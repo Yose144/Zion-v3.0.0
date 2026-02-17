@@ -1,0 +1,89 @@
+# Build artifacts
+/target/
+**/target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Data (runtime)
+data/
+*.db
+*.lmdb
+*.lmdb-lock
+
+# Node.js (reinstall with npm install)
+**/node_modules/
+
+# Next.js build (rebuild with npm run build)
+**/.next/
+
+# Electron build (rebuild with npm run dist)
+desktop-agent/dist/
+desktop-agent/resources/zion-universal-miner.exe
+desktop-agent/resources/zion-miner.exe
+desktop-agent/resources/native-libs/
+desktop-agent/resources/*.dylib
+
+# Release binaries (host on GitHub Releases, not in repo)
+website-v2.9/public/downloads/
+
+# Python (tools)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Docker volumes
+docker-data/
+
+# Editor backups
+*.bak
+*.backup
+*.orig
+
+# Secrets & Keys
+*.pem
+*.key
+*.p12
+*.secret
+wallet_keys/
+**/private_keys/
+PREMINE_WALLETS_BACKUP.json
+**/PREMINE_WALLETS_BACKUP*
+
+# Rust
+Cargo.lock
+**/*.rs.bk
+
+# Python extras
+*.egg-info/
+*.whl
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Misc
+*.tmp
+*.temp
+.cache/
+*.key
+ai.key
+git.key
