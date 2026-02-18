@@ -1,0 +1,15 @@
+# Dependencies / build artifacts
+node_modules
+.next
+
+# VCS
+.git
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Exclude hidden temp files in downloads (docker build context can break on these)
+public/downloads/**/.*

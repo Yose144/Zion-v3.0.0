@@ -1,0 +1,24 @@
+{
+  "name": "zion-bridge-contracts",
+  "version": "0.1.0",
+  "description": "ZION L2 wZION bridge — Solidity smart contracts (ERC-20 + Bridge)",
+  "author": "ZION TerraNova Core Team <contact@zionterranova.com>",
+  "license": "MIT",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:base-sepolia": "npx hardhat run scripts/deploy.ts --network base-sepolia",
+    "deploy:arb-sepolia": "npx hardhat run scripts/deploy.ts --network arbitrum-sepolia",
+    "deploy:bsc-testnet": "npx hardhat run scripts/deploy.ts --network bsc-testnet",
+    "verify": "npx hardhat verify --network",
+    "flatten:wzion": "npx hardhat flatten contracts/wZION.sol > flat/wZION_flat.sol",
+    "flatten:bridge": "npx hardhat flatten contracts/ZIONBridge.sol > flat/ZIONBridge_flat.sol",
+    "size": "npx hardhat size-contracts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.1.0",
+    "hardhat": "^2.22.0",
+    "dotenv": "^16.4.0"
+  }
+}

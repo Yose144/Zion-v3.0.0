@@ -1,0 +1,177 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #000000;
+    position: relative;
+}
+
+.container {
+    position: relative;
+    width: 600px; /* Nastavte šířku kontejneru podle potřeby */
+    height: 600px; /* Nastavte výšku kontejneru podle potřeby */
+}
+
+img {
+    width: 100%; /* Obrázky se nyní přizpůsobí velikosti kontejneru */
+    height: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Umožňuje centrování obrázků */
+    /*box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5); /* stín */
+    filter: grayscale(100%) brightness(150%) blur(0.1px) sepia(50%) contrast(150%); /* filtry invert(100%) */
+
+    /* transition: transform 0.3s;
+}
+
+img:hover {
+    transform: scale(1.1); /* zvětšení obrázku při najetí */
+}
+
+.rotate1 {
+
+    opacity: 0.5;
+    animation: rotate-right 33s linear infinite;
+}
+
+.rotate2 {
+
+    opacity: 0.3;
+    animation: rotate-left 4058s linear infinite;
+}
+
+.rotate3 {
+
+    opacity: 0.6;
+    animation: rotate-right 53.4s linear infinite;
+}
+
+.rotate4 {
+
+    opacity: 0.4;
+    animation: rotate-left 2508s linear infinite;
+}
+.rotate5 {
+
+    opacity: 0.7;
+    animation: rotate-right 86.4s linear infinite;
+}
+
+.rotate6 {
+
+    opacity: 0.5;
+    animation: rotate-left 1550s linear infinite;
+}
+
+.rotate7 {
+
+    opacity: 0.6;
+    animation: rotate-right 139.8s linear infinite;
+}
+
+.rotate8 {
+
+    opacity: 0.7;
+    animation: rotate-left 592s linear infinite;
+}
+
+.rotate9 {
+
+    opacity: 0.6;
+    animation: rotate-right 226.2s linear infinite;
+}
+
+.rotate10 {
+
+    opacity: 0.6;
+    animation: rotate-left 592s linear infinite;
+}
+
+.rotate11 {
+
+    opacity: 0.9;
+    animation: rotate-right 366s linear infinite;
+}
+
+.rotate12 {
+
+    opacity: 0.9;
+    animation: rotate-left 366s linear infinite;
+}
+.rotate13 {
+
+    opacity: 0.45;
+    animation: rotate-right 226.2s linear infinite;
+}
+
+.rotate14 {
+
+    opacity: 0.45;
+    animation: rotate-left 592s linear infinite;
+}
+.rotate15 {
+
+    opacity: 0.7;
+    animation: rotate-right 958s linear infinite;
+}
+
+.rotate16 {
+
+    opacity: 0.6;
+    animation: rotate-left 139.8s linear infinite;
+}
+.rotate17 {
+
+    opacity: 0.5;
+    animation: rotate-right 1550s linear infinite;
+}
+
+.rotate18 {
+
+    opacity: 0.7;
+    animation: rotate-left 86.4s linear infinite;
+}
+.rotate19 {
+
+    opacity: 0.4;
+    animation: rotate-right 2508s linear infinite;
+}
+
+.rotate20 {
+
+    opacity: 0.6;
+    animation: rotate-left 53.4 linear infinite;
+}
+.rotate21 {
+
+    opacity: 0.3;
+    animation: rotate-right 4058s linear infinite;
+}
+
+.rotate22 {
+
+    opacity: 0.5;
+    animation: rotate-left 33s linear infinite;
+}
+
+
+@keyframes rotate-right {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes rotate-left {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(-360deg);
+    }
+}

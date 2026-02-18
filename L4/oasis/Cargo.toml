@@ -1,0 +1,32 @@
+[package]
+name = "zion-oasis"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "ZION L4 — OASIS: Consciousness Mining Game — XP, levels, guilds, territories"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+# Logging
+tracing = "0.1"
+
+# Storage
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# Utils
+thiserror = "2"
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"

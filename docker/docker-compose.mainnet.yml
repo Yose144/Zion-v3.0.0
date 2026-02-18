@@ -1,0 +1,154 @@
+# ZION MainNet Production Stack
+
+services:
+  core:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.core
+    image: zion-core:2.9.5-mainnet
+    container_name: zion-core
+    restart: unless-stopped
+    # P2-08: Read-only root filesystem
+    read_only: true
+    # P2-09: Drop privileges
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8333:8333"   # P2P (mainnet)
+      - "8443:8443"   # RPC (mainnet)
+    volumes:
+      - zion-data:/data/zion
+      - ../config/mainnet.toml:/etc/zion/config.toml:ro
+    tmpfs:
+      - /tmp
+    command:
+      - "--data-dir"
+      - "/data/zion"
+      - "--p2p-port"
+      - "8333"
+      - "--rpc-port"
+      - "8443"
+      - "--network"
+      - "mainnet"
+    environment:
+      - RUST_LOG=info
+      - ZION_NETWORK=mainnet
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8443/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # P2-24: Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    networks:
+      - zion-net
+
+  pool:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.pool
+    image: zion-pool:2.9.5-mainnet
+    container_name: zion-pool
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "3333:3333"   # Stratum
+      - "8080:8080"   # Pool API
+    volumes:
+      - pool-data:/data/zion-pool
+      - ../config/mainnet.toml:/etc/zion/config.toml:ro
+      - ../config/ch3_revenue_settings.json:/config/ch3_revenue_settings.json:ro
+    tmpfs:
+      - /tmp
+    depends_on:
+      core:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - RUST_LOG=info
+      - ZION_CORE_RPC=http://core:8443
+      # P1-32: REDIS_PASSWORD MUST be set via .env file — no hardcoded default
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - ZION_REVENUE_CONFIG=/config/ch3_revenue_settings.json
+      - ZION_CPU_REVENUE_COIN=VRSC
+      - ZION_VRSC_WALLET=RWrHVj8e7fkvfUw4Jf6qJNUHdr6baAsoF5
+      - ZION_VRSC_POOL_URL=eu.luckpool.net:3956
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - zion-net
+
+  miner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.miner
+    image: zion-miner:2.9.5-mainnet
+    container_name: zion-miner
+    restart: unless-stopped
+    depends_on:
+      - pool
+    environment:
+      - POOL_URL=stratum+tcp://pool:3333
+      - WALLET=${MINER_WALLET:-ZION_YOUR_ADDRESS}
+      - WORKER=${MINER_WORKER:-default}
+    command: ["--pool", "pool:3333", "--wallet", "${MINER_WALLET:-ZION_YOUR_ADDRESS}", "--worker", "${MINER_WORKER:-default}"]
+    networks:
+      - zion-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: zion-redis
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    # P1-32: REDIS_PASSWORD MUST be set in .env — no hardcoded fallback
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redis-data:/data
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    networks:
+      - zion-net
+
+volumes:
+  zion-data:
+  pool-data:
+  redis-data:
+
+networks:
+  zion-net:
+    driver: bridge

@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION ⚡ Mission Control</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060a13;--bg2:#0a0e17;--card:#0f1729;--card2:#131d30;
+  --border:#1a2744;--border2:#253552;
+  --accent:#22d3ee;--accent2:#a78bfa;--accent3:#f472b6;
+  --green:#10b981;--red:#ef4444;--yellow:#f59e0b;--orange:#f97316;--blue:#3b82f6;
+  --text:#e2e8f0;--dim:#64748b;--dim2:#475569;
+  --glow:0 0 30px rgba(34,211,238,.08);
+  --glow2:0 0 30px rgba(167,139,250,.08);
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter','SF Pro Display','Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+.mono{font-family:'SF Mono','Fira Code','Cascadia Code','JetBrains Mono',monospace}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+
+/* Nav */
+.nav{position:sticky;top:0;z-index:100;background:rgba(6,10,19,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+.nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;height:56px;gap:8px}
+.nav-logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-right:24px;white-space:nowrap}
+.nav-tabs{display:flex;gap:2px;overflow-x:auto;flex:1}
+.nav-tab{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);cursor:pointer;white-space:nowrap;transition:all .2s;border:none;background:none}
+.nav-tab:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.nav-tab.active{color:var(--accent);background:rgba(34,211,238,.08)}
+.nav-live{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);margin-left:auto;white-space:nowrap}
+.nav-live .dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Sections */
+.section{display:none;max-width:1400px;margin:0 auto;padding:24px}
+.section.active{display:block}
+.section-title{font-size:24px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.section-title .icon{font-size:28px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--glow)}
+.card-header{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-header .badge{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:600}
+.badge-ok{background:rgba(16,185,129,.15);color:var(--green)}
+.badge-progress{background:rgba(34,211,238,.15);color:var(--accent)}
+.badge-todo{background:rgba(100,116,139,.15);color:var(--dim)}
+.badge-blocked{background:rgba(239,68,68,.15);color:var(--red)}
+
+/* Grid layouts */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid-4{grid-template-columns:1fr}}
+
+/* Stat boxes */
+.stat{background:var(--card2);border-radius:12px;padding:14px 16px;border:1px solid var(--border)}
+.stat .lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.stat .val{font-size:22px;font-weight:700}
+.stat .sub{font-size:11px;color:var(--dim);margin-top:4px}
+.cyan{color:var(--accent)}.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}.purple{color:var(--accent2)}.pink{color:var(--accent3)}.blue{color:var(--blue)}.orange{color:var(--orange)}
+
+/* Progress bars */
+.pbar{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;position:relative}
+.pbar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.pbar-glow{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.pbar-green{background:var(--green)}.pbar-yellow{background:var(--yellow)}.pbar-red{background:var(--red)}
+
+/* Big progress */
+.big-progress{margin-bottom:28px}
+.big-progress .bar{height:36px;background:var(--card);border-radius:18px;border:1px solid var(--border);overflow:hidden;position:relative}
+.big-progress .fill{height:100%;background:linear-gradient(90deg,#22d3ee,#a78bfa,#f472b6);border-radius:18px;transition:width 1s ease;position:relative;min-width:2px}
+.big-progress .fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:60px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25));animation:shimmer 2.5s infinite}
+@keyframes shimmer{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+.big-progress .label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);z-index:1}
+.big-progress .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:8px}
+
+/* Server cards */
+.server-card{border-left:3px solid var(--accent)}
+.server-card.alert{border-left-color:var(--red)}
+.server-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.server-head .flag{font-size:32px}
+.server-head .name{font-size:17px;font-weight:600}
+.server-head .ip{font-size:12px;color:var(--dim);font-family:monospace}
+.server-head .status-pill{margin-left:auto;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-ok{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.pill-warn{background:rgba(245,158,11,.12);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
+.pill-err{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:600px){.metrics-grid{grid-template-columns:1fr 1fr}}
+.metric{background:rgba(255,255,255,.02);border-radius:10px;padding:10px 12px}
+.metric .mlbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.metric .mval{font-size:17px;font-weight:700}
+.metric .mbar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:6px;overflow:hidden}
+.metric .mbar-fill{height:100%;border-radius:2px;transition:width .5s}
+
+/* Console */
+.log-box{background:#080c14;border:1px solid var(--border);border-radius:12px;padding:16px;font-size:11px;line-height:1.9;max-height:260px;overflow-y:auto;white-space:pre;font-family:'SF Mono','Fira Code',monospace;color:var(--dim)}
+.log-box .ok{color:var(--green)}.log-box .alert-line{color:var(--red);font-weight:600}
+
+/* Roadmap Phase */
+.phase{margin-bottom:24px}
+.phase-header{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:14px 14px 0 0;cursor:pointer;transition:background .2s}
+.phase-header:hover{background:var(--card2)}
+.phase-header .phase-icon{font-size:24px}
+.phase-header .phase-title{font-size:16px;font-weight:600;flex:1}
+.phase-header .phase-pct{font-size:14px;font-weight:700;margin-right:8px}
+.phase-header .phase-status{font-size:11px;padding:3px 10px;border-radius:8px;font-weight:600}
+.phase-header .chevron{color:var(--dim);font-size:18px;transition:transform .3s}
+.phase.open .chevron{transform:rotate(180deg)}
+.phase-body{display:none;background:var(--card2);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:18px}
+.phase.open .phase-body{display:block}
+.phase-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:8px;flex:1;min-width:120px}
+.phase-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* Sprint table */
+.sprint-table{width:100%;border-collapse:separate;border-spacing:0 4px}
+.sprint-table th{text-align:left;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;padding:6px 12px;font-weight:500}
+.sprint-table td{padding:8px 12px;font-size:13px;background:rgba(255,255,255,.02);border:none}
+.sprint-table tr td:first-child{border-radius:8px 0 0 8px}
+.sprint-table tr td:last-child{border-radius:0 8px 8px 0}
+.sprint-table .sprint-name{font-weight:600;color:var(--text)}
+.sprint-table .sprint-tests{color:var(--accent);font-family:monospace;font-size:12px}
+.check{color:var(--green)}.cross{color:var(--red)}.pending{color:var(--dim)}
+
+/* Layer Stack */
+.layer-stack{display:flex;flex-direction:column;gap:4px}
+.layer-item{padding:20px;border-radius:14px;border:1px solid var(--border);position:relative;overflow:hidden;transition:all .3s;cursor:default}
+.layer-item:hover{transform:translateX(4px);border-color:var(--border2)}
+.layer-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.layer-l1::before{background:linear-gradient(var(--accent),var(--accent2))}.layer-l1{background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(167,139,250,.04))}
+.layer-l2::before{background:linear-gradient(var(--blue),var(--accent))}.layer-l2{background:rgba(59,130,246,.04)}
+.layer-l3::before{background:linear-gradient(var(--accent2),var(--accent3))}.layer-l3{background:rgba(167,139,250,.04)}
+.layer-l4::before{background:linear-gradient(var(--accent3),var(--orange))}.layer-l4{background:rgba(244,114,182,.04)}
+.layer-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.layer-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.layer-desc{font-size:12px;color:var(--dim);line-height:1.6}
+.layer-date{font-size:11px;color:var(--dim2);margin-top:8px}
+.layer-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.layer-tag{font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);color:var(--dim);border:1px solid rgba(255,255,255,.06)}
+
+/* Constitution */
+.const-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.const-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.const-item .lock{font-size:16px}
+.const-item .c-label{font-size:11px;color:var(--dim)}
+.const-item .c-value{font-size:14px;font-weight:600}
+
+/* Economy */
+.econ-flow{display:flex;flex-direction:column;align-items:center;gap:0}
+.econ-node{padding:14px 28px;border-radius:12px;text-align:center;font-weight:600;font-size:14px;border:1px solid var(--border);min-width:200px}
+.econ-arrow{font-size:20px;color:var(--dim);padding:4px 0}
+.econ-split{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+
+/* Security */
+.sec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.sec-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card2);border-radius:10px;font-size:13px;border:1px solid var(--border)}
+
+/* Premine table */
+.premine-table{width:100%;border-collapse:separate;border-spacing:0 4px}
+.premine-table th{text-align:left;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;padding:8px 12px}
+.premine-table td{padding:10px 12px;font-size:13px;background:rgba(255,255,255,.02)}
+.premine-table tr td:first-child{border-radius:8px 0 0 8px}
+.premine-table tr td:last-child{border-radius:0 8px 8px 0}
+
+/* Timeline */
+.timeline{position:relative;padding-left:32px}
+.timeline::before{content:'';position:absolute;left:14px;top:0;bottom:0;width:2px;background:linear-gradient(var(--accent),var(--accent2),var(--accent3),var(--dim))}
+.timeline-item{position:relative;margin-bottom:24px}
+.timeline-item::before{content:'';position:absolute;left:-24px;top:6px;width:12px;height:12px;border-radius:50%;border:2px solid var(--border)}
+.timeline-item.done::before{background:var(--green);border-color:var(--green)}
+.timeline-item.active::before{background:var(--accent);border-color:var(--accent);box-shadow:0 0 12px var(--accent)}
+.timeline-item.future::before{background:var(--bg);border-color:var(--dim)}
+.tl-date{font-size:11px;color:var(--dim);margin-bottom:2px}
+.tl-title{font-size:14px;font-weight:600}
+.tl-desc{font-size:12px;color:var(--dim);margin-top:2px}
+
+/* Footer */
+.footer{text-align:center;padding:32px;color:var(--dim2);font-size:11px;border-top:1px solid var(--border);margin-top:40px}
+
+/* Tooltip */
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--card2);color:var(--text);padding:6px 12px;border-radius:8px;font-size:11px;white-space:nowrap;border:1px solid var(--border);z-index:50;margin-bottom:6px}
+
+/* Priority table */
+.prio-table{width:100%;border-collapse:separate;border-spacing:0 4px}
+.prio-table th{text-align:left;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;padding:8px 12px}
+.prio-table td{padding:10px 12px;font-size:13px;background:rgba(255,255,255,.02)}
+.prio-table tr td:first-child{border-radius:8px 0 0 8px}
+.prio-table tr td:last-child{border-radius:0 8px 8px 0}
+.prio-p0{color:var(--red);font-weight:700}
+.prio-p1{color:var(--yellow);font-weight:700}
+.prio-p2{color:var(--blue);font-weight:600}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.section.active{animation:fadeIn .3s ease}
+
+/* Exchange flow */
+.exchange-flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
+.ex-step{padding:10px 18px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--card2)}
+.ex-arrow{color:var(--dim);font-size:18px}
+.ex-no{opacity:.4;text-decoration:line-through}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+<div class="nav-inner">
+  <div class="nav-logo">⚡ ZION Mission Control</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-tab="dashboard">📊 Dashboard</button>
+    <button class="nav-tab" data-tab="roadmap">🗺️ Roadmap</button>
+    <button class="nav-tab" data-tab="layers">🏗️ Layers</button>
+    <button class="nav-tab" data-tab="constitution">🔒 Constitution</button>
+    <button class="nav-tab" data-tab="economy">💰 Economy</button>
+    <button class="nav-tab" data-tab="security">🛡️ Security</button>
+    <button class="nav-tab" data-tab="timeline">📅 Timeline</button>
+    <button class="nav-tab" data-tab="priority">⚡ Priority</button>
+  </div>
+  <div class="nav-live"><span class="dot"></span> LIVE</div>
+</div>
+</nav>
+
+<!-- ═══════════════════════ TAB 1: DASHBOARD ═══════════════════════ -->
+<div class="section active" id="sec-dashboard">
+
+  <div class="section-title"><span class="icon">📊</span> 72h Stability Run — Sprint 1.10</div>
+
+  <!-- Big progress -->
+  <div class="big-progress">
+    <div class="meta">
+      <span id="start-time">Start: —</span>
+      <span id="end-time">End: —</span>
+    </div>
+    <div class="bar">
+      <div class="fill" id="progress-fill" style="width:0%"></div>
+      <div class="label" id="progress-text">0%</div>
+    </div>
+  </div>
+
+  <!-- KPI row -->
+  <div class="grid-4" style="margin-bottom:24px">
+    <div class="stat"><div class="lbl">Elapsed</div><div class="val cyan mono" id="elapsed-h">—</div></div>
+    <div class="stat"><div class="lbl">Remaining</div><div class="val mono" id="remaining-h">—</div></div>
+    <div class="stat"><div class="lbl">Block Height</div><div class="val purple mono" id="total-blocks">—</div></div>
+    <div class="stat"><div class="lbl">Status</div><div class="val green" id="run-status">—</div></div>
+  </div>
+
+  <!-- Network KPIs -->
+  <div class="grid-4" style="margin-bottom:24px">
+    <div class="stat"><div class="lbl">Network</div><div class="val cyan" id="kpi-network">testnet</div></div>
+    <div class="stat"><div class="lbl">Total Peers</div><div class="val mono" id="kpi-peers">—</div></div>
+    <div class="stat"><div class="lbl">Difficulty</div><div class="val mono" id="kpi-diff">—</div></div>
+    <div class="stat"><div class="lbl">Tip Match</div><div class="val" id="kpi-tip">—</div></div>
+  </div>
+
+  <!-- Server cards -->
+  <div class="grid-2" style="margin-bottom:24px">
+    <!-- Helsinki -->
+    <div class="card server-card" id="srv-helsinki">
+      <div class="server-head">
+        <span class="flag">🇫🇮</span>
+        <div><div class="name">Helsinki</div><div class="ip">77.42.31.72 • 8GB RAM</div></div>
+        <span class="status-pill pill-ok" id="h-status">—</span>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="mlbl">Height</div><div class="mval cyan mono" id="h-height">—</div></div>
+        <div class="metric"><div class="mlbl">Peers</div><div class="mval mono" id="h-peers">—</div></div>
+        <div class="metric"><div class="mlbl">Difficulty</div><div class="mval mono" id="h-diff">—</div></div>
+        <div class="metric"><div class="mlbl">Mempool</div><div class="mval mono" id="h-mempool">—</div></div>
+        <div class="metric"><div class="mlbl">Last Block</div><div class="mval mono" id="h-lastblock">—</div></div>
+        <div class="metric"><div class="mlbl">TPS</div><div class="mval mono" id="h-tps">—</div></div>
+        <div class="metric"><div class="mlbl">Sync State</div><div class="mval" id="h-sync">—</div></div>
+        <div class="metric"><div class="mlbl">Containers</div><div class="mval mono" id="h-containers">—</div></div>
+        <div class="metric"><div class="mlbl">Load</div><div class="mval mono" id="h-load">—</div></div>
+        <div class="metric">
+          <div class="mlbl">Memory</div><div class="mval" id="h-mem">—</div>
+          <div class="mbar"><div class="mbar-fill" id="h-mem-bar" style="width:0%"></div></div>
+        </div>
+        <div class="metric">
+          <div class="mlbl">Disk</div><div class="mval" id="h-disk">—</div>
+          <div class="mbar"><div class="mbar-fill" id="h-disk-bar" style="width:0%"></div></div>
+        </div>
+        <div class="metric"><div class="mlbl">Tip Hash</div><div class="mval mono" id="h-tip" style="font-size:9px;word-break:break-all">—</div></div>
+      </div>
+    </div>
+
+    <!-- Germany -->
+    <div class="card server-card" id="srv-germany">
+      <div class="server-head">
+        <span class="flag">🇩🇪</span>
+        <div><div class="name">Germany</div><div class="ip">195.201.31.201 • 8GB RAM</div></div>
+        <span class="status-pill pill-ok" id="s-status">—</span>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="mlbl">Height</div><div class="mval cyan mono" id="s-height">—</div></div>
+        <div class="metric"><div class="mlbl">Peers</div><div class="mval mono" id="s-peers">—</div></div>
+        <div class="metric"><div class="mlbl">Difficulty</div><div class="mval mono" id="s-diff">—</div></div>
+        <div class="metric"><div class="mlbl">Mempool</div><div class="mval mono" id="s-mempool">—</div></div>
+        <div class="metric"><div class="mlbl">Last Block</div><div class="mval mono" id="s-lastblock">—</div></div>
+        <div class="metric"><div class="mlbl">TPS</div><div class="mval mono" id="s-tps">—</div></div>
+        <div class="metric"><div class="mlbl">Sync State</div><div class="mval" id="s-sync">—</div></div>
+        <div class="metric"><div class="mlbl">Containers</div><div class="mval mono" id="s-containers">—</div></div>
+        <div class="metric"><div class="mlbl">Load</div><div class="mval mono" id="s-load">—</div></div>
+        <div class="metric">
+          <div class="mlbl">Memory</div><div class="mval" id="s-mem">—</div>
+          <div class="mbar"><div class="mbar-fill" id="s-mem-bar" style="width:0%"></div></div>
+        </div>
+        <div class="metric">
+          <div class="mlbl">Disk</div><div class="mval" id="s-disk">—</div>
+          <div class="mbar"><div class="mbar-fill" id="s-disk-bar" style="width:0%"></div></div>
+        </div>
+        <div class="metric"><div class="mlbl">Tip Hash</div><div class="mval mono" id="s-tip" style="font-size:9px;word-break:break-all">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pool Metrics -->
+  <div class="card" style="margin-bottom:24px;border-left:3px solid var(--accent2)">
+    <div class="card-header"><span style="font-size:18px">⛏️</span> Mining Pool — Live Metrics</div>
+    <!-- Aggregate KPIs -->
+    <div class="grid-4" style="margin-bottom:20px">
+      <div class="stat" style="border-color:var(--accent2)"><div class="lbl">Active Miners</div><div class="val purple mono" id="pool-active">—</div><div class="sub" id="pool-total-miners">total: —</div></div>
+      <div class="stat" style="border-color:var(--accent2)"><div class="lbl">Pool Hashrate</div><div class="val cyan mono" id="pool-hashrate">—</div><div class="sub" id="pool-hashrate-24h">24h avg: —</div></div>
+      <div class="stat" style="border-color:var(--accent2)"><div class="lbl">Valid Shares</div><div class="val green mono" id="pool-shares-valid">—</div><div class="sub" id="pool-shares-invalid">invalid: —</div></div>
+      <div class="stat" style="border-color:var(--accent2)"><div class="lbl">Blocks Found</div><div class="val orange mono" id="pool-blocks-found">—</div><div class="sub" id="pool-blocks-pending">pending: —</div></div>
+    </div>
+    <!-- Per-pool details -->
+    <div class="grid-2">
+      <div style="background:var(--card2);border-radius:12px;padding:16px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:20px">🇫🇮</span>
+          <span style="font-weight:600">Helsinki Pool</span>
+          <span class="status-pill pill-ok" id="hp-status" style="font-size:10px;margin-left:auto">—</span>
+        </div>
+        <div class="metrics-grid" style="grid-template-columns:1fr 1fr">
+          <div class="metric"><div class="mlbl">Active / Total</div><div class="mval mono" id="hp-miners">—</div></div>
+          <div class="metric"><div class="mlbl">Hashrate</div><div class="mval cyan mono" id="hp-hashrate">—</div></div>
+          <div class="metric"><div class="mlbl">Shares ✓/✗</div><div class="mval mono" id="hp-shares">—</div></div>
+          <div class="metric"><div class="mlbl">PPLNS Window</div><div class="mval mono" id="hp-pplns">—</div></div>
+          <div class="metric"><div class="mlbl">Pool Fee</div><div class="mval mono" id="hp-fee">—</div></div>
+          <div class="metric"><div class="mlbl">Uptime</div><div class="mval mono" id="hp-uptime">—</div></div>
+          <div class="metric"><div class="mlbl">Pending Payouts</div><div class="mval mono" id="hp-payouts">—</div></div>
+          <div class="metric"><div class="mlbl">Version</div><div class="mval mono" id="hp-version">—</div></div>
+        </div>
+      </div>
+      <div style="background:var(--card2);border-radius:12px;padding:16px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:20px">�🇪</span>
+          <span style="font-weight:600">Germany Pool</span>
+          <span class="status-pill pill-ok" id="sp-status" style="font-size:10px;margin-left:auto">—</span>
+        </div>
+        <div class="metrics-grid" style="grid-template-columns:1fr 1fr">
+          <div class="metric"><div class="mlbl">Active / Total</div><div class="mval mono" id="sp-miners">—</div></div>
+          <div class="metric"><div class="mlbl">Hashrate</div><div class="mval cyan mono" id="sp-hashrate">—</div></div>
+          <div class="metric"><div class="mlbl">Shares ✓/✗</div><div class="mval mono" id="sp-shares">—</div></div>
+          <div class="metric"><div class="mlbl">PPLNS Window</div><div class="mval mono" id="sp-pplns">—</div></div>
+          <div class="metric"><div class="mlbl">Pool Fee</div><div class="mval mono" id="sp-fee">—</div></div>
+          <div class="metric"><div class="mlbl">Uptime</div><div class="mval mono" id="sp-uptime">—</div></div>
+          <div class="metric"><div class="mlbl">Pending Payouts</div><div class="mval mono" id="sp-payouts">—</div></div>
+          <div class="metric"><div class="mlbl">Version</div><div class="mval mono" id="sp-version">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Stats -->
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">🏗️ Project Stats</div>
+    <div class="grid-4">
+      <div class="stat"><div class="lbl">Codebase</div><div class="val cyan">46,690</div><div class="sub">lines of Rust</div></div>
+      <div class="stat"><div class="lbl">Tests</div><div class="val green">512</div><div class="sub">passing / 0 failing</div></div>
+      <div class="stat"><div class="lbl">MainNet Ready</div><div class="val purple">~83%</div><div class="sub">estimated</div></div>
+      <div class="stat"><div class="lbl">Crates</div><div class="val">4</div><div class="sub">core, pool, miner, cosmic-harmony</div></div>
+    </div>
+  </div>
+
+  <!-- Component readiness -->
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">📦 Component Readiness</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="component-row" style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;width:180px">core/ (blockchain)</span>
+        <div class="pbar" style="flex:1"><div class="pbar-fill pbar-glow" style="width:90%"></div></div>
+        <span class="mono" style="font-size:13px;width:40px;text-align:right;color:var(--green)">90%</span>
+        <span class="mono" style="font-size:11px;color:var(--dim);width:80px">~17k LOC</span>
+      </div>
+      <div class="component-row" style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;width:180px">cosmic-harmony/ (PoW)</span>
+        <div class="pbar" style="flex:1"><div class="pbar-fill pbar-glow" style="width:88%"></div></div>
+        <span class="mono" style="font-size:13px;width:40px;text-align:right;color:var(--green)">88%</span>
+        <span class="mono" style="font-size:11px;color:var(--dim);width:80px">~11k LOC</span>
+      </div>
+      <div class="component-row" style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;width:180px">pool/ (mining pool)</span>
+        <div class="pbar" style="flex:1"><div class="pbar-fill pbar-glow" style="width:90%"></div></div>
+        <span class="mono" style="font-size:13px;width:40px;text-align:right;color:var(--green)">90%</span>
+        <span class="mono" style="font-size:11px;color:var(--dim);width:80px">~12k LOC</span>
+      </div>
+      <div class="component-row" style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;width:180px">miner/ (universal)</span>
+        <div class="pbar" style="flex:1"><div class="pbar-fill pbar-glow" style="width:85%"></div></div>
+        <span class="mono" style="font-size:13px;width:40px;text-align:right;color:var(--green)">85%</span>
+        <span class="mono" style="font-size:11px;color:var(--dim);width:80px">~6k LOC</span>
+      </div>
+      <div class="component-row" style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;width:180px">desktop-agent/ (Electron)</span>
+        <div class="pbar" style="flex:1"><div class="pbar-fill pbar-glow" style="width:80%"></div></div>
+        <span class="mono" style="font-size:13px;width:40px;text-align:right;color:var(--yellow)">80%</span>
+        <span class="mono" style="font-size:11px;color:var(--dim);width:80px">~3k JS</span>
+      </div>
+      <div class="component-row" style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;width:180px">website-v2.9/ (Next.js)</span>
+        <div class="pbar" style="flex:1"><div class="pbar-fill pbar-yellow" style="width:75%"></div></div>
+        <span class="mono" style="font-size:13px;width:40px;text-align:right;color:var(--yellow)">75%</span>
+        <span class="mono" style="font-size:11px;color:var(--dim);width:80px">~5k</span>
+      </div>
+      <div class="component-row" style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;width:180px">mobile-app/ (RN)</span>
+        <div class="pbar" style="flex:1"><div class="pbar-fill pbar-red" style="width:55%"></div></div>
+        <span class="mono" style="font-size:13px;width:40px;text-align:right;color:var(--red)">55%</span>
+        <span class="mono" style="font-size:11px;color:var(--dim);width:80px">~2k</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div class="card-header">▸ Monitoring Log (Helsinki)</div>
+    <div class="log-box" id="log-box">Loading...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 2: ROADMAP ═══════════════════════ -->
+<div class="section" id="sec-roadmap">
+  <div class="section-title"><span class="icon">🗺️</span> Roadmap — MainNet 31. 12. 2026</div>
+
+  <!-- Overall -->
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">🎯 Overall Progress to MainNet</div>
+    <div class="big-progress" style="margin-bottom:0">
+      <div class="meta"><span>Fáze 0 (Feb) → Fáze 5 (Dec 2026)</span><span>Cíl: 31. 12. 2026</span></div>
+      <div class="bar"><div class="fill" style="width:28%"></div><div class="label">~28% → MainNet</div></div>
+    </div>
+  </div>
+
+  <!-- Phase 0 -->
+  <div class="phase open">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <span class="phase-icon">✅</span>
+      <span class="phase-title">Fáze 0 — Spec Freeze & Core Rewrite</span>
+      <div class="phase-bar"><div class="phase-bar-fill pbar-green" style="width:100%"></div></div>
+      <span class="phase-pct green">100%</span>
+      <span class="phase-status badge-ok">DOKONČENO</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--dim);margin-bottom:12px">📅 Únor 2026 — 155 testů, 8 commitů</p>
+      <table class="sprint-table">
+        <tr><th>Sprint</th><th>Obsah</th><th>Stav</th></tr>
+        <tr><td class="sprint-name">0.0 Repo Migrace</td><td>Čisté repo, workspace, Docker, CI/CD</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">0.1 Emission & Genesis</td><td>5,400.067 ZION/block, 16.28B premine, time-lock</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">0.2 DAA & Consensus</td><td>LWMA 60-blok, ±25%, fork-choice</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">0.3 Fee Market & Mempool</td><td>Fee burning, double-spend, min fee, eviction</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">0.4 Wallet & TX</td><td>UTXO select, Ed25519, broadcast, E2E</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">0.5 Consensus Hardening</td><td>Coinbase maturity=100, max reorg=10, soft finality=60</td><td><span class="check">✅</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="phase open">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <span class="phase-icon">🔄</span>
+      <span class="phase-title">Fáze 1 — Hardened TestNet</span>
+      <div class="phase-bar"><div class="phase-bar-fill pbar-glow" style="width:77%"></div></div>
+      <span class="phase-pct cyan">77%</span>
+      <span class="phase-status badge-progress">PROBÍHÁ</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--dim);margin-bottom:12px">📅 Únor — Květen 2026 | 420 testů dosud</p>
+      <table class="sprint-table">
+        <tr><th>Sprint</th><th>Obsah</th><th>Testy</th><th>Stav</th></tr>
+        <tr><td class="sprint-name">1.0 Network Deploy</td><td>Chain reset, Docker, 3-server</td><td class="sprint-tests">—</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.1 Config Validation</td><td>TOML parsing, boundary checks</td><td class="sprint-tests">70</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.2 Security Edge-Case</td><td>Reorg, double-spend, fork-choice, coinbase</td><td class="sprint-tests">29</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.3 IBD Hardening</td><td>Timeouts, stall detect, peer scoring</td><td class="sprint-tests">42</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.4 Pool Payout</td><td>Batch TX, PoolWallet, JSON-RPC submit</td><td class="sprint-tests">23</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.5 Buyback + DAO</td><td>100% DAO revenue, burn address, tracker</td><td class="sprint-tests">28</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.6 Supply API</td><td>getSupplyInfo, getBuybackStats, getNetworkInfo</td><td class="sprint-tests">15</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.7 P2P Rate-Limit</td><td>200 msgs/peer/60s, escalating bans</td><td class="sprint-tests">13</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.8 Health & Metrics</td><td>getHealthCheck, getMetrics (structured)</td><td class="sprint-tests">8</td><td><span class="check">✅</span></td></tr>
+        <tr><td class="sprint-name">1.9 Stress Tests</td><td>High-throughput TX, rapid blocks, partition</td><td class="sprint-tests">21</td><td><span class="check">✅</span></td></tr>
+        <tr style="background:rgba(34,211,238,.06)"><td class="sprint-name" style="color:var(--accent)">1.10 72h Stability 🔥</td><td>3+ nody, CPU mining, žádný restart — <b>GATE</b></td><td class="sprint-tests">—</td><td><span style="color:var(--accent)">⏳ NOW</span></td></tr>
+        <tr><td class="sprint-name">1.11 Partition Test</td><td>Izolace node 30 min, reconnect, reorg</td><td class="sprint-tests">—</td><td><span class="pending">⬜</span></td></tr>
+        <tr><td class="sprint-name">1.12 100 Miners</td><td>Simulace 100 Stratum klientů</td><td class="sprint-tests">—</td><td><span class="pending">⬜</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <span class="phase-icon">🖥️</span>
+      <span class="phase-title">Fáze 2 — Node UX & Mining</span>
+      <div class="phase-bar"><div class="phase-bar-fill" style="width:0%;background:var(--dim)"></div></div>
+      <span class="phase-pct" style="color:var(--dim)">0%</span>
+      <span class="phase-status badge-todo">ČER-ČEC 2026</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--dim);margin-bottom:12px">📅 Červen — Červenec 2026 (8 týdnů)</p>
+      <table class="sprint-table">
+        <tr><th>Sprint</th><th>Úkoly</th><th>Stav</th></tr>
+        <tr><td class="sprint-name">2.1 Node UX</td><td>"Run node in 10 min", config.toml, structured logging, graceful shutdown, OpenAPI, CLI</td><td><span class="pending">⬜</span></td></tr>
+        <tr><td class="sprint-name">2.2 Mining Polish</td><td>CPU benchmark, GPU stability (CUDA+OpenCL), pool failover, solo mode, guides</td><td><span class="pending">⬜</span></td></tr>
+        <tr><td class="sprint-name" style="color:var(--red)">2.3 Block Explorer 🔴</td><td>Backend indexer, frontend UI, Supply API, Rich list, Network stats</td><td><span class="pending">⬜</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <span class="phase-icon">🌍</span>
+      <span class="phase-title">Fáze 3 — Infrastructure & Legal</span>
+      <div class="phase-bar"><div class="phase-bar-fill" style="width:18%;background:var(--yellow)"></div></div>
+      <span class="phase-pct" style="color:var(--yellow)">18%</span>
+      <span class="phase-status badge-todo">SRP-ZÁŘ 2026</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--dim);margin-bottom:12px">📅 Srpen — Září 2026 (8 týdnů)</p>
+      <table class="sprint-table">
+        <tr><th>Sprint</th><th>Úkoly</th><th>Stav</th></tr>
+        <tr><td class="sprint-name">3.1 Seed Nodes</td><td>5+ seed nodů (EU 2, USA 1, Asia 2), Prometheus+Grafana, alerts, backup, DDoS</td><td><span class="pending">⬜</span></td></tr>
+        <tr><td class="sprint-name">3.2 Docker & Deploy</td><td>docker-compose.mainnet.yml, runbook, images, SHA-256 checksums, CI/CD</td><td><span class="pending">⬜</span></td></tr>
+        <tr><td class="sprint-name">3.3 Legal</td><td>DISCLAIMER ✅, TOKEN-NOT-SECURITY ✅, RISK ✅, PREMINE ✅, NO-INVEST ✅, INFRA ⬜, footer ⬜</td><td><span style="color:var(--yellow)">5/8</span></td></tr>
+        <tr><td class="sprint-name">3.4 Exchange Ready</td><td>Node guide, whitepaper PDF, wZION ERC-20, bridge backend, logo pack, supply API</td><td><span class="pending">⬜</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <span class="phase-icon">🎯</span>
+      <span class="phase-title">Fáze 4 — Dress Rehearsal</span>
+      <div class="phase-bar"><div class="phase-bar-fill" style="width:0%;background:var(--dim)"></div></div>
+      <span class="phase-pct" style="color:var(--dim)">0%</span>
+      <span class="phase-status badge-todo">ŘÍJ-LIS 2026</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--dim);margin-bottom:12px">📅 Říjen — Listopad 2026 (8 týdnů) — P0 BLOCKER</p>
+      <table class="sprint-table">
+        <tr><th>Sprint</th><th>Úkoly</th><th>Stav</th></tr>
+        <tr><td class="sprint-name">4.1 Dress Rehearsal</td><td>Staging chain, genesis test, 1000 miners, disaster recovery, 168h (7-day) run</td><td><span class="pending">⬜</span></td></tr>
+        <tr><td class="sprint-name">4.2 Security Audit</td><td>External audit (Trail of Bits / OtterSec / Halborn), bug bounty</td><td><span class="pending">⬜</span></td></tr>
+        <tr><td class="sprint-name">4.3 Code Freeze</td><td>Feature freeze, tag v2.9.5-mainnet, binary builds, reproducible, SHA-256</td><td><span class="pending">⬜</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <span class="phase-icon">🚀</span>
+      <span class="phase-title">Fáze 5 — MainNet Launch</span>
+      <div class="phase-bar"><div class="phase-bar-fill" style="width:0%;background:var(--dim)"></div></div>
+      <span class="phase-pct" style="color:var(--dim)">0%</span>
+      <span class="phase-status badge-blocked">31. 12. 2026</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--dim);margin-bottom:12px">📅 Prosinec 2026 — 🎯 GENESIS DAY</p>
+      <table class="sprint-table">
+        <tr><th>Den</th><th>Aktivita</th></tr>
+        <tr><td class="sprint-name">T-14</td><td>Genesis freeze — všechny parametry zmrazeny</td></tr>
+        <tr><td class="sprint-name">T-10</td><td>Seed nody deployed a synchronizovány</td></tr>
+        <tr><td class="sprint-name">T-7</td><td>Community announcement + wallety ke stažení</td></tr>
+        <tr><td class="sprint-name">T-5</td><td>Wallet release (desktop + CLI)</td></tr>
+        <tr><td class="sprint-name">T-3</td><td>Mining guide publikován</td></tr>
+        <tr><td class="sprint-name">T-2</td><td>Final node software release</td></tr>
+        <tr><td class="sprint-name">T-1</td><td>Genesis block vytvořen OFFLINE (air-gapped)</td></tr>
+        <tr style="background:rgba(244,114,182,.08)"><td class="sprint-name" style="color:var(--accent3)">T-0 🚀</td><td style="font-weight:700;color:var(--accent3)">MAINNET GENESIS</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Phase 6 -->
+  <div class="phase">
+    <div class="phase-header" onclick="togglePhase(this)">
+      <span class="phase-icon">🛡️</span>
+      <span class="phase-title">Fáze 6 — Post-Launch & Exchange</span>
+      <div class="phase-bar"><div class="phase-bar-fill" style="width:0%;background:var(--dim)"></div></div>
+      <span class="phase-pct" style="color:var(--dim)">0%</span>
+      <span class="phase-status badge-todo">2027</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="phase-body">
+      <p style="font-size:12px;color:var(--dim);margin-bottom:16px">📅 Leden — Červen 2027 — "Silent MainNet" → DEX → CEX</p>
+
+      <div class="card-header" style="margin-top:8px">Exchange Strategy — Cesta</div>
+      <div class="exchange-flow" style="margin-bottom:20px">
+        <div class="ex-step" style="border-color:var(--green)">1️⃣ DEX (Uniswap wZION)</div>
+        <span class="ex-arrow">→</span>
+        <div class="ex-step" style="border-color:var(--accent)">2️⃣ CoinGecko / CMC</div>
+        <span class="ex-arrow">→</span>
+        <div class="ex-step" style="border-color:var(--yellow)">3️⃣ Tier-3 CEX (MEXC, XT)</div>
+        <span class="ex-arrow">→</span>
+        <div class="ex-step" style="border-color:var(--orange)">4️⃣ Volume Growth</div>
+        <span class="ex-arrow">→</span>
+        <div class="ex-step" style="border-color:var(--accent2)">5️⃣ Tier-2 (Gate, KuCoin)</div>
+        <span class="ex-arrow">→</span>
+        <div class="ex-step ex-no">❌ Binance/Coinbase (ne jako první)</div>
+      </div>
+
+      <div class="card-header">DEX Deploy Sequence</div>
+      <div class="exchange-flow">
+        <div class="ex-step" style="border-color:var(--green)">1️⃣ Base/Arbitrum (Uniswap v3)</div>
+        <span class="ex-arrow">→</span>
+        <div class="ex-step">2️⃣ BNB Chain (PancakeSwap)</div>
+        <span class="ex-arrow">→</span>
+        <div class="ex-step">3️⃣ Polygon (QuickSwap)</div>
+        <span class="ex-arrow">→</span>
+        <div class="ex-step ex-no">❌ ETH mainnet (drahý gas)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 3: LAYERS ═══════════════════════ -->
+<div class="section" id="sec-layers">
+  <div class="section-title"><span class="icon">🏗️</span> Layer Architecture</div>
+  <p style="color:var(--dim);margin-bottom:24px;font-size:14px"><em>"Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním."</em></p>
+
+  <div class="layer-stack">
+    <div class="layer-item layer-l4">
+      <div class="layer-label pink">L4 — ZION OASIS</div>
+      <div class="layer-title">🎮 Consciousness Mining as Gameplay</div>
+      <div class="layer-desc">UE5 open-world, XP/Consciousness levels (offchain), NFT avatary, Play-to-Mine, metaverse ekonomika na L1</div>
+      <div class="layer-tags">
+        <span class="layer-tag">UE5 World</span>
+        <span class="layer-tag">XP System</span>
+        <span class="layer-tag">NFT Avatars</span>
+        <span class="layer-tag">Play-to-Mine</span>
+        <span class="layer-tag">Territory Wars</span>
+        <span class="layer-tag">Guild System</span>
+      </div>
+      <div class="layer-date">📅 2027 Q4 — 2028+</div>
+    </div>
+
+    <div class="layer-item layer-l3">
+      <div class="layer-label purple">L3 — WARP & AI NATIVE</div>
+      <div class="layer-title">🧠 Neural Compute Layer & AI Agents</div>
+      <div class="layer-desc">NCL — decentralizovaný AI task marketplace, AI Orchestrátor, Warp Bridges (cross-chain), AI Native SDK, Compute Marketplace</div>
+      <div class="layer-tags">
+        <span class="layer-tag">NCL Tasks</span>
+        <span class="layer-tag">AI Orchestrátor</span>
+        <span class="layer-tag">Warp Bridges</span>
+        <span class="layer-tag">Knowledge Extractor</span>
+        <span class="layer-tag">GPU za ZION</span>
+      </div>
+      <div class="layer-date">📅 2027 Q3+</div>
+    </div>
+
+    <div class="layer-item layer-l2">
+      <div class="layer-label blue">L2 — DEX & DeFi</div>
+      <div class="layer-title">💱 Atomic Swaps, AMM & DAO Governance</div>
+      <div class="layer-desc">Atomic Swaps (ZION ↔ BTC/ETH/XMR via HTLC), wZION ERC-20 na EVM chains, AMM DEX, Liquidity Pools, DAO Governance v1</div>
+      <div class="layer-tags">
+        <span class="layer-tag">HTLC Swaps</span>
+        <span class="layer-tag">wZION Bridge</span>
+        <span class="layer-tag">Uniswap</span>
+        <span class="layer-tag">LP Mining</span>
+        <span class="layer-tag">DAO Voting</span>
+      </div>
+      <div class="layer-date">📅 2027 Q1-Q2</div>
+    </div>
+
+    <div class="layer-item layer-l1" style="border:2px solid var(--accent);box-shadow:0 0 30px rgba(34,211,238,.12)">
+      <div class="layer-label cyan">L1 — ZION BLOCKCHAIN ← ZDE ✅</div>
+      <div class="layer-title">⛓️ PoW Cosmic Harmony v3</div>
+      <div class="layer-desc">UTXO + Ed25519, 5,400.067 ZION/block, LWMA DAA, 16.28B genesis premine (time-locked), fee burning, max reorg 10, coinbase maturity 100, mining pool (Stratum v2, PPLNS), P2P síť + IBD sync</div>
+      <div class="layer-tags">
+        <span class="layer-tag" style="border-color:var(--accent);color:var(--accent)">ASIC-resistant</span>
+        <span class="layer-tag" style="border-color:var(--accent);color:var(--accent)">UTXO Model</span>
+        <span class="layer-tag" style="border-color:var(--accent);color:var(--accent)">Ed25519</span>
+        <span class="layer-tag" style="border-color:var(--accent);color:var(--accent)">Constant Emission</span>
+        <span class="layer-tag" style="border-color:var(--accent);color:var(--accent)">Fee Burn</span>
+        <span class="layer-tag" style="border-color:var(--accent);color:var(--accent)">Stratum v2</span>
+      </div>
+      <div class="layer-date">📅 MainNet 31. 12. 2026</div>
+    </div>
+  </div>
+
+  <!-- Layer dependency -->
+  <div class="card" style="margin-top:24px">
+    <div class="card-header">🔗 Layer Dependencies</div>
+    <table class="sprint-table">
+      <tr><th>Layer</th><th>Závisí na</th><th>Může existovat bez</th></tr>
+      <tr><td class="sprint-name cyan">L1 Blockchain</td><td>Nic — standalone</td><td>Vše nad ním</td></tr>
+      <tr><td class="sprint-name blue">L2 DEX/DeFi</td><td>L1 (UTXO, TX)</td><td>L3, L4</td></tr>
+      <tr><td class="sprint-name purple">L3 Warp/AI</td><td>L1 + L2</td><td>L4</td></tr>
+      <tr><td class="sprint-name pink">L4 Oasis</td><td>L1 + L2 + L3</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <!-- Consciousness levels -->
+  <div class="card" style="margin-top:24px">
+    <div class="card-header">🌟 Consciousness Evolution Path (L4 Oasis — Offchain XP)</div>
+    <table class="sprint-table">
+      <tr><th>Level</th><th>Název</th><th>XP</th><th>Multiplier</th><th>Unlock</th></tr>
+      <tr><td>0</td><td class="sprint-name">PHYSICAL</td><td class="sprint-tests">0</td><td>1.0×</td><td>Základní mining</td></tr>
+      <tr><td>1</td><td class="sprint-name">EMOTIONAL</td><td class="sprint-tests">1,000</td><td>1.05×</td><td>Avatar, pool chat</td></tr>
+      <tr><td>2</td><td class="sprint-name">MENTAL</td><td class="sprint-tests">10,000</td><td>1.10×</td><td>DAO read, guild</td></tr>
+      <tr><td>3</td><td class="sprint-name" style="color:var(--accent2)">SPIRITUAL</td><td class="sprint-tests">100,000</td><td>1.25×</td><td>DAO proposals, guild creation</td></tr>
+      <tr><td>4</td><td class="sprint-name" style="color:var(--accent3)">COSMIC</td><td class="sprint-tests">1,000,000</td><td>1.50×</td><td>Validator nomination, mentor</td></tr>
+      <tr style="background:rgba(244,114,182,.06)"><td>5</td><td class="sprint-name" style="color:var(--orange)">ON_THE_STAR ⭐</td><td class="sprint-tests">10,000,000</td><td style="color:var(--orange);font-weight:700">2.0×</td><td>Council seat, legendary NFTs</td></tr>
+    </table>
+    <p style="font-size:11px;color:var(--dim);margin-top:8px">⚠️ XP je offchain (pool-level DB). L1 zůstává čistý — žádné XP v konsensus pravidlech.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 4: CONSTITUTION ═══════════════════════ -->
+<div class="section" id="sec-constitution">
+  <div class="section-title"><span class="icon">🔒</span> MainNet Constitution — Neměnné parametry</div>
+  <p style="color:var(--dim);margin-bottom:20px;font-size:13px">Tyto hodnoty jsou zmrazeny a <strong>nemohou být změněny</strong> bez hard forku a konsensu komunity.</p>
+
+  <div class="const-grid" style="margin-bottom:32px">
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Chain ID</div><div class="c-value mono">zion-mainnet-1</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Total Supply</div><div class="c-value mono">144,000,000,000</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Mining Supply</div><div class="c-value mono">127,720,000,000</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Genesis Premine</div><div class="c-value mono">16,280,000,000</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Block Reward</div><div class="c-value mono cyan">5,400.067 ZION</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Block Time</div><div class="c-value mono">60 sekund</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">DAA</div><div class="c-value">LWMA (60 bloků, ±25%)</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Max Reorg</div><div class="c-value mono">10 bloků</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Soft Finality</div><div class="c-value mono">60 bloků</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Coinbase Maturity</div><div class="c-value mono">100 bloků</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Consensus</div><div class="c-value">PoW Cosmic Harmony v3</div></div></div>
+    <div class="const-item"><span class="lock">❌</span><div><div class="c-label">Halving</div><div class="c-value red">ŽÁDNÝ</div></div></div>
+    <div class="const-item"><span class="lock">❌</span><div><div class="c-label">Presale</div><div class="c-value red">NEEXISTUJE</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Atomic Units</div><div class="c-value mono">1M per ZION</div></div></div>
+    <div class="const-item"><span class="lock">🔒</span><div><div class="c-label">Mining Horizon</div><div class="c-value">~45 let (23.65M bloků)</div></div></div>
+  </div>
+
+  <!-- Premine breakdown -->
+  <div class="card">
+    <div class="card-header">💎 Genesis Premine — 16,280,000,000 ZION</div>
+    <table class="premine-table">
+      <tr><th>Kategorie</th><th>ZION</th><th>Podíl</th><th>Lock</th></tr>
+      <tr>
+        <td style="font-weight:600">⛏️ ZION OASIS + Winners Golden Egg/Xp</td>
+        <td class="mono">8,250,000,000</td>
+        <td><div class="pbar" style="width:120px;display:inline-block"><div class="pbar-fill pbar-glow" style="width:50.7%"></div></div> 50.7%</td>
+        <td style="color:var(--green)">Okamžitě dostupné</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600">🏛️ DAO Treasury</td>
+        <td class="mono">4,000,000,000</td>
+        <td><div class="pbar" style="width:120px;display:inline-block"><div class="pbar-fill pbar-glow" style="width:24.6%"></div></div> 24.6%</td>
+        <td style="color:var(--green)">Okamžitě dostupné</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600">🔧 Infrastructure & Dev</td>
+        <td class="mono">2,500,000,000</td>
+        <td><div class="pbar" style="width:120px;display:inline-block"><div class="pbar-fill pbar-glow" style="width:15.4%"></div></div> 15.4%</td>
+        <td style="color:var(--green)">Okamžitě dostupné</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600">💚 Humanitarian Fund</td>
+        <td class="mono">1,530,000,000</td>
+        <td><div class="pbar" style="width:120px;display:inline-block"><div class="pbar-fill pbar-green" style="width:9.4%"></div></div> 9.4%</td>
+        <td style="color:var(--green)">Okamžitě dostupné</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 5: ECONOMY ═══════════════════════ -->
+<div class="section" id="sec-economy">
+  <div class="section-title"><span class="icon">💰</span> Ekonomický model</div>
+
+  <!-- Emission stats -->
+  <div class="grid-4" style="margin-bottom:24px">
+    <div class="stat"><div class="lbl">Block Reward</div><div class="val cyan mono">5,400.067</div><div class="sub">ZION / block (constant)</div></div>
+    <div class="stat"><div class="lbl">Block Time</div><div class="val mono">60s</div><div class="sub">1,440 bloků/den</div></div>
+    <div class="stat"><div class="lbl">Daily Emission</div><div class="val green mono">7,776,096</div><div class="sub">ZION / den</div></div>
+    <div class="stat"><div class="lbl">Mining Horizon</div><div class="val purple mono">~45 let</div><div class="sub">23,652,000 bloků</div></div>
+  </div>
+
+  <!-- Revenue flow -->
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">🔄 Revenue Model — 100% DAO Treasury</div>
+    <div class="econ-flow">
+      <div class="econ-node" style="background:rgba(59,130,246,.1);border-color:var(--blue)">⛏️ External Mining (ETC/RVN/XMR/FLUX...)</div>
+      <div class="econ-arrow">▼</div>
+      <div class="econ-node" style="background:rgba(245,158,11,.1);border-color:var(--yellow)">₿ BTC Payouts (2miners, NiceHash...)</div>
+      <div class="econ-arrow">▼ 100%</div>
+      <div class="econ-node" style="background:rgba(167,139,250,.1);border-color:var(--accent2);font-size:18px">🏛️ DAO TREASURY</div>
+      <div class="econ-arrow">▼</div>
+      <div class="econ-split">
+        <div class="econ-node" style="background:rgba(244,114,182,.08);border-color:var(--accent3);font-size:12px">⛏️ OASIS Fund</div>
+        <div class="econ-node" style="background:rgba(34,211,238,.08);border-color:var(--accent);font-size:12px">🔧 Dev & Infra</div>
+        <div class="econ-node" style="background:rgba(16,185,129,.08);border-color:var(--green);font-size:12px">📢 Marketing & Community</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fee burning -->
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">🔥 Fee Burning</div>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="font-size:48px">🔥</div>
+      <div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">ALL L1 Transaction Fees → <span class="red">BURNED</span></div>
+        <div style="font-size:13px;color:var(--dim)">Posílány na burn address bez privátního klíče → deflationary tlak</div>
+        <div style="font-size:13px;color:var(--dim);margin-top:4px">Žádný halving, ale přirozená deflace z fee burning kompenzuje konstantní emisi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legal position -->
+  <div class="card">
+    <div class="card-header">⚖️ Právní pozice</div>
+    <div class="grid-2" style="gap:12px">
+      <div class="stat"><div class="lbl">Token Type</div><div class="val" style="font-size:15px">Protocol-native utility</div><div class="sub">NE security</div></div>
+      <div class="stat"><div class="lbl">ICO/IEO/IDO</div><div class="val red" style="font-size:15px">ŽÁDNÉ</div><div class="sub">Mined, not sold</div></div>
+      <div class="stat"><div class="lbl">Emitent</div><div class="val" style="font-size:15px">Žádná firma</div><div class="sub">Infrastructure operator</div></div>
+      <div class="stat"><div class="lbl">Premine</div><div class="val" style="font-size:15px">Operační palivo</div><div class="sub">Ne investor allocation</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 6: SECURITY ═══════════════════════ -->
+<div class="section" id="sec-security">
+  <div class="section-title"><span class="icon">🛡️</span> Security Checklist (pre-MainNet)</div>
+
+  <div class="sec-grid">
+    <div class="sec-item"><span class="check">✅</span> Ed25519 signature verification</div>
+    <div class="sec-item"><span class="check">✅</span> Double-spend ochrana (mempool + UTXO)</div>
+    <div class="sec-item"><span class="check">✅</span> Overflow ochrana (checked_add)</div>
+    <div class="sec-item"><span class="check">✅</span> P2P rate limiting (200/peer/60s)</div>
+    <div class="sec-item"><span class="check">✅</span> Coinbase maturity 100 bloků</div>
+    <div class="sec-item"><span class="check">✅</span> Reorg limit 10 bloků</div>
+    <div class="sec-item"><span class="check">✅</span> Timestamp validace ±120s</div>
+    <div class="sec-item"><span class="check">✅</span> Mempool limits (50k TX, min fee)</div>
+    <div class="sec-item"><span class="pending">⬜</span> RPC autentizace (API key pro write)</div>
+    <div class="sec-item"><span class="pending">⬜</span> Block size limit (max 1 MB)</div>
+    <div class="sec-item"><span class="pending">⬜</span> TX size limit (max 100 KB)</div>
+    <div class="sec-item"><span class="pending">⬜</span> Peer limit (50 inbound, 8 outbound)</div>
+    <div class="sec-item"><span class="pending">⬜</span> External security audit</div>
+  </div>
+
+  <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
+    <div class="pbar" style="flex:1;height:12px"><div class="pbar-fill pbar-glow" style="width:61.5%"></div></div>
+    <span class="mono" style="font-size:14px;color:var(--accent)">8/13 (61.5%)</span>
+  </div>
+
+  <!-- Critical issues -->
+  <div class="card" style="margin-top:24px">
+    <div class="card-header" style="color:var(--red)">🔴 Kritické bloky k vyřešení</div>
+    <table class="sprint-table">
+      <tr><th>#</th><th>Problém</th><th>Priorita</th><th>Fáze</th></tr>
+      <tr><td>1</td><td style="font-weight:600">72h stability run ještě neproběhl</td><td class="prio-p0">P0</td><td>1.10</td></tr>
+      <tr><td>2</td><td style="font-weight:600">Block explorer chybí</td><td class="prio-p0">P0</td><td>2.3</td></tr>
+      <tr><td>3</td><td>Premine adresy jsou placeholder</td><td class="prio-p1">P1</td><td>4.1</td></tr>
+      <tr><td>4</td><td>Security audit (externí)</td><td class="prio-p1">P1</td><td>4.2</td></tr>
+      <tr><td>5</td><td>wZION ERC-20 bridge</td><td class="prio-p2">P2</td><td>3.4</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 7: TIMELINE ═══════════════════════ -->
+<div class="section" id="sec-timeline">
+  <div class="section-title"><span class="icon">📅</span> Master Timeline 2026–2028</div>
+
+  <div class="grid-2">
+    <!-- 2026 -->
+    <div class="card">
+      <div class="card-header">📅 2026 — L1 Blockchain Year</div>
+      <div class="timeline">
+        <div class="timeline-item done"><div class="tl-date">Únor 2026</div><div class="tl-title green">Fáze 0 — Spec Freeze ✅</div><div class="tl-desc">Core rewrite, 155 testů, 8 commitů</div></div>
+        <div class="timeline-item active"><div class="tl-date">Únor — Květen 2026</div><div class="tl-title cyan">Fáze 1 — Hardened TestNet 🔄</div><div class="tl-desc">420 testů, 72h stability run PROBÍHÁ</div></div>
+        <div class="timeline-item future"><div class="tl-date">Červen — Červenec 2026</div><div class="tl-title">Fáze 2 — Node UX & Mining</div><div class="tl-desc">Explorer, mining guides, OpenAPI docs</div></div>
+        <div class="timeline-item future"><div class="tl-date">Srpen — Září 2026</div><div class="tl-title">Fáze 3 — Infra & Legal</div><div class="tl-desc">5+ seed nodů, monitoring, legal, exchange ready</div></div>
+        <div class="timeline-item future"><div class="tl-date">Říjen — Listopad 2026</div><div class="tl-title">Fáze 4 — Dress Rehearsal</div><div class="tl-desc">7-day run, security audit, code freeze</div></div>
+        <div class="timeline-item future"><div class="tl-date" style="color:var(--accent3)">31. Prosince 2026</div><div class="tl-title pink">🚀 Fáze 5 — MAINNET GENESIS</div><div class="tl-desc">Genesis block, seed nodes, pool mining, explorer live</div></div>
+      </div>
+    </div>
+
+    <!-- 2027+ -->
+    <div class="card">
+      <div class="card-header">📅 2027–2028 — Ecosystem Expansion</div>
+      <div class="timeline">
+        <div class="timeline-item future"><div class="tl-date">Leden — Červen 2027</div><div class="tl-title">Fáze 6 — Post-Launch</div><div class="tl-desc">Silent MainNet, DEX (wZION), CMC/CoinGecko, Tier-3 CEX</div></div>
+        <div class="timeline-item future"><div class="tl-date">2027 Q1-Q2</div><div class="tl-title blue">L2 — DEX & DeFi</div><div class="tl-desc">Atomic Swaps, wZION Bridge, AMM DEX, DAO Governance</div></div>
+        <div class="timeline-item future"><div class="tl-date">2027 Q3+</div><div class="tl-title purple">L3 — Warp & AI Native</div><div class="tl-desc">NCL, AI Orchestrátor, Warp Bridges, AI SDK</div></div>
+        <div class="timeline-item future"><div class="tl-date">2027 Q4 — 2028+</div><div class="tl-title pink">L4 — ZION Oasis</div><div class="tl-desc">UE5 World, XP System, Play-to-Mine, Marketplace</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TAB 8: PRIORITY ═══════════════════════ -->
+<div class="section" id="sec-priority">
+  <div class="section-title"><span class="icon">⚡</span> Priority To-Do</div>
+
+  <div class="card">
+    <table class="prio-table">
+      <tr><th>Prio</th><th>Úkol</th><th>Fáze</th><th>Stav</th></tr>
+      <tr style="background:rgba(239,68,68,.05)"><td class="prio-p0">P0</td><td style="font-weight:600">72h stability run</td><td>1.10</td><td><span class="cyan">⏳ PROBÍHÁ</span></td></tr>
+      <tr style="background:rgba(239,68,68,.05)"><td class="prio-p0">P0</td><td style="font-weight:600">Live partition test</td><td>1.11</td><td><span class="pending">⬜</span></td></tr>
+      <tr style="background:rgba(239,68,68,.05)"><td class="prio-p0">P0</td><td style="font-weight:600">100 miners stress test</td><td>1.12</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p1">P1</td><td>Block explorer</td><td>2.3</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p1">P1</td><td>Node UX ("10 min setup")</td><td>2.1</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p1">P1</td><td>Mining guides</td><td>2.2</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p1">P1</td><td>5+ seed nodů</td><td>3.1</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p1">P1</td><td>Prometheus + Grafana</td><td>3.1</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p1">P1</td><td>Security audit (externí)</td><td>4.2</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p2">P2</td><td>wZION ERC-20 + bridge</td><td>3.4</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p2">P2</td><td>CMC + CoinGecko příprava</td><td>6C</td><td><span class="pending">⬜</span></td></tr>
+      <tr><td class="prio-p2">P2</td><td>Docker images publish</td><td>3.2</td><td><span class="pending">⬜</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  ZION TerraNova v2.9.5 — L1 Blockchain · L2 DeFi · L3 AI · L4 Oasis<br>
+  <em>"The Full Stack of Consciousness"</em><br><br>
+  Last update: <span id="last-update">—</span> • Auto-refresh: 30s
+</div>
+
+<!-- ═══════════════════════ JAVASCRIPT ═══════════════════════ -->
+<script>
+// Tab navigation
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('sec-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Phase toggle
+function togglePhase(header) {
+  header.parentElement.classList.toggle('open');
+}
+
+// Data fetch
+const API = 'https://zionterranova.com/dash/data.json';
+const FALLBACK = '/dash/data.json';
+
+function fmt(n) { return n != null ? n.toLocaleString() : '—'; }
+function fmtTime(s) {
+  if (s == null) return '—';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h + 'h ' + m + 'm';
+}
+function barColor(pct) {
+  if (pct > 85) return '#ef4444';
+  if (pct > 70) return '#f59e0b';
+  return '#10b981';
+}
+function valColor(pct) {
+  if (pct > 85) return 'red';
+  if (pct > 70) return 'yellow';
+  return 'green';
+}
+
+function updateNode(prefix, node) {
+  const s = node.stats || {};
+  document.getElementById(prefix+'-height').textContent = fmt(s.height);
+  document.getElementById(prefix+'-peers').textContent = fmt(s.peers_connected);
+  document.getElementById(prefix+'-diff').textContent = fmt(s.difficulty);
+  document.getElementById(prefix+'-mempool').textContent = fmt(s.mempool_size);
+  document.getElementById(prefix+'-lastblock').textContent = s.time_since_last_block != null ? s.time_since_last_block + 's ago' : '—';
+  document.getElementById(prefix+'-tps').textContent = s.tps != null ? s.tps.toFixed(1) : '0';
+  document.getElementById(prefix+'-sync').textContent = s.sync?.state || '—';
+  document.getElementById(prefix+'-containers').textContent = (node.containers_up||0) + ' up / ' + (node.containers_healthy||0) + ' ✓';
+  document.getElementById(prefix+'-load').textContent = node.load || '—';
+
+  const tip = s.tip || '';
+  document.getElementById(prefix+'-tip').textContent = tip ? tip.substring(0,16) + '...' + tip.substring(tip.length-8) : '—';
+
+  const memPct = node.mem?.total > 0 ? Math.round(node.mem.used / node.mem.total * 100) : 0;
+  const memEl = document.getElementById(prefix+'-mem');
+  memEl.textContent = (node.mem?.used||0) + '/' + (node.mem?.total||0) + ' MB (' + memPct + '%)';
+  memEl.className = 'mval ' + valColor(memPct);
+  const memBar = document.getElementById(prefix+'-mem-bar');
+  memBar.style.width = memPct + '%';
+  memBar.style.background = barColor(memPct);
+
+  const diskPct = node.disk?.used_pct || 0;
+  const diskEl = document.getElementById(prefix+'-disk');
+  diskEl.textContent = diskPct + '%';
+  diskEl.className = 'mval ' + valColor(diskPct);
+  const diskBar = document.getElementById(prefix+'-disk-bar');
+  diskBar.style.width = diskPct + '%';
+  diskBar.style.background = barColor(diskPct);
+
+  const statusEl = document.getElementById(prefix+'-status');
+  const serverEl = document.getElementById('srv-' + (prefix === 'h' ? 'helsinki' : 'germany'));
+  if (s.status === 'healthy') {
+    statusEl.textContent = '● HEALTHY';
+    statusEl.className = 'status-pill pill-ok';
+    serverEl.classList.remove('alert');
+  } else if (s.status) {
+    statusEl.textContent = '⚠ WARNING';
+    statusEl.className = 'status-pill pill-warn';
+  } else {
+    statusEl.textContent = '✖ OFFLINE';
+    statusEl.className = 'status-pill pill-err';
+    serverEl.classList.add('alert');
+  }
+}
+
+function colorLog(text) {
+  if (!text) return '';
+  return text.split('\\n').filter(l => l.trim()).map(line => {
+    if (line.includes('[') && !line.includes('| OK')) return '<span class="alert-line">' + line + '</span>';
+    if (line.includes('| OK')) return line.replace('OK', '<span class="ok">OK</span>');
+    return line;
+  }).join('\n');
+}
+
+function fmtHash(h) {
+  if (h == null || h === 0) return '0 H/s';
+  if (h >= 1e15) return (h/1e15).toFixed(2) + ' PH/s';
+  if (h >= 1e12) return (h/1e12).toFixed(2) + ' TH/s';
+  if (h >= 1e9) return (h/1e9).toFixed(2) + ' GH/s';
+  if (h >= 1e6) return (h/1e6).toFixed(2) + ' MH/s';
+  if (h >= 1e3) return (h/1e3).toFixed(2) + ' KH/s';
+  return h.toFixed(0) + ' H/s';
+}
+
+function fmtUptime(secs) {
+  if (!secs) return '—';
+  const d = Math.floor(secs/86400), h = Math.floor((secs%86400)/3600), m = Math.floor((secs%3600)/60);
+  if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
+  return h + 'h ' + m + 'm';
+}
+
+function updatePoolNode(prefix, pool) {
+  if (!pool || !pool.ok) {
+    document.getElementById(prefix+'-status').textContent = '✖ OFFLINE';
+    document.getElementById(prefix+'-status').className = 'status-pill pill-err';
+    return;
+  }
+  const m = pool.miners || {};
+  const hr = pool.hashrate || {};
+  const sh = pool.shares || {};
+  const p = pool.pool || {};
+  const bl = pool.blocks || {};
+  const pay = pool.payouts || {};
+
+  document.getElementById(prefix+'-miners').textContent = (m.active||0) + ' / ' + (m.total||0);
+  document.getElementById(prefix+'-hashrate').textContent = fmtHash(hr.pool);
+  document.getElementById(prefix+'-shares').textContent = fmt(sh.valid||0) + ' / ' + (sh.invalid||0);
+  document.getElementById(prefix+'-pplns').textContent = pool.pplns_window_size || '—';
+  document.getElementById(prefix+'-fee').textContent = (p.fee||0) + '%';
+  document.getElementById(prefix+'-uptime').textContent = fmtUptime(p.uptime_secs);
+  document.getElementById(prefix+'-payouts').textContent = (pay.pending_miners||0) + ' miners';
+  document.getElementById(prefix+'-version').textContent = p.version || '—';
+
+  const isOk = m.active > 0 || hr.pool > 0;
+  const statusEl = document.getElementById(prefix+'-status');
+  if (pool.blockchain?.connected) {
+    statusEl.textContent = isOk ? '● ACTIVE' : '● IDLE';
+    statusEl.className = 'status-pill ' + (isOk ? 'pill-ok' : 'pill-warn');
+  } else {
+    statusEl.textContent = '✖ DISCONNECTED';
+    statusEl.className = 'status-pill pill-err';
+  }
+}
+
+function updatePool(hp, sp) {
+  const hm = hp?.miners || {}; const sm = sp?.miners || {};
+  const hhr = hp?.hashrate || {}; const shr = sp?.hashrate || {};
+  const hsh = hp?.shares || {}; const ssh = sp?.shares || {};
+  const hbl = hp?.blocks || {}; const sbl = sp?.blocks || {};
+
+  // Aggregate KPIs
+  const totalActive = (hm.active||0) + (sm.active||0);
+  const totalMiners = (hm.total||0) + (sm.total||0);
+  document.getElementById('pool-active').textContent = totalActive;
+  document.getElementById('pool-total-miners').textContent = 'total registered: ' + totalMiners;
+
+  const totalHR = (hhr.pool||0) + (shr.pool||0);
+  const totalHR24 = (hhr.pool_24h||0) + (shr.pool_24h||0);
+  document.getElementById('pool-hashrate').textContent = fmtHash(totalHR);
+  document.getElementById('pool-hashrate-24h').textContent = '24h avg: ' + fmtHash(totalHR24);
+
+  const validShares = (hsh.valid||0) + (ssh.valid||0);
+  const invalidShares = (hsh.invalid||0) + (ssh.invalid||0);
+  document.getElementById('pool-shares-valid').textContent = fmt(validShares);
+  const invRate = validShares > 0 ? ((invalidShares/(validShares+invalidShares))*100).toFixed(1) : '0';
+  document.getElementById('pool-shares-invalid').textContent = 'invalid: ' + invalidShares + ' (' + invRate + '%)';
+
+  const blocksFound = (hbl.found||0) + (sbl.found||0);
+  const blocksPending = (hbl.pending||0) + (sbl.pending||0);
+  document.getElementById('pool-blocks-found').textContent = blocksFound;
+  document.getElementById('pool-blocks-pending').textContent = 'pending: ' + blocksPending;
+
+  // Per-pool
+  updatePoolNode('hp', hp);
+  updatePoolNode('sp', sp);
+}
+
+async function refresh() {
+  try {
+    let res;
+    try { res = await fetch(API + '?t=' + Date.now()); }
+    catch { res = await fetch(FALLBACK + '?t=' + Date.now()); }
+    const d = await res.json();
+
+    // Progress
+    const sr = d.stability_run;
+    document.getElementById('progress-fill').style.width = Math.min(sr.progress_pct, 100) + '%';
+    document.getElementById('progress-text').textContent = sr.progress_pct + '%';
+    document.getElementById('start-time').textContent = 'Start: ' + new Date(sr.start).toLocaleString();
+    const endDate = new Date(new Date(sr.start).getTime() + sr.duration_secs * 1000);
+    document.getElementById('end-time').textContent = 'End: ' + endDate.toLocaleString();
+    document.getElementById('elapsed-h').textContent = fmtTime(sr.elapsed_secs);
+    document.getElementById('remaining-h').textContent = fmtTime(sr.remaining_secs);
+
+    const hH = d.helsinki.stats?.height || 0;
+    const sH = d.germany.stats?.height || 0;
+    document.getElementById('total-blocks').textContent = fmt(Math.max(hH, sH));
+
+    const allOk = d.helsinki.stats?.status === 'healthy' && d.germany.stats?.status === 'healthy';
+    const statusEl = document.getElementById('run-status');
+    if (sr.progress_pct >= 100) { statusEl.textContent = '✅ PASS'; statusEl.className = 'val green'; }
+    else if (allOk) { statusEl.textContent = '● RUNNING'; statusEl.className = 'val cyan'; }
+    else { statusEl.textContent = '⚠ ISSUE'; statusEl.className = 'val red'; }
+
+    // Network KPIs
+    document.getElementById('kpi-network').textContent = d.helsinki.stats?.network || 'testnet';
+    const totalPeers = (d.helsinki.stats?.peers_connected||0) + (d.germany.stats?.peers_connected||0);
+    document.getElementById('kpi-peers').textContent = totalPeers;
+    document.getElementById('kpi-diff').textContent = fmt(d.helsinki.stats?.difficulty);
+    const tipMatch = d.helsinki.stats?.tip && d.germany.stats?.tip && d.helsinki.stats.tip === d.germany.stats.tip;
+    const tipEl = document.getElementById('kpi-tip');
+    tipEl.textContent = tipMatch ? '✅ MATCH' : hH && sH ? '❌ FORK!' : '—';
+    tipEl.className = 'val ' + (tipMatch ? 'green' : 'red');
+
+    updateNode('h', d.helsinki);
+    updateNode('s', d.germany);
+
+    // Pool metrics
+    updatePool(d.helsinki?.pool, d.germany?.pool);
+
+    document.getElementById('log-box').innerHTML = colorLog(d.log_tail) || 'No log data';
+    document.getElementById('last-update').textContent = new Date(d.timestamp).toLocaleString();
+  } catch(e) {
+    console.error('Fetch error:', e);
+  }
+}
+
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

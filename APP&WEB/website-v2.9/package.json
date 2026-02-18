@@ -1,0 +1,41 @@
+{
+  "name": "zion-web-v2.9.2",
+  "version": "2.9.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "deploy": "bash scripts/deploy.sh"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.4.0",
+    "@splinetool/react-spline": "^4.1.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.24",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.473.0",
+    "next": "^16.0.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.1",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

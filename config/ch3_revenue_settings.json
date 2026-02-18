@@ -1,0 +1,254 @@
+{
+  "version": "3.0.0",
+  "description": "CH v3 Revenue Settings — 50/25/25 Model (ZION / Multi-Algo / NCL)",
+  "last_updated": "2026-02-08T12:00:00Z",
+  "streams": {
+    "zion": {
+      "stream": 1,
+      "name": "ZION",
+      "description": "CosmicHarmony pipeline mining (Keccak→SHA3→Matrix→Fusion)",
+      "enabled": true,
+      "algorithm": "cosmic_harmony_v3",
+      "target_share": 0.50,
+      "configurable": false
+    },
+    "etc": {
+      "stream": 2,
+      "name": "ETC",
+      "description": "Keccak256 merged mining to ETC (FREE byproduct of CosmicHarmony pipeline)",
+      "enabled": true,
+      "algorithm": "keccak256",
+      "pool": {
+        "stratum": "stratum+tcp://etc.2miners.com:1010",
+        "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        "worker": "zion_merged"
+      },
+      "auto_convert_to_zion": true,
+      "min_payout": 0.1,
+      "target_share": 0.05,
+      "configurable": true
+    },
+    "nxs": {
+      "stream": 3,
+      "name": "NXS",
+      "description": "SHA3-512 merged mining to Nexus (FREE byproduct of CosmicHarmony pipeline)",
+      "enabled": false,
+      "algorithm": "sha3_512",
+      "pool": {
+        "stratum": "stratum+tcp://pool.nexus.io:9549",
+        "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        "worker": "zion_merged"
+      },
+      "auto_convert_to_zion": true,
+      "min_payout": 10.0,
+      "target_share": 0.00,
+      "configurable": true
+    },
+    "dynamic_gpu": {
+      "stream": 4,
+      "name": "Dynamic CPU/GPU",
+      "description": "Profit-switched multi-algo mining (25% compute allocation → BTC payouts)",
+      "enabled": true,
+      "mode": "auto",
+      "preferred_coins": ["XMR", "ERG", "RVN"],
+      "current_coin": null,
+      "switching": {
+        "min_profit_usd": 0.1,
+        "interval_minutes": 15,
+        "hysteresis_percent": 5.0
+      },
+      "pools": {
+        "ERG": {
+          "coin": "ERG",
+          "stratum": "stratum+tcp://erg.2miners.com:8888",
+          "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+          "worker": "zion_dynamic",
+          "algorithm": "autolykos",
+          "protocol": "ethstratum",
+          "enabled": true,
+          "proxy_listen": "0.0.0.0:3343"
+        },
+        "RVN": {
+          "coin": "RVN",
+          "stratum": "stratum+tcp://rvn.2miners.com:6060",
+          "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+          "worker": "zion_dynamic",
+          "algorithm": "kawpow",
+          "protocol": "ethstratum",
+          "enabled": true
+        },
+        "XMR": {
+          "coin": "XMR",
+          "stratum": "stratum+tcp://gulf.moneroocean.stream:10001",
+          "wallet": "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK",
+          "worker": "zion_pool",
+          "algorithm": "auto",
+          "protocol": "stratum",
+          "enabled": true
+        },
+        "VRSC": {
+          "coin": "VRSC",
+          "stratum": "stratum+tcp://eu.luckpool.net:3956",
+          "wallet": "RWrHVj8e7fkvfUw4Jf6qJNUHdr6baAsoF5",
+          "worker": "zion_pool",
+          "algorithm": "verushash",
+          "protocol": "zcash",
+          "enabled": true,
+          "threads": 1
+        },
+        "ALPH": {
+          "coin": "ALPH",
+          "stratum": "stratum+tcp://alph.2miners.com:1199",
+          "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+          "worker": "zion_dynamic",
+          "algorithm": "blake3",
+          "protocol": "stratum",
+          "enabled": false
+        },
+        "DERO": {
+          "coin": "DERO",
+          "stratum": "stratum+tcp://dero.herominers.com:1111",
+          "wallet": "DERO_WALLET_ADDRESS",
+          "worker": "zion_pool",
+          "algorithm": "astrobwt/v3",
+          "protocol": "stratum",
+          "enabled": false,
+          "threads": 2,
+          "type": "cpu",
+          "note": "Best CPU profit coin. Deploy via docker-compose.revenue.yml"
+        },
+        "ZEPH": {
+          "coin": "ZEPH",
+          "stratum": "stratum+tcp://zeph.herominers.com:1123",
+          "wallet": "ZEPH_WALLET_ADDRESS",
+          "worker": "zion_pool",
+          "algorithm": "rx/0",
+          "protocol": "stratum",
+          "enabled": false,
+          "threads": 1,
+          "type": "cpu",
+          "note": "RandomX privacy coin. Deploy via docker-compose.revenue.yml"
+        },
+        "EPIC": {
+          "coin": "EPIC",
+          "stratum": "stratum+tcp://fastepic.eu:3416",
+          "wallet": "EPIC_WALLET_ADDRESS",
+          "worker": "zion_pool",
+          "algorithm": "rx/0",
+          "protocol": "stratum",
+          "enabled": false,
+          "threads": 1,
+          "type": "cpu",
+          "note": "MimbleWimble RandomX. Deploy via docker-compose.revenue.yml"
+        }
+      },
+      "auto_convert_to_zion": true,
+      "target_share": 0.20,
+      "configurable": true
+    },
+    "ncl": {
+      "stream": 5,
+      "name": "NCL AI",
+      "description": "Neural Compute Layer — 25% compute for AI inference (embeddings, LLM, classification)",
+      "enabled": true,
+      "npu_allocation": 0.30,
+      "mining_allocation": 0.70,
+      "supported_tasks": [
+        "embeddings",
+        "llm_inference",
+        "image_classification",
+        "code_analysis"
+      ],
+      "requirements": {
+        "min_consciousness": 1,
+        "min_gpu_memory_mb": 4096
+      },
+      "gateway_url": "http://localhost:8002",
+      "target_share": 0.25,
+      "configurable": true
+    }
+  },
+  "profit_switching": {
+    "enabled": true,
+    "check_interval_secs": 300,
+    "switch_threshold_pct": 10.0,
+    "min_switch_interval_secs": 1800,
+    "preferred_coins": ["XMR", "ERG", "RVN"],
+    "excluded_coins": ["KAS"],
+    "fallback_coin": "XMR"
+  },
+  "buyback": {
+    "enabled": true,
+    "btc_wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+    "poll_interval_secs": 600,
+    "min_buyback_btc": 0.001,
+    "auto_buyback_enabled": false,
+    "exchange": "manual",
+    "reserve_pct": 10.0,
+    "split": {
+      "burn_pct": 0,
+      "dao_pct": 100
+    },
+    "pool_dashboards": [
+      {
+        "name": "moneroocean-XMR",
+        "coin": "XMR",
+        "url": "https://api.moneroocean.stream/miner/42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK/stats"
+      },
+      {
+        "name": "2miners-ETC",
+        "coin": "ETC",
+        "url": "https://etc.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+      },
+      {
+        "name": "2miners-RVN",
+        "coin": "RVN",
+        "url": "https://rvn.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+      },
+      {
+        "name": "2miners-ERG",
+        "coin": "ERG",
+        "url": "https://erg.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+      }
+    ]
+  },
+  "allocation_summary": {
+    "model": "50/25/25",
+    "zion_compute": "50% — CosmicHarmony pipeline (Keccak→SHA3→Matrix→Fusion)",
+    "external_compute": "25% — Multi-Algo profit-switch (ERG/RVN/XMR via external pools → BTC)",
+    "ncl_compute": "25% — Neural Compute Layer (AI inference tasks)",
+    "free_byproducts": [
+      "ETC/Keccak — FREE export of Keccak intermediate from CosmicHarmony Stage 1",
+      "NXS/SHA3 — FREE export of SHA3 intermediate from CosmicHarmony Stage 2"
+    ],
+    "total_revenue_streams": 5,
+    "compute_cost_streams": 3,
+    "btc_payout_wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+  },
+  "desktop_agent_dual_mining": {
+    "description": "Desktop Agent default: spawns 2 miner processes to the SAME pool. Pool StreamScheduler routes groups internally.",
+    "model": "ZION (N-1)T + Revenue 1T — both via own pool",
+    "architecture": "All hashpower → own pool → pool routes: g=zion → CosmicHarmony, g=revenue → RevenueProxy → MoneroOcean/BTC",
+    "zion": {
+      "algorithm": "cosmic_harmony_v3",
+      "group": "zion",
+      "threads": "auto (total - 1, min 2)",
+      "pool": "own pool (stratum+tcp://pool:3333)"
+    },
+    "xmr_revenue": {
+      "algorithm": "randomx (assigned by pool RevenueProxy)",
+      "group": "revenue",
+      "threads": 1,
+      "pool": "own pool (stratum+tcp://pool:3333)",
+      "note": "Pool RevenueProxy forwards to MoneroOcean internally, payout in BTC"
+    },
+    "gpu_dual_mining": {
+      "description": "GPU miners connect to pool which forwards hashpower to 2 streams",
+      "stream_1": "ZION CosmicHarmony (50%)",
+      "stream_2": "Multi-Algo profit-switch → BTC (25%)",
+      "payout": "BTC via 2miners/MoneroOcean auto-convert"
+    },
+    "disable_env": "ZION_DISABLE_REVENUE=1",
+    "min_threads": 3
+  }
+}

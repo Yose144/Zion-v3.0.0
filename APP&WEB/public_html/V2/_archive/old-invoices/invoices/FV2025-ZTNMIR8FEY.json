@@ -1,0 +1,144 @@
+{
+    "number": "FV2025-ZTNMIR8FEY",
+    "date": "04.12.2025",
+    "dueDate": "18.12.2025",
+    "order": {
+        "orderId": "ZTNMIR8FEYDP2KQ",
+        "items": [
+            {
+                "id": "star-001",
+                "name": "A-Wing Wooden Starfighter",
+                "price": 890,
+                "image": ".\/img\/starfighters\/awing.png",
+                "category": "starfighters",
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "Jo",
+            "email": "yosef.hubalek@gmail.com",
+            "phone": "773669477",
+            "address": null,
+            "newsletter": false
+        },
+        "shipping": {
+            "method": "osobni",
+            "price": 0,
+            "pickupPoint": null
+        },
+        "payment": "cash",
+        "note": "",
+        "total": 890,
+        "zionTokens": 0,
+        "zionWalletId": "zw_ztnmir8feyd4tla",
+        "termsAccepted": true,
+        "createdAt": "2025-12-04T09:27:15.061Z",
+        "zion": {
+            "tokens": {
+                "totalTokens": 9,
+                "items": [
+                    {
+                        "id": "star-001",
+                        "name": "A-Wing Wooden Starfighter",
+                        "quantity": 1,
+                        "perUnit": 9,
+                        "total": 9
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_7329e141684b",
+                "label": "ZION order ZTNMIR8FEYDP2KQ",
+                "tokens": 9,
+                "orderId": "ZTNMIR8FEYDP2KQ",
+                "createdAt": "2025-12-04T10:27:15+01:00",
+                "expiresAt": "2026-01-03T10:27:15+01:00",
+                "uri": "zion:\/\/wallet\/zw_7329e141684b?tokens=9&label=ZION+order+ZTNMIR8FEYDP2KQ&orderId=ZTNMIR8FEYDP2KQ"
+            },
+            "qr": {
+                "serviceUrl": "https:\/\/quickchart.io\/qr?size=320&margin=1&text=zion%3A%2F%2Fwallet%2Fzw_7329e141684b%3Ftokens%3D9%26label%3DZION%2Border%2BZTNMIR8FEYDP2KQ%26orderId%3DZTNMIR8FEYDP2KQ",
+                "imageFile": "zw_7329e141684b.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAAAklEQVR4AewaftIAAAwiSURBVO3BUXIdwZEEwYwy3P\/KsTTtdw9lTQ0eyEp3\/CVVVQtNqqqWmlRVLTWpqlpqUlW11KSqaqlJVdVSk6qqpb7yG0D+JWpuAfkENSdAnqg5AXKi5haQW2r+NkBuqTkBckvNLSD\/EjUnk6qqpSZVVUtNqqqWmlRVLTWpqlpqUlW11Ff+gJqfCMgb1JwAeaLmBMhbgJyouQXkRM1bgLxBzS01J0CeADlR8wTId1PzEwG5MamqWmpSVbXUpKpqqUlV1VKTqqqlJlVVS02qqpb6youAvEHNG4D8bdTcAnKi5omaT1Dz3YA8UXOi5hOAPFHzBiBvUPOGSVXVUpOqqqUmVVVLTaqqlppUVS01qapa6iv1X1NzC8gtIG9QcwvIT6PmCZATNSdqngA5UfMEyBvU1O9NqqqWmlRVLTWpqlpqUlW11KSqaqlJVdVSk6qqpb5S\/zUgt9T8TYA8UXMC5ImaEyBP1JwAeaLmBMgnqHkDkCdqKplUVS01qapaalJVtdSkqmqpSVXVUpOqqqW+8iI1\/xI1t4CcqPlp1DwBcgvIiZpbaj5BzQmQJ2pOgPxt1PxNJlVVS02qqpaaVFUtNamqWmpSVbXUpKpqqUlV1VJf+QNA6v8BeaLmBMgTNSdAnqg5AXKi5paaJ0BuATlR8wTIiZoTID+RmhMgbwDyL5lUVS01qapaalJVtdSkqmqpSVXVUpOqqqXwl9R\/ALml5gmQEzWfAOQNap4AeYOaNwC5paZ+rklV1VKTqqqlJlVVS02qqpaaVFUtNamqWuorvwHkRM0TID+NmhM1PxGQW2pO1NwCcgLklppPAPIJQE7UPAFyouYWkJ9GzRsmVVVLTaqqlppUVS01qapaalJVtdSkqmqpSVXVUvhLLgG5peYTgHyCmhMgt9Q8AfLd1LwFyBvUnAB5ouYWkE9Q89MAuaXmxqSqaqlJVdVSk6qqpSZVVUtNqqqWmlRVLfWVP6DmE4C8Qc0tILfUPAFyS80JkBM1nwDkiZqfBsiJmidq3gCkfm9SVbXUpKpqqUlV1VKTqqqlJlVVS02qqpaaVFUthb\/kAZBPUPPdgNxS8wTIiZonQG6puQHkiZo3AHmLmhMgm6g5AXJLzQmQJ2q+26SqaqlJVdVSk6qqpSZVVUtNqqqWmlRVLYW\/5AOA3FLzBMiJmjcA+QQ1t4CcqKn\/DpATNU+AnKi5BeSJmhtAnqi5BeQNak4mVVVLTaqqlppUVS01qapaalJVtdSkqmqpSVXVUl\/5DSB\/GzUnQG6puaXmBMgTNSdAnqi5AeSWmidATtS8BcgNNbeAvAXIiZo3qLkF5C1qbkyqqpaaVFUtNamqWmpSVbXUpKpqqUlV1VL4Sy4BeaLmDUBuqTkB8kTNCZC3qPluQN6i5gTIEzX154D8NGpuATlRczKpqlpqUlW11KSqaqlJVdVSk6qqpSZVVUtNqqqWwl\/yAMiJmidATtTcAvJEzU8D5ETNJwA5UfMEyBvUvAXIiZo3AHmi5gTIEzW3gNxQ8wTIiZonQE7UvGFSVbXUpKpqqUlV1VKTqqqlJlVVS02qqpb6yh8A8kTNCZC3ALmh5icCcqLmCZA3qDkB8kTNCZBbav42QE7UPAFyouaWmhMgT9TcUvPdJlVVS02qqpaaVFUtNamqWmpSVbXUpKpqqa\/8hpoTILfUPAFyS80bgJyoeaLmbwLklponQG6pOQHyRM0JkFtqbqm5peYNQE7UPAFyouYJkDeoOZlUVS01qapaalJVtdSkqmqpSVXVUpOqqqUmVVVLfeWHUnMC5AmQEzUnQN4C5ETNEzUnQG6pOQHyRM0JkCdqToC8BcgbgHwCkFtqToDcUnNLzXebVFUtNamqWmpSVbXUpKpqqUlV1VKTqqqlvvIbQE7U3ALyRM0tNd8NyBM1n6DmDUA+AcgtNSdATtTcAnILyBM1b1BzAuSJmltAbqm5MamqWmpSVbXUpKpqqUlV1VKTqqqlJlVVS02qqpb6youAnKh5C5ATNSdq3gLklpo3ADlR8xOpOQFyS80JkJ8IyL9EzQmQN0yqqpaaVFUtNamqWmpSVbXUpKpqqUlV1VJf+Q01bwDyRM2Jmk8AcqLmXwLkLWpuAXkDkBM1bwHyBjVPgLwByImaJ0BO1DwBcqLmZFJVtdSkqmqpSVXVUpOqqqUmVVVLTaqqlppUVS31ld8AcqLmlpq3ADlRc0vNT6PmDWpuAbml5haQJ0C+G5Anam4BOQHyt1FzS82NSVXVUpOqqqUmVVVLTaqqlppUVS01qapaCn\/JAyC31LwByBM1J0BO1DwBcqLmFpC\/jZo3AHmi5haQEzW3gJyouQXkiZoTILfUvAHIEzUnQG6pOZlUVS01qapaalJVtdSkqmqpSVXVUpOqqqUmVVVLfeU31NwCcqLmCZBbQN6g5gTILTVPgJyouQXkFpA3qHmLmhMgt9ScALmlpv6fmjdMqqqWmlRVLTWpqlpqUlW11KSqaqlJVdVSX\/kDQJ6oOQHyRM0bgNwCcqLmCZATILeA\/DRqbgHZRM0JkLeoOQFyouaWmidAbqm5MamqWmpSVbXUpKpqqUlV1VKTqqqlJlVVS+EveQDkRM1bgJyoeQLkRM0JkCdqToA8UXMC5JaaW0BO1DwBcqLmCZA3qPkEILfUvAHILTW3gNxScwLklpqTSVXVUpOqqqUmVVVLTaqqlppUVS01qapaalJVtdRXfkPNCZBPAPJEzRuAnKh5AuREzS0gT9TcAPJEzU8D5ImaEyCfAOQT1JwAuaXmBMhb1NyYVFUtNamqWmpSVbXUpKpqqUlV1VKTqqqlvvIbQE7UvAXIiZonQE7U3FJzS80tICdq3qDmCZATNbfU3ALyBMiJmltA3qDmCZATNU+AnKg5AfIEyImaJ0BO1DwBcqLmZFJVtdSkqmqpSVXVUpOqqqUmVVVLTaqqlppUVS31lRcBOVHzRM0JkCdqbqi5BeSJmhMgt4A8UfMGNbfU3AJyouYNQG6puQXkiZqfRs0nqLkxqapaalJVtdSkqmqpSVXVUpOqqqUmVVVL4S95AOREzRMgt9TcAnKi5gTIEzU\/DZAnak6AnKh5AuREzRMgJ2puAXmDmidAbqk5AfIWNSdA3qDmFpBbak4mVVVLTaqqlppUVS01qapaalJVtdSkqmqpSVXVUl\/5EDW3gDxR8wYgt9S8Qc0tNSdA3qLmE9R8NzVvUfPTqDkBckvNGyZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqmv\/FBATtQ8AXKi5kTNLSBPgJyoeQLkRM0nqLkF5ETNEyDfDchbgNwC8tMAeQOQJ2puTKqqlppUVS01qapaalJVtdSkqmqpSVXVUpOqqqXwl9R\/ALml5i1ATtQ8AXJDTf05ILfU3ALyRM0bgJyo+WkmVVVLTaqqlppUVS01qapaalJVtdSkqmqpr\/wGkH+JmhM1T4CcAHmi5gTILSBP1JwAuQXklppbQN6g5haQEzVPgPw0QE7UvAXILTU3JlVVS02qqpaaVFUtNamqWmpSVbXUpKpqqa\/8ATU\/EZAbQJ6oOQHyBMiJmidATtQ8AfIGNbeAnKh5oua7AbkF5BaQJ2reoOYT1NwCcqLmZFJVtdSkqmqpSVXVUpOqqqUmVVVLTaqqlppUVS31lRcBeYOafwmQJ2p+GiAnam4BeYuaG2puAXmi5hOAfDcgT9ScAHnDpKpqqUlV1VKTqqqlJlVVS02qqpaaVFUt9ZX6n1BzC8gTID+NmhMgT9S8AcgTICdqToDcUvMEyE+j5hOAnKh5w6SqaqlJVdVSk6qqpSZVVUtNqqqWmlRVLTWpqlrqK\/U\/AeQtam4BOVFzAuSWmidAbqm5peYEyC01t9TcAvIGIG9QcwvIEzU3JlVVS02qqpaaVFUtNamqWmpSVbXUpKpqqa+8SM3fRM0TILfU3AJyouYNap4A+QQgJ2puqTkB8gTILTUnQG6puQXklppbak6AvGFSVbXUpKpqqUlV1VKTqqqlJlVVS02qqpaaVFUt9ZU\/AORfAuSWmr8NkBM1T9ScAHmi5haQv4maJ0BO1NwC8kTNiZoTIG8BcqLmDZOqqqUmVVVLTaqqlppUVS01qapaalJVtRT+kqqqhSZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqn\/A8fS0In8w0oUAAAAAElFTkSuQmCC"
+            },
+            "storage": {
+                "json": "zw_7329e141684b.json",
+                "image": "zw_7329e141684b.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_fcd58abb",
+                "orderId": "ZTNMIR8FEYDP2KQ",
+                "walletId": "zw_7329e141684b",
+                "tokens": 9,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-04T10:27:15+01:00",
+                "updatedAt": "2025-12-04T10:27:15+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_7329e141684b?tokens=9&label=ZION+order+ZTNMIR8FEYDP2KQ&orderId=ZTNMIR8FEYDP2KQ",
+                "qrImage": "zw_7329e141684b.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 9,
+                    "items": [
+                        {
+                            "id": "star-001",
+                            "name": "A-Wing Wooden Starfighter",
+                            "quantity": 1,
+                            "perUnit": 9,
+                            "total": 9
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-04T10:27:15+01:00",
+                        "note": "Created from order #ZTNMIR8FEYDP2KQ"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "Jo",
+        "email": "yosef.hubalek@gmail.com",
+        "phone": "773669477",
+        "address": ""
+    },
+    "items": [
+        {
+            "name": "A-Wing Wooden Starfighter",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 890,
+            "unitPriceWithoutVat": 735.53999999999996,
+            "vatRate": 21,
+            "vatAmount": 154.46000000000001,
+            "totalPrice": 890,
+            "priceWithoutVat": 735.53999999999996
+        }
+    ],
+    "totals": {
+        "withoutVat": 735.53999999999996,
+        "vat": 154.46000000000001,
+        "withVat": 890,
+        "currency": "CZK"
+    }
+}

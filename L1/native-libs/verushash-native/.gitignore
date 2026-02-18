@@ -1,0 +1,20 @@
+# Build artifacts
+/target/
+
+# Downloaded C source files (re-download with download_sources.sh)
+# NOTE: We track compat.h and ffi_wrapper.cpp (our own files).
+# The rest of csrc/ is downloaded at build time.
+csrc/haraka.h
+csrc/haraka.c
+csrc/haraka_portable.h
+csrc/haraka_portable.c
+csrc/verus_hash.h
+csrc/verus_hash.cpp
+csrc/verus_clhash.h
+csrc/verus_clhash.cpp
+csrc/verus_clhash_portable.cpp
+csrc/sse2neon.h
+csrc/common.h
+
+# Backup files from sed patching
+*.bak

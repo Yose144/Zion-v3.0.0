@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "ZION Mobile",
+    "slug": "zion-mobile",
+    "version": "2.9.5",
+    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

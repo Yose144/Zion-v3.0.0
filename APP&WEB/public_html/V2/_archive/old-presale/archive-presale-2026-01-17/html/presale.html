@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZION Dharma Credits Presale | Terra Nova ®</title>
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./slider.css" />
+  <link rel="stylesheet" href="./rasta.css" />
+  <link rel="stylesheet" href="./presale.css?v=20251219-2" />
+    <script src="./script.js?v=20251219-2" defer></script>
+    <script src="./presale.js?v=20251219-2" defer></script>
+    <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+  </head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHF25ZZ97S"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NHF25ZZ97S');
+  </script>
+  <body class="rasta-body">
+    <div id="__next">
+      <header id="header">
+        <div class="container">
+          <div class="subcontainer">
+            <nav class="navbar-container">
+              <div class="navbar-left">
+                <a href="#" class="nav-branding-1">Zion<span> ® TerraNova</span></a>
+                <div class="nav-menu">
+                  <a href="#" class="nav-branding-2">Gene<span>sis</span></a>
+
+                  <div class="nav-dropdown">
+                    <button class="nav-link nav-dropdown-toggle" type="button">
+                      Realms
+                      <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="nav-dropdown-panel">
+                      <a href="./main.html" class="nav-dropdown-link">Home</a>
+                      <a href="./camp.html" class="nav-dropdown-link">Camps</a>
+                      <a href="./arts.html" class="nav-dropdown-link">Arts</a>
+                      <a href="./halls.html" class="nav-dropdown-link">Amenti</a>
+                      <a href="./evoluzion.html" class="nav-dropdown-link">Evoluzion</a>
+                    </div>
+                  </div>
+
+                  <div class="nav-dropdown">
+                    <button class="nav-link nav-dropdown-toggle" type="button">
+                      Portals
+                      <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="nav-dropdown-panel">
+                      <a href="./blog.html" class="nav-dropdown-link">Blog</a>
+                      <a href="./links.html" class="nav-dropdown-link">Links</a>
+                      <a href="./about.html" class="nav-dropdown-link">About</a>
+                      <a href="./dev.html" class="nav-dropdown-link">DeV</a>
+                      <!-- <a href="./hemp.html" class="nav-dropdown-link">Hemp</a> -->
+                      <a href="./woodart.html" class="nav-dropdown-link">WoodArt</a>
+                    </div>
+                  </div>
+
+                  <a href="./shop.html" class="nav-link">Shop</a>
+                  <a href="./presale.html" class="nav-link presale-nav-link active">
+                    <span class="presale-badge-nav">🚀</span> Presale
+                  </a>
+                  <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                  <span class="nav-link lang-switch"><span class="active-lang">CZ</span> | <a href="./presale-en.html">EN</a></span>
+
+                  <a href="./cart.html" class="nav-link cart-link">
+                    <span class="cart-icon-wrapper">
+                      <i class="fa-solid fa-cart-shopping"></i>
+                      <span id="cart-count" class="cart-badge">0</span>
+                    </span>
+                  </a>
+                </div>
+              </div>
+
+              <div class="navbar-right">
+                <div class="hamburger">
+                  <span class="bar"></span>
+                  <span class="bar"></span>
+                  <span class="bar"></span>
+                </div>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <!-- Hero Section -->
+      <section class="rasta-hero presale-hero" style="background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(26,26,26,0.95) 100%), url('./img/cosmic-bg.jpg');">
+        <div class="rasta-hero-inner">
+          <h1>ZION <span class="gold-text">Dharma Credits</span></h1>
+          <h2>Consciousness-Based Cryptocurrency</h2>
+          <p class="subtitle">Presale Phase 1 aktivní — získej tokeny za zvýhodněnou cenu €0.004 s bonusy až 30%</p>
+          <div class="presale-stats-hero">
+            <div class="stat">
+              <span class="value" id="tokens-sold">—</span>
+              <span class="label">Tokens prodáno</span>
+            </div>
+            <div class="stat">
+              <span class="value" id="presale-progress">0%</span>
+              <span class="label">Progress Phase 1</span>
+            </div>
+            <div class="stat">
+              <span class="value">€0.004</span>
+              <span class="label">Phase 1 cena</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+            <a href="./roadmap.html" class="rasta-btn pulse-btn">
+              <i class="fa-solid fa-road"></i> Sleduj roadmapu
+            </a>
+            <a href="./presale-info.html" class="rasta-btn-outline rasta-btn">
+              <i class="fa-solid fa-info-circle"></i> Jak to funguje?
+            </a>
+            <a href="https://discord.gg/eatGYDbd" class="rasta-btn" style="background: linear-gradient(90deg,var(--rasta-red),var(--rasta-gold),var(--rasta-green));" target="_blank">
+              <i class="fa-brands fa-discord"></i> Discord notifikace
+            </a>
+          </div>
+
+          <div style="background: rgba(34,177,76,0.15); border: 2px solid var(--rasta-green); padding: 20px; border-radius: 12px; margin: 25px auto 0; max-width: 760px; text-align: left;">
+            <h4 style="color: var(--rasta-gold); margin-bottom: 10px;">✅ Presale Phase 1 aktivní</h4>
+            <p style="margin: 0; color: #eee; line-height: 1.6;">
+              <strong>ZION Dharma Credits presale je nyní spuštěn!</strong> Získej tokeny za zvýhodněnou cenu €0.004 
+              s bonusy až 30% podle objemu. Všechny tokeny jsou zajištěny real blockchain wallets s 12-word mnemonic.
+              Sleduj <a href="./roadmap.html" style="color: var(--rasta-gold);">roadmap</a> a 
+              <a href="https://discord.gg/eatGYDbd" target="_blank" style="color: var(--rasta-gold);">Discord</a> 
+              pro aktualizace TestNet/MainNet.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Progress Bar -->
+      <section class="presale-progress-section">
+        <div class="progress-container">
+          <div class="progress-info">
+            <span>Phase 1 aktivní · Zvýhodněná cena €0.004</span>
+            <span><strong id="progress-sold-value">0</strong> / 500,000,000 Dharma Credits</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;">
+              <span class="progress-text">0%</span>
+            </div>
+          </div>
+          <div class="progress-milestones">
+            <div class="milestone" style="left: 35%;">
+              <span class="milestone-dot"></span>
+              <span class="milestone-label">Phase 1 (€0.004)</span>
+            </div>
+            <div class="milestone" style="left: 70%;">
+              <span class="milestone-dot"></span>
+              <span class="milestone-label">Phase 2 (€0.008)</span>
+            </div>
+            <div class="milestone" style="left: 100%;">
+              <span class="milestone-dot"></span>
+              <span class="milestone-label">Phase 3 (€0.012)</span>
+            </div>
+          </div>
+          <p style="margin-top: 15px; color: #bbb; text-align: center;">
+            🚀 Presale běží! Získej tokeny s bonusy až 30% podle objemu. TestNet launch ETA 2026.
+          </p>
+        </div>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">🦁</span>
+        <div class="line"></div>
+      </div>
+
+      <!-- Info Banner -->
+      <section class="rasta-section" style="padding: 30px 20px;">
+        <div style="max-width: 800px; margin: 0 auto; background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,128,0,0.1)); padding: 30px; border-radius: 12px; border: 2px solid var(--rasta-gold); text-align: center;">
+          <h3 style="color: var(--rasta-gold); margin-bottom: 15px; font-size: 1.6rem;">
+            <i class="fa-solid fa-lightbulb"></i> První návštěva? Nejste si jisti?
+          </h3>
+          <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">
+            Připravili jsme pro vás <strong>kompletní průvodce</strong> s vysvětlením jak presale funguje, 
+            jak koupit tokeny krok za krokem, příklady výpočtů, bezpečnost, právní aspekty a odpovědi na všechny otázky.
+          </p>
+          <a href="./presale-info.html" class="rasta-btn" style="font-size: 1.1rem; padding: 12px 30px;">
+            <i class="fa-solid fa-book-open"></i> Přečíst průvodce pro začátečníky
+          </a>
+        </div>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">💎</span>
+        <div class="line"></div>
+      </div>
+
+      <!-- Token Info Section -->
+      <section class="rasta-section token-info-section">
+        <h2>Co jsou <span>ZION Dharma Credits?</span></h2>
+        <p class="rasta-text">
+          ZION Dharma Credits jsou consciousness-based kryptoměna s maximálním supply 144 miliard (12×12×1B).
+          Těžba využívá unikátní Cosmic Harmony algoritmus, který odměňuje vědomí nad výpočetní silou.
+          <strong>Presale nabízí 500M Dharma Credits</strong> (3.1% z 16.28B premine) ve 3 fázích za ceny €0.008-0.012.
+        </p>
+        <div class="pillar-grid">
+          <div class="pillar-card">
+            <div class="icon"><i class="fa-solid fa-infinity"></i></div>
+            <h4>144B Max Supply</h4>
+            <p>Limitovaná emise inspirovaná posvátnou geometrií a kosmickými cykly.</p>
+          </div>
+          <div class="pillar-card">
+            <div class="icon"><i class="fa-solid fa-brain"></i></div>
+            <h4>Consciousness Mining</h4>
+            <p>Těžba založená na vědomí, humanitárních aktivitách a komunitní participaci.</p>
+          </div>
+          <div class="pillar-card">
+            <div class="icon"><i class="fa-solid fa-hand-holding-heart"></i></div>
+            <h4>1.618% Humanitarian Tithe</h4>
+            <p>Z každého bloku putuje 1.618% na humanitární projekty.</p>
+          </div>
+          <div class="pillar-card">
+            <div class="icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <h4>ASIC Resistant</h4>
+            <p>4 PoW algoritmy zajišťují decentralizaci a férovou těžbu.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Presale Packages -->
+      <section class="rasta-section presale-packages" id="packages">
+        <h2>Presale <span>Balíčky</span></h2>
+        <p class="rasta-text">Vyber si balíček podle svého rozpočtu a získej bonusové tokeny až 30%. Všechny objednávky zahrnují real blockchain wallet s 12-word mnemonic.</p>
+        
+        <div class="packages-grid">
+          <!-- Starter Pack -->
+          <!-- <div class="package-card" data-package="starter">
+            <div class="package-badge">Starter</div>
+            <div class="package-header">
+              <h3>🌱 Seed Pack</h3>
+              <div class="package-price">
+                <span class="amount">€100</span>
+                <span class="tokens">18,750 ZION</span>
+              </div>
+            </div>
+            <div class="package-body">
+              <ul class="package-features">
+                <li><i class="fa-solid fa-check"></i> 12,500 ZION base</li>
+                <li><i class="fa-solid fa-check"></i> <strong>+6,250 bonus (50%)</strong></li>
+                <li><i class="fa-solid fa-check"></i> Phase 1 cena €0.008</li>
+                <li><i class="fa-solid fa-check"></i> Worth €281 at launch</li>
+                <li><i class="fa-solid fa-check"></i> QR wallet + Early Adopter badge</li>
+              </ul>
+              <div class="bonus-tag gold">+50% bonus | 2.8x ROI</div>
+            </div>
+            <button class="package-btn" onclick="selectPackage('starter')">
+              <i class="fa-solid fa-qrcode"></i> Vybrat balíček
+            </button>
+          </div> -->
+
+          <!-- PIZZA Pack -->
+          <div class="package-card" data-package="starter">
+            <div class="package-badge">🍕 PIZZA</div>
+            <div class="package-header">
+              <h3>� PIZZA Pack</h3>
+              <div class="package-price">
+                <span class="amount">2,490 Kč</span>
+                <span class="tokens">27,390 Credits</span>
+              </div>
+            </div>
+            <div class="package-body">
+              <ul class="package-features">
+                <li><i class="fa-solid fa-check"></i> 24,900 Credits base</li>
+                <li><i class="fa-solid fa-check"></i> <strong>+2,490 bonus (10%)</strong></li>
+                <li><i class="fa-solid fa-check"></i> QR peněženka</li>
+                <li><i class="fa-solid fa-check"></i> Bitcoin Pizza memory 🍕</li>
+                <li><i class="fa-solid fa-check"></i> Discord přístup</li>
+              </ul>
+              <div class="bonus-tag gold">+10% bonus | 10,000 BTC = 2 pizzy</div>
+            </div>
+            <button class="package-btn" onclick="selectPackage('starter')">
+              <i class="fa-solid fa-pizza-slice"></i> Objednat PIZZA
+            </button>
+          </div>
+
+          <!-- LAMBO Pack -->
+          <div class="package-card featured" data-package="standard">
+            <div class="package-badge popular">� Budoucí vlastník</div>
+            <div class="package-header">
+              <h3>🚘 LAMBO Pack</h3>
+              <div class="package-price">
+                <span class="amount">12,490 Kč</span>
+                <span class="tokens">149,880 Credits</span>
+              </div>
+            </div>
+            <div class="package-body">
+              <ul class="package-features">
+                <li><i class="fa-solid fa-check"></i> 124,900 Credits base</li>
+                <li><i class="fa-solid fa-check"></i> <strong>+24,980 bonus (20%)</strong></li>
+                <li><i class="fa-solid fa-check"></i> Sní šoféra - budoucí Lambo 🏎️</li>
+                <li><i class="fa-solid fa-check"></i> Lambo Club Discord (VIP)</li>
+                <li><i class="fa-solid fa-check"></i> Priority airdrop - dej se!</li>
+                <li><i class="fa-solid fa-check"></i> Governance práva (DAO hlasování)</li>
+              </ul>
+              <div class="bonus-tag gold">+20% bonus | Cesta k Lamborghini</div>
+            </div>
+            <button class="package-btn featured-btn" onclick="selectPackage('standard')">
+              <i class="fa-solid fa-car-side"></i> Objednat LAMBO
+            </button>
+          </div>
+
+          <!-- Guardian Pack -->
+          <div class="package-card whale" data-package="premium">
+            <div class="package-badge whale-badge">✨ Strážce Světla</div>
+            <div class="package-header">
+              <h3>✍️ Guardian Pack</h3>
+              <div class="package-price">
+                <span class="amount">24,990 Kč</span>
+                <span class="tokens">324,870 Credits</span>
+              </div>
+            </div>
+            <div class="package-body">
+              <ul class="package-features">
+                <li><i class="fa-solid fa-check"></i> 249,900 Credits base</li>
+                <li><i class="fa-solid fa-check"></i> <strong>+74,970 bonus (30%)</strong></li>
+                <li><i class="fa-solid fa-check"></i> Premium QR peněženka</li>
+                <li><i class="fa-solid fa-check"></i> Exclusive NFT badge</li>
+                <li><i class="fa-solid fa-check"></i> Diamantové ruce 💎 (Founder role)</li>
+                <li><i class="fa-solid fa-check"></i> Genesis HODLER - OG legenda</li>
+                <li><i class="fa-solid fa-check"></i> Součást 144k Strážců světla ⭐</li>
+                <li><i class="fa-solid fa-check"></i> Tvůj hlas tváří DAO (governance)</li>
+                <li><i class="fa-solid fa-check"></i> Navždy v blockchainu (Legend)</li>
+              </ul>
+              <div class="bonus-tag premium">+30% bonus | HODL or DIE!</div>
+            </div>
+            <button class="package-btn whale-btn" onclick="selectPackage('premium')">
+              <i class="fa-solid fa-shield-halved"></i> Objednat GUARDIAN
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Custom Amount Section -->
+      <section class="rasta-section custom-amount-section">
+        <h2>Vlastní <span>částka</span></h2>
+  <p class="rasta-text">Presale kalkulátor je dočasně vypnutý — použij ho, jakmile oznámíme spuštění Phase 1.</p>
+        
+        <div class="custom-calculator">
+          <div class="calc-input-group">
+            <label for="custom-eur">Částka v Kč</label>
+            <div class="slider-container">
+              <input type="range" id="custom-eur" min="500" max="30000" value="5000" step="100" class="presale-slider" />
+              <div class="slider-value">
+                <span id="slider-value-display">5,000</span> Kč
+              </div>
+              <div class="slider-price-display">
+                💰 <span id="slider-price-display">50,000</span> Credits
+              </div>
+              <div class="slider-labels">
+                <span>500 Kč</span>
+                <span>30,000 Kč</span>
+              </div>
+            </div>
+          </div>
+          <div class="calc-arrow">
+            <i class="fa-solid fa-arrow-right"></i>
+          </div>
+          <div class="calc-result">
+            <label>Obdržíte ZION Dharma Credits</label>
+            <div class="result-value">
+              <span id="calc-tokens">25,000</span>
+              <span class="token-symbol">Credits</span>
+            </div>
+            <div class="bonus-info" id="calc-bonus">Včetně bonusu</div>
+          </div>
+          <button class="rasta-btn calc-btn" onclick="buyCustomAmount()">
+            <i class="fa-solid fa-shopping-cart"></i> Pokračovat na objednávku
+          </button>
+        </div>
+        
+        <div class="bonus-tiers">
+          <h4>Bonusové úrovně</h4>
+          <div class="tiers-list">
+            <span class="tier"><strong>500-2,489 Kč:</strong> Základní cena (10 Credits/Kč)</span>
+            <span class="tier"><strong>2,490-12,489 Kč:</strong> +10% bonus</span>
+            <span class="tier"><strong>12,490-24,989 Kč:</strong> +20% bonus</span>
+            <span class="tier"><strong>24,990 Kč+:</strong> +30% bonus</span>
+          </div>
+          <p style="margin-top: 15px; font-size: 0.9rem; color: var(--rasta-gold);">
+            💡 Cena: 0.10 Kč za ZION token | Minimálně 500 Kč | Bez KYC požadavků
+          </p>
+        </div>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">⚡</span>
+        <div class="line"></div>
+      </div>
+
+      <!-- How it Works Section -->
+      <section class="rasta-section how-it-works">
+        <h2>Jak to <span>funguje?</span></h2>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <div class="step-icon"><i class="fa-solid fa-box-open"></i></div>
+            <h4>Vyberte balíček</h4>
+            <p>Zvolte presale balíček nebo zadejte vlastní částku.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <div class="step-icon"><i class="fa-solid fa-credit-card"></i></div>
+            <h4>Zaplaťte</h4>
+            <p>Bezpečná platba kartou přes Stripe nebo bankovním převodem.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <div class="step-icon"><i class="fa-solid fa-qrcode"></i></div>
+            <h4>Obdržíte QR kód</h4>
+            <p>Na email dostanete unikátní QR wallet s vašimi tokeny.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">4</div>
+            <div class="step-icon"><i class="fa-solid fa-rocket"></i></div>
+            <h4>Mainnet launch</h4>
+            <p>Po spuštění mainnetu budou tokeny převedeny na vaši adresu.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- QR Preview Modal - Step 1: Order Form -->
+      <div id="qr-modal" class="modal">
+        <div class="modal-content qr-modal-content" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+          <span class="close-modal">&times;</span>
+          <div class="modal-body" style="padding: 30px 20px;">
+            <h2 style="text-align: center; color: var(--rasta-gold); margin-bottom: 20px;">
+              <i class="fa-solid fa-rocket"></i> Presale Objednávka
+            </h2>
+            
+            <!-- Order Summary -->
+            <div class="payment-summary" style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 2px solid var(--rasta-gold);">
+              <div class="summary-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: #ccc;">Balíček:</span>
+                <span id="summary-package" style="color: var(--rasta-green); font-weight: bold;">-</span>
+              </div>
+              <div class="summary-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: #ccc;">ZION Credits:</span>
+                <span id="summary-tokens" style="color: var(--rasta-gold); font-weight: bold;">-</span>
+              </div>
+              <div class="summary-row total" style="display: flex; justify-content: space-between; font-size: 1.3em; padding-top: 15px; border-top: 2px solid var(--rasta-gold); margin-top: 10px;">
+                <span style="color: var(--rasta-gold); font-weight: bold;">Celkem:</span>
+                <span id="summary-total" style="color: var(--rasta-gold); font-weight: bold;">-</span>
+              </div>
+            </div>
+            
+            <!-- Contact Form -->
+            <div class="payment-form">
+              <div class="form-group" style="margin-bottom: 20px;">
+                <label for="buyer-email" style="display: block; color: var(--rasta-gold); margin-bottom: 8px; font-weight: bold;">E-mail *</label>
+                <input type="email" id="buyer-email" required placeholder="vas@email.cz" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--rasta-green); background: rgba(0,0,0,0.5); color: white; font-size: 1rem;" />
+              </div>
+              <div class="form-group" style="margin-bottom: 25px;">
+                <label for="buyer-name" style="display: block; color: var(--rasta-gold); margin-bottom: 8px; font-weight: bold;">Jméno</label>
+                <input type="text" id="buyer-name" placeholder="Jan Novák" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--rasta-green); background: rgba(0,0,0,0.5); color: white; font-size: 1rem;" />
+              </div>
+              
+              <!-- Payment Method -->
+              <div style="margin-bottom: 25px;">
+                <label style="display: block; color: var(--rasta-gold); margin-bottom: 12px; font-weight: bold;">Způsob platby:</label>
+                <div class="payment-methods" style="display: flex; gap: 15px;">
+                  <label class="payment-method" style="flex: 1; cursor: not-allowed; opacity: 0.5;">
+                    <input type="radio" name="payment-method" value="card" disabled />
+                    <span class="method-label" style="display: flex; align-items: center; justify-content: center; padding: 15px; background: rgba(0,0,0,0.3); border: 2px solid #666; border-radius: 10px;">
+                      <i class="fa-solid fa-credit-card" style="margin-right: 8px;"></i> Karta (brzy)
+                    </span>
+                  </label>
+                  <label class="payment-method" style="flex: 1; cursor: pointer;">
+                    <input type="radio" name="payment-method" value="transfer" checked style="display: none;" />
+                    <span class="method-label" style="display: flex; align-items: center; justify-content: center; padding: 15px; background: linear-gradient(135deg, var(--rasta-green), #2e7d32); border: 2px solid var(--rasta-gold); border-radius: 10px; color: white; font-weight: bold;">
+                      <i class="fa-solid fa-building-columns" style="margin-right: 8px;"></i> Převod
+                    </span>
+                  </label>
+                </div>
+
+                <!-- Info blocks toggled by JS (guarded) -->
+                <div id="card-payment-info" class="payment-info" style="display: none;">
+                  <p><i class="fa-solid fa-shield-halved"></i> Bezpečná platba kartou přes Stripe (brzy).</p>
+                </div>
+
+                <div id="transfer-payment-info" class="payment-info" style="display: block;">
+                  <div class="bank-details">
+                    <p><strong>Bankovní převod:</strong></p>
+                    <p>Příjemce: Omnity.One s.r.o.</p>
+                    <p>IBAN: CZ63 2010 0000 0029 0180 9148</p>
+                    <p>SWIFT: FIOBCZPPXXX</p>
+                    <p>Variabilní symbol obdržíte po potvrzení objednávky.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Submit Button -->
+              <button id="pay-btn" class="rasta-btn pay-btn" onclick="processPayment()" style="width: 100%; padding: 18px; font-size: 1.1rem; font-weight: bold; background: linear-gradient(90deg, var(--rasta-green), var(--rasta-gold)); border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s;">
+                <i class="fa-solid fa-check-circle"></i> Potvrdit objednávku
+              </button>
+              
+              <p style="text-align: center; color: #888; font-size: 0.9rem; margin-top: 15px;">
+                <i class="fa-solid fa-shield-halved"></i> Bezpečné zpracování přes Python backend
+              </p>
+            </div>
+            
+            <!-- Transfer Details (shown after order creation) -->
+            <div id="transfer-details"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Modal -->
+      <div id="success-modal" class="modal">
+        <div class="modal-content success-modal-content">
+          <div class="success-icon">
+            <i class="fa-solid fa-check-circle"></i>
+          </div>
+          <h2>🎉 Nákup úspěšný!</h2>
+          <p>Váš ZION wallet byl vytvořen a QR kód odeslán na email.</p>
+          <div class="success-details">
+            <div class="detail-row">
+              <span class="label">Order ID:</span>
+              <span class="value" id="success-order-id">-</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Dharma Credits:</span>
+              <span class="value" id="success-tokens">-</span>
+            </div>
+          </div>
+          <div class="success-qr">
+            <img id="success-qr-image" src="" alt="ZION Wallet QR" />
+          </div>
+          <p class="success-note">
+            <i class="fa-solid fa-envelope"></i> QR kód a detaily byly odeslány na váš email.
+          </p>
+          <button class="rasta-btn" onclick="closeSuccessModal()">
+            <i class="fa-solid fa-home"></i> Zpět na presale
+          </button>
+        </div>
+      </div>
+
+      <!-- FAQ Section -->
+      <section class="rasta-section faq-section">
+        <h2>Často kladené <span>otázky</span></h2>
+        <div class="faq-grid">
+          <div class="faq-item">
+            <h4><i class="fa-solid fa-question-circle"></i> Co jsou ZION Dharma Credits?</h4>
+            <p>ZION Dharma Credits jsou consciousness-based kryptoměna nové generace založená na těžbě vědomím. Kombinuje ASIC-rezistentní algoritmy s humanitárními mechanismy. Total supply: 144 miliard (12×12×1B), Genesis premine: 16.28B (11.31%), z toho 500M (3.1%) v presale.</p>
+          </div>
+          <div class="faq-item">
+            <h4><i class="fa-solid fa-question-circle"></i> Proč cena €0.008-0.012?</h4>
+            <p>Presale nabízí 3 fáze: Phase 1 (€0.008, 150M, +20%), Phase 2 (€0.010, 200M, +15%), Phase 3 (€0.012, 150M, +10%). Launch price bude €0.015. Early investors získají 1.9x-2.8x ROI při public launch.</p>
+          </div>
+          <div class="faq-item">
+            <h4><i class="fa-solid fa-question-circle"></i> Kdy bude mainnet spuštěn?</h4>
+            <p>Mainnet ZION blockchainu plánujeme spustit <strong>31. prosince 2027</strong>. Před tím musí projít ZION 2.9 core + P2P veřejným funkčním testnetem a audity. Presale se otevře až po dokončení testnetu, aby finance proudily do dokončeného ekosystému.</p>
+          </div>
+          <div class="faq-item">
+            <h4><i class="fa-solid fa-question-circle"></i> Co je QR wallet?</h4>
+            <p>QR wallet je unikátní QR kód obsahující vaše tokeny. Po spuštění mainnetu naskenujete QR kód v ZION peněžence a tokeny se převedou na vaši adresu.</p>
+          </div>
+          <div class="faq-item">
+            <h4><i class="fa-solid fa-question-circle"></i> Jsou platby bezpečné?</h4>
+            <p>Ano, platby zpracovává Stripe - světový lídr v online platbách. Vaše platební údaje jsou šifrované a nikdy se nedostanou k nám.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">🌟</span>
+        <div class="line"></div>
+      </div>
+
+      <!-- CTA Section -->
+      <section class="rasta-section cta-section">
+        <h2>Připojte se k <span>revoluci</span></h2>
+        <p class="rasta-text">
+          ZION Dharma Credits nejsou jen kryptoměna - jsou to 144 miliard jednotek duchovní ekonomiky založené na vědomí, spolupráci a humanitárních hodnotách.
+        </p>
+        <div class="cta-buttons">
+          <a href="./roadmap.html" class="rasta-btn pulse-btn">
+            <i class="fa-solid fa-road"></i> Sleduj roadmapu
+          </a>
+          <a href="./dashboard.html" class="rasta-btn-outline rasta-btn">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+          </a>
+          <a href="https://discord.gg/eatGYDbd" class="rasta-btn-outline rasta-btn" target="_blank">
+            <i class="fa-brands fa-discord"></i> Discord alerts
+          </a>
+        </div>
+      </section>
+
+      <footer>
+        <div class="footer-content">
+          <br />
+          <div class="rasta-divider" style="margin: 20px 0;">
+            <div class="line"></div>
+            <span class="icon">🦁</span>
+            <div class="line"></div>
+          </div>
+          
+          <!-- Presale info buttons -->
+          <div style="display: flex; justify-content: center; gap: 20px; margin: 30px 0; flex-wrap: wrap;">
+            <a href="./terms.html" class="footer-rasta-btn" style="background: linear-gradient(135deg, var(--rasta-gold), #ff8c00); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; border: 2px solid var(--rasta-gold); transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4); font-weight: 600; font-size: 1rem;">
+              <i class="fa-solid fa-file-contract"></i> Obchodní podmínky
+            </a>
+            <a href="./whitepaper.html" class="footer-rasta-btn" style="background: linear-gradient(135deg, var(--rasta-green), #2e7d32); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; border: 2px solid var(--rasta-green); transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4); font-weight: 600; font-size: 1rem;">
+              <i class="fa-solid fa-file-pdf"></i> Whitepaper
+            </a>
+            <a href="mailto:presale@zionterranova.com" class="footer-rasta-btn" style="background: linear-gradient(135deg, var(--rasta-red), #c62828); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; border: 2px solid var(--rasta-red); transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(255, 69, 0, 0.4); font-weight: 600; font-size: 1rem;">
+              <i class="fa-solid fa-envelope"></i> Kontakt
+            </a>
+          </div>
+          
+          <style>
+            .footer-rasta-btn:hover {
+              transform: translateY(-3px);
+              box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+              filter: brightness(1.15);
+            }
+          </style>
+          
+          <div class="logo">
+            <a href="./main.html">
+              <img class="zoom" src="./img/logo.jpg" alt="Logo" style="width: 25%; max-width: 150px; opacity: 0.85; border-radius: 50%;" />
+            </a>
+          </div>
+          <br />
+          <p style="color: var(--rasta-gold); font-style: italic; margin-bottom: 20px;">
+            "The future belongs to those who believe in the beauty of their dreams." — ZION
+          </p>
+          <br />
+          <div class="social-icons">
+            <a href="https://www.facebook.com/OmnityCompany/" class="fa-brands fa-facebook fa-xl" style="color: var(--rasta-green);"></a>
+            <a href="https://twitter.com/OmnityCompany" class="fa-brands fa-twitter fa-xl" style="color: var(--rasta-gold);"></a>
+            <a href="https://www.instagram.com/terranova_project/" class="fa-brands fa-instagram fa-xl" style="color: var(--rasta-red);"></a>
+            <a href="https://discord.gg/eatGYDbd" class="fa-brands fa-discord fa-xl" style="color: var(--rasta-green);"></a>
+          </div>
+        </div>
+        <div class="footer-bottom" style="border-top: 3px solid; border-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green)) 1; padding-top: 20px; margin-top: 20px;">
+          <p>&copy; 2025 ZION Terra Nova ® | Omnity.One s.r.o.</p>
+          <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">
+            ⚠️ Kryptoměny jsou vysoce volatilní. Investujte pouze prostředky, které si můžete dovolit ztratit.
+          </p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
