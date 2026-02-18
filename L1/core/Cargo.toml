@@ -50,7 +50,7 @@ log = "0.4"
 verushash-native = { path = "../native-libs/verushash-native", optional = true }
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 tempfile = "3.8"
 # AUDIT-FIX P1-06: Integration tests need dev-tools to access test-only methods
 zion-core = { path = ".", features = ["dev-tools"] }
