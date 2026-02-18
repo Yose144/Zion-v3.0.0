@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::error::{NclError, NclResult};
-use crate::types::{NclJob, NclJobStatus, NclWorker, ComputeBackend};
+use crate::types::{NclJob, NclJobStatus, NclWorker};
 
 /// Job scheduler — assigns queued jobs to available workers.
 pub struct JobScheduler {
@@ -134,6 +134,7 @@ impl JobScheduler {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::ComputeBackend;
 
     fn test_job(backend: ComputeBackend) -> NclJob {
         NclJob::new(
@@ -174,7 +175,7 @@ mod tests {
 
         let result = sched.try_assign_next().unwrap();
         assert!(result.is_some());
-        let (job_id, worker_id) = result.unwrap();
+        let (_job_id, worker_id) = result.unwrap();
         assert_eq!(worker_id, "w1");
         assert_eq!(sched.queued_count(), 0);
         assert_eq!(sched.active_count(), 1);
@@ -222,7 +223,7 @@ mod tests {
         let mut sched = JobScheduler::new(100);
         sched.register_worker(test_worker("w1", vec![ComputeBackend::OnnxRuntime]));
         let job = test_job(ComputeBackend::OnnxRuntime);
-        let reward = job.reward_atomic;
+        let _reward = job.reward_atomic;
         let id = sched.submit_job(job).unwrap();
         sched.try_assign_next().unwrap();
         sched.complete_job(id, "out".into()).unwrap();
