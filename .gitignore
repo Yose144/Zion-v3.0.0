@@ -1,6 +1,9 @@
 # Build artifacts
 /target/
 **/target/
+*.obj
+*.o
+*.a
 
 # IDE
 .idea/
@@ -103,3 +106,7 @@ dist/
 *.dll
 *.so
 *.dylib
+
+# Build logs
+build-check.log
+next-build.log
