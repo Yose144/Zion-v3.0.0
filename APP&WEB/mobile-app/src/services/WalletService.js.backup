@@ -1,0 +1,503 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import KeychainService from './KeychainService';
+import CryptoService from './CryptoService';
+import {CONFIG} from '../constants/config';
+
+/**
+ * Wallet Service
+ * Správa ZION wallet (generování, import, export, signing)
+ * Používá skutečnou kryptografii z utils/crypto.js
+ * 
+ * SECURITY v2.9.2:
+ * - Vždy vyžaduje user-defined password (min 8 znaků)
+ * - Používá Keychain/Keystore pro secure storage (místo AsyncStorage)
+ * - Hardware-backed encryption na podporovaných zařízeních
+ * - Biometric protection (iOS Keychain / Android Keystore)
+ */
+
+const WALLET_STORAGE_KEY = '@zion_wallets'; // Legacy AsyncStorage key
+const ACTIVE_WALLET_KEY = '@zion_active_wallet';
+const MIN_PASSWORD_LENGTH = 8;
+const PASSWORD_STRENGTH_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/; // Min 8 chars, 1 uppercase, 1 lowercase, 1 digit
+const MIGRATION_FLAG_KEY = '@zion_keychain_migrated';
+
+class WalletService {
+  constructor() {
+    this.wallets = [];
+    this.activeWallet = null;
+    this.useKeychain = true; // Use Keychain by default (v2.9.2+)
+  }
+
+  /**
+   * Inicializace - načtení uložených wallets
+   * Automaticky migruje z AsyncStorage na Keychain (jedná migrace)
+   */
+  async initialize() {
+    try {
+      // Check if already migrated to Keychain
+      const migrated = await AsyncStorage.getItem(MIGRATION_FLAG_KEY);
+      
+      if (!migrated) {
+        // First run after v2.9.2 update - migrate from AsyncStorage
+        await this.migrateToKeychain();
+      }
+      
+      // Load wallets from Keychain
+      const walletIds = await KeychainService.listWallets();
+      
+      for (const walletId of walletIds) {
+        try {
+          const wallet = await KeychainService.loadWallet(walletId);
+          if (wallet) {
+            this.wallets.push(wallet);
+          }
+        } catch (error) {
+          console.error(`Failed to load wallet ${walletId}:`, error);
+        }
+      }
+
+      // Load active wallet ID (still from AsyncStorage for now)
+      const activeWalletId = await AsyncStorage.getItem(ACTIVE_WALLET_KEY);
+      if (activeWalletId) {
+        this.activeWallet = this.wallets.find(w => w.id === activeWalletId);
+      }
+      
+      console.log(`✅ WalletService initialized: ${this.wallets.length} wallets loaded`);
+    } catch (error) {
+      console.error('Failed to initialize wallet service:', error);
+    }
+  }
+  
+  /**
+   * Migrace z AsyncStorage na Keychain (jedná)
+   * Spuštěno automaticky při prvním spuštění v2.9.2+
+   */
+  async migrateToKeychain() {
+    try {
+      console.log('🔄 Starting AsyncStorage → Keychain migration...');
+      
+      // Load old wallets from AsyncStorage
+      const walletsJson = await AsyncStorage.getItem(WALLET_STORAGE_KEY);
+      
+      if (!walletsJson) {
+        console.log('ℹ️ No wallets to migrate');
+        await AsyncStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+        return;
+      }
+      
+      const oldWallets = JSON.parse(walletsJson);
+      
+      // Migrate to Keychain
+      const result = await KeychainService.migrateFromAsyncStorage(oldWallets);
+      
+      console.log(`✅ Migration complete: ${result.success} success, ${result.failed} failed`);
+      
+      // Mark as migrated
+      await AsyncStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+      
+      // Keep AsyncStorage backup for 30 days (optional safety)
+      // await AsyncStorage.removeItem(WALLET_STORAGE_KEY);
+      
+    } catch (error) {
+      console.error('❌ Migration failed:', error);
+      // Don't block app startup on migration failure
+    }
+  }
+
+  /**
+   * Generování nové wallet
+   * @param {string} name - Název walletu
+   * @param {string} password - Heslo (min 8 znaků, uppercase, lowercase, digit)
+   * @throws {Error} Pokud heslo nesplňuje požadavky
+   */
+  async generateWallet(name = 'ZION Wallet', password) {
+    // Validate password
+    this.validatePassword(password);
+    
+    try {
+      // Použít CryptoService s reálnými knihovnami (v2.9.3)
+      const walletData = await CryptoService.generateWallet(password);
+
+      const wallet = {
+        id: Date.now().toString(),
+        name,
+        address: walletData.address,
+        publicKey: walletData.publicKey,
+        privateKey: walletData.privateKey, // Už zašifrovaný
+        mnemonic: walletData.mnemonic, // Už zašifrovaný
+        created: new Date().toISOString(),
+        balance: 0,
+        consciousness: {
+          level: 'PHYSICAL',
+          xp: 0,
+        },
+      };
+
+      this.wallets.push(wallet);
+      await this.saveWallets();
+
+      // Set as active if first wallet
+      if (this.wallets.length === 1) {
+        await this.setActiveWallet(wallet.id);
+      }
+
+      return wallet;
+    } catch (error) {
+      console.error('Failed to generate wallet:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Import wallet z private key
+   */
+  async importFromPrivateKey(privateKey, name = 'Imported Wallet') {
+    try {
+      const publicKey = CryptoJS.SHA256(privateKey).toString();
+      const address = this.generateAddress(publicKey);
+
+      const wallet = {
+        id: Date.now().toString(),
+        name,
+        address,
+        publicKey,
+        privateKey: this.encryptPrivateKey(privateKey),, password = DEFAULT_PASSWORD) {
+    try {
+      // Použít skutečnou kryptografii
+      const walletData = cryptoImportFromPrivateKey(privateKey, password);
+
+      const wallet = {
+        id: Date.now().toString(),
+        name,
+        address: walletData.address,
+        publicKey: walletData.publicKey,
+        privateKey: walletData.privateKey, // Už zašifrovaný
+        mnemonic: null,
+        imported: true,
+        created: new Date().toISOString(),
+        balance: 0,
+        consciousness: {
+          level: 'PHYSICAL',
+          xp: 0,
+        },
+      };
+
+      this.wallets.push(wallet);
+      await this.saveWallets();
+
+      return wallet;
+    } catch (error) {
+      console.error('Failed to import wallet:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Import wallet z mnemonic
+   * @param {string} mnemonic - 12 nebo 24 slov
+   * @param {string} name - Název walletu
+   * @param {string} password - Heslo pro šifrování
+   * @throws {Error} Pokud heslo nesplňuje požadavky
+   */
+  async importFromMnemonic(mnemonic, name = 'Imported Wallet', password) {
+    // Validate password
+    this.validatePassword(password);
+    
+    try {
+      // Použít skutečnou kryptografii
+      const walletData = cryptoImportFromMnemonic(mnemonic, password);
+
+      const wallet = { = DEFAULT_PASSWORD) {
+    const wallet = this.wallets.find(w => w.id === walletId);
+    if (!wallet) {
+      throw new Error('Wallet not found');
+    }
+
+    try {
+      return {
+        address: wallet.address,
+        privateKey: decryptPrivateKey(wallet.privateKey, password),
+        mnemonic: wallet.mnemonic ? decryptPrivateKey(wallet.mnemonic, password) : null,
+      };
+    } catch (error) {
+      throw new Error('Failed to decrypt wallet. Invalid password?');
+    }
+  }
+
+  /**
+   * Podepsání transakce
+   * @param {string} walletId
+   * @param {object} transaction - {recipient, amount, fee, token, hash}
+   * @param {string} password
+   * @throws {Error} Pokud transakce není validní nebo wallet nenalezen
+   * 
+   * SECURITY: Před podpisem MUSÍ být zobrazen TransactionConfirmModal
+   */
+  async signTransaction(walletId, transaction, password) {
+    // 1. Validate transaction
+    this.validateTransaction(transaction);
+    
+    // 2. Find wallet
+    const wallet = this.wallets.find(w => w.id === walletId);
+    if (!wallet) {
+      throw new Error('Wallet not found');
+    }
+
+    try {
+      // 3. Decrypt private key
+      const privateKey = decryptPrivateKey(wallet.privateKey, password);
+      
+      // 4. Create transaction hash if not provided
+      const txHash = transaction.hash || this.createTransactionHash(transaction);
+      
+      // 5. Sign
+      const signature = signTransaction(txHash, privateKey);
+      
+      return {
+        signature,
+        txHash,
+        transaction,
+      };
+    } catch (error) {
+      throw new Error('Failed to sign transaction: ' + error.message);
+    }
+  }
+  
+  /**
+   * Vytvoření transaction hash
+   * @param {object} transaction
+   * @returns {string} Hash
+   */
+  createTransactionHash(transaction) {
+    const CryptoJS = require('crypto-js');
+    
+    const data = JSON.stringify({
+      recipient: transaction.recipient,
+      amount: transaction.amount,
+      fee: transaction.fee || 0,
+      timestamp: Date.now(),
+      nonce: Math.random().toString(36).substring(7),
+    });
+    
+    return CryptoJS.SHA256(data).toString();
+  }
+
+  /**
+   * Validace transakce před podpisem
+   * @param {object} transaction - {recipient, amount, fee, token}
+   * @throws {Error} Pokud transakce není validní
+   */
+  validateTransaction(transaction) {
+    // 1. Check required fields
+    if (!transaction.recipient) {
+      throw new Error('Recipient address is required');
+    }
+    
+    if (!transaction.amount || transaction.amount <= 0) {
+      throw new Error('Amount must be greater than 0');
+    }
+    
+    // 2. Validate recipient address format
+    if (!this.validateAddress(transaction.recipient)) {
+      throw new Error('Invalid recipient address format');
+    }
+    
+    // 3. Check amount format
+    if (isNaN(transaction.amount)) {
+      throw new Error('Amount must be a valid number');
+    }
+    
+    // 4. Check for self-transfer (optional warning)
+    const wallet = this.getActiveWallet();
+    if (wallet && transaction.recipient === wallet.address) {
+      console.warn('Warning: Sending to your own address');
+    }
+    
+    // 5. Validate fee (if provided)
+    if (transaction.fee && (isNaN(transaction.fee) || transaction.fee < 0)) {
+      throw new Error('Fee must be a valid positive number');
+    }
+    
+    return true;
+  }
+
+  /**
+   * Validace hesla
+   * @param {string} password
+   * @throws {Error} Pokud heslo nesplňuje požadavky
+   */
+  validatePassword(password) {
+    if (!password) {
+      throw new Error('Password is required');
+    }
+    
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      throw new Error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+    }
+    
+    if (!PASSWORD_STRENGTH_REGEX.test(password)) {
+      throw new Error('Password must contain: uppercase, lowercase, and digit');
+    }
+    
+    return true;
+  }
+
+  /**
+   * Validace adresy
+   */
+  validateAddress(address) {
+    return isValidAddress(address, CONFIG.WALLET.ADDRESS_PREFIX)   consciousness: {
+          level: 'PHYSICAL',
+          xp: 0,
+        },
+      };
+
+      this.wallets.push(wallet);
+      await this.saveWallets();
+
+      return wallet
+    const wallet = this.wallets.find(w => w.id === walletId);
+    if (!wallet) {
+      throw new Error('Wallet not found');
+    }
+
+    return {
+      address: wallet.address,
+      privateKey: this.decryptPrivateKey(wallet.privateKey),
+      mnemonic: wallet.mnemonic ? this.decryptMnemonic(wallet.mnemonic) : null,
+    };
+  }
+
+  /**
+   * Získat seznam všech wallets
+   */
+  getWallets() {
+    return this.wallets.map(w => ({
+      id: w.id,
+      name: w.name,
+      address: w.address,
+      balance: w.balance,
+      consciousness: w.consciousness,
+      isActive: this.activeWallet?.id === w.id,
+    }));
+  }
+
+  /**
+   * Získat aktivní wallet
+   */
+  getActiveWallet() {
+    return this.activeWallet;
+  }
+
+  /**
+   * Nastavit aktivní wallet
+   */
+  async setActiveWallet(walletId) {
+    const wallet = this.wallets.find(w => w.id === walletId);
+    if (!wallet) {
+      throw new Error('Wallet not found');
+    }
+    await this.saveWallets();
+    }
+  }
+
+  // ===== Private Methods =====
+
+  generateAddress(publicKey) {
+    // Simplified address generation
+    // V produkci: použít bech32 encoding
+    const hash = CryptoJS.SHA256(publicKey).toString();
+    return CONFIG.WALLET.ADDRESS_PREFIX + hash.substring(0, 40);
+  }
+
+  generateMnemonic(entropy) {
+    // Simplified mnemonic generation
+    // V produkci: použít BIP39 wordlist
+    const words = [];
+    const entropyHex = entropy.toString();
+    
+    for (let i = 0; i < 24; i++) {
+      const slice = entropyHex.substring(i * 4, (i + 1) * 4);
+      const wordIndex = parseInt(slice, 16) % 2048;
+      words.push(`word${wordIndex}`); // Replace with actual BIP39 wordlist
+    }
+    
+    return words.join(' ');
+  }
+
+  encryptPrivateKey(privateKey) {
+    // V produkci: použít hardware-backed keystore
+    return CryptoJS.AES.encrypt(privateKey, 'zion-secret').toString();
+  }
+
+  decryptPrivateKey(encrypted) {
+    const bytes = CryptoJS.AES.decrypt(encrypted, 'zion-secret');
+    return bytes.toString(CryptoJS.enc.Utf8);
+  }
+
+  encryptMnemonic(mnemonic) {
+    return CryptoJS.AES.encrypt(mnemonic, 'zion-secret').toString();
+  }
+
+  decryptMnemonic(encrypted) {
+    const bytes = CryptoJS.AES.decrypt(encrypted, 'zion-secret');
+    return bytes.toString(CryptoJS.enc.Utf8);
+  }
+
+  /**
+   * Uložení wallets do Keychain (v2.9.2+)
+   * Každý wallet je uložen samostatně pro lepší bezpečnost
+   */
+  async saveWallets() {
+    try {
+      // Save each wallet to Keychain separately
+      for (const wallet of this.wallets) {
+        await KeychainService.saveWallet(wallet.id, wallet);
+        await KeychainService.addToIndex(wallet.id);
+      }
+      
+      // Save active wallet ID to AsyncStorage (lightweight metadata)
+      if (this.activeWallet) {
+        await AsyncStorage.setItem(ACTIVE_WALLET_KEY, this.activeWallet.id);
+      }
+      
+      console.log(`✅ ${this.wallets.length} wallets saved to Keychain`);
+    } catch (error) {
+      console.error('Failed to save wallets:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Smazání walletu z Keychain
+   * @param {string} walletId
+   */
+  async deleteWallet(walletId) {
+    try {
+      // Remove from Keychain
+      await KeychainService.deleteWallet(walletId);
+      await KeychainService.removeFromIndex(walletId);
+      
+      // Remove from memory
+      this.wallets = this.wallets.filter(w => w.id !== walletId);
+      
+      // Update active wallet if needed
+      if (this.activeWallet?.id === walletId) {
+        this.activeWallet = this.wallets[0] || null;
+        if (this.activeWallet) {
+          await AsyncStorage.setItem(ACTIVE_WALLET_KEY, this.activeWallet.id);
+        } else {
+          await AsyncStorage.removeItem(ACTIVE_WALLET_KEY);
+        }
+      }
+      
+      console.log(`✅ Wallet ${walletId} deleted`);
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete wallet ${walletId}:`, error);
+      return false;
+    }
+  }
+}
+
+export default new WalletService();

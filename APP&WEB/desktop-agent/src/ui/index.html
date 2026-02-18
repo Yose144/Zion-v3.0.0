@@ -1,0 +1,2574 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- AUDIT-FIX E-04 (16 Feb 2026): Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:*; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <title>ZION Native Awakening v2.9.5</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <style>
+    :root {
+      --zion-gold: rgb(255, 215, 0);
+      --zion-purple: rgb(147, 51, 234);
+      --zion-cyan: rgb(6, 182, 212);
+      --zion-blue: rgb(30, 58, 138);
+      --bg-dark: rgb(0, 0, 0);
+      --bg-card: rgba(10, 10, 20, 0.8);
+      --border-glow: rgba(147, 51, 234, 0.3);
+      --card-bg: rgba(12, 14, 30, 0.82);
+      --card-border: rgba(255,255,255,0.14);
+      --card-shadow: 0 24px 70px rgba(0,0,0,0.45);
+      --card-shadow-hover: 0 28px 90px rgba(0,0,0,0.55), 0 0 40px rgba(147,51,234,0.25);
+      --glass-bg: rgba(10, 12, 28, 0.72);
+      --glass-border: rgba(255,255,255,0.12);
+      --glow-gradient: linear-gradient(135deg, rgba(249,217,118,0.25), rgba(147,51,234,0.15), rgba(6,182,212,0.15));
+
+      /* web2.9-style tokens */
+      --color-zion-gold: 255 215 0;
+      --color-zion-purple: 147 51 234;
+      --color-zion-cyan: 6 182 212;
+      --color-zion-blue: 30 58 138;
+      --color-bg: 0 0 0;
+      --color-fg: 255 255 255;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(10,12,28,0.65), rgba(0,0,0,0.95)),
+        radial-gradient(ellipse at top, rgba(147, 51, 234, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom, rgba(6, 182, 212, 0.1), transparent 50%),
+        rgb(0, 0, 0);
+      color: #ffffff;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Nebula layer (web2.9-style) */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: url('../assets/nebula.jpg') center/cover no-repeat;
+      opacity: 0.16;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Warp starfield canvas layer (web2.9-style) */
+    .warp-starfield {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* HUD Grid Background */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 80px 80px;
+      pointer-events: none;
+      opacity: 0.5;
+      z-index: 1;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      position: relative;
+      z-index: 2;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    /* ═══ First-Run Wizard ═══ */
+    .wizard-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: wizardFadeIn 0.4s ease;
+    }
+    @keyframes wizardFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .wizard-card {
+      background: linear-gradient(145deg, rgba(12,14,30,0.95), rgba(0,0,0,0.9));
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 24px;
+      padding: 40px 36px;
+      max-width: 480px;
+      width: 90vw;
+      text-align: center;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 60px rgba(147,51,234,0.15);
+    }
+    .wizard-logo { margin-bottom: 8px; }
+    .wizard-btn {
+      display: block;
+      width: 100%;
+      padding: 14px 24px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .wizard-btn-primary {
+      background: linear-gradient(135deg, rgb(255,215,0), rgb(147,51,234));
+      color: #000;
+    }
+    .wizard-btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(255,215,0,0.3);
+    }
+    .wizard-btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .wizard-btn-ghost {
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .wizard-btn-ghost:hover {
+      color: rgba(255,255,255,0.8);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    /* Clickable hashrate unit toggle */
+    #hashrate-unit {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: linear-gradient(180deg, rgba(12, 14, 30, 0.85), rgba(0, 0, 0, 0.6));
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      box-shadow: var(--card-shadow);
+      padding: 16px;
+      backdrop-filter: blur(20px);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo .logo-mark {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 5px;
+      background: radial-gradient(circle at 30% 30%, rgba(var(--color-zion-gold) / 0.22), transparent 65%), rgba(0, 0, 0, 0.65);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .logo .logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+      image-rendering: -webkit-optimize-contrast;
+      will-change: transform, opacity;
+    }
+
+    .logo h1 {
+      font-size: 24px;
+      font-weight: 800;
+      background-image: linear-gradient(to right, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple)), rgb(var(--color-zion-cyan)));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+      letter-spacing: 2px;
+    }
+
+    .text-gradient {
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      background-image: linear-gradient(to right, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple)), rgb(var(--color-zion-cyan)));
+    }
+
+    .neon-border {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 20px rgba(147,51,234,0.25);
+    }
+
+    .logo p {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 11px;
+      margin-top: 8px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 500;
+    }
+
+    .nav-item {
+      padding: 10px 14px;
+      margin: 4px 0;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-emoji {
+      font-size: 16px;
+      line-height: 1;
+      filter: drop-shadow(0 0 6px rgba(147,51,234,0.25));
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      flex: none;
+      opacity: 0.95;
+    }
+
+    .icon-inline {
+      width: 14px;
+      height: 14px;
+      margin-right: 6px;
+      vertical-align: -2px;
+      opacity: 0.9;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .nav-item::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--zion-purple), var(--zion-cyan));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .nav-item:hover {
+      border-color: var(--zion-purple);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+      transform: translateX(4px);
+    }
+
+    .nav-item:hover::before {
+      opacity: 0.1;
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(147, 51, 234, 0.2), rgba(6, 182, 212, 0.15));
+      border-color: var(--zion-purple);
+      box-shadow: 0 0 25px rgba(147, 51, 234, 0.4), inset 0 0 20px rgba(147, 51, 234, 0.1);
+      color: var(--zion-gold);
+    }
+
+    .view-shell {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 18px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    /* Dashboard should not scroll */
+    #dashboard-view {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Gold pass: shared web2.9 page header */
+    .web29-page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0, 0, 0, 0.35);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      backdrop-filter: blur(18px);
+      flex-shrink: 0;
+    }
+
+    .web29-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgb(var(--color-zion-gold));
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      font-weight: 600;
+      box-shadow: 0 0 24px rgba(147,51,234,0.25);
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .about-card {
+      padding: 16px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.45);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+    }
+
+    .about-kicker {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.6);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .about-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .about-meta {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .web29-chip .emoji {
+      font-size: 14px;
+    }
+
+    .web29-title-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .web29-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .web29-kicker {
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      font-weight: 700;
+    }
+
+    .web29-kicker .emoji {
+      margin-right: 6px;
+      font-size: 14px;
+    }
+
+    .web29-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.05;
+      margin: 0;
+    }
+
+    .web29-subtitle {
+      color: rgba(255,255,255,0.72);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .web29-badge {
+      flex: none;
+      white-space: nowrap;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 0;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .view-shell .header {
+      margin-bottom: 28px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0, 0, 0, 0.35);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      backdrop-filter: blur(18px);
+    }
+
+    .header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .status-badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .status-badge.mining {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(74, 222, 128, 0.15));
+      color: rgb(74, 222, 128);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    }
+
+    .status-badge.mining::before {
+      background: rgb(74, 222, 128);
+      box-shadow: 0 0 8px rgb(74, 222, 128);
+    }
+
+    .status-badge.stopped {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
+      color: rgb(248, 113, 113);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .status-badge.stopped::before {
+      background: rgb(239, 68, 68);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 0;
+      flex: 1;
+      align-content: start;
+    }
+
+    .stat-card {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px;
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+      will-change: border-color;
+    }
+
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: 16px;
+      background: radial-gradient(circle at top left, rgba(147, 51, 234, 0.2), transparent 70%);
+      filter: blur(15px);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .stat-card:hover {
+      border-color: var(--zion-purple);
+      box-shadow: 0 0 16px rgba(147, 51, 234, 0.2);
+    }
+
+    .stat-card:hover::before {
+      opacity: 1;
+    }
+
+    .stat-card h3 {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 11px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+    }
+
+    .stat-card .value {
+      background: linear-gradient(135deg, var(--zion-gold), var(--zion-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+
+    .stat-card .label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Sub-stats row inside stat cards */
+    .stat-sub {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      flex-wrap: wrap;
+    }
+    .stat-sub .sub-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .stat-sub .sub-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 600;
+    }
+    .stat-sub .sub-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.85);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-sub .sub-value.accent-green { color: #22c55e; }
+    .stat-sub .sub-value.accent-red { color: #ef4444; }
+    .stat-sub .sub-value.accent-gold { color: var(--zion-gold); }
+    .stat-sub .sub-value.accent-cyan { color: #06b6d4; }
+    .stat-sub .sub-value.accent-purple { color: #a855f7; }
+
+    /* Wide stat card spanning full row */
+    .stat-card.wide {
+      grid-column: 1 / -1;
+    }
+
+    /* Blocks found celebration */
+    .stat-card.has-blocks .value {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Control Panel */
+    .control-panel {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    .control-panel h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--zion-gold), var(--zion-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 11px;
+      margin-bottom: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 14px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(147, 51, 234, 0.3);
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--zion-purple);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+      background: rgba(10, 10, 20, 0.8);
+    }
+
+    /* Buttons */
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+
+    .btn {
+      flex: 0 0 auto;
+      padding: 9px 20px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      position: relative;
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255,255,255,0.88);
+      backdrop-filter: blur(6px);
+      font-family: inherit;
+    }
+
+    .btn:hover {
+      border-color: rgba(147,51,234,0.4);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 16px rgba(147,51,234,0.15);
+    }
+
+    .button-group .btn {
+      min-width: 130px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(147,51,234,0.2));
+      color: #fff;
+      border: 1px solid rgba(255,215,0,0.35);
+      box-shadow: 0 0 20px rgba(255,215,0,0.08);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(147,51,234,0.3));
+      border-color: rgba(255,215,0,0.55);
+      box-shadow: 0 0 28px rgba(255,215,0,0.18), 0 0 12px rgba(147,51,234,0.15);
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.12);
+      color: rgb(248, 113, 113);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: rgba(239, 68, 68, 0.55);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.55);
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 11px;
+      border-radius: 8px;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      filter: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Settings Layout */
+    .settings-grid {
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .settings-card {
+      padding: 24px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.55);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 100%;
+    }
+
+    .settings-card.span-2 {
+      grid-column: span 2;
+    }
+
+    .card-heading {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #0b0b0f;
+      flex: 0 0 44px;
+    }
+
+    .gradient-gold { background: linear-gradient(135deg, var(--zion-gold), var(--zion-cyan)); }
+    .gradient-cyan { background: linear-gradient(135deg, var(--zion-cyan), var(--zion-purple)); }
+    .gradient-purple { background: linear-gradient(135deg, var(--zion-purple), var(--zion-blue)); }
+
+    .card-kicker {
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 4px;
+    }
+
+    .settings-card h3 {
+      font-size: 22px;
+      margin: 0;
+    }
+
+    .badge {
+      margin-left: auto;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .badge-neutral {
+      color: rgba(255,255,255,0.7);
+      border-color: rgba(255,255,255,0.18);
+    }
+
+    .badge-live {
+      color: var(--zion-gold);
+      border-color: rgba(255,215,0,0.35);
+      background: rgba(255,215,0,0.08);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .form-grid.two-col {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .form-grid .span-2 {
+      grid-column: span 2;
+    }
+
+    .floating-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .floating-field span {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .floating-field input {
+      border: none;
+      background: transparent;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .floating-field input:focus {
+      outline: none;
+    }
+
+    .toggle-field {
+      display: flex;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.35);
+    }
+
+    .toggle-field input {
+      width: 18px;
+      height: 18px;
+    }
+
+    .toggle-field p {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .toggle-field small {
+      display: block;
+      color: rgba(255,255,255,0.55);
+      margin-top: 4px;
+    }
+
+    .pool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .pool-card {
+      position: relative;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      cursor: pointer;
+      display: block;
+    }
+
+    .pool-card.span-2 {
+      grid-column: span 2;
+    }
+
+    .pool-card input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .pool-card-body {
+      padding: 18px;
+      background: rgba(0,0,0,0.45);
+      transition: border 0.2s, box-shadow 0.2s;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .pool-card input:checked + .pool-card-body {
+      border-color: rgba(255,215,0,0.5);
+      box-shadow: 0 0 25px rgba(255,215,0,0.25);
+    }
+
+    .pool-card h4 {
+      margin: 10px 0 4px;
+      font-size: 18px;
+    }
+
+    .pool-card p {
+      margin: 0;
+      color: rgba(255,255,255,0.65);
+      font-size: 14px;
+    }
+
+    .pool-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.65);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .pill-gold { border-color: rgba(255,215,0,0.4); color: var(--zion-gold); }
+    .pill-cyan { border-color: rgba(6,182,212,0.4); color: var(--zion-cyan); }
+    .pill-purple { border-color: rgba(147,51,234,0.4); color: var(--zion-purple); }
+
+    .custom-pool-input {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .custom-pool-input input {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.4);
+      color: #fff;
+    }
+
+    .custom-pool-input span {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .mode-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mode-pill {
+      display: flex;
+      gap: 12px;
+      border-radius: 18px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.35);
+      cursor: pointer;
+      align-items: center;
+    }
+
+    .mode-pill input {
+      width: 18px;
+      height: 18px;
+    }
+
+    .mode-title {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .mode-pill p {
+      margin: 2px 0 0;
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .text-success {
+      color: #22c55e;
+    }
+
+    .mode-status {
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .slider,
+    .slider-stack input[type="range"] {
+      width: 100%;
+      accent-color: var(--zion-purple);
+    }
+
+    .slider-hint {
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+      margin-top: 8px;
+    }
+
+    .slider-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .card-desc {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+    }
+
+    .settings-actions {
+      margin-top: 28px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Wallet display (generated address/mnemonic) was outside .form-group -> ensure readable */
+    #wallet-display input,
+    #wallet-display textarea {
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+
+    #wallet-display input:focus,
+    #wallet-display textarea:focus {
+      outline: none;
+      border-color: rgba(147, 51, 234, 0.6) !important;
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.25);
+    }
+
+    /* Consciousness Progress */
+    .consciousness-bar {
+      margin-top: 40px;
+    }
+
+    .consciousness-bar h3 {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    .progress-container {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(147, 51, 234, 0.3);
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .progress-bar {
+      height: 36px;
+      background: linear-gradient(90deg, var(--zion-purple), var(--zion-cyan), var(--zion-gold));
+      border-radius: 8px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000000;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Log Viewer */
+    .log-viewer {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 24px;
+      padding: 24px;
+      height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', 'Consolas', monospace;
+      font-size: 12px;
+      box-shadow: inset 0 2px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .threads-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .threads-meta {
+      color: rgba(255,255,255,0.6);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: rgb(var(--color-zion-purple));
+    }
+
+    .log-entry {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      line-height: 1.6;
+    }
+
+    .log-entry.info {
+      color: rgb(74, 222, 128);
+    }
+
+    .log-entry.error {
+      color: rgb(248, 113, 113);
+    }
+
+    .log-entry.warning {
+      color: rgb(251, 191, 36);
+    }
+
+    .log-entry.success {
+      color: rgb(52, 211, 153);
+    }
+
+    /* ═══ Live Mining Console (XMRig/SRBMiner-style) ═══ */
+    .mining-console {
+      background: #0c0e1a;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .mining-console-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .mining-console-header .title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(255,255,255,0.5);
+    }
+    .mining-console-header .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34,197,94,0.5);
+      animation: pulse-dot 2s infinite;
+    }
+    .mining-console-header .dot.offline { background: #6b7280; box-shadow: none; animation: none; }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .mining-console-header .controls {
+      display: flex; gap: 6px;
+    }
+    .mining-console-header .ctrl-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.4); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; transition: all 0.2s;
+    }
+    .mining-console-header .ctrl-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+    .miner-static-panel {
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(0,255,136,0.25);
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 10px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #e8e8e8;
+      white-space: pre;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 4px 24px rgba(0,255,136,0.06);
+    }
+    .miner-static-panel .sp-label { color: #ffffff; font-weight: 800; font-size: 14px; text-shadow: 0 0 8px rgba(255,255,255,0.15); }
+    .miner-static-panel .sp-value { color: #00ffc8; font-weight: 800; font-size: 15px; text-shadow: 0 0 10px rgba(0,255,200,0.3); }
+    .miner-static-panel .sp-unit  { color: #a0a0a0; font-weight: 600; }
+    .miner-static-panel .sp-good  { color: #34d399; font-weight: 800; text-shadow: 0 0 8px rgba(52,211,153,0.3); }
+    .miner-static-panel .sp-bad   { color: #f87171; font-weight: 700; text-shadow: 0 0 8px rgba(248,113,113,0.3); }
+    .miner-static-panel .sp-dim   { color: #555; }
+    .miner-static-panel .sp-event { color: #34d399; font-weight: 700; }
+    .miner-static-panel .sp-border { color: #3a3a3a; }
+    .mining-console-body {
+      height: calc(100vh - 260px);
+      min-height: 350px;
+      overflow-y: auto;
+      padding: 14px 18px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.8);
+      scroll-behavior: smooth;
+    }
+    .mining-console-body::-webkit-scrollbar { width: 6px; }
+    .mining-console-body::-webkit-scrollbar-track { background: transparent; }
+    .mining-console-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    .mc-line {
+      white-space: pre-wrap;
+      word-break: break-all;
+      padding: 1px 0;
+    }
+    /* XMRig-style color classes */
+    .mc-line .mc-ts { color: #6b7280; }           /* timestamp gray */
+    .mc-line .mc-speed { color: #e879f9; }         /* speed label magenta */
+    .mc-line .mc-hr { color: #22d3ee; font-weight: 700; } /* hashrate cyan bold */
+    .mc-line .mc-unit { color: rgba(255,255,255,0.6); }  /* unit dimmed */
+    .mc-line .mc-max { color: #22c55e; }           /* max green */
+    .mc-line .mc-accepted { color: #22c55e; font-weight: 700; } /* accepted green */
+    .mc-line .mc-rejected { color: #ef4444; font-weight: 700; } /* rejected red */
+    .mc-line .mc-job { color: #3b82f6; }           /* new job blue */
+    .mc-line .mc-diff { color: #fbbf24; }          /* difficulty gold */
+    .mc-line .mc-algo { color: #22d3ee; }          /* algo cyan */
+    .mc-line .mc-block { color: #fbbf24; font-weight: 700; } /* block gold bold */
+    .mc-line .mc-info { color: rgba(255,255,255,0.5); }  /* info dim */
+    .mc-line .mc-err { color: #ef4444; }           /* error red */
+    .mc-line .mc-warn { color: #f59e0b; }          /* warning amber */
+    .mc-line .mc-ok { color: #22c55e; }            /* success green */
+    .mc-line.mc-highlight {
+      background: rgba(34,197,94,0.08);
+      border-left: 2px solid #22c55e;
+      padding-left: 8px;
+      margin-left: -8px;
+    }
+    .mc-line.mc-block-line {
+      background: rgba(251,191,36,0.1);
+      border-left: 3px solid #fbbf24;
+      padding: 4px 0 4px 10px;
+      margin-left: -10px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--zion-purple), var(--zion-cyan));
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, var(--zion-gold), var(--zion-purple));
+    }
+
+    /* CH3 Stream Indicator */
+    .stream-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(147,51,234,0.3);
+      border-radius: 12px;
+      font-size: 13px;
+    }
+    .stream-indicator .stream-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px rgba(16,185,129,0.6);
+      animation: pulse 2s infinite;
+    }
+    .stream-indicator .stream-dot.revenue {
+      background: #f59e0b;
+      box-shadow: 0 0 8px rgba(245,158,11,0.6);
+    }
+    .stream-indicator .stream-dot.offline {
+      background: #6b7280;
+      box-shadow: none;
+      animation: none;
+    }
+
+    /* GPU Badge */
+    .gpu-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .gpu-badge.gpu-available {
+      background: rgba(16,185,129,0.15);
+      border: 1px solid rgba(16,185,129,0.4);
+      color: #10b981;
+    }
+    .gpu-badge.cpu-only {
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.4);
+      color: #f59e0b;
+    }
+
+    /* Server Cards */
+    .server-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .server-card {
+      padding: 20px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(147,51,234,0.25);
+      border-radius: 14px;
+      transition: border-color 0.3s;
+    }
+    .server-card.online { border-color: rgba(16,185,129,0.5); }
+    .server-card.offline { border-color: rgba(248,113,113,0.4); opacity: 0.7; }
+    .server-card .server-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .server-card .server-name {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .server-card .server-status-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .server-card .server-status-dot.on { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+    .server-card .server-status-dot.off { background: #ef4444; }
+    .server-card .server-detail {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .server-card .server-detail:last-child { border-bottom: none; }
+    .server-card .server-detail .label { color: rgba(255,255,255,0.5); }
+    .server-card .server-detail .val { font-weight: 600; }
+    .server-card .server-detail .val.ok { color: #10b981; }
+    .server-card .server-detail .val.err { color: #ef4444; }
+
+
+  </style>
+</head>
+<body>
+  <!-- Inline icon sprite (SVG symbols). Uses currentColor for consistent theming. -->
+  <svg aria-hidden="true" focusable="false" style="position:absolute; width:0; height:0; overflow:hidden" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-dashboard" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" />
+      <rect x="13" y="3" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" />
+      <rect x="3" y="13" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" />
+      <rect x="13" y="13" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" />
+    </symbol>
+
+    <symbol id="i-wallet" viewBox="0 0 24 24">
+      <path d="M4 7.5h15.5a2.5 2.5 0 0 1 2.5 2.5v7a2.5 2.5 0 0 1-2.5 2.5H6.5A2.5 2.5 0 0 1 4 19V7.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+      <path d="M4 7.5V6.5A2.5 2.5 0 0 1 6.5 4h13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <circle cx="17" cy="14" r="1.2" fill="currentColor" />
+    </symbol>
+
+    <symbol id="i-settings" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+      <path d="M12 2.8v2.2M12 19v2.2M2.8 12h2.2M19 12h2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <path d="M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </symbol>
+
+    <symbol id="i-logs" viewBox="0 0 24 24">
+      <rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+      <path d="M7 8h10M7 12h10M7 16h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </symbol>
+
+    <symbol id="i-info" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
+      <path d="M12 10.5v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <circle cx="12" cy="7.5" r="1" fill="currentColor" />
+    </symbol>
+
+    <symbol id="i-play" viewBox="0 0 24 24">
+      <path d="M9 7.5v9l8-4.5-8-4.5Z" fill="currentColor" />
+    </symbol>
+
+    <symbol id="i-stop" viewBox="0 0 24 24">
+      <rect x="8" y="8" width="8" height="8" rx="1.2" fill="currentColor" />
+    </symbol>
+
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </symbol>
+
+    <symbol id="i-spark" viewBox="0 0 24 24">
+      <path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+    </symbol>
+
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
+      <path d="M8.2 12.2l2.4 2.4 5.2-5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+      <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </symbol>
+
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <path d="M12 3.5 21 20.5H3L12 3.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+      <path d="M12 9v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <circle cx="12" cy="16.8" r="1" fill="currentColor" />
+    </symbol>
+
+    <symbol id="i-save" viewBox="0 0 24 24">
+      <path d="M5 20h14a2 2 0 0 0 2-2V9.5L16.5 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+      <path d="M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+      <path d="M8 4v5h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+
+    <symbol id="i-x" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </symbol>
+
+    <symbol id="i-refresh" viewBox="0 0 24 24">
+      <path d="M20 12a8 8 0 1 1-2.3-5.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <path d="M20 4v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+
+    <symbol id="i-import" viewBox="0 0 24 24">
+      <path d="M12 3v10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <path d="M8.5 10.5 12 13.9l3.5-3.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M5 20h14a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <path d="M3 15v3a2 2 0 0 0 2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </symbol>
+
+    <symbol id="i-folder" viewBox="0 0 24 24">
+      <path d="M3 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+    </symbol>
+
+    <symbol id="i-star" viewBox="0 0 24 24">
+      <path d="M12 3.5l2.6 5.8 6.3.6-4.8 4.2 1.4 6.2L12 17.4 6.5 20.3l1.4-6.2-4.8-4.2 6.3-.6L12 3.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+    </symbol>
+  </svg>
+
+  <canvas id="warp-starfield" class="warp-starfield"></canvas>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- FIRST-RUN WIZARD OVERLAY                                -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="wizard-overlay" class="wizard-overlay" style="display:none;">
+    <div class="wizard-card">
+      <!-- Step 1: Welcome -->
+      <div class="wizard-step" data-step="1">
+        <div class="wizard-logo">
+          <img src="../assets/Z.gif" alt="ZION" style="width:80px;height:80px;border-radius:16px;" />
+        </div>
+        <h2 class="text-gradient" style="font-size:28px;margin:16px 0 8px;">Vítejte v ZION Miner</h2>
+        <p style="color:rgba(255,255,255,0.7);font-size:14px;max-width:380px;margin:0 auto 24px;">
+          Za 30 sekund budete těžit. Vytvoříme vám peněženku, nastavíme pool a spustíme mining — vše jedním kliknutím.
+        </p>
+        <button class="wizard-btn wizard-btn-primary" id="wizard-start-btn">
+          ⚡ Pojďme na to
+        </button>
+        <button class="wizard-btn wizard-btn-ghost" id="wizard-skip-btn" style="margin-top:8px;">
+          Přeskočit — nastavím ručně
+        </button>
+      </div>
+
+      <!-- Step 2: Create wallet + password -->
+      <div class="wizard-step" data-step="2" style="display:none;">
+        <h3 style="color:var(--zion-gold);margin-bottom:16px;">🔐 Zabezpečení peněženky</h3>
+        <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:20px;">
+          Zadejte heslo pro šifrování vaší peněženky. Toto heslo si zapamatujte — nelze obnovit.
+        </p>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em;">Heslo</label>
+          <input type="password" id="wizard-password" placeholder="Minimálně 6 znaků"
+            style="width:100%;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.5);color:#fff;font-size:14px;outline:none;" />
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em;">Potvrzení hesla</label>
+          <input type="password" id="wizard-password-confirm" placeholder="Zadejte znovu"
+            style="width:100%;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.5);color:#fff;font-size:14px;outline:none;" />
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em;">Jméno workeru (volitelné)</label>
+          <input type="text" id="wizard-worker" placeholder="desktop-agent" value="desktop-agent"
+            style="width:100%;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.5);color:#fff;font-size:14px;outline:none;" />
+        </div>
+        <div id="wizard-error" style="color:#ff6b6b;font-size:13px;margin-bottom:12px;display:none;"></div>
+        <button class="wizard-btn wizard-btn-primary" id="wizard-create-btn">
+          🔑 Vytvořit peněženku a nastavit
+        </button>
+        <button class="wizard-btn wizard-btn-ghost" id="wizard-back-1" style="margin-top:8px;">← Zpět</button>
+      </div>
+
+      <!-- Step 3: Success + mnemonic -->
+      <div class="wizard-step" data-step="3" style="display:none;">
+        <h3 style="color:var(--zion-gold);margin-bottom:12px;">✅ Peněženka vytvořena!</h3>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;">Adresa</label>
+          <div id="wizard-address" style="font-family:monospace;font-size:13px;color:var(--zion-cyan);word-break:break-all;padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;border:1px solid rgba(255,255,255,0.1);"></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;">⚠️ Recovery phrase — ZAPIŠTE SI A ULOŽTE BEZPEČNĚ</label>
+          <div id="wizard-mnemonic" style="font-family:monospace;font-size:14px;color:#ffa;word-break:break-all;padding:12px;background:rgba(80,60,0,0.3);border-radius:8px;border:1px solid rgba(255,215,0,0.3);line-height:1.6;"></div>
+          <p style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:6px;">Tato fráze je jediný způsob obnovení vaší peněženky. Po zavření tohoto okna ji už neuvidíte.</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="wizard-btn wizard-btn-primary" id="wizard-mine-btn" style="flex:1;">
+            ⛏️ Začít těžit
+          </button>
+          <button class="wizard-btn wizard-btn-ghost" id="wizard-done-btn" style="flex:1;">
+            Hotovo — nastavím později
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="logo">
+        <div class="logo-mark">
+          <img src="../assets/Z.gif" alt="ZION Logo" class="logo-img" />
+        </div>
+        <h1>ZION</h1>
+        <p>Native Awakening v2.9.5</p>
+      </div>
+      
+      <div class="nav-item active" data-view="dashboard">
+        <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" data-view="wallet">
+        <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+        <span>Wallet</span>
+      </div>
+
+      <div class="nav-item" data-view="settings">
+        <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+        <span>Settings</span>
+      </div>
+      <div class="nav-item" data-view="logs">
+        <svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg>
+        <span>Logs</span>
+      </div>
+      <div class="nav-item" data-view="network">
+        <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+        <span>Network</span>
+      </div>
+      <div class="nav-item" data-view="about">
+        <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+        <span>About</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Dashboard View -->
+      <div id="dashboard-view" class="view-shell">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Mining</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Dashboard</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Native Awakening v2.9.5 • TestNet Live</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <div class="status-badge stopped web29-badge" id="status-badge">STOPPED</div>
+          </div>
+        </div>
+
+        <!-- Quick Controls Panel -->
+        <div class="control-panel" style="margin-bottom:14px; padding:16px 20px; flex-shrink:0;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+            <!-- Left: status indicators -->
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div class="gpu-badge cpu-only" id="gpu-badge">
+                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-spark"></use></svg>
+                <span id="gpu-badge-text">Detecting GPU...</span>
+              </div>
+              <div class="stream-indicator" id="stream-indicator" style="padding:6px 12px; font-size:11px; border-radius:8px;">
+                <div class="stream-dot offline" id="stream-dot" style="width:8px;height:8px;"></div>
+                <span id="stream-mode">Stream: —</span>
+                <span id="stream-algo" style="color: rgba(255,255,255,0.5); font-size: 11px;"></span>
+              </div>
+              <div id="algo-display" style="padding:6px 12px; background:rgba(0,0,0,0.35); border:1px solid rgba(147,51,234,0.2); border-radius:8px; color:#fff; display:flex; align-items:center; gap:6px; font-size:11px;">
+                <svg class="icon icon-inline" aria-hidden="true" style="color:var(--zion-gold); width:12px; height:12px;"><use href="#i-star"></use></svg>
+                <span style="font-weight:600;">Cosmic Harmony v3</span>
+              </div>
+              <select id="algo-select" style="display:none;">
+                <option value="cosmic_harmony_v3" selected>Cosmic Harmony v3</option>
+              </select>
+              <span id="algo-status" style="display:none;"></span>
+              <span id="backend-pill" class="pill" style="font-size:10px; padding:3px 8px;">Backend: Auto</span>
+            </div>
+            <!-- Right: action buttons -->
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-primary" id="start-btn">
+                <svg class="icon" aria-hidden="true" style="width:14px;height:14px;"><use href="#i-play"></use></svg>
+                <span>Start Mining</span>
+              </button>
+              <button class="btn btn-danger" id="stop-btn" disabled>
+                <svg class="icon" aria-hidden="true" style="width:14px;height:14px;"><use href="#i-stop"></use></svg>
+                <span>Stop</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Grid — XMRig-style Professional Metrics -->
+        <div class="stats-grid">
+
+          <!-- HASHRATE (primary) -->
+          <div class="stat-card">
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Hashrate</h3>
+            <div class="value" id="hashrate-value">0.00</div>
+            <div class="label" id="hashrate-unit" title="Click to toggle units">kH/s</div>
+            <div class="stat-sub">
+              <div class="sub-item"><span class="sub-label">10s</span><span class="sub-value accent-cyan" id="hr-10s">—</span></div>
+              <div class="sub-item"><span class="sub-label">60s</span><span class="sub-value accent-cyan" id="hr-60s">—</span></div>
+              <div class="sub-item"><span class="sub-label">15m</span><span class="sub-value accent-cyan" id="hr-15m">—</span></div>
+              <div class="sub-item"><span class="sub-label">Max</span><span class="sub-value accent-green" id="hr-max">—</span></div>
+            </div>
+          </div>
+
+          <!-- SHARES -->
+          <div class="stat-card">
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-check"></use></svg>Shares</h3>
+            <div class="value" id="shares-value">0 / 0</div>
+            <div class="label" id="shares-label">Accepted / Rejected</div>
+            <div class="stat-sub">
+              <div class="sub-item"><span class="sub-label">Rate</span><span class="sub-value accent-green" id="share-rate">—</span></div>
+              <div class="sub-item"><span class="sub-label">Best Diff</span><span class="sub-value accent-gold" id="best-diff">—</span></div>
+              <div class="sub-item"><span class="sub-label">Latency</span><span class="sub-value" id="pool-latency">—</span></div>
+            </div>
+          </div>
+
+          <!-- UPTIME -->
+          <div class="stat-card">
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-refresh"></use></svg>Uptime</h3>
+            <div class="value" id="uptime-value">00:00:00</div>
+            <div class="label">HH:MM:SS</div>
+            <div class="stat-sub">
+              <div class="sub-item"><span class="sub-label">Hashes</span><span class="sub-value accent-cyan" id="total-hashes">—</span></div>
+              <div class="sub-item"><span class="sub-label">Conn</span><span class="sub-value" id="conn-count">1</span></div>
+            </div>
+          </div>
+
+          <!-- DIFFICULTY -->
+          <div class="stat-card">
+            <h3>⛏️ Difficulty</h3>
+            <div class="value" id="difficulty-value">—</div>
+            <div class="label">Pool Difficulty</div>
+            <div class="stat-sub">
+              <div class="sub-item"><span class="sub-label">Height</span><span class="sub-value accent-purple" id="pool-height">—</span></div>
+              <div class="sub-item"><span class="sub-label">Algorithm</span><span class="sub-value accent-cyan" id="active-algo">—</span></div>
+            </div>
+          </div>
+
+          <!-- BLOCKS FOUND -->
+          <div class="stat-card" id="blocks-card">
+            <h3>🏆 Blocks Found</h3>
+            <div class="value" id="blocks-value">0</div>
+            <div class="label" id="blocks-label">Total blocks mined</div>
+          </div>
+
+          <!-- HARDWARE -->
+          <div class="stat-card">
+            <h3>🖥️ Hardware</h3>
+            <div class="value" id="hw-threads">—</div>
+            <div class="label">Threads</div>
+            <div class="stat-sub">
+              <div class="sub-item"><span class="sub-label">CPU</span><span class="sub-value" id="hw-cpu-hr">—</span></div>
+              <div class="sub-item"><span class="sub-label">GPU</span><span class="sub-value accent-green" id="hw-gpu-hr">—</span></div>
+              <div class="sub-item"><span class="sub-label">Device</span><span class="sub-value accent-purple" id="hw-gpu-name">—</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+
+      <!-- Wallet View (hidden by default) -->
+      <div id="wallet-view" class="view-shell" style="display: none;">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-wallet"></use></svg>Security</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Wallet</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION Identity Vault</div>
+            </div>
+            <div class="web29-subtitle">Manage your <span style="font-family:monospace;color:var(--zion-gold);">zion1...</span> addresses, balances, and transactions</div>
+          </div>
+        </div>
+
+        <!-- Active Wallet -->
+        <div class="control-panel" style="margin-top: 24px;">
+          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+            <span>Active Wallet</span>
+          </h2>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Wallet Address (for mining + balance)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="text" id="active-wallet-address" placeholder="zion1..." style="flex:1; font-family:monospace;" />
+              <button class="btn btn-primary" id="set-active-wallet-btn">
+                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                <span>Use</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Balance + QR row -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div style="padding:18px; background:rgba(0,0,0,0.4); border-radius:12px; border:1px solid rgba(16,185,129,0.25);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; margin-bottom:8px;">ON-CHAIN BALANCE</div>
+              <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+                <div style="font-size:30px; font-weight:700; color:#6ee7b7;" id="wallet-balance">—</div>
+                <div style="color:rgba(255,255,255,0.5); font-weight:600;">ZION</div>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px;">
+                <div style="padding:8px; background:rgba(16,185,129,0.08); border-radius:8px; border:1px solid rgba(16,185,129,0.15);">
+                  <div style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:600; letter-spacing:0.08em;">POOL PENDING</div>
+                  <div style="font-size:14px; font-weight:600; color:#fbbf24;" id="pool-pending-balance">—</div>
+                </div>
+                <div style="padding:8px; background:rgba(16,185,129,0.08); border-radius:8px; border:1px solid rgba(16,185,129,0.15);">
+                  <div style="color:rgba(255,255,255,0.4); font-size:9px; font-weight:600; letter-spacing:0.08em;">POOL PAID</div>
+                  <div style="font-size:14px; font-weight:600; color:#6ee7b7;" id="pool-paid-balance">—</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px; margin-bottom:6px;">
+                <div style="padding:4px 8px; background:rgba(255,255,255,0.05); border-radius:6px; font-size:10px; color:rgba(255,255,255,0.4);">
+                  Shares: <span id="pool-shares-count" style="color:#6ee7b7;">—</span>
+                </div>
+                <div style="padding:4px 8px; background:rgba(255,255,255,0.05); border-radius:6px; font-size:10px; color:rgba(255,255,255,0.4);">
+                  Blocks: <span id="pool-blocks-count" style="color:#c4b5fd;">—</span>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="refresh-balance-btn" style="border-color:rgba(16,185,129,0.3); color:#6ee7b7;">
+                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg>
+                Refresh
+              </button>
+              <div id="wallet-balance-status" style="margin-top:8px; color:rgba(255,255,255,0.4); font-size:11px;"></div>
+            </div>
+
+            <div style="padding:18px; background:rgba(0,0,0,0.4); border-radius:12px; border:1px solid rgba(147,51,234,0.25);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; margin-bottom:8px;">RECEIVE (QR)</div>
+              <div style="display:flex; gap:14px; align-items:center;">
+                <div style="width:120px; height:120px; border-radius:10px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); display:grid; place-items:center; overflow:hidden;">
+                  <img id="receive-qr-img" alt="Receive QR" style="width:120px; height:120px; display:none;" />
+                  <div id="receive-qr-placeholder" style="color:rgba(255,255,255,0.3); font-size:11px; text-align:center; padding:10px;">No QR</div>
+                </div>
+                <div style="flex:1;">
+                  <button class="btn btn-ghost btn-sm" id="generate-qr-btn" style="border-color:rgba(147,51,234,0.3); color:#c4b5fd;">
+                    <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-spark"></use></svg>
+                    Generate QR
+                  </button>
+                  <div id="receive-qr-status" style="margin-top:8px; color:rgba(255,255,255,0.4); font-size:11px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Send Transaction -->
+        <div class="control-panel" style="margin-top: 20px;">
+          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Send Transaction</span>
+          </h2>
+          <div style="display:grid; grid-template-columns:1fr 180px; gap:14px;">
+            <div class="form-group" style="margin:0;">
+              <label>To Address</label>
+              <input type="text" id="send-to-address" placeholder="zion1..." style="font-family:monospace;" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Amount</label>
+              <input type="number" id="send-amount" min="0" step="0.00000001" placeholder="0.0" />
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:14px;">
+            <label>Purpose (optional)</label>
+            <input type="text" id="send-purpose" placeholder="e.g. payout" />
+          </div>
+          <button class="btn btn-primary" id="send-tx-btn" style="margin-top:8px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Send Transaction</span>
+          </button>
+          <div id="send-status" style="margin-top:8px; color:rgba(255,255,255,0.4); font-size:11px;"></div>
+        </div>
+
+        <!-- Transaction Lookup -->
+        <div class="control-panel" style="margin-top: 20px;">
+          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+            <span>Transaction Lookup</span>
+          </h2>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" id="tx-lookup-id" placeholder="Transaction ID (hash)" style="flex:1; font-family:monospace;" />
+            <button class="btn btn-ghost" id="tx-lookup-btn" style="border-color:rgba(147,51,234,0.3); color:#c4b5fd;">
+              <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+              Lookup
+            </button>
+          </div>
+          <div id="tx-lookup-result" style="margin-top:12px; padding:12px; background:rgba(0,0,0,0.3); border-radius:8px; border:1px solid rgba(255,255,255,0.06); font-family:monospace; font-size:12px; color:rgba(255,255,255,0.6); display:none; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto;"></div>
+        </div>
+
+        <!-- Create New Wallet -->
+        <div class="control-panel" style="margin-top: 20px;">
+          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            <span>Create New Wallet</span>
+          </h2>
+          <p style="margin-bottom:16px; color:rgba(255,255,255,0.5); font-size:13px;">Generate a new ZION wallet with Ed25519 keypair and 12-word recovery phrase.</p>
+
+          <div id="wallet-generator">
+            <div class="form-group">
+              <label>Wallet Name</label>
+              <input type="text" id="new-wallet-name" placeholder="My Mining Wallet" value="My Wallet" />
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="form-group" style="margin:0;">
+                <label>Password</label>
+                <input type="password" id="new-wallet-password" placeholder="Strong password..." />
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label>Confirm Password</label>
+                <input type="password" id="new-wallet-password-confirm" placeholder="Repeat password..." />
+              </div>
+            </div>
+            <div class="button-group" style="margin-top:14px;">
+              <button class="btn btn-primary" id="generate-wallet-btn">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                <span>Generate Wallet</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Generated Wallet Display -->
+          <div id="wallet-display" style="display:none; margin-top:20px;">
+            <div style="padding:20px; background:rgba(0,0,0,0.4); border-radius:12px; border:1px solid rgba(212,175,55,0.35);">
+              <h3 style="color:var(--zion-gold); margin-bottom:14px; display:flex; align-items:center; gap:8px; font-size:14px;">
+                <svg class="icon" aria-hidden="true" style="width:16px;height:16px;"><use href="#i-check"></use></svg>
+                <span>Wallet Generated!</span>
+              </h3>
+              <div style="margin-bottom:14px;">
+                <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; margin-bottom:6px;">ZION ADDRESS</div>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" id="generated-address" readonly style="flex:1; font-family:monospace; background:rgba(0,0,0,0.6);" />
+                  <button class="btn btn-ghost btn-sm" id="copy-address-btn" style="border-color:rgba(147,51,234,0.3); color:#c4b5fd;">
+                    <svg class="icon" aria-hidden="true" style="width:14px;height:14px;"><use href="#i-copy"></use></svg>
+                  </button>
+                </div>
+              </div>
+              <div style="margin-bottom:14px;">
+                <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; margin-bottom:6px;">RECOVERY PHRASE (12 WORDS)</div>
+                <textarea id="generated-mnemonic" readonly rows="2" style="width:100%; padding:10px; background:rgba(0,0,0,0.6); border:1px solid rgba(147,51,234,0.2); border-radius:8px; color:#fff; font-family:monospace; font-size:12px; resize:none;"></textarea>
+                <p style="color:#f87171; font-size:11px; margin-top:6px; display:flex; align-items:center; gap:6px;">
+                  <svg class="icon" aria-hidden="true" style="width:14px;height:14px;"><use href="#i-alert"></use></svg>
+                  <strong>IMPORTANT:</strong> Write down your recovery phrase and store it safely!
+                </p>
+              </div>
+              <div class="button-group">
+                <button class="btn btn-primary" id="save-wallet-btn">
+                  <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
+                  <span>Save Wallet</span>
+                </button>
+                <button class="btn btn-danger" id="cancel-wallet-btn">
+                  <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+                  <span>Cancel</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- My Wallets -->
+        <div class="control-panel" style="margin-top: 20px;">
+          <h2 style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <span style="display:flex; align-items:center; gap:10px;">
+              <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              <span>My Wallets</span>
+            </span>
+            <button class="btn btn-ghost btn-sm" id="refresh-wallets-btn">
+              <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg>
+              Refresh
+            </button>
+          </h2>
+          <div id="wallets-list">
+            <p style="color:rgba(255,255,255,0.3); text-align:center; padding:30px; font-size:13px;">No wallets yet. Create one above!</p>
+          </div>
+        </div>
+
+        <!-- Import Wallet -->
+        <div class="control-panel" style="margin-top: 20px;">
+          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
+            <span>Import Wallet</span>
+          </h2>
+          <p style="margin-bottom:14px; color:rgba(255,255,255,0.5); font-size:13px;">Restore wallet from 12-word recovery phrase.</p>
+          <div class="form-group">
+            <label>Recovery Phrase (12 words)</label>
+            <textarea id="import-mnemonic" rows="2" placeholder="word1 word2 word3 ... word12" style="resize:none;"></textarea>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="form-group" style="margin:0;">
+              <label>Wallet Name</label>
+              <input type="text" id="import-wallet-name" placeholder="Imported Wallet" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Password</label>
+              <input type="password" id="import-wallet-password" placeholder="Password to encrypt..." />
+            </div>
+          </div>
+          <div class="button-group" style="margin-top:14px;">
+            <button class="btn btn-primary" id="import-wallet-btn">
+              <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
+              <span>Import Wallet</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings View (hidden by default) -->
+      <div id="settings-view" class="view-shell" style="display: none;">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-settings"></use></svg>Configuration</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Settings</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Pool + Node Routing</div>
+            </div>
+            <div class="web29-subtitle">Wallet, pools, mining profile · all changes apply on next mining start</div>
+          </div>
+          <button class="btn btn-primary" id="save-settings-btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
+            <span>Save Profile</span>
+          </button>
+        </div>
+
+        <div class="settings-grid">
+          <section class="settings-card span-2">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Identity</p>
+                <h3>Wallet & Worker</h3>
+              </div>
+            </div>
+
+            <div class="form-grid two-col">
+              <label class="floating-field">
+                <span>ZION Wallet Address</span>
+                <input type="text" id="wallet-input" placeholder="zion1..." />
+              </label>
+              <label class="floating-field">
+                <span>Worker Name</span>
+                <input type="text" id="worker-input" value="desktop-agent" />
+              </label>
+              <label class="floating-field span-2">
+                <span>Chain RPC URL</span>
+                <input type="text" id="rpc-url" placeholder="http://localhost:8444/jsonrpc" />
+              </label>
+            </div>
+
+            <div class="toggle-field">
+              <input type="checkbox" id="autostart-checkbox" />
+              <div>
+                <p>Auto-start mining on launch</p>
+                <small>Mining will resume with the last known profile</small>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-card span-2">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Routing</p>
+                <h3>Mining Pools</h3>
+              </div>
+              <span class="badge badge-neutral">VarDiff ready</span>
+            </div>
+
+            <div class="pool-grid">
+              <label class="pool-card">
+                <input type="radio" name="pool-select" value="77.42.31.72:3333" id="pool-helsinki" checked />
+                <div class="pool-card-body">
+                  <div class="pool-meta">
+                    <span class="pill pill-purple">Helsinki</span>
+                    <span class="pill pill-gold">Primary</span>
+                  </div>
+                  <h4>Helsinki Pool (FI)</h4>
+                  <p>77.42.31.72:3333</p>
+                </div>
+              </label>
+
+              <label class="pool-card">
+                <input type="radio" name="pool-select" value="195.201.31.201:3333" id="pool-germany" />
+                <div class="pool-card-body">
+                  <div class="pool-meta">
+                    <span class="pill pill-cyan">Germany</span>
+                    <span class="pill">TestNet</span>
+                  </div>
+                  <h4>Germany Pool (DE)</h4>
+                  <p>195.201.31.201:3333</p>
+                </div>
+              </label>
+
+              <label class="pool-card span-2">
+                <input type="radio" name="pool-select" value="custom" id="pool-custom" />
+                <div class="pool-card-body">
+                  <div class="pool-meta">
+                    <span class="pill">Custom</span>
+                  </div>
+                  <h4>Bring your own endpoint</h4>
+                  <div class="custom-pool-input">
+                    <input type="text" id="pool-input" placeholder="host:port" />
+                    <span>VarDiff is auto-negotiated</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Performance</p>
+                <h3>CPU Threads</h3>
+              </div>
+            </div>
+            <label class="threads-label">
+              <span>CPU allocation</span>
+              <span class="threads-meta"><span id="threads-value">4</span>/<span id="threads-max">32</span></span>
+            </label>
+            <input type="range" id="threads-input" min="1" max="32" value="4" class="slider" />
+            <div class="slider-hint">Optimise for stability by leaving 2 threads free</div>
+          </section>
+
+          <section class="settings-card">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Profile</p>
+                <h3>Mining Mode</h3>
+              </div>
+            </div>
+            <div class="mode-list">
+              <label class="mode-pill">
+                <input type="radio" name="mining-mode" value="cpu" id="mode-cpu" />
+                <div>
+                  <div class="mode-title">CPU Only</div>
+                  <p>Best efficiency • ~600 kH/s</p>
+                </div>
+              </label>
+              <label class="mode-pill">
+                <input type="radio" name="mining-mode" value="gpu" id="mode-gpu" />
+                <div>
+                  <div class="mode-title">GPU Only</div>
+                  <p>High throughput • ~8.5 GH/s</p>
+                </div>
+              </label>
+              <label class="mode-pill">
+                <input type="radio" name="mining-mode" value="dual" id="mode-dual" checked />
+                <div>
+                  <div class="mode-title">Dual (CPU + GPU)</div>
+                  <p class="text-success">MAX POWER • balanced latency</p>
+                </div>
+              </label>
+              <label class="mode-pill">
+                <input type="radio" name="mining-mode" value="gpu-revenue" id="mode-gpu-revenue" />
+                <div>
+                  <div class="mode-title">GPU Revenue Mining</div>
+                  <p class="text-warning">PROFIT SWITCH • ERG/RVN/KAS/ALPH</p>
+                </div>
+              </label>
+            </div>
+            <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously. GPU Revenue Mining automatically switches between ERG, RVN, KAS, and ALPH based on profitability.</div>
+            <input type="checkbox" id="gpu-checkbox" style="display:none;" />
+          </section>
+
+          <section class="settings-card">
+            <div class="card-heading">
+              <div class="card-icon gradient-slate">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Engine</p>
+                <h3>Miner Backend</h3>
+              </div>
+            </div>
+            <div class="mode-list">
+              <label class="mode-pill">
+                <input type="radio" name="miner-backend" value="auto" id="backend-auto" checked />
+                <div>
+                  <div class="mode-title">Auto</div>
+                  <p>Prefer Rust v2.9.5, fallback to Python</p>
+                </div>
+              </label>
+              <label class="mode-pill">
+                <input type="radio" name="miner-backend" value="rust" id="backend-rust" />
+                <div>
+                  <div class="mode-title">Rust (v2.9.5)</div>
+                  <p>Fast native miner • CH v3 ready</p>
+                </div>
+              </label>
+              <label class="mode-pill">
+                <input type="radio" name="miner-backend" value="python" id="backend-python" />
+                <div>
+                  <div class="mode-title">Python</div>
+                  <p>Fallback compatibility mode</p>
+                </div>
+              </label>
+            </div>
+            <div id="backend-status" class="mode-status">Auto selects Rust when available</div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Logs View (hidden by default) -->
+      <div id="logs-view" class="view-shell" style="display: none;">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-logs"></use></svg>Mining Console</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Logs</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Realtime</div>
+            </div>
+            <div class="web29-subtitle">Live miner output · stdout/stderr</div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-ghost btn-sm" id="toggle-debug-btn" title="Toggle App Diagnostics">
+              <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-info"></use></svg>
+              Debug
+            </button>
+            <button class="btn btn-primary" id="open-logs-btn">
+              <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
+              <span>Open Log File</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Mining Console — full width -->
+        <div class="mining-console" id="mining-console">
+          <div class="mining-console-header">
+            <div class="title">
+              <div class="dot offline" id="console-dot"></div>
+              <span>Mining Console</span>
+              <span id="console-status" style="color:rgba(255,255,255,0.3); font-weight:400;">idle</span>
+            </div>
+            <div class="controls">
+              <button class="ctrl-btn" id="console-clear-btn" title="Clear">⌫</button>
+              <button class="ctrl-btn" id="console-scroll-btn" title="Scroll to bottom">↓</button>
+            </div>
+          </div>
+          <div class="mining-console-body" id="console-body">
+            <!-- Static miner panel — SRBMiner style, overwrites in place -->
+            <div id="miner-static-panel" class="miner-static-panel" style="display:none;"></div>
+            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION Native Awakening v2.9.5</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
+            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
+          </div>
+        </div>
+
+        <!-- App Diagnostics — hidden debug drawer -->
+        <div id="debug-drawer" style="display:none; margin-top:12px; animation: fadeSlideIn 0.25s ease-out;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <h3 style="color:rgba(255,255,255,0.4); font-size:11px; text-transform:uppercase; letter-spacing:1.5px; font-weight:600; display:flex; align-items:center; gap:6px;">
+              <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-info"></use></svg>
+              App Diagnostics
+            </h3>
+            <span style="font-size:10px; color:rgba(255,255,255,0.2);">Internal debug output</span>
+          </div>
+          <div class="log-viewer" id="log-viewer" style="height:200px; border-radius:12px;">
+            <div class="log-entry info">System ready. Waiting for mining to start...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Network View (hidden by default) -->
+      <div id="network-view" class="view-shell" style="display: none;">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-refresh"></use></svg>Infrastructure</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Network</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>CH3 TestNet Servers</div>
+            </div>
+            <div class="web29-subtitle">Live monitoring of ZION Native Awakening infrastructure</div>
+          </div>
+        </div>
+
+        <!-- Network Telemetry (lite) -->
+        <div class="control-panel" style="margin-top: 24px;">
+          <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Network Telemetry</span>
+            <span style="margin-left:auto; font-size:11px; color:rgba(255,255,255,0.35); font-weight:400;" id="net-telemetry-updated">—</span>
+          </h2>
+          <!-- Summary cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(16,185,129,0.3);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">NODES ONLINE</div>
+              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#6ee7b7;" id="net-nodes-online">—</div>
+            </div>
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(96,165,250,0.3);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">BLOCK HEIGHT</div>
+              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#93c5fd;" id="net-block-height">—</div>
+            </div>
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(167,139,250,0.3);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">NETWORK HASHRATE</div>
+              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#c4b5fd;" id="net-hashrate">—</div>
+            </div>
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(251,191,36,0.3);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">ACTIVE MINERS</div>
+              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#fcd34d;" id="net-active-miners">—</div>
+            </div>
+          </div>
+          <!-- Sync status -->
+          <div id="net-sync-bar" style="padding:10px 14px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:14px;">
+            <span id="net-sync-icon" style="font-size:15px;">⏳</span>
+            <span id="net-sync-text" style="color:rgba(255,255,255,0.6);">Checking sync status...</span>
+          </div>
+          <!-- Per-node rows -->
+          <div id="net-node-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+
+        <!-- GPU Detection Panel -->
+        <div class="control-panel" style="margin-top: 24px;">
+          <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>GPU Detection</span>
+            <span class="gpu-badge cpu-only" id="net-gpu-badge" style="margin-left: auto;"><span id="net-gpu-badge-text">Scanning...</span></span>
+          </h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(147,51,234,0.2);">
+              <div style="color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;">GPU Name</div>
+              <div style="font-size:16px; font-weight:700; margin-top:4px;" id="net-gpu-name">—</div>
+            </div>
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(147,51,234,0.2);">
+              <div style="color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;">Type</div>
+              <div style="font-size:16px; font-weight:700; margin-top:4px;" id="net-gpu-type">—</div>
+            </div>
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(147,51,234,0.2);">
+              <div style="color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;">Memory</div>
+              <div style="font-size:16px; font-weight:700; margin-top:4px;" id="net-gpu-memory">—</div>
+            </div>
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(147,51,234,0.2);">
+              <div style="color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;">Mining Mode</div>
+              <div style="font-size:16px; font-weight:700; margin-top:4px;" id="net-mining-mode">CPU-Only</div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- P2P Peer Discovery Panel -->
+        <div class="control-panel" style="margin-top: 24px;">
+          <h2 style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <span style="display:flex; align-items:center; gap:10px;">
+              <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+              <span>P2P Peers</span>
+            </span>
+            <span style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:11px; color:rgba(255,255,255,0.35); font-weight:400;" id="net-peers-updated">—</span>
+              <button class="btn btn-ghost btn-sm" id="refresh-peers-btn">
+                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg>
+                Refresh
+              </button>
+            </span>
+          </h2>
+          <!-- Peer summary cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(16,185,129,0.3);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">CONNECTED</div>
+              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#6ee7b7;" id="net-peers-connected">—</div>
+            </div>
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(96,165,250,0.3);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">KNOWN PEERS</div>
+              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#93c5fd;" id="net-peers-known">—</div>
+            </div>
+            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(167,139,250,0.3);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">SEED NODES</div>
+              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#c4b5fd;">2</div>
+            </div>
+          </div>
+          <!-- Peer list -->
+          <div id="net-peer-list" style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto;">
+            <div style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:20px;">Loading peers...</div>
+          </div>
+        </div>
+
+        <!-- Server Status -->
+        <div class="control-panel" style="margin-top: 20px;">
+          <h2 style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <span style="display:flex; align-items:center; gap:10px;">
+              <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+              <span>TestNet Servers</span>
+            </span>
+            <button class="btn btn-ghost btn-sm" id="refresh-servers-btn">
+              <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg>
+              Refresh
+            </button>
+          </h2>
+          <div class="server-grid" id="server-grid">
+            <div class="server-card offline">
+              <div class="server-header">
+                <div class="server-name">🇫🇮 Helsinki</div>
+                <div class="server-status-dot off"></div>
+              </div>
+              <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
+            </div>
+            <div class="server-card offline">
+              <div class="server-header">
+                <div class="server-name">🇺🇸 USA</div>
+                <div class="server-status-dot off"></div>
+              </div>
+              <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
+            </div>
+            <div class="server-card offline">
+              <div class="server-header">
+                <div class="server-name">🇸🇬 Singapore</div>
+                <div class="server-status-dot off"></div>
+              </div>
+              <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- About View (hidden by default) -->
+      <div id="about-view" class="view-shell" style="display: none;">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-info"></use></svg>Project</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">About</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Where technology meets spirit</div>
+            </div>
+            <div class="web29-subtitle">ZION TerraNova · Consciousness-based blockchain</div>
+          </div>
+        </div>
+
+        <!-- Project Info -->
+        <div class="control-panel" style="margin-top: 24px;">
+          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>Native Awakening v2.9.5</span>
+          </h2>
+          <p style="margin-bottom:18px; line-height:1.8; color:rgba(255,255,255,0.65); font-size:14px;">
+            <strong style="background:linear-gradient(135deg, var(--zion-gold), var(--zion-purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Desktop Mining Agent</strong> — Professional mining software with one-click Rust miner, real-time statistics, and full wallet management.
+          </p>
+
+          <!-- Info cards grid -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px;">
+            <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(212,175,55,0.25);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-info"></use></svg> VERSION
+              </div>
+              <div style="font-size:18px; font-weight:700; color:#fcd34d;">2.9.5</div>
+              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">Native Awakening</div>
+            </div>
+            <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(16,185,129,0.25);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-spark"></use></svg> ALGORITHM
+              </div>
+              <div style="font-size:18px; font-weight:700; color:#6ee7b7;">Cosmic Harmony v3</div>
+              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">ZION Proof-of-Work</div>
+            </div>
+            <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(96,165,250,0.25);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg> NETWORK
+              </div>
+              <div style="font-size:18px; font-weight:700; color:#93c5fd;">TestNet</div>
+              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">2 seed nodes · EU-NORTH + EU-CENTRAL</div>
+            </div>
+            <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(167,139,250,0.25);">
+              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-spark"></use></svg> ENGINE
+              </div>
+              <div style="font-size:18px; font-weight:700; color:#c4b5fd;">Rust Native</div>
+              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">CPU + GPU · Stratum v2</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links -->
+        <div class="control-panel" style="margin-top: 20px;">
+          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
+            <span>Links &amp; Resources</span>
+          </h2>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:16px;">🌐</span>
+                <span style="font-weight:600;">Website</span>
+              </div>
+              <a href="https://zionterranova.com" style="color:var(--zion-gold); text-decoration:none; font-family:monospace; font-size:13px;">zionterranova.com</a>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:16px;">💻</span>
+                <span style="font-weight:600;">GitHub</span>
+              </div>
+              <a href="https://github.com/zionterranova" style="color:var(--zion-cyan); text-decoration:none; font-family:monospace; font-size:13px;">github.com/zionterranova</a>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:16px;">⛏️</span>
+                <span style="font-weight:600;">Mining Pools</span>
+              </div>
+              <span style="font-family:monospace; font-size:12px; color:rgba(255,255,255,0.6);">77.42.31.72:3333 · 195.201.31.201:3333</span>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:16px;">🔗</span>
+                <span style="font-weight:600;">RPC Endpoints</span>
+              </div>
+              <span style="font-family:monospace; font-size:12px; color:rgba(255,255,255,0.6);">:8444/jsonrpc · P2P :8334</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Philosophy -->
+        <div class="control-panel" style="margin-top: 20px;">
+          <div style="text-align:center; padding:20px 0;">
+            <div style="font-size:28px; margin-bottom:10px;">✨</div>
+            <p style="font-size:15px; color:rgba(255,255,255,0.55); line-height:1.8; max-width:500px; margin:0 auto; font-style:italic;">
+              "Where Technology Meets Spirit"
+            </p>
+            <p style="font-size:12px; color:rgba(255,255,255,0.3); margin-top:8px;">© 2025–2026 ZION TerraNova · Peace and One Love</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

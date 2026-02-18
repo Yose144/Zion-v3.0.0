@@ -1,0 +1,50 @@
+{
+  "orderId": "TEST-R-003",
+  "customer": {
+    "name": "Local Rasta",
+    "email": "rasta@local.test",
+    "phone": "420777123456",
+    "address": {
+      "street": "Zion Mount 1",
+      "city": "New Earth",
+      "zip": "77777"
+    }
+  },
+  "items": [
+    {
+      "id": "item-1",
+      "name": "Zion Hoodie",
+      "price": 1000,
+      "quantity": 1,
+      "tokens": 2000
+    }
+  ],
+  "shipping": {
+    "method": "zasilkovna",
+    "price": 79,
+    "pickupPoint": {
+        "name": "Z-Point",
+        "street": "Point St 1",
+        "city": "Point City"
+    }
+  },
+  "payment": {
+    "method": "transfer",
+    "price": 0
+  },
+  "total": 1079,
+  "zion": {
+    "tokens": {
+        "totalTokens": 2000,
+        "items": []
+    },
+    "wallet": {
+        "id": "zw_test_local",
+        "address": "zion1testlocal",
+        "mnemonic": "local mnemonic words list"
+    },
+    "qr": {
+        "serviceUrl": "https://example.com/qr"
+    }
+  }
+}

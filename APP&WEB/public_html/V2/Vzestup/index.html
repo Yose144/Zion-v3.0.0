@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vzestup — Portál duchovního růstu | ZION TerraNova</title>
+  <meta name="description" content="Materiály věnované vzestupu, duchovnímu růstu a pomoci Zemi a lidem na vzestupu. Archív překladů, meditací, iniciací a moudrosti.">
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../rasta.css" />
+  <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+  <style>
+    /* === VZESTUP PORTAL STYLES === */
+    :root {
+      --vz-violet: #9b59b6;
+      --vz-violet-dark: #6c3483;
+      --vz-violet-light: #d2b4de;
+      --vz-gold: #f1c40f;
+      --vz-bg: #0a0a14;
+      --vz-card-bg: rgba(155, 89, 182, 0.08);
+      --vz-card-border: rgba(155, 89, 182, 0.25);
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--vz-bg);
+      color: #e0d6eb;
+      min-height: 100vh;
+    }
+
+    /* HERO */
+    .vz-hero {
+      position: relative;
+      min-height: 55vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 20px 40px;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(155,89,182,0.25) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 100%, rgba(108,52,131,0.15) 0%, transparent 50%),
+        linear-gradient(180deg, #0a0a14 0%, #12091c 100%);
+      overflow: hidden;
+    }
+    .vz-hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('./vzestup.webpark.cz/violetmarble.jpg') center/cover;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+    .vz-hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 700px;
+    }
+    .vz-hero .vz-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--vz-violet), var(--vz-violet-dark));
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+    .vz-hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      margin: 0 0 12px;
+      background: linear-gradient(135deg, #d2b4de, #f1c40f, #d2b4de);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .vz-hero h2 {
+      font-size: clamp(1rem, 2.5vw, 1.35rem);
+      font-weight: 300;
+      margin: 0 0 8px;
+      color: var(--vz-violet-light);
+      font-style: italic;
+    }
+    .vz-hero .subtitle {
+      color: #a090b0;
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+    .vz-hero .namaste {
+      color: var(--vz-gold);
+      font-size: 1.1rem;
+      font-style: italic;
+      margin-top: 16px;
+    }
+    .vz-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, var(--vz-violet), var(--vz-violet-dark));
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(155,89,182,0.4);
+    }
+    .vz-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(155,89,182,0.35);
+      background: linear-gradient(135deg, var(--vz-violet-dark), #4a235a);
+    }
+    .vz-btn-outline {
+      background: transparent;
+      border: 1px solid var(--vz-violet);
+      color: var(--vz-violet-light);
+    }
+    .vz-btn-outline:hover {
+      background: rgba(155,89,182,0.15);
+    }
+
+    /* BACK LINK */
+    .vz-back {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 100;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      background: rgba(10,10,20,0.85);
+      border: 1px solid var(--vz-card-border);
+      color: var(--vz-violet-light);
+      text-decoration: none;
+      font-size: 0.85rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+    .vz-back:hover {
+      background: rgba(155,89,182,0.2);
+      color: #fff;
+    }
+
+    /* SECTIONS */
+    .vz-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 50px 20px;
+    }
+    .vz-section-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .vz-section-title h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 700;
+      margin: 0 0 8px;
+      background: linear-gradient(135deg, var(--vz-violet-light), var(--vz-gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .vz-section-title p {
+      color: #a090b0;
+      font-size: 0.95rem;
+    }
+
+    /* PORTAL GRID */
+    .vz-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .vz-card {
+      background: var(--vz-card-bg);
+      border: 1px solid var(--vz-card-border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .vz-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--vz-violet), var(--vz-gold), var(--vz-violet));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .vz-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--vz-violet);
+      box-shadow: 0 12px 40px rgba(155,89,182,0.15);
+    }
+    .vz-card:hover::before {
+      opacity: 1;
+    }
+    .vz-card-icon {
+      font-size: 2.2rem;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .vz-card-icon img {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 2px solid var(--vz-card-border);
+    }
+    .vz-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 8px;
+      color: #e8daf0;
+    }
+    .vz-card h3 a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .vz-card h3 a:hover {
+      color: var(--vz-gold);
+    }
+    .vz-card p {
+      color: #a090b0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin: 0 0 16px;
+    }
+    .vz-card-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .vz-card-links li {
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(155,89,182,0.1);
+    }
+    .vz-card-links li:last-child {
+      border-bottom: none;
+    }
+    .vz-card-links a {
+      color: var(--vz-violet-light);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .vz-card-links a::before {
+      content: '◈';
+      color: var(--vz-violet);
+      font-size: 0.7rem;
+    }
+    .vz-card-links a:hover {
+      color: var(--vz-gold);
+    }
+
+    /* ARTICLES GRID */
+    .vz-articles {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .vz-article-item {
+      background: rgba(155,89,182,0.05);
+      border: 1px solid rgba(155,89,182,0.15);
+      border-radius: 10px;
+      padding: 14px 16px;
+      transition: all 0.2s ease;
+    }
+    .vz-article-item:hover {
+      border-color: var(--vz-violet);
+      background: rgba(155,89,182,0.1);
+    }
+    .vz-article-item a {
+      color: var(--vz-violet-light);
+      text-decoration: none;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .vz-article-item a:hover {
+      color: var(--vz-gold);
+    }
+
+    /* DIVIDER */
+    .vz-divider {
+      max-width: 200px;
+      margin: 0 auto;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--vz-violet), transparent);
+    }
+
+    /* FOOTER */
+    .vz-footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: #605070;
+      font-size: 0.85rem;
+    }
+    .vz-footer a {
+      color: var(--vz-violet-light);
+      text-decoration: none;
+    }
+    .vz-footer a:hover {
+      color: var(--vz-gold);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      .vz-grid {
+        grid-template-columns: 1fr;
+      }
+      .vz-hero {
+        min-height: 40vh;
+        padding: 80px 16px 32px;
+      }
+      .vz-back {
+        top: 10px;
+        left: 10px;
+        font-size: 0.8rem;
+        padding: 6px 14px;
+      }
+    }
+
+    /* EXPAND/COLLAPSE */
+    .vz-expandable {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease;
+    }
+    .vz-expandable.open {
+      max-height: 3000px;
+    }
+    .vz-expand-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(155,89,182,0.15);
+      border: 1px solid var(--vz-card-border);
+      color: var(--vz-violet-light);
+      padding: 8px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      margin-top: 12px;
+    }
+    .vz-expand-btn:hover {
+      background: rgba(155,89,182,0.25);
+      color: #fff;
+    }
+    .vz-expand-btn i {
+      transition: transform 0.3s ease;
+    }
+    .vz-expand-btn.active i {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body>
+
+<!-- BACK LINK -->
+<a href="../halls.html" class="vz-back">
+  <i class="fa-solid fa-arrow-left"></i> Zpět do Amenti
+</a>
+
+<!-- HERO -->
+<section class="vz-hero">
+  <div class="vz-hero-content">
+    <span class="vz-badge">🔮 Vzestup Portál</span>
+    <h1>Vzestup & Duchovní růst</h1>
+    <h2>Materiály věnované vzestupu, duchovnímu růstu<br>a pomoci Zemi a lidem na vzestupu</h2>
+    <p class="subtitle">Archív překladů, channelingů, meditací, iniciací a moudrosti · Původně vzestup.webpark.cz</p>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+      <a href="#portals" class="vz-btn"><i class="fa-solid fa-compass"></i> Prozkoumat sekce</a>
+      <a href="./vzestup.webpark.cz/uvod.html" class="vz-btn vz-btn-outline"><i class="fa-solid fa-scroll"></i> Původní úvod</a>
+    </div>
+    <p class="namaste">🙏 Namaste — Bůh Já JSEM mé duše stále zdraví Boha Já JSEM ve tvé bytosti</p>
+  </div>
+</section>
+
+<!-- MAIN PORTAL SECTIONS -->
+<section class="vz-section" id="portals">
+  <div class="vz-section-title">
+    <h2>✦ Brány Portálu ✦</h2>
+    <p>Šest hlavních sekcí duchovního vzestupu</p>
+  </div>
+
+  <div class="vz-grid">
+
+    <!-- 1. FIALOVÝ PLAMEN -->
+    <div class="vz-card">
+      <div class="vz-card-icon">
+        <img src="./vzestup.webpark.cz/violetfire.jpg" alt="Fialový plamen">
+        🔥
+      </div>
+      <h3><a href="./vzestup.webpark.cz/f_plamen/index_fp.html">Očistný Fialový plamen</a></h3>
+      <p>Fialový plamen léčící tělo, mysl i duši. Dekrety, meditace a cvičení se Saint Germainem.</p>
+      <ul class="vz-card-links">
+        <li><a href="./vzestup.webpark.cz/f_plamen/index_fp.html">Hlavní stránka</a></li>
+        <li><a href="./vzestup.webpark.cz/f_plamen/violetflame.html">O Fialovém plameni</a></li>
+        <li><a href="./vzestup.webpark.cz/f_plamen/decrees.html">Dekrety</a></li>
+        <li><a href="./vzestup.webpark.cz/f_plamen/nine_steps.html">Devět kroků</a></li>
+        <li><a href="./vzestup.webpark.cz/f_plamen/presence.html">Přítomnost</a></li>
+        <li><a href="./vzestup.webpark.cz/f_plamen/chart.html">Harmonický diagram</a></li>
+      </ul>
+    </div>
+
+    <!-- 2. DUCHOVNÍ ŠKOLA VZESTUPU -->
+    <div class="vz-card">
+      <div class="vz-card-icon">
+        <img src="./vzestup.webpark.cz/threecircle.jpg" alt="Vzestup">
+        🌀
+      </div>
+      <h3><a href="./vzestup.webpark.cz/karen/index_vz.html">Duchovní škola vzestupu</a></h3>
+      <p>Překlady článků Karen Danrich ("Míla") a Thomase Webera ("Oa") — nejrozsáhlejší sekce o procesu vzestupu a krystalické transformaci.</p>
+      <button class="vz-expand-btn" onclick="toggleExpand('karen-list', this)">
+        <i class="fa-solid fa-chevron-down"></i> Zobrazit všechny články
+      </button>
+      <div class="vz-expandable" id="karen-list">
+        <ul class="vz-card-links" style="margin-top: 14px;">
+          <li><a href="./vzestup.webpark.cz/karen/ca_ucel.html">O Duchovní škole vzestupu</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_what.html">Co je to vzestup?</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/wishints.html">Rady na cestu vzestupu</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/wishints2.html">Další rady na cestu vzestupu</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/wisoverview.html">Shrnutí procesu vzestupu</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_krist.html">Dosažení stavu Krista</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_egypt.html">Nová zasvěcení ze starého Egypta</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_hier.html">Nový rok vítá novou hierarchii</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_5da.html">Dosažení vědomí 5. dimenze</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_ggu.html">Návrat Boha a Bohyně sjednocených</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/a1liber.html">Dosažení osvobození</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_cryst.html">Krystalická forma</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_rize.html">Představení Lorda a Lady Rize</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_beyl.html">Dál za osvobozením</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_25da.html">Dosažení vědomí 25. dimenze</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/a1bodhi.html">Dosažení stavu Bódhisatvy</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/a17harm.html">Sedm zákonů neubližování</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/a1crechart.html">Kreační diagram</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_char1.html">Energetický diagram</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_dol1.html">Delfíní a velrybí pohyb</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_globu.html">Globální vzestup</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ca_hints.html">Tipy pro vzestup</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/ascend.html">Vzestup</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/nature1.html">Příroda a vzestup</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/muscle.html">Svalové testování</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/lgsupport.html">Podpora světelného jazyka</a></li>
+          <li><a href="./vzestup.webpark.cz/karen/easter.html">Velikonoční poselství</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 3. MOUDROSTI, RADY, MEDITACE -->
+    <div class="vz-card">
+      <div class="vz-card-icon">
+        <img src="./vzestup.webpark.cz/gautama.jpg" alt="Moudrosti">
+        🧘
+      </div>
+      <h3><a href="./vzestup.webpark.cz/moudra/index_m.html">Moudrosti · Rady · Meditace</a></h3>
+      <p>Poselství od Dalajlámy, Ježíše, iniciace od Armanda, umění meditace a praktické rady pro duchovní cestu.</p>
+      <button class="vz-expand-btn" onclick="toggleExpand('moudra-list', this)">
+        <i class="fa-solid fa-chevron-down"></i> Zobrazit všechny články
+      </button>
+      <div class="vz-expandable" id="moudra-list">
+        <ul class="vz-card-links" style="margin-top: 14px;">
+          <li><a href="./vzestup.webpark.cz/moudra/dalajlama.html">Poselství Dalajlámy k miléniu</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/umeni_med.html">Umění meditace (Ed. Tomáš)</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/otcenas.html">Otče Náš (Míla Tomášová)</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/venus.html">Přechod Venuše — brána Zlatého věku</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/sprehledem.html">Praktické rady pro život s přehledem</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/poselstvi_jez.html">Poselství od Ježíše</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/silaviry_jez.html">Síla tvé víry od Ježíše</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/planeta_lasky.html">Učiňme Zemi planetou Lásky</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/volanizeme.html">Volání Matky Země</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/svjan.html">Poselství ze sv. Jána</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/slunzasv.html">Sluneční zasvěcení</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/jaknaodpusteni.html">Jak na odpuštění</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/childrenmeditation.html">Meditace pro děti</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/kvet_med.html">Květinová meditace</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/firegrid.html">Ohnivá mříž</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/harmonicgrid.html">Harmonická mříž</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/wesak.html">Wesak</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/wesaklegenda.html">Legenda o Wesaku</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/altamajor.html">Alta Major</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/ruiz_plamen.html">Plamen (Ruiz)</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/shapiro.html">Shapiro</a></li>
+          <li><a href="./vzestup.webpark.cz/moudra/megrepraha.html">Megre — Praha</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 4. KNIHY -->
+    <div class="vz-card">
+      <div class="vz-card-icon">
+        <img src="./vzestup.webpark.cz/kkniha_1s.jpg" alt="Knihy">
+        📖
+      </div>
+      <h3>Knihy ke stažení</h3>
+      <p>E-knihy a příběhy od autorů ze světa vzestupu — Katrin: Návraty, Vanessa: Horský štít.</p>
+      <ul class="vz-card-links">
+        <li><a href="./vzestup.webpark.cz/katka/kkniha.html">Katrin — Návraty</a></li>
+        <li><a href="./vzestup.webpark.cz/katka/horskystit.pdf">Vanessa — Horský štít (PDF)</a></li>
+        <li><a href="./vzestup.webpark.cz/moudra/Neos.html">A. Grane: Klíč k pochopení vnitřního života (1927)</a></li>
+        <li><a href="./vzestup.webpark.cz/moudra/Verunka.html">Manfred Kyber: Verunčina tři světla</a></li>
+      </ul>
+    </div>
+
+    <!-- 5. RECONNECTION -->
+    <div class="vz-card">
+      <div class="vz-card-icon">
+        <img src="./vzestup.webpark.cz/prst.jpg" alt="Reconnection">
+        ✋
+      </div>
+      <h3><a href="./vzestup.webpark.cz/rc/index_rc.html">Reconnection</a></h3>
+      <p>Obnova napojení — Reconnective Healing, Eric Pearl, léčivé energie a reintegrační léčení.</p>
+      <ul class="vz-card-links">
+        <li><a href="./vzestup.webpark.cz/rc/index_rc.html">Úvod do Reconnection</a></li>
+        <li><a href="./vzestup.webpark.cz/rc/history.html">Historie</a></li>
+      </ul>
+    </div>
+
+    <!-- 6. WINGMAKERS -->
+    <div class="vz-card">
+      <div class="vz-card-icon">
+        🌌
+      </div>
+      <h3><a href="./vzestup.webpark.cz/wm/index_wm.html">WingMakers</a></h3>
+      <p>Materiály od WingMakers — Strážci portálů, časové kapsle a zvukové meditace z budoucnosti.</p>
+      <ul class="vz-card-links">
+        <li><a href="./vzestup.webpark.cz/wm/index_wm.html">Hlavní stránka</a></li>
+        <li><a href="./vzestup.webpark.cz/wm/wmsetup.html">Nastavení WM</a></li>
+        <li><a href="./vzestup.webpark.cz/wm/WingMakers-InetTisk.html">WingMakers pro tisk</a></li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<div class="vz-divider"></div>
+
+<!-- LYARA SECTION -->
+<section class="vz-section" id="lyara">
+  <div class="vz-section-title">
+    <h2>🌟 Poselství Lyary</h2>
+    <p>Chronologická sbírka channelingů a článků od Lyary (1999–2009)</p>
+  </div>
+  <div class="vz-articles">
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara19990704.html">Lyara — 4. 7. 1999</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara19990705.html">Lyara — 5. 7. 1999</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20001121.html">Lyara — 21. 11. 2000</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20011017.html">Lyara — 17. 10. 2001</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20011109.html">Lyara — 9. 11. 2001</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20011126.html">Lyara — 26. 11. 2001</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20020102.html">Lyara — 2. 1. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20020222.html">Lyara — 22. 2. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20020409.html">Lyara — 9. 4. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20020818.html">Lyara — 18. 8. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20020915.html">Lyara — 15. 9. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20030105.html">Lyara — 5. 1. 2003</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20030724.html">Lyara — 24. 7. 2003</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20040622cz.html">Lyara — 22. 6. 2004</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20040921.html">Lyara — 21. 9. 2004</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20041101.html">Lyara — 1. 11. 2004</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20041223.html">Lyara — 23. 12. 2004</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20041230.html">Lyara — 30. 12. 2004</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050121.html">Lyara — 21. 1. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050204.html">Lyara — 4. 2. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050305.html">Lyara — 5. 3. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050317.html">Lyara — 17. 3. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050410.html">Lyara — 10. 4. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050506.html">Lyara — 6. 5. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050527.html">Lyara — 27. 5. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050709.html">Lyara — 9. 7. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20050801.html">Lyara — 1. 8. 2005</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20060226.html">Lyara — 26. 2. 2006</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20060607.html">Lyara — 7. 6. 2006</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20060703.html">Lyara — 3. 7. 2006</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20060720.html">Lyara — 20. 7. 2006</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20060815.html">Lyara — 15. 8. 2006</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20060917.html">Lyara — 17. 9. 2006</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20061110.html">Lyara — 10. 11. 2006</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20061207.html">Lyara — 7. 12. 2006</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20070812.html">Lyara — 12. 8. 2007</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20070822.html">Lyara — 22. 8. 2007</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20071229.html">Lyara — 29. 12. 2007</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20080210.html">Lyara — 10. 2. 2008</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20080621.html">Lyara — 21. 6. 2008</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20080713.html">Lyara — 13. 7. 2008</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20090220.html">Lyara — 20. 2. 2009</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara20090420cz.html">Lyara — 20. 4. 2009</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara_art1.html">Lyara — článek 1</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara_art5.html">Lyara — článek 5</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara_art6.html">Lyara — článek 6</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara_art7.html">Lyara — článek 7</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/lyara_art8.html">Lyara — článek 8</a></div>
+  </div>
+</section>
+
+<div class="vz-divider"></div>
+
+<!-- SHELDAN NIDLE -->
+<section class="vz-section" id="sheldan">
+  <div class="vz-section-title">
+    <h2>💫 Poselství Sheldana Nidla</h2>
+    <p>Aktualizace od Galaktické federace světla</p>
+  </div>
+  <div class="vz-articles">
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20011023.html">SN — 23. 10. 2001</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20011218.html">SN — 18. 12. 2001</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20020305.html">SN — 5. 3. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20020326.html">SN — 26. 3. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20020402.html">SN — 2. 4. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20020409.html">SN — 9. 4. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20020611.html">SN — 11. 6. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20020924.html">SN — 24. 9. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20021008.html">SN — 8. 10. 2002</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/sn20030422.html">SN — 22. 4. 2003</a></div>
+  </div>
+</section>
+
+<div class="vz-divider"></div>
+
+<!-- VŮLE BOŽÍ -->
+<section class="vz-section" id="vule-bozi">
+  <div class="vz-section-title">
+    <h2>📜 Vůle Boží</h2>
+    <p>Kompletní série textů o Vůli Boží (11 dílů)</p>
+  </div>
+  <div class="vz-articles">
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi0.html">Vůle Boží — Úvod</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi1.html">Vůle Boží — díl 1</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi2.html">Vůle Boží — díl 2</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi3.html">Vůle Boží — díl 3</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi4.html">Vůle Boží — díl 4</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi5.html">Vůle Boží — díl 5</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi6.html">Vůle Boží — díl 6</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi7.html">Vůle Boží — díl 7</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi8.html">Vůle Boží — díl 8</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi9.html">Vůle Boží — díl 9</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_bozi10.html">Vůle Boží — díl 10</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/vule_pozvanka.html">Vůle Boží — pozvánka</a></div>
+  </div>
+</section>
+
+<div class="vz-divider"></div>
+
+<!-- METATRON & KAREN EXTRA -->
+<section class="vz-section" id="extra">
+  <div class="vz-section-title">
+    <h2>🕊️ Metatron & Karen — Další poselství</h2>
+    <p>Poselství od Lorda Metatrona a Mistra světla a míru</p>
+  </div>
+  <div class="vz-articles">
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/me-1stgate.html">Metatron — První brána</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/me-changegov.html">Metatron — Změna vlády</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/me_underway.html">Metatron — Na cestě</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/mebless.html">Metatron — Požehnání</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/meconcl2000.html">Metatron — Závěr 2000</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/mepeaceint.html">Metatron — Záměr míru</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/worldpeaceintend.html">Světový záměr míru</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/sun1.html">Slunce — díl 1</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/sun2.html">Slunce — díl 2</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/sun3.html">Slunce — díl 3</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/karen/sun7.html">Slunce — díl 7</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/karen20070424.html">Karen — 24. 4. 2007</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/karen20070621.html">Karen — 21. 6. 2007</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/buletin20070530.html">Buletin — 30. 5. 2007</a></div>
+    <div class="vz-article-item"><a href="./vzestup.webpark.cz/moudra/anchtetl_dopis.html">Anchtetl — veřejný dopis</a></div>
+  </div>
+</section>
+
+<div class="vz-divider"></div>
+
+<!-- ASEA & LOL & LINKS -->
+<section class="vz-section" id="asea-lol">
+  <div class="vz-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+    <!-- ASEA -->
+    <div class="vz-card">
+      <div class="vz-card-icon">⚗️</div>
+      <h3><a href="./vzestup.webpark.cz/asea/index_asea.html">ASEA — Tělo i duch</a></h3>
+      <p>Tělo i duch musí být v rovnováze. Materiály o celostním zdraví a regeneraci.</p>
+    </div>
+
+    <!-- LANGUAGE OF LIGHT -->
+    <div class="vz-card">
+      <div class="vz-card-icon">🌈</div>
+      <h3><a href="./vzestup.webpark.cz/karen/LOL/lolsymboly.html">Jazyk Světla — Symboly</a></h3>
+      <p>Symboly a nástroje Jazyka Světla pro duchovní přeměnu a komunikaci s vyššími dimenzemi.</p>
+      <ul class="vz-card-links">
+        <li><a href="./vzestup.webpark.cz/karen/LOL/lolsymboly.html">Symboly LOL</a></li>
+        <li><a href="./vzestup.webpark.cz/karen/LOL/lolutil.html">Nástroje LOL</a></li>
+      </ul>
+    </div>
+
+    <!-- ODKAZY -->
+    <div class="vz-card">
+      <div class="vz-card-icon">🔗</div>
+      <h3><a href="./vzestup.webpark.cz/index_lx.html">Zajímavé odkazy</a></h3>
+      <p>Kolekce užitečných odkazů na duchovní a vzdělávací zdroje po celém internetu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="vz-footer">
+  <p style="margin-bottom: 12px;">
+    <a href="../halls.html"><i class="fa-solid fa-arrow-left"></i> Zpět do Síní Amenti</a>
+    &nbsp; · &nbsp;
+    <a href="./vzestup.webpark.cz/index.html">Původní portál</a>
+    &nbsp; · &nbsp;
+    <a href="./vzestup.webpark.cz/zpravy.html">Co je nového (archiv)</a>
+  </p>
+  <p>Původní materiály © V. Kašpárek · vzestup.webpark.cz · Zachováno v rámci projektu <a href="../main.html">ZION TerraNova</a></p>
+  <p style="margin-top: 12px;">
+    <em>„Oceňuji místo v tobě, kde dlí celý vesmír."</em> — Namaste 🙏
+  </p>
+</footer>
+
+<script>
+  function toggleExpand(id, btn) {
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+    btn.classList.toggle('active');
+    if (el.classList.contains('open')) {
+      btn.innerHTML = '<i class="fa-solid fa-chevron-down"></i> Skrýt články';
+    } else {
+      btn.innerHTML = '<i class="fa-solid fa-chevron-down"></i> Zobrazit všechny články';
+    }
+  }
+</script>
+
+</body>
+</html>
+
+

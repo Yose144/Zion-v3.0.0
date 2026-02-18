@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION ⚡ 72h Stability Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--card:#111827;--border:#1e293b;--accent:#22d3ee;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--text:#e2e8f0;--dim:#64748b;--glow:0 0 20px rgba(34,211,238,.15)}
+body{background:var(--bg);color:var(--text);font-family:'SF Mono','Fira Code','Cascadia Code',monospace;min-height:100vh;padding:20px}
+.header{text-align:center;margin-bottom:32px}
+.header h1{font-size:28px;font-weight:700;background:linear-gradient(135deg,#22d3ee,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.header .sub{color:var(--dim);font-size:13px}
+.header .live{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-size:12px;margin-top:8px}
+.header .live .dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Progress bar */
+.progress-section{max-width:900px;margin:0 auto 32px}
+.progress-header{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px}
+.progress-bar{height:32px;background:var(--card);border-radius:16px;border:1px solid var(--border);overflow:hidden;position:relative}
+.progress-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#a78bfa);border-radius:16px;transition:width 1s ease;position:relative}
+.progress-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2));animation:shimmer 2s infinite}
+@keyframes shimmer{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+.progress-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);z-index:1}
+.time-cards{display:flex;gap:12px;justify-content:center;margin-top:16px}
+.time-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 20px;text-align:center;min-width:100px}
+.time-card .val{font-size:22px;font-weight:700;color:var(--accent)}
+.time-card .lbl{font-size:11px;color:var(--dim);margin-top:2px}
+
+/* Server grid */
+.servers{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;margin:0 auto 32px}
+@media(max-width:700px){.servers{grid-template-columns:1fr}}
+.server{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--glow)}
+.server.alert{border-color:var(--red);box-shadow:0 0 20px rgba(239,68,68,.15)}
+.server-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.server-head .flag{font-size:28px}
+.server-head .name{font-size:16px;font-weight:600}
+.server-head .ip{color:var(--dim);font-size:12px}
+.server-head .status{margin-left:auto;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600}
+.status-ok{background:rgba(16,185,129,.15);color:var(--green)}
+.status-warn{background:rgba(245,158,11,.15);color:var(--yellow)}
+.status-err{background:rgba(239,68,68,.15);color:var(--red)}
+
+.metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.metric{background:rgba(255,255,255,.03);border-radius:10px;padding:10px 12px}
+.metric .label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.metric .value{font-size:18px;font-weight:700}
+.metric .value.cyan{color:var(--accent)}
+.metric .value.green{color:var(--green)}
+.metric .value.yellow{color:var(--yellow)}
+.metric .value.red{color:var(--red)}
+.metric .bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:6px;overflow:hidden}
+.metric .bar-fill{height:100%;border-radius:2px;transition:width .5s}
+.bar-ok{background:var(--green)}
+.bar-warn{background:var(--yellow)}
+.bar-danger{background:var(--red)}
+
+/* Log console */
+.console{max-width:900px;margin:0 auto}
+.console-header{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.console-header .icon{color:var(--accent)}
+.log-box{background:#0d1117;border:1px solid var(--border);border-radius:12px;padding:16px;font-size:11px;line-height:1.8;max-height:280px;overflow-y:auto;color:var(--dim);white-space:pre;font-family:'SF Mono','Fira Code',monospace}
+.log-box .ok{color:var(--green)}
+.log-box .alert-line{color:var(--red);font-weight:600}
+
+/* Footer */
+.footer{text-align:center;margin-top:32px;color:var(--dim);font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ ZION TerraNova — 72h Stability Run</h1>
+  <div class="sub">Sprint 1.10 • TestNet v2.9.5 • Dual-Node Monitoring</div>
+  <div class="live"><span class="dot"></span> LIVE — auto-refresh 30s</div>
+</div>
+
+<div class="progress-section">
+  <div class="progress-header">
+    <span id="start-time">Start: —</span>
+    <span id="end-time">End: —</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    <div class="progress-text" id="progress-text">0%</div>
+  </div>
+  <div class="time-cards">
+    <div class="time-card"><div class="val" id="elapsed-h">—</div><div class="lbl">ELAPSED (h)</div></div>
+    <div class="time-card"><div class="val" id="remaining-h">—</div><div class="lbl">REMAINING (h)</div></div>
+    <div class="time-card"><div class="val" id="total-blocks">—</div><div class="lbl">BLOCK HEIGHT</div></div>
+    <div class="time-card"><div class="val" id="run-status">—</div><div class="lbl">STATUS</div></div>
+  </div>
+</div>
+
+<div class="servers">
+  <div class="server" id="srv-helsinki">
+    <div class="server-head">
+      <span class="flag">🇫🇮</span>
+      <div><div class="name">Helsinki</div><div class="ip">77.42.31.72</div></div>
+      <span class="status status-ok" id="h-status">—</span>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="label">Height</div><div class="value cyan" id="h-height">—</div></div>
+      <div class="metric"><div class="label">Peers</div><div class="value" id="h-peers">—</div></div>
+      <div class="metric"><div class="label">Difficulty</div><div class="value" id="h-diff">—</div></div>
+      <div class="metric"><div class="label">Mempool</div><div class="value" id="h-mempool">—</div></div>
+      <div class="metric"><div class="label">Last Block</div><div class="value" id="h-lastblock">—</div></div>
+      <div class="metric"><div class="label">Containers</div><div class="value" id="h-containers">—</div></div>
+      <div class="metric">
+        <div class="label">Memory</div><div class="value" id="h-mem">—</div>
+        <div class="bar"><div class="bar-fill" id="h-mem-bar" style="width:0%"></div></div>
+      </div>
+      <div class="metric">
+        <div class="label">Disk</div><div class="value" id="h-disk">—</div>
+        <div class="bar"><div class="bar-fill" id="h-disk-bar" style="width:0%"></div></div>
+      </div>
+      <div class="metric"><div class="label">Load</div><div class="value" id="h-load">—</div></div>
+    </div>
+  </div>
+
+  <div class="server" id="srv-singapore">
+    <div class="server-head">
+      <span class="flag">🇸🇬</span>
+      <div><div class="name">Singapore</div><div class="ip">5.223.56.124</div></div>
+      <span class="status status-ok" id="s-status">—</span>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="label">Height</div><div class="value cyan" id="s-height">—</div></div>
+      <div class="metric"><div class="label">Peers</div><div class="value" id="s-peers">—</div></div>
+      <div class="metric"><div class="label">Difficulty</div><div class="value" id="s-diff">—</div></div>
+      <div class="metric"><div class="label">Mempool</div><div class="value" id="s-mempool">—</div></div>
+      <div class="metric"><div class="label">Last Block</div><div class="value" id="s-lastblock">—</div></div>
+      <div class="metric"><div class="label">Containers</div><div class="value" id="s-containers">—</div></div>
+      <div class="metric">
+        <div class="label">Memory</div><div class="value" id="s-mem">—</div>
+        <div class="bar"><div class="bar-fill" id="s-mem-bar" style="width:0%"></div></div>
+      </div>
+      <div class="metric">
+        <div class="label">Disk</div><div class="value" id="s-disk">—</div>
+        <div class="bar"><div class="bar-fill" id="s-disk-bar" style="width:0%"></div></div>
+      </div>
+      <div class="metric"><div class="label">Load</div><div class="value" id="s-load">—</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="console">
+  <div class="console-header"><span class="icon">▸</span> Monitoring Log (Helsinki)</div>
+  <div class="log-box" id="log-box">Loading...</div>
+</div>
+
+<div class="footer">
+  ZION TerraNova v2.9.5 • Last update: <span id="last-update">—</span> • Refresh interval: 30s
+</div>
+
+<script>
+const API = 'https://zionterranova.com/dash/data.json';
+const FALLBACK = 'http://77.42.31.72/dash/data.json';
+
+function fmt(n) { return n != null ? n.toLocaleString() : '—'; }
+function fmtTime(s) {
+  if (s == null) return '—';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h + 'h ' + m + 'm';
+}
+function barClass(pct) {
+  if (pct > 85) return 'bar-danger';
+  if (pct > 70) return 'bar-warn';
+  return 'bar-ok';
+}
+function valClass(pct) {
+  if (pct > 85) return 'red';
+  if (pct > 70) return 'yellow';
+  return 'green';
+}
+
+function updateNode(prefix, node) {
+  const s = node.stats || {};
+  document.getElementById(prefix+'-height').textContent = fmt(s.height);
+  document.getElementById(prefix+'-peers').textContent = fmt(s.peers_connected);
+  document.getElementById(prefix+'-diff').textContent = fmt(s.difficulty);
+  document.getElementById(prefix+'-mempool').textContent = fmt(s.mempool_size);
+  document.getElementById(prefix+'-lastblock').textContent = s.time_since_last_block != null ? s.time_since_last_block + 's' : '—';
+  document.getElementById(prefix+'-containers').textContent = node.containers_up + '/' + node.containers_healthy + ' ✓';
+
+  const memPct = node.mem && node.mem.total > 0 ? Math.round(node.mem.used / node.mem.total * 100) : 0;
+  document.getElementById(prefix+'-mem').textContent = memPct + '%';
+  document.getElementById(prefix+'-mem').className = 'value ' + valClass(memPct);
+  document.getElementById(prefix+'-mem-bar').style.width = memPct + '%';
+  document.getElementById(prefix+'-mem-bar').className = 'bar-fill ' + barClass(memPct);
+
+  const diskPct = node.disk ? node.disk.used_pct : 0;
+  document.getElementById(prefix+'-disk').textContent = diskPct + '%';
+  document.getElementById(prefix+'-disk').className = 'value ' + valClass(diskPct);
+  document.getElementById(prefix+'-disk-bar').style.width = diskPct + '%';
+  document.getElementById(prefix+'-disk-bar').className = 'bar-fill ' + barClass(diskPct);
+
+  document.getElementById(prefix+'-load').textContent = node.load;
+
+  const statusEl = document.getElementById(prefix+'-status');
+  const serverEl = document.getElementById('srv-' + (prefix === 'h' ? 'helsinki' : 'singapore'));
+  if (s.status === 'healthy' && node.containers_up >= 4) {
+    statusEl.textContent = 'HEALTHY';
+    statusEl.className = 'status status-ok';
+    serverEl.classList.remove('alert');
+  } else if (s.status) {
+    statusEl.textContent = 'WARNING';
+    statusEl.className = 'status status-warn';
+  } else {
+    statusEl.textContent = 'OFFLINE';
+    statusEl.className = 'status status-err';
+    serverEl.classList.add('alert');
+  }
+}
+
+function colorLog(text) {
+  if (!text) return '';
+  return text.split('\\n').filter(l => l.trim()).map(line => {
+    if (line.includes('[') && !line.includes('| OK')) {
+      return '<span class="alert-line">' + line + '</span>';
+    }
+    if (line.includes('| OK')) {
+      return line.replace('OK', '<span class="ok">OK</span>');
+    }
+    return line;
+  }).join('\n');
+}
+
+async function refresh() {
+  try {
+    let res;
+    try { res = await fetch(API + '?t=' + Date.now()); }
+    catch { res = await fetch(FALLBACK + '?t=' + Date.now()); }
+    const d = await res.json();
+
+    // Progress
+    const sr = d.stability_run;
+    document.getElementById('progress-fill').style.width = sr.progress_pct + '%';
+    document.getElementById('progress-text').textContent = sr.progress_pct + '%';
+    document.getElementById('start-time').textContent = 'Start: ' + new Date(sr.start).toLocaleString();
+    const endDate = new Date(new Date(sr.start).getTime() + sr.duration_secs * 1000);
+    document.getElementById('end-time').textContent = 'End: ' + endDate.toLocaleString();
+    document.getElementById('elapsed-h').textContent = fmtTime(sr.elapsed_secs);
+    document.getElementById('remaining-h').textContent = fmtTime(sr.remaining_secs);
+
+    const hHeight = d.helsinki.stats?.height || 0;
+    const sHeight = d.singapore.stats?.height || 0;
+    document.getElementById('total-blocks').textContent = fmt(Math.max(hHeight, sHeight));
+
+    const allOk = d.helsinki.stats?.status === 'healthy' && d.singapore.stats?.status === 'healthy';
+    const runStatusEl = document.getElementById('run-status');
+    if (sr.progress_pct >= 100) {
+      runStatusEl.textContent = '✅ PASS';
+      runStatusEl.style.color = '#10b981';
+    } else if (allOk) {
+      runStatusEl.textContent = '● RUNNING';
+      runStatusEl.style.color = '#22d3ee';
+    } else {
+      runStatusEl.textContent = '⚠ ISSUE';
+      runStatusEl.style.color = '#ef4444';
+    }
+
+    // Nodes
+    updateNode('h', d.helsinki);
+    updateNode('s', d.singapore);
+
+    // Sync check
+    if (hHeight !== sHeight && hHeight > 0 && sHeight > 0) {
+      const diff = Math.abs(hHeight - sHeight);
+      if (diff > 2) {
+        document.getElementById(hHeight < sHeight ? 'h-height' : 's-height').style.color = '#f59e0b';
+      }
+    }
+
+    // Log
+    document.getElementById('log-box').innerHTML = colorLog(d.log_tail) || 'No log data';
+    document.getElementById('last-update').textContent = new Date(d.timestamp).toLocaleString();
+  } catch(e) {
+    document.getElementById('log-box').textContent = 'Fetch error: ' + e.message + '\nTrying: ' + API;
+  }
+}
+
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

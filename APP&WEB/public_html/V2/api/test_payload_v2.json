@@ -1,0 +1,49 @@
+{
+  "orderId": "TEST-R-002",
+  "customer": {
+    "name": "Rasta Tester",
+    "email": "tester@zion.rasta",
+    "phone": "420777123456",
+    "address": {
+      "street": "Zion Mount 1",
+      "city": "New Earth",
+      "zip": "77777",
+      "country": "Czech Republic"
+    }
+  },
+  "items": [
+    {
+      "id": "item-1",
+      "name": "Zion T-Shirt",
+      "price": 500,
+      "quantity": 2,
+      "tokens": 1000
+    }
+  ],
+  "shipping": {
+    "method": "zasilkovna",
+    "price": 79,
+    "pickupPoint": {
+      "name": "Z-Point Test"
+    }
+  },
+  "payment": {
+    "method": "transfer",
+    "price": 0
+  },
+  "total": 1079,
+  "zion": {
+    "tokens": {
+        "totalTokens": 2000,
+        "items": []
+    },
+    "wallet": {
+        "id": "zw_test123",
+        "address": "zion1testaddress",
+        "mnemonic": "test mnemonic words list"
+    },
+    "qr": {
+        "serviceUrl": "https://example.com/qr"
+    }
+  }
+}

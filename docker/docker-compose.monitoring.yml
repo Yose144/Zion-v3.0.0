@@ -1,0 +1,137 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  ZION TerraNova — Monitoring Stack Docker Compose            ║
+# ║  Prometheus + Grafana + Node Exporter + Redis Exporter       ║
+# ╚══════════════════════════════════════════════════════════════╝
+#
+# Usage:
+#   docker compose -f docker/docker-compose.monitoring.yml up -d
+#
+# Ports:
+#   Prometheus: 9090 (internal + external)
+#   Grafana:    3001 (external → 3000 internal)
+#   Node Exp:   9100 (host metrics)
+#   Redis Exp:  9121 (redis metrics)
+
+version: "3.8"
+
+services:
+  # ── Prometheus ──
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: zion-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=90d"
+      - "--storage.tsdb.retention.size=10GB"
+      - "--web.enable-lifecycle"
+      # AUDIT-FIX I-03: Removed --web.enable-admin-api (allows unauthenticated deletion/snapshot)
+      - "--web.external-url=http://localhost:9090"
+    volumes:
+      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - zion-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "com.zion.service=prometheus"
+      - "com.zion.version=2.9.6"
+
+  # ── Grafana ──
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: zion-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      # P1-32: GRAFANA_ADMIN_PASSWORD MUST be set in .env — no hardcoded fallback
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://zionterranova.com/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_DOMAIN=zionterranova.com
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      # AUDIT-FIX I-02: Anonymous access disabled — users must authenticate
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/zion-pool-overview.json
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+    volumes:
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - zion-net
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "com.zion.service=grafana"
+      - "com.zion.version=2.9.6"
+
+  # ── Node Exporter (host metrics) ──
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: zion-node-exporter
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+      - "--collector.netclass.ignored-devices=^(veth|docker|br-).*$$"
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "9100:9100"
+    # P2-09: Security hardening
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    networks:
+      - zion-net
+    # P2-23: Removed pid:host — not required for filesystem/cpu/memory metrics
+    labels:
+      - "com.zion.service=node-exporter"
+
+  # ── Redis Exporter ──
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.61.0
+    container_name: zion-redis-exporter
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis://zion-redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "9121:9121"
+    networks:
+      - zion-net
+    depends_on:
+      - prometheus
+    labels:
+      - "com.zion.service=redis-exporter"
+
+volumes:
+  prometheus-data:
+    driver: local
+    name: zion-prometheus-data
+  grafana-data:
+    driver: local
+    name: zion-grafana-data
+
+networks:
+  zion-net:
+    external: true
+    name: zion-net

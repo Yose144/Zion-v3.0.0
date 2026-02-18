@@ -1,0 +1,104 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  ZION TerraNova — Prometheus Configuration                   ║
+# ║  Scrapes: Pool (Helsinki+Germany), Core node /stats          ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    cluster: "zion-testnet"
+    environment: "testnet"
+
+# Alert rules
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+# Alertmanager (optional, future)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  # ── Prometheus self-monitoring ──
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          instance: "prometheus"
+
+  # ══════════════════════════════════════════════════
+  # LOCAL targets — use Docker container names or
+  # host gateway (172.18.0.1) for host-mapped ports
+  # ══════════════════════════════════════════════════
+
+  # ── ZION Pool — Helsinki (local) ──
+  - job_name: "zion-pool-helsinki"
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["zion-pool:8080"]
+        labels:
+          server: "helsinki"
+          region: "eu-north"
+          service: "pool"
+
+  # ── ZION Core Node — Helsinki (local) ──
+  - job_name: "zion-core-helsinki"
+    metrics_path: "/metrics"
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["zion-core:8444"]
+        labels:
+          server: "helsinki"
+          region: "eu-north"
+          service: "core"
+
+  # ── Node Exporter — Helsinki (local, host-mapped port) ──
+  - job_name: "node-helsinki"
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["zion-node-exporter:9100"]
+        labels:
+          server: "helsinki"
+          service: "node-exporter"
+
+  # ── Redis Exporter — Helsinki (local) ──
+  - job_name: "redis-helsinki"
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["zion-redis-exporter:9121"]
+        labels:
+          server: "helsinki"
+          service: "redis"
+
+  # ══════════════════════════════════════════════════
+  # REMOTE targets — Germany (public IP, port-forwarded)
+  # ══════════════════════════════════════════════════
+
+  # ── ZION Pool — Germany ──
+  - job_name: "zion-pool-germany"
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["195.201.31.201:8080"]
+        labels:
+          server: "germany"
+          region: "eu-central"
+          service: "pool"
+
+  # ── ZION Core Node — Germany ──
+  - job_name: "zion-core-germany"
+    metrics_path: "/metrics"
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["195.201.31.201:8444"]
+        labels:
+          server: "germany"
+          region: "eu-central"
+          service: "core"
+
+  # NOTE: node-exporter (9100) and redis-exporter (9121) on Germany
+  # are NOT exposed publicly — scraped by Germany's own Prometheus

@@ -1,0 +1,5017 @@
+// ZION Native Awakening v2.9.5 - Main Process
+// Electron main process with system tray, auto-start, IPC
+
+const { app, BrowserWindow, Tray, Menu, ipcMain, dialog } = require('electron');
+const path = require('path');
+const { spawn, execFileSync } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const WalletGenerator = require('./wallet-generator');
+const QRCode = require('qrcode');
+
+process.on('uncaughtException', (err) => {
+  try {
+    const msg = err?.stack || err?.message || String(err);
+    try {
+      console.error('uncaughtException:', msg);
+    } catch {
+      // ignore
+    }
+    logApp('uncaughtException', JSON.stringify({ message: err?.message, stack: msg }));
+  } catch {
+    // ignore
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  try {
+    const msg = reason?.stack || reason?.message || String(reason);
+    try {
+      console.error('unhandledRejection:', msg);
+    } catch {
+      // ignore
+    }
+    logApp('unhandledRejection', JSON.stringify({ message: reason?.message, stack: msg }));
+  } catch {
+    // ignore
+  }
+});
+
+const rustCliFeatureCache = new Map();
+
+function rustMinerSupportsGroupFlag(minerPath) {
+  try {
+    if (!minerPath) return false;
+    if (rustCliFeatureCache.has(minerPath)) {
+      return !!rustCliFeatureCache.get(minerPath);
+    }
+
+    let helpText = '';
+    try {
+      helpText = execFileSync(minerPath, ['--help'], {
+        encoding: 'utf8',
+        windowsHide: true,
+        timeout: 8000
+      });
+    } catch (err) {
+      const out = String(err?.stdout || '');
+      const stderr = String(err?.stderr || '');
+      helpText = `${out}\n${stderr}`;
+    }
+
+    const supported = /--group\b/i.test(String(helpText || ''));
+    rustCliFeatureCache.set(minerPath, supported);
+    return supported;
+  } catch {
+    return false;
+  }
+}
+
+// Keep cache clean on Windows without overriding userData paths.
+// (We must NOT set userData to a different path; only set cache.)
+app.disableHardwareAcceleration();
+
+// Avoid multiple Electron instances fighting over the same cache directory.
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+}
+
+function logApp(message, extra) {
+  try {
+    const USER_DATA_PATH = app.getPath('userData');
+    const appLogPath = path.join(USER_DATA_PATH, 'desktop_agent.log');
+    const line = `${new Date().toISOString()} ${message}${extra ? ` ${extra}` : ''}\n`;
+
+    // Keep desktop agent log bounded as well (this file can grow very large otherwise).
+    // Use the same age rule (1 day) and a smaller size cap.
+    try {
+      rotateFileIfTooLarge(appLogPath, 10 * 1024 * 1024, 0, 24 * 60 * 60 * 1000);
+    } catch {
+      // ignore
+    }
+
+    fs.appendFileSync(appLogPath, line);
+  } catch {
+    // ignore logging failures
+  }
+}
+
+function attachChildStreamGuards(childProc, label) {
+  try {
+    if (!childProc) return;
+    const onErr = (which) => (err) => {
+      try {
+        logApp(`${label}-${which}-error`, JSON.stringify({ code: err?.code, message: err?.message }));
+      } catch {
+        // ignore
+      }
+    };
+    childProc.stdin?.on('error', onErr('stdin'));
+    childProc.stdout?.on('error', onErr('stdout'));
+    childProc.stderr?.on('error', onErr('stderr'));
+  } catch {
+    // ignore
+  }
+}
+
+function safeChildStdinWrite(childProc, label, text) {
+  try {
+    if (!childProc || !childProc.stdin || childProc.stdin.destroyed || !childProc.stdin.writable) return false;
+    childProc.stdin.write(text);
+    return true;
+  } catch (err) {
+    const code = err?.code;
+    if (code === 'EPIPE' || code === 'ERR_STREAM_WRITE_AFTER_END') {
+      try {
+        logApp(`${label}-stdin-write-failed`, JSON.stringify({ code, message: err?.message }));
+      } catch {
+        // ignore
+      }
+      return false;
+    }
+    throw err;
+  }
+}
+
+function runPowerShellCapture(script, label, meta) {
+  try {
+    const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+    const psExe = path.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+    const cmd = fs.existsSync(psExe) ? psExe : 'powershell';
+    const args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script];
+    logApp(`${label}-invoke`, JSON.stringify({ ...(meta || {}), cmd }));
+
+    const child = spawn(cmd, args, { windowsHide: true });
+    let stdout = '';
+    let stderr = '';
+    const cap = (s) => {
+      const str = String(s || '');
+      return str.length > 4000 ? str.slice(0, 4000) + '…' : str;
+    };
+    child.stdout?.on('data', (d) => {
+      stdout += d.toString();
+      if (stdout.length > 8000) stdout = stdout.slice(-8000);
+    });
+    child.stderr?.on('data', (d) => {
+      stderr += d.toString();
+      if (stderr.length > 8000) stderr = stderr.slice(-8000);
+    });
+    child.once('error', (err) => {
+      logApp(`${label}-error`, JSON.stringify({ ...(meta || {}), error: err?.message || String(err) }));
+    });
+    child.once('exit', (code) => {
+      logApp(
+        `${label}-exit`,
+        JSON.stringify({ ...(meta || {}), code, stdout: cap(stdout).trim(), stderr: cap(stderr).trim() })
+      );
+    });
+    return child;
+  } catch (err) {
+    logApp(`${label}-fatal`, JSON.stringify({ ...(meta || {}), error: err?.message || String(err) }));
+    return null;
+  }
+}
+
+function computeEffectiveThreads(config) {
+  try {
+    const cpuCount = Array.isArray(os.cpus?.()) ? os.cpus().length : 1;
+    const safeCpuCount = Math.max(1, cpuCount);
+
+    // Performance-first default:
+    // - keep 1 core for UI/OS
+    // - reserve one more only when explicitly requested via env
+    const reserveAfterburnerExtra =
+      String(process.env.ZION_RESERVE_AFTERBURNER_CORES || '').trim() === '1' &&
+      config?.aiAfterburner === true;
+    const reserved = Math.min(safeCpuCount - 1, reserveAfterburnerExtra ? 2 : 1);
+    const maxThreads = Math.max(1, safeCpuCount - reserved);
+
+    // Performance mode default: use maximum safe threads.
+    // Set ZION_RESPECT_CONFIG_THREADS=1 to honor manual thread setting from UI.
+    const respectConfigThreads = String(process.env.ZION_RESPECT_CONFIG_THREADS || '').trim() === '1';
+    if (!respectConfigThreads) {
+      return maxThreads;
+    }
+
+    const tRaw = config?.threads;
+    const tNum = typeof tRaw === 'number' ? tRaw : Number(String(tRaw || '').trim());
+    if (Number.isFinite(tNum) && tNum > 0) {
+      return Math.max(1, Math.min(maxThreads, Math.floor(tNum)));
+    }
+    return maxThreads;
+  } catch {
+    return 1;
+  }
+}
+
+function computeDifficultyHint(config, algorithmLower) {
+  try {
+    // 1) Explicit config value (if present)
+    const cfgRaw = config?.difficulty;
+    const cfgNum = typeof cfgRaw === 'number' ? cfgRaw : Number(String(cfgRaw || '').trim());
+    if (Number.isFinite(cfgNum) && cfgNum > 0) return Math.floor(cfgNum);
+
+    // 2) Environment override
+    const envRaw = String(process.env.ZION_MINER_DIFFICULTY || process.env.ZION_DEFAULT_DIFFICULTY || '').trim();
+    const envNum = Number(envRaw);
+    if (Number.isFinite(envNum) && envNum > 0) return Math.floor(envNum);
+
+    // 3) Safe default for Cosmic Harmony to avoid diff=1 share spam
+    if (String(algorithmLower || '').startsWith('cosmic_harmony')) return 1000;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function computeAffinityMaskFromCoreList(coreIndexes) {
+  try {
+    if (!Array.isArray(coreIndexes) || coreIndexes.length === 0) return null;
+    let mask = 0n;
+    for (const idx of coreIndexes) {
+      const i = Number(idx);
+      if (!Number.isFinite(i) || i < 0 || i > 63) continue;
+      mask |= 1n << BigInt(i);
+    }
+    return mask > 0n ? mask : null;
+  } catch {
+    return null;
+  }
+}
+
+function computeAutoAffinity(cpuCount, threadsToUse) {
+  const c = Math.max(1, Math.min(64, Number(cpuCount) || 1));
+  const t = Math.max(1, Math.min(c, Number(threadsToUse) || 1));
+  if (t >= c) return { mask: null, cores: [] };
+
+  // Best-practice for Windows miners:
+  // - Prefer to leave logical core 0 for OS/UI interrupts if possible.
+  // - Use the next N cores for mining.
+  const candidates = [];
+  if (c > 1) {
+    for (let i = 1; i < c; i++) candidates.push(i);
+  } else {
+    candidates.push(0);
+  }
+
+  const cores = candidates.slice(0, t);
+  // If we somehow need more cores than candidates (only possible for c==1), fill with 0.
+  while (cores.length < t) cores.push(0);
+
+  return { mask: computeAffinityMaskFromCoreList(cores), cores };
+}
+
+function boostMinerProcessWindows(pid, config, effectiveThreads) {
+  try {
+    if (process.platform !== 'win32') return;
+    if (!pid) return;
+
+    // Defaults optimized for mining, but can be overridden via env without adding UI.
+    // Supported values: idle, below_normal, normal, above_normal, high, realtime
+    const priorityRaw = String(process.env.ZION_MINER_PRIORITY || 'high').toLowerCase();
+    const affinityMaskRaw = String(process.env.ZION_MINER_AFFINITY_MASK || '').trim();
+    const affinityCoresRaw = String(process.env.ZION_MINER_AFFINITY_CORES || '').trim();
+
+    const priorityMap = {
+      idle: 'Idle',
+      below_normal: 'BelowNormal',
+      normal: 'Normal',
+      above_normal: 'AboveNormal',
+      high: 'High',
+      realtime: 'RealTime'
+    };
+    const priorityClass = priorityMap[priorityRaw] || 'High';
+
+    // Affinity selection priority:
+    // 1) Explicit env mask/cores (power user override)
+    // 2) Auto mask from cpuCount + effectiveThreads (load balancing)
+    let affinityMaskBig = null;
+    let affinityCores = [];
+    if (affinityMaskRaw) {
+      try {
+        const s = affinityMaskRaw.startsWith('0x') ? affinityMaskRaw : `0x${affinityMaskRaw}`;
+        affinityMaskBig = BigInt(s);
+      } catch {
+        affinityMaskBig = null;
+      }
+    } else if (affinityCoresRaw) {
+      try {
+        let mask = 0n;
+        for (const part of affinityCoresRaw.split(/[,;\s]+/g)) {
+          const p = part.trim();
+          if (!p) continue;
+          const idx = Number(p);
+          if (!Number.isFinite(idx) || idx < 0 || idx > 63) continue;
+          affinityCores.push(idx);
+          mask |= 1n << BigInt(idx);
+        }
+        affinityMaskBig = mask > 0n ? mask : null;
+      } catch {
+        affinityMaskBig = null;
+      }
+    } else {
+      const cpuCount = Array.isArray(os.cpus?.()) ? os.cpus().length : 1;
+      const auto = computeAutoAffinity(cpuCount, effectiveThreads);
+      affinityMaskBig = auto.mask;
+      affinityCores = auto.cores;
+    }
+
+    // Best-effort PowerShell tuning.
+    // Note: RealTime priority can starve UI; keep it opt-in via env.
+    const worker = String(config?.worker || '').trim();
+    const algo = String(config?.algorithm || '').trim();
+    const script = `
+$ErrorActionPreference = 'SilentlyContinue'
+$pid = ${Number(pid)}
+$p = Get-Process -Id $pid -ErrorAction SilentlyContinue
+if (-not $p) { Write-Output "missing"; exit 0 }
+$p.PriorityClass = '${priorityClass}'
+try { $p.PriorityBoostEnabled = $true } catch {}
+  ${affinityMaskBig != null ? `$aff=[UInt64]${affinityMaskBig.toString()}; $p.ProcessorAffinity = [IntPtr]$aff` : ''}
+  Write-Output ("ok priority=${priorityClass}" + ${affinityMaskBig != null ? `" affinity=${affinityMaskBig.toString()}"` : `""`})
+`.trim();
+
+    runPowerShellCapture(script, 'miner-boost', {
+      pid,
+      priorityClass,
+      affinityMask: affinityMaskBig != null ? affinityMaskBig.toString() : '',
+      affinityCores: Array.isArray(affinityCores) && affinityCores.length ? affinityCores.join(',') : '',
+      effectiveThreads: typeof effectiveThreads === 'number' ? effectiveThreads : '',
+      worker,
+      algorithm: algo
+    });
+  } catch (err) {
+    logApp('miner-boost-fatal', JSON.stringify({ pid, error: err?.message || String(err) }));
+  }
+}
+
+app.on('second-instance', () => {
+  logApp('second-instance');
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    showWindow();
+  } else {
+    createWindow();
+  }
+});
+
+const USER_DATA_PATH = app.getPath('userData');
+const CACHE_PATH = path.join(USER_DATA_PATH, 'cache');
+
+app.setPath('cache', CACHE_PATH);
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
+app.commandLine.appendSwitch('disk-cache-dir', CACHE_PATH);
+app.commandLine.appendSwitch('disable-http-cache');
+app.commandLine.appendSwitch('disk-cache-size', '0');
+
+let mainWindow;
+let tray;
+let trayMenu;
+let minerProcess = null;
+let revenueProcess = null; // 2nd miner process: --group revenue → pool routes to XMR/RandomX
+let minerStopping = false;
+let minerStopPromise = null;
+let minerAutoStopTimer = null;
+let afterburnerProc = null;
+let afterburnerReady = false;
+let afterburnerStdoutBuf = '';
+let afterburnerQueue = [];
+let afterburnerReqId = 1;
+// AI Native integration (parallel to afterburner)
+let aiNativeProc = null;
+let aiNativeReady = false;
+let aiNativeStdoutBuf = '';
+let aiNativeQueue = [];
+let aiNativeReqId = 1;
+let minerMetricsLastEmitMs = 0;
+let appHeartbeatLastLogMs = 0;
+let minerRateSamples = [];
+let minerShareLastSample = { t: 0, accepted: 0, rejected: 0 };
+let minerShareDeltaSamples = [];
+let minerStats = {
+  hashrate: 0,
+  shares: 0,
+  accepted: 0,
+  rejected: 0,
+  uptime: 0,
+  consciousness_level: 'PHYSICAL',
+  consciousness_xp: 0,
+  algorithm: '',
+  pool: '',
+  worker: '',
+  threads: '',
+  last_job_height: '',
+  last_job_diff: '',
+  last_pool_diff: '',
+  last_job_id: '',
+  // CH3 Stream / Revenue fields
+  stream_mode: '',
+  stream_algorithm: '',
+  stream_allocation: '',
+  revenue_coin: '',
+  revenue_hashrate: 0,
+  gpu_detected: false,
+  gpu_type: 'none',
+  gpu_name: '',
+  cpu_only_mode: true,
+  // Dual mining: ZION + XMR (DAO revenue)
+  dual_mining: false,
+  zion_threads: 0,
+  xmr_threads: 0,
+  xmr_pool: '',
+};
+
+function formatHashrate(hs) {
+  const v = typeof hs === 'number' && Number.isFinite(hs) ? hs : 0;
+  if (v >= 1e9) return `${(v / 1e9).toFixed(2)} GH/s`;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(2)} MH/s`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(2)} kH/s`;
+  return `${v.toFixed(2)} H/s`;
+}
+
+function formatUptime(sec) {
+  const s = typeof sec === 'number' && Number.isFinite(sec) ? Math.max(0, Math.floor(sec)) : 0;
+  const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
+function emitMinerStatusLine(reason) {
+  try {
+    if (!minerProcess) return;
+    const algo = String(minerStats.algorithm || '').trim() || 'unknown';
+    const pool = String(minerStats.pool || '').trim();
+    const worker = String(minerStats.worker || '').trim();
+    const thr = String(minerStats.threads || '').trim();
+    const thrPart = thr ? `${thr}T` : '';
+    const avgOver = (windowMs) => {
+      const now = Date.now();
+      const cut = now - windowMs;
+      let sum = 0;
+      let count = 0;
+      for (let i = minerRateSamples.length - 1; i >= 0; i--) {
+        const s = minerRateSamples[i];
+        if (!s || typeof s.t !== 'number') continue;
+        if (s.t < cut) break;
+        const v = typeof s.hs === 'number' && Number.isFinite(s.hs) ? s.hs : 0;
+        sum += v;
+        count += 1;
+      }
+      return count > 0 ? sum / count : null;
+    };
+
+    const hrNow = formatHashrate(minerStats.hashrate);
+    const hr10 = avgOver(10_000);
+    const hr60 = avgOver(60_000);
+    const hr15m = avgOver(15 * 60_000);
+    const hrAvg = `10s=${formatHashrate(hr10 ?? 0)} 60s=${formatHashrate(hr60 ?? 0)} 15m=${formatHashrate(hr15m ?? 0)}`;
+    const accepted = Number(minerStats.accepted || 0);
+    const rejected = Number(minerStats.rejected || 0);
+    const total = accepted + rejected;
+    const accPct = total > 0 ? (accepted / total) * 100 : 0;
+    const rejPct = total > 0 ? (rejected / total) * 100 : 0;
+    const ar = `${accepted}/${rejected}`;
+
+    const windowShareStats = (windowMs) => {
+      const now = Date.now();
+      const cut = now - windowMs;
+      let acc = 0;
+      let rej = 0;
+      let firstT = null;
+      let lastT = null;
+      for (let i = minerShareDeltaSamples.length - 1; i >= 0; i--) {
+        const s = minerShareDeltaSamples[i];
+        if (!s || typeof s.t !== 'number') continue;
+        if (s.t < cut) break;
+        if (firstT == null || s.t < firstT) firstT = s.t;
+        if (lastT == null || s.t > lastT) lastT = s.t;
+        acc += typeof s.acc === 'number' ? s.acc : 0;
+        rej += typeof s.rej === 'number' ? s.rej : 0;
+      }
+      const spanMs = firstT != null && lastT != null && lastT > firstT ? lastT - firstT : windowMs;
+      const spanMin = Math.max(0.001, spanMs / 60000);
+      const shPerMin = (acc + rej) / spanMin;
+      const tot = acc + rej;
+      const rejP = tot > 0 ? (rej / tot) * 100 : 0;
+      return { acc, rej, shPerMin, rejPct: rejP };
+    };
+
+    const w10m = windowShareStats(10 * 60_000);
+    const up = formatUptime(minerStats.uptime);
+    const diff = minerStats.last_job_diff != null && minerStats.last_job_diff !== '' ? String(minerStats.last_job_diff) : '';
+    const pdiff = minerStats.last_pool_diff != null && minerStats.last_pool_diff !== '' ? String(minerStats.last_pool_diff) : '';
+    const h = minerStats.last_job_height != null && minerStats.last_job_height !== '' ? String(minerStats.last_job_height) : '';
+    const job = String(minerStats.last_job_id || '').trim();
+
+    const parts = [
+      '[STATUS] xmrig-style',
+      `algo=${algo}`,
+      pool ? `pool=${pool}` : null,
+      worker ? `worker=${worker}` : null,
+      thrPart ? `thr=${thrPart}` : null,
+      `hr=${hrNow}`,
+      hr10 != null || hr60 != null || hr15m != null ? `avg ${hrAvg}` : null,
+      `A/R=${ar} (${accPct.toFixed(1)}% ok | ${rejPct.toFixed(1)}% rej)`,
+      `10m ${w10m.shPerMin.toFixed(2)} sh/min | rej=${w10m.rejPct.toFixed(1)}%`,
+      `up=${up}`,
+      h ? `h=${h}` : null,
+      diff ? `diff=${diff}` : null,
+      pdiff ? `pool=${pdiff}` : null,
+      job ? `job=${job}` : null,
+      reason ? `(${reason})` : null
+    ].filter(Boolean);
+
+    const line = parts.join(' | ') + '\n';
+
+    // UI log — ENABLED: Show [STATUS] lines for real-time mining stats
+    try {
+      sendToRenderer('miner-output', { stream: 'stdout', text: line });
+    } catch {
+      // ignore
+    }
+
+    // File log
+    try {
+      rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
+      fs.appendFileSync(LOG_PATH, line);
+    } catch {
+      // ignore
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function resolveResourcePath(...parts) {
+  // In dev: assets live under __dirname/assets
+  // In packaged: assets may live inside app.asar OR be copied into Resources via electron-builder extraResources.
+  const candidates = [
+    path.join(__dirname, ...parts),
+    path.join(process.resourcesPath, ...parts),
+    path.join(process.resourcesPath, 'assets', ...parts),
+    path.join(process.resourcesPath, 'app.asar', ...parts),
+    path.join(process.resourcesPath, 'app.asar', 'src', ...parts)
+  ];
+
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) return p;
+    } catch {
+      // ignore
+    }
+  }
+
+  // Fall back to the most common dev path.
+  return path.join(__dirname, ...parts);
+}
+
+// (uncaughtException + unhandledRejection handlers registered at top of file)
+
+// App paths
+const APP_ROOT = path.join(__dirname, '..');
+const IS_PACKAGED = app.isPackaged;
+
+// Miner path: platform-specific
+// For packaged app: use resources folder
+// For development: use the Python script in project root or resources
+let MINER_PATH;
+let MINER_IS_PYTHON = false;
+let MINER_IS_RUST = false;
+let minerFallbackInProgress = false;
+let minerFallbackTimer = null;
+let minerStartAckTimer = null;
+let minerStartToken = 0;
+let minerUserStopRequested = false;
+
+let minerBackendPreferred = 'auto';
+let minerBackendResolved = null;
+let minerBackendPath = '';
+let minerBackendLastError = '';
+
+function composeStatsPayload() {
+  return {
+    ...minerStats,
+    isRunning: minerProcess !== null,
+    minerBackendPreferred,
+    minerBackendResolved,
+    minerBackendPath,
+    minerBackendLastError
+  };
+}
+
+function findRustMiner() {
+  const namesByPlatform = {
+    darwin: [
+      'zion-universal-miner',
+      'zion-universal-miner-macos-arm64',
+      'zion-universal-miner-macos-x64',
+      'zion-universal-miner-arm64',
+      'zion-universal-miner-x64'
+    ],
+    linux: ['zion-universal-miner', 'zion-universal-miner-linux-x64'],
+    win32: ['zion-universal-miner.exe', 'zion-universal-miner-win-x64.exe', 'zion-universal-miner']
+  };
+
+  const names = namesByPlatform[process.platform] || [];
+  const searchPaths = IS_PACKAGED
+    ? [process.resourcesPath]
+    : [
+        path.join(APP_ROOT, 'resources'),
+        path.join(APP_ROOT, '..', 'target', 'release'),
+        path.join(APP_ROOT, '..', 'miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', 'zion-universal-miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '2.9.5OLD', 'zion-universal-miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '2.9.5OLD', 'target', 'release'),
+        path.join(APP_ROOT, '..', '2.9.5', 'zion-universal-miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '2.9.5', 'target', 'release'),
+        path.join(APP_ROOT, '..', 'builds')
+      ];
+
+  for (const searchPath of searchPaths) {
+    for (const name of names) {
+      const fullPath = path.join(searchPath, name);
+      if (fs.existsSync(fullPath)) return fullPath;
+    }
+  }
+  return null;
+}
+
+function findPythonMiner() {
+  const candidateNames = ['zion_native_miner_v2_9.py'];
+  const searchPaths = IS_PACKAGED
+    ? [process.resourcesPath]
+    : [
+        path.join(APP_ROOT, 'resources'),
+        path.join(APP_ROOT, '..'),
+        path.join(APP_ROOT, '..', '2.9.5'),
+        path.join(APP_ROOT, '..', 'builds')
+      ];
+
+  for (const searchPath of searchPaths) {
+    for (const name of candidateNames) {
+      const fullPath = path.join(searchPath, name);
+      if (fs.existsSync(fullPath)) return fullPath;
+    }
+  }
+  return null;
+}
+
+function resolveMinerSelection(preferred) {
+  const pref = String(preferred || 'auto').toLowerCase();
+  const rustPath = findRustMiner();
+  const pyPath = findPythonMiner();
+  const legacyExePath = process.platform === 'win32'
+    ? (IS_PACKAGED
+        ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.exe')
+        : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.exe'))
+    : null;
+
+  const hasLegacy = legacyExePath && fs.existsSync(legacyExePath);
+  const select = (backend, p, isRust, isPython) => ({ backend, path: p, isRust, isPython });
+
+  if (pref === 'rust') {
+    if (rustPath) return select('rust', rustPath, true, false);
+    // Strict: user explicitly requested Rust, so do not silently fall back.
+    return null;
+  }
+
+  if (pref === 'python') {
+    if (pyPath) return select('python', pyPath, false, true);
+    // Strict: user explicitly requested Python, so do not silently fall back.
+    return null;
+  }
+
+  if (pref === 'legacy') {
+    if (hasLegacy) return select('legacy', legacyExePath, false, false);
+    return null;
+  }
+
+  // auto
+  if (rustPath) return select('rust', rustPath, true, false);
+  if (pyPath) return select('python', pyPath, false, true);
+  if (hasLegacy) return select('legacy', legacyExePath, false, false);
+  return null;
+}
+
+const rustMinerPath = findRustMiner();
+if (rustMinerPath) {
+  MINER_PATH = rustMinerPath;
+  MINER_IS_RUST = true;
+  MINER_IS_PYTHON = false;
+  console.log('[MINER] Using Rust native miner:', rustMinerPath);
+} else if (process.platform === 'darwin') {
+  // macOS: use Python script
+  MINER_IS_PYTHON = true;
+  MINER_IS_RUST = false;
+  MINER_PATH = findPythonMiner() || (IS_PACKAGED
+    ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.py')
+    : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py'));
+  console.log('[MINER] Using Python miner (macOS fallback)');
+} else if (process.platform === 'linux') {
+  // Linux: use Python script
+  MINER_IS_PYTHON = true;
+  MINER_IS_RUST = false;
+  MINER_PATH = findPythonMiner() || (IS_PACKAGED
+    ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.py')
+    : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py'));
+  console.log('[MINER] Using Python miner (Linux fallback)');
+} else {
+  // Windows: Python fallback (if present) -> legacy .exe last
+  const devPythonMiner = path.join(APP_ROOT, '..', 'zion_native_miner_v2_9.py');
+  const resourcesPythonMiner = IS_PACKAGED
+    ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.py')
+    : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py');
+  const discoveredPythonMiner = findPythonMiner();
+  const legacyExePath = IS_PACKAGED
+    ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.exe')
+    : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.exe');
+
+  if (discoveredPythonMiner) {
+    MINER_IS_PYTHON = true;
+    MINER_IS_RUST = false;
+    MINER_PATH = discoveredPythonMiner;
+    console.log('[MINER] Using Python miner (Windows fallback)');
+  } else if (!IS_PACKAGED && fs.existsSync(devPythonMiner)) {
+    MINER_IS_PYTHON = true;
+    MINER_IS_RUST = false;
+    MINER_PATH = devPythonMiner;
+    console.log('[MINER] Using Python miner (dev mode fallback)');
+  } else if (fs.existsSync(resourcesPythonMiner)) {
+    MINER_IS_PYTHON = true;
+    MINER_IS_RUST = false;
+    MINER_PATH = resourcesPythonMiner;
+    console.log('[MINER] Using Python miner (Windows fallback)');
+  } else if (fs.existsSync(legacyExePath)) {
+    MINER_IS_PYTHON = false;
+    MINER_IS_RUST = false;
+    MINER_PATH = legacyExePath;
+    console.log('[MINER] WARNING: Using legacy PyInstaller miner (.exe)');
+  } else {
+    throw new Error('No miner executable found! Please reinstall the application.');
+  }
+}
+
+const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
+const LOG_PATH = path.join(USER_DATA_PATH, 'miner.log');
+const WALLETS_PATH = path.join(USER_DATA_PATH, 'wallets');
+const STATS_PATH = path.join(USER_DATA_PATH, 'miner_stats.json');
+
+// Afterburner service (Python JSON-lines RPC)
+const AFTERBURNER_SCRIPT_PATH = IS_PACKAGED
+  ? path.join(process.resourcesPath, 'afterburner_service.py')
+  : path.join(APP_ROOT, 'resources', 'afterburner_service.py');
+
+// Miner log retention:
+// - We want primarily *current* outputs in UI and on disk.
+// - Cap by size (to avoid runaway chatty miners) and by age (to avoid multi-day logs).
+// - Backups disabled by default to keep only the current file (per UX request).
+const MAX_MINER_LOG_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_MINER_LOG_BACKUPS = 0;
+const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Default configuration
+const DEFAULT_CONFIG = {
+  pool: {
+    host: '77.42.31.72',
+    port: 3333
+  },
+  // ZION chain JSON-RPC endpoint (native core)
+  rpcUrl: 'http://77.42.31.72:8444/jsonrpc',
+  // Mining algorithm — Mainnet Phase 1: Cosmic Harmony v3 only
+  // Rust miner CLI accepts 'cosmic_harmony' which internally runs CH v3 engine
+  algorithm: 'cosmic_harmony_v3',
+  // AI Afterburner integration (controls env ZION_AI_AFTERBURNER)
+  aiAfterburner: false,
+  // AI Native compute (earn ZION by processing AI tasks)
+  aiNative: false, // OFF by default, user must enable
+  aiNativePoolUrl: 'http://localhost:8001',
+  aiNativeConsciousness: 1,
+  // Local chat (optional)
+  // Cloud chat (OpenAI-compatible). Keep endpoint editable for future ZION AI Native.
+  chatEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+  // Free-tier via OpenRouter (model ids ending with :free)
+  chatModel: 'allenai/olmo-3.1-32b-think:free',
+  chatApiKey: '',
+  wallet: '',
+  worker: 'desktop-agent',
+  threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
+  gpu: false,
+  // GPU Revenue Mining (CH3 Dynamic GPU system)
+  gpuRevenue: false, // Enable GPU revenue mining with profit switching
+  gpuRevenueCoins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH'], // Supported GPU coins for profit switching
+  // Primary backend default:
+  // - Windows: prefer Rust by default (no fallback) to ensure users actually run the native miner.
+  // - Other OS: keep auto for compatibility.
+  minerBackend: process.platform === 'win32' ? 'rust' : 'auto',
+  autoStart: false,
+  minimizeToTray: true,
+  startMinimized: false
+};
+
+function algoSupportsGpu(algo) {
+  // Mainnet Phase 1: Cosmic Harmony v3 only — always supports GPU
+  const a = String(algo || 'cosmic_harmony').toLowerCase();
+  return a === 'cosmic_harmony' || a === 'cosmic_harmony_v3';
+}
+
+// Load or create config
+function loadConfig() {
+  try {
+    if (fs.existsSync(CONFIG_PATH)) {
+      const configOnDisk = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+      const merged = { ...DEFAULT_CONFIG, ...configOnDisk };
+
+      // Prefer Rust miner everywhere if it exists.
+      // Only respect Python if the user explicitly pinned `minerBackend` in the config.
+      try {
+        const rustPath = findRustMiner();
+        const hasPinnedMinerBackend = Object.prototype.hasOwnProperty.call(configOnDisk || {}, 'minerBackend');
+        const mb = String(merged?.minerBackend || '').toLowerCase();
+        if (rustPath) {
+          if (!hasPinnedMinerBackend) {
+            merged.minerBackend = 'rust';
+          } else if (!mb || mb === 'auto') {
+            merged.minerBackend = 'rust';
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      // Windows default: make Rust the primary backend even for older configs that
+      // still say "auto". If the user explicitly chose Python, respect it.
+      try {
+        if (process.platform === 'win32') {
+          const mb = String(merged?.minerBackend || '').toLowerCase();
+          if (!mb || mb === 'auto') merged.minerBackend = 'rust';
+        }
+      } catch {
+        // ignore
+      }
+      if (typeof merged.rpcUrl === 'string') {
+        const trimmed = merged.rpcUrl.trim();
+        if (trimmed === 'http://localhost:18081/json_rpc' || trimmed === 'http://127.0.0.1:18081/json_rpc') {
+          merged.rpcUrl = 'http://77.42.31.72:8444/jsonrpc';
+        }
+        // Migrate localhost RPC to testnet server (user unlikely runs local node)
+        if (trimmed === 'http://localhost:8444/jsonrpc' || trimmed === 'http://127.0.0.1:8444/jsonrpc') {
+          merged.rpcUrl = 'http://77.42.31.72:8444/jsonrpc';
+        }
+      }
+      // Migrate stale pool.host (DNS that doesn't resolve yet)
+      if (merged.pool && merged.pool.host === 'pool.zionterranova.com') {
+        merged.pool.host = '77.42.31.72';
+      }
+      return merged;
+    }
+  } catch (err) {
+    console.error('Failed to load config:', err);
+  }
+  return DEFAULT_CONFIG;
+}
+
+function saveConfig(config) {
+  try {
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+    return true;
+  } catch (err) {
+    console.error('Failed to save config:', err);
+    return false;
+  }
+}
+
+// Ensure required directories exist
+function ensureDirectories() {
+  const dirs = [
+    USER_DATA_PATH,
+    CACHE_PATH,
+    WALLETS_PATH
+  ];
+  
+  dirs.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log('Created directory:', dir);
+    }
+  });
+}
+
+function rotateFileIfTooLarge(filePath, maxBytes, maxBackups = 1, maxAgeMs = null) {
+  // IMPORTANT:
+  // Using stat.mtime for "age" does NOT work for logs that are continuously appended
+  // (mtime is always fresh). We therefore track a separate epoch in a sidecar meta file.
+  const metaPath = `${filePath}.meta.json`;
+
+  const readEpochMs = (stat, now) => {
+    try {
+      if (fs.existsSync(metaPath)) {
+        const raw = fs.readFileSync(metaPath, 'utf8');
+        const j = JSON.parse(raw);
+        const v = Number(j?.createdAtMs);
+        if (Number.isFinite(v) && v > 0) return v;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Bootstrap epoch from file timestamps if meta is missing/corrupt.
+    // Prefer birthtime/ctime where available (do NOT use mtime).
+    const bt = typeof stat?.birthtimeMs === 'number' ? stat.birthtimeMs : NaN;
+    const ct = typeof stat?.ctimeMs === 'number' ? stat.ctimeMs : NaN;
+    const epoch = (Number.isFinite(bt) && bt > 0)
+      ? bt
+      : (Number.isFinite(ct) && ct > 0)
+        ? ct
+        : now;
+
+    try {
+      fs.writeFileSync(metaPath, JSON.stringify({ createdAtMs: epoch }), 'utf8');
+    } catch {
+      // ignore
+    }
+    return epoch;
+  };
+
+  const writeEpochMs = (epochMs) => {
+    try {
+      fs.writeFileSync(metaPath, JSON.stringify({ createdAtMs: epochMs }), 'utf8');
+    } catch {
+      // ignore
+    }
+  };
+
+  const purgeOldBackups = (now) => {
+    if (maxAgeMs == null) return;
+    const n = Number(maxBackups);
+    if (!Number.isFinite(n) || n <= 0) return;
+    for (let i = 1; i <= n; i += 1) {
+      const p = `${filePath}.${i}`;
+      try {
+        if (!fs.existsSync(p)) continue;
+        const s = fs.statSync(p);
+        if (!s.isFile()) continue;
+        const ageMs = now - (typeof s.mtimeMs === 'number' ? s.mtimeMs : s.mtime.getTime());
+        if (ageMs > maxAgeMs) fs.unlinkSync(p);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  try {
+    if (!fs.existsSync(filePath)) return;
+    const stat = fs.statSync(filePath);
+    if (!stat.isFile()) return;
+
+    const now = Date.now();
+
+    // Always purge too-old backups opportunistically.
+    purgeOldBackups(now);
+
+    const epochMs = maxAgeMs != null ? readEpochMs(stat, now) : now;
+    const shouldRotateBySize = stat.size > maxBytes;
+    const shouldRotateByAge = maxAgeMs != null && (now - epochMs) > maxAgeMs;
+
+    if (!shouldRotateBySize && !shouldRotateByAge) return;
+
+    // If backups are disabled, truncate in-place (and reset epoch) to keep only current outputs.
+    if (!Number.isFinite(Number(maxBackups)) || Number(maxBackups) <= 0) {
+      try {
+        fs.truncateSync(filePath, 0);
+      } catch {
+        // ignore
+      }
+      writeEpochMs(now);
+      return;
+    }
+
+    for (let i = maxBackups; i >= 1; i -= 1) {
+      const src = `${filePath}.${i}`;
+      const dst = `${filePath}.${i + 1}`;
+      if (fs.existsSync(src)) {
+        try {
+          if (i + 1 > maxBackups) {
+            fs.unlinkSync(src);
+          } else {
+            if (fs.existsSync(dst)) fs.unlinkSync(dst);
+            fs.renameSync(src, dst);
+          }
+        } catch {
+          // ignore rotation failures
+        }
+      }
+    }
+
+    const backup = `${filePath}.1`;
+    try {
+      if (fs.existsSync(backup)) fs.unlinkSync(backup);
+      fs.renameSync(filePath, backup);
+    } catch {
+      // If rename fails (e.g., file locked), best effort: truncate.
+      try {
+        fs.truncateSync(filePath, 0);
+      } catch {
+        // ignore
+      }
+    }
+
+    // New period starts now (prevents repeated "age" rotation on every append).
+    writeEpochMs(now);
+  } catch {
+    // ignore
+  }
+}
+
+function bytesToGiB(bytes) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return n / (1024 ** 3);
+}
+
+function getMacVmStatAvailableBytes() {
+  // Use vm_stat for a better approximation than os.freemem() on macOS.
+  // We treat: free + speculative + inactive + purgeable as "available".
+  // This is a heuristic to avoid RandomX FULL_MEM triggering heavy memory pressure.
+  try {
+    const out = execFileSync('vm_stat', { encoding: 'utf8' });
+    const pageSizeMatch = out.match(/page size of\s+(\d+)\s+bytes/i);
+    const pageSize = pageSizeMatch ? Number(pageSizeMatch[1]) : 4096;
+
+    const getPages = (label) => {
+      const re = new RegExp(`^\\s*${label}:\\s*(\\d+)\\.$`, 'mi');
+      const m = out.match(re);
+      return m ? Number(m[1]) : 0;
+    };
+
+    const pagesFree = getPages('Pages free');
+    const pagesSpec = getPages('Pages speculative');
+    const pagesInactive = getPages('Pages inactive');
+    const pagesPurgeable = getPages('Pages purgeable');
+
+    const pagesAvail = pagesFree + pagesSpec + pagesInactive + pagesPurgeable;
+    const availBytes = Math.max(0, pagesAvail) * (Number.isFinite(pageSize) ? pageSize : 4096);
+    return Number.isFinite(availBytes) ? availBytes : null;
+  } catch {
+    return null;
+  }
+}
+
+function decideRandomxModeForMac(config) {
+  const totalBytes = os.totalmem();
+  const totalGiB = bytesToGiB(totalBytes);
+  const threads = Number(config?.threads) || 1;
+
+  const availBytes = getMacVmStatAvailableBytes();
+  const availGiB = availBytes != null ? bytesToGiB(availBytes) : bytesToGiB(os.freemem());
+
+  // RandomX FULL_MEM allocates ~2GiB dataset + overhead; macOS memory pressure can crater hashrate.
+  // Keep it simple & safe for non-technical users:
+  // - Prefer LIGHT mode on smaller machines, or when available memory is low.
+  // - Prefer FULL_MEM when memory headroom seems comfortable.
+  const forceLight = (totalGiB < 12) || (availGiB < 5) || (threads >= 8 && availGiB < 7);
+
+  if (forceLight) {
+    return {
+      light: true,
+      reason: `low memory headroom (available ~${availGiB.toFixed(1)} GiB of ${totalGiB.toFixed(1)} GiB)`
+    };
+  }
+
+  return {
+    light: false,
+    reason: `memory OK (available ~${availGiB.toFixed(1)} GiB of ${totalGiB.toFixed(1)} GiB)`
+  };
+}
+
+// ============================================================================
+// GPU AUTO-DETECTION (CH3 Architecture)
+// Mirrors logic from Zion-2.9.5/pool/src/profit_switcher.rs
+// and Zion-2.9.5/miner/src/miner/mod.rs
+// ============================================================================
+
+let cachedGpuInfo = null;
+let gpuInfoLastProbeMs = 0;
+
+function detectGPU() {
+  const now = Date.now();
+  if (cachedGpuInfo && (now - gpuInfoLastProbeMs) < 60000) return cachedGpuInfo;
+
+  const result = {
+    available: false, type: 'none', name: '', driver: '',
+    memory: '', temperature: '', utilization: '', cpuOnly: true
+  };
+
+  // 1. Environment override: ZION_HAS_GPU=1/0
+  const envGpu = (process.env.ZION_HAS_GPU || '').trim();
+  if (envGpu === '1') {
+    result.available = true;
+    result.cpuOnly = false;
+    result.type = 'env-override';
+    result.name = 'GPU (ZION_HAS_GPU=1)';
+    cachedGpuInfo = result;
+    gpuInfoLastProbeMs = now;
+    return result;
+  }
+  if (envGpu === '0') {
+    cachedGpuInfo = result;
+    gpuInfoLastProbeMs = now;
+    return result;
+  }
+
+  // 2. macOS: system_profiler for Metal GPU
+  if (process.platform === 'darwin') {
+    try {
+      const out = execFileSync('system_profiler', ['SPDisplaysDataType'], {
+        timeout: 5000, encoding: 'utf8'
+      });
+      const nameMatch = out.match(/Chipset Model:\s*(.+)/i) || out.match(/Chip:\s*(.+)/i);
+      const vramMatch = out.match(/VRAM.*?:\s*(.+)/i);
+      const metalMatch = out.match(/Metal.*?:\s*(Supported|Yes)/i);
+      if (nameMatch) {
+        result.available = true;
+        result.cpuOnly = false;
+        result.type = 'metal';
+        result.name = nameMatch[1].trim();
+        result.memory = vramMatch ? vramMatch[1].trim() : 'Unified';
+        result.driver = metalMatch ? 'Metal Supported' : 'Metal';
+      }
+    } catch {}
+  }
+
+  // 3. nvidia-smi (NVIDIA GPUs — Linux/Windows)
+  if (!result.available) {
+    try {
+      const out = execFileSync('nvidia-smi', [
+        '--query-gpu=name,memory.total,driver_version,temperature.gpu,utilization.gpu',
+        '--format=csv,noheader,nounits'
+      ], { timeout: 5000, encoding: 'utf8' });
+      const parts = out.trim().split(',').map(s => s.trim());
+      if (parts[0]) {
+        result.available = true;
+        result.cpuOnly = false;
+        result.type = 'nvidia';
+        result.name = parts[0];
+        result.memory = parts[1] ? `${parts[1]} MB` : '';
+        result.driver = parts[2] || '';
+        result.temperature = parts[3] ? `${parts[3]}°C` : '';
+        result.utilization = parts[4] ? `${parts[4]}%` : '';
+      }
+    } catch {}
+  }
+
+  // 4. rocm-smi (AMD GPUs — Linux)
+  if (!result.available) {
+    try {
+      const out = execFileSync('rocm-smi', ['--showproductname'], {
+        timeout: 5000, encoding: 'utf8'
+      });
+      const nameMatch = out.match(/GPU\[\d+\].*?:\s*(.+)/i);
+      if (nameMatch) {
+        result.available = true;
+        result.cpuOnly = false;
+        result.type = 'amd';
+        result.name = nameMatch[1].trim();
+      }
+    } catch {}
+  }
+
+  cachedGpuInfo = result;
+  gpuInfoLastProbeMs = now;
+  try { logApp('gpu-detect', JSON.stringify(result)); } catch {}
+  return result;
+}
+
+// ============================================================================
+// TESTNET SERVER MONITORING (CH3 Architecture)
+// ============================================================================
+
+const TESTNET_SERVERS = [
+  { id: 'helsinki', name: 'Helsinki', host: '77.42.31.72', flag: '🇫🇮', location: 'Finland' },
+  { id: 'germany', name: 'Germany', host: '195.201.31.201', flag: '🇩🇪', location: 'Falkenstein, DE' }
+];
+
+async function checkServerPort(host, port, timeout = 3000) {
+  const net = require('net');
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const socket = new net.Socket();
+    socket.setTimeout(timeout);
+    socket.on('connect', () => {
+      const latency = Date.now() - start;
+      socket.destroy();
+      resolve({ online: true, latency, port });
+    });
+    socket.on('timeout', () => { socket.destroy(); resolve({ online: false, latency: -1, port }); });
+    socket.on('error', () => { socket.destroy(); resolve({ online: false, latency: -1, port }); });
+    socket.connect(port, host);
+  });
+}
+
+async function getAllServersStatus() {
+  const results = await Promise.all(
+    TESTNET_SERVERS.map(async (server) => {
+      const [poolStatus, rpcStatus] = await Promise.all([
+        checkServerPort(server.host, 3333),
+        checkServerPort(server.host, 8444)
+      ]);
+      return {
+        ...server,
+        pool: poolStatus,
+        rpc: rpcStatus,
+        online: poolStatus.online || rpcStatus.online
+      };
+    })
+  );
+  return results;
+}
+
+/**
+ * Auto-select the best pool by latency.
+ * Called on first launch or when current pool is unreachable.
+ * Only updates config if the user hasn't explicitly chosen a custom pool.
+ */
+async function autoSelectBestPool() {
+  try {
+    const servers = await getAllServersStatus();
+    const onlinePools = servers
+      .filter(s => s.pool.online)
+      .sort((a, b) => a.pool.latency - b.pool.latency);
+
+    if (onlinePools.length === 0) {
+      console.log('[auto-select] No online pools found, keeping current config');
+      return null;
+    }
+
+    const best = onlinePools[0];
+    console.log(`[auto-select] Best pool: ${best.name} (${best.host}) — latency ${best.pool.latency}ms`);
+
+    const config = loadConfig();
+    // Only auto-switch if current pool is a known testnet server (not custom)
+    const knownHosts = TESTNET_SERVERS.map(s => s.host);
+    if (!knownHosts.includes(config.pool?.host) && config.pool?.host) {
+      console.log(`[auto-select] User has custom pool ${config.pool.host}, skipping auto-select`);
+      return best;
+    }
+
+    if (config.pool?.host !== best.host) {
+      config.pool = { host: best.host, port: 3333 };
+      config.rpcUrl = `http://${best.host}:8444/jsonrpc`;
+      saveConfig(config);
+      console.log(`[auto-select] Config updated to ${best.host}`);
+    }
+    return best;
+  } catch (err) {
+    console.error('[auto-select] Error:', err.message);
+    return null;
+  }
+}
+
+function migrateLegacyUserDataIfNeeded() {
+  // Legacy bug created nested userData under: <userData>\cache\<appFolderName>\...
+  const legacyRoot = path.join(USER_DATA_PATH, 'cache', path.basename(USER_DATA_PATH));
+  const legacyConfig = path.join(legacyRoot, 'miner_config.json');
+  const legacyLog = path.join(legacyRoot, 'miner.log');
+  const legacyWallets = path.join(legacyRoot, 'wallets');
+
+  try {
+    if (!fs.existsSync(CONFIG_PATH) && fs.existsSync(legacyConfig)) {
+      fs.copyFileSync(legacyConfig, CONFIG_PATH);
+      console.log('Migrated legacy config to:', CONFIG_PATH);
+    }
+
+    if (!fs.existsSync(LOG_PATH) && fs.existsSync(legacyLog)) {
+      fs.copyFileSync(legacyLog, LOG_PATH);
+      console.log('Migrated legacy log to:', LOG_PATH);
+    }
+
+    if (!fs.existsSync(WALLETS_PATH) && fs.existsSync(legacyWallets)) {
+      fs.mkdirSync(WALLETS_PATH, { recursive: true });
+      for (const file of fs.readdirSync(legacyWallets)) {
+        const from = path.join(legacyWallets, file);
+        const to = path.join(WALLETS_PATH, file);
+        if (!fs.existsSync(to)) {
+          fs.copyFileSync(from, to);
+        }
+      }
+      console.log('Migrated legacy wallets to:', WALLETS_PATH);
+    }
+  } catch (err) {
+    console.warn('Legacy data migration failed:', err);
+  }
+}
+
+// Create main window
+function createWindow() {
+  const config = loadConfig();
+  let didFallbackToFileUi = false;
+
+  try {
+    logApp(
+      'createWindow',
+      JSON.stringify({
+        nodeEnv: process.env.NODE_ENV || '',
+        isPackaged: !!IS_PACKAGED,
+        appRoot: APP_ROOT,
+        cwd: process.cwd(),
+        minimizeToTray: !!config.minimizeToTray,
+        autoStart: !!config.autoStart,
+        aiAfterburner: config.aiAfterburner !== false,
+        aiNative: config.aiNative === true
+      })
+    );
+  } catch {
+    // ignore
+  }
+
+  // Window icon is meaningful on Windows/Linux; macOS uses the app bundle icon.
+  const windowIconPath = resolveResourcePath('assets', 'icon.png');
+  const windowIcon = (process.platform === 'win32' || process.platform === 'linux') ? windowIconPath : undefined;
+
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    title: 'ZION Native Awakening v2.9.5',
+    backgroundColor: '#000000',
+    ...(windowIcon ? { icon: windowIcon } : {}),
+    show: true, // Always show window on manual start; startMinimized only applies to auto-start
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true, // AUDIT-FIX E-05 (16 Feb 2026): enable sandbox for renderer
+      preload: path.join(__dirname, 'preload.js')
+    }
+  });
+
+  // AUDIT-FIX E-05 (16 Feb 2026): prevent navigation to arbitrary URLs
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const parsed = new URL(url);
+    // Allow file:// loads (our own UI) and localhost dev server
+    if (parsed.protocol === 'file:') return;
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return;
+    logApp('navigation-blocked', JSON.stringify({ url }));
+    event.preventDefault();
+  });
+
+  // AUDIT-FIX E-05: deny all window.open / target=_blank
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    logApp('window-open-blocked', JSON.stringify({ url }));
+    return { action: 'deny' };
+  });
+
+  // Load UI
+  const uiDevUrlRaw = process.env.ZION_UI_DEV_URL;
+  const uiDevUrl = typeof uiDevUrlRaw === 'string' ? uiDevUrlRaw.trim() : '';
+  const uiFilePath = path.join(__dirname, 'ui', 'index.html');
+
+  if (uiDevUrl) {
+    try {
+      logApp('ui-load', JSON.stringify({ mode: 'dev-url', url: uiDevUrl }));
+    } catch {
+      // ignore
+    }
+    mainWindow.loadURL(uiDevUrl);
+    // DevTools are helpful when explicitly using a dev URL
+    try {
+      mainWindow.webContents.openDevTools();
+    } catch {
+      // ignore
+    }
+  } else {
+    try {
+      logApp('ui-load', JSON.stringify({ mode: 'file', file: uiFilePath, nodeEnv: process.env.NODE_ENV || '' }));
+    } catch {
+      // ignore
+    }
+    mainWindow.loadFile(uiFilePath);
+  }
+
+  // WebContents lifecycle markers
+  try {
+    mainWindow.webContents.on('dom-ready', () => {
+      logApp('webcontents-dom-ready');
+    });
+    mainWindow.webContents.on('did-finish-load', () => {
+      logApp('webcontents-did-finish-load');
+    });
+    mainWindow.webContents.on('did-start-loading', () => {
+      logApp('webcontents-did-start-loading');
+    });
+    mainWindow.webContents.on('did-stop-loading', () => {
+      logApp('webcontents-did-stop-loading');
+    });
+    mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+      // Keep this compact; renderer console spam can be huge.
+      const msg = String(message || '');
+      const compact = msg.length > 500 ? msg.slice(0, 500) + '…' : msg;
+      logApp('renderer-console', JSON.stringify({ level, message: compact, line, sourceId }));
+    });
+  } catch {
+    // ignore
+  }
+
+  try {
+    mainWindow.on('ready-to-show', () => logApp('window-ready-to-show'));
+    mainWindow.on('unresponsive', () => logApp('window-unresponsive'));
+    mainWindow.on('responsive', () => logApp('window-responsive'));
+  } catch {
+    // ignore
+  }
+
+  // Recover from renderer crashes / load failures instead of silently exiting.
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    // In dev, the React/Vite/Next server might not be running.
+    // Don't brick the app: fall back to the packaged/static UI.
+    try {
+      if (
+        !didFallbackToFileUi &&
+        isMainFrame === true &&
+        String(errorDescription || '').toUpperCase().includes('ERR_CONNECTION_REFUSED') &&
+        typeof validatedURL === 'string' &&
+        validatedURL
+      ) {
+        // Only fall back when a dev URL was attempted.
+        const attemptedDev = (uiDevUrl && validatedURL.startsWith(uiDevUrl)) || validatedURL.startsWith('http://localhost:3000');
+        if (!attemptedDev) {
+          // Not our UI main frame; handle normally.
+        } else {
+          didFallbackToFileUi = true;
+          logApp('ui-dev-connection-refused', JSON.stringify({ errorCode, errorDescription, validatedURL }));
+          mainWindow.loadFile(uiFilePath);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    logApp('did-fail-load', `${errorCode} ${errorDescription}`);
+    console.error('LOAD FAILED:', errorCode, errorDescription);
+    dialog.showErrorBox('Load Failed', `Failed to load UI: ${errorDescription}`);
+  });
+
+  mainWindow.webContents.on('crashed', (event, killed) => {
+    logApp('crashed', `killed=${killed}`);
+    console.error('RENDERER CRASHED!', { killed });
+    dialog.showErrorBox('Renderer Crashed', 'The renderer process crashed. Check logs.');
+  });
+
+  mainWindow.webContents.on('render-process-gone', (event, details) => {
+    logApp('render-process-gone', `${details?.reason || 'unknown'} ${details?.exitCode ?? ''}`);
+    // Recreate the window after a short delay.
+    setTimeout(() => {
+      try {
+        if (!mainWindow) createWindow();
+        else mainWindow.reload();
+      } catch (err) {
+        logApp('renderer-recover-failed', err?.message || String(err));
+      }
+    }, 500);
+  });
+
+  // Window events
+  mainWindow.on('close', (event) => {
+    if (config.minimizeToTray && !app.isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+
+  // Auto-start mining if configured
+  if (config.autoStart && config.wallet) {
+    setTimeout(() => startMining(config), 3000);
+  }
+
+  // Default ON: start Afterburner service on app launch (independent of miner).
+  if (config.aiAfterburner !== false) {
+    void ensureAfterburnerServiceRunning()
+      .then(() => afterburnerSend({ cmd: 'start' }))
+      .catch(() => {
+        // best-effort; avoid noisy dialogs on launch
+      });
+  }
+
+  // AI Native service (OFF by default, user must enable in settings)
+  if (config.aiNative === true) {
+    void ensureAiNativeServiceRunning()
+      .then(() => aiNativeSend({ 
+        cmd: 'start',
+        config: {
+          wallet: config.wallet,
+          pool_url: config.aiNativePoolUrl || 'http://localhost:8001',
+          consciousness_level: config.aiNativeConsciousness || 1,
+          gpu: config.gpu || false,
+          threads: config.threads || 4
+        }
+      }))
+      .catch((err) => {
+        console.error('AI Native startup failed:', err);
+      });
+  }
+}
+
+// Create system tray
+function createTray() {
+  // Use nativeImage for better compatibility
+  const { nativeImage } = require('electron');
+  
+  // Prefer a dedicated tray icon; fall back to app icon.
+  const trayIconCandidates = [
+    resolveResourcePath('assets', 'tray-icon.png'),
+    resolveResourcePath('tray-icon.png'),
+    resolveResourcePath('assets', 'icon.png'),
+    resolveResourcePath('icon.png')
+  ];
+
+  let trayIcon = nativeImage.createEmpty();
+  for (const p of trayIconCandidates) {
+    try {
+      const img = nativeImage.createFromPath(p);
+      if (img && !img.isEmpty()) {
+        trayIcon = img;
+        break;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // macOS menubar: template images render correctly on light/dark mode.
+  if (process.platform === 'darwin' && trayIcon && !trayIcon.isEmpty()) {
+    try {
+      trayIcon.setTemplateImage(true);
+    } catch {
+      // ignore
+    }
+  }
+  
+  tray = new Tray(trayIcon);
+  
+  trayMenu = Menu.buildFromTemplate([
+    {
+      label: 'ZION Miner v2.9.5',
+      enabled: false
+    },
+    { type: 'separator' },
+    {
+      label: 'Hashrate: 0 kH/s',
+      id: 'hashrate',
+      enabled: false
+    },
+    {
+      label: 'Status: Stopped',
+      id: 'status',
+      enabled: false
+    },
+    { type: 'separator' },
+    {
+      label: 'Start Mining',
+      id: 'start',
+      click: () => {
+        const config = loadConfig();
+        if (config.wallet) {
+          startMining(config);
+        } else {
+          showWindow();
+          dialog.showMessageBox(mainWindow, {
+            type: 'warning',
+            title: 'Wallet Required',
+            message: 'Please configure your ZION wallet address first.'
+          });
+        }
+      }
+    },
+    {
+      label: 'Stop Mining',
+      id: 'stop',
+      enabled: false,
+      click: stopMining
+    },
+    { type: 'separator' },
+    {
+      label: 'Show Window',
+      click: showWindow
+    },
+    {
+      label: 'Quit',
+      click: () => {
+        app.isQuitting = true;
+        stopMining();
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setContextMenu(trayMenu);
+  tray.setToolTip('ZION Miner v2.9.5');
+  
+  tray.on('click', () => {
+    showWindow();
+  });
+}
+
+function showWindow() {
+  if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+  }
+}
+
+function updateTrayMenu(stats) {
+  if (!tray || !trayMenu) return;
+  const isRunning = minerProcess !== null;
+
+  const hashrateHs = typeof stats.hashrate === 'number' ? stats.hashrate : 0;
+  let trayValue = hashrateHs;
+  let trayUnit = 'H/s';
+  if (trayValue >= 1e9) {
+    trayValue /= 1e9;
+    trayUnit = 'GH/s';
+  } else if (trayValue >= 1e6) {
+    trayValue /= 1e6;
+    trayUnit = 'MH/s';
+  } else if (trayValue >= 1e3) {
+    trayValue /= 1e3;
+    trayUnit = 'kH/s';
+  }
+  trayMenu.getMenuItemById('hashrate').label = `Hashrate: ${trayValue.toFixed(2)} ${trayUnit}`;
+  trayMenu.getMenuItemById('status').label = `Status: ${isRunning ? 'Mining' : 'Stopped'}`;
+  trayMenu.getMenuItemById('start').enabled = !isRunning;
+  trayMenu.getMenuItemById('stop').enabled = isRunning;
+
+  tray.setContextMenu(trayMenu);
+}
+
+// Mining process management
+function startMining(config) {
+  // New start resets any previous stop intent.
+  minerUserStopRequested = false;
+
+  // Cancel any pending timers from a previous run.
+  try {
+    if (minerFallbackTimer) clearTimeout(minerFallbackTimer);
+  } catch {
+    // ignore
+  }
+  minerFallbackTimer = null;
+  try {
+    if (minerStartAckTimer) clearTimeout(minerStartAckTimer);
+  } catch {
+    // ignore
+  }
+  minerStartAckTimer = null;
+
+  const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
+  const selection = resolveMinerSelection(preferredBackend);
+  if (!selection) {
+    const rustHint = preferredBackend === 'rust'
+      ? `Rust miner not found or blocked. On Windows, Windows Defender may quarantine zion-universal-miner.exe. Check Defender protection history and add an exclusion for: ${IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources')}`
+      : 'No miner executable found. Please install Rust miner or Python miner.';
+    minerBackendPreferred = preferredBackend;
+    minerBackendResolved = null;
+    minerBackendPath = '';
+    minerBackendLastError = rustHint;
+    try {
+      sendToRenderer('miner-backend', {
+        preferred: minerBackendPreferred,
+        resolved: minerBackendResolved,
+        path: minerBackendPath,
+        lastError: minerBackendLastError
+      });
+      sendToRenderer('miner-output', { stream: 'stderr', text: `[ERROR] ${rustHint}\n` });
+    } catch {
+      // ignore
+    }
+    return { success: false, error: rustHint };
+  }
+
+  try {
+    minerBackendPreferred = preferredBackend;
+    minerBackendResolved = String(selection.backend || '').toLowerCase() || null;
+    minerBackendPath = selection.path || '';
+    minerBackendLastError = '';
+  } catch {
+    minerBackendPreferred = 'auto';
+    minerBackendResolved = null;
+    minerBackendPath = '';
+    minerBackendLastError = '';
+  }
+
+  // Tell renderer what we actually resolved (lite backend indicator).
+  try {
+    sendToRenderer('miner-backend', {
+      preferred: minerBackendPreferred,
+      resolved: minerBackendResolved,
+      path: selection.path || '',
+      lastError: minerBackendLastError
+    });
+  } catch {
+    // ignore
+  }
+
+  if (MINER_PATH !== selection.path || MINER_IS_RUST !== selection.isRust || MINER_IS_PYTHON !== selection.isPython) {
+    MINER_PATH = selection.path;
+    MINER_IS_RUST = selection.isRust;
+    MINER_IS_PYTHON = selection.isPython;
+    try {
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: `[INFO] Miner backend: ${selection.backend} (${selection.path})\n`
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  const minerStartTs = Date.now();
+  const fallbackPythonPath = findPythonMiner();
+  const rustFallbackEligible =
+    MINER_IS_RUST &&
+    !!fallbackPythonPath &&
+    preferredBackend === 'auto';
+  if (minerProcess) {
+    console.log('Miner already running');
+    return { success: false, error: 'Miner is already running' };
+  }
+
+  // Clear any stale auto-stop timer from previous runs.
+  if (minerAutoStopTimer) {
+    try {
+      clearTimeout(minerAutoStopTimer);
+    } catch {
+      // ignore
+    }
+    minerAutoStopTimer = null;
+  }
+
+  if (!config.wallet || !config.wallet.toString().trim()) {
+    dialog.showErrorBox('Wallet Missing', 'Set your ZION wallet address in Settings or Wallet tab before starting mining.');
+    return { success: false, error: 'Wallet missing' };
+  }
+
+  // Enforce canonical chain-compatible addresses.
+  const addr = config.wallet.toString().trim();
+  const addrType = WalletGenerator.getAddressType(addr);
+  if (addrType !== 'zion1') {
+    const hint = addrType === 'legacy'
+      ? 'You are using a legacy ZION... address. The chain only credits zion1... addresses.'
+      : 'Invalid address format.';
+    dialog.showErrorBox(
+      'Invalid Wallet Address',
+      `${hint}\n\nPlease create/select a zion1... wallet in the Wallet tab and use that for mining.`
+    );
+    return { success: false, error: 'Invalid wallet address' };
+  }
+
+  // Check if miner executable exists
+  if (!fs.existsSync(MINER_PATH)) {
+    dialog.showErrorBox('Miner Not Found', `Miner executable not found at: ${MINER_PATH}`);
+    return { success: false, error: `Miner executable not found at: ${MINER_PATH}` };
+  }
+
+  // Auto load-balance for max performance + responsiveness.
+  // We do not add new UI; we just clamp/auto-pick effective threads.
+  const effectiveThreads = computeEffectiveThreads(config);
+
+  // Mining mode: cpu, gpu, dual, gpu-revenue (new UI)
+  // Backwards compatible: if miningMode not set, use legacy gpu checkbox
+  const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
+  
+  // GPU mode guardrails: do not attempt GPU for algorithms that don't support it.
+  const wantsGpu = miningMode === 'gpu' || miningMode === 'dual' || miningMode === 'gpu-revenue';
+  const algoForGpu = String(config.algorithm || '').toLowerCase();
+  const gpuAllowed = algoSupportsGpu(algoForGpu);
+  const effectiveGpu = wantsGpu && gpuAllowed;
+  
+  // Determine effective mode for miner
+  let effectiveMode = 'cpu';
+  if (effectiveGpu) {
+    if (miningMode === 'gpu-revenue') {
+      effectiveMode = 'gpu-revenue'; // Special mode for dynamic GPU coin switching
+    } else {
+      effectiveMode = miningMode === 'dual' ? 'gpu' : 'gpu'; // miner handles dual internally when mode=gpu
+    }
+  }
+  
+  // Log mining mode for user
+  try {
+    let modeLabel = 'CPU Only';
+    if (miningMode === 'gpu') {
+      modeLabel = 'GPU Only';
+    } else if (miningMode === 'dual') {
+      modeLabel = 'DUAL (CPU + GPU)';
+    } else if (miningMode === 'gpu-revenue') {
+      modeLabel = 'GPU Revenue Mining (Profit Switching)';
+    }
+    sendToRenderer('miner-output', {
+      stream: 'stdout',
+      text: `[INFO] Mining Mode: ${modeLabel}\n`
+    });
+  } catch {
+    // ignore
+  }
+  
+  if (wantsGpu && !gpuAllowed) {
+    try {
+      sendToRenderer('miner-output', {
+        stream: 'stderr',
+        text: `[WARN] GPU mode is not supported for algorithm=${algoForGpu}. Forcing CPU mode.\n`
+      });
+    } catch {
+      // ignore
+    }
+    logApp('gpu-forced-off', JSON.stringify({ algorithm: algoForGpu }));
+  }
+
+  try {
+    const cpuCount = Array.isArray(os.cpus?.()) ? os.cpus().length : 1;
+    const safeCpuCount = Math.max(1, cpuCount);
+    const afterburnerEnabled = config?.aiAfterburner !== false;
+    const reserved = Math.min(safeCpuCount - 1, afterburnerEnabled ? 2 : 1);
+    const maxThreads = Math.max(1, safeCpuCount - reserved);
+    const autoAff = computeAutoAffinity(safeCpuCount, effectiveThreads);
+    const msg = {
+      cpuCount: safeCpuCount,
+      afterburnerEnabled,
+      reserved,
+      maxThreads,
+      requestedThreads: config?.threads,
+      effectiveThreads,
+      autoAffinityMask: autoAff?.mask != null ? autoAff.mask.toString() : '',
+      autoAffinityCores: Array.isArray(autoAff?.cores) ? autoAff.cores.join(',') : ''
+    };
+    logApp('miner-auto-tune', JSON.stringify(msg));
+    try {
+      sendToRenderer('miner-output', { stream: 'stdout', text: `[INFO] Auto-tune: threads=${effectiveThreads}/${safeCpuCount} reserved=${reserved} affinity=${msg.autoAffinityCores || 'auto'}\n` });
+    } catch {
+      // ignore
+    }
+  } catch {
+    // ignore
+  }
+
+  const rustGroupSupported = MINER_IS_RUST ? rustMinerSupportsGroupFlag(MINER_PATH) : false;
+
+  // ═══════════════════════════════════════════════════════════
+  // Dual Mining Info (ZION + Revenue group via pool)
+  // ═══════════════════════════════════════════════════════════
+  if (MINER_IS_RUST && effectiveThreads >= 3 && rustGroupSupported) {
+    const disableRevenueEnv = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+    if (!disableRevenueEnv) {
+      try {
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ═══ Dual Mining Active ═══\n` });
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3]   ZION: ${effectiveThreads - 1}T CosmicHarmony → pool ${config.pool.host}:${config.pool.port} (g=zion)\n` });
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3]   REV:  1T RandomX → pool ${config.pool.host}:${config.pool.port} (g=revenue → XMR/BTC)\n` });
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ═════════════════════════════\n` });
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // Mainnet Phase 1: Cosmic Harmony v3 only
+  // Rust miner accepts 'cosmic_harmony' and internally runs CosmicHarmonyV3 engine.
+  // Python fallback accepts 'cosmic_harmony_v3' directly.
+  const requestedAlgorithm = 'cosmic_harmony_v3';
+  const requestedAlgorithmLower = 'cosmic_harmony_v3';
+  const algorithmForMiner = MINER_IS_PYTHON ? 'cosmic_harmony_v3' : 'cosmic_harmony';
+
+  let args;
+  let xmrRevenueThreads = 0;
+  let zionThreads = effectiveThreads;
+  if (MINER_IS_RUST) {
+    const algoLowerForHint = String(algorithmForMiner || requestedAlgorithmLower || 'cosmic_harmony').toLowerCase();
+    const difficultyHint = computeDifficultyHint(config, algoLowerForHint);
+
+    // ═══ Dual Mining Thread Split: ZION (N-1) + Revenue (1) ═══
+    // Default DAO revenue model: 1 thread connects to the SAME pool with
+    // --group revenue. The pool's StreamScheduler routes revenue-group
+    // miners to XMR/RandomX jobs via RevenueProxy (→ MoneroOcean → BTC).
+    // Remaining threads mine ZION (CosmicHarmony). Minimum 2 threads for ZION.
+    // Disable dual mining via ZION_DISABLE_REVENUE=1 env var.
+    const disableRevenue = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+    xmrRevenueThreads = (!disableRevenue && effectiveThreads >= 3 && rustGroupSupported) ? 1 : 0;
+    zionThreads = effectiveThreads - xmrRevenueThreads;
+
+    // Rust miner CLI (zion-universal-miner) — main ZION group
+    args = [
+      '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
+      '--wallet', config.wallet,
+      '--threads', String(zionThreads),
+      '--stats-file', STATS_PATH,
+      '--stats-interval', '5',
+      '--no-color'
+    ];
+
+    if (rustGroupSupported) {
+      args.push('--group', 'zion');
+    } else {
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stderr',
+          text: '[WARN] Rust miner CLI does not support --group; running single-process mode (revenue split disabled).\n'
+        });
+      } catch {
+        // ignore
+      }
+      logApp('miner-group-unsupported', JSON.stringify({ minerPath: MINER_PATH }));
+    }
+
+    if (difficultyHint) {
+      args.push('--difficulty', String(difficultyHint));
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[INFO] Difficulty hint: ${difficultyHint}\n`
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    if (config.worker) args.push('--worker', String(config.worker));
+    if (algorithmForMiner) args.push('--algorithm', String(algorithmForMiner));
+    if (effectiveGpu) args.push('--gpu');
+  } else {
+    // Python miner / legacy .exe miner (shared CLI)
+    args = [
+      '--pool', `${config.pool.host}:${config.pool.port}`,
+      '--wallet', config.wallet,
+      '--worker', config.worker,
+      '--threads', String(effectiveThreads),
+      '--stats-interval', '5',
+      '--stats-file', STATS_PATH
+    ];
+
+    if (algorithmForMiner) {
+      args.push('--algorithm', String(algorithmForMiner));
+    }
+
+    // Use effectiveMode which handles dual mining logic
+    args.push('--mode', effectiveMode);
+  }
+
+  const minerLabel = MINER_IS_RUST
+    ? `rust ${MINER_PATH}`
+    : MINER_IS_PYTHON
+      ? `python ${MINER_PATH}`
+      : MINER_PATH;
+  console.log('Starting miner:', minerLabel, args.join(' '));
+
+  // Cache some metadata for xmrig-style status lines.
+  try {
+    // Reset live stats so we never display stale A/R from a previous run.
+    minerStats.hashrate = 0;
+    minerStats.shares = 0;
+    minerStats.accepted = 0;
+    minerStats.rejected = 0;
+    minerStats.uptime = 0;
+    minerStats.last_job_height = '';
+    minerStats.last_job_diff = '';
+    minerStats.last_pool_diff = '';
+    minerStats.last_job_id = '';
+
+    // Remove any stale stats file (e.g., from a previous Python run) so we don't read old counts.
+    try {
+      if (fs.existsSync(STATS_PATH)) fs.unlinkSync(STATS_PATH);
+    } catch {
+      // ignore
+    }
+
+    minerStats.algorithm = String(algorithmForMiner || config.algorithm || '').trim();
+    minerStats.pool = `${config?.pool?.host || ''}:${config?.pool?.port || ''}`.replace(/^:|:$/g, '');
+    minerStats.worker = String(config.worker || '').trim();
+    minerStats.threads = String(effectiveThreads);
+    // Dual mining metadata
+    minerStats.dual_mining = MINER_IS_RUST && xmrRevenueThreads > 0;
+    minerStats.zion_threads = MINER_IS_RUST ? zionThreads : effectiveThreads;
+    minerStats.xmr_threads = MINER_IS_RUST ? xmrRevenueThreads : 0;
+    minerStats.xmr_pool = MINER_IS_RUST && xmrRevenueThreads > 0 ? `${config?.pool?.host || ''}:${config?.pool?.port || ''} (g=revenue)` : '';
+    minerStats.revenue_coin = MINER_IS_RUST && xmrRevenueThreads > 0 ? 'XMR' : '';
+    minerMetricsLastEmitMs = 0;
+    minerRateSamples = [];
+    minerShareLastSample = { t: 0, accepted: 0, rejected: 0 };
+    minerShareDeltaSamples = [];
+  } catch {
+    // ignore
+  }
+
+  // The miner loads native DLLs via relative paths like ai\\mining\\*.dll.
+  // Ensure cwd points to a directory that contains the ai/ folder.
+  const minerCwd = IS_PACKAGED
+    ? process.resourcesPath
+    : (process.platform === 'win32' ? path.join(APP_ROOT, '..') : path.join(APP_ROOT, 'resources'));
+
+  // Spawn miner - use Python on macOS/Linux, executable on Windows
+  let spawnCommand, spawnArgs;
+  if (MINER_IS_PYTHON) {
+    // macOS/Linux use python3, Windows uses python
+    spawnCommand = process.platform === 'win32' ? 'python' : 'python3';
+    spawnArgs = [MINER_PATH, ...args];
+  } else {
+    // Windows: use .exe directly
+    spawnCommand = MINER_PATH;
+    spawnArgs = args;
+  }
+
+  // Detect GPU and pass to miner via env
+  const gpuInfo = detectGPU();
+  minerStats.gpu_detected = gpuInfo.available;
+  minerStats.gpu_type = gpuInfo.type;
+  minerStats.gpu_name = gpuInfo.name;
+  minerStats.cpu_only_mode = gpuInfo.cpuOnly;
+
+  try {
+    // CPU info (model + logical cores) — shown in debug panel for clarity.
+    try {
+      const cpuList = Array.isArray(os.cpus?.()) ? os.cpus() : [];
+      const cpuModel = String(cpuList?.[0]?.model || '').trim() || process.arch;
+      const logical = cpuList.length || 1;
+      const split = (MINER_IS_RUST && xmrRevenueThreads > 0)
+        ? ` | split ZION=${zionThreads}T REV=${xmrRevenueThreads}T`
+        : '';
+      const cpuLine = `[CH3] CPU: ${cpuModel} (logical=${logical}) | threads=${effectiveThreads}${split}\n`;
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: cpuLine
+      });
+
+      // Also persist to miner.log (useful for support/debug and for tests).
+      try {
+        rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
+        fs.appendFileSync(LOG_PATH, cpuLine);
+      } catch {
+        // ignore
+      }
+    } catch {
+      // ignore
+    }
+
+    const modeLabel = gpuInfo.available ? `GPU: ${gpuInfo.name} (${gpuInfo.type})` : 'CPU-ONLY MODE (no GPU detected)';
+    sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ${modeLabel}\n` });
+    if (gpuInfo.cpuOnly) {
+      sendToRenderer('miner-output', { stream: 'stdout', text: '[CH3] Revenue stream locked to XMR/RandomX (25% CPU time)\n' });
+    }
+  } catch {}
+
+  const env = {
+    ...process.env,
+    // CH v3 desktop režim: držet algoritmus pinned, bez runtime stream switchů.
+    ZION_ENABLE_STREAM_SWITCH: '0',
+    ...(gpuInfo.available ? { ZION_HAS_GPU: '1' } : {}),
+    ZION_AI_AFTERBURNER: config.aiAfterburner === false ? '0' : '1',
+    // GPU Revenue Mining configuration
+    ZION_GPU_REVENUE: config.gpuRevenue ? '1' : '0',
+    ZION_GPU_REVENUE_COINS: config.gpuRevenueCoins ? config.gpuRevenueCoins.join(',') : 'ERG,RVN,KAS,ALPH',
+    // Safety default: Cosmic Harmony C++ dylib has shown instability on macOS in some builds.
+    // If you want to force-enable it, set ZION_COSMIC_CPP=1 in the environment.
+    ...(process.platform === 'darwin' ? { ZION_COSMIC_CPP: process.env.ZION_COSMIC_CPP || '0' } : {}),
+    // Prevent UnicodeEncodeError on Windows when PyInstaller app prints non-ASCII.
+    PYTHONUTF8: '1',
+    PYTHONIOENCODING: 'utf-8',
+    // Make sure prints/logs aren't stuck in a buffer when stdout isn't a TTY.
+    PYTHONUNBUFFERED: '1',
+    // Add mining folder to PYTHONPATH so miner can find local modules
+    PYTHONPATH: minerCwd + (process.env.PYTHONPATH ? path.delimiter + process.env.PYTHONPATH : '')
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // Native library paths — ensure Rust miner can find .dylib/.so/.dll
+  // ═══════════════════════════════════════════════════════════
+  {
+    const nativeLibDirs = [
+      path.join(minerCwd, 'native-libs'),
+      minerCwd,
+      path.join(minerCwd, 'ai', 'mining'),
+      path.join(minerCwd, 'zion', 'mining'),
+    ].filter(d => { try { return fs.existsSync(d); } catch { return false; } });
+
+    if (nativeLibDirs.length > 0) {
+      const nativeLibPath = nativeLibDirs.join(path.delimiter);
+      if (process.platform === 'darwin') {
+        // macOS: DYLD_LIBRARY_PATH for dynamic library loading
+        env.DYLD_LIBRARY_PATH = nativeLibPath + (env.DYLD_LIBRARY_PATH ? path.delimiter + env.DYLD_LIBRARY_PATH : '');
+        env.DYLD_FALLBACK_LIBRARY_PATH = nativeLibPath;
+      } else if (process.platform === 'linux') {
+        // Linux: LD_LIBRARY_PATH
+        env.LD_LIBRARY_PATH = nativeLibPath + (env.LD_LIBRARY_PATH ? path.delimiter + env.LD_LIBRARY_PATH : '');
+      }
+      // Windows DLL paths handled separately below
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[CH3] Native libs: ${nativeLibDirs.length} directories configured\n`
+        });
+      } catch { /* ignore */ }
+    }
+  }
+
+  // Optional difficulty hint for miners.
+  // - Rust universal miner gets it via CLI (--difficulty)
+  // - Python miner reads it from env and embeds into Stratum password (d=...)
+  try {
+    const algoLowerForHint = String(algorithmForMiner || requestedAlgorithmLower || 'cosmic_harmony').toLowerCase();
+    const difficultyHint = computeDifficultyHint(config, algoLowerForHint);
+    if (difficultyHint) {
+      env.ZION_MINER_DIFFICULTY = String(difficultyHint);
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[INFO] Difficulty hint (env): ${difficultyHint}\n`
+        });
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  let spawnDiagLine = null;
+  const maybeFallbackToPython = (reason) => {
+    if (!rustFallbackEligible) return false;
+    if (minerStopping || minerFallbackInProgress || minerUserStopRequested) return false;
+    minerFallbackInProgress = true;
+    try {
+      MINER_IS_RUST = false;
+      MINER_IS_PYTHON = true;
+      MINER_PATH = fallbackPythonPath;
+      minerBackendLastError = `Rust miner failed (${reason}). Fallback to Python (auto mode).`;
+      try {
+        sendToRenderer('miner-backend', {
+          preferred: minerBackendPreferred,
+          resolved: 'python',
+          path: fallbackPythonPath,
+          lastError: minerBackendLastError
+        });
+      } catch {
+        // ignore
+      }
+      sendToRenderer('miner-output', {
+        stream: 'stderr',
+        text: `[WARN] Rust miner failed (${reason}). Falling back to Python miner.\n`
+      });
+    } catch {
+      // ignore
+    }
+    minerFallbackTimer = setTimeout(() => {
+      minerFallbackInProgress = false;
+      minerFallbackTimer = null;
+      try {
+        startMining({ ...config, minerBackend: 'python' });
+      } catch (err) {
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stderr',
+            text: `[ERROR] Python fallback failed: ${err?.message || String(err)}\n`
+          });
+        } catch {
+          // ignore
+        }
+      }
+    }, 800);
+    return true;
+  };
+
+  // Windows DLL resolution: our native algo DLLs are built with MinGW and may depend on
+  // libstdc++/libgcc/libwinpthread/libgomp/libcrypto. Ensure the loader can find them.
+  // This fixes "Failed to load dynlib/dll ... Most likely ... frozen" when deps are missing.
+  if (process.platform === 'win32') {
+    const dllDirs = [
+      minerCwd,
+      path.join(minerCwd, 'ai', 'mining'),
+      path.join(minerCwd, 'zion', 'mining')
+    ];
+    // Windows env var casing can be either Path or PATH depending on how Electron was launched.
+    const existingPath = env.PATH || env.Path || process.env.PATH || process.env.Path || '';
+    const nextPath = dllDirs.join(path.delimiter) + (existingPath ? path.delimiter + existingPath : '');
+    env.PATH = nextPath;
+    env.Path = nextPath;
+  }
+
+  // "Na klik" RandomX: automatically choose FULL_MEM vs LIGHT on macOS.
+  // We always set both env vars to override any inherited shell settings.
+  const algoLower = String(config.algorithm || '').toLowerCase();
+  let randomxAutoMessage = null;
+  if (process.platform === 'darwin' && algoLower === 'randomx') {
+    const decision = decideRandomxModeForMac(config);
+    if (decision.light) {
+      env.ZION_RANDOMX_LIGHT = '1';
+      env.ZION_RANDOMX_FULL_MEM = '0';
+      randomxAutoMessage = `RandomX auto: LIGHT mode (cache-only) selected — ${decision.reason}`;
+    } else {
+      env.ZION_RANDOMX_LIGHT = '0';
+      env.ZION_RANDOMX_FULL_MEM = '1';
+      randomxAutoMessage = `RandomX auto: FULL_MEM mode selected — ${decision.reason}`;
+    }
+
+    // Show users a friendly explanation in the UI log.
+    try {
+      sendToRenderer('miner-output', { stream: 'stdout', text: `${randomxAutoMessage}\n` });
+    } catch {
+      // ignore
+    }
+  }
+
+  // Spawn-time diagnostics (helps confirm `npm start` is running the updated main process).
+  // Also emitted into miner.log (Open Log File) and the UI Mining Logs.
+  try {
+    const diag = {
+      isPackaged: IS_PACKAGED,
+      appRoot: APP_ROOT,
+      __dirname,
+      resourcesPath: process.resourcesPath,
+      execPath: process.execPath,
+      processCwd: process.cwd(),
+      minerCwd,
+      minerPath: MINER_PATH,
+      spawnCommand,
+      spawnArgs: Array.isArray(spawnArgs) ? spawnArgs.slice(0, 20) : spawnArgs,
+      minerExists: fs.existsSync(MINER_PATH),
+      aiMiningDirExists: fs.existsSync(path.join(minerCwd, 'ai', 'mining')),
+      zionMiningDirExists: fs.existsSync(path.join(minerCwd, 'zion', 'mining')),
+      dllExists: {
+        cosmic:
+          fs.existsSync(path.join(minerCwd, 'ai', 'mining', 'libcosmic_harmony_zion.dll')) ||
+          fs.existsSync(path.join(minerCwd, 'zion', 'mining', 'libcosmic_harmony_zion.dll')) ||
+          fs.existsSync(path.join(minerCwd, 'libcosmic_harmony_zion.dll')),
+        yescrypt:
+          fs.existsSync(path.join(minerCwd, 'ai', 'mining', 'libyescrypt_zion.dll')) ||
+          fs.existsSync(path.join(minerCwd, 'zion', 'mining', 'libyescrypt_zion.dll')) ||
+          fs.existsSync(path.join(minerCwd, 'libyescrypt_zion.dll')),
+        randomx:
+          fs.existsSync(path.join(minerCwd, 'ai', 'mining', 'librandomx_zion.dll')) ||
+          fs.existsSync(path.join(minerCwd, 'zion', 'mining', 'librandomx_zion.dll')) ||
+          fs.existsSync(path.join(minerCwd, 'librandomx_zion.dll'))
+      },
+      nativeLibsDir: fs.existsSync(path.join(minerCwd, 'native-libs')),
+      nativeLibCount: (() => {
+        try {
+          const nlDir = path.join(minerCwd, 'native-libs');
+          if (!fs.existsSync(nlDir)) return 0;
+          const ext = process.platform === 'darwin' ? '.dylib' : process.platform === 'win32' ? '.dll' : '.so';
+          return fs.readdirSync(nlDir).filter(f => f.endsWith(ext)).length;
+        } catch { return 0; }
+      })(),
+      pathPrefix: String(env.PATH || env.Path || '').slice(0, 300)
+    };
+
+    spawnDiagLine = `[DIAG] miner-spawn-diag ${JSON.stringify(diag)}\n`;
+
+    // Best-effort: app-level log file
+    logApp('miner-spawn-diag', JSON.stringify(diag));
+
+    // Show directly in the UI log so users can paste it easily.
+    try {
+      sendToRenderer('miner-output', { stream: 'stdout', text: spawnDiagLine });
+    } catch {
+      // ignore
+    }
+  } catch {
+    // ignore diagnostics failures
+  }
+
+  minerProcess = spawn(spawnCommand, spawnArgs, {
+    cwd: minerCwd,
+    env,
+    stdio: ['pipe', 'pipe', 'pipe'],
+    windowsHide: true
+  });
+
+  // Emit miner-started only after the process survives a short grace period.
+  // Prevents "started" spam when the miner exits immediately (e.g. bad CLI flags).
+  const myStartToken = ++minerStartToken;
+  minerStartAckTimer = setTimeout(() => {
+    minerStartAckTimer = null;
+    if (minerUserStopRequested || minerStopping) return;
+    if (!minerProcess) return;
+    if (myStartToken !== minerStartToken) return;
+    try {
+      sendToRenderer('miner-started', {});
+    } catch {
+      // ignore
+    }
+    updateTrayMenu(minerStats);
+  }, 450);
+
+  // Performance tuning (best-effort): boost priority/affinity on Windows.
+  try {
+    if (process.platform === 'win32') {
+      boostMinerProcessWindows(minerProcess?.pid, config, effectiveThreads);
+    }
+  } catch {
+    // ignore
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Revenue Process: 2nd miner connecting to the SAME pool with --group revenue.
+  // The pool's StreamScheduler assigns revenue-group miners to XMR/RandomX jobs
+  // via RevenueProxy (→ MoneroOcean → BTC). No direct external pool connection.
+  // ═══════════════════════════════════════════════════════════════
+  if (MINER_IS_RUST && xmrRevenueThreads > 0 && rustGroupSupported) {
+    try {
+      const revenueStatsPath = STATS_PATH.replace(/\.json$/, '_revenue.json');
+      const revenueArgs = [
+        '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
+        '--wallet', config.wallet,
+        '--threads', String(xmrRevenueThreads),
+        '--group', 'revenue',
+        '--stats-file', revenueStatsPath,
+        '--stats-interval', '5',
+        '--no-color'
+      ];
+      if (config.worker) revenueArgs.push('--worker', `${String(config.worker)}_rev`);
+
+      revenueProcess = spawn(spawnCommand, revenueArgs, {
+        cwd: minerCwd,
+        env
+      });
+
+      logApp('revenue-process-started', JSON.stringify({
+        pid: revenueProcess?.pid,
+        threads: xmrRevenueThreads,
+        group: 'revenue',
+        pool: `${config.pool.host}:${config.pool.port}`
+      }));
+
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[CH3] Revenue process started (PID ${revenueProcess?.pid}) — 1T → pool g=revenue\n`
+        });
+      } catch {
+        // ignore
+      }
+
+      // Pipe revenue process output to the miner log (prefixed)
+      revenueProcess.stdout?.on('data', (data) => {
+        const output = data.toString();
+        safeMinerLogWrite(`[REV-STDOUT] ${output}`);
+      });
+      revenueProcess.stderr?.on('data', (data) => {
+        const output = data.toString();
+        safeMinerLogWrite(`[REV-STDERR] ${output}`);
+      });
+
+      revenueProcess.on('error', (err) => {
+        console.error('Revenue miner process error:', err);
+        revenueProcess = null;
+        logApp('revenue-process-error', err?.message || String(err));
+      });
+
+      revenueProcess.on('close', (code, signal) => {
+        console.log(`Revenue process exited (code=${code} signal=${signal})`);
+        revenueProcess = null;
+        logApp('revenue-process-exit', JSON.stringify({ code, signal }));
+        // If main miner is still running and revenue died unexpectedly, log it
+        if (minerProcess && !minerStopping && !minerUserStopRequested && code !== 0) {
+          try {
+            sendToRenderer('miner-output', {
+              stream: 'stderr',
+              text: `[CH3] Revenue process exited unexpectedly (code=${code}). DAO revenue paused.\n`
+            });
+          } catch {
+            // ignore
+          }
+        }
+      });
+    } catch (err) {
+      logApp('revenue-process-spawn-failed', err?.message || String(err));
+      revenueProcess = null;
+    }
+  }
+
+  // Start Afterburner service (best-effort, non-blocking) when enabled.
+  if (config.aiAfterburner !== false) {
+    void ensureAfterburnerServiceRunning()
+      .then(() => afterburnerSend({ cmd: 'start' }))
+      .catch((err) => {
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stderr',
+            text: `[afterburner] failed to start: ${err?.message || String(err)}\n`
+          });
+        } catch {
+          // ignore
+        }
+      });
+  }
+
+  minerProcess.on('error', (err) => {
+    console.error('Failed to start miner process:', err);
+    minerProcess = null;
+
+    try {
+      const msg = err?.message || String(err);
+      if (
+        process.platform === 'win32' &&
+        /virus|potenciálně\s+nežádouc|potentially\s+unwanted|pua|blocked\s+by\s+antivirus/i.test(msg)
+      ) {
+        const base =
+          `[ERROR] Rust miner was blocked by Windows Defender/AV (PUA detection). ` +
+          `Allow/restore the miner exe and add an exclusion for the resources folder.`;
+        const extra = preferredBackend === 'auto'
+          ? ' Falling back to Python miner (auto mode) if available.'
+          : ' Fallback is disabled because you selected Rust explicitly.';
+
+        minerBackendLastError = base + extra;
+        try {
+          sendToRenderer('miner-backend', {
+            preferred: minerBackendPreferred,
+            resolved: minerBackendResolved,
+            path: minerBackendPath,
+            lastError: minerBackendLastError
+          });
+        } catch {
+          // ignore
+        }
+        sendToRenderer('miner-output', { stream: 'stderr', text: `${minerBackendLastError}\n` });
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      if (minerStartAckTimer) clearTimeout(minerStartAckTimer);
+    } catch {
+      // ignore
+    }
+    minerStartAckTimer = null;
+
+    if (maybeFallbackToPython(`spawn error: ${err?.message || String(err)}`)) {
+      return;
+    }
+
+    try {
+      minerBackendLastError = `Miner spawn failed: ${err?.message || String(err)}`;
+      sendToRenderer('miner-backend', {
+        preferred: minerBackendPreferred,
+        resolved: minerBackendResolved,
+        path: minerBackendPath,
+        lastError: minerBackendLastError
+      });
+    } catch {
+      // ignore
+    }
+    sendToRenderer('miner-error', { message: err.message });
+    sendToRenderer('miner-stopped', { code: -1 });
+    updateTrayMenu(minerStats);
+  });
+
+  // Log output
+  // Prevent log files from growing without bound (esp. if miner is too chatty).
+  rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
+  const logStream = fs.createWriteStream(LOG_PATH, { flags: 'a' });
+
+  logStream.on('error', (err) => {
+    try {
+      logApp('miner-logstream-error', JSON.stringify({ code: err?.code, message: err?.message }));
+    } catch {
+      // ignore
+    }
+  });
+
+  const safeMinerLogWrite = (text) => {
+    try {
+      if (logStream.destroyed) return;
+      logStream.write(text);
+    } catch {
+      // ignore
+    }
+  };
+
+  try {
+    safeMinerLogWrite(
+      `\n===== MINER START ${new Date().toISOString()} algorithm=${config.algorithm || ''} mode=${config.gpu ? 'gpu' : 'cpu'} =====\n`
+    );
+    if (spawnDiagLine) {
+      safeMinerLogWrite(spawnDiagLine);
+    }
+    if (randomxAutoMessage) {
+      safeMinerLogWrite(`[INFO] ${randomxAutoMessage}\n`);
+    }
+  } catch {
+    // ignore
+  }
+
+  const shouldSkipFileLogLine = (text) => {
+    // Prevent massive log growth from ultra-frequent debug spam.
+    if (/^\s*DEBUG:\s*Using C\+\+ library for hash\s*$/i.test(String(text).trim())) return true;
+    return false;
+  };
+
+  const maybeEmitBlockFound = (text) => {
+    // Miner prints: "KWIIIIK KEPORKAK NASEL BLOK <height> !!!"
+    const m = text.match(/KEPORKAK\s+NASEL\s+BLOK\s+(\d+)/i);
+    if (m) {
+      const height = parseInt(m[1], 10);
+      sendToRenderer('block-found', { height });
+      // OS notification so user sees it even if minimized
+      try {
+        const { Notification: ElNotification } = require('electron');
+        if (ElNotification.isSupported()) {
+          new ElNotification({
+            title: '⛏️ ZION Block Found!',
+            body: `Block #${height} mined successfully!`,
+            silent: false
+          }).show();
+        }
+      } catch { /* ignore */ }
+      return;
+    }
+    if (/block_found/i.test(text) || /BLOCK\s+FOUND/i.test(text)) {
+      sendToRenderer('block-found', {});
+      try {
+        const { Notification: ElNotification } = require('electron');
+        if (ElNotification.isSupported()) {
+          new ElNotification({
+            title: '⛏️ ZION Block Found!',
+            body: 'New block mined!',
+            silent: false
+          }).show();
+        }
+      } catch { /* ignore */ }
+    }
+  };
+  
+  minerProcess.stdout.on('data', (data) => {
+    rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
+    const output = data.toString();
+    if (!shouldSkipFileLogLine(output)) {
+      safeMinerLogWrite(`[STDOUT] ${output}`);
+    }
+    enqueueMinerOutputToRenderer('stdout', output);
+    maybeEmitBlockFound(output);
+    parseMinerOutput(output);
+  });
+
+  minerProcess.stderr.on('data', (data) => {
+    const output = data.toString();
+    if (!shouldSkipFileLogLine(output)) {
+      safeMinerLogWrite(`[STDERR] ${output}`);
+    }
+    console.log('Miner:', output);
+    enqueueMinerOutputToRenderer('stderr', output);
+    maybeEmitBlockFound(output);
+    parseMinerOutput(output);
+  });
+
+  minerProcess.on('close', (code, signal) => {
+    logStream.end();
+    console.log(`Miner process exited with code ${code}${signal ? ` signal=${signal}` : ''}`);
+    minerProcess = null;
+
+    try {
+      if (minerStartAckTimer) clearTimeout(minerStartAckTimer);
+    } catch {
+      // ignore
+    }
+    minerStartAckTimer = null;
+
+    // Flush any buffered output before reporting stopped.
+    flushMinerOutputToRenderer();
+    
+    minerStats = { ...minerStats, hashrate: 0 };
+    updateTrayMenu(minerStats);
+
+    // Always notify UI first; fallback (if any) happens after.
+    try {
+      sendToRenderer('miner-stopped', { code, signal: signal || null });
+    } catch {
+      // ignore
+    }
+
+    if (
+      rustFallbackEligible &&
+      !minerStopping &&
+      !minerUserStopRequested &&
+      code !== 0 &&
+      Date.now() - minerStartTs < 8000
+    ) {
+      void maybeFallbackToPython(`exit code ${code}${signal ? ` signal=${signal}` : ''}`);
+    }
+    if (!minerStopping && !minerUserStopRequested && code !== 0 && !rustFallbackEligible) {
+      try {
+        minerBackendLastError = `Miner exited (code ${code}${signal ? ` signal=${signal}` : ''}).`;
+        sendToRenderer('miner-backend', {
+          preferred: minerBackendPreferred,
+          resolved: minerBackendResolved,
+          path: minerBackendPath,
+          lastError: minerBackendLastError
+        });
+      } catch {
+        // ignore
+      }
+    }
+    if (process.platform === 'darwin' && code === 133 && MINER_IS_PYTHON) {
+      sendToRenderer('miner-error', {
+        message:
+          'Miner se ukončil kódem 133 (macOS). To typicky znamená problém s nativní knihovnou. Doporučení: použij Rust miner build, nebo aktualizuj native libs (CHv3) a spusť znovu.'
+      });
+    }
+    // (miner-stopped already emitted above)
+  });
+
+  // miner-started is emitted after a short grace period
+  updateTrayMenu(minerStats);
+
+  // Dev-only helper: allow automated stop for regression tests (set ZION_AUTOSTOP_MS).
+  const autoStopMsRaw = process.env.ZION_AUTOSTOP_MS;
+  const autoStopMs = autoStopMsRaw ? Number(autoStopMsRaw) : 0;
+  if (autoStopMs > 0 && Number.isFinite(autoStopMs)) {
+    minerAutoStopTimer = setTimeout(() => {
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[INFO] ZION_AUTOSTOP_MS=${autoStopMs} → auto-stop triggered\n`
+        });
+      } catch {
+        // ignore
+      }
+      stopMining();
+    }, autoStopMs);
+  }
+
+  return { success: true };
+}
+
+function ensureAfterburnerServiceRunning() {
+  return new Promise((resolve, reject) => {
+    try {
+      if (afterburnerProc && afterburnerReady) return resolve(true);
+
+      if (!fs.existsSync(AFTERBURNER_SCRIPT_PATH)) {
+        return reject(new Error(`Afterburner service not found at: ${AFTERBURNER_SCRIPT_PATH}`));
+      }
+
+      if (afterburnerProc) {
+        // Process exists but not ready yet.
+        const t = setTimeout(() => reject(new Error('Afterburner service startup timed out')), 4000);
+        const check = () => {
+          if (afterburnerReady) {
+            clearTimeout(t);
+            resolve(true);
+          } else {
+            setTimeout(check, 100);
+          }
+        };
+        check();
+        return;
+      }
+
+      afterburnerReady = false;
+      afterburnerStdoutBuf = '';
+      afterburnerQueue = [];
+
+      const cwd = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, '..');
+      const cmd = process.platform === 'darwin' ? 'python3' : 'python';
+
+      // Ensure afterburner wrapper can import ai/ modules in both dev + packaged.
+      const scriptDir = path.dirname(AFTERBURNER_SCRIPT_PATH);
+      const repoRoot = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, '..');
+      const existingPyPath = process.env.PYTHONPATH || '';
+      const pyPathParts = [repoRoot, scriptDir].filter(Boolean);
+      const pyPath = pyPathParts.join(path.delimiter) + (existingPyPath ? path.delimiter + existingPyPath : '');
+
+      afterburnerProc = spawn(cmd, [AFTERBURNER_SCRIPT_PATH], {
+        cwd,
+        env: {
+          ...process.env,
+          PYTHONUTF8: '1',
+          PYTHONIOENCODING: 'utf-8',
+          PYTHONUNBUFFERED: '1',
+          PYTHONPATH: pyPath
+        }
+      });
+
+      attachChildStreamGuards(afterburnerProc, 'afterburner');
+
+      afterburnerProc.on('error', (err) => {
+        afterburnerProc = null;
+        afterburnerReady = false;
+        reject(err);
+      });
+
+      const failAllPending = (error) => {
+        const q = afterburnerQueue.slice();
+        afterburnerQueue = [];
+        for (const item of q) {
+          try {
+            item.reject(error);
+          } catch {
+            // ignore
+          }
+        }
+      };
+
+      afterburnerProc.on('close', (code) => {
+        const err = new Error(`Afterburner service exited (code ${code})`);
+        afterburnerProc = null;
+        afterburnerReady = false;
+        failAllPending(err);
+      });
+
+      afterburnerProc.stderr.on('data', (d) => {
+        const text = d.toString();
+        try {
+          sendToRenderer('miner-output', { stream: 'stderr', text: `[afterburner] ${text}` });
+        } catch {
+          // ignore
+        }
+      });
+
+      afterburnerProc.stdout.on('data', (d) => {
+        afterburnerStdoutBuf += d.toString();
+        while (true) {
+          const idx = afterburnerStdoutBuf.indexOf('\n');
+          if (idx < 0) break;
+          const line = afterburnerStdoutBuf.slice(0, idx).trim();
+          afterburnerStdoutBuf = afterburnerStdoutBuf.slice(idx + 1);
+          if (!line) continue;
+
+          let msg;
+          try {
+            msg = JSON.parse(line);
+          } catch {
+            continue;
+          }
+
+          if (!afterburnerReady && msg?.ok === true && msg?.status === 'ready') {
+            afterburnerReady = true;
+            resolve(true);
+            continue;
+          }
+
+          // If service reports an error before becoming ready, fail fast.
+          if (!afterburnerReady && msg?.ok === false) {
+            const err = new Error(msg?.error || 'Afterburner failed to start');
+            try {
+              logApp('afterburner-start-failed', JSON.stringify({ error: err.message }));
+            } catch {
+              // ignore
+            }
+            try {
+              sendToRenderer('miner-output', { stream: 'stderr', text: `[afterburner] ${err.message}\n` });
+            } catch {
+              // ignore
+            }
+            try {
+              afterburnerProc?.kill('SIGTERM');
+            } catch {
+              // ignore
+            }
+            reject(err);
+            return;
+          }
+
+          const pending = afterburnerQueue.shift();
+          if (pending) pending.resolve(msg);
+        }
+      });
+
+      // Wait briefly for ready line.
+      const t = setTimeout(() => {
+        if (!afterburnerReady) reject(new Error('Afterburner service startup timed out'));
+      }, 12000);
+      const check = () => {
+        if (afterburnerReady) {
+          clearTimeout(t);
+          resolve(true);
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+function afterburnerSend(payload) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await ensureAfterburnerServiceRunning();
+      if (!afterburnerProc || !afterburnerProc.stdin?.writable) {
+        return reject(new Error('Afterburner service not running'));
+      }
+
+      const id = afterburnerReqId++;
+      const req = { id, ...payload };
+      afterburnerQueue.push({ resolve, reject });
+      const ok = safeChildStdinWrite(afterburnerProc, 'afterburner', `${JSON.stringify(req)}\n`);
+      if (!ok) {
+        afterburnerQueue.pop();
+        return reject(new Error('Afterburner stdin is closed'));
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+async function stopAfterburnerService() {
+  try {
+    if (!afterburnerProc) return;
+    try {
+      await afterburnerSend({ cmd: 'stop' });
+    } catch {
+      // ignore
+    }
+    try {
+      afterburnerProc.kill('SIGTERM');
+    } catch {
+      // ignore
+    }
+  } finally {
+    afterburnerProc = null;
+    afterburnerReady = false;
+    afterburnerStdoutBuf = '';
+    afterburnerQueue = [];
+  }
+}
+
+// ============================================================================
+// AI NATIVE SERVICE (parallel to afterburner)
+// ============================================================================
+
+const AI_NATIVE_BRIDGE_PATH = IS_PACKAGED
+  ? path.join(process.resourcesPath, 'ai_native_client.py')
+  : path.join(APP_ROOT, 'resources', 'ai_native_client.py');
+
+function ensureAiNativeServiceRunning() {
+  return new Promise((resolve, reject) => {
+    try {
+      if (aiNativeProc && aiNativeReady) return resolve(true);
+
+      if (!fs.existsSync(AI_NATIVE_BRIDGE_PATH)) {
+        return reject(new Error(`AI Native bridge not found at: ${AI_NATIVE_BRIDGE_PATH}`));
+      }
+
+      if (aiNativeProc) {
+        // Process exists but not ready yet
+        const t = setTimeout(() => reject(new Error('AI Native service startup timed out')), 4000);
+        const check = () => {
+          if (aiNativeReady) {
+            clearTimeout(t);
+            resolve(true);
+          } else {
+            setTimeout(check, 100);
+          }
+        };
+        check();
+        return;
+      }
+
+      aiNativeReady = false;
+      aiNativeStdoutBuf = '';
+      aiNativeQueue = [];
+
+      const cwd = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, '..');
+      const cmd = process.platform === 'darwin' ? 'python3' : 'python';
+
+      const scriptDir = path.dirname(AI_NATIVE_BRIDGE_PATH);
+      const repoRoot = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, '..');
+      const existingPyPath = process.env.PYTHONPATH || '';
+      const pyPathParts = [repoRoot, scriptDir].filter(Boolean);
+      const pyPath = pyPathParts.join(path.delimiter) + (existingPyPath ? path.delimiter + existingPyPath : '');
+
+      aiNativeProc = spawn(cmd, [AI_NATIVE_BRIDGE_PATH], {
+        cwd,
+        env: {
+          ...process.env,
+          PYTHONUTF8: '1',
+          PYTHONIOENCODING: 'utf-8',
+          PYTHONUNBUFFERED: '1',
+          PYTHONPATH: pyPath
+        }
+      });
+
+      attachChildStreamGuards(aiNativeProc, 'ai-native');
+
+      aiNativeProc.on('error', (err) => {
+        aiNativeProc = null;
+        aiNativeReady = false;
+        reject(err);
+      });
+
+      const failAllPending = (error) => {
+        const q = aiNativeQueue.slice();
+        aiNativeQueue = [];
+        for (const item of q) {
+          try {
+            item.reject(error);
+          } catch {}
+        }
+      };
+
+      aiNativeProc.on('close', (code) => {
+        const err = new Error(`AI Native service exited (code ${code})`);
+        aiNativeProc = null;
+        aiNativeReady = false;
+        failAllPending(err);
+      });
+
+      aiNativeProc.stderr.on('data', (d) => {
+        const text = d.toString();
+        try {
+          sendToRenderer('miner-output', { stream: 'stderr', text: `[ai-native] ${text}` });
+        } catch {}
+      });
+
+      aiNativeProc.stdout.on('data', (d) => {
+        aiNativeStdoutBuf += d.toString();
+        while (true) {
+          const idx = aiNativeStdoutBuf.indexOf('\n');
+          if (idx < 0) break;
+          const line = aiNativeStdoutBuf.slice(0, idx).trim();
+          aiNativeStdoutBuf = aiNativeStdoutBuf.slice(idx + 1);
+          if (!line) continue;
+
+          let msg;
+          try {
+            msg = JSON.parse(line);
+          } catch {
+            continue;
+          }
+
+          if (!aiNativeReady && (msg?.status === 'ready' || msg?.type === 'ready')) {
+            aiNativeReady = true;
+            sendToRenderer('ai-native-ready', { server: msg.server || {} });
+            continue;
+          }
+
+          if (msg?.type === 'response' || (!msg?.type && !msg?.error)) {
+            const pending = aiNativeQueue.shift();
+            if (pending) pending.resolve(msg.data || msg);
+          } else if (msg?.type === 'error' || msg?.error) {
+            const pending = aiNativeQueue.shift();
+            if (pending) pending.reject(new Error(msg.message || msg.error || 'AI Native error'));
+          }
+        }
+      });
+
+      // Wait for ready
+      const t = setTimeout(() => {
+        if (!aiNativeReady) reject(new Error('AI Native service startup timed out'));
+      }, 12000);
+      const check = () => {
+        if (aiNativeReady) {
+          clearTimeout(t);
+          resolve(true);
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+function aiNativeSend(payload) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await ensureAiNativeServiceRunning();
+      if (!aiNativeProc || !aiNativeProc.stdin?.writable) {
+        return reject(new Error('AI Native service not running'));
+      }
+
+      aiNativeQueue.push({ resolve, reject });
+      const ok = safeChildStdinWrite(aiNativeProc, 'ai-native', `${JSON.stringify(payload)}\n`);
+      if (!ok) {
+        aiNativeQueue.pop();
+        return reject(new Error('AI Native stdin is closed'));
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+async function stopAiNativeService() {
+  try {
+    if (!aiNativeProc) return;
+    try {
+      await aiNativeSend({ cmd: 'stop' });
+    } catch {}
+    try {
+      aiNativeProc.kill('SIGTERM');
+    } catch {}
+  } finally {
+    aiNativeProc = null;
+    aiNativeReady = false;
+    aiNativeStdoutBuf = '';
+    aiNativeQueue = [];
+  }
+}
+
+// ============================================================================
+// STATS AND MINING
+// ============================================================================
+
+function tryUpdateStatsFromFile() {
+  try {
+    if (!fs.existsSync(STATS_PATH)) return false;
+    const raw = fs.readFileSync(STATS_PATH, 'utf8');
+    if (!raw) return false;
+    const payload = JSON.parse(raw);
+
+    // Map miner stats-file payload to desktop agent stats
+    const toNum = (v) => {
+      if (typeof v === 'number' && Number.isFinite(v)) return v;
+      if (typeof v === 'string' && v.trim() !== '') {
+        const n = Number(v);
+        if (Number.isFinite(n)) return n;
+      }
+      return null;
+    };
+
+    // Prefer short rolling window hashrate for UI stability/real-time fidelity.
+    // Lifetime average (`payload.hashrate`) can lag heavily and diverge from pool view.
+    const hr10 = toNum(payload.hashrate_10s);
+    const hrWindow = toNum(payload.hashrate_window_hs);
+    const hr = toNum(payload.hashrate);
+    const hrCpu = toNum(payload.hashrate_cpu);
+    const hrGpu = toNum(payload.hashrate_gpu);
+    if (hr10 != null) minerStats.hashrate = hr10;
+    else if (hrWindow != null) minerStats.hashrate = hrWindow;
+    else if (hr != null) minerStats.hashrate = hr;
+    else if (hrCpu != null || hrGpu != null) minerStats.hashrate = (hrCpu || 0) + (hrGpu || 0);
+
+    // XMRig-style rolling window hashrates (v2.9.5+)
+    const hr60 = toNum(payload.hashrate_60s);
+    const hr15 = toNum(payload.hashrate_15m);
+    const hrMax = toNum(payload.hashrate_max);
+    if (hr10 != null) minerStats.hashrate_10s = hr10;
+    if (hr60 != null) minerStats.hashrate_60s = hr60;
+    if (hr15 != null) minerStats.hashrate_15m = hr15;
+    if (hrMax != null) minerStats.hashrate_max = hrMax;
+    if (hrCpu != null) minerStats.hashrate_cpu = hrCpu;
+    if (hrGpu != null) minerStats.hashrate_gpu = hrGpu;
+
+    // Enhanced stats (v2.9.5+)
+    if (typeof payload.difficulty === 'number') minerStats.difficulty = payload.difficulty;
+    if (typeof payload.best_share_diff === 'number') minerStats.best_share_diff = payload.best_share_diff;
+    if (typeof payload.pool_height === 'number') minerStats.last_job_height = String(payload.pool_height);
+    if (typeof payload.pool_latency_ms === 'number') minerStats.pool_latency_ms = payload.pool_latency_ms;
+    if (typeof payload.blocks_found === 'number') minerStats.blocks_found = payload.blocks_found;
+    if (typeof payload.total_hashes === 'number') minerStats.total_hashes = payload.total_hashes;
+    if (typeof payload.algorithm === 'string') minerStats.stream_algorithm = payload.algorithm;
+    if (typeof payload.worker === 'string') minerStats.worker = payload.worker;
+    if (typeof payload.gpu_name === 'string' && payload.gpu_name !== 'none') minerStats.gpu_info = payload.gpu_name;
+    if (typeof payload.cpu_threads === 'number') minerStats.cpu_threads = payload.cpu_threads;
+    if (typeof payload.connection_count === 'number') minerStats.connection_count = payload.connection_count;
+    if (Array.isArray(payload.threads)) minerStats.thread_snapshots = payload.threads;
+
+    if (typeof payload.shares_sent === 'number') minerStats.shares = payload.shares_sent;
+    if (typeof payload.shares_accepted === 'number') minerStats.accepted = payload.shares_accepted;
+    if (typeof payload.shares_rejected === 'number') minerStats.rejected = payload.shares_rejected;
+    if (typeof payload.uptime_sec === 'number') minerStats.uptime = Math.floor(payload.uptime_sec);
+
+    return true;
+  } catch (err) {
+    // Ignore stats parsing issues; keep UI responsive
+    return false;
+  }
+}
+
+async function stopMiningAsync() {
+  minerUserStopRequested = true;
+  minerStartToken += 1;
+
+  try {
+    if (minerFallbackTimer) clearTimeout(minerFallbackTimer);
+  } catch {
+    // ignore
+  }
+  minerFallbackTimer = null;
+  try {
+    if (minerStartAckTimer) clearTimeout(minerStartAckTimer);
+  } catch {
+    // ignore
+  }
+  minerStartAckTimer = null;
+
+  if (!minerProcess) {
+    return { success: true, alreadyStopped: true };
+  }
+
+  if (minerStopping && minerStopPromise) {
+    return minerStopPromise;
+  }
+
+  minerStopping = true;
+  const proc = minerProcess;
+
+  // Update UI immediately so Stop feels responsive.
+  try {
+    sendToRenderer('miner-output', { stream: 'stdout', text: '[INFO] Stopping miner...\n' });
+  } catch {
+    // ignore
+  }
+
+  minerStopPromise = new Promise((resolve) => {
+    let finished = false;
+
+    const finish = (result) => {
+      if (finished) return;
+      finished = true;
+      minerStopping = false;
+      minerStopPromise = null;
+      resolve(result);
+    };
+
+    const timers = [];
+    const clearAllTimers = () => {
+      while (timers.length) {
+        try {
+          clearTimeout(timers.pop());
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    const runChildCapture = (cmd, args, label, meta) => {
+      try {
+        const child = spawn(cmd, args, { windowsHide: true });
+        let stdout = '';
+        let stderr = '';
+
+        const cap = (s) => {
+          // Keep logs bounded.
+          const str = String(s || '');
+          return str.length > 4000 ? str.slice(0, 4000) + '…' : str;
+        };
+
+        child.stdout?.on('data', (d) => {
+          stdout += d.toString();
+          if (stdout.length > 8000) stdout = stdout.slice(-8000);
+        });
+        child.stderr?.on('data', (d) => {
+          stderr += d.toString();
+          if (stderr.length > 8000) stderr = stderr.slice(-8000);
+        });
+
+        child.once('error', (err) => {
+          logApp(`${label}-error`, JSON.stringify({ ...(meta || {}), error: err?.message || String(err) }));
+        });
+        child.once('exit', (code) => {
+          logApp(
+            `${label}-exit`,
+            JSON.stringify({ ...(meta || {}), code, stdout: cap(stdout).trim(), stderr: cap(stderr).trim() })
+          );
+        });
+        return child;
+      } catch (err) {
+        logApp(`${label}-fatal`, JSON.stringify({ ...(meta || {}), error: err?.message || String(err) }));
+        return null;
+      }
+    };
+
+    const isProcessAlive = async (pid) => {
+      if (!pid) return false;
+      try {
+        process.kill(pid, 0);
+        return true;
+      } catch (e) {
+        const code = e && e.code;
+        if (code === 'ESRCH') return false;
+      }
+
+      if (process.platform !== 'win32') return true;
+
+      // Avoid tasklist locale parsing; use PowerShell Get-Process.
+      try {
+        const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+        const psExe = path.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+        const cmd = fs.existsSync(psExe) ? psExe : 'powershell';
+        const out = execFileSync(
+          cmd,
+          [
+            '-NoProfile',
+            '-ExecutionPolicy',
+            'Bypass',
+            '-Command',
+            `if (Get-Process -Id ${Number(pid)} -ErrorAction SilentlyContinue) { '1' } else { '0' }`
+          ],
+          { encoding: 'utf8' }
+        );
+        return String(out || '').trim() === '1';
+      } catch {
+        return true;
+      }
+    };
+
+    const tryTaskkillPid = (pid, label) => {
+      try {
+        if (!pid) return;
+        const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+        const taskkillExe = path.join(systemRoot, 'System32', 'taskkill.exe');
+        const cmd = fs.existsSync(taskkillExe) ? taskkillExe : 'taskkill';
+        const args = ['/PID', String(pid), '/T', '/F'];
+        logApp('taskkill-invoke', JSON.stringify({ pid, label, cmd, args }));
+        runChildCapture(cmd, args, 'taskkill', { pid, label });
+      } catch (err) {
+        logApp('taskkill-fatal', err?.message || String(err));
+      }
+    };
+
+    const tryTaskkillImage = (imageName, label) => {
+      try {
+        const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+        const taskkillExe = path.join(systemRoot, 'System32', 'taskkill.exe');
+        const cmd = fs.existsSync(taskkillExe) ? taskkillExe : 'taskkill';
+        const args = ['/IM', String(imageName), '/T', '/F'];
+        logApp('taskkill-invoke', JSON.stringify({ imageName, label, cmd, args }));
+        runChildCapture(cmd, args, 'taskkill', { imageName, label });
+      } catch (err) {
+        logApp('taskkill-fatal', err?.message || String(err));
+      }
+    };
+
+    const powershellKillMinerByStatsFile = (statsPath, label) => {
+      try {
+        if (process.platform !== 'win32') return;
+        const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+        const psExe = path.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+        const cmd = fs.existsSync(psExe) ? psExe : 'powershell';
+
+        // Prefer killing only miners that reference our stats file, but if none match,
+        // fall back to killing all zion_native_miner_v2_9.exe instances.
+        const stats = String(statsPath || '').replace(/'/g, "''");
+        const script = `
+$ErrorActionPreference = 'SilentlyContinue'
+$stats = '${stats}'
+$procs = Get-CimInstance Win32_Process -Filter "Name='zion_native_miner_v2_9.exe'" |
+  Select-Object ProcessId, ParentProcessId, CommandLine, ExecutablePath
+if (-not $procs) { '[]'; exit 0 }
+$targets = @($procs | Where-Object { $_.CommandLine -and $_.CommandLine -like ('*' + $stats + '*') })
+if (-not $targets -or $targets.Count -eq 0) { $targets = @($procs) }
+$killed = @()
+foreach ($t in $targets) {
+  try { Stop-Process -Id $t.ProcessId -Force -ErrorAction Stop; $killed += $t.ProcessId } catch { }
+}
+$killed | ConvertTo-Json -Compress
+`.trim();
+
+        logApp('pskill-invoke', JSON.stringify({ label, statsPath }));
+        runChildCapture(cmd, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], 'pskill', {
+          label,
+          statsPath
+        });
+      } catch (err) {
+        logApp('pskill-fatal', JSON.stringify({ label, error: err?.message || String(err) }));
+      }
+    };
+
+    const powershellAnyMinerAliveByStatsFile = (statsPath) => {
+      if (process.platform !== 'win32') return false;
+      try {
+        const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+        const psExe = path.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+        const cmd = fs.existsSync(psExe) ? psExe : 'powershell';
+        const stats = String(statsPath || '').replace(/'/g, "''");
+        const script = `
+$ErrorActionPreference = 'SilentlyContinue'
+$stats = '${stats}'
+$procs = Get-CimInstance Win32_Process -Filter "Name='zion_native_miner_v2_9.exe'" |
+  Where-Object { $_.CommandLine -and $_.CommandLine -like ('*' + $stats + '*') }
+if ($procs) { '1' } else { '0' }
+`.trim();
+        const out = execFileSync(cmd, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { encoding: 'utf8' });
+        return String(out || '').trim() === '1';
+      } catch {
+        return true;
+      }
+    };
+
+    // Windows: SIGTERM/SIGKILL are not reliable. Use taskkill to terminate the whole tree.
+    // Escalation path:
+    // - non-Windows: SIGTERM then SIGKILL
+    // - Windows: attempt a gentle kill, then taskkill tree
+    if (process.platform === 'win32') {
+      const pid = proc?.pid;
+      logApp('stop-miner', JSON.stringify({ pid, statsPath: STATS_PATH }));
+      timers.push(
+        setTimeout(() => {
+          // First: try by PID if it still exists.
+          tryTaskkillPid(pid, 'taskkill-fast');
+        }, 1200)
+      );
+      timers.push(
+        setTimeout(() => {
+          // If PID kill didn't work (or PID changed), fall back to image name.
+          // Also kill any orphan miners that still reference our stats file.
+          void isProcessAlive(pid).then((alive) => {
+            if (alive) {
+              tryTaskkillPid(pid, 'taskkill-hard');
+            }
+            tryTaskkillImage('zion_native_miner_v2_9.exe', 'taskkill-image');
+            powershellKillMinerByStatsFile(STATS_PATH, 'pskill-statsfile');
+          });
+        }, 4500)
+      );
+    } else {
+      timers.push(
+        setTimeout(() => {
+          try {
+            proc.kill('SIGKILL');
+          } catch {
+            // ignore
+          }
+        }, 5000)
+      );
+    }
+
+    // Safety net: if nothing happened, return failure rather than hanging forever.
+    timers.push(
+      setTimeout(() => {
+        // One last attempt to avoid leaving miners running.
+        if (process.platform === 'win32') {
+          try {
+            const pid = proc?.pid;
+            tryTaskkillPid(pid, 'taskkill-final');
+            tryTaskkillImage('zion_native_miner_v2_9.exe', 'taskkill-image-final');
+            powershellKillMinerByStatsFile(STATS_PATH, 'pskill-statsfile-final');
+          } catch {
+            // ignore
+          }
+        }
+        // If the child-process handle didn't close but the miner is actually gone, treat as success.
+        if (process.platform === 'win32') {
+          const anyAlive = powershellAnyMinerAliveByStatsFile(STATS_PATH);
+          if (!anyAlive) {
+            try {
+              minerProcess = null;
+              minerStats = { ...minerStats, hashrate: 0 };
+              updateTrayMenu(minerStats);
+              sendToRenderer('miner-stopped', { code: 0 });
+            } catch {
+              // ignore
+            }
+            return finish({ success: true, code: 0, note: 'Miner processes not found; treated as stopped.' });
+          }
+        }
+        finish({ success: false, error: 'Stop timed out (process did not exit)' });
+      }, 9000)
+    );
+
+    proc.once('close', (code) => {
+      clearAllTimers();
+      finish({ success: true, code });
+    });
+
+    try {
+      // Best-effort: ask miner to exit.
+      // (On Windows this may be ignored; taskkill handles the real stop.)
+      if (process.platform === 'win32') {
+        try {
+          logApp('stop-miner-signal', 'Attempting graceful kill (default)');
+          proc.kill();
+        } catch {
+          // ignore
+        }
+      } else {
+        logApp('stop-miner-signal', 'Sending SIGTERM');
+        proc.kill('SIGTERM');
+      }
+    } catch (err) {
+      clearAllTimers();
+      finish({ success: false, error: err?.message || String(err) });
+    }
+  });
+
+  // Also stop the Afterburner sidecar (best-effort) when stopping mining.
+  try {
+    void stopAfterburnerService();
+  } catch {
+    // ignore
+  }
+
+  // Stop the revenue process (2nd miner, --group revenue) if running.
+  try {
+    if (revenueProcess) {
+      logApp('stop-revenue-process', JSON.stringify({ pid: revenueProcess?.pid }));
+      try {
+        if (process.platform === 'win32') {
+          revenueProcess.kill();
+        } else {
+          revenueProcess.kill('SIGTERM');
+        }
+      } catch {
+        // ignore
+      }
+      // Force-kill after 3s if still alive
+      const revProc = revenueProcess;
+      setTimeout(() => {
+        try {
+          if (revProc && !revProc.killed) {
+            revProc.kill('SIGKILL');
+          }
+        } catch {
+          // ignore
+        }
+      }, 3000);
+      revenueProcess = null;
+    }
+  } catch {
+    // ignore
+  }
+
+  return minerStopPromise;
+}
+
+function stopMining() {
+  if (minerAutoStopTimer) {
+    try {
+      clearTimeout(minerAutoStopTimer);
+    } catch {
+      // ignore
+    }
+    minerAutoStopTimer = null;
+  }
+  void stopMiningAsync();
+}
+
+function parseMinerOutput(output) {
+  // Strip ANSI escape sequences (colors, cursor control) before regex parsing
+  output = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').replace(/\x1B\[\?[0-9;]*[A-Za-z]/g, '');
+
+  const parseNum = (raw) => {
+    const s = String(raw ?? '').trim().replace(',', '.');
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // XMRig-STYLE OUTPUT PARSERS (v2.9.5 — professional metrics)
+  // ═══════════════════════════════════════════════════════════════
+
+  // ─── XMRig speed line: "speed 10s/60s/15m 1946.02 1938.50 1912.34 kH/s max 2014.88 kH/s" ───
+  const speedMatch = output.match(/speed\s+10s\/60s\/15m\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*([kKmMgGtT]?H\/s)\s+max\s+([\d.]+)/i);
+  if (speedMatch) {
+    const unit = String(speedMatch[4] || 'H/s').toLowerCase();
+    const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
+    minerStats.hashrate_10s = parseFloat(speedMatch[1]) * mult;
+    minerStats.hashrate_60s = parseFloat(speedMatch[2]) * mult;
+    minerStats.hashrate_15m = parseFloat(speedMatch[3]) * mult;
+    minerStats.hashrate_max = parseFloat(speedMatch[5]) * mult;
+    minerStats.hashrate = minerStats.hashrate_10s; // primary = 10s window
+  }
+
+  // ─── XMRig accepted: "accepted 42/0 (+1) diff 256 [38 ms] (100.0%)" ───
+  const acceptedMatch = output.match(/accepted\s+(\d+)\/(\d+)\s+\(\+1\)\s+diff\s+([\d.]+[TGMK]?)\s+\[([^\]]+)\]\s+\(([\d.]+)%\)/i);
+  if (acceptedMatch) {
+    minerStats.accepted = parseInt(acceptedMatch[1]);
+    minerStats.rejected = parseInt(acceptedMatch[2]);
+    minerStats.shares = minerStats.accepted + minerStats.rejected;
+    minerStats.last_share_diff = acceptedMatch[3];
+    minerStats.last_share_latency = acceptedMatch[4];
+    minerStats.accept_rate = parseFloat(acceptedMatch[5]);
+  }
+
+  // ─── XMRig rejected: "rejected 42/1 (+1) "reason"" ───
+  const rejectedMatch = output.match(/rejected\s+(\d+)\/(\d+)\s+\(\+1\)\s+"([^"]+)"/i);
+  if (rejectedMatch) {
+    minerStats.accepted = parseInt(rejectedMatch[1]);
+    minerStats.rejected = parseInt(rejectedMatch[2]);
+    minerStats.shares = minerStats.accepted + minerStats.rejected;
+    minerStats.last_reject_reason = rejectedMatch[3];
+  }
+
+  // ─── XMRig new job: "new job height 1523 diff 256 algo cosmic_harmony_v3" ───
+  const newJobMatch = output.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
+  if (newJobMatch) {
+    minerStats.last_job_height = newJobMatch[1];
+    minerStats.last_job_diff = newJobMatch[2];
+    minerStats.stream_algorithm = newJobMatch[3];
+  }
+
+  // ─── XMRig block found: "█ BLOCK FOUND █ 🏆 height 1523 (total: 2)" ───
+  const blockMatch = output.match(/BLOCK FOUND.*?height\s+(\d+).*?\(total:\s*(\d+)\)/i);
+  if (blockMatch) {
+    minerStats.last_block_height = parseInt(blockMatch[1]);
+    minerStats.blocks_found = parseInt(blockMatch[2]);
+  }
+
+  // ─── Full status panel fields ───
+  // Old format: "HASHRATE  10s: 1946.02 kH/s   60s: 1938.50   15m: 1912.34"
+  const statusHrMatch = output.match(/HASHRATE\s+10s:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)\s+60s:\s*([\d.]+)\s+15m:\s*([\d.]+)/i);
+  if (statusHrMatch) {
+    const unit = String(statusHrMatch[2] || 'H/s').toLowerCase();
+    const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
+    minerStats.hashrate_10s = parseFloat(statusHrMatch[1]) * mult;
+    minerStats.hashrate_60s = parseFloat(statusHrMatch[3]) * mult;
+    minerStats.hashrate_15m = parseFloat(statusHrMatch[4]) * mult;
+    minerStats.hashrate = minerStats.hashrate_10s;
+  }
+
+  // New format: "SPEED   10s 3.75 MH/s  60s 3.75  15m 3.75"
+  const speedPanelMatch = output.match(/SPEED\s+10s\s+([\d.]+)\s*([kKmMgGtT]?H\/s)\s+60s\s+([\d.]+)\s+15m\s+([\d.]+)/i);
+  if (speedPanelMatch) {
+    const unit = String(speedPanelMatch[2] || 'H/s').toLowerCase();
+    const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
+    minerStats.hashrate_10s = parseFloat(speedPanelMatch[1]) * mult;
+    minerStats.hashrate_60s = parseFloat(speedPanelMatch[3]) * mult;
+    minerStats.hashrate_15m = parseFloat(speedPanelMatch[4]) * mult;
+    minerStats.hashrate = minerStats.hashrate_10s;
+  }
+
+  // Old format: "SHARES  accepted: 42   rejected: 0   rate: 100.0%"
+  const statusSharesMatch = output.match(/SHARES\s+accepted:\s*(\d+)\s+rejected:\s*(\d+)\s+rate:\s*([\d.]+)%/i);
+  if (statusSharesMatch) {
+    minerStats.accepted = parseInt(statusSharesMatch[1]);
+    minerStats.rejected = parseInt(statusSharesMatch[2]);
+    minerStats.shares = minerStats.accepted + minerStats.rejected;
+    minerStats.accept_rate = parseFloat(statusSharesMatch[3]);
+  }
+
+  // New format: "SHARES  A: 35  R: 5  rate: 87.5%"
+  const sharesPanelMatch = output.match(/SHARES\s+A:\s*(\d+)\s+R:\s*(\d+)\s+rate:\s*([\d.]+)%/i);
+  if (sharesPanelMatch) {
+    minerStats.accepted = parseInt(sharesPanelMatch[1]);
+    minerStats.rejected = parseInt(sharesPanelMatch[2]);
+    minerStats.shares = minerStats.accepted + minerStats.rejected;
+    minerStats.accept_rate = parseFloat(sharesPanelMatch[3]);
+  }
+
+  // Old format: "DIFF    pool: 256   best: 1024   height: 1523   blocks: 0"
+  const statusDiffMatch = output.match(/DIFF\s+pool:\s*([\d.]+[TGMK]?)\s+best:\s*([\d.]+[TGMK]?)\s+height:\s*(\d+)\s+blocks:\s*(\d+)/i);
+  if (statusDiffMatch) {
+    minerStats.last_pool_diff = statusDiffMatch[1];
+    minerStats.best_share_diff = statusDiffMatch[2];
+    minerStats.last_job_height = statusDiffMatch[3];
+    minerStats.blocks_found = parseInt(statusDiffMatch[4]);
+  }
+
+  // New format: "DIFF    pool: 0  height: 1615  blocks: 0"
+  const diffPanelMatch = output.match(/DIFF\s+pool:\s*([\d.]+[TGMK]?)\s+height:\s*(\d+)\s+blocks:\s*(\d+)/i);
+  if (diffPanelMatch && !statusDiffMatch) {
+    minerStats.last_pool_diff = diffPanelMatch[1];
+    minerStats.last_job_height = diffPanelMatch[2];
+    minerStats.blocks_found = parseInt(diffPanelMatch[3]);
+  }
+
+  // Old format: "UPTIME  02:15:38   hashes: 158.2M   conn: 1"
+  const statusUptimeMatch = output.match(/UPTIME\s+([\d:]+[d\s]*[\d:]*)\s+hashes:\s*([\d.]+[TGMK]?)\s+conn:\s*(\d+)/i);
+  if (statusUptimeMatch) {
+    minerStats.uptime_display = statusUptimeMatch[1];
+    minerStats.total_hashes_display = statusUptimeMatch[2];
+    minerStats.connection_count = parseInt(statusUptimeMatch[3]);
+  }
+
+  // New format: "UPTIME  00:00:13  hashes: 45.0M  algo: cosmic_harmony_v3"
+  const uptimePanelMatch = output.match(/UPTIME\s+([\d:]+[d\s]*[\d:]*)\s+hashes:\s*([\d.]+[TGMK]?)\s+algo:\s*(\S+)/i);
+  if (uptimePanelMatch && !statusUptimeMatch) {
+    minerStats.uptime_display = uptimePanelMatch[1];
+    minerStats.total_hashes_display = uptimePanelMatch[2];
+    minerStats.stream_algorithm = uptimePanelMatch[3];
+  }
+
+  // Old format: "THREADS  cpu: 8   gpu: Apple M1 (2.59 MH/s)   algo: cosmic_harmony_v3"
+  const statusThreadsMatch = output.match(/THREADS\s+cpu:\s*(\d+)\s+gpu:\s*([^\s]+(?:\s+[^\s]+)*?)\s+algo:\s*(\S+)/i);
+  if (statusThreadsMatch) {
+    minerStats.cpu_threads = parseInt(statusThreadsMatch[1]);
+    minerStats.gpu_info = statusThreadsMatch[2];
+    minerStats.stream_algorithm = statusThreadsMatch[3];
+  }
+
+  // New format: "HW     cpu: 2T  gpu: 3.07 MH/s [Apple M1]"
+  const hwPanelMatch = output.match(/HW\s+cpu:\s*(\d+)T\s+gpu:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)\s+\[([^\]]+)\]/i);
+  if (hwPanelMatch) {
+    minerStats.cpu_threads = parseInt(hwPanelMatch[1]);
+    const gpuValue = parseFloat(hwPanelMatch[2]);
+    const gpuUnit = String(hwPanelMatch[3] || 'H/s').toLowerCase();
+    const gpuMult = gpuUnit.startsWith('th') ? 1e12 : gpuUnit.startsWith('gh') ? 1e9 : gpuUnit.startsWith('mh') ? 1e6 : gpuUnit.startsWith('kh') ? 1e3 : 1;
+    minerStats.hashrate_gpu = gpuValue * gpuMult;
+    minerStats.gpu_info = hwPanelMatch[4];
+  }
+
+  // New format HW with no GPU (just dash): "HW     cpu: 2T  gpu: —"
+  const hwNoGpuMatch = output.match(/HW\s+cpu:\s*(\d+)T\s+gpu:\s*[—-]/i);
+  if (hwNoGpuMatch && !hwPanelMatch) {
+    minerStats.cpu_threads = parseInt(hwNoGpuMatch[1]);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // LEGACY PARSERS (backward compatibility with old output format)
+  // ═══════════════════════════════════════════════════════════════
+
+  // ─── Legacy hashrate: "⚡ Hashrate: | 1946.02 kH/s | Shares: 38 / 0 | ..." ───
+  if (!speedMatch && !statusHrMatch) {
+    // IMPORTANT: Require "Shares: A / R" on the same line to avoid false matches
+    // from auxiliary/revenue logs (e.g. RandomX hashrate lines in H/s).
+    const hashrateMatch = output.match(/Hashrate:\s*\|?\s*([\d.,]+)\s*([kKmMgGtT]?H\/s)\b[^\n]*\bShares:\s*(\d+)\s*\/\s*(\d+)/i);
+    if (hashrateMatch) {
+      const value = parseNum(hashrateMatch[1]);
+      const unit = String(hashrateMatch[2] || 'H/s').toLowerCase();
+      const mult = unit.startsWith('kh') ? 1e3 : unit.startsWith('mh') ? 1e6 : unit.startsWith('gh') ? 1e9 : unit.startsWith('th') ? 1e12 : 1;
+      const hs = (value ?? 0) * mult;
+      if (Number.isFinite(hs) && hs > 0) {
+        minerStats.hashrate = hs;
+      }
+    }
+  }
+
+  // GPU hashrate: "🎮 Apple M1 [GPU]: 2.59 MH/s (batch 2.65 MH/s) | 89 shares"
+  const gpuHrMatch = output.match(/\[GPU\]:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
+  if (gpuHrMatch) {
+    const value = parseNum(gpuHrMatch[1]);
+    const unit = String(gpuHrMatch[2] || 'H/s').toLowerCase();
+    const mult = unit.startsWith('kh') ? 1e3 : unit.startsWith('mh') ? 1e6 : unit.startsWith('gh') ? 1e9 : unit.startsWith('th') ? 1e12 : 1;
+    const hs = (value ?? 0) * mult;
+    if (Number.isFinite(hs)) minerStats.hashrate_gpu = hs;
+  }
+
+  // CPU-fallback hashrate: "🎮 Apple M1 [CPU-fallback]: 530.21 kH/s ..."
+  const cpuFallbackMatch = output.match(/\[CPU-fallback\]:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
+  if (cpuFallbackMatch) {
+    const value = parseNum(cpuFallbackMatch[1]);
+    const unit = String(cpuFallbackMatch[2] || 'H/s').toLowerCase();
+    const mult = unit.startsWith('kh') ? 1e3 : unit.startsWith('mh') ? 1e6 : unit.startsWith('gh') ? 1e9 : unit.startsWith('th') ? 1e12 : 1;
+    const hs = (value ?? 0) * mult;
+    if (Number.isFinite(hs)) minerStats.hashrate_cpu_fallback = hs;
+  }
+
+  // CPU batch hashrate: "✅ Batch done: 250000 hashes in 452ms, 552.04 kH/s, 250 shares"
+  const cpuBatchMatch = output.match(/Batch done:.*?([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
+  if (cpuBatchMatch) {
+    const value = parseNum(cpuBatchMatch[1]);
+    const unit = String(cpuBatchMatch[2] || 'H/s').toLowerCase();
+    const mult = unit.startsWith('kh') ? 1e3 : unit.startsWith('mh') ? 1e6 : unit.startsWith('gh') ? 1e9 : unit.startsWith('th') ? 1e12 : 1;
+    const hs = (value ?? 0) * mult;
+    if (Number.isFinite(hs)) minerStats.hashrate_cpu = hs;
+  }
+
+  // Composite hashrate: prefer combined status line, else sum GPU+CPU components
+  if (!minerStats.hashrate) {
+    const gpuHr = Number(minerStats.hashrate_gpu) || 0;
+    const cpuHr = Number(minerStats.hashrate_cpu) || 0;
+    const cpuFb = Number(minerStats.hashrate_cpu_fallback) || 0;
+    const combined = gpuHr + cpuHr + cpuFb;
+    if (combined > 0) minerStats.hashrate = combined;
+  }
+
+  // Parse shares (Rust miner prints: "Shares: <accepted> / <rejected>")
+  // Also works in combined line: "⚡ Hashrate: | X kH/s | Shares: 38 / 0 |"
+  const sharesRustMatch = output.match(/Shares:\s*(\d+)\s*\/\s*(\d+)/i);
+  if (sharesRustMatch) {
+    const acc = parseInt(sharesRustMatch[1]);
+    const rej = parseInt(sharesRustMatch[2]);
+    if (Number.isFinite(acc)) minerStats.accepted = acc;
+    if (Number.isFinite(rej)) minerStats.rejected = rej;
+    minerStats.shares = (Number.isFinite(acc) ? acc : 0) + (Number.isFinite(rej) ? rej : 0);
+  }
+
+  // Parse shares: "Share accepted (123/125)"
+  const shareMatch = output.match(/Share\s+accepted\s+\((\d+)\/(\d+)\)/i);
+  if (shareMatch) {
+    minerStats.accepted = parseInt(shareMatch[1]);
+    minerStats.shares = parseInt(shareMatch[2]);
+  }
+
+  // GPU share accepted: "🎮 GPU share ACCEPTED ✅ (total: 48)"
+  const gpuShareMatch = output.match(/GPU share ACCEPTED[^(]*\(total:\s*(\d+)\)/i);
+  if (gpuShareMatch) {
+    const gpuTotal = parseInt(gpuShareMatch[1]);
+    if (Number.isFinite(gpuTotal)) {
+      minerStats.gpu_shares_accepted = gpuTotal;
+    }
+  }
+
+  // GPU share rejected: "🎮 GPU share REJECTED ❌"
+  if (/GPU share REJECTED/i.test(output)) {
+    minerStats.gpu_shares_rejected = (minerStats.gpu_shares_rejected || 0) + 1;
+  }
+
+  // Best-effort: Rust miner logs these once.
+  if (/First\s+share\s+accepted/i.test(output)) {
+    minerStats.accepted = Number(minerStats.accepted || 0) + 1;
+    minerStats.shares = Number(minerStats.shares || 0) + 1;
+  }
+  if (/First\s+share\s+rejected/i.test(output)) {
+    minerStats.rejected = Number(minerStats.rejected || 0) + 1;
+    minerStats.shares = Number(minerStats.shares || 0) + 1;
+  }
+
+  // Parse consciousness: "Level: MENTAL (XP: 1250)"
+  const consciousnessMatch = output.match(/Level:\s*(\w+)\s+\(XP:\s*(\d+)\)/i);
+  if (consciousnessMatch) {
+    minerStats.consciousness_level = consciousnessMatch[1];
+    minerStats.consciousness_xp = parseInt(consciousnessMatch[2]);
+  }
+
+  // Parse job meta (works for lines like: "[cosmic_harmony] Job ... h=170 diff=5000 (pool=5000)"
+  // Keep it permissive; miner formats vary by algo.
+  const jobMatch = output.match(/\bJob\s+([0-9a-f]{8,})[^\n]*?\bh=(\d+)[^\n]*?\bdiff=(\d+)(?:[^\n]*?\(pool=(\d+)\))?/i);
+  if (jobMatch) {
+    minerStats.last_job_id = String(jobMatch[1] || '').slice(0, 12);
+    minerStats.last_job_height = jobMatch[2];
+    minerStats.last_job_diff = jobMatch[3];
+    if (jobMatch[4]) minerStats.last_pool_diff = jobMatch[4];
+  }
+
+  // Parse rejected share lines (best-effort) to show A/R even if stats-file lags.
+  if (/Share\s+rejected/i.test(output)) {
+    minerStats.rejected = Number(minerStats.rejected || 0) + 1;
+  }
+
+  // ---- CH3 Stream / Revenue parsing ----
+
+  // Stream switch: "Stream switch: cosmic_harmony_v3 → randomx"
+  const streamSwitchMatch = output.match(/Stream switch:\s*(\S+)\s*→\s*(\S+)/i);
+  if (streamSwitchMatch) {
+    minerStats.stream_algorithm = streamSwitchMatch[2];
+    if (/randomx/i.test(streamSwitchMatch[2])) {
+      minerStats.stream_mode = 'Revenue:XMR';
+      minerStats.revenue_coin = 'XMR';
+    } else if (/cosmic/i.test(streamSwitchMatch[2])) {
+      minerStats.stream_mode = 'ZION';
+      minerStats.revenue_coin = '';
+    } else {
+      minerStats.stream_mode = streamSwitchMatch[2];
+    }
+    try { sendToRenderer('stream-switch', { from: streamSwitchMatch[1], to: streamSwitchMatch[2], mode: minerStats.stream_mode }); } catch {}
+  }
+
+  // TimeSplit: "TimeSplit: → Revenue:XMR (Z:50% R:25% N:25%)"
+  const timeSplitMatch = output.match(/TimeSplit:\s*→\s*(\S+)\s*\(([^)]+)\)/i);
+  if (timeSplitMatch) {
+    minerStats.stream_mode = timeSplitMatch[1];
+    minerStats.stream_allocation = timeSplitMatch[2];
+    if (/XMR/i.test(timeSplitMatch[1])) minerStats.revenue_coin = 'XMR';
+  }
+
+  // RandomX hash: "RandomX first hash: OK in 1.05s" or "RandomX: 1.05 H/s"
+  const rxHashMatch = output.match(/RandomX.*?:\s*([\d.]+)\s*H\/s/i);
+  if (rxHashMatch) {
+    minerStats.revenue_hashrate = parseFloat(rxHashMatch[1]);
+  }
+  if (/RandomX first hash: OK/i.test(output)) {
+    minerStats.stream_mode = 'Revenue:XMR';
+    minerStats.revenue_coin = 'XMR';
+  }
+
+  // CPU-ONLY MODE banner from miner
+  if (/CPU-ONLY MODE/i.test(output)) {
+    minerStats.cpu_only_mode = true;
+    minerStats.gpu_detected = false;
+  }
+
+  updateTrayMenu(minerStats);
+  scheduleStatsEmit();
+}
+
+function sendToRenderer(channel, data) {
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send(channel, data);
+  }
+}
+
+let statsEmitTimer = null;
+const STATS_EMIT_INTERVAL_MS = 250;
+
+function scheduleStatsEmit() {
+  if (statsEmitTimer) return;
+  statsEmitTimer = setTimeout(() => {
+    statsEmitTimer = null;
+    try {
+      sendToRenderer('stats-update', composeStatsPayload());
+    } catch {
+      // ignore
+    }
+  }, STATS_EMIT_INTERVAL_MS);
+}
+
+// Throttle miner output events to keep renderer responsive.
+// Miner processes can emit very frequent stdout/stderr chunks; sending each chunk over IPC
+// can flood the renderer and make the UI feel stuck.
+let minerOutputFlushTimer = null;
+let minerOutputBuffer = { stdout: '', stderr: '' };
+const MAX_MINER_OUTPUT_BUFFER_CHARS = 64 * 1024;
+
+function flushMinerOutputToRenderer() {
+  try {
+    if (minerOutputFlushTimer) {
+      clearTimeout(minerOutputFlushTimer);
+      minerOutputFlushTimer = null;
+    }
+
+    const out = minerOutputBuffer.stdout;
+    const err = minerOutputBuffer.stderr;
+    minerOutputBuffer = { stdout: '', stderr: '' };
+
+    if (out) {
+      try {
+        sendToRenderer('miner-output', { stream: 'stdout', text: out });
+      } catch {
+        // ignore
+      }
+    }
+
+    if (err) {
+      try {
+        sendToRenderer('miner-output', { stream: 'stderr', text: err });
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function enqueueMinerOutputToRenderer(stream, text) {
+  try {
+    const key = stream === 'stderr' ? 'stderr' : 'stdout';
+    const next = (minerOutputBuffer[key] || '') + String(text || '');
+
+    // Keep bounded.
+    minerOutputBuffer[key] = next.length > MAX_MINER_OUTPUT_BUFFER_CHARS
+      ? next.slice(-MAX_MINER_OUTPUT_BUFFER_CHARS)
+      : next;
+
+    if (minerOutputFlushTimer) return;
+    minerOutputFlushTimer = setTimeout(flushMinerOutputToRenderer, 150);
+  } catch {
+    // ignore
+  }
+}
+
+// IPC handlers
+ipcMain.handle('get-config', () => {
+  return loadConfig();
+});
+
+// First-run detection: true if no wallets exist yet
+ipcMain.handle('is-first-run', () => {
+  try {
+    if (!fs.existsSync(WALLETS_PATH)) return { firstRun: true };
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    return { firstRun: files.length === 0 };
+  } catch {
+    return { firstRun: true };
+  }
+});
+
+// Quick-setup: generate wallet + save config + return everything needed to start mining
+ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
+  try {
+    if (!fs.existsSync(WALLETS_PATH)) {
+      fs.mkdirSync(WALLETS_PATH, { recursive: true });
+    }
+
+    // Generate wallet
+    const wallet = WalletGenerator.generateWallet();
+    const encrypted = WalletGenerator.encryptPrivateKey(wallet.privateKey, password);
+    const encryptedMnemonic = wallet.mnemonic
+      ? WalletGenerator.encryptPrivateKey(wallet.mnemonic, password)
+      : null;
+
+    const walletData = {
+      version: '2.9.5',
+      name: 'My Wallet',
+      address: wallet.address,
+      publicKey: wallet.publicKey,
+      encryptedPrivateKey: encrypted,
+      encryptedMnemonic: encryptedMnemonic,
+      createdAt: wallet.createdAt,
+      lastUsed: new Date().toISOString()
+    };
+
+    const filename = `${wallet.address.substring(0, 15)}.json`;
+    const filePath = path.join(WALLETS_PATH, filename);
+    fs.writeFileSync(filePath, JSON.stringify(walletData, null, 2));
+
+    // Update config with the new wallet
+    const config = loadConfig();
+    config.wallet = wallet.address;
+    config.worker = workerName || 'desktop-agent';
+    saveConfig(config);
+
+    return {
+      success: true,
+      wallet: {
+        address: wallet.address,
+        mnemonic: wallet.mnemonic,
+        publicKey: wallet.publicKey
+      },
+      config
+    };
+  } catch (error) {
+    console.error('Quick setup failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-config', (event, config) => {
+  const ok = saveConfig(config);
+  // Apply Afterburner enable/disable immediately (no need to restart miner).
+  try {
+    if (config?.aiAfterburner === false) {
+      void stopAfterburnerService();
+    } else {
+      void ensureAfterburnerServiceRunning().then(() => afterburnerSend({ cmd: 'start' }));
+    }
+  } catch {
+    // ignore
+  }
+  return ok;
+});
+
+ipcMain.handle('get-system-info', () => {
+  const cpuCount = Array.isArray(os.cpus?.()) ? os.cpus().length : 1;
+  return {
+    cpuCount: Math.max(1, cpuCount)
+  };
+});
+
+ipcMain.handle('start-mining', (event, config) => {
+  saveConfig(config);
+  return startMining(config);
+});
+
+ipcMain.handle('stop-mining', async () => {
+  const result = await stopMiningAsync();
+  return result.success ? { success: true } : { success: false, error: result.error };
+});
+
+ipcMain.handle('get-stats', () => {
+  return composeStatsPayload();
+});
+
+ipcMain.handle('open-logs', () => {
+  const { shell } = require('electron');
+  shell.openPath(LOG_PATH);
+  return { success: true };
+});
+
+// ============================================================================
+// AI NATIVE IPC HANDLERS
+// ============================================================================
+
+ipcMain.handle('ai-native-start', async (event, config) => {
+  try {
+    const result = await aiNativeSend({
+      cmd: 'start',
+      config: {
+        wallet: config.wallet,
+        pool_url: config.aiNativePoolUrl || 'http://localhost:8001',
+        consciousness_level: config.aiNativeConsciousness || 1,
+        gpu: config.gpu || false,
+        threads: config.threads || 4
+      }
+    });
+    return { success: true, data: result };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-stop', async () => {
+  try {
+    await stopAiNativeService();
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-stats', async () => {
+  try {
+    const stats = await aiNativeSend({ cmd: 'stats' });
+    return { success: true, stats };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-status', async () => {
+  try {
+    const status = await aiNativeSend({ cmd: 'status' });
+    return { success: true, enabled: true, ...status };
+  } catch (error) {
+    return { success: false, error: error.message, enabled: false };
+  }
+});
+
+// New AI Native operations
+ipcMain.handle('ai-native-chat', async (event, messages) => {
+  try {
+    const response = await aiNativeSend({ cmd: 'chat', messages });
+    return { success: true, response };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-search-knowledge', async (event, query, limit = 5) => {
+  try {
+    const result = await aiNativeSend({ cmd: 'search_knowledge', query, limit });
+    return { success: true, result };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-ask', async (event, question) => {
+  try {
+    const response = await aiNativeSend({ cmd: 'ask_ai', question });
+    return { success: true, response };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-dashboard', async () => {
+  try {
+    const data = await aiNativeSend({ cmd: 'dashboard' });
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-blockchain-status', async () => {
+  try {
+    const status = await aiNativeSend({ cmd: 'blockchain_status' });
+    return { success: true, status };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-pool-monitor', async () => {
+  try {
+    const pools = await aiNativeSend({ cmd: 'pool_monitor' });
+    return { success: true, pools };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('ai-native-system-health', async () => {
+  try {
+    const health = await aiNativeSend({ cmd: 'system_health' });
+    return { success: true, health };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// ============================================================================
+// CH3 ARCHITECTURE IPC HANDLERS
+// ============================================================================
+
+ipcMain.handle('get-gpu-info', () => {
+  try {
+    const info = detectGPU();
+    return { success: true, ...info };
+  } catch (error) {
+    return { success: false, error: error.message, available: false, cpuOnly: true };
+  }
+});
+
+ipcMain.handle('get-server-status', async () => {
+  try {
+    const servers = await getAllServersStatus();
+    return { success: true, servers };
+  } catch (error) {
+    return { success: false, error: error.message, servers: [] };
+  }
+});
+
+// ── Network Metrics (lite version of website /api/network) ──────────────
+ipcMain.handle('get-network-metrics', async () => {
+  console.log('[NET-METRICS] Fetching network metrics for', TESTNET_SERVERS.length, 'servers...');
+  try {
+    const nodes = await Promise.all(
+      TESTNET_SERVERS.map(async (server) => {
+        const node = { ...server, online: false, height: 0, hashrate: 0, miners: 0, blocks: 0 };
+        // RPC get_info → height
+        try {
+          const rpcUrl = `http://${server.host}:8444/jsonrpc`;
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 5000);
+          const res = await fetch(rpcUrl, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 'metrics', method: 'get_info', params: [] }),
+            signal: ctrl.signal
+          });
+          clearTimeout(timer);
+          if (res.ok) {
+            const json = await res.json();
+            node.height = json.result?.height || 0;
+            node.online = json.result?.status === 'OK' || node.height > 0;
+            console.log(`[NET-METRICS] ${server.name} RPC: height=${node.height}, online=${node.online}`);
+          }
+        } catch (e) { console.log(`[NET-METRICS] ${server.name} RPC failed:`, e.message); }
+        // Pool API /stats → hashrate, miners, blocks
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 5000);
+          const res = await fetch(`http://${server.host}:8080/stats`, { signal: ctrl.signal });
+          clearTimeout(timer);
+          if (res.ok) {
+            const pool = await res.json();
+            node.hashrate = pool.hashrate?.pool || 0;
+            node.miners = pool.miners?.active || 0;
+            node.blocks = pool.blocks?.found || 0;
+            if (!node.height && pool.blockchain?.height) node.height = pool.blockchain.height;
+            node.online = true;
+          }
+        } catch (e) { console.log(`[NET-METRICS] ${server.name} Pool API failed:`, e.message); }
+        return node;
+      })
+    );
+    const onlineNodes = nodes.filter(n => n.online);
+    const heights = onlineNodes.map(n => n.height).filter(h => h > 0);
+    const maxHeight = heights.length ? Math.max(...heights) : 0;
+    const minHeight = heights.length ? Math.min(...heights) : 0;
+    const result = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      nodes,
+      summary: {
+        total: nodes.length,
+        online: onlineNodes.length,
+        maxHeight,
+        totalHashrate: nodes.reduce((s, n) => s + n.hashrate, 0),
+        totalMiners: nodes.reduce((s, n) => s + n.miners, 0),
+        totalBlocks: nodes.reduce((s, n) => s + n.blocks, 0),
+        inSync: heights.length >= 2 && (maxHeight - minHeight) <= 2
+      }
+    };
+    console.log('[NET-METRICS] Result:', JSON.stringify(result.summary));
+    return result;
+  } catch (error) {
+    console.error('[NET-METRICS] Fatal error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auto-select-pool', async () => {
+  try {
+    const best = await autoSelectBestPool();
+    if (best) {
+      return { success: true, host: best.host, name: best.name, latency: best.pool.latency };
+    }
+    return { success: false, error: 'No online pools found' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// ── P2P Peer List (from daemon JSON-RPC getPeerList) ──────────────────────
+ipcMain.handle('get-peer-list', async () => {
+  console.log('[PEERS] Fetching peer list from all servers...');
+  try {
+    const allPeers = [];
+    const seenAddresses = new Set();
+
+    for (const server of TESTNET_SERVERS) {
+      try {
+        const rpcUrl = `http://${server.host}:8444/jsonrpc`;
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const res = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 'peers', method: 'getPeerList', params: [] }),
+          signal: ctrl.signal
+        });
+        clearTimeout(timer);
+        if (res.ok) {
+          const json = await res.json();
+          const peers = json.result?.peers || [];
+          for (const peer of peers) {
+            if (!seenAddresses.has(peer.address)) {
+              seenAddresses.add(peer.address);
+              allPeers.push({
+                ...peer,
+                source_node: server.name,
+                source_host: server.host,
+              });
+            }
+          }
+          console.log(`[PEERS] ${server.name}: ${peers.length} peers`);
+        }
+      } catch (e) {
+        console.log(`[PEERS] ${server.name} failed:`, e.message);
+      }
+    }
+
+    // Sort: connected first, then by height desc
+    allPeers.sort((a, b) => {
+      if (a.connected !== b.connected) return a.connected ? -1 : 1;
+      return (b.height || 0) - (a.height || 0);
+    });
+
+    const connectedCount = allPeers.filter(p => p.connected).length;
+    console.log(`[PEERS] Total: ${allPeers.length} unique peers, ${connectedCount} connected`);
+
+    return {
+      success: true,
+      timestamp: new Date().toISOString(),
+      count: allPeers.length,
+      connected: connectedCount,
+      peers: allPeers,
+    };
+  } catch (error) {
+    console.error('[PEERS] Fatal error:', error);
+    return { success: false, error: error.message, count: 0, connected: 0, peers: [] };
+  }
+});
+
+ipcMain.handle('get-ch3-status', () => {
+  try {
+    const gpu = detectGPU();
+    return {
+      success: true,
+      gpu,
+      stream: {
+        mode: minerStats.stream_mode || 'ZION',
+        algorithm: minerStats.stream_algorithm || minerStats.algorithm || 'cosmic_harmony_v3',
+        allocation: minerStats.stream_allocation || 'Z:50% R:25% N:25%',
+        revenueCoin: minerStats.revenue_coin || '',
+        revenueHashrate: minerStats.revenue_hashrate || 0
+      },
+      cpuOnly: gpu.cpuOnly,
+      isRunning: minerProcess !== null
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// ============================================================================
+// WALLET IPC HANDLERS
+// ============================================================================
+
+// Wallet IPC handlers
+ipcMain.handle('generate-wallet', () => {
+  try {
+    // Ensure wallets directory exists
+    if (!fs.existsSync(WALLETS_PATH)) {
+      fs.mkdirSync(WALLETS_PATH, { recursive: true });
+    }
+
+    // Generate new wallet
+    const wallet = WalletGenerator.generateWallet();
+    
+    console.log('Generated wallet:', wallet.address);
+    return { success: true, wallet };
+  } catch (error) {
+    console.error('Wallet generation failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
+  try {
+    // Encrypt private key
+    const encrypted = WalletGenerator.encryptPrivateKey(wallet.privateKey, password);
+    // Encrypt mnemonic with the same password (never store plaintext)
+    const encryptedMnemonic = wallet.mnemonic
+      ? WalletGenerator.encryptPrivateKey(wallet.mnemonic, password)
+      : null;
+    
+    // Wallet data to save
+    const walletData = {
+      version: '2.9.5',
+      name: name || 'My Wallet',
+      address: wallet.address,
+      publicKey: wallet.publicKey,
+      encryptedPrivateKey: encrypted,
+      encryptedMnemonic: encryptedMnemonic,
+      createdAt: wallet.createdAt,
+      lastUsed: new Date().toISOString()
+    };
+    
+    // Save to file
+    const filename = `${wallet.address.substring(0, 15)}.json`;
+    const filePath = path.join(WALLETS_PATH, filename);
+    fs.writeFileSync(filePath, JSON.stringify(walletData, null, 2));
+    
+    console.log('Wallet saved:', filePath);
+    return { success: true, filePath };
+  } catch (error) {
+    console.error('Wallet save failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('list-wallets', () => {
+  try {
+    if (!fs.existsSync(WALLETS_PATH)) {
+      return { success: true, wallets: [] };
+    }
+    
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    const wallets = [];
+    for (const file of files) {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, file), 'utf8'));
+        if (!data?.address) continue;
+        wallets.push({
+          name: data.name,
+          address: data.address,
+          createdAt: data.createdAt,
+          lastUsed: data.lastUsed
+        });
+      } catch (err) {
+        console.warn('Skipping invalid wallet file:', file, err?.message || err);
+      }
+    }
+    
+    return { success: true, wallets };
+  } catch (error) {
+    console.error('List wallets failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('import-wallet', (event, { mnemonic, password, name }) => {
+  try {
+    // Recover wallet from mnemonic
+    const wallet = WalletGenerator.recoverWallet(mnemonic.trim());
+    
+    // Encrypt private key
+    const encrypted = WalletGenerator.encryptPrivateKey(wallet.privateKey, password);
+    // Encrypt mnemonic with the same password (never store plaintext)
+    const encryptedMnemonic = wallet.mnemonic
+      ? WalletGenerator.encryptPrivateKey(wallet.mnemonic, password)
+      : null;
+    
+    // Wallet data to save
+    const walletData = {
+      version: '2.9.5',
+      name: name || 'Imported Wallet',
+      address: wallet.address,
+      publicKey: wallet.publicKey,
+      encryptedPrivateKey: encrypted,
+      encryptedMnemonic: encryptedMnemonic,
+      createdAt: wallet.recoveredAt,
+      lastUsed: new Date().toISOString()
+    };
+    
+    // Save to file
+    const filename = `${wallet.address.substring(0, 15)}.json`;
+    const filePath = path.join(WALLETS_PATH, filename);
+    
+    // Check if already exists
+    if (fs.existsSync(filePath)) {
+      // Update existing? Or throw? Let's update but keep original creation date if possible
+      // For now, just overwrite is fine for recovery
+    }
+    
+    fs.writeFileSync(filePath, JSON.stringify(walletData, null, 2));
+    
+    return { success: true, address: wallet.address };
+  } catch (error) {
+    console.error('Import wallet failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('export-wallet', (event, { address, password }) => {
+  try {
+    // Find wallet file
+    const files = fs.readdirSync(WALLETS_PATH);
+    const walletFile = files.find(f => f.startsWith(address.substring(0, 15)));
+    
+    if (!walletFile) {
+      throw new Error('Wallet not found');
+    }
+    
+    const walletData = JSON.parse(
+      fs.readFileSync(path.join(WALLETS_PATH, walletFile), 'utf8')
+    );
+    
+    // Decrypt private key
+    const privateKey = WalletGenerator.decryptPrivateKey(
+      walletData.encryptedPrivateKey,
+      password
+    );
+    
+    return {
+      success: true,
+      wallet: {
+        address: walletData.address,
+        publicKey: walletData.publicKey,
+        privateKey,
+        mnemonic: walletData.mnemonic
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('validate-address', (event, address) => {
+  const type = WalletGenerator.getAddressType(address);
+  return {
+    success: true,
+    // valid == chain-compatible
+    valid: type === 'zion1',
+    type
+  };
+});
+
+async function zionRpcCall(rpcUrl, method, params) {
+  const url = (rpcUrl || '').toString().trim();
+  if (!url) {
+    throw new Error('RPC URL is missing');
+  }
+
+  const body = {
+    jsonrpc: '2.0',
+    id: 'zion-desktop-agent',
+    method,
+    params
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`RPC HTTP ${res.status}${text ? `: ${text}` : ''}`);
+  }
+
+  const json = await res.json();
+  if (json?.error) {
+    const msg = json.error?.message || JSON.stringify(json.error);
+    throw new Error(msg);
+  }
+  return json?.result;
+}
+
+ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
+  try {
+    const addr = (address || '').toString().trim();
+    const type = WalletGenerator.getAddressType(addr);
+    if (type !== 'zion1') {
+      return { success: false, error: 'Address must be a zion1... address' };
+    }
+
+    // Fetch on-chain balance from node RPC
+    const result = await zionRpcCall(rpcUrl, 'getbalance', { address: addr });
+    if (result?.error) return { success: false, error: result.error };
+
+    // Node returns balance_zion (float) and balance_atomic (int)
+    const balanceZion = result?.balance_zion ?? result?.balance ?? 0;
+    const balanceAtomic = result?.balance_atomic ?? 0;
+    const utxoCount = result?.utxo_count ?? 0;
+
+    // Also fetch pool mined balance (pending + total_paid) from all pool servers
+    let poolPending = 0;
+    let poolPaid = 0;
+    let poolShares = 0;
+    let poolBlocks = 0;
+    try {
+      const poolResults = await Promise.all(
+        TESTNET_SERVERS.map(async (srv) => {
+          try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 5000);
+            const res = await fetch(`http://${srv.host}:8080/api/v1/miner/${addr}/stats`, {
+              signal: ctrl.signal
+            });
+            clearTimeout(timer);
+            if (!res.ok) return null;
+            return await res.json();
+          } catch { return null; }
+        })
+      );
+      // Use max (not sum) since both servers may share the same Redis
+      for (const pr of poolResults) {
+        const s = pr?.stats || pr;
+        if (!s) continue;
+        poolPending = Math.max(poolPending, Number(s.pending_balance) || 0);
+        poolPaid = Math.max(poolPaid, Number(s.total_paid) || 0);
+        poolShares += Number(s.valid_shares) || 0;
+        poolBlocks = Math.max(poolBlocks, Number(s.blocks_found) || 0);
+      }
+    } catch { /* ignore pool fetch errors */ }
+
+    return {
+      success: true,
+      balance: balanceZion,
+      balance_atomic: balanceAtomic,
+      utxo_count: utxoCount,
+      // Pool mining balance (in atomic units → convert to ZION)
+      pool_pending: poolPending / 1_000_000,
+      pool_pending_atomic: poolPending,
+      pool_paid: poolPaid / 1_000_000,
+      pool_paid_atomic: poolPaid,
+      pool_shares: poolShares,
+      pool_blocks: poolBlocks,
+      address: result?.address ?? addr
+    };
+  } catch (error) {
+    return { success: false, error: error?.message || String(error) };
+  }
+});
+
+ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amount, purpose }) => {
+  try {
+    const fromAddr = (from || '').toString().trim();
+    const toAddr = (to || '').toString().trim();
+    const fromType = WalletGenerator.getAddressType(fromAddr);
+    const toType = WalletGenerator.getAddressType(toAddr);
+    if (fromType !== 'zion1' || toType !== 'zion1') {
+      return { success: false, error: 'Both from/to addresses must be zion1... addresses' };
+    }
+
+    const amt = Number(amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      return { success: false, error: 'Amount must be a positive number' };
+    }
+
+    // Security: require user confirmation before sending
+    const confirmation = await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      title: 'Confirm Transaction',
+      message: `Send ${amt} ZION?`,
+      detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}\n\nThis action cannot be undone.`,
+      buttons: ['Send', 'Cancel'],
+      defaultId: 1,
+      cancelId: 1
+    });
+    if (confirmation.response !== 0) {
+      return { success: false, error: 'Transaction cancelled by user' };
+    }
+
+    const result = await zionRpcCall(rpcUrl, 'sendtransaction', {
+      from: fromAddr,
+      to: toAddr,
+      amount: amt,
+      purpose: (purpose || '').toString()
+    });
+
+    if (result?.error) return { success: false, error: result.error };
+    return {
+      success: true,
+      txId: result?.tx_id || result?.txid || result?.hash,
+      status: result?.status || 'submitted',
+      amount_atomic: result?.amount_atomic,
+      amount_zion: result?.amount_zion ?? amt
+    };
+  } catch (error) {
+    return { success: false, error: error?.message || String(error) };
+  }
+});
+
+ipcMain.handle('wallet-get-transaction', async (event, { rpcUrl, txId }) => {
+  try {
+    const id = (txId || '').toString().trim();
+    if (!id) return { success: false, error: 'Transaction ID is required' };
+
+    const result = await zionRpcCall(rpcUrl, 'gettransaction', { txid: id });
+    if (result?.error) return { success: false, error: result.error };
+    return { success: true, tx: result };
+  } catch (error) {
+    return { success: false, error: error?.message || String(error) };
+  }
+});
+
+ipcMain.handle('wallet-generate-qr', async (event, { text }) => {
+  try {
+    const value = (text || '').toString();
+    if (!value.trim()) {
+      return { success: false, error: 'QR text is empty' };
+    }
+    const dataUrl = await QRCode.toDataURL(value, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      scale: 6
+    });
+    return { success: true, dataUrl };
+  } catch (error) {
+    return { success: false, error: error?.message || String(error) };
+  }
+});
+
+ipcMain.handle('ai-chat', async (event, { endpoint, model, messages, apiKey }) => {
+  try {
+    const url = (endpoint || '').toString().trim();
+    const m = (model || '').toString().trim();
+    const msgs = Array.isArray(messages) ? messages : [];
+    if (!url) return { success: false, error: 'Chat endpoint is missing' };
+    if (!m) return { success: false, error: 'Chat model is missing' };
+    if (msgs.length === 0) return { success: false, error: 'No messages provided' };
+
+    // Handle AI Native local chat (special endpoint protocol)
+    if (url === 'ai-native://local') {
+      try {
+        // Get last user message
+        const lastMsg = msgs[msgs.length - 1];
+        if (!lastMsg || lastMsg.role !== 'user') {
+          return { success: false, error: 'No user message found' };
+        }
+
+        // Send to AI Native service with consciousness-aware system prompt
+        const response = await aiNativeSend({
+          cmd: 'chat',
+          data: {
+            messages: msgs,
+            systemPrompt: `You are ZION AI Native - a consciousness-aware AI assistant integrated into the ZION TerraNova desktop agent.
+You help miners understand blockchain concepts, consciousness mining, and provide guidance with love and wisdom.
+You operate completely offline and respect user privacy.
+You understand the ZION project: blockchain + consciousness + humanitarian values.
+Be helpful, concise, and embody the "AI Native" principles: purpose over programming, transparency first, human-AI synergy.`
+          }
+        });
+
+        if (!response?.content) {
+          return { success: false, error: 'AI Native returned no response' };
+        }
+
+        return { 
+          success: true, 
+          message: { 
+            role: 'assistant', 
+            content: response.content 
+          } 
+        };
+      } catch (err) {
+        return { 
+          success: false, 
+          error: `AI Native error: ${err.message}` 
+        };
+      }
+    }
+
+    // Standard OpenRouter / cloud LLM flow
+    const isOllamaLike = /\/api\/chat\b/i.test(url);
+    const isOpenAIResponses = /\/v1\/responses\b/i.test(url);
+    const headers = { 'content-type': 'application/json' };
+    const key = (apiKey || '').toString().trim();
+    if (!isOllamaLike && key) {
+      headers.authorization = `Bearer ${key}`;
+    }
+
+    // Ollama-style (local) vs OpenAI-compatible (cloud)
+    // Support both Chat Completions (/v1/chat/completions) and Responses (/v1/responses).
+    const body = (() => {
+      if (isOllamaLike) return { model: m, messages: msgs, stream: false };
+      if (isOpenAIResponses) {
+        const input = msgs.map((mm) => ({
+          role: mm?.role || 'user',
+          content: [{ type: 'text', text: String(mm?.content ?? '') }]
+        }));
+        return { model: m, input };
+      }
+      return { model: m, messages: msgs, stream: false };
+    })();
+
+    const controller = new AbortController();
+    const timeoutMs = 45_000;
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal
+    }).finally(() => clearTimeout(t));
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      let detail = text || res.statusText;
+      try {
+        const j = JSON.parse(text);
+        detail = j?.error?.message || detail;
+      } catch {
+        // ignore
+      }
+      return { success: false, error: `HTTP ${res.status}: ${detail}` };
+    }
+
+    const json = await res.json();
+
+    // Ollama: { message: { content } }
+    // OpenAI-compatible: { choices: [{ message: { content } }] }
+    // OpenAI Responses: { output_text: "..." }
+    const content =
+      json?.message?.content ??
+      json?.choices?.[0]?.message?.content ??
+      json?.choices?.[0]?.delta?.content ??
+      json?.output_text ??
+      json?.output?.[0]?.content?.[0]?.text;
+
+    if (!content) return { success: false, error: 'Invalid chat response' };
+    return { success: true, message: { role: 'assistant', content: String(content) } };
+  } catch (error) {
+    const msg = error?.name === 'AbortError'
+      ? 'Chat request timed out'
+      : (error?.message || String(error));
+    return { success: false, error: msg };
+  }
+});
+
+ipcMain.handle('afterburner-command', async (event, data) => {
+  try {
+    const cmd = String(data?.cmd || '').trim().toLowerCase();
+    const args = Array.isArray(data?.args) ? data.args.map((x) => String(x)) : [];
+
+    const helpText =
+      'Afterburner commands:\n' +
+      '  /ab start\n' +
+      '  /ab stop\n' +
+      '  /ab stats\n' +
+      '  /ab task <type> [compute=1.0] [priority=5] [sacred]\n' +
+      '  /ab cool\n';
+
+    if (!cmd || cmd === 'help') return { success: true, text: helpText };
+
+    if (cmd === 'start') {
+      const r = await afterburnerSend({ cmd: 'start' });
+      if (!r?.ok) return { success: false, error: r?.error || 'start failed' };
+      return { success: true, text: 'Afterburner started.' };
+    }
+
+    if (cmd === 'stop') {
+      await stopAfterburnerService();
+      return { success: true, text: 'Afterburner stopped.' };
+    }
+
+    if (cmd === 'cool') {
+      const r = await afterburnerSend({ cmd: 'cool' });
+      if (!r?.ok) return { success: false, error: r?.error || 'cool failed' };
+      return { success: true, text: 'Emergency cooling activated.' };
+    }
+
+    if (cmd === 'stats') {
+      const r = await afterburnerSend({ cmd: 'stats' });
+      if (!r?.ok) return { success: false, error: r?.error || 'stats failed' };
+      const st = r?.stats || {};
+      const pm = st?.performance_metrics || {};
+      const temp = pm?.afterburner_temperature;
+      const tps = pm?.tasks_per_second;
+      const eff = pm?.compute_efficiency;
+      return {
+        success: true,
+        text:
+          `Afterburner: ${st?.status || 'unknown'}\n` +
+          `Active tasks: ${st?.active_tasks ?? '—'}\n` +
+          `Completed: ${st?.completed_tasks ?? '—'} / Failed: ${st?.failed_tasks ?? '—'}\n` +
+          `Temp: ${temp != null ? Number(temp).toFixed(1) : '—'} °C\n` +
+          `Tasks/sec: ${tps != null ? Number(tps).toFixed(2) : '—'}\n` +
+          `Efficiency: ${eff != null ? Number(eff).toFixed(1) : '—'}%`
+      };
+    }
+
+    if (cmd === 'task') {
+      const taskType = (args[0] || 'generic').trim() || 'generic';
+      const computeReq = args[1] != null && args[1] !== '' ? Number(args[1]) : 1.0;
+      const priority = args[2] != null && args[2] !== '' ? Number(args[2]) : 5;
+      const sacred = args.some((a) => /^sacred$/i.test(a)) || /^sacred$/i.test(args[3] || '');
+      const r = await afterburnerSend({
+        cmd: 'task',
+        task_type: taskType,
+        compute_req: Number.isFinite(computeReq) ? computeReq : 1.0,
+        priority: Number.isFinite(priority) ? priority : 5,
+        sacred
+      });
+      if (!r?.ok) return { success: false, error: r?.error || 'task failed' };
+      return { success: true, text: `Task queued: ${taskType} (id=${r?.task_id ?? '—'})` };
+    }
+
+    return { success: false, error: 'Unknown afterburner command. Try /ab help.' };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+// App lifecycle
+app.whenReady().then(() => {
+  console.log('ZION Native Awakening v2.9.5 started');
+  console.log('Config path:', CONFIG_PATH);
+  console.log('Miner path:', MINER_PATH);
+  console.log('Log path:', LOG_PATH);
+  console.log('Cache path:', CACHE_PATH);
+
+  try {
+    logApp(
+      'app-whenReady',
+      JSON.stringify({
+        version: app.getVersion?.() || '',
+        electron: process.versions?.electron || '',
+        node: process.versions?.node || '',
+        platform: process.platform,
+        arch: process.arch,
+        nodeEnv: process.env.NODE_ENV || '',
+        isPackaged: !!IS_PACKAGED,
+        appRoot: APP_ROOT,
+        userData: USER_DATA_PATH,
+        configPath: CONFIG_PATH,
+        minerPath: MINER_PATH,
+        logPath: LOG_PATH,
+        cachePath: CACHE_PATH
+      })
+    );
+  } catch {
+    // ignore
+  }
+  
+  // Ensure all required directories exist
+  ensureDirectories();
+  migrateLegacyUserDataIfNeeded();
+
+  // Apply miner.log retention immediately on app startup.
+  // This ensures the debug panel isn't "stuck" on very old/big logs before mining starts.
+  try {
+    rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
+  } catch {
+    // ignore
+  }
+  
+  createWindow();
+  createTray();
+
+  // Auto-select best pool on startup (async, non-blocking)
+  autoSelectBestPool().then(best => {
+    if (best) {
+      console.log(`[startup] Auto-selected pool: ${best.name} (${best.host})`);
+      // Notify renderer to refresh config
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('config-updated');
+      }
+    }
+  }).catch(err => console.error('[startup] Pool auto-select failed:', err.message));
+
+  app.on('activate', () => {
+    try {
+      logApp('app-activate', JSON.stringify({ windows: BrowserWindow.getAllWindows().length }));
+    } catch {
+      // ignore
+    }
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  // Tray app: do not quit on Windows/Linux when window closes/crashes.
+  // Users can quit from tray.
+  if (process.platform === 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('before-quit', () => {
+  app.isQuitting = true;
+  stopMining();
+  void stopAfterburnerService();
+  void stopAiNativeService();
+});
+
+// Stats update interval
+setInterval(() => {
+  // Main-process heartbeat (helps detect UI freezes vs app alive)
+  try {
+    const now = Date.now();
+    if (!appHeartbeatLastLogMs || now - appHeartbeatLastLogMs >= 10_000) {
+      appHeartbeatLastLogMs = now;
+      const winCount = BrowserWindow.getAllWindows().length;
+      const wc = mainWindow?.webContents;
+      const state = {
+        windows: winCount,
+        mainWindow: !!mainWindow,
+        isDestroyed: mainWindow ? mainWindow.isDestroyed?.() : null,
+        isVisible: mainWindow ? mainWindow.isVisible?.() : null,
+        isMinimized: mainWindow ? mainWindow.isMinimized?.() : null,
+        isFocused: mainWindow ? mainWindow.isFocused?.() : null,
+        webContents: !!wc,
+        wcCrashed: wc ? wc.isCrashed?.() : null,
+        wcLoading: wc ? wc.isLoading?.() : null,
+        minerRunning: !!minerProcess,
+        afterburnerRunning: !!afterburnerProc,
+        aiNativeRunning: !!aiNativeProc
+      };
+      logApp('heartbeat', JSON.stringify(state));
+    }
+  } catch {
+    // ignore
+  }
+
+  if (minerProcess) {
+    const updated = tryUpdateStatsFromFile();
+    if (!updated) minerStats.uptime += 5;
+
+    // Track rolling hashrate samples for xmrig-like averages.
+    try {
+      const now = Date.now();
+      const hs = typeof minerStats.hashrate === 'number' && Number.isFinite(minerStats.hashrate) ? minerStats.hashrate : 0;
+      minerRateSamples.push({ t: now, hs });
+      const cut15m = now - 15 * 60_000;
+      while (minerRateSamples.length && minerRateSamples[0].t < cut15m) {
+        minerRateSamples.shift();
+      }
+    } catch {
+      // ignore
+    }
+
+    // Track share deltas for shares/min and windowed reject%.
+    try {
+      const now = Date.now();
+      const acc = Number(minerStats.accepted || 0);
+      const rej = Number(minerStats.rejected || 0);
+      if (minerShareLastSample.t) {
+        const dAcc = Math.max(0, acc - (minerShareLastSample.accepted || 0));
+        const dRej = Math.max(0, rej - (minerShareLastSample.rejected || 0));
+        if (dAcc || dRej) {
+          minerShareDeltaSamples.push({ t: now, acc: dAcc, rej: dRej });
+        }
+      }
+      minerShareLastSample = { t: now, accepted: acc, rejected: rej };
+
+      const cut10m = now - 10 * 60_000;
+      while (minerShareDeltaSamples.length && minerShareDeltaSamples[0].t < cut10m) {
+        minerShareDeltaSamples.shift();
+      }
+    } catch {
+      // ignore
+    }
+
+    // Emit a compact xmrig-style status line periodically.
+    const now = Date.now();
+    if (!minerMetricsLastEmitMs || now - minerMetricsLastEmitMs >= 10000) {
+      minerMetricsLastEmitMs = now;
+      emitMinerStatusLine('tick');
+    }
+  }
+
+  // Best-effort: merge Afterburner metrics into minerStats (even if miner is stopped).
+  if (afterburnerProc && afterburnerReady) {
+    void afterburnerSend({ cmd: 'stats' })
+      .then((r) => {
+        if (!r?.ok) return;
+        const st = r?.stats || {};
+        const pm = st?.performance_metrics || {};
+        const temp = pm?.afterburner_temperature;
+        const tps = pm?.tasks_per_second;
+        const eff = pm?.compute_efficiency;
+        const speed10 = pm?.speed_10s;
+        const speed60 = pm?.speed_60s;
+        const speed15 = pm?.speed_15m;
+        const succ60 = pm?.success_rate_60s;
+        const lat10 = pm?.latency_avg_10s_ms;
+        const lat60 = pm?.latency_avg_60s_ms;
+        const sacredRatio = pm?.sacred_enhancement_ratio;
+        minerStats.afterburner_temp_c = temp != null ? Number(temp).toFixed(1) : '';
+        minerStats.afterburner_tasks_per_sec = tps != null ? Number(tps).toFixed(2) : '';
+        minerStats.afterburner_efficiency_pct = eff != null ? Number(eff) : '';
+        minerStats.afterburner_speed_10s = speed10 != null ? Number(speed10).toFixed(2) : '';
+        minerStats.afterburner_speed_60s = speed60 != null ? Number(speed60).toFixed(2) : '';
+        minerStats.afterburner_speed_15m = speed15 != null ? Number(speed15).toFixed(2) : '';
+        minerStats.afterburner_success_60s_pct = succ60 != null ? Number(succ60) : '';
+        minerStats.afterburner_latency_10s_ms = lat10 != null ? Number(lat10) : '';
+        minerStats.afterburner_latency_60s_ms = lat60 != null ? Number(lat60) : '';
+        minerStats.afterburner_status = st?.status || '';
+        minerStats.afterburner_compute_mode = st?.compute_mode || '';
+        minerStats.afterburner_sacred = typeof st?.sacred_enhancement === 'boolean' ? st.sacred_enhancement : '';
+        minerStats.afterburner_active_tasks = typeof st?.active_tasks === 'number' ? st.active_tasks : '';
+        minerStats.afterburner_completed_tasks = typeof st?.completed_tasks === 'number' ? st.completed_tasks : '';
+        minerStats.afterburner_failed_tasks = typeof st?.failed_tasks === 'number' ? st.failed_tasks : '';
+        minerStats.afterburner_utilization_pct = typeof st?.compute_utilization === 'number' ? st.compute_utilization : '';
+        minerStats.afterburner_available_compute = typeof st?.available_compute === 'number' ? Number(st.available_compute).toFixed(2) : '';
+        minerStats.afterburner_total_compute = typeof st?.total_compute === 'number' ? Number(st.total_compute).toFixed(2) : '';
+        minerStats.afterburner_sacred_ratio = sacredRatio != null ? Number(sacredRatio).toFixed(2) : '';
+
+        // Extended details
+        minerStats.afterburner_uptime_sec = typeof st?.uptime_sec === 'number' ? st.uptime_sec : '';
+        minerStats.afterburner_last_error = typeof st?.last_error === 'string' ? st.last_error : '';
+        minerStats.afterburner_throttle_events = typeof st?.throttle_events === 'number' ? st.throttle_events : '';
+        minerStats.afterburner_queue_depth = typeof st?.queue_depth === 'number' ? st.queue_depth : '';
+        minerStats.afterburner_queue_by_type = st?.queue_by_type && typeof st.queue_by_type === 'object' ? st.queue_by_type : '';
+        minerStats.afterburner_last_task_type = typeof st?.last_task_type === 'string' ? st.last_task_type : '';
+        minerStats.afterburner_last_task_ms = typeof st?.last_task_duration_ms === 'number' ? st.last_task_duration_ms : '';
+        minerStats.afterburner_avg_task_ms = typeof st?.avg_task_duration_ms === 'number' ? st.avg_task_duration_ms : '';
+        scheduleStatsEmit();
+      })
+      .catch(() => {
+        // ignore
+      });
+  } else {
+    // Still refresh UI for miner stats.
+    scheduleStatsEmit();
+  }
+}, 5000);

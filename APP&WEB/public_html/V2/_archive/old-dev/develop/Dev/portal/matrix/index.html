@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Příklad CSS Matrix</title>
+    <style>
+        .box {
+            width: 100px;
+            height: 100px;
+            background-color: teal;
+            transform: matrix(1, 0, 0, 1, 50, 50); /* posun o 50px doprava a dolů */
+            transition: transform 0.5s;
+        }
+
+        .box:hover {
+            transform: matrix(0.5, 0.5, -0.5, 0.5, 100, 100); /* změna velikosti a rotace při hoveru */
+        }
+    </style>
+</head>
+<body>
+
+<div class="box"></div>
+
+</body>
+</html>

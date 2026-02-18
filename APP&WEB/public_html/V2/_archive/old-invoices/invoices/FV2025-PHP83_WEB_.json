@@ -1,0 +1,153 @@
+{
+    "number": "FV2025-PHP83_WEB_",
+    "date": "17.12.2025",
+    "dueDate": "31.12.2025",
+    "order": {
+        "orderId": "PHP83_WEB_TEST_1766008473",
+        "createdAt": "2025-12-17T23:30:00Z",
+        "items": [
+            {
+                "id": "t1",
+                "name": "API Test Product PHP 8.3",
+                "price": 99,
+                "quantity": 1,
+                "tokens": 5
+            }
+        ],
+        "customer": {
+            "name": "Test User",
+            "email": "admin@newearth.cz",
+            "phone": "+420999888777",
+            "address": {
+                "street": "Testovaci 123",
+                "city": "Praha",
+                "zip": "10000"
+            }
+        },
+        "shipping": {
+            "method": "zasilkovna",
+            "price": 50
+        },
+        "payment": "transfer",
+        "total": 149,
+        "note": "PHP 8.3 upgrade test",
+        "zion": {
+            "tokens": {
+                "totalTokens": 5,
+                "items": [
+                    {
+                        "id": "t1",
+                        "name": "API Test Product PHP 8.3",
+                        "quantity": 1,
+                        "perUnit": 5,
+                        "total": 5
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_eba4d84a8807",
+                "label": "ZION order PHP83_WEB_TEST_1766008473",
+                "tokens": 5,
+                "orderId": "PHP83_WEB_TEST_1766008473",
+                "createdAt": "2025-12-17T22:54:33+01:00",
+                "expiresAt": "2026-01-16T22:54:33+01:00",
+                "uri": "zion:\/\/wallet\/zw_eba4d84a8807?tokens=5&label=ZION+order+PHP83_WEB_TEST_1766008473&orderId=PHP83_WEB_TEST_1766008473"
+            },
+            "qr": {
+                "serviceUrl": null,
+                "imageFile": "zw_eba4d84a8807.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAEAklEQVR4nO3dMW4CQRAAQY91\/\/\/yOHCOdRYraFEVg2aDbQ3JitndL6Dp+9UHAP5PwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGsOvuF2bmxDmAX7ee6NvAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUPY7ffAd33g\/w97Mv2A+\/BcNjCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAi7Tg+YmdMjCHEfnssGhjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxvZHdvfV7AECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGsOv0gN09PeLdzMyrj8CnsIEhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUPYdXrAzJweAR\/LBoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhB1\/TsifdvfVR6Bq3B7o8hMawgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBD2A\/hSGohm+TqQAAAAAElFTkSuQmCC"
+            },
+            "storage": {
+                "json": "zw_eba4d84a8807.json",
+                "image": "zw_eba4d84a8807.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_d619ba6f",
+                "orderId": "PHP83_WEB_TEST_1766008473",
+                "walletId": "zw_eba4d84a8807",
+                "tokens": 5,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-17T22:54:33+01:00",
+                "updatedAt": "2025-12-17T22:54:33+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_eba4d84a8807?tokens=5&label=ZION+order+PHP83_WEB_TEST_1766008473&orderId=PHP83_WEB_TEST_1766008473",
+                "qrImage": "zw_eba4d84a8807.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 5,
+                    "items": [
+                        {
+                            "id": "t1",
+                            "name": "API Test Product PHP 8.3",
+                            "quantity": 1,
+                            "perUnit": 5,
+                            "total": 5
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-17T22:54:33+01:00",
+                        "note": "Created from order #PHP83_WEB_TEST_1766008473"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "Test User",
+        "email": "admin@newearth.cz",
+        "phone": "+420999888777",
+        "address": "Testovaci 123, Praha, 10000"
+    },
+    "items": [
+        {
+            "name": "API Test Product PHP 8.3",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 99,
+            "unitPriceWithoutVat": 81.819999999999993,
+            "vatRate": 21,
+            "vatAmount": 17.18,
+            "totalPrice": 99,
+            "priceWithoutVat": 81.819999999999993
+        },
+        {
+            "name": "Doprava - zasilkovna",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 50,
+            "unitPriceWithoutVat": 41.32,
+            "vatRate": 21,
+            "vatAmount": 8.6799999999999997,
+            "totalPrice": 50,
+            "priceWithoutVat": 41.32
+        }
+    ],
+    "totals": {
+        "withoutVat": 123.14,
+        "vat": 25.859999999999999,
+        "withVat": 149,
+        "currency": "CZK"
+    }
+}

@@ -1,0 +1,103 @@
+{
+    "number": "FV2026-ZTNMJVR42R",
+    "date": "01.01.2026",
+    "dueDate": "15.01.2026",
+    "order": {
+        "orderId": "ZTNMJVR42RHNYYK",
+        "items": [
+            {
+                "id": "digi-002",
+                "name": "Firemní\/Osobní web OnePage - komplet",
+                "price": 4900,
+                "image": ".\/img\/144Halls.jpg",
+                "category": "digital",
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "Hg",
+            "email": "yosef.hubalek@gmail.com",
+            "phone": "773669477",
+            "address": null,
+            "newsletter": false
+        },
+        "shipping": {
+            "method": "virtualni-nakup",
+            "price": 0,
+            "pickupPoint": null
+        },
+        "payment": "cash",
+        "note": "",
+        "total": 4900,
+        "zionTokens": 0,
+        "zionWalletId": "zw_ztnmjvr42rg56ph",
+        "termsAccepted": true,
+        "createdAt": "2026-01-01T18:01:05.789Z",
+        "zion": {
+            "tokens": {
+                "totalTokens": 4900,
+                "items": [
+                    {
+                        "id": "digi-002",
+                        "name": "Firemní\/Osobní web OnePage - komplet",
+                        "quantity": 1,
+                        "perUnit": 4900,
+                        "total": 4900
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_274df5ef53dc",
+                "address": "zion1u8a725d4k0c6f0h7x3p2e2r0s0h630j8p6t2d5v",
+                "mnemonic": "exile brave nuclear second fee winner amazing hill margin achieve mutual thank",
+                "publicKey": "50918e7b7a7ebbb7269d85a15b4676cdada206bf43d4bf6d7911198ace5d1b1f",
+                "uri": "zion1u8a725d4k0c6f0h7x3p2e2r0s0h630j8p6t2d5v",
+                "network": "mainnet"
+            },
+            "qr": {
+                "imageFile": "zw_274df5ef53dc.png",
+                "serviceUrl": "https:\/\/www.newearth.cz\/V2\/wallets\/zw_274df5ef53dc.png"
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "Hg",
+        "email": "yosef.hubalek@gmail.com",
+        "phone": "773669477",
+        "address": ""
+    },
+    "items": [
+        {
+            "name": "Firemní\/Osobní web OnePage - komplet",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 4900,
+            "unitPriceWithoutVat": 4049.5900000000001,
+            "vatRate": 21,
+            "vatAmount": 850.40999999999997,
+            "totalPrice": 4900,
+            "priceWithoutVat": 4049.5900000000001
+        }
+    ],
+    "totals": {
+        "withoutVat": 4049.5900000000001,
+        "vat": 850.40999999999997,
+        "withVat": 4900,
+        "currency": "CZK"
+    }
+}

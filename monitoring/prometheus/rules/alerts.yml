@@ -1,0 +1,210 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  ZION TerraNova — Prometheus Alert Rules                     ║
+# ║  Pool, Core, Infrastructure alerts                           ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+groups:
+  # ════════════════════════════════════
+  # Pool Alerts
+  # ════════════════════════════════════
+  - name: zion_pool_alerts
+    rules:
+      # Pool instance down
+      - alert: PoolDown
+        expr: up{job=~"zion-pool-.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Pool {{ $labels.server }} is DOWN"
+          description: "ZION Pool on {{ $labels.server }} ({{ $labels.instance }}) has been unreachable for > 2 minutes."
+
+      # No shares accepted for 10 minutes
+      - alert: PoolNoShares
+        expr: rate(shares_accepted_total{job=~"zion-pool-.*"}[10m]) == 0
+        for: 10m
+        labels:
+          severity: warning
+          team: pool
+        annotations:
+          summary: "Pool {{ $labels.server }} — no shares accepted"
+          description: "No accepted shares on {{ $labels.server }} in the last 10 minutes. Miners may be offline or template broken."
+
+      # High reject rate (> 15%)
+      - alert: PoolHighRejectRate
+        expr: |
+          rate(shares_rejected_total{job=~"zion-pool-.*"}[5m])
+          / (rate(shares_accepted_total{job=~"zion-pool-.*"}[5m]) + rate(shares_rejected_total{job=~"zion-pool-.*"}[5m]))
+          > 0.15
+        for: 5m
+        labels:
+          severity: warning
+          team: pool
+        annotations:
+          summary: "Pool {{ $labels.server }} — reject rate > 15%"
+          description: "Share rejection rate is {{ $value | humanizePercentage }} on {{ $labels.server }}."
+
+      # No active connections
+      - alert: PoolNoConnections
+        expr: stratum_active_connections{job=~"zion-pool-.*"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: pool
+        annotations:
+          summary: "Pool {{ $labels.server }} — zero active miners"
+          description: "No active stratum connections on {{ $labels.server }} for 5 minutes."
+
+      # Redis down (pool side)
+      - alert: PoolRedisDown
+        expr: redis_up{job=~"zion-pool-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Pool {{ $labels.server }} — Redis connection lost"
+          description: "Redis is unreachable from pool on {{ $labels.server }}."
+
+      # Block template stale (height unchanged for > 5 min)
+      - alert: PoolBlockTemplateStale
+        expr: changes(block_template_height{job=~"zion-pool-.*"}[5m]) == 0 and block_template_height > 0
+        for: 10m
+        labels:
+          severity: warning
+          team: pool
+        annotations:
+          summary: "Pool {{ $labels.server }} — block template stale"
+          description: "Block template height hasn't changed in 10 minutes on {{ $labels.server }}. Possible core node issue."
+
+      # Orphan rate > 10%
+      - alert: PoolHighOrphanRate
+        expr: |
+          blocks_orphaned_total{job=~"zion-pool-.*"}
+          / blocks_found_total{job=~"zion-pool-.*"}
+          > 0.1
+        for: 30m
+        labels:
+          severity: warning
+          team: pool
+        annotations:
+          summary: "Pool {{ $labels.server }} — orphan rate > 10%"
+          description: "Orphan rate is {{ $value | humanizePercentage }} on {{ $labels.server }}."
+
+  # ════════════════════════════════════
+  # Core Node Alerts
+  # ════════════════════════════════════
+  - name: zion_core_alerts
+    rules:
+      # Core node down
+      - alert: CoreNodeDown
+        expr: up{job=~"zion-core-.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Core Node {{ $labels.server }} is DOWN"
+          description: "ZION Core Node on {{ $labels.server }} has been unreachable for > 2 minutes."
+
+      # Low peer count
+      - alert: CoreLowPeers
+        expr: zion_peer_count{job=~"zion-core-.*"} < 3
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Core {{ $labels.server }} — low peer count ({{ $value }})"
+          description: "Core node on {{ $labels.server }} has fewer than 3 peers for 10 minutes."
+
+  # ════════════════════════════════════
+  # Infrastructure / Host Alerts
+  # ════════════════════════════════════
+  - name: zion_infra_alerts
+    rules:
+      # Host CPU > 90%
+      - alert: HostHighCPU
+        expr: 100 - (avg by(instance,server) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "High CPU on {{ $labels.server }} ({{ $value }}%)"
+          description: "CPU usage is above 90% on {{ $labels.server }} for 10 minutes."
+
+      # Host Memory > 90%
+      - alert: HostHighMemory
+        expr: |
+          (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "High memory on {{ $labels.server }} ({{ $value }}%)"
+          description: "Memory usage is above 90% on {{ $labels.server }} for 10 minutes."
+
+      # Disk space > 85%
+      - alert: HostDiskAlmostFull
+        expr: |
+          (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Disk almost full on {{ $labels.server }} ({{ $value }}%)"
+          description: "Root filesystem usage is above 85% on {{ $labels.server }}."
+
+      # Disk space > 95%
+      - alert: HostDiskCritical
+        expr: |
+          (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "CRITICAL: Disk full on {{ $labels.server }} ({{ $value }}%)"
+          description: "Root filesystem usage is above 95% on {{ $labels.server }}. Immediate action required."
+
+      # Host down (node exporter)
+      - alert: HostDown
+        expr: up{job=~"node-.*"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Host {{ $labels.server }} is DOWN"
+          description: "Node exporter on {{ $labels.server }} is unreachable for > 3 minutes."
+
+  # ════════════════════════════════════
+  # Redis Alerts
+  # ════════════════════════════════════
+  - name: zion_redis_alerts
+    rules:
+      # Redis exporter down
+      - alert: RedisDown
+        expr: up{job=~"redis-.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Redis {{ $labels.server }} is DOWN"
+          description: "Redis exporter on {{ $labels.server }} is unreachable for > 2 minutes."
+
+      # Redis memory > 80%
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Redis high memory on {{ $labels.server }} ({{ $value }}%)"
+          description: "Redis memory usage is above 80% on {{ $labels.server }}."

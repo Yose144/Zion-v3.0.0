@@ -1,0 +1,205 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# 🌀 WARP Configuration — TestNet
+#
+# Wormhole Architecture for Rainbow Protocol
+# Universal cross-chain interoperability for ZION TerraNova
+# ═══════════════════════════════════════════════════════════════════════════
+
+[warp]
+name = "ZION WARP TestNet Node"
+version = "0.1.0"
+network = "testnet"
+
+# ── ZION L1 Connection ────────────────────────────────────────────────────
+[l1]
+rpc_url = "http://77.42.31.72:8444"
+rpc_url_backup = "http://195.201.31.201:8444"
+vault_address = "zion1warp0000000000000000000000000000vault"
+finality_blocks = 60
+poll_interval_secs = 15
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CHAIN CONFIGURATIONS
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── EVM: Base Sepolia ─────────────────────────────────────────────────────
+[[chains]]
+id = "base"
+family = "Evm"
+name = "Base Sepolia (Testnet)"
+rpc_url = "wss://base-sepolia.g.alchemy.com/v2/YOUR_API_KEY"
+vault_address = "0x0000000000000000000000000000000000000000"  # TBD after deploy
+wzion_address = "0x0000000000000000000000000000000000000000"  # TBD after deploy
+evm_chain_id = 84532
+finality_blocks = 12
+enabled = false  # Enable after contract deployment
+max_single_amount = 5000000000000   # 5M ZION
+daily_limit = 10000000000000        # 10M ZION
+min_amount = 100000000              # 100 ZION
+
+# ── EVM: Arbitrum Sepolia ─────────────────────────────────────────────────
+[[chains]]
+id = "arbitrum"
+family = "Evm"
+name = "Arbitrum Sepolia (Testnet)"
+rpc_url = "wss://arb-sepolia.g.alchemy.com/v2/YOUR_API_KEY"
+vault_address = "0x0000000000000000000000000000000000000000"
+wzion_address = "0x0000000000000000000000000000000000000000"
+evm_chain_id = 421614
+finality_blocks = 20
+enabled = false
+max_single_amount = 5000000000000
+daily_limit = 10000000000000
+min_amount = 100000000
+
+# ── EVM: BSC Testnet ──────────────────────────────────────────────────────
+[[chains]]
+id = "bsc"
+family = "Evm"
+name = "BSC Testnet"
+rpc_url = "wss://bsc-testnet.public.blastapi.io"
+vault_address = "0x0000000000000000000000000000000000000000"
+wzion_address = "0x0000000000000000000000000000000000000000"
+evm_chain_id = 97
+finality_blocks = 15
+enabled = false
+max_single_amount = 5000000000000
+daily_limit = 10000000000000
+min_amount = 100000000
+
+# ── Solana Devnet ─────────────────────────────────────────────────────────
+[[chains]]
+id = "solana"
+family = "Solana"
+name = "Solana Devnet"
+rpc_url = "https://api.devnet.solana.com"
+rpc_url_backup = "https://devnet.helius-rpc.com/?api-key=YOUR_KEY"
+vault_address = "WarpBridge1111111111111111111111111111111"  # TBD: Anchor program ID
+wzion_address = "wZION11111111111111111111111111111111111"    # TBD: SPL token mint
+finality_blocks = 31    # ~12.4 sec
+enabled = false
+max_single_amount = 5000000000000
+daily_limit = 10000000000000
+min_amount = 100000000
+
+# ── Tron Nile (Testnet) ──────────────────────────────────────────────────
+[[chains]]
+id = "tron"
+family = "Tron"
+name = "Tron Nile Testnet"
+rpc_url = "https://nile.trongrid.io"
+vault_address = "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9"  # TBD
+wzion_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"  # TBD: TRC-20 contract
+finality_blocks = 19    # ~57 sec
+enabled = false
+max_single_amount = 5000000000000
+daily_limit = 10000000000000
+min_amount = 100000000
+
+# ── Stellar Testnet ───────────────────────────────────────────────────────
+[[chains]]
+id = "stellar"
+family = "Stellar"
+name = "Stellar Testnet"
+rpc_url = "https://horizon-testnet.stellar.org"
+vault_address = "GDQP2KPQGKIHYJGXNUIYOMHARUARKA7KFJXCWGDX7YXQMATCYA3EC7T6"  # TBD
+wzion_address = "GDQP2KPQGKIHYJGXNUIYOMHARUARKA7KFJXCWGDX7YXQMATCYA3EC7T6"  # TBD: issuer
+finality_blocks = 1     # Stellar: 1 ledger = final (~5 sec)
+enabled = false
+max_single_amount = 5000000000000
+daily_limit = 10000000000000
+min_amount = 100000000
+
+# ── Cardano Pre-Production ────────────────────────────────────────────────
+[[chains]]
+id = "cardano"
+family = "Cardano"
+name = "Cardano Pre-Production"
+rpc_url = "https://cardano-preprod.blockfrost.io/api/v0"
+vault_address = "addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwqfjkjv7"  # TBD
+wzion_address = "0000000000000000000000000000000000000000000000000000000000"  # TBD: policy ID
+finality_blocks = 20    # ~400 sec
+enabled = false
+max_single_amount = 5000000000000
+daily_limit = 10000000000000
+min_amount = 100000000
+
+# ── Cosmos Hub Testnet (theta) ────────────────────────────────────────────
+[[chains]]
+id = "cosmos"
+family = "Cosmos"
+name = "Cosmos Hub Testnet (theta)"
+rpc_url = "https://rpc.sentry-01.theta-testnet.polypore.xyz"
+vault_address = "cosmos1warpvault0000000000000000000000000000"  # TBD
+wzion_address = "ibc/WZION_DENOM_HASH"  # TBD: IBC denom
+finality_blocks = 1     # Tendermint: instant finality
+enabled = false
+max_single_amount = 5000000000000
+daily_limit = 10000000000000
+min_amount = 100000000
+
+# ── Bitcoin Testnet ───────────────────────────────────────────────────────
+[[chains]]
+id = "bitcoin"
+family = "Bitcoin"
+name = "Bitcoin Testnet"
+rpc_url = "http://127.0.0.1:18332"
+vault_address = "tb1qwarpvault000000000000000000000000000000"  # TBD: HTLC script
+finality_blocks = 6     # ~60 min
+enabled = false
+max_single_amount = 5000000000000
+daily_limit = 10000000000000
+min_amount = 500000000  # 500 ZION minimum for BTC (higher due to BTC fees)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# VALIDATORS — 3 of 5 multisig
+# ═══════════════════════════════════════════════════════════════════════════
+[validators]
+threshold = 3
+private_key_file = "keys/warp-validator.key"
+
+[[validators.validators]]
+name = "WARP Validator 1 (Helsinki)"
+evm_address = "0x0000000000000000000000000000000000000001"
+ed25519_pubkey = "ed25519_pubkey_validator_1_placeholder"
+active = true
+
+[[validators.validators]]
+name = "WARP Validator 2 (Germany)"
+evm_address = "0x0000000000000000000000000000000000000002"
+ed25519_pubkey = "ed25519_pubkey_validator_2_placeholder"
+active = true
+
+[[validators.validators]]
+name = "WARP Validator 3 (Community)"
+evm_address = "0x0000000000000000000000000000000000000003"
+ed25519_pubkey = "ed25519_pubkey_validator_3_placeholder"
+active = true
+
+[[validators.validators]]
+name = "WARP Validator 4 (Reserve)"
+evm_address = "0x0000000000000000000000000000000000000004"
+ed25519_pubkey = "ed25519_pubkey_validator_4_placeholder"
+active = true
+
+[[validators.validators]]
+name = "WARP Validator 5 (Reserve)"
+evm_address = "0x0000000000000000000000000000000000000005"
+ed25519_pubkey = "ed25519_pubkey_validator_5_placeholder"
+active = true
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DATABASE
+# ═══════════════════════════════════════════════════════════════════════════
+[database]
+path = "data/warp-testnet.db"
+backup_interval_secs = 3600  # 1 hour
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MONITORING
+# ═══════════════════════════════════════════════════════════════════════════
+[monitoring]
+enabled = true
+port = 9200
+log_level = "debug"
+health_check_interval_secs = 60

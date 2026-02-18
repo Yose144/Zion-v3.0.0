@@ -1,0 +1,20 @@
+# ZION Universal Miner
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y cmake g++ make pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+# Release perf tuning (esp. single-thread hash loop):
+# - target-cpu=native: enable CPU-specific instructions
+# - LTO + codegen-units=1: better inlining across crates
+ENV RUSTFLAGS="-C target-cpu=native"
+ENV CARGO_PROFILE_RELEASE_LTO=true
+ENV CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+COPY . .
+RUN cargo build --release -p zion-miner
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /home/zion -s /sbin/nologin zion
+COPY --from=builder /build/target/release/zion-miner /usr/local/bin/
+USER zion
+ENTRYPOINT ["zion-miner"]

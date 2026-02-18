@@ -1,0 +1,72 @@
+# ZION TestNet Configuration
+
+[network]
+name = "testnet"
+chain_id = "zion-testnet-1"
+listen_addr = "0.0.0.0"
+p2p_port = 8334
+rpc_port = 8444
+
+[network.seeds]
+nodes = [
+    "77.42.31.72:8334",       # Helsinki
+    "195.201.31.201:8334",    # Germany
+]
+
+[consensus]
+algorithm = "cosmic-harmony-v3"
+block_time_target = 60
+daa_type = "lwma"
+daa_window = 60
+daa_max_change_percent = 25
+max_reorg_depth = 10
+soft_finality = 60
+min_difficulty = 1000
+
+[emission]
+block_reward_atomic = 5_400_067_000
+atomic_units_per_zion = 1_000_000
+max_mining_blocks = 23_652_000
+mining_supply = 127_720_000_000
+total_supply = 144_000_000_000
+halving = false
+
+[genesis]
+premine_total = 16_280_000_000
+timestamp = 1770552000               # Feb 8, 2026 12:00:00 UTC
+
+[genesis.premine]
+oasis_golden_egg = 8_250_000_000     # ZION OASIS + Winners Golden Egg/Xp (50.7%)
+dao_treasury = 4_000_000_000         # 24.6%
+infrastructure = 2_590_000_000       # 15.9% (matches premine.rs)
+humanitarian = 1_440_000_000         # 8.8% (matches premine.rs)
+
+[coinbase]
+maturity_blocks = 100
+
+[mempool]
+max_size_mb = 100
+min_fee_per_byte = 1
+fee_policy = "burn"
+
+[storage]
+engine = "lmdb"
+data_dir = "/data/zion"
+max_db_size_gb = 50
+
+[p2p]
+max_peers = 64
+max_inbound = 48
+max_outbound = 16
+ban_duration_secs = 600
+rate_limit_msgs_per_sec = 200
+
+[rpc]
+enabled = true
+# AUDIT-FIX I-01: Bind to localhost only. Use a reverse proxy for remote access.
+bind = "127.0.0.1:8444"
+max_connections = 50
+
+[logging]
+level = "debug"
+format = "pretty"

@@ -1,0 +1,247 @@
+"use client";
+
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { apiClient } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { type LucideIcon, Search, Box, ArrowRightLeft, Wallet, Hash, X, Loader2 } from "lucide-react";
+
+type SearchType = "block_height" | "block_hash" | "tx_hash" | "address" | "unknown";
+
+interface SearchPreview {
+  type: SearchType;
+  label: string;
+  icon: LucideIcon;
+  href: string;
+  meta?: string;
+}
+
+function detectType(q: string): SearchType {
+  const s = q.trim();
+  if (/^\d+$/.test(s)) return "block_height";
+  if (/^[a-fA-F0-9]{64}$/.test(s)) return "tx_hash"; // Could be block or tx hash
+  if (/^(zion|ZION|Z)[a-zA-Z0-9]{40,}$/i.test(s)) return "address";
+  if (/^zion_txid_/i.test(s)) return "tx_hash";
+  if (/^[a-fA-F0-9]{10,}$/i.test(s)) return "block_hash";
+  return "unknown";
+}
+
+function buildPreviews(query: string): SearchPreview[] {
+  const s = query.trim();
+  if (!s) return [];
+
+  const type = detectType(s);
+  const previews: SearchPreview[] = [];
+
+  switch (type) {
+    case "block_height":
+      previews.push({
+        type: "block_height",
+        label: `Block #${parseInt(s).toLocaleString()}`,
+        icon: Box,
+        href: `/explorer/block?id=${s}`,
+        meta: "Search by block height",
+      });
+      break;
+    case "tx_hash":
+      previews.push({
+        type: "tx_hash",
+        label: `TX ${s.slice(0, 12)}…${s.slice(-8)}`,
+        icon: ArrowRightLeft,
+        href: `/explorer/tx?hash=${s}`,
+        meta: "Search as transaction hash",
+      });
+      previews.push({
+        type: "block_hash",
+        label: `Block ${s.slice(0, 12)}…${s.slice(-8)}`,
+        icon: Box,
+        href: `/explorer/block?id=${s}`,
+        meta: "Search as block hash",
+      });
+      break;
+    case "address":
+      previews.push({
+        type: "address",
+        label: `Address ${s.slice(0, 12)}…${s.slice(-8)}`,
+        icon: Wallet,
+        href: `/explorer/address?addr=${s}`,
+        meta: "Search ZION address",
+      });
+      break;
+    case "block_hash":
+      previews.push({
+        type: "block_hash",
+        label: `Hash ${s.slice(0, 12)}…`,
+        icon: Hash,
+        href: `/explorer/block?id=${s}`,
+        meta: "Search by hash",
+      });
+      break;
+    default:
+      if (s.length > 2) {
+        previews.push({
+          type: "unknown",
+          label: `Search "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
+          icon: Search,
+          href: `/explorer/block?id=${s}`,
+          meta: "Try searching as block/tx",
+        });
+      }
+  }
+
+  return previews;
+}
+
+export default function ProSearchBar() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
+  const [selected, setSelected] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const previews = buildPreviews(query);
+
+  const handleSubmit = useCallback(
+    (href?: string) => {
+      const target = href || previews[selected]?.href;
+      if (!target) return;
+      setLoading(true);
+      setFocused(false);
+      router.push(target);
+      setTimeout(() => setLoading(false), 1500);
+    },
+    [previews, selected, router]
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelected((s) => Math.min(s + 1, previews.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelected((s) => Math.max(s - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit();
+    } else if (e.key === "Escape") {
+      setFocused(false);
+      inputRef.current?.blur();
+    }
+  };
+
+  // Close on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Reset selection when query changes
+  useEffect(() => setSelected(0), [query]);
+
+  // Keyboard shortcut: "/" to focus search
+  useEffect(() => {
+    function handleGlobalKey(e: KeyboardEvent) {
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", handleGlobalKey);
+    return () => document.removeEventListener("keydown", handleGlobalKey);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <div
+        className={`relative flex items-center rounded-2xl border transition-all duration-300 ${
+          focused
+            ? "border-zion-cyan/40 bg-black/80 shadow-lg shadow-zion-cyan/5"
+            : "border-white/10 bg-white/5 hover:border-white/20"
+        }`}
+      >
+        <div className="flex items-center justify-center pl-4">
+          {loading ? (
+            <Loader2 className="h-4.5 w-4.5 text-zion-cyan animate-spin" />
+          ) : (
+            <Search className={`h-4.5 w-4.5 transition-colors ${focused ? "text-zion-cyan" : "text-gray-500"}`} />
+          )}
+        </div>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search by block height, tx hash, or address…"
+          className="w-full bg-transparent px-3 py-3.5 text-sm text-white placeholder:text-gray-500 
+            focus:outline-none font-mono"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        {query && (
+          <button
+            onClick={() => {
+              setQuery("");
+              inputRef.current?.focus();
+            }}
+            className="pr-3 text-gray-500 hover:text-white transition"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+        <div className="pr-3">
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded border border-white/10 
+            text-[10px] text-gray-500 font-mono bg-white/5">
+            /
+          </kbd>
+        </div>
+      </div>
+
+      {/* Preview dropdown */}
+      <AnimatePresence>
+        {focused && previews.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 mt-2 w-full rounded-2xl border border-white/10 bg-slate-950/95 
+              backdrop-blur-2xl shadow-2xl shadow-black/50 overflow-hidden"
+          >
+            {previews.map((p, i) => (
+              <button
+                key={p.href}
+                onClick={() => handleSubmit(p.href)}
+                onMouseEnter={() => setSelected(i)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                  i === selected ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"
+                } ${i > 0 ? "border-t border-white/[0.04]" : ""}`}
+              >
+                <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${
+                  i === selected ? "bg-zion-cyan/15" : "bg-white/5"
+                }`}>
+                  <p.icon className={`h-4 w-4 ${i === selected ? "text-zion-cyan" : "text-gray-500"}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-medium truncate font-mono">{p.label}</p>
+                  <p className="text-[11px] text-gray-500">{p.meta}</p>
+                </div>
+                <span className="text-[10px] text-gray-600 uppercase tracking-wider flex-shrink-0">
+                  {i === selected ? "Enter ↵" : ""}
+                </span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

@@ -1,0 +1,53 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.galaxie-wrap {
+  background-color: #000;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.galaxie-wrap:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 0.1)
+  );
+}
+
+.galaxie-inner {
+  position: relative;
+  transform: skewX(-53deg) skewY(6deg) rotate(15deg) scaleX(1.1);
+  left: 34vmax;
+  top: 1vmax;
+}
+
+.galaxie-img {
+  position: absolute;
+  top: -25vmax;
+  left: 0vmax;
+  width: 100vmax;
+  height: 100vmax;
+  aspect-ratio: 1/1;
+  object-fit: contain;
+  animation: galaxie 90s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes galaxie {
+  0% {
+    transform: rotate(0deg) scale(0.8);
+  }
+  100% {
+    transform: rotate(360deg) scale(0.8);
+  }
+}

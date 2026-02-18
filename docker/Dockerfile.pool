@@ -1,0 +1,18 @@
+# ZION Mining Pool
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y cmake g++ make pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-pool
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates libssl3 curl && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/zion-pool -s /sbin/nologin zion
+# NOTE: xmrig installed on host and bind-mounted into container
+COPY --from=builder /build/target/release/zion-pool /usr/local/bin/
+RUN mkdir -p /data/zion-pool && chown -R zion:zion /data/zion-pool
+EXPOSE 3333 8080
+VOLUME ["/data/zion-pool"]
+USER zion
+ENTRYPOINT ["zion-pool"]

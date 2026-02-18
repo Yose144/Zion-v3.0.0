@@ -1,0 +1,151 @@
+{
+    "number": "FV2025-FLOW_17653",
+    "date": "10.12.2025",
+    "dueDate": "24.12.2025",
+    "order": {
+        "orderId": "FLOW_1765358755",
+        "customer": {
+            "name": "Test Kompletní Flow",
+            "email": "admin@newearth.cz",
+            "phone": "+420777888999",
+            "street": "Testovací 123",
+            "city": "Praha",
+            "zip": "12000",
+            "country": "Česká republika"
+        },
+        "items": [
+            {
+                "id": "pergola-konsultace",
+                "name": "Pergola konzultace",
+                "price": 490,
+                "quantity": 1
+            }
+        ],
+        "shipping": {
+            "method": "zasilkovna",
+            "price": 69
+        },
+        "payment": {
+            "method": "bank_transfer"
+        },
+        "total": 559,
+        "zion": {
+            "tokens": {
+                "totalTokens": 5,
+                "items": [
+                    {
+                        "id": "pergola-konsultace",
+                        "name": "Pergola konzultace",
+                        "quantity": 1,
+                        "perUnit": 5,
+                        "total": 5
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_07d8f9dc1b7b",
+                "label": "ZION order FLOW_1765358755",
+                "tokens": 5,
+                "orderId": "FLOW_1765358755",
+                "createdAt": "2025-12-10T10:25:55+01:00",
+                "expiresAt": "2026-01-09T10:25:55+01:00",
+                "uri": "zion:\/\/wallet\/zw_07d8f9dc1b7b?tokens=5&label=ZION+order+FLOW_1765358755&orderId=FLOW_1765358755"
+            },
+            "qr": {
+                "serviceUrl": "https:\/\/quickchart.io\/qr?size=320&margin=1&text=zion%3A%2F%2Fwallet%2Fzw_07d8f9dc1b7b%3Ftokens%3D5%26label%3DZION%2Border%2BFLOW_1765358755%26orderId%3DFLOW_1765358755",
+                "imageFile": "zw_07d8f9dc1b7b.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAAAklEQVR4AewaftIAAAxbSURBVO3BUY4cOJYEwXAi739lXwH7TWrABpUlvTDDX1JVNdBKVdVQK1VVQ61UVQ21UlU11EpV1VArVVVDrVRVDfXJbwD5l6i5BWRHzS0gt9TcAnJLzS0gt9S8AGRHzQmQW2p2gNxScwvIv0TNzkpV1VArVVVDrVRVDbVSVTXUSlXVUCtVVUN98h+o+YmA\/E3UnADZAXKiZkfNDpBbQH4iIDeA\/ERq\/jQ1PxGQGytVVUOtVFUNtVJVNdRKVdVQK1VVQ61UVQ21UlU11CcPAXlBzQtAbgH52wC5BeSWmh0gJ0BuqdkBsqPmBEj9PyAvqHlhpapqqJWqqqFWqqqGWqmqGmqlqmqolaqqoT6p\/5maHSAnanaAnKi5BeSGmp9IzQtqdoDcUvMNQE7UVLJSVTXUSlXVUCtVVUOtVFUNtVJVNdRKVdVQK1VVQ31S\/zMgO2peAfKCmltAvgHIjppbQHbU3AJyouYWkPpvVqqqhlqpqhpqpapqqJWqqqFWqqqGWqmqGuqTh9TU76k5AXJLzQ6QHTUnam4B2VFzAuRPA3JLzStqfho1f5OVqqqhVqqqhlqpqhpqpapqqJWqqqFWqqqGWqmqGuqT\/wDIJGp2gJyo2QFyomYHyDcA2VHzEwHZUbMD5ETNDpATNS8AOVFzA8i\/ZKWqaqiVqqqhVqqqhlqpqhpqpapqqJWqqqE++Q019XtqToDsqDkB8oKaF4CcqNkB8oqaF4C8oOYEyAtqplipqhpqpapqqJWqqqFWqqqGWqmqGmqlqmqoT34DyI6aEyA\/jZodNbeAnKh5Qc0JkBfU7AC5peYEyA6QEzU7QG6puQVkR80tNbeA\/DRqXlipqhpqpapqqJWqqqFWqqqGWqmqGmqlqmqolaqqofCXPAJkR80tICdqdoDsqPkGILfUnADZUbMD5BvU3AJyS80OkBM1LwD5BjU7QG6pOQGyo+YEyI6anZWqqqFWqqqGWqmqGmqlqmqolaqqoVaqqob65DeAfAOQW0B21NwCsqPmBMiOmlfUvKDmFpAX1JwAuaHmBMiOmhMgt9TsALkFZEfNCZBvUHNjpapqqJWqqqFWqqqGWqmqGmqlqmqolaqqoVaqqobCX\/IIkB01J0B21NwCckvNDpBvUHMCZEfNTwPkRM0tIDtqdoC8ouYWkFtqdoDcUrMD5ETNn7ZSVTXUSlXVUCtVVUOtVFUNtVJVNdRKVdVQ+EsuAfnbqNkBcqJmB8iJmh0gfxs1O0C+Qc0JkH+Jmh0gt9R8A5AdNS+sVFUNtVJVNdRKVdVQK1VVQ61UVQ21UlU11EpV1VCf\/AaQW2puAdlRcwvIjpoTILeA3FKzA+REzQ6QHTW31NwCcqLmlpoXgOyoOQGyo+anAfKKmltAdtTsrFRVDbVSVTXUSlXVUCtVVUOtVFUNtVJVNRT+kgMgL6h5BciOmltAdtScANlRMwmQHTUnQF5QcwvILTU7QE7U7AB5Qc0JkBfUvLBSVTXUSlXVUCtVVUOtVFUNtVJVNdRKVdVQK1VVQ+EvOQCyo+YWkBM1O0BO1OwAuaXmBSAnanaA3FJzC8iOmltATtTsADlRswNkR80JkB01J0BeUHMC5KdR86etVFUNtVJVNdRKVdVQK1VVQ61UVQ21UlU1FP6SR4DsqDkBsqPmBMgNNSdAdtScALmlZgfIiZodILfUvACkvkvNDpATNbeA7Kh5YaWqaqiVqqqhVqqqhlqpqhpqpapqqJWqqqE++Q+AnKh5AciJmhtAvkHNT6PmBMiOmhMgO2pOgLyg5huA7Kh5BcgOkB01J0B21JyouQVkR83OSlXVUCtVVUOtVFUNtVJVNdRKVdVQK1VVQ61UVQ31yW8A2VFzAuQFNSdAdtTsqDkBsgPkFpBbak6A\/DRqXlBT\/w\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"
+            },
+            "storage": {
+                "json": "zw_07d8f9dc1b7b.json",
+                "image": "zw_07d8f9dc1b7b.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_085e6e2e",
+                "orderId": "FLOW_1765358755",
+                "walletId": "zw_07d8f9dc1b7b",
+                "tokens": 5,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-10T10:25:56+01:00",
+                "updatedAt": "2025-12-10T10:25:56+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_07d8f9dc1b7b?tokens=5&label=ZION+order+FLOW_1765358755&orderId=FLOW_1765358755",
+                "qrImage": "zw_07d8f9dc1b7b.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 5,
+                    "items": [
+                        {
+                            "id": "pergola-konsultace",
+                            "name": "Pergola konzultace",
+                            "quantity": 1,
+                            "perUnit": 5,
+                            "total": 5
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-10T10:25:56+01:00",
+                        "note": "Created from order #FLOW_1765358755"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "Test Kompletní Flow",
+        "email": "admin@newearth.cz",
+        "phone": "+420777888999",
+        "address": ""
+    },
+    "items": [
+        {
+            "name": "Pergola konzultace",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 490,
+            "unitPriceWithoutVat": 404.95999999999998,
+            "vatRate": 21,
+            "vatAmount": 85.040000000000006,
+            "totalPrice": 490,
+            "priceWithoutVat": 404.95999999999998
+        },
+        {
+            "name": "Doprava - zasilkovna",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 69,
+            "unitPriceWithoutVat": 57.020000000000003,
+            "vatRate": 21,
+            "vatAmount": 11.98,
+            "totalPrice": 69,
+            "priceWithoutVat": 57.020000000000003
+        }
+    ],
+    "totals": {
+        "withoutVat": 461.98000000000002,
+        "vat": 97.019999999999996,
+        "withVat": 559,
+        "currency": "CZK"
+    }
+}
