@@ -1,39 +1,105 @@
-# Rust
-target/
-Cargo.lock
+# Build artifacts
+/target/
+**/target/
 
-# Node.js
-node_modules/
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Data (runtime)
+data/
+*.db
+*.lmdb
+*.lmdb-lock
+
+# Node.js (reinstall with npm install)
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build artifacts
+# Next.js build (rebuild with npm run build)
+**/.next/
+
+# Electron build (rebuild with npm run dist)
+APP&WEB/desktop-agent/dist/
+APP&WEB/desktop-agent/resources/zion-universal-miner.exe
+APP&WEB/desktop-agent/resources/zion-miner.exe
+APP&WEB/desktop-agent/resources/native-libs/
+APP&WEB/desktop-agent/resources/*.dylib
+
+# Release binaries (host on GitHub Releases, not in repo)
+APP&WEB/website-v2.9/public/downloads/
+
+# Python (tools)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Docker volumes
+docker-data/
+
+# Editor backups
+*.bak
+*.backup
+*.orig
+
+# Secrets & Keys
+*.pem
+*.key
+*.p12
+*.secret
+wallet_keys/
+**/private_keys/
+PREMINE_WALLETS_BACKUP.json
+**/PREMINE_WALLETS_BACKUP*
+
+# Rust
+Cargo.lock
+**/*.rs.bk
+
+# Python extras
+*.egg-info/
+*.whl
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Misc
+*.tmp
+*.temp
+.cache/
+ai.key
+git.key
+
+# Large archive files
+Zion-2.9.5-main.zip
+
+# Old backup directory (embedded in repo)
+Zion-2.9.5-main/
+
+# Build outputs
+build/
+dist/
 *.exe
 *.dll
 *.so
 *.dylib
-build/
-dist/
-
-# Large files
-Zion-2.9.5-main.zip
-Zion-2.9.5-main/
-
-# Sensitive
-PREMINE_WALLETS_BACKUP.json
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.swp
