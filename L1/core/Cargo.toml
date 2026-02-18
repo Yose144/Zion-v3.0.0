@@ -8,8 +8,9 @@ repository.workspace = true
 description = "ZION Blockchain Core - Consensus, P2P, Storage, RPC"
 
 [features]
-default = []
+default = ["verushash"]
 dev-tools = []  # Enables dev.credit_balance, dev.set_difficulty — NEVER enable in production
+verushash = ["verushash-native"]  # Native VerusHash 2.2 via C FFI — disable for dev builds without C sources
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -46,7 +47,7 @@ log = "0.4"
 
 # VerusHash 2.2 — native C/C++ implementation via FFI.
 # Supports both x86_64 (SSE4+AES-NI) and aarch64 (NEON+crypto via sse2neon).
-verushash-native = { path = "../native-libs/verushash-native" }
+verushash-native = { path = "../native-libs/verushash-native", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }

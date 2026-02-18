@@ -9,6 +9,7 @@ description = "ZION Mining Pool - Stratum v2, PPLNS"
 
 [features]
 default = []
+verushash = ["zion-core/verushash"]
 native-randomx = ["zion-cosmic-harmony-v3/native-randomx"]
 native-yescrypt = ["zion-cosmic-harmony-v3/native-yescrypt"]
 native-cosmic-harmony = ["zion-cosmic-harmony-v3/native-cosmic-harmony"]
@@ -54,12 +55,15 @@ reqwest = { version = "0.12", features = ["json"] }
 socket2 = "0.5"
 ed25519-dalek = { version = "2", features = ["std"] }
 
-zion-core = { path = "../core" }
+zion-core = { path = "../core", default-features = false }
 zion-cosmic-harmony-v3 = { path = "../cosmic-harmony" }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["async_tokio"] }
 rayon = "1.7"
+serde_json = "1"
+rust_decimal = "1.33"
+rust_decimal_macros = "1.33"
 
 [[bench]]
 name = "share_validation"

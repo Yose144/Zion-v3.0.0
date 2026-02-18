@@ -463,3 +463,192 @@ impl Default for MinerStats {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_stats() {
+        let stats = MinerStats::new();
+        assert_eq!(stats.total_hashes(), 0);
+        assert_eq!(stats.shares_accepted(), 0);
+        assert_eq!(stats.shares_rejected(), 0);
+    }
+
+    #[test]
+    fn test_add_hashes() {
+        let mut stats = MinerStats::new();
+        stats.add_hashes(100);
+        assert_eq!(stats.total_hashes(), 100);
+        stats.add_hashes(200);
+        assert_eq!(stats.total_hashes(), 300);
+    }
+
+    #[test]
+    fn test_share_accepted() {
+        let mut stats = MinerStats::new();
+        stats.share_accepted();
+        stats.share_accepted();
+        assert_eq!(stats.shares_accepted(), 2);
+        assert_eq!(stats.shares_rejected(), 0);
+    }
+
+    #[test]
+    fn test_share_rejected() {
+        let mut stats = MinerStats::new();
+        stats.share_rejected();
+        assert_eq!(stats.shares_rejected(), 1);
+    }
+
+    #[test]
+    fn test_share_accepted_with_diff_tracks_best() {
+        let mut stats = MinerStats::new();
+        stats.share_accepted_with_diff(100.0);
+        stats.share_accepted_with_diff(500.0);
+        stats.share_accepted_with_diff(200.0);
+        assert_eq!(stats.shares_accepted(), 3);
+        // best_share_diff is private but we can verify via to_json
+        let json = stats.to_json();
+        assert_eq!(json["best_share_diff"], 500.0);
+    }
+
+    #[test]
+    fn test_block_found() {
+        let mut stats = MinerStats::new();
+        stats.block_found();
+        stats.block_found();
+        let json = stats.to_json();
+        assert_eq!(json["blocks_found"], 2);
+    }
+
+    #[test]
+    fn test_reset_shares() {
+        let mut stats = MinerStats::new();
+        stats.share_accepted();
+        stats.share_accepted();
+        stats.share_rejected();
+        stats.reset_shares();
+        assert_eq!(stats.shares_accepted(), 0);
+        assert_eq!(stats.shares_rejected(), 0);
+    }
+
+    #[test]
+    fn test_set_config_appears_in_json() {
+        let mut stats = MinerStats::new();
+        stats.set_config("cosmic_harmony_v3", "rig01", "pool.zion.com:3333", 4);
+        let json = stats.to_json();
+        assert_eq!(json["algorithm"], "cosmic_harmony_v3");
+        assert_eq!(json["worker"], "rig01");
+        assert_eq!(json["pool"], "pool.zion.com:3333");
+        assert_eq!(json["cpu_threads"], 4);
+    }
+
+    #[test]
+    fn test_set_gpu_name() {
+        let mut stats = MinerStats::new();
+        stats.set_gpu_name("RTX 4090");
+        let json = stats.to_json();
+        assert_eq!(json["gpu_name"], "RTX 4090");
+    }
+
+    #[test]
+    fn test_gpu_name_default_none() {
+        let stats = MinerStats::new();
+        let json = stats.to_json();
+        assert_eq!(json["gpu_name"], "none");
+    }
+
+    #[test]
+    fn test_to_json_has_version() {
+        let stats = MinerStats::new();
+        let json = stats.to_json();
+        assert_eq!(json["version"], "2.9.6");
+    }
+
+    #[test]
+    fn test_to_json_shares_sent_sum() {
+        let mut stats = MinerStats::new();
+        stats.share_accepted();
+        stats.share_accepted();
+        stats.share_rejected();
+        let json = stats.to_json();
+        assert_eq!(json["shares_sent"], 3);
+        assert_eq!(json["shares_accepted"], 2);
+        assert_eq!(json["shares_rejected"], 1);
+    }
+
+    #[test]
+    fn test_fmt_uptime() {
+        assert_eq!(MinerStats::fmt_uptime(0), "00:00:00");
+        assert_eq!(MinerStats::fmt_uptime(61), "00:01:01");
+        assert_eq!(MinerStats::fmt_uptime(3661), "01:01:01");
+        assert_eq!(MinerStats::fmt_uptime(90061), "1d 01:01:01");
+    }
+
+    #[test]
+    fn test_fmt_difficulty() {
+        assert_eq!(MinerStats::fmt_difficulty(500.0), "500");
+        assert_eq!(MinerStats::fmt_difficulty(1500.0), "1.50K");
+        assert_eq!(MinerStats::fmt_difficulty(2_500_000.0), "2.50M");
+        assert_eq!(MinerStats::fmt_difficulty(3_500_000_000.0), "3.50G");
+        assert_eq!(MinerStats::fmt_difficulty(4_500_000_000_000.0), "4.50T");
+    }
+
+    #[test]
+    fn test_fmt_total_hashes() {
+        assert_eq!(MinerStats::fmt_total_hashes(999), "999");
+        assert_eq!(MinerStats::fmt_total_hashes(1_500), "1.5K");
+        assert_eq!(MinerStats::fmt_total_hashes(1_500_000), "1.5M");
+        assert_eq!(MinerStats::fmt_total_hashes(1_500_000_000), "1.5G");
+    }
+
+    #[test]
+    fn test_fmt_hashrate() {
+        let (v, u) = MinerStats::fmt_hashrate(42.5);
+        assert_eq!(u, "H/s");
+        assert_eq!(v, "42.5");
+
+        let (v, u) = MinerStats::fmt_hashrate(1_500.0);
+        assert_eq!(u, "kH/s");
+        assert_eq!(v, "1.50");
+
+        let (v, u) = MinerStats::fmt_hashrate(2_500_000.0);
+        assert_eq!(u, "MH/s");
+        assert_eq!(v, "2.50");
+    }
+
+    #[test]
+    fn test_share_pct_no_shares() {
+        let stats = MinerStats::new();
+        assert_eq!(stats.share_pct(), "\u{2014}");
+    }
+
+    #[test]
+    fn test_share_pct_mixed() {
+        let mut stats = MinerStats::new();
+        stats.share_accepted();
+        stats.share_accepted();
+        stats.share_accepted();
+        stats.share_rejected();
+        assert_eq!(stats.share_pct(), "75.0%");
+    }
+
+    #[test]
+    fn test_increment_connections() {
+        let mut stats = MinerStats::new();
+        assert_eq!(stats.to_json()["connection_count"], 1);
+        stats.increment_connections();
+        assert_eq!(stats.to_json()["connection_count"], 2);
+    }
+
+    #[test]
+    fn test_difficulty_and_height() {
+        let mut stats = MinerStats::new();
+        stats.set_difficulty(500_000.0);
+        stats.set_pool_height(12345);
+        let json = stats.to_json();
+        assert_eq!(json["difficulty"], 500_000.0);
+        assert_eq!(json["pool_height"], 12345);
+    }
+}
