@@ -1,0 +1,19 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  ZION TerraNova — Grafana Dashboard Provisioning             ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+apiVersion: 1
+
+providers:
+  - name: "ZION Dashboards"
+    orgId: 1
+    folder: "ZION TerraNova"
+    folderUid: "zion"
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

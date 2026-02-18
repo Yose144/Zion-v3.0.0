@@ -1,0 +1,833 @@
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  Activity,
+  ArrowRight,
+  Box,
+  Check,
+  CircleDot,
+  Copy,
+  Cpu,
+  ExternalLink,
+  Globe,
+  HardHat,
+  Heart,
+  Layers,
+  Pickaxe,
+  RefreshCw,
+  Rocket,
+  Search,
+  Server,
+  Shield,
+  Signal,
+  Sparkles,
+  Terminal,
+  TrendingUp,
+  Users,
+  Wallet,
+  XCircle,
+  Zap,
+} from "lucide-react";
+
+/* ═══════════════════════════════════════════════════════════
+   ZION MINING POOL DASHBOARD
+   Redesigned to match Explorer visual language
+   ═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════ TYPES ═══════════════════════ */
+interface PoolServer {
+  id: string;
+  name: string;
+  flag: string;
+  host: string;
+  stratum: number;
+  region: string;
+  online: boolean;
+  stats: {
+    blockchain?: { connected: boolean; height: number; difficulty: number };
+    hashrate?: { pool: number; pool_1h: number; pool_24h: number };
+    miners?: { active: number; total: number };
+    shares?: { valid: number; invalid: number };
+    blocks?: { found: number; pending: number };
+    pool?: { fee: number; humanitarian_tithe: number; miner_share: number; version: string; uptime_secs: number };
+    pplns_window_size?: number;
+    payouts?: { pending_miners: number; pending_total_atomic: number };
+  } | null;
+}
+
+interface Miner {
+  address: string;
+  last_share: number;
+  server: string;
+}
+
+interface Block {
+  height: number;
+  hash: string;
+  difficulty: number;
+  reward: number;
+  timestamp: number;
+  miner_address: string;
+  server: string;
+}
+
+interface PoolData {
+  ok: boolean;
+  timestamp: number;
+  aggregate: {
+    hashrate: number;
+    hashrate_24h: number;
+    active_miners: number;
+    total_miners: number;
+    blocks_found: number;
+    valid_shares: number;
+    invalid_shares: number;
+    share_efficiency: string;
+  };
+  fee: {
+    pool_fee: number;
+    humanitarian_tithe: number;
+    miner_share: number;
+    min_payout: number;
+  };
+  servers: PoolServer[];
+  miners: Miner[];
+  recent_blocks: Block[];
+}
+
+/* ═══════════════════════ HELPERS ═══════════════════════ */
+function fmtHash(h?: number): string {
+  if (!h || h <= 0) return "0 H/s";
+  if (h >= 1e12) return `${(h / 1e12).toFixed(2)} TH/s`;
+  if (h >= 1e9) return `${(h / 1e9).toFixed(2)} GH/s`;
+  if (h >= 1e6) return `${(h / 1e6).toFixed(2)} MH/s`;
+  if (h >= 1e3) return `${(h / 1e3).toFixed(2)} kH/s`;
+  return `${h.toFixed(0)} H/s`;
+}
+
+function fmtNum(n?: number): string {
+  if (n === undefined || n === null) return "—";
+  return n.toLocaleString("en-US");
+}
+
+function fmtDifficulty(d?: number): string {
+  if (!d) return "—";
+  if (d >= 1e9) return `${(d / 1e9).toFixed(2)} G`;
+  if (d >= 1e6) return `${(d / 1e6).toFixed(2)} M`;
+  if (d >= 1e3) return `${(d / 1e3).toFixed(2)} K`;
+  return String(d);
+}
+
+function timeAgo(ts: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - ts;
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function fmtUptime(secs?: number): string {
+  if (!secs) return "—";
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor((secs % 86400) / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function shortAddr(addr: string): string {
+  if (addr.length <= 20) return addr;
+  return `${addr.slice(0, 12)}…${addr.slice(-8)}`;
+}
+
+function atomicToZion(atomic: number): string {
+  return (atomic / 1e6).toFixed(4);
+}
+
+/* ═══════════════════════ COPY BUTTON ═══════════════════════ */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button onClick={copy} className="ml-2 text-gray-500 hover:text-white transition-colors" title="Copy">
+      {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+    </button>
+  );
+}
+
+/* ═══════════════════════ MAIN COMPONENT ═══════════════════════ */
+export default function PoolDashboard() {
+  const [data, setData] = useState<PoolData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  const [minerSearch, setMinerSearch] = useState("");
+  const [searchError, setSearchError] = useState("");
+  const router = useRouter();
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pool/stats", { cache: "no-store" });
+      const json = await res.json();
+      if (json.ok) {
+        setData(json);
+        setLastUpdate(new Date());
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    const iv = setInterval(fetchData, 15000);
+    return () => clearInterval(iv);
+  }, [fetchData]);
+
+  useEffect(() => {
+    const iv = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 10000);
+    return () => clearInterval(iv);
+  }, []);
+
+  return (
+    <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4 overflow-x-hidden">
+      {/* ── Subtle background glows (same as Explorer) ── */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
+        <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
+        <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple/15 to-transparent" />
+      </div>
+
+      <div className="relative z-10 container mx-auto max-w-7xl space-y-14">
+
+        {/* ═══════ HERO ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+        >
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
+                <Pickaxe className="h-4 w-4" />
+                ZION v2.9.6 · Mining Pool
+              </div>
+              <div>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Cosmic Harmony</p>
+                <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
+                  Mine ZION
+                </h1>
+              </div>
+              <p className="text-lg text-gray-300 max-w-2xl">
+                PPLNS rewards · 89% miner · 5% humanitarian · 5% Issobella fund.
+                Real-time pool metrics from all stratum servers with auto-refresh every 15 seconds.
+              </p>
+              <div className="flex flex-wrap gap-3 text-xs">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Live Data
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                  <Activity className="h-3 w-3 text-emerald-400" /> Auto-Refresh 15s
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {data?.servers.length ?? 2} Stratum Servers
+                </span>
+              </div>
+            </div>
+            {/* Stratum quick connect */}
+            <div className="w-full lg:max-w-md space-y-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Quick Connect</p>
+                <div className="space-y-2">
+                  {(data?.servers ?? []).filter(s => s.online).map(s => (
+                    <div key={s.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                      <div className="flex items-center gap-2">
+                        <span>{s.flag}</span>
+                        <code className="text-sm text-zion-cyan font-mono">{s.host}:{s.stratum}</code>
+                      </div>
+                      <CopyButton text={`stratum+tcp://${s.host}:${s.stratum}`} />
+                    </div>
+                  ))}
+                </div>
+                <a href="#start-mining" className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
+                  Getting started guide <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ MINER SEARCH ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.04 }}
+        >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const addr = minerSearch.trim().toLowerCase();
+              if (!addr) return;
+              if (!addr.startsWith("zion1") || addr.length < 20) {
+                setSearchError("Invalid ZION address — must start with zion1");
+                return;
+              }
+              setSearchError("");
+              router.push(`/pool/miner/${addr}`);
+            }}
+            className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-4 md:p-6"
+          >
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                <input
+                  type="text"
+                  value={minerSearch}
+                  onChange={(e) => { setMinerSearch(e.target.value); setSearchError(""); }}
+                  placeholder="Enter your ZION address to view miner stats..."
+                  className={`w-full rounded-xl border ${searchError ? 'border-red-500/60' : 'border-white/10'} bg-white/5 pl-12 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-zion-cyan/50 focus:ring-1 focus:ring-zion-cyan/30 transition-colors font-mono`}
+                />
+                {searchError && (
+                  <p className="absolute -bottom-5 left-0 text-xs text-red-400">{searchError}</p>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="rounded-xl bg-linear-to-r from-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap"
+              >
+                Search Miner
+              </button>
+            </div>
+          </form>
+        </motion.section>
+
+        {/* ═══════ POOL STATS GRID ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.06 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Telemetry</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Activity className="h-7 w-7 text-emerald-400" />
+              Pool Statistics
+            </h2>
+            <p className="text-sm text-gray-400">Real-time metrics aggregated from all stratum servers.</p>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 animate-pulse">
+                  <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
+                  <div className="h-3 w-16 bg-white/5 rounded mb-2" />
+                  <div className="h-6 w-20 bg-white/5 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : data ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label="Pool Hashrate" value={fmtHash(data.aggregate.hashrate)} sub={`24h avg: ${fmtHash(data.aggregate.hashrate_24h)}`} />
+              <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="Active Miners" value={String(data.aggregate.active_miners)} sub={`${data.aggregate.total_miners} total registered`} />
+              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label="Blocks Found" value={fmtNum(data.aggregate.blocks_found)} />
+              <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label="Share Efficiency" value={`${data.aggregate.share_efficiency}%`} sub={`${fmtNum(data.aggregate.valid_shares)} valid`} />
+              <StatCard icon={<Globe className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label="Servers Online" value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} />
+              <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label="Miner Share" value={`${data.fee.miner_share}%`} sub={`${data.fee.pool_fee}% fee`} />
+              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label="Invalid Shares" value={fmtNum(data.aggregate.invalid_shares)} />
+              {data.servers.filter(s => s.stats?.blockchain?.connected).map(srv => (
+                <StatCard
+                  key={srv.id}
+                  icon={<Signal className="h-5 w-5" />}
+                  color="text-zion-cyan"
+                  bg="bg-zion-cyan/10"
+                  label={`${srv.flag} Height`}
+                  value={fmtNum(srv.stats?.blockchain?.height)}
+                  sub={`Diff: ${fmtDifficulty(srv.stats?.blockchain?.difficulty)}`}
+                />
+              ))}
+              {data.servers.filter(s => s.stats?.pool?.uptime_secs).map(srv => (
+                <StatCard
+                  key={`uptime-${srv.id}`}
+                  icon={<RefreshCw className="h-5 w-5" />}
+                  color="text-teal-400"
+                  bg="bg-teal-400/10"
+                  label={`${srv.flag} Uptime`}
+                  value={fmtUptime(srv.stats?.pool?.uptime_secs)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
+              <XCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
+              <p className="text-gray-400">Pool data unavailable. Servers may be offline.</p>
+            </div>
+          )}
+        </motion.section>
+
+        {/* ═══════ POOL SERVERS ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Infrastructure</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Server className="h-7 w-7 text-zion-gold" />
+              Pool Servers
+            </h2>
+            <p className="text-sm text-gray-400">Geographically distributed stratum servers for low-latency mining.</p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {(data?.servers ?? []).map((srv) => {
+              const connected = srv.stats?.blockchain?.connected;
+              const active = (srv.stats?.miners?.active ?? 0) > 0;
+              return (
+                <div key={srv.id} className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{srv.flag}</span>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{srv.name}</h3>
+                        <p className="text-xs text-gray-500 font-mono">{srv.host}:{srv.stratum}</p>
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-widest border ${
+                        !srv.online
+                          ? "border-red-400/30 bg-red-400/10 text-red-300"
+                          : connected && active
+                            ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                            : connected
+                              ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-300"
+                              : "border-red-400/30 bg-red-400/10 text-red-300"
+                      }`}
+                    >
+                      {!srv.online ? (
+                        <><XCircle className="h-3 w-3" /> Offline</>
+                      ) : connected && active ? (
+                        <><CircleDot className="h-3 w-3" /> Mining</>
+                      ) : connected ? (
+                        <><CircleDot className="h-3 w-3" /> Idle</>
+                      ) : (
+                        <><XCircle className="h-3 w-3" /> Disconnected</>
+                      )}
+                    </span>
+                  </div>
+                  {srv.stats ? (
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                      <MiniStat label="Hashrate" value={fmtHash(srv.stats.hashrate?.pool)} highlight />
+                      <MiniStat label="Active / Total" value={`${srv.stats.miners?.active ?? 0} / ${srv.stats.miners?.total ?? 0}`} />
+                      <MiniStat label="Valid Shares" value={fmtNum(srv.stats.shares?.valid)} />
+                      <MiniStat label="Invalid" value={String(srv.stats.shares?.invalid ?? 0)} />
+                      <MiniStat label="Blocks Found" value={fmtNum(srv.stats.blocks?.found)} />
+                      <MiniStat label="PPLNS Window" value={fmtNum(srv.stats.pplns_window_size)} />
+                      <MiniStat label="Height" value={fmtNum(srv.stats.blockchain?.height)} />
+                      <MiniStat label="Uptime" value={fmtUptime(srv.stats.pool?.uptime_secs)} />
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No data available</p>
+                  )}
+                  <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2">
+                    <Terminal className="h-3.5 w-3.5 text-gray-500" />
+                    <code className="text-xs text-zion-cyan font-mono">stratum+tcp://{srv.host}:{srv.stratum}</code>
+                    <CopyButton text={`stratum+tcp://${srv.host}:${srv.stratum}`} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.section>
+
+        {/* ═══════ REWARD DISTRIBUTION ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.14 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Economics</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Wallet className="h-7 w-7 text-purple-400" />
+              Reward Distribution
+            </h2>
+            <p className="text-sm text-gray-400">PPLNS — Pay Per Last N Shares. Fair and transparent reward mechanism.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
+              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-purple-400/10 mx-auto mb-4">
+                <HardHat className="h-7 w-7 text-purple-400" />
+              </div>
+              <p className="text-4xl font-bold text-purple-400 font-mono">{data?.fee.miner_share ?? 89}%</p>
+              <h3 className="mt-2 text-base font-semibold text-white">Miner Reward</h3>
+              <p className="mt-1 text-xs text-gray-500">Direct to your wallet every payout cycle</p>
+            </div>
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
+              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-pink-400/10 mx-auto mb-4">
+                <Heart className="h-7 w-7 text-pink-400" />
+              </div>
+              <p className="text-4xl font-bold text-pink-400 font-mono">{data?.fee.humanitarian_tithe ?? 5}%</p>
+              <h3 className="mt-2 text-base font-semibold text-white">Humanitarian Tithe</h3>
+              <p className="mt-1 text-xs text-gray-500">Funding global humanitarian causes</p>
+            </div>
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
+              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-zion-cyan/10 mx-auto mb-4">
+                <Shield className="h-7 w-7 text-zion-cyan" />
+              </div>
+              <p className="text-4xl font-bold text-zion-cyan font-mono">{data?.fee.pool_fee ?? 1}%</p>
+              <h3 className="mt-2 text-base font-semibold text-white">Pool Fee</h3>
+              <p className="mt-1 text-xs text-gray-500">Infrastructure maintenance &amp; development</p>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ MINERS TABLE ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          id="miners"
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Directory</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Users className="h-7 w-7 text-zion-cyan" />
+              Active Miners ({data?.miners.length ?? 0})
+            </h2>
+            <p className="text-sm text-gray-400">All registered mining addresses across pool servers.</p>
+          </div>
+
+          <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.08]">
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">#</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Address</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Server</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Last Share</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.miners ?? []).map((m, i) => {
+                    const isActive = now - m.last_share < 600;
+                    const serverObj = data?.servers.find(s => s.id === m.server);
+                    return (
+                      <tr key={m.address} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                        <td className="px-5 py-3.5 text-gray-500 font-mono">{i + 1}</td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <code className="text-sm text-white font-mono">{shortAddr(m.address)}</code>
+                            <CopyButton text={m.address} />
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-gray-400 text-sm">{serverObj?.flag} {serverObj?.name ?? m.server}</td>
+                        <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">{timeAgo(m.last_share)}</td>
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+                            isActive
+                              ? "text-emerald-300 bg-emerald-400/10 border border-emerald-400/20"
+                              : "text-gray-500 bg-white/5 border border-white/[0.06]"
+                          }`}>
+                            <CircleDot className="h-3 w-3" />
+                            {isActive ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {(!data?.miners || data.miners.length === 0) && (
+                    <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">No miners registered yet</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ RECENT BLOCKS ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+          id="blocks"
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Ledger</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Box className="h-7 w-7 text-zion-gold" />
+              Recent Blocks ({data?.recent_blocks.length ?? 0})
+            </h2>
+            <p className="text-sm text-gray-400">Latest blocks found by the pool across all servers.</p>
+          </div>
+
+          <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.08]">
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Height</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Hash</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Difficulty</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Reward</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Miner</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.recent_blocks ?? []).map((b, i) => (
+                    <tr key={`${b.height}-${i}`} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                      <td className="px-5 py-3.5">
+                        <Link href={`/explorer/block?height=${b.height}`} className="text-zion-cyan hover:text-white font-mono font-semibold transition-colors">
+                          #{fmtNum(b.height)}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <code className="text-xs text-gray-400 font-mono">{b.hash?.slice(0, 16)}…</code>
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">{fmtDifficulty(b.difficulty)}</td>
+                      <td className="px-5 py-3.5 text-emerald-400 font-mono text-xs">{atomicToZion(b.reward)} ZION</td>
+                      <td className="px-5 py-3.5">
+                        <code className="text-xs text-gray-400 font-mono">{shortAddr(b.miner_address)}</code>
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs">{timeAgo(b.timestamp)}</td>
+                    </tr>
+                  ))}
+                  {(!data?.recent_blocks || data.recent_blocks.length === 0) && (
+                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">No blocks found yet</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ START MINING GUIDE ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.26 }}
+          id="start-mining"
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Getting Started</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Rocket className="h-7 w-7 text-zion-gold" />
+              Start Mining ZION
+            </h2>
+            <p className="text-sm text-gray-400">Follow these steps to begin mining in minutes.</p>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2">
+            {/* Step 1 */}
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80">
+                  <Wallet className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">1. Get a ZION Wallet</h3>
+                  <p className="text-[11px] text-gray-500">Generate your mining address</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-300 mb-3">Download the ZION desktop wallet or use the web wallet to generate your mining address.</p>
+              <Link href="/download" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
+                Download Wallet <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            {/* Step 2 */}
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-zion-cyan/80 to-blue-600/80">
+                  <Cpu className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">2. Choose Mining Software</h3>
+                  <p className="text-[11px] text-gray-500">ZION Native Miner or XMRig</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <p className="text-sm font-medium text-white flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-purple-400" /> ZION Native Miner</p>
+                  <p className="text-xs text-gray-400 mt-1">Official — Cosmic Harmony algorithm · Python/Rust</p>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <p className="text-sm font-medium text-white flex items-center gap-2"><Zap className="h-3.5 w-3.5 text-orange-400" /> XMRig</p>
+                  <p className="text-xs text-gray-400 mt-1">Industry-standard · CPU optimized</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-emerald-500/80 to-teal-600/80">
+                  <Terminal className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">3. Configure &amp; Connect</h3>
+                  <p className="text-[11px] text-gray-500">Start mining with one command</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">ZION Native Miner</p>
+                  <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
+{`python zion_native_miner_v2_9.py \\
+  --pool 195.201.31.201:3333 \\
+  --wallet YOUR_ZION_ADDRESS`}
+                  </pre>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">XMRig</p>
+                  <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
+{`./xmrig -o stratum+tcp://195.201.31.201:3333 \\
+  -u YOUR_ZION_ADDRESS -p x`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4 */}
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br from-zion-gold/80 to-amber-600/80">
+                  <TrendingUp className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">4. Monitor &amp; Earn</h3>
+                  <p className="text-[11px] text-gray-500">Track your rewards in real-time</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-300 mb-3">Once connected, monitor your mining stats right here. Payouts are automatic when you reach the minimum threshold.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <p className="text-[11px] text-gray-500">Min Payout</p>
+                  <p className="text-lg font-bold text-white font-mono">0.1 ZION</p>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <p className="text-[11px] text-gray-500">Reward Method</p>
+                  <p className="text-lg font-bold text-white">PPLNS</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ WHY MINE WITH US ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.30 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Features</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Sparkles className="h-7 w-7 text-purple-400" />
+              Why Mine With Us
+            </h2>
+            <p className="text-sm text-gray-400">Fair, transparent, and humanitarian-focused mining pool.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: "Cosmic Harmony Algorithm", desc: "Native ZION PoW algorithm, CPU-friendly, ASIC-resistant design for fair distribution." },
+              { icon: <Heart className="h-5 w-5 text-white" />, color: "from-pink-500/80 to-rose-600/80", title: "Humanitarian Mission", desc: "5% humanitarian + 5% Issobella fund. Mining for consciousness." },
+              { icon: <Globe className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: "Multi-Region Servers", desc: "Low-latency stratum servers in Europe. More regions coming soon." },
+              { icon: <Shield className="h-5 w-5 text-white" />, color: "from-emerald-500/80 to-teal-600/80", title: "PPLNS Rewards", desc: "Fair reward distribution based on your contributed shares. No luck variance." },
+              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: "Real-Time Monitoring", desc: "Live hashrate, shares, and earnings tracking via web dashboard." },
+              { icon: <Cpu className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: "XMRig Compatible", desc: "Use standard mining software. No special tools required." },
+            ].map((f) => (
+              <div key={f.title} className="group rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-5 hover:border-white/15 transition-all duration-200">
+                <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br ${f.color} opacity-80 group-hover:opacity-100 transition mb-4`}>
+                  {f.icon}
+                </div>
+                <h3 className="text-base font-semibold text-white">{f.title}</h3>
+                <p className="mt-1 text-sm text-gray-400">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ═══════ CTA ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.34 }}
+          className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-10 text-center"
+        >
+          <Pickaxe className="mx-auto h-12 w-12 text-zion-cyan" />
+          <h2 className="mt-6 text-3xl font-semibold text-white">ZION Mining Pool</h2>
+          <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
+            Mine ZION with Cosmic Harmony — a fair, transparent PoW pool with humanitarian impact built into every block.
+          </p>
+          <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
+            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · MainNet 31.12.2026
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <a href="#start-mining" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
+              <Zap className="h-4 w-4" /> Start Mining
+            </a>
+            <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
+              <Layers className="h-4 w-4" /> Explorer
+            </Link>
+            <a
+              href="https://github.com/Zion-TerraNova"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10"
+            >
+              <ExternalLink className="h-4 w-4" /> GitHub
+            </a>
+          </div>
+        </motion.section>
+
+        <p className="text-center text-xs text-gray-600">
+          ZION TerraNova v2.9.6 — Mining Pool · Real-time data from stratum servers · Helsinki &amp; Germany
+          {lastUpdate && <> · Last update: {lastUpdate.toLocaleTimeString()}</>}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════ STAT CARD ═══════════════════════ */
+function StatCard({ icon, color, bg, label, value, sub }: { icon: React.ReactNode; color: string; bg: string; label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+      <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bg} mb-3 [&>svg]:h-4 [&>svg]:w-4 ${color}`}>
+        {icon}
+      </div>
+      <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
+      <p className="text-lg font-bold text-white font-mono mt-0.5">{value}</p>
+      {sub && <p className="text-[11px] text-gray-500 mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
+/* ═══════════════════════ MINI STAT ═══════════════════════ */
+function MiniStat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div>
+      <p className="text-[11px] text-gray-500">{label}</p>
+      <p className={`text-sm font-mono ${highlight ? "text-zion-cyan font-bold" : "text-gray-300"}`}>{value}</p>
+    </div>
+  );
+}

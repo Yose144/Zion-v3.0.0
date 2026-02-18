@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How ZION Presale Works - Beginner's Guide | Terra Nova ®</title>
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./rasta.css" />
+    <link rel="stylesheet" href="./presale.css" />
+    <script src="./script.js" defer></script>
+    <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+    <style>
+      .info-section {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+      
+      .info-box {
+        background: rgba(0,0,0,0.3);
+        border: 2px solid var(--rasta-gold);
+        border-radius: 12px;
+        padding: 30px;
+        margin: 30px 0;
+      }
+      
+      .info-box h3 {
+        color: var(--rasta-gold);
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+      }
+      
+      .info-box p {
+        line-height: 1.8;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+      }
+      
+      .info-box ul {
+        margin: 20px 0;
+        padding-left: 30px;
+      }
+      
+      .info-box li {
+        margin: 10px 0;
+        line-height: 1.6;
+        font-size: 1.05rem;
+      }
+      
+      .highlight-box {
+        background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,128,0,0.1));
+        border-left: 4px solid var(--rasta-gold);
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      
+      .warning-box {
+        background: rgba(255,0,0,0.1);
+        border-left: 4px solid var(--rasta-red);
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      
+      .timeline {
+        position: relative;
+        padding: 40px 0;
+      }
+      
+      .timeline-item {
+        display: flex;
+        gap: 30px;
+        margin: 40px 0;
+        position: relative;
+      }
+      
+      .timeline-dot {
+        width: 40px;
+        height: 40px;
+        background: var(--rasta-gold);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        flex-shrink: 0;
+        z-index: 2;
+      }
+      
+      .timeline-content {
+        flex: 1;
+        background: rgba(0,0,0,0.3);
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid var(--rasta-green);
+      }
+      
+      .timeline-content h4 {
+        color: var(--rasta-gold);
+        margin-bottom: 10px;
+      }
+      
+      .comparison-table {
+        width: 100%;
+        margin: 30px 0;
+        border-collapse: collapse;
+      }
+      
+      .comparison-table th,
+      .comparison-table td {
+        padding: 15px;
+        border: 1px solid var(--rasta-gold);
+        text-align: left;
+      }
+      
+      .comparison-table th {
+        background: rgba(255,215,0,0.2);
+        color: var(--rasta-gold);
+        font-weight: bold;
+      }
+      
+      .comparison-table tr:nth-child(even) {
+        background: rgba(0,0,0,0.2);
+      }
+      
+      .example-calc {
+        background: rgba(0,128,0,0.1);
+        padding: 25px;
+        border-radius: 12px;
+        border: 2px solid var(--rasta-green);
+        margin: 25px 0;
+      }
+      
+      .example-calc h4 {
+        color: var(--rasta-green);
+        margin-bottom: 15px;
+        font-size: 1.4rem;
+      }
+      
+      .calc-step {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      
+      .calc-step:last-child {
+        border-bottom: none;
+        font-weight: bold;
+        font-size: 1.2rem;
+        color: var(--rasta-gold);
+        padding-top: 15px;
+        margin-top: 10px;
+        border-top: 2px solid var(--rasta-gold);
+      }
+    </style>
+  </head>
+  
+  <body class="rasta-body">
+    <div id="__next">
+      <header id="header">
+        <div class="container">
+          <div class="subcontainer">
+            <nav class="navbar-container">
+              <div class="navbar-left">
+                <a href="#" class="nav-branding-1">Zion<span> ® TerraNova</span></a>
+                <div class="nav-menu">
+                  <a href="#" class="nav-branding-2">Gene<span>sis</span></a>
+
+                  <div class="nav-dropdown">
+                    <button class="nav-link nav-dropdown-toggle" type="button">
+                      Realms
+                      <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="nav-dropdown-panel">
+                      <a href="./main-en.html" class="nav-dropdown-link">Home</a>
+                      <a href="./camp-en.html" class="nav-dropdown-link">Camps</a>
+                      <a href="./arts-en.html" class="nav-dropdown-link">Arts</a>
+                      <a href="./halls-en.html" class="nav-dropdown-link">Amenti</a>
+                      <a href="./evoluzion-en.html" class="nav-dropdown-link">EvoluZion</a>
+                    </div>
+                  </div>
+
+                  <div class="nav-dropdown">
+                    <button class="nav-link nav-dropdown-toggle" type="button">
+                      Portals
+                      <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                  <div class="nav-dropdown-panel">
+                      <a href="./blog.html" class="nav-dropdown-link">Blog</a>
+                      <a href="./links-en.html" class="nav-dropdown-link">Links</a>
+                      <a href="./about-en.html" class="nav-dropdown-link">About</a>
+                      <a href="./dev.html" class="nav-dropdown-link">DeV</a>
+                      <!-- <a href="./hemp-en.html" class="nav-dropdown-link">Hemp</a> -->
+                      <a href="./woodart.html" class="nav-dropdown-link">WoodArt</a>
+                    </div>
+                  </div>
+
+                  <a href="./shop.html" class="nav-link">Shop</a>
+                  <a href="./presale-en.html" class="nav-link presale-nav-link">
+                    <span class="presale-badge-nav">🚀</span> Presale
+                  </a>
+                  <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                  <span class="nav-link lang-switch"><a href="./presale-info.html">CZ</a> | <span class="active-lang">EN</span></span>
+
+                  <a href="./cart.html" class="nav-link cart-link">
+                    <span class="cart-icon-wrapper">
+                      <i class="fa-solid fa-cart-shopping"></i>
+                      <span id="cart-count" class="cart-badge">0</span>
+                    </span>
+                  </a>
+                </div>
+              </div>
+
+              <div class="navbar-right">
+                <div class="hamburger">
+                  <span class="bar"></span>
+                  <span class="bar"></span>
+                  <span class="bar"></span>
+                </div>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <!-- Hero Section -->
+      <section class="rasta-hero" style="min-height: 40vh; background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(26,26,26,0.95) 100%), url('./img/cosmic-bg.jpg');">
+        <div class="rasta-hero-inner">
+          <span class="version-badge">📚 GUIDE</span>
+          <h1>How <span class="gold-text">ZION Presale</span> Works</h1>
+          <h2>Complete Guide for Beginners</h2>
+          <p class="subtitle">Everything you need to know about buying ZION tokens</p>
+        </div>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">💡</span>
+        <div class="line"></div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="info-section">
+        
+        <!-- What is ZION Token -->
+        <div class="info-box">
+          <h3><i class="fa-solid fa-coins"></i> What is ZION Token?</h3>
+          <p>
+            <strong>ZION</strong> is a digital currency (cryptocurrency) similar to Bitcoin or Ethereum, 
+            but with unique properties:
+          </p>
+          <ul>
+            <li><strong>🧠 Consciousness Mining:</strong> Instead of expensive computers, we prefer community and humanitarian activities</li>
+            <li><strong>💚 Eco-Friendly:</strong> 4 different mining algorithms, no monopoly by large miners</li>
+            <li><strong>🤝 Humanitarian:</strong> Part of every block goes to charitable projects</li>
+            <li><strong>📊 Transparent:</strong> All transactions are publicly verifiable on the blockchain</li>
+          </ul>
+          
+          <div class="highlight-box">
+            <strong>💎 Total ZION Supply:</strong> 144 billion tokens (no more will ever be created)<br>
+            <strong>🎯 Available in Presale:</strong> 500 million (0.35% of total supply)<br>
+            <strong>⛏️ The Rest:</strong> Will be mined gradually over 45 years
+          </div>
+        </div>
+
+        <!-- What is Presale -->
+        <div class="info-box">
+          <h3><i class="fa-solid fa-rocket"></i> What is Presale (Pre-order)?</h3>
+          <p>
+            <strong>Presale is like "pre-ordering"</strong> ZION tokens before the mainnet launch. 
+            It's an opportunity to buy tokens at a better price than later on exchanges.
+          </p>
+          
+          <h4 style="color: var(--rasta-gold); margin-top: 25px;">🎯 Why Participate in Presale?</h4>
+          <ul>
+            <li><strong>💰 Lower Price:</strong> €0.008 instead of €0.015 at launch (almost 2x cheaper)</li>
+            <li><strong>🎁 Bonuses:</strong> Get extra tokens for free (10-50% bonus)</li>
+            <li><strong>🏆 Exclusive Benefits:</strong> NFT badges, VIP Discord, governance rights</li>
+            <li><strong>📈 Growth Potential:</strong> Historically, most successful projects grow 5-100x</li>
+          </ul>
+
+          <div class="highlight-box">
+            <strong>📅 Timeline:</strong><br>
+            • <strong>Now:</strong> Presale Phase 1 (€0.008, +50% bonus)<br>
+            • <strong>Q1 2026:</strong> Phase 2 & 3 (€0.010-0.012)<br>
+            • <strong>December 31, 2026:</strong> Mainnet launch + public trading (€0.015+)<br>
+            • <strong>2027+:</strong> Exchange listings (KuCoin, Gate.io, MEXC)
+          </div>
+        </div>
+
+        <!-- How to Buy -->
+        <div class="info-box">
+          <h3><i class="fa-solid fa-shopping-cart"></i> How to Buy ZION Tokens? (Step by Step)</h3>
+          
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot">1</div>
+              <div class="timeline-content">
+                <h4>Choose a Package</h4>
+                <p>
+                  On the <a href="./presale-en.html" style="color: var(--rasta-gold);">presale page</a>, select one of the packages:
+                </p>
+                <ul>
+                  <li><strong>Seed Pack (€100):</strong> For beginners - get 18,750 ZION</li>
+                  <li><strong>Builder Pack (€500):</strong> Most popular - get 81,250 ZION</li>
+                  <li><strong>Pioneer Pack (€2,000):</strong> For serious investors - 275,000 ZION</li>
+                  <li><strong>Whale Pack (€10,000):</strong> For large investors - 1,250,000 ZION</li>
+                </ul>
+                <p style="margin-top: 15px;">
+                  Or enter a custom amount (min. €50)
+                </p>
+              </div>
+            </div>
+
+            <div class="timeline-item">
+              <div class="timeline-dot">2</div>
+              <div class="timeline-content">
+                <h4>Fill in Your Details</h4>
+                <p>Enter:</p>
+                <ul>
+                  <li><strong>Email:</strong> Where we'll send your tokens</li>
+                  <li><strong>Name:</strong> (optional, for invoice)</li>
+                  <li><strong>Payment Method:</strong> Card or bank transfer</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="timeline-item">
+              <div class="timeline-dot">3</div>
+              <div class="timeline-content">
+                <h4>Make Payment</h4>
+                <p><strong>Card Payment (Stripe):</strong></p>
+                <ul>
+                  <li>Instant payment</li>
+                  <li>Secure - uses Stripe (like Amazon, Uber)</li>
+                  <li>Tokens received within 5 minutes</li>
+                </ul>
+                <p style="margin-top: 15px;"><strong>Bank Transfer:</strong></p>
+                <ul>
+                  <li>Send amount to our account</li>
+                  <li>Include reference number in message</li>
+                  <li>Tokens received within 1-3 business days after payment clears</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="timeline-item">
+              <div class="timeline-dot">4</div>
+              <div class="timeline-content">
+                <h4>Receive QR Code</h4>
+                <p>
+                  You'll receive a <strong>QR code</strong> via email - it's like a "digital vault" for your tokens.
+                </p>
+                <ul>
+                  <li>Contains your ZION tokens</li>
+                  <li>Protected by password</li>
+                  <li>Can be printed or saved to mobile</li>
+                  <li>No one else has access to it</li>
+                </ul>
+                <div class="warning-box">
+                  <strong>⚠️ IMPORTANT:</strong> Save your QR code safely! It's like a key to a safe. 
+                  If you lose it, you lose access to the tokens.
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline-item">
+              <div class="timeline-dot">5</div>
+              <div class="timeline-content">
+                <h4>Wait for Mainnet Launch (December 31, 2026)</h4>
+                <p>
+                  Tokens are temporarily "frozen" in the QR code. When we launch the ZION mainnet, 
+                  you'll transfer them to a normal wallet and can:
+                </p>
+                <ul>
+                  <li>Sell on exchanges</li>
+                  <li>Send to others</li>
+                  <li>Stake (lend to network and earn rewards)</li>
+                  <li>Use in ZION ecosystem</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Practical Example -->
+        <div class="info-box">
+          <h3><i class="fa-solid fa-calculator"></i> Practical Calculation Example</h3>
+          
+          <div class="example-calc">
+            <h4>Example: You Buy Builder Pack for €500</h4>
+            
+            <div class="calc-step">
+              <span>Investment:</span>
+              <span><strong>€500</strong></span>
+            </div>
+            
+            <div class="calc-step">
+              <span>Phase 1 Price:</span>
+              <span><strong>€0.008 / ZION</strong></span>
+            </div>
+            
+            <div class="calc-step">
+              <span>Base Tokens (€500 ÷ €0.008):</span>
+              <span><strong>62,500 ZION</strong></span>
+            </div>
+            
+            <div class="calc-step">
+              <span>Bonus +30%:</span>
+              <span><strong>+18,750 ZION</strong></span>
+            </div>
+            
+            <div class="calc-step">
+              <span>TOTAL You Get:</span>
+              <span><strong>81,250 ZION</strong></span>
+            </div>
+          </div>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 30px;">📈 What Happens at Launch?</h4>
+          
+          <div class="example-calc">
+            <h4>Scenario: Launch Price €0.015 (conservative estimate)</h4>
+            
+            <div class="calc-step">
+              <span>Your Tokens:</span>
+              <span><strong>81,250 ZION</strong></span>
+            </div>
+            
+            <div class="calc-step">
+              <span>New Price:</span>
+              <span><strong>€0.015 / ZION</strong></span>
+            </div>
+            
+            <div class="calc-step">
+              <span>Value of Your Tokens:</span>
+              <span><strong>€1,219</strong></span>
+            </div>
+            
+            <div class="calc-step">
+              <span>Your Profit:</span>
+              <span style="color: var(--rasta-green);"><strong>+€719 (2.4x ROI)</strong></span>
+            </div>
+          </div>
+
+          <div class="highlight-box" style="margin-top: 20px;">
+            <strong>💡 Tip:</strong> This is a conservative estimate. If ZION succeeds like other projects 
+            (Solana, Cardano, Polygon), price could grow to €0.05-0.10+, meaning 6-12x ROI.
+          </div>
+        </div>
+
+        <!-- Phase Comparison -->
+        <div class="info-box">
+          <h3><i class="fa-solid fa-chart-line"></i> Presale Phase Comparison</h3>
+          
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Phase</th>
+                <th>Price</th>
+                <th>Bonus</th>
+                <th>Example (€100)</th>
+                <th>ROI at €0.015</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Phase 1</strong> (NOW)</td>
+                <td>€0.008</td>
+                <td>+50%</td>
+                <td>18,750 ZION</td>
+                <td style="color: var(--rasta-green);"><strong>2.8x</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Phase 2</strong> (Q1 2026)</td>
+                <td>€0.010</td>
+                <td>+30%</td>
+                <td>13,000 ZION</td>
+                <td style="color: var(--rasta-green);"><strong>2.0x</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Phase 3</strong> (Q1 2026)</td>
+                <td>€0.012</td>
+                <td>+10%</td>
+                <td>9,167 ZION</td>
+                <td style="color: var(--rasta-green);"><strong>1.4x</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Launch</strong> (Dec 31, 2026)</td>
+                <td>€0.015</td>
+                <td>0%</td>
+                <td>6,667 ZION</td>
+                <td>1.0x</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p style="margin-top: 20px; font-size: 1.1rem;">
+            <strong>📊 Conclusion:</strong> The earlier you buy, the better price and higher bonus you get!
+          </p>
+        </div>
+
+        <!-- Security -->
+        <div class="info-box">
+          <h3><i class="fa-solid fa-shield-halved"></i> Is it Safe?</h3>
+          
+          <h4 style="color: var(--rasta-gold); margin-bottom: 15px;">✅ Yes, for Several Reasons:</h4>
+          
+          <ul>
+            <li>
+              <strong>🏢 Official Company:</strong> Operated by Omnity.One s.r.o. (CIN: 19365071), 
+              a registered Czech company
+            </li>
+            <li>
+              <strong>💳 Stripe Payments:</strong> We use globally recognized Stripe (like Amazon, Shopify, Uber). 
+              We DON'T SEE or STORE your payment details.
+            </li>
+            <li>
+              <strong>📧 Email Confirmation:</strong> Every purchase receives confirmation with QR code
+            </li>
+            <li>
+              <strong>📜 Legal Documentation:</strong> We have Terms & Conditions, Whitepaper, roadmap
+            </li>
+            <li>
+              <strong>🔍 Open Source:</strong> ZION blockchain is open-source, anyone can review the code
+            </li>
+            <li>
+              <strong>🤝 Transparency:</strong> All blockchain transactions will be publicly verifiable
+            </li>
+          </ul>
+
+          <div class="warning-box" style="margin-top: 25px;">
+            <h4 style="color: var(--rasta-red); margin-bottom: 10px;">⚠️ WARNING - Investment Risks</h4>
+            <p>
+              Cryptocurrencies are <strong>highly volatile</strong> and <strong>risky</strong>. 
+              Price can drop to zero. Only invest money you can afford to lose.
+            </p>
+            <ul>
+              <li><strong>No Guaranteed Profit:</strong> While we estimate growth, nothing is certain</li>
+              <li><strong>Technical Issues May Occur:</strong> Mainnet could be delayed</li>
+              <li><strong>Regulatory Risk:</strong> Crypto laws may change</li>
+              <li><strong>Market Risk:</strong> Entire crypto market can crash (bear market)</li>
+            </ul>
+            <p style="margin-top: 15px;">
+              <strong>💡 Recommendation:</strong> Diversify (don't buy only ZION), invest long-term, 
+              do your own research (DYOR).
+            </p>
+          </div>
+        </div>
+
+        <!-- Legal Aspects -->
+        <div class="info-box">
+          <h3><i class="fa-solid fa-gavel"></i> Legal Aspects and Taxes</h3>
+          
+          <h4 style="color: var(--rasta-gold);">📜 What You Get When Purchasing?</h4>
+          <ul>
+            <li><strong>Invoice/Receipt:</strong> Via email (if you provide name/company ID)</li>
+            <li><strong>QR Code Wallet:</strong> With your tokens</li>
+            <li><strong>Purchase Confirmation:</strong> Order ID and details</li>
+            <li><strong>System Record:</strong> All presale purchases are logged</li>
+          </ul>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 25px;">💰 Taxes (General Guidelines)</h4>
+          <p>
+            <strong>When Buying Tokens:</strong> No tax obligation (investment only)<br>
+            <strong>When Selling Tokens:</strong> Profit subject to capital gains tax
+          </p>
+
+          <div class="highlight-box">
+            <strong>Tax Guidelines by Country:</strong><br>
+            • <strong>Czech Republic:</strong> Hold 3+ years = 0% tax on profits ✅<br>
+            • <strong>USA:</strong> Short-term (<1 year) taxed as income, long-term (>1 year) = capital gains rates<br>
+            • <strong>EU:</strong> Varies by country (0-33%), most have holding period exemptions<br>
+            • <strong>UK:</strong> Capital gains tax applies, annual exemption available
+          </div>
+
+          <p style="margin-top: 20px;">
+            <strong>💡 Example:</strong> Buy for €500 in Dec 2025, sell in Jan 2029 (Czech Republic) = 
+            <span style="color: var(--rasta-green);"><strong>0% tax</strong></span> (held 3+ years)
+          </p>
+
+          <div class="warning-box">
+            <strong>⚠️ Legal Disclaimer:</strong> This is not tax/legal advice. 
+            Always consult with a tax advisor or accountant for your specific situation and jurisdiction.
+          </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="info-box">
+          <h3><i class="fa-solid fa-question-circle"></i> Frequently Asked Questions (FAQ)</h3>
+          
+          <h4 style="color: var(--rasta-gold);">🤔 Do I Need a Crypto Wallet?</h4>
+          <p>
+            <strong>Not yet!</strong> When you buy, you receive a QR code that works as a temporary wallet. 
+            When mainnet launches, we'll help you set up a normal ZION wallet (it will be easy).
+          </p>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 20px;">💳 Can I Pay with Crypto?</h4>
+          <p>
+            Currently only cards or bank transfer in EUR/USD. We may add BTC/ETH in the future.
+          </p>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 20px;">📱 What Does the QR Code Look Like?</h4>
+          <p>
+            It's a square QR code (like on payment slips) + text key. 
+            Contains unique wallet ID and your tokens. Save as PDF or photo.
+          </p>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 20px;">⏰ When Exactly is Mainnet?</h4>
+          <p>
+            We plan Q2 2026 (April-June 2026). May shift slightly due to testing and audits, 
+            but latest Q3 2026. We'll keep you informed via email.
+          </p>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 20px;">💸 Can I Sell Tokens Immediately?</h4>
+          <p>
+            <strong>No, only after mainnet launch.</strong> Presale tokens are "locked" 
+            until mainnet launch. Then you can transfer and sell them.
+          </p>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 20px;">🔄 What If I Change My Mind?</h4>
+          <p>
+            Presale is <strong>final sale</strong> (non-refundable). This is because tokens are 
+            "minted" (created) specifically for you in the genesis block. Only invest if you agree.
+          </p>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 20px;">📊 Where Can I See ZION Price?</h4>
+          <p>
+            After mainnet launch, price will be on <a href="./dashboard.html" style="color: var(--rasta-gold);">dashboard</a>, 
+            later on CoinGecko/CoinMarketCap and exchanges.
+          </p>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 20px;">👥 How Many People Bought Already?</h4>
+          <p>
+            Currently sold <strong>45 million ZION</strong> (9% of 500M presale target). 
+            Check <a href="./presale-en.html" style="color: var(--rasta-gold);">presale page</a> 
+            for live statistics.
+          </p>
+
+          <h4 style="color: var(--rasta-gold); margin-top: 20px;">🆘 Where Can I Get Help?</h4>
+          <p>
+            • <strong>Email:</strong> presale@zionterranova.com<br>
+            • <strong>Discord:</strong> <a href="https://discord.gg/eatGYDbd" style="color: var(--rasta-gold);" target="_blank">discord.gg/eatGYDbd</a><br>
+            • <strong>Telegram:</strong> @ZionTerraNova<br>
+            • <strong>FAQ:</strong> At the bottom of presale page
+          </p>
+        </div>
+
+        <!-- CTA -->
+        <div class="info-box" style="text-align: center; background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,128,0,0.1));">
+          <h3>🚀 Ready to Start?</h3>
+          <p style="font-size: 1.2rem; margin: 20px 0;">
+            Now you know everything about ZION presale. The earlier you join, 
+            the better price and bonuses you get!
+          </p>
+          <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 30px;">
+            <a href="./presale-en.html" class="rasta-btn pulse-btn" style="font-size: 1.2rem; padding: 15px 40px;">
+              <i class="fa-solid fa-rocket"></i> Buy ZION Tokens
+            </a>
+            <a href="./whitepaper.html" class="rasta-btn-outline rasta-btn" style="font-size: 1.1rem; padding: 15px 30px;">
+              <i class="fa-solid fa-file-pdf"></i> Read Whitepaper
+            </a>
+          </div>
+          <p style="margin-top: 25px; font-size: 0.95rem; color: #888;">
+            Have questions? Email us at <a href="mailto:presale@zionterranova.com" style="color: var(--rasta-gold);">presale@zionterranova.com</a>
+          </p>
+        </div>
+
+      </div>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">🌟</span>
+        <div class="line"></div>
+      </div>
+
+      <footer>
+        <div class="footer-content">
+          <br />
+          <div class="rasta-divider" style="margin: 20px 0;">
+            <div class="line"></div>
+            <span class="icon">🦁</span>
+            <div class="line"></div>
+          </div>
+          
+          <div style="display: flex; justify-content: center; gap: 30px; margin: 20px 0; flex-wrap: wrap;">
+            <a href="./terms.html" style="color: var(--rasta-gold); text-decoration: none; font-size: 1rem;">
+              <i class="fa-solid fa-file-contract"></i> Terms & Conditions
+            </a>
+            <a href="./whitepaper.html" style="color: var(--rasta-green); text-decoration: none; font-size: 1rem;">
+              <i class="fa-solid fa-file-pdf"></i> Whitepaper
+            </a>
+            <a href="mailto:presale@zionterranova.com" style="color: var(--rasta-red); text-decoration: none; font-size: 1rem;">
+              <i class="fa-solid fa-envelope"></i> Contact
+            </a>
+          </div>
+          
+          <div class="logo">
+            <a href="./main.html">
+              <img class="zoom" src="./img/logo.jpg" alt="Logo" style="width: 25%; max-width: 150px; opacity: 0.85; border-radius: 50%;" />
+            </a>
+          </div>
+          <br />
+          <p style="color: var(--rasta-gold); font-style: italic; margin-bottom: 20px;">
+            "Knowledge is power. Invest wisely." — ZION
+          </p>
+          <br />
+          <div class="social-icons">
+            <a href="https://www.facebook.com/OmnityCompany/" class="fa-brands fa-facebook fa-xl" style="color: var(--rasta-green);"></a>
+            <a href="https://twitter.com/OmnityCompany" class="fa-brands fa-twitter fa-xl" style="color: var(--rasta-gold);"></a>
+            <a href="https://www.instagram.com/terranova_project/" class="fa-brands fa-instagram fa-xl" style="color: var(--rasta-red);"></a>
+            <a href="https://discord.gg/eatGYDbd" class="fa-brands fa-discord fa-xl" style="color: var(--rasta-green);"></a>
+          </div>
+        </div>
+        <div class="footer-bottom" style="border-top: 3px solid; border-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green)) 1; padding-top: 20px; margin-top: 20px;">
+          <p>&copy; 2025 ZION Terra Nova ® | Omnity.One s.r.o.</p>
+          <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">
+            ⚠️ Cryptocurrencies are highly volatile. Only invest funds you can afford to lose.
+          </p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

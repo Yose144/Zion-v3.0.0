@@ -1,0 +1,171 @@
+# ═══════════════════════════════════════════════════════════════
+# ZION Revenue Stack — Fáze 1
+# Doplňkový mining + bandwidth nody na stávajících serverech
+#
+# Deploy:
+#   Helsinki:  COMPOSE_PROFILES=helsinki docker compose -f docker-compose.revenue.yml up -d
+#   Germany:   COMPOSE_PROFILES=germany  docker compose -f docker-compose.revenue.yml up -d
+#
+# Wallet adresy nastavit v .env.revenue PŘED deployem!
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+
+  # ═══════════════════════════════════════
+  # DERO — AstroBWTv3 (CPU)
+  # Oba servery, 2 jádra, best CPU profit
+  # ═══════════════════════════════════════
+  dero-miner:
+    image: ubuntu:22.04
+    container_name: zion-dero-miner
+    restart: unless-stopped
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      apt-get update && apt-get install -y --no-install-recommends wget ca-certificates &&
+      wget -qO /tmp/dero_linux_amd64.tar.gz https://github.com/deroproject/derohe/releases/download/Release117/dero_linux_amd64.tar.gz &&
+      cd /tmp && tar xzf dero_linux_amd64.tar.gz &&
+      find /tmp -name 'dero-miner*' -type f -exec chmod +x {} \; &&
+      exec /tmp/dero_linux_amd64/dero-miner
+        --mining-threads 2
+        --daemon-rpc-address=minernode1.dero.io:10100
+        --wallet-address=${DERO_WALLET}
+      "
+    cpuset: "${DERO_CPUSET:-14-15}"
+    mem_limit: 2g
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - revenue-net
+    labels:
+      - "zion.service=revenue"
+      - "zion.coin=dero"
+      - "zion.algo=astrobwt"
+
+  # ═══════════════════════════════════════
+  # ZEPH — RandomX (CPU)
+  # Helsinki only, 1 jádro
+  # ═══════════════════════════════════════
+  zeph-miner:
+    image: ubuntu:22.04
+    container_name: zion-zeph-miner
+    restart: unless-stopped
+    profiles: ["helsinki"]
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      apt-get update && apt-get install -y --no-install-recommends wget ca-certificates xz-utils &&
+      wget -qO /tmp/xmrig.tar.gz https://github.com/xmrig/xmrig/releases/download/v6.21.3/xmrig-6.21.3-linux-static-x64.tar.gz &&
+      cd /tmp && tar xzf xmrig.tar.gz &&
+      exec /tmp/xmrig-6.21.3/xmrig
+        -o zeph.herominers.com:1123
+        -u ${ZEPH_WALLET}
+        -p zion_helsinki
+        -a rx/0
+        -t 1
+        --no-color
+        --donate-level=0
+        --print-time=60
+      "
+    cpuset: "${ZEPH_CPUSET:-12}"
+    mem_limit: 3g
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - revenue-net
+    labels:
+      - "zion.service=revenue"
+      - "zion.coin=zeph"
+      - "zion.algo=randomx"
+
+  # ═══════════════════════════════════════
+  # EPIC — RandomX (CPU)
+  # Germany only, 1 jádro
+  # ═══════════════════════════════════════
+  epic-miner:
+    image: ubuntu:22.04
+    container_name: zion-epic-miner
+    restart: unless-stopped
+    profiles: ["germany"]
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      apt-get update && apt-get install -y --no-install-recommends wget ca-certificates xz-utils &&
+      wget -qO /tmp/xmrig.tar.gz https://github.com/xmrig/xmrig/releases/download/v6.21.3/xmrig-6.21.3-linux-static-x64.tar.gz &&
+      cd /tmp && tar xzf xmrig.tar.gz &&
+      exec /tmp/xmrig-6.21.3/xmrig
+        -o fastepic.eu:3416
+        -u ${EPIC_WALLET}
+        -p zion_germany
+        -a rx/0
+        -t 1
+        --no-color
+        --donate-level=0
+        --print-time=60
+      "
+    cpuset: "${EPIC_CPUSET:-12}"
+    mem_limit: 3g
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - revenue-net
+    labels:
+      - "zion.service=revenue"
+      - "zion.coin=epic"
+      - "zion.algo=randomx"
+
+  # ═══════════════════════════════════════
+  # MYSTERIUM — VPN/Bandwidth node
+  # Oba servery, $0 kapitál
+  # ═══════════════════════════════════════
+  mysterium:
+    image: mysteriumnetwork/myst:latest
+    container_name: zion-mysterium
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "4449:4449"
+      - "41920-41925:41920-41925/udp"
+    volumes:
+      - mysterium-data:/var/lib/mysterium-node
+    command: service --agreed-terms-and-conditions
+    networks:
+      - revenue-net
+    labels:
+      - "zion.service=revenue"
+      - "zion.coin=myst"
+      - "zion.type=bandwidth"
+
+  # ═══════════════════════════════════════
+  # NKN — P2P Relay node
+  # Oba servery, $0 kapitál
+  # ═══════════════════════════════════════
+  nkn:
+    image: nknorg/nkn:latest
+    container_name: zion-nkn
+    restart: unless-stopped
+    ports:
+      - "30001-30005:30001-30005"
+    volumes:
+      - nkn-data:/nkn/data
+    command: nknd -p "" --no-nat
+    networks:
+      - revenue-net
+    labels:
+      - "zion.service=revenue"
+      - "zion.coin=nkn"
+      - "zion.type=relay"
+
+volumes:
+  mysterium-data:
+  nkn-data:
+
+networks:
+  revenue-net:
+    name: zion-revenue-net

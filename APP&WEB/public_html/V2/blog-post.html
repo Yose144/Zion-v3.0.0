@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./rasta.css" />
+    <script src="./blog-posts.js"></script>
+    <script src="./script.js" defer></script>
+    <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+    <title>Blog | ZION TerraNova</title>
+    <style>
+      /* ═══ Article Reader ═══ */
+      .article-container {
+        max-width: 780px;
+        margin: 0 auto;
+        padding: 40px 28px 80px;
+      }
+      .article-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--rasta-gold);
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 30px;
+        opacity: 0.7;
+        transition: opacity 0.3s;
+      }
+      .article-back:hover { opacity: 1; }
+
+      .article-header {
+        margin-bottom: 35px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .article-category-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        padding: 4px 14px;
+        border-radius: 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 15px;
+      }
+      .article-category-badge[data-cat="tech"]         { background: rgba(0,212,255,0.15); color: #00d4ff; }
+      .article-category-badge[data-cat="journey"]      { background: rgba(76,175,80,0.15); color: #4CAF50; }
+      .article-category-badge[data-cat="story"]        { background: rgba(255,152,0,0.15); color: #FF9800; }
+      .article-category-badge[data-cat="spiritual"]    { background: rgba(224,64,251,0.15); color: #E040FB; }
+      .article-category-badge[data-cat="announcement"] { background: rgba(255,215,0,0.15); color: #FFD700; }
+
+      .article-title {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #fff, var(--rasta-gold));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .article-meta {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        color: rgba(255,255,255,0.45);
+        font-size: 0.85rem;
+      }
+      .article-meta i { color: var(--rasta-gold); opacity: 0.6; }
+
+      .article-hero-img {
+        width: 100%;
+        border-radius: 16px;
+        margin-bottom: 35px;
+        border: 1px solid rgba(255,255,255,0.08);
+        object-fit: cover;
+        max-height: 450px;
+      }
+
+      /* ═══ Article Body — docs-like ═══ */
+      .article-body {
+        color: rgba(255,255,255,0.82);
+        font-size: 1.05rem;
+        line-height: 1.85;
+      }
+      .article-body h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 40px 0 15px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255,215,0,0.15);
+      }
+      .article-body h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--rasta-gold);
+        margin: 30px 0 12px;
+      }
+      .article-body p {
+        margin-bottom: 16px;
+      }
+      .article-body ul, .article-body ol {
+        margin: 12px 0 20px 20px;
+      }
+      .article-body li {
+        margin-bottom: 8px;
+        padding-left: 5px;
+      }
+      .article-body a {
+        color: var(--rasta-gold);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .article-body a:hover {
+        color: var(--rasta-green);
+      }
+      .article-body blockquote {
+        border-left: 3px solid var(--rasta-gold);
+        margin: 25px 0;
+        padding: 15px 20px;
+        background: rgba(255,215,0,0.04);
+        border-radius: 0 12px 12px 0;
+        font-style: italic;
+        color: rgba(255,255,255,0.7);
+      }
+      .article-body strong {
+        color: #fff;
+        font-weight: 600;
+      }
+      .article-body em {
+        color: rgba(255,255,255,0.7);
+      }
+      .article-body code {
+        background: rgba(255,255,255,0.08);
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        color: var(--rasta-green);
+      }
+      .article-body .blog-img {
+        width: 100%;
+        border-radius: 12px;
+        margin: 20px 0;
+        border: 1px solid rgba(255,255,255,0.06);
+      }
+      .article-body .blog-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      .article-body .blog-table td {
+        padding: 10px 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        font-size: 0.9rem;
+      }
+      .article-body .blog-table td:first-child {
+        color: var(--rasta-gold);
+        font-weight: 600;
+        white-space: nowrap;
+        width: 120px;
+      }
+      .article-body .blog-table a {
+        color: var(--rasta-green);
+      }
+
+      /* ═══ Language Toggle ═══ */
+      .lang-toggle-article {
+        display: inline-flex;
+        gap: 0;
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .lang-toggle-article button {
+        background: rgba(255,255,255,0.05);
+        border: none;
+        color: rgba(255,255,255,0.5);
+        padding: 6px 16px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        font-family: inherit;
+      }
+      .lang-toggle-article button.active {
+        background: linear-gradient(135deg, var(--rasta-green), var(--rasta-gold));
+        color: #000;
+      }
+      .lang-toggle-article button:hover:not(.active) {
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+      }
+
+      /* ═══ Navigation between posts ═══ */
+      .article-nav {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-top: 50px;
+        padding-top: 25px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+      }
+      .article-nav a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: rgba(255,255,255,0.5);
+        font-size: 0.85rem;
+        padding: 12px 18px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        transition: all 0.3s;
+        max-width: 45%;
+      }
+      .article-nav a:hover {
+        background: rgba(255,255,255,0.07);
+        border-color: var(--rasta-gold);
+        color: #fff;
+      }
+      .article-nav a.next { margin-left: auto; text-align: right; }
+      .article-nav-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; }
+      .article-nav-title { font-weight: 600; }
+
+      /* ═══ 404 ═══ */
+      .article-not-found {
+        text-align: center;
+        padding: 100px 20px;
+        color: rgba(255,255,255,0.4);
+      }
+      .article-not-found h2 {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        background: linear-gradient(135deg, var(--rasta-red), var(--rasta-gold));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      @media (max-width: 600px) {
+        .article-container { padding: 25px 16px 60px; }
+        .article-title { font-size: 1.5rem; }
+        .article-body { font-size: 0.95rem; line-height: 1.7; }
+        .article-nav { flex-direction: column; }
+        .article-nav a { max-width: 100%; }
+      }
+    </style>
+  </head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHF25ZZ97S"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date()); gtag('config', 'G-NHF25ZZ97S');
+  </script>
+  <body>
+    <header id="header">
+      <div class="container"><div class="subcontainer">
+        <nav class="navbar-container">
+          <div class="navbar-left">
+            <a href="#" class="nav-branding-1">Zion<span> ® TerraNova</span></a>
+            <div class="nav-menu">
+              <a href="#" class="nav-branding-2">Gene<span>sis</span></a>
+              <div class="nav-dropdown">
+                <button class="nav-link nav-dropdown-toggle" type="button">Realms <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="nav-dropdown-panel">
+                  <a href="./main.html" class="nav-dropdown-link">Home</a>
+                  <a href="./camp.html" class="nav-dropdown-link">Camps</a>
+                  <a href="./arts.html" class="nav-dropdown-link">Arts</a>
+                  <a href="./halls.html" class="nav-dropdown-link">Amenti</a>
+                  <a href="./evoluzion.html" class="nav-dropdown-link">Evoluzion</a>
+                </div>
+              </div>
+              <div class="nav-dropdown">
+                <button class="nav-link nav-dropdown-toggle" type="button">Portals <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="nav-dropdown-panel">
+                  <a href="./blog.html" class="nav-dropdown-link active">Blog</a>
+                  <a href="./links.html" class="nav-dropdown-link">Links</a>
+                  <a href="./about.html" class="nav-dropdown-link">About</a>
+                  <a href="./dev.html" class="nav-dropdown-link">DeV</a>
+                  <a href="./hemp.html" class="nav-dropdown-link">Hemp</a>
+                  <a href="./woodart.html" class="nav-dropdown-link">WoodArt</a>
+                </div>
+              </div>
+              <a href="./shop.html" class="nav-link">Shop</a>
+              <a href="./dashboard.html" class="nav-link">Dashboard</a>
+              <a href="./mining-start.html" class="nav-link presale-nav-link"><span class="presale-badge-nav">⛏️</span> Start Mining</a>
+              <span class="nav-link lang-switch"><span class="active-lang">CZ</span> | <a href="./blog-en.html">EN</a></span>
+              <a href="./cart.html" class="nav-link cart-link"><span class="cart-icon-wrapper"><i class="fa-solid fa-cart-shopping"></i><span id="cart-count" class="cart-badge">0</span></span></a>
+            </div>
+          </div>
+          <div class="navbar-right"><div class="hamburger"><span class="bar"></span><span class="bar"></span><span class="bar"></span></div></div>
+        </nav>
+      </div></div>
+    </header>
+
+    <div class="article-container" id="articleContainer">
+      <!-- Rendered by JS -->
+    </div>
+
+    <footer>
+      <div class="footer-content">
+        <br>
+        <div class="rasta-divider" style="margin: 20px 0;"><div class="line"></div><span class="icon">🦁</span><div class="line"></div></div>
+        <div class="logo"><a href="./shop.html"><img class="zoom" src="./img/logo.jpg" alt="Logo" style="width: 25%; max-width: 150px; border-radius: 50%;" /></a></div>
+        <br>
+        <p style="color: var(--rasta-gold); font-style: italic; margin-bottom: 20px;">"Pravda je láska, láska je mír. One Love je cesta."</p>
+        <br>
+        <div class="social-icons" style="font-size: 1.5rem;">
+          <a href="https://www.facebook.com/OmnityCompany/" style="color: var(--rasta-green); margin: 0 15px;"><i class="fa-brands fa-facebook"></i></a>
+          <a href="https://x.com/OmnityCompany" style="color: var(--rasta-gold); margin: 0 15px;"><i class="fa-brands fa-twitter"></i></a>
+          <a href="https://www.instagram.com/terranova_project/" style="color: var(--rasta-red); margin: 0 15px;"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://github.com/Zion-TerraNova" style="color: #fff; margin: 0 15px;"><i class="fa-brands fa-github"></i></a>
+          <a href="https://discord.gg/eatGYDbd" style="color: #7289da; margin: 0 15px;"><i class="fa-brands fa-discord"></i></a>
+        </div>
+      </div>
+      <div class="footer-bottom" style="border-top: 3px solid; border-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green)) 1; padding-top: 20px; margin-top: 20px;">
+        <p>&copy; 2025 ZION Terra Nova ® | <a href="./terms.html" style="color: var(--rasta-gold);">Obchodní podmínky</a> | <a href="./legal.html" style="color: var(--rasta-gold);">Legal</a> | <a href="./gdpr-cs.html" style="color: var(--rasta-green);">GDPR</a> | One Love</p>
+      </div>
+    </footer>
+
+    <script>
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var slug = params.get("post");
+      var lang = params.get("lang") || "cs";
+      var container = document.getElementById("articleContainer");
+
+      // Find the post
+      var post = null;
+      var postIndex = -1;
+      for (var i = 0; i < BLOG_POSTS.length; i++) {
+        if (BLOG_POSTS[i].slug === slug) {
+          post = BLOG_POSTS[i];
+          postIndex = i;
+          break;
+        }
+      }
+
+      // If post has a legacy file, redirect
+      if (post && post.file && !post.content) {
+        window.location.href = "./" + post.file;
+        return;
+      }
+
+      // 404
+      if (!post || !post.content) {
+        container.innerHTML = '<div class="article-not-found">'
+          + '<h2>404</h2>'
+          + '<p>Příspěvek nenalezen / Post not found</p>'
+          + '<br><a href="./blog.html" class="rasta-btn"><i class="fa-solid fa-arrow-left"></i> Zpět na blog</a>'
+          + '</div>';
+        return;
+      }
+
+      // Set page title
+      var title = lang === "en" ? (post.titleEn || post.title) : post.title;
+      document.title = title + " | ZION TerraNova";
+
+      // Category label
+      var catLabels = {
+        tech: lang === "en" ? "ZION Tech" : "ZION Tech",
+        journey: lang === "en" ? "Journey" : "Cesta",
+        story: lang === "en" ? "Story" : "Příběh",
+        spiritual: lang === "en" ? "Spiritual" : "Duchovní",
+        announcement: lang === "en" ? "News" : "Oznámení"
+      };
+
+      // Date
+      var months = lang === "cs"
+        ? ["leden","únor","březen","duben","květen","červen","červenec","srpen","září","říjen","listopad","prosinec"]
+        : ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      var d = new Date(post.date);
+      var dateStr = d.getDate() + ". " + months[d.getMonth()] + " " + d.getFullYear();
+
+      // Content
+      var bodyContent = lang === "en" ? (post.contentEn || post.content) : post.content;
+
+      // Build HTML
+      var html = '';
+      html += '<a href="./blog' + (lang === "en" ? "-en" : "") + '.html" class="article-back"><i class="fa-solid fa-arrow-left"></i> ' + (lang === "en" ? "Back to blog" : "Zpět na blog") + '</a>';
+
+      html += '<div class="article-header">';
+      html += '<span class="article-category-badge" data-cat="' + post.category + '">' + (catLabels[post.category] || post.category) + '</span>';
+      html += '<h1 class="article-title">' + title + '</h1>';
+      html += '<div class="article-meta">';
+      html += '<span><i class="fa-regular fa-calendar"></i> ' + dateStr + '</span>';
+      html += '<span><i class="fa-solid fa-user"></i> Yeshuae</span>';
+      html += '<div class="lang-toggle-article">';
+      html += '<button class="' + (lang === "cs" ? "active" : "") + '" onclick="switchLang(\'cs\')">CZ</button>';
+      html += '<button class="' + (lang === "en" ? "active" : "") + '" onclick="switchLang(\'en\')">EN</button>';
+      html += '</div>';
+      html += '</div></div>';
+
+      // Hero image
+      if (post.image) {
+        html += '<img src="' + post.image + '" alt="' + title + '" class="article-hero-img" onerror="this.style.display=\'none\'">';
+      }
+
+      // Body
+      html += '<div class="article-body">' + bodyContent + '</div>';
+
+      // Navigation (prev/next)
+      html += '<div class="article-nav">';
+      if (postIndex < BLOG_POSTS.length - 1) {
+        var prev = BLOG_POSTS[postIndex + 1];
+        var prevTitle = lang === "en" ? (prev.titleEn || prev.title) : prev.title;
+        if (prev.content) {
+          html += '<a href="./blog-post.html?post=' + prev.slug + '&lang=' + lang + '">';
+        } else if (prev.file) {
+          html += '<a href="./' + prev.file + '">';
+        }
+        html += '<i class="fa-solid fa-chevron-left"></i>';
+        html += '<div><div class="article-nav-label">' + (lang === "en" ? "Older" : "Starší") + '</div>';
+        html += '<div class="article-nav-title">' + prevTitle + '</div></div></a>';
+      }
+      if (postIndex > 0) {
+        var next = BLOG_POSTS[postIndex - 1];
+        var nextTitle = lang === "en" ? (next.titleEn || next.title) : next.title;
+        if (next.content) {
+          html += '<a href="./blog-post.html?post=' + next.slug + '&lang=' + lang + '" class="next">';
+        } else if (next.file) {
+          html += '<a href="./' + next.file + '" class="next">';
+        }
+        html += '<div><div class="article-nav-label">' + (lang === "en" ? "Newer" : "Novější") + '</div>';
+        html += '<div class="article-nav-title">' + nextTitle + '</div></div>';
+        html += '<i class="fa-solid fa-chevron-right"></i></a>';
+      }
+      html += '</div>';
+
+      container.innerHTML = html;
+    })();
+
+    function switchLang(lang) {
+      var params = new URLSearchParams(window.location.search);
+      params.set("lang", lang);
+      window.location.search = params.toString();
+    }
+    </script>
+  </body>
+</html>

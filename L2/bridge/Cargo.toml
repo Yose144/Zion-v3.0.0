@@ -1,0 +1,48 @@
+[package]
+name = "zion-bridge"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "ZION L1 ↔ EVM bridge relay — watches L1 locks, triggers wZION mints on EVM chains"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# HTTP client (for L1 RPC + EVM RPC)
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+
+# Ethereum / EVM interaction
+ethers = { version = "2", features = ["abigen", "ws", "rustls"] }
+
+# Crypto
+sha2 = "0.10"
+hex = "0.4"
+
+# Database (bridge state persistence)
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# Config
+config = "0.14"
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3"

@@ -1,0 +1,39 @@
+# Rust
+target/
+Cargo.lock
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+build/
+dist/
+
+# Large files
+Zion-2.9.5-main.zip
+Zion-2.9.5-main/
+
+# Sensitive
+PREMINE_WALLETS_BACKUP.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp

@@ -1,0 +1,144 @@
+# ZION TestNet Stack
+
+services:
+  core:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.core
+    image: zion-core:2.9.6-testnet
+    container_name: zion-core
+    restart: unless-stopped
+    ports:
+      - "8334:8334"
+      - "8444:8444"
+    volumes:
+      - zion-testnet-data:/data/zion
+    command:
+      - "--data-dir"
+      - "/data/zion"
+      - "--rpc-port"
+      - "8444"
+      - "--p2p-port"
+      - "8334"
+      - "--network"
+      - "testnet"
+      - "--peers"
+      - "${SEED_PEERS:-77.42.31.72:8334}"
+    environment:
+      - RUST_LOG=info
+      - ZION_NETWORK=testnet
+      - ZION_DATA_DIR=/data/zion
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8444/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - zion-net
+
+  pool:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.pool
+    image: zion-pool:2.9.6-testnet
+    container_name: zion-pool
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+      - "8080:8080"
+    volumes:
+      - pool-testnet-data:/data/zion-pool
+      - ../config/ch3_revenue_settings.json:/config/ch3_revenue_settings.json:ro
+      - /usr/local/bin/xmrig:/usr/local/bin/xmrig:ro
+    depends_on:
+      core:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - RUST_LOG=info
+      - ZION_CORE_RPC=http://core:8444/jsonrpc
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - ZION_REVENUE_CONFIG=/config/ch3_revenue_settings.json
+      - ZION_CPU_REVENUE_COIN=VRSC
+      - ZION_VRSC_WALLET=RWrHVj8e7fkvfUw4Jf6qJNUHdr6baAsoF5
+      - ZION_VRSC_POOL_URL=eu.luckpool.net:3956
+      - ZION_HAS_GPU=0
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - zion-net
+
+  miner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.miner
+    image: zion-miner:2.9.6-testnet
+    container_name: zion-miner
+    restart: unless-stopped
+    depends_on:
+      - pool
+    command:
+      - "--pool"
+      - "pool:3333"
+      - "--wallet"
+      - "${MINER_WALLET:-zion1q893q6c5j7y0e3r062g4m7c240t5g294k7z6729}"
+      - "--worker"
+      - "testnet-miner"
+      - "--algorithm"
+      - "cosmic_harmony_v3"
+      - "--threads"
+      - "1"
+      - "--xmr-pool"
+      - "45.155.102.89:10001"
+      - "--xmr-wallet"
+      - "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK"
+      - "--xmr-threads"
+      - "2"
+    environment:
+      - ZION_ENABLE_STREAM_SWITCH=1
+      - ZION_RANDOMX_FULL=1
+      - RUST_LOG=info
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /dev/hugepages:/dev/hugepages
+    cpus: 3.5
+    networks:
+      - zion-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: zion-redis
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    # P1-32: REDIS_PASSWORD MUST be set in .env
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - zion-net
+
+volumes:
+  zion-testnet-data:
+    external: true
+  pool-testnet-data:
+    external: true
+
+networks:
+  zion-net:
+    driver: bridge

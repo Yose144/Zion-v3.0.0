@@ -1,0 +1,19 @@
+# ZION Genesis Premine Addresses (PUBLIC)
+# Generated: 2026-02-09T13:17:03.255494+00:00
+# Total: 16,280,000,000 ZION across 12 wallets
+#
+# ⚠️  This file contains ONLY public addresses (safe to share)
+# ⚠️  Private keys & mnemonics are in PREMINE_WALLETS_BACKUP.json
+
+[ 1] oasis_golden_egg     | zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p | 1.65B ZION | ZION OASIS + Winners Golden Egg/Xp (Slot 1)
+[ 2] oasis_golden_egg     | zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a | 1.65B ZION | ZION OASIS + Winners Golden Egg/Xp (Slot 2)
+[ 3] oasis_golden_egg     | zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a | 1.65B ZION | ZION OASIS + Winners Golden Egg/Xp (Slot 3)
+[ 4] oasis_golden_egg     | zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23 | 1.65B ZION | ZION OASIS + Winners Golden Egg/Xp (Slot 4)
+[ 5] oasis_golden_egg     | zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u | 1.65B ZION | ZION OASIS + Winners Golden Egg/Xp (Slot 5)
+[ 6] dao_treasury         | zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s | 2.50B ZION | DAO Treasury — Community Governance (main)
+[ 7] dao_treasury         | zion12643n776r3m8f340484756q06485h5w4c2l405m | 1.00B ZION | DAO Treasury — Grants & Bounties
+[ 8] dao_treasury         | zion1k8w734x422f3t6t536r287k2c6n3z0e05257606 | 0.50B ZION | DAO Treasury — Ecosystem Bootstrap
+[ 9] infrastructure       | zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c | 1.00B ZION | Core Development Fund
+[10] infrastructure       | zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43 | 1.00B ZION | Network Infrastructure — P2P Seed Nodes
+[11] infrastructure       | zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f | 0.59B ZION | Genesis Creator — Lifetime Rent
+[12] humanitarian         | zion1m4v5z8z850u480c5c208z274e334369275n5y20 | 1.44B ZION | Children Future Fund — Humanitarian DAO

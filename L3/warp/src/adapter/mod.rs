@@ -1,0 +1,83 @@
+pub mod evm;
+pub mod solana;
+pub mod tron;
+pub mod stellar;
+pub mod cardano;
+pub mod cosmos;
+pub mod bitcoin;
+
+use async_trait::async_trait;
+use crate::error::WarpResult;
+use crate::protocol::{DepositProof, MintInstruction};
+use crate::types::ChainFamily;
+
+/// Trait that all chain adapters must implement.
+#[async_trait]
+pub trait ChainAdapter: Send + Sync {
+    /// Chain family this adapter handles.
+    fn family(&self) -> ChainFamily;
+
+    /// Chain name (e.g. "base", "solana").
+    fn name(&self) -> &str;
+
+    /// Check if the adapter is connected and functional.
+    async fn health_check(&self) -> WarpResult<bool>;
+
+    /// Watch for deposit/burn events (long-running).
+    async fn watch_events(&self) -> WarpResult<Vec<DepositProof>>;
+
+    /// Execute a mint instruction on the destination chain.
+    async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String>;
+
+    /// Get the current block height on this chain.
+    async fn current_height(&self) -> WarpResult<u64>;
+
+    /// Get confirmation count for a specific transaction.
+    async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64>;
+}
+
+/// Factory function — create an adapter by chain name.
+/// Currently returns stub adapters; real implementations will use chain-specific SDKs.
+pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
+    match chain_name {
+        "base" | "arbitrum" | "bsc" | "polygon" => {
+            Some(Box::new(evm::EvmAdapter::new(chain_name)))
+        }
+        "solana" => Some(Box::new(solana::SolanaAdapter::new())),
+        "tron" => Some(Box::new(tron::TronAdapter::new())),
+        "stellar" => Some(Box::new(stellar::StellarAdapter::new())),
+        "cardano" => Some(Box::new(cardano::CardanoAdapter::new())),
+        "cosmos" => Some(Box::new(cosmos::CosmosAdapter::new())),
+        "bitcoin" => Some(Box::new(bitcoin::BitcoinAdapter::new())),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_adapter_evm() {
+        assert!(create_adapter("base").is_some());
+        assert!(create_adapter("arbitrum").is_some());
+        assert!(create_adapter("bsc").is_some());
+        assert!(create_adapter("polygon").is_some());
+    }
+
+    #[test]
+    fn test_create_adapter_non_evm() {
+        assert!(create_adapter("solana").is_some());
+        assert!(create_adapter("tron").is_some());
+        assert!(create_adapter("stellar").is_some());
+        assert!(create_adapter("cardano").is_some());
+        assert!(create_adapter("cosmos").is_some());
+        assert!(create_adapter("bitcoin").is_some());
+    }
+
+    #[test]
+    fn test_create_adapter_unknown() {
+        assert!(create_adapter("fantom").is_none());
+        assert!(create_adapter("").is_none());
+    }
+}
