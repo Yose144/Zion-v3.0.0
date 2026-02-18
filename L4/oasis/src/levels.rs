@@ -148,6 +148,13 @@ mod tests {
     #[test]
     fn test_cosmic_has_all() {
         let features = unlocked_features(ConsciousnessLevel::Cosmic);
+        assert!(features.contains(&Feature::GuildWars));
+        assert!(features.contains(&Feature::BasicMining));
+    }
+
+    #[test]
+    fn test_on_the_star_has_beacon() {
+        let features = unlocked_features(ConsciousnessLevel::OnTheStar);
         assert!(features.contains(&Feature::ConsciousnessBeacon));
         assert!(features.contains(&Feature::BasicMining));
     }
