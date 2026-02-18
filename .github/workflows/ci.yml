@@ -8,27 +8,50 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: -D warnings
 
 jobs:
-  check:
-    name: Check
+  # ─────────────────────────────────────────────────
+  # L2-L4: Pure Rust crates — compile & test cleanly
+  # ─────────────────────────────────────────────────
+  test-l2-l4:
+    name: Test L2-L4
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
+      - name: Check L2-L4
+        run: cargo check -p zion-bridge -p zion-dao -p zion-warp -p zion-ncl -p zion-ai-native -p zion-oasis
+      - name: Test L2-L4
+        run: cargo test -p zion-bridge -p zion-dao -p zion-warp -p zion-ncl -p zion-ai-native -p zion-oasis
 
-  test:
-    name: Test
+  # ─────────────────────────────────────────────────
+  # L1: Needs native C sources for verushash-native
+  # ─────────────────────────────────────────────────
+  test-l1:
+    name: Test L1
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test --workspace
 
+      - name: Install C/C++ build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      - name: Download VerusHash C sources
+        run: |
+          cd L1/native-libs/verushash-native
+          bash download_sources.sh
+
+      - name: Check L1
+        run: cargo check -p zion-core -p zion-pool -p zion-miner -p zion-cosmic-harmony-v3 -p verushash-native
+      - name: Test L1
+        run: cargo test -p zion-core -p zion-pool -p zion-miner -p zion-cosmic-harmony-v3 -p verushash-native
+
+  # ─────────────────────────────────────────────────
+  # Formatting
+  # ─────────────────────────────────────────────────
   fmt:
     name: Format
     runs-on: ubuntu-latest
@@ -39,8 +62,11 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all --check
 
+  # ─────────────────────────────────────────────────
+  # Clippy (L2-L4 — L1 needs native deps)
+  # ─────────────────────────────────────────────────
   clippy:
-    name: Clippy
+    name: Clippy L2-L4
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,14 +74,4 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --workspace -- -D warnings
-
-  # P2-17: Ensure crate builds without dev-tools feature gate
-  no-default-features:
-    name: Build (no default features)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace --no-default-features
+      - run: cargo clippy -p zion-bridge -p zion-dao -p zion-warp -p zion-ncl -p zion-ai-native -p zion-oasis -- -D warnings

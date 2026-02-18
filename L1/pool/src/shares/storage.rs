@@ -729,4 +729,27 @@ mod tests {
         let deserialized: StoredShare = serde_json::from_str(&json).unwrap();
         assert_eq!(share.job_id, deserialized.job_id);
     }
+
+    #[test]
+    fn test_difficulty_to_hashrate_normal() {
+        // 1000 difficulty over 10 seconds → 100 H/s
+        assert!((difficulty_to_hashrate(1000, 10) - 100.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_difficulty_to_hashrate_zero_window() {
+        assert_eq!(difficulty_to_hashrate(1000, 0), 0.0);
+    }
+
+    #[test]
+    fn test_difficulty_to_hashrate_zero_difficulty() {
+        assert_eq!(difficulty_to_hashrate(0, 100), 0.0);
+    }
+
+    #[test]
+    fn test_difficulty_to_hashrate_large_values() {
+        // 1 billion difficulty over 3600s (1 hour)
+        let rate = difficulty_to_hashrate(1_000_000_000, 3600);
+        assert!((rate - 277_777.777).abs() < 1.0);
+    }
 }

@@ -1009,6 +1009,78 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_algorithm_from_str_cosmic_aliases() {
+        let aliases = ["cosmic_harmony", "cosmicharmony", "cosmic-harmony", "cosmic_harmony_v3",
+                       "cosmic-harmony-v3", "chv3", "ch3"];
+        for alias in aliases {
+            assert_eq!(Algorithm::from_str(alias), Some(Algorithm::CosmicHarmony),
+                "Failed for alias: {}", alias);
+        }
+    }
+
+    #[test]
+    fn test_algorithm_from_str_all_variants() {
+        assert_eq!(Algorithm::from_str("randomx"), Some(Algorithm::RandomX));
+        assert_eq!(Algorithm::from_str("rx/0"), Some(Algorithm::RandomX));
+        assert_eq!(Algorithm::from_str("verushash"), Some(Algorithm::VerusHash));
+        assert_eq!(Algorithm::from_str("blake3"), Some(Algorithm::Blake3));
+        assert_eq!(Algorithm::from_str("ethash"), Some(Algorithm::Ethash));
+        assert_eq!(Algorithm::from_str("etchash"), Some(Algorithm::Ethash));
+        assert_eq!(Algorithm::from_str("kawpow"), Some(Algorithm::KawPow));
+        assert_eq!(Algorithm::from_str("autolykos"), Some(Algorithm::Autolykos));
+        assert_eq!(Algorithm::from_str("autolykos2"), Some(Algorithm::Autolykos));
+        assert_eq!(Algorithm::from_str("kheavyhash"), Some(Algorithm::KHeavyHash));
+        assert_eq!(Algorithm::from_str("equihash"), Some(Algorithm::Equihash));
+        assert_eq!(Algorithm::from_str("progpow"), Some(Algorithm::ProgPow));
+        assert_eq!(Algorithm::from_str("argon2d"), Some(Algorithm::Argon2d));
+    }
+
+    #[test]
+    fn test_algorithm_from_str_unknown() {
+        assert_eq!(Algorithm::from_str("unknown"), None);
+        assert_eq!(Algorithm::from_str(""), None);
+        assert_eq!(Algorithm::from_str("scrypt"), None);
+    }
+
+    #[test]
+    fn test_algorithm_name_roundtrip() {
+        let algorithms = [
+            Algorithm::CosmicHarmony, Algorithm::RandomX, Algorithm::VerusHash,
+            Algorithm::Yescrypt, Algorithm::Blake3, Algorithm::Ethash,
+            Algorithm::KawPow, Algorithm::Autolykos, Algorithm::KHeavyHash,
+            Algorithm::Equihash, Algorithm::ProgPow, Algorithm::Argon2d,
+        ];
+        for algo in algorithms {
+            let name = algo.name();
+            assert!(!name.is_empty(), "Empty name for {:?}", algo);
+            // name should parse back to the same algo
+            assert_eq!(Algorithm::from_str(name), Some(algo),
+                "Round-trip failed for {:?} (name={})", algo, name);
+        }
+    }
+
+    #[test]
+    fn test_check_target32_zero_always_passes() {
+        let hash = [0u8; 32];
+        assert!(check_target32(&hash, 0));
+        let hash2 = [0xFFu8; 32];
+        assert!(check_target32(&hash2, 0));
+    }
+
+    #[test]
+    fn test_check_target32_values() {
+        let mut hash = [0u8; 32];
+        // Set last 4 bytes to 0x00000100 = 256
+        hash[28] = 0;
+        hash[29] = 0;
+        hash[30] = 1;
+        hash[31] = 0;
+        assert!(check_target32(&hash, 256)); // 256 <= 256
+        assert!(check_target32(&hash, 257)); // 256 <= 257
+        assert!(!check_target32(&hash, 255)); // 256 > 255
+    }
+
+    #[test]
     fn chv3_gpu_mineable_only_before_memory_hard_fork() {
         let fork = zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT as u32;
 
