@@ -1,14 +1,22 @@
 //! VerusHash 2.2 wrapper — native C/C++ implementation via FFI.
 //!
 //! Supports both x86_64 (SSE4 + AES-NI) and aarch64 (ARM NEON + crypto).
-//! No more blake3 fallback — real VerusHash on all platforms.
+//! When built without feature "verushash", falls back to blake3 (dev/test only).
 
 use anyhow::Result;
 
 /// Compute VerusHash v2.2 of input bytes.
+#[cfg(feature = "verushash")]
 #[inline]
 pub fn verushash_v2_2(data: &[u8]) -> [u8; 32] {
     verushash_native::verus_hash_v2_2(data)
+}
+
+/// Dev/test fallback: blake3 hash (NOT real VerusHash — NEVER use in production)
+#[cfg(not(feature = "verushash"))]
+#[inline]
+pub fn verushash_v2_2(data: &[u8]) -> [u8; 32] {
+    *blake3::hash(data).as_bytes()
 }
 
 /// Convenience helper used by miner loop:
