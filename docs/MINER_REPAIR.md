@@ -141,11 +141,67 @@ Toto ukáže:
 
 ---
 
+## Session 8 — Desktop Agent na macOS M1 (CPU mining opraveno)
+
+**Datum:** aktuální session  
+**Platforma:** Apple M1, macOS (developer machine)  
+**Binárka:** `APP&WEB/desktop-agent/resources/zion-universal-miner` (arm64 Mach-O, 4.8 MB, self-contained Rust)
+
+### Symptom
+
+Desktop Agent opakovaně zobrazoval "Mining stopped" ihned po pokusu o spuštění.
+Log diagnostiky:
+```
+minerExists: true
+dllExists: {cosmic: false, yescrypt: false, randomx: false}   ← diagnostika, neblokuje
+nativeLibsDir: false, nativeLibCount: 0                       ← diagnostika, neblokuje
+```
+
+### Root cause #1 — execute bit chybí
+
+`zion-universal-miner` byl uložen bez execute bitu (`-rw-r--r--`).
+`spawn()` v Node.js → EACCES → okamžitý exit → "Mining stopped".
+
+**Fix (trvalý):** přidáno do `main.js` těsně před každý `spawn()`:
+```javascript
+if (process.platform !== 'win32') {
+  try { require('fs').chmodSync(spawnCommand, 0o755); } catch { }
+}
+```
+
+### Root cause #2 — `--gpu` flag na M1
+
+Agent předával `--gpu` i na macOS. M1 nemá OpenCL; miner zkusí OpenCL inicializaci
+→ selže → exit → "Mining stopped". M1 používá Metal API interně (bez flagů).
+
+**Fix:** v `main.js` (line 1946):
+```javascript
+// bylo:  if (effectiveGpu) args.push('--gpu');
+if (effectiveGpu && process.platform !== 'darwin') args.push('--gpu');
+```
+
+### Výsledek po opravě
+
+Manuální test (`chmod +x` + spuštění bez `--gpu`):
+```
+SPEED   10s  850.37 kH/s
+SHARES  A: 12   R: 0   rate: 100.0%
+ncl     ENABLED [CoreML] 11.0 TFLOPS    ← NCL funguje na M1 přes CoreML!
+```
+Připojeno na Helsinki pool, 12 přijatých share, 0 odmítnutých.
+
+### Commit
+
+`699dc44` — `fix(agent): macOS GPU flag + chmod+x pred spawn`
+
+---
+
 ## Infrastruktura
 
-- **GPU:** AMD Radeon RX 5600/5700 (gfx1010, 18 CU, 6128 MB)
-- **CPU:** AMD Ryzen 5 3600 6-Core
+- **GPU (AMD server):** AMD Radeon RX 5600/5700 (gfx1010, 18 CU, 6128 MB)
+- **CPU (AMD server):** AMD Ryzen 5 3600 6-Core
+- **M1 Mac (dev):** Apple M1, arm64, Metal GPU (CoreML NCL)
 - **Pool:** Helsinki 77.42.31.72:3333 (Docker zion-pool:2.9.6-testnet)
 - **SSH:** `ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72`
-- **Build:** `cargo build --release -p zion-miner --features gpu`
-- **Deploy:** Copy `target/release/zion-miner.exe` → `APP&WEB/desktop-agent/resources/zion-universal-miner.exe`
+- **Build (Linux):** `cargo build --release -p zion-miner --features gpu`
+- **Deploy (Linux):** Copy `target/release/zion-miner.exe` → `APP&WEB/desktop-agent/resources/zion-universal-miner.exe`
