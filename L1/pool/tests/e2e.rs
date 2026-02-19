@@ -20,7 +20,7 @@ async fn test_share_validation_basic() {
         height: Some(100),
     };
 
-    let res = validator.validate_share(&share).await;
+    let res = validator.validate_share(&share, "test_miner").await;
     // Result depends on whether computed hash matches - but we're testing the flow
     println!("Share validation result: valid={}, reason={}, hash={:?}", 
         res.valid, res.reason, res.hash_value);
