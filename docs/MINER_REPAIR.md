@@ -523,15 +523,39 @@ if (algorithm == "randomx" || algorithm == "rx/0") && seed_hash.is_empty() {
 ### Deployment
 
 - ✅ Commit `85c76b3` pushnut na GitHub
-- ✅ `server_v2.rs` rsync'd na server `/root/zion-build/`
-- ✅ Docker build spuštěn: `nohup docker build -f Dockerfile.pool -t zion-pool:2.9.6-testnet-fix . > /tmp/pool-build.log 2>&1 &`
-- ⏳ Pool redeploy po dokončení build
+- ✅ `server_v2.rs` rsync'd na server + commit `81c4229` (wallet validator P2WSH)
+- ✅ Pool hot-restart s `ZION_CPU_REVENUE_COIN=XMR` (bylo VRSC — miner nepodporoval VerusHash)
+- ✅ Pool interní `xmrig` hashuje 222–226 H/s XMR nepřetržitě
+
+### Nový nález — MoneroOcean IP ban (Session 12 debug)
+
+Při opakovaném testování (mnohonásobné reconnecty revenue mineru) pool server dostal dočasný IP ban od MoneroOcean:
+
+```
+[XMR] ❌ CN login failed: Some({"code": -1, "message": "New connections from this
+IP address are temporarily suspended from mining (10 minutes max)"})
+```
+
+**Dopad:**
+- Revenue miner dostával "Broken pipe" hned po subscribe/authorize
+- Pool nemohl dostat XMR job z MoneroOcean → uzavřel klientské spojení
+- Způsobovalo opakované `Failed to connect after 5 attempts` v miner logu
+
+**Řešení:**
+- Počkat 10 minut → ban automaticky vyprší
+- Pool by měl implementovat exponential backoff pro MoneroOcean reconnecty (ne hammering)
+- Pool interní `xmrig` pokračuje v XMR těžbě i během banu (jiné spojení)
+
+**Potvrzeno:** Po 10 minutách zákaz vyprší a revenue připojení opět funguje.
 
 ### Commits
 
 | Commit | Popis |
 |--------|-------|
+| `81c4229` | `fix(pool): wallet validator - accept P2WSH addresses (20-90 chars)` |
 | `85c76b3` | `fix(agent+pool): revenue miner - odstranil --algorithm randomx (RandomX not initialized)` |
+| `26ef0c4` | `docs: session 12 - RandomX not initialized fix (revenue miner)` |
+| `588270b` | `docs+feat: session 12 report + native-verushash Cargo feature + miner binary` |
 
 ---
 
