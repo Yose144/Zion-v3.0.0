@@ -1405,14 +1405,19 @@ pub async fn handle(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
-    // Helper: build a minimal State for testing RPC handlers
+    static TEST_DIR_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+    // Helper: build a minimal State for testing RPC handlers.
+    // Uses a unique temp dir per call to avoid LMDB conflicts when tests run in parallel.
     fn test_state() -> State {
+        let id = TEST_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
         // Set testnet network (OnceLock — only first call wins, ignore err)
         let _ = std::panic::catch_unwind(|| {
             crate::network::set_network(crate::network::NetworkType::Testnet);
         });
-        crate::state::Inner::new("/tmp/zion_rpc_test")
+        crate::state::Inner::new(&format!("/tmp/zion_rpc_test_{}", id))
     }
 
     fn make_request(method: &str, params: Option<serde_json::Value>) -> Request {

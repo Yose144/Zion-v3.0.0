@@ -64,6 +64,12 @@ pub const DECAY_DENOMINATOR: u64 = 5;
 /// Maximum number of decay steps before tail emission
 pub const MAX_DECAY_DECADES: u64 = 10;
 
+/// Total active mining years (10 decades × 10 years each)
+pub const MINING_YEARS: u64 = MAX_DECAY_DECADES * 10;
+
+/// Total blocks in the decay emission period (before perpetual tail)
+pub const TOTAL_MINING_BLOCKS: u64 = MINING_YEARS * BLOCKS_PER_YEAR;
+
 /// Base block reward (Decade 1): 5,400.067 ZION = 5,400,067,000 atomic units
 pub const BASE_BLOCK_REWARD_ATOMIC: u64 = 5_400_067_000;
 

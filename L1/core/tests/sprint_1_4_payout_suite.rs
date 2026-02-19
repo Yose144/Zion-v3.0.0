@@ -26,8 +26,11 @@ fn pool_keypair() -> ([u8; 32], String, String) {
 }
 
 fn miner_address(n: u8) -> String {
-    let c = (b'a' + n % 26) as char;
-    format!("zion1{}", c.to_string().repeat(39))
+    // Generate a valid ZION address from a deterministic public key seed.
+    // Using n as a seed byte produces a real address with a valid checksum.
+    use zion_core::crypto::keys::zion1_address_from_public_key_bytes;
+    let seed = [n; 32];
+    zion1_address_from_public_key_bytes(&seed)
 }
 
 fn make_utxo(tx_hash: &str, index: u32, amount: u64, address: &str) -> SpendableUtxo {

@@ -389,10 +389,10 @@ fn test_network_partition_short_within_reorg_limit() {
 
 #[test]
 fn test_network_partition_deep_rejected() {
-    // Deep partition (>10 blocks) should be rejected
-    let chain = build_chain_n(20, 1000);
+    // Deep partition (> MAX_REORG_DEPTH=50 blocks) should be rejected
+    let chain = build_chain_n(60, 1000);
 
-    let fork_point = 5; // 15 blocks deep
+    let fork_point = 5; // 55 blocks deep
     let reorg_depth = chain.height - fork_point;
 
     assert!(
@@ -720,7 +720,7 @@ fn test_stability_summary_all_invariants() {
     assert_eq!(b + c, 1_000_000);
 
     // === Consensus invariants ===
-    assert_eq!(MAX_REORG_DEPTH, 10);
+    assert_eq!(MAX_REORG_DEPTH, 50);
     assert_eq!(SOFT_FINALITY_DEPTH, 60);
     assert_eq!(validation::COINBASE_MATURITY, 100);
 
