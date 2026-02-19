@@ -425,21 +425,34 @@ impl ExternalPoolClient {
             });
         }
 
+        let mut consecutive_failures: u32 = 0;
         loop {
             info!("[{}] Connecting to {}...", self.name, self.url);
             match self.connect_and_session().await {
                 Ok(_) => {
+                    consecutive_failures = 0;
                     warn!("[{}] Connection finished, reconnecting in 5s...", self.name);
+                    tokio::time::sleep(Duration::from_secs(5)).await;
                 }
                 Err(e) => {
+                    consecutive_failures += 1;
+                    let err_str = e.to_string();
+                    // MoneroOcean IP ban: use long backoff to avoid hammering
+                    let delay_secs = if err_str.contains("temporarily suspended") || err_str.contains("IP ban") {
+                        warn!("[{}] ⛔ IP ban detected — backing off 10 minutes", self.name);
+                        600 // 10 minutes
+                    } else {
+                        // Exponential backoff: 10s → 20s → 40s → 80s → max 300s
+                        let exp = 10u64 * (1u64 << consecutive_failures.min(5));
+                        exp.min(300)
+                    };
                     error!(
-                        "[{}] Connection error: {}. Retrying in 10s...",
-                        self.name, e
+                        "[{}] Connection error: {}. Retrying in {}s (attempt #{})...",
+                        self.name, e, delay_secs, consecutive_failures
                     );
-                    tokio::time::sleep(Duration::from_secs(10)).await;
+                    tokio::time::sleep(Duration::from_secs(delay_secs)).await;
                 }
             }
-            tokio::time::sleep(Duration::from_secs(5)).await;
         }
     }
 
@@ -1666,7 +1679,15 @@ impl ExternalPoolClient {
                             1 => {
                                 // Login response
                                 if has_error {
-                                    error!("[{}] ❌ CN login failed: {:?}", self.name, error_val);
+                                    let err_msg = error_val
+                                        .and_then(|e| e.get("message"))
+                                        .and_then(|m| m.as_str())
+                                        .unwrap_or("unknown error");
+                                    error!("[{}] ❌ CN login failed: {}", self.name, err_msg);
+                                    // If IP-banned, propagate as anyhow error so run_loop can apply long backoff
+                                    if err_msg.contains("temporarily suspended") || err_msg.contains("IP") {
+                                        return Err(anyhow::anyhow!("temporarily suspended: {}", err_msg));
+                                    }
                                     break;
                                 }
                                 if let Some(result) = parsed.get("result") {
