@@ -454,6 +454,84 @@ Pool: `77.42.31.72`, image `zion-pool:2.9.6-testnet`
 | *(implem.)* | `feat(miner): native-verushash feature + verushash v CLI helpu` |
 | `cb9d9b4` | `feat(agent): GPU revenue macOS Metal - cosmic_harmony+--gpu funguje (17 MH/s M1)` |
 | `2b547c9` | `fix(agent): GPU revenue --threads 1 (Metal nepotrebuje CPU thready, fix pretizeni)` |
+| `85c76b3` | `fix(agent+pool): revenue miner - odstranil --algorithm randomx (RandomX not initialized)` |
+
+---
+
+## Session 12 — RandomX not initialized fix (Revenue miner) (datum: po Session 11)
+
+### Problém
+
+Revenue miner hlásil `hr=0.00 H/s`, `SHARES A: 0 R: 2`, `diff: 0`. Debug log obsahoval stovky řádků:
+
+```
+RandomX not initialized - call init_randomx() first (algo=RandomX)
+```
+
+### Root Cause Chain
+
+1. **Agent** spawnoval CPU revenue miner s `--algorithm randomx` v `revenueArgs`
+2. **Pool** (`handle_login`) detekoval `zion-miner/2.9.5` → výchozí `cosmic_harmony`
+3. **StreamScheduler** měl XMR job z MoneroOcean revenue proxy → přepsal algo na `randomx`
+4. **Jenže** `seed_hash` z MoneroOcean XMR jobu byl **prázdný** (pool poslal `cn/r` bez seed_hash, nebo timing issue)
+5. **Login response:** `algo: randomx`, `seed_hash: ""`
+6. **Miner:** nemohl inicializovat RandomX DAG → garbage nonces → pool: `rejected — low difficulty share`
+
+### Pool architektura (objasněná)
+
+- Pool běží `xmrig` **interně** (server-side) pro XMR/MoneroOcean: `xmrig: 223.1 H/s | accepted=63`
+- `RevenueProxyManager` se TAKÉ připojuje k MoneroOcean pro forwarding jobů **klientům**
+- `StreamScheduler.get_revenue_job()` vrací XMR job pokud dostupné
+
+### Oprava (commit `85c76b3`)
+
+**1. `APP&WEB/desktop-agent/src/main.js`** — odstraněn `--algorithm randomx`:
+```javascript
+// DŘÍVE:
+revenueArgs.push('--algorithm', 'randomx'); // způsobovalo "RandomX not initialized"
+
+// NYNÍ:
+// Pool StreamScheduler přiřadí algoritmus automaticky; fallback = cosmic_harmony
+// Bez --algorithm randomx miner dostává "algorithm cosmic_harmony_v3" ✅
+```
+
+**2. `L1/pool/src/stratum/server_v2.rs`** — safety fallback v `handle_login`:
+```rust
+// Safety fallback: RandomX requires seed_hash to initialize DAG.
+if (algorithm == "randomx" || algorithm == "rx/0") && seed_hash.is_empty() {
+    tracing::warn!("⚠️  RandomX job without seed_hash — falling back to cosmic_harmony");
+    algorithm = "cosmic_harmony".to_string();
+    // Re-fetch ZION template blob pro platný cosmic_harmony job
+    if let Some(tpl) = self.template_for_job().await {
+        blob = tpl.blob.unwrap_or_else(|| "0".repeat(152));
+        height = tpl.height;
+    }
+    conn.algorithm = Some("cosmic_harmony".to_string());
+}
+```
+
+### Výsledek testu
+
+```
+*  CONFIG
+     algorithm    cosmic_harmony_v3   ← SPRÁVNĚ (bylo: randomx → error)
+     pool         stratum+tcp://77.42.31.72:3333
+     threads      1
+     [bez RandomX chyb!]
+```
+
+### Deployment
+
+- ✅ Commit `85c76b3` pushnut na GitHub
+- ✅ `server_v2.rs` rsync'd na server `/root/zion-build/`
+- ✅ Docker build spuštěn: `nohup docker build -f Dockerfile.pool -t zion-pool:2.9.6-testnet-fix . > /tmp/pool-build.log 2>&1 &`
+- ⏳ Pool redeploy po dokončení build
+
+### Commits
+
+| Commit | Popis |
+|--------|-------|
+| `85c76b3` | `fix(agent+pool): revenue miner - odstranil --algorithm randomx (RandomX not initialized)` |
 
 ---
 
