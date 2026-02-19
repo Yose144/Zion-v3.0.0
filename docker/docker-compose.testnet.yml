@@ -61,9 +61,7 @@ services:
       - ZION_CORE_RPC=http://core:8444/jsonrpc
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       - ZION_REVENUE_CONFIG=/config/ch3_revenue_settings.json
-      - ZION_CPU_REVENUE_COIN=VRSC
-      - ZION_VRSC_WALLET=RWrHVj8e7fkvfUw4Jf6qJNUHdr6baAsoF5
-      - ZION_VRSC_POOL_URL=eu.luckpool.net:3956
+      - ZION_CPU_REVENUE_COIN=XMR       # miner binary podporuje RandomX; VRSC (VerusHash) neni implementovano
       - ZION_HAS_GPU=0
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8080/stats"]
