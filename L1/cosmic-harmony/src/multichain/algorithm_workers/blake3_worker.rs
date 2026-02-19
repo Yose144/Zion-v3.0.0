@@ -2,8 +2,8 @@
 //!
 //! Implements Blake3 algorithm with Alephium-specific modifications.
 
-use super::{AlgorithmWorker, FoundShare};
-use crate::multichain::{ExternalChain, MiningJob, ChainStats};
+use super::AlgorithmWorker;
+use crate::multichain::{ChainStats, ExternalChain, MiningJob};
 use anyhow::Result;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
@@ -33,7 +33,7 @@ impl Blake3Worker {
         let mut input = Vec::with_capacity(header.len() + 8);
         input.extend_from_slice(header);
         input.extend_from_slice(&nonce.to_be_bytes()); // Alephium uses big-endian
-        
+
         blake3::hash(&input).into()
     }
 
@@ -43,7 +43,7 @@ impl Blake3Worker {
         if target.len() < 32 {
             return false;
         }
-        
+
         // Compare big-endian (Alephium convention)
         for i in 0..32 {
             if hash[i] < target[i] {
@@ -89,10 +89,10 @@ impl AlgorithmWorker for Blake3Worker {
 
     async fn init(&mut self) -> Result<()> {
         log::info!("ch3_blake3_worker_init");
-        
+
         // Blake3 is simple - no DAG, no lookup tables
         // Just need to set up GPU kernels
-        
+
         Ok(())
     }
 
@@ -105,17 +105,18 @@ impl AlgorithmWorker for Blake3Worker {
 
         log::debug!(
             "ch3_blake3_mining job_id={} allocation={:.1}%",
-            job.job_id, allocation
+            job.job_id,
+            allocation
         );
 
         // GPU mining loop:
         // 1. Serialize header + nonce
         // 2. Blake3 hash
         // 3. Compare to target
-        
+
         // Blake3 is very fast - can achieve high hashrates
         // GPU parallelism is key
-        
+
         Ok(())
     }
 

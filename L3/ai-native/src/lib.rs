@@ -19,12 +19,12 @@
 //! └─────────────────┘
 //! ```
 
-pub mod error;
-pub mod types;
-pub mod orchestrator;
 pub mod consciousness;
+pub mod error;
+pub mod orchestrator;
+pub mod types;
 
-pub use error::{AiError, AiResult};
-pub use types::{Agent, AgentCapability, AgentMessage, AgentStatus};
-pub use orchestrator::Orchestrator;
 pub use consciousness::ConsciousnessLevel;
+pub use error::{AiError, AiResult};
+pub use orchestrator::Orchestrator;
+pub use types::{Agent, AgentCapability, AgentMessage, AgentStatus};

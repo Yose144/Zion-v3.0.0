@@ -22,7 +22,11 @@ impl JobScheduler {
 
     /// Submit a new job to the queue.
     pub fn submit_job(&mut self, job: NclJob) -> NclResult<Uuid> {
-        let queued = self.jobs.values().filter(|j| j.status == NclJobStatus::Queued).count();
+        let queued = self
+            .jobs
+            .values()
+            .filter(|j| j.status == NclJobStatus::Queued)
+            .count();
         if queued >= self.max_queue_size {
             return Err(NclError::QueueFull {
                 current: queued,
@@ -42,7 +46,9 @@ impl JobScheduler {
     /// Try to assign the next queued job to an available worker.
     pub fn try_assign_next(&mut self) -> NclResult<Option<(Uuid, String)>> {
         // Find the oldest queued job
-        let queued_job_id = self.jobs.values()
+        let queued_job_id = self
+            .jobs
+            .values()
             .filter(|j| j.status == NclJobStatus::Queued)
             .min_by_key(|j| j.created_at)
             .map(|j| (j.id, j.backend));
@@ -53,7 +59,9 @@ impl JobScheduler {
         };
 
         // Find an available worker that supports this backend
-        let worker_id = self.workers.values()
+        let worker_id = self
+            .workers
+            .values()
             .find(|w| w.has_capacity() && w.supports_backend(backend))
             .map(|w| w.id.clone());
 
@@ -76,9 +84,10 @@ impl JobScheduler {
 
     /// Mark a job as completed.
     pub fn complete_job(&mut self, job_id: Uuid, output_hash: String) -> NclResult<()> {
-        let job = self.jobs.get_mut(&job_id).ok_or_else(|| {
-            NclError::JobNotFound(job_id.to_string())
-        })?;
+        let job = self
+            .jobs
+            .get_mut(&job_id)
+            .ok_or_else(|| NclError::JobNotFound(job_id.to_string()))?;
         job.status = NclJobStatus::Completed;
         job.output_hash = Some(output_hash);
         job.completed_at = Some(chrono::Utc::now());
@@ -95,9 +104,10 @@ impl JobScheduler {
 
     /// Mark a job as failed.
     pub fn fail_job(&mut self, job_id: Uuid, _reason: &str) -> NclResult<()> {
-        let job = self.jobs.get_mut(&job_id).ok_or_else(|| {
-            NclError::JobNotFound(job_id.to_string())
-        })?;
+        let job = self
+            .jobs
+            .get_mut(&job_id)
+            .ok_or_else(|| NclError::JobNotFound(job_id.to_string()))?;
         job.status = NclJobStatus::Failed;
 
         if let Some(worker_id) = &job.worker_id {
@@ -113,11 +123,15 @@ impl JobScheduler {
     }
 
     pub fn queued_count(&self) -> usize {
-        self.jobs.values().filter(|j| j.status == NclJobStatus::Queued).count()
+        self.jobs
+            .values()
+            .filter(|j| j.status == NclJobStatus::Queued)
+            .count()
     }
 
     pub fn active_count(&self) -> usize {
-        self.jobs.values()
+        self.jobs
+            .values()
             .filter(|j| matches!(j.status, NclJobStatus::Assigned | NclJobStatus::Running))
             .count()
     }
@@ -163,15 +177,21 @@ mod tests {
     #[test]
     fn test_queue_full() {
         let mut sched = JobScheduler::new(1);
-        sched.submit_job(test_job(ComputeBackend::OnnxRuntime)).unwrap();
-        assert!(sched.submit_job(test_job(ComputeBackend::OnnxRuntime)).is_err());
+        sched
+            .submit_job(test_job(ComputeBackend::OnnxRuntime))
+            .unwrap();
+        assert!(sched
+            .submit_job(test_job(ComputeBackend::OnnxRuntime))
+            .is_err());
     }
 
     #[test]
     fn test_assign_job() {
         let mut sched = JobScheduler::new(100);
         sched.register_worker(test_worker("w1", vec![ComputeBackend::OnnxRuntime]));
-        sched.submit_job(test_job(ComputeBackend::OnnxRuntime)).unwrap();
+        sched
+            .submit_job(test_job(ComputeBackend::OnnxRuntime))
+            .unwrap();
 
         let result = sched.try_assign_next().unwrap();
         assert!(result.is_some());
@@ -185,7 +205,9 @@ mod tests {
     fn test_no_worker_available() {
         let mut sched = JobScheduler::new(100);
         sched.register_worker(test_worker("w1", vec![ComputeBackend::Wasm]));
-        sched.submit_job(test_job(ComputeBackend::OnnxRuntime)).unwrap();
+        sched
+            .submit_job(test_job(ComputeBackend::OnnxRuntime))
+            .unwrap();
 
         let result = sched.try_assign_next();
         assert!(result.is_err()); // No ONNX worker

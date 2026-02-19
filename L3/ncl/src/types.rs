@@ -1,6 +1,6 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 /// Supported compute backends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -138,7 +138,11 @@ mod tests {
 
     #[test]
     fn test_ncl_worker_capacity() {
-        let mut w = NclWorker::new("w1".into(), "addr".into(), vec![ComputeBackend::OnnxRuntime]);
+        let mut w = NclWorker::new(
+            "w1".into(),
+            "addr".into(),
+            vec![ComputeBackend::OnnxRuntime],
+        );
         assert!(w.has_capacity());
         w.active_jobs = 4;
         assert!(!w.has_capacity());
@@ -146,10 +150,11 @@ mod tests {
 
     #[test]
     fn test_ncl_worker_supports_backend() {
-        let w = NclWorker::new("w1".into(), "addr".into(), vec![
-            ComputeBackend::OnnxRuntime,
-            ComputeBackend::Wasm,
-        ]);
+        let w = NclWorker::new(
+            "w1".into(),
+            "addr".into(),
+            vec![ComputeBackend::OnnxRuntime, ComputeBackend::Wasm],
+        );
         assert!(w.supports_backend(ComputeBackend::OnnxRuntime));
         assert!(w.supports_backend(ComputeBackend::Wasm));
         assert!(!w.supports_backend(ComputeBackend::TfLite));

@@ -1,15 +1,15 @@
-pub mod evm;
-pub mod solana;
-pub mod tron;
-pub mod stellar;
+pub mod bitcoin;
 pub mod cardano;
 pub mod cosmos;
-pub mod bitcoin;
+pub mod evm;
+pub mod solana;
+pub mod stellar;
+pub mod tron;
 
-use async_trait::async_trait;
 use crate::error::WarpResult;
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
+use async_trait::async_trait;
 
 /// Trait that all chain adapters must implement.
 #[async_trait]
@@ -40,9 +40,7 @@ pub trait ChainAdapter: Send + Sync {
 /// Currently returns stub adapters; real implementations will use chain-specific SDKs.
 pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
     match chain_name {
-        "base" | "arbitrum" | "bsc" | "polygon" => {
-            Some(Box::new(evm::EvmAdapter::new(chain_name)))
-        }
+        "base" | "arbitrum" | "bsc" | "polygon" => Some(Box::new(evm::EvmAdapter::new(chain_name))),
         "solana" => Some(Box::new(solana::SolanaAdapter::new())),
         "tron" => Some(Box::new(tron::TronAdapter::new())),
         "stellar" => Some(Box::new(stellar::StellarAdapter::new())),

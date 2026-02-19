@@ -1,3 +1,4 @@
+use zion_core::p2p::messages::Message;
 /// Sprint 1.3 — IBD (Initial Block Download) Hardening Test Suite
 ///
 /// Tests covering:
@@ -9,13 +10,10 @@
 ///   1.3.6  JSON snapshot (to_json) for RPC
 ///   1.3.7  P2P message serialization (GetBlocksIBD, BlocksIBD, HandshakeAck)
 ///   1.3.8  IBD constants sanity
-
 use zion_core::p2p::sync::{
-    SyncStatus, SyncState,
-    IBD_THRESHOLD, IBD_BATCH_SIZE, IBD_MAX_MESSAGE_SIZE,
-    IBD_STALL_TIMEOUT_SECS, IBD_MAX_STALL_RETRIES,
+    SyncState, SyncStatus, IBD_BATCH_SIZE, IBD_MAX_MESSAGE_SIZE, IBD_MAX_STALL_RETRIES,
+    IBD_STALL_TIMEOUT_SECS, IBD_THRESHOLD,
 };
-use zion_core::p2p::messages::Message;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 1.3.8  IBD Constants
@@ -38,7 +36,10 @@ fn test_ibd_max_message_size_50mb() {
 
 #[test]
 fn test_ibd_stall_timeout_120s() {
-    assert_eq!(IBD_STALL_TIMEOUT_SECS, 120, "Stall after 120s of no progress");
+    assert_eq!(
+        IBD_STALL_TIMEOUT_SECS, 120,
+        "Stall after 120s of no progress"
+    );
 }
 
 #[test]
@@ -62,12 +63,19 @@ fn test_sync_status_initial_state_is_steady() {
 fn test_enter_ibd_sets_state() {
     let ss = SyncStatus::new();
     ss.enter_ibd(1000, "127.0.0.1:8334");
-    
+
     assert_eq!(ss.state(), SyncState::IBD);
     assert!(ss.is_ibd());
     assert!(ss.syncing.load(std::sync::atomic::Ordering::Relaxed));
-    assert_eq!(ss.target_height.load(std::sync::atomic::Ordering::Relaxed), 1000);
-    assert_eq!(ss.blocks_downloaded.load(std::sync::atomic::Ordering::Relaxed), 0);
+    assert_eq!(
+        ss.target_height.load(std::sync::atomic::Ordering::Relaxed),
+        1000
+    );
+    assert_eq!(
+        ss.blocks_downloaded
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
 }
 
 #[test]
@@ -75,9 +83,9 @@ fn test_exit_ibd_resets_state() {
     let ss = SyncStatus::new();
     ss.enter_ibd(500, "10.0.0.1:8334");
     ss.update_progress(100);
-    
+
     ss.exit_ibd();
-    
+
     assert_eq!(ss.state(), SyncState::Steady);
     assert!(!ss.is_ibd());
     assert!(!ss.syncing.load(std::sync::atomic::Ordering::Relaxed));
@@ -88,9 +96,9 @@ fn test_abort_ibd_resets_state() {
     let ss = SyncStatus::new();
     ss.enter_ibd(500, "10.0.0.1:8334");
     ss.update_progress(200);
-    
+
     ss.abort_ibd("test abort");
-    
+
     assert_eq!(ss.state(), SyncState::Steady);
     assert!(!ss.is_ibd());
     assert!(!ss.syncing.load(std::sync::atomic::Ordering::Relaxed));
@@ -101,12 +109,18 @@ fn test_double_enter_ibd_updates_target() {
     let ss = SyncStatus::new();
     // First entry — IBD mode
     ss.enter_ibd(500, "peer1:8334");
-    assert_eq!(ss.target_height.load(std::sync::atomic::Ordering::Relaxed), 500);
-    
+    assert_eq!(
+        ss.target_height.load(std::sync::atomic::Ordering::Relaxed),
+        500
+    );
+
     // Exit and re-enter with higher target
     ss.exit_ibd();
     ss.enter_ibd(1000, "peer2:8334");
-    assert_eq!(ss.target_height.load(std::sync::atomic::Ordering::Relaxed), 1000);
+    assert_eq!(
+        ss.target_height.load(std::sync::atomic::Ordering::Relaxed),
+        1000
+    );
     assert!(ss.is_ibd_peer("peer2:8334"));
 }
 
@@ -117,13 +131,19 @@ fn test_double_enter_ibd_updates_target() {
 #[test]
 fn test_should_enter_ibd_peer_ahead_by_51() {
     let ss = SyncStatus::new();
-    assert!(ss.should_enter_ibd(100, 151), "Peer 51 blocks ahead → should IBD");
+    assert!(
+        ss.should_enter_ibd(100, 151),
+        "Peer 51 blocks ahead → should IBD"
+    );
 }
 
 #[test]
 fn test_should_not_enter_ibd_peer_ahead_by_50() {
     let ss = SyncStatus::new();
-    assert!(!ss.should_enter_ibd(100, 150), "Peer exactly 50 blocks ahead → no IBD");
+    assert!(
+        !ss.should_enter_ibd(100, 150),
+        "Peer exactly 50 blocks ahead → no IBD"
+    );
 }
 
 #[test]
@@ -148,7 +168,10 @@ fn test_should_not_enter_ibd_already_in_ibd() {
 #[test]
 fn test_should_enter_ibd_from_genesis() {
     let ss = SyncStatus::new();
-    assert!(ss.should_enter_ibd(0, 100), "New node at height 0, peer at 100 → IBD");
+    assert!(
+        ss.should_enter_ibd(0, 100),
+        "New node at height 0, peer at 100 → IBD"
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -159,29 +182,49 @@ fn test_should_enter_ibd_from_genesis() {
 fn test_update_progress_increments_counter() {
     let ss = SyncStatus::new();
     ss.enter_ibd(1000, "peer:8334");
-    
+
     ss.update_progress(100);
     ss.update_progress(101);
     ss.update_progress(102);
-    
-    assert_eq!(ss.download_height.load(std::sync::atomic::Ordering::Relaxed), 102);
-    assert_eq!(ss.blocks_downloaded.load(std::sync::atomic::Ordering::Relaxed), 3);
+
+    assert_eq!(
+        ss.download_height
+            .load(std::sync::atomic::Ordering::Relaxed),
+        102
+    );
+    assert_eq!(
+        ss.blocks_downloaded
+            .load(std::sync::atomic::Ordering::Relaxed),
+        3
+    );
 }
 
 #[test]
 fn test_progress_report_format() {
     let ss = SyncStatus::new();
     ss.enter_ibd(1000, "peer:8334");
-    
+
     // Simulate some progress
     for h in 1..=500 {
         ss.update_progress(h);
     }
-    
+
     let report = ss.progress_report();
-    assert!(report.contains("500/1000"), "Report should show 500/1000: {}", report);
-    assert!(report.contains("50.0%"), "Report should show 50%: {}", report);
-    assert!(report.contains("📥 IBD:"), "Report should have IBD prefix: {}", report);
+    assert!(
+        report.contains("500/1000"),
+        "Report should show 500/1000: {}",
+        report
+    );
+    assert!(
+        report.contains("50.0%"),
+        "Report should show 50%: {}",
+        report
+    );
+    assert!(
+        report.contains("📥 IBD:"),
+        "Report should have IBD prefix: {}",
+        report
+    );
 }
 
 #[test]
@@ -221,7 +264,7 @@ fn test_not_stalled_after_progress() {
 fn test_record_stall_increments_retries() {
     let ss = SyncStatus::new();
     ss.enter_ibd(1000, "peer:8334");
-    
+
     assert!(!ss.record_stall(), "First stall → not exhausted");
     assert!(!ss.record_stall(), "Second stall → not exhausted");
     assert!(ss.record_stall(), "Third stall → exhausted (max=3)");
@@ -233,11 +276,14 @@ fn test_enter_ibd_resets_stall_retries() {
     ss.enter_ibd(1000, "peer1:8334");
     ss.record_stall();
     ss.record_stall();
-    
+
     ss.exit_ibd();
     ss.enter_ibd(2000, "peer2:8334");
-    
-    assert_eq!(ss.stall_retries.load(std::sync::atomic::Ordering::Relaxed), 0);
+
+    assert_eq!(
+        ss.stall_retries.load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -247,10 +293,10 @@ fn test_enter_ibd_resets_stall_retries() {
 #[test]
 fn test_ibd_peer_tracking() {
     let ss = SyncStatus::new();
-    
+
     // No peer initially
     assert!(!ss.is_ibd_peer("any"));
-    
+
     // Enter IBD with a specific peer
     ss.enter_ibd(500, "77.42.31.72:8334");
     assert!(ss.is_ibd_peer("77.42.31.72:8334"));
@@ -262,7 +308,7 @@ fn test_ibd_peer_cleared_on_exit() {
     let ss = SyncStatus::new();
     ss.enter_ibd(500, "77.42.31.72:8334");
     assert!(ss.is_ibd_peer("77.42.31.72:8334"));
-    
+
     ss.exit_ibd();
     assert!(!ss.is_ibd_peer("77.42.31.72:8334"));
 }
@@ -271,7 +317,7 @@ fn test_ibd_peer_cleared_on_exit() {
 fn test_ibd_peer_cleared_on_abort() {
     let ss = SyncStatus::new();
     ss.enter_ibd(500, "77.42.31.72:8334");
-    
+
     ss.abort_ibd("test");
     assert!(!ss.is_ibd_peer("77.42.31.72:8334"));
 }
@@ -284,7 +330,7 @@ fn test_ibd_peer_cleared_on_abort() {
 fn test_to_json_steady_state() {
     let ss = SyncStatus::new();
     let snap = ss.to_json();
-    
+
     assert_eq!(snap.state, SyncState::Steady);
     assert!(!snap.syncing);
     assert_eq!(snap.target_height, 0);
@@ -298,19 +344,23 @@ fn test_to_json_steady_state() {
 fn test_to_json_ibd_state() {
     let ss = SyncStatus::new();
     ss.enter_ibd(1000, "10.0.0.1:8334");
-    
+
     for h in 1..=250 {
         ss.update_progress(h);
     }
-    
+
     let snap = ss.to_json();
-    
+
     assert_eq!(snap.state, SyncState::IBD);
     assert!(snap.syncing);
     assert_eq!(snap.target_height, 1000);
     assert_eq!(snap.download_height, 250);
     assert_eq!(snap.blocks_downloaded, 250);
-    assert!(snap.percent > 24.0 && snap.percent < 26.0, "Should be ~25%: {}", snap.percent);
+    assert!(
+        snap.percent > 24.0 && snap.percent < 26.0,
+        "Should be ~25%: {}",
+        snap.percent
+    );
     assert!(snap.blocks_per_sec > 0.0, "Should have non-zero speed");
     assert_eq!(snap.ibd_peer, Some("10.0.0.1:8334".to_string()));
 }
@@ -320,10 +370,10 @@ fn test_to_json_serializable() {
     let ss = SyncStatus::new();
     ss.enter_ibd(500, "peer:8334");
     ss.update_progress(100);
-    
+
     let snap = ss.to_json();
     let json = serde_json::to_value(&snap).unwrap();
-    
+
     assert!(json.get("state").is_some());
     assert!(json.get("syncing").is_some());
     assert!(json.get("target_height").is_some());
@@ -342,12 +392,24 @@ fn test_get_blocks_ibd_serialization() {
         from_height: 100,
         limit: 500,
     };
-    
+
     let json = serde_json::to_string(&msg).unwrap();
-    assert!(json.contains("\"type\":\"GetBlocksIBD\""), "Should be tagged: {}", json);
-    assert!(json.contains("\"from_height\":100"), "Should have from_height: {}", json);
-    assert!(json.contains("\"limit\":500"), "Should have limit: {}", json);
-    
+    assert!(
+        json.contains("\"type\":\"GetBlocksIBD\""),
+        "Should be tagged: {}",
+        json
+    );
+    assert!(
+        json.contains("\"from_height\":100"),
+        "Should have from_height: {}",
+        json
+    );
+    assert!(
+        json.contains("\"limit\":500"),
+        "Should have limit: {}",
+        json
+    );
+
     // Round-trip
     let parsed: Message = serde_json::from_str(&json).unwrap();
     match parsed {
@@ -365,11 +427,19 @@ fn test_blocks_ibd_serialization() {
         blocks: vec![],
         remaining: 42,
     };
-    
+
     let json = serde_json::to_string(&msg).unwrap();
-    assert!(json.contains("\"type\":\"BlocksIBD\""), "Should be tagged: {}", json);
-    assert!(json.contains("\"remaining\":42"), "Should have remaining: {}", json);
-    
+    assert!(
+        json.contains("\"type\":\"BlocksIBD\""),
+        "Should be tagged: {}",
+        json
+    );
+    assert!(
+        json.contains("\"remaining\":42"),
+        "Should have remaining: {}",
+        json
+    );
+
     // Round-trip
     let parsed: Message = serde_json::from_str(&json).unwrap();
     match parsed {
@@ -388,15 +458,27 @@ fn test_handshake_ack_serialization() {
         height: 9876,
         nonce: 42,
     };
-    
+
     let json = serde_json::to_string(&msg).unwrap();
-    assert!(json.contains("\"type\":\"HandshakeAck\""), "Should be tagged: {}", json);
-    assert!(json.contains("\"height\":9876"), "Should have height: {}", json);
-    
+    assert!(
+        json.contains("\"type\":\"HandshakeAck\""),
+        "Should be tagged: {}",
+        json
+    );
+    assert!(
+        json.contains("\"height\":9876"),
+        "Should have height: {}",
+        json
+    );
+
     // Round-trip
     let parsed: Message = serde_json::from_str(&json).unwrap();
     match parsed {
-        Message::HandshakeAck { version, height, nonce } => {
+        Message::HandshakeAck {
+            version,
+            height,
+            nonce,
+        } => {
             assert_eq!(version, 1);
             assert_eq!(height, 9876);
             assert_eq!(nonce, 42);
@@ -414,14 +496,20 @@ fn test_handshake_serialization_with_network() {
         network: "zion-testnet-v1".to_string(),
         nonce: 12345,
     };
-    
+
     let json = serde_json::to_string(&msg).unwrap();
     assert!(json.contains("\"network\":\"zion-testnet-v1\""));
-    
+
     // Round-trip
     let parsed: Message = serde_json::from_str(&json).unwrap();
     match parsed {
-        Message::Handshake { version, agent, height, network, nonce } => {
+        Message::Handshake {
+            version,
+            agent,
+            height,
+            network,
+            nonce,
+        } => {
             assert_eq!(version, 1);
             assert_eq!(agent, "ZionCore/0.2.0");
             assert_eq!(height, 500);
@@ -465,7 +553,7 @@ fn test_get_tip_serialization() {
     let msg = Message::GetTip;
     let json = serde_json::to_string(&msg).unwrap();
     assert!(json.contains("\"type\":\"GetTip\""));
-    
+
     let parsed: Message = serde_json::from_str(&json).unwrap();
     match parsed {
         Message::GetTip => {} // OK
@@ -514,26 +602,30 @@ fn test_new_block_serialization() {
 #[test]
 fn test_full_ibd_lifecycle() {
     let ss = SyncStatus::new();
-    
+
     // 1. Start → Steady
     assert_eq!(ss.state(), SyncState::Steady);
-    
+
     // 2. Peer at height 1000, we at 0 → should IBD
     assert!(ss.should_enter_ibd(0, 1000));
     ss.enter_ibd(1000, "seed:8334");
     assert_eq!(ss.state(), SyncState::IBD);
-    
+
     // 3. Download blocks
     for h in 1..=1000 {
         ss.update_progress(h);
     }
-    assert_eq!(ss.blocks_downloaded.load(std::sync::atomic::Ordering::Relaxed), 1000);
-    
+    assert_eq!(
+        ss.blocks_downloaded
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1000
+    );
+
     // 4. Complete → back to Steady
     ss.exit_ibd();
     assert_eq!(ss.state(), SyncState::Steady);
     assert!(!ss.is_ibd());
-    
+
     // 5. Should be able to enter IBD again if new peer appears
     assert!(ss.should_enter_ibd(1000, 2000));
 }
@@ -541,25 +633,29 @@ fn test_full_ibd_lifecycle() {
 #[test]
 fn test_ibd_abort_and_retry_lifecycle() {
     let ss = SyncStatus::new();
-    
+
     // Enter IBD
     ss.enter_ibd(1000, "peer1:8334");
     ss.update_progress(100);
-    
+
     // Stall 3 times → abort
     ss.record_stall();
     ss.record_stall();
     assert!(ss.record_stall(), "Third stall exhausts retries");
-    
+
     // Abort
     ss.abort_ibd("stall exceeded");
     assert_eq!(ss.state(), SyncState::Steady);
-    
+
     // New peer appears → can re-enter IBD
     assert!(ss.should_enter_ibd(100, 1000));
     ss.enter_ibd(1000, "peer2:8334");
     assert_eq!(ss.state(), SyncState::IBD);
-    assert_eq!(ss.stall_retries.load(std::sync::atomic::Ordering::Relaxed), 0, "Retries reset");
+    assert_eq!(
+        ss.stall_retries.load(std::sync::atomic::Ordering::Relaxed),
+        0,
+        "Retries reset"
+    );
     assert!(ss.is_ibd_peer("peer2:8334"));
 }
 
@@ -567,12 +663,12 @@ fn test_ibd_abort_and_retry_lifecycle() {
 fn test_concurrent_sync_status_access() {
     use std::sync::Arc;
     use std::thread;
-    
+
     let ss = Arc::new(SyncStatus::new());
     ss.enter_ibd(10_000, "peer:8334");
-    
+
     let mut handles = vec![];
-    
+
     // 10 threads updating progress concurrently
     for i in 0..10 {
         let ss_clone = ss.clone();
@@ -582,14 +678,15 @@ fn test_concurrent_sync_status_access() {
             }
         }));
     }
-    
+
     for h in handles {
         h.join().unwrap();
     }
-    
+
     // All 1000 updates should be counted
     assert_eq!(
-        ss.blocks_downloaded.load(std::sync::atomic::Ordering::Relaxed),
+        ss.blocks_downloaded
+            .load(std::sync::atomic::Ordering::Relaxed),
         1000,
         "All concurrent updates counted"
     );

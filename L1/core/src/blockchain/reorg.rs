@@ -2,7 +2,6 @@
 ///
 /// ZION uses simple best-chain-wins based on cumulative difficulty.
 /// If we receive a chain that has more total work than our tip, we reorg.
-
 use crate::blockchain::block::Block;
 use crate::storage::ZionStorage;
 use anyhow::{anyhow, Result};
@@ -63,8 +62,10 @@ pub fn is_stronger_chain(
 
     // Secondary: equal work but longer chain — prefer more confirmations
     if total_new_work == current_work && new_tip_height > current_tip {
-        eprintln!("🔀 is_stronger_chain: equal work but new chain is taller ({} > {}), accepting",
-            new_tip_height, current_tip);
+        eprintln!(
+            "🔀 is_stronger_chain: equal work but new chain is taller ({} > {}), accepting",
+            new_tip_height, current_tip
+        );
         return Ok(true);
     }
 
@@ -116,8 +117,11 @@ pub fn find_fork_point(storage: &ZionStorage, incoming: &[Block]) -> Result<u64>
     let mut check_hash = first.prev_hash().to_string();
     let mut fork_height = first.height().saturating_sub(1);
 
-    eprintln!("🔍 find_fork_point: first incoming height={}, prev_hash={}",
-        first.height(), &check_hash[..16.min(check_hash.len())]);
+    eprintln!(
+        "🔍 find_fork_point: first incoming height={}, prev_hash={}",
+        first.height(),
+        &check_hash[..16.min(check_hash.len())]
+    );
 
     loop {
         if let Some(local_block) = storage.get_block_by_height(fork_height)? {
@@ -128,9 +132,12 @@ pub fn find_fork_point(storage: &ZionStorage, incoming: &[Block]) -> Result<u64>
                 eprintln!("🔍 find_fork_point: MATCH at height {}", fork_height);
                 return Ok(fork_height);
             } else {
-                eprintln!("🔍 find_fork_point: h{} MISMATCH local={} vs check={}",
-                    fork_height, &local_hash_hex[..16.min(local_hash_hex.len())],
-                    &check_hash[..16.min(check_hash.len())]);
+                eprintln!(
+                    "🔍 find_fork_point: h{} MISMATCH local={} vs check={}",
+                    fork_height,
+                    &local_hash_hex[..16.min(local_hash_hex.len())],
+                    &check_hash[..16.min(check_hash.len())]
+                );
                 if fork_height == 0 {
                     return Err(anyhow!(
                         "No common ancestor found - genesis mismatch: local_genesis_hash={} vs check_hash={}",

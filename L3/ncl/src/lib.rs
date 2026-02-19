@@ -17,13 +17,13 @@
 //!                                         └──────────┘
 //! ```
 
-pub mod error;
-pub mod types;
-pub mod scheduler;
-pub mod pricing;
 pub mod backend;
+pub mod error;
+pub mod pricing;
+pub mod scheduler;
+pub mod types;
 
 pub use error::{NclError, NclResult};
-pub use types::{NclJob, NclJobStatus, NclWorker, ComputeBackend};
-pub use scheduler::JobScheduler;
 pub use pricing::PricingEngine;
+pub use scheduler::JobScheduler;
+pub use types::{ComputeBackend, NclJob, NclJobStatus, NclWorker};

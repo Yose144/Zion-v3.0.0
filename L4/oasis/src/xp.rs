@@ -11,7 +11,11 @@ pub enum XpSource {
     /// Completing an AI challenge
     AiChallenge { challenge_id: String, score: f64 },
     /// Passing a knowledge quiz
-    Quiz { topic: String, correct: u32, total: u32 },
+    Quiz {
+        topic: String,
+        correct: u32,
+        total: u32,
+    },
     /// Meditation bonus (daily check-in)
     Meditation { duration_minutes: u32 },
     /// Humanitarian tithe contribution
@@ -29,7 +33,9 @@ impl XpSource {
             XpSource::BlockMined { shares, .. } => shares.min(&100) * 10,
             XpSource::AiChallenge { score, .. } => (*score * 100.0) as u64,
             XpSource::Quiz { correct, total, .. } => {
-                if *total == 0 { return 0; }
+                if *total == 0 {
+                    return 0;
+                }
                 let pct = (*correct as f64 / *total as f64) * 100.0;
                 pct as u64
             }
@@ -45,6 +51,12 @@ impl XpSource {
 pub struct XpSystem {
     /// Daily XP cap (prevent farming)
     pub daily_cap: u64,
+}
+
+impl Default for XpSystem {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl XpSystem {
@@ -105,7 +117,10 @@ mod tests {
 
     #[test]
     fn test_mining_xp() {
-        let source = XpSource::BlockMined { block_height: 1000, shares: 50 };
+        let source = XpSource::BlockMined {
+            block_height: 1000,
+            shares: 50,
+        };
         assert_eq!(source.xp_amount(), 500); // 50 shares × 10
     }
 
@@ -113,9 +128,12 @@ mod tests {
     fn test_level_up() {
         let system = XpSystem::new();
         let award = system.award(
-            4_900,                        // close to Mental (5000)
+            4_900, // close to Mental (5000)
             ConsciousnessLevel::Emotional,
-            &XpSource::BlockMined { block_height: 1, shares: 10 },
+            &XpSource::BlockMined {
+                block_height: 1,
+                shares: 10,
+            },
             0,
         );
 
@@ -132,7 +150,10 @@ mod tests {
         let award = system.award(
             0,
             ConsciousnessLevel::Physical,
-            &XpSource::BlockMined { block_height: 1, shares: 100 },
+            &XpSource::BlockMined {
+                block_height: 1,
+                shares: 100,
+            },
             9_900, // already earned 9900 today
         );
 

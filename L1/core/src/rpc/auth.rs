@@ -32,10 +32,7 @@ fn get_rpc_token() -> Option<String> {
 ///
 /// If `ZION_RPC_TOKEN` is not set → pass through (no auth).
 /// If set → compare constant-time against the provided header.
-pub async fn require_bearer_token(
-    request: Request,
-    next: Next,
-) -> Result<Response, StatusCode> {
+pub async fn require_bearer_token(request: Request, next: Next) -> Result<Response, StatusCode> {
     let expected = match get_rpc_token() {
         Some(t) => t,
         None => return Ok(next.run(request).await), // No token configured → open access

@@ -1,24 +1,23 @@
 mod cpu;
-pub mod gpu;
-mod stats;
-pub mod native_algos;
-pub mod multichain;
 pub mod external_pool;
+pub mod gpu;
+pub mod multichain;
+pub mod native_algos;
 pub mod python_fallback;
+mod stats;
 pub mod stream_aware;
 
 use anyhow::{anyhow, Result};
-use colored::*;
-use log::{debug, info, warn};
-use std::sync::{Arc, RwLock};
-use std::path::PathBuf;
-use tokio::sync::RwLock as AsyncRwLock;
 use hex::FromHex;
+use log::debug;
 use serde_json::Value;
+use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
+use tokio::sync::RwLock as AsyncRwLock;
 
-use crate::stratum::StratumClient;
-use crate::ncl::NCLClient;
 use self::stats::MinerStats;
+use crate::ncl::NCLClient;
+use crate::stratum::StratumClient;
 pub use native_algos::NativeAlgorithm;
 
 // Local Algorithm enum - independent from zion_core
@@ -41,10 +40,9 @@ pub enum Algorithm {
 impl Algorithm {
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            "cosmic_harmony" | "cosmicharmony" | "cosmic-harmony" | "cosmic_harmony_v3" | "cosmic-harmony-v3" | "chv3" | "ch3"
-            | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2" | "cosmic-harmony_v2" => {
-                Some(Self::CosmicHarmony)
-            }
+            "cosmic_harmony" | "cosmicharmony" | "cosmic-harmony" | "cosmic_harmony_v3"
+            | "cosmic-harmony-v3" | "chv3" | "ch3" | "cosmic_harmony_v2" | "cosmicharmonyv2"
+            | "cosmic-harmony-v2" | "cosmic-harmony_v2" => Some(Self::CosmicHarmony),
             "randomx" | "random-x" | "rx/0" => Some(Self::RandomX),
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
@@ -76,7 +74,7 @@ impl Algorithm {
             Self::Argon2d => "argon2d",
         }
     }
-    
+
     pub fn to_native(&self) -> NativeAlgorithm {
         match self {
             Self::CosmicHarmony => NativeAlgorithm::CosmicHarmony,
@@ -118,7 +116,10 @@ pub fn detect_gpu_available() -> bool {
         Ok(gpus) if !gpus.is_empty() => {
             debug!("🎮 GPU detected via native probe: {} device(s)", gpus.len());
             for g in &gpus {
-                debug!("   • {} ({:?}, {} CUs, {} MB)", g.name, g.platform, g.compute_units, g.memory_mb);
+                debug!(
+                    "   • {} ({:?}, {} CUs, {} MB)",
+                    g.name, g.platform, g.compute_units, g.memory_mb
+                );
             }
             return true;
         }
@@ -233,7 +234,11 @@ impl UniversalMiner {
         }
 
         log::debug!("net use pool → {}", self.config.pool_url);
-        log::debug!("cpu {} threads {} algo", self.config.cpu_threads, self.config.algorithm.name());
+        log::debug!(
+            "cpu {} threads {} algo",
+            self.config.cpu_threads,
+            self.config.algorithm.name()
+        );
 
         // Create stratum client (reused across reconnections)
         log::debug!("Creating stratum client for pool: {}", self.config.pool_url);
@@ -274,9 +279,9 @@ impl UniversalMiner {
 
             // Subscribe to jobs and wait for initial job
             let job_state: Arc<RwLock<Option<crate::stratum::Job>>> = Arc::new(RwLock::new(None));
-            
+
             tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-            
+
             let mut job_rx = stratum.subscribe_jobs().await;
 
             // Check if job is already available (from login response)
@@ -284,7 +289,11 @@ impl UniversalMiner {
                 let current = job_rx.borrow_and_update();
                 log::debug!("Job state after subscribe: {:?}", current.is_some());
                 if let Some(ref j) = *current {
-                    log::debug!("Initial job already available: id={}, height={}", j.job_id, j.height);
+                    log::debug!(
+                        "Initial job already available: id={}, height={}",
+                        j.job_id,
+                        j.height
+                    );
                     if let Ok(mut state) = job_state.write() {
                         *state = Some(j.clone());
                     }
@@ -294,14 +303,17 @@ impl UniversalMiner {
             // If no job yet, wait for one
             if job_state.read().unwrap().is_none() {
                 log::debug!("Waiting for initial job...");
-                match tokio::time::timeout(
-                    tokio::time::Duration::from_secs(5),
-                    job_rx.changed()
-                ).await {
+                match tokio::time::timeout(tokio::time::Duration::from_secs(5), job_rx.changed())
+                    .await
+                {
                     Ok(Ok(())) => {
                         let job = job_rx.borrow().clone();
                         if let Some(ref j) = job {
-                            log::debug!("Initial job received: id={}, height={}", j.job_id, j.height);
+                            log::debug!(
+                                "Initial job received: id={}, height={}",
+                                j.job_id,
+                                j.height
+                            );
                             if let Ok(mut state) = job_state.write() {
                                 *state = Some(j.clone());
                             }
@@ -364,7 +376,10 @@ impl UniversalMiner {
                     }
                 });
             } else {
-                log::debug!("getjob polling disabled for external pool: {}", self.config.pool_url);
+                log::debug!(
+                    "getjob polling disabled for external pool: {}",
+                    self.config.pool_url
+                );
             }
 
             // Start CPU mining threads
@@ -400,10 +415,12 @@ impl UniversalMiner {
 
                 // Bug fix: also detect when submit loop died (cpu/gpu alive flag went false)
                 // Previously only stratum disconnect was detected, causing 7h+ dead mining
-                let cpu_submit_dead = cpu_alive_flag.as_ref()
+                let cpu_submit_dead = cpu_alive_flag
+                    .as_ref()
                     .map(|f| !f.load(std::sync::atomic::Ordering::Relaxed))
                     .unwrap_or(false);
-                let gpu_submit_dead = gpu_alive_flag.as_ref()
+                let gpu_submit_dead = gpu_alive_flag
+                    .as_ref()
                     .map(|f| !f.load(std::sync::atomic::Ordering::Relaxed))
                     .unwrap_or(false);
 
@@ -413,7 +430,11 @@ impl UniversalMiner {
                     || gpu_submit_dead
                 {
                     if cpu_submit_dead || gpu_submit_dead {
-                        log::debug!("submit loop died — reconnecting (cpu={}, gpu={})", cpu_submit_dead, gpu_submit_dead);
+                        log::debug!(
+                            "submit loop died — reconnecting (cpu={}, gpu={})",
+                            cpu_submit_dead,
+                            gpu_submit_dead
+                        );
                     } else {
                         log::debug!("pool connection lost");
                     }
@@ -445,7 +466,6 @@ impl UniversalMiner {
             if let Ok(mut stats) = self.stats.try_write() {
                 stats.reset_shares();
             }
-
         } // end reconnect loop
     }
 
@@ -559,16 +579,14 @@ impl UniversalMiner {
 
                 // Occasionally fetch status snapshot for visibility.
                 status_tick = status_tick.wrapping_add(1);
-                if status_tick % 30 == 0 {
+                if status_tick.is_multiple_of(30) {
                     let status_id = stratum.next_request_id();
                     if let Ok(status_resp) = stratum
                         .send_custom_value(ncl.build_status_message(status_id))
                         .await
                     {
-                        if let Some(ncl_status) = status_resp
-                            .result
-                            .as_ref()
-                            .and_then(|v| v.get("ncl"))
+                        if let Some(ncl_status) =
+                            status_resp.result.as_ref().and_then(|v| v.get("ncl"))
                         {
                             debug!("📊 NCL status: {}", ncl_status);
                         }
@@ -596,7 +614,11 @@ impl UniversalMiner {
         Ok(())
     }
 
-    async fn start_cpu_mining(&self, stratum: &StratumClient, job_state: Arc<RwLock<Option<crate::stratum::Job>>>) -> Result<Arc<std::sync::atomic::AtomicBool>> {
+    async fn start_cpu_mining(
+        &self,
+        stratum: &StratumClient,
+        job_state: Arc<RwLock<Option<crate::stratum::Job>>>,
+    ) -> Result<Arc<std::sync::atomic::AtomicBool>> {
         let cpu_miner = cpu::CpuMiner::new(
             self.config.algorithm,
             self.config.cpu_threads,
@@ -611,7 +633,11 @@ impl UniversalMiner {
         Ok(alive_flag)
     }
 
-    async fn start_gpu_mining(&self, stratum: &StratumClient, job_state: Arc<RwLock<Option<crate::stratum::Job>>>) -> Result<Option<Arc<std::sync::atomic::AtomicBool>>> {
+    async fn start_gpu_mining(
+        &self,
+        stratum: &StratumClient,
+        job_state: Arc<RwLock<Option<crate::stratum::Job>>>,
+    ) -> Result<Option<Arc<std::sync::atomic::AtomicBool>>> {
         // GPU mining: primary CHv3 (Metal/OpenCL/CUDA), stream-aware for algo switching
         let devices = gpu::detect_gpus()?;
         if devices.is_empty() {
@@ -704,7 +730,12 @@ impl UniversalMiner {
         let mut batch_count: u64 = 0;
         let mut active_algo = initial_algo;
 
-        log::debug!("GPU mining loop: {} [{:?}] batch={}", device_name, device_platform, batch_size);
+        log::debug!(
+            "GPU mining loop: {} [{:?}] batch={}",
+            device_name,
+            device_platform,
+            batch_size
+        );
 
         loop {
             let job = {
@@ -728,15 +759,26 @@ impl UniversalMiner {
                 // Desktop default: pin configured algorithm (CHv3) for stable hashrate.
                 // Set ZION_ENABLE_STREAM_SWITCH=1 to allow runtime algo switches.
                 if stream_switch_enabled {
-                    let job_algo = job.algo.as_deref()
+                    let job_algo = job
+                        .algo
+                        .as_deref()
                         .and_then(Algorithm::from_str)
                         .unwrap_or(initial_algo);
 
                     if job_algo != active_algo {
                         let coin = job.coin.as_deref().unwrap_or("unknown");
-                        log::debug!("gpu:switch {} → {} coin={}", active_algo.name(), job_algo.name(), coin);
+                        log::debug!(
+                            "gpu:switch {} → {} coin={}",
+                            active_algo.name(),
+                            job_algo.name(),
+                            coin
+                        );
                         if let Ok(mut st) = stats.try_write() {
-                            st.set_event(format!("gpu:switch {} → {}", active_algo.name(), job_algo.name()));
+                            st.set_event(format!(
+                                "gpu:switch {} → {}",
+                                active_algo.name(),
+                                job_algo.name()
+                            ));
                         }
                         active_algo = job_algo;
 
@@ -752,7 +794,9 @@ impl UniversalMiner {
 
                 log::debug!(
                     "GPU: New job height={}, algo={}, target={}",
-                    job.height, active_algo.name(), job.target
+                    job.height,
+                    active_algo.name(),
+                    job.target
                 );
             }
 
@@ -783,7 +827,8 @@ impl UniversalMiner {
                 // CPU fallback for algos GPU can't mine (RandomX, Yescrypt, etc.)
                 // Still runs on this thread so GPU thread isn't wasted
                 if matches!(active_algo, Algorithm::CosmicHarmony)
-                    && job.height >= zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT
+                    && job.height
+                        >= zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT
                 {
                     log::debug!(
                         "GPU fallback: CHv3 memory-hard active at height {} (fork={}) → CPU path",
@@ -806,11 +851,16 @@ impl UniversalMiner {
             batch_count += 1;
 
             // Report GPU hashrate every 10 batches (debug only)
-            if batch_count % 10 == 0 {
+            if batch_count.is_multiple_of(10) {
                 let elapsed = gpu_start_time.elapsed().as_secs_f64();
                 let gpu_hashrate = gpu_total_hashes as f64 / elapsed;
-                log::debug!("GPU: {} {:.2} kH/s {} shares algo {}",
-                    device_name, gpu_hashrate / 1_000.0, gpu_shares_found, active_algo.name());
+                log::debug!(
+                    "GPU: {} {:.2} kH/s {} shares algo {}",
+                    device_name,
+                    gpu_hashrate / 1_000.0,
+                    gpu_shares_found,
+                    active_algo.name()
+                );
             }
 
             // Update shared stats with GPU hashes
@@ -824,14 +874,22 @@ impl UniversalMiner {
                     let result_hex = hex::encode(hash);
                     let job_id = job.job_id.clone();
 
-                    log::debug!("GPU SHARE algo {} nonce {} hash {}...{}",
-                        active_algo.name(), nonce, &result_hex[..8], &result_hex[56..]);
+                    log::debug!(
+                        "GPU SHARE algo {} nonce {} hash {}...{}",
+                        active_algo.name(),
+                        nonce,
+                        &result_hex[..8],
+                        &result_hex[56..]
+                    );
 
                     // Submit share ASYNC — don't block GPU thread!
                     let submit_stratum = Arc::clone(&stratum);
                     let submit_stats = Arc::clone(&stats);
                     tokio::runtime::Handle::current().spawn(async move {
-                        match submit_stratum.submit_share(&job_id, nonce as u32, &result_hex).await {
+                        match submit_stratum
+                            .submit_share(&job_id, nonce as u32, &result_hex)
+                            .await
+                        {
                             Ok(accepted) => {
                                 if let Ok(mut stats) = submit_stats.try_write() {
                                     if accepted {
@@ -853,7 +911,11 @@ impl UniversalMiner {
                     // No solution in this batch — normal, continue
                 }
                 Err(e) => {
-                    log::error!("🎮 GPU mine_batch error (algo={}): {}", active_algo.name(), e);
+                    log::error!(
+                        "🎮 GPU mine_batch error (algo={}): {}",
+                        active_algo.name(),
+                        e
+                    );
                     std::thread::sleep(std::time::Duration::from_millis(1000));
                 }
             }
@@ -908,7 +970,8 @@ impl UniversalMiner {
 
         for n in 0..batch_size {
             let nonce = nonce_start + n;
-            let hash_vec = match native_algos::compute_hash(native_algo, blob_bytes, nonce, height) {
+            let hash_vec = match native_algos::compute_hash(native_algo, blob_bytes, nonce, height)
+            {
                 Ok(h) => h,
                 Err(e) => {
                     if n == 0 {
@@ -938,8 +1001,6 @@ impl UniversalMiner {
     }
 
     async fn stats_loop(&self) {
-        use serde_json::json;
-
         let interval_secs = self.config.stats_interval_secs.max(1);
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_secs));
 
@@ -1010,11 +1071,22 @@ mod tests {
 
     #[test]
     fn test_algorithm_from_str_cosmic_aliases() {
-        let aliases = ["cosmic_harmony", "cosmicharmony", "cosmic-harmony", "cosmic_harmony_v3",
-                       "cosmic-harmony-v3", "chv3", "ch3"];
+        let aliases = [
+            "cosmic_harmony",
+            "cosmicharmony",
+            "cosmic-harmony",
+            "cosmic_harmony_v3",
+            "cosmic-harmony-v3",
+            "chv3",
+            "ch3",
+        ];
         for alias in aliases {
-            assert_eq!(Algorithm::from_str(alias), Some(Algorithm::CosmicHarmony),
-                "Failed for alias: {}", alias);
+            assert_eq!(
+                Algorithm::from_str(alias),
+                Some(Algorithm::CosmicHarmony),
+                "Failed for alias: {}",
+                alias
+            );
         }
     }
 
@@ -1028,8 +1100,14 @@ mod tests {
         assert_eq!(Algorithm::from_str("etchash"), Some(Algorithm::Ethash));
         assert_eq!(Algorithm::from_str("kawpow"), Some(Algorithm::KawPow));
         assert_eq!(Algorithm::from_str("autolykos"), Some(Algorithm::Autolykos));
-        assert_eq!(Algorithm::from_str("autolykos2"), Some(Algorithm::Autolykos));
-        assert_eq!(Algorithm::from_str("kheavyhash"), Some(Algorithm::KHeavyHash));
+        assert_eq!(
+            Algorithm::from_str("autolykos2"),
+            Some(Algorithm::Autolykos)
+        );
+        assert_eq!(
+            Algorithm::from_str("kheavyhash"),
+            Some(Algorithm::KHeavyHash)
+        );
         assert_eq!(Algorithm::from_str("equihash"), Some(Algorithm::Equihash));
         assert_eq!(Algorithm::from_str("progpow"), Some(Algorithm::ProgPow));
         assert_eq!(Algorithm::from_str("argon2d"), Some(Algorithm::Argon2d));
@@ -1045,17 +1123,30 @@ mod tests {
     #[test]
     fn test_algorithm_name_roundtrip() {
         let algorithms = [
-            Algorithm::CosmicHarmony, Algorithm::RandomX, Algorithm::VerusHash,
-            Algorithm::Yescrypt, Algorithm::Blake3, Algorithm::Ethash,
-            Algorithm::KawPow, Algorithm::Autolykos, Algorithm::KHeavyHash,
-            Algorithm::Equihash, Algorithm::ProgPow, Algorithm::Argon2d,
+            Algorithm::CosmicHarmony,
+            Algorithm::RandomX,
+            Algorithm::VerusHash,
+            Algorithm::Yescrypt,
+            Algorithm::Blake3,
+            Algorithm::Ethash,
+            Algorithm::KawPow,
+            Algorithm::Autolykos,
+            Algorithm::KHeavyHash,
+            Algorithm::Equihash,
+            Algorithm::ProgPow,
+            Algorithm::Argon2d,
         ];
         for algo in algorithms {
             let name = algo.name();
             assert!(!name.is_empty(), "Empty name for {:?}", algo);
             // name should parse back to the same algo
-            assert_eq!(Algorithm::from_str(name), Some(algo),
-                "Round-trip failed for {:?} (name={})", algo, name);
+            assert_eq!(
+                Algorithm::from_str(name),
+                Some(algo),
+                "Round-trip failed for {:?} (name={})",
+                algo,
+                name
+            );
         }
     }
 

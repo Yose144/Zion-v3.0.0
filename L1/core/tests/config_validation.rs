@@ -4,10 +4,9 @@
 /// MAINNET_CONSTITUTION specifications.  These tests act as a "spec freeze"
 /// guard: if any constant changes, the corresponding config must be updated
 /// and vice-versa.
-
 use zion_core::blockchain::consensus;
-use zion_core::blockchain::reward;
 use zion_core::blockchain::premine;
+use zion_core::blockchain::reward;
 use zion_core::blockchain::validation;
 use zion_core::network::NetworkType;
 
@@ -41,7 +40,10 @@ fn test_premine_total_matches_spec() {
 
 #[test]
 fn test_mining_emission_equals_supply_minus_premine() {
-    assert_eq!(reward::MINING_EMISSION, reward::TOTAL_SUPPLY - reward::GENESIS_PREMINE);
+    assert_eq!(
+        reward::MINING_EMISSION,
+        reward::TOTAL_SUPPLY - reward::GENESIS_PREMINE
+    );
     assert_eq!(reward::MINING_EMISSION, 127_720_000_000_000_000);
     // premine.rs must also agree
     assert_eq!(premine::MINING_EMISSION, reward::MINING_EMISSION);
@@ -186,9 +188,18 @@ fn test_network_names() {
 
 #[test]
 fn test_network_parsing_case_insensitive() {
-    assert_eq!(NetworkType::from_str("testnet").unwrap(), NetworkType::Testnet);
-    assert_eq!(NetworkType::from_str("TESTNET").unwrap(), NetworkType::Testnet);
-    assert_eq!(NetworkType::from_str("Mainnet").unwrap(), NetworkType::Mainnet);
+    assert_eq!(
+        NetworkType::from_str("testnet").unwrap(),
+        NetworkType::Testnet
+    );
+    assert_eq!(
+        NetworkType::from_str("TESTNET").unwrap(),
+        NetworkType::Testnet
+    );
+    assert_eq!(
+        NetworkType::from_str("Mainnet").unwrap(),
+        NetworkType::Mainnet
+    );
     assert_eq!(NetworkType::from_str("MAIN").unwrap(), NetworkType::Mainnet);
     assert_eq!(NetworkType::from_str("test").unwrap(), NetworkType::Testnet);
     assert!(NetworkType::from_str("invalid").is_err());
@@ -217,7 +228,10 @@ fn test_genesis_has_no_mining_reward() {
 
 #[test]
 fn test_emission_complete_after_last_block() {
-    assert_eq!(reward::calculate(reward::TOTAL_MINING_BLOCKS, 1000), reward::BLOCK_REWARD_ATOMIC);
+    assert_eq!(
+        reward::calculate(reward::TOTAL_MINING_BLOCKS, 1000),
+        reward::BLOCK_REWARD_ATOMIC
+    );
     assert_eq!(reward::calculate(reward::TOTAL_MINING_BLOCKS + 1, 1000), 0);
 }
 

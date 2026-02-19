@@ -18,7 +18,6 @@
 ///   - `BuybackTracker` records each revenue event with DAO allocation.
 ///   - Storage persistence via JSON file (`buyback_ledger.json`).
 ///   - RPC / API exposes cumulative stats at `/api/buyback/stats`.
-
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
@@ -198,11 +197,11 @@ impl BuybackTracker {
         let mut events = self.events.write().unwrap();
 
         // Check for duplicate TX hashes
-        if events.iter().any(|e| e.creators_tx_hash == event.creators_tx_hash) {
-            return Err(format!(
-                "Duplicate DAO TX hash: {}",
-                event.creators_tx_hash
-            ));
+        if events
+            .iter()
+            .any(|e| e.creators_tx_hash == event.creators_tx_hash)
+        {
+            return Err(format!("Duplicate DAO TX hash: {}", event.creators_tx_hash));
         }
 
         let id = events.len() as u64 + 1;
@@ -343,11 +342,7 @@ mod tests {
     use crate::tx::{Transaction, TxOutput};
 
     /// Helper: create a revenue event (100% DAO).
-    fn make_event(
-        btc_total: u64,
-        zion_dao: u64,
-        dao_hash: &str,
-    ) -> BuybackEvent {
+    fn make_event(btc_total: u64, zion_dao: u64, dao_hash: &str) -> BuybackEvent {
         BuybackEvent {
             id: 0,
             timestamp: 1700000000,
@@ -425,11 +420,7 @@ mod tests {
     fn test_tracker_record_and_stats() {
         let tracker = BuybackTracker::in_memory();
 
-        let event = make_event(
-            10_000_000,
-            1_000_000_000_000,
-            "dao_abc123",
-        );
+        let event = make_event(10_000_000, 1_000_000_000_000, "dao_abc123");
 
         let id = tracker.record_buyback(event).unwrap();
         assert_eq!(id, 1);
@@ -596,12 +587,10 @@ mod tests {
             id: "normal_tx".to_string(),
             version: 1,
             inputs: vec![],
-            outputs: vec![
-                TxOutput {
-                    amount: 1_000_000,
-                    address: "zion1user".to_string(),
-                },
-            ],
+            outputs: vec![TxOutput {
+                amount: 1_000_000,
+                address: "zion1user".to_string(),
+            }],
             fee: 1_000,
             timestamp: 100,
         };

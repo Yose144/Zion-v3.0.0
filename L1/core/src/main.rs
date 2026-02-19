@@ -1,8 +1,8 @@
 use clap::Parser;
-use zion_core::rpc;
-use zion_core::p2p;
-use zion_core::state::Inner as NodeState;
 use zion_core::network::{self, NetworkType};
+use zion_core::p2p;
+use zion_core::rpc;
+use zion_core::state::Inner as NodeState;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -54,7 +54,7 @@ async fn main() {
             }
         }
     }
-    
+
     // Parse and set network type
     let net_type = match std::env::var("ZION_NETWORK") {
         Ok(v) if !v.trim().is_empty() => NetworkType::from_str(&v).unwrap_or_else(|e| {
@@ -76,7 +76,7 @@ async fn main() {
 
     // Initialize State
     let state = NodeState::new(&args.data_dir);
-    
+
     // Parse Initial Peers
     let mut initial_peers = match args.peers {
         Some(s) => s.split(',').map(|s| s.trim().to_string()).collect(),
@@ -92,8 +92,8 @@ async fn main() {
     // Start P2P
     let state_p2p = state.clone();
     let p2p_port = args.p2p_port;
-    tokio::spawn(async move { 
-        if let Err(e) = p2p::start(state_p2p, p2p_port, initial_peers).await { 
+    tokio::spawn(async move {
+        if let Err(e) = p2p::start(state_p2p, p2p_port, initial_peers).await {
             eprintln!("P2P Error: {}", e);
         }
     });

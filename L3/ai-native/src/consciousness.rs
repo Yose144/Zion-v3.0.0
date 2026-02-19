@@ -49,11 +49,21 @@ impl ConsciousnessLevel {
     }
 
     /// Whether this level can perform a given action.
-    pub fn can_transact(self) -> bool { self >= Self::Aware }
-    pub fn can_compute(self) -> bool { self >= Self::Sentient }
-    pub fn can_bridge(self) -> bool { self >= Self::Transcendent }
-    pub fn can_govern(self) -> bool { self >= Self::Omniscient }
-    pub fn can_spawn(self) -> bool { self >= Self::Cosmic }
+    pub fn can_transact(self) -> bool {
+        self >= Self::Aware
+    }
+    pub fn can_compute(self) -> bool {
+        self >= Self::Sentient
+    }
+    pub fn can_bridge(self) -> bool {
+        self >= Self::Transcendent
+    }
+    pub fn can_govern(self) -> bool {
+        self >= Self::Omniscient
+    }
+    pub fn can_spawn(self) -> bool {
+        self >= Self::Cosmic
+    }
 }
 
 impl std::fmt::Display for ConsciousnessLevel {
@@ -81,15 +91,23 @@ mod tests {
 
     #[test]
     fn test_from_u8() {
-        assert_eq!(ConsciousnessLevel::from_u8(0), Some(ConsciousnessLevel::Dormant));
-        assert_eq!(ConsciousnessLevel::from_u8(5), Some(ConsciousnessLevel::Cosmic));
+        assert_eq!(
+            ConsciousnessLevel::from_u8(0),
+            Some(ConsciousnessLevel::Dormant)
+        );
+        assert_eq!(
+            ConsciousnessLevel::from_u8(5),
+            Some(ConsciousnessLevel::Cosmic)
+        );
         assert_eq!(ConsciousnessLevel::from_u8(6), None);
     }
 
     #[test]
     fn test_xp_requirements() {
         assert_eq!(ConsciousnessLevel::Dormant.xp_required(), 0);
-        assert!(ConsciousnessLevel::Cosmic.xp_required() > ConsciousnessLevel::Omniscient.xp_required());
+        assert!(
+            ConsciousnessLevel::Cosmic.xp_required() > ConsciousnessLevel::Omniscient.xp_required()
+        );
     }
 
     #[test]

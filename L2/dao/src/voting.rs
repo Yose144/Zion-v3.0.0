@@ -42,6 +42,12 @@ pub struct VotingEngine {
     votes: HashMap<u64, HashMap<String, Vote>>,
 }
 
+impl Default for VotingEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VotingEngine {
     pub fn new() -> Self {
         Self {
@@ -143,13 +149,15 @@ mod tests {
         let mut engine = VotingEngine::new();
         let mut proposal = test_proposal();
 
-        let vote = engine.cast_vote(
-            &mut proposal,
-            "zion1voter1".to_string(),
-            VoteChoice::Yes,
-            1_000_000_000_000, // 1M ZION
-            None,
-        ).unwrap();
+        let vote = engine
+            .cast_vote(
+                &mut proposal,
+                "zion1voter1".to_string(),
+                VoteChoice::Yes,
+                1_000_000_000_000, // 1M ZION
+                None,
+            )
+            .unwrap();
 
         assert_eq!(vote.weight, 1_000_000_000_000);
         assert_eq!(vote.choice, VoteChoice::Yes);
@@ -162,13 +170,15 @@ mod tests {
         let mut engine = VotingEngine::new();
         let mut proposal = test_proposal();
 
-        engine.cast_vote(
-            &mut proposal,
-            "zion1voter1".to_string(),
-            VoteChoice::Yes,
-            1_000_000_000_000,
-            None,
-        ).unwrap();
+        engine
+            .cast_vote(
+                &mut proposal,
+                "zion1voter1".to_string(),
+                VoteChoice::Yes,
+                1_000_000_000_000,
+                None,
+            )
+            .unwrap();
 
         let result = engine.cast_vote(
             &mut proposal,
@@ -189,13 +199,15 @@ mod tests {
 
         assert!(!engine.has_voted(1, "zion1voter1"));
 
-        engine.cast_vote(
-            &mut proposal,
-            "zion1voter1".to_string(),
-            VoteChoice::Yes,
-            1_000_000,
-            None,
-        ).unwrap();
+        engine
+            .cast_vote(
+                &mut proposal,
+                "zion1voter1".to_string(),
+                VoteChoice::Yes,
+                1_000_000,
+                None,
+            )
+            .unwrap();
 
         assert!(engine.has_voted(1, "zion1voter1"));
         assert!(!engine.has_voted(1, "zion1voter2"));

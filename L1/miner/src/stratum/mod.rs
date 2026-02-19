@@ -1,15 +1,21 @@
-mod messages;
 pub mod ethstratum;
+mod messages;
 
 pub use messages::Job;
 
 use anyhow::{anyhow, Result};
 use log::debug;
 use std::collections::HashMap;
-use std::sync::{Arc, atomic::{AtomicU64, Ordering}};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpStream, tcp::{OwnedReadHalf, OwnedWriteHalf}};
-use tokio::sync::{Mutex, oneshot, watch};
+use tokio::net::{
+    tcp::{OwnedReadHalf, OwnedWriteHalf},
+    TcpStream,
+};
+use tokio::sync::{oneshot, watch, Mutex};
 use tokio::time::{timeout, Duration};
 
 use self::messages::{StratumRequest, StratumResponse};
@@ -110,7 +116,9 @@ impl StratumClient {
         let default_algo = self.algorithm.clone();
         let connected_flag = self.connected.clone();
         tokio::spawn(async move {
-            if let Err(e) = Self::read_loop(read_half, session_id, job_tx, pending, default_algo).await {
+            if let Err(e) =
+                Self::read_loop(read_half, session_id, job_tx, pending, default_algo).await
+            {
                 debug!("Stratum read loop ended: {}", e);
             }
             connected_flag.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -123,10 +131,15 @@ impl StratumClient {
         // aggressively — it extends the ban window. Let connect_with_retry back off.
         if let Err(e) = self.login().await {
             let emsg = e.to_string();
-            if emsg.contains("temporarily suspended") || emsg.contains("New connections from this IP") {
+            if emsg.contains("temporarily suspended")
+                || emsg.contains("New connections from this IP")
+            {
                 return Err(e);
             }
-            debug!("XMRig login failed ({}). Falling back to Stratum subscribe/authorize", e);
+            debug!(
+                "XMRig login failed ({}). Falling back to Stratum subscribe/authorize",
+                e
+            );
             self.subscribe_and_authorize().await?;
         }
 
@@ -135,7 +148,8 @@ impl StratumClient {
         while attempts < 20 {
             if self.session_id.lock().await.is_some() {
                 debug!("Logged in as: {}", self.worker_name);
-                self.connected.store(true, std::sync::atomic::Ordering::Relaxed);
+                self.connected
+                    .store(true, std::sync::atomic::Ordering::Relaxed);
                 self.start_keepalive_loop();
                 return Ok(());
             }
@@ -160,7 +174,11 @@ impl StratumClient {
                 Ok(()) => return Ok(()),
                 Err(e) => {
                     if attempt >= max_attempts {
-                        return Err(anyhow!("Failed to connect after {} attempts: {}", max_attempts, e));
+                        return Err(anyhow!(
+                            "Failed to connect after {} attempts: {}",
+                            max_attempts,
+                            e
+                        ));
                     }
                     // Some external pools (e.g. MoneroOcean) will temporarily suspend
                     // new connections from an IP if we reconnect too aggressively.
@@ -173,7 +191,10 @@ impl StratumClient {
                     } else {
                         std::cmp::min(2u64.pow(attempt), 30)
                     };
-                    debug!("Connection attempt {}/{} failed: {} — retrying in {}s", attempt, max_attempts, e, delay);
+                    debug!(
+                        "Connection attempt {}/{} failed: {} — retrying in {}s",
+                        attempt, max_attempts, e, delay
+                    );
                     tokio::time::sleep(Duration::from_secs(delay)).await;
                 }
             }
@@ -182,7 +203,8 @@ impl StratumClient {
 
     /// Reconnect after connection loss
     pub async fn reconnect(&self) -> Result<()> {
-        self.connected.store(false, std::sync::atomic::Ordering::Relaxed);
+        self.connected
+            .store(false, std::sync::atomic::Ordering::Relaxed);
         debug!("Reconnecting to pool {}...", self.pool_url);
         // Clear stale state
         *self.writer.lock().await = None;
@@ -232,7 +254,10 @@ impl StratumClient {
                 if arr.len() >= 2 {
                     let extranonce1 = arr.get(1).and_then(|v| v.as_str()).unwrap_or("");
                     let extranonce2_size = arr.get(2).and_then(|v| v.as_u64()).unwrap_or(4);
-                    debug!("📡 Extranonce1: {}, Extranonce2 size: {}", extranonce1, extranonce2_size);
+                    debug!(
+                        "📡 Extranonce1: {}, Extranonce2 size: {}",
+                        extranonce1, extranonce2_size
+                    );
                 }
             }
         }
@@ -251,12 +276,21 @@ impl StratumClient {
         // Validate authorize response: result should be true
         let authorized = match &auth_resp.result {
             Some(v) if v.as_bool() == Some(true) => true,
-            Some(v) if v.as_str().map(|s| s.eq_ignore_ascii_case("ok")).unwrap_or(false) => true,
+            Some(v)
+                if v.as_str()
+                    .map(|s| s.eq_ignore_ascii_case("ok"))
+                    .unwrap_or(false) =>
+            {
+                true
+            }
             _ => false,
         };
 
         if !authorized {
-            debug!("Pool rejected authorization (result={:?})", auth_resp.result);
+            debug!(
+                "Pool rejected authorization (result={:?})",
+                auth_resp.result
+            );
             // Continue anyway — some pools don't return true but still work
         } else {
             debug!("mining.authorize accepted (worker={})", username);
@@ -280,12 +314,15 @@ impl StratumClient {
                     return true;
                 }
             }
-        }).await;
+        })
+        .await;
 
         match wait_result {
             Ok(true) => debug!("First mining job received — ready to mine"),
             Ok(false) => debug!("Job channel closed while waiting for first job"),
-            Err(_) => debug!("No mining.notify received within 15s — pool may not be sending jobs yet"),
+            Err(_) => {
+                debug!("No mining.notify received within 15s — pool may not be sending jobs yet")
+            }
         }
 
         Ok(())
@@ -314,7 +351,7 @@ impl StratumClient {
                     Err(_) => continue,
                 };
 
-                    if let Some(stream) = writer.lock().await.as_mut() {
+                if let Some(stream) = writer.lock().await.as_mut() {
                     let _ = stream.write_all(json.as_bytes()).await;
                     let _ = stream.write_all(b"\n").await;
                     let _ = stream.flush().await;
@@ -363,7 +400,10 @@ impl StratumClient {
         let id = self.next_request_id();
         let protocol = *self.protocol.lock().await;
         let submit_request = if protocol == ClientProtocol::Xmrig {
-            let session_id = self.session_id.lock().await
+            let session_id = self
+                .session_id
+                .lock()
+                .await
                 .as_ref()
                 .ok_or_else(|| anyhow!("No active session"))?
                 .clone();
@@ -374,7 +414,7 @@ impl StratumClient {
             let nonce_hex = if self.algorithm.eq_ignore_ascii_case("randomx")
                 || self.algorithm.eq_ignore_ascii_case("rx/0")
             {
-                hex::encode((nonce as u32).to_le_bytes())
+                hex::encode(nonce.to_le_bytes())
             } else {
                 format!("{:08x}", nonce)
             };
@@ -408,19 +448,22 @@ impl StratumClient {
         let accepted = match response.result.as_ref() {
             Some(v) if v.is_boolean() => v.as_bool().unwrap_or(false),
             Some(v) if v.is_string() => {
-                matches!(v.as_str().unwrap_or("").to_ascii_uppercase().as_str(), "OK" | "ACCEPTED")
+                matches!(
+                    v.as_str().unwrap_or("").to_ascii_uppercase().as_str(),
+                    "OK" | "ACCEPTED"
+                )
             }
             Some(v) if v.is_object() => {
-                let status = v
-                    .get("status")
-                    .and_then(|s| s.as_str())
-                    .unwrap_or("");
+                let status = v.get("status").and_then(|s| s.as_str()).unwrap_or("");
                 matches!(status.to_ascii_uppercase().as_str(), "OK" | "ACCEPTED")
             }
             Some(v) => {
                 // If we see a weird shape here, surface it at info level so we can debug without
                 // relying on debug logs being enabled in the build.
-                debug!("Unexpected submit result shape (treating as rejected): {:?}", v);
+                debug!(
+                    "Unexpected submit result shape (treating as rejected): {:?}",
+                    v
+                );
                 false
             }
             None => false,
@@ -497,17 +540,31 @@ impl StratumClient {
                                     .and_then(|v| v.as_str())
                                     .map(|s| s.to_string())
                                     .unwrap_or_else(|| default_algo.clone());
-                                let seed_hash = arr
-                                    .get(5)
+                                let seed_hash =
+                                    arr.get(5).and_then(|v| v.as_str()).map(|s| s.to_string());
+                                let job_id = arr
+                                    .first()
                                     .and_then(|v| v.as_str())
-                                    .map(|s| s.to_string());
-                                let job_id = arr.get(0).and_then(|v| v.as_str()).unwrap_or("").to_string();
-                                debug!("mining.notify: job={}, algo={}, height={}", 
-                                    job_id, algo, arr.get(3).and_then(|v| v.as_u64()).unwrap_or(0));
+                                    .unwrap_or("")
+                                    .to_string();
+                                debug!(
+                                    "mining.notify: job={}, algo={}, height={}",
+                                    job_id,
+                                    algo,
+                                    arr.get(3).and_then(|v| v.as_u64()).unwrap_or(0)
+                                );
                                 let job = Job {
                                     job_id: job_id.clone(),
-                                    blob: arr.get(1).and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                                    target: arr.get(2).and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                    blob: arr
+                                        .get(1)
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("")
+                                        .to_string(),
+                                    target: arr
+                                        .get(2)
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("")
+                                        .to_string(),
                                     height: arr.get(3).and_then(|v| v.as_u64()).unwrap_or(0),
                                     seed_hash,
                                     algo: Some(algo),
@@ -541,7 +598,10 @@ impl StratumClient {
                                 } else if revenue_lock_start.is_none() {
                                     // Starting a new Revenue (ext-*) job → arm the lock timer
                                     revenue_lock_start = Some(std::time::Instant::now());
-                                    log::info!("🔒 Revenue lock armed for ext-* job: {}", job.job_id);
+                                    log::info!(
+                                        "🔒 Revenue lock armed for ext-* job: {}",
+                                        job.job_id
+                                    );
                                 }
 
                                 let _ = job_tx.send(Some(job));
@@ -551,8 +611,11 @@ impl StratumClient {
                 } else if method == "mining.set_difficulty" {
                     if let Some(params) = &parsed.params {
                         if let Some(arr) = params.as_array() {
-                            if let Some(diff) = arr.get(0).and_then(|v| v.as_u64()) {
-                                debug!("Pool difficulty updated: {} → target will apply on next job", diff);
+                            if let Some(diff) = arr.first().and_then(|v| v.as_u64()) {
+                                debug!(
+                                    "Pool difficulty updated: {} → target will apply on next job",
+                                    diff
+                                );
                                 // Convert difficulty to 32-byte target and update current job.
                                 // target = 0xFFFFFFFF / difficulty (stored as 8-hex-char BE).
                                 let target_u32 = if diff > 0 {
@@ -591,7 +654,9 @@ impl StratumClient {
                                 .unwrap_or_else(|| default_algo.clone());
 
                             // Normalize CryptoNote algo names
-                            if algo == "rx/0" { algo = "randomx".to_string(); }
+                            if algo == "rx/0" {
+                                algo = "randomx".to_string();
+                            }
 
                             // Append algo suffix to job_id if missing (same logic as login response handler)
                             // BUT skip ext-* jobs — they already have a well-formed id from StreamScheduler
@@ -608,12 +673,26 @@ impl StratumClient {
 
                             let job = Job {
                                 job_id: job_id.clone(),
-                                blob: obj.get("blob").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                                target: obj.get("target").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                blob: obj
+                                    .get("blob")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string(),
+                                target: obj
+                                    .get("target")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string(),
                                 height: obj.get("height").and_then(|v| v.as_u64()).unwrap_or(0),
-                                seed_hash: obj.get("seed_hash").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                seed_hash: obj
+                                    .get("seed_hash")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_string()),
                                 algo: Some(algo.clone()),
-                                coin: obj.get("coin").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                coin: obj
+                                    .get("coin")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_string()),
                                 cosmic_state0_endian: obj
                                     .get("cosmic_state0_endian")
                                     .and_then(|v| v.as_str())
@@ -635,15 +714,21 @@ impl StratumClient {
                                                 locked_elapsed, lock_secs, job.job_id, cur.job_id);
                                             continue;
                                         } else {
-                                            log::info!("🔓 Revenue lock expired ({}s) — switching to {}",
-                                                locked_elapsed, job.job_id);
+                                            log::info!(
+                                                "🔓 Revenue lock expired ({}s) — switching to {}",
+                                                locked_elapsed,
+                                                job.job_id
+                                            );
                                             revenue_lock_start = None;
                                         }
                                     }
                                 }
                             } else if revenue_lock_start.is_none() {
                                 revenue_lock_start = Some(std::time::Instant::now());
-                                log::info!("🔒 Revenue lock armed for ext-* XMRig job: {}", job.job_id);
+                                log::info!(
+                                    "🔒 Revenue lock armed for ext-* XMRig job: {}",
+                                    job.job_id
+                                );
                             }
 
                             let _ = job_tx.send(Some(job));
@@ -658,10 +743,8 @@ impl StratumClient {
                     if let Some(id_val) = obj.get("id") {
                         let session = if let Some(id_str) = id_val.as_str() {
                             Some(id_str.to_string())
-                        } else if let Some(id_num) = id_val.as_u64() {
-                            Some(id_num.to_string())
                         } else {
-                            None
+                            id_val.as_u64().map(|id_num| id_num.to_string())
                         };
 
                         if let Some(session) = session {
@@ -672,7 +755,10 @@ impl StratumClient {
                         debug!("📦 Received job object: {:?}", job_val);
                         match serde_json::from_value::<Job>(job_val.clone()) {
                             Ok(job) => {
-                                debug!("Job parsed: id={}, height={}, target={}", job.job_id, job.height, job.target);
+                                debug!(
+                                    "Job parsed: id={}, height={}, target={}",
+                                    job.job_id, job.height, job.target
+                                );
                                 let _ = job_tx.send(Some(job));
                             }
                             Err(e) => {
@@ -710,12 +796,26 @@ impl StratumClient {
 
                         let job = Job {
                             job_id,
-                            blob: obj.get("blob").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                            target: obj.get("target").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                            blob: obj
+                                .get("blob")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string(),
+                            target: obj
+                                .get("target")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string(),
                             height: obj.get("height").and_then(|v| v.as_u64()).unwrap_or(0),
-                            seed_hash: obj.get("seed_hash").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                            seed_hash: obj
+                                .get("seed_hash")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
                             algo: Some(algo.clone()),
-                            coin: obj.get("coin").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                            coin: obj
+                                .get("coin")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
                             cosmic_state0_endian: obj
                                 .get("cosmic_state0_endian")
                                 .and_then(|v| v.as_str())
@@ -745,7 +845,10 @@ impl StratumClient {
                             }
                         } else if revenue_lock_start.is_none() {
                             revenue_lock_start = Some(std::time::Instant::now());
-                            log::info!("🔒 Revenue lock armed via getjob ext-* response: {}", job.job_id);
+                            log::info!(
+                                "🔒 Revenue lock armed via getjob ext-* response: {}",
+                                job.job_id
+                            );
                         }
 
                         let _ = job_tx.send(Some(job));
@@ -755,7 +858,10 @@ impl StratumClient {
 
             // Fulfill pending requests
             if let Some(id) = parsed.id {
-                debug!("📬 Response for id={}: result={:?}, error={:?}", id, parsed.result, parsed.error);
+                debug!(
+                    "📬 Response for id={}: result={:?}, error={:?}",
+                    id, parsed.result, parsed.error
+                );
                 if let Some(tx) = pending.lock().await.remove(&id) {
                     debug!("📬 Found pending request for id={}, fulfilling", id);
                     let _ = tx.send(parsed);

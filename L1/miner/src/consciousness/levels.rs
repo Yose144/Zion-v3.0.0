@@ -98,7 +98,7 @@ impl ConsciousnessProfile {
                 ConsciousnessLevel::Cosmic => 10000,
                 ConsciousnessLevel::OnTheStar => 100000,
             };
-            
+
             let progress = (self.xp - current_level_start) as f64;
             let total = (next_xp - current_level_start) as f64;
             Some((progress / total) * 100.0)
@@ -115,10 +115,22 @@ mod tests {
     #[test]
     fn test_consciousness_levels() {
         assert_eq!(ConsciousnessLevel::from_xp(0), ConsciousnessLevel::Physical);
-        assert_eq!(ConsciousnessLevel::from_xp(500), ConsciousnessLevel::Physical);
-        assert_eq!(ConsciousnessLevel::from_xp(1000), ConsciousnessLevel::Mental);
-        assert_eq!(ConsciousnessLevel::from_xp(10000), ConsciousnessLevel::Cosmic);
-        assert_eq!(ConsciousnessLevel::from_xp(100000), ConsciousnessLevel::OnTheStar);
+        assert_eq!(
+            ConsciousnessLevel::from_xp(500),
+            ConsciousnessLevel::Physical
+        );
+        assert_eq!(
+            ConsciousnessLevel::from_xp(1000),
+            ConsciousnessLevel::Mental
+        );
+        assert_eq!(
+            ConsciousnessLevel::from_xp(10000),
+            ConsciousnessLevel::Cosmic
+        );
+        assert_eq!(
+            ConsciousnessLevel::from_xp(100000),
+            ConsciousnessLevel::OnTheStar
+        );
     }
 
     #[test]
@@ -132,14 +144,14 @@ mod tests {
     #[test]
     fn test_xp_progression() {
         let mut profile = ConsciousnessProfile::new("test_miner".to_string());
-        
+
         assert_eq!(profile.level, ConsciousnessLevel::Physical);
-        
+
         // Submit 100 shares (1000 XP)
         for _ in 0..100 {
             profile.share_submitted();
         }
-        
+
         assert_eq!(profile.level, ConsciousnessLevel::Mental);
         assert_eq!(profile.xp, 1000);
     }
@@ -148,7 +160,7 @@ mod tests {
     fn test_progress_calculation() {
         let mut profile = ConsciousnessProfile::new("test_miner".to_string());
         profile.add_xp(500); // 50% to Mental level
-        
+
         let progress = profile.progress_to_next_level().unwrap();
         assert!((progress - 50.0).abs() < 0.1);
     }

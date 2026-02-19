@@ -6,9 +6,7 @@
 use super::{ExternalChain, MultiChainConfig};
 use crate::whattomine::WhatToMineClient;
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::RwLock;
 
 /// Allocation strategy
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -78,7 +76,7 @@ impl WorkDispatcher {
 
         // Fetch profits from WhatToMine
         let mut profits: HashMap<ExternalChain, f64> = HashMap::new();
-        
+
         for chain in &self.config.enabled_chains {
             match self.whattomine.get_coin_profit(chain.algorithm()).await {
                 Ok(profit) => {
@@ -96,18 +94,10 @@ impl WorkDispatcher {
 
         // Calculate allocations based on strategy
         let new_allocations = match self.strategy {
-            AllocationStrategy::MostProfitable => {
-                self.calculate_most_profitable(&profits)
-            }
-            AllocationStrategy::Proportional => {
-                self.calculate_proportional(&profits)
-            }
-            AllocationStrategy::Equal => {
-                self.calculate_equal()
-            }
-            AllocationStrategy::Manual => {
-                self.calculate_manual()
-            }
+            AllocationStrategy::MostProfitable => self.calculate_most_profitable(&profits),
+            AllocationStrategy::Proportional => self.calculate_proportional(&profits),
+            AllocationStrategy::Equal => self.calculate_equal(),
+            AllocationStrategy::Manual => self.calculate_manual(),
         };
 
         // Check if switch is needed (threshold check)
@@ -116,10 +106,11 @@ impl WorkDispatcher {
         if should_switch {
             self.allocations = new_allocations;
             self.last_switch = Some(Instant::now());
-            
+
             log::info!(
                 "ch3_allocation_updated allocations={:?}",
-                self.allocations.iter()
+                self.allocations
+                    .iter()
                     .map(|(c, a)| format!("{:?}:{:.1}%", c, a.percentage))
                     .collect::<Vec<_>>()
             );
@@ -134,21 +125,25 @@ impl WorkDispatcher {
         profits: &HashMap<ExternalChain, f64>,
     ) -> HashMap<ExternalChain, ChainAllocation> {
         let mut result = HashMap::new();
-        
-        if let Some((best_chain, &best_profit)) = profits.iter()
+
+        if let Some((best_chain, &_best_profit)) = profits
+            .iter()
             .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
         {
             for chain in &self.config.enabled_chains {
                 let percentage = if chain == best_chain { 100.0 } else { 0.0 };
-                result.insert(*chain, ChainAllocation {
-                    chain: *chain,
-                    percentage,
-                    profit_per_day: *profits.get(chain).unwrap_or(&0.0),
-                    last_update: Instant::now(),
-                });
+                result.insert(
+                    *chain,
+                    ChainAllocation {
+                        chain: *chain,
+                        percentage,
+                        profit_per_day: *profits.get(chain).unwrap_or(&0.0),
+                        last_update: Instant::now(),
+                    },
+                );
             }
         }
-        
+
         result
     }
 
@@ -158,7 +153,7 @@ impl WorkDispatcher {
         profits: &HashMap<ExternalChain, f64>,
     ) -> HashMap<ExternalChain, ChainAllocation> {
         let mut result = HashMap::new();
-        
+
         let total: f64 = profits.values().filter(|&&p| p > 0.0).sum();
         if total <= 0.0 {
             return self.calculate_equal();
@@ -171,15 +166,18 @@ impl WorkDispatcher {
             } else {
                 0.0
             };
-            
-            result.insert(*chain, ChainAllocation {
-                chain: *chain,
-                percentage,
-                profit_per_day: profit,
-                last_update: Instant::now(),
-            });
+
+            result.insert(
+                *chain,
+                ChainAllocation {
+                    chain: *chain,
+                    percentage,
+                    profit_per_day: profit,
+                    last_update: Instant::now(),
+                },
+            );
         }
-        
+
         result
     }
 
@@ -190,14 +188,17 @@ impl WorkDispatcher {
         let pct = 100.0 / count;
 
         for chain in &self.config.enabled_chains {
-            result.insert(*chain, ChainAllocation {
-                chain: *chain,
-                percentage: pct,
-                profit_per_day: 0.0,
-                last_update: Instant::now(),
-            });
+            result.insert(
+                *chain,
+                ChainAllocation {
+                    chain: *chain,
+                    percentage: pct,
+                    profit_per_day: 0.0,
+                    last_update: Instant::now(),
+                },
+            );
         }
-        
+
         result
     }
 
@@ -207,14 +208,17 @@ impl WorkDispatcher {
 
         for chain in &self.config.enabled_chains {
             let percentage = *self.config.allocations.get(chain).unwrap_or(&0.0);
-            result.insert(*chain, ChainAllocation {
-                chain: *chain,
-                percentage,
-                profit_per_day: 0.0,
-                last_update: Instant::now(),
-            });
+            result.insert(
+                *chain,
+                ChainAllocation {
+                    chain: *chain,
+                    percentage,
+                    profit_per_day: 0.0,
+                    last_update: Instant::now(),
+                },
+            );
         }
-        
+
         result
     }
 
@@ -225,11 +229,14 @@ impl WorkDispatcher {
         }
 
         // Find current best and new best
-        let current_best = self.allocations.values()
+        let current_best = self
+            .allocations
+            .values()
             .max_by(|a, b| a.percentage.partial_cmp(&b.percentage).unwrap())
             .map(|a| (a.chain, a.profit_per_day));
 
-        let new_best = new_allocs.values()
+        let new_best = new_allocs
+            .values()
             .max_by(|a, b| a.profit_per_day.partial_cmp(&b.profit_per_day).unwrap())
             .map(|a| (a.chain, a.profit_per_day));
 
@@ -238,11 +245,11 @@ impl WorkDispatcher {
                 if curr_chain == new_chain {
                     return false; // No change needed
                 }
-                
+
                 if curr_profit <= 0.0 {
                     return true; // Switch if current has no profit
                 }
-                
+
                 // Check threshold
                 let improvement = (new_profit - curr_profit) / curr_profit * 100.0;
                 improvement >= self.config.profit_switch_threshold as f64

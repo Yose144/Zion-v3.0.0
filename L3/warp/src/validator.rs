@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use ed25519_dalek::{VerifyingKey, Signature, Verifier};
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::WarpMessage;
@@ -59,11 +59,12 @@ impl WarpValidatorSet {
         let mut valid_count = 0;
 
         for (validator_id, sig_bytes) in signatures {
-            let validator = self.validators.get(validator_id).ok_or_else(|| {
-                WarpError::InvalidSignature {
-                    validator: validator_id.clone(),
-                }
-            })?;
+            let validator =
+                self.validators
+                    .get(validator_id)
+                    .ok_or_else(|| WarpError::InvalidSignature {
+                        validator: validator_id.clone(),
+                    })?;
 
             if !validator.active {
                 continue;

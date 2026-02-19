@@ -2,11 +2,10 @@
 //!
 //! Implements Ethash algorithm with DAG generation and mining.
 
-use super::{AlgorithmWorker, FoundShare};
-use crate::multichain::{ExternalChain, MiningJob, ChainStats};
+use super::AlgorithmWorker;
+use crate::multichain::{ChainStats, ExternalChain, MiningJob};
 use anyhow::Result;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::Arc;
 
 /// DAG cache
 struct DagCache {
@@ -47,17 +46,17 @@ impl EthashWorker {
     /// Generate DAG cache for epoch
     async fn generate_dag(&mut self, epoch: u64) -> Result<()> {
         log::info!("ch3_ethash_dag_generating epoch={}", epoch);
-        
+
         // Cache size calculation
         let cache_size = Self::get_cache_size(epoch);
         let dag_size = Self::get_dag_size(epoch);
 
         // Generate seed hash
         let seed = Self::get_seed_hash(epoch);
-        
+
         // Generate cache
         let cache = Self::make_cache(cache_size, &seed);
-        
+
         // Generate full DAG (GPU accelerated in production)
         let dag = Self::calc_dag(dag_size, &cache);
 
@@ -66,9 +65,11 @@ impl EthashWorker {
 
         log::info!(
             "ch3_ethash_dag_generated epoch={} cache_size={} dag_size={}",
-            epoch, cache_size, dag_size
+            epoch,
+            cache_size,
+            dag_size
         );
-        
+
         Ok(())
     }
 
@@ -93,7 +94,7 @@ impl EthashWorker {
     }
 
     fn keccak256(data: &[u8]) -> [u8; 32] {
-        use sha3::{Keccak256, Digest};
+        use sha3::{Digest, Keccak256};
         let mut hasher = Keccak256::new();
         hasher.update(data);
         hasher.finalize().into()
@@ -103,14 +104,14 @@ impl EthashWorker {
         // Simplified cache generation
         let items = 64 * 1024; // 256KB for testing
         let mut cache = vec![0u32; items];
-        
+
         // Initialize from seed
         let mut hash = *seed;
         for i in 0..items {
             hash = Self::keccak256(&hash);
             cache[i] = u32::from_le_bytes([hash[0], hash[1], hash[2], hash[3]]);
         }
-        
+
         cache
     }
 
@@ -123,23 +124,23 @@ impl EthashWorker {
     /// Ethash hash computation
     fn ethash_hash(&self, header: &[u8], nonce: u64) -> Option<([u8; 32], [u8; 32])> {
         let dag = self.dag.as_ref()?;
-        
+
         // Combine header + nonce
         let mut input = Vec::with_capacity(header.len() + 8);
         input.extend_from_slice(header);
         input.extend_from_slice(&nonce.to_le_bytes());
-        
+
         // Initial hash
         let seed = Self::keccak256(&input);
-        
+
         // Mix computation (simplified)
         let mut mix = [0u32; 32];
         for i in 0..32 {
             mix[i] = u32::from_le_bytes([
-                seed[i % 32], 
-                seed[(i+1) % 32], 
-                seed[(i+2) % 32], 
-                seed[(i+3) % 32]
+                seed[i % 32],
+                seed[(i + 1) % 32],
+                seed[(i + 2) % 32],
+                seed[(i + 3) % 32],
             ]);
         }
 
@@ -154,8 +155,8 @@ impl EthashWorker {
         // Compress mix
         let mut mix_hash = [0u8; 32];
         for i in 0..8 {
-            let value = mix[i*4] ^ mix[i*4+1] ^ mix[i*4+2] ^ mix[i*4+3];
-            mix_hash[i*4..i*4+4].copy_from_slice(&value.to_le_bytes());
+            let value = mix[i * 4] ^ mix[i * 4 + 1] ^ mix[i * 4 + 2] ^ mix[i * 4 + 3];
+            mix_hash[i * 4..i * 4 + 4].copy_from_slice(&value.to_le_bytes());
         }
 
         // Final hash
@@ -196,17 +197,19 @@ impl AlgorithmWorker for EthashWorker {
         }
 
         self.running.store(true, Ordering::Relaxed);
-        
+
         let epoch = Self::height_to_epoch(job.height);
-        
+
         log::debug!(
             "ch3_ethash_mining job_id={} epoch={} allocation={:.1}%",
-            job.job_id, epoch, allocation
+            job.job_id,
+            epoch,
+            allocation
         );
 
         // Mining loop would go here
         // GPU kernel: parallel nonce search
-        
+
         Ok(())
     }
 

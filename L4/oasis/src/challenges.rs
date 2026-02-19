@@ -91,7 +91,7 @@ pub struct MeditationSession {
 pub struct ChallengeResult {
     pub challenge_id: String,
     pub player_address: String,
-    pub score: f64,     // 0.0 - 1.0
+    pub score: f64, // 0.0 - 1.0
     pub xp_earned: u64,
     pub zion_earned: u64,
     pub completed_at: u64,
@@ -101,6 +101,12 @@ pub struct ChallengeResult {
 /// Challenge engine — manages available challenges
 pub struct ChallengeEngine {
     challenges: Vec<Challenge>,
+}
+
+impl Default for ChallengeEngine {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ChallengeEngine {
@@ -132,7 +138,7 @@ impl ChallengeEngine {
     pub fn calculate_reward(&self, challenge: &Challenge, score: f64) -> u64 {
         let base = challenge.base_xp as f64;
         let difficulty_mult = challenge.difficulty.xp_multiplier();
-        let score_mult = score.max(0.0).min(1.0);
+        let score_mult = score.clamp(0.0, 1.0);
 
         (base * difficulty_mult * score_mult) as u64
     }
@@ -191,7 +197,7 @@ impl ChallengeEngine {
             difficulty: Difficulty::Advanced,
             base_xp: 200,
             zion_reward: 50,
-            time_limit: 1800, // 30 minutes
+            time_limit: 1800,    // 30 minutes
             min_level_xp: 5_000, // Mental level
             is_daily: false,
             max_completions: 0,

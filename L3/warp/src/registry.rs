@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::error::{WarpError, WarpResult};
 use crate::types::ChainId;
+use std::collections::HashMap;
 
 /// Registry of supported chains. Manages enabling/disabling chains.
 pub struct ChainRegistry {
@@ -50,9 +50,10 @@ impl ChainRegistry {
     }
 
     pub fn get(&self, name: &str) -> WarpResult<&ChainId> {
-        let entry = self.chains.get(name).ok_or_else(|| {
-            WarpError::UnsupportedChain(name.to_string())
-        })?;
+        let entry = self
+            .chains
+            .get(name)
+            .ok_or_else(|| WarpError::UnsupportedChain(name.to_string()))?;
         if !entry.enabled {
             return Err(WarpError::ChainDisabled {
                 chain: name.to_string(),
@@ -62,26 +63,25 @@ impl ChainRegistry {
     }
 
     pub fn disable(&mut self, name: &str) -> WarpResult<()> {
-        let entry = self.chains.get_mut(name).ok_or_else(|| {
-            WarpError::UnsupportedChain(name.to_string())
-        })?;
+        let entry = self
+            .chains
+            .get_mut(name)
+            .ok_or_else(|| WarpError::UnsupportedChain(name.to_string()))?;
         entry.enabled = false;
         Ok(())
     }
 
     pub fn enable(&mut self, name: &str) -> WarpResult<()> {
-        let entry = self.chains.get_mut(name).ok_or_else(|| {
-            WarpError::UnsupportedChain(name.to_string())
-        })?;
+        let entry = self
+            .chains
+            .get_mut(name)
+            .ok_or_else(|| WarpError::UnsupportedChain(name.to_string()))?;
         entry.enabled = true;
         Ok(())
     }
 
     pub fn is_enabled(&self, name: &str) -> bool {
-        self.chains
-            .get(name)
-            .map(|e| e.enabled)
-            .unwrap_or(false)
+        self.chains.get(name).map(|e| e.enabled).unwrap_or(false)
     }
 
     pub fn list_enabled(&self) -> Vec<&ChainId> {

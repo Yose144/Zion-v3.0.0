@@ -1,7 +1,7 @@
+use crate::blockchain::fee;
+use crate::tx::Transaction;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
-use crate::tx::Transaction;
-use crate::blockchain::fee;
 
 /// Maximum number of transactions in the mempool.
 /// Beyond this limit, lowest-fee-rate transactions are evicted.
@@ -31,8 +31,15 @@ impl std::fmt::Display for MempoolError {
         match self {
             MempoolError::Duplicate => write!(f, "Transaction already in mempool"),
             MempoolError::FeeTooLow(msg) => write!(f, "Fee too low: {}", msg),
-            MempoolError::TxTooLarge(size) => write!(f, "Transaction too large: {} bytes (max {})", size, fee::MAX_TX_SIZE_BYTES),
-            MempoolError::DoubleSpend(outpoint) => write!(f, "Double-spend detected: input {} already spent", outpoint),
+            MempoolError::TxTooLarge(size) => write!(
+                f,
+                "Transaction too large: {} bytes (max {})",
+                size,
+                fee::MAX_TX_SIZE_BYTES
+            ),
+            MempoolError::DoubleSpend(outpoint) => {
+                write!(f, "Double-spend detected: input {} already spent", outpoint)
+            }
             MempoolError::InvalidOutputAmount(msg) => write!(f, "Invalid output amount: {}", msg),
         }
     }
@@ -78,7 +85,9 @@ impl Mempool {
         }
 
         // 3. Output amount check
-        let outputs: Vec<(u64, &str)> = tx.outputs.iter()
+        let outputs: Vec<(u64, &str)> = tx
+            .outputs
+            .iter()
             .map(|o| (o.amount, o.address.as_str()))
             .collect();
         if let Err(msg) = fee::validate_output_amounts(&outputs) {
@@ -116,7 +125,8 @@ impl Mempool {
             self.evict_to_limit(MAX_MEMPOOL_SIZE);
         } else {
             // AUDIT-FIX P1-15: Also evict if over byte size limit
-            let estimated_bytes: usize = pool.values()
+            let estimated_bytes: usize = pool
+                .values()
                 .map(|t| fee::estimate_tx_size(t.inputs.len(), t.outputs.len()))
                 .sum();
             if estimated_bytes > MAX_MEMPOOL_BYTES {
@@ -221,8 +231,8 @@ impl Mempool {
 
         for tx in transactions {
             // Skip coinbase transactions
-            let is_coinbase = tx.inputs.is_empty()
-                || tx.inputs.iter().all(|i| i.prev_tx_hash == zero_hash);
+            let is_coinbase =
+                tx.inputs.is_empty() || tx.inputs.iter().all(|i| i.prev_tx_hash == zero_hash);
             if is_coinbase {
                 continue;
             }
@@ -260,16 +270,22 @@ mod tests {
         Transaction {
             id: id.to_string(),
             version: 1,
-            inputs: inputs.iter().map(|(hash, idx)| TxInput {
-                prev_tx_hash: hash.to_string(),
-                output_index: *idx,
-                signature: "a".repeat(128),
-                public_key: "b".repeat(64),
-            }).collect(),
-            outputs: outputs.iter().map(|amt| TxOutput {
-                amount: *amt,
-                address: "zion1test".to_string(),
-            }).collect(),
+            inputs: inputs
+                .iter()
+                .map(|(hash, idx)| TxInput {
+                    prev_tx_hash: hash.to_string(),
+                    output_index: *idx,
+                    signature: "a".repeat(128),
+                    public_key: "b".repeat(64),
+                })
+                .collect(),
+            outputs: outputs
+                .iter()
+                .map(|amt| TxOutput {
+                    amount: *amt,
+                    address: "zion1test".to_string(),
+                })
+                .collect(),
             fee,
             timestamp: 100,
         }
@@ -288,14 +304,20 @@ mod tests {
         let pool = Mempool::new();
         let tx = make_tx("tx1", 5_000, vec![("aaa", 0)], vec![1_000_000]);
         assert!(pool.add_transaction_validated(tx.clone()).is_ok());
-        assert_eq!(pool.add_transaction_validated(tx), Err(MempoolError::Duplicate));
+        assert_eq!(
+            pool.add_transaction_validated(tx),
+            Err(MempoolError::Duplicate)
+        );
     }
 
     #[test]
     fn test_reject_fee_too_low() {
         let pool = Mempool::new();
         let tx = make_tx("tx1", 100, vec![("aaa", 0)], vec![1_000_000]); // fee=100 < 1000
-        assert!(matches!(pool.add_transaction_validated(tx), Err(MempoolError::FeeTooLow(_))));
+        assert!(matches!(
+            pool.add_transaction_validated(tx),
+            Err(MempoolError::FeeTooLow(_))
+        ));
     }
 
     #[test]
@@ -304,7 +326,10 @@ mod tests {
         let tx1 = make_tx("tx1", 5_000, vec![("utxo1", 0)], vec![1_000_000]);
         let tx2 = make_tx("tx2", 5_000, vec![("utxo1", 0)], vec![1_000_000]); // same input!
         assert!(pool.add_transaction_validated(tx1).is_ok());
-        assert!(matches!(pool.add_transaction_validated(tx2), Err(MempoolError::DoubleSpend(_))));
+        assert!(matches!(
+            pool.add_transaction_validated(tx2),
+            Err(MempoolError::DoubleSpend(_))
+        ));
     }
 
     #[test]
@@ -325,7 +350,10 @@ mod tests {
     fn test_reject_zero_output() {
         let pool = Mempool::new();
         let tx = make_tx("tx1", 5_000, vec![("aaa", 0)], vec![0]);
-        assert!(matches!(pool.add_transaction_validated(tx), Err(MempoolError::InvalidOutputAmount(_))));
+        assert!(matches!(
+            pool.add_transaction_validated(tx),
+            Err(MempoolError::InvalidOutputAmount(_))
+        ));
     }
 
     #[test]
@@ -361,4 +389,3 @@ mod tests {
         assert!(!pool.is_outpoint_spent("other", 2));
     }
 }
-

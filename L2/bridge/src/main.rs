@@ -12,19 +12,18 @@ use tokio::sync::mpsc;
 use tracing::{error, info};
 
 use zion_bridge::config::BridgeConfig;
-use zion_bridge::l1_watcher::L1Watcher;
-use zion_bridge::evm_watcher::EvmWatcher;
-use zion_bridge::relayer::Relayer;
 use zion_bridge::db::BridgeDb;
+use zion_bridge::evm_watcher::EvmWatcher;
+use zion_bridge::l1_watcher::L1Watcher;
 use zion_bridge::metrics::BridgeMetrics;
+use zion_bridge::relayer::Relayer;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize tracing
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
@@ -32,12 +31,11 @@ async fn main() -> Result<()> {
     info!("   L1 ↔ EVM cross-chain bridge");
 
     // Load config
-    let config_path = std::env::var("ZION_BRIDGE_CONFIG")
-        .unwrap_or_else(|_| {
-            std::env::args()
-                .nth(2)
-                .unwrap_or_else(|| "config/bridge.toml".into())
-        });
+    let config_path = std::env::var("ZION_BRIDGE_CONFIG").unwrap_or_else(|_| {
+        std::env::args()
+            .nth(2)
+            .unwrap_or_else(|| "config/bridge.toml".into())
+    });
 
     let config = BridgeConfig::load(&config_path)?;
     let config = Arc::new(config);

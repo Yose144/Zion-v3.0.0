@@ -142,7 +142,7 @@ pub struct ChainBridgeStats {
 
 #[cfg(test)]
 mod type_tests {
-    use crate::{BridgeStatus, BridgeDirection, L1LockEvent, EvmBurnEvent, BridgeStats};
+    use crate::{BridgeDirection, BridgeStats, BridgeStatus, EvmBurnEvent, L1LockEvent};
 
     #[test]
     fn test_bridge_status_serialization() {
@@ -263,7 +263,9 @@ pub mod conversion {
         if frac == 0 {
             format!("{}", whole)
         } else {
-            format!("{}.{:06}", whole, frac).trim_end_matches('0').to_string()
+            format!("{}.{:06}", whole, frac)
+                .trim_end_matches('0')
+                .to_string()
         }
     }
 
@@ -289,7 +291,10 @@ pub mod conversion {
         #[test]
         fn test_wzion_to_l1_conversion() {
             // 1e18 wei → 1_000_000 atomic (1 ZION)
-            assert_eq!(wzion_wei_to_l1_atomic("1000000000000000000").unwrap(), 1_000_000);
+            assert_eq!(
+                wzion_wei_to_l1_atomic("1000000000000000000").unwrap(),
+                1_000_000
+            );
 
             // 100 wZION = 100e18 wei → 100_000_000 atomic
             assert_eq!(

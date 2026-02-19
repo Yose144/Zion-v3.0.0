@@ -23,10 +23,13 @@
 
 use anyhow::Result;
 use log::info;
-use std::sync::{RwLock, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    RwLock,
+};
 
-use super::Algorithm;
 use super::native_algos;
+use super::Algorithm;
 use crate::stratum::Job;
 
 /// Stream assignment from pool (mirrors pool's MinerGroup)
@@ -44,22 +47,22 @@ pub enum StreamGroup {
 pub struct StreamState {
     /// Current algorithm being mined
     current_algo: RwLock<Algorithm>,
-    
+
     /// Current stream group assignment
     current_group: RwLock<StreamGroup>,
-    
+
     /// Whether an algorithm switch is pending (signals mining threads to reload)
     algo_switch_pending: AtomicBool,
-    
+
     /// The default/requested algorithm (what miner was started with)
     default_algo: Algorithm,
-    
+
     /// Current external coin name (e.g., "ERG", "ETC", "XMR")
     current_coin: RwLock<String>,
-    
+
     /// Number of algorithm switches performed
     switch_count: RwLock<u64>,
-    
+
     /// CPU-only mode: GPU algos are automatically replaced with RandomX
     cpu_only_mode: bool,
 }
@@ -76,7 +79,7 @@ impl StreamState {
             cpu_only_mode: false,
         }
     }
-    
+
     /// Create StreamState with CPU-only mode enabled.
     /// In this mode, GPU-only algorithms (ethash, kawpow, autolykos) are
     /// automatically replaced with RandomX (XMR) for CPU mining.
@@ -91,20 +94,24 @@ impl StreamState {
             cpu_only_mode: true,
         }
     }
-    
+
     /// Check if an algorithm requires GPU (can't run efficiently on CPU)
     pub(crate) fn is_gpu_only_algo(algo: Algorithm) -> bool {
-        matches!(algo, 
-            Algorithm::Ethash | Algorithm::KawPow | Algorithm::Autolykos |
-            Algorithm::KHeavyHash | Algorithm::ProgPow
+        matches!(
+            algo,
+            Algorithm::Ethash
+                | Algorithm::KawPow
+                | Algorithm::Autolykos
+                | Algorithm::KHeavyHash
+                | Algorithm::ProgPow
         )
     }
-    
+
     /// Process a new job from the pool and detect if algorithm change is needed.
     /// Returns true if the mining algorithm changed.
     pub fn process_job(&self, job: &Job) -> bool {
         let job_algo_str = job.algo.as_deref().unwrap_or("");
-        
+
         // Detect stream group from job_id prefix
         let is_external = job.job_id.starts_with("ext-");
         let new_group = if is_external {
@@ -112,7 +119,7 @@ impl StreamState {
         } else {
             StreamGroup::Zion
         };
-        
+
         // Parse the algorithm from job
         let mut new_algo = if let Some(parsed) = Algorithm::from_str(job_algo_str) {
             parsed
@@ -123,7 +130,7 @@ impl StreamState {
         } else {
             self.default_algo
         };
-        
+
         // ═══ CPU-Only Mode: Replace GPU-only algorithms with RandomX ═══
         // When no GPU is detected, Revenue stream jobs that require GPU
         // (ethash, kawpow, autolykos) are automatically redirected to
@@ -135,11 +142,11 @@ impl StreamState {
             );
             new_algo = Algorithm::RandomX;
         }
-        
+
         // Check if algorithm changed
         let current = *self.current_algo.read().unwrap();
         let algo_changed = current != new_algo;
-        
+
         if algo_changed {
             let coin = if is_external {
                 self.extract_coin_from_job_id(&job.job_id)
@@ -147,15 +154,16 @@ impl StreamState {
             } else {
                 "ZION".to_string()
             };
-            
+
             info!(
                 "🔄 Stream switch: {:?} → {:?} (coin: {} → {}, group: {:?})",
-                current, new_algo,
+                current,
+                new_algo,
                 self.current_coin.read().unwrap(),
                 coin,
                 new_group
             );
-            
+
             *self.current_algo.write().unwrap() = new_algo;
             *self.current_group.write().unwrap() = new_group;
             *self.current_coin.write().unwrap() = coin;
@@ -165,10 +173,10 @@ impl StreamState {
             // Update group even if algo didn't change
             *self.current_group.write().unwrap() = new_group;
         }
-        
+
         algo_changed
     }
-    
+
     /// Check and clear the pending algorithm switch flag.
     /// Mining threads should call this periodically.
     pub fn take_pending_switch(&self) -> Option<Algorithm> {
@@ -178,27 +186,27 @@ impl StreamState {
             None
         }
     }
-    
+
     /// Get the current mining algorithm
     pub fn current_algorithm(&self) -> Algorithm {
         *self.current_algo.read().unwrap()
     }
-    
+
     /// Get the current stream group
     pub fn current_group(&self) -> StreamGroup {
         self.current_group.read().unwrap().clone()
     }
-    
+
     /// Get the current coin being mined
     pub fn current_coin(&self) -> String {
         self.current_coin.read().unwrap().clone()
     }
-    
+
     /// Get switch count
     pub fn switch_count(&self) -> u64 {
         *self.switch_count.read().unwrap()
     }
-    
+
     /// Detect algorithm from external job_id (e.g., "ext-erg-12345" → Autolykos)
     fn detect_algo_from_job_id(&self, job_id: &str) -> Option<Algorithm> {
         let parts: Vec<&str> = job_id.splitn(3, '-').collect();
@@ -217,7 +225,7 @@ impl StreamState {
             None
         }
     }
-    
+
     /// Extract coin name from job_id
     fn extract_coin_from_job_id(&self, job_id: &str) -> Option<String> {
         let parts: Vec<&str> = job_id.splitn(3, '-').collect();

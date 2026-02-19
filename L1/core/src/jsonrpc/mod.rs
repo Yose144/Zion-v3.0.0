@@ -1,15 +1,19 @@
-use axum::{Json, extract::State as AxumState};
-use serde::{Deserialize, Serialize};
-use crate::state::State;
-use crate::blockchain::consensus;
-use crate::blockchain::reward;
 use crate::blockchain::block::{Algorithm as CoreAlgorithm, Block};
 use crate::blockchain::burn::{self, BuybackTracker};
+use crate::blockchain::consensus;
 use crate::blockchain::premine;
+use crate::blockchain::reward;
+use crate::state::State;
 use crate::tx::{Transaction, TxOutput};
+use axum::{extract::State as AxumState, Json};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
-pub struct Request { pub id: Option<serde_json::Value>, pub method: String, pub params: Option<serde_json::Value> }
+pub struct Request {
+    pub id: Option<serde_json::Value>,
+    pub method: String,
+    pub params: Option<serde_json::Value>,
+}
 
 #[derive(Serialize)]
 pub struct Response {
@@ -19,7 +23,10 @@ pub struct Response {
     pub error: Option<serde_json::Value>,
 }
 
-pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>) -> Json<Response> {
+pub async fn handle(
+    AxumState(state): AxumState<State>,
+    Json(req): Json<Request>,
+) -> Json<Response> {
     let res = match req.method.as_str() {
         "getBlockTemplate" | "get_block_template" | "getblocktemplate" => {
             let tip_h = state.height.load(std::sync::atomic::Ordering::Relaxed) as u64;
@@ -74,7 +81,7 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 })),
                 error: None,
             }
-        },
+        }
         "getMempoolInfo" => Response {
             jsonrpc: "2.0".to_string(),
             id: req.id,
@@ -87,7 +94,7 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 .as_ref()
                 .map(|v| {
                     if let Some(arr) = v.as_array() {
-                        let lim = arr.get(0).and_then(|x| x.as_u64()).unwrap_or(100) as usize;
+                        let lim = arr.first().and_then(|x| x.as_u64()).unwrap_or(100) as usize;
                         let off = arr.get(1).and_then(|x| x.as_u64()).unwrap_or(0) as usize;
                         (lim, off)
                     } else {
@@ -122,16 +129,15 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
             }
         }
         "getBalance" | "getbalance" => {
-            let address_opt: Option<String> = req
-                .params
-                .as_ref()
-                .and_then(|v| {
-                    if let Some(arr) = v.as_array() {
-                        arr.get(0).and_then(|x| x.as_str()).map(|s| s.to_string())
-                    } else {
-                        v.get("address").and_then(|x| x.as_str()).map(|s| s.to_string())
-                    }
-                });
+            let address_opt: Option<String> = req.params.as_ref().and_then(|v| {
+                if let Some(arr) = v.as_array() {
+                    arr.first().and_then(|x| x.as_str()).map(|s| s.to_string())
+                } else {
+                    v.get("address")
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string())
+                }
+            });
 
             match address_opt {
                 Some(addr) => match state.storage.get_balance_for_address(&addr) {
@@ -150,14 +156,18 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
                         result: None,
-                        error: Some(serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")})),
+                        error: Some(
+                            serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")}),
+                        ),
                     },
                 },
                 None => Response {
                     jsonrpc: "2.0".to_string(),
                     id: req.id,
                     result: None,
-                    error: Some(serde_json::json!({"code": -32602, "message": "Invalid params: missing address"})),
+                    error: Some(
+                        serde_json::json!({"code": -32602, "message": "Invalid params: missing address"}),
+                    ),
                 },
             }
         }
@@ -167,12 +177,15 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 .as_ref()
                 .map(|v| {
                     if let Some(arr) = v.as_array() {
-                        let addr = arr.get(0).and_then(|x| x.as_str()).map(|s| s.to_string());
+                        let addr = arr.first().and_then(|x| x.as_str()).map(|s| s.to_string());
                         let lim = arr.get(1).and_then(|x| x.as_u64()).unwrap_or(100) as usize;
                         let off = arr.get(2).and_then(|x| x.as_u64()).unwrap_or(0) as usize;
                         (addr, lim, off)
                     } else {
-                        let addr = v.get("address").and_then(|x| x.as_str()).map(|s| s.to_string());
+                        let addr = v
+                            .get("address")
+                            .and_then(|x| x.as_str())
+                            .map(|s| s.to_string());
                         let lim = v.get("limit").and_then(|x| x.as_u64()).unwrap_or(100) as usize;
                         let off = v.get("offset").and_then(|x| x.as_u64()).unwrap_or(0) as usize;
                         (addr, lim, off)
@@ -212,96 +225,112 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
                         result: None,
-                        error: Some(serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")})),
+                        error: Some(
+                            serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")}),
+                        ),
                     },
                 },
                 None => Response {
                     jsonrpc: "2.0".to_string(),
                     id: req.id,
                     result: None,
-                    error: Some(serde_json::json!({"code": -32602, "message": "Invalid params: missing address"})),
+                    error: Some(
+                        serde_json::json!({"code": -32602, "message": "Invalid params: missing address"}),
+                    ),
                 },
             }
         }
         "getBlockByHash" | "get_block_by_hash" => {
-            let hash_opt: Option<String> = req
-                .params
-                .as_ref()
-                .and_then(|v| {
-                    if let Some(arr) = v.as_array() {
-                        arr.get(0).and_then(|x| x.as_str()).map(|s| s.to_string())
-                    } else {
-                        v.get("hash").and_then(|x| x.as_str()).map(|s| s.to_string())
-                    }
-                });
+            let hash_opt: Option<String> = req.params.as_ref().and_then(|v| {
+                if let Some(arr) = v.as_array() {
+                    arr.first().and_then(|x| x.as_str()).map(|s| s.to_string())
+                } else {
+                    v.get("hash")
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string())
+                }
+            });
 
             match hash_opt {
                 Some(h) => match state.storage.get_block(&h) {
                     Ok(Some(block)) => Response {
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
-                        result: Some(serde_json::to_value(block).unwrap_or(serde_json::Value::Null)),
+                        result: Some(
+                            serde_json::to_value(block).unwrap_or(serde_json::Value::Null),
+                        ),
                         error: None,
                     },
                     Ok(None) => Response {
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
                         result: None,
-                        error: Some(serde_json::json!({"code": -32004, "message": "Block not found"})),
+                        error: Some(
+                            serde_json::json!({"code": -32004, "message": "Block not found"}),
+                        ),
                     },
                     Err(e) => Response {
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
                         result: None,
-                        error: Some(serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")})),
+                        error: Some(
+                            serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")}),
+                        ),
                     },
                 },
                 None => Response {
                     jsonrpc: "2.0".to_string(),
                     id: req.id,
                     result: None,
-                    error: Some(serde_json::json!({"code": -32602, "message": "Invalid params: missing hash"})),
+                    error: Some(
+                        serde_json::json!({"code": -32602, "message": "Invalid params: missing hash"}),
+                    ),
                 },
             }
         }
         "getBlockByHeight" | "get_block_by_height" => {
-            let height_opt: Option<u64> = req
-                .params
-                .as_ref()
-                .and_then(|v| {
-                    if let Some(arr) = v.as_array() {
-                        arr.get(0).and_then(|x| x.as_u64())
-                    } else {
-                        v.get("height").and_then(|x| x.as_u64())
-                    }
-                });
+            let height_opt: Option<u64> = req.params.as_ref().and_then(|v| {
+                if let Some(arr) = v.as_array() {
+                    arr.first().and_then(|x| x.as_u64())
+                } else {
+                    v.get("height").and_then(|x| x.as_u64())
+                }
+            });
 
             match height_opt {
                 Some(h) => match state.storage.get_block_by_height(h) {
                     Ok(Some(block)) => Response {
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
-                        result: Some(serde_json::to_value(block).unwrap_or(serde_json::Value::Null)),
+                        result: Some(
+                            serde_json::to_value(block).unwrap_or(serde_json::Value::Null),
+                        ),
                         error: None,
                     },
                     Ok(None) => Response {
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
                         result: None,
-                        error: Some(serde_json::json!({"code": -32004, "message": "Block not found"})),
+                        error: Some(
+                            serde_json::json!({"code": -32004, "message": "Block not found"}),
+                        ),
                     },
                     Err(e) => Response {
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
                         result: None,
-                        error: Some(serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")})),
+                        error: Some(
+                            serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")}),
+                        ),
                     },
                 },
                 None => Response {
                     jsonrpc: "2.0".to_string(),
                     id: req.id,
                     result: None,
-                    error: Some(serde_json::json!({"code": -32602, "message": "Invalid params: missing height"})),
+                    error: Some(
+                        serde_json::json!({"code": -32602, "message": "Invalid params: missing height"}),
+                    ),
                 },
             }
         }
@@ -314,10 +343,15 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 .as_ref()
                 .map(|v| {
                     if let Some(arr) = v.as_array() {
-                        (arr.get(0).and_then(|x| x.as_u64()), arr.get(1).and_then(|x| x.as_u64()))
+                        (
+                            arr.first().and_then(|x| x.as_u64()),
+                            arr.get(1).and_then(|x| x.as_u64()),
+                        )
                     } else {
-                        (v.get("start_height").and_then(|x| x.as_u64()),
-                         v.get("end_height").and_then(|x| x.as_u64()))
+                        (
+                            v.get("start_height").and_then(|x| x.as_u64()),
+                            v.get("end_height").and_then(|x| x.as_u64()),
+                        )
                     }
                 })
                 .unwrap_or((None, None));
@@ -326,22 +360,25 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 (Some(start), Some(end)) if end >= start => {
                     match state.storage.get_blocks_in_range(start, end) {
                         Ok(blocks) => {
-                            let headers: Vec<serde_json::Value> = blocks.iter().map(|b| {
-                                serde_json::json!({
-                                    "height": b.height(),
-                                    "hash": b.calculate_hash(),
-                                    "prev_hash": b.header.prev_hash,
-                                    "timestamp": b.header.timestamp,
-                                    "difficulty": b.header.difficulty,
-                                    "nonce": b.header.nonce,
-                                    "version": b.header.version,
-                                    "num_txes": b.transactions.len(),
-                                    "reward": b.transactions.first()
-                                        .and_then(|tx| tx.outputs.first())
-                                        .map(|o| o.amount)
-                                        .unwrap_or(0),
+                            let headers: Vec<serde_json::Value> = blocks
+                                .iter()
+                                .map(|b| {
+                                    serde_json::json!({
+                                        "height": b.height(),
+                                        "hash": b.calculate_hash(),
+                                        "prev_hash": b.header.prev_hash,
+                                        "timestamp": b.header.timestamp,
+                                        "difficulty": b.header.difficulty,
+                                        "nonce": b.header.nonce,
+                                        "version": b.header.version,
+                                        "num_txes": b.transactions.len(),
+                                        "reward": b.transactions.first()
+                                            .and_then(|tx| tx.outputs.first())
+                                            .map(|o| o.amount)
+                                            .unwrap_or(0),
+                                    })
                                 })
-                            }).collect();
+                                .collect();
                             Response {
                                 jsonrpc: "2.0".to_string(),
                                 id: req.id,
@@ -353,7 +390,9 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                             jsonrpc: "2.0".to_string(),
                             id: req.id,
                             result: None,
-                            error: Some(serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")})),
+                            error: Some(
+                                serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")}),
+                            ),
                         },
                     }
                 }
@@ -361,21 +400,23 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                     jsonrpc: "2.0".to_string(),
                     id: req.id,
                     result: None,
-                    error: Some(serde_json::json!({"code": -32602, "message": "Invalid params: need start_height and end_height"})),
+                    error: Some(
+                        serde_json::json!({"code": -32602, "message": "Invalid params: need start_height and end_height"}),
+                    ),
                 },
             }
         }
         "getTx" | "get_tx" | "gettransaction" => {
-            let txid_opt: Option<String> = req
-                .params
-                .as_ref()
-                .and_then(|v| {
-                    if let Some(arr) = v.as_array() {
-                        arr.get(0).and_then(|x| x.as_str()).map(|s| s.to_string())
-                    } else {
-                        v.get("txid").or_else(|| v.get("id")).and_then(|x| x.as_str()).map(|s| s.to_string())
-                    }
-                });
+            let txid_opt: Option<String> = req.params.as_ref().and_then(|v| {
+                if let Some(arr) = v.as_array() {
+                    arr.first().and_then(|x| x.as_str()).map(|s| s.to_string())
+                } else {
+                    v.get("txid")
+                        .or_else(|| v.get("id"))
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string())
+                }
+            });
 
             match txid_opt {
                 Some(txid) => {
@@ -384,7 +425,9 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         Response {
                             jsonrpc: "2.0".to_string(),
                             id: req.id,
-                            result: Some(serde_json::to_value(tx).unwrap_or(serde_json::Value::Null)),
+                            result: Some(
+                                serde_json::to_value(tx).unwrap_or(serde_json::Value::Null),
+                            ),
                             error: None,
                         }
                     } else {
@@ -392,12 +435,16 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         match state.storage.get_block_hash_for_tx(&txid) {
                             Ok(Some(block_hash)) => match state.storage.get_block(&block_hash) {
                                 Ok(Some(block)) => {
-                                    let found = block.transactions.into_iter().find(|t| t.id == txid);
+                                    let found =
+                                        block.transactions.into_iter().find(|t| t.id == txid);
                                     if let Some(tx) = found {
                                         Response {
                                             jsonrpc: "2.0".to_string(),
                                             id: req.id,
-                                            result: Some(serde_json::to_value(tx).unwrap_or(serde_json::Value::Null)),
+                                            result: Some(
+                                                serde_json::to_value(tx)
+                                                    .unwrap_or(serde_json::Value::Null),
+                                            ),
                                             error: None,
                                         }
                                     } else {
@@ -405,7 +452,9 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                                             jsonrpc: "2.0".to_string(),
                                             id: req.id,
                                             result: None,
-                                            error: Some(serde_json::json!({"code": -32004, "message": "Transaction not found"})),
+                                            error: Some(
+                                                serde_json::json!({"code": -32004, "message": "Transaction not found"}),
+                                            ),
                                         }
                                     }
                                 }
@@ -413,26 +462,34 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                                     jsonrpc: "2.0".to_string(),
                                     id: req.id,
                                     result: None,
-                                    error: Some(serde_json::json!({"code": -32004, "message": "Block not found"})),
+                                    error: Some(
+                                        serde_json::json!({"code": -32004, "message": "Block not found"}),
+                                    ),
                                 },
                                 Err(e) => Response {
                                     jsonrpc: "2.0".to_string(),
                                     id: req.id,
                                     result: None,
-                                    error: Some(serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")})),
+                                    error: Some(
+                                        serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")}),
+                                    ),
                                 },
                             },
                             Ok(None) => Response {
                                 jsonrpc: "2.0".to_string(),
                                 id: req.id,
                                 result: None,
-                                error: Some(serde_json::json!({"code": -32004, "message": "Transaction not found"})),
+                                error: Some(
+                                    serde_json::json!({"code": -32004, "message": "Transaction not found"}),
+                                ),
                             },
                             Err(e) => Response {
                                 jsonrpc: "2.0".to_string(),
                                 id: req.id,
                                 result: None,
-                                error: Some(serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")})),
+                                error: Some(
+                                    serde_json::json!({"code": -32000, "message": format!("Storage error: {e}")}),
+                                ),
                             },
                         }
                     }
@@ -441,7 +498,9 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                     jsonrpc: "2.0".to_string(),
                     id: req.id,
                     result: None,
-                    error: Some(serde_json::json!({"code": -32602, "message": "Invalid params: missing txid"})),
+                    error: Some(
+                        serde_json::json!({"code": -32602, "message": "Invalid params: missing txid"}),
+                    ),
                 },
             }
         }
@@ -456,12 +515,15 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 })),
                 error: None,
             }
-        },
+        }
         "get_info" | "getInfo" => {
             let h = state.height.load(std::sync::atomic::Ordering::Relaxed) as u64;
             let d = state.difficulty.load(std::sync::atomic::Ordering::Relaxed) as u64;
             let tip = { state.tip.lock().unwrap().clone() };
-            let peers = state.metrics.peers_connected.load(std::sync::atomic::Ordering::Relaxed);
+            let peers = state
+                .metrics
+                .peers_connected
+                .load(std::sync::atomic::Ordering::Relaxed);
             let tx_pool_size = state.mempool.size();
             let uptime_secs = state.metrics.start_time.elapsed().as_secs();
             let start_time_unix = std::time::SystemTime::now()
@@ -508,19 +570,18 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
                         result: None,
-                        error: Some(serde_json::json!({"code": -32601, "message": "Method not found"})),
+                        error: Some(
+                            serde_json::json!({"code": -32601, "message": "Method not found"}),
+                        ),
                     }
                 } else {
-                    let d_opt: Option<u64> = req
-                        .params
-                        .as_ref()
-                        .and_then(|v| {
-                            if let Some(arr) = v.as_array() {
-                                arr.get(0).and_then(|x| x.as_u64())
-                            } else {
-                                v.get("difficulty").and_then(|x| x.as_u64())
-                            }
-                        });
+                    let d_opt: Option<u64> = req.params.as_ref().and_then(|v| {
+                        if let Some(arr) = v.as_array() {
+                            arr.first().and_then(|x| x.as_u64())
+                        } else {
+                            v.get("difficulty").and_then(|x| x.as_u64())
+                        }
+                    });
 
                     match d_opt {
                         Some(d) if d >= 1 => {
@@ -542,7 +603,9 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                             jsonrpc: "2.0".to_string(),
                             id: req.id,
                             result: None,
-                            error: Some(serde_json::json!({"code": -32602, "message": "Invalid params: expected difficulty>=1"})),
+                            error: Some(
+                                serde_json::json!({"code": -32602, "message": "Invalid params: expected difficulty>=1"}),
+                            ),
                         },
                     }
                 }
@@ -568,71 +631,79 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
                         result: None,
-                        error: Some(serde_json::json!({"code": -32601, "message": "Method not found (DEV_MODE required)"})),
+                        error: Some(
+                            serde_json::json!({"code": -32601, "message": "Method not found (DEV_MODE required)"}),
+                        ),
                     }
                 } else {
-                let (addr_opt, amount_opt) = req
-                    .params
-                    .as_ref()
-                    .map(|v| {
-                        if let Some(arr) = v.as_array() {
-                            let addr = arr.get(0).and_then(|x| x.as_str()).map(|s| s.to_string());
-                            let amt = arr.get(1).and_then(|x| x.as_f64());
-                            (addr, amt)
-                        } else {
-                            let addr = v.get("address").and_then(|x| x.as_str()).map(|s| s.to_string());
-                            let amt = v.get("amount").and_then(|x| x.as_f64());
-                            (addr, amt)
-                        }
-                    })
-                    .unwrap_or((None, None));
+                    let (addr_opt, amount_opt) = req
+                        .params
+                        .as_ref()
+                        .map(|v| {
+                            if let Some(arr) = v.as_array() {
+                                let addr =
+                                    arr.first().and_then(|x| x.as_str()).map(|s| s.to_string());
+                                let amt = arr.get(1).and_then(|x| x.as_f64());
+                                (addr, amt)
+                            } else {
+                                let addr = v
+                                    .get("address")
+                                    .and_then(|x| x.as_str())
+                                    .map(|s| s.to_string());
+                                let amt = v.get("amount").and_then(|x| x.as_f64());
+                                (addr, amt)
+                            }
+                        })
+                        .unwrap_or((None, None));
 
-                match (addr_opt, amount_opt) {
-                    (Some(addr), Some(amount)) if amount > 0.0 => {
-                        let amount_atomic = (amount * 1_000_000.0) as u64;
-                        
-                        // Credit balance directly to storage
-                        if let Err(e) = state.storage.credit_balance(&addr, amount_atomic) {
-                            Response {
-                                jsonrpc: "2.0".to_string(),
-                                id: req.id,
-                                result: None,
-                                error: Some(serde_json::json!({
-                                    "code": -32000,
-                                    "message": format!("Failed to credit balance: {}", e)
-                                })),
-                            }
-                        } else {
-                            let new_balance = state.storage.get_balance_for_address(&addr)
-                                .map(|(b, _)| b)
-                                .unwrap_or(0);
-                            
-                            Response {
-                                jsonrpc: "2.0".to_string(),
-                                id: req.id,
-                                result: Some(serde_json::json!({
-                                    "status": "OK",
-                                    "address": addr,
-                                    "credited_atomic": amount_atomic,
-                                    "credited_zion": amount,
-                                    "new_balance_atomic": new_balance,
-                                    "new_balance_zion": (new_balance as f64) / 1_000_000.0
-                                })),
-                                error: None,
+                    match (addr_opt, amount_opt) {
+                        (Some(addr), Some(amount)) if amount > 0.0 => {
+                            let amount_atomic = (amount * 1_000_000.0) as u64;
+
+                            // Credit balance directly to storage
+                            if let Err(e) = state.storage.credit_balance(&addr, amount_atomic) {
+                                Response {
+                                    jsonrpc: "2.0".to_string(),
+                                    id: req.id,
+                                    result: None,
+                                    error: Some(serde_json::json!({
+                                        "code": -32000,
+                                        "message": format!("Failed to credit balance: {}", e)
+                                    })),
+                                }
+                            } else {
+                                let new_balance = state
+                                    .storage
+                                    .get_balance_for_address(&addr)
+                                    .map(|(b, _)| b)
+                                    .unwrap_or(0);
+
+                                Response {
+                                    jsonrpc: "2.0".to_string(),
+                                    id: req.id,
+                                    result: Some(serde_json::json!({
+                                        "status": "OK",
+                                        "address": addr,
+                                        "credited_atomic": amount_atomic,
+                                        "credited_zion": amount,
+                                        "new_balance_atomic": new_balance,
+                                        "new_balance_zion": (new_balance as f64) / 1_000_000.0
+                                    })),
+                                    error: None,
+                                }
                             }
                         }
+                        _ => Response {
+                            jsonrpc: "2.0".to_string(),
+                            id: req.id,
+                            result: None,
+                            error: Some(serde_json::json!({
+                                "code": -32602,
+                                "message": "Invalid params: need address and amount (>0)"
+                            })),
+                        },
                     }
-                    _ => Response {
-                        jsonrpc: "2.0".to_string(),
-                        id: req.id,
-                        result: None,
-                        error: Some(serde_json::json!({
-                            "code": -32602,
-                            "message": "Invalid params: need address and amount (>0)"
-                        })),
-                    },
                 }
-            }
             }
             #[cfg(not(feature = "dev-tools"))]
             Response {
@@ -651,16 +722,27 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 .as_ref()
                 .map(|v| {
                     if let Some(arr) = v.as_array() {
-                        let from = arr.get(0).and_then(|x| x.as_str()).map(|s| s.to_string());
+                        let from = arr.first().and_then(|x| x.as_str()).map(|s| s.to_string());
                         let to = arr.get(1).and_then(|x| x.as_str()).map(|s| s.to_string());
                         let amt = arr.get(2).and_then(|x| x.as_f64());
-                        let purp = arr.get(3).and_then(|x| x.as_str()).unwrap_or("").to_string();
+                        let purp = arr
+                            .get(3)
+                            .and_then(|x| x.as_str())
+                            .unwrap_or("")
+                            .to_string();
                         (from, to, amt, purp)
                     } else {
-                        let from = v.get("from").and_then(|x| x.as_str()).map(|s| s.to_string());
+                        let from = v
+                            .get("from")
+                            .and_then(|x| x.as_str())
+                            .map(|s| s.to_string());
                         let to = v.get("to").and_then(|x| x.as_str()).map(|s| s.to_string());
                         let amt = v.get("amount").and_then(|x| x.as_f64());
-                        let purp = v.get("purpose").and_then(|x| x.as_str()).unwrap_or("").to_string();
+                        let purp = v
+                            .get("purpose")
+                            .and_then(|x| x.as_str())
+                            .unwrap_or("")
+                            .to_string();
                         (from, to, amt, purp)
                     }
                 })
@@ -669,12 +751,14 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
             match (from_opt, to_opt, amount_opt) {
                 (Some(from), Some(to), Some(amount)) if amount > 0.0 => {
                     let amount_atomic = (amount * 1_000_000.0) as u64;
-                    
+
                     // Check sender balance
-                    let sender_balance = state.storage.get_balance_for_address(&from)
+                    let sender_balance = state
+                        .storage
+                        .get_balance_for_address(&from)
                         .map(|(b, _)| b)
                         .unwrap_or(0);
-                    
+
                     if sender_balance < amount_atomic {
                         Response {
                             jsonrpc: "2.0".to_string(),
@@ -691,7 +775,7 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap()
                             .as_secs();
-                        
+
                         let mut tx = Transaction::new();
                         tx.timestamp = timestamp;
                         tx.outputs = vec![TxOutput {
@@ -699,12 +783,12 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                             address: to.clone(),
                         }];
                         tx.id = tx.calculate_hash();
-                        
+
                         let tx_id = tx.id.clone();
-                        
-                        // Add to mempool
-                        state.mempool.add_transaction(tx);
-                        
+
+                        // Add to mempool (validated)
+                        let _ = state.mempool.add_transaction_validated(tx);
+
                         Response {
                             jsonrpc: "2.0".to_string(),
                             id: req.id,
@@ -735,21 +819,19 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
         "submitTransaction" | "submit_transaction" => {
             // Accept a fully signed Transaction object from pool wallet
             // This is the secure path: pool builds + signs TX locally, submits here
-            let tx_opt: Option<Transaction> = req
-                .params
-                .as_ref()
-                .and_then(|v| {
-                    if let Some(arr) = v.as_array() {
-                        arr.get(0).and_then(|x| serde_json::from_value(x.clone()).ok())
-                    } else if v.is_object() {
-                        // Could be the tx directly or {"tx": {...}}
-                        v.get("tx")
-                            .and_then(|x| serde_json::from_value(x.clone()).ok())
-                            .or_else(|| serde_json::from_value(v.clone()).ok())
-                    } else {
-                        None
-                    }
-                });
+            let tx_opt: Option<Transaction> = req.params.as_ref().and_then(|v| {
+                if let Some(arr) = v.as_array() {
+                    arr.first()
+                        .and_then(|x| serde_json::from_value(x.clone()).ok())
+                } else if v.is_object() {
+                    // Could be the tx directly or {"tx": {...}}
+                    v.get("tx")
+                        .and_then(|x| serde_json::from_value(x.clone()).ok())
+                        .or_else(|| serde_json::from_value(v.clone()).ok())
+                } else {
+                    None
+                }
+            });
 
             match tx_opt {
                 Some(tx) => {
@@ -771,13 +853,18 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
 
                     // 2. Verify UTXOs exist and ownership matches
                     {
-                        let zero_hash = "0000000000000000000000000000000000000000000000000000000000000000";
+                        let zero_hash =
+                            "0000000000000000000000000000000000000000000000000000000000000000";
                         for input in &tx.inputs {
-                            if input.prev_tx_hash == zero_hash { continue; }
+                            if input.prev_tx_hash == zero_hash {
+                                continue;
+                            }
                             let key = format!("{}:{}", input.prev_tx_hash, input.output_index);
                             match state.storage.get_utxo(&key).unwrap_or(None) {
                                 Some(output) => {
-                                    let derived = crate::crypto::keys::address_from_public_key(&input.public_key);
+                                    let derived = crate::crypto::keys::address_from_public_key(
+                                        &input.public_key,
+                                    );
                                     if derived.is_none() || derived.unwrap() != output.address {
                                         return Json(Response {
                                             jsonrpc: "2.0".to_string(),
@@ -842,86 +929,93 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
             // Two submission modes:
             // 1. Full block JSON object
             // 2. Template blob + nonce (params: [blob_hex, nonce_u64, wallet])
-            
-            let block_opt: Option<crate::blockchain::block::Block> = if let Some(params) = req.params {
-                 // Mode 2: Check if first param is string (blob) and second is number (nonce)
-                 if let Some(arr) = params.as_array() {
-                     if arr.len() >= 2 {
-                         if let (Some(blob_str), Some(nonce_val)) = (arr[0].as_str(), arr[1].as_u64()) {
-                             // Blob + nonce mode
-                             match Block::from_template_blob(blob_str, nonce_val) {
-                                 Ok(header) => {
-                                     // Reconstruct block with coinbase transaction
-                                     // IMPORTANT: Coinbase must be deterministically created with SAME 
-                                     // parameters as when template was generated, so merkle_root matches!
-                                     let wallet = arr.get(2).and_then(|v| v.as_str()).unwrap_or("UNKNOWN");
-                                     let reward = reward::calculate(header.height, header.difficulty);
-                                     
-                                     // Create coinbase EXACTLY like in getblocktemplate:
-                                     // Use Transaction::new() for consistency, then set fields
-                                     let mut coinbase = Transaction::new();
-                                     coinbase.timestamp = header.timestamp; // MUST match template timestamp
-                                     coinbase.outputs = vec![TxOutput {
-                                         amount: reward,
-                                         address: wallet.to_string(),
-                                     }];
-                                     coinbase.id = coinbase.calculate_hash();
-                                     
-                                     // Verify merkle_root matches what's in the header
-                                     let computed_merkle = Block::calculate_merkle_root(&[coinbase.clone()]);
-                                     if computed_merkle != header.merkle_root {
-                                         eprintln!(
+
+            let block_opt: Option<crate::blockchain::block::Block> = if let Some(params) =
+                req.params
+            {
+                // Mode 2: Check if first param is string (blob) and second is number (nonce)
+                if let Some(arr) = params.as_array() {
+                    if arr.len() >= 2 {
+                        if let (Some(blob_str), Some(nonce_val)) =
+                            (arr[0].as_str(), arr[1].as_u64())
+                        {
+                            // Blob + nonce mode
+                            match Block::from_template_blob(blob_str, nonce_val) {
+                                Ok(header) => {
+                                    // Reconstruct block with coinbase transaction
+                                    // IMPORTANT: Coinbase must be deterministically created with SAME
+                                    // parameters as when template was generated, so merkle_root matches!
+                                    let wallet =
+                                        arr.get(2).and_then(|v| v.as_str()).unwrap_or("UNKNOWN");
+                                    let reward =
+                                        reward::calculate(header.height, header.difficulty);
+
+                                    // Create coinbase EXACTLY like in getblocktemplate:
+                                    // Use Transaction::new() for consistency, then set fields
+                                    let mut coinbase = Transaction::new();
+                                    coinbase.timestamp = header.timestamp; // MUST match template timestamp
+                                    coinbase.outputs = vec![TxOutput {
+                                        amount: reward,
+                                        address: wallet.to_string(),
+                                    }];
+                                    coinbase.id = coinbase.calculate_hash();
+
+                                    // Verify merkle_root matches what's in the header
+                                    let computed_merkle =
+                                        Block::calculate_merkle_root(&[coinbase.clone()]);
+                                    if computed_merkle != header.merkle_root {
+                                        eprintln!(
                                              "WARN: Merkle mismatch! header={} computed={} wallet={} ts={}",
                                              header.merkle_root, computed_merkle, wallet, header.timestamp
                                          );
-                                         // For now, TRUST the header's merkle_root since pool should use same formula
-                                         // The real issue is likely coinbase hash algorithm
-                                     }
-                                     
-                                     Some(Block {
-                                         header,
-                                         transactions: vec![coinbase],
-                                     })
-                                 }
-                                 Err(e) => {
-                                     return Json(Response {
-                                         jsonrpc: "2.0".to_string(),
-                                         id: req.id,
-                                         result: None,
-                                         error: Some(serde_json::json!({
-                                             "code": -32602,
-                                             "message": format!("Invalid blob: {}", e)
-                                         })),
-                                     });
-                                 }
-                             }
-                         } else {
-                             // Mode 1: Full block object in params[0]
-                             let first = arr.get(0).unwrap_or(&serde_json::Value::Null);
-                             if let Some(obj) = first.as_object() {
-                                 if let Some(block_val) = obj.get("block") {
-                                     serde_json::from_value(block_val.clone()).ok()
-                                 } else {
-                                     serde_json::from_value(first.clone()).ok()
-                                 }
-                             } else {
-                                 serde_json::from_value(first.clone()).ok()
-                             }
-                         }
-                     } else {
-                         // Single param array
-                         let first = arr.get(0).unwrap_or(&serde_json::Value::Null);
-                         serde_json::from_value(first.clone()).ok()
-                     }
-                 } else if let Some(obj) = params.as_object() {
-                     if let Some(block_val) = obj.get("block") {
-                         serde_json::from_value(block_val.clone()).ok()
-                     } else {
-                         serde_json::from_value(params).ok()
-                     }
-                 } else {
-                     serde_json::from_value(params).ok()
-                 }
+                                        // For now, TRUST the header's merkle_root since pool should use same formula
+                                        // The real issue is likely coinbase hash algorithm
+                                    }
+
+                                    Some(Block {
+                                        header,
+                                        transactions: vec![coinbase],
+                                    })
+                                }
+                                Err(e) => {
+                                    return Json(Response {
+                                        jsonrpc: "2.0".to_string(),
+                                        id: req.id,
+                                        result: None,
+                                        error: Some(serde_json::json!({
+                                            "code": -32602,
+                                            "message": format!("Invalid blob: {}", e)
+                                        })),
+                                    });
+                                }
+                            }
+                        } else {
+                            // Mode 1: Full block object in params[0]
+                            let first = arr.first().unwrap_or(&serde_json::Value::Null);
+                            if let Some(obj) = first.as_object() {
+                                if let Some(block_val) = obj.get("block") {
+                                    serde_json::from_value(block_val.clone()).ok()
+                                } else {
+                                    serde_json::from_value(first.clone()).ok()
+                                }
+                            } else {
+                                serde_json::from_value(first.clone()).ok()
+                            }
+                        }
+                    } else {
+                        // Single param array
+                        let first = arr.first().unwrap_or(&serde_json::Value::Null);
+                        serde_json::from_value(first.clone()).ok()
+                    }
+                } else if let Some(obj) = params.as_object() {
+                    if let Some(block_val) = obj.get("block") {
+                        serde_json::from_value(block_val.clone()).ok()
+                    } else {
+                        serde_json::from_value(params).ok()
+                    }
+                } else {
+                    serde_json::from_value(params).ok()
+                }
             } else {
                 None
             };
@@ -931,7 +1025,9 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                     Ok((height, hash)) => Response {
                         jsonrpc: "2.0".to_string(),
                         id: req.id,
-                        result: Some(serde_json::json!({"status": "OK", "height": height, "hash": hash})),
+                        result: Some(
+                            serde_json::json!({"status": "OK", "height": height, "hash": hash}),
+                        ),
                         error: None,
                     },
                     Err(e) => Response {
@@ -939,21 +1035,22 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         id: req.id,
                         result: None,
                         error: Some(serde_json::json!({"code": -1, "message": e})),
-                    }
+                    },
                 }
             } else {
                 Response {
                     jsonrpc: "2.0".to_string(),
                     id: req.id,
                     result: None,
-                    error: Some(serde_json::json!({"code": -32602, "message": "Invalid params: Missing block data"})),
+                    error: Some(
+                        serde_json::json!({"code": -32602, "message": "Invalid params: Missing block data"}),
+                    ),
                 }
             }
         }
         // ===================================================================
         // Sprint 1.6 — Supply, Buyback, Network & Peer Info Endpoints
         // ===================================================================
-
         "getSupplyInfo" | "get_supply_info" | "getsupplyinfo" => {
             let height = state.height.load(std::sync::atomic::Ordering::Relaxed);
             // Current block reward (use height+1 to show "next block" reward at genesis)
@@ -963,9 +1060,11 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 let mut sum: u64 = 0;
                 let mut h: u64 = 1;
                 while h <= height {
-                    let decade_end = ((h - 1) / reward::BLOCKS_PER_DECADE + 1) * reward::BLOCKS_PER_DECADE;
+                    let decade_end =
+                        ((h - 1) / reward::BLOCKS_PER_DECADE + 1) * reward::BLOCKS_PER_DECADE;
                     let blocks_in_range = decade_end.min(height) - h + 1;
-                    sum = sum.saturating_add(reward::calculate(h, 0).saturating_mul(blocks_in_range));
+                    sum =
+                        sum.saturating_add(reward::calculate(h, 0).saturating_mul(blocks_in_range));
                     h = decade_end + 1;
                 }
                 sum
@@ -1022,7 +1121,7 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 .as_ref()
                 .and_then(|v| {
                     if let Some(arr) = v.as_array() {
-                        arr.get(0).and_then(|x| x.as_u64())
+                        arr.first().and_then(|x| x.as_u64())
                     } else {
                         v.get("limit").and_then(|x| x.as_u64())
                     }
@@ -1083,12 +1182,27 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
             let d = state.difficulty.load(std::sync::atomic::Ordering::Relaxed);
             let tip = { state.tip.lock().unwrap().clone() };
             let uptime_secs = state.metrics.start_time.elapsed().as_secs();
-            let peers = state.metrics.peers_connected.load(std::sync::atomic::Ordering::Relaxed);
-            let blocks_processed = state.metrics.blocks_processed.load(std::sync::atomic::Ordering::Relaxed);
-            let blocks_rejected = state.metrics.blocks_rejected.load(std::sync::atomic::Ordering::Relaxed);
-            let txs_in_mempool = state.metrics.txs_in_mempool.load(std::sync::atomic::Ordering::Relaxed);
+            let peers = state
+                .metrics
+                .peers_connected
+                .load(std::sync::atomic::Ordering::Relaxed);
+            let blocks_processed = state
+                .metrics
+                .blocks_processed
+                .load(std::sync::atomic::Ordering::Relaxed);
+            let blocks_rejected = state
+                .metrics
+                .blocks_rejected
+                .load(std::sync::atomic::Ordering::Relaxed);
+            let txs_in_mempool = state
+                .metrics
+                .txs_in_mempool
+                .load(std::sync::atomic::Ordering::Relaxed);
             let algo = CoreAlgorithm::from_height(h + 1);
-            let last_block_time = state.metrics.last_block_time.load(std::sync::atomic::Ordering::Relaxed);
+            let last_block_time = state
+                .metrics
+                .last_block_time
+                .load(std::sync::atomic::Ordering::Relaxed);
 
             // Estimated hashrate: difficulty / block_time (60s)
             let estimated_hashrate = d as f64 / 60.0;
@@ -1119,10 +1233,22 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
         }
 
         "getPeerInfo" | "get_peer_info" | "getpeerinfo" => {
-            let peers_connected = state.metrics.peers_connected.load(std::sync::atomic::Ordering::Relaxed);
-            let peers_total = state.metrics.peers_total.load(std::sync::atomic::Ordering::Relaxed);
-            let messages_sent = state.metrics.messages_sent.load(std::sync::atomic::Ordering::Relaxed);
-            let messages_received = state.metrics.messages_received.load(std::sync::atomic::Ordering::Relaxed);
+            let peers_connected = state
+                .metrics
+                .peers_connected
+                .load(std::sync::atomic::Ordering::Relaxed);
+            let peers_total = state
+                .metrics
+                .peers_total
+                .load(std::sync::atomic::Ordering::Relaxed);
+            let messages_sent = state
+                .metrics
+                .messages_sent
+                .load(std::sync::atomic::Ordering::Relaxed);
+            let messages_received = state
+                .metrics
+                .messages_received
+                .load(std::sync::atomic::Ordering::Relaxed);
 
             Response {
                 jsonrpc: "2.0".to_string(),
@@ -1147,26 +1273,30 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         .unwrap_or_default()
                         .as_secs();
                     let known = pm.get_peers();
-                    let peers_json: Vec<serde_json::Value> = known.iter().map(|p| {
-                        let connected = pm.is_connected(&p.addr);
-                        let idle_secs = now.saturating_sub(p.last_seen);
-                        serde_json::json!({
-                            "address": p.addr.to_string(),
-                            "host": p.addr.ip().to_string(),
-                            "port": p.addr.port(),
-                            "height": p.height,
-                            "sub_version": p.sub_version,
-                            "last_seen": p.last_seen,
-                            "idle_seconds": idle_secs,
-                            "connected": connected,
-                            "failed_attempts": p.failed_attempts,
-                            "incoming": false,
-                            "state": if connected { "active" } else { "known" },
+                    let peers_json: Vec<serde_json::Value> = known
+                        .iter()
+                        .map(|p| {
+                            let connected = pm.is_connected(&p.addr);
+                            let idle_secs = now.saturating_sub(p.last_seen);
+                            serde_json::json!({
+                                "address": p.addr.to_string(),
+                                "host": p.addr.ip().to_string(),
+                                "port": p.addr.port(),
+                                "height": p.height,
+                                "sub_version": p.sub_version,
+                                "last_seen": p.last_seen,
+                                "idle_seconds": idle_secs,
+                                "connected": connected,
+                                "failed_attempts": p.failed_attempts,
+                                "incoming": false,
+                                "state": if connected { "active" } else { "known" },
+                            })
                         })
-                    }).collect();
+                        .collect();
 
                     let active_count = pm.active_count();
-                    let chain_height = state.height.load(std::sync::atomic::Ordering::Relaxed) as u64;
+                    let chain_height =
+                        state.height.load(std::sync::atomic::Ordering::Relaxed) as u64;
 
                     Response {
                         jsonrpc: "2.0".to_string(),
@@ -1181,20 +1311,18 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                         error: None,
                     }
                 }
-                None => {
-                    Response {
-                        jsonrpc: "2.0".to_string(),
-                        id: req.id,
-                        result: Some(serde_json::json!({
-                            "count": 0,
-                            "active": 0,
-                            "known": 0,
-                            "chain_height": state.height.load(std::sync::atomic::Ordering::Relaxed) as u64,
-                            "peers": [],
-                        })),
-                        error: None,
-                    }
-                }
+                None => Response {
+                    jsonrpc: "2.0".to_string(),
+                    id: req.id,
+                    result: Some(serde_json::json!({
+                        "count": 0,
+                        "active": 0,
+                        "known": 0,
+                        "chain_height": state.height.load(std::sync::atomic::Ordering::Relaxed) as u64,
+                        "peers": [],
+                    })),
+                    error: None,
+                },
             }
         }
 
@@ -1214,8 +1342,15 @@ pub async fn handle(AxumState(state): AxumState<State>, Json(req): Json<Request>
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_secs();
-            let last_block = state.metrics.last_block_time.load(std::sync::atomic::Ordering::Relaxed);
-            let time_since_last = if last_block > 0 { now.saturating_sub(last_block) } else { 0 };
+            let last_block = state
+                .metrics
+                .last_block_time
+                .load(std::sync::atomic::Ordering::Relaxed);
+            let time_since_last = if last_block > 0 {
+                now.saturating_sub(last_block)
+            } else {
+                0
+            };
 
             Response {
                 jsonrpc: "2.0".to_string(),
@@ -1315,7 +1450,12 @@ mod tests {
         let state = test_state();
         for method in &["getSupplyInfo", "get_supply_info", "getsupplyinfo"] {
             let resp = call_rpc(state.clone(), method, None).await;
-            assert!(resp.error.is_none(), "Method {} failed: {:?}", method, resp.error);
+            assert!(
+                resp.error.is_none(),
+                "Method {} failed: {:?}",
+                method,
+                resp.error
+            );
             let r = resp.result.unwrap();
             assert_eq!(r["total_supply_zion"], 144_000_000_000u64);
         }
@@ -1510,7 +1650,12 @@ mod tests {
     #[tokio::test]
     async fn test_health_check_aliases() {
         let state = test_state();
-        for method in &["getHealthCheck", "get_health_check", "gethealthcheck", "health"] {
+        for method in &[
+            "getHealthCheck",
+            "get_health_check",
+            "gethealthcheck",
+            "health",
+        ] {
             let resp = call_rpc(state.clone(), method, None).await;
             assert!(resp.error.is_none(), "Method {} failed", method);
         }

@@ -3,9 +3,8 @@
 //! Handles share submission for all supported algorithms and protocols.
 
 use super::ExternalChain;
-use anyhow::{Result, Context, anyhow};
+use anyhow::Result;
 use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// Share submission result
@@ -25,7 +24,7 @@ pub struct PendingShare {
     pub job_id: String,
     pub nonce: u64,
     pub hash: Vec<u8>,
-    pub mix_hash: Option<Vec<u8>>,  // For Ethash/KawPow
+    pub mix_hash: Option<Vec<u8>>, // For Ethash/KawPow
     pub extra: HashMap<String, serde_json::Value>,
 }
 
@@ -53,7 +52,7 @@ impl MultiChainSubmitter {
     /// Submit share to external pool
     pub async fn submit_share(&self, share: PendingShare) -> Result<SubmitResult> {
         let start = std::time::Instant::now();
-        
+
         // Format submit request based on chain
         let result = match share.chain {
             ExternalChain::ETC => self.submit_ethash(&share).await,
@@ -72,7 +71,7 @@ impl MultiChainSubmitter {
             let mut stats = self.stats.write().await;
             let chain_stats = stats.entry(share.chain).or_default();
             chain_stats.total_latency_ms += latency_ms;
-            
+
             match &result {
                 Ok(r) if r.accepted => chain_stats.accepted += 1,
                 Ok(_) => chain_stats.rejected += 1,
@@ -83,25 +82,31 @@ impl MultiChainSubmitter {
         match result {
             Ok(mut r) => {
                 r.latency_ms = latency_ms;
-                
+
                 if r.accepted {
                     log::info!(
                         "ch3_external_pool_submit_accepted chain={:?} job_id={} latency={}ms",
-                        share.chain, share.job_id, latency_ms
+                        share.chain,
+                        share.job_id,
+                        latency_ms
                     );
                 } else {
                     log::warn!(
                         "ch3_external_pool_submit_rejected chain={:?} job_id={} reason={:?}",
-                        share.chain, share.job_id, r.message
+                        share.chain,
+                        share.job_id,
+                        r.message
                     );
                 }
-                
+
                 Ok(r)
             }
             Err(e) => {
                 log::error!(
                     "ch3_external_pool_submit_error chain={:?} job_id={} error={}",
-                    share.chain, share.job_id, e
+                    share.chain,
+                    share.job_id,
+                    e
                 );
                 Err(e)
             }
@@ -113,20 +118,24 @@ impl MultiChainSubmitter {
         // Format: eth_submitWork [nonce, header_hash, mix_hash]
         let nonce_hex = format!("0x{:016x}", share.nonce);
         let hash_hex = format!("0x{}", hex::encode(&share.hash));
-        let mix_hex = share.mix_hash.as_ref()
+        let mix_hex = share
+            .mix_hash
+            .as_ref()
             .map(|m| format!("0x{}", hex::encode(m)))
             .unwrap_or_else(|| "0x".repeat(66));
 
         log::debug!(
             "Submitting Ethash share: nonce={} hash={} mix={}",
-            nonce_hex, &hash_hex[..18], &mix_hex[..18]
+            nonce_hex,
+            &hash_hex[..18],
+            &mix_hex[..18]
         );
 
         // TODO: Send via pool connection
         Ok(SubmitResult {
             chain: share.chain,
             job_id: share.job_id.clone(),
-            accepted: true,  // Placeholder
+            accepted: true, // Placeholder
             message: None,
             latency_ms: 0,
         })
@@ -136,14 +145,13 @@ impl MultiChainSubmitter {
     async fn submit_kawpow(&self, share: &PendingShare) -> Result<SubmitResult> {
         // Format: mining.submit [worker, job_id, nonce, header, mixhash]
         let nonce_hex = format!("{:016x}", share.nonce);
-        let hash_hex = hex::encode(&share.hash);
-        let mix_hex = share.mix_hash.as_ref()
-            .map(|m| hex::encode(m))
-            .unwrap_or_default();
+        let _hash_hex = hex::encode(&share.hash);
+        let _mix_hex = share.mix_hash.as_ref().map(hex::encode).unwrap_or_default();
 
         log::debug!(
             "Submitting KawPow share: job_id={} nonce={}",
-            share.job_id, nonce_hex
+            share.job_id,
+            nonce_hex
         );
 
         Ok(SubmitResult {
@@ -159,15 +167,15 @@ impl MultiChainSubmitter {
     async fn submit_autolykos(&self, share: &PendingShare) -> Result<SubmitResult> {
         // Format: mining.submit [worker, job_id, nonce, d]
         let nonce_hex = format!("{:016x}", share.nonce);
-        
+
         // d = H(nonce || msg) for Autolykos
-        let d_hex = share.extra.get("d")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let d_hex = share.extra.get("d").and_then(|v| v.as_str()).unwrap_or("");
 
         log::debug!(
             "Submitting Autolykos share: job_id={} nonce={} d={}",
-            share.job_id, nonce_hex, &d_hex[..std::cmp::min(16, d_hex.len())]
+            share.job_id,
+            nonce_hex,
+            &d_hex[..std::cmp::min(16, d_hex.len())]
         );
 
         Ok(SubmitResult {
@@ -185,7 +193,8 @@ impl MultiChainSubmitter {
 
         log::debug!(
             "Submitting kHeavyHash share: job_id={} nonce={}",
-            share.job_id, nonce_hex
+            share.job_id,
+            nonce_hex
         );
 
         Ok(SubmitResult {
@@ -203,7 +212,8 @@ impl MultiChainSubmitter {
 
         log::debug!(
             "Submitting Blake3 share: job_id={} nonce={}",
-            share.job_id, nonce_hex
+            share.job_id,
+            nonce_hex
         );
 
         Ok(SubmitResult {
@@ -218,13 +228,16 @@ impl MultiChainSubmitter {
     /// Submit Equihash share (ZEC)
     async fn submit_equihash(&self, share: &PendingShare) -> Result<SubmitResult> {
         // Equihash uses solution vector instead of nonce
-        let solution = share.extra.get("solution")
+        let solution = share
+            .extra
+            .get("solution")
             .and_then(|v| v.as_str())
             .unwrap_or("");
 
         log::debug!(
             "Submitting Equihash share: job_id={} solution_len={}",
-            share.job_id, solution.len()
+            share.job_id,
+            solution.len()
         );
 
         Ok(SubmitResult {
@@ -242,7 +255,9 @@ impl MultiChainSubmitter {
 
         log::debug!(
             "Submitting generic share: chain={:?} job_id={} nonce={}",
-            share.chain, share.job_id, nonce_hex
+            share.chain,
+            share.job_id,
+            nonce_hex
         );
 
         Ok(SubmitResult {
@@ -256,7 +271,9 @@ impl MultiChainSubmitter {
 
     /// Get stats for chain
     pub async fn get_stats(&self, chain: ExternalChain) -> SubmitterStats {
-        self.stats.read().await
+        self.stats
+            .read()
+            .await
             .get(&chain)
             .cloned()
             .unwrap_or_default()

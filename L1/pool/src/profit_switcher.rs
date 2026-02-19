@@ -19,13 +19,13 @@
 //!   - Pool external miner filters jobs by active coin
 //!   - API endpoint /api/v1/profit/status exposes state
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use tokio::sync::{RwLock, watch};
-use tracing::{info, warn, error, debug};
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Arc;
+use tokio::sync::{watch, RwLock};
+use tracing::{debug, info, warn};
 
 // ═══════════════════════════════════════════════════════════════
 // GPU Detection — CH3 Rule: No GPU → 25% CPU → XMR (MoneroOcean)
@@ -41,7 +41,11 @@ fn detect_gpu_available() -> bool {
     // Allow manual override via environment variable
     if let Ok(val) = std::env::var("ZION_HAS_GPU") {
         let has = matches!(val.to_lowercase().as_str(), "1" | "true" | "yes");
-        info!("🎮 GPU override via ZION_HAS_GPU={} → {}", val, if has { "GPU mode" } else { "CPU-only mode" });
+        info!(
+            "🎮 GPU override via ZION_HAS_GPU={} → {}",
+            val,
+            if has { "GPU mode" } else { "CPU-only mode" }
+        );
         return has;
     }
 
@@ -116,11 +120,21 @@ pub struct ProfitSwitchConfig {
     pub fallback_coin: String,
 }
 
-fn default_true() -> bool { true }
-fn default_check_interval() -> u64 { 300 } // 5 minutes
-fn default_threshold() -> f64 { 10.0 } // 10%
-fn default_cooldown() -> u64 { 1800 } // 30 minutes
-fn default_fallback() -> String { "XMR".to_string() }
+fn default_true() -> bool {
+    true
+}
+fn default_check_interval() -> u64 {
+    300
+} // 5 minutes
+fn default_threshold() -> f64 {
+    10.0
+} // 10%
+fn default_cooldown() -> u64 {
+    1800
+} // 30 minutes
+fn default_fallback() -> String {
+    "XMR".to_string()
+}
 
 impl Default for ProfitSwitchConfig {
     fn default() -> Self {
@@ -129,11 +143,7 @@ impl Default for ProfitSwitchConfig {
             check_interval_secs: 300,
             switch_threshold_pct: 10.0,
             min_switch_interval_secs: 1800,
-            preferred_coins: vec![
-                "ETC".to_string(),
-                "XMR".to_string(),
-                "RVN".to_string(),
-            ],
+            preferred_coins: vec!["ETC".to_string(), "XMR".to_string(), "RVN".to_string()],
             excluded_coins: vec![],
             fallback_coin: "XMR".to_string(),
         }
@@ -155,7 +165,7 @@ pub struct CoinProfitData {
     pub difficulty: f64,
     pub block_reward: f64,
     pub nethash: f64,
-    pub profit_score: f64,  // Normalized score (higher = more profitable)
+    pub profit_score: f64, // Normalized score (higher = more profitable)
     pub timestamp: i64,
 }
 
@@ -196,9 +206,9 @@ struct WtmCoinData {
     #[serde(default, alias = "btc_revenue")]
     btc_revenue: String,
     #[serde(default, alias = "estimated_rewards")]
-    estimated_rewards: String,
+    _estimated_rewards: String,
     #[serde(default)]
-    profitability: f64,
+    _profitability: f64,
     #[serde(default)]
     profitability24: f64,
 }
@@ -233,7 +243,10 @@ async fn fetch_whattomine(coins: &[String]) -> Result<Vec<CoinProfitData>, Strin
             info!("💹 WhatToMine ASIC: {} coins matched", data.len());
             // Merge: if a coin exists in both APIs, keep the one with higher score
             for asic_coin in data.drain(..) {
-                if let Some(existing) = results.iter_mut().find(|r: &&mut CoinProfitData| r.coin == asic_coin.coin) {
+                if let Some(existing) = results
+                    .iter_mut()
+                    .find(|r: &&mut CoinProfitData| r.coin == asic_coin.coin)
+                {
                     if asic_coin.profit_score > existing.profit_score {
                         *existing = asic_coin;
                     }
@@ -250,7 +263,11 @@ async fn fetch_whattomine(coins: &[String]) -> Result<Vec<CoinProfitData>, Strin
     }
 
     // Sort by profitability (descending)
-    results.sort_by(|a, b| b.profit_score.partial_cmp(&a.profit_score).unwrap_or(std::cmp::Ordering::Equal));
+    results.sort_by(|a, b| {
+        b.profit_score
+            .partial_cmp(&a.profit_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     Ok(results)
 }
@@ -261,18 +278,23 @@ async fn fetch_wtm_endpoint(
     url: &str,
     coins: &[String],
 ) -> Result<Vec<CoinProfitData>, String> {
-    let response = client.get(url).send().await
+    let response = client
+        .get(url)
+        .send()
+        .await
         .map_err(|e| format!("Request to {} failed: {}", url, e))?;
 
     if !response.status().is_success() {
         return Err(format!("{} HTTP {}", url, response.status()));
     }
 
-    let body = response.text().await
+    let body = response
+        .text()
+        .await
         .map_err(|e| format!("Body read from {} failed: {}", url, e))?;
 
-    let wtm: WtmGpuResponse = serde_json::from_str(&body)
-        .map_err(|e| format!("Parse {} failed: {}", url, e))?;
+    let wtm: WtmGpuResponse =
+        serde_json::from_str(&body).map_err(|e| format!("Parse {} failed: {}", url, e))?;
 
     let now = Utc::now().timestamp();
     let mut results = Vec::new();
@@ -291,7 +313,10 @@ async fn fetch_wtm_endpoint(
         ("Clore.ai", "CLORE"),
         ("Monero", "XMR"),
         ("Litecoin", "LTC"),
-    ].iter().cloned().collect();
+    ]
+    .iter()
+    .cloned()
+    .collect();
 
     for (name, data) in &wtm.coins {
         // Skip Nicehash entries
@@ -299,7 +324,8 @@ async fn fetch_wtm_endpoint(
             continue;
         }
 
-        let tag = coin_map.get(name.as_str())
+        let tag = coin_map
+            .get(name.as_str())
             .map(|t| t.to_string())
             .unwrap_or_else(|| data.tag.clone());
 
@@ -335,13 +361,14 @@ fn estimate_profitability_fallback(coins: &[String]) -> Vec<CoinProfitData> {
     // Static estimates based on typical February 2026 values
     // Updated periodically when WhatToMine data is available
     let estimates: Vec<(&str, &str, f64)> = vec![
-        ("XMR",  "RandomX",    90.0),   // CPU-minable, most profitable for our servers
-        ("ETC",  "Ethash",     60.0),
-        ("RVN",  "KawPow",     40.0),
-        ("ERG",  "Autolykos",  35.0),
+        ("XMR", "RandomX", 90.0), // CPU-minable, most profitable for our servers
+        ("ETC", "Ethash", 60.0),
+        ("RVN", "KawPow", 40.0),
+        ("ERG", "Autolykos", 35.0),
     ];
 
-    estimates.iter()
+    estimates
+        .iter()
         .filter(|(tag, _, _)| coins.is_empty() || coins.iter().any(|c| c.eq_ignore_ascii_case(tag)))
         .map(|(tag, algo, score)| CoinProfitData {
             coin: tag.to_string(),
@@ -398,9 +425,15 @@ impl ProfitSwitcher {
             .unwrap_or_else(|_| "XMR".to_string())
             .to_uppercase();
         let initial_coin = if cpu_only {
-            info!("💹 CPU-only mode: Revenue 25% locked to {} ({})",
+            info!(
+                "💹 CPU-only mode: Revenue 25% locked to {} ({})",
                 cpu_revenue_coin,
-                if cpu_revenue_coin == "VRSC" { "VerusHash → LuckPool" } else { "RandomX → MoneroOcean" });
+                if cpu_revenue_coin == "VRSC" {
+                    "VerusHash → LuckPool"
+                } else {
+                    "RandomX → MoneroOcean"
+                }
+            );
             cpu_revenue_coin.clone()
         } else {
             config.fallback_coin.clone()
@@ -455,29 +488,35 @@ impl ProfitSwitcher {
         let history = self.switch_history.read().await.clone();
 
         // Build profitability table
-        let profit_table: Vec<serde_json::Value> = profit.iter().map(|p| {
-            serde_json::json!({
-                "coin": p.coin,
-                "algorithm": p.algorithm,
-                "profit_score": p.profit_score,
-                "price_usd": p.price_usd,
-                "btc_revenue_24h": p.btc_revenue_24h,
-                "usd_revenue_24h": p.usd_revenue_24h,
-                "is_active": p.coin.eq_ignore_ascii_case(&active),
+        let profit_table: Vec<serde_json::Value> = profit
+            .iter()
+            .map(|p| {
+                serde_json::json!({
+                    "coin": p.coin,
+                    "algorithm": p.algorithm,
+                    "profit_score": p.profit_score,
+                    "price_usd": p.price_usd,
+                    "btc_revenue_24h": p.btc_revenue_24h,
+                    "usd_revenue_24h": p.usd_revenue_24h,
+                    "is_active": p.coin.eq_ignore_ascii_case(&active),
+                })
             })
-        }).collect();
+            .collect();
 
         // Last 10 switch events
-        let recent_switches: Vec<serde_json::Value> = history.iter()
+        let recent_switches: Vec<serde_json::Value> = history
+            .iter()
             .rev()
             .take(10)
-            .map(|s| serde_json::json!({
-                "from": s.from_coin,
-                "to": s.to_coin,
-                "reason": s.reason,
-                "advantage_pct": s.profit_advantage_pct,
-                "timestamp": s.timestamp,
-            }))
+            .map(|s| {
+                serde_json::json!({
+                    "from": s.from_coin,
+                    "to": s.to_coin,
+                    "reason": s.reason,
+                    "advantage_pct": s.profit_advantage_pct,
+                    "timestamp": s.timestamp,
+                })
+            })
             .collect();
 
         serde_json::json!({
@@ -542,9 +581,9 @@ impl ProfitSwitcher {
             self.config.fallback_coin,
         );
 
-        let mut interval = tokio::time::interval(
-            tokio::time::Duration::from_secs(self.config.check_interval_secs)
-        );
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.config.check_interval_secs,
+        ));
 
         // First tick is immediate
         interval.tick().await;
@@ -552,7 +591,13 @@ impl ProfitSwitcher {
         loop {
             // Fetch profitability data
             let coins = if self.config.preferred_coins.is_empty() {
-                vec!["KAS".to_string(), "ETC".to_string(), "RVN".to_string(), "ERG".to_string(), "ALPH".to_string()]
+                vec![
+                    "KAS".to_string(),
+                    "ETC".to_string(),
+                    "RVN".to_string(),
+                    "ERG".to_string(),
+                    "ALPH".to_string(),
+                ]
             } else {
                 self.config.preferred_coins.clone()
             };
@@ -602,9 +647,20 @@ impl ProfitSwitcher {
         let current_coin = self.active_coin.read().await.clone();
 
         // Find the most profitable coin (excluding excluded list)
-        let best = profit_data.iter()
-            .filter(|p| !self.config.excluded_coins.iter().any(|e| e.eq_ignore_ascii_case(&p.coin)))
-            .max_by(|a, b| a.profit_score.partial_cmp(&b.profit_score).unwrap_or(std::cmp::Ordering::Equal));
+        let best = profit_data
+            .iter()
+            .filter(|p| {
+                !self
+                    .config
+                    .excluded_coins
+                    .iter()
+                    .any(|e| e.eq_ignore_ascii_case(&p.coin))
+            })
+            .max_by(|a, b| {
+                a.profit_score
+                    .partial_cmp(&b.profit_score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
         let best = match best {
             Some(b) => b,
@@ -612,7 +668,8 @@ impl ProfitSwitcher {
         };
 
         // Find current coin's profitability
-        let current_profit = profit_data.iter()
+        let current_profit = profit_data
+            .iter()
             .find(|p| p.coin.eq_ignore_ascii_case(&current_coin))
             .map(|p| p.profit_score)
             .unwrap_or(0.0);
@@ -637,8 +694,11 @@ impl ProfitSwitcher {
         if advantage_pct < self.config.switch_threshold_pct {
             debug!(
                 "💹 {} is better ({:.1} vs {:.1}, +{:.1}%) but below threshold ({}%)",
-                best.coin, best.profit_score, current_profit,
-                advantage_pct, self.config.switch_threshold_pct
+                best.coin,
+                best.profit_score,
+                current_profit,
+                advantage_pct,
+                self.config.switch_threshold_pct
             );
             return;
         }
@@ -658,8 +718,7 @@ impl ProfitSwitcher {
         // === SWITCH! ===
         info!(
             "🔄 PROFIT SWITCH: {} → {} (advantage: +{:.1}%, score: {:.1} vs {:.1})",
-            current_coin, best.coin, advantage_pct,
-            best.profit_score, current_profit
+            current_coin, best.coin, advantage_pct, best.profit_score, current_profit
         );
 
         // Update active coin

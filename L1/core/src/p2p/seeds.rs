@@ -1,18 +1,17 @@
+use anyhow::Result;
 use std::net::SocketAddr;
 use std::time::Duration;
-use anyhow::Result;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
 /// Hardcoded seed nodes for bootstrapping
 pub const SEED_NODES: &[&str] = &[
     // ZION Foundation nodes
-    "77.42.31.72:8334",      // Helsinki (PRIMARY)
-    "195.201.31.201:8334",   // Germany (SECONDARY)
+    "77.42.31.72:8334",    // Helsinki (PRIMARY)
+    "195.201.31.201:8334", // Germany (SECONDARY)
     "seed1.zionterranova.com:8334",
     "seed2.zionterranova.com:8334",
     "seed3.zionterranova.com:8334",
-    
     // Community nodes (to be added)
     // "community1.zion.network:8334",
 ];
@@ -20,7 +19,7 @@ pub const SEED_NODES: &[&str] = &[
 /// Discover reachable seed nodes
 pub async fn discover_seeds() -> Vec<String> {
     let mut reachable = Vec::new();
-    
+
     for seed in SEED_NODES {
         // Try to resolve and check connectivity
         match try_connect_seed(seed).await {
@@ -36,13 +35,13 @@ pub async fn discover_seeds() -> Vec<String> {
             }
         }
     }
-    
+
     if reachable.is_empty() {
         println!("[P2P] WARNING: No seed nodes reachable!");
     } else {
         println!("[P2P] Discovered {} reachable seeds", reachable.len());
     }
-    
+
     reachable
 }
 
@@ -59,9 +58,9 @@ async fn try_connect_seed(seed: &str) -> Result<bool> {
 /// Resolve DNS seed nodes (for future DNS-based discovery)
 pub async fn resolve_dns_seeds(domain: &str) -> Result<Vec<SocketAddr>> {
     use tokio::net::lookup_host;
-    
+
     let mut addrs = Vec::new();
-    
+
     // Example: seed.zionterranova.com returns multiple A records
     match lookup_host(domain).await {
         Ok(iter) => {
@@ -74,7 +73,7 @@ pub async fn resolve_dns_seeds(domain: &str) -> Result<Vec<SocketAddr>> {
             println!("[P2P] DNS lookup failed for {}: {}", domain, e);
         }
     }
-    
+
     Ok(addrs)
 }
 

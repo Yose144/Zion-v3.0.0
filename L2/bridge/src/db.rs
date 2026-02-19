@@ -153,7 +153,9 @@ impl BridgeDb {
 
     /// Get or set a bridge state key-value pair.
     pub fn get_state(&self, key: &str) -> Result<Option<String>> {
-        let mut stmt = self.conn.prepare("SELECT value FROM bridge_state WHERE key = ?1")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT value FROM bridge_state WHERE key = ?1")?;
         let result = stmt.query_row(params![key], |row| row.get(0)).ok();
         Ok(result)
     }
@@ -181,13 +183,17 @@ impl BridgeDb {
 
     /// Get bridge statistics.
     pub fn get_stats(&self) -> Result<BridgeStats> {
-        let total_locks: u64 = self
-            .conn
-            .query_row("SELECT COUNT(*) FROM l1_locks WHERE status = 'Completed'", [], |r| r.get(0))?;
+        let total_locks: u64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM l1_locks WHERE status = 'Completed'",
+            [],
+            |r| r.get(0),
+        )?;
 
-        let total_burns: u64 = self
-            .conn
-            .query_row("SELECT COUNT(*) FROM evm_burns WHERE status = 'Completed'", [], |r| r.get(0))?;
+        let total_burns: u64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM evm_burns WHERE status = 'Completed'",
+            [],
+            |r| r.get(0),
+        )?;
 
         Ok(BridgeStats {
             total_operations: total_locks + total_burns,
@@ -200,7 +206,7 @@ impl BridgeDb {
         let mut stmt = self.conn.prepare(
             "SELECT l1_tx_hash, l1_block_height, l1_sender, amount_atomic, amount_wzion,
                     target_chain, evm_recipient, status, confirmations, detected_at
-             FROM l1_locks WHERE status IN ('Pending', 'Confirmed')"
+             FROM l1_locks WHERE status IN ('Pending', 'Confirmed')",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(L1LockEvent {
@@ -228,7 +234,7 @@ impl BridgeDb {
         let mut stmt = self.conn.prepare(
             "SELECT burn_id, evm_tx_hash, evm_block_number, evm_chain, evm_burner,
                     amount_wzion, amount_l1_atomic, l1_recipient, status, confirmations, detected_at
-             FROM evm_burns WHERE status IN ('Pending', 'Confirmed')"
+             FROM evm_burns WHERE status IN ('Pending', 'Confirmed')",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(EvmBurnEvent {
@@ -364,7 +370,8 @@ mod tests {
         db.insert_lock(&sample_lock("tx002")).unwrap();
 
         // Status update to Completed
-        db.update_lock_status("tx002", BridgeStatus::Completed).unwrap();
+        db.update_lock_status("tx002", BridgeStatus::Completed)
+            .unwrap();
 
         // Should no longer appear in pending
         let pending = db.get_pending_locks().unwrap();
@@ -380,7 +387,8 @@ mod tests {
         let (db, _dir) = test_db();
         db.insert_burn(&sample_burn("burn002")).unwrap();
 
-        db.update_burn_status("burn002", BridgeStatus::Completed).unwrap();
+        db.update_burn_status("burn002", BridgeStatus::Completed)
+            .unwrap();
 
         let pending = db.get_pending_burns().unwrap();
         assert_eq!(pending.len(), 0);
@@ -444,19 +452,24 @@ mod tests {
 
         // Insert 5 locks, 3 burns
         for i in 0..5 {
-            db.insert_lock(&sample_lock(&format!("lock_{}", i))).unwrap();
+            db.insert_lock(&sample_lock(&format!("lock_{}", i)))
+                .unwrap();
         }
         for i in 0..3 {
-            db.insert_burn(&sample_burn(&format!("burn_{}", i))).unwrap();
+            db.insert_burn(&sample_burn(&format!("burn_{}", i)))
+                .unwrap();
         }
 
         assert_eq!(db.get_pending_locks().unwrap().len(), 5);
         assert_eq!(db.get_pending_burns().unwrap().len(), 3);
 
         // Complete some
-        db.update_lock_status("lock_0", BridgeStatus::Completed).unwrap();
-        db.update_lock_status("lock_1", BridgeStatus::Completed).unwrap();
-        db.update_burn_status("burn_0", BridgeStatus::Completed).unwrap();
+        db.update_lock_status("lock_0", BridgeStatus::Completed)
+            .unwrap();
+        db.update_lock_status("lock_1", BridgeStatus::Completed)
+            .unwrap();
+        db.update_burn_status("burn_0", BridgeStatus::Completed)
+            .unwrap();
 
         assert_eq!(db.get_pending_locks().unwrap().len(), 3);
         assert_eq!(db.get_pending_burns().unwrap().len(), 2);
@@ -498,7 +511,8 @@ mod tests {
     fn test_failed_status() {
         let (db, _dir) = test_db();
         db.insert_lock(&sample_lock("fail_tx")).unwrap();
-        db.update_lock_status("fail_tx", BridgeStatus::Failed).unwrap();
+        db.update_lock_status("fail_tx", BridgeStatus::Failed)
+            .unwrap();
 
         // Failed should not be in pending
         assert_eq!(db.get_pending_locks().unwrap().len(), 0);

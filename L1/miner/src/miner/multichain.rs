@@ -40,7 +40,7 @@ impl ChainConfig {
             enabled: true,
         }
     }
-    
+
     pub fn monero(wallet: &str, pool: &str) -> Self {
         Self {
             coin: "XMR".into(),
@@ -50,7 +50,7 @@ impl ChainConfig {
             enabled: true,
         }
     }
-    
+
     pub fn ravencoin(wallet: &str, pool: &str) -> Self {
         Self {
             coin: "RVN".into(),
@@ -60,7 +60,7 @@ impl ChainConfig {
             enabled: true,
         }
     }
-    
+
     pub fn ergo(wallet: &str, pool: &str) -> Self {
         Self {
             coin: "ERG".into(),
@@ -70,7 +70,7 @@ impl ChainConfig {
             enabled: true,
         }
     }
-    
+
     pub fn kaspa(wallet: &str, pool: &str) -> Self {
         Self {
             coin: "KAS".into(),
@@ -80,7 +80,7 @@ impl ChainConfig {
             enabled: true,
         }
     }
-    
+
     pub fn etc(wallet: &str, pool: &str) -> Self {
         Self {
             coin: "ETC".into(),
@@ -90,7 +90,7 @@ impl ChainConfig {
             enabled: true,
         }
     }
-    
+
     pub fn zcash(wallet: &str, pool: &str) -> Self {
         Self {
             coin: "ZEC".into(),
@@ -100,7 +100,7 @@ impl ChainConfig {
             enabled: true,
         }
     }
-    
+
     pub fn alephium(wallet: &str, pool: &str) -> Self {
         Self {
             coin: "ALPH".into(),
@@ -135,15 +135,15 @@ impl MultiChainMiner {
             running: Arc::new(RwLock::new(false)),
         }
     }
-    
+
     pub fn add_chain(&mut self, config: ChainConfig) {
         self.chains.push(config);
     }
-    
+
     pub fn chains(&self) -> &[ChainConfig] {
         &self.chains
     }
-    
+
     /// Select most profitable chain (placeholder - use whattomine.rs for real data)
     pub async fn select_best_chain(&mut self) -> Result<&ChainConfig> {
         // For now, just select first enabled chain
@@ -156,20 +156,22 @@ impl MultiChainMiner {
         }
         Err(anyhow!("No enabled chains"))
     }
-    
+
     /// Start mining on selected chain
     pub async fn start(&self) -> Result<()> {
-        let chain_idx = self.active_chain.ok_or_else(|| anyhow!("No chain selected"))?;
+        let chain_idx = self
+            .active_chain
+            .ok_or_else(|| anyhow!("No chain selected"))?;
         let chain = &self.chains[chain_idx];
-        
+
         info!("⛏️  Starting {} mining ({:?})", chain.coin, chain.algorithm);
         info!("   Pool: {}", chain.pool_url);
         info!("   Worker: {}", self.worker_name);
         info!("   CPU threads: {}", self.cpu_threads);
         info!("   GPU enabled: {}", self.gpu_enabled);
-        
+
         *self.running.write().await = true;
-        
+
         // Connect to pool
         let stratum = StratumClient::new(
             &chain.pool_url,
@@ -179,44 +181,45 @@ impl MultiChainMiner {
             None,
             None,
         )?;
-        
+
         stratum.connect().await?;
-        
+
         // Request initial job
         let _ = stratum.request_job().await;
-        
+
         // Start mining loop
         self.mine_loop(chain, &stratum).await
     }
-    
+
     async fn mine_loop(&self, chain: &ChainConfig, stratum: &StratumClient) -> Result<()> {
         let mut job_rx = stratum.subscribe_jobs().await;
-        
+
         info!("🔄 Waiting for jobs from pool...");
-        
+
         while *self.running.read().await {
             // Wait for new job
             if job_rx.changed().await.is_err() {
                 warn!("Job channel closed");
                 break;
             }
-            
+
             let job = job_rx.borrow().clone();
             if let Some(job) = job {
                 debug!("Got job: {}", job.job_id);
-                
+
                 // Parse job data
                 let blob = hex::decode(&job.blob).unwrap_or_default();
                 let target_str = &job.target;
-                
+
                 // Mine!
-                self.mine_job(chain, stratum, &blob, target_str, &job.job_id, job.height).await?;
+                self.mine_job(chain, stratum, &blob, target_str, &job.job_id, job.height)
+                    .await?;
             }
         }
-        
+
         Ok(())
     }
-    
+
     async fn mine_job(
         &self,
         chain: &ChainConfig,
@@ -228,7 +231,7 @@ impl MultiChainMiner {
     ) -> Result<()> {
         let threads = self.cpu_threads;
         let algo = chain.algorithm;
-        
+
         // Parse target from hex string
         let target_bytes = hex::decode(target_str).unwrap_or_else(|_| vec![0xff; 32]);
         let target_u64 = if target_bytes.len() >= 8 {
@@ -236,13 +239,13 @@ impl MultiChainMiner {
         } else {
             u64::MAX
         };
-        
+
         // Parallel nonce search
         let results: Vec<Option<(u64, Vec<u8>)>> = (0..threads)
             .map(|thread_id| {
                 let start_nonce = thread_id as u64 * (u64::MAX / threads as u64);
                 let end_nonce = start_nonce + (u64::MAX / threads as u64);
-                
+
                 for nonce in (start_nonce..end_nonce).step_by(1000) {
                     // Compute hash using native algorithm
                     if let Ok(hash) = native_algos::compute_hash(algo, blob, nonce, height as u32) {
@@ -252,43 +255,45 @@ impl MultiChainMiner {
                             return Some((nonce, hash));
                         }
                     }
-                    
+
                     // Check every 1000 iterations if we should stop
                     // In real impl, use atomic flag
                 }
                 None
             })
             .collect();
-        
+
         // Submit any found solutions
         for result in results {
             if let Some((nonce, hash)) = result {
                 info!("💎 Found share! Nonce: {}", nonce);
                 let nonce_u32 = (nonce & 0xFFFFFFFF) as u32;
-                stratum.submit_share(job_id, nonce_u32, &hex::encode(&hash)).await?;
-                
+                stratum
+                    .submit_share(job_id, nonce_u32, &hex::encode(&hash))
+                    .await?;
+
                 // Update stats
                 let mut stats = self.stats.write().await;
                 stats.shares_found += 1;
             }
         }
-        
+
         Ok(())
     }
-    
+
     pub async fn stop(&self) {
         *self.running.write().await = false;
         info!("⏹️  Miner stopped");
     }
-    
+
     pub async fn get_stats(&self) -> MultiChainStats {
         self.stats.read().await.clone()
     }
-    
+
     /// Run benchmark on all available native algorithms
     pub async fn benchmark_all(&self, iterations: i32) -> Vec<(NativeAlgorithm, f64)> {
         let mut results = Vec::new();
-        
+
         for algo in native_algos::available_algorithms() {
             info!("📊 Benchmarking {:?}...", algo);
             match native_algos::benchmark(algo, iterations) {
@@ -301,7 +306,7 @@ impl MultiChainMiner {
                 }
             }
         }
-        
+
         results
     }
 }
@@ -313,26 +318,26 @@ impl MultiChainMiner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_chain_configs() {
         let zion = ChainConfig::zion("ZION_test_wallet", "pool.zion.io:3333");
         assert_eq!(zion.coin, "ZION");
         assert_eq!(zion.algorithm, NativeAlgorithm::CosmicHarmony);
-        
+
         let rvn = ChainConfig::ravencoin("rvn_wallet", "pool.rvn.io:3333");
         assert_eq!(rvn.algorithm, NativeAlgorithm::KawPow);
     }
-    
+
     #[tokio::test]
     async fn test_miner_creation() {
         let mut miner = MultiChainMiner::new("test-worker", 4, false);
-        
+
         miner.add_chain(ChainConfig::zion("wallet", "localhost:3333"));
         miner.add_chain(ChainConfig::ergo("wallet", "localhost:3334"));
-        
+
         assert_eq!(miner.chains().len(), 2);
-        
+
         let best = miner.select_best_chain().await.unwrap();
         assert_eq!(best.coin, "ZION");
     }

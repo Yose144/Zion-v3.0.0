@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 #[derive(Debug, Clone)]
 pub struct BenchmarkResult {
     pub batch_size: u64,
-    pub hashrate: f64,       // H/s
+    pub hashrate: f64, // H/s
     pub elapsed_ms: f64,
     pub hashes_tested: u64,
 }
@@ -53,16 +53,16 @@ impl Default for AutoTuneConfig {
 pub fn calculate_optimal_batch_size(device: &GpuDevice) -> u64 {
     // Base calculation on GPU memory and platform
     let memory_factor = match device.memory_mb {
-        0..=1024 => 500_000,           // Low-end GPU
-        1025..=4096 => 1_000_000,      // Mid-range GPU
-        4097..=8192 => 2_000_000,      // High-end GPU
-        _ => 4_000_000,                // Very high-end GPU
+        0..=1024 => 500_000,      // Low-end GPU
+        1025..=4096 => 1_000_000, // Mid-range GPU
+        4097..=8192 => 2_000_000, // High-end GPU
+        _ => 4_000_000,           // Very high-end GPU
     };
 
     // Platform efficiency factors
     let platform_factor = match device.platform {
         GpuPlatform::Cuda => 1.2,
-        GpuPlatform::Metal => 1.5,  // Metal is very efficient on Apple Silicon
+        GpuPlatform::Metal => 1.5, // Metal is very efficient on Apple Silicon
         GpuPlatform::OpenCL => 1.0,
     };
 
@@ -70,13 +70,13 @@ pub fn calculate_optimal_batch_size(device: &GpuDevice) -> u64 {
 }
 
 /// Run benchmark on a GPU miner
-pub fn run_benchmark(
-    miner: &mut dyn GpuMiner,
-    config: &AutoTuneConfig,
-) -> Result<DeviceBenchmark> {
+pub fn run_benchmark(miner: &mut dyn GpuMiner, config: &AutoTuneConfig) -> Result<DeviceBenchmark> {
     let device = miner.device_info().clone();
     println!("\n🔧 Benchmarking GPU: {}", device.name);
-    println!("   Platform: {:?}, Memory: {} MB", device.platform, device.memory_mb);
+    println!(
+        "   Platform: {:?}, Memory: {} MB",
+        device.platform, device.memory_mb
+    );
 
     // Test header (dummy data)
     let header = vec![0u8; 80];
@@ -139,7 +139,11 @@ pub fn run_benchmark(
         }
     }
 
-    println!("\n✅ Optimal batch size: {} ({:.2} MH/s)", best_batch, best_hashrate / 1_000_000.0);
+    println!(
+        "\n✅ Optimal batch size: {} ({:.2} MH/s)",
+        best_batch,
+        best_hashrate / 1_000_000.0
+    );
 
     Ok(DeviceBenchmark {
         device,
@@ -152,10 +156,10 @@ pub fn run_benchmark(
 /// Quick auto-tune to find optimal batch size
 pub fn auto_tune(miner: &mut dyn GpuMiner) -> Result<u64> {
     let device = miner.device_info();
-    
+
     // Start with calculated estimate
     let estimated = calculate_optimal_batch_size(device);
-    
+
     // Quick benchmark around the estimate
     let config = AutoTuneConfig {
         min_batch: estimated / 2,
@@ -176,11 +180,15 @@ pub fn print_benchmark_results(benchmarks: &[DeviceBenchmark]) {
 
     for bench in benchmarks {
         println!("║ Device: {:<60} ║", bench.device.name);
-        println!("║ Platform: {:?}, Memory: {} MB{:>36} ║", 
-            bench.device.platform, bench.device.memory_mb, "");
+        println!(
+            "║ Platform: {:?}, Memory: {} MB{:>36} ║",
+            bench.device.platform, bench.device.memory_mb, ""
+        );
         println!("╟──────────────────────────────────────────────────────────────────────╢");
-        println!("║ {:>12} │ {:>12} │ {:>12} │ {:>12} ║", 
-            "Batch Size", "Hashrate", "Time (ms)", "Hashes");
+        println!(
+            "║ {:>12} │ {:>12} │ {:>12} │ {:>12} ║",
+            "Batch Size", "Hashrate", "Time (ms)", "Hashes"
+        );
         println!("╟──────────────────────────────────────────────────────────────────────╢");
 
         for result in &bench.results {
@@ -192,18 +200,19 @@ pub fn print_benchmark_results(benchmarks: &[DeviceBenchmark]) {
                 format!("{:.2} H/s", result.hashrate)
             };
 
-            println!("║ {:>12} │ {:>12} │ {:>12.2} │ {:>12} ║",
-                result.batch_size,
-                hashrate_str,
-                result.elapsed_ms,
-                result.hashes_tested);
+            println!(
+                "║ {:>12} │ {:>12} │ {:>12.2} │ {:>12} ║",
+                result.batch_size, hashrate_str, result.elapsed_ms, result.hashes_tested
+            );
         }
 
         println!("╟──────────────────────────────────────────────────────────────────────╢");
-        println!("║ OPTIMAL: batch={}, peak={:.2} MH/s{:>24} ║",
+        println!(
+            "║ OPTIMAL: batch={}, peak={:.2} MH/s{:>24} ║",
             bench.optimal_batch_size,
             bench.peak_hashrate / 1_000_000.0,
-            "");
+            ""
+        );
         println!("╚══════════════════════════════════════════════════════════════════════╝");
     }
 }

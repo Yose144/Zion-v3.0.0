@@ -1,3 +1,7 @@
+use ed25519_dalek::SigningKey;
+use zion_core::blockchain::fee;
+use zion_core::crypto::{keys, to_hex};
+use zion_core::tx::{Transaction, TxInput, TxOutput};
 /// Sprint 1.4 — Pool Payout Integration Tests
 ///
 /// Validates:
@@ -6,13 +10,8 @@
 /// 3. UTXO consumption and change handling
 /// 4. Signature verification for batch transactions
 /// 5. Edge cases: max recipients, fee calculation, insufficient funds
-
 use zion_core::wallet::batch::*;
-use zion_core::wallet::{SpendableUtxo, WalletError, build_and_sign, SendParams};
-use zion_core::tx::{Transaction, TxInput, TxOutput};
-use zion_core::blockchain::fee;
-use zion_core::crypto::{keys, to_hex};
-use ed25519_dalek::SigningKey;
+use zion_core::wallet::{build_and_sign, SendParams, SpendableUtxo, WalletError};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -135,8 +134,14 @@ fn test_batch_multiple_utxo_consumption() {
 
     let params = BatchParams {
         recipients: vec![
-            Recipient { address: miner_address(0), amount: 8_000_000_000 }, // 8000 ZION
-            Recipient { address: miner_address(1), amount: 5_000_000_000 }, // 5000 ZION
+            Recipient {
+                address: miner_address(0),
+                amount: 8_000_000_000,
+            }, // 8000 ZION
+            Recipient {
+                address: miner_address(1),
+                amount: 5_000_000_000,
+            }, // 5000 ZION
         ],
         fee: Some(5_000),
         change_address: pool_addr.clone(),
@@ -152,9 +157,9 @@ fn test_batch_multiple_utxo_consumption() {
 fn test_batch_utxo_largest_first() {
     let (secret, _, pool_addr) = pool_keypair();
     let utxos = vec![
-        make_utxo("small", 0, 1_000_000, &pool_addr),    // 1 ZION
-        make_utxo("large", 0, 100_000_000, &pool_addr),   // 100 ZION
-        make_utxo("medium", 0, 10_000_000, &pool_addr),   // 10 ZION
+        make_utxo("small", 0, 1_000_000, &pool_addr),   // 1 ZION
+        make_utxo("large", 0, 100_000_000, &pool_addr), // 100 ZION
+        make_utxo("medium", 0, 10_000_000, &pool_addr), // 10 ZION
     ];
 
     let params = BatchParams {
@@ -205,9 +210,18 @@ fn test_batch_signatures_ed25519_valid() {
 
     let params = BatchParams {
         recipients: vec![
-            Recipient { address: miner_address(0), amount: 50_000_000 },
-            Recipient { address: miner_address(1), amount: 50_000_000 },
-            Recipient { address: miner_address(2), amount: 50_000_000 },
+            Recipient {
+                address: miner_address(0),
+                amount: 50_000_000,
+            },
+            Recipient {
+                address: miner_address(1),
+                amount: 50_000_000,
+            },
+            Recipient {
+                address: miner_address(2),
+                amount: 50_000_000,
+            },
         ],
         fee: Some(5_000),
         change_address: pool_addr.clone(),
@@ -267,17 +281,24 @@ fn test_batch_fee_scales_with_outputs() {
     // 1 recipient
     let r1 = build_and_sign_batch(
         &BatchParams {
-            recipients: vec![Recipient { address: miner_address(0), amount: 1_000_000 }],
+            recipients: vec![Recipient {
+                address: miner_address(0),
+                amount: 1_000_000,
+            }],
             fee: None,
             change_address: pool_addr.clone(),
         },
         &utxos,
         &secret,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 20 recipients
     let recipients_20: Vec<Recipient> = (0..20)
-        .map(|i| Recipient { address: miner_address(i), amount: 1_000_000 })
+        .map(|i| Recipient {
+            address: miner_address(i),
+            amount: 1_000_000,
+        })
         .collect();
     let r20 = build_and_sign_batch(
         &BatchParams {
@@ -287,7 +308,8 @@ fn test_batch_fee_scales_with_outputs() {
         },
         &utxos,
         &secret,
-    ).unwrap();
+    )
+    .unwrap();
 
     // More outputs → higher fee
     assert!(r20.fee > r1.fee);
@@ -300,13 +322,17 @@ fn test_batch_fee_minimum_enforced() {
 
     let result = build_and_sign_batch(
         &BatchParams {
-            recipients: vec![Recipient { address: miner_address(0), amount: 1_000_000 }],
+            recipients: vec![Recipient {
+                address: miner_address(0),
+                amount: 1_000_000,
+            }],
             fee: None,
             change_address: pool_addr.clone(),
         },
         &utxos,
         &secret,
-    ).unwrap();
+    )
+    .unwrap();
 
     assert!(result.fee >= fee::MIN_TX_FEE);
 }
@@ -339,7 +365,10 @@ fn test_batch_error_insufficient_funds() {
 
     let result = build_and_sign_batch(
         &BatchParams {
-            recipients: vec![Recipient { address: miner_address(0), amount: 100_000_000 }],
+            recipients: vec![Recipient {
+                address: miner_address(0),
+                amount: 100_000_000,
+            }],
             fee: None,
             change_address: pool_addr,
         },
@@ -356,7 +385,10 @@ fn test_batch_error_invalid_miner_address() {
 
     let result = build_and_sign_batch(
         &BatchParams {
-            recipients: vec![Recipient { address: "BAD_ADDR".to_string(), amount: 1_000_000 }],
+            recipients: vec![Recipient {
+                address: "BAD_ADDR".to_string(),
+                amount: 1_000_000,
+            }],
             fee: None,
             change_address: pool_addr,
         },
@@ -373,7 +405,10 @@ fn test_batch_error_zero_amount_recipient() {
 
     let result = build_and_sign_batch(
         &BatchParams {
-            recipients: vec![Recipient { address: miner_address(0), amount: 0 }],
+            recipients: vec![Recipient {
+                address: miner_address(0),
+                amount: 0,
+            }],
             fee: None,
             change_address: pool_addr,
         },
@@ -389,7 +424,10 @@ fn test_batch_error_no_utxos() {
 
     let result = build_and_sign_batch(
         &BatchParams {
-            recipients: vec![Recipient { address: miner_address(0), amount: 1_000_000 }],
+            recipients: vec![Recipient {
+                address: miner_address(0),
+                amount: 1_000_000,
+            }],
             fee: None,
             change_address: pool_addr,
         },
@@ -405,7 +443,10 @@ fn test_batch_error_over_max_recipients() {
     let utxos = vec![make_utxo("u1", 0, u64::MAX / 2, &pool_addr)];
 
     let recipients: Vec<Recipient> = (0..=MAX_BATCH_RECIPIENTS as u8)
-        .map(|i| Recipient { address: miner_address(i), amount: 1_000_000 })
+        .map(|i| Recipient {
+            address: miner_address(i),
+            amount: 1_000_000,
+        })
         .collect();
 
     let result = build_and_sign_batch(
@@ -446,14 +487,18 @@ fn test_batch_more_efficient_than_singles() {
             },
             &utxos,
             &secret,
-        ).unwrap();
+        )
+        .unwrap();
         total_single_fee += result.fee;
     }
 
     // Batch TX for all 5 miners
     let utxos = vec![make_utxo("big", 0, 500_000_000, &pool_addr)];
     let recipients: Vec<Recipient> = (0..5)
-        .map(|i| Recipient { address: miner_address(i), amount: 10_000_000 })
+        .map(|i| Recipient {
+            address: miner_address(i),
+            amount: 10_000_000,
+        })
         .collect();
     let batch_result = build_and_sign_batch(
         &BatchParams {
@@ -463,7 +508,8 @@ fn test_batch_more_efficient_than_singles() {
         },
         &utxos,
         &secret,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Batch should be cheaper than sum of singles
     assert!(
@@ -508,9 +554,18 @@ fn test_batch_tx_has_correct_structure() {
 
     let params = BatchParams {
         recipients: vec![
-            Recipient { address: miner_address(0), amount: 3_000_000_000 },
-            Recipient { address: miner_address(1), amount: 2_000_000_000 },
-            Recipient { address: miner_address(2), amount: 1_000_000_000 },
+            Recipient {
+                address: miner_address(0),
+                amount: 3_000_000_000,
+            },
+            Recipient {
+                address: miner_address(1),
+                amount: 2_000_000_000,
+            },
+            Recipient {
+                address: miner_address(2),
+                amount: 1_000_000_000,
+            },
         ],
         fee: Some(10_000),
         change_address: pool_addr.clone(),
@@ -524,7 +579,7 @@ fn test_batch_tx_has_correct_structure() {
     // ID is non-empty hash
     assert!(!tx.id.is_empty());
     assert_eq!(tx.id.len(), 64); // blake2b hash = 32 bytes = 64 hex
-    // Fee
+                                 // Fee
     assert_eq!(tx.fee, 10_000);
     // Timestamp
     assert!(tx.timestamp > 0);
@@ -582,9 +637,9 @@ fn test_batch_tx_id_is_deterministic() {
 fn test_pool_reward_split_89_10_1() {
     // Block reward: 5,400,067,000 atomic (5400.067 ZION)
     let block_reward: u64 = 5_400_067_000;
-    let miner_share = (block_reward as f64 * 0.89) as u64;  // 4,806,059,630
-    let tithe_share = (block_reward as f64 * 0.10) as u64;  // 540,006,700
-    let pool_fee    = (block_reward as f64 * 0.01) as u64;  // 54,000,670
+    let miner_share = (block_reward as f64 * 0.89) as u64; // 4,806,059,630
+    let tithe_share = (block_reward as f64 * 0.10) as u64; // 540,006,700
+    let pool_fee = (block_reward as f64 * 0.01) as u64; // 54,000,670
 
     assert_eq!(miner_share, 4_806_059_630);
     assert_eq!(tithe_share, 540_006_700);
@@ -596,8 +651,14 @@ fn test_pool_reward_split_89_10_1() {
 
     let params = BatchParams {
         recipients: vec![
-            Recipient { address: miner_address(0), amount: miner_share },
-            Recipient { address: miner_address(1), amount: tithe_share }, // humanitarian
+            Recipient {
+                address: miner_address(0),
+                amount: miner_share,
+            },
+            Recipient {
+                address: miner_address(1),
+                amount: tithe_share,
+            }, // humanitarian
         ],
         fee: Some(2_000),
         change_address: pool_addr.clone(),

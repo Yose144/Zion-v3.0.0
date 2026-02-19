@@ -1,8 +1,8 @@
-use async_trait::async_trait;
 use crate::adapter::ChainAdapter;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
+use async_trait::async_trait;
 
 /// EVM adapter supporting Base, Arbitrum, BSC, Polygon.
 /// Uses ethers-rs for real RPC calls (stub for now).
@@ -20,8 +20,12 @@ impl EvmAdapter {
 
 #[async_trait]
 impl ChainAdapter for EvmAdapter {
-    fn family(&self) -> ChainFamily { ChainFamily::Evm }
-    fn name(&self) -> &str { &self.chain_name }
+    fn family(&self) -> ChainFamily {
+        ChainFamily::Evm
+    }
+    fn name(&self) -> &str {
+        &self.chain_name
+    }
 
     async fn health_check(&self) -> WarpResult<bool> {
         // TODO: W-01 — Connect to real EVM RPC via ethers-rs

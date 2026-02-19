@@ -2,16 +2,14 @@
 //!
 //! Cross-platform GPU mining using OpenCL (AMD, Intel, NVIDIA).
 
-use super::{GpuDevice, GpuMiner};
 #[cfg(feature = "gpu")]
 use super::GpuPlatform;
+use super::{GpuDevice, GpuMiner};
 use anyhow::{anyhow, Result};
 use std::time::Instant;
 
 #[cfg(feature = "gpu")]
-use ocl::{
-    Buffer, Device, DeviceType, Platform, ProQue,
-};
+use ocl::{Buffer, Device, DeviceType, Platform, ProQue};
 
 #[cfg(feature = "gpu")]
 use ocl::enums::{DeviceInfo, DeviceInfoResult};
@@ -59,7 +57,9 @@ impl OpenCLMiner {
         #[cfg(not(feature = "gpu"))]
         {
             let _ = device_id;
-            Err(anyhow!("OpenCL support not enabled. Build with --features gpu"))
+            Err(anyhow!(
+                "OpenCL support not enabled. Build with --features gpu"
+            ))
         }
     }
 }
@@ -98,10 +98,12 @@ impl GpuMiner for OpenCLMiner {
 
         #[cfg(not(feature = "gpu"))]
         {
-            Err(anyhow!("OpenCL support not enabled. Build with --features gpu"))
+            Err(anyhow!(
+                "OpenCL support not enabled. Build with --features gpu"
+            ))
         }
     }
-    
+
     fn mine_batch(
         &mut self,
         header: &[u8],
@@ -111,10 +113,22 @@ impl GpuMiner for OpenCLMiner {
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(feature = "gpu")]
         {
-            let pro_que = self.pro_que.as_ref().ok_or_else(|| anyhow!("OpenCL not initialized"))?;
-            let header_buf = self.header_buf.as_ref().ok_or_else(|| anyhow!("OpenCL header buffer not initialized"))?;
-            let results_buf = self.results_buf.as_ref().ok_or_else(|| anyhow!("OpenCL results buffer not initialized"))?;
-            let result_count_buf = self.result_count_buf.as_ref().ok_or_else(|| anyhow!("OpenCL result count buffer not initialized"))?;
+            let pro_que = self
+                .pro_que
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL not initialized"))?;
+            let header_buf = self
+                .header_buf
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL header buffer not initialized"))?;
+            let results_buf = self
+                .results_buf
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL results buffer not initialized"))?;
+            let result_count_buf = self
+                .result_count_buf
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL result count buffer not initialized"))?;
 
             if batch_size == 0 {
                 return Ok(None);
@@ -129,7 +143,7 @@ impl GpuMiner for OpenCLMiner {
             // Input  is assumed LE byte array or BE?
             // "target" parameter in  is usually byte array of target threshold.
             // We take bytes 24-31 (highest 8 bytes) and interpret as u64.
-            
+
             let mut target_u64_bytes = [0u8; 8];
             if target.len() == 32 {
                 target_u64_bytes.copy_from_slice(&target[24..32]);
@@ -142,17 +156,20 @@ impl GpuMiner for OpenCLMiner {
             let count_init = [0u32];
             result_count_buf.write(&count_init[..]).enq()?;
 
-            // Upload header
-            header_buf.write(header).enq()?;
+            // Upload header — pad to exactly 144 bytes to match buffer size
+            let header_len = header.len().min(144);
+            let mut padded_header = [0u8; 144];
+            padded_header[..header_len].copy_from_slice(&header[..header_len]);
+            header_buf.write(&padded_header[..]).enq()?;
 
             let global_work_size = (batch_size.min(u32::MAX as u64)) as usize;
             let local_work_size = if global_work_size >= 256 { 256 } else { 1 };
-            
+
             // "cosmic_harmony_v3_mine"
             let kernel = pro_que
                 .kernel_builder("cosmic_harmony_v3_mine")
                 .arg(header_buf)
-                .arg(header.len() as u32)
+                .arg(header_len as u32)
                 .arg(nonce_start)
                 .arg(target_difficulty)
                 .arg(results_buf)
@@ -185,14 +202,16 @@ impl GpuMiner for OpenCLMiner {
         #[cfg(not(feature = "gpu"))]
         {
             let _ = (header, target, nonce_start, batch_size);
-            Err(anyhow!("OpenCL support not enabled. Build with --features gpu"))
+            Err(anyhow!(
+                "OpenCL support not enabled. Build with --features gpu"
+            ))
         }
     }
-    
+
     fn device_info(&self) -> &GpuDevice {
         &self.device_info
     }
-    
+
     fn hashrate(&self) -> f64 {
         let elapsed = self.start_time.elapsed().as_secs_f64();
         if elapsed > 0.0 {
@@ -226,14 +245,21 @@ fn list_opencl_devices() -> Result<Vec<(Platform, Device, GpuDevice)>> {
 
         // Use DeviceType::ALL to catch AMD GPUs that may not respond to DeviceType::GPU
         let platform_devices = match Device::list(platform, Some(DeviceType::ALL)) {
-             Ok(d) => d,
-             Err(e) => {
-                 println!("[OPENCL] Failed to list devices for {}: {}", platform_name, e);
-                 continue;
-             }
+            Ok(d) => d,
+            Err(e) => {
+                println!(
+                    "[OPENCL] Failed to list devices for {}: {}",
+                    platform_name, e
+                );
+                continue;
+            }
         };
 
-        println!("[OPENCL] {} raw devices on {}", platform_devices.len(), platform_name);
+        println!(
+            "[OPENCL] {} raw devices on {}",
+            platform_devices.len(),
+            platform_name
+        );
 
         for device in platform_devices {
             let name = device.name().unwrap_or_else(|_| "Unknown Device".into());
@@ -241,7 +267,7 @@ fn list_opencl_devices() -> Result<Vec<(Platform, Device, GpuDevice)>> {
             // Skip CPU devices — we only want GPUs and accelerators
             let dev_type = match device.info(DeviceInfo::Type) {
                 Ok(DeviceInfoResult::Type(t)) => t,
-                _ => DeviceType::GPU,   // assume GPU if we can't query
+                _ => DeviceType::GPU, // assume GPU if we can't query
             };
             if dev_type == DeviceType::CPU {
                 println!("[OPENCL] Skipping CPU device: {}", name);
@@ -257,7 +283,10 @@ fn list_opencl_devices() -> Result<Vec<(Platform, Device, GpuDevice)>> {
                 _ => 0,
             };
 
-            println!("[OPENCL] Found GPU: {} ({} CU, {} MB)", name, compute_units, memory_mb);
+            println!(
+                "[OPENCL] Found GPU: {} ({} CU, {} MB)",
+                name, compute_units, memory_mb
+            );
 
             let id = devices.len();
             devices.push((

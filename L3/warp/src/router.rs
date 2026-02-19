@@ -1,15 +1,15 @@
 use crate::error::{WarpError, WarpResult};
-use crate::types::{ChainId, WarpTransfer, WarpStatus};
+use crate::fees::FeeEngine;
+use crate::metrics::WarpMetrics;
 use crate::protocol::{parse_warp_memo, DepositProof};
 use crate::registry::ChainRegistry;
-use crate::fees::FeeEngine;
-use crate::validator::WarpValidatorSet;
 use crate::state::TransferStateMachine;
-use crate::metrics::WarpMetrics;
+use crate::types::{ChainId, WarpStatus, WarpTransfer};
+use crate::validator::WarpValidatorSet;
 
 use std::collections::HashMap;
-use uuid::Uuid;
 use tracing::info;
+use uuid::Uuid;
 
 /// Orchestrates cross-chain transfers end-to-end.
 pub struct WarpRouter {
@@ -47,10 +47,7 @@ impl WarpRouter {
     }
 
     /// Process an outbound transfer (ZION L1 → external chain).
-    pub fn initiate_outbound(
-        &mut self,
-        proof: DepositProof,
-    ) -> WarpResult<Uuid> {
+    pub fn initiate_outbound(&mut self, proof: DepositProof) -> WarpResult<Uuid> {
         // 1. Parse memo
         let (chain_name, recipient) = parse_warp_memo(&proof.memo)?;
 
@@ -68,7 +65,9 @@ impl WarpRouter {
         }
 
         // 4. Calculate fee
-        let fee = self.fee_engine.calculate_fee(&chain_name, proof.amount_atomic)?;
+        let fee = self
+            .fee_engine
+            .calculate_fee(&chain_name, proof.amount_atomic)?;
 
         // 5. Create transfer
         let mut transfer = WarpTransfer::new(
@@ -118,7 +117,9 @@ impl WarpRouter {
         let source_chain = self.registry.get(source_chain_name)?.clone();
         let dest_chain = ChainId::zion_l1();
 
-        let fee = self.fee_engine.calculate_fee(source_chain_name, proof.amount_atomic)?;
+        let fee = self
+            .fee_engine
+            .calculate_fee(source_chain_name, proof.amount_atomic)?;
 
         let mut transfer = WarpTransfer::new(
             source_chain,
@@ -145,14 +146,16 @@ impl WarpRouter {
 
     /// Advance a transfer to the next state.
     pub fn advance_transfer(&mut self, id: Uuid, new_status: WarpStatus) -> WarpResult<()> {
-        let sm = self.state_machines.get_mut(&id).ok_or_else(|| {
-            WarpError::TransferNotFound(id.to_string())
-        })?;
+        let sm = self
+            .state_machines
+            .get_mut(&id)
+            .ok_or_else(|| WarpError::TransferNotFound(id.to_string()))?;
         sm.transition(new_status)?;
 
-        let transfer = self.transfers.get_mut(&id).ok_or_else(|| {
-            WarpError::TransferNotFound(id.to_string())
-        })?;
+        let transfer = self
+            .transfers
+            .get_mut(&id)
+            .ok_or_else(|| WarpError::TransferNotFound(id.to_string()))?;
         transfer.status = new_status;
         transfer.updated_at = chrono::Utc::now();
 
@@ -258,7 +261,9 @@ mod tests {
     fn test_inbound_transfer_basic() {
         let mut router = test_router();
         let proof = test_deposit(1_000_000_000, "burn_event");
-        let id = router.initiate_inbound("base", proof, "zion1recipient").unwrap();
+        let id = router
+            .initiate_inbound("base", proof, "zion1recipient")
+            .unwrap();
         let t = router.get_transfer(&id).unwrap();
         assert_eq!(t.status, WarpStatus::Detected);
     }
@@ -269,15 +274,25 @@ mod tests {
         let proof = test_deposit(1_000_000, "WARP:1:solana:addr");
         let id = router.initiate_outbound(proof).unwrap();
 
-        router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
-        assert_eq!(router.get_transfer(&id).unwrap().status, WarpStatus::AwaitingFinality);
+        router
+            .advance_transfer(id, WarpStatus::AwaitingFinality)
+            .unwrap();
+        assert_eq!(
+            router.get_transfer(&id).unwrap().status,
+            WarpStatus::AwaitingFinality
+        );
 
         router.advance_transfer(id, WarpStatus::Validating).unwrap();
-        router.advance_transfer(id, WarpStatus::QuorumReached).unwrap();
+        router
+            .advance_transfer(id, WarpStatus::QuorumReached)
+            .unwrap();
         router.advance_transfer(id, WarpStatus::Executing).unwrap();
         router.advance_transfer(id, WarpStatus::Completed).unwrap();
 
-        assert_eq!(router.get_transfer(&id).unwrap().status, WarpStatus::Completed);
+        assert_eq!(
+            router.get_transfer(&id).unwrap().status,
+            WarpStatus::Completed
+        );
     }
 
     #[test]
@@ -297,9 +312,13 @@ mod tests {
         let proof = test_deposit(100_000, "WARP:1:solana:a");
         let id = router.initiate_outbound(proof).unwrap();
         assert_eq!(router.pending_count(), 1);
-        router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
+        router
+            .advance_transfer(id, WarpStatus::AwaitingFinality)
+            .unwrap();
         router.advance_transfer(id, WarpStatus::Validating).unwrap();
-        router.advance_transfer(id, WarpStatus::QuorumReached).unwrap();
+        router
+            .advance_transfer(id, WarpStatus::QuorumReached)
+            .unwrap();
         router.advance_transfer(id, WarpStatus::Executing).unwrap();
         router.advance_transfer(id, WarpStatus::Completed).unwrap();
         assert_eq!(router.pending_count(), 0);
@@ -343,9 +362,13 @@ mod tests {
         let id = router.initiate_outbound(proof).unwrap();
         assert_eq!(router.metrics.transfers_initiated(), 1);
 
-        router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
+        router
+            .advance_transfer(id, WarpStatus::AwaitingFinality)
+            .unwrap();
         router.advance_transfer(id, WarpStatus::Validating).unwrap();
-        router.advance_transfer(id, WarpStatus::QuorumReached).unwrap();
+        router
+            .advance_transfer(id, WarpStatus::QuorumReached)
+            .unwrap();
         router.advance_transfer(id, WarpStatus::Executing).unwrap();
         router.advance_transfer(id, WarpStatus::Completed).unwrap();
         assert_eq!(router.metrics.transfers_completed(), 1);

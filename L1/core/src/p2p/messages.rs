@@ -13,25 +13,63 @@ fn default_ibd_limit() -> u32 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Message {
-    Handshake { version: u32, agent: String, height: u64, #[serde(default)] network: String, #[serde(default)] nonce: u64 },
-    HandshakeAck { version: u32, height: u64, #[serde(default)] nonce: u64 },
-    
+    Handshake {
+        version: u32,
+        agent: String,
+        height: u64,
+        #[serde(default)]
+        network: String,
+        #[serde(default)]
+        nonce: u64,
+    },
+    HandshakeAck {
+        version: u32,
+        height: u64,
+        #[serde(default)]
+        nonce: u64,
+    },
+
     // Gossip
-    NewBlock { height: u64, hash: String },
-    NewTx { id: String },
-    
+    NewBlock {
+        height: u64,
+        hash: String,
+    },
+    NewTx {
+        id: String,
+    },
+
     // Sync Blocks
-    GetBlocks { from_height: u64, #[serde(default = "default_block_limit")] limit: u32 },
-    Blocks { blocks: Vec<crate::blockchain::block::Block> },
+    GetBlocks {
+        from_height: u64,
+        #[serde(default = "default_block_limit")]
+        limit: u32,
+    },
+    Blocks {
+        blocks: Vec<crate::blockchain::block::Block>,
+    },
 
     // IBD (Initial Block Download) — large batch sync
-    GetBlocksIBD { from_height: u64, #[serde(default = "default_ibd_limit")] limit: u32 },
-    BlocksIBD { blocks: Vec<crate::blockchain::block::Block>, remaining: u64 },
-    
+    GetBlocksIBD {
+        from_height: u64,
+        #[serde(default = "default_ibd_limit")]
+        limit: u32,
+    },
+    BlocksIBD {
+        blocks: Vec<crate::blockchain::block::Block>,
+        remaining: u64,
+    },
+
     // Sync Txs
-    GetTx { id: String },
-    Tx { transaction: crate::tx::Transaction },
+    GetTx {
+        id: String,
+    },
+    Tx {
+        transaction: crate::tx::Transaction,
+    },
 
     GetTip,
-    Tip { height: u64, hash: String },
+    Tip {
+        height: u64,
+        hash: String,
+    },
 }

@@ -86,13 +86,13 @@ impl PayoutManager {
             .storage
             .list_payout_candidates(self.min_payout_atomic, self.payout_batch_limit)
             .await?;
-        
+
         tracing::info!(
             "💰 Payout check: {} candidates, min_payout={} atomic",
             candidates.len(),
             self.min_payout_atomic
         );
-        
+
         if candidates.is_empty() {
             return Ok(());
         }
@@ -110,13 +110,13 @@ impl PayoutManager {
             })
             .unwrap_or(0.0);
         let mut pool_balance_atomic = zion_to_atomic(pool_balance);
-        
+
         tracing::info!(
             "💰 Pool balance: {} ZION = {} atomic",
             pool_balance,
             pool_balance_atomic
         );
-        
+
         if pool_balance_atomic == 0 {
             tracing::warn!("Payout skipped: pool balance is 0");
             return Ok(());
@@ -128,7 +128,7 @@ impl PayoutManager {
                 addr,
                 pending_atomic
             );
-            
+
             if pending_atomic < self.min_payout_atomic {
                 tracing::debug!("Skipping {}: below min_payout", addr);
                 continue;
@@ -138,7 +138,7 @@ impl PayoutManager {
             let cap = if self.max_payout_atomic > 0 {
                 self.max_payout_atomic.min(pending_atomic)
             } else {
-                pending_atomic  // No cap, use full pending
+                pending_atomic // No cap, use full pending
             };
 
             let payable = self
@@ -146,16 +146,21 @@ impl PayoutManager {
                 .calculate_payable_amount(&addr, cap)
                 .await
                 .unwrap_or(0);
-            
+
             tracing::info!(
                 "💰 PPLNS result for {}: cap={}, payable={}",
                 addr,
                 cap,
                 payable
             );
-            
+
             if payable < self.min_payout_atomic {
-                tracing::debug!("Skipping {}: payable {} < min {}", addr, payable, self.min_payout_atomic);
+                tracing::debug!(
+                    "Skipping {}: payable {} < min {}",
+                    addr,
+                    payable,
+                    self.min_payout_atomic
+                );
                 continue;
             }
 
@@ -191,11 +196,20 @@ impl PayoutManager {
                 .await
                 .unwrap_or(0);
             if settled == 0 {
-                tracing::warn!("Payout sent but nothing settled: addr={} txid={}", addr, tx_id);
+                tracing::warn!(
+                    "Payout sent but nothing settled: addr={} txid={}",
+                    addr,
+                    tx_id
+                );
             }
 
             pool_balance_atomic = pool_balance_atomic.saturating_sub(payable);
-            tracing::info!("💸 Payout sent: {} amount={} tx_id={}", addr, amount_zion, tx_id);
+            tracing::info!(
+                "💸 Payout sent: {} amount={} tx_id={}",
+                addr,
+                amount_zion,
+                tx_id
+            );
         }
 
         Ok(())
@@ -263,10 +277,8 @@ impl PayoutManager {
 
         for id in ids {
             let key = format!("payout:record:{}", id);
-            let record: std::collections::HashMap<String, String> = conn
-                .hgetall(&key)
-                .await
-                .unwrap_or_default();
+            let record: std::collections::HashMap<String, String> =
+                conn.hgetall(&key).await.unwrap_or_default();
 
             let tx_id = record.get("tx_id").cloned().unwrap_or_default();
             let updated_ts = record
@@ -280,38 +292,20 @@ impl PayoutManager {
             let tx = self.rpc.get_transaction(&tx_id).await;
             match tx {
                 Ok(v) => {
-                    let confirmed = v
-                        .get("block_height")
-                        .and_then(|h| h.as_u64())
-                        .is_some();
+                    let confirmed = v.get("block_height").and_then(|h| h.as_u64()).is_some();
                     if confirmed {
-                        let _: () = conn
-                            .hset(&key, "status", "confirmed")
-                            .await
-                            .unwrap_or(());
-                        let _: () = conn
-                            .hset(&key, "updated_ts", now)
-                            .await
-                            .unwrap_or(());
+                        let _: () = conn.hset(&key, "status", "confirmed").await.unwrap_or(());
+                        let _: () = conn.hset(&key, "updated_ts", now).await.unwrap_or(());
                         let _: () = conn.zrem("payout:sent", id).await.unwrap_or(());
                     }
                 }
                 Err(e) => {
                     if self.confirm_timeout_secs > 0 && updated_ts > 0 {
-                        let age = now.saturating_sub(updated_ts as i64);
+                        let age = now.saturating_sub(updated_ts);
                         if age as u64 >= self.confirm_timeout_secs {
-                            let _: () = conn
-                                .hset(&key, "status", "failed")
-                                .await
-                                .unwrap_or(());
-                            let _: () = conn
-                                .hset(&key, "error", e.to_string())
-                                .await
-                                .unwrap_or(());
-                            let _: () = conn
-                                .hset(&key, "updated_ts", now)
-                                .await
-                                .unwrap_or(());
+                            let _: () = conn.hset(&key, "status", "failed").await.unwrap_or(());
+                            let _: () = conn.hset(&key, "error", e.to_string()).await.unwrap_or(());
+                            let _: () = conn.hset(&key, "updated_ts", now).await.unwrap_or(());
                             let _: () = conn.zrem("payout:sent", id).await.unwrap_or(());
                             metrics::inc_redis_errors();
                         }

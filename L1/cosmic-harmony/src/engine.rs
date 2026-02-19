@@ -2,14 +2,11 @@
 
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn, debug};
+use tracing::{debug, info, warn};
 
-use crate::{
-    Config, AlgorithmType, MiningResult, ExportHash, RevenueBreakdown,
-    algorithms_opt,
-};
-use crate::multichain::{MultiChainEngine, MultiChainConfig, ExternalChain};
+use crate::multichain::{ExternalChain, MultiChainConfig, MultiChainEngine};
 use crate::pool_manager::{MiningJob, PoolManager, Share};
+use crate::{algorithms_opt, AlgorithmType, Config, ExportHash, MiningResult, RevenueBreakdown};
 
 fn decode_hex_loose(s: &str) -> anyhow::Result<Vec<u8>> {
     let cleaned = s.trim().trim_start_matches("0x");
@@ -45,7 +42,7 @@ fn parse_target_hex_prefix(target_hex: &str) -> anyhow::Result<[u8; 32]> {
     if cleaned.is_empty() {
         anyhow::bail!("empty target hex");
     }
-    if cleaned.len() % 2 != 0 {
+    if !cleaned.len().is_multiple_of(2) {
         anyhow::bail!("target hex must have even length");
     }
 
@@ -110,7 +107,7 @@ impl CosmicHarmonyV3 {
                 warn!("Pool connect_all failed during init: {}", e);
             }
         }
-        
+
         // Initialize multichain engine if enabled
         let multichain_engine = if config.multichain.enabled {
             info!("Initializing Multi-Chain GPU Mining Engine");
@@ -126,7 +123,7 @@ impl CosmicHarmonyV3 {
         } else {
             None
         };
-        
+
         Ok(Self {
             config: Arc::new(RwLock::new(config)),
             running: Arc::new(RwLock::new(false)),
@@ -193,8 +190,9 @@ impl CosmicHarmonyV3 {
             .ok_or_else(|| anyhow::anyhow!("No job available for pool {}", pool_id))?;
 
         let result = self.mine_job(&job, nonce).await?;
-        let hash_bytes = hash_bytes_for_algorithm(&result, pool_algorithm)
-            .ok_or_else(|| anyhow::anyhow!("No hash available for pool algorithm {:?}", pool_algorithm))?;
+        let hash_bytes = hash_bytes_for_algorithm(&result, pool_algorithm).ok_or_else(|| {
+            anyhow::anyhow!("No hash available for pool algorithm {:?}", pool_algorithm)
+        })?;
 
         let share = Share {
             job_id: job.job_id.clone(),
@@ -206,52 +204,55 @@ impl CosmicHarmonyV3 {
         let accepted = self.pool_manager.submit_share(pool_id, share).await?;
         Ok((accepted, result))
     }
-    
+
     /// Start the engine (including multichain if enabled)
     pub async fn start(&self) -> anyhow::Result<()> {
         info!("Starting Cosmic Harmony v3");
-        
+
         // Start multichain engine if enabled
         if let Some(ref mc_engine) = *self.multichain_engine.read().await {
             info!("Starting Multi-Chain GPU Mining");
-            
+
             // Connect to external pools
             let config = self.config.read().await;
             for (chain, pool_cfg) in &config.multichain.external_pools {
                 if pool_cfg.enabled {
-                    debug!("Connecting to {:?} pool: {}:{}", chain, pool_cfg.host, pool_cfg.port);
+                    debug!(
+                        "Connecting to {:?} pool: {}:{}",
+                        chain, pool_cfg.host, pool_cfg.port
+                    );
                     // Pool connection would happen here via mc_engine
                 }
             }
-            
+
             mc_engine.start().await?;
         }
-        
+
         let mut running = self.running.write().await;
         *running = true;
         Ok(())
     }
-    
+
     /// Stop the engine
     pub async fn stop(&self) -> anyhow::Result<()> {
         info!("Stopping Cosmic Harmony v3");
-        
+
         // Stop multichain engine if running
         if let Some(ref mc_engine) = *self.multichain_engine.read().await {
             info!("Stopping Multi-Chain GPU Mining");
             mc_engine.stop().await;
         }
-        
+
         let mut running = self.running.write().await;
         *running = false;
         Ok(())
     }
-    
+
     /// Check if multichain mining is active
     pub async fn is_multichain_active(&self) -> bool {
         self.multichain_engine.read().await.is_some()
     }
-    
+
     /// Get multichain stats
     pub async fn get_multichain_stats(&self) -> Option<crate::multichain::MultiChainStats> {
         if let Some(ref mc_engine) = *self.multichain_engine.read().await {
@@ -260,11 +261,15 @@ impl CosmicHarmonyV3 {
             None
         }
     }
-    
+
     /// Enable/disable a specific external chain
-    pub async fn set_chain_enabled(&self, chain: ExternalChain, enabled: bool) -> anyhow::Result<()> {
+    pub async fn set_chain_enabled(
+        &self,
+        chain: ExternalChain,
+        enabled: bool,
+    ) -> anyhow::Result<()> {
         let mut config = self.config.write().await;
-        
+
         if enabled {
             if !config.multichain.enabled_chains.contains(&chain) {
                 config.multichain.enabled_chains.push(chain);
@@ -272,31 +277,31 @@ impl CosmicHarmonyV3 {
         } else {
             config.multichain.enabled_chains.retain(|c| *c != chain);
         }
-        
+
         info!("Chain {:?} enabled={}", chain, enabled);
         Ok(())
     }
-    
+
     /// Mine a single hash with all modules
     pub async fn mine(&self, block_header: &[u8], nonce: u64) -> anyhow::Result<MiningResult> {
         let config = self.config.read().await.clone();
 
         // Step 1: Keccak-256 (deterministic, zero-alloc)
         let step1 = algorithms_opt::keccak256_opt(block_header);
-        
+
         // Step 2: SHA3-512 (deterministic, zero-alloc)
         let step2 = algorithms_opt::sha3_512_opt(&step1.data);
-        
+
         // Step 3: Golden Matrix — fixed-point for cross-platform determinism
         let step3_opt = algorithms_opt::golden_matrix_opt(&step2.data);
-        
+
         // Step 4: Cosmic Fusion — deterministic XOR mask
         let step4_opt = algorithms_opt::cosmic_fusion_opt(&step3_opt.data);
-        
+
         // Convert to fixed-size array
         let mut zion_hash = [0u8; 32];
         zion_hash.copy_from_slice(&step4_opt.data);
-        
+
         // Collect exports
         let keccak_meets = config
             .pipeline
@@ -330,7 +335,7 @@ impl CosmicHarmonyV3 {
                 meets_difficulty: sha3_meets,
             },
         ];
-        
+
         Ok(MiningResult {
             zion_hash,
             nonce,
@@ -338,12 +343,12 @@ impl CosmicHarmonyV3 {
             revenue: RevenueBreakdown::default(),
         })
     }
-    
+
     /// Get current config
     pub async fn get_config(&self) -> Config {
         self.config.read().await.clone()
     }
-    
+
     /// Check if engine is running
     pub async fn is_running(&self) -> bool {
         *self.running.read().await
@@ -354,9 +359,9 @@ impl CosmicHarmonyV3 {
 mod tests {
     use super::*;
     use crate::config::PoolConfig;
-    use tokio::net::TcpListener;
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-    
+    use tokio::net::TcpListener;
+
     #[tokio::test]
     async fn test_engine_creation() {
         let config = Config::default();
@@ -406,7 +411,9 @@ mod tests {
                         },
                         "error": null
                     });
-                    let _ = write_half.write_all(serde_json::to_string(&resp).unwrap().as_bytes()).await;
+                    let _ = write_half
+                        .write_all(serde_json::to_string(&resp).unwrap().as_bytes())
+                        .await;
                     let _ = write_half.write_all(b"\n").await;
                     let _ = write_half.flush().await;
                 } else if method == "getjob" {
@@ -421,7 +428,9 @@ mod tests {
                         },
                         "error": null
                     });
-                    let _ = write_half.write_all(serde_json::to_string(&resp).unwrap().as_bytes()).await;
+                    let _ = write_half
+                        .write_all(serde_json::to_string(&resp).unwrap().as_bytes())
+                        .await;
                     let _ = write_half.write_all(b"\n").await;
                     let _ = write_half.flush().await;
                 }
@@ -442,7 +451,10 @@ mod tests {
         );
 
         let engine = CosmicHarmonyV3::new(config).await.unwrap();
-        let job = engine.get_job_for_algorithm(AlgorithmType::CosmicFusion).await.unwrap();
+        let job = engine
+            .get_job_for_algorithm(AlgorithmType::CosmicFusion)
+            .await
+            .unwrap();
         assert!(job.is_some());
     }
 
@@ -491,7 +503,9 @@ mod tests {
                         },
                         "error": null
                     });
-                    let _ = write_half.write_all(serde_json::to_string(&resp).unwrap().as_bytes()).await;
+                    let _ = write_half
+                        .write_all(serde_json::to_string(&resp).unwrap().as_bytes())
+                        .await;
                     let _ = write_half.write_all(b"\n").await;
                     let _ = write_half.flush().await;
                 } else if method == "submit" {
@@ -503,7 +517,9 @@ mod tests {
                         "result": true,
                         "error": null
                     });
-                    let _ = write_half.write_all(serde_json::to_string(&resp).unwrap().as_bytes()).await;
+                    let _ = write_half
+                        .write_all(serde_json::to_string(&resp).unwrap().as_bytes())
+                        .await;
                     let _ = write_half.write_all(b"\n").await;
                     let _ = write_half.flush().await;
                 }
@@ -537,17 +553,30 @@ mod tests {
             .unwrap()
             .unwrap();
         let params = submit_msg.get("params").unwrap();
-        assert_eq!(submit_msg.get("method").and_then(|v| v.as_str()), Some("submit"));
+        assert_eq!(
+            submit_msg.get("method").and_then(|v| v.as_str()),
+            Some("submit")
+        );
         assert_eq!(params.get("job_id").and_then(|v| v.as_str()), Some("job-1"));
-        assert_eq!(params.get("nonce").and_then(|v| v.as_str()), Some("0000002a"));
-        assert!(params.get("result").and_then(|v| v.as_str()).unwrap_or("").len() > 0);
+        assert_eq!(
+            params.get("nonce").and_then(|v| v.as_str()),
+            Some("0000002a")
+        );
+        assert!(
+            params
+                .get("result")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .len()
+                > 0
+        );
     }
-    
+
     #[tokio::test]
     async fn test_mining() {
         let config = Config::default();
         let engine = CosmicHarmonyV3::new(config).await.unwrap();
-        
+
         let result = engine.mine(b"test block header", 12345).await.unwrap();
         assert_eq!(result.zion_hash.len(), 32);
         assert_eq!(result.nonce, 12345);

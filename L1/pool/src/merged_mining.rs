@@ -10,8 +10,8 @@
 //! - MUST be optional and cheap (sampling + no external submits).
 //! - Default: enabled only if explicitly opted-in via env.
 
-use std::sync::{Arc};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 use serde_json::json;
 use zion_cosmic_harmony_v3::algorithms_opt;
@@ -85,7 +85,7 @@ impl MergedMiningManager {
         let seen = self.chv3_valid_seen.fetch_add(1, Ordering::Relaxed) + 1;
 
         // Sampling gate
-        if self.sample_every > 1 && (seen % self.sample_every != 0) {
+        if self.sample_every > 1 && !seen.is_multiple_of(self.sample_every) {
             return;
         }
 

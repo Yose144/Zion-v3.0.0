@@ -9,7 +9,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
-#[command(name = "zion-wallet", version, about = "ZION native wallet CLI (skeleton)")]
+#[command(
+    name = "zion-wallet",
+    version,
+    about = "ZION native wallet CLI (skeleton)"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -322,7 +326,9 @@ fn main() -> Result<()> {
                 println!("OK");
                 Ok(())
             } else {
-                Err(anyhow!("Invalid address format (expected zion1 + 39 [a-z0-9] chars)"))
+                Err(anyhow!(
+                    "Invalid address format (expected zion1 + 39 [a-z0-9] chars)"
+                ))
             }
         }
 
@@ -331,15 +337,22 @@ fn main() -> Result<()> {
             println!("Wallet: {}", wallet.display());
             println!("Public key: {}", w.public_key_hex);
             println!("Address: {}", w.address);
-            println!("Mnemonic: {}", if w.mnemonic.is_some() { "yes" } else { "no" });
+            println!(
+                "Mnemonic: {}",
+                if w.mnemonic.is_some() { "yes" } else { "no" }
+            );
             println!("Created: {}", w.created_at_utc);
             Ok(())
         }
 
-        Command::Sign { wallet, message_hex } => {
+        Command::Sign {
+            wallet,
+            message_hex,
+        } => {
             let w = read_wallet_file(&wallet)?;
             let msg = hex_to_bytes(&message_hex).context("message_hex must be valid hex")?;
-            let sk_bytes = hex_to_32(&w.secret_key_hex).context("secret_key_hex must be 32-byte hex")?;
+            let sk_bytes =
+                hex_to_32(&w.secret_key_hex).context("secret_key_hex must be 32-byte hex")?;
 
             let signing_key = SigningKey::from_bytes(&sk_bytes);
             let sig: Signature = signing_key.sign(&msg);
@@ -353,8 +366,10 @@ fn main() -> Result<()> {
             signature_hex,
         } => {
             let msg = hex_to_bytes(&message_hex).context("message_hex must be valid hex")?;
-            let pk_bytes = hex_to_32(&public_key_hex).context("public_key_hex must be 32-byte hex")?;
-            let sig_bytes = hex_to_64(&signature_hex).context("signature_hex must be 64-byte hex")?;
+            let pk_bytes =
+                hex_to_32(&public_key_hex).context("public_key_hex must be 32-byte hex")?;
+            let sig_bytes =
+                hex_to_64(&signature_hex).context("signature_hex must be 64-byte hex")?;
 
             let verifying_key = VerifyingKey::from_bytes(&pk_bytes)?;
             let signature = Signature::from_bytes(&sig_bytes);
@@ -438,8 +453,14 @@ fn main() -> Result<()> {
             println!("\n--- Transaction Built ---");
             println!("TX ID:      {}", result.transaction.id);
             println!("To:         {}", to);
-            println!("Amount:     {:.6} ZION", result.amount_sent as f64 / 1_000_000.0);
-            println!("Fee:        {:.6} ZION (burned)", result.fee as f64 / 1_000_000.0);
+            println!(
+                "Amount:     {:.6} ZION",
+                result.amount_sent as f64 / 1_000_000.0
+            );
+            println!(
+                "Fee:        {:.6} ZION (burned)",
+                result.fee as f64 / 1_000_000.0
+            );
             println!("Change:     {:.6} ZION", result.change as f64 / 1_000_000.0);
             println!("Inputs:     {}", result.inputs_used);
             println!("Outputs:    {}", result.transaction.outputs.len());
@@ -523,7 +544,12 @@ fn generate_wallet_file() -> Result<WalletFile> {
 fn generate_mnemonic_wallet_file(words: u8, passphrase: &str) -> Result<WalletFile> {
     let word_count = match words {
         12 | 15 | 18 | 21 | 24 => words as usize,
-        _ => return Err(anyhow!("Unsupported word count: {} (use 12/15/18/21/24)", words)),
+        _ => {
+            return Err(anyhow!(
+                "Unsupported word count: {} (use 12/15/18/21/24)",
+                words
+            ))
+        }
     };
 
     let mnemonic = Mnemonic::generate_in_with(&mut OsRng, Language::English, word_count)
@@ -583,7 +609,8 @@ fn import_secret_key_wallet_file(secret_key_hex: &str) -> Result<WalletFile> {
 fn write_wallet_file(path: &Path, json: &str) -> Result<()> {
     if let Some(parent) = path.parent() {
         if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent).with_context(|| format!("create dir {}", parent.display()))?;
+            fs::create_dir_all(parent)
+                .with_context(|| format!("create dir {}", parent.display()))?;
         }
     }
 
@@ -606,7 +633,7 @@ fn bytes_to_hex(bytes: &[u8]) -> String {
 }
 
 fn hex_to_bytes(s: &str) -> Option<Vec<u8>> {
-    if s.len() % 2 != 0 {
+    if !s.len().is_multiple_of(2) {
         return None;
     }
 

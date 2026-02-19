@@ -37,7 +37,9 @@ impl Orchestrator {
 
     /// Terminate an agent.
     pub fn terminate_agent(&mut self, agent_id: Uuid) -> AiResult<()> {
-        let agent = self.agents.get_mut(&agent_id)
+        let agent = self
+            .agents
+            .get_mut(&agent_id)
             .ok_or_else(|| AiError::AgentNotFound(agent_id.to_string()))?;
         agent.status = AgentStatus::Terminated;
         Ok(())
@@ -49,7 +51,9 @@ impl Orchestrator {
         if !self.agents.contains_key(&msg.from) {
             return Err(AiError::AgentNotFound(msg.from.to_string()));
         }
-        let to_agent = self.agents.get(&msg.to)
+        let to_agent = self
+            .agents
+            .get(&msg.to)
             .ok_or_else(|| AiError::AgentNotFound(msg.to.to_string()))?;
         if !to_agent.is_active() {
             return Err(AiError::AgentOffline(msg.to.to_string()));
@@ -60,7 +64,9 @@ impl Orchestrator {
 
     /// Get pending messages for an agent.
     pub fn get_messages(&mut self, agent_id: Uuid) -> Vec<AgentMessage> {
-        let msgs: Vec<AgentMessage> = self.message_queue.iter()
+        let msgs: Vec<AgentMessage> = self
+            .message_queue
+            .iter()
             .filter(|m| m.to == agent_id)
             .cloned()
             .collect();

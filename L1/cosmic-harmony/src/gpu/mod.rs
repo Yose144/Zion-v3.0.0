@@ -1,5 +1,5 @@
 //! GPU mining support for Cosmic Harmony v3
-//! 
+//!
 //! Supports:
 //! - OpenCL (AMD, NVIDIA, Intel)
 //! - Metal (Apple Silicon) - Native macOS performance
@@ -11,7 +11,7 @@ pub mod opencl_kernel;
 pub mod gpu_miner;
 
 #[cfg(feature = "gpu")]
-pub use gpu_miner::{GpuMiner, GpuConfig};
+pub use gpu_miner::{GpuConfig, GpuMiner};
 
 // Metal backend for macOS — CHv3
 #[cfg(all(feature = "metal", target_os = "macos"))]
@@ -25,7 +25,7 @@ pub use metal_miner::MetalMiner;
 pub mod ethash_metal_miner;
 
 #[cfg(all(feature = "metal", target_os = "macos"))]
-pub use ethash_metal_miner::{EthashMetalMiner, EthashEpoch, EthashDagGenerator};
+pub use ethash_metal_miner::{EthashDagGenerator, EthashEpoch, EthashMetalMiner};
 
 // Metal backend for macOS — Autolykos2 (ERG mining)
 #[cfg(all(feature = "metal", target_os = "macos"))]

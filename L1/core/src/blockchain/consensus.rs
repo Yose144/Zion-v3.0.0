@@ -133,12 +133,10 @@ pub fn lwma_next_difficulty(window: &[BlockInfo]) -> u64 {
     let mut weight_sum: u128 = 0;
 
     for i in 1..=n {
-        let raw_solve = window[i]
-            .timestamp
-            .saturating_sub(window[i - 1].timestamp);
+        let raw_solve = window[i].timestamp.saturating_sub(window[i - 1].timestamp);
 
         // Clamp solve time to [MIN_SOLVE_TIME, MAX_SOLVE_TIME]
-        let solve_time = raw_solve.max(MIN_SOLVE_TIME).min(MAX_SOLVE_TIME);
+        let solve_time = raw_solve.clamp(MIN_SOLVE_TIME, MAX_SOLVE_TIME);
 
         let weight = i as u128; // linear weight: 1, 2, 3, …, N
         weighted_solve_sum += solve_time as u128 * weight;
@@ -152,8 +150,7 @@ pub fn lwma_next_difficulty(window: &[BlockInfo]) -> u64 {
 
     // next_diff = weighted_diff_sum × TARGET / weighted_solve_sum
     // (this is equivalent to: avg_diff × TARGET / avg_solve_time)
-    let next_diff_128 =
-        weighted_diff_sum * TARGET_BLOCK_TIME as u128 / weighted_solve_sum;
+    let next_diff_128 = weighted_diff_sum * TARGET_BLOCK_TIME as u128 / weighted_solve_sum;
 
     let mut next_diff = if next_diff_128 > MAX_DIFFICULTY as u128 {
         MAX_DIFFICULTY
@@ -165,10 +162,10 @@ pub fn lwma_next_difficulty(window: &[BlockInfo]) -> u64 {
     let prev_diff = window.last().unwrap().difficulty;
     let max_allowed = (prev_diff as f64 * MAX_ADJUSTMENT_UP) as u64;
     let min_allowed = (prev_diff as f64 * MAX_ADJUSTMENT_DOWN) as u64;
-    next_diff = next_diff.min(max_allowed).max(min_allowed);
+    next_diff = next_diff.clamp(min_allowed, max_allowed);
 
     // Global floor / ceiling
-    next_diff.max(MIN_DIFFICULTY).min(MAX_DIFFICULTY)
+    next_diff.clamp(MIN_DIFFICULTY, MAX_DIFFICULTY)
 }
 
 /// Simple single-block fallback (kept for backward compatibility with
@@ -185,10 +182,10 @@ pub fn calculate_next_difficulty(
     }
 
     let ratio = target_time_secs as f64 / actual_time_secs as f64;
-    let clamped = ratio.max(MAX_ADJUSTMENT_DOWN).min(MAX_ADJUSTMENT_UP);
+    let clamped = ratio.clamp(MAX_ADJUSTMENT_DOWN, MAX_ADJUSTMENT_UP);
 
     let new_diff = (current_difficulty as f64 * clamped) as u64;
-    new_diff.max(MIN_DIFFICULTY).min(MAX_DIFFICULTY)
+    new_diff.clamp(MIN_DIFFICULTY, MAX_DIFFICULTY)
 }
 
 // ---------------------------------------------------------------------------
@@ -241,7 +238,10 @@ mod tests {
         // All blocks at exactly TARGET_BLOCK_TIME → difficulty should stay ~same
         let window = make_window(60, 10_000, TARGET_BLOCK_TIME);
         let next = lwma_next_difficulty(&window);
-        assert_eq!(next, 10_000, "Perfect timing should keep difficulty unchanged");
+        assert_eq!(
+            next, 10_000,
+            "Perfect timing should keep difficulty unchanged"
+        );
     }
 
     #[test]
@@ -250,7 +250,10 @@ mod tests {
         let window = make_window(60, 10_000, 30);
         let next = lwma_next_difficulty(&window);
         // Clamped to +25% max
-        assert_eq!(next, 12_500, "Fast blocks should increase diff by 25% (clamped)");
+        assert_eq!(
+            next, 12_500,
+            "Fast blocks should increase diff by 25% (clamped)"
+        );
     }
 
     #[test]
@@ -259,7 +262,10 @@ mod tests {
         let window = make_window(60, 10_000, 120);
         let next = lwma_next_difficulty(&window);
         // Clamped to −25% max
-        assert_eq!(next, 7_500, "Slow blocks should decrease diff by 25% (clamped)");
+        assert_eq!(
+            next, 7_500,
+            "Slow blocks should decrease diff by 25% (clamped)"
+        );
     }
 
     #[test]
@@ -292,8 +298,14 @@ mod tests {
     fn test_lwma_short_window() {
         // Only 2 blocks (1 solve time) — should still work
         let window = vec![
-            BlockInfo { timestamp: 1000, difficulty: 5_000 },
-            BlockInfo { timestamp: 1060, difficulty: 5_000 },
+            BlockInfo {
+                timestamp: 1000,
+                difficulty: 5_000,
+            },
+            BlockInfo {
+                timestamp: 1060,
+                difficulty: 5_000,
+            },
         ];
         let next = lwma_next_difficulty(&window);
         assert_eq!(next, 5_000, "2-block window with perfect time");
@@ -302,7 +314,10 @@ mod tests {
     #[test]
     fn test_lwma_single_block() {
         // Only 1 block — return its difficulty
-        let window = vec![BlockInfo { timestamp: 1000, difficulty: 8_000 }];
+        let window = vec![BlockInfo {
+            timestamp: 1000,
+            difficulty: 8_000,
+        }];
         let next = lwma_next_difficulty(&window);
         assert_eq!(next, 8_000);
     }
@@ -320,30 +335,44 @@ mod tests {
         let mut window = Vec::new();
         let mut ts = 1_000_000u64;
         // Block 0 (anchor)
-        window.push(BlockInfo { timestamp: ts, difficulty: 10_000 });
+        window.push(BlockInfo {
+            timestamp: ts,
+            difficulty: 10_000,
+        });
 
         // Blocks 1-50: 60s solve time (perfect)
         for _ in 1..=50 {
             ts += 60;
-            window.push(BlockInfo { timestamp: ts, difficulty: 10_000 });
+            window.push(BlockInfo {
+                timestamp: ts,
+                difficulty: 10_000,
+            });
         }
         // Blocks 51-60: 30s solve time (fast)
         for _ in 51..=60 {
             ts += 30;
-            window.push(BlockInfo { timestamp: ts, difficulty: 10_000 });
+            window.push(BlockInfo {
+                timestamp: ts,
+                difficulty: 10_000,
+            });
         }
 
         let next = lwma_next_difficulty(&window);
         // Should increase — recent fast blocks outweigh older normal blocks
-        assert!(next > 10_000, "Recent fast blocks should increase difficulty: {}", next);
+        assert!(
+            next > 10_000,
+            "Recent fast blocks should increase difficulty: {}",
+            next
+        );
     }
 
     #[test]
     fn test_lwma_stability_simulation() {
         // Simulate 200 blocks with slight variance, verify convergence
-        let mut blocks: Vec<BlockInfo> = vec![
-            BlockInfo { timestamp: 1_000_000, difficulty: 10_000 }
-        ];
+        let mut blocks: Vec<BlockInfo> = vec![BlockInfo {
+            timestamp: 1_000_000,
+            difficulty: 10_000,
+        }];
 
         // Simulate blocks with alternating fast/slow times
         let solve_times = [55u64, 65, 58, 62, 50, 70, 57, 63, 59, 61];
@@ -362,13 +391,19 @@ mod tests {
             let window = &blocks[start..];
             let diff = lwma_next_difficulty(window);
 
-            blocks.push(BlockInfo { timestamp: ts, difficulty: diff });
+            blocks.push(BlockInfo {
+                timestamp: ts,
+                difficulty: diff,
+            });
         }
 
         // After 200 blocks, difficulty should be within reasonable range
         let final_diff = blocks.last().unwrap().difficulty;
-        assert!(final_diff >= 5_000 && final_diff <= 20_000,
-            "After 200 varied blocks, difficulty {} should stabilize near 10k", final_diff);
+        assert!(
+            final_diff >= 5_000 && final_diff <= 20_000,
+            "After 200 varied blocks, difficulty {} should stabilize near 10k",
+            final_diff
+        );
     }
 
     #[test]

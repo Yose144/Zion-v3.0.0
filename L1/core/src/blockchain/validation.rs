@@ -1,4 +1,4 @@
-use crate::blockchain::block::{Block, Algorithm};
+use crate::blockchain::block::{Algorithm, Block};
 use crate::blockchain::consensus;
 use crate::blockchain::fee;
 use crate::network::{get_network, NetworkType};
@@ -50,7 +50,7 @@ pub fn validate_block(
     if block.header.version != 1 {
         return Err(format!("Invalid version: {}", block.header.version));
     }
-    
+
     // 2. Height check (must be prev + 1, or 0 for genesis)
     if let Some(prev) = prev_block {
         if block.header.height != prev.header.height + 1 {
@@ -60,15 +60,17 @@ pub fn validate_block(
                 prev.header.height + 1
             ));
         }
-        
+
         // 3. Previous hash check
         let computed_prev_hash = prev.calculate_hash();
         if block.header.prev_hash != computed_prev_hash {
             eprintln!("❌ prev_hash MISMATCH at height {}:", block.header.height);
             eprintln!("   block.prev_hash = {}", block.header.prev_hash);
             eprintln!("   computed(prev)  = {}", computed_prev_hash);
-            eprintln!("   prev height={}, prev nonce={}, prev algo={:?}",
-                prev.header.height, prev.header.nonce, prev.header.algorithm);
+            eprintln!(
+                "   prev height={}, prev nonce={}, prev algo={:?}",
+                prev.header.height, prev.header.nonce, prev.header.algorithm
+            );
             eprintln!("   prev prev_hash  = {}", prev.header.prev_hash);
             eprintln!("   prev merkle     = {}", prev.header.merkle_root);
             eprintln!("   prev timestamp  = {}", prev.header.timestamp);
@@ -86,7 +88,7 @@ pub fn validate_block(
             block.header.height
         ));
     }
-    
+
     // 4. Timestamp validation
     //    a) Not too far in the future (absolute wall-clock check)
     const MAX_FUTURE_DRIFT: u64 = 7200; // 2 hours
@@ -96,13 +98,13 @@ pub fn validate_block(
             block.header.timestamp, current_time_secs
         ));
     }
-    
+
     if let Some(prev) = prev_block {
         //    b) Not before previous block
         if block.header.timestamp < prev.header.timestamp {
             return Err("Block timestamp before previous block".to_string());
         }
-        
+
         //    c) Timestamp sanity — clamp ±2× target (±120 s)
         //       Reject blocks whose timestamp deviates more than MAX_TIMESTAMP_DRIFT
         //       from the previous block.  This limits manipulation of LWMA inputs.
@@ -111,7 +113,7 @@ pub fn validate_block(
         } else {
             0 // Already rejected above, but be safe
         };
-        
+
         // Maximum gap: prev_timestamp + MAX_TIMESTAMP_DRIFT
         // (We allow 0 delta for fast blocks, but cap the upper end.)
         // Skip drift check for block #1: genesis has a fixed historical timestamp
@@ -125,7 +127,7 @@ pub fn validate_block(
             ));
         }
     }
-    
+
     // 5. Algorithm check (must match height)
     let expected_algo = Algorithm::from_height(block.header.height);
     if block.header.algorithm != expected_algo {
@@ -134,7 +136,7 @@ pub fn validate_block(
             block.header.algorithm, expected_algo, block.header.height
         ));
     }
-    
+
     // 6. Merkle root validation
     let calculated_root = Block::calculate_merkle_root(&block.transactions);
     if block.header.merkle_root != calculated_root {
@@ -143,7 +145,7 @@ pub fn validate_block(
             block.header.merkle_root, calculated_root
         ));
     }
-    
+
     // 7. Difficulty check (validate against consensus rules)
     //
     // Difficulty for block N is set DETERMINISTICALY by the node before mining
@@ -163,13 +165,15 @@ pub fn validate_block(
         if block.header.difficulty < consensus::MIN_DIFFICULTY {
             return Err(format!(
                 "Difficulty {} below minimum {}",
-                block.header.difficulty, consensus::MIN_DIFFICULTY
+                block.header.difficulty,
+                consensus::MIN_DIFFICULTY
             ));
         }
         if block.header.difficulty > consensus::MAX_DIFFICULTY {
             return Err(format!(
                 "Difficulty {} above maximum {}",
-                block.header.difficulty, consensus::MAX_DIFFICULTY
+                block.header.difficulty,
+                consensus::MAX_DIFFICULTY
             ));
         }
         // Per-block adjustment bounds (±25% from previous)
@@ -187,10 +191,10 @@ pub fn validate_block(
             }
         }
     }
-    
+
     // 8. Proof-of-Work validation
     validate_pow(block)?;
-    
+
     // 9. Transaction validation (structural + signature checks)
     if block.transactions.is_empty() {
         return Err("Block must contain at least one transaction (coinbase)".to_string());
@@ -202,10 +206,7 @@ pub fn validate_block(
         let coinbase = &block.transactions[0];
 
         let is_coinbase = coinbase.inputs.is_empty()
-            || coinbase
-                .inputs
-                .iter()
-                .all(|i| i.prev_tx_hash == zero_hash);
+            || coinbase.inputs.iter().all(|i| i.prev_tx_hash == zero_hash);
 
         if !is_coinbase {
             return Err("First transaction must be coinbase".to_string());
@@ -233,12 +234,12 @@ pub fn validate_block(
             if tx.inputs.iter().any(|i| i.prev_tx_hash == zero_hash) {
                 return Err("Non-coinbase tx contains coinbase input".to_string());
             }
-            
+
             // Validate transaction structure, fees, and output amounts
             validate_transaction(tx)?;
         }
     }
-    
+
     Ok(())
 }
 
@@ -268,7 +269,9 @@ pub fn validate_transaction(tx: &crate::tx::Transaction) -> Result<(), String> {
     }
 
     // 4. Output amount validation (no zero, no overflow, within total supply)
-    let outputs: Vec<(u64, &str)> = tx.outputs.iter()
+    let outputs: Vec<(u64, &str)> = tx
+        .outputs
+        .iter()
         .map(|o| (o.amount, o.address.as_str()))
         .collect();
     if let Err(msg) = fee::validate_output_amounts(&outputs) {
@@ -279,10 +282,12 @@ pub fn validate_transaction(tx: &crate::tx::Transaction) -> Result<(), String> {
     if tx_size > fee::MAX_TX_SIZE_BYTES {
         return Err(format!(
             "Transaction {} too large: {} bytes (max {})",
-            tx.id, tx_size, fee::MAX_TX_SIZE_BYTES
+            tx.id,
+            tx_size,
+            fee::MAX_TX_SIZE_BYTES
         ));
     }
-    
+
     Ok(())
 }
 
@@ -346,12 +351,13 @@ pub fn validate_pow(block: &Block) -> Result<(), String> {
 pub fn difficulty_to_target(difficulty: u64) -> [u8; 32] {
     let max_target = BigUint::from_str_radix(
         "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-        16
-    ).unwrap();
-    
+        16,
+    )
+    .unwrap();
+
     let difficulty_val = BigUint::from(difficulty.max(1));
     let target = max_target / difficulty_val;
-    
+
     // Convert to 32-byte array
     let target_bytes = target.to_bytes_be();
     let mut result = [0u8; 32];
@@ -364,12 +370,12 @@ pub fn difficulty_to_target(difficulty: u64) -> [u8; 32] {
 pub fn quick_validate_block(block: &Block) -> Result<(), String> {
     // Just check PoW and merkle root
     validate_pow(block)?;
-    
+
     let calculated_root = Block::calculate_merkle_root(&block.transactions);
     if block.header.merkle_root != calculated_root {
         return Err("Invalid merkle root".to_string());
     }
-    
+
     Ok(())
 }
 
@@ -399,14 +405,14 @@ fn meets_target_be(hash: &[u8], target_hex: &str, size: usize) -> bool {
 mod tests {
     use super::*;
     use std::time::{SystemTime, UNIX_EPOCH};
-    
+
     #[test]
     fn test_difficulty_to_target() {
         let target = difficulty_to_target(1000);
         // Target should be max / 1000
         assert!(target[0] == 0); // High bytes should be small
     }
-    
+
     #[test]
     fn test_validate_genesis() {
         let genesis = Block::genesis();
@@ -414,41 +420,50 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         // Genesis should validate without previous block
         let result = validate_block(&genesis, None, now);
         // May fail on PoW if nonce is wrong, but structure should be valid
         assert!(result.is_ok() || result.unwrap_err().contains("PoW"));
     }
-    
+
     // ── Coinbase maturity constant ──
-    
+
     #[test]
     fn test_coinbase_maturity_constant() {
         assert_eq!(COINBASE_MATURITY, 100);
     }
-    
+
     // ── Timestamp sanity ──
-    
+
     #[test]
     fn test_max_timestamp_drift_per_network() {
-        assert_eq!(max_timestamp_drift_for_network(NetworkType::Testnet), MAX_TIMESTAMP_DRIFT_TESTNET);
-        assert_eq!(max_timestamp_drift_for_network(NetworkType::Mainnet), MAX_TIMESTAMP_DRIFT_MAINNET);
+        assert_eq!(
+            max_timestamp_drift_for_network(NetworkType::Testnet),
+            MAX_TIMESTAMP_DRIFT_TESTNET
+        );
+        assert_eq!(
+            max_timestamp_drift_for_network(NetworkType::Mainnet),
+            MAX_TIMESTAMP_DRIFT_MAINNET
+        );
     }
-    
+
     #[test]
     fn test_timestamp_sanity_rejected() {
         // Create two blocks where the second has timestamp > prev + 7200s
         let prev = Block::new(1, 0, "00".repeat(32), 1_000_000, 1000, 0, vec![]);
-        
+
         // Block with timestamp 8000 seconds after prev (> 7200s drift)
         let block = Block::new(
-            1, 1,
+            1,
+            1,
             prev.calculate_hash(),
             1_008_000, // 8000 seconds later
-            1000, 0, vec![],
+            1000,
+            0,
+            vec![],
         );
-        
+
         // This should fail on timestamp drift (unless dev mode)
         let result = validate_block(&block, Some(&prev), 1_008_000);
         // It will fail either on timestamp drift or PoW, depending on dev mode
@@ -457,35 +472,45 @@ mod tests {
             assert!(valid_error, "Unexpected error: {}", e);
         }
     }
-    
+
     #[test]
     fn test_timestamp_within_drift_accepted() {
         // Block with timestamp exactly 7200s after prev (at the limit)
         let prev = Block::new(1, 0, "00".repeat(32), 1_000_000, 1000, 0, vec![]);
         let block = Block::new(
-            1, 1,
+            1,
+            1,
             prev.calculate_hash(),
             1_007_200, // exactly 7200s — at limit, should be allowed
-            1000, 0, vec![],
+            1000,
+            0,
+            vec![],
         );
-        
+
         let result = validate_block(&block, Some(&prev), 1_007_200);
         // Should not fail on timestamp drift specifically
         if let Err(e) = result {
-            assert!(!e.contains("drift"), "Should not reject at exactly MAX_TIMESTAMP_DRIFT: {}", e);
+            assert!(
+                !e.contains("drift"),
+                "Should not reject at exactly MAX_TIMESTAMP_DRIFT: {}",
+                e
+            );
         }
     }
-    
+
     #[test]
     fn test_timestamp_before_prev_rejected() {
         let prev = Block::new(1, 0, "00".repeat(32), 1_000_000, 1000, 0, vec![]);
         let block = Block::new(
-            1, 1,
+            1,
+            1,
             prev.calculate_hash(),
             999_999, // before previous
-            1000, 0, vec![],
+            1000,
+            0,
+            vec![],
         );
-        
+
         let result = validate_block(&block, Some(&prev), 1_000_000);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("before previous"));

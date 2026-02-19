@@ -2,7 +2,6 @@
 ///
 /// Prevents testnet and mainnet nodes from connecting to each other.
 /// Network magic is included in P2P handshake for peer validation.
-
 use std::fmt;
 use std::sync::OnceLock;
 
@@ -55,8 +54,8 @@ impl NetworkType {
     /// - Mainnet: Jan 1, 2024 00:00:00 UTC (immutable)
     pub fn genesis_timestamp(&self) -> u64 {
         match self {
-            NetworkType::Testnet => 1770552000,  // Feb 8, 2026 12:00:00 UTC
-            NetworkType::Mainnet => 1704067200,  // Jan 1, 2024 00:00:00 UTC
+            NetworkType::Testnet => 1770552000, // Feb 8, 2026 12:00:00 UTC
+            NetworkType::Mainnet => 1704067200, // Jan 1, 2024 00:00:00 UTC
         }
     }
 
@@ -65,7 +64,10 @@ impl NetworkType {
         match s.to_lowercase().as_str() {
             "testnet" | "test" => Ok(NetworkType::Testnet),
             "mainnet" | "main" => Ok(NetworkType::Mainnet),
-            _ => Err(format!("Unknown network '{}'. Use 'testnet' or 'mainnet'.", s)),
+            _ => Err(format!(
+                "Unknown network '{}'. Use 'testnet' or 'mainnet'.",
+                s
+            )),
         }
     }
 }
@@ -103,8 +105,14 @@ mod tests {
 
     #[test]
     fn test_parse_network() {
-        assert_eq!(NetworkType::from_str("testnet").unwrap(), NetworkType::Testnet);
-        assert_eq!(NetworkType::from_str("MAINNET").unwrap(), NetworkType::Mainnet);
+        assert_eq!(
+            NetworkType::from_str("testnet").unwrap(),
+            NetworkType::Testnet
+        );
+        assert_eq!(
+            NetworkType::from_str("MAINNET").unwrap(),
+            NetworkType::Mainnet
+        );
         assert_eq!(NetworkType::from_str("test").unwrap(), NetworkType::Testnet);
         assert!(NetworkType::from_str("invalid").is_err());
     }

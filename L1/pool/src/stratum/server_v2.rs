@@ -1,5 +1,5 @@
 /// Stratum Server - Full async TCP mining server implementation
-/// 
+///
 /// Handles XMRig and Stratum protocol connections with:
 /// - Async TCP (Tokio)
 /// - Connection pooling (10k+ concurrent miners)
@@ -7,13 +7,12 @@
 /// - Protocol auto-detection
 /// - Job distribution
 /// - Share validation integration
-
 use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
 use std::collections::{HashMap, VecDeque};
 use std::net::SocketAddr;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc;
@@ -24,11 +23,11 @@ use uuid::Uuid;
 use super::connection_v2::{Connection, ConnectionState};
 use super::protocol::{StratumError, StratumRequest, StratumResponse};
 use crate::blockchain::{BlockTemplate, BlockTemplateManager};
-use crate::shares::{ProcessedShareOutcome, ShareProcessor, SubmittedShare};
-use crate::session::SessionManager;
 use crate::metrics::prometheus as metrics;
-use crate::stream_scheduler::{MinerGroup, ScheduledJob, ShareRoute, StreamScheduler};
 use crate::revenue_proxy::{RevenueProxyManager, ShareSubmission};
+use crate::session::SessionManager;
+use crate::shares::{ProcessedShareOutcome, ShareProcessor, SubmittedShare};
+use crate::stream_scheduler::{MinerGroup, ScheduledJob, ShareRoute, StreamScheduler};
 use zion_core::blockchain::block::Algorithm as CoreAlgorithm;
 use zion_core::blockchain::consensus;
 
@@ -119,7 +118,13 @@ impl StratumServer {
         });
     }
 
-    async fn try_forward_external_direct(&self, job_id: &str, nonce: &str, worker: &str, result: &str) -> Option<String> {
+    async fn try_forward_external_direct(
+        &self,
+        job_id: &str,
+        nonce: &str,
+        worker: &str,
+        result: &str,
+    ) -> Option<String> {
         if !job_id.starts_with("ext-") {
             return None;
         }
@@ -137,14 +142,16 @@ impl StratumServer {
             guard.clone()
         }?;
 
-        proxy.submit_share(ShareSubmission {
-            coin: coin.clone(),
-            job_id: original_job_id,
-            nonce: nonce.to_string(),
-            worker: worker.to_string(),
-            result: result.to_string(),
-            algorithm: String::new(),
-        }).await;
+        proxy
+            .submit_share(ShareSubmission {
+                coin: coin.clone(),
+                job_id: original_job_id,
+                nonce: nonce.to_string(),
+                worker: worker.to_string(),
+                result: result.to_string(),
+                algorithm: String::new(),
+            })
+            .await;
 
         Some(coin)
     }
@@ -170,7 +177,7 @@ impl StratumServer {
             drop(conn);
 
             let target = if job.target.is_empty() {
-                Self::compute_job_target_hex(&job.algorithm, difficulty as u64)
+                Self::compute_job_target_hex(&job.algorithm, difficulty)
             } else {
                 job.target.clone()
             };
@@ -227,7 +234,10 @@ impl StratumServer {
 
         tracing::info!(
             "📢 StreamScheduler: Broadcasted {} job ({}) to {} miners [algo={}]",
-            job.stream_id, job.job_id, sent, job.algorithm
+            job.stream_id,
+            job.job_id,
+            sent,
+            job.algorithm
         );
     }
 
@@ -237,14 +247,14 @@ impl StratumServer {
         // Clone targeted connections out of the lock
         let target_conns: Vec<Arc<RwLock<Connection>>> = {
             let connections = self.connections.read().await;
-            session_ids.iter()
+            session_ids
+                .iter()
                 .filter_map(|sid| connections.get(sid).cloned())
                 .collect()
         };
         let mut sent = 0;
 
         for connection in &target_conns {
-
             let conn = connection.read().await;
             if conn.state != ConnectionState::Authenticated {
                 continue;
@@ -255,7 +265,7 @@ impl StratumServer {
             drop(conn);
 
             let target = if job.target.is_empty() {
-                Self::compute_job_target_hex(&job.algorithm, difficulty as u64)
+                Self::compute_job_target_hex(&job.algorithm, difficulty)
             } else {
                 job.target.clone()
             };
@@ -312,7 +322,9 @@ impl StratumServer {
 
         tracing::info!(
             "📢 StreamScheduler: Sent {} job to {}/{} targeted miners",
-            job.stream_id, sent, session_ids.len()
+            job.stream_id,
+            sent,
+            session_ids.len()
         );
     }
 
@@ -476,7 +488,7 @@ impl StratumServer {
 
     fn parse_algorithm_hint(pass: &str) -> Option<String> {
         // Common miner formats: "algo=cosmic", "a=cosmic_harmony", "x,a=randomx,d=10000"
-        for part in pass.split(|c| c == ',' || c == ';' || c == ' ') {
+        for part in pass.split([',', ';', ' ']) {
             let part = part.trim();
             if part.is_empty() {
                 continue;
@@ -500,8 +512,7 @@ impl StratumServer {
     }
 
     fn is_hex(s: &str) -> bool {
-        !s.is_empty()
-            && s.as_bytes().iter().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F'))
+        !s.is_empty() && s.as_bytes().iter().all(|b: &u8| b.is_ascii_hexdigit())
     }
 
     fn strict_address_validation() -> bool {
@@ -536,11 +547,7 @@ impl StratumServer {
         // Relaxed mode (testnet/devnet): accept 20-45 chars after prefix,
         // only lowercase alphanumeric (Bech32-compatible charset).
         let len_ok = (20..=45).contains(&tail.len());
-        len_ok
-            && tail
-                .as_bytes()
-                .iter()
-                .all(|b| BECH32_CHARSET.contains(b))
+        len_ok && tail.as_bytes().iter().all(|b| BECH32_CHARSET.contains(b))
     }
 
     fn extract_nonce_and_result(params: &[Value]) -> (Option<String>, Option<String>) {
@@ -568,7 +575,7 @@ impl StratumServer {
 
     fn parse_difficulty_hint(pass: &str) -> Option<u64> {
         // Common miner formats: "d=10000", "x,d=10000", "d=10000,foo"
-        for part in pass.split(|c| c == ',' || c == ';' || c == ' ') {
+        for part in pass.split([',', ';', ' ']) {
             let part = part.trim();
             if let Some(v) = part.strip_prefix("d=") {
                 if let Ok(n) = v.trim().parse::<u64>() {
@@ -583,7 +590,7 @@ impl StratumServer {
 
     fn parse_group_hint(pass: &str) -> Option<MinerGroup> {
         // Supports: g=zion|revenue|ncl (also group=...)
-        for part in pass.split(|c| c == ',' || c == ';' || c == ' ') {
+        for part in pass.split([',', ';', ' ']) {
             let part = part.trim();
             let Some(v) = part
                 .strip_prefix("g=")
@@ -705,7 +712,7 @@ impl StratumServer {
     /// Start Stratum server
     pub async fn start(self: Arc<Self>) -> Result<()> {
         let addr = format!("{}:{}", self.host, self.port);
-        
+
         // Use SO_REUSEADDR to avoid "Address already in use" on restart
         let socket = socket2::Socket::new(
             socket2::Domain::IPV4,
@@ -714,7 +721,8 @@ impl StratumServer {
         )?;
         socket.set_reuse_address(true)?;
         socket.set_nonblocking(true)?;
-        let sock_addr: std::net::SocketAddr = addr.parse()
+        let sock_addr: std::net::SocketAddr = addr
+            .parse()
             .map_err(|e| anyhow::anyhow!("Invalid address '{}': {}", addr, e))?;
         socket.bind(&socket2::SockAddr::from(sock_addr))?;
         socket.listen(1024)?;
@@ -791,10 +799,7 @@ impl StratumServer {
         let session_id = Uuid::new_v4().to_string();
 
         // Create connection object
-        let connection = Arc::new(RwLock::new(Connection::new(
-            session_id.clone(),
-            peer_addr,
-        )));
+        let connection = Arc::new(RwLock::new(Connection::new(session_id.clone(), peer_addr)));
 
         // Register connection
         {
@@ -835,8 +840,7 @@ impl StratumServer {
             // Read line with timeout
             // Keep this timeout shorter than stale-cleaner horizon so reconnect storms
             // from one miner don't accumulate ghost sockets and trip per-IP limits.
-            match tokio::time::timeout(Duration::from_secs(45), reader.read_line(&mut line)).await
-            {
+            match tokio::time::timeout(Duration::from_secs(45), reader.read_line(&mut line)).await {
                 Ok(Ok(0)) => {
                     // EOF - connection closed
                     tracing::info!("📥 Connection closed by client: {}", peer_addr);
@@ -949,8 +953,8 @@ impl StratumServer {
         message: &str,
     ) -> Result<Option<Value>> {
         // Parse JSON-RPC message
-        let request: StratumRequest = serde_json::from_str(message)
-            .map_err(|e| anyhow!("Invalid JSON: {}", e))?;
+        let request: StratumRequest =
+            serde_json::from_str(message).map_err(|e| anyhow!("Invalid JSON: {}", e))?;
 
         let method = request.method.as_str();
         tracing::debug!("🔧 Handling method: {}", method);
@@ -1165,9 +1169,12 @@ impl StratumServer {
         let response = StratumResponse::success(
             request.id.clone(),
             json!([
-                [["mining.notify", subscription_id], ["mining.set_difficulty", subscription_id]],
-                extranonce1,  // Per-session extranonce1 (4 bytes hex)
-                4             // Extranonce2_size
+                [
+                    ["mining.notify", subscription_id],
+                    ["mining.set_difficulty", subscription_id]
+                ],
+                extranonce1, // Per-session extranonce1 (4 bytes hex)
+                4            // Extranonce2_size
             ]),
         );
 
@@ -1187,7 +1194,7 @@ impl StratumServer {
             .ok_or_else(|| anyhow!("Invalid authorize params"))?;
 
         let username = params
-            .get(0)
+            .first()
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("Missing username"))?;
 
@@ -1254,7 +1261,8 @@ impl StratumServer {
                 .register_miner_with_hint(&session_id, group_hint)
                 .await;
             if let Some(job) = scheduled_job {
-                self.broadcast_job_to_sessions(&[session_id.clone()], job).await;
+                self.broadcast_job_to_sessions(std::slice::from_ref(&session_id), job)
+                    .await;
             }
         }
 
@@ -1279,7 +1287,10 @@ impl StratumServer {
                 .clone();
             let worker = conn.worker_name.clone();
             let difficulty = conn.difficulty;
-            let algorithm = conn.algorithm.clone().unwrap_or_else(|| "cosmic_harmony".to_string());
+            let algorithm = conn
+                .algorithm
+                .clone()
+                .unwrap_or_else(|| "cosmic_harmony".to_string());
             let current_job_id = conn
                 .current_job_id
                 .clone()
@@ -1330,12 +1341,22 @@ impl StratumServer {
         {
             let scheduler_guard = self.stream_scheduler.read().await;
             if let Some(scheduler) = scheduler_guard.as_ref() {
-                let route = scheduler.route_share(&job_id, &nonce, &worker.clone().unwrap_or_default(), result_hex.as_deref().unwrap_or("")).await;
+                let route = scheduler
+                    .route_share(
+                        &job_id,
+                        &nonce,
+                        &worker.clone().unwrap_or_default(),
+                        result_hex.as_deref().unwrap_or(""),
+                    )
+                    .await;
                 match route {
                     ShareRoute::External(coin) => {
                         tracing::info!(
                             "💱 Share routed to EXTERNAL pool: coin={} job={} wallet={} nonce={}",
-                            coin, job_id, wallet, nonce
+                            coin,
+                            job_id,
+                            wallet,
+                            nonce
                         );
 
                         // Update session stats (count as accepted — external pool will validate)
@@ -1345,7 +1366,12 @@ impl StratumServer {
                         };
                         let mut session = self
                             .session_manager
-                            .get_or_create(session_id, wallet.clone(), worker.clone(), algorithm.clone())
+                            .get_or_create(
+                                session_id,
+                                wallet.clone(),
+                                worker.clone(),
+                                algorithm.clone(),
+                            )
                             .await;
                         session.record_share_outcome(true);
                         self.session_manager.update(&session).await;
@@ -1373,7 +1399,12 @@ impl StratumServer {
         }
 
         if let Some(coin) = self
-            .try_forward_external_direct(&job_id, &nonce, &worker.clone().unwrap_or_default(), result_hex.as_deref().unwrap_or(""))
+            .try_forward_external_direct(
+                &job_id,
+                &nonce,
+                &worker.clone().unwrap_or_default(),
+                result_hex.as_deref().unwrap_or(""),
+            )
             .await
         {
             tracing::info!(
@@ -1434,7 +1465,6 @@ impl StratumServer {
             height: tpl_height,
         };
 
-
         tracing::info!(
             "📊 Share submit wallet={} worker={:?} algo={} diff={} block_target={:?}",
             wallet,
@@ -1444,7 +1474,6 @@ impl StratumServer {
             submitted.block_target
         );
 
-
         let outcome: ProcessedShareOutcome = self
             .share_processor
             .process_share(&submitted, &wallet)
@@ -1453,13 +1482,18 @@ impl StratumServer {
         if outcome.result.valid {
             tracing::info!(
                 "📊 Share ACCEPTED: wallet={} job={} algo={} diff={}",
-                wallet, submitted.job_id, algo_for_job, difficulty
+                wallet,
+                submitted.job_id,
+                algo_for_job,
+                difficulty
             );
             metrics::inc_accepted();
         } else {
             tracing::warn!(
                 "❌ Share REJECTED: wallet={} job={} reason={}",
-                wallet, submitted.job_id, outcome.result.reason
+                wallet,
+                submitted.job_id,
+                outcome.result.reason
             );
             metrics::inc_rejected();
         }
@@ -1472,7 +1506,12 @@ impl StratumServer {
 
         let mut session = self
             .session_manager
-            .get_or_create(session_id, wallet.clone(), worker.clone(), algo_for_job.clone())
+            .get_or_create(
+                session_id,
+                wallet.clone(),
+                worker.clone(),
+                algo_for_job.clone(),
+            )
             .await;
         session.algorithm = algo_for_job.clone();
         session.record_share_outcome(outcome.result.valid);
@@ -1540,12 +1579,16 @@ impl StratumServer {
         let wallet = match conn.wallet_address.as_ref() {
             Some(w) => w.clone(),
             None => {
-                let response = StratumResponse::error(request.id.clone(), StratumError::unauthorized());
+                let response =
+                    StratumResponse::error(request.id.clone(), StratumError::unauthorized());
                 return Ok(Some(serde_json::to_value(response)?));
             }
         };
         let worker = conn.worker_name.clone();
-        let algorithm = conn.algorithm.clone().unwrap_or_else(|| "cosmic_harmony".to_string());
+        let algorithm = conn
+            .algorithm
+            .clone()
+            .unwrap_or_else(|| "cosmic_harmony".to_string());
         let difficulty = conn.difficulty;
 
         let params = match request.params.as_ref().and_then(|p| p.as_object()) {
@@ -1600,7 +1643,14 @@ impl StratumServer {
         {
             let scheduler_guard = self.stream_scheduler.read().await;
             if let Some(scheduler) = scheduler_guard.as_ref() {
-                let route = scheduler.route_share(&job_id, &nonce, &worker.clone().unwrap_or_default(), &result).await;
+                let route = scheduler
+                    .route_share(
+                        &job_id,
+                        &nonce,
+                        &worker.clone().unwrap_or_default(),
+                        &result,
+                    )
+                    .await;
                 match route {
                     ShareRoute::External(coin) => {
                         tracing::info!(
@@ -1613,7 +1663,12 @@ impl StratumServer {
                         };
                         let mut session = self
                             .session_manager
-                            .get_or_create(session_id, wallet.clone(), worker.clone(), algorithm.clone())
+                            .get_or_create(
+                                session_id,
+                                wallet.clone(),
+                                worker.clone(),
+                                algorithm.clone(),
+                            )
                             .await;
                         session.record_share_outcome(true);
                         self.session_manager.update(&session).await;
@@ -1638,7 +1693,12 @@ impl StratumServer {
         }
 
         if let Some(coin) = self
-            .try_forward_external_direct(&job_id, &nonce, &worker.clone().unwrap_or_default(), &result)
+            .try_forward_external_direct(
+                &job_id,
+                &nonce,
+                &worker.clone().unwrap_or_default(),
+                &result,
+            )
             .await
         {
             tracing::info!(
@@ -1661,7 +1721,8 @@ impl StratumServer {
             None => {
                 tracing::warn!(
                     "⚠️ Job {} not in cache (base={}), falling back to current template",
-                    job_id, Self::base_job_id(&job_id)
+                    job_id,
+                    Self::base_job_id(&job_id)
                 );
                 self.template_for_job().await
             }
@@ -1700,7 +1761,10 @@ impl StratumServer {
             height: tpl_height,
         };
 
-        let outcome = self.share_processor.process_share(&submitted, &wallet).await?;
+        let outcome = self
+            .share_processor
+            .process_share(&submitted, &wallet)
+            .await?;
 
         if outcome.result.valid {
             metrics::inc_accepted();
@@ -1714,7 +1778,12 @@ impl StratumServer {
 
         let mut session = self
             .session_manager
-            .get_or_create(session_id, wallet.clone(), worker.clone(), algo_for_job.clone())
+            .get_or_create(
+                session_id,
+                wallet.clone(),
+                worker.clone(),
+                algo_for_job.clone(),
+            )
             .await;
         session.algorithm = algo_for_job.clone();
         session.record_share_outcome(outcome.result.valid);
@@ -1803,7 +1872,10 @@ impl StratumServer {
         if outcome.result.valid {
             tracing::info!(
                 "📊 Share ACCEPTED: wallet={} job={} algo={} diff={}",
-                wallet, submitted.job_id, algo_for_job, difficulty
+                wallet,
+                submitted.job_id,
+                algo_for_job,
+                difficulty
             );
             // XMRig protocol expects boolean `true` as result, not an object.
             let response = StratumResponse::success(request.id.clone(), json!(true));
@@ -1812,12 +1884,16 @@ impl StratumServer {
 
         tracing::warn!(
             "❌ Share REJECTED: wallet={} job={} reason={}",
-            wallet, submitted.job_id, outcome.result.reason
+            wallet,
+            submitted.job_id,
+            outcome.result.reason
         );
         let reason = outcome.result.reason.clone();
         let mut err = if reason.to_lowercase().contains("duplicate") {
             StratumError::new(StratumError::DUPLICATE_SHARE, reason.clone())
-        } else if reason.to_lowercase().contains("target") || reason.to_lowercase().contains("difficulty") {
+        } else if reason.to_lowercase().contains("target")
+            || reason.to_lowercase().contains("difficulty")
+        {
             StratumError::new(StratumError::LOW_DIFFICULTY, reason.clone())
         } else {
             StratumError::new(StratumError::UNKNOWN, reason.clone())
@@ -1838,7 +1914,8 @@ impl StratumServer {
         _connection: &Arc<RwLock<Connection>>,
         request: &StratumRequest,
     ) -> Result<Option<Value>> {
-        let response = StratumResponse::success(request.id.clone(), json!({"status": "KEEPALIVED"}));
+        let response =
+            StratumResponse::success(request.id.clone(), json!({"status": "KEEPALIVED"}));
         Ok(Some(serde_json::to_value(response)?))
     }
 
@@ -1851,7 +1928,10 @@ impl StratumServer {
         _connection: &Arc<RwLock<Connection>>,
         request: &StratumRequest,
     ) -> Result<Option<Value>> {
-        tracing::debug!("NCL stub: {} (NCL not enabled in this build)", request.method);
+        tracing::debug!(
+            "NCL stub: {} (NCL not enabled in this build)",
+            request.method
+        );
         let response = StratumResponse::success(
             request.id.clone(),
             json!({
@@ -1885,7 +1965,7 @@ impl StratumServer {
                     // Check if this is a Revenue external job (not ZION)
                     if sched_job.job_id.starts_with("ext-") {
                         let target = if sched_job.target.is_empty() {
-                            Self::compute_job_target_hex(&sched_job.algorithm, difficulty as u64)
+                            Self::compute_job_target_hex(&sched_job.algorithm, difficulty)
                         } else {
                             sched_job.target.clone()
                         };
@@ -1898,7 +1978,8 @@ impl StratumServer {
 
                         tracing::debug!(
                             "📋 getjob → returning Revenue job: {} algo={}",
-                            sched_job.job_id, sched_job.algorithm
+                            sched_job.job_id,
+                            sched_job.algorithm
                         );
 
                         let response = StratumResponse::success(
@@ -1996,7 +2077,10 @@ impl StratumServer {
                 tracing::info!("🧹 Cleaning {} stale connections", to_remove.len());
 
                 let mut connections = self.connections.write().await;
-                let removed = to_remove.iter().filter(|sid| connections.remove(*sid).is_some()).count();
+                let removed = to_remove
+                    .iter()
+                    .filter(|sid| connections.remove(*sid).is_some())
+                    .count();
                 drop(connections);
                 // Adjust atomic counter
                 self.connection_count.fetch_sub(removed, Ordering::Relaxed);
@@ -2070,7 +2154,10 @@ impl StratumServer {
         // Clone connections out of the lock to avoid deadlock
         let conns: Vec<(String, Arc<RwLock<Connection>>)> = {
             let connections = self.connections.read().await;
-            connections.iter().map(|(sid, c)| (sid.clone(), c.clone())).collect()
+            connections
+                .iter()
+                .map(|(sid, c)| (sid.clone(), c.clone()))
+                .collect()
         };
         let mut sent = 0;
 
@@ -2156,7 +2243,11 @@ impl StratumServer {
             }
         }
 
-        tracing::info!("📢 Broadcasted new job (height={}) to {} miners", height, sent);
+        tracing::info!(
+            "📢 Broadcasted new job (height={}) to {} miners",
+            height,
+            sent
+        );
         metrics::inc_job_broadcasts();
     }
 }

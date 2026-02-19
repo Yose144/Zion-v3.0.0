@@ -7,7 +7,7 @@
 //! Uses zion-cosmic-harmony-v3 crate's MetalMiner with correct
 //! packed struct buffer layout matching the Metal compute shader.
 
-use super::{GpuDevice, GpuMiner, GpuPlatform};
+use super::{GpuDevice, GpuMiner};
 use anyhow::{anyhow, Result};
 use std::time::Instant;
 
@@ -58,7 +58,9 @@ impl MetalGpuMiner {
     /// Run benchmark and return hashrate in H/s
     #[cfg(all(feature = "metal", target_os = "macos"))]
     pub fn benchmark(&mut self, duration_secs: f64) -> Result<f64> {
-        let inner = self.inner.as_mut()
+        let inner = self
+            .inner
+            .as_mut()
             .ok_or_else(|| anyhow!("Metal miner not initialized"))?;
         Ok(inner.benchmark(duration_secs))
     }
@@ -97,7 +99,9 @@ impl GpuMiner for MetalGpuMiner {
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(all(feature = "metal", target_os = "macos"))]
         {
-            let inner = self.inner.as_mut()
+            let inner = self
+                .inner
+                .as_mut()
                 .ok_or_else(|| anyhow!("Metal miner not initialized"))?;
 
             // Process in chunks of our configured batch_size

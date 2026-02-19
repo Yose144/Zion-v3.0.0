@@ -9,12 +9,11 @@
 /// 5. **Batch Transactions** — multi-recipient payouts (pool)
 ///
 /// The CLI binary (`zion-wallet send`) and RPC endpoint both use this module.
-
 pub mod batch;
 
-use crate::tx::{Transaction, TxInput, TxOutput};
 use crate::blockchain::fee;
 use crate::crypto::{keys, to_hex};
+use crate::tx::{Transaction, TxInput, TxOutput};
 use ed25519_dalek::{Signer, SigningKey};
 use zeroize::Zeroize;
 
@@ -90,18 +89,18 @@ pub enum WalletError {
 impl std::fmt::Display for WalletError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            WalletError::InsufficientFunds { available, needed } =>
-                write!(f, "Insufficient funds: have {} atomic, need {}", available, needed),
-            WalletError::NoUtxos =>
-                write!(f, "No spendable UTXOs found"),
-            WalletError::InvalidAddress(addr) =>
-                write!(f, "Invalid address: {}", addr),
-            WalletError::FeeTooLow { fee, minimum } =>
-                write!(f, "Fee {} is below minimum {}", fee, minimum),
-            WalletError::ZeroAmount =>
-                write!(f, "Send amount cannot be zero"),
-            WalletError::SigningError(msg) =>
-                write!(f, "Signing error: {}", msg),
+            WalletError::InsufficientFunds { available, needed } => write!(
+                f,
+                "Insufficient funds: have {} atomic, need {}",
+                available, needed
+            ),
+            WalletError::NoUtxos => write!(f, "No spendable UTXOs found"),
+            WalletError::InvalidAddress(addr) => write!(f, "Invalid address: {}", addr),
+            WalletError::FeeTooLow { fee, minimum } => {
+                write!(f, "Fee {} is below minimum {}", fee, minimum)
+            }
+            WalletError::ZeroAmount => write!(f, "Send amount cannot be zero"),
+            WalletError::SigningError(msg) => write!(f, "Signing error: {}", msg),
         }
     }
 }
@@ -202,7 +201,10 @@ pub fn build_and_sign(
     let tx_size = fee::estimate_tx_size(selected.len(), num_outputs);
     let min_required = fee::minimum_fee_for_size(tx_size);
     if tx_fee < min_required {
-        return Err(WalletError::FeeTooLow { fee: tx_fee, minimum: min_required });
+        return Err(WalletError::FeeTooLow {
+            fee: tx_fee,
+            minimum: min_required,
+        });
     }
 
     // 4. Derive public key
@@ -212,12 +214,10 @@ pub fn build_and_sign(
     let public_key_hex = to_hex(signing_key.verifying_key().as_bytes());
 
     // 5. Build outputs
-    let mut outputs = vec![
-        TxOutput {
-            amount: params.amount,
-            address: params.to_address.clone(),
-        },
-    ];
+    let mut outputs = vec![TxOutput {
+        amount: params.amount,
+        address: params.to_address.clone(),
+    }];
     if change > 0 {
         outputs.push(TxOutput {
             amount: change,
@@ -226,12 +226,15 @@ pub fn build_and_sign(
     }
 
     // 6. Build inputs (with empty signatures — will be filled after hash)
-    let inputs: Vec<TxInput> = selected.iter().map(|utxo| TxInput {
-        prev_tx_hash: utxo.tx_hash.clone(),
-        output_index: utxo.output_index,
-        signature: String::new(),
-        public_key: public_key_hex.clone(),
-    }).collect();
+    let inputs: Vec<TxInput> = selected
+        .iter()
+        .map(|utxo| TxInput {
+            prev_tx_hash: utxo.tx_hash.clone(),
+            output_index: utxo.output_index,
+            signature: String::new(),
+            public_key: public_key_hex.clone(),
+        })
+        .collect();
 
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -360,9 +363,7 @@ mod tests {
     fn test_select_utxos_exact() {
         // UTXO exactly covers amount + fee
         let min_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(1, 1));
-        let utxos = vec![
-            make_utxo("tx1:0", "tx1", 0, 1_000_000 + min_fee),
-        ];
+        let utxos = vec![make_utxo("tx1:0", "tx1", 0, 1_000_000 + min_fee)];
         let (selected, fee_paid) = select_utxos(&utxos, 1_000_000, None).unwrap();
         assert_eq!(selected.len(), 1);
         assert_eq!(fee_paid, min_fee);
@@ -381,9 +382,7 @@ mod tests {
 
     #[test]
     fn test_select_with_explicit_fee() {
-        let utxos = vec![
-            make_utxo("tx1:0", "tx1", 0, 10_000_000),
-        ];
+        let utxos = vec![make_utxo("tx1:0", "tx1", 0, 10_000_000)];
         let explicit = 5_000u64;
         let (selected, fee) = select_utxos(&utxos, 1_000_000, Some(explicit)).unwrap();
         assert_eq!(selected.len(), 1);
@@ -398,15 +397,13 @@ mod tests {
         let pk_hex = to_hex(signing_key.verifying_key().as_bytes());
         let sender_addr = keys::address_from_public_key_hex(&pk_hex);
 
-        let utxos = vec![
-            SpendableUtxo {
-                key: "tx1:0".to_string(),
-                tx_hash: "tx1".to_string(),
-                output_index: 0,
-                amount: 100_000_000, // 100 ZION
-                address: sender_addr.clone(),
-            },
-        ];
+        let utxos = vec![SpendableUtxo {
+            key: "tx1:0".to_string(),
+            tx_hash: "tx1".to_string(),
+            output_index: 0,
+            amount: 100_000_000, // 100 ZION
+            address: sender_addr.clone(),
+        }];
 
         let params = SendParams {
             to_address: test_address(),
@@ -433,15 +430,13 @@ mod tests {
         let sender_addr = keys::address_from_public_key_hex(&pk_hex);
 
         let fee_amount = fee::minimum_fee_for_size(fee::estimate_tx_size(1, 1));
-        let utxos = vec![
-            SpendableUtxo {
-                key: "tx1:0".to_string(),
-                tx_hash: "tx1".to_string(),
-                output_index: 0,
-                amount: 50_000_000 + fee_amount,
-                address: sender_addr.clone(),
-            },
-        ];
+        let utxos = vec![SpendableUtxo {
+            key: "tx1:0".to_string(),
+            tx_hash: "tx1".to_string(),
+            output_index: 0,
+            amount: 50_000_000 + fee_amount,
+            address: sender_addr.clone(),
+        }];
 
         let params = SendParams {
             to_address: test_address(),
@@ -504,8 +499,13 @@ mod tests {
         assert_eq!(idx, 5);
 
         // Long hash
-        let (hash, idx) = parse_utxo_key("0000000000000000000000000000000000000000000000000000000000000000:0").unwrap();
-        assert_eq!(hash, "0000000000000000000000000000000000000000000000000000000000000000");
+        let (hash, idx) =
+            parse_utxo_key("0000000000000000000000000000000000000000000000000000000000000000:0")
+                .unwrap();
+        assert_eq!(
+            hash,
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
         assert_eq!(idx, 0);
 
         // Invalid
