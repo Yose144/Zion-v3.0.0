@@ -196,6 +196,49 @@ Připojeno na Helsinki pool, 12 přijatých share, 0 odmítnutých.
 
 ---
 
+## Session 9 — Revenue systém E2E verifikace (VRSC→XMR + algo flag)
+
+**Datum:** 19. února 2026  
+**Platforma:** Helsinki 77.42.31.72 (ARM64), macOS M1 (agent)
+
+### Root cause #1 — `ZION_CPU_REVENUE_COIN=VRSC` (VerusHash nepodporován)
+
+Pool byl nakonfigurován s `VRSC` jako revenue coinem. Miner binary nepodporuje VerusHash
+(`cosmic_harmony · randomx · yescrypt · blake3` — bez verushash). Pool posílal VerusHash
+joby → miner mlčky zahodil → 0 hashrate, žádný výstup.
+
+**Fix:** `docker/docker-compose.testnet.yml`:
+```
+ZION_CPU_REVENUE_COIN=VRSC → ZION_CPU_REVENUE_COIN=XMR
+```
+Pool se restartoval, výpis potvrzen: `💹 CPU-only mode: Revenue 25% locked to XMR (RandomX → MoneroOcean)`
+
+### Root cause #2 — `revenueArgs` chyběl `--algorithm randomx`
+
+Revenue process byl spouštěn bez `--algorithm` flagu → miner se připojil s defaultním
+algoritmem (cosmic_harmony), ale pool mu posílal RandomX job → nesoulad protokolu → odpojení každé 2-3s.
+
+**Fix:** v `main.js` přidán do `revenueArgs`:
+```javascript
+'--algorithm', 'randomx',  // Revenue group mines XMR via pool (CPU-only mode → RandomX)
+```
+
+### Stav po opravách
+
+| Komponenta | Stav |
+|---|---|
+| Pool revenue proxy → MoneroOcean (XMR) | ✅ `[XMR] ✅ CN Login successful` |
+| Job broadcasting → revenue miners | ✅ `📢 New Revenue job (xmr) → broadcasting to 1 Revenue miners` |
+| Miner `--algorithm randomx` flag | ✅ přidán (commit níže) |
+| xmrig crash na Helsinki (ARM64) | ❌ `exit status: 1` — server-side problém |
+
+### Commits
+
+- `62dedff` — `fix(pool): revenue coin VRSC→XMR (miner nepodporuje VerusHash)`
+- *(aktuální)* — `fix(agent): revenue --algorithm randomx flag přidán`
+
+---
+
 ## Infrastruktura
 
 - **GPU (AMD server):** AMD Radeon RX 5600/5700 (gfx1010, 18 CU, 6128 MB)

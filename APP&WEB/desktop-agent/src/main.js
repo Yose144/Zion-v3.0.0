@@ -2333,6 +2333,7 @@ function startMining(config) {
         '--wallet', config.wallet,
         '--threads', String(xmrRevenueThreads),
         '--group', 'revenue',
+        '--algorithm', 'randomx',  // Revenue group mines XMR via pool (CPU-only mode → RandomX)
         '--stats-file', revenueStatsPath,
         '--stats-interval', '5',
         '--no-color'
