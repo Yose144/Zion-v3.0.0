@@ -85,7 +85,7 @@ impl MergedMiningManager {
         let seen = self.chv3_valid_seen.fetch_add(1, Ordering::Relaxed) + 1;
 
         // Sampling gate
-        if self.sample_every > 1 && !seen.is_multiple_of(self.sample_every) {
+        if self.sample_every > 1 && seen % self.sample_every != 0 {
             return;
         }
 

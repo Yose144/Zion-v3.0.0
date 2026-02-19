@@ -42,7 +42,7 @@ fn parse_target_hex_prefix(target_hex: &str) -> anyhow::Result<[u8; 32]> {
     if cleaned.is_empty() {
         anyhow::bail!("empty target hex");
     }
-    if !cleaned.len().is_multiple_of(2) {
+    if cleaned.len() % 2 != 0 {
         anyhow::bail!("target hex must have even length");
     }
 
