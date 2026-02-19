@@ -513,3 +513,58 @@ impl Config {
         cfg
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn revenue_settings_defaults_are_sane() {
+        let r = RevenueSettings::default();
+        assert!(r.enabled);
+        // ZION stream: 50% target
+        assert!((r.streams.zion.target_share - 0.50).abs() < 1e-9);
+        assert!(r.streams.zion.enabled);
+    }
+
+    #[test]
+    fn stream_config_default_zion_share() {
+        let s = StreamConfig::default();
+        assert!(s.enabled);
+        assert!((s.target_share - 0.50).abs() < 1e-9);
+    }
+
+    #[test]
+    fn revenue_settings_deserialization_from_toml() {
+        let toml_str = r#"
+            enabled = true
+            [streams.zion]
+            enabled = true
+            target_share = 0.60
+        "#;
+        let r: RevenueSettings = toml::from_str(toml_str).expect("Should deserialize");
+        assert!(r.enabled);
+        assert!((r.streams.zion.target_share - 0.60).abs() < 1e-9);
+    }
+
+    #[test]
+    fn default_btc_wallet_is_non_empty() {
+        // If env var not set, falls back to hardcoded address
+        let wallet = default_btc_wallet();
+        assert!(!wallet.is_empty());
+        // Basic sanity: BTC bech32 starts with bc1
+        if std::env::var("ZION_BTC_WALLET").is_err() {
+            assert!(wallet.starts_with("bc1"), "Fallback BTC wallet should be bech32: {}", wallet);
+        }
+    }
+
+    #[test]
+    fn default_xmr_wallet_is_non_empty() {
+        let wallet = default_xmr_wallet();
+        assert!(!wallet.is_empty());
+        // Monero primary addresses start with '4'
+        if std::env::var("ZION_XMR_WALLET").is_err() {
+            assert!(wallet.starts_with('4'), "Fallback XMR wallet should start with 4: {}", wallet);
+        }
+    }
+}

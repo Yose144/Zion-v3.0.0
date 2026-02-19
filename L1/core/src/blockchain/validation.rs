@@ -20,6 +20,8 @@ pub const COINBASE_MATURITY: u64 = 100;
 /// LWMA internally clamps solve times to prevent manipulation.
 pub const MAX_TIMESTAMP_DRIFT_TESTNET: u64 = 86400;
 pub const MAX_TIMESTAMP_DRIFT_MAINNET: u64 = 7200;
+/// Default timestamp drift (mainnet = 2 hours, matches Bitcoin)
+pub const MAX_TIMESTAMP_DRIFT: u64 = MAX_TIMESTAMP_DRIFT_MAINNET;
 
 pub fn max_timestamp_drift_for_network(network: NetworkType) -> u64 {
     match network {

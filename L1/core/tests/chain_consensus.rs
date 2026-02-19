@@ -314,17 +314,21 @@ fn test_reward_at_various_heights() {
     // Height 0: no reward (genesis)
     assert_eq!(reward::calculate(0, 1000), 0);
 
-    // Height 1: first mined block
+    // Height 1: first mined block — Decade 1 base reward
     assert_eq!(reward::calculate(1, 1000), 5_400_067_000);
 
-    // Height 1,000,000: same reward (constant emission)
+    // Height 1,000,000: still Decade 1 (< 5,256,000)
     assert_eq!(reward::calculate(1_000_000, 1000), 5_400_067_000);
 
-    // Height 23,652,000: last rewarded block
-    assert_eq!(reward::calculate(23_652_000, 1000), 5_400_067_000);
+    // Height 5,256,001: Decade 2 starts — reward = BASE * (4/5)^1 = 4,320,053,600
+    let d2 = 5_400_067_000u64 * 4 / 5;
+    assert_eq!(reward::calculate(5_256_001, 1000), d2);
 
-    // Height 23,652,001: emission complete
-    assert_eq!(reward::calculate(23_652_001, 1000), 0);
+    // Height 52,560,001: Decade 11+ — perpetual tail emission
+    assert_eq!(reward::calculate(52_560_001, 1000), reward::TAIL_REWARD_ATOMIC);
+
+    // Tail emission continues forever
+    assert_eq!(reward::calculate(u64::MAX, 1000), reward::TAIL_REWARD_ATOMIC);
 }
 
 #[test]
@@ -332,17 +336,18 @@ fn test_miner_tithe_pool_distribution() {
     let total = reward::calculate(1, 1000);
     let miner = reward::miner_reward(1, 1000);
     let tithe = reward::tithe_reward(1, 1000);
+    let issobella = reward::issobella_fund_reward(1, 1000);
     let pool = reward::pool_fee_reward(1, 1000);
 
-    // All three should sum close to total (integer division truncation may lose a few units)
-    let sum = miner + tithe + pool;
+    // All four should sum close to total (integer division truncation may lose a few units)
+    let sum = miner + tithe + issobella + pool;
     assert!(
         sum <= total,
         "Distribution sum {} exceeds total {}",
         sum,
         total
     );
-    // Allow max 3 atomic units rounding error
+    // Allow max 3 atomic units rounding error (89+5+5+1=100, but integer division may truncate)
     assert!(
         total - sum <= 3,
         "Rounding error too large: total={}, sum={}",

@@ -3,11 +3,55 @@
 //! - L1→EVM: After L1 lock is confirmed + finalized, submits `submitLockProof()` to ZIONBridge.sol
 //! - EVM→L1: After wZION burn is confirmed, submits L1 unlock TX + `confirmBurnRelease()` to ZIONBridge.sol
 
-use crate::config::BridgeConfig;
+use crate::config::{BridgeConfig, ValidatorConfig};
 use crate::types::{EvmBurnEvent, L1LockEvent};
 use anyhow::Result;
 use ethers::prelude::*;
 use serde_json;
+use zeroize::Zeroizing;
+
+/// Load the validator private key securely.
+///
+/// Priority:
+///   1. `ZION_VALIDATOR_PRIVATE_KEY` env var (preferred for containers/CI)
+///   2. File at `config.validator.private_key_file`
+///
+/// On Unix the file must have mode 0o600 (owner-only read/write) or startup aborts.
+/// The returned `Zeroizing<String>` is automatically wiped from memory when dropped.
+fn load_validator_key(config: &ValidatorConfig) -> anyhow::Result<Zeroizing<String>> {
+    // --- Env var ---
+    if let Ok(key) = std::env::var("ZION_VALIDATOR_PRIVATE_KEY") {
+        if !key.trim().is_empty() {
+            tracing::info!("🔑 Validator key loaded from ZION_VALIDATOR_PRIVATE_KEY env var");
+            return Ok(Zeroizing::new(key.trim().to_string()));
+        }
+    }
+
+    // --- File ---
+    let path = &config.private_key_file;
+
+    // Unix: enforce 0o600 file permissions
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        let meta = std::fs::metadata(path).map_err(|e| {
+            anyhow::anyhow!("Cannot stat key file {:?}: {}", path, e)
+        })?;
+        let mode = meta.mode() & 0o777;
+        if mode != 0o600 {
+            anyhow::bail!(
+                "🚨 Key file {:?} has insecure permissions {:o} — expected 0o600. \
+                 Run: chmod 600 {:?}",
+                path, mode, path
+            );
+        }
+    }
+
+    let raw = std::fs::read_to_string(path)
+        .map_err(|e| anyhow::anyhow!("Cannot read key file {:?}: {}", path, e))?;
+    tracing::info!("🔑 Validator key loaded from file {:?}", path);
+    Ok(Zeroizing::new(raw.trim().to_string()))
+}
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
@@ -96,10 +140,10 @@ impl Relayer {
         let provider = Provider::<Http>::try_from(&chain_config.rpc_url)?;
         let chain_id = chain_config.evm_chain_id;
 
-        // Load validator private key
-        let key_bytes = std::fs::read_to_string(&self.config.validator.private_key_file)?;
-        let wallet: LocalWallet = key_bytes
-            .trim()
+        // Load validator private key securely (env var or file, zeroized after use)
+        let key_secret = load_validator_key(&self.config.validator)?;
+        let wallet: LocalWallet = key_secret
+            .as_str()
             .parse::<LocalWallet>()?
             .with_chain_id(chain_id);
 
@@ -233,9 +277,10 @@ impl Relayer {
             .ok_or_else(|| anyhow::anyhow!("Burn chain '{}' not configured", burn.evm_chain))?;
 
         let provider = Provider::<Http>::try_from(&chain_config.rpc_url)?;
-        let key_bytes = std::fs::read_to_string(&self.config.validator.private_key_file)?;
-        let wallet: LocalWallet = key_bytes
-            .trim()
+        // Load validator private key securely (env var or file, zeroized after use)
+        let key_secret = load_validator_key(&self.config.validator)?;
+        let wallet: LocalWallet = key_secret
+            .as_str()
             .parse::<LocalWallet>()?
             .with_chain_id(chain_config.evm_chain_id);
 
