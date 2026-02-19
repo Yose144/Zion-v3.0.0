@@ -2415,6 +2415,7 @@ function startMining(config) {
       const gpuRevenueArgs = [
         '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
         '--wallet', config.wallet,
+        '--threads', '1',  // GPU process needs only 1 CPU thread; GPU (Metal/OpenCL) does the heavy work
         '--group', 'revenue',
         '--algorithm', gpuRevenueAlgo,
         '--gpu',   // works on macOS for cosmic_harmony (Metal), and on Linux/Win (OpenCL)
