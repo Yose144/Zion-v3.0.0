@@ -468,6 +468,26 @@ impl StratumClient {
             }
             None => false,
         };
+
+        // Log actual rejection reason from pool (if present).
+        // This replaces the generic "low difficulty share" guesswork.
+        if !accepted {
+            if let Some(ref err) = response.error {
+                log::warn!(
+                    "⛏ Share rejected by pool: code={} reason=\"{}\" job={}",
+                    err.code,
+                    err.message,
+                    job_id
+                );
+            } else {
+                log::warn!(
+                    "⛏ Share rejected by pool (no error detail) job={} result={:?}",
+                    job_id,
+                    response.result
+                );
+            }
+        }
+
         Ok(accepted)
     }
 
