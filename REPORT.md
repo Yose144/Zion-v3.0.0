@@ -10,27 +10,27 @@
 
 | Metrika | Hodnota |
 |---------|---------|
-| **Rust LOC (skutečné)** | ~60,761 |
-| **Crate count** | 11 (L1–L4) — všechny kompilují |
-| **Testy celkem** | 967 Rust + Hardhat (450 Rust unit/integration + 95 Solidity) |
+| **Rust LOC (L1–L4, deep scan)** | 64,288 |
+| **Crate count** | 11 (L1–L4), deep scan ověřil 10/11 |
+| **Testy celkem (ověřeno)** | 499 Rust + 95 Hardhat |
 | **CI Build** | ✅ 4-job pipeline (L1, L2-L4, fmt, clippy) |
-| **Clippy warnings** | ~15 (sníženo z ~280) |
+| **Clippy warnings (deep scan)** | 46+ (core/verushash scan blokován) |
 | **cargo fmt** | ✅ čistý (zero diffs) |
-| **L1 připravenost** | **92%** |
-| **MainNet blokery** | 8 zbývá z 14 |
+| **L1 připravenost** | **90%** |
+| **MainNet blokery** | 9 zbývá z 14 |
 
 ---
 
-## L1 ⛏️ Blockchain Core — 92% ready
+## L1 ⛏️ Blockchain Core — 90% ready
 
 | Crate | LOC (skutečné) | Testů | Stav |
 |-------|----------------|-------|------|
-| `L1/core/src` | 11,980 | 234 | ✅ Produkce |
-| `L1/core/tests` | 2,522 | 185 | ✅ Integrační testy |
-| `L1/pool/` | 12,743 | 96 | ✅ Běží — 96 testů (+66 nových: config, vardiff, rewards, storage) |
+| `L1/core/src` | 11,980 | n/a (scan blokován) | ⚠️ Build padá na `verushash-native` (chybí `csrc/`) |
+| `L1/core/tests` | 2,522 | n/a (scan blokován) | ⚠️ Test list nelze dokončit bez C sources |
+| `L1/pool/` | 12,743 | 97 | ✅ Běží — 97 testů (deep scan) |
 | `L1/miner/` | 9,281 | 73 | ✅ Běží — 73 testů (+53 nových: stratum, stats, stream, algo) |
-| `L1/cosmic-harmony/` | 8,861 | 45 | ✅ CHv3 finální |
-| `L1/native-libs/` | ~251 | — | ✅ VerusHash binding (optional — blake3 fallback pro dev) |
+| `L1/cosmic-harmony/` | 8,861 | 48 | ✅ CHv3 finální (deep scan) |
+| `L1/native-libs/` | ~251 | n/a | ⚠️ Vyžaduje `download_sources.sh` (`csrc/` chybí) |
 
 **Servery:**
 
@@ -45,7 +45,7 @@
 
 | Crate | LOC (skutečné) | Testů | Stav |
 |-------|----------------|-------|------|
-| `L2/bridge/` | 1,991 | 55 | 80% — kompletní pipeline, chybí E2E |
+| `L2/bridge/` | 1,991 | 71 | 80% — kompletní pipeline, chybí E2E |
 | `L2/dao/` | 1,055 | 18 | 55% — logika hotová, chybí DB + daemon |
 | `L2/contracts/` | ~1,935 | 95 | 70% — Solidity kompiluje, chybí deploy |
 
@@ -57,7 +57,7 @@
 
 | Crate | LOC (skutečné) | Testů | Stav |
 |-------|----------------|-------|------|
-| `L3/warp/` | 2,217 | 111 | ✅ Rekonstruováno — 10 řetězců, router, fees, validátoři |
+| `L3/warp/` | 2,217 | 115 | ✅ Rekonstruováno — 10 řetězců, router, fees, validátoři |
 | `L3/ncl/` | 533 | 22 | ✅ Rekonstruováno — scheduler, pricing, 4 backend stuby |
 | `L3/ai-native/` | 339 | 15 | ✅ Rekonstruováno — orchestrátor, consciousness, messaging |
 
@@ -103,9 +103,16 @@
 14. ✅ **Dead code cleanup** — Prefixed unused fields, suppressed multichain stubs
 15. ✅ **218 souborů** — Celkový refactor (11,889 insertions, 7,506 deletions)
 
+### Session 4 — Deep scan reality check (19. února 2026)
+16. ✅ **Rust LOC přepočet (L1–L4)** — 64,288 LOC (228 `.rs` souborů)
+17. ✅ **Test inventory ověřen** — 499 Rust testů potvrzeno (`pool 97`, `miner 73`, `bridge 71`, `dao 18`, `warp 115`, `ncl 22`, `ai-native 15`, `oasis 40`, `cosmic 48`)
+18. ⚠️ **`zion-core` / `verushash-native`** — test listing a clippy blokovány chybějícími Verus C zdrojáky (`csrc/`)
+19. ⚠️ **Clippy baseline (ověřený rozsah)** — 46+ warnings na skenovaných cratech (regrese proti předchozímu stavu)
+
 ### ⚠️ Zbývající problémy
 
 - **Helsinki sync**: Server 77.42.31.72 má novější kód — potřeba rsync/porovnání
+- **verushash-native C sources**: Bez `csrc/` nelze plně testovat `zion-core` ani `verushash-native`
 - **L1/core LOC gap**: 14,500 LOC (src+tests) vs 35,000 tvrzených — ~58% chybí
 - **L3 adaptéry**: Všech 7 chain adaptérů jsou stuby (EVM, Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin)
 
