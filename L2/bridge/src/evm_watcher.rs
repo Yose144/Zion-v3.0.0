@@ -36,10 +36,7 @@ impl EvmWatcher {
     }
 
     /// Start the EVM watcher loop. Sends confirmed burn events to the channel.
-    pub async fn run(
-        &mut self,
-        burn_tx: mpsc::Sender<EvmBurnEvent>,
-    ) -> Result<()> {
+    pub async fn run(&mut self, burn_tx: mpsc::Sender<EvmBurnEvent>) -> Result<()> {
         info!(
             "👁️ EVM Watcher started — chain: {} ({}), wZION: {}, finality: {} blocks",
             self.config.name,
@@ -64,7 +61,10 @@ impl EvmWatcher {
             .address(wzion_addr)
             .event("BridgeBurn(address,uint256,string,bytes32,uint256)");
 
-        info!("📡 Subscribing to BridgeBurn events on {}", self.config.name);
+        info!(
+            "📡 Subscribing to BridgeBurn events on {}",
+            self.config.name
+        );
 
         // Use polling for broader compatibility
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(12));
@@ -106,10 +106,7 @@ impl EvmWatcher {
             self.config.name, from, to, current_block, finalized_block
         );
 
-        let filter = base_filter
-            .clone()
-            .from_block(from)
-            .to_block(to);
+        let filter = base_filter.clone().from_block(from).to_block(to);
 
         let logs = provider.get_logs(&filter).await?;
         let count = logs.len();
@@ -119,10 +116,7 @@ impl EvmWatcher {
                 Ok(burn) => {
                     info!(
                         "🔥 Burn detected on {}: {} wZION → {} (burn_id: {})",
-                        self.config.name,
-                        burn.amount_wzion,
-                        burn.l1_recipient,
-                        burn.burn_id,
+                        self.config.name, burn.amount_wzion, burn.l1_recipient, burn.burn_id,
                     );
                     if let Err(e) = burn_tx.send(burn).await {
                         error!("Failed to send burn event: {:?}", e);
@@ -209,10 +203,8 @@ impl EvmWatcher {
             evm_chain: self.config.chain_id.clone(),
             evm_burner: format!("{:?}", from),
             amount_wzion: amount.to_string(),
-            amount_l1_atomic: crate::types::conversion::wzion_wei_to_l1_atomic(
-                &amount.to_string(),
-            )
-            .unwrap_or(0),
+            amount_l1_atomic: crate::types::conversion::wzion_wei_to_l1_atomic(&amount.to_string())
+                .unwrap_or(0),
             l1_recipient,
             burn_id: format!("{:?}", burn_id),
             detected_at: Utc::now(),

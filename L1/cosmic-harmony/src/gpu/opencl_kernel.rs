@@ -428,7 +428,8 @@ __kernel void cosmic_harmony_v3_batch(
 pub fn get_kernel_source(optimize: bool) -> String {
     if optimize {
         // Add aggressive optimizations
-        let mut source = String::from("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable\n");
+        let mut source =
+            String::from("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable\n");
         source.push_str("#pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable\n");
         source.push_str(COSMIC_HARMONY_V3_KERNEL);
         source
@@ -440,7 +441,7 @@ pub fn get_kernel_source(optimize: bool) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_kernel_source_not_empty() {
         assert!(!COSMIC_HARMONY_V3_KERNEL.is_empty());
@@ -450,7 +451,7 @@ mod tests {
         assert!(COSMIC_HARMONY_V3_KERNEL.contains("golden_matrix"));
         assert!(COSMIC_HARMONY_V3_KERNEL.contains("cosmic_fusion"));
     }
-    
+
     #[test]
     fn test_optimized_kernel() {
         let source = get_kernel_source(true);

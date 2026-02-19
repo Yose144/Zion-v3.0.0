@@ -94,7 +94,12 @@ impl CpuMiner {
                         break;
                     }
                     share_count += 1;
-                    log::debug!("Submitting share #{}: job={}, nonce={}", share_count, share.job_id, share.nonce);
+                    log::debug!(
+                        "Submitting share #{}: job={}, nonce={}",
+                        share_count,
+                        share.job_id,
+                        share.nonce
+                    );
                     let accepted = match stratum
                         .submit_share(&share.job_id, share.nonce, &share.result_hex)
                         .await
@@ -103,7 +108,7 @@ impl CpuMiner {
                             consecutive_errors = 0;
                             log::debug!("Share #{} result: accepted={}", share_count, v);
                             v
-                        },
+                        }
                         Err(e) => {
                             consecutive_errors += 1;
                             log::debug!("net submit error #{}: {}", consecutive_errors, e);
@@ -233,7 +238,8 @@ impl CpuMiner {
         // nonce position so we can resume where we left off when we return.
         // Without this, stream switches (CH→RandomX→CH) reset nonce to 0 and
         // cause Duplicate Share rejections because the same nonces get re-hashed.
-        let mut nonce_bookmarks: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+        let mut nonce_bookmarks: std::collections::HashMap<String, u32> =
+            std::collections::HashMap::new();
         // Cached Verus job context (rebuilt on job change)
         let mut verus_ctx: Option<(String, VerusJobCtx)> = None;
         // Cached decoded blob for current job_id (avoid hex decode every batch)
@@ -268,7 +274,8 @@ impl CpuMiner {
                 // nonces and never cover enough search space to find a share.
                 // Only reset nonce when the seed_hash actually changes (new block).
                 let same_seed = matches!(active_algorithm, Algorithm::RandomX)
-                    && last_seed_hash.as_deref() == job.seed_hash.as_deref().filter(|s| !s.is_empty());
+                    && last_seed_hash.as_deref()
+                        == job.seed_hash.as_deref().filter(|s| !s.is_empty());
                 if !same_seed {
                     // Check if we have a saved bookmark for this job
                     let bk_key = Self::bookmark_key(&job.job_id);
@@ -276,7 +283,12 @@ impl CpuMiner {
                         .get(bk_key.as_str())
                         .copied()
                         .unwrap_or(worker_index);
-                    log::debug!("nonce resume: job={} bk_key={} → start={}", job.job_id, bk_key, nonce_start);
+                    log::debug!(
+                        "nonce resume: job={} bk_key={} → start={}",
+                        job.job_id,
+                        bk_key,
+                        nonce_start
+                    );
                 }
                 last_job_id = Some(job.job_id.clone());
                 last_seed_hash = job.seed_hash.clone();
@@ -307,7 +319,9 @@ impl CpuMiner {
                 // If we don't initialize with the pool key, we'll compute invalid hashes and the
                 // pool will reject shares as "low difficulty" / "unauthenticated".
                 if matches!(active_algorithm, Algorithm::RandomX) {
-                    let seed_key = job.seed_hash.as_deref()
+                    let seed_key = job
+                        .seed_hash
+                        .as_deref()
                         .filter(|s| !s.is_empty() && s.len() >= 16)
                         .and_then(|s| hex::decode(s).ok());
 
@@ -325,18 +339,27 @@ impl CpuMiner {
                 // so hashrate doesn't collapse when pool sends Revenue stream jobs.
                 // Set ZION_ENABLE_STREAM_SWITCH=1 to enable dynamic switching.
                 if stream_switch_enabled {
-                    let job_algo = job.algo.as_deref()
+                    let job_algo = job
+                        .algo
+                        .as_deref()
                         .and_then(Algorithm::from_str)
                         .unwrap_or(algorithm);
 
                     if job_algo != active_algorithm {
                         // CPU-only mode: if pool sends a GPU-only algo, replace with RandomX
-                        let effective_algo = if matches!(job_algo,
-                            Algorithm::Ethash | Algorithm::KawPow | Algorithm::Autolykos |
-                            Algorithm::KHeavyHash | Algorithm::ProgPow
+                        let effective_algo = if matches!(
+                            job_algo,
+                            Algorithm::Ethash
+                                | Algorithm::KawPow
+                                | Algorithm::Autolykos
+                                | Algorithm::KHeavyHash
+                                | Algorithm::ProgPow
                         ) {
                             // Check if GPU is available — if not, use RandomX instead
-                            if std::env::var("ZION_HAS_GPU").map(|v| v == "1" || v.to_lowercase() == "true").unwrap_or(false) {
+                            if std::env::var("ZION_HAS_GPU")
+                                .map(|v| v == "1" || v.to_lowercase() == "true")
+                                .unwrap_or(false)
+                            {
                                 job_algo // GPU available, keep original
                             } else {
                                 log::debug!("cpu:switch {} is GPU-only → RandomX", job_algo.name());
@@ -346,7 +369,11 @@ impl CpuMiner {
                             job_algo
                         };
 
-                        log::debug!("cpu:switch {} → {}", active_algorithm.name(), effective_algo.name());
+                        log::debug!(
+                            "cpu:switch {} → {}",
+                            active_algorithm.name(),
+                            effective_algo.name()
+                        );
                         active_algorithm = effective_algo;
                         batch_size = Self::batch_size_for_algo(active_algorithm);
 
@@ -354,7 +381,9 @@ impl CpuMiner {
                         if active_algorithm == Algorithm::RandomX {
                             // Use seed_hash from pool job (MoneroOcean/CryptoNote sends
                             // the proper seed_hash for RandomX dataset initialization)
-                            let seed_key = job.seed_hash.as_deref()
+                            let seed_key = job
+                                .seed_hash
+                                .as_deref()
                                 .filter(|s| !s.is_empty() && s.len() >= 16)
                                 .and_then(|s| hex::decode(s).ok())
                                 .unwrap_or_else(|| b"ZION_RANDOMX_TESTNET_2026".to_vec());
@@ -369,10 +398,7 @@ impl CpuMiner {
                 let t = job.target.trim();
                 if matches!(active_algorithm, Algorithm::CosmicHarmony) {
                     let tu = parse_cosmic_target_to_u32(t);
-                    let endian = job
-                        .cosmic_state0_endian
-                        .as_deref()
-                        .unwrap_or("little");
+                    let endian = job.cosmic_state0_endian.as_deref().unwrap_or("little");
                     log::debug!(
                         "New mining job: id={}, height={}, algo={}, target='{}' (u32=0x{:08x}) endian={}",
                         job.job_id,
@@ -446,10 +472,10 @@ impl CpuMiner {
                         let solution_part = &blob_bytes[PREFIX_LEN..]; // varint(3) + solution(1344)
 
                         let mut buf = Vec::with_capacity(PREFIX_LEN + 32 + solution_part.len());
-                        buf.extend_from_slice(prefix);         // 108B: version(4)+prev(32)+merkle(32)+reserved(32)+ntime(4)+nbits(4)
-                        buf.extend_from_slice(&[0u8; 32]);     // 32B: nonce placeholder (will be zeroed for v7+)
-                        buf.extend_from_slice(solution_part);  // varint(3) + solution(1344) = 1347B
-                        // Total: 108 + 32 + 1347 = 1487 bytes ✅
+                        buf.extend_from_slice(prefix); // 108B: version(4)+prev(32)+merkle(32)+reserved(32)+ntime(4)+nbits(4)
+                        buf.extend_from_slice(&[0u8; 32]); // 32B: nonce placeholder (will be zeroed for v7+)
+                        buf.extend_from_slice(solution_part); // varint(3) + solution(1344) = 1347B
+                                                              // Total: 108 + 32 + 1347 = 1487 bytes ✅
 
                         // Detect PBaaS v7+ merged mining from solution version byte
                         let sol_offset = PREFIX_LEN + 32 + 3; // = 143 (header 140 + varint 3)
@@ -465,14 +491,22 @@ impl CpuMiner {
                             log::info!("VerusHash PBaaS v7+ mode: iterating nonce in solution (not header)");
                             // Clear non-canonical data for hashing (same as ccminer/node ClearNonCanonicalData)
                             // hashPrevBlock + hashMerkleRoot + hashFinalSaplingRoot (96B at 4..100)
-                            for b in &mut buf[4..100] { *b = 0; }
+                            for b in &mut buf[4..100] {
+                                *b = 0;
+                            }
                             // nBits (4B at 104..108)
-                            for b in &mut buf[104..108] { *b = 0; }
+                            for b in &mut buf[104..108] {
+                                *b = 0;
+                            }
                             // nNonce (32B at 108..140) — zeroed, daemon nonce is not used for hash
-                            for b in &mut buf[108..140] { *b = 0; }
+                            for b in &mut buf[108..140] {
+                                *b = 0;
+                            }
                             // hashPrevMMRRoot + hashBlockMMRRoot in solution (64B at sol_offset+8)
                             if buf.len() >= sol_offset + 8 + 64 {
-                                for b in &mut buf[sol_offset + 8..sol_offset + 8 + 64] { *b = 0; }
+                                for b in &mut buf[sol_offset + 8..sol_offset + 8 + 64] {
+                                    *b = 0;
+                                }
                             }
                         }
 
@@ -494,7 +528,8 @@ impl CpuMiner {
                         // Prebuild base 32B nonce (non-PBaaS) once.
                         let mut nonce32_base = [0u8; 32];
                         let nonce32_en_take = extranonce.len().min(28);
-                        nonce32_base[..nonce32_en_take].copy_from_slice(&extranonce[..nonce32_en_take]);
+                        nonce32_base[..nonce32_en_take]
+                            .copy_from_slice(&extranonce[..nonce32_en_take]);
 
                         log::info!(
                             "VerusHash job built: buf_len={} (expected 1487), extranonce_len={}, pbaas_v7={}, nonce_space_off={}",
@@ -505,7 +540,11 @@ impl CpuMiner {
                             job.job_id.clone(),
                             VerusJobCtx {
                                 buf,
-                                nonce_off: if is_pbaas_v7 { nonce_space_off + 11 } else { PREFIX_LEN },
+                                nonce_off: if is_pbaas_v7 {
+                                    nonce_space_off + 11
+                                } else {
+                                    PREFIX_LEN
+                                },
                                 is_pbaas_v7,
                                 nonce32_base,
                                 nonce32_en_take,
@@ -645,7 +684,11 @@ impl CpuMiner {
                             Ok(h) => h,
                             Err(e) => {
                                 if !compute_error_logged {
-                                    log::error!("❌ compute_hash error: {} (algo={:?})", e, native_algo);
+                                    log::error!(
+                                        "❌ compute_hash error: {} (algo={:?})",
+                                        e,
+                                        native_algo
+                                    );
                                     compute_error_logged = true;
                                 }
                                 let msg = e.to_string();
@@ -688,7 +731,11 @@ impl CpuMiner {
                                 );
                             } else if !compute_error_logged {
                                 // Log once per job to avoid flooding.
-                                log::error!("❌ compute_hash error: {} (algo={:?})", e, native_algo);
+                                log::error!(
+                                    "❌ compute_hash error: {} (algo={:?})",
+                                    e,
+                                    native_algo
+                                );
                                 compute_error_logged = true;
                             }
 
@@ -741,7 +788,12 @@ impl CpuMiner {
                 let meets = if matches!(active_algorithm, Algorithm::VerusHash) {
                     meets_target_verushash(&hash, &verus_target_be)
                 } else {
-                    Self::meets_target(active_algorithm, &hash, &target_hex, job.cosmic_state0_endian.as_deref())
+                    Self::meets_target(
+                        active_algorithm,
+                        &hash,
+                        &target_hex,
+                        job.cosmic_state0_endian.as_deref(),
+                    )
                 };
 
                 if meets {
@@ -770,13 +822,15 @@ impl CpuMiner {
                             if let Some((_jid, ctx)) = verus_ctx.as_ref() {
                                 let buf = &ctx.buf;
                                 let mut hash_be = [0u8; 32];
-                                for i in 0..32 { hash_be[i] = hash[31 - i]; }
+                                for i in 0..32 {
+                                    hash_be[i] = hash[31 - i];
+                                }
 
                                 log::debug!(
                                     "🔬 VRSC SHARE DUMP: nonce={} hash_le={} hash_be={} target={} buf_len={}",
                                     nonce,
                                     hex::encode(hash),
-                                    hex::encode(&hash_be),
+                                    hex::encode(hash_be),
                                     &target_hex[..target_hex.len().min(32)],
                                     buf.len()
                                 );
@@ -793,15 +847,24 @@ impl CpuMiner {
                                 if buf.len() > sol_off + 72 {
                                     log::debug!(
                                         "🔬 VRSC buf solution: ver={} flags={} mmr_roots={} ",
-                                        hex::encode(&buf[sol_off..sol_off+4]),
-                                        hex::encode(&buf[sol_off+4..sol_off+8]),
-                                        hex::encode(&buf[sol_off+8..sol_off+72])
+                                        hex::encode(&buf[sol_off..sol_off + 4]),
+                                        hex::encode(&buf[sol_off + 4..sol_off + 8]),
+                                        hex::encode(&buf[sol_off + 8..sol_off + 72])
                                     );
                                 }
                                 if buf.len() >= 1487 {
-                                    log::debug!("🔬 VRSC buf nonceSpace: {}", hex::encode(&buf[1472..1487]));
-                                    log::debug!("🔬 VRSC FULL_BUF_FIRST280: {}", hex::encode(&buf[..280]));
-                                    log::debug!("🔬 VRSC FULL_BUF_LAST30: {}", hex::encode(&buf[1457..1487]));
+                                    log::debug!(
+                                        "🔬 VRSC buf nonceSpace: {}",
+                                        hex::encode(&buf[1472..1487])
+                                    );
+                                    log::debug!(
+                                        "🔬 VRSC FULL_BUF_FIRST280: {}",
+                                        hex::encode(&buf[..280])
+                                    );
+                                    log::debug!(
+                                        "🔬 VRSC FULL_BUF_LAST30: {}",
+                                        hex::encode(&buf[1457..1487])
+                                    );
                                 }
                             }
                         }
@@ -828,7 +891,13 @@ impl CpuMiner {
             } else {
                 0.0
             };
-            log::debug!("batch {} hashes {:.2} kH/s {} shares (algo={})", hashes_count, hash_rate_khs, shares_found, active_algorithm.name());
+            log::debug!(
+                "batch {} hashes {:.2} kH/s {} shares (algo={})",
+                hashes_count,
+                hash_rate_khs,
+                shares_found,
+                active_algorithm.name()
+            );
 
             if hashes_pending_stats > 0 {
                 let mut stats_guard = stats.blocking_write();
@@ -954,14 +1023,13 @@ impl CpuMiner {
 
                 let target64 = 0xFFFF_FFFF_FFFF_FFFFu64 / (0xFFFF_FFFFu64 / target_u32 as u64);
                 let hash_val = u64::from_le_bytes([
-                    hash[24], hash[25], hash[26], hash[27],
-                    hash[28], hash[29], hash[30], hash[31],
+                    hash[24], hash[25], hash[26], hash[27], hash[28], hash[29], hash[30], hash[31],
                 ]);
 
                 static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
                 let cnt = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 let hit = hash_val < target64;
-                if cnt % 200 == 0 || hit {
+                if cnt.is_multiple_of(200) || hit {
                     log::debug!(
                         "🎯 RandomX target check: hash_val=0x{:016X} target64=0x{:016X} {} (n={})",
                         hash_val,
@@ -1000,9 +1068,10 @@ impl CpuMiner {
                     u32::from_le_bytes([hash[0], hash[1], hash[2], hash[3]])
                 };
                 let result = state0 <= target_u32;
-                
+
                 // Debug: log first few comparisons
-                static DEBUG_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+                static DEBUG_COUNT: std::sync::atomic::AtomicU32 =
+                    std::sync::atomic::AtomicU32::new(0);
                 let count = DEBUG_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 if count < 5 || (result && count < 100) {
                     log::debug!(
@@ -1010,7 +1079,7 @@ impl CpuMiner {
                         state0, state0, target_u32, target_u32, target_hex, result
                     );
                 }
-                
+
                 result
             }
             _ => {
@@ -1042,22 +1111,29 @@ impl CpuMiner {
                 }
 
                 // Diagnostic log for VerusHash — every 50000 hashes + hits
-                static VRSC_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+                static VRSC_COUNTER: std::sync::atomic::AtomicU64 =
+                    std::sync::atomic::AtomicU64::new(0);
                 let vcnt = VRSC_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
                 let result = {
                     let mut res = std::cmp::Ordering::Equal;
                     for (a, b) in hash_be.iter().zip(target_bytes.iter()) {
-                        if a < b { res = std::cmp::Ordering::Less; break; }
-                        if a > b { res = std::cmp::Ordering::Greater; break; }
+                        if a < b {
+                            res = std::cmp::Ordering::Less;
+                            break;
+                        }
+                        if a > b {
+                            res = std::cmp::Ordering::Greater;
+                            break;
+                        }
                     }
                     matches!(res, std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
                 };
 
-                if vcnt % 50000 == 0 || result {
+                if vcnt.is_multiple_of(50000) || result {
                     log::debug!(
                         "🎯 VerusHash target check #{}: hash_le={} hash_be={} target={} meets={} (algo={:?})",
-                        vcnt, hex::encode(hash), hex::encode(&hash_be), hex::encode(&target_bytes), result, algorithm
+                        vcnt, hex::encode(hash), hex::encode(hash_be), hex::encode(&target_bytes), result, algorithm
                     );
                 }
 

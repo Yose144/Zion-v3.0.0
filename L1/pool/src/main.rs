@@ -3,28 +3,34 @@
 // Core: Stratum, PPLNS, Payout, Block Templates
 // Revenue: revenue_proxy, profit_switcher, buyback, stream_scheduler, pool_external_miner
 
-use zion_pool::stratum;
-use zion_pool::config::Config;
-use axum::{extract::{Path, Query, State}, http::{header, StatusCode}, response::IntoResponse, routing::get, Json};
+use axum::{
+    extract::{Path, Query, State},
+    http::{header, StatusCode},
+    response::IntoResponse,
+    routing::get,
+    Json,
+};
+use chrono::Utc;
 use serde::Deserialize;
 use serde_json::json;
-use zion_pool::payout;
 use std::sync::Arc;
+use std::time::Duration;
+use zion_pool::blockchain::{BlockTemplateManager, ZionRPCClient};
+use zion_pool::config::Config;
+use zion_pool::merged_mining::MergedMiningManager;
+use zion_pool::metrics::prometheus as metrics;
+use zion_pool::payout;
+use zion_pool::pplns::PPLNSCalculator;
 use zion_pool::session::SessionManager;
 use zion_pool::shares::{RedisStorage, ShareProcessor, ShareValidator};
-use zion_pool::blockchain::{BlockTemplateManager, ZionRPCClient};
-use std::time::Duration;
-use zion_pool::pplns::PPLNSCalculator;
-use zion_pool::metrics::prometheus as metrics;
-use chrono::Utc;
-use zion_pool::merged_mining::MergedMiningManager;
+use zion_pool::stratum;
 
 // CH v3 Revenue Orchestration imports
-use zion_pool::revenue_proxy::RevenueProxyManager;
-use zion_pool::pool_external_miner::{PoolExternalMiner, ExternalMinerConfig};
-use zion_pool::profit_switcher::ProfitSwitcher;
 use zion_pool::buyback::BuybackEngine;
-use zion_pool::stream_scheduler::{StreamScheduler, ScheduledJob, StreamId};
+use zion_pool::pool_external_miner::{ExternalMinerConfig, PoolExternalMiner};
+use zion_pool::profit_switcher::ProfitSwitcher;
+use zion_pool::revenue_proxy::RevenueProxyManager;
+use zion_pool::stream_scheduler::{ScheduledJob, StreamId, StreamScheduler};
 
 #[derive(Clone)]
 struct ApiState {
@@ -58,7 +64,10 @@ async fn api_metrics() -> impl IntoResponse {
     let body = metrics::render();
     (
         StatusCode::OK,
-        [(header::CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")],
+        [(
+            header::CONTENT_TYPE,
+            "text/plain; version=0.0.4; charset=utf-8",
+        )],
         body,
     )
 }
@@ -106,13 +115,16 @@ async fn api_recent_blocks(
 
 fn parse_port(addr: &str, default_port: u16) -> u16 {
     addr.split(':')
-        .last()
+        .next_back()
         .and_then(|p| p.parse::<u16>().ok())
         .unwrap_or(default_port)
 }
 
 async fn api_pool_info(State(state): State<ApiState>) -> Json<serde_json::Value> {
-    let miner_pct = 100.0 - state.pool_fee_percent - state.humanitarian_tithe_percent - state.issobella_fund_percent;
+    let miner_pct = 100.0
+        - state.pool_fee_percent
+        - state.humanitarian_tithe_percent
+        - state.issobella_fund_percent;
     Json(json!({
         "name": "ZION Pool",
         "version": "2.9.6-mainnet",
@@ -216,13 +228,29 @@ async fn api_payouts(
 
 async fn api_stats(State(state): State<ApiState>) -> Json<serde_json::Value> {
     let pplns_window_size = state.storage.get_pplns_window_size().await.unwrap_or(0);
-    let recent_blocks = state.storage.get_recent_blocks(10).await.unwrap_or_default();
+    let recent_blocks = state
+        .storage
+        .get_recent_blocks(10)
+        .await
+        .unwrap_or_default();
     let blocks_found = state.storage.get_blocks_count().await.unwrap_or(0);
-    let (hashrate_1h, hashrate_24h) = state.storage.get_pool_hashrate().await.unwrap_or((0.0, 0.0));
-    let (valid_shares, invalid_shares) = state.storage.get_global_share_counts().await.unwrap_or((0, 0));
+    let (hashrate_1h, hashrate_24h) = state
+        .storage
+        .get_pool_hashrate()
+        .await
+        .unwrap_or((0.0, 0.0));
+    let (valid_shares, invalid_shares) = state
+        .storage
+        .get_global_share_counts()
+        .await
+        .unwrap_or((0, 0));
     let active_miners = state.storage.get_active_miners(600).await.unwrap_or(0);
     let total_miners = state.storage.get_total_miners().await.unwrap_or(0);
-    let (pending_total, pending_miners) = state.storage.get_pending_payout_totals().await.unwrap_or((0, 0));
+    let (pending_total, pending_miners) = state
+        .storage
+        .get_pending_payout_totals()
+        .await
+        .unwrap_or((0, 0));
     let template = state.template_manager.get_template().await;
     let height = template.as_ref().map(|t| t.height).unwrap_or(0);
     let difficulty = template.as_ref().map(|t| t.difficulty).unwrap_or(0);
@@ -371,16 +399,20 @@ async fn main() {
         threads: if cpu_only { 1 } else { 2 },
         ..ExternalMinerConfig::default()
     };
-    let external_miner = Arc::new(PoolExternalMiner::new(
-        miner_config,
-        revenue_proxy.clone(),
-    ));
+    let external_miner = Arc::new(PoolExternalMiner::new(miner_config, revenue_proxy.clone()));
     {
         let miner_handle = external_miner.clone();
-        let mode_str = if cpu_only { "CPU-only, 1 thread" } else { "GPU, 2 threads" };
+        let mode_str = if cpu_only {
+            "CPU-only, 1 thread"
+        } else {
+            "GPU, 2 threads"
+        };
         tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs(5)).await;
-            tracing::info!("⛏️ Starting PoolExternalMiner ({}) — xmrig → MoneroOcean", mode_str);
+            tracing::info!(
+                "⛏️ Starting PoolExternalMiner ({}) — xmrig → MoneroOcean",
+                mode_str
+            );
             miner_handle.start().await;
         });
     }
@@ -410,8 +442,13 @@ async fn main() {
     let session_manager = Arc::new(SessionManager::new());
 
     // Share processing pipeline
-    let pplns_window_shares = if cfg.pplns_window_shares > 0 { cfg.pplns_window_shares } else { cfg.pplns_size };
-    let storage = Arc::new(RedisStorage::new(&cfg.redis_url, pplns_window_shares).expect("redis storage"));
+    let pplns_window_shares = if cfg.pplns_window_shares > 0 {
+        cfg.pplns_window_shares
+    } else {
+        cfg.pplns_size
+    };
+    let storage =
+        Arc::new(RedisStorage::new(&cfg.redis_url, pplns_window_shares).expect("redis storage"));
     let validator = Arc::new(ShareValidator::new("little"));
 
     // CHv3 byproduct/merged mining scaffolding (optional, env-gated)
@@ -424,20 +461,29 @@ async fn main() {
             let port = uri.port_u16().unwrap_or(8444);
             let path = {
                 let p = uri.path();
-                if p.is_empty() || p == "/" { "/jsonrpc".to_string() } else { p.to_string() }
+                if p.is_empty() || p == "/" {
+                    "/jsonrpc".to_string()
+                } else {
+                    p.to_string()
+                }
             };
             (host, port, path)
         }
         Err(e) => {
-            eprintln!("Invalid core_rpc_url '{}': {} (using defaults)", cfg.core_rpc_url, e);
+            eprintln!(
+                "Invalid core_rpc_url '{}': {} (using defaults)",
+                cfg.core_rpc_url, e
+            );
             ("127.0.0.1".to_string(), 8444, "/jsonrpc".to_string())
         }
     };
 
     let rpc_client = Arc::new(ZionRPCClient::new(
-        rpc_host, rpc_port,
+        rpc_host,
+        rpc_port,
         Some(Duration::from_secs(5)),
-        None, None,
+        None,
+        None,
         Some(rpc_path),
     ));
 
@@ -461,8 +507,17 @@ async fn main() {
 
     // Stratum server v2
     let server = Arc::new(stratum::StratumServer::new(
-        cfg.listen.split(':').next().unwrap_or("0.0.0.0").to_string(),
-        cfg.listen.split(':').last().unwrap_or("3333").parse().unwrap_or(3333),
+        cfg.listen
+            .split(':')
+            .next()
+            .unwrap_or("0.0.0.0")
+            .to_string(),
+        cfg.listen
+            .split(':')
+            .next_back()
+            .unwrap_or("3333")
+            .parse()
+            .unwrap_or(3333),
         session_manager,
         share_processor,
         Some(10_000),
@@ -488,9 +543,15 @@ async fn main() {
                 let scheduler = scheduler.clone();
                 tokio::spawn(async move {
                     // Update StreamScheduler with new ZION job
-                    let job_id = format!("h{}-{}", template_clone.height,
-                        template_clone.prev_hash.chars().take(8).collect::<String>());
-                    let blob = template_clone.blob.clone().unwrap_or_else(|| "0".repeat(152));
+                    let job_id = format!(
+                        "h{}-{}",
+                        template_clone.height,
+                        template_clone.prev_hash.chars().take(8).collect::<String>()
+                    );
+                    let blob = template_clone
+                        .blob
+                        .clone()
+                        .unwrap_or_else(|| "0".repeat(152));
                     let zion_job = ScheduledJob {
                         stream_id: StreamId::Zion,
                         job_id: job_id.clone(),
@@ -543,11 +604,16 @@ async fn main() {
                 }
                 let new_coin = coin_rx.borrow().clone();
                 if let Some(new_job) = scheduler_ref.set_best_coin(&new_coin).await {
-                    tracing::info!("📢 Profit switch → {} — broadcasting to Revenue miners", new_coin.to_uppercase());
+                    tracing::info!(
+                        "📢 Profit switch → {} — broadcasting to Revenue miners",
+                        new_coin.to_uppercase()
+                    );
                     if let Some(server) = server_weak.upgrade() {
                         let revenue_miners = scheduler_ref.get_revenue_miners().await;
                         if !revenue_miners.is_empty() {
-                            server.broadcast_job_to_sessions(&revenue_miners, new_job).await;
+                            server
+                                .broadcast_job_to_sessions(&revenue_miners, new_job)
+                                .await;
                         }
                     }
                 }
@@ -599,9 +665,12 @@ async fn main() {
                         if let Some(server) = server_weak.upgrade() {
                             tracing::info!(
                                 "📢 New Revenue job ({}) → broadcasting to {} Revenue miners",
-                                revenue_job.coin, revenue_miners.len()
+                                revenue_job.coin,
+                                revenue_miners.len()
                             );
-                            server.broadcast_job_to_sessions(&revenue_miners, revenue_job).await;
+                            server
+                                .broadcast_job_to_sessions(&revenue_miners, revenue_job)
+                                .await;
                         }
                     }
                 }
@@ -624,12 +693,20 @@ async fn main() {
     });
 
     // PPLNS + Payout
-    let pplns = Arc::new(PPLNSCalculator::new(storage.clone(), pplns_window_shares as u64));
+    let pplns = Arc::new(PPLNSCalculator::new(
+        storage.clone(),
+        pplns_window_shares as u64,
+    ));
     let payout_manager = payout::PayoutManager::new(
-        storage.clone(), pplns.clone(), rpc_client.clone(),
-        cfg.pool_wallet.clone(), cfg.min_payout,
-        cfg.max_payout_per_tx, cfg.payout_interval_seconds,
-        cfg.payout_batch_limit, cfg.payout_confirm_timeout_seconds,
+        storage.clone(),
+        pplns.clone(),
+        rpc_client.clone(),
+        cfg.pool_wallet.clone(),
+        cfg.min_payout,
+        cfg.max_payout_per_tx,
+        cfg.payout_interval_seconds,
+        cfg.payout_batch_limit,
+        cfg.payout_confirm_timeout_seconds,
     );
     payout_manager.start();
 
@@ -637,9 +714,12 @@ async fn main() {
     if let Ok(postgres_url) = std::env::var("PAYOUT_DB_URL") {
         println!("Starting PostgreSQL payout scheduler...");
         match zion_pool::payout::scheduler::PayoutScheduler::new(
-            &postgres_url, cfg.min_payout,
-            Duration::from_secs(cfg.payout_interval_seconds as u64),
-        ).await {
+            &postgres_url,
+            cfg.min_payout,
+            Duration::from_secs(cfg.payout_interval_seconds),
+        )
+        .await
+        {
             Ok(scheduler) => {
                 if let Err(e) = scheduler.init_schema().await {
                     eprintln!("Failed to initialize payout scheduler schema: {}", e);
@@ -659,7 +739,9 @@ async fn main() {
                         });
                         println!("✅ Payout scheduler started (RPC processing enabled)");
                     } else {
-                        tokio::spawn(async move { scheduler.run().await; });
+                        tokio::spawn(async move {
+                            scheduler.run().await;
+                        });
                         println!("✅ Payout scheduler started (monitor-only)");
                     }
                 }
@@ -750,14 +832,17 @@ async fn main() {
         .route("/api/v1/scheduler/status", get(api_scheduler_status))
         .with_state(api_state);
 
-    let listener = tokio::net::TcpListener::bind(&cfg.api_listen).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&cfg.api_listen)
+        .await
+        .unwrap();
 
     // Graceful shutdown (cross-platform: ctrl_c + SIGTERM on Unix)
     let shutdown_signal = async {
         #[cfg(unix)]
         {
-            let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-                .expect("Failed to register SIGTERM handler");
+            let mut sigterm =
+                tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+                    .expect("Failed to register SIGTERM handler");
             let ctrl_c = tokio::signal::ctrl_c();
             tokio::select! {
                 _ = sigterm.recv() => tracing::info!("SIGTERM — shutting down"),
@@ -767,13 +852,16 @@ async fn main() {
         #[cfg(not(unix))]
         {
             // Windows: only ctrl_c is supported
-            tokio::signal::ctrl_c().await.expect("Failed to register Ctrl+C handler");
+            tokio::signal::ctrl_c()
+                .await
+                .expect("Failed to register Ctrl+C handler");
             tracing::info!("Ctrl+C — shutting down");
         }
     };
 
     tracing::info!("📡 ZION Pool API listening on {}", cfg.api_listen);
-    tracing::info!("💰 CH v3 Revenue: proxy={}, scheduler={}, profit_switch={}, buyback={}",
+    tracing::info!(
+        "💰 CH v3 Revenue: proxy={}, scheduler={}, profit_switch={}, buyback={}",
         cfg.revenue.enabled,
         cfg.revenue.streams.zion.enabled,
         cfg.revenue.profit_switching.enabled,

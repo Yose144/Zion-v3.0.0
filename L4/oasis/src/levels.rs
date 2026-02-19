@@ -117,9 +117,9 @@ pub fn level_up_reward(
     };
 
     let title = format!(
-        "{} Awakened — {} ({})",
+        "{} Awakened — {:?} ({})",
         new_level.sefira(),
-        format!("{:?}", new_level),
+        new_level,
         new_level.multiplier()
     );
 
@@ -137,12 +137,18 @@ mod tests {
 
     #[test]
     fn test_physical_has_basic_mining() {
-        assert!(has_feature(ConsciousnessLevel::Physical, &Feature::BasicMining));
+        assert!(has_feature(
+            ConsciousnessLevel::Physical,
+            &Feature::BasicMining
+        ));
     }
 
     #[test]
     fn test_physical_no_guild() {
-        assert!(!has_feature(ConsciousnessLevel::Physical, &Feature::JoinGuild));
+        assert!(!has_feature(
+            ConsciousnessLevel::Physical,
+            &Feature::JoinGuild
+        ));
     }
 
     #[test]
@@ -161,10 +167,7 @@ mod tests {
 
     #[test]
     fn test_level_up_reward() {
-        let reward = level_up_reward(
-            ConsciousnessLevel::Physical,
-            ConsciousnessLevel::Emotional,
-        );
+        let reward = level_up_reward(ConsciousnessLevel::Physical, ConsciousnessLevel::Emotional);
         assert_eq!(reward.zion_bonus, 100);
         assert!(reward.new_features.contains(&Feature::JoinGuild));
         assert!(reward.new_features.contains(&Feature::AiChallenges));

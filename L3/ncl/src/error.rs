@@ -54,7 +54,10 @@ mod tests {
 
     #[test]
     fn test_queue_full() {
-        let e = NclError::QueueFull { current: 100, max: 100 };
+        let e = NclError::QueueFull {
+            current: 100,
+            max: 100,
+        };
         assert!(e.to_string().contains("100/100"));
     }
 }

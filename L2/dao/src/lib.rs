@@ -50,22 +50,22 @@
 //! | Timelock         | 48 hours           | Before execution      |
 //! | Multi-sig        | 5-of-7             | Treasury operations   |
 
+pub mod config;
 pub mod error;
-pub mod types;
-pub mod proposal;
-pub mod voting;
-pub mod treasury;
-pub mod timelock;
-pub mod quorum;
 pub mod executor;
 pub mod humanitarian;
-pub mod config;
+pub mod proposal;
+pub mod quorum;
+pub mod timelock;
+pub mod treasury;
+pub mod types;
+pub mod voting;
 
 // Re-exports
 pub use config::DaoConfig;
 pub use error::{DaoError, DaoResult};
-pub use proposal::{Proposal, ProposalType, ProposalStatus};
-pub use voting::{Vote, VotingEngine};
-pub use types::VoteChoice;
-pub use treasury::{Treasury, TreasuryOperation};
 pub use humanitarian::{HumanitarianCategory, HumanitarianFund};
+pub use proposal::{Proposal, ProposalStatus, ProposalType};
+pub use treasury::{Treasury, TreasuryOperation};
+pub use types::VoteChoice;
+pub use voting::{Vote, VotingEngine};

@@ -29,13 +29,13 @@
 //! - [`metrics`]   — Bridge monitoring and statistics
 
 pub mod config;
-pub mod types;
-pub mod l1_watcher;
-pub mod evm_watcher;
-pub mod relayer;
-pub mod validator;
 pub mod db;
+pub mod evm_watcher;
+pub mod l1_watcher;
 pub mod metrics;
+pub mod relayer;
+pub mod types;
+pub mod validator;
 
 pub use config::BridgeConfig;
 pub use types::*;

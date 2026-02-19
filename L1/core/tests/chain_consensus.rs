@@ -1,13 +1,12 @@
+use zion_core::blockchain::block::{Algorithm, Block};
 /// Sprint 1.1 — Chain Consensus Validation Tests
 ///
 /// Tests the consensus rules that protect chain integrity:
 /// difficulty bounds, timestamp sanity, reward schedule, and
 /// target calculations.
-
 use zion_core::blockchain::consensus::{self, BlockInfo};
 use zion_core::blockchain::reward;
 use zion_core::blockchain::validation;
-use zion_core::blockchain::block::{Block, Algorithm};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. Difficulty target calculations
@@ -18,7 +17,12 @@ fn test_target_u32_inversely_proportional() {
     let t1 = consensus::target_u32_from_difficulty(1000);
     let t2 = consensus::target_u32_from_difficulty(2000);
     // Higher difficulty → lower target
-    assert!(t1 > t2, "target(1000)={} should be > target(2000)={}", t1, t2);
+    assert!(
+        t1 > t2,
+        "target(1000)={} should be > target(2000)={}",
+        t1,
+        t2
+    );
 }
 
 #[test]
@@ -54,7 +58,10 @@ fn test_target_256_format() {
     let target = consensus::target_from_difficulty_256(1000);
     assert_eq!(target.len(), 64, "Target hex should be 64 chars (256 bits)");
     // Should start with zeros (high difficulty = small target)
-    assert!(target.starts_with("00"), "High difficulty target should start with zeros");
+    assert!(
+        target.starts_with("00"),
+        "High difficulty target should start with zeros"
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -83,7 +90,9 @@ fn test_lwma_stable_difficulty() {
     assert!(
         (0.95..=1.05).contains(&ratio),
         "Stable chain should maintain difficulty: next={}, base={}, ratio={}",
-        next, base_diff, ratio
+        next,
+        base_diff,
+        ratio
     );
 }
 
@@ -106,7 +115,8 @@ fn test_lwma_fast_blocks_increase_difficulty() {
     assert!(
         next > base_diff,
         "Fast blocks should increase difficulty: next={}, base={}",
-        next, base_diff
+        next,
+        base_diff
     );
 }
 
@@ -129,7 +139,8 @@ fn test_lwma_slow_blocks_decrease_difficulty() {
     assert!(
         next < base_diff,
         "Slow blocks should decrease difficulty: next={}, base={}",
-        next, base_diff
+        next,
+        base_diff
     );
 }
 
@@ -151,7 +162,8 @@ fn test_lwma_never_below_min_difficulty() {
     assert!(
         next >= consensus::MIN_DIFFICULTY,
         "Difficulty {} should not go below MIN {}",
-        next, consensus::MIN_DIFFICULTY
+        next,
+        consensus::MIN_DIFFICULTY
     );
 }
 
@@ -165,7 +177,9 @@ fn test_lwma_clamped_per_block() {
     assert!(
         next <= max_allowed,
         "Difficulty {} exceeds max adjustment {} (from {})",
-        next, max_allowed, current_diff
+        next,
+        max_allowed,
+        current_diff
     );
 }
 
@@ -188,7 +202,7 @@ fn test_genesis_block_validates() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    
+
     let result = validation::validate_block(&genesis, None, now);
     // Genesis should validate structurally (may fail on PoW for test genesis)
     assert!(
@@ -325,13 +339,15 @@ fn test_miner_tithe_pool_distribution() {
     assert!(
         sum <= total,
         "Distribution sum {} exceeds total {}",
-        sum, total
+        sum,
+        total
     );
     // Allow max 3 atomic units rounding error
     assert!(
         total - sum <= 3,
         "Rounding error too large: total={}, sum={}",
-        total, sum
+        total,
+        sum
     );
 }
 

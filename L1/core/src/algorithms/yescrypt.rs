@@ -19,7 +19,7 @@ pub struct YescryptParams {
 impl Default for YescryptParams {
     fn default() -> Self {
         Self {
-            n: 4096,  // 4 MiB memory
+            n: 4096, // 4 MiB memory
             r: 8,
             p: 1,
         }
@@ -133,7 +133,7 @@ mod tests {
 
         // Low memory for testing
         let params = YescryptParams {
-            n: 1024,  // 1 MiB
+            n: 1024, // 1 MiB
             r: 8,
             p: 1,
         };

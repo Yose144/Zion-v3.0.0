@@ -180,4 +180,3 @@ mod tests {
         assert!(next.unwrap() < 100);
     }
 }
-

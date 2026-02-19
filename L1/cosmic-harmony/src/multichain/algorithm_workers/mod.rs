@@ -2,24 +2,28 @@
 //!
 //! Each worker handles mining for a specific algorithm using native libraries.
 
-pub mod ethash_worker;
-pub mod kawpow_worker;
+#[allow(dead_code, unused_imports)]
 pub mod autolykos_worker;
-pub mod kheavyhash_worker;
+#[allow(dead_code, unused_imports)]
 pub mod blake3_worker;
+#[allow(dead_code, unused_imports)]
+pub mod ethash_worker;
+#[allow(dead_code, unused_imports)]
+pub mod kawpow_worker;
+#[allow(dead_code, unused_imports)]
+pub mod kheavyhash_worker;
 
-use super::{ExternalChain, MiningJob, ChainStats};
+use super::{ChainStats, ExternalChain, MiningJob};
 use anyhow::Result;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use tokio::sync::RwLock;
 
+pub use autolykos_worker::AutolykosWorker;
+pub use blake3_worker::Blake3Worker;
 pub use ethash_worker::EthashWorker;
 pub use kawpow_worker::KawPowWorker;
-pub use autolykos_worker::AutolykosWorker;
 pub use kheavyhash_worker::KHeavyHashWorker;
-pub use blake3_worker::Blake3Worker;
 
 /// Share found by worker
 #[derive(Debug, Clone)]
@@ -37,25 +41,25 @@ pub struct FoundShare {
 pub trait AlgorithmWorker: Send + Sync {
     /// Get supported chain
     fn chain(&self) -> ExternalChain;
-    
+
     /// Get algorithm name
     fn algorithm(&self) -> &'static str;
-    
+
     /// Initialize worker
     async fn init(&mut self) -> Result<()>;
-    
+
     /// Start mining on job
     async fn mine(&self, job: &MiningJob, allocation: f32) -> Result<()>;
-    
+
     /// Stop mining
     async fn stop(&self);
-    
+
     /// Get current hashrate
     fn hashrate(&self) -> f64;
-    
+
     /// Get stats
     fn stats(&self) -> ChainStats;
-    
+
     /// Check if running
     fn is_running(&self) -> bool;
 }
@@ -94,7 +98,8 @@ impl WorkerPool {
         self.add_worker(ethash);
 
         // KawPow (RVN)
-        let mut kawpow = Box::new(KawPowWorker::new(ExternalChain::RVN)) as Box<dyn AlgorithmWorker>;
+        let mut kawpow =
+            Box::new(KawPowWorker::new(ExternalChain::RVN)) as Box<dyn AlgorithmWorker>;
         kawpow.init().await?;
         self.add_worker(kawpow);
 
@@ -119,7 +124,7 @@ impl WorkerPool {
 
     /// Start all workers
     pub async fn start_all(&self) -> Result<()> {
-        for (chain, worker) in &self.workers {
+        for (chain, _worker) in &self.workers {
             log::info!("ch3_worker_started chain={:?}", chain);
         }
         Ok(())
@@ -135,7 +140,10 @@ impl WorkerPool {
     }
 
     /// Get worker for chain
-    pub fn get_worker(&self, chain: ExternalChain) -> Option<Arc<RwLock<Box<dyn AlgorithmWorker>>>> {
+    pub fn get_worker(
+        &self,
+        chain: ExternalChain,
+    ) -> Option<Arc<RwLock<Box<dyn AlgorithmWorker>>>> {
         self.workers.get(&chain).cloned()
     }
 
@@ -146,7 +154,7 @@ impl WorkerPool {
         for (chain, worker) in &self.workers {
             let w = worker.read().await;
             let chain_stats = w.stats();
-            
+
             stats.total_hashrate += chain_stats.hashrate;
             stats.shares_accepted += chain_stats.shares_accepted;
             stats.shares_rejected += chain_stats.shares_rejected;

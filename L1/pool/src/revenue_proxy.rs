@@ -1,13 +1,13 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
-use tokio::io::{copy_bidirectional, AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::{RwLock, broadcast, mpsc};
-use tokio::time::Duration;
-use tracing::{info, error, warn, debug};
 use crate::config::StreamsConfig;
 use serde_json;
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
+use tokio::io::{copy_bidirectional, AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::{broadcast, mpsc, RwLock};
+use tokio::time::Duration;
+use tracing::{debug, error, info, warn};
 
 /// Stratum protocol variant for external pool communication
 #[derive(Debug, Clone, PartialEq)]
@@ -116,7 +116,10 @@ impl RevenueProxyManager {
         if let Some(client) = conns.get(&submission.coin) {
             client.queue_submit(submission).await;
         } else {
-            warn!("No connection for coin '{}' to submit share", submission.coin);
+            warn!(
+                "No connection for coin '{}' to submit share",
+                submission.coin
+            );
         }
     }
 
@@ -129,13 +132,16 @@ impl RevenueProxyManager {
     pub fn stats_json(&self) -> serde_json::Value {
         let mut coins = serde_json::Map::new();
         for (coin, stats) in self.stats.iter() {
-            coins.insert(coin.clone(), serde_json::json!({
-                "jobs_received": stats.jobs_received.load(Ordering::Relaxed),
-                "shares_submitted": stats.shares_submitted.load(Ordering::Relaxed),
-                "shares_accepted": stats.shares_accepted.load(Ordering::Relaxed),
-                "shares_rejected": stats.shares_rejected.load(Ordering::Relaxed),
-                "connected": stats.connected.load(Ordering::Relaxed) == 1,
-            }));
+            coins.insert(
+                coin.clone(),
+                serde_json::json!({
+                    "jobs_received": stats.jobs_received.load(Ordering::Relaxed),
+                    "shares_submitted": stats.shares_submitted.load(Ordering::Relaxed),
+                    "shares_accepted": stats.shares_accepted.load(Ordering::Relaxed),
+                    "shares_rejected": stats.shares_rejected.load(Ordering::Relaxed),
+                    "connected": stats.connected.load(Ordering::Relaxed) == 1,
+                }),
+            );
         }
         serde_json::Value::Object(coins)
     }
@@ -212,11 +218,10 @@ impl RevenueProxyManager {
                         warn!("[{}] Skipping: no wallet configured", coin);
                         continue;
                     }
-                    let protocol = StratumProtocol::from_str_opt(
-                        pool.protocol.as_deref(),
-                        coin,
-                    );
-                    let algorithm = pool.algorithm.clone()
+                    let protocol = StratumProtocol::from_str_opt(pool.protocol.as_deref(), coin);
+                    let algorithm = pool
+                        .algorithm
+                        .clone()
                         .filter(|a| a != "auto" && !a.is_empty())
                         .unwrap_or_else(|| Self::detect_algorithm(coin));
                     let coin_stats = Arc::new(ExternalPoolStats::default());
@@ -261,9 +266,12 @@ impl RevenueProxyManager {
                 } else {
                     let vrsc_url = std::env::var("ZION_VRSC_POOL_URL")
                         .unwrap_or_else(|_| "eu.luckpool.net:3956".to_string());
-                    info!("💹 Auto-creating VRSC/Zcash client → {} (wallet={}...{})",
-                        vrsc_url, &vrsc_wallet[..8.min(vrsc_wallet.len())],
-                        &vrsc_wallet[vrsc_wallet.len().saturating_sub(6)..]);
+                    info!(
+                        "💹 Auto-creating VRSC/Zcash client → {} (wallet={}...{})",
+                        vrsc_url,
+                        &vrsc_wallet[..8.min(vrsc_wallet.len())],
+                        &vrsc_wallet[vrsc_wallet.len().saturating_sub(6)..]
+                    );
                     let coin_stats = Arc::new(ExternalPoolStats::default());
                     stats_map.insert("vrsc".to_string(), coin_stats.clone());
                     let client = ExternalPoolClient::new(
@@ -283,9 +291,12 @@ impl RevenueProxyManager {
                 let xmr_wallet = "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK".to_string();
                 let xmr_url = std::env::var("ZION_XMR_POOL_URL")
                     .unwrap_or_else(|_| "gulf.moneroocean.stream:10001".to_string());
-                info!("💹 Auto-creating XMR/CryptoNote client → {} (wallet={}...{})",
-                    xmr_url, &xmr_wallet[..8.min(xmr_wallet.len())],
-                    &xmr_wallet[xmr_wallet.len().saturating_sub(6)..]);
+                info!(
+                    "💹 Auto-creating XMR/CryptoNote client → {} (wallet={}...{})",
+                    xmr_url,
+                    &xmr_wallet[..8.min(xmr_wallet.len())],
+                    &xmr_wallet[xmr_wallet.len().saturating_sub(6)..]
+                );
                 let coin_stats = Arc::new(ExternalPoolStats::default());
                 stats_map.insert("xmr".to_string(), coin_stats.clone());
                 let client = ExternalPoolClient::new(
@@ -305,7 +316,9 @@ impl RevenueProxyManager {
 
         // Store stats map (unsafe cast — we're in startup, single-threaded init)
         let stats_ptr = Arc::as_ptr(&self.stats) as *mut HashMap<String, Arc<ExternalPoolStats>>;
-        unsafe { *stats_ptr = stats_map; }
+        unsafe {
+            *stats_ptr = stats_map;
+        }
 
         info!("✅ Revenue Proxy Manager initialized (job channel capacity=256)");
     }
@@ -323,13 +336,14 @@ impl RevenueProxyManager {
             "FLUX" => "equihash",
             "RTM" => "ghostrider",
             _ => "unknown",
-        }.to_string()
+        }
+        .to_string()
     }
 
     async fn add_client(&self, id: &str, client: Arc<ExternalPoolClient>) {
         let mut conns = self.connections.write().await;
         conns.insert(id.to_lowercase(), client.clone());
-        
+
         // Spawn connection loop
         tokio::spawn(async move {
             client.run_loop().await;
@@ -418,7 +432,10 @@ impl ExternalPoolClient {
                     warn!("[{}] Connection finished, reconnecting in 5s...", self.name);
                 }
                 Err(e) => {
-                    error!("[{}] Connection error: {}. Retrying in 10s...", self.name, e);
+                    error!(
+                        "[{}] Connection error: {}. Retrying in 10s...",
+                        self.name, e
+                    );
                     tokio::time::sleep(Duration::from_secs(10)).await;
                 }
             }
@@ -490,12 +507,17 @@ impl ExternalPoolClient {
                 "method": "mining.subscribe",
                 "params": [format!("ZION-Proxy/1.0/{}", self.name)]
             }),
-            StratumProtocol::CryptoNoteStratum | StratumProtocol::ZcashStratum => unreachable!("protocol handled in dedicated connect_and_session path"),
+            StratumProtocol::CryptoNoteStratum | StratumProtocol::ZcashStratum => {
+                unreachable!("protocol handled in dedicated connect_and_session path")
+            }
         };
         let mut sub_bytes = serde_json::to_vec(&sub_msg)?;
         sub_bytes.push(b'\n');
         writer.write_all(&sub_bytes).await?;
-        info!("[{}] > mining.subscribe (protocol={:?})", self.name, self.protocol);
+        info!(
+            "[{}] > mining.subscribe (protocol={:?})",
+            self.name, self.protocol
+        );
 
         // Step 2: Wait for subscribe response, then authorize
         let mut authorized = false;
@@ -565,11 +587,11 @@ impl ExternalPoolClient {
                                     // Note: KAS 2miners uses EthStratum but sends header as [u64,u64,u64,u64] array
                                     let (job_id, header_hash, seed_hash, clean_jobs) = match &self.protocol {
                                         StratumProtocol::EthStratum => {
-                                            let jid = params.get(0).map(|v| {
+                                            let jid = params.first().map(|v| {
                                                 v.as_str().map(|s| s.to_string())
                                                     .unwrap_or_else(|| v.to_string().trim_matches('"').to_string())
                                             }).unwrap_or_default();
-                                            
+
                                             let mut sh = String::new();
                                             let mut hh = String::new();
 
@@ -631,7 +653,7 @@ impl ExternalPoolClient {
                                                 None
                                             };
 
-                                            // Helper: convert a JSON value to hex string  
+                                            // Helper: convert a JSON value to hex string
                                             let value_to_hex = |v: &serde_json::Value| -> String {
                                                 // First try u64 array conversion (KAS format)
                                                 if let Some(hex_str) = try_u64_array_to_hex(v, "v2h") {
@@ -648,7 +670,7 @@ impl ExternalPoolClient {
                                                 // Fallback
                                                 v.to_string().trim_matches('"').to_string()
                                             };
-                                            
+
                                             // Scan params for u64 array (KAS format) first
                                             let mut found_array_header = false;
                                             for (idx, p) in params.iter().enumerate() {
@@ -656,12 +678,12 @@ impl ExternalPoolClient {
                                                 if let Some(hex_str) = try_u64_array_to_hex(p, &format!("scan[{}]", idx)) {
                                                     hh = hex_str;
                                                     found_array_header = true;
-                                                    info!("[{}] 🔑 Header from u64 array at param[{}]: {}...({} hex chars)", 
+                                                    info!("[{}] 🔑 Header from u64 array at param[{}]: {}...({} hex chars)",
                                                         self.name, idx, &hh[..std::cmp::min(32, hh.len())], hh.len());
                                                     break;
                                                 }
                                             }
-                                            
+
                                             if !found_array_header {
                                                 // Standard EthStratum: param[1]=seed, param[2]=header
                                                 if params.len() >= 3 {
@@ -671,14 +693,14 @@ impl ExternalPoolClient {
                                                     hh = value_to_hex(&params[1]);
                                                 }
                                             }
-                                            
+
                                             let cj = params.last().and_then(|v| v.as_bool()).unwrap_or(false);
                                             (jid, hh, sh, cj)
                                         }
                                         StratumProtocol::StandardStratum => {
                                             // Standard Stratum v1: [job_id, prevhash, coinb1, coinb2, merkle, version, nbits, ntime, clean_jobs]
                                             // OR KAS simplified: [job_id, header_hash, timestamp, clean_jobs]
-                                            let jid = params.get(0).map(|v| {
+                                            let jid = params.first().map(|v| {
                                                 v.as_str().map(|s| s.to_string())
                                                     .unwrap_or_else(|| v.to_string().trim_matches('"').to_string())
                                             }).unwrap_or_default();
@@ -699,7 +721,7 @@ impl ExternalPoolClient {
                                         StratumProtocol::ZcashStratum => {
                                             // Zcash/Verus uses connect_and_session_zcash(), not this path.
                                             // Fallback parser for completeness.
-                                            let jid = params.get(0).map(|v| {
+                                            let jid = params.first().map(|v| {
                                                 v.as_str().map(|s| s.to_string())
                                                     .unwrap_or_else(|| v.to_string().trim_matches('"').to_string())
                                             }).unwrap_or_default();
@@ -762,7 +784,7 @@ impl ExternalPoolClient {
                             }
                             "mining.set_extranonce" => {
                                 if let Some(params) = parsed.get("params").and_then(|p| p.as_array()) {
-                                    if let Some(en) = params.get(0).and_then(|v| v.as_str()) {
+                                    if let Some(en) = params.first().and_then(|v| v.as_str()) {
                                         *self.current_extranonce.lock().await = en.to_string();
                                         info!("[{}] ⚙️ Set extranonce: '{}'", self.name, en);
                                     }
@@ -791,7 +813,7 @@ impl ExternalPoolClient {
                                 info!("[{}] 📋 Subscribe response result: {:?}", self.name, result);
 
                                 // Extract extranonce from subscribe result
-                                // EthStratum: result = [["mining.notify","session"], "extranonce"]  
+                                // EthStratum: result = [["mining.notify","session"], "extranonce"]
                                 // Or: result = [null, "extranonce"]
                                 // KAS 2miners: result = [null, "EthereumStratum/1.0.0"] — NOT an extranonce!
                                 if let Some(res) = result {
@@ -917,9 +939,15 @@ impl ExternalPoolClient {
         self.stats.connected.store(0, Ordering::Relaxed);
 
         if authorized {
-            info!("[{}] Session ended (was authorized, will reconnect)", self.name);
+            info!(
+                "[{}] Session ended (was authorized, will reconnect)",
+                self.name
+            );
         } else if subscribe_ok {
-            warn!("[{}] Session ended before authorization completed", self.name);
+            warn!(
+                "[{}] Session ended before authorization completed",
+                self.name
+            );
         } else {
             warn!("[{}] Session ended before subscribe completed", self.name);
         }
@@ -1160,7 +1188,7 @@ impl ExternalPoolClient {
                             }
                             "mining.set_extranonce" => {
                                 if let Some(params) = parsed.get("params").and_then(|p| p.as_array()) {
-                                    if let Some(en) = params.get(0).and_then(|v| v.as_str()) {
+                                    if let Some(en) = params.first().and_then(|v| v.as_str()) {
                                         *self.current_extranonce.lock().await = en.to_string();
                                         info!("[{}] ⚙️ ZC extranonce: {}", self.name, en);
                                     }
@@ -1577,10 +1605,12 @@ impl ExternalPoolClient {
         let mut login_bytes = serde_json::to_vec(&login_msg)?;
         login_bytes.push(b'\n');
         writer.write_all(&login_bytes).await?;
-        info!("[{}] > login (CryptoNote protocol, wallet={}...{})",
+        info!(
+            "[{}] > login (CryptoNote protocol, wallet={}...{})",
             self.name,
             &self.wallet[..8.min(self.wallet.len())],
-            &self.wallet[self.wallet.len().saturating_sub(6)..]);
+            &self.wallet[self.wallet.len().saturating_sub(6)..]
+        );
 
         let mut session_id = String::new();
         let mut authorized = false;
@@ -1713,7 +1743,10 @@ impl ExternalPoolClient {
 
         self.stats.connected.store(0, Ordering::Relaxed);
         if authorized {
-            info!("[{}] CN session ended (was logged in, will reconnect)", self.name);
+            info!(
+                "[{}] CN session ended (was logged in, will reconnect)",
+                self.name
+            );
         } else {
             warn!("[{}] CN session ended before login completed", self.name);
         }
@@ -1722,12 +1755,32 @@ impl ExternalPoolClient {
 
     /// Parse a CryptoNote job notification and broadcast it
     async fn handle_cryptonote_job(&self, job: &serde_json::Value) {
-        let job_id = job.get("job_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let blob = job.get("blob").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let target = job.get("target").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let seed_hash = job.get("seed_hash").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let job_id = job
+            .get("job_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let blob = job
+            .get("blob")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let target = job
+            .get("target")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let seed_hash = job
+            .get("seed_hash")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         let height = job.get("height").and_then(|v| v.as_u64()).unwrap_or(0);
-        let algo = job.get("algo").and_then(|v| v.as_str()).unwrap_or("rx/0").to_string();
+        let algo = job
+            .get("algo")
+            .and_then(|v| v.as_str())
+            .unwrap_or("rx/0")
+            .to_string();
 
         // Map MoneroOcean algo names to our algorithm names
         let algorithm = match algo.as_str() {
@@ -1742,12 +1795,16 @@ impl ExternalPoolClient {
             let target_bytes = hex::decode(&target).unwrap_or_default();
             if target_bytes.len() == 4 {
                 let target_u32 = u32::from_le_bytes([
-                    target_bytes.get(0).copied().unwrap_or(0),
+                    target_bytes.first().copied().unwrap_or(0),
                     target_bytes.get(1).copied().unwrap_or(0),
                     target_bytes.get(2).copied().unwrap_or(0),
                     target_bytes.get(3).copied().unwrap_or(0),
                 ]);
-                if target_u32 > 0 { 0xFFFFFFFF_u64 as f64 / target_u32 as f64 } else { 1.0 }
+                if target_u32 > 0 {
+                    0xFFFFFFFF_u64 as f64 / target_u32 as f64
+                } else {
+                    1.0
+                }
             } else {
                 1.0
             }
@@ -1778,7 +1835,12 @@ impl ExternalPoolClient {
         let _ = self.job_sender.send(ext_job);
         info!(
             "[{}] 📦 CN Job: id={} algo={} height={} diff={:.0} target={} (total={})",
-            self.name, job_id, algorithm, height, difficulty, target,
+            self.name,
+            job_id,
+            algorithm,
+            height,
+            difficulty,
+            target,
             self.stats.jobs_received.load(Ordering::Relaxed)
         );
     }

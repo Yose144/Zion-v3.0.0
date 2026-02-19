@@ -12,12 +12,12 @@
 //! Stats are read from a JSON stats file that the Python miner writes.
 
 use anyhow::{anyhow, Result};
-use log::{info, warn, error};
+use log::{error, info, warn};
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Deserialize, Serialize};
 
 /// Python fallback miner configuration
 #[derive(Debug, Clone)]
@@ -115,7 +115,10 @@ impl PythonFallbackMiner {
             if path.exists() {
                 return Ok(path.clone());
             }
-            return Err(anyhow!("Specified Python script not found: {}", path.display()));
+            return Err(anyhow!(
+                "Specified Python script not found: {}",
+                path.display()
+            ));
         }
 
         let script_name = self.config.variant.script_name();
@@ -165,7 +168,10 @@ impl PythonFallbackMiner {
         Err(anyhow!(
             "Python miner script '{}' not found. Searched: {:?}",
             script_name,
-            search_paths.iter().map(|p| p.display().to_string()).collect::<Vec<_>>()
+            search_paths
+                .iter()
+                .map(|p| p.display().to_string())
+                .collect::<Vec<_>>()
         ))
     }
 
@@ -195,7 +201,9 @@ impl PythonFallbackMiner {
             }
         }
 
-        Err(anyhow!("Python 3 not found. Install Python 3.9+ to use Python fallback."))
+        Err(anyhow!(
+            "Python 3 not found. Install Python 3.9+ to use Python fallback."
+        ))
     }
 
     /// Build command arguments for the Python miner
@@ -246,7 +254,8 @@ impl PythonFallbackMiner {
 
     /// Extract host:port from pool URL
     fn pool_host_port(&self) -> String {
-        self.config.pool_url
+        self.config
+            .pool_url
             .strip_prefix("stratum+tcp://")
             .or_else(|| self.config.pool_url.strip_prefix("tcp://"))
             .unwrap_or(&self.config.pool_url)
@@ -268,7 +277,14 @@ impl PythonFallbackMiner {
         info!("   Script:  {}", script.display());
         info!("   Python:  {}", python);
         info!("   Variant: {:?}", self.config.variant);
-        info!("   GPU:     {}", if self.config.gpu { "enabled" } else { "disabled" });
+        info!(
+            "   GPU:     {}",
+            if self.config.gpu {
+                "enabled"
+            } else {
+                "disabled"
+            }
+        );
         info!("   Pool:    {}", self.pool_host_port());
         info!("   Wallet:  {}", self.config.wallet);
 
@@ -288,7 +304,9 @@ impl PythonFallbackMiner {
         let child = cmd.spawn().map_err(|e| {
             anyhow!(
                 "Failed to spawn Python miner: {} (python={}, script={})",
-                e, python, script.display()
+                e,
+                python,
+                script.display()
             )
         })?;
 
@@ -396,15 +414,13 @@ impl PythonFallbackMiner {
         }
 
         match tokio::fs::read_to_string(&self.config.stats_file).await {
-            Ok(content) => {
-                match serde_json::from_str::<PythonMinerStats>(&content) {
-                    Ok(stats) => Some(stats),
-                    Err(e) => {
-                        warn!("Failed to parse Python miner stats: {}", e);
-                        None
-                    }
+            Ok(content) => match serde_json::from_str::<PythonMinerStats>(&content) {
+                Ok(stats) => Some(stats),
+                Err(e) => {
+                    warn!("Failed to parse Python miner stats: {}", e);
+                    None
                 }
-            }
+            },
             Err(_) => None,
         }
     }
@@ -414,7 +430,7 @@ impl PythonFallbackMiner {
         let mut guard = self.child.write().await;
         if let Some(ref mut child) = *guard {
             match child.try_wait() {
-                Ok(None) => true,  // Still running
+                Ok(None) => true, // Still running
                 Ok(Some(_)) => {
                     *self.running.write().await = false;
                     false
@@ -480,10 +496,22 @@ mod tests {
 
     #[test]
     fn test_variant_from_str() {
-        assert_eq!(PythonMinerVariant::from_str("chv3"), Some(PythonMinerVariant::Chv3Gpu));
-        assert_eq!(PythonMinerVariant::from_str("gpu"), Some(PythonMinerVariant::Chv3Gpu));
-        assert_eq!(PythonMinerVariant::from_str("legacy"), Some(PythonMinerVariant::Legacy));
-        assert_eq!(PythonMinerVariant::from_str("native"), Some(PythonMinerVariant::Legacy));
+        assert_eq!(
+            PythonMinerVariant::from_str("chv3"),
+            Some(PythonMinerVariant::Chv3Gpu)
+        );
+        assert_eq!(
+            PythonMinerVariant::from_str("gpu"),
+            Some(PythonMinerVariant::Chv3Gpu)
+        );
+        assert_eq!(
+            PythonMinerVariant::from_str("legacy"),
+            Some(PythonMinerVariant::Legacy)
+        );
+        assert_eq!(
+            PythonMinerVariant::from_str("native"),
+            Some(PythonMinerVariant::Legacy)
+        );
         assert_eq!(PythonMinerVariant::from_str("unknown"), None);
     }
 

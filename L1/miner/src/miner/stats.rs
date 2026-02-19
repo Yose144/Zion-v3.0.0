@@ -25,7 +25,7 @@ impl HashrateWindow {
         self.samples.push_back((now, hashes));
         let cutoff = now.checked_sub(std::time::Duration::from_secs(self.window_secs + 2));
         if let Some(cutoff) = cutoff {
-            while self.samples.front().map_or(false, |(t, _)| *t < cutoff) {
+            while self.samples.front().is_some_and(|(t, _)| *t < cutoff) {
                 self.samples.pop_front();
             }
         }
@@ -38,7 +38,9 @@ impl HashrateWindow {
         let first = self.samples.front().unwrap();
         let last = self.samples.back().unwrap();
         let dt = last.0.duration_since(first.0).as_secs_f64();
-        if dt < 0.5 { return 0.0; }
+        if dt < 0.5 {
+            return 0.0;
+        }
         let total: u64 = self.samples.iter().skip(1).map(|(_, h)| h).sum();
         total as f64 / dt
     }
@@ -204,16 +206,30 @@ impl MinerStats {
 
     pub fn hashrate(&self) -> f64 {
         let elapsed = self.start_time.elapsed().as_secs_f64();
-        if elapsed > 0.0 { self.total_hashes as f64 / elapsed } else { 0.0 }
+        if elapsed > 0.0 {
+            self.total_hashes as f64 / elapsed
+        } else {
+            0.0
+        }
     }
 
-    pub fn hashrate_10s(&self) -> f64 { self.window_10s.rate() }
-    pub fn hashrate_60s(&self) -> f64 { self.window_60s.rate() }
-    pub fn hashrate_15m(&self) -> f64 { self.window_15m.rate() }
+    pub fn hashrate_10s(&self) -> f64 {
+        self.window_10s.rate()
+    }
+    pub fn hashrate_60s(&self) -> f64 {
+        self.window_60s.rate()
+    }
+    pub fn hashrate_15m(&self) -> f64 {
+        self.window_15m.rate()
+    }
 
     pub fn hashrate_gpu(&self) -> f64 {
         let elapsed = self.start_time.elapsed().as_secs_f64();
-        if elapsed > 0.0 { self.gpu_hashes as f64 / elapsed } else { 0.0 }
+        if elapsed > 0.0 {
+            self.gpu_hashes as f64 / elapsed
+        } else {
+            0.0
+        }
     }
 
     pub fn hashrate_cpu(&self) -> f64 {
@@ -221,15 +237,25 @@ impl MinerStats {
         if elapsed > 0.0 {
             let cpu_hashes = self.total_hashes.saturating_sub(self.gpu_hashes);
             cpu_hashes as f64 / elapsed
-        } else { 0.0 }
+        } else {
+            0.0
+        }
     }
 
     // ──── Stat accessors ────
 
-    pub fn total_hashes(&self) -> u64 { self.total_hashes }
-    pub fn shares_accepted(&self) -> u64 { self.shares_accepted }
-    pub fn shares_rejected(&self) -> u64 { self.shares_rejected }
-    pub fn uptime_seconds(&self) -> u64 { self.start_time.elapsed().as_secs() }
+    pub fn total_hashes(&self) -> u64 {
+        self.total_hashes
+    }
+    pub fn shares_accepted(&self) -> u64 {
+        self.shares_accepted
+    }
+    pub fn shares_rejected(&self) -> u64 {
+        self.shares_rejected
+    }
+    pub fn uptime_seconds(&self) -> u64 {
+        self.start_time.elapsed().as_secs()
+    }
 
     pub fn reset_shares(&mut self) {
         self.shares_accepted = 0;
@@ -239,11 +265,17 @@ impl MinerStats {
     // ──── Formatting helpers (XMRig-style) ────
 
     fn fmt_hashrate(h: f64) -> (String, &'static str) {
-        if h >= 1e12      { (format!("{:.2}", h / 1e12), "TH/s") }
-        else if h >= 1e9  { (format!("{:.2}", h / 1e9),  "GH/s") }
-        else if h >= 1e6  { (format!("{:.2}", h / 1e6),  "MH/s") }
-        else if h >= 1e3  { (format!("{:.2}", h / 1e3),  "kH/s") }
-        else              { (format!("{:.1}", h),         "H/s")  }
+        if h >= 1e12 {
+            (format!("{:.2}", h / 1e12), "TH/s")
+        } else if h >= 1e9 {
+            (format!("{:.2}", h / 1e9), "GH/s")
+        } else if h >= 1e6 {
+            (format!("{:.2}", h / 1e6), "MH/s")
+        } else if h >= 1e3 {
+            (format!("{:.2}", h / 1e3), "kH/s")
+        } else {
+            (format!("{:.1}", h), "H/s")
+        }
     }
 
     fn fmt_uptime(secs: u64) -> String {
@@ -251,28 +283,44 @@ impl MinerStats {
         let h = (secs % 86400) / 3600;
         let m = (secs % 3600) / 60;
         let s = secs % 60;
-        if d > 0 { format!("{}d {:02}:{:02}:{:02}", d, h, m, s) }
-        else { format!("{:02}:{:02}:{:02}", h, m, s) }
+        if d > 0 {
+            format!("{}d {:02}:{:02}:{:02}", d, h, m, s)
+        } else {
+            format!("{:02}:{:02}:{:02}", h, m, s)
+        }
     }
 
     fn fmt_difficulty(d: f64) -> String {
-        if d >= 1e12      { format!("{:.2}T", d / 1e12) }
-        else if d >= 1e9  { format!("{:.2}G", d / 1e9) }
-        else if d >= 1e6  { format!("{:.2}M", d / 1e6) }
-        else if d >= 1e3  { format!("{:.2}K", d / 1e3) }
-        else              { format!("{:.0}", d) }
+        if d >= 1e12 {
+            format!("{:.2}T", d / 1e12)
+        } else if d >= 1e9 {
+            format!("{:.2}G", d / 1e9)
+        } else if d >= 1e6 {
+            format!("{:.2}M", d / 1e6)
+        } else if d >= 1e3 {
+            format!("{:.2}K", d / 1e3)
+        } else {
+            format!("{:.0}", d)
+        }
     }
 
     fn fmt_total_hashes(h: u64) -> String {
-        if h >= 1_000_000_000 { format!("{:.1}G", h as f64 / 1e9) }
-        else if h >= 1_000_000 { format!("{:.1}M", h as f64 / 1e6) }
-        else if h >= 1_000 { format!("{:.1}K", h as f64 / 1e3) }
-        else { format!("{}", h) }
+        if h >= 1_000_000_000 {
+            format!("{:.1}G", h as f64 / 1e9)
+        } else if h >= 1_000_000 {
+            format!("{:.1}M", h as f64 / 1e6)
+        } else if h >= 1_000 {
+            format!("{:.1}K", h as f64 / 1e3)
+        } else {
+            format!("{}", h)
+        }
     }
 
     fn share_pct(&self) -> String {
         let total = self.shares_accepted + self.shares_rejected;
-        if total == 0 { return "—".to_string(); }
+        if total == 0 {
+            return "—".to_string();
+        }
         let pct = (self.shares_accepted as f64 / total as f64) * 100.0;
         format!("{:.1}%", pct)
     }
@@ -304,7 +352,11 @@ impl MinerStats {
         // Hashrate values — use same unit for consistency
         let (_, unit) = Self::fmt_hashrate(self.hashrate_10s());
         let divisor = match unit {
-            "TH/s" => 1e12, "GH/s" => 1e9, "MH/s" => 1e6, "kH/s" => 1e3, _ => 1.0,
+            "TH/s" => 1e12,
+            "GH/s" => 1e9,
+            "MH/s" => 1e6,
+            "kH/s" => 1e3,
+            _ => 1.0,
         };
         let v10 = self.hashrate_10s() / divisor;
         let v60 = self.hashrate_60s() / divisor;
@@ -328,9 +380,10 @@ impl MinerStats {
 
         // Each line: \x1B[2K = clear line, \r = start of line
         let bar = "─".repeat(64);
-        let _ = writeln!(out, "\x1B[2K\r{}",
-            format!("┌{}┐", bar).bright_black());
-        let _ = writeln!(out, "\x1B[2K\r{}  {}   10s {} {}  60s {}  15m {}",
+        let _ = writeln!(out, "\x1B[2K\r{}", format!("┌{}┐", bar).bright_black());
+        let _ = writeln!(
+            out,
+            "\x1B[2K\r{}  {}   10s {} {}  60s {}  15m {}",
             "│".bright_black(),
             "SPEED".bright_white().bold(),
             format!("{:.2}", v10).bright_cyan().bold(),
@@ -338,47 +391,58 @@ impl MinerStats {
             format!("{:.2}", v60).bright_cyan(),
             format!("{:.2}", v15).bright_cyan(),
         );
-        let _ = writeln!(out, "\x1B[2K\r{}  {}  A: {}  R: {}  rate: {}",
+        let _ = writeln!(
+            out,
+            "\x1B[2K\r{}  {}  A: {}  R: {}  rate: {}",
             "│".bright_black(),
             "SHARES".bright_white().bold(),
             self.shares_accepted.to_string().bright_green().bold(),
             self.shares_rejected.to_string().bright_red(),
             self.share_pct().bright_white(),
         );
-        let _ = writeln!(out, "\x1B[2K\r{}  {}    pool: {}  height: {}  blocks: {}",
+        let _ = writeln!(
+            out,
+            "\x1B[2K\r{}  {}    pool: {}  height: {}  blocks: {}",
             "│".bright_black(),
             "DIFF".bright_white().bold(),
             diff_str.bright_yellow(),
             self.pool_height.to_string().bright_white(),
             self.blocks_found.to_string().bright_cyan().bold(),
         );
-        let _ = writeln!(out, "\x1B[2K\r{}  {}  {}  hashes: {}  algo: {}",
+        let _ = writeln!(
+            out,
+            "\x1B[2K\r{}  {}  {}  hashes: {}  algo: {}",
             "│".bright_black(),
             "UPTIME".bright_white().bold(),
             uptime.bright_white(),
             total_h.bright_cyan(),
             self.algorithm.bright_cyan(),
         );
-        let _ = writeln!(out, "\x1B[2K\r{}  {}     cpu: {}T  gpu: {}",
+        let _ = writeln!(
+            out,
+            "\x1B[2K\r{}  {}     cpu: {}T  gpu: {}",
             "│".bright_black(),
             "HW".bright_white().bold(),
             self.cpu_threads.to_string().bright_magenta(),
             gpu_str.bright_green(),
         );
-        let _ = writeln!(out, "\x1B[2K\r{}  {}   pool: {}  worker: {}",
+        let _ = writeln!(
+            out,
+            "\x1B[2K\r{}  {}   pool: {}  worker: {}",
             "│".bright_black(),
             "NET".bright_white().bold(),
             self.pool.bright_white(),
             self.worker.bright_white(),
         );
-        let _ = writeln!(out, "\x1B[2K\r{}  {}  [{}] {}",
+        let _ = writeln!(
+            out,
+            "\x1B[2K\r{}  {}  [{}] {}",
             "│".bright_black(),
             "EVENT".bright_white().bold(),
             now.to_string().bright_black(),
             event_str.bright_green(),
         );
-        let _ = writeln!(out, "\x1B[2K\r{}",
-            format!("└{}┘", bar).bright_black());
+        let _ = writeln!(out, "\x1B[2K\r{}", format!("└{}┘", bar).bright_black());
 
         let _ = out.flush();
     }
@@ -387,7 +451,8 @@ impl MinerStats {
     pub fn print_accepted(&mut self) {
         self.set_event(format!(
             "accepted {}/{} (+1) diff {} ({})",
-            self.shares_accepted, self.shares_rejected,
+            self.shares_accepted,
+            self.shares_rejected,
             Self::fmt_difficulty(self.difficulty),
             self.share_pct(),
         ));

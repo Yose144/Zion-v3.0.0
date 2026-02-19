@@ -136,7 +136,10 @@ mod tests {
         let memo = "DAO:vote:42:yes";
         let parsed = parse_dao_memo(memo).unwrap();
         match parsed {
-            DaoMemo::Vote { proposal_id, choice } => {
+            DaoMemo::Vote {
+                proposal_id,
+                choice,
+            } => {
                 assert_eq!(proposal_id, "42");
                 assert_eq!(choice, VoteChoice::Yes);
             }

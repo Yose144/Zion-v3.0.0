@@ -167,9 +167,7 @@ impl Proposal {
         snapshot_block: u64,
     ) -> Self {
         let now = Utc::now();
-        let voting_period = chrono::Duration::seconds(
-            proposal_type.voting_period_secs() as i64,
-        );
+        let voting_period = chrono::Duration::seconds(proposal_type.voting_period_secs() as i64);
         Self {
             id,
             uuid: Uuid::new_v4().to_string(),
@@ -252,7 +250,7 @@ mod tests {
     fn test_add_votes() {
         let mut p = sample_proposal();
         p.add_vote(VoteChoice::Yes, 1_000_000_000_000); // 1M ZION
-        p.add_vote(VoteChoice::No, 500_000_000_000);     // 500K ZION
+        p.add_vote(VoteChoice::No, 500_000_000_000); // 500K ZION
         p.add_vote(VoteChoice::Abstain, 100_000_000_000); // 100K ZION
 
         assert_eq!(p.votes_for, 1_000_000_000_000);
@@ -269,14 +267,16 @@ mod tests {
                 parameter_name: "x".into(),
                 current_value: "1".into(),
                 proposed_value: "2".into(),
-            }.required_quorum_percent(),
+            }
+            .required_quorum_percent(),
             10.0
         );
         assert_eq!(
             ProposalType::Emergency {
                 action: "pause".into(),
                 justification: "critical".into(),
-            }.required_quorum_percent(),
+            }
+            .required_quorum_percent(),
             20.0
         );
     }

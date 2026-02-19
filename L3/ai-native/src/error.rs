@@ -35,7 +35,10 @@ mod tests {
 
     #[test]
     fn test_consciousness_error() {
-        let e = AiError::ConsciousnessInsufficient { required: 5, current: 2 };
+        let e = AiError::ConsciousnessInsufficient {
+            required: 5,
+            current: 2,
+        };
         assert!(e.to_string().contains("5"));
         assert!(e.to_string().contains("2"));
     }

@@ -9,9 +9,9 @@
 //! - Retry counter with max attempts
 //! - RPC-visible sync info via to_json()
 
+use serde::Serialize;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
-use serde::Serialize;
 
 /// Threshold: if peer is more than 50 blocks ahead, enter IBD mode.
 pub const IBD_THRESHOLD: u64 = 50;
@@ -108,21 +108,31 @@ impl SyncStatus {
         *self.ibd_start_time.lock().unwrap() = Some(std::time::Instant::now());
         *self.last_batch_time.lock().unwrap() = Some(std::time::Instant::now());
         *self.ibd_peer.lock().unwrap() = Some(peer_addr.to_string());
-        println!("📥 Entering IBD mode — target height: {} (peer: {})", target, peer_addr);
+        println!(
+            "📥 Entering IBD mode — target height: {} (peer: {})",
+            target, peer_addr
+        );
     }
 
     pub fn exit_ibd(&self) {
         let downloaded = self.blocks_downloaded.load(Ordering::Relaxed);
-        let elapsed = self.ibd_start_time.lock().unwrap()
+        let elapsed = self
+            .ibd_start_time
+            .lock()
+            .unwrap()
             .map(|t| t.elapsed().as_secs_f64())
             .unwrap_or(1.0);
-        let bps = if elapsed > 0.0 { downloaded as f64 / elapsed } else { 0.0 };
-        
+        let bps = if elapsed > 0.0 {
+            downloaded as f64 / elapsed
+        } else {
+            0.0
+        };
+
         println!(
             "✅ IBD complete — {} blocks downloaded in {:.1}s ({:.0} blocks/sec)",
             downloaded, elapsed, bps
         );
-        
+
         *self.state.lock().unwrap() = SyncState::Steady;
         self.syncing.store(false, Ordering::Relaxed);
         *self.ibd_start_time.lock().unwrap() = None;
@@ -165,7 +175,10 @@ impl SyncStatus {
     /// Record a stall event. Returns true if retries exceeded.
     pub fn record_stall(&self) -> bool {
         let retries = self.stall_retries.fetch_add(1, Ordering::Relaxed) + 1;
-        println!("⚠️ IBD stall detected (retry {}/{})", retries, IBD_MAX_STALL_RETRIES);
+        println!(
+            "⚠️ IBD stall detected (retry {}/{})",
+            retries, IBD_MAX_STALL_RETRIES
+        );
         retries >= IBD_MAX_STALL_RETRIES as u64
     }
 
@@ -179,16 +192,31 @@ impl SyncStatus {
         let current = self.download_height.load(Ordering::Relaxed);
         let target = self.target_height.load(Ordering::Relaxed);
         let downloaded = self.blocks_downloaded.load(Ordering::Relaxed);
-        let elapsed = self.ibd_start_time.lock().unwrap()
+        let elapsed = self
+            .ibd_start_time
+            .lock()
+            .unwrap()
             .map(|t| t.elapsed().as_secs_f64())
             .unwrap_or(0.0);
-        
-        let bps = if elapsed > 0.0 { downloaded as f64 / elapsed } else { 0.0 };
+
+        let bps = if elapsed > 0.0 {
+            downloaded as f64 / elapsed
+        } else {
+            0.0
+        };
         let remaining = target.saturating_sub(current);
-        let eta = if bps > 0.0 { remaining as f64 / bps } else { 0.0 };
-        
-        let pct = if target > 0 { (current as f64 / target as f64 * 100.0).min(100.0) } else { 0.0 };
-        
+        let eta = if bps > 0.0 {
+            remaining as f64 / bps
+        } else {
+            0.0
+        };
+
+        let pct = if target > 0 {
+            (current as f64 / target as f64 * 100.0).min(100.0)
+        } else {
+            0.0
+        };
+
         format!(
             "📥 IBD: {}/{} ({:.1}%) | {:.0} blocks/sec | ETA: {:.0}s",
             current, target, pct, bps, eta
@@ -200,14 +228,29 @@ impl SyncStatus {
         let current = self.download_height.load(Ordering::Relaxed);
         let target = self.target_height.load(Ordering::Relaxed);
         let downloaded = self.blocks_downloaded.load(Ordering::Relaxed);
-        let elapsed = self.ibd_start_time.lock().unwrap()
+        let elapsed = self
+            .ibd_start_time
+            .lock()
+            .unwrap()
             .map(|t| t.elapsed().as_secs_f64())
             .unwrap_or(0.0);
-        let bps = if elapsed > 0.0 { downloaded as f64 / elapsed } else { 0.0 };
+        let bps = if elapsed > 0.0 {
+            downloaded as f64 / elapsed
+        } else {
+            0.0
+        };
         let remaining = target.saturating_sub(current);
-        let eta = if bps > 0.0 { remaining as f64 / bps } else { 0.0 };
-        let pct = if target > 0 { (current as f64 / target as f64 * 100.0).min(100.0) } else { 0.0 };
-        
+        let eta = if bps > 0.0 {
+            remaining as f64 / bps
+        } else {
+            0.0
+        };
+        let pct = if target > 0 {
+            (current as f64 / target as f64 * 100.0).min(100.0)
+        } else {
+            0.0
+        };
+
         SyncSnapshot {
             state: self.state(),
             syncing: self.syncing.load(Ordering::Relaxed),

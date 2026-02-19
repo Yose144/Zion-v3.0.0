@@ -11,17 +11,16 @@
 ///   1.9.8  Orphan rate measurement
 ///   1.9.9  Security under stress (rate-limiter, misbehavior)
 ///   1.9.10 Full stability summary assertion
-
 use zion_core::blockchain::block::Block;
+use zion_core::blockchain::burn::{self, BuybackEvent, BuybackTracker};
 use zion_core::blockchain::chain::{Chain, MAX_REORG_DEPTH, SOFT_FINALITY_DEPTH};
 use zion_core::blockchain::consensus;
-use zion_core::blockchain::reward;
-use zion_core::blockchain::burn::{self, BuybackTracker, BuybackEvent};
 use zion_core::blockchain::premine;
+use zion_core::blockchain::reward;
 use zion_core::blockchain::validation;
 use zion_core::mempool::pool::Mempool;
+use zion_core::p2p::security::{Blacklist, MessageRateLimiter, RateLimiter};
 use zion_core::tx::{Transaction, TxOutput};
-use zion_core::p2p::security::{RateLimiter, Blacklist, MessageRateLimiter};
 
 use std::net::{IpAddr, Ipv4Addr};
 use std::time::Instant;
@@ -382,7 +381,9 @@ fn test_network_partition_short_within_reorg_limit() {
     assert_eq!(fork_blocks.len(), 5);
     println!(
         "[STRESS 1.9.5] Short partition (3-block reorg): fork_point={}, reorg_depth={}, new_len={}",
-        fork_point, reorg_depth, fork_blocks.len()
+        fork_point,
+        reorg_depth,
+        fork_blocks.len()
     );
 }
 

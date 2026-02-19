@@ -14,7 +14,6 @@
 ///
 /// ⚠️  RUN THIS ONCE. SAVE THE BACKUP. DELETE THE BINARY.
 /// ⚠️  THE BACKUP FILE CONTAINS PRIVATE KEYS — GUARD WITH YOUR LIFE.
-
 use bip39::{Language, Mnemonic};
 use ed25519_dalek::SigningKey;
 use rand::rngs::OsRng;
@@ -50,7 +49,7 @@ struct PremineBackup {
 struct WalletDef {
     category: &'static str,
     purpose: &'static str,
-    amount_zion: u64,         // In full ZION
+    amount_zion: u64, // In full ZION
     unlock_height: Option<u64>,
 }
 
@@ -105,7 +104,6 @@ fn main() {
             amount_zion: 1_650_000_000,
             unlock_height: None,
         },
-
         // === DAO Treasury (3 slots = 4.0B) ===
         WalletDef {
             category: "dao_treasury",
@@ -125,7 +123,6 @@ fn main() {
             amount_zion: 500_000_000,
             unlock_height: None,
         },
-
         // === Infrastructure (3 slots = 2.59B) ===
         WalletDef {
             category: "infrastructure",
@@ -145,7 +142,6 @@ fn main() {
             amount_zion: 590_000_000,
             unlock_height: None,
         },
-
         // === Humanitarian (1 slot = 1.44B) ===
         WalletDef {
             category: "humanitarian",
@@ -172,9 +168,8 @@ fn main() {
 
         let secret_key_hex = bytes_to_hex(&secret);
         let public_key_hex = bytes_to_hex(verifying_key.as_bytes());
-        let address = zion_core::crypto::keys::zion1_address_from_public_key_bytes(
-            verifying_key.as_bytes(),
-        );
+        let address =
+            zion_core::crypto::keys::zion1_address_from_public_key_bytes(verifying_key.as_bytes());
 
         let amount_atomic = def.amount_zion * 1_000_000;
         total_zion += def.amount_zion;
@@ -205,7 +200,11 @@ fn main() {
     }
 
     println!();
-    println!("Total: {} ZION across {} wallets", format_zion(total_zion), wallets.len());
+    println!(
+        "Total: {} ZION across {} wallets",
+        format_zion(total_zion),
+        wallets.len()
+    );
     assert_eq!(total_zion, 16_280_000_000, "Premine total mismatch!");
     println!("✅ Premine total verified: 16,280,000,000 ZION (16.28B)");
 
@@ -244,7 +243,11 @@ fn main() {
         println!("    (");
         println!("        \"{}\",", w.address);
         println!("        \"{}\",", w.purpose);
-        println!("        {:>19}, // {:.2}B ZION", w.amount_atomic, w.amount_zion as f64 / 1_000_000_000.0);
+        println!(
+            "        {:>19}, // {:.2}B ZION",
+            w.amount_atomic,
+            w.amount_zion as f64 / 1_000_000_000.0
+        );
         println!("    ),");
     }
     println!("];");
@@ -256,7 +259,11 @@ fn main() {
         println!("    (");
         println!("        \"{}\",", w.address);
         println!("        \"{}\",", w.purpose);
-        println!("        {:>19}, // {:.2}B ZION", w.amount_atomic, w.amount_zion as f64 / 1_000_000_000.0);
+        println!(
+            "        {:>19}, // {:.2}B ZION",
+            w.amount_atomic,
+            w.amount_zion as f64 / 1_000_000_000.0
+        );
         println!("    ),");
     }
     println!("];");
@@ -268,7 +275,11 @@ fn main() {
         println!("    (");
         println!("        \"{}\",", w.address);
         println!("        \"{}\",", w.purpose);
-        println!("        {:>19}, // {:.2}B ZION", w.amount_atomic, w.amount_zion as f64 / 1_000_000_000.0);
+        println!(
+            "        {:>19}, // {:.2}B ZION",
+            w.amount_atomic,
+            w.amount_zion as f64 / 1_000_000_000.0
+        );
         println!("    ),");
     }
     println!("];");
@@ -280,7 +291,11 @@ fn main() {
         println!("    (");
         println!("        \"{}\",", w.address);
         println!("        \"{}\",", w.purpose);
-        println!("        {:>19}, // {:.2}B ZION", w.amount_atomic, w.amount_zion as f64 / 1_000_000_000.0);
+        println!(
+            "        {:>19}, // {:.2}B ZION",
+            w.amount_atomic,
+            w.amount_zion as f64 / 1_000_000_000.0
+        );
         println!("    ),");
     }
     println!("];");

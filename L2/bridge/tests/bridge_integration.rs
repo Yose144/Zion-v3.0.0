@@ -9,8 +9,8 @@ use tempfile::TempDir;
 use zion_bridge::config::BridgeConfig;
 use zion_bridge::db::BridgeDb;
 use zion_bridge::metrics::BridgeMetrics;
-use zion_bridge::types::*;
 use zion_bridge::types::conversion::*;
+use zion_bridge::types::*;
 use zion_bridge::validator::{ConsensusTracker, ValidatorSet};
 
 // ──────────────────────────────────────────────
@@ -82,25 +82,39 @@ fn test_full_lock_flow_l1_to_evm() {
     assert_eq!(pending[0].l1_tx_hash, "lock_integ_001");
 
     // Step 3: Validators confirm (3-of-5)
-    let validators = ValidatorSet::new(3, vec![
-        "0xV1".into(), "0xV2".into(), "0xV3".into(), "0xV4".into(), "0xV5".into(),
-    ]);
+    let validators = ValidatorSet::new(
+        3,
+        vec![
+            "0xV1".into(),
+            "0xV2".into(),
+            "0xV3".into(),
+            "0xV4".into(),
+            "0xV5".into(),
+        ],
+    );
     let mut tracker = ConsensusTracker::new("lock_integ_001".into(), validators.threshold);
 
-    db.add_confirmation("lock", "lock_integ_001", "0xV1").unwrap();
+    db.add_confirmation("lock", "lock_integ_001", "0xV1")
+        .unwrap();
     assert!(!tracker.add_confirmation("0xV1")); // 1/3
 
-    db.add_confirmation("lock", "lock_integ_001", "0xV2").unwrap();
+    db.add_confirmation("lock", "lock_integ_001", "0xV2")
+        .unwrap();
     assert!(!tracker.add_confirmation("0xV2")); // 2/3
 
-    db.add_confirmation("lock", "lock_integ_001", "0xV3").unwrap();
+    db.add_confirmation("lock", "lock_integ_001", "0xV3")
+        .unwrap();
     assert!(tracker.add_confirmation("0xV3")); // 3/3 → consensus!
 
-    assert_eq!(db.get_confirmation_count("lock", "lock_integ_001").unwrap(), 3);
+    assert_eq!(
+        db.get_confirmation_count("lock", "lock_integ_001").unwrap(),
+        3
+    );
     assert!(tracker.reached);
 
     // Step 4: After EVM mint, mark as completed
-    db.update_lock_status("lock_integ_001", BridgeStatus::Completed).unwrap();
+    db.update_lock_status("lock_integ_001", BridgeStatus::Completed)
+        .unwrap();
 
     // Step 5: Verify completed
     let pending = db.get_pending_locks().unwrap();
@@ -134,10 +148,14 @@ fn test_full_burn_flow_evm_to_l1() {
         tracker.add_confirmation(addr);
     }
     assert!(tracker.reached);
-    assert_eq!(db.get_confirmation_count("burn", "burn_integ_001").unwrap(), 3);
+    assert_eq!(
+        db.get_confirmation_count("burn", "burn_integ_001").unwrap(),
+        3
+    );
 
     // Step 4: Unlock on L1, mark completed
-    db.update_burn_status("burn_integ_001", BridgeStatus::Completed).unwrap();
+    db.update_burn_status("burn_integ_001", BridgeStatus::Completed)
+        .unwrap();
 
     let pending = db.get_pending_burns().unwrap();
     assert_eq!(pending.len(), 0);
@@ -224,7 +242,10 @@ fn test_amount_validation_ranges() {
     // Valid amount (1000 wZION)
     let normal = l1_atomic_to_wzion_wei(1_000_000_000); // 1000 ZION
     let normal_wei: u128 = normal.parse().unwrap();
-    assert!(normal_wei >= min && normal_wei <= max, "1000 ZION should be in valid range");
+    assert!(
+        normal_wei >= min && normal_wei <= max,
+        "1000 ZION should be in valid range"
+    );
 
     // Above single max (6M wZION)
     let big = l1_atomic_to_wzion_wei(6_000_000_000_000); // 6M ZION
@@ -244,12 +265,18 @@ fn test_timelock_detection() {
     // 500K ZION — no timelock
     let amount_500k = l1_atomic_to_wzion_wei(500_000_000_000u64);
     let wei_500k: u128 = amount_500k.parse().unwrap();
-    assert!(wei_500k < timelock_threshold, "500K should not trigger timelock");
+    assert!(
+        wei_500k < timelock_threshold,
+        "500K should not trigger timelock"
+    );
 
     // 2M ZION — timelock!
     let amount_2m = l1_atomic_to_wzion_wei(2_000_000_000_000u64);
     let wei_2m: u128 = amount_2m.parse().unwrap();
-    assert!(wei_2m > timelock_threshold, "2M should trigger 24h timelock");
+    assert!(
+        wei_2m > timelock_threshold,
+        "2M should trigger 24h timelock"
+    );
 }
 
 // ──────────────────────────────────────────────
@@ -258,9 +285,16 @@ fn test_timelock_detection() {
 
 #[test]
 fn test_validator_consensus_exact_threshold() {
-    let set = ValidatorSet::new(3, vec![
-        "0xA".into(), "0xB".into(), "0xC".into(), "0xD".into(), "0xE".into(),
-    ]);
+    let set = ValidatorSet::new(
+        3,
+        vec![
+            "0xA".into(),
+            "0xB".into(),
+            "0xC".into(),
+            "0xD".into(),
+            "0xE".into(),
+        ],
+    );
 
     let mut tracker = ConsensusTracker::new("op_exact".into(), set.threshold);
 
@@ -308,7 +342,10 @@ fn test_db_persistence_state() {
 
     assert_eq!(db.get_state("last_l1_height").unwrap().unwrap(), "12345");
     assert_eq!(db.get_state("bridge_status").unwrap().unwrap(), "running");
-    assert_eq!(db.get_state("daily_volume").unwrap().unwrap(), "500000000000");
+    assert_eq!(
+        db.get_state("daily_volume").unwrap().unwrap(),
+        "500000000000"
+    );
     assert!(db.get_state("nonexistent").unwrap().is_none());
 }
 
@@ -361,11 +398,29 @@ fn test_multi_chain_locks() {
     let (db, _dir) = setup_db();
 
     // Lock to Base
-    db.insert_lock(&make_lock("tx_base", 1000, "base", "0x1111111111111111111111111111111111111111")).unwrap();
+    db.insert_lock(&make_lock(
+        "tx_base",
+        1000,
+        "base",
+        "0x1111111111111111111111111111111111111111",
+    ))
+    .unwrap();
     // Lock to Arbitrum
-    db.insert_lock(&make_lock("tx_arb", 2000, "arbitrum", "0x2222222222222222222222222222222222222222")).unwrap();
+    db.insert_lock(&make_lock(
+        "tx_arb",
+        2000,
+        "arbitrum",
+        "0x2222222222222222222222222222222222222222",
+    ))
+    .unwrap();
     // Lock to BSC
-    db.insert_lock(&make_lock("tx_bsc", 3000, "bsc", "0x3333333333333333333333333333333333333333")).unwrap();
+    db.insert_lock(&make_lock(
+        "tx_bsc",
+        3000,
+        "bsc",
+        "0x3333333333333333333333333333333333333333",
+    ))
+    .unwrap();
 
     let pending = db.get_pending_locks().unwrap();
     assert_eq!(pending.len(), 3);
@@ -414,19 +469,27 @@ fn test_supply_invariant() {
 #[test]
 fn test_bridge_status_transitions() {
     let (db, _dir) = setup_db();
-    let lock = make_lock("tx_states", 100, "base", "0x1234567890abcdef1234567890abcdef12345678");
+    let lock = make_lock(
+        "tx_states",
+        100,
+        "base",
+        "0x1234567890abcdef1234567890abcdef12345678",
+    );
     db.insert_lock(&lock).unwrap();
 
     // Pending → Confirmed
-    db.update_lock_status("tx_states", BridgeStatus::Confirmed).unwrap();
+    db.update_lock_status("tx_states", BridgeStatus::Confirmed)
+        .unwrap();
     assert_eq!(db.count_by_status("l1_locks", "Confirmed").unwrap(), 1);
 
     // Confirmed → Executing
-    db.update_lock_status("tx_states", BridgeStatus::Executing).unwrap();
+    db.update_lock_status("tx_states", BridgeStatus::Executing)
+        .unwrap();
     assert_eq!(db.count_by_status("l1_locks", "Executing").unwrap(), 1);
 
     // Executing → Completed
-    db.update_lock_status("tx_states", BridgeStatus::Completed).unwrap();
+    db.update_lock_status("tx_states", BridgeStatus::Completed)
+        .unwrap();
     assert_eq!(db.count_by_status("l1_locks", "Completed").unwrap(), 1);
 
     let stats = db.get_stats().unwrap();
@@ -442,21 +505,31 @@ fn test_timelock_flow() {
     let (db, _dir) = setup_db();
 
     // Large lock — 2M ZION → should be timelocked
-    let lock = make_lock("tx_timelock", 2_000_000, "base", "0x1234567890abcdef1234567890abcdef12345678");
+    let lock = make_lock(
+        "tx_timelock",
+        2_000_000,
+        "base",
+        "0x1234567890abcdef1234567890abcdef12345678",
+    );
     db.insert_lock(&lock).unwrap();
 
     let config = BridgeConfig::default();
     let timelock_threshold: u128 = config.security.timelock_threshold.parse().unwrap();
     let lock_wei: u128 = lock.amount_wzion.parse().unwrap();
 
-    assert!(lock_wei > timelock_threshold, "2M should exceed 1M timelock threshold");
+    assert!(
+        lock_wei > timelock_threshold,
+        "2M should exceed 1M timelock threshold"
+    );
 
     // Set to Timelocked
-    db.update_lock_status("tx_timelock", BridgeStatus::Timelocked).unwrap();
+    db.update_lock_status("tx_timelock", BridgeStatus::Timelocked)
+        .unwrap();
     assert_eq!(db.count_by_status("l1_locks", "Timelocked").unwrap(), 1);
 
     // After 24h delay → Completed
-    db.update_lock_status("tx_timelock", BridgeStatus::Completed).unwrap();
+    db.update_lock_status("tx_timelock", BridgeStatus::Completed)
+        .unwrap();
     assert_eq!(db.count_by_status("l1_locks", "Completed").unwrap(), 1);
 }
 

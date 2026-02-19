@@ -1,5 +1,5 @@
-use prometheus::{Encoder, IntCounter, IntGauge, IntCounterVec, IntGaugeVec, Opts, TextEncoder};
 use prometheus::core::Collector;
+use prometheus::{Encoder, IntCounter, IntCounterVec, IntGauge, IntGaugeVec, Opts, TextEncoder};
 use std::sync::OnceLock;
 
 static ACCEPTED: OnceLock<IntCounter> = OnceLock::new();
@@ -48,24 +48,24 @@ static MINER_PAID_TOTAL: OnceLock<IntGaugeVec> = OnceLock::new();
 static MINER_CONNECTIONS: OnceLock<IntGaugeVec> = OnceLock::new();
 
 fn accepted() -> &'static IntCounter {
-    ACCEPTED.get_or_init(|| IntCounter::new("shares_accepted_total", "Total accepted shares").unwrap())
+    ACCEPTED
+        .get_or_init(|| IntCounter::new("shares_accepted_total", "Total accepted shares").unwrap())
 }
 
 fn rejected() -> &'static IntCounter {
-    REJECTED.get_or_init(|| IntCounter::new("shares_rejected_total", "Total rejected shares").unwrap())
+    REJECTED
+        .get_or_init(|| IntCounter::new("shares_rejected_total", "Total rejected shares").unwrap())
 }
 
 fn blocks_found() -> &'static IntCounter {
-    BLOCKS_FOUND.get_or_init(|| IntCounter::new("blocks_found_total", "Total blocks accepted by core").unwrap())
+    BLOCKS_FOUND.get_or_init(|| {
+        IntCounter::new("blocks_found_total", "Total blocks accepted by core").unwrap()
+    })
 }
 
 fn vardiff_retargets() -> &'static IntCounter {
     VARDIFF_RETARGETS.get_or_init(|| {
-        IntCounter::new(
-            "vardiff_retargets_total",
-            "Total VarDiff retarget events",
-        )
-        .unwrap()
+        IntCounter::new("vardiff_retargets_total", "Total VarDiff retarget events").unwrap()
     })
 }
 
@@ -80,8 +80,9 @@ fn job_broadcasts() -> &'static IntCounter {
 }
 
 fn rpc_requests() -> &'static IntCounter {
-    RPC_REQUESTS
-        .get_or_init(|| IntCounter::new("rpc_requests_total", "Total RPC requests to core").unwrap())
+    RPC_REQUESTS.get_or_init(|| {
+        IntCounter::new("rpc_requests_total", "Total RPC requests to core").unwrap()
+    })
 }
 
 fn rpc_errors() -> &'static IntCounter {
@@ -89,8 +90,9 @@ fn rpc_errors() -> &'static IntCounter {
 }
 
 fn template_updates() -> &'static IntCounter {
-    TEMPLATE_UPDATES
-        .get_or_init(|| IntCounter::new("block_template_updates_total", "Total template updates").unwrap())
+    TEMPLATE_UPDATES.get_or_init(|| {
+        IntCounter::new("block_template_updates_total", "Total template updates").unwrap()
+    })
 }
 
 fn template_fetch_errors() -> &'static IntCounter {
@@ -124,11 +126,15 @@ fn block_submit_rejected() -> &'static IntCounter {
 }
 
 fn active_connections() -> &'static IntGauge {
-    ACTIVE_CONNECTIONS.get_or_init(|| IntGauge::new("stratum_active_connections", "Active Stratum connections").unwrap())
+    ACTIVE_CONNECTIONS.get_or_init(|| {
+        IntGauge::new("stratum_active_connections", "Active Stratum connections").unwrap()
+    })
 }
 
 fn template_height() -> &'static IntGauge {
-    TEMPLATE_HEIGHT.get_or_init(|| IntGauge::new("block_template_height", "Current block template height").unwrap())
+    TEMPLATE_HEIGHT.get_or_init(|| {
+        IntGauge::new("block_template_height", "Current block template height").unwrap()
+    })
 }
 
 fn redis_up() -> &'static IntGauge {
@@ -161,16 +167,19 @@ fn payout_queue_length() -> &'static IntGauge {
 }
 
 fn redis_errors() -> &'static IntCounter {
-    REDIS_ERRORS
-        .get_or_init(|| IntCounter::new("redis_errors_total", "Total Redis operation errors").unwrap())
+    REDIS_ERRORS.get_or_init(|| {
+        IntCounter::new("redis_errors_total", "Total Redis operation errors").unwrap()
+    })
 }
 
 fn payouts_queued() -> &'static IntCounter {
-    PAYOUTS_QUEUED.get_or_init(|| IntCounter::new("payouts_queued_total", "Total payouts queued").unwrap())
+    PAYOUTS_QUEUED
+        .get_or_init(|| IntCounter::new("payouts_queued_total", "Total payouts queued").unwrap())
 }
 
 fn payouts_paid() -> &'static IntCounter {
-    PAYOUTS_PAID.get_or_init(|| IntCounter::new("payouts_paid_total", "Total payouts marked paid").unwrap())
+    PAYOUTS_PAID
+        .get_or_init(|| IntCounter::new("payouts_paid_total", "Total payouts marked paid").unwrap())
 }
 
 fn chv3_byproduct_samples() -> &'static IntCounter {
@@ -205,11 +214,7 @@ fn chv3_byproduct_sha3_hits() -> &'static IntCounter {
 
 fn ncl_registered() -> &'static IntCounter {
     NCL_REGISTERED.get_or_init(|| {
-        IntCounter::new(
-            "ncl_registered_total",
-            "Total NCL register calls accepted",
-        )
-        .unwrap()
+        IntCounter::new("ncl_registered_total", "Total NCL register calls accepted").unwrap()
     })
 }
 
@@ -379,7 +384,8 @@ fn miner_hashrate() -> &'static IntGaugeVec {
         IntGaugeVec::new(
             Opts::new("miner_hashrate", "Current miner hashrate (H/s)"),
             &["address"],
-        ).unwrap()
+        )
+        .unwrap()
     })
 }
 
@@ -388,7 +394,8 @@ fn miner_shares() -> &'static IntCounterVec {
         IntCounterVec::new(
             Opts::new("miner_shares_total", "Total shares per miner"),
             &["address", "status"],
-        ).unwrap()
+        )
+        .unwrap()
     })
 }
 
@@ -397,25 +404,34 @@ fn miner_blocks_found_vec() -> &'static IntCounterVec {
         IntCounterVec::new(
             Opts::new("miner_blocks_found_total", "Blocks found per miner"),
             &["address"],
-        ).unwrap()
+        )
+        .unwrap()
     })
 }
 
 fn miner_pending_balance() -> &'static IntGaugeVec {
     MINER_PENDING_BALANCE.get_or_init(|| {
         IntGaugeVec::new(
-            Opts::new("miner_pending_balance_atomic", "Pending balance per miner (atomic units)"),
+            Opts::new(
+                "miner_pending_balance_atomic",
+                "Pending balance per miner (atomic units)",
+            ),
             &["address"],
-        ).unwrap()
+        )
+        .unwrap()
     })
 }
 
 fn miner_paid_total() -> &'static IntGaugeVec {
     MINER_PAID_TOTAL.get_or_init(|| {
         IntGaugeVec::new(
-            Opts::new("miner_paid_total_atomic", "Total paid per miner (atomic units)"),
+            Opts::new(
+                "miner_paid_total_atomic",
+                "Total paid per miner (atomic units)",
+            ),
             &["address"],
-        ).unwrap()
+        )
+        .unwrap()
     })
 }
 
@@ -424,13 +440,16 @@ fn miner_connections() -> &'static IntGaugeVec {
         IntGaugeVec::new(
             Opts::new("miner_connections_active", "Active connections per miner"),
             &["address"],
-        ).unwrap()
+        )
+        .unwrap()
     })
 }
 
 // ── Per-miner public helpers ────────────────────────────────────────
 pub fn set_miner_hashrate(address: &str, hashrate: u64) {
-    miner_hashrate().with_label_values(&[address]).set(hashrate as i64);
+    miner_hashrate()
+        .with_label_values(&[address])
+        .set(hashrate as i64);
 }
 
 pub fn inc_miner_share(address: &str, valid: bool) {
@@ -443,7 +462,9 @@ pub fn inc_miner_blocks(address: &str) {
 }
 
 pub fn set_miner_pending(address: &str, amount: i64) {
-    miner_pending_balance().with_label_values(&[address]).set(amount);
+    miner_pending_balance()
+        .with_label_values(&[address])
+        .set(amount);
 }
 
 pub fn set_miner_paid(address: &str, amount: i64) {

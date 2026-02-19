@@ -1,13 +1,13 @@
-use axum::{Json, extract::State as AxumState};
-use axum::extract::{Path, Query};
-use serde::{Deserialize, Serialize};
-use crate::state::State;
-use crate::blockchain::reward;
-use crate::blockchain::consensus;
-use crate::premine;
-use crate::crypto::keys;
-use crate::tx::Transaction;
 use crate::blockchain::block::Block;
+use crate::blockchain::consensus;
+use crate::blockchain::reward;
+use crate::crypto::keys;
+use crate::premine;
+use crate::state::State;
+use crate::tx::Transaction;
+use axum::extract::{Path, Query};
+use axum::{extract::State as AxumState, Json};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 pub struct Template {
@@ -22,9 +22,13 @@ pub struct Template {
 }
 
 #[derive(Deserialize)]
-pub struct Submit { pub data: String } // Deprecated/Unused if we switch to Json<Block>
+pub struct Submit {
+    pub data: String,
+} // Deprecated/Unused if we switch to Json<Block>
 
-pub async fn health() -> &'static str { "ok" }
+pub async fn health() -> &'static str {
+    "ok"
+}
 
 pub async fn stats(AxumState(state): AxumState<State>) -> Json<serde_json::Value> {
     let h = state.height.load(std::sync::atomic::Ordering::Relaxed);
@@ -85,31 +89,41 @@ pub async fn get_premine_total() -> Json<serde_json::Value> {
 
 pub async fn get_premine_summary() -> Json<serde_json::Value> {
     let all = premine::get_all_premine_addresses();
-    let by_category = all.iter().fold(std::collections::HashMap::new(), |mut map, addr| {
-        let cat = addr.category.clone();
-        let entry = map.entry(cat).or_insert((0u64, 0usize));
-        entry.0 += addr.amount;
-        entry.1 += 1;
-        map
-    });
-    let summary: Vec<_> = by_category.iter().map(|(cat, (amt, cnt))| 
-        serde_json::json!({
-            "category": cat,
-            "count": cnt,
-            "total_atomic": amt,
-            "total_zion": amt / 1_000_000
+    let by_category = all
+        .iter()
+        .fold(std::collections::HashMap::new(), |mut map, addr| {
+            let cat = addr.category.clone();
+            let entry = map.entry(cat).or_insert((0u64, 0usize));
+            entry.0 += addr.amount;
+            entry.1 += 1;
+            map
+        });
+    let summary: Vec<_> = by_category
+        .iter()
+        .map(|(cat, (amt, cnt))| {
+            serde_json::json!({
+                "category": cat,
+                "count": cnt,
+                "total_atomic": amt,
+                "total_zion": amt / 1_000_000
+            })
         })
-    ).collect();
+        .collect();
     Json(serde_json::json!({"categories": summary}))
 }
 
-pub async fn submit_tx(AxumState(state): AxumState<State>, Json(tx): Json<Transaction>) -> Json<serde_json::Value> {
+pub async fn submit_tx(
+    AxumState(state): AxumState<State>,
+    Json(tx): Json<Transaction>,
+) -> Json<serde_json::Value> {
     let tx_id = tx.id.clone();
     println!("RPC: submit_tx received {}", tx_id);
-    
+
     // 1. Verify Signatures (Stateless)
     if !tx.verify_signatures() {
-        return Json(serde_json::json!({"status": "error", "message": "Invalid signatures or ID mismatch"}));
+        return Json(
+            serde_json::json!({"status": "error", "message": "Invalid signatures or ID mismatch"}),
+        );
     }
 
     // 2. Verify UTXOs (Context uses Storage)
@@ -117,7 +131,9 @@ pub async fn submit_tx(AxumState(state): AxumState<State>, Json(tx): Json<Transa
         for input in &tx.inputs {
             // Check for Coinbase-like inputs?
             let zero_hash = "0000000000000000000000000000000000000000000000000000000000000000";
-            if input.prev_tx_hash == zero_hash { continue; }
+            if input.prev_tx_hash == zero_hash {
+                continue;
+            }
 
             let key = format!("{}:{}", input.prev_tx_hash, input.output_index);
             // Storage access (Blocking I/O)
@@ -126,11 +142,15 @@ pub async fn submit_tx(AxumState(state): AxumState<State>, Json(tx): Json<Transa
                     // Check ownership
                     let derived = keys::address_from_public_key(&input.public_key);
                     if derived.is_none() || derived.unwrap() != output.address {
-                         return Json(serde_json::json!({"status": "error", "message": "Input signature does not match UTXO owner"}));
+                        return Json(
+                            serde_json::json!({"status": "error", "message": "Input signature does not match UTXO owner"}),
+                        );
                     }
-                },
+                }
                 None => {
-                     return Json(serde_json::json!({"status": "error", "message": format!("UTXO not found: {}", key)}));
+                    return Json(
+                        serde_json::json!({"status": "error", "message": format!("UTXO not found: {}", key)}),
+                    );
                 }
             }
         }
@@ -143,27 +163,40 @@ pub async fn submit_tx(AxumState(state): AxumState<State>, Json(tx): Json<Transa
     }
 }
 
-pub async fn submit_block(AxumState(state): AxumState<State>, Json(block): Json<Block>) -> Json<serde_json::Value> {
-    println!("RPC: submit_block received height={} hash={} txs={}", block.height(), block.calculate_hash(), block.transactions.len());
+pub async fn submit_block(
+    AxumState(state): AxumState<State>,
+    Json(block): Json<Block>,
+) -> Json<serde_json::Value> {
+    println!(
+        "RPC: submit_block received height={} hash={} txs={}",
+        block.height(),
+        block.calculate_hash(),
+        block.transactions.len()
+    );
 
     match state.process_block(block) {
-        Ok((height, hash)) => Json(serde_json::json!({"status": "ok", "height": height, "hash": hash})),
-        Err(e) => Json(serde_json::json!({"status": "error", "message": e}))
+        Ok((height, hash)) => {
+            Json(serde_json::json!({"status": "ok", "height": height, "hash": hash}))
+        }
+        Err(e) => Json(serde_json::json!({"status": "error", "message": e})),
     }
 }
 
 pub async fn get_premine_list() -> Json<Vec<serde_json::Value>> {
     let all = premine::get_all_premine_addresses();
-    let list = all.iter().map(|addr| {
-        serde_json::json!({
-            "address": addr.address,
-            "purpose": addr.purpose,
-            "amount_atomic": addr.amount,
-            "amount_zion": addr.amount / 1_000_000,
-            "category": addr.category,
-            "unlock_height": addr.unlock_height,
+    let list = all
+        .iter()
+        .map(|addr| {
+            serde_json::json!({
+                "address": addr.address,
+                "purpose": addr.purpose,
+                "amount_atomic": addr.amount,
+                "amount_zion": addr.amount / 1_000_000,
+                "category": addr.category,
+                "unlock_height": addr.unlock_height,
+            })
         })
-    }).collect();
+        .collect();
     Json(list)
 }
 
@@ -216,22 +249,25 @@ pub async fn get_blocks_range_rest(
 ) -> Json<serde_json::Value> {
     match state.storage.get_blocks_in_range(start, end) {
         Ok(blocks) => {
-            let headers: Vec<serde_json::Value> = blocks.iter().map(|b| {
-                serde_json::json!({
-                    "height": b.height(),
-                    "hash": b.calculate_hash(),
-                    "prev_hash": b.header.prev_hash,
-                    "timestamp": b.header.timestamp,
-                    "difficulty": b.header.difficulty,
-                    "nonce": b.header.nonce,
-                    "version": b.header.version,
-                    "num_txes": b.transactions.len(),
-                    "reward": b.transactions.first()
-                        .and_then(|tx| tx.outputs.first())
-                        .map(|o| o.amount)
-                        .unwrap_or(0),
+            let headers: Vec<serde_json::Value> = blocks
+                .iter()
+                .map(|b| {
+                    serde_json::json!({
+                        "height": b.height(),
+                        "hash": b.calculate_hash(),
+                        "prev_hash": b.header.prev_hash,
+                        "timestamp": b.header.timestamp,
+                        "difficulty": b.header.difficulty,
+                        "nonce": b.header.nonce,
+                        "version": b.header.version,
+                        "num_txes": b.transactions.len(),
+                        "reward": b.transactions.first()
+                            .and_then(|tx| tx.outputs.first())
+                            .map(|o| o.amount)
+                            .unwrap_or(0),
+                    })
                 })
-            }).collect();
+                .collect();
             Json(serde_json::json!({
                 "status": "ok",
                 "count": headers.len(),

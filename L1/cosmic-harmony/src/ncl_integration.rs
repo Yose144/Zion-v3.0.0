@@ -30,12 +30,12 @@ use std::sync::atomic::{AtomicU64, Ordering};
 /// All multipliers are 1.0×. Reserved for future L3 activation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ConsciousnessLevel {
-    Physical,   // 1.0x
-    Emotional,  // 1.0x (disabled, was 1.05x — reserved for L3)
-    Mental,     // 1.0x (disabled, was 1.1x  — reserved for L3)
-    Spiritual,  // 1.0x (disabled, was 1.25x — reserved for L3)
-    Cosmic,     // 1.0x (disabled, was 1.5x  — reserved for L3)
-    OnTheStar,  // 1.0x (disabled, was 2.0x  — reserved for L3)
+    Physical,  // 1.0x
+    Emotional, // 1.0x (disabled, was 1.05x — reserved for L3)
+    Mental,    // 1.0x (disabled, was 1.1x  — reserved for L3)
+    Spiritual, // 1.0x (disabled, was 1.25x — reserved for L3)
+    Cosmic,    // 1.0x (disabled, was 1.5x  — reserved for L3)
+    OnTheStar, // 1.0x (disabled, was 2.0x  — reserved for L3)
 }
 
 impl ConsciousnessLevel {
@@ -118,10 +118,10 @@ impl AITaskType {
 /// NPU Runtime detection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NPURuntime {
-    CoreML,     // Apple Silicon
-    TensorRT,   // NVIDIA
-    OpenVINO,   // Intel
-    ONNX,       // Generic
+    CoreML,   // Apple Silicon
+    TensorRT, // NVIDIA
+    OpenVINO, // Intel
+    ONNX,     // Generic
 }
 
 impl NPURuntime {
@@ -154,11 +154,11 @@ impl NPURuntime {
 }
 
 /// NCL Scheduler for time allocation
-/// 
+///
 /// Compute split: 75% mining (50% ZION + 25% multi-algo), 25% NCL AI
 /// Keccak & SHA3 intermediate hashes are FREE byproducts of ZION mining.
 pub struct NCLScheduler {
-    mining_allocation: f64,  // 0.75 = 75% mining (50% ZION + 25% multi-algo)
+    mining_allocation: f64, // 0.75 = 75% mining (50% ZION + 25% multi-algo)
     #[allow(dead_code)]
     min_mining: f64,
     #[allow(dead_code)]
@@ -226,8 +226,16 @@ impl NCLScheduler {
         NCLSchedulerStats {
             mining_allocation: self.mining_allocation,
             npu_allocation: self.npu_allocation(),
-            actual_mining_ratio: if total > 0 { mining as f64 / total as f64 } else { 0.0 },
-            actual_npu_ratio: if total > 0 { npu as f64 / total as f64 } else { 0.0 },
+            actual_mining_ratio: if total > 0 {
+                mining as f64 / total as f64
+            } else {
+                0.0
+            },
+            actual_npu_ratio: if total > 0 {
+                npu as f64 / total as f64
+            } else {
+                0.0
+            },
             mining_time_ms: mining,
             npu_time_ms: npu,
             mining_priority: self.mining_priority.load(Ordering::Relaxed),
@@ -271,7 +279,7 @@ impl NCLBonusCalculator {
         success: bool,
     ) -> f64 {
         let base_reward = task_type.base_reward();
-        
+
         // Apply consciousness multiplier
         let mut reward = base_reward * self.consciousness.multiplier();
 
@@ -343,7 +351,7 @@ pub struct NCLIntegration {
     pub runtime: NPURuntime,
     pub scheduler: NCLScheduler,
     pub calculator: NCLBonusCalculator,
-    
+
     // Stats
     pub tasks_completed: u64,
     pub tasks_failed: u64,
@@ -352,13 +360,9 @@ pub struct NCLIntegration {
 }
 
 impl NCLIntegration {
-    pub fn new(
-        miner_address: String,
-        consciousness_level: u8,
-        mining_allocation: f64,
-    ) -> Self {
+    pub fn new(miner_address: String, consciousness_level: u8, mining_allocation: f64) -> Self {
         let consciousness = ConsciousnessLevel::from_level(consciousness_level);
-        
+
         Self {
             miner_address,
             consciousness,
@@ -379,7 +383,9 @@ impl NCLIntegration {
         execution_time_ms: u64,
         success: bool,
     ) -> f64 {
-        let reward = self.calculator.calculate_reward(task_type, execution_time_ms, success);
+        let reward = self
+            .calculator
+            .calculate_reward(task_type, execution_time_ms, success);
 
         if success {
             self.tasks_completed += 1;
@@ -492,13 +498,33 @@ impl CH3RevenueModel {
     /// Revenue breakdown by stream
     pub fn revenue_breakdown(&self) -> Vec<(String, f64, f64)> {
         let total = self.total_earnings().max(0.0001); // Avoid div by zero
-        
+
         vec![
-            ("ZION (50% compute)".to_string(), self.zion_earnings, self.zion_earnings / total * 100.0),
-            ("ETC/Keccak (FREE)".to_string(), self.etc_earnings, self.etc_earnings / total * 100.0),
-            ("NXS/SHA3 (FREE)".to_string(), self.nxs_earnings, self.nxs_earnings / total * 100.0),
-            ("Multi-Algo (25%)".to_string(), self.dynamic_earnings, self.dynamic_earnings / total * 100.0),
-            ("NCL AI (25%)".to_string(), self.ncl.total_earnings, self.ncl.total_earnings / total * 100.0),
+            (
+                "ZION (50% compute)".to_string(),
+                self.zion_earnings,
+                self.zion_earnings / total * 100.0,
+            ),
+            (
+                "ETC/Keccak (FREE)".to_string(),
+                self.etc_earnings,
+                self.etc_earnings / total * 100.0,
+            ),
+            (
+                "NXS/SHA3 (FREE)".to_string(),
+                self.nxs_earnings,
+                self.nxs_earnings / total * 100.0,
+            ),
+            (
+                "Multi-Algo (25%)".to_string(),
+                self.dynamic_earnings,
+                self.dynamic_earnings / total * 100.0,
+            ),
+            (
+                "NCL AI (25%)".to_string(),
+                self.ncl.total_earnings,
+                self.ncl.total_earnings / total * 100.0,
+            ),
         ]
     }
 
@@ -506,13 +532,19 @@ impl CH3RevenueModel {
         println!("\n╔════════════════════════════════════════════════════════════╗");
         println!("║     CH v3 REVENUE MODEL - 50/25/25 + 2 FREE BONUS         ║");
         println!("╠════════════════════════════════════════════════════════════╣");
-        
+
         for (name, earnings, percent) in self.revenue_breakdown() {
-            println!("║  {:<25} {:>10.4} ZION  ({:>5.1}%)  ║", name, earnings, percent);
+            println!(
+                "║  {:<25} {:>10.4} ZION  ({:>5.1}%)  ║",
+                name, earnings, percent
+            );
         }
-        
+
         println!("╠════════════════════════════════════════════════════════════╣");
-        println!("║  TOTAL                      {:>10.4} ZION  (100%)    ║", self.total_earnings());
+        println!(
+            "║  TOTAL                      {:>10.4} ZION  (100%)    ║",
+            self.total_earnings()
+        );
         println!("╚════════════════════════════════════════════════════════════╝");
     }
 }
@@ -535,15 +567,15 @@ mod tests {
     #[test]
     fn test_ncl_scheduler() {
         let scheduler = NCLScheduler::new(0.75);
-        assert!((scheduler.npu_allocation() - 0.25).abs() < 0.001);  // 25% NCL
-        
+        assert!((scheduler.npu_allocation() - 0.25).abs() < 0.001); // 25% NCL
+
         // Initially should do NPU work
         assert!(scheduler.should_do_npu_work());
-        
+
         // After lots of mining, should do NPU work
         scheduler.record_mining_time(1000);
         assert!(scheduler.should_do_npu_work());
-        
+
         // Mining priority blocks NPU
         scheduler.set_mining_priority(true);
         assert!(!scheduler.should_do_npu_work());
@@ -552,19 +584,19 @@ mod tests {
     #[test]
     fn test_bonus_calculator() {
         let mut calc = NCLBonusCalculator::new(ConsciousnessLevel::Cosmic);
-        
+
         // All levels = 1.0x on mainnet L1 (consciousness disabled)
         let reward = calc.calculate_reward(AITaskType::Embeddings, 50, true);
-        assert!(reward > 0.001);  // Base * 1.0 + efficiency
-        
+        assert!(reward > 0.001); // Base * 1.0 + efficiency
+
         let reward2 = calc.calculate_reward(AITaskType::LlmInference, 100, true);
-        assert!(reward2 > reward);  // LLM has higher base reward
+        assert!(reward2 > reward); // LLM has higher base reward
     }
 
     #[test]
     fn test_revenue_model() {
         let mut model = CH3RevenueModel::new("ZION_TEST", 5);
-        
+
         // Add some earnings
         model.zion_earnings = 100.0;
         model.etc_earnings = 40.0;
@@ -572,10 +604,10 @@ mod tests {
         model.dynamic_earnings = 40.0;
         model.ncl.process_task(AITaskType::Embeddings, 50, true);
         model.ncl.process_task(AITaskType::LlmInference, 100, true);
-        
+
         let total = model.total_earnings();
         assert!(total > 190.0);
-        
+
         let breakdown = model.revenue_breakdown();
         assert_eq!(breakdown.len(), 5);
     }

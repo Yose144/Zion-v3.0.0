@@ -1,17 +1,16 @@
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 /// Session manager for tracking miner sessions
-/// 
+///
 /// Manages:
 /// - Active sessions with state tracking
 /// - Difficulty adjustment per session
 /// - Share statistics
 /// - Share statistics
-
 use std::net::SocketAddr;
-use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::RwLock;
 
 // Legacy simple session (kept for compatibility)
 pub struct Session {
@@ -22,8 +21,13 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(id: u64) -> Self { 
-        Self { id, user: None, addr: None, authorized: false } 
+    pub fn new(id: u64) -> Self {
+        Self {
+            id,
+            user: None,
+            addr: None,
+            authorized: false,
+        }
     }
 }
 

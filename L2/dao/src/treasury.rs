@@ -20,7 +20,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{DaoError, DaoResult};
-use crate::types::{Guardian, MULTISIG_THRESHOLD, MULTISIG_TOTAL, DAILY_SPEND_LIMIT};
+use crate::types::{Guardian, DAILY_SPEND_LIMIT, MULTISIG_THRESHOLD, MULTISIG_TOTAL};
 
 // ---------------------------------------------------------------------------
 // Treasury Operation
@@ -99,7 +99,7 @@ impl Treasury {
         // Verify submitter is a guardian
         if !self.is_guardian(submitter) {
             return Err(DaoError::Unauthorized(
-                "Only guardians can submit treasury operations".into()
+                "Only guardians can submit treasury operations".into(),
             ));
         }
 
@@ -137,7 +137,9 @@ impl Treasury {
             return Err(DaoError::Unauthorized("Not a guardian".into()));
         }
 
-        let pending = self.pending.get_mut(operation_id)
+        let pending = self
+            .pending
+            .get_mut(operation_id)
             .ok_or_else(|| DaoError::Internal(format!("Operation {} not found", operation_id)))?;
 
         // Deduplicate
@@ -151,7 +153,9 @@ impl Treasury {
 
     /// Execute a fully-signed operation
     pub fn execute(&mut self, operation_id: &str) -> DaoResult<TreasuryOperation> {
-        let pending = self.pending.get(operation_id)
+        let pending = self
+            .pending
+            .get(operation_id)
             .ok_or_else(|| DaoError::Internal(format!("Operation {} not found", operation_id)))?;
 
         if (pending.signatures.len() as u32) < self.threshold {
@@ -179,7 +183,9 @@ impl Treasury {
 
     /// Is address a guardian?
     fn is_guardian(&self, address: &str) -> bool {
-        self.guardians.iter().any(|g| g.address == address && g.is_active)
+        self.guardians
+            .iter()
+            .any(|g| g.address == address && g.is_active)
     }
 
     /// Get amount from operation
@@ -206,32 +212,38 @@ mod tests {
     use super::*;
 
     fn test_guardians() -> Vec<Guardian> {
-        (1..=7).map(|i| Guardian {
-            name: format!("Guardian {}", i),
-            address: format!("zion1guardian{}", i),
-            public_key: format!("key{}", i),
-            is_active: true,
-        }).collect()
+        (1..=7)
+            .map(|i| Guardian {
+                name: format!("Guardian {}", i),
+                address: format!("zion1guardian{}", i),
+                public_key: format!("key{}", i),
+                is_active: true,
+            })
+            .collect()
     }
 
     #[test]
     fn test_submit_and_sign() {
         let mut treasury = Treasury::new(test_guardians(), 1_000_000_000_000_000);
 
-        treasury.submit_operation(
-            "op1".into(),
-            TreasuryOperation::Spend {
-                recipient: "zion1recipient".into(),
-                amount: 100_000_000_000, // 100K ZION
-                purpose: "dev grant".into(),
-                proposal_id: 1,
-            },
-            "zion1guardian1",
-        ).unwrap();
+        treasury
+            .submit_operation(
+                "op1".into(),
+                TreasuryOperation::Spend {
+                    recipient: "zion1recipient".into(),
+                    amount: 100_000_000_000, // 100K ZION
+                    purpose: "dev grant".into(),
+                    proposal_id: 1,
+                },
+                "zion1guardian1",
+            )
+            .unwrap();
 
         // Need 5 signatures total (already have 1)
         for i in 2..=5 {
-            let ready = treasury.add_signature("op1", &format!("zion1guardian{}", i)).unwrap();
+            let ready = treasury
+                .add_signature("op1", &format!("zion1guardian{}", i))
+                .unwrap();
             if i < 5 {
                 assert!(!ready);
             } else {
@@ -248,20 +260,25 @@ mod tests {
     fn test_insufficient_signatures() {
         let mut treasury = Treasury::new(test_guardians(), 1_000_000_000_000_000);
 
-        treasury.submit_operation(
-            "op1".into(),
-            TreasuryOperation::Spend {
-                recipient: "zion1r".into(),
-                amount: 100_000,
-                purpose: "test".into(),
-                proposal_id: 1,
-            },
-            "zion1guardian1",
-        ).unwrap();
+        treasury
+            .submit_operation(
+                "op1".into(),
+                TreasuryOperation::Spend {
+                    recipient: "zion1r".into(),
+                    amount: 100_000,
+                    purpose: "test".into(),
+                    proposal_id: 1,
+                },
+                "zion1guardian1",
+            )
+            .unwrap();
 
         // Only 1 signature, need 5
         let result = treasury.execute("op1");
-        assert!(matches!(result, Err(DaoError::InsufficientSignatures { .. })));
+        assert!(matches!(
+            result,
+            Err(DaoError::InsufficientSignatures { .. })
+        ));
     }
 
     #[test]

@@ -14,13 +14,12 @@
 /// 2. Build batch TX (N recipients) using `zion_core::wallet::batch`
 /// 3. Sign with pool secret key
 /// 4. Submit signed TX via `submitTransaction` RPC
-
 use anyhow::{anyhow, Result};
+use ed25519_dalek::SigningKey;
 use std::sync::Arc;
 use zion_core::crypto::{keys, to_hex};
-use zion_core::wallet::batch::{BatchParams, BatchResult, Recipient, build_and_sign_batch};
+use zion_core::wallet::batch::{build_and_sign_batch, BatchParams, BatchResult, Recipient};
 use zion_core::wallet::SpendableUtxo;
-use ed25519_dalek::SigningKey;
 
 use crate::blockchain::ZionRPCClient;
 
@@ -88,11 +87,12 @@ impl PoolWallet {
             }
 
             for u in &utxos_arr {
-                let key = u.get("key").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let amount = u
-                    .get("amount_atomic")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
+                let key = u
+                    .get("key")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let amount = u.get("amount_atomic").and_then(|v| v.as_u64()).unwrap_or(0);
                 let addr = u
                     .get("address")
                     .and_then(|v| v.as_str())
@@ -139,10 +139,7 @@ impl PoolWallet {
     /// Build, sign, and submit a batch payout transaction.
     ///
     /// Returns the tx_id of the submitted transaction.
-    pub async fn send_batch_payout(
-        &self,
-        recipients: Vec<Recipient>,
-    ) -> Result<BatchResult> {
+    pub async fn send_batch_payout(&self, recipients: Vec<Recipient>) -> Result<BatchResult> {
         if recipients.is_empty() {
             return Err(anyhow!("No recipients for batch payout"));
         }
@@ -202,11 +199,7 @@ impl PoolWallet {
     }
 
     /// Send a single payout (wraps batch with 1 recipient).
-    pub async fn send_single_payout(
-        &self,
-        to_address: &str,
-        amount_atomic: u64,
-    ) -> Result<String> {
+    pub async fn send_single_payout(&self, to_address: &str, amount_atomic: u64) -> Result<String> {
         let recipients = vec![Recipient {
             address: to_address.to_string(),
             amount: amount_atomic,

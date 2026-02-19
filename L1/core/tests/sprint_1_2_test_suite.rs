@@ -7,7 +7,6 @@
 ///   1.2.4  Timestamp drift tests (boundary cases)
 ///   1.2.5  Mempool edge cases (oversize, invalid sig, dust, eviction)
 ///   1.2.6  Coinbase maturity enforcement
-
 use zion_core::blockchain::block::Block;
 use zion_core::blockchain::chain::{Chain, MAX_REORG_DEPTH, SOFT_FINALITY_DEPTH};
 use zion_core::blockchain::validation;
@@ -147,7 +146,11 @@ fn test_reorg_max_10_blocks_succeeds() {
     let fork_blocks = build_fork_blocks(&chain, 5, 10, 1250);
 
     let result = chain.try_reorg_unchecked(5, &fork_blocks);
-    assert!(result.is_ok(), "10-block reorg (max depth) should succeed: {:?}", result);
+    assert!(
+        result.is_ok(),
+        "10-block reorg (max depth) should succeed: {:?}",
+        result
+    );
     assert_eq!(chain.height, 15);
 }
 
@@ -161,7 +164,11 @@ fn test_reorg_11_blocks_rejected() {
     let fork_blocks = build_fork_blocks(&chain, 4, 11, 2000);
 
     let result = chain.try_reorg_unchecked(4, &fork_blocks);
-    assert!(result.is_ok(), "11-block reorg (depth < 50) should succeed: {:?}", result);
+    assert!(
+        result.is_ok(),
+        "11-block reorg (depth < 50) should succeed: {:?}",
+        result
+    );
 }
 
 #[test]
@@ -174,7 +181,10 @@ fn test_reorg_updates_total_work() {
     chain.try_reorg_unchecked(7, &fork_blocks).unwrap();
 
     // Total work should now be higher (fork point work + 3 × 1250)
-    assert!(chain.total_work > old_work, "Work after reorg should exceed original");
+    assert!(
+        chain.total_work > old_work,
+        "Work after reorg should exceed original"
+    );
 }
 
 #[test]
@@ -306,7 +316,10 @@ fn test_fork_equal_work_keeps_incumbent() {
     let result = chain.try_reorg_unchecked(7, &fork_blocks);
 
     // Should fail: competing work does not EXCEED current
-    assert!(result.is_err(), "Equal-work fork should not replace incumbent");
+    assert!(
+        result.is_err(),
+        "Equal-work fork should not replace incumbent"
+    );
     assert!(result.unwrap_err().contains("does not exceed"));
 }
 
@@ -331,24 +344,31 @@ fn test_fork_lower_work_rejected() {
 fn test_timestamp_future_exceeds_max_rejected() {
     let now: u64 = 1_700_000_000;
     let prev = Block::new(
-        1, 0,
+        1,
+        0,
         "00".repeat(32),
         now - 120,
-        1000, 0,
+        1000,
+        0,
         vec![make_coinbase(0)],
     );
 
     // Block timestamp = now + 7201 (exceeds MAX_FUTURE_DRIFT of 7200)
     let block = Block::new(
-        1, 1,
+        1,
+        1,
         prev.calculate_hash(),
         now + 7201,
-        1000, 0,
+        1000,
+        0,
         vec![make_coinbase(1)],
     );
 
     let result = validation::validate_block(&block, Some(&prev), now);
-    assert!(result.is_err(), "Timestamp >7200s in future should be rejected");
+    assert!(
+        result.is_err(),
+        "Timestamp >7200s in future should be rejected"
+    );
     let err = result.unwrap_err();
     assert!(
         err.contains("future") || err.contains("drift"),
@@ -361,19 +381,23 @@ fn test_timestamp_future_exceeds_max_rejected() {
 fn test_timestamp_future_within_limit_structurally_valid() {
     let now: u64 = 1_700_000_000;
     let prev = Block::new(
-        1, 0,
+        1,
+        0,
         "00".repeat(32),
         now - 60,
-        1000, 0,
+        1000,
+        0,
         vec![make_coinbase(0)],
     );
 
     // Block timestamp = now + 7199 (just within MAX_FUTURE_DRIFT)
     let block = Block::new(
-        1, 1,
+        1,
+        1,
         prev.calculate_hash(),
         now + 7199,
-        1000, 0,
+        1000,
+        0,
         vec![make_coinbase(1)],
     );
 
@@ -391,20 +415,16 @@ fn test_timestamp_future_within_limit_structurally_valid() {
 #[test]
 fn test_timestamp_before_parent_rejected() {
     let now: u64 = 1_700_000_000;
-    let prev = Block::new(
-        1, 0,
-        "00".repeat(32),
-        now,
-        1000, 0,
-        vec![make_coinbase(0)],
-    );
+    let prev = Block::new(1, 0, "00".repeat(32), now, 1000, 0, vec![make_coinbase(0)]);
 
     // Block timestamp BEFORE parent
     let block = Block::new(
-        1, 1,
+        1,
+        1,
         prev.calculate_hash(),
         now - 1,
-        1000, 0,
+        1000,
+        0,
         vec![make_coinbase(1)],
     );
 
@@ -417,19 +437,23 @@ fn test_timestamp_before_parent_rejected() {
 fn test_timestamp_boundary_exactly_max_drift_accepted() {
     let now: u64 = 1_700_000_000;
     let prev = Block::new(
-        1, 0,
+        1,
+        0,
         "00".repeat(32),
         now - 60,
-        1000, 0,
+        1000,
+        0,
         vec![make_coinbase(0)],
     );
 
     // Exactly at the MAX_TIMESTAMP_DRIFT boundary (7200s from prev)
     let block = Block::new(
-        1, 1,
+        1,
+        1,
         prev.calculate_hash(),
         prev.header.timestamp + validation::MAX_TIMESTAMP_DRIFT,
-        1000, 0,
+        1000,
+        0,
         vec![make_coinbase(1)],
     );
 
@@ -454,9 +478,7 @@ fn test_mempool_oversized_tx_rejected() {
 
     // Create tx with many inputs to exceed MAX_TX_SIZE_BYTES (100_000)
     // Each input ≈ 196 bytes, so 512 inputs ≈ 100_352 > 100_000
-    let many_inputs: Vec<(&str, u32)> = (0..512)
-        .map(|_| ("large_utxo_hash", 0u32))
-        .collect();
+    let many_inputs: Vec<(&str, u32)> = (0..512).map(|_| ("large_utxo_hash", 0u32)).collect();
     let tx = make_tx("tx_oversized", 1_000_000, many_inputs, vec![1_000_000]);
 
     let result = pool.add_transaction_validated(tx);
@@ -521,7 +543,7 @@ fn test_mempool_eviction_lowest_fee() {
         let utxo_name = format!("utxo_{}", i);
         let tx = make_tx(
             &format!("tx_{}", i),
-            5_000,  // moderate fee
+            5_000, // moderate fee
             vec![(utxo_name.as_str(), 0)],
             vec![1_000_000],
         );
@@ -539,7 +561,10 @@ fn test_mempool_eviction_lowest_fee() {
     pool.add_transaction_validated(tx_high_fee).unwrap();
 
     // Pool should still be at or below limit
-    assert!(pool.size() <= MAX_MEMPOOL_SIZE, "Pool should evict to stay within limit");
+    assert!(
+        pool.size() <= MAX_MEMPOOL_SIZE,
+        "Pool should evict to stay within limit"
+    );
     // The high-fee tx should still be present
     assert!(pool.get_transaction("tx_high_fee").is_some());
 }
@@ -549,7 +574,12 @@ fn test_mempool_fee_below_minimum_rejected() {
     let pool = Mempool::new();
 
     // fee = 100 which is below MIN_TX_FEE (1000)
-    let tx = make_tx("tx_lowfee", 100, vec![("utxo_cheapskate", 0)], vec![1_000_000]);
+    let tx = make_tx(
+        "tx_lowfee",
+        100,
+        vec![("utxo_cheapskate", 0)],
+        vec![1_000_000],
+    );
 
     let result = pool.add_transaction_validated(tx);
     assert!(
@@ -566,7 +596,8 @@ fn test_mempool_fee_below_minimum_rejected() {
 #[test]
 fn test_coinbase_maturity_constant() {
     assert_eq!(
-        validation::COINBASE_MATURITY, 100,
+        validation::COINBASE_MATURITY,
+        100,
         "Coinbase maturity must be 100 blocks"
     );
 }

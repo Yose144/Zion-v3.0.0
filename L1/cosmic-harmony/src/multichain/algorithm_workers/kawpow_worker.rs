@@ -2,11 +2,10 @@
 //!
 //! Implements KawPow (ProgPoW variant) with epoch-based DAG.
 
-use super::{AlgorithmWorker, FoundShare};
-use crate::multichain::{ExternalChain, MiningJob, ChainStats};
+use super::AlgorithmWorker;
+use crate::multichain::{ChainStats, ExternalChain, MiningJob};
 use anyhow::Result;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::Arc;
 
 /// KawPow configuration
 const KAWPOW_DAG_LOADS: usize = 8;
@@ -50,54 +49,54 @@ impl KawPowWorker {
         // This is a simplified version
         let mut rng_state = seed;
         let mut sequence = Vec::with_capacity(256);
-        
+
         for _ in 0..256 {
             rng_state = rng_state.wrapping_mul(0x5851F42D4C957F2D).wrapping_add(1);
             sequence.push((rng_state >> 56) as u8);
         }
-        
+
         sequence
     }
 
     /// KawPow hash computation
     fn kawpow_hash(&self, header: &[u8], nonce: u64, height: u64) -> Option<([u8; 32], [u8; 32])> {
-        use sha3::{Keccak256, Digest};
-        
+        use sha3::{Digest, Keccak256};
+
         let epoch = Self::height_to_epoch(height);
-        
+
         // Initial seed from header + nonce
         let mut hasher = Keccak256::new();
         hasher.update(header);
-        hasher.update(&nonce.to_le_bytes());
+        hasher.update(nonce.to_le_bytes());
         let seed: [u8; 32] = hasher.finalize().into();
-        
+
         // Initialize mix state (32 lanes × 4 bytes)
         let mut mix = [0u32; 32];
         for i in 0..32 {
             mix[i] = u32::from_le_bytes([
                 seed[i % 32],
-                seed[(i+1) % 32],
-                seed[(i+2) % 32],
-                seed[(i+3) % 32],
+                seed[(i + 1) % 32],
+                seed[(i + 2) % 32],
+                seed[(i + 3) % 32],
             ]);
         }
 
         // ProgPoW rounds (simplified)
         let math_seq = self.generate_random_math(epoch ^ height);
-        
+
         for round in 0..64 {
             // Random math operations based on sequence
             let op = math_seq[round % 256];
             let src_idx = (round * 3) % 32;
             let dst_idx = (round * 5) % 32;
-            
+
             match op % 8 {
                 0 => mix[dst_idx] = mix[dst_idx].wrapping_add(mix[src_idx]),
                 1 => mix[dst_idx] = mix[dst_idx].wrapping_mul(mix[src_idx]),
-                2 => mix[dst_idx] = mix[dst_idx] ^ mix[src_idx],
+                2 => mix[dst_idx] ^= mix[src_idx],
                 3 => mix[dst_idx] = mix[dst_idx].rotate_left(mix[src_idx] % 32),
-                4 => mix[dst_idx] = mix[dst_idx] & mix[src_idx],
-                5 => mix[dst_idx] = mix[dst_idx] | mix[src_idx],
+                4 => mix[dst_idx] &= mix[src_idx],
+                5 => mix[dst_idx] |= mix[src_idx],
                 6 => mix[dst_idx] = mix[dst_idx].wrapping_sub(mix[src_idx]),
                 _ => mix[dst_idx] = !mix[dst_idx],
             }
@@ -106,14 +105,14 @@ impl KawPowWorker {
         // Compress to 256-bit mix hash
         let mut mix_hash = [0u8; 32];
         for i in 0..8 {
-            let value = mix[i*4] ^ mix[i*4+1] ^ mix[i*4+2] ^ mix[i*4+3];
-            mix_hash[i*4..i*4+4].copy_from_slice(&value.to_le_bytes());
+            let value = mix[i * 4] ^ mix[i * 4 + 1] ^ mix[i * 4 + 2] ^ mix[i * 4 + 3];
+            mix_hash[i * 4..i * 4 + 4].copy_from_slice(&value.to_le_bytes());
         }
 
         // Final hash
         let mut final_hasher = Keccak256::new();
-        final_hasher.update(&seed);
-        final_hasher.update(&mix_hash);
+        final_hasher.update(seed);
+        final_hasher.update(mix_hash);
         let result: [u8; 32] = final_hasher.finalize().into();
 
         Some((result, mix_hash))
@@ -142,18 +141,22 @@ impl AlgorithmWorker for KawPowWorker {
 
         self.running.store(true, Ordering::Relaxed);
         self.current_height.store(job.height, Ordering::Relaxed);
-        
+
         let epoch = Self::height_to_epoch(job.height);
         self.current_epoch.store(epoch, Ordering::Relaxed);
 
         log::debug!(
             "ch3_kawpow_mining chain={:?} job_id={} height={} epoch={} allocation={:.1}%",
-            self.chain, job.job_id, job.height, epoch, allocation
+            self.chain,
+            job.job_id,
+            job.height,
+            epoch,
+            allocation
         );
 
         // GPU mining loop would go here
         // Each GPU thread searches different nonce ranges
-        
+
         Ok(())
     }
 

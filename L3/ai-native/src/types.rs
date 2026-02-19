@@ -1,6 +1,6 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 /// What an agent can do.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

@@ -29,7 +29,7 @@ thread_local! {
     // Cache RandomX VM per thread (RandomXVM is not Send+Sync).
     // Stores (key, hasher) so we can recreate if key changes.
     static RANDOMX_HASHER: RefCell<Option<(Vec<u8>, zion_core::algorithms::randomx::RandomXHasher)>> =
-        RefCell::new(None);
+        const { RefCell::new(None) };
 }
 
 /// Initialize RandomX with key (typically seed_hash from pool job)
@@ -38,25 +38,32 @@ thread_local! {
 pub fn init_randomx_with_key(key: &[u8]) -> Result<()> {
     // Check if key is the same as current — skip reinit
     {
-        let current = RANDOMX_KEY.read().map_err(|e| anyhow!("lock error: {}", e))?;
+        let current = RANDOMX_KEY
+            .read()
+            .map_err(|e| anyhow!("lock error: {}", e))?;
         if !current.is_empty() && current.as_slice() == key {
             return Ok(()); // Same key, no need to reinitialize
         }
     }
-    
+
     // Store the new key
     {
-        let mut k = RANDOMX_KEY.write().map_err(|e| anyhow!("lock error: {}", e))?;
+        let mut k = RANDOMX_KEY
+            .write()
+            .map_err(|e| anyhow!("lock error: {}", e))?;
         *k = key.to_vec();
     }
-    
+
     RANDOMX_INITIALIZED.store(true, Ordering::SeqCst);
-    
+
     // Validate by creating a test hasher (using zion-core's RandomXHasher)
     let _test_hasher = zion_core::algorithms::randomx::RandomXHasher::new(key)?;
-    
-    log::info!("✅ RandomX initialized with key (len={}, hash={}...)", 
-        key.len(), hex::encode(&key[..key.len().min(8)]));
+
+    log::info!(
+        "✅ RandomX initialized with key (len={}, hash={}...)",
+        key.len(),
+        hex::encode(&key[..key.len().min(8)])
+    );
     Ok(())
 }
 
@@ -74,21 +81,21 @@ pub fn init_randomx() -> Result<()> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NativeAlgorithm {
     // CPU Algorithms
-    RandomX,        // XMR
-    VerusHash,      // VRSC
-    Yescrypt,       // LTC/YTN
-    CosmicHarmony,  // ZION (CHv3 unified)
-    Argon2d,        // DYN
-    
+    RandomX,       // XMR
+    VerusHash,     // VRSC
+    Yescrypt,      // LTC/YTN
+    CosmicHarmony, // ZION (CHv3 unified)
+    Argon2d,       // DYN
+
     // GPU Algorithms
-    Ethash,         // ETC
-    KawPow,         // RVN/CLORE
-    KawPowGpu,      // RVN/CLORE (GPU accelerated)
-    Autolykos,      // ERG
-    KHeavyHash,     // KAS
-    Equihash,       // ZEC
-    ProgPow,        // VEIL
-    Blake3,         // ALPH
+    Ethash,     // ETC
+    KawPow,     // RVN/CLORE
+    KawPowGpu,  // RVN/CLORE (GPU accelerated)
+    Autolykos,  // ERG
+    KHeavyHash, // KAS
+    Equihash,   // ZEC
+    ProgPow,    // VEIL
+    Blake3,     // ALPH
 }
 
 impl NativeAlgorithm {
@@ -98,7 +105,9 @@ impl NativeAlgorithm {
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
             "cosmic_harmony" | "cosmic_harmony_v3" | "cosmicharmony" | "chv3" | "ch3"
-            | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2" => Some(Self::CosmicHarmony),
+            | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2" => {
+                Some(Self::CosmicHarmony)
+            }
             "ethash" | "etchash" => Some(Self::Ethash),
             "kawpow" => Some(Self::KawPow),
             "kawpow_gpu" | "kawpow-gpu" => Some(Self::KawPowGpu),
@@ -111,7 +120,7 @@ impl NativeAlgorithm {
             _ => None,
         }
     }
-    
+
     pub fn coin(&self) -> &'static str {
         match self {
             Self::RandomX => "XMR",
@@ -128,11 +137,16 @@ impl NativeAlgorithm {
             Self::Blake3 => "ALPH",
         }
     }
-    
+
     pub fn is_gpu(&self) -> bool {
-        matches!(self, 
-            Self::Ethash | Self::KawPow | Self::KawPowGpu | 
-            Self::Autolykos | Self::KHeavyHash | Self::ProgPow
+        matches!(
+            self,
+            Self::Ethash
+                | Self::KawPow
+                | Self::KawPowGpu
+                | Self::Autolykos
+                | Self::KHeavyHash
+                | Self::ProgPow
         )
     }
 }
@@ -144,33 +158,61 @@ impl NativeAlgorithm {
 #[cfg(feature = "native-ethash")]
 mod ethash_ffi {
     use super::*;
-    
+
     #[link(name = "ethash_zion")]
     extern "C" {
         fn ethash_init();
-        fn ethash_hash(header: *const u8, header_len: usize, nonce: u64, height: u32, output: *mut u8);
-        fn ethash_verify(header: *const u8, header_len: usize, nonce: u64, height: u32, target: *const u8) -> i32;
+        fn ethash_hash(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            output: *mut u8,
+        );
+        fn ethash_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            target: *const u8,
+        ) -> i32;
         fn ethash_get_epoch(block_number: u32) -> u32;
         fn ethash_benchmark(iterations: i32) -> f64;
     }
-    
+
     pub fn init() {
         unsafe { ethash_init() }
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
         let mut output = [0u8; 32];
         unsafe {
-            ethash_hash(header.as_ptr(), header.len(), nonce, height, output.as_mut_ptr());
+            ethash_hash(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                output.as_mut_ptr(),
+            );
         }
         output
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, height: u32, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
-        unsafe { ethash_verify(header.as_ptr(), header.len(), nonce, height, target.as_ptr()) != 0 }
+        if target.len() != 32 {
+            return false;
+        }
+        unsafe {
+            ethash_verify(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                target.as_ptr(),
+            ) != 0
+        }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { ethash_benchmark(iterations) }
     }
@@ -183,31 +225,63 @@ mod ethash_ffi {
 #[cfg(feature = "native-kawpow")]
 mod kawpow_ffi {
     use super::*;
-    
+
     #[link(name = "kawpow_zion")]
     extern "C" {
-        fn kawpow_hash(header: *const u8, nonce: u64, height: u32, epoch: u32, mix_out: *mut u8, hash_out: *mut u8);
-        fn kawpow_verify(header: *const u8, nonce: u64, height: u32, epoch: u32, expected_mix: *const u8, target: *const u8) -> i32;
+        fn kawpow_hash(
+            header: *const u8,
+            nonce: u64,
+            height: u32,
+            epoch: u32,
+            mix_out: *mut u8,
+            hash_out: *mut u8,
+        );
+        fn kawpow_verify(
+            header: *const u8,
+            nonce: u64,
+            height: u32,
+            epoch: u32,
+            expected_mix: *const u8,
+            target: *const u8,
+        ) -> i32;
         fn kawpow_get_epoch(height: u32) -> u32;
         fn kawpow_benchmark_cpu(iterations: i32) -> f64;
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> ([u8; 32], [u8; 32]) {
         let epoch = unsafe { kawpow_get_epoch(height) };
         let mut mix = [0u8; 32];
         let mut hash = [0u8; 32];
         unsafe {
-            kawpow_hash(header.as_ptr(), nonce, height, epoch, mix.as_mut_ptr(), hash.as_mut_ptr());
+            kawpow_hash(
+                header.as_ptr(),
+                nonce,
+                height,
+                epoch,
+                mix.as_mut_ptr(),
+                hash.as_mut_ptr(),
+            );
         }
         (hash, mix)
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, height: u32, mix: &[u8], target: &[u8]) -> bool {
-        if mix.len() != 32 || target.len() != 32 { return false; }
+        if mix.len() != 32 || target.len() != 32 {
+            return false;
+        }
         let epoch = unsafe { kawpow_get_epoch(height) };
-        unsafe { kawpow_verify(header.as_ptr(), nonce, height, epoch, mix.as_ptr(), target.as_ptr()) != 0 }
+        unsafe {
+            kawpow_verify(
+                header.as_ptr(),
+                nonce,
+                height,
+                epoch,
+                mix.as_ptr(),
+                target.as_ptr(),
+            ) != 0
+        }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { kawpow_benchmark_cpu(iterations) }
     }
@@ -220,40 +294,55 @@ mod kawpow_ffi {
 #[cfg(feature = "native-kawpow-gpu")]
 mod kawpow_gpu_ffi {
     use super::*;
-    
+
     #[link(name = "kawpow_gpu_zion")]
     extern "C" {
         fn kawpow_gpu_init(device_id: i32, platform_id: i32) -> i32;
         fn kawpow_gpu_shutdown();
         fn kawpow_gpu_set_epoch(epoch: u32) -> i32;
-        fn kawpow_gpu_hash(header: *const u8, nonce: u64, height: u32, mix_out: *mut u8, hash_out: *mut u8);
+        fn kawpow_gpu_hash(
+            header: *const u8,
+            nonce: u64,
+            height: u32,
+            mix_out: *mut u8,
+            hash_out: *mut u8,
+        );
         fn kawpow_gpu_benchmark(iterations: i32) -> f64;
         fn kawpow_gpu_get_hashrate() -> f64;
     }
-    
+
     pub fn init(device_id: i32) -> Result<()> {
         let result = unsafe { kawpow_gpu_init(device_id, 0) };
-        if result == 0 { Ok(()) }
-        else { Err(anyhow!("KawPow GPU init failed")) }
+        if result == 0 {
+            Ok(())
+        } else {
+            Err(anyhow!("KawPow GPU init failed"))
+        }
     }
-    
+
     pub fn shutdown() {
         unsafe { kawpow_gpu_shutdown() }
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> ([u8; 32], [u8; 32]) {
         let mut mix = [0u8; 32];
         let mut hash = [0u8; 32];
         unsafe {
-            kawpow_gpu_hash(header.as_ptr(), nonce, height, mix.as_mut_ptr(), hash.as_mut_ptr());
+            kawpow_gpu_hash(
+                header.as_ptr(),
+                nonce,
+                height,
+                mix.as_mut_ptr(),
+                hash.as_mut_ptr(),
+            );
         }
         (hash, mix)
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { kawpow_gpu_benchmark(iterations) }
     }
-    
+
     pub fn get_hashrate() -> f64 {
         unsafe { kawpow_gpu_get_hashrate() }
     }
@@ -266,26 +355,44 @@ mod kawpow_gpu_ffi {
 #[cfg(feature = "native-autolykos")]
 mod autolykos_ffi {
     use super::*;
-    
+
     #[link(name = "autolykos_zion")]
     extern "C" {
-        fn autolykos_hash(header: *const u8, header_len: usize, nonce: u64, height: u32, output: *mut u8) -> u64;
-        fn autolykos_verify(header: *const u8, header_len: usize, nonce: u64, height: u32, target: u64) -> i32;
+        fn autolykos_hash(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            output: *mut u8,
+        ) -> u64;
+        fn autolykos_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            target: u64,
+        ) -> i32;
         fn autolykos_benchmark_cpu(iterations: i32) -> f64;
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
         let mut output = [0u8; 32];
         unsafe {
-            autolykos_hash(header.as_ptr(), header.len(), nonce, height, output.as_mut_ptr());
+            autolykos_hash(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                output.as_mut_ptr(),
+            );
         }
         output
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, height: u32, target: u64) -> bool {
         unsafe { autolykos_verify(header.as_ptr(), header.len(), nonce, height, target) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { autolykos_benchmark_cpu(iterations) }
     }
@@ -298,14 +405,19 @@ mod autolykos_ffi {
 #[cfg(feature = "native-kheavyhash")]
 mod kheavyhash_ffi {
     use super::*;
-    
+
     #[link(name = "kheavyhash_zion")]
     extern "C" {
         fn kheavyhash_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
-        fn kheavyhash_verify(header: *const u8, header_len: usize, nonce: u64, target: *const u8) -> i32;
+        fn kheavyhash_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
         fn kheavyhash_benchmark(iterations: i32) -> f64;
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
         let mut output = [0u8; 32];
         unsafe {
@@ -313,12 +425,14 @@ mod kheavyhash_ffi {
         }
         output
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
+        if target.len() != 32 {
+            return false;
+        }
         unsafe { kheavyhash_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { kheavyhash_benchmark(iterations) }
     }
@@ -331,24 +445,34 @@ mod kheavyhash_ffi {
 #[cfg(feature = "native-equihash")]
 mod equihash_ffi {
     use super::*;
-    
+
     #[link(name = "equihash_zion")]
     extern "C" {
-        fn equihash_solve(header: *const u8, header_len: usize, nonce: u64, solution: *mut u8) -> i32;
+        fn equihash_solve(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            solution: *mut u8,
+        ) -> i32;
         fn equihash_verify(header: *const u8, header_len: usize, solution: *const u8) -> i32;
         fn equihash_benchmark(iterations: i32) -> f64;
     }
-    
+
     pub fn solve(header: &[u8], nonce: u64) -> Option<Vec<u8>> {
         let mut solution = vec![0u8; 1344]; // Equihash(200,9)
-        let result = unsafe { equihash_solve(header.as_ptr(), header.len(), nonce, solution.as_mut_ptr()) };
-        if result == 0 { Some(solution) } else { None }
+        let result =
+            unsafe { equihash_solve(header.as_ptr(), header.len(), nonce, solution.as_mut_ptr()) };
+        if result == 0 {
+            Some(solution)
+        } else {
+            None
+        }
     }
-    
+
     pub fn verify(header: &[u8], solution: &[u8]) -> bool {
         unsafe { equihash_verify(header.as_ptr(), header.len(), solution.as_ptr()) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { equihash_benchmark(iterations) }
     }
@@ -361,27 +485,55 @@ mod equihash_ffi {
 #[cfg(feature = "native-progpow")]
 mod progpow_ffi {
     use super::*;
-    
+
     #[link(name = "progpow_zion")]
     extern "C" {
-        fn progpow_hash(header: *const u8, header_len: usize, nonce: u64, height: u32, output: *mut u8);
-        fn progpow_verify(header: *const u8, header_len: usize, nonce: u64, height: u32, target: *const u8) -> i32;
+        fn progpow_hash(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            output: *mut u8,
+        );
+        fn progpow_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            target: *const u8,
+        ) -> i32;
         fn progpow_benchmark(iterations: i32) -> f64;
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
         let mut output = [0u8; 32];
         unsafe {
-            progpow_hash(header.as_ptr(), header.len(), nonce, height, output.as_mut_ptr());
+            progpow_hash(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                output.as_mut_ptr(),
+            );
         }
         output
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, height: u32, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
-        unsafe { progpow_verify(header.as_ptr(), header.len(), nonce, height, target.as_ptr()) != 0 }
+        if target.len() != 32 {
+            return false;
+        }
+        unsafe {
+            progpow_verify(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                target.as_ptr(),
+            ) != 0
+        }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { progpow_benchmark(iterations) }
     }
@@ -394,14 +546,19 @@ mod progpow_ffi {
 #[cfg(feature = "native-argon2d")]
 mod argon2d_ffi {
     use super::*;
-    
+
     #[link(name = "argon2d_zion")]
     extern "C" {
         fn argon2d_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
-        fn argon2d_verify(header: *const u8, header_len: usize, nonce: u64, target: *const u8) -> i32;
+        fn argon2d_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
         fn argon2d_benchmark(iterations: i32) -> f64;
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
         let mut output = [0u8; 32];
         unsafe {
@@ -409,12 +566,14 @@ mod argon2d_ffi {
         }
         output
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
+        if target.len() != 32 {
+            return false;
+        }
         unsafe { argon2d_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { argon2d_benchmark(iterations) }
     }
@@ -427,15 +586,20 @@ mod argon2d_ffi {
 #[cfg(feature = "native-blake3")]
 mod blake3_ffi {
     use super::*;
-    
+
     #[link(name = "blake3_zion")]
     extern "C" {
         fn blake3_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         fn blake3_alph(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
-        fn blake3_verify(header: *const u8, header_len: usize, nonce: u64, target: *const u8) -> i32;
+        fn blake3_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
         fn blake3_benchmark(iterations: i32) -> f64;
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
         let mut output = [0u8; 32];
         unsafe {
@@ -443,7 +607,7 @@ mod blake3_ffi {
         }
         output
     }
-    
+
     /// Alephium-style double Blake3
     pub fn alph_hash(header: &[u8], nonce: u64) -> [u8; 32] {
         let mut output = [0u8; 32];
@@ -452,12 +616,14 @@ mod blake3_ffi {
         }
         output
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
+        if target.len() != 32 {
+            return false;
+        }
         unsafe { blake3_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { blake3_benchmark(iterations) }
     }
@@ -468,7 +634,12 @@ mod blake3_ffi {
 // ============================================================================
 
 /// Compute hash for any supported algorithm
-pub fn compute_hash(algo: NativeAlgorithm, header: &[u8], nonce: u64, height: u32) -> Result<Vec<u8>> {
+pub fn compute_hash(
+    algo: NativeAlgorithm,
+    header: &[u8],
+    nonce: u64,
+    height: u32,
+) -> Result<Vec<u8>> {
     match algo {
         // Cosmic Harmony v3 - use the canonical implementation (same as pool native lib)
         NativeAlgorithm::CosmicHarmony => {
@@ -479,14 +650,17 @@ pub fn compute_hash(algo: NativeAlgorithm, header: &[u8], nonce: u64, height: u3
             );
             Ok(h.data.to_vec())
         }
-        
+
         // RandomX - use zion-core's thread-local hasher
         NativeAlgorithm::RandomX => {
             let key_vec = {
-                let key = RANDOMX_KEY.read()
+                let key = RANDOMX_KEY
+                    .read()
                     .map_err(|e| anyhow!("RandomX key lock: {}", e))?;
                 if key.is_empty() {
-                    return Err(anyhow!("RandomX not initialized - call init_randomx() first"));
+                    return Err(anyhow!(
+                        "RandomX not initialized - call init_randomx() first"
+                    ));
                 }
                 key.clone()
             };
@@ -532,7 +706,7 @@ pub fn compute_hash(algo: NativeAlgorithm, header: &[u8], nonce: u64, height: u3
             let hash = zion_core::algorithms::verushash::verushash_v2_2_with_nonce(header, nonce);
             Ok(hash.to_vec())
         }
-        
+
         // Yescrypt - use zion-core implementation (scrypt-based)
         NativeAlgorithm::Yescrypt => {
             // Must match native pool share validator input construction:
@@ -548,41 +722,44 @@ pub fn compute_hash(algo: NativeAlgorithm, header: &[u8], nonce: u64, height: u3
             let hash = zion_core::algorithms::yescrypt::yescrypt_hash_mining(&data, nonce)?;
             Ok(hash.to_vec())
         }
-        
+
         #[cfg(feature = "native-ethash")]
         NativeAlgorithm::Ethash => Ok(ethash_ffi::hash(header, nonce, height).to_vec()),
-        
+
         #[cfg(feature = "native-kawpow")]
         NativeAlgorithm::KawPow => {
             let (hash, _mix) = kawpow_ffi::hash(header, nonce, height);
             Ok(hash.to_vec())
         }
-        
+
         #[cfg(feature = "native-kawpow-gpu")]
         NativeAlgorithm::KawPowGpu => {
             let (hash, _mix) = kawpow_gpu_ffi::hash(header, nonce, height);
             Ok(hash.to_vec())
         }
-        
+
         #[cfg(feature = "native-autolykos")]
         NativeAlgorithm::Autolykos => Ok(autolykos_ffi::hash(header, nonce, height).to_vec()),
-        
+
         #[cfg(feature = "native-kheavyhash")]
         NativeAlgorithm::KHeavyHash => Ok(kheavyhash_ffi::hash(header, nonce).to_vec()),
-        
+
         #[cfg(feature = "native-progpow")]
         NativeAlgorithm::ProgPow => Ok(progpow_ffi::hash(header, nonce, height).to_vec()),
-        
+
         #[cfg(feature = "native-argon2d")]
         NativeAlgorithm::Argon2d => Ok(argon2d_ffi::hash(header, nonce).to_vec()),
-        
+
         // Blake3 - use zion-core fallback implementation (fast, always available)
         NativeAlgorithm::Blake3 => {
             let hash = zion_core::algorithms::blake3::hash_with_nonce(header, nonce as u32);
             Ok(hash.to_vec())
         }
-        
-        _ => Err(anyhow!("Algorithm {:?} not compiled or not supported", algo)),
+
+        _ => Err(anyhow!(
+            "Algorithm {:?} not compiled or not supported",
+            algo
+        )),
     }
 }
 
@@ -598,7 +775,7 @@ fn cosmic_harmony_hash(data: &[u8], nonce: u32) -> [u8; 32] {
     // Create input with nonce
     let mut input = data.to_vec();
     input.extend_from_slice(&nonce.to_le_bytes());
-    
+
     // Initialize state with golden ratio
     let mut state = [0u64; 4];
     for (i, chunk) in input.chunks(8).enumerate() {
@@ -606,7 +783,7 @@ fn cosmic_harmony_hash(data: &[u8], nonce: u32) -> [u8; 32] {
         bytes[..chunk.len()].copy_from_slice(chunk);
         state[i % 4] ^= u64::from_le_bytes(bytes);
     }
-    
+
     // Apply golden ratio mixing
     for round in 0..8 {
         let phi_scaled = ((PHI * (round as f64 + 1.0)) * 1e15) as u64;
@@ -615,7 +792,7 @@ fn cosmic_harmony_hash(data: &[u8], nonce: u32) -> [u8; 32] {
         state[2] = state[2].wrapping_add(state[3]).rotate_left(31) ^ state[1];
         state[3] = state[3].wrapping_add(state[0]).rotate_left(37) ^ state[2];
     }
-    
+
     // Finalize
     let mut output = [0u8; 32];
     for (i, &s) in state.iter().enumerate() {
@@ -625,98 +802,104 @@ fn cosmic_harmony_hash(data: &[u8], nonce: u32) -> [u8; 32] {
 }
 
 /// Verify hash meets target
-pub fn verify_hash(algo: NativeAlgorithm, header: &[u8], nonce: u64, height: u32, target: &[u8]) -> bool {
+pub fn verify_hash(
+    algo: NativeAlgorithm,
+    _header: &[u8],
+    _nonce: u64,
+    _height: u32,
+    _target: &[u8],
+) -> bool {
     match algo {
         #[cfg(feature = "native-ethash")]
         NativeAlgorithm::Ethash => ethash_ffi::verify(header, nonce, height, target),
-        
+
         #[cfg(feature = "native-kawpow")]
         NativeAlgorithm::KawPow => {
             let (hash, mix) = kawpow_ffi::hash(header, nonce, height);
             kawpow_ffi::verify(header, nonce, height, &mix, target)
         }
-        
+
         #[cfg(feature = "native-kheavyhash")]
         NativeAlgorithm::KHeavyHash => kheavyhash_ffi::verify(header, nonce, target),
-        
+
         #[cfg(feature = "native-progpow")]
         NativeAlgorithm::ProgPow => progpow_ffi::verify(header, nonce, height, target),
-        
+
         #[cfg(feature = "native-argon2d")]
         NativeAlgorithm::Argon2d => argon2d_ffi::verify(header, nonce, target),
-        
+
         #[cfg(feature = "native-blake3")]
         NativeAlgorithm::Blake3 => blake3_ffi::verify(header, nonce, target),
-        
+
         _ => false,
     }
 }
 
 /// Run benchmark for algorithm
-pub fn benchmark(algo: NativeAlgorithm, iterations: i32) -> Result<f64> {
+pub fn benchmark(algo: NativeAlgorithm, _iterations: i32) -> Result<f64> {
     match algo {
         #[cfg(feature = "native-ethash")]
         NativeAlgorithm::Ethash => Ok(ethash_ffi::benchmark(iterations)),
-        
+
         #[cfg(feature = "native-kawpow")]
         NativeAlgorithm::KawPow => Ok(kawpow_ffi::benchmark(iterations)),
-        
+
         #[cfg(feature = "native-kawpow-gpu")]
         NativeAlgorithm::KawPowGpu => Ok(kawpow_gpu_ffi::benchmark(iterations)),
-        
+
         #[cfg(feature = "native-autolykos")]
         NativeAlgorithm::Autolykos => Ok(autolykos_ffi::benchmark(iterations)),
-        
+
         #[cfg(feature = "native-kheavyhash")]
         NativeAlgorithm::KHeavyHash => Ok(kheavyhash_ffi::benchmark(iterations)),
-        
+
         #[cfg(feature = "native-equihash")]
         NativeAlgorithm::Equihash => Ok(equihash_ffi::benchmark(iterations)),
-        
+
         #[cfg(feature = "native-progpow")]
         NativeAlgorithm::ProgPow => Ok(progpow_ffi::benchmark(iterations)),
-        
+
         #[cfg(feature = "native-argon2d")]
         NativeAlgorithm::Argon2d => Ok(argon2d_ffi::benchmark(iterations)),
-        
+
         #[cfg(feature = "native-blake3")]
         NativeAlgorithm::Blake3 => Ok(blake3_ffi::benchmark(iterations)),
-        
+
         _ => Err(anyhow!("Algorithm {:?} not compiled", algo)),
     }
 }
 
 /// List available native algorithms
 pub fn available_algorithms() -> Vec<NativeAlgorithm> {
-    let mut algos = Vec::new();
-    
+    let algos = Vec::new();
+
     #[cfg(feature = "native-ethash")]
     algos.push(NativeAlgorithm::Ethash);
-    
+
     #[cfg(feature = "native-kawpow")]
     algos.push(NativeAlgorithm::KawPow);
-    
+
     #[cfg(feature = "native-kawpow-gpu")]
     algos.push(NativeAlgorithm::KawPowGpu);
-    
+
     #[cfg(feature = "native-autolykos")]
     algos.push(NativeAlgorithm::Autolykos);
-    
+
     #[cfg(feature = "native-kheavyhash")]
     algos.push(NativeAlgorithm::KHeavyHash);
-    
+
     #[cfg(feature = "native-equihash")]
     algos.push(NativeAlgorithm::Equihash);
-    
+
     #[cfg(feature = "native-progpow")]
     algos.push(NativeAlgorithm::ProgPow);
-    
+
     #[cfg(feature = "native-argon2d")]
     algos.push(NativeAlgorithm::Argon2d);
-    
+
     #[cfg(feature = "native-blake3")]
     algos.push(NativeAlgorithm::Blake3);
-    
+
     algos
 }
 

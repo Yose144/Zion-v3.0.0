@@ -7,37 +7,41 @@
 //!   cargo build --features native-randomx    # Link RandomX
 //!   cargo build --features native-all        # Link all native libs
 
-
 // ============================================================================
 // RANDOMX FFI (only when native-randomx feature enabled)
 // ============================================================================
 
 #[cfg(feature = "native-randomx")]
 mod randomx_ffi {
+    use crate::algorithms::HashOutput;
     use std::ffi::{c_char, CString};
     use std::sync::Once;
-    use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         pub fn zion_randomx_init(key_hex: *const c_char, threads: i32) -> i32;
         pub fn zion_randomx_hash_bytes(input: *const u8, len: usize, output: *mut u8);
-        pub fn zion_randomx_hash_bytes_vm(vm_index: i32, input: *const u8, len: usize, output: *mut u8);
+        pub fn zion_randomx_hash_bytes_vm(
+            vm_index: i32,
+            input: *const u8,
+            len: usize,
+            output: *mut u8,
+        );
         pub fn zion_randomx_get_num_threads() -> i32;
         pub fn zion_randomx_check_difficulty(hash: *const u8, difficulty: i32) -> i32;
         pub fn zion_randomx_cleanup();
         pub fn zion_randomx_version() -> *const c_char;
     }
-    
+
     use std::sync::atomic::{AtomicBool, Ordering};
-    
+
     static INIT: Once = Once::new();
     // AUDIT-FIX C-10 (16 Feb 2026): Replaced `static mut bool` with AtomicBool
     // to eliminate data race on concurrent reads during init.
     static INITIALIZED: AtomicBool = AtomicBool::new(false);
-    
+
     pub fn init(pool_key: &str, threads: i32) -> anyhow::Result<bool> {
         let mut result = false;
-        
+
         INIT.call_once(|| {
             let key_hex = hex::encode(pool_key.as_bytes());
             if let Ok(key_cstr) = CString::new(key_hex) {
@@ -48,11 +52,14 @@ mod randomx_ffi {
                 }
             }
         });
-        
-        if INITIALIZED.load(Ordering::Acquire) { Ok(true) }
-        else { Err(anyhow::anyhow!("RandomX initialization failed")) }
+
+        if INITIALIZED.load(Ordering::Acquire) {
+            Ok(true)
+        } else {
+            Err(anyhow::anyhow!("RandomX initialization failed"))
+        }
     }
-    
+
     pub fn hash(input: &[u8]) -> anyhow::Result<HashOutput> {
         if !INITIALIZED.load(Ordering::Acquire) {
             return Err(anyhow::anyhow!("RandomX not initialized - call init first"));
@@ -60,10 +67,12 @@ mod randomx_ffi {
         unsafe {
             let mut output = [0u8; 32];
             zion_randomx_hash_bytes(input.as_ptr(), input.len(), output.as_mut_ptr());
-            Ok(HashOutput { hash: output.to_vec() })
+            Ok(HashOutput {
+                hash: output.to_vec(),
+            })
         }
     }
-    
+
     pub fn hash_vm(vm_index: i32, input: &[u8]) -> anyhow::Result<HashOutput> {
         if !INITIALIZED.load(Ordering::Acquire) {
             return Err(anyhow::anyhow!("RandomX not initialized"));
@@ -71,22 +80,29 @@ mod randomx_ffi {
         unsafe {
             let mut output = [0u8; 32];
             zion_randomx_hash_bytes_vm(vm_index, input.as_ptr(), input.len(), output.as_mut_ptr());
-            Ok(HashOutput { hash: output.to_vec() })
+            Ok(HashOutput {
+                hash: output.to_vec(),
+            })
         }
     }
-    
+
     pub fn threads() -> i32 {
         unsafe { zion_randomx_get_num_threads() }
     }
-    
+
     pub fn check_diff(hash: &[u8], difficulty: i32) -> bool {
-        if hash.len() != 32 { return false; }
+        if hash.len() != 32 {
+            return false;
+        }
         unsafe { zion_randomx_check_difficulty(hash.as_ptr(), difficulty) != 0 }
     }
 }
 
 #[cfg(feature = "native-randomx")]
-pub use randomx_ffi::{init as randomx_init, hash as randomx_hash, hash_vm as randomx_hash_vm, threads as randomx_threads, check_diff as randomx_check_diff};
+pub use randomx_ffi::{
+    check_diff as randomx_check_diff, hash as randomx_hash, hash_vm as randomx_hash_vm,
+    init as randomx_init, threads as randomx_threads,
+};
 
 // ============================================================================
 // YESCRYPT FFI (only when native-yescrypt feature enabled)
@@ -95,11 +111,11 @@ pub use randomx_ffi::{init as randomx_init, hash as randomx_hash, hash_vm as ran
 #[cfg(feature = "native-yescrypt")]
 mod yescrypt_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         pub fn zion_yescrypt_hash(input: *const u8, len: usize, output: *mut u8) -> i32;
     }
-    
+
     pub fn hash(input: &[u8]) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
         unsafe {
@@ -108,7 +124,9 @@ mod yescrypt_ffi {
                 return Err(anyhow::anyhow!("Yescrypt hash failed with code {}", ret));
             }
         }
-        Ok(HashOutput { hash: output.to_vec() })
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
 }
 
@@ -122,20 +140,25 @@ pub use yescrypt_ffi::hash as yescrypt_hash;
 #[cfg(feature = "native-cosmic-harmony")]
 mod cosmic_harmony_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         pub fn zion_cosmic_harmony_hash(input: *const u8, len: usize, output: *mut u8) -> i32;
     }
-    
+
     pub fn hash(input: &[u8]) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
         unsafe {
             let ret = zion_cosmic_harmony_hash(input.as_ptr(), input.len(), output.as_mut_ptr());
             if ret != 0 {
-                return Err(anyhow::anyhow!("Cosmic Harmony v2 hash failed with code {}", ret));
+                return Err(anyhow::anyhow!(
+                    "Cosmic Harmony v2 hash failed with code {}",
+                    ret
+                ));
             }
         }
-        Ok(HashOutput { hash: output.to_vec() })
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
 }
 
@@ -149,7 +172,7 @@ pub use cosmic_harmony_ffi::hash as cosmic_harmony_v2_hash;
 #[cfg(feature = "native-autolykos")]
 mod autolykos_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         /// Compute Autolykos v2 hash
         pub fn autolykos_hash(
@@ -157,22 +180,22 @@ mod autolykos_ffi {
             header_len: usize,
             nonce: u64,
             height: u32,
-            output: *mut u8
+            output: *mut u8,
         ) -> u64;
-        
+
         /// Verify Autolykos solution
         pub fn autolykos_verify(
             header: *const u8,
             header_len: usize,
             nonce: u64,
             height: u32,
-            target: u64
+            target: u64,
         ) -> i32;
-        
+
         /// Benchmark CPU performance
         pub fn autolykos_benchmark_cpu(iterations: i32) -> f64;
     }
-    
+
     pub fn hash(input: &[u8], nonce: u64, height: u32) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
         unsafe {
@@ -181,25 +204,27 @@ mod autolykos_ffi {
                 input.len(),
                 nonce,
                 height,
-                output.as_mut_ptr()
+                output.as_mut_ptr(),
             );
         }
-        Ok(HashOutput { hash: output.to_vec() })
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     pub fn verify(input: &[u8], nonce: u64, height: u32, target: u64) -> bool {
-        unsafe {
-            autolykos_verify(input.as_ptr(), input.len(), nonce, height, target) != 0
-        }
+        unsafe { autolykos_verify(input.as_ptr(), input.len(), nonce, height, target) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { autolykos_benchmark_cpu(iterations) }
     }
 }
 
 #[cfg(feature = "native-autolykos")]
-pub use autolykos_ffi::{hash as autolykos_hash, verify as autolykos_verify, benchmark as autolykos_benchmark};
+pub use autolykos_ffi::{
+    benchmark as autolykos_benchmark, hash as autolykos_hash, verify as autolykos_verify,
+};
 
 // ============================================================================
 // KAWPOW FFI (only when native-kawpow feature enabled) - RVN/CLORE CRITICAL
@@ -208,18 +233,18 @@ pub use autolykos_ffi::{hash as autolykos_hash, verify as autolykos_verify, benc
 #[cfg(feature = "native-kawpow")]
 mod kawpow_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         /// Compute KawPow hash
         pub fn kawpow_hash(
-            header: *const u8,       // 32-byte header hash
-            nonce: u64,              // 8-byte nonce
-            height: u32,             // Block height
-            epoch: u32,              // DAG epoch
-            mix_out: *mut u8,        // 32-byte mix hash output
-            hash_out: *mut u8        // 32-byte final hash output
+            header: *const u8, // 32-byte header hash
+            nonce: u64,        // 8-byte nonce
+            height: u32,       // Block height
+            epoch: u32,        // DAG epoch
+            mix_out: *mut u8,  // 32-byte mix hash output
+            hash_out: *mut u8, // 32-byte final hash output
         );
-        
+
         /// Verify KawPow solution
         pub fn kawpow_verify(
             header: *const u8,
@@ -227,28 +252,28 @@ mod kawpow_ffi {
             height: u32,
             epoch: u32,
             expected_mix: *const u8,
-            target: *const u8
+            target: *const u8,
         ) -> i32;
-        
+
         /// Get epoch for block height
         pub fn kawpow_get_epoch(height: u32) -> u32;
-        
+
         /// Benchmark CPU performance
         pub fn kawpow_benchmark_cpu(iterations: i32) -> f64;
-        
+
         /// Get version string
         pub fn kawpow_version() -> *const std::ffi::c_char;
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> anyhow::Result<(HashOutput, Vec<u8>)> {
         if header.len() != 32 {
             return Err(anyhow::anyhow!("KawPow requires 32-byte header hash"));
         }
-        
+
         let epoch = unsafe { kawpow_get_epoch(height) };
         let mut mix = [0u8; 32];
         let mut hash = [0u8; 32];
-        
+
         unsafe {
             kawpow_hash(
                 header.as_ptr(),
@@ -256,20 +281,31 @@ mod kawpow_ffi {
                 height,
                 epoch,
                 mix.as_mut_ptr(),
-                hash.as_mut_ptr()
+                hash.as_mut_ptr(),
             );
         }
-        
-        Ok((HashOutput { hash: hash.to_vec() }, mix.to_vec()))
+
+        Ok((
+            HashOutput {
+                hash: hash.to_vec(),
+            },
+            mix.to_vec(),
+        ))
     }
-    
-    pub fn verify(header: &[u8], nonce: u64, height: u32, expected_mix: &[u8], target: &[u8]) -> bool {
+
+    pub fn verify(
+        header: &[u8],
+        nonce: u64,
+        height: u32,
+        expected_mix: &[u8],
+        target: &[u8],
+    ) -> bool {
         if header.len() != 32 || expected_mix.len() != 32 || target.len() != 32 {
             return false;
         }
-        
+
         let epoch = unsafe { kawpow_get_epoch(height) };
-        
+
         unsafe {
             kawpow_verify(
                 header.as_ptr(),
@@ -277,28 +313,26 @@ mod kawpow_ffi {
                 height,
                 epoch,
                 expected_mix.as_ptr(),
-                target.as_ptr()
+                target.as_ptr(),
             ) != 0
         }
     }
-    
+
     pub fn get_epoch(height: u32) -> u32 {
         unsafe { kawpow_get_epoch(height) }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { kawpow_benchmark_cpu(iterations) }
     }
-    
+
     pub fn version() -> String {
         unsafe {
             let ptr = kawpow_version();
             if ptr.is_null() {
                 "Unknown".to_string()
             } else {
-                std::ffi::CStr::from_ptr(ptr)
-                    .to_string_lossy()
-                    .into_owned()
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
             }
         }
     }
@@ -306,11 +340,8 @@ mod kawpow_ffi {
 
 #[cfg(feature = "native-kawpow")]
 pub use kawpow_ffi::{
-    hash as kawpow_hash, 
-    verify as kawpow_verify, 
-    get_epoch as kawpow_get_epoch,
-    benchmark as kawpow_benchmark,
-    version as kawpow_version
+    benchmark as kawpow_benchmark, get_epoch as kawpow_get_epoch, hash as kawpow_hash,
+    verify as kawpow_verify, version as kawpow_version,
 };
 
 // ============================================================================
@@ -320,122 +351,130 @@ pub use kawpow_ffi::{
 #[cfg(feature = "native-kawpow-gpu")]
 mod kawpow_gpu_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         /// Initialize GPU context
         pub fn kawpow_gpu_init(device_id: i32, platform_id: i32) -> i32;
-        
+
         /// Shutdown GPU
         pub fn kawpow_gpu_shutdown();
-        
+
         /// Set epoch (regenerate DAG if needed)
         pub fn kawpow_gpu_set_epoch(epoch: u32) -> i32;
-        
+
         /// Compute KawPow hash on GPU
         pub fn kawpow_gpu_hash(
             header: *const u8,
             nonce: u64,
             height: u32,
             mix_out: *mut u8,
-            hash_out: *mut u8
+            hash_out: *mut u8,
         );
-        
+
         /// Benchmark GPU performance
         pub fn kawpow_gpu_benchmark(iterations: i32) -> f64;
-        
+
         /// Get current hashrate
         pub fn kawpow_gpu_get_hashrate() -> f64;
-        
+
         /// Get device name
         pub fn kawpow_gpu_get_device_name() -> *const std::ffi::c_char;
-        
+
         /// Get current epoch
         pub fn kawpow_gpu_get_epoch() -> u32;
-        
+
         /// Run test
         pub fn kawpow_gpu_test();
-        
+
         /// Get version
         pub fn kawpow_gpu_version() -> *const std::ffi::c_char;
     }
-    
+
     pub fn init(device_id: i32, platform_id: i32) -> anyhow::Result<()> {
         let result = unsafe { kawpow_gpu_init(device_id, platform_id) };
         if result == 0 {
             Ok(())
         } else {
-            Err(anyhow::anyhow!("KawPow GPU init failed with code {}", result))
+            Err(anyhow::anyhow!(
+                "KawPow GPU init failed with code {}",
+                result
+            ))
         }
     }
-    
+
     pub fn shutdown() {
         unsafe { kawpow_gpu_shutdown() }
     }
-    
+
     pub fn set_epoch(epoch: u32) -> anyhow::Result<()> {
         let result = unsafe { kawpow_gpu_set_epoch(epoch) };
         if result == 0 {
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Failed to set epoch {} (code {})", epoch, result))
+            Err(anyhow::anyhow!(
+                "Failed to set epoch {} (code {})",
+                epoch,
+                result
+            ))
         }
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> anyhow::Result<(HashOutput, Vec<u8>)> {
         if header.len() != 32 {
             return Err(anyhow::anyhow!("KawPow GPU requires 32-byte header"));
         }
-        
+
         let mut mix = [0u8; 32];
         let mut hash = [0u8; 32];
-        
+
         unsafe {
             kawpow_gpu_hash(
                 header.as_ptr(),
                 nonce,
                 height,
                 mix.as_mut_ptr(),
-                hash.as_mut_ptr()
+                hash.as_mut_ptr(),
             );
         }
-        
-        Ok((HashOutput { hash: hash.to_vec() }, mix.to_vec()))
+
+        Ok((
+            HashOutput {
+                hash: hash.to_vec(),
+            },
+            mix.to_vec(),
+        ))
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { kawpow_gpu_benchmark(iterations) }
     }
-    
+
     pub fn get_hashrate() -> f64 {
         unsafe { kawpow_gpu_get_hashrate() }
     }
-    
+
     pub fn get_device_name() -> String {
         unsafe {
             let ptr = kawpow_gpu_get_device_name();
             if ptr.is_null() {
                 "Unknown".to_string()
             } else {
-                std::ffi::CStr::from_ptr(ptr)
-                    .to_string_lossy()
-                    .into_owned()
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
             }
         }
     }
-    
+
     pub fn get_epoch() -> u32 {
         unsafe { kawpow_gpu_get_epoch() }
     }
-    
+
     pub fn version() -> String {
         unsafe {
             let ptr = kawpow_gpu_version();
             if ptr.is_null() {
                 "Unknown".to_string()
             } else {
-                std::ffi::CStr::from_ptr(ptr)
-                    .to_string_lossy()
-                    .into_owned()
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
             }
         }
     }
@@ -443,15 +482,10 @@ mod kawpow_gpu_ffi {
 
 #[cfg(feature = "native-kawpow-gpu")]
 pub use kawpow_gpu_ffi::{
-    init as kawpow_gpu_init,
-    shutdown as kawpow_gpu_shutdown,
-    set_epoch as kawpow_gpu_set_epoch,
-    hash as kawpow_gpu_hash,
-    benchmark as kawpow_gpu_benchmark,
-    get_hashrate as kawpow_gpu_get_hashrate,
-    get_device_name as kawpow_gpu_get_device_name,
-    get_epoch as kawpow_gpu_get_epoch,
-    version as kawpow_gpu_version
+    benchmark as kawpow_gpu_benchmark, get_device_name as kawpow_gpu_get_device_name,
+    get_epoch as kawpow_gpu_get_epoch, get_hashrate as kawpow_gpu_get_hashrate,
+    hash as kawpow_gpu_hash, init as kawpow_gpu_init, set_epoch as kawpow_gpu_set_epoch,
+    shutdown as kawpow_gpu_shutdown, version as kawpow_gpu_version,
 };
 
 // ============================================================================
@@ -521,18 +555,42 @@ pub const HAS_NATIVE_BLAKE3: bool = false;
 /// Check what native algorithms are available at compile time
 pub fn available_native_algorithms() -> Vec<&'static str> {
     let mut algos = Vec::new();
-    if HAS_NATIVE_RANDOMX { algos.push("randomx"); }
-    if HAS_NATIVE_YESCRYPT { algos.push("yescrypt"); }
-    if HAS_NATIVE_COSMIC_HARMONY { algos.push("cosmic_harmony_v2"); }
-    if HAS_NATIVE_AUTOLYKOS { algos.push("autolykos"); }
-    if HAS_NATIVE_KAWPOW { algos.push("kawpow"); }
-    if HAS_NATIVE_KAWPOW_GPU { algos.push("kawpow_gpu"); }
-    if HAS_NATIVE_ETHASH { algos.push("ethash"); }
-    if HAS_NATIVE_KHEAVYHASH { algos.push("kheavyhash"); }
-    if HAS_NATIVE_EQUIHASH { algos.push("equihash"); }
-    if HAS_NATIVE_PROGPOW { algos.push("progpow"); }
-    if HAS_NATIVE_ARGON2D { algos.push("argon2d"); }
-    if HAS_NATIVE_BLAKE3 { algos.push("blake3"); }
+    if HAS_NATIVE_RANDOMX {
+        algos.push("randomx");
+    }
+    if HAS_NATIVE_YESCRYPT {
+        algos.push("yescrypt");
+    }
+    if HAS_NATIVE_COSMIC_HARMONY {
+        algos.push("cosmic_harmony_v2");
+    }
+    if HAS_NATIVE_AUTOLYKOS {
+        algos.push("autolykos");
+    }
+    if HAS_NATIVE_KAWPOW {
+        algos.push("kawpow");
+    }
+    if HAS_NATIVE_KAWPOW_GPU {
+        algos.push("kawpow_gpu");
+    }
+    if HAS_NATIVE_ETHASH {
+        algos.push("ethash");
+    }
+    if HAS_NATIVE_KHEAVYHASH {
+        algos.push("kheavyhash");
+    }
+    if HAS_NATIVE_EQUIHASH {
+        algos.push("equihash");
+    }
+    if HAS_NATIVE_PROGPOW {
+        algos.push("progpow");
+    }
+    if HAS_NATIVE_ARGON2D {
+        algos.push("argon2d");
+    }
+    if HAS_NATIVE_BLAKE3 {
+        algos.push("blake3");
+    }
     algos
 }
 
@@ -543,7 +601,7 @@ pub fn available_native_algorithms() -> Vec<&'static str> {
 #[cfg(feature = "native-ethash")]
 mod ethash_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         pub fn ethash_init();
         pub fn ethash_hash(
@@ -551,24 +609,24 @@ mod ethash_ffi {
             header_len: usize,
             nonce: u64,
             height: u32,
-            output: *mut u8
+            output: *mut u8,
         );
         pub fn ethash_verify(
             header: *const u8,
             header_len: usize,
             nonce: u64,
             height: u32,
-            target: *const u8
+            target: *const u8,
         ) -> i32;
         pub fn ethash_get_epoch(block_number: u32) -> u32;
         pub fn ethash_benchmark(iterations: i32) -> f64;
         pub fn ethash_version() -> *const std::ffi::c_char;
     }
-    
+
     pub fn init() {
         unsafe { ethash_init() }
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
         unsafe {
@@ -577,46 +635,53 @@ mod ethash_ffi {
                 header.len(),
                 nonce,
                 height,
-                output.as_mut_ptr()
+                output.as_mut_ptr(),
             );
         }
-        Ok(HashOutput { hash: output.to_vec() })
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, height: u32, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
+        if target.len() != 32 {
+            return false;
+        }
         unsafe {
             ethash_verify(
                 header.as_ptr(),
                 header.len(),
                 nonce,
                 height,
-                target.as_ptr()
+                target.as_ptr(),
             ) != 0
         }
     }
-    
+
     pub fn get_epoch(block_number: u32) -> u32 {
         unsafe { ethash_get_epoch(block_number) }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { ethash_benchmark(iterations) }
     }
-    
+
     pub fn version() -> String {
         unsafe {
             let ptr = ethash_version();
-            if ptr.is_null() { "Unknown".to_string() }
-            else { std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned() }
+            if ptr.is_null() {
+                "Unknown".to_string()
+            } else {
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            }
         }
     }
 }
 
 #[cfg(feature = "native-ethash")]
 pub use ethash_ffi::{
-    init as ethash_init, hash as ethash_hash, verify as ethash_verify,
-    get_epoch as ethash_get_epoch, benchmark as ethash_benchmark, version as ethash_version
+    benchmark as ethash_benchmark, get_epoch as ethash_get_epoch, hash as ethash_hash,
+    init as ethash_init, verify as ethash_verify, version as ethash_version,
 };
 
 // ============================================================================
@@ -626,49 +691,67 @@ pub use ethash_ffi::{
 #[cfg(feature = "native-kheavyhash")]
 mod kheavyhash_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         pub fn kheavyhash_hash(input: *const u8, len: usize, output: *mut u8);
         pub fn kheavyhash_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
-        pub fn kheavyhash_verify(header: *const u8, header_len: usize, nonce: u64, target: *const u8) -> i32;
+        pub fn kheavyhash_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
         pub fn kheavyhash_benchmark(iterations: i32) -> f64;
         pub fn kheavyhash_version() -> *const std::ffi::c_char;
     }
-    
+
     pub fn hash(input: &[u8]) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
-        unsafe { kheavyhash_hash(input.as_ptr(), input.len(), output.as_mut_ptr()); }
-        Ok(HashOutput { hash: output.to_vec() })
+        unsafe {
+            kheavyhash_hash(input.as_ptr(), input.len(), output.as_mut_ptr());
+        }
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     pub fn mine(header: &[u8], nonce: u64) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
-        unsafe { kheavyhash_mine(header.as_ptr(), header.len(), nonce, output.as_mut_ptr()); }
-        Ok(HashOutput { hash: output.to_vec() })
+        unsafe {
+            kheavyhash_mine(header.as_ptr(), header.len(), nonce, output.as_mut_ptr());
+        }
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
+        if target.len() != 32 {
+            return false;
+        }
         unsafe { kheavyhash_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { kheavyhash_benchmark(iterations) }
     }
-    
+
     pub fn version() -> String {
         unsafe {
             let ptr = kheavyhash_version();
-            if ptr.is_null() { "Unknown".to_string() }
-            else { std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned() }
+            if ptr.is_null() {
+                "Unknown".to_string()
+            } else {
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            }
         }
     }
 }
 
 #[cfg(feature = "native-kheavyhash")]
 pub use kheavyhash_ffi::{
-    hash as kheavyhash_hash, mine as kheavyhash_mine, verify as kheavyhash_verify,
-    benchmark as kheavyhash_benchmark, version as kheavyhash_version
+    benchmark as kheavyhash_benchmark, hash as kheavyhash_hash, mine as kheavyhash_mine,
+    verify as kheavyhash_verify, version as kheavyhash_version,
 };
 
 // ============================================================================
@@ -678,56 +761,82 @@ pub use kheavyhash_ffi::{
 #[cfg(feature = "native-equihash")]
 mod equihash_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
-        pub fn equihash_solve(header: *const u8, header_len: usize, nonce: u64, solution: *mut u8) -> i32;
+        pub fn equihash_solve(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            solution: *mut u8,
+        ) -> i32;
         pub fn equihash_verify(header: *const u8, header_len: usize, solution: *const u8) -> i32;
-        pub fn equihash_mine(header: *const u8, header_len: usize, start_nonce: u64, target: *const u8, found_nonce: *mut u64, solution: *mut u8) -> i32;
+        pub fn equihash_mine(
+            header: *const u8,
+            header_len: usize,
+            start_nonce: u64,
+            target: *const u8,
+            found_nonce: *mut u64,
+            solution: *mut u8,
+        ) -> i32;
         pub fn equihash_benchmark(iterations: i32) -> f64;
         pub fn equihash_version() -> *const std::ffi::c_char;
     }
-    
+
     pub fn solve(header: &[u8], nonce: u64) -> anyhow::Result<Vec<u8>> {
         let mut solution = vec![0u8; 1344]; // Equihash(200,9) solution size
-        let result = unsafe { equihash_solve(header.as_ptr(), header.len(), nonce, solution.as_mut_ptr()) };
-        if result == 0 { Ok(solution) }
-        else { Err(anyhow::anyhow!("No solution found")) }
+        let result =
+            unsafe { equihash_solve(header.as_ptr(), header.len(), nonce, solution.as_mut_ptr()) };
+        if result == 0 {
+            Ok(solution)
+        } else {
+            Err(anyhow::anyhow!("No solution found"))
+        }
     }
-    
+
     pub fn verify(header: &[u8], solution: &[u8]) -> bool {
         unsafe { equihash_verify(header.as_ptr(), header.len(), solution.as_ptr()) != 0 }
     }
-    
+
     pub fn mine(header: &[u8], start_nonce: u64, target: &[u8]) -> anyhow::Result<(u64, Vec<u8>)> {
         let mut found_nonce = 0u64;
         let mut solution = vec![0u8; 1344];
         let result = unsafe {
             equihash_mine(
-                header.as_ptr(), header.len(), start_nonce,
-                target.as_ptr(), &mut found_nonce, solution.as_mut_ptr()
+                header.as_ptr(),
+                header.len(),
+                start_nonce,
+                target.as_ptr(),
+                &mut found_nonce,
+                solution.as_mut_ptr(),
             )
         };
-        if result == 0 { Ok((found_nonce, solution)) }
-        else { Err(anyhow::anyhow!("Mining failed")) }
+        if result == 0 {
+            Ok((found_nonce, solution))
+        } else {
+            Err(anyhow::anyhow!("Mining failed"))
+        }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { equihash_benchmark(iterations) }
     }
-    
+
     pub fn version() -> String {
         unsafe {
             let ptr = equihash_version();
-            if ptr.is_null() { "Unknown".to_string() }
-            else { std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned() }
+            if ptr.is_null() {
+                "Unknown".to_string()
+            } else {
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            }
         }
     }
 }
 
 #[cfg(feature = "native-equihash")]
 pub use equihash_ffi::{
-    solve as equihash_solve, verify as equihash_verify, mine as equihash_mine,
-    benchmark as equihash_benchmark, version as equihash_version
+    benchmark as equihash_benchmark, mine as equihash_mine, solve as equihash_solve,
+    verify as equihash_verify, version as equihash_version,
 };
 
 // ============================================================================
@@ -737,42 +846,77 @@ pub use equihash_ffi::{
 #[cfg(feature = "native-progpow")]
 mod progpow_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
-        pub fn progpow_hash(header: *const u8, header_len: usize, nonce: u64, height: u32, output: *mut u8);
-        pub fn progpow_verify(header: *const u8, header_len: usize, nonce: u64, height: u32, target: *const u8) -> i32;
+        pub fn progpow_hash(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            output: *mut u8,
+        );
+        pub fn progpow_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            target: *const u8,
+        ) -> i32;
         pub fn progpow_benchmark(iterations: i32) -> f64;
         pub fn progpow_version() -> *const std::ffi::c_char;
     }
-    
+
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
-        unsafe { progpow_hash(header.as_ptr(), header.len(), nonce, height, output.as_mut_ptr()); }
-        Ok(HashOutput { hash: output.to_vec() })
+        unsafe {
+            progpow_hash(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                output.as_mut_ptr(),
+            );
+        }
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, height: u32, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
-        unsafe { progpow_verify(header.as_ptr(), header.len(), nonce, height, target.as_ptr()) != 0 }
+        if target.len() != 32 {
+            return false;
+        }
+        unsafe {
+            progpow_verify(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                target.as_ptr(),
+            ) != 0
+        }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { progpow_benchmark(iterations) }
     }
-    
+
     pub fn version() -> String {
         unsafe {
             let ptr = progpow_version();
-            if ptr.is_null() { "Unknown".to_string() }
-            else { std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned() }
+            if ptr.is_null() {
+                "Unknown".to_string()
+            } else {
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            }
         }
     }
 }
 
 #[cfg(feature = "native-progpow")]
 pub use progpow_ffi::{
-    hash as progpow_hash, verify as progpow_verify,
-    benchmark as progpow_benchmark, version as progpow_version
+    benchmark as progpow_benchmark, hash as progpow_hash, verify as progpow_verify,
+    version as progpow_version,
 };
 
 // ============================================================================
@@ -782,62 +926,96 @@ pub use progpow_ffi::{
 #[cfg(feature = "native-argon2d")]
 mod argon2d_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         pub fn argon2d_hash(
-            password: *const u8, pwdlen: usize,
-            salt: *const u8, saltlen: usize,
-            t_cost: u32, m_cost: u32, parallelism: u32,
-            output: *mut u8, outlen: usize
+            password: *const u8,
+            pwdlen: usize,
+            salt: *const u8,
+            saltlen: usize,
+            t_cost: u32,
+            m_cost: u32,
+            parallelism: u32,
+            output: *mut u8,
+            outlen: usize,
         ) -> i32;
         pub fn argon2d_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
-        pub fn argon2d_verify(header: *const u8, header_len: usize, nonce: u64, target: *const u8) -> i32;
+        pub fn argon2d_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
         pub fn argon2d_benchmark(iterations: i32) -> f64;
         pub fn argon2d_version() -> *const std::ffi::c_char;
     }
-    
-    pub fn hash(password: &[u8], salt: &[u8], t_cost: u32, m_cost: u32, parallelism: u32, outlen: usize) -> anyhow::Result<Vec<u8>> {
+
+    pub fn hash(
+        password: &[u8],
+        salt: &[u8],
+        t_cost: u32,
+        m_cost: u32,
+        parallelism: u32,
+        outlen: usize,
+    ) -> anyhow::Result<Vec<u8>> {
         let mut output = vec![0u8; outlen];
         let result = unsafe {
             argon2d_hash(
-                password.as_ptr(), password.len(),
-                salt.as_ptr(), salt.len(),
-                t_cost, m_cost, parallelism,
-                output.as_mut_ptr(), outlen
+                password.as_ptr(),
+                password.len(),
+                salt.as_ptr(),
+                salt.len(),
+                t_cost,
+                m_cost,
+                parallelism,
+                output.as_mut_ptr(),
+                outlen,
             )
         };
-        if result == 0 { Ok(output) }
-        else { Err(anyhow::anyhow!("Argon2d hash failed with code {}", result)) }
+        if result == 0 {
+            Ok(output)
+        } else {
+            Err(anyhow::anyhow!("Argon2d hash failed with code {}", result))
+        }
     }
-    
+
     pub fn mine(header: &[u8], nonce: u64) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
-        unsafe { argon2d_mine(header.as_ptr(), header.len(), nonce, output.as_mut_ptr()); }
-        Ok(HashOutput { hash: output.to_vec() })
+        unsafe {
+            argon2d_mine(header.as_ptr(), header.len(), nonce, output.as_mut_ptr());
+        }
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
+        if target.len() != 32 {
+            return false;
+        }
         unsafe { argon2d_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { argon2d_benchmark(iterations) }
     }
-    
+
     pub fn version() -> String {
         unsafe {
             let ptr = argon2d_version();
-            if ptr.is_null() { "Unknown".to_string() }
-            else { std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned() }
+            if ptr.is_null() {
+                "Unknown".to_string()
+            } else {
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            }
         }
     }
 }
 
 #[cfg(feature = "native-argon2d")]
 pub use argon2d_ffi::{
-    hash as argon2d_hash, mine as argon2d_mine, verify as argon2d_verify,
-    benchmark as argon2d_benchmark, version as argon2d_version
+    benchmark as argon2d_benchmark, hash as argon2d_hash, mine as argon2d_mine,
+    verify as argon2d_verify, version as argon2d_version,
 };
 
 // ============================================================================
@@ -847,57 +1025,79 @@ pub use argon2d_ffi::{
 #[cfg(feature = "native-blake3")]
 mod blake3_ffi {
     use crate::algorithms::HashOutput;
-    
+
     extern "C" {
         pub fn blake3_hash(input: *const u8, len: usize, output: *mut u8);
         pub fn blake3_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         pub fn blake3_alph(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
-        pub fn blake3_verify(header: *const u8, header_len: usize, nonce: u64, target: *const u8) -> i32;
+        pub fn blake3_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
         pub fn blake3_benchmark(iterations: i32) -> f64;
         pub fn blake3_version() -> *const std::ffi::c_char;
     }
-    
+
     pub fn hash(input: &[u8]) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
-        unsafe { blake3_hash(input.as_ptr(), input.len(), output.as_mut_ptr()); }
-        Ok(HashOutput { hash: output.to_vec() })
+        unsafe {
+            blake3_hash(input.as_ptr(), input.len(), output.as_mut_ptr());
+        }
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     pub fn mine(header: &[u8], nonce: u64) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
-        unsafe { blake3_mine(header.as_ptr(), header.len(), nonce, output.as_mut_ptr()); }
-        Ok(HashOutput { hash: output.to_vec() })
+        unsafe {
+            blake3_mine(header.as_ptr(), header.len(), nonce, output.as_mut_ptr());
+        }
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     /// Alephium-style double Blake3
     pub fn alph(header: &[u8], nonce: u64) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
-        unsafe { blake3_alph(header.as_ptr(), header.len(), nonce, output.as_mut_ptr()); }
-        Ok(HashOutput { hash: output.to_vec() })
+        unsafe {
+            blake3_alph(header.as_ptr(), header.len(), nonce, output.as_mut_ptr());
+        }
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
-    
+
     pub fn verify(header: &[u8], nonce: u64, target: &[u8]) -> bool {
-        if target.len() != 32 { return false; }
+        if target.len() != 32 {
+            return false;
+        }
         unsafe { blake3_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) != 0 }
     }
-    
+
     pub fn benchmark(iterations: i32) -> f64 {
         unsafe { blake3_benchmark(iterations) }
     }
-    
+
     pub fn version() -> String {
         unsafe {
             let ptr = blake3_version();
-            if ptr.is_null() { "Unknown".to_string() }
-            else { std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned() }
+            if ptr.is_null() {
+                "Unknown".to_string()
+            } else {
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            }
         }
     }
 }
 
 #[cfg(feature = "native-blake3")]
 pub use blake3_ffi::{
-    hash as native_blake3_hash, mine as blake3_mine, alph as blake3_alph,
-    verify as blake3_verify, benchmark as blake3_benchmark, version as blake3_version
+    alph as blake3_alph, benchmark as blake3_benchmark, hash as native_blake3_hash,
+    mine as blake3_mine, verify as blake3_verify, version as blake3_version,
 };
 
 // ============================================================================
@@ -915,14 +1115,14 @@ mod cosmic_harmony_v3_ffi {
             header: *const u8,
             header_len: usize,
             nonce: u64,
-            output: *mut u8
+            output: *mut u8,
         ) -> i32;
 
         /// Compute CHv3 hash from raw input (no nonce appended)
         pub fn cosmic_harmony_v3_hash_raw(
             input: *const u8,
             input_len: usize,
-            output: *mut u8
+            output: *mut u8,
         ) -> i32;
 
         /// GPU device count
@@ -938,7 +1138,7 @@ mod cosmic_harmony_v3_ffi {
             nonce_start: u64,
             target: *const u8,
             found_nonce: *mut u64,
-            found_hash: *mut u8
+            found_hash: *mut u8,
         ) -> i32;
 
         /// Cleanup GPU resources
@@ -978,23 +1178,30 @@ mod cosmic_harmony_v3_ffi {
         if ret != 0 {
             return Err(anyhow::anyhow!("CHv3 hash failed with code {}", ret));
         }
-        Ok(HashOutput { hash: output.to_vec() })
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
 
     /// Hash raw input (no nonce)
     pub fn hash_raw(input: &[u8]) -> anyhow::Result<HashOutput> {
         let mut output = [0u8; 32];
-        let ret = unsafe {
-            cosmic_harmony_v3_hash_raw(input.as_ptr(), input.len(), output.as_mut_ptr())
-        };
+        let ret =
+            unsafe { cosmic_harmony_v3_hash_raw(input.as_ptr(), input.len(), output.as_mut_ptr()) };
         if ret != 0 {
             return Err(anyhow::anyhow!("CHv3 raw hash failed with code {}", ret));
         }
-        Ok(HashOutput { hash: output.to_vec() })
+        Ok(HashOutput {
+            hash: output.to_vec(),
+        })
     }
 
     /// GPU mine a batch
-    pub fn gpu_mine(header: &[u8], nonce_start: u64, target: &[u8]) -> anyhow::Result<Option<(u64, Vec<u8>)>> {
+    pub fn gpu_mine(
+        header: &[u8],
+        nonce_start: u64,
+        target: &[u8],
+    ) -> anyhow::Result<Option<(u64, Vec<u8>)>> {
         if target.len() != 32 {
             return Err(anyhow::anyhow!("Target must be 32 bytes"));
         }
@@ -1002,9 +1209,12 @@ mod cosmic_harmony_v3_ffi {
         let mut found_hash = [0u8; 32];
         let ret = unsafe {
             cosmic_harmony_v3_gpu_mine(
-                header.as_ptr(), header.len(),
-                nonce_start, target.as_ptr(),
-                &mut found_nonce, found_hash.as_mut_ptr()
+                header.as_ptr(),
+                header.len(),
+                nonce_start,
+                target.as_ptr(),
+                &mut found_nonce,
+                found_hash.as_mut_ptr(),
             )
         };
         match ret {
@@ -1030,15 +1240,20 @@ mod cosmic_harmony_v3_ffi {
 
     /// GPU cleanup
     pub fn gpu_cleanup() {
-        unsafe { cosmic_harmony_v3_gpu_cleanup(); }
+        unsafe {
+            cosmic_harmony_v3_gpu_cleanup();
+        }
     }
 
     /// Library info
     pub fn info() -> String {
         unsafe {
             let ptr = cosmic_harmony_v3_get_info();
-            if ptr.is_null() { "Unknown".to_string() }
-            else { std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned() }
+            if ptr.is_null() {
+                "Unknown".to_string()
+            } else {
+                std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            }
         }
     }
 
@@ -1050,8 +1265,7 @@ mod cosmic_harmony_v3_ffi {
 
 #[cfg(feature = "native-cosmic-harmony-v3")]
 pub use cosmic_harmony_v3_ffi::{
-    hash as chv3_hash, hash_raw as chv3_hash_raw,
-    gpu_mine as chv3_gpu_mine, gpu_init as chv3_gpu_init,
-    gpu_count as chv3_gpu_count, gpu_cleanup as chv3_gpu_cleanup,
-    info as chv3_info, benchmark as chv3_benchmark
+    benchmark as chv3_benchmark, gpu_cleanup as chv3_gpu_cleanup, gpu_count as chv3_gpu_count,
+    gpu_init as chv3_gpu_init, gpu_mine as chv3_gpu_mine, hash as chv3_hash,
+    hash_raw as chv3_hash_raw, info as chv3_info,
 };

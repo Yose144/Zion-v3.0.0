@@ -85,6 +85,12 @@ pub struct LeaderboardManager {
     leaderboards: Vec<Leaderboard>,
 }
 
+impl Default for LeaderboardManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LeaderboardManager {
     pub fn new() -> Self {
         let types = vec![
@@ -104,12 +110,16 @@ impl LeaderboardManager {
 
     /// Get a specific leaderboard
     pub fn get(&self, lb_type: LeaderboardType) -> Option<&Leaderboard> {
-        self.leaderboards.iter().find(|lb| lb.leaderboard_type == lb_type)
+        self.leaderboards
+            .iter()
+            .find(|lb| lb.leaderboard_type == lb_type)
     }
 
     /// Get a mutable leaderboard for updating
     pub fn get_mut(&mut self, lb_type: LeaderboardType) -> Option<&mut Leaderboard> {
-        self.leaderboards.iter_mut().find(|lb| lb.leaderboard_type == lb_type)
+        self.leaderboards
+            .iter_mut()
+            .find(|lb| lb.leaderboard_type == lb_type)
     }
 }
 
@@ -122,12 +132,20 @@ mod tests {
         let mut lb = Leaderboard::new(LeaderboardType::GlobalXp);
         let entries = vec![
             LeaderboardEntry {
-                rank: 0, address: "addr1".into(), display_name: None,
-                value: 5000, level: "Mental".into(), guild_name: None,
+                rank: 0,
+                address: "addr1".into(),
+                display_name: None,
+                value: 5000,
+                level: "Mental".into(),
+                guild_name: None,
             },
             LeaderboardEntry {
-                rank: 0, address: "addr2".into(), display_name: None,
-                value: 3000, level: "Emotional".into(), guild_name: None,
+                rank: 0,
+                address: "addr2".into(),
+                display_name: None,
+                value: 3000,
+                level: "Emotional".into(),
+                guild_name: None,
             },
         ];
         lb.update(entries);
@@ -138,12 +156,14 @@ mod tests {
     #[test]
     fn test_find_rank() {
         let mut lb = Leaderboard::new(LeaderboardType::GlobalXp);
-        let entries = vec![
-            LeaderboardEntry {
-                rank: 0, address: "alice".into(), display_name: None,
-                value: 100, level: "Physical".into(), guild_name: None,
-            },
-        ];
+        let entries = vec![LeaderboardEntry {
+            rank: 0,
+            address: "alice".into(),
+            display_name: None,
+            value: 100,
+            level: "Physical".into(),
+            guild_name: None,
+        }];
         lb.update(entries);
         assert_eq!(lb.find_rank("alice"), Some(1));
         assert_eq!(lb.find_rank("bob"), None);

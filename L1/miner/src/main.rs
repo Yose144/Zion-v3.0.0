@@ -1,24 +1,30 @@
 // Allow dead code for modules that contain future/planned features
 #![allow(dead_code)]
+// Suppress style lints for protocol/crypto code
+#![allow(
+    clippy::upper_case_acronyms,     // ETC/RVN/KAS/etc are standard coin tickers
+    clippy::too_many_arguments,      // protocol handlers need many params
+    clippy::should_implement_trait,  // Algorithm::from_str is not std::str::FromStr
+)]
 
-mod miner;
-mod stratum;
-mod consciousness;
-mod telemetry;
 mod config;
+mod consciousness;
+mod miner;
 mod ncl;
+mod stratum;
+mod telemetry;
 
 use clap::Parser;
 use colored::*;
-use log::{info, warn, error};
+use log::{error, info, warn};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::signal;
 
-use miner::MinerConfig;
+use miner::gpu::{auto_tune, print_benchmark_results, run_benchmark, AutoTuneConfig};
+use miner::python_fallback::{PythonFallbackConfig, PythonFallbackMiner, PythonMinerVariant};
 use miner::Algorithm;
-use miner::gpu::{auto_tune, run_benchmark, print_benchmark_results, AutoTuneConfig};
-use miner::python_fallback::{PythonFallbackMiner, PythonFallbackConfig, PythonMinerVariant};
+use miner::MinerConfig;
 use ncl::{NCLClient, NCLConfig, NpuType};
 
 #[derive(Parser, Debug)]
@@ -186,20 +192,81 @@ async fn main() -> anyhow::Result<()> {
     let algorithm = Algorithm::from_str(&cli.algorithm)
         .ok_or_else(|| anyhow::anyhow!("Invalid algorithm: {}", cli.algorithm))?;
 
-    println!("{} {}", " * ".bright_green().bold(), "ABOUT".bright_white().bold());
-    println!("{}  {} {}", "   ".bright_black(), "ZION".bright_cyan().bold(), "v2.9.6 TerraNova".white());
-    println!("{}  libs {}", "   ".bright_black(), "tokio/1.35  colored/2.1  clap/4.4".bright_black());
+    println!(
+        "{} {}",
+        " * ".bright_green().bold(),
+        "ABOUT".bright_white().bold()
+    );
+    println!(
+        "{}  {} {}",
+        "   ".bright_black(),
+        "ZION".bright_cyan().bold(),
+        "v2.9.6 TerraNova".white()
+    );
+    println!(
+        "{}  libs {}",
+        "   ".bright_black(),
+        "tokio/1.35  colored/2.1  clap/4.4".bright_black()
+    );
     println!();
-    println!("{} {}", " * ".bright_green().bold(), "COMMANDS".bright_white().bold());
-    println!("{}  {} - {} {}", "   ".bright_black(), "h".bright_magenta(), "hashrate".white(), "· show current speed".bright_black());
-    println!("{}  {} - {} {}", "   ".bright_black(), "p".bright_magenta(), "pause".white(), "· pause mining".bright_black());
-    println!("{}  {} - {} {}", "   ".bright_black(), "r".bright_magenta(), "resume".white(), "· resume mining".bright_black());
-    println!("{}  {} - {} {}", "   ".bright_black(), "s".bright_magenta(), "status".white(), "· full status panel".bright_black());
+    println!(
+        "{} {}",
+        " * ".bright_green().bold(),
+        "COMMANDS".bright_white().bold()
+    );
+    println!(
+        "{}  {} - {} {}",
+        "   ".bright_black(),
+        "h".bright_magenta(),
+        "hashrate".white(),
+        "· show current speed".bright_black()
+    );
+    println!(
+        "{}  {} - {} {}",
+        "   ".bright_black(),
+        "p".bright_magenta(),
+        "pause".white(),
+        "· pause mining".bright_black()
+    );
+    println!(
+        "{}  {} - {} {}",
+        "   ".bright_black(),
+        "r".bright_magenta(),
+        "resume".white(),
+        "· resume mining".bright_black()
+    );
+    println!(
+        "{}  {} - {} {}",
+        "   ".bright_black(),
+        "s".bright_magenta(),
+        "status".white(),
+        "· full status panel".bright_black()
+    );
     println!();
-    println!("{} {}", " * ".bright_green().bold(), "CONFIG".bright_white().bold());
-    println!("{}  {:<12} {}", "   ".bright_black(), "algorithm".bright_black(), algorithm.name().bright_cyan());
-    println!("{}  {:<12} {}", "   ".bright_black(), "pool".bright_black(), cli.pool.bright_white());
-    println!("{}  {:<12} {}...{}", "   ".bright_black(), "wallet".bright_black(), &cli.wallet[..8].bright_white(), &cli.wallet[cli.wallet.len().saturating_sub(6)..].bright_white());
+    println!(
+        "{} {}",
+        " * ".bright_green().bold(),
+        "CONFIG".bright_white().bold()
+    );
+    println!(
+        "{}  {:<12} {}",
+        "   ".bright_black(),
+        "algorithm".bright_black(),
+        algorithm.name().bright_cyan()
+    );
+    println!(
+        "{}  {:<12} {}",
+        "   ".bright_black(),
+        "pool".bright_black(),
+        cli.pool.bright_white()
+    );
+    println!(
+        "{}  {:<12} {}...{}",
+        "   ".bright_black(),
+        "wallet".bright_black(),
+        &cli.wallet[..8].bright_white(),
+        &cli.wallet[cli.wallet.len().saturating_sub(6)..].bright_white()
+    );
 
     // Determine thread count
     let threads = if cli.threads == 0 {
@@ -207,18 +274,30 @@ async fn main() -> anyhow::Result<()> {
     } else {
         cli.threads
     };
-    println!("{}  {:<12} {}", "   ".bright_black(), "threads".bright_black(), threads.to_string().bright_magenta().bold());
+    println!(
+        "{}  {:<12} {}",
+        "   ".bright_black(),
+        "threads".bright_black(),
+        threads.to_string().bright_magenta().bold()
+    );
 
     // Detect GPUs if enabled
     if cli.gpu {
         match miner::detect_gpus() {
             Ok(gpus) => {
                 if gpus.is_empty() {
-                    println!("{}  {:<12} {}", "   ".bright_black(), "gpu".bright_black(), "none detected".bright_red());
+                    println!(
+                        "{}  {:<12} {}",
+                        "   ".bright_black(),
+                        "gpu".bright_black(),
+                        "none detected".bright_red()
+                    );
                 } else {
                     for gpu in &gpus {
-                        println!("{}  {:<12} {} {} {} CUs {} MB",
-                            "   ".bright_black(), "gpu".bright_black(),
+                        println!(
+                            "{}  {:<12} {} {} {} CUs {} MB",
+                            "   ".bright_black(),
+                            "gpu".bright_black(),
                             gpu.name.bright_green().bold(),
                             format!("[{:?}]", gpu.platform).bright_black(),
                             gpu.compute_units.to_string().bright_cyan(),
@@ -228,7 +307,12 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
             Err(_e) => {
-                println!("{}  {:<12} {}", "   ".bright_black(), "gpu".bright_black(), "detection failed".bright_red());
+                println!(
+                    "{}  {:<12} {}",
+                    "   ".bright_black(),
+                    "gpu".bright_black(),
+                    "detection failed".bright_red()
+                );
             }
         }
     }
@@ -255,25 +339,50 @@ async fn main() -> anyhow::Result<()> {
 
     // Auto-detect GPU availability for CH3 Revenue stream routing
     let has_gpu = miner::detect_gpu_available();
-    
+
     if gpu_enabled {
-        println!("{}  {:<12} {}", "   ".bright_black(), "gpu-mode".bright_black(), "ENABLED".bright_green().bold());
+        println!(
+            "{}  {:<12} {}",
+            "   ".bright_black(),
+            "gpu-mode".bright_black(),
+            "ENABLED".bright_green().bold()
+        );
     } else if has_gpu {
-        println!("{}  {:<12} {}", "   ".bright_black(), "gpu-mode".bright_black(), "available (--gpu to enable)".bright_yellow());
+        println!(
+            "{}  {:<12} {}",
+            "   ".bright_black(),
+            "gpu-mode".bright_black(),
+            "available (--gpu to enable)".bright_yellow()
+        );
     } else {
-        println!("{}  {:<12} {} {}", "   ".bright_black(), "gpu-mode".bright_black(), "DISABLED".bright_red(), "→ revenue XMR/RandomX".bright_black());
+        println!(
+            "{}  {:<12} {} {}",
+            "   ".bright_black(),
+            "gpu-mode".bright_black(),
+            "DISABLED".bright_red(),
+            "→ revenue XMR/RandomX".bright_black()
+        );
     }
 
     // NCL (Neural Compute Layer) info
     let ncl_config = if cli.ncl {
         let npu = NpuType::detect();
-        println!("{}  {:<12} {} {} {:.1} TFLOPS",
-            "   ".bright_black(), "ncl".bright_black(),
+        println!(
+            "{}  {:<12} {} {} {:.1} TFLOPS",
+            "   ".bright_black(),
+            "ncl".bright_black(),
             "ENABLED".bright_green().bold(),
             format!("[{:?}]", npu).bright_black(),
             npu.estimated_tflops(),
         );
-        println!("{}  {:<12} {}%", "   ".bright_black(), "ncl-alloc".bright_black(), ((cli.ncl_allocation * 100.0) as u32).to_string().bright_cyan());
+        println!(
+            "{}  {:<12} {}%",
+            "   ".bright_black(),
+            "ncl-alloc".bright_black(),
+            ((cli.ncl_allocation * 100.0) as u32)
+                .to_string()
+                .bright_cyan()
+        );
         Some(NCLConfig {
             enabled: true,
             allocation: cli.ncl_allocation.clamp(0.0, 0.5),
@@ -281,7 +390,12 @@ async fn main() -> anyhow::Result<()> {
             min_task_interval_ms: 1000,
         })
     } else {
-        println!("{}  {:<12} {}", "   ".bright_black(), "ncl".bright_black(), "DISABLED".bright_red());
+        println!(
+            "{}  {:<12} {}",
+            "   ".bright_black(),
+            "ncl".bright_black(),
+            "DISABLED".bright_red()
+        );
         None
     };
 
@@ -292,7 +406,12 @@ async fn main() -> anyhow::Result<()> {
             .to_string_lossy()
             .into_owned()
     });
-    println!("{}  {:<12} {}", "   ".bright_black(), "worker".bright_black(), worker.bright_white().bold());
+    println!(
+        "{}  {:<12} {}",
+        "   ".bright_black(),
+        "worker".bright_black(),
+        worker.bright_white().bold()
+    );
 
     // Build miner config
     let config = MinerConfig {
@@ -303,14 +422,17 @@ async fn main() -> anyhow::Result<()> {
         difficulty: cli.difficulty,
         group_hint: cli.group.clone(),
         cpu_threads: threads,
-        gpu_enabled: gpu_enabled,
+        gpu_enabled,
         gpu_devices: parse_gpu_devices(cli.gpu_devices.as_deref()),
         stats_file: cli.stats_file.as_deref().map(PathBuf::from),
         stats_interval_secs: cli.stats_interval.max(1),
     };
 
     println!();
-    println!("{}", "─────────────────────────────────────────────────────────────────".bright_black());
+    println!(
+        "{}",
+        "─────────────────────────────────────────────────────────────────".bright_black()
+    );
     println!();
 
     // Handle benchmark/auto-tune mode
@@ -320,31 +442,52 @@ async fn main() -> anyhow::Result<()> {
 
     // Initialize NCL client if enabled
     let ncl_client = ncl_config.map(|cfg| Arc::new(NCLClient::new(cfg)));
-    
+
     if let Some(ref _ncl) = ncl_client {
         log::debug!("NCL Client initialized");
     }
 
     // Start external pool mining if configured
     if let Some(ref ext_coin_str) = cli.external_coin {
+        use crate::miner::external_pool::{ExternalMiner, ExternalPoolConfig};
         use crate::stratum::ethstratum::ExternalCoin;
-        use crate::miner::external_pool::{ExternalPoolConfig, ExternalMiner};
 
-        let ext_coin = ExternalCoin::from_str(ext_coin_str)
-            .ok_or_else(|| anyhow::anyhow!("Unknown external coin: {}. Use: etc, rvn, erg, kas", ext_coin_str))?;
+        let ext_coin = ExternalCoin::from_str(ext_coin_str).ok_or_else(|| {
+            anyhow::anyhow!(
+                "Unknown external coin: {}. Use: etc, rvn, erg, kas",
+                ext_coin_str
+            )
+        })?;
 
-        let ext_pool = cli.external_pool.clone()
+        let ext_pool = cli
+            .external_pool
+            .clone()
             .unwrap_or_else(|| ext_coin.default_pool_url().to_string());
 
-        let ext_wallet = cli.external_wallet.clone()
-            .unwrap_or_else(|| {
-                // Default BTC wallet
-                "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw".to_string()
-            });
+        let ext_wallet = cli.external_wallet.clone().unwrap_or_else(|| {
+            // Default BTC wallet
+            "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw".to_string()
+        });
 
-        println!("{}  {:<12} {} on {}", "   ".bright_black(), "external".bright_black(), ext_coin.name().bright_cyan(), ext_pool.bright_white());
-        println!("{}  {:<12} {}", "   ".bright_black(), "ext-wallet".bright_black(), ext_wallet.bright_white());
-        println!("{}  {:<12} {}%", "   ".bright_black(), "ext-power".bright_black(), cli.external_percent.to_string().bright_cyan());
+        println!(
+            "{}  {:<12} {} on {}",
+            "   ".bright_black(),
+            "external".bright_black(),
+            ext_coin.name().bright_cyan(),
+            ext_pool.bright_white()
+        );
+        println!(
+            "{}  {:<12} {}",
+            "   ".bright_black(),
+            "ext-wallet".bright_black(),
+            ext_wallet.bright_white()
+        );
+        println!(
+            "{}  {:<12} {}%",
+            "   ".bright_black(),
+            "ext-power".bright_black(),
+            cli.external_percent.to_string().bright_cyan()
+        );
 
         let ext_config = ExternalPoolConfig {
             coin: ext_coin,
@@ -352,7 +495,7 @@ async fn main() -> anyhow::Result<()> {
             wallet: ext_wallet,
             worker: worker.clone(),
             cpu_threads: 1,
-            gpu_enabled: gpu_enabled,
+            gpu_enabled,
             hashpower_percent: cli.external_percent,
         };
 
@@ -377,17 +520,23 @@ async fn main() -> anyhow::Result<()> {
                     PythonMinerVariant::Legacy
                 }
             }
-            other => PythonMinerVariant::from_str(other)
-                .unwrap_or_else(|| {
-                    warn!("Unknown Python fallback variant '{}', defaulting to 'chv3'", other);
-                    PythonMinerVariant::Chv3Gpu
-                }),
+            other => PythonMinerVariant::from_str(other).unwrap_or_else(|| {
+                warn!(
+                    "Unknown Python fallback variant '{}', defaulting to 'chv3'",
+                    other
+                );
+                PythonMinerVariant::Chv3Gpu
+            }),
         };
 
-        let py_stats_file = cli.stats_file.clone()
+        let py_stats_file = cli
+            .stats_file
+            .clone()
             .unwrap_or_else(|| "data/python_miner_stats.json".to_string());
 
-        let extra_args: Vec<String> = cli.python_args.as_deref()
+        let extra_args: Vec<String> = cli
+            .python_args
+            .as_deref()
             .map(|s| s.split(',').map(|a| a.trim().to_string()).collect())
             .unwrap_or_default();
 
@@ -468,9 +617,25 @@ async fn main() -> anyhow::Result<()> {
         });
         let xmr_threads = cli.xmr_threads.max(1);
 
-        println!("{}  {:<12} {}", "   ".bright_black(), "xmr-pool".bright_black(), xmr_pool.bright_cyan().bold());
-        println!("{}  {:<12} {}...{}", "   ".bright_black(), "xmr-wallet".bright_black(), &xmr_wallet[..8].bright_white(), &xmr_wallet[xmr_wallet.len().saturating_sub(6)..].bright_white());
-        println!("{}  {:<12} {}", "   ".bright_black(), "xmr-threads".bright_black(), xmr_threads.to_string().bright_magenta().bold());
+        println!(
+            "{}  {:<12} {}",
+            "   ".bright_black(),
+            "xmr-pool".bright_black(),
+            xmr_pool.bright_cyan().bold()
+        );
+        println!(
+            "{}  {:<12} {}...{}",
+            "   ".bright_black(),
+            "xmr-wallet".bright_black(),
+            &xmr_wallet[..8].bright_white(),
+            &xmr_wallet[xmr_wallet.len().saturating_sub(6)..].bright_white()
+        );
+        println!(
+            "{}  {:<12} {}",
+            "   ".bright_black(),
+            "xmr-threads".bright_black(),
+            xmr_threads.to_string().bright_magenta().bold()
+        );
         println!();
 
         let xmr_config = MinerConfig {
@@ -494,15 +659,22 @@ async fn main() -> anyhow::Result<()> {
                 error!("❌ XMR parallel miner failed: {}", e);
             }
         });
-        info!("⛏️  XMR parallel miner started ({} threads → {})", xmr_threads, xmr_pool);
+        info!(
+            "⛏️  XMR parallel miner started ({} threads → {})",
+            xmr_threads, xmr_pool
+        );
     }
 
-    let miner = Arc::new(miner::UniversalMiner::new_with_ncl(config, ncl_client.clone())?);
+    let miner = Arc::new(miner::UniversalMiner::new_with_ncl(
+        config,
+        ncl_client.clone(),
+    )?);
     // Handle Ctrl+C gracefully
     let miner_clone = Arc::clone(&miner);
     tokio::spawn(async move {
         signal::ctrl_c().await.ok();
-        println!("\n{} {} {}\n",
+        println!(
+            "\n{} {} {}\n",
             format!("[{}]", chrono::Utc::now().format("%H:%M:%S")).bright_black(),
             "signal".bright_yellow(),
             "Ctrl+C — shutting down...".bright_yellow().bold(),
@@ -514,7 +686,10 @@ async fn main() -> anyhow::Result<()> {
     // Run miner
     // If external mining is 100%, don't require main pool connection
     if cli.external_percent >= 100 && cli.external_coin.is_some() {
-        info!("⛏️  External-only mode ({}%) — main pool connection skipped", cli.external_percent);
+        info!(
+            "⛏️  External-only mode ({}%) — main pool connection skipped",
+            cli.external_percent
+        );
         info!("   Waiting for external mining to complete...");
         // Wait indefinitely — external mining runs in background tokio::spawn
         loop {
@@ -529,7 +704,7 @@ async fn main() -> anyhow::Result<()> {
 
 /// Run GPU benchmark or auto-tune mode
 async fn run_benchmark_mode(full_benchmark: bool, do_auto_tune: bool) -> anyhow::Result<()> {
-    use miner::gpu::{detect_gpus, create_miner};
+    use miner::gpu::{create_miner, detect_gpus};
 
     info!("🔧 GPU Benchmark/Auto-tune Mode");
 
@@ -542,7 +717,7 @@ async fn run_benchmark_mode(full_benchmark: bool, do_auto_tune: bool) -> anyhow:
 
     for gpu in &gpus {
         info!("Initializing GPU {}: {}", gpu.id, gpu.name);
-        
+
         let mut miner = create_miner(gpu)?;
         miner.init()?;
 
@@ -571,15 +746,56 @@ async fn run_benchmark_mode(full_benchmark: bool, do_auto_tune: bool) -> anyhow:
 
 fn print_banner() {
     println!();
-    println!("{}",   " ╔══════════════════════════════════════════════════════════════════╗".bright_cyan());
-    println!("{}{}{}" ," ║ ".bright_cyan(), "       ZION UNIVERSAL MINER  v2.9.6  TerraNova              ".bright_white().bold(), " ║".bright_cyan());
-    println!("{}{}{}" ," ║ ".bright_cyan(), "       Multi-Algorithm  ·  CPU + GPU + NCL AI               ".bright_black(), " ║".bright_cyan());
-    println!("{}",   " ╠══════════════════════════════════════════════════════════════════╣".bright_cyan());
-    println!("{}{}{}" ," ║ ".bright_cyan(), " Algorithms   cosmic_harmony · randomx · yescrypt · blake3   ".white(), " ║".bright_cyan());
-    println!("{}{}{}" ," ║ ".bright_cyan(), " GPU Accel    Metal (macOS) · CUDA · OpenCL                  ".white(), " ║".bright_cyan());
-    println!("{}{}{}" ," ║ ".bright_cyan(), " Revenue      ERG/RVN/KAS/ETC (GPU) · XMR (CPU)             ".white(), " ║".bright_cyan());
-    println!("{}{}{}" ," ║ ".bright_cyan(), " NCL Bonus    Neural Compute Layer — AI task rewards         ".white(), " ║".bright_cyan());
-    println!("{}",   " ╚══════════════════════════════════════════════════════════════════╝".bright_cyan());
+    println!(
+        "{}",
+        " ╔══════════════════════════════════════════════════════════════════╗".bright_cyan()
+    );
+    println!(
+        "{}{}{}",
+        " ║ ".bright_cyan(),
+        "       ZION UNIVERSAL MINER  v2.9.6  TerraNova              "
+            .bright_white()
+            .bold(),
+        " ║".bright_cyan()
+    );
+    println!(
+        "{}{}{}",
+        " ║ ".bright_cyan(),
+        "       Multi-Algorithm  ·  CPU + GPU + NCL AI               ".bright_black(),
+        " ║".bright_cyan()
+    );
+    println!(
+        "{}",
+        " ╠══════════════════════════════════════════════════════════════════╣".bright_cyan()
+    );
+    println!(
+        "{}{}{}",
+        " ║ ".bright_cyan(),
+        " Algorithms   cosmic_harmony · randomx · yescrypt · blake3   ".white(),
+        " ║".bright_cyan()
+    );
+    println!(
+        "{}{}{}",
+        " ║ ".bright_cyan(),
+        " GPU Accel    Metal (macOS) · CUDA · OpenCL                  ".white(),
+        " ║".bright_cyan()
+    );
+    println!(
+        "{}{}{}",
+        " ║ ".bright_cyan(),
+        " Revenue      ERG/RVN/KAS/ETC (GPU) · XMR (CPU)             ".white(),
+        " ║".bright_cyan()
+    );
+    println!(
+        "{}{}{}",
+        " ║ ".bright_cyan(),
+        " NCL Bonus    Neural Compute Layer — AI task rewards         ".white(),
+        " ║".bright_cyan()
+    );
+    println!(
+        "{}",
+        " ╚══════════════════════════════════════════════════════════════════╝".bright_cyan()
+    );
     println!();
 }
 
@@ -590,5 +806,5 @@ fn parse_gpu_devices(devices: Option<&str>) -> Vec<usize> {
                 .filter_map(|d| d.trim().parse::<usize>().ok())
                 .collect()
         })
-        .unwrap_or_else(Vec::new)
+        .unwrap_or_default()
 }

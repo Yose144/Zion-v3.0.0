@@ -10,4 +10,3 @@ pub fn to_hex(data: &[u8]) -> String {
     }
     s
 }
-

@@ -18,7 +18,6 @@
 ///   - Mining Operators Pool → renamed ZION OASIS + Winners Golden Egg/Xp
 ///
 /// Source: WP2.9.5 / MAINNET_CONSTITUTION.md (verified)
-
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
@@ -138,13 +137,11 @@ pub const INFRASTRUCTURE: &[(&str, &str, u64)] = &[
 /// Humanitarian Fund — 1,440,000,000 ZION (8.8% of premine)
 ///
 /// Children's Future Fund + humanitarian initiatives.
-pub const HUMANITARIAN: &[(&str, &str, u64)] = &[
-    (
-        "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
-        "Children Future Fund — Humanitarian DAO",
-        1_440_000_000_000_000, // 1.44B ZION
-    ),
-];
+pub const HUMANITARIAN: &[(&str, &str, u64)] = &[(
+    "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
+    "Children Future Fund — Humanitarian DAO",
+    1_440_000_000_000_000, // 1.44B ZION
+)];
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -219,7 +216,10 @@ pub fn validate_premine() -> Result<(), String> {
     // DAO Treasury: must total 4.0B
     let dao_total: u64 = DAO_TREASURY.iter().map(|x| x.2).sum();
     if dao_total != 4_000_000_000_000_000 {
-        return Err(format!("DAO Treasury total {} != 4.0B", dao_total / 1_000_000));
+        return Err(format!(
+            "DAO Treasury total {} != 4.0B",
+            dao_total / 1_000_000
+        ));
     }
     total += dao_total;
 
@@ -330,7 +330,8 @@ mod tests {
                 is_valid_zion1_address_format(&pa.address),
                 "Invalid premine address '{}' (purpose: {}). \
                  Must be 44 chars: zion1 + 39 lowercase alphanumeric",
-                pa.address, pa.purpose
+                pa.address,
+                pa.purpose
             );
         }
     }
@@ -343,7 +344,8 @@ mod tests {
             assert!(
                 seen.insert(&pa.address),
                 "Duplicate premine address: {} (purpose: {})",
-                pa.address, pa.purpose
+                pa.address,
+                pa.purpose
             );
         }
     }

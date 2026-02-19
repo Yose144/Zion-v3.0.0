@@ -1,1 +1,3 @@
-fn main() { println!("benchmark placeholder"); }
+fn main() {
+    println!("benchmark placeholder");
+}

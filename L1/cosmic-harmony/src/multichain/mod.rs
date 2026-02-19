@@ -12,20 +12,24 @@
 //!                                   ZION Cosmic Fusion
 //! ```
 
-pub mod job_receiver;
-pub mod work_dispatcher;
-pub mod multi_submitter;
+#[allow(dead_code, unused_imports, unused_variables)]
 pub mod algorithm_workers;
+#[allow(dead_code, unused_imports, unused_variables)]
+pub mod job_receiver;
+#[allow(dead_code, unused_imports, unused_variables)]
+pub mod multi_submitter;
+#[allow(dead_code, unused_imports, unused_variables)]
+pub mod work_dispatcher;
 
-pub use job_receiver::{ExternalJobReceiver, MiningJob, PoolConnection};
-pub use work_dispatcher::{WorkDispatcher, AllocationStrategy};
-pub use multi_submitter::{MultiChainSubmitter, SubmitResult};
 pub use algorithm_workers::{AlgorithmWorker, WorkerPool};
+pub use job_receiver::{ExternalJobReceiver, MiningJob, PoolConnection};
+pub use multi_submitter::{MultiChainSubmitter, SubmitResult};
+pub use work_dispatcher::{AllocationStrategy, WorkDispatcher};
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Serialize, Deserialize};
 
 /// Supported external chains for multi-chain mining
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -118,8 +122,8 @@ impl Default for MultiChainConfig {
             wallets: HashMap::new(),
             pool_overrides: HashMap::new(),
             allocations: HashMap::new(),
-            profit_switch_threshold: 10.0,  // 10% minimum improvement
-            switch_cooldown_secs: 300,       // 5 minutes
+            profit_switch_threshold: 10.0, // 10% minimum improvement
+            switch_cooldown_secs: 300,     // 5 minutes
         }
     }
 }
@@ -150,7 +154,7 @@ impl MultiChainEngine {
     /// Start multi-chain mining
     pub async fn start(&self) -> anyhow::Result<()> {
         use std::sync::atomic::Ordering;
-        
+
         if self.running.swap(true, Ordering::SeqCst) {
             return Err(anyhow::anyhow!("Already running"));
         }
@@ -159,12 +163,16 @@ impl MultiChainEngine {
 
         // Connect to all enabled pools
         for chain in &self.config.enabled_chains {
-            let (host, port) = self.config.pool_overrides
+            let (host, port) = self
+                .config
+                .pool_overrides
                 .get(chain)
                 .map(|(h, p)| (h.as_str(), *p))
                 .unwrap_or_else(|| chain.default_pool());
-            
-            let wallet = self.config.wallets
+
+            let wallet = self
+                .config
+                .wallets
                 .get(chain)
                 .cloned()
                 .unwrap_or_else(|| "YOUR_WALLET".to_string());
@@ -185,17 +193,20 @@ impl MultiChainEngine {
         let dispatcher = self.dispatcher.read().await;
         dispatcher.start().await?;
 
-        log::info!("✅ Multi-chain mining active on {} chains", self.config.enabled_chains.len());
-        
+        log::info!(
+            "✅ Multi-chain mining active on {} chains",
+            self.config.enabled_chains.len()
+        );
+
         Ok(())
     }
 
     /// Stop multi-chain mining
     pub async fn stop(&self) {
         use std::sync::atomic::Ordering;
-        
+
         self.running.store(false, Ordering::SeqCst);
-        
+
         // Stop workers
         let workers = self.workers.read().await;
         workers.stop_all().await;

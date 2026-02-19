@@ -611,7 +611,7 @@ function findRustMiner() {
       'zion-universal-miner-x64'
     ],
     linux: ['zion-universal-miner', 'zion-universal-miner-linux-x64'],
-    win32: ['zion-universal-miner.exe', 'zion-universal-miner-win-x64.exe', 'zion-universal-miner']
+    win32: ['zion-universal-miner.exe', 'zion-universal-miner-win-x64.exe', 'zion-miner.exe']
   };
 
   const names = namesByPlatform[process.platform] || [];
@@ -774,11 +774,11 @@ const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 // Default configuration
 const DEFAULT_CONFIG = {
   pool: {
-    host: '77.42.31.72',
+    host: '149.248.8.4',
     port: 3333
   },
   // ZION chain JSON-RPC endpoint (native core)
-  rpcUrl: 'http://77.42.31.72:8444/jsonrpc',
+  rpcUrl: 'http://149.248.8.4:8444/jsonrpc',
   // Mining algorithm — Mainnet Phase 1: Cosmic Harmony v3 only
   // Rust miner CLI accepts 'cosmic_harmony' which internally runs CH v3 engine
   algorithm: 'cosmic_harmony_v3',
@@ -797,7 +797,7 @@ const DEFAULT_CONFIG = {
   wallet: '',
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
-  gpu: false,
+  gpu: true,
   // GPU Revenue Mining (CH3 Dynamic GPU system)
   gpuRevenue: false, // Enable GPU revenue mining with profit switching
   gpuRevenueCoins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH'], // Supported GPU coins for profit switching
@@ -1189,6 +1189,10 @@ function detectGPU() {
 
 const TESTNET_SERVERS = [
   { id: 'helsinki', name: 'Helsinki', host: '77.42.31.72', flag: '🇫🇮', location: 'Finland' },
+  { id: 'losangeles', name: 'Los Angeles', host: '149.248.8.4', flag: '🇺🇸', location: 'Los Angeles, US' },
+  { id: 'sydney', name: 'Sydney', host: '108.61.184.118', flag: '🇦🇺', location: 'Sydney, AU' },
+  { id: 'delhi', name: 'Delhi', host: '139.84.170.133', flag: '🇮🇳', location: 'Delhi, IN' },
+  { id: 'santiago', name: 'Santiago', host: '64.176.13.76', flag: '🇨🇱', location: 'Santiago, CL' },
   { id: 'germany', name: 'Germany', host: '195.201.31.201', flag: '🇩🇪', location: 'Falkenstein, DE' }
 ];
 

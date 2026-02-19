@@ -1,10 +1,10 @@
-use tokio_postgres::{Client, NoTls, Error};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::future::Future;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
-use std::sync::Arc;
-use std::future::Future;
+use tokio_postgres::{Client, Error, NoTls};
 
 use crate::blockchain::ZionRPCClient;
 
@@ -40,24 +40,26 @@ impl PayoutScheduler {
         payout_interval: Duration,
     ) -> Result<Self, Error> {
         let (client, connection) = tokio_postgres::connect(db_url, NoTls).await?;
-        
+
         // Spawn connection handler
         tokio::spawn(async move {
             if let Err(e) = connection.await {
                 eprintln!("PostgreSQL connection error: {}", e);
             }
         });
-        
+
         Ok(Self {
             client,
             min_payout_amount,
             payout_interval,
         })
     }
-    
+
     /// Initialize database schema
     pub async fn init_schema(&self) -> Result<(), Error> {
-        self.client.batch_execute(r#"
+        self.client
+            .batch_execute(
+                r#"
             CREATE TABLE IF NOT EXISTS pending_payouts (
                 id BIGSERIAL PRIMARY KEY,
                 miner_address VARCHAR(256) NOT NULL,
@@ -83,11 +85,13 @@ impl PayoutScheduler {
             
             CREATE INDEX IF NOT EXISTS idx_completed_payouts_date 
             ON completed_payouts(paid_at DESC);
-        "#).await?;
-        
+        "#,
+            )
+            .await?;
+
         Ok(())
     }
-    
+
     /// Add or update pending payout
     pub async fn add_pending_payout(
         &self,
@@ -95,8 +99,9 @@ impl PayoutScheduler {
         amount: f64,
         shares_count: i64,
     ) -> Result<(), Error> {
-        self.client.execute(
-            r#"
+        self.client
+            .execute(
+                r#"
             INSERT INTO pending_payouts 
                 (miner_address, amount, shares_count)
             VALUES ($1, $2, $3)
@@ -105,116 +110,126 @@ impl PayoutScheduler {
                 amount = pending_payouts.amount + EXCLUDED.amount,
                 shares_count = pending_payouts.shares_count + EXCLUDED.shares_count
             "#,
-            &[&miner_address, &amount, &shares_count],
-        ).await?;
-        
+                &[&miner_address, &amount, &shares_count],
+            )
+            .await?;
+
         Ok(())
     }
-    
+
     /// Get all payouts ready to be paid
     pub async fn get_payouts_ready(&self) -> Result<Vec<PendingPayout>, Error> {
-        let rows = self.client.query(
-            r#"
+        let rows = self
+            .client
+            .query(
+                r#"
             SELECT id, miner_address, amount, shares_count, created_at
             FROM pending_payouts
             WHERE amount >= $1
             ORDER BY amount DESC
             "#,
-            &[&self.min_payout_amount],
-        ).await?;
-        
-        let payouts = rows.iter().map(|row| PendingPayout {
-            id: row.get(0),
-            miner_address: row.get(1),
-            amount: row.get(2),
-            shares_count: row.get(3),
-            created_at: row.get(4),
-        }).collect();
-        
+                &[&self.min_payout_amount],
+            )
+            .await?;
+
+        let payouts = rows
+            .iter()
+            .map(|row| PendingPayout {
+                id: row.get(0),
+                miner_address: row.get(1),
+                amount: row.get(2),
+                shares_count: row.get(3),
+                created_at: row.get(4),
+            })
+            .collect();
+
         Ok(payouts)
     }
-    
+
     /// Mark payout as completed
-    pub async fn mark_payout_completed(
-        &self,
-        payout_id: i64,
-        tx_hash: &str,
-    ) -> Result<(), Error> {
+    pub async fn mark_payout_completed(&self, payout_id: i64, tx_hash: &str) -> Result<(), Error> {
         // Move to completed_payouts
-        self.client.execute(
-            r#"
+        self.client
+            .execute(
+                r#"
             INSERT INTO completed_payouts (miner_address, amount, tx_hash)
             SELECT miner_address, amount, $2
             FROM pending_payouts
             WHERE id = $1
             "#,
-            &[&payout_id, &tx_hash],
-        ).await?;
-        
+                &[&payout_id, &tx_hash],
+            )
+            .await?;
+
         // Remove from pending
-        self.client.execute(
-            "DELETE FROM pending_payouts WHERE id = $1",
-            &[&payout_id],
-        ).await?;
-        
+        self.client
+            .execute("DELETE FROM pending_payouts WHERE id = $1", &[&payout_id])
+            .await?;
+
         Ok(())
     }
-    
+
     /// Get payout history for miner
     pub async fn get_miner_history(
         &self,
         miner_address: &str,
         limit: i64,
     ) -> Result<Vec<CompletedPayout>, Error> {
-        let rows = self.client.query(
-            r#"
+        let rows = self
+            .client
+            .query(
+                r#"
             SELECT id, miner_address, amount, tx_hash, paid_at
             FROM completed_payouts
             WHERE miner_address = $1
             ORDER BY paid_at DESC
             LIMIT $2
             "#,
-            &[&miner_address, &limit],
-        ).await?;
-        
-        let payouts = rows.iter().map(|row| CompletedPayout {
-            id: row.get(0),
-            miner_address: row.get(1),
-            amount: row.get(2),
-            tx_hash: row.get(3),
-            paid_at: row.get(4),
-        }).collect();
-        
+                &[&miner_address, &limit],
+            )
+            .await?;
+
+        let payouts = rows
+            .iter()
+            .map(|row| CompletedPayout {
+                id: row.get(0),
+                miner_address: row.get(1),
+                amount: row.get(2),
+                tx_hash: row.get(3),
+                paid_at: row.get(4),
+            })
+            .collect();
+
         Ok(payouts)
     }
-    
+
     /// Get total paid to miner
     pub async fn get_miner_total_paid(&self, miner_address: &str) -> Result<f64, Error> {
-        let row = self.client.query_one(
-            r#"
+        let row = self
+            .client
+            .query_one(
+                r#"
             SELECT COALESCE(SUM(amount), 0.0)
             FROM completed_payouts
             WHERE miner_address = $1
             "#,
-            &[&miner_address],
-        ).await?;
-        
+                &[&miner_address],
+            )
+            .await?;
+
         Ok(row.get(0))
     }
-    
+
     /// Start automatic payout processing loop
-    pub async fn start_auto_payout_loop<F>(
-        &self,
-        mut process_payout: F,
-    ) -> Result<(), Error>
+    pub async fn start_auto_payout_loop<F>(&self, mut process_payout: F) -> Result<(), Error>
     where
         F: FnMut(&PendingPayout) -> Result<String, Box<dyn std::error::Error + Send + Sync>>,
     {
         loop {
             sleep(self.payout_interval).await;
-            
+
             tracing::info!("🔄 Running automatic payout cycle...");
-            
+
             let payouts = match self.get_payouts_ready().await {
                 Ok(p) => p,
                 Err(e) => {
@@ -222,32 +237,30 @@ impl PayoutScheduler {
                     continue;
                 }
             };
-            
+
             tracing::info!("📤 Found {} payouts ready to process", payouts.len());
-            
+
             for payout in payouts {
                 tracing::info!(
                     "💰 Processing payout: {} -> {} ZION",
                     payout.miner_address,
                     payout.amount,
                 );
-                
+
                 match process_payout(&payout) {
-                    Ok(tx_hash) => {
-                        match self.mark_payout_completed(payout.id, &tx_hash).await {
-                            Ok(_) => {
-                                tracing::info!("✅ Payout completed: tx {}", tx_hash);
-                            }
-                            Err(e) => {
-                                tracing::error!("❌ Failed to mark payout completed: {}", e);
-                            }
+                    Ok(tx_hash) => match self.mark_payout_completed(payout.id, &tx_hash).await {
+                        Ok(_) => {
+                            tracing::info!("✅ Payout completed: tx {}", tx_hash);
                         }
-                    }
+                        Err(e) => {
+                            tracing::error!("❌ Failed to mark payout completed: {}", e);
+                        }
+                    },
                     Err(e) => {
                         tracing::error!("❌ Failed to process payout: {}", e);
                     }
                 }
-                
+
                 // Small delay between payouts
                 sleep(Duration::from_millis(500)).await;
             }
@@ -334,7 +347,7 @@ impl PayoutScheduler {
         .await
         .map_err(|e| anyhow::anyhow!(e))
     }
-    
+
     /// Simple monitoring loop that logs payouts but does not send transactions.
     ///
     /// For real payouts, prefer `PayoutManager` (Redis-based) or call
@@ -343,14 +356,19 @@ impl PayoutScheduler {
         println!("PayoutScheduler: Starting monitoring loop...");
         loop {
             sleep(self.payout_interval).await;
-            
+
             match self.get_payouts_ready().await {
                 Ok(payouts) if !payouts.is_empty() => {
-                    println!("PayoutScheduler: {} payouts ready (min: {} ZION)", 
-                        payouts.len(), self.min_payout_amount);
+                    println!(
+                        "PayoutScheduler: {} payouts ready (min: {} ZION)",
+                        payouts.len(),
+                        self.min_payout_amount
+                    );
                     for p in &payouts {
-                        println!("  - {} → {} ZION ({} shares)",
-                            p.miner_address, p.amount, p.shares_count);
+                        println!(
+                            "  - {} → {} ZION ({} shares)",
+                            p.miner_address, p.amount, p.shares_count
+                        );
                     }
                 }
                 Ok(_) => {
@@ -367,7 +385,7 @@ impl PayoutScheduler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     #[ignore] // Requires PostgreSQL
     async fn test_payout_scheduler() {
@@ -375,17 +393,18 @@ mod tests {
             "postgresql://zion:zion@localhost/zion_pool",
             0.1,
             Duration::from_secs(60),
-        ).await.unwrap();
-        
+        )
+        .await
+        .unwrap();
+
         scheduler.init_schema().await.unwrap();
-        
+
         // Add pending payout
-        scheduler.add_pending_payout(
-            "ZION_TEST_ADDRESS",
-            1.5,
-            100,
-        ).await.unwrap();
-        
+        scheduler
+            .add_pending_payout("ZION_TEST_ADDRESS", 1.5, 100)
+            .await
+            .unwrap();
+
         // Get payouts ready
         let payouts = scheduler.get_payouts_ready().await.unwrap();
         assert_eq!(payouts.len(), 1);

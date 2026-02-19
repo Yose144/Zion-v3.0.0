@@ -28,12 +28,12 @@
 //! auto-switches between CPU algorithms for maximum profitability.
 //! We manage its lifecycle (start/stop/restart) and parse its stdout for stats.
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use tokio::sync::Mutex;
-use tokio::process::{Child, Command};
+use std::sync::Arc;
 use tokio::io::AsyncBufReadExt;
-use tracing::{info, warn, error, debug};
+use tokio::process::{Child, Command};
+use tokio::sync::Mutex;
+use tracing::{debug, error, info, warn};
 
 use crate::revenue_proxy::RevenueProxyManager;
 
@@ -94,10 +94,7 @@ pub struct PoolExternalMiner {
 }
 
 impl PoolExternalMiner {
-    pub fn new(
-        config: ExternalMinerConfig,
-        revenue_proxy: Arc<RevenueProxyManager>,
-    ) -> Self {
+    pub fn new(config: ExternalMinerConfig, revenue_proxy: Arc<RevenueProxyManager>) -> Self {
         Self {
             config,
             revenue_proxy,
@@ -140,14 +137,16 @@ impl PoolExternalMiner {
 
         info!(
             "⛏️ Starting Pool External Miner (xmrig mode, threads={}, coins={:?})",
-            self.config.threads,
-            self.config.coins
+            self.config.threads, self.config.coins
         );
 
         // Check if xmrig is available
         let xmrig_available = self.check_xmrig().await;
         if !xmrig_available {
-            warn!("⚠️ xmrig not found at '{}' — attempting to install", self.config.xmrig_path);
+            warn!(
+                "⚠️ xmrig not found at '{}' — attempting to install",
+                self.config.xmrig_path
+            );
             self.install_xmrig().await;
         }
 
@@ -224,7 +223,10 @@ fi
                     info!("✅ xmrig installed successfully");
                 } else {
                     let stderr = String::from_utf8_lossy(&output.stderr);
-                    error!("❌ xmrig install failed: {}", stderr.chars().take(200).collect::<String>());
+                    error!(
+                        "❌ xmrig install failed: {}",
+                        stderr.chars().take(200).collect::<String>()
+                    );
                 }
             }
             Err(e) => error!("❌ Failed to run xmrig installer: {}", e),
@@ -236,27 +238,40 @@ fi
         // Stop any existing xmrig first
         self.stop_xmrig().await;
 
-        let xmrig_path = self.find_xmrig().await
+        let xmrig_path = self
+            .find_xmrig()
+            .await
             .ok_or_else(|| "xmrig binary not found".to_string())?;
 
         let threads_str = self.config.threads.to_string();
 
         info!(
             "🚀 Starting xmrig: coin={} algo={} pool={} wallet={} worker={} threads={}",
-            target.coin, target.algorithm, target.pool_url, target.wallet, target.worker, threads_str
+            target.coin,
+            target.algorithm,
+            target.pool_url,
+            target.wallet,
+            target.worker,
+            threads_str
         );
 
         // MoneroOcean auto-switches algos via mining.set_algo extension
         // Do NOT specify --algo or --coin — let the pool control algorithm selection
         // MoneroOcean format: --user XMR_WALLET --pass worker_name
         let mut child = Command::new(&xmrig_path)
-            .arg("--url").arg(&target.pool_url)
-            .arg("--user").arg(&target.wallet)
-            .arg("--pass").arg(&target.worker)
-            .arg("--threads").arg(&threads_str)
+            .arg("--url")
+            .arg(&target.pool_url)
+            .arg("--user")
+            .arg(&target.wallet)
+            .arg("--pass")
+            .arg(&target.worker)
+            .arg("--threads")
+            .arg(&threads_str)
             .arg("--no-color")
-            .arg("--print-time").arg("10")
-            .arg("--donate-level").arg("0")
+            .arg("--print-time")
+            .arg("10")
+            .arg("--donate-level")
+            .arg("0")
             .arg("--keepalive")
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -265,7 +280,10 @@ fi
             .map_err(|e| format!("Failed to spawn xmrig: {}", e))?;
 
         let pid = child.id().unwrap_or(0);
-        info!("✅ xmrig started (PID={}, coin={}, algo={})", pid, target.coin, target.algorithm);
+        info!(
+            "✅ xmrig started (PID={}, coin={}, algo={})",
+            pid, target.coin, target.algorithm
+        );
 
         // Take stdout for parsing before storing child
         let stdout = child.stdout.take();
@@ -321,7 +339,10 @@ fi
 
     /// Switch to a different coin (stop current xmrig, start new one)
     pub async fn switch_coin(&self, target: &MiningTarget) -> Result<(), String> {
-        info!("🔄 Switching mining to {} ({})", target.coin, target.algorithm);
+        info!(
+            "🔄 Switching mining to {} ({})",
+            target.coin, target.algorithm
+        );
         self.start_xmrig(target).await
     }
 
@@ -393,10 +414,7 @@ fi
 // ═══════════════════════════════════════════════════════════════
 
 /// Parse xmrig stdout stream and update stats
-async fn parse_xmrig_output(
-    stdout: tokio::process::ChildStdout,
-    stats: Arc<MinerStats>,
-) {
+async fn parse_xmrig_output(stdout: tokio::process::ChildStdout, stats: Arc<MinerStats>) {
     let reader = tokio::io::BufReader::new(stdout);
     let mut lines = reader.lines();
 
@@ -419,7 +437,8 @@ async fn parse_xmrig_output(
                 };
                 info!(
                     "📊 xmrig: {:.1} {} | accepted={} rejected={}",
-                    val, unit,
+                    val,
+                    unit,
                     stats.shares_accepted.load(Ordering::Relaxed),
                     stats.shares_rejected.load(Ordering::Relaxed),
                 );

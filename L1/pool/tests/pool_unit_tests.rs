@@ -45,20 +45,32 @@ mod config_tests {
             + streams.ncl.target_share
             + streams.dynamic_gpu.target_share;
         // Total should be <= 1.0 (100% of compute)
-        assert!(total <= 1.0 + 0.001, "Stream targets exceed 100%: {}", total);
+        assert!(
+            total <= 1.0 + 0.001,
+            "Stream targets exceed 100%: {}",
+            total
+        );
     }
 
     #[test]
     fn test_default_btc_wallet_has_bc1_prefix() {
         let wallet = default_btc_wallet();
-        assert!(wallet.starts_with("bc1"), "BTC wallet doesn't start with bc1: {}", wallet);
+        assert!(
+            wallet.starts_with("bc1"),
+            "BTC wallet doesn't start with bc1: {}",
+            wallet
+        );
     }
 
     #[test]
     fn test_default_xmr_wallet_is_long() {
         let wallet = default_xmr_wallet();
         // XMR addresses are 95 or 106 characters
-        assert!(wallet.len() >= 90, "XMR wallet too short: {} chars", wallet.len());
+        assert!(
+            wallet.len() >= 90,
+            "XMR wallet too short: {} chars",
+            wallet.len()
+        );
     }
 
     #[test]
@@ -75,7 +87,10 @@ mod config_tests {
         let dg = StreamDynamicGpuConfig::default();
         assert!(dg.enabled);
         assert!((dg.target_share - 0.20).abs() < 0.001);
-        assert!(!dg.pools.is_empty(), "Dynamic GPU should have default pools");
+        assert!(
+            !dg.pools.is_empty(),
+            "Dynamic GPU should have default pools"
+        );
     }
 
     #[test]
@@ -123,7 +138,11 @@ mod vardiff_tests {
         // Submit shares within window (30s < 60s retarget)
         for i in 0..5 {
             let result = st.on_share(start + Duration::from_secs(i * 3), true, 1000);
-            assert!(result.is_none(), "Should not retarget within window at {}s", i * 3);
+            assert!(
+                result.is_none(),
+                "Should not retarget within window at {}s",
+                i * 3
+            );
         }
     }
 
@@ -142,7 +161,10 @@ mod vardiff_tests {
         let t = start + Duration::from_secs(10);
         // 1 accepted share over 10s → avg 10s, target 10s, ratio ≈ 1.0 (within variance)
         let next = st.on_share(t, true, 1000);
-        assert!(next.is_none(), "Difficulty should not change when within variance");
+        assert!(
+            next.is_none(),
+            "Difficulty should not change when within variance"
+        );
     }
 
     #[test]
@@ -196,9 +218,9 @@ mod vardiff_tests {
 
 #[cfg(test)]
 mod reward_calculator_tests {
-    use zion_pool::blockchain::reward_calculator::*;
     use rust_decimal::Decimal;
     use rust_decimal_macros::dec;
+    use zion_pool::blockchain::reward_calculator::*;
 
     #[test]
     fn test_height_zero_reward() {
@@ -211,7 +233,10 @@ mod reward_calculator_tests {
         let calc = RewardCalculator::default();
         assert_eq!(calc.calculate_block_reward_at_height(1), dec!(5400.067));
         assert_eq!(calc.calculate_block_reward_at_height(1000), dec!(5400.067));
-        assert_eq!(calc.calculate_block_reward_at_height(BLOCKS_PER_DECADE), dec!(5400.067));
+        assert_eq!(
+            calc.calculate_block_reward_at_height(BLOCKS_PER_DECADE),
+            dec!(5400.067)
+        );
     }
 
     #[test]
@@ -221,7 +246,13 @@ mod reward_calculator_tests {
         for decade in 0..MAX_DECAY_DECADES {
             let height = decade * BLOCKS_PER_DECADE + 1;
             let reward = calc.calculate_block_reward_at_height(height);
-            assert!(reward < prev, "Decade {} reward {} >= prev {}", decade + 1, reward, prev);
+            assert!(
+                reward < prev,
+                "Decade {} reward {} >= prev {}",
+                decade + 1,
+                reward,
+                prev
+            );
             prev = reward;
         }
     }
@@ -230,9 +261,15 @@ mod reward_calculator_tests {
     fn test_tail_emission_after_max_decades() {
         let calc = RewardCalculator::default();
         let tail_height = MAX_DECAY_DECADES * BLOCKS_PER_DECADE + 1;
-        assert_eq!(calc.calculate_block_reward_at_height(tail_height), TAIL_REWARD);
+        assert_eq!(
+            calc.calculate_block_reward_at_height(tail_height),
+            TAIL_REWARD
+        );
         // Way beyond
-        assert_eq!(calc.calculate_block_reward_at_height(tail_height + 1_000_000), TAIL_REWARD);
+        assert_eq!(
+            calc.calculate_block_reward_at_height(tail_height + 1_000_000),
+            TAIL_REWARD
+        );
     }
 
     #[test]
@@ -251,18 +288,30 @@ mod reward_calculator_tests {
         let issobella: Decimal = breakdown.issobella_fund.parse().unwrap();
         let fee: Decimal = breakdown.pool_fee.parse().unwrap();
 
-        assert_eq!(total, miner + tithe + issobella + fee, "Breakdown must sum to total");
+        assert_eq!(
+            total,
+            miner + tithe + issobella + fee,
+            "Breakdown must sum to total"
+        );
 
         // 2% pool fee + 10% tithe + 5% issobella = 17% → miner = 83%
         let miner_pct = (miner / total) * dec!(100);
-        assert!((miner_pct - dec!(83)).abs() < dec!(0.1), "Miner should get 83%, got {}", miner_pct);
+        assert!(
+            (miner_pct - dec!(83)).abs() < dec!(0.1),
+            "Miner should get 83%, got {}",
+            miner_pct
+        );
     }
 
     #[test]
     fn test_breakdown_adds_up_all_decades() {
         let calc = RewardCalculator::default();
         for decade in 0..=MAX_DECAY_DECADES {
-            let height = if decade == 0 { 1 } else { decade * BLOCKS_PER_DECADE + 1 };
+            let height = if decade == 0 {
+                1
+            } else {
+                decade * BLOCKS_PER_DECADE + 1
+            };
             let breakdown = calc.calculate_reward_breakdown_at_height(height);
 
             let total: Decimal = breakdown.total_reward.parse().unwrap();
@@ -271,8 +320,13 @@ mod reward_calculator_tests {
             let issobella: Decimal = breakdown.issobella_fund.parse().unwrap();
             let fee: Decimal = breakdown.pool_fee.parse().unwrap();
 
-            assert_eq!(total, miner + tithe + issobella + fee,
-                "Breakdown doesn't add up at decade {} (height {})", decade, height);
+            assert_eq!(
+                total,
+                miner + tithe + issobella + fee,
+                "Breakdown doesn't add up at decade {} (height {})",
+                decade,
+                height
+            );
         }
     }
 
@@ -281,7 +335,11 @@ mod reward_calculator_tests {
         let calc = RewardCalculator::default();
         let payout_full = calc.calculate_pplns_payout(1000, 1000).unwrap();
         let payout_half = calc.calculate_pplns_payout(500, 1000).unwrap();
-        assert_eq!(payout_full, payout_half * dec!(2), "Full share should be 2x half share");
+        assert_eq!(
+            payout_full,
+            payout_half * dec!(2),
+            "Full share should be 2x half share"
+        );
     }
 
     #[test]
@@ -343,8 +401,12 @@ mod connection_tests {
     #[test]
     fn test_acceptance_rate_mixed() {
         let mut conn = Connection::new("s1".to_string(), test_addr());
-        for _ in 0..7 { conn.record_share(true); }
-        for _ in 0..3 { conn.record_share(false); }
+        for _ in 0..7 {
+            conn.record_share(true);
+        }
+        for _ in 0..3 {
+            conn.record_share(false);
+        }
         assert!((conn.acceptance_rate() - 0.7).abs() < 0.001);
     }
 
@@ -371,15 +433,26 @@ mod connection_tests {
 
         // Second detection should not override
         conn.detect_protocol("mining.subscribe");
-        assert_eq!(conn.protocol, Protocol::XMRig, "Protocol changed after first detection");
+        assert_eq!(
+            conn.protocol,
+            Protocol::XMRig,
+            "Protocol changed after first detection"
+        );
     }
 
     #[test]
     fn test_extranonce1_format() {
         let conn = Connection::new("session-abc".to_string(), test_addr());
-        assert_eq!(conn.extranonce1.len(), 8, "extranonce1 should be 8 hex chars");
-        assert!(conn.extranonce1.chars().all(|c| c.is_ascii_hexdigit()),
-            "extranonce1 must be hex: {}", conn.extranonce1);
+        assert_eq!(
+            conn.extranonce1.len(),
+            8,
+            "extranonce1 should be 8 hex chars"
+        );
+        assert!(
+            conn.extranonce1.chars().all(|c| c.is_ascii_hexdigit()),
+            "extranonce1 must be hex: {}",
+            conn.extranonce1
+        );
     }
 
     #[test]
@@ -454,7 +527,12 @@ mod connection_tests {
         for method in methods {
             let mut conn = Connection::new(format!("s-{}", method), test_addr());
             conn.detect_protocol(method);
-            assert_eq!(conn.protocol, Protocol::Stratum, "Method '{}' should be Stratum", method);
+            assert_eq!(
+                conn.protocol,
+                Protocol::Stratum,
+                "Method '{}' should be Stratum",
+                method
+            );
         }
     }
 
@@ -464,7 +542,12 @@ mod connection_tests {
         for method in methods {
             let mut conn = Connection::new(format!("s-{}", method), test_addr());
             conn.detect_protocol(method);
-            assert_eq!(conn.protocol, Protocol::XMRig, "Method '{}' should be XMRig", method);
+            assert_eq!(
+                conn.protocol,
+                Protocol::XMRig,
+                "Method '{}' should be XMRig",
+                method
+            );
         }
     }
 

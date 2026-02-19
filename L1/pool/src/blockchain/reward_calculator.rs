@@ -3,7 +3,6 @@
 /// Block reward: Decade Decay -20% / 10 years, tail 725 ZION
 /// Distribution: 89% miner, 5% humanitarian, 5% L5/L6 Issobella, 1% pool fee
 /// Additional funding: ZION Oasis (L4) revenue share (off-chain)
-
 use anyhow::Result;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -117,11 +116,7 @@ impl RewardCalculator {
     }
 
     /// Calculate PPLNS payout for a miner
-    pub fn calculate_pplns_payout(
-        &self,
-        miner_shares: u64,
-        total_shares: u64,
-    ) -> Result<Decimal> {
+    pub fn calculate_pplns_payout(&self, miner_shares: u64, total_shares: u64) -> Result<Decimal> {
         if total_shares == 0 {
             return Ok(Decimal::ZERO);
         }

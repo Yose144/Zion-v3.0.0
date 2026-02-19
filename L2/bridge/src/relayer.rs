@@ -85,7 +85,12 @@ impl Relayer {
             .evm_chains
             .iter()
             .find(|c| c.chain_id == lock.target_chain && c.enabled)
-            .ok_or_else(|| anyhow::anyhow!("Target chain '{}' not configured or disabled", lock.target_chain))?;
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Target chain '{}' not configured or disabled",
+                    lock.target_chain
+                )
+            })?;
 
         // Connect to EVM chain
         let provider = Provider::<Http>::try_from(&chain_config.rpc_url)?;
@@ -120,7 +125,7 @@ impl Relayer {
         );
 
         let tx = bridge.submit_lock_proof(
-            l1_tx_hash.into(),
+            l1_tx_hash,
             recipient,
             amount,
             U256::from(lock.l1_block_height),
@@ -134,8 +139,7 @@ impl Relayer {
             Some(r) => {
                 info!(
                     "   ✅ Lock proof submitted — EVM TX: {:?}, gas: {:?}",
-                    r.transaction_hash,
-                    r.gas_used,
+                    r.transaction_hash, r.gas_used,
                 );
             }
             None => {
@@ -173,7 +177,10 @@ impl Relayer {
             burn.l1_recipient,
         );
 
-        let l1_rpc_url = format!("{}/api/bridge/unlock", self.config.l1.rpc_url.trim_end_matches('/'));
+        let l1_rpc_url = format!(
+            "{}/api/bridge/unlock",
+            self.config.l1.rpc_url.trim_end_matches('/')
+        );
 
         let unlock_request = serde_json::json!({
             "recipient": burn.l1_recipient,
@@ -245,12 +252,8 @@ impl Relayer {
         let evm_burner: Address = burn.evm_burner.parse()?;
         let amount = U256::from_dec_str(&burn.amount_wzion)?;
 
-        let tx = bridge.confirm_burn_release(
-            burn_id.into(),
-            evm_burner,
-            amount,
-            burn.l1_recipient.clone(),
-        );
+        let tx =
+            bridge.confirm_burn_release(burn_id, evm_burner, amount, burn.l1_recipient.clone());
 
         let pending = tx.send().await?;
         let receipt = pending.await?;
@@ -259,8 +262,7 @@ impl Relayer {
             Some(r) => {
                 info!(
                     "   ✅ Burn release confirmed — EVM TX: {:?}, L1 TX: {}",
-                    r.transaction_hash,
-                    l1_tx_hash,
+                    r.transaction_hash, l1_tx_hash,
                 );
             }
             None => {

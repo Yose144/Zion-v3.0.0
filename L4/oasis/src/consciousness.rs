@@ -61,15 +61,25 @@ impl ConsciousnessLevel {
 
     /// Determine level from total XP
     pub fn from_xp(xp: u64) -> Self {
-        if xp >= 10_000_000 { Self::OnTheStar }
-        else if xp >= 2_000_000 { Self::Unity }
-        else if xp >= 500_000 { Self::Divine }
-        else if xp >= 150_000 { Self::Cosmic }
-        else if xp >= 50_000 { Self::Spiritual }
-        else if xp >= 15_000 { Self::Intuitional }
-        else if xp >= 5_000 { Self::Mental }
-        else if xp >= 1_000 { Self::Emotional }
-        else { Self::Physical }
+        if xp >= 10_000_000 {
+            Self::OnTheStar
+        } else if xp >= 2_000_000 {
+            Self::Unity
+        } else if xp >= 500_000 {
+            Self::Divine
+        } else if xp >= 150_000 {
+            Self::Cosmic
+        } else if xp >= 50_000 {
+            Self::Spiritual
+        } else if xp >= 15_000 {
+            Self::Intuitional
+        } else if xp >= 5_000 {
+            Self::Mental
+        } else if xp >= 1_000 {
+            Self::Emotional
+        } else {
+            Self::Physical
+        }
     }
 
     /// Human-readable name
@@ -105,9 +115,15 @@ impl ConsciousnessLevel {
     /// All levels in order
     pub fn all() -> &'static [ConsciousnessLevel] {
         &[
-            Self::Physical, Self::Emotional, Self::Mental,
-            Self::Intuitional, Self::Spiritual, Self::Cosmic,
-            Self::Divine, Self::Unity, Self::OnTheStar,
+            Self::Physical,
+            Self::Emotional,
+            Self::Mental,
+            Self::Intuitional,
+            Self::Spiritual,
+            Self::Cosmic,
+            Self::Divine,
+            Self::Unity,
+            Self::OnTheStar,
         ]
     }
 }
@@ -140,10 +156,22 @@ mod tests {
     #[test]
     fn test_from_xp() {
         assert_eq!(ConsciousnessLevel::from_xp(0), ConsciousnessLevel::Physical);
-        assert_eq!(ConsciousnessLevel::from_xp(1_000), ConsciousnessLevel::Emotional);
-        assert_eq!(ConsciousnessLevel::from_xp(4_999), ConsciousnessLevel::Emotional);
-        assert_eq!(ConsciousnessLevel::from_xp(5_000), ConsciousnessLevel::Mental);
-        assert_eq!(ConsciousnessLevel::from_xp(10_000_000), ConsciousnessLevel::OnTheStar);
+        assert_eq!(
+            ConsciousnessLevel::from_xp(1_000),
+            ConsciousnessLevel::Emotional
+        );
+        assert_eq!(
+            ConsciousnessLevel::from_xp(4_999),
+            ConsciousnessLevel::Emotional
+        );
+        assert_eq!(
+            ConsciousnessLevel::from_xp(5_000),
+            ConsciousnessLevel::Mental
+        );
+        assert_eq!(
+            ConsciousnessLevel::from_xp(10_000_000),
+            ConsciousnessLevel::OnTheStar
+        );
     }
 
     #[test]

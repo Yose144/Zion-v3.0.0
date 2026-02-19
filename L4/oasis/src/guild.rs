@@ -180,16 +180,30 @@ pub struct GuildRegistry {
     guilds: HashMap<String, Guild>,
 }
 
+impl Default for GuildRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GuildRegistry {
     pub fn new() -> Self {
-        Self { guilds: HashMap::new() }
+        Self {
+            guilds: HashMap::new(),
+        }
     }
 
-    pub fn create_guild(&mut self, id: String, name: String, founder: String) -> Result<(), GuildError> {
+    pub fn create_guild(
+        &mut self,
+        id: String,
+        name: String,
+        founder: String,
+    ) -> Result<(), GuildError> {
         if self.guilds.contains_key(&id) {
             return Err(GuildError::AlreadyMember); // guild ID exists
         }
-        self.guilds.insert(id.clone(), Guild::new(id, name, founder));
+        self.guilds
+            .insert(id.clone(), Guild::new(id, name, founder));
         Ok(())
     }
 

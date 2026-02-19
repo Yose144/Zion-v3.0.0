@@ -1,7 +1,6 @@
 /// Block Template Manager - Fetch and manage block templates from ZION Core
-/// 
+///
 /// Periodically fetches new block templates and notifies miners
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -35,20 +34,19 @@ impl BlockTemplate {
     /// Parse from RPC response
     pub fn from_rpc_response(value: &serde_json::Value) -> Result<Self> {
         Ok(Self {
-            version: value.get("version")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(1) as u32,
-            height: value.get("height")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0),
-            difficulty: value.get("difficulty")
+            version: value.get("version").and_then(|v| v.as_u64()).unwrap_or(1) as u32,
+            height: value.get("height").and_then(|v| v.as_u64()).unwrap_or(0),
+            difficulty: value
+                .get("difficulty")
                 .and_then(|v| v.as_u64())
                 .unwrap_or(10000),
-            prev_hash: value.get("prev_hash")
+            prev_hash: value
+                .get("prev_hash")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string(),
-            target: value.get("target")
+            target: value
+                .get("target")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string(),
@@ -60,14 +58,16 @@ impl BlockTemplate {
                 .get("target_u128")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string()),
-            reward_atomic: value.get("reward_atomic")
+            reward_atomic: value
+                .get("reward_atomic")
                 .and_then(|v| v.as_u64())
                 .unwrap_or(0),
             timestamp: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_secs(),
-            blob: value.get("blob")
+            blob: value
+                .get("blob")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string()),
         })
@@ -124,7 +124,7 @@ impl BlockTemplateManager {
 
         tokio::spawn(async move {
             let mut interval = time::interval(update_interval);
-            
+
             loop {
                 interval.tick().await;
 
@@ -132,9 +132,10 @@ impl BlockTemplateManager {
                     Ok(template) => {
                         let height = template.height;
                         let mut current = current_template.write().await;
-                        
+
                         // Check if template changed
-                        let changed = current.as_ref()
+                        let changed = current
+                            .as_ref()
                             .map(|t| t.height != height || t.prev_hash != template.prev_hash)
                             .unwrap_or(true);
 
@@ -181,12 +182,12 @@ impl BlockTemplateManager {
     /// Force update template immediately
     pub async fn force_update(&self) -> Result<BlockTemplate> {
         let template = Self::fetch_template(&self.rpc_client, &self.pool_wallet).await?;
-        
+
         let mut current = self.current_template.write().await;
         *current = Some(template.clone());
 
         metrics::set_template_height(template.height);
-        
+
         tracing::info!(
             "📋 Forced template update: height={}, difficulty={}",
             template.height,
@@ -199,7 +200,7 @@ impl BlockTemplateManager {
     /// Check if template is stale (older than 2x update interval)
     pub async fn is_stale(&self) -> bool {
         let template = self.current_template.read().await;
-        
+
         match template.as_ref() {
             None => true,
             Some(t) => {
@@ -207,7 +208,7 @@ impl BlockTemplateManager {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_secs();
-                
+
                 let age = now.saturating_sub(t.timestamp);
                 age > (self.update_interval.as_secs() * 2)
             }
@@ -216,12 +217,20 @@ impl BlockTemplateManager {
 
     /// Get current height
     pub async fn get_height(&self) -> Option<u64> {
-        self.current_template.read().await.as_ref().map(|t| t.height)
+        self.current_template
+            .read()
+            .await
+            .as_ref()
+            .map(|t| t.height)
     }
 
     /// Get current difficulty
     pub async fn get_difficulty(&self) -> Option<u64> {
-        self.current_template.read().await.as_ref().map(|t| t.difficulty)
+        self.current_template
+            .read()
+            .await
+            .as_ref()
+            .map(|t| t.difficulty)
     }
 }
 
@@ -241,7 +250,7 @@ mod tests {
         });
 
         let template = BlockTemplate::from_rpc_response(&json).unwrap();
-        
+
         assert_eq!(template.version, 1);
         assert_eq!(template.height, 12345);
         assert_eq!(template.difficulty, 100000);
@@ -269,7 +278,7 @@ mod tests {
 
         assert_eq!(manager.pool_wallet, "ZION_TEST_WALLET");
         assert_eq!(manager.update_interval, Duration::from_secs(5));
-        
+
         // Initially no template
         assert!(manager.get_template().await.is_none());
     }

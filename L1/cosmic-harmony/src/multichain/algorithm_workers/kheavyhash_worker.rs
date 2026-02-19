@@ -2,8 +2,8 @@
 //!
 //! Implements kHeavyHash algorithm (Blake3 + matrix multiplication).
 
-use super::{AlgorithmWorker, FoundShare};
-use crate::multichain::{ExternalChain, MiningJob, ChainStats};
+use super::AlgorithmWorker;
+use crate::multichain::{ChainStats, ExternalChain, MiningJob};
 use anyhow::Result;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
@@ -37,14 +37,14 @@ impl KHeavyHashWorker {
         // The actual matrix is a fixed constant in Kaspa
         // This is a simplified placeholder
         let mut matrix = [[0u8; MATRIX_SIZE]; MATRIX_SIZE];
-        
+
         // Fill with deterministic values
         for i in 0..MATRIX_SIZE {
             for j in 0..MATRIX_SIZE {
                 matrix[i][j] = ((i * 17 + j * 31) % 256) as u8;
             }
         }
-        
+
         matrix
     }
 
@@ -52,10 +52,10 @@ impl KHeavyHashWorker {
     fn kheavyhash(&self, header: &[u8]) -> [u8; 32] {
         // Step 1: Blake3 hash
         let blake_hash = self.blake3_hash(header);
-        
+
         // Step 2: Matrix multiplication
         let matrix_result = self.matrix_multiply(&blake_hash);
-        
+
         // Step 3: Final Blake3
         self.blake3_hash(&matrix_result)
     }
@@ -68,14 +68,14 @@ impl KHeavyHashWorker {
     /// Matrix multiplication step
     fn matrix_multiply(&self, input: &[u8; 32]) -> [u8; 64] {
         let mut output = [0u8; MATRIX_SIZE];
-        
+
         // Expand input to 64 bytes by padding
         let mut expanded = [0u8; MATRIX_SIZE];
         expanded[..32].copy_from_slice(input);
         for i in 32..64 {
             expanded[i] = input[i - 32] ^ input[63 - i];
         }
-        
+
         // Matrix × vector multiplication in GF(256)
         for i in 0..MATRIX_SIZE {
             let mut acc: u16 = 0;
@@ -84,7 +84,7 @@ impl KHeavyHashWorker {
             }
             output[i] = (acc & 0xFF) as u8;
         }
-        
+
         output
     }
 
@@ -93,7 +93,7 @@ impl KHeavyHashWorker {
         if target.len() < 32 {
             return false;
         }
-        
+
         // Compare big-endian
         for i in 0..32 {
             if hash[i] < target[i] {
@@ -125,10 +125,10 @@ impl AlgorithmWorker for KHeavyHashWorker {
 
     async fn init(&mut self) -> Result<()> {
         log::info!("ch3_kheavyhash_worker_init");
-        
+
         // Pre-compute matrix for GPU
         // In production, this would upload to GPU memory
-        
+
         Ok(())
     }
 
@@ -141,7 +141,8 @@ impl AlgorithmWorker for KHeavyHashWorker {
 
         log::debug!(
             "ch3_kheavyhash_mining job_id={} allocation={:.1}%",
-            job.job_id, allocation
+            job.job_id,
+            allocation
         );
 
         // GPU mining loop:
@@ -149,9 +150,9 @@ impl AlgorithmWorker for KHeavyHashWorker {
         // 2. Matrix multiplication
         // 3. Final Blake3
         // 4. Compare to target
-        
+
         // Kaspa has very fast block times (1s), so low latency is critical
-        
+
         Ok(())
     }
 

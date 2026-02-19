@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::path::Path;
-use tokio::sync::mpsc;
 use crate::p2p::messages::Message;
 use crate::p2p::persistence::{self, PersistedPeer};
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use std::path::Path;
+use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::mpsc;
 
 #[derive(Clone, Debug)]
 pub struct PeerInfo {
@@ -54,13 +54,18 @@ impl PeerManager {
     }
 
     /// P1-07: Register connection with direction tracking
-    pub fn register_connection_with_direction(&self, addr: SocketAddr, sender: mpsc::Sender<Message>, direction: PeerDirection) {
+    pub fn register_connection_with_direction(
+        &self,
+        addr: SocketAddr,
+        sender: mpsc::Sender<Message>,
+        direction: PeerDirection,
+    ) {
         let mut active = self.active_peers.lock().unwrap();
         active.insert(addr, sender);
         let mut dirs = self.peer_directions.lock().unwrap();
         dirs.insert(addr, direction);
     }
-    
+
     pub fn remove_peer(&self, addr: &SocketAddr) {
         let mut peers = self.known_peers.lock().unwrap();
         peers.remove(addr);
@@ -69,22 +74,22 @@ impl PeerManager {
         let mut dirs = self.peer_directions.lock().unwrap();
         dirs.remove(addr);
     }
-    
+
     pub async fn broadcast(&self, msg: Message) {
         // Clone senders to avoid holding lock while sending
         let senders: Vec<mpsc::Sender<Message>> = {
             let active = self.active_peers.lock().unwrap();
             active.values().cloned().collect()
         };
-        
+
         for tx in senders {
             // Check if capacity exists, otherwise drop (or block if critical?)
             // For P2P gossip, drop is usually acceptable if peer is slow.
-            let _ = tx.send(msg.clone()).await; 
+            let _ = tx.send(msg.clone()).await;
             // Note: Message needs to be Clone
         }
     }
-    
+
     pub fn get_peers(&self) -> Vec<PeerInfo> {
         let peers = self.known_peers.lock().unwrap();
         peers.values().cloned().collect()
@@ -148,7 +153,10 @@ impl PeerManager {
     /// P2-03: Get failure count for backoff calculation
     pub fn get_failures(&self, addr: &SocketAddr) -> u32 {
         let peers = self.known_peers.lock().unwrap();
-        peers.get(addr).map(|info| info.failed_attempts).unwrap_or(0)
+        peers
+            .get(addr)
+            .map(|info| info.failed_attempts)
+            .unwrap_or(0)
     }
 
     /// P2-03: Get last seen timestamp for backoff timing
@@ -166,11 +174,9 @@ impl PeerManager {
     pub async fn save_to_disk(&self, path: &Path) -> anyhow::Result<()> {
         let peers_to_save: Vec<PersistedPeer> = {
             let peers = self.known_peers.lock().unwrap();
-            peers.values()
-                .map(|info| persistence::to_persisted(info))
-                .collect()
+            peers.values().map(persistence::to_persisted).collect()
         };
-        
+
         persistence::save_peers(&peers_to_save, path).await?;
         println!("[P2P] Saved {} peers to {:?}", peers_to_save.len(), path);
         Ok(())
@@ -179,16 +185,20 @@ impl PeerManager {
     /// Load peers from disk on startup
     pub async fn load_from_disk(&self, path: &Path) -> anyhow::Result<Vec<String>> {
         let persisted = persistence::load_peers(path).await?;
-        
+
         if persisted.is_empty() {
             println!("[P2P] No saved peers found");
             return Ok(Vec::new());
         }
-        
+
         // Get best peers (low failures, recent)
         let best = persistence::get_best_peers(&persisted, 10);
-        println!("[P2P] Loaded {} peers from disk, using {} best", persisted.len(), best.len());
-        
+        println!(
+            "[P2P] Loaded {} peers from disk, using {} best",
+            persisted.len(),
+            best.len()
+        );
+
         Ok(best)
     }
 
@@ -197,13 +207,17 @@ impl PeerManager {
     /// Count how many inbound connections are active.
     pub fn inbound_count(&self) -> usize {
         let dirs = self.peer_directions.lock().unwrap();
-        dirs.values().filter(|d| **d == PeerDirection::Inbound).count()
+        dirs.values()
+            .filter(|d| **d == PeerDirection::Inbound)
+            .count()
     }
 
     /// Count how many outbound connections are active.
     pub fn outbound_count(&self) -> usize {
         let dirs = self.peer_directions.lock().unwrap();
-        dirs.values().filter(|d| **d == PeerDirection::Outbound).count()
+        dirs.values()
+            .filter(|d| **d == PeerDirection::Outbound)
+            .count()
     }
 
     /// P1-07: Check if an inbound connection can be accepted.

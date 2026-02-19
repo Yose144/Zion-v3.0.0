@@ -1,6 +1,6 @@
 //! Algorithm implementations
 
-use sha3::{Sha3_512, Keccak256, Digest};
+use sha3::{Digest, Keccak256, Sha3_512};
 
 /// Hash output from an algorithm
 pub struct HashOutput {
@@ -16,7 +16,9 @@ pub fn keccak256(input: &[u8]) -> anyhow::Result<HashOutput> {
     let mut hasher = Keccak256::new();
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result.to_vec() })
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 /// SHA3-512 (Step 2: Stellar Harmony)
@@ -24,7 +26,9 @@ pub fn sha3_512(input: &[u8]) -> anyhow::Result<HashOutput> {
     let mut hasher = Sha3_512::new();
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result.to_vec() })
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 /// Golden Matrix Transform (Step 3: φ = 1.618 transform)
@@ -34,7 +38,9 @@ pub fn sha3_512(input: &[u8]) -> anyhow::Result<HashOutput> {
 /// results on different platforms/compilers due to floating-point rounding.
 pub fn golden_matrix(input: &[u8]) -> anyhow::Result<HashOutput> {
     let opt_result = crate::algorithms_opt::golden_matrix_opt(input);
-    Ok(HashOutput { hash: opt_result.data.to_vec() })
+    Ok(HashOutput {
+        hash: opt_result.data.to_vec(),
+    })
 }
 
 /// Cosmic Fusion (Step 4: Final ZION hash)
@@ -44,7 +50,9 @@ pub fn golden_matrix(input: &[u8]) -> anyhow::Result<HashOutput> {
 /// golden-ratio byte derivation.
 pub fn cosmic_fusion(input: &[u8]) -> anyhow::Result<HashOutput> {
     let opt_result = crate::algorithms_opt::cosmic_fusion_opt(input);
-    Ok(HashOutput { hash: opt_result.data.to_vec() })
+    Ok(HashOutput {
+        hash: opt_result.data.to_vec(),
+    })
 }
 
 /// Memory-hard scratchpad transform (Step 4: ASIC resistance layer)
@@ -59,7 +67,9 @@ pub fn memory_hard_scratchpad(input: &[u8]) -> anyhow::Result<HashOutput> {
     let mut seed = [0u8; 64];
     seed.copy_from_slice(&input[..64]);
     let out = crate::scratchpad::memory_hard_transform(&seed);
-    Ok(HashOutput { hash: out.data.to_vec() })
+    Ok(HashOutput {
+        hash: out.data.to_vec(),
+    })
 }
 
 // ============================================================================
@@ -67,7 +77,7 @@ pub fn memory_hard_scratchpad(input: &[u8]) -> anyhow::Result<HashOutput> {
 // ============================================================================
 
 /// Autolykos2 (Ergo) - memory-hard
-/// 
+///
 /// Uses native libautolykos_zion when compiled with `native-autolykos` feature.
 #[cfg(feature = "native-autolykos")]
 pub fn autolykos2(input: &[u8]) -> anyhow::Result<HashOutput> {
@@ -82,11 +92,13 @@ pub fn autolykos2(input: &[u8]) -> anyhow::Result<HashOutput> {
     hasher.update(b"autolykos2");
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result.to_vec() })
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 /// KawPow (Ravencoin/CLORE) - ProgPow variant
-/// 
+///
 /// When native-kawpow feature is enabled: Uses high-performance C library
 /// Otherwise: Returns error (KawPow requires native implementation for valid shares)
 #[cfg(feature = "native-kawpow")]
@@ -108,7 +120,9 @@ pub fn kawpow_simple(input: &[u8]) -> anyhow::Result<HashOutput> {
     hasher.update(b"kawpow");
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result.to_vec() })
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 /// Verify KawPow solution
@@ -118,7 +132,13 @@ pub fn kawpow_verify(header: &[u8], nonce: u64, height: u32, mix: &[u8], target:
 }
 
 #[cfg(not(feature = "native-kawpow"))]
-pub fn kawpow_verify(_header: &[u8], _nonce: u64, _height: u32, _mix: &[u8], _target: &[u8]) -> bool {
+pub fn kawpow_verify(
+    _header: &[u8],
+    _nonce: u64,
+    _height: u32,
+    _mix: &[u8],
+    _target: &[u8],
+) -> bool {
     tracing::error!("KawPow verify requires native library!");
     false
 }
@@ -131,22 +151,22 @@ pub fn kawpow_epoch(height: u32) -> u32 {
 
 #[cfg(not(feature = "native-kawpow"))]
 pub fn kawpow_epoch(height: u32) -> u32 {
-    height / 7500  // KAWPOW_EPOCH_LENGTH
+    height / 7500 // KAWPOW_EPOCH_LENGTH
 }
 
 /// kHeavyHash (Kaspa) - Using tiny-keccak when algo-kheavyhash feature enabled
-/// 
+///
 /// kHeavyHash = SHA3-256(SHA3-256(input) XOR HeavyHash_Matrix)
 #[cfg(feature = "algo-kheavyhash")]
 pub fn kheavyhash(input: &[u8]) -> anyhow::Result<HashOutput> {
     use tiny_keccak::{Hasher, Keccak};
-    
+
     // First SHA3-256
     let mut keccak = Keccak::v256();
     keccak.update(input);
     let mut first_hash = [0u8; 32];
     keccak.finalize(&mut first_hash);
-    
+
     // HeavyHash matrix multiplication (simplified - real impl uses 64x64 matrix)
     // For now, use the standard Kaspa heavy matrix approach
     let mut matrix_result = [0u8; 32];
@@ -159,20 +179,22 @@ pub fn kheavyhash(input: &[u8]) -> anyhow::Result<HashOutput> {
         }
         matrix_result[i] = (acc >> 24) as u8;
     }
-    
+
     // XOR with first hash
     let mut xored = [0u8; 32];
     for i in 0..32 {
         xored[i] = first_hash[i] ^ matrix_result[i];
     }
-    
+
     // Final SHA3-256
     let mut keccak2 = Keccak::v256();
     keccak2.update(&xored);
     let mut final_hash = [0u8; 32];
     keccak2.finalize(&mut final_hash);
-    
-    Ok(HashOutput { hash: final_hash.to_vec() })
+
+    Ok(HashOutput {
+        hash: final_hash.to_vec(),
+    })
 }
 
 #[cfg(not(feature = "algo-kheavyhash"))]
@@ -182,33 +204,39 @@ pub fn kheavyhash(input: &[u8]) -> anyhow::Result<HashOutput> {
     hasher.update(b"kheavyhash");
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result.to_vec() })
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 /// Blake3 (Alephium) - ✅ NATIVE via blake3 crate
 pub fn blake3_hash(input: &[u8]) -> anyhow::Result<HashOutput> {
     let hash = blake3::hash(input);
-    Ok(HashOutput { hash: hash.as_bytes().to_vec() })
+    Ok(HashOutput {
+        hash: hash.as_bytes().to_vec(),
+    })
 }
 
 /// Ethash (Ethereum Classic) - Using ethash crate when algo-ethash feature enabled
 #[cfg(feature = "algo-ethash")]
 pub fn ethash(input: &[u8]) -> anyhow::Result<HashOutput> {
     use ethash::LightDAG;
-    
+
     // For light client mode, we use seed hash computation
     // Full Ethash requires DAG which is memory-intensive
     let seed_hash = ethash::get_seedhash(0); // epoch 0
-    
+
     // Combine input with seed for basic hashing
     let mut combined = seed_hash.to_vec();
     combined.extend_from_slice(input);
-    
+
     let mut hasher = Keccak256::new();
     hasher.update(&combined);
     let result = hasher.finalize();
-    
-    Ok(HashOutput { hash: result.to_vec() })
+
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 #[cfg(not(feature = "algo-ethash"))]
@@ -218,7 +246,9 @@ pub fn ethash(input: &[u8]) -> anyhow::Result<HashOutput> {
     hasher.update(b"ethash");
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result.to_vec() })
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 /// Equihash (Zcash) - Using equihash crate when algo-equihash feature enabled
@@ -230,13 +260,15 @@ pub fn equihash(input: &[u8]) -> anyhow::Result<HashOutput> {
     hasher.update(b"equihash_200_9");
     hasher.update(input);
     let intermediate = hasher.finalize();
-    
+
     // Blake2b-256 final (Zcash style)
     let mut hasher2 = Keccak256::new();
     hasher2.update(&intermediate);
     let result = hasher2.finalize();
-    
-    Ok(HashOutput { hash: result.to_vec() })
+
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 #[cfg(not(feature = "algo-equihash"))]
@@ -246,41 +278,45 @@ pub fn equihash(input: &[u8]) -> anyhow::Result<HashOutput> {
     hasher.update(b"equihash");
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result.to_vec() })
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 /// ProgPow - Memory-hard, ASIC-resistant algorithm
-/// 
+///
 /// Used by VEIL, Sero, and other privacy coins
 /// This is a simplified CPU version - full ProgPow requires DAG like Ethash
 pub fn progpow(input: &[u8]) -> anyhow::Result<HashOutput> {
     // ProgPow is Ethash-derived with programmable random sequences
     // For CPU mining, we implement a simplified version
-    
+
     // Step 1: Keccak-f[1600] based mixing
     let mut state = [0u8; 200]; // 1600 bits = 200 bytes
     let copy_len = input.len().min(state.len());
     state[..copy_len].copy_from_slice(&input[..copy_len]);
-    
+
     // Step 2: Apply ProgPow rounds (simplified)
     for round in 0u8..64 {
         let mut hasher = Keccak256::new();
-        hasher.update(&state);
-        hasher.update(&[round]);
+        hasher.update(state);
+        hasher.update([round]);
         let round_hash = hasher.finalize();
-        
+
         // Mix into state
         for i in 0..32 {
             state[i * 6 % 200] ^= round_hash[i];
         }
     }
-    
+
     // Step 3: Final hash
     let mut hasher = Keccak256::new();
-    hasher.update(&state);
+    hasher.update(state);
     let result = hasher.finalize();
-    
-    Ok(HashOutput { hash: result.to_vec() })
+
+    Ok(HashOutput {
+        hash: result.to_vec(),
+    })
 }
 
 // ============================================================================
@@ -288,7 +324,7 @@ pub fn progpow(input: &[u8]) -> anyhow::Result<HashOutput> {
 // ============================================================================
 
 /// RandomX (Monero) - CPU optimized
-/// 
+///
 /// Uses native librandomx_zion library when compiled with `native-randomx` feature.
 #[cfg(feature = "native-randomx")]
 pub fn randomx(input: &[u8]) -> anyhow::Result<HashOutput> {
@@ -302,11 +338,13 @@ pub fn randomx(input: &[u8]) -> anyhow::Result<HashOutput> {
     hasher.update(b"randomx");
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result[..32].to_vec() })
+    Ok(HashOutput {
+        hash: result[..32].to_vec(),
+    })
 }
 
 /// Yescrypt (Litecoin) - Memory-hard CPU algorithm
-/// 
+///
 /// Uses native libyescrypt_zion library when compiled with `native-yescrypt` feature.
 #[cfg(feature = "native-yescrypt")]
 pub fn yescrypt(input: &[u8]) -> anyhow::Result<HashOutput> {
@@ -315,43 +353,51 @@ pub fn yescrypt(input: &[u8]) -> anyhow::Result<HashOutput> {
 
 #[cfg(not(feature = "native-yescrypt"))]
 pub fn yescrypt(input: &[u8]) -> anyhow::Result<HashOutput> {
-    tracing::warn!("Yescrypt using STUB - compile with --features native-yescrypt for real hashing!");
+    tracing::warn!(
+        "Yescrypt using STUB - compile with --features native-yescrypt for real hashing!"
+    );
     let mut hasher = Sha3_512::new();
     hasher.update(b"yescrypt");
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result[..32].to_vec() })
+    Ok(HashOutput {
+        hash: result[..32].to_vec(),
+    })
 }
 
 /// Argon2d - Using argon2 crate when algo-argon2 feature enabled
-/// 
+///
 /// Used by Dynamic (DYN), GRIN, and other coins
 #[cfg(feature = "algo-argon2")]
 pub fn argon2d(input: &[u8]) -> anyhow::Result<HashOutput> {
-    use argon2::{Argon2, Algorithm, Version, Params};
-    
+    use argon2::{Algorithm, Argon2, Params, Version};
+
     // Argon2d parameters (typical for cryptocurrencies)
     let params = Params::new(
-        1024,       // m_cost (1 MB)
-        1,          // t_cost (iterations)
-        1,          // p_cost (parallelism)
-        Some(32)    // output length
-    ).map_err(|e| anyhow::anyhow!("Argon2 params error: {}", e))?;
-    
+        1024,     // m_cost (1 MB)
+        1,        // t_cost (iterations)
+        1,        // p_cost (parallelism)
+        Some(32), // output length
+    )
+    .map_err(|e| anyhow::anyhow!("Argon2 params error: {}", e))?;
+
     let argon2 = Argon2::new(Algorithm::Argon2d, Version::V0x13, params);
-    
+
     // Use input as both password and salt (simplified for PoW)
-    let salt = if input.len() >= 16 { 
-        &input[..16] 
-    } else { 
-        b"zion_argon2_salt" 
+    let salt = if input.len() >= 16 {
+        &input[..16]
+    } else {
+        b"zion_argon2_salt"
     };
-    
+
     let mut output = [0u8; 32];
-    argon2.hash_password_into(input, salt, &mut output)
+    argon2
+        .hash_password_into(input, salt, &mut output)
         .map_err(|e| anyhow::anyhow!("Argon2d hash failed: {}", e))?;
-    
-    Ok(HashOutput { hash: output.to_vec() })
+
+    Ok(HashOutput {
+        hash: output.to_vec(),
+    })
 }
 
 #[cfg(not(feature = "algo-argon2"))]
@@ -361,60 +407,62 @@ pub fn argon2d(input: &[u8]) -> anyhow::Result<HashOutput> {
     hasher.update(b"argon2d");
     hasher.update(input);
     let result = hasher.finalize();
-    Ok(HashOutput { hash: result[..32].to_vec() })
+    Ok(HashOutput {
+        hash: result[..32].to_vec(),
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_keccak256() {
         let input = b"test input";
         let result = keccak256(input).unwrap();
         assert_eq!(result.hash.len(), 32);
     }
-    
+
     #[test]
     fn test_sha3_512() {
         let input = b"test input";
         let result = sha3_512(input).unwrap();
         assert_eq!(result.hash.len(), 64);
     }
-    
+
     #[test]
     fn test_golden_matrix() {
         let input = b"test input with enough bytes for matrix";
         let result = golden_matrix(input).unwrap();
         assert_eq!(result.hash.len(), 64); // 8 * 8 bytes
     }
-    
+
     #[test]
     fn test_cosmic_fusion() {
         let input = b"test cosmic fusion input";
         let result = cosmic_fusion(input).unwrap();
         assert_eq!(result.hash.len(), 32);
     }
-    
+
     #[test]
     fn test_full_pipeline() {
         let input = b"block header data";
-        
+
         // Step 1: Keccak
         let step1 = keccak256(input).unwrap();
-        
+
         // Step 2: SHA3
         let step2 = sha3_512(&step1.hash).unwrap();
-        
+
         // Step 3: Golden Matrix
         let step3 = golden_matrix(&step2.hash).unwrap();
-        
+
         // Step 4: Memory-hard scratchpad
         let step4 = memory_hard_scratchpad(&step3.hash).unwrap();
 
         // Step 5: Cosmic Fusion
         let final_hash = cosmic_fusion(&step4.hash).unwrap();
-        
+
         assert_eq!(final_hash.hash.len(), 32);
         println!("Final hash: {:?}", hex::encode(&final_hash.hash));
     }
@@ -437,7 +485,8 @@ mod tests {
             let legacy = golden_matrix(input).unwrap();
             let opt = golden_matrix_opt(input);
             assert_eq!(
-                legacy.hash, opt.data.to_vec(),
+                legacy.hash,
+                opt.data.to_vec(),
                 "golden_matrix diverges from golden_matrix_opt for input {:?}",
                 &input[..4]
             );
@@ -448,16 +497,13 @@ mod tests {
     fn test_cosmic_fusion_matches_opt() {
         use crate::algorithms_opt::cosmic_fusion_opt;
 
-        let inputs: Vec<Vec<u8>> = vec![
-            vec![0u8; 64],
-            vec![0xAB; 64],
-            (0u8..64).collect(),
-        ];
+        let inputs: Vec<Vec<u8>> = vec![vec![0u8; 64], vec![0xAB; 64], (0u8..64).collect()];
         for input in &inputs {
             let legacy = cosmic_fusion(input).unwrap();
             let opt = cosmic_fusion_opt(input);
             assert_eq!(
-                legacy.hash, opt.data.to_vec(),
+                legacy.hash,
+                opt.data.to_vec(),
                 "cosmic_fusion diverges from cosmic_fusion_opt for input {:?}",
                 &input[..4]
             );

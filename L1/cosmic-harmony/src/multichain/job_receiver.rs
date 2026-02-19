@@ -4,12 +4,11 @@
 //! for processing by algorithm workers.
 
 use super::ExternalChain;
-use anyhow::{Result, Context, anyhow};
+use anyhow::{Context, Result};
 use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tokio::sync::{mpsc, RwLock, watch};
+use tokio::sync::watch;
 
 /// Mining job from external pool
 #[derive(Debug, Clone)]
@@ -94,8 +93,10 @@ impl PoolConnection {
 
     /// Authenticate with pool
     async fn authenticate(&mut self) -> Result<()> {
-        let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        
+        let id = self
+            .next_id
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
         // Different protocols for different algos
         let request = match self.chain {
             ExternalChain::ETC => {
@@ -143,8 +144,10 @@ impl PoolConnection {
 
     /// Subscribe for mining jobs
     async fn subscribe(&mut self) -> Result<()> {
-        let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        
+        let id = self
+            .next_id
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
         let request = match self.chain {
             ExternalChain::ETC => {
                 serde_json::json!({
@@ -209,7 +212,7 @@ impl PoolConnection {
     /// Parse job from pool message
     fn parse_job(chain: ExternalChain, msg: &serde_json::Value) -> Option<MiningJob> {
         let method = msg.get("method").and_then(|v| v.as_str())?;
-        
+
         if method != "mining.notify" && method != "eth_getWork" {
             return None;
         }
@@ -233,9 +236,11 @@ impl PoolConnection {
 
         Some(MiningJob {
             chain,
-            job_id: arr.get(0)?.as_str()?.to_string(),
-            header_hash: hex::decode(arr.get(0)?.as_str()?.trim_start_matches("0x")).ok()?,
-            seed_hash: arr.get(1).and_then(|v| v.as_str())
+            job_id: arr.first()?.as_str()?.to_string(),
+            header_hash: hex::decode(arr.first()?.as_str()?.trim_start_matches("0x")).ok()?,
+            seed_hash: arr
+                .get(1)
+                .and_then(|v| v.as_str())
                 .and_then(|s| hex::decode(s.trim_start_matches("0x")).ok()),
             target: hex::decode(arr.get(2)?.as_str()?.trim_start_matches("0x")).ok()?,
             height: arr.get(3).and_then(|v| v.as_u64()).unwrap_or(0),
@@ -249,12 +254,14 @@ impl PoolConnection {
 
     fn parse_kawpow_job(chain: ExternalChain, params: &serde_json::Value) -> Option<MiningJob> {
         let arr = params.as_array()?;
-        
+
         Some(MiningJob {
             chain,
-            job_id: arr.get(0)?.as_str()?.to_string(),
+            job_id: arr.first()?.as_str()?.to_string(),
             header_hash: hex::decode(arr.get(1)?.as_str()?.trim_start_matches("0x")).ok()?,
-            seed_hash: arr.get(2).and_then(|v| v.as_str())
+            seed_hash: arr
+                .get(2)
+                .and_then(|v| v.as_str())
                 .and_then(|s| hex::decode(s.trim_start_matches("0x")).ok()),
             target: hex::decode(arr.get(3)?.as_str()?.trim_start_matches("0x")).ok()?,
             height: arr.get(4).and_then(|v| v.as_u64()).unwrap_or(0),
@@ -267,9 +274,9 @@ impl PoolConnection {
     }
 
     fn parse_autolykos_job(chain: ExternalChain, params: &serde_json::Value) -> Option<MiningJob> {
-        let obj = params.as_object().or_else(|| {
-            params.as_array().and_then(|arr| arr.get(0)?.as_object())
-        })?;
+        let obj = params
+            .as_object()
+            .or_else(|| params.as_array().and_then(|arr| arr.first()?.as_object()))?;
 
         Some(MiningJob {
             chain,
@@ -291,7 +298,7 @@ impl PoolConnection {
 
         Some(MiningJob {
             chain,
-            job_id: arr.get(0)?.as_str()?.to_string(),
+            job_id: arr.first()?.as_str()?.to_string(),
             header_hash: hex::decode(arr.get(1)?.as_str()?).ok()?,
             seed_hash: None,
             target: hex::decode(arr.get(2)?.as_str()?).ok()?,
@@ -311,13 +318,19 @@ impl PoolConnection {
 
         Some(MiningJob {
             chain,
-            job_id: arr.get(0)?.as_str()?.to_string(),
-            header_hash: arr.get(1).and_then(|v| v.as_str())
+            job_id: arr.first()?.as_str()?.to_string(),
+            header_hash: arr
+                .get(1)
+                .and_then(|v| v.as_str())
                 .and_then(|s| hex::decode(s).ok())
                 .unwrap_or_default(),
-            seed_hash: arr.get(2).and_then(|v| v.as_str())
+            seed_hash: arr
+                .get(2)
+                .and_then(|v| v.as_str())
                 .and_then(|s| hex::decode(s).ok()),
-            target: arr.get(3).and_then(|v| v.as_str())
+            target: arr
+                .get(3)
+                .and_then(|v| v.as_str())
                 .and_then(|s| hex::decode(s).ok())
                 .unwrap_or_default(),
             height: arr.get(4).and_then(|v| v.as_u64()).unwrap_or(0),
@@ -369,12 +382,14 @@ impl ExternalJobReceiver {
         let mut conn = PoolConnection::new(chain, host, port, wallet);
         conn.connect().await?;
         self.connections.insert(chain, conn);
-        
+
         log::info!(
             "ch3_external_pool_connected chain={:?} host={}:{}",
-            chain, host, port
+            chain,
+            host,
+            port
         );
-        
+
         Ok(())
     }
 
@@ -387,9 +402,7 @@ impl ExternalJobReceiver {
     pub fn get_all_jobs(&self) -> HashMap<ExternalChain, MiningJob> {
         self.connections
             .iter()
-            .filter_map(|(chain, conn)| {
-                conn.current_job().map(|job| (*chain, job))
-            })
+            .filter_map(|(chain, conn)| conn.current_job().map(|job| (*chain, job)))
             .collect()
     }
 

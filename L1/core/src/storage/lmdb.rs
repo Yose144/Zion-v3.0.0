@@ -1,11 +1,11 @@
-use std::path::Path;
-use anyhow::Result;
-use heed::{EnvOpenOptions, Database, Env};
-use heed::types::*;
-use heed::byteorder::BigEndian;
-use serde::{Serialize, Deserialize};
 use crate::blockchain::block::Block;
 use crate::tx::TxOutput;
+use anyhow::Result;
+use heed::byteorder::BigEndian;
+use heed::types::*;
+use heed::{Database, Env, EnvOpenOptions};
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 /// Undo data for a single block — stores all UTXOs that were spent when the
 /// block was applied.  During rollback we restore these without needing to
@@ -25,7 +25,7 @@ pub struct ZionStorage {
     blocks: Database<Str, SerdeBincode<Block>>, // Hash -> Block
     height_to_hash: Database<U64<BigEndian>, Str>, // Height -> Hash
     utxos: Database<Str, SerdeBincode<TxOutput>>, // "txid:index" -> Output
-    tx_to_block: Database<Str, Str>, // TxID -> Block hash
+    tx_to_block: Database<Str, Str>,            // TxID -> Block hash
     hash_to_height: Database<Str, U64<BigEndian>>, // Block hash -> Height
     /// Undo log: height -> BlockUndoData (spent UTXOs for safe rollback)
     undo_blocks: Database<U64<BigEndian>, SerdeBincode<BlockUndoData>>,
@@ -36,7 +36,7 @@ pub struct ZionStorage {
 impl ZionStorage {
     pub fn open(path: &Path) -> Result<Self> {
         std::fs::create_dir_all(path)?;
-        
+
         // P1-12: Configurable map size via env var (default 10 GB)
         let map_size_gb: usize = std::env::var("ZION_LMDB_MAP_SIZE_GB")
             .ok()
@@ -71,13 +71,13 @@ impl ZionStorage {
             balance_cache,
         })
     }
-    
+
     // --- Block Methods ---
 
     pub fn save_block(&self, block: &Block) -> Result<()> {
         let mut wtxn = self.env.write_txn()?;
         let hash = block.calculate_hash();
-        
+
         self.blocks.put(&mut wtxn, &hash, block)?;
         self.hash_to_height.put(&mut wtxn, &hash, &block.height())?;
         self.height_to_hash.put(&mut wtxn, &block.height(), &hash)?;
@@ -88,7 +88,7 @@ impl ZionStorage {
                 self.tx_to_block.put(&mut wtxn, &tx.id, &hash)?;
             }
         }
-        
+
         wtxn.commit()?;
         Ok(())
     }
@@ -107,7 +107,7 @@ impl ZionStorage {
         let rtxn = self.env.read_txn()?;
         Ok(self.blocks.get(&rtxn, hash)?)
     }
-    
+
     pub fn get_block_by_height(&self, height: u64) -> Result<Option<Block>> {
         let rtxn = self.env.read_txn()?;
         if let Some(hash) = self.height_to_hash.get(&rtxn, &height)? {
@@ -123,7 +123,10 @@ impl ZionStorage {
         // Since keys are BigEndian U64, the last key is the highest.
         match self.height_to_hash.last(&rtxn)? {
             Some((h, hash)) => Ok((h, hash.to_string())),
-            None => Ok((0, "0000000000000000000000000000000000000000000000000000000000000000".to_string())), // Genesis default
+            None => Ok((
+                0,
+                "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+            )), // Genesis default
         }
     }
 
@@ -150,8 +153,8 @@ impl ZionStorage {
     // --- UTXO Methods ---
 
     pub fn get_utxo(&self, key: &str) -> Result<Option<TxOutput>> {
-         let rtxn = self.env.read_txn()?;
-         Ok(self.utxos.get(&rtxn, key)?)
+        let rtxn = self.env.read_txn()?;
+        Ok(self.utxos.get(&rtxn, key)?)
     }
 
     pub fn add_utxo(&self, key: &str, output: &TxOutput) -> Result<()> {
@@ -167,7 +170,7 @@ impl ZionStorage {
         wtxn.commit()?;
         Ok(())
     }
-    
+
     /// Atomically apply block: remove inputs, add outputs, save undo data.
     ///
     /// The undo data captures every UTXO that is *spent* by this block so
@@ -226,11 +229,15 @@ impl ZionStorage {
         let block_height = block.height();
         let block_hash = block.calculate_hash();
         let mut spent_utxos: Vec<(String, TxOutput)> = Vec::new();
-        
+
         for tx in &block.transactions {
             // Remove inputs — but first snapshot for undo
             for input in &tx.inputs {
-                if input.prev_tx_hash == "0000000000000000000000000000000000000000000000000000000000000000" { continue; } // Coinbase
+                if input.prev_tx_hash
+                    == "0000000000000000000000000000000000000000000000000000000000000000"
+                {
+                    continue;
+                } // Coinbase
                 let key = format!("{}:{}", input.prev_tx_hash, input.output_index);
                 // Snapshot the UTXO before deleting
                 if let Some(output) = self.utxos.get(&wtxn, &key)? {
@@ -238,7 +245,7 @@ impl ZionStorage {
                 }
                 self.utxos.delete(&mut wtxn, &key)?;
             }
-            
+
             // Add outputs
             let tx_id = tx.calculate_hash();
             for (idx, output) in tx.outputs.iter().enumerate() {
@@ -253,10 +260,10 @@ impl ZionStorage {
             spent_utxos,
         };
         self.undo_blocks.put(wtxn, &block_height, &undo)?;
-        
+
         Ok(())
     }
-    
+
     /// Rollback block UTXO changes using the undo log.
     ///
     /// 1. Remove outputs created by the block.
@@ -267,7 +274,7 @@ impl ZionStorage {
     /// (e.g. blocks applied before the undo log was added).
     pub fn rollback_block_utxos(&self, block: &Block) -> Result<()> {
         let block_height = block.height();
-        
+
         // Try undo-log path first
         let undo_opt = {
             let rtxn = self.env.read_txn()?;
@@ -289,7 +296,7 @@ impl ZionStorage {
     /// Fast rollback using persisted undo data.
     fn rollback_block_utxos_from_undo(&self, block: &Block, undo: &BlockUndoData) -> Result<()> {
         let mut wtxn = self.env.write_txn()?;
-        
+
         // 1. Remove outputs that were created by this block
         for tx in &block.transactions {
             let tx_id = tx.calculate_hash();
@@ -298,15 +305,15 @@ impl ZionStorage {
                 let _ = self.utxos.delete(&mut wtxn, &key);
             }
         }
-        
+
         // 2. Restore spent UTXOs from undo data
         for (key, output) in &undo.spent_utxos {
             self.utxos.put(&mut wtxn, key, output)?;
         }
-        
+
         // 3. Remove undo record
         self.undo_blocks.delete(&mut wtxn, &block.height())?;
-        
+
         wtxn.commit()?;
         Ok(())
     }
@@ -318,7 +325,7 @@ impl ZionStorage {
     /// instead of opening nested read transactions (which would deadlock in LMDB).
     fn rollback_block_utxos_legacy(&self, block: &Block) -> Result<()> {
         let mut wtxn = self.env.write_txn()?;
-        
+
         // Process in reverse order compared to apply
         for tx in &block.transactions {
             // Remove outputs that were added
@@ -328,20 +335,29 @@ impl ZionStorage {
                 // Ignore error if UTXO was already spent in a later block
                 let _ = self.utxos.delete(&mut wtxn, &key);
             }
-            
+
             // Restore inputs that were removed
             for input in &tx.inputs {
-                if input.prev_tx_hash == "0000000000000000000000000000000000000000000000000000000000000000" { continue; }
-                
+                if input.prev_tx_hash
+                    == "0000000000000000000000000000000000000000000000000000000000000000"
+                {
+                    continue;
+                }
+
                 // Read through the SAME write transaction to avoid nested txn deadlock
-                let prev_block_hash: Option<String> = self.tx_to_block
+                let prev_block_hash: Option<String> = self
+                    .tx_to_block
                     .get(&wtxn, &input.prev_tx_hash)?
                     .map(|s| s.to_string());
-                
+
                 if let Some(ref pbh) = prev_block_hash {
                     let prev_block: Option<Block> = self.blocks.get(&wtxn, pbh)?;
                     if let Some(prev_block) = prev_block {
-                        if let Some(prev_tx) = prev_block.transactions.iter().find(|t| t.calculate_hash() == input.prev_tx_hash) {
+                        if let Some(prev_tx) = prev_block
+                            .transactions
+                            .iter()
+                            .find(|t| t.calculate_hash() == input.prev_tx_hash)
+                        {
                             if let Some(output) = prev_tx.outputs.get(input.output_index as usize) {
                                 let key = format!("{}:{}", input.prev_tx_hash, input.output_index);
                                 self.utxos.put(&mut wtxn, &key, output)?;
@@ -351,7 +367,7 @@ impl ZionStorage {
                 }
             }
         }
-        
+
         wtxn.commit()?;
         Ok(())
     }
@@ -386,7 +402,9 @@ impl ZionStorage {
 
         // Populate cache for next time
         if let Ok(mut wtxn) = self.env.write_txn() {
-            let _ = self.balance_cache.put(&mut wtxn, address, &(total, count as u64));
+            let _ = self
+                .balance_cache
+                .put(&mut wtxn, address, &(total, count as u64));
             let _ = wtxn.commit();
         }
 
@@ -438,23 +456,26 @@ impl ZionStorage {
     #[cfg(feature = "dev-tools")]
     pub fn credit_balance(&self, address: &str, amount_atomic: u64) -> Result<()> {
         let mut wtxn = self.env.write_txn()?;
-        
+
         // Generate unique key for synthetic UTXO
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
         let key = format!("dev_credit:{}:{}", timestamp, address);
-        
+
         let output = TxOutput {
             amount: amount_atomic,
             address: address.to_string(),
         };
-        
+
         self.utxos.put(&mut wtxn, &key, &output)?;
         wtxn.commit()?;
-        
-        eprintln!("[DEV] Credited {} atomic units to {} (key: {})", amount_atomic, address, key);
+
+        eprintln!(
+            "[DEV] Credited {} atomic units to {} (key: {})",
+            amount_atomic, address, key
+        );
         Ok(())
     }
 
@@ -549,14 +570,14 @@ impl ZionStorage {
     pub fn prune_undo_data(&self, finalized_height: u64) -> Result<usize> {
         let mut wtxn = self.env.write_txn()?;
         let mut pruned: usize = 0;
-        
+
         // Iterate from height 0 up to finalized_height
         for h in 0..=finalized_height {
             if self.undo_blocks.delete(&mut wtxn, &h)? {
                 pruned += 1;
             }
         }
-        
+
         wtxn.commit()?;
         Ok(pruned)
     }
@@ -601,8 +622,8 @@ mod tests {
 
     /// Helper: spending transaction — consumes `inputs` and creates `outputs`.
     fn spend_tx(
-        inputs: Vec<(&str, u32)>,   // (prev_tx_hash, output_index)
-        outputs: Vec<(&str, u64)>,   // (address, amount)
+        inputs: Vec<(&str, u32)>,  // (prev_tx_hash, output_index)
+        outputs: Vec<(&str, u64)>, // (address, amount)
     ) -> Transaction {
         let tx = Transaction {
             id: String::new(), // will be replaced by calculate_hash
@@ -694,9 +715,15 @@ mod tests {
         assert_eq!(undo.spent_utxos[0].1.amount, 5000);
 
         // Alice's UTXO must be gone, Bob's must exist
-        assert!(storage.get_utxo(&format!("{}:0", cb_txid)).unwrap().is_none());
+        assert!(storage
+            .get_utxo(&format!("{}:0", cb_txid))
+            .unwrap()
+            .is_none());
         let bob_txid = block1.transactions[0].calculate_hash();
-        let bob_utxo = storage.get_utxo(&format!("{}:0", bob_txid)).unwrap().unwrap();
+        let bob_utxo = storage
+            .get_utxo(&format!("{}:0", bob_txid))
+            .unwrap()
+            .unwrap();
         assert_eq!(bob_utxo.address, "bob");
         assert_eq!(bob_utxo.amount, 4500);
 
@@ -727,12 +754,18 @@ mod tests {
         storage.rollback_block_utxos(&block1).unwrap();
 
         // Alice's UTXO must be restored
-        let alice_utxo = storage.get_utxo(&format!("{}:0", cb_txid)).unwrap().unwrap();
+        let alice_utxo = storage
+            .get_utxo(&format!("{}:0", cb_txid))
+            .unwrap()
+            .unwrap();
         assert_eq!(alice_utxo.address, "alice");
         assert_eq!(alice_utxo.amount, 5000);
 
         // Bob's UTXO must be gone
-        assert!(storage.get_utxo(&format!("{}:0", bob_txid)).unwrap().is_none());
+        assert!(storage
+            .get_utxo(&format!("{}:0", bob_txid))
+            .unwrap()
+            .is_none());
 
         // Undo record for height 1 must be cleaned up
         assert!(storage.get_undo_data(1).unwrap().is_none());
@@ -760,34 +793,90 @@ mod tests {
         storage.apply_block_utxos(&block1).unwrap();
 
         // Block 2: Bob → Carol 3000, change → Bob 3000
-        let spend2 = spend_tx(vec![(&spend1_txid, 0)], vec![("carol", 3000), ("bob", 3000)]);
+        let spend2 = spend_tx(
+            vec![(&spend1_txid, 0)],
+            vec![("carol", 3000), ("bob", 3000)],
+        );
         let spend2_txid = spend2.calculate_hash();
         let block2 = Block::new(1, 2, block1.calculate_hash(), 300, 1000, 2, vec![spend2]);
         storage.save_block(&block2).unwrap();
         storage.apply_block_utxos(&block2).unwrap();
 
         // Verify pre-rollback state
-        assert!(storage.get_utxo(&format!("{}:0", cb_txid)).unwrap().is_none());     // Alice original: spent
-        assert!(storage.get_utxo(&format!("{}:0", spend1_txid)).unwrap().is_none());  // Bob 6000: spent
-        assert_eq!(storage.get_utxo(&format!("{}:1", spend1_txid)).unwrap().unwrap().amount, 4000); // Alice change
-        assert_eq!(storage.get_utxo(&format!("{}:0", spend2_txid)).unwrap().unwrap().amount, 3000); // Carol
-        assert_eq!(storage.get_utxo(&format!("{}:1", spend2_txid)).unwrap().unwrap().amount, 3000); // Bob change
+        assert!(storage
+            .get_utxo(&format!("{}:0", cb_txid))
+            .unwrap()
+            .is_none()); // Alice original: spent
+        assert!(storage
+            .get_utxo(&format!("{}:0", spend1_txid))
+            .unwrap()
+            .is_none()); // Bob 6000: spent
+        assert_eq!(
+            storage
+                .get_utxo(&format!("{}:1", spend1_txid))
+                .unwrap()
+                .unwrap()
+                .amount,
+            4000
+        ); // Alice change
+        assert_eq!(
+            storage
+                .get_utxo(&format!("{}:0", spend2_txid))
+                .unwrap()
+                .unwrap()
+                .amount,
+            3000
+        ); // Carol
+        assert_eq!(
+            storage
+                .get_utxo(&format!("{}:1", spend2_txid))
+                .unwrap()
+                .unwrap()
+                .amount,
+            3000
+        ); // Bob change
 
         // --- ROLLBACK block 2 ---
         storage.rollback_block_utxos(&block2).unwrap();
 
         // Bob 6000 UTXO restored, Carol + Bob-change removed
-        assert_eq!(storage.get_utxo(&format!("{}:0", spend1_txid)).unwrap().unwrap().amount, 6000);
-        assert!(storage.get_utxo(&format!("{}:0", spend2_txid)).unwrap().is_none());
-        assert!(storage.get_utxo(&format!("{}:1", spend2_txid)).unwrap().is_none());
+        assert_eq!(
+            storage
+                .get_utxo(&format!("{}:0", spend1_txid))
+                .unwrap()
+                .unwrap()
+                .amount,
+            6000
+        );
+        assert!(storage
+            .get_utxo(&format!("{}:0", spend2_txid))
+            .unwrap()
+            .is_none());
+        assert!(storage
+            .get_utxo(&format!("{}:1", spend2_txid))
+            .unwrap()
+            .is_none());
 
         // --- ROLLBACK block 1 ---
         storage.rollback_block_utxos(&block1).unwrap();
 
         // Alice original UTXO restored, Bob + Alice-change removed
-        assert_eq!(storage.get_utxo(&format!("{}:0", cb_txid)).unwrap().unwrap().amount, 10_000);
-        assert!(storage.get_utxo(&format!("{}:0", spend1_txid)).unwrap().is_none());
-        assert!(storage.get_utxo(&format!("{}:1", spend1_txid)).unwrap().is_none());
+        assert_eq!(
+            storage
+                .get_utxo(&format!("{}:0", cb_txid))
+                .unwrap()
+                .unwrap()
+                .amount,
+            10_000
+        );
+        assert!(storage
+            .get_utxo(&format!("{}:0", spend1_txid))
+            .unwrap()
+            .is_none());
+        assert!(storage
+            .get_utxo(&format!("{}:1", spend1_txid))
+            .unwrap()
+            .is_none());
 
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -808,8 +897,14 @@ mod tests {
                 public_key: String::new(),
             }],
             outputs: vec![
-                TxOutput { amount: 2000, address: "alice".to_string() },
-                TxOutput { amount: 3000, address: "bob".to_string() },
+                TxOutput {
+                    amount: 2000,
+                    address: "alice".to_string(),
+                },
+                TxOutput {
+                    amount: 3000,
+                    address: "bob".to_string(),
+                },
             ],
             fee: 0,
             timestamp: 100,
@@ -820,10 +915,7 @@ mod tests {
         let cb_txid = block0.transactions[0].calculate_hash();
 
         // Block 1: spend BOTH outputs in a single tx → Carol
-        let spend = spend_tx(
-            vec![(&cb_txid, 0), (&cb_txid, 1)],
-            vec![("carol", 5000)]
-        );
+        let spend = spend_tx(vec![(&cb_txid, 0), (&cb_txid, 1)], vec![("carol", 5000)]);
         let block1 = Block::new(1, 1, block0.calculate_hash(), 200, 1000, 1, vec![spend]);
         storage.save_block(&block1).unwrap();
         storage.apply_block_utxos(&block1).unwrap();
@@ -835,8 +927,14 @@ mod tests {
         // Rollback
         storage.rollback_block_utxos(&block1).unwrap();
 
-        let alice = storage.get_utxo(&format!("{}:0", cb_txid)).unwrap().unwrap();
-        let bob   = storage.get_utxo(&format!("{}:1", cb_txid)).unwrap().unwrap();
+        let alice = storage
+            .get_utxo(&format!("{}:0", cb_txid))
+            .unwrap()
+            .unwrap();
+        let bob = storage
+            .get_utxo(&format!("{}:1", cb_txid))
+            .unwrap()
+            .unwrap();
         assert_eq!(alice.amount, 2000);
         assert_eq!(bob.amount, 3000);
 
@@ -860,7 +958,10 @@ mod tests {
 
         // All 5 undo records exist
         for h in 0..5 {
-            assert!(storage.get_undo_data(h).unwrap().is_some(), "undo at height {h}");
+            assert!(
+                storage.get_undo_data(h).unwrap().is_some(),
+                "undo at height {h}"
+            );
         }
 
         // Prune heights 0..=2
@@ -941,4 +1042,3 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
-

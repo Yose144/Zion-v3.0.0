@@ -1,3 +1,4 @@
+pub mod blake3_algo;
 /// Mining algorithm implementations
 ///
 /// ZION uses **Cosmic Harmony v3** as the single production PoW algorithm.
@@ -10,9 +11,7 @@
 ///   - Future multi-algo rotation (commented out in block.rs)
 ///
 /// **CH v1 and v2 have been archived** — see `archive/legacy-algorithms/`.
-
 pub mod cosmic_harmony;
-pub mod blake3_algo;
 pub mod randomx;
 pub mod verushash;
 pub mod yescrypt;
@@ -49,8 +48,9 @@ impl Algorithm {
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "cosmic" | "cosmic_harmony" | "cosmicharmony" | "cosmic-harmony"
-            | "cosmic_harmony_v3" | "cosmicharmonyv3" | "cosmic-harmony-v3"
-            | "chv3" | "ch3" => Some(Self::CosmicHarmony),
+            | "cosmic_harmony_v3" | "cosmicharmonyv3" | "cosmic-harmony-v3" | "chv3" | "ch3" => {
+                Some(Self::CosmicHarmony)
+            }
             "randomx" | "random-x" | "rx/0" | "rx0" => Some(Self::RandomX),
             "yescrypt" => Some(Self::Yescrypt),
             "blake3" => Some(Self::Blake3),
@@ -71,17 +71,17 @@ impl Algorithm {
     /// Get expected hashrate (H/s) for CPU baseline
     pub fn baseline_hashrate(&self) -> u64 {
         match self {
-            Self::CosmicHarmony => 500_000,    // 500 kH/s (pre-scratchpad)
-            Self::RandomX => 600,              // 600 H/s
-            Self::Yescrypt => 1_000,           // 1 kH/s
-            Self::Blake3 => 5_000_000,         // 5 MH/s
+            Self::CosmicHarmony => 500_000, // 500 kH/s (pre-scratchpad)
+            Self::RandomX => 600,           // 600 H/s
+            Self::Yescrypt => 1_000,        // 1 kH/s
+            Self::Blake3 => 5_000_000,      // 5 MH/s
         }
     }
 
     /// Check if algorithm has known ASIC hardware
     pub fn has_known_asic(&self) -> bool {
         match self {
-            Self::RandomX => true,  // Antminer X5 (212 kH/s, ~$5-8K)
+            Self::RandomX => true, // Antminer X5 (212 kH/s, ~$5-8K)
             _ => false,
         }
     }
@@ -89,10 +89,10 @@ impl Algorithm {
     /// Get ASIC resistance level (0-100)
     pub fn asic_resistance_score(&self) -> u8 {
         match self {
-            Self::CosmicHarmony => 90,     // CHv3 with memory-hard scratchpad
-            Self::RandomX => 20,           // ASIC exists (Antminer X5)
-            Self::Yescrypt => 85,          // Memory-hard, no known ASIC
-            Self::Blake3 => 10,            // Trivial to ASIC
+            Self::CosmicHarmony => 90, // CHv3 with memory-hard scratchpad
+            Self::RandomX => 20,       // ASIC exists (Antminer X5)
+            Self::Yescrypt => 85,      // Memory-hard, no known ASIC
+            Self::Blake3 => 10,        // Trivial to ASIC
         }
     }
 

@@ -1,7 +1,6 @@
 /// Stratum protocol message types and serialization
-/// 
+///
 /// Supports both XMRig and Stratum JSON-RPC protocols
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -21,11 +20,19 @@ pub struct Response {
 }
 
 pub fn ok(id: Option<Value>, result: Value) -> Response {
-    Response { id, result: Some(result), error: None }
+    Response {
+        id,
+        result: Some(result),
+        error: None,
+    }
 }
 
 pub fn err(id: Option<Value>, message: &str) -> Response {
-    Response { id, result: None, error: Some(Value::String(message.to_string())) }
+    Response {
+        id,
+        result: None,
+        error: Some(Value::String(message.to_string())),
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

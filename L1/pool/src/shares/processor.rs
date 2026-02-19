@@ -9,7 +9,6 @@
 /// 6. Return result to miner
 ///
 /// This module ties validator.rs + storage.rs together
-
 use anyhow::Result;
 use chrono::Utc;
 use hex::FromHex;
@@ -17,12 +16,10 @@ use std::sync::Arc;
 
 use super::storage::{BlockFound, RedisStorage, StoredShare};
 use super::validator::{ShareResult, ShareValidator, SubmittedShare};
-use crate::pplns::PPLNSCalculator;
 use crate::blockchain::ZionRPCClient;
 use crate::merged_mining::MergedMiningManager;
-use zion_core::blockchain::block::Block;
+use crate::pplns::PPLNSCalculator;
 use zion_core::blockchain::reward as core_reward;
-use zion_core::tx::{Transaction, TxOutput};
 
 #[derive(Debug, Clone)]
 pub struct ProcessedShareOutcome {
@@ -89,13 +86,16 @@ impl ShareProcessor {
         pplns_window_shares: u64,
     ) -> Self {
         let issobella_fund_percent = 5.0; // default L5/L6 ZION Issobella fund
-        let miner_pct = 100.0 - pool_fee_percent - humanitarian_tithe_percent - issobella_fund_percent;
+        let miner_pct =
+            100.0 - pool_fee_percent - humanitarian_tithe_percent - issobella_fund_percent;
         tracing::info!(
             "💰 ShareProcessor fee split: miners={:.0}%, humanitarian={:.0}%, issobella={:.0}%, pool={:.0}%",
             miner_pct, humanitarian_tithe_percent, issobella_fund_percent, pool_fee_percent
         );
         if humanitarian_wallet.is_empty() {
-            tracing::warn!("⚠️  No humanitarian_wallet configured — tithe will stay in pool wallet");
+            tracing::warn!(
+                "⚠️  No humanitarian_wallet configured — tithe will stay in pool wallet"
+            );
         }
         Self {
             validator,
@@ -189,14 +189,11 @@ impl ShareProcessor {
 
     /// Handle block found notification
     async fn handle_block_found(&self, share: &StoredShare, miner_address: &str) -> Result<bool> {
-        tracing::info!(
-            "🎉 BLOCK FOUND by {} - hash: {}",
-            miner_address,
-            share.hash
-        );
+        tracing::info!("🎉 BLOCK FOUND by {} - hash: {}", miner_address, share.hash);
 
         let template = share.job_blob.as_deref().and_then(parse_template_blob);
-        let (version, tpl_height, prev_hash, tpl_merkle, timestamp, difficulty) = match template {
+        let (_version, tpl_height, _prev_hash, _tpl_merkle, _timestamp, difficulty) = match template
+        {
             Some(parsed) => parsed,
             None => {
                 tracing::warn!("Invalid template blob; cannot submit block");
@@ -217,12 +214,11 @@ impl ShareProcessor {
             // Submit using blob + nonce + wallet as array
             // This ensures core reconstructs coinbase with matching merkle root
             if let Some(blob) = &share.job_blob {
-                let accepted = rpc.submit_block_with_nonce(
-                    blob,
-                    nonce,
-                    &self.pool_wallet,
-                ).await.unwrap_or(false);
-                
+                let accepted = rpc
+                    .submit_block_with_nonce(blob, nonce, &self.pool_wallet)
+                    .await
+                    .unwrap_or(false);
+
                 if !accepted {
                     tracing::warn!(
                         "Block candidate rejected (or submit failed): miner={} job_id={}",
@@ -256,11 +252,20 @@ impl ShareProcessor {
 
         // Calculate PPLNS payouts with proper fee split
         // Miner share = 100% - pool_fee - humanitarian_tithe - issobella_fund (default: 89%)
-        let miner_pct = (100.0 - self.pool_fee_percent - self.humanitarian_tithe_percent - self.issobella_fund_percent) / 100.0;
+        let miner_pct = (100.0
+            - self.pool_fee_percent
+            - self.humanitarian_tithe_percent
+            - self.issobella_fund_percent)
+            / 100.0;
         let miner_share = (coinbase_reward as f64 * miner_pct) as u64;
-        let humanitarian_share = (coinbase_reward as f64 * (self.humanitarian_tithe_percent / 100.0)) as u64;
-        let issobella_share = (coinbase_reward as f64 * (self.issobella_fund_percent / 100.0)) as u64;
-        let pool_fee_share = coinbase_reward.saturating_sub(miner_share).saturating_sub(humanitarian_share).saturating_sub(issobella_share);
+        let humanitarian_share =
+            (coinbase_reward as f64 * (self.humanitarian_tithe_percent / 100.0)) as u64;
+        let issobella_share =
+            (coinbase_reward as f64 * (self.issobella_fund_percent / 100.0)) as u64;
+        let pool_fee_share = coinbase_reward
+            .saturating_sub(miner_share)
+            .saturating_sub(humanitarian_share)
+            .saturating_sub(issobella_share);
 
         tracing::info!(
             "💰 Block {} reward split: total={} | miners={}({:.0}%) | humanitarian={}({:.0}%) | issobella={}({:.0}%) | pool_fee={}({:.0}%)",
@@ -290,20 +295,27 @@ impl ShareProcessor {
                 let mut tithe_sent = false;
                 let max_retries: u32 = 3;
                 for attempt in 0..max_retries {
-                    match rpc.send_transaction(
-                        &self.pool_wallet,
-                        &self.humanitarian_wallet,
-                        tithe_zion,
-                        Some("humanitarian-tithe"),
-                    ).await {
+                    match rpc
+                        .send_transaction(
+                            &self.pool_wallet,
+                            &self.humanitarian_wallet,
+                            tithe_zion,
+                            Some("humanitarian-tithe"),
+                        )
+                        .await
+                    {
                         Ok(tx) => {
-                            let tx_id = tx.get("tx_id")
+                            let tx_id = tx
+                                .get("tx_id")
                                 .and_then(|v| v.as_str())
                                 .or_else(|| tx.get("txid").and_then(|v| v.as_str()))
                                 .unwrap_or("unknown");
                             tracing::info!(
                                 "🕊️  Humanitarian tithe sent: {} ZION to {} (tx: {}, attempt {})",
-                                tithe_zion, self.humanitarian_wallet, tx_id, attempt + 1
+                                tithe_zion,
+                                self.humanitarian_wallet,
+                                tx_id,
+                                attempt + 1
                             );
                             tithe_sent = true;
                             break;
@@ -315,7 +327,8 @@ impl ShareProcessor {
                                 attempt + 1, max_retries, tithe_zion, self.humanitarian_wallet, e, backoff_ms
                             );
                             if attempt + 1 < max_retries {
-                                tokio::time::sleep(tokio::time::Duration::from_millis(backoff_ms)).await;
+                                tokio::time::sleep(tokio::time::Duration::from_millis(backoff_ms))
+                                    .await;
                             }
                         }
                     }
@@ -348,9 +361,7 @@ impl ShareProcessor {
     }
 }
 
-fn parse_template_blob(
-    blob_hex: &str,
-) -> Option<(u32, u64, String, String, u64, u64)> {
+fn parse_template_blob(blob_hex: &str) -> Option<(u32, u64, String, String, u64, u64)> {
     let clean = blob_hex.trim_start_matches("0x");
     let bytes = Vec::from_hex(clean).ok()?;
     if bytes.len() < 156 {
@@ -368,7 +379,14 @@ fn parse_template_blob(
     let timestamp = u64::from_le_bytes(bytes[140..148].try_into().ok()?);
     let difficulty = u64::from_le_bytes(bytes[148..156].try_into().ok()?);
 
-    Some((version, height, prev_hash, merkle_root, timestamp, difficulty))
+    Some((
+        version,
+        height,
+        prev_hash,
+        merkle_root,
+        timestamp,
+        difficulty,
+    ))
 }
 
 #[cfg(test)]
@@ -385,8 +403,8 @@ mod tests {
             None,
             "ZION_TEST_WALLET".to_string(),
             "ZION_HUMANITARIAN_WALLET".to_string(),
-            1.0,  // pool_fee_percent
-            5.0,  // humanitarian_tithe_percent (5% humanitarian + 5% issobella = 10% social)
+            1.0, // pool_fee_percent
+            5.0, // humanitarian_tithe_percent (5% humanitarian + 5% issobella = 10% social)
             1000,
         );
     }
