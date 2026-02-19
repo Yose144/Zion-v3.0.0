@@ -28,7 +28,7 @@
 | `L1/core/src` | 11,980 | n/a (scan blokován) | ⚠️ Build padá na `verushash-native` (chybí `csrc/`) |
 | `L1/core/tests` | 2,522 | n/a (scan blokován) | ⚠️ Test list nelze dokončit bez C sources |
 | `L1/pool/` | 12,743 | 97 | ✅ Běží — 97 testů (deep scan) |
-| `L1/miner/` | 9,281 | 73 | ✅ Běží — 73 testů (+53 nových: stratum, stats, stream, algo) |
+| `L1/miner/` | 9,281 | 73 | ✅ Běží — 73 testů, GPU OpenCL opraveno (CHv3 kernel rewrite) |
 | `L1/cosmic-harmony/` | 8,861 | 48 | ✅ CHv3 finální (deep scan) |
 | `L1/native-libs/` | ~251 | n/a | ⚠️ Vyžaduje `download_sources.sh` (`csrc/` chybí) |
 
@@ -36,7 +36,7 @@
 
 | Server | IP | Uptime | Stav |
 |--------|----|--------|------|
-| Helsinki 🇫🇮 | 77.42.31.72 | ✅ | Seed + Pool + Web (NOVĚJŠÍ VERZE!) |
+| Helsinki 🇫🇮 | 77.42.31.72 | ✅ | Seed + Pool + Web — zion-pool:2.9.6-testnet, Docker opraveno |
 | Germany 🇩🇪 | 195.201.31.201 | ✅ | Peer |
 
 ---
@@ -108,6 +108,25 @@
 17. ✅ **Test inventory ověřen** — 499 Rust testů potvrzeno (`pool 97`, `miner 73`, `bridge 71`, `dao 18`, `warp 115`, `ncl 22`, `ai-native 15`, `oasis 40`, `cosmic 48`)
 18. ⚠️ **`zion-core` / `verushash-native`** — test listing a clippy blokovány chybějícími Verus C zdrojáky (`csrc/`)
 19. ⚠️ **Clippy baseline (ověřený rozsah)** — 46+ warnings na skenovaných cratech (regrese proti předchozímu stavu)
+
+### Session 5 — Desktop Agent + GPU Mining fix (19. února 2026)
+20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
+21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
+22. ✅ **Helsinki pool Docker** — Opraven mount + restart kontejneru `zion-pool:2.9.6-testnet`
+23. ✅ **OpenCL Buffer Overflow** — Header slice padded na 144 B v `opencl.rs`
+24. ✅ **CL_INVALID_WORK_GROUP_SIZE** — `local_work_size=64→256` s device query + round-up
+25. ✅ **GPU hashrate funguje** — AMD RX 5600/5700, ~40-64 MH/s CosmicHarmony
+
+### Session 6 — GPU Kernel Rewrite + Optimalizace (19. února 2026)
+26. ✅ **ROOT CAUSE: GPU hash ≠ CPU/pool hash** — OpenCL kernel měl úplně jiný algoritmus pro GoldenMatrix i CosmicFusion → pool VŽDY přepočítá hash sám → 100% reject rate
+27. ✅ **GoldenMatrix opravena** — Byte-matice × `PHI_POWERS_FP[i+j]` fixed-point (shodné s Rust `golden_matrix_opt`)
+28. ✅ **CosmicFusion opravena** — 4× `Keccak-256(state‖round)` + XOR `COSMIC_XOR_MASK` + finální `SHA3-512` (shodné s Rust `cosmic_fusion_opt`)
+29. ✅ **Target check opraven** — `u32::from_le_bytes(hash[0..4]) ≤ target_u32` (shodné s pool validátorem)
+30. ✅ **Header délka** — Omezena na 80 B (CPU/pool vždy bere jen prvních 80 B blobu)
+31. ✅ **GPU batch_size** — 1M → 4M (konfigurovatelné: `ZION_GPU_BATCH_SIZE=4000000`)
+32. ✅ **local_work_size** — 64 → 256 (plné zaplnění AMD wavefrontů)
+33. ✅ **CPU throttle** — `yield_now()` + 1ms sleep mezi batche (konfigurovatelné: `ZION_CPU_SLEEP_MS`)
+34. ✅ **Revenue logování** — Pool rejection reason nyní logován z odpovědi (code+message)
 
 ### ⚠️ Zbývající problémy
 

@@ -1,5 +1,7 @@
-// Cosmic Harmony v3 - OpenCL Kernel
-// Pipeline: Keccak256 -> SHA3-512 -> GoldenMatrix -> CosmicFusion
+// Cosmic Harmony v3 - OpenCL Kernel  (corrected -- matches CPU/pool exactly)
+// Pipeline: Keccak-256(88B) -> SHA3-512(32B) -> GoldenMatrix -> CosmicFusion -> 32B hash
+//
+// Pool verification:  hash[0..4] as u32-LE  <=  target_u32
 
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_int64_extended_atomics : enable
@@ -8,23 +10,32 @@
 // Constants
 // ============================================================================
 
-__constant ulong PHI_POWERS[16] = {
-    0x9E3779B97F4A7C15UL,
-    0xC6EF3720A5F82D14UL,
-    0x93C467E37DB0C7A4UL,
-    0xD76AA478E8C7B756UL,
-    0xB7E15162E8F85F94UL,
-    0x8AED2A6ABF715880UL,
-    0xA8EDA8A6C43E3EF5UL,
-    0xC5D2460186F7233CUL,
-    0xE6546B64A8E3F7BCUL,
-    0xF7E294D5C7F82A8DUL,
-    0xD8A4E5F6C9B7A8E3UL,
-    0xB9C5D6E7F8A9B0C1UL,
-    0xCAD6E7F8091A2B3CUL,
-    0xDBE7F8091A2B3C4DUL,
-    0xECF8091A2B3C4D5EUL,
-    0xFD091A2B3C4D5E6FUL,
+// Fixed-point golden-ratio powers  phi^n * 2^32  (identical to Rust PHI_POWERS_FP)
+__constant ulong PHI_POWERS_FP[16] = {
+    4294967296UL,      // phi^0
+    6949403065UL,      // phi^1
+    11244370361UL,     // phi^2
+    18193773427UL,     // phi^3
+    29438143788UL,     // phi^4
+    47631917215UL,     // phi^5
+    77070061004UL,     // phi^6
+    124701978219UL,    // phi^7
+    201772039223UL,    // phi^8
+    326474017443UL,    // phi^9
+    528246056666UL,    // phi^10
+    854720074109UL,    // phi^11
+    1382966130776UL,   // phi^12
+    2237686204885UL,   // phi^13
+    3620652335660UL,   // phi^14
+    5858338540545UL,   // phi^15
+};
+
+// Cosmic XOR mask -- repeating 4-byte pattern (identical to Rust COSMIC_XOR_MASK)
+__constant uchar COSMIC_XOR_MASK[32] = {
+    0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60,
+    0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60,
+    0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60,
+    0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60,
 };
 
 __constant ulong KECCAK_RC[24] = {
@@ -35,7 +46,7 @@ __constant ulong KECCAK_RC[24] = {
     0x000000008000808BUL, 0x800000000000008BUL, 0x8000000000008089UL,
     0x8000000000008003UL, 0x8000000000008002UL, 0x8000000000000080UL,
     0x000000000000800AUL, 0x800000008000000AUL, 0x8000000080008081UL,
-    0x8000000000008080UL, 0x0000000080000001UL, 0x8000000080008008UL,
+    0x8000000080008080UL, 0x0000000080000001UL, 0x8000000080008008UL,
 };
 
 __constant int KECCAK_PILN[24] = {
@@ -49,36 +60,29 @@ __constant int KECCAK_ROTC[24] = {
 };
 
 // ============================================================================
-// Helper Functions
+// Helpers
 // ============================================================================
 
 inline ulong rotl64(ulong x, int n) {
-    return (x << n) | (x >> (64 - n)); // OpenCL rotate built-in exists but explicit is clearer
+    return (x << n) | (x >> (64 - n));
 }
 
 // ============================================================================
-// Keccak-f[1600]
+// Keccak-f[1600]  (standard 24-round permutation)
 // ============================================================================
 
 void keccak_f1600(ulong *state) {
-    ulong bc[5];
-    ulong t;
-    
-    #pragma unroll
+    ulong bc[5], t;
+
     for (int round = 0; round < 24; round++) {
         // Theta
+        for (int i = 0; i < 5; i++)
+            bc[i] = state[i] ^ state[i+5] ^ state[i+10] ^ state[i+15] ^ state[i+20];
         for (int i = 0; i < 5; i++) {
-            bc[i] = state[i] ^ state[i + 5] ^ state[i + 10] ^ state[i + 15] ^ state[i + 20];
+            t = bc[(i+4) % 5] ^ rotl64(bc[(i+1) % 5], 1);
+            for (int j = 0; j < 25; j += 5) state[j+i] ^= t;
         }
-        
-        for (int i = 0; i < 5; i++) {
-            t = bc[(i + 4) % 5] ^ rotl64(bc[(i + 1) % 5], 1);
-            for (int j = 0; j < 25; j += 5) {
-                state[j + i] ^= t;
-            }
-        }
-        
-        // Rho and Pi
+        // Rho + Pi
         t = state[1];
         for (int i = 0; i < 24; i++) {
             int j = KECCAK_PILN[i];
@@ -86,102 +90,151 @@ void keccak_f1600(ulong *state) {
             state[j] = rotl64(t, KECCAK_ROTC[i]);
             t = bc[0];
         }
-        
         // Chi
         for (int j = 0; j < 25; j += 5) {
-            for (int i = 0; i < 5; i++) {
-                bc[i] = state[j + i];
-            }
-            for (int i = 0; i < 5; i++) {
-                state[j + i] ^= (~bc[(i + 1) % 5]) & bc[(i + 2) % 5];
-            }
+            for (int i = 0; i < 5; i++) bc[i] = state[j+i];
+            for (int i = 0; i < 5; i++)
+                state[j+i] ^= (~bc[(i+1) % 5]) & bc[(i+2) % 5];
         }
-        
         // Iota
         state[0] ^= KECCAK_RC[round];
     }
 }
 
 // ============================================================================
-// Algorithms
+// Keccak-256  (padding byte 0x01 -- NOT SHA3 0x06)
+// Rate = 136 bytes = 17 u64 words.   Output = 32 bytes.
+// Handles arbitrary input_len (including non-multiple-of-8).
 // ============================================================================
 
-void keccak256(const uchar* input, int input_len, ulong* output_words) {
-    ulong state[25] = {0};
-    
-    // Absorb
-    for (int i = 0; i < input_len/8; i++) {
-       ulong word = 0;
-       for (int b=0; b<8; b++) word |= ((ulong)input[i*8+b]) << (b*8);
-       state[i] ^= word;
+void keccak256_bytes(const uchar* input, int input_len, uchar* output) {
+    ulong state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    // Absorb full 8-byte words
+    int full_words = input_len / 8;
+    for (int i = 0; i < full_words; i++) {
+        ulong w = 0;
+        for (int b = 0; b < 8; b++) w |= ((ulong)input[i*8+b]) << (b*8);
+        state[i] ^= w;
     }
-    
-    int word_idx = input_len / 8;
-    int byte_idx = input_len % 8;
-    
-    ulong pad_word = 0;
-    pad_word |= ((ulong)0x01) << (byte_idx * 8);
-    state[word_idx] ^= pad_word;
-    
-    // 0x80 at byte 135 (Word 16, byte 7)
+
+    // Remaining bytes + Keccak padding (0x01)
+    int rem = input_len % 8;
+    int pw  = full_words;
+    ulong pad = 0;
+    for (int b = 0; b < rem; b++)
+        pad |= ((ulong)input[pw*8+b]) << (b*8);
+    pad |= ((ulong)0x01) << (rem * 8);
+    state[pw] ^= pad;
+
+    // Terminal bit at last byte of rate block (byte 135 = word 16, byte 7)
     state[16] ^= 0x8000000000000000UL;
-    
+
     keccak_f1600(state);
-    
-    for (int i = 0; i < 4; i++) {
-        output_words[i] = state[i];
-    }
+
+    // Squeeze 32 bytes
+    for (int i = 0; i < 4; i++)
+        for (int b = 0; b < 8; b++)
+            output[i*8+b] = (uchar)(state[i] >> (b*8));
 }
 
-void sha3_512(const ulong* input_words, ulong* output_words) {
-    ulong state[25] = {0};
-    
+// ============================================================================
+// SHA3-512  (padding byte 0x06)
+// Rate = 72 bytes = 9 u64 words.   Output = 64 bytes.
+// Fixed for 32-byte input, outputting first 32 bytes (truncated).
+// ============================================================================
+
+void sha3_512_trunc32(const uchar* input, uchar* output) {
+    ulong state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
     for (int i = 0; i < 4; i++) {
-        state[i] ^= input_words[i];
+        ulong w = 0;
+        for (int b = 0; b < 8; b++) w |= ((ulong)input[i*8+b]) << (b*8);
+        state[i] ^= w;
     }
-    
-    // SHA3 Padding 0x06...0x80
     state[4] ^= 0x06;
     state[8] ^= 0x8000000000000000UL;
-    
     keccak_f1600(state);
-    
+
+    for (int i = 0; i < 4; i++)
+        for (int b = 0; b < 8; b++)
+            output[i*8+b] = (uchar)(state[i] >> (b*8));
+}
+
+// SHA3-512 variant: 32-byte input -> 8 u64 output words (full 64 bytes)
+void sha3_512_words(const uchar* input, ulong* out_words) {
+    ulong state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    for (int i = 0; i < 4; i++) {
+        ulong w = 0;
+        for (int b = 0; b < 8; b++) w |= ((ulong)input[i*8+b]) << (b*8);
+        state[i] ^= w;
+    }
+    state[4] ^= 0x06;
+    state[8] ^= 0x8000000000000000UL;
+    keccak_f1600(state);
+
+    for (int i = 0; i < 8; i++) out_words[i] = state[i];
+}
+
+// ============================================================================
+// Golden Matrix  (matches Rust golden_matrix_opt exactly)
+//
+//   matrix[i][j] = byte_value_at(i*8+j)   as u64      (0-255)
+//   result[i]    = (sum_j matrix[i][j] * PHI_POWERS_FP[i+j]) >> 32
+//
+// All products fit in u64 (byte <= 255, max PHI ~ 5.9e12 -> product <= 1.5e15).
+// Sum of 8 terms <= 1.2e16 -- safely within u64.
+// ============================================================================
+
+void golden_matrix(const ulong* sha3_words, ulong* result) {
     for (int i = 0; i < 8; i++) {
-        output_words[i] = state[i];
+        ulong sum = 0;
+        for (int j = 0; j < 8; j++) {
+            ulong byte_val = (sha3_words[i] >> (j * 8)) & 0xFFUL;
+            sum += byte_val * PHI_POWERS_FP[i + j];
+        }
+        result[i] = sum >> 32;
     }
 }
 
-void golden_matrix(ulong* state) {
-    for (int i = 0; i < 8; i++) {
-        ulong phi = PHI_POWERS[i % 16];
-        ulong neighbor = state[(i + 1) % 8];
-        state[i] = state[i] ^ (neighbor * phi);
-        state[i] = rotl64(state[i], (i * 7) % 64);
-    }
-    
+// ============================================================================
+// Cosmic Fusion  (matches Rust cosmic_fusion_opt exactly)
+//
+//   state[0..64] = golden_matrix output (bytes)
+//   4 rounds:
+//     intermediate = Keccak-256( state[0..32] || round_byte )   (33 bytes)
+//     state[0..32] = intermediate XOR COSMIC_XOR_MASK
+//   final_hash = SHA3-512( state[0..32] )[0..32]               (truncated)
+// ============================================================================
+
+void cosmic_fusion(const ulong* gm_words, uchar* output) {
+    // Convert golden-matrix u64 words -> 64 bytes (LE)
+    uchar state[64];
+    for (int i = 0; i < 8; i++)
+        for (int b = 0; b < 8; b++)
+            state[i*8+b] = (uchar)(gm_words[i] >> (b*8));
+
+    // 4 fusion rounds
     for (int round = 0; round < 4; round++) {
-        ulong temp[8]; 
-        for(int k=0; k<8; k++) temp[k] = state[k];
-        
-        for (int i = 0; i < 8; i++) {
-            state[i] ^= rotl64(state[(i + 3) % 8], 17);
-            state[i] += state[(i + 5) % 8];
-        }
-    }
-}
+        // Build 33-byte Keccak input: state[0..32] + round_byte
+        uchar kin[33];
+        for (int i = 0; i < 32; i++) kin[i] = state[i];
+        kin[32] = (uchar)round;
 
-void cosmic_fusion(ulong* state) {
-    for (int round = 0; round < 8; round++) {
-        ulong phi = PHI_POWERS[round];
-        
-        for (int i = 0; i < 8; i++) {
-            state[i] += state[(i + 1) % 8];
-            state[i] = rotl64(state[i], 13);
-            state[i] ^= phi;
-            state[i] ^= (state[(i + 4) % 8] >> 7);
-            state[(i + 2) % 8] += state[i];
-        }
+        uchar intermediate[32];
+        keccak256_bytes(kin, 33, intermediate);
+
+        // XOR with mask -> update state[0..32]
+        for (int i = 0; i < 32; i++)
+            state[i] = intermediate[i] ^ COSMIC_XOR_MASK[i];
     }
+
+    // Final: SHA3-512( state[0..32] ) -> first 32 bytes
+    sha3_512_trunc32(state, output);
 }
 
 // ============================================================================
@@ -189,50 +242,48 @@ void cosmic_fusion(ulong* state) {
 // ============================================================================
 
 __kernel void cosmic_harmony_v3_mine(
-    __global const uchar* header,  
-    const uint header_len,
+    __global const uchar* header,   // block header (first 80 bytes used)
+    const uint header_len,          // actual header length (capped at 80 by host)
     const ulong start_nonce,
-    const ulong target_difficulty, 
-    __global ulong* results,   
+    const uint target_u32,          // pool target as u32 (hash[0..4] LE <= this)
+    __global ulong* results,        // [0]=flag, [1]=winning nonce
     __global uint* result_count
 ) {
     uint tid = get_global_id(0);
-    ulong nonce = start_nonce + tid;
-    
-    uchar local_input[144]; 
-    
-    for (int i = 0; i < header_len; i++) {
-        local_input[i] = header[i];
-    }
-    
-    for (int i = 0; i < 8; i++) {
-        local_input[header_len + i] = (nonce >> (i * 8)) & 0xFF;
-    }
-    int total_len = header_len + 8;
-    
-    // Stage 1
-    ulong stage1[4];
-    keccak256(local_input, total_len, stage1);
-    
-    // Stage 2
-    ulong stage2[8];
-    sha3_512(stage1, stage2);
-    
-    // Stage 3
-    golden_matrix(stage2);
-    
-    // Stage 4
-    cosmic_fusion(stage2);
-    
-    // Check
-    ulong final_hash_high = stage2[3] ^ stage2[7]; // Matching logic approximately. 
-    // Wait, Metal logic was: final_state[i] = stage2[i] ^ stage2[i+4];
-    // And verification on final_state[3].
-    
-    // Correct check:
-    ulong final_word_3 = stage2[3] ^ stage2[7];
-    
-    if (final_word_3 <= target_difficulty) {
+    ulong nonce = start_nonce + (ulong)tid;
+
+    // -- Step 0: Prepare 88-byte input  (80B header + 8B LE nonce) --
+    uchar input[88];
+    uint clen = min(header_len, 80u);
+    for (uint i = 0; i < clen; i++)  input[i] = header[i];
+    for (uint i = clen; i < 80; i++) input[i] = 0;
+    for (int i = 0; i < 8; i++)
+        input[80 + i] = (uchar)(nonce >> (i * 8));
+
+    // -- Step 1: Keccak-256( 88 bytes ) -> 32 bytes --
+    uchar step1[32];
+    keccak256_bytes(input, 88, step1);
+
+    // -- Step 2: SHA3-512( 32 bytes ) -> 8 u64 words (64 bytes) --
+    ulong step2[8];
+    sha3_512_words(step1, step2);
+
+    // -- Step 3: GoldenMatrix -> 8 u64 words --
+    ulong step3[8];
+    golden_matrix(step2, step3);
+
+    // -- Step 4: CosmicFusion -> 32-byte final hash --
+    uchar final_hash[32];
+    cosmic_fusion(step3, final_hash);
+
+    // -- Target check (matches pool validator exactly) --
+    // state0 = u32::from_le_bytes( hash[0..4] )
+    uint state0 = ((uint)final_hash[0])
+                | ((uint)final_hash[1] << 8)
+                | ((uint)final_hash[2] << 16)
+                | ((uint)final_hash[3] << 24);
+
+    if (state0 <= target_u32) {
         if (atomic_xchg(result_count, 1) == 0) {
             results[0] = 1;
             results[1] = nonce;
