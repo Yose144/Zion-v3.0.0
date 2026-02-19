@@ -51,21 +51,22 @@ fn test_mining_emission_equals_supply_minus_premine() {
 
 #[test]
 fn test_emission_timeline() {
-    // 45 years × 525,600 blocks/year = 23,652,000 total blocks
+    // 100 years (10 decades × 10 years) × 525,600 blocks/year = 52,560,000 total decay blocks
     assert_eq!(reward::BLOCKS_PER_YEAR, 525_600);
-    assert_eq!(reward::MINING_YEARS, 45);
-    assert_eq!(reward::TOTAL_MINING_BLOCKS, 23_652_000);
-    assert_eq!(reward::emission_end_block(), 23_652_000);
-    assert_eq!(reward::emission_end_year(), 2071); // 2026 + 45
+    assert_eq!(reward::MINING_YEARS, 100);
+    assert_eq!(reward::TOTAL_MINING_BLOCKS, 52_560_000);
+    assert_eq!(reward::emission_end_block(), 52_560_000);
+    assert_eq!(reward::emission_end_year(), 2126); // 2026 + 100
 }
 
 #[test]
 fn test_reward_distribution_percentages() {
     assert_eq!(reward::MINER_SHARE_PERCENT, 89);
-    assert_eq!(reward::TITHE_PERCENT, 10);
+    assert_eq!(reward::TITHE_PERCENT, 5);
+    assert_eq!(reward::ISSOBELLA_FUND_PERCENT, 5);
     assert_eq!(reward::POOL_FEE_PERCENT, 1);
     assert_eq!(
-        reward::MINER_SHARE_PERCENT + reward::TITHE_PERCENT + reward::POOL_FEE_PERCENT,
+        reward::MINER_SHARE_PERCENT + reward::TITHE_PERCENT + reward::ISSOBELLA_FUND_PERCENT + reward::POOL_FEE_PERCENT,
         100
     );
 }
@@ -228,11 +229,18 @@ fn test_genesis_has_no_mining_reward() {
 
 #[test]
 fn test_emission_complete_after_last_block() {
-    assert_eq!(
-        reward::calculate(reward::TOTAL_MINING_BLOCKS, 1000),
-        reward::BLOCK_REWARD_ATOMIC
-    );
-    assert_eq!(reward::calculate(reward::TOTAL_MINING_BLOCKS + 1, 1000), 0);
+    // D10 (decade index 9): last decay decade, before tail starts
+    let d10_last_block = reward::TOTAL_MINING_BLOCKS;
+    let d10_reward = reward::calculate(d10_last_block, 1000);
+    assert!(d10_reward > 0, "D10 last block must have non-zero reward");
+    assert!(d10_reward < reward::BLOCK_REWARD_ATOMIC, "D10 reward must be lower than D1");
+
+    // After TOTAL_MINING_BLOCKS, tail emission begins (never zero)
+    let tail_reward = reward::calculate(d10_last_block + 1, 1000);
+    assert_eq!(tail_reward, reward::TAIL_REWARD_ATOMIC, "First tail block must equal TAIL_REWARD_ATOMIC");
+
+    // Tail emission continues forever
+    assert_eq!(reward::calculate(u64::MAX, 1000), reward::TAIL_REWARD_ATOMIC);
 }
 
 #[test]

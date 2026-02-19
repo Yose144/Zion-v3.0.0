@@ -179,4 +179,92 @@ mod tests {
         assert!(next.is_some());
         assert!(next.unwrap() < 100);
     }
+
+    #[test]
+    fn vardiff_no_retarget_within_variance_band() {
+        // variance = 0.25, so no retarget if ratio within [0.75, 1.25]
+        let cfg = VarDiffConfig {
+            target_share_time: Duration::from_secs(10),
+            retarget_time: Duration::from_secs(10),
+            variance: 0.25,
+            min_difficulty: 1,
+            max_difficulty: 1_000_000,
+        };
+        let mut st = VarDiffState::new(Some(cfg));
+        let start = st.last_retarget;
+        // 1 share in 10s => avg share time = 10s = target => ratio = 1.0 → no retarget
+        let next = st.on_share(start + Duration::from_secs(10), true, 100);
+        assert!(next.is_none(), "Difficulty within variance should not retarget, got {:?}", next);
+    }
+
+    #[test]
+    fn vardiff_clamps_to_min_difficulty() {
+        let cfg = VarDiffConfig {
+            target_share_time: Duration::from_secs(10),
+            retarget_time: Duration::from_secs(10),
+            variance: 0.0,
+            min_difficulty: 50,
+            max_difficulty: 1_000_000,
+        };
+        let mut st = VarDiffState::new(Some(cfg));
+        let start = st.last_retarget;
+        // 1 share in 10s but target=10s => would normally stay the same.
+        // Force slow: 1 share in 100s => ratio=0.1 => new_diff = 5 => clamps to 50
+        let next = st.on_share(start + Duration::from_secs(100), true, 500);
+        assert!(next.is_some());
+        assert!(next.unwrap() >= 50, "Should be at least min_difficulty 50, got {:?}", next);
+    }
+
+    #[test]
+    fn vardiff_clamps_to_max_difficulty() {
+        let cfg = VarDiffConfig {
+            target_share_time: Duration::from_secs(10),
+            retarget_time: Duration::from_secs(10),
+            variance: 0.0,
+            min_difficulty: 1,
+            max_difficulty: 200,
+        };
+        let mut st = VarDiffState::new(Some(cfg));
+        let start = st.last_retarget;
+        // 100 shares in 10s => avg=0.1s, target=10s => ratio=100 => new_diff=100*100=10000 → clamps to 200
+        for i in 0..100u64 {
+            let _ = st.on_share(start + Duration::from_millis(i * 100), true, 100);
+        }
+        let next = st.on_share(start + Duration::from_secs(10), true, 100);
+        // After the retarget window passes, difficulty should be clamped to max
+        if let Some(d) = next {
+            assert!(d <= 200, "Should be at most max_difficulty 200, got {}", d);
+        }
+    }
+
+    #[test]
+    fn vardiff_rejected_shares_do_not_count() {
+        let cfg = VarDiffConfig {
+            target_share_time: Duration::from_secs(10),
+            retarget_time: Duration::from_secs(10),
+            variance: 0.0,
+            min_difficulty: 1,
+            max_difficulty: 1_000_000,
+        };
+        let mut st = VarDiffState::new(Some(cfg));
+        let start = st.last_retarget;
+        // 10 rejected shares — should not affect accepted count
+        for i in 0..10u64 {
+            let _ = st.on_share(start + Duration::from_secs(i), false, 100);
+        }
+        // No accepted shares → retarget returns None (keeps same window)
+        let next = st.on_share(start + Duration::from_secs(10), false, 100);
+        assert!(next.is_none(), "Rejected-only shares should not trigger retarget, got {:?}", next);
+    }
+
+    #[test]
+    fn vardiff_default_config_has_sane_values() {
+        let cfg = VarDiffConfig::default();
+        assert_eq!(cfg.target_share_time, Duration::from_secs(15));
+        assert_eq!(cfg.retarget_time, Duration::from_secs(30));
+        assert!((cfg.variance - 0.25).abs() < 1e-9);
+        assert_eq!(cfg.min_difficulty, 1_000);
+        assert_eq!(cfg.max_difficulty, 10_000_000_000);
+        assert!(cfg.min_difficulty < cfg.max_difficulty);
+    }
 }

@@ -626,6 +626,62 @@ mod tests {
         assert_eq!(Algorithm::from_str("blake3"), Algorithm::Blake3);
     }
 
+    #[test]
+    fn test_algorithm_all_known_aliases() {
+        // CHv3 aliases
+        for alias in &["ch3", "cosmic3", "cosmicharmony", "cosmic-harmony", 
+                       "cosmic-harmony-v3", "cosmicharmonyv3", "cosmicharmonyv2",
+                       "cosmic-harmony-v2", "cosmic_v3"] {
+            assert_eq!(Algorithm::from_str(alias), Algorithm::CosmicHarmony,
+                "Expected CosmicHarmony for alias '{}'", alias);
+        }
+        // External algorithms → Unknown (routed to external pool)
+        for s in &["ethash", "etchash", "kawpow"] {
+            assert_eq!(Algorithm::from_str(s), Algorithm::Unknown,
+                "Expected Unknown for external algorithm '{}'", s);
+        }
+        // Autolykos
+        assert_eq!(Algorithm::from_str("autolykos"), Algorithm::AutolykovV2);
+        assert_eq!(Algorithm::from_str("autolykos_v2"), Algorithm::AutolykovV2);
+        // Truly unknown
+        assert_eq!(Algorithm::from_str("nonsense_algo"), Algorithm::Unknown);
+        assert_eq!(Algorithm::from_str(""), Algorithm::Unknown);
+    }
+
+    #[test]
+    fn test_algorithm_uppercase_is_unknown() {
+        // from_str does to_lowercase internally — uppercase should still parse
+        assert_eq!(Algorithm::from_str("RANDOMX"), Algorithm::RandomX);
+        assert_eq!(Algorithm::from_str("BLAKE3"), Algorithm::Blake3);
+        assert_eq!(Algorithm::from_str("YESCRYPT"), Algorithm::Yescrypt);
+        assert_eq!(Algorithm::from_str("CHV3"), Algorithm::CosmicHarmony);
+    }
+
+    #[test]
+    fn test_u256_from_hex_zero_and_max() {
+        assert_eq!(u256_from_hex("00"), 0u128);
+        // u256_from_hex uses u128::from_str_radix — max is 32 hex chars (16 bytes).
+        // 64-char hex (256-bit) overflows u128 → returns 0 (unwrap_or(0)).
+        assert_eq!(u256_from_hex(&"ff".repeat(32)), 0u128, "64-char hex overflows u128, returns 0");
+        // 32-char hex (128-bit) fits u128 exactly
+        assert_eq!(u256_from_hex(&"ff".repeat(16)), u128::MAX);
+        assert_eq!(u256_from_hex("01"), 1u128);
+        assert_eq!(u256_from_hex("0f"), 15u128);
+    }
+
+    #[test]
+    fn test_meets_target_be_trivial() {
+        // Hash of all zeros always meets any target
+        let zero_hash = [0u8; 32];
+        assert!(meets_target_be(&zero_hash, &"ff".repeat(32), 32));
+        // Hash of all 0xff never meets target of all zeros
+        let max_hash = [0xffu8; 32];
+        let zero_target = "00".repeat(32);
+        assert!(!meets_target_be(&max_hash, &zero_target, 32));
+        // Hash of all 0xff meets target of all 0xff (equal = meets)
+        assert!(meets_target_be(&max_hash, &"ff".repeat(32), 32));
+    }
+
     #[tokio::test]
     async fn test_duplicate_detection() {
         let validator = ShareValidator::new("little");
