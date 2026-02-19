@@ -117,6 +117,14 @@
 39. ✅ **--threads 1 fix** — GPU revenue přetážní M1 opraveno (bylo 8T default → nyní 1T CPU, Metal děla gpu práci)
 40. ✅ **BLOCK FOUND** — pool našel blok během session, payouty funguji (1705, 1660, 3236 ZION)
 
+### Session 12 — RandomX not initialized fix + Revenue pipeline (19. února 2026)
+41. ✅ **Root cause nalezen** — CPU revenue spawnoval `--algorithm randomx`, ale pool posílal `seed_hash: ""` → `RandomX not initialized` → `hr=0.00 H/s`
+42. ✅ **Odstraněn `--algorithm randomx`** — `revenueArgs` v `main.js`: pool StreamScheduler přiřadí algoritmus sám; fallback = `cosmic_harmony`
+43. ✅ **Pool safety fallback** — `server_v2.rs`: randomx bez `seed_hash` → přepínáme na `cosmic_harmony` (warn + re-fetch ZION template)
+44. ✅ **Pool hot restart** — `ZION_CPU_REVENUE_COIN=XMR` (bylo VRSC — miner nepodporoval VerusHash) bez rebuildu
+45. ✅ **Wallet validator rozšířen** — P2WSH adresy 20–90 znaků (bylo max 45) — `server_v2.rs` commit `81c4229`
+46. ✅ **Pool XMR hashrate** — `xmrig: 222–223 H/s` na serveru, `BLOCK FOUND` pokračuje, MoneroOcean XMR accumulation = 0.00024 XMR
+
 ### Session 5 — Desktop Agent + GPU Mining fix (19. února 2026)
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
@@ -138,10 +146,11 @@
 
 ### ⚠️ Zbývající problémy
 
-- **Helsinki sync**: Server 77.42.31.72 má novější kód — potřeba rsync/porovnání
 - **verushash-native C sources**: Bez `csrc/` nelze plně testovat `zion-core` ani `verushash-native`
 - **L1/core LOC gap**: 14,500 LOC (src+tests) vs 35,000 tvrzených — ~58% chybí
 - **L3 adaptéry**: Všech 7 chain adaptérů jsou stuby (EVM, Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin)
+- **Revenue miner hr** — CPU revenue na Mac stále závisí na `seed_hash` z MoneroOcean; pokud pool nemá XMR job → fallback cosmic_harmony (ZION hashrate, ne XMR)
+- **Main miner macOS Metal** — hlavní ZION miner stále bez `--gpu` (darwin guard) — GPU revenue process ale funguje Metal ✅
 
 ---
 
