@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y cmake g++ make pkg-config libssl-dev &&
 COPY . .
 RUN cargo build --release -p zion-pool
 
-FROM debian:bookworm-slim
+FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y ca-certificates libssl3 curl && rm -rf /var/lib/apt/lists/*
 RUN groupadd -r zion && useradd -r -g zion -d /data/zion-pool -s /sbin/nologin zion
 # NOTE: xmrig installed on host and bind-mounted into container
