@@ -21,8 +21,10 @@ async fn stratum_subscribe_authorize() {
         validator,
         storage,
         None,
-        None,
         "ZION_TEST_WALLET".to_string(),
+        "ZION_HUMANITARIAN_WALLET".to_string(),
+        1.0,  // pool_fee_percent
+        10.0, // humanitarian_tithe_percent
         100_000, // pplns_window_shares
     ));
 
@@ -46,7 +48,6 @@ async fn stratum_subscribe_authorize() {
         session_manager.clone(),
         share_processor,
         Some(128),
-        0.20,
     ));
     
     server.set_template_manager(template_manager);
@@ -85,8 +86,10 @@ async fn stratum_pushes_set_difficulty_on_vardiff_retarget() {
         validator,
         storage,
         None,
-        None,
         "ZION_TEST_WALLET".to_string(),
+        "ZION_HUMANITARIAN_WALLET".to_string(),
+        1.0,  // pool_fee_percent
+        10.0, // humanitarian_tithe_percent
         100_000, // pplns_window_shares
     ));
 
@@ -110,7 +113,6 @@ async fn stratum_pushes_set_difficulty_on_vardiff_retarget() {
         session_manager.clone(),
         share_processor,
         Some(128),
-        0.20,
     ));
     
     server.set_template_manager(template_manager);
