@@ -34,7 +34,7 @@ hex = "0.4"
 rusqlite = { version = "0.31", features = ["bundled"] }
 
 # Config
-config = "0.14"
+config = "0.15"
 
 # Error handling
 thiserror = "2"
