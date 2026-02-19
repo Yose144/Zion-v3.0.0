@@ -312,9 +312,65 @@ pool Docker image přebuildován:
 
 ```bash
 rsync -a --exclude='target/' L1/ root@77.42.31.72:/root/zion-build/L1/
-ssh root@77.42.31.72 'cd /root/zion-build && docker build -f Dockerfile.pool -t zion-pool:2.9.6-testnet . > /root/docker-build.log 2>&1'
-ssh root@77.42.31.72 'cd /root/docker && docker compose -f docker-compose.testnet.yml up -d --no-deps pool'
+rsync -a docker/Dockerfile.pool Cargo.toml Cargo.lock root@77.42.31.72:/root/zion-build/
+ssh root@77.42.31.72 'cd /root/zion-build && nohup docker build -f Dockerfile.pool -t zion-pool:2.9.6-testnet . > /root/docker-build.log 2>&1 &'
+# Restart pool containeru:
+ssh root@77.42.31.72 'docker stop zion-pool && docker rm zion-pool'
+ssh root@77.42.31.72 'docker run -d --name zion-pool --network docker_zion-net \
+  --restart unless-stopped -p 3333:3333 -p 8080:8080 \
+  -v pool-testnet-data:/data/zion-pool \
+  -v /root/Zion-2.9.5/config/ch3_revenue_settings.json:/config/ch3_revenue_settings.json:ro \
+  -v /usr/local/bin/xmrig:/usr/local/bin/xmrig:ro \
+  -e REDIS_URL="redis://:ZionTestNet2025SecureR3d1s@redis:6379" \
+  -e ZION_REVENUE_CONFIG=/config/ch3_revenue_settings.json \
+  -e ZION_CPU_REVENUE_COIN=XMR -e ZION_HAS_GPU=0 \
+  -e RUST_LOG=info -e ZION_CORE_RPC=http://core:8444/jsonrpc \
+  zion-pool:2.9.6-testnet'
 ```
+
+### E2E verifikace (po rebuildu pool image)
+
+```
+✅ RandomX initialized with key (len=32, hash=ce1fc29930bbbc08...)
+SPEED   10s 21.60 H/s   algo: randomx
+pool: stratum+tcp://77.42.31.72:3333   worker: Jose--MacBook-Pro.local
+```
+
+Miner se připojil, dostal login response se `seed_hash`, inicializoval RandomX a ihned hashuje 21 H/s.
+
+### Pool xmrig (server-side)
+
+```
+📊 xmrig: 213.8 H/s | accepted=1 rejected=0
+```
+
+Pool's own xmrig (MoneroOcean) stabilní, přijímá shares.
+
+### Root cause: Dockerfile glibc mismatch
+
+xmrig binárka na hostu vyžaduje GLIBC_2.38, container měl Debian Bookworm (glibc 2.36):
+```
+/usr/local/bin/xmrig: /lib/aarch64-linux-gnu/libc.so.6: version 'GLIBC_2.38' not found
+```
+
+**Fix:** Změna runtime stage v `Dockerfile.pool`:
+```dockerfile
+# Bylo:
+FROM debian:bookworm-slim   # glibc 2.36
+# Teď:
+FROM ubuntu:24.04            # glibc 2.39 ✅
+```
+
+### Root cause: Rust 1.85 neznámá `is_multiple_of()` (stable od 1.86)
+
+Build selhal s:
+```
+error[E0658]: use of unstable library feature `unsigned_is_multiple_of`
+  --> L1/cosmic-harmony/src/engine.rs:45
+  --> L1/pool/src/merged_mining.rs:88
+```
+
+**Fix:** nahradit `.is_multiple_of(N)` → `% N == 0` (backwards compatible).
 
 ---
 
