@@ -109,6 +109,14 @@
 18. ⚠️ **`zion-core` / `verushash-native`** — test listing a clippy blokovány chybějícími Verus C zdrojáky (`csrc/`)
 19. ⚠️ **Clippy baseline (ověřený rozsah)** — 46+ warnings na skenovaných cratech (regrese proti předchozímu stavu)
 
+### Session 11 — VerusHash native + GPU Revenue macOS Metal (19. února 2026)
+35. ✅ **native-verushash feature** — `L1/miner/Cargo.toml` + `native-all` zahrnuje VRSC
+36. ✅ **CLI help text** — `--algorithm` nyní zobrazuje `verushash` jako platnou volbu
+37. ✅ **GPU revenue spawn** — 3. miner proces v agentu: `gpuRevenueProcess`, stop cleanup
+38. ✅ **macOS Metal GPU revenue** — `cosmic_harmony + --gpu` → 17-18 MH/s na Apple M1 Metal
+39. ✅ **--threads 1 fix** — GPU revenue přetážní M1 opraveno (bylo 8T default → nyní 1T CPU, Metal děla gpu práci)
+40. ✅ **BLOCK FOUND** — pool našel blok během session, payouty funguji (1705, 1660, 3236 ZION)
+
 ### Session 5 — Desktop Agent + GPU Mining fix (19. února 2026)
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)

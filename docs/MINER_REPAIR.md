@@ -374,6 +374,89 @@ error[E0658]: use of unstable library feature `unsigned_is_multiple_of`
 
 ---
 
+## Session 11 — VerusHash native + GPU Revenue (macOS Metal) (19. února 2026)
+
+**Platforma:** macOS M1 (agent), Helsinki 77.42.31.72 (pool)
+
+### 1. VerusHash native lib integrace
+
+VerusHash (VRSC) algoritmus existoval v `NativeAlgorithm::VerusHash` enum, ale:
+- `verushash-native` crate nebyl závislost`L1/miner/Cargo.toml`
+- CLI `--algorithm` help text nezobrazoval `verushash`
+- `zion_core/algorithms/verushash.rs` už existoval se správným wraperem (`verus_hash_v2_2_with_nonce`)
+
+**Fix `L1/miner/Cargo.toml`:**
+```toml
+native-verushash = ["zion-core/verushash"]       # VerusHash 2.2 (VRSC) via native C FFI
+native-all = [..., "native-verushash"]           # přidáno
+```
+
+**Fix `L1/miner/src/main.rs`:**
+```rust
+/// Mining algorithm (cosmic_harmony, randomx, yescrypt, verushash, blake3)
+```
+
+### 2. GPU Revenue spawn (agent)
+
+Přidán třetí miner proces `gpuRevenueProcess` v `APP&WEB/desktop-agent/src/main.js`:
+- Proměnná `gpuRevenueProcess = null` deklarována (line 373)
+- Spawn blok za CPU revenue procesem: spustí se pokud `config.gpuRevenue && effectiveGpu && rustGroupSupported`
+- **macOS Metal:** `algorithm = cosmic_harmony`, `--gpu` flag (Metal aktivuje automaticky) ✅
+- **Linux/Win OpenCL:** `algorithm = kawpow` (RVN), `--gpu` flag
+- Stop cleanup: SIGTERM → SIGKILL po 3s (stejný vzor jako CPU revenue)
+
+### 3. Test: Gordon macOS Metal funguje
+
+Manualní test `cosmic_harmony + --gpu + --group revenue` na M1:
+```
+CONFIG
+  algorithm    cosmic_harmony_v3
+  gpu          Apple M1 [Metal] 0 CUs 5461 MB
+  gpu-mode     ENABLED
+
+SPEED   10s 16.67 MH/s  60s 18.17  15m 18.17
+SHARES  A: 0  R: 1  rate: 0.0%       ← rejected = low difficulty (ok, pool nastaví d=)
+HW     gpu: 17.88 MH/s [Apple M1]   ✔ Metal aktivní
+```
+
+### 4. Fix: GPU revenue --threads 1 (přetížení M1)
+
+**Problém:** GPU revenue bez `--threads` arg bral všechna jádra (8T default).
+Celkem: 6T (zion) + 1T (CPU rev) + 8T (GPU rev) = **15T na 8-jádrovém M1** → přetížení
+→ hlavní miner `hr=0.00 H/s` → `Broken pipe`.
+
+**Fix:** přidáno `'--threads', '1'` do `gpuRevenueArgs`.
+
+Výsledné rozłožení na M1:
+| Proces | Thready | GPU |
+|--------|---------|-----|
+| Hlavní ZION | 6T CPU | – |
+| CPU revenue (randomx) | 1T CPU | – |
+| GPU revenue (cosmic_harmony) | 1T CPU | **Metal GPU** |
+| **Celkem** | **8T** (max M1) | ✅ |
+
+### 5. Pool výsledky (během session)
+
+Pool: `77.42.31.72`, image `zion-pool:2.9.6-testnet`
+
+```
+🎉 BLOCK FOUND by zion1l6qc82s2r9cnw8ckwj0wgjtcllee5ylwl6qc82s
+   hash: df000000d31d106bcd79d3d046b867bb97914c5eb35a1bd8ee1d754bf54dda86
+💸 Payout sent: 1705 ZION  tx_id: f5005027...
+💸 Payout sent: 1660 ZION  tx_id: 6049e8d4...
+💸 Payout sent: 3236 ZION  tx_id: 5ab30fda...
+```
+
+### Commits
+
+| Commit | Popis |
+|--------|-------|
+| *(implem.)* | `feat(miner): native-verushash feature + verushash v CLI helpu` |
+| `cb9d9b4` | `feat(agent): GPU revenue macOS Metal - cosmic_harmony+--gpu funguje (17 MH/s M1)` |
+| `2b547c9` | `fix(agent): GPU revenue --threads 1 (Metal nepotrebuje CPU thready, fix pretizeni)` |
+
+---
+
 ## Infrastruktura
 
 - **GPU (AMD server):** AMD Radeon RX 5600/5700 (gfx1010, 18 CU, 6128 MB)
