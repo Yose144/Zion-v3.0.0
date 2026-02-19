@@ -162,8 +162,14 @@ impl GpuMiner for OpenCLMiner {
             padded_header[..header_len].copy_from_slice(&header[..header_len]);
             header_buf.write(&padded_header[..]).enq()?;
 
-            let global_work_size = (batch_size.min(u32::MAX as u64)) as usize;
-            let local_work_size = if global_work_size >= 256 { 256 } else { 1 };
+            // Optimal local work size — 256 fully occupies AMD wavefronts (64)
+            // and Nvidia warps (32).  Query device max and cap.
+            let max_wg = pro_que.device().max_wg_size().unwrap_or(256);
+            let local_work_size = 256usize.min(max_wg);
+            let raw_global = (batch_size.min(u32::MAX as u64)) as usize;
+            let raw_global = raw_global.max(local_work_size); // at least one workgroup
+            let global_work_size =
+                ((raw_global + local_work_size - 1) / local_work_size) * local_work_size;
 
             // "cosmic_harmony_v3_mine"
             let kernel = pro_que

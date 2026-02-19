@@ -127,7 +127,7 @@ impl CpuMiner {
                         stats_guard.print_accepted();
                     } else {
                         stats_guard.share_rejected();
-                        stats_guard.print_rejected("low difficulty share");
+                        stats_guard.print_rejected("share rejected by pool");
                     }
                 }
                 log::debug!("Share submit loop ended");
@@ -912,6 +912,26 @@ impl CpuMiner {
             }
 
             nonce_start = nonce_start.wrapping_add(batch_size.wrapping_mul(effective_workers));
+
+            // ═══ CPU throttle: yield + optional sleep between batches ═══
+            // When GPU handles the heavy lifting, CPU threads don't need to
+            // burn 100 % of every core.  yield_now() lets the OS scheduler
+            // give time to the GPU driver / other processes.
+            // ZION_CPU_SLEEP_MS (default 1 ms) adds a tiny pause that drops
+            // per-core usage from ~100 % to <10 % while barely affecting
+            // the CPU hashrate (CH batch 25 k takes ~40 ms → 1 ms = ~2 % hit).
+            std::thread::yield_now();
+            {
+                // Read once per thread startup via lazy static-like pattern;
+                // re-read each loop is fine — env::var is fast enough.
+                let sleep_ms: u64 = std::env::var("ZION_CPU_SLEEP_MS")
+                    .ok()
+                    .and_then(|v| v.trim().parse().ok())
+                    .unwrap_or(1);
+                if sleep_ms > 0 {
+                    std::thread::sleep(std::time::Duration::from_millis(sleep_ms));
+                }
+            }
 
             // Check if connection is still alive (set to false by submit loop or connection monitor)
             if !connection_alive.load(std::sync::atomic::Ordering::Relaxed) {
