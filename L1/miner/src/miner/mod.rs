@@ -880,6 +880,22 @@ impl UniversalMiner {
                     let result_hex = hex::encode(hash);
                     let job_id = job.job_id.clone();
 
+                    // ═══ GPU→CPU verification: re-hash on CPU and compare ═══
+                    {
+                        let cpu_hash = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_v3_with_height(
+                            &blob_bytes, nonce, job.height,
+                        );
+                        let cpu_hex = hex::encode(&cpu_hash.data);
+                        let cpu_state0 = u32::from_le_bytes([
+                            cpu_hash.data[0], cpu_hash.data[1],
+                            cpu_hash.data[2], cpu_hash.data[3],
+                        ]);
+                        log::warn!(
+                            "🔬 GPU→CPU verify: nonce={} gpu_hash={} cpu_hash={} cpu_state0={:#010x} blob_len={} height={}",
+                            nonce, result_hex, cpu_hex, cpu_state0, blob_bytes.len(), job.height,
+                        );
+                    }
+
                     log::debug!(
                         "GPU SHARE algo {} nonce {} hash {}...{}",
                         active_algo.name(),
