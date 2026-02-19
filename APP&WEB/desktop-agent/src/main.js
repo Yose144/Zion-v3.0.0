@@ -370,6 +370,7 @@ let tray;
 let trayMenu;
 let minerProcess = null;
 let revenueProcess = null; // 2nd miner process: --group revenue → pool routes to XMR/RandomX
+let gpuRevenueProcess = null; // 3rd miner process: --group revenue --gpu → GPU algorithms (kawpow/ethash)
 let minerStopping = false;
 let minerStopPromise = null;
 let minerAutoStopTimer = null;
@@ -2399,6 +2400,87 @@ function startMining(config) {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // GPU Revenue Process: 3rd miner instance for GPU-accelerated revenue mining.
+  // macOS (Metal): cosmic_harmony + --gpu (Metal active, 12+ MH/s on M1). ✅
+  // Linux/Win (OpenCL): kawpow (RVN) + --gpu.
+  // Only spawns when: gpuRevenue=true, GPU detected, Rust miner, --group supported.
+  // ═══════════════════════════════════════════════════════════════
+  if (MINER_IS_RUST && config.gpuRevenue && effectiveGpu && rustGroupSupported) {
+    try {
+      const gpuRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_gpu_revenue.json');
+      // macOS Metal: kawpow needs OpenCL (dropped on macOS) → cosmic_harmony works with Metal + --gpu ✅
+      const isMacOS = process.platform === 'darwin';
+      const gpuRevenueAlgo = isMacOS ? 'cosmic_harmony' : 'kawpow';
+      const gpuRevenueArgs = [
+        '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
+        '--wallet', config.wallet,
+        '--group', 'revenue',
+        '--algorithm', gpuRevenueAlgo,
+        '--gpu',   // works on macOS for cosmic_harmony (Metal), and on Linux/Win (OpenCL)
+        '--stats-file', gpuRevenueStatsPath,
+        '--stats-interval', '5',
+        '--no-color'
+      ];
+      if (config.worker) gpuRevenueArgs.push('--worker', `${String(config.worker)}_gpu_rev`);
+
+      gpuRevenueProcess = spawn(spawnCommand, gpuRevenueArgs, {
+        cwd: minerCwd,
+        env
+      });
+
+      logApp('gpu-revenue-process-started', JSON.stringify({
+        pid: gpuRevenueProcess?.pid,
+        algorithm: gpuRevenueAlgo,
+        group: 'revenue',
+        pool: `${config.pool.host}:${config.pool.port}`
+      }));
+
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[CH3-GPU] GPU Revenue process started (PID ${gpuRevenueProcess?.pid}) — algo=${gpuRevenueAlgo} g=revenue\n`
+        });
+      } catch {
+        // ignore
+      }
+
+      gpuRevenueProcess.stdout?.on('data', (data) => {
+        const output = data.toString();
+        safeMinerLogWrite(`[GPU-REV-STDOUT] ${output}`);
+      });
+      gpuRevenueProcess.stderr?.on('data', (data) => {
+        const output = data.toString();
+        safeMinerLogWrite(`[GPU-REV-STDERR] ${output}`);
+      });
+
+      gpuRevenueProcess.on('error', (err) => {
+        console.error('GPU Revenue miner process error:', err);
+        gpuRevenueProcess = null;
+        logApp('gpu-revenue-process-error', err?.message || String(err));
+      });
+
+      gpuRevenueProcess.on('close', (code, signal) => {
+        console.log(`GPU Revenue process exited (code=${code} signal=${signal})`);
+        gpuRevenueProcess = null;
+        logApp('gpu-revenue-process-exit', JSON.stringify({ code, signal }));
+        if (minerProcess && !minerStopping && !minerUserStopRequested && code !== 0) {
+          try {
+            sendToRenderer('miner-output', {
+              stream: 'stderr',
+              text: `[CH3-GPU] GPU Revenue process exited unexpectedly (code=${code}). GPU revenue paused.\n`
+            });
+          } catch {
+            // ignore
+          }
+        }
+      });
+    } catch (err) {
+      logApp('gpu-revenue-process-spawn-failed', err?.message || String(err));
+      gpuRevenueProcess = null;
+    }
+  }
+
   // Start Afterburner service (best-effort, non-blocking) when enabled.
   if (config.aiAfterburner !== false) {
     void ensureAfterburnerServiceRunning()
@@ -3434,6 +3516,35 @@ if ($procs) { '1' } else { '0' }
         }
       }, 3000);
       revenueProcess = null;
+    }
+  } catch {
+    // ignore
+  }
+
+  // Stop the GPU revenue process (3rd miner, --group revenue --gpu) if running.
+  try {
+    if (gpuRevenueProcess) {
+      logApp('stop-gpu-revenue-process', JSON.stringify({ pid: gpuRevenueProcess?.pid }));
+      try {
+        if (process.platform === 'win32') {
+          gpuRevenueProcess.kill();
+        } else {
+          gpuRevenueProcess.kill('SIGTERM');
+        }
+      } catch {
+        // ignore
+      }
+      const gpuRevProc = gpuRevenueProcess;
+      setTimeout(() => {
+        try {
+          if (gpuRevProc && !gpuRevProc.killed) {
+            gpuRevProc.kill('SIGKILL');
+          }
+        } catch {
+          // ignore
+        }
+      }, 3000);
+      gpuRevenueProcess = null;
     }
   } catch {
     // ignore
