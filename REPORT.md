@@ -125,6 +125,7 @@
 45. ✅ **Wallet validator rozšířen** — P2WSH adresy 20–90 znaků (bylo max 45) — `server_v2.rs` commit `81c4229`
 46. ✅ **Pool XMR hashrate** — `xmrig: 222–223 H/s` na serveru, `BLOCK FOUND` pokračuje, MoneroOcean XMR accumulation = 0.00024 XMR
 47. ⚠️ **MoneroOcean IP ban** — opakované reconnecty z testování způsobily dočasný 10min ban; revenue miner dostával "Broken pipe"; pool internal xmrig neovlivněn
+48. ✅ **Exponential backoff v revenue_proxy** — `run_loop`: detekce IP banu → 10min pauza; ostatní chyby: 10s→20s→40s→80s→max 300s
 
 ### Session 5 — Desktop Agent + GPU Mining fix (19. února 2026)
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
@@ -151,7 +152,7 @@
 - **L1/core LOC gap**: 14,500 LOC (src+tests) vs 35,000 tvrzených — ~58% chybí
 - **L3 adaptéry**: Všech 7 chain adaptérů jsou stuby (EVM, Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin)
 - **Revenue miner hr** — CPU revenue na Mac stále závisí na `seed_hash` z MoneroOcean; pokud pool nemá XMR job → fallback cosmic_harmony (ZION hashrate, ne XMR)
-- **MoneroOcean reconnect backoff** — Pool by měl implementovat exponential backoff pro MO reconnecty (jinak dočasný IP ban = "Broken pipe" u revenue mineru)
+- **MoneroOcean reconnect backoff** — ✅ OPRAVENO: exponential backoff + IP ban detekce (commit `15b8d85`); pool rebuild probíhá na serveru
 - **Main miner macOS Metal** — hlavní ZION miner stále bez `--gpu` (darwin guard) — GPU revenue process ale funguje Metal ✅
 
 ---
