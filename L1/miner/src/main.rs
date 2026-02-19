@@ -44,7 +44,7 @@ struct Cli {
     #[arg(short, long)]
     wallet: String,
 
-    /// Mining algorithm (cosmic_harmony, randomx, yescrypt, blake3)
+    /// Mining algorithm (cosmic_harmony, randomx, yescrypt, verushash, blake3)
     #[arg(short, long, default_value = "cosmic_harmony")]
     algorithm: String,
 
