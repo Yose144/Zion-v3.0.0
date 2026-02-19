@@ -1942,7 +1942,8 @@ function startMining(config) {
 
     if (config.worker) args.push('--worker', String(config.worker));
     if (algorithmForMiner) args.push('--algorithm', String(algorithmForMiner));
-    if (effectiveGpu) args.push('--gpu');
+    // macOS (M1/Intel): miner uses Metal internally — OpenCL flag causes crash, skip it.
+    if (effectiveGpu && process.platform !== 'darwin') args.push('--gpu');
   } else {
     // Python miner / legacy .exe miner (shared CLI)
     args = [
@@ -2280,6 +2281,11 @@ function startMining(config) {
     }
   } catch {
     // ignore diagnostics failures
+  }
+
+  // Ensure execute bit is set on Unix — survives fresh checkouts and packaging.
+  if (process.platform !== 'win32') {
+    try { require('fs').chmodSync(spawnCommand, 0o755); } catch { /* ignore */ }
   }
 
   minerProcess = spawn(spawnCommand, spawnArgs, {
