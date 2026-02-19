@@ -239,6 +239,85 @@ algoritmem (cosmic_harmony), ale pool mu posílal RandomX job → nesoulad proto
 
 ---
 
+## Session 10 — Pool login response: `seed_hash` chyběl (RandomX not initialized)
+
+**Datum:** 19. února 2026  
+**Platforma:** Helsinki 77.42.31.72 (ARM64), macOS M1 (dev)
+
+### Root cause — `seed_hash` neuvedena v CN login response
+
+Po opravě `--algorithm randomx` flagu (Session 9) se miner připojil správně. Přesto
+RandomX stále odmítalo hashovat s chybou: `RandomX not initialized - call init_randomx() first`.
+
+Diagnóza přes `--debug` flag (`406K řádků logu`):
+
+```
+📦 Received job object: {"job_id": "ext-xmr-41947213", "algo": "randomx", ...}
+   (NO seed_hash field!)
+randomx: missing/invalid seed_hash in job ext-xmr-41947213
+🧪 RandomX first hash: ERROR in 1.5µs: RandomX not initialized
+```
+
+**Root cause:** `handle_login()` v `server_v2.rs` extrahovala ze scheduled Revenue
+jobu `sj.job_id`, `sj.blob`, `sj.height`, `sj.algorithm` — ale **ne** `sj.seed_hash`.
+Login response tedy neobsahovala `seed_hash` → miner `cpu.rs` nepovolal
+`init_randomx_with_key` → `RANDOMX_KEY` globální RwLock zůstal prázdný →
+"RandomX not initialized" při každém pokusu o hash.
+
+**`getjob` handler byl v pořádku** (měl `"seed_hash": sched_job.seed_hash`).
+Problém byl výhradně v login response.
+
+**Fix:** `L1/pool/src/stratum/server_v2.rs`, funkce `handle_login()`:
+
+```rust
+// Před opravou — seed_hash se neextrahovala:
+if let Some(sj) = scheduled_job {
+    job_id = sj.job_id.clone();
+    blob = sj.blob.clone();
+    height = sj.height;
+    // ❌ sj.seed_hash nebyla přečtena!
+    ...
+}
+
+// Po opravě:
+let mut seed_hash = String::new();
+if let Some(sj) = scheduled_job {
+    job_id = sj.job_id.clone();
+    blob = sj.blob.clone();
+    height = sj.height;
+    seed_hash = sj.seed_hash.clone(); // ✅ Needed for RandomX initialization
+    ...
+}
+
+// Login response nyní obsahuje:
+"job": {
+    "blob": blob, "job_id": job_id, "target": target,
+    "difficulty": diff, "height": height, "algo": algorithm,
+    "seed_hash": seed_hash,   // ✅ Required for RandomX (XMR revenue jobs)
+    "cosmic_state0_endian": Self::COSMIC_STATE0_ENDIAN
+}
+```
+
+### Fixes & commits
+
+| Fix | Commit |
+|---|---|
+| Wallet validator P2WSH (20..=45 → 20..=90) | `81c4229` |
+| `seed_hash` v CN login response | `de3f0e9` |
+
+### Rebuild pool image
+
+Po commitu fixů byl zdrojový kód rsyncnut na Helsinki (`/root/zion-build/`) a
+pool Docker image přebuildován:
+
+```bash
+rsync -a --exclude='target/' L1/ root@77.42.31.72:/root/zion-build/L1/
+ssh root@77.42.31.72 'cd /root/zion-build && docker build -f Dockerfile.pool -t zion-pool:2.9.6-testnet . > /root/docker-build.log 2>&1'
+ssh root@77.42.31.72 'cd /root/docker && docker compose -f docker-compose.testnet.yml up -d --no-deps pool'
+```
+
+---
+
 ## Infrastruktura
 
 - **GPU (AMD server):** AMD Radeon RX 5600/5700 (gfx1010, 18 CU, 6128 MB)
