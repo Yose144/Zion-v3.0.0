@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "electron": "^39.2.7",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^22.14.13"
   },
   "build": {
     "appId": "com.zionterranova.desktop-agent",
