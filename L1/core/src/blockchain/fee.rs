@@ -174,10 +174,10 @@ mod tests {
     #[test]
     fn test_fee_rate_calculation() {
         assert_eq!(fee_rate(1000, 250), 4); // 1000/250 = 4
-        assert_eq!(fee_rate(500, 250), 2);  // 500/250 = 2
-        assert_eq!(fee_rate(100, 250), 0);  // 100/250 = 0 (integer division)
+        assert_eq!(fee_rate(500, 250), 2); // 500/250 = 2
+        assert_eq!(fee_rate(100, 250), 0); // 100/250 = 0 (integer division)
         assert_eq!(fee_rate(0, 250), 0);
-        assert_eq!(fee_rate(1000, 0), 0);   // Edge case: zero size
+        assert_eq!(fee_rate(1000, 0), 0); // Edge case: zero size
     }
 
     #[test]
@@ -232,25 +232,21 @@ mod tests {
     #[test]
     fn test_validate_output_amounts_ok() {
         let outputs = vec![
-            (1_000_000u64, "addr1"),     // 1 ZION
-            (5_000_000u64, "addr2"),     // 5 ZION
+            (1_000_000u64, "addr1"), // 1 ZION
+            (5_000_000u64, "addr2"), // 5 ZION
         ];
         assert!(validate_output_amounts(&outputs).is_ok());
     }
 
     #[test]
     fn test_validate_output_zero() {
-        let outputs = vec![
-            (0u64, "addr1"),
-        ];
+        let outputs = vec![(0u64, "addr1")];
         assert!(validate_output_amounts(&outputs).is_err());
     }
 
     #[test]
     fn test_validate_output_exceeds_max() {
-        let outputs = vec![
-            (MAX_OUTPUT_AMOUNT + 1, "addr1"),
-        ];
+        let outputs = vec![(MAX_OUTPUT_AMOUNT + 1, "addr1")];
         assert!(validate_output_amounts(&outputs).is_err());
     }
 
@@ -258,10 +254,7 @@ mod tests {
     fn test_validate_output_total_exceeds_max() {
         // Each output is within bounds, but sum exceeds max
         let half = MAX_OUTPUT_AMOUNT / 2 + 1;
-        let outputs = vec![
-            (half, "addr1"),
-            (half, "addr2"),
-        ];
+        let outputs = vec![(half, "addr1"), (half, "addr2")];
         assert!(validate_output_amounts(&outputs).is_err());
     }
 
@@ -300,7 +293,10 @@ mod tests {
             id: "cb".to_string(),
             version: 1,
             inputs: vec![],
-            outputs: vec![TxOutput { amount: 5_400_067_000, address: "miner".to_string() }],
+            outputs: vec![TxOutput {
+                amount: 5_400_067_000,
+                address: "miner".to_string(),
+            }],
             fee: 0,
             timestamp: 0,
         };

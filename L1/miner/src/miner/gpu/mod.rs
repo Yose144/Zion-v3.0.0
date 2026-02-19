@@ -8,21 +8,18 @@ use anyhow::Result;
 mod cuda;
 
 // OpenCL backend is guarded by the `gpu` feature.
+pub mod benchmark;
+pub mod metal;
 #[cfg(feature = "gpu")]
 mod opencl;
-pub mod metal;
-pub mod benchmark;
 
 #[cfg(feature = "cuda")]
 pub use cuda::CudaMiner;
 
+pub use benchmark::{auto_tune, print_benchmark_results, run_benchmark, AutoTuneConfig};
+pub use metal::MetalGpuMiner;
 #[cfg(feature = "gpu")]
 pub use opencl::OpenCLMiner;
-pub use metal::MetalGpuMiner;
-pub use benchmark::{
-    auto_tune, run_benchmark, print_benchmark_results,
-    AutoTuneConfig,
-};
 
 /// GPU platform type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,7 +46,7 @@ pub struct GpuDevice {
 pub trait GpuMiner: Send + Sync {
     /// Initialize GPU device
     fn init(&mut self) -> Result<()>;
-    
+
     /// Mine with GPU (returns hash if found)
     fn mine_batch(
         &mut self,
@@ -58,10 +55,10 @@ pub trait GpuMiner: Send + Sync {
         nonce_start: u64,
         batch_size: u64,
     ) -> Result<Option<(u64, [u8; 32])>>;
-    
+
     /// Get device information
     fn device_info(&self) -> &GpuDevice;
-    
+
     /// Get current hashrate
     fn hashrate(&self) -> f64;
 }
@@ -69,7 +66,7 @@ pub trait GpuMiner: Send + Sync {
 /// Detect available GPU devices
 pub fn detect_gpus() -> Result<Vec<GpuDevice>> {
     let mut devices = Vec::new();
-    
+
     // Try Metal first (Apple Silicon — fastest on macOS)
     if let Ok(metal_devices) = metal::detect_metal_devices() {
         if !metal_devices.is_empty() {
@@ -77,7 +74,7 @@ pub fn detect_gpus() -> Result<Vec<GpuDevice>> {
             devices.extend(metal_devices);
         }
     }
-    
+
     // Try CUDA (NVIDIA)
     #[cfg(feature = "cuda")]
     {
@@ -100,7 +97,7 @@ pub fn detect_gpus() -> Result<Vec<GpuDevice>> {
             }
         }
     }
-    
+
     Ok(devices)
 }
 
@@ -120,7 +117,9 @@ pub fn create_miner(device: &GpuDevice) -> Result<Box<dyn GpuMiner>> {
             }
             #[cfg(not(feature = "cuda"))]
             {
-                Err(anyhow::anyhow!("CUDA support not compiled. Rebuild with --features cuda"))
+                Err(anyhow::anyhow!(
+                    "CUDA support not compiled. Rebuild with --features cuda"
+                ))
             }
         }
         GpuPlatform::OpenCL => {
@@ -131,7 +130,9 @@ pub fn create_miner(device: &GpuDevice) -> Result<Box<dyn GpuMiner>> {
             }
             #[cfg(not(feature = "gpu"))]
             {
-                Err(anyhow::anyhow!("OpenCL support not compiled. Rebuild with --features gpu"))
+                Err(anyhow::anyhow!(
+                    "OpenCL support not compiled. Rebuild with --features gpu"
+                ))
             }
         }
     }
@@ -146,12 +147,14 @@ mod tests {
         // Should not panic, even if no GPUs found
         let result = detect_gpus();
         assert!(result.is_ok());
-        
+
         if let Ok(devices) = result {
             println!("Found {} GPU(s)", devices.len());
             for dev in devices {
-                println!("  - {} ({:?}, {} CUs, {} MB)", 
-                    dev.name, dev.platform, dev.compute_units, dev.memory_mb);
+                println!(
+                    "  - {} ({:?}, {} CUs, {} MB)",
+                    dev.name, dev.platform, dev.compute_units, dev.memory_mb
+                );
             }
         }
     }

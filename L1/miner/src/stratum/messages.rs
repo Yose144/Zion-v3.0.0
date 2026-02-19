@@ -63,7 +63,13 @@ impl StratumRequest {
     }
 
     /// Create submit request (Stratum)
-    pub fn submit_stratum(id: u64, worker: &str, job_id: &str, nonce_hex: &str, result: &str) -> Self {
+    pub fn submit_stratum(
+        id: u64,
+        worker: &str,
+        job_id: &str,
+        nonce_hex: &str,
+        result: &str,
+    ) -> Self {
         // Submit with result hash for CH v3 revenue stream forwarding.
         // Pool extracts result from params[5] and forwards it to external pools
         // (MoneroOcean/CryptoNote requires the result hash for share validation).
@@ -211,8 +217,12 @@ mod tests {
             StratumRequest::getjob(7),
         ];
         for req in requests {
-            assert_eq!(req.jsonrpc, Some("2.0".to_string()),
-                "Missing jsonrpc 2.0 on method: {}", req.method);
+            assert_eq!(
+                req.jsonrpc,
+                Some("2.0".to_string()),
+                "Missing jsonrpc 2.0 on method: {}",
+                req.method
+            );
         }
     }
 
@@ -236,7 +246,8 @@ mod tests {
 
     #[test]
     fn test_stratum_error_deserialization() {
-        let json = r#"{"id": 1, "result": null, "error": {"code": -1, "message": "invalid share"}}"#;
+        let json =
+            r#"{"id": 1, "result": null, "error": {"code": -1, "message": "invalid share"}}"#;
         let resp: StratumResponse = serde_json::from_str(json).unwrap();
         let err = resp.error.unwrap();
         assert_eq!(err.code, -1);

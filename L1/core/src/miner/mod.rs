@@ -1,4 +1,4 @@
-use crate::algorithms::{cosmic_harmony, blake3_algo, Algorithm};
+use crate::algorithms::{blake3_algo, cosmic_harmony, Algorithm};
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
@@ -43,19 +43,16 @@ pub fn mine_block(
     let start = Instant::now();
     let algo = algorithm.unwrap_or_else(|| template.get_algorithm());
     let target = parse_target(&template.target);
-    
+
     println!("🌟 Mining with {} algorithm", algo);
-    
+
     // Create block header prefix (everything except nonce)
     let prefix = format!(
         "{}:{}:{}:{}",
-        template.height,
-        template.prev_hash,
-        template.coinbase_address,
-        template.difficulty
+        template.height, template.prev_hash, template.coinbase_address, template.difficulty
     );
     let prefix_bytes = prefix.as_bytes();
-    
+
     for nonce in 0..max_iterations {
         // Compute hash based on algorithm
         let hash = match algo {
@@ -70,7 +67,7 @@ pub fn mine_block(
                 // RandomX needs full header with nonce
                 let mut full_input = prefix_bytes.to_vec();
                 full_input.extend_from_slice(&nonce.to_le_bytes());
-                
+
                 match crate::algorithms::randomx::randomx_hash(&full_input) {
                     Ok(h) => h.to_vec(),
                     Err(e) => {
@@ -80,7 +77,8 @@ pub fn mine_block(
                 }
             }
             Algorithm::Yescrypt => {
-                match crate::algorithms::yescrypt::yescrypt_hash_mining(prefix_bytes, nonce as u64) {
+                match crate::algorithms::yescrypt::yescrypt_hash_mining(prefix_bytes, nonce as u64)
+                {
                     Ok(h) => h.to_vec(),
                     Err(e) => {
                         eprintln!("❌ Yescrypt error: {}", e);
@@ -89,14 +87,14 @@ pub fn mine_block(
                 }
             }
         };
-        
+
         let hash_hex = hex::encode(&hash);
-        
+
         // Check if hash meets target
         if hash_meets_target(&hash_hex, &target) {
             let elapsed = start.elapsed().as_secs_f64();
             let hashrate = (nonce + 1) as f64 / elapsed;
-            
+
             return Some(MiningResult {
                 nonce,
                 hash: hash_hex,
@@ -106,7 +104,7 @@ pub fn mine_block(
                 algorithm: algo,
             });
         }
-        
+
         // Progress update every million iterations
         if nonce > 0 && nonce % 1_000_000 == 0 {
             let elapsed = start.elapsed().as_secs_f64();
@@ -114,7 +112,7 @@ pub fn mine_block(
             println!("⛏️  {} iterations, {:.2} kH/s", nonce, hashrate / 1000.0);
         }
     }
-    
+
     None
 }
 
@@ -122,10 +120,10 @@ pub fn mine_block(
 fn parse_target(target_hex: &str) -> Vec<u8> {
     // Remove "0x" prefix if present
     let hex = target_hex.trim_start_matches("0x");
-    
+
     // Pad to 64 characters (32 bytes) if needed
     let padded = format!("{:0>64}", hex);
-    
+
     hex::decode(&padded).unwrap_or_else(|_| vec![0xff; 32])
 }
 
@@ -135,12 +133,12 @@ fn hash_meets_target(hash_hex: &str, target: &[u8]) -> bool {
         Ok(b) => b,
         Err(_) => return false,
     };
-    
+
     // Compare byte by byte (big-endian comparison)
     for i in 0..32 {
         let h = hash_bytes.get(i).unwrap_or(&0xff);
         let t = target.get(i).unwrap_or(&0xff);
-        
+
         if h < t {
             return true;
         } else if h > t {
@@ -148,7 +146,7 @@ fn hash_meets_target(hash_hex: &str, target: &[u8]) -> bool {
         }
         // If equal, continue to next byte
     }
-    
+
     // Hashes are equal, which counts as meeting target
     true
 }
@@ -163,13 +161,13 @@ mod tests {
         let low_hash = "0000000000000001000000000000000000000000000000000000000000000000";
         let high_target = vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10];
         let high_target_padded = [high_target, vec![0xff; 24]].concat();
-        
+
         assert!(hash_meets_target(low_hash, &high_target_padded));
-        
+
         // High hash should not meet low target
         let high_hash = "f000000000000000000000000000000000000000000000000000000000000000";
         let low_target = vec![0x01; 32];
-        
+
         assert!(!hash_meets_target(high_hash, &low_target));
     }
 
@@ -177,16 +175,17 @@ mod tests {
     fn test_mine_simple_block() {
         let template = BlockTemplate {
             height: 1,
-            prev_hash: "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+            prev_hash: "0000000000000000000000000000000000000000000000000000000000000000"
+                .to_string(),
             difficulty: 100,
             target: "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_string(),
             coinbase_address: "test_address".to_string(),
             algorithm: Some("cosmic_harmony".to_string()),
         };
-        
+
         // Try mining with limited iterations
         let result = mine_block(&template, 100_000, None);
-        
+
         // May or may not find a block depending on luck
         if let Some(res) = result {
             println!("Found block! Nonce: {}, Hash: {}", res.nonce, res.hash);
@@ -197,7 +196,7 @@ mod tests {
     #[test]
     fn test_cosmic_harmony_mining() {
         use crate::algorithms::Algorithm;
-        
+
         let template = BlockTemplate {
             height: 1,
             prev_hash: "0".repeat(64),
@@ -209,7 +208,7 @@ mod tests {
 
         let result = mine_block(&template, 10_000, Some(Algorithm::CosmicHarmony));
         assert!(result.is_some(), "Should find block with low difficulty");
-        
+
         if let Some(res) = result {
             assert_eq!(res.algorithm, Algorithm::CosmicHarmony);
             println!("✅ Cosmic Harmony found block at nonce {}", res.nonce);

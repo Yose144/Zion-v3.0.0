@@ -45,10 +45,8 @@ static INIT: Once = Once::new();
 
 /// Ensure the VerusHash library is initialized (safe to call many times).
 fn ensure_init() {
-    INIT.call_once(|| {
-        unsafe {
-            verushash_init();
-        }
+    INIT.call_once(|| unsafe {
+        verushash_init();
     });
 }
 
@@ -119,7 +117,10 @@ mod tests {
     fn test_hash_different_inputs() {
         let a = verus_hash_v2_2(b"input A");
         let b = verus_hash_v2_2(b"input B");
-        assert_ne!(a, b, "Different inputs should (almost certainly) produce different hashes");
+        assert_ne!(
+            a, b,
+            "Different inputs should (almost certainly) produce different hashes"
+        );
     }
 
     #[test]

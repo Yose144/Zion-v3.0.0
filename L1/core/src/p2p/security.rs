@@ -35,20 +35,24 @@ impl RateLimiter {
             .as_secs();
 
         let mut attempts = self.attempts.lock().unwrap();
-        
+
         // Get or create attempt history for this IP
-        let history = attempts.entry(ip).or_insert_with(Vec::new);
-        
+        let history = attempts.entry(ip).or_default();
+
         // Remove old attempts outside window
         history.retain(|&timestamp| now - timestamp < self.window_secs);
-        
+
         // Check rate limit
         if history.len() >= self.max_rate {
-            println!("[P2P Security] Rate limit exceeded for {}: {} attempts in {}s", 
-                     ip, history.len(), self.window_secs);
+            println!(
+                "[P2P Security] Rate limit exceeded for {}: {} attempts in {}s",
+                ip,
+                history.len(),
+                self.window_secs
+            );
             return false;
         }
-        
+
         // Record this attempt
         history.push(now);
         true
@@ -134,11 +138,15 @@ impl Blacklist {
         let expiry = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() + duration_secs;
+            .as_secs()
+            + duration_secs;
 
         let mut temporary = self.temporary.lock().unwrap();
         temporary.insert(ip, expiry);
-        println!("[P2P Security] Temporarily banned {} for {}s", ip, duration_secs);
+        println!(
+            "[P2P Security] Temporarily banned {} for {}s",
+            ip, duration_secs
+        );
     }
 
     /// Remove IP from blacklist
@@ -191,8 +199,10 @@ impl ConnectionLimiter {
 
     pub fn allow_connection(&self, current_count: usize) -> bool {
         if current_count >= self.max_connections {
-            println!("[P2P Security] Connection limit reached: {}/{}", 
-                     current_count, self.max_connections);
+            println!(
+                "[P2P Security] Connection limit reached: {}/{}",
+                current_count, self.max_connections
+            );
             false
         } else {
             true
@@ -248,7 +258,9 @@ impl MessageRateLimiter {
         let entry = peers.entry(ip).or_insert_with(|| (Vec::new(), 0));
 
         // Prune old timestamps
-        entry.0.retain(|&ts| now.saturating_sub(ts) < self.window_secs);
+        entry
+            .0
+            .retain(|&ts| now.saturating_sub(ts) < self.window_secs);
 
         if entry.0.len() >= self.max_messages {
             entry.1 += 1; // Increment misbehavior score
@@ -341,10 +353,10 @@ mod tests {
         let ip = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1));
 
         assert!(!blacklist.is_blacklisted(&ip));
-        
+
         blacklist.ban_permanent(ip);
         assert!(blacklist.is_blacklisted(&ip));
-        
+
         blacklist.unban(&ip);
         assert!(!blacklist.is_blacklisted(&ip));
     }
@@ -356,7 +368,7 @@ mod tests {
 
         blacklist.ban_temporary(ip, 2); // 2 second ban
         assert!(blacklist.is_blacklisted(&ip));
-        
+
         // After cleanup (if time passed), should be unbanned
         // Note: This test might be flaky with timing
     }

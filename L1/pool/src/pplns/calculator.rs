@@ -1,3 +1,5 @@
+use crate::metrics::prometheus as metrics;
+use crate::shares::storage::{RedisStorage, StoredShare};
 /// PPLNS (Pay Per Last N Shares) Distribution Calculator
 ///
 /// Calculates fair reward distribution based on weighted shares
@@ -16,15 +18,12 @@
 /// - payout:address:total → INTEGER (total paid to address)
 ///
 /// Mirrors Python logic from src/pool/database/models.py
-
 use anyhow::{anyhow, Result};
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
-use crate::shares::storage::{RedisStorage, StoredShare};
-use crate::metrics::prometheus as metrics;
 
 /// Payout entry for a miner
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,7 +103,8 @@ impl PPLNSCalculator {
 
         for (miner_address, (weighted_shares, share_count)) in &miner_weighted_shares {
             // amount = miner_share_reward * weighted_shares / total_weighted_shares
-            let amount = ((miner_share_reward as u128) * weighted_shares / total_weighted_shares) as u64;
+            let amount =
+                ((miner_share_reward as u128) * weighted_shares / total_weighted_shares) as u64;
 
             if amount > 0 {
                 distributed += amount;
@@ -545,7 +545,7 @@ mod tests {
     fn test_compute_two_miners_equal() {
         let shares = make_shares(&[
             ("zion1alice", 1000, 10), // 10,000 weight
-            ("zion1bob",   1000, 10), // 10,000 weight
+            ("zion1bob", 1000, 10),   // 10,000 weight
         ]);
         let payouts = compute_pplns_payouts(&shares, 1_000_000_000_000, 1, "h", 0);
         assert_eq!(payouts.len(), 2);
@@ -565,28 +565,31 @@ mod tests {
         // Alice: 10 shares @ diff 2000 = 20,000
         // Bob:   10 shares @ diff 1000 = 10,000
         // Alice gets 2/3, Bob gets 1/3
-        let shares = make_shares(&[
-            ("zion1alice", 2000, 10),
-            ("zion1bob",   1000, 10),
-        ]);
+        let shares = make_shares(&[("zion1alice", 2000, 10), ("zion1bob", 1000, 10)]);
         let payouts = compute_pplns_payouts(&shares, 900_000_000_000, 2, "h2", 0);
 
-        let alice = payouts.iter().find(|p| p.miner_address == "zion1alice").unwrap();
-        let bob   = payouts.iter().find(|p| p.miner_address == "zion1bob").unwrap();
+        let alice = payouts
+            .iter()
+            .find(|p| p.miner_address == "zion1alice")
+            .unwrap();
+        let bob = payouts
+            .iter()
+            .find(|p| p.miner_address == "zion1bob")
+            .unwrap();
 
         assert_eq!(alice.amount, 600_000_000_000); // 2/3 of 900B
-        assert_eq!(bob.amount,   300_000_000_000); // 1/3 of 900B
+        assert_eq!(bob.amount, 300_000_000_000); // 1/3 of 900B
     }
 
     #[test]
     fn test_compute_many_miners_proportional() {
         // 5 miners with different difficulties
         let shares = make_shares(&[
-            ("m1", 100,  50),
-            ("m2", 200,  25),
-            ("m3", 400,  10),
-            ("m4", 50,  100),
-            ("m5", 1000,  5),
+            ("m1", 100, 50),
+            ("m2", 200, 25),
+            ("m3", 400, 10),
+            ("m4", 50, 100),
+            ("m5", 1000, 5),
         ]);
         let reward = 10_000_000_000_000u64; // 10 ZION
         let payouts = compute_pplns_payouts(&shares, reward, 3, "h3", 0);
@@ -605,19 +608,23 @@ mod tests {
         // Truncation means total <= reward
         assert!(total <= reward);
         // But very close (within 5 atomic units max for 5 miners)
-        assert!(reward - total <= 5, "Rounding loss too high: {}", reward - total);
+        assert!(
+            reward - total <= 5,
+            "Rounding loss too high: {}",
+            reward - total
+        );
     }
 
     #[test]
     fn test_compute_dust_amounts_filtered() {
         // Miner with negligible share → amount rounds to 0 → excluded
-        let shares = make_shares(&[
-            ("whale", 1_000_000, 100),
-            ("dust",  1,          1),
-        ]);
+        let shares = make_shares(&[("whale", 1_000_000, 100), ("dust", 1, 1)]);
         let payouts = compute_pplns_payouts(&shares, 1_000_000, 1, "h", 0);
         // dust miner's share: 1 / (100*1M + 1) ≈ 1e-8, payout ≈ 0.01 → truncated to 0
-        assert!(payouts.iter().all(|p| p.amount > 0), "No zero-amount payouts allowed");
+        assert!(
+            payouts.iter().all(|p| p.amount > 0),
+            "No zero-amount payouts allowed"
+        );
     }
 
     #[test]

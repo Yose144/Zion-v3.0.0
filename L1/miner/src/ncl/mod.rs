@@ -1,8 +1,8 @@
 //! 🧠 NCL (Neural Compute Layer) Client for ZION Miner
-//! 
+//!
 //! Handles AI task fetching, NPU scheduling, and bonus submission.
 //! Implements the 5th revenue stream from CH v3.
-//! 
+//!
 //! ## Protocol Version
 //! This client supports NCL Protocol v1.0
 
@@ -10,8 +10,8 @@ use anyhow::Result;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use tokio::sync::RwLock;
 
 /// NCL Protocol Version (must match pool)
 pub const NCL_PROTOCOL_VERSION: &str = "1.0";
@@ -53,7 +53,7 @@ impl NclTaskType {
             NclTaskType::ImageClassification => "image_classification",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "hash_chaining_v1" => Some(NclTaskType::HashChainingV1),
@@ -63,12 +63,12 @@ impl NclTaskType {
             _ => None,
         }
     }
-    
+
     /// Check if task type is deterministically verifiable
     pub fn is_deterministic(&self) -> bool {
         matches!(self, NclTaskType::HashChainingV1)
     }
-    
+
     /// Get default time budget for this task type (ms)
     pub fn default_budget_ms(&self) -> u64 {
         match self {
@@ -109,7 +109,7 @@ impl NpuType {
             NpuType::Onnx => "onnx",
         }
     }
-    
+
     /// Detect best available NPU on this system
     pub fn detect() -> Self {
         #[cfg(target_os = "macos")]
@@ -130,10 +130,10 @@ impl NpuType {
 
         #[cfg(not(any(target_os = "macos", target_os = "linux")))]
         {
-            return NpuType::Cpu;
+            NpuType::Cpu
         }
     }
-    
+
     /// Estimated TFLOPS for this NPU type
     pub fn estimated_tflops(&self) -> f32 {
         match self {
@@ -158,8 +158,12 @@ pub struct NclRetryPolicy {
     pub allow_reassignment: bool,
 }
 
-fn default_max_retries() -> u32 { 3 }
-fn default_retry_delay_ms() -> u64 { 5000 }
+fn default_max_retries() -> u32 {
+    3
+}
+fn default_retry_delay_ms() -> u64 {
+    5000
+}
 
 impl Default for NclRetryPolicy {
     fn default() -> Self {
@@ -194,7 +198,7 @@ pub struct NclVerification {
 }
 
 /// AI Task from pool (NCL Contract v1.0)
-/// 
+///
 /// This struct matches the pool's NclTask contract.
 /// All required fields must be present for task validation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -202,37 +206,37 @@ pub struct NCLTask {
     /// Protocol version (must match NCL_PROTOCOL_VERSION)
     #[serde(default = "default_version")]
     pub version: String,
-    
+
     /// Unique task ID (UUID format)
     pub task_id: String,
-    
+
     /// Task type (validated against NclTaskType enum)
     pub task_type: String,
-    
+
     /// Task payload (JSON) - contains rounds, seed, etc.
     #[serde(default)]
     pub payload: serde_json::Value,
-    
+
     /// Absolute deadline (Unix timestamp ms)
     #[serde(default)]
     pub deadline_ms: u64,
-    
+
     /// Creation timestamp
     #[serde(default = "current_timestamp_ms")]
     pub created_at: u64,
-    
+
     /// Reward configuration
     #[serde(default)]
     pub reward: NclReward,
-    
+
     /// Verification configuration
     #[serde(default)]
     pub verification: Option<NclVerification>,
-    
+
     /// Retry policy
     #[serde(default)]
     pub retry_policy: NclRetryPolicy,
-    
+
     // Legacy fields for backward compatibility
     /// Input data (base64 or JSON) - legacy
     #[serde(default)]
@@ -248,25 +252,32 @@ pub struct NCLTask {
     pub reward_multiplier: f64,
 }
 
-fn default_version() -> String { NCL_PROTOCOL_VERSION.to_string() }
-fn default_reward_multiplier() -> f64 { 1.0 }
+fn default_version() -> String {
+    NCL_PROTOCOL_VERSION.to_string()
+}
+fn default_reward_multiplier() -> f64 {
+    1.0
+}
 
 impl NCLTask {
     /// Validate task contract
     pub fn validate(&self) -> Result<(), String> {
         // Version check (warn but don't fail for minor mismatches)
         if !self.version.starts_with("1.") {
-            warn!("NCL version mismatch: {} (expected {})", self.version, NCL_PROTOCOL_VERSION);
+            warn!(
+                "NCL version mismatch: {} (expected {})",
+                self.version, NCL_PROTOCOL_VERSION
+            );
         }
-        
+
         // Task type validation
         if NclTaskType::from_str(&self.task_type).is_none() {
             return Err(format!("Unknown task_type: {}", self.task_type));
         }
-        
+
         Ok(())
     }
-    
+
     /// Check if task has expired
     pub fn is_expired(&self) -> bool {
         if self.deadline_ms == 0 {
@@ -274,7 +285,7 @@ impl NCLTask {
         }
         current_timestamp_ms() > self.deadline_ms
     }
-    
+
     /// Get remaining time in milliseconds
     pub fn remaining_ms(&self) -> Option<u64> {
         if self.deadline_ms == 0 {
@@ -287,24 +298,24 @@ impl NCLTask {
             None
         }
     }
-    
+
     /// Get task type as enum
     pub fn task_type_enum(&self) -> Option<NclTaskType> {
         NclTaskType::from_str(&self.task_type)
     }
-    
+
     /// Get effective time budget (from payload, verification, or legacy field)
     pub fn effective_max_time_ms(&self) -> u64 {
         // Try deadline first
         if let Some(remaining) = self.remaining_ms() {
             return remaining.min(30_000); // Cap at 30s
         }
-        
+
         // Fallback to legacy max_time_ms
         if self.max_time_ms > 0 {
             return self.max_time_ms;
         }
-        
+
         // Default based on task type
         self.task_type_enum()
             .map(|t| t.default_budget_ms())
@@ -338,7 +349,7 @@ impl Default for NCLConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            allocation: 0.4,  // 40% time for AI (Targeting 20% Revenue)
+            allocation: 0.4, // 40% time for AI (Targeting 20% Revenue)
             npu_type: NpuType::detect(),
             min_task_interval_ms: 1000,
         }
@@ -374,27 +385,27 @@ impl NCLClient {
             registered: Arc::new(RwLock::new(false)),
         }
     }
-    
+
     /// Set session ID (from stratum login)
     pub async fn set_session_id(&self, session_id: String) {
         *self.session_id.write().await = Some(session_id);
     }
-    
+
     /// Check if NCL is enabled
     pub fn is_enabled(&self) -> bool {
         self.config.enabled
     }
-    
+
     /// Get current allocation
     pub fn allocation(&self) -> f32 {
         self.config.allocation
     }
-    
+
     /// Get NPU type
     pub fn npu_type(&self) -> NpuType {
         self.config.npu_type
     }
-    
+
     /// Build NCL register message for stratum
     pub fn build_register_message(&self, id: u64) -> serde_json::Value {
         serde_json::json!({
@@ -415,7 +426,7 @@ impl NCLClient {
             }
         })
     }
-    
+
     /// Build NCL status request message
     pub fn build_status_message(&self, id: u64) -> serde_json::Value {
         serde_json::json!({
@@ -425,7 +436,7 @@ impl NCLClient {
             "params": {}
         })
     }
-    
+
     /// Build NCL task request message
     pub fn build_get_task_message(&self, id: u64) -> serde_json::Value {
         serde_json::json!({
@@ -435,9 +446,14 @@ impl NCLClient {
             "params": {}
         })
     }
-    
+
     /// Build NCL submit message
-    pub fn build_submit_message(&self, id: u64, result: &NCLTaskResult, base_reward: f64) -> serde_json::Value {
+    pub fn build_submit_message(
+        &self,
+        id: u64,
+        result: &NCLTaskResult,
+        base_reward: f64,
+    ) -> serde_json::Value {
         serde_json::json!({
             "id": id,
             "jsonrpc": "2.0",
@@ -455,7 +471,12 @@ impl NCLClient {
     }
 
     /// Build submit message for pool v1 hash_chaining task.
-    pub fn build_submit_hash_chain_message(&self, id: u64, task_id: &str, result_hex: &str) -> serde_json::Value {
+    pub fn build_submit_hash_chain_message(
+        &self,
+        id: u64,
+        task_id: &str,
+        result_hex: &str,
+    ) -> serde_json::Value {
         serde_json::json!({
             "id": id,
             "jsonrpc": "2.0",
@@ -497,23 +518,26 @@ impl NCLClient {
     pub fn min_task_interval_ms(&self) -> u64 {
         self.config.min_task_interval_ms
     }
-    
+
     /// Process a received task
     pub async fn set_task(&self, task: NCLTask) {
-        info!("📥 Received NCL task: {} ({})", task.task_id, task.task_type);
+        info!(
+            "📥 Received NCL task: {} ({})",
+            task.task_id, task.task_type
+        );
         *self.current_task.write().await = Some(task);
     }
-    
+
     /// Get current task if any
     pub async fn get_current_task(&self) -> Option<NCLTask> {
         self.current_task.read().await.clone()
     }
-    
+
     /// Clear current task
     pub async fn clear_task(&self) {
         *self.current_task.write().await = None;
     }
-    
+
     /// Execute AI task.
     ///
     /// Current implementation uses a real CPU-bound compute loop (blake3 chaining)
@@ -526,9 +550,7 @@ impl NCLClient {
 
         info!(
             "🧠 Executing NCL task: {} (type: {}, model: {})",
-            task.task_id,
-            task.task_type,
-            task.model
+            task.task_id, task.task_type, task.model
         );
 
         if task.max_time_ms == 0 {
@@ -543,10 +565,22 @@ impl NCLClient {
         // Deterministic mode (verifiable):
         // If input_data is a JSON string containing {"mode":"deterministic","iterations":N},
         // we execute exactly N rounds of the chaining algorithm.
-        let deterministic_iterations: Option<u64> = serde_json::from_str::<serde_json::Value>(&task.input_data)
-            .ok()
-            .and_then(|v| v.get("mode").and_then(|m| m.as_str()).map(|m| m.to_string()).zip(v.get("iterations").and_then(|i| i.as_u64())))
-            .and_then(|(mode, iters)| if mode == "deterministic" { Some(iters) } else { None });
+        let deterministic_iterations: Option<u64> =
+            serde_json::from_str::<serde_json::Value>(&task.input_data)
+                .ok()
+                .and_then(|v| {
+                    v.get("mode")
+                        .and_then(|m| m.as_str())
+                        .map(|m| m.to_string())
+                        .zip(v.get("iterations").and_then(|i| i.as_u64()))
+                })
+                .and_then(|(mode, iters)| {
+                    if mode == "deterministic" {
+                        Some(iters)
+                    } else {
+                        None
+                    }
+                });
 
         // Time-budget mode (best-effort compute), capped by task.max_time_ms.
         let default_budget_ms: u64 = match task.task_type.as_str() {
@@ -555,7 +589,7 @@ impl NCLClient {
             "image_classification" => 100,
             _ => 100,
         };
-        let budget_ms = task.max_time_ms.min(default_budget_ms).max(1);
+        let budget_ms = task.max_time_ms.clamp(1, default_budget_ms);
 
         let npu_type = self.config.npu_type;
         if npu_type != NpuType::Cpu && npu_type != NpuType::Onnx {
@@ -575,7 +609,7 @@ impl NCLClient {
             let mut state = blake3::hash(format!("{}:{}:{}", task_id, task_type, model).as_bytes());
 
             if let Some(iters) = deterministic_iterations {
-                let iters = iters.min(5_000_000).max(1);
+                let iters = iters.clamp(1, 5_000_000);
                 for counter in 0..iters {
                     let mut hasher = blake3::Hasher::new();
                     hasher.update(state.as_bytes());
@@ -614,13 +648,13 @@ impl NCLClient {
             success: true,
         })
     }
-    
+
     /// Record bonus received
     pub async fn record_bonus(&self, bonus: f64) {
         *self.total_bonus.write().await += bonus;
         *self.tasks_completed.write().await += 1;
     }
-    
+
     /// Get statistics
     pub async fn get_stats(&self) -> NCLStats {
         NCLStats {
@@ -632,21 +666,21 @@ impl NCLClient {
             registered: *self.registered.read().await,
         }
     }
-    
+
     /// Mark as registered with pool
     pub async fn set_registered(&self, registered: bool) {
         *self.registered.write().await = registered;
     }
-    
+
     /// Check if time for next AI cycle (based on allocation)
     pub fn should_do_ai_cycle(&self, mining_cycle_count: u64) -> bool {
         if !self.config.enabled {
             return false;
         }
-        
+
         // allocation 0.3 = every ~3rd cycle is AI
         let ai_frequency = (1.0 / self.config.allocation) as u64;
-        mining_cycle_count % ai_frequency == 0
+        mining_cycle_count.is_multiple_of(ai_frequency)
     }
 }
 
@@ -664,27 +698,27 @@ pub struct NCLStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_npu_detection() {
         let npu = NpuType::detect();
         assert!(npu.estimated_tflops() > 0.0);
     }
-    
+
     #[test]
     fn test_ncl_client_creation() {
         let client = NCLClient::new(NCLConfig::default());
         assert!(client.is_enabled());
         assert_eq!(client.allocation(), 0.4); // 40% time for AI (20% Revenue target)
     }
-    
+
     #[test]
     fn test_register_message() {
         let client = NCLClient::new(NCLConfig::default());
         let msg = client.build_register_message(1);
         assert_eq!(msg["method"], "ncl.register");
     }
-    
+
     #[tokio::test]
     async fn test_task_execution() {
         let client = NCLClient::new(NCLConfig::default());
@@ -704,7 +738,7 @@ mod tests {
             max_time_ms: 25,
             reward_multiplier: 1.0,
         };
-        
+
         let result = client.execute_task(&task).await.unwrap();
         assert!(result.success);
         assert_eq!(result.task_id, "test-123");

@@ -1,20 +1,32 @@
-use async_trait::async_trait;
 use crate::adapter::ChainAdapter;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
+use async_trait::async_trait;
 
 /// Solana adapter — SPL Token mint/burn via Anchor program.
 pub struct SolanaAdapter;
 
+impl Default for SolanaAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SolanaAdapter {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 #[async_trait]
 impl ChainAdapter for SolanaAdapter {
-    fn family(&self) -> ChainFamily { ChainFamily::Solana }
-    fn name(&self) -> &str { "solana" }
+    fn family(&self) -> ChainFamily {
+        ChainFamily::Solana
+    }
+    fn name(&self) -> &str {
+        "solana"
+    }
 
     async fn health_check(&self) -> WarpResult<bool> {
         // TODO: W-05 — Connect to Solana RPC (solana-client)
@@ -33,8 +45,12 @@ impl ChainAdapter for SolanaAdapter {
         })
     }
 
-    async fn current_height(&self) -> WarpResult<u64> { Ok(0) }
-    async fn confirmations(&self, _tx_hash: &str) -> WarpResult<u64> { Ok(0) }
+    async fn current_height(&self) -> WarpResult<u64> {
+        Ok(0)
+    }
+    async fn confirmations(&self, _tx_hash: &str) -> WarpResult<u64> {
+        Ok(0)
+    }
 }
 
 #[cfg(test)]

@@ -24,12 +24,12 @@
 //!   - API endpoint /api/v1/buyback/status exposes state
 //!   - Revenue proxy provides per-coin earnings data
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
-use tokio::sync::RwLock;
-use tracing::{info, warn, error, debug};
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use tracing::{debug, info};
 
 // ═══════════════════════════════════════════════════════════════
 // Configuration
@@ -70,11 +70,21 @@ pub struct BuybackConfig {
     pub xmr_dashboards: Vec<PoolDashboard>,
 }
 
-fn default_true() -> bool { true }
-fn default_poll_interval() -> u64 { 600 } // 10 minutes
-fn default_min_buyback() -> f64 { 0.001 } // 0.001 BTC minimum
-fn default_exchange() -> String { "manual".to_string() }
-fn default_reserve() -> f64 { 10.0 } // Keep 10% BTC reserve
+fn default_true() -> bool {
+    true
+}
+fn default_poll_interval() -> u64 {
+    600
+} // 10 minutes
+fn default_min_buyback() -> f64 {
+    0.001
+} // 0.001 BTC minimum
+fn default_exchange() -> String {
+    "manual".to_string()
+}
+fn default_reserve() -> f64 {
+    10.0
+} // Keep 10% BTC reserve
 fn default_xmr_wallet() -> String {
     crate::config::default_xmr_wallet()
 }
@@ -121,13 +131,11 @@ impl Default for BuybackConfig {
                     url: format!("https://erg.2miners.com/api/accounts/{}", btc),
                 },
             ],
-            xmr_dashboards: vec![
-                PoolDashboard {
-                    name: "MoneroOcean".to_string(),
-                    coin: "XMR".to_string(),
-                    url: format!("https://api.moneroocean.stream/miner/{}/stats", xmr),
-                },
-            ],
+            xmr_dashboards: vec![PoolDashboard {
+                name: "MoneroOcean".to_string(),
+                coin: "XMR".to_string(),
+                url: format!("https://api.moneroocean.stream/miner/{}/stats", xmr),
+            }],
         }
     }
 }
@@ -202,9 +210,9 @@ struct TwoMinersStats {
     #[serde(default)]
     paid: f64,
     #[serde(default, alias = "blocksFound")]
-    blocks_found: u64,
+    _blocks_found: u64,
     #[serde(default, alias = "immature")]
-    immature: f64,
+    _immature: f64,
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -230,19 +238,32 @@ struct MoneroOceanStatsResponse {
 }
 
 /// Fetch miner stats from MoneroOcean API
-async fn fetch_moneroocean_stats(client: &reqwest::Client, url: &str) -> Result<MoneroOceanStatsResponse, String> {
-    let response = client.get(url).send().await
+async fn fetch_moneroocean_stats(
+    client: &reqwest::Client,
+    url: &str,
+) -> Result<MoneroOceanStatsResponse, String> {
+    let response = client
+        .get(url)
+        .send()
+        .await
         .map_err(|e| format!("MoneroOcean request failed: {}", e))?;
 
     if !response.status().is_success() {
         return Err(format!("MoneroOcean HTTP {}", response.status()));
     }
 
-    let body = response.text().await
+    let body = response
+        .text()
+        .await
         .map_err(|e| format!("MoneroOcean body read failed: {}", e))?;
 
-    serde_json::from_str(&body)
-        .map_err(|e| format!("MoneroOcean parse failed: {} (body: {})", e, &body[..body.len().min(200)]))
+    serde_json::from_str(&body).map_err(|e| {
+        format!(
+            "MoneroOcean parse failed: {} (body: {})",
+            e,
+            &body[..body.len().min(200)]
+        )
+    })
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -250,19 +271,32 @@ async fn fetch_moneroocean_stats(client: &reqwest::Client, url: &str) -> Result<
 // ═══════════════════════════════════════════════════════════════
 
 /// Fetch account stats from 2miners pool API
-async fn fetch_2miners_account(client: &reqwest::Client, url: &str) -> Result<TwoMinersAccountResponse, String> {
-    let response = client.get(url).send().await
+async fn fetch_2miners_account(
+    client: &reqwest::Client,
+    url: &str,
+) -> Result<TwoMinersAccountResponse, String> {
+    let response = client
+        .get(url)
+        .send()
+        .await
         .map_err(|e| format!("2miners request failed: {}", e))?;
 
     if !response.status().is_success() {
         return Err(format!("2miners HTTP {}", response.status()));
     }
 
-    let body = response.text().await
+    let body = response
+        .text()
+        .await
         .map_err(|e| format!("2miners body read failed: {}", e))?;
 
-    serde_json::from_str(&body)
-        .map_err(|e| format!("2miners parse failed: {} (body: {})", e, &body[..body.len().min(200)]))
+    serde_json::from_str(&body).map_err(|e| {
+        format!(
+            "2miners parse failed: {} (body: {})",
+            e,
+            &body[..body.len().min(200)]
+        )
+    })
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -323,34 +357,40 @@ impl BuybackEngine {
         let total_xmr_paid = *self.total_xmr_paid.read().await;
         let history = self.buyback_history.read().await.clone();
 
-        let pool_stats: Vec<serde_json::Value> = balances.iter().map(|b| {
-            serde_json::json!({
-                "pool": b.pool_name,
-                "coin": b.coin,
-                "payout_coin": b.payout_coin,
-                "balance": b.balance,
-                "total_paid": b.total_paid,
-                "payout_count": b.payout_count,
-                "hashrate": b.current_hashrate,
-                "avg_hashrate_24h": b.avg_hashrate_24h,
-                "valid_shares": b.valid_shares,
-                "stale_shares": b.stale_shares,
-                "is_fresh": b.is_fresh,
-                "last_updated": b.last_updated,
-                "last_error": b.last_error,
+        let pool_stats: Vec<serde_json::Value> = balances
+            .iter()
+            .map(|b| {
+                serde_json::json!({
+                    "pool": b.pool_name,
+                    "coin": b.coin,
+                    "payout_coin": b.payout_coin,
+                    "balance": b.balance,
+                    "total_paid": b.total_paid,
+                    "payout_count": b.payout_count,
+                    "hashrate": b.current_hashrate,
+                    "avg_hashrate_24h": b.avg_hashrate_24h,
+                    "valid_shares": b.valid_shares,
+                    "stale_shares": b.stale_shares,
+                    "is_fresh": b.is_fresh,
+                    "last_updated": b.last_updated,
+                    "last_error": b.last_error,
+                })
             })
-        }).collect();
+            .collect();
 
-        let recent_buybacks: Vec<serde_json::Value> = history.iter()
+        let recent_buybacks: Vec<serde_json::Value> = history
+            .iter()
             .rev()
             .take(10)
-            .map(|b| serde_json::json!({
-                "btc_amount": b.btc_amount,
-                "zion_amount": b.zion_amount,
-                "exchange": b.exchange,
-                "status": b.status,
-                "timestamp": b.timestamp,
-            }))
+            .map(|b| {
+                serde_json::json!({
+                    "btc_amount": b.btc_amount,
+                    "zion_amount": b.zion_amount,
+                    "exchange": b.exchange,
+                    "status": b.status,
+                    "timestamp": b.timestamp,
+                })
+            })
             .collect();
 
         let uptime = Utc::now().timestamp() - self.start_time;
@@ -407,9 +447,9 @@ impl BuybackEngine {
             .build()
             .expect("HTTP client");
 
-        let mut interval = tokio::time::interval(
-            tokio::time::Duration::from_secs(self.config.poll_interval_secs)
-        );
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.config.poll_interval_secs,
+        ));
 
         loop {
             interval.tick().await;
@@ -479,15 +519,16 @@ impl BuybackEngine {
             let mut total_xmr_paid = 0.0_f64;
 
             for dashboard in &self.config.xmr_dashboards {
-                let balance = match fetch_moneroocean_stats(&client, &dashboard.url).await {
-                    Ok(stats) => {
-                        self.api_fetches.fetch_add(1, Ordering::Relaxed);
+                let balance =
+                    match fetch_moneroocean_stats(&client, &dashboard.url).await {
+                        Ok(stats) => {
+                            self.api_fetches.fetch_add(1, Ordering::Relaxed);
 
-                        // MoneroOcean amounts are in piconero (1 XMR = 1e12 piconero)
-                        let due_xmr = stats.amt_due as f64 / 1e12;
-                        let paid_xmr = stats.amt_paid as f64 / 1e12;
+                            // MoneroOcean amounts are in piconero (1 XMR = 1e12 piconero)
+                            let due_xmr = stats.amt_due as f64 / 1e12;
+                            let paid_xmr = stats.amt_paid as f64 / 1e12;
 
-                        info!(
+                            info!(
                             "⛏️  {} ({}): due={:.12} XMR, paid={:.12} XMR, hashrate={:.0}, txns={}",
                             dashboard.name, dashboard.coin,
                             due_xmr, paid_xmr,
@@ -495,40 +536,40 @@ impl BuybackEngine {
                             stats.txn_count,
                         );
 
-                        total_xmr_earned += due_xmr + paid_xmr;
-                        total_xmr_paid += paid_xmr;
+                            total_xmr_earned += due_xmr + paid_xmr;
+                            total_xmr_paid += paid_xmr;
 
-                        PoolBalance {
-                            pool_name: dashboard.name.clone(),
-                            coin: dashboard.coin.clone(),
-                            payout_coin: "XMR".to_string(),
-                            balance: due_xmr,
-                            total_paid: paid_xmr,
-                            payout_count: stats.txn_count,
-                            current_hashrate: stats.hash,
-                            avg_hashrate_24h: stats.hash2,
-                            valid_shares: 0,
-                            stale_shares: 0,
-                            last_updated: Utc::now().timestamp(),
-                            is_fresh: true,
-                            last_error: None,
+                            PoolBalance {
+                                pool_name: dashboard.name.clone(),
+                                coin: dashboard.coin.clone(),
+                                payout_coin: "XMR".to_string(),
+                                balance: due_xmr,
+                                total_paid: paid_xmr,
+                                payout_count: stats.txn_count,
+                                current_hashrate: stats.hash,
+                                avg_hashrate_24h: stats.hash2,
+                                valid_shares: 0,
+                                stale_shares: 0,
+                                last_updated: Utc::now().timestamp(),
+                                is_fresh: true,
+                                last_error: None,
+                            }
                         }
-                    }
-                    Err(e) => {
-                        self.api_errors.fetch_add(1, Ordering::Relaxed);
-                        debug!("⛏️  {} fetch error: {}", dashboard.name, e);
+                        Err(e) => {
+                            self.api_errors.fetch_add(1, Ordering::Relaxed);
+                            debug!("⛏️  {} fetch error: {}", dashboard.name, e);
 
-                        PoolBalance {
-                            pool_name: dashboard.name.clone(),
-                            coin: dashboard.coin.clone(),
-                            payout_coin: "XMR".to_string(),
-                            last_error: Some(e),
-                            is_fresh: false,
-                            last_updated: Utc::now().timestamp(),
-                            ..Default::default()
+                            PoolBalance {
+                                pool_name: dashboard.name.clone(),
+                                coin: dashboard.coin.clone(),
+                                payout_coin: "XMR".to_string(),
+                                last_error: Some(e),
+                                is_fresh: false,
+                                last_updated: Utc::now().timestamp(),
+                                ..Default::default()
+                            }
                         }
-                    }
-                };
+                    };
 
                 balances.push(balance);
             }

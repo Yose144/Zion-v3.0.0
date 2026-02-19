@@ -70,9 +70,17 @@ pub struct TitheTracker {
     contributions: Vec<TitheContribution>,
 }
 
+impl Default for TitheTracker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TitheTracker {
     pub fn new() -> Self {
-        Self { contributions: Vec::new() }
+        Self {
+            contributions: Vec::new(),
+        }
     }
 
     /// Record a tithe contribution

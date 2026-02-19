@@ -93,7 +93,9 @@ impl RewardPool {
 
     /// Percentage distributed
     pub fn distribution_percentage(&self) -> f64 {
-        if self.total == 0 { return 0.0; }
+        if self.total == 0 {
+            return 0.0;
+        }
         (self.distributed as f64 / self.total as f64) * 100.0
     }
 }
@@ -123,13 +125,16 @@ pub struct RewardManager {
     pools: Vec<RewardPool>,
 }
 
+impl Default for RewardManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RewardManager {
     pub fn new() -> Self {
         Self {
-            pools: RewardSlot::all()
-                .into_iter()
-                .map(RewardPool::new)
-                .collect(),
+            pools: RewardSlot::all().into_iter().map(RewardPool::new).collect(),
         }
     }
 
@@ -162,13 +167,16 @@ impl RewardManager {
 
     /// Summary of all pools
     pub fn summary(&self) -> Vec<PoolSummary> {
-        self.pools.iter().map(|p| PoolSummary {
-            slot: p.slot,
-            total: p.total,
-            distributed: p.distributed,
-            remaining: p.remaining(),
-            percentage: p.distribution_percentage(),
-        }).collect()
+        self.pools
+            .iter()
+            .map(|p| PoolSummary {
+                slot: p.slot,
+                total: p.total,
+                distributed: p.distributed,
+                remaining: p.remaining(),
+                percentage: p.distribution_percentage(),
+            })
+            .collect()
     }
 }
 

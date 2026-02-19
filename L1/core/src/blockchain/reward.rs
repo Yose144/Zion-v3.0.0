@@ -253,8 +253,11 @@ mod tests {
     #[test]
     fn test_tail_reward_value() {
         let tail_zion = TAIL_REWARD_ATOMIC as f64 / ATOMIC_UNITS_PER_ZION as f64;
-        assert!((tail_zion - 724.785).abs() < 0.001,
-            "Tail reward should be ~724.785 ZION, got {}", tail_zion);
+        assert!(
+            (tail_zion - 724.785).abs() < 0.001,
+            "Tail reward should be ~724.785 ZION, got {}",
+            tail_zion
+        );
     }
 
     #[test]
@@ -269,7 +272,12 @@ mod tests {
         for d in 1..MAX_DECAY_DECADES {
             let height = d * BLOCKS_PER_DECADE + 1;
             let curr = calculate(height, 0);
-            assert!(curr < prev, "Decade {} reward should be less than decade {}", d + 1, d);
+            assert!(
+                curr < prev,
+                "Decade {} reward should be less than decade {}",
+                d + 1,
+                d
+            );
             prev = curr;
         }
     }
@@ -351,7 +359,15 @@ mod tests {
     #[test]
     fn test_never_zero_reward() {
         // After genesis, reward is never 0 (tail emission)
-        for h in [1u64, 100, 1_000_000, 52_560_000, 52_560_001, 100_000_000, u64::MAX] {
+        for h in [
+            1u64,
+            100,
+            1_000_000,
+            52_560_000,
+            52_560_001,
+            100_000_000,
+            u64::MAX,
+        ] {
             assert!(calculate(h, 0) > 0, "Reward at height {} should be > 0", h);
         }
     }

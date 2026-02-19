@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
 use crate::crypto::{hash, keys, to_hex};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TxInput {
     pub prev_tx_hash: String,
     pub output_index: u32,
-    pub signature: String, // Hex encoded 64-byte Ed25519 signature
+    pub signature: String,  // Hex encoded 64-byte Ed25519 signature
     pub public_key: String, // Hex encoded 32-byte Ed25519 public key
 }
 
@@ -56,7 +56,7 @@ impl Transaction {
         }
         data.extend_from_slice(&self.fee.to_le_bytes());
         data.extend_from_slice(&self.timestamp.to_le_bytes());
-        
+
         to_hex(&hash::blake(&data))
     }
 
@@ -92,4 +92,3 @@ impl Transaction {
         true
     }
 }
-

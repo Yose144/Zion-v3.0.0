@@ -1,5 +1,4 @@
 use clap::Parser;
-use reqwest;
 use serde_json::{json, Value};
 use std::time::Duration;
 use zion_core::algorithms::Algorithm;
@@ -32,10 +31,10 @@ struct Args {
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    
+
     let algorithm = Algorithm::from_str(&args.algorithm)
         .expect("Invalid algorithm. Use: cosmic_harmony, randomx, yescrypt, or blake3");
-    
+
     println!("🚀 ZION Native Miner v2.9.6");
     println!("================================");
     println!("RPC URL: {}", args.rpc_url);
@@ -58,10 +57,14 @@ async fn main() {
                     println!("   Target: {}", template.target);
                     previous_height = template.height;
                 }
-                
-                println!("\n⛏️  Mining block {} with {}...", template.height, algorithm);
-                
-                match zion_core::miner::mine_block(&template, args.max_iterations, Some(algorithm)) {
+
+                println!(
+                    "\n⛏️  Mining block {} with {}...",
+                    template.height, algorithm
+                );
+
+                match zion_core::miner::mine_block(&template, args.max_iterations, Some(algorithm))
+                {
                     Some(result) => {
                         println!("✨ Block Found!");
                         println!("   Nonce: {}", result.nonce);
@@ -69,9 +72,17 @@ async fn main() {
                         println!("   Iterations: {}", result.iterations);
                         println!("   Hashrate: {:.2} kH/s", result.hashrate / 1000.0);
                         println!("   Algorithm: {}", result.algorithm);
-                        
+
                         // Submit block
-                        match submit_block(&client, &args.rpc_url, &template, result.nonce, &result.hash).await {
+                        match submit_block(
+                            &client,
+                            &args.rpc_url,
+                            &template,
+                            result.nonce,
+                            &result.hash,
+                        )
+                        .await
+                        {
                             Ok(accepted) => {
                                 if accepted {
                                     println!("🎉 Block ACCEPTED by node!");
@@ -83,7 +94,7 @@ async fn main() {
                                 eprintln!("⚠️  Submit error: {}", e);
                             }
                         }
-                        
+
                         // Wait before fetching new template
                         tokio::time::sleep(Duration::from_secs(2)).await;
                     }
@@ -96,7 +107,7 @@ async fn main() {
                 eprintln!("❌ RPC Error: {}", e);
             }
         }
-        
+
         tokio::time::sleep(Duration::from_secs(args.poll_interval)).await;
     }
 }
@@ -112,26 +123,25 @@ async fn get_block_template(
         "method": "getBlockTemplate",
         "params": {"wallet_address": wallet}
     });
-    
+
     let response = client
         .post(rpc_url)
         .json(&payload)
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
-    
+
     let json: Value = response
         .json()
         .await
         .map_err(|e| format!("Parse failed: {}", e))?;
-    
+
     if let Some(error) = json.get("error") {
         return Err(format!("RPC error: {}", error));
     }
-    
-    let result = json.get("result")
-        .ok_or("Missing result")?;
-    
+
+    let result = json.get("result").ok_or("Missing result")?;
+
     Ok(BlockTemplate {
         height: result["height"].as_u64().unwrap_or(0),
         prev_hash: result["prev_hash"].as_str().unwrap_or("").to_string(),
@@ -158,31 +168,32 @@ async fn submit_block(
         "nonce": nonce,
         "transactions": []
     });
-    
+
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 2,
         "method": "submitblock",
         "params": {"block_data": block_data.to_string()}
     });
-    
+
     let response = client
         .post(rpc_url)
         .json(&payload)
         .send()
         .await
         .map_err(|e| format!("Submit request failed: {}", e))?;
-    
+
     let json: Value = response
         .json()
         .await
         .map_err(|e| format!("Parse response failed: {}", e))?;
-    
+
     if let Some(error) = json.get("error") {
         return Err(format!("Submit error: {}", error));
     }
-    
-    Ok(json.get("result")
+
+    Ok(json
+        .get("result")
         .and_then(|r| r.get("accepted"))
         .and_then(|a| a.as_bool())
         .unwrap_or(false))

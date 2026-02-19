@@ -1,12 +1,15 @@
 //! Pool connection management for multi-chain mining
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpStream, tcp::{OwnedReadHalf, OwnedWriteHalf}};
-use tokio::sync::{Mutex, RwLock, oneshot, watch};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::{
+    tcp::{OwnedReadHalf, OwnedWriteHalf},
+    TcpStream,
+};
+use tokio::sync::{oneshot, watch, Mutex, RwLock};
 
 use crate::config::PoolConfig;
 
@@ -46,7 +49,7 @@ impl PoolConnection {
             last_share_time: None,
         }
     }
-    
+
     pub fn accept_rate(&self) -> f64 {
         let total = self.accepted_shares + self.rejected_shares;
         if total == 0 {
@@ -240,7 +243,7 @@ fn parse_job_from_notify(params: &serde_json::Value) -> Option<MiningJob> {
         return None;
     }
 
-    let job_id = arr.get(0)?.as_str()?.to_string();
+    let job_id = arr.first()?.as_str()?.to_string();
     let blob = arr.get(1)?.as_str()?.to_string();
     let target = arr.get(2)?.as_str()?.to_string();
     let height = arr.get(3).and_then(|v| v.as_u64()).unwrap_or(0);
@@ -255,16 +258,16 @@ fn parse_job_from_notify(params: &serde_json::Value) -> Option<MiningJob> {
     })
 }
 
-fn parse_job_from_xmrig_result(result: &serde_json::Value) -> Option<(Option<String>, Option<MiningJob>)> {
+fn parse_job_from_xmrig_result(
+    result: &serde_json::Value,
+) -> Option<(Option<String>, Option<MiningJob>)> {
     let obj = result.as_object()?;
 
     let session_id = obj.get("id").and_then(|id_val| {
         if let Some(id_str) = id_val.as_str() {
             Some(id_str.to_string())
-        } else if let Some(id_num) = id_val.as_u64() {
-            Some(id_num.to_string())
         } else {
-            None
+            id_val.as_u64().map(|id_num| id_num.to_string())
         }
     });
 
@@ -276,9 +279,21 @@ fn parse_job_from_xmrig_result(result: &serde_json::Value) -> Option<(Option<Str
 
     if obj.get("job_id").is_some() && obj.get("blob").is_some() {
         let job = MiningJob {
-            job_id: obj.get("job_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            blob: obj.get("blob").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            target: obj.get("target").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            job_id: obj
+                .get("job_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            blob: obj
+                .get("blob")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            target: obj
+                .get("target")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
             height: obj.get("height").and_then(|v| v.as_u64()).unwrap_or(0),
             seed_hash: obj
                 .get("seed_hash")
@@ -349,7 +364,7 @@ pub struct PoolManager {
     connections: Arc<RwLock<HashMap<String, PoolConnection>>>,
 
     runtimes: Arc<RwLock<HashMap<String, PoolRuntime>>>,
-    
+
     /// Revenue tracking per pool
     revenue: Arc<RwLock<HashMap<String, f64>>>,
 }
@@ -362,14 +377,14 @@ impl PoolManager {
             revenue: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    
+
     /// Add pool from config
     pub async fn add_pool(&self, pool_id: &str, config: PoolConfig) {
         let connection = PoolConnection::new(pool_id, config);
         let mut connections = self.connections.write().await;
         connections.insert(pool_id.to_string(), connection);
     }
-    
+
     /// Connect to a pool
     pub async fn connect(&self, pool_id: &str) -> anyhow::Result<()> {
         let cfg = {
@@ -442,7 +457,7 @@ impl PoolManager {
 
         Ok(())
     }
-    
+
     /// Disconnect from a pool
     pub async fn disconnect(&self, pool_id: &str) -> anyhow::Result<()> {
         let mut connections = self.connections.write().await;
@@ -453,7 +468,7 @@ impl PoolManager {
         runtimes.remove(pool_id);
         Ok(())
     }
-    
+
     /// Submit share to pool
     pub async fn submit_share(&self, pool_id: &str, share: Share) -> anyhow::Result<bool> {
         let (runtime, cfg) = {
@@ -486,17 +501,20 @@ impl PoolManager {
         };
 
         let resp = runtime.send_request(&submit_req).await?;
-        let accepted = resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false);
+        let accepted = resp
+            .get("result")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
         let mut connections = self.connections.write().await;
         let conn = connections
             .get_mut(pool_id)
             .ok_or_else(|| anyhow::anyhow!("Pool {} not connected", pool_id))?;
-        
+
         if accepted {
             conn.accepted_shares += 1;
             conn.last_share_time = Some(std::time::Instant::now());
-            
+
             // Track revenue (estimated)
             let revenue_per_share = share.difficulty * 0.00001;
             let mut revenue = self.revenue.write().await;
@@ -504,10 +522,10 @@ impl PoolManager {
         } else {
             conn.rejected_shares += 1;
         }
-        
+
         Ok(accepted)
     }
-    
+
     /// Get current job from pool
     pub async fn get_job(&self, pool_id: &str) -> anyhow::Result<Option<MiningJob>> {
         let runtime = {
@@ -520,48 +538,48 @@ impl PoolManager {
 
         // Best-effort: request a job for XMRig protocol if none yet.
         let mut rx = runtime.job_tx.subscribe();
-        if rx.borrow().is_none() {
-            if *runtime.protocol.lock().await == ClientProtocol::Xmrig {
-                let id = runtime.next_request_id();
-                let req = build_getjob_request(id);
-                let _ = runtime.send_request(&req).await;
-                let _ = tokio::time::timeout(std::time::Duration::from_secs(1), rx.changed()).await;
-            }
+        if rx.borrow().is_none() && *runtime.protocol.lock().await == ClientProtocol::Xmrig {
+            let id = runtime.next_request_id();
+            let req = build_getjob_request(id);
+            let _ = runtime.send_request(&req).await;
+            let _ = tokio::time::timeout(std::time::Duration::from_secs(1), rx.changed()).await;
         }
 
         let job = rx.borrow().clone();
         Ok(job)
     }
-    
+
     /// Get pool statistics
     pub async fn get_stats(&self, pool_id: &str) -> anyhow::Result<PoolConnection> {
         let connections = self.connections.read().await;
-        connections.get(pool_id)
+        connections
+            .get(pool_id)
             .cloned()
             .ok_or_else(|| anyhow::anyhow!("Pool {} not found", pool_id))
     }
-    
+
     /// Get all active pools
     pub async fn get_active_pools(&self) -> Vec<PoolConnection> {
         let connections = self.connections.read().await;
-        connections.values()
+        connections
+            .values()
             .filter(|c| matches!(c.state, PoolState::Connected | PoolState::Mining))
             .cloned()
             .collect()
     }
-    
+
     /// Get total revenue across all pools
     pub async fn get_total_revenue(&self) -> HashMap<String, f64> {
         self.revenue.read().await.clone()
     }
-    
+
     /// Connect to all configured pools
     pub async fn connect_all(&self) -> anyhow::Result<()> {
         let pool_ids: Vec<String> = {
             let connections = self.connections.read().await;
             connections.keys().cloned().collect()
         };
-        
+
         for pool_id in pool_ids {
             if let Err(e) = self.connect(&pool_id).await {
                 log::warn!("Failed to connect to pool {}: {}", pool_id, e);
@@ -569,7 +587,7 @@ impl PoolManager {
         }
         Ok(())
     }
-    
+
     /// Disconnect from all pools
     pub async fn disconnect_all(&self) -> anyhow::Result<()> {
         let mut connections = self.connections.write().await;
@@ -591,7 +609,7 @@ mod tests {
     use super::*;
     use crate::AlgorithmType;
     use tokio::net::TcpListener;
-    
+
     #[tokio::test]
     async fn test_pool_manager() {
         let manager = PoolManager::new();
@@ -636,7 +654,9 @@ mod tests {
                         },
                         "error": null
                     });
-                    let _ = write_half.write_all(serde_json::to_string(&resp).unwrap().as_bytes()).await;
+                    let _ = write_half
+                        .write_all(serde_json::to_string(&resp).unwrap().as_bytes())
+                        .await;
                     let _ = write_half.write_all(b"\n").await;
                     let _ = write_half.flush().await;
                 } else if method == "getjob" {
@@ -651,7 +671,9 @@ mod tests {
                         },
                         "error": null
                     });
-                    let _ = write_half.write_all(serde_json::to_string(&resp).unwrap().as_bytes()).await;
+                    let _ = write_half
+                        .write_all(serde_json::to_string(&resp).unwrap().as_bytes())
+                        .await;
                     let _ = write_half.write_all(b"\n").await;
                     let _ = write_half.flush().await;
                 } else if method == "submit" {
@@ -660,13 +682,15 @@ mod tests {
                         "result": true,
                         "error": null
                     });
-                    let _ = write_half.write_all(serde_json::to_string(&resp).unwrap().as_bytes()).await;
+                    let _ = write_half
+                        .write_all(serde_json::to_string(&resp).unwrap().as_bytes())
+                        .await;
                     let _ = write_half.write_all(b"\n").await;
                     let _ = write_half.flush().await;
                 }
             }
         });
-        
+
         let config = PoolConfig {
             url: format!("stratum+tcp://{}", addr),
             wallet: "ZION_WALLET".to_string(),
@@ -675,10 +699,10 @@ mod tests {
             algorithm: AlgorithmType::CosmicFusion,
             enabled: true,
         };
-        
+
         manager.add_pool("zion-main", config).await;
         manager.connect("zion-main").await.unwrap();
-        
+
         let stats = manager.get_stats("zion-main").await.unwrap();
         assert_eq!(stats.state, PoolState::Connected);
 

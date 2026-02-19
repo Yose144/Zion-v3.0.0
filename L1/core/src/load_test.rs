@@ -1,18 +1,17 @@
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 /// Load test simulator for ZION blockchain core
-/// 
+///
 /// Simulates high transaction load and mining activity to stress test:
 /// - Mempool capacity and eviction
 /// - Block validation throughput
 /// - P2P propagation
 /// - Storage I/O
-
 use tokio::time::{sleep, Duration};
-use rand::{Rng, SeedableRng};
-use rand_chacha::ChaCha8Rng;
 
+use crate::blockchain::block::Block;
 use crate::state::State;
 use crate::tx::{Transaction, TxInput, TxOutput};
-use crate::blockchain::block::Block;
 
 pub struct LoadTestConfig {
     pub tx_per_second: u32,
@@ -33,8 +32,10 @@ impl Default for LoadTestConfig {
 }
 
 pub async fn run_load_test(state: State, config: LoadTestConfig) {
-    println!("[LoadTest] Starting with {} TPS for {}s", 
-        config.tx_per_second, config.duration_secs);
+    println!(
+        "[LoadTest] Starting with {} TPS for {}s",
+        config.tx_per_second, config.duration_secs
+    );
 
     let state_tx = state.clone();
     let state_mining = state.clone();
@@ -46,7 +47,12 @@ pub async fn run_load_test(state: State, config: LoadTestConfig) {
 
     // Block generation
     let mining_handle = tokio::spawn(async move {
-        generate_blocks(state_mining, config.block_interval_secs, config.duration_secs).await;
+        generate_blocks(
+            state_mining,
+            config.block_interval_secs,
+            config.duration_secs,
+        )
+        .await;
     });
 
     // Wait for completion
@@ -82,8 +88,11 @@ async fn generate_transactions(state: State, tps: u32, duration_secs: u64) {
         let _ = state.process_transaction(tx);
 
         if i % 100 == 0 {
-            println!("[LoadTest] Generated {} transactions, mempool size: {}", 
-                i, state.mempool.size());
+            println!(
+                "[LoadTest] Generated {} transactions, mempool size: {}",
+                i,
+                state.mempool.size()
+            );
         }
 
         sleep(Duration::from_millis(interval_ms)).await;
@@ -128,7 +137,7 @@ async fn generate_blocks(state: State, interval_secs: u64, duration_secs: u64) {
 fn print_statistics(state: &State) {
     let height = state.height.load(std::sync::atomic::Ordering::Relaxed);
     let mempool_size = state.mempool.size();
-    
+
     println!("\n[LoadTest] Final Statistics:");
     println!("  Blockchain height: {}", height);
     println!("  Mempool size: {}", mempool_size);

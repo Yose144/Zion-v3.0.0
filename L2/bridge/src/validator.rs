@@ -32,7 +32,9 @@ impl ValidatorSet {
     }
 
     pub fn is_validator(&self, address: &str) -> bool {
-        self.validators.iter().any(|v| v.eq_ignore_ascii_case(address))
+        self.validators
+            .iter()
+            .any(|v| v.eq_ignore_ascii_case(address))
     }
 
     pub fn count(&self) -> usize {
@@ -62,7 +64,11 @@ impl ConsensusTracker {
     /// Add a validator confirmation. Returns true if threshold was just reached.
     pub fn add_confirmation(&mut self, validator_address: &str) -> bool {
         // Dedup
-        if self.confirmations.iter().any(|v| v.eq_ignore_ascii_case(validator_address)) {
+        if self
+            .confirmations
+            .iter()
+            .any(|v| v.eq_ignore_ascii_case(validator_address))
+        {
             return false;
         }
 
@@ -93,13 +99,16 @@ mod tests {
 
     #[test]
     fn test_validator_set() {
-        let set = ValidatorSet::new(3, vec![
-            "0xAAA".into(),
-            "0xBBB".into(),
-            "0xCCC".into(),
-            "0xDDD".into(),
-            "0xEEE".into(),
-        ]);
+        let set = ValidatorSet::new(
+            3,
+            vec![
+                "0xAAA".into(),
+                "0xBBB".into(),
+                "0xCCC".into(),
+                "0xDDD".into(),
+                "0xEEE".into(),
+            ],
+        );
 
         assert_eq!(set.count(), 5);
         assert!(set.is_validator("0xAAA"));
@@ -113,7 +122,7 @@ mod tests {
 
         assert!(!tracker.add_confirmation("0xAAA")); // 1/3
         assert!(!tracker.add_confirmation("0xBBB")); // 2/3
-        assert!(tracker.add_confirmation("0xCCC"));  // 3/3 → reached!
+        assert!(tracker.add_confirmation("0xCCC")); // 3/3 → reached!
         assert!(!tracker.add_confirmation("0xDDD")); // 4/3 → already reached
         assert!(!tracker.add_confirmation("0xAAA")); // duplicate
 

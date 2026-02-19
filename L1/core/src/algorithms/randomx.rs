@@ -91,13 +91,33 @@ fn detect_flags() -> RandomXFlag {
     }
 
     LOG_FLAGS_ONCE.call_once(|| {
-        let mode = if flags.contains(RandomXFlag::FLAG_FULL_MEM) { "FULL" } else { "LIGHT" };
-        let jit = if flags.contains(RandomXFlag::FLAG_JIT) { "+JIT" } else { "" };
-        let aes = if flags.contains(RandomXFlag::FLAG_HARD_AES) { "+HARD_AES" } else { "" };
-        let hp = if flags.contains(RandomXFlag::FLAG_LARGE_PAGES) { "+HUGEPAGES" } else { "" };
+        let mode = if flags.contains(RandomXFlag::FLAG_FULL_MEM) {
+            "FULL"
+        } else {
+            "LIGHT"
+        };
+        let jit = if flags.contains(RandomXFlag::FLAG_JIT) {
+            "+JIT"
+        } else {
+            ""
+        };
+        let aes = if flags.contains(RandomXFlag::FLAG_HARD_AES) {
+            "+HARD_AES"
+        } else {
+            ""
+        };
+        let hp = if flags.contains(RandomXFlag::FLAG_LARGE_PAGES) {
+            "+HUGEPAGES"
+        } else {
+            ""
+        };
         log::info!(
             "⚡ RandomX flags: 0x{:x} mode={}{}{}{} (get_recommended_flags + env)",
-            flags.bits(), mode, jit, aes, hp
+            flags.bits(),
+            mode,
+            jit,
+            aes,
+            hp
         );
     });
 
@@ -124,7 +144,8 @@ impl RandomXHasher {
 
         if flags.contains(RandomXFlag::FLAG_FULL_MEM) {
             // === FULL MODE: shared dataset ===
-            let mut guard = SHARED_FULL_RESOURCES.lock()
+            let mut guard = SHARED_FULL_RESOURCES
+                .lock()
                 .map_err(|e| anyhow!("shared dataset lock poisoned: {}", e))?;
 
             // Reuse existing dataset if key matches, otherwise recreate
@@ -134,8 +155,10 @@ impl RandomXHasher {
             };
 
             if need_create {
-                log::info!("🔧 RandomX FULL: allocating shared 2 GB dataset (key={}...)",
-                    hex::encode(&key[..key.len().min(8)]));
+                log::info!(
+                    "🔧 RandomX FULL: allocating shared 2 GB dataset (key={}...)",
+                    hex::encode(&key[..key.len().min(8)])
+                );
                 let t0 = std::time::Instant::now();
 
                 let cache = RandomXCache::new(flags, key)
@@ -143,12 +166,15 @@ impl RandomXHasher {
                 let dataset = RandomXDataset::new(flags, cache.clone(), 0)
                     .map_err(|e| anyhow!("RandomX dataset creation failed: {}", e))?;
 
-                log::info!("✅ RandomX FULL dataset ready in {:.1}s", t0.elapsed().as_secs_f64());
+                log::info!(
+                    "✅ RandomX FULL dataset ready in {:.1}s",
+                    t0.elapsed().as_secs_f64()
+                );
 
                 *guard = Some(SharedFullResources {
                     key: key.to_vec(),
-                    cache: cache,
-                    dataset: dataset,
+                    cache,
+                    dataset,
                 });
             }
 
@@ -189,8 +215,16 @@ pub fn init_randomx(key: &[u8]) -> Result<()> {
     let _hasher = RandomXHasher::new(key)?;
 
     let flags = detect_flags();
-    let mode = if flags.contains(RandomXFlag::FLAG_FULL_MEM) { "full" } else { "light" };
-    log::info!("[RandomX] Ready ({} mode, per-thread VMs, flags=0x{:x})", mode, flags.bits());
+    let mode = if flags.contains(RandomXFlag::FLAG_FULL_MEM) {
+        "full"
+    } else {
+        "light"
+    };
+    log::info!(
+        "[RandomX] Ready ({} mode, per-thread VMs, flags=0x{:x})",
+        mode,
+        flags.bits()
+    );
     Ok(())
 }
 

@@ -4,10 +4,7 @@ use crate::error::{DaoError, DaoResult};
 use crate::proposal::Proposal;
 
 /// Check if a proposal has reached quorum
-pub fn check_quorum(
-    proposal: &Proposal,
-    circulating_supply: u64,
-) -> DaoResult<bool> {
+pub fn check_quorum(proposal: &Proposal, circulating_supply: u64) -> DaoResult<bool> {
     let required_percent = proposal.proposal_type.required_quorum_percent();
     let total_votes = proposal.total_votes();
 
@@ -40,18 +37,22 @@ mod tests {
     #[test]
     fn test_quorum_met() {
         let mut p = Proposal::new(
-            1, "Test".into(), "Desc".into(),
+            1,
+            "Test".into(),
+            "Desc".into(),
             ProposalType::Parameter {
                 parameter_name: "fee".into(),
                 current_value: "1".into(),
                 proposed_value: "2".into(),
             },
-            "zion1p".into(), 2_000_000_000_000, 100,
+            "zion1p".into(),
+            2_000_000_000_000,
+            100,
         );
 
         // 10% quorum, circulating = 1B ZION (atomic), need 100M votes
         let circulating = 1_000_000_000_000_000_000u64; // 1B ZION in atomic
-        // Add 200M ZION worth of votes
+                                                        // Add 200M ZION worth of votes
         p.add_vote(VoteChoice::Yes, 200_000_000_000_000_000);
 
         assert!(check_quorum(&p, circulating).is_ok());
@@ -60,13 +61,17 @@ mod tests {
     #[test]
     fn test_quorum_not_met() {
         let mut p = Proposal::new(
-            1, "Test".into(), "Desc".into(),
+            1,
+            "Test".into(),
+            "Desc".into(),
             ProposalType::Parameter {
                 parameter_name: "fee".into(),
                 current_value: "1".into(),
                 proposed_value: "2".into(),
             },
-            "zion1p".into(), 2_000_000_000_000, 100,
+            "zion1p".into(),
+            2_000_000_000_000,
+            100,
         );
 
         let circulating = 1_000_000_000_000_000_000u64;

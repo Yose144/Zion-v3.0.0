@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::error::{WarpError, WarpResult};
 
@@ -58,7 +58,7 @@ impl FeeEngine {
             engine.add_route(RouteFee {
                 chain_name: chain.to_string(),
                 fee_rate: 0.001,
-                min_fee: 100_000,    // 0.1 ZION
+                min_fee: 100_000,        // 0.1 ZION
                 max_fee: 10_000_000_000, // 10,000 ZION
             });
         }
@@ -119,9 +119,10 @@ impl FeeEngine {
     }
 
     pub fn calculate_fee(&self, chain_name: &str, amount_atomic: u64) -> WarpResult<u64> {
-        let route = self.routes.get(chain_name).ok_or_else(|| {
-            WarpError::UnsupportedChain(chain_name.to_string())
-        })?;
+        let route = self
+            .routes
+            .get(chain_name)
+            .ok_or_else(|| WarpError::UnsupportedChain(chain_name.to_string()))?;
 
         let raw_fee = (amount_atomic as f64 * route.fee_rate) as u64;
         let clamped = raw_fee.max(route.min_fee).min(route.max_fee);
@@ -211,8 +212,8 @@ mod tests {
     fn test_split_fee() {
         let engine = FeeEngine::with_defaults();
         let (burn, dao, validator) = engine.split_fee(1_000_000);
-        assert_eq!(burn, 500_000);    // 50%
-        assert_eq!(dao, 250_000);     // 25%
+        assert_eq!(burn, 500_000); // 50%
+        assert_eq!(dao, 250_000); // 25%
         assert_eq!(validator, 250_000); // 25%
     }
 

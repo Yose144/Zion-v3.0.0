@@ -27,7 +27,9 @@ impl PricingEngine {
 
     /// Calculate price for a job based on backend and estimated compute units.
     pub fn calculate_price(&self, backend: ComputeBackend, compute_units: u64) -> u64 {
-        let multiplier = self.multipliers.iter()
+        let multiplier = self
+            .multipliers
+            .iter()
             .find(|(b, _)| *b == backend)
             .map(|(_, m)| *m)
             .unwrap_or(1.0);

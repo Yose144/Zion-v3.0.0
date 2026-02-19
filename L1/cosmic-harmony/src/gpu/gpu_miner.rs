@@ -2,13 +2,13 @@
 //!
 //! Supports OpenCL backends (AMD, NVIDIA, Intel)
 
-use super::{GpuBackend, GpuDevice};
 use super::opencl_kernel::get_kernel_source;
-use anyhow::{Result, Context, anyhow};
+use super::{GpuBackend, GpuDevice};
+use anyhow::{anyhow, Context, Result};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 #[cfg(feature = "gpu")]
-use opencl3::command_queue::{CommandQueue, CL_QUEUE_PROFILING_ENABLE, CL_BLOCKING};
+use opencl3::command_queue::{CommandQueue, CL_BLOCKING, CL_QUEUE_PROFILING_ENABLE};
 #[cfg(feature = "gpu")]
 use opencl3::context::Context as ClContext;
 #[cfg(feature = "gpu")]
@@ -39,7 +39,7 @@ impl Default for GpuConfig {
     fn default() -> Self {
         Self {
             device_id: 0,
-            batch_size: 1_000_000,  // 1M hashes per batch
+            batch_size: 1_000_000, // 1M hashes per batch
             work_group_size: 256,
             profiling: false,
         }
@@ -56,14 +56,14 @@ pub struct GpuMiner {
     program: Program,
     kernel_mine: Kernel,
     kernel_batch: Kernel,
-    
+
     // Buffers
     header_buffer: Buffer<cl_uchar>,
     target_buffer: Buffer<cl_uchar>,
     found_nonce_buffer: Buffer<cl_ulong>,
     found_hash_buffer: Buffer<cl_uchar>,
     solution_count_buffer: Buffer<cl_uint>,
-    
+
     // Stats
     total_hashes: AtomicU64,
     solutions_found: AtomicU64,
@@ -75,13 +75,13 @@ impl GpuMiner {
     /// Create new GPU miner
     pub fn new(config: GpuConfig) -> Result<Self> {
         // Get GPU devices
-        let device_ids = get_all_devices(CL_DEVICE_TYPE_GPU)
-            .context("Failed to get GPU devices")?;
-        
+        let device_ids =
+            get_all_devices(CL_DEVICE_TYPE_GPU).context("Failed to get GPU devices")?;
+
         if device_ids.is_empty() {
             return Err(anyhow!("No GPU devices found"));
         }
-        
+
         if config.device_id >= device_ids.len() {
             return Err(anyhow!(
                 "Invalid device ID {}. Available: 0-{}",
@@ -89,16 +89,15 @@ impl GpuMiner {
                 device_ids.len() - 1
             ));
         }
-        
+
         let device = Device::new(device_ids[config.device_id]);
         let device_name = device.name().unwrap_or_default();
-        
+
         log::info!("Using GPU: {} (ID: {})", device_name, config.device_id);
-        
+
         // Create context
-        let context = ClContext::from_device(&device)
-            .context("Failed to create OpenCL context")?;
-        
+        let context = ClContext::from_device(&device).context("Failed to create OpenCL context")?;
+
         // Create command queue
         let queue_props = if config.profiling {
             CL_QUEUE_PROFILING_ENABLE
@@ -107,44 +106,44 @@ impl GpuMiner {
         };
         let queue = CommandQueue::create_default_with_properties(&context, queue_props, 0)
             .context("Failed to create command queue")?;
-        
+
         // Build program
         let kernel_source = get_kernel_source(true);
         let program = Program::create_and_build_from_source(&context, &kernel_source, "")
             .map_err(|e| anyhow!("Failed to build OpenCL program: {}", e))?;
-        
+
         // Create kernels
         let kernel_mine = Kernel::create(&program, "cosmic_harmony_v3_mine")
             .context("Failed to create mining kernel")?;
         let kernel_batch = Kernel::create(&program, "cosmic_harmony_v3_batch")
             .context("Failed to create batch kernel")?;
-        
+
         // Create buffers
         let header_buffer = unsafe {
             Buffer::<cl_uchar>::create(&context, CL_MEM_READ_ONLY, 144, std::ptr::null_mut())
                 .context("Failed to create header buffer")?
         };
-        
+
         let target_buffer = unsafe {
             Buffer::<cl_uchar>::create(&context, CL_MEM_READ_ONLY, 32, std::ptr::null_mut())
                 .context("Failed to create target buffer")?
         };
-        
+
         let found_nonce_buffer = unsafe {
             Buffer::<cl_ulong>::create(&context, CL_MEM_WRITE_ONLY, 1, std::ptr::null_mut())
                 .context("Failed to create nonce buffer")?
         };
-        
+
         let found_hash_buffer = unsafe {
             Buffer::<cl_uchar>::create(&context, CL_MEM_WRITE_ONLY, 32, std::ptr::null_mut())
                 .context("Failed to create hash buffer")?
         };
-        
+
         let solution_count_buffer = unsafe {
             Buffer::<cl_uint>::create(&context, CL_MEM_READ_WRITE, 1, std::ptr::null_mut())
                 .context("Failed to create solution count buffer")?
         };
-        
+
         Ok(Self {
             config,
             device,
@@ -163,17 +162,17 @@ impl GpuMiner {
             running: AtomicBool::new(false),
         })
     }
-    
+
     /// List available GPU devices
     pub fn list_devices() -> Result<Vec<GpuDevice>> {
-        let device_ids = get_all_devices(CL_DEVICE_TYPE_GPU)
-            .context("Failed to get GPU devices")?;
-        
+        let device_ids =
+            get_all_devices(CL_DEVICE_TYPE_GPU).context("Failed to get GPU devices")?;
+
         let mut devices = Vec::new();
-        
+
         for (id, device_id) in device_ids.iter().enumerate() {
             let device = Device::new(*device_id);
-            
+
             devices.push(GpuDevice {
                 id,
                 name: device.name().unwrap_or_default(),
@@ -185,10 +184,10 @@ impl GpuMiner {
                 local_memory: device.local_mem_size().unwrap_or(0),
             });
         }
-        
+
         Ok(devices)
     }
-    
+
     /// Mine for a valid nonce
     pub fn mine(
         &mut self,
@@ -199,11 +198,11 @@ impl GpuMiner {
         if block_header.len() > 136 {
             return Err(anyhow!("Block header too large (max 136 bytes)"));
         }
-        
+
         // Prepare header (pad to 144 bytes)
         let mut header = [0u8; 144];
         header[..block_header.len()].copy_from_slice(block_header);
-        
+
         // Upload buffers
         unsafe {
             self.queue.enqueue_write_buffer(
@@ -213,7 +212,7 @@ impl GpuMiner {
                 &header,
                 &[],
             )?;
-            
+
             self.queue.enqueue_write_buffer(
                 &mut self.target_buffer,
                 CL_BLOCKING,
@@ -221,7 +220,7 @@ impl GpuMiner {
                 target,
                 &[],
             )?;
-            
+
             // Reset solution count
             let zero: [cl_uint; 1] = [0];
             self.queue.enqueue_write_buffer(
@@ -232,12 +231,12 @@ impl GpuMiner {
                 &[],
             )?;
         }
-        
+
         // Execute kernel
         let header_len = block_header.len() as cl_uint;
         let global_work_size = self.config.batch_size;
         let local_work_size = self.config.work_group_size;
-        
+
         unsafe {
             ExecuteKernel::new(&self.kernel_mine)
                 .set_arg(&self.header_buffer)
@@ -251,12 +250,13 @@ impl GpuMiner {
                 .set_local_work_size(local_work_size)
                 .enqueue_nd_range(&self.queue)?;
         }
-        
+
         self.queue.finish()?;
-        
+
         // Update stats
-        self.total_hashes.fetch_add(self.config.batch_size as u64, Ordering::Relaxed);
-        
+        self.total_hashes
+            .fetch_add(self.config.batch_size as u64, Ordering::Relaxed);
+
         // Read results
         let mut solution_count = [0u32; 1];
         unsafe {
@@ -268,11 +268,11 @@ impl GpuMiner {
                 &[],
             )?;
         }
-        
+
         if solution_count[0] > 0 {
             let mut found_nonce = [0u64; 1];
             let mut found_hash = [0u8; 32];
-            
+
             unsafe {
                 self.queue.enqueue_read_buffer(
                     &self.found_nonce_buffer,
@@ -281,7 +281,7 @@ impl GpuMiner {
                     &mut found_nonce,
                     &[],
                 )?;
-                
+
                 self.queue.enqueue_read_buffer(
                     &self.found_hash_buffer,
                     CL_BLOCKING,
@@ -290,12 +290,12 @@ impl GpuMiner {
                     &[],
                 )?;
             }
-            
+
             self.solutions_found.fetch_add(1, Ordering::Relaxed);
-            
+
             return Ok(Some((found_nonce[0], found_hash)));
         }
-        
+
         Ok(None)
     }
 
@@ -355,13 +355,8 @@ impl GpuMiner {
 
         let mut flat = vec![0u8; count * 32];
         unsafe {
-            self.queue.enqueue_read_buffer(
-                &output_buffer,
-                CL_BLOCKING,
-                0,
-                &mut flat,
-                &[],
-            )?;
+            self.queue
+                .enqueue_read_buffer(&output_buffer, CL_BLOCKING, 0, &mut flat, &[])?;
         }
 
         let mut out = Vec::with_capacity(count);
@@ -425,7 +420,11 @@ impl GpuMiner {
 
         for (i, gpu_hash) in gpu_hashes.iter().enumerate() {
             let nonce = start_nonce + i as u64;
-            let cpu = crate::algorithms_opt::cosmic_harmony_v3_with_height(block_header, nonce, height as u64);
+            let cpu = crate::algorithms_opt::cosmic_harmony_v3_with_height(
+                block_header,
+                nonce,
+                height as u64,
+            );
 
             if gpu_hash != &cpu.data {
                 mismatches += 1;
@@ -444,23 +443,23 @@ impl GpuMiner {
 
         Ok(mismatches)
     }
-    
+
     /// Get hashrate (hashes per second)
     pub fn get_hashrate(&self) -> f64 {
         // This would need timing integration
         0.0
     }
-    
+
     /// Get total hashes computed
     pub fn total_hashes(&self) -> u64 {
         self.total_hashes.load(Ordering::Relaxed)
     }
-    
+
     /// Get solutions found
     pub fn solutions_found(&self) -> u64 {
         self.solutions_found.load(Ordering::Relaxed)
     }
-    
+
     /// Get device info
     pub fn device_info(&self) -> GpuDevice {
         GpuDevice {
@@ -485,7 +484,7 @@ impl GpuMiner {
     pub fn new(_config: GpuConfig) -> Result<Self> {
         Err(anyhow!("GPU support not compiled. Enable 'gpu' feature."))
     }
-    
+
     pub fn list_devices() -> Result<Vec<GpuDevice>> {
         Err(anyhow!("GPU support not compiled. Enable 'gpu' feature."))
     }
@@ -494,7 +493,7 @@ impl GpuMiner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_gpu_config_default() {
         let config = GpuConfig::default();

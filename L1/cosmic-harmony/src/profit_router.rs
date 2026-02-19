@@ -1,7 +1,7 @@
 //! Profit router with WhatToMine integration
 
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::{AlgorithmType, Config, WhatToMineClient};
@@ -33,12 +33,12 @@ impl ProfitRouter {
             whattomine: WhatToMineClient::new(),
         }
     }
-    
+
     /// Get current algorithm
     pub async fn current_algorithm(&self) -> AlgorithmType {
         *self.current_algo.read().await
     }
-    
+
     /// Update profitability data
     pub async fn update_profitability(&self) -> anyhow::Result<()> {
         let data = self.whattomine.fetch_profitability().await?;
@@ -65,27 +65,28 @@ impl ProfitRouter {
 
         Ok(())
     }
-    
+
     /// Check if should switch algorithm
     pub async fn should_switch(&self) -> Option<AlgorithmType> {
         let config = self.config.read().await;
         let current = *self.current_algo.read().await;
         let prof = self.profitability.read().await;
-        
-        let current_profit = prof.get(&current)
+
+        let current_profit = prof
+            .get(&current)
             .map(|p| p.profit_per_day_usd)
             .unwrap_or(0.0);
-        
+
         let mut best_algo = current;
         let mut best_profit = current_profit;
-        
+
         for (algo, data) in prof.iter() {
             if data.profit_per_day_usd > best_profit {
                 best_profit = data.profit_per_day_usd;
                 best_algo = *algo;
             }
         }
-        
+
         // Check if improvement exceeds threshold
         if best_algo != current {
             let improvement = if current_profit.abs() < f64::EPSILON {
@@ -102,28 +103,29 @@ impl ProfitRouter {
                 return Some(best_algo);
             }
         }
-        
+
         None
     }
-    
+
     /// Switch to new algorithm
     pub async fn switch_to(&self, algo: AlgorithmType) {
         let mut current = self.current_algo.write().await;
         *current = algo;
     }
-    
+
     /// Get best algorithm for GPU
     pub async fn get_best_gpu_algo(&self) -> Option<AlgorithmType> {
         let prof = self.profitability.read().await;
-        
+
         let gpu_algos = [
             AlgorithmType::Autolykos2,
             AlgorithmType::KawPow,
             AlgorithmType::KHeavyHash,
             AlgorithmType::Blake3,
         ];
-        
-        gpu_algos.iter()
+
+        gpu_algos
+            .iter()
             .filter_map(|algo| prof.get(algo).map(|p| (*algo, p.profit_per_day_usd)))
             .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
             .map(|(algo, _)| algo)
@@ -133,14 +135,14 @@ impl ProfitRouter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_profit_router() {
         let config = Arc::new(RwLock::new(Config::default()));
         let router = ProfitRouter::new(config);
-        
+
         router.update_profitability().await.unwrap();
-        
+
         let best = router.get_best_gpu_algo().await;
         assert!(best.is_some());
     }

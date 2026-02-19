@@ -84,6 +84,12 @@ pub struct HumanitarianFund {
     pub distributed: std::collections::HashMap<HumanitarianCategory, u64>,
 }
 
+impl Default for HumanitarianFund {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HumanitarianFund {
     pub fn new() -> Self {
         Self {

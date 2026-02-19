@@ -11,7 +11,6 @@
 /// 2. On each payout cycle, check current chain height
 /// 3. If current_height - block_height >= COINBASE_MATURITY → mature
 /// 4. Only mature blocks' rewards are eligible for distribution
-
 use anyhow::{anyhow, Result};
 use redis::AsyncCommands;
 use std::sync::Arc;
@@ -133,7 +132,11 @@ impl MaturityTracker {
             };
 
             // Verify block is still on the main chain (not orphaned)
-            let still_valid = match self.rpc.call("getBlockByHeight", serde_json::json!([block.height])).await {
+            let still_valid = match self
+                .rpc
+                .call("getBlockByHeight", serde_json::json!([block.height]))
+                .await
+            {
                 Ok(chain_block) => {
                     let chain_hash = chain_block
                         .get("hash")

@@ -36,7 +36,7 @@ pub struct WarpMessage {
 impl WarpMessage {
     /// Compute a deterministic hash for signing.
     pub fn signing_hash(&self) -> Vec<u8> {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(self.transfer_id.as_bytes());
         hasher.update(self.source_chain.as_bytes());
@@ -74,22 +74,25 @@ pub struct ValidatorSignature {
 pub fn parse_warp_memo(memo: &str) -> WarpResult<(String, String)> {
     let parts: Vec<&str> = memo.split(':').collect();
     if parts.len() < 4 {
-        return Err(WarpError::InvalidMemo(
-            format!("Expected WARP:<ver>:<chain>:<addr>, got: {}", memo),
-        ));
+        return Err(WarpError::InvalidMemo(format!(
+            "Expected WARP:<ver>:<chain>:<addr>, got: {}",
+            memo
+        )));
     }
     if parts[0] != WARP_MEMO_PREFIX {
-        return Err(WarpError::InvalidMemo(
-            format!("Memo must start with '{}', got: {}", WARP_MEMO_PREFIX, parts[0]),
-        ));
+        return Err(WarpError::InvalidMemo(format!(
+            "Memo must start with '{}', got: {}",
+            WARP_MEMO_PREFIX, parts[0]
+        )));
     }
-    let version: u32 = parts[1].parse().map_err(|_| {
-        WarpError::InvalidMemo(format!("Invalid version: {}", parts[1]))
-    })?;
+    let version: u32 = parts[1]
+        .parse()
+        .map_err(|_| WarpError::InvalidMemo(format!("Invalid version: {}", parts[1])))?;
     if version != WARP_MEMO_VERSION {
-        return Err(WarpError::InvalidMemo(
-            format!("Unsupported WARP version: {} (expected {})", version, WARP_MEMO_VERSION),
-        ));
+        return Err(WarpError::InvalidMemo(format!(
+            "Unsupported WARP version: {} (expected {})",
+            version, WARP_MEMO_VERSION
+        )));
     }
     let chain_name = parts[2].to_string();
     // Address may contain colons (e.g. in some chain formats)
@@ -102,7 +105,10 @@ pub fn parse_warp_memo(memo: &str) -> WarpResult<(String, String)> {
 
 /// Build a WARP memo string.
 pub fn build_warp_memo(chain_name: &str, address: &str) -> String {
-    format!("{}:{}:{}:{}", WARP_MEMO_PREFIX, WARP_MEMO_VERSION, chain_name, address)
+    format!(
+        "{}:{}:{}:{}",
+        WARP_MEMO_PREFIX, WARP_MEMO_VERSION, chain_name, address
+    )
 }
 
 #[cfg(test)]

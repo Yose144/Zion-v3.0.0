@@ -6,8 +6,8 @@
   "main": "src/main.js",
   "scripts": {
     "prestart": "node scripts/prepare-rust-miner.js --no-build",
-    "start": "electron .",
-    "dev": "NODE_ENV=development electron .",
+    "start": "node scripts/launch-electron.js",
+    "dev": "node scripts/launch-electron.js",
     "prepare:rust-miner": "node scripts/prepare-rust-miner.js --auto --require",
     "build": "npm run prepare:rust-miner && electron-builder",
     "build:win": "npm run prepare:rust-miner && electron-builder --win --x64",
@@ -31,7 +31,7 @@
   "license": "MIT",
   "dependencies": {
     "@noble/ed25519": "^3.0.0",
-    "bip32": "^5.0.0",
+    "bip32": "^4.0.0",
     "bip39": "^3.1.0",
     "qrcode": "^1.5.4"
   },

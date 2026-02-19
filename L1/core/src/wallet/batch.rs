@@ -1,3 +1,5 @@
+use crate::blockchain::fee;
+use crate::crypto::{keys, to_hex};
 /// ZION Wallet — Batch Transaction Builder
 ///
 /// Builds a single transaction with multiple recipients (N outputs).
@@ -14,10 +16,7 @@
 /// - Lower total fees (1 tx vs N txs)
 /// - Atomic: all payouts confirmed in one block
 /// - Simpler tracking: one txid for entire payout round
-
 use crate::tx::{Transaction, TxInput, TxOutput};
-use crate::blockchain::fee;
-use crate::crypto::{keys, to_hex};
 use crate::wallet::{SpendableUtxo, WalletError};
 use ed25519_dalek::{Signer, SigningKey};
 
@@ -206,7 +205,8 @@ pub fn build_and_sign_batch(
     if tx_size > fee::MAX_TX_SIZE_BYTES {
         return Err(WalletError::SigningError(format!(
             "Batch transaction too large: {} bytes (max {})",
-            tx_size, fee::MAX_TX_SIZE_BYTES
+            tx_size,
+            fee::MAX_TX_SIZE_BYTES
         )));
     }
 
@@ -382,8 +382,14 @@ mod tests {
 
         let params = BatchParams {
             recipients: vec![
-                Recipient { address: test_address('a'), amount: 120_000_000 },
-                Recipient { address: test_address('b'), amount: 80_000_000 },
+                Recipient {
+                    address: test_address('a'),
+                    amount: 120_000_000,
+                },
+                Recipient {
+                    address: test_address('b'),
+                    amount: 80_000_000,
+                },
             ],
             fee: Some(3_000),
             change_address: pool_addr.clone(),
@@ -422,8 +428,14 @@ mod tests {
 
         let params = BatchParams {
             recipients: vec![
-                Recipient { address: test_address('a'), amount: 50_000_000 },
-                Recipient { address: test_address('b'), amount: 50_000_000 },
+                Recipient {
+                    address: test_address('a'),
+                    amount: 50_000_000,
+                },
+                Recipient {
+                    address: test_address('b'),
+                    amount: 50_000_000,
+                },
             ],
             fee: None, // Auto-calculate
             change_address: pool_addr.clone(),
@@ -467,10 +479,7 @@ mod tests {
         };
 
         let result = build_and_sign_batch(&params, &utxos, &secret);
-        assert!(matches!(
-            result,
-            Err(WalletError::InsufficientFunds { .. })
-        ));
+        assert!(matches!(result, Err(WalletError::InsufficientFunds { .. })));
     }
 
     #[test]

@@ -201,8 +201,8 @@ impl Default for BridgeConfig {
             },
             security: SecurityConfig {
                 max_single_amount: "5000000000000000000000000".into(), // 5M wZION
-                daily_limit: "10000000000000000000000000".into(),     // 10M wZION
-                min_bridge_amount: "100000000000000000000".into(),    // 100 wZION
+                daily_limit: "10000000000000000000000000".into(),      // 10M wZION
+                min_bridge_amount: "100000000000000000000".into(),     // 100 wZION
                 timelock_threshold: "1000000000000000000000000".into(), // 1M wZION
                 max_ops_per_hour: 100,
                 l1_block_timeout_secs: 300,
@@ -231,7 +231,10 @@ mod tests {
         assert_eq!(cfg.bridge.name, "ZION Bridge Relay");
         assert_eq!(cfg.bridge.network, "testnet");
         assert_eq!(cfg.l1.rpc_url, "http://127.0.0.1:8444");
-        assert_eq!(cfg.l1.bridge_address, "zion1bridge000000000000000000000000000vault");
+        assert_eq!(
+            cfg.l1.bridge_address,
+            "zion1bridge000000000000000000000000000vault"
+        );
         assert_eq!(cfg.l1.finality_blocks, 60);
         assert_eq!(cfg.l1.poll_interval_secs, 15);
         assert_eq!(cfg.validator.threshold, 3);

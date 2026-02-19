@@ -1,6 +1,6 @@
-use serde::Deserialize;
-use crate::profit_switcher::ProfitSwitchConfig;
 use crate::buyback::BuybackConfig;
+use crate::profit_switcher::ProfitSwitchConfig;
+use serde::Deserialize;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct RevenueSettings {
@@ -25,7 +25,9 @@ impl Default for RevenueSettings {
     }
 }
 
-fn default_revenue_enabled() -> bool { true }
+fn default_revenue_enabled() -> bool {
+    true
+}
 
 #[derive(Deserialize, Clone, Debug, Default)]
 pub struct StreamsConfig {
@@ -50,7 +52,10 @@ pub struct StreamConfig {
 impl Default for StreamConfig {
     fn default() -> Self {
         // CH v3 spec: ZION = 50% of total compute
-        Self { enabled: true, target_share: 0.50 }
+        Self {
+            enabled: true,
+            target_share: 0.50,
+        }
     }
 }
 
@@ -81,8 +86,8 @@ impl Default for StreamEtcConfig {
     fn default() -> Self {
         // CH v3 spec: ETC = FREE byproduct (Keccak intermediate from CosmicHarmony)
         // Part of the 25% external pool allocation, but costs 0% extra compute
-        Self { 
-            enabled: true, 
+        Self {
+            enabled: true,
             pool: ExternalPoolConfig {
                 stratum: "stratum+tcp://etc.2miners.com:1010".to_string(),
                 wallet: default_btc_wallet(),
@@ -113,8 +118,8 @@ pub struct StreamNxsConfig {
 
 impl Default for StreamNxsConfig {
     fn default() -> Self {
-        Self { 
-            enabled: false, 
+        Self {
+            enabled: false,
             pool: ExternalPoolConfig {
                 stratum: "stratum+tcp://pool.nexus.io:9549".to_string(),
                 wallet: default_btc_wallet(),
@@ -157,7 +162,9 @@ pub struct StreamDynamicPoolEntry {
     pub threads: usize,
 }
 
-fn default_coin_threads() -> usize { 1 }
+fn default_coin_threads() -> usize {
+    1
+}
 
 impl Default for StreamDynamicGpuConfig {
     fn default() -> Self {
@@ -165,74 +172,89 @@ impl Default for StreamDynamicGpuConfig {
         // Profit-switched between ETC/ERG/RVN/KAS/ALPH via external pools
         // ETC prioritized as highest profitability GPU coin (Etchash algorithm)
         let mut pools = std::collections::HashMap::new();
-        
+
         // ETC (Ethereum Classic) - highest profitability GPU coin
-        pools.insert("etc".to_string(), StreamDynamicPoolEntry {
-            coin: "ETC".to_string(),
-            stratum: "stratum+tcp://etc.2miners.com:1010".to_string(),
-            wallet: default_btc_wallet(),
-            worker: "zion_dynamic".to_string(),
-            enabled: true,
-            algorithm: Some("ethash".to_string()),
-            protocol: Some("ethstratum".to_string()),
-            proxy_listen: None,
-            threads: 0, // GPU only
-        });
-        
+        pools.insert(
+            "etc".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "ETC".to_string(),
+                stratum: "stratum+tcp://etc.2miners.com:1010".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("ethash".to_string()),
+                protocol: Some("ethstratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
         // ERG (Ergo)
-        pools.insert("erg".to_string(), StreamDynamicPoolEntry {
-            coin: "ERG".to_string(),
-            stratum: "stratum+tcp://erg.2miners.com:8888".to_string(),
-            wallet: default_btc_wallet(),
-            worker: "zion_dynamic".to_string(),
-            enabled: true,
-            algorithm: Some("autolykos".to_string()),
-            protocol: Some("ethstratum".to_string()),
-            proxy_listen: None,
-            threads: 0, // GPU only
-        });
-        
+        pools.insert(
+            "erg".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "ERG".to_string(),
+                stratum: "stratum+tcp://erg.2miners.com:8888".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("autolykos".to_string()),
+                protocol: Some("ethstratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
         // RVN (Ravencoin)
-        pools.insert("rvn".to_string(), StreamDynamicPoolEntry {
-            coin: "RVN".to_string(),
-            stratum: "stratum+tcp://rvn.2miners.com:6060".to_string(),
-            wallet: default_btc_wallet(),
-            worker: "zion_dynamic".to_string(),
-            enabled: true,
-            algorithm: Some("kawpow".to_string()),
-            protocol: Some("ethstratum".to_string()),
-            proxy_listen: None,
-            threads: 0, // GPU only
-        });
-        
+        pools.insert(
+            "rvn".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "RVN".to_string(),
+                stratum: "stratum+tcp://rvn.2miners.com:6060".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("kawpow".to_string()),
+                protocol: Some("ethstratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
         // KAS (Kaspa)
-        pools.insert("kas".to_string(), StreamDynamicPoolEntry {
-            coin: "KAS".to_string(),
-            stratum: "stratum+tcp://pool.woolypooly.com:3112".to_string(),
-            wallet: default_btc_wallet(),
-            worker: "zion_dynamic".to_string(),
-            enabled: true,
-            algorithm: Some("kheavyhash".to_string()),
-            protocol: Some("stratum".to_string()),
-            proxy_listen: None,
-            threads: 0, // GPU only
-        });
-        
+        pools.insert(
+            "kas".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "KAS".to_string(),
+                stratum: "stratum+tcp://pool.woolypooly.com:3112".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("kheavyhash".to_string()),
+                protocol: Some("stratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
         // ALPH (Alephium)
-        pools.insert("alph".to_string(), StreamDynamicPoolEntry {
-            coin: "ALPH".to_string(),
-            stratum: "stratum+tcp://alph.2miners.com:2020".to_string(),
-            wallet: default_btc_wallet(),
-            worker: "zion_dynamic".to_string(),
+        pools.insert(
+            "alph".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "ALPH".to_string(),
+                stratum: "stratum+tcp://alph.2miners.com:2020".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("blake3".to_string()),
+                protocol: Some("stratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
+        Self {
             enabled: true,
-            algorithm: Some("blake3".to_string()),
-            protocol: Some("stratum".to_string()),
-            proxy_listen: None,
-            threads: 0, // GPU only
-        });
-        
-        Self { 
-            enabled: true, 
             mode: "auto".to_string(),
             target_share: 0.20,
             pools,
@@ -251,10 +273,10 @@ impl Default for StreamNclConfig {
     fn default() -> Self {
         // CH v3 spec: NCL AI = 25% of total compute
         // Neural Compute Layer for embeddings, inference, code analysis
-        Self { 
-            enabled: true, 
+        Self {
+            enabled: true,
             npu_allocation: 0.30,
-            target_share: 0.25 
+            target_share: 0.25,
         }
     }
 }
@@ -295,26 +317,28 @@ pub struct Config {
     pub revenue: RevenueSettings,
 }
 
-fn default_tithe_percent() -> f64 { 10.0 }
+fn default_tithe_percent() -> f64 {
+    10.0
+}
 
 impl Config {
     pub fn load() -> Self {
-        let mut cfg = Self { 
-            listen: "0.0.0.0:3333".to_string(), 
-            metrics_listen: "0.0.0.0:9100".to_string(), 
-            redis_url: "redis://127.0.0.1/".to_string(), 
-            notify_secs: 10, 
-            core_rpc_url: "http://127.0.0.1:8444/jsonrpc".to_string(), 
-            pool_wallet: "ZION_TEST_WALLET".to_string(), 
+        let mut cfg = Self {
+            listen: "0.0.0.0:3333".to_string(),
+            metrics_listen: "0.0.0.0:9100".to_string(),
+            redis_url: "redis://127.0.0.1/".to_string(),
+            notify_secs: 10,
+            core_rpc_url: "http://127.0.0.1:8444/jsonrpc".to_string(),
+            pool_wallet: "ZION_TEST_WALLET".to_string(),
             humanitarian_wallet: String::new(),
-            api_listen: "0.0.0.0:8080".to_string(), 
-            pplns_size: 5000, 
-            pplns_window_shares: 0, 
-            min_payout: 0.1, 
-            max_payout_per_tx: 0.0, 
-            payout_interval_seconds: 30, 
-            payout_batch_limit: 50, 
-            payout_confirm_timeout_seconds: 3600, 
+            api_listen: "0.0.0.0:8080".to_string(),
+            pplns_size: 5000,
+            pplns_window_shares: 0,
+            min_payout: 0.1,
+            max_payout_per_tx: 0.0,
+            payout_interval_seconds: 30,
+            payout_batch_limit: 50,
+            payout_confirm_timeout_seconds: 3600,
             pool_fee_percent: 1.0,
             humanitarian_tithe_percent: 10.0,
             revenue: RevenueSettings::default(),
@@ -325,14 +349,18 @@ impl Config {
             // legacy
             cfg.listen = l;
         }
-        if let Ok(m) = std::env::var("ZION_POOL_METRICS") { cfg.metrics_listen = m; }
+        if let Ok(m) = std::env::var("ZION_POOL_METRICS") {
+            cfg.metrics_listen = m;
+        }
         if let Ok(r) = std::env::var("ZION_REDIS_URL") {
             cfg.redis_url = r;
         } else if let Ok(r) = std::env::var("REDIS_URL") {
             // legacy
             cfg.redis_url = r;
         }
-        if let Ok(n) = std::env::var("ZION_NOTIFY_SECS") { cfg.notify_secs = n.parse().unwrap_or(10); }
+        if let Ok(n) = std::env::var("ZION_NOTIFY_SECS") {
+            cfg.notify_secs = n.parse().unwrap_or(10);
+        }
         if let Ok(c) = std::env::var("ZION_CORE_RPC") {
             cfg.core_rpc_url = c;
         } else if let Ok(c) = std::env::var("ZION_RPC_URL") {
@@ -345,7 +373,9 @@ impl Config {
             // Docker/legacy alias
             cfg.pool_wallet = w;
         }
-        if let Ok(w) = std::env::var("ZION_HUMANITARIAN_WALLET") { cfg.humanitarian_wallet = w; }
+        if let Ok(w) = std::env::var("ZION_HUMANITARIAN_WALLET") {
+            cfg.humanitarian_wallet = w;
+        }
         if let Ok(p) = std::env::var("ZION_HUMANITARIAN_TITHE_PERCENT") {
             cfg.humanitarian_tithe_percent = p.parse().unwrap_or(10.0);
         }
@@ -355,25 +385,37 @@ impl Config {
             // legacy
             cfg.api_listen = a;
         }
-        if let Ok(p) = std::env::var("ZION_PPLNS_SIZE") { cfg.pplns_size = p.parse().unwrap_or(1024); }
-        if let Ok(p) = std::env::var("ZION_PPLNS_WINDOW_SHARES") { cfg.pplns_window_shares = p.parse().unwrap_or(0); }
+        if let Ok(p) = std::env::var("ZION_PPLNS_SIZE") {
+            cfg.pplns_size = p.parse().unwrap_or(1024);
+        }
+        if let Ok(p) = std::env::var("ZION_PPLNS_WINDOW_SHARES") {
+            cfg.pplns_window_shares = p.parse().unwrap_or(0);
+        }
         if let Ok(p) = std::env::var("ZION_MIN_PAYOUT") {
             cfg.min_payout = p.parse().unwrap_or(0.1);
         } else if let Ok(p) = std::env::var("POOL_MIN_PAYOUT") {
             // legacy
             cfg.min_payout = p.parse().unwrap_or(0.1);
         }
-        if let Ok(p) = std::env::var("ZION_MAX_PAYOUT_PER_TX") { cfg.max_payout_per_tx = p.parse().unwrap_or(0.0); }
-        if let Ok(p) = std::env::var("ZION_PAYOUT_INTERVAL") { cfg.payout_interval_seconds = p.parse().unwrap_or(30); }
-        if let Ok(p) = std::env::var("ZION_PAYOUT_BATCH_LIMIT") { cfg.payout_batch_limit = p.parse().unwrap_or(50); }
-        if let Ok(p) = std::env::var("ZION_PAYOUT_CONFIRM_TIMEOUT") { cfg.payout_confirm_timeout_seconds = p.parse().unwrap_or(3600); }
+        if let Ok(p) = std::env::var("ZION_MAX_PAYOUT_PER_TX") {
+            cfg.max_payout_per_tx = p.parse().unwrap_or(0.0);
+        }
+        if let Ok(p) = std::env::var("ZION_PAYOUT_INTERVAL") {
+            cfg.payout_interval_seconds = p.parse().unwrap_or(30);
+        }
+        if let Ok(p) = std::env::var("ZION_PAYOUT_BATCH_LIMIT") {
+            cfg.payout_batch_limit = p.parse().unwrap_or(50);
+        }
+        if let Ok(p) = std::env::var("ZION_PAYOUT_CONFIRM_TIMEOUT") {
+            cfg.payout_confirm_timeout_seconds = p.parse().unwrap_or(3600);
+        }
         if let Ok(p) = std::env::var("ZION_POOL_FEE") {
             cfg.pool_fee_percent = p.parse().unwrap_or(1.0);
         } else if let Ok(p) = std::env::var("POOL_FEE") {
             // legacy
             cfg.pool_fee_percent = p.parse().unwrap_or(1.0);
         }
-        
+
         // Load main pool config
         if let Ok(txt) = std::fs::read_to_string("pool_config.json") {
             if let Ok(file_cfg) = serde_json::from_str::<Config>(&txt) {
@@ -403,7 +445,7 @@ impl Config {
                 struct RevenueFile {
                     streams: StreamsConfig,
                 }
-                
+
                 if let Ok(rev_file) = serde_json::from_str::<RevenueFile>(&txt) {
                     println!("✅ Loaded Revenue Settings from {}", path);
                     cfg.revenue.streams = rev_file.streams;
@@ -441,16 +483,22 @@ impl Config {
         }
         // Warn if humanitarian wallet is not configured
         if cfg.humanitarian_wallet.is_empty() {
-            eprintln!("⚠️  ZION_HUMANITARIAN_WALLET not set — 10% tithe will accumulate in pool wallet");
+            eprintln!(
+                "⚠️  ZION_HUMANITARIAN_WALLET not set — 10% tithe will accumulate in pool wallet"
+            );
         } else {
-            println!("✅ Humanitarian tithe wallet: {} ({}%)", cfg.humanitarian_wallet, cfg.humanitarian_tithe_percent);
+            println!(
+                "✅ Humanitarian tithe wallet: {} ({}%)",
+                cfg.humanitarian_wallet, cfg.humanitarian_tithe_percent
+            );
         }
 
         // AUDIT-FIX P0-14: Reject startup if pool wallet is a test placeholder on mainnet.
         // This prevents accidental mainnet launches where block rewards go to a dead address.
         let is_mainnet = std::env::var("ZION_NETWORK")
             .unwrap_or_default()
-            .to_lowercase() == "mainnet";
+            .to_lowercase()
+            == "mainnet";
         if is_mainnet && (cfg.pool_wallet == "ZION_TEST_WALLET" || cfg.pool_wallet.is_empty()) {
             panic!(
                 "🚨 FATAL: ZION_POOL_WALLET must be set to a real wallet address on mainnet! \

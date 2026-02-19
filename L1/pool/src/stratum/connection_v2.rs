@@ -1,11 +1,10 @@
 /// Connection state management for Stratum miners
-/// 
+///
 /// Tracks individual miner connections with:
 /// - Authentication state
 /// - Session metadata
 /// - Activity tracking
 /// - Protocol detection
-
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};

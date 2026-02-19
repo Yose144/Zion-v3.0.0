@@ -3,7 +3,6 @@
 /// Validates the genesis block premine: correct totals, categories,
 /// address format, timelocks, and no duplicates.  These tests ensure
 /// the on-chain genesis state matches the whitepaper specification.
-
 use zion_core::blockchain::premine;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -22,10 +21,26 @@ fn test_premine_grand_total() {
 fn test_premine_category_totals() {
     let all = premine::get_all_premine_addresses();
 
-    let oasis: u64 = all.iter().filter(|a| a.category == "oasis_golden_egg").map(|a| a.amount).sum();
-    let dao: u64 = all.iter().filter(|a| a.category == "dao_treasury").map(|a| a.amount).sum();
-    let infra: u64 = all.iter().filter(|a| a.category == "infrastructure").map(|a| a.amount).sum();
-    let humanitarian: u64 = all.iter().filter(|a| a.category == "humanitarian").map(|a| a.amount).sum();
+    let oasis: u64 = all
+        .iter()
+        .filter(|a| a.category == "oasis_golden_egg")
+        .map(|a| a.amount)
+        .sum();
+    let dao: u64 = all
+        .iter()
+        .filter(|a| a.category == "dao_treasury")
+        .map(|a| a.amount)
+        .sum();
+    let infra: u64 = all
+        .iter()
+        .filter(|a| a.category == "infrastructure")
+        .map(|a| a.amount)
+        .sum();
+    let humanitarian: u64 = all
+        .iter()
+        .filter(|a| a.category == "humanitarian")
+        .map(|a| a.amount)
+        .sum();
 
     assert_eq!(oasis, 8_250_000_000_000_000, "OASIS + Golden Egg: 8.25B");
     assert_eq!(dao, 4_000_000_000_000_000, "DAO treasury: 4.0B");
@@ -58,7 +73,8 @@ fn test_all_premine_addresses_start_with_zion1() {
         assert!(
             entry.address.starts_with("zion1"),
             "Address '{}' does not start with 'zion1' (purpose: {})",
-            entry.address, entry.purpose
+            entry.address,
+            entry.purpose
         );
     }
 }
@@ -72,7 +88,8 @@ fn test_no_duplicate_addresses() {
         assert!(
             seen.insert(&entry.address),
             "Duplicate premine address: {} (purpose: {})",
-            entry.address, entry.purpose
+            entry.address,
+            entry.purpose
         );
     }
 }
@@ -82,7 +99,11 @@ fn test_no_empty_addresses() {
     let all = premine::get_all_premine_addresses();
     for entry in &all {
         assert!(!entry.address.is_empty(), "Empty premine address");
-        assert!(entry.address.len() >= 10, "Address too short: {}", entry.address);
+        assert!(
+            entry.address.len() >= 10,
+            "Address too short: {}",
+            entry.address
+        );
     }
 }
 
@@ -95,22 +116,34 @@ fn test_all_four_categories_present() {
     let all = premine::get_all_premine_addresses();
     let categories: Vec<&str> = all.iter().map(|a| a.category.as_str()).collect();
 
-    assert!(categories.contains(&"oasis_golden_egg"), "Missing oasis_golden_egg");
+    assert!(
+        categories.contains(&"oasis_golden_egg"),
+        "Missing oasis_golden_egg"
+    );
     assert!(categories.contains(&"dao_treasury"), "Missing dao_treasury");
-    assert!(categories.contains(&"infrastructure"), "Missing infrastructure");
+    assert!(
+        categories.contains(&"infrastructure"),
+        "Missing infrastructure"
+    );
     assert!(categories.contains(&"humanitarian"), "Missing humanitarian");
 }
 
 #[test]
 fn test_no_unknown_categories() {
     let all = premine::get_all_premine_addresses();
-    let valid = ["oasis_golden_egg", "dao_treasury", "infrastructure", "humanitarian"];
+    let valid = [
+        "oasis_golden_egg",
+        "dao_treasury",
+        "infrastructure",
+        "humanitarian",
+    ];
 
     for entry in &all {
         assert!(
             valid.contains(&entry.category.as_str()),
             "Unknown category '{}' for address {}",
-            entry.category, entry.address
+            entry.category,
+            entry.address
         );
     }
 }
@@ -128,7 +161,8 @@ fn test_all_premine_immediately_available() {
         assert!(
             entry.unlock_height.is_none(),
             "{} ({}) should have no on-chain lock — governance is off-chain in v2.9.5",
-            entry.address, entry.category
+            entry.address,
+            entry.category
         );
     }
 }
@@ -136,7 +170,10 @@ fn test_all_premine_immediately_available() {
 #[test]
 fn test_dao_treasury_governance_metadata() {
     let all = premine::get_all_premine_addresses();
-    let dao: Vec<_> = all.iter().filter(|a| a.category == "dao_treasury").collect();
+    let dao: Vec<_> = all
+        .iter()
+        .filter(|a| a.category == "dao_treasury")
+        .collect();
 
     assert!(!dao.is_empty());
     for entry in &dao {
@@ -160,7 +197,8 @@ fn test_no_zero_amount_premine() {
         assert!(
             entry.amount > 0,
             "Zero amount for address {} ({})",
-            entry.address, entry.purpose
+            entry.address,
+            entry.purpose
         );
     }
 }
@@ -172,7 +210,8 @@ fn test_no_amount_exceeds_total_supply() {
         assert!(
             entry.amount <= premine::TOTAL_SUPPLY,
             "Amount {} exceeds total supply for {}",
-            entry.amount, entry.address
+            entry.amount,
+            entry.address
         );
     }
 }
@@ -180,7 +219,11 @@ fn test_no_amount_exceeds_total_supply() {
 #[test]
 fn test_premine_validate_function() {
     // The built-in validator should pass
-    assert!(premine::validate_premine().is_ok(), "{:?}", premine::validate_premine());
+    assert!(
+        premine::validate_premine().is_ok(),
+        "{:?}",
+        premine::validate_premine()
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -189,22 +232,38 @@ fn test_premine_validate_function() {
 
 #[test]
 fn test_oasis_golden_egg_slot_count() {
-    assert_eq!(premine::OASIS_GOLDEN_EGG_POOL.len(), 5, "Expected 5 OASIS + Golden Egg slots");
+    assert_eq!(
+        premine::OASIS_GOLDEN_EGG_POOL.len(),
+        5,
+        "Expected 5 OASIS + Golden Egg slots"
+    );
 }
 
 #[test]
 fn test_dao_treasury_slot_count() {
-    assert_eq!(premine::DAO_TREASURY.len(), 3, "Expected 3 DAO treasury slots");
+    assert_eq!(
+        premine::DAO_TREASURY.len(),
+        3,
+        "Expected 3 DAO treasury slots"
+    );
 }
 
 #[test]
 fn test_infrastructure_slot_count() {
-    assert_eq!(premine::INFRASTRUCTURE.len(), 3, "Expected 3 infrastructure slots");
+    assert_eq!(
+        premine::INFRASTRUCTURE.len(),
+        3,
+        "Expected 3 infrastructure slots"
+    );
 }
 
 #[test]
 fn test_humanitarian_slot_count() {
-    assert_eq!(premine::HUMANITARIAN.len(), 1, "Expected 1 humanitarian slot");
+    assert_eq!(
+        premine::HUMANITARIAN.len(),
+        1,
+        "Expected 1 humanitarian slot"
+    );
 }
 
 #[test]

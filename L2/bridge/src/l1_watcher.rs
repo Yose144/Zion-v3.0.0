@@ -80,19 +80,14 @@ impl L1Watcher {
     }
 
     /// Start the L1 watcher loop. Sends confirmed lock events to the channel.
-    pub async fn run(
-        &mut self,
-        lock_tx: mpsc::Sender<L1LockEvent>,
-    ) -> Result<()> {
+    pub async fn run(&mut self, lock_tx: mpsc::Sender<L1LockEvent>) -> Result<()> {
         info!(
             "🔍 L1 Watcher started — monitoring {} for bridge locks to {}",
             self.config.rpc_url, self.config.bridge_address
         );
         info!(
             "   Finality: {} blocks, Poll interval: {}s, Start height: {}",
-            self.config.finality_blocks,
-            self.config.poll_interval_secs,
-            self.last_processed_height,
+            self.config.finality_blocks, self.config.poll_interval_secs, self.last_processed_height,
         );
 
         loop {
@@ -111,10 +106,7 @@ impl L1Watcher {
     }
 
     /// Single poll cycle: fetch new blocks, detect lock TXs, check finality.
-    async fn poll_cycle(
-        &mut self,
-        lock_tx: &mpsc::Sender<L1LockEvent>,
-    ) -> Result<()> {
+    async fn poll_cycle(&mut self, lock_tx: &mpsc::Sender<L1LockEvent>) -> Result<()> {
         // Get current chain height
         let health = self.get_health().await?;
         let current_height = health.height;
@@ -221,8 +213,7 @@ impl L1Watcher {
                         self.config.finality_blocks,
                     );
 
-                    self.pending_locks
-                        .insert(tx.hash.clone(), lock_event);
+                    self.pending_locks.insert(tx.hash.clone(), lock_event);
                 }
             }
         }
@@ -248,14 +239,26 @@ impl L1Watcher {
     /// Get L1 chain health.
     async fn get_health(&self) -> Result<L1Health> {
         let url = format!("{}/health", self.config.rpc_url);
-        let resp = self.client.get(&url).send().await?.json::<L1Health>().await?;
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await?
+            .json::<L1Health>()
+            .await?;
         Ok(resp)
     }
 
     /// Get L1 block by height.
     async fn get_block(&self, height: u64) -> Result<L1Block> {
         let url = format!("{}/api/block/height/{}", self.config.rpc_url, height);
-        let resp = self.client.get(&url).send().await?.json::<L1Block>().await?;
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await?
+            .json::<L1Block>()
+            .await?;
         Ok(resp)
     }
 }
@@ -280,7 +283,9 @@ mod tests {
     #[test]
     fn test_parse_bridge_memo_valid_base() {
         let w = test_watcher();
-        let result = w.parse_bridge_memo(Some("BRIDGE:base:0x1234567890abcdef1234567890abcdef12345678"));
+        let result = w.parse_bridge_memo(Some(
+            "BRIDGE:base:0x1234567890abcdef1234567890abcdef12345678",
+        ));
         assert!(result.is_some());
         let (chain, addr) = result.unwrap();
         assert_eq!(chain, "base");
@@ -290,7 +295,9 @@ mod tests {
     #[test]
     fn test_parse_bridge_memo_valid_arbitrum() {
         let w = test_watcher();
-        let result = w.parse_bridge_memo(Some("BRIDGE:ARBITRUM:0xAbCdEf1234567890aBcDeF1234567890AbCdEf12"));
+        let result = w.parse_bridge_memo(Some(
+            "BRIDGE:ARBITRUM:0xAbCdEf1234567890aBcDeF1234567890AbCdEf12",
+        ));
         assert!(result.is_some());
         let (chain, addr) = result.unwrap();
         assert_eq!(chain, "arbitrum"); // lowercased
@@ -300,7 +307,9 @@ mod tests {
     #[test]
     fn test_parse_bridge_memo_valid_bsc() {
         let w = test_watcher();
-        let result = w.parse_bridge_memo(Some("BRIDGE:bsc:0x0000000000000000000000000000000000000001"));
+        let result = w.parse_bridge_memo(Some(
+            "BRIDGE:bsc:0x0000000000000000000000000000000000000001",
+        ));
         assert!(result.is_some());
         let (chain, _) = result.unwrap();
         assert_eq!(chain, "bsc");
@@ -321,13 +330,19 @@ mod tests {
     #[test]
     fn test_parse_bridge_memo_wrong_prefix() {
         let w = test_watcher();
-        assert!(w.parse_bridge_memo(Some("TRANSFER:base:0x1234567890abcdef1234567890abcdef12345678")).is_none());
+        assert!(w
+            .parse_bridge_memo(Some(
+                "TRANSFER:base:0x1234567890abcdef1234567890abcdef12345678"
+            ))
+            .is_none());
     }
 
     #[test]
     fn test_parse_bridge_memo_missing_chain() {
         let w = test_watcher();
-        assert!(w.parse_bridge_memo(Some("BRIDGE:0x1234567890abcdef1234567890abcdef12345678")).is_none());
+        assert!(w
+            .parse_bridge_memo(Some("BRIDGE:0x1234567890abcdef1234567890abcdef12345678"))
+            .is_none());
     }
 
     #[test]
@@ -341,14 +356,20 @@ mod tests {
     fn test_parse_bridge_memo_invalid_address_no_prefix() {
         let w = test_watcher();
         // No 0x prefix
-        assert!(w.parse_bridge_memo(Some("BRIDGE:base:1234567890abcdef1234567890abcdef12345678")).is_none());
+        assert!(w
+            .parse_bridge_memo(Some("BRIDGE:base:1234567890abcdef1234567890abcdef12345678"))
+            .is_none());
     }
 
     #[test]
     fn test_parse_bridge_memo_case_insensitive_prefix() {
         let w = test_watcher();
         // "bridge" lowercase — currently expects uppercase "BRIDGE"
-        assert!(w.parse_bridge_memo(Some("bridge:base:0x1234567890abcdef1234567890abcdef12345678")).is_none());
+        assert!(w
+            .parse_bridge_memo(Some(
+                "bridge:base:0x1234567890abcdef1234567890abcdef12345678"
+            ))
+            .is_none());
     }
 
     #[test]
@@ -365,14 +386,17 @@ mod tests {
         let w = L1Watcher::new(config, Some(5000));
         assert_eq!(w.last_processed_height, 5000);
 
-        let w2 = L1Watcher::new(L1Config {
-            rpc_url: "http://localhost:8444".into(),
-            rpc_url_backup: None,
-            bridge_address: "zion1bridge000000000000000000000000000vault".into(),
-            finality_blocks: 60,
-            poll_interval_secs: 15,
-            start_block_height: None,
-        }, None);
+        let w2 = L1Watcher::new(
+            L1Config {
+                rpc_url: "http://localhost:8444".into(),
+                rpc_url_backup: None,
+                bridge_address: "zion1bridge000000000000000000000000000vault".into(),
+                finality_blocks: 60,
+                poll_interval_secs: 15,
+                start_block_height: None,
+            },
+            None,
+        );
         assert_eq!(w2.last_processed_height, 0);
     }
 
@@ -419,7 +443,10 @@ mod tests {
         let lock = w.pending_locks.get("tx_bridge_001").unwrap();
         assert_eq!(lock.amount_atomic, 5_000_000);
         assert_eq!(lock.target_chain, "base");
-        assert_eq!(lock.evm_recipient, "0x1234567890abcdef1234567890abcdef12345678");
+        assert_eq!(
+            lock.evm_recipient,
+            "0x1234567890abcdef1234567890abcdef12345678"
+        );
         assert_eq!(lock.l1_sender, "zion1qsender");
         assert_eq!(lock.status, BridgeStatus::Pending);
     }
@@ -461,7 +488,10 @@ mod tests {
             transactions: vec![
                 L1Transaction {
                     hash: "tx_a".into(),
-                    inputs: vec![L1TxInput { address: "zion1qa".into(), amount: 1_000_000 }],
+                    inputs: vec![L1TxInput {
+                        address: "zion1qa".into(),
+                        amount: 1_000_000,
+                    }],
                     outputs: vec![L1TxOutput {
                         address: "zion1bridge000000000000000000000000000vault".into(),
                         amount: 1_000_000,
@@ -470,11 +500,16 @@ mod tests {
                 },
                 L1Transaction {
                     hash: "tx_b".into(),
-                    inputs: vec![L1TxInput { address: "zion1qb".into(), amount: 2_000_000 }],
+                    inputs: vec![L1TxInput {
+                        address: "zion1qb".into(),
+                        amount: 2_000_000,
+                    }],
                     outputs: vec![L1TxOutput {
                         address: "zion1bridge000000000000000000000000000vault".into(),
                         amount: 2_000_000,
-                        memo: Some("BRIDGE:arbitrum:0x2222222222222222222222222222222222222222".into()),
+                        memo: Some(
+                            "BRIDGE:arbitrum:0x2222222222222222222222222222222222222222".into(),
+                        ),
                     }],
                 },
             ],

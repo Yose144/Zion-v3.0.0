@@ -50,19 +50,19 @@
 //!   - Unlocked based on consciousness level achievements
 //!   - Controlled by OASIS game engine + DAO governance
 
-pub mod error;
+pub mod api;
+pub mod challenges;
+pub mod config;
 pub mod consciousness;
-pub mod xp;
+pub mod error;
+pub mod guild;
+pub mod leaderboard;
 pub mod levels;
 pub mod player;
-pub mod guild;
-pub mod territory;
-pub mod challenges;
 pub mod rewards;
-pub mod leaderboard;
+pub mod territory;
 pub mod tithe;
-pub mod api;
-pub mod config;
+pub mod xp;
 
 // Re-exports
 pub use config::OasisConfig;

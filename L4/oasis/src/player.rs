@@ -164,9 +164,17 @@ pub struct PlayerStore {
     players: HashMap<String, Player>,
 }
 
+impl Default for PlayerStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PlayerStore {
     pub fn new() -> Self {
-        Self { players: HashMap::new() }
+        Self {
+            players: HashMap::new(),
+        }
     }
 
     /// Register or get existing player

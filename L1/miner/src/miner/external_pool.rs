@@ -13,13 +13,15 @@
 //!
 //! GPU Mining: Uses Metal (Apple Silicon) for Ethash with full DAG.
 
-use anyhow::{anyhow, Result};
-use log::{info, warn, error, debug};
-use std::sync::Arc;
+use anyhow::Result;
+use log::{debug, error, info, warn};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::stratum::ethstratum::{EthStratumClient, EthStratumJob, ExternalCoin, ExternalPoolStats};
+use crate::stratum::ethstratum::{
+    EthStratumClient, EthStratumJob, ExternalCoin, ExternalPoolStats,
+};
 
 /// Configuration for external pool mining
 #[derive(Debug, Clone)]
@@ -120,7 +122,10 @@ impl ExternalMiner {
     /// Start external pool mining
     /// For ETC: Initializes Metal GPU + Ethash DAG, then runs GPU mining loop
     pub async fn start(&self) -> Result<()> {
-        info!("🚀 [{}] Starting external pool mining", self.config.coin.name());
+        info!(
+            "🚀 [{}] Starting external pool mining",
+            self.config.coin.name()
+        );
         info!("   Pool: {}", self.config.pool_url);
         info!("   Wallet: {}", self.config.wallet);
         info!("   Worker: {}", self.config.worker);
@@ -152,26 +157,24 @@ impl ExternalMiner {
     /// GPU Ethash mining loop (Metal, Apple Silicon)
     #[cfg(all(feature = "metal", target_os = "macos"))]
     async fn start_gpu_ethash_mining(&self) -> Result<()> {
-        use zion_cosmic_harmony_v3::gpu::{EthashMetalMiner, EthashEpoch};
-        
+        use zion_cosmic_harmony_v3::gpu::{EthashEpoch, EthashMetalMiner};
+
         info!("🍎 [ETC] Initializing Metal GPU Ethash miner...");
-        
+
         let client = Arc::clone(&self.client);
         let running = Arc::clone(&self.running);
         let stats = Arc::clone(&self.stats);
         let coin_name = self.config.coin.name().to_string();
-        
+
         // Subscribe to jobs
         let mut job_rx = self.client.subscribe_jobs().await;
-        
+
         // Wait for first job to get seed_hash for DAG epoch
         info!("[ETC] ⏳ Waiting for initial job to determine DAG epoch...");
-        
+
         let initial_job = loop {
-            match tokio::time::timeout(
-                tokio::time::Duration::from_secs(30),
-                job_rx.changed()
-            ).await {
+            match tokio::time::timeout(tokio::time::Duration::from_secs(30), job_rx.changed()).await
+            {
                 Ok(Ok(())) => {
                     if let Some(job) = job_rx.borrow().clone() {
                         break job;
@@ -181,20 +184,25 @@ impl ExternalMiner {
                 Err(_) => return Err(anyhow!("Timeout waiting for initial ETC job")),
             }
         };
-        
-        info!("[ETC] 📋 Initial job: id={}, seed={}", initial_job.job_id, &initial_job.seed_hash[..16]);
-        
+
+        info!(
+            "[ETC] 📋 Initial job: id={}, seed={}",
+            initial_job.job_id,
+            &initial_job.seed_hash[..16]
+        );
+
         // Determine epoch from seed hash
         let epoch = EthashEpoch::from_seed_hash(&initial_job.seed_hash);
-        info!("[ETC] 📊 Epoch {} — DAG size: {:.2} GB ({} items)",
+        info!(
+            "[ETC] 📊 Epoch {} — DAG size: {:.2} GB ({} items)",
             epoch.number,
             epoch.dataset_size as f64 / 1_073_741_824.0,
             epoch.dataset_items,
         );
-        
+
         // GPU mining runs in a blocking thread (Metal API is synchronous)
         let batch_size = 65_536u64; // 64K nonces per batch (Ethash is heavy per-nonce)
-        
+
         tokio::task::spawn_blocking(move || {
             // Initialize Metal Ethash miner
             let mut miner = match EthashMetalMiner::new(batch_size as usize) {
@@ -204,7 +212,7 @@ impl ExternalMiner {
                     return;
                 }
             };
-            
+
             // Generate and upload DAG
             log::info!("🔧 [ETC] Generating Ethash DAG — this takes 30-60s...");
             match miner.load_dag_for_epoch(&epoch) {
@@ -212,8 +220,12 @@ impl ExternalMiner {
                     log::info!("✅ [ETC] DAG loaded — starting GPU mining!");
                 }
                 Err(e) => {
-                    log::error!("🍎 [ETC] DAG loading failed: {}. GPU memory may be insufficient.", e);
-                    log::warn!("🍎 [ETC] ETC epoch {} requires {:.2} GB DAG — your GPU has {:.2} GB.",
+                    log::error!(
+                        "🍎 [ETC] DAG loading failed: {}. GPU memory may be insufficient.",
+                        e
+                    );
+                    log::warn!(
+                        "🍎 [ETC] ETC epoch {} requires {:.2} GB DAG — your GPU has {:.2} GB.",
                         epoch.number,
                         epoch.dataset_size as f64 / 1_073_741_824.0,
                         5461.0 / 1024.0, // Approximate, actual checked in load_dag
@@ -222,7 +234,7 @@ impl ExternalMiner {
                     return;
                 }
             }
-            
+
             let mut nonce_start = 0u64;
             let mut last_job_id: Option<String> = None;
             let mut current_header_hash = [0u8; 32];
@@ -233,7 +245,7 @@ impl ExternalMiner {
             let mut batch_count: u64 = 0;
             let mut current_epoch = epoch.number;
             let mut current_job_id = String::new();
-            
+
             // Set initial job
             {
                 if let Ok(hh) = hex::decode(&initial_job.header_hash) {
@@ -246,12 +258,12 @@ impl ExternalMiner {
                 current_job_id = initial_job.job_id.clone();
                 last_job_id = Some(initial_job.job_id.clone());
             }
-            
+
             loop {
                 if !running.load(Ordering::SeqCst) {
                     break;
                 }
-                
+
                 // Check for new job (non-blocking)
                 if let Ok(job) = job_rx.has_changed() {
                     if job {
@@ -267,26 +279,32 @@ impl ExternalMiner {
                                 current_job_id = new_job.job_id.clone();
                                 last_job_id = Some(new_job.job_id.clone());
                                 nonce_start = 0; // Reset nonce for new job
-                                
+
                                 // Check if epoch changed
                                 let new_epoch = EthashEpoch::from_seed_hash(&new_job.seed_hash);
                                 if new_epoch.number != current_epoch {
-                                    log::info!("[ETC] 🔄 Epoch changed {} → {} — regenerating DAG...",
-                                        current_epoch, new_epoch.number);
+                                    log::info!(
+                                        "[ETC] 🔄 Epoch changed {} → {} — regenerating DAG...",
+                                        current_epoch,
+                                        new_epoch.number
+                                    );
                                     if let Err(e) = miner.load_dag_for_epoch(&new_epoch) {
                                         log::error!("[ETC] DAG regen failed: {}", e);
                                         break;
                                     }
                                     current_epoch = new_epoch.number;
                                 }
-                                
-                                log::info!("[ETC] 📋 New job: {} (diff: {:.4})", 
-                                    new_job.job_id, new_job.difficulty);
+
+                                log::info!(
+                                    "[ETC] 📋 New job: {} (diff: {:.4})",
+                                    new_job.job_id,
+                                    new_job.difficulty
+                                );
                             }
                         }
                     }
                 }
-                
+
                 // Mine batch
                 let batch_start = std::time::Instant::now();
                 match miner.mine(&current_header_hash, &current_target, nonce_start) {
@@ -295,20 +313,23 @@ impl ExternalMiner {
                         let mix_hex = hex::encode(mix_digest);
                         let result_hex = hex::encode(result_hash);
                         let job_id = current_job_id.clone();
-                        
+
                         log::info!(
                             "🍎💎 [ETC] GPU SHARE FOUND! nonce={} mix={}...{}",
-                            nonce, &mix_hex[..8], &mix_hex[56..]
+                            nonce,
+                            &mix_hex[..8],
+                            &mix_hex[56..]
                         );
-                        
+
                         // Submit share async
                         let submit_client = Arc::clone(&client);
                         let submit_stats = Arc::clone(&stats);
                         let total = gpu_shares_found;
                         tokio::runtime::Handle::current().spawn(async move {
-                            match submit_client.submit_share(
-                                &job_id, nonce, &result_hex, &mix_hex
-                            ).await {
+                            match submit_client
+                                .submit_share(&job_id, nonce, &result_hex, &mix_hex)
+                                .await
+                            {
                                 Ok(accepted) => {
                                     if accepted {
                                         log::info!("🍎✅ [ETC] Share ACCEPTED (total: {})", total);
@@ -337,18 +358,18 @@ impl ExternalMiner {
                         std::thread::sleep(std::time::Duration::from_millis(1000));
                     }
                 }
-                
+
                 gpu_total_hashes += batch_size;
                 batch_count += 1;
                 nonce_start = nonce_start.wrapping_add(batch_size);
-                
+
                 // Report hashrate every 20 batches
                 if batch_count % 20 == 0 {
                     let elapsed = gpu_start_time.elapsed().as_secs_f64();
                     let gpu_hashrate = gpu_total_hashes as f64 / elapsed;
                     let batch_elapsed = batch_start.elapsed().as_secs_f64();
                     let batch_rate = batch_size as f64 / batch_elapsed;
-                    
+
                     log::info!(
                         "🍎 [ETC] GPU: {:.2} kH/s (batch {:.2} kH/s) | {} shares | nonce {}",
                         gpu_hashrate / 1_000.0,
@@ -356,7 +377,7 @@ impl ExternalMiner {
                         gpu_shares_found,
                         nonce_start
                     );
-                    
+
                     // Update stats
                     if let Ok(mut s) = stats.try_write() {
                         s.hashrate = gpu_hashrate;
@@ -365,32 +386,32 @@ impl ExternalMiner {
                 }
             }
         });
-        
+
         Ok(())
     }
 
     /// GPU Autolykos2 mining loop (Metal, Apple Silicon) — ERG on 2miners
     #[cfg(all(feature = "metal", target_os = "macos"))]
     async fn start_gpu_autolykos_mining(&self) -> Result<()> {
-        use zion_cosmic_harmony_v3::gpu::{autolykos2_hash_cpu, AutolykosMetalMiner, AutolykosTableInfo};
-        
+        use zion_cosmic_harmony_v3::gpu::{
+            autolykos2_hash_cpu, AutolykosMetalMiner, AutolykosTableInfo,
+        };
+
         info!("🍎 [ERG] Initializing Metal GPU Autolykos2 miner...");
-        
+
         let client = Arc::clone(&self.client);
         let running = Arc::clone(&self.running);
         let stats = Arc::clone(&self.stats);
-        
+
         // Subscribe to jobs
         let mut job_rx = self.client.subscribe_jobs().await;
-        
+
         // Wait for first job to get block height for table generation
         info!("[ERG] ⏳ Waiting for initial job...");
-        
+
         let initial_job = loop {
-            match tokio::time::timeout(
-                tokio::time::Duration::from_secs(30),
-                job_rx.changed()
-            ).await {
+            match tokio::time::timeout(tokio::time::Duration::from_secs(30), job_rx.changed()).await
+            {
                 Ok(Ok(())) => {
                     if let Some(job) = job_rx.borrow().clone() {
                         break job;
@@ -400,10 +421,13 @@ impl ExternalMiner {
                 Err(_) => return Err(anyhow!("Timeout waiting for initial ERG job")),
             }
         };
-        
-        info!("[ERG] 📋 Initial job: id={}, header={}", 
-            initial_job.job_id, &initial_job.header_hash[..16]);
-        
+
+        info!(
+            "[ERG] 📋 Initial job: id={}, header={}",
+            initial_job.job_id,
+            &initial_job.header_hash[..16]
+        );
+
         // ERG 2miners sends height directly in mining.notify params[1]
         // It's stored in job.height (parsed from notify in ethstratum.rs)
         let initial_height = if initial_job.height > 0 {
@@ -412,17 +436,21 @@ impl ExternalMiner {
             Self::extract_erg_height(&initial_job.seed_hash).unwrap_or(1_200_000)
         };
         let table_info = AutolykosTableInfo::from_height(initial_height);
-        
-        info!("[ERG] 📊 Block height ~{} — N={} (2^{:.1}) — TABLELESS mode",
-            initial_height, table_info.n, (table_info.n as f64).log2());
-        
+
+        info!(
+            "[ERG] 📊 Block height ~{} — N={} (2^{:.1}) — TABLELESS mode",
+            initial_height,
+            table_info.n,
+            (table_info.n as f64).log2()
+        );
+
         // GPU mining runs in blocking thread
         // Tableless Autolykos2: 36 Blake2b256 per nonce (each ~8200 bytes) = very compute heavy
         // 65K batch balances throughput vs GPU timeout risk on Apple M1
         let batch_size = 65_536u64;
-        
+
         // Get extranonce from pool — nonce must start with this prefix!
-        // ERG Stratum: pool sends extranonce (e.g. "152f"), miner searches nonces 
+        // ERG Stratum: pool sends extranonce (e.g. "152f"), miner searches nonces
         // where upper bytes match extranonce. Submit = extranonce + miner_part.
         let mut extranonce_str = client.get_extranonce().await;
         if extranonce_str.is_empty() {
@@ -445,9 +473,13 @@ impl ExternalMiner {
         } else {
             0
         };
-        log::info!("[ERG] 🔑 Extranonce: '{}' → nonce base: 0x{:016x}", extranonce_str, extranonce_base);
+        log::info!(
+            "[ERG] 🔑 Extranonce: '{}' → nonce base: 0x{:016x}",
+            extranonce_str,
+            extranonce_base
+        );
         let _extranonce_for_submit = extranonce_str.clone();
-        
+
         tokio::task::spawn_blocking(move || {
             fn be32_leq(a: &[u8; 32], b: &[u8; 32]) -> bool {
                 for i in 0..32 {
@@ -469,18 +501,21 @@ impl ExternalMiner {
                     return;
                 }
             };
-            
+
             // Prepare for height (TABLELESS — instant, no table generation!)
             match miner.prepare_for_height(initial_height) {
                 Ok(_) => {
-                    log::info!("✅ [ERG] TABLELESS mode ready — N={}, R values computed on-the-fly!", table_info.n);
+                    log::info!(
+                        "✅ [ERG] TABLELESS mode ready — N={}, R values computed on-the-fly!",
+                        table_info.n
+                    );
                 }
                 Err(e) => {
                     log::error!("🍎 [ERG] Height preparation failed: {}", e);
                     return;
                 }
             }
-            
+
             // Nonce MUST start with extranonce prefix from pool!
             // E.g. extranonce "152f" → nonces are 0x152f000000000000 + offset
             let mut nonce_start = extranonce_base;
@@ -528,12 +563,12 @@ impl ExternalMiner {
                 current_job_id = initial_job.job_id.clone();
                 last_job_id = Some(initial_job.job_id.clone());
             }
-            
+
             loop {
                 if !running.load(Ordering::SeqCst) {
                     break;
                 }
-                
+
                 // Check for new job (non-blocking)
                 if let Ok(job) = job_rx.has_changed() {
                     if job {
@@ -554,7 +589,7 @@ impl ExternalMiner {
                                 current_job_id = new_job.job_id.clone();
                                 last_job_id = Some(new_job.job_id.clone());
                                 nonce_start = extranonce_base; // Reset with extranonce prefix!
-                                
+
                                 // Check if height changed (requires new table)
                                 let new_height = if new_job.height > 0 {
                                     new_job.height
@@ -563,8 +598,9 @@ impl ExternalMiner {
                                         .unwrap_or(current_height as u64)
                                 };
                                 let new_info = AutolykosTableInfo::from_height(new_height);
-                                let old_info = AutolykosTableInfo::from_height(current_height as u64);
-                                
+                                let old_info =
+                                    AutolykosTableInfo::from_height(current_height as u64);
+
                                 if new_info.n != old_info.n {
                                     log::info!("[ERG] 🔄 Table size changed (N: {} → {}) — regenerating...",
                                         old_info.n, new_info.n);
@@ -574,17 +610,26 @@ impl ExternalMiner {
                                     }
                                 }
                                 current_height = new_height as u32;
-                                
-                                log::info!("[ERG] 📋 New job: {} (diff: {:.4}, h: {})", 
-                                    new_job.job_id, new_job.difficulty, current_height);
+
+                                log::info!(
+                                    "[ERG] 📋 New job: {} (diff: {:.4}, h: {})",
+                                    new_job.job_id,
+                                    new_job.difficulty,
+                                    current_height
+                                );
                             }
                         }
                     }
                 }
-                
+
                 // Mine batch
                 let batch_start = std::time::Instant::now();
-                match miner.mine(&current_header_hash, &current_share_target, current_height, nonce_start) {
+                match miner.mine(
+                    &current_header_hash,
+                    &current_share_target,
+                    current_height,
+                    nonce_start,
+                ) {
                     Ok(Some((nonce, result_hash))) => {
                         gpu_shares_found += 1;
                         let result_hex = hex::encode(result_hash);
@@ -592,7 +637,7 @@ impl ExternalMiner {
                         let nonce_hex = format!("{:016x}", nonce);
                         let share_target_hex = hex::encode(current_share_target);
                         let block_target_hex = hex::encode(current_block_target);
-                        
+
                         log::info!(
                             "🍎💎 [ERG] GPU SHARE FOUND! nonce=0x{} hash={} share_target={}...{} block_target={}...{}",
                             nonce_hex,
@@ -606,7 +651,12 @@ impl ExternalMiner {
                         // Validate against CPU reference for this exact nonce.
                         // If this fails, pool rejection is expected (we're hashing something else than pool verifies).
                         let current_n = AutolykosTableInfo::from_height(current_height as u64).n;
-                        let cpu_hash = autolykos2_hash_cpu(&current_header_hash, nonce, current_height, current_n);
+                        let cpu_hash = autolykos2_hash_cpu(
+                            &current_header_hash,
+                            nonce,
+                            current_height,
+                            current_n,
+                        );
                         if cpu_hash != result_hash {
                             log::warn!(
                                 "[ERG] ❌ GPU/CPU mismatch for nonce=0x{} (cpu={}..., gpu={}...) — skipping submit",
@@ -627,17 +677,21 @@ impl ExternalMiner {
                             continue;
                         }
                         if meets_block {
-                            log::info!("[ERG] 🧱 Block-candidate meets network target (nonce=0x{})", nonce_hex);
+                            log::info!(
+                                "[ERG] 🧱 Block-candidate meets network target (nonce=0x{})",
+                                nonce_hex
+                            );
                         }
-                        
+
                         // Submit share async
                         let submit_client = Arc::clone(&client);
                         let submit_stats = Arc::clone(&stats);
                         let total = gpu_shares_found;
                         tokio::runtime::Handle::current().spawn(async move {
-                            match submit_client.submit_share(
-                                &job_id, nonce, &result_hex, &nonce_hex
-                            ).await {
+                            match submit_client
+                                .submit_share(&job_id, nonce, &result_hex, &nonce_hex)
+                                .await
+                            {
                                 Ok(accepted) => {
                                     if accepted {
                                         log::info!("🍎✅ [ERG] Share ACCEPTED (total: {})", total);
@@ -666,18 +720,18 @@ impl ExternalMiner {
                         std::thread::sleep(std::time::Duration::from_millis(1000));
                     }
                 }
-                
+
                 gpu_total_hashes += batch_size;
                 batch_count += 1;
                 nonce_start = nonce_start.wrapping_add(batch_size);
-                
+
                 // Report hashrate every 5 batches (Autolykos2 tableless — batches are slow)
                 if batch_count % 5 == 0 {
                     let elapsed = gpu_start_time.elapsed().as_secs_f64();
                     let gpu_hashrate = gpu_total_hashes as f64 / elapsed;
                     let batch_elapsed = batch_start.elapsed().as_secs_f64();
                     let batch_rate = batch_size as f64 / batch_elapsed;
-                    
+
                     log::info!(
                         "🍎 [ERG] GPU: {:.2} kH/s (batch {:.2} kH/s) | {} shares | nonce {} | h:{}",
                         gpu_hashrate / 1_000.0,
@@ -686,7 +740,7 @@ impl ExternalMiner {
                         nonce_start,
                         current_height,
                     );
-                    
+
                     // Update stats
                     if let Ok(mut s) = stats.try_write() {
                         s.hashrate = gpu_hashrate;
@@ -695,10 +749,10 @@ impl ExternalMiner {
                 }
             }
         });
-        
+
         Ok(())
     }
-    
+
     /// Extract ERG block height from seed_hash
     /// ERG stratum typically encodes height info in the seed_hash field
     fn extract_erg_height(seed_hash: &str) -> Option<u64> {
@@ -719,7 +773,10 @@ impl ExternalMiner {
     async fn start_cpu_mining(&self) -> Result<()> {
         let mut job_rx = self.client.subscribe_jobs().await;
 
-        info!("[{}] ⏳ Waiting for jobs from external pool...", self.config.coin.name());
+        info!(
+            "[{}] ⏳ Waiting for jobs from external pool...",
+            self.config.coin.name()
+        );
 
         while self.running.load(Ordering::SeqCst) {
             tokio::select! {
@@ -754,7 +811,12 @@ impl ExternalMiner {
     async fn mine_job_cpu(&self, job: &EthStratumJob) {
         let coin = self.config.coin;
 
-        debug!("[{}] Mining job {} (diff: {:.4})", coin.name(), job.job_id, job.difficulty);
+        debug!(
+            "[{}] Mining job {} (diff: {:.4})",
+            coin.name(),
+            job.job_id,
+            job.difficulty
+        );
 
         let target_u64 = if job.difficulty > 0.0 {
             (u64::MAX as f64 / job.difficulty) as u64
@@ -788,13 +850,11 @@ impl ExternalMiner {
                 let hash_val = u64::from_le_bytes(hash[..8].try_into().unwrap_or([0xFF; 8]));
                 if hash_val < target_u64 {
                     info!("💎 [{}] Share found! nonce={}", coin.name(), nonce);
-                    
-                    let _ = self.client.submit_share(
-                        &job.job_id,
-                        nonce,
-                        &job.header_hash,
-                        &hex::encode(&hash),
-                    ).await;
+
+                    let _ = self
+                        .client
+                        .submit_share(&job.job_id, nonce, &job.header_hash, &hex::encode(hash))
+                        .await;
 
                     let mut stats = self.stats.write().await;
                     stats.shares_found += 1;
@@ -815,7 +875,7 @@ impl ExternalMiner {
         let mut input = Vec::with_capacity(header.len() + 8);
         input.extend_from_slice(header);
         input.extend_from_slice(&nonce.to_le_bytes());
-        
+
         let hash = blake3::hash(&input);
         let mut result = [0u8; 32];
         result.copy_from_slice(hash.as_bytes());
@@ -850,10 +910,9 @@ fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
     // 0x00000000FFFF0000000000000000000000000000000000000000000000000000
     // This is a standard constant in Ethash-stratum implementations.
     const DIFF1_TARGET_BE: [u8; 32] = [
-        0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00,
     ];
 
     fn div_be_bytes_by_u64(input_be: &[u8], divisor: u64) -> Vec<u8> {
@@ -953,30 +1012,31 @@ fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
 /// Used for ERG pool target 'b' value from mining.notify.
 fn decimal_bigint_to_be32(decimal_str: &str) -> [u8; 32] {
     let mut result = [0u8; 32];
-    
+
     if decimal_str.is_empty() || decimal_str == "0" {
         return result;
     }
-    
+
     // Convert decimal string to bytes using repeated division by 256
     // We work with the number as a vector of decimal digits
-    let mut digits: Vec<u8> = decimal_str.bytes()
+    let mut digits: Vec<u8> = decimal_str
+        .bytes()
         .filter(|b| b.is_ascii_digit())
         .map(|b| b - b'0')
         .collect();
-    
+
     if digits.is_empty() {
         return [0xFF; 32]; // fallback easy target
     }
-    
+
     // Extract bytes from LSB to MSB by dividing by 256
     let mut byte_index = 31i32; // Start from LSB in BE layout
-    
+
     while !digits.is_empty() && byte_index >= 0 {
         // Divide digits by 256, get remainder as next byte
         let mut remainder: u32 = 0;
         let mut new_digits: Vec<u8> = Vec::new();
-        
+
         for &d in &digits {
             remainder = remainder * 10 + d as u32;
             let quotient = remainder / 256;
@@ -985,12 +1045,12 @@ fn decimal_bigint_to_be32(decimal_str: &str) -> [u8; 32] {
                 new_digits.push(quotient as u8);
             }
         }
-        
+
         result[byte_index as usize] = remainder as u8;
         byte_index -= 1;
         digits = new_digits;
     }
-    
+
     result
 }
 
@@ -1015,8 +1075,11 @@ impl ExternalPoolManager {
     /// Start all external miners
     pub async fn start_all(&self) -> Result<()> {
         self.running.store(true, Ordering::SeqCst);
-        
-        info!("🌐 Starting {} external pool miner(s)...", self.miners.len());
+
+        info!(
+            "🌐 Starting {} external pool miner(s)...",
+            self.miners.len()
+        );
 
         let mut handles = Vec::new();
         for miner in &self.miners {
@@ -1047,7 +1110,8 @@ impl ExternalPoolManager {
         for miner in &self.miners {
             let stats = miner.get_stats().await;
             let pool_stats = miner.get_pool_stats().await;
-            info!("📊 [{}] H/s: {:.2}, shares: {}/{}/{}, jobs: {}",
+            info!(
+                "📊 [{}] H/s: {:.2}, shares: {}/{}/{}, jobs: {}",
                 miner.config.coin.name(),
                 stats.hashrate,
                 pool_stats.shares_accepted,

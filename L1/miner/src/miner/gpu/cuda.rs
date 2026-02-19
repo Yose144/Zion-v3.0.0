@@ -2,9 +2,9 @@
 //!
 //! High-performance mining on NVIDIA GPUs using CUDA.
 
-use super::{GpuDevice, GpuMiner};
 #[cfg(feature = "cuda")]
 use super::GpuPlatform;
+use super::{GpuDevice, GpuMiner};
 use anyhow::{anyhow, Result};
 use std::time::Instant;
 
@@ -58,7 +58,9 @@ impl CudaMiner {
         #[cfg(not(feature = "cuda"))]
         {
             let _ = device_id;
-            Err(anyhow!("CUDA support not enabled. Build with --features cuda"))
+            Err(anyhow!(
+                "CUDA support not enabled. Build with --features cuda"
+            ))
         }
     }
 }
@@ -70,10 +72,11 @@ impl GpuMiner for CudaMiner {
             println!("[CUDA] Initializing device {}", self.device_id);
 
             let device = CudaDevice::new(self.device_id)?;
-            
+
             // Compile PTX kernel
             println!("[CUDA] Compiling PTX for Cosmic Harmony v3...");
-            let ptx = compile_ptx(CUDA_KERNEL).map_err(|e| anyhow!("Failed to compile PTX: {:?}", e))?;
+            let ptx =
+                compile_ptx(CUDA_KERNEL).map_err(|e| anyhow!("Failed to compile PTX: {:?}", e))?;
             device.load_ptx(ptx, "cosmic_harmony", &["cosmic_harmony_v3_mine"])?;
 
             // Allocate buffers
@@ -86,13 +89,18 @@ impl GpuMiner for CudaMiner {
             self.results_buf = Some(results_buf);
             self.result_count_buf = Some(result_count_buf);
 
-            println!("[CUDA] Device {} initialized: {}", self.device_id, self.device_info.name);
+            println!(
+                "[CUDA] Device {} initialized: {}",
+                self.device_id, self.device_info.name
+            );
             Ok(())
         }
 
         #[cfg(not(feature = "cuda"))]
         {
-            Err(anyhow!("CUDA support not enabled. Build with --features cuda"))
+            Err(anyhow!(
+                "CUDA support not enabled. Build with --features cuda"
+            ))
         }
     }
 
@@ -105,13 +113,21 @@ impl GpuMiner for CudaMiner {
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(feature = "cuda")]
         {
-            let device = self.device.as_ref()
+            let device = self
+                .device
+                .as_ref()
                 .ok_or_else(|| anyhow!("CUDA device not initialized"))?;
-            let header_buf = self.header_buf.as_mut()
+            let header_buf = self
+                .header_buf
+                .as_mut()
                 .ok_or_else(|| anyhow!("CUDA header buffer not initialized"))?;
-            let results_buf = self.results_buf.as_mut()
+            let results_buf = self
+                .results_buf
+                .as_mut()
                 .ok_or_else(|| anyhow!("CUDA results buffer not initialized"))?;
-            let result_count_buf = self.result_count_buf.as_mut()
+            let result_count_buf = self
+                .result_count_buf
+                .as_mut()
                 .ok_or_else(|| anyhow!("CUDA result count buffer not initialized"))?;
 
             if batch_size == 0 {
@@ -137,7 +153,8 @@ impl GpuMiner for CudaMiner {
             let num_blocks = ((batch_size as u32) + threads_per_block - 1) / threads_per_block;
             let num_blocks = num_blocks.min(65535);
 
-            let func = device.get_func("cosmic_harmony", "cosmic_harmony_v3_mine")
+            let func = device
+                .get_func("cosmic_harmony", "cosmic_harmony_v3_mine")
                 .ok_or_else(|| anyhow!("CUDA kernel not found"))?;
 
             let config = LaunchConfig {
@@ -147,14 +164,17 @@ impl GpuMiner for CudaMiner {
             };
 
             unsafe {
-                func.launch(config, (
-                    header_buf,
-                    header.len() as u32,
-                    nonce_start,
-                    target_difficulty,
-                    results_buf,
-                    result_count_buf
-                ))?;
+                func.launch(
+                    config,
+                    (
+                        header_buf,
+                        header.len() as u32,
+                        nonce_start,
+                        target_difficulty,
+                        results_buf,
+                        result_count_buf,
+                    ),
+                )?;
             }
 
             device.synchronize()?;
@@ -173,7 +193,9 @@ impl GpuMiner for CudaMiner {
         #[cfg(not(feature = "cuda"))]
         {
             let _ = (header, target, nonce_start, batch_size);
-            Err(anyhow!("CUDA support not enabled. Build with --features cuda"))
+            Err(anyhow!(
+                "CUDA support not enabled. Build with --features cuda"
+            ))
         }
     }
 
@@ -201,10 +223,12 @@ pub fn detect_cuda_devices() -> Result<Vec<GpuDevice>> {
         let mut devices = Vec::new();
         for i in 0..count {
             if let Ok(device) = CudaDevice::new(i) {
-                let name = device.name()
+                let name = device
+                    .name()
                     .unwrap_or_else(|_| format!("CUDA Device {}", i));
-                
-                let memory_mb = device.total_memory()
+
+                let memory_mb = device
+                    .total_memory()
                     .map(|m| (m / (1024 * 1024)) as u64)
                     .unwrap_or(0);
 

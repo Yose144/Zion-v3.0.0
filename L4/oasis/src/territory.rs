@@ -174,9 +174,17 @@ pub struct TerritoryMap {
     territories: HashMap<String, Territory>,
 }
 
+impl Default for TerritoryMap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TerritoryMap {
     pub fn new() -> Self {
-        Self { territories: HashMap::new() }
+        Self {
+            territories: HashMap::new(),
+        }
     }
 
     pub fn add_territory(&mut self, territory: Territory) {
@@ -217,7 +225,11 @@ impl TerritoryMap {
             ("negev_desert", "Negev Desert", Region::Desert),
             ("galilee_sea", "Sea of Galilee", Region::Ocean),
             ("masada_forge", "Masada Forge", Region::Volcano),
-            ("crystal_mines", "Crystal Mines of Solomon", Region::CrystalCaves),
+            (
+                "crystal_mines",
+                "Crystal Mines of Solomon",
+                Region::CrystalCaves,
+            ),
             ("temple_mount", "Temple of Consciousness", Region::Temple),
             ("babel_nexus", "Babel Nexus", Region::Nexus),
         ];

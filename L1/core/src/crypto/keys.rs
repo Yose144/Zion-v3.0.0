@@ -1,4 +1,4 @@
-use ed25519_dalek::{Verifier, VerifyingKey, Signature};
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
@@ -8,7 +8,7 @@ pub fn verify(public_key_bytes: &[u8], msg: &[u8], signature_bytes: &[u8]) -> bo
         Ok(arr) => arr,
         Err(_) => return false,
     };
-    
+
     let public_key = match VerifyingKey::from_bytes(&pk_array) {
         Ok(pk) => pk,
         Err(_) => return false,
@@ -31,7 +31,7 @@ pub fn from_hex(s: &str) -> Option<Vec<u8>> {
     }
     let mut bytes = Vec::with_capacity(s.len() / 2);
     for i in (0..s.len()).step_by(2) {
-        let byte_str = &s[i..i+2];
+        let byte_str = &s[i..i + 2];
         match u8::from_str_radix(byte_str, 16) {
             Ok(b) => bytes.push(b),
             Err(_) => return None,
@@ -248,7 +248,9 @@ mod tests {
 
     #[test]
     fn test_invalid_addresses() {
-        assert!(!is_valid_zion1_address("btc1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        assert!(!is_valid_zion1_address(
+            "btc1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ));
         assert!(!is_valid_zion1_address("zion1short"));
         assert!(!is_valid_zion1_address(""));
         assert!(!is_valid_zion1_address(

@@ -83,7 +83,10 @@ mod tests {
         let hash1 = hash(input, 0, height);
         let hash2 = hash(input, 1, height);
 
-        assert_ne!(hash1, hash2, "Different nonces should produce different hashes");
+        assert_ne!(
+            hash1, hash2,
+            "Different nonces should produce different hashes"
+        );
     }
 
     #[test]
@@ -96,7 +99,10 @@ mod tests {
 
         // Heights below/above memory-hard fork should produce different hashes
         // (different pipeline path: legacy vs scratchpad)
-        assert_ne!(hash1, hash2, "Different heights (across fork) should produce different hashes");
+        assert_ne!(
+            hash1, hash2,
+            "Different heights (across fork) should produce different hashes"
+        );
     }
 
     #[test]

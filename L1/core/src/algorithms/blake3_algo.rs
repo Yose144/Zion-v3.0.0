@@ -1,7 +1,6 @@
 /// Blake3 algorithm wrapper
-/// 
+///
 /// Simple fallback algorithm for testing and compatibility
-
 pub fn blake3_hash(input: &[u8]) -> [u8; 32] {
     blake3::hash(input).into()
 }

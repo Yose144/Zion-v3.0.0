@@ -18,9 +18,10 @@ pub fn execute_proposal(
 ) -> DaoResult<String> {
     // Verify status
     if proposal.status != ProposalStatus::Timelocked {
-        return Err(DaoError::ProposalNotVotable(
-            format!("Proposal {} is {:?}, expected Timelocked", proposal.id, proposal.status)
-        ));
+        return Err(DaoError::ProposalNotVotable(format!(
+            "Proposal {} is {:?}, expected Timelocked",
+            proposal.id, proposal.status
+        )));
     }
 
     // Verify timelock is ready
@@ -32,7 +33,12 @@ pub fn execute_proposal(
 
     // Execute based on proposal type
     let result = match &proposal.proposal_type {
-        ProposalType::Treasury { recipient, amount, purpose, .. } => {
+        ProposalType::Treasury {
+            recipient,
+            amount,
+            purpose,
+            ..
+        } => {
             // Create treasury spend operation
             let op_id = format!("dao-exec-{}", proposal.id);
             treasury.submit_operation(
@@ -48,7 +54,12 @@ pub fn execute_proposal(
             )?;
             format!("Treasury spend submitted: {} → {}", amount, recipient)
         }
-        ProposalType::Humanitarian { category, amount, region, .. } => {
+        ProposalType::Humanitarian {
+            category,
+            amount,
+            region,
+            ..
+        } => {
             let op_id = format!("dao-humanitarian-{}", proposal.id);
             treasury.submit_operation(
                 op_id.clone(),
@@ -60,13 +71,22 @@ pub fn execute_proposal(
                 },
                 "zion1executor",
             )?;
-            format!("Humanitarian grant submitted: {} ZION to {}", amount, category)
+            format!(
+                "Humanitarian grant submitted: {} ZION to {}",
+                amount, category
+            )
         }
-        ProposalType::Parameter { parameter_name, proposed_value, .. } => {
+        ProposalType::Parameter {
+            parameter_name,
+            proposed_value,
+            ..
+        } => {
             // TODO: Emit L1 transaction with parameter change
             format!("Parameter {} changed to {}", parameter_name, proposed_value)
         }
-        ProposalType::Grant { recipient, amount, .. } => {
+        ProposalType::Grant {
+            recipient, amount, ..
+        } => {
             let op_id = format!("dao-grant-{}", proposal.id);
             treasury.submit_operation(
                 op_id,

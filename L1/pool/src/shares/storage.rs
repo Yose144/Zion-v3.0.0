@@ -8,7 +8,6 @@
 ///
 /// Uses redis::aio::ConnectionManager for async operations
 /// Mirrors Python src/pool/database/models.py logic
-
 use anyhow::{anyhow, Result};
 use chrono::Utc;
 use redis::AsyncCommands;
@@ -109,7 +108,11 @@ impl RedisStorage {
         Ok(Self {
             client,
             connection: Arc::new(RwLock::new(None)),
-            pplns_window_shares: if pplns_window_shares == 0 { 100_000 } else { pplns_window_shares },
+            pplns_window_shares: if pplns_window_shares == 0 {
+                100_000
+            } else {
+                pplns_window_shares
+            },
         })
     }
 
@@ -281,13 +284,13 @@ impl RedisStorage {
     pub async fn snapshot_pool_stats(&self) -> Result<()> {
         let mut conn = self.get_connection().await?;
         let now = Utc::now().timestamp();
-        
+
         // Calculate current hashrate (1m window)
         let (hashrate, _) = self.get_pool_hashrate().await?;
-        
+
         // Count active miners
         let miners = self.get_active_miners(600).await?;
-        
+
         // Create snapshot point
         let snapshot = serde_json::json!({
             "timestamp": now,
@@ -298,10 +301,10 @@ impl RedisStorage {
 
         // Add to history list (right push)
         let _: () = conn.rpush("history:pool", snapshot.to_string()).await?;
-        
+
         // Trim history to last 24h (Assuming 1 min interval = 1440 items)
         let _: () = conn.ltrim("history:pool", -1440, -1).await?;
-        
+
         Ok(())
     }
 
@@ -309,7 +312,7 @@ impl RedisStorage {
     pub async fn get_pool_history(&self) -> Result<Vec<serde_json::Value>> {
         let mut conn = self.get_connection().await?;
         let history: Vec<String> = conn.lrange("history:pool", 0, -1).await?;
-        
+
         let mut result = Vec::new();
         for item in history {
             if let Ok(val) = serde_json::from_str(&item) {
@@ -320,18 +323,18 @@ impl RedisStorage {
     }
 
     /// Get top miners by total shares
-    pub async fn get_top_miners(&self, limit: usize) -> Result<Vec<MinerStats>> {
-         // This is expensive in Redis without a sorted set of "total_shares".
-         // But we assume "total_shares" doesn't decrease.
-         // Better: Maintain a ZSET "leaderboard:shares" updated on every share?
-         // Optimisation: We'll implement a scan-based approach or reuse existing keys if possible.
-         // Real approach: We don't have a leaderboard ZSET.
-         // fallback: Return top active miners from miners:last_share? No, that's by time.
-         
-         // Fix: For now, return empty list or implement ZSET maintenance in store_share.
-         // I'll add ZSET maintenance to store_share later. 
-         // For now, return empty.
-         Ok(Vec::new())
+    pub async fn get_top_miners(&self, _limit: usize) -> Result<Vec<MinerStats>> {
+        // This is expensive in Redis without a sorted set of "total_shares".
+        // But we assume "total_shares" doesn't decrease.
+        // Better: Maintain a ZSET "leaderboard:shares" updated on every share?
+        // Optimisation: We'll implement a scan-based approach or reuse existing keys if possible.
+        // Real approach: We don't have a leaderboard ZSET.
+        // fallback: Return top active miners from miners:last_share? No, that's by time.
+
+        // Fix: For now, return empty list or implement ZSET maintenance in store_share.
+        // I'll add ZSET maintenance to store_share later.
+        // For now, return empty.
+        Ok(Vec::new())
     }
 
     /// Get miner statistics
@@ -340,31 +343,19 @@ impl RedisStorage {
 
         // Get total shares
         let shares_key = format!("miner:{}:shares", address);
-        let total_shares: u64 = conn
-            .get(&shares_key)
-            .await
-            .unwrap_or(0);
+        let total_shares: u64 = conn.get(&shares_key).await.unwrap_or(0);
 
         // Get blocks found
         let blocks_key = format!("miner:{}:blocks", address);
-        let blocks_found: u64 = conn
-            .get(&blocks_key)
-            .await
-            .unwrap_or(0);
+        let blocks_found: u64 = conn.get(&blocks_key).await.unwrap_or(0);
 
         // Get last share time
         let last_key = format!("miner:{}:last_share", address);
-        let last_share_time: i64 = conn
-            .get(&last_key)
-            .await
-            .unwrap_or(0);
+        let last_share_time: i64 = conn.get(&last_key).await.unwrap_or(0);
 
         // Get invalid shares
         let invalid_key = format!("miner:{}:invalid", address);
-        let invalid_shares: u64 = conn
-            .get(&invalid_key)
-            .await
-            .unwrap_or(0);
+        let invalid_shares: u64 = conn.get(&invalid_key).await.unwrap_or(0);
 
         // Get paid amount
         // Prefer PPLNS accounting keys, fallback to legacy miner:* keys.
@@ -581,10 +572,8 @@ impl RedisStorage {
         let mut records = Vec::new();
         for id in ids {
             let key = format!("payout:record:{}", id);
-            let map: std::collections::HashMap<String, String> = conn
-                .hgetall(&key)
-                .await
-                .unwrap_or_default();
+            let map: std::collections::HashMap<String, String> =
+                conn.hgetall(&key).await.unwrap_or_default();
 
             if map.is_empty() {
                 continue;
@@ -601,7 +590,10 @@ impl RedisStorage {
                     .get("amount")
                     .and_then(|v| v.parse::<f64>().ok())
                     .unwrap_or(0.0),
-                status: map.get("status").cloned().unwrap_or_else(|| "unknown".to_string()),
+                status: map
+                    .get("status")
+                    .cloned()
+                    .unwrap_or_else(|| "unknown".to_string()),
                 tx_id: map.get("tx_id").cloned().filter(|v| !v.is_empty()),
                 created_ts: map
                     .get("created_ts")

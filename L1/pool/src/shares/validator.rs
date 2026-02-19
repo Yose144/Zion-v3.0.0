@@ -1,3 +1,4 @@
+use chrono::Utc;
 /// Share Validator - Algorithm-specific validation
 ///
 /// Validates mining shares using native Rust cryptography
@@ -5,14 +6,12 @@
 ///
 /// Implementation mirrors /src/pool/mining/share_validator.py exactly
 /// for cross-compatibility with Python pool reference implementation.
-
 use hex::FromHex;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use zion_core::algorithms::{blake3, randomx, yescrypt};
 use zion_cosmic_harmony_v3::algorithms_opt;
-use std::collections::HashMap;
-use tokio::sync::RwLock;
-use std::sync::Arc;
-use chrono::Utc;
 
 /// Share validation result
 #[derive(Debug, Clone)]
@@ -48,9 +47,8 @@ impl Algorithm {
             // All cosmic_harmony variants now map to CHv3
             "cosmic_harmony" | "cosmic" | "cosmic_harmony_v3" | "cosmic_v3" | "cosmic3"
             | "cosmicharmony" | "cosmic-harmony" | "cosmic-harmony-v3" | "cosmicharmonyv3"
-            | "chv3" | "ch3"
-            | "cosmic_harmony_v1" | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2"
-                => Algorithm::CosmicHarmony,
+            | "chv3" | "ch3" | "cosmic_harmony_v1" | "cosmic_harmony_v2" | "cosmicharmonyv2"
+            | "cosmic-harmony-v2" => Algorithm::CosmicHarmony,
             "blake3" => Algorithm::Blake3,
             "autolykos" | "autolykos_v2" => Algorithm::AutolykovV2,
             // External algorithms — routed to external pool by StreamScheduler.
@@ -64,11 +62,11 @@ impl Algorithm {
 #[derive(Debug, Clone)]
 pub struct SubmittedShare {
     pub job_id: String,
-    pub nonce: String,       // hex
+    pub nonce: String,          // hex
     pub result: Option<String>, // hex (may not be provided)
     pub algorithm: String,
-    pub job_blob: String,    // hex
-    pub job_target: String,  // hex
+    pub job_blob: String,             // hex
+    pub job_target: String,           // hex
     pub block_target: Option<String>, // hex
     pub height: Option<u64>,
 }
@@ -106,7 +104,11 @@ impl ShareValidator {
                     cache.retain(|_, entry| now - entry.timestamp < SHARE_CACHE_MAX_AGE_SECS);
                     let pruned = before - cache.len();
                     if pruned > 0 {
-                        tracing::debug!("Share cache pruned {} stale entries ({} remaining)", pruned, cache.len());
+                        tracing::debug!(
+                            "Share cache pruned {} stale entries ({} remaining)",
+                            pruned,
+                            cache.len()
+                        );
                     }
                 }
             });
@@ -250,7 +252,7 @@ impl ShareValidator {
         let nonce = u32::from_str_radix(&share.nonce, 16).ok()?;
         let full_blob = Vec::from_hex(blob).ok()?;
         let height = share.height.unwrap_or(0);
-        
+
         // Template blob layout:
         // version(4) + height(8) + prev_hash(64) + merkle_root(64) + timestamp(8) + difficulty(8) + algo(1) + nonce_reserved(8) = 165 bytes
         // For RandomX/Yescrypt/Blake3 we mirror core's calculate_hash():
@@ -289,10 +291,14 @@ impl ShareValidator {
                 // CHv3 unified: canonical 5-phase pipeline, no height XOR.
                 // Pass the raw template blob bytes; the hasher uses first 80 bytes.
                 if full_blob.len() < 80 {
-                    tracing::warn!("Blob too short for CHv3: {} bytes, need at least 80", full_blob.len());
+                    tracing::warn!(
+                        "Blob too short for CHv3: {} bytes, need at least 80",
+                        full_blob.len()
+                    );
                     return None;
                 }
-                let h = algorithms_opt::cosmic_harmony_v3_with_height(&full_blob, nonce as u64, height);
+                let h =
+                    algorithms_opt::cosmic_harmony_v3_with_height(&full_blob, nonce as u64, height);
                 Some(hex::encode(h.data))
             }
             Algorithm::RandomX => {
@@ -329,7 +335,7 @@ impl ShareValidator {
                 let target_int = u64::from_str_radix(job_target, 16).unwrap_or(0);
                 let meets = res_low64 <= target_int;
                 let difficulty = if res_low64 > 0 {
-                    (u64::MAX / res_low64) as u64
+                    u64::MAX / res_low64
                 } else {
                     0
                 };
@@ -343,7 +349,7 @@ impl ShareValidator {
                 let hash_int = u256_from_be_slice(&hash_bytes[0..28]);
                 let meets = meets_target_be(hash_bytes, job_target, 28);
                 let difficulty = if hash_int > 0 {
-                    ((u64::MAX as u128) / (hash_int as u128)) as u64
+                    ((u64::MAX as u128) / hash_int) as u64
                 } else {
                     0
                 };
@@ -382,8 +388,12 @@ impl ShareValidator {
                     0
                 };
 
-                tracing::debug!("POOL check_target(CHv3): state0={} target={} meets={}",
-                    state0, target_int, meets);
+                tracing::debug!(
+                    "POOL check_target(CHv3): state0={} target={} meets={}",
+                    state0,
+                    target_int,
+                    meets
+                );
 
                 (meets, difficulty)
             }
@@ -395,7 +405,7 @@ impl ShareValidator {
                 let hash_int = u256_from_be_slice(&hash_bytes[0..32]);
                 let meets = meets_target_be(hash_bytes, job_target, 32);
                 let difficulty = if hash_int > 0 {
-                    ((u64::MAX as u128) / (hash_int as u128)) as u64
+                    ((u64::MAX as u128) / hash_int) as u64
                 } else {
                     0
                 };
@@ -406,7 +416,7 @@ impl ShareValidator {
                 let hash_int = u256_from_be_slice(hash_bytes);
                 let meets = meets_target_be(hash_bytes, job_target, 32);
                 let difficulty = if hash_int > 0 {
-                    ((u64::MAX as u128) / (hash_int as u128)) as u64
+                    ((u64::MAX as u128) / hash_int) as u64
                 } else {
                     0
                 };
@@ -467,9 +477,7 @@ impl ShareValidator {
                 }
                 meets_target_be(hash_bytes, block_target, 32)
             }
-            Algorithm::AutolykovV2 => {
-                meets_target_be(hash_bytes, block_target, 32)
-            }
+            Algorithm::AutolykovV2 => meets_target_be(hash_bytes, block_target, 32),
             Algorithm::Unknown => false,
         }
     }
@@ -496,7 +504,7 @@ impl ShareValidator {
                 }
                 let hash_int = u256_from_be_slice(&hash_bytes[0..28]);
                 if hash_int > 0 {
-                    ((u64::MAX as u128) / (hash_int as u128)) as u64
+                    ((u64::MAX as u128) / hash_int) as u64
                 } else {
                     0
                 }
@@ -532,7 +540,7 @@ impl ShareValidator {
                 }
                 let hash_int = u256_from_be_slice(&hash_bytes[0..32]);
                 if hash_int > 0 {
-                    ((u64::MAX as u128) / (hash_int as u128)) as u64
+                    ((u64::MAX as u128) / hash_int) as u64
                 } else {
                     0
                 }
@@ -540,7 +548,7 @@ impl ShareValidator {
             Algorithm::AutolykovV2 => {
                 let hash_int = u256_from_be_slice(hash_bytes);
                 if hash_int > 0 {
-                    ((u64::MAX as u128) / (hash_int as u128)) as u64
+                    ((u64::MAX as u128) / hash_int) as u64
                 } else {
                     0
                 }
@@ -553,7 +561,7 @@ impl ShareValidator {
 /// Helper: parse big-endian u256 from byte slice (simplified)
 fn u256_from_be_slice(bytes: &[u8]) -> u128 {
     let mut result: u128 = 0;
-    for (_i, &byte) in bytes.iter().take(16).enumerate() {
+    for &byte in bytes.iter().take(16) {
         result = (result << 8) | (byte as u128);
     }
     result
@@ -597,11 +605,23 @@ mod tests {
         assert_eq!(Algorithm::from_str("rx/0"), Algorithm::RandomX);
         assert_eq!(Algorithm::from_str("yescrypt"), Algorithm::Yescrypt);
         // All cosmic_harmony variants now map to single CosmicHarmony = CHv3
-        assert_eq!(Algorithm::from_str("cosmic_harmony"), Algorithm::CosmicHarmony);
+        assert_eq!(
+            Algorithm::from_str("cosmic_harmony"),
+            Algorithm::CosmicHarmony
+        );
         assert_eq!(Algorithm::from_str("cosmic"), Algorithm::CosmicHarmony);
-        assert_eq!(Algorithm::from_str("cosmic_harmony_v3"), Algorithm::CosmicHarmony);
-        assert_eq!(Algorithm::from_str("cosmic_harmony_v1"), Algorithm::CosmicHarmony);
-        assert_eq!(Algorithm::from_str("cosmic_harmony_v2"), Algorithm::CosmicHarmony);
+        assert_eq!(
+            Algorithm::from_str("cosmic_harmony_v3"),
+            Algorithm::CosmicHarmony
+        );
+        assert_eq!(
+            Algorithm::from_str("cosmic_harmony_v1"),
+            Algorithm::CosmicHarmony
+        );
+        assert_eq!(
+            Algorithm::from_str("cosmic_harmony_v2"),
+            Algorithm::CosmicHarmony
+        );
         assert_eq!(Algorithm::from_str("chv3"), Algorithm::CosmicHarmony);
         assert_eq!(Algorithm::from_str("blake3"), Algorithm::Blake3);
     }
@@ -609,7 +629,7 @@ mod tests {
     #[tokio::test]
     async fn test_duplicate_detection() {
         let validator = ShareValidator::new("little");
-        
+
         // CHv3 is the single production algorithm.
         // Provide a minimally valid blob length.
         let share = SubmittedShare {
@@ -626,15 +646,30 @@ mod tests {
 
         // First validation
         let result1 = validator.validate_share(&share, "miner_A").await;
-        assert!(result1.valid, "First share should be valid: {}", result1.reason);
-        
+        assert!(
+            result1.valid,
+            "First share should be valid: {}",
+            result1.reason
+        );
+
         // Second validation from SAME miner (duplicate)
         let result2 = validator.validate_share(&share, "miner_A").await;
-        assert!(!result2.valid, "Second share from same miner should be rejected");
-        assert!(result2.reason.contains("Duplicate"), "Reason should mention duplicate: {}", result2.reason);
-        
+        assert!(
+            !result2.valid,
+            "Second share from same miner should be rejected"
+        );
+        assert!(
+            result2.reason.contains("Duplicate"),
+            "Reason should mention duplicate: {}",
+            result2.reason
+        );
+
         // Third validation from DIFFERENT miner (should NOT be duplicate)
         let result3 = validator.validate_share(&share, "miner_B").await;
-        assert!(result3.valid, "Same nonce from different miner should be accepted: {}", result3.reason);
+        assert!(
+            result3.valid,
+            "Same nonce from different miner should be accepted: {}",
+            result3.reason
+        );
     }
 }

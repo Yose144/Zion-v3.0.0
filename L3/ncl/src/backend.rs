@@ -17,6 +17,12 @@ pub struct OnnxBackend {
     available: bool,
 }
 
+impl Default for OnnxBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl OnnxBackend {
     pub fn new() -> Self {
         // TODO: N-01 — Initialize ONNX Runtime
@@ -25,18 +31,32 @@ impl OnnxBackend {
 }
 
 impl BackendRunner for OnnxBackend {
-    fn name(&self) -> &str { "ONNX Runtime" }
-    fn backend_type(&self) -> ComputeBackend { ComputeBackend::OnnxRuntime }
-    fn is_available(&self) -> bool { self.available }
+    fn name(&self) -> &str {
+        "ONNX Runtime"
+    }
+    fn backend_type(&self) -> ComputeBackend {
+        ComputeBackend::OnnxRuntime
+    }
+    fn is_available(&self) -> bool {
+        self.available
+    }
 
     fn run_inference(&self, _model_path: &str, _input: &[u8]) -> NclResult<Vec<u8>> {
-        Err(NclError::UnsupportedBackend("ONNX Runtime not initialized".into()))
+        Err(NclError::UnsupportedBackend(
+            "ONNX Runtime not initialized".into(),
+        ))
     }
 }
 
 /// WASM sandbox backend.
 pub struct WasmBackend {
     available: bool,
+}
+
+impl Default for WasmBackend {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl WasmBackend {
@@ -46,18 +66,32 @@ impl WasmBackend {
 }
 
 impl BackendRunner for WasmBackend {
-    fn name(&self) -> &str { "WASM Sandbox" }
-    fn backend_type(&self) -> ComputeBackend { ComputeBackend::Wasm }
-    fn is_available(&self) -> bool { self.available }
+    fn name(&self) -> &str {
+        "WASM Sandbox"
+    }
+    fn backend_type(&self) -> ComputeBackend {
+        ComputeBackend::Wasm
+    }
+    fn is_available(&self) -> bool {
+        self.available
+    }
 
     fn run_inference(&self, _model_path: &str, _input: &[u8]) -> NclResult<Vec<u8>> {
-        Err(NclError::UnsupportedBackend("WASM backend not initialized".into()))
+        Err(NclError::UnsupportedBackend(
+            "WASM backend not initialized".into(),
+        ))
     }
 }
 
 /// TensorFlow Lite backend.
 pub struct TfLiteBackend {
     available: bool,
+}
+
+impl Default for TfLiteBackend {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TfLiteBackend {
@@ -67,12 +101,20 @@ impl TfLiteBackend {
 }
 
 impl BackendRunner for TfLiteBackend {
-    fn name(&self) -> &str { "TF Lite" }
-    fn backend_type(&self) -> ComputeBackend { ComputeBackend::TfLite }
-    fn is_available(&self) -> bool { self.available }
+    fn name(&self) -> &str {
+        "TF Lite"
+    }
+    fn backend_type(&self) -> ComputeBackend {
+        ComputeBackend::TfLite
+    }
+    fn is_available(&self) -> bool {
+        self.available
+    }
 
     fn run_inference(&self, _model_path: &str, _input: &[u8]) -> NclResult<Vec<u8>> {
-        Err(NclError::UnsupportedBackend("TF Lite backend not initialized".into()))
+        Err(NclError::UnsupportedBackend(
+            "TF Lite backend not initialized".into(),
+        ))
     }
 }
 
