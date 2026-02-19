@@ -2334,7 +2334,10 @@ function startMining(config) {
         '--wallet', config.wallet,
         '--threads', String(xmrRevenueThreads),
         '--group', 'revenue',
-        '--algorithm', 'randomx',  // Revenue group mines XMR via pool (CPU-only mode → RandomX)
+        // Algorithm is NOT forced here — pool StreamScheduler assigns the best revenue algo.
+        // If pool has XMR CN job with seed_hash → overrides to randomx (with seed_hash).
+        // If no external job available → pool falls back to cosmic_harmony (ZION).
+        // Forcing randomx caused "RandomX not initialized" when seed_hash was missing.
         '--stats-file', revenueStatsPath,
         '--stats-interval', '5',
         '--no-color'
