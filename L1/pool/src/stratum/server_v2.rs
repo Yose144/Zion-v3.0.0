@@ -1102,6 +1102,7 @@ impl StratumServer {
 
         // Register miner with StreamScheduler for per-miner assignment.
         // If scheduler has a job for this miner, override the default ZION login job.
+        let mut seed_hash = String::new();
         if let Some(scheduler) = { self.stream_scheduler.read().await.clone() } {
             let (_group, scheduled_job) = scheduler
                 .register_miner_with_hint(&session_id, group_hint)
@@ -1110,6 +1111,7 @@ impl StratumServer {
                 job_id = sj.job_id.clone();
                 blob = sj.blob.clone();
                 height = sj.height;
+                seed_hash = sj.seed_hash.clone(); // Needed for RandomX initialization
                 if !sj.algorithm.is_empty() {
                     algorithm = sj.algorithm.clone();
                 }
@@ -1137,6 +1139,7 @@ impl StratumServer {
                     "difficulty": diff,
                     "height": height,
                     "algo": algorithm,
+                    "seed_hash": seed_hash,   // Required for RandomX (XMR revenue jobs)
                     "cosmic_state0_endian": Self::COSMIC_STATE0_ENDIAN
                 },
                 "status": "OK"
