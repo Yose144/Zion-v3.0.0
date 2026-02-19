@@ -134,21 +134,15 @@ impl GpuMiner for OpenCLMiner {
                 return Ok(None);
             }
 
-            // Extract target difficulty high u64 (Big Endian from target[24..32])
-            // Target is 32 bytes. [0] is LSB .. [31] MSB? No.
-            // Bitcoin-like target is simple 256 bit number.
-            // If checking (hash < target).
-            // Usually we compare high words first.
-            // Let's stick to the convention used in CUDA implementation:
-            // Input  is assumed LE byte array or BE?
-            // "target" parameter in  is usually byte array of target threshold.
-            // We take bytes 24-31 (highest 8 bytes) and interpret as u64.
-
-            let mut target_u64_bytes = [0u8; 8];
-            if target.len() == 32 {
-                target_u64_bytes.copy_from_slice(&target[24..32]);
-            }
-            let target_difficulty = u64::from_le_bytes(target_u64_bytes);
+            // ═══ CHv3 target: pool sends 8-char hex → parse_target_bytes places
+            // the 4 bytes at target[28..32] (right-aligned in 32-byte array).
+            // Pool validator does:  u32::from_le_bytes(hash[0..4]) ≤ target_int
+            //   where target_int = u32::from_str_radix(&hex[0..8], 16)
+            //                    = u32::from_be_bytes(decoded[0..4])
+            // After parse_target_bytes, the decoded bytes sit at [28..32].
+            let target_u32: u32 = u32::from_be_bytes([
+                target[28], target[29], target[30], target[31],
+            ]);
 
             // Reset buffers
             let result_init = [0u64, 0u64];
@@ -156,8 +150,9 @@ impl GpuMiner for OpenCLMiner {
             let count_init = [0u32];
             result_count_buf.write(&count_init[..]).enq()?;
 
-            // Upload header — pad to exactly 144 bytes to match buffer size
-            let header_len = header.len().min(144);
+            // Upload header — cap at 80 bytes (CPU/pool only uses first 80).
+            // Pad to 144 bytes to match buffer allocation size.
+            let header_len = header.len().min(80);
             let mut padded_header = [0u8; 144];
             padded_header[..header_len].copy_from_slice(&header[..header_len]);
             header_buf.write(&padded_header[..]).enq()?;
@@ -177,7 +172,7 @@ impl GpuMiner for OpenCLMiner {
                 .arg(header_buf)
                 .arg(header_len as u32)
                 .arg(nonce_start)
-                .arg(target_difficulty)
+                .arg(target_u32)
                 .arg(results_buf)
                 .arg(result_count_buf)
                 .global_work_size(global_work_size)
