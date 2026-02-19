@@ -1127,6 +1127,30 @@ impl StratumServer {
             }
         }
 
+        // Safety fallback: RandomX requires seed_hash to initialize DAG.
+        // If we have a randomx job but seed_hash is empty → revert to cosmic_harmony.
+        // This avoids "RandomX not initialized" errors on the client miner.
+        // Only applies when falling back to ZION blob (blob is from ZION template, not XMR).
+        if (algorithm == "randomx" || algorithm == "rx/0") && seed_hash.is_empty() {
+            tracing::warn!(
+                "⚠️  RandomX job without seed_hash for session={} — falling back to cosmic_harmony",
+                &session_id[..8.min(session_id.len())]
+            );
+            algorithm = "cosmic_harmony".to_string();
+            target = Self::compute_job_target_hex("cosmic_harmony", diff);
+            // Re-fetch ZION template blob so the miner gets a valid cosmic_harmony job
+            if let Some(tpl) = self.template_for_job().await {
+                let fallback_id = Self::job_id_from_template(&tpl);
+                job_id = format!("{}-cosmic_harmony", fallback_id);
+                blob = tpl.blob.unwrap_or_else(|| "0".repeat(152));
+                height = tpl.height;
+                seed_hash = String::new();
+            }
+            let mut conn = connection.write().await;
+            conn.current_job_id = Some(job_id.clone());
+            conn.algorithm = Some("cosmic_harmony".to_string());
+        }
+
         // Build response - include difficulty for miner compatibility
         let response = StratumResponse::success(
             request.id.clone(),
