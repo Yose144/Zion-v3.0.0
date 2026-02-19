@@ -544,9 +544,10 @@ impl StratumServer {
             return tail.as_bytes().iter().all(|b| BECH32_CHARSET.contains(b));
         }
 
-        // Relaxed mode (testnet/devnet): accept 20-45 chars after prefix,
+        // Relaxed mode (testnet/devnet): accept 20-90 chars after prefix,
         // only lowercase alphanumeric (Bech32-compatible charset).
-        let len_ok = (20..=45).contains(&tail.len());
+        // P2WPKH (native segwit) = 39 chars, P2WSH = 59 chars — both valid.
+        let len_ok = (20..=90).contains(&tail.len());
         len_ok && tail.as_bytes().iter().all(|b| BECH32_CHARSET.contains(b))
     }
 
