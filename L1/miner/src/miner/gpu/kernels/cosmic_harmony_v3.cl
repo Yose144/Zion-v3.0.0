@@ -46,7 +46,7 @@ __constant ulong KECCAK_RC[24] = {
     0x000000008000808BUL, 0x800000000000008BUL, 0x8000000000008089UL,
     0x8000000000008003UL, 0x8000000000008002UL, 0x8000000000000080UL,
     0x000000000000800AUL, 0x800000008000000AUL, 0x8000000080008081UL,
-    0x8000000080008080UL, 0x0000000080000001UL, 0x8000000080008008UL,
+    0x8000000000000001UL, 0x8000000080008008UL, 0x0000000000000000UL,
 };
 
 __constant int KECCAK_PILN[24] = {
@@ -247,7 +247,8 @@ __kernel void cosmic_harmony_v3_mine(
     const ulong start_nonce,
     const uint target_u32,          // pool target as u32 (hash[0..4] LE <= this)
     __global ulong* results,        // [0]=flag, [1]=winning nonce
-    __global uint* result_count
+    __global uint* result_count,
+    __global uchar* result_hash     // 32 bytes: winning hash for host verification
 ) {
     uint tid = get_global_id(0);
     ulong nonce = start_nonce + (ulong)tid;
@@ -287,6 +288,9 @@ __kernel void cosmic_harmony_v3_mine(
         if (atomic_xchg(result_count, 1) == 0) {
             results[0] = 1;
             results[1] = nonce;
+            // Copy winning hash so host can verify
+            for (int i = 0; i < 32; i++)
+                result_hash[i] = final_hash[i];
         }
     }
 }
