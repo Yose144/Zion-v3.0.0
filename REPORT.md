@@ -201,6 +201,22 @@ Cargo.toml          ← Workspace: 11 crates v L1–L4
 
 ---
 
+## How to verify — GPU auto-disable (Session 14)
+
+1. **Spusť desktop-agent mining** se zapnutým GPU (`gpu=true`) a GPU revenue (`gpuRevenue=true`).
+2. **Ověř start GPU revenue procesu** v `miner.log`:
+	- `[CH3-GPU] GPU Revenue process started ... algo=pool-assigned g=revenue`
+3. **Simulace/pozorování reject smyčky** (pool pošle nekompatibilní revenue joby):
+	- v logu se opakují `rejected` z `GPU-REV-STDOUT/STDERR`
+4. **Fail-safe trigger** (během prvních 3 minut, při 8+ reject a 0 accepted):
+	- `[CH3-GPU] GPU Revenue auto-disabled (repeated rejects, no accepted shares). Main GPU mining continues.`
+	- `desktop_agent.log` obsahuje event `gpu-revenue-auto-disabled`
+5. **Hlavní miner pokračuje** bez výpadku:
+	- pravidelné `[STATUS] xmrig-style ... hr=...`
+	- accepted shares z hlavního workera zůstávají aktivní
+
+---
+
 ## Další kroky (prioritně)
 
 1. **Dokončit P0-01** — Počkat na 14 dní bez critical bugu (cíl: 2. března)
