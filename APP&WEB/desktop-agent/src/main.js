@@ -371,6 +371,7 @@ let trayMenu;
 let minerProcess = null;
 let revenueProcess = null; // 2nd miner process: --group revenue → pool routes to XMR/RandomX
 let gpuRevenueProcess = null; // 3rd miner process: --group revenue --gpu → GPU algorithms (kawpow/ethash)
+let gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
 let minerStopping = false;
 let minerStopPromise = null;
 let minerAutoStopTimer = null;
@@ -807,6 +808,7 @@ const DEFAULT_CONFIG = {
   // - Other OS: keep auto for compatibility.
   minerBackend: process.platform === 'win32' ? 'rust' : 'auto',
   autoStart: false,
+  autoSelectPool: false,
   minimizeToTray: true,
   startMinimized: false
 };
@@ -1672,6 +1674,7 @@ function startMining(config) {
     // ignore
   }
   minerStartAckTimer = null;
+  gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
 
   const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
   const selection = resolveMinerSelection(preferredBackend);
@@ -1943,8 +1946,9 @@ function startMining(config) {
 
     if (config.worker) args.push('--worker', String(config.worker));
     if (algorithmForMiner) args.push('--algorithm', String(algorithmForMiner));
-    // macOS (M1/Intel): miner uses Metal internally — OpenCL flag causes crash, skip it.
-    if (effectiveGpu && process.platform !== 'darwin') args.push('--gpu');
+    // Enable GPU on all platforms for Rust miner.
+    // On macOS this uses Metal backend (no OpenCL required).
+    if (effectiveGpu) args.push('--gpu');
   } else {
     // Python miner / legacy .exe miner (shared CLI)
     args = [
@@ -2412,15 +2416,13 @@ function startMining(config) {
   if (MINER_IS_RUST && config.gpuRevenue && effectiveGpu && rustGroupSupported) {
     try {
       const gpuRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_gpu_revenue.json');
-      // macOS Metal: kawpow needs OpenCL (dropped on macOS) → cosmic_harmony works with Metal + --gpu ✅
-      const isMacOS = process.platform === 'darwin';
-      const gpuRevenueAlgo = isMacOS ? 'cosmic_harmony' : 'kawpow';
+      // Do NOT force algorithm in revenue group.
+      // Pool StreamScheduler must choose job/algo (XMR/ERG/RVN/...) to avoid wrong-algo low-diff rejects.
       const gpuRevenueArgs = [
         '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
         '--wallet', config.wallet,
         '--threads', '1',  // GPU process needs only 1 CPU thread; GPU (Metal/OpenCL) does the heavy work
         '--group', 'revenue',
-        '--algorithm', gpuRevenueAlgo,
         '--gpu',   // works on macOS for cosmic_harmony (Metal), and on Linux/Win (OpenCL)
         '--stats-file', gpuRevenueStatsPath,
         '--stats-interval', '5',
@@ -2433,9 +2435,56 @@ function startMining(config) {
         env
       });
 
+      gpuRevenueHealth = {
+        startedAt: Date.now(),
+        accepted: 0,
+        rejected: 0,
+        disabled: false
+      };
+
+      const maybeDisableGpuRevenue = (reason) => {
+        try {
+          if (!gpuRevenueProcess || gpuRevenueHealth.disabled) return;
+          if (gpuRevenueHealth.accepted > 0) return;
+          if (gpuRevenueHealth.rejected < 8) return;
+
+          const windowMs = Date.now() - Number(gpuRevenueHealth.startedAt || 0);
+          if (windowMs > 180000) return;
+
+          gpuRevenueHealth.disabled = true;
+          logApp('gpu-revenue-auto-disabled', JSON.stringify({
+            reason,
+            rejected: gpuRevenueHealth.rejected,
+            accepted: gpuRevenueHealth.accepted,
+            windowMs
+          }));
+
+          try {
+            sendToRenderer('miner-output', {
+              stream: 'stderr',
+              text: '[CH3-GPU] GPU Revenue auto-disabled (repeated rejects, no accepted shares). Main GPU mining continues.\n'
+            });
+          } catch {
+            // ignore
+          }
+
+          try {
+            if (process.platform === 'win32') {
+              gpuRevenueProcess.kill();
+            } else {
+              gpuRevenueProcess.kill('SIGTERM');
+            }
+          } catch {
+            // ignore
+          }
+        } catch {
+          // ignore
+        }
+      };
+
       logApp('gpu-revenue-process-started', JSON.stringify({
         pid: gpuRevenueProcess?.pid,
-        algorithm: gpuRevenueAlgo,
+        algorithm: 'pool-assigned',
         group: 'revenue',
         pool: `${config.pool.host}:${config.pool.port}`
       }));
@@ -2443,7 +2492,7 @@ function startMining(config) {
       try {
         sendToRenderer('miner-output', {
           stream: 'stdout',
-          text: `[CH3-GPU] GPU Revenue process started (PID ${gpuRevenueProcess?.pid}) — algo=${gpuRevenueAlgo} g=revenue\n`
+          text: `[CH3-GPU] GPU Revenue process started (PID ${gpuRevenueProcess?.pid}) — algo=pool-assigned g=revenue\n`
         });
       } catch {
         // ignore
@@ -2451,22 +2500,30 @@ function startMining(config) {
 
       gpuRevenueProcess.stdout?.on('data', (data) => {
         const output = data.toString();
+        if (/\baccepted\b/i.test(output)) gpuRevenueHealth.accepted += 1;
+        if (/\brejected\b/i.test(output)) gpuRevenueHealth.rejected += 1;
+        maybeDisableGpuRevenue('stdout-pattern');
         safeMinerLogWrite(`[GPU-REV-STDOUT] ${output}`);
       });
       gpuRevenueProcess.stderr?.on('data', (data) => {
         const output = data.toString();
+        if (/\baccepted\b/i.test(output)) gpuRevenueHealth.accepted += 1;
+        if (/\brejected\b/i.test(output)) gpuRevenueHealth.rejected += 1;
+        maybeDisableGpuRevenue('stderr-pattern');
         safeMinerLogWrite(`[GPU-REV-STDERR] ${output}`);
       });
 
       gpuRevenueProcess.on('error', (err) => {
         console.error('GPU Revenue miner process error:', err);
         gpuRevenueProcess = null;
+        gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
         logApp('gpu-revenue-process-error', err?.message || String(err));
       });
 
       gpuRevenueProcess.on('close', (code, signal) => {
         console.log(`GPU Revenue process exited (code=${code} signal=${signal})`);
         gpuRevenueProcess = null;
+        gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
         logApp('gpu-revenue-process-exit', JSON.stringify({ code, signal }));
         if (minerProcess && !minerStopping && !minerUserStopRequested && code !== 0) {
           try {
@@ -3549,6 +3606,7 @@ if ($procs) { '1' } else { '0' }
         }
       }, 3000);
       gpuRevenueProcess = null;
+      gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
     }
   } catch {
     // ignore
@@ -4971,16 +5029,24 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
 
-  // Auto-select best pool on startup (async, non-blocking)
-  autoSelectBestPool().then(best => {
-    if (best) {
-      console.log(`[startup] Auto-selected pool: ${best.name} (${best.host})`);
-      // Notify renderer to refresh config
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('config-updated');
-      }
+  // Auto-select best pool on startup only if explicitly enabled in config.
+  try {
+    const startupConfig = loadConfig();
+    if (startupConfig?.autoSelectPool) {
+      autoSelectBestPool().then(best => {
+        if (best) {
+          console.log(`[startup] Auto-selected pool: ${best.name} (${best.host})`);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('config-updated');
+          }
+        }
+      }).catch(err => console.error('[startup] Pool auto-select failed:', err.message));
+    } else {
+      console.log('[startup] Pool auto-select disabled (config.autoSelectPool=false)');
     }
-  }).catch(err => console.error('[startup] Pool auto-select failed:', err.message));
+  } catch (err) {
+    console.error('[startup] Failed to read config for auto-select:', err.message);
+  }
 
   app.on('activate', () => {
     try {
