@@ -134,6 +134,13 @@
 52. ✅ **Agent E2E ověřen** — `hr=643.10 kH/s`, `A/R=92/0 (100%)`, pool vidí login `zion1l6qc82s...` (desktop-agent) ✅
 53. ✅ **Exponential backoff v provozu** — Pool log: `XMR: Retrying in 600s (attempt #1)` — backoff správně detekoval IP ban a čeká 10 min
 
+### Session 14 — GPU stabilizace desktop-agentu (20. února 2026)
+54. ✅ **Main miner macOS GPU aktivován** — odstraněn darwin guard pro `--gpu`; hlavní ZION miner běží na Metal i na macOS
+55. ✅ **GPU revenue bez forced algo** — z `gpuRevenueProcess` odebrán `--algorithm`; algoritmus je nyní `pool-assigned` (dle StreamScheduleru)
+56. ✅ **Startup auto-select pool guard** — auto přepnutí poolu při startu je defaultně vypnuto (`autoSelectPool: false`), aby se host nepřepisoval mimo Helsinki
+57. ✅ **GPU revenue health fail-safe** — při `8+` rejectech bez jediného accepted share během prvních 3 minut se `gpu_rev` proces automaticky vypne; hlavní GPU mining pokračuje bez přerušení
+58. ✅ **Runtime validace bez syntax chyb** — `APP&WEB/desktop-agent/src/main.js` prošel kontrolou bez nových errors
+
 
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
@@ -159,10 +166,10 @@
 - **L1/core LOC gap**: 14,500 LOC (src+tests) vs 35,000 tvrzených — ~58% chybí
 - **L3 adaptéry**: Všech 7 chain adaptérů jsou stuby (EVM, Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin)
 - ~~**Revenue miner hr**~~ — ✅ OPRAVENO (session 13): desktop agent nyní `643 kH/s`, pool login ✅
-- **Revenue shares — low difficulty** — Revenue miner posílá cosmic_harmony shares, pool nastavuje diff pro server-side miner (rychlejší) → revenu group dostává "low diff" rejecty (vardiff se časem přizpůsobí)
+- ~~**Revenue shares — low difficulty**~~ — ✅ MITIGOVÁNO (session 14): `gpu_rev` se při opakovaných rejectech auto-disabluje; hlavní GPU miner pokračuje stabilně
 - **MoneroOcean reconnect backoff** — ✅ OPRAVENO: exponential backoff + IP ban detekce; pool po redeployi čeká 600s (10min) na ban expiry ✅
-- **Main miner macOS Metal** — hlavní ZION miner stále bez `--gpu` (darwin guard) — GPU revenue process ale funguje Metal ✅
-- **Pool per-IP limit** — ✅ OPRAVENO: 10→50 conn/IP (commit `219ab23`), rebuild na serveru probíhá
+- ~~**Main miner macOS Metal**~~ — ✅ OPRAVENO (session 14): hlavní miner nyní spouští `--gpu` i na macOS (Metal)
+- ~~**Pool per-IP limit**~~ — ✅ OPRAVENO (session 13): 10→50 conn/IP (commit `219ab23`), nasazeno na Helsinki
 
 ---
 
