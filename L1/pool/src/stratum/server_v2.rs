@@ -73,7 +73,7 @@ impl StratumServer {
             connections: Arc::new(RwLock::new(HashMap::new())),
             connection_count: Arc::new(AtomicUsize::new(0)),
             connections_per_ip: Arc::new(RwLock::new(HashMap::new())),
-            max_connections_per_ip: 10, // AUDIT-FIX P0-13: max 10 connections per IP
+            max_connections_per_ip: 50, // AUDIT-FIX P0-13: max 50 conn/IP (3 processes × miner + retries; was 10 → too low)
             session_manager,
             share_processor,
             template_manager: Arc::new(RwLock::new(None)),
