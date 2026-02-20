@@ -218,6 +218,21 @@ docker logs zion-miner 2>&1 | tail -20
 docker logs zion-pool 2>&1 | grep -i "block\|template"
 ```
 
+### Desktop Agent GPU revenue verify (Session 14)
+```bash
+# 1) Start desktop-agent with gpu=true and gpuRevenue=true
+
+# 2) Verify GPU revenue process started (pool-assigned algo)
+grep -n "GPU Revenue process started" "$HOME/Library/Application Support/zion-desktop-agent/miner.log"
+
+# 3) If revenue jobs are incompatible, verify auto-disable trigger
+grep -n "GPU Revenue auto-disabled" "$HOME/Library/Application Support/zion-desktop-agent/miner.log"
+grep -n "gpu-revenue-auto-disabled" "$HOME/Library/Application Support/zion-desktop-agent/desktop_agent.log"
+
+# 4) Confirm main miner keeps running after auto-disable
+grep -n "\[STATUS\] xmrig-style" "$HOME/Library/Application Support/zion-desktop-agent/miner.log" | tail -20
+```
+
 ### Check disk usage
 ```bash
 docker system df
