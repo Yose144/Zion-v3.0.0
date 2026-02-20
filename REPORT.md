@@ -127,7 +127,14 @@
 47. ⚠️ **MoneroOcean IP ban** — opakované reconnecty z testování způsobily dočasný 10min ban; revenue miner dostával "Broken pipe"; pool internal xmrig neovlivněn
 48. ✅ **Exponential backoff v revenue_proxy** — `run_loop`: detekce IP banu → 10min pauza; ostatní chyby: 10s→20s→40s→80s→max 300s
 
-### Session 5 — Desktop Agent + GPU Mining fix (19. února 2026)
+### Session 13 — Desktop Agent Broken Pipe fix (20. února 2026)
+49. ✅ **Root cause: Per-IP limit** — Pool stratum server měl `max_connections_per_ip: 10`; desktop agent z IP `185.165.241.209` nahromadil 10 stuck sessions z předchozích reconnect pokusů → nové připojení bylo odmítnuto RST → miner hlásil `Broken pipe (os error 32)`, `hr=0.00 H/s`
+50. ✅ **Pool redeploy** — Nová image `zion-pool:2.9.6-testnet` (build `658f71b85bad`, backoff fix) nasazena na Helsinki; vyčistila stuck session counter → agent se okamžitě připojil
+51. ✅ **Per-IP limit 10→50** — `server_v2.rs`: 3 procesy × miner + retries potřebují dost prostoru; opraveno commit `219ab23`
+52. ✅ **Agent E2E ověřen** — `hr=643.10 kH/s`, `A/R=92/0 (100%)`, pool vidí login `zion1l6qc82s...` (desktop-agent) ✅
+53. ✅ **Exponential backoff v provozu** — Pool log: `XMR: Retrying in 600s (attempt #1)` — backoff správně detekoval IP ban a čeká 10 min
+
+
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
 22. ✅ **Helsinki pool Docker** — Opraven mount + restart kontejneru `zion-pool:2.9.6-testnet`
@@ -151,9 +158,11 @@
 - **verushash-native C sources**: Bez `csrc/` nelze plně testovat `zion-core` ani `verushash-native`
 - **L1/core LOC gap**: 14,500 LOC (src+tests) vs 35,000 tvrzených — ~58% chybí
 - **L3 adaptéry**: Všech 7 chain adaptérů jsou stuby (EVM, Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin)
-- **Revenue miner hr** — CPU revenue na Mac stále závisí na `seed_hash` z MoneroOcean; pokud pool nemá XMR job → fallback cosmic_harmony (ZION hashrate, ne XMR)
-- **MoneroOcean reconnect backoff** — ✅ OPRAVENO: exponential backoff + IP ban detekce (commit `15b8d85`); pool rebuild probíhá na serveru
+- ~~**Revenue miner hr**~~ — ✅ OPRAVENO (session 13): desktop agent nyní `643 kH/s`, pool login ✅
+- **Revenue shares — low difficulty** — Revenue miner posílá cosmic_harmony shares, pool nastavuje diff pro server-side miner (rychlejší) → revenu group dostává "low diff" rejecty (vardiff se časem přizpůsobí)
+- **MoneroOcean reconnect backoff** — ✅ OPRAVENO: exponential backoff + IP ban detekce; pool po redeployi čeká 600s (10min) na ban expiry ✅
 - **Main miner macOS Metal** — hlavní ZION miner stále bez `--gpu` (darwin guard) — GPU revenue process ale funguje Metal ✅
+- **Pool per-IP limit** — ✅ OPRAVENO: 10→50 conn/IP (commit `219ab23`), rebuild na serveru probíhá
 
 ---
 
