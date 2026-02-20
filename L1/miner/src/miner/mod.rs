@@ -886,14 +886,43 @@ impl UniversalMiner {
                             &blob_bytes, nonce, job.height,
                         );
                         let cpu_hex = hex::encode(&cpu_hash.data);
+                        let gpu_state0 = u32::from_le_bytes([
+                            hash[0], hash[1], hash[2], hash[3],
+                        ]);
                         let cpu_state0 = u32::from_le_bytes([
                             cpu_hash.data[0], cpu_hash.data[1],
                             cpu_hash.data[2], cpu_hash.data[3],
                         ]);
+                        // Parse target for comparison
+                        let target_val = u32::from_be_bytes([
+                            target_bytes[28], target_bytes[29],
+                            target_bytes[30], target_bytes[31],
+                        ]);
+                        let hash_match = result_hex == cpu_hex;
+                        let cpu_meets_target = cpu_state0 <= target_val;
+                        let nonce_u32 = nonce as u32;
+                        let nonce_overflow = nonce > u32::MAX as u64;
                         log::warn!(
-                            "🔬 GPU→CPU verify: nonce={} gpu_hash={} cpu_hash={} cpu_state0={:#010x} blob_len={} height={}",
-                            nonce, result_hex, cpu_hex, cpu_state0, blob_bytes.len(), job.height,
+                            "🔬 GPU→CPU VERIFY:\n  nonce_u64={} nonce_as_u32={} overflow={}\n  gpu_hash={}\n  cpu_hash={}\n  MATCH={}\n  gpu_state0={:#010x} cpu_state0={:#010x} target={:#010x}\n  cpu_meets_target={} blob_len={} height={}",
+                            nonce, nonce_u32, nonce_overflow,
+                            result_hex, cpu_hex, hash_match,
+                            gpu_state0, cpu_state0, target_val,
+                            cpu_meets_target, blob_bytes.len(), job.height,
                         );
+                        if !hash_match {
+                            // Log first bytes of blob for debugging
+                            let blob_preview = hex::encode(&blob_bytes[..blob_bytes.len().min(20)]);
+                            log::error!(
+                                "❌ GPU≠CPU HASH MISMATCH! blob_first20={} target_hex={}",
+                                blob_preview, job.target,
+                            );
+                        }
+                        if nonce_overflow {
+                            log::error!(
+                                "❌ NONCE OVERFLOW! GPU nonce {} > u32::MAX, submitted as {}",
+                                nonce, nonce_u32,
+                            );
+                        }
                     }
 
                     log::debug!(

@@ -30,6 +30,8 @@ pub struct OpenCLMiner {
     results_buf: Option<Buffer<u64>>,
     #[cfg(feature = "gpu")]
     result_count_buf: Option<Buffer<u32>>,
+    #[cfg(feature = "gpu")]
+    result_hash_buf: Option<Buffer<u8>>,
 }
 
 impl OpenCLMiner {
@@ -51,6 +53,7 @@ impl OpenCLMiner {
                 header_buf: None,
                 results_buf: None,
                 result_count_buf: None,
+                result_hash_buf: None,
             })
         }
 
@@ -87,11 +90,13 @@ impl GpuMiner for OpenCLMiner {
             let header_buf = pro_que.buffer_builder::<u8>().len(144).build()?;
             let results_buf = pro_que.buffer_builder::<u64>().len(2).build()?;
             let result_count_buf = pro_que.buffer_builder::<u32>().len(1).build()?;
+            let result_hash_buf = pro_que.buffer_builder::<u8>().len(32).build()?;
 
             self.pro_que = Some(pro_que);
             self.header_buf = Some(header_buf);
             self.results_buf = Some(results_buf);
             self.result_count_buf = Some(result_count_buf);
+            self.result_hash_buf = Some(result_hash_buf);
 
             Ok(())
         }
@@ -129,6 +134,10 @@ impl GpuMiner for OpenCLMiner {
                 .result_count_buf
                 .as_ref()
                 .ok_or_else(|| anyhow!("OpenCL result count buffer not initialized"))?;
+            let result_hash_buf = self
+                .result_hash_buf
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL result hash buffer not initialized"))?;
 
             if batch_size == 0 {
                 return Ok(None);
@@ -149,6 +158,8 @@ impl GpuMiner for OpenCLMiner {
             results_buf.write(&result_init[..]).enq()?;
             let count_init = [0u32];
             result_count_buf.write(&count_init[..]).enq()?;
+            let hash_init = [0u8; 32];
+            result_hash_buf.write(&hash_init[..]).enq()?;
 
             // Upload header — cap at 80 bytes (CPU/pool only uses first 80).
             // Pad to 144 bytes to match buffer allocation size.
@@ -175,6 +186,7 @@ impl GpuMiner for OpenCLMiner {
                 .arg(target_u32)
                 .arg(results_buf)
                 .arg(result_count_buf)
+                .arg(result_hash_buf)
                 .global_work_size(global_work_size)
                 .local_work_size(local_work_size)
                 .build()?;
@@ -194,7 +206,9 @@ impl GpuMiner for OpenCLMiner {
                 let mut res = [0u64; 2];
                 results_buf.read(&mut res[..]).enq()?;
                 let nonce = res[1];
-                return Ok(Some((nonce, [0u8; 32])));
+                let mut gpu_hash = [0u8; 32];
+                result_hash_buf.read(&mut gpu_hash[..]).enq()?;
+                return Ok(Some((nonce, gpu_hash)));
             }
 
             Ok(None)
