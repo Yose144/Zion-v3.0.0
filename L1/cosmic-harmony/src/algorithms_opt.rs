@@ -578,4 +578,504 @@ mod tests {
         assert!(meets_difficulty(&hash, &easy_target));
         assert!(!meets_difficulty(&hash, &hard_target));
     }
+
+    // ============================================================================
+    // GPU Kernel Algorithm Reimplementation (for comparison testing)
+    // ============================================================================
+
+    const KECCAK_RC: [u64; 24] = [
+        0x0000000000000001, 0x0000000000008082, 0x800000000000808A,
+        0x8000000080008000, 0x000000000000808B, 0x0000000080000001,
+        0x8000000080008081, 0x8000000000008009, 0x000000000000008A,
+        0x0000000000000088, 0x0000000080008009, 0x000000008000000A,
+        0x000000008000808B, 0x800000000000008B, 0x8000000000008089,
+        0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
+        0x000000000000800A, 0x800000008000000A, 0x8000000080008081,
+        0x8000000000000001, 0x8000000080008008, 0x0000000000000000,
+    ];
+    const KECCAK_PILN: [usize; 24] = [
+        10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4,
+        15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
+    ];
+    const KECCAK_ROTC: [u32; 24] = [
+        1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14,
+        27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
+    ];
+
+    fn gpu_keccak_f1600(state: &mut [u64; 25]) {
+        let mut bc = [0u64; 5];
+        for round in 0..24 {
+            // Theta
+            for i in 0..5 {
+                bc[i] = state[i] ^ state[i+5] ^ state[i+10] ^ state[i+15] ^ state[i+20];
+            }
+            for i in 0..5 {
+                let t = bc[(i+4) % 5] ^ bc[(i+1) % 5].rotate_left(1);
+                for j in (0..25).step_by(5) {
+                    state[j+i] ^= t;
+                }
+            }
+            // Rho + Pi
+            let mut t = state[1];
+            for i in 0..24 {
+                let j = KECCAK_PILN[i];
+                bc[0] = state[j];
+                state[j] = t.rotate_left(KECCAK_ROTC[i]);
+                t = bc[0];
+            }
+            // Chi
+            for j in (0..25).step_by(5) {
+                for i in 0..5 { bc[i] = state[j+i]; }
+                for i in 0..5 {
+                    state[j+i] ^= (!bc[(i+1) % 5]) & bc[(i+2) % 5];
+                }
+            }
+            // Iota
+            state[0] ^= KECCAK_RC[round];
+        }
+    }
+
+    /// Reference Keccak-f[1600] from FIPS 202 spec (2D representation)
+    fn reference_keccak_f1600(state: &mut [u64; 25]) {
+        // Rotation offsets: rot_offsets[y][x] = r[x,y]
+        const ROT: [[u32; 5]; 5] = [
+            [ 0,  1, 62, 28, 27],  // y=0
+            [36, 44,  6, 55, 20],  // y=1
+            [ 3, 10, 43, 25, 39],  // y=2
+            [41, 45, 15, 21,  8],  // y=3
+            [18,  2, 61, 56, 14],  // y=4
+        ];
+        for round in 0..24 {
+            // θ (Theta)
+            let mut c = [0u64; 5];
+            for x in 0..5 {
+                c[x] = state[x] ^ state[x+5] ^ state[x+10] ^ state[x+15] ^ state[x+20];
+            }
+            let mut d = [0u64; 5];
+            for x in 0..5 {
+                d[x] = c[(x + 4) % 5] ^ c[(x + 1) % 5].rotate_left(1);
+            }
+            for y in 0..5 {
+                for x in 0..5 {
+                    state[x + 5*y] ^= d[x];
+                }
+            }
+            // ρ (Rho) + π (Pi) combined
+            let mut b = [0u64; 25];
+            for y in 0..5 {
+                for x in 0..5 {
+                    let rotated = state[x + 5*y].rotate_left(ROT[y][x]);
+                    let new_x = y;
+                    let new_y = (2 * x + 3 * y) % 5;
+                    b[new_x + 5*new_y] = rotated;
+                }
+            }
+            // χ (Chi)
+            for y in 0..5 {
+                for x in 0..5 {
+                    state[x + 5*y] = b[x + 5*y] ^ ((!b[(x+1)%5 + 5*y]) & b[(x+2)%5 + 5*y]);
+                }
+            }
+            // ι (Iota)
+            state[0] ^= KECCAK_RC[round];
+        }
+    }
+
+    /// GPU-style Keccak-256 (pad byte 0x01, rate=136)
+    fn gpu_keccak256(input: &[u8]) -> [u8; 32] {
+        let mut state = [0u64; 25];
+        let full_words = input.len() / 8;
+        for i in 0..full_words {
+            let mut w = 0u64;
+            for b in 0..8 {
+                w |= (input[i*8+b] as u64) << (b*8);
+            }
+            state[i] ^= w;
+        }
+        let rem = input.len() % 8;
+        let pw = full_words;
+        let mut pad = 0u64;
+        for b in 0..rem {
+            pad |= (input[pw*8+b] as u64) << (b*8);
+        }
+        pad |= 0x01u64 << (rem * 8);
+        state[pw] ^= pad;
+        state[16] ^= 0x8000000000000000u64;
+        gpu_keccak_f1600(&mut state);
+        let mut output = [0u8; 32];
+        for i in 0..4 {
+            for b in 0..8 {
+                output[i*8+b] = (state[i] >> (b*8)) as u8;
+            }
+        }
+        output
+    }
+
+    /// GPU-style SHA3-512 (pad byte 0x06, rate=72) for 32-byte input
+    fn gpu_sha3_512_words(input: &[u8; 32]) -> [u64; 8] {
+        let mut state = [0u64; 25];
+        for i in 0..4 {
+            let mut w = 0u64;
+            for b in 0..8 {
+                w |= (input[i*8+b] as u64) << (b*8);
+            }
+            state[i] ^= w;
+        }
+        state[4] ^= 0x06;
+        state[8] ^= 0x8000000000000000u64;
+        gpu_keccak_f1600(&mut state);
+        let mut out = [0u64; 8];
+        for i in 0..8 { out[i] = state[i]; }
+        out
+    }
+
+    /// GPU-style GoldenMatrix
+    fn gpu_golden_matrix(sha3_words: &[u64; 8]) -> [u64; 8] {
+        let mut result = [0u64; 8];
+        for i in 0..8 {
+            let mut sum = 0u64;
+            for j in 0..8 {
+                let byte_val = (sha3_words[i] >> (j * 8)) & 0xFF;
+                sum += byte_val * PHI_POWERS_FP[i + j];
+            }
+            result[i] = sum >> 32;
+        }
+        result
+    }
+
+    /// GPU-style CosmicFusion
+    fn gpu_cosmic_fusion(gm_words: &[u64; 8]) -> [u8; 32] {
+        // Convert golden-matrix u64 words -> 64 bytes (LE)
+        let mut state = [0u8; 64];
+        for i in 0..8 {
+            for b in 0..8 {
+                state[i*8+b] = (gm_words[i] >> (b*8)) as u8;
+            }
+        }
+        // 4 fusion rounds
+        for round in 0..4u8 {
+            let mut kin = [0u8; 33];
+            kin[..32].copy_from_slice(&state[..32]);
+            kin[32] = round;
+            let intermediate = gpu_keccak256(&kin);
+            for i in 0..32 {
+                state[i] = intermediate[i] ^ COSMIC_XOR_MASK[i];
+            }
+        }
+        // Final: SHA3-512(state[0..32]) -> first 32 bytes
+        gpu_sha3_512_trunc32(&state[..32])
+    }
+
+    /// GPU-style SHA3-512 truncated to 32 bytes
+    fn gpu_sha3_512_trunc32(input: &[u8]) -> [u8; 32] {
+        let mut state = [0u64; 25];
+        for i in 0..4 {
+            let mut w = 0u64;
+            for b in 0..8 {
+                w |= (input[i*8+b] as u64) << (b*8);
+            }
+            state[i] ^= w;
+        }
+        state[4] ^= 0x06;
+        state[8] ^= 0x8000000000000000u64;
+        gpu_keccak_f1600(&mut state);
+        let mut output = [0u8; 32];
+        for i in 0..4 {
+            for b in 0..8 {
+                output[i*8+b] = (state[i] >> (b*8)) as u8;
+            }
+        }
+        output
+    }
+
+    /// Full GPU pipeline reimplemented in Rust
+    fn gpu_cosmic_harmony_v3_legacy(block_header: &[u8], nonce: u64) -> [u8; 32] {
+        let mut input = [0u8; 88];
+        let copy_len = block_header.len().min(80);
+        input[..copy_len].copy_from_slice(&block_header[..copy_len]);
+        input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+        let step1 = gpu_keccak256(&input);
+        let step2 = gpu_sha3_512_words(&step1);
+        let step3 = gpu_golden_matrix(&step2);
+        gpu_cosmic_fusion(&step3)
+    }
+
+    #[test]
+    fn test_gpu_vs_cpu_keccak256() {
+        // Known Keccak-256 (pad=0x01) test vectors (Ethereum keccak256)
+        let known_vectors: Vec<(&[u8], &str)> = vec![
+            // Empty string
+            (b"", "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"),
+            // "abc"  -- well-known test vector
+            (b"abc", "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45"),
+        ];
+
+        for (input, expected_hex) in &known_vectors {
+            let cpu_hash = keccak256_opt(input);
+            let gpu_hash = gpu_keccak256(input);
+            println!(
+                "Input: {:?} ({} bytes)\n  expected: {}\n  cpu:      {}\n  gpu:      {}",
+                String::from_utf8_lossy(input),
+                input.len(),
+                expected_hex,
+                hex::encode(cpu_hash.data),
+                hex::encode(gpu_hash),
+            );
+            // Check CPU matches known vector
+            assert_eq!(
+                hex::encode(cpu_hash.data), *expected_hex,
+                "CPU Keccak-256 does not match known vector for {:?}",
+                String::from_utf8_lossy(input),
+            );
+        }
+
+        // Debug: compare gpu_keccak_f1600 vs reference_keccak_f1600 round by round
+        {
+            println!("\n--- Comparing gpu_keccak_f1600 vs reference_keccak_f1600 ---");
+            let mut gpu_state = [0u64; 25];
+            let mut ref_state = [0u64; 25];
+            gpu_state[0] = 0x01;
+            gpu_state[16] = 0x8000000000000000;
+            ref_state[0] = 0x01;
+            ref_state[16] = 0x8000000000000000;
+
+            // Run both ONE round at a time and compare
+            for round in 0..24 {
+                // GPU: one round
+                {
+                    let state = &mut gpu_state;
+                    let mut bc = [0u64; 5];
+                    for i in 0..5 {
+                        bc[i] = state[i] ^ state[i+5] ^ state[i+10] ^ state[i+15] ^ state[i+20];
+                    }
+                    for i in 0..5 {
+                        let t = bc[(i+4) % 5] ^ bc[(i+1) % 5].rotate_left(1);
+                        for j in (0..25).step_by(5) { state[j+i] ^= t; }
+                    }
+                    let mut t = state[1];
+                    for i in 0..24 {
+                        let j = KECCAK_PILN[i];
+                        bc[0] = state[j];
+                        state[j] = t.rotate_left(KECCAK_ROTC[i]);
+                        t = bc[0];
+                    }
+                    for j in (0..25).step_by(5) {
+                        for i in 0..5 { bc[i] = state[j+i]; }
+                        for i in 0..5 { state[j+i] ^= (!bc[(i+1)%5]) & bc[(i+2)%5]; }
+                    }
+                    state[0] ^= KECCAK_RC[round];
+                }
+                // Reference: one round
+                {
+                    const ROT: [[u32; 5]; 5] = [
+                        [ 0,  1, 62, 28, 27],
+                        [36, 44,  6, 55, 20],
+                        [ 3, 10, 43, 25, 39],
+                        [41, 45, 15, 21,  8],
+                        [18,  2, 61, 56, 14],
+                    ];
+                    let state = &mut ref_state;
+                    let mut c = [0u64; 5];
+                    for x in 0..5 { c[x] = state[x]^state[x+5]^state[x+10]^state[x+15]^state[x+20]; }
+                    let mut d = [0u64; 5];
+                    for x in 0..5 { d[x] = c[(x+4)%5] ^ c[(x+1)%5].rotate_left(1); }
+                    for y in 0..5 { for x in 0..5 { state[x+5*y] ^= d[x]; } }
+                    let mut b = [0u64; 25];
+                    for y in 0..5 {
+                        for x in 0..5 {
+                            let rotated = state[x+5*y].rotate_left(ROT[y][x]);
+                            let nx = y; let ny = (2*x + 3*y) % 5;
+                            b[nx + 5*ny] = rotated;
+                        }
+                    }
+                    for y in 0..5 {
+                        for x in 0..5 {
+                            state[x+5*y] = b[x+5*y] ^ ((!b[(x+1)%5+5*y]) & b[(x+2)%5+5*y]);
+                        }
+                    }
+                    state[0] ^= KECCAK_RC[round];
+                }
+                // Compare
+                if gpu_state != ref_state {
+                    println!("  DIVERGENCE at round {}!", round);
+                    for i in 0..25 {
+                        if gpu_state[i] != ref_state[i] {
+                            println!("    state[{:2}]: gpu={:016x} ref={:016x}", i, gpu_state[i], ref_state[i]);
+                        }
+                    }
+                    panic!("f1600 diverges at round {}", round);
+                }
+            }
+            println!("  All 24 rounds match! ✅");
+
+            // Now verify output
+            let mut out = [0u8; 32];
+            for i in 0..4 {
+                for b in 0..8 { out[i*8+b] = (ref_state[i] >> (b*8)) as u8; }
+            }
+            let expected = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
+            println!("  ref_hash(empty) = {}", hex::encode(out));
+            assert_eq!(hex::encode(out), expected, "Reference f1600 should produce correct Keccak-256 of empty string");
+        }
+
+        // Test with various input sizes
+        for input in &[
+            b"hello world".to_vec(),
+            vec![0u8; 88],
+            vec![0xAB; 33],
+        ] {
+            let cpu_hash = keccak256_opt(input);
+            let gpu_hash = gpu_keccak256(input);
+            println!(
+                "Input {} bytes: cpu={} gpu={} match={}",
+                input.len(),
+                hex::encode(cpu_hash.data),
+                hex::encode(gpu_hash),
+                cpu_hash.data == gpu_hash,
+            );
+        }
+    }
+
+    #[test]
+    fn test_gpu_vs_cpu_sha3_512() {
+        // Test SHA3-512 with 32-byte input
+        let input = [0x42u8; 32];
+        let cpu_hash = sha3_512_opt(&input);
+        let gpu_words = gpu_sha3_512_words(&input);
+        // Convert GPU words to bytes
+        let mut gpu_bytes = [0u8; 64];
+        for i in 0..8 {
+            for b in 0..8 {
+                gpu_bytes[i*8+b] = (gpu_words[i] >> (b*8)) as u8;
+            }
+        }
+        assert_eq!(
+            cpu_hash.data, gpu_bytes,
+            "SHA3-512 mismatch:\n  cpu={}\n  gpu={}",
+            hex::encode(cpu_hash.data),
+            hex::encode(gpu_bytes),
+        );
+        println!("✅ SHA3-512: GPU matches CPU");
+    }
+
+    #[test]
+    fn test_gpu_vs_cpu_golden_matrix() {
+        // Set up a known SHA3-512 output
+        let keccak_input = [0x42u8; 32];
+        let sha3_out = sha3_512_opt(&keccak_input);
+
+        let cpu_gm = golden_matrix_opt(&sha3_out.data);
+
+        // Convert SHA3 output to u64 words (same as GPU)
+        let mut sha3_words = [0u64; 8];
+        for i in 0..8 {
+            for b in 0..8 {
+                sha3_words[i] |= (sha3_out.data[i*8+b] as u64) << (b*8);
+            }
+        }
+        let gpu_gm = gpu_golden_matrix(&sha3_words);
+
+        // Compare: CPU uses u128 accumulator, GPU uses u64. Both should give same result.
+        let mut gpu_gm_bytes = [0u8; 64];
+        for i in 0..8 {
+            for b in 0..8 {
+                gpu_gm_bytes[i*8+b] = (gpu_gm[i] >> (b*8)) as u8;
+            }
+        }
+        assert_eq!(
+            cpu_gm.data, gpu_gm_bytes,
+            "GoldenMatrix mismatch:\n  cpu={}\n  gpu={}",
+            hex::encode(cpu_gm.data),
+            hex::encode(gpu_gm_bytes),
+        );
+        println!("✅ GoldenMatrix: GPU matches CPU");
+    }
+
+    #[test]
+    fn test_gpu_vs_cpu_full_pipeline() {
+        let header = b"ZION block header v2.9.5";
+        let nonce = 12345u64;
+
+        let cpu_hash = cosmic_harmony_v3_legacy(header, nonce);
+        let gpu_hash = gpu_cosmic_harmony_v3_legacy(header, nonce);
+
+        assert_eq!(
+            cpu_hash.data, gpu_hash,
+            "Full pipeline mismatch:\n  cpu={}\n  gpu={}",
+            hex::encode(cpu_hash.data),
+            hex::encode(gpu_hash),
+        );
+        println!("✅ Full pipeline: GPU matches CPU");
+    }
+
+    #[test]
+    fn test_gpu_vs_cpu_with_real_data() {
+        // Real blob from miner logs (first 20 bytes: 01000000ee020000000000003365303130303030)
+        // Full blob is 165 bytes, but we only use first 80 for CHv3
+        let blob_hex = "01000000ee020000000000003365303130303030";
+        let blob_bytes = hex::decode(blob_hex).unwrap();
+        let nonce = 196001088u64;
+
+        let cpu_hash = cosmic_harmony_v3_with_height(&blob_bytes, nonce, 750);
+        let gpu_hash = gpu_cosmic_harmony_v3_legacy(&blob_bytes, nonce);
+
+        // Also test with intermediates
+        let (cpu_final, intermediates) =
+            cosmic_harmony_v3_with_height_intermediates(&blob_bytes, nonce, 750);
+
+        println!("Real data test (nonce={}, blob_len={}, height=750):", nonce, blob_bytes.len());
+        println!("  CPU final hash: {}", hex::encode(cpu_final.data));
+        println!("  GPU final hash: {}", hex::encode(gpu_hash));
+        println!("  CPU Keccak256:  {}", hex::encode(intermediates.keccak256.data));
+        println!("  CPU SHA3-512:   {}", hex::encode(intermediates.sha3_512.data));
+        println!("  CPU GoldenMat:  {}", hex::encode(intermediates.golden_matrix.data));
+        println!("  memory_hard:    {}", intermediates.memory_hard_enabled);
+
+        // Step-by-step GPU comparison
+        let mut input = [0u8; 88];
+        let copy_len = blob_bytes.len().min(80);
+        input[..copy_len].copy_from_slice(&blob_bytes[..copy_len]);
+        input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+        let gpu_step1 = gpu_keccak256(&input);
+        println!("  GPU Keccak256:  {}", hex::encode(gpu_step1));
+        assert_eq!(
+            intermediates.keccak256.data, gpu_step1,
+            "Step 1 (Keccak-256) mismatch!"
+        );
+
+        let gpu_step2 = gpu_sha3_512_words(&gpu_step1);
+        let mut gpu_step2_bytes = [0u8; 64];
+        for i in 0..8 {
+            for b in 0..8 {
+                gpu_step2_bytes[i*8+b] = (gpu_step2[i] >> (b*8)) as u8;
+            }
+        }
+        println!("  GPU SHA3-512:   {}", hex::encode(gpu_step2_bytes));
+        assert_eq!(
+            intermediates.sha3_512.data, gpu_step2_bytes,
+            "Step 2 (SHA3-512) mismatch!"
+        );
+
+        let gpu_step3 = gpu_golden_matrix(&gpu_step2);
+        let mut gpu_step3_bytes = [0u8; 64];
+        for i in 0..8 {
+            for b in 0..8 {
+                gpu_step3_bytes[i*8+b] = (gpu_step3[i] >> (b*8)) as u8;
+            }
+        }
+        println!("  GPU GoldenMat:  {}", hex::encode(gpu_step3_bytes));
+        assert_eq!(
+            intermediates.golden_matrix.data, gpu_step3_bytes,
+            "Step 3 (GoldenMatrix) mismatch!"
+        );
+
+        let gpu_step4 = gpu_cosmic_fusion(&gpu_step3);
+        println!("  GPU Fusion:     {}", hex::encode(gpu_step4));
+        assert_eq!(
+            cpu_final.data, gpu_step4,
+            "Step 4 (CosmicFusion) mismatch!"
+        );
+    }
 }
