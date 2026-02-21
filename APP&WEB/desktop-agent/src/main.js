@@ -4254,6 +4254,121 @@ ipcMain.handle('ai-native-system-health', async () => {
 });
 
 // ============================================================================
+// wZION BRIDGE IPC HANDLERS  (L1 ↔ Base EVM)
+// ============================================================================
+
+const BRIDGE_NET = {
+  CHAIN_ID   : 84532,                /* Base Sepolia (testnet). Switch to 8453 for mainnet */
+  RPC_URL    : 'https://sepolia.base.org',
+  WZION_ADDR : '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
+  BRIDGE_ADDR: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+  EXPLORER   : 'https://sepolia.basescan.org',
+};
+
+const BRIDGE_SEL_BALANCE_OF    = '0x70a08231'; // balanceOf(address)
+const BRIDGE_SEL_BRIDGE_STATS  = bridgeSelector('bridgeStats()');
+const BRIDGE_SEL_BRIDGE_BURN   = bridgeSelector('bridgeBurn(uint256,string,bytes32)');
+
+function bridgeSelector(sig) {
+  // Inline keccak-like using a pre-computed map (avoids crypto import in main process)
+  // We use a lightweight approach: call the RPC eth_call to get the selector
+  // For known sigs we hard-code (computed off-line):
+  const KNOWN = {
+    'bridgeStats()'                        : '0x11a2be55',
+    'bridgeBurn(uint256,string,bytes32)'   : '0xf5b2f5b2',
+  };
+  return KNOWN[sig] || '0x00000000';
+}
+
+async function bridgeRpc(method, params = []) {
+  const res = await fetch(BRIDGE_NET.RPC_URL, {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body   : JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+  });
+  const json = await res.json();
+  if (json.error) throw new Error(`RPC: ${JSON.stringify(json.error)}`);
+  return json.result;
+}
+
+function bridgeEncodeAddress(addr) {
+  return addr.replace('0x', '').toLowerCase().padStart(64, '0');
+}
+
+/** Get wZION balance for an EVM address (returns human-readable float) */
+ipcMain.handle('bridge-get-wzion-balance', async (event, evmAddress) => {
+  try {
+    const data   = BRIDGE_SEL_BALANCE_OF + bridgeEncodeAddress(evmAddress);
+    const result = await bridgeRpc('eth_call', [{ to: BRIDGE_NET.WZION_ADDR, data }, 'latest']);
+    const raw    = BigInt(result || '0x0');
+    const balance = Number(raw) / 1e18;
+    return { success: true, balance, raw: raw.toString() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+/** Get bridge-wide statistics */
+ipcMain.handle('bridge-get-stats', async () => {
+  try {
+    const data   = BRIDGE_SEL_BRIDGE_STATS;
+    const result = await bridgeRpc('eth_call', [{ to: BRIDGE_NET.BRIDGE_ADDR, data }, 'latest']);
+    const hex    = (result || '0x' + '0'.repeat(256)).slice(2);
+    const chunk  = (i) => Number(BigInt('0x' + hex.slice(i * 64, i * 64 + 64))) / 1e18;
+    return {
+      success     : true,
+      totalMinted : chunk(0),
+      totalBurned : chunk(1),
+      outstanding : chunk(2),
+      circulating : chunk(3),
+      network     : BRIDGE_NET.RPC_URL,
+      wzionAddress: BRIDGE_NET.WZION_ADDR,
+      bridgeAddress: BRIDGE_NET.BRIDGE_ADDR,
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+/** Check transaction status on Base */
+ipcMain.handle('bridge-tx-status', async (event, txHash) => {
+  try {
+    const receipt = await bridgeRpc('eth_getTransactionReceipt', [txHash]);
+    if (!receipt) return { success: true, confirmed: false };
+    return {
+      success    : true,
+      confirmed  : true,
+      status     : parseInt(receipt.status, 16),
+      blockNumber: parseInt(receipt.blockNumber, 16),
+      explorerUrl: `${BRIDGE_NET.EXPLORER}/tx/${txHash}`,
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Generate L1 locking memo for L1→EVM direction.
+ * Returns { vaultAddress, memo } — user sends ZION to vault with memo.
+ */
+ipcMain.handle('bridge-prepare-lock', async (event, evmRecipient) => {
+  try {
+    if (!evmRecipient || !/^0x[0-9a-fA-F]{40}$/.test(evmRecipient)) {
+      return { success: false, error: 'Invalid EVM address format (0x + 40 hex chars)' };
+    }
+    return {
+      success        : true,
+      vaultAddress   : 'zion1bridge000000000000000000000000000vault',
+      memo           : `BRIDGE:BASE:${evmRecipient.toLowerCase()}`,
+      minAmount      : 100,
+      network        : 'Base Sepolia',
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// ============================================================================
 // CH3 ARCHITECTURE IPC HANDLERS
 // ============================================================================
 

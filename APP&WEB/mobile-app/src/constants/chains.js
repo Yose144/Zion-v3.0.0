@@ -1,7 +1,11 @@
 // Minimal chain registry for multi-chain payout addresses (watch-only for non-ZION)
+// WZION = wrapped ZION ERC-20 on Base network (L2 bridge)
 
 export const CHAIN_IDS = {
   ZION: 'ZION',
+  WZION: 'WZION',        // wZION ERC-20 on Base
+  BASE: 'BASE',          // Base network (ETH L2 by Coinbase)
+  BASE_SEPOLIA: 'BASE_SEPOLIA', // testnet
   BTC: 'BTC',
   ETH: 'ETH',
   SOL: 'SOL',
@@ -22,6 +26,26 @@ export const CHAINS = [
     name: 'ZION TerraNova',
     algo: 'CosmicHarmony',
     addressHint: 'zion1... (44 chars)',
+    isL1: true,
+  },
+  {
+    id: CHAIN_IDS.WZION,
+    symbol: 'wZION',
+    name: 'Wrapped ZION (Base)',
+    algo: 'ERC-20',
+    addressHint: '0x... (EVM address)',
+    isEvm: true,
+    evmChainId: 8453, // Base mainnet
+  },
+  {
+    id: CHAIN_IDS.BASE_SEPOLIA,
+    symbol: 'wZION',
+    name: 'Wrapped ZION (Base Sepolia)',
+    algo: 'ERC-20',
+    addressHint: '0x... (EVM address)',
+    isEvm: true,
+    evmChainId: 84532,
+    isTestnet: true,
   },
   {
     id: CHAIN_IDS.BTC,
