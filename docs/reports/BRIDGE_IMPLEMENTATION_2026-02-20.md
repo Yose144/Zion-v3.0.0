@@ -3,7 +3,14 @@
 > **Datum:** 20.–21. února 2026  
 > **Branch:** `main`  
 > **Repo:** [github.com/Yose144/2.9.6](https://github.com/Yose144/2.9.6)  
-> **Status: ✅ IMPLEMENTACE + TESTY KOMPLETNÍ — čeká na deploy testnet**
+> **Status: ✅ NASAZENO NA BASE SEPOLIA TESTNET — LIVE**
+
+**Nasazené adresy (Base Sepolia):**
+
+| Kontrakt | Adresa | Explorer |
+|----------|--------|----------|
+| **wZION (ERC-20)** | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | [Basescan](https://sepolia.basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6) |
+| **ZIONBridge** | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | [Basescan](https://sepolia.basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721) |
 
 ---
 
@@ -230,13 +237,13 @@ npx hardhat verify --network base-sepolia <ADDRESS>
 
 ## 📌 Next Steps
 
-| Priorita | Úkol | Co potřeba |
-|----------|------|-----------|
-| 🔴 P0 | Deploy na Base Sepolia testnet | ETH z faucetu (https://www.alchemy.com/faucets/base-sepolia) |
-| 🔴 P0 | Aktualizovat `config/bridge-testnet.toml` s adresami | Po deployi |
+| Priorita | Úkol | Stav |
+|----------|------|------|
+| ✅ DONE | Deploy na Base Sepolia testnet | wZION: `0x0c493763...`, ZIONBridge: `0xa5a09b2C...` |
+| ✅ DONE | Aktualizovat `config/bridge-testnet.toml` s adresami | Hotovo |
 | 🟡 P1 | Spustit Rust relay na Helsinki serveru | `cargo build -p zion-bridge --release` |
-| 🟡 P1 | Manuální E2E test — lock ZION → zkontrolovat wZION mint | Po deployi + relay spuštění |
-| 🟡 P1 | Přidat Liquidity Pool na Uniswap v3 (Base Sepolia) | wZION adresa |
+| 🟡 P1 | Manuální E2E test — lock ZION → zkontrolovat wZION mint | Po relay spuštění |
+| 🟡 P1 | Přidat Liquidity Pool na Uniswap v3 (Base Sepolia) | wZION adresa k dispozici |
 | 🟢 P2 | Contract verifikace na Basescan | Basescan API key |
 | 🟢 P2 | Nasazení na Arbitrum Sepolia (záložní chain) | Po Base Sepolia testu |
 | 🟢 P2 | Mainnet deploy (Base/Arbitrum) | Audit + reálné ETH |
@@ -283,4 +290,4 @@ config/
 
 ## ✅ Výsledek
 
-> **wZION Bridge je kódově kompletní a plně otestován.** Solidity kontrakty prošly **96/96 testem** (Session 15 přidala 21 testů: EIP-2612 Permit, supply cap, role management, L1 addr edge cases, multi-user flow). Rust relay má plnou implementaci L1 watcheru, EVM watcheru, relayeru, multisig validátoru a SQLite persistence — **16/16 Rust testů passing**. Celkem **112 testů** (96 Hardhat + 16 Rust). **Deploy na testnet čeká pouze na Base Sepolia ETH z faucetu.**
+> **wZION Bridge je živý na Base Sepolia testnet.** Solidity kontrakty nasazeny 21. 2. 2026 a prošly **96/96 testem**. Rust relay má plnou implementaci — **16/16 Rust testů passing**. Příští krok: spustit relay na Helsinki + manuální E2E test.
