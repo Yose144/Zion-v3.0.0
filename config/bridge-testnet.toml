@@ -37,10 +37,10 @@ name                  = "Base Sepolia (TestNet)"
 evm_chain_id          = 84532
 rpc_url               = "wss://base-sepolia.g.alchemy.com/v2/YOUR_KEY"
 rpc_url_backup        = "wss://sepolia.base.org"
-wzion_address          = "0x0000000000000000000000000000000000000000"  # TBD after deploy
-bridge_contract_address = "0x0000000000000000000000000000000000000000"  # TBD after deploy
+wzion_address          = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"  # Base Sepolia deploy 21.2.2026
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"  # Base Sepolia deploy 21.2.2026
 finality_blocks       = 12
-enabled               = false   # Enable after contract deployment
+enabled               = true   # LIVE on Base Sepolia testnet
 gas_strategy          = "eip1559"
 max_gas_gwei          = 5
 
@@ -75,14 +75,12 @@ max_gas_gwei          = 10
 [validator]
 private_key_file   = "keys/validator.key"
 validator_id       = "validator-1"
-threshold          = 3          # 3-of-5 multisig
-total_validators   = 5
+threshold          = 2          # 2-of-2 testnet (min allowed by contract)
+total_validators   = 2
 validator_addresses = [
-    # "0xVALIDATOR1_ADDRESS",
-    # "0xVALIDATOR2_ADDRESS",
-    # "0xVALIDATOR3_ADDRESS",
-    # "0xVALIDATOR4_ADDRESS",
-    # "0xVALIDATOR5_ADDRESS",
+    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",  # validator-1 (deployer)
+    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",  # validator-2 (testnet: same address)
+    # Mainnet: 5 independent validator addresses
 ]
 
 # ── Security ────────────────────────────────────────────────
