@@ -24,9 +24,9 @@ Celkem bylo implementováno **4,701 LOC** rozdělených do 2 hlavních komponent
 |-----------|---------|-----|-------|
 | **Solidity kontrakty** | 2 | 688 | — |
 | **Hardhat testy** | 3 | ~1,600 | **96 passing ✅** |
-| **Rust bridge relay** | 9 | 2,766 | 71 (z předchozí session) |
+| **Rust bridge relay** | 9 | 2,766 | **16 passing ✅** |
 | **Config + docs** | 3 | — | — |
-| **CELKEM** | **17** | **~5,054** | **167 testů** |
+| **CELKEM** | **17** | **~5,054** | **112 testů** |
 
 ---
 
@@ -150,7 +150,7 @@ Celkem bylo implementováno **4,701 LOC** rozdělených do 2 hlavních komponent
 | Soubor | Testy | Oblast |
 |--------|-------|--------|
 | `test/wZION.test.ts` | **48** | ERC-20 deployment, mint, burn, pause, stats, **supply cap, decimal invariant, L1 addr edge cases, EIP-2612 Permit, role management, multi-user flow** |
-| `test/ZIONBridge.test.ts` | 34 | Multisig, timelock, daily limit, admin ops |
+| `test/ZIONBridge.test.ts` | **34** | Multisig, timelock, daily limit, admin ops |
 | `test/E2E.test.ts` | 14 | Full lifecycle — lock→mint, burn→release, round-trip, pause |
 
 **Výsledek testů (21. 2. 2026):**
@@ -283,4 +283,4 @@ config/
 
 ## ✅ Výsledek
 
-> **wZION Bridge je kódově kompletní a plně otestován.** Solidity kontrakty prošly **96/96 testem** (Session 15 přidala 21 testů: EIP-2612 Permit, supply cap, role management, L1 addr edge cases, multi-user flow). Rust relay má plnou implementaci L1 watcheru, EVM watcheru, relayeru, multisig validátoru a SQLite persistence. **Deploy na testnet čeká pouze na Base Sepolia ETH z faucetu.**
+> **wZION Bridge je kódově kompletní a plně otestován.** Solidity kontrakty prošly **96/96 testem** (Session 15 přidala 21 testů: EIP-2612 Permit, supply cap, role management, L1 addr edge cases, multi-user flow). Rust relay má plnou implementaci L1 watcheru, EVM watcheru, relayeru, multisig validátoru a SQLite persistence — **16/16 Rust testů passing**. Celkem **112 testů** (96 Hardhat + 16 Rust). **Deploy na testnet čeká pouze na Base Sepolia ETH z faucetu.**

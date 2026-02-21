@@ -2,8 +2,12 @@ import { ethers } from "hardhat";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
+  const network = await ethers.provider.getNetwork();
+  const isLocal = network.chainId === 31337n;
+
   console.log("Deploying wZION + ZIONBridge with account:", deployer.address);
   console.log("Balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)));
+  console.log("Network:", network.name, `(${network.chainId})`);
 
   // ── Configuration ──────────────────────────────────
   // For testnet: deployer is admin + guardian
@@ -12,15 +16,23 @@ async function main() {
   const guardian = deployer.address;
 
   // Validator addresses (bridge relay operators)
-  // Testnet: 2 validators (deployer + second signer) — contract requires threshold >= 2
+  // Testnet: 2 validators (threshold must be >= 2, contract requirement)
+  //   - Validator 1 = deployer (primary relay)
+  //   - Validator 2 = VALIDATOR2_ADDRESS env var OR second hardhat account (local only)
   // Mainnet: 5 independent validators required
-  const signers = await ethers.getSigners();
-  const validator2 = signers[1] ?? deployer; // second hardhat account (or deployer on real net)
-  const validators = [
-    deployer.address,
-    validator2.address,
-    // Add more validator addresses for production
-  ];
+  let validator2Addr: string;
+  if (isLocal) {
+    const signers = await ethers.getSigners();
+    validator2Addr = signers[1].address;
+  } else {
+    validator2Addr = process.env.VALIDATOR2_ADDRESS ?? "";
+    if (!validator2Addr || !ethers.isAddress(validator2Addr)) {
+      console.error("❌ VALIDATOR2_ADDRESS not set or invalid. Run scripts/gen-wallets.ts first.");
+      process.exit(1);
+    }
+  }
+
+  const validators = [deployer.address, validator2Addr];
   const threshold = 2; // Testnet: 2-of-2 (min allowed by contract). Mainnet: 3-of-5
 
   // ── Step 1: Deploy wZION ERC-20 ────────────────────
