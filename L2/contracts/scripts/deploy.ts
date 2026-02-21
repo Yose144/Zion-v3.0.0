@@ -12,13 +12,16 @@ async function main() {
   const guardian = deployer.address;
 
   // Validator addresses (bridge relay operators)
-  // Testnet: use deployer as single validator
+  // Testnet: 2 validators (deployer + second signer) — contract requires threshold >= 2
   // Mainnet: 5 independent validators required
+  const signers = await ethers.getSigners();
+  const validator2 = signers[1] ?? deployer; // second hardhat account (or deployer on real net)
   const validators = [
     deployer.address,
+    validator2.address,
     // Add more validator addresses for production
   ];
-  const threshold = 1; // Testnet: 1-of-1. Mainnet: 3-of-5
+  const threshold = 2; // Testnet: 2-of-2 (min allowed by contract). Mainnet: 3-of-5
 
   // ── Step 1: Deploy wZION ERC-20 ────────────────────
 
@@ -67,7 +70,8 @@ async function main() {
   console.log(`  ZIONBridge:     ${bridgeAddr}`);
   console.log(`  Admin:          ${admin}`);
   console.log(`  Guardian:       ${guardian}`);
-  console.log(`  Validators:     ${validators.length} (threshold: ${threshold})`);
+  console.log(`  Validators:     ${validators.join(", ")}`);
+  console.log(`  Threshold:      ${threshold}-of-${validators.length}`);
   console.log("═".repeat(60));
   console.log("\n⚠️  Update config/bridge-testnet.toml with these addresses!");
   console.log(`    wzion_address          = "${wzionAddr}"`);
