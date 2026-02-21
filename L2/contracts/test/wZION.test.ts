@@ -326,4 +326,391 @@ describe("wZION (Wrapped ZION ERC-20)", function () {
       expect(await wzion.balanceOf(user2.address)).to.equal(ethers.parseEther("300"));
     });
   });
+
+  // ── Supply cap ───────────────────────────────────────
+  describe("Supply cap (ExceedsMaxSupply)", function () {
+    it("should revert when minting would exceed MAX_SUPPLY", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      const maxSupply = await wzion.MAX_SUPPLY();
+
+      // First fill up to near max (MAX - 200 wZION)
+      const nearMax = maxSupply - ethers.parseEther("200");
+      // We can't actually mint this in one TX (gas), so test with a very small cap contract
+      // Instead just test that minting exactly max works fine and mintableSupply goes to 0
+      // We'll test ExceedsMaxSupply by minting exactly max in two steps that would overflow.
+      // Since we can't mint 144B in tests, we verify the guard logic via mint that would set supply to max + 1.
+
+      // Mint 200 wZION (valid)
+      await wzion.connect(bridge).bridgeMint(
+        user1.address,
+        ethers.parseEther("200"),
+        ethers.keccak256(ethers.toUtf8Bytes("cap_lock_01"))
+      );
+
+      // Attempt to mint (MAX_SUPPLY) — totalSupply would become MAX+200, should revert
+      await expect(
+        wzion.connect(bridge).bridgeMint(
+          user1.address,
+          maxSupply,
+          ethers.keccak256(ethers.toUtf8Bytes("cap_lock_02"))
+        )
+      ).to.be.revertedWithCustomError(wzion, "ExceedsMaxSupply");
+    });
+
+    it("mintableSupply decreases correctly with each mint", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      const max = await wzion.MAX_SUPPLY();
+
+      await wzion.connect(bridge).bridgeMint(
+        user1.address, ethers.parseEther("1000"),
+        ethers.keccak256(ethers.toUtf8Bytes("mintable_01"))
+      );
+      expect(await wzion.mintableSupply()).to.equal(max - ethers.parseEther("1000"));
+
+      await wzion.connect(bridge).bridgeMint(
+        user1.address, ethers.parseEther("5000"),
+        ethers.keccak256(ethers.toUtf8Bytes("mintable_02"))
+      );
+      expect(await wzion.mintableSupply()).to.equal(max - ethers.parseEther("6000"));
+    });
+  });
+
+  // ── Decimal invariant ─────────────────────────────────
+  describe("Decimal invariant (L1 6-dec ↔ EVM 18-dec)", function () {
+    it("1 ZION L1 atomic = 1e12 wZION wei (scale factor check)", async function () {
+      // 1 ZION on L1 = 1_000_000 atomic units (6 decimals)
+      // 1 wZION on EVM = 1e18 wei (18 decimals)
+      // Scale: 1e18 / 1e6 = 1e12
+      const SCALE = BigInt(1e12);
+      const l1Atomic = BigInt(1_000_000); // 1 ZION in L1 atoms
+      const expectedWzionWei = l1Atomic * SCALE;
+      expect(expectedWzionWei).to.equal(ethers.parseEther("1"));
+    });
+
+    it("MIN_BRIDGE_AMOUNT 100 wZION = 100 ZION on L1 (scale)", async function () {
+      const { wzion } = await loadFixture(deployFixture);
+      const minWzionWei = await wzion.MIN_BRIDGE_AMOUNT();
+      const SCALE = BigInt(1e12);
+      // 100 wZION wei / 1e12 = 100_000_000 L1 atomic = 100 ZION
+      expect(minWzionWei / SCALE).to.equal(BigInt(100_000_000));
+    });
+
+    it("round-trip: mint 1e3 wZION → burn 1e3 wZION → supply back to 0", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      const amount = ethers.parseEther("1000");
+
+      await wzion.connect(bridge).bridgeMint(
+        user1.address, amount,
+        ethers.keccak256(ethers.toUtf8Bytes("rt_lock_01"))
+      );
+      expect(await wzion.totalSupply()).to.equal(amount);
+
+      await wzion.connect(user1).bridgeBurn(
+        amount,
+        "zion1qrecipientaddress1234567890abcdef12345",
+        ethers.keccak256(ethers.toUtf8Bytes("rt_burn_01"))
+      );
+      expect(await wzion.totalSupply()).to.equal(0);
+
+      const [minted, burned, outstanding] = await wzion.bridgeStats();
+      expect(minted).to.equal(amount);
+      expect(burned).to.equal(amount);
+      expect(outstanding).to.equal(0);
+    });
+  });
+
+  // ── L1 address edge cases ─────────────────────────────
+  describe("L1 address validation edge cases", function () {
+    async function mintForBurn(wzion: any, bridge: any, user: any, suffix: string) {
+      await wzion.connect(bridge).bridgeMint(
+        user.address, ethers.parseEther("500"),
+        ethers.keccak256(ethers.toUtf8Bytes(`l1addr_lock_${suffix}`))
+      );
+    }
+
+    it("should accept minimum valid L1 address (40 chars, zion1 prefix)", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      await mintForBurn(wzion, bridge, user1, "min");
+      // 40 chars: "zion1" (5) + 35 chars
+      const addr40 = "zion1" + "a".repeat(35); // length 40
+      await expect(
+        wzion.connect(user1).bridgeBurn(
+          ethers.parseEther("200"), addr40,
+          ethers.keccak256(ethers.toUtf8Bytes("l1addr_burn_min"))
+        )
+      ).to.emit(wzion, "BridgeBurn");
+    });
+
+    it("should accept maximum valid L1 address (62 chars, zion1 prefix)", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      await mintForBurn(wzion, bridge, user1, "max");
+      const addr62 = "zion1" + "b".repeat(57); // length 62
+      await expect(
+        wzion.connect(user1).bridgeBurn(
+          ethers.parseEther("200"), addr62,
+          ethers.keccak256(ethers.toUtf8Bytes("l1addr_burn_max"))
+        )
+      ).to.emit(wzion, "BridgeBurn");
+    });
+
+    it("should reject address shorter than 40 chars", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      await mintForBurn(wzion, bridge, user1, "short");
+      const shortAddr = "zion1" + "c".repeat(30); // 35 chars — too short
+      await expect(
+        wzion.connect(user1).bridgeBurn(
+          ethers.parseEther("200"), shortAddr,
+          ethers.keccak256(ethers.toUtf8Bytes("l1addr_burn_short"))
+        )
+      ).to.be.revertedWithCustomError(wzion, "InvalidL1Address");
+    });
+
+    it("should reject address longer than 62 chars", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      await mintForBurn(wzion, bridge, user1, "long");
+      const longAddr = "zion1" + "d".repeat(58); // 63 chars — too long
+      await expect(
+        wzion.connect(user1).bridgeBurn(
+          ethers.parseEther("200"), longAddr,
+          ethers.keccak256(ethers.toUtf8Bytes("l1addr_burn_long"))
+        )
+      ).to.be.revertedWithCustomError(wzion, "InvalidL1Address");
+    });
+
+    it("should reject address with wrong prefix (not zion1)", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      await mintForBurn(wzion, bridge, user1, "prefix");
+      const badPrefix = "addr1" + "e".repeat(35); // correct length, wrong prefix
+      await expect(
+        wzion.connect(user1).bridgeBurn(
+          ethers.parseEther("200"), badPrefix,
+          ethers.keccak256(ethers.toUtf8Bytes("l1addr_burn_prefix"))
+        )
+      ).to.be.revertedWithCustomError(wzion, "InvalidL1Address");
+    });
+
+    it("should reject empty string as L1 address", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      await mintForBurn(wzion, bridge, user1, "empty");
+      await expect(
+        wzion.connect(user1).bridgeBurn(
+          ethers.parseEther("200"), "",
+          ethers.keccak256(ethers.toUtf8Bytes("l1addr_burn_empty"))
+        )
+      ).to.be.revertedWithCustomError(wzion, "InvalidL1Address");
+    });
+  });
+
+  // ── bridgeBurn extra guards ───────────────────────────
+  describe("bridgeBurn extra guards", function () {
+    it("should revert on zero amount", async function () {
+      const { wzion, user1 } = await loadFixture(deployFixture);
+      await expect(
+        wzion.connect(user1).bridgeBurn(
+          0,
+          "zion1qrecipientaddress1234567890abcdef12345",
+          ethers.keccak256(ethers.toUtf8Bytes("burn_zero"))
+        )
+      ).to.be.revertedWithCustomError(wzion, "ZeroAmount");
+    });
+
+    it("should allow partial burns from same user", async function () {
+      const { wzion, bridge, user1 } = await loadFixture(deployFixture);
+      await wzion.connect(bridge).bridgeMint(
+        user1.address, ethers.parseEther("2000"),
+        ethers.keccak256(ethers.toUtf8Bytes("partial_burn_lock"))
+      );
+      const l1Addr = "zion1qrecipientaddress1234567890abcdef12345";
+
+      await wzion.connect(user1).bridgeBurn(
+        ethers.parseEther("500"), l1Addr,
+        ethers.keccak256(ethers.toUtf8Bytes("pb_01"))
+      );
+      expect(await wzion.balanceOf(user1.address)).to.equal(ethers.parseEther("1500"));
+
+      await wzion.connect(user1).bridgeBurn(
+        ethers.parseEther("700"), l1Addr,
+        ethers.keccak256(ethers.toUtf8Bytes("pb_02"))
+      );
+      expect(await wzion.balanceOf(user1.address)).to.equal(ethers.parseEther("800"));
+
+      expect(await wzion.totalBridgeBurned()).to.equal(ethers.parseEther("1200"));
+    });
+  });
+
+  // ── Multi-user flow ───────────────────────────────────
+  describe("Multi-user flow", function () {
+    it("mint to user1, transfer to user2, user2 burns", async function () {
+      const { wzion, bridge, user1, user2 } = await loadFixture(deployFixture);
+
+      // Mint 1000 to user1
+      await wzion.connect(bridge).bridgeMint(
+        user1.address, ethers.parseEther("1000"),
+        ethers.keccak256(ethers.toUtf8Bytes("mu_lock_01"))
+      );
+
+      // user1 → user2: 600 wZION
+      await wzion.connect(user1).transfer(user2.address, ethers.parseEther("600"));
+      expect(await wzion.balanceOf(user1.address)).to.equal(ethers.parseEther("400"));
+      expect(await wzion.balanceOf(user2.address)).to.equal(ethers.parseEther("600"));
+
+      // user2 burns 500
+      await wzion.connect(user2).bridgeBurn(
+        ethers.parseEther("500"),
+        "zion1qrecipientaddress1234567890abcdef12345",
+        ethers.keccak256(ethers.toUtf8Bytes("mu_burn_01"))
+      );
+      expect(await wzion.balanceOf(user2.address)).to.equal(ethers.parseEther("100"));
+      expect(await wzion.totalSupply()).to.equal(ethers.parseEther("500"));
+    });
+
+    it("independent mints to multiple users do not interfere", async function () {
+      const { wzion, bridge, user1, user2 } = await loadFixture(deployFixture);
+
+      await wzion.connect(bridge).bridgeMint(
+        user1.address, ethers.parseEther("300"),
+        ethers.keccak256(ethers.toUtf8Bytes("multi_lock_u1"))
+      );
+      await wzion.connect(bridge).bridgeMint(
+        user2.address, ethers.parseEther("700"),
+        ethers.keccak256(ethers.toUtf8Bytes("multi_lock_u2"))
+      );
+
+      expect(await wzion.balanceOf(user1.address)).to.equal(ethers.parseEther("300"));
+      expect(await wzion.balanceOf(user2.address)).to.equal(ethers.parseEther("700"));
+      expect(await wzion.totalSupply()).to.equal(ethers.parseEther("1000"));
+      expect(await wzion.totalBridgeMinted()).to.equal(ethers.parseEther("1000"));
+    });
+  });
+
+  // ── EIP-2612 Permit ───────────────────────────────────
+  describe("EIP-2612 Permit (gasless approve)", function () {
+    it("should have correct EIP-712 domain name", async function () {
+      const { wzion } = await loadFixture(deployFixture);
+      // ERC20Permit stores domain name equal to token name
+      const domain = await wzion.eip712Domain();
+      expect(domain.name).to.equal("Wrapped ZION");
+    });
+
+    it("should allow permit-based gasless approve", async function () {
+      const { wzion, bridge, user1, user2 } = await loadFixture(deployFixture);
+
+      // Mint some tokens so user1 has balance
+      await wzion.connect(bridge).bridgeMint(
+        user1.address, ethers.parseEther("500"),
+        ethers.keccak256(ethers.toUtf8Bytes("permit_lock_01"))
+      );
+
+      const amount = ethers.parseEther("200");
+      const latestBlock = await ethers.provider.getBlock("latest");
+      const deadline = BigInt(latestBlock!.timestamp + 3600);
+      const nonce = await wzion.nonces(user1.address);
+      const chainId = (await ethers.provider.getNetwork()).chainId;
+
+      // Build EIP-712 permit signature
+      const domain = {
+        name: "Wrapped ZION",
+        version: "1",
+        chainId,
+        verifyingContract: await wzion.getAddress()
+      };
+      const types = {
+        Permit: [
+          { name: "owner",   type: "address" },
+          { name: "spender", type: "address" },
+          { name: "value",   type: "uint256" },
+          { name: "nonce",   type: "uint256" },
+          { name: "deadline",type: "uint256" }
+        ]
+      };
+      const value = {
+        owner:   user1.address,
+        spender: user2.address,
+        value:   amount,
+        nonce,
+        deadline
+      };
+
+      const sig = await user1.signTypedData(domain, types, value);
+      const { v, r, s } = ethers.Signature.from(sig);
+
+      // Execute permit (user2 pays gas, user1 signs off-chain)
+      await wzion.connect(user2).permit(user1.address, user2.address, amount, deadline, v, r, s);
+      expect(await wzion.allowance(user1.address, user2.address)).to.equal(amount);
+
+      // Now user2 can transferFrom without separate approve TX
+      await wzion.connect(user2).transferFrom(user1.address, user2.address, amount);
+      expect(await wzion.balanceOf(user2.address)).to.equal(amount);
+    });
+
+    it("should revert permit with expired deadline", async function () {
+      const { wzion, user1, user2 } = await loadFixture(deployFixture);
+      const amount = ethers.parseEther("100");
+      const deadline = BigInt(1); // already expired
+      const nonce = await wzion.nonces(user1.address);
+      const chainId = (await ethers.provider.getNetwork()).chainId;
+
+      const domain = {
+        name: "Wrapped ZION",
+        version: "1",
+        chainId,
+        verifyingContract: await wzion.getAddress()
+      };
+      const types = {
+        Permit: [
+          { name: "owner",   type: "address" },
+          { name: "spender", type: "address" },
+          { name: "value",   type: "uint256" },
+          { name: "nonce",   type: "uint256" },
+          { name: "deadline",type: "uint256" }
+        ]
+      };
+      const value = { owner: user1.address, spender: user2.address, value: amount, nonce, deadline };
+      const sig = await user1.signTypedData(domain, types, value);
+      const { v, r, s } = ethers.Signature.from(sig);
+
+      await expect(
+        wzion.connect(user2).permit(user1.address, user2.address, amount, deadline, v, r, s)
+      ).to.be.revertedWithCustomError(wzion, "ERC2612ExpiredSignature");
+    });
+  });
+
+  // ── Role management ───────────────────────────────────
+  describe("Role management", function () {
+    it("should allow admin to grant BRIDGE_ROLE to another address", async function () {
+      const { wzion, admin, user1, user2, BRIDGE_ROLE } = await loadFixture(deployFixture);
+
+      await wzion.connect(admin).grantRole(BRIDGE_ROLE, user1.address);
+      expect(await wzion.hasRole(BRIDGE_ROLE, user1.address)).to.be.true;
+
+      // New bridge can now mint
+      await expect(
+        wzion.connect(user1).bridgeMint(
+          user2.address, ethers.parseEther("500"),
+          ethers.keccak256(ethers.toUtf8Bytes("role_grant_mint"))
+        )
+      ).to.emit(wzion, "BridgeMint");
+    });
+
+    it("should allow admin to revoke BRIDGE_ROLE", async function () {
+      const { wzion, admin, bridge, user1, BRIDGE_ROLE } = await loadFixture(deployFixture);
+
+      await wzion.connect(admin).revokeRole(BRIDGE_ROLE, bridge.address);
+      expect(await wzion.hasRole(BRIDGE_ROLE, bridge.address)).to.be.false;
+
+      await expect(
+        wzion.connect(bridge).bridgeMint(
+          user1.address, ethers.parseEther("500"),
+          ethers.keccak256(ethers.toUtf8Bytes("revoke_mint_attempt"))
+        )
+      ).to.be.reverted;
+    });
+
+    it("should not allow non-admin to grant roles", async function () {
+      const { wzion, user1, user2, BRIDGE_ROLE } = await loadFixture(deployFixture);
+      await expect(
+        wzion.connect(user1).grantRole(BRIDGE_ROLE, user2.address)
+      ).to.be.reverted;
+    });
+  });
 });
