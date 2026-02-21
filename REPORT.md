@@ -12,7 +12,7 @@
 |---------|---------|
 | **Rust LOC (L1–L4, deep scan)** | 64,288 |
 | **Crate count** | 11 (L1–L4), deep scan ověřil 10/11 |
-| **Testy celkem (ověřeno)** | 499 Rust + 95 Hardhat |
+| **Testy celkem (ověřeno)** | 499 Rust + 96 Hardhat |
 | **CI Build** | ✅ 4-job pipeline (L1, L2-L4, fmt, clippy) |
 | **Clippy warnings (deep scan)** | 46+ (core/verushash scan blokován) |
 | **cargo fmt** | ✅ čistý (zero diffs) |
@@ -140,6 +140,16 @@
 56. ✅ **Startup auto-select pool guard** — auto přepnutí poolu při startu je defaultně vypnuto (`autoSelectPool: false`), aby se host nepřepisoval mimo Helsinki
 57. ✅ **GPU revenue health fail-safe** — při `8+` rejectech bez jediného accepted share během prvních 3 minut se `gpu_rev` proces automaticky vypne; hlavní GPU mining pokračuje bez přerušení
 58. ✅ **Runtime validace bez syntax chyb** — `APP&WEB/desktop-agent/src/main.js` prošel kontrolou bez nových errors
+
+### Session 15 — L2 wZION test coverage rozšíření (únor 2026)
+59. ✅ **wZION test suite rozšířena: 27→48 testů (+21)** — nové describe bloky: Supply cap, Decimal invariant, L1 address edge cases, bridgeBurn extra guards, Multi-user flow, EIP-2612 Permit, Role management
+60. ✅ **Supply cap test** — ověřen `ExceedsMaxSupply` custom error při pokusu mintovat nad `MAX_SUPPLY = 144B wZION`; test `mintableSupply` dekrementu po každém mintu
+61. ✅ **Decimal invariant** — unit test 1 ZION L1 (6 dec) = 1×10¹² wZION wei (18 dec); `MIN_BRIDGE_AMOUNT` scale vztah; round-trip mint→burn→supply=0
+62. ✅ **L1 address edge case testy** — min délka 40 znaků (✅ ok), max délka 62 znaků (✅ ok), 35 znaků (❌ revert), 63 znaků (❌ revert), špatný prefix `addr1` (❌ revert), prázdný string (❌ revert)
+63. ✅ **Multi-user flow** — mint→transfer user1→user2→burn; paralelní minty více uživatelům
+64. ✅ **EIP-2612 Permit** — EIP-712 podpis (`user1.signTypedData`), `permit()` gasless approve, `transferFrom` po permit; expired deadline revert; deadline opraven na `block.timestamp` (Hardhat time.increase kompatibilita)
+65. ✅ **Role management** — `grantRole(BRIDGE_ROLE)` → nový bridge může mintovat; `revokeRole(BRIDGE_ROLE)` → starý bridge je blokován; non-admin nemůže udělit role
+66. ✅ **Celková suite: 96/96 passing** — wZION (48) + ZIONBridge (34) + E2E (14)
 
 
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
