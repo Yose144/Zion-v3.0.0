@@ -94,6 +94,35 @@ export const CONFIG = {
   VERSION: '2.9.5',
   BUILD_NUMBER: 5,
   CODENAME: 'TerraNova',
+
+  // ── wZION Bridge (L1 ↔ EVM) ──────────────────────────────
+  BRIDGE: {
+    // Base Sepolia testnet (live 21.2.2026)
+    TESTNET: {
+      CHAIN_ID: 84532,
+      RPC_URL: 'https://sepolia.base.org',
+      WZION_ADDRESS: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
+      BRIDGE_ADDRESS: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+      EXPLORER: 'https://sepolia.basescan.org',
+      NAME: 'Base Sepolia',
+    },
+    // Base Mainnet (deploy after audit)
+    MAINNET: {
+      CHAIN_ID: 8453,
+      RPC_URL: 'https://mainnet.base.org',
+      WZION_ADDRESS: '0x0000000000000000000000000000000000000000', // TBD after mainnet deploy
+      BRIDGE_ADDRESS: '0x0000000000000000000000000000000000000000', // TBD after mainnet deploy
+      EXPLORER: 'https://basescan.org',
+      NAME: 'Base Mainnet',
+    },
+    // L1 vault address (lock ZION here for bridging)
+    L1_VAULT_ADDRESS: 'zion1bridge000000000000000000000000000vault',
+    // Scale factor: 1 ZION (6 dec) → 1 wZION wei / 1e12
+    SCALE_FACTOR: 1e12,
+    MIN_BRIDGE_AMOUNT: 100,   // 100 ZION minimum
+    // Relay backend
+    RELAY_API: 'https://api.zionterranova.com/api/wzion-bridge',
+  },
 };
 
 export default CONFIG;

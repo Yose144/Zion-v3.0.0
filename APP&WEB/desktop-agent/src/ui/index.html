@@ -1673,6 +1673,12 @@
         <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
         <span>About</span>
       </div>
+      <div class="nav-item" data-view="bridge">
+        <svg class="icon" aria-hidden="true" style="width:20px;height:20px;">
+          <path fill="currentColor" d="M7 6V3L3 7l4 4V8c3.31 0 6 2.69 6 6H11c0-2.21-1.79-4-4-4zm10 2c0-3.31-2.69-6-6-6H9v2h2c2.21 0 4 1.79 4 4h-2l4 4 4-4h-4z"/>
+        </svg>
+        <span>Bridge</span>
+      </div>
     </div>
 
     <!-- Main Content -->
@@ -2563,6 +2569,130 @@
             </p>
             <p style="font-size:12px; color:rgba(255,255,255,0.3); margin-top:8px;">© 2025–2026 ZION TerraNova · Peace and One Love</p>
           </div>
+        </div>
+      </div>
+
+      <!-- ── Bridge View ──────────────────────────────────────────────────── -->
+      <div id="bridge-view" class="view-shell" style="display: none;">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker">↔ L1 · Base</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">wZION Bridge</h1>
+              <div class="web29-chip">ERC-20 wrapped ZION on Base network</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Direction toggle -->
+        <div class="control-panel" style="margin-bottom:14px; padding:16px 20px;">
+          <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <button id="bridge-btn-to-evm" class="btn-zion active"
+              onclick="window.bridgeSetDirection('L1toEVM')"
+              style="flex:1; padding:10px; border-radius:10px;">
+              ZION → wZION (lock on L1)
+            </button>
+            <button id="bridge-btn-to-l1" class="btn-zion"
+              onclick="window.bridgeSetDirection('EVMtoL1')"
+              style="flex:1; padding:10px; border-radius:10px;">
+              wZION → ZION (burn on Base)
+            </button>
+          </div>
+        </div>
+
+        <!-- Balance cards -->
+        <div style="display:flex; gap:14px; margin-bottom:14px;">
+          <div class="control-panel" style="flex:1; padding:18px; text-align:center;">
+            <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:6px; text-transform:uppercase; letter-spacing:.08em;">L1 ZION Balance</div>
+            <div id="bridge-l1-balance" style="font-size:22px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">—</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px;">native chain</div>
+          </div>
+          <div class="control-panel" style="flex:1; padding:18px; text-align:center;">
+            <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:6px; text-transform:uppercase; letter-spacing:.08em;">wZION Balance</div>
+            <div id="bridge-wzion-balance" style="font-size:22px; font-weight:700; color:var(--zion-gold); font-variant-numeric:tabular-nums;">—</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px;">Base Sepolia</div>
+          </div>
+        </div>
+
+        <!-- EVM address display -->
+        <div class="control-panel" style="margin-bottom:14px; padding:14px 20px;">
+          <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:6px;">Your EVM address (Base)</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <code id="bridge-evm-address" style="flex:1; font-size:12px; color:var(--zion-cyan); word-break:break-all;">—</code>
+            <button onclick="window.bridgeCopyEvm()" style="padding:4px 10px; font-size:11px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fff; cursor:pointer;">Copy</button>
+          </div>
+        </div>
+
+        <!-- Form: L1→EVM -->
+        <div id="bridge-form-l1toevm" class="control-panel" style="margin-bottom:14px; padding:18px 20px;">
+          <h3 style="margin:0 0 8px; font-size:14px; color:var(--zion-gold);">Lock ZION on L1 → receive wZION on Base</h3>
+          <p style="margin:0 0 14px; font-size:12px; color:rgba(255,255,255,0.5); line-height:1.6;">
+            Send ZION to the bridge vault address on L1 with the generated memo.
+            The Rust relay monitors L1 and automatically mints wZION to your Base address.
+          </p>
+          <div style="margin-bottom:10px;">
+            <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">Amount (ZION, min. 100)</label>
+            <input id="bridge-l1-amount" type="number" min="100" step="1" placeholder="e.g. 500"
+              style="width:100%; box-sizing:border-box; padding:10px 14px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:14px;" />
+          </div>
+          <div id="bridge-memo-box" style="display:none; margin-bottom:14px;">
+            <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">L1 Vault address</label>
+            <code id="bridge-vault-addr" style="display:block; padding:10px; background:rgba(0,0,0,0.35); border-radius:8px; font-size:11px; color:rgba(255,255,255,0.6); word-break:break-all; margin-bottom:10px;">—</code>
+            <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">Memo (copy EXACTLY)</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <code id="bridge-memo-text" style="flex:1; padding:10px; background:rgba(247,184,1,0.08); border:1px solid rgba(247,184,1,0.3); border-radius:8px; font-size:11px; color:var(--zion-gold); word-break:break-all;">—</code>
+              <button onclick="window.bridgeCopyMemo()" style="padding:8px 12px; background:var(--zion-gold); border:none; border-radius:8px; color:#000; font-weight:700; font-size:12px; cursor:pointer;">Copy</button>
+            </div>
+          </div>
+          <button onclick="window.bridgePrepareLock()" style="width:100%; padding:12px; background:linear-gradient(135deg,#f7b801,#e09000); border:none; border-radius:10px; color:#000; font-weight:700; font-size:14px; cursor:pointer; margin-bottom:8px;">
+            Generate memo
+          </button>
+        </div>
+
+        <!-- Form: EVM→L1 (read-only instructions — signing requires mobile or MetaMask) -->
+        <div id="bridge-form-evmtol1" class="control-panel" style="margin-bottom:14px; padding:18px 20px; display:none;">
+          <h3 style="margin:0 0 8px; font-size:14px; color:var(--zion-cyan);">Burn wZION on Base → receive ZION on L1</h3>
+          <p style="margin:0 0 14px; font-size:12px; color:rgba(255,255,255,0.5); line-height:1.6;">
+            Use the mobile wallet to sign and broadcast the <code>bridgeBurn()</code> transaction,
+            or call the contract directly via BaseScan write interface. The Rust relay will
+            release L1 ZION after confirmation.
+          </p>
+          <div style="margin-bottom:10px;">
+            <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">Contract on Base Sepolia</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <code style="flex:1; padding:8px 12px; background:rgba(0,0,0,0.35); border-radius:8px; font-size:11px; color:var(--zion-cyan); word-break:break-all;">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
+              <button onclick="window.open('https://sepolia.basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721#writeContract','_blank')" style="padding:8px 12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:11px; cursor:pointer;">Open ↗</button>
+            </div>
+          </div>
+          <div style="padding:14px; background:rgba(0,0,0,0.25); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:12px; color:rgba(255,255,255,0.6); line-height:1.7;">
+              <b style="color:#fff;">Function:</b> <code>bridgeBurn(uint256 amount, string l1Recipient, bytes32 burnId)</code><br/>
+              <b style="color:#fff;">amount:</b> ZION × 10<sup>18</sup> × 10<sup>6</sup> (e.g. 500 ZION → <code>500000000000000000000</code>)<br/>
+              <b style="color:#fff;">l1Recipient:</b> your ZION L1 address (<code>zion1...</code>)<br/>
+              <b style="color:#fff;">burnId:</b> unique bytes32 (e.g. <code>0x000...001</code>)
+            </div>
+          </div>
+        </div>
+
+        <!-- Bridge stats -->
+        <div class="control-panel" style="padding:18px 20px;">
+          <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:12px; text-transform:uppercase; letter-spacing:.08em;">Bridge Statistics</div>
+          <div id="bridge-stats-loading" style="text-align:center; padding:20px; color:rgba(255,255,255,0.3); font-size:13px;">Loading…</div>
+          <div id="bridge-stats-grid" style="display:none; display:flex; flex-wrap:wrap; gap:10px;">
+            <div style="flex:1; min-width:140px; padding:14px; background:rgba(0,0,0,0.3); border-radius:10px; text-align:center;">
+              <div id="bs-minted" style="font-size:20px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">—</div>
+              <div style="font-size:10px; color:rgba(255,255,255,0.4); margin-top:4px;">Total minted</div>
+            </div>
+            <div style="flex:1; min-width:140px; padding:14px; background:rgba(0,0,0,0.3); border-radius:10px; text-align:center;">
+              <div id="bs-burned" style="font-size:20px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">—</div>
+              <div style="font-size:10px; color:rgba(255,255,255,0.4); margin-top:4px;">Total burned</div>
+            </div>
+            <div style="flex:1; min-width:140px; padding:14px; background:rgba(0,0,0,0.3); border-radius:10px; text-align:center;">
+              <div id="bs-circ" style="font-size:20px; font-weight:700; color:var(--zion-gold); font-variant-numeric:tabular-nums;">—</div>
+              <div style="font-size:10px; color:rgba(255,255,255,0.4); margin-top:4px;">Circulating</div>
+            </div>
+          </div>
+          <button onclick="window.bridgeLoadStats()" style="margin-top:12px; padding:8px 18px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:12px; cursor:pointer;">↻ Refresh</button>
         </div>
       </div>
 
