@@ -482,6 +482,9 @@ function switchView(view) {
       appendMiningConsole(line);
     }
   }
+
+  // Initialize bridge view when opened
+  if (view === 'bridge') initBridgeView();
 }
 
 // Control setup
@@ -2315,5 +2318,143 @@ function renderServerGrid(servers) {
     `;
   }).join('');
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// wZION Bridge View Logic
+// ─────────────────────────────────────────────────────────────────────────────
+
+let _bridgeEvmAddress = null;
+let _bridgeDirection  = 'L1toEVM';
+let _bridgeMemo       = null;
+
+/** Called when Bridge nav item is clicked (from switchView) */
+function initBridgeView() {
+  bridgeLoadStats();
+  bridgeLoadEvmAddress();
+}
+
+/** Load EVM address from wallet context (derive from mnemonic via IPC) */
+async function bridgeLoadEvmAddress() {
+  try {
+    // Desktop wallet stores mnemonic in keychain; ask main process for EVM address
+    const res = await window.electronAPI?.invoke?.('wallet-get-evm-address') || null;
+    if (res?.address) {
+      _bridgeEvmAddress = res.address;
+      const el = document.getElementById('bridge-evm-address');
+      if (el) el.textContent = res.address;
+      bridgeLoadWzionBalance(res.address);
+    } else {
+      const el = document.getElementById('bridge-evm-address');
+      if (el) el.textContent = 'Unlock wallet first';
+    }
+  } catch (e) {
+    console.warn('[BRIDGE] EVM address load failed:', e.message);
+  }
+}
+
+/** Fetch wZION balance */
+async function bridgeLoadWzionBalance(addr) {
+  try {
+    const res = await window.ipcRenderer.invoke('bridge-get-wzion-balance', addr);
+    const el  = document.getElementById('bridge-wzion-balance');
+    if (el) el.textContent = res.success ? res.balance.toFixed(4) : 'Error';
+  } catch (e) {
+    console.warn('[BRIDGE] wZION balance error:', e.message);
+  }
+}
+
+/** Fetch bridge global stats */
+window.bridgeLoadStats = async function () {
+  const loadingEl  = document.getElementById('bridge-stats-loading');
+  const gridEl     = document.getElementById('bridge-stats-grid');
+  if (loadingEl) { loadingEl.style.display = 'block'; loadingEl.textContent = 'Loading…'; }
+  if (gridEl)    { gridEl.style.display    = 'none'; }
+  try {
+    const res = await window.ipcRenderer.invoke('bridge-get-stats');
+    if (res.success) {
+      const fmt = (n) => Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('bs-minted', fmt(res.totalMinted));
+      set('bs-burned', fmt(res.totalBurned));
+      set('bs-circ',   fmt(res.circulating));
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (gridEl)    { gridEl.style.display  = 'flex'; }
+    } else {
+      if (loadingEl) loadingEl.textContent = `Error: ${res.error}`;
+    }
+  } catch (e) {
+    if (loadingEl) loadingEl.textContent = `RPC error: ${e.message}`;
+  }
+};
+
+/** Toggle between L1→EVM and EVM→L1 forms */
+window.bridgeSetDirection = function (dir) {
+  _bridgeDirection = dir;
+  const l1toEvm = document.getElementById('bridge-form-l1toevm');
+  const evmToL1 = document.getElementById('bridge-form-evmtol1');
+  const btnEvm  = document.getElementById('bridge-btn-to-evm');
+  const btnL1   = document.getElementById('bridge-btn-to-l1');
+  if (dir === 'L1toEVM') {
+    if (l1toEvm) l1toEvm.style.display = 'block';
+    if (evmToL1) evmToL1.style.display = 'none';
+    if (btnEvm)  btnEvm.classList.add('active');
+    if (btnL1)   btnL1.classList.remove('active');
+  } else {
+    if (l1toEvm) l1toEvm.style.display = 'none';
+    if (evmToL1) evmToL1.style.display = 'block';
+    if (btnEvm)  btnEvm.classList.remove('active');
+    if (btnL1)   btnL1.classList.add('active');
+  }
+};
+
+/** Generate L1 locking memo for the entered EVM address */
+window.bridgePrepareLock = async function () {
+  if (!_bridgeEvmAddress) {
+    alert('Please unlock your ZION wallet first.');
+    return;
+  }
+  const amount  = parseFloat(document.getElementById('bridge-l1-amount')?.value || '0');
+  if (!amount || amount < 100) {
+    alert('Enter an amount of at least 100 ZION.');
+    return;
+  }
+  try {
+    const res = await window.ipcRenderer.invoke('bridge-prepare-lock', _bridgeEvmAddress);
+    if (!res.success) { alert(`Error: ${res.error}`); return; }
+    _bridgeMemo = res.memo;
+    const vaultEl = document.getElementById('bridge-vault-addr');
+    const memoEl  = document.getElementById('bridge-memo-text');
+    const boxEl   = document.getElementById('bridge-memo-box');
+    if (vaultEl) vaultEl.textContent = res.vaultAddress;
+    if (memoEl)  memoEl.textContent  = res.memo;
+    if (boxEl)   boxEl.style.display  = 'block';
+  } catch (e) {
+    alert(`Error: ${e.message}`);
+  }
+};
+
+/** Copy memo to clipboard */
+window.bridgeCopyMemo = function () {
+  if (_bridgeMemo) {
+    navigator.clipboard?.writeText(_bridgeMemo).then(() => {
+      const el = document.getElementById('bridge-memo-text');
+      if (el) {
+        const orig = el.style.borderColor;
+        el.style.borderColor = '#00ff99';
+        setTimeout(() => { el.style.borderColor = orig; }, 800);
+      }
+    });
+  }
+};
+
+/** Copy EVM address to clipboard */
+window.bridgeCopyEvm = function () {
+  if (_bridgeEvmAddress) {
+    navigator.clipboard?.writeText(_bridgeEvmAddress);
+  }
+};
+
+// Hook into switchView to initialize bridge when tab is opened
+// (initBridgeView() is called directly inside switchView() above)
 
 console.log('Renderer script loaded');

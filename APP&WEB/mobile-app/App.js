@@ -10,6 +10,7 @@ import WalletScreen from './src/screens/WalletScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import MiningScreen from './src/screens/MiningScreen';
 import NetworkScreen from './src/screens/NetworkScreen';
+import BridgeScreen from './src/screens/BridgeScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import {WalletProvider} from './src/context/WalletContext';
 import {MiningProvider} from './src/context/MiningContext';
@@ -57,6 +58,9 @@ const App = () => {
                       break;
                     case 'Network':
                       iconName = 'lan';
+                      break;
+                    case 'Bridge':
+                      iconName = 'swap-horizontal';
                       break;
                     case 'Settings':
                       iconName = 'cog';
@@ -111,6 +115,11 @@ const App = () => {
               name="Network"
               component={NetworkScreen}
               options={{title: 'Network'}}
+            />
+            <Tab.Screen
+              name="Bridge"
+              component={BridgeScreen}
+              options={{title: 'wZION Bridge'}}
             />
             <Tab.Screen
               name="Settings"
