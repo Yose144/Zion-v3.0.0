@@ -1,6 +1,6 @@
 # 📊 ZION TerraNova — Project Report
 
-> **Datum:** 19. února 2026  
+> **Datum:** 21. února 2026  
 > **Verze:** v2.9.6 "On the Star"  
 > **MainNet cíl:** 31. prosince 2026
 
@@ -41,13 +41,18 @@
 
 ---
 
-## L2 💱 DeFi — 65% skeleton
+## L2 💱 DeFi — 75% (wZION LIVE na Base Sepolia)
 
 | Crate | LOC (skutečné) | Testů | Stav |
 |-------|----------------|-------|------|
-| `L2/bridge/` | 1,991 | 71 | 80% — kompletní pipeline, chybí E2E |
+| `L2/bridge/` | 1,991 | 16 Rust | ✅ Rust relay 16/16 — pipeline kompletní |
 | `L2/dao/` | 1,055 | 18 | 55% — logika hotová, chybí DB + daemon |
-| `L2/contracts/` | ~1,935 | 95 | 70% — Solidity kompiluje, chybí deploy |
+| `L2/contracts/` | ~1,935 | 96 Hardhat | ✅ wZION+ZIONBridge LIVE na Base Sepolia |
+
+**Kontrakty (Base Sepolia, 21.2.2026):**
+- `wZION ERC-20`: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`
+- `ZIONBridge`: `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`
+- BRIDGE_ROLE: ZIONBridge ✅, deployer revoked ✅
 
 **Blocker:** L1 potřebuje `/api/bridge/unlock` endpoint pro Bridge produkci.
 
@@ -151,6 +156,42 @@
 65. ✅ **Role management** — `grantRole(BRIDGE_ROLE)` → nový bridge může mintovat; `revokeRole(BRIDGE_ROLE)` → starý bridge je blokován; non-admin nemůže udělit role
 66. ✅ **Celková suite: 96/96 passing** — wZION (48) + ZIONBridge (34) + E2E (14)
 
+### Session 16 — wZION Bridge UI (mobile app + desktop agent) (21. února 2026)
+67. ✅ **Mobile: `config.js`** — přidána sekce `CONFIG.BRIDGE` s testnet+mainnet konfigurací (Chain ID, RPC URL, adresy kontraktů, SCALE_FACTOR, MIN_BRIDGE_AMOUNT, RELAY_API)
+68. ✅ **Mobile: `chains.js`** — přidány nové chain záznamy: `WZION`, `BASE`, `BASE_SEPOLIA` (s metadaty `isEvm`, `evmChainId`, `isTestnet`)
+69. ✅ **Mobile: `WZIONBridgeService.js`** — nová služba bez ethers.js; čistý stack přes `@noble/secp256k1` + `@scure/bip32`:
+    - EVM key derivace z BIP-39 mnemonicu (`m/44'/60'/0'/0/0`)
+    - `getWzionBalance()` — raw JSON-RPC `eth_call` → `balanceOf(address)`
+    - `getBridgeStats()` — `eth_call` → `bridgeStats()`, decode 4 uint256
+    - `bridgeBurnToL1()` — ABI encode + RLP TX + secp256k1 sign + `eth_sendRawTransaction`
+    - `prepareLockMemo()` — generuje `BRIDGE:BASE:<evmAddr>` memo pro L1 vault
+    - `getTxStatus()` — `eth_getTransactionReceipt` polling
+70. ✅ **Mobile: `BridgeScreen.js`** — nová React Native obrazovka:
+    - Direction toggle: `ZION→wZION` (lock na L1 + memo) / `wZION→ZION` (burn na EVM)
+    - Balance karta: L1 ZION + wZION (Base) + zkrácená EVM adresa
+    - L1→EVM: generuje memo, vault adresu, kopíruje do schránky
+    - EVM→L1: burn formulář, MAX tlačítko, L1 recipient, TX polling, explorer link
+    - Bridge stats sekce (totalMinted, totalBurned, circulating)
+    - Pull-to-refresh, GlassCard/GradientButton styly (shodné se SendScreen)
+71. ✅ **Mobile: `App.js`** — přidán tab `Bridge` s ikonou `swap-horizontal` (mezi Network a Settings)
+72. ✅ **Desktop: `main.js`** — 4 nové IPC handlery:
+    - `bridge-get-wzion-balance` — `eth_call balanceOf`, vrací float
+    - `bridge-get-stats` — `eth_call bridgeStats()`, vrací 4 metriky
+    - `bridge-tx-status` — `eth_getTransactionReceipt`, vrací status + explorer URL
+    - `bridge-prepare-lock` — validace EVM adresy, generuje `BRIDGE:BASE:...` memo
+73. ✅ **Desktop: `index.html`** — Bridge nav item + kompletní `bridge-view`:
+    - Direction toggle tlačítka (L1→EVM / EVM→L1)
+    - Balance karty (L1 ZION, wZION) + EVM adresa s Copy
+    - Lock memo formulář: amount input, vault adresa, generovaný memo (zvýrazněný, copy button)
+    - EVM→L1 instrukce: adresa kontraktu, BaseScan odkaz, ABI volání popis
+    - Stats grid (minted, burned, circulating) + Refresh tlačítko
+74. ✅ **Desktop: `renderer.js`** — bridge logika hookovaná přímo do `switchView()`:
+    - `initBridgeView()` — načte EVM adresu + wZION balance + stats při otevření tabu
+    - `bridgeLoadStats()` — IPC → `bridge-get-stats`, formátování čísel
+    - `bridgeSetDirection()` — přepíná formuláře, zvýrazňuje aktivní tlačítko
+    - `bridgePrepareLock()` — IPC → `bridge-prepare-lock`, zobrazí memo box
+    - `bridgeCopyMemo()` / `bridgeCopyEvm()` — clipboard + vizuální feedback
+75. ✅ **Commit `a4b72b4`** — 8 souborů, +1 486 řádků, pushnut na GitHub
 
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
@@ -233,10 +274,14 @@ Cargo.toml          ← Workspace: 11 crates v L1–L4
 2. **P0-02** — Přidat orphan rate Prometheus metriku do pool
 3. ~~**Založit nové git repo**~~ — ✅ VYŘEŠENO: Yose144/2.9.6 funguje
 4. ~~**P1 testy — pool coverage**~~ — ✅ VYŘEŠENO: 96 testů (cíl byl 60+)
-5. **P0-04** — Pronajmout 3 nové VPS (USA, Asia ×2)
-6. **Helsinki deploy** — `ssh zion-helsinki "cd /opt/zion && git pull"`
-7. **Bridge endpoint** — L1 `/api/bridge/unlock` pro bridge produkci
-8. **DAO executor** — Reálná implementace (multi-sig guardian)
+5. ~~**L2 Solidity deploy**~~ — ✅ VYŘEŠENO (21.2.2026): wZION + ZIONBridge LIVE na Base Sepolia
+6. ~~**Bridge UI v mobile + desktop**~~ — ✅ VYŘEŠENO (21.2.2026): BridgeScreen + IPC handlery
+7. **P0-04** — Pronajmout 3 nové VPS (USA, Asia ×2)
+8. **Helsinki deploy** — `ssh zion-helsinki "cd /opt/zion && git pull"`
+9. **Bridge endpoint** — L1 `/api/bridge/unlock` pro bridge produkci
+10. **Rust relay napojit na mainnet** — po auditu přepnout `BRIDGE_NET` na Base Mainnet
+11. **DAO executor** — Reálná implementace (multi-sig guardian)
+12. **Mobile TestFlight build** — spustit `BridgeScreen` na fyzickém zařízení (Base Sepolia)
 
 ---
 
