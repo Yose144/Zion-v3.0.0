@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Github, MessageCircle, Globe, BookOpen, Compass, Map, Download, Pickaxe, Crown, FileText, Orbit, ArrowUpRight } from 'lucide-react';
+import { Github, MessageCircle, Globe, BookOpen, Compass, Map, Download, Pickaxe, Crown, FileText, Orbit, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
 
 const footerGroups = [
   {
@@ -18,6 +18,7 @@ const footerGroups = [
       { href: '/dashboard', label: 'Dashboard', Icon: Orbit },
       { href: '/dao', label: 'DAO', Icon: Crown },
       { href: '/warp', label: 'WARP', Icon: ArrowUpRight },
+      { href: '/bridge', label: 'Bridge', Icon: ArrowLeftRight },
     ],
   },
   {

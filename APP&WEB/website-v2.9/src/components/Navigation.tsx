@@ -24,6 +24,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/warp', label: 'Warp' },
       { href: '/dao', label: 'DAO' },
+      { href: '/bridge', label: 'Bridge' },
       { href: '/download', label: 'Download' },
       { href: '/pool', label: 'Pool' },
       {
