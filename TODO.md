@@ -72,12 +72,19 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 
 - [x] **B-05** Testnet deploy (Base Sepolia) ✅ *wZION `0x0c49...` + ZIONBridge `0xa5a0...` LIVE (21.2.2026)*
 - [x] **B-06** E2E test ✅ *96/96 Hardhat + 16/16 Rust relay*
+- [x] **B-02** WS auto-reconnect ✅ *exponenciální backoff 5→80s, MAX_RETRIES=5 (Session 18)*
 - [ ] **B-01** L1 `/api/bridge/unlock` endpoint *(🔴 P0 — L1 modifikace)*
 - [ ] **B-04** Private key management (ne plaintext)
 - [ ] **B-10** Mainnet deploy (Base + Arbitrum)
-- [ ] **D-01** DAO SQLite persistence + migrations
-- [ ] **D-03** L1 memo scanner (treasury příchozí platby)
-- [ ] **D-05** DAO daemon (main.rs — Tokio runtime)
+- [x] **D-01** DAO SQLite persistence + migrations ✅ *(Session 17)*
+- [x] **D-03** L1 memo scanner (treasury příchozí platby) ✅ *(Session 17)*
+- [x] **D-05** DAO executor — Parameter, Emergency, guardian multisig ✅ *(Session 18)*
+- [x] **D-07** DAO integration testy (38 testů, E2E lifecycle) ✅ *(Session 18)*
+- [ ] **D-06** TOML konfig pro DAO daemon
+- [ ] **D-09** Prometheus metriky pro DAO
+- [ ] **DEX-01** wZION/ETH Uniswap V3 pool deploy (Base Mainnet) *(🔴 NEXT)*
+- [ ] **DEX-02** Liquidity seeding script
+- [ ] **DEX-03** Price oracle + slippage guard
 - [ ] Atomic Swaps design + BTC HTLC prototype
 - [ ] Solidity contracts audit
 
@@ -91,7 +98,7 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 WARP 75% (7 stub adaptérů) | NCL 30% | AI-Native 20%
 ```
 
-- [ ] **W-01** EVM adapter (ethers-rs → reálné RPC) *(🔴 P0)*
+- [x] **W-01** EVM adapter (ethers-rs → reálné RPC) ✅ *(Session 17)*
 - [ ] **W-02** Bitcoin adapter (bitcoincore-rpc)
 - [ ] **W-05** Solana adapter (solana-client)
 - [ ] **N-01** ONNX Runtime backend
