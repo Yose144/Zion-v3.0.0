@@ -6,7 +6,7 @@
 
 ---
 
-## 🔴 P0 — MainNet Blokery (11 zbývá z 14)
+## 🔴 P0 — MainNet Blokery (11 zbývá z 14) — 3 hotovo: P0-03, P0-04, P0-06
 
 ### Fáze 1 — Stabilita (únor–březen)
 
@@ -16,7 +16,7 @@
 
 ### Fáze 3 — Infrastruktura (Q2–Q3)
 
-- [x] **P0-04** 5 seed nodů — Helsinki ✅ SeedDE ✅ Usa1 ✅ Usa2 ✅ Asia3 ✅ — všechny běží *(22.2.2026, QEMU arm64→amd64 na xArch serverech)*
+- [x] **P0-04** 5 seed nodů — Helsinki ✅ SeedDE ✅ Usa1 ✅ Usa2 ✅ Asia3 ✅ — všechny běží *(22.2.2026; Helsinki+SeedDE: arm64 native; Usa1/Usa2/Asia3: native amd64 cross-build; fix `is_multiple_of()` → `% 2` pro Rust 1.85)*
 - [ ] **P0-05** Premine klíče — air-gapped Ed25519 keypair generace
 - [x] **P0-06** RPC autentizace — API key pro write endpointy *(kód hotov v `rpc/auth.rs`; nasadit: `export ZION_RPC_TOKEN=$(openssl rand -hex 32)` na každém nodu)*
 
