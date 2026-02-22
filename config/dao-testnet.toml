@@ -1,0 +1,65 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# ZION DAO Daemon — Testnet Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Usage:
+#   DAO_CONFIG=/etc/zion/dao-testnet.toml cargo run --bin zion-dao
+#
+# Secrets (never store in this file on production — use env vars instead):
+#   export ZION_DAO_API_KEY=$(openssl rand -hex 32)
+#
+# Individual env vars always override TOML values:
+#   DAO_API_PORT, ZION_DAO_API_KEY, DAO_DB_PATH, DAO_L1_RPC
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─── Identity ─────────────────────────────────────────────────────────────────
+name    = "ZION DAO — Testnet"
+version = "1.0.0"
+
+# ─── HTTP Server ──────────────────────────────────────────────────────────────
+api_port = 8080
+# api_key: leave empty here and set via ZION_DAO_API_KEY env var
+api_key  = ""
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+db_path = "/var/lib/zion/dao.db"
+
+# ─── L1 Connection ────────────────────────────────────────────────────────────
+l1_rpc_url    = "http://77.42.31.72:8444/jsonrpc"
+l1_rpc_backup = "http://195.201.31.201:8444/jsonrpc"
+
+# ─── L1 Scanner ───────────────────────────────────────────────────────────────
+scan_interval_secs = 10
+min_vote_weight    = 1000        # atomic units minimum to register a vote
+finality_blocks    = 6           # wait N blocks before treating TX as final
+
+# ─── Governance Parameters ────────────────────────────────────────────────────
+proposal_threshold = 1_000_000_000_000   # 1 000 000 ZION (atomic)
+quorum_percent     = 10.0                # 10% of total supply
+voting_period_days = 7
+timelock_hours     = 48
+
+# ─── Treasury ─────────────────────────────────────────────────────────────────
+treasury_addresses = [
+  "zion1dao0treasury0main000000000000000000001",
+  "zion1dao0treasury0main000000000000000000002",
+  "zion1dao0treasury0main000000000000000000003",
+]
+
+daily_spend_limit   = 100_000_000_000_000   # 100 000 000 ZION (atomic)
+multisig_threshold  = 5
+multisig_total      = 7
+
+# ─── Guardians ────────────────────────────────────────────────────────────────
+# Each guardian can veto proposals during the timelock window.
+# Add real keys before mainnet deploy.
+
+[[guardians]]
+name       = "Guardian 1"
+address    = "zion1guardian000000000000000000000000000001"
+public_key = ""
+
+# [[guardians]]
+# name       = "Guardian 2"
+# address    = "zion1guardian000000000000000000000000000002"
+# public_key = ""
