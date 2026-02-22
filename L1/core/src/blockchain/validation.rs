@@ -5,6 +5,7 @@ use crate::network::{get_network, NetworkType};
 use hex::FromHex;
 use num_bigint::BigUint;
 use num_traits::Num;
+use serde_json;
 
 // ──────────────────────────────────────────────
 // Consensus constants
@@ -22,6 +23,11 @@ pub const MAX_TIMESTAMP_DRIFT_TESTNET: u64 = 86400;
 pub const MAX_TIMESTAMP_DRIFT_MAINNET: u64 = 7200;
 /// Default timestamp drift (mainnet = 2 hours, matches Bitcoin)
 pub const MAX_TIMESTAMP_DRIFT: u64 = MAX_TIMESTAMP_DRIFT_MAINNET;
+
+/// Maximum allowed block size (JSON-serialised bytes). P1 security limit —
+/// prevents OOM/DoS via oversized blocks. 1 MB is well above any realistic
+/// Zion block but still bounded. Reject oversized blocks before PoW check.
+pub const MAX_BLOCK_SIZE_BYTES: usize = 1_048_576; // 1 MB
 
 pub fn max_timestamp_drift_for_network(network: NetworkType) -> u64 {
     match network {
@@ -48,6 +54,17 @@ pub fn validate_block(
         .unwrap_or(false);
     #[cfg(not(debug_assertions))]
     let dev_mode = false;
+    // 0. Block size limit (P1 security — reject before PoW to avoid DoS)
+    let block_bytes = serde_json::to_string(block)
+        .map(|s| s.len())
+        .unwrap_or(0);
+    if block_bytes > MAX_BLOCK_SIZE_BYTES {
+        return Err(format!(
+            "Block size {} bytes exceeds maximum {} bytes (P1 limit)",
+            block_bytes, MAX_BLOCK_SIZE_BYTES
+        ));
+    }
+
     // 1. Version check
     if block.header.version != 1 {
         return Err(format!("Invalid version: {}", block.header.version));
