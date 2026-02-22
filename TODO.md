@@ -74,6 +74,7 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 - [x] **B-06** E2E test ✅ *96/96 Hardhat + 16/16 Rust relay*
 - [x] **B-02** WS auto-reconnect ✅ *exponenciální backoff 5→80s, MAX_RETRIES=5 (Session 18)*
 - [x] **B-03** Bridge Prometheus `/metrics` HTTP endpoint ✅ *(port 9100, 11 metrik, Session 19)*
+- [x] **WEB-01** Bridge stránka `/bridge` na webu ✅ *(`page.tsx` + `/api/bridge/status` proxy + Nav+Footer, Session 19)*
 - [ ] **B-01** L1 `/api/bridge/unlock` endpoint *(🔴 P0 — L1 modifikace)*
 - [ ] **B-04** Private key management (ne plaintext)
 - [ ] **B-10** Mainnet deploy (Base + Arbitrum)
