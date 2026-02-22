@@ -59,6 +59,10 @@ pub struct L1Config {
 
     /// Last processed L1 block height (persisted in DB)
     pub start_block_height: Option<u64>,
+
+    /// Optional Bearer token for L1 RPC write endpoints (ZION_RPC_TOKEN on L1 node).
+    /// If set, it is sent as `Authorization: Bearer <token>` to /api/bridge/unlock.
+    pub l1_rpc_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -190,6 +194,7 @@ impl Default for BridgeConfig {
                 finality_blocks: 60,
                 poll_interval_secs: 15,
                 start_block_height: None,
+                l1_rpc_token: None,
             },
             evm_chains: vec![],
             validator: ValidatorConfig {

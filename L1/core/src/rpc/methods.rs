@@ -1,12 +1,13 @@
 use crate::blockchain::block::Block;
 use crate::blockchain::consensus;
 use crate::blockchain::reward;
-use crate::crypto::keys;
+use crate::crypto::{keys, to_hex};
 use crate::premine;
 use crate::state::State;
-use crate::tx::Transaction;
+use crate::tx::{Transaction, TxInput, TxOutput};
 use axum::extract::{Path, Query};
 use axum::{extract::State as AxumState, Json};
+use ed25519_dalek::{Signer, SigningKey};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -410,4 +411,227 @@ pub async fn get_sync_status_rest() -> Json<serde_json::Value> {
         "status": "ok",
         "sync": snap,
     }))
+}
+
+// ─── Bridge Unlock Endpoint (B-01) ──────────────────────────────────────────
+
+/// Request body for POST /api/bridge/unlock
+#[derive(Debug, Deserialize)]
+pub struct BridgeUnlockRequest {
+    /// ZION L1 recipient address (e.g. \"zion1q...\")
+    pub recipient: String,
+    /// Amount to unlock in atomic units (1 ZION = 1_000_000 atomic)
+    pub amount_atomic: u64,
+    /// EVM burn transaction hash (proof of burn, stored for audit)
+    pub evm_tx_hash: String,
+    /// EVM burn ID from ZIONBridge contract
+    pub burn_id: String,
+    /// EVM chain name (e.g. \"base\", \"base-sepolia\")
+    pub evm_chain: String,
+    /// Bridge relay validator identifier
+    pub validator_id: String,
+}
+
+/// POST /api/bridge/unlock
+///
+/// Called by the bridge relay after a confirmed wZION burn on EVM.
+/// Reads the bridge vault private key from `ZION_BRIDGE_VAULT_KEY` env var
+/// (64-char hex = 32-byte Ed25519 secret), creates a signed ZION TX from
+/// the vault to the recipient, and submits it to the L1 mempool.
+///
+/// Environment variables:
+/// - `ZION_BRIDGE_VAULT_KEY` — 64-char hex Ed25519 secret key of bridge vault
+///   If unset, returns 503 (bridge unlock not configured).
+///
+/// Authentication: Bearer token via ZION_RPC_TOKEN (if set).
+pub async fn bridge_unlock(
+    AxumState(state): AxumState<State>,
+    Json(req): Json<BridgeUnlockRequest>,
+) -> Json<serde_json::Value> {
+    // ── 1. Read vault key from env ────────────────────────────────────────
+    let vault_key_hex = match std::env::var("ZION_BRIDGE_VAULT_KEY").ok() {
+        Some(k) if k.len() == 64 => k,
+        Some(_) => {
+            return Json(serde_json::json!({
+                "status": "error",
+                "message": "ZION_BRIDGE_VAULT_KEY must be exactly 64 hex chars (32 bytes)"
+            }));
+        }
+        None => {
+            return Json(serde_json::json!({
+                "status": "error",
+                "message": "Bridge unlock not configured: ZION_BRIDGE_VAULT_KEY not set"
+            }));
+        }
+    };
+
+    let vault_key_bytes: [u8; 32] = match keys::from_hex(&vault_key_hex)
+        .and_then(|b| b.try_into().ok())
+    {
+        Some(b) => b,
+        None => {
+            return Json(serde_json::json!({
+                "status": "error",
+                "message": "ZION_BRIDGE_VAULT_KEY is not valid hex"
+            }));
+        }
+    };
+
+    // ── 2. Derive vault address ───────────────────────────────────────────
+    let signing_key = SigningKey::from_bytes(&vault_key_bytes);
+    let public_key_bytes = signing_key.verifying_key();
+    let public_key_hex = to_hex(public_key_bytes.as_bytes());
+    let vault_address =
+        keys::zion1_address_from_public_key_bytes(public_key_bytes.as_bytes());
+
+    // ── 3. Validate request ───────────────────────────────────────────────
+    if !keys::is_valid_zion1_address(&req.recipient) {
+        return Json(serde_json::json!({
+            "status": "error",
+            "message": format!("Invalid recipient address: {}", req.recipient)
+        }));
+    }
+    if req.amount_atomic == 0 {
+        return Json(serde_json::json!({
+            "status": "error",
+            "message": "amount_atomic must be > 0"
+        }));
+    }
+
+    // ── 4. Fetch vault UTXOs ──────────────────────────────────────────────
+    let utxos = match state.storage.get_utxos_for_address(&vault_address, 200, 0) {
+        Ok(u) => u,
+        Err(e) => {
+            return Json(serde_json::json!({
+                "status": "error",
+                "message": format!("Storage error fetching vault UTXOs: {}", e)
+            }));
+        }
+    };
+
+    // ── 5. Coin selection (largest-first) ─────────────────────────────────
+    // Estimate fee: 1 input, 2 outputs ≈ 600 bytes × 1 atomic/byte = 600 atomic
+    let fee_atomic: u64 = 1_000; // conservative flat fee for bridge TX
+    let needed = req.amount_atomic.saturating_add(fee_atomic);
+
+    let mut sorted_utxos = utxos;
+    sorted_utxos.sort_by(|a, b| b.1.amount.cmp(&a.1.amount)); // largest first
+
+    let mut selected: Vec<(String, TxOutput)> = Vec::new();
+    let mut total_in: u64 = 0;
+    for utxo in sorted_utxos {
+        selected.push(utxo);
+        total_in = selected.iter().map(|u| u.1.amount).sum();
+        if total_in >= needed {
+            break;
+        }
+    }
+
+    if total_in < needed {
+        return Json(serde_json::json!({
+            "status": "error",
+            "message": format!(
+                "Insufficient vault balance: have {} atomic, need {} atomic (amount {} + fee {})",
+                total_in, needed, req.amount_atomic, fee_atomic
+            )
+        }));
+    }
+
+    let change = total_in - req.amount_atomic - fee_atomic;
+
+    // ── 6. Build transaction ──────────────────────────────────────────────
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let inputs: Vec<TxInput> = selected
+        .iter()
+        .map(|(key, _)| {
+            // key format: "{tx_hash}:{output_index}"
+            let parts: Vec<&str> = key.rsplitn(2, ':').collect();
+            let (output_index, prev_tx_hash) = if parts.len() == 2 {
+                let idx = parts[0].parse::<u32>().unwrap_or(0);
+                (idx, parts[1].to_string())
+            } else {
+                (0u32, key.clone())
+            };
+            TxInput {
+                prev_tx_hash,
+                output_index,
+                signature: String::new(), // filled after hash
+                public_key: public_key_hex.clone(),
+            }
+        })
+        .collect();
+
+    let mut outputs = vec![TxOutput {
+        amount: req.amount_atomic,
+        address: req.recipient.clone(),
+    }];
+    if change > 0 {
+        outputs.push(TxOutput {
+            amount: change,
+            address: vault_address.clone(),
+        });
+    }
+
+    let mut tx = Transaction {
+        id: String::new(),
+        version: 1,
+        inputs,
+        outputs,
+        fee: fee_atomic,
+        timestamp,
+    };
+
+    let tx_hash = tx.calculate_hash();
+    tx.id = tx_hash.clone();
+
+    // ── 7. Sign each input ────────────────────────────────────────────────
+    let msg_bytes = match keys::from_hex(&tx_hash) {
+        Some(b) => b,
+        None => {
+            return Json(serde_json::json!({
+                "status": "error",
+                "message": "Failed to decode tx hash for signing"
+            }));
+        }
+    };
+
+    for input in &mut tx.inputs {
+        let sig = signing_key.sign(&msg_bytes);
+        input.signature = to_hex(&sig.to_bytes());
+    }
+
+    // ── 8. Self-verify ────────────────────────────────────────────────────
+    if !tx.verify_signatures() {
+        return Json(serde_json::json!({
+            "status": "error",
+            "message": "Bridge TX self-verification failed — key mismatch"
+        }));
+    }
+
+    // ── 9. Log and submit to mempool ──────────────────────────────────────
+    println!(
+        "🌉 Bridge unlock: {} atomic → {} | burn_id={} evm_chain={} validator={}",
+        req.amount_atomic, req.recipient, req.burn_id, req.evm_chain, req.validator_id,
+    );
+
+    match state.process_transaction(tx) {
+        Ok(()) => Json(serde_json::json!({
+            "status": "submitted",
+            "tx_hash": tx_hash,
+            "recipient": req.recipient,
+            "amount_atomic": req.amount_atomic,
+            "vault_address": vault_address,
+            "fee_atomic": fee_atomic,
+            "burn_id": req.burn_id,
+            "evm_chain": req.evm_chain,
+        })),
+        Err(e) => Json(serde_json::json!({
+            "status": "error",
+            "message": format!("Mempool rejected bridge TX: {}", e)
+        })),
+    }
 }

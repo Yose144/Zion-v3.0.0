@@ -20,6 +20,10 @@ pub fn build(state: State) -> Router {
             post(methods::submit_tx).with_state(state.clone()),
         )
         .route("/jsonrpc", post(jsonrpc::handle).with_state(state.clone()))
+        .route(
+            "/api/bridge/unlock",
+            post(methods::bridge_unlock).with_state(state.clone()),
+        )
         .layer(middleware::from_fn(auth::require_bearer_token));
 
     // --- Public routes (read-only, no auth) ---
