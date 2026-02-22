@@ -15,6 +15,7 @@ import {
   Flame,
   Activity,
   Copy,
+  AlertCircle,
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import {
