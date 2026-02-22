@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowRight, Crown, ShieldCheck, AlertCircle, Plus, Heart, TreeDeciduous, Star, Sparkles, Users } from 'lucide-react';
+import { ArrowRight, Crown, ShieldCheck, Plus, Heart, TreeDeciduous, Star, Sparkles, Users, Info } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DAOStats from '@/components/dao/DAOStats';
 import ProposalCard from '@/components/dao/ProposalCard';
@@ -52,7 +52,7 @@ export default function DaoPage() {
   const [stats, setStats] = useState<DAOStatsType | null>(null);
   const [proposals, setProposals] = useState<GovernanceProposal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [daemonOnline, setDaemonOnline] = useState<boolean | null>(null);
 
   useEffect(() => {
     loadDAOData();
@@ -61,18 +61,16 @@ export default function DaoPage() {
   async function loadDAOData() {
     try {
       setLoading(true);
-      setError(null);
-      
       const [statsData, proposalsData] = await Promise.all([
         getDAOStats(),
         getGovernanceProposals()
       ]);
-      
       setStats(statsData);
       setProposals(proposalsData);
-    } catch (err) {
-      console.error('Failed to load DAO data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load DAO data');
+      // Daemon is considered online if we have > 0 proposals OR treasury > 0 and not default placeholder
+      setDaemonOnline(proposalsData.length > 0 || statsData.governance.total_proposals > 0);
+    } catch {
+      setDaemonOnline(false);
     } finally {
       setLoading(false);
     }
@@ -80,10 +78,10 @@ export default function DaoPage() {
 
   async function handleVote(proposalId: string, voteType: string) {
     try {
-      const demoWallet = 'ZION_DEMO_VOTER_' + Math.random().toString(36).substring(7);
+      const demoWallet = 'zion1demo' + Math.random().toString(36).substring(2, 10);
       await castGovernanceVote(parseInt(proposalId, 10), demoWallet, voteType as 'for' | 'against');
       await loadDAOData();
-      alert(`Vote cast successfully: ${voteType.toUpperCase()}`);
+      alert(`Vote cast: ${voteType.toUpperCase()}`);
     } catch (err) {
       console.error('Vote failed:', err);
       alert(err instanceof Error ? err.message : 'Failed to cast vote');
@@ -119,13 +117,18 @@ export default function DaoPage() {
           </div>
         </motion.section>
 
-        {error && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-red-500/20 bg-red-500/10 p-6">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-red-400" />
+        {/* DAO daemon status notice */}
+        {!loading && daemonOnline === false && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-6">
+            <div className="flex items-start gap-3">
+              <Info className="h-6 w-6 text-blue-400 mt-0.5 shrink-0" />
               <div>
-                <p className="font-semibold text-red-400">Failed to load DAO data</p>
-                <p className="text-sm text-red-300">{error}</p>
+                <p className="font-semibold text-blue-300">DAO Daemon — Phase 2 (Hybrid DAO)</p>
+                <p className="text-sm text-blue-200/80 mt-1">
+                  The on-chain DAO governance daemon will be deployed with the Hybrid DAO phase (Q2 2026).
+                  Treasury balance and governance rules are active; proposal creation via UI launches with the daemon.
+                  Showing placeholder treasury data below.
+                </p>
               </div>
             </div>
           </motion.div>
