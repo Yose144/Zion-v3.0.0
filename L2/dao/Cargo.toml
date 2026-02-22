@@ -26,6 +26,14 @@ ed25519-dalek = { version = "2", features = ["serde"] }
 # Storage
 rusqlite = { version = "0.31", features = ["bundled"] }
 
+# HTTP API
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# HTTP client (L1 RPC queries)
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+
 # Utils
 thiserror = "2"
 anyhow = "1"
@@ -35,6 +43,12 @@ uuid = { version = "1", features = ["v4", "serde"] }
 # Sibling crate (L1 types — READ ONLY)
 # NOTE: We only use core types, never modify L1 state
 # zion-core = { path = "../../L1/core" }  # L1/core (cross-layer, uncomment when needed)
+
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+[[bin]]
+name = "zion-dao"
+path = "src/main.rs"
 
 [dev-dependencies]
 tokio-test = "0.4"
