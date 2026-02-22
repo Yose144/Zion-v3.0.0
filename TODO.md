@@ -82,8 +82,8 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 - [x] **D-07** DAO integration testy (38 testů, E2E lifecycle) ✅ *(Session 18)*
 - [ ] **D-06** TOML konfig pro DAO daemon
 - [ ] **D-09** Prometheus metriky pro DAO
-- [ ] **DEX-01** wZION/ETH Uniswap V3 pool deploy (Base Mainnet) *(🔴 NEXT)*
-- [ ] **DEX-02** Liquidity seeding script
+- [x] **DEX-01** wZION/ETH Uniswap V3 pool deploy (Base Mainnet) ✅ *(scripts/deploy-pool.ts, Session 18)*
+- [x] **DEX-02** Liquidity seeding script ✅ *(scripts/seed-liquidity.ts, Session 18)*
 - [ ] **DEX-03** Price oracle + slippage guard
 - [ ] Atomic Swaps design + BTC HTLC prototype
 - [ ] Solidity contracts audit
