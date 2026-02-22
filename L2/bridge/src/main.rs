@@ -15,7 +15,7 @@ use zion_bridge::config::BridgeConfig;
 use zion_bridge::db::BridgeDb;
 use zion_bridge::evm_watcher::EvmWatcher;
 use zion_bridge::l1_watcher::L1Watcher;
-use zion_bridge::metrics::BridgeMetrics;
+use zion_bridge::metrics::{serve_metrics, BridgeMetrics};
 use zion_bridge::relayer::Relayer;
 
 #[tokio::main]
@@ -60,7 +60,11 @@ async fn main() -> Result<()> {
     let last_l1_height = db.get_last_l1_height()?;
 
     // Initialize metrics
-    let _metrics = BridgeMetrics::new();
+    let metrics = BridgeMetrics::new();
+
+    // Start Prometheus metrics endpoint
+    let metrics_port = config.metrics.port;
+    tokio::spawn(serve_metrics(Arc::clone(&metrics), metrics_port));
 
     // Create channels
     let (lock_tx, lock_rx) = mpsc::channel(100);
