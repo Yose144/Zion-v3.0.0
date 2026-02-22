@@ -34,10 +34,14 @@
 
 **Servery:**
 
-| Server | IP | Uptime | Stav |
-|--------|----|--------|------|
-| Helsinki 🇫🇮 | 77.42.31.72 | ✅ | Seed + Pool + Web — zion-pool:2.9.6-testnet, Docker opraveno |
-| Germany 🇩🇪 | 195.201.31.201 | ✅ | Peer |
+| Server | IP | Stav |
+|--------|----|------|
+| Helsinki 🇫🇮 (TreeofLife) | 77.42.31.72 | ✅ Seed + Pool + Web — Docker 2.9.6-testnet |
+| SeedDE 🇩🇪 (Seed) | 46.225.126.243 | 🔧 Připraven k deploy |
+| Usa1 🇺🇸 (Seed2) | 5.78.178.227 | 🔧 Připraven k deploy |
+| Usa2 🇺🇸 (Seed3) | 178.156.240.160 | 🔧 Připraven k deploy |
+| Asia3 🌏 (Seed4) | 5.223.43.93 | 🔧 Připraven k deploy |
+| ~~LA~~ ~~Sydney~~ ~~Delhi~~ ~~Santiago~~ | Vultr | ❌ Suspendovány |
 
 ---
 
