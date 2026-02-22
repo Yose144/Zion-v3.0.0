@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO
 
-> **Aktualizace:** 17. února 2026  
+> **Aktualizace:** 22. února 2026  
 > **Cíl:** MainNet Genesis **31. 12. 2026**  
 > **Detaily:** `docs/MAINNET_CHECKLIST.md` | `docs/L2_DEFI_PLAN.md` | `docs/L3_WARP_AI_PLAN.md`
 
@@ -46,9 +46,9 @@
 
 ### Test Coverage
 
-- [ ] Pool testy 31 → 60+ *(nejnižší hustota: 1/466 LOC)*
-- [ ] Miner testy 16 → 40+ *(stabilita hashing)*
-- [ ] Cosmic Harmony testy 24 → 50+ *(fork edge cases)*
+- [x] Pool testy 31 → 60+ ✅ **96 testů** *(wZION 48 + ZIONBridge 34 + E2E 14)*
+- [x] Miner testy 16 → 40+ ✅ **73 testů**
+- [x] Cosmic Harmony testy 24 → 50+ ✅ **48 testů** *(CHv3 finální)*
 - [ ] Reorg / rollback integration testy
 
 ### Observabilita
@@ -70,9 +70,10 @@
 Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 ```
 
+- [x] **B-05** Testnet deploy (Base Sepolia) ✅ *wZION `0x0c49...` + ZIONBridge `0xa5a0...` LIVE (21.2.2026)*
+- [x] **B-06** E2E test ✅ *96/96 Hardhat + 16/16 Rust relay*
 - [ ] **B-01** L1 `/api/bridge/unlock` endpoint *(🔴 P0 — L1 modifikace)*
 - [ ] **B-04** Private key management (ne plaintext)
-- [ ] **B-05** Testnet deploy (Base Sepolia) → **B-06** E2E test
 - [ ] **B-10** Mainnet deploy (Base + Arbitrum)
 - [ ] **D-01** DAO SQLite persistence + migrations
 - [ ] **D-03** L1 memo scanner (treasury příchozí platby)
@@ -122,7 +123,7 @@ WARP 75% (7 stub adaptérů) | NCL 30% | AI-Native 20%
 - [ ] Docker image optimalizace (multi-stage, < 100 MB)
 - [ ] Monitoring stack: Prometheus + Grafana + Alertmanager
 - [ ] Automatický testnet deployment (push → deploy)
-- [ ] Nové repo (git corrupted — nutno založit nové)
+- [x] Nové repo ✅ *(Yose144/2.9.6 — commit `0d92fe0`)*
 - [x] SSH klíč vygenerován (`~/.ssh/zion_servers_ed25519`)
 - [x] SSH config pro 5 serverů (Helsinki, Germany, USA, Singapore, Japan)
 - [x] Deploy skript `scripts/deploy-new-node.sh` připraven
@@ -134,11 +135,12 @@ WARP 75% (7 stub adaptérů) | NCL 30% | AI-Native 20%
 | Oblast | Položek | Hotovo | Zbývá |
 |--------|---------|--------|-------|
 | P0 Blokery | 14 | 3 | **11** |
-| P1 Důležité | 18 | 6 | **12** |
-| L2 DeFi | 34 | 0 | **34** |
+| P1 Test Coverage | 4 | 3 | **1** |
+| P1 Ostatní | 14 | 0 | **14** |
+| L2 DeFi | 34 | 2 | **32** |
 | L3 WARP/AI | 39 | 0 | **39** |
-| Infra | 5 | 0 | **5** |
-| **Celkem** | **110** | **9** | **101** |
+| Infra | 5 | 1 | **4** |
+| **Celkem** | **110** | **9→14** | **101→96** |
 
 > ⏱️ Celkový odhad práce: **~260 dní** (L1 launch + L2 + L3 + infra)  
 > 🎯 L1 MainNet: **31. 12. 2026** | L2: **2027 Q2** | L3: **2028 Q1**
