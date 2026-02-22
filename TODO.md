@@ -73,6 +73,7 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 - [x] **B-05** Testnet deploy (Base Sepolia) ✅ *wZION `0x0c49...` + ZIONBridge `0xa5a0...` LIVE (21.2.2026)*
 - [x] **B-06** E2E test ✅ *96/96 Hardhat + 16/16 Rust relay*
 - [x] **B-02** WS auto-reconnect ✅ *exponenciální backoff 5→80s, MAX_RETRIES=5 (Session 18)*
+- [x] **B-03** Bridge Prometheus `/metrics` HTTP endpoint ✅ *(port 9100, 11 metrik, Session 19)*
 - [ ] **B-01** L1 `/api/bridge/unlock` endpoint *(🔴 P0 — L1 modifikace)*
 - [ ] **B-04** Private key management (ne plaintext)
 - [ ] **B-10** Mainnet deploy (Base + Arbitrum)
@@ -81,7 +82,7 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 - [x] **D-05** DAO executor — Parameter, Emergency, guardian multisig ✅ *(Session 18)*
 - [x] **D-07** DAO integration testy (38 testů, E2E lifecycle) ✅ *(Session 18)*
 - [ ] **D-06** TOML konfig pro DAO daemon
-- [ ] **D-09** Prometheus metriky pro DAO
+- [x] **D-09** Prometheus metriky pro DAO ✅ *(`GET /metrics`, 17 metrik, Session 19)*
 - [x] **DEX-01** wZION/ETH Uniswap V3 pool deploy (Base Mainnet) ✅ *(scripts/deploy-pool.ts, Session 18)*
 - [x] **DEX-02** Liquidity seeding script ✅ *(scripts/seed-liquidity.ts, Session 18)*
 - [ ] **DEX-03** Price oracle + slippage guard

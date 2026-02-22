@@ -38,6 +38,7 @@ use tracing::info;
 
 use crate::config::DaoConfig;
 use crate::db::DaoDb;
+use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalType};
 use crate::types::{VoteChoice, PROPOSAL_THRESHOLD};
 
@@ -50,6 +51,7 @@ pub struct AppState {
     pub db: Arc<Mutex<DaoDb>>,
     pub config: Arc<DaoConfig>,
     pub api_key: String,
+    pub metrics: Arc<DaoMetrics>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,12 +106,22 @@ pub fn dao_router(state: AppState) -> Router {
         .route("/api/dao/proposals/:id/vote",  post(cast_vote))
         .route("/api/dao/treasury",        get(treasury_overview))
         .route("/api/dao/stats",           get(dao_stats))
+        .route("/metrics",                 get(prometheus_metrics))
         .with_state(state)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Handlers
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// GET /metrics — Prometheus text exposition format (compatible with Grafana/Prometheus)
+async fn prometheus_metrics(State(state): State<AppState>) -> impl axum::response::IntoResponse {
+    let body = state.metrics.render_prometheus();
+    (
+        [(axum::http::header::CONTENT_TYPE, "text/plain; version=0.0.4")],
+        body,
+    )
+}
 
 /// GET /api/dao/health
 async fn health() -> Json<serde_json::Value> {

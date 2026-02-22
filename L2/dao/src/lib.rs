@@ -65,6 +65,7 @@ pub mod voting;
 pub mod db;
 pub mod l1_scanner;
 pub mod api;
+pub mod metrics;
 
 // Re-exports
 pub use config::DaoConfig;
