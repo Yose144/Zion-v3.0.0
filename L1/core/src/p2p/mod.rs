@@ -70,7 +70,7 @@ pub async fn start(state: State, port: u16, mut initial_peers: Vec<String>) -> R
         10, // max 10 attempts per window
     ));
     let blacklist = Arc::new(Blacklist::new());
-    let connection_limiter = ConnectionLimiter::new(100); // max 100 total connections
+    let connection_limiter = ConnectionLimiter::new(128); // max 128 total connections (96 inbound + 32 outbound)
     let msg_rate_limiter = Arc::new(MessageRateLimiter::new(
         200, // max 200 messages per peer
         60,  // per 60 seconds
@@ -237,9 +237,9 @@ pub async fn start(state: State, port: u16, mut initial_peers: Vec<String>) -> R
             continue;
         }
 
-        // P1-07: Inbound/outbound slot separation — reserve 8 slots for outbound
-        // to prevent eclipse attack where attacker fills all slots with inbound.
-        if !peers.allow_inbound(100, 8) {
+        // P1-07: Inbound/outbound slot separation — reserve 32 slots for outbound
+        // (96 inbound max + 32 outbound = 128 total) to prevent eclipse attacks.
+        if !peers.allow_inbound(128, 32) {
             println!(
                 "[P2P Security] Inbound slot limit reached (outbound reserved), rejecting {}",
                 remote_addr

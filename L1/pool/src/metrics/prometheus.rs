@@ -14,6 +14,10 @@ static TEMPLATE_UPDATES: OnceLock<IntCounter> = OnceLock::new();
 static TEMPLATE_FETCH_ERRORS: OnceLock<IntCounter> = OnceLock::new();
 static BLOCK_SUBMIT_ATTEMPTS: OnceLock<IntCounter> = OnceLock::new();
 static BLOCK_SUBMIT_REJECTED: OnceLock<IntCounter> = OnceLock::new();
+/// Orphan blocks = block submissions rejected by L1 (height already filled by another block)
+static ORPHAN_BLOCKS: OnceLock<IntCounter> = OnceLock::new();
+/// Orphan rate in permille (‰) — orphans / (accepted + orphans) × 1000
+static ORPHAN_RATE_PERMILLE: OnceLock<IntGauge> = OnceLock::new();
 
 static REDIS_ERRORS: OnceLock<IntCounter> = OnceLock::new();
 static PAYOUTS_QUEUED: OnceLock<IntCounter> = OnceLock::new();
@@ -298,6 +302,44 @@ pub fn inc_block_submit_rejected() {
     block_submit_rejected().inc();
 }
 
+// ── Orphan block metrics (P0-02) ─────────────────────────────────────────────
+
+fn orphan_blocks() -> &'static IntCounter {
+    ORPHAN_BLOCKS.get_or_init(|| {
+        IntCounter::new(
+            "orphan_blocks_total",
+            "Block submissions rejected by L1 (height already filled = orphan)",
+        )
+        .unwrap()
+    })
+}
+
+fn orphan_rate_permille() -> &'static IntGauge {
+    ORPHAN_RATE_PERMILLE.get_or_init(|| {
+        IntGauge::new(
+            "orphan_rate_permille",
+            "Orphan rate in permille: orphans / (accepted + orphans) × 1000 (< 20 = < 2%)",
+        )
+        .unwrap()
+    })
+}
+
+/// Increment orphan counter and recompute orphan rate gauge.
+/// Call this whenever a block submission is rejected by L1.
+pub fn inc_orphan_blocks() {
+    orphan_blocks().inc();
+    recompute_orphan_rate();
+}
+
+/// Recompute orphan rate (call also after a block is accepted).
+pub fn recompute_orphan_rate() {
+    let orphans = ORPHAN_BLOCKS.get().map(|c| c.get()).unwrap_or(0);
+    let accepted = BLOCKS_FOUND.get().map(|c| c.get()).unwrap_or(0);
+    let total = accepted + orphans;
+    let permille = if total > 0 { (orphans * 1000) / total } else { 0 } as i64;
+    orphan_rate_permille().set(permille);
+}
+
 pub fn inc_connections() {
     active_connections().inc();
 }
@@ -502,6 +544,8 @@ pub fn render() -> String {
     mfs.extend(template_fetch_errors().collect());
     mfs.extend(block_submit_attempts().collect());
     mfs.extend(block_submit_rejected().collect());
+    mfs.extend(orphan_blocks().collect());
+    mfs.extend(orphan_rate_permille().collect());
     mfs.extend(redis_errors().collect());
     mfs.extend(payouts_queued().collect());
     mfs.extend(payouts_paid().collect());
