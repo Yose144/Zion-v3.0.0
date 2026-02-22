@@ -268,6 +268,30 @@ Cargo.toml          ← Workspace: 11 crates v L1–L4
 
 ---
 
+## Session 18 — L2 DAO executor + testy + Bridge auto-reconnect
+
+### D-05 — DAO Executor rewrite (L2/dao/src/executor.rs)
+- `apply_parameter_change()` — validace + mutace 6 config parametrů (quorum_percent 1–50, voting_period_days 1–30, timelock_hours 12–168, daily_spend_limit, multisig_threshold ≥3, proposal_threshold)
+- `execute_emergency_action()` — whitelist 6 akcí (pause/unpause_bridge, freeze/unfreeze_treasury, halt_validator, rotate_guardian), vrací L1 memo `DAO:emergency:<action>:<justification>`
+- `execute_proposal()` — reálná guardian adresa místo hardcoded "zion1executor", plná podpora ProposalType (Treasury, Parameter, Emergency, Grant, Humanitarian)
+- 7 inline jednotkových testů
+
+### D-07 — DAO Integration testy (L2/dao/tests/integration.rs)
+- 38 testů pokrývajících: DB persistence (5), voting engine (3), quorum check (4), executor (9), E2E lifecycle (3)
+- In-memory SQLite, žádná sít, deterministické helpery (make_guardian, expired_timelock, vote_n...)
+
+### B-02 — Bridge WS auto-reconnect (L2/bridge/src/evm_watcher.rs)
+- `MAX_RETRIES = 5`, `BACKOFF_BASE_SECS = 5` — exponenciální backoff 5→10→20→40→80 s
+- `run()` — vnější retry smyčka; `connect_and_watch()` — vnitřní poll smyčka
+- 3 po sobě jdoucí poll chyby spustí reconnect
+- 3 nové unit testy
+
+### Stav po session 18
+- `cargo check -p zion-dao` ✅ čistý (0 errors, 0 warnings)
+- `cargo check -p zion-bridge` ✅ čistý (0 errors, 0 warnings)
+
+---
+
 ## Další kroky (prioritně)
 
 1. **Dokončit P0-01** — Počkat na 14 dní bez critical bugu (cíl: 2. března)

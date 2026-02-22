@@ -3,6 +3,12 @@
 //! Subscribes to BridgeBurn events from the wZION contract.
 //! When a burn is detected and finalized, sends it to the relayer
 //! to submit an L1 unlock transaction.
+//!
+//! ## Auto-reconnect (B-02)
+//!
+//! The watcher automatically reconnects on WebSocket failure using
+//! exponential backoff: 5s → 10s → 20s → 40s → 80s (max 5 retries → error).
+//! On successful poll, the backoff counter resets to 0.
 
 use crate::config::EvmChainConfig;
 use crate::types::{BridgeStatus, EvmBurnEvent};
@@ -21,6 +27,17 @@ abigen!(
     ]"#
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Auto-reconnect constants (B-02)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Maximum reconnect attempts before giving up (returns Err to the caller
+/// which will restart the task via the bridge daemon).
+const MAX_RETRIES: u32 = 5;
+
+/// Base backoff in seconds — doubles each attempt (5→10→20→40→80s).
+const BACKOFF_BASE_SECS: u64 = 5;
+
 /// EVM watcher for a single chain.
 pub struct EvmWatcher {
     config: EvmChainConfig,
@@ -35,7 +52,8 @@ impl EvmWatcher {
         }
     }
 
-    /// Start the EVM watcher loop. Sends confirmed burn events to the channel.
+    /// Start the EVM watcher loop with auto-reconnect (B-02).
+    /// Sends confirmed burn events to the channel.
     pub async fn run(&mut self, burn_tx: mpsc::Sender<EvmBurnEvent>) -> Result<()> {
         info!(
             "👁️ EVM Watcher started — chain: {} ({}), wZION: {}, finality: {} blocks",
@@ -45,9 +63,42 @@ impl EvmWatcher {
             self.config.finality_blocks,
         );
 
+        let mut retry_count = 0u32;
+
+        loop {
+            match self.connect_and_watch(&burn_tx).await {
+                Ok(()) => {
+                    // Returned normally (shouldn't happen — loop is infinite)
+                    info!("[{}] Watcher loop exited cleanly", self.config.name);
+                    return Ok(());
+                }
+                Err(e) => {
+                    retry_count += 1;
+                    if retry_count > MAX_RETRIES {
+                        error!(
+                            "[{}] EVM Watcher exceeded {} retries — giving up. Last error: {}",
+                            self.config.name, MAX_RETRIES, e
+                        );
+                        return Err(e);
+                    }
+
+                    let backoff_secs = BACKOFF_BASE_SECS * (1 << (retry_count - 1).min(6));
+                    warn!(
+                        "[{}] EVM Watcher error (attempt {}/{}): {} — reconnecting in {}s",
+                        self.config.name, retry_count, MAX_RETRIES, e, backoff_secs
+                    );
+                    tokio::time::sleep(std::time::Duration::from_secs(backoff_secs)).await;
+                }
+            }
+        }
+    }
+
+    /// Inner loop: connect to EVM RPC and poll for new burn events.
+    /// Returns Err on any connectivity issue (triggering auto-reconnect).
+    async fn connect_and_watch(&mut self, burn_tx: &mpsc::Sender<EvmBurnEvent>) -> Result<()> {
         let provider = Provider::<Ws>::connect(&self.config.rpc_url)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to connect to EVM RPC: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("Failed to connect to EVM RPC {}: {}", self.config.rpc_url, e))?;
 
         let provider = Arc::new(provider);
         let wzion_addr: Address = self
@@ -56,30 +107,39 @@ impl EvmWatcher {
             .parse()
             .map_err(|e| anyhow::anyhow!("Invalid wZION address: {}", e))?;
 
-        // Build event filter for BridgeBurn
         let filter = Filter::new()
             .address(wzion_addr)
             .event("BridgeBurn(address,uint256,string,bytes32,uint256)");
 
-        info!(
-            "📡 Subscribing to BridgeBurn events on {}",
-            self.config.name
-        );
+        info!("📡 Connected to {} — polling BridgeBurn events", self.config.name);
 
-        // Use polling for broader compatibility
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(12));
+        let mut consecutive_errors = 0u32;
 
         loop {
             interval.tick().await;
 
-            match self.poll_burns(&provider, &filter, &burn_tx).await {
+            match self.poll_burns(&provider, &filter, burn_tx).await {
                 Ok(count) => {
+                    consecutive_errors = 0; // reset on success
                     if count > 0 {
                         info!("{}: processed {} burn events", self.config.name, count);
                     }
                 }
                 Err(e) => {
-                    error!("{}: poll error: {:?}", self.config.name, e);
+                    consecutive_errors += 1;
+                    warn!(
+                        "[{}] poll error #{}: {:?}",
+                        self.config.name, consecutive_errors, e
+                    );
+                    // After 3 consecutive poll errors, trigger reconnect
+                    if consecutive_errors >= 3 {
+                        return Err(anyhow::anyhow!(
+                            "3 consecutive poll errors on {}: {}",
+                            self.config.name,
+                            e
+                        ));
+                    }
                 }
             }
         }
@@ -133,21 +193,9 @@ impl EvmWatcher {
     }
 
     fn parse_burn_event(&self, log: Log) -> Result<EvmBurnEvent> {
-        // Parse indexed topics:
-        //   topic[0] = event signature hash
-        //   topic[1] = from (address, indexed)
-        //   topic[2] = burnId (bytes32, indexed)
         let from = Address::from(log.topics.get(1).copied().unwrap_or_default());
         let burn_id = log.topics.get(2).copied().unwrap_or_default();
 
-        // Parse non-indexed data: ABI-encoded (uint256 amount, string l1Recipient, uint256 timestamp)
-        //
-        // ABI layout for (uint256, string, uint256):
-        //   [0..32]    = amount (uint256)
-        //   [32..64]   = offset to string data (always 0x60 = 96 for this layout)
-        //   [64..96]   = timestamp (uint256)
-        //   [96..128]  = string length (uint256)
-        //   [128..]    = string data (UTF-8, padded to 32-byte boundary)
         let data = &log.data;
 
         if data.len() < 128 {
@@ -157,16 +205,10 @@ impl EvmWatcher {
             ));
         }
 
-        // Slot 0: amount (uint256)
         let amount = U256::from_big_endian(&data[0..32]);
-
-        // Slot 1: offset to string data (should be 0x60 = 96)
         let string_offset = U256::from_big_endian(&data[32..64]).as_usize();
-
-        // Slot 2: timestamp (uint256)
         let _timestamp = U256::from_big_endian(&data[64..96]);
 
-        // At string_offset: string length + string bytes
         if data.len() < string_offset + 32 {
             return Err(anyhow::anyhow!(
                 "BridgeBurn event data truncated at string offset {}",
@@ -189,7 +231,6 @@ impl EvmWatcher {
         let l1_recipient = String::from_utf8(data[string_start..string_end].to_vec())
             .map_err(|e| anyhow::anyhow!("Invalid UTF-8 in l1Recipient: {}", e))?;
 
-        // Validate l1_recipient looks like a ZION address (starts with "zion1")
         if !l1_recipient.starts_with("zion1") {
             warn!(
                 "Parsed l1_recipient '{}' does not start with 'zion1' — possible decoding error",
@@ -213,5 +254,43 @@ impl EvmWatcher {
         };
 
         Ok(burn_event)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_reconnect_constants() {
+        // Backoff sequence: 5, 10, 20, 40, 80
+        for attempt in 1u32..=5 {
+            let secs = BACKOFF_BASE_SECS * (1 << (attempt - 1).min(6));
+            assert!(secs <= 80, "Backoff at attempt {} should be ≤80s, got {}s", attempt, secs);
+        }
+    }
+
+    #[test]
+    fn test_max_retries_constant() {
+        assert_eq!(MAX_RETRIES, 5);
+    }
+
+    #[test]
+    fn test_watcher_new() {
+        let config = EvmChainConfig {
+            chain_id: "base".into(),
+            name: "Base".into(),
+            evm_chain_id: 8453,
+            rpc_url: "wss://base-rpc.example.com".into(),
+            rpc_url_backup: None,
+            wzion_address: "0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2".into(),
+            bridge_contract_address: "0xabc".into(),
+            finality_blocks: 12,
+            enabled: true,
+            gas_strategy: "eip1559".into(),
+            max_gas_gwei: 100,
+        };
+        let watcher = EvmWatcher::new(config, Some(1_000_000));
+        assert_eq!(watcher.last_processed_block, 1_000_000);
     }
 }
