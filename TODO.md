@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO
 
-> **Aktualizace:** 22. února 2026  
+> **Aktualizace:** Session 24 (miner deploy + DAO web fix)  
 > **Cíl:** MainNet Genesis **31. 12. 2026**  
 > **Detaily:** `docs/MAINNET_CHECKLIST.md` | `docs/L2_DEFI_PLAN.md` | `docs/L3_WARP_AI_PLAN.md`
 
@@ -16,7 +16,7 @@
 
 ### Fáze 3 — Infrastruktura (Q2–Q3)
 
-- [x] **P0-04** 5 seed nodů — Helsinki ✅ SeedDE ✅ Usa1 ✅ Usa2 ✅ Asia3 ✅ — všechny běží *(22.2.2026; Helsinki+SeedDE: arm64 native; Usa1/Usa2/Asia3: native amd64 cross-build; fix `is_multiple_of()` → `% 2` pro Rust 1.85)*
+- [x] **P0-04** 5 seed nodů — Helsinki ✅ SeedDE ✅ Usa1 ✅ Usa2 ✅ Asia3 ✅ — všechny běží + **miner nasadzen na všechny 4 seed nody** *(22.2.2026; fix `is_multiple_of()` → `% n == 0` pro stable Rust 1.85, commit `ef4b105`, Session 24)*
 - [ ] **P0-05** Premine klíče — air-gapped Ed25519 keypair generace
 - [x] **P0-06** RPC autentizace — API key pro write endpointy *(kód hotov v `rpc/auth.rs`; nasadit: `export ZION_RPC_TOKEN=$(openssl rand -hex 32)` na každém nodu)*
 
@@ -84,6 +84,7 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 - [x] **D-07** DAO integration testy (38 testů, E2E lifecycle) ✅ *(Session 18)*
 - [x] **D-06** TOML konfig pro DAO daemon ✅ *(`DaoConfig::load()`, TOML file + env var override, `config/dao-testnet.toml`, Session 20)*
 - [x] **D-09** Prometheus metriky pro DAO ✅ *(`GET /metrics`, 17 metrik, Session 19)*
+- [x] **D-10** DAO web integrace ✅ *(`dao-api.ts` přepsán pro Rust `/api/dao/*`, `dao/page.tsx` graceful offline, commit `dfa4dae`, Session 24)*
 - [x] **DEX-01** wZION/ETH Uniswap V3 pool deploy (Base Mainnet) ✅ *(scripts/deploy-pool.ts, Session 18)*
 - [x] **DEX-02** Liquidity seeding script ✅ *(scripts/seed-liquidity.ts, Session 18)*
 - [ ] **DEX-03** Price oracle + slippage guard

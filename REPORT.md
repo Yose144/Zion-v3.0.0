@@ -557,5 +557,61 @@ cargo check -p zion-pool: Finished 3.53s ✅ (0 errors, 1 future-incompat warnin
 
 ---
 
+## Session 24 — DAO web fix + Miner deploy na all seed nodes
+
+### Commity
+| Hash | Popis |
+|------|-------|
+| `dfa4dae` | fix(dao-web): rewrite dao-api.ts pro Rust /api/dao/* + page.tsx graceful offline |
+| `ef4b105` | fix(miner): replace is_multiple_of() with % == 0 for stable Rust |
+
+### DAO Web — Oprava integrace (commit `dfa4dae`)
+**Problém:** `dao-api.ts` ukazoval na starý FastAPI backend (`localhost:8001/dao/governance/...`) místo Rust DAO axum daemonu (`/api/dao/*`).
+
+| Soubor | Změna |
+|--------|-------|
+| `APP&WEB/website-v2.9/src/lib/dao-api.ts` | Přepsán pro Rust `/api/dao/*` API — `daoFetch()` timeout wrapper, `mapProposal()`, `PLACEHOLDER_STATS`, env `NEXT_PUBLIC_DAO_API_URL` |
+| `APP&WEB/website-v2.9/src/app/dao/page.tsx` | Odstraněn červený error banner, přidáno modré info "DAO Daemon — Phase 2", `daemonOnline` state |
+
+**Rust DAO endpoint (port 8080):**
+- `GET /api/dao/stats` → `{total_proposals, active, passed, executed, treasury_total_zion, voting_period_days, quorum_percent, multisig}`
+- `GET /api/dao/proposals` → `{proposals: [ProposalRow], total, offset, limit}`
+- `POST /api/dao/proposals/:id/vote` → `{voter, choice: "yes"|"no"|"abstain"}`
+
+### Audit serverů (všech 5 nodů)
+| Server | Arch | IP | Kontejnery | Source | Block Height |
+|--------|------|-----|------------|--------|-------------|
+| Helsinki | arm64 | 77.42.31.72 | core+pool+miner+website+redis+grafana+prometheus | /root/zion-2.9.6 | 4042 |
+| SeedDE | arm64 | 46.225.126.243 | core only → +miner | /root/zion-2.9.6 | 4042 |
+| Usa1 | amd64 | 5.78.178.227 | core only → +miner | /root/zion-2.9.6 | 4042 |
+| Usa2 | amd64 | 178.156.240.160 | core only → +miner | /root/zion-2.9.6 | 4042 |
+| Asia3 | amd64 | 5.223.43.93 | core only → +miner | /root/zion-2.9.6 | 4042 |
+
+### Miner deploy — bug fix (commit `ef4b105`)
+**Problém:** `cargo build --release -p zion-miner` selhal s `E0658: use of unstable library feature unsigned_is_multiple_of` — metoda dostupná jen v nightly Rustu.
+
+**Oprava:** 5 výskytů `.is_multiple_of(n)` → `% n == 0` (stable alternativa):
+- `L1/miner/src/miner/mod.rs` (řádky 582, 860)
+- `L1/miner/src/miner/cpu.rs` (řádky 1052, 1153)
+- `L1/miner/src/ncl/mod.rs` (řádek 683)
+
+### Compose soubory (nasazeny na všechny 4 seed server)
+**Path:** `/root/docker-compose-seed.yml`  
+**Miner config:** `--pool 77.42.31.72:3333 --wallet zion1q893q6c5j7y0e3r062g4m7c240t5g294k7z6729 --algorithm cosmic_harmony_v3 --threads 1 --xmr-pool 45.155.102.89:10001`
+
+| Server | Worker name | CPU limit |
+|--------|-------------|-----------|
+| SeedDE | `seedde-miner` | 1.5 |
+| Usa1 | `usa1-miner` | 1.5 |
+| Usa2 | `usa2-miner` | 1.5 |
+| Asia3 | `asia3-miner` | 1.5 |
+
+### Stav buildů
+- ✅ `ef4b105` opravuje stable Rust kompatibilitu
+- 🔄 `docker build -f /root/Dockerfile.miner` běží na všech 4 serverech (~15-20 min cargo)
+- ⏳ Po dokončení: `docker compose -f /root/docker-compose-seed.yml up -d miner`
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*
