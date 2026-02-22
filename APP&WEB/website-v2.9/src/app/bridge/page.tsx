@@ -8,7 +8,6 @@ import {
   Zap,
   Shield,
   Clock,
-  AlertCircle,
   CheckCircle2,
   ExternalLink,
   RefreshCw,
@@ -61,7 +60,7 @@ const burnUnlockSteps = [
     icon: CheckCircle2,
     title: 'Receive ZION on L1',
     desc:
-      '[Coming soon — B-01] L1 unlock endpoint processes the memo and releases escrowed ZION.',
+      'L1 unlock endpoint processes the memo and releases escrowed ZION.',
   },
 ];
 
@@ -234,17 +233,7 @@ export default function BridgePage() {
             viewport={{ once: true }}
             className="rounded-[28px] border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-black/60 p-6 md:p-8 backdrop-blur-xl relative overflow-hidden"
           >
-            {/* Coming soon overlay */}
-            <div className="absolute inset-0 rounded-[28px] backdrop-blur-[1px] bg-black/30 z-10 flex flex-col items-center justify-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-5 py-2 text-sm font-semibold text-orange-400">
-                <AlertCircle className="h-4 w-4" /> Coming soon — B-01
-              </span>
-              <p className="text-xs text-gray-400 max-w-xs text-center">
-                L1 unlock endpoint is in development. EVM burn events are already tracked.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between mb-6 opacity-40">
+            <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-xs uppercase tracking-[0.4em] text-orange-400">Direction B</p>
                 <h2 className="text-2xl font-semibold text-white">Burn &amp; Unlock</h2>
@@ -252,7 +241,7 @@ export default function BridgePage() {
               </div>
             </div>
 
-            <ol className="space-y-4 mb-8 opacity-40">
+            <ol className="space-y-4 mb-8">
               {burnUnlockSteps.map((step, i) => (
                 <li key={step.title} className="flex gap-4">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-500/30 bg-orange-500/10">
@@ -269,7 +258,7 @@ export default function BridgePage() {
             </ol>
 
             {status && (
-              <div className="grid grid-cols-2 gap-3 opacity-40">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
                   <p className="text-lg font-bold text-white">
                     {status.evm_burns_detected.toLocaleString()}
