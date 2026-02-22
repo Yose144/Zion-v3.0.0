@@ -32,15 +32,15 @@ import {
 const heroStats = [
   { label: 'Seed Regions', value: '2', descriptor: 'EU-NORTH · EU-CENTRAL' },
   { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
-  { label: 'Sync Cohesion', value: '100%', descriptor: '2/2 nodes synced' },
+  { label: 'Sync Cohesion', value: '100%', descriptor: '5/5 nodes synced' },
   { label: 'Network', value: 'TestNet', descriptor: 'v2.9.6 · Rust native' },
 ];
 
 const infraFeatures = [
   {
     icon: Server,
-    title: 'Helsinki (EU-NORTH)',
-    detail: 'Primary seed node — ARM64 8GB',
+    title: 'Helsinki 🇫🇮 (EU-NORTH)',
+    detail: 'Primary seed + pool — ARM64 8GB',
     ip: '77.42.31.72',
     status: 'Primary',
     color: 'text-emerald-400',
@@ -49,10 +49,40 @@ const infraFeatures = [
   },
   {
     icon: Server,
-    title: 'Germany (EU-CENTRAL)',
-    detail: 'Secondary seed — AMD64 8GB',
-    ip: '195.201.31.201',
-    status: 'Secondary',
+    title: 'SeedDE 🇩🇪 (EU-CENTRAL)',
+    detail: 'Seed node — ARM64 4GB',
+    ip: '46.225.126.243',
+    status: 'Seed',
+    color: 'text-blue-400',
+    border: 'border-blue-500/30',
+    bg: 'bg-blue-500/5',
+  },
+  {
+    icon: Server,
+    title: 'Usa1 🇺🇸 (US-WEST)',
+    detail: 'Seed node — AMD64 4GB',
+    ip: '5.78.178.227',
+    status: 'Seed',
+    color: 'text-blue-400',
+    border: 'border-blue-500/30',
+    bg: 'bg-blue-500/5',
+  },
+  {
+    icon: Server,
+    title: 'Usa2 🇺🇸 (US-EAST)',
+    detail: 'Seed node — AMD64 4GB',
+    ip: '178.156.240.160',
+    status: 'Seed',
+    color: 'text-blue-400',
+    border: 'border-blue-500/30',
+    bg: 'bg-blue-500/5',
+  },
+  {
+    icon: Server,
+    title: 'Asia3 🌏 (ASIA)',
+    detail: 'Seed node — AMD64 4GB',
+    ip: '5.223.43.93',
+    status: 'Seed',
     color: 'text-blue-400',
     border: 'border-blue-500/30',
     bg: 'bg-blue-500/5',
@@ -63,10 +93,9 @@ const guideBlocks = [
   {
     icon: Zap,
     title: 'Mining',
-    description: 'Connect any Cosmic Harmony / CPU miner to the primary pool.',
+    description: 'Connect any Cosmic Harmony / CPU miner to the Helsinki pool.',
     items: [
-      'Pool: 77.42.31.72:3333 (Helsinki)',
-      'Pool: 195.201.31.201:3333 (Germany)',
+      'Pool: 77.42.31.72:3333 (Helsinki — primary)',
       'Wallet: YOUR_ZION_ADDRESS',
       'Password: x',
     ],
@@ -77,7 +106,8 @@ const guideBlocks = [
     description: 'Native Rust JSON-RPC endpoint for explorers and tooling.',
     items: [
       'Helsinki: http://77.42.31.72:8444/jsonrpc',
-      'Germany: http://195.201.31.201:8444/jsonrpc',
+      'SeedDE:   http://46.225.126.243:8444/jsonrpc',
+      'Usa1:     http://5.78.178.227:8444/jsonrpc',
       'Method: POST',
     ],
   },
@@ -87,14 +117,17 @@ const guideBlocks = [
     description: 'Native libp2p network for blockchain synchronization.',
     items: [
       'Helsinki: 77.42.31.72:8334',
-      'Germany: 195.201.31.201:8334',
+      'SeedDE:   46.225.126.243:8334',
+      'Usa1:     5.78.178.227:8334',
+      'Usa2:     178.156.240.160:8334',
+      'Asia3:    5.223.43.93:8334',
     ],
   },
 ];
 
 const networkFacts = [
   { text: 'Native Rust P2P — libp2p mesh', done: true },
-  { text: '2 seed nodes in full consensus', done: true },
+  { text: '5 seed nodes in full consensus', done: true },
   { text: 'Stratum v2 mining on both pools', done: true },
   { text: 'JSON-RPC endpoints live (port 8444)', done: true },
   { text: '24/7 Docker containers with auto-restart', done: true },
@@ -138,7 +171,7 @@ export default function NetworkPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from native Rust nodes. Helsinki (primary seed) and Germany (secondary)
+                Real-time telemetry from native Rust nodes. Helsinki (primary + pool), SeedDE, Usa1, Usa2, Asia3 (seed-only)
                 forming the TestNet mesh. All data refreshes every 30 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
@@ -380,7 +413,7 @@ export default function NetworkPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — P2P Network · Native Rust Infrastructure · Helsinki &amp; Germany · MainNet 31.12.2026
+          ZION TerraNova v2.9.6 — P2P Network · Native Rust Infrastructure · 5 Seed Nodes · 5 Continents · MainNet 31.12.2026
         </p>
       </div>
     </div>

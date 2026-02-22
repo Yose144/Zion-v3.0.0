@@ -270,7 +270,7 @@ export default function ExplorerPage() {
               <Globe className="h-7 w-7 text-zion-cyan" />
               Network Peers
             </h2>
-            <p className="text-sm text-gray-400">Global node connectivity — Helsinki (EU-NORTH) and Germany (EU-CENTRAL).</p>
+            <p className="text-sm text-gray-400">Global node connectivity — Helsinki · SeedDE · Usa1 · Usa2 · Asia3 (5 seed nodes).</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[280px]" />}>
             <NetworkPeers />
@@ -332,7 +332,7 @@ export default function ExplorerPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — Blockchain Explorer · Real-time data from native Rust nodes · Helsinki &amp; Germany
+          ZION TerraNova v2.9.6 — Blockchain Explorer · Real-time data from native Rust nodes · 5 Seed Nodes · 5 Continents
         </p>
       </div>
     </div>

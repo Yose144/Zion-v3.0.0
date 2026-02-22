@@ -24,7 +24,7 @@ const missionSignals = [
   {
     title: 'Validator Grid',
     status: '2 / 2 nodes online',
-    value: 'Helsinki + Frankfurt synced',
+    value: '5 seed nodes synced',  // Helsinki, SeedDE, Usa1, Usa2, Asia3
     accent: 'text-zion-cyan',
   },
   {
