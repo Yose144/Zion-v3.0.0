@@ -50,23 +50,25 @@ const config: HardhatUserConfig = {
       accounts: [PRIVATE_KEY],
     },
 
-    // ── MainNet (uncomment when ready) ──
-    // base: {
-    //   url: process.env.BASE_RPC || "https://mainnet.base.org",
-    //   chainId: 8453,
-    //   accounts: [PRIVATE_KEY],
-    // },
-    // arbitrum: {
-    //   url: process.env.ARB_RPC || "https://arb1.arbitrum.io/rpc",
-    //   chainId: 42161,
-    //   accounts: [PRIVATE_KEY],
-    // },
+    // ── MainNet ──────────────────────────────────────────────────────────────
+    base: {
+      url: process.env.BASE_RPC || "https://mainnet.base.org",
+      chainId: 8453,
+      accounts: [PRIVATE_KEY],
+    },
+    arbitrum: {
+      url: process.env.ARB_RPC || "https://arb1.arbitrum.io/rpc",
+      chainId: 42161,
+      accounts: [PRIVATE_KEY],
+    },
   },
 
   etherscan: {
     apiKey: {
       "base-sepolia": process.env.BASESCAN_API_KEY || "",
+      "base": process.env.BASESCAN_API_KEY || "",
       "arbitrum-sepolia": process.env.ARBISCAN_API_KEY || "",
+      "arbitrumOne": process.env.ARBISCAN_API_KEY || "",
       bscTestnet: process.env.BSCSCAN_API_KEY || "",
     },
   },

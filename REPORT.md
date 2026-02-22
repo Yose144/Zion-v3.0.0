@@ -290,6 +290,13 @@ Cargo.toml          ← Workspace: 11 crates v L1–L4
 - `cargo check -p zion-dao` ✅ čistý (0 errors, 0 warnings)
 - `cargo check -p zion-bridge` ✅ čistý (0 errors, 0 warnings)
 
+### DEX-01/02 — wZION/WETH Uniswap V3 Pool setup (L2/contracts/scripts/)
+- `scripts/dex-config.ts` — sdílená konfigurace: adresy Uniswap V3 pro Base Sepolia + Base Mainnet, price math (`computeSqrtPriceX96`, `tickFromSqrtPriceX96`), fee tier 3000 (0.3%)
+- `scripts/deploy-pool.ts` — DEX-01: vytvoří pool přes Factory + inicializuje sqrtPriceX96
+- `scripts/seed-liquidity.ts` — DEX-02: full-range liquidity via NonfungiblePositionManager, approve + mint
+- `hardhat.config.ts` — odkomentován Base Mainnet (chainId 8453) + Arbitrum Mainnet
+- `package.json` — přidány npm skripty: `dex:pool:sepolia`, `dex:pool:mainnet`, `dex:seed:sepolia`, `dex:seed:mainnet`
+
 ---
 
 ## Další kroky (prioritně)
