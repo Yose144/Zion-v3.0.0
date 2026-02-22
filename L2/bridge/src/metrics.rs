@@ -1,9 +1,21 @@
 //! Bridge metrics and monitoring.
+//!
+//! Exposes a Prometheus-compatible `/metrics` HTTP endpoint on `metrics.port`
+//! (default 9100). All counters are pure atomic — no external crate required.
+//!
+//! ## Prometheus endpoint
+//!
+//! ```text
+//! GET http://localhost:9100/metrics
+//! GET http://localhost:9100/health
+//! ```
 
+use axum::{routing::get, Router};
 use serde::Serialize;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use tracing::info;
 
 /// Runtime metrics for the bridge relay.
 #[derive(Debug)]
@@ -66,6 +78,101 @@ impl BridgeMetrics {
             last_l1_height: self.last_l1_height.load(Ordering::Relaxed),
             last_evm_block: self.last_evm_block.load(Ordering::Relaxed),
         }
+    }
+
+    /// Render metrics in Prometheus text exposition format.
+    ///
+    /// Compatible with `prometheus_client`, `node_exporter`, Grafana, etc.
+    pub fn render_prometheus(&self) -> String {
+        let snap = self.snapshot();
+        let mut out = String::with_capacity(1024);
+
+        let metrics: &[(&str, &str, &str, u64)] = &[
+            ("counter", "zion_bridge_uptime_seconds",
+             "Bridge relay uptime in seconds",
+             snap.uptime_secs),
+            ("counter", "zion_bridge_l1_locks_detected_total",
+             "Total L1 lock transactions detected",
+             snap.l1_locks_detected),
+            ("counter", "zion_bridge_l1_locks_finalized_total",
+             "Total L1 lock transactions finalized (enough confirmations)",
+             snap.l1_locks_finalized),
+            ("counter", "zion_bridge_evm_mints_submitted_total",
+             "Total wZION mint transactions submitted on EVM",
+             snap.evm_mints_submitted),
+            ("counter", "zion_bridge_evm_mints_confirmed_total",
+             "Total wZION mint transactions confirmed on EVM",
+             snap.evm_mints_confirmed),
+            ("counter", "zion_bridge_evm_burns_detected_total",
+             "Total wZION burn events detected on EVM",
+             snap.evm_burns_detected),
+            ("counter", "zion_bridge_l1_unlocks_submitted_total",
+             "Total L1 unlock transactions submitted",
+             snap.l1_unlocks_submitted),
+            ("counter", "zion_bridge_l1_unlocks_confirmed_total",
+             "Total L1 unlock transactions confirmed",
+             snap.l1_unlocks_confirmed),
+            ("counter", "zion_bridge_errors_total",
+             "Total bridge relay errors",
+             snap.errors),
+            ("gauge", "zion_bridge_last_l1_height",
+             "Last processed L1 block height",
+             snap.last_l1_height),
+            ("gauge", "zion_bridge_last_evm_block",
+             "Last processed EVM block number",
+             snap.last_evm_block),
+        ];
+
+        for (kind, name, help, value) in metrics {
+            out.push_str(&format!("# HELP {name} {help}\n"));
+            out.push_str(&format!("# TYPE {name} {kind}\n"));
+            out.push_str(&format!("{name} {value}\n"));
+        }
+
+        out
+    }
+}
+
+/// Spawn a lightweight Prometheus HTTP endpoint.
+///
+/// Serves:
+/// - `GET /metrics` — Prometheus text format
+/// - `GET /health`  — JSON `{"status":"ok"}`
+///
+/// Call with `tokio::spawn(serve_metrics(metrics, port))`.
+pub async fn serve_metrics(metrics: Arc<BridgeMetrics>, port: u16) {
+    let app = Router::new()
+        .route(
+            "/metrics",
+            get({
+                let m = Arc::clone(&metrics);
+                move || {
+                    let txt = m.render_prometheus();
+                    async move {
+                        (
+                            [(axum::http::header::CONTENT_TYPE, "text/plain; version=0.0.4")],
+                            txt,
+                        )
+                    }
+                }
+            }),
+        )
+        .route(
+            "/health",
+            get(|| async { axum::Json(serde_json::json!({"status": "ok"})) }),
+        );
+
+    let addr = format!("0.0.0.0:{port}");
+    let listener = match tokio::net::TcpListener::bind(&addr).await {
+        Ok(l) => l,
+        Err(e) => {
+            tracing::error!("Metrics server bind failed on {addr}: {e}");
+            return;
+        }
+    };
+    info!("📊 Metrics endpoint: http://{addr}/metrics");
+    if let Err(e) = axum::serve(listener, app).await {
+        tracing::error!("Metrics server error: {e}");
     }
 }
 

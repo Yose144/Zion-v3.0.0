@@ -33,6 +33,7 @@ use zion_dao::api::{dao_router, AppState};
 use zion_dao::config::DaoConfig;
 use zion_dao::db::DaoDb;
 use zion_dao::l1_scanner::{L1Scanner, ScannerConfig};
+use zion_dao::metrics::DaoMetrics;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Entry point
@@ -75,6 +76,10 @@ async fn main() {
     // ── Load config (minimal, uses defaults for now) ───────────────────────
     let dao_config = Arc::new(DaoConfig::default());
 
+    // ── Initialize metrics ─────────────────────────────────────────────────
+    let dao_metrics = DaoMetrics::new();
+    info!("📊 Prometheus metrics: http://0.0.0.0:{}/metrics", api_port);
+
     // ── Build Axum app ─────────────────────────────────────────────────────
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -85,6 +90,7 @@ async fn main() {
         db: Arc::clone(&db),
         config: Arc::clone(&dao_config),
         api_key: api_key.clone(),
+        metrics: Arc::clone(&dao_metrics),
     };
 
     let app = dao_router(state)

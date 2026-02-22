@@ -303,6 +303,41 @@ Cargo.toml          ← Workspace: 11 crates v L1–L4
 
 ---
 
+## Session 19 — B-03 Bridge Prometheus + D-09 DAO Prometheus
+
+### B-03 — Bridge `/metrics` HTTP endpoint (L2/bridge/src/metrics.rs + main.rs)
+- Přidán `axum 0.7` + `tower 0.4` do `L2/bridge/Cargo.toml`
+- `render_prometheus(&self) -> String` na `BridgeMetrics` — 11 metrik v Prometheus text formátu:
+  - `zion_bridge_uptime_seconds`, `zion_bridge_errors_total`
+  - `zion_bridge_l1_locks_detected_total`, `_finalized_total`
+  - `zion_bridge_evm_mints_submitted_total`, `_confirmed_total`
+  - `zion_bridge_evm_burns_detected_total`
+  - `zion_bridge_l1_unlocks_submitted_total`, `_confirmed_total`
+  - `zion_bridge_last_l1_height`, `zion_bridge_last_evm_block`
+- `pub async fn serve_metrics(metrics: Arc<BridgeMetrics>, port: u16)` — Axum HTTP server
+  - `GET /metrics` → Prometheus text (Content-Type: `text/plain; version=0.0.4`)
+  - `GET /health` → `{"status":"ok"}`
+  - Binduje na `0.0.0.0:{config.metrics.port}` (default 9100), spawn v main.rs
+
+### D-09 — DAO `/metrics` HTTP endpoint (L2/dao/src/metrics.rs + api.rs)
+- Nový soubor `L2/dao/src/metrics.rs` — `DaoMetrics` struct s 17 `AtomicU64` čítači:
+  - Proposals: `proposals_created/executed/rejected/expired`
+  - Votes: `votes_cast/yes/no/abstain`
+  - Treasury: `treasury_operations_submitted/executed`, `treasury_total_disbursed_zion`
+  - Actions: `emergency_actions_executed`, `guardian_signatures_collected`
+  - Scanner: `l1_blocks_scanned`, `l1_governance_memos_found`
+  - API: `api_requests_total`, `api_errors_total`
+- `render_prometheus(&self) -> String` + 4 unit testy
+- `AppState` rozšířen o `pub metrics: Arc<DaoMetrics>`
+- `GET /metrics` přidán do `dao_router()` — stejný port jako REST API (8080)
+- `main.rs` instanciuje `DaoMetrics::new()` a napojí na AppState
+
+### Stav po session 19
+- `cargo check -p zion-bridge` ✅ čistý (0 errors)
+- `cargo check -p zion-dao` ✅ čistý (0 errors)
+
+---
+
 ## Další kroky (prioritně)
 
 1. **Dokončit P0-01** — Počkat na 14 dní bez critical bugu (cíl: 2. března)
