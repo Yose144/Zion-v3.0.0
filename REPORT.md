@@ -336,6 +336,22 @@ Cargo.toml          ← Workspace: 11 crates v L1–L4
 - `cargo check -p zion-bridge` ✅ čistý (0 errors)
 - `cargo check -p zion-dao` ✅ čistý (0 errors)
 
+### WEB-01 — Bridge stránka `/bridge` (APP&WEB/website-v2.9)
+- Nový soubor `src/lib/bridge-api.ts` — typy `BridgeStatus`, `BridgeContractInfo`, `getBridgeStatus()`, `formatUptime()`, `bridgeEfficiency()`, `BRIDGE_CONTRACTS` (reálné adresy wZION + ZIONBridge z Base Sepolia)
+- Nová Next.js API route `src/app/api/bridge/status/route.ts` — server-side proxy: fetchuje Prometheus text z `:9100/metrics` → parsuje 11 metrik → vrací JSON; graceful offline fallback (3s AbortTimeout)
+- Nová stránka `src/app/bridge/page.tsx` — plné UI:
+  - Live status pill (Online/Offline + uptime + L1/EVM výška bloku, auto-refresh každých 15s)
+  - **Lock & Mint** karta ✅ (aktivní, 3 kroky, live counts: locks/mints)
+  - **Burn & Unlock** karta s `Coming soon — B-01` overlay (poloprůhledná dokud B-01 neexistuje)
+  - Relay statistics mřížka: efektivita %, errors_total, l1_unlocks_submitted, uptime
+  - Contract addresses: wZION + ZIONBridge s Copy + BaseScan link
+  - Security ¬ testnet notice (12-block finality, Guardian multi-sig, testnet only)
+  - Resources section (docs, BaseScan, DEX roadmap)
+- `src/components/Navigation.tsx` — přidán `{ href: '/bridge', label: 'Bridge' }` do skupiny "Stacks"
+- `src/components/Footer.tsx` — přidán `{ href: '/bridge', label: 'Bridge', Icon: ArrowLeftRight }` do skupiny "Explore"
+- `.env.local.example` — dokumentována nová env var `BRIDGE_METRICS_URL=http://localhost:9100/metrics`
+- Commit `959219b` — 7 souborů, +667 řádků
+
 ---
 
 ## Další kroky (prioritně)
