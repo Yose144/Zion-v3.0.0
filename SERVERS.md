@@ -1,79 +1,80 @@
 # 🖥️ ZION TerraNova — Seed Nodes
 
-> **Aktualizace:** 17. února 2026
-> **Cíl:** 5 seed nodů v 5 regionech pro MainNet
+> **Aktualizace:** 22. února 2026  
+> **Cíl:** 5 seed nodů pro TestNet → MainNet  
+> **Poznámka:** Původní Vultr servery (LA, Sydney, Delhi, Santiago) suspendovány → nahrazeny testovacími nody
 
 ## Aktivní servery
 
-| # | Lokace | IP | SSH alias | RAM | Disk | CPU | OS | Stav |
-|---|--------|----|-----------|-----|------|-----|----|------|
-| 1 | 🇫🇮 Helsinki | 77.42.31.72 | `zion-helsinki` | — | — | — | — | ✅ Běží (seed + pool) |
-| 2 | �🇸 Los Angeles | 149.248.8.4 | `zion-losangeles` | 4 GB | 75 GB | 2 vCPU | Ubuntu 22.04 | ✅ Deployed |
-| 3 | 🇦🇺 Sydney | 108.61.184.118 | `zion-sydney` | 4 GB | 75 GB | 2 vCPU | Ubuntu 22.04 | ✅ Deployed |
-| 4 | 🇮🇳 Delhi | 139.84.170.133 | `zion-delhi` | 4 GB | 75 GB | 2 vCPU | Ubuntu 22.04 | ✅ Deployed |
-| 5 | 🇨🇱 Santiago | 64.176.13.76 | `zion-santiago` | 4 GB | 75 GB | 2 vCPU | Ubuntu 22.04 | ✅ Deployed |
+| # | Název | Lokace | IP | SSH alias | Klíč | Stav |
+|---|-------|--------|----|-----------|------|------|
+| 1 | TreeofLife | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | `zion-helsinki` | `zion_hetzner_key` | ✅ Běží (seed + pool + monitoring) |
+| 2 | Seed | 🇩🇪 Germany | 46.225.126.243 | `zion-seedde` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
+| 3 | Seed2 | 🇺🇸 USA 1 | 5.78.178.227 | `zion-usa1` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
+| 4 | Seed3 | 🇺🇸 USA 2 | 178.156.240.160 | `zion-usa2` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
+| 5 | Seed4 | 🌏 Asia | 5.223.43.93 | `zion-asia3` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
 
-## 🏅 Olympijské kruhy — 5 kontinentů, 5 nodů
+### ❌ Suspendované servery (Vultr — pozastaveny)
+
+| Lokace | IP | Stav |
+|--------|----|------|
+| 🇺🇸 Los Angeles | 149.248.8.4 | ❌ Suspendován |
+| 🇦🇺 Sydney | 108.61.184.118 | ❌ Suspendován |
+| 🇮🇳 Delhi | 139.84.170.133 | ❌ Suspendován |
+| 🇨🇱 Santiago | 64.176.13.76 | ❌ Suspendován |
+
+## � Testovací síť — 5 nodů
 
 ```
-                    🔵                ⚫                🔴
-               ╭─────────╮       ╭─────────╮       ╭─────────╮
-              ( 🇫🇮 EVROPA )─────( 🇺🇸 AMERIKA)─────( 🇮🇳  ASIE  )
-              ( Helsinki )     ( L.Angeles)     (  Delhi   )
-               ╰────┬────╯       ╰────┬────╯       ╰────┬────╯
-                    │    🟡            │          🟢     │
-                    │ ╭─────────╮      │      ╭─────────╮│
-                    └─( 🇨🇱 JIŽ.AM)────┴──────( 🇦🇺 OCEÁN.)┘
-                      ( Santiago)             ( Sydney  )
-                       ╰─────────╯             ╰─────────╯
-
           ╔═══════════════════════════════════════════════════╗
-          ║    🌟 ZION TerraNova — Global P2P Network 🌟     ║
-          ║    5 Seed Nodes · 5 Continents · Port 8333       ║
+          ║    🌟 ZION TerraNova — TestNet P2P Network 🌟    ║
+          ║    5 Seed Nodes · Port 8334 (testnet)            ║
           ╚═══════════════════════════════════════════════════╝
+
+              🇫🇮 Helsinki (TreeofLife)
+                 77.42.31.72
+               ╱     |      ╲
+              ╱      |       ╲
+    🇩🇪 SeedDE     Seed2 🇺🇸    Seed3 🇺🇸
+  46.225.126.243  5.78.178.227  178.156.240.160
+              ╲      |       ╱
+               ╲     |      ╱
+             Seed4 🌏 Asia
+             5.223.43.93
 ```
 
-```
-              ZION GLOBAL SEED NETWORK — Olympic Rings
-
-                          🇫🇮 Helsinki
-                            ╱   ╲
-                           ╱     ╲
-            🇺🇸 Los Angeles ───⛏️─── 🇮🇳 Delhi
-                           ╲     ╱
-                            ╲   ╱
-              🇨🇱 Santiago ───┴─── 🇦🇺 Sydney
-
-                   ◯     ◯     ◯
-                     ◯     ◯
-            5 rings · 5 continents · 1 network
-```
-
-| Kontinent | Nod | Barva kruhu |
-|-----------|-----|-------------|
-| 🔵 **Evropa** | Helsinki | Modrý |
-| ⚫ **Severní Amerika** | Los Angeles | Černý |
-| 🔴 **Asie** | Delhi | Červený |
-| 🟡 **Jižní Amerika** | Santiago | Žlutý |
-| 🟢 **Oceánie** | Sydney | Zelený |
+| # | Název | IP | Region |
+|---|-------|----|--------|
+| 1 | TreeofLife | 77.42.31.72 | 🇫🇮 Evropa (Hetzner Helsinki) |
+| 2 | Seed | 46.225.126.243 | 🇩🇪 Evropa (Germany) |
+| 3 | Seed2 | 5.78.178.227 | 🇺🇸 USA 1 |
+| 4 | Seed3 | 178.156.240.160 | 🇺🇸 USA 2 |
+| 5 | Seed4 | 5.223.43.93 | 🌏 Asie |
 
 ## Připojení
 
 ```bash
-ssh zion-helsinki     # 🇫🇮 Evropa
-ssh zion-losangeles   # 🇺🇸 Severní Amerika
-ssh zion-sydney       # 🇦🇺 Oceánie
-ssh zion-delhi        # 🇮🇳 Asie
-ssh zion-santiago     # 🇨🇱 Jižní Amerika
+ssh zion-helsinki   # 🇫🇮 Helsinki — TreeofLife (seed + pool + monitoring)
+ssh zion-seedde     # 🇩🇪 Germany — Seed
+ssh zion-usa1       # 🇺🇸 USA 1 — Seed2
+ssh zion-usa2       # 🇺🇸 USA 2 — Seed3
+ssh zion-asia3      # 🌏 Asia — Seed4
 ```
 
-## Deploy nového nodu
+## Deploy seed nodů
 
 ```bash
-ssh zion-losangeles 'bash -s' < scripts/deploy-new-node.sh
-ssh zion-sydney     'bash -s' < scripts/deploy-new-node.sh
-ssh zion-delhi      'bash -s' < scripts/deploy-new-node.sh
-ssh zion-santiago   'bash -s' < scripts/deploy-new-node.sh
+# Nasadit core node na všechny seed servery:
+ssh zion-seedde  'bash -s' < scripts/deploy-testnet.sh
+ssh zion-usa1    'bash -s' < scripts/deploy-testnet.sh
+ssh zion-usa2    'bash -s' < scripts/deploy-testnet.sh
+ssh zion-asia3   'bash -s' < scripts/deploy-testnet.sh
+```
+
+## SEED_PEERS pro nody
+
+```
+77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334
 ```
 
 ## 🔑 SSH klíče a přístupy
@@ -82,9 +83,9 @@ ssh zion-santiago   'bash -s' < scripts/deploy-new-node.sh
 
 | Klíč | Soubor | Použití |
 |------|--------|---------|
-| **Vultr servery** | `~/.ssh/zion_servers_ed25519` | LA, Sydney, Delhi, Santiago, Helsinki |
-| **Hetzner** | `~/.ssh/zion_hetzner_key` | Helsinki (77.42.31.72), Germany (195.201.31.201) |
-| **Deploy (starý)** | `~/.ssh/zion_deployment_key` | Starý server 91.98.122.165 |
+| **Hetzner** | `~/.ssh/zion_hetzner_key` | Helsinki (77.42.31.72) |
+| **Testnet servery** | `~/.ssh/zion_servers_ed25519` | SeedDE, Usa1, Usa2, Asia3 |
+| **Deploy (starý)** | `~/.ssh/zion_deployment_key` | Starý server 91.98.122.165 — nepoužívat |
 | **Server key** | `~/.ssh/zion_server_key` | Záloha |
 
 - **Typ:** Ed25519
@@ -93,34 +94,54 @@ ssh zion-santiago   'bash -s' < scripts/deploy-new-node.sh
 
 ### SSH Config (`~/.ssh/config`)
 
+Přidat/aktualizovat `~/.ssh/config`:
+
 ```
-Host zion-helsinki       → 77.42.31.72    (klíč: zion_servers_ed25519)
-Host zion-losangeles     → 149.248.8.4    (klíč: zion_servers_ed25519)
-Host zion-sydney         → 108.61.184.118 (klíč: zion_servers_ed25519)
-Host zion-delhi          → 139.84.170.133 (klíč: zion_servers_ed25519)
-Host zion-santiago       → 64.176.13.76   (klíč: zion_servers_ed25519)
-Host zion-germany        → 195.201.31.201 (klíč: zion_servers_ed25519)
+Host zion-helsinki
+    HostName 77.42.31.72
+    User root
+    IdentityFile ~/.ssh/zion_hetzner_key
+
+Host zion-seedde
+    HostName 46.225.126.243
+    User root
+    IdentityFile ~/.ssh/zion_servers_ed25519
+
+Host zion-usa1
+    HostName 5.78.178.227
+    User root
+    IdentityFile ~/.ssh/zion_servers_ed25519
+
+Host zion-usa2
+    HostName 178.156.240.160
+    User root
+    IdentityFile ~/.ssh/zion_servers_ed25519
+
+Host zion-asia3
+    HostName 5.223.43.93
+    User root
+    IdentityFile ~/.ssh/zion_servers_ed25519
 ```
 
-### Přímé připojení (alternativně s explicitním klíčem)
+### Přímé připojení (s explicitním klíčem)
 
 ```bash
-ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72       # Helsinki (Hetzner klíč)
-ssh -i ~/.ssh/zion_servers_ed25519 root@149.248.8.4    # LA
-ssh -i ~/.ssh/zion_servers_ed25519 root@108.61.184.118 # Sydney
-ssh -i ~/.ssh/zion_servers_ed25519 root@139.84.170.133 # Delhi
-ssh -i ~/.ssh/zion_servers_ed25519 root@64.176.13.76   # Santiago
+ssh -i ~/.ssh/zion_hetzner_key     root@77.42.31.72     # Helsinki (TreeofLife)
+ssh -i ~/.ssh/zion_servers_ed25519 root@46.225.126.243  # SeedDE (Seed)
+ssh -i ~/.ssh/zion_servers_ed25519 root@5.78.178.227    # Usa1 (Seed2)
+ssh -i ~/.ssh/zion_servers_ed25519 root@178.156.240.160 # Usa2 (Seed3)
+ssh -i ~/.ssh/zion_servers_ed25519 root@5.223.43.93     # Asia3 (Seed4)
 ```
 
 ## 🌐 Porty (Testnet)
 
-| Port | Služba | Popis |
-|------|--------|-------|
-| **8334** | P2P | Testnet peer-to-peer |
-| **8444** | RPC | Testnet JSON-RPC (`/jsonrpc`) |
-| **3333** | Stratum | Mining pool (pouze Helsinki) |
-| **8080** | Pool API | Pool statistiky (pouze Helsinki) |
-| **3000** | Web | Dashboard / Website (pouze Helsinki) |
-| **3001** | Grafana | Monitoring (pouze Helsinki) |
-| **9090** | Prometheus | Metriky (pouze Helsinki) |
+| Port | Služba | Popis | Kde |
+|------|--------|-------|-----|
+| **8334** | P2P | Testnet peer-to-peer | Všechny nody |
+| **8444** | RPC | Testnet JSON-RPC (`/jsonrpc`) | Všechny nody |
+| **3333** | Stratum | Mining pool | Helsinki |
+| **8080** | Pool API | Pool statistiky | Helsinki |
+| **3000** | Web | Dashboard / Website | Helsinki |
+| **3001** | Grafana | Monitoring | Helsinki |
+| **9090** | Prometheus | Metriky | Helsinki |
 

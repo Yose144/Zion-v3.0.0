@@ -16,7 +16,7 @@
 
 ### Fáze 3 — Infrastruktura (Q2–Q3)
 
-- [x] **P0-04** 5 seed nodů / 5 kontinentů (EU 1 ✅, USA 1 ✅, SA 1 ✅, Asia 1 ✅, Oceánie 1 ✅)
+- [ ] **P0-04** 5 seed nodů — Helsinki ✅ běží, SeedDE/Usa1/Usa2/Asia3 🔧 čekají na deploy *(Vultr nody suspendovány → nahrazeny testovacími, 22.2.2026)*
 - [ ] **P0-05** Premine klíče — air-gapped Ed25519 keypair generace
 - [x] **P0-06** RPC autentizace — API key pro write endpointy *(kód hotov v `rpc/auth.rs`; nasadit: `export ZION_RPC_TOKEN=$(openssl rand -hex 32)` na každém nodu)*
 
