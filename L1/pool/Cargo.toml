@@ -41,7 +41,7 @@ hyper = { version = "1", features = ["client"] }
 hyper-util = { version = "0.1", features = ["client-legacy", "http1", "tokio"] }
 http-body-util = { version = "0.1" }
 bytes = "1"
-axum = "0.7"
+axum = "0.8"
 rust_decimal = "1.33"
 rust_decimal_macros = "1.33"
 tracing = "0.1"
