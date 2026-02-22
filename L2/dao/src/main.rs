@@ -18,7 +18,6 @@
 //! cargo run --bin zion-dao
 //! ```
 
-use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -49,36 +48,34 @@ async fn main() {
 
     info!("ZION DAO Daemon v2.9.6 starting...");
 
-    // ── Config from env ────────────────────────────────────────────────────
-    let db_path   = env::var("DAO_DB_PATH").unwrap_or_else(|_| "./dao.db".into());
-    let api_port  = env::var("DAO_API_PORT").unwrap_or_else(|_| "8080".into());
-    let l1_rpc    = env::var("DAO_L1_RPC")
-        .unwrap_or_else(|_| "http://77.42.31.72:8444/jsonrpc".into());
-    let api_key   = env::var("ZION_DAO_API_KEY")
-        .unwrap_or_else(|_| {
-            tracing::warn!("ZION_DAO_API_KEY not set — write endpoints disabled");
-            "".into()
-        });
+    // ── Config: TOML file + env var overrides ──────────────────────────────
+    // Priority: defaults < DAO_CONFIG=<path>.toml < individual env vars
+    let cfg = DaoConfig::load(None);
+    info!("Config: name={} api_port={} db={}", cfg.name, cfg.api_port, cfg.db_path);
+
+    if cfg.api_key.is_empty() {
+        tracing::warn!("ZION_DAO_API_KEY not set — write endpoints disabled");
+    }
 
     // ── Open SQLite DB ─────────────────────────────────────────────────────
-    let dao_db = match DaoDb::open(&db_path) {
+    let dao_db = match DaoDb::open(&cfg.db_path) {
         Ok(db) => {
-            info!("DB opened at {}", db_path);
+            info!("DB opened at {}", cfg.db_path);
             db
         }
         Err(e) => {
-            error!("Failed to open DB at {}: {}", db_path, e);
+            error!("Failed to open DB at {}: {}", cfg.db_path, e);
             std::process::exit(1);
         }
     };
     let db = Arc::new(Mutex::new(dao_db));
 
     // ── Load config (minimal, uses defaults for now) ───────────────────────
-    let dao_config = Arc::new(DaoConfig::default());
+    let dao_config = Arc::new(cfg.clone());
 
     // ── Initialize metrics ─────────────────────────────────────────────────
     let dao_metrics = DaoMetrics::new();
-    info!("📊 Prometheus metrics: http://0.0.0.0:{}/metrics", api_port);
+    info!("📊 Prometheus metrics: http://0.0.0.0:{}/metrics", cfg.api_port);
 
     // ── Build Axum app ─────────────────────────────────────────────────────
     let cors = CorsLayer::new()
@@ -89,7 +86,7 @@ async fn main() {
     let state = AppState {
         db: Arc::clone(&db),
         config: Arc::clone(&dao_config),
-        api_key: api_key.clone(),
+        api_key: cfg.api_key.clone(),
         metrics: Arc::clone(&dao_metrics),
     };
 
@@ -98,16 +95,18 @@ async fn main() {
         .layer(TraceLayer::new_for_http());
 
     // ── Bind address ───────────────────────────────────────────────────────
-    let addr: SocketAddr = format!("0.0.0.0:{}", api_port)
+    let addr: SocketAddr = format!("0.0.0.0:{}", cfg.api_port)
         .parse()
-        .expect("Invalid DAO_API_PORT");
+        .expect("Invalid api_port in DAO config");
 
     info!("HTTP API listening on http://{}", addr);
 
     // ── Start L1 scanner ───────────────────────────────────────────────────
     let scanner_cfg = ScannerConfig {
-        rpc_url: l1_rpc.clone(),
-        ..ScannerConfig::default()
+        rpc_url: cfg.l1_rpc_url.clone(),
+        poll_interval: std::time::Duration::from_secs(cfg.scan_interval_secs),
+        min_vote_weight: cfg.min_vote_weight,
+        finality_blocks: cfg.finality_blocks,
     };
     let scanner = L1Scanner::new(scanner_cfg, Arc::clone(&db));
 
