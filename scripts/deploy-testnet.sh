@@ -51,7 +51,8 @@ deploy_server() {
     # 1. Rsync source code (faster than git clone, works with private repos)
     log "[$name] Syncing source code..."
     ssh_cmd "$ip" "mkdir -p $DEPLOY_DIR"
-    rsync -az --exclude 'target/' --exclude '.git/' --exclude 'node_modules/' --exclude 'Zion-2.9.5-main.zip' \
+    # --chmod ensures files are readable even if local perms are restrictive (macOS 700)
+    rsync -az --chmod=Du=rwx,Fu=rw --exclude 'target/' --exclude '.git/' --exclude 'node_modules/' --exclude 'Zion-2.9.5-main.zip' \
         -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new" \
         "$LOCAL_SRC/" "${DEPLOY_USER}@$ip:$DEPLOY_DIR/"
     
