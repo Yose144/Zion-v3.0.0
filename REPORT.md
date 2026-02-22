@@ -1,6 +1,6 @@
 # 📊 ZION TerraNova — Project Report
 
-> **Datum:** 21. února 2026  
+> **Datum:** 22. února 2026  
 > **Verze:** v2.9.6 "On the Star"  
 > **MainNet cíl:** 31. prosince 2026
 
@@ -17,7 +17,7 @@
 | **Clippy warnings (deep scan)** | 46+ (core/verushash scan blokován) |
 | **cargo fmt** | ✅ čistý (zero diffs) |
 | **L1 připravenost** | **90%** |
-| **MainNet blokery** | 9 zbývá z 14 |
+| **MainNet blokery** | 11 zbývá z 14 (P0-03 ✅ P0-04 ✅ P0-06 ✅) |
 
 ---
 
