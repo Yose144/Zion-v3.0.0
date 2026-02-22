@@ -38,9 +38,9 @@
 |--------|----|------|
 | Helsinki 🇫🇮 (TreeofLife) | 77.42.31.72 | ✅ Seed + Pool + Web — Docker 2.9.6-testnet |
 | SeedDE 🇩🇪 (Seed) | 46.225.126.243 | ✅ zion-core Up (seed node) |
-| Usa1 🇺🇸 (Seed2) | 5.78.178.227 | ✅ zion-core Up (seed node, QEMU arm64) |
-| Usa2 🇺🇸 (Seed3) | 178.156.240.160 | ✅ zion-core Up (seed node, QEMU arm64) |
-| Asia3 🌏 (Seed4) | 5.223.43.93 | ✅ zion-core Up (seed node, QEMU arm64) |
+| Usa1 🇺🇸 (Seed2) | 5.78.178.227 | ✅ zion-core Up (seed node, native amd64) |
+| Usa2 🇺🇸 (Seed3) | 178.156.240.160 | ✅ zion-core Up (seed node, native amd64) |
+| Asia3 🌏 (Seed4) | 5.223.43.93 | ✅ zion-core Up (seed node, native amd64) |
 | ~~LA~~ ~~Sydney~~ ~~Delhi~~ ~~Santiago~~ | Vultr | ❌ Suspendovány |
 
 ---
@@ -425,7 +425,7 @@ cargo run --bin zion-dao
 
 ### Stav po session 20
 - `cargo check -p zion-dao` ✅ čistý (jen warnings, 0 errors)
-- P0-04 deploy: ✅ HOTOVO — všech 5 seed nodů běží (22.2.2026). Usa1/Usa2/Asia3 jsou AMD64, QEMU binfmt arm64 emulátor aktivován pro arm64 image
+- P0-04 deploy: ✅ HOTOVO — všech 5 seed nodů běží (22.2.2026). Helsinki+SeedDE arm64 native, Usa1/Usa2/Asia3 cross-compiled amd64 (`zion-core:2.9.6-amd64`). Fix: `is_multiple_of()` → `% 2` pro Rust 1.85.
 
 ---
 
