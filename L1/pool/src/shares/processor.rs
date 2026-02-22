@@ -166,8 +166,12 @@ impl ShareProcessor {
                 if accepted {
                     crate::metrics::prometheus::inc_blocks_found();
                     crate::metrics::prometheus::inc_miner_blocks(miner_address);
+                    // P0-02: recompute orphan rate after accepted block
+                    crate::metrics::prometheus::recompute_orphan_rate();
                 } else {
                     crate::metrics::prometheus::inc_block_submit_rejected();
+                    // P0-02: orphan = block rejected by L1 (height already filled)
+                    crate::metrics::prometheus::inc_orphan_blocks();
                     tracing::warn!(
                         "Block candidate rejected (or submit failed): miner={} job_id={}",
                         miner_address,
