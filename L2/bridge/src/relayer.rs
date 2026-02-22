@@ -239,9 +239,17 @@ impl Relayer {
             .timeout(std::time::Duration::from_secs(30))
             .build()?;
 
-        let l1_response = http_client
+        let mut request_builder = http_client
             .post(&l1_rpc_url)
-            .json(&unlock_request)
+            .json(&unlock_request);
+
+        // Attach Bearer token if configured (ZION_RPC_TOKEN on L1 node)
+        if let Some(token) = &self.config.l1.l1_rpc_token {
+            request_builder = request_builder
+                .header("Authorization", format!("Bearer {}", token));
+        }
+
+        let l1_response = request_builder
             .send()
             .await
             .map_err(|e| anyhow::anyhow!("L1 unlock RPC failed: {}", e))?;

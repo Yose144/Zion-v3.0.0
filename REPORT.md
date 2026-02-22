@@ -332,7 +332,33 @@ Cargo.toml          ← Workspace: 11 crates v L1–L4
 - `GET /metrics` přidán do `dao_router()` — stejný port jako REST API (8080)
 - `main.rs` instanciuje `DaoMetrics::new()` a napojí na AppState
 
-### Stav po session 19
+### B-01 — L1 `/api/bridge/unlock` endpoint (B-01, L1/core/src/rpc/methods.rs + server.rs)
+- `POST /api/bridge/unlock` — nový protected endpoint (bearer token, stejný ZION_RPC_TOKEN jako submit_tx)
+- Request body: `{ recipient, amount_atomic, evm_tx_hash, burn_id, evm_chain, validator_id }`
+- Response: `{ status: "submitted", tx_hash, recipient, amount_atomic, vault_address, fee_atomic, burn_id, evm_chain }`
+- Logika v `bridge_unlock()` handleru:
+  1. Čte `ZION_BRIDGE_VAULT_KEY` env var (64-hex = 32-byte Ed25519 secret)
+  2. Odvozuje vault adresu z public key (via `zion1_address_from_public_key_bytes`)
+  3. Načte až 200 UTXOs pro vault adresu z LMDB (`get_utxos_for_address`)
+  4. Coin selection largest-first, fee 1000 atomic flat
+  5. Postaví + podepíše `Transaction` (Ed25519, stejný pattern jako `wallet/batch.rs`)
+  6. Self-verify + submit do mempoolu přes `state.process_transaction()`
+- `L1/core/src/rpc/server.rs` — přidán route `POST /api/bridge/unlock` do protected routeru
+- `L2/bridge/src/config.rs` — nové pole `l1_rpc_token: Option<String>` v `L1Config`
+- `L2/bridge/src/relayer.rs` — `handle_evm_burn()`: přidán Bearer token header pokud je `config.l1.l1_rpc_token` nastaven
+- `config/bridge-testnet.toml` — komentář k `l1_rpc_token` konfiguraci
+
+**Setup:**
+```bash
+# Na L1 nodu:
+export ZION_BRIDGE_VAULT_KEY=$(openssl rand -hex 32)  # vygeneruj vault key
+export ZION_RPC_TOKEN=<token>                          # chráni write endpointy
+# V bridge-testnet.toml:
+l1_rpc_token = "<token>"   # stejný jako ZION_RPC_TOKEN na L1
+```
+
+### Stav po session 19 (kompletní)
+- `cargo check -p zion-core --no-default-features` ✅ čistý (0 errors)
 - `cargo check -p zion-bridge` ✅ čistý (0 errors)
 - `cargo check -p zion-dao` ✅ čistý (0 errors)
 
@@ -364,7 +390,8 @@ Cargo.toml          ← Workspace: 11 crates v L1–L4
 6. ~~**Bridge UI v mobile + desktop**~~ — ✅ VYŘEŠENO (21.2.2026): BridgeScreen + IPC handlery
 7. **P0-04** — Pronajmout 3 nové VPS (USA, Asia ×2)
 8. **Helsinki deploy** — `ssh zion-helsinki "cd /opt/zion && git pull"`
-9. **Bridge endpoint** — L1 `/api/bridge/unlock` pro bridge produkci
+9. ~~**Bridge endpoint**~~ — ✅ HOTOVO (Session 19): `POST /api/bridge/unlock` na L1 nodu
+10. **Bridge vault setup** — vygenerovat `ZION_BRIDGE_VAULT_KEY`, nasadit na Helsinki
 10. **Rust relay napojit na mainnet** — po auditu přepnout `BRIDGE_NET` na Base Mainnet
 11. **DAO executor** — Reálná implementace (multi-sig guardian)
 12. **Mobile TestFlight build** — spustit `BridgeScreen` na fyzickém zařízení (Base Sepolia)

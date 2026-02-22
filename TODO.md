@@ -75,7 +75,7 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 - [x] **B-02** WS auto-reconnect ✅ *exponenciální backoff 5→80s, MAX_RETRIES=5 (Session 18)*
 - [x] **B-03** Bridge Prometheus `/metrics` HTTP endpoint ✅ *(port 9100, 11 metrik, Session 19)*
 - [x] **WEB-01** Bridge stránka `/bridge` na webu ✅ *(`page.tsx` + `/api/bridge/status` proxy + Nav+Footer, Session 19)*
-- [ ] **B-01** L1 `/api/bridge/unlock` endpoint *(🔴 P0 — L1 modifikace)*
+- [x] **B-01** L1 `/api/bridge/unlock` endpoint ✅ *(Ed25519 vault key, coin selection, signed TX → mempool, Session 19)*
 - [ ] **B-04** Private key management (ne plaintext)
 - [ ] **B-10** Mainnet deploy (Base + Arbitrum)
 - [x] **D-01** DAO SQLite persistence + migrations ✅ *(Session 17)*
