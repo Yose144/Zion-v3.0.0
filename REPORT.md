@@ -465,8 +465,10 @@ GET /api/mission-data/data
 ## Další kroky (prioritně)
 
 1. **Dokončit P0-01** — Počkat na 14 dní bez critical bugu (cíl: 2. března)
-2. **P0-02** — Přidat orphan rate Prometheus metriku do pool
-3. ~~**Založit nové git repo**~~ — ✅ VYŘEŠENO: Yose144/2.9.6 funguje
+2. ~~**P0-02**~~ — ✅ HOTOVO (Session 22): `pool_orphan_blocks_total` counter + `pool_orphan_rate_permille` gauge, commit `023528d`
+3. ~~**P1: Block size limit**~~ — ✅ HOTOVO (Session 22): `MAX_BLOCK_SIZE_BYTES = 1_048_576` (1 MB), step-0 v `validate_block()` před PoW
+4. ~~**P1: Peer limits**~~ — ✅ HOTOVO (Session 22): `96 inbound / 32 outbound = 128 celkem` (bylo 100/8), commit `023528d`
+5. ~~**Založit nové git repo**~~ — ✅ VYŘEŠENO: Yose144/2.9.6 funguje
 4. ~~**P1 testy — pool coverage**~~ — ✅ VYŘEŠENO: 96 testů (cíl byl 60+)
 5. ~~**L2 Solidity deploy**~~ — ✅ VYŘEŠENO (21.2.2026): wZION + ZIONBridge LIVE na Base Sepolia
 6. ~~**Bridge UI v mobile + desktop**~~ — ✅ VYŘEŠENO (21.2.2026): BridgeScreen + IPC handlery
@@ -477,6 +479,35 @@ GET /api/mission-data/data
 10. **Rust relay napojit na mainnet** — po auditu přepnout `BRIDGE_NET` na Base Mainnet
 11. **DAO executor** — Reálná implementace (multi-sig guardian)
 12. **Mobile TestFlight build** — spustit `BridgeScreen` na fyzickém zařízení (Base Sepolia)
+
+---
+
+## Session 22 — P0-02 + P1 bezpečnostní limity (commit `023528d`)
+
+### Co bylo hotovo
+| Ticket | Popis | Soubory | Stav |
+|--------|-------|---------|------|
+| P0-02 | `pool_orphan_blocks_total` counter + `pool_orphan_rate_permille` gauge | `prometheus.rs`, `processor.rs` | ✅ |
+| P1 | Block size limit 1 MB — `MAX_BLOCK_SIZE_BYTES = 1_048_576`, step-0 v `validate_block()` před PoW | `validation.rs` | ✅ |
+| P1 | Peer limity: 96 inbound / 32 outbound = 128 total (bylo 100 total, 8 reserved) | `p2p/mod.rs` | ✅ |
+
+### Detaily implementace
+- **Orphan rate:** Permille (`value / 1000 = rate`). Threshold alert: 20 = 2.0 % orphan rate.  
+  Metriky exponovány v `/metrics` jako `pool_orphan_blocks_total` + `pool_orphan_rate_permille`.
+- **Block size:** Serde JSON serialization size check jako step 0 — před PoW ověřením, aby nemohla přijít DoS přes velký blok.
+- **Peer limity:** `ConnectionLimiter::new(128)` + `allow_inbound(128, 32)` — 32 outbound slotů je rezervováno, max 96 inbound.
+
+### Cargo checks
+```
+cargo check -p zion-core: Finished 2.49s ✅ (0 errors)
+cargo check -p zion-pool: Finished 3.53s ✅ (0 errors, 1 future-incompat warning redis v0.24)
+```
+
+### Zbývá
+- **DEX-03** — Price oracle + slippage guard (L2/contracts + L2/bridge/relayer.rs)  
+- **Bridge vault setup** — `ZION_BRIDGE_VAULT_KEY` na Helsinki  
+- **DAO executor** — multi-sig guardian  
+- **Rust relay mainnet** — přepnout `BRIDGE_NET` na Base Mainnet po auditu
 
 ---
 
