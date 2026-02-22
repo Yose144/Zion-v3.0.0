@@ -6,12 +6,12 @@
 
 ---
 
-## 🔴 P0 — MainNet Blokery (11 zbývá z 14) — 3 hotovo: P0-03, P0-04, P0-06
+## 🔴 P0 — MainNet Blokery (10 zbývá z 14) — 4 hotovo: P0-02, P0-03, P0-04, P0-06
 
 ### Fáze 1 — Stabilita (únor–březen)
 
 - [ ] **P0-01** 14 dní bez critical bugu *(countdown od 16.2.)*
-- [ ] **P0-02** Orphan rate < 2% — Prometheus metrika + Grafana
+- [x] **P0-02** Orphan rate < 2% — `pool_orphan_blocks_total` counter + `pool_orphan_rate_permille` gauge ✅ *(Session 22, commit `023528d`)*
 - [x] **P0-03** 72h stability run *(restart #3, od 10.2.)*
 
 ### Fáze 3 — Infrastruktura (Q2–Q3)
@@ -37,9 +37,9 @@
 
 ### Bezpečnost
 
-- [ ] Block size limit (max 1 MB)
-- [ ] TX size limit (max 100 KB)
-- [ ] Peer limit enforcement (96 in / 32 out)
+- [x] Block size limit (max 1 MB) ✅ `MAX_BLOCK_SIZE_BYTES = 1_048_576`, step-0 v `validate_block()` *(Session 22)*
+- [x] TX size limit (max 100 KB) ✅ `MAX_TX_SIZE_BYTES = 100_000` již existovalo *(před Session 22)*
+- [x] Peer limit enforcement (96 in / 32 out) ✅ `allow_inbound(128, 32)` *(Session 22)*
 - [ ] DDoS ochrana seed nodů
 - [ ] LMDB backup strategie → offsite
 - [ ] Bug bounty program
