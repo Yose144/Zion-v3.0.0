@@ -39,15 +39,48 @@ const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
   },
 
   {
-    id: 'seed-germany',
-    name: 'Germany',
-    host: '195.201.31.201',
+    id: 'seed-seedde',
+    name: 'SeedDE',
+    host: '46.225.126.243',
     region: 'EU-CENTRAL',
     lat: 50.11,
     lon: 8.68,
     ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
-    rpcUrl: 'http://195.201.31.201:8444/jsonrpc',
-    poolApiUrl: 'http://195.201.31.201:8080',
+    rpcUrl: 'http://46.225.126.243:8444/jsonrpc',
+    poolApiUrl: 'http://46.225.126.243:8080',
+  },
+  {
+    id: 'seed-usa1',
+    name: 'Usa1',
+    host: '5.78.178.227',
+    region: 'US-WEST',
+    lat: 37.77,
+    lon: -122.42,
+    ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
+    rpcUrl: 'http://5.78.178.227:8444/jsonrpc',
+    poolApiUrl: 'http://5.78.178.227:8080',
+  },
+  {
+    id: 'seed-usa2',
+    name: 'Usa2',
+    host: '178.156.240.160',
+    region: 'US-EAST',
+    lat: 40.71,
+    lon: -74.01,
+    ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
+    rpcUrl: 'http://178.156.240.160:8444/jsonrpc',
+    poolApiUrl: 'http://178.156.240.160:8080',
+  },
+  {
+    id: 'seed-asia3',
+    name: 'Asia3',
+    host: '5.223.43.93',
+    region: 'ASIA',
+    lat: 35.69,
+    lon: 139.69,
+    ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
+    rpcUrl: 'http://5.223.43.93:8444/jsonrpc',
+    poolApiUrl: 'http://5.223.43.93:8080',
   },
 ];
 
@@ -62,15 +95,7 @@ const DEFAULT_MINING_POOLS: MiningPoolConfig[] = [
     lon: 24.94,
   },
 
-  {
-    id: 'pool-germany',
-    name: 'Germany Pool',
-    host: '195.201.31.201',
-    port: 3333,
-    region: 'EU-CENTRAL',
-    lat: 50.11,
-    lon: 8.68,
-  },
+  // SeedDE/Usa1/Usa2/Asia3 are seed-only — no stratum pool
 ];
 
 function safeJsonParse<T>(raw: string | undefined | null): T | null {

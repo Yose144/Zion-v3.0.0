@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const POOL_SERVERS = [
   { id: 'helsinki', host: '77.42.31.72', port: 8080 },
-  { id: 'germany', host: '195.201.31.201', port: 8080 },
+  { id: 'helsinki', host: '77.42.31.72', port: 8080 },
+  // SeedDE/Usa1/Usa2/Asia3 are seed-only nodes — no pool
 ];
 
 type MetricRow = {

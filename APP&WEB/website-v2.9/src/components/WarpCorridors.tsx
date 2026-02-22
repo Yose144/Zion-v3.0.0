@@ -18,7 +18,7 @@ const corridorStats = [
   {
     label: 'Guardian Mesh',
     value: '2 / 2',
-    detail: 'Multi-region guardians — Helsinki + Frankfurt',
+    detail: 'Multi-region guardians — 5 seed nodes · 5 continents',
   },
 ];
 
@@ -37,7 +37,7 @@ const validatorDeck = [
   {
     title: 'Guardian Nodes',
     value: '2 regions',
-    description: 'Helsinki (EU-NORTH) · Frankfurt (EU-CENTRAL) — expanding globally for MainNet',
+    description: 'Helsinki · SeedDE · Usa1 · Usa2 · Asia3 — global coverage for MainNet',
   },
   {
     title: 'Telemetry',

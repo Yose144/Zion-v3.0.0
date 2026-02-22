@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 
 const POOL_SERVERS = [
   { id: 'helsinki', name: 'Helsinki (EU-North)', flag: '🇫🇮', host: '77.42.31.72', port: 8080, stratum: 3333, region: 'eu-north' },
-  { id: 'germany', name: 'Germany (EU-Central)', flag: '🇩🇪', host: '195.201.31.201', port: 8080, stratum: 3333, region: 'eu-central' },
 ];
 
 async function fetchPool(host: string, port: number, endpoint: string, timeout = 4000) {
