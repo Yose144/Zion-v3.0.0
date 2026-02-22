@@ -1,26 +1,31 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
-# ZION 2.9.5 TestNet Deploy — Phase 1
-# Deploys clean MainNet-ready core to all 3 servers
+# ZION 2.9.6 TestNet Deploy — Seed Nodes
+# Deploys zion-core seed node to all 4 peer servers
+# Helsinki (TreeofLife) already runs full stack — skipped
+# Updated: 22.2.2026
 # ═══════════════════════════════════════════════════════════════
 
 set -euo pipefail
 
 SSH_KEY="$HOME/.ssh/zion_hetzner_key"
-# P1-30: Use dedicated deploy user instead of root when available
-# To switch: create 'zion' user on servers with sudo access, then set DEPLOY_USER=zion
 DEPLOY_USER="${DEPLOY_USER:-root}"
-DEPLOY_DIR="/root/zion-2.9.5"
+DEPLOY_DIR="/root/zion-2.9.6"
 COMPOSE_FILE="docker/docker-compose.testnet.yml"
 LOCAL_SRC="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Server list
-HELSINKI="77.42.31.72"
-USA="5.78.145.234"
-SINGAPORE="5.223.56.124"
+# Seed peers (all 5 nodes)
+SEED_PEERS="77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334"
 
-ALL_SERVERS=("$HELSINKI" "$USA" "$SINGAPORE")
-SERVER_NAMES=("Helsinki-SEED" "USA-PEER1" "Singapore-PEER2")
+# Server list (Helsinki skipped — already running full stack)
+HELSINKI="77.42.31.72"
+SEEDDE="46.225.126.243"
+USA1="5.78.178.227"
+USA2="178.156.240.160"
+ASIA3="5.223.43.93"
+
+ALL_SERVERS=("$SEEDDE" "$USA1" "$USA2" "$ASIA3")
+SERVER_NAMES=("SeedDE" "Usa1" "Usa2" "Asia3")
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -45,23 +50,26 @@ deploy_server() {
     
     # 1. Rsync source code (faster than git clone, works with private repos)
     log "[$name] Syncing source code..."
-    ssh_cmd "$ip" "rm -rf $DEPLOY_DIR && mkdir -p $DEPLOY_DIR"
-    rsync -az --exclude 'target/' --exclude '.git/' \
+    ssh_cmd "$ip" "mkdir -p $DEPLOY_DIR"
+    rsync -az --exclude 'target/' --exclude '.git/' --exclude 'node_modules/' --exclude 'Zion-2.9.5-main.zip' \
         -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new" \
         "$LOCAL_SRC/" "${DEPLOY_USER}@$ip:$DEPLOY_DIR/"
     
-    # 2. Build Docker images
+    # 2. Install Docker if missing
+    ssh_cmd "$ip" "command -v docker >/dev/null || (curl -fsSL https://get.docker.com | sh)"
+
+    # 3. Build Docker images
     log "[$name] Building Docker images (this takes a few minutes)..."
     ssh_cmd "$ip" "
         cd $DEPLOY_DIR
-        docker compose -f $COMPOSE_FILE build --no-cache 2>&1 | tail -5
+        docker compose -f $COMPOSE_FILE build --no-cache 2>&1 | tail -10
     "
     
-    # 3. Start services
-    log "[$name] Starting services..."
+    # 4. Start only core (seed node — no pool/miner/monitoring on peers)
+    log "[$name] Starting zion-core seed node..."
     ssh_cmd "$ip" "
         cd $DEPLOY_DIR
-        docker compose -f $COMPOSE_FILE up -d 2>&1
+        SEED_PEERS='$SEED_PEERS' docker compose -f $COMPOSE_FILE up -d core redis 2>&1
     "
     
     # 4. Wait for health
@@ -102,27 +110,19 @@ verify_server() {
 # ─── Main ────────────────────────────────────
 
 case "${1:-all}" in
-    helsinki)
-        deploy_server "$HELSINKI" "Helsinki-SEED"
-        ;;
-    usa)
-        deploy_server "$USA" "USA-PEER1"
-        ;;
-    singapore)
-        deploy_server "$SINGAPORE" "Singapore-PEER2"
-        ;;
+    seedde)   deploy_server "$SEEDDE" "SeedDE" ;;
+    usa1)     deploy_server "$USA1"   "Usa1"   ;;
+    usa2)     deploy_server "$USA2"   "Usa2"   ;;
+    asia3)    deploy_server "$ASIA3"  "Asia3"  ;;
     all)
-        log "🚀 ZION 2.9.5 TestNet Full Deploy"
-        log "Servers: Helsinki (SEED), USA (PEER1), Singapore (PEER2)"
+        log "🚀 ZION 2.9.6 TestNet Seed Node Deploy"
+        log "Servers: SeedDE, Usa1, Usa2, Asia3 (Helsinki již běží)"
         echo ""
         
-        # Deploy sequentially (Helsinki first as SEED)
-        deploy_server "$HELSINKI" "Helsinki-SEED"
-        echo ""
-        deploy_server "$USA" "USA-PEER1"
-        echo ""
-        deploy_server "$SINGAPORE" "Singapore-PEER2"
-        echo ""
+        for i in "${!ALL_SERVERS[@]}"; do
+            deploy_server "${ALL_SERVERS[$i]}" "${SERVER_NAMES[$i]}"
+            echo ""
+        done
         
         log "━━━ Verification ━━━"
         for i in "${!ALL_SERVERS[@]}"; do
@@ -130,26 +130,23 @@ case "${1:-all}" in
         done
         
         echo ""
-        log "🎉 TestNet Deploy Complete!"
-        log "P2P: $HELSINKI:8334, $USA:8334, $SINGAPORE:8334"
-        log "RPC: $HELSINKI:8444, $USA:8444, $SINGAPORE:8444"
-        log "Pool: $HELSINKI:3333, $USA:3333, $SINGAPORE:3333"
+        log "🎉 Deploy dokončen!"
+        log "SEED_PEERS: $SEED_PEERS"
         ;;
     verify)
-        log "━━━ Verification Only ━━━"
         for i in "${!ALL_SERVERS[@]}"; do
             verify_server "${ALL_SERVERS[$i]}" "${SERVER_NAMES[$i]}"
         done
         ;;
     clean)
-        log "━━━ Stopping All Servers ━━━"
+        log "━━━ Stopping All Seed Nodes ━━━"
         for i in "${!ALL_SERVERS[@]}"; do
             log "[${SERVER_NAMES[$i]}] Stopping..."
             ssh_cmd "${ALL_SERVERS[$i]}" "cd $DEPLOY_DIR && docker compose -f $COMPOSE_FILE down 2>/dev/null; echo done" || true
         done
         ;;
     *)
-        echo "Usage: $0 {all|helsinki|usa|singapore|verify|clean}"
+        echo "Usage: $0 {all|seedde|usa1|usa2|asia3|verify|clean}"
         exit 1
         ;;
 esac
