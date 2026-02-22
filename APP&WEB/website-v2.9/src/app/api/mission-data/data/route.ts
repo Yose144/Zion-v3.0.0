@@ -4,10 +4,14 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /* ── Node definitions ─────────────────────────────────────────────── */
+// Pool runs only on Helsinki (port 8080). Seed-only nodes get pool: 0 (skipped).
 const NODES = [
-  { id: 'helsinki', host: '77.42.31.72', rpc: 8444, pool: 8080 },
-  { id: 'germany', host: '195.201.31.201', rpc: 8444, pool: 8080 },
-] as const;
+  { id: 'helsinki', host: '77.42.31.72',    rpc: 8444, pool: 8080 },
+  { id: 'seedde',  host: '46.225.126.243',  rpc: 8444, pool: 0 },
+  { id: 'usa1',    host: '5.78.178.227',    rpc: 8444, pool: 0 },
+  { id: 'usa2',    host: '178.156.240.160', rpc: 8444, pool: 0 },
+  { id: 'asia3',   host: '5.223.43.93',     rpc: 8444, pool: 0 },
+];
 
 const TIMEOUT = 6_000;
 
@@ -43,10 +47,10 @@ async function rpcCall<T = any>(url: string, method: string): Promise<T | null> 
 }
 
 /* ── Fetch data for a single node ─────────────────────────────────── */
-async function fetchNodeData(node: typeof NODES[number]) {
+async function fetchNodeData(node: (typeof NODES)[number]) {
   const [stats, poolStats] = await Promise.all([
     fetchJson<any>(`http://${node.host}:${node.rpc}/stats`),
-    fetchJson<any>(`http://${node.host}:${node.pool}/stats`),
+    node.pool > 0 ? fetchJson<any>(`http://${node.host}:${node.pool}/stats`) : Promise.resolve(null),
   ]);
 
   const nodeStats = stats
@@ -99,13 +103,12 @@ async function fetchNodeData(node: typeof NODES[number]) {
   return { ip: node.host, stats: nodeStats, pool };
 }
 
-/* ── GET handler ──────────────────────────────────────────────────── */
+/* ── GET handler ───────────────────────────────────────────────── */
 export async function GET() {
-  const [helsinki, germany] = await Promise.all(NODES.map(fetchNodeData));
+  const [helsinki, seedde, usa1, usa2, asia3] = await Promise.all(NODES.map(fetchNodeData));
 
-  // Build stability run from uptime data
-  const poolUptime = helsinki?.pool?.pool?.uptime_secs ?? germany?.pool?.pool?.uptime_secs ?? 0;
-  const STABILITY_DURATION = 72 * 3600; // 72 hours
+  const poolUptime = helsinki?.pool?.pool?.uptime_secs ?? 0;
+  const STABILITY_DURATION = 168 * 3600; // 168h = 7 days
   const elapsed = Math.min(poolUptime, STABILITY_DURATION);
 
   const data = {
@@ -118,8 +121,11 @@ export async function GET() {
       progress_pct: Math.min(100, Math.round((elapsed / STABILITY_DURATION) * 100)),
     },
     helsinki,
-    germany,
-    log_tail: buildLogTail(helsinki, germany),
+    seedde,
+    usa1,
+    usa2,
+    asia3,
+    log_tail: buildLogTail({ helsinki, seedde, usa1, usa2, asia3 }),
   };
 
   return NextResponse.json(data, {
@@ -130,34 +136,30 @@ export async function GET() {
   });
 }
 
-/* ── Build a fake monitoring log from live data ───────────────────── */
-function buildLogTail(
-  helsinki: Awaited<ReturnType<typeof fetchNodeData>> | undefined,
-  germany: Awaited<ReturnType<typeof fetchNodeData>> | undefined,
-) {
+/* ── Build monitoring log from live data ────────────────────────── */
+type NodeResult = Awaited<ReturnType<typeof fetchNodeData>> | undefined;
+
+function buildLogTail(nodes: { helsinki: NodeResult; seedde: NodeResult; usa1: NodeResult; usa2: NodeResult; asia3: NodeResult }) {
   const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const lines: string[] = [];
-  const hs = helsinki?.stats;
-  const gs = germany?.stats;
-  const hp = helsinki?.pool;
-
-  if (hs) {
-    lines.push(`[${now}] [HELSINKI] H:${hs.height} D:${hs.difficulty} P:${hs.peers_connected} STATUS:${hs.status}`);
-  } else {
-    lines.push(`[${now}] [HELSINKI] OFFLINE — unable to reach node`);
+  const entries = [
+    { label: 'HELSINKI    ', data: nodes.helsinki },
+    { label: 'SEEDDE      ', data: nodes.seedde },
+    { label: 'USA1        ', data: nodes.usa1 },
+    { label: 'USA2        ', data: nodes.usa2 },
+    { label: 'ASIA3       ', data: nodes.asia3 },
+  ];
+  for (const { label, data } of entries) {
+    const s = data?.stats;
+    if (s) {
+      lines.push(`[${now}] [${label}] H:${s.height} D:${s.difficulty} P:${s.peers_connected} STATUS:${s.status}`);
+    } else {
+      lines.push(`[${now}] [${label}] OFFLINE — unable to reach node`);
+    }
   }
-  if (gs) {
-    lines.push(`[${now}] [GERMANY]  H:${gs.height} D:${gs.difficulty} P:${gs.peers_connected} STATUS:${gs.status}`);
-  } else {
-    lines.push(`[${now}] [GERMANY]  OFFLINE — unable to reach node`);
-  }
-  if (hs && gs) {
-    const synced = hs.height === gs.height && hs.tip === gs.tip;
-    lines.push(`[${now}] [SYNC]     ${synced ? '✓ Nodes synchronized' : `⚠ Height diff: ${Math.abs(hs.height - gs.height)}`}`);
-  }
+  const hp = nodes.helsinki?.pool;
   if (hp) {
-    lines.push(`[${now}] [POOL]     Miners:${hp.miners?.active} Blocks:${hp.blocks?.found} HR:${hp.hashrate?.pool}`);
+    lines.push(`[${now}] [POOL        ] Miners:${hp.miners?.active} Blocks:${hp.blocks?.found} HR:${hp.hashrate?.pool}`);
   }
-
   return lines.join('\n');
 }

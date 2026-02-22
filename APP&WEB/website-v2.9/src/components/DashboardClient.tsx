@@ -33,7 +33,7 @@ const missionMetrics = [
   {
     label: 'Pool Health',
     value: '100%',
-    description: '2 EU pools · Helsinki · Frankfurt',
+    description: '1 pool · Helsinki (EU-North)',  // pool only on Helsinki
     icon: ShieldCheck
   },
   {
@@ -53,7 +53,7 @@ const missionMetrics = [
 const roadmapSlices = [
   {
     title: 'TestNet Live · Jan 2026',
-    bullets: ['Native Rust blockchain + pool infrastructure', '2 EU nodes: Helsinki · Frankfurt', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
+    bullets: ['Native Rust blockchain + pool infrastructure', '5 seed nodes: Helsinki · SeedDE · Usa1 · Usa2 · Asia3', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
   },
   {
     title: 'Q1-Q2 2026 · Hardening',

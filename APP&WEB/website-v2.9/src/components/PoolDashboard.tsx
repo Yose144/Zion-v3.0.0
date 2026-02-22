@@ -691,14 +691,14 @@ export default function PoolDashboard() {
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">ZION Native Miner</p>
                   <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
 {`python zion_native_miner_v2_9.py \\
-  --pool 195.201.31.201:3333 \\
+  --pool 77.42.31.72:3333 \\
   --wallet YOUR_ZION_ADDRESS`}
                   </pre>
                 </div>
                 <div>
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">XMRig</p>
                   <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
-{`./xmrig -o stratum+tcp://195.201.31.201:3333 \\
+{`./xmrig -o stratum+tcp://77.42.31.72:3333 \\
   -u YOUR_ZION_ADDRESS -p x`}
                   </pre>
                 </div>
@@ -800,7 +800,7 @@ export default function PoolDashboard() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — Mining Pool · Real-time data from stratum servers · Helsinki &amp; Germany
+          ZION TerraNova v2.9.6 — Mining Pool · Real-time data from stratum servers · Helsinki (primary pool)
           {lastUpdate && <> · Last update: {lastUpdate.toLocaleTimeString()}</>}
         </p>
       </div>

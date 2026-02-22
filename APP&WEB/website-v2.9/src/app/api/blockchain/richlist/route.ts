@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 
 const SERVERS = [
   { url: 'http://77.42.31.72:8444/jsonrpc', name: 'Helsinki' },
-  { url: 'http://195.201.31.201:8444/jsonrpc', name: 'Germany' },
+  { url: 'http://46.225.126.243:8444/jsonrpc', name: 'SeedDE' },
+  { url: 'http://5.78.178.227:8444/jsonrpc',   name: 'Usa1' },
 ];
 
 const POOL_SERVERS = [
   'http://77.42.31.72:8080',
-  'http://195.201.31.201:8080',
+  'http://46.225.126.243:8080',
 ];
 
 async function rpc(method: string, params: unknown[] = []) {
