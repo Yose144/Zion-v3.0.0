@@ -429,6 +429,39 @@ cargo run --bin zion-dao
 
 ---
 
+## Session 21 — Website dashboard: 5-node update (22. února 2026)
+
+**Commity:** `a9bcd24` (17 souborů), `9e74692` (AlertCircle fix)  
+**Deploy:** Docker rebuild na Helsinki, container recreate `zion-website:2.9.6-rpc`
+
+### Co bylo aktualizováno
+
+- **`src/app/api/mission-data/data/route.ts`** — 5 nodů (Helsinki, SeedDE, Usa1, Usa2, Asia3), stability 168h, `buildLogTail` pro všech 5
+- **`src/app/api/pool/stats/route.ts`** — jen Helsinki (seed nody nemají stratum pool)
+- **`src/app/api/pool/miner/[address]/route.ts` + `metrics/route.ts`** — Germany odstraněn
+- **`src/app/api/blockchain/richlist/route.ts`** — přidány SeedDE + Usa1, Germany odstraněn
+- **`src/lib/network-config.ts`** — 4 nové `SeedNodeConfig` záznamy (SeedDE, Usa1, Usa2, Asia3), Germany pool odstraněn, zůstává jen Helsinki pool
+- **`src/components/MissionControlDashboard.tsx`** — 5 ServerCards, odznak `5 Nodes · 5 Continents`, `DashData` typ aktualizován
+- **`src/app/network/page.tsx`** — 5 infraFeatures, `5/5 nodes synced`, guides (pool/RPC/P2P) pro všech 5 serverů, `5 seed nodes in full consensus`
+- **`src/components/Hero.tsx`** — `Helsinki + Frankfurt synced` → `5 seed nodes synced`
+- **`src/components/DashboardClient.tsx`** — `2 EU pools · Frankfurt` → `1 pool · Helsinki (EU-North)`
+- **`src/components/LiveDashboard.tsx`** — `2 validator nodes (Helsinki + Frankfurt)` → 5 seed nodů
+- **`src/components/WarpCorridors.tsx`** — `Helsinki + Frankfurt` → `5 seed nodes · 5 continents`
+- **`src/components/NodeSetupClient.tsx`** — peer list příklady aktualizovány (SeedDE místo Germany)
+- **`src/components/PoolDashboard.tsx`** — pool adresa → jen Helsinki, footer aktualizován
+- **`src/app/warp/page.tsx`** — `2 / 2 Guardian Nodes` → `5 / 5`
+- **`src/app/explorer/page.tsx`** — node connectivity text aktualizován
+- **`src/app/bridge/page.tsx`** — přidán chybějící import `AlertCircle` (Next.js build fix)
+
+### Live API (po deployi)
+```
+GET /api/mission-data/data
+→ keys: helsinki · seedde · usa1 · usa2 · asia3
+```
+✅ Všech 5 nodů v odpovědi, staré Vultr nody (LA, Sydney, Delhi, Santiago) kompletně odstraněny.
+
+---
+
 ## Další kroky (prioritně)
 
 1. **Dokončit P0-01** — Počkat na 14 dní bez critical bugu (cíl: 2. března)
@@ -437,8 +470,8 @@ cargo run --bin zion-dao
 4. ~~**P1 testy — pool coverage**~~ — ✅ VYŘEŠENO: 96 testů (cíl byl 60+)
 5. ~~**L2 Solidity deploy**~~ — ✅ VYŘEŠENO (21.2.2026): wZION + ZIONBridge LIVE na Base Sepolia
 6. ~~**Bridge UI v mobile + desktop**~~ — ✅ VYŘEŠENO (21.2.2026): BridgeScreen + IPC handlery
-7. **P0-04** — Pronajmout 3 nové VPS (USA, Asia ×2)
-8. **Helsinki deploy** — `ssh zion-helsinki "cd /opt/zion && git pull"`
+7. ~~**P0-04**~~ — ✅ HOTOVO (22.2.2026): 5 seed nodů běží (Helsinki, SeedDE, Usa1, Usa2, Asia3)
+8. ~~**Helsinki deploy**~~ — ✅ HOTOVO: website dashboard aktualizován (commity `a9bcd24`, `9e74692`)
 9. ~~**Bridge endpoint**~~ — ✅ HOTOVO (Session 19): `POST /api/bridge/unlock` na L1 nodu
 10. **Bridge vault setup** — vygenerovat `ZION_BRIDGE_VAULT_KEY`, nasadit na Helsinki
 10. **Rust relay napojit na mainnet** — po auditu přepnout `BRIDGE_NET` na Base Mainnet
