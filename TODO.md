@@ -1,12 +1,73 @@
 # 📋 ZION TerraNova — TODO
 
-> **Aktualizace:** Session 24 (miner deploy + DAO web fix)  
+> **Aktualizace:** Session 24 — 23. února 2026  
 > **Cíl:** MainNet Genesis **31. 12. 2026**  
 > **Detaily:** `docs/MAINNET_CHECKLIST.md` | `docs/L2_DEFI_PLAN.md` | `docs/L3_WARP_AI_PLAN.md`
 
 ---
 
-## 🔴 P0 — MainNet Blokery (10 zbývá z 14) — 4 hotovo: P0-02, P0-03, P0-04, P0-06
+## � Plán na zítra — 24. února 2026
+
+> Buildy `zion-miner:2.9.6-testnet` běží na SeedDE/Usa1/Usa2/Asia3 od 23.2. večer (~15–20 min cargo). Zítra ráno ověřit + spustit minery a validovat workflow.
+
+### 🔴 Priorita 1 — Minery (nutné ověřit mining workflow)
+
+- [ ] **[M-1] Ověřit build dokončen** na všech 4 seed serverech
+  ```bash
+  for host in zion-seedde zion-usa1 zion-usa2 zion-asia3; do
+    ssh $host 'docker images | grep miner && tail -3 /tmp/miner-build.log'
+  done
+  ```
+- [ ] **[M-2] Spustit minery** přes compose na všech 4 serverech
+  ```bash
+  for host in zion-seedde zion-usa1 zion-usa2 zion-asia3; do
+    ssh $host 'docker compose -f /root/docker-compose-seed.yml up -d miner'
+  done
+  ```
+- [ ] **[M-3] Ověřit logy** — RandomX init + stratum job + share submit
+  ```bash
+  for host in zion-seedde zion-usa1 zion-usa2 zion-asia3; do
+    ssh $host 'docker logs zion-miner --tail 20'
+  done
+  ```
+- [ ] **[M-4] Pool stats** — ověřit že 4 workery vidí pool na Helsinki
+  ```bash
+  ssh zion-helsinki 'curl -s http://localhost:8080/stats | python3 -m json.tool | grep -E "worker|miner|hash|connected"'
+  ```
+
+### 🟡 Priorita 2 — Website + DAO
+
+- [ ] **[W-1] Helsinki website rebuild** — `dao-api.ts` fix (commit `dfa4dae`) nasadit
+  ```bash
+  ssh zion-helsinki 'cd /root/zion-2.9.6 && docker build -t zion-website:dao-fix -f APP&WEB/website-v2.9/Dockerfile . && docker stop zion-website && docker run -d --name zion-website-new ... '
+  ```
+  nebo přes rsync + docker compose up --force-recreate
+- [ ] **[W-2] Ověřit /dao stránku** na https://zionterranova.com/dao — `daemonOnline` = false, info notice viditelný, žádné error bannery
+
+### 🟢 Priorita 3 — Stabilita + monitoring
+
+- [ ] **[S-1] Zkontrolovat 168h stability run** — progress ke dni 2/7
+  ```bash
+  ssh zion-helsinki 'tail -20 /root/stability_run_v2.log'
+  ```
+- [ ] **[S-2] Block height** — všechny nody synced (kontrola h > 4200)
+- [ ] **[S-3]** Pokud minery jedou → nechat běžet 24h, zkontrolovat hashrate a share acceptance rate
+
+### 📌 Poznámky k nasazení
+
+| Server | Worker | Pool | Status cíl |
+|--------|--------|------|-----------|
+| SeedDE | `seedde-miner` | 77.42.31.72:3333 | ✅ mining |
+| Usa1 | `usa1-miner` | 77.42.31.72:3333 | ✅ mining |
+| Usa2 | `usa2-miner` | 77.42.31.72:3333 | ✅ mining |
+| Asia3 | `asia3-miner` | 77.42.31.72:3333 | ✅ mining |
+| Helsinki | `testnet-miner` | localhost:3333 | ✅ již běží |
+
+**Pokud build selhal znovu:** zkontrolovat chybu v `/tmp/miner-build.log`, opravit, znovu rsync + build.
+
+---
+
+## �🔴 P0 — MainNet Blokery (10 zbývá z 14) — 4 hotovo: P0-02, P0-03, P0-04, P0-06
 
 ### Fáze 1 — Stabilita (únor–březen)
 
