@@ -1049,7 +1049,7 @@ impl CpuMiner {
                 static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
                 let cnt = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 let hit = hash_val < target64;
-                if cnt.is_multiple_of(200) || hit {
+                if cnt % 200 == 0 || hit {
                     log::debug!(
                         "🎯 RandomX target check: hash_val=0x{:016X} target64=0x{:016X} {} (n={})",
                         hash_val,
@@ -1150,7 +1150,7 @@ impl CpuMiner {
                     matches!(res, std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
                 };
 
-                if vcnt.is_multiple_of(50000) || result {
+                if vcnt % 50000 == 0 || result {
                     log::debug!(
                         "🎯 VerusHash target check #{}: hash_le={} hash_be={} target={} meets={} (algo={:?})",
                         vcnt, hex::encode(hash), hex::encode(hash_be), hex::encode(&target_bytes), result, algorithm
