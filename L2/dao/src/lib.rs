@@ -61,6 +61,11 @@ pub mod treasury;
 pub mod types;
 pub mod voting;
 
+// Persistence + daemon layer (added in v2.9.6)
+pub mod db;
+pub mod l1_scanner;
+pub mod api;
+
 // Re-exports
 pub use config::DaoConfig;
 pub use error::{DaoError, DaoResult};
@@ -69,3 +74,5 @@ pub use proposal::{Proposal, ProposalStatus, ProposalType};
 pub use treasury::{Treasury, TreasuryOperation};
 pub use types::VoteChoice;
 pub use voting::{Vote, VotingEngine};
+pub use db::DaoDb;
+pub use l1_scanner::{L1Scanner, ScannerConfig};
