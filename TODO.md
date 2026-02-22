@@ -16,7 +16,7 @@
 
 ### Fáze 3 — Infrastruktura (Q2–Q3)
 
-- [ ] **P0-04** 5 seed nodů — Helsinki ✅ běží, SeedDE/Usa1/Usa2/Asia3 🔧 čekají na deploy *(Vultr nody suspendovány → nahrazeny testovacími, 22.2.2026)*
+- [x] **P0-04** 5 seed nodů — Helsinki ✅ SeedDE ✅ Usa1 ✅ Usa2 ✅ Asia3 ✅ — všechny běží *(22.2.2026, QEMU arm64→amd64 na xArch serverech)*
 - [ ] **P0-05** Premine klíče — air-gapped Ed25519 keypair generace
 - [x] **P0-06** RPC autentizace — API key pro write endpointy *(kód hotov v `rpc/auth.rs`; nasadit: `export ZION_RPC_TOKEN=$(openssl rand -hex 32)` na každém nodu)*
 
@@ -82,7 +82,7 @@ Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
 - [x] **D-03** L1 memo scanner (treasury příchozí platby) ✅ *(Session 17)*
 - [x] **D-05** DAO executor — Parameter, Emergency, guardian multisig ✅ *(Session 18)*
 - [x] **D-07** DAO integration testy (38 testů, E2E lifecycle) ✅ *(Session 18)*
-- [ ] **D-06** TOML konfig pro DAO daemon
+- [x] **D-06** TOML konfig pro DAO daemon ✅ *(`DaoConfig::load()`, TOML file + env var override, `config/dao-testnet.toml`, Session 20)*
 - [x] **D-09** Prometheus metriky pro DAO ✅ *(`GET /metrics`, 17 metrik, Session 19)*
 - [x] **DEX-01** wZION/ETH Uniswap V3 pool deploy (Base Mainnet) ✅ *(scripts/deploy-pool.ts, Session 18)*
 - [x] **DEX-02** Liquidity seeding script ✅ *(scripts/seed-liquidity.ts, Session 18)*

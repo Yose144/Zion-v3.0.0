@@ -37,10 +37,10 @@
 | Server | IP | Stav |
 |--------|----|------|
 | Helsinki 🇫🇮 (TreeofLife) | 77.42.31.72 | ✅ Seed + Pool + Web — Docker 2.9.6-testnet |
-| SeedDE 🇩🇪 (Seed) | 46.225.126.243 | 🔧 Připraven k deploy |
-| Usa1 🇺🇸 (Seed2) | 5.78.178.227 | 🔧 Připraven k deploy |
-| Usa2 🇺🇸 (Seed3) | 178.156.240.160 | 🔧 Připraven k deploy |
-| Asia3 🌏 (Seed4) | 5.223.43.93 | 🔧 Připraven k deploy |
+| SeedDE 🇩🇪 (Seed) | 46.225.126.243 | ✅ zion-core Up (seed node) |
+| Usa1 🇺🇸 (Seed2) | 5.78.178.227 | ✅ zion-core Up (seed node, QEMU arm64) |
+| Usa2 🇺🇸 (Seed3) | 178.156.240.160 | ✅ zion-core Up (seed node, QEMU arm64) |
+| Asia3 🌏 (Seed4) | 5.223.43.93 | ✅ zion-core Up (seed node, QEMU arm64) |
 | ~~LA~~ ~~Sydney~~ ~~Delhi~~ ~~Santiago~~ | Vultr | ❌ Suspendovány |
 
 ---
@@ -377,6 +377,55 @@ l1_rpc_token = "<token>"   # stejný jako ZION_RPC_TOKEN na L1
 - `src/components/Footer.tsx` — přidán `{ href: '/bridge', label: 'Bridge', Icon: ArrowLeftRight }` do skupiny "Explore"
 - `.env.local.example` — dokumentována nová env var `BRIDGE_METRICS_URL=http://localhost:9100/metrics`
 - Commit `959219b` — 7 souborů, +667 řádků
+
+---
+
+## Session 20 — D-06 DAO TOML config + P0-04 Seed node deploy
+
+**Datum:** 22. února 2026  
+**Commity:** `64aee76` (B-01 push dokončen z Session 19), `e6d4d03` (bridge page overlay), `852f5e6` (D-06)
+
+### B-01 finalizace (dokončeno z Session 19)
+- Push B-01 commitu `64aee76` — 7 souborů, 277 insertions
+- Bridge stránka: odstraněn `Coming soon — B-01` overlay z Burn & Unlock karty (commit `e6d4d03`)
+
+### D-06 — DAO TOML konfig (`L2/dao/src/config.rs` + `main.rs` + `config/dao-testnet.toml`)
+
+**Problém:** DAO daemon konfiguraci načítal výhradně z env proměnných; žádná podpora TOML souboru, bez konfigurace skeneru z DaoConfig.
+
+**Řešení:**
+
+1. **`DaoConfig` rozšířen** o nová pole:
+   - `api_port: u16` (default 8080)
+   - `api_key: String` (default prázdný → write endpointy disabled)
+   - `db_path: String` (default `"data/dao.db"`)
+   - `scan_interval_secs: u64`, `min_vote_weight: u64`, `finality_blocks: u64` → předány `ScannerConfig`
+
+2. **`DaoConfig::load(file_path: Option<&str>)`** — tříúrovňová priorita:
+   - Level 1: built-in defaults
+   - Level 2: TOML soubor via `DAO_CONFIG=/path/to/dao.toml` env var
+   - Level 3: individuální env var override (`DAO_API_PORT`, `ZION_DAO_API_KEY`, `DAO_DB_PATH`, `DAO_L1_RPC`)
+
+3. **`DaoConfig::to_toml_string()`** — serializace pro `GET /api/config` endpoint (budoucí diagnostika)
+
+4. **`main.rs` refactor** — nahrazeny rozptýlené `env::var()` volání za `DaoConfig::load(None)`, `ScannerConfig` stavěn z `cfg.*` polí
+
+5. **`config/dao-testnet.toml`** — vzorový config soubor s komentáři pro všechna pole
+
+```sh
+# Použití:
+DAO_CONFIG=/etc/zion/dao-testnet.toml \
+ZION_DAO_API_KEY=$(openssl rand -hex 32) \
+cargo run --bin zion-dao
+```
+
+### P0-04 — Seed node deploy (probíhá)
+- `scripts/deploy-testnet.sh` aktualizován na SeedDE/Usa1/Usa2/Asia3 s `zion_hetzner_key`
+- Deploy spuštěn: `bash scripts/deploy-testnet.sh seedde` → rsync + docker build + start
+
+### Stav po session 20
+- `cargo check -p zion-dao` ✅ čistý (jen warnings, 0 errors)
+- P0-04 deploy: ✅ HOTOVO — všech 5 seed nodů běží (22.2.2026). Usa1/Usa2/Asia3 jsou AMD64, QEMU binfmt arm64 emulátor aktivován pro arm64 image
 
 ---
 
