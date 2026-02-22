@@ -511,5 +511,51 @@ cargo check -p zion-pool: Finished 3.53s ✅ (0 errors, 1 future-incompat warnin
 
 ---
 
+## Session 23 — Helsinki P2P fix + 168h stability run start (22.2.2026)
+
+### Co bylo hotovo
+| Akce | Popis | Stav |
+|------|-------|------|
+| P2P diagnóza | Helsinki zion-core měl staré Vultr peer IPs (LA/Sydney/Delhi/Santiago) → seed nody stály na h=0 | ✅ |
+| Helsinki core restart | `docker stop/rm/run zion-core` s `--peers` 4 seed nodů místo Vultr | ✅ |
+| 5-node P2P sync | Všech 5 nodů na h=4042 potvrzeno | ✅ |
+| Helsinki cleanup | Odstraněno: `Zion-2.9.5/`, `zion-build/`, `zion-src.zip`, XMR keys, build logy | ✅ |
+| stability_monitor_v3.sh | Nový 168h monitor (5-node, JSON-RPC 8444/jsonrpc, 300s interval) spuštěn jako PID 3967166 od `2026-02-22T21:30:45Z` | ✅ |
+| collect_stats.sh v3 | HTTP endpoint `8334/stats` → `8444/jsonrpc`, Germany SSH blok odstraněn, nový START_EPOCH pro 168h run, pool endpoint `localhost:8080/stats` | ✅ |
+| stability_check.sh v4 | Germany (195.201.31.201) odstraněn, 5 nodů, JSON-RPC | ✅ |
+| route.ts fix | `fetchNodeData`: `/stats` → `/jsonrpc` (JSON-RPC), `rpcInfo.incoming+outgoing_connections_count`, stability_run: hardcoded `START_EPOCH=1771795845` místo pool uptime | ✅ |
+
+### 5-node stav po P2P fixu
+| Node | IP | Výška | Status |
+|------|----|-------|--------|
+| Helsinki | 77.42.31.72 | 4042 | ✅ pool+seed |
+| SeedDE | 46.225.126.243 | 4042 | ✅ |
+| Usa1 | 5.78.178.227 | 4042 | ✅ |
+| Usa2 | 178.156.240.160 | 4042 | ✅ |
+| Asia3 | 5.223.43.93 | 4042 | ✅ |
+
+### 168h Stability Run
+- **Start:** `2026-02-22T21:30:45Z` (epoch `1771795845`)
+- **Konec (plánovaný):** `2026-03-01T21:30:45Z` (po 168h)
+- **Monitor:** `/root/stability_monitor_v3.sh` — PID 3967166, 300s check interval
+- **Log:** `/root/stability_run_v2.log`
+- **Data JSON:** `/var/www/html/dash/data.json` — generuje `collect_stats.sh` každých 30s
+- **Pool uptime v době startu:** ~221 437s (~61.5h) — pool běžel kontinuálně od ~19.2.
+
+### Root cause P2P problému
+```
+# Starý docker run (Helsinki):
+--peers 149.248.8.4:8334,108.61.184.118:8334,139.84.170.133:8334,64.176.13.76:8334
+#          LA (Vultr)         Sydney (Vultr)          Delhi (Vultr)       Santiago (Vultr)
+# → Helsinki měl plný inbound slot limit od Vultr nodů
+# → Seed nody nemohly se připojit → výška stála na 0
+
+# Oprava (nový docker run):
+--peers 46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334
+#          SeedDE                   Usa1                  Usa2                Asia3
+```
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*

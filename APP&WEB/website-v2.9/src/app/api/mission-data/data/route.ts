@@ -48,23 +48,24 @@ async function rpcCall<T = any>(url: string, method: string): Promise<T | null> 
 
 /* ── Fetch data for a single node ─────────────────────────────────── */
 async function fetchNodeData(node: (typeof NODES)[number]) {
-  const [stats, poolStats] = await Promise.all([
-    fetchJson<any>(`http://${node.host}:${node.rpc}/stats`),
+  const rpcUrl = `http://${node.host}:${node.rpc}/jsonrpc`;
+  const [rpcInfo, poolStats] = await Promise.all([
+    rpcCall<any>(rpcUrl, 'get_info'),
     node.pool > 0 ? fetchJson<any>(`http://${node.host}:${node.pool}/stats`) : Promise.resolve(null),
   ]);
 
-  const nodeStats = stats
+  const nodeStats = rpcInfo
     ? {
-        height: stats.height ?? 0,
-        peers_connected: stats.peers_connected ?? 0,
-        difficulty: stats.difficulty ?? 0,
-        mempool_size: stats.mempool_size ?? 0,
-        status: stats.status ?? 'unknown',
-        time_since_last_block: stats.time_since_last_block ?? 0,
-        tip: stats.tip ?? '',
-        tps: stats.tps ?? 0,
-        sync: stats.sync ?? { state: 'unknown' },
-        network: stats.network ?? 'testnet',
+        height: rpcInfo.height ?? 0,
+        peers_connected: (rpcInfo.incoming_connections_count ?? 0) + (rpcInfo.outgoing_connections_count ?? 0),
+        difficulty: rpcInfo.difficulty ?? 0,
+        mempool_size: rpcInfo.tx_pool_size ?? 0,
+        status: rpcInfo.status ?? 'OK',
+        time_since_last_block: rpcInfo.target ?? 0,
+        tip: rpcInfo.top_block_hash ?? '',
+        tps: 0,
+        sync: { state: rpcInfo.synchronized ? 'synced' : 'syncing' },
+        network: rpcInfo.mainnet ? 'mainnet' : 'testnet',
       }
     : undefined;
 
@@ -72,31 +73,31 @@ async function fetchNodeData(node: (typeof NODES)[number]) {
     ? {
         ok: true,
         miners: {
-          active: poolStats.miners_active ?? poolStats.miners?.active ?? 0,
-          total: poolStats.miners_total ?? poolStats.miners?.total ?? 0,
+          active: poolStats.miners?.active ?? 0,
+          total: poolStats.miners?.total ?? 0,
         },
         hashrate: {
-          pool: poolStats.pool_hashrate ?? poolStats.hashrate?.pool ?? 0,
-          pool_24h: poolStats.pool_hashrate_24h ?? poolStats.hashrate?.pool_24h ?? 0,
+          pool: poolStats.hashrate?.pool ?? 0,
+          pool_24h: poolStats.hashrate?.pool_24h ?? 0,
         },
         shares: {
-          valid: poolStats.shares_valid ?? poolStats.shares?.valid ?? 0,
-          invalid: poolStats.shares_invalid ?? poolStats.shares?.invalid ?? 0,
+          valid: poolStats.shares?.valid ?? 0,
+          invalid: poolStats.shares?.invalid ?? 0,
         },
         blocks: {
-          found: poolStats.blocks_found ?? poolStats.blocks?.found ?? 0,
-          pending: poolStats.blocks_pending ?? poolStats.blocks?.pending ?? 0,
+          found: poolStats.blocks?.found ?? 0,
+          pending: poolStats.blocks?.pending ?? 0,
         },
         pool: {
-          fee: poolStats.pool_fee ?? poolStats.fee ?? 0,
-          version: poolStats.version ?? 'v2.9.6',
-          uptime_secs: poolStats.uptime_secs ?? poolStats.pool_uptime ?? 0,
+          fee: poolStats.pool?.fee ?? 0,
+          version: poolStats.pool?.version ?? 'v2.9.6',
+          uptime_secs: poolStats.pool?.uptime_secs ?? 0,
         },
         payouts: {
-          pending_miners: poolStats.pending_payouts ?? poolStats.payouts?.pending_miners ?? 0,
+          pending_miners: poolStats.payouts?.pending_miners ?? 0,
         },
-        pplns_window_size: poolStats.pplns_window ?? 0,
-        blockchain: { connected: !!stats },
+        pplns_window_size: poolStats.pplns_window_size ?? 0,
+        blockchain: { connected: poolStats.blockchain?.connected ?? false },
       }
     : undefined;
 
@@ -107,14 +108,16 @@ async function fetchNodeData(node: (typeof NODES)[number]) {
 export async function GET() {
   const [helsinki, seedde, usa1, usa2, asia3] = await Promise.all(NODES.map(fetchNodeData));
 
-  const poolUptime = helsinki?.pool?.pool?.uptime_secs ?? 0;
-  const STABILITY_DURATION = 168 * 3600; // 168h = 7 days
-  const elapsed = Math.min(poolUptime, STABILITY_DURATION);
+  // 168h stability run — started 2026-02-22T21:30:45Z (5-node P2P verified)
+  const STABILITY_START_EPOCH = 1771795845; // unix epoch UTC
+  const STABILITY_DURATION = 168 * 3600;   // 604800s = 7 days
+  const nowSec = Math.floor(Date.now() / 1000);
+  const elapsed = Math.min(Math.max(0, nowSec - STABILITY_START_EPOCH), STABILITY_DURATION);
 
   const data = {
     timestamp: new Date().toISOString(),
     stability_run: {
-      start: new Date(Date.now() - elapsed * 1000).toISOString(),
+      start: '2026-02-22T21:30:45Z',
       elapsed_secs: elapsed,
       remaining_secs: Math.max(0, STABILITY_DURATION - elapsed),
       duration_secs: STABILITY_DURATION,
