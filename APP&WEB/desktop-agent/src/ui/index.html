@@ -301,9 +301,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 2px;
-      padding: 6px 12px;
-      margin: 0 auto 10px;
+      gap: 4px;
+      padding: 8px 18px;
+      margin: 0 auto 12px;
       max-width: 100%;
       background: rgba(0, 0, 0, 0.45);
       border: 1px solid rgba(255,255,255,0.08);
@@ -319,16 +319,16 @@
 
     .dock-sep {
       width: 1px;
-      height: 28px;
+      height: 36px;
       background: rgba(255,255,255,0.06);
-      margin: 0 4px;
+      margin: 0 6px;
       flex-shrink: 0;
     }
 
     .dock-logo {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       padding: 3px;
       background: radial-gradient(circle at 30% 30%, rgba(var(--color-zion-gold) / 0.22), transparent 65%), rgba(0, 0, 0, 0.65);
@@ -360,9 +360,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
-      padding: 6px 10px;
-      border-radius: 12px;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 14px;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid transparent;
@@ -370,10 +370,10 @@
       background: transparent;
       color: rgba(255,255,255,0.45);
       flex-shrink: 0;
-      min-width: 44px;
+      min-width: 52px;
     }
     .nav-item span {
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -382,8 +382,8 @@
     }
 
     .icon {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       flex: none;
       opacity: 0.95;
     }
@@ -424,11 +424,11 @@
     .nav-item.active::after {
       content: '';
       position: absolute;
-      bottom: -2px;
+      bottom: -3px;
       left: 50%;
       transform: translateX(-50%);
-      width: 4px;
-      height: 4px;
+      width: 5px;
+      height: 5px;
       border-radius: 50%;
       background: var(--zion-gold);
       box-shadow: 0 0 6px var(--zion-gold);
