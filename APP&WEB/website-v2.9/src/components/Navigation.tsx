@@ -113,12 +113,11 @@ export default function Navigation() {
             <div className="w-12 h-12 rounded-lg flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-gold/50 transition-colors bg-black/40">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,215,0,0.3),transparent_60%)]" />
               <Image 
-                src="/Z.gif" 
+                src="/LogoStargate.jpg" 
                 alt="ZION Logo" 
-                width={40} 
-                height={40}
-                className="relative z-10"
-                unoptimized
+                width={48} 
+                height={48}
+                className="relative z-10 object-cover w-full h-full"
               />
             </div>
             <span className="text-2xl font-bold text-gradient tracking-tight">ZION</span>
