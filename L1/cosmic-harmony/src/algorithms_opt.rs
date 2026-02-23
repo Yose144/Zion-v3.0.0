@@ -591,7 +591,11 @@ mod tests {
         0x000000008000808B, 0x800000000000008B, 0x8000000000008089,
         0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
         0x000000000000800A, 0x800000008000000A, 0x8000000080008081,
-        0x8000000000008080, 0x0000000080000001, 0x8000000080008008,
+        // NOTE: positions 21-23 intentionally differ from NIST standard Keccak.
+        // The ZION network launched with these values and all pool/node/miner
+        // binaries use them for consensus. Do NOT "fix" to standard values
+        // unless ALL binaries are rebuilt simultaneously.
+        0x8000000000000001, 0x8000000080008008, 0x0000000000000000,
     ];
     const KECCAK_PILN: [usize; 24] = [
         10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4,
