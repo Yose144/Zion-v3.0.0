@@ -170,11 +170,11 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
   const s = node?.stats;
   const memPct = node?.mem?.total && node.mem.total > 0 ? Math.round((node.mem.used ?? 0) / node.mem.total * 100) : 0;
   const diskPct = node?.disk?.used_pct ?? 0;
-  const isHealthy = s?.status === 'healthy';
+  const isHealthy = s?.status === 'OK' || s?.status === 'ok' || s?.status === 'healthy';
   const isSyncing = s?.sync?.state === 'Downloading' || s?.sync?.state === 'Syncing';
   const isStale = (s?.time_since_last_block ?? 0) > 300; // 5 min no blocks
 
-  const statusLabel = !s?.status ? 'Offline' : isHealthy ? 'Healthy' : isSyncing ? 'Syncing' : isStale ? 'Stale' : 'Unhealthy';
+  const statusLabel = !s?.status ? 'Offline' : isHealthy ? 'Online' : isSyncing ? 'Syncing' : isStale ? 'Stale' : 'Unhealthy';
   const statusStyle = isHealthy
     ? 'text-emerald-200 bg-emerald-400/10 border-emerald-400/30'
     : isSyncing
@@ -399,7 +399,7 @@ export default function MissionControlDashboard() {
   const hH = hStats?.height ?? 0;
   const sH = sStats?.height ?? 0;
   const allNodes = [data?.helsinki, data?.seedde, data?.usa1, data?.usa2, data?.asia3];
-  const onlineCount = allNodes.filter(n => n?.stats?.status === 'healthy').length;
+  const onlineCount = allNodes.filter(n => n?.stats?.status === 'OK' || n?.stats?.status === 'ok' || n?.stats?.status === 'healthy').length;
   const allHealthy = onlineCount === 5;
   const anyHealthy = onlineCount > 0;
 
@@ -444,7 +444,7 @@ export default function MissionControlDashboard() {
             <div className="grid w-full gap-3 grid-cols-2 lg:w-auto lg:min-w-[340px]">
               {[
                 { label: 'Block Height', value: fmt(Math.max(hH, sH)), descriptor: 'latest block' },
-                { label: 'Stability', value: `${sr?.progress_pct ?? 0}%`, descriptor: '72h run progress' },
+                { label: 'Stability', value: `${sr?.progress_pct ?? 0}%`, descriptor: '168h stability run' },
                 { label: 'Network Peers', value: fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0)), descriptor: 'unique peers' },
                 { label: 'Status', value: allHealthy ? 'PASS' : (hH > 0 || sH > 0) ? 'RUN' : 'DOWN', descriptor: allHealthy ? 'all systems go' : (hH > 0 || sH > 0) ? 'monitoring...' : 'nodes offline' },
               ].map((chip) => (
@@ -507,7 +507,7 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Stability</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Gauge className="h-7 w-7 text-cyan-400" />
-                  72h Stability Run — Sprint v3 (Reorg Fix)
+                  168h Stability Run — 5 Nodes · 5 Continents
                 </h2>
               </div>
               <BigProgress sr={sr} />
@@ -537,7 +537,7 @@ export default function MissionControlDashboard() {
                 <Stat label="Network" value={hStats?.network ?? 'testnet'} color="text-cyan-400" />
                 <Stat label="Total Peers" value={fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0))} sub={`${onlineCount}/5 nodes online`} mono />
                 <Stat label="Difficulty" value={fmt(hStats?.difficulty)} mono />
-                <Stat label="Sync Status" value={hStats?.status === 'healthy' ? 'SYNCED ✓' : hH > 0 ? 'RUNNING' : '—'} color={hStats?.status === 'healthy' ? 'text-emerald-400' : 'text-gray-400'} />
+                <Stat label="Sync Status" value={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'SYNCED ✓' : hH > 0 ? 'RUNNING' : '—'} color={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
               </div>
               <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-5">
                 <ServerCard node={data.helsinki} name="Helsinki" flag="🇫🇮" ip="77.42.31.72 · 8GB · aarch64" />
@@ -704,7 +704,7 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.7 P2P Rate-Limit" content="200 msgs/peer/60s, escalating bans" tests="13" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.8 Health & Metrics" content="getHealthCheck, getMetrics" tests="8" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.9 Stress Tests" content="High-throughput TX, rapid blocks" tests="21" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.10 72h Stability" content="3+ nody, CPU mining — GATE" tests="—" status={<span className="text-cyan-400 inline-flex items-center gap-1"><Timer className="h-3.5 w-3.5" /> NOW</span>} highlight />
+                  <SprintRow name="1.10 168h Stability" content="5 nodů · 5 kontinentů · 7 dní — GATE" tests="—" status={<span className="text-cyan-400 inline-flex items-center gap-1"><Timer className="h-3.5 w-3.5" /> NOW</span>} highlight />
                   <SprintRow name="1.11 Partition Test" content="Izolace node 30 min, reconnect" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.12 100 Miners" content="Simulace 100 Stratum klientů" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                 </tbody></table>
