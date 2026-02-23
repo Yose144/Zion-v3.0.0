@@ -143,14 +143,14 @@ impl GpuMiner for OpenCLMiner {
                 return Ok(None);
             }
 
-            // ═══ CHv3 target: pool sends 8-char hex → parse_target_bytes places
-            // the 4 bytes at target[28..32] (right-aligned in 32-byte array).
+            // ═══ CHv3 target: pool sends full 32-byte target hex.
             // Pool validator does:  u32::from_le_bytes(hash[0..4]) ≤ target_int
             //   where target_int = u32::from_str_radix(&hex[0..8], 16)
             //                    = u32::from_be_bytes(decoded[0..4])
-            // After parse_target_bytes, the decoded bytes sit at [28..32].
+            // parse_target_bytes places decoded bytes at natural positions:
+            // target[0..4] = first 4 bytes = the most significant part.
             let target_u32: u32 = u32::from_be_bytes([
-                target[28], target[29], target[30], target[31],
+                target[0], target[1], target[2], target[3],
             ]);
 
             // Reset buffers
