@@ -2685,6 +2685,7 @@ let _bridgeMemo       = null;
 function initBridgeView() {
   bridgeLoadStats();
   bridgeLoadEvmAddress();
+  window.dexLoadPools();
 }
 
 /** Load EVM address from wallet context (derive from mnemonic via IPC) */
@@ -2808,21 +2809,132 @@ window.bridgeCopyEvm = function () {
   }
 };
 
+// ── DEX Pool Data Loader ─────────────────────────────────────────────────
+
+/** Fetch DEX pool stats (wZION/ETH, wZION/USDC) from backend or defaults */
+window.dexLoadPools = async function () {
+  try {
+    const res = await window.ipcRenderer?.invoke?.('dex-get-pool-stats');
+    if (res?.success) {
+      const fmt  = (n) => Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      const set  = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      if (res.pools?.eth) {
+        set('dex-tvl-eth',   '$' + fmt(res.pools.eth.tvl));
+        set('dex-vol-eth',   '$' + fmt(res.pools.eth.volume24h));
+        set('dex-price-eth', '$' + fmt(res.pools.eth.price));
+        set('dex-apr-eth',   fmt(res.pools.eth.apr) + '%');
+      }
+      if (res.pools?.usdc) {
+        set('dex-tvl-usdc',   '$' + fmt(res.pools.usdc.tvl));
+        set('dex-vol-usdc',   '$' + fmt(res.pools.usdc.volume24h));
+        set('dex-price-usdc', '$' + fmt(res.pools.usdc.price));
+        set('dex-apr-usdc',   fmt(res.pools.usdc.apr) + '%');
+      }
+    }
+  } catch (e) {
+    console.warn('[DEX] Pool stats load failed:', e.message);
+  }
+};
+
+// ── Atomic Swap Logic ────────────────────────────────────────────────────
+
+const _swapPairs = {
+  'zion-btc': { send: 'ZION', receive: 'BTC', rate: 0.0000012 },
+  'zion-eth': { send: 'ZION', receive: 'ETH', rate: 0.0000085 },
+  'zion-xmr': { send: 'ZION', receive: 'XMR', rate: 0.000065  },
+};
+let _swapSelectedPair = 'zion-btc';
+let _swapReversed = false;
+
+/** Select an atomic swap pair */
+window.swapSelectPair = function (pair) {
+  _swapSelectedPair = pair;
+  _swapReversed = false;
+  document.querySelectorAll('.swap-pair-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.pair === pair);
+  });
+  const p = _swapPairs[pair];
+  if (p) {
+    const sendEl = document.getElementById('swap-send-coin');
+    const recvEl = document.getElementById('swap-receive-coin');
+    if (sendEl) sendEl.textContent = p.send;
+    if (recvEl) recvEl.textContent = p.receive;
+    swapCalcEstimate();
+  }
+};
+
+/** Reverse swap direction */
+window.swapReverse = function () {
+  _swapReversed = !_swapReversed;
+  const p = _swapPairs[_swapSelectedPair];
+  if (!p) return;
+  const sendEl = document.getElementById('swap-send-coin');
+  const recvEl = document.getElementById('swap-receive-coin');
+  if (_swapReversed) {
+    if (sendEl) sendEl.textContent = p.receive;
+    if (recvEl) recvEl.textContent = p.send;
+  } else {
+    if (sendEl) sendEl.textContent = p.send;
+    if (recvEl) recvEl.textContent = p.receive;
+  }
+  swapCalcEstimate();
+};
+
+/** Calculate estimate based on mock rate */
+function swapCalcEstimate() {
+  const p = _swapPairs[_swapSelectedPair];
+  if (!p) return;
+  const sendAmt = parseFloat(document.getElementById('swap-send-amount')?.value || '0');
+  const recvEl  = document.getElementById('swap-receive-amount');
+  if (!recvEl) return;
+  if (!sendAmt || sendAmt <= 0) { recvEl.value = ''; return; }
+  const rate = _swapReversed ? (1 / p.rate) : p.rate;
+  recvEl.value = (sendAmt * rate).toFixed(8);
+}
+
+/** Copy contract/address to clipboard helper */
+function bridgeCopyText(text) {
+  navigator.clipboard?.writeText(text).catch(() => {});
+}
+
 // ── Bridge DOM event listeners (CSP-compliant, no inline onclick) ────────
 (function attachBridgeListeners() {
   const on = (id, evt, fn) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener(evt, fn);
   };
+  // Bridge tab
   on('bridge-btn-to-evm',    'click', () => window.bridgeSetDirection('L1toEVM'));
   on('bridge-btn-to-l1',     'click', () => window.bridgeSetDirection('EVMtoL1'));
   on('bridge-copy-evm',      'click', () => window.bridgeCopyEvm());
   on('bridge-copy-memo',     'click', () => window.bridgeCopyMemo());
   on('bridge-prepare-lock',  'click', () => window.bridgePrepareLock());
-  on('bridge-refresh-stats',  'click', () => window.bridgeLoadStats());
+  on('bridge-refresh-stats', 'click', () => window.bridgeLoadStats());
   on('bridge-open-basescan', 'click', () => {
     window.open('https://sepolia.basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721#writeContract', '_blank');
   });
+
+  // DEX tab
+  on('dex-refresh-pools', 'click', () => window.dexLoadPools());
+
+  // Atomic Swap tab
+  on('swap-reverse-btn',  'click', () => window.swapReverse());
+  on('swap-send-amount',  'input', () => swapCalcEstimate());
+
+  // Swap pair cards
+  document.querySelectorAll('.swap-pair-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.dataset.pair) window.swapSelectPair(card.dataset.pair);
+    });
+  });
+
+  // Stats tab — copy buttons
+  on('stats-copy-wzion', 'click', () => bridgeCopyText('0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721'));
+  on('stats-copy-bridge', 'click', () => {
+    const el = document.getElementById('stats-bridge-contract');
+    if (el) bridgeCopyText(el.textContent);
+  });
+  on('stats-copy-vault', 'click', () => bridgeCopyText('zion1bridge000000000000000000000000000vault'));
 })();
 
 // Hook into switchView to initialize bridge when tab is opened
