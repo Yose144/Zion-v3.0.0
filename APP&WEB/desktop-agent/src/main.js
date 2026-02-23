@@ -2256,15 +2256,16 @@ function startMining(config) {
   }
 
   let spawnDiagLine = null;
-  const maybeFallbackToPython = (reason) => {
-    if (!rustFallbackEligible) return false;
+  const maybeFallbackToPython = (reason, force = false) => {
+    if (!fallbackPythonPath) return false;
+    if (!force && !rustFallbackEligible) return false;
     if (minerStopping || minerFallbackInProgress || minerUserStopRequested) return false;
     minerFallbackInProgress = true;
     try {
       MINER_IS_RUST = false;
       MINER_IS_PYTHON = true;
       MINER_PATH = fallbackPythonPath;
-      minerBackendLastError = `Rust miner failed (${reason}). Fallback to Python (auto mode).`;
+      minerBackendLastError = `Rust miner failed (${reason}). Fallback to Python miner.`;
       try {
         sendToRenderer('miner-backend', {
           preferred: minerBackendPreferred,
@@ -2688,18 +2689,20 @@ function startMining(config) {
     console.error('Failed to start miner process:', err);
     minerProcess = null;
 
+    let defenderBlocked = false;
     try {
       const msg = err?.message || String(err);
       if (
         process.platform === 'win32' &&
         /virus|potenciálně\s+nežádouc|potentially\s+unwanted|pua|blocked\s+by\s+antivirus/i.test(msg)
       ) {
+        defenderBlocked = true;
         const base =
           `[ERROR] Rust miner was blocked by Windows Defender/AV (PUA detection). ` +
           `Allow/restore the miner exe and add an exclusion for the resources folder.`;
-        const extra = preferredBackend === 'auto'
-          ? ' Falling back to Python miner (auto mode) if available.'
-          : ' Fallback is disabled because you selected Rust explicitly.';
+        const extra = fallbackPythonPath
+          ? ' Falling back to Python miner if available.'
+          : ' Python fallback is not available on this installation.';
 
         minerBackendLastError = base + extra;
         try {
@@ -2725,7 +2728,7 @@ function startMining(config) {
     }
     minerStartAckTimer = null;
 
-    if (maybeFallbackToPython(`spawn error: ${err?.message || String(err)}`)) {
+    if (maybeFallbackToPython(`spawn error: ${err?.message || String(err)}`, defenderBlocked)) {
       return;
     }
 
