@@ -1890,6 +1890,11 @@ function startMining(config) {
   const requestedAlgorithmLower = 'cosmic_harmony_v3';
   const algorithmForMiner = MINER_IS_PYTHON ? 'cosmic_harmony_v3' : 'cosmic_harmony';
 
+  // GPU is exclusive: only the main ZION miner OR the GPU Revenue process gets --gpu, never both.
+  // Two OpenCL contexts on the same GPU cause severe context-switching overhead (120→20 MH/s).
+  // mode=gpu/dual → main miner uses GPU; mode=gpu-revenue → GPU Revenue process uses GPU.
+  const mainMinerGpu = effectiveGpu && miningMode !== 'gpu-revenue';
+
   let args;
   let xmrRevenueThreads = 0;
   let zionThreads = effectiveThreads;
@@ -1947,7 +1952,13 @@ function startMining(config) {
     if (algorithmForMiner) args.push('--algorithm', String(algorithmForMiner));
     // Enable GPU on all platforms for Rust miner.
     // On macOS this uses Metal backend (no OpenCL required).
-    if (effectiveGpu) args.push('--gpu');
+    if (mainMinerGpu) {
+      args.push('--gpu');
+      // Auto-tune GPU batch size for maximum hashrate.
+      // The miner benchmarks batch sizes from 100K→10M during startup
+      // and picks the fastest, typically 2-6× faster than the default.
+      args.push('--auto-tune');
+    }
   } else {
     // Python miner / legacy .exe miner (shared CLI)
     args = [
@@ -2412,7 +2423,22 @@ function startMining(config) {
   // Linux/Win (OpenCL): kawpow (RVN) + --gpu.
   // Only spawns when: gpuRevenue=true, GPU detected, Rust miner, --group supported.
   // ═══════════════════════════════════════════════════════════════
-  if (MINER_IS_RUST && config.gpuRevenue && effectiveGpu && rustGroupSupported) {
+  // IMPORTANT: Do NOT spawn GPU Revenue when the main ZION miner already uses --gpu.
+  // Two OpenCL processes on the same GPU cause severe context-switching overhead
+  // and can drop hashrate from >100 MH/s to <20 MH/s. GPU is exclusive to one process.
+  // GPU Revenue only gets the GPU in 'gpu-revenue' mining mode.
+  const gpuRevenueAllowed = config.gpuRevenue && effectiveGpu && !mainMinerGpu;
+  if (config.gpuRevenue && mainMinerGpu) {
+    // GPU is dedicated to ZION mining — skip GPU Revenue to avoid contention
+    logApp('gpu-revenue-skipped', 'GPU dedicated to main ZION miner (mode=' + miningMode + '); GPU Revenue skipped to prevent contention.');
+    try {
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: '[CH3-GPU] GPU dedicated to ZION mining — GPU Revenue skipped (prevents dual-GPU contention).\n'
+      });
+    } catch { /* ignore */ }
+  }
+  if (MINER_IS_RUST && gpuRevenueAllowed && rustGroupSupported) {
     try {
       const gpuRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_gpu_revenue.json');
       // Do NOT force algorithm in revenue group.
@@ -2423,6 +2449,7 @@ function startMining(config) {
         '--threads', '1',  // GPU process needs only 1 CPU thread; GPU (Metal/OpenCL) does the heavy work
         '--group', 'revenue',
         '--gpu',   // works on macOS for cosmic_harmony (Metal), and on Linux/Win (OpenCL)
+        '--auto-tune',  // optimize GPU batch size for maximum hashrate
         '--stats-file', gpuRevenueStatsPath,
         '--stats-interval', '5',
         '--no-color'
