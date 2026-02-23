@@ -61,9 +61,9 @@ Helsinki
 |---|---|---|---|
 | Helsinki (`77.42.31.72`) | `zion-dero-miner`, `zion-zeph-miner`, `zion-mysterium` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Registered |
 | Germany (`46.225.126.243`) | `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium` | `0x1a9bcc8298a4cd214a90fb63e1eb5effa8fd8969` | ✅ Registered |
-| Usa1 (`5.78.178.227`) | `zion-mysterium` | `0xbfce8102af31342a22bdf217c7fd446d1476d2f7` | ✅ Registered |
-| Usa2 (`178.156.240.160`) | `zion-mysterium` | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Registered |
-| Asia3 (`5.223.43.93`) | `zion-mysterium` | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Registered |
+| Usa1 (`5.78.178.227`) | `zion-mysterium`, `zion-xmr-x86` | `0xbfce8102af31342a22bdf217c7fd446d1476d2f7` | ✅ Registered |
+| Usa2 (`178.156.240.160`) | `zion-mysterium`, `zion-xmr-x86` | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Registered |
+| Asia3 (`5.223.43.93`) | `zion-mysterium`, `zion-xmr-x86` | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Registered |
 
 Poznámka: `nkn` je v produkci zatím vypnutý (wallet init flow ještě není idempotentně zautomatizovaný).
 Poznámka 2: Usa1/Usa2/Asia3 spouštějí jen Mysterium (`docker-compose.mysterium-only.yml`) — miner není potřeba.

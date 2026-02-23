@@ -164,6 +164,116 @@ services:
       - "zion.service=revenue"
       - "zion.pool=moneroocean"
 
+  # ─── XMR-X86-MINER ──────────────────────────────────────────
+  # Pre-built xmrig static binary pro x86_64 (Usa1/Usa2/Asia3)
+  # Stahuje hotovy binary z GitHub (~30s) misto compilace
+  # Profily: x86
+  # ─────────────────────────────────────────────────────────────
+  xmr-x86-miner:
+    image: ubuntu:22.04
+    container_name: zion-xmr-x86
+    restart: unless-stopped
+    profiles: ["x86"]
+    entrypoint: /bin/bash
+    volumes:
+      - zion-xmrig-x86:/opt/xmrig-bin
+    command:
+      - -c
+      - |
+        DEBIAN_FRONTEND=noninteractive apt-get update -qq 2>/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          curl ca-certificates libuv1 libssl3 libhwloc15 2>&1 | tail -1
+        if [ ! -f /opt/xmrig-bin/xmrig ]; then
+          echo "[ZION] Downloading xmrig static x64 binary..."
+          mkdir -p /opt/xmrig-bin
+          curl -fsSL "https://github.com/xmrig/xmrig/releases/download/v6.21.3/xmrig-6.21.3-linux-static-x64.tar.gz" \
+            | tar xz -C /opt/xmrig-bin --strip-components=1
+          chmod +x /opt/xmrig-bin/xmrig
+          /opt/xmrig-bin/xmrig --version
+        fi
+        WORKER="zion_x86_$$(hostname | tr -cd '[:alnum:]' | head -c8)"
+        echo "[ZION] Starting MoneroOcean x86 (worker=$$WORKER threads=1)"
+        exec /opt/xmrig-bin/xmrig \
+          --url gulf.moneroocean.stream:10001 \
+          --user 42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK \
+          --pass $$WORKER \
+          --threads 1 \
+          --no-color \
+          --donate-level 0 \
+          --print-time 120
+    cpus: "1.0"
+    mem_limit: 2g
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - revenue-net
+    labels:
+      - "zion.service=revenue"
+      - "zion.pool=moneroocean"
+      - "zion.arch=x86"
+
+  # ─── VRSC-MINER (VerusHash) ───────────────────────────────
+  # CPU: VerusHash — best CPU efficiency coin
+  # x86_64 only (ccminer-verus Docker = x86)
+  # Pool: luckpool.net:3956 | payout: VRSC → convert manually
+  # Profily: vrsc (opt-in)
+  # ─────────────────────────────────────────────────────────────
+  vrsc-miner:
+    image: oink70/ccminer-verus:latest
+    container_name: zion-vrsc-miner
+    restart: unless-stopped
+    profiles: ["vrsc"]
+    command:
+      - "-a"
+      - "verushash"
+      - "-o"
+      - "stratum+tcp://eu.luckpool.net:3956"
+      - "-u"
+      - "RWrHVj8e7fkvfUw4Jf6qJNUHdr6baAsoF5"   # VRSC wallet
+      - "-p"
+      - "zion_vrsc"
+      - "-t"
+      - "1"
+    cpus: "1.0"
+    mem_limit: 2g
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - revenue-net
+    labels:
+      - "zion.service=revenue"
+      - "zion.pool=luckpool"
+      - "zion.arch=x86"
+      - "zion.algo=verushash"
+
+  # ─── NCL GATEWAY (Stream 5: AI Compute) ──────────────────
+  # Neural Compute Layer — 25% compute alokace pro AI tasky
+  # Přijímá inference tasky z poolu, vrací result hashe
+  # Port 8002 — referenced in ch3_revenue_settings.json
+  # Aktivace: profil ncl nebo ZION_NCL_ENABLED=1
+  # ─────────────────────────────────────────────────────────────
+  ncl-gateway:
+    image: python:3.12-slim
+    container_name: zion-ncl-gateway
+    restart: unless-stopped
+    profiles: ["ncl"]
+    environment:
+      - NCL_POOL_URL=http://77.42.31.72:8444
+      - NCL_WALLET=42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK
+      - NCL_PORT=8002
+      - NCL_GPU_ENABLED=0
+    ports:
+      - "8002:8002"
+    volumes:
+      - /opt/zion/scripts/ncl_gateway.py:/app/ncl_gateway.py:ro
+      - zion-ncl-state:/app/state
+    command: python /app/ncl_gateway.py
+    networks:
+      - revenue-net
+    labels:
+      - "zion.service=ncl"
+      - "zion.stream=5"
+
   # ─── MYSTERIUM ──────────────────────────────────────────────
   # VPN bandwidth node, oba servery, $0 kapital
   # Registrace: http://SERVER:4449 nebo MMN_API_KEY env
@@ -207,10 +317,14 @@ services:
 volumes:
   zion-xmrig-cache:
     name: zion-xmrig-cache
+  zion-xmrig-x86:
+    name: zion-xmrig-x86
   zion-mysterium-data:
     name: zion-mysterium-data
   zion-nkn-data:
     name: zion-nkn-data
+  zion-ncl-state:
+    name: zion-ncl-state
 
 networks:
   revenue-net:
