@@ -931,6 +931,311 @@
       word-break: break-all;
     }
 
+    .muted-time {
+      margin-left: auto;
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 400;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .metric-grid.metric-grid-200 {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+
+    .metric-card {
+      padding: 14px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+
+    .metric-card.green { border-color: rgba(16,185,129,0.3); }
+    .metric-card.blue { border-color: rgba(96,165,250,0.3); }
+    .metric-card.purple { border-color: rgba(167,139,250,0.3); }
+    .metric-card.gold { border-color: rgba(251,191,36,0.3); }
+    .metric-card.soft-purple { border-color: rgba(147,51,234,0.2); }
+
+    .metric-kicker {
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .metric-kicker.regular {
+      font-size: 12px;
+      letter-spacing: normal;
+      text-transform: none;
+    }
+
+    .metric-value {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-value.green { color: #6ee7b7; }
+    .metric-value.blue { color: #93c5fd; }
+    .metric-value.purple { color: #c4b5fd; }
+    .metric-value.gold { color: #fcd34d; }
+
+    .sync-bar {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    .stack-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stack-col.scroll {
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .placeholder-row {
+      text-align: center;
+      color: rgba(255,255,255,0.35);
+      font-size: 13px;
+      padding: 20px;
+    }
+
+    .bridge-toggle {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .bridge-toggle .btn-zion {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .bridge-balance-grid {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .bridge-balance-card {
+      flex: 1;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .bridge-balance-kicker {
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .bridge-balance-value {
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bridge-balance-value.gold { color: var(--zion-gold); }
+
+    .bridge-balance-sub {
+      font-size: 10px;
+      color: rgba(255,255,255,0.3);
+      margin-top: 4px;
+    }
+
+    .bridge-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bridge-code {
+      flex: 1;
+      font-size: 12px;
+      color: var(--zion-cyan);
+      word-break: break-all;
+    }
+
+    .bridge-btn-small {
+      padding: 8px 12px;
+      font-size: 11px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .bridge-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .bridge-form-title {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--zion-gold);
+    }
+
+    .bridge-form-title.cyan { color: var(--zion-cyan); }
+
+    .bridge-help {
+      margin: 0 0 14px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.6;
+    }
+
+    .bridge-label {
+      display: block;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 4px;
+    }
+
+    .bridge-code-block {
+      display: block;
+      padding: 10px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 8px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+
+    .bridge-code-block.warn {
+      background: rgba(247,184,1,0.08);
+      border: 1px solid rgba(247,184,1,0.3);
+      color: var(--zion-gold);
+      margin-bottom: 0;
+      flex: 1;
+    }
+
+    .bridge-primary-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg,#f7b801,#e09000);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .bridge-note-box {
+      padding: 14px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .bridge-note-text {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.7;
+    }
+
+    .bridge-note-text b {
+      color: #fff;
+    }
+
+    .bridge-stats-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .bridge-stat-card {
+      flex: 1;
+      min-width: 140px;
+      padding: 14px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .bridge-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bridge-stat-value.gold { color: var(--zion-gold); }
+
+    .bridge-stat-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 4px;
+      text-transform: none;
+    }
+
+    .bridge-refresh-btn {
+      margin-top: 12px;
+      padding: 8px 18px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .about-quote-wrap {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .about-quote-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .about-quote {
+      font-size: 15px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.8;
+      max-width: 500px;
+      margin: 0 auto;
+      font-style: italic;
+    }
+
+    .about-quote-foot {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      margin-top: 8px;
+    }
+
     /* Form Elements */
     .form-group {
       margin-bottom: 16px;
@@ -2704,62 +3009,62 @@
 
         <!-- Network Telemetry (lite) -->
         <div class="control-panel" style="margin-top: 24px;">
-          <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+          <h2 class="panel-header-title">
             <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
             <span>Network Telemetry</span>
-            <span style="margin-left:auto; font-size:11px; color:rgba(255,255,255,0.35); font-weight:400;" id="net-telemetry-updated">—</span>
+            <span class="muted-time" id="net-telemetry-updated">—</span>
           </h2>
           <!-- Summary cards -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px;">
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(16,185,129,0.3);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">NODES ONLINE</div>
-              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#6ee7b7;" id="net-nodes-online">—</div>
+          <div class="metric-grid">
+            <div class="metric-card green">
+              <div class="metric-kicker">NODES ONLINE</div>
+              <div class="metric-value green" id="net-nodes-online">—</div>
             </div>
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(96,165,250,0.3);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">BLOCK HEIGHT</div>
-              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#93c5fd;" id="net-block-height">—</div>
+            <div class="metric-card blue">
+              <div class="metric-kicker">BLOCK HEIGHT</div>
+              <div class="metric-value blue" id="net-block-height">—</div>
             </div>
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(167,139,250,0.3);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">NETWORK HASHRATE</div>
-              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#c4b5fd;" id="net-hashrate">—</div>
+            <div class="metric-card purple">
+              <div class="metric-kicker">NETWORK HASHRATE</div>
+              <div class="metric-value purple" id="net-hashrate">—</div>
             </div>
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(251,191,36,0.3);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">ACTIVE MINERS</div>
-              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#fcd34d;" id="net-active-miners">—</div>
+            <div class="metric-card gold">
+              <div class="metric-kicker">ACTIVE MINERS</div>
+              <div class="metric-value gold" id="net-active-miners">—</div>
             </div>
           </div>
           <!-- Sync status -->
-          <div id="net-sync-bar" style="padding:10px 14px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:14px;">
-            <span id="net-sync-icon" style="font-size:15px;">⏳</span>
-            <span id="net-sync-text" style="color:rgba(255,255,255,0.6);">Checking sync status...</span>
+          <div id="net-sync-bar" class="sync-bar">
+            <span id="net-sync-icon">⏳</span>
+            <span id="net-sync-text">Checking sync status...</span>
           </div>
           <!-- Per-node rows -->
-          <div id="net-node-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+          <div id="net-node-list" class="stack-col"></div>
         </div>
 
         <!-- GPU Detection Panel -->
         <div class="control-panel" style="margin-top: 24px;">
-          <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+          <h2 class="panel-header-title">
             <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
             <span>GPU Detection</span>
             <span class="gpu-badge cpu-only" id="net-gpu-badge" style="margin-left: auto;"><span id="net-gpu-badge-text">Scanning...</span></span>
           </h2>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(147,51,234,0.2);">
-              <div style="color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;">GPU Name</div>
-              <div style="font-size:16px; font-weight:700; margin-top:4px;" id="net-gpu-name">—</div>
+          <div class="metric-grid metric-grid-200">
+            <div class="metric-card soft-purple">
+              <div class="metric-kicker regular">GPU Name</div>
+              <div class="metric-value" id="net-gpu-name">—</div>
             </div>
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(147,51,234,0.2);">
-              <div style="color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;">Type</div>
-              <div style="font-size:16px; font-weight:700; margin-top:4px;" id="net-gpu-type">—</div>
+            <div class="metric-card soft-purple">
+              <div class="metric-kicker regular">Type</div>
+              <div class="metric-value" id="net-gpu-type">—</div>
             </div>
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(147,51,234,0.2);">
-              <div style="color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;">Memory</div>
-              <div style="font-size:16px; font-weight:700; margin-top:4px;" id="net-gpu-memory">—</div>
+            <div class="metric-card soft-purple">
+              <div class="metric-kicker regular">Memory</div>
+              <div class="metric-value" id="net-gpu-memory">—</div>
             </div>
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(147,51,234,0.2);">
-              <div style="color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;">Mining Mode</div>
-              <div style="font-size:16px; font-weight:700; margin-top:4px;" id="net-mining-mode">CPU-Only</div>
+            <div class="metric-card soft-purple">
+              <div class="metric-kicker regular">Mining Mode</div>
+              <div class="metric-value" id="net-mining-mode">CPU-Only</div>
             </div>
           </div>
         </div>
@@ -2767,13 +3072,13 @@
 
         <!-- P2P Peer Discovery Panel -->
         <div class="control-panel" style="margin-top: 24px;">
-          <h2 style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-            <span style="display:flex; align-items:center; gap:10px;">
+          <h2 class="panel-header-row">
+            <span class="panel-header-title">
               <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
               <span>P2P Peers</span>
             </span>
-            <span style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:11px; color:rgba(255,255,255,0.35); font-weight:400;" id="net-peers-updated">—</span>
+            <span class="panel-header-title">
+              <span class="muted-time" id="net-peers-updated">—</span>
               <button class="btn btn-ghost btn-sm" id="refresh-peers-btn">
                 <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg>
                 Refresh
@@ -2781,23 +3086,23 @@
             </span>
           </h2>
           <!-- Peer summary cards -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px;">
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(16,185,129,0.3);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">CONNECTED</div>
-              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#6ee7b7;" id="net-peers-connected">—</div>
+          <div class="metric-grid">
+            <div class="metric-card green">
+              <div class="metric-kicker">CONNECTED</div>
+              <div class="metric-value green" id="net-peers-connected">—</div>
             </div>
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(96,165,250,0.3);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">KNOWN PEERS</div>
-              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#93c5fd;" id="net-peers-known">—</div>
+            <div class="metric-card blue">
+              <div class="metric-kicker">KNOWN PEERS</div>
+              <div class="metric-value blue" id="net-peers-known">—</div>
             </div>
-            <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(167,139,250,0.3);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">SEED NODES</div>
-              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#c4b5fd;">5</div>
+            <div class="metric-card purple">
+              <div class="metric-kicker">SEED NODES</div>
+              <div class="metric-value purple">5</div>
             </div>
           </div>
           <!-- Peer list -->
-          <div id="net-peer-list" style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto;">
-            <div style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:20px;">Loading peers...</div>
+          <div id="net-peer-list" class="stack-col scroll">
+            <div class="placeholder-row">Loading peers...</div>
           </div>
         </div>
 
@@ -2935,12 +3240,12 @@
 
         <!-- Philosophy -->
         <div class="control-panel" style="margin-top: 20px;">
-          <div style="text-align:center; padding:20px 0;">
-            <div style="font-size:28px; margin-bottom:10px;">✨</div>
-            <p style="font-size:15px; color:rgba(255,255,255,0.55); line-height:1.8; max-width:500px; margin:0 auto; font-style:italic;">
+          <div class="about-quote-wrap">
+            <div class="about-quote-icon">✨</div>
+            <p class="about-quote">
               "Where Technology Meets Spirit"
             </p>
-            <p style="font-size:12px; color:rgba(255,255,255,0.3); margin-top:8px;">© 2025–2026 ZION TerraNova · Peace and One Love</p>
+            <p class="about-quote-foot">© 2025–2026 ZION TerraNova · Peace and One Love</p>
           </div>
         </div>
       </div>
@@ -2959,111 +3264,109 @@
 
         <!-- Direction toggle -->
         <div class="control-panel" style="margin-bottom:14px; padding:16px 20px;">
-          <div style="display:flex; gap:10px; margin-bottom:16px;">
-            <button id="bridge-btn-to-evm" class="btn-zion active"
-              style="flex:1; padding:10px; border-radius:10px;">
+          <div class="bridge-toggle">
+            <button id="bridge-btn-to-evm" class="btn-zion active">
               ZION → wZION (lock on L1)
             </button>
-            <button id="bridge-btn-to-l1" class="btn-zion"
-              style="flex:1; padding:10px; border-radius:10px;">
+            <button id="bridge-btn-to-l1" class="btn-zion">
               wZION → ZION (burn on Base)
             </button>
           </div>
         </div>
 
         <!-- Balance cards -->
-        <div style="display:flex; gap:14px; margin-bottom:14px;">
-          <div class="control-panel" style="flex:1; padding:18px; text-align:center;">
-            <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:6px; text-transform:uppercase; letter-spacing:.08em;">L1 ZION Balance</div>
-            <div id="bridge-l1-balance" style="font-size:22px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">—</div>
-            <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px;">native chain</div>
+        <div class="bridge-balance-grid">
+          <div class="control-panel bridge-balance-card">
+            <div class="bridge-balance-kicker">L1 ZION Balance</div>
+            <div id="bridge-l1-balance" class="bridge-balance-value">—</div>
+            <div class="bridge-balance-sub">native chain</div>
           </div>
-          <div class="control-panel" style="flex:1; padding:18px; text-align:center;">
-            <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:6px; text-transform:uppercase; letter-spacing:.08em;">wZION Balance</div>
-            <div id="bridge-wzion-balance" style="font-size:22px; font-weight:700; color:var(--zion-gold); font-variant-numeric:tabular-nums;">—</div>
-            <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px;">Base Sepolia</div>
+          <div class="control-panel bridge-balance-card">
+            <div class="bridge-balance-kicker">wZION Balance</div>
+            <div id="bridge-wzion-balance" class="bridge-balance-value gold">—</div>
+            <div class="bridge-balance-sub">Base Sepolia</div>
           </div>
         </div>
 
         <!-- EVM address display -->
         <div class="control-panel" style="margin-bottom:14px; padding:14px 20px;">
-          <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:6px;">Your EVM address (Base)</div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <code id="bridge-evm-address" style="flex:1; font-size:12px; color:var(--zion-cyan); word-break:break-all;">—</code>
-            <button id="bridge-copy-evm" style="padding:4px 10px; font-size:11px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fff; cursor:pointer;">Copy</button>
+          <div class="bridge-label">Your EVM address (Base)</div>
+          <div class="bridge-inline-row">
+            <code id="bridge-evm-address" class="bridge-code">—</code>
+            <button id="bridge-copy-evm" class="bridge-btn-small">Copy</button>
           </div>
         </div>
 
         <!-- Form: L1→EVM -->
         <div id="bridge-form-l1toevm" class="control-panel" style="margin-bottom:14px; padding:18px 20px;">
-          <h3 style="margin:0 0 8px; font-size:14px; color:var(--zion-gold);">Lock ZION on L1 → receive wZION on Base</h3>
-          <p style="margin:0 0 14px; font-size:12px; color:rgba(255,255,255,0.5); line-height:1.6;">
+          <h3 class="bridge-form-title">Lock ZION on L1 → receive wZION on Base</h3>
+          <p class="bridge-help">
             Send ZION to the bridge vault address on L1 with the generated memo.
             The Rust relay monitors L1 and automatically mints wZION to your Base address.
           </p>
           <div style="margin-bottom:10px;">
-            <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">Amount (ZION, min. 100)</label>
+            <label class="bridge-label">Amount (ZION, min. 100)</label>
             <input id="bridge-l1-amount" type="number" min="100" step="1" placeholder="e.g. 500"
-              style="width:100%; box-sizing:border-box; padding:10px 14px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:14px;" />
+              class="bridge-input" />
           </div>
           <div id="bridge-memo-box" style="display:none; margin-bottom:14px;">
-            <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">L1 Vault address</label>
-            <code id="bridge-vault-addr" style="display:block; padding:10px; background:rgba(0,0,0,0.35); border-radius:8px; font-size:11px; color:rgba(255,255,255,0.6); word-break:break-all; margin-bottom:10px;">—</code>
-            <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">Memo (copy EXACTLY)</label>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <code id="bridge-memo-text" style="flex:1; padding:10px; background:rgba(247,184,1,0.08); border:1px solid rgba(247,184,1,0.3); border-radius:8px; font-size:11px; color:var(--zion-gold); word-break:break-all;">—</code>
-              <button id="bridge-copy-memo" style="padding:8px 12px; background:var(--zion-gold); border:none; border-radius:8px; color:#000; font-weight:700; font-size:12px; cursor:pointer;">Copy</button>
+            <label class="bridge-label">L1 Vault address</label>
+            <code id="bridge-vault-addr" class="bridge-code-block">—</code>
+            <label class="bridge-label">Memo (copy EXACTLY)</label>
+            <div class="bridge-inline-row">
+              <code id="bridge-memo-text" class="bridge-code-block warn">—</code>
+              <button id="bridge-copy-memo" class="bridge-primary-btn" style="width:auto; margin:0; padding:8px 12px;">Copy</button>
             </div>
           </div>
-          <button id="bridge-prepare-lock" style="width:100%; padding:12px; background:linear-gradient(135deg,#f7b801,#e09000); border:none; border-radius:10px; color:#000; font-weight:700; font-size:14px; cursor:pointer; margin-bottom:8px;">
+          <button id="bridge-prepare-lock" class="bridge-primary-btn">
             Generate memo
           </button>
         </div>
 
         <!-- Form: EVM→L1 (read-only instructions — signing requires mobile or MetaMask) -->
         <div id="bridge-form-evmtol1" class="control-panel" style="margin-bottom:14px; padding:18px 20px; display:none;">
-          <h3 style="margin:0 0 8px; font-size:14px; color:var(--zion-cyan);">Burn wZION on Base → receive ZION on L1</h3>
-          <p style="margin:0 0 14px; font-size:12px; color:rgba(255,255,255,0.5); line-height:1.6;">
+          <h3 class="bridge-form-title cyan">Burn wZION on Base → receive ZION on L1</h3>
+          <p class="bridge-help">
             Use the mobile wallet to sign and broadcast the <code>bridgeBurn()</code> transaction,
             or call the contract directly via BaseScan write interface. The Rust relay will
             release L1 ZION after confirmation.
           </p>
           <div style="margin-bottom:10px;">
-            <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">Contract on Base Sepolia</label>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <code style="flex:1; padding:8px 12px; background:rgba(0,0,0,0.35); border-radius:8px; font-size:11px; color:var(--zion-cyan); word-break:break-all;">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
-              <button id="bridge-open-basescan" style="padding:8px 12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:11px; cursor:pointer;">Open ↗</button>
+            <label class="bridge-label">Contract on Base Sepolia</label>
+            <div class="bridge-inline-row">
+              <code class="bridge-code-block" style="margin:0;">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
+              <button id="bridge-open-basescan" class="bridge-btn-small">Open ↗</button>
             </div>
           </div>
-          <div style="padding:14px; background:rgba(0,0,0,0.25); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
-            <div style="font-size:12px; color:rgba(255,255,255,0.6); line-height:1.7;">
-              <b style="color:#fff;">Function:</b> <code>bridgeBurn(uint256 amount, string l1Recipient, bytes32 burnId)</code><br/>
-              <b style="color:#fff;">amount:</b> ZION × 10<sup>18</sup> × 10<sup>6</sup> (e.g. 500 ZION → <code>500000000000000000000</code>)<br/>
-              <b style="color:#fff;">l1Recipient:</b> your ZION L1 address (<code>zion1...</code>)<br/>
-              <b style="color:#fff;">burnId:</b> unique bytes32 (e.g. <code>0x000...001</code>)
+          <div class="bridge-note-box">
+            <div class="bridge-note-text">
+              <b>Function:</b> <code>bridgeBurn(uint256 amount, string l1Recipient, bytes32 burnId)</code><br/>
+              <b>amount:</b> ZION × 10<sup>18</sup> × 10<sup>6</sup> (e.g. 500 ZION → <code>500000000000000000000</code>)<br/>
+              <b>l1Recipient:</b> your ZION L1 address (<code>zion1...</code>)<br/>
+              <b>burnId:</b> unique bytes32 (e.g. <code>0x000...001</code>)
             </div>
           </div>
         </div>
 
         <!-- Bridge stats -->
         <div class="control-panel" style="padding:18px 20px;">
-          <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:12px; text-transform:uppercase; letter-spacing:.08em;">Bridge Statistics</div>
-          <div id="bridge-stats-loading" style="text-align:center; padding:20px; color:rgba(255,255,255,0.3); font-size:13px;">Loading…</div>
-          <div id="bridge-stats-grid" style="display:none; display:flex; flex-wrap:wrap; gap:10px;">
-            <div style="flex:1; min-width:140px; padding:14px; background:rgba(0,0,0,0.3); border-radius:10px; text-align:center;">
-              <div id="bs-minted" style="font-size:20px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">—</div>
-              <div style="font-size:10px; color:rgba(255,255,255,0.4); margin-top:4px;">Total minted</div>
+          <div class="bridge-balance-kicker" style="margin-bottom:12px;">Bridge Statistics</div>
+          <div id="bridge-stats-loading" class="placeholder-row">Loading…</div>
+          <div id="bridge-stats-grid" class="bridge-stats-grid" style="display:none;">
+            <div class="bridge-stat-card">
+              <div id="bs-minted" class="bridge-stat-value">—</div>
+              <div class="bridge-stat-label">Total minted</div>
             </div>
-            <div style="flex:1; min-width:140px; padding:14px; background:rgba(0,0,0,0.3); border-radius:10px; text-align:center;">
-              <div id="bs-burned" style="font-size:20px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">—</div>
-              <div style="font-size:10px; color:rgba(255,255,255,0.4); margin-top:4px;">Total burned</div>
+            <div class="bridge-stat-card">
+              <div id="bs-burned" class="bridge-stat-value">—</div>
+              <div class="bridge-stat-label">Total burned</div>
             </div>
-            <div style="flex:1; min-width:140px; padding:14px; background:rgba(0,0,0,0.3); border-radius:10px; text-align:center;">
-              <div id="bs-circ" style="font-size:20px; font-weight:700; color:var(--zion-gold); font-variant-numeric:tabular-nums;">—</div>
-              <div style="font-size:10px; color:rgba(255,255,255,0.4); margin-top:4px;">Circulating</div>
+            <div class="bridge-stat-card">
+              <div id="bs-circ" class="bridge-stat-value gold">—</div>
+              <div class="bridge-stat-label">Circulating</div>
             </div>
           </div>
-          <button id="bridge-refresh-stats" style="margin-top:12px; padding:8px 18px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:12px; cursor:pointer;">↻ Refresh</button>
+          <button id="bridge-refresh-stats" class="bridge-refresh-btn">↻ Refresh</button>
         </div>
       </div>
 
