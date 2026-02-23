@@ -5709,6 +5709,206 @@ ipcMain.handle('afterburner-command', async (event, data) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// AUTO-UPDATER — GitHub Releases via electron-updater (graceful)
+// ═══════════════════════════════════════════════════════════════════
+let _autoUpdaterAvailable = false;
+let _autoUpdater = null;
+let _updateReady = false;
+
+function _sendUpdateStatus(status, info = {}) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-status', { status, ...info });
+    }
+  } catch { /* ignore */ }
+}
+
+function _sendUpdateProgress(progress) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-progress', progress);
+    }
+  } catch { /* ignore */ }
+}
+
+function _initAutoUpdater() {
+  if (_autoUpdater) return _autoUpdater;
+  try {
+    const { autoUpdater } = require('electron-updater');
+    _autoUpdater = autoUpdater;
+    _autoUpdaterAvailable = true;
+
+    autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = true;
+
+    autoUpdater.on('checking-for-update', () => {
+      _sendUpdateStatus('checking');
+    });
+
+    autoUpdater.on('update-available', (info) => {
+      _sendUpdateStatus('available', {
+        version: info?.version,
+        releaseDate: info?.releaseDate,
+        releaseNotes: info?.releaseNotes || info?.releaseName || '',
+      });
+    });
+
+    autoUpdater.on('update-not-available', (info) => {
+      _sendUpdateStatus('up-to-date', { version: info?.version });
+    });
+
+    autoUpdater.on('download-progress', (progress) => {
+      _sendUpdateProgress({
+        percent: Math.round(progress.percent || 0),
+        transferred: progress.transferred || 0,
+        total: progress.total || 0,
+        bytesPerSecond: progress.bytesPerSecond || 0,
+      });
+    });
+
+    autoUpdater.on('update-downloaded', (info) => {
+      _updateReady = true;
+      _sendUpdateStatus('downloaded', {
+        version: info?.version,
+        releaseNotes: info?.releaseNotes || '',
+      });
+    });
+
+    autoUpdater.on('error', (err) => {
+      _sendUpdateStatus('error', { error: err?.message || String(err) });
+    });
+
+    dbg('[auto-updater] Initialized successfully');
+    return autoUpdater;
+  } catch (err) {
+    dbg('[auto-updater] electron-updater not available:', err.message);
+    _autoUpdaterAvailable = false;
+    return null;
+  }
+}
+
+// IPC: Check for updates
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    const updater = _initAutoUpdater();
+    if (!updater) {
+      // Fallback: check GitHub API directly
+      return await _checkGitHubRelease();
+    }
+    const result = await updater.checkForUpdates();
+    return {
+      success: true,
+      updateAvailable: !!result?.updateInfo?.version &&
+        result.updateInfo.version !== app.getVersion(),
+      currentVersion: app.getVersion(),
+      latestVersion: result?.updateInfo?.version || app.getVersion(),
+      releaseNotes: result?.updateInfo?.releaseNotes || '',
+      releaseDate: result?.updateInfo?.releaseDate || '',
+    };
+  } catch (err) {
+    // Fallback to GitHub API
+    try {
+      return await _checkGitHubRelease();
+    } catch {
+      return { success: false, error: err?.message || String(err) };
+    }
+  }
+});
+
+// IPC: Download update
+ipcMain.handle('download-update', async () => {
+  try {
+    const updater = _initAutoUpdater();
+    if (!updater) return { success: false, error: 'Updater not available in dev mode' };
+    await updater.downloadUpdate();
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+// IPC: Install update (quit and install)
+ipcMain.handle('install-update', () => {
+  try {
+    if (_updateReady && _autoUpdater) {
+      _autoUpdater.quitAndInstall(false, true);
+      return { success: true };
+    }
+    return { success: false, error: 'No update downloaded' };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+// IPC: Get/set auto-check setting
+ipcMain.handle('get-update-settings', () => {
+  try {
+    const cfg = loadConfig();
+    return { autoCheck: cfg?.autoCheckUpdates !== false };
+  } catch {
+    return { autoCheck: true };
+  }
+});
+
+ipcMain.handle('set-update-auto-check', (event, enabled) => {
+  try {
+    const cfg = loadConfig();
+    cfg.autoCheckUpdates = !!enabled;
+    saveConfigSync(cfg);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+// Fallback: Check GitHub releases directly (works without electron-updater)
+async function _checkGitHubRelease() {
+  try {
+    const https = require('https');
+    const data = await new Promise((resolve, reject) => {
+      const req = https.get('https://api.github.com/repos/Yose144/2.9.6/releases/latest', {
+        headers: { 'User-Agent': 'ZION-Desktop-Agent/' + app.getVersion() }
+      }, (res) => {
+        let body = '';
+        res.on('data', (chunk) => body += chunk);
+        res.on('end', () => {
+          try { resolve(JSON.parse(body)); }
+          catch { reject(new Error('Invalid JSON')); }
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
+    });
+
+    const latestTag = (data.tag_name || '').replace(/^v/, '');
+    const currentVer = app.getVersion();
+
+    return {
+      success: true,
+      updateAvailable: latestTag && latestTag !== currentVer && _isNewerVersion(latestTag, currentVer),
+      currentVersion: currentVer,
+      latestVersion: latestTag || currentVer,
+      releaseNotes: data.body || '',
+      releaseDate: data.published_at || '',
+      htmlUrl: data.html_url || '',
+      assets: (data.assets || []).map(a => ({ name: a.name, url: a.browser_download_url, size: a.size })),
+    };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err), currentVersion: app.getVersion() };
+  }
+}
+
+function _isNewerVersion(latest, current) {
+  const a = latest.split('.').map(Number);
+  const b = current.split('.').map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if ((a[i] || 0) > (b[i] || 0)) return true;
+    if ((a[i] || 0) < (b[i] || 0)) return false;
+  }
+  return false;
+}
+
 // App lifecycle
 app.whenReady().then(() => {
   console.log('ZION Native Awakening v2.9.6 started');
@@ -5754,6 +5954,33 @@ app.whenReady().then(() => {
   
   createWindow();
   createTray();
+
+  // Auto-check for updates on startup (delayed 8s to not block UI)
+  setTimeout(() => {
+    try {
+      const startupCfg = loadConfig();
+      if (startupCfg?.autoCheckUpdates !== false) {
+        dbg('[startup] Auto-checking for updates...');
+        const updater = _initAutoUpdater();
+        if (updater) {
+          updater.checkForUpdates().catch(err => {
+            dbg('[startup] Update check failed:', err?.message);
+          });
+        } else {
+          // Fallback to GitHub API check
+          _checkGitHubRelease().then(result => {
+            if (result?.updateAvailable) {
+              _sendUpdateStatus('available', {
+                version: result.latestVersion,
+                releaseNotes: result.releaseNotes,
+                releaseDate: result.releaseDate,
+              });
+            }
+          }).catch(() => {});
+        }
+      }
+    } catch { /* ignore */ }
+  }, 8000);
 
   // Auto-select best pool on startup only if explicitly enabled in config.
   try {
