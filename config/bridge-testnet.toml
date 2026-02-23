@@ -36,7 +36,7 @@ l1_rpc_token = "5812008eeb500c923a3f5f678cc136d4997d5854b216fba699112ca2039dc8a1
 chain_id              = "base-sepolia"
 name                  = "Base Sepolia (TestNet)"
 evm_chain_id          = 84532
-rpc_url               = "wss://sepolia.base.org"
+rpc_url               = "wss://base-sepolia.publicnode.com"
 rpc_url_backup        = "wss://base-sepolia.g.alchemy.com/v2/YOUR_KEY"  # TODO: vložit vlastní Alchemy klíč pro prod
 wzion_address          = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"  # Base Sepolia deploy 21.2.2026
 bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"  # Base Sepolia deploy 21.2.2026
@@ -105,5 +105,5 @@ backup_interval_secs = 3600      # Backup every hour
 
 [metrics]
 enabled   = true
-port      = 9100
+port      = 9101
 log_level = "info"
