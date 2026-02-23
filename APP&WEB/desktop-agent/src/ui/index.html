@@ -126,6 +126,99 @@
       box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 60px rgba(147,51,234,0.15);
     }
     .wizard-logo { margin-bottom: 8px; }
+    .wizard-logo-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      object-fit: cover;
+    }
+    .wizard-title {
+      font-size: 28px;
+      margin: 16px 0 8px;
+    }
+    .wizard-text {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      max-width: 380px;
+      margin: 0 auto 24px;
+    }
+    .wizard-step-hidden { display: none; }
+    .wizard-mt-8 { margin-top: 8px; }
+    .wizard-mb-16 { margin-bottom: 16px; }
+    .wizard-mb-20 { margin-bottom: 20px; }
+    .wizard-label {
+      display: block;
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .wizard-label-sm {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 4px;
+    }
+    .wizard-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .wizard-error {
+      color: #ff6b6b;
+      font-size: 13px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .wizard-heading {
+      color: var(--zion-gold);
+      margin-bottom: 16px;
+    }
+    .wizard-heading-tight {
+      color: var(--zion-gold);
+      margin-bottom: 12px;
+    }
+    .wizard-subtext {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .wizard-address-box {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--zion-cyan);
+      word-break: break-all;
+      padding: 10px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .wizard-mnemonic-box {
+      font-family: monospace;
+      font-size: 14px;
+      color: #ffa;
+      word-break: break-all;
+      padding: 12px;
+      background: rgba(80,60,0,0.3);
+      border-radius: 8px;
+      border: 1px solid rgba(255,215,0,0.3);
+      line-height: 1.6;
+    }
+    .wizard-footnote {
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      margin-top: 6px;
+    }
+    .wizard-row {
+      display: flex;
+      gap: 8px;
+    }
+    .wizard-flex-1 { flex: 1; }
     .wizard-btn {
       display: block;
       width: 100%;
@@ -827,6 +920,54 @@
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+    .view-hidden { display: none; }
+    .form-grid-mt-14 { margin-top: 14px; }
+    .form-grid-mt-10 { margin-top: 10px; }
+    .toggle-mt-12 { margin-top: 12px; }
+    .toggle-no-margin { margin: 0; }
+    .input-hidden { display: none; }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .icon-xs {
+      width: 12px;
+      height: 12px;
+    }
+    .console-status {
+      color: rgba(255,255,255,0.3);
+      font-weight: 400;
+    }
+    .debug-drawer {
+      display: none;
+      margin-top: 12px;
+      animation: fadeSlideIn 0.25s ease-out;
+    }
+    .debug-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .debug-title {
+      color: rgba(255,255,255,0.4);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .debug-note {
+      font-size: 10px;
+      color: rgba(255,255,255,0.2);
+    }
+    .log-viewer-compact {
+      height: 200px;
+      border-radius: 12px;
     }
 
     .about-lead {
@@ -2123,70 +2264,70 @@
   <!-- ═══════════════════════════════════════════════════════ -->
   <!-- FIRST-RUN WIZARD OVERLAY                                -->
   <!-- ═══════════════════════════════════════════════════════ -->
-  <div id="wizard-overlay" class="wizard-overlay" style="display:none;">
+  <div id="wizard-overlay" class="wizard-overlay view-hidden">
     <div class="wizard-card">
       <!-- Step 1: Welcome -->
       <div class="wizard-step" data-step="1">
         <div class="wizard-logo">
-          <img src="../assets/logo.jpg" alt="ZION" style="width:80px;height:80px;border-radius:16px;object-fit:cover;" />
+          <img src="../assets/logo.jpg" alt="ZION" class="wizard-logo-img" />
         </div>
-        <h2 class="text-gradient" style="font-size:28px;margin:16px 0 8px;">Vítejte v ZION Miner</h2>
-        <p style="color:rgba(255,255,255,0.7);font-size:14px;max-width:380px;margin:0 auto 24px;">
+        <h2 class="text-gradient wizard-title">Vítejte v ZION Miner</h2>
+        <p class="wizard-text">
           Za 30 sekund budete těžit. Vytvoříme vám peněženku, nastavíme pool a spustíme mining — vše jedním kliknutím.
         </p>
         <button class="wizard-btn wizard-btn-primary" id="wizard-start-btn">
           ⚡ Pojďme na to
         </button>
-        <button class="wizard-btn wizard-btn-ghost" id="wizard-skip-btn" style="margin-top:8px;">
+        <button class="wizard-btn wizard-btn-ghost wizard-mt-8" id="wizard-skip-btn">
           Přeskočit — nastavím ručně
         </button>
       </div>
 
       <!-- Step 2: Create wallet + password -->
-      <div class="wizard-step" data-step="2" style="display:none;">
-        <h3 style="color:var(--zion-gold);margin-bottom:16px;">🔐 Zabezpečení peněženky</h3>
-        <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:20px;">
+      <div class="wizard-step wizard-step-hidden" data-step="2">
+        <h3 class="wizard-heading">🔐 Zabezpečení peněženky</h3>
+        <p class="wizard-subtext">
           Zadejte heslo pro šifrování vaší peněženky. Toto heslo si zapamatujte — nelze obnovit.
         </p>
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em;">Heslo</label>
+        <div class="wizard-mb-16">
+          <label class="wizard-label">Heslo</label>
           <input type="password" id="wizard-password" placeholder="Minimálně 6 znaků"
-            style="width:100%;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.5);color:#fff;font-size:14px;outline:none;" />
+            class="wizard-input" />
         </div>
-        <div style="margin-bottom:20px;">
-          <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em;">Potvrzení hesla</label>
+        <div class="wizard-mb-20">
+          <label class="wizard-label">Potvrzení hesla</label>
           <input type="password" id="wizard-password-confirm" placeholder="Zadejte znovu"
-            style="width:100%;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.5);color:#fff;font-size:14px;outline:none;" />
+            class="wizard-input" />
         </div>
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em;">Jméno workeru (volitelné)</label>
+        <div class="wizard-mb-16">
+          <label class="wizard-label">Jméno workeru (volitelné)</label>
           <input type="text" id="wizard-worker" placeholder="desktop-agent" value="desktop-agent"
-            style="width:100%;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.5);color:#fff;font-size:14px;outline:none;" />
+            class="wizard-input" />
         </div>
-        <div id="wizard-error" style="color:#ff6b6b;font-size:13px;margin-bottom:12px;display:none;"></div>
+        <div id="wizard-error" class="wizard-error"></div>
         <button class="wizard-btn wizard-btn-primary" id="wizard-create-btn">
           🔑 Vytvořit peněženku a nastavit
         </button>
-        <button class="wizard-btn wizard-btn-ghost" id="wizard-back-1" style="margin-top:8px;">← Zpět</button>
+        <button class="wizard-btn wizard-btn-ghost wizard-mt-8" id="wizard-back-1">← Zpět</button>
       </div>
 
       <!-- Step 3: Success + mnemonic -->
-      <div class="wizard-step" data-step="3" style="display:none;">
-        <h3 style="color:var(--zion-gold);margin-bottom:12px;">✅ Peněženka vytvořena!</h3>
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;">Adresa</label>
-          <div id="wizard-address" style="font-family:monospace;font-size:13px;color:var(--zion-cyan);word-break:break-all;padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;border:1px solid rgba(255,255,255,0.1);"></div>
+      <div class="wizard-step wizard-step-hidden" data-step="3">
+        <h3 class="wizard-heading-tight">✅ Peněženka vytvořena!</h3>
+        <div class="wizard-mb-16">
+          <label class="wizard-label wizard-label-sm">Adresa</label>
+          <div id="wizard-address" class="wizard-address-box"></div>
         </div>
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;">⚠️ Recovery phrase — ZAPIŠTE SI A ULOŽTE BEZPEČNĚ</label>
-          <div id="wizard-mnemonic" style="font-family:monospace;font-size:14px;color:#ffa;word-break:break-all;padding:12px;background:rgba(80,60,0,0.3);border-radius:8px;border:1px solid rgba(255,215,0,0.3);line-height:1.6;"></div>
-          <p style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:6px;">Tato fráze je jediný způsob obnovení vaší peněženky. Po zavření tohoto okna ji už neuvidíte.</p>
+        <div class="wizard-mb-16">
+          <label class="wizard-label wizard-label-sm">⚠️ Recovery phrase — ZAPIŠTE SI A ULOŽTE BEZPEČNĚ</label>
+          <div id="wizard-mnemonic" class="wizard-mnemonic-box"></div>
+          <p class="wizard-footnote">Tato fráze je jediný způsob obnovení vaší peněženky. Po zavření tohoto okna ji už neuvidíte.</p>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="wizard-btn wizard-btn-primary" id="wizard-mine-btn" style="flex:1;">
+        <div class="wizard-row">
+          <button class="wizard-btn wizard-btn-primary wizard-flex-1" id="wizard-mine-btn">
             ⛏️ Začít těžit
           </button>
-          <button class="wizard-btn wizard-btn-ghost" id="wizard-done-btn" style="flex:1;">
+          <button class="wizard-btn wizard-btn-ghost wizard-flex-1" id="wizard-done-btn">
             Hotovo — nastavím později
           </button>
         </div>
@@ -2630,7 +2771,7 @@
       </div>
 
       <!-- Settings View (hidden by default) -->
-      <div id="settings-view" class="view-shell" style="display: none;">
+      <div id="settings-view" class="view-shell view-hidden">
         <div class="web29-page-header">
           <div class="web29-title-stack">
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-settings"></use></svg>Configuration</div>
@@ -2831,7 +2972,7 @@
             </div>
             <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously. GPU Revenue Mining automatically switches between ERG, RVN, KAS, and ALPH based on profitability.</div>
 
-            <div class="form-grid two-col" style="margin-top:14px;">
+            <div class="form-grid two-col form-grid-mt-14">
               <label class="floating-field">
                 <span>CPU Revenue Coin</span>
                 <select id="revenue-cpu-coin">
@@ -2858,7 +2999,7 @@
               </label>
             </div>
 
-            <div class="toggle-field" style="margin-top:12px;">
+            <div class="toggle-field toggle-mt-12">
               <input type="checkbox" id="revenue-enabled" checked />
               <div>
                 <p>Enable multi-algo revenue routing</p>
@@ -2880,21 +3021,21 @@
               </div>
             </div>
 
-            <div class="form-grid two-col" style="margin-top:10px;">
-              <label class="toggle-field" style="margin:0;">
+            <div class="form-grid two-col form-grid-mt-10">
+              <label class="toggle-field toggle-no-margin">
                 <input type="checkbox" id="revenue-mysterium-enabled" checked />
                 <div><p>Mysterium stream</p></div>
               </label>
-              <label class="toggle-field" style="margin:0;">
+              <label class="toggle-field toggle-no-margin">
                 <input type="checkbox" id="revenue-nkn-enabled" checked />
                 <div><p>NKN stream</p></div>
               </label>
-              <label class="toggle-field" style="margin:0;">
+              <label class="toggle-field toggle-no-margin">
                 <input type="checkbox" id="revenue-ai-enabled" checked />
                 <div><p>AI Gateway stream</p></div>
               </label>
             </div>
-            <input type="checkbox" id="gpu-checkbox" style="display:none;" />
+            <input type="checkbox" id="gpu-checkbox" class="input-hidden" />
           </section>
 
           <section class="settings-card">
@@ -2936,7 +3077,7 @@
       </div>
 
       <!-- Logs View (hidden by default) -->
-      <div id="logs-view" class="view-shell" style="display: none;">
+      <div id="logs-view" class="view-shell view-hidden">
         <div class="web29-page-header">
           <div class="web29-title-stack">
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-logs"></use></svg>Mining Console</div>
@@ -2946,9 +3087,9 @@
             </div>
             <div class="web29-subtitle">Live miner output · stdout/stderr</div>
           </div>
-          <div style="display:flex; gap:8px; align-items:center;">
+          <div class="header-actions">
             <button class="btn btn-ghost btn-sm" id="toggle-debug-btn" title="Toggle App Diagnostics">
-              <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-info"></use></svg>
+              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-info"></use></svg>
               Debug
             </button>
             <button class="btn btn-primary" id="open-logs-btn">
@@ -2964,7 +3105,7 @@
             <div class="title">
               <div class="dot offline" id="console-dot"></div>
               <span>Mining Console</span>
-              <span id="console-status" style="color:rgba(255,255,255,0.3); font-weight:400;">idle</span>
+              <span id="console-status" class="console-status">idle</span>
             </div>
             <div class="controls">
               <button class="ctrl-btn" id="console-clear-btn" title="Clear">⌫</button>
@@ -2973,22 +3114,22 @@
           </div>
           <div class="mining-console-body" id="console-body">
             <!-- Static miner panel — SRBMiner style, overwrites in place -->
-            <div id="miner-static-panel" class="miner-static-panel" style="display:none;"></div>
+            <div id="miner-static-panel" class="miner-static-panel view-hidden"></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION Native Awakening v2.9.6</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
           </div>
         </div>
 
         <!-- App Diagnostics — hidden debug drawer -->
-        <div id="debug-drawer" style="display:none; margin-top:12px; animation: fadeSlideIn 0.25s ease-out;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <h3 style="color:rgba(255,255,255,0.4); font-size:11px; text-transform:uppercase; letter-spacing:1.5px; font-weight:600; display:flex; align-items:center; gap:6px;">
-              <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-info"></use></svg>
+        <div id="debug-drawer" class="debug-drawer">
+          <div class="debug-head">
+            <h3 class="debug-title">
+              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-info"></use></svg>
               App Diagnostics
             </h3>
-            <span style="font-size:10px; color:rgba(255,255,255,0.2);">Internal debug output</span>
+            <span class="debug-note">Internal debug output</span>
           </div>
-          <div class="log-viewer" id="log-viewer" style="height:200px; border-radius:12px;">
+          <div class="log-viewer log-viewer-compact" id="log-viewer">
             <div class="log-entry info">System ready. Waiting for mining to start...</div>
           </div>
         </div>
