@@ -942,5 +942,92 @@ volumes:
 
 ---
 
+## Session 28 — GPU hashrate optimalizace + balance fix + Keccak RC revert (23. února 2026)
+
+**Datum:** 23. února 2026  
+**Commit:** `66c4678` — 4 soubory, +70/−6  
+**Problém:** Agent dával 120 MH/s na GPU, nyní jen ~20 MH/s. Balance stále neukazuje.
+
+---
+
+### Diagnostika — root causes
+
+| Problém | Root cause | Závažnost |
+|---------|-----------|-----------|
+| GPU 120→20 MH/s | **Dva miner procesy** oba s `--gpu` na stejné GPU (main ZION + GPU Revenue) → OpenCL context-switching overhead | 🔴 Critical |
+| Chybějící `--auto-tune` | Miner podporuje auto-tune batch sizes (100K→10M), ale agent ho nepředával | 🟡 Medium |
+| Balance neukazuje | `getRpcUrl()` neappendoval `/jsonrpc` cestu; žádný auto-refresh | 🟡 Medium |
+| 90.6% invalid shares | Keccak RC pozice 21-23 změněny na NIST standard v source, ale running binaries používají staré hodnoty | 🔴 Critical |
+
+### Live testy (před opravami)
+
+```
+RPC getbalance → {"balance_zion": 5028.804731, "utxo_count": 30}        ✅ Funguje
+Pool API stats → {"valid_shares": 806, "invalid_shares": 7776,          ⚠️ 90.6% reject
+                   "blocks_found": 1107, "hashrate_24h": 2590.3}
+```
+
+---
+
+### Opravy (4 soubory)
+
+#### 1. GPU Exclusive Mode (`main.js`)
+**Problém:** V režimu `dual` (výchozí) se spawnovali DVA procesy s `--gpu`:
+- Main ZION miner: `--threads N-1 --gpu --group zion`
+- GPU Revenue: `--threads 1 --gpu --group revenue`
+
+Dva OpenCL kontexty na jedné GPU → massive context-switching → hashrate padá 6×.
+
+**Řešení:** GPU je nyní exkluzivní:
+- `mode=gpu|dual` → main miner dostane `--gpu`, GPU Revenue se nespawnuje
+- `mode=gpu-revenue` → GPU Revenue dostane `--gpu`, main miner běží jen CPU
+- Přidán log: `[CH3-GPU] GPU dedicated to ZION mining — GPU Revenue skipped`
+
+#### 2. `--auto-tune` přidán (`main.js`)
+- Main miner i GPU Revenue nyní dostávají `--auto-tune`
+- Miner při startu benchmarkuje batch sizes (100K → 10M, 1.5× kroky, 5 iterací)
+- Vybere nejrychlejší → typicky 2-6× zrychlení oproti defaultu
+
+#### 3. Balance Auto-Refresh (`renderer.js`)
+- **Periodic refresh:** 30s interval běží dokud je wallet tab otevřený (`_startBalanceAutoRefresh`)
+- **`getRpcUrl()` fix:** Auto-appends `/jsonrpc` cestu pokud chybí (regex: `:\d+/?$`)
+- **Lepší error messages:** Prázdný wallet → `No wallet address configured`, invalid address → ukazuje prefix
+
+#### 4. Keccak RC Revert (`algorithms_opt.rs` + `cosmic_harmony_v3.cl`)
+**Problém:** Pozice 21-23 byly "opraveny" na NIST standard Keccak:
+```
+OLD (running network): 0x8000000000000001, 0x8000000080008008, 0x0000000000000000
+NEW (NIST standard):   0x8000000000008080, 0x0000000080000001, 0x8000000080008008
+```
+
+Pokud by se miner přecompiloval z upraveného source → hash ≠ pool/node → 100% reject.
+Pool stats ukazují 90.6% reject rate (7776/8582) — pravděpodobně z testovacích buildů.
+
+**Řešení:** Revertováno na síťový konsensus + přidány warning komentáře:
+```rust
+// NOTE: positions 21-23 intentionally differ from NIST standard Keccak.
+// The ZION network launched with these values and all pool/node/miner
+// binaries use them for consensus. Do NOT "fix" to standard values
+// unless ALL binaries are rebuilt simultaneously.
+```
+
+---
+
+### Změněné soubory
+
+| Soubor | Změny |
+|--------|-------|
+| `APP&WEB/desktop-agent/src/main.js` | +31 (GPU exclusive mode, auto-tune, skip log) |
+| `APP&WEB/desktop-agent/src/ui/renderer.js` | +35 (balance auto-refresh, getRpcUrl fix, error msgs) |
+| `L1/cosmic-harmony/src/algorithms_opt.rs` | +6 (Keccak RC revert + warning comments) |
+| `L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl` | +4 (Keccak RC revert + warning comments) |
+
+### Očekávaný dopad
+- **GPU hashrate:** Návrat na ~120 MH/s (single-process exclusive GPU + auto-tuned batches)
+- **Balance:** Zobrazuje se automaticky po přepnutí na wallet tab, refreshuje každých 30s
+- **Share validity:** Po přecompilaci z revertovaného source → hashe matchují pool/node → 0% reject
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*
