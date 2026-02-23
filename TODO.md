@@ -1,14 +1,31 @@
 # 📋 ZION TerraNova — TODO
 
-> **Aktualizace:** Session 24 — 23. února 2026  
+> **Aktualizace:** Session 28 — 23. února 2026  
 > **Cíl:** MainNet Genesis **31. 12. 2026**  
 > **Detaily:** `docs/MAINNET_CHECKLIST.md` | `docs/L2_DEFI_PLAN.md` | `docs/L3_WARP_AI_PLAN.md`
 
 ---
 
-## � Plán na zítra — 24. února 2026
+## 🔴 Plán na zítra — 24. února 2026
 
-> Buildy `zion-miner:2.9.6-testnet` běží na SeedDE/Usa1/Usa2/Asia3 od 23.2. večer (~15–20 min cargo). Zítra ráno ověřit + spustit minery a validovat workflow.
+> **Session 28 dokončena:** NKN fix deploynut (oba servery), Mysterium klíče zálohovány. Blokery: NKN potřebuje NKN tokeny, Mysterium potřebuje MYST tokeny nebo mystnodes.com účet.
+
+### 🔴 Revenue stack — čeká na tokeny (kritické)
+
+- [ ] **[R-1] Koupit MYST tokeny** (~0.2 MYST stačí pro oba servery) — Uniswap/1inch na Polygon, poslat na identity adresy:
+  - Helsinki: `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` (Polygon)
+  - Germany: `0x1a9bcc8298a4cd214a90fb63e1eb5effa8fd8969` (Polygon)
+  Pak spustit: `bash scripts/myst_register.sh` na obou serverech
+- [ ] **[R-2] ALTERNATIVA — mystnodes.com registrace** — vytvořit účet → Nodes → Add node → zkopírovat MMN_API_KEY → přidat do `docker-compose.revenue.yml` env:
+  ```yaml
+  environment:
+    - MMN_API_KEY=<tvuj_klic>
+  ```
+  pak `docker compose up -d mysterium` (restart bez mazání volume)
+- [ ] **[R-3] NKN tokeny** — NKN wallet `NKNa2RgWynz4HB6BMqUACwqrzSwdZHcGznKg` potřebuje ~10 NKN pro CreateID tx; NKN lze koupit na Binance/Gate.io
+- [ ] **[R-4] Ověřit po tokenech** — `docker logs zion-nkn --tail 20` (hledej `CreateID success`) + Mysterium status → `Registered`
+
+> Původní buildy `zion-miner:2.9.6-testnet` na SeedDE/Usa1/Usa2/Asia3 stále platí:
 
 ### 🔴 Priorita 1 — Minery (nutné ověřit mining workflow)
 
