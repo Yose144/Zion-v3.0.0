@@ -5178,12 +5178,26 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     const balanceAtomic = result?.balance_atomic ?? 0;
     const utxoCount = result?.utxo_count ?? 0;
 
-    // Fetch pool mined balance — query servers with pool API (port 8080)
-    // All nodes share the same Redis so we use max() to avoid double-counting.
-    // Short 3s timeout; pool API servers listed first for priority.
-    const POOL_API_SERVERS = TESTNET_SERVERS.filter(s =>
-      ['helsinki', 'seedde', 'usa1', 'usa2', 'asia3'].includes(s.id)
-    );
+    // Fetch pool mined balance — prefer authoritative pool API (Helsinki), fallback to others.
+    const POOL_SERVER_PRIORITY = ['helsinki', 'seedde', 'usa1', 'usa2', 'asia3'];
+    const POOL_API_SERVERS = POOL_SERVER_PRIORITY
+      .map(id => TESTNET_SERVERS.find(s => s.id === id))
+      .filter(Boolean);
+
+    const fetchPoolJson = async (url, timeoutMs = 3000) => {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { signal: ctrl.signal });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    };
+
     let poolPending = 0;
     let poolPaid = 0;
     let poolShares = 0;
@@ -5191,32 +5205,38 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     let poolHashrate1h = 0;
     let poolHashrate24h = 0;
     let poolLastShare = 0;
+    let poolPendingTxCount = 0;
+    let poolPendingSource = 'stats';
+    let poolSource = '';
+    let poolSourceHost = '';
     try {
-      const poolResults = await Promise.all(
-        POOL_API_SERVERS.map(async (srv) => {
-          try {
-            const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 3000);
-            const res = await fetch(`http://${srv.host}:8080/api/v1/miner/${addr}/stats`, {
-              signal: ctrl.signal
-            });
-            clearTimeout(timer);
-            if (!res.ok) return null;
-            return await res.json();
-          } catch { return null; }
-        })
-      );
-      // Use max() — all pool nodes share Redis, summing would inflate values.
-      for (const pr of poolResults) {
-        const s = pr?.stats || pr;
-        if (!s) continue;
-        poolPending  = Math.max(poolPending,    Number(s.pending_balance) || 0);
-        poolPaid     = Math.max(poolPaid,        Number(s.total_paid)      || 0);
-        poolShares   = Math.max(poolShares,      Number(s.valid_shares)    || 0);
-        poolBlocks   = Math.max(poolBlocks,      Number(s.blocks_found)    || 0);
-        poolHashrate1h  = Math.max(poolHashrate1h,  Number(s.hashrate_1h)  || 0);
-        poolHashrate24h = Math.max(poolHashrate24h, Number(s.hashrate_24h) || 0);
-        poolLastShare   = Math.max(poolLastShare,   Number(s.last_share_time) || 0);
+      for (const srv of POOL_API_SERVERS) {
+        const statsResp = await fetchPoolJson(`http://${srv.host}:8080/api/v1/miner/${addr}/stats`);
+        const stats = statsResp?.stats || statsResp;
+        if (!stats) continue;
+
+        const payoutsResp = await fetchPoolJson(`http://${srv.host}:8080/api/v1/miner/${addr}/payouts`);
+
+        poolSource = srv.id || '';
+        poolSourceHost = srv.host || '';
+
+        poolPending  = Number(stats.pending_balance) || 0;
+        poolPaid     = Number(stats.total_paid) || 0;
+        poolShares   = Number(stats.valid_shares) || 0;
+        poolBlocks   = Number(stats.blocks_found) || 0;
+        poolHashrate1h  = Number(stats.hashrate_1h) || 0;
+        poolHashrate24h = Number(stats.hashrate_24h) || 0;
+        poolLastShare   = Number(stats.last_share_time) || 0;
+
+        if (payoutsResp && typeof payoutsResp.pending_balance !== 'undefined') {
+          poolPending = Number(payoutsResp.pending_balance) || 0;
+          poolPendingSource = 'payouts';
+          const pendingPayouts = Array.isArray(payoutsResp.pending_payouts) ? payoutsResp.pending_payouts : [];
+          poolPendingTxCount = pendingPayouts.length;
+        }
+
+        // First successful server in priority order is authoritative.
+        break;
       }
     } catch { /* ignore pool fetch errors */ }
 
@@ -5235,6 +5255,10 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       pool_hashrate_1h:    poolHashrate1h,
       pool_hashrate_24h:   poolHashrate24h,
       pool_last_share:     poolLastShare,   // unix timestamp (seconds)
+      pool_pending_txs:    poolPendingTxCount,
+      pool_pending_source: poolPendingSource,
+      pool_source:         poolSource,
+      pool_source_host:    poolSourceHost,
       address: result?.address ?? addr
     };
   } catch (error) {

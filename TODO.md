@@ -1,48 +1,44 @@
 # 📋 ZION TerraNova — TODO
 
-> **Aktualizace:** Session 28 — 23. února 2026  
+> **Aktualizace:** Session 34 — 23. února 2026  
 > **Cíl:** MainNet Genesis **31. 12. 2026**  
 > **Detaily:** `docs/MAINNET_CHECKLIST.md` | `docs/L2_DEFI_PLAN.md` | `docs/L3_WARP_AI_PLAN.md`
 
 ---
 
-## 🔴 Plán na zítra — 24. února 2026
+## ✅ Hotovo (Session 34 — 23. února 2026)
 
-> **Session 28 dokončena:** NKN fix deploynut (oba servery), Mysterium klíče zálohovány. Blokery: NKN potřebuje NKN tokeny, Mysterium potřebuje MYST tokeny nebo mystnodes.com účet.
+- [x] **[M-1–M-4] Seed miners** ✅ — všechny 4 seed servery (SeedDE/Usa1/Usa2/Asia3) běží `zion-miner` (Up)
+- [x] **[R-1] Mysterium** ✅ — 5 nodů Registered, earns aktivní
+- [x] **[S-3] 168h stability run** ✅ — **22h50m / 168h**, 5/5 nodů OK, height 4532, P:9+9 peers
+- [x] **CHv3 fix** ✅ — mining funguje: 19531 valid / 20965 total shares (93%), 1.23 MH/s
+- [x] **Resources cleanup** ✅ — odstraněno 20+ mrtvých souborů (v1/v2/ERG/ai/zion/bak), dead imports v miner.py
+- [x] **[R-2/3] NKN SKIP** — ROI nevychází, běží jako relay ale bez registrace (OK)
+- [x] **ERG SKIP** — ARM64 příliš pomalé (34× Blake2b na hash), nevyplatí se
 
-### 🔴 Revenue stack — čeká na tokeny (kritické)
+---
 
-- [ ] **[R-1] HOTOVO — Mysterium** ✅ oba nody `Registered` (Helsinki + Germany), 5 služeb aktivních
-- [ ] **[R-2] NKN tokeny** — NKN wallet `NKNa2RgWynz4HB6BMqUACwqrzSwdZHcGznKg` potřebuje ~10 NKN pro CreateID tx; NKN lze koupit na Binance/Gate.io
-- [ ] **[R-3] Ověřit NKN** — po přijetí tokenů: `docker logs zion-nkn --tail 20` (hledej `CreateID success`)
-- [ ] **[R-4] Ověřit Mysterium earns** — zkontrolovat https://my.mystnodes.com — oba nody by měly být viditelné jako Online
+## 🔴 Priorita — Další kroky
 
-> Původní buildy `zion-miner:2.9.6-testnet` na SeedDE/Usa1/Usa2/Asia3 stále platí:
+### [S-4] P0-01 Stability countdown (kritické)
+- Countdown: **od 16.2.2026 → cíl 2.3.2026** (7 zbývá z 14 dní)
+- 168h stability run: **22h/168h** (den 1/7) — NODES:5/5, žádné crash
+- Akce: nechat běžet, monitorovat každých 12h
 
-### 🔴 Priorita 1 — Minery (nutné ověřit mining workflow)
+### [W-2] Bridge vault setup (P1)
+- Vygenerovat `ZION_BRIDGE_VAULT_KEY` na Helsinki
+- `export ZION_BRIDGE_VAULT_KEY=$(openssl rand -hex 32)` → uložit bezpečně
+- Nasadit do `zion-core` env na Helsinki
 
-- [ ] **[M-1] Ověřit build dokončen** na všech 4 seed serverech
-  ```bash
-  for host in zion-seedde zion-usa1 zion-usa2 zion-asia3; do
-    ssh $host 'docker images | grep miner && tail -3 /tmp/miner-build.log'
-  done
-  ```
-- [ ] **[M-2] Spustit minery** přes compose na všech 4 serverech
-  ```bash
-  for host in zion-seedde zion-usa1 zion-usa2 zion-asia3; do
-    ssh $host 'docker compose -f /root/docker-compose-seed.yml up -d miner'
-  done
-  ```
-- [ ] **[M-3] Ověřit logy** — RandomX init + stratum job + share submit
-  ```bash
-  for host in zion-seedde zion-usa1 zion-usa2 zion-asia3; do
-    ssh $host 'docker logs zion-miner --tail 20'
-  done
-  ```
-- [ ] **[M-4] Pool stats** — ověřit že 4 workery vidí pool na Helsinki
-  ```bash
-  ssh zion-helsinki 'curl -s http://localhost:8080/stats | python3 -m json.tool | grep -E "worker|miner|hash|connected"'
-  ```
+### [W-3] DAO daemon deploy (P2)
+- `zion-dao` daemon ještě není spuštěn na žádném serveru
+- Config: `config/dao-testnet.toml`, port 8080 (sdílený s pool — nutno řešit)
+
+### [D-1] Desktop agent miner — CHv3 shares monitoring
+- Pool vidí 93% acceptance rate — OK
+- Sledovat VarDiff retargeting (byl retarget 49580→1364274 — správné)
+
+> ~~Session 28~~: NKN fix deploynut, Mysterium Registered.
 
 ### 🟡 Priorita 2 — Website + DAO
 

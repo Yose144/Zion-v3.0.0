@@ -1545,5 +1545,75 @@ Binary nasazen do `zion-pool` kontejneru. ERG miner po restartu: subscribe ✅, 
 
 ---
 
+## Session 34 — Scan + Cleanup (23.2.2026)
+
+**Datum:** 23. února 2026  
+**Commity:** `TBD` (cleanup + TODO update)
+
+### 168h Stability Run — stav (22h50m)
+
+| Metrika | Hodnota |
+|---------|---------|
+| Uptime | **22h50m / 168h** (den 1/7) |
+| Nodes | **5/5** OK |
+| Height | 4532 |
+| Peers | 9+9 |
+| Pool uptime | 6964s (~2h od posledního restartu) |
+| MEM | 75–99% (GC cycle aktivní) |
+| DISK | 30% |
+| Status | ✅ OK |
+
+### Server scan
+
+| Server | Kontejnery | Stav |
+|--------|-----------|------|
+| Helsinki | core, pool, miner, dero-miner, zeph-miner, mysterium, nkn, grafana, prometheus, redis, website | ✅ vše Up |
+| SeedDE | core, miner, dero-miner, epic-miner, mysterium, nkn | ✅ |
+| Usa1 | core, miner, xmr-x86, mysterium | ✅ |
+| Usa2 | core, miner, xmr-x86, mysterium | ✅ |
+| Asia3 | core, miner, xmr-x86, mysterium | ✅ |
+
+**Pool mining status (Helsinki):** `19531/20965` shares (93% acceptance), hashrate 1.23 MH/s, `blocks_found: 2884`
+
+### Resources cleanup
+
+**Odstraněno:** 20+ mrtvých souborů z `APP&WEB/desktop-agent/resources/`:
+
+| Kategorie | Soubory |
+|-----------|---------|
+| Python v1/v2 | `cosmic_harmony_v1_turbo.py`, `cosmic_harmony_v2*.py` (6 variant), `cosmic_harmony_wrapper.py` |
+| ERG (skip) | `gpu_autolykos_v2_engine.py`, `native_autolykos_wrapper.py` |
+| Linux .so | `libcosmic_harmony_zion.so`, `librandomx_zion.so`, `libyescrypt_zion.so` |
+| Dead dirs | `ai/` (12 souborů), `zion/` (duplicate wrapper) |
+| Dead root | `ai_native_bridge.py`, `requirements 2/3/4.txt`, `.bak2` soubory |
+| Old binaries | `zion_native_miner_v2_9` (stub), `zion_native_miner_v2_9_macos` (29MB PyInstaller, outdated) |
+
+**Zachováno (aktivní):**
+- `zion_native_miner_v2_9.py` ✅ main miner script
+- `zion-miner`, `zion-universal-miner` ✅ Rust miner arm64 (4.8 MB, Feb 18)
+- `afterburner_service.py`, `ai_native_client.py` ✅ referenced in main.js
+- `mining/cosmic_harmony_native.py`, `v3_gpu.py`, `v3_python.py` ✅ aktivní CHv3
+- `requirements.txt` ✅
+
+### Dead imports cleanup (`zion_native_miner_v2_9.py`)
+
+Odstraněno ~90 řádků mrtvých try/except import bloků (v1 wrapper, v2 unified/native/optimized/python, ERG GPU engine, v1 TURBO). Aktivní sekce (CHv3 native + python fallback + GPU) zachována.
+
+### Rozhodnutí (skipped streams)
+
+| Stream | Rozhodnutí | Důvod |
+|--------|-----------|-------|
+| **NKN** | ❌ SKIP | ROI nevychází; běží jako relay bez registrace |
+| **ERG (Autolykos v2)** | ❌ SKIP | ARM64 příliš pomalý (34× Blake2b/hash); 60s timeout na 2miners |
+
+### cargo check
+
+```
+cargo check --workspace --exclude verushash-native --no-default-features
+→ Finished `dev` profile in 30.90s (0 errors, 0 warnings)
+```
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*
