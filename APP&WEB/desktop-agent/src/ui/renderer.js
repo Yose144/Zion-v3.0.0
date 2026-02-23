@@ -495,6 +495,38 @@ function setupNavigation() {
       item.classList.add('active');
     });
   });
+
+  // ── Section Tabs (subsection navigation within views) ──
+  setupSectionTabs();
+}
+
+/**
+ * Set up all .section-tabs pill bars — clicking a tab shows
+ * the corresponding .section-panel and hides siblings.
+ */
+function setupSectionTabs() {
+  document.querySelectorAll('.section-tabs').forEach(tabBar => {
+    const tabs = tabBar.querySelectorAll('.section-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const sectionId = tab.dataset.section;
+        if (!sectionId) return;
+
+        // Deactivate sibling tabs
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Find the parent view-shell and toggle section-panels within it
+        const viewShell = tabBar.closest('.view-shell');
+        if (!viewShell) return;
+        viewShell.querySelectorAll('.section-panel').forEach(p => {
+          p.classList.remove('active');
+        });
+        const target = document.getElementById(sectionId);
+        if (target) target.classList.add('active');
+      });
+    });
+  });
 }
 
 function switchView(view) {
@@ -2016,6 +2048,54 @@ function setupWalletControls() {
     }
     if (receiveQrPlaceholder) receiveQrPlaceholder.style.display = 'none';
     if (receiveQrStatusEl) receiveQrStatusEl.textContent = 'OK';
+  });
+
+  // ── Receive section tab handlers ──
+  const receiveWalletAddr = document.getElementById('receive-wallet-address');
+  const copyReceiveAddrBtn = document.getElementById('copy-receive-address-btn');
+  const generateReceiveQrBtn = document.getElementById('generate-receive-qr-btn');
+  const receiveSectionQrImg = document.getElementById('receive-section-qr-img');
+  const receiveSectionQrPlaceholder = document.getElementById('receive-section-qr-placeholder');
+  const receiveSectionQrStatus = document.getElementById('receive-section-qr-status');
+
+  // Sync address into receive tab when wallet tab is opened
+  const _origSyncActiveWallet = syncActiveWallet;
+  syncActiveWallet = () => {
+    _origSyncActiveWallet();
+    if (receiveWalletAddr) receiveWalletAddr.value = (config.wallet || '').toString();
+  };
+
+  copyReceiveAddrBtn?.addEventListener('click', () => {
+    const addr = getActiveAddress();
+    if (addr) {
+      navigator.clipboard.writeText(addr);
+      addLogEntry('Address copied to clipboard', 'info');
+    }
+  });
+
+  generateReceiveQrBtn?.addEventListener('click', async () => {
+    const address = getActiveAddress();
+    if (receiveSectionQrStatus) receiveSectionQrStatus.textContent = 'Generating...';
+    if (receiveWalletAddr) receiveWalletAddr.value = address;
+
+    const check = await window.electronAPI.validateAddress(address);
+    if (!check?.valid) {
+      if (receiveSectionQrStatus) receiveSectionQrStatus.textContent = 'Set a valid zion1... address first (Overview tab).';
+      return;
+    }
+
+    const result = await window.electronAPI.walletGenerateQr({ text: address });
+    if (!result?.success) {
+      if (receiveSectionQrStatus) receiveSectionQrStatus.textContent = `Error: ${result?.error || 'QR failed'}`;
+      return;
+    }
+
+    if (receiveSectionQrImg) {
+      receiveSectionQrImg.src = result.dataUrl;
+      receiveSectionQrImg.style.display = 'block';
+    }
+    if (receiveSectionQrPlaceholder) receiveSectionQrPlaceholder.style.display = 'none';
+    if (receiveSectionQrStatus) receiveSectionQrStatus.textContent = '';
   });
 
   sendTxBtn?.addEventListener('click', async () => {
