@@ -563,6 +563,12 @@ function switchView(view) {
   // Initialize Warp view when opened
   if (view === 'warp') initWarpView();
 
+  // Initialize Free World view when opened
+  if (view === 'freeworld') initFreeWorldView();
+
+  // Initialize Issobella view when opened
+  if (view === 'issobella') initIssobellaView();
+
   // Refresh network data only when user opens Network view
   if (view === 'network') {
     void refreshServerStatus();
@@ -3505,6 +3511,141 @@ function initWarpView() {
 
   setupSectionTabs();
   dbg('[WARP] View initialized');
+}
+
+// ═══════════════════════════════════════════════════════
+// FREE WORLD — Sovereignty & Humanitarian Layer (L5)
+// ═══════════════════════════════════════════════════════
+
+const FW_PILLARS = [
+  { icon: '⚡', name: 'Free Energy Research', desc: 'Quantum/free energy R&D, open-source hardware, decentralized energy grids for off-grid communities.' },
+  { icon: '🤝', name: 'Humanitarian Missions', desc: '5% block reward → Humanitarian Fund, DAO governance for allocation, direct community support worldwide.' },
+  { icon: '🏘️', name: 'Free Communities', desc: 'Self-sustaining off-grid communities using ZION as native currency with local mesh network infrastructure.' },
+  { icon: '📖', name: 'Education & Awareness', desc: 'Open-source educational platforms, consciousness mining integration with L4 Oasis, knowledge sharing.' },
+];
+
+const FW_MILESTONES = [
+  { year: '2030', text: 'ZION Free World Foundation established', done: false },
+  { year: '2031', text: 'First quantum energy research laboratory', done: false },
+  { year: '2033', text: 'Prototype quantum generator', done: false },
+  { year: '2035', text: 'Pilot deployment in 10 communities', done: false },
+  { year: '2037', text: 'Open-source hardware specifications release', done: false },
+  { year: '2040', text: 'Mass production — energy for millions', done: false },
+];
+
+let _fwInitialized = false;
+
+function initFreeWorldView() {
+  if (_fwInitialized) return;
+  _fwInitialized = true;
+  dbg('[FW] Initializing Free World view');
+
+  /* — Pillars — */
+  const pGrid = document.getElementById('fw-pillar-grid');
+  if (pGrid) {
+    pGrid.innerHTML = FW_PILLARS.map(p =>
+      `<div class="fw-pillar-card">
+        <div class="fw-pillar-icon">${p.icon}</div>
+        <div class="fw-pillar-name">${p.name}</div>
+        <div class="fw-pillar-desc">${p.desc}</div>
+      </div>`
+    ).join('');
+  }
+
+  /* — Milestones — */
+  const mList = document.getElementById('fw-milestone-list');
+  if (mList) {
+    mList.innerHTML = FW_MILESTONES.map(m =>
+      `<div class="fw-milestone-row">
+        <div class="fw-milestone-dot${m.done ? '' : ' future'}"></div>
+        <div class="fw-milestone-year">${m.year}</div>
+        <div class="fw-milestone-text">${m.text}</div>
+      </div>`
+    ).join('');
+  }
+
+  setupSectionTabs();
+  dbg('[FW] View initialized');
+}
+
+// ═══════════════════════════════════════════════════════
+// ISSOBELLA — Orbital Observatory & Station (L6)
+// ═══════════════════════════════════════════════════════
+
+const ISS_MISSION_PILLARS = [
+  { icon: '🔭', name: 'Earth Orbital Observatory', desc: 'LEO observatory with decentralized management via ZION DAO. Open data for all humanity.' },
+  { icon: '🧬', name: 'Research Station', desc: 'Microgravity experiments, biological research, deep-space technology development.' },
+  { icon: '🛰️', name: 'ZION Space Network', desc: 'Satellite mesh network, redundant orbital nodes, independence from terrestrial infrastructure.' },
+];
+
+const ISS_STATION_MODULES = [
+  { icon: '🖥️', name: 'ZION Node Module', desc: 'Radiation-hardened FPGA running full ZION consensus in orbit' },
+  { icon: '📡', name: 'Communications Hub', desc: 'ISL mesh links + ground station relay for block propagation' },
+  { icon: '☀️', name: 'Solar Power Array', desc: 'Solar panels + battery systems for continuous LEO operation' },
+  { icon: '🔬', name: 'Research Lab', desc: 'Microgravity experiments, biology, materials science' },
+  { icon: '🏠', name: 'Habitat Module', desc: 'Crew quarters for visiting researchers and operators' },
+  { icon: '🛸', name: 'Docking Port', desc: 'Standardized docking for CubeSat deployment and resupply' },
+];
+
+const ISS_MILESTONES = [
+  { year: '2026', text: 'Mainnet launch, Issobella fund begins accumulating', done: true },
+  { year: '2028', text: 'Feasibility study + space agency partnerships', done: false },
+  { year: '2030', text: 'CubeSat prototype with ZION node', done: false },
+  { year: '2035', text: 'LEO test module deployment', done: false },
+  { year: '2040', text: 'ZION Space Division established', done: false },
+  { year: '2042', text: 'Station design finalized', done: false },
+  { year: '2045', text: 'Component manufacturing begins', done: false },
+  { year: '2048', text: 'First module on orbit', done: false },
+  { year: '2050', text: 'Fully operational station', done: false },
+  { year: '2055', text: 'Expansion — 2nd and 3rd modules', done: false },
+];
+
+let _issInitialized = false;
+
+function initIssobellaView() {
+  if (_issInitialized) return;
+  _issInitialized = true;
+  dbg('[ISS] Initializing Issobella view');
+
+  /* — Mission pillars — */
+  const mGrid = document.getElementById('iss-module-grid');
+  if (mGrid) {
+    mGrid.innerHTML = ISS_MISSION_PILLARS.map(p =>
+      `<div class="iss-module-card">
+        <div class="iss-module-icon">${p.icon}</div>
+        <div class="iss-module-name">${p.name}</div>
+        <div class="iss-module-desc">${p.desc}</div>
+      </div>`
+    ).join('');
+  }
+
+  /* — Station modules — */
+  const sGrid = document.getElementById('iss-station-grid');
+  if (sGrid) {
+    sGrid.innerHTML = ISS_STATION_MODULES.map(m =>
+      `<div class="iss-module-card">
+        <div class="iss-module-icon">${m.icon}</div>
+        <div class="iss-module-name">${m.name}</div>
+        <div class="iss-module-desc">${m.desc}</div>
+        <div class="iss-orbit-badge">LEO Module</div>
+      </div>`
+    ).join('');
+  }
+
+  /* — Timeline — */
+  const tList = document.getElementById('iss-timeline-list');
+  if (tList) {
+    tList.innerHTML = ISS_MILESTONES.map(m =>
+      `<div class="fw-milestone-row">
+        <div class="fw-milestone-dot${m.done ? '' : ' future'}"></div>
+        <div class="fw-milestone-year" style="color:#f43f5e">${m.year}</div>
+        <div class="fw-milestone-text">${m.text}</div>
+      </div>`
+    ).join('');
+  }
+
+  setupSectionTabs();
+  dbg('[ISS] View initialized');
 }
 
 dbg('Renderer script loaded');
