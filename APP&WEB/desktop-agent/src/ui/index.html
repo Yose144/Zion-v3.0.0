@@ -42,6 +42,29 @@
       box-sizing: border-box;
     }
 
+    /* Global glass reset — no white inputs anywhere */
+    input, textarea, select {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      color: #ffffff;
+      font-size: 13px;
+      font-family: inherit;
+      padding: 12px 16px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: rgba(147, 51, 234, 0.35);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+      background: rgba(10, 10, 20, 0.40);
+    }
+    input::placeholder, textarea::placeholder {
+      color: rgba(255,255,255,0.30);
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background:
@@ -1108,6 +1131,21 @@
     .input-flex-mono {
       flex: 1;
       font-family: monospace;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      color: #ffffff;
+      font-size: 13px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .input-flex-mono:focus {
+      outline: none;
+      border-color: rgba(147, 51, 234, 0.35);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+      background: rgba(10, 10, 20, 0.40);
     }
     .pool-metric-blue { color: #38bdf8; font-weight: 600; }
     .pool-metric-green { color: #6ee7b7; font-weight: 600; }
@@ -1169,9 +1207,9 @@
     .input-mono { font-family: monospace; }
     .tx-lookup-result {
       margin-top: 12px;
-      padding: 12px;
-      background: rgba(0,0,0,0.3);
-      border-radius: 8px;
+      padding: 14px;
+      background: rgba(0,0,0,0.18);
+      border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.06);
       font-family: monospace;
       font-size: 12px;
@@ -1181,6 +1219,8 @@
       word-break: break-all;
       max-height: 200px;
       overflow-y: auto;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
     .muted-note {
       margin-bottom: 16px;
@@ -1270,7 +1310,26 @@
       padding: 30px;
       font-size: 13px;
     }
-    .textarea-no-resize { resize: none; }
+    .textarea-no-resize {
+      resize: none;
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      color: #ffffff;
+      font-size: 13px;
+      font-family: monospace;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: border-color 0.3s ease;
+    }
+    .textarea-no-resize:focus {
+      outline: none;
+      border-color: rgba(147, 51, 234, 0.35);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+      background: rgba(10, 10, 20, 0.40);
+    }
 
     .about-lead {
       margin-bottom: 18px;
@@ -2191,18 +2250,25 @@
       justify-content: flex-end;
     }
 
-    /* Wallet display (generated address/mnemonic) was outside .form-group -> ensure readable */
+    /* Wallet display (generated address/mnemonic) — glass inputs */
     #wallet-display input,
     #wallet-display textarea {
       color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 13px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
     #wallet-display input:focus,
     #wallet-display textarea:focus {
       outline: none;
-      border-color: rgba(147, 51, 234, 0.6) !important;
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.25);
+      border-color: rgba(147, 51, 234, 0.35) !important;
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+      background: rgba(10, 10, 20, 0.40);
     }
 
     /* Consciousness Progress */
