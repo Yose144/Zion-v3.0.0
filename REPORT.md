@@ -1784,3 +1784,117 @@ INFO zion_bridge::l1_watcher: 🔍 Monitoring zion1wn5nv4snxzjjlqb48z5zatungtvr4
 
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*
+
+---
+
+## Session 40 — Bridge debugging + Chain stall incident (23.2.2026)
+
+**Datum:** 23. února 2026 (večer)  
+**Commity:** `5cd177c`  
+**Soubory:** `L2/bridge/src/l1_watcher.rs`, `L2/bridge/src/evm_watcher.rs`, `L2/bridge/src/config.rs`, `L2/bridge/src/main.rs`, `config/bridge-testnet.toml`
+
+### Kritický incident: Chain stall 87+ minut
+
+**Příčina:** Pool ztratil spojení s core po restartu bridge (`blockchain.connected: false`). Pool nacházel bloky ale nedokázal je submittovat.
+
+**Root cause:** `ZION_RPC_TOKEN` env var na zion-core aktivoval Bearer auth middleware pro `/jsonrpc`. Pool posílá requesty bez auth headeru → `401 Unauthorized`.
+
+**Průběh:**
+- H:4550 — poslední blok před stallí
+- 87+ minut bez nového bloku (time_since_last_block: 5250s)
+- Pool log: `Block candidate rejected`
+- Pool stats: `blockchain.connected: false`
+
+**Řešení:**
+1. Zjistil jsem, že `ZION_RPC_TOKEN` blokuje `/jsonrpc` (pool nemá podporu Bearer tokenu)
+2. Restartoval `zion-core` BEZ `ZION_RPC_TOKEN`, zachoval `ZION_BRIDGE_VAULT_KEY`
+3. Poll circuit breaker — počkal 60s na reset
+4. Pool reconnected → blok 4551 nalezen v 22:18:16
+5. Chain opět progresuje: H:4557+ (stability log potvrzen)
+
+> **Poznámka pro mainnet:** Pool potřebuje podporu `Authorization: Bearer` headeru, nebo je třeba oddělit auth per-endpoint (bridge `/api/bridge/unlock` chráněn, `/jsonrpc` otevřen).
+
+### Cleanup bug: ch3_revenue_settings.json byl adresář
+
+**Příčina:** Cleanup session 39 smazal JSON soubor ale zanechal prázdný adresář se stejným jménem:
+```
+/root/Zion-2.9.5/config/ch3_revenue_settings.json/   ← byl ADRESÁŘ!
+```
+
+**Řešení:**
+```bash
+rmdir /root/Zion-2.9.5/config/ch3_revenue_settings.json
+scp -i ~/.ssh/zion_hetzner_key config/ch3_revenue_settings.json root@77.42.31.72:/root/Zion-2.9.5/config/
+```
+Pool se mohl opět spustit.
+
+### Bridge fix 1: L1Block API deserialization
+
+**Chyba:** `missing field 'height' at line 1 column 519`
+
+**Příčina:** API `/api/block/height/{h}` vrací nested formát, ale kód čekal flat struct:
+```json
+{
+  "block": {
+    "header": {"height": 4552, "prev_hash": "...", "timestamp": 177...},
+    "transactions": [{"id": "...", "inputs": [], "outputs": [...]}]
+  },
+  "status": "ok"
+}
+```
+
+**Oprava** (`L2/bridge/src/l1_watcher.rs`):
+- Přidán `ApiBlockResponse` wrapper struct s `ApiBlockData` + `ApiBlockHeader`
+- `impl From<ApiBlockResponse> for L1Block` — konverze z nested na flat
+- `L1Transaction`: `#[serde(rename = "id")]` pro pole hash (API vrací `id`, kód čekal `hash`)
+- `L1TxInput`/`L1TxOutput`: `#[serde(default)]` pro optional pole
+- `get_block()` nyní: `json::<ApiBlockResponse>()` → `L1Block::from(resp)`
+
+### Bridge fix 2: EVM block range limit
+
+**Chyba:** `exceed maximum block range: 50000` na publicnode.com
+
+**Příčina:** EVM watcher skenoval od bloku 0 do aktuálního (~38M bloků v jednom `eth_getLogs` volání), publicnode limit je 50k.
+
+**Oprava** (`L2/bridge/src/evm_watcher.rs`):
+```rust
+const MAX_BLOCK_RANGE: u64 = 49_000;
+// poll_burns nyní chunks:
+let mut chunk_from = from;
+while chunk_from <= to {
+    let chunk_to = (chunk_from + MAX_BLOCK_RANGE - 1).min(to);
+    let filter = base_filter.clone().from_block(chunk_from).to_block(chunk_to);
+    let logs = provider.get_logs(&filter).await?;
+    chunk_from = chunk_to + 1;
+}
+```
+
+### Bridge fix 3: start_block konfigurace
+
+**Oprava** (`L2/bridge/src/config.rs`, `L2/bridge/src/main.rs`, `config/bridge-testnet.toml`):
+```toml
+[[evm_chains]]
+chain_id = "base-sepolia"
+# ... 
+start_block = 38057800  # Bridge deploy 23.2.2026 — skip genesis scan
+```
+- Config: `pub start_block: Option<u64>` v `EvmChainConfig`
+- main.rs: předáno do `EvmWatcher::new(chain_config, start_block)`
+
+### Stav po session 40
+
+| Komponenta | Stav |
+|-----------|------|
+| Chain | ✅ H:4557+, peers:16, time_since_last_block < 30s |
+| Pool | ✅ connected:true, ~5.5 MH/s, 3 miners |
+| zion-core | ✅ bez ZION_RPC_TOKEN, s ZION_BRIDGE_VAULT_KEY |
+| Bridge | ⚠️ Stará image — build3 s fixem probíhá |
+| ch3 revenue config | ✅ opraven (byl adresář, nyní soubor) |
+| Stability monitor | ✅ PID 909210, 5min interval, log `/root/stability_run.log` |
+
+### Zbývá po build3 dokončení
+
+- [ ] Restart bridge s novou image (build3) — bez `missing field 'height'`
+- [ ] Ověřit EVM watcher skenuje v chuncích (49k bloků), ne 38M najednou
+- [ ] W-1: Website rebuild (dao-api.ts fix)
+- [ ] Zvážit: pool Bearer token support pro mainnet
