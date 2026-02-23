@@ -1893,6 +1893,230 @@
       cursor: pointer;
     }
 
+    /* ── DEX & Atomic Swap ──────────────────────────────── */
+
+    .dex-chain-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 6px;
+    }
+    .dex-chain-table th {
+      text-align: left;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.4);
+      padding: 0 12px 4px;
+      font-weight: 500;
+    }
+    .dex-chain-table td {
+      padding: 10px 12px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.03);
+    }
+    .dex-chain-table tr td:first-child { border-radius: 8px 0 0 8px; }
+    .dex-chain-table tr td:last-child  { border-radius: 0 8px 8px 0; }
+    .dex-chain-table .chain-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .chain-status.live       { background: rgba(0,255,136,0.15); color: #00ff88; }
+    .chain-status.prep       { background: rgba(255,193,7,0.15);  color: #ffc107; }
+    .chain-status.planned    { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+
+    .dex-pool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .dex-pool-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .dex-pool-card .pool-pair {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .dex-pool-card .pool-dex {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+    .dex-pool-card .pool-metric {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 3px 0;
+    }
+    .dex-pool-card .pool-metric .pm-label { color: rgba(255,255,255,0.45); }
+    .dex-pool-card .pool-metric .pm-value { color: rgba(255,255,255,0.85); font-weight: 500; }
+
+    .swap-pair-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+    }
+    .swap-pair-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 18px;
+      cursor: pointer;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .swap-pair-card:hover,
+    .swap-pair-card.selected {
+      border-color: var(--zion-gold);
+      background: rgba(255,193,7,0.05);
+    }
+    .swap-pair-card .pair-symbols {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .swap-pair-card .pair-route {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 8px;
+    }
+    .swap-pair-card .pair-status {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .swap-form-skeleton {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .swap-box {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .swap-box-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .swap-box .swap-amount-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .swap-box .swap-amount-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      font-size: 22px;
+      font-weight: 600;
+      color: #fff;
+      outline: none;
+      font-family: inherit;
+    }
+    .swap-box .swap-coin-badge {
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .swap-arrow-row {
+      text-align: center;
+      font-size: 20px;
+      color: rgba(255,255,255,0.3);
+    }
+    .swap-steps {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+      margin-top: 16px;
+    }
+    .swap-step {
+      flex: 1;
+      text-align: center;
+      padding: 12px 8px;
+      position: relative;
+    }
+    .swap-step::after {
+      content: '';
+      position: absolute;
+      top: 20px;
+      right: -1px;
+      width: 2px;
+      height: 14px;
+      background: rgba(255,255,255,0.1);
+    }
+    .swap-step:last-child::after { display: none; }
+    .swap-step .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.5);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .swap-step.active .step-num {
+      background: var(--zion-gold);
+      color: #000;
+    }
+    .swap-step .step-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+    .swap-step.active .step-label { color: rgba(255,255,255,0.8); }
+
+    .validator-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .validator-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+    .validator-card .v-region {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .validator-card .v-status {
+      margin-top: 6px;
+      font-size: 10px;
+    }
+    .validator-card .v-status.online  { color: #00ff88; }
+    .validator-card .v-status.offline { color: #ff4d4f; }
+
     .about-quote-wrap {
       text-align: center;
       padding: 20px 0;
@@ -4200,119 +4424,497 @@
       <div id="bridge-view" class="view-shell d-none">
         <div class="web29-page-header">
           <div class="web29-title-stack">
-            <div class="web29-kicker">↔ L1 · Base</div>
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>L2 · DeFi Layer</div>
             <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">wZION Bridge</h1>
-              <div class="web29-chip">ERC-20 wrapped ZION on Base network</div>
+              <h1 class="web29-title text-gradient">Bridge & DEX</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-wallet"></use></svg>wZION · Atomic Swaps · Liquidity</div>
+            </div>
+            <div class="web29-subtitle">Cross-chain bridge, decentralised exchange & trustless swaps</div>
+          </div>
+        </div>
+
+        <!-- ── Bridge Section Tabs ──────────────────────────── -->
+        <div class="section-tabs" data-group="bridge">
+          <div class="section-tab active" data-section="bridge-transfer">
+            <span class="tab-dot"></span>
+            <span>Bridge</span>
+          </div>
+          <div class="section-tab" data-section="bridge-dex">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>DEX</span>
+          </div>
+          <div class="section-tab" data-section="bridge-swap">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <span>Atomic Swap</span>
+          </div>
+          <div class="section-tab" data-section="bridge-stats">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
+            <span>Stats</span>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Bridge (wZION transfer) ═══ -->
+        <div id="bridge-transfer" class="section-panel active">
+
+          <!-- Direction toggle -->
+          <div class="control-panel mb-14 p-bridge">
+            <div class="bridge-toggle">
+              <button id="bridge-btn-to-evm" class="btn-zion active">
+                ZION → wZION (lock on L1)
+              </button>
+              <button id="bridge-btn-to-l1" class="btn-zion">
+                wZION → ZION (burn on Base)
+              </button>
             </div>
           </div>
-        </div>
 
-        <!-- Direction toggle -->
-        <div class="control-panel mb-14 p-bridge">
-          <div class="bridge-toggle">
-            <button id="bridge-btn-to-evm" class="btn-zion active">
-              ZION → wZION (lock on L1)
-            </button>
-            <button id="bridge-btn-to-l1" class="btn-zion">
-              wZION → ZION (burn on Base)
-            </button>
+          <!-- Balance cards -->
+          <div class="bridge-balance-grid">
+            <div class="control-panel bridge-balance-card">
+              <div class="bridge-balance-kicker">L1 ZION Balance</div>
+              <div id="bridge-l1-balance" class="bridge-balance-value">—</div>
+              <div class="bridge-balance-sub">native chain</div>
+            </div>
+            <div class="control-panel bridge-balance-card">
+              <div class="bridge-balance-kicker">wZION Balance</div>
+              <div id="bridge-wzion-balance" class="bridge-balance-value gold">—</div>
+              <div class="bridge-balance-sub">Base Sepolia</div>
+            </div>
           </div>
-        </div>
 
-        <!-- Balance cards -->
-        <div class="bridge-balance-grid">
-          <div class="control-panel bridge-balance-card">
-            <div class="bridge-balance-kicker">L1 ZION Balance</div>
-            <div id="bridge-l1-balance" class="bridge-balance-value">—</div>
-            <div class="bridge-balance-sub">native chain</div>
-          </div>
-          <div class="control-panel bridge-balance-card">
-            <div class="bridge-balance-kicker">wZION Balance</div>
-            <div id="bridge-wzion-balance" class="bridge-balance-value gold">—</div>
-            <div class="bridge-balance-sub">Base Sepolia</div>
-          </div>
-        </div>
-
-        <!-- EVM address display -->
-        <div class="control-panel mb-14 p-bridge-sm">
-          <div class="bridge-label">Your EVM address (Base)</div>
-          <div class="bridge-inline-row">
-            <code id="bridge-evm-address" class="bridge-code">—</code>
-            <button id="bridge-copy-evm" class="bridge-btn-small">Copy</button>
-          </div>
-        </div>
-
-        <!-- Form: L1→EVM -->
-        <div id="bridge-form-l1toevm" class="control-panel mb-14 p-bridge-form">
-          <h3 class="bridge-form-title">Lock ZION on L1 → receive wZION on Base</h3>
-          <p class="bridge-help">
-            Send ZION to the bridge vault address on L1 with the generated memo.
-            The Rust relay monitors L1 and automatically mints wZION to your Base address.
-          </p>
-          <div class="mb-10">
-            <label class="bridge-label">Amount (ZION, min. 100)</label>
-            <input id="bridge-l1-amount" type="number" min="100" step="1" placeholder="e.g. 500"
-              class="bridge-input" />
-          </div>
-          <div id="bridge-memo-box" class="d-none mb-14">
-            <label class="bridge-label">L1 Vault address</label>
-            <code id="bridge-vault-addr" class="bridge-code-block">—</code>
-            <label class="bridge-label">Memo (copy EXACTLY)</label>
+          <!-- EVM address display -->
+          <div class="control-panel mb-14 p-bridge-sm">
+            <div class="bridge-label">Your EVM address (Base)</div>
             <div class="bridge-inline-row">
-              <code id="bridge-memo-text" class="bridge-code-block warn">—</code>
-              <button id="bridge-copy-memo" class="bridge-primary-btn bridge-copy-compact">Copy</button>
+              <code id="bridge-evm-address" class="bridge-code">—</code>
+              <button id="bridge-copy-evm" class="bridge-btn-small">Copy</button>
             </div>
           </div>
-          <button id="bridge-prepare-lock" class="bridge-primary-btn">
-            Generate memo
-          </button>
+
+          <!-- Form: L1→EVM -->
+          <div id="bridge-form-l1toevm" class="control-panel mb-14 p-bridge-form">
+            <h3 class="bridge-form-title">Lock ZION on L1 → receive wZION on Base</h3>
+            <p class="bridge-help">
+              Send ZION to the bridge vault address on L1 with the generated memo.
+              The Rust relay monitors L1 and automatically mints wZION to your Base address.
+            </p>
+            <div class="mb-10">
+              <label class="bridge-label">Amount (ZION, min. 100)</label>
+              <input id="bridge-l1-amount" type="number" min="100" step="1" placeholder="e.g. 500"
+                class="bridge-input" />
+            </div>
+            <div id="bridge-memo-box" class="d-none mb-14">
+              <label class="bridge-label">L1 Vault address</label>
+              <code id="bridge-vault-addr" class="bridge-code-block">—</code>
+              <label class="bridge-label">Memo (copy EXACTLY)</label>
+              <div class="bridge-inline-row">
+                <code id="bridge-memo-text" class="bridge-code-block warn">—</code>
+                <button id="bridge-copy-memo" class="bridge-primary-btn bridge-copy-compact">Copy</button>
+              </div>
+            </div>
+            <button id="bridge-prepare-lock" class="bridge-primary-btn">
+              Generate memo
+            </button>
+          </div>
+
+          <!-- Form: EVM→L1 -->
+          <div id="bridge-form-evmtol1" class="control-panel mb-14 p-bridge-form d-none">
+            <h3 class="bridge-form-title cyan">Burn wZION on Base → receive ZION on L1</h3>
+            <p class="bridge-help">
+              Use the mobile wallet to sign and broadcast the <code>bridgeBurn()</code> transaction,
+              or call the contract directly via BaseScan write interface. The Rust relay will
+              release L1 ZION after confirmation.
+            </p>
+            <div class="mb-10">
+              <label class="bridge-label">Contract on Base Sepolia</label>
+              <div class="bridge-inline-row">
+                <code class="bridge-code-block bridge-code-nomargin">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
+                <button id="bridge-open-basescan" class="bridge-btn-small">Open ↗</button>
+              </div>
+            </div>
+            <div class="bridge-note-box">
+              <div class="bridge-note-text">
+                <b>Function:</b> <code>bridgeBurn(uint256 amount, string l1Recipient, bytes32 burnId)</code><br/>
+                <b>amount:</b> ZION × 10<sup>18</sup> × 10<sup>6</sup> (e.g. 500 ZION → <code>500000000000000000000</code>)<br/>
+                <b>l1Recipient:</b> your ZION L1 address (<code>zion1...</code>)<br/>
+                <b>burnId:</b> unique bytes32 (e.g. <code>0x000...001</code>)
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Form: EVM→L1 (read-only instructions — signing requires mobile or MetaMask) -->
-        <div id="bridge-form-evmtol1" class="control-panel mb-14 p-bridge-form d-none">
-          <h3 class="bridge-form-title cyan">Burn wZION on Base → receive ZION on L1</h3>
-          <p class="bridge-help">
-            Use the mobile wallet to sign and broadcast the <code>bridgeBurn()</code> transaction,
-            or call the contract directly via BaseScan write interface. The Rust relay will
-            release L1 ZION after confirmation.
-          </p>
-          <div class="mb-10">
-            <label class="bridge-label">Contract on Base Sepolia</label>
-            <div class="bridge-inline-row">
-              <code class="bridge-code-block bridge-code-nomargin">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
-              <button id="bridge-open-basescan" class="bridge-btn-small">Open ↗</button>
+        <!-- ═══ SECTION: DEX ═══ -->
+        <div id="bridge-dex" class="section-panel">
+
+          <!-- Target Chains -->
+          <div class="control-panel mb-14 p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Multi-Chain</p>
+                <h3>Target EVM Chains</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table">
+              <thead>
+                <tr><th>Priority</th><th>Chain</th><th>DEX</th><th>Chain ID</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>🥇</td><td>Base</td><td>Uniswap v3</td><td>8453</td>
+                  <td><span class="chain-status prep">Preparing</span></td>
+                </tr>
+                <tr>
+                  <td>🥈</td><td>Arbitrum</td><td>Uniswap v3</td><td>42161</td>
+                  <td><span class="chain-status planned">Planned</span></td>
+                </tr>
+                <tr>
+                  <td>🥉</td><td>BNB Chain</td><td>PancakeSwap</td><td>56</td>
+                  <td><span class="chain-status planned">Planned</span></td>
+                </tr>
+                <tr>
+                  <td>4</td><td>Polygon</td><td>QuickSwap</td><td>137</td>
+                  <td><span class="chain-status planned">Planned</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Liquidity Pools -->
+          <div class="control-panel mb-14 p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Liquidity</p>
+                <h3>wZION Pools</h3>
+              </div>
+              <span class="badge badge-neutral">Post-MainNet</span>
+            </div>
+            <div class="dex-pool-grid">
+              <div class="dex-pool-card">
+                <div class="pool-pair">wZION / ETH</div>
+                <div class="pool-dex">Uniswap v3 · Base</div>
+                <div class="pool-metric"><span class="pm-label">TVL</span><span class="pm-value" id="dex-tvl-eth">—</span></div>
+                <div class="pool-metric"><span class="pm-label">24h Vol</span><span class="pm-value" id="dex-vol-eth">—</span></div>
+                <div class="pool-metric"><span class="pm-label">Price</span><span class="pm-value" id="dex-price-eth">—</span></div>
+                <div class="pool-metric"><span class="pm-label">APR</span><span class="pm-value" id="dex-apr-eth">—</span></div>
+              </div>
+              <div class="dex-pool-card">
+                <div class="pool-pair">wZION / USDC</div>
+                <div class="pool-dex">Uniswap v3 · Base</div>
+                <div class="pool-metric"><span class="pm-label">TVL</span><span class="pm-value" id="dex-tvl-usdc">—</span></div>
+                <div class="pool-metric"><span class="pm-label">24h Vol</span><span class="pm-value" id="dex-vol-usdc">—</span></div>
+                <div class="pool-metric"><span class="pm-label">Price</span><span class="pm-value" id="dex-price-usdc">—</span></div>
+                <div class="pool-metric"><span class="pm-label">APR</span><span class="pm-value" id="dex-apr-usdc">—</span></div>
+              </div>
+              <div class="dex-pool-card">
+                <div class="pool-pair">wZION / wBTC</div>
+                <div class="pool-dex">PancakeSwap · BNB</div>
+                <div class="pool-metric"><span class="pm-label">TVL</span><span class="pm-value">—</span></div>
+                <div class="pool-metric"><span class="pm-label">24h Vol</span><span class="pm-value">—</span></div>
+                <div class="pool-metric"><span class="pm-label">Price</span><span class="pm-value">—</span></div>
+                <div class="pool-metric"><span class="pm-label">APR</span><span class="pm-value">—</span></div>
+              </div>
+            </div>
+            <button id="dex-refresh-pools" class="bridge-refresh-btn">↻ Refresh Pools</button>
+          </div>
+
+          <!-- Fee model -->
+          <div class="control-panel p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple">
+                <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Economics</p>
+                <h3>Bridge Fee Model</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table">
+              <thead><tr><th>Operation</th><th>Fee</th><th>Note</th></tr></thead>
+              <tbody>
+                <tr><td>Lock (L1→EVM)</td><td>0.1 %</td><td>Burned on L1 burn address</td></tr>
+                <tr><td>Unlock (EVM→L1)</td><td>0.1 %</td><td>Burned on L1</td></tr>
+                <tr><td>EVM gas</td><td>User pays</td><td>Gas for burn TX on EVM</td></tr>
+                <tr><td>Validator gas</td><td>Operator pays</td><td>Gas for submitLockProof()</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Atomic Swap ═══ -->
+        <div id="bridge-swap" class="section-panel">
+
+          <!-- Swap Pairs -->
+          <div class="control-panel mb-14 p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">HTLC · Trustless</p>
+                <h3>Atomic Swap Pairs</h3>
+              </div>
+              <span class="badge badge-neutral">2027 Q2</span>
+            </div>
+            <p class="bridge-help">
+              Hash Time-Locked Contracts enable trustless cross-chain swaps without intermediaries.
+              Alice (ZION) and Bob (BTC/ETH/XMR) exchange assets using secret reveal mechanism.
+            </p>
+            <div class="swap-pair-grid">
+              <div class="swap-pair-card selected" data-pair="zion-btc">
+                <div class="pair-symbols">ZION ↔ BTC</div>
+                <div class="pair-route">SHA-256 HTLC · Bitcoin Lightning</div>
+                <div class="pair-status" style="color: var(--zion-gold)">● Priority Target</div>
+              </div>
+              <div class="swap-pair-card" data-pair="zion-eth">
+                <div class="pair-symbols">ZION ↔ ETH</div>
+                <div class="pair-route">Keccak-256 HTLC · Solidity</div>
+                <div class="pair-status" style="color: var(--zion-cyan)">● Planned</div>
+              </div>
+              <div class="swap-pair-card" data-pair="zion-xmr">
+                <div class="pair-symbols">ZION ↔ XMR</div>
+                <div class="pair-route">DLEQ proof · Monero adaptor sigs</div>
+                <div class="pair-status" style="color: rgba(255,255,255,0.4)">○ Research</div>
+              </div>
             </div>
           </div>
-          <div class="bridge-note-box">
-            <div class="bridge-note-text">
-              <b>Function:</b> <code>bridgeBurn(uint256 amount, string l1Recipient, bytes32 burnId)</code><br/>
-              <b>amount:</b> ZION × 10<sup>18</sup> × 10<sup>6</sup> (e.g. 500 ZION → <code>500000000000000000000</code>)<br/>
-              <b>l1Recipient:</b> your ZION L1 address (<code>zion1...</code>)<br/>
-              <b>burnId:</b> unique bytes32 (e.g. <code>0x000...001</code>)
+
+          <!-- Swap Form Skeleton -->
+          <div class="control-panel mb-14 p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Swap</p>
+                <h3>Create Atomic Swap</h3>
+              </div>
+            </div>
+            <div class="swap-form-skeleton">
+              <div class="swap-box">
+                <div class="swap-box-label">You send</div>
+                <div class="swap-amount-row">
+                  <input type="number" id="swap-send-amount" class="swap-amount-input" placeholder="0.00" min="0" step="any" />
+                  <div class="swap-coin-badge" id="swap-send-coin">ZION</div>
+                </div>
+              </div>
+              <div class="swap-arrow-row">⇅</div>
+              <div class="swap-box">
+                <div class="swap-box-label">You receive (estimated)</div>
+                <div class="swap-amount-row">
+                  <input type="number" id="swap-receive-amount" class="swap-amount-input" placeholder="0.00" readonly />
+                  <div class="swap-coin-badge" id="swap-receive-coin">BTC</div>
+                </div>
+              </div>
+              <div class="bridge-inline-row" style="gap:8px">
+                <button id="swap-initiate-btn" class="bridge-primary-btn" style="flex:1" disabled>
+                  Initiate Swap (coming soon)
+                </button>
+                <button id="swap-reverse-btn" class="bridge-btn-small" title="Reverse direction">
+                  ⇄
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- HTLC Steps -->
+          <div class="control-panel mb-14 p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple">
+                <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Protocol</p>
+                <h3>HTLC Swap Flow</h3>
+              </div>
+            </div>
+            <div class="swap-steps">
+              <div class="swap-step active">
+                <div class="step-num">1</div>
+                <div class="step-label">Generate secret hash</div>
+              </div>
+              <div class="swap-step">
+                <div class="step-num">2</div>
+                <div class="step-label">Lock ZION + HTLC</div>
+              </div>
+              <div class="swap-step">
+                <div class="step-num">3</div>
+                <div class="step-label">Counterparty locks BTC</div>
+              </div>
+              <div class="swap-step">
+                <div class="step-num">4</div>
+                <div class="step-label">Reveal secret</div>
+              </div>
+              <div class="swap-step">
+                <div class="step-num">5</div>
+                <div class="step-label">Claim complete</div>
+              </div>
+            </div>
+            <div class="bridge-note-box" style="margin-top:16px">
+              <div class="bridge-note-text">
+                <b>Security:</b> If counterparty fails to claim within the timelock window, funds are automatically refunded.<br/>
+                <b>L1 Requirement:</b> Atomic swaps require a soft-fork TX model extension on ZION L1 (non-consensus RPC change).<br/>
+                <b>Timeline:</b> Implementation target 2027 Q2 (~30 days of work, ~3,000 LOC)
+              </div>
+            </div>
+          </div>
+
+          <!-- Open Swaps (skeleton) -->
+          <div class="control-panel p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-slate">
+                <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">History</p>
+                <h3>Active Swaps</h3>
+              </div>
+            </div>
+            <div id="swap-active-list" class="placeholder-row" style="color:rgba(255,255,255,0.35); padding:20px 0; text-align:center">
+              No active swaps — module not yet deployed
             </div>
           </div>
         </div>
 
-        <!-- Bridge stats -->
-        <div class="control-panel p-bridge-form">
-          <div class="bridge-balance-kicker mb-12">Bridge Statistics</div>
-          <div id="bridge-stats-loading" class="placeholder-row">Loading…</div>
-          <div id="bridge-stats-grid" class="bridge-stats-grid d-none">
-            <div class="bridge-stat-card">
-              <div id="bs-minted" class="bridge-stat-value">—</div>
-              <div class="bridge-stat-label">Total minted</div>
+        <!-- ═══ SECTION: Stats ═══ -->
+        <div id="bridge-stats" class="section-panel">
+
+          <!-- Bridge statistics -->
+          <div class="control-panel mb-14 p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Telemetry</p>
+                <h3>Bridge Statistics</h3>
+              </div>
             </div>
-            <div class="bridge-stat-card">
-              <div id="bs-burned" class="bridge-stat-value">—</div>
-              <div class="bridge-stat-label">Total burned</div>
+            <div id="bridge-stats-loading" class="placeholder-row">Loading…</div>
+            <div id="bridge-stats-grid" class="bridge-stats-grid d-none">
+              <div class="bridge-stat-card">
+                <div id="bs-minted" class="bridge-stat-value">—</div>
+                <div class="bridge-stat-label">Total minted</div>
+              </div>
+              <div class="bridge-stat-card">
+                <div id="bs-burned" class="bridge-stat-value">—</div>
+                <div class="bridge-stat-label">Total burned</div>
+              </div>
+              <div class="bridge-stat-card">
+                <div id="bs-circ" class="bridge-stat-value gold">—</div>
+                <div class="bridge-stat-label">Circulating</div>
+              </div>
+              <div class="bridge-stat-card">
+                <div id="bs-daily-mint" class="bridge-stat-value">—</div>
+                <div class="bridge-stat-label">Daily minted</div>
+              </div>
+              <div class="bridge-stat-card">
+                <div id="bs-daily-burn" class="bridge-stat-value">—</div>
+                <div class="bridge-stat-label">Daily burned</div>
+              </div>
+              <div class="bridge-stat-card">
+                <div id="bs-daily-remaining" class="bridge-stat-value gold">—</div>
+                <div class="bridge-stat-label">Daily limit left</div>
+              </div>
             </div>
-            <div class="bridge-stat-card">
-              <div id="bs-circ" class="bridge-stat-value gold">—</div>
-              <div class="bridge-stat-label">Circulating</div>
+            <button id="bridge-refresh-stats" class="bridge-refresh-btn">↻ Refresh</button>
+          </div>
+
+          <!-- Contract addresses -->
+          <div class="control-panel mb-14 p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Deployment</p>
+                <h3>Contract Addresses</h3>
+              </div>
+            </div>
+            <div class="form-grid" style="gap:10px">
+              <div class="bridge-label" style="margin:0">wZION (ERC-20)</div>
+              <div class="bridge-inline-row">
+                <code class="bridge-code" style="font-size:11px">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
+                <button class="bridge-btn-small" id="stats-copy-wzion">Copy</button>
+              </div>
+              <div class="bridge-label" style="margin:6px 0 0">ZIONBridge (Controller)</div>
+              <div class="bridge-inline-row">
+                <code class="bridge-code" style="font-size:11px" id="stats-bridge-contract">Pending deploy</code>
+                <button class="bridge-btn-small" id="stats-copy-bridge">Copy</button>
+              </div>
+              <div class="bridge-label" style="margin:6px 0 0">L1 Vault</div>
+              <div class="bridge-inline-row">
+                <code class="bridge-code" style="font-size:11px">zion1bridge000000000000000000000000000vault</code>
+                <button class="bridge-btn-small" id="stats-copy-vault">Copy</button>
+              </div>
             </div>
           </div>
-          <button id="bridge-refresh-stats" class="bridge-refresh-btn">↻ Refresh</button>
+
+          <!-- Validators -->
+          <div class="control-panel mb-14 p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple">
+                <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Consensus</p>
+                <h3>Bridge Validators (3-of-5)</h3>
+              </div>
+            </div>
+            <div class="validator-grid">
+              <div class="validator-card">
+                <div class="v-region">EU-1 (Helsinki)</div>
+                <div class="v-status online">● Online</div>
+              </div>
+              <div class="validator-card">
+                <div class="v-region">EU-2 (Germany)</div>
+                <div class="v-status online">● Online</div>
+              </div>
+              <div class="validator-card">
+                <div class="v-region">US-1 (East)</div>
+                <div class="v-status online">● Online</div>
+              </div>
+              <div class="validator-card">
+                <div class="v-region">AS-1 (Singapore)</div>
+                <div class="v-status offline">○ Standby</div>
+              </div>
+              <div class="validator-card">
+                <div class="v-region">AS-2 (Tokyo)</div>
+                <div class="v-status offline">○ Standby</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security model -->
+          <div class="control-panel p-bridge-form">
+            <div class="card-heading">
+              <div class="card-icon gradient-slate">
+                <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Security</p>
+                <h3>Protection Mechanisms</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table">
+              <thead><tr><th>Mechanism</th><th>Detail</th></tr></thead>
+              <tbody>
+                <tr><td>Multisig</td><td>3-of-5 validators must confirm every operation</td></tr>
+                <tr><td>Finality</td><td>L1: 60 blocks (~1h) · EVM: 12-15 blocks</td></tr>
+                <tr><td>Timelock</td><td>Transfers &gt; 1M wZION have 24h delay</td></tr>
+                <tr><td>Daily limit</td><td>Max 10M wZION/day throughput</td></tr>
+                <tr><td>Min amount</td><td>100 wZION minimum (anti-dust)</td></tr>
+                <tr><td>Replay protection</td><td>Unique L1 TX hash + burn ID</td></tr>
+                <tr><td>Emergency pause</td><td>Guardian can halt bridge instantly</td></tr>
+                <tr><td>Supply invariant</td><td>locked_L1 ≥ total_wZION_supply (always)</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
