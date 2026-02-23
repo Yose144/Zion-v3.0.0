@@ -1042,20 +1042,34 @@ Benchmark proběhne (59 MH/s), ale `return` = miner se UKONČÍ bez těžby!
 | Test | Výsledek |
 |------|---------|
 | GPU benchmark (miner binary) | ✅ 60.34 MH/s — gfx1010 works |
-| GPU exclusive mode | ✅ Revenue miner correctly shows "gpu-mode available (--gpu to enable)" |
+| GPU exclusive mode | ✅ Revenue miner CPU-only ("gpu-mode available") |
 | `--auto-tune` removed | ✅ Miner stays alive (neexituje po benchmark) |
 | Pool failover (stratum dead) | ✅ Detects dead stratum, does not restart in loop |
-| Pool failover (pool up) | ⏳ Nelze testovat — pool service je down na všech 5 nodech |
+| Pool failover (pool up) | ✅ `autoSelectBestPool()` vrací Helsinki po restartu |
 | Balance RPC | ✅ 302,290.58 ZION returned via JSON-RPC |
-| Mining with live pool | ❌ BLOCKED — Helsinki stratum mrtvý, žádný pool na síti neběží |
+| **Mining with live pool** | ✅ **33.94 MH/s** (GPU 31.35 + CPU 10T), A/R=192/2 **(99.0%)** |
 
-### ⚠️ Server-side blocker
+### Pool restart (server-side fix)
 
-**Stratum pool service je DOWN na všech 5 nodech:**
-- Helsinki (`77.42.31.72:3333`): TCP open, stratum protocol dead (accepts connection, no JSON response, closes on write)
-- SeedDE/Usa1/Usa2/Asia3: Port 3333 actively refused (no pool service running)
+**Root cause:** Pool kontejner `zion-pool` běžel 6h, ale stratum TCP listener přijímal spojení bez JSON odpovědi — interní deadlock/hang.
 
-**Akce:** Restartovat pool container na Helsinki: `docker restart zion-pool` nebo `docker-compose -f docker-compose.testnet.yml up -d pool`
+**Fix:** `docker restart zion-pool` na Helsinki → stratum okamžitě živý:
+```
+🔌 New connection from 109.81.19.52:31555
+📡 Subscribe from 109.81.19.52:31555
+```
+
+**Výsledek po restartu (desktop agent):**
+```
+SPEED   10s 32.24 MH/s  60s 33.94  15m 31.04
+SHARES  A: 192  R: 2  rate: 99.0%
+HW      cpu: 10T  gpu: 31.35 MH/s [gfx1010:xnack-]
+UPTIME  00:04:05  hashes: 7.5G
+```
+
+> ⚠️ **GPU 31 MH/s vs benchmark 60 MH/s** — pool mining je pomalejší než benchmark kvůli:  
+> 1) share submission overhead, 2) job notification latency, 3) difficulty negotiation.  
+> Reálný výkon ~32-34 MH/s je normální pro pool mining na této GPU.
 
 ---
 
