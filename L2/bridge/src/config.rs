@@ -276,6 +276,7 @@ mod tests {
                 enabled: true,
                 gas_strategy: "eip1559".into(),
                 max_gas_gwei: 50,
+                start_block: None,
             },
             EvmChainConfig {
                 chain_id: "arbitrum".into(),
@@ -289,6 +290,7 @@ mod tests {
                 enabled: false, // disabled
                 gas_strategy: "eip1559".into(),
                 max_gas_gwei: 30,
+                start_block: None,
             },
         ];
 

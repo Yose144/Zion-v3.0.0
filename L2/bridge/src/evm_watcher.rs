@@ -308,6 +308,7 @@ mod tests {
             enabled: true,
             gas_strategy: "eip1559".into(),
             max_gas_gwei: 100,
+            start_block: None,
         };
         let watcher = EvmWatcher::new(config, Some(1_000_000));
         assert_eq!(watcher.last_processed_block, 1_000_000);
