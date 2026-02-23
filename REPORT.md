@@ -1898,3 +1898,129 @@ start_block = 38057800  # Bridge deploy 23.2.2026 — skip genesis scan
 - [ ] Ověřit EVM watcher skenuje v chuncích (49k bloků), ne 38M najednou
 - [ ] W-1: Website rebuild (dao-api.ts fix)
 - [ ] Zvážit: pool Bearer token support pro mainnet
+
+---
+
+## Session 41 — Website-style section tabs: Wallet, Network, About (commit `a06368e`)
+
+**Commit:** `a06368e`  
+**Soubory:** `APP&WEB/desktop-agent/src/ui/index.html` (1 soubor, +523 −211 řádků)
+
+### Problém
+Všechny views (Wallet, Network, About) měly plochý vertikální layout — uživatel musel scrollovat stovky pixelů bez orientace čím prochází.
+
+### Řešení: Pill-style section tabs (website-v2.9 design pattern)
+
+Nový CSS komponent `.section-tabs` / `.section-tab` / `.section-panel`:
+- Glass pill bar s horizontálními taby
+- Active tab: gold gradient dot + white text
+- Smooth scroll, `scrollbar-width: none`
+- `setupSectionTabs()` — generic JS handler pro libovolnou view, `data-group` + `data-section`
+
+### Restrukturované views
+
+| View | Sekce (tabs) |
+|------|-------------|
+| **Wallet** | Overview · Send · Receive · History · Manage (5 tabs) |
+| **Network** | Telemetry · Hardware · Peers · Servers (4 tabs) |
+| **About** | Project · Resources · Philosophy (3 tabs) |
+
+### Detail implementace
+- Wallet Overview: balance + UTXO + pool stats (kompaktní karta)
+- Wallet Send: odesílací formulář (recipient, amount, fee, confirm)
+- Wallet Receive: QR kód + adresa + copy
+- Wallet History: TX tabulka s rolemi, hashemi, timestampy
+- Network Telemetry: p2p/rpc/pool statistiky
+- Network Peers: peer tabulka s regionem, výškou, latencí
+- About Philosophy: citace, mise, vize s gradient textem
+
+---
+
+## Session 42 — Const crash fix + Settings section tabs (commit `9783af6`)
+
+**Commit:** `9783af6`  
+**Soubory:** `index.html`, `renderer.js` (2 soubory)
+
+### Bug fix: `const` reassignment crash
+**Chyba:** `Assignment to constant variable` v renderer.js — `const config = ...` definováno dvakrát, nebo reused.  
+**Oprava:** Přepsáno na `let` kde je proměnná měněna; deduplikace deklarací.
+
+### Settings — 4 section tabs
+
+| Tab | Obsah |
+|-----|-------|
+| **Identity** | Wallet adresa, worker name, pool selection |
+| **Pools** | Pool URL konfigurace, test connection |
+| **Performance** | Thread count, CPU limit, RAM limit |
+| **Engine** | Mining algoritmus, auto-restart, watchdog |
+
+---
+
+## Session 43 — Bridge / DEX / Atomic Swap / Stats section tabs (commit `219a9a5`)
+
+**Commit:** `219a9a5`  
+**Soubory:** `index.html`, `renderer.js` (+799 řádků — největší UI sesion)
+
+### Bridge view restrukturalizace
+
+Celá Bridge view přebudována ze single-panel na 4 section tabs:
+
+| Tab | Obsah |
+|-----|-------|
+| **Bridge** | Lock → wZION mint formulář, status indikátory, fee kalkulace |
+| **DEX** | Pool cards (wZION/WETH, wZION/USDC), TVL, 24h volume, chain comparison tabulka |
+| **Atomic Swap** | HTLC P2P swap — pair selektor, estimate kalkulátor, timelock nastavení, direction reversal |
+| **Stats** | Validator grid (5 nodů), smart contract adresy s copy buttony, security tabulka (8 ochranných mechanismů) |
+
+### Nové CSS (~190 řádků)
+- `.dex-chain-table` — responsivní tabulka s hover efekty
+- `.pool-card`, `.pool-row`, `.pool-value`, `.pool-change` — DEX pool karty s green/red barvami
+- `.swap-pair-row`, `.swap-direction-btn`, `.swap-estimate` — Atomic Swap UI
+- `.validator-grid`, `.validator-card`, `.v-status.online/.offline` — validator status karty
+
+### Nový JS (~260 řádků)
+- `initBridgeView()` — inicializace section tabs, DEX pool loader, swap pair selektor
+- `loadDexPools()` — simulovaná data (wZION/WETH 0.00042, wZION/USDC 0.0021)
+- `updateSwapEstimate()` — výpočet výměnného kurzu s fee
+- Reverse direction button — prohození From/To párů
+- Copy buttony pro smart contract adresy
+
+---
+
+## Session 44 — OASIS section: Consciousness Gaming Layer (aktuální)
+
+**Commit:** (pending)  
+**Soubory:** `index.html`, `renderer.js`
+
+### Nová sekce: OASIS — L4 Gaming World
+
+Přidán nový navigační item **OASIS** do desktop agenta — kompletní herní svět vycházející z `L4/oasis` Rust cratu (14 zdrojových souborů, ~2 335 řádků, 40 testů).
+
+### OASIS section tabs (5 tabů)
+
+| Tab | Obsah |
+|-----|-------|
+| **Journey** | 9 úrovní vědomí (Kabbalah Sefirot): Physical→OnTheStar, XP progress bar, aktuální multiplikátor, odemčené features, level-up ZION bonusy |
+| **Territories** | 8 Genesis Territories vizuální karty — Mount Zion, Cedar Forest, Negev Desert, Sea of Galilee, Masada Forge, Crystal Mines of Solomon, Temple of Consciousness, Babel Nexus — s region typy, obtížností, mining bonusy |
+| **Guild** | Guild systém — vytváření/připojení, questy (5 typů: CollectiveMining, AiChallengeSprint, TitheGoal, TerritoryDefense, XpMilestone), leaderboard |
+| **Challenges** | 6 kategorií výzev (Quiz, Technical, Meditation, Humanitarian, Creative, Community), 4 obtížnosti (Beginner 1×, Intermediate 2×, Advanced 4×, Master 8×), daily challenges |
+| **Tithe** | 7 humanitárních kategorií (💧🍞🏠🌍🏥📚🚨), donation tracking, celkové statistiky, top tithers |
+
+### Klíčová data z L4/oasis Rust cratu
+
+**Consciousness Levels:**
+| Level | Sefira | XP práh | Multiplikátor |
+|-------|--------|---------|---------------|
+| Physical | Malkuth | 0 | 1.0× |
+| Emotional | Yesod | 1 000 | 1.2× |
+| Mental | Hod/Netzach | 5 000 | 1.5× |
+| Intuitional | Tiferet | 15 000 | 2.0× |
+| Spiritual | Gevurah/Chesed | 50 000 | 3.0× |
+| Cosmic | Binah | 150 000 | 5.0× |
+| Divine | Chokmah | 500 000 | 8.0× |
+| Unity | Da'at | 2 000 000 | 12.0× |
+| OnTheStar | Keter | 10 000 000 | 15.0× |
+
+**Reward Pool:** 8.25B ZION (5 slotů × 1.65B, 10letá distribuce)  
+**XP Sources:** 7 zdrojů (BlockMined, AiChallenge, Quiz, Meditation, Tithe, GuildQuest, Referral)  
+**Leaderboards:** 7 typů (GlobalXp, BlocksMined, TopTithers, GuildXp, GuildTerritories, Challenges, LongestStreak)
