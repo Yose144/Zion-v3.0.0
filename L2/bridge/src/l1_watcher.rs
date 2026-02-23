@@ -53,6 +53,7 @@ struct L1TxOutput {
 struct L1Health {
     pub height: u64,
     pub difficulty: u64,
+    #[serde(alias = "peers_connected", default)]
     pub peers: u64,
     pub status: String,
 }
