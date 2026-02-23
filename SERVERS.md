@@ -50,19 +50,23 @@ Helsinki
 | # | Název | Lokace | IP | SSH alias | Klíč | Stav |
 |---|-------|--------|----|-----------|------|------|
 | 1 | TreeofLife | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | `zion-helsinki` | `zion_hetzner_key` | ✅ Běží (seed + pool + monitoring) |
-| 2 | Seed | 🇩🇪 Germany | 46.225.126.243 | `zion-seedde` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
-| 3 | Seed2 | 🇺🇸 USA 1 | 5.78.178.227 | `zion-usa1` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
-| 4 | Seed3 | 🇺🇸 USA 2 | 178.156.240.160 | `zion-usa2` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
-| 5 | Seed4 | 🌏 Asia | 5.223.43.93 | `zion-asia3` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
+| 2 | Seed | 🇩🇪 Germany | 46.225.126.243 | `zion-seedde` | `zion_server_key` | ✅ Běží (seed + mysterium) |
+| 3 | Seed2 | 🇺🇸 USA 1 | 5.78.178.227 | `zion-usa1` | `zion_hetzner_key` | ✅ Běží (seed + mysterium) |
+| 4 | Seed3 | 🇺🇸 USA 2 | 178.156.240.160 | `zion-usa2` | `zion_hetzner_key` | ✅ Běží (seed + mysterium) |
+| 5 | Seed4 | 🌏 Asia | 5.223.43.93 | `zion-asia3` | `zion_hetzner_key` | ✅ Běží (seed + mysterium) |
 
 ### 💰 Revenue stack (snapshot 23. 2. 2026)
 
-| Server | Revenue kontejnery | Aktuální stav |
-|---|---|---|
-| Helsinki (`77.42.31.72`) | `zion-dero-miner`, `zion-zeph-miner`, `zion-mysterium` | `dero`: běží, ale vrací `unregistered miner or you need to wait 15 mins`; `zeph`: běží, po restartu probíhá build/start `xmrig`; `mysterium`: stabilně `Up` |
-| Germany (`46.225.126.243`) | `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium` | `dero`: běží, ale vrací `unregistered miner or you need to wait 15 mins`; `epic`: běží, ale pool `fastepic.eu:3416` vrací opakovaně `connect error: operation canceled`; `mysterium`: stabilně `Up` |
+| Server | Revenue kontejnery | Mysterium ID | Stav |
+|---|---|---|---|
+| Helsinki (`77.42.31.72`) | `zion-dero-miner`, `zion-zeph-miner`, `zion-mysterium` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Registered |
+| Germany (`46.225.126.243`) | `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium` | `0x1a9bcc8298a4cd214a90fb63e1eb5effa8fd8969` | ✅ Registered |
+| Usa1 (`5.78.178.227`) | `zion-mysterium` | `0xbfce8102af31342a22bdf217c7fd446d1476d2f7` | ✅ Registered |
+| Usa2 (`178.156.240.160`) | `zion-mysterium` | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Registered |
+| Asia3 (`5.223.43.93`) | `zion-mysterium` | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Registered |
 
 Poznámka: `nkn` je v produkci zatím vypnutý (wallet init flow ještě není idempotentně zautomatizovaný).
+Poznámka 2: Usa1/Usa2/Asia3 spouštějí jen Mysterium (`docker-compose.mysterium-only.yml`) — miner není potřeba.
 
 ### ❌ Suspendované servery (Vultr — pozastaveny)
 
