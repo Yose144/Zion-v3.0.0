@@ -1,7 +1,7 @@
 # 🛠️ ZION TerraNova — Operations Runbook
 
 > **Version:** 1.0  
-> **Last Updated:** 11. února 2026  
+> **Last Updated:** 23. února 2026  
 > **Environment:** TestNet (transition to MainNet planned 31.12.2026)
 
 ---
@@ -25,7 +25,7 @@
 | Server | IP | Location | Role | Specs |
 |--------|-----|----------|------|-------|
 | **Helsinki** 🇫🇮 | `77.42.31.72` | Hetzner Helsinki | Seed Node + Web + Pool | ARM64, 8GB RAM, 75GB SSD |
-| **Germany** 🇩🇪 | `195.201.31.201` | Hetzner Falkenstein | Peer Node + Pool | x86_64, 8GB RAM |
+| **Germany** 🇩🇪 | `46.225.126.243` | Hetzner Nuremberg | Seed Node + Revenue | ARM64, 4GB RAM |
 
 ### Network Ports
 
@@ -53,14 +53,14 @@
 ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72
 
 # Germany (Peer Node)
-ssh -i ~/.ssh/zion_hetzner_key root@195.201.31.201
+ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243
 ```
 
 ### SSH between servers
 
 Helsinki → Germany:
 ```bash
-ssh root@195.201.31.201  # ed25519 key pre-configured
+ssh root@46.225.126.243  # ed25519 key pre-configured
 ```
 
 ---
@@ -411,6 +411,43 @@ curl -s http://localhost:3000/ | head -5
 # Check Nginx config
 nginx -t
 systemctl reload nginx
+```
+
+### Revenue blockers (Helsinki + SeedDE) — 23.02.2026
+
+#### 1) DERO: `unregistered miner or you need to wait 15 mins`
+```bash
+# Check logs on both servers
+ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72  'docker logs --tail 80 zion-dero-miner | tail -30'
+ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243 'docker logs --tail 80 zion-dero-miner | tail -30'
+
+# Verify wallet value in env on server
+ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72  'grep -n "^DERO_WALLET=" /root/revenue-stack/.env.revenue'
+ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243 'grep -n "^DERO_WALLET=" /root/revenue-stack/.env.revenue'
+
+# Action: wait 15+ min after registration/first connect, then recheck logs.
+```
+
+#### 2) EPIC: `connect error: operation canceled` (`fastepic.eu:3416`)
+```bash
+# DNS + TCP check from SeedDE
+ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243 'getent hosts fastepic.eu || true; timeout 8 bash -lc "cat < /dev/null > /dev/tcp/fastepic.eu/3416" && echo epic-port-open || echo epic-port-fail'
+
+# Runtime logs
+ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243 'docker logs --tail 120 zion-epic-miner | tail -40'
+
+# If unreachable persists: switch to alternate EPIC pool endpoint in docker-compose.revenue.yml,
+# redeploy only epic service:
+# COMPOSE_PROFILES=germany docker compose --env-file .env.revenue -f docker-compose.revenue.yml up -d --force-recreate epic-miner
+```
+
+#### 3) NKN wallet init flow (currently disabled)
+```bash
+# One-time wallet creation in isolated test (no compose)
+ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72 'docker run --rm -v /opt/nkn/data:/nkn/data nknorg/nkn:latest nknd -c --password-file /nkn/data/wallet.pswd --wallet /nkn/data/wallet.json --no-nat'
+
+# Then enable nkn service in revenue compose and start only nkn:
+# docker compose --env-file .env.revenue -f docker-compose.revenue.yml up -d nkn
 ```
 
 ---
