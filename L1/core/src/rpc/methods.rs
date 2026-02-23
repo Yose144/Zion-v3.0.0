@@ -357,7 +357,7 @@ pub async fn get_address_balance_rest(
             "address": address,
             "utxo_count": count,
             "balance_atomic": total,
-            "balance_zion": total / 1_000_000,
+            "balance_zion": (total as f64) / 1_000_000.0,
         })),
         Err(e) => Json(serde_json::json!({
             "status": "error",
