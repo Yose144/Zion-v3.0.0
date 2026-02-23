@@ -419,7 +419,7 @@ fn etc_mine_loop(
 struct ErgJob {
     job_id: String,
     msg: Vec<u8>,   // header blob / message for autolykos
-    n_bits: u32,    // compact target
+    target: Vec<u8>, // 32-byte big-endian target
     height: u32,
     session_id: String,
     extranonce1: String,       // hex string, assigned by pool (e.g. "93d9")
@@ -501,33 +501,38 @@ impl GpuMiner {
                     if let Some(params) = msg["params"].as_array() {
                         // 2miners ERG (9 params): [job_id, height, header_hex, "", "", nbits, target_hex, "", clean]
                         // 4 params fallback: [job_id, msg_hex, nbits, height]
-                        let (job_id, header_hex, height, n_bits) = if params.len() >= 7 {
+                        let (job_id, header_hex, height, target_raw) = if params.len() >= 7 {
                             (
                                 params.get(0).and_then(|v| v.as_str()).unwrap_or(""),
                                 params.get(2).and_then(|v| v.as_str()).unwrap_or(""),
                                 params.get(1).and_then(|v| v.as_u64()).map(|n| n as u32).unwrap_or(0),
-                                params.get(5)
-                                    .and_then(|v| v.as_str())
-                                    .and_then(|s| u32::from_str_radix(s.trim_start_matches("0x"), 16).ok())
-                                    .or_else(|| params.get(5).and_then(|v| v.as_u64()).map(|n| n as u32))
-                                    .unwrap_or(0),
+                                // params[6] = target as decimal OR hex string
+                                params.get(6).and_then(|v| v.as_str()).unwrap_or(""),
                             )
                         } else {
                             (
                                 params.get(0).and_then(|v| v.as_str()).unwrap_or(""),
                                 params.get(1).and_then(|v| v.as_str()).unwrap_or(""),
                                 params.get(3).and_then(|v| v.as_u64()).map(|n| n as u32).unwrap_or(0),
-                                params.get(2)
-                                    .and_then(|v| v.as_str())
-                                    .and_then(|s| u32::from_str_radix(s.trim_start_matches("0x"), 16).ok())
-                                    .or_else(|| params.get(2).and_then(|v| v.as_u64()).map(|n| n as u32))
-                                    .unwrap_or(0),
+                                "",
                             )
+                        };
+                        // Parse target: try hex decode first, then decimal string
+                        let target_bytes = if target_raw.starts_with("0x") || (target_raw.len() == 64 && target_raw.chars().all(|c| c.is_ascii_hexdigit())) {
+                            let raw = target_raw.trim_start_matches("0x");
+                            let mut b = hex::decode(raw).unwrap_or_default();
+                            while b.len() < 32 { b.insert(0, 0); }
+                            b
+                        } else if !target_raw.is_empty() && target_raw.chars().all(|c| c.is_ascii_digit()) {
+                            decimal_to_bytes32(target_raw)
+                        } else {
+                            // fallback: very permissive target (all F's = any hash wins)
+                            vec![0xFF; 32]
                         };
                         let job = ErgJob {
                             job_id: job_id.to_string(),
                             msg: hex_to_bytes(header_hex),
-                            n_bits,
+                            target: target_bytes,
                             height,
                             session_id: session_id.clone(),
                             extranonce1: extranonce1.clone(),
@@ -626,9 +631,8 @@ fn erg_mine_loop(
 
             stats.erg_hashes.fetch_add(1, Ordering::Relaxed);
 
-            // Check target: nbits compact → target bytes
-            let target = nbits_to_target(job.n_bits);
-            if hash_lt(&hash, &target) {
+            // Check target
+            if !job.target.is_empty() && hash_lt(&hash, &job.target) {
                 info!("[ERG] 🎉 Share found! nonce={:#018x} height={}", nonce, job.height);
                 stats.erg_shares_submitted.fetch_add(1, Ordering::Relaxed);
 
@@ -675,6 +679,23 @@ fn hex_to_bytes(s: &str) -> Vec<u8> {
     hex::decode(s).unwrap_or_default()
 }
 
+/// Convert a decimal string (arbitrarily large integer) to a 32-byte big-endian representation.
+/// Uses grade-school multiply-by-10: iterates digit-by-digit.
+fn decimal_to_bytes32(s: &str) -> Vec<u8> {
+    let mut result = [0u8; 32];
+    for ch in s.chars() {
+        if let Some(digit) = ch.to_digit(10) {
+            let mut carry = digit as u32;
+            for i in (0..32).rev() {
+                let val = result[i] as u32 * 10 + carry;
+                result[i] = (val & 0xFF) as u8;
+                carry = val >> 8;
+            }
+        }
+    }
+    result.to_vec()
+}
+
 /// Return true if a < b (32-byte big-endian comparison)
 fn hash_lt(a: &[u8], b: &[u8]) -> bool {
     let a = if a.len() >= 32 { &a[..32] } else { return false };
@@ -684,24 +705,6 @@ fn hash_lt(a: &[u8], b: &[u8]) -> bool {
         if a[i] > b[i] { return false; }
     }
     false
-}
-
-/// Convert nBits compact format to 32-byte target (big-endian)
-fn nbits_to_target(nbits: u32) -> Vec<u8> {
-    let exp = (nbits >> 24) as usize;
-    let mantissa = (nbits & 0x7fffff) as u64;
-    let mut target = vec![0u8; 32];
-    if exp == 0 || exp > 32 {
-        return target;
-    }
-    // mantissa * 256^(exp-3)
-    let byte_pos = 32 - exp;
-    if byte_pos + 2 < 32 {
-        target[byte_pos]     = ((mantissa >> 16) & 0xff) as u8;
-        target[byte_pos + 1] = ((mantissa >> 8)  & 0xff) as u8;
-        target[byte_pos + 2] = (mantissa         & 0xff) as u8;
-    }
-    target
 }
 
 /// Random starting nonce (using simple XOR-shift for no-std compatibility)
