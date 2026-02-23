@@ -960,7 +960,8 @@ volumes:
 ## Session 28 — GPU hashrate optimalizace + balance fix + Keccak RC revert (23. února 2026)
 
 **Datum:** 23. února 2026  
-**Commit:** `66c4678` — 4 soubory, +70/−6  
+**Commity:** `66c4678` (initial fixes) → `3241d87` (pool failover + auto-tune bugfix)  
+**Soubory:** 5 souborů, celkem +195/−13  
 **Problém:** Agent dával 120 MH/s na GPU, nyní jen ~20 MH/s. Balance stále neukazuje.
 
 ---
@@ -970,61 +971,60 @@ volumes:
 | Problém | Root cause | Závažnost |
 |---------|-----------|-----------|
 | GPU 120→20 MH/s | **Dva miner procesy** oba s `--gpu` na stejné GPU (main ZION + GPU Revenue) → OpenCL context-switching overhead | 🔴 Critical |
-| Chybějící `--auto-tune` | Miner podporuje auto-tune batch sizes (100K→10M), ale agent ho nepředával | 🟡 Medium |
+| `--auto-tune` bug | Flag přidán v první opravě ale ZPŮSOBUJE EXIT — `run_benchmark_mode()` early return v `main.rs:438-440` | 🔴 Critical |
 | Balance neukazuje | `getRpcUrl()` neappendoval `/jsonrpc` cestu; žádný auto-refresh | 🟡 Medium |
 | 90.6% invalid shares | Keccak RC pozice 21-23 změněny na NIST standard v source, ale running binaries používají staré hodnoty | 🔴 Critical |
+| Pool stratum mrtvý | Helsinki port 3333 přijímá TCP ale stratum neodpovídá; ostatní 4 nody vůbec neběží pool service | 🔴 Critical |
 
 ### Live testy (před opravami)
 
 ```
-RPC getbalance → {"balance_zion": 5028.804731, "utxo_count": 30}        ✅ Funguje
+RPC getbalance → {"balance_zion": 302290.584698, "utxo_count": 122}     ✅ Funguje
 Pool API stats → {"valid_shares": 806, "invalid_shares": 7776,          ⚠️ 90.6% reject
                    "blocks_found": 1107, "hashrate_24h": 2590.3}
+GPU benchmark  → 60.34 MH/s peak (AMD gfx1010, 18 CU, 6128 MB)         ✅ GPU OK
+Stratum test   → TCP connects, protocol dead (no JSON response)          ❌ Pool down
 ```
 
 ---
 
-### Opravy (4 soubory)
+### Opravy
 
 #### 1. GPU Exclusive Mode (`main.js`)
-**Problém:** V režimu `dual` (výchozí) se spawnovali DVA procesy s `--gpu`:
-- Main ZION miner: `--threads N-1 --gpu --group zion`
-- GPU Revenue: `--threads 1 --gpu --group revenue`
-
-Dva OpenCL kontexty na jedné GPU → massive context-switching → hashrate padá 6×.
+**Problém:** V režimu `dual` (výchozí) se spawnovali DVA procesy s `--gpu` na jedné GPU → context-switching → 6× pokles.
 
 **Řešení:** GPU je nyní exkluzivní:
 - `mode=gpu|dual` → main miner dostane `--gpu`, GPU Revenue se nespawnuje
 - `mode=gpu-revenue` → GPU Revenue dostane `--gpu`, main miner běží jen CPU
 - Přidán log: `[CH3-GPU] GPU dedicated to ZION mining — GPU Revenue skipped`
 
-#### 2. `--auto-tune` přidán (`main.js`)
-- Main miner i GPU Revenue nyní dostávají `--auto-tune`
-- Miner při startu benchmarkuje batch sizes (100K → 10M, 1.5× kroky, 5 iterací)
-- Vybere nejrychlejší → typicky 2-6× zrychlení oproti defaultu
-
-#### 3. Balance Auto-Refresh (`renderer.js`)
-- **Periodic refresh:** 30s interval běží dokud je wallet tab otevřený (`_startBalanceAutoRefresh`)
-- **`getRpcUrl()` fix:** Auto-appends `/jsonrpc` cestu pokud chybí (regex: `:\d+/?$`)
-- **Lepší error messages:** Prázdný wallet → `No wallet address configured`, invalid address → ukazuje prefix
-
-#### 4. Keccak RC Revert (`algorithms_opt.rs` + `cosmic_harmony_v3.cl`)
-**Problém:** Pozice 21-23 byly "opraveny" na NIST standard Keccak:
-```
-OLD (running network): 0x8000000000000001, 0x8000000080008008, 0x0000000000000000
-NEW (NIST standard):   0x8000000000008080, 0x0000000080000001, 0x8000000080008008
-```
-
-Pokud by se miner přecompiloval z upraveného source → hash ≠ pool/node → 100% reject.
-Pool stats ukazují 90.6% reject rate (7776/8582) — pravděpodobně z testovacích buildů.
-
-**Řešení:** Revertováno na síťový konsensus + přidány warning komentáře:
+#### 2. `--auto-tune` bug nalezen a opraven (`main.js` + `main.rs` analýza)
+**Problém:** `--auto-tune` flag způsobuje volání `run_benchmark_mode()` v `main.rs:438`:
 ```rust
-// NOTE: positions 21-23 intentionally differ from NIST standard Keccak.
-// The ZION network launched with these values and all pool/node/miner
-// binaries use them for consensus. Do NOT "fix" to standard values
-// unless ALL binaries are rebuilt simultaneously.
+if cli.benchmark || cli.auto_tune { return run_benchmark_mode(...).await; }
 ```
+Benchmark proběhne (59 MH/s), ale `return` = miner se UKONČÍ bez těžby!
+
+**Řešení:** Flag odstraněn z obou spawn args. Miner má vestavěnou `calculate_optimal_batch_size()` která automaticky nastaví batch size na základě GPU paměti při normálním startu — auto-tune NENÍ potřeba.
+
+#### 3. Pool Failover Watchdog (`main.js`)
+**Problém:** Když pool service spadne, miner se po 5 retry pokusech ukončí a agent ho znovu nespustí.
+
+**Řešení:**
+- **`checkStratumHealth()`** — nová funkce: místo pouhého TCP connect testu posílá `mining.subscribe` JSON-RPC a čeká na validní JSON odpověď. Detekuje mrtvé stratum servisy.
+- **Failover watchdog:** Na miner crash (non-zero exit, ne user-stop) → `autoSelectBestPool()` → restart s lepším poolem (max 3 pokusy)
+- **`autoSelectPool: true`** — zapnuto defaultně (bylo `false`)
+- **Failover counter reset:** Jakmile se detekuje hashrate > 0 nebo accepted share, counter se resetuje.
+
+#### 4. Balance Auto-Refresh (`renderer.js`)
+- **Periodic refresh:** 30s interval běží dokud je wallet tab otevřený
+- **`getRpcUrl()` fix:** Auto-appends `/jsonrpc` pokud chybí
+- **Lepší error messages:** Prázdný wallet → `No wallet address configured`
+
+#### 5. Keccak RC Revert (`algorithms_opt.rs` + `cosmic_harmony_v3.cl`)
+**Problém:** Pozice 21-23 "opraveny" na NIST standard, ale running network používá staré hodnoty.
+
+**Řešení:** Revertováno na síťový konsensus + warning komentáře.
 
 ---
 
@@ -1032,15 +1032,30 @@ Pool stats ukazují 90.6% reject rate (7776/8582) — pravděpodobně z testovac
 
 | Soubor | Změny |
 |--------|-------|
-| `APP&WEB/desktop-agent/src/main.js` | +31 (GPU exclusive mode, auto-tune, skip log) |
-| `APP&WEB/desktop-agent/src/ui/renderer.js` | +35 (balance auto-refresh, getRpcUrl fix, error msgs) |
-| `L1/cosmic-harmony/src/algorithms_opt.rs` | +6 (Keccak RC revert + warning comments) |
-| `L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl` | +4 (Keccak RC revert + warning comments) |
+| `APP&WEB/desktop-agent/src/main.js` | +156 (GPU exclusive, auto-tune fix, pool failover, stratum health, autoSelectPool) |
+| `APP&WEB/desktop-agent/src/ui/renderer.js` | +35 (balance auto-refresh, getRpcUrl fix) |
+| `L1/cosmic-harmony/src/algorithms_opt.rs` | +6 (Keccak RC revert) |
+| `L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl` | +4 (Keccak RC revert) |
 
-### Očekávaný dopad
-- **GPU hashrate:** Návrat na ~120 MH/s (single-process exclusive GPU + auto-tuned batches)
-- **Balance:** Zobrazuje se automaticky po přepnutí na wallet tab, refreshuje každých 30s
-- **Share validity:** Po přecompilaci z revertovaného source → hashe matchují pool/node → 0% reject
+### Stav
+
+| Test | Výsledek |
+|------|---------|
+| GPU benchmark (miner binary) | ✅ 60.34 MH/s — gfx1010 works |
+| GPU exclusive mode | ✅ Revenue miner correctly shows "gpu-mode available (--gpu to enable)" |
+| `--auto-tune` removed | ✅ Miner stays alive (neexituje po benchmark) |
+| Pool failover (stratum dead) | ✅ Detects dead stratum, does not restart in loop |
+| Pool failover (pool up) | ⏳ Nelze testovat — pool service je down na všech 5 nodech |
+| Balance RPC | ✅ 302,290.58 ZION returned via JSON-RPC |
+| Mining with live pool | ❌ BLOCKED — Helsinki stratum mrtvý, žádný pool na síti neběží |
+
+### ⚠️ Server-side blocker
+
+**Stratum pool service je DOWN na všech 5 nodech:**
+- Helsinki (`77.42.31.72:3333`): TCP open, stratum protocol dead (accepts connection, no JSON response, closes on write)
+- SeedDE/Usa1/Usa2/Asia3: Port 3333 actively refused (no pool service running)
+
+**Akce:** Restartovat pool container na Helsinki: `docker restart zion-pool` nebo `docker-compose -f docker-compose.testnet.yml up -d pool`
 
 ---
 
