@@ -5271,8 +5271,58 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       return { success: false, error: 'Address must be a zion1... address' };
     }
 
-    // Fetch on-chain balance from node RPC
-    const result = await zionRpcCall(rpcUrl, 'getbalance', { address: addr });
+    const normalizeRpcUrl = (value) => {
+      const raw = String(value || '').trim();
+      if (!raw) return 'http://77.42.31.72:8444/jsonrpc';
+      if (/^https?:\/\//i.test(raw)) {
+        if (raw.endsWith('/jsonrpc')) return raw;
+        if (/:\d+\/?$/.test(raw)) return raw.replace(/\/+$/, '') + '/jsonrpc';
+        return raw;
+      }
+      if (/^[^/]+:\d+$/.test(raw)) return `http://${raw}/jsonrpc`;
+      return raw;
+    };
+
+    const baseRpcUrl = normalizeRpcUrl(rpcUrl);
+    const rpcPort = (() => {
+      try {
+        const parsed = new URL(baseRpcUrl);
+        return parsed.port || '8444';
+      } catch {
+        return '8444';
+      }
+    })();
+
+    const rpcCandidates = [
+      baseRpcUrl,
+      ...TESTNET_SERVERS.map(s => `http://${s.host}:${rpcPort}/jsonrpc`)
+    ].filter(Boolean);
+
+    const seenRpc = new Set();
+    const uniqueRpcCandidates = rpcCandidates.filter((url) => {
+      if (!url || seenRpc.has(url)) return false;
+      seenRpc.add(url);
+      return true;
+    });
+
+    let result = null;
+    let rpcSource = '';
+    let lastRpcError = '';
+
+    for (const candidateUrl of uniqueRpcCandidates) {
+      try {
+        const rpcRes = await zionRpcCall(candidateUrl, 'getbalance', { address: addr });
+        result = rpcRes;
+        rpcSource = candidateUrl;
+        break;
+      } catch (err) {
+        lastRpcError = err?.message || String(err);
+      }
+    }
+
+    if (!result) {
+      return { success: false, error: `RPC unavailable: ${lastRpcError || 'no reachable endpoint'}` };
+    }
     if (result?.error) return { success: false, error: result.error };
 
     // Node returns balance_zion (float) and balance_atomic (int)
@@ -5367,6 +5417,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       pool_pending_source: poolPendingSource,
       pool_source:         poolSource,
       pool_source_host:    poolSourceHost,
+      rpc_source:          rpcSource,
       address: result?.address ?? addr
     };
   } catch (error) {

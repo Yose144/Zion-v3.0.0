@@ -1970,7 +1970,18 @@ function setupWalletControls() {
       pendingDriftText = ` · pending drift ${(pendingStatsAtomic / 1_000_000).toFixed(4)}↔${(pendingPayoutsAtomic / 1_000_000).toFixed(4)}`;
     }
 
-    if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${payoutDeltaText}${pendingDriftText}`;
+    const rpcSourceText = (() => {
+      try {
+        const source = String(result.rpc_source || '').trim();
+        if (!source) return '';
+        const u = new URL(source);
+        return ` · rpc ${u.hostname}`;
+      } catch {
+        return '';
+      }
+    })();
+
+    if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${rpcSourceText}${payoutDeltaText}${pendingDriftText}`;
   });
 
   generateQrBtn?.addEventListener('click', async () => {
