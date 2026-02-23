@@ -487,6 +487,101 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* ── Section Tabs — website-style pill navigation ─────────────── */
+    .section-tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 6px;
+      margin-bottom: 20px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    .section-tabs::-webkit-scrollbar { display: none; }
+
+    .section-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: rgba(255,255,255,0.45);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .section-tab:hover {
+      color: rgba(255,255,255,0.70);
+      background: rgba(255,255,255,0.04);
+    }
+    .section-tab.active {
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.10);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.20);
+    }
+    .section-tab .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.5;
+    }
+    .section-tab.active .tab-dot {
+      background: var(--zion-gold);
+      opacity: 1;
+      box-shadow: 0 0 8px rgba(255,215,0,0.4);
+    }
+    .section-tab .tab-icon {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+    .section-tab.active .tab-icon {
+      opacity: 1;
+    }
+
+    /* Section content panels — show/hide with animation */
+    .section-panel {
+      display: none;
+      animation: viewFadeIn 0.25s ease-out;
+    }
+    .section-panel.active {
+      display: block;
+    }
+
+    /* Section divider kicker — used inside subsections */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0 16px;
+      color: rgba(255,255,255,0.35);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+    }
+
     /* Gold pass: shared web2.9 page header — pool-style glass */
     .web29-page-header {
       display: flex;
@@ -3072,248 +3167,321 @@
           </div>
         </div>
 
-        <!-- Active Wallet -->
-        <div class="control-panel panel-mt-24">
-          <h2 class="panel-title-row">
-            <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
-            <span>Active Wallet</span>
-          </h2>
-          <div class="form-group form-group-mb-16">
-            <label>Wallet Address (for mining + balance)</label>
-            <div class="inline-row">
-              <input type="text" id="active-wallet-address" placeholder="zion1..." class="input-flex-mono" />
-              <button class="btn btn-primary" id="set-active-wallet-btn">
-                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
-                <span>Use</span>
-              </button>
+        <!-- ── Wallet Section Tabs ─────────────────────────────── -->
+        <div class="section-tabs" data-group="wallet">
+          <div class="section-tab active" data-section="wallet-overview">
+            <span class="tab-dot"></span>
+            <span>Overview</span>
+          </div>
+          <div class="section-tab" data-section="wallet-send">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Send</span>
+          </div>
+          <div class="section-tab" data-section="wallet-receive">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-import"></use></svg>
+            <span>Receive</span>
+          </div>
+          <div class="section-tab" data-section="wallet-history">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-search"></use></svg>
+            <span>History</span>
+          </div>
+          <div class="section-tab" data-section="wallet-manage">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+            <span>Manage</span>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Overview ═══ -->
+        <div id="wallet-overview" class="section-panel active">
+
+          <!-- Active Wallet -->
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              <span>Active Wallet</span>
+            </h2>
+            <div class="form-group form-group-mb-16">
+              <label>Wallet Address (for mining + balance)</label>
+              <div class="inline-row">
+                <input type="text" id="active-wallet-address" placeholder="zion1..." class="input-flex-mono" />
+                <button class="btn btn-primary" id="set-active-wallet-btn">
+                  <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                  <span>Use</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Balance + QR row -->
+            <div class="wallet-grid">
+              <div class="wallet-card wallet-balance-card">
+                <div class="wallet-kicker">ON-CHAIN BALANCE</div>
+                <div class="wallet-main">
+                  <div class="wallet-main-value" id="wallet-balance">—</div>
+                  <div class="wallet-main-unit">ZION</div>
+                </div>
+                <div class="wallet-pill-grid">
+                  <div class="wallet-pill">
+                    <div class="wallet-pill-label">POOL PENDING</div>
+                    <div class="wallet-pill-value pending" id="pool-pending-balance">—</div>
+                  </div>
+                  <div class="wallet-pill">
+                    <div class="wallet-pill-label">POOL PAID</div>
+                    <div class="wallet-pill-value paid" id="pool-paid-balance">—</div>
+                  </div>
+                </div>
+                <div class="wallet-metrics-grid">
+                  <div class="wallet-metric">
+                    <div class="wallet-metric-label">HASHRATE 1H</div>
+                    <span id="pool-hashrate-1h" class="pool-metric-blue">—</span>
+                  </div>
+                  <div class="wallet-metric">
+                    <div class="wallet-metric-label">SHARES</div>
+                    <span id="pool-shares-count" class="pool-metric-green">—</span>
+                  </div>
+                  <div class="wallet-metric">
+                    <div class="wallet-metric-label">BLOCKS</div>
+                    <span id="pool-blocks-count" class="pool-metric-purple">—</span>
+                  </div>
+                </div>
+                <div class="wallet-meta-row">
+                  <div class="wallet-meta flex-1">
+                    UTXOs: <span id="wallet-utxo-count" class="wallet-meta-value">—</span>
+                  </div>
+                  <div class="wallet-meta flex-1">
+                    Pending TXs: <span id="pool-pending-tx-count" class="wallet-meta-value">—</span>
+                  </div>
+                  <div class="wallet-meta flex-2">
+                    Last share: <span id="pool-last-share" class="wallet-meta-value">—</span>
+                  </div>
+                </div>
+                <button class="btn btn-ghost btn-sm btn-ghost-green" id="refresh-balance-btn">
+                  <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                  Refresh
+                </button>
+                <div id="wallet-balance-status" class="wallet-status-row"></div>
+                <div id="pool-source-info" class="wallet-status-row"></div>
+              </div>
+
+              <div class="wallet-card wallet-receive-card">
+                <div class="wallet-kicker">RECEIVE (QR)</div>
+                <div class="wallet-receive-row">
+                  <div class="qr-box">
+                    <img id="receive-qr-img" alt="Receive QR" class="qr-img" />
+                    <div id="receive-qr-placeholder" class="qr-placeholder">No QR</div>
+                  </div>
+                  <div class="flex-1">
+                    <button class="btn btn-ghost btn-sm btn-ghost-purple" id="generate-qr-btn">
+                      <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+                      Generate QR
+                    </button>
+                    <div id="receive-qr-status" class="status-note"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Balance + QR row -->
-          <div class="wallet-grid">
-            <div class="wallet-card wallet-balance-card">
-              <div class="wallet-kicker">ON-CHAIN BALANCE</div>
-              <div class="wallet-main">
-                <div class="wallet-main-value" id="wallet-balance">—</div>
-                <div class="wallet-main-unit">ZION</div>
-              </div>
-              <div class="wallet-pill-grid">
-                <div class="wallet-pill">
-                  <div class="wallet-pill-label">POOL PENDING</div>
-                  <div class="wallet-pill-value pending" id="pool-pending-balance">—</div>
-                </div>
-                <div class="wallet-pill">
-                  <div class="wallet-pill-label">POOL PAID</div>
-                  <div class="wallet-pill-value paid" id="pool-paid-balance">—</div>
-                </div>
-              </div>
-              <div class="wallet-metrics-grid">
-                <div class="wallet-metric">
-                  <div class="wallet-metric-label">HASHRATE 1H</div>
-                  <span id="pool-hashrate-1h" class="pool-metric-blue">—</span>
-                </div>
-                <div class="wallet-metric">
-                  <div class="wallet-metric-label">SHARES</div>
-                  <span id="pool-shares-count" class="pool-metric-green">—</span>
-                </div>
-                <div class="wallet-metric">
-                  <div class="wallet-metric-label">BLOCKS</div>
-                  <span id="pool-blocks-count" class="pool-metric-purple">—</span>
-                </div>
-              </div>
-              <div class="wallet-meta-row">
-                <div class="wallet-meta flex-1">
-                  UTXOs: <span id="wallet-utxo-count" class="wallet-meta-value">—</span>
-                </div>
-                <div class="wallet-meta flex-1">
-                  Pending TXs: <span id="pool-pending-tx-count" class="wallet-meta-value">—</span>
-                </div>
-                <div class="wallet-meta flex-2">
-                  Last share: <span id="pool-last-share" class="wallet-meta-value">—</span>
-                </div>
-              </div>
-              <button class="btn btn-ghost btn-sm btn-ghost-green" id="refresh-balance-btn">
+          <!-- My Wallets (quick list in overview) -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="my-wallets-header">
+              <span class="my-wallets-title">
+                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+                <span>My Wallets</span>
+              </span>
+              <button class="btn btn-ghost btn-sm" id="refresh-wallets-btn">
                 <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
                 Refresh
               </button>
-              <div id="wallet-balance-status" class="wallet-status-row"></div>
-              <div id="pool-source-info" class="wallet-status-row"></div>
+            </h2>
+            <div id="wallets-list">
+              <p class="wallet-empty">No wallets yet. Create one in the Manage tab!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Send ═══ -->
+        <div id="wallet-send" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              <span>Send Transaction</span>
+            </h2>
+            <div class="send-grid">
+              <div class="form-group form-group-no-margin">
+                <label>To Address</label>
+                <input type="text" id="send-to-address" placeholder="zion1..." class="input-mono" />
+              </div>
+              <div class="form-group form-group-no-margin">
+                <label>Amount</label>
+                <input type="number" id="send-amount" min="0" step="0.00000001" placeholder="0.0" />
+              </div>
+            </div>
+            <div class="form-group form-group-mt-14">
+              <label>Purpose (optional)</label>
+              <input type="text" id="send-purpose" placeholder="e.g. payout" />
+            </div>
+            <button class="btn btn-primary btn-mt-8" id="send-tx-btn">
+              <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              <span>Send Transaction</span>
+            </button>
+            <div id="send-status" class="status-note"></div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Receive ═══ -->
+        <div id="wallet-receive" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
+              <span>Receive ZION</span>
+            </h2>
+            <p class="muted-note" style="margin-bottom: 16px;">Share your address or QR code to receive ZION payments.</p>
+
+            <div class="form-group form-group-mb-16">
+              <label>Your Wallet Address</label>
+              <div class="inline-row">
+                <input type="text" id="receive-wallet-address" readonly placeholder="No wallet set" class="input-flex-mono" />
+                <button class="btn btn-ghost btn-sm btn-ghost-purple" id="copy-receive-address-btn">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-copy"></use></svg>
+                </button>
+              </div>
             </div>
 
-            <div class="wallet-card wallet-receive-card">
-              <div class="wallet-kicker">RECEIVE (QR)</div>
-              <div class="wallet-receive-row">
-                <div class="qr-box">
-                  <img id="receive-qr-img" alt="Receive QR" class="qr-img" />
-                  <div id="receive-qr-placeholder" class="qr-placeholder">No QR</div>
+            <div class="wallet-card" style="max-width: 320px;">
+              <div class="wallet-kicker">QR CODE</div>
+              <div class="wallet-receive-row" style="justify-content: center; padding: 16px 0;">
+                <div class="qr-box" style="width: 200px; height: 200px;">
+                  <img id="receive-section-qr-img" alt="Receive QR" class="qr-img" />
+                  <div id="receive-section-qr-placeholder" class="qr-placeholder">Click Generate</div>
                 </div>
-                <div class="flex-1">
-                  <button class="btn btn-ghost btn-sm btn-ghost-purple" id="generate-qr-btn">
-                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
-                    Generate QR
+              </div>
+              <button class="btn btn-primary btn-mt-8" id="generate-receive-qr-btn" style="width: 100%;">
+                <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+                Generate QR Code
+              </button>
+              <div id="receive-section-qr-status" class="status-note"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: History ═══ -->
+        <div id="wallet-history" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+              <span>Transaction Lookup</span>
+            </h2>
+            <div class="inline-row">
+              <input type="text" id="tx-lookup-id" placeholder="Transaction ID (hash)" class="input-flex-mono" />
+              <button class="btn btn-ghost btn-ghost-purple" id="tx-lookup-btn">
+                <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+                Lookup
+              </button>
+            </div>
+            <div id="tx-lookup-result" class="tx-lookup-result"></div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Manage ═══ -->
+        <div id="wallet-manage" class="section-panel">
+
+          <!-- Create New Wallet -->
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+              <span>Create New Wallet</span>
+            </h2>
+            <p class="muted-note">Generate a new ZION wallet with Ed25519 keypair and 12-word recovery phrase.</p>
+
+            <div id="wallet-generator">
+              <div class="form-group">
+                <label>Wallet Name</label>
+                <input type="text" id="new-wallet-name" placeholder="My Mining Wallet" value="My Wallet" />
+              </div>
+              <div class="form-two-col">
+                <div class="form-group form-group-no-margin">
+                  <label>Password</label>
+                  <input type="password" id="new-wallet-password" placeholder="Strong password..." />
+                </div>
+                <div class="form-group form-group-no-margin">
+                  <label>Confirm Password</label>
+                  <input type="password" id="new-wallet-password-confirm" placeholder="Repeat password..." />
+                </div>
+              </div>
+              <div class="button-group button-group-mt-14">
+                <button class="btn btn-primary" id="generate-wallet-btn">
+                  <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                  <span>Generate Wallet</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Generated Wallet Display -->
+            <div id="wallet-display" class="wallet-display">
+              <div class="wallet-display-card">
+                <h3 class="wallet-display-title">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check"></use></svg>
+                  <span>Wallet Generated!</span>
+                </h3>
+                <div class="wallet-display-section">
+                  <div class="wallet-display-kicker">ZION ADDRESS</div>
+                  <div class="wallet-display-row">
+                    <input type="text" id="generated-address" readonly class="generated-address-input" />
+                    <button class="btn btn-ghost btn-sm btn-ghost-purple" id="copy-address-btn">
+                      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-copy"></use></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="wallet-display-section">
+                  <div class="wallet-display-kicker">RECOVERY PHRASE (12 WORDS)</div>
+                  <textarea id="generated-mnemonic" readonly rows="2" class="wallet-display-mnemonic"></textarea>
+                  <p class="wallet-warning">
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert"></use></svg>
+                    <strong>IMPORTANT:</strong> Write down your recovery phrase and store it safely!
+                  </p>
+                </div>
+                <div class="button-group">
+                  <button class="btn btn-primary" id="save-wallet-btn">
+                    <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
+                    <span>Save Wallet</span>
                   </button>
-                  <div id="receive-qr-status" class="status-note"></div>
+                  <button class="btn btn-danger" id="cancel-wallet-btn">
+                    <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+                    <span>Cancel</span>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Send Transaction -->
-        <div class="control-panel panel-mt-20">
-          <h2 class="panel-title-row">
-            <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-            <span>Send Transaction</span>
-          </h2>
-          <div class="send-grid">
-            <div class="form-group form-group-no-margin">
-              <label>To Address</label>
-              <input type="text" id="send-to-address" placeholder="zion1..." class="input-mono" />
-            </div>
-            <div class="form-group form-group-no-margin">
-              <label>Amount</label>
-              <input type="number" id="send-amount" min="0" step="0.00000001" placeholder="0.0" />
-            </div>
-          </div>
-          <div class="form-group form-group-mt-14">
-            <label>Purpose (optional)</label>
-            <input type="text" id="send-purpose" placeholder="e.g. payout" />
-          </div>
-          <button class="btn btn-primary btn-mt-8" id="send-tx-btn">
-            <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-            <span>Send Transaction</span>
-          </button>
-          <div id="send-status" class="status-note"></div>
-        </div>
-
-        <!-- Transaction Lookup -->
-        <div class="control-panel panel-mt-20">
-          <h2 class="panel-title-row">
-            <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
-            <span>Transaction Lookup</span>
-          </h2>
-          <div class="inline-row">
-            <input type="text" id="tx-lookup-id" placeholder="Transaction ID (hash)" class="input-flex-mono" />
-            <button class="btn btn-ghost btn-ghost-purple" id="tx-lookup-btn">
-              <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
-              Lookup
-            </button>
-          </div>
-          <div id="tx-lookup-result" class="tx-lookup-result"></div>
-        </div>
-
-        <!-- Create New Wallet -->
-        <div class="control-panel panel-mt-20">
-          <h2 class="panel-title-row">
-            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
-            <span>Create New Wallet</span>
-          </h2>
-          <p class="muted-note">Generate a new ZION wallet with Ed25519 keypair and 12-word recovery phrase.</p>
-
-          <div id="wallet-generator">
+          <!-- Import Wallet -->
+          <div class="section-divider">Import</div>
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
+              <span>Import Wallet</span>
+            </h2>
+            <p class="muted-note">Restore wallet from 12-word recovery phrase.</p>
             <div class="form-group">
-              <label>Wallet Name</label>
-              <input type="text" id="new-wallet-name" placeholder="My Mining Wallet" value="My Wallet" />
+              <label>Recovery Phrase (12 words)</label>
+              <textarea id="import-mnemonic" rows="2" placeholder="word1 word2 word3 ... word12" class="textarea-no-resize"></textarea>
             </div>
             <div class="form-two-col">
               <div class="form-group form-group-no-margin">
-                <label>Password</label>
-                <input type="password" id="new-wallet-password" placeholder="Strong password..." />
+                <label>Wallet Name</label>
+                <input type="text" id="import-wallet-name" placeholder="Imported Wallet" />
               </div>
               <div class="form-group form-group-no-margin">
-                <label>Confirm Password</label>
-                <input type="password" id="new-wallet-password-confirm" placeholder="Repeat password..." />
+                <label>Password</label>
+                <input type="password" id="import-wallet-password" placeholder="Password to encrypt..." />
               </div>
             </div>
             <div class="button-group button-group-mt-14">
-              <button class="btn btn-primary" id="generate-wallet-btn">
-                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-                <span>Generate Wallet</span>
+              <button class="btn btn-primary" id="import-wallet-btn">
+                <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
+                <span>Import Wallet</span>
               </button>
             </div>
-          </div>
-
-          <!-- Generated Wallet Display -->
-          <div id="wallet-display" class="wallet-display">
-            <div class="wallet-display-card">
-              <h3 class="wallet-display-title">
-                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check"></use></svg>
-                <span>Wallet Generated!</span>
-              </h3>
-              <div class="wallet-display-section">
-                <div class="wallet-display-kicker">ZION ADDRESS</div>
-                <div class="wallet-display-row">
-                  <input type="text" id="generated-address" readonly class="generated-address-input" />
-                  <button class="btn btn-ghost btn-sm btn-ghost-purple" id="copy-address-btn">
-                    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-copy"></use></svg>
-                  </button>
-                </div>
-              </div>
-              <div class="wallet-display-section">
-                <div class="wallet-display-kicker">RECOVERY PHRASE (12 WORDS)</div>
-                <textarea id="generated-mnemonic" readonly rows="2" class="wallet-display-mnemonic"></textarea>
-                <p class="wallet-warning">
-                  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert"></use></svg>
-                  <strong>IMPORTANT:</strong> Write down your recovery phrase and store it safely!
-                </p>
-              </div>
-              <div class="button-group">
-                <button class="btn btn-primary" id="save-wallet-btn">
-                  <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
-                  <span>Save Wallet</span>
-                </button>
-                <button class="btn btn-danger" id="cancel-wallet-btn">
-                  <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
-                  <span>Cancel</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- My Wallets -->
-        <div class="control-panel panel-mt-20">
-          <h2 class="my-wallets-header">
-            <span class="my-wallets-title">
-              <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
-              <span>My Wallets</span>
-            </span>
-            <button class="btn btn-ghost btn-sm" id="refresh-wallets-btn">
-              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
-              Refresh
-            </button>
-          </h2>
-          <div id="wallets-list">
-            <p class="wallet-empty">No wallets yet. Create one above!</p>
-          </div>
-        </div>
-
-        <!-- Import Wallet -->
-        <div class="control-panel panel-mt-20">
-          <h2 class="panel-title-row">
-            <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
-            <span>Import Wallet</span>
-          </h2>
-          <p class="muted-note">Restore wallet from 12-word recovery phrase.</p>
-          <div class="form-group">
-            <label>Recovery Phrase (12 words)</label>
-            <textarea id="import-mnemonic" rows="2" placeholder="word1 word2 word3 ... word12" class="textarea-no-resize"></textarea>
-          </div>
-          <div class="form-two-col">
-            <div class="form-group form-group-no-margin">
-              <label>Wallet Name</label>
-              <input type="text" id="import-wallet-name" placeholder="Imported Wallet" />
-            </div>
-            <div class="form-group form-group-no-margin">
-              <label>Password</label>
-              <input type="password" id="import-wallet-password" placeholder="Password to encrypt..." />
-            </div>
-          </div>
-          <div class="button-group button-group-mt-14">
-            <button class="btn btn-primary" id="import-wallet-btn">
-              <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
-              <span>Import Wallet</span>
-            </button>
           </div>
         </div>
       </div>
@@ -3696,138 +3864,165 @@
           </div>
         </div>
 
-        <!-- Network Telemetry (lite) -->
-        <div class="control-panel mt-24">
-          <h2 class="panel-header-title">
-            <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-            <span>Network Telemetry</span>
-            <span class="muted-time" id="net-telemetry-updated">—</span>
-          </h2>
-          <!-- Summary cards -->
-          <div class="metric-grid">
-            <div class="metric-card green">
-              <div class="metric-kicker">NODES ONLINE</div>
-              <div class="metric-value green" id="net-nodes-online">—</div>
-            </div>
-            <div class="metric-card blue">
-              <div class="metric-kicker">BLOCK HEIGHT</div>
-              <div class="metric-value blue" id="net-block-height">—</div>
-            </div>
-            <div class="metric-card purple">
-              <div class="metric-kicker">NETWORK HASHRATE</div>
-              <div class="metric-value purple" id="net-hashrate">—</div>
-            </div>
-            <div class="metric-card gold">
-              <div class="metric-kicker">ACTIVE MINERS</div>
-              <div class="metric-value gold" id="net-active-miners">—</div>
-            </div>
+        <!-- ── Network Section Tabs ─────────────────────────── -->
+        <div class="section-tabs" data-group="network">
+          <div class="section-tab active" data-section="net-telemetry">
+            <span class="tab-dot"></span>
+            <span>Telemetry</span>
           </div>
-          <!-- Sync status -->
-          <div id="net-sync-bar" class="sync-bar">
-            <span id="net-sync-icon">⏳</span>
-            <span id="net-sync-text">Checking sync status...</span>
+          <div class="section-tab" data-section="net-hardware">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Hardware</span>
           </div>
-          <!-- Per-node rows -->
-          <div id="net-node-list" class="stack-col"></div>
-        </div>
-
-        <!-- GPU Detection Panel -->
-        <div class="control-panel mt-24">
-          <h2 class="panel-header-title">
-            <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-            <span>GPU Detection</span>
-            <span class="gpu-badge cpu-only ml-auto" id="net-gpu-badge"><span id="net-gpu-badge-text">Scanning...</span></span>
-          </h2>
-          <div class="metric-grid metric-grid-200">
-            <div class="metric-card soft-purple">
-              <div class="metric-kicker regular">GPU Name</div>
-              <div class="metric-value" id="net-gpu-name">—</div>
-            </div>
-            <div class="metric-card soft-purple">
-              <div class="metric-kicker regular">Type</div>
-              <div class="metric-value" id="net-gpu-type">—</div>
-            </div>
-            <div class="metric-card soft-purple">
-              <div class="metric-kicker regular">Memory</div>
-              <div class="metric-value" id="net-gpu-memory">—</div>
-            </div>
-            <div class="metric-card soft-purple">
-              <div class="metric-kicker regular">Mining Mode</div>
-              <div class="metric-value" id="net-mining-mode">CPU-Only</div>
-            </div>
+          <div class="section-tab" data-section="net-peers">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <span>Peers</span>
+          </div>
+          <div class="section-tab" data-section="net-servers">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+            <span>Servers</span>
           </div>
         </div>
 
+        <!-- ═══ SECTION: Telemetry ═══ -->
+        <div id="net-telemetry" class="section-panel active">
+          <div class="control-panel">
+            <h2 class="panel-header-title">
+              <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              <span>Network Telemetry</span>
+              <span class="muted-time" id="net-telemetry-updated">—</span>
+            </h2>
+            <!-- Summary cards -->
+            <div class="metric-grid">
+              <div class="metric-card green">
+                <div class="metric-kicker">NODES ONLINE</div>
+                <div class="metric-value green" id="net-nodes-online">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">BLOCK HEIGHT</div>
+                <div class="metric-value blue" id="net-block-height">—</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-kicker">NETWORK HASHRATE</div>
+                <div class="metric-value purple" id="net-hashrate">—</div>
+              </div>
+              <div class="metric-card gold">
+                <div class="metric-kicker">ACTIVE MINERS</div>
+                <div class="metric-value gold" id="net-active-miners">—</div>
+              </div>
+            </div>
+            <!-- Sync status -->
+            <div id="net-sync-bar" class="sync-bar">
+              <span id="net-sync-icon">⏳</span>
+              <span id="net-sync-text">Checking sync status...</span>
+            </div>
+            <!-- Per-node rows -->
+            <div id="net-node-list" class="stack-col"></div>
+          </div>
+        </div>
 
-        <!-- P2P Peer Discovery Panel -->
-        <div class="control-panel mt-24">
-          <h2 class="panel-header-row">
-            <span class="panel-header-title">
-              <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-              <span>P2P Peers</span>
-            </span>
-            <span class="panel-header-title">
-              <span class="muted-time" id="net-peers-updated">—</span>
-              <button class="btn btn-ghost btn-sm" id="refresh-peers-btn">
+        <!-- ═══ SECTION: Hardware ═══ -->
+        <div id="net-hardware" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-title">
+              <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              <span>GPU Detection</span>
+              <span class="gpu-badge cpu-only ml-auto" id="net-gpu-badge"><span id="net-gpu-badge-text">Scanning...</span></span>
+            </h2>
+            <div class="metric-grid metric-grid-200">
+              <div class="metric-card soft-purple">
+                <div class="metric-kicker regular">GPU Name</div>
+                <div class="metric-value" id="net-gpu-name">—</div>
+              </div>
+              <div class="metric-card soft-purple">
+                <div class="metric-kicker regular">Type</div>
+                <div class="metric-value" id="net-gpu-type">—</div>
+              </div>
+              <div class="metric-card soft-purple">
+                <div class="metric-kicker regular">Memory</div>
+                <div class="metric-value" id="net-gpu-memory">—</div>
+              </div>
+              <div class="metric-card soft-purple">
+                <div class="metric-kicker regular">Mining Mode</div>
+                <div class="metric-value" id="net-mining-mode">CPU-Only</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Peers ═══ -->
+        <div id="net-peers" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                <span>P2P Peers</span>
+              </span>
+              <span class="panel-header-title">
+                <span class="muted-time" id="net-peers-updated">—</span>
+                <button class="btn btn-ghost btn-sm" id="refresh-peers-btn">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                  Refresh
+                </button>
+              </span>
+            </h2>
+            <!-- Peer summary cards -->
+            <div class="metric-grid">
+              <div class="metric-card green">
+                <div class="metric-kicker">CONNECTED</div>
+                <div class="metric-value green" id="net-peers-connected">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">KNOWN PEERS</div>
+                <div class="metric-value blue" id="net-peers-known">—</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-kicker">SEED NODES</div>
+                <div class="metric-value purple">5</div>
+              </div>
+            </div>
+            <!-- Peer list -->
+            <div id="net-peer-list" class="stack-col scroll">
+              <div class="placeholder-row">Loading peers...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Servers ═══ -->
+        <div id="net-servers" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                <span>TestNet Servers</span>
+              </span>
+              <button class="btn btn-ghost btn-sm" id="refresh-servers-btn">
                 <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
                 Refresh
               </button>
-            </span>
-          </h2>
-          <!-- Peer summary cards -->
-          <div class="metric-grid">
-            <div class="metric-card green">
-              <div class="metric-kicker">CONNECTED</div>
-              <div class="metric-value green" id="net-peers-connected">—</div>
-            </div>
-            <div class="metric-card blue">
-              <div class="metric-kicker">KNOWN PEERS</div>
-              <div class="metric-value blue" id="net-peers-known">—</div>
-            </div>
-            <div class="metric-card purple">
-              <div class="metric-kicker">SEED NODES</div>
-              <div class="metric-value purple">5</div>
-            </div>
-          </div>
-          <!-- Peer list -->
-          <div id="net-peer-list" class="stack-col scroll">
-            <div class="placeholder-row">Loading peers...</div>
-          </div>
-        </div>
-
-        <!-- Server Status -->
-        <div class="control-panel mt-20">
-          <h2 class="panel-header-row">
-            <span class="panel-header-title">
-              <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-              <span>TestNet Servers</span>
-            </span>
-            <button class="btn btn-ghost btn-sm" id="refresh-servers-btn">
-              <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
-              Refresh
-            </button>
-          </h2>
-          <div class="server-grid" id="server-grid">
-            <div class="server-card offline">
-              <div class="server-header">
-                <div class="server-name">🇫🇮 Helsinki</div>
-                <div class="server-status-dot off"></div>
+            </h2>
+            <div class="server-grid" id="server-grid">
+              <div class="server-card offline">
+                <div class="server-header">
+                  <div class="server-name">🇫🇮 Helsinki</div>
+                  <div class="server-status-dot off"></div>
+                </div>
+                <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
               </div>
-              <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
-            </div>
-            <div class="server-card offline">
-              <div class="server-header">
-                <div class="server-name">🇺🇸 USA</div>
-                <div class="server-status-dot off"></div>
+              <div class="server-card offline">
+                <div class="server-header">
+                  <div class="server-name">🇺🇸 USA</div>
+                  <div class="server-status-dot off"></div>
+                </div>
+                <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
               </div>
-              <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
-            </div>
-            <div class="server-card offline">
-              <div class="server-header">
-                <div class="server-name">🇸🇬 Singapore</div>
-                <div class="server-status-dot off"></div>
+              <div class="server-card offline">
+                <div class="server-header">
+                  <div class="server-name">🇸🇬 Singapore</div>
+                  <div class="server-status-dot off"></div>
+                </div>
+                <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
               </div>
-              <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
             </div>
           </div>
         </div>
@@ -3846,95 +4041,117 @@
           </div>
         </div>
 
-        <!-- Project Info -->
-        <div class="control-panel mt-24">
-          <h2 class="inline-heading">
-            <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
-            <span>Native Awakening v2.9.6</span>
-          </h2>
-          <p class="about-lead">
-            <strong>Desktop Mining Agent</strong> — Professional mining software with one-click Rust miner, real-time statistics, and full wallet management.
-          </p>
-
-          <!-- Info cards grid -->
-          <div class="info-cards-grid">
-            <div class="info-card version">
-              <div class="info-card-kicker">
-                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> VERSION
-              </div>
-              <div class="info-card-value version">2.9.6</div>
-              <div class="info-card-sub">Native Awakening</div>
-            </div>
-            <div class="info-card algo">
-              <div class="info-card-kicker">
-                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> ALGORITHM
-              </div>
-              <div class="info-card-value algo">Cosmic Harmony v3</div>
-              <div class="info-card-sub">ZION Proof-of-Work</div>
-            </div>
-            <div class="info-card network">
-              <div class="info-card-kicker">
-                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> NETWORK
-              </div>
-              <div class="info-card-value network">Mainnet</div>
-              <div class="info-card-sub">5 seed nodes · Global (FI, DE, US×2, SG)</div>
-            </div>
-            <div class="info-card engine">
-              <div class="info-card-kicker">
-                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> ENGINE
-              </div>
-              <div class="info-card-value engine">Rust Native</div>
-              <div class="info-card-sub">CPU + GPU · Stratum v2</div>
-            </div>
+        <!-- ── About Section Tabs ───────────────────────────── -->
+        <div class="section-tabs" data-group="about">
+          <div class="section-tab active" data-section="about-project">
+            <span class="tab-dot"></span>
+            <span>Project</span>
+          </div>
+          <div class="section-tab" data-section="about-links">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-folder"></use></svg>
+            <span>Resources</span>
+          </div>
+          <div class="section-tab" data-section="about-philosophy">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>Philosophy</span>
           </div>
         </div>
 
-        <!-- Links -->
-        <div class="control-panel mt-20">
-          <h2 class="inline-heading">
-            <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
-            <span>Links &amp; Resources</span>
-          </h2>
-          <div class="resource-list">
-            <div class="resource-item">
-              <div class="resource-item-left">
-                <span class="emoji-16">🌐</span>
-                <span class="resource-item-label">Website</span>
-              </div>
-              <a href="https://zionterranova.com" class="resource-item-link" class="link-gold">zionterranova.com</a>
-            </div>
-            <div class="resource-item">
-              <div class="resource-item-left">
-                <span class="emoji-16">💻</span>
-                <span class="resource-item-label">GitHub</span>
-              </div>
-              <a href="https://github.com/zionterranova" class="resource-item-link" class="link-cyan">github.com/zionterranova</a>
-            </div>
-            <div class="resource-item">
-              <div class="resource-item-left">
-                <span class="emoji-16">⛏️</span>
-                <span class="resource-item-label">Mining Pools</span>
-              </div>
-              <span class="resource-item-value">77.42.31.72:3333 · 46.225.126.243:3333 · 5.78.178.227:3333 · 178.156.240.160:3333 · 5.223.43.93:3333</span>
-            </div>
-            <div class="resource-item">
-              <div class="resource-item-left">
-                <span class="emoji-16">🔗</span>
-                <span class="resource-item-label">RPC Endpoints</span>
-              </div>
-              <span class="resource-item-value">:8444/jsonrpc · P2P :8334</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Philosophy -->
-        <div class="control-panel mt-20">
-          <div class="about-quote-wrap">
-            <div class="about-quote-icon">✨</div>
-            <p class="about-quote">
-              "Where Technology Meets Spirit"
+        <!-- ═══ SECTION: Project ═══ -->
+        <div id="about-project" class="section-panel active">
+          <div class="control-panel">
+            <h2 class="inline-heading">
+              <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
+              <span>Native Awakening v2.9.6</span>
+            </h2>
+            <p class="about-lead">
+              <strong>Desktop Mining Agent</strong> — Professional mining software with one-click Rust miner, real-time statistics, and full wallet management.
             </p>
-            <p class="about-quote-foot">© 2025–2026 ZION TerraNova · Peace and One Love</p>
+
+            <!-- Info cards grid -->
+            <div class="info-cards-grid">
+              <div class="info-card version">
+                <div class="info-card-kicker">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> VERSION
+                </div>
+                <div class="info-card-value version">2.9.6</div>
+                <div class="info-card-sub">Native Awakening</div>
+              </div>
+              <div class="info-card algo">
+                <div class="info-card-kicker">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> ALGORITHM
+                </div>
+                <div class="info-card-value algo">Cosmic Harmony v3</div>
+                <div class="info-card-sub">ZION Proof-of-Work</div>
+              </div>
+              <div class="info-card network">
+                <div class="info-card-kicker">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> NETWORK
+                </div>
+                <div class="info-card-value network">Mainnet</div>
+                <div class="info-card-sub">5 seed nodes · Global (FI, DE, US×2, SG)</div>
+              </div>
+              <div class="info-card engine">
+                <div class="info-card-kicker">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> ENGINE
+                </div>
+                <div class="info-card-value engine">Rust Native</div>
+                <div class="info-card-sub">CPU + GPU · Stratum v2</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Resources ═══ -->
+        <div id="about-links" class="section-panel">
+          <div class="control-panel">
+            <h2 class="inline-heading">
+              <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
+              <span>Links &amp; Resources</span>
+            </h2>
+            <div class="resource-list">
+              <div class="resource-item">
+                <div class="resource-item-left">
+                  <span class="emoji-16">🌐</span>
+                  <span class="resource-item-label">Website</span>
+                </div>
+                <a href="https://zionterranova.com" class="resource-item-link" class="link-gold">zionterranova.com</a>
+              </div>
+              <div class="resource-item">
+                <div class="resource-item-left">
+                  <span class="emoji-16">💻</span>
+                  <span class="resource-item-label">GitHub</span>
+                </div>
+                <a href="https://github.com/zionterranova" class="resource-item-link" class="link-cyan">github.com/zionterranova</a>
+              </div>
+              <div class="resource-item">
+                <div class="resource-item-left">
+                  <span class="emoji-16">⛏️</span>
+                  <span class="resource-item-label">Mining Pools</span>
+                </div>
+                <span class="resource-item-value">77.42.31.72:3333 · 46.225.126.243:3333 · 5.78.178.227:3333 · 178.156.240.160:3333 · 5.223.43.93:3333</span>
+              </div>
+              <div class="resource-item">
+                <div class="resource-item-left">
+                  <span class="emoji-16">🔗</span>
+                  <span class="resource-item-label">RPC Endpoints</span>
+                </div>
+                <span class="resource-item-value">:8444/jsonrpc · P2P :8334</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Philosophy ═══ -->
+        <div id="about-philosophy" class="section-panel">
+          <div class="control-panel">
+            <div class="about-quote-wrap">
+              <div class="about-quote-icon">✨</div>
+              <p class="about-quote">
+                "Where Technology Meets Spirit"
+              </p>
+              <p class="about-quote-foot">© 2025–2026 ZION TerraNova · Peace and One Love</p>
+            </div>
           </div>
         </div>
       </div>
