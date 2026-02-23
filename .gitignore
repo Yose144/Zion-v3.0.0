@@ -73,6 +73,8 @@ wallet_keys/
 **/private_keys/
 PREMINE_WALLETS_BACKUP.json
 **/PREMINE_WALLETS_BACKUP*
+MYSTERIUM_KEYS_BACKUP.json
+scripts/_decrypt_myst.py
 
 # Rust
 Cargo.lock
