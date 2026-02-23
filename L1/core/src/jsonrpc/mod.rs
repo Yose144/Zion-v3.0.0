@@ -786,8 +786,61 @@ pub async fn handle(
 
                         let tx_id = tx.id.clone();
 
-                        // Add to mempool (validated)
+                        // Add to mempool for record-keeping (gettransaction finds it)
                         let _ = state.mempool.add_transaction_validated(tx);
+
+                        // ---------------------------------------------------------
+                        // Direct UTXO settlement — pool payout trusted path.
+                        //
+                        // Block templates only include coinbase; mempool TXs are
+                        // never picked up by the miner, so payout transactions
+                        // would never land on-chain through the normal path.
+                        // Instead, we write the UTXO directly to storage and
+                        // debit the sender's UTXOs atomically so that both
+                        // getbalance calls reflect the transfer immediately.
+                        // ---------------------------------------------------------
+
+                        // 1. Credit recipient
+                        let credit_output = TxOutput {
+                            amount: amount_atomic,
+                            address: to.clone(),
+                        };
+                        let credit_key = format!("{}:0", tx_id);
+                        if let Err(e) = state.storage.add_utxo(&credit_key, &credit_output) {
+                            eprintln!("[PAYOUT] UTXO write failed {}: {}", credit_key, e);
+                        }
+
+                        // 2. Debit sender UTXOs (consume cheapest first)
+                        if let Ok(sender_utxos) =
+                            state.storage.get_utxos_for_address(&from, 1000, 0)
+                        {
+                            let mut remaining = amount_atomic;
+                            for (key, utxo) in sender_utxos {
+                                if remaining == 0 {
+                                    break;
+                                }
+                                if utxo.amount <= remaining {
+                                    // Consume whole UTXO
+                                    let _ = state.storage.remove_utxo(&key);
+                                    remaining = remaining.saturating_sub(utxo.amount);
+                                } else {
+                                    // Partial consume — remove and re-add change
+                                    let _ = state.storage.remove_utxo(&key);
+                                    let change = TxOutput {
+                                        amount: utxo.amount - remaining,
+                                        address: from.clone(),
+                                    };
+                                    let change_key = format!("change:{}:{}", tx_id, key);
+                                    let _ = state.storage.add_utxo(&change_key, &change);
+                                    remaining = 0;
+                                }
+                            }
+                        }
+
+                        // 3. Invalidate balance cache for both parties
+                        let _ = state
+                            .storage
+                            .invalidate_balance_cache(&[from.clone(), to.clone()]);
 
                         Response {
                             jsonrpc: "2.0".to_string(),
