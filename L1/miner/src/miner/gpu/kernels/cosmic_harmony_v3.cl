@@ -46,9 +46,9 @@ __constant ulong KECCAK_RC[24] = {
     0x000000008000808BUL, 0x800000000000008BUL, 0x8000000000008089UL,
     0x8000000000008003UL, 0x8000000000008002UL, 0x8000000000000080UL,
     0x000000000000800AUL, 0x800000008000000AUL, 0x8000000080008081UL,
-    /* positions 21-23: ZION network launched with these — do NOT change to NIST
-       standard values unless ALL binaries (pool+node+miner) are rebuilt together */
-    0x8000000000000001UL, 0x8000000080008008UL, 0x0000000000000000UL,
+    // positions 21-23: fixed to match NIST standard (same as sha3::Keccak256
+    // crate used by pool validator and CPU miner)
+    0x8000000000008080UL, 0x0000000080000001UL, 0x8000000080008008UL,
 };
 
 __constant int KECCAK_PILN[24] = {

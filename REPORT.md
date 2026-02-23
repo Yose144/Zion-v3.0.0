@@ -1223,11 +1223,106 @@ Důvod: Se spam filtrem je 10 MB dostatečné — užitečná data se nerotují 
 - **L1/core LOC gap**: 14,500 LOC (src+tests) vs 35,000 tvrzených — ~58% chybí
 - **L3 adaptéry**: Všech 7 chain adaptérů jsou stuby (EVM, Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin)
 - **NKN CreateID fee** — node běží (`Up`), ale potřebuje ~10 NKN tokenů pro registraci node identity
-- **Pool share rejection rate** — Desktop agent dostává `diff: 0, height: 0` v některých panelech; A:1 R:2 (33.3%) — možný pool-side bug
+- **Pool share rejection rate** — ~~Desktop agent dostává `diff: 0, height: 0` v některých panelech; A:1 R:2 (33.3%) — možný pool-side bug~~ → ✅ OPRAVENO (Session 31): GPU kernel měl špatné Keccak RC[21-23] + nonce overflow
 - **Bridge vault setup** — vygenerovat `ZION_BRIDGE_VAULT_KEY`, nasadit na Helsinki
 - **Rust relay mainnet** — po auditu přepnout `BRIDGE_NET` na Base Mainnet
 - **DAO executor** — Reálná implementace (multi-sig guardian)
 - **Mobile TestFlight build** — spustit `BridgeScreen` na fyzickém zařízení
+
+---
+
+## Session 31 — CHv3 GPU share rejection fix (23. února 2026)
+
+**Datum:** 23. února 2026  
+**Problém:** 100% GPU share rejection — "3 reject share, nepadaj acceptz ale vůbec"
+
+---
+
+### Diagnostika
+
+Uživatel hlásil, že ALL shares jsou rejected (A/R = 0/3, rate 0.0%). Hluboká analýza celého CHv3 mining pipeline:
+
+#### 1. Raw stratum test
+```
+Pool stratum (77.42.31.72:3333) → ALIVE
+  algo=cosmic_harmony, height=4421, difficulty=500000
+  target=000000cc6ca25bc9...
+```
+Pool posílá správná data. Blockchain height = 4421 (< 50000 fork height) → 4-phase LEGACY pipeline je SPRÁVNÝ.
+
+#### 2. ROOT CAUSE: Keccak round constants RC[21-23] v GPU kernelu
+
+**Klíčový objev:** Porovnáním GPU kernelu (`cosmic_harmony_v3.cl`) s pool validátorem (`sha3::Keccak256`):
+
+| Pozice | NIST standard (pool) | GPU kernel | Match? |
+|--------|---------------------|------------|--------|
+| RC[0-20] | ✅ | ✅ | ✅ |
+| **RC[21]** | `0x8000000000008080` | `0x8000000000000001` | **❌ MISMATCH** |
+| **RC[22]** | `0x0000000080000001` | `0x8000000080008008` | **❌ MISMATCH** |
+| **RC[23]** | `0x8000000080008008` | `0x0000000000000000` | **❌ MISMATCH** |
+
+**Dopad:**
+- Pool validátor (`L1/pool/src/shares/validator.rs`) volá `cosmic_harmony_v3_with_height()` → `keccak256_opt()` → **`sha3::Keccak256`** (standard NIST constants)
+- GPU kernel (`L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl`) měl **nestandardní** konstanty
+- **Každý GPU hash byl odlišný od pool hashe** → 100% GPU rejection
+
+**Důkaz:** Druhý OpenCL kernel (`L1/cosmic-harmony/src/gpu/opencl_kernel.rs`) a Metal shader (`metal_shader.metal`) mají **SPRÁVNÉ** NIST konstanty. Pouze miner-side kernel byl špatný.
+
+> **Note k Session 28:** "Keccak RC revert" v Session 28 byl chybný. Diagnóza "running binaries používají staré hodnoty" nebyla správná — pool vždy používal `sha3::Keccak256` (NIST standard). Session 28 revert vrátil špatné konstanty do GPU kernelu.
+
+#### 3. Nonce overflow bug
+
+GPU `nonce_start` je `u64`, ale pool přijímá `u32` nonce. Při ~40 MH/s s batch_size=4M se `nonce_start` dostane nad `u32::MAX` (4.3B) za ~107 sekund → nonce trukkován na u32 → pool re-hashuje s jiným nonce → REJECT.
+
+| Čas od startu | Nonce range | Overflow? | Rejects? |
+|---------------|-------------|-----------|----------|
+| 0-107s | 0 – 4.3B | Ne | Ano (Keccak RC bug) |
+| 107s+ | >4.3B | **Ano** | Ano (Keccak + nonce) |
+
+---
+
+### Opravy
+
+#### 1. Keccak RC fix (`cosmic_harmony_v3.cl`)
+```diff
+- 0x8000000000000001UL, 0x8000000080008008UL, 0x0000000000000000UL,
++ 0x8000000000008080UL, 0x0000000080000001UL, 0x8000000080008008UL,
+```
+Nyní GPU kernel produkuje identické hashe jako pool validátor.
+
+#### 2. Keccak RC fix v testu (`algorithms_opt.rs`)
+Test code `KECCAK_RC` v `mod tests` opraveno na NIST standard — test `test_gpu_vs_cpu_keccak256` nyní validuje správnost.
+
+#### 3. Nonce overflow prevention (`mod.rs`)
+- **Skip submission** pokud `nonce > u32::MAX` → žádné zbytečné rejecty
+- **Wrap nonce_start** zpět na 0 když by překročil u32 range:
+```rust
+let next = nonce_start.wrapping_add(batch_size);
+nonce_start = if next > u32::MAX as u64 { 0u64 } else { next };
+```
+
+---
+
+### Změněné soubory
+
+| Soubor | Změna |
+|--------|-------|
+| `L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl` | Keccak RC[21-23] → NIST standard |
+| `L1/miner/src/miner/mod.rs` | Nonce overflow skip + wrap |
+| `L1/cosmic-harmony/src/algorithms_opt.rs` | Test KECCAK_RC → NIST standard |
+
+### Stav po opravě
+
+| Co | Před | Po |
+|----|------|-----|
+| GPU Keccak RC[21-23] | Nestandardní (nesouhlasí s pool) | NIST standard ✅ |
+| Nonce overflow | Submituje truncated nonce | Skip + wrap ✅ |
+| GPU share accept rate | **0%** | Očekáváno **~99%** (po rebuildu binárky) |
+
+> ⚠️ **POTŘEBA REBUILD:** Opravy jsou v source kódu. Pro aktivaci je třeba:
+> 1. `cargo build --release` v `L1/miner/`
+> 2. Kopírovat nový `zion-universal-miner.exe` do `APP&WEB/desktop-agent/resources/`
+> 3. Restart desktop agenta
 
 ---
 
