@@ -256,7 +256,8 @@
 - **EPIC external pool reachability (SeedDE)** — ~~spojení na `fastepic.eu:3416` je nestabilní/nedostupné (`operation canceled`)~~ → ✅ OPRAVENO (session 27): přechod na MoneroOcean
 - **Revenue cold-start latency (ZEPH/EPIC)** — ~~při restartu trvá start déle kvůli in-container build procesu `xmrig`~~ → ✅ MITIGOVÁNO: xmrig binary cached v `zion-xmrig-cache` Docker volume (rebuild jen při smazání volume)
 - **NKN CreateID fee** — node běží (`Up`), ale potřebuje ~10 NKN tokenů na adrese `NKNa2RgWynz4HB6BMqUACwqrzSwdZHcGznKg` (Polygon/NKN mainnet) pro registraci node identity; bez registrace nereceivuje mining rewards
-- ~~**Mysterium registrace — MYST fee**~~ → ✅ OPRAVENOsession 28: `--mmn.api-key` + mystnodes.com sponzoroval Polygon gas; Helsinki `0xbf8598...` + Germany `0x1a9bcc...` → **`Registered`**, 5 služeb aktivních
+- ~~**Mysterium registrace — MYST fee**~~ → ✅ OPRAVENO session 28: `--mmn.api-key` + mystnodes.com sponzoroval Polygon gas; Helsinki `0xbf8598...` + Germany `0x1a9bcc...` → **`Registered`**, 5 služeb aktivních
+- ~~**GPU→CPU VERIFY log spam**~~ → ✅ OPRAVENO (session 30): 76.5% noise filtered, static panel a share eventy viditelné v LOGS tabu
 
 ---
 
@@ -1070,6 +1071,163 @@ UPTIME  00:04:05  hashes: 7.5G
 > ⚠️ **GPU 31 MH/s vs benchmark 60 MH/s** — pool mining je pomalejší než benchmark kvůli:  
 > 1) share submission overhead, 2) job notification latency, 3) difficulty negotiation.  
 > Reálný výkon ~32-34 MH/s je normální pro pool mining na této GPU.
+
+---
+
+## Session 29 — Logging optimalizace (23. února 2026)
+
+**Datum:** 23. února 2026  
+**Commit:** `f1585df`  
+**Soubory:** `main.js`, `renderer.js`
+
+### Cíl
+
+Snížit logging overhead — miner metriky a statická data zůstanou v LOGS, veškerý ostatní verbose output jde jen do debug konzole. Zmenšit log soubor pro výkon.
+
+### Implementace
+
+#### 1. Debug logging systém (`dbg()`)
+
+| Soubor | Mechanismus |
+|--------|------------|
+| `main.js:15` | `const DBG = process.env.ZION_DEBUG === '1'` + `function dbg(...args) { if (DBG) console.debug('[DBG]', ...args); }` |
+| `renderer.js:4-6` | `const DBG = localStorage.getItem('ZION_DEBUG') === '1'` + `function dbg(...)` |
+
+**Aktivace:** `set ZION_DEBUG=1` (env) nebo `localStorage.setItem('ZION_DEBUG','1')` (renderer DevTools)
+
+#### 2. Konverze console.log → dbg()
+
+| Soubor | Převedeno | Příklady |
+|--------|-----------|---------|
+| `main.js` | ~35 volání | IPC handlers, config loads, pool selection, revenue spawn, wallet ops |
+| `renderer.js` | ~25 volání | View switches, settings UI, bridge ops, network metrics |
+
+#### 3. Log cap snížen
+
+| Parametr | Před | Po |
+|----------|------|-----|
+| `MAX_MINER_LOG_BYTES` | 10 MB | 2 MB |
+
+**Co zůstává v produkčních logech:**
+- `[STATUS]` řádky (miner stats summary)
+- `[CH3-GPU]` události (GPU start/stop/error)
+- `console.warn` / `console.error` (vždy)
+- Miner static panel (`┌│└` box-drawing)
+- Share accepted/rejected events
+
+**Co přesunuto do dbg():**
+- IPC handler vstupy/výstupy
+- Config load/save detaily
+- Pool selection algoritmika
+- Revenue miner spawn/exit
+- Wallet operace (create/import/export)
+- Network metrics fetch
+- Bridge UI operace
+
+---
+
+## Session 30 — GPU→CPU VERIFY spam filtr (23. února 2026)
+
+**Datum:** 23. února 2026  
+**Commit:** `5a2867d`  
+**Soubor:** `APP&WEB/desktop-agent/src/main.js`
+
+### Problém
+
+Po logging optimalizaci (Session 29) uživatel hlásil, že statický miner panel a accepted share eventy zmizely z LOGS tabu. Porovnání s 2.9.5 ukázalo identický output handling kód — problém nebyl v kódu, ale v **datech**.
+
+### Root cause: GPU→CPU VERIFY debug spam
+
+Rust miner `zion-universal-miner.exe` při každém GPU nonce checku emituje 7 řádků debug výstupu na stderr:
+
+```
+=== GPU→CPU VERIFY ===
+  nonce_u64=12345678901234
+  gpu_hash=abcdef0123456789...
+  cpu_hash=abcdef0123456789...
+  MATCH=true
+  gpu_state0=0x12345678
+  cpu_meets_target=true nonce_as_u32=12345678 overflow=false
+```
+
+**Analýza miner.log:**
+| Metrika | Hodnota |
+|---------|---------|
+| Celkem řádků | 2,765 |
+| VERIFY spam | 2,114 (76.5%) |
+| Užitečné řádky | 651 (23.5%) |
+
+Tento spam:
+1. **Zaplavil log soubor** — 2 MB cap z Session 29 se zaplnil za minuty → užitečná data rotována pryč
+2. **Zaplavil renderer** — `enqueueMinerOutputToRenderer()` posílal vše přes IPC → statický panel a share eventy pohřbeny pod spamem
+
+### Oprava (3 změny v main.js)
+
+#### 1. Rozšíření `shouldSkipFileLogLine()` (řádky 2753-2761)
+
+```javascript
+// Nové filtry (přidány k existujícím):
+/GPU.*CPU VERIFY/i
+/nonce_u64=|gpu_hash=|cpu_hash=/
+/MATCH=|gpu_state0=|cpu_meets_target|nonce_as_u32=.*overflow=/
+```
+
+#### 2. Gate pro renderer IPC (řádky 2793-2815)
+
+```javascript
+// PŘED: spam se filtroval jen z file write, ale šel do rendereru
+if (!skip) safeMinerLogWrite(output);
+enqueueMinerOutputToRenderer(output);  // ← vždy
+
+// PO: spam se filtruje z OBOU cest
+const skip = shouldSkipFileLogLine(output);
+if (!skip) safeMinerLogWrite(output);
+if (!skip) enqueueMinerOutputToRenderer(output);  // ← jen užitečné
+```
+
+#### 3. Log cap obnoven na 10 MB
+
+| Parametr | Session 29 | Session 30 |
+|----------|-----------|-----------|
+| `MAX_MINER_LOG_BYTES` | 2 MB | **10 MB** |
+
+Důvod: Se spam filtrem je 10 MB dostatečné — užitečná data se nerotují předčasně.
+
+### Výsledek (ověřeno v produkci)
+
+| Metrika | Před | Po |
+|---------|------|-----|
+| VERIFY spam v logu | 76.5% (2114/2765) | **0%** (0/831) |
+| Panel field řádky | pohřbeny | **283 viditelných** |
+| Share/result řádky | pohřbeny | **75 viditelných** |
+| Log cap | 2 MB (rotuje za minuty) | 10 MB (užitečná data přežijí) |
+
+**Aktuální miner výstup (čistý):**
+```
+┌────────────────────────────────────────────────────────────────┐
+│  SPEED   10s 37.58 MH/s  60s 38.42  15m 41.03
+│  SHARES  A: 1  R: 2  rate: 33.3%
+│  DIFF    pool: 0  height: 0  blocks: 0
+│  UPTIME  00:02:17  hashes: 5.6G  algo: cosmic_harmony_v3
+│  HW     cpu: 10T  gpu: 39.44 MH/s [gfx1010:xnack-]
+│  NET   pool: stratum+tcp://77.42.31.72:3333  worker: dev-auto
+│  EVENT  [16:29:05] rejected 1/2 — share rejected by pool
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### ⚠️ Zbývající problémy (aktualizováno)
+
+- **verushash-native C sources**: Bez `csrc/` nelze plně testovat `zion-core` ani `verushash-native`
+- **L1/core LOC gap**: 14,500 LOC (src+tests) vs 35,000 tvrzených — ~58% chybí
+- **L3 adaptéry**: Všech 7 chain adaptérů jsou stuby (EVM, Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin)
+- **NKN CreateID fee** — node běží (`Up`), ale potřebuje ~10 NKN tokenů pro registraci node identity
+- **Pool share rejection rate** — Desktop agent dostává `diff: 0, height: 0` v některých panelech; A:1 R:2 (33.3%) — možný pool-side bug
+- **Bridge vault setup** — vygenerovat `ZION_BRIDGE_VAULT_KEY`, nasadit na Helsinki
+- **Rust relay mainnet** — po auditu přepnout `BRIDGE_NET` na Base Mainnet
+- **DAO executor** — Reálná implementace (multi-sig guardian)
+- **Mobile TestFlight build** — spustit `BridgeScreen` na fyzickém zařízení
 
 ---
 
