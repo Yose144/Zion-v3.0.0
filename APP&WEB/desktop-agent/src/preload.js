@@ -1,4 +1,4 @@
-// ZION Desktop Mining Agent v2.9.5 - Preload Script
+// ZION Desktop Mining Agent v2.9.6 - Preload Script
 // IPC bridge between main process and renderer (security layer)
 
 const { contextBridge, ipcRenderer } = require('electron');
