@@ -1939,7 +1939,14 @@ function setupWalletControls() {
       lastPoolPaidAtomic = currentPaidAtomic;
     }
 
-    if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${payoutDeltaText}`;
+    let pendingDriftText = '';
+    const pendingStatsAtomic = Number(result.pool_pending_stats_atomic ?? 0);
+    const pendingPayoutsAtomic = Number(result.pool_pending_payouts_atomic ?? 0);
+    if (Number.isFinite(pendingStatsAtomic) && Number.isFinite(pendingPayoutsAtomic) && pendingStatsAtomic !== pendingPayoutsAtomic) {
+      pendingDriftText = ` · pending drift ${(pendingStatsAtomic / 1_000_000).toFixed(4)}↔${(pendingPayoutsAtomic / 1_000_000).toFixed(4)}`;
+    }
+
+    if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${payoutDeltaText}${pendingDriftText}`;
   });
 
   generateQrBtn?.addEventListener('click', async () => {
