@@ -1910,7 +1910,12 @@ function setupWalletControls() {
     });
 
     if (!result?.success) {
-      if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `Error: ${result?.error || 'balance fetch failed'}`;
+      const tried = Array.isArray(result?.rpc_tried) ? result.rpc_tried : [];
+      const triedHosts = tried.slice(0, 3).map((u) => {
+        try { return new URL(u).hostname; } catch { return u; }
+      }).filter(Boolean).join(', ');
+      const triedText = triedHosts ? ` · tried: ${triedHosts}` : '';
+      if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `Error: ${result?.error || 'balance fetch failed'}${triedText}`;
       return;
     }
 
@@ -1981,7 +1986,12 @@ function setupWalletControls() {
       }
     })();
 
-    if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${rpcSourceText}${payoutDeltaText}${pendingDriftText}`;
+    const rpcFallbackText = (() => {
+      const tried = Array.isArray(result?.rpc_tried) ? result.rpc_tried : [];
+      return tried.length > 1 ? ` · failover ${tried.length}x` : '';
+    })();
+
+    if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${rpcSourceText}${rpcFallbackText}${payoutDeltaText}${pendingDriftText}`;
   });
 
   generateQrBtn?.addEventListener('click', async () => {
