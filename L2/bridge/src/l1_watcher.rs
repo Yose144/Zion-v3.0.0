@@ -318,6 +318,7 @@ mod tests {
             finality_blocks: 60,
             poll_interval_secs: 15,
             start_block_height: None,
+            l1_rpc_token: None,
         };
         L1Watcher::new(config, None)
     }
@@ -423,6 +424,7 @@ mod tests {
             finality_blocks: 60,
             poll_interval_secs: 15,
             start_block_height: None,
+            l1_rpc_token: None,
         };
 
         let w = L1Watcher::new(config, Some(5000));
@@ -436,6 +438,7 @@ mod tests {
                 finality_blocks: 60,
                 poll_interval_secs: 15,
                 start_block_height: None,
+                l1_rpc_token: None,
             },
             None,
         );
