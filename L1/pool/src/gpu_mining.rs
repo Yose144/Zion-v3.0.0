@@ -422,8 +422,9 @@ struct ErgJob {
     target: Vec<u8>, // 32-byte big-endian target
     height: u32,
     session_id: String,
-    extranonce1: String,       // hex string, assigned by pool (e.g. "93d9")
-    worker_nonce_size: usize,  // hex chars worker must send (e.g. 6)
+    extranonce1: String,       // hex string, assigned by pool (e.g. "97a4" = 2 bytes)
+    worker_nonce_size: usize,  // bytes the worker must supply (e.g. 6 bytes = 12 hex chars)
+    worker_login: String,      // "wallet.worker" used in mining.submit
 }
 
 impl GpuMiner {
@@ -537,6 +538,7 @@ impl GpuMiner {
                             session_id: session_id.clone(),
                             extranonce1: extranonce1.clone(),
                             worker_nonce_size,
+                            worker_login: format!("{}.{}", &self.config.wallet, &self.config.worker),
                         };
                         info!("[ERG] New job id={} h={} en1={} ns={}", job.job_id, job.height, job.extranonce1, job.worker_nonce_size);
                         *self.stats.erg_current_job.lock().await = job.job_id.clone();
@@ -636,20 +638,22 @@ fn erg_mine_loop(
                 info!("[ERG] 🎉 Share found! nonce={:#018x} height={}", nonce, job.height);
                 stats.erg_shares_submitted.fetch_add(1, Ordering::Relaxed);
 
-                let ns = job.worker_nonce_size.max(1).min(16);
-                let worker_nonce = if ns >= 16 {
+                let ns_bytes = job.worker_nonce_size.max(1).min(8);
+                let ns_bits = ns_bytes * 8;
+                let worker_nonce = if ns_bits >= 64 {
                     nonce
                 } else {
-                    nonce & ((1u64 << (ns * 4)) - 1)
+                    nonce & ((1u64 << ns_bits) - 1)
                 };
+                let nonce_hex = format!("{:0>width$x}", worker_nonce, width = ns_bytes * 2);
+                info!("[ERG] > mining.submit #{} (nonce={})", stats.erg_shares_submitted.load(Ordering::Relaxed), nonce_hex);
                 let submit = json!({
                     "id": stats.erg_shares_submitted.load(Ordering::Relaxed),
                     "method": "mining.submit",
                     "params": [
-                        &job.session_id,
+                        &job.worker_login,
                         &job.job_id,
-                        // Only send the worker portion: ns hex chars
-                        format!("{:0>width$x}", worker_nonce, width = ns),
+                        nonce_hex,
                     ]
                 });
                 let line = submit.to_string();
