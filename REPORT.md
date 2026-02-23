@@ -744,5 +744,104 @@ Docker image timeline na Helsinki:
 
 ---
 
+## Desktop Agent — Comprehensive Audit & Update (23. února 2026)
+
+> **Rozsah:** Hloubkový audit celého `APP&WEB/desktop-agent/`, migrace na 5-node topologii, oprava CSP, verze v2.9.5→v2.9.6.
+
+### Souhrn
+
+| Kategorie | Počet změn |
+|-----------|-----------|
+| Verze v2.9.5 → v2.9.6 | 10 |
+| IP/node migrace (old → 5-node) | 8 |
+| CSP & security | 8 |
+| Pool/network config | 5 |
+| **Celkem** | **31 atomických úprav ve 3 souborech** |
+
+### Změněné soubory
+
+| Soubor | Změn | Popis |
+|--------|------|-------|
+| `src/main.js` (5338 řádků) | 10 | Verze, TESTNET_SERVERS 6→5 nodů, POOL_API_SERVERS filtr, aiNativePoolUrl default, localhost fallbacks |
+| `src/ui/index.html` (2755 řádků) | 17 | CSP connect-src pro 5 IP, verze, pool karty (3 nové nody), badges TestNet→Mainnet, seed nodes 2→5, inline onclick→id |
+| `src/ui/renderer.js` (2491 řádků) | 8 | Verze, backend labels, mining console banner, getRpcUrl fallback, poolRadios mapa, bridge addEventListener |
+
+### Detail změn
+
+#### 1. Verze v2.9.5 → v2.9.6
+
+| Místo | Soubor |
+|-------|--------|
+| Renderer header komentář | `renderer.js:1` |
+| Backend status "Rust v2.9.5" | `renderer.js:152, 530` |
+| Mining console banner | `renderer.js:1120` |
+| Wallet data version | `main.js:4657` |
+| App lifecycle startup log | `main.js:5116` |
+| HTML title | `index.html:8` |
+| About page version | `index.html:2536, 2548` |
+| Miner backend label "Rust (v2.9.5)" | `index.html:2287, 2293` |
+| Console initial banner | `index.html:2349` |
+
+#### 2. IP/Node migrace — 5-node topologie
+
+| Změna | Soubor | Detail |
+|-------|--------|--------|
+| `TESTNET_SERVERS` | `main.js:1194-1200` | Odstraněny: LA `149.248.8.4`, Sydney `108.61.184.118`, Delhi `139.84.170.133`, Santiago `64.176.13.76`, Germany `195.201.31.201`. Přidány: SeedDE `46.225.126.243`, Usa1 `5.78.178.227`, Usa2 `178.156.240.160`, Asia3 `5.223.43.93` |
+| `DEFAULT_CONFIG.pool.host` | `main.js:779` | `149.248.8.4` → `77.42.31.72` |
+| `DEFAULT_CONFIG.aiNativePoolUrl` | `main.js:791` | `localhost:8001` → `77.42.31.72:8001` |
+| AI Native fallback (2×) | `main.js:1514, 4152` | `localhost:8001` → `77.42.31.72:8001` |
+| `getRpcUrl()` fallback | `renderer.js:1566` | `localhost:8444` → `77.42.31.72:8444` |
+| `updateSettingsUI()` poolRadios mapa | `renderer.js:751` | Přidány: `46.225.126.243`, `5.78.178.227`, `178.156.240.160`, `5.223.43.93` |
+
+#### 3. Pool & Network UI
+
+| Změna | Soubor | Detail |
+|-------|--------|--------|
+| `POOL_API_SERVERS` filtr | `main.js:4783` | `['helsinki','losangeles','sydney','germany']` → `['helsinki','seedde','usa1','usa2','asia3']` |
+| Pool karty v Settings | `index.html:2147-2195` | Germany IP aktualizována + přidány 3 nové karty (Usa1, Usa2, Asia3) |
+| Pool badges | `index.html` | `TestNet` → `Mainnet` (pill-gold) |
+| About page Mining Pools | `index.html:2598` | 2 IP → 5 IP |
+| About page Network | `index.html:2562` | `TestNet, 2 seed nodes EU-NORTH + EU-CENTRAL` → `Mainnet, 5 seed nodes Global (FI, DE, US×2, SG)` |
+| Seed nodes counter | `index.html:2472` | `2` → `5` |
+
+#### 4. CSP & Security
+
+| Změna | Soubor | Detail |
+|-------|--------|--------|
+| CSP `connect-src` | `index.html:7` | Přidáno: `http://77.42.31.72:* http://46.225.126.243:* http://5.78.178.227:* http://178.156.240.160:* http://5.223.43.93:* https://openrouter.ai https://sepolia.basescan.org` |
+| Inline `onclick=` → `addEventListener` | `index.html` + `renderer.js` | 7 inline onclick handlerů v Bridge view odstraněno → přesunuto do `attachBridgeListeners()` IIFE v renderer.js |
+
+**Bridge buttony migrované na addEventListener:**
+
+| Button ID | Akce |
+|-----------|------|
+| `bridge-btn-to-evm` | `bridgeSetDirection('L1toEVM')` |
+| `bridge-btn-to-l1` | `bridgeSetDirection('EVMtoL1')` |
+| `bridge-copy-evm` | `bridgeCopyEvm()` |
+| `bridge-copy-memo` | `bridgeCopyMemo()` |
+| `bridge-prepare-lock` | `bridgePrepareLock()` |
+| `bridge-open-basescan` | `window.open(basescan URL)` |
+| `bridge-refresh-stats` | `bridgeLoadStats()` |
+
+#### 5. GPU comment reference
+
+| Změna | Soubor | Detail |
+|-------|--------|--------|
+| Komentář "Zion-2.9.5" | `main.js:1093-1094` | → `Zion-2.9.6` |
+
+### Ověření
+
+| Check | Výsledek |
+|-------|----------|
+| `get_errors` (HTML + JS) | ✅ 0 chyb |
+| `npm start` (Electron v39.2.7) | ✅ Spuštěno, všech 9 init kroků proběhlo |
+| NET-METRICS | ✅ 5/5 nodů online, height 4333, hashrate ~4.8 MH/s |
+| PEERS | ✅ 35 unique peers (Helsinki 4, SeedDE 11, Usa1 11, Usa2 10, Asia3 11) |
+| Miner GPU↔CPU parity | ✅ Všechny MATCH=true |
+| CSP violations | ✅ 0 (inline onclick odstraněny) |
+| Zbývající `v2.9.5` reference | ✅ Legitimní (backward-compat cesty, historické komentáře) |
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*

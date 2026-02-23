@@ -168,8 +168,10 @@ Hloubkový audit (12. února 2026) odhalil **14 kritických (P0) nálezů**, **2
 | Server | IP | Role | Mainnet akce |
 |--------|-----|------|-------------|
 | ⬜ | Helsinki `77.42.31.72` | Core + Pool + Miner + Web | **Oddělit role** na min. 2 servery |
-| ⬜ | Germany `195.201.31.201` | Core + Pool + Miner | ⬜ Ověřit redundanci |
-| ⬜ | Třetí server (nový) | — | **Nasadit** pro seed3 + explorer |
+| ⬜ | SeedDE `46.225.126.243` | Core + Pool + Miner | ⬜ Ověřit redundanci |
+| ⬜ | Usa1 `5.78.178.227` | Seed | ⬜ Ověřit regionální latenci |
+| ⬜ | Usa2 `178.156.240.160` | Seed | ⬜ Ověřit regionální latenci |
+| ⬜ | Asia3 `5.223.43.93` | Seed | ⬜ Ověřit APAC konektivitu |
 
 ---
 
@@ -177,7 +179,7 @@ Hloubkový audit (12. února 2026) odhalil **14 kritických (P0) nálezů**, **2
 
 | # | Problém | Soubor | Závažnost | Mainnet akce |
 |---|---------|--------|-----------|-------------|
-| ⬜ | **Pouze 2 hardcoded seed IP** — DNS záznamy neresolvují | `core/src/p2p/seeds.rs` | 🔴 P0 | **Přidat ≥3 DNS seed nody + fallback IP** |
+| ⬜ | **DNS seed validace není dokončena** — aktivních 5 IP seedů je již nasazeno | `L1/core/src/p2p/seeds.rs` | 🟡 P1 | **Dokončit seed1-3 DNS + monitorovaný failover** |
 | ✅ | **process_block nemá mutex** — race condition | `core/src/state/mod.rs` | 🔴 P0 | **✅ Přidán `block_processing_lock: Mutex<()>`** (commit `f7ce224`) |
 | ✅ | **save_block + apply_block_utxos NEJSOU atomické** | `core/src/state/mod.rs` | 🔴 P0 | **✅ Single LMDB write transakce** (commit `f7ce224`) |
 | ✅ | **Legacy rollback může deadlocknout** | `core/src/storage/lmdb.rs` | 🔴 P0 | **✅ Refaktorováno — single write txn** (commit `5d0e2b8`) |

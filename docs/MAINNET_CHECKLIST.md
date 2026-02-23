@@ -60,19 +60,19 @@ Launch:       ░░░░░░░░░░░░░░░░░░░░   0% 
 
 | # | Úkol | Odhad | Deadline | Stav | Poznámka |
 |---|------|-------|----------|------|----------|
-| **P0-04** | 5+ seed nodů (EU 2, USA 1, Asia 2) | 2 týdny | srpen 2026 | ⬜ | Máme 2 (Helsinki + Germany), chybí 3 |
+| **P0-04** | 5+ seed nodů (EU 2, USA 2, Asia 1) | 2 týdny | srpen 2026 | ✅ | Aktivní: Helsinki, SeedDE, Usa1, Usa2, Asia3 |
 | **P0-05** | Premine adresy — reálné bech32 klíče | 1 den | září 2026 | ⬜ | HSM/air-gapped generace, NIKDY online |
 | **P0-06** | RPC autentizace (API key pro write endpointy) | 2 dny | září 2026 | ⬜ | Ochrana před neautorizovaným submitTx |
 
 **Seed nodů plán:**
 ```
 Uzel 1: Helsinki 🇫🇮   77.42.31.72       ✅ BĚŽÍ
-Uzel 2: Germany 🇩🇪    195.201.31.201    ✅ BĚŽÍ
-Uzel 3: USA East 🇺🇸   ?.?.?.?           ⬜ Pronájem VPS (Hetzner US / Vultr)
-Uzel 4: Singapore 🇸🇬  ?.?.?.?           ⬜ Pronájem VPS (asia latency < 200ms)
-Uzel 5: Japan 🇯🇵      ?.?.?.?           ⬜ Alternativně: Korea / HK
-Cíl: minimálně 5 seed nodů ve 3 regionech (EU, NA, Asia)
-Odhad: ~$50-80/měsíc × 3 nové = $150-240/měsíc
+Uzel 2: SeedDE 🇩🇪     46.225.126.243    ✅ BĚŽÍ
+Uzel 3: Usa1 🇺🇸       5.78.178.227      ✅ BĚŽÍ
+Uzel 4: Usa2 🇺🇸       178.156.240.160   ✅ BĚŽÍ
+Uzel 5: Asia3 🌏       5.223.43.93       ✅ BĚŽÍ
+Cíl: minimálně 5 seed nodů ve 3 regionech (EU, NA, Asia) — SPLNĚNO
+Další krok: DNS seed1-3 + health-check automatizace
 ```
 
 **Premine klíče — postup:**

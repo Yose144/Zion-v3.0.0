@@ -41,7 +41,7 @@
 | **Pool** | ZION (CH) + XMR (RandomX) + VRSC (VerusHash) + ETC (Ethash) |
 | **Website** | Up 14h (healthy), port 3000 |
 
-### Germany 🇩🇪 (`195.201.31.201`)
+### Germany 🇩🇪 (`46.225.126.243`)
 
 | Metrika | Hodnota |
 |---------|---------|

@@ -223,14 +223,14 @@ Architektura ZION TerraNova je **solidní** — LWMA difficulty adjustment, Ed25
 
 ---
 
-### P0-11: Pouze 2 hardcoded seed IP
+### P0-11: Seed resilience (aktualizováno pro 5 seedů)
 
 | | |
 |---|---|
-| **Soubor** | `core/src/p2p/seeds.rs` |
+| **Soubor** | `L1/core/src/p2p/seeds.rs` |
 | **Závažnost** | 🔴 KRITICKÁ |
-| **Popis** | Síť má pouze 2 seed IP adresy (Helsinki `77.42.31.72`, Germany `195.201.31.201`). DNS záznamy (`seed1-3.zionterranova.com`) neresolvují. |
-| **Dopad** | Pokud oba seedy spadnou, nové nody se nepřipojí k síti. Eclipse attack snadný. |
+| **Popis** | Síť má aktuálně 5 seed IP adres (Helsinki `77.42.31.72`, SeedDE `46.225.126.243`, Usa1 `5.78.178.227`, Usa2 `178.156.240.160`, Asia3 `5.223.43.93`). DNS záznamy (`seed1-3.zionterranova.com`) stále vyžadují produkční validaci. |
+| **Dopad** | Pokud seed vrstva není geograficky a DNS robustní, nové nody se mohou připojovat pomaleji a roste riziko síťové centralizace / eclipse scénářů. |
 | **Oprava** | Zaregistrovat DNS, přidat ≥3 seed nody na různých ISP/regionech. |
 
 ---
