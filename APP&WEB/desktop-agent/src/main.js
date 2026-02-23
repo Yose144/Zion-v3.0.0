@@ -781,7 +781,7 @@ const AFTERBURNER_SCRIPT_PATH = IS_PACKAGED
 // - We want primarily *current* outputs in UI and on disk.
 // - Cap by size (to avoid runaway chatty miners) and by age (to avoid multi-day logs).
 // - Backups disabled by default to keep only the current file (per UX request).
-const MAX_MINER_LOG_BYTES = 2 * 1024 * 1024; // 2MB (reduced for performance)
+const MAX_MINER_LOG_BYTES = 10 * 1024 * 1024; // 10MB
 const MAX_MINER_LOG_BACKUPS = 0;
 const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -2753,6 +2753,11 @@ function startMining(config) {
   const shouldSkipFileLogLine = (text) => {
     // Prevent massive log growth from ultra-frequent debug spam.
     if (/^\s*DEBUG:\s*Using C\+\+ library for hash\s*$/i.test(String(text).trim())) return true;
+    // GPU→CPU VERIFY blocks: 7-line blocks emitted for every GPU nonce check (~76% of all output).
+    // They contain: nonce_u64, gpu_hash, cpu_hash, MATCH=, gpu_state0, cpu_meets_target, blob_len
+    if (/GPU.*CPU VERIFY|nonce_u64=|gpu_hash=|cpu_hash=|\bMATCH=|gpu_state0=|cpu_meets_target/i.test(text)) return true;
+    // Overflow check lines
+    if (/nonce_as_u32=.*overflow=/i.test(text)) return true;
     return false;
   };
 
@@ -2793,21 +2798,22 @@ function startMining(config) {
   minerProcess.stdout.on('data', (data) => {
     rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
     const output = data.toString();
-    if (!shouldSkipFileLogLine(output)) {
+    const skip = shouldSkipFileLogLine(output);
+    if (!skip) {
       safeMinerLogWrite(`[STDOUT] ${output}`);
     }
-    enqueueMinerOutputToRenderer('stdout', output);
+    if (!skip) enqueueMinerOutputToRenderer('stdout', output);
     maybeEmitBlockFound(output);
     parseMinerOutput(output);
   });
 
   minerProcess.stderr.on('data', (data) => {
     const output = data.toString();
-    if (!shouldSkipFileLogLine(output)) {
+    const skip = shouldSkipFileLogLine(output);
+    if (!skip) {
       safeMinerLogWrite(`[STDERR] ${output}`);
     }
-    dbg('Miner stderr:', output);
-    enqueueMinerOutputToRenderer('stderr', output);
+    if (!skip) enqueueMinerOutputToRenderer('stderr', output);
     maybeEmitBlockFound(output);
     parseMinerOutput(output);
   });
