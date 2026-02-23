@@ -82,9 +82,9 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-      background-size: 80px 80px;
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 120px 120px;
       pointer-events: none;
       opacity: 0.5;
       z-index: 1;
@@ -265,11 +265,11 @@
     .sidebar {
       width: 240px;
       background: linear-gradient(180deg, rgba(12, 14, 30, 0.85), rgba(0, 0, 0, 0.6));
-      border: 1px solid var(--glass-border);
-      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 24px;
       box-shadow: var(--card-shadow);
       padding: 16px;
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(24px);
       flex-shrink: 0;
     }
 
@@ -402,7 +402,7 @@
 
     .nav-item:hover {
       border-color: var(--zion-purple);
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+      box-shadow: 0 0 24px rgba(147, 51, 234, 0.35);
       transform: translateX(4px);
     }
 
@@ -418,11 +418,11 @@
     }
 
     .view-shell {
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.50);
       border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 18px;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      border-radius: 24px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.45);
       padding: 20px;
       overflow-y: auto;
     }
@@ -441,12 +441,12 @@
       align-items: flex-end;
       gap: 12px;
       margin-bottom: 14px;
-      padding: 10px 12px;
-      border-radius: 14px;
+      padding: 14px 16px;
+      border-radius: 20px;
       border: 1px solid rgba(255,255,255,0.08);
       background: rgba(0, 0, 0, 0.35);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-      backdrop-filter: blur(18px);
+      box-shadow: 0 8px 26px rgba(0,0,0,0.35);
+      backdrop-filter: blur(24px);
       flex-shrink: 0;
     }
 
@@ -474,11 +474,18 @@
     }
 
     .about-card {
-      padding: 16px 18px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(0,0,0,0.45);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+      padding: 18px 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+      transition: border-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .about-card:hover {
+      border-color: rgba(255,255,255,0.25);
+      transform: translateY(-2px);
     }
 
     .about-kicker {
@@ -647,14 +654,15 @@
     }
 
     .stat-card {
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 12px;
-      padding: 14px 16px;
+      border-radius: 20px;
+      padding: 16px 18px;
       position: relative;
       overflow: hidden;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      backdrop-filter: blur(12px);
       will-change: border-color;
     }
 
@@ -671,8 +679,9 @@
     }
 
     .stat-card:hover {
-      border-color: var(--zion-purple);
-      box-shadow: 0 0 16px rgba(147, 51, 234, 0.2);
+      border-color: rgba(255,255,255,0.30);
+      box-shadow: 0 8px 30px rgba(147, 51, 234, 0.25);
+      transform: translateY(-2px);
     }
 
     .stat-card:hover::before {
@@ -754,12 +763,18 @@
 
     /* Control Panel */
     .control-panel {
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 24px;
+      padding: 24px;
       margin-bottom: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      backdrop-filter: blur(16px);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .control-panel:hover {
+      border-color: rgba(255,255,255,0.18);
     }
 
     .control-panel h2 {
@@ -779,10 +794,18 @@
     }
 
     .wallet-card {
-      padding: 18px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(0,0,0,0.4);
+      padding: 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(12px);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+    }
+
+    .wallet-card:hover {
+      border-color: rgba(255,255,255,0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
     }
 
     .wallet-card.wallet-balance-card {
@@ -1243,10 +1266,17 @@
     }
 
     .info-card {
-      padding: 16px;
-      background: rgba(0,0,0,0.4);
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.12);
+      padding: 18px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.10);
+      backdrop-filter: blur(12px);
+      transition: border-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.22);
     }
 
     .info-card.version { border-color: rgba(212,175,55,0.25); }
@@ -1292,11 +1322,16 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
-      background: rgba(0,0,0,0.3);
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.06);
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
       gap: 12px;
+      transition: border-color 0.3s ease;
+    }
+
+    .resource-item:hover {
+      border-color: rgba(255,255,255,0.18);
     }
 
     .resource-item-left {
@@ -1343,10 +1378,17 @@
     }
 
     .metric-card {
-      padding: 14px;
-      background: rgba(0,0,0,0.4);
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.18);
+      padding: 16px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.10);
+      backdrop-filter: blur(12px);
+      transition: border-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.22);
     }
 
     .metric-card.green { border-color: rgba(16,185,129,0.3); }
@@ -1419,8 +1461,8 @@
 
     .bridge-toggle .btn-zion {
       flex: 1;
-      padding: 10px;
-      border-radius: 10px;
+      padding: 12px;
+      border-radius: 12px;
     }
 
     .bridge-balance-grid {
@@ -1471,24 +1513,37 @@
     }
 
     .bridge-btn-small {
-      padding: 8px 12px;
+      padding: 8px 14px;
       font-size: 11px;
-      border-radius: 8px;
+      border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.08);
       color: #fff;
       cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .bridge-btn-small:hover {
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.25);
     }
 
     .bridge-input {
       width: 100%;
       box-sizing: border-box;
-      padding: 10px 14px;
+      padding: 12px 16px;
       background: rgba(0,0,0,0.35);
       border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 10px;
+      border-radius: 12px;
       color: #fff;
       font-size: 14px;
+      transition: border-color 0.2s ease;
+    }
+
+    .bridge-input:focus {
+      outline: none;
+      border-color: rgba(147,51,234,0.5);
+      box-shadow: 0 0 16px rgba(147,51,234,0.15);
     }
 
     .bridge-form-title {
@@ -1515,9 +1570,9 @@
 
     .bridge-code-block {
       display: block;
-      padding: 10px;
+      padding: 12px;
       background: rgba(0,0,0,0.35);
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 11px;
       color: rgba(255,255,255,0.6);
       word-break: break-all;
@@ -1534,22 +1589,28 @@
 
     .bridge-primary-btn {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       background: linear-gradient(135deg,#f7b801,#e09000);
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       color: #000;
       font-weight: 700;
       font-size: 14px;
       cursor: pointer;
       margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .bridge-primary-btn:hover {
+      box-shadow: 0 0 24px rgba(247,184,1,0.35);
+      transform: translateY(-1px);
     }
 
     .bridge-note-box {
-      padding: 14px;
-      background: rgba(0,0,0,0.25);
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.06);
+      padding: 16px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
     }
 
     .bridge-note-text {
@@ -1615,12 +1676,16 @@
     }
 
     .about-quote {
-      font-size: 15px;
-      color: rgba(255,255,255,0.55);
+      font-size: 16px;
+      color: rgba(255,255,255,0.6);
       line-height: 1.8;
       max-width: 500px;
       margin: 0 auto;
       font-style: italic;
+      background: linear-gradient(135deg, rgba(255,215,0,0.8), rgba(147,51,234,0.8));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .about-quote-foot {
@@ -1647,21 +1712,21 @@
     .form-group input,
     .form-group select {
       width: 100%;
-      padding: 10px 14px;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(147, 51, 234, 0.3);
-      border-radius: 8px;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
       color: #ffffff;
       font-size: 13px;
       font-family: 'Inter', sans-serif;
-      transition: border-color 0.2s;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .form-group input:focus,
     .form-group select:focus {
       outline: none;
-      border-color: var(--zion-purple);
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+      border-color: rgba(147, 51, 234, 0.5);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.25);
       background: rgba(10, 10, 20, 0.8);
     }
 
@@ -1676,26 +1741,27 @@
 
     .btn {
       flex: 0 0 auto;
-      padding: 9px 20px;
+      padding: 10px 22px;
       border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       position: relative;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.05);
       color: rgba(255,255,255,0.88);
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(8px);
       font-family: inherit;
     }
 
     .btn:hover {
       border-color: rgba(147,51,234,0.4);
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 16px rgba(147,51,234,0.15);
+      background: rgba(255, 255, 255, 0.10);
+      box-shadow: 0 0 20px rgba(147,51,234,0.2);
+      transform: translateY(-1px);
     }
 
     .button-group .btn {
@@ -1764,13 +1830,19 @@
     .settings-card {
       padding: 24px;
       border-radius: 24px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(0,0,0,0.55);
-      box-shadow: 0 25px 60px rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
       display: flex;
       flex-direction: column;
       gap: 18px;
       min-height: 100%;
+      transition: border-color 0.3s ease;
+    }
+
+    .settings-card:hover {
+      border-color: rgba(255,255,255,0.18);
     }
 
     .settings-card.span-2 {
@@ -1924,11 +1996,12 @@
     }
 
     .pool-card-body {
-      padding: 18px;
-      background: rgba(0,0,0,0.45);
-      transition: border 0.2s, box-shadow 0.2s;
+      padding: 20px;
+      background: rgba(255,255,255,0.05);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
       border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
     }
 
     .pool-card input:checked + .pool-card-body {
@@ -2263,7 +2336,7 @@
     }
     .mining-console-body::-webkit-scrollbar { width: 6px; }
     .mining-console-body::-webkit-scrollbar-track { background: transparent; }
-    .mining-console-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    .mining-console-body::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple))); border-radius: 4px; }
     .mc-line {
       white-space: pre-wrap;
       word-break: break-all;
@@ -2298,23 +2371,23 @@
       margin-left: -10px;
     }
 
-    /* Scrollbar */
+    /* Scrollbar — web2.9 gold→purple gradient */
     ::-webkit-scrollbar {
-      width: 10px;
+      width: 8px;
     }
 
     ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
     }
 
     ::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, var(--zion-purple), var(--zion-cyan));
-      border-radius: 10px;
+      background: linear-gradient(180deg, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple)));
+      border-radius: 8px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, var(--zion-gold), var(--zion-purple));
+      background: linear-gradient(180deg, rgb(var(--color-zion-gold)), rgb(var(--color-zion-cyan)));
     }
 
     /* CH3 Stream Indicator */
@@ -2375,10 +2448,14 @@
     }
     .server-card {
       padding: 20px;
-      background: rgba(0,0,0,0.45);
+      background: rgba(255,255,255,0.05);
       border: 1px solid rgba(147,51,234,0.25);
-      border-radius: 14px;
-      transition: border-color 0.3s;
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      transition: border-color 0.3s ease, transform 0.2s ease;
+    }
+    .server-card:hover {
+      transform: translateY(-2px);
     }
     .server-card.online { border-color: rgba(16,185,129,0.5); }
     .server-card.offline { border-color: rgba(248,113,113,0.4); opacity: 0.7; }
@@ -2412,6 +2489,56 @@
     .server-card .server-detail .val.ok { color: #10b981; }
     .server-card .server-detail .val.err { color: #ef4444; }
 
+    /* ═══ Utility classes — eliminating inline styles ═══ */
+    .mt-20 { margin-top: 20px; }
+    .mt-24 { margin-top: 24px; }
+    .mb-10 { margin-bottom: 10px; }
+    .mb-12 { margin-bottom: 12px; }
+    .mb-14 { margin-bottom: 14px; }
+    .ml-auto { margin-left: auto; }
+    .p-bridge { padding: 16px 20px; }
+    .p-bridge-form { padding: 18px 20px; }
+    .p-bridge-sm { padding: 14px 20px; }
+    .icon-12 { width: 12px; height: 12px; }
+    .emoji-16 { font-size: 16px; line-height: 1; }
+    .link-gold { color: var(--zion-gold); }
+    .link-cyan { color: var(--zion-cyan); }
+    .d-none { display: none; }
+    .inline-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .bridge-copy-compact {
+      width: auto;
+      margin: 0;
+      padding: 8px 12px;
+    }
+    .bridge-code-nomargin { margin: 0; }
+
+    /* ═══ Web 2.9 unified design tokens ═══ */
+    .card-glow {
+      box-shadow: 0 0 30px rgba(147, 51, 234, 0.3);
+    }
+
+    .hud-grid {
+      background-image:
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 120px 120px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* ═══ Reduced Motion ═══ */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
 
   </style>
 </head>
@@ -3388,7 +3515,7 @@
       </div>
 
       <!-- Network View (hidden by default) -->
-      <div id="network-view" class="view-shell" style="display: none;">
+      <div id="network-view" class="view-shell d-none">
         <div class="web29-page-header">
           <div class="web29-title-stack">
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-refresh"></use></svg>Infrastructure</div>
@@ -3401,7 +3528,7 @@
         </div>
 
         <!-- Network Telemetry (lite) -->
-        <div class="control-panel" style="margin-top: 24px;">
+        <div class="control-panel mt-24">
           <h2 class="panel-header-title">
             <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
             <span>Network Telemetry</span>
@@ -3436,11 +3563,11 @@
         </div>
 
         <!-- GPU Detection Panel -->
-        <div class="control-panel" style="margin-top: 24px;">
+        <div class="control-panel mt-24">
           <h2 class="panel-header-title">
             <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
             <span>GPU Detection</span>
-            <span class="gpu-badge cpu-only" id="net-gpu-badge" style="margin-left: auto;"><span id="net-gpu-badge-text">Scanning...</span></span>
+            <span class="gpu-badge cpu-only ml-auto" id="net-gpu-badge"><span id="net-gpu-badge-text">Scanning...</span></span>
           </h2>
           <div class="metric-grid metric-grid-200">
             <div class="metric-card soft-purple">
@@ -3464,7 +3591,7 @@
 
 
         <!-- P2P Peer Discovery Panel -->
-        <div class="control-panel" style="margin-top: 24px;">
+        <div class="control-panel mt-24">
           <h2 class="panel-header-row">
             <span class="panel-header-title">
               <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
@@ -3473,7 +3600,7 @@
             <span class="panel-header-title">
               <span class="muted-time" id="net-peers-updated">—</span>
               <button class="btn btn-ghost btn-sm" id="refresh-peers-btn">
-                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg>
+                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
                 Refresh
               </button>
             </span>
@@ -3500,14 +3627,14 @@
         </div>
 
         <!-- Server Status -->
-        <div class="control-panel" style="margin-top: 20px;">
+        <div class="control-panel mt-20">
           <h2 class="panel-header-row">
             <span class="panel-header-title">
               <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
               <span>TestNet Servers</span>
             </span>
             <button class="btn btn-ghost btn-sm" id="refresh-servers-btn">
-              <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg>
+              <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
               Refresh
             </button>
           </h2>
@@ -3538,7 +3665,7 @@
       </div>
 
       <!-- About View (hidden by default) -->
-      <div id="about-view" class="view-shell" style="display: none;">
+      <div id="about-view" class="view-shell d-none">
         <div class="web29-page-header">
           <div class="web29-title-stack">
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-info"></use></svg>Project</div>
@@ -3551,8 +3678,8 @@
         </div>
 
         <!-- Project Info -->
-        <div class="control-panel" style="margin-top: 24px;">
-          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <div class="control-panel mt-24">
+          <h2 class="inline-heading">
             <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
             <span>Native Awakening v2.9.6</span>
           </h2>
@@ -3564,28 +3691,28 @@
           <div class="info-cards-grid">
             <div class="info-card version">
               <div class="info-card-kicker">
-                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-info"></use></svg> VERSION
+                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> VERSION
               </div>
               <div class="info-card-value version">2.9.6</div>
               <div class="info-card-sub">Native Awakening</div>
             </div>
             <div class="info-card algo">
               <div class="info-card-kicker">
-                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-spark"></use></svg> ALGORITHM
+                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> ALGORITHM
               </div>
               <div class="info-card-value algo">Cosmic Harmony v3</div>
               <div class="info-card-sub">ZION Proof-of-Work</div>
             </div>
             <div class="info-card network">
               <div class="info-card-kicker">
-                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg> NETWORK
+                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> NETWORK
               </div>
               <div class="info-card-value network">Mainnet</div>
               <div class="info-card-sub">5 seed nodes · Global (FI, DE, US×2, SG)</div>
             </div>
             <div class="info-card engine">
               <div class="info-card-kicker">
-                <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-spark"></use></svg> ENGINE
+                <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> ENGINE
               </div>
               <div class="info-card-value engine">Rust Native</div>
               <div class="info-card-sub">CPU + GPU · Stratum v2</div>
@@ -3594,36 +3721,36 @@
         </div>
 
         <!-- Links -->
-        <div class="control-panel" style="margin-top: 20px;">
-          <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <div class="control-panel mt-20">
+          <h2 class="inline-heading">
             <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
             <span>Links &amp; Resources</span>
           </h2>
           <div class="resource-list">
             <div class="resource-item">
               <div class="resource-item-left">
-                <span style="font-size:16px;">🌐</span>
+                <span class="emoji-16">🌐</span>
                 <span class="resource-item-label">Website</span>
               </div>
-              <a href="https://zionterranova.com" class="resource-item-link" style="color:var(--zion-gold);">zionterranova.com</a>
+              <a href="https://zionterranova.com" class="resource-item-link" class="link-gold">zionterranova.com</a>
             </div>
             <div class="resource-item">
               <div class="resource-item-left">
-                <span style="font-size:16px;">💻</span>
+                <span class="emoji-16">💻</span>
                 <span class="resource-item-label">GitHub</span>
               </div>
-              <a href="https://github.com/zionterranova" class="resource-item-link" style="color:var(--zion-cyan);">github.com/zionterranova</a>
+              <a href="https://github.com/zionterranova" class="resource-item-link" class="link-cyan">github.com/zionterranova</a>
             </div>
             <div class="resource-item">
               <div class="resource-item-left">
-                <span style="font-size:16px;">⛏️</span>
+                <span class="emoji-16">⛏️</span>
                 <span class="resource-item-label">Mining Pools</span>
               </div>
               <span class="resource-item-value">77.42.31.72:3333 · 46.225.126.243:3333 · 5.78.178.227:3333 · 178.156.240.160:3333 · 5.223.43.93:3333</span>
             </div>
             <div class="resource-item">
               <div class="resource-item-left">
-                <span style="font-size:16px;">🔗</span>
+                <span class="emoji-16">🔗</span>
                 <span class="resource-item-label">RPC Endpoints</span>
               </div>
               <span class="resource-item-value">:8444/jsonrpc · P2P :8334</span>
@@ -3632,7 +3759,7 @@
         </div>
 
         <!-- Philosophy -->
-        <div class="control-panel" style="margin-top: 20px;">
+        <div class="control-panel mt-20">
           <div class="about-quote-wrap">
             <div class="about-quote-icon">✨</div>
             <p class="about-quote">
@@ -3644,7 +3771,7 @@
       </div>
 
       <!-- ── Bridge View ──────────────────────────────────────────────────── -->
-      <div id="bridge-view" class="view-shell" style="display: none;">
+      <div id="bridge-view" class="view-shell d-none">
         <div class="web29-page-header">
           <div class="web29-title-stack">
             <div class="web29-kicker">↔ L1 · Base</div>
@@ -3656,7 +3783,7 @@
         </div>
 
         <!-- Direction toggle -->
-        <div class="control-panel" style="margin-bottom:14px; padding:16px 20px;">
+        <div class="control-panel mb-14 p-bridge">
           <div class="bridge-toggle">
             <button id="bridge-btn-to-evm" class="btn-zion active">
               ZION → wZION (lock on L1)
@@ -3682,7 +3809,7 @@
         </div>
 
         <!-- EVM address display -->
-        <div class="control-panel" style="margin-bottom:14px; padding:14px 20px;">
+        <div class="control-panel mb-14 p-bridge-sm">
           <div class="bridge-label">Your EVM address (Base)</div>
           <div class="bridge-inline-row">
             <code id="bridge-evm-address" class="bridge-code">—</code>
@@ -3691,24 +3818,24 @@
         </div>
 
         <!-- Form: L1→EVM -->
-        <div id="bridge-form-l1toevm" class="control-panel" style="margin-bottom:14px; padding:18px 20px;">
+        <div id="bridge-form-l1toevm" class="control-panel mb-14 p-bridge-form">
           <h3 class="bridge-form-title">Lock ZION on L1 → receive wZION on Base</h3>
           <p class="bridge-help">
             Send ZION to the bridge vault address on L1 with the generated memo.
             The Rust relay monitors L1 and automatically mints wZION to your Base address.
           </p>
-          <div style="margin-bottom:10px;">
+          <div class="mb-10">
             <label class="bridge-label">Amount (ZION, min. 100)</label>
             <input id="bridge-l1-amount" type="number" min="100" step="1" placeholder="e.g. 500"
               class="bridge-input" />
           </div>
-          <div id="bridge-memo-box" style="display:none; margin-bottom:14px;">
+          <div id="bridge-memo-box" class="d-none mb-14">
             <label class="bridge-label">L1 Vault address</label>
             <code id="bridge-vault-addr" class="bridge-code-block">—</code>
             <label class="bridge-label">Memo (copy EXACTLY)</label>
             <div class="bridge-inline-row">
               <code id="bridge-memo-text" class="bridge-code-block warn">—</code>
-              <button id="bridge-copy-memo" class="bridge-primary-btn" style="width:auto; margin:0; padding:8px 12px;">Copy</button>
+              <button id="bridge-copy-memo" class="bridge-primary-btn bridge-copy-compact">Copy</button>
             </div>
           </div>
           <button id="bridge-prepare-lock" class="bridge-primary-btn">
@@ -3717,17 +3844,17 @@
         </div>
 
         <!-- Form: EVM→L1 (read-only instructions — signing requires mobile or MetaMask) -->
-        <div id="bridge-form-evmtol1" class="control-panel" style="margin-bottom:14px; padding:18px 20px; display:none;">
+        <div id="bridge-form-evmtol1" class="control-panel mb-14 p-bridge-form d-none">
           <h3 class="bridge-form-title cyan">Burn wZION on Base → receive ZION on L1</h3>
           <p class="bridge-help">
             Use the mobile wallet to sign and broadcast the <code>bridgeBurn()</code> transaction,
             or call the contract directly via BaseScan write interface. The Rust relay will
             release L1 ZION after confirmation.
           </p>
-          <div style="margin-bottom:10px;">
+          <div class="mb-10">
             <label class="bridge-label">Contract on Base Sepolia</label>
             <div class="bridge-inline-row">
-              <code class="bridge-code-block" style="margin:0;">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
+              <code class="bridge-code-block bridge-code-nomargin">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
               <button id="bridge-open-basescan" class="bridge-btn-small">Open ↗</button>
             </div>
           </div>
@@ -3742,10 +3869,10 @@
         </div>
 
         <!-- Bridge stats -->
-        <div class="control-panel" style="padding:18px 20px;">
-          <div class="bridge-balance-kicker" style="margin-bottom:12px;">Bridge Statistics</div>
+        <div class="control-panel p-bridge-form">
+          <div class="bridge-balance-kicker mb-12">Bridge Statistics</div>
           <div id="bridge-stats-loading" class="placeholder-row">Loading…</div>
-          <div id="bridge-stats-grid" class="bridge-stats-grid" style="display:none;">
+          <div id="bridge-stats-grid" class="bridge-stats-grid d-none">
             <div class="bridge-stat-card">
               <div id="bs-minted" class="bridge-stat-value">—</div>
               <div class="bridge-stat-label">Total minted</div>
