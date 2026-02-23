@@ -31,6 +31,9 @@ abigen!(
 // Auto-reconnect constants (B-02)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Maximum block range per eth_getLogs call (publicnode limit: 50000).
+const MAX_BLOCK_RANGE: u64 = 49_000;
+
 /// Maximum reconnect attempts before giving up (returns Err to the caller
 /// which will restart the task via the bridge daemon).
 const MAX_RETRIES: u32 = 5;
@@ -166,30 +169,46 @@ impl EvmWatcher {
             self.config.name, from, to, current_block, finalized_block
         );
 
-        let filter = base_filter.clone().from_block(from).to_block(to);
+        // Chunk requests to stay within publicnode limit of 50k blocks per getLogs call
+        let mut total_count = 0usize;
+        let mut chunk_from = from;
 
-        let logs = provider.get_logs(&filter).await?;
-        let count = logs.len();
+        while chunk_from <= to {
+            let chunk_to = (chunk_from + MAX_BLOCK_RANGE - 1).min(to);
+            if chunk_from < to {
+                debug!(
+                    "{}: chunk {} → {} (of {})",
+                    self.config.name, chunk_from, chunk_to, to
+                );
+            }
 
-        for log in logs {
-            match self.parse_burn_event(log) {
-                Ok(burn) => {
-                    info!(
-                        "🔥 Burn detected on {}: {} wZION → {} (burn_id: {})",
-                        self.config.name, burn.amount_wzion, burn.l1_recipient, burn.burn_id,
-                    );
-                    if let Err(e) = burn_tx.send(burn).await {
-                        error!("Failed to send burn event: {:?}", e);
+            let filter = base_filter.clone().from_block(chunk_from).to_block(chunk_to);
+            let logs = provider.get_logs(&filter).await?;
+            let count = logs.len();
+            total_count += count;
+
+            for log in logs {
+                match self.parse_burn_event(log) {
+                    Ok(burn) => {
+                        info!(
+                            "🔥 Burn detected on {}: {} wZION → {} (burn_id: {})",
+                            self.config.name, burn.amount_wzion, burn.l1_recipient, burn.burn_id,
+                        );
+                        if let Err(e) = burn_tx.send(burn).await {
+                            error!("Failed to send burn event: {:?}", e);
+                        }
+                    }
+                    Err(e) => {
+                        warn!("{}: failed to parse burn event: {:?}", self.config.name, e);
                     }
                 }
-                Err(e) => {
-                    warn!("{}: failed to parse burn event: {:?}", self.config.name, e);
-                }
             }
+
+            chunk_from = chunk_to + 1;
         }
 
         self.last_processed_block = to;
-        Ok(count)
+        Ok(total_count)
     }
 
     fn parse_burn_event(&self, log: Log) -> Result<EvmBurnEvent> {

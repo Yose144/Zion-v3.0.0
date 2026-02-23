@@ -99,6 +99,11 @@ pub struct EvmChainConfig {
 
     /// Max gas price (in gwei) — safety limit
     pub max_gas_gwei: u64,
+
+    /// Starting EVM block for event scanning (avoids scanning from genesis).
+    /// Set to approximate block number at bridge deployment time.
+    #[serde(default)]
+    pub start_block: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
