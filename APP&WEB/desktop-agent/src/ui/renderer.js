@@ -554,6 +554,9 @@ function switchView(view) {
   // Initialize bridge view when opened
   if (view === 'bridge') initBridgeView();
 
+  // Initialize OASIS view when opened
+  if (view === 'oasis') initOasisView();
+
   // Refresh network data only when user opens Network view
   if (view === 'network') {
     void refreshServerStatus();
@@ -2939,5 +2942,333 @@ function bridgeCopyText(text) {
 
 // Hook into switchView to initialize bridge when tab is opened
 // (initBridgeView() is called directly inside switchView() above)
+
+// ═══════════════════════════════════════════════════════════════
+// OASIS — Consciousness Gaming Layer (L4)
+// ═══════════════════════════════════════════════════════════════
+
+/** OASIS Consciousness Levels — mirrors L4/oasis/src/consciousness.rs */
+const OASIS_LEVELS = [
+  { name: 'Physical',     sefira: 'Malkuth',         desc: 'Foundation',     xp: 0,         mult: 1.0,  symbol: '🌍', features: ['BasicMining'] },
+  { name: 'Emotional',    sefira: 'Yesod',           desc: 'Connection',     xp: 1_000,     mult: 1.2,  symbol: '🌊', features: ['JoinGuild'] },
+  { name: 'Mental',       sefira: 'Hod / Netzach',   desc: 'Splendor',       xp: 5_000,     mult: 1.5,  symbol: '🔥', features: ['AiChallenges', 'CreateGuild'] },
+  { name: 'Intuitional',  sefira: 'Tiferet',         desc: 'Beauty',         xp: 15_000,    mult: 2.0,  symbol: '💎', features: ['ClaimTerritory', 'MeditationBonus'] },
+  { name: 'Spiritual',    sefira: 'Gevurah / Chesed',desc: 'Strength & Mercy',xp: 50_000,   mult: 3.0,  symbol: '⚡', features: ['DaoVoting', 'TitheProposals'] },
+  { name: 'Cosmic',       sefira: 'Binah',           desc: 'Understanding',  xp: 150_000,   mult: 5.0,  symbol: '🌌', features: ['CreateAiAgent', 'GuildWars'] },
+  { name: 'Divine',       sefira: 'Chokmah',         desc: 'Wisdom',         xp: 500_000,   mult: 8.0,  symbol: '👁', features: ['ExpandTerritory', 'Mentorship'] },
+  { name: 'Unity',        sefira: "Da'at",           desc: 'Knowledge',      xp: 2_000_000, mult: 12.0, symbol: '∞',  features: ['WarpPortals', 'CreateChallenges'] },
+  { name: 'OnTheStar',    sefira: 'Keter',           desc: 'Crown',          xp: 10_000_000,mult: 15.0, symbol: '✦',  features: ['ConsciousnessBeacon'] },
+];
+
+/** Level-up ZION bonuses — mirrors L4/oasis/src/levels.rs */
+const LEVEL_UP_REWARDS = [0, 100, 500, 2_500, 10_000, 50_000, 250_000, 1_000_000, 5_000_000];
+
+/** 8 Genesis Territories — mirrors L4/oasis/src/territory.rs */
+const OASIS_TERRITORIES = [
+  { name: 'Mount Zion',                  region: 'Mountains',     emoji: '🏔️', bg: 'bg-mountains',difficulty: 1.0, miningBonus: 10, xpBonus: 5,  capacity: 50  },
+  { name: 'Cedar Forest',                region: 'Forest',        emoji: '🌲', bg: 'bg-forest',   difficulty: 0.8, miningBonus: 15, xpBonus: 10, capacity: 40  },
+  { name: 'Negev Desert',                region: 'Desert',        emoji: '🏜️', bg: 'bg-desert',   difficulty: 1.5, miningBonus: 20, xpBonus: 15, capacity: 30  },
+  { name: 'Sea of Galilee',              region: 'Ocean',         emoji: '🌊', bg: 'bg-ocean',    difficulty: 1.2, miningBonus: 12, xpBonus: 8,  capacity: 35  },
+  { name: 'Masada Forge',                region: 'Volcano',       emoji: '🌋', bg: 'bg-volcano',  difficulty: 2.0, miningBonus: 25, xpBonus: 20, capacity: 20  },
+  { name: 'Crystal Mines of Solomon',    region: 'Crystal Caves', emoji: '💎', bg: 'bg-crystal',  difficulty: 1.8, miningBonus: 22, xpBonus: 18, capacity: 25  },
+  { name: 'Temple of Consciousness',     region: 'Temple',        emoji: '🕍', bg: 'bg-temple',   difficulty: 1.3, miningBonus: 18, xpBonus: 25, capacity: 30  },
+  { name: 'Babel Nexus',                 region: 'Nexus',         emoji: '🌀', bg: 'bg-nexus',    difficulty: 2.5, miningBonus: 30, xpBonus: 30, capacity: 15  },
+];
+
+/** Tithe categories — mirrors L4/oasis/src/tithe.rs */
+const OASIS_TITHE_CATEGORIES = [
+  { name: 'Water',       emoji: '💧', desc: 'Clean water access' },
+  { name: 'Food',        emoji: '🍞', desc: 'Food security' },
+  { name: 'Shelter',     emoji: '🏠', desc: 'Housing & shelter' },
+  { name: 'Environment', emoji: '🌍', desc: 'Earth protection' },
+  { name: 'Medical',     emoji: '🏥', desc: 'Healthcare access' },
+  { name: 'Education',   emoji: '📚', desc: 'Knowledge & learning' },
+  { name: 'Emergency',   emoji: '🚨', desc: 'Disaster response' },
+];
+
+/** Challenge definitions — mirrors L4/oasis/src/challenges.rs genesis_challenges() */
+const OASIS_CHALLENGES = [
+  { id: 'daily_meditation',        title: 'Daily Meditation',         category: 'Meditation',    difficulty: 'Beginner',      baseXp: 50,  zion: 10,    desc: 'Complete a 10-minute guided meditation session to center your consciousness.', isDaily: true },
+  { id: 'crypto_quiz_beginner',    title: 'Crypto Fundamentals',      category: 'Quiz',          difficulty: 'Beginner',      baseXp: 100, zion: 25,    desc: 'Test your knowledge of blockchain basics, consensus mechanisms, and cryptography.', isDaily: false },
+  { id: 'humanitarian_awareness',  title: 'Humanitarian Awareness',   category: 'Humanitarian',  difficulty: 'Intermediate', baseXp: 200, zion: 50,    desc: 'Learn about global humanitarian challenges and how blockchain can help solve them.', isDaily: false },
+  { id: 'ai_challenge_advanced',   title: 'Neural Consciousness',     category: 'Technical',     difficulty: 'Advanced',      baseXp: 500, zion: 200,   desc: 'Solve an advanced AI reasoning challenge that tests pattern recognition and logic.', isDaily: false },
+  { id: 'creative_expression',     title: 'Sacred Geometry',          category: 'Creative',      difficulty: 'Intermediate', baseXp: 150, zion: 40,    desc: 'Create or identify sacred geometric patterns in nature and mathematics.', isDaily: true },
+  { id: 'community_builder',       title: 'Community Builder',        category: 'Community',     difficulty: 'Beginner',      baseXp: 75,  zion: 20,    desc: 'Help onboard a new member or contribute to community discussions.', isDaily: false },
+  { id: 'quantum_mastery',         title: 'Quantum Consciousness',    category: 'Technical',     difficulty: 'Master',        baseXp: 1000,zion: 500,   desc: 'Master-level challenge exploring quantum entanglement and consciousness theory.', isDaily: false },
+  { id: 'tithe_reflection',        title: 'Tithe Reflection',         category: 'Humanitarian',  difficulty: 'Beginner',      baseXp: 60,  zion: 15,    desc: 'Reflect on your humanitarian contributions and set intention for future giving.', isDaily: true },
+];
+
+/** Reward pool slots — mirrors L4/oasis/src/rewards.rs */
+const OASIS_REWARD_SLOTS = [
+  { name: 'Mining',     icon: '⛏',  amount: '1.65B' },
+  { name: 'Challenges', icon: '🧠', amount: '1.65B' },
+  { name: 'Guild',      icon: '⚔',  amount: '1.65B' },
+  { name: 'Level-Up',   icon: '⬆',  amount: '1.65B' },
+  { name: 'Reserve',    icon: '🔒', amount: '1.65B' },
+];
+
+/** Sample guild quests — mirrors L4/oasis/src/guild.rs QuestType */
+const GUILD_QUESTS = [
+  { icon: '⛏', title: 'Collective Mining Sprint', desc: 'Mine 500 blocks as a guild', reward: '2,000 XP', progress: 67 },
+  { icon: '🧠', title: 'AI Challenge Blitz',       desc: 'Complete 25 AI challenges',  reward: '1,500 XP', progress: 44 },
+  { icon: '💝', title: 'Humanitarian Goal',         desc: 'Tithe 10,000 ZION total',    reward: '3,000 XP', progress: 23 },
+  { icon: '🛡', title: 'Territory Defense',         desc: 'Hold Cedar Forest for 48h',  reward: '2,500 XP', progress: 89 },
+  { icon: '✨', title: 'XP Milestone',              desc: 'Reach 100K combined guild XP',reward: '5,000 XP', progress: 56 },
+];
+
+let oasisInitialized = false;
+
+/** Called when OASIS nav item is clicked (from switchView) */
+function initOasisView() {
+  if (oasisInitialized) return;
+  oasisInitialized = true;
+
+  // Simulated player state (in production, this comes from L4 OASIS API port 8094)
+  const player = {
+    totalXp: 3_420,
+    level: 2, // Mental
+    blocksMined: 1_247,
+    streak: 12,
+    zionEarned: 84_210,
+    guildName: null,
+  };
+
+  renderJourney(player);
+  renderTerritories();
+  renderGuild(player);
+  renderChallenges();
+  renderTithe();
+}
+
+function renderJourney(player) {
+  const currentLevel = OASIS_LEVELS[player.level];
+  const nextLevel = OASIS_LEVELS[player.level + 1] || null;
+
+  // Orb & name
+  const orb = document.getElementById('oasis-orb');
+  const nameEl = document.getElementById('oasis-level-name');
+  const subEl = document.getElementById('oasis-sefira-label');
+  if (orb) orb.textContent = currentLevel.symbol;
+  if (nameEl) nameEl.textContent = currentLevel.name;
+  if (subEl) subEl.textContent = `${currentLevel.sefira} · ${currentLevel.desc}`;
+
+  // XP bar
+  const fill = document.getElementById('oasis-xp-fill');
+  const xpCur = document.getElementById('oasis-xp-current');
+  const xpNext = document.getElementById('oasis-xp-next');
+  if (nextLevel && fill) {
+    const pct = ((player.totalXp - currentLevel.xp) / (nextLevel.xp - currentLevel.xp)) * 100;
+    fill.style.width = `${Math.min(100, Math.max(0, pct)).toFixed(1)}%`;
+  }
+  if (xpCur) xpCur.textContent = `${player.totalXp.toLocaleString()} XP`;
+  if (xpNext) xpNext.textContent = nextLevel ? `Next: ${nextLevel.xp.toLocaleString()} XP` : 'MAX LEVEL';
+
+  // Stats
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setTxt('oasis-multiplier', `${currentLevel.mult}×`);
+  setTxt('oasis-blocks-mined', player.blocksMined.toLocaleString());
+  setTxt('oasis-streak', `${player.streak}d`);
+  setTxt('oasis-zion-earned', player.zionEarned.toLocaleString());
+
+  // Features
+  const featuresEl = document.getElementById('oasis-features');
+  if (featuresEl) {
+    const allFeatures = [
+      { key: 'BasicMining',        icon: '⛏', label: 'Basic Mining' },
+      { key: 'JoinGuild',          icon: '🤝', label: 'Join Guild' },
+      { key: 'AiChallenges',       icon: '🧠', label: 'AI Challenges' },
+      { key: 'CreateGuild',        icon: '⚔', label: 'Create Guild' },
+      { key: 'ClaimTerritory',     icon: '🏴', label: 'Claim Territory' },
+      { key: 'MeditationBonus',    icon: '🧘', label: 'Meditation Bonus' },
+      { key: 'DaoVoting',          icon: '🗳', label: 'DAO Voting' },
+      { key: 'TitheProposals',     icon: '💝', label: 'Tithe Proposals' },
+      { key: 'CreateAiAgent',      icon: '🤖', label: 'Create AI Agent' },
+      { key: 'GuildWars',          icon: '⚔', label: 'Guild Wars' },
+      { key: 'ExpandTerritory',    icon: '🗺', label: 'Expand Territory' },
+      { key: 'Mentorship',         icon: '🎓', label: 'Mentorship' },
+      { key: 'WarpPortals',        icon: '🌀', label: 'Warp Portals' },
+      { key: 'CreateChallenges',   icon: '✏', label: 'Create Challenges' },
+      { key: 'ConsciousnessBeacon',icon: '✦', label: 'Consciousness Beacon' },
+    ];
+
+    // Collect all unlocked features up to current level
+    const unlockedKeys = new Set();
+    for (let i = 0; i <= player.level; i++) {
+      for (const f of OASIS_LEVELS[i].features) unlockedKeys.add(f);
+    }
+
+    featuresEl.innerHTML = allFeatures.map(f => {
+      const unlocked = unlockedKeys.has(f.key);
+      return `<div class="oasis-feature ${unlocked ? 'unlocked' : 'locked'}">
+        <span class="oasis-feature-icon">${f.icon}</span>
+        <span>${f.label}</span>
+        <span style="margin-left:auto; font-size:11px">${unlocked ? '✅' : '🔒'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Ladder
+  const ladderEl = document.getElementById('oasis-ladder');
+  if (ladderEl) {
+    ladderEl.innerHTML = OASIS_LEVELS.map((lvl, i) => {
+      let cls = 'future';
+      if (i < player.level) cls = 'achieved';
+      if (i === player.level) cls = 'current';
+      const reward = LEVEL_UP_REWARDS[i] ? `+${LEVEL_UP_REWARDS[i].toLocaleString()} ZION` : '';
+      return `<div class="oasis-level-step ${cls}">
+        <div class="oasis-level-num">${i + 1}</div>
+        <div class="oasis-level-name">${lvl.symbol} ${lvl.name}</div>
+        <div class="oasis-level-xp">${lvl.xp.toLocaleString()} XP</div>
+        <div class="oasis-level-mult">${lvl.mult}×</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Reward pool
+  const chartEl = document.getElementById('oasis-reward-chart');
+  if (chartEl) {
+    chartEl.innerHTML = OASIS_REWARD_SLOTS.map(s =>
+      `<div class="reward-slot">
+        <div class="reward-slot-icon">${s.icon}</div>
+        <div class="reward-slot-name">${s.name}</div>
+        <div class="reward-slot-amount">${s.amount}</div>
+        <div class="reward-slot-pct">20%</div>
+      </div>`
+    ).join('');
+  }
+}
+
+function renderTerritories() {
+  const grid = document.getElementById('oasis-territory-grid');
+  if (!grid) return;
+
+  grid.innerHTML = OASIS_TERRITORIES.map(t => {
+    const controllers = ['Unclaimed', 'Sons of Light', 'Dawn Seekers', 'Crystal Guardians', 'Unclaimed', 'Forge Masters', 'Temple Keepers', 'Nexus Architects'];
+    const idx = OASIS_TERRITORIES.indexOf(t);
+    const controller = controllers[idx] || 'Unclaimed';
+    const isClaimed = controller !== 'Unclaimed';
+
+    return `<div class="territory-card">
+      <div class="territory-banner ${t.bg}">
+        <div class="territory-banner-bg"></div>
+        <div class="territory-banner-region">${t.region}</div>
+        <div class="territory-banner-icon">${t.emoji}</div>
+      </div>
+      <div class="territory-body">
+        <div class="territory-name">${t.name}</div>
+        <div class="territory-meta">
+          <span>⚙ Difficulty ${t.difficulty}×</span>
+          <span>⛏ +${t.miningBonus}%</span>
+          <span>✨ +${t.xpBonus}%</span>
+        </div>
+        <div class="territory-status">
+          <span style="color:${isClaimed ? 'var(--zion-cyan)' : 'rgba(255,255,255,0.3)'}">
+            ${isClaimed ? '🏴 ' + controller : '○ Unclaimed'}
+          </span>
+          <span style="font-size:10px; color:rgba(255,255,255,0.3)">${t.capacity} slots</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGuild(player) {
+  // Quests
+  const questList = document.getElementById('guild-quests');
+  if (questList) {
+    questList.innerHTML = GUILD_QUESTS.map(q =>
+      `<div class="quest-item">
+        <div class="quest-icon">${q.icon}</div>
+        <div class="quest-info">
+          <div class="quest-title">${q.title}</div>
+          <div class="quest-desc">${q.desc}</div>
+          <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${q.progress}%"></div></div>
+        </div>
+        <div class="quest-reward">${q.reward}</div>
+      </div>`
+    ).join('');
+  }
+
+  // Leaderboard
+  const lbBody = document.getElementById('guild-lb-body');
+  if (lbBody) {
+    const guilds = [
+      { name: 'Sons of Light',      xp: '245,800', members: 47, territories: 2 },
+      { name: 'Dawn Seekers',       xp: '198,400', members: 38, territories: 1 },
+      { name: 'Crystal Guardians',  xp: '167,200', members: 52, territories: 1 },
+      { name: 'Forge Masters',      xp: '142,100', members: 29, territories: 1 },
+      { name: 'Temple Keepers',     xp: '128,900', members: 34, territories: 1 },
+      { name: 'Nexus Architects',   xp: '95,300',  members: 21, territories: 1 },
+    ];
+    lbBody.innerHTML = guilds.map((g, i) =>
+      `<tr><td style="color:var(--zion-gold); font-weight:700">${i + 1}</td><td>${g.name}</td><td>${g.xp}</td><td>${g.members}</td><td>${g.territories}</td></tr>`
+    ).join('');
+  }
+}
+
+function renderChallenges() {
+  const diffClass = d => {
+    const m = { Beginner: 'diff-beginner', Intermediate: 'diff-intermediate', Advanced: 'diff-advanced', Master: 'diff-master' };
+    return m[d] || 'diff-beginner';
+  };
+  const diffMult = d => {
+    const m = { Beginner: '1×', Intermediate: '2×', Advanced: '4×', Master: '8×' };
+    return m[d] || '1×';
+  };
+
+  // Daily challenges
+  const dailyEl = document.getElementById('oasis-daily-challenges');
+  if (dailyEl) {
+    const dailies = OASIS_CHALLENGES.filter(c => c.isDaily);
+    dailyEl.innerHTML = dailies.map(c =>
+      `<div class="challenge-card">
+        <div class="challenge-category">${c.category}</div>
+        <div class="challenge-title">${c.title}</div>
+        <div class="challenge-desc">${c.desc}</div>
+        <div class="challenge-footer">
+          <span class="challenge-difficulty ${diffClass(c.difficulty)}">${c.difficulty} ${diffMult(c.difficulty)}</span>
+          <span class="challenge-xp">+${c.baseXp} XP · ${c.zion} ZION</span>
+        </div>
+      </div>`
+    ).join('');
+  }
+
+  // All challenges
+  const allEl = document.getElementById('oasis-all-challenges');
+  if (allEl) {
+    allEl.innerHTML = OASIS_CHALLENGES.map(c =>
+      `<div class="challenge-card">
+        <div class="challenge-category">${c.category}${c.isDaily ? ' · Daily' : ''}</div>
+        <div class="challenge-title">${c.title}</div>
+        <div class="challenge-desc">${c.desc}</div>
+        <div class="challenge-footer">
+          <span class="challenge-difficulty ${diffClass(c.difficulty)}">${c.difficulty} ${diffMult(c.difficulty)}</span>
+          <span class="challenge-xp">+${c.baseXp} XP · ${c.zion} ZION</span>
+        </div>
+      </div>`
+    ).join('');
+  }
+}
+
+function renderTithe() {
+  const grid = document.getElementById('oasis-tithe-grid');
+  if (grid) {
+    // Simulated tithe data
+    const amounts = [12_500, 8_200, 6_800, 15_300, 4_100, 9_700, 2_400];
+    grid.innerHTML = OASIS_TITHE_CATEGORIES.map((cat, i) =>
+      `<div class="tithe-card">
+        <div class="tithe-emoji">${cat.emoji}</div>
+        <div class="tithe-name">${cat.name}</div>
+        <div class="tithe-amount">${amounts[i].toLocaleString()}</div>
+        <div class="tithe-sub">${cat.desc}</div>
+      </div>`
+    ).join('');
+  }
+
+  const totalEl = document.getElementById('tithe-total-value');
+  if (totalEl) {
+    totalEl.textContent = '59,000 ZION';
+  }
+}
 
 dbg('Renderer script loaded');
