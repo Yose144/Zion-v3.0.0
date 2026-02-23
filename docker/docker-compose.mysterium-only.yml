@@ -1,0 +1,31 @@
+# ═══════════════════════════════════════════════════════════════
+# ZION Mysterium-Only Stack — pro Usa1, Usa2, Asia3 (x86_64)
+# Spouštět příkazem:
+#   docker compose -f docker-compose.mysterium-only.yml up -d
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+
+  mysterium:
+    image: mysteriumnetwork/myst:latest
+    container_name: zion-mysterium
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "4449:4449"
+      - "41920-41925:41920-41925/udp"
+    volumes:
+      - zion-mysterium-data:/var/lib/mysterium-node
+    environment:
+      - MMN_API_KEY=8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob
+    command: --mmn.api-key=8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob service --agreed-terms-and-conditions
+    labels:
+      - "zion.service=revenue"
+      - "zion.type=bandwidth"
+
+volumes:
+  zion-mysterium-data:
+    name: zion-mysterium-data
