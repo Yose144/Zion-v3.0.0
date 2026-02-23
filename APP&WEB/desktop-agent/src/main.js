@@ -2180,6 +2180,29 @@ function startMining(config) {
     PYTHONPATH: minerCwd + (process.env.PYTHONPATH ? path.delimiter + process.env.PYTHONPATH : '')
   };
 
+  // CHv3 performance defaults (speed-first):
+  // - higher GPU batch for better OpenCL occupancy
+  // - no CPU inter-batch sleep for maximum CPU throughput
+  // - larger CH CPU batch for better per-thread efficiency
+  // All remain overrideable by explicit environment variables.
+  try {
+    const algoLower = String(algorithmForMiner || requestedAlgorithmLower || '').toLowerCase();
+    const isChv3 = algoLower === 'cosmic_harmony' || algoLower === 'cosmic_harmony_v3';
+    if (isChv3 && mainMinerGpu) {
+      if (!String(process.env.ZION_GPU_BATCH_SIZE || '').trim()) {
+        env.ZION_GPU_BATCH_SIZE = '8000000';
+      }
+      if (!String(process.env.ZION_CPU_SLEEP_MS || '').trim()) {
+        env.ZION_CPU_SLEEP_MS = '0';
+      }
+      if (!String(process.env.ZION_BATCH_CH3 || '').trim()) {
+        env.ZION_BATCH_CH3 = '50000';
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   // ═══════════════════════════════════════════════════════════
   // Native library paths — ensure Rust miner can find .dylib/.so/.dll
   // ═══════════════════════════════════════════════════════════
