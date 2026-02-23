@@ -776,7 +776,7 @@ const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 // Default configuration
 const DEFAULT_CONFIG = {
   pool: {
-    host: '149.248.8.4',
+    host: '77.42.31.72',
     port: 3333
   },
   // ZION chain JSON-RPC endpoint (native core)
@@ -788,7 +788,7 @@ const DEFAULT_CONFIG = {
   aiAfterburner: false,
   // AI Native compute (earn ZION by processing AI tasks)
   aiNative: false, // OFF by default, user must enable
-  aiNativePoolUrl: 'http://localhost:8001',
+  aiNativePoolUrl: 'http://77.42.31.72:8001',
   aiNativeConsciousness: 1,
   // Local chat (optional)
   // Cloud chat (OpenAI-compatible). Keep endpoint editable for future ZION AI Native.
@@ -1090,8 +1090,8 @@ function decideRandomxModeForMac(config) {
 
 // ============================================================================
 // GPU AUTO-DETECTION (CH3 Architecture)
-// Mirrors logic from Zion-2.9.5/pool/src/profit_switcher.rs
-// and Zion-2.9.5/miner/src/miner/mod.rs
+// Mirrors logic from Zion-2.9.6/pool/src/profit_switcher.rs
+// and Zion-2.9.6/miner/src/miner/mod.rs
 // ============================================================================
 
 let cachedGpuInfo = null;
@@ -1192,11 +1192,10 @@ function detectGPU() {
 
 const TESTNET_SERVERS = [
   { id: 'helsinki', name: 'Helsinki', host: '77.42.31.72', flag: '🇫🇮', location: 'Finland' },
-  { id: 'losangeles', name: 'Los Angeles', host: '149.248.8.4', flag: '🇺🇸', location: 'Los Angeles, US' },
-  { id: 'sydney', name: 'Sydney', host: '108.61.184.118', flag: '🇦🇺', location: 'Sydney, AU' },
-  { id: 'delhi', name: 'Delhi', host: '139.84.170.133', flag: '🇮🇳', location: 'Delhi, IN' },
-  { id: 'santiago', name: 'Santiago', host: '64.176.13.76', flag: '🇨🇱', location: 'Santiago, CL' },
-  { id: 'germany', name: 'Germany', host: '195.201.31.201', flag: '🇩🇪', location: 'Falkenstein, DE' }
+  { id: 'seedde', name: 'SeedDE', host: '46.225.126.243', flag: '🇩🇪', location: 'Nuremberg, DE' },
+  { id: 'usa1', name: 'Usa1', host: '5.78.178.227', flag: '🇺🇸', location: 'Hillsboro, US' },
+  { id: 'usa2', name: 'Usa2', host: '178.156.240.160', flag: '🇺🇸', location: 'Ashburn, US' },
+  { id: 'asia3', name: 'Asia3', host: '5.223.43.93', flag: '🌏', location: 'Singapore, SG' }
 ];
 
 async function checkServerPort(host, port, timeout = 3000) {
@@ -1512,7 +1511,7 @@ function createWindow() {
         cmd: 'start',
         config: {
           wallet: config.wallet,
-          pool_url: config.aiNativePoolUrl || 'http://localhost:8001',
+          pool_url: config.aiNativePoolUrl || 'http://77.42.31.72:8001',
           consciousness_level: config.aiNativeConsciousness || 1,
           gpu: config.gpu || false,
           threads: config.threads || 4
@@ -4150,7 +4149,7 @@ ipcMain.handle('ai-native-start', async (event, config) => {
       cmd: 'start',
       config: {
         wallet: config.wallet,
-        pool_url: config.aiNativePoolUrl || 'http://localhost:8001',
+        pool_url: config.aiNativePoolUrl || 'http://77.42.31.72:8001',
         consciousness_level: config.aiNativeConsciousness || 1,
         gpu: config.gpu || false,
         threads: config.threads || 4
@@ -4655,7 +4654,7 @@ ipcMain.handle('import-wallet', (event, { mnemonic, password, name }) => {
     
     // Wallet data to save
     const walletData = {
-      version: '2.9.5',
+      version: '2.9.6',
       name: name || 'Imported Wallet',
       address: wallet.address,
       publicKey: wallet.publicKey,
@@ -4781,7 +4780,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     // All nodes share the same Redis so we use max() to avoid double-counting.
     // Short 3s timeout; pool API servers listed first for priority.
     const POOL_API_SERVERS = TESTNET_SERVERS.filter(s =>
-      ['helsinki', 'losangeles', 'sydney', 'germany'].includes(s.id)
+      ['helsinki', 'seedde', 'usa1', 'usa2', 'asia3'].includes(s.id)
     );
     let poolPending = 0;
     let poolPaid = 0;
@@ -5114,7 +5113,7 @@ ipcMain.handle('afterburner-command', async (event, data) => {
 
 // App lifecycle
 app.whenReady().then(() => {
-  console.log('ZION Native Awakening v2.9.5 started');
+  console.log('ZION Native Awakening v2.9.6 started');
   console.log('Config path:', CONFIG_PATH);
   console.log('Miner path:', MINER_PATH);
   console.log('Log path:', LOG_PATH);

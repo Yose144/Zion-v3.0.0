@@ -76,7 +76,7 @@
 | Server | IP | Lokace | Služby |
 |--------|------|--------|--------|
 | Helsinki | 77.42.31.72 | Finsko | Seed node, pool, web, API |
-| Germany | 195.201.31.201 | Německo | Peer node |
+| Germany | 46.225.126.243 | Německo | Seed node |
 
 ### Mainnet cíl
 

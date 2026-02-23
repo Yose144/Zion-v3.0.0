@@ -129,28 +129,15 @@ v2.9.6 supports parallel dual-mining with PerMiner thread groups:
 
 ---
 
-## Network — 🏅 Olympic Coverage (5 Continents, 5 Nodes)
-
-```
-           🔵               ⚫               🔴
-        ╭──────╮         ╭──────╮         ╭──────╮
-       ( EUROPE )───────(AMERICA)───────(  ASIA  )
-       ( Helsin)       ( L.A.  )       ( Delhi )
-        ╰──┬───╯         ╰──┬───╯         ╰──┬───╯
-           │    🟡           │          🟢    │
-           │ ╭──────╮        │      ╭──────╮  │
-           └─( S.AM. )───────┴──────(OCEANIA)─┘
-             (Santia)               (Sydney)
-              ╰──────╯               ╰──────╯
-```
+## Network — Active 5-Node Topology
 
 | Node | Location | IP | Role | Ports |
 |------|----------|----|------|-------|
-| Helsinki | 🇫🇮 Europe | 77.42.31.72 | Seed + Pool + Web | P2P 8333, RPC 8443 |
-| Los Angeles | 🇺🇸 N. America | 149.248.8.4 | Seed | P2P 8333 |
-| Santiago | 🇨🇱 S. America | 64.176.13.76 | Seed | P2P 8333 |
-| Delhi | 🇮🇳 Asia | 139.84.170.133 | Seed | P2P 8333 |
-| Sydney | 🇦🇺 Oceania | 108.61.184.118 | Seed | P2P 8333 |
+| Helsinki | 🇫🇮 Europe | 77.42.31.72 | Seed + Pool + Web + Monitoring | P2P 8334, RPC 8444, Stratum 3333 |
+| SeedDE | 🇩🇪 Europe | 46.225.126.243 | Seed | P2P 8334, RPC 8444 |
+| Usa1 | 🇺🇸 N. America | 5.78.178.227 | Seed | P2P 8334, RPC 8444 |
+| Usa2 | 🇺🇸 N. America | 178.156.240.160 | Seed | P2P 8334, RPC 8444 |
+| Asia3 | 🌏 Asia | 5.223.43.93 | Seed | P2P 8334, RPC 8444 |
 | TestNet | — | — | — | P2P 8334, RPC 8444 |
 
 ---

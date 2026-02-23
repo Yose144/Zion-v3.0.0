@@ -83,7 +83,7 @@ scrape_configs:
     metrics_path: "/metrics"
     scrape_interval: 15s
     static_configs:
-      - targets: ["195.201.31.201:8080"]
+      - targets: ["46.225.126.243:8080"]
         labels:
           server: "germany"
           region: "eu-central"
@@ -94,7 +94,7 @@ scrape_configs:
     metrics_path: "/metrics"
     scrape_interval: 30s
     static_configs:
-      - targets: ["195.201.31.201:8444"]
+      - targets: ["46.225.126.243:8444"]
         labels:
           server: "germany"
           region: "eu-central"

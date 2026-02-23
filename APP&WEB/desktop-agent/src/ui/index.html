@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- AUDIT-FIX E-04 (16 Feb 2026): Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:*; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://77.42.31.72:* http://46.225.126.243:* http://5.78.178.227:* http://178.156.240.160:* http://5.223.43.93:* https://openrouter.ai https://sepolia.basescan.org; object-src 'none'; base-uri 'self'; form-action 'self';">
   <title>ZION Native Awakening v2.9.6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2144,14 +2144,50 @@
               </label>
 
               <label class="pool-card">
-                <input type="radio" name="pool-select" value="195.201.31.201:3333" id="pool-germany" />
+                <input type="radio" name="pool-select" value="46.225.126.243:3333" id="pool-germany" />
                 <div class="pool-card-body">
                   <div class="pool-meta">
                     <span class="pill pill-cyan">Germany</span>
-                    <span class="pill">TestNet</span>
+                    <span class="pill pill-gold">Mainnet</span>
                   </div>
                   <h4>Germany Pool (DE)</h4>
-                  <p>195.201.31.201:3333</p>
+                  <p>46.225.126.243:3333</p>
+                </div>
+              </label>
+
+              <label class="pool-card">
+                <input type="radio" name="pool-select" value="5.78.178.227:3333" id="pool-usa1" />
+                <div class="pool-card-body">
+                  <div class="pool-meta">
+                    <span class="pill pill-cyan">Usa1</span>
+                    <span class="pill pill-gold">Mainnet</span>
+                  </div>
+                  <h4>Usa1 Pool (US)</h4>
+                  <p>5.78.178.227:3333</p>
+                </div>
+              </label>
+
+              <label class="pool-card">
+                <input type="radio" name="pool-select" value="178.156.240.160:3333" id="pool-usa2" />
+                <div class="pool-card-body">
+                  <div class="pool-meta">
+                    <span class="pill pill-cyan">Usa2</span>
+                    <span class="pill pill-gold">Mainnet</span>
+                  </div>
+                  <h4>Usa2 Pool (US)</h4>
+                  <p>178.156.240.160:3333</p>
+                </div>
+              </label>
+
+              <label class="pool-card">
+                <input type="radio" name="pool-select" value="5.223.43.93:3333" id="pool-asia3" />
+                <div class="pool-card-body">
+                  <div class="pool-meta">
+                    <span class="pill pill-cyan">Asia3</span>
+                    <span class="pill pill-gold">Mainnet</span>
+                  </div>
+                  <h4>Asia3 Pool (SG)</h4>
+                  <p>5.223.43.93:3333</p>
                 </div>
               </label>
 
@@ -2248,13 +2284,13 @@
                 <input type="radio" name="miner-backend" value="auto" id="backend-auto" checked />
                 <div>
                   <div class="mode-title">Auto</div>
-                  <p>Prefer Rust v2.9.5, fallback to Python</p>
+                  <p>Prefer Rust v2.9.6, fallback to Python</p>
                 </div>
               </label>
               <label class="mode-pill">
                 <input type="radio" name="miner-backend" value="rust" id="backend-rust" />
                 <div>
-                  <div class="mode-title">Rust (v2.9.5)</div>
+                  <div class="mode-title">Rust (v2.9.6)</div>
                   <p>Fast native miner • CH v3 ready</p>
                 </div>
               </label>
@@ -2310,7 +2346,7 @@
           <div class="mining-console-body" id="console-body">
             <!-- Static miner panel — SRBMiner style, overwrites in place -->
             <div id="miner-static-panel" class="miner-static-panel" style="display:none;"></div>
-            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION Native Awakening v2.9.5</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
+            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION Native Awakening v2.9.6</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
           </div>
         </div>
@@ -2433,7 +2469,7 @@
             </div>
             <div style="padding:14px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(167,139,250,0.3);">
               <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em;">SEED NODES</div>
-              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#c4b5fd;">2</div>
+              <div style="font-size:22px; font-weight:700; margin-top:4px; color:#c4b5fd;">5</div>
             </div>
           </div>
           <!-- Peer list -->
@@ -2497,7 +2533,7 @@
         <div class="control-panel" style="margin-top: 24px;">
           <h2 style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
             <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
-            <span>Native Awakening v2.9.5</span>
+            <span>Native Awakening v2.9.6</span>
           </h2>
           <p style="margin-bottom:18px; line-height:1.8; color:rgba(255,255,255,0.65); font-size:14px;">
             <strong style="background:linear-gradient(135deg, var(--zion-gold), var(--zion-purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Desktop Mining Agent</strong> — Professional mining software with one-click Rust miner, real-time statistics, and full wallet management.
@@ -2509,7 +2545,7 @@
               <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
                 <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-info"></use></svg> VERSION
               </div>
-              <div style="font-size:18px; font-weight:700; color:#fcd34d;">2.9.5</div>
+              <div style="font-size:18px; font-weight:700; color:#fcd34d;">2.9.6</div>
               <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">Native Awakening</div>
             </div>
             <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(16,185,129,0.25);">
@@ -2523,8 +2559,8 @@
               <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
                 <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg> NETWORK
               </div>
-              <div style="font-size:18px; font-weight:700; color:#93c5fd;">TestNet</div>
-              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">2 seed nodes · EU-NORTH + EU-CENTRAL</div>
+              <div style="font-size:18px; font-weight:700; color:#93c5fd;">Mainnet</div>
+              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">5 seed nodes · Global (FI, DE, US×2, SG)</div>
             </div>
             <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(167,139,250,0.25);">
               <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
@@ -2562,7 +2598,7 @@
                 <span style="font-size:16px;">⛏️</span>
                 <span style="font-weight:600;">Mining Pools</span>
               </div>
-              <span style="font-family:monospace; font-size:12px; color:rgba(255,255,255,0.6);">77.42.31.72:3333 · 195.201.31.201:3333</span>
+              <span style="font-family:monospace; font-size:12px; color:rgba(255,255,255,0.6);">77.42.31.72:3333 · 46.225.126.243:3333 · 5.78.178.227:3333 · 178.156.240.160:3333 · 5.223.43.93:3333</span>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
               <div style="display:flex; align-items:center; gap:10px;">
@@ -2602,12 +2638,10 @@
         <div class="control-panel" style="margin-bottom:14px; padding:16px 20px;">
           <div style="display:flex; gap:10px; margin-bottom:16px;">
             <button id="bridge-btn-to-evm" class="btn-zion active"
-              onclick="window.bridgeSetDirection('L1toEVM')"
               style="flex:1; padding:10px; border-radius:10px;">
               ZION → wZION (lock on L1)
             </button>
             <button id="bridge-btn-to-l1" class="btn-zion"
-              onclick="window.bridgeSetDirection('EVMtoL1')"
               style="flex:1; padding:10px; border-radius:10px;">
               wZION → ZION (burn on Base)
             </button>
@@ -2633,7 +2667,7 @@
           <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:6px;">Your EVM address (Base)</div>
           <div style="display:flex; align-items:center; gap:10px;">
             <code id="bridge-evm-address" style="flex:1; font-size:12px; color:var(--zion-cyan); word-break:break-all;">—</code>
-            <button onclick="window.bridgeCopyEvm()" style="padding:4px 10px; font-size:11px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fff; cursor:pointer;">Copy</button>
+            <button id="bridge-copy-evm" style="padding:4px 10px; font-size:11px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fff; cursor:pointer;">Copy</button>
           </div>
         </div>
 
@@ -2655,10 +2689,10 @@
             <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">Memo (copy EXACTLY)</label>
             <div style="display:flex; align-items:center; gap:8px;">
               <code id="bridge-memo-text" style="flex:1; padding:10px; background:rgba(247,184,1,0.08); border:1px solid rgba(247,184,1,0.3); border-radius:8px; font-size:11px; color:var(--zion-gold); word-break:break-all;">—</code>
-              <button onclick="window.bridgeCopyMemo()" style="padding:8px 12px; background:var(--zion-gold); border:none; border-radius:8px; color:#000; font-weight:700; font-size:12px; cursor:pointer;">Copy</button>
+              <button id="bridge-copy-memo" style="padding:8px 12px; background:var(--zion-gold); border:none; border-radius:8px; color:#000; font-weight:700; font-size:12px; cursor:pointer;">Copy</button>
             </div>
           </div>
-          <button onclick="window.bridgePrepareLock()" style="width:100%; padding:12px; background:linear-gradient(135deg,#f7b801,#e09000); border:none; border-radius:10px; color:#000; font-weight:700; font-size:14px; cursor:pointer; margin-bottom:8px;">
+          <button id="bridge-prepare-lock" style="width:100%; padding:12px; background:linear-gradient(135deg,#f7b801,#e09000); border:none; border-radius:10px; color:#000; font-weight:700; font-size:14px; cursor:pointer; margin-bottom:8px;">
             Generate memo
           </button>
         </div>
@@ -2675,7 +2709,7 @@
             <label style="display:block; font-size:11px; color:rgba(255,255,255,0.45); margin-bottom:4px;">Contract on Base Sepolia</label>
             <div style="display:flex; align-items:center; gap:8px;">
               <code style="flex:1; padding:8px 12px; background:rgba(0,0,0,0.35); border-radius:8px; font-size:11px; color:var(--zion-cyan); word-break:break-all;">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
-              <button onclick="window.open('https://sepolia.basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721#writeContract','_blank')" style="padding:8px 12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:11px; cursor:pointer;">Open ↗</button>
+              <button id="bridge-open-basescan" style="padding:8px 12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:11px; cursor:pointer;">Open ↗</button>
             </div>
           </div>
           <div style="padding:14px; background:rgba(0,0,0,0.25); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
@@ -2706,7 +2740,7 @@
               <div style="font-size:10px; color:rgba(255,255,255,0.4); margin-top:4px;">Circulating</div>
             </div>
           </div>
-          <button onclick="window.bridgeLoadStats()" style="margin-top:12px; padding:8px 18px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:12px; cursor:pointer;">↻ Refresh</button>
+          <button id="bridge-refresh-stats" style="margin-top:12px; padding:8px 18px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:12px; cursor:pointer;">↻ Refresh</button>
         </div>
       </div>
 

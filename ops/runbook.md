@@ -222,7 +222,7 @@ curl -s http://localhost:8444/stats | jq '.peer_count'
 ```bash
 # Check both servers
 HELSINKI=$(curl -s http://77.42.31.72:8444/stats | jq '.block_height')
-GERMANY=$(curl -s http://195.201.31.201:8444/stats | jq '.block_height')
+GERMANY=$(curl -s http://46.225.126.243:8444/stats | jq '.block_height')
 echo "Helsinki: $HELSINKI, Germany: $GERMANY"
 
 # If diverged > 10 blocks, the shorter chain will auto-reorg

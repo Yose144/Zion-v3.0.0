@@ -1,4 +1,4 @@
-// ZION Native Awakening v2.9.5 - Renderer Process
+// ZION Native Awakening v2.9.6 - Renderer Process
 // UI logic and state management
 
 // ── AUDIT-FIX E-02/E-03 (16 Feb 2026): HTML sanitizer ─────────────────────
@@ -149,7 +149,7 @@ function renderBackendUi() {
     if (backendStatusEl) {
       const labels = {
         auto: 'Auto selects Rust when available (Python fallback).',
-        rust: 'Rust v2.9.5 selected (no fallback).',
+        rust: 'Rust v2.9.6 selected (no fallback).',
         python: 'Python selected (no fallback).'
       };
       const base = labels[preferred] || '';
@@ -527,7 +527,7 @@ function setupControls() {
   const updateBackendStatus = (value) => {
     const labels = {
       auto: 'Auto selects Rust when available (Python fallback).',
-      rust: 'Rust v2.9.5 selected (Python fallback on failure).',
+      rust: 'Rust v2.9.6 selected (Python fallback on failure).',
       python: 'Python selected (compatibility mode).'
     };
     if (backendStatusEl) backendStatusEl.textContent = labels[value] || '';
@@ -748,7 +748,10 @@ function updateSettingsUI() {
   const poolAddress = `${config.pool?.host || '77.42.31.72'}:${config.pool?.port || 3333}`;
   const poolRadios = {
     '77.42.31.72:3333': 'pool-helsinki',
-    '195.201.31.201:3333': 'pool-germany'
+    '46.225.126.243:3333': 'pool-germany',
+    '5.78.178.227:3333': 'pool-usa1',
+    '178.156.240.160:3333': 'pool-usa2',
+    '5.223.43.93:3333': 'pool-asia3'
   };
   
   if (poolRadios[poolAddress]) {
@@ -766,7 +769,7 @@ function updateSettingsUI() {
   }
   
   const rpcUrlEl = document.getElementById('rpc-url');
-  if (rpcUrlEl) rpcUrlEl.value = config.rpcUrl || 'http://localhost:8444/jsonrpc';
+  if (rpcUrlEl) rpcUrlEl.value = config.rpcUrl || 'http://77.42.31.72:8444/jsonrpc';
   document.getElementById('worker-input').value = config.worker || 'desktop-agent';
   const threadsInput = document.getElementById('threads-input');
   if (threadsInput) {
@@ -1114,7 +1117,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION Native Awakening v2.9.5 — Mining started');
+    appendMiningConsole(' * ZION Native Awakening v2.9.6 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   
@@ -1560,7 +1563,7 @@ function setupWalletControls() {
   const sendTxBtn = document.getElementById('send-tx-btn');
   const sendStatusEl = document.getElementById('send-status');
 
-  const getRpcUrl = () => (config?.rpcUrl || 'http://localhost:8444/jsonrpc');
+  const getRpcUrl = () => (config?.rpcUrl || 'http://77.42.31.72:8444/jsonrpc');
   const getActiveAddress = () => {
     const v = activeWalletInput && 'value' in activeWalletInput ? activeWalletInput.value : '';
     return (v || config.wallet || '').toString().trim();
@@ -2480,6 +2483,23 @@ window.bridgeCopyEvm = function () {
     navigator.clipboard?.writeText(_bridgeEvmAddress);
   }
 };
+
+// ── Bridge DOM event listeners (CSP-compliant, no inline onclick) ────────
+(function attachBridgeListeners() {
+  const on = (id, evt, fn) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(evt, fn);
+  };
+  on('bridge-btn-to-evm',    'click', () => window.bridgeSetDirection('L1toEVM'));
+  on('bridge-btn-to-l1',     'click', () => window.bridgeSetDirection('EVMtoL1'));
+  on('bridge-copy-evm',      'click', () => window.bridgeCopyEvm());
+  on('bridge-copy-memo',     'click', () => window.bridgeCopyMemo());
+  on('bridge-prepare-lock',  'click', () => window.bridgePrepareLock());
+  on('bridge-refresh-stats',  'click', () => window.bridgeLoadStats());
+  on('bridge-open-basescan', 'click', () => {
+    window.open('https://sepolia.basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721#writeContract', '_blank');
+  });
+})();
 
 // Hook into switchView to initialize bridge when tab is opened
 // (initBridgeView() is called directly inside switchView() above)
