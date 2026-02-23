@@ -815,6 +815,122 @@
       font-size: 11px;
     }
 
+    .panel-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .panel-header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .about-lead {
+      margin-bottom: 18px;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.65);
+      font-size: 14px;
+    }
+
+    .about-lead strong {
+      background: linear-gradient(135deg, var(--zion-gold), var(--zion-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .info-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .info-card {
+      padding: 16px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .info-card.version { border-color: rgba(212,175,55,0.25); }
+    .info-card.algo { border-color: rgba(16,185,129,0.25); }
+    .info-card.network { border-color: rgba(96,165,250,0.25); }
+    .info-card.engine { border-color: rgba(167,139,250,0.25); }
+
+    .info-card-kicker {
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .info-card-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .info-card-value.version { color: #fcd34d; }
+    .info-card-value.algo { color: #6ee7b7; }
+    .info-card-value.network { color: #93c5fd; }
+    .info-card-value.engine { color: #c4b5fd; }
+
+    .info-card-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 2px;
+    }
+
+    .resource-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .resource-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      gap: 12px;
+    }
+
+    .resource-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 130px;
+    }
+
+    .resource-item-label {
+      font-weight: 600;
+    }
+
+    .resource-item-link {
+      text-decoration: none;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .resource-item-value {
+      font-family: monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      text-align: right;
+      word-break: break-all;
+    }
+
     /* Form Elements */
     .form-group {
       margin-bottom: 16px;
@@ -2687,8 +2803,8 @@
 
         <!-- Server Status -->
         <div class="control-panel" style="margin-top: 20px;">
-          <h2 style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-            <span style="display:flex; align-items:center; gap:10px;">
+          <h2 class="panel-header-row">
+            <span class="panel-header-title">
               <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
               <span>TestNet Servers</span>
             </span>
@@ -2742,39 +2858,39 @@
             <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
             <span>Native Awakening v2.9.6</span>
           </h2>
-          <p style="margin-bottom:18px; line-height:1.8; color:rgba(255,255,255,0.65); font-size:14px;">
-            <strong style="background:linear-gradient(135deg, var(--zion-gold), var(--zion-purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Desktop Mining Agent</strong> — Professional mining software with one-click Rust miner, real-time statistics, and full wallet management.
+          <p class="about-lead">
+            <strong>Desktop Mining Agent</strong> — Professional mining software with one-click Rust miner, real-time statistics, and full wallet management.
           </p>
 
           <!-- Info cards grid -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px;">
-            <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(212,175,55,0.25);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+          <div class="info-cards-grid">
+            <div class="info-card version">
+              <div class="info-card-kicker">
                 <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-info"></use></svg> VERSION
               </div>
-              <div style="font-size:18px; font-weight:700; color:#fcd34d;">2.9.6</div>
-              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">Native Awakening</div>
+              <div class="info-card-value version">2.9.6</div>
+              <div class="info-card-sub">Native Awakening</div>
             </div>
-            <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(16,185,129,0.25);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+            <div class="info-card algo">
+              <div class="info-card-kicker">
                 <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-spark"></use></svg> ALGORITHM
               </div>
-              <div style="font-size:18px; font-weight:700; color:#6ee7b7;">Cosmic Harmony v3</div>
-              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">ZION Proof-of-Work</div>
+              <div class="info-card-value algo">Cosmic Harmony v3</div>
+              <div class="info-card-sub">ZION Proof-of-Work</div>
             </div>
-            <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(96,165,250,0.25);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+            <div class="info-card network">
+              <div class="info-card-kicker">
                 <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-refresh"></use></svg> NETWORK
               </div>
-              <div style="font-size:18px; font-weight:700; color:#93c5fd;">Mainnet</div>
-              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">5 seed nodes · Global (FI, DE, US×2, SG)</div>
+              <div class="info-card-value network">Mainnet</div>
+              <div class="info-card-sub">5 seed nodes · Global (FI, DE, US×2, SG)</div>
             </div>
-            <div style="padding:16px; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(167,139,250,0.25);">
-              <div style="color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+            <div class="info-card engine">
+              <div class="info-card-kicker">
                 <svg class="icon icon-inline" aria-hidden="true" style="width:12px;height:12px;"><use href="#i-spark"></use></svg> ENGINE
               </div>
-              <div style="font-size:18px; font-weight:700; color:#c4b5fd;">Rust Native</div>
-              <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">CPU + GPU · Stratum v2</div>
+              <div class="info-card-value engine">Rust Native</div>
+              <div class="info-card-sub">CPU + GPU · Stratum v2</div>
             </div>
           </div>
         </div>
@@ -2785,34 +2901,34 @@
             <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
             <span>Links &amp; Resources</span>
           </h2>
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
-              <div style="display:flex; align-items:center; gap:10px;">
+          <div class="resource-list">
+            <div class="resource-item">
+              <div class="resource-item-left">
                 <span style="font-size:16px;">🌐</span>
-                <span style="font-weight:600;">Website</span>
+                <span class="resource-item-label">Website</span>
               </div>
-              <a href="https://zionterranova.com" style="color:var(--zion-gold); text-decoration:none; font-family:monospace; font-size:13px;">zionterranova.com</a>
+              <a href="https://zionterranova.com" class="resource-item-link" style="color:var(--zion-gold);">zionterranova.com</a>
             </div>
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
-              <div style="display:flex; align-items:center; gap:10px;">
+            <div class="resource-item">
+              <div class="resource-item-left">
                 <span style="font-size:16px;">💻</span>
-                <span style="font-weight:600;">GitHub</span>
+                <span class="resource-item-label">GitHub</span>
               </div>
-              <a href="https://github.com/zionterranova" style="color:var(--zion-cyan); text-decoration:none; font-family:monospace; font-size:13px;">github.com/zionterranova</a>
+              <a href="https://github.com/zionterranova" class="resource-item-link" style="color:var(--zion-cyan);">github.com/zionterranova</a>
             </div>
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
-              <div style="display:flex; align-items:center; gap:10px;">
+            <div class="resource-item">
+              <div class="resource-item-left">
                 <span style="font-size:16px;">⛏️</span>
-                <span style="font-weight:600;">Mining Pools</span>
+                <span class="resource-item-label">Mining Pools</span>
               </div>
-              <span style="font-family:monospace; font-size:12px; color:rgba(255,255,255,0.6);">77.42.31.72:3333 · 46.225.126.243:3333 · 5.78.178.227:3333 · 178.156.240.160:3333 · 5.223.43.93:3333</span>
+              <span class="resource-item-value">77.42.31.72:3333 · 46.225.126.243:3333 · 5.78.178.227:3333 · 178.156.240.160:3333 · 5.223.43.93:3333</span>
             </div>
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
-              <div style="display:flex; align-items:center; gap:10px;">
+            <div class="resource-item">
+              <div class="resource-item-left">
                 <span style="font-size:16px;">🔗</span>
-                <span style="font-weight:600;">RPC Endpoints</span>
+                <span class="resource-item-label">RPC Endpoints</span>
               </div>
-              <span style="font-family:monospace; font-size:12px; color:rgba(255,255,255,0.6);">:8444/jsonrpc · P2P :8334</span>
+              <span class="resource-item-value">:8444/jsonrpc · P2P :8334</span>
             </div>
           </div>
         </div>
