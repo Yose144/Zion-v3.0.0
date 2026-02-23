@@ -1666,6 +1666,7 @@ function addLogEntry(message, type = 'info') {
 
 // Wallet management
 let generatedWallet = null;
+let lastPoolPaidAtomic = null;
 
 function setupWalletControls() {
   const generateBtn = document.getElementById('generate-wallet-btn');
@@ -1900,10 +1901,13 @@ function setupWalletControls() {
     const poolBlocksEl = document.getElementById('pool-blocks-count');
     const poolHashrateEl = document.getElementById('pool-hashrate-1h');
     const poolLastShareEl = document.getElementById('pool-last-share');
+    const poolPendingTxEl = document.getElementById('pool-pending-tx-count');
+    const poolSourceEl = document.getElementById('pool-source-info');
     if (poolPendingEl) poolPendingEl.textContent = Number(result.pool_pending ?? 0).toFixed(4) + ' ZION';
     if (poolPaidEl) poolPaidEl.textContent = Number(result.pool_paid ?? 0).toFixed(4) + ' ZION';
     if (poolSharesEl) poolSharesEl.textContent = Number(result.pool_shares ?? 0).toLocaleString();
     if (poolBlocksEl) poolBlocksEl.textContent = Number(result.pool_blocks ?? 0).toLocaleString();
+    if (poolPendingTxEl) poolPendingTxEl.textContent = Number(result.pool_pending_txs ?? 0).toLocaleString();
     // Format hashrate (H/s → kH/s → MH/s)
     const hr = Number(result.pool_hashrate_1h ?? 0);
     if (poolHashrateEl) {
@@ -1918,7 +1922,24 @@ function setupWalletControls() {
         ? new Date(ts * 1000).toLocaleTimeString()
         : 'never';
     }
-    if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}`;
+
+    if (poolSourceEl) {
+      const source = result.pool_source || 'n/a';
+      const pendingSrc = result.pool_pending_source || 'stats';
+      poolSourceEl.textContent = `Pool source: ${source} · pending from ${pendingSrc}`;
+    }
+
+    let payoutDeltaText = '';
+    const currentPaidAtomic = Number(result.pool_paid_atomic ?? 0);
+    if (Number.isFinite(currentPaidAtomic) && currentPaidAtomic >= 0) {
+      if (Number.isFinite(lastPoolPaidAtomic) && currentPaidAtomic > lastPoolPaidAtomic) {
+        const delta = (currentPaidAtomic - lastPoolPaidAtomic) / 1_000_000;
+        payoutDeltaText = ` · payout +${delta.toFixed(4)} ZION`;
+      }
+      lastPoolPaidAtomic = currentPaidAtomic;
+    }
+
+    if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${payoutDeltaText}`;
   });
 
   generateQrBtn?.addEventListener('click', async () => {
