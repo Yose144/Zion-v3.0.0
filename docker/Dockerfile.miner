@@ -1,8 +1,15 @@
 # ZION Universal Miner
+# Native GPU-algo features compiled from C sources via cc crate:
+#   native-ethash (ETC), native-autolykos (ERG), native-kheavyhash (KAS)
+#   native-kawpow (RVN), native-blake3 (ALPH), native-equihash (ZEC)
 
 FROM rust:1.85-bookworm AS builder
 WORKDIR /build
-RUN apt-get update && apt-get install -y cmake g++ make pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+        build-essential cmake g++ make \
+        pkg-config libssl-dev \
+        libclang-dev \
+    && rm -rf /var/lib/apt/lists/*
 # Release perf tuning (esp. single-thread hash loop):
 # - target-cpu=native: enable CPU-specific instructions
 # - LTO + codegen-units=1: better inlining across crates
@@ -10,11 +17,16 @@ ENV RUSTFLAGS="-C target-cpu=native"
 ENV CARGO_PROFILE_RELEASE_LTO=true
 ENV CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
 COPY . .
-RUN cargo build --release -p zion-miner
+RUN cargo build --release -p zion-miner \
+        --features native-ethash,native-autolykos,native-kheavyhash,native-kawpow,native-blake3,native-equihash
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 \
+        libgcc-s1 libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
 RUN groupadd -r zion && useradd -r -g zion -d /home/zion -s /sbin/nologin zion
 COPY --from=builder /build/target/release/zion-miner /usr/local/bin/
 USER zion
 ENTRYPOINT ["zion-miner"]
+

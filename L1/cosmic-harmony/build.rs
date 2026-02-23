@@ -1,127 +1,115 @@
-//! Build script for native library linking
+//! Build script for native library compilation + linking
+//!
+//! Uses the `cc` crate to compile native C sources in-tree, so no pre-built
+//! `.so`/`.dylib` files are required on Linux.  The compiled static archive is
+//! linked automatically by cargo.
+//!
+//! Feature flags:
+//!   cargo build --features native-ethash        # ethash only
+//!   cargo build --features native-autolykos     # autolykos v2 only
+//!   cargo build --features native-all           # all native algos
+
+use std::path::PathBuf;
 
 fn main() {
-    // Path to native libraries
-    let native_libs_path = std::env::current_dir()
+    let src_dir: PathBuf = std::env::current_dir()
         .unwrap()
         .parent()
         .unwrap()
-        .join("native-libs");
+        .join("native-libs")
+        .join("all");
 
-    println!(
-        "cargo:rustc-link-search=native={}",
-        native_libs_path.display()
-    );
+    println!("cargo:rerun-if-changed={}", src_dir.display());
 
-    // Only link if feature enabled
-    #[cfg(feature = "native-randomx")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=randomx_zion");
+    // -----------------------------------------------------------------------
+    // Helper closure: compile a C source into a static archive via `cc` crate
+    // -----------------------------------------------------------------------
+    let compile = |lib_name: &str, c_file: &str| {
+        let src = src_dir.join(c_file);
+        if !src.exists() {
+            eprintln!("cargo:warning=native source not found, skipping: {}", src.display());
+            return;
+        }
+        let mut build = cc::Build::new();
+        build
+            .file(&src)
+            .opt_level(3)
+            .flag_if_supported("-fPIC")
+            .flag_if_supported("-std=c99")
+            .flag_if_supported("-march=native")
+            .flag_if_supported("-Wno-unused-function");
 
-        #[cfg(target_os = "linux")]
+        if !std::env::var("TARGET").unwrap_or_default().contains("windows") {
+            build.define("LINUX", None);
+        }
+
+        build.compile(lib_name);
+        // cc::Build::compile outputs a static archive; cargo links it automatically.
+    };
+
+    // -----------------------------------------------------------------------
+    // Compile per feature flag
+    // -----------------------------------------------------------------------
+
+    if cfg!(feature = "native-ethash") {
+        compile("ethash_zion", "ethash_native.c");
+    }
+
+    if cfg!(feature = "native-autolykos") {
+        compile("autolykos_zion", "autolykos_v2_native.c");
+    }
+
+    if cfg!(feature = "native-kawpow") {
+        compile("kawpow_zion", "kawpow_native.c");
+    }
+
+    if cfg!(feature = "native-kawpow-gpu") {
+        compile("kawpow_gpu_zion", "kawpow_gpu_native.c");
+    }
+
+    if cfg!(feature = "native-kheavyhash") {
+        compile("kheavyhash_zion", "kheavyhash_native.c");
+    }
+
+    if cfg!(feature = "native-equihash") {
+        compile("equihash_zion", "equihash_native.c");
+    }
+
+    if cfg!(feature = "native-progpow") {
+        compile("progpow_zion", "progpow_native.c");
+    }
+
+    if cfg!(feature = "native-argon2d") {
+        compile("argon2d_zion", "argon2d_native.c");
+    }
+
+    if cfg!(feature = "native-blake3") {
+        compile("blake3_zion", "blake3_native.c");
+    }
+
+    if cfg!(feature = "native-cosmic-harmony") {
+        compile("cosmic_harmony_zion", "cosmic_harmony_v2_native.c");
+    }
+
+    // -----------------------------------------------------------------------
+    // RandomX + Yescrypt: rely on pre-built .so (complex C++ deps)
+    // -----------------------------------------------------------------------
+    let lib_dir = src_dir.parent().unwrap();
+    let link_dir = lib_dir.display().to_string();
+
+    if cfg!(feature = "native-randomx") {
+        println!("cargo:rustc-link-search=native={}", link_dir);
         println!("cargo:rustc-link-lib=randomx_zion");
     }
 
-    #[cfg(feature = "native-yescrypt")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=yescrypt_zion");
-
-        #[cfg(target_os = "linux")]
+    if cfg!(feature = "native-yescrypt") {
+        println!("cargo:rustc-link-search=native={}", link_dir);
         println!("cargo:rustc-link-lib=yescrypt_zion");
     }
 
-    #[cfg(feature = "native-cosmic-harmony")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=cosmic_harmony_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=cosmic_harmony_zion");
+    // Math library needed on Linux for several C sources (-lm)
+    if cfg!(target_os = "linux") {
+        println!("cargo:rustc-link-lib=m");
     }
-
-    #[cfg(feature = "native-autolykos")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=autolykos_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=autolykos_zion");
-    }
-
-    #[cfg(feature = "native-kawpow")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=kawpow_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=kawpow_zion");
-    }
-
-    #[cfg(feature = "native-kawpow-gpu")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=kawpow_gpu_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=kawpow_gpu_zion");
-    }
-
-    #[cfg(feature = "native-ethash")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=ethash_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=ethash_zion");
-    }
-
-    #[cfg(feature = "native-kheavyhash")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=kheavyhash_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=kheavyhash_zion");
-    }
-
-    #[cfg(feature = "native-equihash")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=equihash_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=equihash_zion");
-    }
-
-    #[cfg(feature = "native-progpow")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=progpow_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=progpow_zion");
-    }
-
-    #[cfg(feature = "native-argon2d")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=argon2d_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=argon2d_zion");
-    }
-
-    #[cfg(feature = "native-blake3")]
-    {
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=dylib=blake3_zion");
-
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=blake3_zion");
-    }
-
-    // Rerun if native-libs changes
-    println!("cargo:rerun-if-changed=../native-libs/");
 }
+

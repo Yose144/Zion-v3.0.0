@@ -159,7 +159,6 @@ impl NativeAlgorithm {
 mod ethash_ffi {
     use super::*;
 
-    #[link(name = "ethash_zion")]
     extern "C" {
         fn ethash_init();
         fn ethash_hash(
@@ -226,7 +225,6 @@ mod ethash_ffi {
 mod kawpow_ffi {
     use super::*;
 
-    #[link(name = "kawpow_zion")]
     extern "C" {
         fn kawpow_hash(
             header: *const u8,
@@ -295,7 +293,6 @@ mod kawpow_ffi {
 mod kawpow_gpu_ffi {
     use super::*;
 
-    #[link(name = "kawpow_gpu_zion")]
     extern "C" {
         fn kawpow_gpu_init(device_id: i32, platform_id: i32) -> i32;
         fn kawpow_gpu_shutdown();
@@ -356,7 +353,6 @@ mod kawpow_gpu_ffi {
 mod autolykos_ffi {
     use super::*;
 
-    #[link(name = "autolykos_zion")]
     extern "C" {
         fn autolykos_hash(
             header: *const u8,
@@ -406,7 +402,6 @@ mod autolykos_ffi {
 mod kheavyhash_ffi {
     use super::*;
 
-    #[link(name = "kheavyhash_zion")]
     extern "C" {
         fn kheavyhash_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         fn kheavyhash_verify(
@@ -446,7 +441,6 @@ mod kheavyhash_ffi {
 mod equihash_ffi {
     use super::*;
 
-    #[link(name = "equihash_zion")]
     extern "C" {
         fn equihash_solve(
             header: *const u8,
@@ -486,7 +480,6 @@ mod equihash_ffi {
 mod progpow_ffi {
     use super::*;
 
-    #[link(name = "progpow_zion")]
     extern "C" {
         fn progpow_hash(
             header: *const u8,
@@ -547,7 +540,6 @@ mod progpow_ffi {
 mod argon2d_ffi {
     use super::*;
 
-    #[link(name = "argon2d_zion")]
     extern "C" {
         fn argon2d_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         fn argon2d_verify(
@@ -587,7 +579,6 @@ mod argon2d_ffi {
 mod blake3_ffi {
     use super::*;
 
-    #[link(name = "blake3_zion")]
     extern "C" {
         fn blake3_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         fn blake3_alph(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);

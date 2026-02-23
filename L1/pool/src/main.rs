@@ -17,6 +17,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use zion_pool::blockchain::{BlockTemplateManager, ZionRPCClient};
 use zion_pool::config::Config;
+use zion_pool::gpu_mining::GpuMiner;
 use zion_pool::merged_mining::MergedMiningManager;
 use zion_pool::metrics::prometheus as metrics;
 use zion_pool::payout;
@@ -422,6 +423,16 @@ async fn main() {
             // Give revenue proxy + miner time to connect first
             tokio::time::sleep(Duration::from_secs(15)).await;
             switcher_handle.run().await;
+        });
+    }
+
+    // ── GPU-Algorithm Mining (ETC/ERG native stratum clients) ──
+    // Requires --features native-ethash and/or native-autolykos
+    {
+        let gpu_miner = GpuMiner::from_env();
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_secs(8)).await;
+            gpu_miner.start().await;
         });
     }
 
