@@ -1,4 +1,4 @@
-// ZION Native Awakening v2.9.5 - Main Process
+// ZION Native Awakening v2.9.6 - Main Process
 // Electron main process with system tray, auto-start, IPC
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, dialog } = require('electron');
@@ -1341,7 +1341,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: 'ZION Native Awakening v2.9.5',
+    title: 'ZION Native Awakening v2.9.6',
     backgroundColor: '#000000',
     ...(windowIcon ? { icon: windowIcon } : {}),
     show: true, // Always show window on manual start; startMinimized only applies to auto-start
@@ -1563,7 +1563,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Miner v2.9.5',
+      label: 'ZION Miner v2.9.6',
       enabled: false
     },
     { type: 'separator' },
@@ -1617,7 +1617,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Miner v2.9.5');
+  tray.setToolTip('ZION Miner v2.9.6');
   
   tray.on('click', () => {
     showWindow();
@@ -4063,7 +4063,7 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
       : null;
 
     const walletData = {
-      version: '2.9.5',
+      version: '2.9.6',
       name: 'My Wallet',
       address: wallet.address,
       publicKey: wallet.publicKey,
@@ -4588,7 +4588,7 @@ ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
     
     // Wallet data to save
     const walletData = {
-      version: '2.9.5',
+      version: '2.9.6',
       name: name || 'My Wallet',
       address: wallet.address,
       publicKey: wallet.publicKey,
