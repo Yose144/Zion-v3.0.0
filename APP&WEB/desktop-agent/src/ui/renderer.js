@@ -481,62 +481,90 @@ function initWarpStarfield() {
   });
 }
 
-// Navigation
+// Navigation — single delegated listener for performance
 function setupNavigation() {
-  const navItems = document.querySelectorAll('.nav-item');
-  
-  navItems.forEach(item => {
-    item.addEventListener('click', () => {
+  const sidebar = document.querySelector('.nav-scroll') || document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.addEventListener('click', (e) => {
+      const item = e.target.closest('.nav-item');
+      if (!item || !item.dataset.view) return;
       const view = item.dataset.view;
       switchView(view);
-      
-      // Update active state
-      navItems.forEach(i => i.classList.remove('active'));
+      // Update active state — single loop
+      sidebar.querySelectorAll('.nav-item.active').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
     });
-  });
+  }
 
   // ── Section Tabs (subsection navigation within views) ──
   setupSectionTabs();
 }
 
 /**
- * Set up all .section-tabs pill bars — clicking a tab shows
- * the corresponding .section-panel and hides siblings.
+ * Set up all .section-tabs pill bars — uses event delegation
+ * on each tab bar for efficient listener management.
  */
 function setupSectionTabs() {
   document.querySelectorAll('.section-tabs').forEach(tabBar => {
-    const tabs = tabBar.querySelectorAll('.section-tab');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const sectionId = tab.dataset.section;
-        if (!sectionId) return;
+    // Skip already-delegated tab bars
+    if (tabBar._delegated) return;
+    tabBar._delegated = true;
+    tabBar.addEventListener('click', (e) => {
+      const tab = e.target.closest('.section-tab');
+      if (!tab) return;
+      const sectionId = tab.dataset.section;
+      if (!sectionId) return;
 
-        // Deactivate sibling tabs
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+      // Deactivate sibling tabs
+      tabBar.querySelectorAll('.section-tab.active').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
 
-        // Find the parent view-shell and toggle section-panels within it
-        const viewShell = tabBar.closest('.view-shell');
-        if (!viewShell) return;
-        viewShell.querySelectorAll('.section-panel').forEach(p => {
-          p.classList.remove('active');
-        });
-        const target = document.getElementById(sectionId);
-        if (target) target.classList.add('active');
-      });
+      // Find the parent view-shell and toggle section-panels within it
+      const viewShell = tabBar.closest('.view-shell');
+      if (!viewShell) return;
+      viewShell.querySelectorAll('.section-panel.active').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(sectionId);
+      if (target) target.classList.add('active');
     });
   });
 }
 
+// Cache view elements to avoid repeated DOM queries
+let _viewCache = null;
+function _getViewEls() {
+  if (!_viewCache) {
+    _viewCache = {};
+    document.querySelectorAll('[id$="-view"]').forEach(v => {
+      _viewCache[v.id] = v;
+    });
+  }
+  return _viewCache;
+}
+
+// Lazy-init dispatch table — avoids long if-else chain
+const _viewInitFns = {
+  bridge:    () => initBridgeView(),
+  oasis:     () => initOasisView(),
+  dao:       () => initDaoView(),
+  warp:      () => initWarpView(),
+  freeworld: () => initFreeWorldView(),
+  issobella: () => initIssobellaView(),
+};
+
 function switchView(view) {
-  // Hide all views
-  document.querySelectorAll('[id$="-view"]').forEach(v => {
-    v.style.display = 'none';
-  });
-  
+  if (view === currentView) return; // skip redundant switches
+
+  const views = _getViewEls();
+
+  // Hide previous view only (not all)
+  if (currentView) {
+    const prev = views[currentView + '-view'];
+    if (prev) prev.style.display = 'none';
+  }
+
   // Show selected view
-  document.getElementById(`${view}-view`).style.display = 'block';
+  const next = views[view + '-view'];
+  if (next) next.style.display = 'block';
   currentView = view;
 
   // When switching to Logs, flush deferred mining console lines
@@ -551,23 +579,9 @@ function switchView(view) {
     }
   }
 
-  // Initialize bridge view when opened
-  if (view === 'bridge') initBridgeView();
-
-  // Initialize OASIS view when opened
-  if (view === 'oasis') initOasisView();
-
-  // Initialize DAO view when opened
-  if (view === 'dao') initDaoView();
-
-  // Initialize Warp view when opened
-  if (view === 'warp') initWarpView();
-
-  // Initialize Free World view when opened
-  if (view === 'freeworld') initFreeWorldView();
-
-  // Initialize Issobella view when opened
-  if (view === 'issobella') initIssobellaView();
+  // Lazy-initialize view if it has an init function
+  const initFn = _viewInitFns[view];
+  if (initFn) initFn();
 
   // Refresh network data only when user opens Network view
   if (view === 'network') {
