@@ -23,6 +23,65 @@ let currentView = 'dashboard';
 let config = {};
 let isRunning = false;
 
+const DEFAULT_REVENUE_PROFILE = {
+  enabled: true,
+  allocation: {
+    zionPct: 50,
+    multiAlgoPct: 25,
+    nclPct: 25,
+  },
+  cpu: { coin: 'auto' },
+  merged: { etcEnabled: false, nxsEnabled: false },
+  gpu: { enabled: false, coins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH'] },
+  ncl: { enabled: false },
+  nclEnabled: false,
+  freeStreams: { mysterium: true, nkn: true, aiGateway: true },
+};
+
+function normalizeRevenueProfile(input = {}) {
+  const allocation = input && typeof input.allocation === 'object' ? input.allocation : {};
+  const pct = (v, fallback) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  };
+
+  const coins = Array.isArray(input?.gpu?.coins)
+    ? input.gpu.coins.map(v => String(v || '').trim().toUpperCase()).filter(Boolean)
+    : [...DEFAULT_REVENUE_PROFILE.gpu.coins];
+
+  const cpuCoin = String(input?.cpu?.coin || DEFAULT_REVENUE_PROFILE.cpu.coin).toLowerCase();
+
+  return {
+    enabled: input?.enabled !== undefined ? !!input.enabled : DEFAULT_REVENUE_PROFILE.enabled,
+    allocation: {
+      zionPct: pct(allocation.zionPct, DEFAULT_REVENUE_PROFILE.allocation.zionPct),
+      multiAlgoPct: pct(allocation.multiAlgoPct, DEFAULT_REVENUE_PROFILE.allocation.multiAlgoPct),
+      nclPct: pct(allocation.nclPct, DEFAULT_REVENUE_PROFILE.allocation.nclPct),
+    },
+    cpu: {
+      coin: ['auto', 'xmr', 'btc'].includes(cpuCoin) ? cpuCoin : DEFAULT_REVENUE_PROFILE.cpu.coin,
+    },
+    gpu: {
+      enabled: input?.gpu?.enabled !== undefined ? !!input.gpu.enabled : DEFAULT_REVENUE_PROFILE.gpu.enabled,
+      coins: coins.length ? coins : [...DEFAULT_REVENUE_PROFILE.gpu.coins],
+    },
+    ncl: {
+      enabled: input?.ncl?.enabled !== undefined ? !!input.ncl.enabled : DEFAULT_REVENUE_PROFILE.ncl.enabled,
+    },
+    nclEnabled: input?.nclEnabled !== undefined ? !!input.nclEnabled : (input?.ncl?.enabled !== undefined ? !!input.ncl.enabled : DEFAULT_REVENUE_PROFILE.nclEnabled),
+    merged: {
+      etcEnabled: input?.merged?.etcEnabled !== undefined ? !!input.merged.etcEnabled : DEFAULT_REVENUE_PROFILE.merged.etcEnabled,
+      nxsEnabled: input?.merged?.nxsEnabled !== undefined ? !!input.merged.nxsEnabled : DEFAULT_REVENUE_PROFILE.merged.nxsEnabled,
+    },
+    freeStreams: {
+      mysterium: input?.freeStreams?.mysterium !== undefined ? !!input.freeStreams.mysterium : DEFAULT_REVENUE_PROFILE.freeStreams.mysterium,
+      nkn: input?.freeStreams?.nkn !== undefined ? !!input.freeStreams.nkn : DEFAULT_REVENUE_PROFILE.freeStreams.nkn,
+      aiGateway: input?.freeStreams?.aiGateway !== undefined ? !!input.freeStreams.aiGateway : DEFAULT_REVENUE_PROFILE.freeStreams.aiGateway,
+    },
+  };
+}
+
 let cpuThreadMax = 32;
 
 // Hashrate units
@@ -506,18 +565,23 @@ function setupControls() {
   const modeStatusEl = document.getElementById('mode-status');
   const backendStatusEl = document.getElementById('backend-status');
 
+  const setModeStatus = (mode) => {
+    const labels = {
+      'cpu': 'CPU mining only (~600 kH/s)',
+      'gpu': 'GPU mining only (~8.5 GH/s)',
+      'dual': 'Dual mining uses both CPU and GPU simultaneously (MAX POWER!)',
+      'gpu-revenue': 'GPU revenue mode routes GPU to profit-switch stream while CPU keeps ZION/revenue split'
+    };
+    if (modeStatusEl) modeStatusEl.textContent = labels[mode] || '';
+  };
+
   // Mining mode radio button listeners
   document.querySelectorAll('input[name="mining-mode"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const mode = radio.value;
-      const labels = {
-        'cpu': 'CPU mining only (~600 kH/s)',
-        'gpu': 'GPU mining only (~8.5 GH/s)',
-        'dual': 'Dual mining uses both CPU and GPU simultaneously (MAX POWER!)'
-      };
-      if (modeStatusEl) modeStatusEl.textContent = labels[mode] || '';
+      setModeStatus(mode);
       // Sync hidden gpu checkbox for backwards compat
-      if (gpuCheckbox) gpuCheckbox.checked = (mode === 'gpu' || mode === 'dual');
+      if (gpuCheckbox) gpuCheckbox.checked = (mode === 'gpu' || mode === 'dual' || mode === 'gpu-revenue');
     });
   });
 
@@ -666,7 +730,38 @@ function setupControls() {
       }
     }
     
+    const selectedMode = document.querySelector('input[name="mining-mode"]:checked')?.value || 'dual';
+    const revenueCpuCoin = (document.getElementById('revenue-cpu-coin')?.value || 'auto').toLowerCase();
+    const revenueGpuCoinsRaw = document.getElementById('revenue-gpu-coins')?.value || '';
+    const revenueGpuCoins = revenueGpuCoinsRaw
+      .split(',')
+      .map(v => v.trim().toUpperCase())
+      .filter(Boolean);
+
+    const currentRevenue = normalizeRevenueProfile(config?.revenue || {});
+    const nextRevenue = normalizeRevenueProfile({
+      ...currentRevenue,
+      enabled: !!document.getElementById('revenue-enabled')?.checked,
+      allocation: {
+        zionPct: parseInt(document.getElementById('revenue-zion-pct')?.value || String(currentRevenue.allocation.zionPct), 10),
+        multiAlgoPct: parseInt(document.getElementById('revenue-multi-pct')?.value || String(currentRevenue.allocation.multiAlgoPct), 10),
+        nclPct: parseInt(document.getElementById('revenue-ncl-pct')?.value || String(currentRevenue.allocation.nclPct), 10),
+      },
+      cpu: { coin: revenueCpuCoin },
+      gpu: {
+        enabled: !!document.getElementById('revenue-gpu-enabled')?.checked || selectedMode === 'gpu-revenue',
+        coins: revenueGpuCoins,
+      },
+      ncl: { enabled: !!document.getElementById('revenue-ncl-enabled')?.checked },
+      freeStreams: {
+        mysterium: !!document.getElementById('revenue-mysterium-enabled')?.checked,
+        nkn: !!document.getElementById('revenue-nkn-enabled')?.checked,
+        aiGateway: !!document.getElementById('revenue-ai-enabled')?.checked,
+      },
+    });
+
     config = {
+      ...config,
       pool: {
         host: poolHost,
         port: poolPort
@@ -680,11 +775,12 @@ function setupControls() {
         Math.max(1, parseInt(document.getElementById('threads-input').value) || 1)
       ),
       // New mining mode system
-      miningMode: document.querySelector('input[name="mining-mode"]:checked')?.value || 'dual',
-      gpu: ['gpu', 'dual', 'gpu-revenue'].includes(document.querySelector('input[name="mining-mode"]:checked')?.value || 'dual'),
+      miningMode: selectedMode,
+      gpu: ['gpu', 'dual', 'gpu-revenue'].includes(selectedMode),
       // GPU Revenue Mining configuration
-      gpuRevenue: document.querySelector('input[name="mining-mode"]:checked')?.value === 'gpu-revenue',
-      gpuRevenueCoins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH'], // Default supported coins
+      gpuRevenue: selectedMode === 'gpu-revenue' || nextRevenue.gpu.enabled,
+      gpuRevenueCoins: nextRevenue.gpu.coins,
+      revenue: nextRevenue,
       // Miner backend preference: auto | rust | python
       minerBackend: document.querySelector('input[name="miner-backend"]:checked')?.value || 'auto',
       autoStart: document.getElementById('autostart-checkbox').checked,
@@ -784,6 +880,41 @@ function updateSettingsUI() {
   const miningMode = config.miningMode || (config.gpu ? 'dual' : 'cpu');
   const modeRadio = document.querySelector(`input[name="mining-mode"][value="${miningMode}"]`);
   if (modeRadio) modeRadio.checked = true;
+  const modeStatusEl = document.getElementById('mode-status');
+  if (modeStatusEl) {
+    const modeLabels = {
+      'cpu': 'CPU mining only (~600 kH/s)',
+      'gpu': 'GPU mining only (~8.5 GH/s)',
+      'dual': 'Dual mining uses both CPU and GPU simultaneously (MAX POWER!)',
+      'gpu-revenue': 'GPU revenue mode routes GPU to profit-switch stream while CPU keeps ZION/revenue split'
+    };
+    modeStatusEl.textContent = modeLabels[miningMode] || '';
+  }
+
+  const revenue = normalizeRevenueProfile(config?.revenue || {});
+  const revenueCpuCoinEl = document.getElementById('revenue-cpu-coin');
+  const revenueGpuCoinsEl = document.getElementById('revenue-gpu-coins');
+  const revenueEnabledEl = document.getElementById('revenue-enabled');
+  const revenueGpuEnabledEl = document.getElementById('revenue-gpu-enabled');
+  const revenueNclEnabledEl = document.getElementById('revenue-ncl-enabled');
+  const revenueZionPctEl = document.getElementById('revenue-zion-pct');
+  const revenueMultiPctEl = document.getElementById('revenue-multi-pct');
+  const revenueNclPctEl = document.getElementById('revenue-ncl-pct');
+  const revenueMysteriumEl = document.getElementById('revenue-mysterium-enabled');
+  const revenueNknEl = document.getElementById('revenue-nkn-enabled');
+  const revenueAiEl = document.getElementById('revenue-ai-enabled');
+
+  if (revenueCpuCoinEl) revenueCpuCoinEl.value = revenue.cpu.coin;
+  if (revenueGpuCoinsEl) revenueGpuCoinsEl.value = revenue.gpu.coins.join(',');
+  if (revenueEnabledEl) revenueEnabledEl.checked = revenue.enabled;
+  if (revenueGpuEnabledEl) revenueGpuEnabledEl.checked = revenue.gpu.enabled || miningMode === 'gpu-revenue';
+  if (revenueNclEnabledEl) revenueNclEnabledEl.checked = revenue.ncl.enabled;
+  if (revenueZionPctEl) revenueZionPctEl.value = String(revenue.allocation.zionPct);
+  if (revenueMultiPctEl) revenueMultiPctEl.value = String(revenue.allocation.multiAlgoPct);
+  if (revenueNclPctEl) revenueNclPctEl.value = String(revenue.allocation.nclPct);
+  if (revenueMysteriumEl) revenueMysteriumEl.checked = revenue.freeStreams.mysterium;
+  if (revenueNknEl) revenueNknEl.checked = revenue.freeStreams.nkn;
+  if (revenueAiEl) revenueAiEl.checked = revenue.freeStreams.aiGateway;
   
   // Sync hidden gpu-checkbox for backwards compatibility
   const gpuEl = document.getElementById('gpu-checkbox');
@@ -2100,6 +2231,27 @@ function updateCH3Dashboard(stats) {
         badge.className = 'gpu-badge cpu-only';
         badgeText.textContent = 'CPU-Only Mode';
       }
+    }
+  }
+
+  // Revenue split badge
+  const splitBadge = document.getElementById('revenue-split-badge');
+  const splitText = document.getElementById('revenue-split-text');
+  if (splitBadge && splitText) {
+    if (stats.isRunning && stats.dual_mining) {
+      const zT = stats.zion_threads || 0;
+      const rT = stats.xmr_threads || 0;
+      const nT = stats.ncl_threads || 0;
+      const alloc = stats.stream_allocation || '';
+      const coin = stats.revenue_coin || 'AUTO';
+      const parts = [`ZION:${zT}T`];
+      if (rT > 0) parts.push(`REV:${rT}T`);
+      if (nT > 0) parts.push(`NCL:${nT}T`);
+      if (coin && coin !== 'AUTO') parts.push(coin);
+      splitText.textContent = parts.join(' | ') + (alloc ? ` (${alloc})` : '');
+      splitBadge.style.display = '';
+    } else {
+      splitBadge.style.display = 'none';
     }
   }
 

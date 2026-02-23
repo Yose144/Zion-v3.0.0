@@ -380,6 +380,9 @@ class CosmicHarmonyV3GPU:
         
         # Build program
         self.program = cl.Program(self.ctx, KERNEL_SOURCE).build()
+        # Cache kernel objects (avoid repeated kernel retrieval overhead/warnings)
+        self.kernel_mine = cl.Kernel(self.program, "cosmic_harmony_v3_mine")
+        self.kernel_batch = cl.Kernel(self.program, "cosmic_harmony_v3_batch")
         
         # Get device info
         self.device_info = GpuDevice(
@@ -399,6 +402,12 @@ class CosmicHarmonyV3GPU:
         self.found_nonce_buf = cl.Buffer(self.ctx, cl.mem_flags.WRITE_ONLY, 8)
         self.found_hash_buf = cl.Buffer(self.ctx, cl.mem_flags.WRITE_ONLY, 32)
         self.solution_count_buf = cl.Buffer(self.ctx, cl.mem_flags.READ_WRITE, 4)
+
+        # Reusable host-side buffers for deterministic transfer semantics.
+        self._zero_u32 = np.array([0], dtype=np.uint32)
+        self._solution_count_host = np.zeros(1, dtype=np.uint32)
+        self._found_nonce_host = np.zeros(1, dtype=np.uint64)
+        self._found_hash_host = np.zeros(32, dtype=np.uint8)
         
         # Stats
         self.total_hashes = 0
@@ -459,7 +468,7 @@ class CosmicHarmonyV3GPU:
         cl.enqueue_copy(self.queue, self.header_buf, header)
 
         # Reset solution count
-        cl.enqueue_copy(self.queue, self.solution_count_buf, np.array([0], dtype=np.uint32))
+        cl.enqueue_copy(self.queue, self.solution_count_buf, self._zero_u32, is_blocking=True)
 
         # Normalize target to 32-bit, matching pool semantics (state0 vs u32 target).
         if isinstance(target, (bytes, bytearray)):
@@ -484,7 +493,7 @@ class CosmicHarmonyV3GPU:
         global_size = (adjusted_batch,)
         local_size = (max_wg,)
 
-        self.program.cosmic_harmony_v3_mine(
+        self.kernel_mine(
             self.queue,
             global_size,
             local_size,
@@ -503,18 +512,14 @@ class CosmicHarmonyV3GPU:
         self.total_hashes += int(adjusted_batch)
 
         # Check results
-        solution_count = np.zeros(1, dtype=np.uint32)
-        cl.enqueue_copy(self.queue, solution_count, self.solution_count_buf)
+        cl.enqueue_copy(self.queue, self._solution_count_host, self.solution_count_buf, is_blocking=True)
         
-        if solution_count[0] > 0:
-            found_nonce = np.zeros(1, dtype=np.uint64)
-            found_hash = np.zeros(32, dtype=np.uint8)
-            
-            cl.enqueue_copy(self.queue, found_nonce, self.found_nonce_buf)
-            cl.enqueue_copy(self.queue, found_hash, self.found_hash_buf)
+        if self._solution_count_host[0] > 0:
+            cl.enqueue_copy(self.queue, self._found_nonce_host, self.found_nonce_buf, is_blocking=True)
+            cl.enqueue_copy(self.queue, self._found_hash_host, self.found_hash_buf, is_blocking=True)
             
             self.solutions_found += 1
-            return int(found_nonce[0]), bytes(found_hash)
+            return int(self._found_nonce_host[0]), bytes(self._found_hash_host)
         
         return None
     
@@ -546,7 +551,7 @@ class CosmicHarmonyV3GPU:
         global_size = (count,)
         local_size = (min(self.work_group_size, count),)
         
-        self.program.cosmic_harmony_v3_batch(
+        self.kernel_batch(
             self.queue,
             global_size,
             local_size,

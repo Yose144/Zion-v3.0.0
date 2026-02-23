@@ -530,7 +530,7 @@ curl -s "http://SERVER_IP:4449/tequilapi/identities/IDENTITY_ADDRESS" \
 
 ---
 
-_Poslední aktualizace: 23. 2. 2026 — Session 30_
+_Poslední aktualizace: 23. 2. 2026 — Session 33_
 
 ## 📊 Live stav (23.2.2026 ~16:30 UTC)
 
@@ -559,3 +559,11 @@ _Poslední aktualizace: 23. 2. 2026 — Session 30_
 | ETC (etc.2miners.com:1010) | Ethash/Keccak | ⏳ 1241+ jobs forwarded, 0 shares | $0 |
 
 VRSC/ERG/ETC merged vyžadují implementaci share extraction v `zion-pool` (feature: `native-ethash`, `native-autolykos`, `native-verushash`).
+
+### Session 33 — Desktop Agent CH3 update (23.2.2026)
+
+- ✅ CHv3 hash path opraven na height-aware variantu (`hash_with_height`) — odstraněn mismatch legacy vs memory-hard pod fork výškou.
+- ✅ Přidán pure-Python CHv3 fallback (`cosmic_harmony_v3_python.py`) pro případy, kdy Windows Defender blokuje Rust DLL.
+- ✅ Revenue wiring v desktop-agentu sjednocen na 50/25/25 split (ZION/REV/NCL) včetně Python backendu (`--group revenue`).
+- ✅ CH3 dashboard nyní zobrazuje live split threadů a alokaci.
+- ⚠️ ETC/NXS merged streamy zůstávají pool-side TODO (share extraction/forwarding ve `zion-pool`).

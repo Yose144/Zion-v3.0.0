@@ -1712,6 +1712,9 @@
                 <span id="stream-mode">Stream: —</span>
                 <span id="stream-algo" style="color: rgba(255,255,255,0.5); font-size: 11px;"></span>
               </div>
+              <div id="revenue-split-badge" style="display:none; padding:4px 10px; background:rgba(0,0,0,0.35); border:1px solid rgba(34,197,94,0.3); border-radius:8px; color:rgba(255,255,255,0.8); font-size:10px; line-height:1.4;">
+                <span id="revenue-split-text"></span>
+              </div>
               <div id="algo-display" style="padding:6px 12px; background:rgba(0,0,0,0.35); border:1px solid rgba(147,51,234,0.2); border-radius:8px; color:#fff; display:flex; align-items:center; gap:6px; font-size:11px;">
                 <svg class="icon icon-inline" aria-hidden="true" style="color:var(--zion-gold); width:12px; height:12px;"><use href="#i-star"></use></svg>
                 <span style="font-weight:600;">Cosmic Harmony v3</span>
@@ -2266,6 +2269,70 @@
               </label>
             </div>
             <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously. GPU Revenue Mining automatically switches between ERG, RVN, KAS, and ALPH based on profitability.</div>
+
+            <div class="form-grid two-col" style="margin-top:14px;">
+              <label class="floating-field">
+                <span>CPU Revenue Coin</span>
+                <select id="revenue-cpu-coin">
+                  <option value="auto">Auto</option>
+                  <option value="xmr">XMR</option>
+                  <option value="btc">BTC</option>
+                </select>
+              </label>
+              <label class="floating-field">
+                <span>GPU Revenue Coins</span>
+                <input type="text" id="revenue-gpu-coins" placeholder="ERG,RVN,KAS,ALPH" />
+              </label>
+              <label class="floating-field">
+                <span>ZION %</span>
+                <input type="number" id="revenue-zion-pct" min="0" max="100" step="1" value="50" />
+              </label>
+              <label class="floating-field">
+                <span>Multi-Alg %</span>
+                <input type="number" id="revenue-multi-pct" min="0" max="100" step="1" value="25" />
+              </label>
+              <label class="floating-field">
+                <span>NCL %</span>
+                <input type="number" id="revenue-ncl-pct" min="0" max="100" step="1" value="25" />
+              </label>
+            </div>
+
+            <div class="toggle-field" style="margin-top:12px;">
+              <input type="checkbox" id="revenue-enabled" checked />
+              <div>
+                <p>Enable multi-algo revenue routing</p>
+                <small>When disabled, all CPU threads mine ZION only</small>
+              </div>
+            </div>
+            <div class="toggle-field">
+              <input type="checkbox" id="revenue-gpu-enabled" />
+              <div>
+                <p>Enable GPU revenue switcher</p>
+                <small>Use dedicated GPU revenue stream in GPU Revenue mode</small>
+              </div>
+            </div>
+            <div class="toggle-field">
+              <input type="checkbox" id="revenue-ncl-enabled" checked />
+              <div>
+                <p>Enable NCL gateway stream</p>
+                <small>Reserve NCL allocation for compute marketplace channel</small>
+              </div>
+            </div>
+
+            <div class="form-grid two-col" style="margin-top:10px;">
+              <label class="toggle-field" style="margin:0;">
+                <input type="checkbox" id="revenue-mysterium-enabled" checked />
+                <div><p>Mysterium stream</p></div>
+              </label>
+              <label class="toggle-field" style="margin:0;">
+                <input type="checkbox" id="revenue-nkn-enabled" checked />
+                <div><p>NKN stream</p></div>
+              </label>
+              <label class="toggle-field" style="margin:0;">
+                <input type="checkbox" id="revenue-ai-enabled" checked />
+                <div><p>AI Gateway stream</p></div>
+              </label>
+            </div>
             <input type="checkbox" id="gpu-checkbox" style="display:none;" />
           </section>
 
