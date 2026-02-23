@@ -771,6 +771,12 @@ const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
 const LOG_PATH = path.join(USER_DATA_PATH, 'miner.log');
 const WALLETS_PATH = path.join(USER_DATA_PATH, 'wallets');
 const STATS_PATH = path.join(USER_DATA_PATH, 'miner_stats.json');
+const STATS_INTERVAL_SEC = (() => {
+  const raw = Number(String(process.env.ZION_STATS_INTERVAL_SEC || '10').trim());
+  if (!Number.isFinite(raw) || raw < 2) return 10;
+  return Math.floor(raw);
+})();
+const STATS_TICK_MS = STATS_INTERVAL_SEC * 1000;
 
 // Afterburner service (Python JSON-lines RPC)
 const AFTERBURNER_SCRIPT_PATH = IS_PACKAGED
@@ -1941,7 +1947,8 @@ function startMining(config) {
   // Dual Mining Info (ZION + Revenue group via pool)
   // ═══════════════════════════════════════════════════════════
   if (MINER_IS_RUST && effectiveThreads >= 3 && rustGroupSupported) {
-    const disableRevenueEnv = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+    const disableRevenueEnv = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1'
+      || String(process.env.ZION_ENABLE_REVENUE || '').trim() !== '1';
     if (!disableRevenueEnv) {
       try {
         sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ═══ Dual Mining Active ═══\n` });
@@ -1979,7 +1986,8 @@ function startMining(config) {
     // miners to XMR/RandomX jobs via RevenueProxy (→ MoneroOcean → BTC).
     // Remaining threads mine ZION (CosmicHarmony). Minimum 2 threads for ZION.
     // Disable dual mining via ZION_DISABLE_REVENUE=1 env var.
-    const disableRevenue = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+    const disableRevenue = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1'
+      || String(process.env.ZION_ENABLE_REVENUE || '').trim() !== '1';
     xmrRevenueThreads = (!disableRevenue && effectiveThreads >= 3 && rustGroupSupported) ? 1 : 0;
     zionThreads = effectiveThreads - xmrRevenueThreads;
 
@@ -1989,7 +1997,7 @@ function startMining(config) {
       '--wallet', config.wallet,
       '--threads', String(zionThreads),
       '--stats-file', STATS_PATH,
-      '--stats-interval', '5',
+      '--stats-interval', String(STATS_INTERVAL_SEC),
       '--no-color'
     ];
 
@@ -2036,7 +2044,7 @@ function startMining(config) {
       '--wallet', config.wallet,
       '--worker', config.worker,
       '--threads', String(effectiveThreads),
-      '--stats-interval', '5',
+      '--stats-interval', String(STATS_INTERVAL_SEC),
       '--stats-file', STATS_PATH
     ];
 
@@ -2423,7 +2431,7 @@ function startMining(config) {
         // If no external job available → pool falls back to cosmic_harmony (ZION).
         // Forcing randomx caused "RandomX not initialized" when seed_hash was missing.
         '--stats-file', revenueStatsPath,
-        '--stats-interval', '5',
+        '--stats-interval', String(STATS_INTERVAL_SEC),
         '--no-color'
       ];
       if (config.worker) revenueArgs.push('--worker', `${String(config.worker)}_rev`);
@@ -2520,7 +2528,7 @@ function startMining(config) {
         '--group', 'revenue',
         '--gpu',   // works on macOS for cosmic_harmony (Metal), and on Linux/Win (OpenCL)
         '--stats-file', gpuRevenueStatsPath,
-        '--stats-interval', '5',
+        '--stats-interval', String(STATS_INTERVAL_SEC),
         '--no-color'
       ];
       if (config.worker) gpuRevenueArgs.push('--worker', `${String(config.worker)}_gpu_rev`);
@@ -5390,7 +5398,7 @@ setInterval(() => {
 
   if (minerProcess) {
     const updated = tryUpdateStatsFromFile();
-    if (!updated) minerStats.uptime += 5;
+    if (!updated) minerStats.uptime += STATS_INTERVAL_SEC;
 
     // Track rolling hashrate samples for xmrig-like averages.
     try {
@@ -5490,4 +5498,4 @@ setInterval(() => {
     // Still refresh UI for miner stats.
     scheduleStatsEmit();
   }
-}, 5000);
+}, STATS_TICK_MS);
