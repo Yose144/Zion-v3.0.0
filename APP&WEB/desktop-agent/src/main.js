@@ -587,6 +587,13 @@ let minerStartAckTimer = null;
 let minerStartToken = 0;
 let minerUserStopRequested = false;
 
+// Pool failover watchdog — auto-restart miner with a different pool when stratum dies
+let poolFailoverCount = 0;         // consecutive crash-restarts
+const POOL_FAILOVER_MAX = 3;       // max auto-restarts before giving up
+const POOL_FAILOVER_DELAY_MS = 10000; // 10s between restarts
+let poolFailoverTimer = null;
+let poolHealthTimer = null;          // periodic pool probe while mining
+
 let minerBackendPreferred = 'auto';
 let minerBackendResolved = null;
 let minerBackendPath = '';
@@ -808,7 +815,7 @@ const DEFAULT_CONFIG = {
   // - Other OS: keep auto for compatibility.
   minerBackend: process.platform === 'win32' ? 'rust' : 'auto',
   autoStart: false,
-  autoSelectPool: false,
+  autoSelectPool: true,
   minimizeToTray: true,
   startMinimized: false
 };
@@ -1215,11 +1222,68 @@ async function checkServerPort(host, port, timeout = 3000) {
   });
 }
 
+/**
+ * Deep stratum health check — connects AND verifies the pool responds
+ * to a mining.subscribe JSON-RPC message. Catches cases where TCP is open
+ * but the stratum service is dead/broken.
+ */
+async function checkStratumHealth(host, port = 3333, timeout = 5000) {
+  const net = require('net');
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const socket = new net.Socket();
+    let responded = false;
+    let buf = '';
+
+    const fail = () => {
+      if (!responded) { responded = true; socket.destroy(); resolve({ online: false, latency: -1, port }); }
+    };
+
+    socket.setTimeout(timeout);
+    socket.on('timeout', fail);
+    socket.on('error', fail);
+    socket.on('close', fail);
+
+    socket.on('connect', () => {
+      // Send stratum subscribe
+      try {
+        socket.write('{"id":1,"method":"mining.subscribe","params":["zion-agent/2.9.6"]}\n');
+      } catch { fail(); return; }
+    });
+
+    socket.on('data', (chunk) => {
+      buf += chunk.toString();
+      // Look for a valid JSON line (stratum uses newline-delimited JSON)
+      const lines = buf.split('\n');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const msg = JSON.parse(line);
+          // Any valid JSON response from stratum = pool is alive
+          if (msg && (msg.id !== undefined || msg.method)) {
+            if (!responded) {
+              responded = true;
+              const latency = Date.now() - start;
+              socket.destroy();
+              resolve({ online: true, latency, port });
+            }
+            return;
+          }
+        } catch {
+          // not valid JSON yet, keep buffering
+        }
+      }
+    });
+
+    socket.connect(port, host);
+  });
+}
+
 async function getAllServersStatus() {
   const results = await Promise.all(
     TESTNET_SERVERS.map(async (server) => {
       const [poolStatus, rpcStatus] = await Promise.all([
-        checkServerPort(server.host, 3333),
+        checkStratumHealth(server.host, 3333),  // deep stratum check, not just TCP
         checkServerPort(server.host, 8444)
       ]);
       return {
@@ -1661,6 +1725,8 @@ function startMining(config) {
   minerUserStopRequested = false;
 
   // Cancel any pending timers from a previous run.
+  if (poolFailoverTimer) { clearTimeout(poolFailoverTimer); poolFailoverTimer = null; }
+  if (poolHealthTimer) { clearInterval(poolHealthTimer); poolHealthTimer = null; }
   try {
     if (minerFallbackTimer) clearTimeout(minerFallbackTimer);
   } catch {
@@ -1954,10 +2020,9 @@ function startMining(config) {
     // On macOS this uses Metal backend (no OpenCL required).
     if (mainMinerGpu) {
       args.push('--gpu');
-      // Auto-tune GPU batch size for maximum hashrate.
-      // The miner benchmarks batch sizes from 100K→10M during startup
-      // and picks the fastest, typically 2-6× faster than the default.
-      args.push('--auto-tune');
+      // NOTE: Do NOT add --auto-tune here — it makes the miner run benchmark-only
+      // and exit without mining. The miner already auto-calculates optimal batch
+      // size via calculate_optimal_batch_size() based on GPU memory at runtime.
     }
   } else {
     // Python miner / legacy .exe miner (shared CLI)
@@ -2449,7 +2514,6 @@ function startMining(config) {
         '--threads', '1',  // GPU process needs only 1 CPU thread; GPU (Metal/OpenCL) does the heavy work
         '--group', 'revenue',
         '--gpu',   // works on macOS for cosmic_harmony (Metal), and on Linux/Win (OpenCL)
-        '--auto-tune',  // optimize GPU batch size for maximum hashrate
         '--stats-file', gpuRevenueStatsPath,
         '--stats-interval', '5',
         '--no-color'
@@ -2797,6 +2861,54 @@ function startMining(config) {
       });
     }
     // (miner-stopped already emitted above)
+
+    // ── Pool Failover Watchdog ──────────────────────────────────────────
+    // If the miner crashed (non-zero exit) and user didn't stop it, try
+    // switching to a different pool server and auto-restarting.
+    if (
+      !minerStopping &&
+      !minerUserStopRequested &&
+      code !== 0 &&
+      !rustFallbackEligible &&
+      poolFailoverCount < POOL_FAILOVER_MAX
+    ) {
+      poolFailoverCount++;
+      console.log(`[pool-failover] Miner crashed (code ${code}). Attempting failover ${poolFailoverCount}/${POOL_FAILOVER_MAX} in ${POOL_FAILOVER_DELAY_MS / 1000}s...`);
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          data: `[FAILOVER] Pool connection lost — switching to best available pool (${poolFailoverCount}/${POOL_FAILOVER_MAX})...\n`
+        });
+      } catch { /* ignore */ }
+
+      if (poolFailoverTimer) clearTimeout(poolFailoverTimer);
+      poolFailoverTimer = setTimeout(async () => {
+        try {
+          const best = await autoSelectBestPool();
+          if (best) {
+            console.log(`[pool-failover] Restarting with pool: ${best.name} (${best.host})`);
+            const cfg = loadConfig();
+            startMining(cfg);
+            try {
+              sendToRenderer('config-updated');
+              sendToRenderer('miner-output', {
+                stream: 'stdout',
+                data: `[FAILOVER] Restarted mining on pool ${best.host}\n`
+              });
+            } catch { /* ignore */ }
+          } else {
+            console.log('[pool-failover] No online pools found. Giving up.');
+            try {
+              sendToRenderer('miner-error', {
+                message: 'Failover failed — no reachable pool servers. Check network or restart manually.'
+              });
+            } catch { /* ignore */ }
+          }
+        } catch (err) {
+          console.error('[pool-failover] Error during failover:', err.message);
+        }
+      }, POOL_FAILOVER_DELAY_MS);
+    }
   });
 
   // miner-started is emitted after a short grace period
@@ -3976,6 +4088,12 @@ function parseMinerOutput(output) {
   if (/CPU-ONLY MODE/i.test(output)) {
     minerStats.cpu_only_mode = true;
     minerStats.gpu_detected = false;
+  }
+
+  // Pool failover: reset counter once we see real hashing (pool connection works)
+  if (poolFailoverCount > 0 && (minerStats.hashrate_10s > 0 || minerStats.accepted > 0)) {
+    console.log(`[pool-failover] Mining confirmed working — resetting failover counter (was ${poolFailoverCount})`);
+    poolFailoverCount = 0;
   }
 
   updateTrayMenu(minerStats);
