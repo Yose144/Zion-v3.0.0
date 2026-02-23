@@ -1223,7 +1223,7 @@ Důvod: Se spam filtrem je 10 MB dostatečné — užitečná data se nerotují 
 - **L1/core LOC gap**: 14,500 LOC (src+tests) vs 35,000 tvrzených — ~58% chybí
 - **L3 adaptéry**: Všech 7 chain adaptérů jsou stuby (EVM, Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin)
 - **NKN CreateID fee** — node běží (`Up`), ale potřebuje ~10 NKN tokenů pro registraci node identity
-- **Pool share rejection rate** — ~~Desktop agent dostává `diff: 0, height: 0` v některých panelech; A:1 R:2 (33.3%) — možný pool-side bug~~ → ✅ OPRAVENO (Session 31): GPU kernel měl špatné Keccak RC[21-23] + nonce overflow
+- **Pool share rejection rate** — ~~Desktop agent dostává `diff: 0, height: 0` v některých panelech; A:1 R:2 (33.3%) — možný pool-side bug~~ → ✅ OPRAVENO (Session 31): 3 bugy — Keccak RC[21-23] + nonce overflow (`3fed7ab`) + target byte extraction (`9516f3a`). Výsledek: **A:26 R:0 rate:100%**
 - **Bridge vault setup** — vygenerovat `ZION_BRIDGE_VAULT_KEY`, nasadit na Helsinki
 - **Rust relay mainnet** — po auditu přepnout `BRIDGE_NET` na Base Mainnet
 - **DAO executor** — Reálná implementace (multi-sig guardian)
@@ -1270,7 +1270,20 @@ Pool posílá správná data. Blockchain height = 4421 (< 50000 fork height) →
 
 > **Note k Session 28:** "Keccak RC revert" v Session 28 byl chybný. Diagnóza "running binaries používají staré hodnoty" nebyla správná — pool vždy používal `sha3::Keccak256` (NIST standard). Session 28 revert vrátil špatné konstanty do GPU kernelu.
 
-#### 3. Nonce overflow bug
+#### 3. ROOT CAUSE #2: Target byte extraction mismatch (`opencl.rs`)
+
+**Objev po prvním rebuildu:** Keccak fix opraven → GPU→CPU VERIFY ukazuje `MATCH=true`, ale pool stále odmítá ALL shares.
+
+| Komponenta | Co čte | Hodnota | Difficulty |
+|-----------|--------|---------|------------|
+| **Pool** (`validator.rs`) | `job_target[0..8]` hex → first 4 bytes | `0x000000cc` | 204 (těžký) |
+| **GPU** (`opencl.rs`) | `target[28..32]` → last 4 bytes | `0x20b1b2b4` | 549M (extrémně lehký) |
+
+**Dopad:** GPU nacházel miliony "easy" hitů za sekundu (state0 < 549M), ale žádný z nich nesplnil skutečnou pool difficulty (`state0 < 204`). Pool viděl hashe, které neměly dostatečně nízkou state0 → 100% rejection.
+
+**CPU miner BYL SPRÁVNÝ** — `parse_cosmic_target_to_u32()` v `cpu.rs` čte správně `target_hex[0..8]`. Bug byl pouze v GPU path.
+
+#### 4. Nonce overflow bug
 
 GPU `nonce_start` je `u64`, ale pool přijímá `u32` nonce. Při ~40 MH/s s batch_size=4M se `nonce_start` dostane nad `u32::MAX` (4.3B) za ~107 sekund → nonce trukkován na u32 → pool re-hashuje s jiným nonce → REJECT.
 
@@ -1301,28 +1314,43 @@ let next = nonce_start.wrapping_add(batch_size);
 nonce_start = if next > u32::MAX as u64 { 0u64 } else { next };
 ```
 
+#### 4. Target byte extraction fix (`opencl.rs` + `mod.rs`)
+```diff
+- let target_u32 = u32::from_be_bytes([target[28], target[29], target[30], target[31]]);
++ let target_u32 = u32::from_be_bytes([target[0], target[1], target[2], target[3]]);
+```
+GPU nyní čte stejné 4 byty jako pool → difficulty match.
+
 ---
 
 ### Změněné soubory
 
-| Soubor | Změna |
-|--------|-------|
-| `L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl` | Keccak RC[21-23] → NIST standard |
-| `L1/miner/src/miner/mod.rs` | Nonce overflow skip + wrap |
-| `L1/cosmic-harmony/src/algorithms_opt.rs` | Test KECCAK_RC → NIST standard |
+| Soubor | Změna | Commit |
+|--------|-------|--------|
+| `L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl` | Keccak RC[21-23] → NIST standard | `3fed7ab` |
+| `L1/miner/src/miner/mod.rs` | Nonce overflow skip + wrap + VERIFY target fix | `3fed7ab` + `9516f3a` |
+| `L1/cosmic-harmony/src/algorithms_opt.rs` | Test KECCAK_RC → NIST standard | `3fed7ab` |
+| `L1/miner/src/miner/gpu/opencl.rs` | target[28..32] → target[0..4] | `9516f3a` |
 
-### Stav po opravě
+### Stav po opravě — OVĚŘENO ✅
 
 | Co | Před | Po |
 |----|------|-----|
 | GPU Keccak RC[21-23] | Nestandardní (nesouhlasí s pool) | NIST standard ✅ |
+| GPU target extraction | `target[28..32]` = 549M (příliš lehký) | `target[0..4]` = 204 ✅ |
 | Nonce overflow | Submituje truncated nonce | Skip + wrap ✅ |
-| GPU share accept rate | **0%** | Očekáváno **~99%** (po rebuildu binárky) |
+| GPU share accept rate | **0%** (100% rejection) | **100%** (A:26 R:0) ✅ |
+| GPU hashrate | ~15 MH/s | **45 MH/s** (gfx1010) ✅ |
 
-> ⚠️ **POTŘEBA REBUILD:** Opravy jsou v source kódu. Pro aktivaci je třeba:
-> 1. `cargo build --release` v `L1/miner/`
-> 2. Kopírovat nový `zion-universal-miner.exe` do `APP&WEB/desktop-agent/resources/`
-> 3. Restart desktop agenta
+**Test výsledek (23. února 2026, 17:30 UTC):**
+```
+SHARES  A: 26  R: 0  rate: 100.0%
+SPEED   10s 47.98 MH/s  60s 45.03  15m 45.03
+HW      gpu: 42.95 MH/s [gfx1010:xnack-]
+EVENT   [17:30:07] accepted 26/0 (+1) diff 0 (100.0%)
+```
+
+GPU→CPU VERIFY potvrzuje: `MATCH=true`, `target=0x000000cc`, state0 hodnoty (`0x0000005c`, `0x0000000e`, `0x0000001b`) všechny správně pod target.
 
 ---
 
