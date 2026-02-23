@@ -1,128 +1,171 @@
 # ═══════════════════════════════════════════════════════════════
-# ZION Revenue Stack — Fáze 1
-# Doplňkový mining + bandwidth nody na stávajících serverech
+# ZION Revenue Stack — Fáze 1 (v5 final — MoneroOcean ARM64)
+# CPU mining na MoneroOcean (auto profit-switch: XMR/ZEPH/DERO/...)
+# Bandwidth nody: Mysterium + NKN
+#
+# Payout: MoneroOcean auto-switch XMR wallet
+#   Dashboard: https://moneroocean.stream/#/dashboard?addr=42m86RBWf4PeuRf8P5...
 #
 # Deploy:
-#   Helsinki:  COMPOSE_PROFILES=helsinki docker compose -f docker-compose.revenue.yml up -d
-#   Germany:   COMPOSE_PROFILES=germany  docker compose -f docker-compose.revenue.yml up -d
+#   Helsinki: COMPOSE_PROFILES=helsinki docker compose -p zion-revenue \
+#             -f docker/docker-compose.revenue.yml up -d --force-recreate
+#   Germany:  COMPOSE_PROFILES=germany  docker compose -p zion-revenue \
+#             -f docker/docker-compose.revenue.yml up -d --force-recreate
 #
-# Wallet adresy nastavit v .env.revenue PŘED deployem!
+# POZOR: xmrig se kompiluje z source (~10-15 min prvni spusteni).
+# Binarka se ulozi do volume zion-xmrig-cache a znovu se nebuiluje.
 # ═══════════════════════════════════════════════════════════════
 
 version: '3.8'
 
 services:
 
-  # ═══════════════════════════════════════
-  # DERO — AstroBWTv3 (CPU)
-  # Oba servery, 2 jádra, best CPU profit
-  # ═══════════════════════════════════════
+  # ─── DERO-MINER ─────────────────────────────────────────────
+  # 2T, oba servery, MoneroOcean autoswitch XMR/DERO/ZEPH/...
+  # Buduje xmrig binárku a ukládá do sdíleného volume
+  # ─────────────────────────────────────────────────────────────
   dero-miner:
     image: ubuntu:22.04
     container_name: zion-dero-miner
     restart: unless-stopped
     entrypoint: /bin/bash
-    command: >
-      -c "
-      apt-get update && apt-get install -y --no-install-recommends wget ca-certificates &&
-      wget -qO /tmp/dero_linux_amd64.tar.gz https://github.com/deroproject/derohe/releases/download/Release117/dero_linux_amd64.tar.gz &&
-      cd /tmp && tar xzf dero_linux_amd64.tar.gz &&
-      find /tmp -name 'dero-miner*' -type f -exec chmod +x {} \; &&
-      exec /tmp/dero_linux_amd64/dero-miner
-        --mining-threads 2
-        --daemon-rpc-address=minernode1.dero.io:10100
-        --wallet-address=${DERO_WALLET}
-      "
-    cpuset: "${DERO_CPUSET:-14-15}"
-    mem_limit: 2g
-    read_only: false
+    volumes:
+      - zion-xmrig-cache:/opt/xmrig-bin
+    command:
+      - -c
+      - |
+        if [ ! -f /opt/xmrig-bin/xmrig ]; then
+          echo "[ZION] Building xmrig (ARM64 first run ~10-15 min)..."
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential cmake git ca-certificates libssl-dev libhwloc-dev libuv1-dev
+          update-ca-certificates
+          git clone --depth=1 --branch=v6.21.3 https://github.com/xmrig/xmrig.git /opt/xmrig-src
+          cmake -S /opt/xmrig-src -B /opt/xmrig-src/build \
+            -DCMAKE_BUILD_TYPE=Release -DWITH_OPENCL=OFF -DWITH_CUDA=OFF
+          cmake --build /opt/xmrig-src/build --parallel $$(nproc) 2>&1 | grep -c '\[' | xargs -I{} echo "[ZION] Build {} steps done"
+          cp /opt/xmrig-src/build/xmrig /opt/xmrig-bin/xmrig
+          chmod +x /opt/xmrig-bin/xmrig
+          rm -rf /opt/xmrig-src
+          /opt/xmrig-bin/xmrig --version
+        fi
+        echo "[ZION] Installing runtime deps (libuv1 libssl3 libhwloc15)..."
+        apt-get update -qq 2>/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          libuv1 libssl3 libhwloc15 2>&1 | tail -1
+        echo "[ZION] Starting MoneroOcean (worker=zion_dero threads=2)"
+        exec /opt/xmrig-bin/xmrig \
+          --url gulf.moneroocean.stream:10001 \
+          --user 42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK \
+          --pass zion_dero \
+          --threads 2 \
+          --no-color \
+          --donate-level 0 \
+          --print-time 120
+    cpus: "${DERO_CPUS:-2.0}"
+    mem_limit: 4g
     security_opt:
       - no-new-privileges:true
     networks:
       - revenue-net
     labels:
       - "zion.service=revenue"
-      - "zion.coin=dero"
-      - "zion.algo=astrobwt"
+      - "zion.pool=moneroocean"
 
-  # ═══════════════════════════════════════
-  # ZEPH — RandomX (CPU)
-  # Helsinki only, 1 jádro
-  # ═══════════════════════════════════════
+  # ─── ZEPH-MINER ─────────────────────────────────────────────
+  # 1T, Helsinki only, ceka na binary z dero-miner volume
+  # ─────────────────────────────────────────────────────────────
   zeph-miner:
     image: ubuntu:22.04
     container_name: zion-zeph-miner
     restart: unless-stopped
     profiles: ["helsinki"]
     entrypoint: /bin/bash
-    command: >
-      -c "
-      apt-get update && apt-get install -y --no-install-recommends wget ca-certificates xz-utils &&
-      wget -qO /tmp/xmrig.tar.gz https://github.com/xmrig/xmrig/releases/download/v6.21.3/xmrig-6.21.3-linux-static-x64.tar.gz &&
-      cd /tmp && tar xzf xmrig.tar.gz &&
-      exec /tmp/xmrig-6.21.3/xmrig
-        -o zeph.herominers.com:1123
-        -u ${ZEPH_WALLET}
-        -p zion_helsinki
-        -a rx/0
-        -t 1
-        --no-color
-        --donate-level=0
-        --print-time=60
-      "
-    cpuset: "${ZEPH_CPUSET:-12}"
+    volumes:
+      - zion-xmrig-cache:/opt/xmrig-bin
+    command:
+      - -c
+      - |
+        echo "[ZION] zeph-miner waiting for xmrig binary..."
+        n=0
+        while [ ! -f /opt/xmrig-bin/xmrig ] && [ $$n -lt 90 ]; do
+          n=$$((n+1))
+          echo "[ZION] Waiting $${n}/90..."
+          sleep 10
+        done
+        if [ ! -f /opt/xmrig-bin/xmrig ]; then echo "[ZION] Timeout waiting for xmrig"; exit 1; fi
+        echo "[ZION] Installing runtime deps..."
+        apt-get update -qq 2>/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          libuv1 libssl3 libhwloc15 2>&1 | tail -1
+        echo "[ZION] Starting MoneroOcean (worker=zion_zeph_helsinki threads=1)"
+        exec /opt/xmrig-bin/xmrig \
+          --url gulf.moneroocean.stream:10001 \
+          --user 42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK \
+          --pass zion_zeph_helsinki \
+          --threads 1 \
+          --no-color \
+          --donate-level 0 \
+          --print-time 120
+    cpus: "${ZEPH_CPUS:-1.0}"
     mem_limit: 3g
-    read_only: false
     security_opt:
       - no-new-privileges:true
     networks:
       - revenue-net
     labels:
       - "zion.service=revenue"
-      - "zion.coin=zeph"
-      - "zion.algo=randomx"
+      - "zion.pool=moneroocean"
 
-  # ═══════════════════════════════════════
-  # EPIC — RandomX (CPU)
-  # Germany only, 1 jádro
-  # ═══════════════════════════════════════
+  # ─── EPIC-MINER ─────────────────────────────────────────────
+  # 1T, Germany only, nahrazuje mrtvy fastepic.eu:3416
+  # ─────────────────────────────────────────────────────────────
   epic-miner:
     image: ubuntu:22.04
     container_name: zion-epic-miner
     restart: unless-stopped
     profiles: ["germany"]
     entrypoint: /bin/bash
-    command: >
-      -c "
-      apt-get update && apt-get install -y --no-install-recommends wget ca-certificates xz-utils &&
-      wget -qO /tmp/xmrig.tar.gz https://github.com/xmrig/xmrig/releases/download/v6.21.3/xmrig-6.21.3-linux-static-x64.tar.gz &&
-      cd /tmp && tar xzf xmrig.tar.gz &&
-      exec /tmp/xmrig-6.21.3/xmrig
-        -o fastepic.eu:3416
-        -u ${EPIC_WALLET}
-        -p zion_germany
-        -a rx/0
-        -t 1
-        --no-color
-        --donate-level=0
-        --print-time=60
-      "
-    cpuset: "${EPIC_CPUSET:-12}"
+    volumes:
+      - zion-xmrig-cache:/opt/xmrig-bin
+    command:
+      - -c
+      - |
+        echo "[ZION] epic-miner waiting for xmrig binary..."
+        n=0
+        while [ ! -f /opt/xmrig-bin/xmrig ] && [ $$n -lt 90 ]; do
+          n=$$((n+1))
+          echo "[ZION] Waiting $${n}/90..."
+          sleep 10
+        done
+        if [ ! -f /opt/xmrig-bin/xmrig ]; then echo "[ZION] Timeout waiting for xmrig"; exit 1; fi
+        echo "[ZION] Installing runtime deps..."
+        apt-get update -qq 2>/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          libuv1 libssl3 libhwloc15 2>&1 | tail -1
+        echo "[ZION] Starting MoneroOcean (worker=zion_epic_germany threads=1)"
+        exec /opt/xmrig-bin/xmrig \
+          --url gulf.moneroocean.stream:10001 \
+          --user 42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK \
+          --pass zion_epic_germany \
+          --threads 1 \
+          --no-color \
+          --donate-level 0 \
+          --print-time 120
+    cpus: "${EPIC_CPUS:-1.0}"
     mem_limit: 3g
-    read_only: false
     security_opt:
       - no-new-privileges:true
     networks:
       - revenue-net
     labels:
       - "zion.service=revenue"
-      - "zion.coin=epic"
-      - "zion.algo=randomx"
+      - "zion.pool=moneroocean"
 
-  # ═══════════════════════════════════════
-  # MYSTERIUM — VPN/Bandwidth node
-  # Oba servery, $0 kapitál
-  # ═══════════════════════════════════════
+  # ─── MYSTERIUM ──────────────────────────────────────────────
+  # VPN bandwidth node, oba servery, $0 kapital
+  # Registrace: http://SERVER:4449 nebo MMN_API_KEY env
+  # ─────────────────────────────────────────────────────────────
   mysterium:
     image: mysteriumnetwork/myst:latest
     container_name: zion-mysterium
@@ -133,19 +176,17 @@ services:
       - "4449:4449"
       - "41920-41925:41920-41925/udp"
     volumes:
-      - mysterium-data:/var/lib/mysterium-node
+      - zion-mysterium-data:/var/lib/mysterium-node
+    environment:
+      - MMN_API_KEY=${MMN_API_KEY:-}
     command: service --agreed-terms-and-conditions
     networks:
       - revenue-net
     labels:
       - "zion.service=revenue"
-      - "zion.coin=myst"
       - "zion.type=bandwidth"
 
-  # ═══════════════════════════════════════
-  # NKN — P2P Relay node
-  # Oba servery, $0 kapitál
-  # ═══════════════════════════════════════
+  # ─── NKN ────────────────────────────────────────────────────
   nkn:
     image: nknorg/nkn:latest
     container_name: zion-nkn
@@ -153,19 +194,23 @@ services:
     ports:
       - "30001-30005:30001-30005"
     volumes:
-      - nkn-data:/nkn/data
+      - zion-nkn-data:/nkn/data
     command: nknd -p "" --no-nat
     networks:
       - revenue-net
     labels:
       - "zion.service=revenue"
-      - "zion.coin=nkn"
       - "zion.type=relay"
 
 volumes:
-  mysterium-data:
-  nkn-data:
+  zion-xmrig-cache:
+    name: zion-xmrig-cache
+  zion-mysterium-data:
+    name: zion-mysterium-data
+  zion-nkn-data:
+    name: zion-nkn-data
 
 networks:
   revenue-net:
     name: zion-revenue-net
+    external: true
