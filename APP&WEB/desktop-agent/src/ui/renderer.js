@@ -481,17 +481,17 @@ function initWarpStarfield() {
   });
 }
 
-// Navigation — single delegated listener for performance
+// Navigation — single delegated listener on dock bar
 function setupNavigation() {
-  const sidebar = document.querySelector('.nav-scroll') || document.querySelector('.sidebar');
-  if (sidebar) {
-    sidebar.addEventListener('click', (e) => {
+  const dock = document.getElementById('dock-bar') || document.querySelector('.dock-bar');
+  if (dock) {
+    dock.addEventListener('click', (e) => {
       const item = e.target.closest('.nav-item');
       if (!item || !item.dataset.view) return;
       const view = item.dataset.view;
       switchView(view);
       // Update active state — single loop
-      sidebar.querySelectorAll('.nav-item.active').forEach(i => i.classList.remove('active'));
+      dock.querySelectorAll('.nav-item.active').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
     });
   }
@@ -562,9 +562,12 @@ function switchView(view) {
     if (prev) prev.style.display = 'none';
   }
 
-  // Show selected view
+  // Show selected view — remove hiding classes that block rendering
   const next = views[view + '-view'];
-  if (next) next.style.display = 'block';
+  if (next) {
+    next.classList.remove('d-none', 'view-hidden');
+    next.style.display = 'block';
+  }
   currentView = view;
 
   // When switching to Logs, flush deferred mining console lines
