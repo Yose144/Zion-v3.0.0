@@ -44,6 +44,7 @@ finality_blocks       = 12
 enabled               = true   # LIVE on Base Sepolia testnet
 gas_strategy          = "eip1559"
 max_gas_gwei          = 5
+start_block           = 38057800  # Bridge deployed 23.2.2026 — skip genesis scan
 
 # -- Arbitrum Sepolia (Testnet) --
 [[evm_chains]]

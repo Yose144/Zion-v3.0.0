@@ -15,7 +15,30 @@ use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
 /// L1 block data from RPC.
+/// Wrapper for /api/block/height/{height} response.
+/// API returns: {"block": {"header": {...}, "transactions": [...]}, "status": "ok"}
 #[derive(Debug, Deserialize)]
+struct ApiBlockResponse {
+    pub block: ApiBlockData,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiBlockData {
+    pub header: ApiBlockHeader,
+    pub transactions: Vec<L1Transaction>,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct ApiBlockHeader {
+    pub height: u64,
+    // API uses prev_hash but we just need something for the hash field
+    #[serde(rename = "prev_hash", default)]
+    pub prev_hash: String,
+    pub timestamp: u64,
+}
+
+/// Flattened L1 block data (converted from ApiBlockResponse).
 #[allow(dead_code)]
 struct L1Block {
     pub height: u64,
@@ -24,10 +47,24 @@ struct L1Block {
     pub transactions: Vec<L1Transaction>,
 }
 
+impl From<ApiBlockResponse> for L1Block {
+    fn from(r: ApiBlockResponse) -> Self {
+        L1Block {
+            height: r.block.header.height,
+            hash: r.block.header.prev_hash,
+            timestamp: r.block.header.timestamp,
+            transactions: r.block.transactions,
+        }
+    }
+}
+
 /// L1 transaction data from RPC.
 #[derive(Debug, Deserialize)]
 struct L1Transaction {
+    /// API returns field as "id" (not "hash")
+    #[serde(rename = "id")]
     pub hash: String,
+    #[serde(default)]
     pub inputs: Vec<L1TxInput>,
     pub outputs: Vec<L1TxOutput>,
 }
@@ -35,7 +72,9 @@ struct L1Transaction {
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct L1TxInput {
+    #[serde(default)]
     pub address: String,
+    #[serde(default)]
     pub amount: u64,
 }
 
@@ -44,6 +83,7 @@ struct L1TxOutput {
     pub address: String,
     pub amount: u64,
     /// Optional memo / OP_RETURN data (used to encode EVM recipient + target chain)
+    #[serde(default)]
     pub memo: Option<String>,
 }
 
@@ -251,6 +291,7 @@ impl L1Watcher {
     }
 
     /// Get L1 block by height.
+    /// API response: {"block": {"header": {...}, "transactions": [...]}, "status": "ok"}
     async fn get_block(&self, height: u64) -> Result<L1Block> {
         let url = format!("{}/api/block/height/{}", self.config.rpc_url, height);
         let resp = self
@@ -258,9 +299,9 @@ impl L1Watcher {
             .get(&url)
             .send()
             .await?
-            .json::<L1Block>()
+            .json::<ApiBlockResponse>()
             .await?;
-        Ok(resp)
+        Ok(L1Block::from(resp))
     }
 }
 

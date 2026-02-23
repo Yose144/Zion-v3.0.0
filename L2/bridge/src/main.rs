@@ -83,9 +83,10 @@ async fn main() -> Result<()> {
     let mut evm_handles = vec![];
     for chain in config.active_chains() {
         let chain_config = chain.clone();
+        let start_block = chain_config.start_block;
         let burn_tx = burn_tx.clone();
         let handle = tokio::spawn(async move {
-            let mut watcher = EvmWatcher::new(chain_config, None);
+            let mut watcher = EvmWatcher::new(chain_config, start_block);
             if let Err(e) = watcher.run(burn_tx).await {
                 error!("EVM watcher crashed: {:?}", e);
             }
