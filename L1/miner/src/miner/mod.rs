@@ -919,11 +919,17 @@ impl UniversalMiner {
                         }
                         if nonce_overflow {
                             log::error!(
-                                "❌ NONCE OVERFLOW! GPU nonce {} > u32::MAX, submitted as {}",
-                                nonce, nonce_u32,
+                                "❌ NONCE OVERFLOW! GPU nonce {} > u32::MAX — SKIPPING submission",
+                                nonce,
                             );
                         }
                     }
+
+                    // Skip submission if nonce overflows u32 (pool expects u32 nonce)
+                    if nonce > u32::MAX as u64 {
+                        log::warn!("Skipping GPU share: nonce {} > u32::MAX", nonce);
+                        // Don't submit — pool would get wrong nonce
+                    } else {
 
                     log::debug!(
                         "GPU SHARE algo {} nonce {} hash {}...{}",
@@ -957,6 +963,8 @@ impl UniversalMiner {
                             }
                         }
                     });
+
+                    } // end else (nonce not overflowed)
                 }
                 Ok(None) => {
                     // No solution in this batch — normal, continue
@@ -971,7 +979,9 @@ impl UniversalMiner {
                 }
             }
 
-            nonce_start = nonce_start.wrapping_add(batch_size);
+            // Advance nonce, wrap to 0 if it would exceed u32 range
+            let next = nonce_start.wrapping_add(batch_size);
+            nonce_start = if next > u32::MAX as u64 { 0u64 } else { next };
 
             // Check if connection is still alive
             if !connection_alive.load(std::sync::atomic::Ordering::Relaxed) {

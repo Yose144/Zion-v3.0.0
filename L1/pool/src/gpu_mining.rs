@@ -196,7 +196,7 @@ impl GpuMiner {
                     sleep(reconnect_delay).await;
                 }
                 Ok(stream) => {
-                    if let Err(e) = self.etc_session(stream).await {
+                    if let Err(e) = self.clone().etc_session(stream).await {
                         warn!("[ETC] Session error: {e} — reconnecting in 15s");
                     }
                     sleep(reconnect_delay).await;
@@ -429,7 +429,7 @@ impl GpuMiner {
                     sleep(reconnect_delay).await;
                 }
                 Ok(stream) => {
-                    if let Err(e) = self.erg_session(stream).await {
+                    if let Err(e) = self.clone().erg_session(stream).await {
                         warn!("[ERG] Session error: {e} — reconnecting in 15s");
                     }
                     sleep(reconnect_delay).await;
