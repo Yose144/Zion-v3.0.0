@@ -3503,292 +3503,332 @@
           </button>
         </div>
 
-        <div class="settings-grid">
-          <section class="settings-card span-2">
-            <div class="card-heading">
-              <div class="card-icon gradient-gold">
-                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
-              </div>
-              <div>
-                <p class="card-kicker">Identity</p>
-                <h3>Wallet & Worker</h3>
-              </div>
-            </div>
+        <!-- ── Settings Section Tabs ──────────────────────────── -->
+        <div class="section-tabs" data-group="settings">
+          <div class="section-tab active" data-section="settings-identity">
+            <span class="tab-dot"></span>
+            <span>Identity</span>
+          </div>
+          <div class="section-tab" data-section="settings-pools">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+            <span>Pools</span>
+          </div>
+          <div class="section-tab" data-section="settings-performance">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Performance</span>
+          </div>
+          <div class="section-tab" data-section="settings-engine">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-play"></use></svg>
+            <span>Engine</span>
+          </div>
+        </div>
 
-            <div class="form-grid two-col">
-              <label class="floating-field">
-                <span>ZION Wallet Address</span>
-                <input type="text" id="wallet-input" placeholder="zion1..." />
-              </label>
-              <label class="floating-field">
-                <span>Worker Name</span>
-                <input type="text" id="worker-input" value="desktop-agent" />
-              </label>
-              <label class="floating-field span-2">
-                <span>Chain RPC URL</span>
-                <input type="text" id="rpc-url" placeholder="http://localhost:8444/jsonrpc" />
-              </label>
-            </div>
-
-            <div class="toggle-field">
-              <input type="checkbox" id="autostart-checkbox" />
-              <div>
-                <p>Auto-start mining on launch</p>
-                <small>Mining will resume with the last known profile</small>
-              </div>
-            </div>
-          </section>
-
-          <section class="settings-card span-2">
-            <div class="card-heading">
-              <div class="card-icon gradient-cyan">
-                <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
-              </div>
-              <div>
-                <p class="card-kicker">Routing</p>
-                <h3>Mining Pools</h3>
-              </div>
-              <span class="badge badge-neutral">VarDiff ready</span>
-            </div>
-
-            <div class="pool-grid">
-              <label class="pool-card">
-                <input type="radio" name="pool-select" value="77.42.31.72:3333" id="pool-helsinki" checked />
-                <div class="pool-card-body">
-                  <div class="pool-meta">
-                    <span class="pill pill-purple">Helsinki</span>
-                    <span class="pill pill-gold">Primary</span>
-                  </div>
-                  <h4>Helsinki Pool (FI)</h4>
-                  <p>77.42.31.72:3333</p>
+        <!-- ═══ SECTION: Identity ═══ -->
+        <div id="settings-identity" class="section-panel active">
+          <div class="settings-grid">
+            <section class="settings-card span-2">
+              <div class="card-heading">
+                <div class="card-icon gradient-gold">
+                  <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
                 </div>
-              </label>
-
-              <label class="pool-card">
-                <input type="radio" name="pool-select" value="46.225.126.243:3333" id="pool-germany" />
-                <div class="pool-card-body">
-                  <div class="pool-meta">
-                    <span class="pill pill-cyan">Germany</span>
-                    <span class="pill pill-gold">Mainnet</span>
-                  </div>
-                  <h4>Germany Pool (DE)</h4>
-                  <p>46.225.126.243:3333</p>
-                </div>
-              </label>
-
-              <label class="pool-card">
-                <input type="radio" name="pool-select" value="5.78.178.227:3333" id="pool-usa1" />
-                <div class="pool-card-body">
-                  <div class="pool-meta">
-                    <span class="pill pill-cyan">Usa1</span>
-                    <span class="pill pill-gold">Mainnet</span>
-                  </div>
-                  <h4>Usa1 Pool (US)</h4>
-                  <p>5.78.178.227:3333</p>
-                </div>
-              </label>
-
-              <label class="pool-card">
-                <input type="radio" name="pool-select" value="178.156.240.160:3333" id="pool-usa2" />
-                <div class="pool-card-body">
-                  <div class="pool-meta">
-                    <span class="pill pill-cyan">Usa2</span>
-                    <span class="pill pill-gold">Mainnet</span>
-                  </div>
-                  <h4>Usa2 Pool (US)</h4>
-                  <p>178.156.240.160:3333</p>
-                </div>
-              </label>
-
-              <label class="pool-card">
-                <input type="radio" name="pool-select" value="5.223.43.93:3333" id="pool-asia3" />
-                <div class="pool-card-body">
-                  <div class="pool-meta">
-                    <span class="pill pill-cyan">Asia3</span>
-                    <span class="pill pill-gold">Mainnet</span>
-                  </div>
-                  <h4>Asia3 Pool (SG)</h4>
-                  <p>5.223.43.93:3333</p>
-                </div>
-              </label>
-
-              <label class="pool-card span-2">
-                <input type="radio" name="pool-select" value="custom" id="pool-custom" />
-                <div class="pool-card-body">
-                  <div class="pool-meta">
-                    <span class="pill">Custom</span>
-                  </div>
-                  <h4>Bring your own endpoint</h4>
-                  <div class="custom-pool-input">
-                    <input type="text" id="pool-input" placeholder="host:port" />
-                    <span>VarDiff is auto-negotiated</span>
-                  </div>
-                </div>
-              </label>
-            </div>
-          </section>
-
-          <section class="settings-card">
-            <div class="card-heading">
-              <div class="card-icon gradient-purple">
-                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-              </div>
-              <div>
-                <p class="card-kicker">Performance</p>
-                <h3>CPU Threads</h3>
-              </div>
-            </div>
-            <label class="threads-label">
-              <span>CPU allocation</span>
-              <span class="threads-meta"><span id="threads-value">4</span>/<span id="threads-max">32</span></span>
-            </label>
-            <input type="range" id="threads-input" min="1" max="32" value="4" class="slider" />
-            <div class="slider-hint">Optimise for stability by leaving 2 threads free</div>
-          </section>
-
-          <section class="settings-card">
-            <div class="card-heading">
-              <div class="card-icon gradient-gold">
-                <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
-              </div>
-              <div>
-                <p class="card-kicker">Profile</p>
-                <h3>Mining Mode</h3>
-              </div>
-            </div>
-            <div class="mode-list">
-              <label class="mode-pill">
-                <input type="radio" name="mining-mode" value="cpu" id="mode-cpu" />
                 <div>
-                  <div class="mode-title">CPU Only</div>
-                  <p>Best efficiency • ~600 kH/s</p>
+                  <p class="card-kicker">Identity</p>
+                  <h3>Wallet & Worker</h3>
                 </div>
-              </label>
-              <label class="mode-pill">
-                <input type="radio" name="mining-mode" value="gpu" id="mode-gpu" />
-                <div>
-                  <div class="mode-title">GPU Only</div>
-                  <p>High throughput • ~8.5 GH/s</p>
-                </div>
-              </label>
-              <label class="mode-pill">
-                <input type="radio" name="mining-mode" value="dual" id="mode-dual" checked />
-                <div>
-                  <div class="mode-title">Dual (CPU + GPU)</div>
-                  <p class="text-success">MAX POWER • balanced latency</p>
-                </div>
-              </label>
-              <label class="mode-pill">
-                <input type="radio" name="mining-mode" value="gpu-revenue" id="mode-gpu-revenue" />
-                <div>
-                  <div class="mode-title">GPU Revenue Mining</div>
-                  <p class="text-warning">PROFIT SWITCH • ERG/RVN/KAS/ALPH</p>
-                </div>
-              </label>
-            </div>
-            <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously. GPU Revenue Mining automatically switches between ERG, RVN, KAS, and ALPH based on profitability.</div>
+              </div>
 
-            <div class="form-grid two-col form-grid-mt-14">
-              <label class="floating-field">
-                <span>CPU Revenue Coin</span>
-                <select id="revenue-cpu-coin">
-                  <option value="auto">Auto</option>
-                  <option value="xmr">XMR</option>
-                  <option value="btc">BTC</option>
-                </select>
-              </label>
-              <label class="floating-field">
-                <span>GPU Revenue Coins</span>
-                <input type="text" id="revenue-gpu-coins" placeholder="ERG,RVN,KAS,ALPH" />
-              </label>
-              <label class="floating-field">
-                <span>ZION %</span>
-                <input type="number" id="revenue-zion-pct" min="0" max="100" step="1" value="50" />
-              </label>
-              <label class="floating-field">
-                <span>Multi-Alg %</span>
-                <input type="number" id="revenue-multi-pct" min="0" max="100" step="1" value="25" />
-              </label>
-              <label class="floating-field">
-                <span>NCL %</span>
-                <input type="number" id="revenue-ncl-pct" min="0" max="100" step="1" value="25" />
-              </label>
-            </div>
+              <div class="form-grid two-col">
+                <label class="floating-field">
+                  <span>ZION Wallet Address</span>
+                  <input type="text" id="wallet-input" placeholder="zion1..." />
+                </label>
+                <label class="floating-field">
+                  <span>Worker Name</span>
+                  <input type="text" id="worker-input" value="desktop-agent" />
+                </label>
+                <label class="floating-field span-2">
+                  <span>Chain RPC URL</span>
+                  <input type="text" id="rpc-url" placeholder="http://localhost:8444/jsonrpc" />
+                </label>
+              </div>
 
-            <div class="toggle-field toggle-mt-12">
-              <input type="checkbox" id="revenue-enabled" checked />
-              <div>
-                <p>Enable multi-algo revenue routing</p>
-                <small>When disabled, all CPU threads mine ZION only</small>
+              <div class="toggle-field">
+                <input type="checkbox" id="autostart-checkbox" />
+                <div>
+                  <p>Auto-start mining on launch</p>
+                  <small>Mining will resume with the last known profile</small>
+                </div>
               </div>
-            </div>
-            <div class="toggle-field">
-              <input type="checkbox" id="revenue-gpu-enabled" />
-              <div>
-                <p>Enable GPU revenue switcher</p>
-                <small>Use dedicated GPU revenue stream in GPU Revenue mode</small>
-              </div>
-            </div>
-            <div class="toggle-field">
-              <input type="checkbox" id="revenue-ncl-enabled" checked />
-              <div>
-                <p>Enable NCL gateway stream</p>
-                <small>Reserve NCL allocation for compute marketplace channel</small>
-              </div>
-            </div>
+            </section>
+          </div>
+        </div>
 
-            <div class="form-grid two-col form-grid-mt-10">
-              <label class="toggle-field toggle-no-margin">
-                <input type="checkbox" id="revenue-mysterium-enabled" checked />
-                <div><p>Mysterium stream</p></div>
-              </label>
-              <label class="toggle-field toggle-no-margin">
-                <input type="checkbox" id="revenue-nkn-enabled" checked />
-                <div><p>NKN stream</p></div>
-              </label>
-              <label class="toggle-field toggle-no-margin">
-                <input type="checkbox" id="revenue-ai-enabled" checked />
-                <div><p>AI Gateway stream</p></div>
-              </label>
-            </div>
-            <input type="checkbox" id="gpu-checkbox" class="input-hidden" />
-          </section>
+        <!-- ═══ SECTION: Pools ═══ -->
+        <div id="settings-pools" class="section-panel">
+          <div class="settings-grid">
+            <section class="settings-card span-2">
+              <div class="card-heading">
+                <div class="card-icon gradient-cyan">
+                  <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+                </div>
+                <div>
+                  <p class="card-kicker">Routing</p>
+                  <h3>Mining Pools</h3>
+                </div>
+                <span class="badge badge-neutral">VarDiff ready</span>
+              </div>
 
-          <section class="settings-card">
-            <div class="card-heading">
-              <div class="card-icon gradient-slate">
-                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              <div class="pool-grid">
+                <label class="pool-card">
+                  <input type="radio" name="pool-select" value="77.42.31.72:3333" id="pool-helsinki" checked />
+                  <div class="pool-card-body">
+                    <div class="pool-meta">
+                      <span class="pill pill-purple">Helsinki</span>
+                      <span class="pill pill-gold">Primary</span>
+                    </div>
+                    <h4>Helsinki Pool (FI)</h4>
+                    <p>77.42.31.72:3333</p>
+                  </div>
+                </label>
+
+                <label class="pool-card">
+                  <input type="radio" name="pool-select" value="46.225.126.243:3333" id="pool-germany" />
+                  <div class="pool-card-body">
+                    <div class="pool-meta">
+                      <span class="pill pill-cyan">Germany</span>
+                      <span class="pill pill-gold">Mainnet</span>
+                    </div>
+                    <h4>Germany Pool (DE)</h4>
+                    <p>46.225.126.243:3333</p>
+                  </div>
+                </label>
+
+                <label class="pool-card">
+                  <input type="radio" name="pool-select" value="5.78.178.227:3333" id="pool-usa1" />
+                  <div class="pool-card-body">
+                    <div class="pool-meta">
+                      <span class="pill pill-cyan">Usa1</span>
+                      <span class="pill pill-gold">Mainnet</span>
+                    </div>
+                    <h4>Usa1 Pool (US)</h4>
+                    <p>5.78.178.227:3333</p>
+                  </div>
+                </label>
+
+                <label class="pool-card">
+                  <input type="radio" name="pool-select" value="178.156.240.160:3333" id="pool-usa2" />
+                  <div class="pool-card-body">
+                    <div class="pool-meta">
+                      <span class="pill pill-cyan">Usa2</span>
+                      <span class="pill pill-gold">Mainnet</span>
+                    </div>
+                    <h4>Usa2 Pool (US)</h4>
+                    <p>178.156.240.160:3333</p>
+                  </div>
+                </label>
+
+                <label class="pool-card">
+                  <input type="radio" name="pool-select" value="5.223.43.93:3333" id="pool-asia3" />
+                  <div class="pool-card-body">
+                    <div class="pool-meta">
+                      <span class="pill pill-cyan">Asia3</span>
+                      <span class="pill pill-gold">Mainnet</span>
+                    </div>
+                    <h4>Asia3 Pool (SG)</h4>
+                    <p>5.223.43.93:3333</p>
+                  </div>
+                </label>
+
+                <label class="pool-card span-2">
+                  <input type="radio" name="pool-select" value="custom" id="pool-custom" />
+                  <div class="pool-card-body">
+                    <div class="pool-meta">
+                      <span class="pill">Custom</span>
+                    </div>
+                    <h4>Bring your own endpoint</h4>
+                    <div class="custom-pool-input">
+                      <input type="text" id="pool-input" placeholder="host:port" />
+                      <span>VarDiff is auto-negotiated</span>
+                    </div>
+                  </div>
+                </label>
               </div>
-              <div>
-                <p class="card-kicker">Engine</p>
-                <h3>Miner Backend</h3>
+            </section>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Performance ═══ -->
+        <div id="settings-performance" class="section-panel">
+          <div class="settings-grid">
+            <section class="settings-card">
+              <div class="card-heading">
+                <div class="card-icon gradient-purple">
+                  <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                </div>
+                <div>
+                  <p class="card-kicker">Performance</p>
+                  <h3>CPU Threads</h3>
+                </div>
               </div>
-            </div>
-            <div class="mode-list">
-              <label class="mode-pill">
-                <input type="radio" name="miner-backend" value="auto" id="backend-auto" checked />
-                <div>
-                  <div class="mode-title">Auto</div>
-                  <p>Prefer Rust v2.9.6, fallback to Python</p>
-                </div>
+              <label class="threads-label">
+                <span>CPU allocation</span>
+                <span class="threads-meta"><span id="threads-value">4</span>/<span id="threads-max">32</span></span>
               </label>
-              <label class="mode-pill">
-                <input type="radio" name="miner-backend" value="rust" id="backend-rust" />
-                <div>
-                  <div class="mode-title">Rust (v2.9.6)</div>
-                  <p>Fast native miner • CH v3 ready</p>
+              <input type="range" id="threads-input" min="1" max="32" value="4" class="slider" />
+              <div class="slider-hint">Optimise for stability by leaving 2 threads free</div>
+            </section>
+
+            <section class="settings-card">
+              <div class="card-heading">
+                <div class="card-icon gradient-gold">
+                  <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
                 </div>
-              </label>
-              <label class="mode-pill">
-                <input type="radio" name="miner-backend" value="python" id="backend-python" />
                 <div>
-                  <div class="mode-title">Python</div>
-                  <p>Fallback compatibility mode</p>
+                  <p class="card-kicker">Profile</p>
+                  <h3>Mining Mode</h3>
                 </div>
-              </label>
-            </div>
-            <div id="backend-status" class="mode-status">Auto selects Rust when available</div>
-          </section>
+              </div>
+              <div class="mode-list">
+                <label class="mode-pill">
+                  <input type="radio" name="mining-mode" value="cpu" id="mode-cpu" />
+                  <div>
+                    <div class="mode-title">CPU Only</div>
+                    <p>Best efficiency • ~600 kH/s</p>
+                  </div>
+                </label>
+                <label class="mode-pill">
+                  <input type="radio" name="mining-mode" value="gpu" id="mode-gpu" />
+                  <div>
+                    <div class="mode-title">GPU Only</div>
+                    <p>High throughput • ~8.5 GH/s</p>
+                  </div>
+                </label>
+                <label class="mode-pill">
+                  <input type="radio" name="mining-mode" value="dual" id="mode-dual" checked />
+                  <div>
+                    <div class="mode-title">Dual (CPU + GPU)</div>
+                    <p class="text-success">MAX POWER • balanced latency</p>
+                  </div>
+                </label>
+                <label class="mode-pill">
+                  <input type="radio" name="mining-mode" value="gpu-revenue" id="mode-gpu-revenue" />
+                  <div>
+                    <div class="mode-title">GPU Revenue Mining</div>
+                    <p class="text-warning">PROFIT SWITCH • ERG/RVN/KAS/ALPH</p>
+                  </div>
+                </label>
+              </div>
+              <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously. GPU Revenue Mining automatically switches between ERG, RVN, KAS, and ALPH based on profitability.</div>
+
+              <div class="section-divider">Revenue Routing</div>
+
+              <div class="form-grid two-col">
+                <label class="floating-field">
+                  <span>CPU Revenue Coin</span>
+                  <select id="revenue-cpu-coin">
+                    <option value="auto">Auto</option>
+                    <option value="xmr">XMR</option>
+                    <option value="btc">BTC</option>
+                  </select>
+                </label>
+                <label class="floating-field">
+                  <span>GPU Revenue Coins</span>
+                  <input type="text" id="revenue-gpu-coins" placeholder="ERG,RVN,KAS,ALPH" />
+                </label>
+                <label class="floating-field">
+                  <span>ZION %</span>
+                  <input type="number" id="revenue-zion-pct" min="0" max="100" step="1" value="50" />
+                </label>
+                <label class="floating-field">
+                  <span>Multi-Alg %</span>
+                  <input type="number" id="revenue-multi-pct" min="0" max="100" step="1" value="25" />
+                </label>
+                <label class="floating-field">
+                  <span>NCL %</span>
+                  <input type="number" id="revenue-ncl-pct" min="0" max="100" step="1" value="25" />
+                </label>
+              </div>
+
+              <div class="toggle-field toggle-mt-12">
+                <input type="checkbox" id="revenue-enabled" checked />
+                <div>
+                  <p>Enable multi-algo revenue routing</p>
+                  <small>When disabled, all CPU threads mine ZION only</small>
+                </div>
+              </div>
+              <div class="toggle-field">
+                <input type="checkbox" id="revenue-gpu-enabled" />
+                <div>
+                  <p>Enable GPU revenue switcher</p>
+                  <small>Use dedicated GPU revenue stream in GPU Revenue mode</small>
+                </div>
+              </div>
+              <div class="toggle-field">
+                <input type="checkbox" id="revenue-ncl-enabled" checked />
+                <div>
+                  <p>Enable NCL gateway stream</p>
+                  <small>Reserve NCL allocation for compute marketplace channel</small>
+                </div>
+              </div>
+
+              <div class="form-grid two-col form-grid-mt-10">
+                <label class="toggle-field toggle-no-margin">
+                  <input type="checkbox" id="revenue-mysterium-enabled" checked />
+                  <div><p>Mysterium stream</p></div>
+                </label>
+                <label class="toggle-field toggle-no-margin">
+                  <input type="checkbox" id="revenue-nkn-enabled" checked />
+                  <div><p>NKN stream</p></div>
+                </label>
+                <label class="toggle-field toggle-no-margin">
+                  <input type="checkbox" id="revenue-ai-enabled" checked />
+                  <div><p>AI Gateway stream</p></div>
+                </label>
+              </div>
+              <input type="checkbox" id="gpu-checkbox" class="input-hidden" />
+            </section>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Engine ═══ -->
+        <div id="settings-engine" class="section-panel">
+          <div class="settings-grid">
+            <section class="settings-card span-2">
+              <div class="card-heading">
+                <div class="card-icon gradient-slate">
+                  <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                </div>
+                <div>
+                  <p class="card-kicker">Engine</p>
+                  <h3>Miner Backend</h3>
+                </div>
+              </div>
+              <div class="mode-list">
+                <label class="mode-pill">
+                  <input type="radio" name="miner-backend" value="auto" id="backend-auto" checked />
+                  <div>
+                    <div class="mode-title">Auto</div>
+                    <p>Prefer Rust v2.9.6, fallback to Python</p>
+                  </div>
+                </label>
+                <label class="mode-pill">
+                  <input type="radio" name="miner-backend" value="rust" id="backend-rust" />
+                  <div>
+                    <div class="mode-title">Rust (v2.9.6)</div>
+                    <p>Fast native miner • CH v3 ready</p>
+                  </div>
+                </label>
+                <label class="mode-pill">
+                  <input type="radio" name="miner-backend" value="python" id="backend-python" />
+                  <div>
+                    <div class="mode-title">Python</div>
+                    <p>Fallback compatibility mode</p>
+                  </div>
+                </label>
+              </div>
+              <div id="backend-status" class="mode-status">Auto selects Rust when available</div>
+            </section>
+          </div>
         </div>
       </div>
 
