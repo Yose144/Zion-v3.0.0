@@ -303,13 +303,17 @@ class StratumClient:
         self._pending_submit_ids = set()
         self._pending_submit_meta: Dict[int, Dict[str, Any]] = {}
 
-        # Some deployed pool builds validate Cosmic Harmony state0 with different
-        # endianness. We auto-detect this from reject responses to avoid spamming
-        # invalid submits.
-        # Pool default (src/pool/mining/share_validator.py) is big-endian state0.
-        # Some deployments used little-endian historically; we can autodetect.
-        self.cosmic_state0_endian: str = "little"  # "little" | "big"
+        # Cosmic Harmony v3 pool state0 endianness.
+        # Current pool default is little-endian; allow explicit override via env.
+        endian_env = str(os.getenv("ZION_COSMIC_STATE0_ENDIAN", "little")).strip().lower()
+        self.cosmic_state0_endian: str = "big" if endian_env == "big" else "little"
+        # Reject-driven auto-switch is fragile and can mask real target/job issues,
+        # so keep it disabled by default. Opt-in only via env.
         self._cosmic_endian_autodetected: bool = False
+        self._cosmic_endian_autoswitch: bool = (
+            str(os.getenv("ZION_COSMIC_ENDIAN_AUTOSWITCH", "0")).strip().lower()
+            in ("1", "true", "yes", "on")
+        )
 
         # Logging throttles (avoid console spam)
         self._last_reject_log_time = 0.0
@@ -327,6 +331,13 @@ class StratumClient:
         self._wait_events: Dict[int, threading.Event] = {}
         self._wait_responses: Dict[int, Dict[str, Any]] = {}
         self._wait_lock = threading.Lock()
+
+        # Stratum RPC wait timeout (seconds) for subscribe/login/authorize.
+        try:
+            rpc_t = float(str(os.getenv("ZION_STRATUM_RPC_TIMEOUT", "8")).strip())
+            self._rpc_timeout_sec = max(3.0, min(30.0, rpc_t))
+        except Exception:
+            self._rpc_timeout_sec = 8.0
         
     def connect(self) -> bool:
         """Connect to pool"""
@@ -379,8 +390,10 @@ class StratumClient:
             }
             self.request_id += 1
 
-            if not self._send_and_wait(req_id, request, timeout=5.0):
-                logger.error("Subscribe failed: no response from pool")
+            if not self._send_and_wait(req_id, request, timeout=self._rpc_timeout_sec):
+                logger.error(
+                    f"Subscribe failed: no response from pool (timeout={self._rpc_timeout_sec:.1f}s, req_id={req_id})"
+                )
                 return False
 
             resp = self._wait_responses.get(req_id)
@@ -425,8 +438,10 @@ class StratumClient:
                 },
             }
 
-            if not self._send_and_wait(req_id, request, timeout=5.0):
-                logger.error("Login failed: no response from pool")
+            if not self._send_and_wait(req_id, request, timeout=self._rpc_timeout_sec):
+                logger.error(
+                    f"Login failed: no response from pool (timeout={self._rpc_timeout_sec:.1f}s, req_id={req_id})"
+                )
                 return False
 
             resp = self._wait_responses.get(req_id)
@@ -442,6 +457,10 @@ class StratumClient:
                 if session_id:
                     self.worker_id = session_id
                 if isinstance(job, dict):
+                    job_endian = str(job.get("cosmic_state0_endian") or "").strip().lower()
+                    if job_endian in ("little", "big"):
+                        self.cosmic_state0_endian = job_endian
+                        logger.info(f"⚙️  Pool Cosmic state0 endianness: {job_endian}")
                     # Normalize into the same shape as mining.notify parsing
                     self.current_job = {
                         "job_id": job.get("job_id"),
@@ -511,8 +530,10 @@ class StratumClient:
             }
             self.request_id += 1
 
-            if not self._send_and_wait(req_id, request, timeout=5.0):
-                logger.error("Authorization failed: no response from pool")
+            if not self._send_and_wait(req_id, request, timeout=self._rpc_timeout_sec):
+                logger.error(
+                    f"Authorization failed: no response from pool (timeout={self._rpc_timeout_sec:.1f}s, req_id={req_id})"
+                )
                 return False
 
             resp = self._wait_responses.get(req_id)
@@ -540,6 +561,13 @@ class StratumClient:
             raise
 
         ok = ev.wait(timeout)
+        if not ok:
+            try:
+                logger.warning(
+                    f"⏱️ Stratum RPC timeout: id={req_id}, method={request.get('method')}, timeout={timeout:.1f}s, connected={self.connected}"
+                )
+            except Exception:
+                pass
         with self._wait_lock:
             self._wait_events.pop(req_id, None)
         return ok
@@ -697,19 +725,43 @@ class StratumClient:
                     # Dict format (legacy)
                     job = params[0]
                 elif isinstance(params, list) and len(params) >= 2:
-                    # Array format (standard Stratum)
-                    diff = params[5] if len(params) > 5 else None
-                    if (diff in (None, 0, "", "0")) and self.pool_difficulty:
-                        diff = int(self.pool_difficulty)
-                    job = {
-                        'job_id': params[0],
-                        'blob': params[1],
-                        'seed_hash': params[2] if len(params) > 2 else '',
-                        'next_seed_hash': params[3] if len(params) > 3 else '',
-                        'height': params[4] if len(params) > 4 else 0,
-                        'difficulty': diff if diff is not None else 1,
-                        'clean_jobs': params[6] if len(params) > 6 else True
-                    }
+                    # Array format (standard Stratum).
+                    # Support both layouts:
+                    #  - legacy: [job_id, blob, seed_hash, next_seed, height, diff, clean]
+                    #  - v2:     [job_id, blob, target, height, algo, seed_hash, clean]
+                    is_v2_layout = (
+                        len(params) >= 7
+                        and isinstance(params[2], str)
+                        and len(str(params[2])) in (8, 16, 56, 64)
+                        and isinstance(params[4], str)
+                    )
+
+                    if is_v2_layout:
+                        diff = int(self.pool_difficulty or 1)
+                        job = {
+                            'job_id': params[0],
+                            'blob': params[1],
+                            'target': params[2],
+                            'height': params[3],
+                            'algo': params[4],
+                            'seed_hash': params[5] if len(params) > 5 else '',
+                            'next_seed_hash': '',
+                            'difficulty': diff,
+                            'clean_jobs': params[6] if len(params) > 6 else True,
+                        }
+                    else:
+                        diff = params[5] if len(params) > 5 else None
+                        if (diff in (None, 0, "", "0")) and self.pool_difficulty:
+                            diff = int(self.pool_difficulty)
+                        job = {
+                            'job_id': params[0],
+                            'blob': params[1],
+                            'seed_hash': params[2] if len(params) > 2 else '',
+                            'next_seed_hash': params[3] if len(params) > 3 else '',
+                            'height': params[4] if len(params) > 4 else 0,
+                            'difficulty': diff if diff is not None else 1,
+                            'clean_jobs': params[6] if len(params) > 6 else True
+                        }
                 else:
                     logger.warning(f"Invalid job params format: {params}")
                     return
@@ -734,6 +786,10 @@ class StratumClient:
             # XMRig job push: {"jsonrpc":"2.0","method":"job","params":{...}}
             params = message.get('params') or {}
             if isinstance(params, dict):
+                job_endian = str(params.get('cosmic_state0_endian') or '').strip().lower()
+                if job_endian in ('little', 'big'):
+                    self.cosmic_state0_endian = job_endian
+                    logger.info(f"⚙️  Pool Cosmic state0 endianness: {job_endian}")
                 job = {
                     'job_id': params.get('job_id'),
                     'blob': params.get('blob'),
@@ -806,7 +862,8 @@ class StratumClient:
                             err_msg = str(err)
 
                         if (
-                            (not self._cosmic_endian_autodetected)
+                            self._cosmic_endian_autoswitch
+                            and (not self._cosmic_endian_autodetected)
                             and ("Does not meet target difficulty" in err_msg)
                             and isinstance(meta, dict)
                             and meta.get("target32") is not None
@@ -877,7 +934,8 @@ class StratumClient:
                     # Treat as a reject and attempt to infer Cosmic endianness from meta.
                     try:
                         if (
-                            (not self._cosmic_endian_autodetected)
+                            self._cosmic_endian_autoswitch
+                            and (not self._cosmic_endian_autodetected)
                             and isinstance(meta, dict)
                             and meta.get("target32") is not None
                             and meta.get("state0_le") is not None
@@ -2166,21 +2224,37 @@ class ZionNativeMiner:
         total_shares_rej = 0
 
         def _connect_and_handshake() -> Optional[StratumClient]:
-            s = StratumClient(
-                self.config.pool_host,
-                self.config.pool_port,
-                worker_id=self.config.wallet_address or self.config.worker_name,
-            )
+            def _new_client() -> StratumClient:
+                return StratumClient(
+                    self.config.pool_host,
+                    self.config.pool_port,
+                    worker_id=self.config.wallet_address or self.config.worker_name,
+                )
+
+            s = _new_client()
             if not s.connect():
                 return None
             time.sleep(0.2)
+
             # Prefer XMRig login (reliably conveys algorithm via params.algo).
-            if not s.login(
+            login_ok = s.login(
                 self.config.wallet_address or "test_wallet",
                 self.config.worker_name,
                 self.config.algorithm.value,
-            ):
-                # Fallback to classic Stratum subscribe/authorize.
+            )
+
+            if not login_ok:
+                logger.warning("⚠️ XMRig login handshake failed; retrying with Stratum subscribe/authorize on fresh connection")
+                try:
+                    s.disconnect()
+                except Exception:
+                    pass
+
+                s = _new_client()
+                if not s.connect():
+                    return None
+                time.sleep(0.2)
+
                 if not s.subscribe():
                     try:
                         s.disconnect()
@@ -2199,10 +2273,17 @@ class ZionNativeMiner:
                         pass
                     return None
 
-            first_job_deadline = time.perf_counter() + 5.0
+            try:
+                first_job_wait = float(str(os.getenv("ZION_STRATUM_FIRST_JOB_WAIT", "8")).strip())
+                first_job_wait = max(3.0, min(30.0, first_job_wait))
+            except Exception:
+                first_job_wait = 8.0
+
+            first_job_deadline = time.perf_counter() + first_job_wait
             while time.perf_counter() < first_job_deadline and not s.get_job():
                 time.sleep(0.1)
             if not s.current_job:
+                logger.error(f"❌ Handshake completed but no first job received within {first_job_wait:.1f}s")
                 try:
                     s.disconnect()
                 except Exception:
@@ -2382,6 +2463,7 @@ class ZionNativeMiner:
 
             cpu_hashes = 0
             gpu_hashes = 0
+            chv3_gpu_verify_mismatches = 0
 
             def _alloc_nonces(count: int) -> int:
                 nonlocal nonce_cursor
@@ -2443,12 +2525,22 @@ class ZionNativeMiner:
                     target_64 = None
 
                     # IMPORTANT: Pool-side Cosmic Harmony validation compares only the
-                    # first 4 bytes (state0, little-endian) against the *top 32 bits*
-                    # of the 256-bit target (see src/pool/mining/share_validator.py).
-                    # To avoid invalid submits (and possible disconnect/ban), mirror
-                    # that exact rule here.
+                    # first 4 bytes (state0) against a 32-bit job target.
+                    # Prefer explicit pool `target` if present; fallback to difficulty.
                     if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
-                        target_cosmic32 = (target_256 >> 224) if target_256 is not None else None
+                        target_cosmic32 = None
+                        try:
+                            if pool_target_raw:
+                                target_hex = str(pool_target_raw).strip().lower()
+                                if target_hex.startswith("0x"):
+                                    target_hex = target_hex[2:]
+                                if len(target_hex) >= 8:
+                                    target_cosmic32 = int(target_hex[:8], 16)
+                        except Exception:
+                            target_cosmic32 = None
+
+                        if target_cosmic32 is None:
+                            target_cosmic32 = (target_256 >> 224) if target_256 is not None else None
                     else:
                         target_cosmic32 = None
 
@@ -2660,6 +2752,7 @@ class ZionNativeMiner:
 
             def _gpu_worker():
                 nonlocal gpu_hashes
+                nonlocal chv3_gpu_verify_mismatches
                 while not stop_event.is_set():
                     if not gpu_enabled.is_set() or pause_event.is_set():
                         time.sleep(0.1)
@@ -2710,9 +2803,32 @@ class ZionNativeMiner:
                                     continue
 
                             nonce, result_hash = result
+
+                            # Canonical verification: if native CHv3 is available,
+                            # recompute hash for the found nonce and submit only the
+                            # verified hash. This protects against GPU-kernel drift.
+                            if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
+                                try:
+                                    verified_hash = _cosmic_v3_native.hash(blob_bytes, int(nonce))
+                                    if verified_hash != result_hash:
+                                        chv3_gpu_verify_mismatches += 1
+                                        if chv3_gpu_verify_mismatches <= 3 or (chv3_gpu_verify_mismatches % 50) == 0:
+                                            logger.warning(
+                                                f"⚠️ CHv3 GPU/native hash mismatch for nonce {int(nonce):08x} "
+                                                f"(count={chv3_gpu_verify_mismatches})"
+                                            )
+                                    result_hash = verified_hash
+                                except Exception as e:
+                                    logger.warning(f"⚠️ CHv3 native verify failed for nonce {int(nonce):08x}: {e}")
+
                             state0_le = int.from_bytes(result_hash[:4], "little", signed=False)
                             state0_be = int.from_bytes(result_hash[:4], "big", signed=False)
                             state0_used = state0_be if str(endian).lower() == "big" else state0_le
+
+                            # Submit only if canonical hash actually meets pool target.
+                            if state0_used > int(target_cosmic32):
+                                continue
+
                             submit_meta = {
                                 "job_id": job_id,
                                 "nonce_hex": f"{int(nonce):08x}",

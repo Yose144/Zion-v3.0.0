@@ -2705,6 +2705,25 @@ function startMining(config) {
           : ' Python fallback is not available on this installation.';
 
         minerBackendLastError = base + extra;
+
+        // Persist fallback backend to avoid repeated Rust spawn failures
+        // on every app start while Defender/AV keeps blocking the binary.
+        if (fallbackPythonPath) {
+          try {
+            const persisted = loadConfig();
+            if (String(persisted?.minerBackend || '').toLowerCase() !== 'python') {
+              persisted.minerBackend = 'python';
+              saveConfig(persisted);
+              sendToRenderer('miner-output', {
+                stream: 'stderr',
+                text: '[WARN] Backend switched to Python in config due to Defender block. Switch back to Rust after adding Defender exclusion.\n'
+              });
+            }
+          } catch {
+            // ignore
+          }
+        }
+
         try {
           sendToRenderer('miner-backend', {
             preferred: minerBackendPreferred,
