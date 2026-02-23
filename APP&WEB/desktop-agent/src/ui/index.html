@@ -434,6 +434,177 @@
       box-shadow: 0 0 6px var(--zion-gold);
     }
 
+    /* ═══ Auto-Update Styles ═══ */
+    .update-progress-wrap {
+      margin: 16px 0;
+      padding: 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .update-progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .update-progress-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .update-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--zion-purple), var(--zion-cyan));
+      transition: width 0.3s ease;
+      box-shadow: 0 0 12px rgba(147,51,234,0.4);
+    }
+    .update-progress-detail {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 6px;
+    }
+    .update-actions {
+      display: flex;
+      gap: 12px;
+      margin: 18px 0 12px;
+    }
+    .update-actions .btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: 1px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .update-actions .btn-primary {
+      background: rgba(147,51,234,0.15);
+      color: #c4b5fd;
+    }
+    .update-actions .btn-primary:hover {
+      background: rgba(147,51,234,0.25);
+      border-color: rgba(147,51,234,0.4);
+      box-shadow: 0 0 20px rgba(147,51,234,0.2);
+    }
+    .update-actions .btn-success {
+      background: rgba(16,185,129,0.15);
+      color: #6ee7b7;
+    }
+    .update-actions .btn-success:hover {
+      background: rgba(16,185,129,0.25);
+      border-color: rgba(16,185,129,0.4);
+      box-shadow: 0 0 20px rgba(16,185,129,0.2);
+    }
+    .update-actions .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .update-settings {
+      margin: 12px 0;
+    }
+    .update-toggle {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .update-toggle input {
+      display: none;
+    }
+    .update-toggle-slider {
+      width: 36px;
+      height: 20px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.1);
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .update-toggle-slider::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      transition: all 0.2s;
+    }
+    .update-toggle input:checked + .update-toggle-slider {
+      background: rgba(147,51,234,0.4);
+    }
+    .update-toggle input:checked + .update-toggle-slider::after {
+      left: 19px;
+      background: #c4b5fd;
+      box-shadow: 0 0 8px rgba(147,51,234,0.4);
+    }
+    .update-toggle-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 500;
+    }
+    .update-changelog {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .update-changelog-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 10px;
+    }
+    .update-changelog-body {
+      font-size: 12px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.55);
+    }
+    .update-changelog-body ul {
+      list-style: none;
+      padding: 0;
+    }
+    .update-changelog-body li::before {
+      content: '→ ';
+      color: var(--zion-purple);
+      font-weight: 700;
+    }
+    .update-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .update-badge.new {
+      background: rgba(16,185,129,0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(16,185,129,0.25);
+    }
+    .update-badge.current {
+      background: rgba(147,51,234,0.15);
+      color: #c4b5fd;
+      border: 1px solid rgba(147,51,234,0.25);
+    }
+
     .view-shell {
       background: rgba(0, 0, 0, 0.18);
       border: 1px solid rgba(255,255,255,0.06);
@@ -5192,6 +5363,10 @@
             <span class="tab-dot"></span>
             <span>Project</span>
           </div>
+          <div class="section-tab" data-section="about-updates">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <span>Updates</span>
+          </div>
           <div class="section-tab" data-section="about-links">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-folder"></use></svg>
             <span>Resources</span>
@@ -5244,6 +5419,74 @@
                 <div class="info-card-sub">CPU + GPU · Stratum v2</div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Updates ═══ -->
+        <div id="about-updates" class="section-panel">
+          <div class="control-panel">
+            <h2 class="inline-heading">
+              <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+              <span>Automatic Updates</span>
+            </h2>
+
+            <!-- Current version + status -->
+            <div class="info-cards-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <div class="info-card version">
+                <div class="info-card-kicker">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> CURRENT VERSION
+                </div>
+                <div class="info-card-value version" id="update-current-ver">2.9.6</div>
+                <div class="info-card-sub">Native Awakening</div>
+              </div>
+              <div class="info-card network">
+                <div class="info-card-kicker">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> UPDATE STATUS
+                </div>
+                <div class="info-card-value network" id="update-status-label">Ready</div>
+                <div class="info-card-sub" id="update-status-sub">Click to check for updates</div>
+              </div>
+            </div>
+
+            <!-- Progress bar (hidden by default) -->
+            <div class="update-progress-wrap" id="update-progress-wrap" style="display:none;">
+              <div class="update-progress-header">
+                <span id="update-progress-title">Downloading...</span>
+                <span id="update-progress-pct">0%</span>
+              </div>
+              <div class="update-progress-bar">
+                <div class="update-progress-fill" id="update-progress-fill" style="width:0%"></div>
+              </div>
+              <div class="update-progress-detail" id="update-progress-detail"></div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="update-actions">
+              <button class="btn btn-primary" id="update-check-btn">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                Check for Updates
+              </button>
+              <button class="btn btn-success" id="update-install-btn" style="display:none;">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                Install &amp; Restart
+              </button>
+            </div>
+
+            <!-- Auto-update toggle -->
+            <div class="update-settings">
+              <label class="update-toggle">
+                <input type="checkbox" id="update-auto-check" checked />
+                <span class="update-toggle-slider"></span>
+                <span class="update-toggle-label">Auto-check for updates at startup</span>
+              </label>
+            </div>
+
+            <!-- Changelog -->
+            <div class="update-changelog" id="update-changelog" style="display:none;">
+              <h3 class="update-changelog-title">What's New</h3>
+              <div class="update-changelog-body" id="update-changelog-body"></div>
+            </div>
+
           </div>
         </div>
 

@@ -69,6 +69,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiNativePoolMonitor: () => ipcRenderer.invoke('ai-native-pool-monitor'),
   aiNativeSystemHealth: () => ipcRenderer.invoke('ai-native-system-health'),
 
+  // Auto-update
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  getUpdateSettings: () => ipcRenderer.invoke('get-update-settings'),
+  setUpdateAutoCheck: (enabled) => ipcRenderer.invoke('set-update-auto-check', enabled),
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on('update-status', (event, data) => callback(data));
+  },
+  onUpdateProgress: (callback) => {
+    ipcRenderer.on('update-progress', (event, data) => callback(data));
+  },
+
   // Event listeners
   onMinerStarted: (callback) => {
     ipcRenderer.on('miner-started', (event, data) => callback(data));
