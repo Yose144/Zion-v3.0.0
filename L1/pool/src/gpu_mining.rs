@@ -78,12 +78,18 @@ impl Default for GpuMiningConfig {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(1),
-            etc_enabled: std::env::var("ETC_ENABLED").as_deref() != Ok("0"),
+            etc_enabled: !matches!(
+                std::env::var("ETC_ENABLED").as_deref(),
+                Ok("0") | Ok("false") | Ok("no") | Ok("off")
+            ),
             etc_pool: std::env::var("ETC_POOL")
                 .unwrap_or_else(|_| "etc.2miners.com:1010".to_string()),
-            erg_enabled: std::env::var("ERG_ENABLED").as_deref() != Ok("0"),
+            erg_enabled: !matches!(
+                std::env::var("ERG_ENABLED").as_deref(),
+                Ok("0") | Ok("false") | Ok("no") | Ok("off")
+            ),
             erg_pool: std::env::var("ERG_POOL")
-                .unwrap_or_else(|_| "erg.2miners.com:2012".to_string()),
+                .unwrap_or_else(|_| "erg.2miners.com:8888".to_string()),
         }
     }
 }
@@ -443,11 +449,20 @@ impl GpuMiner {
         let mut lines = BufReader::new(read_half).lines();
         let write_half = Arc::new(Mutex::new(write_half));
 
-        // --- Login ---
-        let login = json!({
+        // --- Subscribe (required by most Ergo pools before authorize) ---
+        let subscribe = json!({
             "id": 1,
-            "method": "mining.login",
-            "params": [&self.config.wallet, &self.config.worker, "x"]
+            "method": "mining.subscribe",
+            "params": ["zion-pool/2.9.6", "EthereumStratum/1.0.0"]
+        });
+        Self::send_line(&write_half, &subscribe.to_string()).await?;
+
+        // --- Authorize (wallet.worker format) ---
+        let login_str = format!("{}.{}", &self.config.wallet, &self.config.worker);
+        let login = json!({
+            "id": 2,
+            "method": "mining.authorize",
+            "params": [login_str, "x"]
         });
         Self::send_line(&write_half, &login.to_string()).await?;
         info!("[ERG] Login sent as {}", self.config.worker);
@@ -501,19 +516,33 @@ impl GpuMiner {
                     }
                 }
                 _ => {
-                    // Login response
+                    let req_id = msg["id"].as_u64().unwrap_or(0);
                     if let Some(result) = msg.get("result") {
-                        if let Some(id_obj) = result.get("id").and_then(|v| v.as_str()) {
-                            session_id = id_obj.to_string();
-                            info!("[ERG] Login accepted, session={}", session_id);
+                        if req_id == 1 {
+                            // subscribe response: result = [null, session_id, extra] or true
+                            if let Some(arr) = result.as_array() {
+                                if let Some(sid) = arr.get(1).and_then(|v| v.as_str()) {
+                                    session_id = sid.to_string();
+                                }
+                            }
+                            info!("[ERG] Subscribed, session={}", session_id);
+                        } else if req_id == 2 {
+                            // authorize response
+                            if result.as_bool() == Some(true) {
+                                info!("[ERG] Login authorized ✅");
+                            } else {
+                                let err = msg.get("error").cloned().unwrap_or(Value::Null);
+                                warn!("[ERG] Auth rejected: {err}");
+                            }
                         } else if result.as_bool() == Some(true) {
-                            let req_id = msg["id"].as_u64().unwrap_or(0);
                             info!("[ERG] Share #{req_id} accepted ✅");
                             self.stats.erg_shares_accepted.fetch_add(1, Ordering::Relaxed);
                         } else {
                             let err = msg.get("error").cloned().unwrap_or(Value::Null);
                             warn!("[ERG] Response rejected: {err}");
                         }
+                    } else if let Some(err) = msg.get("error") {
+                        warn!("[ERG] Error from pool: {err}");
                     }
                 }
             }
