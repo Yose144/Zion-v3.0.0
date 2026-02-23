@@ -221,8 +221,8 @@
 94. ✅ **Mysterium identity created** — Helsinki: `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b`; Germany: `0x1a9bcc8298a4cd214a90fb63e1eb5effa8fd8969`
 95. ✅ **Mysterium private keys zálohovány** — keystore decryptnuty (prázdné heslo, Ethereum-kompatibilní scrypt AES-128-CTR); viz `PREMINE_WALLETS_BACKUP.json` (gitignored)
 96. ⚠️ **Mysterium registrace — fee blocker** — `POST /register` vrátil HTTP 202, transactor inicioval tx na Polygon (ChainID 137); ale `Fee:+62026071429350000 wei (~0.062 MYST)` selhal — wallet nemá MYST tokeny; status `RegistrationError → Unregistered`
-97. 💡 **Mysterium registrace — řešení** — buď (a) koupit ~0.1 MYST na DEX a poslat na identity adresu na Polygon, nebo (b) registrovat se na mystnodes.com + přidat `MMN_API_KEY` do compose prostředí
-98. ✅ **Commit `b24657b`** — `docker/docker-compose.revenue.yml` (NKN fix) + `scripts/myst_register.sh`
+97. ✅ **Mysterium registrace — Úspěch přes MMN** — `--mmn.api-key=8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob` CLI flag před `service` subcommandem; mystnodes.com sponzoroval Polygon gas; oba nody `Registered`, všech 5 služeb aktivních: `dvpn`, `data_transfer`, `scraping`, `monitoring`, `quic_scraping`
+98. ✅ **Commit `f99bf59`** — `docker/docker-compose.revenue.yml` (MMN flag fix + NKN fix)
 
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
@@ -256,7 +256,7 @@
 - **EPIC external pool reachability (SeedDE)** — ~~spojení na `fastepic.eu:3416` je nestabilní/nedostupné (`operation canceled`)~~ → ✅ OPRAVENO (session 27): přechod na MoneroOcean
 - **Revenue cold-start latency (ZEPH/EPIC)** — ~~při restartu trvá start déle kvůli in-container build procesu `xmrig`~~ → ✅ MITIGOVÁNO: xmrig binary cached v `zion-xmrig-cache` Docker volume (rebuild jen při smazání volume)
 - **NKN CreateID fee** — node běží (`Up`), ale potřebuje ~10 NKN tokenů na adrese `NKNa2RgWynz4HB6BMqUACwqrzSwdZHcGznKg` (Polygon/NKN mainnet) pro registraci node identity; bez registrace nereceivuje mining rewards
-- **Mysterium registrace — MYST fee** — identity `0xbf85983...` (Helsinki) + `0x1a9bcc82...` (Germany) vytvořeny, `/register` zavolán, ale Polygon tx selhala kvůli chybějícímu ~0.062 MYST poplatku; řešení: (a) poslat MYST na identity adresu na Polygon nebo (b) vytvořit mystnodes.com účet + `MMN_API_KEY` v compose
+- ~~**Mysterium registrace — MYST fee**~~ → ✅ OPRAVENOsession 28: `--mmn.api-key` + mystnodes.com sponzoroval Polygon gas; Helsinki `0xbf8598...` + Germany `0x1a9bcc...` → **`Registered`**, 5 služeb aktivních
 
 ---
 

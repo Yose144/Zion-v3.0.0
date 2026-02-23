@@ -12,18 +12,10 @@
 
 ### 🔴 Revenue stack — čeká na tokeny (kritické)
 
-- [ ] **[R-1] Koupit MYST tokeny** (~0.2 MYST stačí pro oba servery) — Uniswap/1inch na Polygon, poslat na identity adresy:
-  - Helsinki: `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` (Polygon)
-  - Germany: `0x1a9bcc8298a4cd214a90fb63e1eb5effa8fd8969` (Polygon)
-  Pak spustit: `bash scripts/myst_register.sh` na obou serverech
-- [ ] **[R-2] ALTERNATIVA — mystnodes.com registrace** — vytvořit účet → Nodes → Add node → zkopírovat MMN_API_KEY → přidat do `docker-compose.revenue.yml` env:
-  ```yaml
-  environment:
-    - MMN_API_KEY=<tvuj_klic>
-  ```
-  pak `docker compose up -d mysterium` (restart bez mazání volume)
-- [ ] **[R-3] NKN tokeny** — NKN wallet `NKNa2RgWynz4HB6BMqUACwqrzSwdZHcGznKg` potřebuje ~10 NKN pro CreateID tx; NKN lze koupit na Binance/Gate.io
-- [ ] **[R-4] Ověřit po tokenech** — `docker logs zion-nkn --tail 20` (hledej `CreateID success`) + Mysterium status → `Registered`
+- [ ] **[R-1] HOTOVO — Mysterium** ✅ oba nody `Registered` (Helsinki + Germany), 5 služeb aktivních
+- [ ] **[R-2] NKN tokeny** — NKN wallet `NKNa2RgWynz4HB6BMqUACwqrzSwdZHcGznKg` potřebuje ~10 NKN pro CreateID tx; NKN lze koupit na Binance/Gate.io
+- [ ] **[R-3] Ověřit NKN** — po přijetí tokenů: `docker logs zion-nkn --tail 20` (hledej `CreateID success`)
+- [ ] **[R-4] Ověřit Mysterium earns** — zkontrolovat https://my.mystnodes.com — oba nody by měly být viditelné jako Online
 
 > Původní buildy `zion-miner:2.9.6-testnet` na SeedDE/Usa1/Usa2/Asia3 stále platí:
 
