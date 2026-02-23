@@ -2024,3 +2024,88 @@ Přidán nový navigační item **OASIS** do desktop agenta — kompletní hern�
 **Reward Pool:** 8.25B ZION (5 slotů × 1.65B, 10letá distribuce)  
 **XP Sources:** 7 zdrojů (BlockMined, AiChallenge, Quiz, Meditation, Tithe, GuildQuest, Referral)  
 **Leaderboards:** 7 typů (GlobalXp, BlocksMined, TopTithers, GuildXp, GuildTerritories, Challenges, LongestStreak)
+
+---
+
+## Session 45 — Bridge security fix + 119 testů + Website bridge page rebuild
+
+**Commity:** `d3ca8c0` (bridge), `db8457c` (website)  
+**Soubory:** `L2/bridge/src/db.rs`, `l1_watcher.rs`, `config.rs`, `evm_watcher.rs`, `tests/mainnet_readiness.rs`, `APP&WEB/website-v2.9/src/app/bridge/page.tsx`, `api/bridge/status/route.ts`, `docker/docker-compose.bridge-testnet.yml`, `docker/docker-compose.website.yml`
+
+### Bezpečnostní bug — Replay attack přes INSERT OR REPLACE
+
+Při psaní nových testů byl objeven **kritický bezpečnostní bug** v `L2/bridge/src/db.rs`:
+
+```sql
+-- PŘED (zranitelné):
+INSERT OR REPLACE INTO l1_locks ...   -- attacker resetoval Completed→Pending
+INSERT OR REPLACE INTO evm_burns ...  -- → druhý EVM mint
+
+-- PO (opraveno):
+INSERT OR IGNORE INTO l1_locks ...    -- duplicitní TX hash tiše přeskočen
+INSERT OR IGNORE INTO evm_burns ...   -- status Completed se nemůže přepsat
+```
+
+**Dopad:** Útočník mohl odeslat stejný TX hash znovu → relay zpracoval lock podruhé → double-mint wZION. Opraveno na `INSERT OR IGNORE` — duplikát je zahozem, existující řádek zachován.
+
+### 45 nových mainnet-readiness testů
+
+Nový soubor `L2/bridge/tests/mainnet_readiness.rs`:
+
+| Kategorie | Počet | Popis |
+|-----------|-------|-------|
+| L1 API JSON | 3 | Deserializace `ApiBlockResponse`, coinbase TX s prázdným `inputs` |
+| Testnet vs Mainnet config | 6 | chain_id 84532 vs 8453, `enabled=false`, security thresholds |
+| EVM block chunking | 6 | 49k chunk logika, gaps/overlaps, start_block skip |
+| Replay prevention | 3 | INSERT OR IGNORE verifikace, duplicate TX rejected |
+| Memo parsing | 12 | Platné/neplatné formáty, case sensitivity, edge cases |
+| Amount invariants | 6 | Min 100 ZION, timelock 1M ZION, daily limit |
+| Multi-chain routing | 3 | "base" → 8453, disabled chain lookup |
+| Supply invariant | 4 | After roundtrip, konverze precision |
+| Mainnet checklist | 1 | finality≥60, threshold≥2, auto_pause=true |
+
+**Výsledek: 119 testů celkem, 0 selhání**
+
+```
+58 unit + 16 integration + 45 mainnet_readiness = 119 OK, 0 FAILED
+```
+
+Testy zároveň odhalily 6 pre-existing compile bugů (chybějící `l1_rpc_token: None`, `start_block: None` v test initializers) — vše opraveno.
+
+### Bridge build4 — nasazen na Helsinki
+
+```
+Image: e521723cad58  (zion-bridge:2.9.6-testnet, build4)
+Port:  0.0.0.0:9101/tcp  (Prometheus metrics)
+Status: Up (healthy), errors_total 0
+```
+
+### Website — bridge page kompletní přepis
+
+`/bridge` rozšířen na plnohodnotný průvodce:
+
+| Sekce | Přidáno |
+|-------|---------|
+| Hero | Badge "Replay-safe · INSERT OR IGNORE" |
+| Memo builder | Interaktivní generátor `BRIDGE:base:0x...` s copy tlačítkem |
+| Průvodce L1→Base | Step-by-step, 60-block finality, min 100 ZION, memo syntax |
+| Průvodce Base→L1 | `burn(amount, l1Recipient)`, výpočet wei (8 decimals), příklad |
+| Architecture | Flowchart L1→Relay→ZIONBridge.sol→wZION + 4 komponentní karty |
+| FAQ | 7 otázek (čas, minimum, memo, poplatky, replay, mainnet, riziko) |
+| Security badges | `INSERT OR IGNORE`, `60-block finality`, `Guardian ≥2/N`, `auto_pause` |
+
+### Opravy infrastruktury
+
+- `docker-compose.bridge-testnet.yml` — port `9100→9101` (9100 = node-exporter)
+- `docker-compose.website.yml` — přidán `BRIDGE_METRICS_URL=http://zion-bridge:9101/metrics`
+- `api/bridge/status/route.ts` — default URL přesměrován na `zion-bridge:9101`
+
+### Docker images — stav po session 45
+
+| Image | Tag | Hash | Popis |
+|-------|-----|------|-------|
+| zion-bridge | 2.9.6-testnet | `e521723cad58` | build4 — INSERT OR IGNORE |
+| zion-website | 2.9.6 | `8a2a5791ba0b` | bridge page rebuild |
+| zion-core | 2.9.6-fix2 | `7942be4a758d` | béžící L1 node |
+| zion-pool | native-ethash | `dc3a3e28b5a3` | pool stratum |
+
