@@ -1725,5 +1725,62 @@ Předchozí styling commits (Session 35) přidaly CSS třídy, ale vizuální zm
 
 ---
 
+## Session 39 — Helsinki cleanup + Bridge deployment (23.2.2026)
+
+**Datum:** 23. února 2026  
+**Commity:** `aa66ec5`, `3c67ee8`  
+**Soubory:** `docker/Dockerfile.bridge`, `docker/docker-compose.bridge-testnet.yml`, `config/bridge-testnet.toml`, `L2/bridge/src/l1_watcher.rs`
+
+### Helsinki — disk cleanup
+
+| | Před | Po |
+|---|---|---|
+| Disk použito | 24 GB | **9.8 GB** (−14.2 GB) |
+| Docker images | 20 | 13 |
+| Docker volumes | 18 | 8 |
+| Build cache | 7.8 GB | **0 B** |
+| `/root/` source dirs | ~1.5 GB | 11 MB |
+
+Odstraněno: `zion-src-build/` (1.3 GB), `website-v2.9/` (182 MB), `Zion-2.9.5/`, staré images (`zion-core:2.9.6-fix`, `zion-core:2.9.6-testnet`, `zion-website:dao-fix`, `xmrig/xmrig`), 10 orphan volumes, 2 mrtvé Created kontejnery.
+
+### Bridge deployment
+
+**Vygenerované klíče:**
+- `ZION_BRIDGE_VAULT_KEY` — Ed25519 seed, vault adresa: **`zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5`**
+- `ZION_RPC_TOKEN` — Bearer token pro `/api/bridge/unlock` na L1 node
+- `ZION_VALIDATOR_PRIVATE_KEY` — pro podepisování EVM transakcí
+
+**Nové soubory:**
+
+| Soubor | Popis |
+|--------|-------|
+| `docker/Dockerfile.bridge` | Multi-stage ARM64 build (rust:1.88-bookworm) |
+| `docker/docker-compose.bridge-testnet.yml` | Compose definice pro bridge relay |
+| `config/bridge-testnet.toml` | Vault adresa, l1_rpc_token, WSS endpoint |
+
+**Provedené kroky:**
+1. `zion-core` restartován s `ZION_BRIDGE_VAULT_KEY` + `ZION_RPC_TOKEN` env vars
+2. `docker build` na Helsinki (ARM64, rust:1.88) — 30+ min kompilace ethers-rs
+3. Opraven L1Health struct: `#[serde(alias = "peers_connected")]` — `/health` vrací `peers_connected` ne `peers`
+4. EVM WSS: `wss://sepolia.base.org` (405) → `wss://base-sepolia.publicnode.com` (OK)
+5. Metrics port: 9100 obsazen `node-exporter` → přesunuto na **9101**
+6. Opraven ownership `/root/zion-bridge-data/` (UID 999 pro `zion-bridge` user)
+
+**Bridge UP stav:**
+```
+INFO zion_bridge::db: 📦 Bridge database initialized
+INFO zion_bridge: 🟢 Bridge relay running
+INFO zion_bridge::metrics: 📊 Metrics endpoint: http://0.0.0.0:9101/metrics
+INFO zion_bridge::evm_watcher: 📡 Connected to Base Sepolia (TestNet)
+INFO zion_bridge::l1_watcher: 🔍 Monitoring zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5
+```
+
+**Zbývá:**
+- [ ] Rebuild s L1Health fixem (běží v pozadí)
+- [ ] Alchemy API klíč pro produkci (zatím publicnode)
+- [ ] Fund vault adresy testovacím ZION pro E2E test bridge flow
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*
