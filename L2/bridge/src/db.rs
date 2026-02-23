@@ -87,9 +87,12 @@ impl BridgeDb {
     }
 
     /// Insert a new L1 lock event.
+    /// Uses INSERT OR IGNORE so that duplicate TX hashes are silently skipped —
+    /// prevents replay attacks where an attacker resends a completed lock to reset
+    /// its status back to Pending and trigger a second mint.
     pub fn insert_lock(&self, lock: &L1LockEvent) -> Result<()> {
         self.conn.execute(
-            "INSERT OR REPLACE INTO l1_locks
+            "INSERT OR IGNORE INTO l1_locks
              (l1_tx_hash, l1_block_height, l1_sender, amount_atomic, amount_wzion,
               target_chain, evm_recipient, status, confirmations, detected_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
@@ -110,9 +113,11 @@ impl BridgeDb {
     }
 
     /// Insert a new EVM burn event.
+    /// Uses INSERT OR IGNORE so that duplicate burn IDs are silently skipped —
+    /// prevents processing the same burn event twice if the watcher re-scans old blocks.
     pub fn insert_burn(&self, burn: &EvmBurnEvent) -> Result<()> {
         self.conn.execute(
-            "INSERT OR REPLACE INTO evm_burns
+            "INSERT OR IGNORE INTO evm_burns
              (burn_id, evm_tx_hash, evm_block_number, evm_chain, evm_burner,
               amount_wzion, amount_l1_atomic, l1_recipient, status, confirmations, detected_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
@@ -479,19 +484,28 @@ mod tests {
     }
 
     #[test]
-    fn test_insert_lock_upsert() {
+    fn test_insert_lock_ignore_duplicate() {
+        // INSERT OR IGNORE: second insert of same TX hash is silently skipped.
+        // The original row (with original confirmations) is preserved.
+        // This protects against replay attacks where an attacker resends a completed
+        // lock to reset its status or trigger a second mint.
         let (db, _dir) = test_db();
-        let mut lock = sample_lock("tx_upsert");
+        let mut lock = sample_lock("tx_dup_ignore");
         lock.confirmations = 0;
+        lock.status = BridgeStatus::Pending;
         db.insert_lock(&lock).unwrap();
 
-        // Update via upsert
-        lock.confirmations = 3;
-        db.insert_lock(&lock).unwrap();
+        // Mark as Completed
+        db.update_lock_status("tx_dup_ignore", BridgeStatus::Completed).unwrap();
 
+        // Attacker tries to replay: insert same TX with Pending status
+        lock.confirmations = 0;
+        lock.status = BridgeStatus::Pending;
+        db.insert_lock(&lock).unwrap(); // INSERT OR IGNORE → no-op
+
+        // Completed status must be preserved (not reset to Pending)
         let pending = db.get_pending_locks().unwrap();
-        assert_eq!(pending.len(), 1);
-        assert_eq!(pending[0].confirmations, 3);
+        assert_eq!(pending.len(), 0, "Replay attack must not reset Completed → Pending");
     }
 
     #[test]
