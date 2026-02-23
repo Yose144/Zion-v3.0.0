@@ -1,0 +1,52 @@
+# ZION Bridge Relay
+# Multi-stage build — builder uses full Rust toolchain, runtime is minimal Debian.
+# Supports both amd64 and arm64 (cross-compile via Docker buildx).
+
+FROM rust:1.88-bookworm AS builder
+WORKDIR /build
+
+# System dependencies for ethers-rs (OpenSSL, pkg-config)
+RUN apt-get update && apt-get install -y \
+    cmake g++ make pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy workspace root manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Copy all workspace member crates
+COPY L1/ L1/
+COPY L2/ L2/
+COPY L3/ L3/
+COPY L4/ L4/
+
+# Build only the bridge binary (release)
+RUN cargo build --release -p zion-bridge
+
+# ── Runtime image ─────────────────────────────────────────
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dedicated non-root user
+RUN groupadd -r zion-bridge && \
+    useradd -r -g zion-bridge -d /data/bridge -s /sbin/nologin zion-bridge
+
+# Binary
+COPY --from=builder /build/target/release/zion-bridge /usr/local/bin/zion-bridge
+
+# Data directory (DB + keys)
+RUN mkdir -p /data/bridge/keys && chown -R zion-bridge:zion-bridge /data/bridge
+
+ENV ZION_BRIDGE_CONFIG=/data/bridge/bridge.toml
+WORKDIR /data/bridge
+
+# Prometheus metrics
+EXPOSE 9100
+
+VOLUME ["/data/bridge"]
+
+USER zion-bridge
+ENTRYPOINT ["zion-bridge"]
+CMD ["--config", "/data/bridge/bridge.toml"]
