@@ -440,7 +440,7 @@ class CosmicHarmonyV3GPU:
         block_header: bytes,
         target: Union[int, bytes, bytearray],
         start_nonce: int = 0,
-        state0_endian: str = "big",
+        state0_endian: str = "little",
     ) -> Optional[Tuple[int, bytes]]:
         """
         Mine for a valid nonce.
