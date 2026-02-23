@@ -38,7 +38,7 @@ services:
       - "/data/bridge/bridge.toml"
     # Health check via Prometheus metrics endpoint
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9100/metrics"]
+      test: ["CMD", "curl", "-f", "http://localhost:9101/metrics"]
       interval: 30s
       timeout: 10s
       retries: 3
