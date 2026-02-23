@@ -530,4 +530,32 @@ curl -s "http://SERVER_IP:4449/tequilapi/identities/IDENTITY_ADDRESS" \
 
 ---
 
-_Poslední aktualizace: 23. 2. 2026 — Session 29_
+_Poslední aktualizace: 23. 2. 2026 — Session 30_
+
+## 📊 Live stav (23.2.2026 ~16:30 UTC)
+
+| Server | Hash | Pool | Stav |
+|--------|------|------|------|
+| Helsinki dero-miner | ~218 H/s (2T fast) | MoneroOcean | ✅ 78.7% CPU |
+| Helsinki zeph-miner | ~30 H/s (1T fast) | MoneroOcean | ✅ 82.4% CPU |
+| SeedDE dero-miner | ~15 H/s (2T light) | MoneroOcean | ✅ RAM-bound |
+| SeedDE epic-miner | ~16 H/s (1T light) | MoneroOcean | ✅ |
+| Usa1 xmr-x86 | ~40 H/s (2T light) | MoneroOcean | ✅ |
+| Usa2 xmr-x86 | ~40 H/s (2T light) | MoneroOcean | ✅ |
+| Asia3 xmr-x86 | ~40 H/s (1T slow) | MoneroOcean | ✅ |
+| **Celkem** | **~399 H/s** | MoneroOcean | ✅ |
+
+**MoneroOcean earnings:** `amtDue = 0.0003 XMR (~$0.07)` po 4 hodinách  
+**ZION pool:** height `4422`, 9054+ bloků, `3.0 MH/s`, pending `26+ ZION`  
+**Mysterium:** všech 5 nodů Registered, 0 MYST (čeká na quality oracle ~24h)
+
+### Pool merged mining stav
+
+| Pool | Algo | Status | Earnings |
+|------|------|--------|---------|
+| MoneroOcean (XMR) | RandomX | ✅ CN submit #14+ | $0.07 pending |
+| VRSC (eu.luckpool.net:3956) | VerusHash | ⚠️ Jobs forwarded, 0 shares | $0 |
+| ERG (erg.2miners.com:8888) | Autolykos2 | ⏳ Authorized, timeout reconnect | $0 |
+| ETC (etc.2miners.com:1010) | Ethash/Keccak | ⏳ 1241+ jobs forwarded, 0 shares | $0 |
+
+VRSC/ERG/ETC merged vyžadují implementaci share extraction v `zion-pool` (feature: `native-ethash`, `native-autolykos`, `native-verushash`).
