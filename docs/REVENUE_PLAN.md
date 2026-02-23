@@ -217,6 +217,24 @@ COMPOSE_PROFILES=helsinki docker compose -f docker-compose.revenue.yml up -d
 COMPOSE_PROFILES=germany docker compose -f docker-compose.revenue.yml up -d
 ```
 
+### 🔧 Aktuální implementace (23. února 2026)
+
+Produkční nasazení běží z `docker/docker-compose.revenue.yml` a obsahuje tyto změny oproti původnímu návrhu výše:
+
+- **ARM64 kompatibilita:** kontejnery běží na `ubuntu:22.04`, DERO binárka se vybírá podle architektury (`arm64` / `amd64`).
+- **DERO endpoint:** používá se `node.derofoundation.org:10100` (původní `minernode1.dero.io` byl z hostů nedostupný).
+- **ZEPH endpoint:** používá se `zephyr.herominers.com:1123` (hostname `zeph.herominers.com` je neplatný).
+- **XMRig build režim:** ZEPH/EPIC kontejnery kompilují `xmrig` uvnitř kontejneru, restart-safe (`rm -rf /tmp/xmrig`) a CPU-only build (`-DWITH_OPENCL=OFF -DWITH_CUDA=OFF`).
+- **Compose warning fix:** `version: '3.8'` bylo odstraněno (Compose v2 ho ignoruje jako obsolete).
+
+#### Stav po deploy (23. února 2026)
+
+- `mysterium` běží na obou serverech stabilně.
+- `dero-miner` běží, ale vrací chybu poolu: `unregistered miner or you need to wait 15 mins` (nutná registrace/propagace mineru na DERO straně).
+- `zeph-miner` běží po opravě restart loopu; po prvním startu probíhá delší build `xmrig`.
+- `epic-miner` běží, ale z Germany je aktuálně problém s konektivitou na `fastepic.eu:3416`.
+- `nkn` zůstává zatím vypnutý v produkci, dokud nebude idempotentně dořešená inicializace wallet (`wallet.json`/password flow).
+
 ---
 
 ## 📊 Přehled příjmů

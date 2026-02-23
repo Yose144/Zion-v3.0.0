@@ -187,6 +187,9 @@ ProfitSwitcher
              └── Žádný xmrig subprocess → šetří paměť + CPU
 ```
 
+> **Poznámka k produkčnímu infra deploy (23. února 2026):**
+> Samostatný serverový `docker-compose.revenue.yml` (Helsinki/Germany) je pomocný revenue stack mimo CH3 scheduler a aktuálně používá oddělené kontejnery (`dero-miner`, `zeph-miner`, `epic-miner`) se `xmrig` build/run flow. Tento dokument popisuje cílovou CH3 integrovanou architekturu v poolu.
+
 **GPU mode (když je GPU dostupné):**
 
 ```
