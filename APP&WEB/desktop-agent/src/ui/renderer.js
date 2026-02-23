@@ -492,7 +492,27 @@ function switchView(view) {
       const refreshBtn = document.getElementById('refresh-balance-btn');
       if (refreshBtn && (config?.wallet || '').trim()) refreshBtn.click();
     }, 300);
+    // Start periodic balance auto-refresh while wallet tab is open (every 30s)
+    _startBalanceAutoRefresh();
+  } else {
+    // Stop auto-refresh when leaving wallet tab
+    _stopBalanceAutoRefresh();
   }
+}
+
+// Periodic balance auto-refresh (runs while wallet tab is open)
+let _balanceAutoRefreshTimer = null;
+function _startBalanceAutoRefresh() {
+  _stopBalanceAutoRefresh();
+  _balanceAutoRefreshTimer = setInterval(() => {
+    if (currentView !== 'wallet') { _stopBalanceAutoRefresh(); return; }
+    const refreshBtn = document.getElementById('refresh-balance-btn');
+    const addr = (config?.wallet || '').trim();
+    if (refreshBtn && addr) refreshBtn.click();
+  }, 30000); // 30s interval
+}
+function _stopBalanceAutoRefresh() {
+  if (_balanceAutoRefreshTimer) { clearInterval(_balanceAutoRefreshTimer); _balanceAutoRefreshTimer = null; }
 }
 
 // Control setup
@@ -1563,7 +1583,14 @@ function setupWalletControls() {
   const sendTxBtn = document.getElementById('send-tx-btn');
   const sendStatusEl = document.getElementById('send-status');
 
-  const getRpcUrl = () => (config?.rpcUrl || 'http://77.42.31.72:8444/jsonrpc');
+  const getRpcUrl = () => {
+    let url = (config?.rpcUrl || 'http://77.42.31.72:8444/jsonrpc').trim();
+    // Ensure /jsonrpc path is present (common misconfiguration: port without path)
+    if (url && !url.endsWith('/jsonrpc') && /:\d+\/?$/.test(url)) {
+      url = url.replace(/\/+$/, '') + '/jsonrpc';
+    }
+    return url;
+  };
   const getActiveAddress = () => {
     const v = activeWalletInput && 'value' in activeWalletInput ? activeWalletInput.value : '';
     return (v || config.wallet || '').toString().trim();
@@ -1732,11 +1759,15 @@ function setupWalletControls() {
 
   refreshBalanceBtn?.addEventListener('click', async () => {
     const address = getActiveAddress();
+    if (!address) {
+      if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = 'No wallet address configured. Set wallet in Settings first.';
+      return;
+    }
     if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = 'Loading...';
 
     const check = await window.electronAPI.validateAddress(address);
     if (!check?.valid) {
-      if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = 'Set a valid zion1... address first.';
+      if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = 'Set a valid zion1... address first. Current: ' + (address.slice(0, 20) || '(empty)') + '...';
       return;
     }
 
