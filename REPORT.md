@@ -204,7 +204,13 @@
 79. ⚠️ **DERO registrace** — na Helsinki i SeedDE běží miner, ale vrací `unregistered miner or you need to wait 15 mins` (wallet/registration stav na DERO straně)
 80. ⚠️ **EPIC konektivita (SeedDE)** — `zion-epic-miner` běží, ale `fastepic.eu:3416` vrací opakovaně `connect error: operation canceled`
 81. ⚠️ **NKN** — v produkci zatím vypnuto, dokud nebude idempotentně dořešen wallet init flow
-
+### Session 27 — Revenue System kompletní oprava (23. února 2026)
+83. ✅ **MoneroOcean unified mining** — přechod ze samostatných DERO/ZEPH/EPIC poolů; XMR wallet `42m86RBWf4P...`; auto profit-switch
+84. ✅ **xmrig ARM64 zkompilován** — ubuntu:22.04, cmake, gcc/11.4.0, v6.21.3; binary cached v `zion-xmrig-cache` Docker volume (3.4 MB)
+85. ✅ **Fix xmrig CLI flags** — odstraněn neexistující `--worker`; single `--url` per miner (double `--url` způsobovalo `user=x` chybu na pool #1)
+86. ✅ **Fix libuv runtime** — `apt install libuv1 libssl3 libhwloc15` před každým `exec xmrig` (dynamicky linkovaná binárka potřebuje runtime libs)
+87. ✅ **Fix OOM na serverech** — `--randomx-mode=light` pro zeph-miner + epic-miner (2 GB dataset × 2 = OOM na 3.7–7.5 GB serverech)
+88. ✅ **4 mineri těží** — Helsinki: dero (420 H/s) + zeph; SeedDE: dero (200 H/s) + epic; celkem ~620 H/s na MoneroOcean
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
 22. ✅ **Helsinki pool Docker** — Opraven mount + restart kontejneru `zion-pool:2.9.6-testnet`
@@ -233,9 +239,9 @@
 - **MoneroOcean reconnect backoff** — ✅ OPRAVENO: exponential backoff + IP ban detekce; pool po redeployi čeká 600s (10min) na ban expiry ✅
 - ~~**Main miner macOS Metal**~~ — ✅ OPRAVENO (session 14): hlavní miner nyní spouští `--gpu` i na macOS (Metal)
 - ~~**Pool per-IP limit**~~ — ✅ OPRAVENO (session 13): 10→50 conn/IP (commit `219ab23`), nasazeno na Helsinki
-- **DERO external registration gate** — miner kontejnery běží, ale DERO pool vrací `unregistered miner or you need to wait 15 mins` (nutná registrace/propagace)
-- **EPIC external pool reachability (SeedDE)** — spojení na `fastepic.eu:3416` je nestabilní/nedostupné (`operation canceled`)
-- **Revenue cold-start latency (ZEPH/EPIC)** — při restartu trvá start déle kvůli in-container build procesu `xmrig`
+- **DERO external registration gate** — ~~miner kontejnery běží, ale DERO pool vrací `unregistered miner or you need to wait 15 mins`~~ → ✅ OPRAVENO (session 27): přechod na MoneroOcean, žádná registrace nepotřebná
+- **EPIC external pool reachability (SeedDE)** — ~~spojení na `fastepic.eu:3416` je nestabilní/nedostupné (`operation canceled`)~~ → ✅ OPRAVENO (session 27): přechod na MoneroOcean
+- **Revenue cold-start latency (ZEPH/EPIC)** — ~~při restartu trvá start déle kvůli in-container build procesu `xmrig`~~ → ✅ MITIGOVÁNO: xmrig binary cached v `zion-xmrig-cache` Docker volume (rebuild jen při smazání volume)
 
 ---
 
@@ -840,6 +846,99 @@ Docker image timeline na Helsinki:
 | Miner GPU↔CPU parity | ✅ Všechny MATCH=true |
 | CSP violations | ✅ 0 (inline onclick odstraněny) |
 | Zbývající `v2.9.5` reference | ✅ Legitimní (backward-compat cesty, historické komentáře) |
+
+---
+
+---
+
+## Session 27 — Revenue System kompletní oprava (23. února 2026)
+
+**Datum:** 23. února 2026  
+**Commity:** `9217b80` (MoneroOcean ARM64 v7 — correct flags), `b8bd58c` (zeph+epic RandomX light mode)  
+**Deploy:** Helsinki + SeedDE — všechny revenue kontejnery aktivní
+
+### Cíl
+
+Kompletně rozchodit revenue stack (`docker/docker-compose.revenue.yml`) — 4 CPU minera na MoneroOcean, Mysterium VPN bandwidth node, NKN relay.
+
+---
+
+### Diagnostika — root causes
+
+| Kontejner | Symptom | Root cause |
+|-----------|---------|------------|
+| `zion-dero-miner` | `unregistered miner or you need to wait 15 mins` | `${DERO_WALLET}` prázdný — chybějící `.env.revenue` |
+| `zion-zeph-miner` | Mining nikam | `${ZEPH_WALLET}` prázdný |
+| `zion-epic-miner` | `connect error: operation canceled` | Pool `fastepic.eu:3416` nedostupný |
+| `zion-mysterium` | `not registered` | Identita nenregistrovaná on-chain |
+
+**Řešení:** Přechod na **MoneroOcean** — auto profit-switch pool (XMR/DERO/ZEPH/EPIC/...), výplata v XMR. Jeden wallet pro všechny minery.
+
+---
+
+### Iterativní opravy (v1 → v7)
+
+| Verze | Opravený problém |
+|-------|-----------------|
+| v1 | YAML anchors — nefungují v `command:` blocích |
+| v2 | `cpuset: "14-15"` / `"12"` neplatné — Helsinki má 4 jádra (0-3), Germany 2 (0-1) → `cpus:` soft limit |
+| v3 | Korupce souboru z částečného replace |
+| v4 | Clean rewrite — ubuntu:22.04 + cmake build xmrig z source, `zion-xmrig-cache` volume |
+| v4+SSL | `ca-certificates` instalovány, ale `update-ca-certificates` neschopen zavolat → přidán explicitní call |
+| v5 | **xmrig binárka zkompilována** (ARM64 gcc/11.4.0, v6.21.3). Nový error: `unrecognized option '--worker'` + `Invalid payment address: x` |
+| v6 | Fix `--worker` → pouze `--pass WORKER_NAME`, přidán `apt install libuv1 libssl3 libhwloc15` před exec (dynamicky linkovaná binárka) |
+| **v7** | **Fix double `--url`** — 2× `--url` způsobilo, že `--user/--pass` byly přiřazeny jen poslednímu poolu; pool #1 dostával `user=x` → jednopoolu design |
+
+---
+
+### Výsledný stav — 4 minerové těží
+
+| Kontejner | Server | Threads | Mode | Hashrate | Status |
+|-----------|--------|---------|------|----------|--------|
+| `zion-dero-miner` | Helsinki | 2T | fast | ~420 H/s | ✅ `accepted (3/0)` |
+| `zion-zeph-miner` | Helsinki | 1T | light | ~1-2 H/s | ✅ `new job rx/0` |
+| `zion-dero-miner` | SeedDE | 2T | fast | ~200 H/s | ✅ `new job rx/0` |
+| `zion-epic-miner` | SeedDE | 1T | light | ~1-2 H/s | ✅ `new job rx/0` |
+
+**Celkový hashrate:** ~620 H/s (dominantní: dero-mineri fast mode)
+
+**MoneroOcean dashboard:**  
+`https://moneroocean.stream/#/dashboard?addr=42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK`
+
+**Workers:** `zion_dero` · `zion_zeph_helsinki` · `zion_epic_germany`
+
+---
+
+### Technická architektura (v7 final)
+
+```
+docker/docker-compose.revenue.yml
+├── dero-miner    ubuntu:22.04, cmake xmrig z source (1× per server)
+│                 → binary cached v volume zion-xmrig-cache
+│                 → 2T, --randomx-mode=fast, --pass zion_dero
+├── zeph-miner    profile=helsinki, waits for binary, 1T, light mode
+├── epic-miner    profile=germany,  waits for binary, 1T, light mode  
+├── mysterium     mysteriumnetwork/myst:latest (needs manual registration)
+└── nkn           nknorg/nkn:latest
+
+volumes:
+  zion-xmrig-cache    # arm64 xmrig v6.21.3 binary, ~3.4 MB
+  zion-mysterium-data
+  zion-nkn-data
+```
+
+**Klíčové detaily implementace:**
+- `$$` escaping v Docker Compose `command:` blocích (bash proměnné: `$$n`, `$${n}`)
+- `apt install libuv1 libssl3 libhwloc15` před každým `exec xmrig` (dynamické linky)
+- `--randomx-mode=light` pro zeph+epic (2× xmrig na 3.7 GB = OOM bez light mode)
+- Jediné `--url` per miner (double `--url` přiřazuje `--user/--pass` jen poslednímu)
+
+---
+
+### Zbývá
+
+- **Mysterium registrace** — ruční: `http://77.42.31.72:4449` + `http://46.225.126.243:4449` → potřeba ~1.5 MYST nebo API klíč z mystnodes.com
+- **NKN** — běží (`Restarting`) — wallet init flow potřebuje dořešit
 
 ---
 
