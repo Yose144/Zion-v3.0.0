@@ -792,6 +792,99 @@ const MAX_MINER_LOG_BACKUPS = 0;
 const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Default configuration
+const DEFAULT_REVENUE_PROFILE = {
+  enabled: true,
+  allocation: {
+    zionPct: 50,
+    multiAlgoPct: 25,
+    nclPct: 25
+  },
+  cpu: {
+    coin: 'auto'
+  },
+  merged: {
+    etcEnabled: false,
+    nxsEnabled: false
+  },
+  gpu: {
+    enabled: false,
+    coins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH']
+  },
+  ncl: {
+    enabled: false
+  },
+  nclEnabled: false,
+  freeStreams: {
+    mysterium: true,
+    nkn: true,
+    aiGateway: true
+  }
+};
+
+function normalizeRevenueProfile(input) {
+  const src = (input && typeof input === 'object') ? input : {};
+  const allocationRaw = (src.allocation && typeof src.allocation === 'object') ? src.allocation : {};
+
+  const toPct = (v, fallback) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  };
+
+  let zionPct = toPct(allocationRaw.zionPct, DEFAULT_REVENUE_PROFILE.allocation.zionPct);
+  let multiAlgoPct = toPct(allocationRaw.multiAlgoPct, DEFAULT_REVENUE_PROFILE.allocation.multiAlgoPct);
+  let nclPct = toPct(allocationRaw.nclPct, DEFAULT_REVENUE_PROFILE.allocation.nclPct);
+
+  const total = zionPct + multiAlgoPct + nclPct;
+  if (total !== 100) {
+    if (total <= 0) {
+      zionPct = 50;
+      multiAlgoPct = 25;
+      nclPct = 25;
+    } else {
+      zionPct = Math.round((zionPct / total) * 100);
+      multiAlgoPct = Math.round((multiAlgoPct / total) * 100);
+      nclPct = 100 - zionPct - multiAlgoPct;
+    }
+  }
+
+  const gpuObj = (src.gpu && typeof src.gpu === 'object') ? src.gpu : {};
+  const mergedObj = (src.merged && typeof src.merged === 'object') ? src.merged : {};
+  const nclObj = (src.ncl && typeof src.ncl === 'object') ? src.ncl : {};
+  const cpuObj = (src.cpu && typeof src.cpu === 'object') ? src.cpu : {};
+
+  const coinsRaw = Array.isArray(gpuObj.coins)
+    ? gpuObj.coins
+    : (typeof gpuObj.coins === 'string' ? gpuObj.coins.split(',') : DEFAULT_REVENUE_PROFILE.gpu.coins);
+
+  const coins = Array.from(new Set(coinsRaw
+    .map((value) => String(value || '').trim().toUpperCase())
+    .filter(Boolean)));
+
+  return {
+    enabled: src.enabled !== false,
+    allocation: {
+      zionPct,
+      multiAlgoPct,
+      nclPct
+    },
+    cpu: {
+      coin: String(cpuObj.coin || 'auto').trim().toLowerCase() || 'auto'
+    },
+    merged: {
+      etcEnabled: !!mergedObj.etcEnabled,
+      nxsEnabled: !!mergedObj.nxsEnabled
+    },
+    gpu: {
+      enabled: !!gpuObj.enabled,
+      coins: coins.length ? coins : [...DEFAULT_REVENUE_PROFILE.gpu.coins]
+    },
+    ncl: {
+      enabled: !!nclObj.enabled
+    }
+  };
+}
+
 const DEFAULT_CONFIG = {
   pool: {
     host: '77.42.31.72',
@@ -818,6 +911,7 @@ const DEFAULT_CONFIG = {
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
   gpu: true,
+  revenue: DEFAULT_REVENUE_PROFILE,
   // GPU Revenue Mining (CH3 Dynamic GPU system)
   gpuRevenue: false, // Enable GPU revenue mining with profit switching
   gpuRevenueCoins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH'], // Supported GPU coins for profit switching
@@ -842,7 +936,27 @@ function loadConfig() {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
       const configOnDisk = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
-      const merged = { ...DEFAULT_CONFIG, ...configOnDisk };
+      const merged = {
+        ...DEFAULT_CONFIG,
+        ...configOnDisk,
+        pool: {
+          ...DEFAULT_CONFIG.pool,
+          ...(configOnDisk.pool || {})
+        }
+      };
+
+      merged.revenue = normalizeRevenueProfile(configOnDisk.revenue || merged.revenue);
+      // Backward compatibility with older top-level GPU revenue fields.
+      if (typeof configOnDisk.gpuRevenue === 'boolean') {
+        merged.revenue.gpu.enabled = configOnDisk.gpuRevenue;
+      }
+      if (Array.isArray(configOnDisk.gpuRevenueCoins) && configOnDisk.gpuRevenueCoins.length) {
+        merged.revenue.gpu.coins = configOnDisk.gpuRevenueCoins.map((value) => String(value || '').trim().toUpperCase()).filter(Boolean);
+      }
+      merged.gpuRevenue = !!merged.revenue.gpu.enabled;
+      merged.gpuRevenueCoins = Array.isArray(merged.revenue.gpu.coins) && merged.revenue.gpu.coins.length
+        ? [...merged.revenue.gpu.coins]
+        : [...DEFAULT_REVENUE_PROFILE.gpu.coins];
 
       // Prefer Rust miner everywhere if it exists.
       // Only respect Python if the user explicitly pinned `minerBackend` in the config.
@@ -1863,6 +1977,7 @@ function startMining(config) {
   // Auto load-balance for max performance + responsiveness.
   // We do not add new UI; we just clamp/auto-pick effective threads.
   const effectiveThreads = computeEffectiveThreads(config);
+  const revenueProfile = normalizeRevenueProfile(config?.revenue || {});
 
   // Mining mode: cpu, gpu, dual, gpu-revenue (new UI)
   // Backwards compatible: if miningMode not set, use legacy gpu checkbox
@@ -1944,17 +2059,25 @@ function startMining(config) {
   const rustGroupSupported = MINER_IS_RUST ? rustMinerSupportsGroupFlag(MINER_PATH) : false;
 
   // ═══════════════════════════════════════════════════════════
-  // Dual Mining Info (ZION + Revenue group via pool)
+  // CH3 Revenue Mining Info (50/25/25 allocation)
   // ═══════════════════════════════════════════════════════════
-  if (MINER_IS_RUST && effectiveThreads >= 3 && rustGroupSupported) {
-    const disableRevenueEnv = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1'
-      || String(process.env.ZION_ENABLE_REVENUE || '').trim() !== '1';
-    if (!disableRevenueEnv) {
+  {
+    const envDisableRevenue = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+    const envEnableRevenue = String(process.env.ZION_ENABLE_REVENUE || '').trim() === '1';
+    const revenueEnabled = envDisableRevenue ? false : (envEnableRevenue ? true : revenueProfile.enabled !== false);
+
+    if (revenueEnabled && effectiveThreads >= 3) {
+      const alloc = revenueProfile.allocation || {};
+      const allocText = `Z:${alloc.zionPct ?? 50}% R:${alloc.multiAlgoPct ?? 25}% N:${alloc.nclPct ?? 25}%`;
       try {
-        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ═══ Dual Mining Active ═══\n` });
-        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3]   ZION: ${effectiveThreads - 1}T CosmicHarmony → pool ${config.pool.host}:${config.pool.port} (g=zion)\n` });
-        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3]   REV:  1T RandomX → pool ${config.pool.host}:${config.pool.port} (g=revenue → XMR/BTC)\n` });
-        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ═════════════════════════════\n` });
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ═══ Revenue Mining Active ═══\n` });
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3]   ZION: CosmicHarmony → pool:${config.pool.port} (g=zion)\n` });
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3]   REV:  Multi-Algo → pool:${config.pool.port} (g=revenue)\n` });
+        if (revenueProfile?.nclEnabled !== false) {
+          sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3]   NCL:  AI Compute → pool:${config.pool.port} (g=ncl)\n` });
+        }
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3]   ALLOC: ${allocText}\n` });
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ══════════════════════════════\n` });
       } catch {
         // ignore
       }
@@ -1975,21 +2098,43 @@ function startMining(config) {
 
   let args;
   let xmrRevenueThreads = 0;
+  let nclThreads = 0;
   let zionThreads = effectiveThreads;
+
+  // ═══ Revenue Thread Split (applies to both Rust and Python miners) ═══
+  const envDisableRevenue = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+  const envEnableRevenue = String(process.env.ZION_ENABLE_REVENUE || '').trim() === '1';
+  const revenueEnabled = envDisableRevenue ? false : (envEnableRevenue ? true : revenueProfile.enabled !== false);
+
+  const canSplitThreads = (MINER_IS_RUST && rustGroupSupported) || MINER_IS_PYTHON;
+  if (revenueEnabled && effectiveThreads >= 3 && canSplitThreads) {
+    // ═══ 3-Way Split: ZION / Multi-Algo / NCL (50/25/25 default) ═══
+    const multiPct = Math.max(0, Math.min(100, Number(revenueProfile?.allocation?.multiAlgoPct ?? 25)));
+    const nclPct   = Math.max(0, Math.min(100, Number(revenueProfile?.allocation?.nclPct ?? 25)));
+    const nclEnabled = revenueProfile?.nclEnabled !== false;
+
+    const suggestedMulti = Math.max(1, Math.round(effectiveThreads * (multiPct / 100)));
+    const suggestedNcl   = nclEnabled ? Math.max(1, Math.round(effectiveThreads * (nclPct / 100))) : 0;
+
+    // Keep at least 2 threads for primary ZION stream.
+    const maxRevenue = Math.max(0, effectiveThreads - 2);
+    const totalRevenue = Math.min(maxRevenue, suggestedMulti + suggestedNcl);
+
+    if (totalRevenue > 0 && suggestedMulti + suggestedNcl > 0) {
+      // Proportionally distribute available revenue threads
+      const ratio = totalRevenue / (suggestedMulti + suggestedNcl);
+      xmrRevenueThreads = Math.max(1, Math.round(suggestedMulti * ratio));
+      nclThreads = nclEnabled ? Math.max(0, totalRevenue - xmrRevenueThreads) : 0;
+    } else {
+      xmrRevenueThreads = 0;
+      nclThreads = 0;
+    }
+  }
+  zionThreads = effectiveThreads - xmrRevenueThreads - nclThreads;
+
   if (MINER_IS_RUST) {
     const algoLowerForHint = String(algorithmForMiner || requestedAlgorithmLower || 'cosmic_harmony').toLowerCase();
     const difficultyHint = computeDifficultyHint(config, algoLowerForHint);
-
-    // ═══ Dual Mining Thread Split: ZION (N-1) + Revenue (1) ═══
-    // Default DAO revenue model: 1 thread connects to the SAME pool with
-    // --group revenue. The pool's StreamScheduler routes revenue-group
-    // miners to XMR/RandomX jobs via RevenueProxy (→ MoneroOcean → BTC).
-    // Remaining threads mine ZION (CosmicHarmony). Minimum 2 threads for ZION.
-    // Disable dual mining via ZION_DISABLE_REVENUE=1 env var.
-    const disableRevenue = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1'
-      || String(process.env.ZION_ENABLE_REVENUE || '').trim() !== '1';
-    xmrRevenueThreads = (!disableRevenue && effectiveThreads >= 3 && rustGroupSupported) ? 1 : 0;
-    zionThreads = effectiveThreads - xmrRevenueThreads;
 
     // Rust miner CLI (zion-universal-miner) — main ZION group
     args = [
@@ -2043,7 +2188,8 @@ function startMining(config) {
       '--pool', `${config.pool.host}:${config.pool.port}`,
       '--wallet', config.wallet,
       '--worker', config.worker,
-      '--threads', String(effectiveThreads),
+      '--threads', String(zionThreads),
+      '--group', 'zion',
       '--stats-interval', String(STATS_INTERVAL_SEC),
       '--stats-file', STATS_PATH
     ];
@@ -2087,12 +2233,23 @@ function startMining(config) {
     minerStats.pool = `${config?.pool?.host || ''}:${config?.pool?.port || ''}`.replace(/^:|:$/g, '');
     minerStats.worker = String(config.worker || '').trim();
     minerStats.threads = String(effectiveThreads);
-    // Dual mining metadata
-    minerStats.dual_mining = MINER_IS_RUST && xmrRevenueThreads > 0;
-    minerStats.zion_threads = MINER_IS_RUST ? zionThreads : effectiveThreads;
-    minerStats.xmr_threads = MINER_IS_RUST ? xmrRevenueThreads : 0;
-    minerStats.xmr_pool = MINER_IS_RUST && xmrRevenueThreads > 0 ? `${config?.pool?.host || ''}:${config?.pool?.port || ''} (g=revenue)` : '';
-    minerStats.revenue_coin = MINER_IS_RUST && xmrRevenueThreads > 0 ? 'XMR' : '';
+    // Dual/triple mining metadata
+    minerStats.dual_mining = (xmrRevenueThreads > 0) || (nclThreads > 0);
+    minerStats.zion_threads = zionThreads;
+    minerStats.xmr_threads = xmrRevenueThreads;
+    minerStats.ncl_threads = nclThreads;
+    minerStats.xmr_pool = xmrRevenueThreads > 0 ? `${config?.pool?.host || ''}:${config?.pool?.port || ''} (g=revenue)` : '';
+    const preferredRevenueCoin = String(revenueProfile?.cpu?.coin || 'auto').toUpperCase();
+    minerStats.revenue_coin = MINER_IS_RUST && xmrRevenueThreads > 0
+      ? (preferredRevenueCoin === 'AUTO' ? 'AUTO' : preferredRevenueCoin)
+      : '';
+    minerStats.stream_allocation = `Z:${revenueProfile?.allocation?.zionPct ?? 50}% R:${revenueProfile?.allocation?.multiAlgoPct ?? 25}% N:${revenueProfile?.allocation?.nclPct ?? 25}%`;
+    minerStats.ncl_enabled = !!revenueProfile?.ncl?.enabled;
+    minerStats.free_streams = {
+      mysterium: !!revenueProfile?.freeStreams?.mysterium,
+      nkn: !!revenueProfile?.freeStreams?.nkn,
+      ai_gateway: !!revenueProfile?.freeStreams?.aiGateway,
+    };
     minerMetricsLastEmitMs = 0;
     minerRateSamples = [];
     minerShareLastSample = { t: 0, accepted: 0, rejected: 0 };
@@ -2132,9 +2289,13 @@ function startMining(config) {
       const cpuList = Array.isArray(os.cpus?.()) ? os.cpus() : [];
       const cpuModel = String(cpuList?.[0]?.model || '').trim() || process.arch;
       const logical = cpuList.length || 1;
-      const split = (MINER_IS_RUST && xmrRevenueThreads > 0)
-        ? ` | split ZION=${zionThreads}T REV=${xmrRevenueThreads}T`
-        : '';
+      const splitParts = [];
+      if (xmrRevenueThreads > 0 || nclThreads > 0) {
+        splitParts.push(`ZION=${zionThreads}T`);
+        if (xmrRevenueThreads > 0) splitParts.push(`REV=${xmrRevenueThreads}T`);
+        if (nclThreads > 0) splitParts.push(`NCL=${nclThreads}T`);
+      }
+      const split = splitParts.length > 0 ? ` | split ${splitParts.join(' ')}` : '';
       const cpuLine = `[CH3] CPU: ${cpuModel} (logical=${logical}) | threads=${effectiveThreads}${split}\n`;
       sendToRenderer('miner-output', {
         stream: 'stdout',
@@ -2165,9 +2326,20 @@ function startMining(config) {
     ZION_ENABLE_STREAM_SWITCH: '0',
     ...(gpuInfo.available ? { ZION_HAS_GPU: '1' } : {}),
     ZION_AI_AFTERBURNER: config.aiAfterburner === false ? '0' : '1',
+    // Revenue profile configuration
+    ZION_REVENUE_ENABLED: revenueProfile.enabled ? '1' : '0',
+    ZION_REVENUE_CPU_COIN: String(revenueProfile?.cpu?.coin || 'auto').toLowerCase(),
+    ZION_REVENUE_ALLOCATION: `Z:${revenueProfile?.allocation?.zionPct ?? 50},R:${revenueProfile?.allocation?.multiAlgoPct ?? 25},N:${revenueProfile?.allocation?.nclPct ?? 25}`,
+    ZION_ENABLE_NCL: revenueProfile?.ncl?.enabled ? '1' : '0',
+    ZION_NCL_ALLOCATION_PCT: String(revenueProfile?.allocation?.nclPct ?? 25),
+    ZION_ENABLE_MYSTERIUM: revenueProfile?.freeStreams?.mysterium ? '1' : '0',
+    ZION_ENABLE_NKN: revenueProfile?.freeStreams?.nkn ? '1' : '0',
+    ZION_ENABLE_AI_GATEWAY: revenueProfile?.freeStreams?.aiGateway ? '1' : '0',
     // GPU Revenue Mining configuration
-    ZION_GPU_REVENUE: config.gpuRevenue ? '1' : '0',
-    ZION_GPU_REVENUE_COINS: config.gpuRevenueCoins ? config.gpuRevenueCoins.join(',') : 'ERG,RVN,KAS,ALPH',
+    ZION_GPU_REVENUE: (revenueProfile?.gpu?.enabled || config.gpuRevenue) ? '1' : '0',
+    ZION_GPU_REVENUE_COINS: Array.isArray(revenueProfile?.gpu?.coins) && revenueProfile.gpu.coins.length
+      ? revenueProfile.gpu.coins.join(',')
+      : (config.gpuRevenueCoins ? config.gpuRevenueCoins.join(',') : 'ERG,RVN,KAS,ALPH'),
     // Safety default: Cosmic Harmony C++ dylib has shown instability on macOS in some builds.
     // If you want to force-enable it, set ZION_COSMIC_CPP=1 in the environment.
     ...(process.platform === 'darwin' ? { ZION_COSMIC_CPP: process.env.ZION_COSMIC_CPP || '0' } : {}),
@@ -2441,26 +2613,46 @@ function startMining(config) {
   // Revenue Process: 2nd miner connecting to the SAME pool with --group revenue.
   // The pool's StreamScheduler assigns revenue-group miners to XMR/RandomX jobs
   // via RevenueProxy (→ MoneroOcean → BTC). No direct external pool connection.
+  // Supports both Rust (--group flag) and Python (--group CLI arg) miners.
   // ═══════════════════════════════════════════════════════════════
-  if (MINER_IS_RUST && xmrRevenueThreads > 0 && rustGroupSupported) {
+  const canSpawnRevenue = xmrRevenueThreads > 0 && (
+    (MINER_IS_RUST && rustGroupSupported) || MINER_IS_PYTHON
+  );
+  if (canSpawnRevenue) {
     try {
       const revenueStatsPath = STATS_PATH.replace(/\.json$/, '_revenue.json');
-      const revenueArgs = [
-        '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
-        '--wallet', config.wallet,
-        '--threads', String(xmrRevenueThreads),
-        '--group', 'revenue',
-        // Algorithm is NOT forced here — pool StreamScheduler assigns the best revenue algo.
-        // If pool has XMR CN job with seed_hash → overrides to randomx (with seed_hash).
-        // If no external job available → pool falls back to cosmic_harmony (ZION).
-        // Forcing randomx caused "RandomX not initialized" when seed_hash was missing.
-        '--stats-file', revenueStatsPath,
-        '--stats-interval', String(STATS_INTERVAL_SEC),
-        '--no-color'
-      ];
-      if (config.worker) revenueArgs.push('--worker', `${String(config.worker)}_rev`);
+      let revSpawnCmd, revSpawnArgs;
+      if (MINER_IS_PYTHON) {
+        const revArgs = [
+          MINER_PATH,
+          '--algorithm', String(algorithmForMiner || 'cosmic_harmony_v3'),
+          '--pool', `${config.pool.host}:${config.pool.port}`,
+          '--wallet', config.wallet || '',
+          '--threads', String(xmrRevenueThreads),
+          '--group', 'revenue',
+          '--stats-file', revenueStatsPath,
+          '--stats-interval', String(STATS_INTERVAL_SEC),
+        ];
+        if (config.worker) revArgs.push('--worker', `${String(config.worker)}_rev`);
+        revSpawnCmd = process.platform === 'win32' ? 'python' : 'python3';
+        revSpawnArgs = revArgs;
+      } else {
+        const revenueArgs = [
+          '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
+          '--wallet', config.wallet,
+          '--threads', String(xmrRevenueThreads),
+          '--group', 'revenue',
+          // Algorithm is NOT forced here — pool StreamScheduler assigns the best revenue algo.
+          '--stats-file', revenueStatsPath,
+          '--stats-interval', String(STATS_INTERVAL_SEC),
+          '--no-color'
+        ];
+        if (config.worker) revenueArgs.push('--worker', `${String(config.worker)}_rev`);
+        revSpawnCmd = spawnCommand;
+        revSpawnArgs = revenueArgs;
+      }
 
-      revenueProcess = spawn(spawnCommand, revenueArgs, {
+      revenueProcess = spawn(revSpawnCmd, revSpawnArgs, {
         cwd: minerCwd,
         env
       });
@@ -2529,8 +2721,9 @@ function startMining(config) {
   // Two OpenCL processes on the same GPU cause severe context-switching overhead
   // and can drop hashrate from >100 MH/s to <20 MH/s. GPU is exclusive to one process.
   // GPU Revenue only gets the GPU in 'gpu-revenue' mining mode.
-  const gpuRevenueAllowed = config.gpuRevenue && effectiveGpu && !mainMinerGpu;
-  if (config.gpuRevenue && mainMinerGpu) {
+  const gpuRevenueEnabled = !!(revenueProfile?.gpu?.enabled || config.gpuRevenue);
+  const gpuRevenueAllowed = gpuRevenueEnabled && effectiveGpu && !mainMinerGpu;
+  if (gpuRevenueEnabled && mainMinerGpu) {
     // GPU is dedicated to ZION mining — skip GPU Revenue to avoid contention
     logApp('gpu-revenue-skipped', 'GPU dedicated to main ZION miner (mode=' + miningMode + '); GPU Revenue skipped to prevent contention.');
     try {

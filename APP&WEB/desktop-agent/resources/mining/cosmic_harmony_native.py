@@ -103,6 +103,18 @@ class CosmicHarmonyNative:
         ]
         self._lib.cosmic_harmony_v3_hash.restype = ctypes.c_int
         
+        # cosmic_harmony_v3_hash_with_height (height-aware: legacy vs memory-hard)
+        self._has_hash_with_height = hasattr(self._lib, 'cosmic_harmony_v3_hash_with_height')
+        if self._has_hash_with_height:
+            self._lib.cosmic_harmony_v3_hash_with_height.argtypes = [
+                ctypes.POINTER(ctypes.c_uint8),  # input
+                ctypes.c_size_t,                  # input_len
+                ctypes.c_uint64,                  # nonce
+                ctypes.c_uint64,                  # height
+                ctypes.POINTER(ctypes.c_uint8),  # output
+            ]
+            self._lib.cosmic_harmony_v3_hash_with_height.restype = ctypes.c_int
+        
         # cosmic_harmony_v3_batch_hash
         self._lib.cosmic_harmony_v3_batch_hash.argtypes = [
             ctypes.POINTER(ctypes.c_uint8),  # input
@@ -187,6 +199,55 @@ class CosmicHarmonyNative:
             nonce,
             output_arr
         )
+        
+        if result != 0:
+            raise RuntimeError(f"Hash computation failed: error code {result}")
+        
+        return bytes(output_arr)
+    
+    def _prepare_header(self, block_header: bytes) -> bytes:
+        """Validate and trim header to 80 bytes (consensus rule)."""
+        if not isinstance(block_header, (bytes, bytearray, memoryview)):
+            raise TypeError(f"block_header must be bytes-like, got {type(block_header).__name__}")
+        bh = bytes(block_header)
+        if len(bh) == 0:
+            raise ValueError("block_header must not be empty")
+        if len(bh) > 80:
+            bh = bh[:80]
+        return bh
+
+    def hash_with_height(self, block_header: bytes, nonce: int, height: int) -> bytes:
+        """
+        Height-aware Cosmic Harmony v3 hash.
+        
+        At height < 50,000 uses legacy pipeline (no scratchpad).
+        At height >= 50,000 uses full memory-hard pipeline.
+        The FFI also XORs nonce with height (consensus rule).
+        
+        Args:
+            block_header: Block header bytes (trimmed to 80)
+            nonce: Mining nonce
+            height: Block height
+            
+        Returns:
+            32-byte hash result
+        """
+        bh = self._prepare_header(block_header)
+        input_arr = (ctypes.c_uint8 * len(bh))(*bh)
+        output_arr = (ctypes.c_uint8 * 32)()
+        
+        if self._has_hash_with_height:
+            result = self._lib.cosmic_harmony_v3_hash_with_height(
+                input_arr, len(bh), nonce, height, output_arr
+            )
+        else:
+            # Old DLL without _with_height: manually replicate the nonce XOR
+            # and call base hash. NOTE: this still uses the full (memory-hard)
+            # variant, so shares may be invalid at height < 50,000.
+            effective_nonce = nonce ^ height
+            result = self._lib.cosmic_harmony_v3_hash(
+                input_arr, len(bh), effective_nonce, output_arr
+            )
         
         if result != 0:
             raise RuntimeError(f"Hash computation failed: error code {result}")

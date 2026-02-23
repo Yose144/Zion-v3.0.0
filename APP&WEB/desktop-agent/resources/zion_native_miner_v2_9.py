@@ -153,9 +153,12 @@ except ImportError as e:
     print(f"[WARN] Cosmic Harmony v1 TURBO not available: {e}")
 
 # Import Cosmic Harmony v3 - Native Rust FFI + GPU (21+ MH/s)
+# Also try pure-Python fallback for when Defender blocks the native DLL.
 COSMIC_V3_AVAILABLE = False
+COSMIC_V3_PYTHON_AVAILABLE = False
 COSMIC_V3_GPU_AVAILABLE = False
 _cosmic_v3_native = None
+_cosmic_v3_python = None
 _cosmic_v3_gpu = None
 
 # Search paths for CH v3 modules
@@ -175,6 +178,20 @@ try:
     print(f"[OK] Cosmic Harmony v3 NATIVE loaded ({_cosmic_v3_native.cpu_count} cores)")
 except Exception as e:
     print(f"[WARN] Cosmic Harmony v3 Native not available: {e}")
+
+# Always try to load Python fallback (used when native is missing or as verification)
+try:
+    from cosmic_harmony_v3_python import CosmicHarmonyV3Python
+    _cosmic_v3_python = CosmicHarmonyV3Python()
+    COSMIC_V3_PYTHON_AVAILABLE = True
+except Exception as e:
+    print(f"[WARN] Cosmic Harmony v3 Python fallback not available: {e}")
+
+# If native failed, promote Python fallback to primary
+if not COSMIC_V3_AVAILABLE and COSMIC_V3_PYTHON_AVAILABLE:
+    _cosmic_v3_native = _cosmic_v3_python
+    COSMIC_V3_AVAILABLE = True
+    print("[OK] Cosmic Harmony v3 using PYTHON FALLBACK (Rust DLL unavailable)")
 
 try:
     from cosmic_harmony_v3_gpu import CosmicHarmonyV3GPU, GPU_AVAILABLE as CV3_GPU
@@ -235,6 +252,12 @@ class MinerConfig:
 
     # Console UI mode: "lines" (default) or "xmrig" (static dashboard).
     ui: str = "lines"
+
+    # Stream group: zion (primary mining), revenue (multi-algo), ncl (AI compute)
+    group: str = "zion"
+
+    # Fixed difficulty hint (overrides pool difficulty if set)
+    difficulty_hint: float = 0
 
 
 @dataclass
@@ -490,7 +513,7 @@ class StratumClient:
             logger.error(f"Login failed: {e}")
             return False
     
-    def authorize(self, wallet: str, worker: str, algorithm: str) -> bool:
+    def authorize(self, wallet: str, worker: str, algorithm: str, group: str = "zion") -> bool:
         """Send mining.authorize.
 
         Pool-side expects standard Stratum params:
@@ -504,9 +527,9 @@ class StratumClient:
         try:
             req_id = self.request_id
             username = f"{wallet}.{worker}" if worker else wallet
-            # Include algo in password as a fallback for older pool builds.
-            # Pool-side parser supports formats like: "x,a=randomx,d=10000".
-            password = f"x:{algorithm},a={algorithm}"
+            # Include algo and group in password for pool-side StreamScheduler.
+            # Pool parser supports formats like: "x,a=randomx,d=10000,g=revenue".
+            password = f"x:{algorithm},a={algorithm},g={group}"
 
             # Optional difficulty hint (best-effort). Helps avoid diff=1 share spam
             # if pool supports parsing d=... from password.
@@ -1858,7 +1881,7 @@ class ZionNativeMiner:
         self.hashrate_samples.clear()
         self._initialize_algorithm()
     
-    def hash_single_cpu(self, data: bytes, nonce: int) -> bytes:
+    def hash_single_cpu(self, data: bytes, nonce: int, height: int = 0) -> bytes:
         """Compute single hash on CPU"""
         algo = self.config.algorithm
         
@@ -1914,14 +1937,25 @@ class ZionNativeMiner:
         elif algo == Algorithm.COSMIC_HARMONY_V3:
             if not hasattr(self, "_hash_impl_logged"):
                 self._hash_impl_logged = set()
-            # Cosmic Harmony v3: Native Rust FFI (163 kH/s batch) or GPU (21+ MH/s)
+            # Cosmic Harmony v3: Height-aware hash (legacy < 50k, memory-hard >= 50k)
             if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
                 if "cosmic_harmony_v3" not in self._hash_impl_logged:
-                    logger.info("⚙️  Cosmic Harmony v3: Native Rust FFI (~163 kH/s batch)")
+                    is_python_fb = COSMIC_V3_PYTHON_AVAILABLE and (_cosmic_v3_native is _cosmic_v3_python)
+                    if is_python_fb:
+                        backend_name = f"Python fallback ({_cosmic_v3_python.backend})"
+                    else:
+                        backend_name = "Native Rust FFI (~163 kH/s batch)"
+                    logger.info(f"⚙️  Cosmic Harmony v3: {backend_name}")
                     self._hash_impl_logged.add("cosmic_harmony_v3")
-                return _cosmic_v3_native.hash(data, nonce)
+                # CRITICAL: Use hash_with_height to select correct pipeline variant.
+                # Without this, the miner uses the memory-hard variant at all heights,
+                # producing wrong hashes for heights below 50,000, resulting in 0 shares.
+                if hasattr(_cosmic_v3_native, 'hash_with_height'):
+                    return _cosmic_v3_native.hash_with_height(data, nonce, height)
+                else:
+                    return _cosmic_v3_native.hash(data, nonce)
             else:
-                raise RuntimeError("Cosmic Harmony v3 native library not available. Build with: cd 2.9.5/zion-cosmic-harmony-v3 && cargo build --release --features parallel")
+                raise RuntimeError("Cosmic Harmony v3 not available. Install pycryptodome for Python fallback, or build the Rust library.")
         
         elif algo == Algorithm.RANDOMX:
             lib = self.loader.libs['randomx']
@@ -2203,9 +2237,19 @@ class ZionNativeMiner:
         print(f"   Pool: {self.config.pool_host}:{self.config.pool_port}")
         print(f"   Wallet: {self.config.wallet_address}")
         print(f"   Algorithm: {self.config.algorithm.value}")
+        print(f"   Group: {self.config.group}")
         if self.config.stats_interval:
             stats_path = self.config.stats_file or "(disabled)"
             print(f"   Stats: every {float(self.config.stats_interval):g}s -> {stats_path}")
+
+        # Log revenue env vars (set by desktop-agent main.js)
+        rev_enabled = os.getenv("ZION_REVENUE_ENABLED", "")
+        rev_alloc = os.getenv("ZION_REVENUE_ALLOCATION", "")
+        rev_coin = os.getenv("ZION_REVENUE_CPU_COIN", "")
+        ncl_enabled = os.getenv("ZION_ENABLE_NCL", "")
+        if rev_enabled:
+            print(f"   Revenue: enabled={rev_enabled} alloc={rev_alloc} coin={rev_coin} ncl={ncl_enabled}")
+
         print("   Stop : Ctrl+C")
         print()
 
@@ -2266,6 +2310,7 @@ class ZionNativeMiner:
                     self.config.wallet_address or "test_wallet",
                     self.config.worker_name,
                     self.config.algorithm.value,
+                    group=self.config.group,
                 ):
                     try:
                         s.disconnect()
@@ -2464,6 +2509,11 @@ class ZionNativeMiner:
             cpu_hashes = 0
             gpu_hashes = 0
             chv3_gpu_verify_mismatches = 0
+            try:
+                chv3_gpu_mismatch_limit = max(1, int(os.getenv("ZION_CHV3_GPU_MISMATCH_LIMIT", "3")))
+            except Exception:
+                chv3_gpu_mismatch_limit = 3
+            chv3_gpu_disabled_due_to_mismatch = False
 
             def _alloc_nonces(count: int) -> int:
                 nonlocal nonce_cursor
@@ -2526,21 +2576,10 @@ class ZionNativeMiner:
 
                     # IMPORTANT: Pool-side Cosmic Harmony validation compares only the
                     # first 4 bytes (state0) against a 32-bit job target.
-                    # Prefer explicit pool `target` if present; fallback to difficulty.
+                    # Always derive from difficulty for reliability. Pool's `target`
+                    # field format varies and incorrect parsing causes 0 shares.
                     if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
-                        target_cosmic32 = None
-                        try:
-                            if pool_target_raw:
-                                target_hex = str(pool_target_raw).strip().lower()
-                                if target_hex.startswith("0x"):
-                                    target_hex = target_hex[2:]
-                                if len(target_hex) >= 8:
-                                    target_cosmic32 = int(target_hex[:8], 16)
-                        except Exception:
-                            target_cosmic32 = None
-
-                        if target_cosmic32 is None:
-                            target_cosmic32 = (target_256 >> 224) if target_256 is not None else None
+                        target_cosmic32 = max(1, int(((1 << 32) - 1) // max(1, difficulty)))
                     else:
                         target_cosmic32 = None
 
@@ -2622,6 +2661,7 @@ class ZionNativeMiner:
                     target_256 = snap["target_256"]
                     target_cosmic32 = snap.get("target_cosmic32")
                     version = snap["version"]
+                    job_height = int(snap.get("height") or 0)
 
                     # Prepare per-job reusable input buffer.
                     # For non-Cosmic algos, nonce is at byte offset 38..41.
@@ -2649,7 +2689,7 @@ class ZionNativeMiner:
                         nonce = start + i
                         if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
                             try:
-                                result_hash = self.hash_single_cpu(blob_bytes, nonce)
+                                result_hash = self.hash_single_cpu(blob_bytes, nonce, height=job_height)
                             except Exception as e:
                                 err_count += 1
                                 now_err = time.perf_counter()
@@ -2753,6 +2793,7 @@ class ZionNativeMiner:
             def _gpu_worker():
                 nonlocal gpu_hashes
                 nonlocal chv3_gpu_verify_mismatches
+                nonlocal chv3_gpu_disabled_due_to_mismatch
                 while not stop_event.is_set():
                     if not gpu_enabled.is_set() or pause_event.is_set():
                         time.sleep(0.1)
@@ -2771,6 +2812,7 @@ class ZionNativeMiner:
                     target_256 = snap["target_256"]
                     target_cosmic32 = snap.get("target_cosmic32")
                     version = snap["version"]
+                    job_height = int(snap.get("height") or 0)
 
                     batch_size = min(int(self.config.gpu_batch_size), 50_000)
                     nonce_start = _alloc_nonces(batch_size)
@@ -2809,13 +2851,27 @@ class ZionNativeMiner:
                             # verified hash. This protects against GPU-kernel drift.
                             if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
                                 try:
-                                    verified_hash = _cosmic_v3_native.hash(blob_bytes, int(nonce))
+                                    if hasattr(_cosmic_v3_native, 'hash_with_height'):
+                                        verified_hash = _cosmic_v3_native.hash_with_height(blob_bytes, int(nonce), job_height)
+                                    else:
+                                        verified_hash = _cosmic_v3_native.hash(blob_bytes, int(nonce))
                                     if verified_hash != result_hash:
                                         chv3_gpu_verify_mismatches += 1
                                         if chv3_gpu_verify_mismatches <= 3 or (chv3_gpu_verify_mismatches % 50) == 0:
                                             logger.warning(
-                                                f"⚠️ CHv3 GPU/native hash mismatch for nonce {int(nonce):08x} "
+                                                f"⚠️ CHv3 GPU/native hash mismatch for nonce 0x{int(nonce):016x} "
                                                 f"(count={chv3_gpu_verify_mismatches})"
+                                            )
+                                        if (
+                                            not chv3_gpu_disabled_due_to_mismatch
+                                            and chv3_gpu_verify_mismatches >= chv3_gpu_mismatch_limit
+                                        ):
+                                            chv3_gpu_disabled_due_to_mismatch = True
+                                            gpu_enabled.clear()
+                                            logger.error(
+                                                "❌ CHv3 GPU auto-disabled: repeated GPU/native hash mismatches "
+                                                f"(count={chv3_gpu_verify_mismatches}, limit={chv3_gpu_mismatch_limit}). "
+                                                "Continuing in CPU-only mode."
                                             )
                                     result_hash = verified_hash
                                 except Exception as e:
@@ -3213,6 +3269,10 @@ def main():
                        help="Optional path to write JSON stats (e.g., data/miner_stats.json)")
     parser.add_argument("--ui", choices=["lines", "xmrig"], default="lines",
                        help="Console UI mode: lines (default) or xmrig (static dashboard)")
+    parser.add_argument("--group", "-g", default="zion",
+                       help="Stream group: zion (primary), revenue (multi-algo), ncl (AI compute)")
+    parser.add_argument("--difficulty", type=float, default=None,
+                       help="Fixed difficulty hint (overrides pool difficulty)")
     
     args = parser.parse_args()
 
@@ -3272,6 +3332,8 @@ def main():
         stats_interval=float(args.stats_interval or 10.0),
         stats_file=args.stats_file or "",
         ui=str(args.ui or "lines"),
+        group=str(args.group or "zion"),
+        difficulty_hint=float(args.difficulty or 0),
     )
     
     try:
