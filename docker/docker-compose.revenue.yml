@@ -197,7 +197,7 @@ services:
       - "30001-30005:30001-30005"
     volumes:
       - zion-nkn-data:/nkn/data
-    command: nknd -p "" --no-nat
+    command: nknd --password-file /nkn/data/wallet.pswd --no-nat
     networks:
       - revenue-net
     labels:
