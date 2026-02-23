@@ -522,6 +522,11 @@ function switchView(view) {
   // Initialize bridge view when opened
   if (view === 'bridge') initBridgeView();
 
+  // Refresh network data only when user opens Network view
+  if (view === 'network') {
+    void refreshServerStatus();
+  }
+
   // Auto-fetch balance when wallet view is opened (if address is configured)
   if (view === 'wallet') {
     setTimeout(() => {
@@ -542,10 +547,11 @@ function _startBalanceAutoRefresh() {
   _stopBalanceAutoRefresh();
   _balanceAutoRefreshTimer = setInterval(() => {
     if (currentView !== 'wallet') { _stopBalanceAutoRefresh(); return; }
+    if (document.hidden) return;
     const refreshBtn = document.getElementById('refresh-balance-btn');
     const addr = (config?.wallet || '').trim();
     if (refreshBtn && addr) refreshBtn.click();
-  }, 30000); // 30s interval
+  }, 45000); // 45s interval
 }
 function _stopBalanceAutoRefresh() {
   if (_balanceAutoRefreshTimer) { clearInterval(_balanceAutoRefreshTimer); _balanceAutoRefreshTimer = null; }
@@ -625,7 +631,7 @@ function setupControls() {
     }
     renderHashrateUnitLabel();
     // Force redraw with current stats (if present)
-    window.electronAPI.getStats().then(updateStats).catch(() => {});
+    window.electronAPI.getStats().then(scheduleStatsUpdate).catch(() => {});
   };
 
   if (hashrateUnitEl) {
@@ -1337,6 +1343,7 @@ function setupEventListeners() {
   });
   
   window.electronAPI.onStatsUpdate((stats) => {
+    _lastIpcStatsAt = Date.now();
     scheduleStatsUpdate(stats);
   });
 }
@@ -1549,6 +1556,18 @@ let _lastStatsSignature = null;
 let _lastIsRunning = null;
 let _pendingStats = null;
 let _statsRafId = null;
+let _lastIpcStatsAt = 0;
+
+const STATS_POLL_VISIBLE_MS = 6000;
+const STATS_POLL_VISIBLE_IPC_ACTIVE_MS = 12000;
+const STATS_POLL_HIDDEN_MS = 15000;
+
+function computeStatsPollDelay() {
+  if (document.hidden) return STATS_POLL_HIDDEN_MS;
+  const now = Date.now();
+  const ipcFresh = _lastIpcStatsAt > 0 && (now - _lastIpcStatsAt) < 5000;
+  return ipcFresh ? STATS_POLL_VISIBLE_IPC_ACTIVE_MS : STATS_POLL_VISIBLE_MS;
+}
 
 function buildStatsSignature(stats) {
   if (!stats) return '';
@@ -1600,7 +1619,13 @@ function scheduleStatsUpdate(stats) {
 
 async function pollStats() {
   if (_pollInFlight) {
-    setTimeout(pollStats, document.hidden ? 8000 : 3000);
+    setTimeout(pollStats, computeStatsPollDelay());
+    return;
+  }
+
+  // If push updates are flowing, avoid redundant IPC invoke polling.
+  if (!document.hidden && _lastIpcStatsAt > 0 && (Date.now() - _lastIpcStatsAt) < 2500) {
+    setTimeout(pollStats, computeStatsPollDelay());
     return;
   }
 
@@ -1610,8 +1635,7 @@ async function pollStats() {
     scheduleStatsUpdate(stats);
   } finally {
     _pollInFlight = false;
-    // Poll every 3 seconds (8 seconds when app is hidden)
-    setTimeout(pollStats, document.hidden ? 8000 : 3000);
+    setTimeout(pollStats, computeStatsPollDelay());
   }
 }
 
@@ -2130,6 +2154,10 @@ let ch3GpuInfo = null;
 let ch3ServerStatus = [];
 let ch3ServerPollInterval = null;
 
+function shouldRunNetworkPolling() {
+  return currentView === 'network' && !document.hidden;
+}
+
 async function initCH3Features() {
   try {
     // GPU Detection
@@ -2297,10 +2325,11 @@ async function refreshServerStatus() {
   } catch (err) {
     console.error('Server status refresh failed:', err);
   }
-  // Also refresh network metrics
-  await refreshNetworkMetrics();
-  // Also refresh peer list
-  await refreshPeerList();
+  // Heavier network telemetry only when Network tab is visible.
+  if (shouldRunNetworkPolling()) {
+    await refreshNetworkMetrics();
+    await refreshPeerList();
+  }
 }
 
 // ── Network Telemetry (lite) ───────────────────────────────────────
@@ -2313,6 +2342,7 @@ function formatHashrateLite(h) {
 }
 
 async function refreshNetworkMetrics() {
+  if (!shouldRunNetworkPolling()) return;
   try {
     if (typeof window.electronAPI.getNetworkMetrics !== 'function') {
       dbg('[NET-METRICS] getNetworkMetrics not available');
@@ -2401,6 +2431,7 @@ async function refreshNetworkMetrics() {
 
 // ── P2P Peer Discovery Panel ───────────────────────────────────────
 async function refreshPeerList() {
+  if (!shouldRunNetworkPolling()) return;
   try {
     if (typeof window.electronAPI.getPeerList !== 'function') {
       dbg('[PEERS] getPeerList not available');
@@ -2489,9 +2520,17 @@ async function refreshPeerList() {
     refreshBtn.addEventListener('click', () => refreshPeerList());
   }
   // Auto-refresh every 15s
-  setInterval(refreshPeerList, 15000);
+  setInterval(() => {
+    if (shouldRunNetworkPolling()) {
+      void refreshPeerList();
+    }
+  }, 15000);
   // Initial fetch after 2s
-  setTimeout(refreshPeerList, 2000);
+  setTimeout(() => {
+    if (currentView === 'network') {
+      void refreshPeerList();
+    }
+  }, 2000);
 })();
 
 function renderServerGrid(servers) {

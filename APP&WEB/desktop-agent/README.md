@@ -254,6 +254,27 @@ set CSC_IDENTITY_AUTO_DISCOVERY=false
 npm run build:win
 ```
 
+### Issue: "Windows Defender / SmartScreen blocks app"
+
+This is typically reputation/signing related, not runtime malware behavior.
+
+**Recommended production flow (Windows):**
+```bash
+# Build installer target (lower heuristic risk than portable EXE)
+npm run build:win:nsis
+```
+
+**Release checklist (important):**
+1. Sign binaries with EV/OV certificate (`CSC_LINK` + `CSC_KEY_PASSWORD`).
+2. Keep stable `publisher` + `productName` across releases (build reputation).
+3. Prefer `nsis` installer for public distribution; keep `portable` only for internal debug.
+4. Publish SHA256 checksums for every release artifact.
+5. Submit blocked artifacts to Microsoft false-positive portal for reclassification.
+
+**For internal/dev machines only:**
+- Add Defender exclusion for the build output folder (`dist/`) instead of disabling Defender globally.
+- Avoid running unsigned binaries directly from temp folders or network shares.
+
 ---
 
 ## 📚 Advanced Usage
