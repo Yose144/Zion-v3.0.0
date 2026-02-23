@@ -19,7 +19,10 @@
 //! lib.cosmic_harmony_v3_hash.restype = ctypes.c_int
 //! ```
 
-use crate::algorithms_opt::{cosmic_harmony_v3, cosmic_harmony_v3_batch, Hash32};
+use crate::algorithms_opt::{
+    cosmic_harmony_v3, cosmic_harmony_v3_batch,
+    cosmic_harmony_v3_with_height, Hash32,
+};
 use std::slice;
 
 /// Version of the FFI interface
@@ -113,8 +116,10 @@ pub unsafe extern "C" fn cosmic_harmony_v3_hash_with_height(
     // reducing search space from 2^64 to 2^32.
     let effective_nonce = nonce ^ height;
 
-    // Compute hash with effective nonce
-    let result = cosmic_harmony_v3(input, effective_nonce);
+    // FIX: Use height-aware selector so legacy path is used below fork height.
+    // Previously this always called cosmic_harmony_v3() (memory-hard), which was wrong
+    // for heights below CHV3_MEMORY_HARD_FORK_HEIGHT (50,000).
+    let result = cosmic_harmony_v3_with_height(input, effective_nonce, height);
 
     // Copy result to output
     let output = slice::from_raw_parts_mut(output_ptr, 32);

@@ -1495,5 +1495,55 @@ Binary nasazen do `zion-pool` kontejneru. ERG miner po restartu: subscribe ✅, 
 
 ---
 
+## Session 33 — CHv3 root-cause fix + Python fallback + CH3 revenue wiring (23. února 2026)
+
+**Datum:** 23. února 2026  
+**Rozsah:** Desktop Agent + CHv3 FFI + miner fallback + revenue UX/wiring
+
+### Root cause (0 shares) — finální diagnóza
+
+- Pool na výšce ~4.4k validuje **legacy CHv3** (bez memory-hard scratchpadu).
+- FFI cesta v mineru ale používala pro hashování cestu, která v praxi vedla na memory-hard variantu.
+- Výsledek: hash nesouhlasil s pool validátorem + výkon spadl o řády níž → `sent 0`, `A/R 0/0`.
+
+### Opravy CHv3
+
+| Soubor | Oprava |
+|--------|--------|
+| `L1/cosmic-harmony/src/ffi.rs` | `cosmic_harmony_v3_hash_with_height()` nyní volá `cosmic_harmony_v3_with_height()` (height-aware selector) |
+| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_native.py` | Přidáno `hash_with_height()` + detekce `cosmic_harmony_v3_hash_with_height` |
+| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v3_python.py` | Nový pure-Python fallback (Keccak-256 → SHA3-512 → Golden Matrix → Cosmic Fusion) |
+| `APP&WEB/desktop-agent/resources/zion_native_miner_v2_9.py` | CPU/GPU verify používá height-aware hash; fallback na Python při blokaci DLL |
+
+### Miner stabilita
+
+- `target_cosmic32` sjednocen na `((2^32 - 1) / difficulty)` (odstraněna nekonzistentní parser logika pool targetu).
+- Rust DLL přebuilděna a nasazena do desktop-agent resources:
+  - `target/release/zion_cosmic_harmony_v3.dll` → `APP&WEB/desktop-agent/resources/mining/zion_cosmic_harmony_v3.dll`
+
+### CH3 Revenue systém — desktop-agent wiring dokončen
+
+| Oblast | Stav |
+|--------|------|
+| 3-way split (50/25/25) | ✅ Implementováno: ZION / REV / NCL thread split |
+| Python miner stream group | ✅ Přidáno `--group` + `g=<group>` v Stratum authorize password |
+| Python revenue spawn | ✅ Revenue process spawn funguje i pro Python backend |
+| Revenue UI dashboard | ✅ Přidán live badge se splitem threadů + alokací |
+| Revenue config model | ✅ Sjednocen `DEFAULT_REVENUE_PROFILE` mezi main.js a renderer.js |
+
+### Validace
+
+- `cargo build --release --features parallel` (cosmic-harmony) ✅
+- `python -m py_compile` (upravené Python soubory) ✅
+- `node --check` (`main.js`, `renderer.js`) ✅
+- `get_errors` pro `index.html`, `main.js`, `renderer.js` ✅ bez nových chyb
+
+### Poznámka k runtime verifikaci
+
+- Změny jsou build/syntax validované.
+- Finální runtime KPI (`sent > 0`, `A/R`, dlouhodobá stabilita) vyžaduje běh mineru proti live poolu po delší interval.
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*
