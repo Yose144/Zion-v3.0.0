@@ -5284,18 +5284,24 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     };
 
     const baseRpcUrl = normalizeRpcUrl(rpcUrl);
-    const rpcPort = (() => {
+    const parsedBase = (() => {
       try {
-        const parsed = new URL(baseRpcUrl);
-        return parsed.port || '8444';
+        return new URL(baseRpcUrl);
       } catch {
-        return '8444';
+        return null;
       }
     })();
+    const baseHost = parsedBase?.hostname || '';
+    const baseProtocol = parsedBase?.protocol || 'http:';
+    const basePort = parsedBase?.port || '8444';
+
+    const canonicalRpcCandidates = TESTNET_SERVERS.map((s) => `http://${s.host}:8444/jsonrpc`);
 
     const rpcCandidates = [
       baseRpcUrl,
-      ...TESTNET_SERVERS.map(s => `http://${s.host}:${rpcPort}/jsonrpc`)
+      baseHost ? `${baseProtocol}//${baseHost}:8444/jsonrpc` : '',
+      ...TESTNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
+      ...canonicalRpcCandidates
     ].filter(Boolean);
 
     const seenRpc = new Set();
@@ -5308,9 +5314,11 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     let result = null;
     let rpcSource = '';
     let lastRpcError = '';
+    const rpcTried = [];
 
     for (const candidateUrl of uniqueRpcCandidates) {
       try {
+        rpcTried.push(candidateUrl);
         const rpcRes = await zionRpcCall(candidateUrl, 'getbalance', { address: addr });
         result = rpcRes;
         rpcSource = candidateUrl;
@@ -5321,7 +5329,11 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     }
 
     if (!result) {
-      return { success: false, error: `RPC unavailable: ${lastRpcError || 'no reachable endpoint'}` };
+      return {
+        success: false,
+        error: `RPC unavailable: ${lastRpcError || 'no reachable endpoint'}`,
+        rpc_tried: rpcTried
+      };
     }
     if (result?.error) return { success: false, error: result.error };
 
@@ -5418,6 +5430,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       pool_source:         poolSource,
       pool_source_host:    poolSourceHost,
       rpc_source:          rpcSource,
+      rpc_tried:           rpcTried,
       address: result?.address ?? addr
     };
   } catch (error) {
