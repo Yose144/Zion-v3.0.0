@@ -14,6 +14,87 @@ const QRCode = require('qrcode');
 const DBG = process.env.ZION_DEBUG === '1';
 function dbg(...args) { if (DBG) console.debug('[DBG]', ...args); }
 
+const fileAppendState = new Map();
+const fileRotateLastCheckMs = new Map();
+
+function maybeRotateFileThrottled(filePath, maxBytes, maxBackups, maxAgeMs, minCheckIntervalMs = 5000) {
+  try {
+    const now = Date.now();
+    const last = Number(fileRotateLastCheckMs.get(filePath) || 0);
+    if (now - last < minCheckIntervalMs) return;
+    fileRotateLastCheckMs.set(filePath, now);
+    rotateFileIfTooLarge(filePath, maxBytes, maxBackups, maxAgeMs);
+  } catch {
+    // ignore
+  }
+}
+
+function appendToFileBuffered(filePath, text, options = {}) {
+  try {
+    if (!filePath || !text) return;
+    const flushDelayMs = Number(options.flushDelayMs) > 0 ? Number(options.flushDelayMs) : 180;
+    const maxBufferedChars = Number(options.maxBufferedChars) > 0 ? Number(options.maxBufferedChars) : 256 * 1024;
+
+    if (options.rotate) {
+      maybeRotateFileThrottled(
+        filePath,
+        Number(options.rotate.maxBytes) || 0,
+        Number(options.rotate.maxBackups) || 0,
+        Number(options.rotate.maxAgeMs) || 0,
+        Number(options.rotate.minCheckIntervalMs) || 5000
+      );
+    }
+
+    let state = fileAppendState.get(filePath);
+    if (!state) {
+      state = { buffer: '', timer: null };
+      fileAppendState.set(filePath, state);
+    }
+
+    state.buffer += String(text);
+    if (state.buffer.length > maxBufferedChars) {
+      state.buffer = state.buffer.slice(-maxBufferedChars);
+    }
+
+    if (state.timer) return;
+    state.timer = setTimeout(() => {
+      try {
+        const payload = state.buffer;
+        state.buffer = '';
+        state.timer = null;
+        if (!payload) return;
+        fs.appendFile(filePath, payload, () => {});
+      } catch {
+        // ignore
+      }
+    }, flushDelayMs);
+  } catch {
+    // ignore
+  }
+}
+
+function flushBufferedFileAppendsSync() {
+  try {
+    for (const [filePath, state] of fileAppendState.entries()) {
+      try {
+        if (state?.timer) {
+          clearTimeout(state.timer);
+          state.timer = null;
+        }
+        const payload = String(state?.buffer || '');
+        state.buffer = '';
+        if (payload) {
+          fs.appendFileSync(filePath, payload);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 process.on('uncaughtException', (err) => {
   try {
     const msg = err?.stack || err?.message || String(err);
@@ -91,12 +172,15 @@ function logApp(message, extra) {
     // Keep desktop agent log bounded as well (this file can grow very large otherwise).
     // Use the same age rule (1 day) and a smaller size cap.
     try {
-      rotateFileIfTooLarge(appLogPath, 10 * 1024 * 1024, 0, 24 * 60 * 60 * 1000);
+      maybeRotateFileThrottled(appLogPath, 10 * 1024 * 1024, 0, 24 * 60 * 60 * 1000, 10000);
     } catch {
       // ignore
     }
 
-    fs.appendFileSync(appLogPath, line);
+    appendToFileBuffered(appLogPath, line, {
+      flushDelayMs: 220,
+      maxBufferedChars: 128 * 1024
+    });
   } catch {
     // ignore logging failures
   }
@@ -539,13 +623,16 @@ function emitMinerStatusLine(reason) {
       // ignore
     }
 
-    // File log
-    try {
-      rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
-      fs.appendFileSync(LOG_PATH, line);
-    } catch {
-      // ignore
-    }
+    appendToFileBuffered(LOG_PATH, line, {
+      flushDelayMs: 140,
+      maxBufferedChars: 256 * 1024,
+      rotate: {
+        maxBytes: MAX_MINER_LOG_BYTES,
+        maxBackups: MAX_MINER_LOG_BACKUPS,
+        maxAgeMs: MAX_MINER_LOG_AGE_MS,
+        minCheckIntervalMs: 5000
+      }
+    });
   } catch {
     // ignore
   }
@@ -2303,12 +2390,16 @@ function startMining(config) {
       });
 
       // Also persist to miner.log (useful for support/debug and for tests).
-      try {
-        rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
-        fs.appendFileSync(LOG_PATH, cpuLine);
-      } catch {
-        // ignore
-      }
+      appendToFileBuffered(LOG_PATH, cpuLine, {
+        flushDelayMs: 140,
+        maxBufferedChars: 256 * 1024,
+        rotate: {
+          maxBytes: MAX_MINER_LOG_BYTES,
+          maxBackups: MAX_MINER_LOG_BACKUPS,
+          maxAgeMs: MAX_MINER_LOG_AGE_MS,
+          minCheckIntervalMs: 5000
+        }
+      });
     } catch {
       // ignore
     }
@@ -4357,10 +4448,21 @@ function parseMinerOutput(output) {
   scheduleStatsEmit();
 }
 
+function sendToRendererNow(channel, data) {
+  if (!mainWindow || !mainWindow.webContents) return;
+  if (mainWindow.isDestroyed && mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send(channel, data);
+}
+
 function sendToRenderer(channel, data) {
-  if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.send(channel, data);
+  // Queue noisy miner logs to avoid flooding renderer IPC.
+  if (channel === 'miner-output') {
+    const stream = data?.stream === 'stderr' ? 'stderr' : 'stdout';
+    const text = String(data?.text || '');
+    if (text) enqueueMinerOutputToRenderer(stream, text);
+    return;
   }
+  sendToRendererNow(channel, data);
 }
 
 let statsEmitTimer = null;
@@ -4398,7 +4500,7 @@ function flushMinerOutputToRenderer() {
 
     if (out) {
       try {
-        sendToRenderer('miner-output', { stream: 'stdout', text: out });
+        sendToRendererNow('miner-output', { stream: 'stdout', text: out });
       } catch {
         // ignore
       }
@@ -4406,7 +4508,7 @@ function flushMinerOutputToRenderer() {
 
     if (err) {
       try {
-        sendToRenderer('miner-output', { stream: 'stderr', text: err });
+        sendToRendererNow('miner-output', { stream: 'stderr', text: err });
       } catch {
         // ignore
       }
@@ -5630,6 +5732,8 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   app.isQuitting = true;
+  flushMinerOutputToRenderer();
+  flushBufferedFileAppendsSync();
   stopMining();
   void stopAfterburnerService();
   void stopAiNativeService();
