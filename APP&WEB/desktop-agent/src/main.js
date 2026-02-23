@@ -780,7 +780,7 @@ const DEFAULT_CONFIG = {
     port: 3333
   },
   // ZION chain JSON-RPC endpoint (native core)
-  rpcUrl: 'http://149.248.8.4:8444/jsonrpc',
+  rpcUrl: 'http://77.42.31.72:8444/jsonrpc',
   // Mining algorithm — Mainnet Phase 1: Cosmic Harmony v3 only
   // Rust miner CLI accepts 'cosmic_harmony' which internally runs CH v3 engine
   algorithm: 'cosmic_harmony_v3',
@@ -4777,17 +4777,25 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     const balanceAtomic = result?.balance_atomic ?? 0;
     const utxoCount = result?.utxo_count ?? 0;
 
-    // Also fetch pool mined balance (pending + total_paid) from all pool servers
+    // Fetch pool mined balance — query servers with pool API (port 8080)
+    // All nodes share the same Redis so we use max() to avoid double-counting.
+    // Short 3s timeout; pool API servers listed first for priority.
+    const POOL_API_SERVERS = TESTNET_SERVERS.filter(s =>
+      ['helsinki', 'losangeles', 'sydney', 'germany'].includes(s.id)
+    );
     let poolPending = 0;
     let poolPaid = 0;
     let poolShares = 0;
     let poolBlocks = 0;
+    let poolHashrate1h = 0;
+    let poolHashrate24h = 0;
+    let poolLastShare = 0;
     try {
       const poolResults = await Promise.all(
-        TESTNET_SERVERS.map(async (srv) => {
+        POOL_API_SERVERS.map(async (srv) => {
           try {
             const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 5000);
+            const timer = setTimeout(() => ctrl.abort(), 3000);
             const res = await fetch(`http://${srv.host}:8080/api/v1/miner/${addr}/stats`, {
               signal: ctrl.signal
             });
@@ -4797,14 +4805,17 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
           } catch { return null; }
         })
       );
-      // Use max (not sum) since both servers may share the same Redis
+      // Use max() — all pool nodes share Redis, summing would inflate values.
       for (const pr of poolResults) {
         const s = pr?.stats || pr;
         if (!s) continue;
-        poolPending = Math.max(poolPending, Number(s.pending_balance) || 0);
-        poolPaid = Math.max(poolPaid, Number(s.total_paid) || 0);
-        poolShares += Number(s.valid_shares) || 0;
-        poolBlocks = Math.max(poolBlocks, Number(s.blocks_found) || 0);
+        poolPending  = Math.max(poolPending,    Number(s.pending_balance) || 0);
+        poolPaid     = Math.max(poolPaid,        Number(s.total_paid)      || 0);
+        poolShares   = Math.max(poolShares,      Number(s.valid_shares)    || 0);
+        poolBlocks   = Math.max(poolBlocks,      Number(s.blocks_found)    || 0);
+        poolHashrate1h  = Math.max(poolHashrate1h,  Number(s.hashrate_1h)  || 0);
+        poolHashrate24h = Math.max(poolHashrate24h, Number(s.hashrate_24h) || 0);
+        poolLastShare   = Math.max(poolLastShare,   Number(s.last_share_time) || 0);
       }
     } catch { /* ignore pool fetch errors */ }
 
@@ -4813,13 +4824,16 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       balance: balanceZion,
       balance_atomic: balanceAtomic,
       utxo_count: utxoCount,
-      // Pool mining balance (in atomic units → convert to ZION)
-      pool_pending: poolPending / 1_000_000,
+      // Pool mining balance (pool stores atomic units, 1 ZION = 1_000_000 atomic)
+      pool_pending:        poolPending  / 1_000_000,
       pool_pending_atomic: poolPending,
-      pool_paid: poolPaid / 1_000_000,
-      pool_paid_atomic: poolPaid,
-      pool_shares: poolShares,
-      pool_blocks: poolBlocks,
+      pool_paid:           poolPaid     / 1_000_000,
+      pool_paid_atomic:    poolPaid,
+      pool_shares:         poolShares,
+      pool_blocks:         poolBlocks,
+      pool_hashrate_1h:    poolHashrate1h,
+      pool_hashrate_24h:   poolHashrate24h,
+      pool_last_share:     poolLastShare,   // unix timestamp (seconds)
       address: result?.address ?? addr
     };
   } catch (error) {

@@ -485,6 +485,14 @@ function switchView(view) {
 
   // Initialize bridge view when opened
   if (view === 'bridge') initBridgeView();
+
+  // Auto-fetch balance when wallet view is opened (if address is configured)
+  if (view === 'wallet') {
+    setTimeout(() => {
+      const refreshBtn = document.getElementById('refresh-balance-btn');
+      if (refreshBtn && (config?.wallet || '').trim()) refreshBtn.click();
+    }, 300);
+  }
 }
 
 // Control setup
@@ -1740,15 +1748,34 @@ function setupWalletControls() {
     }
 
     if (walletBalanceEl) walletBalanceEl.textContent = Number(result.balance ?? 0).toFixed(6);
+    // UTXO count
+    const utxoEl = document.getElementById('wallet-utxo-count');
+    if (utxoEl) utxoEl.textContent = Number(result.utxo_count ?? 0).toLocaleString();
     // Pool stats
     const poolPendingEl = document.getElementById('pool-pending-balance');
     const poolPaidEl = document.getElementById('pool-paid-balance');
     const poolSharesEl = document.getElementById('pool-shares-count');
     const poolBlocksEl = document.getElementById('pool-blocks-count');
+    const poolHashrateEl = document.getElementById('pool-hashrate-1h');
+    const poolLastShareEl = document.getElementById('pool-last-share');
     if (poolPendingEl) poolPendingEl.textContent = Number(result.pool_pending ?? 0).toFixed(4) + ' ZION';
     if (poolPaidEl) poolPaidEl.textContent = Number(result.pool_paid ?? 0).toFixed(4) + ' ZION';
     if (poolSharesEl) poolSharesEl.textContent = Number(result.pool_shares ?? 0).toLocaleString();
     if (poolBlocksEl) poolBlocksEl.textContent = Number(result.pool_blocks ?? 0).toLocaleString();
+    // Format hashrate (H/s → kH/s → MH/s)
+    const hr = Number(result.pool_hashrate_1h ?? 0);
+    if (poolHashrateEl) {
+      poolHashrateEl.textContent = hr >= 1e6 ? (hr / 1e6).toFixed(2) + ' MH/s'
+        : hr >= 1e3 ? (hr / 1e3).toFixed(1) + ' kH/s'
+        : hr.toFixed(0) + ' H/s';
+    }
+    // Format last share timestamp
+    if (poolLastShareEl) {
+      const ts = Number(result.pool_last_share ?? 0);
+      poolLastShareEl.textContent = ts > 0
+        ? new Date(ts * 1000).toLocaleTimeString()
+        : 'never';
+    }
     if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}`;
   });
 
