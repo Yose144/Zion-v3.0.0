@@ -1,6 +1,6 @@
 # 📊 ZION TerraNova — Project Report
 
-> **Datum:** 22. února 2026  
+> **Datum:** 23. února 2026  
 > **Verze:** v2.9.6 "On the Star"  
 > **MainNet cíl:** 31. prosince 2026
 
@@ -632,6 +632,104 @@ cargo check -p zion-pool: Finished 3.53s ✅ (0 errors, 1 future-incompat warnin
 3. **Dockerfile.miner chyběl** na SeedDE — scp opraven
 4. **RandomX FULL na 2GB serverech** — smyčka alokace 2GB datasetu, opraveno `RANDOMX_FULL=0` (light mode)
 5. **Asia3 má jen 1 vCPU** — `--cpus 0.9` místo 1.5
+
+---
+
+---
+
+## Session 25 — Balance E2E fix + Core sendtransaction UTXO settlement (23.2.2026)
+
+**Datum:** 23. února 2026  
+**Commity:** `479d638` (desktop agent), `4781c11` (core UTXO fix), `d270830` (float division fix)  
+**Deploy:** `zion-core:2.9.6-fix2` nasazeno na Helsinki
+
+### Problém: Pool payout nepříchází na onchain balance
+
+**Příznaky:**
+- Agent peněženka `zion1l6qc82s2r9cnw8ckwj0wgjtcllee5ylwl6qc82s` — pool statistiky: `blocks_found: 1105`, `total_paid: 1 322 782 829 053 atomic` (~1 322 kZION)
+- Přesto: `getbalance` → `balance_atomic: 0`, `utxo_count: 0`
+- Pool log potvrdil: payout TX `915ddcf5…` (84 ZION) a `23257bed…` (116 ZION) byly odeslány
+
+**Root cause: `getBlockTemplate` ignoruje mempool**
+
+```rust
+// L1/core — PŘED opravou:
+let merkle_root = Block::calculate_merkle_root(&[coinbase]);
+// → mempool TX nikdy nezařazeny do bloku → UTXO nikdy indexováno → balance = 0 navždy
+```
+
+Pool payout TX přišly do mempoolu přes `sendtransaction`, ale `getBlockTemplate` sestavoval bloky **výhradně s coinbase TX**. Mempool TX čekaly navždy, UTXOs nikdy nezapsány, balance zůstalo 0.
+
+### Oprava: sendtransaction přímý UTXO settlement (commit `4781c11`)
+
+**Soubor:** `L1/core/src/jsonrpc/mod.rs` — handler `sendtransaction`
+
+```rust
+// Po přidání do mempoolu — Direct UTXO settlement (pool payout trusted path):
+// 1. Zapíše output UTXO přímo do LMDB
+state.storage.add_utxo(&utxo_key, &output_utxo)?;
+// 2. Odečte UTXO odesílatele (coin selection do 1000 UTXO, nejmenší první)
+state.storage.remove_utxo(&sender_key)?;
+// 3. Vrátí change UTXO zpět odesílateli (klíč: change:{tx_id}:{old_key})
+state.storage.add_utxo(&change_key, &change_utxo)?;
+// 4. Invaliduje balance cache pro obě strany
+state.invalidate_balance_cache(&recipient_addr);
+state.invalidate_balance_cache(&sender_addr);
+```
+
+### Float division fix: balance_zion (commit `d270830`)
+
+**Problém:** `balance_zion` vráceno jako integer (`277` místo `277.884502`).
+
+| Soubor | Před | Po |
+|--------|------|-----|
+| `L1/core/src/jsonrpc/mod.rs` | `total / 1_000_000` | `(total as f64) / 1_000_000.0` |
+| `L1/core/src/rpc/methods.rs` | `total / 1_000_000` | `(total as f64) / 1_000_000.0` |
+
+### Desktop Agent — balance optimalizace (commit `479d638`)
+
+| Změna | Soubor | Detail |
+|-------|--------|--------|
+| `rpcUrl` default → Helsinki | `main.js` | `149.248.8.4` → `77.42.31.72` (byl nastaven LA) |
+| Pool shares `Math.max()` | `main.js` | `poolShares +=` → `Math.max()` (Redis je sdílený → `+=` dávalo 6× inflaci) |
+| `POOL_API_SERVERS` filtr | `main.js` | Jen 4 relevantní nody místo všech 6 |
+| Pool fetch timeout 5s → 3s | `main.js` | Snížení latence balance refresh |
+| Nová pole v odpovědi | `main.js` | `pool_hashrate_1h`, `pool_hashrate_24h`, `pool_last_share` (unix ts) |
+| UI stats grid | `index.html` | 3 karty: HASHRATE 1H / SHARES / BLOCKS; řádky UTXOs + Last share |
+| Display nových polí | `renderer.js` | Hashrate formátování H/s → kH/s → MH/s; datum z unix ts |
+| Auto-refresh wallet tab | `renderer.js` | `switchView('wallet')` → balance refresh s 300ms delay |
+
+### Deploy na Helsinki (ARM64)
+
+```
+# Multi-stage Docker build (rust:1.85-bookworm → debian:bookworm-slim)
+# Na Helsinki /root/zion-src-build/ (rsync ze zdroje)
+docker build -t zion-core:2.9.6-fix2 .
+→ zion-core:2.9.6-fix2  7942be4a758d  (120 MB, bookworm glibc)
+```
+
+Docker image timeline na Helsinki:
+| Image | Stav |
+|-------|------|
+| `zion-core:2.9.6-testnet` | originál (bez fixů) |
+| `zion-core:2.9.6-testnet-fix` | ❌ GLIBC mismatch (nepoužívat) |
+| `zion-core:2.9.6-fix` | UTXO fix, integer division bug |
+| `zion-core:2.9.6-fix2` | ✅ NASAZENO — vše opraveno |
+
+### Verifikace (po deployi)
+
+```json
+// GET getbalance → zion1l6qc82s2r9cnw8ckwj0wgjtcllee5ylwl6qc82s
+{
+  "balance_atomic": 2411275643,
+  "balance_zion": 2411.275643,
+  "utxo_count": 15
+}
+```
+
+✅ `balance_zion` float — správně  
+✅ `utxo_count: 15` — pool payouty se projevují jako UTXO  
+✅ Container `zion-core` — `Up`, peering s SeedDE/Usa1/Usa2/Asia3 (height ~4146)
 
 ---
 
