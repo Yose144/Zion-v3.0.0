@@ -557,6 +557,12 @@ function switchView(view) {
   // Initialize OASIS view when opened
   if (view === 'oasis') initOasisView();
 
+  // Initialize DAO view when opened
+  if (view === 'dao') initDaoView();
+
+  // Initialize Warp view when opened
+  if (view === 'warp') initWarpView();
+
   // Refresh network data only when user opens Network view
   if (view === 'network') {
     void refreshServerStatus();
@@ -3269,6 +3275,236 @@ function renderTithe() {
   if (totalEl) {
     totalEl.textContent = '59,000 ZION';
   }
+}
+
+// ═══════════════════════════════════════════════════
+// DAO — On-Chain Governance (L2)
+// ═══════════════════════════════════════════════════
+
+const DAO_PROPOSALS = [
+  { id: 'PROP-001', title: 'Increase daily spend limit to 150M ZION', type: 'Parameter', status: 'Active', desc: 'Raise treasury daily spend limit from 100M to 150M ZION to support upcoming ecosystem growth and grant program expansion.', yes: 67, no: 18, abstain: 15, endDate: '2026-07-22' },
+  { id: 'PROP-002', title: 'Fund wZION Bridge security audit', type: 'Treasury', status: 'Passed', desc: 'Allocate 2.5M ZION to fund a comprehensive security audit of the wZION bridge smart contracts by Trail of Bits.', yes: 89, no: 6, abstain: 5, endDate: '2026-07-15' },
+  { id: 'PROP-003', title: 'Emergency: Pause bridge for upgrade', type: 'Emergency', status: 'Executed', desc: 'Temporary pause of bridge operations during v2.9.6 smart contract upgrade window (48h max).', yes: 92, no: 3, abstain: 5, endDate: '2026-07-10' },
+  { id: 'PROP-004', title: 'Developer grant: ZION SDK for Rust', type: 'Grant', status: 'Active', desc: 'Milestone-based grant of 500K ZION for development of a Rust SDK. 3 milestones over 6 months.', yes: 54, no: 21, abstain: 25, endDate: '2026-07-25' },
+  { id: 'PROP-005', title: 'Humanitarian: Clean water initiative', type: 'Humanitarian', status: 'Timelocked', desc: 'Allocate 10M ZION from humanitarian fund for clean water projects in Sub-Saharan Africa. Category: Water.', yes: 78, no: 12, abstain: 10, endDate: '2026-07-12' },
+];
+
+const DAO_GUARDIANS = [
+  { name: 'Guardian Alpha', key: 'zion1q...a7f3', icon: '🛡️', status: 'active' },
+  { name: 'Guardian Bravo', key: 'zion1w...b8e4', icon: '🛡️', status: 'active' },
+  { name: 'Guardian Charlie', key: 'zion1e...c9d5', icon: '🛡️', status: 'active' },
+  { name: 'Guardian Delta', key: 'zion1r...d0c6', icon: '🛡️', status: 'active' },
+  { name: 'Guardian Echo', key: 'zion1t...e1b7', icon: '🛡️', status: 'active' },
+  { name: 'Guardian Foxtrot', key: 'zion1y...f2a8', icon: '🛡️', status: 'standby' },
+  { name: 'Guardian Golf', key: 'zion1u...g3z9', icon: '🛡️', status: 'standby' },
+];
+
+const DAO_HUMANITARIAN_CATEGORIES = [
+  { icon: '💧', name: 'Clean Water', allocated: '205,714,286', color: '#06b6d4' },
+  { icon: '🍞', name: 'Food Security', allocated: '205,714,286', color: '#ffd700' },
+  { icon: '🏠', name: 'Shelter', allocated: '205,714,286', color: '#9333ea' },
+  { icon: '🌍', name: 'Environment', allocated: '205,714,286', color: '#00ff88' },
+  { icon: '🏥', name: 'Healthcare', allocated: '205,714,286', color: '#f87171' },
+  { icon: '📚', name: 'Education', allocated: '205,714,286', color: '#818cf8' },
+  { icon: '🚨', name: 'Disaster Relief', allocated: '205,714,280', color: '#fb923c' },
+];
+
+let _daoInitialized = false;
+
+function initDaoView() {
+  if (_daoInitialized) return;
+  _daoInitialized = true;
+  dbg('[DAO] Initializing DAO view');
+
+  /* — Proposals — */
+  const listEl = document.getElementById('dao-proposal-list');
+  if (listEl) {
+    listEl.innerHTML = DAO_PROPOSALS.map(p => {
+      const statusCls = 'dao-status-' + p.status.toLowerCase();
+      return `<div class="dao-proposal">
+        <div class="dao-proposal-header">
+          <div class="dao-proposal-title">${p.id} — ${p.title}</div>
+          <div class="dao-status-badge ${statusCls}">${p.status}</div>
+        </div>
+        <div class="dao-proposal-desc">${p.desc}</div>
+        <div class="dao-vote-bar">
+          <div class="dao-vote-yes" style="width:${p.yes}%"></div>
+          <div class="dao-vote-no" style="width:${p.no}%"></div>
+          <div class="dao-vote-abstain" style="width:${p.abstain}%"></div>
+        </div>
+        <div class="dao-vote-labels">
+          <span>Yes ${p.yes}%</span>
+          <span>Type: ${p.type}</span>
+          <span>No ${p.no}%</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  /* — Treasury stats — */
+  const spent = document.getElementById('dao-daily-spent');
+  if (spent) spent.textContent = '12.3M ZION';
+  const ops = document.getElementById('dao-ops-pending');
+  if (ops) ops.textContent = '2';
+  const dis = document.getElementById('dao-total-disbursed');
+  if (dis) dis.textContent = '347M ZION';
+  const sig = document.getElementById('dao-signers');
+  if (sig) sig.textContent = '5 / 7';
+
+  /* — Guardians — */
+  const gGrid = document.getElementById('dao-guardian-grid');
+  if (gGrid) {
+    gGrid.innerHTML = DAO_GUARDIANS.map(g => {
+      const col = g.status === 'active' ? '#00ff88' : 'rgba(255,255,255,0.25)';
+      return `<div class="dao-guardian">
+        <div class="dao-guardian-icon">${g.icon}</div>
+        <div class="dao-guardian-name">${g.name}</div>
+        <div class="dao-guardian-status" style="color:${col}">● ${g.status}</div>
+        <div style="font-size:10px; color:rgba(255,255,255,0.25); margin-top:6px; font-family:monospace">${g.key}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* — Humanitarian — */
+  const hGrid = document.getElementById('dao-humanitarian-grid');
+  if (hGrid) {
+    hGrid.innerHTML = DAO_HUMANITARIAN_CATEGORIES.map(c =>
+      `<div class="tithe-card">
+        <div class="tithe-icon" style="color:${c.color}">${c.icon}</div>
+        <div class="tithe-cat">${c.name}</div>
+        <div class="tithe-amount" style="color:${c.color}">${c.allocated} ZION</div>
+      </div>`
+    ).join('');
+  }
+
+  setupSectionTabs();
+  dbg('[DAO] View initialized');
+}
+
+// ═══════════════════════════════════════════════════
+// WARP — Cross-Chain Corridors (L3)
+// ═══════════════════════════════════════════════════
+
+const WARP_CHAINS = [
+  { name: 'Base',     family: 'EVM',     icon: '🔵', fee: '0.10%', finality: 12,  enabled: true },
+  { name: 'Arbitrum', family: 'EVM',     icon: '🔷', fee: '0.10%', finality: 12,  enabled: true },
+  { name: 'BSC',      family: 'EVM',     icon: '🟡', fee: '0.12%', finality: 15,  enabled: true },
+  { name: 'Polygon',  family: 'EVM',     icon: '🟣', fee: '0.10%', finality: 64,  enabled: true },
+  { name: 'Solana',   family: 'Solana',  icon: '🟢', fee: '0.15%', finality: 32,  enabled: false },
+  { name: 'Bitcoin',  family: 'Bitcoin', icon: '🟠', fee: '0.25%', finality: 6,   enabled: false },
+  { name: 'Tron',     family: 'Tron',    icon: '🔴', fee: '0.15%', finality: 20,  enabled: false },
+  { name: 'Stellar',  family: 'Stellar', icon: '⚪', fee: '0.08%', finality: 5,   enabled: false },
+  { name: 'Cardano',  family: 'Cardano', icon: '🫐', fee: '0.18%', finality: 30,  enabled: false },
+  { name: 'Cosmos',   family: 'Cosmos',  icon: '⚛️',  fee: '0.12%', finality: 10,  enabled: false },
+];
+
+const WARP_STATUS_FLOW = [
+  'Pending', 'Detected', 'AwaitingFinality', 'Validating',
+  'QuorumReached', 'Executing', 'Completed'
+];
+
+const WARP_FEE_ROUTES = [
+  { from: 'ZION L1', to: 'Base',     rate: '0.10%', min: '1 ZION', max: '50,000 ZION' },
+  { from: 'ZION L1', to: 'Arbitrum', rate: '0.10%', min: '1 ZION', max: '50,000 ZION' },
+  { from: 'ZION L1', to: 'BSC',      rate: '0.12%', min: '1 ZION', max: '50,000 ZION' },
+  { from: 'ZION L1', to: 'Polygon',  rate: '0.10%', min: '1 ZION', max: '50,000 ZION' },
+  { from: 'ZION L1', to: 'Solana',   rate: '0.15%', min: '2 ZION', max: '40,000 ZION' },
+  { from: 'ZION L1', to: 'Bitcoin',  rate: '0.25%', min: '10 ZION', max: '100,000 ZION' },
+  { from: 'ZION L1', to: 'Tron',     rate: '0.15%', min: '1 ZION', max: '40,000 ZION' },
+  { from: 'ZION L1', to: 'Stellar',  rate: '0.08%', min: '0.5 ZION', max: '30,000 ZION' },
+  { from: 'ZION L1', to: 'Cardano',  rate: '0.18%', min: '2 ZION', max: '40,000 ZION' },
+  { from: 'ZION L1', to: 'Cosmos',   rate: '0.12%', min: '1 ZION', max: '40,000 ZION' },
+];
+
+const WARP_VALIDATORS = [
+  { name: 'Warp Validator 1', key: 'ed25519:warp1...v1x', status: 'active' },
+  { name: 'Warp Validator 2', key: 'ed25519:warp2...v2y', status: 'active' },
+  { name: 'Warp Validator 3', key: 'ed25519:warp3...v3z', status: 'active' },
+  { name: 'Warp Validator 4', key: 'ed25519:warp4...v4w', status: 'standby' },
+  { name: 'Warp Validator 5', key: 'ed25519:warp5...v5q', status: 'standby' },
+];
+
+let _warpInitialized = false;
+
+function initWarpView() {
+  if (_warpInitialized) return;
+  _warpInitialized = true;
+  dbg('[WARP] Initializing Warp view');
+
+  /* — Transfer status flow — */
+  const flowEl = document.getElementById('warp-status-flow');
+  if (flowEl) {
+    flowEl.innerHTML = WARP_STATUS_FLOW.map((s, i) => {
+      const active = i === 0 ? ' flow-active' : '';
+      const arrow = i < WARP_STATUS_FLOW.length - 1 ? '<span class="warp-flow-arrow">→</span>' : '';
+      return `<span class="warp-flow-step${active}">${s}</span>${arrow}`;
+    }).join('');
+  }
+
+  /* — Chains grid — */
+  const chainGrid = document.getElementById('warp-chain-grid');
+  if (chainGrid) {
+    chainGrid.innerHTML = WARP_CHAINS.map(c => {
+      const cls = c.enabled ? 'chain-enabled' : 'chain-disabled';
+      const badge = c.enabled ? '<span style="color:#00ff88; font-size:10px">● Live</span>' : '<span style="color:rgba(255,255,255,0.25); font-size:10px">○ Stub</span>';
+      return `<div class="warp-chain-card ${cls}">
+        <div class="warp-chain-icon">${c.icon}</div>
+        <div class="warp-chain-name">${c.name}</div>
+        <div class="warp-chain-family">${c.family}</div>
+        <div class="warp-chain-fee">Fee: ${c.fee}</div>
+        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px">Finality: ${c.finality} blocks</div>
+        <div style="margin-top:6px">${badge}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* — Validators — */
+  const vGrid = document.getElementById('warp-validator-grid');
+  if (vGrid) {
+    vGrid.innerHTML = WARP_VALIDATORS.map(v => {
+      const col = v.status === 'active' ? '#00ff88' : 'rgba(255,255,255,0.25)';
+      return `<div class="dao-guardian">
+        <div class="dao-guardian-icon">🔐</div>
+        <div class="dao-guardian-name">${v.name}</div>
+        <div class="dao-guardian-status" style="color:${col}">● ${v.status}</div>
+        <div style="font-size:10px; color:rgba(255,255,255,0.25); margin-top:6px; font-family:monospace">${v.key}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* — Fee distribution — */
+  const feeEl = document.getElementById('warp-fee-split');
+  if (feeEl) {
+    feeEl.innerHTML = [
+      { pct: '50%', label: 'Burned', color: '#f87171' },
+      { pct: '25%', label: 'DAO Treasury', color: 'var(--zion-gold)' },
+      { pct: '25%', label: 'Validators', color: 'var(--zion-cyan)' },
+    ].map(f => `<div class="warp-fee-slice">
+      <div class="warp-fee-pct" style="color:${f.color}">${f.pct}</div>
+      <div class="warp-fee-label">${f.label}</div>
+    </div>`).join('');
+  }
+
+  /* — Fee routes table — */
+  const feeBody = document.getElementById('warp-fees-body');
+  if (feeBody) {
+    feeBody.innerHTML = WARP_FEE_ROUTES.map(r =>
+      `<tr><td>${r.from} → ${r.to}</td><td>${r.rate}</td><td>${r.min}</td><td>${r.max}</td></tr>`
+    ).join('');
+  }
+
+  /* — Update fee display on chain change — */
+  const sel = document.getElementById('warp-dest-chain');
+  const feeDisp = document.getElementById('warp-fee-display');
+  if (sel && feeDisp) {
+    sel.addEventListener('change', () => {
+      const ch = WARP_CHAINS.find(c => c.name.toLowerCase() === sel.value);
+      if (ch) feeDisp.textContent = ch.fee;
+    });
+  }
+
+  setupSectionTabs();
+  dbg('[WARP] View initialized');
 }
 
 dbg('Renderer script loaded');
