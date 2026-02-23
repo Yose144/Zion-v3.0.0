@@ -3018,6 +3018,593 @@
       border: 1px solid rgba(255,255,255,0.04);
     }
 
+    /* ═══ OASIS — Consciousness Gaming Layer ═══ */
+
+    /* Consciousness level progress */
+    .oasis-level-card {
+      padding: 28px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,215,0,0.15);
+      background: linear-gradient(135deg, rgba(255,215,0,0.04), rgba(147,51,234,0.06));
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      position: relative;
+      overflow: hidden;
+    }
+    .oasis-level-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(255,215,0,0.06), transparent, rgba(147,51,234,0.06), transparent);
+      animation: oasisRotate 20s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes oasisRotate {
+      to { transform: rotate(360deg); }
+    }
+    .oasis-sefira {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .oasis-sefira-orb {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255,215,0,0.8), rgba(147,51,234,0.6));
+      box-shadow: 0 0 30px rgba(255,215,0,0.3), 0 0 60px rgba(147,51,234,0.15);
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      animation: orbPulse 3s ease-in-out infinite;
+    }
+    @keyframes orbPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(255,215,0,0.3), 0 0 60px rgba(147,51,234,0.15); }
+      50% { transform: scale(1.08); box-shadow: 0 0 40px rgba(255,215,0,0.5), 0 0 80px rgba(147,51,234,0.25); }
+    }
+    .oasis-sefira-name {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--zion-gold), var(--zion-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+    .oasis-sefira-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 2px;
+    }
+    .oasis-xp-bar {
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      margin: 14px 0 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .oasis-xp-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--zion-gold), var(--zion-purple), var(--zion-cyan));
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 12px rgba(255,215,0,0.4);
+    }
+    .oasis-xp-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      position: relative;
+      z-index: 1;
+    }
+    .oasis-stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+      position: relative;
+      z-index: 1;
+    }
+    .oasis-stat {
+      text-align: center;
+      padding: 14px 10px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .oasis-stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--zion-gold);
+    }
+    .oasis-stat-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    /* Feature unlock timeline */
+    .oasis-features {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 18px;
+      position: relative;
+      z-index: 1;
+    }
+    .oasis-feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      font-size: 13px;
+      transition: all 0.25s ease;
+    }
+    .oasis-feature.unlocked {
+      border-color: rgba(255,215,0,0.2);
+      background: rgba(255,215,0,0.04);
+    }
+    .oasis-feature.locked {
+      opacity: 0.4;
+      filter: grayscale(0.5);
+    }
+    .oasis-feature-icon {
+      font-size: 16px;
+      width: 28px;
+      text-align: center;
+    }
+
+    /* Consciousness level ladder */
+    .oasis-level-ladder {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .oasis-level-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+    .oasis-level-step.current {
+      border-color: rgba(255,215,0,0.35);
+      background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(147,51,234,0.06));
+      box-shadow: 0 0 20px rgba(255,215,0,0.08);
+    }
+    .oasis-level-step.achieved {
+      border-color: rgba(0,255,136,0.15);
+      background: rgba(0,255,136,0.03);
+    }
+    .oasis-level-step.future {
+      opacity: 0.35;
+    }
+    .oasis-level-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .oasis-level-step.current .oasis-level-num {
+      background: linear-gradient(135deg, var(--zion-gold), var(--zion-purple));
+      color: #000;
+    }
+    .oasis-level-step.achieved .oasis-level-num {
+      background: rgba(0,255,136,0.2);
+      color: #00ff88;
+    }
+    .oasis-level-step.future .oasis-level-num {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.3);
+    }
+    .oasis-level-name {
+      font-weight: 600;
+      font-size: 13px;
+      flex: 1;
+    }
+    .oasis-level-xp {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      font-variant-numeric: tabular-nums;
+    }
+    .oasis-level-mult {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--zion-cyan);
+      min-width: 36px;
+      text-align: right;
+    }
+
+    /* Territory cards */
+    .territory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .territory-card {
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0, 0, 0, 0.30);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      overflow: hidden;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .territory-card:hover {
+      border-color: rgba(255,255,255,0.20);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 50px rgba(0,0,0,0.35), 0 0 30px var(--territory-glow, rgba(147,51,234,0.12));
+    }
+    .territory-banner {
+      height: 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .territory-banner-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.7;
+    }
+    .territory-banner-icon {
+      position: absolute;
+      bottom: 10px;
+      right: 14px;
+      font-size: 36px;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+    }
+    .territory-banner-region {
+      position: absolute;
+      top: 10px;
+      left: 14px;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.3);
+      padding: 4px 10px;
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+    }
+    .territory-body {
+      padding: 16px;
+    }
+    .territory-name {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+    .territory-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+    }
+    .territory-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .territory-status {
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Guild section */
+    .guild-card {
+      padding: 24px;
+      border-radius: 22px;
+      border: 1px solid rgba(147,51,234,0.2);
+      background: linear-gradient(135deg, rgba(147,51,234,0.05), rgba(6,182,212,0.04));
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      margin-bottom: 16px;
+    }
+    .guild-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .guild-emblem {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--zion-purple), var(--zion-cyan));
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+    }
+    .guild-name-big {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .guild-meta-row {
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+      display: flex;
+      gap: 14px;
+    }
+    .quest-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .quest-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: all 0.25s ease;
+    }
+    .quest-item:hover {
+      border-color: rgba(147,51,234,0.25);
+      background: rgba(147,51,234,0.04);
+    }
+    .quest-icon {
+      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(147,51,234,0.1);
+      display: grid;
+      place-items: center;
+    }
+    .quest-info {
+      flex: 1;
+    }
+    .quest-title {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+    .quest-desc {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+    .quest-reward {
+      text-align: right;
+      font-size: 12px;
+      color: var(--zion-gold);
+      font-weight: 600;
+    }
+    .quest-progress-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.06);
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .quest-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--zion-purple), var(--zion-cyan));
+    }
+
+    /* Challenge cards */
+    .challenge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .challenge-card {
+      padding: 20px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.25);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: default;
+    }
+    .challenge-card:hover {
+      border-color: rgba(6,182,212,0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 20px rgba(6,182,212,0.08);
+    }
+    .challenge-category {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--zion-cyan);
+      margin-bottom: 8px;
+    }
+    .challenge-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .challenge-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .challenge-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .challenge-difficulty {
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .diff-beginner    { background: rgba(0,255,136,0.1);  color: #00ff88; }
+    .diff-intermediate { background: rgba(6,182,212,0.1);  color: var(--zion-cyan); }
+    .diff-advanced    { background: rgba(255,215,0,0.1);  color: var(--zion-gold); }
+    .diff-master      { background: rgba(239,68,68,0.1);  color: #f87171; }
+    .challenge-xp {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--zion-gold);
+    }
+
+    /* Tithe humanitarian */
+    .tithe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .tithe-card {
+      padding: 22px 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.22);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .tithe-card:hover {
+      border-color: rgba(255,215,0,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 35px rgba(0,0,0,0.25), 0 0 18px rgba(255,215,0,0.06);
+    }
+    .tithe-emoji {
+      font-size: 36px;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+    }
+    .tithe-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .tithe-amount {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--zion-gold);
+      font-variant-numeric: tabular-nums;
+    }
+    .tithe-sub {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .tithe-total-bar {
+      margin-top: 20px;
+      padding: 20px 24px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,215,0,0.12);
+      background: linear-gradient(135deg, rgba(255,215,0,0.04), rgba(147,51,234,0.03));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tithe-total-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .tithe-total-value {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--zion-gold), var(--zion-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Reward pool visualization */
+    .reward-pool-chart {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .reward-slot {
+      padding: 16px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+      text-align: center;
+      transition: all 0.25s ease;
+    }
+    .reward-slot:hover {
+      border-color: rgba(255,215,0,0.15);
+      background: rgba(255,215,0,0.03);
+    }
+    .reward-slot-icon {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .reward-slot-name {
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .reward-slot-amount {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--zion-gold);
+    }
+    .reward-slot-pct {
+      font-size: 10px;
+      color: rgba(255,255,255,0.3);
+      margin-top: 2px;
+    }
+
+    /* Gradient sheen for territory banners */
+    .bg-mountains   { background: linear-gradient(135deg, #2d3436, #636e72, #b2bec3); --territory-glow: rgba(178,190,195,0.15); }
+    .bg-forest      { background: linear-gradient(135deg, #00b894, #00cec9, #55efc4); --territory-glow: rgba(0,184,148,0.15); }
+    .bg-desert      { background: linear-gradient(135deg, #fdcb6e, #e17055, #d63031); --territory-glow: rgba(253,203,110,0.15); }
+    .bg-ocean       { background: linear-gradient(135deg, #0984e3, #74b9ff, #00cec9); --territory-glow: rgba(9,132,227,0.15); }
+    .bg-volcano     { background: linear-gradient(135deg, #d63031, #e17055, #fdcb6e); --territory-glow: rgba(214,48,49,0.15); }
+    .bg-crystal     { background: linear-gradient(135deg, #a29bfe, #6c5ce7, #fd79a8); --territory-glow: rgba(108,92,231,0.15); }
+    .bg-temple      { background: linear-gradient(135deg, #ffd700, #f0c060, #9b59b6); --territory-glow: rgba(255,215,0,0.15); }
+    .bg-nexus       { background: linear-gradient(135deg, #2d3436, #6c5ce7, #00cec9); --territory-glow: rgba(6,182,212,0.15); }
+
     /* ═══ Reduced Motion ═══ */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -3243,6 +3830,18 @@
           <path fill="currentColor" d="M7 6V3L3 7l4 4V8c3.31 0 6 2.69 6 6H11c0-2.21-1.79-4-4-4zm10 2c0-3.31-2.69-6-6-6H9v2h2c2.21 0 4 1.79 4 4h-2l4 4 4-4h-4z"/>
         </svg>
         <span>Bridge</span>
+      </div>
+      <div class="nav-item" data-view="oasis">
+        <svg class="icon icon-20" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          <line x1="12" y1="3" x2="12" y2="8" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+          <line x1="12" y1="16" x2="12" y2="21" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+          <line x1="3" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+          <line x1="16" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+        </svg>
+        <span>OASIS</span>
       </div>
     </div>
 
@@ -4912,6 +5511,306 @@
                 <tr><td>Replay protection</td><td>Unique L1 TX hash + burn ID</td></tr>
                 <tr><td>Emergency pause</td><td>Guardian can halt bridge instantly</td></tr>
                 <tr><td>Supply invariant</td><td>locked_L1 ≥ total_wZION_supply (always)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- OASIS — Consciousness Gaming Layer             -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div id="oasis-view" class="view-shell d-none">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 4 · Consciousness</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">OASIS</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>8.25B ZION Reward Pool · 9 Levels · 8 Territories</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section tabs -->
+        <div class="section-tabs" data-group="oasis">
+          <div class="section-tab active" data-section="oasis-journey">
+            <span class="tab-dot"></span>
+            <span>Journey</span>
+          </div>
+          <div class="section-tab" data-section="oasis-territories">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+            <span>Territories</span>
+          </div>
+          <div class="section-tab" data-section="oasis-guild">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>Guild</span>
+          </div>
+          <div class="section-tab" data-section="oasis-challenges">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Challenges</span>
+          </div>
+          <div class="section-tab" data-section="oasis-tithe">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
+            <span>Tithe</span>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Journey — Consciousness Progression ═══ -->
+        <div id="oasis-journey" class="section-panel active">
+
+          <!-- Current level card -->
+          <div class="oasis-level-card">
+            <div class="oasis-sefira">
+              <div class="oasis-sefira-orb" id="oasis-orb">✦</div>
+              <div>
+                <div class="oasis-sefira-name" id="oasis-level-name">Physical</div>
+                <div class="oasis-sefira-sub" id="oasis-sefira-label">Malkuth · Foundation</div>
+              </div>
+            </div>
+            <div class="oasis-xp-bar">
+              <div class="oasis-xp-fill" id="oasis-xp-fill" style="width: 0%"></div>
+            </div>
+            <div class="oasis-xp-labels">
+              <span id="oasis-xp-current">0 XP</span>
+              <span id="oasis-xp-next">Next: 1,000 XP</span>
+            </div>
+            <div class="oasis-stats-row">
+              <div class="oasis-stat">
+                <div class="oasis-stat-value" id="oasis-multiplier">1.0×</div>
+                <div class="oasis-stat-label">XP Multiplier</div>
+              </div>
+              <div class="oasis-stat">
+                <div class="oasis-stat-value" id="oasis-blocks-mined">0</div>
+                <div class="oasis-stat-label">Blocks Mined</div>
+              </div>
+              <div class="oasis-stat">
+                <div class="oasis-stat-value" id="oasis-streak">0</div>
+                <div class="oasis-stat-label">Daily Streak</div>
+              </div>
+              <div class="oasis-stat">
+                <div class="oasis-stat-value" id="oasis-zion-earned">0</div>
+                <div class="oasis-stat-label">ZION Earned</div>
+              </div>
+            </div>
+
+            <!-- Unlocked features -->
+            <h4 style="margin-top:20px; font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:rgba(255,255,255,0.4); position:relative; z-index:1">Unlocked Features</h4>
+            <div class="oasis-features" id="oasis-features">
+              <!-- JS fills -->
+            </div>
+          </div>
+
+          <!-- Consciousness ladder -->
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Tree of Life</p>
+                <h3>9 Levels of Consciousness</h3>
+              </div>
+            </div>
+            <div class="oasis-level-ladder" id="oasis-ladder">
+              <!-- JS fills -->
+            </div>
+          </div>
+
+          <!-- Reward Pool Overview -->
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Distribution · 10 Years</p>
+                <h3>8.25 Billion ZION Reward Pool</h3>
+              </div>
+            </div>
+            <div class="reward-pool-chart" id="oasis-reward-chart">
+              <!-- JS fills -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Territories — 8 Genesis Regions ═══ -->
+        <div id="oasis-territories" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Genesis Map</p>
+                <h3>8 Sacred Territories</h3>
+              </div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              Each territory offers unique mining bonuses and XP multipliers. Guilds can claim territories through stake-weighted governance. Defend your land to earn bonus rewards.
+            </p>
+          </div>
+          <div class="territory-grid" id="oasis-territory-grid">
+            <!-- JS fills 8 territory cards -->
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Guild — Social Mining ═══ -->
+        <div id="oasis-guild" class="section-panel">
+          <div class="guild-card">
+            <div class="guild-header">
+              <div class="guild-emblem" id="guild-emblem">⚔</div>
+              <div>
+                <div class="guild-name-big" id="guild-name">No Guild Joined</div>
+                <div class="guild-meta-row">
+                  <span id="guild-members">0 / 100 members</span>
+                  <span id="guild-level">Level 0</span>
+                  <span id="guild-territories">0 territories</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px">
+              <button class="btn btn-primary btn-sm" id="guild-create-btn">Create Guild</button>
+              <button class="btn btn-sm" id="guild-join-btn">Join Guild</button>
+            </div>
+          </div>
+
+          <!-- Active Quests -->
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Cooperative</p>
+                <h3>Guild Quests</h3>
+              </div>
+            </div>
+            <div class="quest-list" id="guild-quests">
+              <!-- JS fills -->
+            </div>
+          </div>
+
+          <!-- Leaderboard -->
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Rankings</p>
+                <h3>Guild Leaderboard</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table" id="guild-leaderboard">
+              <thead><tr><th>#</th><th>Guild</th><th>XP</th><th>Members</th><th>Territories</th></tr></thead>
+              <tbody id="guild-lb-body">
+                <!-- JS fills -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Challenges — AI Challenges & Achievements ═══ -->
+        <div id="oasis-challenges" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">6 Categories · 4 Difficulties</p>
+                <h3>AI Challenges & Quests</h3>
+              </div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              Complete challenges to earn XP and ZION. Difficulty multipliers: Beginner 1×, Intermediate 2×, Advanced 4×, Master 8×. Daily challenges refresh every 24h.
+            </p>
+          </div>
+
+          <!-- Daily Challenges -->
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Refreshes in 24h</p>
+                <h3>Daily Challenges</h3>
+              </div>
+            </div>
+            <div class="challenge-grid" id="oasis-daily-challenges">
+              <!-- JS fills -->
+            </div>
+          </div>
+
+          <!-- All Challenges -->
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Browse All</p>
+                <h3>Challenge Library</h3>
+              </div>
+            </div>
+            <div class="challenge-grid" id="oasis-all-challenges">
+              <!-- JS fills -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Tithe — Humanitarian Contributions ═══ -->
+        <div id="oasis-tithe" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">7 Humanitarian Categories</p>
+                <h3>Sacred Tithe</h3>
+              </div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              Contribute to real-world humanitarian causes through OASIS. Your tithe is tracked on-chain via L1 TX memo: <code style="color:var(--zion-cyan); font-size:12px">TITHE:category:amount:player_addr</code>. Every contribution earns XP and unlocks achievements.
+            </p>
+          </div>
+
+          <!-- Category grid -->
+          <div class="tithe-grid" id="oasis-tithe-grid">
+            <!-- JS fills 7 categories -->
+          </div>
+
+          <!-- Total bar -->
+          <div class="tithe-total-bar" id="oasis-tithe-total">
+            <div>
+              <div class="tithe-total-label">Total Humanitarian Contributions</div>
+            </div>
+            <div class="tithe-total-value" id="tithe-total-value">0 ZION</div>
+          </div>
+
+          <!-- XP Sources -->
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">How You Earn</p>
+                <h3>XP Sources</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table">
+              <thead><tr><th>Source</th><th>XP per Action</th><th>Daily Cap</th></tr></thead>
+              <tbody>
+                <tr><td>⛏ Block Mined</td><td>10 × shares (max 1,000)</td><td>10,000</td></tr>
+                <tr><td>🧠 AI Challenge</td><td>score × 100</td><td>10,000</td></tr>
+                <tr><td>📝 Quiz</td><td>(correct/total) × 100</td><td>10,000</td></tr>
+                <tr><td>🧘 Meditation</td><td>min × 5 (max 300)</td><td>10,000</td></tr>
+                <tr><td>💝 Tithe</td><td>amount/1M (max 500)</td><td>10,000</td></tr>
+                <tr><td>⚔ Guild Quest</td><td>200 flat</td><td>10,000</td></tr>
+                <tr><td>🤝 Referral</td><td>50 flat</td><td>10,000</td></tr>
               </tbody>
             </table>
           </div>
