@@ -3832,6 +3832,136 @@
       margin-top: 4px;
     }
 
+    /* ═══ FREE WORLD — Sovereignty Layer ═══ */
+
+    .fw-pillar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .fw-pillar-card {
+      padding: 24px 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(135deg, rgba(251,191,36,0.04), rgba(0,0,0,0.25));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .fw-pillar-card:hover {
+      border-color: rgba(251,191,36,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .fw-pillar-icon { font-size: 36px; margin-bottom: 10px; }
+    .fw-pillar-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .fw-pillar-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.5;
+    }
+    .fw-milestone-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.02);
+      margin-bottom: 8px;
+      transition: all 0.2s ease;
+    }
+    .fw-milestone-row:hover { border-color: rgba(251,191,36,0.15); }
+    .fw-milestone-year {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fbbf24;
+      min-width: 50px;
+    }
+    .fw-milestone-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+    .fw-milestone-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #fbbf24;
+      flex-shrink: 0;
+    }
+    .fw-milestone-dot.future { background: rgba(251,191,36,0.25); }
+
+    /* ═══ ISSOBELLA — Orbital Observatory ═══ */
+
+    .iss-module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .iss-module-card {
+      padding: 24px 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(135deg, rgba(244,63,94,0.04), rgba(0,0,0,0.25));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .iss-module-card:hover {
+      border-color: rgba(244,63,94,0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 20px rgba(244,63,94,0.06);
+    }
+    .iss-module-icon { font-size: 36px; margin-bottom: 10px; }
+    .iss-module-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .iss-module-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.5;
+    }
+    .iss-orbit-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(244,63,94,0.1);
+      color: #f43f5e;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+    .iss-fund-card {
+      padding: 28px;
+      border-radius: 22px;
+      border: 1px solid rgba(244,63,94,0.12);
+      background: linear-gradient(135deg, rgba(244,63,94,0.04), rgba(147,51,234,0.04));
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      text-align: center;
+    }
+    .iss-fund-value {
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f43f5e, #fbbf24);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 12px 0 6px;
+    }
+    .iss-fund-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
     /* ═══ Reduced Motion ═══ */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -4084,6 +4214,22 @@
           <circle cx="12" cy="12" r="2" fill="currentColor"/>
         </svg>
         <span>Warp</span>
+      </div>
+      <div class="nav-item" data-view="freeworld">
+        <svg class="icon icon-20" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M3 12h18M12 3c-3 3-3 9 0 9s3-6 0-9M12 21c3-3 3-9 0-9s-3 6 0 9" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+        </svg>
+        <span>Free World</span>
+      </div>
+      <div class="nav-item" data-view="issobella">
+        <svg class="icon icon-20" aria-hidden="true">
+          <circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M6 21l6-10 6 10" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M9 16h6" stroke="currentColor" stroke-width="1"/>
+          <circle cx="12" cy="3" r="1" fill="currentColor" opacity="0.5"/>
+        </svg>
+        <span>Issobella</span>
       </div>
     </div>
 
@@ -6527,6 +6673,361 @@
                 <tr><td>CardanoAdapter</td><td>Cardano</td><td style="color:rgba(255,255,255,0.3)">○ Stub</td></tr>
                 <tr><td>CosmosAdapter</td><td>Cosmos</td><td style="color:rgba(255,255,255,0.3)">○ Stub</td></tr>
                 <tr><td>BitcoinAdapter</td><td>Bitcoin (HTLC)</td><td style="color:rgba(255,255,255,0.3)">○ Stub</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- FREE WORLD — Sovereignty & Humanitarian Layer (L5) -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <div id="freeworld-view" class="view-shell d-none">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 5 · Sovereignty</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Free World</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Quantum Energy · Humanitarian Missions · Free Communities · 2030+</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-tabs" data-group="freeworld">
+          <div class="section-tab active" data-section="fw-pillars">
+            <span class="tab-dot"></span>
+            <span>Pillars</span>
+          </div>
+          <div class="section-tab" data-section="fw-milestones">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>Milestones</span>
+          </div>
+          <div class="section-tab" data-section="fw-funding">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+            <span>Funding</span>
+          </div>
+          <div class="section-tab" data-section="fw-integration">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+            <span>Integration</span>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Pillars ═══ -->
+        <div id="fw-pillars" class="section-panel active">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Mission</p>
+                <h3>Four Pillars of Free World</h3>
+              </div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              The humanitarian layer of the ZION ecosystem — infrastructure for free communities, quantum/free energy, and humanitarian missions funded directly from the blockchain.
+            </p>
+          </div>
+          <div class="fw-pillar-grid" id="fw-pillar-grid">
+            <!-- JS fills -->
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Milestones ═══ -->
+        <div id="fw-milestones" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">
+                <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Timeline</p>
+                <h3>Roadmap 2030 — 2040</h3>
+              </div>
+            </div>
+          </div>
+          <div id="fw-milestone-list" style="margin-top:16px">
+            <!-- JS fills -->
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Funding ═══ -->
+        <div id="fw-funding" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Revenue Streams</p>
+                <h3>Funding Sources</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Source</th><th>Share</th><th>Mechanism</th></tr></thead>
+              <tbody>
+                <tr><td>Block Reward (Humanitarian Tithe)</td><td>5%</td><td>Automatic from <code style="color:var(--zion-cyan)">coinbase_distribution()</code></td></tr>
+                <tr><td>L5/L6 Issobella Fund</td><td>5% shared</td><td>Dedicated fund from block reward</td></tr>
+                <tr><td>DAO Treasury</td><td>Variable</td><td>Governance proposals</td></tr>
+                <tr><td>L4 Oasis Revenue</td><td>Variable</td><td>% from economic activity</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="oasis-stats-row" style="margin-top:20px">
+            <div class="oasis-stat">
+              <div class="oasis-stat-value" style="color:#fbbf24">270 ZION</div>
+              <div class="oasis-stat-label">Per Block (5%)</div>
+            </div>
+            <div class="oasis-stat">
+              <div class="oasis-stat-value" style="color:#fbbf24">~1.42B</div>
+              <div class="oasis-stat-label">10yr Projection</div>
+            </div>
+            <div class="oasis-stat">
+              <div class="oasis-stat-value" style="color:#fbbf24">~5.2B</div>
+              <div class="oasis-stat-label">50yr Projection</div>
+            </div>
+            <div class="oasis-stat">
+              <div class="oasis-stat-value" style="color:#fbbf24">~7.0B</div>
+              <div class="oasis-stat-label">100yr+ (w/ tail)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Integration ═══ -->
+        <div id="fw-integration" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple">
+                <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Layer Synergy</p>
+                <h3>Cross-Layer Integration</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Layer</th><th>Relationship to Free World</th></tr></thead>
+              <tbody>
+                <tr><td>L1 Core</td><td>5% block reward → Humanitarian Fund, 5% → L5/L6 Issobella Fund</td></tr>
+                <tr><td>L2 DAO</td><td>Governance for fund allocation, proposal voting</td></tr>
+                <tr><td>L3 Warp</td><td>Cross-chain humanitarian fundraising</td></tr>
+                <tr><td>L4 Oasis</td><td>Consciousness mining → XP revenue → L5/L6 funds</td></tr>
+                <tr><td>L6 Issobella</td><td>Shares L5/L6 fund, L5 energy revenue funds orbital station</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Implementation</p>
+                <h3>Reward Distribution</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Recipient</th><th>Share</th><th>Per Block (Decade 1)</th></tr></thead>
+              <tbody>
+                <tr><td>Miners</td><td>89%</td><td>4,806.060 ZION</td></tr>
+                <tr><td style="color:#fbbf24">Humanitarian Tithe</td><td style="color:#fbbf24">5%</td><td style="color:#fbbf24">270.003 ZION</td></tr>
+                <tr><td style="color:#f43f5e">L5/L6 Issobella Fund</td><td style="color:#f43f5e">5%</td><td style="color:#f43f5e">270.003 ZION</td></tr>
+                <tr><td>Pool Fee</td><td>1%</td><td>54.001 ZION</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- ISSOBELLA — Orbital Observatory & Station (L6)     -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <div id="issobella-view" class="view-shell d-none">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 6 · Orbital</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">ZION Issobella</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Orbital Observatory · 5% Block Reward Fund · 2040+</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-tabs" data-group="issobella">
+          <div class="section-tab active" data-section="iss-mission">
+            <span class="tab-dot"></span>
+            <span>Mission</span>
+          </div>
+          <div class="section-tab" data-section="iss-station">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>Station</span>
+          </div>
+          <div class="section-tab" data-section="iss-timeline">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+            <span>Timeline</span>
+          </div>
+          <div class="section-tab" data-section="iss-fund">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+            <span>Fund</span>
+          </div>
+          <div class="section-tab" data-section="iss-tech">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+            <span>Tech</span>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Mission ═══ -->
+        <div id="iss-mission" class="section-panel active">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Final Layer</p>
+                <h3>Beyond Earth</h3>
+              </div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              ZION Issobella is the final layer — an orbital observatory and research station named after ISS + Issobella. Extending human consciousness beyond Earth through decentralized space infrastructure funded by 5% of every block reward since block 1.
+            </p>
+          </div>
+          <div class="iss-module-grid" id="iss-module-grid">
+            <!-- JS fills -->
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Station ═══ -->
+        <div id="iss-station" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">
+                <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">LEO Infrastructure</p>
+                <h3>Station Modules</h3>
+              </div>
+            </div>
+          </div>
+          <div class="iss-module-grid" id="iss-station-grid">
+            <!-- JS fills -->
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Timeline ═══ -->
+        <div id="iss-timeline" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">
+                <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">2026 — 2055</p>
+                <h3>Issobella Roadmap</h3>
+              </div>
+            </div>
+          </div>
+          <div id="iss-timeline-list" style="margin-top:16px">
+            <!-- JS fills -->
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Fund ═══ -->
+        <div id="iss-fund" class="section-panel">
+          <div class="iss-fund-card">
+            <div class="iss-fund-label">L5/L6 Issobella Fund (5% Block Reward)</div>
+            <div class="iss-fund-value" id="iss-fund-value">270.003 ZION / block</div>
+            <div class="iss-fund-label">Accumulating since block #1 · Shared with L5 Free World</div>
+          </div>
+
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold">
+                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Revenue Streams</p>
+                <h3>Funding Sources</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Source</th><th>Share</th><th>Mechanism</th></tr></thead>
+              <tbody>
+                <tr><td>Block Reward</td><td>1% dedicated</td><td>Automatic from <code style="color:#f43f5e">coinbase_distribution()</code></td></tr>
+                <tr><td>L5/L6 Shared Fund</td><td>5% block reward</td><td>Dedicated fund split with L5</td></tr>
+                <tr><td>DAO Treasury</td><td>Variable</td><td>Long-term governance proposals</td></tr>
+                <tr><td>L5 Free World Revenue</td><td>Variable</td><td>Revenue from quantum energy</td></tr>
+                <tr><td>Tail Emission (post-2126)</td><td>724.785 ZION/block</td><td>Perpetual funding source</td></tr>
+                <tr><td>Partnerships</td><td>TBD</td><td>Space agencies, private sector</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="oasis-stats-row" style="margin-top:20px">
+            <div class="oasis-stat">
+              <div class="oasis-stat-value" style="color:#f43f5e">~1.42B</div>
+              <div class="oasis-stat-label">10yr Projection</div>
+            </div>
+            <div class="oasis-stat">
+              <div class="oasis-stat-value" style="color:#f43f5e">~5.2B</div>
+              <div class="oasis-stat-label">50yr Projection</div>
+            </div>
+            <div class="oasis-stat">
+              <div class="oasis-stat-value" style="color:#f43f5e">~7.0B</div>
+              <div class="oasis-stat-label">100yr+ (w/ tail)</div>
+            </div>
+            <div class="oasis-stat">
+              <div class="oasis-stat-value" style="color:#f43f5e">724.785</div>
+              <div class="oasis-stat-label">Tail Emission/blk</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: Tech ═══ -->
+        <div id="iss-tech" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan">
+                <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Hardware</p>
+                <h3>Technical Requirements</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Component</th><th>Specification</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>ZION Node</td><td>Radiation-hardened FPGA</td><td>On-orbit consensus participation</td></tr>
+                <tr><td>ISL Communications</td><td>Inter-Satellite Links mesh</td><td>Low-latency P2P between orbital nodes</td></tr>
+                <tr><td>Power</td><td>Solar panels + batteries</td><td>Continuous operation in LEO</td></tr>
+                <tr><td>Consensus</td><td>High-latency tolerant</td><td>Autonomous consensus with ground delays</td></tr>
+                <tr><td>Data Link</td><td>Ground station relay</td><td>Block propagation to/from Earth</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">
+                <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+              </div>
+              <div>
+                <p class="card-kicker">Network</p>
+                <h3>ZION Space Network</h3>
+              </div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
+              <tbody>
+                <tr><td>Orbital Altitude</td><td>LEO (Low Earth Orbit, ~400 km)</td></tr>
+                <tr><td>Node Redundancy</td><td>Multiple satellite nodes in mesh</td></tr>
+                <tr><td>Ground Independence</td><td>Autonomous operation during comms blackout</td></tr>
+                <tr><td>Data Sovereignty</td><td>Blockchain data replicated in orbit</td></tr>
+                <tr><td>CubeSat Prototype</td><td>First hardware test platform (2030)</td></tr>
               </tbody>
             </table>
           </div>
