@@ -1,0 +1,256 @@
+# ═══════════════════════════════════════════════════════════════
+# ZION GPU Revenue Stack — Multi-Algo Profit-Switch (CH3 Stream 4)
+# ═══════════════════════════════════════════════════════════════
+#
+# 🎯 Model: 50/25/25 (ZION / GPU Multi-Algo / NCL AI)
+#
+#   Stream 1: ZION CPU mining (zion-core + zion-pool)
+#   Stream 2: ETC merged mining (FREE byproduct — Keccak)
+#   Stream 3: NXS merged mining (FREE byproduct — SHA3)
+#   Stream 4: ← THIS FILE — GPU profit-switch (ERG/RVN/ETC/ALPH)
+#   Stream 5: NCL AI compute (ncl-gateway service)
+#
+# ═══════════════════════════════════════════════════════════════
+# HARDWARE REQUIREMENTS:
+#   NVIDIA: CUDA 11.0+ (RTX 2000+/GTX 1060+/T4/A4000/A100)
+#   AMD:    ROCm 5.0+ / OpenCL (RX 5000+/RX 6000+/RX 7000+)
+#   Minimum 4GB VRAM
+#
+# DEPLOY:
+#   NVIDIA:  COIN=ERG  WALLET=<zion_wallet> docker compose -f docker-compose.gpu-revenue.yml --profile nvidia up -d
+#   AMD:     COIN=ERG  WALLET=<zion_wallet> docker compose -f docker-compose.gpu-revenue.yml --profile amd    up -d
+#   CPU+GPU: COIN=auto WALLET=<zion_wallet> docker compose -f docker-compose.gpu-revenue.yml --profile dual   up -d
+#   Auto:    WALLET=<zion_wallet> docker compose -f docker-compose.gpu-revenue.yml up -d
+#
+# PROFIT SWITCHER:
+#   Checks WhatToMine API every 15 min → restarts lolminer with best coin
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+# ── Wallet & worker config ───────────────────────────────────
+# Set via environment or .env file:
+#   ZION_BTC_WALLET=bc1q...
+#   ZION_WORKER=zion_gpu_1
+#   ZION_GPU_COIN=auto   (auto | ERG | RVN | ETC | ALPH)
+x-env-common: &env-common
+  WALLET:   ${ZION_BTC_WALLET:-bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw}
+  WORKER:   ${ZION_WORKER:-zion_gpu}
+  COIN:     ${ZION_GPU_COIN:-ERG}
+
+services:
+
+  # ─── LOLMINER (NVIDIA + AMD) ─────────────────────────────
+  # Universal GPU miner: supports CUDA + OpenCL
+  # Profit-switch coins: ERG / RVN / ETC / ALPH
+  # ─────────────────────────────────────────────────────────
+  lolminer:
+    image: cryptopunk/lolminer:latest
+    container_name: zion-lolminer
+    restart: unless-stopped
+    environment:
+      <<: *env-common
+    command:
+      - "--coin"
+      - "${ZION_GPU_COIN:-ERG}"
+      - "--pool"
+      - "${ZION_GPU_POOL:-erg.2miners.com:8008}"
+      - "--user"
+      - "${ZION_BTC_WALLET:-bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw}.${ZION_WORKER:-zion_gpu}"
+      - "--apiport"
+      - "19999"
+      - "--watchdog"
+      - "1"
+    ports:
+      - "19999:19999"   # lolminer API
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - gpu-revenue-net
+    labels:
+      - "zion.service=gpu-revenue"
+      - "zion.stream=4"
+      - "zion.miner=lolminer"
+
+  # ─── TEAMREDMINER (AMD) ──────────────────────────────────
+  # Best AMD performance. Profiles: amd
+  # ─────────────────────────────────────────────────────────
+  teamredminer:
+    image: todxx/teamredminer:latest
+    container_name: zion-teamredminer
+    restart: unless-stopped
+    profiles: ["amd"]
+    environment:
+      <<: *env-common
+    command:
+      - "-a"
+      - "${ZION_GPU_ALGO:-autolykos2}"
+      - "-o"
+      - "stratum+tcp://${ZION_GPU_POOL:-erg.2miners.com:8008}"
+      - "-u"
+      - "${ZION_BTC_WALLET:-bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw}.${ZION_WORKER:-zion_gpu}"
+      - "-p"
+      - "x"
+      - "--api_listen=0.0.0.0:4067"
+    ports:
+      - "4067:4067"   # teamredminer API
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+    networks:
+      - gpu-revenue-net
+    labels:
+      - "zion.service=gpu-revenue"
+      - "zion.stream=4"
+      - "zion.miner=teamredminer"
+
+  # ─── T-REX (NVIDIA only, best NVIDIA performance) ────────
+  # Profiles: nvidia-trex
+  # Coins: ETC (etchash) / RVN (kawpow) / ERG (autolykos)
+  # ─────────────────────────────────────────────────────────
+  trex:
+    image: trexminer/t-rex:latest
+    container_name: zion-trex
+    restart: unless-stopped
+    profiles: ["nvidia-trex"]
+    environment:
+      <<: *env-common
+    command:
+      - "-a"
+      - "${ZION_GPU_ALGO:-autolykos2}"
+      - "-o"
+      - "stratum+tcp://${ZION_GPU_POOL:-erg.2miners.com:8008}"
+      - "-u"
+      - "${ZION_BTC_WALLET:-bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw}.${ZION_WORKER:-zion_gpu}"
+      - "-p"
+      - "x"
+      - "--api-bind-http"
+      - "0.0.0.0:4067"
+    ports:
+      - "4068:4067"   # t-rex API
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - gpu-revenue-net
+    labels:
+      - "zion.service=gpu-revenue"
+      - "zion.stream=4"
+      - "zion.miner=trex"
+
+  # ─── PROFIT SWITCHER ──────────────────────────────────────
+  # Polls WhatToMine API every 15 min
+  # Auto-switches lolminer to most profitable GPU coin
+  # Supports: ERG, RVN, ETC, ALPH, KAS
+  # ─────────────────────────────────────────────────────────
+  profit-switcher:
+    image: python:3.12-slim
+    container_name: zion-profit-switcher
+    restart: unless-stopped
+    depends_on:
+      - lolminer
+    environment:
+      <<: *env-common
+      WHATTOMINE_GPU_ID: "${WHATTOMINE_GPU_ID:-353}"  # 353=RTX 4090, 165=RTX 3080, 74=RTX 3070
+      SWITCH_INTERVAL_MIN: "15"
+      HYSTERESIS_PCT: "5"
+      ENABLED_COINS: "ERG,RVN,ETC,ALPH"
+      LOLMINER_API: "http://lolminer:19999"
+    volumes:
+      - ./scripts/profit_switcher.py:/app/profit_switcher.py:ro
+      - zion-profit-state:/app/state
+    command: python /app/profit_switcher.py
+    networks:
+      - gpu-revenue-net
+    labels:
+      - "zion.service=gpu-revenue"
+      - "zion.type=profit-switcher"
+
+  # ─── NCL GATEWAY (Stream 5: AI Compute) ───────────────────
+  # Accepts AI inference tasks from ZION pool
+  # Runs: embeddings, classification, tiny LLM inference
+  # GPU-accelerated via ONNX Runtime or llama.cpp
+  # ─────────────────────────────────────────────────────────
+  ncl-gateway:
+    image: python:3.12-slim
+    container_name: zion-ncl-gateway
+    restart: unless-stopped
+    environment:
+      NCL_POOL_URL: "${ZION_POOL_URL:-http://77.42.31.72:8444}"
+      NCL_WALLET: "${ZION_BTC_WALLET:-bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw}"
+      NCL_WORKER: "${ZION_WORKER:-zion_gpu}"
+      NCL_PORT: "8002"
+      NCL_GPU_ENABLED: "${ZION_HAS_GPU:-1}"
+    ports:
+      - "8002:8002"   # NCL API (referenced in ch3_revenue_settings.json)
+    volumes:
+      - ./scripts/ncl_gateway.py:/app/ncl_gateway.py:ro
+      - zion-ncl-models:/app/models
+    command: python /app/ncl_gateway.py
+    networks:
+      - gpu-revenue-net
+    labels:
+      - "zion.service=ncl"
+      - "zion.stream=5"
+      - "zion.type=ai-gateway"
+
+  # ─── METRICS EXPORTER ─────────────────────────────────────
+  # Scrapes lolminer/teamredminer APIs → Prometheus metrics
+  # ─────────────────────────────────────────────────────────
+  gpu-exporter:
+    image: python:3.12-slim
+    container_name: zion-gpu-exporter
+    restart: unless-stopped
+    depends_on:
+      - lolminer
+    environment:
+      EXPORTER_PORT: "9200"
+      LOLMINER_API: "http://lolminer:19999"
+    ports:
+      - "9200:9200"   # Prometheus scrape endpoint
+    volumes:
+      - ./scripts/gpu_metrics_exporter.py:/app/exporter.py:ro
+    command: python /app/exporter.py
+    networks:
+      - gpu-revenue-net
+    labels:
+      - "zion.service=monitoring"
+
+volumes:
+  zion-profit-state:
+    name: zion-profit-state
+  zion-ncl-models:
+    name: zion-ncl-models
+
+networks:
+  gpu-revenue-net:
+    name: zion-gpu-revenue-net
+    driver: bridge
+
+# ═══════════════════════════════════════════════════════════════
+# POOL MAPPINGS (best pools for each GPU coin):
+#
+#  ERG  (Autolykos2): erg.2miners.com:8008       → payout BTC
+#  RVN  (KawPow):     rvn.2miners.com:6060        → payout BTC
+#  ETC  (Etchash):    etc.2miners.com:1010         → payout BTC
+#  ALPH (Blake3):     alph.2miners.com:1199        → payout BTC
+#  KAS  (KHeavyHash): pool.woolypooly.com:3112     → payout BTC
+#
+# WHATTOMINE GPU IDs:
+#  353 = RTX 4090  |  165 = RTX 3080  |  74 = RTX 3070
+#  335 = RX 7900 XT|  141 = RX 6800   |  120 = RX 5700 XT
+# ═══════════════════════════════════════════════════════════════
