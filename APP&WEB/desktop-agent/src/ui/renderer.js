@@ -1,6 +1,11 @@
 // ZION Native Awakening v2.9.6 - Renderer Process
 // UI logic and state management
 
+// ── Logging: only user-visible events + errors in console.log.
+// Verbose init/polling chatter uses dbg() → console.debug (hidden unless DevTools filter set).
+const DBG = typeof localStorage !== 'undefined' && localStorage.getItem('ZION_DEBUG') === '1';
+function dbg(...args) { if (DBG) console.debug('[DBG]', ...args); }
+
 // ── AUDIT-FIX E-02/E-03 (16 Feb 2026): HTML sanitizer ─────────────────────
 // Escapes HTML special characters to prevent XSS via innerHTML injection.
 function escapeHtml(str) {
@@ -171,63 +176,35 @@ function renderBackendUi() {
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('Renderer DOMContentLoaded fired');
+  dbg('Renderer DOMContentLoaded fired');
 
   try {
-    console.log('Step 1: Init starfield...');
+    dbg('Init starfield...');
     initWarpStarfield();
-    console.log('Starfield OK');
 
     // ═══ First-run wizard check ═══
-    console.log('Step 0: Checking first-run...');
     await checkFirstRun();
-    console.log('First-run check done');
     
-    console.log('Step 2: Load config...');
     config = await window.electronAPI.getConfig();
-    console.log('Config loaded:', config);
+    dbg('Config loaded');
     
-    console.log('Step 3: Load system limits...');
     await loadSystemLimits();
-    console.log('System limits loaded');
-    
-    console.log('Step 4: Update settings UI...');
     updateSettingsUI();
-    console.log('Settings UI updated');
-    
-    console.log('Step 5: Setup threads control...');
     setupThreadsControl();
-    console.log('Threads control setup');
-    
-    console.log('Step 6: Setup navigation...');
     setupNavigation();
-    console.log('Navigation setup');
-    
-    console.log('Step 7: Setup controls...');
     setupControls();
-    console.log('Controls setup');
-    
-    console.log('Step 8: Setup wallet controls...');
     setupWalletControls();
-    console.log('Wallet controls setup');
 
-    console.log('Step 8b: Controls setup');
-    console.log('AI/chat removed for mainnet');
+    dbg('AI/chat removed for mainnet');
     
-    console.log('Step 9: Setup event listeners...');
     setupEventListeners();
     setupMiningConsole();
-    console.log('Event listeners setup');
     
-    console.log('Step 9b: Init CH3 features...');
     await initCH3Features();
-    console.log('CH3 features initialized');
 
-    console.log('Step 10: Start polling stats...');
     pollStats();
-    console.log('Polling started');
 
-    console.log('Renderer initialization complete');
+    console.log('Renderer ready');
   } catch (err) {
     console.error('Renderer initialization failed:', err);
     console.error('Error stack:', err?.stack);
@@ -239,15 +216,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadSystemLimits() {
   try {
     if (typeof window.electronAPI?.getSystemInfo !== 'function') {
-      console.warn('getSystemInfo not available');
+      dbg('getSystemInfo not available');
       return;
     }
     const info = await window.electronAPI.getSystemInfo();
-    console.log('System info:', info);
+    dbg('System info:', info);
     const cpuCount = Number(info?.cpuCount);
     if (Number.isFinite(cpuCount) && cpuCount > 0) {
       cpuThreadMax = Math.max(1, Math.floor(cpuCount));
-      console.log('CPU thread max:', cpuThreadMax);
+      dbg('CPU thread max:', cpuThreadMax);
     }
   } catch (err) {
     console.error('Failed to load system limits:', err);
@@ -1107,7 +1084,7 @@ function setupEventListeners() {
   // Auto-select pool notification — refresh config when main process picks best pool
   if (typeof window.electronAPI.onConfigUpdated === 'function') {
     window.electronAPI.onConfigUpdated(async () => {
-      console.log('[renderer] Config updated by main process, refreshing...');
+      dbg('[renderer] Config updated by main process, refreshing...');
       const result = await window.electronAPI.getConfig();
       if (result.success) {
         config = result.config;
@@ -2020,7 +1997,7 @@ async function initCH3Features() {
     // Stream switch event
     if (window.electronAPI.onStreamSwitch) {
       window.electronAPI.onStreamSwitch((data) => {
-        console.log('[CH3] Stream switch:', data);
+        dbg('[CH3] Stream switch:', data);
         updateStreamIndicator(data.mode, data.to);
       });
     }
@@ -2158,14 +2135,14 @@ function formatHashrateLite(h) {
 async function refreshNetworkMetrics() {
   try {
     if (typeof window.electronAPI.getNetworkMetrics !== 'function') {
-      console.warn('[NET-METRICS] getNetworkMetrics not available in electronAPI');
+      dbg('[NET-METRICS] getNetworkMetrics not available');
       return;
     }
-    console.log('[NET-METRICS] Fetching network metrics...');
+    dbg('[NET-METRICS] Fetching...');
     const data = await window.electronAPI.getNetworkMetrics();
-    console.log('[NET-METRICS] Response:', JSON.stringify(data).substring(0, 300));
+    dbg('[NET-METRICS] nodes:', data?.summary?.online);
     if (!data.success) {
-      console.warn('[NET-METRICS] Response not successful:', data.error);
+      dbg('[NET-METRICS] not successful:', data.error);
       return;
     }
     const s = data.summary;
@@ -2246,12 +2223,12 @@ async function refreshNetworkMetrics() {
 async function refreshPeerList() {
   try {
     if (typeof window.electronAPI.getPeerList !== 'function') {
-      console.warn('[PEERS] getPeerList not available in electronAPI');
+      dbg('[PEERS] getPeerList not available');
       return;
     }
-    console.log('[PEERS] Fetching peer list...');
+    dbg('[PEERS] Fetching...');
     const data = await window.electronAPI.getPeerList();
-    console.log('[PEERS] Response:', data.count, 'peers,', data.connected, 'connected');
+    dbg('[PEERS]', data.count, 'peers,', data.connected, 'connected');
 
     const el = (id) => document.getElementById(id);
 
@@ -2535,4 +2512,4 @@ window.bridgeCopyEvm = function () {
 // Hook into switchView to initialize bridge when tab is opened
 // (initBridgeView() is called directly inside switchView() above)
 
-console.log('Renderer script loaded');
+dbg('Renderer script loaded');

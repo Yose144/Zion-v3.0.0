@@ -9,6 +9,11 @@ const os = require('os');
 const WalletGenerator = require('./wallet-generator');
 const QRCode = require('qrcode');
 
+// ── Logging: only miner metrics + errors go to console.log.
+// Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
+const DBG = process.env.ZION_DEBUG === '1';
+function dbg(...args) { if (DBG) console.debug('[DBG]', ...args); }
+
 process.on('uncaughtException', (err) => {
   try {
     const msg = err?.stack || err?.message || String(err);
@@ -709,7 +714,7 @@ if (rustMinerPath) {
   MINER_PATH = rustMinerPath;
   MINER_IS_RUST = true;
   MINER_IS_PYTHON = false;
-  console.log('[MINER] Using Rust native miner:', rustMinerPath);
+  dbg('[MINER] Using Rust native miner:', rustMinerPath);
 } else if (process.platform === 'darwin') {
   // macOS: use Python script
   MINER_IS_PYTHON = true;
@@ -717,7 +722,7 @@ if (rustMinerPath) {
   MINER_PATH = findPythonMiner() || (IS_PACKAGED
     ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.py')
     : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py'));
-  console.log('[MINER] Using Python miner (macOS fallback)');
+  dbg('[MINER] Using Python miner (macOS fallback)');
 } else if (process.platform === 'linux') {
   // Linux: use Python script
   MINER_IS_PYTHON = true;
@@ -725,7 +730,7 @@ if (rustMinerPath) {
   MINER_PATH = findPythonMiner() || (IS_PACKAGED
     ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.py')
     : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py'));
-  console.log('[MINER] Using Python miner (Linux fallback)');
+  dbg('[MINER] Using Python miner (Linux fallback)');
 } else {
   // Windows: Python fallback (if present) -> legacy .exe last
   const devPythonMiner = path.join(APP_ROOT, '..', 'zion_native_miner_v2_9.py');
@@ -741,22 +746,22 @@ if (rustMinerPath) {
     MINER_IS_PYTHON = true;
     MINER_IS_RUST = false;
     MINER_PATH = discoveredPythonMiner;
-    console.log('[MINER] Using Python miner (Windows fallback)');
+    dbg('[MINER] Using Python miner (Windows fallback)');
   } else if (!IS_PACKAGED && fs.existsSync(devPythonMiner)) {
     MINER_IS_PYTHON = true;
     MINER_IS_RUST = false;
     MINER_PATH = devPythonMiner;
-    console.log('[MINER] Using Python miner (dev mode fallback)');
+    dbg('[MINER] Using Python miner (dev mode fallback)');
   } else if (fs.existsSync(resourcesPythonMiner)) {
     MINER_IS_PYTHON = true;
     MINER_IS_RUST = false;
     MINER_PATH = resourcesPythonMiner;
-    console.log('[MINER] Using Python miner (Windows fallback)');
+    dbg('[MINER] Using Python miner (Windows fallback)');
   } else if (fs.existsSync(legacyExePath)) {
     MINER_IS_PYTHON = false;
     MINER_IS_RUST = false;
     MINER_PATH = legacyExePath;
-    console.log('[MINER] WARNING: Using legacy PyInstaller miner (.exe)');
+    dbg('[MINER] WARNING: Using legacy PyInstaller miner (.exe)');
   } else {
     throw new Error('No miner executable found! Please reinstall the application.');
   }
@@ -776,7 +781,7 @@ const AFTERBURNER_SCRIPT_PATH = IS_PACKAGED
 // - We want primarily *current* outputs in UI and on disk.
 // - Cap by size (to avoid runaway chatty miners) and by age (to avoid multi-day logs).
 // - Backups disabled by default to keep only the current file (per UX request).
-const MAX_MINER_LOG_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_MINER_LOG_BYTES = 2 * 1024 * 1024; // 2MB (reduced for performance)
 const MAX_MINER_LOG_BACKUPS = 0;
 const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -903,7 +908,7 @@ function ensureDirectories() {
   dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
-      console.log('Created directory:', dir);
+      dbg('Created directory:', dir);
     }
   });
 }
@@ -1310,18 +1315,18 @@ async function autoSelectBestPool() {
       .sort((a, b) => a.pool.latency - b.pool.latency);
 
     if (onlinePools.length === 0) {
-      console.log('[auto-select] No online pools found, keeping current config');
+      dbg('[auto-select] No online pools found, keeping current config');
       return null;
     }
 
     const best = onlinePools[0];
-    console.log(`[auto-select] Best pool: ${best.name} (${best.host}) — latency ${best.pool.latency}ms`);
+    dbg(`[auto-select] Best pool: ${best.name} (${best.host}) — latency ${best.pool.latency}ms`);
 
     const config = loadConfig();
     // Only auto-switch if current pool is a known testnet server (not custom)
     const knownHosts = TESTNET_SERVERS.map(s => s.host);
     if (!knownHosts.includes(config.pool?.host) && config.pool?.host) {
-      console.log(`[auto-select] User has custom pool ${config.pool.host}, skipping auto-select`);
+      dbg(`[auto-select] User has custom pool ${config.pool.host}, skipping auto-select`);
       return best;
     }
 
@@ -1329,7 +1334,7 @@ async function autoSelectBestPool() {
       config.pool = { host: best.host, port: 3333 };
       config.rpcUrl = `http://${best.host}:8444/jsonrpc`;
       saveConfig(config);
-      console.log(`[auto-select] Config updated to ${best.host}`);
+      dbg(`[auto-select] Config updated to ${best.host}`);
     }
     return best;
   } catch (err) {
@@ -1348,12 +1353,12 @@ function migrateLegacyUserDataIfNeeded() {
   try {
     if (!fs.existsSync(CONFIG_PATH) && fs.existsSync(legacyConfig)) {
       fs.copyFileSync(legacyConfig, CONFIG_PATH);
-      console.log('Migrated legacy config to:', CONFIG_PATH);
+      dbg('Migrated legacy config to:', CONFIG_PATH);
     }
 
     if (!fs.existsSync(LOG_PATH) && fs.existsSync(legacyLog)) {
       fs.copyFileSync(legacyLog, LOG_PATH);
-      console.log('Migrated legacy log to:', LOG_PATH);
+      dbg('Migrated legacy log to:', LOG_PATH);
     }
 
     if (!fs.existsSync(WALLETS_PATH) && fs.existsSync(legacyWallets)) {
@@ -1365,7 +1370,7 @@ function migrateLegacyUserDataIfNeeded() {
           fs.copyFileSync(from, to);
         }
       }
-      console.log('Migrated legacy wallets to:', WALLETS_PATH);
+      dbg('Migrated legacy wallets to:', WALLETS_PATH);
     }
   } catch (err) {
     console.warn('Legacy data migration failed:', err);
@@ -1810,7 +1815,7 @@ function startMining(config) {
     !!fallbackPythonPath &&
     preferredBackend === 'auto';
   if (minerProcess) {
-    console.log('Miner already running');
+    dbg('Miner already running');
     return { success: false, error: 'Miner is already running' };
   }
 
@@ -2048,7 +2053,7 @@ function startMining(config) {
     : MINER_IS_PYTHON
       ? `python ${MINER_PATH}`
       : MINER_PATH;
-  console.log('Starting miner:', minerLabel, args.join(' '));
+  dbg('Starting miner:', minerLabel, args.join(' '));
 
   // Cache some metadata for xmrig-style status lines.
   try {
@@ -2461,7 +2466,7 @@ function startMining(config) {
       });
 
       revenueProcess.on('close', (code, signal) => {
-        console.log(`Revenue process exited (code=${code} signal=${signal})`);
+        dbg(`Revenue process exited (code=${code} signal=${signal})`);
         revenueProcess = null;
         logApp('revenue-process-exit', JSON.stringify({ code, signal }));
         // If main miner is still running and revenue died unexpectedly, log it
@@ -2611,7 +2616,7 @@ function startMining(config) {
       });
 
       gpuRevenueProcess.on('close', (code, signal) => {
-        console.log(`GPU Revenue process exited (code=${code} signal=${signal})`);
+        dbg(`GPU Revenue process exited (code=${code} signal=${signal})`);
         gpuRevenueProcess = null;
         gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
         logApp('gpu-revenue-process-exit', JSON.stringify({ code, signal }));
@@ -2801,7 +2806,7 @@ function startMining(config) {
     if (!shouldSkipFileLogLine(output)) {
       safeMinerLogWrite(`[STDERR] ${output}`);
     }
-    console.log('Miner:', output);
+    dbg('Miner stderr:', output);
     enqueueMinerOutputToRenderer('stderr', output);
     maybeEmitBlockFound(output);
     parseMinerOutput(output);
@@ -2873,7 +2878,7 @@ function startMining(config) {
       poolFailoverCount < POOL_FAILOVER_MAX
     ) {
       poolFailoverCount++;
-      console.log(`[pool-failover] Miner crashed (code ${code}). Attempting failover ${poolFailoverCount}/${POOL_FAILOVER_MAX} in ${POOL_FAILOVER_DELAY_MS / 1000}s...`);
+      console.log(`[pool-failover] Failover ${poolFailoverCount}/${POOL_FAILOVER_MAX} — restarting in ${POOL_FAILOVER_DELAY_MS / 1000}s`);
       try {
         sendToRenderer('miner-output', {
           stream: 'stdout',
@@ -2886,7 +2891,7 @@ function startMining(config) {
         try {
           const best = await autoSelectBestPool();
           if (best) {
-            console.log(`[pool-failover] Restarting with pool: ${best.name} (${best.host})`);
+            dbg(`[pool-failover] Restarting with pool: ${best.name} (${best.host})`);
             const cfg = loadConfig();
             startMining(cfg);
             try {
@@ -2897,7 +2902,7 @@ function startMining(config) {
               });
             } catch { /* ignore */ }
           } else {
-            console.log('[pool-failover] No online pools found. Giving up.');
+            dbg('[pool-failover] No online pools found. Giving up.');
             try {
               sendToRenderer('miner-error', {
                 message: 'Failover failed — no reachable pool servers. Check network or restart manually.'
@@ -4092,7 +4097,7 @@ function parseMinerOutput(output) {
 
   // Pool failover: reset counter once we see real hashing (pool connection works)
   if (poolFailoverCount > 0 && (minerStats.hashrate_10s > 0 || minerStats.accepted > 0)) {
-    console.log(`[pool-failover] Mining confirmed working — resetting failover counter (was ${poolFailoverCount})`);
+    dbg(`[pool-failover] Mining confirmed working — resetting failover counter (was ${poolFailoverCount})`);
     poolFailoverCount = 0;
   }
 
@@ -4536,7 +4541,7 @@ ipcMain.handle('get-server-status', async () => {
 
 // ── Network Metrics (lite version of website /api/network) ──────────────
 ipcMain.handle('get-network-metrics', async () => {
-  console.log('[NET-METRICS] Fetching network metrics for', TESTNET_SERVERS.length, 'servers...');
+  dbg('[NET-METRICS] Fetching network metrics for', TESTNET_SERVERS.length, 'servers...');
   try {
     const nodes = await Promise.all(
       TESTNET_SERVERS.map(async (server) => {
@@ -4557,9 +4562,9 @@ ipcMain.handle('get-network-metrics', async () => {
             const json = await res.json();
             node.height = json.result?.height || 0;
             node.online = json.result?.status === 'OK' || node.height > 0;
-            console.log(`[NET-METRICS] ${server.name} RPC: height=${node.height}, online=${node.online}`);
+            dbg(`[NET-METRICS] ${server.name} RPC: height=${node.height}, online=${node.online}`);
           }
-        } catch (e) { console.log(`[NET-METRICS] ${server.name} RPC failed:`, e.message); }
+        } catch (e) { dbg(`[NET-METRICS] ${server.name} RPC failed:`, e.message); }
         // Pool API /stats → hashrate, miners, blocks
         try {
           const ctrl = new AbortController();
@@ -4574,7 +4579,7 @@ ipcMain.handle('get-network-metrics', async () => {
             if (!node.height && pool.blockchain?.height) node.height = pool.blockchain.height;
             node.online = true;
           }
-        } catch (e) { console.log(`[NET-METRICS] ${server.name} Pool API failed:`, e.message); }
+        } catch (e) { dbg(`[NET-METRICS] ${server.name} Pool API failed:`, e.message); }
         return node;
       })
     );
@@ -4596,7 +4601,7 @@ ipcMain.handle('get-network-metrics', async () => {
         inSync: heights.length >= 2 && (maxHeight - minHeight) <= 2
       }
     };
-    console.log('[NET-METRICS] Result:', JSON.stringify(result.summary));
+    dbg('[NET-METRICS] Result:', JSON.stringify(result.summary));
     return result;
   } catch (error) {
     console.error('[NET-METRICS] Fatal error:', error);
@@ -4618,7 +4623,7 @@ ipcMain.handle('auto-select-pool', async () => {
 
 // ── P2P Peer List (from daemon JSON-RPC getPeerList) ──────────────────────
 ipcMain.handle('get-peer-list', async () => {
-  console.log('[PEERS] Fetching peer list from all servers...');
+  dbg('[PEERS] Fetching peer list from all servers...');
   try {
     const allPeers = [];
     const seenAddresses = new Set();
@@ -4648,10 +4653,10 @@ ipcMain.handle('get-peer-list', async () => {
               });
             }
           }
-          console.log(`[PEERS] ${server.name}: ${peers.length} peers`);
+          dbg(`[PEERS] ${server.name}: ${peers.length} peers`);
         }
       } catch (e) {
-        console.log(`[PEERS] ${server.name} failed:`, e.message);
+        dbg(`[PEERS] ${server.name} failed:`, e.message);
       }
     }
 
@@ -4662,7 +4667,7 @@ ipcMain.handle('get-peer-list', async () => {
     });
 
     const connectedCount = allPeers.filter(p => p.connected).length;
-    console.log(`[PEERS] Total: ${allPeers.length} unique peers, ${connectedCount} connected`);
+    dbg(`[PEERS] Total: ${allPeers.length} unique peers, ${connectedCount} connected`);
 
     return {
       success: true,
@@ -4713,7 +4718,7 @@ ipcMain.handle('generate-wallet', () => {
     // Generate new wallet
     const wallet = WalletGenerator.generateWallet();
     
-    console.log('Generated wallet:', wallet.address);
+    dbg('Generated wallet:', wallet.address);
     return { success: true, wallet };
   } catch (error) {
     console.error('Wallet generation failed:', error);
@@ -4747,7 +4752,7 @@ ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
     const filePath = path.join(WALLETS_PATH, filename);
     fs.writeFileSync(filePath, JSON.stringify(walletData, null, 2));
     
-    console.log('Wallet saved:', filePath);
+    dbg('Wallet saved:', filePath);
     return { success: true, filePath };
   } catch (error) {
     console.error('Wallet save failed:', error);
@@ -4774,7 +4779,7 @@ ipcMain.handle('list-wallets', () => {
           lastUsed: data.lastUsed
         });
       } catch (err) {
-        console.warn('Skipping invalid wallet file:', file, err?.message || err);
+        dbg('Skipping invalid wallet file:', file, err?.message || err);
       }
     }
     
@@ -5259,10 +5264,10 @@ ipcMain.handle('afterburner-command', async (event, data) => {
 // App lifecycle
 app.whenReady().then(() => {
   console.log('ZION Native Awakening v2.9.6 started');
-  console.log('Config path:', CONFIG_PATH);
-  console.log('Miner path:', MINER_PATH);
-  console.log('Log path:', LOG_PATH);
-  console.log('Cache path:', CACHE_PATH);
+  dbg('Config path:', CONFIG_PATH);
+  dbg('Miner path:', MINER_PATH);
+  dbg('Log path:', LOG_PATH);
+  dbg('Cache path:', CACHE_PATH);
 
   try {
     logApp(
@@ -5308,14 +5313,14 @@ app.whenReady().then(() => {
     if (startupConfig?.autoSelectPool) {
       autoSelectBestPool().then(best => {
         if (best) {
-          console.log(`[startup] Auto-selected pool: ${best.name} (${best.host})`);
+          dbg(`[startup] Auto-selected pool: ${best.name} (${best.host})`);
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('config-updated');
           }
         }
       }).catch(err => console.error('[startup] Pool auto-select failed:', err.message));
     } else {
-      console.log('[startup] Pool auto-select disabled (config.autoSelectPool=false)');
+      dbg('[startup] Pool auto-select disabled (config.autoSelectPool=false)');
     }
   } catch (err) {
     console.error('[startup] Failed to read config for auto-select:', err.message);
