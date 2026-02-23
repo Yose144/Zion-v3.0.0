@@ -1,8 +1,49 @@
 # 🖥️ ZION TerraNova — Seed Nodes
 
-> **Aktualizace:** 22. února 2026  
+> **Aktualizace:** 23. února 2026  
 > **Cíl:** 5 seed nodů pro TestNet → MainNet  
 > **Poznámka:** Původní Vultr servery (LA, Sydney, Delhi, Santiago) suspendovány → nahrazeny testovacími nody
+
+
+
+Asia3
+CPX12 | x86 | 40 GB | ap-southeast
+5.223.43.93
+
+Singapore
+about 4 hours ago
+
+
+Usa2
+CPX11 | x86 | 40 GB | us-east
+178.156.240.160
+
+Ashburn, VA
+about 4 hours ago
+
+
+Usa1
+CPX11 | x86 | 40 GB | us-west
+5.78.178.227
+
+Hillsboro, OR
+about 4 hours ago
+
+
+SeedDE
+CAX11 | arm | 40 GB | eu-central
+46.225.126.243
+
+Nuremberg
+about 4 hours ago
+
+
+TreeOfLife-Zion
+CAX21 | arm | 80 GB | eu-central
+77.42.31.72
+
+Helsinki
+25 days ago
 
 ## Aktivní servery
 
@@ -13,6 +54,15 @@
 | 3 | Seed2 | 🇺🇸 USA 1 | 5.78.178.227 | `zion-usa1` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
 | 4 | Seed3 | 🇺🇸 USA 2 | 178.156.240.160 | `zion-usa2` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
 | 5 | Seed4 | 🌏 Asia | 5.223.43.93 | `zion-asia3` | `zion_servers_ed25519` | 🔧 Připraven k deploy |
+
+### 💰 Revenue stack (snapshot 23. 2. 2026)
+
+| Server | Revenue kontejnery | Aktuální stav |
+|---|---|---|
+| Helsinki (`77.42.31.72`) | `zion-dero-miner`, `zion-zeph-miner`, `zion-mysterium` | `dero`: běží, ale vrací `unregistered miner or you need to wait 15 mins`; `zeph`: běží, po restartu probíhá build/start `xmrig`; `mysterium`: stabilně `Up` |
+| Germany (`46.225.126.243`) | `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium` | `dero`: běží, ale vrací `unregistered miner or you need to wait 15 mins`; `epic`: běží, ale pool `fastepic.eu:3416` vrací opakovaně `connect error: operation canceled`; `mysterium`: stabilně `Up` |
+
+Poznámka: `nkn` je v produkci zatím vypnutý (wallet init flow ještě není idempotentně zautomatizovaný).
 
 ### ❌ Suspendované servery (Vultr — pozastaveny)
 
