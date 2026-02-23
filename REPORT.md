@@ -1615,5 +1615,115 @@ cargo check --workspace --exclude verushash-native --no-default-features
 
 ---
 
+## Session 35 — Desktop Agent UI sjednocení (web2.9 classes) (23.2.2026)
+
+**Datum:** 23. února 2026  
+**Commity:** `124b1ee`, `176fca7`, `35b4fc8`, `8f933a1`, `60be672`
+
+### Co bylo hotovo
+
+| Commit | Popis | Soubory |
+|--------|-------|---------|
+| `124b1ee` | Sjednocení Network + Bridge + About sekcí s web2.9 class systémem | `index.html` |
+| `176fca7` | Sjednocení About/Network panelů s web2.9 classes | `index.html` |
+| `35b4fc8` | Expose pending drift stats vs payouts in wallet | `index.html`, `renderer.js` |
+| `8f933a1` | Polish wizard, settings and logs UI classes | `index.html` |
+| `60be672` | Final dashboard and wallet inline cleanup | `index.html` |
+
+### Detail změn
+
+- **web2.9 page headers** — `.web29-page-header`, `.web29-kicker`, `.web29-title`, `.web29-chip`, `.web29-subtitle` zavedeny na Dashboard, Network, About, Bridge views
+- **Panel header titulky** — `.panel-header-title`, `.panel-header-row` pro konzistentní layout hlaviček
+- **Wizard** — CSS classes místo inline styles (`.wizard-overlay`, `.wizard-card`, `.wizard-btn-primary`)
+- **Settings** — `.settings-card`, `.card-heading`, `.card-icon`, pool karty `.pool-card`, toggle `.toggle-field`
+- **Logs** — `.mining-console-header`, stream indicator, GPU badge
+- **Wallet** — pending drift stats, balance sub-metriky, inline čištění
+
+---
+
+## Session 36 — Performance optimalizace + Defender hardening (23.2.2026)
+
+**Datum:** 23. února 2026  
+**Commit:** `ba3f8b0`
+
+### Co bylo hotovo
+
+| Změna | Soubor | Detail |
+|-------|--------|--------|
+| Buffered file appends | `main.js` | `appendFileSync` → `appendFile` (non-blocking I/O) pro `desktop_agent.log` a `miner.log` |
+| Miner output batching | `main.js` | `miner-output` IPC: stdout/stderr batching přes 200ms buffer místo per-line forwarding → snížení IPC overhead |
+| Windows Defender exclusion | `main.js` | `Add-MpExclusion -Path` pro app + resources cesty při startu na Windows; eliminuje runtime scanning latenci |
+| Stats poll adaptive interval | `renderer.js` | Mining stats polling: 5s → adaptivní (1s mining / 10s idle), snížení CPU zátěže |
+| Network poll gating | `renderer.js` | Server/peer status polling jen když je Network tab aktivní |
+
+---
+
+## Session 37 — Wallet balance RPC fallback (23.2.2026)
+
+**Datum:** 23. února 2026  
+**Commity:** `df68d5c`, `fc86f65`
+
+### Problém
+Primární RPC node `77.42.31.72:8444` byl nedostupný → wallet balance zobrazoval error místo hodnoty.
+
+### Oprava
+
+| Commit | Změna | Detail |
+|--------|-------|--------|
+| `df68d5c` | RPC fallback pro wallet balance | `wallet-get-balance` handler: zkouší 5 testnet serverů (`:8444/jsonrpc`) postupně; při chybě přechází na další |
+| `fc86f65` | Hardening + diagnostika | Vždy zkouší kanonický `:8444` endpoint; přidán `rpc_tried` array do odpovědi (UI zobrazuje které hosty agent zkoušel); `rpc_source` v renderer.js |
+
+### Chování po opravě
+```
+wallet-get-balance →
+  1. 77.42.31.72:8444  (pokud OK → vrátí)
+  2. 46.225.126.243:8444 (fallback #1)
+  3. 5.78.178.227:8444   (fallback #2)
+  4. 178.156.240.160:8444 (fallback #3)
+  5. 5.223.43.93:8444    (fallback #4)
+```
+
+UI zobrazuje: `⚡ RPC: 46.225.126.243 (fallback #1, tried 2 hosts)`
+
+---
+
+## Session 38 — Desktop Agent vizuální sjednocení s website-v2.9 (23.2.2026)
+
+**Datum:** 23. února 2026  
+**Commit:** `72d70e7`  
+**Soubory:** 1 (index.html), 259 insertions, 132 deletions
+
+### Problém
+Předchozí styling commits (Session 35) přidaly CSS třídy, ale vizuální změny nebyly dostatečně viditelné. Uživatel požadoval kompletní vizuální sjednocení desktop-agenta s designem website-v2.9.
+
+### Co bylo hotovo
+
+| Kategorie | Detail |
+|-----------|--------|
+| **Inline styles → CSS classes** | 37 inline `style=""` atributů převedeno na utility třídy: `d-none`, `mt-20`, `mt-24`, `mb-10`, `mb-12`, `mb-14`, `ml-auto`, `icon-12`, `emoji-16`, `link-gold`, `link-cyan`, `inline-heading`, `bridge-copy-compact`, `bridge-code-nomargin`, `p-bridge`, `p-bridge-form`, `p-bridge-sm` |
+| **Glass morphism** | Všechny karty: `background: rgba(255,255,255,0.05)` + `backdrop-filter: blur(12-24px)` + `border: 1px solid rgba(255,255,255,0.10)` — shodné s web2.9 `bg-white/5 border-white/10 backdrop-blur` |
+| **Border-radius** | `24px` na sidebar, view-shell, control-panel, settings-card; `20px` na stat/metric/info/server/wallet/pool karty (web2.9 `rounded-3xl`) |
+| **HUD grid** | Zvětšen na `120px` spacing (z 80px) — shodný s web2.9 `globals.css` |
+| **Scrollbar** | Gold→purple gradient (`rgb(var(--color-zion-gold)) → rgb(var(--color-zion-purple))`); mining konzole scrollbar rovněž |
+| **Hover efekty** | `translateY(-2px)` lift + `border-color: rgba(255,255,255,0.30)` + `box-shadow glow` na všech kartách |
+| **Tlačítka** | Radius `12px`, hover glow + lift transform; bridge buttons: hover feedback |
+| **Form inputy** | `12px` radius, purple focus glow (`box-shadow: 0 0 20px rgba(147,51,234,0.25)`), smooth transitions |
+| **About citace** | Gradient text gold→purple (web2.9 style) |
+| **Resource items** | Glass bg `rgba(255,255,255,0.04)`, rounded-14, hover border glow |
+| **Reduced motion** | `@media (prefers-reduced-motion: reduce)` — animace/přechody deaktivovány |
+| **Utility classes** | `card-glow`, `hud-grid` z web2.9 `globals.css` |
+
+### Web2.9 design reference
+- **Zdrojový soubor:** `APP&WEB/website-v2.9/src/app/globals.css` (475 řádků)
+- **Karta pattern z Features.tsx:** `rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur hover:border-white/30 transition`
+- **Barvy:** gold `#FFD700`, purple `#9333EA`, cyan `#06B6D4`
+
+### Inline styles — bilance
+| Před | Po |
+|------|-----|
+| 38 inline `style=""` | 1 (SVG sprite kontejner — standard) |
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*
