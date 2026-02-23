@@ -1,0 +1,50 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────
+#  ZION Bridge Relay — TestNet
+#
+#  Usage:
+#    docker compose -f docker/docker-compose.bridge-testnet.yml up -d
+#
+#  Requires:
+#    - zion-bridge:2.9.6-testnet image built (Dockerfile.bridge)
+#    - /root/zion-bridge-data/ with bridge.toml + keys/validator.key
+#    - zion-net Docker network
+# ──────────────────────────────────────────────────────────────
+
+networks:
+  zion-net:
+    external: true
+
+services:
+  zion-bridge:
+    image: zion-bridge:2.9.6-testnet
+    container_name: zion-bridge
+    restart: unless-stopped
+    networks:
+      - zion-net
+    ports:
+      - "9100:9100"   # Prometheus metrics
+    volumes:
+      - /root/zion-bridge-data:/data/bridge:rw
+    environment:
+      # Validator private key for signing EVM transactions (podepisuje EVM TX)
+      # Loaded from /data/bridge/keys/validator.key OR from this env var
+      ZION_VALIDATOR_PRIVATE_KEY: "${ZION_VALIDATOR_PRIVATE_KEY}"
+      # Log level (trace, debug, info, warn, error)
+      RUST_LOG: "info,zion_bridge=debug"
+    command:
+      - "--config"
+      - "/data/bridge/bridge.toml"
+    # Health check via Prometheus metrics endpoint
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
