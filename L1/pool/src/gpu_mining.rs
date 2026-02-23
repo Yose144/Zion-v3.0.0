@@ -418,10 +418,12 @@ fn etc_mine_loop(
 #[derive(Clone, Debug, Default)]
 struct ErgJob {
     job_id: String,
-    msg: Vec<u8>,   // header blob
+    msg: Vec<u8>,   // header blob / message for autolykos
     n_bits: u32,    // compact target
     height: u32,
     session_id: String,
+    extranonce1: String,       // hex string, assigned by pool (e.g. "93d9")
+    worker_nonce_size: usize,  // hex chars worker must send (e.g. 6)
 }
 
 impl GpuMiner {
@@ -482,6 +484,8 @@ impl GpuMiner {
         }
 
         let mut session_id = String::new();
+        let mut extranonce1 = String::new();
+        let mut worker_nonce_size: usize = 6; // default 6 hex chars = 3 bytes
 
         while let Some(line) = lines.next_line().await? {
             debug!("[ERG] ← {}", line);
@@ -495,21 +499,41 @@ impl GpuMiner {
             match method {
                 "mining.notify" => {
                     if let Some(params) = msg["params"].as_array() {
-                        let job = ErgJob {
-                            job_id: params.get(0).and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                            msg: hex_to_bytes(params.get(1).and_then(|v| v.as_str()).unwrap_or("")),
-                            n_bits: params.get(2)
-                                .and_then(|v| v.as_str())
-                                .and_then(|s| u32::from_str_radix(s.trim_start_matches("0x"), 16).ok())
-                                .or_else(|| params.get(2).and_then(|v| v.as_u64()).map(|n| n as u32))
-                                .unwrap_or(0),
-                            height: params.get(3)
-                                .and_then(|v| v.as_u64())
-                                .map(|n| n as u32)
-                                .unwrap_or(0),
-                            session_id: session_id.clone(),
+                        // 2miners ERG (9 params): [job_id, height, header_hex, "", "", nbits, target_hex, "", clean]
+                        // 4 params fallback: [job_id, msg_hex, nbits, height]
+                        let (job_id, header_hex, height, n_bits) = if params.len() >= 7 {
+                            (
+                                params.get(0).and_then(|v| v.as_str()).unwrap_or(""),
+                                params.get(2).and_then(|v| v.as_str()).unwrap_or(""),
+                                params.get(1).and_then(|v| v.as_u64()).map(|n| n as u32).unwrap_or(0),
+                                params.get(5)
+                                    .and_then(|v| v.as_str())
+                                    .and_then(|s| u32::from_str_radix(s.trim_start_matches("0x"), 16).ok())
+                                    .or_else(|| params.get(5).and_then(|v| v.as_u64()).map(|n| n as u32))
+                                    .unwrap_or(0),
+                            )
+                        } else {
+                            (
+                                params.get(0).and_then(|v| v.as_str()).unwrap_or(""),
+                                params.get(1).and_then(|v| v.as_str()).unwrap_or(""),
+                                params.get(3).and_then(|v| v.as_u64()).map(|n| n as u32).unwrap_or(0),
+                                params.get(2)
+                                    .and_then(|v| v.as_str())
+                                    .and_then(|s| u32::from_str_radix(s.trim_start_matches("0x"), 16).ok())
+                                    .or_else(|| params.get(2).and_then(|v| v.as_u64()).map(|n| n as u32))
+                                    .unwrap_or(0),
+                            )
                         };
-                        info!("[ERG] New job id={} h={}", job.job_id, job.height);
+                        let job = ErgJob {
+                            job_id: job_id.to_string(),
+                            msg: hex_to_bytes(header_hex),
+                            n_bits,
+                            height,
+                            session_id: session_id.clone(),
+                            extranonce1: extranonce1.clone(),
+                            worker_nonce_size,
+                        };
+                        info!("[ERG] New job id={} h={} en1={} ns={}", job.job_id, job.height, job.extranonce1, job.worker_nonce_size);
                         *self.stats.erg_current_job.lock().await = job.job_id.clone();
                         *current_job.lock().await = Some(job);
                         new_job_flag.store(true, Ordering::Release);
@@ -519,13 +543,19 @@ impl GpuMiner {
                     let req_id = msg["id"].as_u64().unwrap_or(0);
                     if let Some(result) = msg.get("result") {
                         if req_id == 1 {
-                            // subscribe response: result = [null, session_id, extra] or true
+                            // subscribe response: [[methods], extranonce1, nonce_size]
                             if let Some(arr) = result.as_array() {
-                                if let Some(sid) = arr.get(1).and_then(|v| v.as_str()) {
-                                    session_id = sid.to_string();
+                                if let Some(en1) = arr.get(1).and_then(|v| v.as_str()) {
+                                    extranonce1 = en1.to_string();
+                                    session_id = en1.to_string();
+                                }
+                                if let Some(ns) = arr.get(2).and_then(|v| v.as_u64()) {
+                                    worker_nonce_size = ns as usize;
                                 }
                             }
-                            info!("[ERG] Subscribed, session={}", session_id);
+                            info!("[ERG] ✅ Subscribed successfully");
+                            info!("[ERG] 🔑 Extranonce: '{}' ({} hex chars)", extranonce1, extranonce1.len());
+                            info!("[ERG] 📋 Subscribe response result: {:?}", result);
                         } else if req_id == 2 {
                             // authorize response
                             if result.as_bool() == Some(true) {
@@ -602,13 +632,20 @@ fn erg_mine_loop(
                 info!("[ERG] 🎉 Share found! nonce={:#018x} height={}", nonce, job.height);
                 stats.erg_shares_submitted.fetch_add(1, Ordering::Relaxed);
 
+                let ns = job.worker_nonce_size.max(1).min(16);
+                let worker_nonce = if ns >= 16 {
+                    nonce
+                } else {
+                    nonce & ((1u64 << (ns * 4)) - 1)
+                };
                 let submit = json!({
                     "id": stats.erg_shares_submitted.load(Ordering::Relaxed),
                     "method": "mining.submit",
                     "params": [
                         &job.session_id,
                         &job.job_id,
-                        format!("{:016x}", nonce),
+                        // Only send the worker portion: ns hex chars
+                        format!("{:0>width$x}", worker_nonce, width = ns),
                     ]
                 });
                 let line = submit.to_string();
