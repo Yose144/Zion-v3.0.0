@@ -599,17 +599,39 @@ cargo check -p zion-pool: Finished 3.53s ✅ (0 errors, 1 future-incompat warnin
 **Path:** `/root/docker-compose-seed.yml`  
 **Miner config:** `--pool 77.42.31.72:3333 --wallet zion1q893q6c5j7y0e3r062g4m7c240t5g294k7z6729 --algorithm cosmic_harmony_v3 --threads 1 --xmr-pool 45.155.102.89:10001`
 
-| Server | Worker name | CPU limit |
-|--------|-------------|-----------|
-| SeedDE | `seedde-miner` | 1.5 |
-| Usa1 | `usa1-miner` | 1.5 |
-| Usa2 | `usa2-miner` | 1.5 |
-| Asia3 | `asia3-miner` | 1.5 |
+| Server | Worker name | CPU limit | RAM | RandomX mode |
+|--------|-------------|-----------|-----|-------------|
+| SeedDE | `seedde-miner` | 1.5 | 3.8 GB | FULL |
+| Usa1 | `usa1-miner` | 1.5 | 1.9 GB | LIGHT |
+| Usa2 | `usa2-miner` | 1.5 | 1.9 GB | LIGHT |
+| Asia3 | `asia3-miner` | 0.9 | 1.9 GB | LIGHT |
 
-### Stav buildů
-- ✅ `ef4b105` opravuje stable Rust kompatibilitu
-- 🔄 `docker build -f /root/Dockerfile.miner` běží na všech 4 serverech (~15-20 min cargo)
-- ⏳ Po dokončení: `docker compose -f /root/docker-compose-seed.yml up -d miner`
+### Stav nasazení (23.2.2026)
+- ✅ Build `zion-miner:2.9.6-testnet` hotový na všech 4 serverech
+- ✅ Miner spuštěn na všech 4 seed nodech — dual mining (Cosmic Harmony v3 + RandomX)
+- ✅ Pool na Helsinki vidí **4 miners** (2 active / 4 total)
+- ✅ Website `zion-website:dao-fix` nasazena na Helsinki (dao-api.ts pro Rust backend)
+- ✅ `/dao` stránka vrací HTTP 200
+
+**Hashrate po nasazení (23.2. 07:11 UTC):**
+| Server | RandomX H/s | CH v3 kH/s | Shares A/R |
+|--------|-------------|------------|------------|
+| SeedDE | init (FULL 2GB alloc) | 208 kH/s | 1A/1R |
+| Usa1 | ~30 H/s | 272 kH/s | 0A/2R |
+| Usa2 | ~36 H/s | ~35 H/s | 0A/1R |
+| Asia3 | ~20 H/s | ~20 H/s | 0A/1R |
+
+**168h Stability Run:**
+- Uptime: **9h 46m** / 168h (den 1/7), status **OK**
+- NODES: 5/5, height 4060, peers 8+8
+- MEM: 63-82%, DISK: 17%
+
+### Problémy nalezené a vyřešené
+1. **`is_multiple_of()` nightly-only** — `E0658`, nahrazeno `% n == 0` (commit `ef4b105`)
+2. **Chybějící workspace members** na serverech — L2/bridge, L2/dao, L4/oasis -> rsync doplněn
+3. **Dockerfile.miner chyběl** na SeedDE — scp opraven
+4. **RandomX FULL na 2GB serverech** — smyčka alokace 2GB datasetu, opraveno `RANDOMX_FULL=0` (light mode)
+5. **Asia3 má jen 1 vCPU** — `--cpus 0.9` místo 1.5
 
 ---
 
