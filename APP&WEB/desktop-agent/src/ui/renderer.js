@@ -1765,6 +1765,9 @@ function setupWalletControls() {
     if (activeWalletInput && 'value' in activeWalletInput) {
       activeWalletInput.value = (config.wallet || '').toString();
     }
+    // Also sync into the Receive section tab
+    const recvAddr = document.getElementById('receive-wallet-address');
+    if (recvAddr) recvAddr.value = (config.wallet || '').toString();
   };
 
   // Generate wallet
@@ -2057,13 +2060,6 @@ function setupWalletControls() {
   const receiveSectionQrImg = document.getElementById('receive-section-qr-img');
   const receiveSectionQrPlaceholder = document.getElementById('receive-section-qr-placeholder');
   const receiveSectionQrStatus = document.getElementById('receive-section-qr-status');
-
-  // Sync address into receive tab when wallet tab is opened
-  const _origSyncActiveWallet = syncActiveWallet;
-  syncActiveWallet = () => {
-    _origSyncActiveWallet();
-    if (receiveWalletAddr) receiveWalletAddr.value = (config.wallet || '').toString();
-  };
 
   copyReceiveAddrBtn?.addEventListener('click', () => {
     const addr = getActiveAddress();
