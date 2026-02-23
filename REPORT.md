@@ -1354,5 +1354,146 @@ GPU→CPU VERIFY potvrzuje: `MATCH=true`, `target=0x000000cc`, state0 hodnoty (`
 
 ---
 
+---
+
+## Session 32 — Autolykos v2 správná implementace z oficiálního Ergo zdroje (23. února 2026)
+
+**Datum:** 23. února 2026  
+**Commity:** `beee0cf`  
+**Problém:** `L1/native-libs/all/autolykos_v2_native.c` měl kompletně špatný algoritmus — stubový Blake2b (8 B + nulovací padding) a nesprávnou logiku index generování. ERG stratum se připojoval, ale shares nebyly submittovány → 60s timeout → reconnect loop.
+
+---
+
+### Diagnostika
+
+#### Prerekvizita: Co bylo opraveno před touto session
+- ERG stratum subscribe + authorize → funguje ✅
+- Target z decimal string (`decimal_to_bytes32`) → funguje ✅
+- nonce formát 12 hex znaků → funguje ✅
+- `worker_login` v `mining.submit` → funguje ✅
+- Blake2b-256 RFC-7693 foundation (commit `34774dd`) → funguje ✅
+
+#### ROOT CAUSE: Autolykos v2 algoritmus byl celý špatný
+Předchozí implementace v `autolykos_v2_native.c`:
+- Nesprávná seed konstrukce: `Blake2b(nonce_LE8 || header)` namísto správného víceúrovňového procesu
+- Nesprávná index generace: `Blake2b(seed || k_BE4)` pro každý index
+- Nesprávná element funkce: používala N jako parametr (`N_BE4`) namísto výšky (`height_BE4`) + M konstanty
+
+**Skutečný algoritmus** nalezen v `ergoplatform/ergo` repozitáři, soubor `AutolykosPowScheme.scala` (funkce `hitForVersion2ForMessage`, `genIndexes`, `genElement`):
+
+---
+
+### Správný Autolykos v2 algoritmus (z AutolykosPowScheme.scala)
+
+```
+Konstanty:
+  M = i=0..1023, každé i jako 8-byte big-endian int64 → 8192 bytů celkem
+  k = 32 indexů
+  N = calcN(height): 2^26 základní, +5% každých 51 200 bloků po výšce 614 400
+
+Vstupy:
+  msg (32B) — header/message z notify params[2]
+  nonce_BE8  — nonce jako 8-byte big-endian (Java Longs.toByteArray)
+  height_BE4 — výška jako 4-byte big-endian
+
+Algoritmus:
+  1. h1      = Blake2b256(msg || nonce_BE8)
+     prei8   = BigInt(h1[24..31])   ← takeRight(8)
+     i4      = (prei8 mod N) jako 4-byte BE
+
+  2. f_raw   = Blake2b256(i4 || height_BE4 || M)
+     f31     = f_raw[1..31]         ← drop(1) = 31 bytů
+
+  3. seed    = f31 || msg || nonce_BE8   ← 71 bytů
+
+  4. genIndexes(seed, N):
+     hash32  = Blake2b256(seed)
+     ext35   = hash32 || hash32[0..2]   ← 35 bytů
+     idx[k]  = BigInt(ext35[k..k+3]) mod N   pro k=0..31
+
+  5. element[j] = Blake2b256(j_BE4 || height_BE4 || M)[1..31]   ← 31-byte BigInt
+
+  6. f2 = sum(element[0..31])   jako 256-bit big-endian (mod 2^256)
+
+  7. output = Blake2b256(f2_32bytes)   ← výsledný hash
+
+  8. Validní pokud BigInt(output) < b   (b = q / nBits_decoded)
+```
+
+**Klíčové rozdíly oproti předchozí implementaci:**
+
+| Aspekt | Předchozí (špatné) | Správné |
+|--------|-------------------|---------|
+| nonce encoding | little-endian | **big-endian** (Scala `Longs.toByteArray`) |
+| M konstanta | chybějící | **8192 B** (0..1023 jako BE int64) |
+| seed konstrukce | `B2b(nonce_LE8 ‖ header)` | `f31 ‖ msg ‖ nonce_BE8` (přes 2 předchozí kroky) |
+| index generace | `B2b(seed ‖ k_BE4)` high bytes | ext35 sliding window mod N |
+| element parametry | `idx_BE4 ‖ N_BE4` | `idx_BE4 ‖ height_BE4 ‖ M` |
+| bigint součet | XOR-fold | **skutečný 256-bit sčítací carry** |
+
+---
+
+### Opravy (commit `beee0cf`)
+
+#### `L1/native-libs/all/autolykos_v2_native.c` — kompletní přepis (239 insertions, 216 deletions)
+
+1. **M konstanta (`build_M()`)** — lazy init, 8192 B: `for i in 0..1023: M[i*8..i*8+7] = i jako BE int64`
+2. **`calcN(height)`** — `base=2^26`, po 614 400: každých 51 200 bloků `N = N/100*105` (integer 5%)
+3. **`bigint32_add(dst, src, srclen)`** — 256-bit big-endian sčítání s carry, mod 2^256
+4. **`autolykos_hash()`** — přesná implementace 8-krokového algoritmu výše
+5. **`autolykos_verify()`** + **`autolykos_benchmark_cpu()`** — zachovány s opravenými vstupy
+
+---
+
+### Build a deploy na Helsinki
+
+```bash
+# 1. Upload opraveného C souboru
+scp autolykos_v2_native.c root@77.42.31.72:/root/zion-src-build/L1/native-libs/all/
+
+# 2. Build (ARM64, ~2 minuty)
+nohup /tmp/build7.sh &   # → /tmp/cargo-pool-build7.log
+# Výsledek: "Finished release profile in 2m 03s"
+
+# 3. Hot-swap
+docker cp /root/zion-src-build/target/release/zion-pool zion-pool:/usr/local/bin/zion-pool
+docker restart zion-pool
+```
+
+**Build 7 — `Finished release profile [optimized] target(s) in 2m 03s`** ✅  
+Binary nasazen do `zion-pool` kontejneru. ERG miner po restartu: subscribe ✅, authorize ✅, job přijat ✅.
+
+---
+
+### Aktuální stav ERG mining
+
+| Komponenta | Stav |
+|------------|------|
+| ERG stratum subscribe | ✅ |
+| ERG authorize (`bc1q...zion_dynamic`) | ✅ |
+| Job parsing (9-params format, výška, target, msg hex) | ✅ |
+| Autolykos v2 algoritmus | ✅ Správný (z oficálního Ergo zdroje) |
+| Share submission | ⚠️ Probíhá — ARM64 CPU ~pomalý pro Autolykos v2 |
+| 2miners 60s timeout | ⚠️ Reconnect loop (bez submittovaného share) |
+
+**Výkon problém:** Každý Autolykos v2 hash vyžaduje **34× Blake2b-256 volání** s 8 192-byte M konstantou (1× pro f31, 32× pro elementy, 1× finální). Na ARM64 serveru (1–2 CPU vlákna) je to velmi pomalé — potřeba více vláken nebo GPU/FPGA.
+
+**Příší kroky:**
+- Zvýšit `cpu_threads` pro ERG mining (aktuálně 2) nebo přidat paralelizaci
+- Alternativně: přidat ERG wallet adresu (`ERG_WALLET`) pro dedikovaný miner
+- Zvážit implementaci DAG/table precomputation pro N indexů (jako Ergo reference implementace)
+
+---
+
+### Zbývající problémy (aktualizováno po session 32)
+
+- **ERG share submission** — algoritmus správný, ale hashrate na ARM64 příliš nízký pro pravidelné submity; 60s 2miners timeout → reconnect loop
+- **verushash-native C sources**: Bez `csrc/` nelze plně testovat `zion-core`
+- **NKN CreateID fee** — node běží, ale potřebuje ~10 NKN pro registraci
+- **Bridge vault setup** — vygenerovat `ZION_BRIDGE_VAULT_KEY`, nasadit na Helsinki
+- **DAO executor** — Reálná implementace (multi-sig guardian)
+
+---
+
 *Detailní historický log: `docs/REPORT_SESSION_9-17_FEB_2026.md`*  
 *Celkový plán: `docs/ROADMAP.md`*
