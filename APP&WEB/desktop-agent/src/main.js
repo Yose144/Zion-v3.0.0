@@ -5199,6 +5199,8 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     };
 
     let poolPending = 0;
+    let poolPendingFromStats = 0;
+    let poolPendingFromPayouts = 0;
     let poolPaid = 0;
     let poolShares = 0;
     let poolBlocks = 0;
@@ -5220,7 +5222,8 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
         poolSource = srv.id || '';
         poolSourceHost = srv.host || '';
 
-        poolPending  = Number(stats.pending_balance) || 0;
+        poolPendingFromStats = Number(stats.pending_balance) || 0;
+        poolPending = poolPendingFromStats;
         poolPaid     = Number(stats.total_paid) || 0;
         poolShares   = Number(stats.valid_shares) || 0;
         poolBlocks   = Number(stats.blocks_found) || 0;
@@ -5229,7 +5232,8 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
         poolLastShare   = Number(stats.last_share_time) || 0;
 
         if (payoutsResp && typeof payoutsResp.pending_balance !== 'undefined') {
-          poolPending = Number(payoutsResp.pending_balance) || 0;
+          poolPendingFromPayouts = Number(payoutsResp.pending_balance) || 0;
+          poolPending = poolPendingFromPayouts;
           poolPendingSource = 'payouts';
           const pendingPayouts = Array.isArray(payoutsResp.pending_payouts) ? payoutsResp.pending_payouts : [];
           poolPendingTxCount = pendingPayouts.length;
@@ -5248,6 +5252,8 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       // Pool mining balance (pool stores atomic units, 1 ZION = 1_000_000 atomic)
       pool_pending:        poolPending  / 1_000_000,
       pool_pending_atomic: poolPending,
+      pool_pending_stats_atomic: poolPendingFromStats,
+      pool_pending_payouts_atomic: poolPendingFromPayouts,
       pool_paid:           poolPaid     / 1_000_000,
       pool_paid_atomic:    poolPaid,
       pool_shares:         poolShares,
