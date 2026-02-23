@@ -59,11 +59,12 @@ services:
           --user 42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK \
           --pass zion_dero \
           --threads 2 \
+          --randomx-mode ${DERO_RANDOMX_MODE:-auto} \
           --no-color \
           --donate-level 0 \
           --print-time 120
     cpus: "${DERO_CPUS:-2.0}"
-    mem_limit: 4g
+    mem_limit: "${DERO_MEM:-4g}"
     security_opt:
       - no-new-privileges:true
     networks:
