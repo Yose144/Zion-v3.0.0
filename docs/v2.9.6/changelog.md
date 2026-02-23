@@ -59,7 +59,7 @@
 
 - **Servery**:
   - Helsinki (77.42.31.72) — seed node + web
-  - Germany (195.201.31.201) — peer node
+  - Germany (46.225.126.243) — seed node
 - **Docker** — `docker-compose.native-2.9.5.yml` (bude aktualizován na 2.9.6)
 - **Config** — `config/mainnet.toml`, `testnet.toml`, `devnet.toml`
 

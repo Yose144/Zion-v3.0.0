@@ -91,7 +91,7 @@ Ověřeno přes 47 unit testů v `zion-cosmic-harmony-v3` crate:
 | Log rotation | ✅ logrotate configured |
 | Monitoring | 🔄 Basic uptime checks |
 
-### Germany (195.201.31.201)
+### Germany (46.225.126.243)
 
 | Check | Status |
 |-------|--------|

@@ -32,7 +32,7 @@ cd 2.9.5-NativeAwakening
 
 ```bash
 export MINER_WALLET="zion1qTVOJE_ADRESA"
-export SEED_PEERS="77.42.31.72:8334,195.201.31.201:8334"
+export SEED_PEERS="77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334"
 ```
 
 ### 3. Spusť stack
@@ -105,7 +105,7 @@ Binárky budou v `target/release/`:
   --rpc-port 8444 \
   --p2p-port 8334 \
   --network testnet \
-  --peers "77.42.31.72:8334,195.201.31.201:8334"
+  --peers "77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334"
 ```
 
 ### 4. Spusť miner (druhý terminál)

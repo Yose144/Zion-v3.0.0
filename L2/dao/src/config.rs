@@ -79,7 +79,7 @@ impl Default for DaoConfig {
             api_key: String::new(),
             db_path: "data/dao.db".into(),
             l1_rpc_url: "http://77.42.31.72:8444/jsonrpc".into(),
-            l1_rpc_backup: Some("http://195.201.31.201:8444/jsonrpc".into()),
+            l1_rpc_backup: Some("http://46.225.126.243:8444/jsonrpc".into()),
             scan_interval_secs: 10,
             min_vote_weight: 1_000,
             finality_blocks: 6,

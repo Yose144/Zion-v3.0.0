@@ -159,7 +159,7 @@ v2.9.6 supports parallel dual-mining:
 | Node | IP | Role | Ports |
 |------|----|------|-------|
 | Helsinki | 77.42.31.72 | Seed + Pool + Web | P2P 8333, RPC 8443 |
-| Germany | 195.201.31.201 | Peer | P2P 8333 |
+| Germany | 46.225.126.243 | Peer | P2P 8333 |
 | TestNet | — | — | P2P 8334, RPC 8444 |
 
 > 📋 P2P protocol: [p2p.md](p2p.md)

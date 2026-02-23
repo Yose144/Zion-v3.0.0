@@ -16,7 +16,7 @@ network = "testnet"
 
 [l1]
 rpc_url        = "http://77.42.31.72:8444"
-rpc_url_backup = "http://195.201.31.201:8444"
+rpc_url_backup = "http://46.225.126.243:8444"
 bridge_address = "zion1bridge000000000000000000000000000vault"
 finality_blocks     = 60       # ~60 minutes (60 blocks × 60s)
 poll_interval_secs  = 15       # Check for new blocks every 15s

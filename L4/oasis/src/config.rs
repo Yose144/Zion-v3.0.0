@@ -81,7 +81,7 @@ impl Default for OasisConfig {
 
             l1_rpc_endpoints: vec![
                 "http://77.42.31.72:8332".to_string(),    // Helsinki
-                "http://195.201.31.201:8332".to_string(), // Germany
+                "http://46.225.126.243:8332".to_string(), // SeedDE (Germany)
             ],
             ncl_endpoint: Some("http://localhost:8090".to_string()),
             ai_native_endpoint: Some("http://localhost:8091".to_string()),

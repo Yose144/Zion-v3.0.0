@@ -62,7 +62,7 @@ Nejrychleji přes Docker — viz [Quick Start →](#getting-started). Nebo stáh
 
 ```bash
 ./zion-core --network testnet \
-  --peers "77.42.31.72:8334,195.201.31.201:8334"
+  --peers "77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334"
 ```
 
 ---

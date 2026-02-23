@@ -7,7 +7,7 @@ set -euo pipefail
 
 # ── Configuration ──
 SERVER_HELSINKI="77.42.31.72"
-SERVER_GERMANY="195.201.31.201"
+SERVER_GERMANY="46.225.126.243"
 SSH_KEY="$HOME/.ssh/zion_hetzner_key"
 REMOTE_DIR="/opt/zion"
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -o ConnectTimeout=10"

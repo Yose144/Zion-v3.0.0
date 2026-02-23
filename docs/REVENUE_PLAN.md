@@ -10,7 +10,7 @@
 | Server | Lokace | CPU | RAM | Disk volný | Bandwidth |
 |--------|--------|-----|-----|------------|-----------|
 | **Helsinki** | FI `77.42.31.72` | AMD Hetzner AX | 64 GB | ~200 GB SSD | 1 Gbps / 20 TB |
-| **Germany** | DE `195.201.31.201` | AMD Hetzner AX | 64 GB | ~200 GB SSD | 1 Gbps / 20 TB |
+| **Germany** | DE `46.225.126.243` | AMD Hetzner AX | 64 GB | ~200 GB SSD | 1 Gbps / 20 TB |
 
 **Aktuální obsazení:** ZION node + pool (hlavní jádra) + XMR revenue (1T) → **volná: 2–4 jádra, ~16 GB RAM, 200 GB disk per server.**
 

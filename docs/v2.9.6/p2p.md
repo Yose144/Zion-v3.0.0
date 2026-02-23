@@ -12,7 +12,7 @@ ZION používá vlastní P2P protokol nad TCP s JSON-RPC zprávami.
 |----------|---------|---------|
 | P2P port | 8334 | 8333 |
 | RPC port | 8444 | 8443 |
-| Seed nody | 2 | 3 (plán) |
+| Seed nody | 5 | 3+ DNS (plán) |
 | Max peers | 32 | 128 (plán) |
 | Block time | 60 s | 60 s |
 
@@ -25,7 +25,10 @@ ZION používá vlastní P2P protokol nad TCP s JSON-RPC zprávami.
 | Server | IP | Lokace | Role |
 |--------|------|--------|------|
 | Helsinki | `77.42.31.72:8334` | Finsko | Seed + web + pool |
-| Germany | `195.201.31.201:8334` | Německo | Peer node |
+| SeedDE | `46.225.126.243:8334` | Německo | Seed node |
+| Usa1 | `5.78.178.227:8334` | USA West | Seed node |
+| Usa2 | `178.156.240.160:8334` | USA East | Seed node |
+| Asia3 | `5.223.43.93:8334` | Asie (SG) | Seed node |
 
 ### Mainnet (plánováno)
 
@@ -117,13 +120,13 @@ Transakce se šíří mempool → peers broadcasting. Duplicate detection přes 
               ┌────────────┼────────────┐
               │            │            │
         ┌─────┴─────┐ ┌───┴───┐ ┌──────┴──────┐
-        │  Germany   │ │ Miner │ │  Pool Node  │
-        │195.201.31. │ │  (1)  │ │  Helsinki   │
-        │   201      │ └───────┘ └─────────────┘
+        │  SeedDE    │ │ Miner │ │  Pool Node  │
+        │46.225.126. │ │  (1)  │ │  Helsinki   │
+        │   243      │ └───────┘ └─────────────┘
         └────────────┘
 ```
 
-Aktuálně 2 nody. Pro mainnet cíl: minimálně 5 seed nodů na 3 kontinentech.
+    Aktuálně 5 seed nodů na 3 kontinentech.
 
 ---
 
@@ -151,7 +154,10 @@ rpc_port = 8444
 [network.seeds]
 nodes = [
     "77.42.31.72:8334",
-    "195.201.31.201:8334",
+    "46.225.126.243:8334",
+    "5.78.178.227:8334",
+    "178.156.240.160:8334",
+    "5.223.43.93:8334",
 ]
 
 [network.limits]
