@@ -549,6 +549,7 @@ const _viewInitFns = {
   warp:      () => initWarpView(),
   freeworld: () => initFreeWorldView(),
   issobella: () => initIssobellaView(),
+  about:     () => initUpdateUI(),
 };
 
 function switchView(view) {
@@ -3663,6 +3664,191 @@ function initIssobellaView() {
 
   setupSectionTabs();
   dbg('[ISS] View initialized');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTO-UPDATE UI
+// ═══════════════════════════════════════════════════════════════════
+let _updateState = { checking: false, available: false, downloading: false, downloaded: false };
+
+function initUpdateUI() {
+  const checkBtn = document.getElementById('update-check-btn');
+  const installBtn = document.getElementById('update-install-btn');
+  const autoCheckbox = document.getElementById('update-auto-check');
+
+  if (checkBtn && !checkBtn._bound) {
+    checkBtn._bound = true;
+    checkBtn.addEventListener('click', async () => {
+      if (_updateState.checking) return;
+      _updateState.checking = true;
+      _setUpdateStatus('Checking...', 'Contacting update server...', '#93c5fd');
+      checkBtn.disabled = true;
+      checkBtn.textContent = 'Checking...';
+
+      try {
+        const result = await window.electronAPI.checkForUpdates();
+        if (!result?.success) {
+          _setUpdateStatus('Error', result?.error || 'Check failed', '#f87171');
+        } else if (result.updateAvailable) {
+          _updateState.available = true;
+          _setUpdateStatus('Update Available!', `v${result.latestVersion} ready`, '#6ee7b7');
+          _showChangelog(result.releaseNotes, result.latestVersion);
+          _showDownloadPrompt(result);
+        } else {
+          _setUpdateStatus('Up to Date', `v${result.currentVersion} is the latest`, '#6ee7b7');
+        }
+      } catch (err) {
+        _setUpdateStatus('Error', err?.message || 'Check failed', '#f87171');
+      } finally {
+        _updateState.checking = false;
+        checkBtn.disabled = false;
+        checkBtn.innerHTML = '<svg class=\"icon\" aria-hidden=\"true\"><use href=\"#i-refresh\"></use></svg> Check for Updates';
+      }
+    });
+  }
+
+  if (installBtn && !installBtn._bound) {
+    installBtn._bound = true;
+    installBtn.addEventListener('click', async () => {
+      try {
+        installBtn.disabled = true;
+        installBtn.textContent = 'Restarting...';
+        await window.electronAPI.installUpdate();
+      } catch (err) {
+        _setUpdateStatus('Error', err?.message || 'Install failed', '#f87171');
+        installBtn.disabled = false;
+        installBtn.innerHTML = '<svg class=\"icon\" aria-hidden=\"true\"><use href=\"#i-spark\"></use></svg> Install & Restart';
+      }
+    });
+  }
+
+  // Auto-check toggle
+  if (autoCheckbox && !autoCheckbox._bound) {
+    autoCheckbox._bound = true;
+    // Load saved setting
+    window.electronAPI.getUpdateSettings?.().then(s => {
+      autoCheckbox.checked = s?.autoCheck !== false;
+    }).catch(() => {});
+    autoCheckbox.addEventListener('change', () => {
+      window.electronAPI.setUpdateAutoCheck?.(autoCheckbox.checked).catch(() => {});
+    });
+  }
+
+  // Listen for update events from main process
+  if (!window._updateListenersBound) {
+    window._updateListenersBound = true;
+
+    window.electronAPI.onUpdateStatus?.((data) => {
+      switch (data.status) {
+        case 'checking':
+          _setUpdateStatus('Checking...', 'Contacting update server...', '#93c5fd');
+          break;
+        case 'available':
+          _updateState.available = true;
+          _setUpdateStatus('Update Available!', `v${data.version} ready`, '#6ee7b7');
+          if (data.releaseNotes) _showChangelog(data.releaseNotes, data.version);
+          break;
+        case 'up-to-date':
+          _setUpdateStatus('Up to Date', 'You have the latest version', '#6ee7b7');
+          break;
+        case 'downloaded':
+          _updateState.downloaded = true;
+          _setUpdateStatus('Ready to Install', `v${data.version} downloaded`, '#fcd34d');
+          _showInstallBtn();
+          break;
+        case 'error':
+          _setUpdateStatus('Error', data.error || 'Update check failed', '#f87171');
+          break;
+      }
+    });
+
+    window.electronAPI.onUpdateProgress?.((progress) => {
+      _updateState.downloading = true;
+      _showProgress(progress);
+    });
+  }
+}
+
+function _setUpdateStatus(label, sub, color) {
+  const el = document.getElementById('update-status-label');
+  const subEl = document.getElementById('update-status-sub');
+  if (el) { el.textContent = label; el.style.color = color || ''; }
+  if (subEl) subEl.textContent = sub || '';
+}
+
+function _showProgress(progress) {
+  const wrap = document.getElementById('update-progress-wrap');
+  const fill = document.getElementById('update-progress-fill');
+  const pct = document.getElementById('update-progress-pct');
+  const detail = document.getElementById('update-progress-detail');
+  const title = document.getElementById('update-progress-title');
+
+  if (wrap) wrap.style.display = '';
+  if (fill) fill.style.width = progress.percent + '%';
+  if (pct) pct.textContent = progress.percent + '%';
+  if (title) title.textContent = 'Downloading update...';
+  if (detail) {
+    const mb = (n) => (n / 1024 / 1024).toFixed(1);
+    const speed = (progress.bytesPerSecond / 1024 / 1024).toFixed(1);
+    detail.textContent = `${mb(progress.transferred)} / ${mb(progress.total)} MB · ${speed} MB/s`;
+  }
+}
+
+function _showDownloadPrompt(result) {
+  const checkBtn = document.getElementById('update-check-btn');
+  if (checkBtn) {
+    checkBtn.innerHTML = '<svg class=\"icon\" aria-hidden=\"true\"><use href=\"#i-refresh\"></use></svg> Download v' + result.latestVersion;
+    checkBtn.onclick = async () => {
+      checkBtn.disabled = true;
+      checkBtn.textContent = 'Downloading...';
+      _setUpdateStatus('Downloading...', 'Download in progress', '#93c5fd');
+      try {
+        const dlResult = await window.electronAPI.downloadUpdate();
+        if (!dlResult?.success) {
+          // If electron-updater not available, offer GitHub link
+          _setUpdateStatus('Manual Download', 'Open GitHub releases to download', '#fcd34d');
+          if (result.htmlUrl) {
+            checkBtn.innerHTML = '🔗 Open GitHub Releases';
+            checkBtn.disabled = false;
+            checkBtn.onclick = () => { window.open(result.htmlUrl, '_blank'); };
+          }
+        }
+      } catch (err) {
+        _setUpdateStatus('Download Failed', err?.message || 'Try again', '#f87171');
+        checkBtn.disabled = false;
+      }
+    };
+    checkBtn.disabled = false;
+  }
+}
+
+function _showInstallBtn() {
+  const installBtn = document.getElementById('update-install-btn');
+  const checkBtn = document.getElementById('update-check-btn');
+  if (installBtn) installBtn.style.display = '';
+  if (checkBtn) checkBtn.style.display = 'none';
+  const progressWrap = document.getElementById('update-progress-wrap');
+  if (progressWrap) progressWrap.style.display = 'none';
+}
+
+function _showChangelog(notes, version) {
+  const wrap = document.getElementById('update-changelog');
+  const body = document.getElementById('update-changelog-body');
+  if (!wrap || !body) return;
+  wrap.style.display = '';
+
+  // Parse markdown-ish release notes into list
+  let html = '';
+  if (typeof notes === 'string' && notes.trim()) {
+    const lines = notes.split('\n').filter(l => l.trim());
+    html = '<ul>' + lines.map(l => {
+      const clean = l.replace(/^[-*•]\s*/, '').trim();
+      return clean ? `<li>${clean}</li>` : '';
+    }).filter(Boolean).join('') + '</ul>';
+  } else {
+    html = `<p>Version ${version || ''} is available.</p>`;
+  }
+  body.innerHTML = `<span class="update-badge new">v${version || '?'}</span> ` + html;
 }
 
 dbg('Renderer script loaded');
