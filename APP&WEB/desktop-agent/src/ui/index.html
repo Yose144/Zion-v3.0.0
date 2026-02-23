@@ -118,11 +118,11 @@
 
     .container {
       display: flex;
+      flex-direction: column;
       height: 100vh;
       position: relative;
       z-index: 2;
-      gap: 16px;
-      padding: 16px;
+      padding: 12px 16px 0;
     }
 
     /* ═══ First-Run Wizard ═══ */
@@ -295,98 +295,53 @@
       user-select: none;
     }
 
-    /* Sidebar — pool-style ultra-glass */
-    .sidebar {
-      width: 240px;
-      background: rgba(0, 0, 0, 0.28);
+    /* ═══ Dock — macOS-style bottom bar ═══ */
+    .dock-bar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 6px 12px;
+      margin: 0 auto 10px;
+      max-width: 100%;
+      background: rgba(0, 0, 0, 0.45);
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 28px;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
-      padding: 16px 14px;
+      border-radius: 20px;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
       backdrop-filter: blur(40px);
       -webkit-backdrop-filter: blur(40px);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+    }
+    .dock-bar::-webkit-scrollbar { display: none; }
+
+    .dock-sep {
+      width: 1px;
+      height: 28px;
+      background: rgba(255,255,255,0.06);
+      margin: 0 4px;
       flex-shrink: 0;
-      transition: border-color 0.4s ease;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
     }
 
-    .nav-scroll {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.08) transparent;
-      margin: 0 -4px;
-      padding: 0 4px;
-    }
-    .nav-scroll::-webkit-scrollbar { width: 4px; }
-    .nav-scroll::-webkit-scrollbar-track { background: transparent; }
-    .nav-scroll::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.08);
-      border-radius: 2px;
-    }
-    .nav-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
-
-    .nav-group {
-      margin-bottom: 4px;
-    }
-    .nav-group-label {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2.5px;
-      color: rgba(255,255,255,0.2);
-      padding: 12px 14px 4px;
-      user-select: none;
-    }
-    .nav-group-label:first-child { padding-top: 4px; }
-    .nav-separator {
-      height: 1px;
-      background: rgba(255,255,255,0.04);
-      margin: 6px 12px;
-    }
-
-    .logo {
-      text-align: center;
-      margin-bottom: 24px;
-      padding: 16px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .logo .logo-mark {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 5px;
+    .dock-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 3px;
       background: radial-gradient(circle at 30% 30%, rgba(var(--color-zion-gold) / 0.22), transparent 65%), rgba(0, 0, 0, 0.65);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
+      cursor: default;
     }
-
-    .logo .logo-img {
+    .dock-logo img {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      border-radius: 12px;
+      border-radius: 8px;
       image-rendering: -webkit-optimize-contrast;
-      will-change: transform, opacity;
-    }
-
-    .logo h1 {
-      font-size: 24px;
-      font-weight: 800;
-      background-image: linear-gradient(to right, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple)), rgb(var(--color-zion-cyan)));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-      letter-spacing: 2px;
     }
 
     .text-gradient {
@@ -400,45 +355,30 @@
       box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 20px rgba(147,51,234,0.25);
     }
 
-    .logo p {
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 11px;
-      margin-top: 8px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-weight: 500;
-    }
-
     .nav-item {
-      padding: 11px 14px;
-      margin: 2px 0;
-      border-radius: 14px;
-      cursor: pointer;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid transparent;
-      font-weight: 600;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
       position: relative;
-      overflow: hidden;
       background: transparent;
-      color: rgba(255,255,255,0.55);
+      color: rgba(255,255,255,0.45);
+      flex-shrink: 0;
+      min-width: 44px;
     }
-
-    .nav-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .nav-emoji {
-      font-size: 16px;
+    .nav-item span {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
       line-height: 1;
-      filter: drop-shadow(0 0 6px rgba(147,51,234,0.25));
     }
 
     .icon {
@@ -468,32 +408,30 @@
       height: 18px;
     }
 
-    .nav-item::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, var(--zion-purple), var(--zion-cyan));
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
     .nav-item:hover {
-      border-color: rgba(147, 51, 234, 0.25);
-      background: rgba(147, 51, 234, 0.06);
-      box-shadow: 0 0 16px rgba(147, 51, 234, 0.10);
-      transform: translateX(2px);
-      color: rgba(255,255,255,0.85);
-    }
-
-    .nav-item:hover::before {
-      opacity: 0.06;
+      background: rgba(147, 51, 234, 0.08);
+      border-color: rgba(147, 51, 234, 0.15);
+      transform: translateY(-3px) scale(1.08);
+      color: rgba(255,255,255,0.9);
     }
 
     .nav-item.active {
-      background: rgba(147, 51, 234, 0.10);
-      border-color: rgba(147, 51, 234, 0.30);
-      box-shadow: 0 0 24px rgba(147, 51, 234, 0.15), inset 0 0 16px rgba(147, 51, 234, 0.05);
+      background: rgba(147, 51, 234, 0.12);
+      border-color: rgba(147, 51, 234, 0.25);
       color: var(--zion-gold);
+      transform: translateY(-2px);
+    }
+    .nav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--zion-gold);
+      box-shadow: 0 0 6px var(--zion-gold);
     }
 
     .view-shell {
@@ -509,10 +447,7 @@
       contain: layout style;
     }
 
-    .view-shell.d-none {
-      content-visibility: hidden;
-      contain-intrinsic-size: 0 500px;
-    }
+
 
     /* Dashboard should not scroll */
     #dashboard-view {
@@ -765,7 +700,9 @@
       flex: 1;
       padding: 0;
       overflow-y: auto;
+      overflow-x: hidden;
       position: relative;
+      min-height: 0;
     }
 
     .header {
@@ -4190,111 +4127,6 @@
   </div>
 
   <div class="container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <div class="logo">
-        <div class="logo-mark">
-          <img src="../assets/logo.jpg" alt="ZION Logo" class="logo-img" />
-        </div>
-        <h1>ZION</h1>
-        <p>Native Awakening v2.9.6</p>
-      </div>
-
-      <div class="nav-scroll">
-        <!-- ═══ CORE ═══ -->
-        <div class="nav-group">
-          <div class="nav-group-label">Core</div>
-          <div class="nav-item active" data-view="dashboard">
-            <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
-            <span>Dashboard</span>
-          </div>
-          <div class="nav-item" data-view="wallet">
-            <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
-            <span>Wallet</span>
-          </div>
-          <div class="nav-item" data-view="network">
-            <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-            <span>Network</span>
-          </div>
-        </div>
-
-        <div class="nav-separator"></div>
-
-        <!-- ═══ LAYERS ═══ -->
-        <div class="nav-group">
-          <div class="nav-group-label">Layers</div>
-          <div class="nav-item" data-view="bridge">
-            <svg class="icon icon-20" aria-hidden="true">
-              <path fill="currentColor" d="M7 6V3L3 7l4 4V8c3.31 0 6 2.69 6 6H11c0-2.21-1.79-4-4-4zm10 2c0-3.31-2.69-6-6-6H9v2h2c2.21 0 4 1.79 4 4h-2l4 4 4-4h-4z"/>
-            </svg>
-            <span>Bridge</span>
-          </div>
-          <div class="nav-item" data-view="dao">
-            <svg class="icon icon-20" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M3 10h18M8 5v14M16 5v14" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-            </svg>
-            <span>DAO</span>
-          </div>
-          <div class="nav-item" data-view="warp">
-            <svg class="icon icon-20" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
-              <path d="M12 3v4M12 17v4M3 12h4M17 12h4" stroke="currentColor" stroke-width="1.5"/>
-              <circle cx="12" cy="12" r="2" fill="currentColor"/>
-            </svg>
-            <span>Warp</span>
-          </div>
-          <div class="nav-item" data-view="oasis">
-            <svg class="icon icon-20" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-              <line x1="12" y1="3" x2="12" y2="8" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-              <line x1="12" y1="16" x2="12" y2="21" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-              <line x1="3" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-              <line x1="16" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-            </svg>
-            <span>OASIS</span>
-          </div>
-          <div class="nav-item" data-view="freeworld">
-            <svg class="icon icon-20" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M3 12h18M12 3c-3 3-3 9 0 9s3-6 0-9M12 21c3-3 3-9 0-9s-3 6 0 9" stroke="currentColor" stroke-width="1" opacity="0.6"/>
-            </svg>
-            <span>Free World</span>
-          </div>
-          <div class="nav-item" data-view="issobella">
-            <svg class="icon icon-20" aria-hidden="true">
-              <circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M6 21l6-10 6 10" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M9 16h6" stroke="currentColor" stroke-width="1"/>
-              <circle cx="12" cy="3" r="1" fill="currentColor" opacity="0.5"/>
-            </svg>
-            <span>Issobella</span>
-          </div>
-        </div>
-
-        <div class="nav-separator"></div>
-
-        <!-- ═══ SYSTEM ═══ -->
-        <div class="nav-group">
-          <div class="nav-group-label">System</div>
-          <div class="nav-item" data-view="settings">
-            <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
-            <span>Settings</span>
-          </div>
-          <div class="nav-item" data-view="logs">
-            <svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg>
-            <span>Logs</span>
-          </div>
-          <div class="nav-item" data-view="about">
-            <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
-            <span>About</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Main Content -->
     <div class="main-content">
       <!-- Dashboard View -->
@@ -6267,8 +6099,6 @@
         </div>
       </div>
 
-    </div>
-
       <!-- ═══════════════════════════════════════════════ -->
       <!-- DAO — On-Chain Governance                      -->
       <!-- ═══════════════════════════════════════════════ -->
@@ -7095,8 +6925,90 @@
           </div>
         </div>
       </div>
+    </div> <!-- /main-content -->
 
-    </div>
+    <!-- ═══ Dock Navigation (macOS-style) ═══ -->
+    <nav class="dock-bar" id="dock-bar">
+      <div class="dock-logo">
+        <img src="../assets/logo.jpg" alt="ZION" />
+      </div>
+      <div class="dock-sep"></div>
+
+      <div class="nav-item active" data-view="dashboard">
+        <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" data-view="wallet">
+        <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+        <span>Wallet</span>
+      </div>
+      <div class="nav-item" data-view="network">
+        <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+        <span>Network</span>
+      </div>
+
+      <div class="dock-sep"></div>
+
+      <div class="nav-item" data-view="bridge">
+        <svg class="icon" aria-hidden="true">
+          <path fill="currentColor" d="M7 6V3L3 7l4 4V8c3.31 0 6 2.69 6 6H11c0-2.21-1.79-4-4-4zm10 2c0-3.31-2.69-6-6-6H9v2h2c2.21 0 4 1.79 4 4h-2l4 4 4-4h-4z"/>
+        </svg>
+        <span>Bridge</span>
+      </div>
+      <div class="nav-item" data-view="dao">
+        <svg class="icon" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M3 10h18M8 5v14M16 5v14" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+        </svg>
+        <span>DAO</span>
+      </div>
+      <div class="nav-item" data-view="warp">
+        <svg class="icon" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <path d="M12 3v4M12 17v4M3 12h4M17 12h4" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        </svg>
+        <span>Warp</span>
+      </div>
+      <div class="nav-item" data-view="oasis">
+        <svg class="icon" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+        </svg>
+        <span>OASIS</span>
+      </div>
+      <div class="nav-item" data-view="freeworld">
+        <svg class="icon" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M3 12h18M12 3c-3 3-3 9 0 9s3-6 0-9M12 21c3-3 3-9 0-9s-3 6 0 9" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+        </svg>
+        <span>World</span>
+      </div>
+      <div class="nav-item" data-view="issobella">
+        <svg class="icon" aria-hidden="true">
+          <circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M6 21l6-10 6 10" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="12" cy="3" r="1" fill="currentColor" opacity="0.5"/>
+        </svg>
+        <span>Issobella</span>
+      </div>
+
+      <div class="dock-sep"></div>
+
+      <div class="nav-item" data-view="settings">
+        <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+        <span>Settings</span>
+      </div>
+      <div class="nav-item" data-view="logs">
+        <svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg>
+        <span>Logs</span>
+      </div>
+      <div class="nav-item" data-view="about">
+        <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+        <span>About</span>
+      </div>
+    </nav>
   </div>
 
   <script src="renderer.js"></script>
