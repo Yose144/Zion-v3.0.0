@@ -735,6 +735,12 @@ impl UniversalMiner {
         let mut gpu_shares_found: u64 = 0;
         let mut batch_count: u64 = 0;
         let mut active_algo = initial_algo;
+        let gpu_verify_enabled = std::env::var("ZION_GPU_VERIFY")
+            .map(|v| {
+                let value = v.trim().to_ascii_lowercase();
+                value == "1" || value == "true" || value == "yes"
+            })
+            .unwrap_or(false);
 
         log::debug!(
             "GPU mining loop: {} [{:?}] batch={}",
@@ -880,8 +886,8 @@ impl UniversalMiner {
                     let result_hex = hex::encode(hash);
                     let job_id = job.job_id.clone();
 
-                    // ═══ GPU→CPU verification: re-hash on CPU and compare ═══
-                    {
+                    // ═══ GPU→CPU verification: re-hash on CPU and compare (debug opt-in) ═══
+                    if gpu_verify_enabled {
                         let cpu_hash = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_v3_with_height(
                             &blob_bytes, nonce, job.height,
                         );
