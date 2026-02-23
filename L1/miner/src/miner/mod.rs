@@ -893,10 +893,10 @@ impl UniversalMiner {
                             cpu_hash.data[0], cpu_hash.data[1],
                             cpu_hash.data[2], cpu_hash.data[3],
                         ]);
-                        // Parse target for comparison
+                        // Parse target for comparison (first 4 bytes = pool's target_int)
                         let target_val = u32::from_be_bytes([
-                            target_bytes[28], target_bytes[29],
-                            target_bytes[30], target_bytes[31],
+                            target_bytes[0], target_bytes[1],
+                            target_bytes[2], target_bytes[3],
                         ]);
                         let hash_match = result_hex == cpu_hex;
                         let cpu_meets_target = cpu_state0 <= target_val;
