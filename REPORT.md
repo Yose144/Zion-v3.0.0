@@ -197,6 +197,14 @@
     - `bridgeCopyMemo()` / `bridgeCopyEvm()` — clipboard + vizuální feedback
 75. ✅ **Commit `a4b72b4`** — 8 souborů, +1 486 řádků, pushnut na GitHub
 
+### Session 26 — Revenue infra snapshot (23. února 2026)
+76. ✅ **Revenue docs sync** — aktualizovány `docs/REVENUE_PLAN.md`, `docs/CH3_REVENUE_ARCHITECTURE.md`, `SERVERS.md` dle reálného deploye na Helsinki/SeedDE
+77. ✅ **Revenue compose ARM64 hardening** — `docker/docker-compose.revenue.yml` upraven pro arm64 runtime, restart-safe `xmrig` build flow (`rm -rf /tmp/xmrig`), OpenCL/CUDA build vypnut
+78. ✅ **Helsinki runtime** — `zion-dero-miner` + `zion-mysterium` stabilně `Up`; `zion-zeph-miner` běží, ale po restartu má delší cold-start kvůli build procesu
+79. ⚠️ **DERO registrace** — na Helsinki i SeedDE běží miner, ale vrací `unregistered miner or you need to wait 15 mins` (wallet/registration stav na DERO straně)
+80. ⚠️ **EPIC konektivita (SeedDE)** — `zion-epic-miner` běží, ale `fastepic.eu:3416` vrací opakovaně `connect error: operation canceled`
+81. ⚠️ **NKN** — v produkci zatím vypnuto, dokud nebude idempotentně dořešen wallet init flow
+
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
 22. ✅ **Helsinki pool Docker** — Opraven mount + restart kontejneru `zion-pool:2.9.6-testnet`
@@ -225,6 +233,9 @@
 - **MoneroOcean reconnect backoff** — ✅ OPRAVENO: exponential backoff + IP ban detekce; pool po redeployi čeká 600s (10min) na ban expiry ✅
 - ~~**Main miner macOS Metal**~~ — ✅ OPRAVENO (session 14): hlavní miner nyní spouští `--gpu` i na macOS (Metal)
 - ~~**Pool per-IP limit**~~ — ✅ OPRAVENO (session 13): 10→50 conn/IP (commit `219ab23`), nasazeno na Helsinki
+- **DERO external registration gate** — miner kontejnery běží, ale DERO pool vrací `unregistered miner or you need to wait 15 mins` (nutná registrace/propagace)
+- **EPIC external pool reachability (SeedDE)** — spojení na `fastepic.eu:3416` je nestabilní/nedostupné (`operation canceled`)
+- **Revenue cold-start latency (ZEPH/EPIC)** — při restartu trvá start déle kvůli in-container build procesu `xmrig`
 
 ---
 
