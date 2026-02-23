@@ -10,7 +10,8 @@
     "dev": "node scripts/launch-electron.js",
     "prepare:rust-miner": "node scripts/prepare-rust-miner.js --auto --require",
     "build": "npm run prepare:rust-miner && electron-builder",
-    "build:win": "npm run prepare:rust-miner && electron-builder --win --x64",
+    "build:win": "npm run prepare:rust-miner && electron-builder --win nsis --x64",
+    "build:win:nsis": "npm run prepare:rust-miner && electron-builder --win nsis --x64",
     "build:win:portable": "npm run prepare:rust-miner && electron-builder --win portable --x64",
     "build:mac": "npm run prepare:rust-miner && electron-builder --mac",
     "build:linux": "npm run prepare:rust-miner && electron-builder --linux --x64",
@@ -68,7 +69,7 @@
     ],
     "win": {
       "target": [
-        "portable",
+        "nsis",
         "zip"
       ],
       "icon": "src/assets/icon.png",
