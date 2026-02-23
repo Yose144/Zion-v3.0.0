@@ -26,6 +26,10 @@ pub mod stream_scheduler;
 // CHv3 Byproduct / Merged mining (safe scaffolding)
 pub mod merged_mining;
 
+// Native GPU-algorithm mining: ETC (Ethash) + ERG (Autolykos v2)
+// Enabled via --features native-ethash / native-autolykos at build time.
+pub mod gpu_mining;
+
 // NOTE: The following modules remain post-mainnet:
 // - consciousness (XP/levels → moved to pool-level off-chain or OASIS game)
 // - ncl (Neural Consciousness Layer → post-mainnet)
