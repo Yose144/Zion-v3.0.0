@@ -49,10 +49,11 @@ Portováno z `Zion-2.9.5-main/2.9-History/ai/` — 70+ Python souborů:
 ## Aktuální stav testů
 
 ```
-zion-ai-native:   59 unit testů  ✅
-zion-ncl:         34 unit testů  ✅
+zion-ai-native:   67 unit testů  ✅  (+8 message_bus)
+zion-ncl:         42 unit testů  ✅  (+8 store)
+doctests:          2 testů       ✅
 ──────────────────────────────────
-Celkem:           93 testů, 0 selhání, 0 varování
+Celkem:           111 testů, 0 selhání, 0 varování
 ```
 
 Spuštění:
@@ -116,6 +117,21 @@ cargo test -p zion-ai-native -p zion-ncl
 ### `warp_agent.rs` ✅ NOVÝ
 - `FieldTopology`: `Sphere(1×)` → `Torus(1.2×)` → `Helix(1.4×)` → `Fractal(1.7×)` → `Hypercube(2.5×)`
 - `WarpMode`: `Standard(1×)` → `Boost(2×)` → `Overdrive(3×)` → `Quantum(5×)` → `Transcendent(10×)`
+- `WarpOptimizer::tick()` — coherence drift, auto-eskalace modu
+- `on_level_up(n)` — upgrade topologie, reset coherence
+- 6 testů
+
+### `message_bus.rs` ✅ NOVÝ (L3-E)
+- `BusMessage` enum: `Direct { to, msg }` | `Broadcast { msg }` | `System(SystemEvent)`
+- `SystemEvent`: `AgentConnected(Uuid)` | `AgentDisconnected(Uuid)` | `OrchestratorStarted` | `Shutdown` | `Custom(String)`
+- `MessageBus::new(capacity)` — `tokio::sync::broadcast` kanál, klonování sdílí kanál
+- `send_direct(from, to, payload)`, `broadcast(from, to, payload)`, `broadcast_system(event)`
+- `subscribe() -> Receiver` — raw přihlášení
+- `subscribe_for(agent_id) -> AgentSubscriber` — filtruje zprávy jen pro daného agenta
+- `AgentSubscriber::next()` (async), `try_next()` (non-blocking) — přeskakuje cizí zprávy, loguje lag
+- `BusStats` snapshot (serializovatelný)
+- 8 testů + 1 doctest
+- `WarpMode`: `Standard(1×)` → `Boost(2×)` → `Overdrive(3×)` → `Quantum(5×)` → `Transcendent(10×)`
 - Výpočet intenzity:
 
   ```
@@ -133,6 +149,17 @@ cargo test -p zion-ai-native -p zion-ncl
 ---
 
 ## Moduly — zion-ncl
+
+### `store.rs` ✅ NOVÝ (L3-F)
+- `JobStore::open(path)` / `JobStore::in_memory()` — file-backed nebo paměťový SQLite
+- Thread-safe: `Arc<Mutex<Connection>>` — klonování sdílí spojení
+- Schéma: tabulka `jobs` (id, status, priority, submitter, model_id, reward, created_at, data JSON)
+- Indexy: `idx_jobs_status`, `idx_jobs_created`
+- `save_job()` (INSERT OR REPLACE), `load_job(id)`, `update_status(id, status)`, `update_job()`
+- `list_jobs(filter)` — volitelně filtruje status, řadit priority DESC / created_at ASC
+- `load_pending()` — lazy reload Queued jobů do scheduleru po restartu
+- `count(filter)`, `delete_job(id)`, `purge_old(days)` — čistí dokončené/failed/cancelled záznamy
+- 8 testů
 
 ### `api.rs` ✅ NOVÝ (Axum REST API)
 - `NclAppState { scheduler, reputation }` — sdílený stav přes `Arc<Mutex<>>`
@@ -207,8 +234,8 @@ Viz [`docs/v2.9.6/L3_AI_ARCHITECTURE.md`](docs/v2.9.6/L3_AI_ARCHITECTURE.md) —
 | L3-C3 | ConsciousnessEngine (`consciousness_engine.rs`) | Vysoká | ✅ Hotovo |
 | L3-D | NCL Reputace + Scheduler (`reputation.rs`, `scheduler.rs`) | Vysoká | ✅ Hotovo |
 | L3-D2 | NCL REST API (`api.rs`) | Vysoká | ✅ Hotovo |
-| L3-E | Agent messaging bus | Střední | ⬜ Nezačato |
-| L3-F | Perzistentní job store (SQLite) | Střední | ⬜ Nezačato |
+| L3-E | Agent messaging bus | Střední | ✅ Hotovo |
+| L3-F | Perzistentní job store (SQLite) | Střední | ✅ Hotovo |
 | L3-G | Live L1 pool telemetrie → PoolOptimizer | Nízká | ⬜ Nezačato |
 | L3-H | L4/Oasis integrace (vědomí ↔ on-chain XP) | Budoucí | ⬜ Nezačato |
 
