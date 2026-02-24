@@ -54,18 +54,22 @@ Pod forkovací výškou (blok < 100 000) se pipeline zkracuje — fáze [4] se p
 
 Soubor: [`L1/cosmic-harmony/src/scratchpad.rs`](L1/cosmic-harmony/src/scratchpad.rs)
 
-### 2. Dynamická XOR maska v Cosmic Fusion (fáze 5)
+### 2. AES-NI maska v Cosmic Fusion (fáze 5) — Haraka-inspired
 
-Původní implementace používala statickou konstantu `COSMIC_XOR_MASK` — ASIC ji mohl
-hardwirovat a celou fázi eliminovat. Nahrazena dynamickou derivací v každém kole:
+Původní statická konstanta `COSMIC_XOR_MASK` odstraněna. Maska nyní kombinuje
+Keccak256 (data-dependent základ) s **AES-128 blokovým šifrováním** (Haraka-inspired):
 
 ```
-maska = Keccak256(state[32..64] || round || 0xAB)
+intermediate = Keccak256(state[0..32] || round)
+maska[0..16]  = AES128_encrypt(key=intermediate[0..16], plaintext=state[32..48])
+maska[16..32] = AES128_encrypt(key=intermediate[0..16] ^ round_tweak, plaintext=state[48..64])
 ```
 
-- `state[32..64]` se vyvíjí v každém kole (závisí na datech pipeline)
-- Doménový separátor `0xAB` odděluje derivaci masky od intermediate hashe
-- ASIC nemůže přepočítat výsledek bez provedení celé Keccak256
+**Výhody oproti druhému Keccak:**
+- CPU s AES-NI (`AESENC` instrukce): ~1–2 ns/blok vs ~50 ns Keccak — **25× rychlejší**
+- ASIC musí implementovat **AES hardware + Keccak hardware** = dvojitá bariéra
+- Inspirováno **Haraka sponge construction** z VerusHash 2.2 (ověřená technika)
+- Data-dependent klíč — ASIC nemůže hardwirovat žádnou konstantu
 
 Soubor: [`L1/cosmic-harmony/src/algorithms_opt.rs`](L1/cosmic-harmony/src/algorithms_opt.rs)
 
