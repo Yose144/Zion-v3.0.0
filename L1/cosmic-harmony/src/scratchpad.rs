@@ -7,17 +7,23 @@ use sha3::{Digest, Keccak256, Sha3_512};
 
 use crate::algorithms_opt::Hash64;
 
-/// Scratchpad velikost v bajtech (256 KiB).
-pub const SCRATCHPAD_SIZE: usize = 256 * 1024;
+/// Scratchpad velikost v bajtech (2 MiB).
+///
+/// 2 MiB přesahuje SRAM kapacitu reálných ASIC čipů a L2 cache u většiny FPGA —
+/// útočník musí použít pomalou DRAM, čímž ztrácí výhodu parallelismu.
+/// (Monero/RandomX standard: 2 MB; zvyšovat opatrně kvůli RAM nárokům na validátory.)
+pub const SCRATCHPAD_SIZE: usize = 2 * 1024 * 1024;
 
 /// Velikost jednoho bloku scratchpadu.
 const BLOCK_SIZE: usize = 64;
 
 /// Počet sekvenčních průchodů scratchpadem.
-const PASSES: usize = 4;
+/// 8 průchodů × 2 MiB = 16 MiB sekvenčního čtení/zápisu per hash.
+const PASSES: usize = 8;
 
 /// Počet pseudo-random čtení pro finální mix.
-const RANDOM_READS: usize = 512;
+/// 1024 reads při 32768 blocích = 3.1% pokrytí per hash — stačí pro data-dependency.
+const RANDOM_READS: usize = 1024;
 
 #[inline]
 fn block_count() -> usize {
