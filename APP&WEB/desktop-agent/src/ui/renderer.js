@@ -3130,6 +3130,7 @@ function initOasisView() {
   renderGuild(player);
   renderChallenges();
   renderTithe();
+  initGameView();
 }
 
 function renderJourney(player) {
@@ -3361,6 +3362,366 @@ function renderTithe() {
   if (totalEl) {
     totalEl.textContent = '59,000 ZION';
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OASIS MOON MINER — Pure Clicker Game (no backend, just fun 🚀)
+// ═══════════════════════════════════════════════════════════════
+
+const GM_SAVE_KEY = 'zion_moon_miner_v1';
+
+const GM_UPGRADES = [
+  { id: 'pickaxe',  icon: '⛏',  name: 'Pickaxe',             desc: '+1 ZION/click',    bonus: 1,   baseCost: 10,     costMult: 1.50 },
+  { id: 'drill',    icon: '💎',  name: 'Crystal Drill',       desc: '+5 ZION/click',    bonus: 5,   baseCost: 100,    costMult: 1.60 },
+  { id: 'laser',    icon: '⚡',  name: 'Laser Canon',         desc: '+25 ZION/click',   bonus: 25,  baseCost: 1200,   costMult: 1.70 },
+  { id: 'quantum',  icon: '⚛',  name: 'Quantum Extractor',   desc: '+100 ZION/click',  bonus: 100, baseCost: 20000,  costMult: 1.80 },
+  { id: 'divine',   icon: '✦',  name: 'Divine Consciousness', desc: '+500 ZION/click', bonus: 500, baseCost: 500000, costMult: 2.00 },
+];
+
+const GM_MINERS = [
+  { id: 'zach',    icon: '🤖',  name: 'Zachariah Bot',     desc: '0.1 ZION/sec',  rate: 0.1,   baseCost: 15,     costMult: 1.15 },
+  { id: 'drone',   icon: '🛸',  name: 'Temple Drone',      desc: '0.5 ZION/sec',  rate: 0.5,   baseCost: 100,    costMult: 1.20 },
+  { id: 'crystal', icon: '💠',  name: 'Crystal Harvester', desc: '3 ZION/sec',    rate: 3,     baseCost: 1100,   costMult: 1.30 },
+  { id: 'warp',    icon: '🌀',  name: 'WARP Node',         desc: '20 ZION/sec',   rate: 20,    baseCost: 12000,  costMult: 1.40 },
+  { id: 'beacon',  icon: '🌟',  name: 'Divine Beacon',     desc: '200 ZION/sec',  rate: 200,   baseCost: 130000, costMult: 1.60 },
+];
+
+const GM_ACHIEVEMENTS = [
+  { id: 'first',    name: '🥇 First Blood',    desc: 'Mine your first ZION',              cond: s => s.zionTotal >= 1 },
+  { id: 'click10',  name: '✌ Getting Warm',    desc: 'Click 10 times',                    cond: s => s.clicks >= 10 },
+  { id: 'hundred',  name: '💯 Triple Digits',  desc: '100 ZION mined',                    cond: s => s.zionTotal >= 100 },
+  { id: 'hodl',     name: '💎 HODL',           desc: '1,000 ZION mined',                  cond: s => s.zionTotal >= 1000 },
+  { id: 'moon',     name: '🌙 Moon Mission',   desc: '10,000 ZION mined',                 cond: s => s.zionTotal >= 10000 },
+  { id: 'wagmi',    name: '🚀 WAGMI',          desc: '100,000 ZION mined',                cond: s => s.zionTotal >= 100000 },
+  { id: 'lambo',    name: '🏎 Wen Lambo',      desc: '1,000,000 ZION mined',              cond: s => s.zionTotal >= 1000000 },
+  { id: 'satoshi',  name: '👁 Satoshi Tier',   desc: '10,000,000 ZION mined',             cond: s => s.zionTotal >= 10000000 },
+  { id: 'clickbro', name: '🖱 Click Bro',      desc: '100 total clicks',                  cond: s => s.clicks >= 100 },
+  { id: 'clicker1k',name: '⚡ Finger Warrior', desc: '1,000 total clicks',                cond: s => s.clicks >= 1000 },
+  { id: 'autofarm', name: '🤖 Lazy Miner',     desc: 'Deploy first auto-miner',           cond: s => Object.values(s.miners).some(v => v > 0) },
+  { id: 'fleet',    name: '🛸 Fleet Admiral',  desc: 'Own 10+ auto-miners total',         cond: s => Object.values(s.miners).reduce((a,b)=>a+b,0) >= 10 },
+  { id: 'upgrade1', name: '⚒ Geared Up',      desc: 'Buy first upgrade',                 cond: s => Object.values(s.upgrades).some(v => v > 0) },
+  { id: 'ascended', name: '✦ Ascended',        desc: 'Own 5+ of every upgrade type',      cond: s => Object.values(s.upgrades).every(v => v >= 5) },
+];
+
+const GM_MILESTONES = [
+  { at: 10,         emoji: '🥇', title: 'First Steps!',        sub: 'You mined your first 10 ZION. ngmi? nah, you are gonna make it.' },
+  { at: 100,        emoji: '💎', title: 'Diamond Hands!',      sub: '100 ZION. Diamond hands confirmed. Never selling.' },
+  { at: 1000,       emoji: '🌙', title: 'Moon Protocol!',      sub: '1,000 ZION. The bull market is HERE.' },
+  { at: 10000,      emoji: '🚀', title: 'WAGMI!!!',            sub: '10,000 ZION. We are ALL gonna make it ser.' },
+  { at: 100000,     emoji: '🏆', title: 'Satoshi Vibes!',      sub: '100K ZION. Satoshi is watching from the cosmos.' },
+  { at: 1000000,    emoji: '🏎', title: 'Wen Lambo?',          sub: '1 MILLION simZION! Not financial advice but... wen lambo?' },
+  { at: 10000000,   emoji: '✦',  title: 'Ascended Miner',      sub: '10M ZION! You have transcended reality itself.' },
+  { at: 1000000000, emoji: '∞',  title: 'One With The Chain',  sub: 'BILLION ZION! You ARE the blockchain now. ser.' },
+];
+
+const GM_MSGS = [
+  '📈 Number go up!', '🚀 To the moon!', '💎 Diamond hands!', 'HODL! HODL!', '🌙 WAGMI ser',
+  'gm gm ☀️', '😅 Not financial advice', '1 ZION = 1 ZION', '🔥 LFG!', '👁 Few understand',
+  'Still early 👀', '🤝 This is the way', 'Based and ZION-pilled', '🏆 Vitalik is impressed',
+  'Satoshi would be proud 👴', '🎭 Wen lambo?', 'ser this is a Wendy\'s 😂',
+  '🌍 We are all gonna make it', '⚡ Zion protocol go brrr', ' 🛸 Sending it!',
+  'ngmi if you stop clicking 🤡', '🤌 Perfectly balanced', 'Have fun staying poor (jk)',
+  '🏅 Number bigger, brain happy', '🪐 The chain must grow', '⛓ Not your keys, not your ZION',
+];
+
+let _gameInitialized = false;
+let _gmShownMilestones = new Set();
+
+function _gmDefState() {
+  const upg = {}; GM_UPGRADES.forEach(u => { upg[u.id] = 0; });
+  const min = {}; GM_MINERS.forEach(m => { min[m.id] = 0; });
+  return { zion: 0, zionTotal: 0, clicks: 0, upgrades: upg, miners: min, achievements: {}, blockNum: 1247331 };
+}
+
+function _gmLoadState() {
+  try {
+    const raw = localStorage.getItem(GM_SAVE_KEY);
+    if (!raw) return _gmDefState();
+    const s = JSON.parse(raw);
+    const def = _gmDefState();
+    return {
+      zion: s.zion || 0,
+      zionTotal: s.zionTotal || 0,
+      clicks: s.clicks || 0,
+      upgrades: { ...def.upgrades, ...s.upgrades },
+      miners: { ...def.miners, ...s.miners },
+      achievements: s.achievements || {},
+      blockNum: s.blockNum || 1247331,
+    };
+  } catch(e) { return _gmDefState(); }
+}
+
+function _gmSave(s) { try { localStorage.setItem(GM_SAVE_KEY, JSON.stringify(s)); } catch(e) {} }
+
+function _gmPerClick(s) {
+  let n = 1;
+  GM_UPGRADES.forEach(u => { n += u.bonus * s.upgrades[u.id]; });
+  return n;
+}
+
+function _gmPerSec(s) {
+  let n = 0;
+  GM_MINERS.forEach(m => { n += m.rate * s.miners[m.id]; });
+  return n;
+}
+
+function _gmUpgCost(upg, owned) {
+  return Math.round(upg.baseCost * Math.pow(upg.costMult, owned));
+}
+
+function _gmFmt(n) {
+  n = Math.floor(n);
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9)  return (n / 1e9).toFixed(2)  + 'B';
+  if (n >= 1e6)  return (n / 1e6).toFixed(2)  + 'M';
+  if (n >= 1e3)  return (n / 1e3).toFixed(1)  + 'K';
+  return n.toLocaleString();
+}
+
+function initGameView() {
+  if (_gameInitialized) return;
+  _gameInitialized = true;
+  dbg('[GAME] Moon Miner initializing 🚀');
+
+  const state = _gmLoadState();
+
+  /* Stars */
+  const starsEl = document.getElementById('gm-stars');
+  if (starsEl) {
+    let h = '';
+    for (let i = 0; i < 60; i++) {
+      const x = (Math.random() * 100).toFixed(1);
+      const y = (Math.random() * 100).toFixed(1);
+      const d = (Math.random() * 4).toFixed(2);
+      const t = (1.5 + Math.random() * 2).toFixed(2);
+      const o = (0.3 + Math.random() * 0.7).toFixed(2);
+      h += `<div class="game-star" style="left:${x}%;top:${y}%;opacity:${o};animation-delay:${d}s;animation-duration:${t}s"></div>`;
+    }
+    starsEl.innerHTML = h;
+  }
+
+  _gmRenderUpgrades(state);
+  _gmRenderMiners(state);
+  _gmRenderAchievements(state);
+  _gmUpdateStats(state);
+
+  /* Moon click */
+  const moon = document.getElementById('gm-moon');
+  if (moon) {
+    moon.addEventListener('click', () => {
+      const perClick = _gmPerClick(state);
+      state.zion += perClick;
+      state.zionTotal += perClick;
+      state.clicks++;
+      state.blockNum++;
+
+      /* Floating +N */
+      const scene = document.getElementById('gm-moon-scene');
+      if (scene) {
+        const f = document.createElement('div');
+        f.className = 'game-float';
+        f.textContent = `+${_gmFmt(perClick)}`;
+        const moonRect = moon.getBoundingClientRect();
+        const sceneRect = scene.getBoundingClientRect();
+        f.style.left = `${moonRect.left - sceneRect.left + moonRect.width / 2 - 18 + (Math.random() * 40 - 20)}px`;
+        f.style.top  = `${moonRect.top  - sceneRect.top  + moonRect.height / 2 - 16}px`;
+        scene.appendChild(f);
+        setTimeout(() => f.remove(), 950);
+      }
+
+      /* Shake */
+      moon.classList.add('gm-clicked');
+      setTimeout(() => moon.classList.remove('gm-clicked'), 200);
+
+      /* Funny message */
+      if (state.clicks === 1 || state.clicks % 7 === 0) {
+        const msgEl = document.getElementById('gm-msg');
+        if (msgEl) msgEl.textContent = GM_MSGS[Math.floor(Math.random() * GM_MSGS.length)];
+      }
+
+      _gmUpdateStats(state);
+      _gmCheckMilestones(state);
+      _gmRenderUpgrades(state);
+      _gmRenderMiners(state);
+      _gmRenderAchievements(state);
+      _gmSave(state);
+    });
+  }
+
+  /* Auto-miner ticker every 100ms (= 10 ticks/sec) */
+  setInterval(() => {
+    const perSec = _gmPerSec(state);
+    if (perSec > 0 && currentView === 'oasis') {
+      const tick = perSec / 10;
+      state.zion      += tick;
+      state.zionTotal += tick;
+      _gmUpdateStats(state);
+      _gmCheckMilestones(state);
+    }
+  }, 100);
+
+  /* Save every 5s */
+  setInterval(() => _gmSave(state), 5000);
+
+  /* Block counter */
+  setInterval(() => {
+    state.blockNum++;
+    const el = document.getElementById('gm-block');
+    if (el) el.textContent = state.blockNum.toLocaleString();
+  }, 8000);
+
+  /* Reset */
+  const resetBtn = document.getElementById('gm-reset');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('🗑 Reset all Moon Miner progress? (cannot be undone)')) return;
+      localStorage.removeItem(GM_SAVE_KEY);
+      const fresh = _gmDefState();
+      Object.assign(state, fresh);
+      _gmShownMilestones.clear();
+      _gmUpdateStats(state);
+      _gmRenderUpgrades(state);
+      _gmRenderMiners(state);
+      _gmRenderAchievements(state);
+      const msgEl = document.getElementById('gm-msg');
+      if (msgEl) msgEl.textContent = '👆 Click the moon!';
+    });
+  }
+
+  dbg('[GAME] Moon Miner ready — saved state loaded');
+}
+
+function _gmUpdateStats(state) {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('gm-balance',   _gmFmt(state.zion));
+  set('gm-total',     _gmFmt(state.zionTotal));
+  set('gm-per-click', _gmFmt(_gmPerClick(state)));
+  set('gm-per-sec',   (_gmPerSec(state)).toFixed(1));
+  set('gm-clicks',    state.clicks.toLocaleString());
+  set('gm-block',     state.blockNum.toLocaleString());
+}
+
+function _gmRenderUpgrades(state) {
+  const el = document.getElementById('gm-upgrades');
+  if (!el) return;
+  el.innerHTML = GM_UPGRADES.map(u => {
+    const cost = _gmUpgCost(u, state.upgrades[u.id]);
+    const can  = state.zion >= cost;
+    return `<button class="game-upgrade-btn${can ? ' affordable' : ''}" data-gupg="${u.id}"${can ? '' : ' disabled'}>
+      <span class="game-upg-icon">${u.icon}</span>
+      <div class="game-upg-info">
+        <div class="game-upg-name">${u.name}</div>
+        <div class="game-upg-desc">${u.desc}</div>
+      </div>
+      <div class="game-upg-right">
+        <div class="game-upg-cost">⚡${_gmFmt(cost)}</div>
+        <div class="game-upg-count">owned: ${state.upgrades[u.id]}</div>
+      </div>
+    </button>`;
+  }).join('');
+  el.querySelectorAll('[data-gupg]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const uid  = btn.dataset.gupg;
+      const upg  = GM_UPGRADES.find(u => u.id === uid);
+      const cost = _gmUpgCost(upg, state.upgrades[uid]);
+      if (state.zion < cost) return;
+      state.zion -= cost;
+      state.upgrades[uid]++;
+      _gmRenderUpgrades(state);
+      _gmUpdateStats(state);
+      _gmRenderAchievements(state);
+      _gmSave(state);
+      const msgEl = document.getElementById('gm-msg');
+      if (msgEl) msgEl.textContent = `✅ ${upg.name} upgraded! (level ${state.upgrades[uid]}) 🔥`;
+    });
+  });
+}
+
+function _gmRenderMiners(state) {
+  const el = document.getElementById('gm-miners');
+  if (!el) return;
+  el.innerHTML = GM_MINERS.map(m => {
+    const cnt  = state.miners[m.id];
+    const cost = Math.round(m.baseCost * Math.pow(m.costMult, cnt));
+    const can  = state.zion >= cost;
+    const extra = cnt > 0 ? ` · total: ${(m.rate * cnt).toFixed(1)}/s` : '';
+    return `<button class="game-upgrade-btn${can ? ' affordable' : ''}" data-gminer="${m.id}"${can ? '' : ' disabled'}>
+      <span class="game-upg-icon">${m.icon}</span>
+      <div class="game-upg-info">
+        <div class="game-upg-name">${m.name}</div>
+        <div class="game-upg-desc">${m.desc}${extra}</div>
+      </div>
+      <div class="game-upg-right">
+        <div class="game-upg-cost">⚡${_gmFmt(cost)}</div>
+        <div class="game-upg-count">owned: ${cnt}</div>
+      </div>
+    </button>`;
+  }).join('');
+  el.querySelectorAll('[data-gminer]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mid   = btn.dataset.gminer;
+      const miner = GM_MINERS.find(m => m.id === mid);
+      const cnt   = state.miners[mid];
+      const cost  = Math.round(miner.baseCost * Math.pow(miner.costMult, cnt));
+      if (state.zion < cost) return;
+      state.zion -= cost;
+      state.miners[mid]++;
+      _gmRenderMiners(state);
+      _gmUpdateStats(state);
+      _gmRenderAchievements(state);
+      _gmSave(state);
+      const msgEl = document.getElementById('gm-msg');
+      if (msgEl) msgEl.textContent = `🤖 ${miner.name} deployed! (${state.miners[mid]} total)`;
+    });
+  });
+}
+
+function _gmRenderAchievements(state) {
+  const el    = document.getElementById('gm-achievements');
+  const cntEl = document.getElementById('gm-ach-count');
+  if (!el) return;
+  let unlocked = 0;
+  el.innerHTML = GM_ACHIEVEMENTS.map(a => {
+    const done = a.cond(state);
+    if (done) {
+      const wasNew = !state.achievements[a.id];
+      if (wasNew) {
+        state.achievements[a.id] = true;
+        const msgEl = document.getElementById('gm-msg');
+        if (msgEl) msgEl.textContent = `🏆 Achievement unlocked: ${a.name}!`;
+      }
+      unlocked++;
+      return `<div class="game-ach" title="${a.desc}">${a.name}</div>`;
+    }
+    return `<div class="game-ach locked" title="${a.desc}">???</div>`;
+  }).join('');
+  if (cntEl) cntEl.textContent = `(${unlocked}/${GM_ACHIEVEMENTS.length})`;
+}
+
+function _gmCheckMilestones(state) {
+  for (const ms of GM_MILESTONES) {
+    if (state.zionTotal >= ms.at && !_gmShownMilestones.has(ms.at)) {
+      _gmShownMilestones.add(ms.at);
+      _gmShowMilestone(ms);
+      break;
+    }
+  }
+}
+
+function _gmShowMilestone(ms) {
+  const el = document.getElementById('gm-milestone');
+  if (!el) return;
+  el.innerHTML = `
+    <span class="ms-emoji">${ms.emoji}</span>
+    <div class="ms-title">${ms.title}</div>
+    <div class="ms-sub">${ms.sub}</div>
+    <div style="margin-top:16px">
+      <button class="bridge-btn" id="gm-ms-close">awesome! 🎉</button>
+    </div>`;
+  el.style.display = 'block';
+  const closeBtn = el.querySelector('#gm-ms-close');
+  if (closeBtn) closeBtn.addEventListener('click', () => { el.style.display = 'none'; });
+  setTimeout(() => { el.style.display = 'none'; }, 7000);
 }
 
 // ═══════════════════════════════════════════════════
