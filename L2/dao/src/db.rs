@@ -143,7 +143,7 @@ impl DaoDb {
         Ok(self.conn.last_insert_rowid())
     }
 
-    /// Update proposal status + vote counts (called after each vote or finalisation).
+    /// Update proposal status + vote counts from a live `Proposal` object.
     pub fn update_proposal_status(&self, p: &Proposal) -> DaoResult<()> {
         let status = format!("{:?}", p.status);
         let executed_at = p.executed_at.as_ref().map(|dt| dt.to_rfc3339());
@@ -159,6 +159,25 @@ impl DaoDb {
                     p.votes_abstain,
                     executed_at,
                     p.id,
+                ],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Update proposal status from a `ProposalRow` (used after loading from DB and modifying status).
+    pub fn update_proposal_row(&self, row: &ProposalRow) -> DaoResult<()> {
+        self.conn
+            .execute(
+                r#"UPDATE proposals SET status=?1, votes_yes=?2, votes_no=?3,
+                       votes_abstain=?4, executed_at=?5 WHERE id=?6"#,
+                params![
+                    row.status,
+                    row.votes_yes,
+                    row.votes_no,
+                    row.votes_abstain,
+                    row.executed_at,
+                    row.id,
                 ],
             )
             .map_err(|e| DaoError::Internal(e.to_string()))?;
