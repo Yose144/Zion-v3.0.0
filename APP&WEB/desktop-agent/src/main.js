@@ -2057,8 +2057,40 @@ function startMining(config) {
 
   // Check if miner executable exists
   if (!fs.existsSync(MINER_PATH)) {
-    dialog.showErrorBox('Miner Not Found', `Miner executable not found at: ${MINER_PATH}`);
-    return { success: false, error: `Miner executable not found at: ${MINER_PATH}` };
+    // On Windows, Defender may quarantine the Rust binary after app startup.
+    // If a Python fallback exists and user hasn't explicitly pinned Rust, auto-switch.
+    if (MINER_IS_RUST && fallbackPythonPath && preferredBackend === 'auto') {
+      MINER_IS_RUST = false;
+      MINER_IS_PYTHON = true;
+      MINER_PATH = fallbackPythonPath;
+      minerBackendLastError = 'Rust miner was removed (Windows Defender quarantine?). Switched to Python miner automatically.';
+      try {
+        const persisted = loadConfig();
+        if (String(persisted?.minerBackend || '').toLowerCase() !== 'python') {
+          persisted.minerBackend = 'python';
+          saveConfig(persisted);
+        }
+      } catch { /* ignore */ }
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stderr',
+          text: `[WARN] ${minerBackendLastError}\n`
+        });
+        sendToRenderer('miner-backend', {
+          preferred: minerBackendPreferred,
+          resolved: 'python',
+          path: fallbackPythonPath,
+          lastError: minerBackendLastError
+        });
+      } catch { /* ignore */ }
+      // Continue — MINER_PATH is now the Python script
+    } else {
+      const defMsg = MINER_IS_RUST && process.platform === 'win32'
+        ? `Miner executable not found at: ${MINER_PATH}\n\nWindows Defender may have quarantined zion-universal-miner.exe.\nCheck Defender Protection History and add an exclusion for:\n${IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources')}`
+        : `Miner executable not found at: ${MINER_PATH}`;
+      dialog.showErrorBox('Miner Not Found', defMsg);
+      return { success: false, error: `Miner executable not found at: ${MINER_PATH}` };
+    }
   }
 
   // Auto load-balance for max performance + responsiveness.
@@ -2978,7 +3010,12 @@ function startMining(config) {
       const msg = err?.message || String(err);
       if (
         process.platform === 'win32' &&
-        /virus|potenciálně\s+nežádouc|potentially\s+unwanted|pua|blocked\s+by\s+antivirus/i.test(msg)
+        (
+          /virus|potenciálně\s+nežádouc|potentially\s+unwanted|pua|blocked\s+by\s+antivirus/i.test(msg) ||
+          /EACCES/i.test(msg) ||
+          (err?.code === 'EACCES') ||
+          (typeof err?.errno === 'number' && (err.errno === -4048 || err.errno === 5))
+        )
       ) {
         defenderBlocked = true;
         const base =
@@ -3180,14 +3217,16 @@ function startMining(config) {
       // ignore
     }
 
+    // Exit code 5 on Windows = ERROR_ACCESS_DENIED — most common Defender kill signature.
+    const defenderExitCode = process.platform === 'win32' && (code === 5 || code === 0xC0000005 || code === -1073741819);
     if (
       rustFallbackEligible &&
       !minerStopping &&
       !minerUserStopRequested &&
       code !== 0 &&
-      Date.now() - minerStartTs < 8000
+      (Date.now() - minerStartTs < 8000 || defenderExitCode)
     ) {
-      void maybeFallbackToPython(`exit code ${code}${signal ? ` signal=${signal}` : ''}`);
+      void maybeFallbackToPython(`exit code ${code}${signal ? ` signal=${signal}` : ''}`, defenderExitCode);
     }
     if (!minerStopping && !minerUserStopRequested && code !== 0 && !rustFallbackEligible) {
       try {
