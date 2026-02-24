@@ -1,0 +1,22 @@
+{
+  "id": 4,
+  "title": "\ud83d\ude80 Space Program - Cosmic Research & Education",
+  "description": "\ud83d\ude80 PROJECT OVERVIEW:\nSupport space research, cosmic consciousness studies, and STEM education programs inspiring future generations.\n\n\ud83d\udccd IMPACT:\n- Space science education for 5,000 students\n- Telescope access programs (100 schools)\n- Cosmic consciousness research\n- Collaboration with space agencies\n- Astronomy outreach events\n- Scholarships for aspiring astronauts/scientists\n\n\ud83d\udcb0 BUDGET (2% of humanitarian tithe):\n- Educational programs & materials: $40,000\n- Telescope equipment for schools: $30,000\n- Research grants: $15,000\n- Scholarships: $10,000\n- Outreach events: $5,000\nTotal: $100,000 annually\n\n\ud83e\udd1d PARTNER ORGANIZATIONS:\n- NASA Education Programs\n- European Space Agency (ESA)\n- International Astronomical Union\n- Universities with space programs\n\n\u23f1\ufe0f ONGOING PROGRAM:\nYear-round STEM education with annual space research grants\n\n\ud83d\udcf8 VERIFICATION:\n- Student participation numbers\n- Telescope installations\n- Research papers published\n- Scholarship recipients\n- Event attendance",
+  "category": "education",
+  "recipient_address": "ZION_SPACE_PROGRAM_EDUCATION_2024",
+  "recipient_organization": "Cosmic Education Foundation",
+  "amount_zion": 200000.0,
+  "amount_usd": 100000.0,
+  "location": "Global (with focus on underserved regions)",
+  "beneficiaries": 5000,
+  "votes_for": 0.0,
+  "votes_against": 0.0,
+  "voter_count": 0,
+  "created_at": 1760390257.025204,
+  "voting_deadline": 1760995057.025204,
+  "executed_at": 0.0,
+  "status": "active",
+  "proposal_hash": "4691788b8a501564cba5e1253fc2c244bfbef2004cb1e6803a3299ed72c36204",
+  "proposer_address": "ZION_DAO_ADMIN_001",
+  "tx_hash": ""
+}

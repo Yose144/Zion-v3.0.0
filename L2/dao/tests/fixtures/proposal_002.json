@@ -1,0 +1,22 @@
+{
+  "id": 2,
+  "title": "\ud83c\udf0a Vy\u010di\u0161t\u011bn\u00ed oce\u00e1n\u016f - Ocean Plastic Removal",
+  "description": "\ufffd PROJECT OVERVIEW:\nGlobal ocean cleanup initiative removing plastic waste and restoring marine ecosystems.\n\n\ud83d\udccd IMPACT:\n- 1,000 tons of ocean plastic removed annually\n- Coral reef restoration (50 hectares)\n- Marine wildlife protection\n- Beach cleanup operations in 20 coastal regions\n- Microplastic filtration systems deployed\n- Educational programs for coastal communities\n\n\ud83d\udcb0 BUDGET (2% of humanitarian tithe):\n- Cleanup vessels & equipment: $40,000\n- Beach cleanup operations: $25,000\n- Coral restoration: $20,000\n- Microplastic filtration: $10,000\n- Community education: $5,000\nTotal: $100,000 annually\n\n\ud83e\udd1d PARTNER ORGANIZATIONS:\n- Ocean Cleanup Foundation\n- Coral Restoration Foundation\n- Local marine conservation groups\n\n\u23f1\ufe0f ONGOING PROGRAM:\nYear-round ocean cleanup with quarterly impact reports\n\n\ud83d\udcf8 VERIFICATION:\n- Plastic removed (weight/volume)\n- Before/after underwater footage\n- Coral health assessments\n- Marine biodiversity surveys",
+  "category": "environment",
+  "recipient_address": "ZION_OCEAN_CLEANUP_GLOBAL_2024",
+  "recipient_organization": "Ocean Cleanup Alliance",
+  "amount_zion": 200000.0,
+  "amount_usd": 100000.0,
+  "location": "Global Oceans (Pacific, Atlantic, Indian)",
+  "beneficiaries": 1000,
+  "votes_for": 0.0,
+  "votes_against": 0.0,
+  "voter_count": 0,
+  "created_at": 1760390257.024103,
+  "voting_deadline": 1760995057.024103,
+  "executed_at": 0.0,
+  "status": "active",
+  "proposal_hash": "0c6c70eaae77d84fa5dd7205cbe7d342fe9b630d9a48af2231a95acfeca3d8b9",
+  "proposer_address": "ZION_DAO_ADMIN_001",
+  "tx_hash": ""
+}

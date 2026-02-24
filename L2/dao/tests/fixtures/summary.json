@@ -1,0 +1,56 @@
+{
+  "total_proposals": 5,
+  "treasury_balance": 1000000.0,
+  "proposals": [
+    {
+      "id": 5,
+      "title": "\ud83d\udd49\ufe0f Dharma v\u00fdvoj - Sacred Garden Portugal Development",
+      "category": "education",
+      "amount_usd": 100000.0,
+      "beneficiaries": 200,
+      "location": "Portugal (Sacred Garden Site)",
+      "status": "active",
+      "approval_percentage": 0.0
+    },
+    {
+      "id": 4,
+      "title": "\ud83d\ude80 Space Program - Cosmic Research & Education",
+      "category": "education",
+      "amount_usd": 100000.0,
+      "beneficiaries": 5000,
+      "location": "Global (with focus on underserved regions)",
+      "status": "active",
+      "approval_percentage": 0.0
+    },
+    {
+      "id": 3,
+      "title": "\u2764\ufe0f Humanit\u00e1rn\u00ed pomoc - Emergency Relief & Children Support",
+      "category": "medical_aid",
+      "amount_usd": 100000.0,
+      "beneficiaries": 10000,
+      "location": "Global Crisis Regions",
+      "status": "active",
+      "approval_percentage": 0.0
+    },
+    {
+      "id": 2,
+      "title": "\ud83c\udf0a Vy\u010di\u0161t\u011bn\u00ed oce\u00e1n\u016f - Ocean Plastic Removal",
+      "category": "environment",
+      "amount_usd": 100000.0,
+      "beneficiaries": 1000,
+      "location": "Global Oceans (Pacific, Atlantic, Indian)",
+      "status": "active",
+      "approval_percentage": 0.0
+    },
+    {
+      "id": 1,
+      "title": "\ud83c\udf32 Zales\u0148ov\u00e1n\u00ed prales\u016f - Global Reforestation",
+      "category": "environment",
+      "amount_usd": 100000.0,
+      "beneficiaries": 500,
+      "location": "Global (Amazon, Southeast Asia, Africa)",
+      "status": "active",
+      "approval_percentage": 0.0
+    }
+  ]
+}
