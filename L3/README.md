@@ -9,8 +9,8 @@ L3 vrstva poskytuje cross-chain bridge framework, AI compute marketplace a auton
 | Crate | Package | LOC | Testů | Popis |
 |-------|---------|-----|-------|-------|
 | `warp/` | `zion-warp` | 4,859 | 192 | Multi-chain bridge — 7 chain families, fee router |
-| `ncl/` | `zion-ncl` | 1,034 | 9 | Neural Compute Layer — task scheduler, 4 backendy |
-| `ai-native/` | `zion-ai-native` | 752 | 5 | AI Agent framework — orchestrátor, consciousness, SDK |
+| `ncl/` | `zion-ncl` | ~1,800 | 34 | Neural Compute Layer — scheduler, reputation, REST API (axum) |
+| `ai-native/` | `zion-ai-native` | ~2,200 | 59 | AI Agent framework — orchestrátor, consciousness engine, memory, WARP |
 
 ## Dependency graf
 
@@ -26,5 +26,11 @@ ai-native ←── (standalone)
 cargo check -p zion-warp
 cargo check -p zion-ncl
 cargo check -p zion-ai-native
-cargo test -p zion-warp
+cargo test -p zion-ncl
+cargo test -p zion-ai-native
+# 93 testů, 0 selhání
 ```
+
+## Dokumentace
+
+Detailní architektonická dokumentace: [`docs/v2.9.6/L3_AI_ARCHITECTURE.md`](../docs/v2.9.6/L3_AI_ARCHITECTURE.md)
