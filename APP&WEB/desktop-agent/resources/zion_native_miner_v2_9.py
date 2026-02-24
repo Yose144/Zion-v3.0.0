@@ -233,6 +233,13 @@ class StratumClient:
         self._pending_submit_ids = set()
         self._pending_submit_meta: Dict[int, Dict[str, Any]] = {}
 
+        # Client-side duplicate-share guard (pool code 22 = DUPLICATE_SHARE).
+        # Keyed by (job_id, nonce_hex); bounded FIFO to keep memory stable.
+        self._submit_dedup_lock = threading.Lock()
+        self._submit_dedup_keys = set()
+        self._submit_dedup_fifo = deque()
+        self._submit_dedup_max = 20000
+
         # Cosmic Harmony v3 pool state0 endianness.
         # Current pool default is little-endian; allow explicit override via env.
         endian_env = str(os.getenv("ZION_COSMIC_STATE0_ENDIAN", "little")).strip().lower()
@@ -501,6 +508,28 @@ class StratumClient:
         with self._wait_lock:
             self._wait_events.pop(req_id, None)
         return ok
+
+    def _clear_submit_dedup(self):
+        with self._submit_dedup_lock:
+            self._submit_dedup_keys.clear()
+            self._submit_dedup_fifo.clear()
+
+    def _reserve_submit_once(self, job_id: str, nonce_hex: str) -> bool:
+        key = (str(job_id), str(nonce_hex).lower())
+        with self._submit_dedup_lock:
+            if key in self._submit_dedup_keys:
+                return False
+            self._submit_dedup_keys.add(key)
+            self._submit_dedup_fifo.append(key)
+            if len(self._submit_dedup_fifo) > self._submit_dedup_max:
+                old = self._submit_dedup_fifo.popleft()
+                self._submit_dedup_keys.discard(old)
+            return True
+
+    def _release_submit_reservation(self, job_id: str, nonce_hex: str):
+        key = (str(job_id), str(nonce_hex).lower())
+        with self._submit_dedup_lock:
+            self._submit_dedup_keys.discard(key)
     
     def submit_share(
         self,
@@ -515,6 +544,10 @@ class StratumClient:
             # provided result hash even when it can't compute RandomX locally.
             nonce_hex = hex(nonce)[2:].zfill(8)
             result_hex = result_hash.hex()
+
+            if not self._reserve_submit_once(job_id, nonce_hex):
+                logger.debug(f"↩️ Skip duplicate local submit job={str(job_id)[:12]} nonce={nonce_hex}")
+                return False
 
             with self._id_lock:
                 req_id = self.request_id
@@ -538,6 +571,10 @@ class StratumClient:
             self._send_request(request)
             return True
         except Exception as e:
+            try:
+                self._release_submit_reservation(job_id, nonce_hex)
+            except Exception:
+                pass
             logger.error(f"Share submission failed: {e}")
             return False
     
@@ -704,6 +741,7 @@ class StratumClient:
                             self.job_queue.get_nowait()
                     except Empty:
                         pass
+                    self._clear_submit_dedup()
 
                 # Latest job always wins
                 self.current_job = job
@@ -739,6 +777,7 @@ class StratumClient:
                         self.job_queue.get_nowait()
                 except Empty:
                     pass
+                self._clear_submit_dedup()
 
                 self.current_job = job
                 self.job_queue.put(job)
@@ -2411,7 +2450,15 @@ class ZionNativeMiner:
                 "target_cosmic32": None,
                 "version": 0,
             }
-            nonce_cursor = 0
+            try:
+                nonce_base_raw = str(os.getenv("ZION_NONCE_BASE", "0")).strip()
+                nonce_base = max(0, int(nonce_base_raw, 0)) if nonce_base_raw else 0
+            except Exception:
+                nonce_base = 0
+            nonce_cursor = nonce_base
+
+            if nonce_base:
+                logger.info(f"🔢 Nonce base offset active: {nonce_base} (0x{nonce_base:08x})")
 
             cpu_hashes = 0
             gpu_hashes = 0
@@ -2502,7 +2549,7 @@ class ZionNativeMiner:
                         job_state["target_cosmic32"] = target_cosmic32
                         job_state["version"] = int(job_state.get("version") or 0) + 1
                         with nonce_lock:
-                            nonce_cursor = 0
+                            nonce_cursor = nonce_base
                         
                         # Update Cosmic Harmony v2 parameters
                         if self.config.algorithm == Algorithm.COSMIC_HARMONY_V2:
