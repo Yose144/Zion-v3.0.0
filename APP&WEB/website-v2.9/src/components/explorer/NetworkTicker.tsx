@@ -69,9 +69,12 @@ export default function NetworkTicker() {
   }, [prevHeight]);
 
   useEffect(() => {
-    fetchData();
+    const initial = setTimeout(fetchData, 0);
     const iv = setInterval(fetchData, 8000);
-    return () => clearInterval(iv);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(iv);
+    };
   }, [fetchData]);
 
   if (!data) {

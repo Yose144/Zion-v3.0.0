@@ -52,8 +52,11 @@ export default function Navigation() {
 
   /* Close mobile menu on route change */
   useEffect(() => {
-    setIsOpen(false);
-    setOpenGroup(null);
+    const raf = requestAnimationFrame(() => {
+      setIsOpen(false);
+      setOpenGroup(null);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [pathname]);
 
   /* Scroll lock when mobile menu open */
