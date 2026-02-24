@@ -2467,6 +2467,12 @@ class ZionNativeMiner:
                 chv3_gpu_mismatch_limit = max(1, int(os.getenv("ZION_CHV3_GPU_MISMATCH_LIMIT", "3")))
             except Exception:
                 chv3_gpu_mismatch_limit = 3
+            chv3_gpu_strict_verify = (
+                str(os.getenv("ZION_CHV3_GPU_STRICT_VERIFY", "0")).strip().lower()
+                in ("1", "true", "yes", "on")
+            )
+            if not chv3_gpu_strict_verify:
+                logger.info("⚙️  CHv3 GPU strict native-verify: OFF (performance mode)")
             chv3_gpu_disabled_due_to_mismatch = False
 
             def _alloc_nonces(count: int) -> int:
@@ -2538,7 +2544,27 @@ class ZionNativeMiner:
                         target_cosmic32 = None
 
                 with job_lock:
-                    if job_state.get("job_id") != job_id:
+                    prev_job_id = job_state.get("job_id")
+                    prev_blob_hex = job_state.get("blob_hex")
+                    prev_height = job_state.get("height")
+                    prev_diff = job_state.get("difficulty")
+                    prev_t64 = job_state.get("target_64")
+                    prev_t256 = job_state.get("target_256")
+                    prev_t32 = job_state.get("target_cosmic32")
+
+                    job_template_changed = (
+                        prev_job_id != job_id
+                        or prev_blob_hex != blob_hex
+                        or prev_height != height
+                    )
+                    target_changed = (
+                        prev_diff != difficulty
+                        or prev_t64 != target_64
+                        or prev_t256 != target_256
+                        or prev_t32 != target_cosmic32
+                    )
+
+                    if job_template_changed or target_changed:
                         job_state["job_id"] = job_id
                         job_state["blob_hex"] = blob_hex
                         job_state["blob_bytes"] = blob_bytes
@@ -2548,8 +2574,9 @@ class ZionNativeMiner:
                         job_state["target_256"] = target_256
                         job_state["target_cosmic32"] = target_cosmic32
                         job_state["version"] = int(job_state.get("version") or 0) + 1
-                        with nonce_lock:
-                            nonce_cursor = nonce_base
+                        if job_template_changed:
+                            with nonce_lock:
+                                nonce_cursor = nonce_base
                         
                         # Update Cosmic Harmony v2 parameters
                         if self.config.algorithm == Algorithm.COSMIC_HARMONY_V2:
@@ -2803,7 +2830,7 @@ class ZionNativeMiner:
                             # Canonical verification: if native CHv3 is available,
                             # recompute hash for the found nonce and submit only the
                             # verified hash. This protects against GPU-kernel drift.
-                            if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
+                            if COSMIC_V3_AVAILABLE and _cosmic_v3_native and chv3_gpu_strict_verify:
                                 try:
                                     if hasattr(_cosmic_v3_native, 'hash_with_height'):
                                         verified_hash = _cosmic_v3_native.hash_with_height(blob_bytes, int(nonce), job_height)
