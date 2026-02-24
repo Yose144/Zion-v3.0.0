@@ -241,6 +241,25 @@ pub fn validate_block(
             ));
         }
 
+        // 9b. Block-level duplicate-input check (double-spend within same block).
+        //     Collect all (prev_tx_hash, output_index) pairs across all non-coinbase
+        //     transactions.  If any pair appears more than once the block is invalid.
+        {
+            let mut seen_outpoints: std::collections::HashSet<(String, u32)> =
+                std::collections::HashSet::new();
+            for tx in block.transactions.iter().skip(1) {
+                for input in &tx.inputs {
+                    let key = (input.prev_tx_hash.clone(), input.output_index);
+                    if !seen_outpoints.insert(key) {
+                        return Err(format!(
+                            "Block contains duplicate input (double-spend within block): {}:{}",
+                            input.prev_tx_hash, input.output_index
+                        ));
+                    }
+                }
+            }
+        }
+
         for tx in block.transactions.iter().skip(1) {
             if tx.inputs.is_empty() {
                 return Err("Non-coinbase tx must have inputs".to_string());
