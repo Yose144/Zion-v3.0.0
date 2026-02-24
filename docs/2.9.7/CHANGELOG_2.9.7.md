@@ -1,0 +1,213 @@
+# ZION TerraNova — Changelog v2.9.7
+
+> **Datum:** 24. února 2026  
+> **Navazuje na:** v2.9.6 "On the Star"  
+> **Codename:** Code Freeze Gate
+
+---
+
+## Přehled změn
+
+v2.9.7 uzavírá všechny podstatné technické dluhy před mainnet code freeze.
+Klíčové oblasti: CHv3 ASIC hardening + AES-NI optimalizace, oprava Windows/MSVC buildu,
+dokončení revenue systému, infrastrukturní stabilizace.
+
+---
+
+## [CHv3] ASIC Resistance Hardening
+
+**Commit:** `8a2b295`  
+**Soubory:** `L1/cosmic-harmony/src/algorithms_opt.rs`, `L1/cosmic-harmony/src/scratchpad.rs`
+
+### Změny
+
+| Parametr | Před (2.9.6) | Po (2.9.7) | Důvod |
+|---|---|---|---|
+| Fork výška | `50 000` | **`100 000`** | Více času pro testnet provoz před aktivací |
+| `SCRATCHPAD_SIZE` | 256 KiB | **512 KiB** | Přesahuje L1/L2 ASIC cache; vynucuje DRAM |
+| `PASSES` | 4 | **4** | 4 × 512 KiB = 2 MiB R/W per hash |
+| `RANDOM_READS` | 512 | **256** | Data-dependent, dostatečné pokrytí |
+| XOR maska | statická `COSMIC_XOR_MASK` | **data-dependent** per-round | ASIC nemůže hardwirovat |
+| Env overrides | dostupné vždy | **zakázány v `--release`** | Produkce řízena výhradně výškou bloku |
+
+### Benchmark výsledky (release build, 12-jádrový CPU)
+
+| Scénář | Výsledek |
+|--------|---------|
+| Legacy pipeline (1 vlákno) | ~108 kH/s |
+| Full CHv3 pipeline (1 vlákno) | **~10.5 H/s** |
+| Full CHv3 pipeline (12 vláken) | **~70.3 H/s** |
+| Zpomalení vůči legacy | **~10 000×** |
+
+---
+
+## [CHv3] AES-NI Haraka-Inspired Mask (Cosmic Fusion)
+
+**Commit:** `c6189c4`  
+**Soubory:** `L1/cosmic-harmony/src/algorithms_opt.rs`, `L1/cosmic-harmony/Cargo.toml`  
+**Nová závislost:** `aes = "0.8.4"` (RustCrypto, auto-detekce AES-NI)
+
+### Změna
+
+Druhý `Keccak256` v `fusion_round()` nahrazen AES-128 blokovým šifrováním (Haraka-inspired):
+
+```
+Předchozí:  second_hash = Keccak256(state[32..64] || round || 0xAB)   ≈ 50 ns
+
+Nové:       intermediate = Keccak256(state[0..32] || round)
+            block0 = AES128_encrypt(key=intermediate[0..16], state[32..48])    ≈ 1–2 ns (AES-NI)
+            block1 = AES128_encrypt(key=intermediate[0..16]^tweak, state[48..64])
+```
+
+### Výhody
+
+- CPU s AES-NI (`AESENC` instrukce): **25× rychlejší** mask computation
+- ASIC musí implementovat **AES hardware + Keccak hardware** = dvojitá bariéra
+- Technika identická s **Haraka sponge z VerusHash 2.2** (ověřená v produkci)
+- Data-dependent klíč — není co hardwirovat
+
+### Testy (release build)
+
+```
+cargo test -p zion-cosmic-harmony-v3 --release
+test result: ok. 52 passed; 0 failed  (35s)
+```
+
+---
+
+## [Build] Windows MSVC Compatibility Fix
+
+**Commit:** `243e4b8`  
+**Soubory:** `L1/native-libs/verushash-native/build.rs`, `L1/native-libs/verushash-native/csrc/haraka.c`, `L1/core/Cargo.toml`
+
+### Opravené problémy
+
+| # | Soubor | Chyba | Oprava |
+|---|--------|-------|--------|
+| 1 | `csrc/haraka.c` | `#include "crypto/haraka.h"` — cesta neexistuje | `#include "haraka.h"` |
+| 2 | `csrc/haraka_portable.c` | VLA `unsigned char t[r]` — MSVC nepodporuje | `#ifdef _MSC_VER` → fixed 256B buffer |
+| 3 | `build.rs` | cc-rs nenacházel `stdio.h` / `immintrin.h` | `add_msvc_includes()`: auto-detekce Windows SDK (ucrt/um) + MSVC include cest |
+| 4 | `build.rs` | GCC arch flags (`-mpclmul`, `-maes`) předány MSVC | Skip arch flags na MSVC |
+| 5 | `build.rs` | `stdc++` linkování na MSVC | Skip `stdc++` na MSVC |
+| 6 | `L1/core/Cargo.toml` | `verushash` v `default` features — blokuje Windows build | `default = []`; verushash opt-in; blake3 fallback pro `#[cfg(not(feature = "verushash"))]` |
+
+### Výsledek
+
+```
+cargo check -p zion-core   → exit 0  ✅
+cargo check -p zion-pool   → exit 0  ✅
+cargo check -p zion-miner  → exit 0  ✅
+```
+
+> Pro produkční Linux build s VerusHash: `cargo build --features verushash`
+
+---
+
+## [Revenue] Systém implementován v L1/pool
+
+**Architektura:** 50/25/25 model (ZION / Revenue / NCL)
+
+Systém byl plánován pro 2.9.8, ale **kompletní implementace existuje již v 2.9.6/2.9.7 codebase**:
+
+| Modul | Soubor | Stav |
+|-------|--------|------|
+| Revenue proxy (Stratum klienti pro ext. pooly) | `L1/pool/src/revenue_proxy.rs` (1 869 řádků) | ✅ implementováno |
+| Stream scheduler (50/25/25 allocation) | `L1/pool/src/stream_scheduler.rs` | ✅ implementováno |
+| Profit switcher (WhatToMine API) | `L1/pool/src/profit_switcher.rs` | ✅ implementováno |
+| External pool miner | `L1/pool/src/pool_external_miner.rs` | ✅ implementováno |
+| Revenue config | `config/ch3_revenue_settings.json` | ✅ hotovo |
+| Docker compose | `docker/docker-compose.revenue.yml` | ✅ hotovo |
+
+### Stratum protokoly podporované revenue proxem
+
+| Protokol | Coiny |
+|----------|-------|
+| EthStratum | ETC, ERG, RVN, KAS |
+| CryptoNoteStratum | XMR, ZEPH (MoneroOcean) |
+| ZcashStratum | VRSC/VerusHash |
+| StandardStratum | ALPH, FLUX, NEXA |
+
+### 5 Revenue streamů
+
+| # | Stream | Compute | Revenue |
+|---|--------|---------|---------|
+| 1 | ZION / CosmicHarmony | 50% | ZION block rewards |
+| 2 | ETC / Keccak | FREE byproduct | ETC merged mining |
+| 3 | NXS / SHA3 | FREE byproduct | Nexus merged mining |
+| 4 | GPU: ERG/RVN/KAS **nebo** CPU: XMR/MoneroOcean | 25% | BTC payouty |
+| 5 | NCL AI inference | 25% | ZION bonus + AI credits |
+
+### Co zbývá pro produkční aktivaci (2.9.8)
+
+- [ ] Nastavit reálné wallet adresy v `ch3_revenue_settings.json`
+- [ ] Testnet 72h run s revenue proxem aktivní
+- [ ] MoneroOcean XMR payout ověřit na reálném serveru
+- [ ] BuyBack modul aktivovat (převodem BTC výdělků na ZION)
+- [ ] Mysterium + NKN nody spustit (pasivní bandwidth revenue)
+
+---
+
+## [Infra] Serversová topologie uzavřena (3 nody)
+
+**Session:** 53 + 54 (24. 2. 2026)
+
+| Server | IP | Arch | Role |
+|--------|----|------|------|
+| TreeOfLife-Zion (Helsinki) 🇫🇮 | `77.42.31.72` | ARM64 | Seed + Pool + Web + Monitoring |
+| Usa 🇺🇸 | `178.156.240.160` | amd64 | Seed node |
+| Asia 🌏 | `5.223.43.93` | amd64 | Seed node |
+
+- SeedDE + Usa1: **decommissioned**
+- Usa + Asia: opraveny na `zion-core:2.9.6-amd64` (byl `exec format error` s arm64 image)
+- Helsinki: nový compose file s čistými SEED_PEERS
+- P2P mesh: všechny 3 nody v meshu ✅
+- 168h stability window: start **2026-02-24 11:48 UTC**, cíl 2026-03-03
+
+---
+
+## [Desktop Agent] AI Afterburner
+
+**Commit:** `30005af`  
+**Session:** 55 (24. 2. 2026)
+
+- `ai/zion_ai_afterburner.py` (813 řádků) — portován z 2.9 history
+- GPU power monitoring: WMI util% → TDP odhad → H/W výpočet
+- Live: RX 5600 XT = 59.5 MH/s @ 150W = **~397 kH/W**
+- Rolling averages 10s / 60s
+
+---
+
+## [Docs] Dokumentace přidána
+
+| Soubor | Obsah |
+|--------|-------|
+| `asic.md` | CHv3 ASIC resistance — technická spec., pipeline, parametry, benchmark, kompatibilita |
+| `REPORT.md` (Session 56) | Benchmark výsledky, L1 kompatibilita matrix, test výsledky |
+| `docs/2.9.7/CHANGELOG_2.9.7.md` | Tento soubor |
+
+---
+
+## Kompatibilita L1 (ověřeno)
+
+Všechny komponenty volají `cosmic_harmony_v3_with_height(blob, nonce, height)`:
+
+| Komponenta | Soubor | Stav |
+|------------|--------|------|
+| Core block validation | `L1/core/src/blockchain/block.rs:99` | ✅ |
+| Core mining alias | `L1/core/src/algorithms/cosmic_harmony.rs:24` | ✅ |
+| Miner native | `L1/miner/src/miner/native_algos.rs:637` | ✅ |
+| Miner GPU thread | `L1/miner/src/miner/mod.rs:910` | ✅ |
+| Pool share validator | `L1/pool/src/shares/validator.rs:301` | ✅ |
+
+---
+
+## Git log (relevantní commity)
+
+| Commit | Změna |
+|--------|-------|
+| `8a2b295` | CHv3 ASIC hardening: fork@100k, scratchpad, dynamic mask, env lockout |
+| `c66f9bc` | docs: asic.md — CHv3 ASIC resistance dokumentace |
+| `5037e8b` | CHv3: tuning 512 KiB/4 průchody/256 čtení + benchmark |
+| `c6189c4` | CHv3: AES-NI Haraka-inspired maska v Cosmic Fusion |
+| `55a5b75` | docs: Session 56 — ASIC hardening, L1 kompatibilita, test výsledky |
+| `243e4b8` | fix(core): Windows MSVC build pro verushash-native + zion-core |
