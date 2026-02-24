@@ -305,9 +305,6 @@ function computeDifficultyHint(config, algorithmLower) {
     const envRaw = String(process.env.ZION_MINER_DIFFICULTY || process.env.ZION_DEFAULT_DIFFICULTY || '').trim();
     const envNum = Number(envRaw);
     if (Number.isFinite(envNum) && envNum > 0) return Math.floor(envNum);
-
-    // 3) Safe default for Cosmic Harmony to avoid diff=1 share spam
-    if (String(algorithmLower || '').startsWith('cosmic_harmony')) return 1000;
   } catch {
     // ignore
   }
@@ -676,6 +673,7 @@ let MINER_IS_RUST = false;
 let minerFallbackInProgress = false;
 let minerFallbackTimer = null;
 let minerStartAckTimer = null;
+let minerGpuInitWatchdogTimer = null;
 let minerStartToken = 0;
 let minerUserStopRequested = false;
 
@@ -1954,6 +1952,12 @@ function startMining(config) {
     // ignore
   }
   minerStartAckTimer = null;
+  try {
+    if (minerGpuInitWatchdogTimer) clearTimeout(minerGpuInitWatchdogTimer);
+  } catch {
+    // ignore
+  }
+  minerGpuInitWatchdogTimer = null;
   gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
 
   const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
@@ -2483,6 +2487,10 @@ function startMining(config) {
     }
   } catch {}
 
+  const sessionNonceBaseMain = (Date.now() >>> 0) & 0x1fffffff; // 0 .. 0x1FFFFFFF
+  const sessionNonceBaseRevenue = sessionNonceBaseMain + 0x40000000;
+  const sessionNonceBaseGpuRevenue = sessionNonceBaseMain + 0x80000000;
+
   const env = {
     ...process.env,
     // CH v3 desktop režim: držet algoritmus pinned, bez runtime stream switchů.
@@ -2515,7 +2523,9 @@ function startMining(config) {
     // Make sure prints/logs aren't stuck in a buffer when stdout isn't a TTY.
     PYTHONUNBUFFERED: '1',
     // Add mining folder to PYTHONPATH so miner can find local modules
-    PYTHONPATH: minerCwd + (process.env.PYTHONPATH ? path.delimiter + process.env.PYTHONPATH : '')
+    PYTHONPATH: minerCwd + (process.env.PYTHONPATH ? path.delimiter + process.env.PYTHONPATH : ''),
+    // Main process nonce base is randomized per session to avoid reconnect duplicates.
+    ZION_NONCE_BASE: String(sessionNonceBaseMain)
   };
 
   // CHv3 performance defaults (speed-first):
@@ -2528,7 +2538,7 @@ function startMining(config) {
     const isChv3 = algoLower === 'cosmic_harmony' || algoLower === 'cosmic_harmony_v3';
     if (isChv3 && mainMinerGpu) {
       if (!String(process.env.ZION_GPU_BATCH_SIZE || '').trim()) {
-        env.ZION_GPU_BATCH_SIZE = '8000000';
+        env.ZION_GPU_BATCH_SIZE = '4000000';
       }
       if (!String(process.env.ZION_CPU_SLEEP_MS || '').trim()) {
         env.ZION_CPU_SLEEP_MS = '0';
@@ -2621,10 +2631,17 @@ function startMining(config) {
     } catch {
       // ignore
     }
-    minerFallbackTimer = setTimeout(() => {
+    minerFallbackTimer = setTimeout(async () => {
       minerFallbackInProgress = false;
       minerFallbackTimer = null;
       try {
+        if (minerProcess) {
+          try {
+            await stopMiningAsync();
+          } catch {
+            // ignore
+          }
+        }
         startMining({ ...config, minerBackend: 'python' });
       } catch (err) {
         try {
@@ -2639,6 +2656,44 @@ function startMining(config) {
     }, 800);
     return true;
   };
+
+  // Rust GPU watchdog:
+  // If main Rust miner runs with --gpu but produces no hashrate/shares after warmup,
+  // it is typically stuck in OpenCL init/kernel build. Auto-fallback to Python miner.
+  if (MINER_IS_RUST && mainMinerGpu) {
+    minerGpuInitWatchdogTimer = setTimeout(() => {
+      try {
+        if (!minerProcess || minerStopping || minerUserStopRequested) return;
+        const hr = Number(minerStats.hashrate || 0);
+        const accepted = Number(minerStats.accepted || 0);
+        const rejected = Number(minerStats.rejected || 0);
+        if (hr > 0 || accepted > 0 || rejected > 0) return;
+
+        const reason = 'GPU init watchdog: 45s no hashrate/shares';
+        logApp('gpu-init-watchdog', JSON.stringify({ reason, backend: minerBackendResolved, worker: config?.worker || '' }));
+        try {
+          const persisted = loadConfig();
+          if (String(persisted?.minerBackend || '').toLowerCase() !== 'python') {
+            persisted.minerBackend = 'python';
+            saveConfig(persisted);
+          }
+        } catch {
+          // ignore
+        }
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stderr',
+            text: '[WARN] Rust GPU miner appears stuck (no hashrate/shares after 45s). Switching to Python GPU fallback...\n'
+          });
+        } catch {
+          // ignore
+        }
+        void maybeFallbackToPython(reason, true);
+      } catch {
+        // ignore
+      }
+    }, 45_000);
+  }
 
   // Windows DLL resolution: our native algo DLLs are built with MinGW and may depend on
   // libstdc++/libgcc/libwinpthread/libgomp/libcrypto. Ensure the loader can find them.
@@ -2781,9 +2836,33 @@ function startMining(config) {
   // via RevenueProxy (→ MoneroOcean → BTC). No direct external pool connection.
   // Supports both Rust (--group flag) and Python (--group CLI arg) miners.
   // ═══════════════════════════════════════════════════════════════
-  const canSpawnRevenue = xmrRevenueThreads > 0 && (
-    (MINER_IS_RUST && rustGroupSupported) || MINER_IS_PYTHON
-  );
+  const allowRevenueWithMainGpu = String(process.env.ZION_ALLOW_REVENUE_WITH_MAIN_GPU || '').trim() === '1';
+  const revenueSuppressedForGpuInit = MINER_IS_RUST && mainMinerGpu && !allowRevenueWithMainGpu;
+  const canSpawnRevenue =
+    !revenueSuppressedForGpuInit &&
+    xmrRevenueThreads > 0 &&
+    ((MINER_IS_RUST && rustGroupSupported) || MINER_IS_PYTHON);
+
+  // Keep non-overlapping nonce spaces across parallel miner processes.
+  // main: random low partition, revenue: +0x40000000, gpu-revenue: +0x80000000
+  const revenueEnv = { ...env, ZION_NONCE_BASE: String(sessionNonceBaseRevenue) };
+  const gpuRevenueEnv = { ...env, ZION_NONCE_BASE: String(sessionNonceBaseGpuRevenue) };
+
+  if (revenueSuppressedForGpuInit && xmrRevenueThreads > 0) {
+    try {
+      logApp('revenue-process-skipped', JSON.stringify({
+        reason: 'main-rust-gpu-active',
+        worker: String(config?.worker || ''),
+        threadsRequested: xmrRevenueThreads,
+      }));
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: '[CH3] Revenue CPU process skipped while Rust GPU init is active (stability guard). Set ZION_ALLOW_REVENUE_WITH_MAIN_GPU=1 to override.\n'
+      });
+    } catch {
+      // ignore
+    }
+  }
   if (canSpawnRevenue) {
     try {
       const revenueStatsPath = STATS_PATH.replace(/\.json$/, '_revenue.json');
@@ -2820,7 +2899,7 @@ function startMining(config) {
 
       revenueProcess = spawn(revSpawnCmd, revSpawnArgs, {
         cwd: minerCwd,
-        env
+        env: revenueEnv
       });
 
       logApp('revenue-process-started', JSON.stringify({
@@ -2918,7 +2997,7 @@ function startMining(config) {
 
       gpuRevenueProcess = spawn(spawnCommand, gpuRevenueArgs, {
         cwd: minerCwd,
-        env
+        env: gpuRevenueEnv
       });
 
       gpuRevenueHealth = {
@@ -3246,6 +3325,12 @@ function startMining(config) {
       // ignore
     }
     minerStartAckTimer = null;
+    try {
+      if (minerGpuInitWatchdogTimer) clearTimeout(minerGpuInitWatchdogTimer);
+    } catch {
+      // ignore
+    }
+    minerGpuInitWatchdogTimer = null;
 
     // Flush any buffered output before reporting stopped.
     flushMinerOutputToRenderer();
@@ -3822,6 +3907,12 @@ async function stopMiningAsync() {
     // ignore
   }
   minerStartAckTimer = null;
+  try {
+    if (minerGpuInitWatchdogTimer) clearTimeout(minerGpuInitWatchdogTimer);
+  } catch {
+    // ignore
+  }
+  minerGpuInitWatchdogTimer = null;
 
   if (!minerProcess) {
     return { success: true, alreadyStopped: true };
