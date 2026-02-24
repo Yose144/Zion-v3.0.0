@@ -3,7 +3,32 @@
 > **Engine:** Unreal Engine 5.4  
 > **Module:** `ZionOasis`  
 > **Backend:** Rust/Axum oasis API on port `8094` + L1 chain RPC on `8444`  
-> **Target:** AAA MMORPG — 10 000 players/realm, 7 sacred continents, 51 avatar NFTs
+> **Target:** AAA MMORPG — 10 000 players/realm, 7 sacred continents, 51 avatar NFTs  
+> **Budget:** $50 000 000 USD  |  **Timeline:** 2026–2029
+
+---
+
+## System Requirements
+
+### Minimum (Development)
+| Component | Spec |
+|-----------|------|
+| OS | Windows 10/11 64-bit |
+| CPU | Intel i7-10700K / AMD Ryzen 7 3700X |
+| RAM | 32 GB |
+| GPU | NVIDIA RTX 3070 / AMD RX 6700 XT (8 GB VRAM) |
+| Storage | 500 GB NVMe SSD |
+| UE version | 5.4.x (120 GB install) |
+
+### Recommended (AAA)
+| Component | Spec |
+|-----------|------|
+| OS | Windows 11 64-bit |
+| CPU | Intel i9-13900K / AMD Ryzen 9 7950X |
+| RAM | 64–128 GB DDR5 |
+| GPU | NVIDIA RTX 4090 (24 GB VRAM) |
+| Storage | 2 TB NVMe SSD (PCIe 4.0) |
+| Network | 1 Gbps |
 
 ---
 
@@ -122,6 +147,61 @@ Create `Content/DataTables/DT_Avatars` in-editor using `FAvatarRow` as the row s
 Columns: `AvatarID`, `DisplayName`, `Title`, `Teaching`, `SpecialAbilityName`,
 `MinConsciousnessLevel`, `Ray`, `Rarity`, `RegionName`, `QuestCount`, `NftMetadataUri`,
 `CharacterClass`, `PortraitTexture`.
+
+---
+
+## Version Control — Git LFS
+
+Binary UE5 assets (`.uasset`, `.umap`) should use Git LFS in production:
+
+```bash
+git lfs install
+
+# Add to .gitattributes at repo root
+*.uasset filter=lfs diff=lfs merge=lfs -text
+*.umap   filter=lfs diff=lfs merge=lfs -text
+*.ubulk  filter=lfs diff=lfs merge=lfs -text
+*.uplugin filter=lfs diff=lfs merge=lfs -text
+```
+
+For a team of 50+ people switch to **Perforce Helix Core** — UE5 has native Perforce integration and it handles large binary files without LFS limits.
+
+---
+
+## Recommended Third-Party Plugins
+
+| Plugin | Cost | Purpose |
+|--------|------|---------|
+| MetaHuman Creator | Free | Photorealistic character faces |
+| Quixel Bridge | Free (UE5) | Megascans environment assets |
+| Water | Free (built-in) | Ocean, rivers, lakes |
+| Landmass | Free (built-in) | Procedural landscape |
+| Niagara | Free (built-in) | VFX particle system |
+| Vivox Voice | Free ≤10k users | In-game voice chat |
+| Easy Anti-Cheat | Free (Epic) | Anti-cheat |
+| Houdini Engine | Free (indie) | Procedural world generation |
+| Substance 3D | ~$20/month | PBR material authoring |
+
+Vivox marketplace URL: `com.epicgames.launcher://ue/marketplace/product/d71f5abfa65f4de6830a017dd0c0b9ff`
+
+---
+
+## Troubleshooting
+
+**"Out of Video Memory" crash**  
+Lower shader quality: *Project Settings → Engine → Rendering → Shader Quality: Medium*. Close other GPU-heavy apps.
+
+**"Compiling Shaders" > 30 min**  
+Normal on first launch (10 000+ shaders). Use SSD, close background apps, increase Windows virtual memory to 32 GB page file.
+
+**"Missing Modules" error**  
+Right-click `ZionOasis.uproject` → *Generate Visual Studio Project Files* → open `ZionOasis.sln` → *Build Solution* (Ctrl+Shift+B).
+
+**Multiplayer port blocked**  
+Ensure firewall allows Unreal Editor on **port 7777**. For remote play use Steam lobbies (OnlineSubsystemSteam is already configured).
+
+**Backend unreachable in PIE**  
+Start the Rust oasis server first (`cargo run -p zion-oasis -- --port 8094`). The GameInstance logs `[ZionGameInstance] BlockchainBridge initialised` on success.
 
 ---
 
