@@ -2141,7 +2141,7 @@ function startMining(config) {
 
   // Auto load-balance for max performance + responsiveness.
   // We do not add new UI; we just clamp/auto-pick effective threads.
-  const effectiveThreads = computeEffectiveThreads(config);
+  let effectiveThreads = computeEffectiveThreads(config);
   const revenueProfile = normalizeRevenueProfile(config?.revenue || {});
 
   // Mining mode: cpu, gpu, dual, gpu-revenue (new UI)
@@ -2153,6 +2153,21 @@ function startMining(config) {
   const algoForGpu = String(config.algorithm || '').toLowerCase();
   const gpuAllowed = algoSupportsGpu(algoForGpu);
   const effectiveGpu = wantsGpu && gpuAllowed;
+
+  // CHv3 GPU performance guard:
+  // On some Ryzen/AMD OpenCL rigs, too many CPU threads steal memory/cache bandwidth
+  // and reduce GPU hashrate significantly. Cap CPU threads while GPU mining is active.
+  try {
+    const algoLowerPerf = String(config.algorithm || '').toLowerCase();
+    const isChv3Perf = algoLowerPerf === 'cosmic_harmony' || algoLowerPerf === 'cosmic_harmony_v3';
+    if (effectiveGpu && isChv3Perf) {
+      const gpuCpuCapRaw = Number(String(process.env.ZION_GPU_CPU_THREADS || '5').trim());
+      const gpuCpuCap = Number.isFinite(gpuCpuCapRaw) && gpuCpuCapRaw > 0 ? Math.floor(gpuCpuCapRaw) : 5;
+      effectiveThreads = Math.max(1, Math.min(effectiveThreads, gpuCpuCap));
+    }
+  } catch {
+    // ignore
+  }
   
   // Determine effective mode for miner
   let effectiveMode = 'cpu';
@@ -2575,7 +2590,7 @@ function startMining(config) {
     const isChv3 = algoLower === 'cosmic_harmony' || algoLower === 'cosmic_harmony_v3';
     if (isChv3 && mainMinerGpu) {
       if (!String(process.env.ZION_GPU_BATCH_SIZE || '').trim()) {
-        env.ZION_GPU_BATCH_SIZE = '4000000';
+        env.ZION_GPU_BATCH_SIZE = '16000000';
       }
       if (!String(process.env.ZION_CPU_SLEEP_MS || '').trim()) {
         env.ZION_CPU_SLEEP_MS = '0';
