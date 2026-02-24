@@ -53,7 +53,7 @@ __constant ulong PHI_POWERS_FP[16] = {
     | ((ulong)(arr)[(off)+6] << 48)  \
     | ((ulong)(arr)[(off)+7] << 56)  )
 
-#define STORE_U64_LE(arr, off, w) \
+#define STORE_U64_LE(arr, off, w) do { \
     (arr)[(off)+0] = (uchar)((w));        \
     (arr)[(off)+1] = (uchar)((w) >>  8);  \
     (arr)[(off)+2] = (uchar)((w) >> 16);  \
@@ -61,7 +61,8 @@ __constant ulong PHI_POWERS_FP[16] = {
     (arr)[(off)+4] = (uchar)((w) >> 32);  \
     (arr)[(off)+5] = (uchar)((w) >> 40);  \
     (arr)[(off)+6] = (uchar)((w) >> 48);  \
-    (arr)[(off)+7] = (uchar)((w) >> 56);
+    (arr)[(off)+7] = (uchar)((w) >> 56);  \
+} while (0)
 
 // Chi macro for one 5-element row
 #define CHI_ROW(b) \

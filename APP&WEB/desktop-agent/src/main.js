@@ -2282,11 +2282,10 @@ function startMining(config) {
   }
 
   // Mainnet Phase 1: Cosmic Harmony v3 only
-  // Rust miner accepts 'cosmic_harmony' and internally runs CosmicHarmonyV3 engine.
-  // Python fallback accepts 'cosmic_harmony_v3' directly.
+  // Use explicit CHv3 token for both Rust and Python so pool job routing stays consistent.
   const requestedAlgorithm = 'cosmic_harmony_v3';
   const requestedAlgorithmLower = 'cosmic_harmony_v3';
-  const algorithmForMiner = MINER_IS_PYTHON ? 'cosmic_harmony_v3' : 'cosmic_harmony';
+  const algorithmForMiner = 'cosmic_harmony_v3';
 
   // GPU is exclusive: only the main ZION miner OR the GPU Revenue process gets --gpu, never both.
   // Two OpenCL contexts on the same GPU cause severe context-switching overhead (120→20 MH/s).
