@@ -284,6 +284,7 @@ class ZionRpcClient {
 
   /**
    * Pool API call (for mining-specific data not available via RPC)
+   * Only queries nodes that have a pool API configured (poolApiUrl set or pool_api port > 0).
    */
   async poolCall<T = any>(path: string): Promise<T> {
     const errors: string[] = [];
@@ -291,6 +292,10 @@ class ZionRpcClient {
     for (let attempt = 0; attempt < this.nodes.length; attempt++) {
       const nodeIndex = (this.primaryIndex + attempt) % this.nodes.length;
       const node = this.nodes[nodeIndex];
+
+      // Skip nodes without a pool API — avoids 8s timeout on port 0
+      if (!node.poolApiUrl && (!node.ports.pool_api || node.ports.pool_api === 0)) continue;
+
       const baseUrl = this.getPoolApiUrl(node);
 
       try {
