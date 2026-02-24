@@ -113,3 +113,5 @@ dist/
 build-check.log
 next-build.log$LOG
 APP&WEB/website-v2.9/SeedDE
+
+test_out.txt
