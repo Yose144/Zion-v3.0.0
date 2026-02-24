@@ -79,14 +79,15 @@ async fn main() -> Result<()> {
         }
     });
 
-    // Start EVM watchers (one per active chain)
+    // Start EVM watchers (one per active chain via Ankr HTTP)
     let mut evm_handles = vec![];
     for chain in config.active_chains() {
         let chain_config = chain.clone();
         let start_block = chain_config.start_block;
+        let ankr_config = config.ankr.clone();
         let burn_tx = burn_tx.clone();
         let handle = tokio::spawn(async move {
-            let mut watcher = EvmWatcher::new(chain_config, start_block);
+            let mut watcher = EvmWatcher::new(chain_config, ankr_config, start_block);
             if let Err(e) = watcher.run(burn_tx).await {
                 error!("EVM watcher crashed: {:?}", e);
             }

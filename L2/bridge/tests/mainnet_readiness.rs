@@ -163,7 +163,7 @@ fn base_testnet_chain() -> EvmChainConfig {
         chain_id: "base-sepolia".into(),
         name: "Base Sepolia (TestNet)".into(),
         evm_chain_id: 84532,
-        rpc_url: "wss://base-sepolia.publicnode.com".into(),
+        rpc_url: Some("wss://base-sepolia.publicnode.com".into()),
         rpc_url_backup: None,
         wzion_address: "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6".into(),
         bridge_contract_address: "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721".into(),
@@ -180,7 +180,7 @@ fn base_mainnet_chain() -> EvmChainConfig {
         chain_id: "base".into(),
         name: "Base (MainNet)".into(),
         evm_chain_id: 8453,
-        rpc_url: "wss://base-mainnet.publicnode.com".into(),
+        rpc_url: Some("wss://base-mainnet.publicnode.com".into()),
         rpc_url_backup: Some("wss://base.llamarpc.com".into()),
         wzion_address: "0x0000000000000000000000000000000000000000".into(), // TODO: deploy
         bridge_contract_address: "0x0000000000000000000000000000000000000000".into(), // TODO: deploy
@@ -668,7 +668,7 @@ fn test_multi_chain_routing_correct_chain() {
             chain_id: "arbitrum".into(),
             name: "Arbitrum One".into(),
             evm_chain_id: 42161,
-            rpc_url: "wss://arbitrum-one.publicnode.com".into(),
+            rpc_url: Some("wss://arbitrum-one.publicnode.com".into()),
             rpc_url_backup: None,
             wzion_address: "0x0000000000000000000000000000000000000000".into(),
             bridge_contract_address: "0x0000000000000000000000000000000000000000".into(),

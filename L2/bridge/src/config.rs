@@ -12,6 +12,14 @@ pub struct BridgeConfig {
     /// ZION L1 connection
     pub l1: L1Config,
 
+    /// Ankr multi-chain RPC configuration.
+    ///
+    /// When `ankr.enabled = true`, EVM chain connections are made through
+    /// Ankr's unified endpoint (`https://rpc.ankr.com/{chain}`), eliminating
+    /// the need for per-chain WebSocket URLs.
+    #[serde(default)]
+    pub ankr: AnkrConfig,
+
     /// EVM chain connections (can bridge to multiple chains)
     pub evm_chains: Vec<EvmChainConfig>,
 
@@ -26,6 +34,49 @@ pub struct BridgeConfig {
 
     /// Monitoring
     pub metrics: MetricsConfig,
+}
+
+/// Ankr multi-chain RPC settings.
+///
+/// Ankr provides HTTP JSON-RPC for all major EVM chains under a single API key:
+/// `https://rpc.ankr.com/{chain}/{api_key}`
+///
+/// Advantages over per-chain WebSocket config:
+/// - One API key handles Base, Arbitrum, BSC, Polygon, etc.
+/// - HTTP polling (no WebSocket reconnect logic needed)
+/// - No per-chain RPC URL configuration
+/// - Free tier available for development / testnet
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnkrConfig {
+    /// Enable Ankr as the EVM RPC backend.
+    ///
+    /// When `true`, `rpc_url` in each `EvmChainConfig` is ignored;
+    /// the URL is auto-derived from `https://rpc.ankr.com/{chain_id}/{api_key}`.
+    pub enabled: bool,
+
+    /// Optional Ankr API key (premium tier).
+    ///
+    /// If not set, uses the free public endpoint (rate-limited).
+    /// Can also be provided via the `ANKR_API_KEY` environment variable.
+    pub api_key: Option<String>,
+}
+
+impl Default for AnkrConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,  // Ankr is the preferred default
+            api_key: None,  // free tier
+        }
+    }
+}
+
+impl AnkrConfig {
+    /// Resolve the effective API key: config file first, then `ANKR_API_KEY` env var.
+    pub fn effective_api_key(&self) -> Option<String> {
+        self.api_key
+            .clone()
+            .or_else(|| std::env::var("ANKR_API_KEY").ok().filter(|k| !k.is_empty()))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,10 +127,17 @@ pub struct EvmChainConfig {
     /// EVM chain ID (8453 = Base, 42161 = Arbitrum, 56 = BSC, 137 = Polygon)
     pub evm_chain_id: u64,
 
-    /// EVM RPC URL (WebSocket preferred for event listening)
-    pub rpc_url: String,
+    /// EVM RPC URL override.
+    ///
+    /// When `BridgeConfig.ankr.enabled = true`, this field is **optional** —
+    /// the Ankr endpoint for this chain is auto-derived from `chain_id`.
+    ///
+    /// Set this to a custom URL to override Ankr (e.g., a private node).
+    #[serde(default)]
+    pub rpc_url: Option<String>,
 
-    /// Backup RPC URL
+    /// Backup RPC URL (used if both Ankr and primary `rpc_url` fail).
+    #[serde(default)]
     pub rpc_url_backup: Option<String>,
 
     /// Deployed wZION contract address
@@ -184,6 +242,25 @@ impl BridgeConfig {
     }
 }
 
+impl EvmChainConfig {
+    /// Resolve the effective RPC URL for this chain.
+    ///
+    /// Priority:
+    /// 1. `self.rpc_url` — if explicitly set
+    /// 2. Ankr URL derived from `chain_id` + optional `api_key`
+    pub fn effective_rpc_url(&self, ankr: &AnkrConfig) -> String {
+        if let Some(url) = &self.rpc_url {
+            return url.clone();
+        }
+        // Build Ankr URL
+        let key = ankr.effective_api_key();
+        match key {
+            Some(k) => format!("https://rpc.ankr.com/{}/{}", self.chain_id, k),
+            None => format!("https://rpc.ankr.com/{}", self.chain_id),
+        }
+    }
+}
+
 impl Default for BridgeConfig {
     fn default() -> Self {
         Self {
@@ -201,6 +278,7 @@ impl Default for BridgeConfig {
                 start_block_height: None,
                 l1_rpc_token: None,
             },
+            ankr: AnkrConfig::default(),
             evm_chains: vec![],
             validator: ValidatorConfig {
                 private_key_file: PathBuf::from("keys/validator.key"),
@@ -268,7 +346,7 @@ mod tests {
                 chain_id: "base".into(),
                 name: "Base".into(),
                 evm_chain_id: 8453,
-                rpc_url: "ws://base.rpc".into(),
+                rpc_url: None, // auto-derived from Ankr
                 rpc_url_backup: None,
                 wzion_address: "0xWZION".into(),
                 bridge_contract_address: "0xBRIDGE".into(),
@@ -282,7 +360,7 @@ mod tests {
                 chain_id: "arbitrum".into(),
                 name: "Arbitrum".into(),
                 evm_chain_id: 42161,
-                rpc_url: "ws://arb.rpc".into(),
+                rpc_url: None, // auto-derived from Ankr
                 rpc_url_backup: None,
                 wzion_address: "0xWZION_ARB".into(),
                 bridge_contract_address: "0xBRIDGE_ARB".into(),
@@ -317,7 +395,7 @@ poll_interval_secs = 15
 chain_id = "base"
 name = "Base Sepolia"
 evm_chain_id = 84532
-rpc_url = "wss://base-sepolia.rpc"
+# rpc_url = "wss://base-sepolia.rpc"  # optional: leave unset to use Ankr auto-URL
 wzion_address = "0xWZION_TEST"
 bridge_contract_address = "0xBRIDGE_TEST"
 finality_blocks = 15
@@ -358,6 +436,107 @@ log_level = "info"
         assert_eq!(config.validator.threshold, 3);
         assert_eq!(config.validator.validator_addresses.len(), 5);
         assert!(config.security.auto_pause_on_anomaly);
+    }
+
+    // ── AnkrConfig tests ────────────────────────────────────────────────────
+
+    #[test]
+    fn test_ankr_config_default() {
+        let ankr = AnkrConfig::default();
+        assert!(ankr.enabled, "Ankr should be enabled by default");
+        assert!(ankr.api_key.is_none(), "Default should have no API key");
+    }
+
+    #[test]
+    fn test_ankr_effective_api_key_from_config() {
+        let ankr = AnkrConfig {
+            enabled: true,
+            api_key: Some("config_key".into()),
+        };
+        assert_eq!(ankr.effective_api_key(), Some("config_key".into()));
+    }
+
+    #[test]
+    fn test_ankr_effective_api_key_from_env() {
+        std::env::set_var("ANKR_API_KEY", "env_key_test");
+        let ankr = AnkrConfig { enabled: true, api_key: None };
+        assert_eq!(ankr.effective_api_key(), Some("env_key_test".into()));
+        std::env::remove_var("ANKR_API_KEY");
+    }
+
+    #[test]
+    fn test_ankr_effective_api_key_config_takes_priority_over_env() {
+        std::env::set_var("ANKR_API_KEY", "env_key");
+        let ankr = AnkrConfig {
+            enabled: true,
+            api_key: Some("config_key".into()),
+        };
+        // Config key takes priority
+        assert_eq!(ankr.effective_api_key(), Some("config_key".into()));
+        std::env::remove_var("ANKR_API_KEY");
+    }
+
+    // ── effective_rpc_url tests ─────────────────────────────────────────────
+
+    fn make_chain_cfg(chain_id: &str, rpc_url: Option<&str>) -> EvmChainConfig {
+        EvmChainConfig {
+            chain_id: chain_id.into(),
+            name: chain_id.into(),
+            evm_chain_id: 1,
+            rpc_url: rpc_url.map(|s| s.into()),
+            rpc_url_backup: None,
+            wzion_address: "0xWZION".into(),
+            bridge_contract_address: "0xBRIDGE".into(),
+            finality_blocks: 12,
+            enabled: true,
+            gas_strategy: "eip1559".into(),
+            max_gas_gwei: 100,
+            start_block: None,
+        }
+    }
+
+    #[test]
+    fn test_effective_rpc_url_no_key_no_override() {
+        let chain = make_chain_cfg("base", None);
+        let ankr = AnkrConfig { enabled: true, api_key: None };
+        assert_eq!(
+            chain.effective_rpc_url(&ankr),
+            "https://rpc.ankr.com/base"
+        );
+    }
+
+    #[test]
+    fn test_effective_rpc_url_with_api_key() {
+        let chain = make_chain_cfg("arbitrum", None);
+        let ankr = AnkrConfig {
+            enabled: true,
+            api_key: Some("mykey123".into()),
+        };
+        assert_eq!(
+            chain.effective_rpc_url(&ankr),
+            "https://rpc.ankr.com/arbitrum/mykey123"
+        );
+    }
+
+    #[test]
+    fn test_effective_rpc_url_explicit_override() {
+        let chain = make_chain_cfg("base", Some("wss://my-private-node.example.com"));
+        let ankr = AnkrConfig {
+            enabled: true,
+            api_key: Some("should_be_ignored".into()),
+        };
+        // Explicit rpc_url overrides Ankr
+        assert_eq!(
+            chain.effective_rpc_url(&ankr),
+            "wss://my-private-node.example.com"
+        );
+    }
+
+    #[test]
+    fn test_default_config_has_ankr() {
+        let cfg = BridgeConfig::default();
+        assert!(cfg.ankr.enabled);
+        assert!(cfg.ankr.api_key.is_none());
     }
 
     #[test]

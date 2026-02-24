@@ -1,77 +1,91 @@
-//! EVM Chain Watcher — listens for wZION BridgeBurn events on EVM chains.
+//! EVM Chain Watcher — polls for wZION BridgeBurn events via Ankr HTTP RPC.
 //!
-//! Subscribes to BridgeBurn events from the wZION contract.
-//! When a burn is detected and finalized, sends it to the relayer
-//! to submit an L1 unlock transaction.
+//! Instead of maintaining a WebSocket connection per chain, this module uses
+//! Ankr's HTTP JSON-RPC endpoint and polls `eth_getLogs` on a configurable
+//! interval.  This eliminates the `ethers` dependency and per-chain WebSocket
+//! URL configuration.
 //!
-//! ## Auto-reconnect (B-02)
+//! ## Auto-reconnect
 //!
-//! The watcher automatically reconnects on WebSocket failure using
-//! exponential backoff: 5s → 10s → 20s → 40s → 80s (max 5 retries → error).
-//! On successful poll, the backoff counter resets to 0.
+//! The watcher retries on any RPC failure using exponential backoff:
+//! 5 s → 10 s → 20 s → 40 s → 80 s (max 5 retries, then returns Err).
+//! On a successful poll, the retry counter resets.
 
-use crate::config::EvmChainConfig;
+use crate::ankr::{AnkrClient, AnkrLog, LogFilter, BRIDGE_BURN_TOPIC};
+use crate::config::{AnkrConfig, EvmChainConfig};
 use crate::types::{BridgeStatus, EvmBurnEvent};
 use anyhow::Result;
 use chrono::Utc;
-use ethers::prelude::*;
-use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
-// ABI for the BridgeBurn event from wZION contract
-abigen!(
-    WZIONEvents,
-    r#"[
-        event BridgeBurn(address indexed from, uint256 amount, string l1Recipient, bytes32 indexed burnId, uint256 timestamp)
-    ]"#
-);
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Auto-reconnect constants (B-02)
+// Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Maximum block range per eth_getLogs call (publicnode limit: 50000).
-const MAX_BLOCK_RANGE: u64 = 49_000;
-
-/// Maximum reconnect attempts before giving up (returns Err to the caller
-/// which will restart the task via the bridge daemon).
+/// Maximum reconnect attempts before giving up.
 const MAX_RETRIES: u32 = 5;
 
-/// Base backoff in seconds — doubles each attempt (5→10→20→40→80s).
+/// Base backoff in seconds — doubles each attempt (5→10→20→40→80 s).
 const BACKOFF_BASE_SECS: u64 = 5;
 
+/// Poll interval between `eth_getLogs` calls.
+const POLL_INTERVAL_SECS: u64 = 12;
+
+/// Maximum block range per `eth_getLogs` chunk (Ankr free-tier limit ≤ 3500).
+const MAX_BLOCK_RANGE: u64 = 3_000;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EvmWatcher
+// ─────────────────────────────────────────────────────────────────────────────
+
 /// EVM watcher for a single chain.
+///
+/// Polls `eth_getLogs` via Ankr HTTP to detect wZION `BridgeBurn` events.
 pub struct EvmWatcher {
     config: EvmChainConfig,
+    ankr_config: AnkrConfig,
     last_processed_block: u64,
 }
 
 impl EvmWatcher {
-    pub fn new(config: EvmChainConfig, start_block: Option<u64>) -> Self {
+    /// Create a new watcher.
+    ///
+    /// - `start_block`: Resume scanning from this block (from persisted state or chain config).
+    pub fn new(config: EvmChainConfig, ankr_config: AnkrConfig, start_block: Option<u64>) -> Self {
+        let last = start_block.or(config.start_block).unwrap_or(0);
         Self {
             config,
-            last_processed_block: start_block.unwrap_or(0),
+            ankr_config,
+            last_processed_block: last,
         }
     }
 
-    /// Start the EVM watcher loop with auto-reconnect (B-02).
-    /// Sends confirmed burn events to the channel.
+    /// Start the EVM watcher loop with auto-reconnect.
+    ///
+    /// Sends confirmed burn events to `burn_tx`.  Returns `Err` only after
+    /// exhausting all retries (the bridge daemon should then restart this task).
     pub async fn run(&mut self, burn_tx: mpsc::Sender<EvmBurnEvent>) -> Result<()> {
         info!(
-            "👁️ EVM Watcher started — chain: {} ({}), wZION: {}, finality: {} blocks",
+            "👁️  EVM Watcher started — chain: {} (EVM ID {}), wZION: {}, finality: {} blocks",
             self.config.name,
             self.config.evm_chain_id,
             self.config.wzion_address,
             self.config.finality_blocks,
         );
 
+        let rpc_url = self.config.effective_rpc_url(&self.ankr_config);
+        info!(
+            "   RPC: {} (Ankr enabled: {})",
+            rpc_url, self.ankr_config.enabled
+        );
+
+        let ankr = AnkrClient::new(self.ankr_config.effective_api_key());
         let mut retry_count = 0u32;
 
         loop {
-            match self.connect_and_watch(&burn_tx).await {
+            match self.poll_loop(&ankr, &burn_tx).await {
                 Ok(()) => {
-                    // Returned normally (shouldn't happen — loop is infinite)
                     info!("[{}] Watcher loop exited cleanly", self.config.name);
                     return Ok(());
                 }
@@ -79,7 +93,7 @@ impl EvmWatcher {
                     retry_count += 1;
                     if retry_count > MAX_RETRIES {
                         error!(
-                            "[{}] EVM Watcher exceeded {} retries — giving up. Last error: {}",
+                            "[{}] EVM Watcher exceeded {} retries. Last error: {}",
                             self.config.name, MAX_RETRIES, e
                         );
                         return Err(e);
@@ -87,7 +101,7 @@ impl EvmWatcher {
 
                     let backoff_secs = BACKOFF_BASE_SECS * (1 << (retry_count - 1).min(6));
                     warn!(
-                        "[{}] EVM Watcher error (attempt {}/{}): {} — reconnecting in {}s",
+                        "[{}] EVM Watcher error (attempt {}/{}): {} — retry in {}s",
                         self.config.name, retry_count, MAX_RETRIES, e, backoff_secs
                     );
                     tokio::time::sleep(std::time::Duration::from_secs(backoff_secs)).await;
@@ -96,46 +110,32 @@ impl EvmWatcher {
         }
     }
 
-    /// Inner loop: connect to EVM RPC and poll for new burn events.
-    /// Returns Err on any connectivity issue (triggering auto-reconnect).
-    async fn connect_and_watch(&mut self, burn_tx: &mpsc::Sender<EvmBurnEvent>) -> Result<()> {
-        let provider = Provider::<Ws>::connect(&self.config.rpc_url)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to connect to EVM RPC {}: {}", self.config.rpc_url, e))?;
-
-        let provider = Arc::new(provider);
-        let wzion_addr: Address = self
-            .config
-            .wzion_address
-            .parse()
-            .map_err(|e| anyhow::anyhow!("Invalid wZION address: {}", e))?;
-
-        let filter = Filter::new()
-            .address(wzion_addr)
-            .event("BridgeBurn(address,uint256,string,bytes32,uint256)");
-
-        info!("📡 Connected to {} — polling BridgeBurn events", self.config.name);
-
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(12));
+    /// Inner polling loop — returns Err on connectivity issues (triggers retry).
+    async fn poll_loop(
+        &mut self,
+        ankr: &AnkrClient,
+        burn_tx: &mpsc::Sender<EvmBurnEvent>,
+    ) -> Result<()> {
+        let mut interval =
+            tokio::time::interval(std::time::Duration::from_secs(POLL_INTERVAL_SECS));
         let mut consecutive_errors = 0u32;
 
         loop {
             interval.tick().await;
 
-            match self.poll_burns(&provider, &filter, burn_tx).await {
+            match self.poll_burns(ankr, burn_tx).await {
                 Ok(count) => {
-                    consecutive_errors = 0; // reset on success
+                    consecutive_errors = 0;
                     if count > 0 {
-                        info!("{}: processed {} burn events", self.config.name, count);
+                        info!("[{}] Processed {} burn event(s)", self.config.name, count);
                     }
                 }
                 Err(e) => {
                     consecutive_errors += 1;
                     warn!(
-                        "[{}] poll error #{}: {:?}",
+                        "[{}] Poll error #{}: {}",
                         self.config.name, consecutive_errors, e
                     );
-                    // After 3 consecutive poll errors, trigger reconnect
                     if consecutive_errors >= 3 {
                         return Err(anyhow::anyhow!(
                             "3 consecutive poll errors on {}: {}",
@@ -148,146 +148,236 @@ impl EvmWatcher {
         }
     }
 
+    /// Fetch new burn logs from `last_processed_block + 1` to `finalized_block`.
     async fn poll_burns(
         &mut self,
-        provider: &Arc<Provider<Ws>>,
-        base_filter: &Filter,
+        ankr: &AnkrClient,
         burn_tx: &mpsc::Sender<EvmBurnEvent>,
     ) -> Result<usize> {
-        let current_block = provider.get_block_number().await?.as_u64();
+        let current_block = ankr.block_number(&self.config.chain_id).await?;
         let finalized_block = current_block.saturating_sub(self.config.finality_blocks);
 
         if finalized_block <= self.last_processed_block {
+            debug!(
+                "[{}] No new finalized blocks (last: {}, finalized: {})",
+                self.config.name, self.last_processed_block, finalized_block
+            );
             return Ok(0);
         }
 
-        let from = self.last_processed_block + 1;
-        let to = finalized_block;
+        let from_block = self.last_processed_block + 1;
+        let to_block = finalized_block.min(from_block + MAX_BLOCK_RANGE * 10 - 1);
 
         debug!(
-            "{}: scanning blocks {} → {} (current: {}, finalized: {})",
-            self.config.name, from, to, current_block, finalized_block
+            "[{}] Scanning blocks {} → {} (current: {}, finalized: {})",
+            self.config.name, from_block, to_block, current_block, finalized_block
         );
 
-        // Chunk requests to stay within publicnode limit of 50k blocks per getLogs call
-        let mut total_count = 0usize;
-        let mut chunk_from = from;
-
-        while chunk_from <= to {
-            let chunk_to = (chunk_from + MAX_BLOCK_RANGE - 1).min(to);
-            if chunk_from < to {
-                debug!(
-                    "{}: chunk {} → {} (of {})",
-                    self.config.name, chunk_from, chunk_to, to
-                );
-            }
-
-            let filter = base_filter.clone().from_block(chunk_from).to_block(chunk_to);
-            let logs = provider.get_logs(&filter).await?;
-            let count = logs.len();
-            total_count += count;
-
-            for log in logs {
-                match self.parse_burn_event(log) {
-                    Ok(burn) => {
-                        info!(
-                            "🔥 Burn detected on {}: {} wZION → {} (burn_id: {})",
-                            self.config.name, burn.amount_wzion, burn.l1_recipient, burn.burn_id,
-                        );
-                        if let Err(e) = burn_tx.send(burn).await {
-                            error!("Failed to send burn event: {:?}", e);
-                        }
-                    }
-                    Err(e) => {
-                        warn!("{}: failed to parse burn event: {:?}", self.config.name, e);
-                    }
-                }
-            }
-
-            chunk_from = chunk_to + 1;
-        }
-
-        self.last_processed_block = to;
-        Ok(total_count)
-    }
-
-    fn parse_burn_event(&self, log: Log) -> Result<EvmBurnEvent> {
-        let from = Address::from(log.topics.get(1).copied().unwrap_or_default());
-        let burn_id = log.topics.get(2).copied().unwrap_or_default();
-
-        let data = &log.data;
-
-        if data.len() < 128 {
-            return Err(anyhow::anyhow!(
-                "BridgeBurn event data too short: {} bytes (need ≥128)",
-                data.len()
-            ));
-        }
-
-        let amount = U256::from_big_endian(&data[0..32]);
-        let string_offset = U256::from_big_endian(&data[32..64]).as_usize();
-        let _timestamp = U256::from_big_endian(&data[64..96]);
-
-        if data.len() < string_offset + 32 {
-            return Err(anyhow::anyhow!(
-                "BridgeBurn event data truncated at string offset {}",
-                string_offset
-            ));
-        }
-        let string_len = U256::from_big_endian(&data[string_offset..string_offset + 32]).as_usize();
-
-        let string_start = string_offset + 32;
-        let string_end = string_start + string_len;
-
-        if data.len() < string_end {
-            return Err(anyhow::anyhow!(
-                "BridgeBurn event data truncated: need {} bytes for l1Recipient, have {}",
-                string_end,
-                data.len()
-            ));
-        }
-
-        let l1_recipient = String::from_utf8(data[string_start..string_end].to_vec())
-            .map_err(|e| anyhow::anyhow!("Invalid UTF-8 in l1Recipient: {}", e))?;
-
-        if !l1_recipient.starts_with("zion1") {
-            warn!(
-                "Parsed l1_recipient '{}' does not start with 'zion1' — possible decoding error",
-                l1_recipient
-            );
-        }
-
-        let burn_event = EvmBurnEvent {
-            evm_tx_hash: format!("{:?}", log.transaction_hash.unwrap_or_default()),
-            evm_block_number: log.block_number.map(|n| n.as_u64()).unwrap_or(0),
-            evm_chain: self.config.chain_id.clone(),
-            evm_burner: format!("{:?}", from),
-            amount_wzion: amount.to_string(),
-            amount_l1_atomic: crate::types::conversion::wzion_wei_to_l1_atomic(&amount.to_string())
-                .unwrap_or(0),
-            l1_recipient,
-            burn_id: format!("{:?}", burn_id),
-            detected_at: Utc::now(),
-            status: BridgeStatus::Confirmed,
-            confirmations: 0,
+        let filter = LogFilter {
+            from_block,
+            to_block,
+            address: self.config.wzion_address.clone(),
+            topics: vec![Some(BRIDGE_BURN_TOPIC.to_string())],
         };
 
-        Ok(burn_event)
+        let logs = ankr.get_logs(&self.config.chain_id, &filter).await?;
+        let count = logs.len();
+
+        for log in logs {
+            // Skip removed logs (chain reorg)
+            if log.removed == Some(true) {
+                warn!(
+                    "[{}] Skipping removed log (chain reorg) in block {}",
+                    self.config.name,
+                    log.block_number_u64()
+                );
+                continue;
+            }
+
+            match parse_bridge_burn_log(&log, &self.config.chain_id) {
+                Ok(burn) => {
+                    info!(
+                        "🔥 BridgeBurn on {}: {} wZION → {} (burn_id: {})",
+                        self.config.name,
+                        burn.amount_wzion,
+                        burn.l1_recipient,
+                        burn.burn_id,
+                    );
+                    if let Err(e) = burn_tx.send(burn).await {
+                        error!(
+                            "[{}] Failed to send burn event to channel: {:?}",
+                            self.config.name, e
+                        );
+                    }
+                }
+                Err(e) => {
+                    warn!(
+                        "[{}] Failed to parse BridgeBurn log: {}",
+                        self.config.name, e
+                    );
+                }
+            }
+        }
+
+        self.last_processed_block = to_block;
+        Ok(count)
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Log parsing helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Parse an `AnkrLog` into an `EvmBurnEvent`.
+///
+/// ABI encoding for `BridgeBurn(address indexed from, uint256 amount,
+/// string l1Recipient, bytes32 indexed burnId, uint256 timestamp)`:
+///
+/// - `topics[0]` = event signature hash (always BRIDGE_BURN_TOPIC)
+/// - `topics[1]` = `from` address (zero-padded to 32 bytes)
+/// - `topics[2]` = `burnId` (bytes32)
+/// - `data[0..32]`  = `amount` (uint256, big-endian)
+/// - `data[32..64]` = offset of `l1Recipient` string (= 96 = 0x60)
+/// - `data[64..96]` = `timestamp` (uint256, unused)
+/// - `data[96..128]` = `l1Recipient` string length
+/// - `data[128..128+len]` = `l1Recipient` UTF-8 bytes
+fn parse_bridge_burn_log(log: &AnkrLog, chain_id: &str) -> Result<EvmBurnEvent> {
+    use anyhow::anyhow;
+
+    let from_topic = log
+        .topics
+        .get(1)
+        .ok_or_else(|| anyhow!("BridgeBurn: missing topics[1] (from address)"))?;
+
+    let burn_id_topic = log
+        .topics
+        .get(2)
+        .ok_or_else(|| anyhow!("BridgeBurn: missing topics[2] (burnId)"))?;
+
+    // Address = last 20 bytes of the 32-byte zero-padded topic (skip first 24 hex chars = 12 bytes)
+    let evm_burner = format!(
+        "0x{}",
+        from_topic
+            .trim_start_matches("0x")
+            .get(24..)
+            .unwrap_or(from_topic.trim_start_matches("0x"))
+    );
+    let burn_id = burn_id_topic.clone();
+
+    let data = log.data_bytes()?;
+
+    if data.len() < 96 {
+        return Err(anyhow!(
+            "BridgeBurn: data too short ({} bytes, need ≥ 96)",
+            data.len()
+        ));
+    }
+
+    let amount_str = u256_be_to_decimal(&data[0..32]);
+    let string_offset = usize_from_be32(&data[32..64]);
+
+    if data.len() < string_offset + 32 {
+        return Err(anyhow!(
+            "BridgeBurn: data truncated at string offset {} (have {} bytes)",
+            string_offset,
+            data.len()
+        ));
+    }
+
+    let string_len = usize_from_be32(&data[string_offset..string_offset + 32]);
+    let string_start = string_offset + 32;
+    let string_end = string_start + string_len;
+
+    if data.len() < string_end {
+        return Err(anyhow!(
+            "BridgeBurn: data truncated reading l1Recipient (need {} bytes, have {})",
+            string_end,
+            data.len()
+        ));
+    }
+
+    let l1_recipient = String::from_utf8(data[string_start..string_end].to_vec())
+        .map_err(|e| anyhow!("BridgeBurn: invalid UTF-8 in l1Recipient: {}", e))?;
+
+    if !l1_recipient.starts_with("zion1") {
+        warn!(
+            "BridgeBurn: l1_recipient '{}' does not start with 'zion1'",
+            l1_recipient
+        );
+    }
+
+    let amount_l1_atomic =
+        crate::types::conversion::wzion_wei_to_l1_atomic(&amount_str).unwrap_or(0);
+
+    Ok(EvmBurnEvent {
+        evm_tx_hash: log.transaction_hash.clone().unwrap_or_default(),
+        evm_block_number: log.block_number_u64(),
+        evm_chain: chain_id.to_string(),
+        evm_burner,
+        amount_wzion: amount_str,
+        amount_l1_atomic,
+        l1_recipient,
+        burn_id,
+        detected_at: Utc::now(),
+        status: BridgeStatus::Confirmed,
+        confirmations: 0,
+    })
+}
+
+/// Read a usize from the lower bytes of a big-endian slice (≥8 bytes).
+fn usize_from_be32(bytes: &[u8]) -> usize {
+    if bytes.len() < 8 {
+        return 0;
+    }
+    let offset = bytes.len().saturating_sub(8);
+    let mut arr = [0u8; 8];
+    arr.copy_from_slice(&bytes[offset..offset + 8]);
+    u64::from_be_bytes(arr) as usize
+}
+
+/// Convert big-endian uint256 bytes (32 bytes) to decimal string.
+///
+/// ZION amounts always fit in u128, so we only use the lower 16 bytes.
+fn u256_be_to_decimal(bytes: &[u8]) -> String {
+    if bytes.len() < 32 {
+        return "0".into();
+    }
+    let hi = &bytes[0..16];
+    let lo_bytes: [u8; 16] = bytes[16..32].try_into().unwrap_or([0u8; 16]);
+    if hi == [0u8; 16] {
+        u128::from_be_bytes(lo_bytes).to_string()
+    } else {
+        format!("0x{}{}", hex::encode(hi), hex::encode(&lo_bytes as &[u8]))
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tests
+// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::AnkrConfig;
 
-    #[test]
-    fn test_reconnect_constants() {
-        // Backoff sequence: 5, 10, 20, 40, 80
-        for attempt in 1u32..=5 {
-            let secs = BACKOFF_BASE_SECS * (1 << (attempt - 1).min(6));
-            assert!(secs <= 80, "Backoff at attempt {} should be ≤80s, got {}s", attempt, secs);
+    fn make_chain() -> EvmChainConfig {
+        EvmChainConfig {
+            chain_id: "base".into(),
+            name: "Base".into(),
+            evm_chain_id: 8453,
+            rpc_url: None,
+            rpc_url_backup: None,
+            wzion_address: "0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2".into(),
+            bridge_contract_address: "0xBridgeContract".into(),
+            finality_blocks: 12,
+            enabled: true,
+            gas_strategy: "eip1559".into(),
+            max_gas_gwei: 100,
+            start_block: None,
         }
     }
+
+    // ── Constants ────────────────────────────────────────────────────────────
 
     #[test]
     fn test_max_retries_constant() {
@@ -295,22 +385,171 @@ mod tests {
     }
 
     #[test]
-    fn test_watcher_new() {
-        let config = EvmChainConfig {
-            chain_id: "base".into(),
-            name: "Base".into(),
-            evm_chain_id: 8453,
-            rpc_url: "wss://base-rpc.example.com".into(),
-            rpc_url_backup: None,
-            wzion_address: "0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2".into(),
-            bridge_contract_address: "0xabc".into(),
-            finality_blocks: 12,
-            enabled: true,
-            gas_strategy: "eip1559".into(),
-            max_gas_gwei: 100,
-            start_block: None,
+    fn test_backoff_sequence() {
+        let seq: Vec<u64> = (1u32..=5)
+            .map(|a| BACKOFF_BASE_SECS * (1 << (a - 1).min(6)))
+            .collect();
+        assert_eq!(seq, vec![5, 10, 20, 40, 80]);
+    }
+
+    #[test]
+    fn test_max_block_range_within_ankr_limit() {
+        assert!(
+            MAX_BLOCK_RANGE <= 3_500,
+            "MAX_BLOCK_RANGE {} exceeds Ankr free-tier limit",
+            MAX_BLOCK_RANGE
+        );
+    }
+
+    // ── EvmWatcher::new ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_watcher_new_with_start_block() {
+        let watcher = EvmWatcher::new(make_chain(), AnkrConfig::default(), Some(1_234_567));
+        assert_eq!(watcher.last_processed_block, 1_234_567);
+    }
+
+    #[test]
+    fn test_watcher_new_without_start_block() {
+        let watcher = EvmWatcher::new(make_chain(), AnkrConfig::default(), None);
+        assert_eq!(watcher.last_processed_block, 0);
+    }
+
+    #[test]
+    fn test_watcher_uses_config_start_block() {
+        let mut chain = make_chain();
+        chain.start_block = Some(5_000_000);
+        let watcher = EvmWatcher::new(chain, AnkrConfig::default(), None);
+        assert_eq!(watcher.last_processed_block, 5_000_000);
+    }
+
+    // ── u256_be_to_decimal ───────────────────────────────────────────────────
+
+    #[test]
+    fn test_u256_be_zero() {
+        assert_eq!(u256_be_to_decimal(&[0u8; 32]), "0");
+    }
+
+    #[test]
+    fn test_u256_be_one() {
+        let mut b = [0u8; 32];
+        b[31] = 1;
+        assert_eq!(u256_be_to_decimal(&b), "1");
+    }
+
+    #[test]
+    fn test_u256_be_5000_wzion() {
+        let amount: u128 = 5_000 * 1_000_000_000_000_000_000u128;
+        let mut bytes = [0u8; 32];
+        bytes[16..32].copy_from_slice(&amount.to_be_bytes());
+        assert_eq!(u256_be_to_decimal(&bytes), amount.to_string());
+    }
+
+    // ── usize_from_be32 ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_usize_from_be32_zero() {
+        assert_eq!(usize_from_be32(&[0u8; 32]), 0);
+    }
+
+    #[test]
+    fn test_usize_from_be32_96() {
+        let mut b = [0u8; 32];
+        b[31] = 96;
+        assert_eq!(usize_from_be32(&b), 96);
+    }
+
+    // ── parse_bridge_burn_log ────────────────────────────────────────────────
+
+    fn encode_burn_data(amount: u128, l1_recipient: &str, timestamp: u64) -> String {
+        let recipient_bytes = l1_recipient.as_bytes();
+        let recipient_len = recipient_bytes.len();
+        let padded_len = (recipient_len + 31) / 32 * 32;
+        let mut data = Vec::<u8>::new();
+        // [0..32]: amount
+        data.extend_from_slice(&[0u8; 16]);
+        data.extend_from_slice(&amount.to_be_bytes());
+        // [32..64]: string offset = 96
+        data.extend_from_slice(&[0u8; 24]);
+        data.extend_from_slice(&96u64.to_be_bytes());
+        // [64..96]: timestamp
+        data.extend_from_slice(&[0u8; 24]);
+        data.extend_from_slice(&timestamp.to_be_bytes());
+        // [96..128]: string length
+        data.extend_from_slice(&[0u8; 24]);
+        data.extend_from_slice(&(recipient_len as u64).to_be_bytes());
+        // [128..128+padded]: string bytes
+        data.extend_from_slice(recipient_bytes);
+        data.extend((0..(padded_len - recipient_len)).map(|_| 0u8));
+        format!("0x{}", hex::encode(&data))
+    }
+
+    fn make_burn_log(from: &str, burn_id: &str, amount: u128, recipient: &str, block: u64) -> AnkrLog {
+        AnkrLog {
+            address: "0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2".into(),
+            topics: vec![
+                BRIDGE_BURN_TOPIC.to_string(),
+                format!("0x{:0>64}", from.trim_start_matches("0x")),
+                format!("0x{:0>64}", burn_id.trim_start_matches("0x")),
+            ],
+            data: encode_burn_data(amount, recipient, 1_700_000_000),
+            block_number: format!("0x{:x}", block),
+            transaction_hash: Some(format!("0xtxhash{}", block)),
+            block_hash: None,
+            log_index: None,
+            removed: None,
+        }
+    }
+
+    #[test]
+    fn test_parse_burn_log_basic() {
+        let amount: u128 = 1_000 * 1_000_000_000_000_000_000u128;
+        let log = make_burn_log(
+            "DeAdBeEf00000000000000000000000000000001",
+            "abcdef00000000000000000000000000000000000000000000000000abcdef01",
+            amount,
+            "zion1qrecipient000000000000000000000000001",
+            123456,
+        );
+        let burn = parse_bridge_burn_log(&log, "base").unwrap();
+        assert_eq!(burn.evm_chain, "base");
+        assert_eq!(burn.l1_recipient, "zion1qrecipient000000000000000000000000001");
+        assert_eq!(burn.amount_wzion, amount.to_string());
+        assert_eq!(burn.evm_block_number, 123456);
+        assert_eq!(burn.status, BridgeStatus::Confirmed);
+    }
+
+    #[test]
+    fn test_parse_burn_log_short_data_errors() {
+        let log = AnkrLog {
+            address: "0x...".into(),
+            topics: vec![
+                BRIDGE_BURN_TOPIC.to_string(),
+                "0x0000000000000000000000001234".to_string(),
+                "0x0000000000000000000000000000000000000000000000000000000000000001".to_string(),
+            ],
+            data: "0xdeadbeef".into(),
+            block_number: "0x1".into(),
+            transaction_hash: None,
+            block_hash: None,
+            log_index: None,
+            removed: None,
         };
-        let watcher = EvmWatcher::new(config, Some(1_000_000));
-        assert_eq!(watcher.last_processed_block, 1_000_000);
+        assert!(parse_bridge_burn_log(&log, "base").is_err());
+    }
+
+    #[test]
+    fn test_parse_burn_log_missing_topics_errors() {
+        let log = AnkrLog {
+            address: "0x...".into(),
+            topics: vec![BRIDGE_BURN_TOPIC.to_string()],
+            data: format!("0x{}", "00".repeat(128)),
+            block_number: "0x1".into(),
+            transaction_hash: None,
+            block_hash: None,
+            log_index: None,
+            removed: None,
+        };
+        assert!(parse_bridge_burn_log(&log, "base").is_err());
     }
 }

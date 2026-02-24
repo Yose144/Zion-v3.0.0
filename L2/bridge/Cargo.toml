@@ -20,21 +20,16 @@ toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-# HTTP client (for L1 RPC + EVM RPC)
+# HTTP client (for L1 RPC + Ankr EVM RPC)
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 
-# Ethereum / EVM interaction
-ethers = { version = "2", features = ["abigen", "ws", "rustls"] }
-
-# Crypto
+# Crypto — keccak256 for EVM event topic hash (replaces ethers dependency)
+sha3 = "0.10"   # Keccak256 (same family as Ethereum's hash function)
 sha2 = "0.10"
 hex = "0.4"
 
 # Database (bridge state persistence)
 rusqlite = { version = "0.31", features = ["bundled"] }
-
-# Config
-config = "0.14"
 
 # Error handling
 thiserror = "2"
