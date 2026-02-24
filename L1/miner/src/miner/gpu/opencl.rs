@@ -79,10 +79,28 @@ impl GpuMiner for OpenCLMiner {
                 .ok_or_else(|| anyhow!("OpenCL device {} not found", self.device_id))?
                 .clone();
 
+            let platform_name = platform.name().unwrap_or_default();
+            let device_name = device.name().unwrap_or_else(|_| String::from("unknown"));
+
+            let compile_opts = std::env::var("ZION_OPENCL_BUILD_OPTS")
+                .ok()
+                .map(|v| v.trim().to_string())
+                .filter(|v| !v.is_empty())
+                .unwrap_or_else(|| {
+                    let platform_l = platform_name.to_ascii_lowercase();
+                    let device_l = device_name.to_ascii_lowercase();
+                    if platform_l.contains("amd") || device_l.contains("amd") || device_l.contains("gfx") {
+                        String::from("-cl-std=CL1.2")
+                    } else {
+                        String::from("-cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero")
+                    }
+                });
+
             println!("[OpenCL] Building Cosmic Harmony v3 kernel...");
+            println!("[OpenCL] Compile opts: {}", compile_opts);
             let mut prog_bldr = Program::builder();
             prog_bldr.src(OPENCL_KERNEL);
-            prog_bldr.cmplr_opt("-cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero");
+            prog_bldr.cmplr_opt(&compile_opts);
             let pro_que = ProQue::builder()
                 .prog_bldr(prog_bldr)
                 .platform(platform)
