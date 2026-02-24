@@ -8,7 +8,7 @@ repository.workspace = true
 description = "ZION Blockchain Core - Consensus, P2P, Storage, RPC"
 
 [features]
-default = ["verushash"]
+default = []  # verushash requires full VerusCoin C++ source tree (hash.h, primitives/block.h); enable explicitly on Linux production builds
 dev-tools = []  # Enables dev.credit_balance, dev.set_difficulty — NEVER enable in production
 verushash = ["verushash-native"]  # Native VerusHash 2.2 via C FFI — disable for dev builds without C sources
 
