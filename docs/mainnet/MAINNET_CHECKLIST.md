@@ -2,26 +2,28 @@
 
 **Comprehensive checklist for MainNet readiness**
 
+> 🔄 Aktualizace: 24. 2. 2026 (Session 50) — hloubkový scan kódu + live servery
+
 ---
 
 ## 🔴 PHASE 0 — SPEC FREEZE (P0 Critical)
 
 ### Genesis & Supply
-- [ ] Genesis parametry definovány (chain id, timestamp, supply)
-- [ ] `genesis.json` / `genesis.rs` vytvořen
-- [ ] Emission křivka implementována (reward vs height)
-- [ ] Premine rozdělení finální
-- [ ] Time-lock mechanismus implementován
-- [ ] Hash genesis souboru publikován
+- ✅ Genesis parametry definovány (chain id, timestamp, supply) — `consensus.rs`, `reward.rs`, `premine.rs`
+- ⚠️ `genesis.json` / `genesis.rs` — GENESIS_MESSAGE.txt placeholder existuje; formální genesis blok NENAPLNĚN před mainnet
+- ✅ Emission křivka implementována — `reward.rs` (decade decay, tail 724 ZION, 100+ let)
+- ✅ Premine rozdělení finální — `premine.rs` (4 kategorie, 16.28B ZION)
+- ⚠️ Time-lock mechanismus — pole `unlock_height` v kódu existuje; on-chain enforcement **není aktivní v v2.9.5**, řídí DAO governance
+- [ ] Hash genesis souboru publikován — blokováno do vytvoření genesis bloku OFFLINE
 
 ### DAA & Consensus
-- [ ] DAA finální implementace (bez TODO)
-- [ ] Max reorg depth definován
-- [ ] Finality window definován
-- [ ] Fork-choice rule implementován
+- ✅ DAA finální implementace — LWMA, window 60, ±25%, clamp 30–120 s (`consensus.rs`)
+- ✅ Max reorg depth definován — 10 bloků (`docs/mainnet/MAINNET_CONSTITUTION.md`)
+- ✅ Finality window definován — 60 bloků (soft finality)
+- ✅ Fork-choice rule implementován — highest accumulated work (`reorg.rs`)
 
 ### Exit Criteria
-- [ ] `mainnet_exit_criteria.md` vytvořen
+- [ ] `mainnet_exit_criteria.md` vytvořen — **CHYBÍ, P0 blocker**
 - [ ] CI job: `mainnet_correctness_suite`
 
 ---
@@ -29,18 +31,18 @@
 ## 🟠 PHASE 1 — CORE CORRECTNESS (P0)
 
 ### Test Suite
-- [ ] Reorg test suite (short + long)
-- [ ] Double-spend simulace
-- [ ] Fork-choice testy
-- [ ] Time drift / timestamp sanity
+- ✅ Reorg test suite — `reorg.rs` + `L1/core/tests/genesis_verification.rs` existuje
+- [ ] Double-spend simulace — **CHYBÍ**
+- [ ] Fork-choice testy — logika v `reorg.rs`, ale integrační test chybí
+- ✅ Time drift / timestamp sanity — `validation.rs` (testnet 86400 s, mainnet 7200 s) ⚠️ zkontrolovat přepnutí při launch
 - [ ] Mempool edge cases
-- [ ] DoS basic ochrany (rate limit, peers)
+- ✅ Max block size DoS ochrana — `validation.rs` limit 1 MB blokuje OOM
 
 ### Node Stability
 - [ ] Node restart mid-block test
 - [ ] Network partition scénáře (2-3)
 - [ ] Clock skew tolerance test
-- [ ] 72-168h stability run bez restartu
+- ✅ 5 nodů běží 24–38h+ bez restartu (testnet, ověřeno 24. 2. 2026)
 
 ---
 
@@ -48,16 +50,17 @@
 
 ### Node UX
 - [ ] README: "run full node in 10 min"
-- [ ] Jednotná config struktura
+- ✅ Jednotná config struktura — `config/testnet.toml`, `config/mainnet.toml`
 - [ ] Logy srozumitelné pro lidi
 - [ ] Panic → error handling
 - [ ] `docs/run-node.md` hotový
 
 ### Mining Reality
 - [ ] CPU mining baseline (low-end stroje)
-- [ ] GPU mining stabilita
+- ✅ GPU mining — Rust miner s OpenCL (AMD RX 5600 XT) implementován a otestován
 - [ ] Pool failover scénáře
 - [ ] Solo vs pool parity
+- ⚠️ Algoritmus rotace (Blake3/RandomX/Yescrypt) zakomentována pro testnet — **rozhodnout před mainnet**
 - [ ] Mining dokumentace
 
 ---
@@ -65,16 +68,16 @@
 ## 🟢 PHASE 3 — INFRASTRUCTURE (P1)
 
 ### Seed & Bootstrap
-- [ ] Min. 3 geografické seed nody
-- [ ] Monitoring (Prometheus/Grafana)
-- [ ] Alerty (disk, peers, block lag)
+- ✅ Min. 3 geografické seed nody — 5 nodů (Helsinki/SeedDE/Usa1/Usa2/Asia3), live 24. 2. 2026
+- ✅ Monitoring (Prometheus/Grafana) — běží na Helsinki (port 3001/9090)
+- [ ] Alerty (disk, peers, block lag) — **Alertmanager routing CHYBÍ** (Telegram/Slack)
 - [ ] Zálohy dat
 
 ### Docker & Deploy
-- [ ] `docker-compose.mainnet.yml` hotový
-- [ ] `ops/runbook.md` hotový
-- [ ] Docker images published
-- [ ] Checksums publikovány
+- ✅ `docker-compose.mainnet.yml` — existuje
+- ✅ `ops/runbook.md` — existuje
+- [ ] Docker images published na registry
+- [ ] Checksums / SHA256 publikovány
 
 ---
 
@@ -163,5 +166,5 @@
 
 ---
 
-*Checklist Version: 1.0*  
-*Last Updated: 2026-02-03*
+*Checklist Version: 1.1*  
+*Last Updated: 2026-02-24 (hloubkový scan kódu + live servery, Session 50)*

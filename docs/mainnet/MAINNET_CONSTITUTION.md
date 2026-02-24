@@ -1,5 +1,8 @@
 # 📜 ZION MAINNET CONSTITUTION
 
+> ✅ **TOTO JE AUTORITATIVNÍ VERZE** — označena jako kanonický zdroj pravdy 24. 2. 2026
+> Zastaralá verze: `docs/MAINNET_CONSTITUTION.md` (označena SUPERSEDED)
+
 **Version 1.0 — Immutable Protocol Charter**
 
 ---
@@ -79,6 +82,8 @@ Premine je rozdělen na následující logické skupiny:
 - ✅ Část premine je **časově uzamčena**
 - ✅ Unlock je založen na **block height**
 - ✅ Unlock je **automatický** a nevyžaduje důvěru
+
+> **Implementační poznámka (v2.9.5):** Pole `unlock_height` existuje v `premine.rs` (`L1/core/src/blockchain/premine.rs`). V aktuální verzi v2.9.5 není unlock vynucován L1 konsensem — řídí se DAO governance (off-chain). On-chain enforcement bude aktivován při MainNet launch.
 
 > **Žádné ruční odemykání. Žádné výjimky.**
 

@@ -1,6 +1,6 @@
 # 🖥️ ZION TerraNova — Seed Nodes
 
-> **Aktualizace:** 23. února 2026  
+> **Aktualizace:** 24. února 2026 (Session 50 — live server check)  
 > **Cíl:** 5 seed nodů pro TestNet → MainNet  
 > **Poznámka:** Původní Vultr servery (LA, Sydney, Delhi, Santiago) suspendovány → nahrazeny testovacími nody
 
@@ -49,7 +49,7 @@ Helsinki
 
 | # | Název | Lokace | IP | SSH alias | Klíč | Stav |
 |---|-------|--------|----|-----------|------|------|
-| 1 | TreeofLife | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | `zion-helsinki` | `zion_hetzner_key` | ✅ Běží (seed + pool + monitoring) |
+| 1 | TreeofLife | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | `zion-helsinki` | `zion_hetzner_key` | ✅ Běží (seed + bridge + website + monitoring) |
 | 2 | Seed | 🇩🇪 Germany | 46.225.126.243 | `zion-seedde` | `zion_server_key` | ✅ Běží (seed + mysterium) |
 | 3 | Seed2 | 🇺🇸 USA 1 | 5.78.178.227 | `zion-usa1` | `zion_hetzner_key` | ✅ Běží (seed + mysterium) |
 | 4 | Seed3 | 🇺🇸 USA 2 | 178.156.240.160 | `zion-usa2` | `zion_hetzner_key` | ✅ Běží (seed + mysterium) |
@@ -59,7 +59,7 @@ Helsinki
 
 | Server | Revenue kontejnery | Mysterium ID | Stav |
 |---|---|---|---|
-| Helsinki (`77.42.31.72`) | `zion-dero-miner`, `zion-zeph-miner`, `zion-mysterium` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Registered |
+| Helsinki (`77.42.31.72`) | `zion-bridge`, `zion-website`, `zion-mysterium`, `zion-nkn` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Registered (minery odstaveny 24.2.2026 — RAM cleanup) |
 | Germany (`46.225.126.243`) | `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium` | `0x1a9bcc8298a4cd214a90fb63e1eb5effa8fd8969` | ✅ Registered |
 | Usa1 (`5.78.178.227`) | `zion-mysterium`, `zion-xmr-x86` | `0xbfce8102af31342a22bdf217c7fd446d1476d2f7` | ✅ Registered |
 | Usa2 (`178.156.240.160`) | `zion-mysterium`, `zion-xmr-x86` | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Registered |
