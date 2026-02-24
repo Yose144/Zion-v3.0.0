@@ -854,6 +854,7 @@ function setupControls() {
       revenue: nextRevenue,
       // Miner backend preference: auto | rust | python
       minerBackend: document.querySelector('input[name="miner-backend"]:checked')?.value || 'auto',
+      aiAfterburner: document.getElementById('ai-afterburner-enabled')?.checked !== false,
       autoStart: document.getElementById('autostart-checkbox').checked,
       minimizeToTray: true,
       startMinimized: false
@@ -1006,6 +1007,10 @@ function updateSettingsUI() {
   void backendStatusEl;
   void backendPill;
   renderBackendUi();
+
+  // AI Afterburner toggle
+  const abToggle = document.getElementById('ai-afterburner-enabled');
+  if (abToggle) abToggle.checked = config.aiAfterburner !== false;
 
   // Dashboard quick controls — algorithm fixed to CH v3
   const algoSelect = document.getElementById('algo-select');
@@ -1577,6 +1582,63 @@ function updateStats(stats) {
   setText('hw-cpu-hr', fmtHr(stats.hashrate_cpu));
   setText('hw-gpu-hr', fmtHr(stats.hashrate_gpu));
   setText('hw-gpu-name', stats.gpu_info || stats.gpu_name || '—');
+
+  // ═══ AI Afterburner — Efficiency (H/W) ═══
+  {
+    const gpuW  = stats.afterburner_gpu_power_w;
+    const hpw   = stats.afterburner_hashrate_per_watt;
+    const hint  = stats.afterburner_efficiency_hint || '';
+    const util  = stats.afterburner_gpu_util_pct;
+    const psrc  = stats.afterburner_power_source || '';
+    const abActive = gpuW != null && gpuW > 0;
+
+    if (abActive) {
+      const hpwK = hpw ? Math.round(Number(hpw) / 1000) : 0;
+      setText('ab-hpw-value', hpwK > 0 ? hpwK + ' kH/W' : '—');
+      setText('ab-power-value', Math.round(Number(gpuW)) + 'W');
+      setText('ab-util', util != null ? Math.round(Number(util)) + '%' : '—');
+      setText('ab-source', psrc.includes('estimated') ? '~est.' : psrc || '—');
+      setText('ab-hint', hint || '—');
+    } else {
+      setText('ab-hpw-value', '—');
+      setText('ab-power-value', '—');
+      setText('ab-util', '—');
+      setText('ab-source', '—');
+      setText('ab-hint', 'AI Afterburner initializing...');
+    }
+
+    // Logs view compact status strip
+    const abStatusEl = getEl('ab-console-status');
+    if (abStatusEl) {
+      if (abActive && hpw) {
+        const hr = stats.hashrate || stats.hashrate_10s || 0;
+        const hpwK = Math.round(Number(hpw) / 1000);
+        abStatusEl.textContent = `⚡ ${(Number(hr)/1e6).toFixed(1)} MH/s @ ${Math.round(Number(gpuW))}W → ${hpwK} kH/W`;
+        abStatusEl.className = 'ab-strip-text ab-active';
+      } else {
+        abStatusEl.textContent = '⚡ Afterburner ready';
+        abStatusEl.className = 'ab-strip-text';
+      }
+    }
+  }
+
+    // Update ab-settings-status in Engine settings panel
+    const abSetSt = getEl('ab-settings-status');
+    if (abSetSt) {
+      const gpuW = stats.afterburner_gpu_power_w;
+      const hpw  = stats.afterburner_hashrate_per_watt;
+      if (gpuW != null && gpuW > 0 && hpw) {
+        const hpwK = Math.round(Number(hpw) / 1000);
+        abSetSt.textContent = `\u26a1 Live: ${Math.round(Number(gpuW))}W \u2192 ${hpwK} kH/W  [${stats.afterburner_power_source || 'estimated'}]`;
+        abSetSt.style.color = '#fbbf24';
+      } else if (stats.afterburner_status) {
+        abSetSt.textContent = `\u26a1 Afterburner: ${stats.afterburner_status}`;
+        abSetSt.style.color = '#a0c8b0';
+      } else {
+        abSetSt.textContent = '\u26a1 Live: initializing...';
+        abSetSt.style.color = '#a0c8b0';
+      }
+    }
 
   // ---- CH3 Stream / GPU / Revenue ----
   updateCH3Dashboard(stats);
