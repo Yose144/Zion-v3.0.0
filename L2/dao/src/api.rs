@@ -40,7 +40,8 @@ use crate::config::DaoConfig;
 use crate::db::DaoDb;
 use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalType};
-use crate::types::{VoteChoice, PROPOSAL_THRESHOLD};
+use crate::treasury::{Treasury, TreasuryOperation};
+use crate::types::{VoteChoice, DAO_TREASURY_TOTAL, PROPOSAL_THRESHOLD};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // App State
@@ -52,6 +53,7 @@ pub struct AppState {
     pub config: Arc<DaoConfig>,
     pub api_key: String,
     pub metrics: Arc<DaoMetrics>,
+    pub treasury: Arc<Mutex<Treasury>>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,14 +101,20 @@ fn check_api_key(headers: &HeaderMap, expected: &str) -> bool {
 
 pub fn dao_router(state: AppState) -> Router {
     Router::new()
-        .route("/api/dao/health",          get(health))
-        .route("/api/dao/proposals",       get(list_proposals).post(create_proposal))
-        .route("/api/dao/proposals/:id",   get(get_proposal))
+        .route("/api/dao/health", get(health))
+        .route(
+            "/api/dao/proposals",
+            get(list_proposals).post(create_proposal),
+        )
+        .route("/api/dao/proposals/:id", get(get_proposal))
         .route("/api/dao/proposals/:id/votes", get(get_votes))
-        .route("/api/dao/proposals/:id/vote",  post(cast_vote))
-        .route("/api/dao/treasury",        get(treasury_overview))
-        .route("/api/dao/stats",           get(dao_stats))
-        .route("/metrics",                 get(prometheus_metrics))
+        .route("/api/dao/proposals/:id/vote", post(cast_vote))
+        .route("/api/dao/treasury", get(treasury_overview))
+        .route("/api/dao/treasury/submit", post(treasury_submit))
+        .route("/api/dao/treasury/:op_id/sign", post(treasury_sign))
+        .route("/api/dao/treasury/:op_id/execute", post(treasury_execute))
+        .route("/api/dao/stats", get(dao_stats))
+        .route("/metrics", get(prometheus_metrics))
         .with_state(state)
 }
 
@@ -118,7 +126,10 @@ pub fn dao_router(state: AppState) -> Router {
 async fn prometheus_metrics(State(state): State<AppState>) -> impl axum::response::IntoResponse {
     let body = state.metrics.render_prometheus();
     (
-        [(axum::http::header::CONTENT_TYPE, "text/plain; version=0.0.4")],
+        [(
+            axum::http::header::CONTENT_TYPE,
+            "text/plain; version=0.0.4",
+        )],
         body,
     )
 }
@@ -199,7 +210,10 @@ async fn get_proposal(
     let db = state.db.lock().await;
     match db.get_proposal(id) {
         Ok(Some(row)) => Ok(ok(row)),
-        Ok(None) => Err(err(format!("Proposal {} not found", id), StatusCode::NOT_FOUND)),
+        Ok(None) => Err(err(
+            format!("Proposal {} not found", id),
+            StatusCode::NOT_FOUND,
+        )),
         Err(e) => Err(err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
     }
 }
@@ -222,20 +236,34 @@ async fn create_proposal(
     Json(req): Json<CreateProposalRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     if !check_api_key(&headers, &state.api_key) {
-        return Err(err("Unauthorized — X-DAO-Key required", StatusCode::UNAUTHORIZED));
+        return Err(err(
+            "Unauthorized — X-DAO-Key required",
+            StatusCode::UNAUTHORIZED,
+        ));
     }
 
     // Validate inputs
     if req.title.is_empty() || req.description.is_empty() || req.proposer.is_empty() {
-        return Err(err("title, description, proposer are required", StatusCode::BAD_REQUEST));
+        return Err(err(
+            "title, description, proposer are required",
+            StatusCode::BAD_REQUEST,
+        ));
     }
     if !req.proposer.starts_with("zion1") {
-        return Err(err("proposer must be a valid ZION L1 address (zion1...)", StatusCode::BAD_REQUEST));
+        return Err(err(
+            "proposer must be a valid ZION L1 address (zion1...)",
+            StatusCode::BAD_REQUEST,
+        ));
     }
 
     // Parse ProposalType from JSON
-    let proposal_type: ProposalType = serde_json::from_value(req.proposal_type.clone())
-        .map_err(|e| err(format!("Invalid proposal_type: {}", e), StatusCode::BAD_REQUEST))?;
+    let proposal_type: ProposalType =
+        serde_json::from_value(req.proposal_type.clone()).map_err(|e| {
+            err(
+                format!("Invalid proposal_type: {}", e),
+                StatusCode::BAD_REQUEST,
+            )
+        })?;
 
     // Assign sequential ID (simple: max(id)+1)
     let next_id = {
@@ -260,7 +288,10 @@ async fn create_proposal(
             .map_err(|e| err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))?;
     }
 
-    info!("[DAO-API] Proposal #{} created by {}", next_id, req.proposer);
+    info!(
+        "[DAO-API] Proposal #{} created by {}",
+        next_id, req.proposer
+    );
 
     Ok(ok(serde_json::json!({
         "id": next_id,
@@ -280,7 +311,12 @@ async fn get_votes(
 
     // Verify proposal exists
     match db.get_proposal(id) {
-        Ok(None) => return Err(err(format!("Proposal {} not found", id), StatusCode::NOT_FOUND)),
+        Ok(None) => {
+            return Err(err(
+                format!("Proposal {} not found", id),
+                StatusCode::NOT_FOUND,
+            ))
+        }
         Err(e) => return Err(err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
         _ => {}
     }
@@ -290,7 +326,11 @@ async fn get_votes(
         .map_err(|e| err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))?;
 
     let total = yes + no + abstain;
-    let yes_pct = if total > 0 { yes as f64 / total as f64 * 100.0 } else { 0.0 };
+    let yes_pct = if total > 0 {
+        yes as f64 / total as f64 * 100.0
+    } else {
+        0.0
+    };
 
     Ok(ok(serde_json::json!({
         "proposal_id": id,
@@ -305,8 +345,8 @@ async fn get_votes(
 #[derive(Deserialize)]
 struct CastVoteRequest {
     voter: String,
-    choice: String,   // "yes" | "no" | "abstain"
-    weight: u64,      // ZION balance in atomic units (verified by scanner; API trusts it for now)
+    choice: String, // "yes" | "no" | "abstain"
+    weight: u64,    // ZION balance in atomic units (verified by scanner; API trusts it for now)
     l1_tx_hash: Option<String>,
 }
 
@@ -324,18 +364,31 @@ async fn cast_vote(
         "yes" => VoteChoice::Yes,
         "no" => VoteChoice::No,
         "abstain" => VoteChoice::Abstain,
-        other => return Err(err(format!("Invalid choice '{}' — use yes/no/abstain", other), StatusCode::BAD_REQUEST)),
+        other => {
+            return Err(err(
+                format!("Invalid choice '{}' — use yes/no/abstain", other),
+                StatusCode::BAD_REQUEST,
+            ))
+        }
     };
 
     if !req.voter.starts_with("zion1") {
-        return Err(err("voter must be a valid ZION L1 address", StatusCode::BAD_REQUEST));
+        return Err(err(
+            "voter must be a valid ZION L1 address",
+            StatusCode::BAD_REQUEST,
+        ));
     }
 
     let db = state.db.lock().await;
 
     // Check proposal is active
     match db.get_proposal(id) {
-        Ok(None) => return Err(err(format!("Proposal {} not found", id), StatusCode::NOT_FOUND)),
+        Ok(None) => {
+            return Err(err(
+                format!("Proposal {} not found", id),
+                StatusCode::NOT_FOUND,
+            ))
+        }
         Ok(Some(ref p)) if p.status != "Active" => {
             return Err(err(
                 format!("Proposal {} is {}, not Active", id, p.status),
@@ -347,7 +400,13 @@ async fn cast_vote(
     }
 
     let recorded = db
-        .record_vote(id, &req.voter, choice, req.weight, req.l1_tx_hash.as_deref())
+        .record_vote(
+            id,
+            &req.voter,
+            choice,
+            req.weight,
+            req.l1_tx_hash.as_deref(),
+        )
         .map_err(|e| err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))?;
 
     if !recorded {
@@ -357,7 +416,10 @@ async fn cast_vote(
         ));
     }
 
-    info!("[DAO-API] Vote recorded: proposal={} voter={}", id, req.voter);
+    info!(
+        "[DAO-API] Vote recorded: proposal={} voter={}",
+        id, req.voter
+    );
 
     Ok(ok(serde_json::json!({
         "proposal_id": id,
@@ -370,18 +432,165 @@ async fn cast_vote(
 // ── Treasury ──────────────────────────────────────────────────────────────────
 
 /// GET /api/dao/treasury
-async fn treasury_overview() -> Json<serde_json::Value> {
+async fn treasury_overview(State(state): State<AppState>) -> Json<serde_json::Value> {
+    let treasury = state.treasury.lock().await;
     ok(serde_json::json!({
-        "total_zion": 4_000_000_000u64,
+        "total_zion": DAO_TREASURY_TOTAL / 1_000_000,
+        "available_atomic": treasury.balance(),
+        "available_zion": treasury.balance() / 1_000_000,
         "addresses": [
             "zion1dao0treasury0main000000000000000000001",
             "zion1dao0treasury0main000000000000000000002",
             "zion1dao0treasury0main000000000000000000003",
         ],
-        "multisig": "5-of-7",
+        "multisig": format!("{}-of-{}", treasury.threshold(), treasury.guardian_count()),
+        "pending_operations": treasury.pending_count(),
         "daily_spend_limit_zion": 100_000_000u64,
-        "note": "Balance queries require L1 RPC integration (see D-01)",
+        "note": "Treasury operations require guardian signatures",
     }))
+}
+
+#[derive(Deserialize)]
+struct SubmitTreasuryRequest {
+    op_id: String,
+    guardian: String,
+    operation: TreasuryOperation,
+}
+
+#[derive(Deserialize)]
+struct SignTreasuryRequest {
+    guardian: String,
+}
+
+#[derive(Deserialize)]
+struct ExecuteTreasuryRequest {
+    guardian: String,
+}
+
+/// POST /api/dao/treasury/submit
+async fn treasury_submit(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<SubmitTreasuryRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    if !check_api_key(&headers, &state.api_key) {
+        return Err(err(
+            "Unauthorized — X-DAO-Key required",
+            StatusCode::UNAUTHORIZED,
+        ));
+    }
+    if req.op_id.trim().is_empty() {
+        return Err(err("op_id is required", StatusCode::BAD_REQUEST));
+    }
+
+    let mut treasury = state.treasury.lock().await;
+    treasury
+        .submit_operation(req.op_id.clone(), req.operation, &req.guardian)
+        .map_err(|e| err(e.to_string(), StatusCode::BAD_REQUEST))?;
+
+    state
+        .metrics
+        .treasury_operations_submitted
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    state
+        .metrics
+        .guardian_signatures_collected
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    let signatures = treasury.pending_signatures(&req.op_id).unwrap_or(0);
+    let threshold = treasury.threshold() as usize;
+    Ok(ok(serde_json::json!({
+        "op_id": req.op_id,
+        "signatures": signatures,
+        "threshold": threshold,
+        "ready": signatures >= threshold,
+    })))
+}
+
+/// POST /api/dao/treasury/:op_id/sign
+async fn treasury_sign(
+    Path(op_id): Path<String>,
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<SignTreasuryRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    if !check_api_key(&headers, &state.api_key) {
+        return Err(err(
+            "Unauthorized — X-DAO-Key required",
+            StatusCode::UNAUTHORIZED,
+        ));
+    }
+
+    let mut treasury = state.treasury.lock().await;
+    let before = treasury.pending_signatures(&op_id).unwrap_or(0);
+    let threshold_reached = treasury
+        .add_signature(&op_id, &req.guardian)
+        .map_err(|e| err(e.to_string(), StatusCode::BAD_REQUEST))?;
+    let after = treasury.pending_signatures(&op_id).unwrap_or(before);
+
+    if after > before {
+        state
+            .metrics
+            .guardian_signatures_collected
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    Ok(ok(serde_json::json!({
+        "op_id": op_id,
+        "signatures": after,
+        "threshold": treasury.threshold(),
+        "ready": threshold_reached,
+    })))
+}
+
+/// POST /api/dao/treasury/:op_id/execute
+async fn treasury_execute(
+    Path(op_id): Path<String>,
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<ExecuteTreasuryRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    if !check_api_key(&headers, &state.api_key) {
+        return Err(err(
+            "Unauthorized — X-DAO-Key required",
+            StatusCode::UNAUTHORIZED,
+        ));
+    }
+
+    let mut treasury = state.treasury.lock().await;
+    if !treasury.is_guardian_address(&req.guardian) {
+        return Err(err(
+            "guardian is not in active guardian set",
+            StatusCode::UNAUTHORIZED,
+        ));
+    }
+
+    let operation = treasury
+        .execute(&op_id)
+        .map_err(|e| err(e.to_string(), StatusCode::BAD_REQUEST))?;
+
+    state
+        .metrics
+        .treasury_operations_executed
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    let amount = match &operation {
+        TreasuryOperation::Spend { amount, .. } => *amount,
+        TreasuryOperation::HumanitarianGrant { amount, .. } => *amount,
+        TreasuryOperation::Rebalance { amount, .. } => *amount,
+    };
+    state
+        .metrics
+        .treasury_total_disbursed_zion
+        .fetch_add(amount / 1_000_000, std::sync::atomic::Ordering::Relaxed);
+
+    Ok(ok(serde_json::json!({
+        "op_id": op_id,
+        "executed_by": req.guardian,
+        "amount_atomic": amount,
+        "amount_zion": amount / 1_000_000,
+        "operation": operation,
+    })))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
