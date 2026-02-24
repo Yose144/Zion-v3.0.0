@@ -153,13 +153,13 @@ function runWizard(overlay) {
       if (errorEl) errorEl.style.display = 'none';
 
       const btn = document.getElementById('wizard-create-btn');
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ Vytvářím...'; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Vytvářím...'; }
 
       try {
         const result = await window.electronAPI.quickSetup({ password: pw, workerName });
         if (!result?.success) {
           if (errorEl) { errorEl.textContent = result?.error || 'Chyba při vytváření peněženky.'; errorEl.style.display = 'block'; }
-          if (btn) { btn.disabled = false; btn.textContent = '🔑 Vytvořit peněženku a nastavit'; }
+          if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-key"></use></svg> Vytvořit peněženku a nastavit'; }
           return;
         }
 
@@ -173,7 +173,7 @@ function runWizard(overlay) {
         showStep(3);
       } catch (err) {
         if (errorEl) { errorEl.textContent = err?.message || 'Neočekávaná chyba.'; errorEl.style.display = 'block'; }
-        if (btn) { btn.disabled = false; btn.textContent = '🔑 Vytvořit peněženku a nastavit'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-key"></use></svg> Vytvořit peněženku a nastavit'; }
       }
     });
 
@@ -1147,22 +1147,22 @@ function colorizeConsoleLine(raw) {
   // ── BLOCK FOUND ──
   m = raw.match(/BLOCK FOUND.*?height\s+(\d+).*?\(total:\s*(\d+)\)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-block">█ BLOCK FOUND █ 🏆</span> height <span class="mc-hr">${m[1]}</span> <span class="mc-info">(total: ${m[2]})</span>`, _cls: ' mc-block-line' };
+    return { html: `${tsHtml}<span class="mc-block">█ BLOCK FOUND █ ★</span> height <span class="mc-hr">${m[1]}</span> <span class="mc-info">(total: ${m[2]})</span>`, _cls: ' mc-block-line' };
   }
 
   // ── GPU share: "GPU SHARE FOUND" / "GPU share ACCEPTED" / "GPU share REJECTED" ──
   if (/GPU SHARE FOUND/i.test(raw)) {
-    return { html: `${tsHtml}<span class="mc-ok">⛏ GPU SHARE FOUND!</span> <span class="mc-info">${esc(raw.replace(/.*GPU SHARE FOUND!?/i, '').trim())}</span>` };
+    return { html: `${tsHtml}<span class="mc-ok">[GPU] SHARE FOUND!</span> <span class="mc-info">${esc(raw.replace(/.*GPU SHARE FOUND!?/i, '').trim())}</span>` };
   }
   if (/GPU share ACCEPTED/i.test(raw)) {
     m = raw.match(/\(total:\s*(\d+)\)/i);
-    return { html: `${tsHtml}<span class="mc-accepted">✅ GPU share ACCEPTED</span> <span class="mc-info">(total: ${m ? m[1] : '?'})</span>`, _cls: ' mc-highlight' };
+    return { html: `${tsHtml}<span class="mc-accepted">[+] GPU share ACCEPTED</span> <span class="mc-info">(total: ${m ? m[1] : '?'})</span>`, _cls: ' mc-highlight' };
   }
   if (/GPU share REJECTED/i.test(raw)) {
-    return { html: `${tsHtml}<span class="mc-rejected">❌ GPU share REJECTED</span>` };
+    return { html: `${tsHtml}<span class="mc-rejected">[✗] GPU share REJECTED</span>` };
   }
 
-  // ── GPU hashrate: "🎮 Apple M1 [GPU]: 2.59 MH/s" ──
+  // ── GPU hashrate: "Apple M1 [GPU]: 2.59 MH/s" ──
   m = raw.match(/([^\[]+)\[(GPU|CPU-fallback)\]:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
   if (m) {
     const mode = m[2].toUpperCase();
@@ -1173,7 +1173,7 @@ function colorizeConsoleLine(raw) {
   // ── Batch done: "✅ Batch done: 250000 hashes in 452ms, 552.04 kH/s" ──
   m = raw.match(/Batch done:.*?([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-ok">✅ Batch</span> <span class="mc-hr">${m[1]}</span> <span class="mc-unit">${m[2]}</span>` };
+    return { html: `${tsHtml}<span class="mc-ok">[OK] Batch</span> <span class="mc-hr">${m[1]}</span> <span class="mc-unit">${m[2]}</span>` };
   }
 
   // ── Connection: "Connecting", "connected", "Reconnection" ──
@@ -1185,7 +1185,7 @@ function colorizeConsoleLine(raw) {
   // ── Stream switch ──
   m = raw.match(/Stream switch:\s*(\S+)\s*→\s*(\S+)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-warn">⚡ Stream switch</span> <span class="mc-algo">${esc(m[1])}</span> → <span class="mc-algo">${esc(m[2])}</span>` };
+    return { html: `${tsHtml}<span class="mc-warn">~&gt; Stream switch</span> <span class="mc-algo">${esc(m[1])}</span> → <span class="mc-algo">${esc(m[2])}</span>` };
   }
 
   // ── Errors ──
@@ -1569,7 +1569,7 @@ function updateStats(stats) {
   if (blocksCard) {
     if (blocks > 0) {
       blocksCard.classList.add('has-blocks');
-      setText('blocks-label', `🎉 ${blocks} block${blocks > 1 ? 's' : ''} mined!`);
+      setText('blocks-label', `${blocks} block${blocks > 1 ? 's' : ''} mined!`);
     } else {
       blocksCard.classList.remove('has-blocks');
       setText('blocks-label', 'Total blocks mined');
@@ -1613,10 +1613,10 @@ function updateStats(stats) {
       if (abActive && hpw) {
         const hr = stats.hashrate || stats.hashrate_10s || 0;
         const hpwK = Math.round(Number(hpw) / 1000);
-        abStatusEl.textContent = `⚡ ${(Number(hr)/1e6).toFixed(1)} MH/s @ ${Math.round(Number(gpuW))}W → ${hpwK} kH/W`;
+        abStatusEl.textContent = `[AB] ${(Number(hr)/1e6).toFixed(1)} MH/s @ ${Math.round(Number(gpuW))}W → ${hpwK} kH/W`;
         abStatusEl.className = 'ab-strip-text ab-active';
       } else {
-        abStatusEl.textContent = '⚡ Afterburner ready';
+        abStatusEl.textContent = '[AB] ready';
         abStatusEl.className = 'ab-strip-text';
       }
     }
@@ -1629,13 +1629,13 @@ function updateStats(stats) {
       const hpw  = stats.afterburner_hashrate_per_watt;
       if (gpuW != null && gpuW > 0 && hpw) {
         const hpwK = Math.round(Number(hpw) / 1000);
-        abSetSt.textContent = `\u26a1 Live: ${Math.round(Number(gpuW))}W \u2192 ${hpwK} kH/W  [${stats.afterburner_power_source || 'estimated'}]`;
+        abSetSt.textContent = `[AB] Live: ${Math.round(Number(gpuW))}W \u2192 ${hpwK} kH/W  [${stats.afterburner_power_source || 'estimated'}]`;
         abSetSt.style.color = '#fbbf24';
       } else if (stats.afterburner_status) {
-        abSetSt.textContent = `\u26a1 Afterburner: ${stats.afterburner_status}`;
+        abSetSt.textContent = `[AB] ${stats.afterburner_status}`;
         abSetSt.style.color = '#a0c8b0';
       } else {
-        abSetSt.textContent = '\u26a1 Live: initializing...';
+        abSetSt.textContent = '[AB] initializing...';
         abSetSt.style.color = '#a0c8b0';
       }
     }
@@ -2569,17 +2569,17 @@ async function refreshNetworkMetrics() {
     const syncBar  = el('net-sync-bar');
     if (syncBar) {
       if (s.online === 0) {
-        syncIcon.textContent = '❌';
+        syncIcon.textContent = '✗';
         syncText.textContent = 'All nodes offline';
         syncText.style.color = '#f87171';
         syncBar.style.borderColor = 'rgba(248,113,113,0.3)';
       } else if (s.inSync) {
-        syncIcon.textContent = '✅';
+        syncIcon.textContent = '✓';
         syncText.textContent = `Network Synchronized — ${s.online}/${s.total} nodes in consensus`;
         syncText.style.color = '#6ee7b7';
         syncBar.style.borderColor = 'rgba(16,185,129,0.3)';
       } else {
-        syncIcon.textContent = '⚠️';
+        syncIcon.textContent = '!';
         syncText.textContent = `Synchronizing... (${s.online}/${s.total} online)`;
         syncText.style.color = '#fbbf24';
         syncBar.style.borderColor = 'rgba(251,191,36,0.3)';
@@ -2605,7 +2605,7 @@ async function refreshNetworkMetrics() {
           </div>
           <div style="display:flex;gap:16px;font-size:12px;color:rgba(255,255,255,0.55);">
             <span>H: <b style="color:#93c5fd;">${n.height ? n.height.toLocaleString() : '—'}</b></span>
-            <span>⛏ <b style="color:#fcd34d;">${n.miners}</b></span>
+            <span>M: <b style="color:#fcd34d;">${n.miners}</b></span>
             <span style="color:#c4b5fd;font-family:monospace;">${hr}</span>
           </div>
         </div>`;
@@ -2654,7 +2654,7 @@ async function refreshPeerList() {
 
     if (!data.success || !data.peers || data.peers.length === 0) {
       listEl.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:20px;">
-        <div style="font-size:20px; margin-bottom:8px;">📡</div>
+        <div style="font-size:20px; margin-bottom:8px;">◈</div>
         No peers discovered yet. Daemon will find peers after deployment.
       </div>`;
       return;
@@ -3041,13 +3041,13 @@ function bridgeCopyText(text) {
 
 /** OASIS Consciousness Levels — mirrors L4/oasis/src/consciousness.rs */
 const OASIS_LEVELS = [
-  { name: 'Physical',     sefira: 'Malkuth',         desc: 'Foundation',     xp: 0,         mult: 1.0,  symbol: '🌍', features: ['BasicMining'] },
-  { name: 'Emotional',    sefira: 'Yesod',           desc: 'Connection',     xp: 1_000,     mult: 1.2,  symbol: '🌊', features: ['JoinGuild'] },
-  { name: 'Mental',       sefira: 'Hod / Netzach',   desc: 'Splendor',       xp: 5_000,     mult: 1.5,  symbol: '🔥', features: ['AiChallenges', 'CreateGuild'] },
-  { name: 'Intuitional',  sefira: 'Tiferet',         desc: 'Beauty',         xp: 15_000,    mult: 2.0,  symbol: '💎', features: ['ClaimTerritory', 'MeditationBonus'] },
+  { name: 'Physical',     sefira: 'Malkuth',         desc: 'Foundation',     xp: 0,         mult: 1.0,  symbol: '◯',  features: ['BasicMining'] },
+  { name: 'Emotional',    sefira: 'Yesod',           desc: 'Connection',     xp: 1_000,     mult: 1.2,  symbol: '≋',  features: ['JoinGuild'] },
+  { name: 'Mental',       sefira: 'Hod / Netzach',   desc: 'Splendor',       xp: 5_000,     mult: 1.5,  symbol: '▲',  features: ['AiChallenges', 'CreateGuild'] },
+  { name: 'Intuitional',  sefira: 'Tiferet',         desc: 'Beauty',         xp: 15_000,    mult: 2.0,  symbol: '◆',  features: ['ClaimTerritory', 'MeditationBonus'] },
   { name: 'Spiritual',    sefira: 'Gevurah / Chesed',desc: 'Strength & Mercy',xp: 50_000,   mult: 3.0,  symbol: '⚡', features: ['DaoVoting', 'TitheProposals'] },
-  { name: 'Cosmic',       sefira: 'Binah',           desc: 'Understanding',  xp: 150_000,   mult: 5.0,  symbol: '🌌', features: ['CreateAiAgent', 'GuildWars'] },
-  { name: 'Divine',       sefira: 'Chokmah',         desc: 'Wisdom',         xp: 500_000,   mult: 8.0,  symbol: '👁', features: ['ExpandTerritory', 'Mentorship'] },
+  { name: 'Cosmic',       sefira: 'Binah',           desc: 'Understanding',  xp: 150_000,   mult: 5.0,  symbol: '◉',  features: ['CreateAiAgent', 'GuildWars'] },
+  { name: 'Divine',       sefira: 'Chokmah',         desc: 'Wisdom',         xp: 500_000,   mult: 8.0,  symbol: '◎',  features: ['ExpandTerritory', 'Mentorship'] },
   { name: 'Unity',        sefira: "Da'at",           desc: 'Knowledge',      xp: 2_000_000, mult: 12.0, symbol: '∞',  features: ['WarpPortals', 'CreateChallenges'] },
   { name: 'OnTheStar',    sefira: 'Keter',           desc: 'Crown',          xp: 10_000_000,mult: 15.0, symbol: '✦',  features: ['ConsciousnessBeacon'] },
 ];
@@ -3057,25 +3057,25 @@ const LEVEL_UP_REWARDS = [0, 100, 500, 2_500, 10_000, 50_000, 250_000, 1_000_000
 
 /** 8 Genesis Territories — mirrors L4/oasis/src/territory.rs */
 const OASIS_TERRITORIES = [
-  { name: 'Mount Zion',                  region: 'Mountains',     emoji: '🏔️', bg: 'bg-mountains',difficulty: 1.0, miningBonus: 10, xpBonus: 5,  capacity: 50  },
-  { name: 'Cedar Forest',                region: 'Forest',        emoji: '🌲', bg: 'bg-forest',   difficulty: 0.8, miningBonus: 15, xpBonus: 10, capacity: 40  },
-  { name: 'Negev Desert',                region: 'Desert',        emoji: '🏜️', bg: 'bg-desert',   difficulty: 1.5, miningBonus: 20, xpBonus: 15, capacity: 30  },
-  { name: 'Sea of Galilee',              region: 'Ocean',         emoji: '🌊', bg: 'bg-ocean',    difficulty: 1.2, miningBonus: 12, xpBonus: 8,  capacity: 35  },
-  { name: 'Masada Forge',                region: 'Volcano',       emoji: '🌋', bg: 'bg-volcano',  difficulty: 2.0, miningBonus: 25, xpBonus: 20, capacity: 20  },
-  { name: 'Crystal Mines of Solomon',    region: 'Crystal Caves', emoji: '💎', bg: 'bg-crystal',  difficulty: 1.8, miningBonus: 22, xpBonus: 18, capacity: 25  },
-  { name: 'Temple of Consciousness',     region: 'Temple',        emoji: '🕍', bg: 'bg-temple',   difficulty: 1.3, miningBonus: 18, xpBonus: 25, capacity: 30  },
-  { name: 'Babel Nexus',                 region: 'Nexus',         emoji: '🌀', bg: 'bg-nexus',    difficulty: 2.5, miningBonus: 30, xpBonus: 30, capacity: 15  },
+  { name: 'Mount Zion',                  region: 'Mountains',     emoji: '△',   bg: 'bg-mountains',difficulty: 1.0, miningBonus: 10, xpBonus: 5,  capacity: 50  },
+  { name: 'Cedar Forest',                region: 'Forest',        emoji: '≋',  bg: 'bg-forest',   difficulty: 0.8, miningBonus: 15, xpBonus: 10, capacity: 40  },
+  { name: 'Negev Desert',                region: 'Desert',        emoji: '◇',  bg: 'bg-desert',   difficulty: 1.5, miningBonus: 20, xpBonus: 15, capacity: 30  },
+  { name: 'Sea of Galilee',              region: 'Ocean',         emoji: '≈',  bg: 'bg-ocean',    difficulty: 1.2, miningBonus: 12, xpBonus: 8,  capacity: 35  },
+  { name: 'Masada Forge',                region: 'Volcano',       emoji: '▲',  bg: 'bg-volcano',  difficulty: 2.0, miningBonus: 25, xpBonus: 20, capacity: 20  },
+  { name: 'Crystal Mines of Solomon',    region: 'Crystal Caves', emoji: '◆',  bg: 'bg-crystal',  difficulty: 1.8, miningBonus: 22, xpBonus: 18, capacity: 25  },
+  { name: 'Temple of Consciousness',     region: 'Temple',        emoji: '◈',  bg: 'bg-temple',   difficulty: 1.3, miningBonus: 18, xpBonus: 25, capacity: 30  },
+  { name: 'Babel Nexus',                 region: 'Nexus',         emoji: '∞',  bg: 'bg-nexus',    difficulty: 2.5, miningBonus: 30, xpBonus: 30, capacity: 15  },
 ];
 
 /** Tithe categories — mirrors L4/oasis/src/tithe.rs */
 const OASIS_TITHE_CATEGORIES = [
-  { name: 'Water',       emoji: '💧', desc: 'Clean water access' },
-  { name: 'Food',        emoji: '🍞', desc: 'Food security' },
-  { name: 'Shelter',     emoji: '🏠', desc: 'Housing & shelter' },
-  { name: 'Environment', emoji: '🌍', desc: 'Earth protection' },
-  { name: 'Medical',     emoji: '🏥', desc: 'Healthcare access' },
-  { name: 'Education',   emoji: '📚', desc: 'Knowledge & learning' },
-  { name: 'Emergency',   emoji: '🚨', desc: 'Disaster response' },
+  { name: 'Water',       emoji: '~',  desc: 'Clean water access' },
+  { name: 'Food',        emoji: '◈',  desc: 'Food security' },
+  { name: 'Shelter',     emoji: '⌂',  desc: 'Housing & shelter' },
+  { name: 'Environment', emoji: '◎',  desc: 'Earth protection' },
+  { name: 'Medical',     emoji: '+',  desc: 'Healthcare access' },
+  { name: 'Education',   emoji: '≡',  desc: 'Knowledge & learning' },
+  { name: 'Emergency',   emoji: '!',  desc: 'Disaster response' },
 ];
 
 /** Challenge definitions — mirrors L4/oasis/src/challenges.rs genesis_challenges() */
@@ -3092,20 +3092,20 @@ const OASIS_CHALLENGES = [
 
 /** Reward pool slots — mirrors L4/oasis/src/rewards.rs */
 const OASIS_REWARD_SLOTS = [
-  { name: 'Mining',     icon: '⛏',  amount: '1.65B' },
-  { name: 'Challenges', icon: '🧠', amount: '1.65B' },
-  { name: 'Guild',      icon: '⚔',  amount: '1.65B' },
-  { name: 'Level-Up',   icon: '⬆',  amount: '1.65B' },
-  { name: 'Reserve',    icon: '🔒', amount: '1.65B' },
+  { name: 'Mining',     icon: '▶',  amount: '1.65B' },
+  { name: 'Challenges', icon: '◎', amount: '1.65B' },
+  { name: 'Guild',      icon: '×',  amount: '1.65B' },
+  { name: 'Level-Up',   icon: '↑',  amount: '1.65B' },
+  { name: 'Reserve',    icon: '●', amount: '1.65B' },
 ];
 
 /** Sample guild quests — mirrors L4/oasis/src/guild.rs QuestType */
 const GUILD_QUESTS = [
-  { icon: '⛏', title: 'Collective Mining Sprint', desc: 'Mine 500 blocks as a guild', reward: '2,000 XP', progress: 67 },
-  { icon: '🧠', title: 'AI Challenge Blitz',       desc: 'Complete 25 AI challenges',  reward: '1,500 XP', progress: 44 },
-  { icon: '💝', title: 'Humanitarian Goal',         desc: 'Tithe 10,000 ZION total',    reward: '3,000 XP', progress: 23 },
-  { icon: '🛡', title: 'Territory Defense',         desc: 'Hold Cedar Forest for 48h',  reward: '2,500 XP', progress: 89 },
-  { icon: '✨', title: 'XP Milestone',              desc: 'Reach 100K combined guild XP',reward: '5,000 XP', progress: 56 },
+  { icon: '▶', title: 'Collective Mining Sprint', desc: 'Mine 500 blocks as a guild', reward: '2,000 XP', progress: 67 },
+  { icon: '◎', title: 'AI Challenge Blitz',       desc: 'Complete 25 AI challenges',  reward: '1,500 XP', progress: 44 },
+  { icon: '♥', title: 'Humanitarian Goal',         desc: 'Tithe 10,000 ZION total',    reward: '3,000 XP', progress: 23 },
+  { icon: '◈', title: 'Territory Defense',         desc: 'Hold Cedar Forest for 48h',  reward: '2,500 XP', progress: 89 },
+  { icon: '✶', title: 'XP Milestone',              desc: 'Reach 100K combined guild XP',reward: '5,000 XP', progress: 56 },
 ];
 
 let oasisInitialized = false;
@@ -3166,20 +3166,20 @@ function renderJourney(player) {
   const featuresEl = document.getElementById('oasis-features');
   if (featuresEl) {
     const allFeatures = [
-      { key: 'BasicMining',        icon: '⛏', label: 'Basic Mining' },
-      { key: 'JoinGuild',          icon: '🤝', label: 'Join Guild' },
-      { key: 'AiChallenges',       icon: '🧠', label: 'AI Challenges' },
-      { key: 'CreateGuild',        icon: '⚔', label: 'Create Guild' },
-      { key: 'ClaimTerritory',     icon: '🏴', label: 'Claim Territory' },
-      { key: 'MeditationBonus',    icon: '🧘', label: 'Meditation Bonus' },
-      { key: 'DaoVoting',          icon: '🗳', label: 'DAO Voting' },
-      { key: 'TitheProposals',     icon: '💝', label: 'Tithe Proposals' },
-      { key: 'CreateAiAgent',      icon: '🤖', label: 'Create AI Agent' },
-      { key: 'GuildWars',          icon: '⚔', label: 'Guild Wars' },
-      { key: 'ExpandTerritory',    icon: '🗺', label: 'Expand Territory' },
-      { key: 'Mentorship',         icon: '🎓', label: 'Mentorship' },
-      { key: 'WarpPortals',        icon: '🌀', label: 'Warp Portals' },
-      { key: 'CreateChallenges',   icon: '✏', label: 'Create Challenges' },
+      { key: 'BasicMining',        icon: '▶', label: 'Basic Mining' },
+      { key: 'JoinGuild',          icon: '∞', label: 'Join Guild' },
+      { key: 'AiChallenges',       icon: '◎', label: 'AI Challenges' },
+      { key: 'CreateGuild',        icon: '×', label: 'Create Guild' },
+      { key: 'ClaimTerritory',     icon: '◈', label: 'Claim Territory' },
+      { key: 'MeditationBonus',    icon: '○', label: 'Meditation Bonus' },
+      { key: 'DaoVoting',          icon: '▣', label: 'DAO Voting' },
+      { key: 'TitheProposals',     icon: '♡', label: 'Tithe Proposals' },
+      { key: 'CreateAiAgent',      icon: '◉', label: 'Create AI Agent' },
+      { key: 'GuildWars',          icon: '×', label: 'Guild Wars' },
+      { key: 'ExpandTerritory',    icon: '△', label: 'Expand Territory' },
+      { key: 'Mentorship',         icon: '◆', label: 'Mentorship' },
+      { key: 'WarpPortals',        icon: '∞', label: 'Warp Portals' },
+      { key: 'CreateChallenges',   icon: '✎', label: 'Create Challenges' },
       { key: 'ConsciousnessBeacon',icon: '✦', label: 'Consciousness Beacon' },
     ];
 
@@ -3194,7 +3194,7 @@ function renderJourney(player) {
       return `<div class="oasis-feature ${unlocked ? 'unlocked' : 'locked'}">
         <span class="oasis-feature-icon">${f.icon}</span>
         <span>${f.label}</span>
-        <span style="margin-left:auto; font-size:11px">${unlocked ? '✅' : '🔒'}</span>
+        <span style="margin-left:auto; font-size:11px">${unlocked ? '✓' : '●'}</span>
       </div>`;
     }).join('');
   }
@@ -3249,13 +3249,13 @@ function renderTerritories() {
       <div class="territory-body">
         <div class="territory-name">${t.name}</div>
         <div class="territory-meta">
-          <span>⚙ Difficulty ${t.difficulty}×</span>
-          <span>⛏ +${t.miningBonus}%</span>
-          <span>✨ +${t.xpBonus}%</span>
+          <span>× Difficulty ${t.difficulty}×</span>
+          <span>+${t.miningBonus}% mining</span>
+          <span>+${t.xpBonus}% XP</span>
         </div>
         <div class="territory-status">
           <span style="color:${isClaimed ? 'var(--zion-cyan)' : 'rgba(255,255,255,0.3)'}">
-            ${isClaimed ? '🏴 ' + controller : '○ Unclaimed'}
+            ${isClaimed ? '■ ' + controller : '○ Unclaimed'}
           </span>
           <span style="font-size:10px; color:rgba(255,255,255,0.3)">${t.capacity} slots</span>
         </div>
@@ -3376,23 +3376,23 @@ const DAO_PROPOSALS = [
 ];
 
 const DAO_GUARDIANS = [
-  { name: 'Guardian Alpha', key: 'zion1q...a7f3', icon: '🛡️', status: 'active' },
-  { name: 'Guardian Bravo', key: 'zion1w...b8e4', icon: '🛡️', status: 'active' },
-  { name: 'Guardian Charlie', key: 'zion1e...c9d5', icon: '🛡️', status: 'active' },
-  { name: 'Guardian Delta', key: 'zion1r...d0c6', icon: '🛡️', status: 'active' },
-  { name: 'Guardian Echo', key: 'zion1t...e1b7', icon: '🛡️', status: 'active' },
-  { name: 'Guardian Foxtrot', key: 'zion1y...f2a8', icon: '🛡️', status: 'standby' },
-  { name: 'Guardian Golf', key: 'zion1u...g3z9', icon: '🛡️', status: 'standby' },
+  { name: 'Guardian Alpha',   key: 'zion1q...a7f3', icon: '◈', status: 'active' },
+  { name: 'Guardian Bravo',   key: 'zion1w...b8e4', icon: '◈', status: 'active' },
+  { name: 'Guardian Charlie', key: 'zion1e...c9d5', icon: '◈', status: 'active' },
+  { name: 'Guardian Delta',   key: 'zion1r...d0c6', icon: '◈', status: 'active' },
+  { name: 'Guardian Echo',    key: 'zion1t...e1b7', icon: '◈', status: 'active' },
+  { name: 'Guardian Foxtrot', key: 'zion1y...f2a8', icon: '◈', status: 'standby' },
+  { name: 'Guardian Golf',    key: 'zion1u...g3z9', icon: '◈', status: 'standby' },
 ];
 
 const DAO_HUMANITARIAN_CATEGORIES = [
-  { icon: '💧', name: 'Clean Water', allocated: '205,714,286', color: '#06b6d4' },
-  { icon: '🍞', name: 'Food Security', allocated: '205,714,286', color: '#ffd700' },
-  { icon: '🏠', name: 'Shelter', allocated: '205,714,286', color: '#9333ea' },
-  { icon: '🌍', name: 'Environment', allocated: '205,714,286', color: '#00ff88' },
-  { icon: '🏥', name: 'Healthcare', allocated: '205,714,286', color: '#f87171' },
-  { icon: '📚', name: 'Education', allocated: '205,714,286', color: '#818cf8' },
-  { icon: '🚨', name: 'Disaster Relief', allocated: '205,714,280', color: '#fb923c' },
+  { icon: '◆', name: 'Clean Water', allocated: '205,714,286', color: '#06b6d4' },
+  { icon: '◈', name: 'Food Security', allocated: '205,714,286', color: '#ffd700' },
+  { icon: '⌂', name: 'Shelter', allocated: '205,714,286', color: '#9333ea' },
+  { icon: '◎', name: 'Environment', allocated: '205,714,286', color: '#00ff88' },
+  { icon: '+',  name: 'Healthcare', allocated: '205,714,286', color: '#f87171' },
+  { icon: '≡', name: 'Education', allocated: '205,714,286', color: '#818cf8' },
+  { icon: '!',  name: 'Disaster Relief', allocated: '205,714,280', color: '#fb923c' },
 ];
 
 let _daoInitialized = false;
@@ -3472,15 +3472,15 @@ function initDaoView() {
 // ═══════════════════════════════════════════════════
 
 const WARP_CHAINS = [
-  { name: 'Base',     family: 'EVM',     icon: '🔵', fee: '0.10%', finality: 12,  enabled: true },
-  { name: 'Arbitrum', family: 'EVM',     icon: '🔷', fee: '0.10%', finality: 12,  enabled: true },
-  { name: 'BSC',      family: 'EVM',     icon: '🟡', fee: '0.12%', finality: 15,  enabled: true },
-  { name: 'Polygon',  family: 'EVM',     icon: '🟣', fee: '0.10%', finality: 64,  enabled: true },
-  { name: 'Solana',   family: 'Solana',  icon: '🟢', fee: '0.15%', finality: 32,  enabled: false },
-  { name: 'Bitcoin',  family: 'Bitcoin', icon: '🟠', fee: '0.25%', finality: 6,   enabled: false },
-  { name: 'Tron',     family: 'Tron',    icon: '🔴', fee: '0.15%', finality: 20,  enabled: false },
+  { name: 'Base',     family: 'EVM',     icon: '◎',  fee: '0.10%', finality: 12,  enabled: true },
+  { name: 'Arbitrum', family: 'EVM',     icon: '▲',  fee: '0.10%', finality: 12,  enabled: true },
+  { name: 'BSC',      family: 'EVM',     icon: '◈',  fee: '0.12%', finality: 15,  enabled: true },
+  { name: 'Polygon',  family: 'EVM',     icon: '◉',  fee: '0.10%', finality: 64,  enabled: true },
+  { name: 'Solana',   family: 'Solana',  icon: '○',  fee: '0.15%', finality: 32,  enabled: false },
+  { name: 'Bitcoin',  family: 'Bitcoin', icon: '◇',  fee: '0.25%', finality: 6,   enabled: false },
+  { name: 'Tron',     family: 'Tron',    icon: '△',  fee: '0.15%', finality: 20,  enabled: false },
   { name: 'Stellar',  family: 'Stellar', icon: '⚪', fee: '0.08%', finality: 5,   enabled: false },
-  { name: 'Cardano',  family: 'Cardano', icon: '🫐', fee: '0.18%', finality: 30,  enabled: false },
+  { name: 'Cardano',  family: 'Cardano', icon: '≋',  fee: '0.18%', finality: 30,  enabled: false },
   { name: 'Cosmos',   family: 'Cosmos',  icon: '⚛️',  fee: '0.12%', finality: 10,  enabled: false },
 ];
 
@@ -3550,7 +3550,7 @@ function initWarpView() {
     vGrid.innerHTML = WARP_VALIDATORS.map(v => {
       const col = v.status === 'active' ? '#00ff88' : 'rgba(255,255,255,0.25)';
       return `<div class="dao-guardian">
-        <div class="dao-guardian-icon">🔐</div>
+        <div class="dao-guardian-icon">◈</div>
         <div class="dao-guardian-name">${v.name}</div>
         <div class="dao-guardian-status" style="color:${col}">● ${v.status}</div>
         <div style="font-size:10px; color:rgba(255,255,255,0.25); margin-top:6px; font-family:monospace">${v.key}</div>
@@ -3598,10 +3598,10 @@ function initWarpView() {
 // ═══════════════════════════════════════════════════════
 
 const FW_PILLARS = [
-  { icon: '⚡', name: 'Free Energy Research', desc: 'Quantum/free energy R&D, open-source hardware, decentralized energy grids for off-grid communities.' },
-  { icon: '🤝', name: 'Humanitarian Missions', desc: '5% block reward → Humanitarian Fund, DAO governance for allocation, direct community support worldwide.' },
-  { icon: '🏘️', name: 'Free Communities', desc: 'Self-sustaining off-grid communities using ZION as native currency with local mesh network infrastructure.' },
-  { icon: '📖', name: 'Education & Awareness', desc: 'Open-source educational platforms, consciousness mining integration with L4 Oasis, knowledge sharing.' },
+  { icon: '↯', name: 'Free Energy Research', desc: 'Quantum/free energy R&D, open-source hardware, decentralized energy grids for off-grid communities.' },
+  { icon: '♥', name: 'Humanitarian Missions', desc: '5% block reward → Humanitarian Fund, DAO governance for allocation, direct community support worldwide.' },
+  { icon: '⌂', name: 'Free Communities', desc: 'Self-sustaining off-grid communities using ZION as native currency with local mesh network infrastructure.' },
+  { icon: '≡', name: 'Education & Awareness', desc: 'Open-source educational platforms, consciousness mining integration with L4 Oasis, knowledge sharing.' },
 ];
 
 const FW_MILESTONES = [
@@ -3653,18 +3653,18 @@ function initFreeWorldView() {
 // ═══════════════════════════════════════════════════════
 
 const ISS_MISSION_PILLARS = [
-  { icon: '🔭', name: 'Earth Orbital Observatory', desc: 'LEO observatory with decentralized management via ZION DAO. Open data for all humanity.' },
-  { icon: '🧬', name: 'Research Station', desc: 'Microgravity experiments, biological research, deep-space technology development.' },
-  { icon: '🛰️', name: 'ZION Space Network', desc: 'Satellite mesh network, redundant orbital nodes, independence from terrestrial infrastructure.' },
+  { icon: '◎', name: 'Earth Orbital Observatory', desc: 'LEO observatory with decentralized management via ZION DAO. Open data for all humanity.' },
+  { icon: '◆', name: 'Research Station', desc: 'Microgravity experiments, biological research, deep-space technology development.' },
+  { icon: '◈', name: 'ZION Space Network', desc: 'Satellite mesh network, redundant orbital nodes, independence from terrestrial infrastructure.' },
 ];
 
 const ISS_STATION_MODULES = [
-  { icon: '🖥️', name: 'ZION Node Module', desc: 'Radiation-hardened FPGA running full ZION consensus in orbit' },
-  { icon: '📡', name: 'Communications Hub', desc: 'ISL mesh links + ground station relay for block propagation' },
-  { icon: '☀️', name: 'Solar Power Array', desc: 'Solar panels + battery systems for continuous LEO operation' },
-  { icon: '🔬', name: 'Research Lab', desc: 'Microgravity experiments, biology, materials science' },
-  { icon: '🏠', name: 'Habitat Module', desc: 'Crew quarters for visiting researchers and operators' },
-  { icon: '🛸', name: 'Docking Port', desc: 'Standardized docking for CubeSat deployment and resupply' },
+  { icon: '◎', name: 'ZION Node Module', desc: 'Radiation-hardened FPGA running full ZION consensus in orbit' },
+  { icon: '◈', name: 'Communications Hub', desc: 'ISL mesh links + ground station relay for block propagation' },
+  { icon: '○', name: 'Solar Power Array', desc: 'Solar panels + battery systems for continuous LEO operation' },
+  { icon: '◆', name: 'Research Lab', desc: 'Microgravity experiments, biology, materials science' },
+  { icon: '⌂', name: 'Habitat Module', desc: 'Crew quarters for visiting researchers and operators' },
+  { icon: '▲', name: 'Docking Port', desc: 'Standardized docking for CubeSat deployment and resupply' },
 ];
 
 const ISS_MILESTONES = [
@@ -3870,7 +3870,7 @@ function _showDownloadPrompt(result) {
           // If electron-updater not available, offer GitHub link
           _setUpdateStatus('Manual Download', 'Open GitHub releases to download', '#fcd34d');
           if (result.htmlUrl) {
-            checkBtn.innerHTML = '🔗 Open GitHub Releases';
+            checkBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg> Open GitHub Releases';
             checkBtn.disabled = false;
             checkBtn.onclick = () => { window.open(result.htmlUrl, '_blank'); };
           }
