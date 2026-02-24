@@ -6,6 +6,29 @@
 
 ---
 
+## 0.1) Kompletní oprava mineru (aktuální hotfix track)
+
+### Cíl
+- [ ] Uzavřít reject smyčky po opravě `code 22` a stabilizovat runtime pro dlouhý běh.
+- [ ] Dokončit root-cause fix pro `code 23` (target/difficulty mismatch) bez degradace hashrate.
+
+### Plán (end-to-end)
+- [ ] Reprodukovat `code 23` v čistém startu (main + revenue) s uloženým log oknem.
+- [ ] Trasovat flow `job → diff → target → submit` v Python i Rust backendu.
+- [ ] Opravit sjednocení výpočtu/parsingu targetu (endianness + boundary check).
+- [ ] Přidat diagnostiku pro submit context (`job_id`, `pool_diff`, `target32`, `state0`).
+- [ ] Ověřit fix na lokálním běhu (A/R trend, bez regresí `code 22`).
+- [ ] Ověřit fix proti live poolu (Helsinki) v několika reconnect cyklech.
+- [ ] Zapsat výsledky do `REPORT.md` a uzavřít checklist + push na `main`.
+
+### Akceptační kritéria
+- [ ] `code 22` se nevrací jako opakovaný dominantní reject pattern.
+- [ ] `code 23` podíl rejectů je stabilně nízký (cílově <10% ve steady-state okně).
+- [ ] Při reconnectu nedochází k burst rejectům způsobeným stale target/state.
+- [ ] Main + revenue stream běží souběžně bez kolizí nonce prostoru.
+
+---
+
 ## 0) Co bylo při této analýze ověřeno
 
 ### Dokumenty (roadmapy / checklisty / reporty)
