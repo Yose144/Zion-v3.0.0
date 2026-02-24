@@ -9,7 +9,7 @@ use anyhow::{anyhow, Result};
 use std::time::Instant;
 
 #[cfg(feature = "gpu")]
-use ocl::{Buffer, Device, DeviceType, Platform, ProQue};
+use ocl::{Buffer, Device, DeviceType, Platform, Program, ProQue};
 
 #[cfg(feature = "gpu")]
 use ocl::enums::{DeviceInfo, DeviceInfoResult};
@@ -80,8 +80,11 @@ impl GpuMiner for OpenCLMiner {
                 .clone();
 
             println!("[OpenCL] Building Cosmic Harmony v3 kernel...");
+            let mut prog_bldr = Program::builder();
+            prog_bldr.src(OPENCL_KERNEL);
+            prog_bldr.cmplr_opt("-cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero");
             let pro_que = ProQue::builder()
-                .src(OPENCL_KERNEL)
+                .prog_bldr(prog_bldr)
                 .platform(platform)
                 .device(device)
                 .dims(1usize)

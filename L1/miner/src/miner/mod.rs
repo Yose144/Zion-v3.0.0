@@ -728,7 +728,7 @@ impl UniversalMiner {
         let mut batch_size: u64 = std::env::var("ZION_GPU_BATCH_SIZE")
             .ok()
             .and_then(|v| v.trim().parse().ok())
-            .unwrap_or(4_000_000);
+            .unwrap_or(16_000_000);
         let mut last_job_id: Option<String> = None;
         let mut gpu_total_hashes: u64 = 0;
         let gpu_start_time = std::time::Instant::now();
@@ -796,7 +796,7 @@ impl UniversalMiner {
 
                         // Adjust batch size for the new algorithm
                         batch_size = match active_algo {
-                            Algorithm::CosmicHarmony => 4_000_000,
+                            Algorithm::CosmicHarmony => 16_000_000,
                             Algorithm::Ethash | Algorithm::Autolykos | Algorithm::KawPow => 100_000,
                             Algorithm::RandomX | Algorithm::Yescrypt => 5_000,
                             _ => 250_000,
