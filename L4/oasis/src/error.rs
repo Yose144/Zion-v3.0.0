@@ -37,6 +37,9 @@ pub enum OasisError {
     #[error("Database error: {0}")]
     Database(#[from] rusqlite::Error),
 
+    #[error("Serialization error: {0}")]
+    Serialization(String),
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
