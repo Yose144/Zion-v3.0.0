@@ -3790,6 +3790,60 @@
     .bg-temple      { background: linear-gradient(135deg, #ffd700, #f0c060, #9b59b6); --territory-glow: rgba(255,215,0,0.15); }
     .bg-nexus       { background: linear-gradient(135deg, #2d3436, #6c5ce7, #00cec9); --territory-glow: rgba(6,182,212,0.15); }
 
+    /* ═══ OASIS Moon Miner Game ═══ */
+    .game-header { text-align:center; padding:20px 0 10px; }
+    .game-title  { font-size:22px; font-weight:800; background:linear-gradient(135deg,var(--zion-gold),var(--zion-cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0 0 4px; }
+    .game-subtitle { font-size:12px; color:rgba(255,255,255,0.35); margin:0; }
+    .game-stats-bar { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+    .game-stat-box { flex:1; min-width:80px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; text-align:center; }
+    .game-stat-val { font-size:16px; font-weight:700; color:var(--zion-gold); font-family:monospace; }
+    .game-stat-lbl { font-size:10px; color:rgba(255,255,255,0.4); margin-top:2px; }
+    .game-main-row { display:flex; gap:14px; align-items:flex-start; }
+    .game-moon-col { flex:0 0 240px; display:flex; flex-direction:column; align-items:center; }
+    .game-moon-scene { width:240px; height:310px; background:radial-gradient(ellipse at 30% 40%,#0f1a2e,#050c18); border-radius:16px; border:1px solid rgba(255,255,255,0.07); position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .game-stars { position:absolute; inset:0; pointer-events:none; }
+    .game-star  { position:absolute; width:2px; height:2px; border-radius:50%; background:white; animation:gmStarTwinkle 2s ease-in-out infinite; }
+    @keyframes gmStarTwinkle { 0%,100%{opacity:.8} 50%{opacity:.1} }
+    .game-earth-chip { position:absolute; top:10px; right:8px; font-size:9px; color:rgba(255,255,255,0.35); background:rgba(0,0,0,0.35); border-radius:999px; padding:2px 7px; }
+    .game-moon-btn { width:120px; height:120px; border-radius:50%; border:none; cursor:pointer; position:relative; background:radial-gradient(circle at 35% 32%,#eaeaea,#b0b0b0,#787878,#4a4a4a); box-shadow:0 0 0 4px rgba(255,255,255,0.04),0 0 40px rgba(200,200,200,0.15),0 0 80px rgba(255,215,0,0.08); transition:transform .1s,box-shadow .15s; user-select:none; flex-shrink:0; }
+    .game-moon-btn:hover { box-shadow:0 0 0 6px rgba(255,255,255,0.06),0 0 60px rgba(200,220,255,0.25),0 0 120px rgba(255,215,0,0.18); }
+    .game-moon-btn:active { transform:scale(0.89); }
+    .game-moon-btn.gm-clicked { animation:gmMoonShake .18s ease; }
+    @keyframes gmMoonShake { 0%{transform:scale(1)} 35%{transform:scale(0.87) rotate(-4deg)} 65%{transform:scale(0.93) rotate(3deg)} 100%{transform:scale(1)} }
+    .game-moon-surface { position:relative; width:100%; height:100%; border-radius:50%; }
+    .moon-crater { position:absolute; border-radius:50%; background:radial-gradient(circle,rgba(0,0,0,0.28) 0%,transparent 70%); }
+    .mc1{width:22px;height:19px;top:20%;left:22%} .mc2{width:34px;height:28px;top:48%;left:52%} .mc3{width:17px;height:15px;top:67%;left:24%} .mc4{width:11px;height:10px;top:28%;left:60%} .mc5{width:19px;height:16px;top:14%;left:48%}
+    .moon-zion-logo { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:30px; filter:drop-shadow(0 0 8px gold); opacity:.65; }
+    .moon-atmo { position:absolute; inset:-5px; border-radius:50%; border:2px solid rgba(200,220,255,0.12); pointer-events:none; }
+    .game-moon-lbl  { font-size:9px; color:rgba(255,255,255,0.25); margin-top:6px; font-family:monospace; position:absolute; bottom:38px; }
+    .game-msg-box   { position:absolute; bottom:8px; left:8px; right:8px; text-align:center; font-size:10px; color:var(--zion-gold); font-weight:600; background:rgba(0,0,0,0.45); border-radius:7px; padding:5px 8px; min-height:26px; display:flex; align-items:center; justify-content:center; }
+    .game-float     { position:absolute; pointer-events:none; font-size:14px; font-weight:800; color:var(--zion-gold); font-family:monospace; animation:gmFloatUp .9s ease forwards; z-index:20; text-shadow:0 0 10px rgba(255,215,0,0.8); }
+    @keyframes gmFloatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-65px) scale(1.4)} }
+    .game-right-col { flex:1; min-width:0; }
+    .game-panel     { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:12px 14px; }
+    .game-panel-hdr { font-size:11px; font-weight:700; color:var(--zion-cyan); margin-bottom:8px; letter-spacing:.06em; text-transform:uppercase; }
+    .game-upgrade-btn { display:flex; align-items:center; gap:10px; width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:8px 10px; cursor:pointer; margin-bottom:6px; transition:background .15s,border-color .15s; color:inherit; text-align:left; }
+    .game-upgrade-btn:last-child { margin-bottom:0; }
+    .game-upgrade-btn:hover:not(:disabled) { background:rgba(255,215,0,0.07); border-color:rgba(255,215,0,0.25); }
+    .game-upgrade-btn:active:not(:disabled) { background:rgba(255,215,0,0.14); }
+    .game-upgrade-btn:disabled { opacity:.32; cursor:not-allowed; }
+    .game-upgrade-btn.affordable { border-color:rgba(255,215,0,0.35); }
+    .game-upg-icon  { font-size:20px; flex-shrink:0; min-width:26px; text-align:center; }
+    .game-upg-info  { flex:1; min-width:0; }
+    .game-upg-name  { font-size:12px; font-weight:600; color:rgba(255,255,255,0.9); }
+    .game-upg-desc  { font-size:10px; color:rgba(255,255,255,0.38); margin-top:1px; }
+    .game-upg-right { text-align:right; flex-shrink:0; }
+    .game-upg-cost  { font-size:11px; color:var(--zion-gold); font-family:monospace; font-weight:700; }
+    .game-upg-count { font-size:10px; color:rgba(255,255,255,0.28); margin-top:1px; }
+    .game-ach-strip { display:flex; flex-wrap:wrap; gap:7px; padding-top:4px; }
+    .game-ach       { padding:5px 11px; border-radius:999px; font-size:11px; font-weight:600; border:1px solid rgba(255,215,0,0.3); background:rgba(255,215,0,0.07); color:rgba(255,215,0,.9); transition:all .3s; }
+    .game-ach.locked { border-color:rgba(255,255,255,0.08); background:transparent; color:rgba(255,255,255,0.18); letter-spacing:.08em; }
+    .game-milestone-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:linear-gradient(135deg,rgba(12,18,38,.98),rgba(7,11,24,.98)); border:2px solid var(--zion-gold); border-radius:16px; padding:28px 36px; text-align:center; z-index:9999; min-width:280px; box-shadow:0 0 80px rgba(255,215,0,.4); animation:gmMilestone .4s ease; }
+    @keyframes gmMilestone { from{transform:translate(-50%,-50%) scale(.45);opacity:0} to{transform:translate(-50%,-50%) scale(1);opacity:1} }
+    .ms-emoji { font-size:52px; display:block; margin-bottom:8px; }
+    .ms-title { font-size:22px; font-weight:800; color:var(--zion-gold); }
+    .ms-sub   { font-size:13px; color:rgba(255,255,255,.55); margin-top:8px; }
+
     /* ═══ DAO — Governance Layer ═══ */
 
     .dao-proposal-list {
@@ -6171,6 +6225,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
             <span>Tithe</span>
           </div>
+          <div class="section-tab" data-section="oasis-game">
+            <span class="tab-dot"></span>
+            <span>🎮 Mine</span>
+          </div>
         </div>
 
         <!-- ═══ TAB: Journey — Consciousness Progression ═══ -->
@@ -6433,6 +6491,92 @@
             </table>
           </div>
         </div>
+
+        <!-- ═══ TAB: Moon Miner Game ═══ -->
+        <div id="oasis-game" class="section-panel">
+
+          <div class="game-header">
+            <div class="game-title">🚀 ZION MOON MINER</div>
+            <p class="game-subtitle">The most decentralised moon. 100% not financial advice. 1 simZION = 1 simZION.</p>
+          </div>
+
+          <!-- Stats bar -->
+          <div class="game-stats-bar">
+            <div class="game-stat-box">
+              <div class="game-stat-val" id="gm-balance">0</div>
+              <div class="game-stat-lbl">ZION Balance</div>
+            </div>
+            <div class="game-stat-box">
+              <div class="game-stat-val" id="gm-total">0</div>
+              <div class="game-stat-lbl">Total Mined</div>
+            </div>
+            <div class="game-stat-box">
+              <div class="game-stat-val" id="gm-per-click">1</div>
+              <div class="game-stat-lbl">Per Click</div>
+            </div>
+            <div class="game-stat-box">
+              <div class="game-stat-val" id="gm-per-sec">0</div>
+              <div class="game-stat-lbl">Per Second</div>
+            </div>
+            <div class="game-stat-box">
+              <div class="game-stat-val" id="gm-clicks">0</div>
+              <div class="game-stat-lbl">Moon Clicks</div>
+            </div>
+          </div>
+
+          <!-- Main layout -->
+          <div class="game-main-row">
+
+            <!-- Moon clicker -->
+            <div class="game-moon-col">
+              <div class="game-moon-scene" id="gm-moon-scene">
+                <div class="game-stars" id="gm-stars"></div>
+                <div class="game-earth-chip">🌍 L1 Chain</div>
+                <button class="game-moon-btn" id="gm-moon" title="CLICK TO MINE!">
+                  <div class="game-moon-surface">
+                    <div class="moon-crater mc1"></div>
+                    <div class="moon-crater mc2"></div>
+                    <div class="moon-crater mc3"></div>
+                    <div class="moon-crater mc4"></div>
+                    <div class="moon-crater mc5"></div>
+                    <div class="moon-zion-logo">⚡</div>
+                  </div>
+                  <div class="moon-atmo"></div>
+                </button>
+                <div class="game-moon-lbl">Block #<span id="gm-block">1,247,331</span></div>
+                <div class="game-msg-box" id="gm-msg">👆 Click the moon!</div>
+              </div>
+            </div>
+
+            <!-- Upgrades & auto-miners -->
+            <div class="game-right-col">
+              <div class="game-panel">
+                <div class="game-panel-hdr">⚡ Click Upgrades</div>
+                <div id="gm-upgrades"></div>
+              </div>
+              <div class="game-panel" style="margin-top:10px">
+                <div class="game-panel-hdr">🤖 Auto-Miners</div>
+                <div id="gm-miners"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Achievements -->
+          <div class="game-panel" style="margin-top:12px">
+            <div class="game-panel-hdr">🏆 Achievements <span id="gm-ach-count" style="color:rgba(255,255,255,0.3);font-weight:400"></span></div>
+            <div class="game-ach-strip" id="gm-achievements"></div>
+          </div>
+
+          <!-- Milestone popup (fixed overlay) -->
+          <div class="game-milestone-popup" id="gm-milestone" style="display:none"></div>
+
+          <!-- Footer -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:0 4px">
+            <span style="font-size:10px;color:rgba(255,255,255,0.18)">Progress auto-saved in localStorage · not financial advice · 1 simZION = 1 simZION</span>
+            <button class="bridge-btn-small" id="gm-reset" style="background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.3);color:#f87171;font-size:10px">⚠ Reset</button>
+          </div>
+        </div>
+
       </div>
 
       <!-- ═══════════════════════════════════════════════ -->
