@@ -1,6 +1,6 @@
 # CHv3 ASIC Resistance — Technická dokumentace
 
-> Stav: **Mainnet-ready** | Commit: `8a2b295` | Datum: 2026-02-24
+> Stav: **Mainnet-ready** | Poslední commit: `c6189c4` | Datum: 2026-02-24
 
 ---
 
@@ -28,7 +28,7 @@ Vstup (blob + nonce)
     │
     ▼
 [4] Memory-Hard Scratchpad  ← aktivní od bloku 100 000
-    │   2 MiB scratchpad, 8 průchodů, 1024 pseudo-random čtení
+    │   512 KiB scratchpad, 4 průchody, 256 pseudo-random čtení
     │
     ▼
 [5] Cosmic Fusion        (data-dependent XOR maska, 32 B výstup)
@@ -177,8 +177,10 @@ cargo test -p zion-cosmic-harmony-v3
 
 | Commit | Změna |
 |---|---|
-| `8a2b295` | CHv3 ASIC hardening: fork@100k, 2MiB scratchpad, dynamic XOR mask |
-| `625c3ca` | L3-WARP SQLite persistence + XP bridge |
+| `c6189c4` | CHv3: AES-NI Haraka-inspired maska v Cosmic Fusion (VerusHash technika) |
+| `5037e8b` | CHv3: scratchpad tuning 512 KiB/4 průchody/256 čtení + benchmark |
+| `c66f9bc` | docs: asic.md — CHv3 ASIC resistance documentation |
+| `8a2b295` | CHv3 ASIC hardening: fork@100k, dynamic XOR mask, env lockout |
 
 ---
 
