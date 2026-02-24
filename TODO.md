@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 24. února 2026 (Session 49)  
+> **Aktualizace:** 24. února 2026 (Session 50 — hloubkový scan kódu + live server check)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
@@ -36,27 +36,51 @@
 
 ---
 
-## 1) Live stav serverů (24. 2. 2026)
+## 1) Live stav serverů (24. 2. 2026 — Session 50)
 
-### Síť / chain
-- ✅ Všechny ověřené nody hlásí `height: 5199` a `network: testnet` přes `http://localhost:8444/health`
-- ✅ Peers: Helsinki 16, SeedDE 32, Usa1 36, Usa2 31, Asia3 36
+### Sítě / chain
+- ✅ Všechny ověřené nody běží, height **5205** (testnet), růst potvrdíl nárůst od přípřího checku (5199 → 5205)
+- ⚠️ Helsinki: health endpoint vrací `peers: null` — JSON klíč `peers` možné přejmenován (`connected_peers`?), zkontrolovat
 - ⚠️ Helsinki i SeedDE reportují nenulové `blocks_rejected` (monitorovat trend)
 
 ### Runtime / kapacita
-- 🔴 **Helsinki RAM tlak**: 7.2/7.5 GiB, load ~22–24 (velmi vysoké)
-- 🟡 SeedDE: RAM 3.3/3.7 GiB, load ~5
-- 🟢 Usa1/Usa2/Asia3: load ~3–4, RAM ~1.0/1.9 GiB
+- ✅ **Helsinki RAM v pořádku**: 5.0/7.5 GiB (bylo 7.2/7.5, minery odstaveny) — **P0-02 splynuloÅ**
+- 🟡 SeedDE: běží, zion-miner restartován před 24 min (24. 2. 2026 ~10:xx) — sledovat stabilitu
+- 🟢 Usa1/Usa2/Asia3: stabilní, core+miner+mysterium
 
 ### Kontejnery
-- Helsinki: `zion-core`, `zion-pool`, `zion-miner`, `zion-mysterium`, `zion-dero-miner`, `zion-zeph-miner`, `zion-grafana`, `zion-prometheus` ✅
-- SeedDE: `zion-core`, `zion-miner`, `zion-mysterium`, `zion-dero-miner`, `zion-epic-miner` ✅
-- Usa1/Usa2/Asia3: `zion-core`, `zion-miner`, `zion-mysterium`, `zion-xmr-x86` ✅
-- ⚠️ SeedDE: pool API `localhost:8080` momentálně nedostupná (pool zřejmě neběží / není vystaven)
+- **Helsinki**: `zion-bridge` ✅ (nově!), `zion-website` ✅ (nově!), `zion-core`, `zion-mysterium`, `zion-nkn`, `zion-redis`, `zion-grafana`, `zion-prometheus` — NO miners/pool (♟ RAM cleanup)
+- **SeedDE**: `zion-core` (38h), `zion-miner` (24 min restart!), `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium`, `zion-nkn`
+- **Usa1/Asia3**: `zion-core`, `zion-miner`, `zion-xmr-x86`, `zion-mysterium`
 
 ---
 
-## 2) Hlavní zjištění z roadmap/report konsolidace
+## 2.5) Hloubkový scan kódu — nová zjištění Session 50
+
+### Implementace L1 (stav k 24. 2. 2026)
+| Komponenta | Soubor | Stav |
+|-----------|--------|------|
+| Emise / decade decay | `reward.rs` | ✅ Hotové |
+| Premine alokace | `premine.rs` | ✅ Hotové |
+| LWMA DAA | `consensus.rs` | ✅ Hotové |
+| Reorg / fork-choice | `reorg.rs` | ✅ Hotové |
+| Block validation | `validation.rs` | ✅ Hotové (1 MB limit, coinbase maturity 100) |
+| GPU miner | `L1/miner/` | ✅ OpenCL build funguje |
+| Genesis blok | GENESIS_MESSAGE.txt | ⚠️ Placeholder — formální genesis.json **CHYBÍ** |
+| On-chain time-lock | `premine.rs` | ⚠️ Pole existuje, není vynuceno v2.9.5 |
+| Algoritmus rotace | `block.rs` | ⚠️ Zakomentována (testnet = jen CHv3) — rozhodnutí před mainnet |
+| MAX_TIMESTAMP_DRIFT | `validation.rs` | ⚠️ Testnet 86400 s; mainnet musí být 7200 s (komentář v kódu) |
+| mainnet_exit_criteria.md | — | ❌ **CHYBÍ** — P0 blocker |
+| Double-spend test | — | ❌ **CHYBÍ** |
+| Alertmanager routing | prometheus config | ❌ **CHYBÍ** |
+
+### Constitution conflict — OPRAVENO (Session 50)
+- ✅ `docs/MAINNET_CONSTITUTION.md` označen jako SUPERSEDED, ukazuje na kanonickou verzi
+- ✅ `docs/mainnet/MAINNET_CONSTITUTION.md` označen jako autorit. verze + clarification o time-lock
+- ✅ `docs/mainnet/MAINNET_CHECKLIST.md` aktualizován dle skenu kódu (v1.1)
+- ✅ `SERVERS.md` aktualizován (Helsinki role: bridge+website+monitoring, bez minerů)
+
+
 
 ### A) Dokumentační drift (kritický)
 - 🔴 Různé dokumenty uvádějí odlišnou readiness (`~65%` až `~92%`).
@@ -78,26 +102,33 @@
 
 ## 3) Priorita P0 (teď)
 
-### P0-01 — Canonical MainNet Source of Truth (blokující)
-- [ ] Vybrat **jediný** autoritativní dokument pro launch gating (`docs/MAINNET_CHECKLIST.md`).
-- [ ] Sloučit konflikty z `docs/MAINNET_CONSTITUTION.md` vs `docs/mainnet/MAINNET_CONSTITUTION.md`.
-- [ ] Zamknout hodnoty: reward model, premine unlock pravidla, genesis timestamp policy.
-- [ ] Přidat sekci „Superseded docs“ do starších roadmap/checklist souborů.
+### P0-01 — Canonical MainNet Source of Truth
+- ✅ Vybrán autoritativní dokument: `docs/mainnet/MAINNET_CONSTITUTION.md`
+- ✅ `docs/MAINNET_CONSTITUTION.md` označen SUPERSEDED + popis konfliktu
+- ✅ Clarification time-lock enforcement přidán do kanonické constitution
+- ✅ Zamknuty hodnoty: reward model (reward.rs), premine rozdely (premine.rs), genesis hash policy
+- [ ] Přidat sekci „Superseded docs“ do starších roadmap dokumentů (MAINNET_ROADMAP_2026.md, MAINNET_CHECKLIST.md redundance)
 
-### P0-02 — Helsinki stabilita (blokující)
-- [ ] Okamžitě snížit resource tlak (rebalanc/limitace revenue procesů, memory audit kontejnerů).
-- [ ] Nastavit alert na RAM > 90% + load > počet vCPU na 30 min.
-- [ ] Ověřit, že `zion-dero-miner` restarty nejsou časté (stabilita > 24h).
+### P0-02 — Helsinki stabilita
+- ✅ RAM mitigace provedena (těžbní kontejnery odstaveny, RAM 5.0/7.5 GiB)
+- [ ] Alert na RAM > 90% + load > vCPU (Alertmanager **nenastaven — blokujíce**)
+- [ ] Sledovat `zion-dero-miner` restart trend (SeedDE měl restart 24 minut před checkem)
 
 ### P0-03 — SeedDE role korekce
-- [ ] Rozhodnout cílovou roli SeedDE: `seed-only` vs `seed+pool`.
-- [ ] Pokud `seed+pool`, obnovit/validovat `zion-pool` + API:8080.
-- [ ] Pokud `seed-only`, upravit dokumentaci (SERVERS + checklist) aby nečekala pool endpoint.
+- [ ] Rozhodnout cílovou roli SeedDE: `seed-only` vs `seed+pool`
+- [ ] Pokud `seed+pool`, obnovit/validovat `zion-pool` + API:8080
+- [ ] Pokud `seed-only`, upravit dokumentaci aby nečekala pool endpoint
 
 ### P0-04 — MainNet exit criteria evidence
-- [ ] Udržet formální evidence pro bug-free window + orphan/reject trend.
-- [ ] Dopsat metriku „orphan/reject rate“ do jednotného dashboardu a checklistu.
-- [ ] Přidat datum+důkaz pro každý P0 bod (odkaz na command output/log panel).
+- [ ] **Vytvořit `docs/mainnet/MAINNET_EXIT_CRITERIA.md`** (P0 blocker, chybí úplně)
+- [ ] Formalizovat metriku orphan/reject rate v dashboardu
+- [ ] Přidat datum+důkaz pro každý P0 bod
+
+### P0-05 — Nové blocker z Session 50 (code scan)
+- [ ] **Genesis blok vytvořit OFFLINE** před mainnet (genesis.json/genesis.rs neexistuje)
+- [ ] **Rozhodnout algoritmus rotaci** (zakomentovaná, testnet = jen CHv3) — zdokumentovat či aktivovat
+- [ ] **MAX_TIMESTAMP_DRIFT přepnout na 7200 s** pro mainnet build (`validation.rs` line 22)
+- [ ] **Double-spend integrační test** napsat
 
 ---
 
@@ -146,4 +177,8 @@
 - ✅ Sjednocení portů napříč config/API/E2E/website dokončeno (`bc450ce`, push na `main`)
 - ✅ Canonical port matrix přidána do `docs/mainnet/PORT_MATRIX.md`
 - ✅ Helsinki RAM emergency mitigace provedena (těžební kontejnery na Helsinki odstaveny)
-- ⏭️ Další krok: převést tento TODO plán do konkrétních issue/task IDs a formalizovat P0 evidence v checklistu
+- ✅ **Session 50:** Hloubkový scan kódu (reward.rs, premine.rs, consensus.rs, reorg.rs, validation.rs)
+- ✅ **Session 50:** Constitution conflict vyřešen — SUPERSEDED oznamení, kanonická verze označena
+- ✅ **Session 50:** MAINNET_CHECKLIST.md aktualizován na v1.1 podle skenu kódu
+- ✅ **Session 50:** SERVERS.md aktualizován (Helsinki nové kontejnery, role)
+- ⏭️ **Další P0 priority:** genesis.json OFFLINE, exit_criteria.md, double-spend test, Alertmanager, MAX_TIMESTAMP_DRIFT mainnet switch
