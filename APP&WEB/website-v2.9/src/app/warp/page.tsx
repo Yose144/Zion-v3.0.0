@@ -16,7 +16,7 @@ import {
 
 const warpStats = [
   { label: 'Corridors Planned', value: '11', detail: 'BTC · ETH · SOL · L2 + Lightning', icon: CloudLightning },
-  { label: 'Guardian Nodes', value: '5 / 5', detail: 'Helsinki · SeedDE · Usa1 · Usa2 · Asia3', icon: ShieldCheck },
+  { label: 'Guardian Nodes', value: '3 / 3', detail: 'Helsinki · Usa · Asia', icon: ShieldCheck },
   { label: 'Development Phase', value: 'Phase 2', detail: 'Architecture + validator design', icon: Globe2 },
   { label: 'Target Launch', value: 'Q3 2026', detail: 'After security audit completion', icon: Zap }
 ];

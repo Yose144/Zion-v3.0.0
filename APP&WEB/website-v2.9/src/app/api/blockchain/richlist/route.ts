@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 
 const SERVERS = [
-  { url: 'http://77.42.31.72:8444/jsonrpc', name: 'Helsinki' },
-  { url: 'http://46.225.126.243:8444/jsonrpc', name: 'SeedDE' },
-  { url: 'http://5.78.178.227:8444/jsonrpc',   name: 'Usa1' },
+  { url: 'http://77.42.31.72:8444/jsonrpc',    name: 'Helsinki' },
+  { url: 'http://178.156.240.160:8444/jsonrpc', name: 'Usa' },
+  { url: 'http://5.223.43.93:8444/jsonrpc',     name: 'Asia' },
 ];
 
 const POOL_SERVERS = [
   'http://77.42.31.72:8080',
-  'http://46.225.126.243:8080',
 ];
 
 async function rpc(method: string, params: unknown[] = []) {

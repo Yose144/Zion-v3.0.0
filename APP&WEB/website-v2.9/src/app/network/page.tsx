@@ -30,9 +30,9 @@ import {
    ═══════════════════════════════════════════════════════════ */
 
 const heroStats = [
-  { label: 'Seed Regions', value: '2', descriptor: 'EU-NORTH · EU-CENTRAL' },
+  { label: 'Seed Regions', value: '3', descriptor: 'EU · US-EAST · AP' },
   { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
-  { label: 'Sync Cohesion', value: '100%', descriptor: '5/5 nodes synced' },
+  { label: 'Sync Cohesion', value: '100%', descriptor: '3/3 nodes synced' },
   { label: 'Network', value: 'TestNet', descriptor: 'v2.9.6 · Rust native' },
 ];
 
@@ -49,27 +49,7 @@ const infraFeatures = [
   },
   {
     icon: Server,
-    title: 'SeedDE 🇩🇪 (EU-CENTRAL)',
-    detail: 'Seed node — ARM64 4GB',
-    ip: '46.225.126.243',
-    status: 'Seed',
-    color: 'text-blue-400',
-    border: 'border-blue-500/30',
-    bg: 'bg-blue-500/5',
-  },
-  {
-    icon: Server,
-    title: 'Usa1 🇺🇸 (US-WEST)',
-    detail: 'Seed node — AMD64 4GB',
-    ip: '5.78.178.227',
-    status: 'Seed',
-    color: 'text-blue-400',
-    border: 'border-blue-500/30',
-    bg: 'bg-blue-500/5',
-  },
-  {
-    icon: Server,
-    title: 'Usa2 🇺🇸 (US-EAST)',
+    title: 'Usa 🇺🇸 (US-EAST)',
     detail: 'Seed node — AMD64 4GB',
     ip: '178.156.240.160',
     status: 'Seed',
@@ -79,7 +59,7 @@ const infraFeatures = [
   },
   {
     icon: Server,
-    title: 'Asia3 🌏 (ASIA)',
+    title: 'Asia 🌏 (AP-SOUTHEAST)',
     detail: 'Seed node — AMD64 4GB',
     ip: '5.223.43.93',
     status: 'Seed',
@@ -106,8 +86,8 @@ const guideBlocks = [
     description: 'Native Rust JSON-RPC endpoint for explorers and tooling.',
     items: [
       'Helsinki: http://77.42.31.72:8444/jsonrpc',
-      'SeedDE:   http://46.225.126.243:8444/jsonrpc',
-      'Usa1:     http://5.78.178.227:8444/jsonrpc',
+      'Usa:      http://178.156.240.160:8444/jsonrpc',
+      'Asia:     http://5.223.43.93:8444/jsonrpc',
       'Method: POST',
     ],
   },
@@ -117,22 +97,20 @@ const guideBlocks = [
     description: 'Native libp2p network for blockchain synchronization.',
     items: [
       'Helsinki: 77.42.31.72:8334',
-      'SeedDE:   46.225.126.243:8334',
-      'Usa1:     5.78.178.227:8334',
-      'Usa2:     178.156.240.160:8334',
-      'Asia3:    5.223.43.93:8334',
+      'Usa:      178.156.240.160:8334',
+      'Asia:     5.223.43.93:8334',
     ],
   },
 ];
 
 const networkFacts = [
   { text: 'Native Rust P2P — libp2p mesh', done: true },
-  { text: '5 seed nodes in full consensus', done: true },
+  { text: '3 seed nodes in full consensus', done: true },
   { text: 'Stratum v2 mining on both pools', done: true },
   { text: 'JSON-RPC endpoints live (port 8444)', done: true },
   { text: '24/7 Docker containers with auto-restart', done: true },
   { text: 'LWMA DAA — target 60s block time', done: true },
-  { text: '5+ nodes across 3+ regions', done: false },
+  { text: '3 nodes across 3 regions', done: true },
   { text: 'Prometheus + Grafana monitoring', done: false },
   { text: 'Geographic load balancing', done: false },
 ];
@@ -171,7 +149,7 @@ export default function NetworkPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from native Rust nodes. Helsinki (primary + pool), SeedDE, Usa1, Usa2, Asia3 (seed-only)
+                Real-time telemetry from native Rust nodes. Helsinki (primary + pool), Usa (Ashburn US-EAST), Asia (Singapore AP-SOUTHEAST)
                 forming the TestNet mesh. All data refreshes every 30 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
@@ -179,10 +157,10 @@ export default function NetworkPage() {
                   <Sparkles className="h-3 w-3 text-zion-gold" /> Native Rust
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Orbit className="h-3 w-3 text-zion-cyan" /> TestNet 2.9.5
+                  <Orbit className="h-3 w-3 text-zion-cyan" /> TestNet 2.9.6
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 2 Nodes Synced
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 3 Nodes Synced
                 </span>
               </div>
             </div>
@@ -381,7 +359,7 @@ export default function NetworkPage() {
           <Radio className="mx-auto h-12 w-12 text-emerald-400" />
           <h2 className="mt-6 text-3xl font-semibold text-white">Join the ZION Network</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            Two native Rust nodes running 24/7, forming a resilient P2P mesh.
+            Three native Rust nodes running 24/7, forming a resilient P2P mesh.
             Connect your miner, run your own node, or explore the blockchain.
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
@@ -413,7 +391,7 @@ export default function NetworkPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — P2P Network · Native Rust Infrastructure · 5 Seed Nodes · 5 Continents · MainNet 31.12.2026
+          ZION TerraNova v2.9.6 — P2P Network · Native Rust Infrastructure · 3 Seed Nodes · 3 Continents · MainNet 31.12.2026
         </p>
       </div>
     </div>

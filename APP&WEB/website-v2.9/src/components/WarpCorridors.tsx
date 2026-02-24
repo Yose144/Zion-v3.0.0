@@ -18,7 +18,7 @@ const corridorStats = [
   {
     label: 'Guardian Mesh',
     value: '2 / 2',
-    detail: 'Multi-region guardians — 5 seed nodes · 5 continents',
+    detail: 'Multi-region guardians — 3 seed nodes · 3 continents',
   },
 ];
 
@@ -36,8 +36,8 @@ const warpCorridors = [
 const validatorDeck = [
   {
     title: 'Guardian Nodes',
-    value: '2 regions',
-    description: 'Helsinki · SeedDE · Usa1 · Usa2 · Asia3 — global coverage for MainNet',
+    value: '3 regions',
+    description: 'Helsinki · Usa · Asia — global coverage for MainNet',
   },
   {
     title: 'Telemetry',

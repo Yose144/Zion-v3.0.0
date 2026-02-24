@@ -109,7 +109,7 @@ export default function ExplorerPage() {
                   <Activity className="h-3 w-3 text-emerald-400" /> Auto-Refresh 10s
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> 2 Seed Nodes
+                  <Globe className="h-3 w-3 text-zion-cyan" /> 3 Seed Nodes
                 </span>
               </div>
             </div>
@@ -270,7 +270,7 @@ export default function ExplorerPage() {
               <Globe className="h-7 w-7 text-zion-cyan" />
               Network Peers
             </h2>
-            <p className="text-sm text-gray-400">Global node connectivity — Helsinki · SeedDE · Usa1 · Usa2 · Asia3 (5 seed nodes).</p>
+            <p className="text-sm text-gray-400">Global node connectivity — Helsinki · Usa · Asia (3 seed nodes).</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[280px]" />}>
             <NetworkPeers />
@@ -332,7 +332,7 @@ export default function ExplorerPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — Blockchain Explorer · Real-time data from native Rust nodes · 5 Seed Nodes · 5 Continents
+          ZION TerraNova v2.9.6 — Blockchain Explorer · Real-time data from native Rust nodes · 3 Seed Nodes · 3 Continents
         </p>
       </div>
     </div>
