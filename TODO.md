@@ -1,222 +1,146 @@
-# 📋 ZION TerraNova — TODO
+# 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** Session 34 — 23. února 2026  
-> **Cíl:** MainNet Genesis **31. 12. 2026**  
-> **Detaily:** `docs/MAINNET_CHECKLIST.md` | `docs/L2_DEFI_PLAN.md` | `docs/L3_WARP_AI_PLAN.md`
-
----
-
-## ✅ Hotovo (Session 34 — 23. února 2026)
-
-- [x] **[M-1–M-4] Seed miners** ✅ — všechny 4 seed servery (SeedDE/Usa1/Usa2/Asia3) běží `zion-miner` (Up)
-- [x] **[R-1] Mysterium** ✅ — 5 nodů Registered, earns aktivní
-- [x] **[S-3] 168h stability run** ✅ — **22h50m / 168h**, 5/5 nodů OK, height 4532, P:9+9 peers
-- [x] **CHv3 fix** ✅ — mining funguje: 19531 valid / 20965 total shares (93%), 1.23 MH/s
-- [x] **Resources cleanup** ✅ — odstraněno 20+ mrtvých souborů (v1/v2/ERG/ai/zion/bak), dead imports v miner.py
-- [x] **[R-2/3] NKN SKIP** — ROI nevychází, běží jako relay ale bez registrace (OK)
-- [x] **ERG SKIP** — ARM64 příliš pomalé (34× Blake2b na hash), nevyplatí se
+> **Aktualizace:** 24. února 2026 (Session 49)  
+> **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
+> **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
 ---
 
-## 🔴 Priorita — Další kroky
+## 0) Co bylo při této analýze ověřeno
 
-### [S-4] P0-01 Stability countdown (kritické)
-- Countdown: **od 16.2.2026 → cíl 2.3.2026** (7 zbývá z 14 dní)
-- 168h stability run: **22h/168h** (den 1/7) — NODES:5/5, žádné crash
-- Akce: nechat běžet, monitorovat každých 12h
+### Dokumenty (roadmapy / checklisty / reporty)
+- `docs/MAINNET_ROADMAP_2026.md`
+- `docs/MAINNET_READINESS-ROADMAP.md`
+- `docs/MAINNET_PREFLIGHT_CHECKLIST.md`
+- `docs/MAINNET_CHECKLIST.md`
+- `docs/mainnet/MAINNET_CHECKLIST.md`
+- `docs/mainnet/COMPLETE_ROADMAP_TO_MAINNET.md`
+- `docs/ROADMAP.md`
+- `docs/L1-L4_ROADMAP.md`
+- `docs/MAINNET_LAUNCH_PLAN_v2.9.5.md`
+- `docs/MAINNET_CONSTITUTION.md`
+- `docs/mainnet/MAINNET_CONSTITUTION.md`
+- `REPORT.md`
+- `docs/REPORT.md`
+- `docs/REPORT_SESSION_9-17_FEB_2026.md`
+- `docs/AUDIT_SERVERS_2026-02-12.md`
+- `docs/AUDIT_2026_02_16.md`
+- `SERVERS.md`
 
-### [W-2] Bridge vault setup (P1)
-- Vygenerovat `ZION_BRIDGE_VAULT_KEY` na Helsinki
-- `export ZION_BRIDGE_VAULT_KEY=$(openssl rand -hex 32)` → uložit bezpečně
-- Nasadit do `zion-core` env na Helsinki
-
-### [W-3] DAO daemon deploy (P2)
-- `zion-dao` daemon ještě není spuštěn na žádném serveru
-- Config: `config/dao-testnet.toml`, port 8080 (sdílený s pool — nutno řešit)
-
-### [D-1] Desktop agent miner — CHv3 shares monitoring
-- Pool vidí 93% acceptance rate — OK
-- Sledovat VarDiff retargeting (byl retarget 49580→1364274 — správné)
-
-> ~~Session 28~~: NKN fix deploynut, Mysterium Registered.
-
-### 🟡 Priorita 2 — Website + DAO
-
-- [ ] **[W-1] Helsinki website rebuild** — `dao-api.ts` fix (commit `dfa4dae`) nasadit
-  ```bash
-  ssh zion-helsinki 'cd /root/zion-2.9.6 && docker build -t zion-website:dao-fix -f APP&WEB/website-v2.9/Dockerfile . && docker stop zion-website && docker run -d --name zion-website-new ... '
-  ```
-  nebo přes rsync + docker compose up --force-recreate
-- [ ] **[W-2] Ověřit /dao stránku** na https://zionterranova.com/dao — `daemonOnline` = false, info notice viditelný, žádné error bannery
-
-### 🟢 Priorita 3 — Stabilita + monitoring
-
-- [ ] **[S-1] Zkontrolovat 168h stability run** — progress ke dni 2/7
-  ```bash
-  ssh zion-helsinki 'tail -20 /root/stability_run_v2.log'
-  ```
-- [ ] **[S-2] Block height** — všechny nody synced (kontrola h > 4200)
-- [ ] **[S-3]** Pokud minery jedou → nechat běžet 24h, zkontrolovat hashrate a share acceptance rate
-
-### 📌 Poznámky k nasazení
-
-| Server | Worker | Pool | Status cíl |
-|--------|--------|------|-----------|
-| SeedDE | `seedde-miner` | 77.42.31.72:3333 | ✅ mining |
-| Usa1 | `usa1-miner` | 77.42.31.72:3333 | ✅ mining |
-| Usa2 | `usa2-miner` | 77.42.31.72:3333 | ✅ mining |
-| Asia3 | `asia3-miner` | 77.42.31.72:3333 | ✅ mining |
-| Helsinki | `testnet-miner` | localhost:3333 | ✅ již běží |
-
-**Pokud build selhal znovu:** zkontrolovat chybu v `/tmp/miner-build.log`, opravit, znovu rsync + build.
+### Live servery (SSH + runtime snapshot)
+- ✅ Helsinki `77.42.31.72`
+- ✅ SeedDE `46.225.126.243`
+- ✅ Usa1 `5.78.178.227`
+- ✅ Usa2 `178.156.240.160`
+- ✅ Asia3 `5.223.43.93`
 
 ---
 
-## �🔴 P0 — MainNet Blokery (10 zbývá z 14) — 4 hotovo: P0-02, P0-03, P0-04, P0-06
+## 1) Live stav serverů (24. 2. 2026)
 
-### Fáze 1 — Stabilita (únor–březen)
+### Síť / chain
+- ✅ Všechny ověřené nody hlásí `height: 5199` a `network: testnet` přes `http://localhost:8444/health`
+- ✅ Peers: Helsinki 16, SeedDE 32, Usa1 36, Usa2 31, Asia3 36
+- ⚠️ Helsinki i SeedDE reportují nenulové `blocks_rejected` (monitorovat trend)
 
-- [ ] **P0-01** 14 dní bez critical bugu *(countdown od 16.2.)*
-- [x] **P0-02** Orphan rate < 2% — `pool_orphan_blocks_total` counter + `pool_orphan_rate_permille` gauge ✅ *(Session 22, commit `023528d`)*
-- [x] **P0-03** 72h stability run *(restart #3, od 10.2.)*
+### Runtime / kapacita
+- 🔴 **Helsinki RAM tlak**: 7.2/7.5 GiB, load ~22–24 (velmi vysoké)
+- 🟡 SeedDE: RAM 3.3/3.7 GiB, load ~5
+- 🟢 Usa1/Usa2/Asia3: load ~3–4, RAM ~1.0/1.9 GiB
 
-### Fáze 3 — Infrastruktura (Q2–Q3)
-
-- [x] **P0-04** 5 seed nodů — Helsinki ✅ SeedDE ✅ Usa1 ✅ Usa2 ✅ Asia3 ✅ — všechny běží + **miner nasadzen na všechny 4 seed nody** *(22.2.2026; fix `is_multiple_of()` → `% n == 0` pro stable Rust 1.85, commit `ef4b105`, Session 24)*
-- [ ] **P0-05** Premine klíče — air-gapped Ed25519 keypair generace
-- [x] **P0-06** RPC autentizace — API key pro write endpointy *(kód hotov v `rpc/auth.rs`; nasadit: `export ZION_RPC_TOKEN=$(openssl rand -hex 32)` na každém nodu)*
-
-### Fáze 4 — Dress Rehearsal (Q4)
-
-- [ ] **P0-07** Genesis block test (staging, reálné premine adresy)
-- [ ] **P0-08** 168h (7-day) stability run na staging
-- [ ] **P0-09** 1000 miners load test *(aktuálně 60 funguje)*
-- [ ] **P0-10** Disaster recovery test (pád 50% nodů)
-- [ ] **P0-11** External security audit — žádný critical/high
-- [ ] **P0-12** Code freeze + tag `v2.9.6-mainnet`
-- [ ] **P0-13** Binární releasy (Linux, macOS, Windows)
-- [ ] **P0-14** Genesis block — offline + SHA-256 hash publikace
+### Kontejnery
+- Helsinki: `zion-core`, `zion-pool`, `zion-miner`, `zion-mysterium`, `zion-dero-miner`, `zion-zeph-miner`, `zion-grafana`, `zion-prometheus` ✅
+- SeedDE: `zion-core`, `zion-miner`, `zion-mysterium`, `zion-dero-miner`, `zion-epic-miner` ✅
+- Usa1/Usa2/Asia3: `zion-core`, `zion-miner`, `zion-mysterium`, `zion-xmr-x86` ✅
+- ⚠️ SeedDE: pool API `localhost:8080` momentálně nedostupná (pool zřejmě neběží / není vystaven)
 
 ---
 
-## 🟡 P1 — Důležité (18 položek)
+## 2) Hlavní zjištění z roadmap/report konsolidace
 
-### Bezpečnost
+### A) Dokumentační drift (kritický)
+- 🔴 Různé dokumenty uvádějí odlišnou readiness (`~65%` až `~92%`).
+- 🔴 Dva constitution dokumenty mají konflikt v premine pravidlech (immediate unlock vs. část time-lock).
+- 🔴 Starší roadmapy obsahují dnes neaktuální baseline (3 seed nody, staré test-county, staré P0 stavy).
 
-- [x] Block size limit (max 1 MB) ✅ `MAX_BLOCK_SIZE_BYTES = 1_048_576`, step-0 v `validate_block()` *(Session 22)*
-- [x] TX size limit (max 100 KB) ✅ `MAX_TX_SIZE_BYTES = 100_000` již existovalo *(před Session 22)*
-- [x] Peer limit enforcement (96 in / 32 out) ✅ `allow_inbound(128, 32)` *(Session 22)*
-- [ ] DDoS ochrana seed nodů
-- [ ] LMDB backup strategie → offsite
-- [ ] Bug bounty program
+### B) P0/P1 status drift
+- ✅ Prakticky: 5 seed nodů jsou aktivní (live ověřeno).
+- ⚠️ Formálně: některé checklisty stále vedou seed část jako pending nebo s historickými IP.
+- ⚠️ Některé body označené dříve jako hotové nemají jednotný důkaz v jednom „master“ checklistu.
 
-### Test Coverage
-
-- [x] Pool testy 31 → 60+ ✅ **96 testů** *(wZION 48 + ZIONBridge 34 + E2E 14)*
-- [x] Miner testy 16 → 40+ ✅ **73 testů**
-- [x] Cosmic Harmony testy 24 → 50+ ✅ **48 testů** *(CHv3 finální)*
-- [ ] Reorg / rollback integration testy
-
-### Observabilita
-
-- [ ] Grafana dashboardy (pool, node, p2p)
-- [ ] Alert rules (OOM, disk, orphan, lag)
-
-### Dokumentace
-
-- [ ] Operator runbook (start/stop/recovery)
-- [ ] Wallet dokumentace + UX
-- [ ] Changelog pro community
+### C) Největší aktuální operační rizika
+1. 🔴 Helsinki resource pressure (RAM/load) = riziko nestability.
+2. 🟡 SeedDE pool/API nesoulad oproti očekávanému role modelu.
+3. 🔴 Chybí jednoznačný, jednotný „source of truth“ pro MainNet freeze parametry.
+4. 🔴 Premine/keys governance a history hygiene musí být explicitně uzavřené před dress rehearsal.
 
 ---
 
-## 💱 L2 DeFi (post-MainNet → 2027 Q1–Q2)
+## 3) Priorita P0 (teď)
 
-```
-Bridge 80% → prod | DAO 55% → prod | Atomic Swaps 0%
-```
+### P0-01 — Canonical MainNet Source of Truth (blokující)
+- [ ] Vybrat **jediný** autoritativní dokument pro launch gating (`docs/MAINNET_CHECKLIST.md`).
+- [ ] Sloučit konflikty z `docs/MAINNET_CONSTITUTION.md` vs `docs/mainnet/MAINNET_CONSTITUTION.md`.
+- [ ] Zamknout hodnoty: reward model, premine unlock pravidla, genesis timestamp policy.
+- [ ] Přidat sekci „Superseded docs“ do starších roadmap/checklist souborů.
 
-- [x] **B-05** Testnet deploy (Base Sepolia) ✅ *wZION `0x0c49...` + ZIONBridge `0xa5a0...` LIVE (21.2.2026)*
-- [x] **B-06** E2E test ✅ *96/96 Hardhat + 16/16 Rust relay*
-- [x] **B-02** WS auto-reconnect ✅ *exponenciální backoff 5→80s, MAX_RETRIES=5 (Session 18)*
-- [x] **B-03** Bridge Prometheus `/metrics` HTTP endpoint ✅ *(port 9100, 11 metrik, Session 19)*
-- [x] **WEB-01** Bridge stránka `/bridge` na webu ✅ *(`page.tsx` + `/api/bridge/status` proxy + Nav+Footer, Session 19)*
-- [x] **B-01** L1 `/api/bridge/unlock` endpoint ✅ *(Ed25519 vault key, coin selection, signed TX → mempool, Session 19)*
-- [ ] **B-04** Private key management (ne plaintext)
-- [ ] **B-10** Mainnet deploy (Base + Arbitrum)
-- [x] **D-01** DAO SQLite persistence + migrations ✅ *(Session 17)*
-- [x] **D-03** L1 memo scanner (treasury příchozí platby) ✅ *(Session 17)*
-- [x] **D-05** DAO executor — Parameter, Emergency, guardian multisig ✅ *(Session 18)*
-- [x] **D-07** DAO integration testy (38 testů, E2E lifecycle) ✅ *(Session 18)*
-- [x] **D-06** TOML konfig pro DAO daemon ✅ *(`DaoConfig::load()`, TOML file + env var override, `config/dao-testnet.toml`, Session 20)*
-- [x] **D-09** Prometheus metriky pro DAO ✅ *(`GET /metrics`, 17 metrik, Session 19)*
-- [x] **D-10** DAO web integrace ✅ *(`dao-api.ts` přepsán pro Rust `/api/dao/*`, `dao/page.tsx` graceful offline, commit `dfa4dae`, Session 24)*
-- [x] **DEX-01** wZION/ETH Uniswap V3 pool deploy (Base Mainnet) ✅ *(scripts/deploy-pool.ts, Session 18)*
-- [x] **DEX-02** Liquidity seeding script ✅ *(scripts/seed-liquidity.ts, Session 18)*
-- [ ] **DEX-03** Price oracle + slippage guard
-- [ ] Atomic Swaps design + BTC HTLC prototype
-- [ ] Solidity contracts audit
+### P0-02 — Helsinki stabilita (blokující)
+- [ ] Okamžitě snížit resource tlak (rebalanc/limitace revenue procesů, memory audit kontejnerů).
+- [ ] Nastavit alert na RAM > 90% + load > počet vCPU na 30 min.
+- [ ] Ověřit, že `zion-dero-miner` restarty nejsou časté (stabilita > 24h).
 
-> Detail: `docs/L2_DEFI_PLAN.md` — 34 úkolů, ~75 dní práce, +6k LOC
+### P0-03 — SeedDE role korekce
+- [ ] Rozhodnout cílovou roli SeedDE: `seed-only` vs `seed+pool`.
+- [ ] Pokud `seed+pool`, obnovit/validovat `zion-pool` + API:8080.
+- [ ] Pokud `seed-only`, upravit dokumentaci (SERVERS + checklist) aby nečekala pool endpoint.
+
+### P0-04 — MainNet exit criteria evidence
+- [ ] Udržet formální evidence pro bug-free window + orphan/reject trend.
+- [ ] Dopsat metriku „orphan/reject rate“ do jednotného dashboardu a checklistu.
+- [ ] Přidat datum+důkaz pro každý P0 bod (odkaz na command output/log panel).
 
 ---
 
-## 🧠 L3 WARP & AI (2027 Q3 → 2028 Q1)
+## 4) Priorita P1 (do 2–4 týdnů)
 
-```
-WARP 75% (7 stub adaptérů) | NCL 30% | AI-Native 20%
-```
+### Bezpečnost / release
+- [ ] Premine key ceremony runbook (air-gapped, dual backup, sign-off).
+- [ ] Dokončit write-endpoint auth revizi napříč core/pool/dao (jednotný token model).
+- [ ] Připravit externí audit package (scope, frozen commit, threat model).
 
-- [x] **W-01** EVM adapter (ethers-rs → reálné RPC) ✅ *(Session 17)*
-- [ ] **W-02** Bitcoin adapter (bitcoincore-rpc)
-- [ ] **W-05** Solana adapter (solana-client)
-- [ ] **N-01** ONNX Runtime backend
-- [ ] **N-04** Marketplace HTTP server (Axum)
-- [ ] **N-07** SQLite persistence pro joby
-- [ ] **A-01** HTTP API server (Axum)
-- [ ] **A-03** LLM integrace (OpenAI / local)
-- [ ] **A-07** WebSocket real-time stream
+### Infra / observabilita
+- [ ] Alertmanager routing (Telegram/Slack) + test incident cesty.
+- [ ] Height divergence alert mezi 5 nody.
+- [ ] Standardizace firewall politik na všech uzlech.
 
-> Detail: `docs/L3_WARP_AI_PLAN.md` — 39 úkolů, ~85 dní práce, +11k LOC
-
----
-
-## 🎮 L4 OASIS (2029)
-
-- [ ] OASIS game-layer skeleton → real XP engine
-- [ ] Golden Egg + Winners integration
-
-## 🌍 L5 Free World (2030) / 🔭 L6 Issobella (2040+)
-
-- [x] Vision dokumenty vytvořeny (`L5/README.md`, `L6/README.md`)
-- [ ] L5/L6 coinbase fund distribuce v `reward.rs`
+### Kvalita / release engineering
+- [ ] Reproducible build checklist + SHA256 publishing flow.
+- [ ] Windows artifact verifikace v release pipeline.
+- [ ] Jednotné release note šablony (core/pool/miner/web).
 
 ---
 
-## 🛠️ Infra & DevOps
+## 5) Priorita P2 (post-mainnet / paralelně)
 
-- [ ] CI/CD — GitHub Actions pro 3 OS releasy
-- [ ] Docker image optimalizace (multi-stage, < 100 MB)
-- [ ] Monitoring stack: Prometheus + Grafana + Alertmanager
-- [ ] Automatický testnet deployment (push → deploy)
-- [x] Nové repo ✅ *(Yose144/2.9.6 — commit `0d92fe0`)*
-- [x] SSH klíč vygenerován (`~/.ssh/zion_servers_ed25519`)
-- [x] SSH config pro 5 serverů (Helsinki, Germany, USA, Singapore, Japan)
-- [x] Deploy skript `scripts/deploy-new-node.sh` připraven
+- [ ] L2 bridge/DAO produkční hardening (audit + integration soak).
+- [ ] L3/L4 milestones držet odděleně od L1 freeze tracku.
+- [ ] Cleanup starých roadmap duplicit do archivu `docs/ARCHIVE/`.
 
 ---
 
-## 📊 Souhrn
+## 6) Konkrétní akce na další 72 hodin
 
-| Oblast | Položek | Hotovo | Zbývá |
-|--------|---------|--------|-------|
-| P0 Blokery | 14 | 3 | **11** |
-| P1 Test Coverage | 4 | 3 | **1** |
-| P1 Ostatní | 14 | 0 | **14** |
-| L2 DeFi | 34 | 2 | **32** |
-| L3 WARP/AI | 39 | 0 | **39** |
-| Infra | 5 | 1 | **4** |
-| **Celkem** | **110** | **9→14** | **101→96** |
+- [ ] **Dnes:** publish „MainNet Canonical Checklist v1.0" + označit superseded dokumenty.
+- [ ] **Dnes:** Helsinki performance triage (RAM/load) + mitigace + záznam do `REPORT.md`.
+- [ ] **Zítra:** SeedDE role fix + verifikace API dostupnosti podle cílové role.
+- [ ] **Do 48h:** aktualizovat `SERVERS.md` o live role mapu (core/pool/revenue/monitoring) včetně důkazů.
+- [ ] **Do 72h:** přidat orphan/reject trend panel + alert threshold + odkaz do checklistu.
 
-> ⏱️ Celkový odhad práce: **~260 dní** (L1 launch + L2 + L3 + infra)  
-> 🎯 L1 MainNet: **31. 12. 2026** | L2: **2027 Q2** | L3: **2028 Q1**
+---
+
+## 7) Stav po této aktualizaci
+
+- ✅ Deep analýza roadmap/report dokumentů provedena
+- ✅ Live server snapshot ověřen přes SSH
+- ✅ TODO sjednoceno na aktuální realitu (24. 2. 2026)
+- ⏭️ Další krok: převést tento TODO plán do konkrétních issue/task IDs a začít P0-02 (Helsinki tlak)
