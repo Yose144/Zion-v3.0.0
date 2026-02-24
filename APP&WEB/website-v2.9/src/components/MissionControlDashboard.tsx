@@ -532,7 +532,7 @@ export default function MissionControlDashboard() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <Stat label="Network" value={hStats?.network ?? 'testnet'} color="text-cyan-400" />
+                <Stat label="Network" value={hStats?.network ?? 'TestNet 2.9.6'} color="text-cyan-400" />
                 <Stat label="Total Peers" value={fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0))} sub={`${onlineCount}/3 nodes online`} mono />
                 <Stat label="Difficulty" value={fmt(hStats?.difficulty)} mono />
                 <Stat label="Sync Status" value={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'SYNCED ✓' : hH > 0 ? 'RUNNING' : '—'} color={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
