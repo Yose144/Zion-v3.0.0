@@ -774,7 +774,10 @@ function resolveMinerSelection(preferred) {
 
   if (pref === 'rust') {
     if (rustPath) return select('rust', rustPath, true, false);
-    // Strict: user explicitly requested Rust, so do not silently fall back.
+    // Rust not found (possibly quarantined by Defender) — soft-downgrade to Python/legacy.
+    // This prevents hard 'Miner Not Found' errors when Defender removes the binary.
+    if (pyPath) return select('python', pyPath, false, true);
+    if (hasLegacy) return select('legacy', legacyExePath, false, false);
     return null;
   }
 
@@ -1956,6 +1959,43 @@ function startMining(config) {
   const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
   const selection = resolveMinerSelection(preferredBackend);
   if (!selection) {
+    // Rust was explicitly requested (or auto) but the binary is missing / quarantined.
+    // Before showing an error, try to auto-downgrade to Python if it exists.
+    const emergencyPythonPath = findPythonMiner();
+    if (emergencyPythonPath && (preferredBackend === 'rust' || preferredBackend === 'auto')) {
+      const warnMsg =
+        `[WARN] Rust miner not found (Windows Defender may have quarantined zion-universal-miner.exe). ` +
+        `Automatically falling back to Python miner.\n`;
+      MINER_IS_RUST = false;
+      MINER_IS_PYTHON = true;
+      MINER_PATH = emergencyPythonPath;
+      // Persist so we don't keep trying Rust on every start
+      try {
+        const persisted = loadConfig();
+        if (String(persisted?.minerBackend || '').toLowerCase() !== 'python') {
+          persisted.minerBackend = 'python';
+          saveConfig(persisted);
+        }
+      } catch { /* ignore */ }
+      minerBackendPreferred = preferredBackend;
+      minerBackendResolved = 'python';
+      minerBackendPath = emergencyPythonPath;
+      minerBackendLastError = warnMsg.trim();
+      try {
+        sendToRenderer('miner-backend', {
+          preferred: minerBackendPreferred,
+          resolved: 'python',
+          path: emergencyPythonPath,
+          lastError: minerBackendLastError
+        });
+        sendToRenderer('miner-output', { stream: 'stderr', text: warnMsg });
+      } catch { /* ignore */ }
+      // Reconstruct a synthetic selection and continue
+      const synth = { backend: 'python', path: emergencyPythonPath, isRust: false, isPython: true };
+      // Jump directly to the rest of startMining with python backend explicitly
+      return startMining({ ...config, minerBackend: 'python' });
+    }
+
     const rustHint = preferredBackend === 'rust'
       ? `Rust miner not found or blocked. On Windows, Windows Defender may quarantine zion-universal-miner.exe. Check Defender protection history and add an exclusion for: ${IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources')}`
       : 'No miner executable found. Please install Rust miner or Python miner.';
