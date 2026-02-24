@@ -111,15 +111,13 @@ pub unsafe extern "C" fn cosmic_harmony_v3_hash_with_height(
     // Create slice from raw pointer
     let input = slice::from_raw_parts(input_ptr, input_len);
 
-    // AUDIT-FIX C-04 (16 Feb 2026): Use full u64 XOR instead of truncating to u32.
-    // Previous code: (nonce as u32) ^ (height as u32) — silently discarded upper 32 bits,
-    // reducing search space from 2^64 to 2^32.
-    let effective_nonce = nonce ^ height;
-
-    // FIX: Use height-aware selector so legacy path is used below fork height.
-    // Previously this always called cosmic_harmony_v3() (memory-hard), which was wrong
-    // for heights below CHV3_MEMORY_HARD_FORK_HEIGHT (50,000).
-    let result = cosmic_harmony_v3_with_height(input, effective_nonce, height);
+    // BUG-FIX (Session 34): Do NOT XOR nonce with height.
+    // Core's consensus (block.rs:99, cosmic_harmony.rs:25) passes raw nonce to
+    // cosmic_harmony_v3_with_height() — no XOR. The AUDIT-FIX C-04 XOR was incorrect:
+    // it caused the FFI hash to diverge from pool/core, producing LOW_DIFFICULTY (error 23)
+    // on every submitted share.
+    // The height parameter is used only for the memory-hard fork gate (< 50000 = legacy).
+    let result = cosmic_harmony_v3_with_height(input, nonce, height);
 
     // Copy result to output
     let output = slice::from_raw_parts_mut(output_ptr, 32);
