@@ -180,6 +180,13 @@ const versions: Version[] = [
   },
 ];
 
+function findCategoryIdByDoc(docId: string): string | null {
+  const category = versions
+    .flatMap((version) => version.categories)
+    .find((cat) => cat.docs.some((doc) => doc.id === docId));
+  return category?.id ?? null;
+}
+
 export default function DocsPage() {
   const [activeVersion, setActiveVersion] = useState('v2.9.6');
   const [selectedDoc, setSelectedDoc] = useState('v296-readme');
@@ -205,12 +212,9 @@ export default function DocsPage() {
     const hash = window.location.hash.replace('#', '');
     if (hash) {
       setSelectedDoc(hash);
-      // Find category for this doc
-      const category = docCategories.find(cat => 
-        cat.docs.some(doc => doc.id === hash)
-      );
-      if (category) {
-        setActiveCategory(category.id);
+      const categoryId = findCategoryIdByDoc(hash);
+      if (categoryId) {
+        setActiveCategory(categoryId);
       }
     }
 
