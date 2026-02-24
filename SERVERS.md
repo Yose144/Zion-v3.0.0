@@ -1,8 +1,8 @@
 # 🖥️ ZION TerraNova — Seed Nodes
 
-> **Aktualizace:** 24. února 2026 (Session 53 — po stability testu)  
-> **Cíl:** 3 seed nody (mainnet topologie po stability testu)  
-> **Stability test:** ✅ ~72h bez restartů na Asia nodu, stability window splněna
+> **Aktualizace:** 24. února 2026 (Session 54 — P2P fix + 168h stability test restart)  
+> **Cíl:** 3 seed nody (mainnet topologie)  
+> **Stability test:** 🟡 168h test spuštěn 2026-02-24 11:48 UTC → target 2026-03-03 11:48 UTC
 
 
 Asia
@@ -37,8 +37,8 @@ Helsinki
 | # | Název | Lokace | IP | HW | SSH alias | Klíč | Stav |
 |---|-------|--------|----|-----|-----------|------|------|
 | 1 | TreeOfLife-Zion | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | CAX21 arm 80 GB | `zion-helsinki` | `zion_hetzner_key` | ✅ Seed + Pool + Web + Monitoring |
-| 2 | Usa | 🇺🇸 Ashburn, VA (Hetzner) | 178.156.240.160 | CPX11 x86 40 GB | `zion-usa` | `zion_servers_ed25519` | ✅ Seed node |
-| 3 | Asia | 🌏 Singapore (Hetzner) | 5.223.43.93 | CPX12 x86 40 GB | `zion-asia` | `zion_servers_ed25519` | ✅ Seed node |
+| 2 | Usa | 🇺🇸 Ashburn, VA (Hetzner) | 178.156.240.160 | CPX11 x86 40 GB | `zion-usa` | `zion_server_key` | ✅ Seed node |
+| 3 | Asia | 🌏 Singapore (Hetzner) | 5.223.43.93 | CPX12 x86 40 GB | `zion-asia` | `zion_server_key` | ✅ Seed node |
 
 ### ❌ Decommissioned servery
 
@@ -118,12 +118,11 @@ ssh zion-asia  'bash -s' < scripts/deploy-testnet.sh
 | Klíč | Soubor | Použití |
 |------|--------|---------|
 | **Hetzner** | `~/.ssh/zion_hetzner_key` | Helsinki (77.42.31.72) |
-| **Testnet servery** | `~/.ssh/zion_servers_ed25519` | SeedDE, Usa1, Usa2, Asia3 |
+| **Testnet servery** | `~/.ssh/zion_server_key` | Usa (178.156.240.160), Asia (5.223.43.93) |
 | **Deploy (starý)** | `~/.ssh/zion_deployment_key` | Starý server 91.98.122.165 — nepoužívat |
-| **Server key** | `~/.ssh/zion_server_key` | Záloha |
 
 - **Typ:** Ed25519
-- **Hlavní klíč:** `~/.ssh/zion_servers_ed25519`
+- **Hlavní klíč pro Usa+Asia:** `~/.ssh/zion_server_key`
 - **Fingerprint:** `SHA256:inS+3Zmbn3ewfRb5AGwfcfbuXmh0Y0tR3riPl/GtOYo`
 
 ### SSH Config (`~/.ssh/config`)
@@ -139,20 +138,20 @@ Host zion-helsinki
 Host zion-usa
     HostName 178.156.240.160
     User root
-    IdentityFile ~/.ssh/zion_servers_ed25519
+    IdentityFile ~/.ssh/zion_server_key
 
 Host zion-asia
     HostName 5.223.43.93
     User root
-    IdentityFile ~/.ssh/zion_servers_ed25519
+    IdentityFile ~/.ssh/zion_server_key
 ```
 
 ### Přímé připojení (s explicitním klíčem)
 
 ```bash
 ssh -i ~/.ssh/zion_hetzner_key     root@77.42.31.72     # Helsinki (TreeOfLife)
-ssh -i ~/.ssh/zion_servers_ed25519 root@178.156.240.160 # Usa (Ashburn)
-ssh -i ~/.ssh/zion_servers_ed25519 root@5.223.43.93     # Asia (Singapore)
+ssh -i ~/.ssh/zion_server_key root@178.156.240.160 # Usa (Ashburn)
+ssh -i ~/.ssh/zion_server_key root@5.223.43.93     # Asia (Singapore)
 ```
 
 ## 🌐 Porty (Testnet)
