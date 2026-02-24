@@ -4253,6 +4253,35 @@
     <symbol id="i-star" viewBox="0 0 24 24">
       <path d="M12 3.5l2.6 5.8 6.3.6-4.8 4.2 1.4 6.2L12 17.4 6.5 20.3l1.4-6.2-4.8-4.2 6.3-.6L12 3.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
     </symbol>
+
+    <symbol id="i-cpu" viewBox="0 0 24 24">
+      <rect x="7" y="7" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M9 4v3M12 4v3M15 4v3M9 17v3M12 17v3M15 17v3M4 9h3M4 12h3M4 15h3M17 9h3M17 12h3M17 15h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-trophy" viewBox="0 0 24 24">
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.7V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M6 4h12v7a6 6 0 0 1-12 0V4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-monitor" viewBox="0 0 24 24">
+      <rect x="2" y="3" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M8 21h8M12 17v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-lock" viewBox="0 0 24 24">
+      <rect x="3" y="11" width="18" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-key" viewBox="0 0 24 24">
+      <circle cx="7.5" cy="15.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="m21 2-9.6 9.6M15.5 7.5l2.5 2.5L21 7.5l-2.5-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-link" viewBox="0 0 24 24">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.73 1.73M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.73-1.72" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
   </svg>
 
   <canvas id="warp-starfield" class="warp-starfield"></canvas>
@@ -4272,7 +4301,7 @@
           Za 30 sekund budete těžit. Vytvoříme vám peněženku, nastavíme pool a spustíme mining — vše jedním kliknutím.
         </p>
         <button class="wizard-btn wizard-btn-primary" id="wizard-start-btn">
-          ⚡ Pojďme na to
+          <svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg> Pojďme na to
         </button>
         <button class="wizard-btn wizard-btn-ghost wizard-mt-8" id="wizard-skip-btn">
           Přeskočit — nastavím ručně
@@ -4281,7 +4310,7 @@
 
       <!-- Step 2: Create wallet + password -->
       <div class="wizard-step wizard-step-hidden" data-step="2">
-        <h3 class="wizard-heading">🔐 Zabezpečení peněženky</h3>
+        <h3 class="wizard-heading"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-lock"></use></svg> Zabezpečení peněženky</h3>
         <p class="wizard-subtext">
           Zadejte heslo pro šifrování vaší peněženky. Toto heslo si zapamatujte — nelze obnovit.
         </p>
@@ -4302,26 +4331,26 @@
         </div>
         <div id="wizard-error" class="wizard-error"></div>
         <button class="wizard-btn wizard-btn-primary" id="wizard-create-btn">
-          🔑 Vytvořit peněženku a nastavit
+          <svg class="icon icon-inline" aria-hidden="true"><use href="#i-key"></use></svg> Vytvořit peněženku a nastavit
         </button>
         <button class="wizard-btn wizard-btn-ghost wizard-mt-8" id="wizard-back-1">← Zpět</button>
       </div>
 
       <!-- Step 3: Success + mnemonic -->
       <div class="wizard-step wizard-step-hidden" data-step="3">
-        <h3 class="wizard-heading-tight">✅ Peněženka vytvořena!</h3>
+        <h3 class="wizard-heading-tight"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-check"></use></svg> Peněženka vytvořena!</h3>
         <div class="wizard-mb-16">
           <label class="wizard-label wizard-label-sm">Adresa</label>
           <div id="wizard-address" class="wizard-address-box"></div>
         </div>
         <div class="wizard-mb-16">
-          <label class="wizard-label wizard-label-sm">⚠️ Recovery phrase — ZAPIŠTE SI A ULOŽTE BEZPEČNĚ</label>
+          <label class="wizard-label wizard-label-sm"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-alert"></use></svg> Recovery phrase — ZAPIŠTE SI A ULOŽTE BEZPEČNĚ</label>
           <div id="wizard-mnemonic" class="wizard-mnemonic-box"></div>
           <p class="wizard-footnote">Tato fráze je jediný způsob obnovení vaší peněženky. Po zavření tohoto okna ji už neuvidíte.</p>
         </div>
         <div class="wizard-row">
           <button class="wizard-btn wizard-btn-primary wizard-flex-1" id="wizard-mine-btn">
-            ⛏️ Začít těžit
+            <svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg> Začít těžit
           </button>
           <button class="wizard-btn wizard-btn-ghost wizard-flex-1" id="wizard-done-btn">
             Hotovo — nastavím později
@@ -4431,7 +4460,7 @@
 
           <!-- DIFFICULTY -->
           <div class="stat-card">
-            <h3>⛏️ Difficulty</h3>
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-cpu"></use></svg>Difficulty</h3>
             <div class="value" id="difficulty-value">—</div>
             <div class="label">Pool Difficulty</div>
             <div class="stat-sub">
@@ -4442,14 +4471,14 @@
 
           <!-- BLOCKS FOUND -->
           <div class="stat-card" id="blocks-card">
-            <h3>🏆 Blocks Found</h3>
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-trophy"></use></svg>Blocks Found</h3>
             <div class="value" id="blocks-value">0</div>
             <div class="label" id="blocks-label">Total blocks mined</div>
           </div>
 
           <!-- HARDWARE -->
           <div class="stat-card">
-            <h3>🖥️ Hardware</h3>
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-monitor"></use></svg>Hardware</h3>
             <div class="value" id="hw-threads">—</div>
             <div class="label">Threads</div>
             <div class="stat-sub">
@@ -5384,21 +5413,21 @@
             <div class="server-grid" id="server-grid">
               <div class="server-card offline">
                 <div class="server-header">
-                  <div class="server-name">🇫🇮 Helsinki</div>
+                  <div class="server-name">Helsinki</div>
                   <div class="server-status-dot off"></div>
                 </div>
                 <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
               </div>
               <div class="server-card offline">
                 <div class="server-header">
-                  <div class="server-name">🇺🇸 USA</div>
+                  <div class="server-name">USA</div>
                   <div class="server-status-dot off"></div>
                 </div>
                 <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
               </div>
               <div class="server-card offline">
                 <div class="server-header">
-                  <div class="server-name">🇸🇬 Singapore</div>
+                  <div class="server-name">Singapore</div>
                   <div class="server-status-dot off"></div>
                 </div>
                 <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
@@ -5564,14 +5593,14 @@
             <div class="resource-list">
               <div class="resource-item">
                 <div class="resource-item-left">
-                  <span class="emoji-16">🌐</span>
+                  <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
                   <span class="resource-item-label">Website</span>
                 </div>
                 <a href="https://zionterranova.com" class="resource-item-link" class="link-gold">zionterranova.com</a>
               </div>
               <div class="resource-item">
                 <div class="resource-item-left">
-                  <span class="emoji-16">💻</span>
+                  <svg class="icon icon-inline" aria-hidden="true"><use href="#i-monitor"></use></svg>
                   <span class="resource-item-label">GitHub</span>
                 </div>
                 <a href="https://github.com/zionterranova" class="resource-item-link" class="link-cyan">github.com/zionterranova</a>
@@ -5585,7 +5614,7 @@
               </div>
               <div class="resource-item">
                 <div class="resource-item-left">
-                  <span class="emoji-16">🔗</span>
+                  <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
                   <span class="resource-item-label">RPC Endpoints</span>
                 </div>
                 <span class="resource-item-value">:8444/jsonrpc · P2P :8334</span>
@@ -5751,15 +5780,15 @@
               </thead>
               <tbody>
                 <tr>
-                  <td>🥇</td><td>Base</td><td>Uniswap v3</td><td>8453</td>
+                  <td>1.</td><td>Base</td><td>Uniswap v3</td><td>8453</td>
                   <td><span class="chain-status prep">Preparing</span></td>
                 </tr>
                 <tr>
-                  <td>🥈</td><td>Arbitrum</td><td>Uniswap v3</td><td>42161</td>
+                  <td>2.</td><td>Arbitrum</td><td>Uniswap v3</td><td>42161</td>
                   <td><span class="chain-status planned">Planned</span></td>
                 </tr>
                 <tr>
-                  <td>🥉</td><td>BNB Chain</td><td>PancakeSwap</td><td>56</td>
+                  <td>3.</td><td>BNB Chain</td><td>PancakeSwap</td><td>56</td>
                   <td><span class="chain-status planned">Planned</span></td>
                 </tr>
                 <tr>
@@ -6394,12 +6423,12 @@
               <thead><tr><th>Source</th><th>XP per Action</th><th>Daily Cap</th></tr></thead>
               <tbody>
                 <tr><td>⛏ Block Mined</td><td>10 × shares (max 1,000)</td><td>10,000</td></tr>
-                <tr><td>🧠 AI Challenge</td><td>score × 100</td><td>10,000</td></tr>
-                <tr><td>📝 Quiz</td><td>(correct/total) × 100</td><td>10,000</td></tr>
-                <tr><td>🧘 Meditation</td><td>min × 5 (max 300)</td><td>10,000</td></tr>
-                <tr><td>💝 Tithe</td><td>amount/1M (max 500)</td><td>10,000</td></tr>
+                <tr><td>AI Challenge</td><td>score × 100</td><td>10,000</td></tr>
+                <tr><td>Quiz</td><td>(correct/total) × 100</td><td>10,000</td></tr>
+                <tr><td>Meditation</td><td>min × 5 (max 300)</td><td>10,000</td></tr>
+                <tr><td>Tithe</td><td>amount/1M (max 500)</td><td>10,000</td></tr>
                 <tr><td>⚔ Guild Quest</td><td>200 flat</td><td>10,000</td></tr>
-                <tr><td>🤝 Referral</td><td>50 flat</td><td>10,000</td></tr>
+                <tr><td>Referral</td><td>50 flat</td><td>10,000</td></tr>
               </tbody>
             </table>
           </div>

@@ -1418,11 +1418,11 @@ function detectGPU() {
 // ============================================================================
 
 const TESTNET_SERVERS = [
-  { id: 'helsinki', name: 'Helsinki', host: '77.42.31.72', flag: '🇫🇮', location: 'Finland' },
-  { id: 'seedde', name: 'SeedDE', host: '46.225.126.243', flag: '🇩🇪', location: 'Nuremberg, DE' },
-  { id: 'usa1', name: 'Usa1', host: '5.78.178.227', flag: '🇺🇸', location: 'Hillsboro, US' },
-  { id: 'usa2', name: 'Usa2', host: '178.156.240.160', flag: '🇺🇸', location: 'Ashburn, US' },
-  { id: 'asia3', name: 'Asia3', host: '5.223.43.93', flag: '🌏', location: 'Singapore, SG' }
+  { id: 'helsinki', name: 'Helsinki', host: '77.42.31.72', flag: 'FI', location: 'Finland' },
+  { id: 'seedde', name: 'SeedDE', host: '46.225.126.243', flag: 'DE', location: 'Nuremberg, DE' },
+  { id: 'usa1', name: 'Usa1', host: '5.78.178.227', flag: 'US', location: 'Hillsboro, US' },
+  { id: 'usa2', name: 'Usa2', host: '178.156.240.160', flag: 'US', location: 'Ashburn, US' },
+  { id: 'asia3', name: 'Asia3', host: '5.223.43.93', flag: 'SG', location: 'Singapore, SG' }
 ];
 
 async function checkServerPort(host, port, timeout = 3000) {
@@ -4421,7 +4421,7 @@ function parseMinerOutput(output) {
     minerStats.stream_algorithm = newJobMatch[3];
   }
 
-  // ─── XMRig block found: "█ BLOCK FOUND █ 🏆 height 1523 (total: 2)" ───
+  // ─── XMRig block found: "█ BLOCK FOUND █ ★ height 1523 (total: 2)" ───
   const blockMatch = output.match(/BLOCK FOUND.*?height\s+(\d+).*?\(total:\s*(\d+)\)/i);
   if (blockMatch) {
     minerStats.last_block_height = parseInt(blockMatch[1]);
@@ -4547,7 +4547,7 @@ function parseMinerOutput(output) {
     }
   }
 
-  // GPU hashrate: "🎮 Apple M1 [GPU]: 2.59 MH/s (batch 2.65 MH/s) | 89 shares"
+  // GPU hashrate: "Apple M1 [GPU]: 2.59 MH/s (batch 2.65 MH/s) | 89 shares"
   const gpuHrMatch = output.match(/\[GPU\]:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
   if (gpuHrMatch) {
     const value = parseNum(gpuHrMatch[1]);
@@ -4557,7 +4557,7 @@ function parseMinerOutput(output) {
     if (Number.isFinite(hs)) minerStats.hashrate_gpu = hs;
   }
 
-  // CPU-fallback hashrate: "🎮 Apple M1 [CPU-fallback]: 530.21 kH/s ..."
+  // CPU-fallback hashrate: "Apple M1 [CPU-fallback]: 530.21 kH/s ..."
   const cpuFallbackMatch = output.match(/\[CPU-fallback\]:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
   if (cpuFallbackMatch) {
     const value = parseNum(cpuFallbackMatch[1]);
@@ -4604,7 +4604,7 @@ function parseMinerOutput(output) {
     minerStats.shares = parseInt(shareMatch[2]);
   }
 
-  // GPU share accepted: "🎮 GPU share ACCEPTED ✅ (total: 48)"
+  // GPU share accepted: "[GPU] share ACCEPTED (total: 48)"
   const gpuShareMatch = output.match(/GPU share ACCEPTED[^(]*\(total:\s*(\d+)\)/i);
   if (gpuShareMatch) {
     const gpuTotal = parseInt(gpuShareMatch[1]);
@@ -4613,7 +4613,7 @@ function parseMinerOutput(output) {
     }
   }
 
-  // GPU share rejected: "🎮 GPU share REJECTED ❌"
+  // GPU share rejected: "[GPU] share REJECTED"
   if (/GPU share REJECTED/i.test(output)) {
     minerStats.gpu_shares_rejected = (minerStats.gpu_shares_rejected || 0) + 1;
   }
@@ -6426,7 +6426,7 @@ setInterval(() => {
             const psrc = pm.power_source ? ` [${pm.power_source}]` : '';
             sendToRenderer('miner-output', {
               stream: 'stdout',
-              text: `[AFTERBURNER] ⚡ ${pm.efficiency_hint}  (${pW}W${psrc}  ${hpwK} kH/W)\n`
+              text: `[AFTERBURNER] ${pm.efficiency_hint}  (${pW}W${psrc}  ${hpwK} kH/W)\n`
             });
           }
         }
