@@ -48,7 +48,7 @@ class CosmicHarmonyNative:
         # Cache CPU count
         self._cpu_count = self._lib.cosmic_harmony_v3_cpu_count()
         
-        print(f"🚀 ZION Cosmic Harmony v3 Native Library loaded")
+        print(f"[OK] ZION Cosmic Harmony v3 Native Library loaded")
         print(f"   Version: {self.version}")
         print(f"   CPU cores: {self._cpu_count}")
     
@@ -432,7 +432,7 @@ if __name__ == "__main__":
         elapsed = time.perf_counter() - start
         single_rate = iterations / elapsed
         
-        print(f"\n📊 Single Hash Performance:")
+        print(f"\n>>> Single Hash Performance:")
         print(f"   {iterations} hashes in {elapsed:.3f}s")
         print(f"   Rate: {single_rate:,.0f} H/s ({single_rate/1000:.1f} kH/s)")
         
@@ -443,7 +443,7 @@ if __name__ == "__main__":
         elapsed = time.perf_counter() - start
         batch_rate = batch_size / elapsed
         
-        print(f"\n📊 Batch Hash Performance ({batch_size} hashes):")
+        print(f"\n>>> Batch Hash Performance ({batch_size} hashes):")
         print(f"   Completed in {elapsed:.3f}s")
         print(f"   Rate: {batch_rate:,.0f} H/s ({batch_rate/1000:.1f} kH/s)")
         
@@ -452,7 +452,7 @@ if __name__ == "__main__":
         print(f"   Unique hashes (first 100): {unique_hashes}")
         
         # Difficulty check
-        print(f"\n🎯 Difficulty Check:")
+        print(f"\n>>> Difficulty Check:")
         easy_target = bytes.fromhex("00ff" + "ff" * 30)
         hard_target = bytes.fromhex("0000" + "ff" * 30)
         
@@ -461,11 +461,11 @@ if __name__ == "__main__":
         print(f"   Meets easy target (00ff...): {miner.check_difficulty(test_hash, easy_target)}")
         print(f"   Meets hard target (0000...): {miner.check_difficulty(test_hash, hard_target)}")
         
-        print(f"\n✅ All tests passed!")
+        print(f"\n[OK] All tests passed!")
         print("=" * 60)
         
     except FileNotFoundError as e:
-        print(f"❌ Library not found: {e}")
+        print(f"[ERR] Library not found: {e}")
         print("\nTo build the native library:")
         print("  cd 2.9.5/zion-cosmic-harmony-v3")
         print("  cargo build --release --features parallel")
