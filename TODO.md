@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 24. února 2026 (Session 50 — hloubkový scan kódu + live server check)  
+> **Aktualizace:** 24. února 2026 (Session 54 — P2P fix + 168h stability test restart)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
@@ -40,20 +40,20 @@
 
 ### Sítě / chain
 - ✅ Všechny 3 aktivní nody běží — Helsinki, Usa, Asia
-- ✅ **72h stability test splněn** — Asia node ~3 dny bez restartu
+- 🟡 **168h stability test IN PROGRESS** — start `2026-02-24 11:48 UTC`, target `2026-03-03 11:48 UTC`
 - ✅ Topologie uzavřena: **3 servery** (Helsinki EU + Usa US-East + Asia AP-Singapore)
-- ⚠️ Helsinki: health endpoint vrací `peers: null` — JSON klíč `peers` možné přejmenován (`connected_peers`?), zkontrolovat
-- ⚠️ Helsinki i SeedDE reportují nenulové `blocks_rejected` (monitorovat trend)
+- ✅ P2P mesh obnoven po Session 54 fix (Helsinki⇔Usa⇔Asia, height=5209 na všech)
+- ⚠️ Helsinki: health endpoint vrací `peers: null` — JSON klíč `peers` možné přejmenován, zkontrolovat
 
 ### Runtime / kapacita
-- ✅ **Helsinki RAM v pořádku**: 5.0/7.5 GiB (bylo 7.2/7.5, minery odstaveny) — **P0-02 splynuloÅ**
-- 🟡 SeedDE: běží, zion-miner restartován před 24 min (24. 2. 2026 ~10:xx) — sledovat stabilitu
-- 🟢 Usa1/Usa2/Asia3: stabilní, core+miner+mysterium
+- ✅ **Helsinki RAM v pořádku**: 5.0/7.5 GiB (bylo 7.2/7.5, minery odstaveny)
+- ✅ Usa/Asia: `zion-core:2.9.6-amd64` (nativní x86, opraveno Session 54)
+- ~~SeedDE~~ / ~~Usa1~~: decommissioned
 
 ### Kontejnery
-- **Helsinki** (77.42.31.72): `zion-bridge` ✅, `zion-website` ✅, `zion-core`, `zion-pool:2.9.6-testnet` ✅ (Docker, 3333+8080), `zion-mysterium`, `zion-nkn`, `zion-redis`, `zion-grafana`, `zion-prometheus`
-- **Usa** (178.156.240.160): `zion-core`, `zion-mysterium`, `zion-xmr-x86`
-- **Asia** (5.223.43.93): `zion-core`, `zion-mysterium`, `zion-xmr-x86` — ✅ **72h stability test prošel**
+- **Helsinki** (77.42.31.72): `zion-bridge` ✅, `zion-website` ✅, `zion-core` (`zion-core:2.9.6-fix2` arm64), `zion-pool:2.9.6-testnet` ✅ (Docker, 3333+8080), `zion-mysterium`, `zion-nkn`, `zion-redis`, `zion-grafana`, `zion-prometheus`
+- **Usa** (178.156.240.160): `zion-core:2.9.6-amd64` ✅, `zion-miner`, `zion-mysterium`, `zion-xmr-x86`
+- **Asia** (5.223.43.93): `zion-core:2.9.6-amd64` ✅, `zion-miner`, `zion-mysterium`, `zion-xmr-x86`
 - ~~SeedDE (46.225.126.243)~~ — decommissioned
 - ~~Usa1 (5.78.178.227)~~ — decommissioned po stability testu
 
@@ -119,9 +119,8 @@
 - [ ] Sledovat `zion-dero-miner` restart trend (SeedDE měl restart 24 minut před checkem)
 
 ### P0-03 — SeedDE role korekce
-- [ ] Rozhodnout cílovou roli SeedDE: `seed-only` vs `seed+pool`
-- [ ] Pokud `seed+pool`, obnovit/validovat `zion-pool` + API:8080
-- [ ] Pokud `seed-only`, upravit dokumentaci aby nečekala pool endpoint
+- ✅ SeedDE decommissioned — uzavřeno (Session 53+54)
+- ✅ SERVERS.md aktualizován, SEED_PEERS opraven na všech nodech
 
 ### P0-04 — MainNet exit criteria evidence
 - [ ] **Vytvořit `docs/mainnet/MAINNET_EXIT_CRITERIA.md`** (P0 blocker, chybí úplně)
@@ -195,4 +194,12 @@
 - ✅ **Session 51:** Block-level double-spend check do `validation.rs` + test (P0-B)
 - ✅ **Session 51:** Alertmanager aktivován + Telegram config vytvořen (P0-C)
 - ✅ **Session 51:** `MAX_TIMESTAMP_DRIFT` ověřen jako automaticky per-network (P0-D)
+- ✅ **Session 52:** Pool Docker fix Helsinki (zion-rpc-redirect.service vypnut, zion-pool:2.9.6-testnet spuštěn)
+- ✅ **Session 53:** 3-server topologie uzavřena (Helsinki+Usa+Asia), SeedDE+Usa1 decommissioned, docs/2.9.7/ vytvořena
+- ✅ **Session 54:** P2P fix — arm64→amd64 image na Usa+Asia, SEED_PEERS opraven na všech 3 nodech, Helsinki compose file
+- ✅ **Session 54:** `docs/2.9.7/STABILITY_LOG.md` vytvořen, 168h test spuštěn `2026-02-24 11:48 UTC`
+- ✅ **Session 54:** SERVERS.md SSH klíč opraven: `zion_servers_ed25519` → `zion_server_key`
+- ⏭️ **Další P0:** Telegram tokeny nastavit na serveru, genesis.json OFFLINE, docker images SHA-256, constitution FROZEN
+- ✅ **Session 54:** `docs/2.9.7/STABILITY_LOG.md` vytvořen, 168h test spuštěn `2026-02-24 11:48 UTC`
+- ✅ **Session 54:** SERVERS.md SSH klíč opraven: `zion_servers_ed25519` → `zion_server_key`
 - ⏭️ **Další P0:** Telegram tokeny nastavit na serveru, genesis.json OFFLINE, docker images SHA-256, constitution FROZEN
