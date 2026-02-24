@@ -466,6 +466,7 @@ let afterburnerReady = false;
 let afterburnerStdoutBuf = '';
 let afterburnerQueue = [];
 let afterburnerReqId = 1;
+let abLastConsoleEmitMs = 0; // rate-limit afterburner console line injection
 // AI Native integration (parallel to afterburner)
 let aiNativeProc = null;
 let aiNativeReady = false;
@@ -6404,6 +6405,30 @@ setInterval(() => {
         minerStats.afterburner_last_task_type = typeof st?.last_task_type === 'string' ? st.last_task_type : '';
         minerStats.afterburner_last_task_ms = typeof st?.last_task_duration_ms === 'number' ? st.last_task_duration_ms : '';
         minerStats.afterburner_avg_task_ms = typeof st?.avg_task_duration_ms === 'number' ? st.avg_task_duration_ms : '';
+
+        // Power / efficiency metrics (from WMI+TDP estimation or direct ADL)
+        minerStats.afterburner_gpu_power_w         = pm?.gpu_power_w        != null ? pm.gpu_power_w        : '';
+        minerStats.afterburner_gpu_util_pct        = pm?.gpu_util_pct       != null ? pm.gpu_util_pct       : '';
+        minerStats.afterburner_power_source        = pm?.power_source       != null ? pm.power_source       : '';
+        minerStats.afterburner_hashrate_per_watt   = pm?.hashrate_per_watt  != null ? pm.hashrate_per_watt  : '';
+        minerStats.afterburner_hashrate_per_watt_10s = pm?.hashrate_per_watt_10s != null ? pm.hashrate_per_watt_10s : '';
+        minerStats.afterburner_hashrate_per_watt_60s = pm?.hashrate_per_watt_60s != null ? pm.hashrate_per_watt_60s : '';
+        minerStats.afterburner_efficiency_hint     = pm?.efficiency_hint    != null ? pm.efficiency_hint    : '';
+
+        // Inject efficiency line into the mining console output (at most once per 60s)
+        if (pm?.efficiency_hint && pm?.gpu_power_w != null) {
+          const nowMs = Date.now();
+          if (nowMs - abLastConsoleEmitMs >= 60000) {
+            abLastConsoleEmitMs = nowMs;
+            const hpwK = pm.hashrate_per_watt ? Math.round(pm.hashrate_per_watt / 1000) : 0;
+            const pW   = Math.round(Number(pm.gpu_power_w));
+            const psrc = pm.power_source ? ` [${pm.power_source}]` : '';
+            sendToRenderer('miner-output', {
+              stream: 'stdout',
+              text: `[AFTERBURNER] ⚡ ${pm.efficiency_hint}  (${pW}W${psrc}  ${hpwK} kH/W)\n`
+            });
+          }
+        }
         scheduleStatsEmit();
       })
       .catch(() => {
