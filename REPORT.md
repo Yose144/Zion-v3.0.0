@@ -2191,3 +2191,40 @@ test result: ok. 40 passed; 0 failed
 - DAO multisig executor API je implementovaný a testně ověřený ✅
 - Následující krok: doplnit HTTP integration testy přes Axum Router + přidat endpoint-level audit logging (guardian/op_id)
 
+
+## Session 47 — DAO website v2.9 treasury multisig integrace (24. února 2026)
+
+**Soubory:** `APP&WEB/website-v2.9/src/lib/dao-api.ts`, `APP&WEB/website-v2.9/src/app/dao/page.tsx`
+
+### Co bylo dokončeno
+
+1. ✅ **DAO API klient rozšířen o treasury multisig endpointy**
+  - přidáno do `dao-api.ts`:
+    - `getDAOTreasuryOverview()` → `GET /api/dao/treasury`
+    - `submitTreasuryOperation()` → `POST /api/dao/treasury/submit`
+    - `signTreasuryOperation()` → `POST /api/dao/treasury/:op_id/sign`
+    - `executeTreasuryOperation()` → `POST /api/dao/treasury/:op_id/execute`
+  - nové TS typy: `DAOTreasuryOverview`, `TreasuryMultisigResult`
+
+2. ✅ **DAO page napojena na live treasury overview**
+  - `loadDAOData()` nyní načítá i treasury data paralelně se stats + proposals
+  - zobrazeny metriky: `multisig`, `available_zion`, `pending_operations`, `daily_spend_limit_zion`
+
+3. ✅ **Přidán operator panel pro multisig workflow**
+  - formulář pro:
+    - `X-DAO-Key`
+    - guardian adresu
+    - `op_id`
+    - JSON payload operace (`submit`)
+  - akce: **Submit / Sign / Execute**
+  - po každé akci probíhá refresh dat + UI feedback zpráva
+
+### Validace
+
+- ✅ Editor/TypeScript kontrola bez chyb v obou upravených souborech
+- ⚠️ `npm run lint` v tomto workspace nebyl spolehlivě dokončen kvůli Windows path + npm/cmd quoting konfliktu pro složku `APP&WEB`
+
+### Stav
+
+- DAO web nyní umí obsloužit backend multisig executor flow end-to-end (submit/sign/execute) ✅
+

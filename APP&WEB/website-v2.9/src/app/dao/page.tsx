@@ -9,10 +9,15 @@ import ProposalCard from '@/components/dao/ProposalCard';
 import GuardiansTreeClient from '@/components/GuardiansTreeClient';
 import { 
   getDAOStats, 
+  getDAOTreasuryOverview,
   getGovernanceProposals, 
   castGovernanceVote,
+  submitTreasuryOperation,
+  signTreasuryOperation,
+  executeTreasuryOperation,
   type GovernanceProposal,
-  type DAOStats as DAOStatsType 
+  type DAOStats as DAOStatsType,
+  type DAOTreasuryOverview,
 } from '@/lib/dao-api';
 
 const phases = [
@@ -50,9 +55,16 @@ const quickLinks = [
 
 export default function DaoPage() {
   const [stats, setStats] = useState<DAOStatsType | null>(null);
+  const [treasury, setTreasury] = useState<DAOTreasuryOverview | null>(null);
   const [proposals, setProposals] = useState<GovernanceProposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [daemonOnline, setDaemonOnline] = useState<boolean | null>(null);
+  const [operatorApiKey, setOperatorApiKey] = useState('');
+  const [operatorGuardian, setOperatorGuardian] = useState('');
+  const [operatorOpId, setOperatorOpId] = useState('');
+  const [operationJson, setOperationJson] = useState('{\n  "Transfer": {\n    "to": "zion1recipient...",\n    "amount_atomic": 1000000,\n    "purpose": "Treasury allocation",\n    "proposal_id": null\n  }\n}');
+  const [operatorLoading, setOperatorLoading] = useState(false);
+  const [operatorMessage, setOperatorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadDAOData();
@@ -61,12 +73,14 @@ export default function DaoPage() {
   async function loadDAOData() {
     try {
       setLoading(true);
-      const [statsData, proposalsData] = await Promise.all([
+      const [statsData, proposalsData, treasuryData] = await Promise.all([
         getDAOStats(),
-        getGovernanceProposals()
+        getGovernanceProposals(),
+        getDAOTreasuryOverview(),
       ]);
       setStats(statsData);
       setProposals(proposalsData);
+      setTreasury(treasuryData);
       // Daemon is considered online if we have > 0 proposals OR treasury > 0 and not default placeholder
       setDaemonOnline(proposalsData.length > 0 || statsData.governance.total_proposals > 0);
     } catch {
@@ -85,6 +99,71 @@ export default function DaoPage() {
     } catch (err) {
       console.error('Vote failed:', err);
       alert(err instanceof Error ? err.message : 'Failed to cast vote');
+    }
+  }
+
+  async function handleTreasurySubmit() {
+    try {
+      if (!operatorApiKey || !operatorGuardian || !operatorOpId) {
+        throw new Error('API key, guardian address and operation ID are required');
+      }
+      const operation = JSON.parse(operationJson) as Record<string, unknown>;
+      setOperatorLoading(true);
+      setOperatorMessage(null);
+      const result = await submitTreasuryOperation({
+        apiKey: operatorApiKey,
+        guardian: operatorGuardian,
+        op_id: operatorOpId,
+        operation,
+      });
+      setOperatorMessage(`Submitted ${result.op_id} (${result.signatures ?? 0}/${result.threshold ?? 0} signatures)`);
+      await loadDAOData();
+    } catch (err) {
+      setOperatorMessage(err instanceof Error ? err.message : 'Submit failed');
+    } finally {
+      setOperatorLoading(false);
+    }
+  }
+
+  async function handleTreasurySign() {
+    try {
+      if (!operatorApiKey || !operatorGuardian || !operatorOpId) {
+        throw new Error('API key, guardian address and operation ID are required');
+      }
+      setOperatorLoading(true);
+      setOperatorMessage(null);
+      const result = await signTreasuryOperation({
+        apiKey: operatorApiKey,
+        guardian: operatorGuardian,
+        op_id: operatorOpId,
+      });
+      setOperatorMessage(`Signed ${result.op_id} (${result.signatures ?? 0}/${result.threshold ?? 0} signatures)`);
+      await loadDAOData();
+    } catch (err) {
+      setOperatorMessage(err instanceof Error ? err.message : 'Sign failed');
+    } finally {
+      setOperatorLoading(false);
+    }
+  }
+
+  async function handleTreasuryExecute() {
+    try {
+      if (!operatorApiKey || !operatorGuardian || !operatorOpId) {
+        throw new Error('API key, guardian address and operation ID are required');
+      }
+      setOperatorLoading(true);
+      setOperatorMessage(null);
+      const result = await executeTreasuryOperation({
+        apiKey: operatorApiKey,
+        guardian: operatorGuardian,
+        op_id: operatorOpId,
+      });
+      setOperatorMessage(`Executed ${result.op_id} by ${result.executed_by ?? operatorGuardian}`);
+      await loadDAOData();
+    } catch (err) {
+      setOperatorMessage(err instanceof Error ? err.message : 'Execute failed');
+    } finally {
+      setOperatorLoading(false);
     }
   }
 
@@ -139,6 +218,66 @@ export default function DaoPage() {
             <DAOStats stats={stats} />
           </motion.section>
         )}
+
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
+          <div className="mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Treasury multisig</p>
+            <h2 className="text-3xl font-semibold text-white">Operator console</h2>
+            <p className="text-sm text-gray-400 mt-2">Submit, sign and execute treasury operations through DAO guardian multisig endpoints.</p>
+          </div>
+
+          {treasury && (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-wider text-gray-400">Multisig</p>
+                <p className="text-lg font-semibold text-white mt-1">{treasury.multisig}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-wider text-gray-400">Available</p>
+                <p className="text-lg font-semibold text-white mt-1">{treasury.available_zion.toLocaleString()} ZION</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-wider text-gray-400">Pending Ops</p>
+                <p className="text-lg font-semibold text-white mt-1">{treasury.pending_operations}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-wider text-gray-400">Daily Limit</p>
+                <p className="text-lg font-semibold text-white mt-1">{treasury.daily_spend_limit_zion.toLocaleString()} ZION</p>
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-4 md:grid-cols-2 mb-4">
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-gray-400">Operator API Key</label>
+              <input value={operatorApiKey} onChange={(e) => setOperatorApiKey(e.target.value)} type="password" className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-zion-gold/40" placeholder="X-DAO-Key" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-gray-400">Guardian Address</label>
+              <input value={operatorGuardian} onChange={(e) => setOperatorGuardian(e.target.value)} className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-zion-gold/40" placeholder="zion1guardian..." />
+            </div>
+          </div>
+
+          <div className="space-y-2 mb-4">
+            <label className="text-xs uppercase tracking-wider text-gray-400">Operation ID</label>
+            <input value={operatorOpId} onChange={(e) => setOperatorOpId(e.target.value)} className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-zion-gold/40" placeholder="op-2026-001" />
+          </div>
+
+          <div className="space-y-2 mb-5">
+            <label className="text-xs uppercase tracking-wider text-gray-400">Operation JSON (submit)</label>
+            <textarea value={operationJson} onChange={(e) => setOperationJson(e.target.value)} rows={8} className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-zion-gold/40" />
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button onClick={handleTreasurySubmit} disabled={operatorLoading} className="inline-flex items-center gap-2 rounded-xl bg-zion-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">Submit</button>
+            <button onClick={handleTreasurySign} disabled={operatorLoading} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">Sign</button>
+            <button onClick={handleTreasuryExecute} disabled={operatorLoading} className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-100 disabled:opacity-60">Execute</button>
+          </div>
+
+          {operatorMessage && (
+            <p className="mt-4 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200">{operatorMessage}</p>
+          )}
+        </motion.section>
 
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
           <div className="flex flex-col gap-2 mb-6">
