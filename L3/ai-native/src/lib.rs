@@ -24,9 +24,11 @@ pub mod consciousness_engine;
 pub mod error;
 pub mod memory;
 pub mod message_bus;
+pub mod oasis_bridge;
 pub mod orchestrator;
 pub mod pool_optimizer;
 pub mod task;
+pub mod telemetry;
 pub mod types;
 pub mod warp_agent;
 
@@ -39,4 +41,6 @@ pub use pool_optimizer::{PoolOptimizer, PoolRecommendation, PoolStats};
 pub use task::{AiTask, AiTaskType, TaskQueue, TaskStatus};
 pub use types::{Agent, AgentCapability, AgentMessage, AgentStatus};
 pub use message_bus::{AgentSubscriber, BusMessage, BusStats, MessageBus, SystemEvent};
+pub use oasis_bridge::{AgentOasisProfile, OasisBridge, OasisLevel, XpSyncRequest, l3_to_oasis_level, scale_xp_to_oasis};
+pub use telemetry::{NodeConfig, PoolRawStats, TelemetryFeed, TelemetryStats};
 pub use warp_agent::{FieldTopology, WarpField, WarpMode, WarpOptimizer, WarpStats};

@@ -3574,7 +3574,8 @@ function ensureAfterburnerServiceRunning() {
           PYTHONUTF8: '1',
           PYTHONIOENCODING: 'utf-8',
           PYTHONUNBUFFERED: '1',
-          PYTHONPATH: pyPath
+          PYTHONPATH: pyPath,
+          ZION_USER_DATA: USER_DATA_PATH,   // lets Python find miner_stats.json
         }
       });
 
