@@ -17,6 +17,7 @@
 //!                                         └──────────┘
 //! ```
 
+pub mod api;
 pub mod backend;
 pub mod error;
 pub mod pricing;
@@ -24,6 +25,7 @@ pub mod reputation;
 pub mod scheduler;
 pub mod types;
 
+pub use api::{create_router, NclAppState};
 pub use error::{NclError, NclResult};
 pub use pricing::PricingEngine;
 pub use reputation::{ReputationRecord, ReputationRegistry};
