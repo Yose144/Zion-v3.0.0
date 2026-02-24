@@ -35,8 +35,9 @@ def main() -> int:
     # We try a few common locations.
     here = os.path.abspath(os.path.dirname(__file__))
     candidates = [
-        os.path.abspath(os.path.join(here, "..", "..")),  # repo root (dev)
-        os.path.abspath(os.path.join(here, "..")),
+        here,                                               # resources/ itself
+        os.path.abspath(os.path.join(here, "..")),         # desktop-agent/ (ai/ subfolder lives here)
+        os.path.abspath(os.path.join(here, "..", "..")),  # APP&WEB/
         os.getcwd(),
     ]
     for p in candidates:
