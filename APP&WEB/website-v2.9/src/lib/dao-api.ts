@@ -14,6 +14,9 @@
  *   POST /api/dao/proposals          (X-DAO-Key required)
  *   POST /api/dao/proposals/:id/vote (X-DAO-Key required)
  *   GET  /api/dao/treasury
+ *   POST /api/dao/treasury/submit    (X-DAO-Key required)
+ *   POST /api/dao/treasury/:op_id/sign
+ *   POST /api/dao/treasury/:op_id/execute
  */
 
 const DAO_BASE =
@@ -100,6 +103,27 @@ export interface DAOHealth {
   status: string;
   total_proposals?: number;
   db_version?: string;
+}
+
+export interface DAOTreasuryOverview {
+  total_zion: number;
+  available_atomic: number;
+  available_zion: number;
+  addresses: string[];
+  multisig: string;
+  pending_operations: number;
+  daily_spend_limit_zion: number;
+  note?: string;
+}
+
+export interface TreasuryMultisigResult {
+  op_id: string;
+  signatures?: number;
+  threshold?: number;
+  ready?: boolean;
+  executed_by?: string;
+  amount_atomic?: number;
+  amount_zion?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -226,6 +250,86 @@ export async function getDAOStats(): Promise<DAOStats> {
     // DAO daemon not yet deployed — return placeholder so page looks good
     return PLACEHOLDER_STATS;
   }
+}
+
+/** GET /api/dao/treasury */
+export async function getDAOTreasuryOverview(): Promise<DAOTreasuryOverview | null> {
+  try {
+    const res = await daoFetch('/api/dao/treasury', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const raw = await res.json();
+    return (raw.data ?? raw) as DAOTreasuryOverview;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * POST /api/dao/treasury/submit
+ * operation format follows Rust TreasuryOperation enum JSON shape.
+ */
+export async function submitTreasuryOperation(input: {
+  apiKey: string;
+  op_id: string;
+  guardian: string;
+  operation: Record<string, unknown>;
+}): Promise<TreasuryMultisigResult> {
+  const res = await daoFetch('/api/dao/treasury/submit', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-DAO-Key': input.apiKey,
+    },
+    body: JSON.stringify({
+      op_id: input.op_id,
+      guardian: input.guardian,
+      operation: input.operation,
+    }),
+  });
+
+  const raw = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(raw.error || `Submit failed (${res.status})`);
+  return (raw.data ?? raw) as TreasuryMultisigResult;
+}
+
+/** POST /api/dao/treasury/:op_id/sign */
+export async function signTreasuryOperation(input: {
+  apiKey: string;
+  op_id: string;
+  guardian: string;
+}): Promise<TreasuryMultisigResult> {
+  const res = await daoFetch(`/api/dao/treasury/${encodeURIComponent(input.op_id)}/sign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-DAO-Key': input.apiKey,
+    },
+    body: JSON.stringify({ guardian: input.guardian }),
+  });
+
+  const raw = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(raw.error || `Sign failed (${res.status})`);
+  return (raw.data ?? raw) as TreasuryMultisigResult;
+}
+
+/** POST /api/dao/treasury/:op_id/execute */
+export async function executeTreasuryOperation(input: {
+  apiKey: string;
+  op_id: string;
+  guardian: string;
+}): Promise<TreasuryMultisigResult> {
+  const res = await daoFetch(`/api/dao/treasury/${encodeURIComponent(input.op_id)}/execute`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-DAO-Key': input.apiKey,
+    },
+    body: JSON.stringify({ guardian: input.guardian }),
+  });
+
+  const raw = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(raw.error || `Execute failed (${res.status})`);
+  return (raw.data ?? raw) as TreasuryMultisigResult;
 }
 
 /** GET /api/dao/proposals */
