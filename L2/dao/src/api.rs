@@ -598,6 +598,71 @@ async fn treasury_execute(
 mod tests {
     use super::*;
 
+    use std::sync::Arc;
+
+    use axum::extract::State;
+    use axum::http::HeaderMap;
+    use axum::Json;
+    use tokio::sync::Mutex;
+
+    use crate::config::GuardianConfig;
+    use crate::db::DaoDb;
+    use crate::metrics::DaoMetrics;
+    use crate::types::Guardian;
+
+    fn test_state() -> AppState {
+        let mut cfg = DaoConfig::default();
+        cfg.api_key = "test-key".to_string();
+        cfg.guardians = vec![
+            GuardianConfig {
+                name: "G1".to_string(),
+                address: "zion1guardian1".to_string(),
+                public_key: "pk1".to_string(),
+            },
+            GuardianConfig {
+                name: "G2".to_string(),
+                address: "zion1guardian2".to_string(),
+                public_key: "pk2".to_string(),
+            },
+            GuardianConfig {
+                name: "G3".to_string(),
+                address: "zion1guardian3".to_string(),
+                public_key: "pk3".to_string(),
+            },
+            GuardianConfig {
+                name: "G4".to_string(),
+                address: "zion1guardian4".to_string(),
+                public_key: "pk4".to_string(),
+            },
+            GuardianConfig {
+                name: "G5".to_string(),
+                address: "zion1guardian5".to_string(),
+                public_key: "pk5".to_string(),
+            },
+        ];
+
+        let db = DaoDb::in_memory().expect("in-memory dao db must open");
+        let treasury_guardians: Vec<Guardian> = cfg
+            .guardians
+            .iter()
+            .map(|g| Guardian {
+                name: g.name.clone(),
+                address: g.address.clone(),
+                public_key: g.public_key.clone(),
+                is_active: true,
+            })
+            .collect();
+        let treasury = Treasury::new(treasury_guardians, DAO_TREASURY_TOTAL);
+
+        AppState {
+            db: Arc::new(Mutex::new(db)),
+            config: Arc::new(cfg.clone()),
+            api_key: cfg.api_key.clone(),
+            metrics: DaoMetrics::new(),
+            treasury: Arc::new(Mutex::new(treasury)),
+        }
+    }
+
     #[test]
     fn test_api_key_check() {
         let mut headers = HeaderMap::new();
@@ -610,5 +675,96 @@ mod tests {
     fn test_api_key_missing() {
         let headers = HeaderMap::new();
         assert!(!check_api_key(&headers, "any"));
+    }
+
+    #[tokio::test]
+    async fn test_treasury_multisig_submit_sign_execute_flow() {
+        let state = test_state();
+        let mut headers = HeaderMap::new();
+        headers.insert("X-DAO-Key", "test-key".parse().unwrap());
+
+        let submit = SubmitTreasuryRequest {
+            op_id: "op-multisig-1".to_string(),
+            guardian: "zion1guardian1".to_string(),
+            operation: TreasuryOperation::Spend {
+                recipient: "zion1recipientxyz".to_string(),
+                amount: 1_000_000,
+                purpose: "integration test spend".to_string(),
+                proposal_id: 42,
+            },
+        };
+
+        let submit_res = treasury_submit(State(state.clone()), headers.clone(), Json(submit))
+            .await
+            .expect("submit should succeed");
+        let submit_json = submit_res.0;
+        assert_eq!(submit_json["data"]["signatures"], 1);
+        assert_eq!(submit_json["data"]["ready"], false);
+
+        for guardian in [
+            "zion1guardian2",
+            "zion1guardian3",
+            "zion1guardian4",
+            "zion1guardian5",
+        ] {
+            let sign_res = treasury_sign(
+                Path("op-multisig-1".to_string()),
+                State(state.clone()),
+                headers.clone(),
+                Json(SignTreasuryRequest {
+                    guardian: guardian.to_string(),
+                }),
+            )
+            .await
+            .expect("sign should succeed");
+
+            let sign_json = sign_res.0;
+            if guardian == "zion1guardian5" {
+                assert_eq!(sign_json["data"]["ready"], true);
+                assert_eq!(sign_json["data"]["signatures"], 5);
+            }
+        }
+
+        let exec_res = treasury_execute(
+            Path("op-multisig-1".to_string()),
+            State(state.clone()),
+            headers,
+            Json(ExecuteTreasuryRequest {
+                guardian: "zion1guardian1".to_string(),
+            }),
+        )
+        .await
+        .expect("execute should succeed after threshold");
+
+        let exec_json = exec_res.0;
+        assert_eq!(exec_json["data"]["executed_by"], "zion1guardian1");
+        assert_eq!(exec_json["data"]["amount_atomic"], 1_000_000);
+    }
+
+    #[tokio::test]
+    async fn test_treasury_submit_unauthorized_without_api_key() {
+        let state = test_state();
+        let headers = HeaderMap::new();
+
+        let res = treasury_submit(
+            State(state),
+            headers,
+            Json(SubmitTreasuryRequest {
+                op_id: "op-noauth".to_string(),
+                guardian: "zion1guardian1".to_string(),
+                operation: TreasuryOperation::Spend {
+                    recipient: "zion1recipientxyz".to_string(),
+                    amount: 1_000_000,
+                    purpose: "unauthorized".to_string(),
+                    proposal_id: 1,
+                },
+            }),
+        )
+        .await;
+
+        assert!(res.is_err());
+        let (code, body) = res.err().unwrap();
+        assert_eq!(code, StatusCode::UNAUTHORIZED);
+        assert_eq!(body.0["success"], false);
     }
 }

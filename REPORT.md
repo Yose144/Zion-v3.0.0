@@ -2136,3 +2136,58 @@ Status: Up (healthy), errors_total 0
 | zion-core | 2.9.6-fix2 | `7942be4a758d` | béžící L1 node |
 | zion-pool | native-ethash | `dc3a3e28b5a3` | pool stratum |
 
+---
+
+## Session 46 — DAO multisig executor API + testy (24. února 2026)
+
+**Commit:** `ac65493` (+ follow-up test commit v této session)  
+**Soubory:** `L2/dao/src/api.rs`, `L2/dao/src/main.rs`, `L2/dao/src/treasury.rs`
+
+### Co bylo dokončeno
+
+1. **DAO daemon state rozšířen o treasury runtime**
+  - `AppState` nyní obsahuje `treasury: Arc<Mutex<Treasury>>`
+  - `main.rs` inicializuje treasury z `cfg.guardians` a `DAO_TREASURY_TOTAL`
+
+2. **Nové multisig endpointy (write API)**
+  - `POST /api/dao/treasury/submit`
+  - `POST /api/dao/treasury/:op_id/sign`
+  - `POST /api/dao/treasury/:op_id/execute`
+
+3. **Treasury overview napojen na live stav**
+  - `GET /api/dao/treasury` vrací živé hodnoty:
+    - `available_atomic`, `available_zion`
+    - `pending_operations`
+    - dynamický `multisig` (`threshold-of-guardian_count`)
+
+4. **Metrics napojení**
+  - submit → `treasury_operations_submitted`, `guardian_signatures_collected`
+  - sign → `guardian_signatures_collected` (jen při novém podpisu)
+  - execute → `treasury_operations_executed`, `treasury_total_disbursed_zion`
+
+5. **Treasury helper API methods**
+  - přidáno: `guardian_count()`, `threshold()`, `pending_count()`, `pending_signatures()`, `is_guardian_address()`
+
+### Testy (ověřeno 24.2.2026)
+
+Přidány nové async testy do `L2/dao/src/api.rs`:
+
+- `test_treasury_multisig_submit_sign_execute_flow`
+  - ověřuje plný tok `submit → sign (5/5) → execute`
+  - validace `ready=false` po submit, `ready=true` na 5. podpisu, následné úspěšné execute
+- `test_treasury_submit_unauthorized_without_api_key`
+  - ověřuje `401 Unauthorized` bez `X-DAO-Key`
+
+**Výsledek:**
+
+```bash
+cargo test -p zion-dao --lib
+running 40 tests
+test result: ok. 40 passed; 0 failed
+```
+
+### Stav
+
+- DAO multisig executor API je implementovaný a testně ověřený ✅
+- Následující krok: doplnit HTTP integration testy přes Axum Router + přidat endpoint-level audit logging (guardian/op_id)
+
