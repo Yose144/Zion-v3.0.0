@@ -2,6 +2,40 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+// ─── NCL task type ────────────────────────────────────────────────────────────
+
+/// High-level AI task category — used for routing and pricing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum NclTaskType {
+    /// Text generation / LLM inference
+    LlmInference,
+    /// Image synthesis
+    ImageGeneration,
+    /// Fine-tuning / model training
+    ModelTraining,
+    /// Vector embeddings
+    Embeddings,
+    /// Code analysis, review
+    CodeAnalysis,
+    /// User-defined custom task
+    Custom,
+}
+
+impl std::fmt::Display for NclTaskType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::LlmInference    => write!(f, "llm_inference"),
+            Self::ImageGeneration => write!(f, "image_generation"),
+            Self::ModelTraining   => write!(f, "model_training"),
+            Self::Embeddings      => write!(f, "embeddings"),
+            Self::CodeAnalysis    => write!(f, "code_analysis"),
+            Self::Custom          => write!(f, "custom"),
+        }
+    }
+}
+
+// ─── Compute backends ────────────────────────────────────────────────────────
+
 /// Supported compute backends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ComputeBackend {
@@ -43,12 +77,18 @@ pub struct NclJob {
     pub id: Uuid,
     pub model_id: String,
     pub backend: ComputeBackend,
+    /// High-level task category (for routing and pricing decisions)
+    pub task_type: NclTaskType,
     pub input_hash: String,
     pub output_hash: Option<String>,
     pub status: NclJobStatus,
     pub submitter: String,
     pub worker_id: Option<String>,
     pub reward_atomic: u64,
+    /// Priority 1 (lowest) – 10 (highest); default 5
+    pub priority: u8,
+    /// Minimum miner consciousness level required to accept this job
+    pub min_consciousness: u8,
     pub created_at: DateTime<Utc>,
     pub completed_at: Option<DateTime<Utc>>,
     pub timeout_ms: u64,
@@ -67,16 +107,34 @@ impl NclJob {
             id: Uuid::new_v4(),
             model_id,
             backend,
+            task_type: NclTaskType::Custom,
             input_hash,
             output_hash: None,
             status: NclJobStatus::Queued,
             submitter,
             worker_id: None,
             reward_atomic,
+            priority: 5,
+            min_consciousness: 0,
             created_at: Utc::now(),
             completed_at: None,
             timeout_ms,
         }
+    }
+
+    pub fn with_priority(mut self, p: u8) -> Self {
+        self.priority = p.clamp(1, 10);
+        self
+    }
+
+    pub fn with_task_type(mut self, t: NclTaskType) -> Self {
+        self.task_type = t;
+        self
+    }
+
+    pub fn with_min_consciousness(mut self, level: u8) -> Self {
+        self.min_consciousness = level;
+        self
     }
 }
 
@@ -92,6 +150,8 @@ pub struct NclWorker {
     pub total_earned: u64,
     pub online: bool,
     pub last_heartbeat: DateTime<Utc>,
+    /// Miner consciousness level (affects job eligibility and pricing bonus)
+    pub consciousness_level: u8,
 }
 
 impl NclWorker {
@@ -106,6 +166,7 @@ impl NclWorker {
             total_earned: 0,
             online: true,
             last_heartbeat: Utc::now(),
+            consciousness_level: 0,
         }
     }
 
@@ -115,6 +176,11 @@ impl NclWorker {
 
     pub fn supports_backend(&self, backend: ComputeBackend) -> bool {
         self.backends.contains(&backend)
+    }
+
+    /// Returns `true` if worker meets the minimum consciousness requirement.
+    pub fn meets_consciousness(&self, min: u8) -> bool {
+        self.consciousness_level >= min
     }
 }
 

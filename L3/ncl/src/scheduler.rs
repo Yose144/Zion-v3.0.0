@@ -2,13 +2,24 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::error::{NclError, NclResult};
+use crate::reputation::ReputationRegistry;
 use crate::types::{NclJob, NclJobStatus, NclWorker};
 
 /// Job scheduler — assigns queued jobs to available workers.
+///
+/// ## Scheduling policy
+/// 1. **Priority-first**: higher-priority jobs are dispatched before lower-priority
+///    jobs (ties broken by FIFO — oldest first).
+/// 2. **Consciousness gate**: only workers that meet `job.min_consciousness`
+///    are considered.
+/// 3. **Reputation-weighted**: among eligible workers, the one with the
+///    highest reputation score wins.
 pub struct JobScheduler {
     jobs: HashMap<Uuid, NclJob>,
     workers: HashMap<String, NclWorker>,
     max_queue_size: usize,
+    /// Optional shared reputation registry (set via `with_reputation`)
+    reputation: Option<ReputationRegistry>,
 }
 
 impl JobScheduler {
@@ -17,7 +28,14 @@ impl JobScheduler {
             jobs: HashMap::new(),
             workers: HashMap::new(),
             max_queue_size,
+            reputation: None,
         }
+    }
+
+    /// Attach a reputation registry for reputation-weighted scheduling.
+    pub fn with_reputation(mut self, reg: ReputationRegistry) -> Self {
+        self.reputation = Some(reg);
+        self
     }
 
     /// Submit a new job to the queue.
@@ -44,30 +62,51 @@ impl JobScheduler {
     }
 
     /// Try to assign the next queued job to an available worker.
+    ///
+    /// Selection:
+    /// - Among queued jobs, pick the one with **highest priority** (then oldest).
+    /// - Among eligible workers, pick the one with **highest reputation score**
+    ///   (falls back to first available when no registry is attached).
     pub fn try_assign_next(&mut self) -> NclResult<Option<(Uuid, String)>> {
-        // Find the oldest queued job
-        let queued_job_id = self
+        // Find the best queued job (priority-first, then oldest)
+        let best_job = self
             .jobs
             .values()
             .filter(|j| j.status == NclJobStatus::Queued)
-            .min_by_key(|j| j.created_at)
-            .map(|j| (j.id, j.backend));
+            .max_by(|a, b| {
+                a.priority
+                    .cmp(&b.priority)
+                    .then(b.created_at.cmp(&a.created_at)) // older first on tie
+            });
 
-        let (job_id, backend) = match queued_job_id {
-            Some((id, b)) => (id, b),
+        let (job_id, backend, min_consciousness) = match best_job {
+            Some(j) => (j.id, j.backend, j.min_consciousness),
             None => return Ok(None),
         };
 
-        // Find an available worker that supports this backend
-        let worker_id = self
+        // Collect eligible workers
+        let eligible: Vec<&NclWorker> = self
             .workers
             .values()
-            .find(|w| w.has_capacity() && w.supports_backend(backend))
-            .map(|w| w.id.clone());
+            .filter(|w| {
+                w.has_capacity()
+                    && w.supports_backend(backend)
+                    && w.meets_consciousness(min_consciousness)
+            })
+            .collect();
 
-        let worker_id = match worker_id {
-            Some(id) => id,
-            None => return Err(NclError::NoWorkerAvailable(backend.to_string())),
+        if eligible.is_empty() {
+            return Err(NclError::NoWorkerAvailable(backend.to_string()));
+        }
+
+        // Pick best worker by reputation (or fallback to first eligible)
+        let worker_id: String = if let Some(rep) = &self.reputation {
+            let ids: Vec<&str> = eligible.iter().map(|w| w.id.as_str()).collect();
+            rep.best_worker(&ids)
+                .unwrap_or(eligible[0].id.as_str())
+                .to_string()
+        } else {
+            eligible[0].id.clone()
         };
 
         // Assign
@@ -92,11 +131,12 @@ impl JobScheduler {
         job.output_hash = Some(output_hash);
         job.completed_at = Some(chrono::Utc::now());
 
-        if let Some(worker_id) = &job.worker_id {
-            if let Some(worker) = self.workers.get_mut(worker_id) {
+        let reward = job.reward_atomic;
+        if let Some(worker_id) = job.worker_id.clone() {
+            if let Some(worker) = self.workers.get_mut(&worker_id) {
                 worker.active_jobs = worker.active_jobs.saturating_sub(1);
                 worker.total_completed += 1;
-                worker.total_earned += job.reward_atomic;
+                worker.total_earned += reward;
             }
         }
         Ok(())
@@ -110,13 +150,30 @@ impl JobScheduler {
             .ok_or_else(|| NclError::JobNotFound(job_id.to_string()))?;
         job.status = NclJobStatus::Failed;
 
-        if let Some(worker_id) = &job.worker_id {
-            if let Some(worker) = self.workers.get_mut(worker_id) {
+        if let Some(worker_id) = job.worker_id.clone() {
+            if let Some(worker) = self.workers.get_mut(&worker_id) {
                 worker.active_jobs = worker.active_jobs.saturating_sub(1);
             }
         }
         Ok(())
     }
+
+    /// Cancel a queued job (cannot cancel assigned/running jobs).
+    pub fn cancel_job(&mut self, job_id: Uuid) -> NclResult<()> {
+        let job = self
+            .jobs
+            .get_mut(&job_id)
+            .ok_or_else(|| NclError::JobNotFound(job_id.to_string()))?;
+        if job.status != NclJobStatus::Queued {
+            return Err(NclError::ExecutionFailed(
+                "Cannot cancel a job that is not queued".into(),
+            ));
+        }
+        job.status = NclJobStatus::Cancelled;
+        Ok(())
+    }
+
+    // ─── Stats ────────────────────────────────────────────────────────────
 
     pub fn get_job(&self, id: &Uuid) -> Option<&NclJob> {
         self.jobs.get(id)

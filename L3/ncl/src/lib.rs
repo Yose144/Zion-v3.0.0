@@ -20,10 +20,12 @@
 pub mod backend;
 pub mod error;
 pub mod pricing;
+pub mod reputation;
 pub mod scheduler;
 pub mod types;
 
 pub use error::{NclError, NclResult};
 pub use pricing::PricingEngine;
+pub use reputation::{ReputationRecord, ReputationRegistry};
 pub use scheduler::JobScheduler;
-pub use types::{ComputeBackend, NclJob, NclJobStatus, NclWorker};
+pub use types::{ComputeBackend, NclJob, NclJobStatus, NclTaskType, NclWorker};
