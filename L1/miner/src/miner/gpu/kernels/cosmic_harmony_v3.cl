@@ -4,7 +4,7 @@
 // Pool verification:  hash[0..4] as u32-LE  <=  target_u32
 //
 // Optimisations vs baseline:
-//   1. keccak_f1600 outer loop unrolled (#pragma unroll 24) - AMD JIT expands
+//   1. keccak_f1600 outer loop unrolled (#pragma unroll 4) - fast AMD JIT, low register pressure
 //   2. Rho+Pi inlined (no PILN/ROTC table lookups, no loop)
 //   3. Chi inlined per row macro (5 independent data-parallel rows)
 //   4. Byte-to-word packing via LOAD_U64_LE macro (single instruction sequence)
@@ -79,7 +79,7 @@ __constant ulong PHI_POWERS_FP[16] = {
 void keccak_f1600(ulong *st) {
     ulong bc0, bc1, bc2, bc3, bc4, t;
 
-    #pragma unroll 24
+    #pragma unroll 4
     for (int rnd = 0; rnd < 24; rnd++) {
         // Theta
         bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
@@ -250,7 +250,7 @@ void cosmic_fusion(const ulong *gm_words, uchar *output) {
 // Main Kernel
 // ============================================================================
 
-__kernel __attribute__((reqd_work_group_size(256, 1, 1)))
+__kernel
 void cosmic_harmony_v3_mine(
     __global const uchar* header,
     const uint  header_len,
@@ -266,7 +266,7 @@ void cosmic_harmony_v3_mine(
     uchar input[88];
     uint  clen = min(header_len, 80u);
 
-    #pragma unroll 80
+    #pragma unroll 16
     for (uint i = 0; i < 80; i++)
         input[i] = (i < clen) ? header[i] : 0;
 
