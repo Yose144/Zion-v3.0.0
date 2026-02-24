@@ -2251,3 +2251,79 @@ test result: ok. 40 passed; 0 failed
 - Tooling blocker pro spuštění lintu na Windows je odstraněn ✅
 - Ve workspace zůstávají starší, nesouvisející ESLint chyby v dalších UI souborech (mimo DAO multisig změnu)
 
+
+## Session 49 — GPU kernel unroll fix + miner rebuild (24. února 2026)
+
+**Commit:** `d5f5120`  
+**Soubory:** `L1/cosmic-harmony/src/opencl.rs` (OpenCL kernel), `APP&WEB/desktop-agent/resources/zion-universal-miner.exe`
+
+### Problém
+
+GPU miner se zasekával — nulový hashrate, log se zastavil za separátorem bez zprávy `[OpenCL] Building kernel...`. JIT kompilace kernelu na AMD RX 5600 XT trval příliš dlouho nebo selhávala tiše.
+
+### Root cause
+
+OpenCL kernel měl `#pragma unroll 24` a `#pragma unroll 80` + atribut `__attribute__((reqd_work_group_size(256,1,1)))`. AMD LLVM JIT backend (ROCm/GCN) při velkém unrollu generuje obrovský ISA → timeout nebo silent crash.
+
+### Co bylo opraveno
+
+1. ✅ **`#pragma unroll 24` → `#pragma unroll 4`** — hlavní smyčky v `golden_matrix` + `cosmic_fusion`
+2. ✅ **`#pragma unroll 80` → `#pragma unroll 16`** — finální iterace
+3. ✅ **`reqd_work_group_size(256,1,1)` odstraněn** — driver si vybírá optimální velikost sám
+4. ✅ **Miner rebuild** → 5,211,648 B (4.97 MB), nasazen do `resources/`
+
+---
+
+## Session 50 — Hluboký scan kódu + dokumentace (24. února 2026)
+
+**Commit:** `docs(session50): hluboky scan kodu, oprava constitution konfliktu, update checklist+servery`  
+**Soubory:** `docs/MAINNET_CONSTITUTION.md`, `docs/mainnet/MAINNET_CONSTITUTION.md`, `docs/mainnet/MAINNET_CHECKLIST.md`, `SERVERS.md`, `TODO.md`
+
+1. ✅ **Hluboký scan kódu L1–L4** — ověření stavu cratu, LOC potvrzeny
+2. ✅ **MAINNET_CONSTITUTION.md** — opraven git merge konflikt; verze sloučena
+3. ✅ **MAINNET_CHECKLIST.md** — aktualizovány statusy P0/P1 blokerů
+4. ✅ **SERVERS.md + TODO.md** — aktualizovány dle reálného stavu
+
+---
+
+## Session 51 — Oživení mining poolu (24. února 2026)
+
+**Server:** 77.42.31.72 (Helsinki / TreeOfLife)
+
+### Problém — Pool zcela mimo provoz
+
+Miner se stále zasekával i po opravě GPU kernelu (Session 49). Kompletní debug:
+
+1. **Test 25 s s přímým spuštěním binárky** — banner + `Found GPU: gfx1010` se zobrazily, pak absolutní ticho za separátorem. `[OpenCL] Building kernel...` se nikdy neobjevil.
+2. **Root cause:** GPU vlákno startuje až **po** navázání spojení se stratum poolem. Miner volá `miner.start().await?` → `TcpStream::connect("5.223.43.93:3333")` → OS čeká na TCP SYN timeout (~21 s) → opakuje → věčná smyčka.
+3. **Ověření:** `Test-NetConnection 5.223.43.93 3333` → `TcpTestSucceeded: False` — port 3333 zavřen na všech serverech.
+4. **Příčina:** Pool Docker kontejner nebyl spuštěn. Binárka `/opt/zion/pool/zion-pool` existovala, ale žádná systemd služba nebyla. Singapore server (5.223.56.124) byl reprovisioned — SSH host key se změnil.
+
+### Co bylo opraveno
+
+| Krok | Akce | Výsledek |
+|------|------|----------|
+| 1 | `pool_config.json`: wallet `ZION_POOL_WALLET_ADDRESS_HERE` → `zion1q893q6c5j7y0e3r062g4m7c240t5g294k7z6729` | Správná adresa |
+| 2 | `/etc/systemd/system/zion-pool.service` vytvořena (`WorkingDirectory=/opt/zion/pool`) | Pool startuje při bootu |
+| 3 | `/etc/systemd/system/zion-rpc-redirect.service` (socat `8080→8444`) | Stará binárka v2.9.5 volá port 8080; redirect opravuje RPC |
+| 4 | nginx `stream.d/zion-singapore-proxy.conf`: proxy `3334→127.0.0.1:3333` (bylo Singapore 5.223.56.124:3335) | nginx proxy funkční |
+| 5 | `systemctl start zion-pool && systemctl enable zion-pool` | Pool naslouchá na `0.0.0.0:3333` |
+
+### Ověření
+
+```
+TcpTestSucceeded: True  (77.42.31.72:3333 z Windows)
+Pool log: 📋 Forced template update: height=5206, difficulty=13966209
+Pool log: 🔐 Login attempt: wallet=zion1q893..., agent=zion-universal-miner/2.9.6
+Pool log: 🎚️  VarDiff retarget: diff 314 → 511
+```
+
+- Port 3333 naslouchá ✅
+- Blokové šablony z core RPC přijímány ✅
+- Miner se připojil a přihlásil ✅
+- VarDiff retarget → proof aktivní share submission ✅
+- Pool spouští se při bootu (`systemctl is-active` → `active`) ✅
+
+### Desktop agent
+
+`DEFAULT_CONFIG.pool` byl již nastaven na `77.42.31.72:3333`. `autoSelectBestPool()` automaticky přepne uživatele z nefunkčního Asia3 na Helsinki. Bez změny kódu agenta.
