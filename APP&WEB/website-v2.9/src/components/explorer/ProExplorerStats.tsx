@@ -123,9 +123,12 @@ export default function ProExplorerStats() {
   }, []);
 
   useEffect(() => {
-    fetchStats();
+    const initial = setTimeout(fetchStats, 0);
     const iv = setInterval(fetchStats, 12000);
-    return () => clearInterval(iv);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(iv);
+    };
   }, [fetchStats]);
 
   if (!stats && !error) {

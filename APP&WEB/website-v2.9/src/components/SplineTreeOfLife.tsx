@@ -7,18 +7,25 @@ import { OrbitControls, Sparkles, Stars } from '@react-three/drei';
 
 type Vec3 = [number, number, number];
 
+function pseudoRandom(seed: number): number {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453123;
+  return x - Math.floor(x);
+}
+
 function AncientTree() {
   const leaves = useMemo(() => {
     const arr: Array<{ p: [number, number, number]; s: number; c: string }> = [];
     for (let i = 0; i < 180; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const r = 0.6 + Math.random() * 2.4;
-      const h = 1.2 + Math.random() * 2.6;
+      const a = pseudoRandom(i * 7 + 1) * Math.PI * 2;
+      const r = 0.6 + pseudoRandom(i * 7 + 2) * 2.4;
+      const h = 1.2 + pseudoRandom(i * 7 + 3) * 2.6;
       const x = Math.cos(a) * r;
       const z = Math.sin(a) * r;
       const y = h;
-      const s = 0.08 + Math.random() * 0.16;
-      const c = Math.random() < 0.18 ? '#f7c35f' : Math.random() < 0.3 ? '#8da55c' : '#6f8f4a';
+      const s = 0.08 + pseudoRandom(i * 7 + 4) * 0.16;
+      const cRollA = pseudoRandom(i * 7 + 5);
+      const cRollB = pseudoRandom(i * 7 + 6);
+      const c = cRollA < 0.18 ? '#f7c35f' : cRollB < 0.3 ? '#8da55c' : '#6f8f4a';
       arr.push({ p: [x, y, z], s, c });
     }
     return arr;
@@ -105,9 +112,9 @@ function FireSanctuary() {
       const a = (i / 14) * Math.PI * 2;
       arr.push({
         p: [Math.cos(a) * 0.27, -0.35, Math.sin(a) * 0.17],
-        sx: 0.045 + Math.random() * 0.03,
-        sy: 0.02 + Math.random() * 0.02,
-        sz: 0.035 + Math.random() * 0.03,
+        sx: 0.045 + pseudoRandom(i * 3 + 11) * 0.03,
+        sy: 0.02 + pseudoRandom(i * 3 + 12) * 0.02,
+        sz: 0.035 + pseudoRandom(i * 3 + 13) * 0.03,
       });
     }
     return arr;
