@@ -54,7 +54,7 @@ except ImportError:
         ndarray = Any  # type: ignore
 
     np = _NpShim()  # type: ignore
-    print("⚠️  PyOpenCL not available - GPU mining disabled")
+    print("[WARN] PyOpenCL not available - GPU mining disabled")
 
 # Legacy v1/v2 imports removed — active algo is Cosmic Harmony v3 (height-aware)
 # All v2/v1 mining files have been cleaned from resources.

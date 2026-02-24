@@ -25,7 +25,7 @@ try:
     GPU_AVAILABLE = True
 except ImportError:
     GPU_AVAILABLE = False
-    print("⚠️  PyOpenCL not available - install with: pip install pyopencl")
+    print("[WARN] PyOpenCL not available - install with: pip install pyopencl")
 
 
 # OpenCL Kernel source (same as Rust version)
@@ -395,7 +395,7 @@ class CosmicHarmonyV3GPU:
             local_memory=self.device.local_mem_size,
         )
         
-        print(f"🚀 GPU initialized: {self.device_info}")
+        print(f"[GPU] Initialized: {self.device_info}")
         
         # Allocate buffers (CHv3 uses only the first 80 bytes of the header)
         self.header_buf = cl.Buffer(self.ctx, cl.mem_flags.READ_ONLY, 80)
@@ -531,7 +531,7 @@ class CosmicHarmonyV3GPU:
     ) -> List[bytes]:
         """Compute batch of hashes"""
         if len(block_header) > 80 and not self._warned_header_trim:
-            print(f"⚠️  CHv3 GPU: ignoring extra header bytes {len(block_header)} -> 80 (consensus)")
+            print(f"[WARN] CHv3 GPU: ignoring extra header bytes {len(block_header)} -> 80 (consensus)")
             self._warned_header_trim = True
 
         header_prefix = block_header[:80]
@@ -610,12 +610,12 @@ if __name__ == "__main__":
     print("=" * 60)
     
     if not GPU_AVAILABLE:
-        print("❌ PyOpenCL not installed!")
+        print("[ERR] PyOpenCL not installed!")
         print("   Install with: pip install pyopencl")
         exit(1)
     
     # List devices
-    print("\n📋 Available GPU Devices:")
+    print("\n>>> Available GPU Devices:")
     devices = CosmicHarmonyV3GPU.list_devices()
     if not devices:
         print("   No GPU devices found!")
@@ -632,20 +632,20 @@ if __name__ == "__main__":
             work_group_size=256,
         )
     except Exception as e:
-        print(f"❌ Failed to initialize GPU: {e}")
+        print(f"[ERR] Failed to initialize GPU: {e}")
         exit(1)
     
     # Benchmark
-    print("\n⏱️  Running 5-second benchmark...")
+    print("\n>>> Running 5-second benchmark...")
     hashrate = miner.benchmark(5.0)
     
-    print(f"\n📊 Results:")
+    print(f"\n>>> Results:")
     print(f"   Hashrate: {hashrate:,.0f} H/s ({hashrate/1_000_000:.2f} MH/s)")
     print(f"   Total hashes: {miner.total_hashes:,}")
     print(f"   Device: {miner.device_info.name}")
     
     # Verify hash correctness
-    print("\n🔍 Verifying hash correctness...")
+    print("\n>>> Verifying hash correctness...")
     hashes = miner.batch_hash(b"ZION test", 0, 10)
     print(f"   First hash: {hashes[0].hex()[:32]}...")
     print(f"   Unique hashes: {len(set(h.hex() for h in hashes))}/10")

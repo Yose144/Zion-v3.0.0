@@ -299,7 +299,7 @@ class CosmicHarmonyV3Python:
             self._backend = 'pysha3'
         else:
             self._backend = 'pure-python'
-        print(f"🐍 ZION CHv3 Python fallback loaded (Keccak: {self._backend})")
+        print(f"[OK] ZION CHv3 Python fallback loaded (Keccak: {self._backend})")
 
     @property
     def version(self) -> int:
