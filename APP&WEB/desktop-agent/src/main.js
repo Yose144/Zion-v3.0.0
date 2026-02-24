@@ -1007,6 +1007,8 @@ const DEFAULT_CONFIG = {
   // - Windows: prefer Rust by default (no fallback) to ensure users actually run the native miner.
   // - Other OS: keep auto for compatibility.
   minerBackend: process.platform === 'win32' ? 'rust' : 'auto',
+  // Python miner console style (used only when python backend is active).
+  pythonUi: 'trex',
   autoStart: false,
   autoSelectPool: true,
   minimizeToTray: true,
@@ -2336,6 +2338,7 @@ function startMining(config) {
       '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
       '--wallet', config.wallet,
       '--threads', String(zionThreads),
+      '--mode', mainMinerGpu ? (zionThreads > 0 ? 'dual' : 'gpu') : 'cpu',
       '--stats-file', STATS_PATH,
       '--stats-interval', String(STATS_INTERVAL_SEC),
       '--no-color'
@@ -2379,12 +2382,15 @@ function startMining(config) {
     }
   } else {
     // Python miner / legacy .exe miner (shared CLI)
+    const pythonUi = String(config?.pythonUi || process.env.ZION_PY_UI || 'trex').trim().toLowerCase();
+    const pythonUiResolved = ['lines', 'xmrig', 'trex'].includes(pythonUi) ? pythonUi : 'trex';
     args = [
       '--pool', `${config.pool.host}:${config.pool.port}`,
       '--wallet', config.wallet,
       '--worker', config.worker,
       '--threads', String(zionThreads),
       '--group', 'zion',
+      '--ui', pythonUiResolved,
       '--stats-interval', String(STATS_INTERVAL_SEC),
       '--stats-file', STATS_PATH
     ];
