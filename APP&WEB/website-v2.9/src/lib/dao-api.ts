@@ -175,7 +175,6 @@ async function daoFetch(path: string, init?: RequestInit): Promise<Response> {
 }
 
 /** Map Rust ProposalRow fields → GovernanceProposal used by the page */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapProposal(row: any): GovernanceProposal {
   return {
     id: row.id,
