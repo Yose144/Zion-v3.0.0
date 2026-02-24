@@ -111,5 +111,23 @@ fn main() {
     if cfg!(target_os = "linux") {
         println!("cargo:rustc-link-lib=m");
     }
+
+    // OpenCL: on Windows, provide search path for the generated OpenCL.lib import library.
+    // The library was generated from OpenCL.dll (installed by AMD/Intel/NVIDIA GPU drivers)
+    // using MSVC lib.exe and a standard OpenCL exports DEF file.
+    // Regenerate with: powershell -File make_opencl_lib.ps1 (in workspace root)
+    if std::env::var("CARGO_FEATURE_GPU").is_ok() && cfg!(target_os = "windows") {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let opencl_sdk = PathBuf::from(&manifest_dir)
+            .parent().unwrap()  // L1/
+            .parent().unwrap()  // workspace root
+            .join("opencl_sdk");
+        if opencl_sdk.exists() {
+            println!("cargo:rustc-link-search=native={}", opencl_sdk.display());
+        } else {
+            println!("cargo:warning=opencl_sdk/ not found — run make_opencl_lib.ps1 to generate OpenCL.lib for GPU builds on Windows.");
+        }
+        println!("cargo:rerun-if-changed=opencl_sdk/OpenCL.lib");
+    }
 }
 
