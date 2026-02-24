@@ -12,12 +12,41 @@
 |---------|---------|
 | **Rust LOC (L1–L4, deep scan)** | 64,288 |
 | **Crate count** | 11 (L1–L4), deep scan ověřil 10/11 |
-| **Testy celkem (ověřeno)** | 499 Rust + 96 Hardhat |
+| **Testy celkem (ověřeno)** | 500 Rust + 96 Hardhat (+1 block-level double-spend) |
 | **CI Build** | ✅ 4-job pipeline (L1, L2-L4, fmt, clippy) |
 | **Clippy warnings (deep scan)** | 46+ (core/verushash scan blokován) |
 | **cargo fmt** | ✅ čistý (zero diffs) |
-| **L1 připravenost** | **90%** |
-| **MainNet blokery** | 11 zbývá z 14 (P0-03 ✅ P0-04 ✅ P0-06 ✅) |
+| **L1 připravenost** | **92%** |
+| **MainNet blokery** | 7 zbývá (viz Session 51 níže) |
+
+---
+
+## Session 51 — 24. 2. 2026 (P0 blokkery)
+
+### Dokončeno
+
+| # | Akce | Soubory |
+|---|------|---------|
+| P0-A | `MAINNET_EXIT_CRITERIA.md` vytvořen (měřitelná gating kritéria) | `docs/mainnet/MAINNET_EXIT_CRITERIA.md` |
+| P0-B | Block-level double-spend check přidán do `validation.rs` | `L1/core/src/blockchain/validation.rs` (step 9b) |
+| P0-B | Block-level double-spend test `test_double_spend_block_level_rejected` | `L1/core/tests/sprint_1_2_test_suite.rs` |
+| P0-C | Alertmanager aktivován v `prometheus.yml` | `monitoring/prometheus/prometheus.yml` |
+| P0-C | Alertmanager service přidán do `docker-compose.monitoring.yml` | `docker/docker-compose.monitoring.yml` |
+| P0-C | Alertmanager config s Telegram routing vytvořen | `monitoring/alertmanager/alertmanager.yml` |
+| P0-D | `MAX_TIMESTAMP_DRIFT` ověřen — automaticky per-network (86400 testnet / 7200 mainnet) | `L1/core/src/blockchain/validation.rs` + `network.rs` |
+
+### Zbývající P0 blokkery před MainNet
+| ID | Blokker | Priorita |
+|----|---------|---------|
+| C-01 | 72h testnet stability window (formální, s důkazem) | 🔴 |
+| C-02 | Genesis blok vytvořit OFFLINE (genesis.json) | 🔴 |
+| C-03 | On-chain time-lock aktivovat v mainnet buildu | 🟠 |
+| C-04 | Docker images SHA-256 published | 🟠 |
+| C-04 | Alertmanager Telegram tokeny nastavit + test-incident | 🟠 |
+| C-05 | `MAINNET_CONSTITUTION.md` označit FROZEN (hash) | 🟠 |
+| algo | Algoritmus rotace — rozhodnutí dokumentovat | 🟡 |
+
+
 
 ---
 

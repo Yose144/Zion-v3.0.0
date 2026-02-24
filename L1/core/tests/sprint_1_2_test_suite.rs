@@ -288,6 +288,63 @@ fn test_restore_skips_coinbase() {
     assert_eq!(pool.size(), 0);
 }
 
+/// Block-level double-spend: two non-coinbase transactions in the same block
+/// spending the same UTXO must be rejected by validate_block.
+///
+/// This test is part of exit criterion C-02 (MAINNET_EXIT_CRITERIA.md).
+/// Validates the `9b. Block-level duplicate-input check` added to validation.rs.
+#[test]
+fn test_double_spend_block_level_rejected() {
+    let chain = build_chain(2, 1000);
+    let tip = chain.get_block(2).unwrap();
+    let current_ts = tip.header.timestamp + 120;
+
+    let zero_hash = "0000000000000000000000000000000000000000000000000000000000000000";
+
+    // Build a next block with two txs both spending "utxo_shared:0"
+    let coinbase = Transaction {
+        id: "coinbase_3".to_string(),
+        version: 1,
+        inputs: vec![TxInput {
+            prev_tx_hash: zero_hash.to_string(),
+            output_index: 0,
+            signature: "0".repeat(128),
+            public_key: "0".repeat(64),
+        }],
+        outputs: vec![TxOutput {
+            amount: 5_400_067_000,
+            address: "zion1miner".to_string(),
+        }],
+        fee: 0,
+        timestamp: current_ts,
+    };
+
+    let tx_a = make_tx("tx_spend_a", 5_000, vec![("utxo_shared", 0)], vec![900_000]);
+    let tx_b = make_tx("tx_spend_b", 5_000, vec![("utxo_shared", 0)], vec![800_000]);
+
+    let bad_block = Block::new(
+        1,
+        3,
+        tip.calculate_hash(),
+        current_ts,
+        tip.header.difficulty,
+        99999,
+        vec![coinbase, tx_a, tx_b],
+    );
+
+    let result = validation::validate_block(&bad_block, Some(&tip), current_ts + 10);
+    assert!(
+        result.is_err(),
+        "Block with two txs spending the same UTXO must be rejected"
+    );
+    let err = result.unwrap_err();
+    assert!(
+        err.contains("double-spend within block") || err.contains("duplicate input"),
+        "Expected double-spend error, got: {}",
+        err
+    );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 1.2.3 — Fork-Choice Tests
 // ═══════════════════════════════════════════════════════════════════════════

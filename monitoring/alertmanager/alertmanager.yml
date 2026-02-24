@@ -1,0 +1,99 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  ZION TerraNova — Alertmanager Configuration                 ║
+# ║  Routing: critical → Telegram, warning → Telegram            ║
+# ╚══════════════════════════════════════════════════════════════╝
+#
+# Potřebné ENV proměnné (nastavit v .env nebo přímo na serveru):
+#   TELEGRAM_BOT_TOKEN  — token Telegram bota (od @BotFather)
+#   TELEGRAM_CHAT_ID    — ID skupiny/kanálu (získat přes @userinfobot)
+#
+# Deploy:
+#   docker compose -f docker/docker-compose.monitoring.yml up -d alertmanager
+#
+# Test alertu:
+#   curl -X POST http://localhost:9093/api/v1/alerts \
+#     -H 'Content-Type: application/json' \
+#     -d '[{"labels":{"alertname":"TestAlert","severity":"critical"},"annotations":{"summary":"Test z Alertmanager"}}]'
+
+global:
+  resolve_timeout: 5m
+  # Jak dlouho čekat po resolve než poslat "RESOLVED" notifikaci
+  smtp_require_tls: true
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# ── Routing ──────────────────────────────────────────────────────────────
+route:
+  # Výchozí příjemce
+  receiver: "telegram-ops"
+  group_by: ["alertname", "server", "severity"]
+  group_wait: 30s        # Čekat na první report před odesláním
+  group_interval: 5m     # Minimum mezi skupinovými zprávami
+  repeat_interval: 4h    # Opakovat pokud alert stále trvá
+
+  routes:
+    # Critical alertes → okamžitý Telegram
+    - match:
+        severity: critical
+      receiver: "telegram-ops"
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: false
+
+    # Warning alertes → Telegram, méně urgentní
+    - match:
+        severity: warning
+      receiver: "telegram-ops"
+      group_wait: 1m
+      repeat_interval: 6h
+      continue: false
+
+    # Infra alertes (disk, RAM)
+    - match:
+        team: infra
+      receiver: "telegram-ops"
+      group_wait: 30s
+      repeat_interval: 2h
+
+# ── Inhibition (potlačení duplicitních alertů) ──────────────────────────
+inhibit_rules:
+  # Pokud je node DOWN, potlač všechny ostatní warning z toho serveru
+  - source_match:
+      severity: "critical"
+      alertname: "CoreNodeDown"
+    target_match:
+      severity: "warning"
+    equal:
+      - server
+
+  - source_match:
+      severity: "critical"
+      alertname: "PoolDown"
+    target_match:
+      severity: "warning"
+      alertname: "PoolNoShares"
+    equal:
+      - server
+
+# ── Receivers ────────────────────────────────────────────────────────────
+receivers:
+  - name: "telegram-ops"
+    telegram_configs:
+      - bot_token: "${TELEGRAM_BOT_TOKEN}"
+        chat_id: ${TELEGRAM_CHAT_ID}
+        parse_mode: "HTML"
+        message: |
+          {{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} <b>{{ .GroupLabels.alertname }}</b>
+          🖥️ Server: <code>{{ .CommonLabels.server }}</code>
+          ⚠️ Severity: <b>{{ .CommonLabels.severity }}</b>
+          📊 Alerts: {{ len .Alerts }}
+
+          {{ range .Alerts }}
+          ▸ <b>{{ .Annotations.summary }}</b>
+          {{ .Annotations.description }}
+          🕐 Started: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+
+          🌐 <a href="http://77.42.31.72:9093">Alertmanager</a> | <a href="http://77.42.31.72:3001">Grafana</a>
+        send_resolved: true
