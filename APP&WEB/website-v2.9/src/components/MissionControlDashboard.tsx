@@ -56,10 +56,8 @@ interface DashData {
   timestamp?: string;
   stability_run?: StabilityRun;
   helsinki?: ServerNode;
-  seedde?: ServerNode;
-  usa1?: ServerNode;
-  usa2?: ServerNode;
-  asia3?: ServerNode;
+  usa?: ServerNode;
+  asia?: ServerNode;
   log_tail?: string;
 }
 
@@ -395,12 +393,12 @@ export default function MissionControlDashboard() {
 
   const sr = data?.stability_run;
   const hStats = data?.helsinki?.stats;
-  const sStats = data?.seedde?.stats;
+  const sStats = data?.usa?.stats;
   const hH = hStats?.height ?? 0;
   const sH = sStats?.height ?? 0;
-  const allNodes = [data?.helsinki, data?.seedde, data?.usa1, data?.usa2, data?.asia3];
+  const allNodes = [data?.helsinki, data?.usa, data?.asia];
   const onlineCount = allNodes.filter(n => n?.stats?.status === 'OK' || n?.stats?.status === 'ok' || n?.stats?.status === 'healthy').length;
-  const allHealthy = onlineCount === 5;
+  const allHealthy = onlineCount === 3;
   const anyHealthy = onlineCount > 0;
 
   return (
@@ -434,7 +432,7 @@ export default function MissionControlDashboard() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE DATA · 30s refresh
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> 5 Nodes · 5 Continents
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> 3 Nodes · 3 Continents
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? 'All Systems Healthy' : anyHealthy ? 'Partial Systems Up' : 'Systems Monitoring'}
@@ -507,7 +505,7 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Stability</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Gauge className="h-7 w-7 text-cyan-400" />
-                  168h Stability Run — 5 Nodes · 5 Continents
+                  168h Stability Run — 3 Nodes · 3 Continents
                 </h2>
               </div>
               <BigProgress sr={sr} />
@@ -535,16 +533,14 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <Stat label="Network" value={hStats?.network ?? 'testnet'} color="text-cyan-400" />
-                <Stat label="Total Peers" value={fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0))} sub={`${onlineCount}/5 nodes online`} mono />
+                <Stat label="Total Peers" value={fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0))} sub={`${onlineCount}/3 nodes online`} mono />
                 <Stat label="Difficulty" value={fmt(hStats?.difficulty)} mono />
                 <Stat label="Sync Status" value={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'SYNCED ✓' : hH > 0 ? 'RUNNING' : '—'} color={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
               </div>
               <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-5">
                 <ServerCard node={data.helsinki} name="Helsinki" flag="🇫🇮" ip="77.42.31.72 · 8GB · aarch64" />
-                <ServerCard node={data.seedde}  name="SeedDE"   flag="🇩🇪" ip="46.225.126.243 · 4GB · aarch64" />
-                <ServerCard node={data.usa1}    name="Usa1"     flag="🇺🇸" ip="5.78.178.227 · 4GB · amd64" />
-                <ServerCard node={data.usa2}    name="Usa2"     flag="🇺🇸" ip="178.156.240.160 · 4GB · amd64" />
-                <ServerCard node={data.asia3}   name="Asia3"    flag="🌏" ip="5.223.43.93 · 4GB · amd64" />
+                <ServerCard node={data.usa}     name="Usa"      flag="🇺🇸" ip="178.156.240.160 · 4GB · amd64" />
+                <ServerCard node={data.asia}    name="Asia"     flag="🌏" ip="5.223.43.93 · 4GB · amd64" />
               </div>
             </motion.section>
 
@@ -638,7 +634,7 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Logs</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Activity className="h-7 w-7 text-cyan-400" />
-                  Monitoring Log (5 Nodes)
+                  Monitoring Log (3 Nodes)
                 </h2>
               </div>
               <LogConsole logTail={data.log_tail} />
