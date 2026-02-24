@@ -49,7 +49,7 @@
 - 🟢 Usa1/Usa2/Asia3: stabilní, core+miner+mysterium
 
 ### Kontejnery
-- **Helsinki**: `zion-bridge` ✅ (nově!), `zion-website` ✅ (nově!), `zion-core`, `zion-mysterium`, `zion-nkn`, `zion-redis`, `zion-grafana`, `zion-prometheus` — NO miners/pool (♟ RAM cleanup)
+- **Helsinki**: `zion-bridge` ✅, `zion-website` ✅, `zion-core`, `zion-pool:2.9.6-testnet` ✅ **(Docker spuštěn Session 52, ports 3333+8080)**, `zion-mysterium`, `zion-nkn`, `zion-redis`, `zion-grafana`, `zion-prometheus` — NO miners (♟ RAM cleanup)
 - **SeedDE**: `zion-core` (38h), `zion-miner` (24 min restart!), `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium`, `zion-nkn`
 - **Usa1/Asia3**: `zion-core`, `zion-miner`, `zion-xmr-x86`, `zion-mysterium`
 
@@ -132,6 +132,7 @@
 - [x] **`MAINNET_EXIT_CRITERIA.md`** vytvořen — `docs/mainnet/MAINNET_EXIT_CRITERIA.md`
 - [x] **Alertmanager** — aktivován v prometheus.yml, service přidán do docker-compose.monitoring.yml, config s Telegram routing vytvořen (`monitoring/alertmanager/alertmanager.yml`)
 - [ ] **Alertmanager Telegram tokeny nastavit na serveru** a otestovat test-incident (env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`)
+- [x] **Pool Docker spuštěn na Helsinki** — `zion-rpc-redirect.service` (socat) vypnut; `zion-pool:2.9.6-testnet` běží jako Docker (3333+8080, `zion-net`)
 - [ ] **Docker images SHA-256 published** (release flow chybí)
 - [ ] **`MAINNET_CONSTITUTION.md` označit FROZEN** (SHA-256 hash v signatování)
 

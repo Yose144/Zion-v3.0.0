@@ -17,7 +17,7 @@
 | **Clippy warnings (deep scan)** | 46+ (core/verushash scan blokován) |
 | **cargo fmt** | ✅ čistý (zero diffs) |
 | **L1 připravenost** | **92%** |
-| **MainNet blokery** | 7 zbývá (viz Session 51 níže) |
+| **MainNet blokery** | 7 zbývá (viz Session 52 níže) |
 
 ---
 
@@ -50,6 +50,31 @@
 
 ---
 
+## Session 52 — 24. 2. 2026 (Pool Docker fix + Server topology)
+
+### Dokončeno
+
+| # | Akce | Detail |
+|---|------|--------|
+| S52-A | **Pool Docker fix Helsinki** | Odstraněn systemd `zion-rpc-redirect.service` (socat 8080→8444 respawn blocker); `zion-pool:2.9.6-testnet` spuštěn jako Docker (`--restart unless-stopped`, network `zion-net`, ports 3333+8080) |
+| S52-B | **`REDIS_URL` opravena** | Native pool config měl `redis://127.0.0.1:6379` bez auth → Docker container dostane `redis://:ZionTestNet2025SecureR3d1s@zion-redis:6379` |
+| S52-C | **Server topology rozhodnuta** | Mainnet: **Helsinki + Usa1 + Usa2 + Asia3** (SeedDE decommission — geografická diverzita) |
+| S52-D | **Revenue out of 2.9.7 scope** | Mysterium/XMR/DAO payout revenue: zpracovat v 2.9.8 |
+
+### Zbývající P0 blokkery (po Session 52)
+| ID | Blokker | Priorita |
+|----|---------|---------|
+| C-01 | 72h testnet stability window (formální, s důkazem) | 🔴 |
+| C-02 | Genesis blok vytvořit OFFLINE (genesis.json) | 🔴 |
+| C-03 | On-chain time-lock aktivovat v mainnet buildu | 🟠 |
+| C-04 | Docker images SHA-256 published | 🟠 |
+| C-04 | Alertmanager Telegram tokeny nastavit + test-incident | 🟠 |
+| C-04 | 2.9.7 Code Freeze — `docs/mainnet/API_ENDPOINTS.md` canonical single source | 🟠 |
+| C-05 | `MAINNET_CONSTITUTION.md` označit FROZEN (hash) | 🟠 |
+| algo | Algoritmus rotace — rozhodnutí dokumentovat | 🟡 |
+
+---
+
 ## L1 ⛏️ Blockchain Core — 90% ready
 
 | Crate | LOC (skutečné) | Testů | Stav |
@@ -65,7 +90,7 @@
 
 | Server | IP | Stav |
 |--------|----|------|
-| Helsinki 🇫🇮 (TreeofLife) | 77.42.31.72 | ✅ Seed + Pool + Web — Docker 2.9.6-testnet |
+| Helsinki 🇫🇮 (TreeofLife) | 77.42.31.72 | ✅ Seed + Pool + Web — Docker 2.9.6-testnet (`zion-pool` Docker ✅ Session 52) |
 | SeedDE 🇩🇪 (Seed) | 46.225.126.243 | ✅ zion-core Up (seed node) |
 | Usa1 🇺🇸 (Seed2) | 5.78.178.227 | ✅ zion-core Up (seed node, native amd64) |
 | Usa2 🇺🇸 (Seed3) | 178.156.240.160 | ✅ zion-core Up (seed node, native amd64) |
