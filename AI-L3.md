@@ -2,8 +2,8 @@
 
 > Workspace: `C:\Users\anaha\Desktop\ZION\2.9.6-main`  
 > Branch: `main` → `https://github.com/Yose144/2.9.6.git`  
-> Datum aktualizace: 2026-02-24  
-> Stav: **AKTIVNÍ VÝVOJ** — fáze L3-A až L3-D dokončeny ✅
+> Datum aktualizace: 2026-02-25  
+> Stav: **AKTIVNÍ VÝVOJ** — fáze L3-A až L3-H dokončeny ✅
 
 ---
 
@@ -43,17 +43,21 @@ Portováno z `Zion-2.9.5-main/2.9-History/ai/` — 70+ Python souborů:
 |---|---|
 | `bc29b3a` | feat(L3): AI-native + NCL vrstva z Python 2.9 historie |
 | `a411872` | feat(L3): ConsciousnessEngine + NCL REST API + architektonická dokumentace |
+| `a59134d` | docs: AI-L3.md - postup vývoje L3 AI/Orchestration vrstvy |
+| `8b5ef85` | feat(L3): E+F — MessageBus + SQLite JobStore |
+| `2180fa4` | docs: AI-L3.md update — L3-E/F completed, 111 tests |
+| `28b3509` | feat(L3): G+H — Live pool telemetry feed + L4 Oasis bridge [132 tests] |
 
 ---
 
 ## Aktuální stav testů
 
 ```
-zion-ai-native:   67 unit testů  ✅  (+8 message_bus)
-zion-ncl:         42 unit testů  ✅  (+8 store)
+zion-ai-native:   88 unit testů  ✅  (+8 telemetry, +11 oasis_bridge)
+zion-ncl:         42 unit testů  ✅
 doctests:          2 testů       ✅
 ──────────────────────────────────
-Celkem:           111 testů, 0 selhání, 0 varování
+Celkem:           132 testů, 0 selhání, 0 varování
 ```
 
 Spuštění:
@@ -121,7 +125,28 @@ cargo test -p zion-ai-native -p zion-ncl
 - `on_level_up(n)` — upgrade topologie, reset coherence
 - 6 testů
 
-### `message_bus.rs` ✅ NOVÝ (L3-E)
+### `telemetry.rs` ✅ NOVÝ (L3-G)
+- Přemosťuje živá L1 pool data do `PoolOptimizer` bez HTTP klienta v crate
+- `PoolRawStats` — deserializovatelný z `GET /stats` odpovědi, serializovatelný
+- `TelemetryFeed::ingest(raw)` → `Option<PoolRecommendation>`, rolling history (cap=200)
+- `TelemetryFeed::ingest_many(snaps)` — batch ingestion
+- `TelemetryFeed::stats()` → `TelemetryStats { ingested, errors, history_len, known_pools, recommendation }`
+- `NodeConfig::mainnet()` — Helsinki `77.42.31.72:8080`
+- Uptime % = min(uptime_s, 604800) / 604800 × 100 (7-denní okno)
+- 8 testů
+
+### `oasis_bridge.rs` ✅ NOVÝ (L3-H)
+- Mapuje stav L3 `ConsciousnessEngine` na L4 Oasis profily hráče
+- `OasisLevel` enum: `Physical(1)` → `OnTheStar(9)` — mirror L4 bez cross-dep
+  - `xp_threshold()`: 0 / 1K / 5K / 15K / 50K / 150K / 500K / 2M / 10M
+  - `multiplier()`: 1.0 / 1.2 / 1.5 / 2.0 / 3.0 / 5.0 / 8.0 / 12.0 / 15.0
+- `l3_to_oasis_level(ConsciousnessLevel) -> OasisLevel`:
+  Dormant→Physical, Aware→Emotional, Sentient→Mental, Transcendent→Intuitional, Omniscient→Spiritual, Cosmic→Cosmic
+- `scale_xp_to_oasis(l3_xp: u64) -> u64` — faktor ×10 (L3 Cosmic 1M → L4 10M = OnTheStar)
+- `OasisBridge::new(wallet, agent_id)` + `sync(&status) -> AgentOasisProfile`
+- `AgentOasisProfile` — snapshot pro L4 API, obsahuje `warp_boost`, `effective_multiplier`
+- `XpSyncRequest` — POST payload pro `L4 /api/oasis/xp/sync`
+- 11 testů
 - `BusMessage` enum: `Direct { to, msg }` | `Broadcast { msg }` | `System(SystemEvent)`
 - `SystemEvent`: `AgentConnected(Uuid)` | `AgentDisconnected(Uuid)` | `OrchestratorStarted` | `Shutdown` | `Custom(String)`
 - `MessageBus::new(capacity)` — `tokio::sync::broadcast` kanál, klonování sdílí kanál
@@ -236,8 +261,8 @@ Viz [`docs/v2.9.6/L3_AI_ARCHITECTURE.md`](docs/v2.9.6/L3_AI_ARCHITECTURE.md) —
 | L3-D2 | NCL REST API (`api.rs`) | Vysoká | ✅ Hotovo |
 | L3-E | Agent messaging bus | Střední | ✅ Hotovo |
 | L3-F | Perzistentní job store (SQLite) | Střední | ✅ Hotovo |
-| L3-G | Live L1 pool telemetrie → PoolOptimizer | Nízká | ⬜ Nezačato |
-| L3-H | L4/Oasis integrace (vědomí ↔ on-chain XP) | Budoucí | ⬜ Nezačato |
+| L3-G | Live L1 pool telemetrie → PoolOptimizer | Nízká | ✅ Hotovo |
+| L3-H | L4/Oasis integrace (vědomí ↔ on-chain XP) | Budoucí | ✅ Hotovo |
 
 ### L3-E — Agent messaging bus
 - Soubor: `L3/ai-native/src/message_bus.rs`
@@ -251,13 +276,16 @@ Viz [`docs/v2.9.6/L3_AI_ARCHITECTURE.md`](docs/v2.9.6/L3_AI_ARCHITECTURE.md) —
 - SQLite-backed perzistence jobů (přežijí restart)
 - Integrační bod: `JobScheduler` volitelně podložen store
 
-### L3-G — Live L1 pool telemetrie
-- Napojit odpovědi RPC uzlů L1 do `PoolOptimizer::update_pool()`
-- Potřeba L1/RPC klient nebo gRPC binding
-- Node Helsinki: `77.42.31.72` (pool+seed)
+### L3-G — Live L1 pool telemetrie ✅
+- Soubor: `L3/ai-native/src/telemetry.rs`
+- `PoolRawStats` deserializovatelný z `/stats` JSON endpointu
+- `TelemetryFeed` obaluje `PoolOptimizer`, caller dodá data (no-reqwest design)
+- Node Helsinki: `77.42.31.72:8080`
 
-### L3-H — L4/Oasis integrace
-- `ConsciousnessEngine::status()` vrací serializovatelný `ConsciousnessStatus`
+### L3-H — L4/Oasis integrace ✅
+- Soubor: `L3/ai-native/src/oasis_bridge.rs`
+- `OasisBridge::sync()` → `AgentOasisProfile` s kompletním XP mapováním
+- `XpSyncRequest` připraven pro volání `L4 /api/oasis/xp/sync`
 - Připraveno pro sync on-chain až bude L4 postaven
 
 ---
@@ -272,6 +300,10 @@ Viz [`docs/v2.9.6/L3_AI_ARCHITECTURE.md`](docs/v2.9.6/L3_AI_ARCHITECTURE.md) —
 - `ReputationRegistry::leaderboard()` vrací `Vec<(&str, f64)>` (id + skóre)
 - `ConsciousnessLevel` má 6 variant (0=Dormant → 5=Cosmic), používá `zion-ai-native`
 - NCL worker consciousness používá prostý `u8` (0–255), odděleno od `ConsciousnessLevel`
+- L3→L4 XP faktor: **×10** (L3 Cosmic 1 000 000 XP → L4 10 000 000 = OnTheStar)
+- L3→L4 level mapování: Dormant→Physical, Aware→Emotional, Sentient→Mental, Transcendent→Intuitional, Omniscient→Spiritual, Cosmic→Cosmic
+- `zion-ai-native` neobsahuje HTTP klienta (reqwest) — caller poskytuje `PoolRawStats`
+- Pool API node: Helsinki `77.42.31.72:8080`
 
 ---
 
@@ -296,4 +328,4 @@ axum = "0.7"
 
 ---
 
-*Dokument generován automaticky z průběhu Session 55–56 vývoje ZION 2.9.6*
+*Dokument generován automaticky z průběhu Session 55–57 vývoje ZION 2.9.6*
