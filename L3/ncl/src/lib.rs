@@ -23,11 +23,13 @@ pub mod error;
 pub mod pricing;
 pub mod reputation;
 pub mod scheduler;
+pub mod store;
 pub mod types;
 
 pub use api::{create_router, NclAppState};
 pub use error::{NclError, NclResult};
 pub use pricing::PricingEngine;
 pub use reputation::{ReputationRecord, ReputationRegistry};
+pub use store::JobStore;
 pub use scheduler::JobScheduler;
 pub use types::{ComputeBackend, NclJob, NclJobStatus, NclTaskType, NclWorker};

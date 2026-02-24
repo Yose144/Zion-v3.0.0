@@ -23,6 +23,7 @@ pub mod consciousness;
 pub mod consciousness_engine;
 pub mod error;
 pub mod memory;
+pub mod message_bus;
 pub mod orchestrator;
 pub mod pool_optimizer;
 pub mod task;
@@ -37,4 +38,5 @@ pub use orchestrator::{weighted_majority, AgentVote, AgentWeights, Orchestrator,
 pub use pool_optimizer::{PoolOptimizer, PoolRecommendation, PoolStats};
 pub use task::{AiTask, AiTaskType, TaskQueue, TaskStatus};
 pub use types::{Agent, AgentCapability, AgentMessage, AgentStatus};
+pub use message_bus::{AgentSubscriber, BusMessage, BusStats, MessageBus, SystemEvent};
 pub use warp_agent::{FieldTopology, WarpField, WarpMode, WarpOptimizer, WarpStats};
