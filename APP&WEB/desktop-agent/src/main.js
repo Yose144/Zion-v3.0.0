@@ -5126,6 +5126,178 @@ ipcMain.handle('bridge-prepare-lock', async (event, evmRecipient) => {
 });
 
 // ============================================================================
+// L2 DAO IPC HANDLERS  (Governance, Treasury, Proposals)
+// Forwards to the zion-dao REST API running on :8080
+// ============================================================================
+
+const DAO_API_BASE = 'http://77.42.31.72:8080';
+const DAO_API_KEY  = process.env.ZION_DAO_API_KEY || '';
+
+async function daoFetch(path, opts = {}) {
+  const url = DAO_API_BASE + path;
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (DAO_API_KEY) headers['X-DAO-Key'] = DAO_API_KEY;
+  const res = await fetch(url, { ...opts, headers });
+  const json = await res.json();
+  if (json && json.success === false) throw new Error(json.error || 'DAO API error');
+  return json;
+}
+
+ipcMain.handle('dao-health', async () => {
+  try {
+    const data = await daoFetch('/api/dao/health');
+    return { success: true, ...((data && data.data) || data) };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('dao-get-stats', async () => {
+  try {
+    const data = await daoFetch('/api/dao/stats');
+    return { success: true, ...((data && data.data) || data) };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('dao-get-proposals', async (event, params = {}) => {
+  try {
+    const qs = new URLSearchParams();
+    if (params.page)  qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const q = qs.toString() ? '?' + qs.toString() : '';
+    const data = await daoFetch(`/api/dao/proposals${q}`);
+    const proposals = (data && data.data) ? data.data : data;
+    return { success: true, proposals };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('dao-get-proposal', async (event, id) => {
+  try {
+    const data = await daoFetch(`/api/dao/proposals/${id}`);
+    return { success: true, proposal: (data && data.data) || data };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('dao-create-proposal', async (event, body) => {
+  try {
+    const data = await daoFetch('/api/dao/proposals', {
+      method: 'POST',
+      body: JSON.stringify(body || {}),
+    });
+    return { success: true, proposal: (data && data.data) || data };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('dao-get-votes', async (event, id) => {
+  try {
+    const data = await daoFetch(`/api/dao/proposals/${id}/votes`);
+    return { success: true, votes: (data && data.data) || data };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('dao-cast-vote', async (event, { id, choice, voter }) => {
+  try {
+    const data = await daoFetch(`/api/dao/proposals/${id}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ choice, voter }),
+    });
+    return { success: true, ...(data && data.data ? data.data : data) };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('dao-get-treasury', async () => {
+  try {
+    const data = await daoFetch('/api/dao/treasury');
+    return { success: true, ...((data && data.data) || data) };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+// ============================================================================
+// L3 WARP IPC HANDLERS  (Cross-chain Bridge Router)
+// Forwards to the zion-warp REST API running on :9333
+// ============================================================================
+
+const WARP_API_BASE = 'http://77.42.31.72:9333';
+
+async function warpFetch(path, opts = {}) {
+  const url = WARP_API_BASE + path;
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  const res = await fetch(url, { ...opts, headers });
+  if (!res.ok) throw new Error(`WARP HTTP ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+ipcMain.handle('warp-get-health', async () => {
+  try {
+    const data = await warpFetch('/health');
+    return { success: true, ...data };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('warp-get-chains', async () => {
+  try {
+    const chains = await warpFetch('/chains');
+    return { success: true, chains };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('warp-get-metrics', async () => {
+  try {
+    const data = await warpFetch('/metrics');
+    return { success: true, metrics: data };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('warp-get-transfers', async () => {
+  try {
+    const transfers = await warpFetch('/transfers');
+    return { success: true, transfers };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('warp-get-pending-transfers', async () => {
+  try {
+    const transfers = await warpFetch('/transfers/pending');
+    return { success: true, transfers };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('warp-get-transfer', async (event, id) => {
+  try {
+    const transfer = await warpFetch(`/transfers/${id}`);
+    return { success: true, transfer };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('warp-initiate-outbound', async (event, data) => {
+  try {
+    const result = await warpFetch('/transfers/outbound', {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+    return { success: true, ...result };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('warp-initiate-inbound', async (event, data) => {
+  try {
+    const result = await warpFetch('/transfers/inbound', {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+    return { success: true, ...result };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('warp-advance-transfer', async (event, { id, new_status }) => {
+  try {
+    const result = await warpFetch(`/transfers/${id}/advance`, {
+      method: 'POST',
+      body: JSON.stringify({ new_status }),
+    });
+    return { success: true, ...result };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+// ============================================================================
 // CH3 ARCHITECTURE IPC HANDLERS
 // ============================================================================
 
