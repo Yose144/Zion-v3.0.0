@@ -235,4 +235,48 @@ impl PeerManager {
         let inbound = self.inbound_count();
         inbound < max_inbound
     }
+
+    // --- Discovery helpers ---
+
+    /// Register a discovered peer address (from peer-exchange or DNS).
+    /// Uses a dummy `SocketAddr` from the string; full PeerInfo is populated
+    /// once we actually connect and complete a handshake.
+    pub fn add_discovered(&self, addr_str: &str) {
+        if let Ok(addr) = addr_str.parse::<SocketAddr>() {
+            let mut peers = self.known_peers.lock().unwrap();
+            // Only add if not already tracked
+            peers.entry(addr).or_insert_with(|| PeerInfo {
+                addr,
+                height: 0,
+                sub_version: String::new(),
+                last_seen: 0,
+                failed_attempts: 0,
+            });
+        }
+    }
+
+    /// Total number of known peers (connected + discovered).
+    pub fn known_peer_count(&self) -> usize {
+        let peers = self.known_peers.lock().unwrap();
+        peers.len()
+    }
+
+    /// Synchronously enqueue a message to every active peer.
+    /// Used by discovery to send `GetPeers` without awaiting.
+    pub fn broadcast_message(&self, msg: Message) {
+        let senders: Vec<mpsc::Sender<Message>> = {
+            let active = self.active_peers.lock().unwrap();
+            active.values().cloned().collect()
+        };
+        for tx in senders {
+            let _ = tx.try_send(msg.clone());
+        }
+    }
+
+    /// Returns "ip:port" strings of all currently-active (connected) peers.
+    /// Used to answer `GetPeers` requests from remote peers.
+    pub fn get_active_addrs(&self) -> Vec<String> {
+        let active = self.active_peers.lock().unwrap();
+        active.keys().map(|a| a.to_string()).collect()
+    }
 }

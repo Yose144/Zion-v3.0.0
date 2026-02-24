@@ -1,3 +1,5 @@
+pub mod checkpoint;
+pub mod discovery;
 pub mod heartbeat;
 pub mod messages;
 pub mod peers;
@@ -16,6 +18,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::collections::HashSet;
 use sync::SyncStatus;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
@@ -43,6 +46,12 @@ pub async fn start(state: State, port: u16, mut initial_peers: Vec<String>) -> R
     println!("P2P Node listening on {}", addr);
 
     let peers = Arc::new(PeerManager::new());
+
+    // ── Tree-node discovery ───────────────────────────────────────────────
+    // Start peer-exchange loop (GetPeers every 5 min)
+    discovery::start_peer_exchange(peers.clone());
+    // Start DNS seed refresh loop (every 30 min)
+    discovery::start_dns_refresh(peers.clone());
 
     // Register PeerManager in State so JSON-RPC can access peer list
     {
@@ -981,6 +990,31 @@ pub async fn handle_connection(
                             .await;
                     }
                 }
+            }
+
+            // --- Peer Exchange (Tree-nodes Discovery) ---
+            Message::GetPeers => {
+                // Respond with our list of active peer addresses
+                let peer_list = peers.get_active_addrs();
+                let _ = tx.send(Message::Peers { peers: peer_list }).await;
+            }
+
+            Message::Peers { peers: new_peers } => {
+                // Merge newly learned peers into our known pool
+                // Use a per-connection seen-set stored locally in handle_connection.
+                // We pass a thread-local set here; for production use a proper
+                // per-peer dedup set (handled in discovery module).
+                let mut seen: HashSet<String> = HashSet::new();
+                discovery::handle_peers_response(&peers, new_peers, &mut seen);
+            }
+
+            // --- Keepalive ---
+            Message::Ping { nonce } => {
+                let _ = tx.send(Message::Pong { nonce }).await;
+            }
+
+            Message::Pong { nonce: _ } => {
+                // Update last_seen — handled generically above
             }
 
             // --- Transaction Logic ---

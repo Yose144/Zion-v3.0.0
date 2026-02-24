@@ -547,6 +547,7 @@ const _viewInitFns = {
   oasis:     () => initOasisView(),
   dao:       () => initDaoView(),
   warp:      () => initWarpView(),
+  node:      () => initNodeView(),
   freeworld: () => initFreeWorldView(),
   issobella: () => initIssobellaView(),
   about:     () => initUpdateUI(),
@@ -4475,3 +4476,202 @@ function _showChangelog(notes, version) {
 }
 
 dbg('Renderer script loaded');
+
+// ============================================================================
+// TREE NODE VIEW — Local L1 zion-core process management
+// ============================================================================
+
+let _nodeInitialized = false;
+let _nodeRunning     = false;
+let _nodeRefreshTimer = null;
+
+function initNodeView() {
+  if (_nodeInitialized) return;
+  _nodeInitialized = true;
+  dbg('[NODE] Initializing Tree Node view');
+
+  const toggleBtn  = document.getElementById('node-toggle-btn');
+  const btnLabel   = document.getElementById('node-btn-label');
+  const refreshBtn = document.getElementById('node-refresh-btn');
+
+  // Attach IPC: listen for streaming node output
+  if (window.electronAPI?.onNodeOutput) {
+    window.electronAPI.onNodeOutput(({ stream, text }) => {
+      _nodeAppendConsole(text, stream === 'stderr');
+    });
+  }
+  if (window.electronAPI?.onNodeStopped) {
+    window.electronAPI.onNodeStopped(({ code }) => {
+      _nodeRunning = false;
+      _nodeSetStatus(false, `Zastaveno (exit ${code ?? '?'})`);
+      _nodeAppendConsole(`\n[NODE] Proces skončil (kód ${code ?? '?'})\n`, true);
+    });
+  }
+
+  // Refresh
+  if (refreshBtn) refreshBtn.addEventListener('click', () => void _nodeRefresh());
+
+  // Toggle Start / Stop
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', async () => {
+      if (_nodeRunning) {
+        toggleBtn.disabled = true;
+        const r = await window.electronAPI?.nodeStop?.();
+        if (r?.success) {
+          _nodeRunning = false;
+          _nodeSetStatus(false, 'Offline');
+        } else {
+          _nodeAppendConsole(`Chyba: ${r?.error || 'neznámá'}\n`, true);
+        }
+        toggleBtn.disabled = false;
+      } else {
+        // Gather config
+        const p2pPort = Number(document.getElementById('node-cfg-p2p')?.value || 8334);
+        const rpcPort = Number(document.getElementById('node-cfg-rpc')?.value || 8545);
+        const network = document.getElementById('node-cfg-network')?.value || 'mainnet';
+        toggleBtn.disabled = true;
+        _nodeSetStatus(false, 'Spouštím…');
+        _nodeAppendConsole(`[NODE] Spouštím node (${network} p2p:${p2pPort} rpc:${rpcPort})…\n`, false);
+        const r = await window.electronAPI?.nodeStart?.({ p2pPort, rpcPort, network });
+        if (r?.success) {
+          _nodeRunning = true;
+          _nodeSetStatus(true, `Běží · PID ${r.pid}`);
+          _nodeAppendConsole(`[NODE] Spuštěn: ${r.binPath}\n`, false);
+          // Start auto-refresh
+          void _nodeRefresh();
+          _nodeRefreshTimer = setInterval(() => {
+            if (currentView === 'node') void _nodeRefresh();
+            else { clearInterval(_nodeRefreshTimer); _nodeRefreshTimer = null; }
+          }, 10000);
+        } else {
+          _nodeSetStatus(false, 'Chyba');
+          _nodeAppendConsole(`[NODE] Spuštění selhalo: ${r?.error || 'unknown'}\n`, true);
+          if (r?.error?.includes('binary not found')) {
+            const binEl = document.getElementById('node-binary-status');
+            if (binEl) binEl.textContent = 'Binary nebyla nalezena. Spusť: cargo build --release -p zion-core';
+            binEl.style.color = '#f87171';
+          }
+        }
+        toggleBtn.disabled = false;
+      }
+    });
+  }
+
+  // Initial status check (maybe node is already running from before)
+  void _nodeRefresh();
+
+  dbg('[NODE] View initialized');
+}
+
+function _nodeSetStatus(running, label) {
+  const dot  = document.getElementById('node-status-dot');
+  const text = document.getElementById('node-status-text');
+  const btn  = document.getElementById('node-btn-label');
+  if (dot)  dot.style.background  = running ? '#00ff88' : 'rgba(255,255,255,0.2)';
+  if (text) text.textContent = label;
+  if (text) text.style.color = running ? '#00ff88' : 'rgba(255,255,255,0.5)';
+  if (btn)  btn.textContent  = running ? 'Zastavit Node' : 'Spustit Node';
+  _nodeRunning = running;
+}
+
+function _nodeFmt(val, unit = '') {
+  if (val == null || val === '') return '—';
+  return `${val}${unit}`;
+}
+
+async function _nodeRefresh() {
+  if (!window.electronAPI?.nodeGetStatus) return;
+  try {
+    const r = await window.electronAPI.nodeGetStatus();
+
+    if (r.running && r.sync) {
+      _nodeSetStatus(true, `Běží · PID ${r.pid || '?'}`);
+      const s = r.sync;
+      // Stats
+      const heightEl = document.getElementById('node-stat-height');
+      const peersEl  = document.getElementById('node-stat-peers');
+      const syncEl   = document.getElementById('node-stat-sync');
+      const bpsEl    = document.getElementById('node-stat-bps');
+      if (heightEl) heightEl.textContent = _nodeFmt(s.download_height);
+      if (syncEl)   syncEl.textContent   = s.syncing ? `${s.percent?.toFixed(1)}%` : (s.state === 'Steady' ? 'Synced' : '—');
+      if (bpsEl)    bpsEl.textContent    = s.blocks_per_sec > 0 ? `${s.blocks_per_sec.toFixed(0)}` : '—';
+      if (peersEl && r.peers) peersEl.textContent = _nodeFmt(r.peers.active_count);
+
+      // IBD progress bar
+      const barWrap = document.getElementById('node-ibd-bar-wrap');
+      if (barWrap) {
+        if (s.state === 'IBD' && s.percent < 100) {
+          barWrap.style.display = 'block';
+          const pct = s.percent?.toFixed(1) || '0';
+          const pctEl = document.getElementById('node-ibd-pct');
+          const bar   = document.getElementById('node-ibd-bar');
+          const eta   = document.getElementById('node-ibd-eta');
+          if (pctEl) pctEl.textContent = `${pct}%`;
+          if (bar)   bar.style.width   = `${pct}%`;
+          if (eta) {
+            const remaining = s.eta_secs > 0 ? `ETA: ~${Math.round(s.eta_secs)}s` : '';
+            const peer = s.ibd_peer ? `· peer: ${s.ibd_peer}` : '';
+            eta.textContent = `${remaining} ${peer}`.trim();
+          }
+        } else {
+          barWrap.style.display = 'none';
+        }
+      }
+
+      // Peers table
+      if (r.peers?.active) _nodeRenderPeers(r.peers.known || []);
+    } else if (!r.running) {
+      // Wasn't running remotely either
+      if (!_nodeRunning) _nodeSetStatus(false, r.error ? 'Offline' : 'Offline');
+    }
+  } catch (e) {
+    dbg('[NODE] Status check error:', e.message);
+  }
+}
+
+function _nodeRenderPeers(peerList) {
+  const tbody = document.getElementById('node-peers-body');
+  if (!tbody) return;
+
+  if (!peerList || peerList.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.25)">— žádné peery —</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = peerList.map(p => {
+    const addr    = p.addr || '?';
+    const height  = p.height > 0 ? p.height : '—';
+    const agent   = p.agent || '—';
+    const lastSec = p.last_seen > 0 ? `${Math.round((Date.now()/1000) - p.last_seen)}s` : '—';
+    return `<tr>
+      <td style="font-family:monospace;font-size:11px">${addr}</td>
+      <td>${height}</td>
+      <td style="color:rgba(255,255,255,0.4);font-size:11px">${agent}</td>
+      <td style="color:rgba(255,255,255,0.3);font-size:11px">${lastSec}</td>
+    </tr>`;
+  }).join('');
+}
+
+const NODE_MAX_LOG_LINES = 400;
+let _nodeLogLines = [];
+
+function _nodeAppendConsole(text, isErr = false) {
+  const el = document.getElementById('node-console');
+  if (!el) return;
+  const lines = text.split('\n');
+  for (const ln of lines) {
+    if (!ln) continue;
+    _nodeLogLines.push({ text: ln, isErr });
+    if (_nodeLogLines.length > NODE_MAX_LOG_LINES) _nodeLogLines.shift();
+  }
+  el.innerHTML = _nodeLogLines
+    .map(l => `<span style="color:${l.isErr ? '#f87171' : 'rgba(255,255,255,0.55)'}">${escapeHtml(l.text)}</span>`)
+    .join('\n');
+  el.scrollTop = el.scrollHeight;
+}
+
+// escapeHtml is already defined elsewhere in renderer; if not, define it
+if (typeof escapeHtml === 'undefined') {
+  var escapeHtml = (s) => String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
