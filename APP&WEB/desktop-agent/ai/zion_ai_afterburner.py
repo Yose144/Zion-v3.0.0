@@ -45,7 +45,10 @@ DIVINE_FREQUENCY    = 432.0    # Hz — used for sacred geometry calc
 
 # Path to miner_stats.json (written by Rust miner every stats-interval seconds)
 _APPDATA = os.environ.get('APPDATA', '')
-MINER_STATS_PATH = os.path.join(_APPDATA, 'zion-desktop-agent', 'miner_stats.json')
+# Electron passes its exact userData path via ZION_USER_DATA; fall back to legacy folder.
+_ZION_USER_DATA = os.environ.get('ZION_USER_DATA', '')
+_STATS_DIR = _ZION_USER_DATA if _ZION_USER_DATA else os.path.join(_APPDATA, 'zion-desktop-agent')
+MINER_STATS_PATH = os.path.join(_STATS_DIR, 'miner_stats.json')
 
 
 # ─── AMD power query helpers ───────────────────────────────────────────────────
