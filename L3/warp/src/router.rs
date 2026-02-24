@@ -172,6 +172,22 @@ impl WarpRouter {
         self.transfers.get(id)
     }
 
+    /// List all transfers, most recent first.
+    pub fn list_transfers(&self) -> Vec<WarpTransfer> {
+        let mut v: Vec<WarpTransfer> = self.transfers.values().cloned().collect();
+        v.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        v
+    }
+
+    /// List pending (non-terminal) transfers.
+    pub fn list_pending(&self) -> Vec<WarpTransfer> {
+        self.transfers
+            .values()
+            .filter(|t| !matches!(t.status, WarpStatus::Completed | WarpStatus::Failed))
+            .cloned()
+            .collect()
+    }
+
     pub fn transfer_count(&self) -> usize {
         self.transfers.len()
     }
