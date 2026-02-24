@@ -124,11 +124,16 @@
 - [ ] Formalizovat metriku orphan/reject rate v dashboardu
 - [ ] Přidat datum+důkaz pro každý P0 bod
 
-### P0-05 — Nové blocker z Session 50 (code scan)
-- [ ] **Genesis blok vytvořit OFFLINE** před mainnet (genesis.json/genesis.rs neexistuje)
-- [ ] **Rozhodnout algoritmus rotaci** (zakomentovaná, testnet = jen CHv3) — zdokumentovat či aktivovat
-- [ ] **MAX_TIMESTAMP_DRIFT přepnout na 7200 s** pro mainnet build (`validation.rs` line 22)
-- [ ] **Double-spend integrační test** napsat
+### P0-05 — Nové blokkery z Session 50+51 (code scan)
+- [ ] **Genesis blok vytvořit OFFLINE** před mainnet (genesis.json/genesis.rs neexistuje) — _blokující_
+- [ ] **Rozhodnout algoritmus rotaci** (zakomentovaná, testnet = jen CHv3) — dokumentovat nebo aktivovat _(odsunuto po dohodě)_
+- [x] **MAX_TIMESTAMP_DRIFT** — ověřeno, automaticky per-network (86400 s testnet / 7200 s mainnet) v `network.rs`
+- [x] **Block-level double-spend** — check přidán do `validation.rs` (step 9b) + test `test_double_spend_block_level_rejected` v `sprint_1_2_test_suite.rs`
+- [x] **`MAINNET_EXIT_CRITERIA.md`** vytvořen — `docs/mainnet/MAINNET_EXIT_CRITERIA.md`
+- [x] **Alertmanager** — aktivován v prometheus.yml, service přidán do docker-compose.monitoring.yml, config s Telegram routing vytvořen (`monitoring/alertmanager/alertmanager.yml`)
+- [ ] **Alertmanager Telegram tokeny nastavit na serveru** a otestovat test-incident (env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`)
+- [ ] **Docker images SHA-256 published** (release flow chybí)
+- [ ] **`MAINNET_CONSTITUTION.md` označit FROZEN** (SHA-256 hash v signatování)
 
 ---
 
@@ -181,4 +186,8 @@
 - ✅ **Session 50:** Constitution conflict vyřešen — SUPERSEDED oznamení, kanonická verze označena
 - ✅ **Session 50:** MAINNET_CHECKLIST.md aktualizován na v1.1 podle skenu kódu
 - ✅ **Session 50:** SERVERS.md aktualizován (Helsinki nové kontejnery, role)
-- ⏭️ **Další P0 priority:** genesis.json OFFLINE, exit_criteria.md, double-spend test, Alertmanager, MAX_TIMESTAMP_DRIFT mainnet switch
+- ✅ **Session 51:** `MAINNET_EXIT_CRITERIA.md` vytvořen (P0-A)
+- ✅ **Session 51:** Block-level double-spend check do `validation.rs` + test (P0-B)
+- ✅ **Session 51:** Alertmanager aktivován + Telegram config vytvořen (P0-C)
+- ✅ **Session 51:** `MAX_TIMESTAMP_DRIFT` ověřen jako automaticky per-network (P0-D)
+- ⏭️ **Další P0:** Telegram tokeny nastavit na serveru, genesis.json OFFLINE, docker images SHA-256, constitution FROZEN
