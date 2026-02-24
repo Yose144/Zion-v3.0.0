@@ -2588,3 +2588,95 @@ h/W stable: 396699 H/W  (59.5 MH/s @ 150W [estimated (100% util)])
 | Odhadovaný příkon | ~150W (100% load, TDP profil) |
 | **Výkon/watt** | **~397 kH/W** |
 | Power source | `estimated (100% util)` — WMI+TDP |
+
+---
+
+## Session 56 — 24. 2. 2026 (CHv3 ASIC hardening + AES-NI Haraka optimalizace)
+
+### Commits
+
+| Commit | Popis |
+|--------|-------|
+| `8a2b295` | CHv3 ASIC hardening: fork@100k, dynamická XOR maska, env lockout |
+| `c66f9bc` | docs: asic.md — CHv3 ASIC resistance dokumentace |
+| `5037e8b` | CHv3: scratchpad tuning 512 KiB/4 průchody/256 čtení + benchmark |
+| `c6189c4` | CHv3: AES-NI Haraka-inspired maska v Cosmic Fusion (VerusHash technika) |
+
+### Cíl
+
+Přidat ASIC odolnost do CHv3 pipeline před mainnet code-freeze a optimalizovat
+výkon CPU těžby integrací AES-NI instrukce (inspirováno VerusHash 2.2 Haraka construction).
+
+### Implementováno
+
+| # | Akce | Soubory |
+|---|------|---------|
+| 56-A | Fork výška `CHV3_MEMORY_HARD_FORK_HEIGHT = 100_000` | `algorithms_opt.rs` |
+| 56-B | Scratchpad: 512 KiB / 4 průchody / 256 náhodných čtení | `scratchpad.rs` |
+| 56-C | Cosmic Fusion: statická maska odstraněna, data-dependent XOR | `algorithms_opt.rs` |
+| 56-D | Env overrides uzamčeny v `#[cfg(debug_assertions)]` | `algorithms_opt.rs` |
+| 56-E | 5-bodový benchmark (`algorithm_bench.rs`) | `benches/algorithm_bench.rs` |
+| 56-F | AES-NI Haraka maska: AES128_encrypt × 2 bloky místo 2. Keccak | `algorithms_opt.rs` |
+| 56-G | `aes = "0.8.4"` (RustCrypto, AES-NI auto-detect) | `L1/cosmic-harmony/Cargo.toml` |
+| 56-H | `gpu_cosmic_fusion()` test helper synchronizován | `algorithms_opt.rs` |
+| 56-I | `asic.md` dokumentace vytvořena a aktualizována | `asic.md` |
+
+### Benchmark výsledky (release build, 12-core CPU)
+
+| Scénář | Výsledek |
+|--------|---------|
+| Legacy pipeline (1T) | ~108 kH/s |
+| Full CHv3 pipeline (1T) | ~10.5 H/s |
+| Full CHv3 pipeline (12T) | ~70.3 H/s |
+| Zpomalení vs. legacy | ~10 000× |
+
+### Kompatibilita L1 (ověřeno)
+
+| Komponenta | Soubor | Stav |
+|------------|--------|------|
+| L1/core block validation | `core/src/blockchain/block.rs:99` | OK |
+| L1/core — mining alias | `core/src/algorithms/cosmic_harmony.rs:24` | OK |
+| L1/miner native_algos | `miner/src/miner/native_algos.rs:637` | OK |
+| L1/miner GPU thread | `miner/src/miner/mod.rs:910` | OK |
+| L1/pool share validator | `pool/src/shares/validator.rs:301` | OK |
+
+Všechny volají `cosmic_harmony_v3_with_height(blob, nonce, height)`.
+Pod forkem (výška < 100 000): legacy pipeline. Od bloku 100 000: memory-hard full pipeline.
+
+### AES-NI Haraka — princip
+
+Druhý Keccak256 v fusion_round (~50 ns) nahrazen AES-128 (~1-2 ns na AES-NI CPU, 25× rychlejší).
+Technika identická s Haraka sponge z VerusHash 2.2. ASIC musí implementovat AES + Keccak HW.
+
+    intermediate = Keccak256(state[0..32] || round)
+    block0 = AES128_encrypt(key=intermediate[0..16], plaintext=state[32..48])
+    block1 = AES128_encrypt(key=intermediate ^ tweak, plaintext=state[48..64])
+
+### `cargo check`
+
+    cargo check -p zion-cosmic-harmony-v3  -->  exit code 0  (aes v0.8.4, clean)
+
+### Test výsledky (release mode)
+
+```
+cargo test -p zion-cosmic-harmony-v3 --release
+test result: ok. 52 passed; 0 failed  (35s)
+```
+
+Kritické testy prošly:
+- `test_full_pipeline_matches_opt` ... ok
+- `test_memory_hard_deterministic` ... ok
+- `test_memory_hard_changes_output` ... ok
+- `test_ffi_hash` ... ok
+- `test_ffi_batch` ... ok
+
+### Test výsledky (release mode)
+
+cargo test -p zion-cosmic-harmony-v3 --release -> 52 passed; 0 failed (35s)
+
+Kritické testy:
+- test_full_pipeline_matches_opt ... ok
+- test_memory_hard_deterministic ... ok
+- test_memory_hard_changes_output ... ok
+- test_ffi_hash ... ok
+
