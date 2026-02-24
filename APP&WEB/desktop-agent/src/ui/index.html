@@ -7255,128 +7255,203 @@
       <!-- TREE NODE — L1 Core Node Runner                     -->
       <!-- ═══════════════════════════════════════════════════ -->
       <div id="node-view" class="view-shell d-none">
+
+        <!-- ── Page Header ───────────────────────────────────── -->
         <div class="web29-page-header">
           <div class="web29-title-stack">
-            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 1 · Tree Node</div>
-            <h1 class="web29-title">ZION Node</h1>
-            <p class="web29-subtitle">Spusť lokální L1 core node jedním kliknutím — nebo se připoj k existujícímu.</p>
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 1</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Tree Node</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION Network · P2P</div>
+            </div>
+            <div class="web29-subtitle">Spusť lokální L1 core node jedním kliknutím — peer-to-peer, bez zprostředkovatele.</div>
           </div>
         </div>
 
-        <!-- Status bar -->
-        <div class="control-panel" style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:8px">
-              <div id="node-status-dot" style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .3s"></div>
-              <span id="node-status-text" style="font-size:13px;color:rgba(255,255,255,0.5)">Offline</span>
+        <!-- ── Node Action Bar ─────────────────────────────────── -->
+        <div class="control-panel" style="margin-bottom:12px;padding:12px 16px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <!-- Status pill -->
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;transition:border-color .3s">
+              <div id="node-status-dot" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.18);transition:background .4s,box-shadow .4s;flex-shrink:0"></div>
+              <span id="node-status-text" style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.4);white-space:nowrap;transition:color .3s">Offline</span>
             </div>
             <div style="flex:1"></div>
-            <button id="node-toggle-btn" class="btn-primary" style="min-width:130px">
-              <svg class="icon" aria-hidden="true" style="margin-right:6px"><use href="#i-spark"></use></svg>
+            <!-- Start / Stop button -->
+            <button id="node-toggle-btn" class="btn btn-primary" style="min-width:148px">
+              <svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>
               <span id="node-btn-label">Spustit Node</span>
             </button>
-            <button id="node-refresh-btn" class="btn-secondary" title="Refresh">
-              <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <!-- Refresh button -->
+            <button id="node-refresh-btn" class="btn btn-ghost btn-sm" title="Obnovit stav">
+              <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
             </button>
           </div>
         </div>
 
-        <!-- Sync + Stats row -->
-        <div class="oasis-stats-row" style="margin-bottom:20px">
-          <div class="oasis-stat">
-            <div class="oasis-stat-value" id="node-stat-height" style="color:var(--zion-cyan)">—</div>
-            <div class="oasis-stat-label">Výška bloku</div>
+        <!-- ── Section Tabs ─────────────────────────────────── -->
+        <div class="section-tabs" data-group="node">
+          <div class="section-tab active" data-section="node-overview">
+            <span class="tab-dot"></span>
+            <span>Přehled</span>
           </div>
-          <div class="oasis-stat">
-            <div class="oasis-stat-value" id="node-stat-peers" style="color:#00ff88">—</div>
-            <div class="oasis-stat-label">Peery</div>
+          <div class="section-tab" data-section="node-peers-tab">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <span>Peery</span>
           </div>
-          <div class="oasis-stat">
-            <div class="oasis-stat-value" id="node-stat-sync" style="color:var(--zion-gold)">—</div>
-            <div class="oasis-stat-label">Synchronizace</div>
+          <div class="section-tab" data-section="node-settings-tab">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+            <span>Nastavení</span>
           </div>
-          <div class="oasis-stat">
-            <div class="oasis-stat-value" id="node-stat-bps" style="color:#c084fc">—</div>
-            <div class="oasis-stat-label">Bloků/s</div>
+          <div class="section-tab" data-section="node-log-tab">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-logs"></use></svg>
+            <span>Log</span>
           </div>
         </div>
 
-        <!-- IBD Progress bar -->
-        <div id="node-ibd-bar-wrap" class="control-panel" style="margin-bottom:16px;display:none">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:12px;color:rgba(255,255,255,0.5)">Initial Block Download</span>
-            <span id="node-ibd-pct" style="font-size:12px;color:var(--zion-cyan)">0%</span>
-          </div>
-          <div style="background:rgba(255,255,255,0.07);border-radius:4px;height:6px;overflow:hidden">
-            <div id="node-ibd-bar" style="height:100%;background:linear-gradient(90deg,var(--zion-cyan),#a78bfa);width:0%;transition:width .5s"></div>
-          </div>
-          <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,0.3)" id="node-ibd-eta"></div>
-        </div>
-
-        <!-- Peers table -->
-        <div class="control-panel" style="margin-bottom:16px">
-          <div class="card-heading">
-            <div class="card-icon gradient-cyan">
-              <svg class="icon" aria-hidden="true"><use href="#i-network"></use></svg>
+        <!-- ═══ SECTION: Přehled ═══ -->
+        <div id="node-overview" class="section-panel active">
+          <div class="control-panel">
+            <h2 class="panel-header-title">
+              <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+              <span>Stav Node</span>
+              <span class="muted-time" id="node-updated">—</span>
+            </h2>
+            <div class="metric-grid">
+              <div class="metric-card blue">
+                <div class="metric-kicker">VÝŠKA BLOKU</div>
+                <div class="metric-value blue" id="node-stat-height">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">PEERY</div>
+                <div class="metric-value green" id="node-stat-peers">—</div>
+              </div>
+              <div class="metric-card gold">
+                <div class="metric-kicker">SYNCHRONIZACE</div>
+                <div class="metric-value gold" id="node-stat-sync">—</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-kicker">BLOKŮ / S</div>
+                <div class="metric-value purple" id="node-stat-bps">—</div>
+              </div>
             </div>
-            <div>
-              <p class="card-kicker">P2P Síť</p>
-              <h3>Připojené peery</h3>
+            <!-- IBD progress (hidden until syncing) -->
+            <div id="node-ibd-bar-wrap" style="display:none;margin-top:18px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-size:12px;color:rgba(255,255,255,0.45);display:flex;align-items:center;gap:6px">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                  Initial Block Download
+                </span>
+                <span id="node-ibd-pct" style="font-size:12px;font-weight:600;color:var(--zion-cyan)">0%</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.06)">
+                <div id="node-ibd-bar" style="height:100%;background:linear-gradient(90deg,var(--zion-cyan),#a78bfa);width:0%;transition:width .6s ease;border-radius:6px"></div>
+              </div>
+              <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,0.28)" id="node-ibd-eta"></div>
             </div>
           </div>
-          <table class="dex-chain-table" style="margin-top:14px">
-            <thead><tr><th>Adresa</th><th>Výška</th><th>Agent</th><th>Last seen</th></tr></thead>
-            <tbody id="node-peers-body">
-              <tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.25)">— žádné peery —</td></tr>
-            </tbody>
-          </table>
+          <!-- Status message bar -->
+          <div id="node-sync-bar" class="sync-bar">
+            <span id="node-sync-icon">⚡</span>
+            <span id="node-sync-text">Node není spuštěn — klikni na <b>Spustit Node</b></span>
+          </div>
         </div>
 
-        <!-- Advanced / Config -->
-        <details class="control-panel" style="margin-bottom:16px">
-          <summary style="cursor:pointer;font-size:13px;color:rgba(255,255,255,0.5);list-style:none">⚙ Pokročilé nastavení</summary>
-          <div style="margin-top:16px;display:grid;gap:12px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <label style="font-size:12px;color:rgba(255,255,255,0.4)">
+        <!-- ═══ SECTION: Peery ═══ -->
+        <div id="node-peers-tab" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                <span>P2P Peery</span>
+              </span>
+              <span class="panel-header-title">
+                <span class="muted-time" id="node-peers-updated">—</span>
+                <button class="btn btn-ghost btn-sm" id="node-refresh-peers-btn">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                  Obnovit
+                </button>
+              </span>
+            </h2>
+            <div class="metric-grid" style="margin-bottom:16px">
+              <div class="metric-card green">
+                <div class="metric-kicker">PŘIPOJENO</div>
+                <div class="metric-value green" id="node-peers-active">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">KNOWN PEERS</div>
+                <div class="metric-value blue" id="node-peers-known">—</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-kicker">SEED NODES</div>
+                <div class="metric-value purple">3</div>
+              </div>
+            </div>
+            <div id="node-peers-list" class="stack-col scroll">
+              <div class="placeholder-row">— žádné peery —</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Nastavení ═══ -->
+        <div id="node-settings-tab" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-title">
+              <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+              <span>Konfigurace Node</span>
+            </h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+              <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.07em;font-weight:600">
                 P2P Port
-                <input id="node-cfg-p2p" type="number" value="8334" min="1024" max="65535"
-                  style="display:block;width:100%;margin-top:4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;padding:6px 10px;font-size:13px">
+                <input id="node-cfg-p2p" type="number" value="8334" min="1024" max="65535" style="display:block;width:100%;margin-top:6px">
               </label>
-              <label style="font-size:12px;color:rgba(255,255,255,0.4)">
+              <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.07em;font-weight:600">
                 RPC Port
-                <input id="node-cfg-rpc" type="number" value="8545" min="1024" max="65535"
-                  style="display:block;width:100%;margin-top:4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;padding:6px 10px;font-size:13px">
+                <input id="node-cfg-rpc" type="number" value="8545" min="1024" max="65535" style="display:block;width:100%;margin-top:6px">
               </label>
             </div>
-            <label style="font-size:12px;color:rgba(255,255,255,0.4)">
-              Network
-              <select id="node-cfg-network"
-                style="display:block;width:100%;margin-top:4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;padding:6px 10px;font-size:13px">
-                <option value="mainnet">mainnet</option>
-                <option value="testnet">testnet</option>
-                <option value="devnet">devnet</option>
-              </select>
-            </label>
-            <div id="node-binary-status" style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:4px">Binary: hledám…</div>
+            <div style="margin-top:12px">
+              <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.07em;font-weight:600">
+                Network
+                <select id="node-cfg-network" style="display:block;width:100%;margin-top:6px">
+                  <option value="mainnet">mainnet</option>
+                  <option value="testnet">testnet</option>
+                  <option value="devnet">devnet</option>
+                </select>
+              </label>
+            </div>
+            <div id="node-binary-status" style="margin-top:16px;padding:10px 14px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:11px;color:rgba(255,255,255,0.28);font-family:monospace;line-height:1.6">
+              Binary: hledám…
+            </div>
           </div>
-        </details>
+          <!-- Checkpoints card -->
+          <div class="control-panel">
+            <h2 class="panel-header-title">
+              <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
+              <span>Checkpointy sítě</span>
+            </h2>
+            <div id="node-checkpoint-list" class="stack-col" style="margin-top:12px">
+              <div class="placeholder-row">Načítám checkpointy…</div>
+            </div>
+          </div>
+        </div>
 
-        <!-- Node console -->
-        <div class="control-panel">
-          <div class="card-heading">
-            <div class="card-icon" style="background:rgba(0,0,0,0.3)">
-              <svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg>
-            </div>
-            <div>
-              <p class="card-kicker">Výstup</p>
-              <h3>Node Log</h3>
-            </div>
-          </div>
-          <div id="node-console"
-            style="margin-top:14px;background:rgba(0,0,0,0.4);border-radius:8px;padding:12px 14px;
-                   font-family:monospace;font-size:11px;color:rgba(255,255,255,0.6);
-                   height:220px;overflow-y:auto;white-space:pre-wrap;word-break:break-all">
-            — čekám na spuštění —
+        <!-- ═══ SECTION: Log ═══ -->
+        <div id="node-log-tab" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title">
+                <svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg>
+                <span>Node Log</span>
+              </span>
+              <button class="btn btn-ghost btn-sm" id="node-clear-log-btn">Vymazat</button>
+            </h2>
+            <div id="node-console"
+              style="margin-top:14px;background:rgba(0,0,0,0.5);border-radius:10px;padding:14px 16px;
+                     font-family:'JetBrains Mono',Menlo,'Courier New',monospace;font-size:11px;
+                     color:rgba(255,255,255,0.5);height:360px;overflow-y:auto;
+                     white-space:pre-wrap;word-break:break-all;
+                     border:1px solid rgba(255,255,255,0.05);line-height:1.65;letter-spacing:0.01em">— čekám na spuštění —</div>
           </div>
         </div>
 
