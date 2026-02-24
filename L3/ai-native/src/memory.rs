@@ -82,6 +82,11 @@ impl MemoryEntry {
         self.importance = i.clamp(0.0, 1.0);
         self
     }
+
+    /// Convenience constructor — no structured data payload.
+    pub fn simple(kind: MemoryEventKind, summary: impl Into<String>) -> Self {
+        Self::new(kind, summary, serde_json::Value::Null)
+    }
 }
 
 // ─── AgentMemory ─────────────────────────────────────────────────────────────
