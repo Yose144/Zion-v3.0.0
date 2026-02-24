@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRightLeft, ChevronRight, Copy, Check, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -74,7 +74,7 @@ export default function TransactionsPageClient() {
     return () => clearInterval(tickRef.current);
   }, []);
 
-  const loadTransactions = async (pageNum: number = 1, append: boolean = false) => {
+  const loadTransactions = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     try {
       if (append) setLoadingMore(true); else setLoading(true);
       const offset = (pageNum - 1) * 50;
@@ -100,9 +100,9 @@ export default function TransactionsPageClient() {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [addressFilter]);
 
-  useEffect(() => { setPage(1); loadTransactions(1, false); }, [addressFilter]);
+  useEffect(() => { setPage(1); loadTransactions(1, false); }, [addressFilter, loadTransactions]);
 
   const loadMore = () => { const next = page + 1; setPage(next); loadTransactions(next, true); };
 

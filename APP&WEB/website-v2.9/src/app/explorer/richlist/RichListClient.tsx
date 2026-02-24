@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -120,7 +120,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
   const [error, setError] = useState<string | null>(null);
   const [limit, setLimit] = useState(50);
 
-  async function fetchRichList() {
+  const fetchRichList = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -133,11 +133,11 @@ export default function RichListClient({ embedded = false }: RichListClientProps
     } finally {
       setLoading(false);
     }
-  }
+  }, [limit]);
 
   useEffect(() => {
     fetchRichList();
-  }, [limit]);
+  }, [fetchRichList]);
 
   /* ── Shared content sections rendered in both modes ── */
   const content = (
