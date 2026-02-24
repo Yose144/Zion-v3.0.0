@@ -236,6 +236,12 @@ Zion-2.9.5/
 - [Security Audit](docs/v2.9.6/audit.md) — Audit status & plan
 - [Changelog](docs/v2.9.6/changelog.md) — Complete list of changes
 
+### Layer Architecture
+
+- [L3 AI Architecture](docs/v2.9.6/L3_AI_ARCHITECTURE.md) — AI agents, NCL, WARP engine
+- [L4 Oasis Architecture](docs/v2.9.6/L4_OASIS_ARCHITECTURE.md) — XP system, guilds, REST API, SQLite
+- [Ankr Integration](docs/ankr.md) — L2 bridge via Ankr HTTP RPC, wZION plan
+
 ### General
 
 - [Whitepaper v2.9.5](docs/whitepaper/) — Full technical specification
