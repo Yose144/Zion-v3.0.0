@@ -2222,7 +2222,7 @@ function startMining(config) {
   // GPU stability guard:
   // Python CHv3 GPU path can produce invalid shares on some driver/kernel combos.
   // When GPU mode is requested and Rust miner is available, prefer Rust backend.
-  if (effectiveGpu && MINER_IS_PYTHON) {
+  if (effectiveGpu && MINER_IS_PYTHON && preferredBackend !== 'python') {
     const forcePythonGpu = String(process.env.ZION_FORCE_PYTHON_GPU || '').trim() === '1';
     if (!forcePythonGpu) {
       const rustGpuPath = findRustMiner();
@@ -2693,7 +2693,7 @@ function startMining(config) {
   // If main Rust miner runs with --gpu but produces no hashrate/shares after warmup,
   // it is typically stuck in OpenCL init/kernel build. Auto-fallback to Python miner.
   if (MINER_IS_RUST && mainMinerGpu) {
-    const enableGpuInitWatchdog = String(process.env.ZION_ENABLE_GPU_INIT_WATCHDOG || '').trim() === '1';
+    const enableGpuInitWatchdog = String(process.env.ZION_ENABLE_GPU_INIT_WATCHDOG || '1').trim() !== '0';
     if (!enableGpuInitWatchdog) {
       try {
         logApp('gpu-init-watchdog-disabled', JSON.stringify({ backend: minerBackendResolved, worker: config?.worker || '' }));

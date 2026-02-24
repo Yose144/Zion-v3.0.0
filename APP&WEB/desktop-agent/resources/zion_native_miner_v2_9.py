@@ -2468,10 +2468,24 @@ class ZionNativeMiner:
             except Exception:
                 chv3_gpu_mismatch_limit = 3
             chv3_gpu_strict_verify = (
-                str(os.getenv("ZION_CHV3_GPU_STRICT_VERIFY", "0")).strip().lower()
+                str(os.getenv("ZION_CHV3_GPU_STRICT_VERIFY", "1")).strip().lower()
                 in ("1", "true", "yes", "on")
             )
-            if not chv3_gpu_strict_verify:
+            chv3_gpu_disable_on_mismatch = (
+                str(os.getenv("ZION_CHV3_GPU_DISABLE_ON_MISMATCH", "0")).strip().lower()
+                in ("1", "true", "yes", "on")
+            )
+            try:
+                chv3_gpu_mismatch_log_interval_sec = max(
+                    2.0,
+                    float(str(os.getenv("ZION_CHV3_GPU_MISMATCH_LOG_INTERVAL_SEC", "15")).strip()),
+                )
+            except Exception:
+                chv3_gpu_mismatch_log_interval_sec = 15.0
+            chv3_gpu_last_mismatch_log_t = 0.0
+            if chv3_gpu_strict_verify:
+                logger.info("⚙️  CHv3 GPU strict native-verify: ON (safe submit mode)")
+            else:
                 logger.info("⚙️  CHv3 GPU strict native-verify: OFF (performance mode)")
             chv3_gpu_disabled_due_to_mismatch = False
 
@@ -2838,13 +2852,19 @@ class ZionNativeMiner:
                                         verified_hash = _cosmic_v3_native.hash(blob_bytes, int(nonce))
                                     if verified_hash != result_hash:
                                         chv3_gpu_verify_mismatches += 1
-                                        if chv3_gpu_verify_mismatches <= 3 or (chv3_gpu_verify_mismatches % 50) == 0:
+                                        now_mismatch_t = time.perf_counter()
+                                        if (
+                                            chv3_gpu_verify_mismatches <= 3
+                                            or (now_mismatch_t - chv3_gpu_last_mismatch_log_t) >= chv3_gpu_mismatch_log_interval_sec
+                                        ):
+                                            chv3_gpu_last_mismatch_log_t = now_mismatch_t
                                             logger.warning(
                                                 f"⚠️ CHv3 GPU/native hash mismatch for nonce 0x{int(nonce):016x} "
-                                                f"(count={chv3_gpu_verify_mismatches})"
+                                                f"(count={chv3_gpu_verify_mismatches}, interval={chv3_gpu_mismatch_log_interval_sec:.0f}s)"
                                             )
                                         if (
-                                            not chv3_gpu_disabled_due_to_mismatch
+                                            chv3_gpu_disable_on_mismatch
+                                            and (not chv3_gpu_disabled_due_to_mismatch)
                                             and chv3_gpu_verify_mismatches >= chv3_gpu_mismatch_limit
                                         ):
                                             chv3_gpu_disabled_due_to_mismatch = True
