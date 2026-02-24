@@ -1,6 +1,21 @@
-# 📜 ZION MAINNET CONSTITUTION
+# ~~📜 ZION MAINNET CONSTITUTION~~
 
-**Version 1.0 — Immutable Protocol Charter**
+> ⚠️ **TENTO DOKUMENT JE ZASTARALÝ (SUPERSEDED)**
+>
+> Autoritativní verze je: [`docs/mainnet/MAINNET_CONSTITUTION.md`](mainnet/MAINNET_CONSTITUTION.md)
+>
+> **Konkrétní rozdíly oproti autoritativní verzi:**
+> - Tento draft uvádí „Žádné time-locky, žádný vesting" → **NESPRÁVNĚ**
+> - Autoritativní verze správně říká: premine unlock je řízen DAO governance (off-chain), `unlock_height` pole existuje v kódu, ale v2.9.5 není vynuceno L1 konsensem
+> - Tento draft neobsahuje sekci Presale Status, Upgrade politiku, ani Bezpečnostní model
+>
+> *Označeno jako SUPERSEDED: 24. února 2026 — Session 49*
+
+---
+
+# 📜 ZION MAINNET CONSTITUTION (DRAFT — SUPERSEDED)
+
+**Version 0.9-draft — SUPERSEDED by docs/mainnet/MAINNET_CONSTITUTION.md**
 
 ---
 
