@@ -3406,7 +3406,11 @@ const GM_ACHIEVEMENTS = [
   { id: 'upgrade1',  name: '⚒ Geared Up',         cond: s => Object.values(s.upgrades).some(v => v > 0) },
   { id: 'ascended',  name: '✦ Ascended',           cond: s => GM_UPGRADES.every(u => (s.upgrades[u.id]||0) >= 5) },
   { id: 'ufo',       name: '🛸 First Contact',     cond: s => s.ufoSeen },
-  { id: 'planets',   name: '🪐 Planet Hopper',     cond: s => (s.planetsClicked||0) >= 5 },
+  { id: 'planets',   name: '🪐 Planet Hopper',      cond: s => (s.planetsClicked||0) >= 5 },
+  { id: 'iss',       name: '⊕ Docked at Isabella',  cond: s => !!s.issVisited },
+  { id: 'deathstar', name: '💀 Death Star Destroyer', cond: s => (s.deathStarClicks||0) >= 1 },
+  { id: 'yoda',      name: '🐸 Strong in the Force',  cond: s => !!s.yodaVisited },
+  { id: 'trekkie',   name: '🖖 Live Long & Prosper',   cond: s => !!s.enterpriseSeen },
 ];
 
 const GM_PLANET_BONUSES = {
@@ -3439,6 +3443,12 @@ const GM_MSGS = [
   '🌌 The cosmos is bullish ser', '👨‍🚀 Houston, we have ZION',
   '♃ Jupiter aligns with your portfolio', '⛓ Not your keys, not your ZION',
   '🧑‍🚀 One small click for man, one giant bag for mankind',
+  '🖖 Live long and prosper, ser', '💀 Alderaan had no ZION — ngmi',
+  '🐸 Do or do not, there is no NGMI', '⊕ ISS Isabella confirms: ultra bullish',
+  '☄ May the ZION be with you', '🖖 Beam me up some ZION, Scotty',
+  '💀 "I am your financial advisor" — Darth Zion', '🌌 That\'s no moon... wait, IT IS the moon!',
+  '🐸 Much ZION, I sense', '🖖 Resistance to HODL is futile',
+  '⊗ Death Star destroyed — gains confirmed', '🚀 Warp speed to the moon!',
 ];
 
 let _gameInitialized = false;
@@ -3449,7 +3459,7 @@ const _gmPlanetsClicked = new Set();
 function _gmDefState() {
   const upg = {}; GM_UPGRADES.forEach(u => { upg[u.id] = 0; });
   const min = {}; GM_MINERS.forEach(m => { min[m.id] = 0; });
-  return { zion: 0, zionTotal: 0, clicks: 0, upgrades: upg, miners: min, achievements: {}, blockNum: 1247331, ufoSeen: false, planetsClicked: 0 };
+  return { zion: 0, zionTotal: 0, clicks: 0, upgrades: upg, miners: min, achievements: {}, blockNum: 1247331, ufoSeen: false, planetsClicked: 0, issVisited: false, deathStarClicks: 0, yodaVisited: false, enterpriseSeen: false };
 }
 
 function _gmLoadState() {
@@ -3467,7 +3477,11 @@ function _gmLoadState() {
       achievements:   s.achievements || {},
       blockNum:       s.blockNum || 1247331,
       ufoSeen:        s.ufoSeen || false,
-      planetsClicked: s.planetsClicked || 0,
+      planetsClicked:  s.planetsClicked  || 0,
+      issVisited:      s.issVisited      || false,
+      deathStarClicks: s.deathStarClicks  || 0,
+      yodaVisited:     s.yodaVisited      || false,
+      enterpriseSeen:  s.enterpriseSeen   || false,
     };
   } catch(e) { return _gmDefState(); }
 }
@@ -3548,6 +3562,75 @@ function initGameView() {
       _gmSave(state);
     });
   });
+
+  /* ── ISS Isabella click ── */
+  const issEl = document.getElementById('cs-iss');
+  if (issEl && scene) {
+    issEl.addEventListener('click', () => {
+      const bonus = 300;
+      state.zion += bonus; state.zionTotal += bonus;
+      state.issVisited = true;
+      const pr = issEl.getBoundingClientRect(); const sr = scene.getBoundingClientRect();
+      const f = document.createElement('div');
+      f.className = 'cs-float'; f.textContent = `+${bonus} ZION 🛰️`;
+      f.style.fontSize = '13px';
+      f.style.left = `${pr.left - sr.left + pr.width/2 - 22}px`;
+      f.style.top  = `${pr.top  - sr.top  - 8}px`;
+      scene.appendChild(f); setTimeout(() => f.remove(), 1300);
+      const msgEl = document.getElementById('gm-msg');
+      if (msgEl) msgEl.textContent = '⊕ ISS Isabella docked! +300 ZION! 👨‍🚀🛰️';
+      _gmUpdateStats(state); _gmCheckMilestones(state); _gmRenderAchievements(state); _gmSave(state);
+    });
+  }
+
+  /* ── Death Star click ── */
+  const dsEl = document.getElementById('cs-death-star');
+  const dsSphere = dsEl?.querySelector('.cs-ds-sphere');
+  if (dsEl && scene) {
+    dsEl.addEventListener('click', () => {
+      const bonus = 1000 + (state.deathStarClicks || 0) * 250;
+      state.zion += bonus; state.zionTotal += bonus;
+      state.deathStarClicks = (state.deathStarClicks || 0) + 1;
+      /* Superlaser flash */
+      if (dsSphere) {
+        dsSphere.style.boxShadow = '0 0 50px rgba(255,60,0,1),0 0 120px rgba(255,60,0,.7),inset -10px -8px 24px rgba(0,0,0,.7)';
+        setTimeout(() => { dsSphere.style.boxShadow = ''; }, 450);
+      }
+      const pr = dsEl.getBoundingClientRect(); const sr = scene.getBoundingClientRect();
+      const f = document.createElement('div');
+      f.className = 'cs-float';
+      f.textContent = `💥 +${(bonus/1000).toFixed(1)}K ZION`;
+      f.style.fontSize = '15px';
+      f.style.left = `${pr.left - sr.left + pr.width/2 - 32}px`;
+      f.style.top  = `${pr.top  - sr.top  - 8}px`;
+      scene.appendChild(f); setTimeout(() => f.remove(), 1500);
+      const lines = ['💀 That\'s no moon... wait, it IS! (+ZION)', '🔫 The Force is strong with this wallet', '🚀 Rebel ZION fleet victorious!', '⊗ Exhaust port located — bonus mined!'];
+      const msgEl = document.getElementById('gm-msg');
+      if (msgEl) msgEl.textContent = lines[Math.floor(Math.random() * lines.length)];
+      _gmUpdateStats(state); _gmCheckMilestones(state); _gmRenderAchievements(state); _gmSave(state);
+    });
+  }
+
+  /* ── Baby Yoda / Grogu click ── */
+  const yodaEl = document.getElementById('cs-yoda');
+  if (yodaEl && scene) {
+    yodaEl.addEventListener('click', () => {
+      const bonus = 500;
+      state.zion += bonus; state.zionTotal += bonus;
+      state.yodaVisited = true;
+      const pr = yodaEl.getBoundingClientRect(); const sr = scene.getBoundingClientRect();
+      const f = document.createElement('div');
+      f.className = 'cs-float'; f.textContent = `+${bonus} ZION 🐸`;
+      f.style.fontSize = '14px';
+      f.style.left = `${pr.left - sr.left + pr.width/2 - 24}px`;
+      f.style.top  = `${pr.top  - sr.top  - 8}px`;
+      scene.appendChild(f); setTimeout(() => f.remove(), 1500);
+      const wisdoms = ['🐸 "Mine ZION, you must." — Grogu', '🌿 Rich in ZION, one becomes.', '🐸 Do or do not, there is no NGMI.', '✨ Much ZION, I sense in you, young ser.'];
+      const msgEl = document.getElementById('gm-msg');
+      if (msgEl) msgEl.textContent = wisdoms[Math.floor(Math.random() * wisdoms.length)];
+      _gmUpdateStats(state); _gmCheckMilestones(state); _gmRenderAchievements(state); _gmSave(state);
+    });
+  }
 
   /* ── Moon click (main action) ── */
   const moon = document.getElementById('gm-moon');
@@ -3631,6 +3714,11 @@ function initGameView() {
   setInterval(() => {
     if (Math.random() < 0.3 && state.zionTotal >= 100) _gmTriggerUFO(state);
   }, 180000);
+
+  /* ── Enterprise fly-by every 5 minutes (30% chance if >= 500 ZION) ── */
+  setInterval(() => {
+    if (Math.random() < 0.3 && state.zionTotal >= 500) _gmTriggerEnterprise(state);
+  }, 300000);
 
   /* ── Auto-save every 5s ── */
   setInterval(() => _gmSave(state), 5000);
@@ -3802,7 +3890,7 @@ function _gmTriggerUFO(state) {
   const ufo = document.getElementById('cs-ufo');
   if (!ufo) return;
   ufo.classList.remove('cs-ufo-fly');
-  void ufo.offsetWidth; // force reflow
+  void ufo.offsetWidth;
   ufo.classList.add('cs-ufo-fly');
   state.ufoSeen = true;
   setTimeout(() => {
@@ -3810,6 +3898,25 @@ function _gmTriggerUFO(state) {
     _gmRenderAchievements(state);
     _gmSave(state);
   }, 5000);
+}
+
+function _gmTriggerEnterprise(state) {
+  const ent = document.getElementById('cs-enterprise');
+  if (!ent) return;
+  ent.classList.remove('cs-trek-fly');
+  void ent.offsetWidth;
+  ent.classList.add('cs-trek-fly');
+  state.enterpriseSeen = true;
+  const msgEl = document.getElementById('gm-msg');
+  if (msgEl) {
+    const lines = ['🖖 USS Enterprise detected! Live long and ZION!', '🚀 Beam me up some ZION, Scotty!', '🖖 Warp factor 9... to the moon!', '⚡ Captain\'s log: ZION holdings nominal'];
+    msgEl.textContent = lines[Math.floor(Math.random() * lines.length)];
+  }
+  setTimeout(() => {
+    ent.classList.remove('cs-trek-fly');
+    _gmRenderAchievements(state);
+    _gmSave(state);
+  }, 6500);
 }
 
 function _gmShowMilestone(ms) {
