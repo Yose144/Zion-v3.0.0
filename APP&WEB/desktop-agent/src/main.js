@@ -999,6 +999,9 @@ const DEFAULT_CONFIG = {
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
   gpu: true,
+  // CHv3 GPU performance knobs (safe defaults for Ryzen 5 3600 + RX 5700 class rigs)
+  gpuCpuThreads: 5,
+  gpuBatchSize: 16000000,
   revenue: DEFAULT_REVENUE_PROFILE,
   // GPU Revenue Mining (CH3 Dynamic GPU system)
   gpuRevenue: false, // Enable GPU revenue mining with profit switching
@@ -2161,7 +2164,11 @@ function startMining(config) {
     const algoLowerPerf = String(config.algorithm || '').toLowerCase();
     const isChv3Perf = algoLowerPerf === 'cosmic_harmony' || algoLowerPerf === 'cosmic_harmony_v3';
     if (effectiveGpu && isChv3Perf) {
-      const gpuCpuCapRaw = Number(String(process.env.ZION_GPU_CPU_THREADS || '5').trim());
+      const cfgGpuCpuCap = Number(config?.gpuCpuThreads);
+      const envGpuCpuCap = Number(String(process.env.ZION_GPU_CPU_THREADS || '').trim());
+      const gpuCpuCapRaw = Number.isFinite(envGpuCpuCap) && envGpuCpuCap > 0
+        ? envGpuCpuCap
+        : (Number.isFinite(cfgGpuCpuCap) && cfgGpuCpuCap > 0 ? cfgGpuCpuCap : 5);
       const gpuCpuCap = Number.isFinite(gpuCpuCapRaw) && gpuCpuCapRaw > 0 ? Math.floor(gpuCpuCapRaw) : 5;
       effectiveThreads = Math.max(1, Math.min(effectiveThreads, gpuCpuCap));
     }
@@ -2590,7 +2597,11 @@ function startMining(config) {
     const isChv3 = algoLower === 'cosmic_harmony' || algoLower === 'cosmic_harmony_v3';
     if (isChv3 && mainMinerGpu) {
       if (!String(process.env.ZION_GPU_BATCH_SIZE || '').trim()) {
-        env.ZION_GPU_BATCH_SIZE = '16000000';
+        const cfgBatch = Number(config?.gpuBatchSize);
+        const tunedBatch = Number.isFinite(cfgBatch) && cfgBatch >= 1_000_000
+          ? Math.floor(cfgBatch)
+          : 16_000_000;
+        env.ZION_GPU_BATCH_SIZE = String(tunedBatch);
       }
       if (!String(process.env.ZION_CPU_SLEEP_MS || '').trim()) {
         env.ZION_CPU_SLEEP_MS = '0';
