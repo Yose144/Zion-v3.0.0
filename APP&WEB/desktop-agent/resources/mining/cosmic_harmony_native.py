@@ -241,12 +241,12 @@ class CosmicHarmonyNative:
                 input_arr, len(bh), nonce, height, output_arr
             )
         else:
-            # Old DLL without _with_height: manually replicate the nonce XOR
-            # and call base hash. NOTE: this still uses the full (memory-hard)
-            # variant, so shares may be invalid at height < 50,000.
-            effective_nonce = nonce ^ height
+            # Old DLL without _with_height: fall back to base hash (no XOR — core never
+            # XORs nonce with height). NOTE: this path always uses the memory-hard variant,
+            # so shares at height < 50,000 will still mismatch the pool's legacy path.
+            # Update the DLL to get the correct height-aware behaviour.
             result = self._lib.cosmic_harmony_v3_hash(
-                input_arr, len(bh), effective_nonce, output_arr
+                input_arr, len(bh), nonce, output_arr
             )
         
         if result != 0:
