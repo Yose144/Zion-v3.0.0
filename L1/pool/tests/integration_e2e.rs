@@ -8,6 +8,7 @@ use serde_json::{json, Value};
 use std::time::Duration;
 
 const POOL_ADDR: &str = "127.0.0.1:3333";
+const POOL_API_BASE: &str = "http://127.0.0.1:8080";
 const TEST_WALLET: &str = "ZION_INTEGRATION_TEST";
 
 /// Helper to connect and login a miner
@@ -241,7 +242,7 @@ async fn test_e2e_pplns_calculation() {
 async fn test_e2e_metrics_endpoint() {
     let client = reqwest::Client::new();
     let response = client
-        .get("http://127.0.0.1:8080/metrics")
+        .get(format!("{}/metrics", POOL_API_BASE))
         .send()
         .await
         .expect("Failed to connect to metrics endpoint");
@@ -263,7 +264,7 @@ async fn test_e2e_metrics_endpoint() {
 async fn test_e2e_api_health() {
     let client = reqwest::Client::new();
     let response = client
-        .get("http://127.0.0.1:8080/api/health")
+        .get(format!("{}/api/health", POOL_API_BASE))
         .send()
         .await
         .expect("Failed to connect to API");
@@ -307,7 +308,7 @@ async fn test_e2e_api_miner_stats() {
     
     // Query stats
     let response = client
-        .get(format!("http://127.0.0.1:8080/api/miner/{}", TEST_WALLET))
+        .get(format!("{}/api/miner/{}", POOL_API_BASE, TEST_WALLET))
         .send()
         .await
         .expect("Failed to query miner stats");

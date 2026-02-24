@@ -1,10 +1,10 @@
 /**
  * ZION DAO API Client
- * Connects to the Rust zion-dao daemon (axum, port 8080).
+ * Connects to the Rust zion-dao daemon (axum, port 8081).
  *
  * Endpoint base (override via NEXT_PUBLIC_DAO_API_URL):
- *   production  → https://zionterranova.com/dao-api  (nginx proxy → Helsinki:8080)
- *   development → http://localhost:8080
+ *   production  → https://zionterranova.com/dao-api  (nginx proxy → Helsinki:8081)
+ *   development → http://localhost:8081
  *
  * Rust DAO routes:
  *   GET  /api/dao/health
@@ -22,8 +22,8 @@
 const DAO_BASE =
   process.env.NEXT_PUBLIC_DAO_API_URL ||
   (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-    ? '/dao-api'           // nginx proxy to Helsinki:8080 in production
-    : 'http://localhost:8080');
+    ? '/dao-api'           // nginx proxy to Helsinki:8081 in production
+    : 'http://localhost:8081');
 
 // ---------------------------------------------------------------------------
 // TypeScript interfaces — aligned with Rust ProposalRow + dao_stats response
