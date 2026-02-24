@@ -90,7 +90,7 @@ impl GpuMiner for OpenCLMiner {
                     let platform_l = platform_name.to_ascii_lowercase();
                     let device_l = device_name.to_ascii_lowercase();
                     if platform_l.contains("amd") || device_l.contains("amd") || device_l.contains("gfx") {
-                        String::from("-cl-std=CL1.2")
+                        String::from("-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero")
                     } else {
                         String::from("-cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero")
                     }
