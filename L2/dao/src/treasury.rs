@@ -181,6 +181,31 @@ impl Treasury {
         self.balance
     }
 
+    /// Number of configured guardians.
+    pub fn guardian_count(&self) -> usize {
+        self.guardians.len()
+    }
+
+    /// Current multisig threshold.
+    pub fn threshold(&self) -> u32 {
+        self.threshold
+    }
+
+    /// Number of pending operations waiting for signatures/execution.
+    pub fn pending_count(&self) -> usize {
+        self.pending.len()
+    }
+
+    /// Signature count for a pending operation.
+    pub fn pending_signatures(&self, operation_id: &str) -> Option<usize> {
+        self.pending.get(operation_id).map(|p| p.signatures.len())
+    }
+
+    /// Public guardian membership check for API/auth layers.
+    pub fn is_guardian_address(&self, address: &str) -> bool {
+        self.is_guardian(address)
+    }
+
     /// Is address a guardian?
     fn is_guardian(&self, address: &str) -> bool {
         self.guardians

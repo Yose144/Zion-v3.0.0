@@ -33,6 +33,8 @@ use zion_dao::config::DaoConfig;
 use zion_dao::db::DaoDb;
 use zion_dao::l1_scanner::{L1Scanner, ScannerConfig};
 use zion_dao::metrics::DaoMetrics;
+use zion_dao::treasury::Treasury;
+use zion_dao::types::{Guardian, DAO_TREASURY_TOTAL};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Entry point
@@ -51,7 +53,10 @@ async fn main() {
     // ── Config: TOML file + env var overrides ──────────────────────────────
     // Priority: defaults < DAO_CONFIG=<path>.toml < individual env vars
     let cfg = DaoConfig::load(None);
-    info!("Config: name={} api_port={} db={}", cfg.name, cfg.api_port, cfg.db_path);
+    info!(
+        "Config: name={} api_port={} db={}",
+        cfg.name, cfg.api_port, cfg.db_path
+    );
 
     if cfg.api_key.is_empty() {
         tracing::warn!("ZION_DAO_API_KEY not set — write endpoints disabled");
@@ -75,7 +80,23 @@ async fn main() {
 
     // ── Initialize metrics ─────────────────────────────────────────────────
     let dao_metrics = DaoMetrics::new();
-    info!("📊 Prometheus metrics: http://0.0.0.0:{}/metrics", cfg.api_port);
+    info!(
+        "📊 Prometheus metrics: http://0.0.0.0:{}/metrics",
+        cfg.api_port
+    );
+
+    // ── Initialize Treasury (guardian set + premine total) ───────────────
+    let guardian_set: Vec<Guardian> = cfg
+        .guardians
+        .iter()
+        .map(|g| Guardian {
+            name: g.name.clone(),
+            address: g.address.clone(),
+            public_key: g.public_key.clone(),
+            is_active: true,
+        })
+        .collect();
+    let treasury = Arc::new(Mutex::new(Treasury::new(guardian_set, DAO_TREASURY_TOTAL)));
 
     // ── Build Axum app ─────────────────────────────────────────────────────
     let cors = CorsLayer::new()
@@ -88,6 +109,7 @@ async fn main() {
         config: Arc::clone(&dao_config),
         api_key: cfg.api_key.clone(),
         metrics: Arc::clone(&dao_metrics),
+        treasury: Arc::clone(&treasury),
     };
 
     let app = dao_router(state)
