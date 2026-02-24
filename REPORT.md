@@ -18,6 +18,7 @@
 | **cargo fmt** | ✅ čistý (zero diffs) |
 | **L1 připravenost** | **92%** |
 | **MainNet blokery** | 7 zbývá (viz Session 54 níže) |
+| **Desktop Agent** | AI Afterburner ✅ LIVE — 59.5 MH/s @ 150W → 397 kH/W |
 
 ---
 
@@ -47,6 +48,67 @@
 | algo | Algoritmus rotace — rozhodnutí dokumentovat | 🟡 |
 
 
+
+---
+
+## Session 55 — 24. 2. 2026 (AI Afterburner + GPU power/efficiency monitoring)
+
+**Commit:** `30005af`  
+**Soubory:** `APP&WEB/desktop-agent/ai/__init__.py` (nový), `APP&WEB/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 řádků), `APP&WEB/desktop-agent/resources/afterburner_service.py`, `APP&WEB/desktop-agent/src/main.js`
+
+### Cíl
+
+Integrovat **AI Afterburner** z 2.9 historie do aktuálního 2.9.6 projektu + přidat monitoring GPU spotřeby vs. výkonu (výkon/watt = H/W metrika).
+
+### Investigace GPU power API (AMD RX 5600 XT / RDNA)
+
+| API | Výsledek | Důvod |
+|-----|----------|-------|
+| ADL OD6 `CurrentPower` | ❌ vrací 0 | RDNA nepodporuje OD6 power API |
+| ADL OD8 `PM_Activity_Get` | ❌ neexistuje v DLL | Pouze novější Adrenalin |
+| ADL OD5 `CurrentActivity` | ❌ load%, ale žádné watty | OD5 neexponuje příkon pro RDNA |
+| ADL PMLog sensor 16 (`ASIC_POWER_W`) | ❌ `PMLog_Start` → -1 | Vyžaduje D3DKMT handle (background Python proces ho nemá) |
+| **WMI `Get-Counter GPU Engine Compute Util%`** | ✅ **108%** (GPU plně zatížena) | Funguje bez speciálních práv |
+
+### Řešení: WMI utilization + TDP profil
+
+```
+P = P_idle + (util / 100) × (TDP - P_idle)
+RX 5600 XT: P = 18 + 1.0 × (150 - 18) = 150 W
+```
+
+TDP profily pro RX 5xxx / 6xxx / 7xxx uloženy v `_GPU_TDP_W` dict.
+
+### Výsledek (live test)
+
+```
+GPU:  AMD Radeon RX 5600 XT
+Util: 100%  →  Est. Power: 150W
+Hashrate: 59.5 MH/s
+h/W stable: 396699 H/W  (59.5 MH/s @ 150W [estimated (100% util)])
+```
+
+### Co bylo implementováno
+
+| # | Akce | Detail |
+|---|------|--------|
+| 55-A | `ai/__init__.py` vytvořen | Python package marker |
+| 55-B | `ai/zion_ai_afterburner.py` (813 ř.) | ZionAIAfterburner portován z 2.9 history, rozšířen o ADL+WMI power monitoring |
+| 55-C | `afterburner_service.py` sys.path opraven | Electron subproces najde `ai/` modul |
+| 55-D | `main.js`: `aiAfterburner: true` | Afterburner spouští se automaticky při startu aplikace |
+| 55-E | Bug fix: `_adl_last_load_pct` (NameError) odstraněn | OD5 nepodporuje watty na RDNA |
+| 55-F | `_update_power_metrics()` přepsána | ADL direct → fallback WMI util% → TDP odhad → H/W výpočet |
+| 55-G | Rolling averages 10s / 60s H/W | Efficiency hint: stable / dropping (snižte batch) / improving (zvyšte batch) |
+
+### Efektivita
+
+| Metrika | Hodnota |
+|---------|---------|
+| GPU | AMD Radeon RX 5600 XT |
+| Hashrate | ~59.5 MH/s (GPU, CHv3 Rust backend) |
+| Odhadovaný příkon | ~150W (100% load, TDP profil) |
+| **Výkon/watt** | **~397 kH/W** |
+| Power source | `estimated (100% util)` — WMI+TDP, přímé měření bez ADL |
 
 ---
 
@@ -2406,3 +2468,123 @@ Pool log: 🎚️  VarDiff retarget: diff 314 → 511
 ### Desktop agent
 
 `DEFAULT_CONFIG.pool` byl již nastaven na `77.42.31.72:3333`. `autoSelectBestPool()` automaticky přepne uživatele z nefunkčního Asia3 na Helsinki. Bez změny kódu agenta.
+
+---
+
+## Session 55 — AI Afterburner + GPU power/efficiency monitoring (24. února 2026)
+
+**Commit:** `30005af`  
+**Soubory:** `APP&WEB/desktop-agent/ai/__init__.py` (nový), `APP&WEB/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 ř.), `APP&WEB/desktop-agent/resources/afterburner_service.py`, `APP&WEB/desktop-agent/src/main.js`
+
+### Cíl
+
+Integrovat **AI Afterburner** z 2.9 historie do aktuálního 2.9.6 projektu + přidat monitoring GPU spotřeby vs. výkonu (výkon/watt = H/W metrika).
+
+### Investigace GPU power API (AMD RX 5600 XT / RDNA)
+
+| API | Výsledek | Důvod |
+|-----|----------|-------|
+| ADL OD6 CurrentPower | vrací 0 | RDNA nepodporuje OD6 power API |
+| ADL OD8 PM_Activity_Get | neexistuje v DLL | Pouze novější Adrenalin |
+| ADL OD5 CurrentActivity | load%, ale žádné watty | OD5 neexponuje příkon pro RDNA |
+| ADL PMLog sensor 16 (ASIC_POWER_W) | PMLog_Start vrací -1 | Vyžaduje D3DKMT handle |
+| **WMI Get-Counter GPU Engine Compute Util%** | **108% — GPU plně zatížena** | Funguje bez speciálních práv |
+
+### Řešení: WMI utilization + TDP profil
+
+P = P_idle + (util / 100) x (TDP - P_idle)
+RX 5600 XT: P = 18 + 1.0 x (150 - 18) = 150 W
+
+TDP profily pro RX 5xxx / 6xxx / 7xxx uloženy v _GPU_TDP_W dict.
+
+### Co bylo implementováno
+
+| # | Akce | Detail |
+|---|------|--------|
+| 55-A | ai/__init__.py vytvořen | Python package marker |
+| 55-B | ai/zion_ai_afterburner.py (813 ř.) | ZionAIAfterburner portován z 2.9 history, rozšířen o ADL+WMI power monitoring |
+| 55-C | afterburner_service.py sys.path opraven | Electron subproces najde ai/ modul |
+| 55-D | main.js: aiAfterburner: true | Afterburner spouští se automaticky při startu aplikace |
+| 55-E | Bug fix: _adl_last_load_pct (NameError) odstraněn | OD5 nepodporuje watty na RDNA |
+| 55-F | _update_power_metrics() přepsána | ADL direct → fallback WMI util% → TDP odhad → H/W výpočet |
+| 55-G | Rolling averages 10s / 60s H/W | Efficiency hint: stable / dropping / improving |
+
+### Výsledek (live test)
+
+GPU: AMD Radeon RX 5600 XT
+Util: 100% → Est. Power: 150W
+Hashrate: 59.5 MH/s
+h/W stable: 396699 H/W  (59.5 MH/s @ 150W [estimated (100% util)])
+
+### Efektivita
+
+| Metrika | Hodnota |
+|---------|---------|
+| GPU | AMD Radeon RX 5600 XT |
+| Hashrate | ~59.5 MH/s (CHv3 Rust backend) |
+| Odhadovaný příkon | ~150W (100% load, TDP profil) |
+| Výkon/watt | ~397 kH/W |
+| Power source | estimated (100% util) — WMI+TDP |
+
+
+
+---
+
+## Session 55 — AI Afterburner + GPU power/efficiency monitoring (24. února 2026)
+
+**Commit:** `30005af`  
+**Soubory:** `APP&WEB/desktop-agent/ai/__init__.py` (nový), `APP&WEB/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 ř.), `APP&WEB/desktop-agent/resources/afterburner_service.py`, `APP&WEB/desktop-agent/src/main.js`
+
+### Cíl
+
+Integrovat **AI Afterburner** z 2.9 historie do aktuálního 2.9.6 projektu + přidat monitoring GPU spotřeby vs. výkonu (výkon/watt = H/W metrika).
+
+### Investigace GPU power API (AMD RX 5600 XT / RDNA)
+
+| API | Výsledek | Důvod |
+|-----|----------|-------|
+| ADL OD6 `CurrentPower` | ❌ vrací 0 | RDNA nepodporuje OD6 power API |
+| ADL OD8 `PM_Activity_Get` | ❌ neexistuje v DLL | Pouze novější Adrenalin |
+| ADL OD5 `CurrentActivity` | ❌ load%, ale žádné watty | OD5 neexponuje příkon pro RDNA |
+| ADL PMLog sensor 16 (`ASIC_POWER_W`) | ❌ `PMLog_Start` → -1 | Vyžaduje D3DKMT handle |
+| **WMI `Get-Counter GPU Engine Compute Util%`** | ✅ **108% — GPU plně zatížena** | Funguje bez speciálních práv |
+
+### Řešení: WMI utilization + TDP profil
+
+```
+P = P_idle + (util / 100) × (TDP - P_idle)
+RX 5600 XT: P = 18 + 1.0 × (150 - 18) = 150 W
+```
+
+TDP profily pro RX 5xxx / 6xxx / 7xxx uloženy v `_GPU_TDP_W` dict.
+
+### Co bylo implementováno
+
+| # | Akce | Detail |
+|---|------|--------|
+| 55-A | `ai/__init__.py` vytvořen | Python package marker |
+| 55-B | `ai/zion_ai_afterburner.py` (813 ř.) | ZionAIAfterburner portován z 2.9 history, rozšířen o ADL+WMI power monitoring |
+| 55-C | `afterburner_service.py` sys.path opraven | Electron subproces najde `ai/` modul |
+| 55-D | `main.js`: `aiAfterburner: true` | Afterburner spouští se automaticky při startu aplikace |
+| 55-E | Bug fix: `_adl_last_load_pct` (NameError) odstraněn | OD5 nepodporuje watty na RDNA |
+| 55-F | `_update_power_metrics()` přepsána | ADL direct → fallback WMI util% → TDP odhad → H/W výpočet |
+| 55-G | Rolling averages 10s / 60s H/W | Efficiency hint: stable / dropping / improving |
+
+### Výsledek (live test)
+
+```
+GPU:  AMD Radeon RX 5600 XT
+Util: 100%  →  Est. Power: 150W
+Hashrate: 59.5 MH/s
+h/W stable: 396699 H/W  (59.5 MH/s @ 150W [estimated (100% util)])
+```
+
+### Efektivita
+
+| Metrika | Hodnota |
+|---------|---------|
+| GPU | AMD Radeon RX 5600 XT |
+| Hashrate | ~59.5 MH/s (CHv3 Rust backend) |
+| Odhadovaný příkon | ~150W (100% load, TDP profil) |
+| **Výkon/watt** | **~397 kH/W** |
+| Power source | `estimated (100% util)` — WMI+TDP |
