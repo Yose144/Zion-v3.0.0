@@ -1,0 +1,80 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.4",
+	"Category": "MMORPG",
+	"Description": "ZION OASIS - The Golden Egg Chronicles. World's first spiritual AAA MMORPG. Blockchain-native, 51 sacred avatars, UE5 photorealistic open world.",
+	"Modules": [
+		{
+			"Name": "ZionOasis",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine",
+				"CoreUObject",
+				"UMG",
+				"Slate",
+				"SlateCore",
+				"OnlineSubsystem",
+				"OnlineSubsystemUtils",
+				"HTTP",
+				"Json",
+				"JsonUtilities"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelViewViewModel",
+			"Enabled": true
+		},
+		{
+			"Name": "EnhancedInput",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "CommonUI",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineSubsystem",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineSubsystemNull",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineSubsystemSteam",
+			"Enabled": true,
+			"Optional": true
+		},
+		{
+			"Name": "Nanite",
+			"Enabled": true
+		},
+		{
+			"Name": "Lumen",
+			"Enabled": true
+		},
+		{
+			"Name": "MetaHuman",
+			"Enabled": true
+		},
+		{
+			"Name": "ChaosPhysics",
+			"Enabled": true
+		},
+		{
+			"Name": "WorldPartition",
+			"Enabled": true
+		},
+		{
+			"Name": "LevelSnapshots",
+			"Enabled": true
+		}
+	]
+}
