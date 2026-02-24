@@ -100,7 +100,7 @@ const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
   { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
   { cmd: "zion-node --network mainnet --rpc-port 8444", desc: "Override RPC port" },
-  { cmd: "zion-node --peers 77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334", desc: "Manual peer list (3 of 5)" },
+  { cmd: "zion-node --peers 77.42.31.72:8334,178.156.240.160:8334,5.223.43.93:8334", desc: "Manual peer list (all 3 seeds)" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
   { cmd: "zion-node --data-dir /custom/path", desc: "Custom data directory" },
 ];
@@ -317,7 +317,7 @@ file = "zion.log"
 [peers]
 bootstrap = [
   "77.42.31.72:8334",
-  "46.225.126.243:8334"
+  "178.156.240.160:8334"
 ]`}
             />
           </div>
@@ -484,7 +484,7 @@ curl -s http://localhost:8444 \\
               },
               {
                 q: "No peers connecting",
-                a: "Verify firewall allows TCP 8334. Try manual peers: `--peers 77.42.31.72:8334,46.225.126.243:8334`. Check DNS resolution.",
+                a: "Verify firewall allows TCP 8334. Try manual peers: `--peers 77.42.31.72:8334,178.156.240.160:8334`. Check DNS resolution.",
               },
               {
                 q: "Sync stuck / slow",

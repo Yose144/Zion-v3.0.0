@@ -7,10 +7,8 @@ export const revalidate = 0;
 // Pool runs only on Helsinki (port 8080). Seed-only nodes get pool: 0 (skipped).
 const NODES = [
   { id: 'helsinki', host: '77.42.31.72',    rpc: 8444, pool: 8080 },
-  { id: 'seedde',  host: '46.225.126.243',  rpc: 8444, pool: 0 },
-  { id: 'usa1',    host: '5.78.178.227',    rpc: 8444, pool: 0 },
-  { id: 'usa2',    host: '178.156.240.160', rpc: 8444, pool: 0 },
-  { id: 'asia3',   host: '5.223.43.93',     rpc: 8444, pool: 0 },
+  { id: 'usa',      host: '178.156.240.160', rpc: 8444, pool: 0 },
+  { id: 'asia',     host: '5.223.43.93',     rpc: 8444, pool: 0 },
 ];
 
 const TIMEOUT = 6_000;
@@ -106,10 +104,10 @@ async function fetchNodeData(node: (typeof NODES)[number]) {
 
 /* ── GET handler ───────────────────────────────────────────────── */
 export async function GET() {
-  const [helsinki, seedde, usa1, usa2, asia3] = await Promise.all(NODES.map(fetchNodeData));
+  const [helsinki, usa, asia] = await Promise.all(NODES.map(fetchNodeData));
 
-  // 168h stability run — started 2026-02-22T21:30:45Z (5-node P2P verified)
-  const STABILITY_START_EPOCH = 1771795845; // unix epoch UTC
+  // 168h stability run — started 2026-02-24T11:48:00Z (3-node P2P verified)
+  const STABILITY_START_EPOCH = 1771962480; // unix epoch UTC
   const STABILITY_DURATION = 168 * 3600;   // 604800s = 7 days
   const nowSec = Math.floor(Date.now() / 1000);
   const elapsed = Math.min(Math.max(0, nowSec - STABILITY_START_EPOCH), STABILITY_DURATION);
@@ -117,18 +115,16 @@ export async function GET() {
   const data = {
     timestamp: new Date().toISOString(),
     stability_run: {
-      start: '2026-02-22T21:30:45Z',
+      start: '2026-02-24T11:48:00Z',
       elapsed_secs: elapsed,
       remaining_secs: Math.max(0, STABILITY_DURATION - elapsed),
       duration_secs: STABILITY_DURATION,
       progress_pct: Math.min(100, Math.round((elapsed / STABILITY_DURATION) * 100)),
     },
     helsinki,
-    seedde,
-    usa1,
-    usa2,
-    asia3,
-    log_tail: buildLogTail({ helsinki, seedde, usa1, usa2, asia3 }),
+    usa,
+    asia,
+    log_tail: buildLogTail({ helsinki, usa, asia }),
   };
 
   return NextResponse.json(data, {
@@ -142,15 +138,13 @@ export async function GET() {
 /* ── Build monitoring log from live data ────────────────────────── */
 type NodeResult = Awaited<ReturnType<typeof fetchNodeData>> | undefined;
 
-function buildLogTail(nodes: { helsinki: NodeResult; seedde: NodeResult; usa1: NodeResult; usa2: NodeResult; asia3: NodeResult }) {
+function buildLogTail(nodes: { helsinki: NodeResult; usa: NodeResult; asia: NodeResult }) {
   const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const lines: string[] = [];
   const entries = [
     { label: 'HELSINKI    ', data: nodes.helsinki },
-    { label: 'SEEDDE      ', data: nodes.seedde },
-    { label: 'USA1        ', data: nodes.usa1 },
-    { label: 'USA2        ', data: nodes.usa2 },
-    { label: 'ASIA3       ', data: nodes.asia3 },
+    { label: 'USA         ', data: nodes.usa },
+    { label: 'ASIA        ', data: nodes.asia },
   ];
   for (const { label, data } of entries) {
     const s = data?.stats;

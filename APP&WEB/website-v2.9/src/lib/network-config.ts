@@ -25,6 +25,8 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
+// Active 3-node topology (24.2.2026): Helsinki + Usa (Ashburn) + Asia (Singapore)
+// Decommissioned: SeedDE (46.225.126.243), Usa1 (5.78.178.227)
 const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
   {
     id: 'seed-helsinki',
@@ -37,50 +39,25 @@ const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
     rpcUrl: 'http://77.42.31.72:8444/jsonrpc',
     poolApiUrl: 'http://77.42.31.72:8080',
   },
-
   {
-    id: 'seed-seedde',
-    name: 'SeedDE',
-    host: '46.225.126.243',
-    region: 'EU-CENTRAL',
-    lat: 50.11,
-    lon: 8.68,
-    ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
-    rpcUrl: 'http://46.225.126.243:8444/jsonrpc',
-    poolApiUrl: 'http://46.225.126.243:8080',
-  },
-  {
-    id: 'seed-usa1',
-    name: 'Usa1',
-    host: '5.78.178.227',
-    region: 'US-WEST',
-    lat: 37.77,
-    lon: -122.42,
-    ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
-    rpcUrl: 'http://5.78.178.227:8444/jsonrpc',
-    poolApiUrl: 'http://5.78.178.227:8080',
-  },
-  {
-    id: 'seed-usa2',
-    name: 'Usa2',
+    id: 'seed-usa',
+    name: 'Usa',
     host: '178.156.240.160',
     region: 'US-EAST',
-    lat: 40.71,
-    lon: -74.01,
-    ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
+    lat: 38.89,
+    lon: -77.04,
+    ports: { p2p: 8334, rpc: 8444, stratum: 0, pool_api: 0 },
     rpcUrl: 'http://178.156.240.160:8444/jsonrpc',
-    poolApiUrl: 'http://178.156.240.160:8080',
   },
   {
-    id: 'seed-asia3',
-    name: 'Asia3',
+    id: 'seed-asia',
+    name: 'Asia',
     host: '5.223.43.93',
-    region: 'ASIA',
-    lat: 35.69,
-    lon: 139.69,
-    ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
+    region: 'AP-SOUTHEAST',
+    lat: 1.35,
+    lon: 103.82,
+    ports: { p2p: 8334, rpc: 8444, stratum: 0, pool_api: 0 },
     rpcUrl: 'http://5.223.43.93:8444/jsonrpc',
-    poolApiUrl: 'http://5.223.43.93:8080',
   },
 ];
 
@@ -95,7 +72,7 @@ const DEFAULT_MINING_POOLS: MiningPoolConfig[] = [
     lon: 24.94,
   },
 
-  // SeedDE/Usa1/Usa2/Asia3 are seed-only — no stratum pool
+  // Usa/Asia are seed-only — no stratum pool
 ];
 
 function safeJsonParse<T>(raw: string | undefined | null): T | null {

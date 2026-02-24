@@ -53,7 +53,7 @@ const missionMetrics = [
 const roadmapSlices = [
   {
     title: 'TestNet Live · Jan 2026',
-    bullets: ['Native Rust blockchain + pool infrastructure', '5 seed nodes: Helsinki · SeedDE · Usa1 · Usa2 · Asia3', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
+    bullets: ['Native Rust blockchain + pool infrastructure', '3 seed nodes: Helsinki · Usa · Asia', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
   },
   {
     title: 'Q1-Q2 2026 · Hardening',
