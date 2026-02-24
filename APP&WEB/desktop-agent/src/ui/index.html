@@ -2932,6 +2932,40 @@
       font-size: 12px; transition: all 0.2s;
     }
     .mining-console-header .ctrl-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+
+    /* ── AI Afterburner — efficiency stat card ─────────────────── */
+    .stat-card-afterburner .ab-hint {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #a0c8b0;
+      line-height: 1.4;
+      opacity: 0.85;
+    }
+    .accent-orange { color: #fb923c !important; }
+    .accent-gold   { color: #fbbf24 !important; }
+
+    /* ── Afterburner strip in mining console header ─────────────── */
+    .ab-console-strip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 10px;
+      background: rgba(251,191,36,0.08);
+      border: 1px solid rgba(251,191,36,0.18);
+      border-radius: 6px;
+      flex: 1;
+      min-width: 0;
+      margin: 0 10px;
+    }
+    .ab-strip-icon { font-size: 12px; flex-shrink: 0; }
+    .ab-strip-text {
+      font-size: 11px;
+      color: #d4a017;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ab-strip-text.ab-active { color: #fbbf24; }
     .miner-static-panel {
       background: rgba(0,0,0,0.45);
       border: 1px solid rgba(0,255,136,0.18);
@@ -4425,6 +4459,19 @@
             </div>
           </div>
 
+          <!-- EFFICIENCY (AI Afterburner) -->
+          <div class="stat-card stat-card-afterburner" id="ab-card">
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Efficiency</h3>
+            <div class="value accent-gold" id="ab-hpw-value">—</div>
+            <div class="label">kH/W  (hashes per watt)</div>
+            <div class="stat-sub">
+              <div class="sub-item"><span class="sub-label">Power</span><span class="sub-value accent-orange" id="ab-power-value">—</span></div>
+              <div class="sub-item"><span class="sub-label">GPU util</span><span class="sub-value" id="ab-util">—</span></div>
+              <div class="sub-item"><span class="sub-label">Source</span><span class="sub-value" id="ab-source">—</span></div>
+            </div>
+            <div class="ab-hint" id="ab-hint">AI Afterburner initializing...</div>
+          </div>
+
         </div>
       </div>
 
@@ -5103,6 +5150,19 @@
                 </label>
               </div>
               <div id="backend-status" class="mode-status">Auto selects Rust when available</div>
+
+              <div class="section-divider">AI Afterburner</div>
+
+              <div class="toggle-field">
+                <input type="checkbox" id="ai-afterburner-enabled" checked />
+                <div>
+                  <p>Enable AI Afterburner</p>
+                  <small>Monitors GPU power consumption and H/W efficiency in real-time. Uses WMI + TDP profile (Windows). Requires restart to take effect.</small>
+                </div>
+              </div>
+              <div id="ab-settings-status" class="mode-status" style="font-size:11px;color:#a0c8b0;margin-top:4px;">
+                ⚡ Live: checking...
+              </div>
             </section>
           </div>
         </div>
@@ -5138,6 +5198,10 @@
               <div class="dot offline" id="console-dot"></div>
               <span>Mining Console</span>
               <span id="console-status" class="console-status">idle</span>
+            </div>
+            <div class="ab-console-strip" id="ab-console-strip">
+              <span class="ab-strip-icon">⚡</span>
+              <span id="ab-console-status" class="ab-strip-text">Afterburner ready</span>
             </div>
             <div class="controls">
               <button class="ctrl-btn" id="console-clear-btn" title="Clear">⌫</button>
