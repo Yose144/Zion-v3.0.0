@@ -48,9 +48,9 @@ Pod forkovací výškou (blok < 100 000) se pipeline zkracuje — fáze [4] se p
 
 | Parametr | Stará hodnota | Nová hodnota | Důvod |
 |---|---|---|---|
-| `SCRATCHPAD_SIZE` | 256 KiB | **2 MiB** | Přesahuje SRAM kapacitu reálných ASIC čipů a L2 cache FPGA; nutnost DRAM eliminuje výhodu paralelismu |
-| `PASSES` | 4 | **8** | 8 průchodů × 2 MiB = 16 MiB sekvenčního R/W per hash |
-| `RANDOM_READS` | 512 | **1024** | 1024 data-dependent náhodných čtení — zvyšuje latency bound |
+| `SCRATCHPAD_SIZE` | 256 KiB | **512 KiB** | Přesahuje L1/L2 cache ASIC čipů a FPGA; použítí DRAM eliminuje výhodu paralelismu |
+| `PASSES` | 4 | **4** | 4 průchody × 512 KiB = 2 MiB sekvenčního R/W per hash |
+| `RANDOM_READS` | 512 | **256** | 256 data-dependent náhodných čtení — dostatečné pro data-dependency |
 
 Soubor: [`L1/cosmic-harmony/src/scratchpad.rs`](L1/cosmic-harmony/src/scratchpad.rs)
 
@@ -136,13 +136,9 @@ na stejnou CHv3 implementaci.
 
 | Komponenta | Nároky | Poznámka |
 |---|---|---|
-| RAM per hash | ~2 MiB | Scratchpad alokovaný na stacku/heapu per thread |
-| Sekvenční přístup | 16 MiB R/W | 8 průchodů × 2 MiB |
-| Keccak256 volání | 2 × 4 = 8 per Fusion | Per hash, 4 kola × 2 Keccak |
-| Celkové Keccak256 | ~10+ | Scratchpad init + Fusion + Random reads |
-
-Pro validátory a full nody je doporučeno min. 4 MiB volné RAM na vlákno těžební
-pipeline (2 MiB scratchpad + overhead).
+| `SCRATCHPAD_SIZE` | **512 KiB** | Benchmark: Legacy 99 kH/s → Full ~50–100 H/s (~1000× pomalější) |
+| `PASSES` | **4** | 4 průchody × 512 KiB = 2 MiB R/W per hash |
+| `RANDOM_READS` | **256** | Data-dependent náhodné čtení |
 
 ---
 
@@ -150,7 +146,7 @@ pipeline (2 MiB scratchpad + overhead).
 
 | Algoritmus | Paměť | Důvod ASIC odolnosti |
 |---|---|---|
-| **CHv3** | 2 MiB | Data-dependent scratchpad + dynamická XOR maska |
+| **CHv3** | 512 KiB | Data-dependent scratchpad + dynamická XOR maska |
 | RandomX (Monero) | 2 MB | Náhodný přístup do paměti |
 | Ethash (ETH pre-merge) | 1–4 GB | DAG v paměti |
 | SHA256 (Bitcoin) | < 1 KB | **Žádná** — ASIC dominuje |
