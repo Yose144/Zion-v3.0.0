@@ -1,6 +1,6 @@
 # 📊 ZION TerraNova — Project Report
 
-> **Datum:** 23. února 2026  
+> **Datum:** 24. února 2026  
 > **Verze:** v2.9.6 "On the Star"  
 > **MainNet cíl:** 31. prosince 2026
 
@@ -223,6 +223,33 @@
 96. ⚠️ **Mysterium registrace — fee blocker** — `POST /register` vrátil HTTP 202, transactor inicioval tx na Polygon (ChainID 137); ale `Fee:+62026071429350000 wei (~0.062 MYST)` selhal — wallet nemá MYST tokeny; status `RegistrationError → Unregistered`
 97. ✅ **Mysterium registrace — Úspěch přes MMN** — `--mmn.api-key=8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob` CLI flag před `service` subcommandem; mystnodes.com sponzoroval Polygon gas; oba nody `Registered`, všech 5 služeb aktivních: `dvpn`, `data_transfer`, `scraping`, `monitoring`, `quic_scraping`
 98. ✅ **Commit `f99bf59`** — `docker/docker-compose.revenue.yml` (MMN flag fix + NKN fix)
+
+### Session 29 — Desktop Agent: DAO/Warp/FreeWorld/Issobella + macOS Dock + Auto-Updates (24. února 2026)
+99. ✅ **OASIS sekce** — Plná UI sekce v desktop agentovi (L4 Oasis: XP, guilds, territories, consciousness gamification); commit `879d918`
+100. ✅ **DAO sekce** — Nová UI sekce (L2 DAO: on-chain governance, 14 modulů z Rust source); 3 taby (Overview, Architecture, Technical)
+101. ✅ **Warp sekce** — Nová UI sekce (L3 Warp: cross-chain corridory, 11 modulů); 3 taby (Overview, Architecture, Technical)
+102. ✅ **Commit `01954fe`** — DAO + Warp sekce (+952 řádků: 716 HTML/CSS + 236 JS)
+103. ✅ **Free World sekce** — Nová UI sekce (L5: humanitární/sovereignty layer, 2030+); milníky, revenue split, statistiky
+104. ✅ **Issobella sekce** — Nová UI sekce (L6: orbitální observatoř, 2040+); fáze, technické specifikace, timeline
+105. ✅ **Commit `bf67ec0`** — Free World + Issobella (+642 řádků: 501 HTML/CSS + 141 JS)
+106. ✅ **Nav reorganizace** — 12 položek seskupeno do 3 skupin (Core / Layers / System) s labely a separátory
+107. ✅ **Performance optimalizace** — Event delegation, view cache, dispatch table pro init funkce, optimalizovaný `switchView` (jen skryje předchozí view)
+108. ✅ **Commit `bf06936`** — Nav reorganizace + perf optimalizace
+109. ✅ **Bug fix: broken view switching** — Root cause: CSS `content-visibility: hidden` na `.view-shell.d-none` blokoval vykreslování i při inline `display: block`; třída `d-none` nebyla nikdy odstraněna. Fix: `switchView()` nyní odstraňuje `d-none`/`view-hidden` třídy. Orphaned `</div>` mezi OASIS a DAO opraven.
+110. ✅ **macOS Dock navbar** — Sidebar (240px vlevo) nahrazen spodním dock barem ve stylu macOS; glass morphism (`backdrop-filter: blur(40px)`), zaoblený pill tvar, hover scale/lift animace, aktivní golden dot indikátor, tečkové separátory
+111. ✅ **Commit `178b1ea`** — macOS dock + view switching fix (+166, -251)
+112. ✅ **Dock zvětšení** — Ikony 22px, logo 42px, padding 8/12px, labely 10px, separátory 36px, min-width 52px
+113. ✅ **Commit `7414dde`** — Dock enlarge
+114. ✅ **Auto-Updates** — Plná integrace automatických aktualizací v sekci About:
+  - Nový tab "Updates" s glassmorfním UI (progress bar, toggle, changelog, action buttons)
+  - `electron-updater` integrace (`autoDownload=false`, uživatelsky řízený flow)
+  - Graceful fallback na GitHub Releases API (`/repos/Yose144/2.9.6/releases/latest`) bez electron-updater
+  - Check → Download → Install & Restart flow s progress barem (MB/s, procenta)
+  - Auto-check toggle (uložen do config, default=on, 8s delay po startu)
+  - IPC: `check-for-updates`, `download-update`, `install-update`, `get-update-settings`, `set-update-auto-check`
+  - IPC eventy: `update-status`, `update-progress`
+  - Preload: 8 nových API metod
+115. ✅ **Commit `262f1ee`** — Auto-updater integrace (+669 řádků: main.js, preload.js, index.html, renderer.js)
 
 20. ✅ **Desktop Agent startup** — Opravena chyba s `&` v cestě (`scripts/launch-electron.js`)
 21. ✅ **Rust miner Windows build** — `cargo build --release -p zion-miner --features gpu` (4.9 MB)
