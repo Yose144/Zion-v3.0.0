@@ -2228,3 +2228,26 @@ test result: ok. 40 passed; 0 failed
 
 - DAO web nyní umí obsloužit backend multisig executor flow end-to-end (submit/sign/execute) ✅
 
+
+## Session 48 — Website lint workflow fix na Windows (24. února 2026)
+
+**Soubory:** `APP&WEB/website-v2.9/.npmrc`, `APP&WEB/website-v2.9/src/lib/dao-api.ts`
+
+### Co bylo dokončeno
+
+1. ✅ **Fix npm scripts shell pro cestu s `APP&WEB`**
+  - přidán project-level npm config: `script-shell=powershell.exe`
+  - odstraněn cmd quoting problém, kvůli kterému dříve padaly lifecycle skripty při cestě obsahující `&`
+
+2. ✅ **Instalace dependencies proběhla úspěšně**
+  - `npm install` ve `website-v2.9` doběhlo (s engine warningy, bez blokující chyby)
+
+3. ✅ **Lint je nyní spustitelný**
+  - `npm run lint` se normálně vykoná a vrací reálné ESLint výsledky
+  - odstranená lokální warning direktiva v `dao-api.ts` (`unused eslint-disable`)
+
+### Stav
+
+- Tooling blocker pro spuštění lintu na Windows je odstraněn ✅
+- Ve workspace zůstávají starší, nesouvisející ESLint chyby v dalších UI souborech (mimo DAO multisig změnu)
+
