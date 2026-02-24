@@ -411,6 +411,19 @@ impl UniversalMiner {
                     stats_ticks = 0;
                     let mut stats = self.stats.write().await;
                     stats.print();
+                    if let Some(ref path) = self.config.stats_file {
+                        let payload = stats.to_json();
+
+                        if let Some(parent) = path.parent() {
+                            let _ = std::fs::create_dir_all(parent);
+                        }
+
+                        let tmp = path.with_extension("tmp");
+                        if std::fs::write(&tmp, payload.to_string()).is_ok() {
+                            let _ = std::fs::remove_file(path);
+                            let _ = std::fs::rename(&tmp, path);
+                        }
+                    }
                 }
 
                 // Bug fix: also detect when submit loop died (cpu/gpu alive flag went false)
@@ -662,14 +675,7 @@ impl UniversalMiner {
         let gpu_alive_flag = Arc::new(std::sync::atomic::AtomicBool::new(true));
 
         for device in selected {
-            let mut miner = gpu::create_miner(&device)?;
-            miner.init()?;
-
-            // Register GPU name in stats engine
-            {
-                let mut stats = self.stats.write().await;
-                stats.set_gpu_name(&device.name);
-            }
+            let miner = gpu::create_miner(&device)?;
 
             let stats = Arc::clone(&self.stats);
             let job_state = Arc::clone(&job_state);
@@ -681,6 +687,19 @@ impl UniversalMiner {
             let gpu_alive = Arc::clone(&gpu_alive_flag);
 
             tokio::task::spawn_blocking(move || {
+                let mut miner = miner;
+                if let Err(e) = miner.init() {
+                    log::error!("GPU init failed on {} [{:?}]: {}", device_name, device_platform, e);
+                    if let Ok(mut st) = stats.try_write() {
+                        st.set_event(format!("gpu-init-failed {}", device_name));
+                    }
+                    return;
+                }
+
+                if let Ok(mut st) = stats.try_write() {
+                    st.set_gpu_name(&device_name);
+                }
+
                 Self::gpu_mining_loop(
                     miner,
                     initial_algo,
