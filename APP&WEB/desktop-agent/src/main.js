@@ -2508,6 +2508,9 @@ function startMining(config) {
     ...(process.platform === 'darwin' ? { ZION_COSMIC_CPP: process.env.ZION_COSMIC_CPP || '0' } : {}),
     // Prevent UnicodeEncodeError on Windows when PyInstaller app prints non-ASCII.
     PYTHONUTF8: '1',
+    // Belt-and-suspenders: force UTF-8 for all Python I/O (stdout/stderr/stdin).
+    // Without this, emoji in print() during module import crash under Electron pipes.
+    PYTHONIOENCODING: 'utf-8',
     PYTHONIOENCODING: 'utf-8',
     // Make sure prints/logs aren't stuck in a buffer when stdout isn't a TTY.
     PYTHONUNBUFFERED: '1',
