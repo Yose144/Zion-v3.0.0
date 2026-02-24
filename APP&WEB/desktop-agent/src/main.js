@@ -2219,6 +2219,38 @@ function startMining(config) {
     // ignore
   }
 
+  // GPU stability guard:
+  // Python CHv3 GPU path can produce invalid shares on some driver/kernel combos.
+  // When GPU mode is requested and Rust miner is available, prefer Rust backend.
+  if (effectiveGpu && MINER_IS_PYTHON) {
+    const forcePythonGpu = String(process.env.ZION_FORCE_PYTHON_GPU || '').trim() === '1';
+    if (!forcePythonGpu) {
+      const rustGpuPath = findRustMiner();
+      if (rustGpuPath && fs.existsSync(rustGpuPath)) {
+        MINER_PATH = rustGpuPath;
+        MINER_IS_RUST = true;
+        MINER_IS_PYTHON = false;
+        minerBackendResolved = 'rust';
+        minerBackendPath = rustGpuPath;
+        try {
+          logApp('gpu-backend-switch', JSON.stringify({ reason: 'gpu-mode-prefer-rust', path: rustGpuPath }));
+          sendToRenderer('miner-output', {
+            stream: 'stdout',
+            text: `[INFO] GPU mode: switching backend to Rust miner (${path.basename(rustGpuPath)}) for share validity.\n`
+          });
+          sendToRenderer('miner-backend', {
+            preferred: minerBackendPreferred,
+            resolved: 'rust',
+            path: rustGpuPath,
+            lastError: minerBackendLastError
+          });
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
   const rustGroupSupported = MINER_IS_RUST ? rustMinerSupportsGroupFlag(MINER_PATH) : false;
 
   // ═══════════════════════════════════════════════════════════
@@ -2661,6 +2693,19 @@ function startMining(config) {
   // If main Rust miner runs with --gpu but produces no hashrate/shares after warmup,
   // it is typically stuck in OpenCL init/kernel build. Auto-fallback to Python miner.
   if (MINER_IS_RUST && mainMinerGpu) {
+    const enableGpuInitWatchdog = String(process.env.ZION_ENABLE_GPU_INIT_WATCHDOG || '').trim() === '1';
+    if (!enableGpuInitWatchdog) {
+      try {
+        logApp('gpu-init-watchdog-disabled', JSON.stringify({ backend: minerBackendResolved, worker: config?.worker || '' }));
+      } catch {
+        // ignore
+      }
+    }
+    if (enableGpuInitWatchdog) {
+    const gpuWatchdogMsRaw = Number(String(process.env.ZION_GPU_INIT_WATCHDOG_MS || '150000').trim());
+    const gpuWatchdogMs = Number.isFinite(gpuWatchdogMsRaw) && gpuWatchdogMsRaw >= 30_000
+      ? Math.floor(gpuWatchdogMsRaw)
+      : 150_000;
     minerGpuInitWatchdogTimer = setTimeout(() => {
       try {
         if (!minerProcess || minerStopping || minerUserStopRequested) return;
@@ -2669,7 +2714,7 @@ function startMining(config) {
         const rejected = Number(minerStats.rejected || 0);
         if (hr > 0 || accepted > 0 || rejected > 0) return;
 
-        const reason = 'GPU init watchdog: 45s no hashrate/shares';
+        const reason = `GPU init watchdog: ${Math.round(gpuWatchdogMs / 1000)}s no hashrate/shares`;
         logApp('gpu-init-watchdog', JSON.stringify({ reason, backend: minerBackendResolved, worker: config?.worker || '' }));
         try {
           const persisted = loadConfig();
@@ -2683,7 +2728,7 @@ function startMining(config) {
         try {
           sendToRenderer('miner-output', {
             stream: 'stderr',
-            text: '[WARN] Rust GPU miner appears stuck (no hashrate/shares after 45s). Switching to Python GPU fallback...\n'
+            text: `[WARN] Rust GPU miner appears stuck (no hashrate/shares after ${Math.round(gpuWatchdogMs / 1000)}s). Switching to Python fallback...\n`
           });
         } catch {
           // ignore
@@ -2692,7 +2737,8 @@ function startMining(config) {
       } catch {
         // ignore
       }
-    }, 45_000);
+    }, gpuWatchdogMs);
+    }
   }
 
   // Windows DLL resolution: our native algo DLLs are built with MinGW and may depend on
@@ -2837,7 +2883,7 @@ function startMining(config) {
   // Supports both Rust (--group flag) and Python (--group CLI arg) miners.
   // ═══════════════════════════════════════════════════════════════
   const allowRevenueWithMainGpu = String(process.env.ZION_ALLOW_REVENUE_WITH_MAIN_GPU || '').trim() === '1';
-  const revenueSuppressedForGpuInit = MINER_IS_RUST && mainMinerGpu && !allowRevenueWithMainGpu;
+  const revenueSuppressedForGpuInit = mainMinerGpu && !allowRevenueWithMainGpu;
   const canSpawnRevenue =
     !revenueSuppressedForGpuInit &&
     xmrRevenueThreads > 0 &&
@@ -2851,13 +2897,13 @@ function startMining(config) {
   if (revenueSuppressedForGpuInit && xmrRevenueThreads > 0) {
     try {
       logApp('revenue-process-skipped', JSON.stringify({
-        reason: 'main-rust-gpu-active',
+        reason: 'main-gpu-active',
         worker: String(config?.worker || ''),
         threadsRequested: xmrRevenueThreads,
       }));
       sendToRenderer('miner-output', {
         stream: 'stdout',
-        text: '[CH3] Revenue CPU process skipped while Rust GPU init is active (stability guard). Set ZION_ALLOW_REVENUE_WITH_MAIN_GPU=1 to override.\n'
+        text: '[CH3] Revenue CPU process skipped while main GPU mining is active (stability guard). Set ZION_ALLOW_REVENUE_WITH_MAIN_GPU=1 to override.\n'
       });
     } catch {
       // ignore
@@ -2871,6 +2917,7 @@ function startMining(config) {
         const revArgs = [
           MINER_PATH,
           '--algorithm', String(algorithmForMiner || 'cosmic_harmony_v3'),
+          '--mode', 'cpu',
           '--pool', `${config.pool.host}:${config.pool.port}`,
           '--wallet', config.wallet || '',
           '--threads', String(xmrRevenueThreads),
