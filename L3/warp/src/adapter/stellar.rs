@@ -54,11 +54,35 @@ impl ChainAdapter for StellarAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::protocol::MintInstruction;
 
     #[test]
     fn test_stellar_adapter() {
         let a = StellarAdapter::new();
         assert_eq!(a.family(), ChainFamily::Stellar);
         assert_eq!(a.name(), "stellar");
+    }
+
+    #[tokio::test]
+    async fn test_stellar_health() {
+        assert!(StellarAdapter::new().health_check().await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_stellar_watch_events_empty() {
+        assert!(StellarAdapter::new().watch_events().await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_stellar_execute_mint_is_stub() {
+        let inst = MintInstruction { dest_chain: "test".into(), recipient: "GADDR".into(), amount_dest_atomic: 100, signatures: vec![], warp_message_hash: String::new() };
+        assert!(StellarAdapter::new().execute_mint(&inst).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_stellar_height_and_confirmations() {
+        let a = StellarAdapter::new();
+        assert_eq!(a.current_height().await.unwrap(), 0);
+        assert_eq!(a.confirmations("txhash").await.unwrap(), 0);
     }
 }
