@@ -17,7 +17,7 @@
 use std::net::SocketAddr;
 use tracing::info;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
-use zion_warp::{WarpConfig, WarpState};
+use zion_warp::WarpConfig;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -39,7 +39,26 @@ async fn main() -> anyhow::Result<()> {
     );
 
     // ── State ─────────────────────────────────────────────────────────────────
-    let state = WarpState::new(config.clone());
+    // Prefer persistent SQLite storage; fall back to in-memory if path is empty.
+    let state = if config.database_path.is_empty() {
+        info!("No database_path configured — using in-memory storage");
+        zion_warp::WarpState::new(config.clone())
+    } else {
+        // Ensure parent directory exists
+        if let Some(parent) = std::path::Path::new(&config.database_path).parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        match zion_warp::WarpState::with_db(config.clone(), &config.database_path) {
+            Ok(s) => {
+                info!(path = %config.database_path, "SQLite persistence enabled");
+                s
+            }
+            Err(e) => {
+                tracing::warn!(err = %e, "Failed to open database — falling back to in-memory");
+                zion_warp::WarpState::new(config.clone())
+            }
+        }
+    };
 
     // ── Router ────────────────────────────────────────────────────────────────
     let app = zion_warp::create_api_router(state);

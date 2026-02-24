@@ -56,6 +56,7 @@ impl ChainAdapter for SolanaAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::protocol::MintInstruction;
 
     #[test]
     fn test_solana_adapter_basic() {
@@ -68,5 +69,23 @@ mod tests {
     async fn test_solana_health() {
         let a = SolanaAdapter::new();
         assert!(a.health_check().await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_solana_watch_events_empty() {
+        assert!(SolanaAdapter::new().watch_events().await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_solana_execute_mint_is_stub() {
+        let inst = MintInstruction { dest_chain: "test".into(), recipient: "7xKXtg2CW87d97T".into(), amount_dest_atomic: 100, signatures: vec![], warp_message_hash: String::new() };
+        assert!(SolanaAdapter::new().execute_mint(&inst).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_solana_height_and_confirmations() {
+        let a = SolanaAdapter::new();
+        assert_eq!(a.current_height().await.unwrap(), 0);
+        assert_eq!(a.confirmations("txhash").await.unwrap(), 0);
     }
 }

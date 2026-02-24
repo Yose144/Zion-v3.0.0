@@ -54,11 +54,35 @@ impl ChainAdapter for CardanoAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::protocol::MintInstruction;
 
     #[test]
     fn test_cardano_adapter() {
         let a = CardanoAdapter::new();
         assert_eq!(a.family(), ChainFamily::Cardano);
         assert_eq!(a.name(), "cardano");
+    }
+
+    #[tokio::test]
+    async fn test_cardano_health() {
+        assert!(CardanoAdapter::new().health_check().await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_cardano_watch_events_empty() {
+        assert!(CardanoAdapter::new().watch_events().await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_cardano_execute_mint_is_stub() {
+        let inst = MintInstruction { dest_chain: "test".into(), recipient: "addr1xyz".into(), amount_dest_atomic: 100, signatures: vec![], warp_message_hash: String::new() };
+        assert!(CardanoAdapter::new().execute_mint(&inst).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_cardano_height_and_confirmations() {
+        let a = CardanoAdapter::new();
+        assert_eq!(a.current_height().await.unwrap(), 0);
+        assert_eq!(a.confirmations("txhash").await.unwrap(), 0);
     }
 }
