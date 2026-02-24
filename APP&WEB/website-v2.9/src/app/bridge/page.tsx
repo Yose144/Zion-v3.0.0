@@ -120,9 +120,12 @@ export default function BridgePage() {
   }, []);
 
   useEffect(() => {
-    load();
+    const initial = setTimeout(load, 0);
     const id = setInterval(load, 15_000);
-    return () => clearInterval(id);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(id);
+    };
   }, [load]);
 
   function copyText(text: string, key: string) {

@@ -142,9 +142,6 @@ export default function ProSearchBar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Reset selection when query changes
-  useEffect(() => setSelected(0), [query]);
-
   // Keyboard shortcut: "/" to focus search
   useEffect(() => {
     function handleGlobalKey(e: KeyboardEvent) {
@@ -177,7 +174,10 @@ export default function ProSearchBar() {
           ref={inputRef}
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelected(0);
+          }}
           onFocus={() => setFocused(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search by block height, tx hash, or address…"
@@ -190,6 +190,7 @@ export default function ProSearchBar() {
           <button
             onClick={() => {
               setQuery("");
+              setSelected(0);
               inputRef.current?.focus();
             }}
             className="pr-3 text-gray-500 hover:text-white transition"
