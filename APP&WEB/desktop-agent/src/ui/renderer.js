@@ -2805,7 +2805,7 @@ async function bridgeLoadEvmAddress() {
 /** Fetch wZION balance */
 async function bridgeLoadWzionBalance(addr) {
   try {
-    const res = await window.ipcRenderer.invoke('bridge-get-wzion-balance', addr);
+    const res = await window.electronAPI.bridgeGetWzionBalance(addr);
     const el  = document.getElementById('bridge-wzion-balance');
     if (el) el.textContent = res.success ? res.balance.toFixed(4) : 'Error';
   } catch (e) {
@@ -2820,7 +2820,7 @@ window.bridgeLoadStats = async function () {
   if (loadingEl) { loadingEl.style.display = 'block'; loadingEl.textContent = 'Loading…'; }
   if (gridEl)    { gridEl.style.display    = 'none'; }
   try {
-    const res = await window.ipcRenderer.invoke('bridge-get-stats');
+    const res = await window.electronAPI.bridgeGetStats();
     if (res.success) {
       const fmt = (n) => Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -2869,7 +2869,7 @@ window.bridgePrepareLock = async function () {
     return;
   }
   try {
-    const res = await window.ipcRenderer.invoke('bridge-prepare-lock', _bridgeEvmAddress);
+    const res = await window.electronAPI.bridgePrepareLock(_bridgeEvmAddress);
     if (!res.success) { alert(`Error: ${res.error}`); return; }
     _bridgeMemo = res.memo;
     const vaultEl = document.getElementById('bridge-vault-addr');
@@ -3396,48 +3396,14 @@ const DAO_HUMANITARIAN_CATEGORIES = [
 ];
 
 let _daoInitialized = false;
+let _daoRefreshTimer = null;
 
 function initDaoView() {
   if (_daoInitialized) return;
   _daoInitialized = true;
-  dbg('[DAO] Initializing DAO view');
+  dbg('[DAO] Initializing DAO view — connecting to live API');
 
-  /* — Proposals — */
-  const listEl = document.getElementById('dao-proposal-list');
-  if (listEl) {
-    listEl.innerHTML = DAO_PROPOSALS.map(p => {
-      const statusCls = 'dao-status-' + p.status.toLowerCase();
-      return `<div class="dao-proposal">
-        <div class="dao-proposal-header">
-          <div class="dao-proposal-title">${p.id} — ${p.title}</div>
-          <div class="dao-status-badge ${statusCls}">${p.status}</div>
-        </div>
-        <div class="dao-proposal-desc">${p.desc}</div>
-        <div class="dao-vote-bar">
-          <div class="dao-vote-yes" style="width:${p.yes}%"></div>
-          <div class="dao-vote-no" style="width:${p.no}%"></div>
-          <div class="dao-vote-abstain" style="width:${p.abstain}%"></div>
-        </div>
-        <div class="dao-vote-labels">
-          <span>Yes ${p.yes}%</span>
-          <span>Type: ${p.type}</span>
-          <span>No ${p.no}%</span>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  /* — Treasury stats — */
-  const spent = document.getElementById('dao-daily-spent');
-  if (spent) spent.textContent = '12.3M ZION';
-  const ops = document.getElementById('dao-ops-pending');
-  if (ops) ops.textContent = '2';
-  const dis = document.getElementById('dao-total-disbursed');
-  if (dis) dis.textContent = '347M ZION';
-  const sig = document.getElementById('dao-signers');
-  if (sig) sig.textContent = '5 / 7';
-
-  /* — Guardians — */
+  /* — Render static guardians / humanitarian (always visible) — */
   const gGrid = document.getElementById('dao-guardian-grid');
   if (gGrid) {
     gGrid.innerHTML = DAO_GUARDIANS.map(g => {
@@ -3450,8 +3416,6 @@ function initDaoView() {
       </div>`;
     }).join('');
   }
-
-  /* — Humanitarian — */
   const hGrid = document.getElementById('dao-humanitarian-grid');
   if (hGrid) {
     hGrid.innerHTML = DAO_HUMANITARIAN_CATEGORIES.map(c =>
@@ -3463,8 +3427,120 @@ function initDaoView() {
     ).join('');
   }
 
+  /* — Live data fetch — */
+  void refreshDaoData();
+
+  /* — Refresh button — */
+  const btn = document.getElementById('dao-refresh-btn');
+  if (btn) btn.addEventListener('click', () => void refreshDaoData());
+
+  /* — Auto-refresh every 60s while DAO tab is open — */
+  _daoRefreshTimer = setInterval(() => {
+    if (currentView === 'dao') void refreshDaoData();
+    else { clearInterval(_daoRefreshTimer); _daoRefreshTimer = null; }
+  }, 60000);
+
   setupSectionTabs();
   dbg('[DAO] View initialized');
+}
+
+async function refreshDaoData() {
+  /* — Status indicator — */
+  const statusEl = document.getElementById('dao-connection-status');
+  if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = 'rgba(255,255,255,0.4)'; }
+
+  try {
+    /* ── Stats ── */
+    const statsRes = await window.electronAPI.daoGetStats();
+    if (statsRes.success) {
+      const s = statsRes;
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      const fmt = (n) => n != null ? Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—';
+      set('dao-total-proposals',  fmt(s.total_proposals));
+      set('dao-active-proposals', fmt(s.active_proposals));
+      set('dao-passed-proposals', fmt(s.passed_proposals));
+      set('dao-total-votes',      fmt(s.total_votes));
+      if (statusEl) { statusEl.textContent = '● Live'; statusEl.style.color = '#00ff88'; }
+    }
+
+    /* ── Proposals ── */
+    const propRes = await window.electronAPI.daoGetProposals({ limit: 20 });
+    const proposals = propRes.success && Array.isArray(propRes.proposals) ? propRes.proposals : null;
+    const listEl = document.getElementById('dao-proposal-list');
+    if (listEl) {
+      if (proposals && proposals.length > 0) {
+        listEl.innerHTML = proposals.map(p => {
+          const total = (p.votes_yes || 0) + (p.votes_no || 0) + (p.votes_abstain || 0);
+          const yesPct     = total > 0 ? Math.round((p.votes_yes    || 0) / total * 100) : 0;
+          const noPct      = total > 0 ? Math.round((p.votes_no     || 0) / total * 100) : 0;
+          const abstainPct = total > 0 ? Math.round((p.votes_abstain|| 0) / total * 100) : 0;
+          const statusCls  = 'dao-status-' + (p.status || 'active').toLowerCase();
+          return `<div class="dao-proposal">
+            <div class="dao-proposal-header">
+              <div class="dao-proposal-title">${p.id} — ${p.title || ''}</div>
+              <div class="dao-status-badge ${statusCls}">${p.status || 'Active'}</div>
+            </div>
+            <div class="dao-proposal-desc">${p.description || ''}</div>
+            <div class="dao-vote-bar">
+              <div class="dao-vote-yes"     style="width:${yesPct}%"></div>
+              <div class="dao-vote-no"      style="width:${noPct}%"></div>
+              <div class="dao-vote-abstain" style="width:${abstainPct}%"></div>
+            </div>
+            <div class="dao-vote-labels">
+              <span>Yes ${yesPct}%</span>
+              <span>Type: ${p.proposal_type || 'General'}</span>
+              <span>No ${noPct}%</span>
+            </div>
+          </div>`;
+        }).join('');
+      } else {
+        /* Fallback to mock data when API is offline */
+        listEl.innerHTML = DAO_PROPOSALS.map(p => {
+          const statusCls = 'dao-status-' + p.status.toLowerCase();
+          return `<div class="dao-proposal">
+            <div class="dao-proposal-header">
+              <div class="dao-proposal-title">${p.id} — ${p.title}</div>
+              <div class="dao-status-badge ${statusCls}">${p.status}</div>
+            </div>
+            <div class="dao-proposal-desc">${p.desc}</div>
+            <div class="dao-vote-bar">
+              <div class="dao-vote-yes"     style="width:${p.yes}%"></div>
+              <div class="dao-vote-no"      style="width:${p.no}%"></div>
+              <div class="dao-vote-abstain" style="width:${p.abstain}%"></div>
+            </div>
+            <div class="dao-vote-labels">
+              <span>Yes ${p.yes}%</span>
+              <span>Type: ${p.type}</span>
+              <span>No ${p.no}%</span>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    /* ── Treasury ── */
+    const treasRes = await window.electronAPI.daoGetTreasury();
+    if (treasRes.success) {
+      const t = treasRes;
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      const fmtM = (n) => n != null ? (Number(n) / 1e6).toLocaleString(undefined, { maximumFractionDigits: 1 }) + 'M ZION' : '—';
+      set('dao-daily-spent',    fmtM(t.daily_spent));
+      set('dao-ops-pending',    t.pending_ops != null ? String(t.pending_ops) : '—');
+      set('dao-total-disbursed',fmtM(t.total_disbursed));
+      set('dao-signers',        t.signers || '—');
+    }
+
+  } catch (e) {
+    dbg('[DAO] API error:', e.message);
+    if (statusEl) { statusEl.textContent = '● Offline'; statusEl.style.color = '#f87171'; }
+
+    /* Fallback treasury stats */
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('dao-daily-spent',     '12.3M ZION');
+    set('dao-ops-pending',     '2');
+    set('dao-total-disbursed', '347M ZION');
+    set('dao-signers',         '5 / 7');
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -3511,40 +3587,37 @@ const WARP_VALIDATORS = [
 ];
 
 let _warpInitialized = false;
+let _warpRefreshTimer = null;
 
 function initWarpView() {
   if (_warpInitialized) return;
   _warpInitialized = true;
-  dbg('[WARP] Initializing Warp view');
+  dbg('[WARP] Initializing Warp view — connecting to live API');
 
-  /* — Transfer status flow — */
+  /* — Status flow (static) — */
   const flowEl = document.getElementById('warp-status-flow');
   if (flowEl) {
     flowEl.innerHTML = WARP_STATUS_FLOW.map((s, i) => {
       const active = i === 0 ? ' flow-active' : '';
-      const arrow = i < WARP_STATUS_FLOW.length - 1 ? '<span class="warp-flow-arrow">→</span>' : '';
+      const arrow  = i < WARP_STATUS_FLOW.length - 1 ? '<span class="warp-flow-arrow">→</span>' : '';
       return `<span class="warp-flow-step${active}">${s}</span>${arrow}`;
     }).join('');
   }
 
-  /* — Chains grid — */
-  const chainGrid = document.getElementById('warp-chain-grid');
-  if (chainGrid) {
-    chainGrid.innerHTML = WARP_CHAINS.map(c => {
-      const cls = c.enabled ? 'chain-enabled' : 'chain-disabled';
-      const badge = c.enabled ? '<span style="color:#00ff88; font-size:10px">● Live</span>' : '<span style="color:rgba(255,255,255,0.25); font-size:10px">○ Stub</span>';
-      return `<div class="warp-chain-card ${cls}">
-        <div class="warp-chain-icon">${c.icon}</div>
-        <div class="warp-chain-name">${c.name}</div>
-        <div class="warp-chain-family">${c.family}</div>
-        <div class="warp-chain-fee">Fee: ${c.fee}</div>
-        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px">Finality: ${c.finality} blocks</div>
-        <div style="margin-top:6px">${badge}</div>
-      </div>`;
-    }).join('');
+  /* — Fee split (static) — */
+  const feeEl = document.getElementById('warp-fee-split');
+  if (feeEl) {
+    feeEl.innerHTML = [
+      { pct: '50%', label: 'Burned',       color: '#f87171' },
+      { pct: '25%', label: 'DAO Treasury', color: 'var(--zion-gold)' },
+      { pct: '25%', label: 'Validators',   color: 'var(--zion-cyan)' },
+    ].map(f => `<div class="warp-fee-slice">
+      <div class="warp-fee-pct"   style="color:${f.color}">${f.pct}</div>
+      <div class="warp-fee-label">${f.label}</div>
+    </div>`).join('');
   }
 
-  /* — Validators — */
+  /* — Validators (static) — */
   const vGrid = document.getElementById('warp-validator-grid');
   if (vGrid) {
     vGrid.innerHTML = WARP_VALIDATORS.map(v => {
@@ -3558,20 +3631,7 @@ function initWarpView() {
     }).join('');
   }
 
-  /* — Fee distribution — */
-  const feeEl = document.getElementById('warp-fee-split');
-  if (feeEl) {
-    feeEl.innerHTML = [
-      { pct: '50%', label: 'Burned', color: '#f87171' },
-      { pct: '25%', label: 'DAO Treasury', color: 'var(--zion-gold)' },
-      { pct: '25%', label: 'Validators', color: 'var(--zion-cyan)' },
-    ].map(f => `<div class="warp-fee-slice">
-      <div class="warp-fee-pct" style="color:${f.color}">${f.pct}</div>
-      <div class="warp-fee-label">${f.label}</div>
-    </div>`).join('');
-  }
-
-  /* — Fee routes table — */
+  /* — Fee routes table (static fallback, overwritten by live data) — */
   const feeBody = document.getElementById('warp-fees-body');
   if (feeBody) {
     feeBody.innerHTML = WARP_FEE_ROUTES.map(r =>
@@ -3579,7 +3639,7 @@ function initWarpView() {
     ).join('');
   }
 
-  /* — Update fee display on chain change — */
+  /* — Dest-chain fee display — */
   const sel = document.getElementById('warp-dest-chain');
   const feeDisp = document.getElementById('warp-fee-display');
   if (sel && feeDisp) {
@@ -3589,8 +3649,148 @@ function initWarpView() {
     });
   }
 
+  /* — Live data fetch — */
+  void refreshWarpData();
+
+  /* — Refresh button — */
+  const btn = document.getElementById('warp-refresh-btn');
+  if (btn) btn.addEventListener('click', () => void refreshWarpData());
+
+  /* — Auto-refresh every 30s while WARP tab is open — */
+  _warpRefreshTimer = setInterval(() => {
+    if (currentView === 'warp') void refreshWarpData();
+    else { clearInterval(_warpRefreshTimer); _warpRefreshTimer = null; }
+  }, 30000);
+
   setupSectionTabs();
   dbg('[WARP] View initialized');
+}
+
+async function refreshWarpData() {
+  const statusEl = document.getElementById('warp-connection-status');
+  if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = 'rgba(255,255,255,0.4)'; }
+
+  try {
+    /* ── Health + Metrics ── */
+    const [healthRes, chainsRes, transfersRes] = await Promise.allSettled([
+      window.electronAPI.warpGetHealth(),
+      window.electronAPI.warpGetChains(),
+      window.electronAPI.warpGetTransfers(),
+    ]);
+
+    /* — Health — */
+    if (healthRes.status === 'fulfilled' && healthRes.value.success !== false) {
+      const h = healthRes.value;
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('warp-node-id',            h.node || h.node_id || '—');
+      set('warp-transfers-total',    h.transfers_total   != null ? String(h.transfers_total)   : '—');
+      set('warp-transfers-pending',  h.transfers_pending != null ? String(h.transfers_pending) : '—');
+      set('warp-version',            h.version || '2.9.6');
+      if (statusEl) { statusEl.textContent = '● Live'; statusEl.style.color = '#00ff88'; }
+    }
+
+    /* — Chains — */
+    if (chainsRes.status === 'fulfilled' && chainsRes.value.success !== false) {
+      const chains = chainsRes.value.chains;
+      const chainGrid = document.getElementById('warp-chain-grid');
+      if (chainGrid && Array.isArray(chains) && chains.length > 0) {
+        chainGrid.innerHTML = chains.map(c => {
+          const enabled = c.enabled !== false;
+          const cls     = enabled ? 'chain-enabled' : 'chain-disabled';
+          const badge   = enabled
+            ? '<span style="color:#00ff88; font-size:10px">● Live</span>'
+            : '<span style="color:rgba(255,255,255,0.25); font-size:10px">○ Stub</span>';
+          return `<div class="warp-chain-card ${cls}">
+            <div class="warp-chain-icon">${c.icon || '◎'}</div>
+            <div class="warp-chain-name">${c.name || c.chain_id || '?'}</div>
+            <div class="warp-chain-family">${c.family || c.chain_type || ''}</div>
+            <div class="warp-chain-fee">Fee: ${c.fee_rate || c.fee || '—'}</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px">Finality: ${c.finality_blocks || c.finality || '—'} blocks</div>
+            <div style="margin-top:6px">${badge}</div>
+          </div>`;
+        }).join('');
+      } else if (chainGrid) {
+        /* Fallback to static if API returns empty */
+        chainGrid.innerHTML = WARP_CHAINS.map(c => {
+          const cls   = c.enabled ? 'chain-enabled' : 'chain-disabled';
+          const badge = c.enabled
+            ? '<span style="color:#00ff88; font-size:10px">● Live</span>'
+            : '<span style="color:rgba(255,255,255,0.25); font-size:10px">○ Stub</span>';
+          return `<div class="warp-chain-card ${cls}">
+            <div class="warp-chain-icon">${c.icon}</div>
+            <div class="warp-chain-name">${c.name}</div>
+            <div class="warp-chain-family">${c.family}</div>
+            <div class="warp-chain-fee">Fee: ${c.fee}</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px">Finality: ${c.finality} blocks</div>
+            <div style="margin-top:6px">${badge}</div>
+          </div>`;
+        }).join('');
+      }
+    } else {
+      /* Fallback to static chains */
+      const chainGrid = document.getElementById('warp-chain-grid');
+      if (chainGrid) {
+        chainGrid.innerHTML = WARP_CHAINS.map(c => {
+          const cls   = c.enabled ? 'chain-enabled' : 'chain-disabled';
+          const badge = c.enabled
+            ? '<span style="color:#00ff88; font-size:10px">● Live</span>'
+            : '<span style="color:rgba(255,255,255,0.25); font-size:10px">○ Stub</span>';
+          return `<div class="warp-chain-card ${cls}">
+            <div class="warp-chain-icon">${c.icon}</div>
+            <div class="warp-chain-name">${c.name}</div>
+            <div class="warp-chain-family">${c.family}</div>
+            <div class="warp-chain-fee">Fee: ${c.fee}</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px">Finality: ${c.finality} blocks</div>
+            <div style="margin-top:6px">${badge}</div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    /* — Transfers — */
+    if (transfersRes.status === 'fulfilled' && transfersRes.value.success !== false) {
+      const transfers = transfersRes.value.transfers;
+      const txBody = document.getElementById('warp-transfers-body');
+      if (txBody && Array.isArray(transfers) && transfers.length > 0) {
+        txBody.innerHTML = transfers.slice(0, 20).map(t => {
+          const statusColor = t.status === 'Completed' ? '#00ff88'
+            : t.status === 'Failed' ? '#f87171'
+            : 'var(--zion-gold)';
+          const shortId = String(t.id || '').slice(0, 8) + '…';
+          return `<tr>
+            <td title="${t.id || ''}" style="font-family:monospace;font-size:11px">${shortId}</td>
+            <td>${t.source_chain || '—'} → ${t.dest_chain || '—'}</td>
+            <td>${t.amount_zion != null ? Number(t.amount_zion).toLocaleString() + ' ZION' : '—'}</td>
+            <td style="color:${statusColor}">${t.status || '—'}</td>
+          </tr>`;
+        }).join('');
+      } else if (txBody) {
+        txBody.innerHTML = '<tr><td colspan="4" style="text-align:center; opacity:0.4; padding:16px">No transfers yet</td></tr>';
+      }
+    }
+
+  } catch (e) {
+    dbg('[WARP] API error:', e.message);
+    if (statusEl) { statusEl.textContent = '● Offline'; statusEl.style.color = '#f87171'; }
+    /* Fallback to static chains on total failure */
+    const chainGrid = document.getElementById('warp-chain-grid');
+    if (chainGrid && !chainGrid.innerHTML.trim()) {
+      chainGrid.innerHTML = WARP_CHAINS.map(c => {
+        const cls   = c.enabled ? 'chain-enabled' : 'chain-disabled';
+        const badge = c.enabled
+          ? '<span style="color:#00ff88; font-size:10px">● Live</span>'
+          : '<span style="color:rgba(255,255,255,0.25); font-size:10px">○ Stub</span>';
+        return `<div class="warp-chain-card ${cls}">
+          <div class="warp-chain-icon">${c.icon}</div>
+          <div class="warp-chain-name">${c.name}</div>
+          <div class="warp-chain-family">${c.family}</div>
+          <div class="warp-chain-fee">Fee: ${c.fee}</div>
+          <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px">Finality: ${c.finality} blocks</div>
+          <div style="margin-top:6px">${badge}</div>
+        </div>`;
+      }).join('');
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════

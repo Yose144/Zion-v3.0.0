@@ -111,6 +111,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('config-updated', (event) => callback());
   },
 
+  // ── L2 Bridge (wZION, Base EVM) ──────────────────────────────────────────
+  bridgeGetWzionBalance: (evmAddress) => ipcRenderer.invoke('bridge-get-wzion-balance', evmAddress),
+  bridgeGetStats: () => ipcRenderer.invoke('bridge-get-stats'),
+  bridgeTxStatus: (txHash) => ipcRenderer.invoke('bridge-tx-status', txHash),
+  bridgePrepareLock: (evmRecipient) => ipcRenderer.invoke('bridge-prepare-lock', evmRecipient),
+
+  // ── L2 DAO (Governance, Treasury, Proposals) ─────────────────────────────
+  daoGetStats: () => ipcRenderer.invoke('dao-get-stats'),
+  daoGetProposals: (params) => ipcRenderer.invoke('dao-get-proposals', params),
+  daoGetProposal: (id) => ipcRenderer.invoke('dao-get-proposal', id),
+  daoCreateProposal: (data) => ipcRenderer.invoke('dao-create-proposal', data),
+  daoGetVotes: (id) => ipcRenderer.invoke('dao-get-votes', id),
+  daoCastVote: (data) => ipcRenderer.invoke('dao-cast-vote', data),
+  daoGetTreasury: () => ipcRenderer.invoke('dao-get-treasury'),
+  daoHealth: () => ipcRenderer.invoke('dao-health'),
+
+  // ── L3 WARP (Cross-chain Bridge Router) ──────────────────────────────────
+  warpGetHealth: () => ipcRenderer.invoke('warp-get-health'),
+  warpGetChains: () => ipcRenderer.invoke('warp-get-chains'),
+  warpGetMetrics: () => ipcRenderer.invoke('warp-get-metrics'),
+  warpGetTransfers: () => ipcRenderer.invoke('warp-get-transfers'),
+  warpGetPendingTransfers: () => ipcRenderer.invoke('warp-get-pending-transfers'),
+  warpGetTransfer: (id) => ipcRenderer.invoke('warp-get-transfer', id),
+  warpInitiateOutbound: (data) => ipcRenderer.invoke('warp-initiate-outbound', data),
+  warpInitiateInbound: (data) => ipcRenderer.invoke('warp-initiate-inbound', data),
+  warpAdvanceTransfer: (data) => ipcRenderer.invoke('warp-advance-transfer', data),
+
   // Cleanup listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);
