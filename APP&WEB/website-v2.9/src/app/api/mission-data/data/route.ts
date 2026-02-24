@@ -63,7 +63,7 @@ async function fetchNodeData(node: (typeof NODES)[number]) {
         tip: rpcInfo.top_block_hash ?? '',
         tps: 0,
         sync: { state: rpcInfo.synchronized ? 'synced' : 'syncing' },
-        network: rpcInfo.mainnet ? 'mainnet' : 'testnet',
+        network: 'TestNet 2.9.6', // node binary reports mainnet=true regardless; override to correct label
       }
     : undefined;
 
