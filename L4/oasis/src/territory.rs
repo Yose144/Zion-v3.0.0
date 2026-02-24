@@ -170,6 +170,7 @@ impl std::fmt::Display for TerritoryError {
 }
 
 /// Territory world map
+#[derive(Debug, Serialize)]
 pub struct TerritoryMap {
     territories: HashMap<String, Territory>,
 }
