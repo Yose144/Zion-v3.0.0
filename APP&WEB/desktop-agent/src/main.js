@@ -984,7 +984,8 @@ const DEFAULT_CONFIG = {
   // Rust miner CLI accepts 'cosmic_harmony' which internally runs CH v3 engine
   algorithm: 'cosmic_harmony_v3',
   // AI Afterburner integration (controls env ZION_AI_AFTERBURNER)
-  aiAfterburner: false,
+  // Enabled by default: monitors GPU power draw and computes H/W efficiency metric
+  aiAfterburner: true,
   // AI Native compute (earn ZION by processing AI tasks)
   aiNative: false, // OFF by default, user must enable
   aiNativePoolUrl: 'http://77.42.31.72:8001',
