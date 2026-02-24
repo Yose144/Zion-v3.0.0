@@ -294,24 +294,42 @@ pub fn cosmic_fusion_opt(input: &[u8]) -> Hash32 {
     hash
 }
 
-/// Single fusion round — data-dependent XOR maska.
+/// Single fusion round — Keccak256 + AES-NI maska (Haraka-inspired).
 ///
-/// Maska je odvozena z Keccak256(state[32..64] || round || 0xAB),
-/// takže je plně závislá na datech pipeline a mění se každé kolo.
-/// Statická konstanta (COSMIC_XOR_MASK) je odstraněna.
+/// Krok 1: intermediate = Keccak256(state[0..32] || round)  — data-dependent základ.
+/// Krok 2: maska = AES128(key=intermediate[0..16], plaintext=state[32..48,48..64])
+///          → na CPU s AES-NI: ~1–2 ns/blok (hardware instrukce AESENC).
+///          → ASIC musí implementovat AES hardware + Keccak hardware = dvojitá bariéra.
+///
+/// Inspirováno Haraka sponge construction z VerusHash 2.2.
 #[inline(always)]
 fn fusion_round(state: &mut [u8; 64], round: u8) {
-    // Krok 1: výstup z dolní poloviny stavu
+    use aes::{Aes128, cipher::{BlockEncrypt, KeyInit}};
+
+    // Krok 1: Keccak256 dolní poloviny — data-dependent intermediate
     let mut h1 = Keccak256::new();
     h1.update(&state[..32]);
     h1.update([round]);
     let intermediate = h1.finalize();
 
-    // Krok 2: data-dependent maska z horní poloviny stavu
-    let mut h2 = Keccak256::new();
-    h2.update(&state[32..64]);
-    h2.update([round, 0xAB]); // domain separator
-    let mask = h2.finalize();
+    // Krok 2: AES-NI maska (Haraka-inspired).
+    // Klíč = intermediate[0..16] (data-dependent, mění se každé kolo).
+    // Plaintext = horní polovina stavu (data-dependent).
+    // aes crate automaticky použije AESENC instrukci pokud má CPU AES-NI.
+    let aes_key: &[u8; 16] = intermediate[..16].try_into().unwrap();
+    let mut block0: [u8; 16] = state[32..48].try_into().unwrap();
+    let mut block1: [u8; 16] = state[48..64].try_into().unwrap();
+    let cipher = Aes128::new_from_slice(aes_key).expect("aes128 key");
+    cipher.encrypt_block((&mut block0).into());
+    // Druhý blok: round-dependent tweak pro key schedule rozmanitost
+    let mut key2 = *aes_key;
+    key2[0] ^= round;
+    key2[15] ^= 0xAB;
+    let cipher2 = Aes128::new_from_slice(&key2).expect("aes128 key2");
+    cipher2.encrypt_block((&mut block1).into());
+    let mut mask = [0u8; 32];
+    mask[..16].copy_from_slice(&block0);
+    mask[16..].copy_from_slice(&block1);
 
     // XOR + evoluce horní poloviny
     #[cfg(target_feature = "avx2")]
@@ -767,8 +785,9 @@ mod tests {
     }
 
     /// GPU-style CosmicFusion — musí přesně odpovídat fusion_round() v CPU variantě.
-    /// Data-dependent XOR maska derivovaná z state[32..64] — bez statické konstanty.
+    /// Krok 2 používá AES-128 místo Keccak (Haraka-inspired) — identické s CPU impl.
     fn gpu_cosmic_fusion(gm_words: &[u64; 8]) -> [u8; 32] {
+        use aes::{Aes128, cipher::{BlockEncrypt, KeyInit}};
         // Convert golden-matrix u64 words -> 64 bytes (LE)
         let mut state = [0u8; 64];
         for i in 0..8 {
@@ -778,18 +797,26 @@ mod tests {
         }
         // 4 fusion rounds — zrcadlí fusion_round() z CPU implementace
         for round in 0..4u8 {
-            // Step 1: intermediate z dolní poloviny (koresponduje s h1 v fusion_round)
+            // Step 1: intermediate (Keccak256 dolní polovina) — stejné jako fusion_round Step 1
             let mut kin = [0u8; 33];
             kin[..32].copy_from_slice(&state[..32]);
             kin[32] = round;
             let intermediate = gpu_keccak256(&kin);
 
-            // Step 2: dynamická maska z horní poloviny (koresponduje s h2 v fusion_round)
-            let mut mask_in = [0u8; 34];
-            mask_in[..32].copy_from_slice(&state[32..64]);
-            mask_in[32] = round;
-            mask_in[33] = 0xAB; // domain separator
-            let mask = gpu_keccak256(&mask_in);
+            // Step 2: AES-NI maska — koresponduje přesně s fusion_round Step 2
+            let aes_key: &[u8; 16] = intermediate[..16].try_into().unwrap();
+            let mut block0: [u8; 16] = state[32..48].try_into().unwrap();
+            let mut block1: [u8; 16] = state[48..64].try_into().unwrap();
+            let cipher = Aes128::new_from_slice(aes_key).unwrap();
+            cipher.encrypt_block((&mut block0).into());
+            let mut key2 = *aes_key;
+            key2[0] ^= round;
+            key2[15] ^= 0xAB;
+            let cipher2 = Aes128::new_from_slice(&key2).unwrap();
+            cipher2.encrypt_block((&mut block1).into());
+            let mut mask = [0u8; 32];
+            mask[..16].copy_from_slice(&block0);
+            mask[16..].copy_from_slice(&block1);
 
             // XOR + evoluce horní poloviny (identické s #[cfg(not(target_feature = "avx2"))])
             for i in 0..32 {
