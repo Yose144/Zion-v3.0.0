@@ -1,31 +1,46 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 24. února 2026 (Session 54 — P2P fix + 168h stability test restart)  
+> **Aktualizace:** 24. února 2026 (Session 57 — CHv3 ASIC hardening + AES-NI + MSVC fix + docs 2.9.7)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
 ---
 
-## 0.1) Kompletní oprava mineru (aktuální hotfix track)
+## 0.1) CHv3 ASIC Hardening + AES-NI ✅ HOTOVO
 
-### Cíl
-- [ ] Uzavřít reject smyčky po opravě `code 22` a stabilizovat runtime pro dlouhý běh.
-- [ ] Dokončit root-cause fix pro `code 23` (target/difficulty mismatch) bez degradace hashrate.
+- [x] Fork height `CHV3_MEMORY_HARD_FORK_HEIGHT = 100_000` — commit `8a2b295`
+- [x] Scratchpad: 512 KiB / 4 průchody / 256 random reads — commit `8a2b295`
+- [x] Dynamic XOR maska (data-dependent per-round) — commit `8a2b295`
+- [x] Env overrides zakázány v `--release` buildu — commit `8a2b295`
+- [x] AES-NI Haraka-inspired maska v `fusion_round()` (`aes = "0.8.4"`) — commit `c6189c4`
+- [x] 52/52 unit testů v release buildu (10.5 H/s 1T / 70.3 H/s 12T) — commit `55a5b75`
+- [x] Windows/MSVC build fix (haraka.c, VLA, SDK cesty) — commit `243e4b8`
+- [x] `cargo check`: zion-core ✅ / zion-pool ✅ / zion-miner ✅ — commit `243e4b8`
 
-### Plán (end-to-end)
-- [ ] Reprodukovat `code 23` v čistém startu (main + revenue) s uloženým log oknem.
-- [ ] Trasovat flow `job → diff → target → submit` v Python i Rust backendu.
-- [ ] Opravit sjednocení výpočtu/parsingu targetu (endianness + boundary check).
-- [ ] Přidat diagnostiku pro submit context (`job_id`, `pool_diff`, `target32`, `state0`).
-- [ ] Ověřit fix na lokálním běhu (A/R trend, bez regresí `code 22`).
-- [ ] Ověřit fix proti live poolu (Helsinki) v několika reconnect cyklech.
-- [ ] Zapsat výsledky do `REPORT.md` a uzavřít checklist + push na `main`.
+## 0.2) 2.9.7 Code Freeze — otevřené P0 blokkery
 
-### Akceptační kritéria
-- [ ] `code 22` se nevrací jako opakovaný dominantní reject pattern.
-- [ ] `code 23` podíl rejectů je stabilně nízký (cílově <10% ve steady-state okně).
-- [ ] Při reconnectu nedochází k burst rejectům způsobeným stale target/state.
-- [ ] Main + revenue stream běží souběžně bez kolizí nonce prostoru.
+### Lze udělat lokálně (kód)
+- [ ] **A-05** — opravit `peers: null` v `/health` endpointu (`L1/core/src/api/`)
+- [ ] **B-01** — on-chain time-lock enforcement aktivovat v mainnet buildu (`premine.rs`) + unit test
+- [ ] **B-02** — algo rotace: zdokumentovat rozhodnutí v `block.rs` + `CODE_FREEZE.md`
+- [ ] **B-05** — Prometheus rule `blocks_rejected_alert` + Grafana panel (`monitoring/`)
+- [ ] **C-03** — `docs/2.9.7/GENESIS_CEREMONY.md` — key ceremony runbook
+- [ ] **C-04** — `Genesis/GENESIS_MESSAGE.txt` — finalizovat text
+- [ ] **D-04** — `docs/2.9.7/API_ENDPOINTS.md` — canonical single source of truth
+
+### Potřebuje server / ceremonii
+- [ ] **A-03/A-04** — Alertmanager Telegram tokeny nastavit na Helsinki + test-incident
+- [ ] **C-01/C-02** — `genesis.json` OFFLINE vytvořit + ověřit adresy vs. `PREMINE_ADDRESSES_PUBLIC.txt`
+- [ ] **D-01** — Docker SHA-256 manifest (Helsinki `docker inspect`)
+- [ ] **D-05** — 168h stability window (🟡 běží, cíl **2026-03-03 11:48 UTC**)
+- [ ] **D-06/D-07** — `v2.9.7-freeze` tag + `CODE_FREEZE.md` podpis
+
+### Revenue (implementováno, aktivace v 2.9.8)
+- [x] `revenue_proxy.rs` 1869 ř. — StratumProtocol EthStratum/CryptoNoteStratum/ZcashStratum
+- [x] `stream_scheduler.rs` — 50/25/25, PerMiner/TimeSplit
+- [x] `profit_switcher.rs` — WhatToMine API, GPU detekce, hysteresis
+- [x] `config/ch3_revenue_settings.json` v3.0.0 — 5 streamů
+- [ ] Produkční aktivace: wallet adresy, BuyBack, Mysterium/NKN (→ **2.9.8**)
 
 ---
 
@@ -222,7 +237,12 @@
 - ✅ **Session 54:** P2P fix — arm64→amd64 image na Usa+Asia, SEED_PEERS opraven na všech 3 nodech, Helsinki compose file
 - ✅ **Session 54:** `docs/2.9.7/STABILITY_LOG.md` vytvořen, 168h test spuštěn `2026-02-24 11:48 UTC`
 - ✅ **Session 54:** SERVERS.md SSH klíč opraven: `zion_servers_ed25519` → `zion_server_key`
-- ⏭️ **Další P0:** Telegram tokeny nastavit na serveru, genesis.json OFFLINE, docker images SHA-256, constitution FROZEN
-- ✅ **Session 54:** `docs/2.9.7/STABILITY_LOG.md` vytvořen, 168h test spuštěn `2026-02-24 11:48 UTC`
-- ✅ **Session 54:** SERVERS.md SSH klíč opraven: `zion_servers_ed25519` → `zion_server_key`
-- ⏭️ **Další P0:** Telegram tokeny nastavit na serveru, genesis.json OFFLINE, docker images SHA-256, constitution FROZEN
+- ✅ **Session 55:** AI Afterburner `ai/zion_ai_afterburner.py` (813 ř.) — GPU power monitoring, live H/W výpočet
+- ✅ **Session 56:** CHv3 ASIC hardening (fork@100k, 512KiB/4/256, dynamic XOR, env lockout) — commit `8a2b295`
+- ✅ **Session 56:** AES-NI Haraka mask v `fusion_round()` (aes=0.8.4) — commit `c6189c4`
+- ✅ **Session 56:** 52/52 testů v release, benchmark 10.5 H/s (1T) / 70.3 H/s (12T) — commit `55a5b75`
+- ✅ **Session 56:** Windows MSVC build fix (haraka.c, VLA, SDK auto-detect) — commit `243e4b8`
+- ✅ **Session 57:** `docs/2.9.7/` aktualizovány — revenue IS implemented, B-06/07/08, Skupina E, CHANGELOG_2.9.7.md — commit `43322cf`
+- ✅ **Session 57:** L4 Oasis architektura, changelog, README aktualizovány — commit pushnut
+- ⏭️ **Další P0 (lokálně):** A-05 `peers:null`, B-01 time-lock, B-02 algo rotace rozhodnutí, B-05 Prometheus blocks_rejected, D-04 API_ENDPOINTS.md
+- ⏭️ **Další P0 (server):** Alertmanager Telegram tokeny, genesis.json OFFLINE, Docker SHA-256, constitution FROZEN, v2.9.7-freeze tag
