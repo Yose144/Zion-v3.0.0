@@ -13,32 +13,36 @@ use crate::scratchpad;
 
 /// Fork height pro aktivaci memory-hard scratchpad fáze v CHv3.
 ///
-/// Poznámka: ponecháno na 0 => aktivní ihned (aktuální chování).
-/// Pro staged rollout změňte na plánovanou výšku hard-forku.
-pub const CHV3_MEMORY_HARD_FORK_HEIGHT: u64 = 50_000;
+/// Aktivuje se od bloku 100 000 (mainnet hard-fork).
+/// Testnety pod tímto číslem stále běží legacy pipeline.
+pub const CHV3_MEMORY_HARD_FORK_HEIGHT: u64 = 100_000;
 
 /// Runtime override pro memory-hard scratchpad fázi.
 ///
-/// Bezpečnostní poznámka:
-/// - Default chování je řízeno výškou (`CHV3_MEMORY_HARD_FORK_HEIGHT`).
-/// - Tyto override jsou určené pro TESTING / staged rollout.
-/// - Na mainnetu musí být aktivace memory-hard deterministická a konzistentní
-///   pro všechny uzly (tj. typicky jen přes fork-height / chain parametry).
+/// BEZPEČNOSTNÍ PRAVIDLO:
+/// - V release/mainnet buildu (`--release`, `debug_assertions = false`) jsou env
+///   overrides ZAKÁZÁNY. Aktivace se řídí výhradně `CHV3_MEMORY_HARD_FORK_HEIGHT`.
+/// - Env overrides sont dostupné POUZE v debug/testovacím buildu.
 #[inline]
 fn runtime_memory_hard_override() -> Option<bool> {
-    // 1) Explicitní disable má přednost
-    if let Ok(v) = std::env::var("ZION_CHV3_MEMORY_HARD_DISABLE") {
-        let v = v.trim().to_ascii_lowercase();
-        if v == "1" || v == "true" || v == "yes" {
-            return Some(false);
+    // Env overrides jsou povoleny pouze v debug buildu (testnet/dev).
+    // V release buildu tato funkce vždy vrátí None — konsenzus řídí jen výška.
+    #[cfg(debug_assertions)]
+    {
+        // 1) Explicitní disable má přednost
+        if let Ok(v) = std::env::var("ZION_CHV3_MEMORY_HARD_DISABLE") {
+            let v = v.trim().to_ascii_lowercase();
+            if v == "1" || v == "true" || v == "yes" {
+                return Some(false);
+            }
         }
-    }
 
-    // 2) Force enable
-    if let Ok(v) = std::env::var("ZION_CHV3_MEMORY_HARD_FORCE") {
-        let v = v.trim().to_ascii_lowercase();
-        if v == "1" || v == "true" || v == "yes" {
-            return Some(true);
+        // 2) Force enable
+        if let Ok(v) = std::env::var("ZION_CHV3_MEMORY_HARD_FORCE") {
+            let v = v.trim().to_ascii_lowercase();
+            if v == "1" || v == "true" || v == "yes" {
+                return Some(true);
+            }
         }
     }
 
@@ -97,11 +101,8 @@ pub const PHI_POWERS_FP: [u64; 16] = [
     5858338540545, // φ^15 * 2^32
 ];
 
-/// XOR mask for cosmic fusion (pre-computed)
-pub const COSMIC_XOR_MASK: [u8; 32] = [
-    0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60,
-    0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60,
-];
+// COSMIC_XOR_MASK byla statická konstanta — nahrazena dynamickou derivací
+// z horní poloviny stavu uvnitř fusion_round() pro ASIC hardening.
 
 // ============================================================================
 // OPTIMIZED HASH OUTPUT (Fixed-size, stack-allocated)
@@ -265,15 +266,19 @@ pub fn golden_matrix_simd(input: &[u8]) -> Hash64 {
 // OPTIMIZED COSMIC FUSION (Step 4) - SIMD XOR
 // ============================================================================
 
-/// Cosmic Fusion optimized - zero allocation, SIMD XOR
+/// Cosmic Fusion optimized - dynamická data-dependent maska, bez statické konstanty.
+///
+/// Pipeline přijímá 64B výstup z memory_hard_transform.
+/// Horní polovina stavu (bytes 32–63) slouží jako klíč pro XOR v každém kole
+/// a sama se vyvíjí — ASIC nemůže hardwirovat žádnou konstantu.
 #[inline]
 pub fn cosmic_fusion_opt(input: &[u8]) -> Hash32 {
-    // Pre-allocated state buffer (stack)
+    // State: dolní 32B = pracovní oblast, horní 32B = evolvující klíč
     let mut state = [0u8; 64];
     let copy_len = input.len().min(64);
     state[..copy_len].copy_from_slice(&input[..copy_len]);
 
-    // 4 rounds of fusion (unrolled)
+    // 4 kola fusion s data-dependent maskou
     fusion_round(&mut state, 0);
     fusion_round(&mut state, 1);
     fusion_round(&mut state, 2);
@@ -289,32 +294,48 @@ pub fn cosmic_fusion_opt(input: &[u8]) -> Hash32 {
     hash
 }
 
-/// Single fusion round - inlined
+/// Single fusion round — data-dependent XOR maska.
+///
+/// Maska je odvozena z Keccak256(state[32..64] || round || 0xAB),
+/// takže je plně závislá na datech pipeline a mění se každé kolo.
+/// Statická konstanta (COSMIC_XOR_MASK) je odstraněna.
 #[inline(always)]
 fn fusion_round(state: &mut [u8; 64], round: u8) {
-    // Keccak round
-    let mut hasher = Keccak256::new();
-    hasher.update(&state[..32]);
-    hasher.update([round]);
-    let intermediate = hasher.finalize();
+    // Krok 1: výstup z dolní poloviny stavu
+    let mut h1 = Keccak256::new();
+    h1.update(&state[..32]);
+    h1.update([round]);
+    let intermediate = h1.finalize();
 
-    // SIMD XOR with mask
+    // Krok 2: data-dependent maska z horní poloviny stavu
+    let mut h2 = Keccak256::new();
+    h2.update(&state[32..64]);
+    h2.update([round, 0xAB]); // domain separator
+    let mask = h2.finalize();
+
+    // XOR + evoluce horní poloviny
     #[cfg(target_feature = "avx2")]
     {
         use std::arch::x86_64::*;
         unsafe {
             let a = _mm256_loadu_si256(intermediate.as_ptr() as *const __m256i);
-            let b = _mm256_loadu_si256(COSMIC_XOR_MASK.as_ptr() as *const __m256i);
+            let b = _mm256_loadu_si256(mask.as_ptr() as *const __m256i);
             let result = _mm256_xor_si256(a, b);
+            // Aktualizace dolní poloviny
             _mm256_storeu_si256(state.as_mut_ptr() as *mut __m256i, result);
+            // Evoluce horní poloviny: state[32..64] ^= intermediate
+            let c = _mm256_loadu_si256(state.as_ptr().add(32) as *const __m256i);
+            let d = _mm256_loadu_si256(intermediate.as_ptr() as *const __m256i);
+            let evolved = _mm256_xor_si256(c, d);
+            _mm256_storeu_si256(state.as_mut_ptr().add(32) as *mut __m256i, evolved);
         }
     }
 
     #[cfg(not(target_feature = "avx2"))]
     {
-        // Fallback: manual XOR
         for i in 0..32 {
-            state[i] = intermediate[i] ^ COSMIC_XOR_MASK[i];
+            state[32 + i] ^= intermediate[i]; // evoluce klíče
+            state[i] = intermediate[i] ^ mask[i];
         }
     }
 }
@@ -745,7 +766,8 @@ mod tests {
         result
     }
 
-    /// GPU-style CosmicFusion
+    /// GPU-style CosmicFusion — musí přesně odpovídat fusion_round() v CPU variantě.
+    /// Data-dependent XOR maska derivovaná z state[32..64] — bez statické konstanty.
     fn gpu_cosmic_fusion(gm_words: &[u64; 8]) -> [u8; 32] {
         // Convert golden-matrix u64 words -> 64 bytes (LE)
         let mut state = [0u8; 64];
@@ -754,14 +776,25 @@ mod tests {
                 state[i*8+b] = (gm_words[i] >> (b*8)) as u8;
             }
         }
-        // 4 fusion rounds
+        // 4 fusion rounds — zrcadlí fusion_round() z CPU implementace
         for round in 0..4u8 {
+            // Step 1: intermediate z dolní poloviny (koresponduje s h1 v fusion_round)
             let mut kin = [0u8; 33];
             kin[..32].copy_from_slice(&state[..32]);
             kin[32] = round;
             let intermediate = gpu_keccak256(&kin);
+
+            // Step 2: dynamická maska z horní poloviny (koresponduje s h2 v fusion_round)
+            let mut mask_in = [0u8; 34];
+            mask_in[..32].copy_from_slice(&state[32..64]);
+            mask_in[32] = round;
+            mask_in[33] = 0xAB; // domain separator
+            let mask = gpu_keccak256(&mask_in);
+
+            // XOR + evoluce horní poloviny (identické s #[cfg(not(target_feature = "avx2"))])
             for i in 0..32 {
-                state[i] = intermediate[i] ^ COSMIC_XOR_MASK[i];
+                state[32 + i] ^= intermediate[i];
+                state[i] = intermediate[i] ^ mask[i];
             }
         }
         // Final: SHA3-512(state[0..32]) -> first 32 bytes
@@ -1022,9 +1055,14 @@ mod tests {
         let cpu_hash = cosmic_harmony_v3_with_height(&blob_bytes, nonce, 750);
         let gpu_hash = gpu_cosmic_harmony_v3_legacy(&blob_bytes, nonce);
 
-        // Also test with intermediates
+        // Also test with intermediates — musí vrátit identický výsledek jako cpu_hash
         let (cpu_final, intermediates) =
             cosmic_harmony_v3_with_height_intermediates(&blob_bytes, nonce, 750);
+
+        assert_eq!(
+            cpu_hash.data, cpu_final.data,
+            "cosmic_harmony_v3_with_height a _with_height_intermediates musí vrátit stejný hash"
+        );
 
         println!("Real data test (nonce={}, blob_len={}, height=750):", nonce, blob_bytes.len());
         println!("  CPU final hash: {}", hex::encode(cpu_final.data));
