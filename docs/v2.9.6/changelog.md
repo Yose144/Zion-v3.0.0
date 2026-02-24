@@ -78,6 +78,69 @@
 - `docs/v2.9.6/changelog.md` — tento soubor
 - `docs/v2.9.6/p2p.md` — P2P protokol
 - `docs/v2.9.6/launch-plan.md` — Mainnet launch plán
+
+---
+
+## Session 9–17 Únor + 24. Únor 2026 — L2/L3/L4 implementace
+
+### 🔗 L2 — Bridge + DAO
+
+- **Ankr integrace** — odstraněna závislost na `ethers-rs` v2, nahrazena čistým
+  Ankr HTTP JSON-RPC clientem (`AnkrClient`)
+  - `evm_watcher.rs` přepsán — `get_logs`, `get_block_number`, sledování EVM bridge events
+  - Rust native HTTP (`reqwest`) místo heavyweight Web3 Ethers stacku
+  - 157 testů (`zion-bridge`) — E2E mock testy, AnkrClient unit testy
+- **L2/dao** — 65 testů
+  - `governance.rs` — Proposal lifecycle (Draft→Active→Passed/Failed→Executed)
+  - `treasury.rs` — Treasury 4B ZION, allokace, emergency withdrawal
+  - `humanitarian.rs` — Humanitarian fund tracking, verified recipients
+  - `voting.rs` — Weighted voting, quorum 20%, majority 60%
+  - REST API (Axum, port 8093) + SQLite persistence
+- **Dokumentace**: `docs/ankr.md` — Ankr integrace, wZION plán, průvodce pro laiky
+
+### 🧠 L3 — WARP + AI
+
+- **zion-warp** — 164 testů (největší test suite v projektu)
+  - REST API (Axum, port 8092) — chain status, cross-chain swap quotes, order book
+  - SQLite persistence — `WarpDb` s kompletním swap history
+  - 7 chain family adapters: Cosmos, EVM (via Ankr), Bitcoin, Solana, Near, Polkadot, TON
+  - XP Bridge — on-chain XP akumulace přes WARP swapy
+  - 58 REST API testů, 45 adapter testů, 35 DB testů, 26 XP bridge testů
+- **CHv3 ASIC hardening** — Session 56 (únor 2026)
+  - `AES-NI Haraka-inspired` mask v Cosmic Fusion (Phase 5)
+  - Fork height `ASIC_HARD_FORK_HEIGHT = 100_000`
+  - L1 kompatibilita s VRSC dual-mining zachována
+  - Docs: `docs/v2.9.6/L3_AI_ARCHITECTURE.md`
+
+### 🎮 L4 — ZION Oasis
+
+- **SQLite persistence** (`db.rs`) — 9 nových testů
+  - `OasisDb`: `save_player`, `get_player`, `get_or_create_player`
+  - `save_guild`, `get_guild`, `list_guilds`
+  - `top_players`, `player_rank`, `player_count`, `guild_count`
+  - Thread-safe `Arc<Mutex<Connection>>`, opravena deadlock podmínka v `player_rank`
+- **Axum REST API** (`server.rs`, port 8094) — 7 nových testů
+  - 9 endpointů: health, player, xp award, leaderboard, guild CRUD, territory map, reward pools
+  - `OasisState { db, config, xp_sys }` — sdílený stav přes Axum Extension
+  - `TerritoryMap` — přidán `#[derive(Serialize)]`
+  - `RewardSlot::all()` + `RewardPool::new(slot)` — dynamické generování 5 poolů
+- **Binary** (`main.rs`) — env overrides: `OASIS_PORT`, `OASIS_BIND`, `OASIS_DB`
+- **Celkem tesů zion-oasis**: 56 (bylo 40 před touto session)
+- **Dokumentace**: `docs/v2.9.6/L4_OASIS_ARCHITECTURE.md`
+
+### 📊 Celkový přehled testů (Únor 2026)
+
+| Crate | Testů | Vrstva |
+|-------|-------|--------|
+| `zion-warp` | 164 | L3 |
+| `zion-bridge` | 157 | L2 |
+| `zion-oasis` | 56 | L4 |
+| `zion-dao` | 65 | L2 |
+| `zion-ai-native` | 45 | L3 |
+| `zion-ncl` | 40 | L3 |
+| `zion-cosmic-harmony-v3` | 47 | L1 |
+| L1 core/pool/miner | ~268 | L1 |
+| **Celkem** | **~842** | všechny vrstvy |
 - `docs/v2.9.6/migration.md` — Migrační průvodce
 - `docs/v2.9.6/audit.md` — Bezpečnostní audit
 
