@@ -4614,6 +4614,27 @@ function initNodeView() {
   // Refresh
   if (refreshBtn) refreshBtn.addEventListener('click', () => void _nodeRefresh());
 
+  // Peers tab: refresh peers button
+  const refreshPeersBtn = document.getElementById('node-refresh-peers-btn');
+  if (refreshPeersBtn) refreshPeersBtn.addEventListener('click', () => void _nodeRefresh());
+
+  // Log tab: clear log button
+  const clearLogBtn = document.getElementById('node-clear-log-btn');
+  if (clearLogBtn) clearLogBtn.addEventListener('click', () => {
+    _nodeLogLines = [];
+    const con = document.getElementById('node-console');
+    if (con) con.innerHTML = '— log vymazán —';
+  });
+
+  // Settings tab: load checkpoints on first reveal
+  document.querySelectorAll('.section-tabs[data-group="node"] .section-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (tab.dataset.section === 'node-settings-tab') {
+        void _nodeLoadCheckpoints();
+      }
+    });
+  });
+
   // Toggle Start / Stop
   if (toggleBtn) {
     toggleBtn.addEventListener('click', async () => {
@@ -4667,13 +4688,23 @@ function initNodeView() {
 }
 
 function _nodeSetStatus(running, label) {
-  const dot  = document.getElementById('node-status-dot');
-  const text = document.getElementById('node-status-text');
-  const btn  = document.getElementById('node-btn-label');
-  if (dot)  dot.style.background  = running ? '#00ff88' : 'rgba(255,255,255,0.2)';
-  if (text) text.textContent = label;
-  if (text) text.style.color = running ? '#00ff88' : 'rgba(255,255,255,0.5)';
-  if (btn)  btn.textContent  = running ? 'Zastavit Node' : 'Spustit Node';
+  const dot     = document.getElementById('node-status-dot');
+  const text    = document.getElementById('node-status-text');
+  const btnLbl  = document.getElementById('node-btn-label');
+  const toggleBtn = document.getElementById('node-toggle-btn');
+  if (dot) {
+    dot.style.background = running ? '#22c55e' : 'rgba(255,255,255,0.18)';
+    dot.style.boxShadow  = running ? '0 0 8px #22c55e, 0 0 16px rgba(34,197,94,0.4)' : 'none';
+  }
+  if (text) {
+    text.textContent = label;
+    text.style.color = running ? '#6ee7b7' : 'rgba(255,255,255,0.4)';
+  }
+  if (btnLbl) btnLbl.textContent = running ? 'Zastavit Node' : 'Spustit Node';
+  if (toggleBtn) {
+    toggleBtn.classList.toggle('btn-primary', !running);
+    toggleBtn.classList.toggle('btn-danger',  running);
+  }
   _nodeRunning = running;
 }
 
@@ -4684,48 +4715,97 @@ function _nodeFmt(val, unit = '') {
 
 async function _nodeRefresh() {
   if (!window.electronAPI?.nodeGetStatus) return;
+  const now = new Date().toLocaleTimeString();
   try {
     const r = await window.electronAPI.nodeGetStatus();
 
     if (r.running && r.sync) {
       _nodeSetStatus(true, `Běží · PID ${r.pid || '?'}`);
       const s = r.sync;
-      // Stats
+
+      // Timestamp
+      const updEl = document.getElementById('node-updated');
+      if (updEl) updEl.textContent = '⟳ ' + now;
+
+      // Stats cards
       const heightEl = document.getElementById('node-stat-height');
       const peersEl  = document.getElementById('node-stat-peers');
       const syncEl   = document.getElementById('node-stat-sync');
       const bpsEl    = document.getElementById('node-stat-bps');
       if (heightEl) heightEl.textContent = _nodeFmt(s.download_height);
-      if (syncEl)   syncEl.textContent   = s.syncing ? `${s.percent?.toFixed(1)}%` : (s.state === 'Steady' ? 'Synced' : '—');
+      if (syncEl)   syncEl.textContent   = s.syncing ? `${s.percent?.toFixed(1) ?? 0}%` : (s.state === 'Steady' ? '✓ Synced' : '—');
       if (bpsEl)    bpsEl.textContent    = s.blocks_per_sec > 0 ? `${s.blocks_per_sec.toFixed(0)}` : '—';
-      if (peersEl && r.peers) peersEl.textContent = _nodeFmt(r.peers.active_count);
+
+      // Peer counts (overview + peers tab)
+      if (r.peers) {
+        const ac = r.peers.active_count ?? 0;
+        const kc = r.peers.known_count  ?? 0;
+        if (peersEl) peersEl.textContent = _nodeFmt(ac);
+        const activeEl = document.getElementById('node-peers-active');
+        const knownEl  = document.getElementById('node-peers-known');
+        if (activeEl) { activeEl.textContent = ac; activeEl.style.color = ac > 0 ? '' : '#f87171'; }
+        if (knownEl)  knownEl.textContent = kc;
+        const puEl = document.getElementById('node-peers-updated');
+        if (puEl) puEl.textContent = '⟳ ' + now;
+      }
+
+      // Sync status bar
+      const syncBar  = document.getElementById('node-sync-bar');
+      const syncIcon = document.getElementById('node-sync-icon');
+      const syncTxt  = document.getElementById('node-sync-text');
+      if (syncBar && syncTxt) {
+        if (s.state === 'IBD') {
+          if (syncIcon) syncIcon.textContent = '⬇';
+          syncTxt.innerHTML = `Synchronizuji bloky… <b>${s.percent?.toFixed(1) ?? 0}%</b>`;
+          syncBar.style.background = 'rgba(6,182,212,0.07)';
+          syncBar.style.borderColor = 'rgba(6,182,212,0.2)';
+        } else if (s.state === 'Steady') {
+          if (syncIcon) syncIcon.textContent = '✓';
+          syncTxt.innerHTML = `Node je plně synchronizován — blok <b>#${s.download_height ?? 0}</b>`;
+          syncBar.style.background = 'rgba(16,185,129,0.06)';
+          syncBar.style.borderColor = 'rgba(16,185,129,0.18)';
+        } else {
+          if (syncIcon) syncIcon.textContent = '⚡';
+          syncTxt.innerHTML = `Stav: <b>${s.state ?? '?'}</b>`;
+          syncBar.style.background = '';
+          syncBar.style.borderColor = '';
+        }
+      }
 
       // IBD progress bar
       const barWrap = document.getElementById('node-ibd-bar-wrap');
       if (barWrap) {
-        if (s.state === 'IBD' && s.percent < 100) {
+        if (s.state === 'IBD' && (s.percent ?? 100) < 100) {
           barWrap.style.display = 'block';
-          const pct = s.percent?.toFixed(1) || '0';
+          const pct   = (s.percent ?? 0).toFixed(1);
           const pctEl = document.getElementById('node-ibd-pct');
           const bar   = document.getElementById('node-ibd-bar');
           const eta   = document.getElementById('node-ibd-eta');
           if (pctEl) pctEl.textContent = `${pct}%`;
           if (bar)   bar.style.width   = `${pct}%`;
           if (eta) {
-            const remaining = s.eta_secs > 0 ? `ETA: ~${Math.round(s.eta_secs)}s` : '';
-            const peer = s.ibd_peer ? `· peer: ${s.ibd_peer}` : '';
-            eta.textContent = `${remaining} ${peer}`.trim();
+            const rem  = s.eta_secs > 0 ? `ETA: ~${Math.round(s.eta_secs)}s` : '';
+            const peer = s.ibd_peer  ? `· peer: ${escapeHtml(String(s.ibd_peer))}` : '';
+            eta.textContent = `${rem} ${peer}`.trim();
           }
         } else {
           barWrap.style.display = 'none';
         }
       }
 
-      // Peers table
-      if (r.peers?.active) _nodeRenderPeers(r.peers.known || []);
+      // Peers list
+      if (r.peers?.known) _nodeRenderPeers(r.peers.known);
+
     } else if (!r.running) {
-      // Wasn't running remotely either
-      if (!_nodeRunning) _nodeSetStatus(false, r.error ? 'Offline' : 'Offline');
+      if (!_nodeRunning) {
+        _nodeSetStatus(false, 'Offline');
+        const syncTxt = document.getElementById('node-sync-text');
+        const syncIcon = document.getElementById('node-sync-icon');
+        if (syncTxt)  syncTxt.innerHTML = 'Node není spuštěn — klikni na <b>Spustit Node</b>';
+        if (syncIcon) syncIcon.textContent = '⚡';
+        const syncBar = document.getElementById('node-sync-bar');
+        if (syncBar) { syncBar.style.background = ''; syncBar.style.borderColor = ''; }
+      }
     }
   } catch (e) {
     dbg('[NODE] Status check error:', e.message);
@@ -4733,26 +4813,76 @@ async function _nodeRefresh() {
 }
 
 function _nodeRenderPeers(peerList) {
-  const tbody = document.getElementById('node-peers-body');
-  if (!tbody) return;
+  const listEl = document.getElementById('node-peers-list');
+  if (!listEl) return;
 
   if (!peerList || peerList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.25)">— žádné peery —</td></tr>';
+    listEl.innerHTML = `<div style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;padding:20px">
+      <div style="font-size:20px;margin-bottom:8px">◈</div>Žádné peery zatím nepřipojeny.</div>`;
     return;
   }
 
-  tbody.innerHTML = peerList.map(p => {
-    const addr    = p.addr || '?';
-    const height  = p.height > 0 ? p.height : '—';
-    const agent   = p.agent || '—';
-    const lastSec = p.last_seen > 0 ? `${Math.round((Date.now()/1000) - p.last_seen)}s` : '—';
-    return `<tr>
-      <td style="font-family:monospace;font-size:11px">${addr}</td>
-      <td>${height}</td>
-      <td style="color:rgba(255,255,255,0.4);font-size:11px">${agent}</td>
-      <td style="color:rgba(255,255,255,0.3);font-size:11px">${lastSec}</td>
-    </tr>`;
+  listEl.innerHTML = peerList.map(p => {
+    const addr      = escapeHtml(String(p.addr || p.address || '?'));
+    const height    = p.height > 0 ? Number(p.height).toLocaleString() : '—';
+    const agent     = escapeHtml(String(p.agent || '—'));
+    const connected = !!p.connected;
+    const dotColor  = connected ? '#22c55e' : '#6b7280';
+    const dotGlow   = connected ? 'box-shadow:0 0 6px #22c55e;' : '';
+    const bgColor   = connected ? 'rgba(16,185,129,0.04)' : 'rgba(0,0,0,0.25)';
+    const border    = connected ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.06)';
+    const statusLbl = connected
+      ? '<span style="color:#6ee7b7;font-size:10px;text-transform:uppercase;letter-spacing:.08em">● Připojen</span>'
+      : '<span style="color:#6b7280;font-size:10px;text-transform:uppercase;letter-spacing:.08em">○ Known</span>';
+    const nowSec  = Date.now() / 1000;
+    const idleSec = p.last_seen > 0 ? Math.round(nowSec - p.last_seen) : null;
+    const idleStr = idleSec == null ? '—' : idleSec < 60 ? `${idleSec}s` : idleSec < 3600 ? `${Math.floor(idleSec/60)}m` : `${Math.floor(idleSec/3600)}h`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;
+              padding:10px 14px;background:${bgColor};border-radius:10px;
+              border:1px solid ${border};transition:border-color .3s;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotColor};${dotGlow};flex-shrink:0"></span>
+        <div>
+          <div style="font-weight:600;font-family:monospace;font-size:13px">${addr}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:2px">${statusLbl}
+            <span style="color:rgba(255,255,255,0.25);font-size:10px">${agent}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:rgba(255,255,255,0.5)">
+        <span>H: <b style="color:#93c5fd">${height}</b></span>
+        <span style="color:rgba(255,255,255,0.28)">idle ${idleStr}</span>
+      </div>
+    </div>`;
   }).join('');
+}
+
+async function _nodeLoadCheckpoints() {
+  const el = document.getElementById('node-checkpoint-list');
+  if (!el) return;
+  try {
+    const data = await window.electronAPI?.nodeGetCheckpoints?.();
+    if (!data?.checkpoints?.length) {
+      el.innerHTML = '<div class="placeholder-row">Žádné checkpointy (mainnet ještě nespuštěn)</div>';
+      return;
+    }
+    el.innerHTML = data.checkpoints.map(cp => {
+      const hStr = Number(cp.height).toLocaleString();
+      const hash = escapeHtml(String(cp.hash || ''));
+      const label = cp.label ? escapeHtml(String(cp.label)) : '';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;
+                padding:10px 14px;background:rgba(255,215,0,0.03);border-radius:10px;
+                border:1px solid rgba(255,215,0,0.1);margin-bottom:6px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#fcd34d">Blok #${hStr} ${label ? '<span style="font-weight:400;color:rgba(255,255,255,0.4);font-size:11px;margin-left:6px">' + label + '</span>' : ''}</div>
+          <div style="font-family:monospace;font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px;word-break:break-all">${hash}</div>
+        </div>
+        <span style="font-size:10px;color:rgba(255,215,0,0.5);text-transform:uppercase;letter-spacing:.08em;flex-shrink:0;margin-left:12px">✓ Checkpoint</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    if (el) el.innerHTML = '<div class="placeholder-row">Chyba při načítání checkpointů</div>';
+  }
 }
 
 const NODE_MAX_LOG_LINES = 400;
