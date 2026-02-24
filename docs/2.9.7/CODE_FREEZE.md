@@ -29,7 +29,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 ### Release Engineering
 - [ ] `MAINNET_CONSTITUTION.md` — status: FROZEN, SHA-256: `<hash>`
 - [ ] Docker SHA-256 manifesty v `DOCKER_MANIFEST.md`
-- [ ] 72h stability window bez restartu (viz `STABILITY_LOG.md`)
+- [ ] 168h stability window (7 dní) bez restartu (viz `STABILITY_LOG.md`) — target 2026-03-03 11:48 UTC
 - [ ] CI zelené: `cargo test` ≥ 501 testů, `cargo clippy -- -D warnings`, Hardhat 96
 - [ ] API_ENDPOINTS.md canonical — zkontrolován s živými servery
 - [ ] `MAINNET_EXIT_CRITERIA.md` — všechny checkboxy ✅
