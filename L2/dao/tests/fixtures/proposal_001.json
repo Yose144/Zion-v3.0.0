@@ -1,0 +1,22 @@
+{
+  "id": 1,
+  "title": "\ud83c\udf32 Zales\u0148ov\u00e1n\u00ed prales\u016f - Global Reforestation",
+  "description": "\ud83c\udf32 PROJECT OVERVIEW:\nGlobal forest restoration initiative focusing on tropical rainforests and sacred groves.\n\n\ud83d\udccd IMPACT:\n- 2 million native trees planted annually\n- 5,000 acres reforested per year\n- Absorbs ~50,000 tons CO2 annually\n- Restores biodiversity in 10 countries\n- Creates jobs for 500 indigenous families\n- Protects water sources and prevents soil erosion\n\n\ud83d\udcb0 BUDGET (2% of humanitarian tithe):\n- Seedling cultivation: $30,000\n- Planting labor (local communities): $40,000\n- Site preparation & maintenance: $20,000\n- GPS mapping & monitoring: $8,000\n- Project coordination: $2,000\nTotal: $100,000 annually\n\n\ud83e\udd1d PARTNER ORGANIZATIONS:\n- Amazon Conservation Association\n- One Tree Planted\n- Local indigenous communities\n\n\u23f1\ufe0f ONGOING PROGRAM:\nContinuous reforestation with quarterly reporting\n\n\ud83d\udcf8 VERIFICATION:\n- Satellite imagery (before/after)\n- GPS coordinates\n- Quarterly progress reports",
+  "category": "environment",
+  "recipient_address": "ZION_FOREST_RESTORATION_GLOBAL_2024",
+  "recipient_organization": "Forest Restoration Alliance",
+  "amount_zion": 200000.0,
+  "amount_usd": 100000.0,
+  "location": "Global (Amazon, Southeast Asia, Africa)",
+  "beneficiaries": 500,
+  "votes_for": 0.0,
+  "votes_against": 0.0,
+  "voter_count": 0,
+  "created_at": 1760390257.023581,
+  "voting_deadline": 1760995057.023581,
+  "executed_at": 0.0,
+  "status": "active",
+  "proposal_hash": "3f9d63d138578a906255446dfe03a35e944b2bfb7eae03505d57b2c6fd25c8ea",
+  "proposer_address": "ZION_DAO_ADMIN_001",
+  "tx_hash": ""
+}

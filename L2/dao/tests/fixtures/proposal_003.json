@@ -1,0 +1,22 @@
+{
+  "id": 3,
+  "title": "\u2764\ufe0f Humanit\u00e1rn\u00ed pomoc - Emergency Relief & Children Support",
+  "description": "\u2764\ufe0f PROJECT OVERVIEW:\nEmergency humanitarian aid for crisis regions plus ongoing support for children's education and healthcare.\n\n\ud83d\udccd IMPACT:\n- Emergency relief in disaster zones\n- 10,000 children supported with education & meals\n- Medical supplies to 50 clinics\n- Clean water access for 20 communities\n- Shelter for displaced families\n- Food security programs\n\n\ud83d\udcb0 BUDGET (2% of humanitarian tithe):\n- Emergency relief supplies: $30,000\n- Children education & meals: $35,000\n- Medical supplies: $20,000\n- Clean water projects: $10,000\n- Administrative costs: $5,000\nTotal: $100,000 annually\n\n\ud83e\udd1d PARTNER ORGANIZATIONS:\n- UNICEF\n- Red Cross/Red Crescent\n- Save the Children\n- Local NGOs\n\n\u23f1\ufe0f ONGOING PROGRAM:\nContinuous humanitarian support with rapid emergency response capability\n\n\ud83d\udcf8 VERIFICATION:\n- Beneficiary counts\n- Supply distribution logs\n- School attendance records\n- Health improvement metrics\n- Emergency response reports",
+  "category": "medical_aid",
+  "recipient_address": "ZION_HUMANITARIAN_AID_GLOBAL_2024",
+  "recipient_organization": "Humanitarian Aid Alliance",
+  "amount_zion": 200000.0,
+  "amount_usd": 100000.0,
+  "location": "Global Crisis Regions",
+  "beneficiaries": 10000,
+  "votes_for": 0.0,
+  "votes_against": 0.0,
+  "voter_count": 0,
+  "created_at": 1760390257.0247092,
+  "voting_deadline": 1760995057.0247092,
+  "executed_at": 0.0,
+  "status": "active",
+  "proposal_hash": "468cedeb07fb740e33e01ead3d6b8925a75d29be830ce2387391a8ec9196ac7a",
+  "proposer_address": "ZION_DAO_ADMIN_001",
+  "tx_hash": ""
+}
