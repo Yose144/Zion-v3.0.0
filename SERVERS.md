@@ -1,41 +1,24 @@
 # 🖥️ ZION TerraNova — Seed Nodes
 
-> **Aktualizace:** 24. února 2026 (Session 50 — live server check)  
-> **Cíl:** 5 seed nodů pro TestNet → MainNet  
-> **Poznámka:** Původní Vultr servery (LA, Sydney, Delhi, Santiago) suspendovány → nahrazeny testovacími nody
+> **Aktualizace:** 24. února 2026 (Session 53 — po stability testu)  
+> **Cíl:** 3 seed nody (mainnet topologie po stability testu)  
+> **Stability test:** ✅ ~72h bez restartů na Asia nodu, stability window splněna
 
 
-
-Asia3
+Asia
 CPX12 | x86 | 40 GB | ap-southeast
 5.223.43.93
 
 Singapore
-about 4 hours ago
+1 day ago
 
 
-Usa2
+Usa
 CPX11 | x86 | 40 GB | us-east
 178.156.240.160
 
 Ashburn, VA
-about 4 hours ago
-
-
-Usa1
-CPX11 | x86 | 40 GB | us-west
-5.78.178.227
-
-Hillsboro, OR
-about 4 hours ago
-
-
-SeedDE
-CAX11 | arm | 40 GB | eu-central
-46.225.126.243
-
-Nuremberg
-about 4 hours ago
+1 day ago
 
 
 TreeOfLife-Zion
@@ -43,27 +26,34 @@ CAX21 | arm | 80 GB | eu-central
 77.42.31.72
 
 Helsinki
-25 days ago
+27 days ago
+
+
+> ~~Usa1 (5.78.178.227 — Hillsboro, OR)~~ — decommissioned po stability testu  
+> ~~SeedDE (46.225.126.243 — Nuremberg)~~ — decommissioned (geografická diverzita)
 
 ## Aktivní servery
 
-| # | Název | Lokace | IP | SSH alias | Klíč | Stav |
-|---|-------|--------|----|-----------|------|------|
-| 1 | TreeofLife | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | `zion-helsinki` | `zion_hetzner_key` | ✅ Běží (seed + bridge + website + monitoring) |
-| 2 | Seed | 🇩🇪 Germany | 46.225.126.243 | `zion-seedde` | `zion_server_key` | ✅ Běží (seed + mysterium) |
-| 3 | Seed2 | 🇺🇸 USA 1 | 5.78.178.227 | `zion-usa1` | `zion_hetzner_key` | ✅ Běží (seed + mysterium) |
-| 4 | Seed3 | 🇺🇸 USA 2 | 178.156.240.160 | `zion-usa2` | `zion_hetzner_key` | ✅ Běží (seed + mysterium) |
-| 5 | Seed4 | 🌏 Asia | 5.223.43.93 | `zion-asia3` | `zion_hetzner_key` | ✅ Běží (seed + mysterium) |
+| # | Název | Lokace | IP | HW | SSH alias | Klíč | Stav |
+|---|-------|--------|----|-----|-----------|------|------|
+| 1 | TreeOfLife-Zion | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | CAX21 arm 80 GB | `zion-helsinki` | `zion_hetzner_key` | ✅ Seed + Pool + Web + Monitoring |
+| 2 | Usa | 🇺🇸 Ashburn, VA (Hetzner) | 178.156.240.160 | CPX11 x86 40 GB | `zion-usa` | `zion_servers_ed25519` | ✅ Seed node |
+| 3 | Asia | 🌏 Singapore (Hetzner) | 5.223.43.93 | CPX12 x86 40 GB | `zion-asia` | `zion_servers_ed25519` | ✅ Seed node |
 
-### 💰 Revenue stack (snapshot 23. 2. 2026)
+### ❌ Decommissioned servery
+
+| Název | IP | Důvod |
+|-------|----|-------|
+| SeedDE (Nuremberg) | 46.225.126.243 | Decommissioned — geografická diverzita |
+| Usa1 (Hillsboro, OR) | 5.78.178.227 | Decommissioned po stability testu |
+
+### 💰 Revenue stack (snapshot 24. 2. 2026 — 3 servery)
 
 | Server | Revenue kontejnery | Mysterium ID | Stav |
 |---|---|---|---|
-| Helsinki (`77.42.31.72`) | `zion-bridge`, `zion-website`, `zion-mysterium`, `zion-nkn` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Registered (minery odstaveny 24.2.2026 — RAM cleanup) |
-| Germany (`46.225.126.243`) | `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium` | `0x1a9bcc8298a4cd214a90fb63e1eb5effa8fd8969` | ✅ Registered |
-| Usa1 (`5.78.178.227`) | `zion-mysterium`, `zion-xmr-x86` | `0xbfce8102af31342a22bdf217c7fd446d1476d2f7` | ✅ Registered |
-| Usa2 (`178.156.240.160`) | `zion-mysterium`, `zion-xmr-x86` | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Registered |
-| Asia3 (`5.223.43.93`) | `zion-mysterium`, `zion-xmr-x86` | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Registered |
+| Helsinki (`77.42.31.72`) | `zion-bridge`, `zion-website`, `zion-mysterium`, `zion-nkn`, `zion-pool` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Active |
+| Usa (`178.156.240.160`) | `zion-mysterium`, `zion-xmr-x86` | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Active |
+| Asia (`5.223.43.93`) | `zion-mysterium`, `zion-xmr-x86` | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Active |
 
 Poznámka: `nkn` je v produkci zatím vypnutý (wallet init flow ještě není idempotentně zautomatizovaný).
 Poznámka 2: Usa1/Usa2/Asia3 spouštějí jen Mysterium (`docker-compose.mysterium-only.yml`) — miner není potřeba.
@@ -77,58 +67,48 @@ Poznámka 2: Usa1/Usa2/Asia3 spouštějí jen Mysterium (`docker-compose.mysteri
 | 🇮🇳 Delhi | 139.84.170.133 | ❌ Suspendován |
 | 🇨🇱 Santiago | 64.176.13.76 | ❌ Suspendován |
 
-## � Testovací síť — 5 nodů
+## 🌐 Síť — 3 nody (mainnet topologie)
 
 ```
-          ╔═══════════════════════════════════════════════════╗
-          ║    🌟 ZION TerraNova — TestNet P2P Network 🌟    ║
-          ║    5 Seed Nodes · Port 8334 (testnet)            ║
-          ╚═══════════════════════════════════════════════════╝
+          ╔══════════════════════════════════════════════════╗
+          ║   🌟 ZION TerraNova — TestNet P2P Network 🌟   ║
+          ║   3 Seed Nodes · Port 8334 (testnet)           ║
+          ╚══════════════════════════════════════════════════╝
 
-              🇫🇮 Helsinki (TreeofLife)
-                 77.42.31.72
-               ╱     |      ╲
-              ╱      |       ╲
-    🇩🇪 SeedDE     Seed2 🇺🇸    Seed3 🇺🇸
-  46.225.126.243  5.78.178.227  178.156.240.160
-              ╲      |       ╱
-               ╲     |      ╱
-             Seed4 🌏 Asia
-             5.223.43.93
+          🇫🇮 Helsinki (TreeOfLife)
+             77.42.31.72
+               ╱       ╲
+              ╱         ╲
+     🇺🇸 Usa            Asia 🌏
+  178.156.240.160     5.223.43.93
 ```
 
 | # | Název | IP | Region |
 |---|-------|----|--------|
-| 1 | TreeofLife | 77.42.31.72 | 🇫🇮 Evropa (Hetzner Helsinki) |
-| 2 | Seed | 46.225.126.243 | 🇩🇪 Evropa (Germany) |
-| 3 | Seed2 | 5.78.178.227 | 🇺🇸 USA 1 |
-| 4 | Seed3 | 178.156.240.160 | 🇺🇸 USA 2 |
-| 5 | Seed4 | 5.223.43.93 | 🌏 Asie |
+| 1 | TreeOfLife-Zion | 77.42.31.72 | 🇫🇮 EU (Hetzner Helsinki) |
+| 2 | Usa | 178.156.240.160 | 🇺🇸 US East (Ashburn, VA) |
+| 3 | Asia | 5.223.43.93 | 🌏 AP (Singapore) |
 
 ## Připojení
 
 ```bash
-ssh zion-helsinki   # 🇫🇮 Helsinki — TreeofLife (seed + pool + monitoring)
-ssh zion-seedde     # 🇩🇪 Germany — Seed
-ssh zion-usa1       # 🇺🇸 USA 1 — Seed2
-ssh zion-usa2       # 🇺🇸 USA 2 — Seed3
-ssh zion-asia3      # 🌏 Asia — Seed4
+ssh zion-helsinki   # 🇫🇮 Helsinki — TreeOfLife (seed + pool + monitoring)
+ssh zion-usa        # 🇺🇸 Ashburn VA — Usa
+ssh zion-asia       # 🌏 Singapore — Asia
 ```
 
 ## Deploy seed nodů
 
 ```bash
-# Nasadit core node na všechny seed servery:
-ssh zion-seedde  'bash -s' < scripts/deploy-testnet.sh
-ssh zion-usa1    'bash -s' < scripts/deploy-testnet.sh
-ssh zion-usa2    'bash -s' < scripts/deploy-testnet.sh
-ssh zion-asia3   'bash -s' < scripts/deploy-testnet.sh
+# Nasadit core node na seed servery:
+ssh zion-usa   'bash -s' < scripts/deploy-testnet.sh
+ssh zion-asia  'bash -s' < scripts/deploy-testnet.sh
 ```
 
 ## SEED_PEERS pro nody
 
 ```
-77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334
+77.42.31.72:8334,178.156.240.160:8334,5.223.43.93:8334
 ```
 
 ## 🔑 SSH klíče a přístupy
@@ -156,22 +136,12 @@ Host zion-helsinki
     User root
     IdentityFile ~/.ssh/zion_hetzner_key
 
-Host zion-seedde
-    HostName 46.225.126.243
-    User root
-    IdentityFile ~/.ssh/zion_servers_ed25519
-
-Host zion-usa1
-    HostName 5.78.178.227
-    User root
-    IdentityFile ~/.ssh/zion_servers_ed25519
-
-Host zion-usa2
+Host zion-usa
     HostName 178.156.240.160
     User root
     IdentityFile ~/.ssh/zion_servers_ed25519
 
-Host zion-asia3
+Host zion-asia
     HostName 5.223.43.93
     User root
     IdentityFile ~/.ssh/zion_servers_ed25519
@@ -180,11 +150,9 @@ Host zion-asia3
 ### Přímé připojení (s explicitním klíčem)
 
 ```bash
-ssh -i ~/.ssh/zion_hetzner_key     root@77.42.31.72     # Helsinki (TreeofLife)
-ssh -i ~/.ssh/zion_servers_ed25519 root@46.225.126.243  # SeedDE (Seed)
-ssh -i ~/.ssh/zion_servers_ed25519 root@5.78.178.227    # Usa1 (Seed2)
-ssh -i ~/.ssh/zion_servers_ed25519 root@178.156.240.160 # Usa2 (Seed3)
-ssh -i ~/.ssh/zion_servers_ed25519 root@5.223.43.93     # Asia3 (Seed4)
+ssh -i ~/.ssh/zion_hetzner_key     root@77.42.31.72     # Helsinki (TreeOfLife)
+ssh -i ~/.ssh/zion_servers_ed25519 root@178.156.240.160 # Usa (Ashburn)
+ssh -i ~/.ssh/zion_servers_ed25519 root@5.223.43.93     # Asia (Singapore)
 ```
 
 ## 🌐 Porty (Testnet)

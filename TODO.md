@@ -39,7 +39,9 @@
 ## 1) Live stav serverů (24. 2. 2026 — Session 50)
 
 ### Sítě / chain
-- ✅ Všechny ověřené nody běží, height **5205** (testnet), růst potvrdíl nárůst od přípřího checku (5199 → 5205)
+- ✅ Všechny 3 aktivní nody běží — Helsinki, Usa, Asia
+- ✅ **72h stability test splněn** — Asia node ~3 dny bez restartu
+- ✅ Topologie uzavřena: **3 servery** (Helsinki EU + Usa US-East + Asia AP-Singapore)
 - ⚠️ Helsinki: health endpoint vrací `peers: null` — JSON klíč `peers` možné přejmenován (`connected_peers`?), zkontrolovat
 - ⚠️ Helsinki i SeedDE reportují nenulové `blocks_rejected` (monitorovat trend)
 
@@ -49,9 +51,11 @@
 - 🟢 Usa1/Usa2/Asia3: stabilní, core+miner+mysterium
 
 ### Kontejnery
-- **Helsinki**: `zion-bridge` ✅, `zion-website` ✅, `zion-core`, `zion-pool:2.9.6-testnet` ✅ **(Docker spuštěn Session 52, ports 3333+8080)**, `zion-mysterium`, `zion-nkn`, `zion-redis`, `zion-grafana`, `zion-prometheus` — NO miners (♟ RAM cleanup)
-- **SeedDE**: `zion-core` (38h), `zion-miner` (24 min restart!), `zion-dero-miner`, `zion-epic-miner`, `zion-mysterium`, `zion-nkn`
-- **Usa1/Asia3**: `zion-core`, `zion-miner`, `zion-xmr-x86`, `zion-mysterium`
+- **Helsinki** (77.42.31.72): `zion-bridge` ✅, `zion-website` ✅, `zion-core`, `zion-pool:2.9.6-testnet` ✅ (Docker, 3333+8080), `zion-mysterium`, `zion-nkn`, `zion-redis`, `zion-grafana`, `zion-prometheus`
+- **Usa** (178.156.240.160): `zion-core`, `zion-mysterium`, `zion-xmr-x86`
+- **Asia** (5.223.43.93): `zion-core`, `zion-mysterium`, `zion-xmr-x86` — ✅ **72h stability test prošel**
+- ~~SeedDE (46.225.126.243)~~ — decommissioned
+- ~~Usa1 (5.78.178.227)~~ — decommissioned po stability testu
 
 ---
 
