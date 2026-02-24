@@ -5298,8 +5298,144 @@ ipcMain.handle('warp-advance-transfer', async (event, { id, new_status }) => {
 });
 
 // ============================================================================
-// CH3 ARCHITECTURE IPC HANDLERS
+// TREE NODE IPC HANDLERS — Start/stop/monitor a local ZION L1 core node
 // ============================================================================
+
+const NODE_RPC_URL = 'http://127.0.0.1:8545';
+let nodeProcess = null;
+
+/** Resolve path to the compiled zion-core binary */
+function findCoreBinary() {
+  const isWin = process.platform === 'win32';
+  const bin   = isWin ? 'zion-core.exe' : 'zion-core';
+  const candidates = [
+    path.join(APP_ROOT, '..', '..', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', '..', 'L1', 'core', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', 'target', 'release', bin),
+  ];
+  for (const p2 of candidates) {
+    if (fs.existsSync(p2)) return p2;
+  }
+  return null;
+}
+
+/** Call the local node JSON-RPC and return the result object */
+async function nodeRpc(method, params = {}) {
+  const res = await fetch(NODE_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    signal: AbortSignal.timeout(4000),
+  });
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json.result;
+}
+
+ipcMain.handle('node-get-status', async () => {
+  try {
+    const [sync, peers] = await Promise.all([
+      nodeRpc('getSyncStatus'),
+      nodeRpc('getPeers'),
+    ]);
+    return {
+      success: true,
+      running: true,
+      pid: nodeProcess?.pid ?? null,
+      sync,
+      peers,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      running: nodeProcess != null && !nodeProcess.killed,
+      pid: nodeProcess?.pid ?? null,
+      error: e.message,
+    };
+  }
+});
+
+ipcMain.handle('node-get-peers', async () => {
+  try {
+    const peers = await nodeRpc('getPeers');
+    return { success: true, ...peers };
+  } catch (e) {
+    return { success: false, error: e.message, active: [], known: [], active_count: 0, known_count: 0 };
+  }
+});
+
+ipcMain.handle('node-start', async (event, options = {}) => {
+  if (nodeProcess && !nodeProcess.killed) {
+    return { success: false, error: 'Node is already running', pid: nodeProcess.pid };
+  }
+
+  const binPath = findCoreBinary();
+  if (!binPath) {
+    return {
+      success: false,
+      error: 'zion-core binary not found. Run: cargo build --release -p zion-core',
+    };
+  }
+
+  const dataDir = options.dataDir ?? path.join(app.getPath('userData'), 'zion-node-data');
+  const p2pPort = options.p2pPort ?? 8334;
+  const rpcPort = options.rpcPort ?? 8545;
+  const network = options.network ?? 'mainnet';
+
+  const args = [
+    '--data-dir', dataDir,
+    '--p2p-port', String(p2pPort),
+    '--rpc-port', String(rpcPort),
+    '--network', network,
+  ];
+
+  try {
+    nodeProcess = spawn(binPath, args, {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    nodeProcess.stdout?.on('data', (data) => {
+      sendToRenderer('node-output', { stream: 'stdout', text: data.toString() });
+    });
+    nodeProcess.stderr?.on('data', (data) => {
+      sendToRenderer('node-output', { stream: 'stderr', text: data.toString() });
+    });
+    nodeProcess.on('exit', (code) => {
+      sendToRenderer('node-stopped', { code });
+      nodeProcess = null;
+    });
+
+    return { success: true, pid: nodeProcess.pid, binPath, dataDir, p2pPort, rpcPort, network };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('node-stop', async () => {
+  if (!nodeProcess || nodeProcess.killed) {
+    return { success: false, error: 'Node is not running' };
+  }
+  try {
+    nodeProcess.kill('SIGTERM');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!nodeProcess.killed) nodeProcess.kill('SIGKILL');
+    nodeProcess = null;
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('node-get-checkpoints', async () => {
+  // Returns hardcoded checkpoint list (L1/core checkpoint.rs)
+  return {
+    success: true,
+    checkpoints: [
+      { height: 0, label: 'genesis', hash: '0000000000000000000000000000000000000000000000000000000000000000' },
+    ],
+  };
+});
 
 ipcMain.handle('get-gpu-info', () => {
   try {
@@ -6452,6 +6588,8 @@ app.on('before-quit', () => {
   flushMinerOutputToRenderer();
   flushBufferedFileAppendsSync();
   stopMining();
+  // Stop local node if running
+  if (nodeProcess && !nodeProcess.killed) { try { nodeProcess.kill('SIGTERM'); } catch {} }
   void stopAfterburnerService();
   void stopAiNativeService();
 });

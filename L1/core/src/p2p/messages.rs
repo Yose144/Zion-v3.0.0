@@ -72,4 +72,19 @@ pub enum Message {
         height: u64,
         hash: String,
     },
+
+    // Peer Exchange — nodes share their known peer lists
+    GetPeers,
+    Peers {
+        /// "ip:port" strings
+        peers: Vec<String>,
+    },
+
+    // Keepalive / latency measurement
+    Ping {
+        nonce: u64,
+    },
+    Pong {
+        nonce: u64,
+    },
 }

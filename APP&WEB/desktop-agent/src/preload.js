@@ -138,6 +138,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   warpInitiateInbound: (data) => ipcRenderer.invoke('warp-initiate-inbound', data),
   warpAdvanceTransfer: (data) => ipcRenderer.invoke('warp-advance-transfer', data),
 
+  // ── L1 Tree Node (local zion-core process) ──────────────────────────────
+  nodeGetStatus: () => ipcRenderer.invoke('node-get-status'),
+  nodeGetPeers: () => ipcRenderer.invoke('node-get-peers'),
+  nodeStart: (options) => ipcRenderer.invoke('node-start', options),
+  nodeStop: () => ipcRenderer.invoke('node-stop'),
+  nodeGetCheckpoints: () => ipcRenderer.invoke('node-get-checkpoints'),
+  onNodeOutput: (callback) => ipcRenderer.on('node-output', (event, data) => callback(data)),
+  onNodeStopped: (callback) => ipcRenderer.on('node-stopped', (event, data) => callback(data)),
+
   // Cleanup listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);

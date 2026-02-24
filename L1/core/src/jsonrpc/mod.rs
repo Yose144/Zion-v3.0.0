@@ -1441,6 +1441,59 @@ pub async fn handle(
             }
         }
 
+        // ── Tree-nodes: Peer & Sync Info ─────────────────────────────────────
+        "getPeers" | "get_peers" | "getpeers" => {
+            let peers: Vec<serde_json::Value> = {
+                let pm_lock = state.peer_manager.lock().unwrap();
+                if let Some(pm) = pm_lock.as_ref() {
+                    pm.get_peers()
+                        .iter()
+                        .map(|p| {
+                            serde_json::json!({
+                                "addr": p.addr.to_string(),
+                                "height": p.height,
+                                "agent": p.sub_version,
+                                "last_seen": p.last_seen,
+                            })
+                        })
+                        .collect()
+                } else {
+                    vec![]
+                }
+            };
+            let active: Vec<String> = {
+                let pm_lock = state.peer_manager.lock().unwrap();
+                if let Some(pm) = pm_lock.as_ref() {
+                    pm.get_active_addrs()
+                } else {
+                    vec![]
+                }
+            };
+            Response {
+                jsonrpc: "2.0".to_string(),
+                id: req.id,
+                result: Some(serde_json::json!({
+                    "known_count": peers.len(),
+                    "active_count": active.len(),
+                    "active": active,
+                    "known": peers,
+                })),
+                error: None,
+            }
+        }
+
+        "getSyncStatus" | "get_sync_status" | "getsyncstatus" => {
+            let sync = crate::p2p::get_sync_status();
+            let snapshot = sync.to_json();
+            let info = serde_json::to_value(&snapshot).unwrap_or(serde_json::json!(null));
+            Response {
+                jsonrpc: "2.0".to_string(),
+                id: req.id,
+                result: Some(info),
+                error: None,
+            }
+        }
+
         _ => Response {
             jsonrpc: "2.0".to_string(),
             id: req.id,
