@@ -18,6 +18,7 @@
 
 pub mod adapter;
 pub mod config;
+pub mod db;
 pub mod error;
 pub mod fees;
 pub mod metrics;
@@ -28,8 +29,10 @@ pub mod server;
 pub mod state;
 pub mod types;
 pub mod validator;
+pub mod xp_bridge;
 
 pub use config::WarpConfig;
+pub use db::TransferDb;
 pub use error::WarpError;
 pub use fees::FeeEngine;
 pub use metrics::WarpMetrics;
@@ -40,3 +43,4 @@ pub use server::{WarpState, create_router as create_api_router};
 pub use state::TransferStateMachine;
 pub use types::{Asset, ChainFamily, ChainId, WarpStatus, WarpTransfer};
 pub use validator::WarpValidatorSet;
+pub use xp_bridge::{WarpXpEvent, WarpXpReward};

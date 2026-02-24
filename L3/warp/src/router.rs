@@ -6,6 +6,7 @@ use crate::registry::ChainRegistry;
 use crate::state::TransferStateMachine;
 use crate::types::{ChainId, WarpStatus, WarpTransfer};
 use crate::validator::WarpValidatorSet;
+use crate::xp_bridge::WarpXpEvent;
 
 use std::collections::HashMap;
 use tracing::info;
@@ -25,6 +26,8 @@ pub struct WarpRouter {
     pub daily_limit: u64,
     /// Amount threshold for timelock hold.
     pub timelock_threshold: u64,
+    /// XP events queued for drain by the orchestration layer.
+    xp_events: Vec<WarpXpEvent>,
 }
 
 impl WarpRouter {
@@ -41,8 +44,9 @@ impl WarpRouter {
             transfers: HashMap::new(),
             state_machines: HashMap::new(),
             daily_volume: HashMap::new(),
-            daily_limit: 10_000_000_000_000, // 10M ZION in atomic (6 dec)
-            timelock_threshold: 1_000_000_000_000, // 1M ZION
+            daily_limit: 10_000_000_000_000,
+            timelock_threshold: 1_000_000_000_000,
+            xp_events: Vec::new(),
         }
     }
 
@@ -161,6 +165,10 @@ impl WarpRouter {
 
         if new_status == WarpStatus::Completed {
             self.metrics.record_transfer_completed();
+            // Emit XP event for AI-native bridge
+            if let Some(t) = self.transfers.get(&id) {
+                self.xp_events.push(WarpXpEvent::from_transfer(t));
+            }
         } else if new_status == WarpStatus::Failed {
             self.metrics.record_transfer_failed();
         }
@@ -197,6 +205,12 @@ impl WarpRouter {
             .values()
             .filter(|t| !matches!(t.status, WarpStatus::Completed | WarpStatus::Failed))
             .count()
+    }
+
+    /// Drain and return all accumulated XP events (empties the internal queue).
+    /// Caller should forward these to `ConsciousnessEngine::add_xp()`.
+    pub fn drain_xp_events(&mut self) -> Vec<WarpXpEvent> {
+        std::mem::take(&mut self.xp_events)
     }
 
     /// Reset daily volume counters (should be called at midnight UTC).
@@ -388,5 +402,38 @@ mod tests {
         router.advance_transfer(id, WarpStatus::Executing).unwrap();
         router.advance_transfer(id, WarpStatus::Completed).unwrap();
         assert_eq!(router.metrics.transfers_completed(), 1);
+    }
+
+    #[test]
+    fn test_drain_xp_events_on_complete() {
+        let mut router = test_router();
+        let proof = test_deposit(5_000_000, "WARP:1:solana:addr");
+        let id = router.initiate_outbound(proof).unwrap();
+
+        // No XP events until completed
+        assert!(router.drain_xp_events().is_empty());
+
+        // Advance to completed
+        router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
+        router.advance_transfer(id, WarpStatus::Validating).unwrap();
+        router.advance_transfer(id, WarpStatus::QuorumReached).unwrap();
+        router.advance_transfer(id, WarpStatus::Executing).unwrap();
+        router.advance_transfer(id, WarpStatus::Completed).unwrap();
+
+        let events = router.drain_xp_events();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].amount_atomic, 5_000_000);
+        // Second drain is empty
+        assert!(router.drain_xp_events().is_empty());
+    }
+
+    #[test]
+    fn test_no_xp_on_failure() {
+        let mut router = test_router();
+        let proof = test_deposit(100_000, "WARP:1:base:0x1");
+        let id = router.initiate_outbound(proof).unwrap();
+        router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
+        router.advance_transfer(id, WarpStatus::Failed).unwrap();
+        assert!(router.drain_xp_events().is_empty());
     }
 }

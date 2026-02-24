@@ -31,6 +31,7 @@ use tracing::info;
 use uuid::Uuid;
 
 use crate::config::WarpConfig;
+use crate::db::TransferDb;
 use crate::fees::FeeEngine;
 use crate::protocol::DepositProof;
 use crate::registry::ChainRegistry;
@@ -46,9 +47,12 @@ use crate::validator::WarpValidatorSet;
 pub struct WarpState {
     pub router: Arc<Mutex<WarpRouter>>,
     pub config: WarpConfig,
+    /// Optional SQLite persistence — None = in-memory only (dev mode).
+    pub db: Option<TransferDb>,
 }
 
 impl WarpState {
+    /// Create state with in-memory router and NO persistence.
     pub fn new(config: WarpConfig) -> Self {
         let registry = ChainRegistry::with_defaults();
         let fee_engine = FeeEngine::with_defaults();
@@ -58,7 +62,22 @@ impl WarpState {
         Self {
             router: Arc::new(Mutex::new(router)),
             config,
+            db: None,
         }
+    }
+
+    /// Create state with SQLite persistence at `db_path`.
+    pub fn with_db(config: WarpConfig, db_path: &str) -> crate::error::WarpResult<Self> {
+        let db = TransferDb::open(db_path)?;
+        let registry = ChainRegistry::with_defaults();
+        let fee_engine = FeeEngine::with_defaults();
+        let validator_set = WarpValidatorSet::new(config.quorum);
+        let router = WarpRouter::new(registry, fee_engine, validator_set);
+        Ok(Self {
+            router: Arc::new(Mutex::new(router)),
+            config,
+            db: Some(db),
+        })
     }
 }
 
@@ -224,6 +243,9 @@ async fn initiate_outbound(
     match r.initiate_outbound(req.proof) {
         Ok(id) => {
             info!(transfer_id = %id, "Outbound transfer initiated via API");
+            if let (Some(db), Some(t)) = (&s.db, r.get_transfer(&id)) {
+                let _ = db.save(t);
+            }
             Json(ApiOk::new(serde_json::json!({ "transfer_id": id }))).into_response()
         }
         Err(e) => ApiErr::new(e.to_string()).into_response(),
@@ -238,6 +260,9 @@ async fn initiate_inbound(
     match r.initiate_inbound(&req.source_chain, req.proof, &req.recipient_zion) {
         Ok(id) => {
             info!(transfer_id = %id, "Inbound transfer initiated via API");
+            if let (Some(db), Some(t)) = (&s.db, r.get_transfer(&id)) {
+                let _ = db.save(t);
+            }
             Json(ApiOk::new(serde_json::json!({ "transfer_id": id }))).into_response()
         }
         Err(e) => ApiErr::new(e.to_string()).into_response(),
@@ -252,7 +277,13 @@ async fn advance_transfer(
     let mut r = s.router.lock().await;
     let new_status: WarpStatus = req.new_status.into();
     match r.advance_transfer(id, new_status) {
-        Ok(()) => Json(ApiOk::new(serde_json::json!({ "transfer_id": id, "advanced": true }))).into_response(),
+        Ok(()) => {
+            if let (Some(db), Some(t)) = (&s.db, r.get_transfer(&id)) {
+                let json = serde_json::to_string(t).unwrap_or_default();
+                let _ = db.update_status(&id, new_status, &json);
+            }
+            Json(ApiOk::new(serde_json::json!({ "transfer_id": id, "advanced": true }))).into_response()
+        }
         Err(e) => ApiErr::new(e.to_string()).into_response(),
     }
 }

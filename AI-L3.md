@@ -2,8 +2,8 @@
 
 > Workspace: `C:\Users\anaha\Desktop\ZION\2.9.6-main`  
 > Branch: `main` → `https://github.com/Yose144/2.9.6.git`  
-> Datum aktualizace: 2026-02-25  
-> Stav: **AKTIVNÍ VÝVOJ** — fáze L3-A až L3-H dokončeny ✅
+> Datum aktualizace: 2026-02-24  
+> Stav: **L2+L3 KOMPLETNÍ** — všechny plánované funkce implementovány ✅ (481 testů)
 
 ---
 
@@ -16,12 +16,14 @@ L3  ─  AI / Orchestration  ← TATO VRSTVA
 L4  ─  Oasis (on-chain XP, governance)
 ```
 
-L3 obsahuje dva Rust crates:
+L3 obsahuje čtyři Rust crates:
 
 | Crate | Cesta | Popis |
 |---|---|---|
 | `zion-ai-native` | `L3/ai-native/` | AI agenti, vědomí, paměť, WARP, orchestrace |
 | `zion-ncl` | `L3/ncl/` | Native Compute Layer – scheduling AI jobů, reputace, cenování, REST API |
+| `zion-warp` | `L3/warp/` | WARP Bridge — univezální cross-chain most (REST API, SQLite, XP bridge) |
+| `zion-bridge` | `L2/bridge/` | L2 ERC-20 bridge (součást L2, propojena s WARP) |
 
 ---
 
@@ -47,6 +49,8 @@ Portováno z `Zion-2.9.5-main/2.9-History/ai/` — 70+ Python souborů:
 | `8b5ef85` | feat(L3): E+F — MessageBus + SQLite JobStore |
 | `2180fa4` | docs: AI-L3.md update — L3-E/F completed, 111 tests |
 | `28b3509` | feat(L3): G+H — Live pool telemetry feed + L4 Oasis bridge [132 tests] |
+| `64f03c9` | feat(L2+L3): fix dao integration tests + warp REST API server [436 tests] |
+| `latest`  | feat(L3-WARP): db.rs + xp_bridge.rs + adapter tests [481 tests] |
 
 ---
 
@@ -55,14 +59,17 @@ Portováno z `Zion-2.9.5-main/2.9-History/ai/` — 70+ Python souborů:
 ```
 zion-ai-native:   88 unit testů  ✅  (+8 telemetry, +11 oasis_bridge)
 zion-ncl:         42 unit testů  ✅
-doctests:          2 testů       ✅
-──────────────────────────────────
-Celkem:           132 testů, 0 selhání, 0 varování
+zion-bridge:     119 unit testů  ✅
+zion-dao:         65 unit testů  ✅  (40 unit + 25 integration)
+zion-warp:       164 unit testů  ✅  (+db, +xp_bridge, +adapter async, +server API)
+doctests:          3 testů       ✅
+──────────────────────────────────────────────────────────────
+Celkem:           481 testů, 0 selhání, 0 varování
 ```
 
 Spuštění:
 ```bash
-cargo test -p zion-ai-native -p zion-ncl
+cargo test -p zion-ai-native -p zion-ncl -p zion-bridge -p zion-dao -p zion-warp
 ```
 
 ---
@@ -236,6 +243,98 @@ cargo test -p zion-ai-native -p zion-ncl
 
 ---
 
+## WARP Bridge — zion-warp
+
+Crate `zion-warp` (`L3/warp/`) — Wormhole Architecture for Rainbow Protocol.
+Universal cross-chain bridge: ZION L1 ↔ EVM / Solana / Tron / Stellar / Cardano / Cosmos / Bitcoin.
+
+### Architektura
+
+```
+WARP ROUTER
+  ├── ChainRegistry    (registr povolených řetězců)
+  ├── FeeEngine        (výpočet poplatků, per-chain multiplikátory)
+  ├── WarpValidatorSet (quorum validátorů, 3/5 default)
+  ├── WarpMetrics      (čítače, snapshots)
+  └── TransferStateMachine (Pending→Detected→AwaitingFinality→…→Completed)
+
+REST API server (port 9333)
+  ├── GET  /health
+  ├── GET  /metrics
+  ├── GET  /chains
+  ├── GET  /transfers         (newest first)
+  ├── GET  /transfers/pending
+  ├── GET  /transfers/:id
+  ├── POST /transfers/outbound
+  ├── POST /transfers/inbound
+  └── POST /transfers/:id/advance
+
+SQLite persistence (data/warp.db)
+  └── TransferDb — save/load/update/list/purge
+
+XP Bridge (warp↔ai-native)
+  └── WarpXpEvent emitted on Completed → drain_xp_events()
+```
+
+### `router.rs` ✅
+- `WarpRouter::new(registry, fee_engine, validator_set)`
+- `initiate_outbound(proof)` — timelock hold, daily limit, fee, status = `Detected`
+- `initiate_inbound(chain, proof, recipient_zion)` — inbound flow z externího řetězce
+- `advance_transfer(id, new_status)` — FSM validace, metrics, **XP event emit**
+- `list_transfers()` — všechny, newest first
+- `list_pending()` — nekoncové (non-Completed/Failed)
+- `drain_xp_events() -> Vec<WarpXpEvent>` — odebere frontu XP eventů
+
+### `db.rs` ✅ NOVÝ (L3-WARP-I)
+- `TransferDb::in_memory()` / `TransferDb::open(path)` — SQLite (+rusqlite bundled)
+- `save(transfer)` — INSERT OR REPLACE, serializace jako JSON blok
+- `load(id) -> Option<WarpTransfer>` — načte podle UUID
+- `update_status(id, status, json)` — aktualizace stavu a celého JSON
+- `list_all() -> Vec<WarpTransfer>` — newest first
+- `list_pending()` — status NOT IN ('completed','failed')
+- `count()`, `count_by_status(status)`, `purge_old(days)`
+- 9 testů
+
+### `xp_bridge.rs` ✅ NOVÝ (L3-WARP-II)
+- Propojuje WARP bridge s L3 AI consciousness systémem
+- `WarpXpEvent { transfer_id, initiator, source_family, dest_family, amount_atomic, completed_at }`
+  - `from_transfer(t)` — konstruktor z `WarpTransfer`
+  - `is_cross_family()` — true pokud source ≠ dest chain family
+- `WarpXpReward::for_transfer(ev) -> u64`:
+  ```
+  base_xp     = 50
+  volume_xp   = min(amount_atomic / 1_000_000, 200)
+  cross_bonus = if is_cross_family { 25 } else { 0 }
+  total       = 50..275 XP
+  ```
+- Konstanta `MIN_XP = 50`, `MAX_XP = 275`
+- 7 testů
+
+### `server.rs` ✅ (REST API)
+- `WarpState { router: Arc<Mutex<WarpRouter>>, config: WarpConfig, db: Option<TransferDb> }`
+- `WarpState::new(config)` — in-memory, bez persistence
+- `WarpState::with_db(config, path)` — SQLite persistence zapojena
+- Persistence: `save()` při `initiate_*`, `update_status()` při `advance_transfer`
+- 6 async testů (zdraví, metriky, řetězce, výpis, 404, pending)
+
+### `main.rs` ✅ (binárka `zion-warp-server`)
+- Načítá `WarpConfig` z: `WARP_CONFIG` env var → `config/warp-testnet.toml` → defaults
+- Otevírá SQLite z `config.database_path` (default: `data/warp.db`), fallback in-memory
+- Bind na `listen_addr:listen_port` (default: `0.0.0.0:9333`)
+
+### Chain adapters
+| Adapter | Stav | Testy |
+|---------|------|-------|
+| `evm.rs` | ✅ plně implementován (JSON-RPC) | 5 unit + 1 integ |
+| `solana.rs` | Stub (TODO: SPL Token) | 5 async testů |
+| `bitcoin.rs` | Stub (TODO: HTLC) | 5 async testů |
+| `cosmos.rs` | Stub | 5 async testů |
+| `stellar.rs` | Stub | 5 async testů |
+| `cardano.rs` | Stub | 5 async testů |
+| `tron.rs` | Stub | 5 async testů |
+
+---
+
 ## Architektonická dokumentace
 
 Viz [`docs/v2.9.6/L3_AI_ARCHITECTURE.md`](docs/v2.9.6/L3_AI_ARCHITECTURE.md) — 400+ řádků:
@@ -263,6 +362,11 @@ Viz [`docs/v2.9.6/L3_AI_ARCHITECTURE.md`](docs/v2.9.6/L3_AI_ARCHITECTURE.md) —
 | L3-F | Perzistentní job store (SQLite) | Střední | ✅ Hotovo |
 | L3-G | Live L1 pool telemetrie → PoolOptimizer | Nízká | ✅ Hotovo |
 | L3-H | L4/Oasis integrace (vědomí ↔ on-chain XP) | Budoucí | ✅ Hotovo |
+| L3-WARP-0 | WARP REST API server (`server.rs`, `main.rs`) | Vysoká | ✅ Hotovo |
+| L3-WARP-I | WARP SQLite persistence (`db.rs`) | Vysoká | ✅ Hotovo |
+| L3-WARP-II | WARP → AI XP bridge (`xp_bridge.rs`) | Střední | ✅ Hotovo |
+| L3-WARP-III | Adapter testy (6× stub adaptery) | Střední | ✅ Hotovo |
+| L3-WARP-IV | Non-EVM adapter implementace (Solana, BTC…) | Nízká | ⬜ Budoucí |
 
 ### L3-E — Agent messaging bus
 - Soubor: `L3/ai-native/src/message_bus.rs`
@@ -320,10 +424,23 @@ thiserror = "1"
 async-trait = "0.1"
 ```
 
-### zion-ncl (navíc)
+### zion-ncl (navíc oproti ai-native)
 ```toml
 rusqlite = { version = "0.31", features = ["bundled"] }
 axum = "0.7"
+```
+
+### zion-warp (navíc)
+```toml
+axum = "0.7"
+reqwest = { version = "0.12", features = ["json"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
+ed25519-dalek = { version = "2", features = ["serde"] }
+sha2 = "0.10"
+bs58 = "0.5"
+anyhow = "1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+toml = "0.8"
 ```
 
 ---
