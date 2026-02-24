@@ -17,7 +17,7 @@
 | **Clippy warnings (deep scan)** | 46+ (core/verushash scan blokován) |
 | **cargo fmt** | ✅ čistý (zero diffs) |
 | **L1 připravenost** | **92%** |
-| **MainNet blokery** | 7 zbývá (viz Session 52 níže) |
+| **MainNet blokery** | 7 zbývá (viz Session 54 níže) |
 
 ---
 
@@ -49,6 +49,41 @@
 
 
 ---
+
+## Session 54 — 24. 2. 2026 (P2P fix + 168h stability test restart)
+
+### Problém
+Oba seed nody Usa + Asia měly 2 kritické chyby:
+1. **`exec format error`** — `zion-core:2.9.6-testnet` je arm64 image, ale CPX11/CPX12 jsou amd64 servery (bez QEMU emulátu)
+2. **Mrtvé SEED_PEERS** — všechny 3 nody měly přímo nakonfigurováno `46.225.126.243:8334` (SeedDE) + `5.78.178.227:8334` (Usa1) — oba decommissioned
+
+### Dokončeno
+
+| # | Akce | Detail |
+|---|------|--------|
+| S54-A | **Usa + Asia: fix image** | Přepínut na `zion-core:2.9.6-amd64` (nativní x86 image — existoval na serveru) |
+| S54-B | **SEED_PEERS opraven na všech 3 nodech** | Odstraňovány mrtvé `46.225.126.243` + `5.78.178.227` ze všech compose files |
+| S54-C | **Helsinki compose file vytvořen** | `/root/docker-compose-seed.yml` (dříve běžel přes `docker run`); container rekreán |
+| S54-D | **Plný P2P mesh ověřen** | Helsinki⇔Usa⇔Asia, IBD 5209 na všech, HandshakeAck ✅ |
+| S54-E | **168h stability test spuštěn** | Start: `2026-02-24 11:48 UTC` → Target: `2026-03-03 11:48 UTC` |
+| S54-F | **`docs/2.9.7/STABILITY_LOG.md`** | Vytvořen se checkpointy T+24h/48h/72h/120h/168h |
+| S54-G | **SERVERS.md opraven** | SSH klíč `zion_servers_ed25519` → `zion_server_key` (správný klíč) |
+
+### Stav P2P meshi po fixu
+
+| Server | Image | Height | Peers | IBD | Status |
+|--------|-------|--------|-------|-----|--------|
+| Helsinki 77.42.31.72 | `zion-core:2.9.6-fix2` (arm64 nativní) | 5209 | 10 | — | ✅ healthy |
+| Usa 178.156.240.160 | `zion-core:2.9.6-amd64` (x86 nativní) | 5209 | 6–7 | 9.6s @ 545 blk/s | ✅ healthy |
+| Asia 5.223.43.93 | `zion-core:2.9.6-amd64` (x86 nativní) | 5209 | 7 | 17.4s @ 299 blk/s | ✅ healthy |
+
+### Zbývající P0 blokkery (po Session 54)
+| ID | Blokker | Priorita |
+|----|---------|----------|
+| A-03/A-04 | Alertmanager Telegram tokeny + test incident | 🟠 |
+| C-01 | Genesis.json OFFLINE ceremony | 🔴 P0-CRITICAL |
+| D-04 | API_ENDPOINTS.md canonical | 🟡 |
+| D-05 | 168h stability window — in progress do 2026-03-03 | 🟡 |
 
 ## Session 52 — 24. 2. 2026 (Pool Docker fix + Server topology)
 
@@ -83,7 +118,7 @@
 |--------|----|------|
 | TreeOfLife-Zion 🇫🇮 Helsinki | 77.42.31.72 | ✅ Seed + Pool + Web + Monitoring (CAX21 arm 80 GB) |
 | Usa 🇺🇸 Ashburn, VA | 178.156.240.160 | ✅ Seed node (CPX11 x86 40 GB) |
-| Asia 🌏 Singapore | 5.223.43.93 | ✅ Seed node — ✅ **72h stability test prošel** (CPX12 x86 40 GB) |
+| Asia 🌏 Singapore | 5.223.43.93 | ✅ Seed node — 🟡 **168h stability test IN PROGRESS (2026-02-24 → 2026-03-03)** (CPX12 x86 40 GB, `zion-core:2.9.6-amd64`) |
 | ~~SeedDE~~ ~~Usa1~~ | Decommissioned | ~~46.225.126.243~~ ~~5.78.178.227~~ — odstaveny po stability testu |
 | ~~LA~~ ~~Sydney~~ ~~Delhi~~ ~~Santiago~~ | Vultr | ❌ Suspendovány |
 
