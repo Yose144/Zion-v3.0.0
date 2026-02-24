@@ -143,4 +143,7 @@
 - ✅ Deep analýza roadmap/report dokumentů provedena
 - ✅ Live server snapshot ověřen přes SSH
 - ✅ TODO sjednoceno na aktuální realitu (24. 2. 2026)
-- ⏭️ Další krok: převést tento TODO plán do konkrétních issue/task IDs a začít P0-02 (Helsinki tlak)
+- ✅ Sjednocení portů napříč config/API/E2E/website dokončeno (`bc450ce`, push na `main`)
+- ✅ Canonical port matrix přidána do `docs/mainnet/PORT_MATRIX.md`
+- ✅ Helsinki RAM emergency mitigace provedena (těžební kontejnery na Helsinki odstaveny)
+- ⏭️ Další krok: převést tento TODO plán do konkrétních issue/task IDs a formalizovat P0 evidence v checklistu
