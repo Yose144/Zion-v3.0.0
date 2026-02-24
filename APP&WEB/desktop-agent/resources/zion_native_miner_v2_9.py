@@ -157,7 +157,7 @@ class MinerConfig:
     stats_interval: float = 10.0
     stats_file: str = ""
 
-    # Console UI mode: "lines" (default) or "xmrig" (static dashboard).
+    # Console UI mode: "lines" (default), "xmrig" or "trex" (static dashboard).
     ui: str = "lines"
 
     # Stream group: zion (primary mining), revenue (multi-algo), ncl (AI compute)
@@ -2290,11 +2290,11 @@ class ZionNativeMiner:
 
         # UI
         ui_mode = (self.config.ui or "lines").strip().lower()
-        if ui_mode == "xmrig":
+        if ui_mode in ("xmrig", "trex"):
             self._enable_ansi_console()
 
         def _clear_screen() -> None:
-            if ui_mode != "xmrig":
+            if ui_mode not in ("xmrig", "trex"):
                 return
             # Clear + home
             sys.stdout.write("\x1b[2J\x1b[H")
@@ -2322,7 +2322,7 @@ class ZionNativeMiner:
             gpu_kernel_ms: Optional[float],
             gpu_global_size: Optional[int],
         ) -> None:
-            if ui_mode != "xmrig":
+            if ui_mode not in ("xmrig", "trex"):
                 return
             _clear_screen()
             acc_rate = (shares_acc / shares_sent * 100.0) if shares_sent else 0.0
@@ -2330,25 +2330,46 @@ class ZionNativeMiner:
             if gpu_kernel_ms is not None and gpu_global_size:
                 gpu_perf = f"{gpu_kernel_ms:.2f}ms/{gpu_global_size}"
 
-            print("ZION Native Miner v2.9.0 | XMRig-style UI")
-            print(f"Uptime  : {uptime} | Algo: {algo}")
-            print(f"Pool    : {pool_host}:{pool_port} | Wallet: {wallet} | Worker: {worker}")
-            print(f"Job     : {str(job_id)[:16] if job_id else '-'} | Height: {height} | Diff: {diff}")
-            print("-")
-            print(
-                f"Hashrate: total {self._format_hashrate(total_hr)} | "
-                f"cpu {self._format_hashrate(cpu_hr)} | gpu {self._format_hashrate(gpu_hr)} (GPU {gpu_state})"
-            )
-            print(
-                f"Shares  : sent {shares_sent} | accepted {shares_acc} | rejected {shares_rej} | acc {acc_rate:.1f}%"
-            )
-            print(f"GPU     : {getattr(self.gpu_miner.device, 'name', '-') if self.gpu_miner is not None else '-'} | kernel {gpu_perf}")
-            if last_err:
-                print(f"Last err: {last_err}")
+            if ui_mode == "trex":
+                print("ZION Native Miner v2.9.0 | T-Rex style")
+                print("=" * 92)
+                print(f" ALGO     : {algo}")
+                print(f" POOL     : {pool_host}:{pool_port} | WORKER: {worker}")
+                print(f" UPTIME   : {uptime} | GPU: {gpu_state} | JOB: {str(job_id)[:16] if job_id else '-'}")
+                print(f" HEIGHT   : {height} | DIFF: {diff}")
+                print("-" * 92)
+                print(
+                    f" HASHRATE : TOTAL {self._format_hashrate(total_hr)} | "
+                    f"CPU {self._format_hashrate(cpu_hr)} | GPU {self._format_hashrate(gpu_hr)}"
+                )
+                print(
+                    f" SHARES   : ACCEPTED {shares_acc} | REJECTED {shares_rej} | SENT {shares_sent} | ACC {acc_rate:.1f}%"
+                )
+                print(f" GPU DEV  : {getattr(self.gpu_miner.device, 'name', '-') if self.gpu_miner is not None else '-'}")
+                print(f" GPU KERN : {gpu_perf}")
+                print(f" LAST ERR : {last_err if last_err else '-'}")
+                print("=" * 92)
+                print(" HOTKEYS  : h help | s summary | p pause | g gpu on/off | r reconnect | a algo | q quit")
             else:
-                print("Last err: -")
-            print("-")
-            print("Hotkeys : h=help | s=summary | p=pause | g=gpu on/off | r=reconnect | a=algo next | q=quit")
+                print("ZION Native Miner v2.9.0 | XMRig-style UI")
+                print(f"Uptime  : {uptime} | Algo: {algo}")
+                print(f"Pool    : {pool_host}:{pool_port} | Wallet: {wallet} | Worker: {worker}")
+                print(f"Job     : {str(job_id)[:16] if job_id else '-'} | Height: {height} | Diff: {diff}")
+                print("-")
+                print(
+                    f"Hashrate: total {self._format_hashrate(total_hr)} | "
+                    f"cpu {self._format_hashrate(cpu_hr)} | gpu {self._format_hashrate(gpu_hr)} (GPU {gpu_state})"
+                )
+                print(
+                    f"Shares  : sent {shares_sent} | accepted {shares_acc} | rejected {shares_rej} | acc {acc_rate:.1f}%"
+                )
+                print(f"GPU     : {getattr(self.gpu_miner.device, 'name', '-') if self.gpu_miner is not None else '-'} | kernel {gpu_perf}")
+                if last_err:
+                    print(f"Last err: {last_err}")
+                else:
+                    print("Last err: -")
+                print("-")
+                print("Hotkeys : h=help | s=summary | p=pause | g=gpu on/off | r=reconnect | a=algo next | q=quit")
 
         # Restartable pool mining session loop (supports reconnect + algo switch).
         while True:
@@ -3110,7 +3131,7 @@ class ZionNativeMiner:
                         if gpu_ms is not None and gpu_gs:
                             gpu_perf = f" | gpu {gpu_ms:.2f}ms/{gpu_gs}"
 
-                        if ui_mode == "xmrig":
+                        if ui_mode in ("xmrig", "trex"):
                             _render_dashboard(
                                 uptime=uptime,
                                 pool_host=self.config.pool_host,
@@ -3294,8 +3315,8 @@ def main():
                        help="Stats print interval in seconds (default: 10)")
     parser.add_argument("--stats-file", default="",
                        help="Optional path to write JSON stats (e.g., data/miner_stats.json)")
-    parser.add_argument("--ui", choices=["lines", "xmrig"], default="lines",
-                       help="Console UI mode: lines (default) or xmrig (static dashboard)")
+    parser.add_argument("--ui", choices=["lines", "xmrig", "trex"], default="lines",
+                       help="Console UI mode: lines (default), xmrig or trex (static dashboard)")
     parser.add_argument("--group", "-g", default="zion",
                        help="Stream group: zion (primary), revenue (multi-algo), ncl (AI compute)")
     parser.add_argument("--difficulty", type=float, default=None,
