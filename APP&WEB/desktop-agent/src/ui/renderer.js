@@ -550,7 +550,7 @@ const _viewInitFns = {
   node:      () => initNodeView(),
   freeworld: () => initFreeWorldView(),
   issobella: () => initIssobellaView(),
-  about:     () => initUpdateUI(),
+  about:     () => { initUpdateUI(); initSecurityUI(); },
 };
 
 function switchView(view) {
@@ -4683,6 +4683,116 @@ function _showChangelog(notes, version) {
     html = `<p>Version ${version || ''} is available.</p>`;
   }
   body.innerHTML = `<span class="update-badge new">v${version || '?'}</span> ` + html;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SECURITY / AV TROUBLESHOOTING UI
+// ═══════════════════════════════════════════════════════════════════
+let _securityInitialized = false;
+
+function initSecurityUI() {
+  if (_securityInitialized) return;
+  _securityInitialized = true;
+
+  const checkBtn = document.getElementById('btn-security-check');
+  const fixBtn = document.getElementById('btn-security-fix');
+  const defenderBtn = document.getElementById('btn-security-defender');
+
+  if (checkBtn) {
+    checkBtn.addEventListener('click', loadSecurityStatus);
+  }
+  if (fixBtn) {
+    fixBtn.addEventListener('click', async () => {
+      fixBtn.disabled = true;
+      fixBtn.textContent = 'Opravuji...';
+      try {
+        const result = await window.electronAPI.fixSecurityBlocks();
+        if (result?.success) {
+          fixBtn.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-check"></use></svg> Opraveno!';
+          setTimeout(() => loadSecurityStatus(), 1000);
+        } else {
+          fixBtn.textContent = 'Chyba: ' + (result?.error || 'Neznámá');
+        }
+      } catch (err) {
+        fixBtn.textContent = 'Chyba: ' + (err?.message || '?');
+      }
+      setTimeout(() => {
+        fixBtn.disabled = false;
+        fixBtn.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-settings"></use></svg> Opravit automaticky';
+      }, 3000);
+    });
+  }
+  if (defenderBtn) {
+    defenderBtn.addEventListener('click', async () => {
+      await window.electronAPI.openDefenderSettings();
+    });
+  }
+}
+
+async function loadSecurityStatus() {
+  const listEl = document.getElementById('security-binaries-list');
+  const recsEl = document.getElementById('security-recommendations');
+  const fixBtn = document.getElementById('btn-security-fix');
+  const defenderBtn = document.getElementById('btn-security-defender');
+
+  if (listEl) listEl.innerHTML = '<p style="color:var(--text-third)">Kontroluji...</p>';
+
+  try {
+    const status = await window.electronAPI.getSecurityStatus();
+
+    // Render binaries status
+    if (listEl && status?.binaries) {
+      listEl.innerHTML = Object.entries(status.binaries).map(([name, info]) => {
+        let statusIcon = '✅';
+        let statusText = 'OK';
+        let statusColor = '#6ee7b7';
+        if (!info.exists) {
+          statusIcon = '❌';
+          statusText = 'Chybí (smazáno antivirem?)';
+          statusColor = '#f87171';
+        } else if (info.quarantined) {
+          statusIcon = '⚠️';
+          statusText = 'Quarantine (Gatekeeper)';
+          statusColor = '#fcd34d';
+        } else if (!info.executable) {
+          statusIcon = '⚠️';
+          statusText = 'Bez exec permissions';
+          statusColor = '#fcd34d';
+        }
+        return `<div class="resource-item">
+          <div class="resource-item-left">
+            <span class="emoji-16">${statusIcon}</span>
+            <span class="resource-item-label">${name}</span>
+          </div>
+          <span class="resource-item-value" style="color:${statusColor}">${statusText}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Render recommendations
+    if (recsEl && status?.recommendations) {
+      const hasIssues = status.recommendations.some(r => r.type !== 'ok');
+      recsEl.innerHTML = status.recommendations.map(rec => {
+        if (rec.type === 'ok') {
+          return `<div class="glass-panel" style="padding:12px; background:rgba(110,231,183,.08); border:1px solid rgba(110,231,183,.2);">
+            <span style="color:#6ee7b7; font-weight:600;">✅ ${rec.title}</span>
+            <span style="color:var(--text-secondary); margin-left:8px;">${rec.description}</span>
+          </div>`;
+        }
+        return `<div class="glass-panel" style="padding:12px; background:rgba(248,113,113,.06); border:1px solid rgba(248,113,113,.2);">
+          <div style="color:#f87171; font-weight:600; margin-bottom:4px;">⚠️ ${rec.title}</div>
+          <div style="color:var(--text-secondary); font-size:13px; white-space:pre-wrap;">${rec.description}</div>
+          ${rec.command ? `<code style="display:block; margin-top:8px; padding:6px 10px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#93c5fd; word-break:break-all;">${rec.command}</code>` : ''}
+        </div>`;
+      }).join('');
+
+      // Show/hide action buttons
+      if (fixBtn) fixBtn.style.display = hasIssues && status.platform !== 'win32' ? '' : 'none';
+      if (defenderBtn) defenderBtn.style.display = hasIssues && status.platform === 'win32' ? '' : 'none';
+    }
+  } catch (err) {
+    if (listEl) listEl.innerHTML = `<p style="color:#f87171">Chyba: ${err?.message || '?'}</p>`;
+  }
 }
 
 dbg('Renderer script loaded');
