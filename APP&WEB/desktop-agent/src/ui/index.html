@@ -5736,6 +5736,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
             <span>Philosophy</span>
           </div>
+          <div class="section-tab" data-section="about-security">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-lock"></use></svg>
+            <span>Security</span>
+          </div>
         </div>
 
         <!-- ═══ SECTION: Project ═══ -->
@@ -5901,6 +5905,309 @@
               </p>
               <p class="about-quote-foot">© 2025–2026 ZION TerraNova · Peace and One Love</p>
             </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Security / AV Troubleshooting ═══ -->
+        <div id="about-security" class="section-panel">
+          <div class="control-panel">
+            <h2 class="inline-heading">
+              <svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>
+              Security &amp; Antivirus
+            </h2>
+            <p style="color:var(--text-secondary); margin-bottom:16px;">
+              Těžební software může být falešně detekován antivirem. Zde můžete zkontrolovat stav a opravit problémy.
+            </p>
+
+            <!-- ── Live diagnostics ── -->
+            <div id="security-status-wrap" style="margin-bottom:16px;">
+              <div class="resource-list" id="security-binaries-list">
+                <!-- filled by JS -->
+              </div>
+            </div>
+
+            <div id="security-recommendations" style="margin-bottom:16px;">
+              <!-- filled by JS -->
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px;">
+              <button id="btn-security-check" class="btn btn-primary" style="gap:6px;">
+                <svg class="icon icon-inline" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                Zkontrolovat
+              </button>
+              <button id="btn-security-fix" class="btn btn-primary" style="gap:6px; display:none;">
+                <svg class="icon icon-inline" aria-hidden="true"><use href="#i-settings"></use></svg>
+                Opravit automaticky
+              </button>
+              <button id="btn-security-defender" class="btn btn-secondary" style="gap:6px; display:none;">
+                <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
+                Otevřít Windows Defender
+              </button>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- 🪟 WINDOWS — Kompletní průvodce                       -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <div class="glass-panel" style="padding:20px; margin-bottom:16px;">
+              <h3 style="margin:0 0 12px 0; color:var(--accent-2); font-size:16px;">🪟 Windows — Kompletní průvodce</h3>
+
+              <!-- SmartScreen -->
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">1. SmartScreen při instalaci</h4>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
+                  Při spuštění instalátoru Windows zobrazí modré okno „SmartScreen ochránil tento počítač":
+                </p>
+                <ol style="color:var(--text-secondary); font-size:13px; margin:0 0 0 0; padding-left:20px;">
+                  <li>Klikněte na <b>„Více informací"</b> (malý odkaz vlevo dole)</li>
+                  <li>Zobrazí se tlačítko <b>„Přesto spustit"</b> → klikněte na něj</li>
+                  <li>Instalace proběhne normálně</li>
+                </ol>
+                <p style="color:var(--text-third); font-size:12px; margin:6px 0 0 0;">
+                  ℹ️ SmartScreen blokuje všechny nové/nepodepsané aplikace. Jakmile bude ZION Miner digitálně podepsán, tato hláška zmizí.
+                </p>
+              </div>
+
+              <!-- Defender -->
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">2. Windows Defender — smazaná binárka</h4>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
+                  Defender může po instalaci smazat <code style="background:rgba(255,255,255,.08); padding:1px 5px; border-radius:3px;">zion-universal-miner.exe</code> jako „Potentially Unwanted App" (PUA). Obnovení:
+                </p>
+                <ol style="color:var(--text-secondary); font-size:13px; margin:0; padding-left:20px;">
+                  <li>Otevřete <b>Windows Security</b> (Start → napište „Zabezpečení")</li>
+                  <li>Klikněte <b>Ochrana před viry a hrozbami</b></li>
+                  <li>Klikněte <b>„Historie ochrany"</b></li>
+                  <li>Najděte zablokovanou položku → rozbalte → klikněte <b>„Akce → Povolit na zařízení"</b></li>
+                </ol>
+              </div>
+
+              <!-- Exclusion -->
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">3. Přidání výjimky (doporučeno)</h4>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
+                  Aby Defender neblokoval miner opakovaně:
+                </p>
+                <ol style="color:var(--text-secondary); font-size:13px; margin:0 0 8px 0; padding-left:20px;">
+                  <li>Windows Security → Ochrana před viry → <b>Spravovat nastavení</b></li>
+                  <li>Sjeďte dolů k <b>„Výjimky"</b> → klikněte <b>„Přidat nebo odebrat vyloučení"</b></li>
+                  <li>Klikněte <b>+ Přidat vyloučení → Složka</b></li>
+                  <li>Vyberte instalační složku ZION Mineru:</li>
+                </ol>
+                <code style="display:block; padding:8px 12px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#93c5fd; margin:0 0 4px 0;">C:\Users\VaseJmeno\AppData\Local\Programs\zion-desktop-agent\</code>
+                <code style="display:block; padding:8px 12px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#93c5fd;">C:\Program Files\ZION Miner\</code>
+              </div>
+
+              <!-- PowerShell -->
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">4. PowerShell příkazy (pro pokročilé)</h4>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">Spusťte PowerShell jako Administrator:</p>
+                <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
+                  <span style="color:#6b7280;"># Přidání výjimky na složku</span><br/>
+                  Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\Programs\zion-desktop-agent"<br/><br/>
+                  <span style="color:#6b7280;"># Obnovení smazaného souboru z karantény</span><br/>
+                  Get-MpThreatDetection | Where-Object { $_.Resources -like "*zion*" }<br/>
+                  Remove-MpThreat -ThreatID &lt;ID_z_výpisu&gt;<br/><br/>
+                  <span style="color:#6b7280;"># Vypnutí PUA detekce (nedoporučeno pro běžné uživatele)</span><br/>
+                  Set-MpPreference -PUAProtection 0
+                </div>
+              </div>
+
+              <!-- Quick start -->
+              <div>
+                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">5. Quick Start — Windows</h4>
+                <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
+                  <span style="color:#6b7280;"># 1. Stáhněte installer z GitHub Releases</span><br/>
+                  <span style="color:#6b7280;"># 2. Spusťte .exe → SmartScreen → "Více informací" → "Přesto spustit"</span><br/>
+                  <span style="color:#6b7280;"># 3. Nainstalujte (výchozí složka je OK)</span><br/>
+                  <span style="color:#6b7280;"># 4. Pokud Defender smaže miner:</span><br/>
+                  <span style="color:#6b7280;">#    → Otevřete Windows Security → Historie ochrany → Povolit</span><br/>
+                  <span style="color:#6b7280;">#    → Přidejte výjimku (viz výše)</span><br/>
+                  <span style="color:#6b7280;"># 5. Spusťte ZION Miner z plochy nebo Start menu</span><br/>
+                  <span style="color:#6b7280;"># 6. Zadejte wallet adresu → klikněte Start Mining</span><br/>
+                  <span style="color:#6b7280;"># ✅ Pokud Rust miner nefunguje, app automaticky přepne na Python</span>
+                </div>
+              </div>
+
+              <p style="color:var(--text-third); font-size:12px; margin:12px 0 0 0;">
+                💡 Pokud Defender smaže miner, aplikace automaticky přepne na Python fallback — těží se dál.
+              </p>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- 🍎 macOS — Kompletní průvodce                         -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <div class="glass-panel" style="padding:20px; margin-bottom:16px;">
+              <h3 style="margin:0 0 12px 0; color:var(--accent-1); font-size:16px;">🍎 macOS — Kompletní průvodce</h3>
+
+              <!-- Gatekeeper -->
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">1. Gatekeeper — „Aplikace nemůže být otevřena"</h4>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
+                  macOS blokuje stažené neregistrované aplikace. Tři způsoby obejití:
+                </p>
+                <ol style="color:var(--text-secondary); font-size:13px; margin:0; padding-left:20px;">
+                  <li><b>Pravý klik → Otevřít</b> — místo dvojkliku klikněte pravým → vyberte „Otevřít" → potvrďte v dialogu</li>
+                  <li><b>System Settings</b> → Privacy &amp; Security → dole najdete hlášku „ZION Miner was blocked" → klikněte <b>„Open Anyway"</b></li>
+                  <li><b>Terminál</b> — viz příkazy níže</li>
+                </ol>
+              </div>
+
+              <!-- Quarantine xattr -->
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">2. Odstranění quarantine příznaku</h4>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
+                  Stažené soubory dostanou atribut <code style="background:rgba(255,255,255,.08); padding:1px 5px; border-radius:3px;">com.apple.quarantine</code>. Odebrání:
+                </p>
+                <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
+                  <span style="color:#6b7280;"># Odebrání quarantine z celé aplikace</span><br/>
+                  xattr -dr com.apple.quarantine /Applications/ZION\ Miner.app<br/><br/>
+                  <span style="color:#6b7280;"># Nebo jen z DMG před instalací</span><br/>
+                  xattr -dr com.apple.quarantine ~/Downloads/ZION*.dmg<br/><br/>
+                  <span style="color:#6b7280;"># Ověření — nesmí zobrazit "quarantine"</span><br/>
+                  xattr -l /Applications/ZION\ Miner.app
+                </div>
+              </div>
+
+              <!-- Permissions -->
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">3. Oprávnění ke spuštění minerů</h4>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
+                  Pokud miner hlásí „Permission denied":
+                </p>
+                <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
+                  <span style="color:#6b7280;"># Nastavení execute permissions na miner binárky</span><br/>
+                  chmod +x /Applications/ZION\ Miner.app/Contents/Resources/zion-universal-miner<br/>
+                  chmod +x /Applications/ZION\ Miner.app/Contents/Resources/zion-miner<br/><br/>
+                  <span style="color:#6b7280;"># Nebo pro dev režim</span><br/>
+                  chmod +x ./resources/zion-universal-miner<br/>
+                  chmod +x ./resources/zion-miner
+                </div>
+              </div>
+
+              <!-- Firewall -->
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">4. Firewall — povolení síťového přístupu</h4>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
+                  macOS firewall se může zeptat na povolení síťového přístupu:
+                </p>
+                <ol style="color:var(--text-secondary); font-size:13px; margin:0; padding-left:20px;">
+                  <li>V dialogu „Do you want ZION Miner to accept incoming connections?" → klikněte <b>„Allow"</b></li>
+                  <li>Nebo: System Settings → Network → Firewall → Options → přidejte ZION Miner do seznamu</li>
+                </ol>
+              </div>
+
+              <!-- Quick Start -->
+              <div>
+                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">5. Quick Start — macOS</h4>
+                <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
+                  <span style="color:#6b7280;"># 1. Stáhněte .dmg z GitHub Releases</span><br/>
+                  <span style="color:#6b7280;"># 2. Odstraňte quarantine (volitelné — app to dělá automaticky)</span><br/>
+                  xattr -dr com.apple.quarantine ~/Downloads/ZION*.dmg<br/><br/>
+                  <span style="color:#6b7280;"># 3. Otevřete DMG a přetáhněte do Applications</span><br/>
+                  <span style="color:#6b7280;"># 4. První spuštění: Pravý klik → Otevřít → potvrdit</span><br/>
+                  <span style="color:#6b7280;"># 5. Povolte firewall pokud se zeptá</span><br/>
+                  <span style="color:#6b7280;"># 6. Zadejte wallet adresu → Start Mining</span><br/>
+                  <span style="color:#6b7280;"># ✅ Hotovo!</span>
+                </div>
+              </div>
+
+              <p style="color:var(--text-third); font-size:12px; margin:12px 0 0 0;">
+                💡 Aplikace automaticky opravuje quarantine příznak a permissions při každém spuštění.
+              </p>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- 🐧 Linux                                              -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <div class="glass-panel" style="padding:20px; margin-bottom:16px;">
+              <h3 style="margin:0 0 12px 0; color:var(--accent-3); font-size:16px;">🐧 Linux — Průvodce</h3>
+
+              <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 6px 0; color:#6ee7b7; font-size:14px;">Quick Start — Linux</h4>
+                <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
+                  <span style="color:#6b7280;"># AppImage</span><br/>
+                  chmod +x zion-desktop-agent-v2.9.6-linux-x64.AppImage<br/>
+                  ./zion-desktop-agent-v2.9.6-linux-x64.AppImage<br/><br/>
+                  <span style="color:#6b7280;"># Nebo .deb</span><br/>
+                  sudo dpkg -i zion-desktop-agent-v2.9.6-linux-x64.deb<br/>
+                  zion-miner<br/><br/>
+                  <span style="color:#6b7280;"># Pokud miner nefunguje — nastavte permissions</span><br/>
+                  chmod +x /opt/ZION\ Miner/resources/zion-universal-miner<br/>
+                  chmod +x /opt/ZION\ Miner/resources/zion-miner<br/><br/>
+                  <span style="color:#6b7280;"># GPU mining (volitelné) — nainstalujte OpenCL</span><br/>
+                  sudo apt install ocl-icd-opencl-dev<br/>
+                  <span style="color:#6b7280;"># NVIDIA CUDA (volitelné)</span><br/>
+                  sudo apt install nvidia-cuda-toolkit
+                </div>
+              </div>
+
+              <p style="color:var(--text-third); font-size:12px; margin:8px 0 0 0;">
+                💡 Linux typicky nemá problémy s antivirem. Aplikace automaticky nastavuje execute permissions.
+              </p>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- ❓ FAQ                                                 -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <div class="glass-panel" style="padding:20px;">
+              <h3 style="margin:0 0 16px 0; color:var(--text-primary); font-size:16px;">❓ FAQ — Často kladené otázky</h3>
+
+              <div style="margin-bottom:14px;">
+                <div style="color:var(--accent-1); font-weight:600; font-size:13px; margin-bottom:3px;">Q: Je ZION Miner virus?</div>
+                <div style="color:var(--text-secondary); font-size:13px;">
+                  Ne. Těžební software má podobné chování jako malware (vysoké využití CPU/GPU, síťová komunikace), 
+                  proto ho antiviry občas falešně detekují jako „PUA" (Potentially Unwanted Application). Kód je open-source a lze si ho ověřit.
+                </div>
+              </div>
+
+              <div style="margin-bottom:14px;">
+                <div style="color:var(--accent-1); font-weight:600; font-size:13px; margin-bottom:3px;">Q: Proč Windows Defender smaže miner po instalaci?</div>
+                <div style="color:var(--text-secondary); font-size:13px;">
+                  Defender má heuristickou detekci kryptominerů. Řešení: přidejte výjimku na instalační složku (viz návod výše).
+                  Aplikace automaticky přepne na Python miner jako zálohu.
+                </div>
+              </div>
+
+              <div style="margin-bottom:14px;">
+                <div style="color:var(--accent-1); font-weight:600; font-size:13px; margin-bottom:3px;">Q: Na macOS se zobrazuje „App is damaged" nebo „Cannot be opened"</div>
+                <div style="color:var(--text-secondary); font-size:13px;">
+                  Pravý klik → Otevřít místo dvojkliku. Nebo v Terminálu: 
+                  <code style="background:rgba(255,255,255,.08); padding:1px 5px; border-radius:3px;">xattr -dr com.apple.quarantine /Applications/ZION\ Miner.app</code>
+                </div>
+              </div>
+
+              <div style="margin-bottom:14px;">
+                <div style="color:var(--accent-1); font-weight:600; font-size:13px; margin-bottom:3px;">Q: Miner se spustil, ale hash rate je 0</div>
+                <div style="color:var(--text-secondary); font-size:13px;">
+                  Zkontrolujte: 1) Je zadaná správná wallet adresa? 2) Je připojení k poolu aktivní? (zelená tečka v Dashboard)
+                  3) Zkuste přepnout backend na „Python" v nastavení, pokud Rust miner nefunguje.
+                </div>
+              </div>
+
+              <div style="margin-bottom:14px;">
+                <div style="color:var(--accent-1); font-weight:600; font-size:13px; margin-bottom:3px;">Q: Jak zapnu GPU mining?</div>
+                <div style="color:var(--text-secondary); font-size:13px;">
+                  GPU mining vyžaduje OpenCL driver (AMD/Intel) nebo CUDA (NVIDIA). Na macOS Apple Silicon se použije Metal automaticky.
+                  Zkontrolujte, že máte nainstalované GPU drivery. V nastavení vyberte „GPU" mód.
+                </div>
+              </div>
+
+              <div style="margin-bottom:14px;">
+                <div style="color:var(--accent-1); font-weight:600; font-size:13px; margin-bottom:3px;">Q: Jak funguje auto-update?</div>
+                <div style="color:var(--text-secondary); font-size:13px;">
+                  Při startu (a manuálně v About → Updates) aplikace zkontroluje GitHub Releases.
+                  Pokud existuje nová verze, nabídne stažení a instalaci. Na Windows se nainstaluje přes NSIS installer automaticky.
+                </div>
+              </div>
+
+              <div>
+                <div style="color:var(--accent-1); font-weight:600; font-size:13px; margin-bottom:3px;">Q: Můžu těžit na více počítačích se stejnou peněženkou?</div>
+                <div style="color:var(--text-secondary); font-size:13px;">
+                  Ano. Stačí použít stejnou wallet adresu na všech počítačích. Pool přiřadí hashrate ke stejnému účtu.
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

@@ -32,13 +32,13 @@
   "license": "MIT",
   "dependencies": {
     "@noble/ed25519": "^3.0.0",
-    "bip32": "^4.0.0",
     "bip39": "^3.1.0",
+    "electron-updater": "^6.8.3",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "electron": "^39.2.7",
-    "electron-builder": "^22.14.13"
+    "electron-builder": "^26.0.0"
   },
   "build": {
     "appId": "com.zionterranova.desktop-agent",
@@ -48,6 +48,7 @@
     },
     "files": [
       "src/**/*",
+      "ai/**/*",
       "package.json"
     ],
     "extraResources": [
@@ -72,7 +73,7 @@
         "nsis",
         "zip"
       ],
-      "icon": "src/assets/icon.png",
+      "icon": "src/assets/icon.ico",
       "signAndEditExecutable": false,
       "artifactName": "zion-desktop-agent-v${version}-windows-${arch}.${ext}"
     },
@@ -101,6 +102,13 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Yose144",
+        "repo": "2.9.6"
+      }
+    ]
   }
 }

@@ -147,6 +147,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onNodeOutput: (callback) => ipcRenderer.on('node-output', (event, data) => callback(data)),
   onNodeStopped: (callback) => ipcRenderer.on('node-stopped', (event, data) => callback(data)),
 
+  // ── Security / AV Troubleshooting ────────────────────────────────────────
+  getSecurityStatus: () => ipcRenderer.invoke('get-security-status'),
+  fixSecurityBlocks: () => ipcRenderer.invoke('fix-security-blocks'),
+  openDefenderSettings: () => ipcRenderer.invoke('open-defender-settings'),
+
   // Cleanup listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);

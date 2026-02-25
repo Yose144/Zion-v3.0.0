@@ -1128,6 +1128,210 @@ function ensureDirectories() {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// SECURITY FIX: macOS Gatekeeper quarantine + permissions
+// On macOS, downloaded apps/binaries get com.apple.quarantine xattr
+// which blocks execution. We strip it proactively on startup.
+// Also ensures execute permissions on all miner binaries.
+// ═══════════════════════════════════════════════════════════════════
+function fixSecurityBlocks() {
+  const results = { fixed: [], errors: [] };
+
+  // Collect all binary/script paths that need to be executable
+  const resourceBase = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources');
+  const binaryNames = [
+    'zion-miner', 'zion-universal-miner',
+    'zion_native_miner_v2_9.py', 'ai_native_client.py',
+    'afterburner_service.py',
+    'mining/cosmic_harmony_native.py',
+    'mining/cosmic_harmony_v3_gpu.py',
+    'mining/cosmic_harmony_v3_python.py',
+  ];
+
+  // Platform-specific exe names
+  if (process.platform === 'win32') {
+    binaryNames.push('zion-miner.exe', 'zion-universal-miner.exe', 'zion_native_miner_v2_9.exe');
+  }
+
+  const targetPaths = binaryNames
+    .map(name => path.join(resourceBase, name))
+    .filter(p => fs.existsSync(p));
+
+  // macOS: Remove quarantine xattr and set execute permissions
+  if (process.platform === 'darwin') {
+    for (const targetPath of targetPaths) {
+      try {
+        // Remove com.apple.quarantine extended attribute
+        const { execSync } = require('child_process');
+        execSync(`xattr -dr com.apple.quarantine "${targetPath}" 2>/dev/null || true`, { timeout: 5000 });
+        results.fixed.push(`xattr: ${path.basename(targetPath)}`);
+      } catch (err) {
+        results.errors.push(`xattr ${path.basename(targetPath)}: ${err?.message}`);
+      }
+      try {
+        fs.chmodSync(targetPath, 0o755);
+        results.fixed.push(`chmod: ${path.basename(targetPath)}`);
+      } catch (err) {
+        results.errors.push(`chmod ${path.basename(targetPath)}: ${err?.message}`);
+      }
+    }
+
+    // Also fix the app binary itself and native_modules if packaged
+    if (IS_PACKAGED) {
+      try {
+        const { execSync } = require('child_process');
+        // Strip quarantine from the entire resources dir recursively
+        execSync(`xattr -dr com.apple.quarantine "${resourceBase}" 2>/dev/null || true`, { timeout: 10000 });
+        results.fixed.push('xattr: resources/ (recursive)');
+      } catch (err) {
+        results.errors.push(`xattr resources/: ${err?.message}`);
+      }
+    }
+  }
+
+  // Linux: Ensure execute permissions
+  if (process.platform === 'linux') {
+    for (const targetPath of targetPaths) {
+      try {
+        fs.chmodSync(targetPath, 0o755);
+        results.fixed.push(`chmod: ${path.basename(targetPath)}`);
+      } catch (err) {
+        results.errors.push(`chmod ${path.basename(targetPath)}: ${err?.message}`);
+      }
+    }
+  }
+
+  // Windows: Check if Defender has quarantined the miner binary
+  if (process.platform === 'win32') {
+    const minerExes = targetPaths.filter(p => /\.(exe)$/i.test(p));
+    for (const exe of minerExes) {
+      if (!fs.existsSync(exe)) {
+        results.errors.push(`missing (quarantined?): ${path.basename(exe)}`);
+      }
+    }
+  }
+
+  if (results.fixed.length > 0) {
+    dbg('[security-fix] Fixed:', results.fixed.join(', '));
+  }
+  if (results.errors.length > 0) {
+    dbg('[security-fix] Errors:', results.errors.join(', '));
+  }
+
+  return results;
+}
+
+// IPC: Get security/AV status and troubleshooting info
+ipcMain.handle('get-security-status', async () => {
+  const resourceBase = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources');
+  const status = {
+    platform: process.platform,
+    isPackaged: IS_PACKAGED,
+    resourcesPath: resourceBase,
+    binaries: {},
+    recommendations: [],
+  };
+
+  const checkBinaries = ['zion-miner', 'zion-universal-miner'];
+  if (process.platform === 'win32') {
+    checkBinaries.push('zion-miner.exe', 'zion-universal-miner.exe');
+  }
+
+  for (const name of checkBinaries) {
+    const fullPath = path.join(resourceBase, name);
+    const exists = fs.existsSync(fullPath);
+    let executable = false;
+    let quarantined = false;
+
+    if (exists) {
+      try {
+        fs.accessSync(fullPath, fs.constants.X_OK);
+        executable = true;
+      } catch {
+        executable = false;
+      }
+
+      // macOS: check quarantine xattr
+      if (process.platform === 'darwin') {
+        try {
+          const { execSync } = require('child_process');
+          const xattrOut = execSync(`xattr -l "${fullPath}" 2>/dev/null || true`, { timeout: 3000, encoding: 'utf8' });
+          quarantined = xattrOut.includes('com.apple.quarantine');
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    status.binaries[name] = { exists, executable, quarantined };
+  }
+
+  // Generate recommendations
+  if (process.platform === 'darwin') {
+    const anyQuarantined = Object.values(status.binaries).some(b => b.quarantined);
+    const anyNotExecutable = Object.values(status.binaries).some(b => b.exists && !b.executable);
+    if (anyQuarantined) {
+      status.recommendations.push({
+        type: 'macos-quarantine',
+        title: 'macOS Gatekeeper blokuje miner',
+        description: 'Stáhnuté soubory mají quarantine příznak. Klikněte "Opravit" nebo spusťte v terminálu:',
+        command: `xattr -dr com.apple.quarantine "${resourceBase}"`,
+      });
+    }
+    if (anyNotExecutable) {
+      status.recommendations.push({
+        type: 'macos-permissions',
+        title: 'Chybí exec permissions',
+        description: 'Binárky nemají oprávnění ke spuštění.',
+        command: `chmod +x "${resourceBase}/zion-miner" "${resourceBase}/zion-universal-miner"`,
+      });
+    }
+    const anyMissing = Object.values(status.binaries).some(b => !b.exists);
+    if (!anyQuarantined && !anyNotExecutable && !anyMissing) {
+      status.recommendations.push({ type: 'ok', title: 'Vše OK', description: 'Žádné bezpečnostní problémy nenalezeny.' });
+    }
+  } else if (process.platform === 'win32') {
+    const anyMissing = Object.values(status.binaries).some(b => !b.exists);
+    if (anyMissing) {
+      status.recommendations.push({
+        type: 'windows-defender',
+        title: 'Windows Defender zablokoval miner',
+        description: 'Miner binary byla pravděpodobně smazána antivirem. Postup:\n1. Otevřete Windows Security → Ochrana před viry\n2. Historie ochrany → Povolte zablokovanou položku\n3. Přidejte výjimku pro složku:',
+        command: resourceBase,
+      });
+    } else {
+      status.recommendations.push({ type: 'ok', title: 'Vše OK', description: 'Žádné bezpečnostní problémy nenalezeny.' });
+    }
+  } else {
+    status.recommendations.push({ type: 'ok', title: 'Vše OK', description: 'Linux — žádné známé problémy.' });
+  }
+
+  return status;
+});
+
+// IPC: Attempt to fix security blocks (macOS quarantine, permissions)
+ipcMain.handle('fix-security-blocks', async () => {
+  try {
+    const results = fixSecurityBlocks();
+    return { success: true, ...results };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+// IPC: Open Windows Defender exclusion settings (Windows only)
+ipcMain.handle('open-defender-settings', async () => {
+  try {
+    if (process.platform !== 'win32') return { success: false, error: 'Not Windows' };
+    const { shell } = require('electron');
+    // Opens Windows Security virus & threat protection settings
+    await shell.openExternal('windowsdefender://threat');
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
 function rotateFileIfTooLarge(filePath, maxBytes, maxBackups = 1, maxAgeMs = null) {
   // IMPORTANT:
   // Using stat.mtime for "age" does NOT work for logs that are continuously appended
@@ -6505,6 +6709,13 @@ app.whenReady().then(() => {
   // Ensure all required directories exist
   ensureDirectories();
   migrateLegacyUserDataIfNeeded();
+
+  // Fix macOS Gatekeeper quarantine + Unix permissions on startup
+  try {
+    fixSecurityBlocks();
+  } catch (err) {
+    dbg('[startup] fixSecurityBlocks failed:', err?.message);
+  }
 
   // Apply miner.log retention immediately on app startup.
   // This ensures the debug panel isn't "stuck" on very old/big logs before mining starts.
