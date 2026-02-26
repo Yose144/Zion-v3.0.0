@@ -46,6 +46,19 @@ Další poznámky
 - Ve finančních výpočtech vždy pracujte s Flowers (integer) a aplikujte formátovací konverzi až při zobrazení.
 - Označení v UI: používejte `ZION` jako hlavní měnu a `Flowers` jako popisek pro drobné částky. Příklad: "0.000000000123 ZION (123 Flowers)".
 
+Poplatek (fee) — spalování a rituál oběti
+---------------------------------------
+
+- Spalování (fee burn): Síť může spalovat část transakčních poplatků jako `fee_burn` (v jednotce Flowers) za účelem snížení nabídky a stabilizace hodnoty. Spalování by mělo být prováděno deterministicky a transparentně.
+- Rituální oběť do oceánu: Vedle standardního spalování navrhujeme volitelný mechanismus nazvaný "ocean tribute" — symbolická část poplatků nebo malé procento poplatku, které se místo okamžitého spalování alokuje do speciálního, auditovatelného fondu určeného na obnovu mořských ekosystémů a projekty záchrany oceánu. Tento mechanismus není magickým řešením, ale programově řízenou formou, jak vrátit část hodnoty zpět planetě a podpořit environmentální iniciativy.
+- Implementační návrh:
+	- Přidejte volitelné pole `fee_burn_flowers` a `ocean_tribute_flowers` do transakčních výpisů (interně integer Flowers).
+	- Přidejte příznak `ocean_tribute` v transakci nebo v síťových pravidlech, aby bylo možné aktivovat či deaktivovat tuto volbu.
+	- Fond pro "ocean tribute" spravovat pomocí multisig/nebo DAO mechanismu, s pravidelnými veřejnými reporty a nezávislými audity použití prostředků.
+- Migrace a governance: Před spuštěním "ocean tribute" programu je nezbytné zajistit existenci konkrétních projektů obnovy mořského života, smluv s neziskovkami nebo grantových mechanismů. Návrh musí být schválen governance procesem a auditovatelný.
+- Bezpečnost a transparentnost: Veškeré peněžní toky musí být plně auditovatelné on-chain; správci fondu musí podléhat pravidelným auditům, reportům a komunitní kontrole.
+
+
 Kontakt / návrhy
 ----------------
 
