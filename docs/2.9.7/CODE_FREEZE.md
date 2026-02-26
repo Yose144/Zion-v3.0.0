@@ -1,6 +1,6 @@
 # CODE FREEZE SIGN-OFF — ZION TerraNova v2.9.7
 
-> **Stav:** � IN PROGRESS — technické úkoly dokončeny, zbývají infra/genesis  
+> **Stav:** 🟡 IN PROGRESS — technické úkoly dokončeny, zbývají infra/genesis  
 > **Target tag:** `v2.9.7-freeze`  
 > **Datum cíle:** 31. 3. 2026
 
@@ -14,7 +14,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [ ] Pool Docker běží na Helsinki (port 3333+8080) — `curl http://77.42.31.72:8080/stats`
 - [ ] Alertmanager Telegram tokeny aktivní + test-incident doručen
 - [ ] `peers` health endpoint vrací číslo (ne null)
-- [ ] SeedDE offline a odpojen ze seed listu
+- [ ] SeedDE + Usa1 offline a odpojeny ze seed listu
 
 ### CHv3 / Algoritmus
 - [x] CHv3 ASIC hardening: fork@100k, scratchpad 512KiB/4/256, dynamic XOR maska — commit `8a2b295` ✅ 2026-02-24

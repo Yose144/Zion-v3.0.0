@@ -11,7 +11,7 @@
 - ✅ SEED_PEERS opraveny na všech nodech (odstraněny mrtvé: SeedDE `46.225.126.243`, Usa1 `5.78.178.227`)
 - ✅ Usa + Asia přepnuty na `zion-core:2.9.6-amd64` (nativní image pro x86)
 - ✅ Helsinki na `zion-core:2.9.6-fix2` (nativní arm64)
-- ✅ IBD syncronizace: všechny nody na height=5209
+- ✅ IBD synchronizace: všechny nody na height=5209
 - ✅ Pool na Helsinki: `zion-pool:2.9.6-testnet` na portech 3333+8080
 
 ## Servery
