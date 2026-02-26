@@ -6233,14 +6233,73 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       return { success: false, error: 'Transaction cancelled by user' };
     }
 
-    const result = await zionRpcCall(rpcUrl, 'sendtransaction', {
-      from: fromAddr,
-      to: toAddr,
-      amount: amt,
-      purpose: (purpose || '').toString()
+    // Build multi-server candidate list (same pattern as wallet-get-balance)
+    const normalizeRpcUrl = (value) => {
+      const raw = String(value || '').trim();
+      if (!raw) return 'http://77.42.31.72:8444/jsonrpc';
+      if (/^https?:\/\//i.test(raw)) {
+        if (raw.endsWith('/jsonrpc')) return raw;
+        if (/:\d+\/?$/.test(raw)) return raw.replace(/\/+$/, '') + '/jsonrpc';
+        return raw;
+      }
+      if (/^[^/]+:\d+$/.test(raw)) return `http://${raw}/jsonrpc`;
+      return raw;
+    };
+
+    const baseRpcUrl = normalizeRpcUrl(rpcUrl);
+    const parsedBase = (() => {
+      try { return new URL(baseRpcUrl); } catch { return null; }
+    })();
+    const baseHost = parsedBase?.hostname || '';
+    const baseProtocol = parsedBase?.protocol || 'http:';
+    const basePort = parsedBase?.port || '8444';
+
+    const rpcCandidates = [
+      baseRpcUrl,
+      baseHost ? `${baseProtocol}//${baseHost}:8444/jsonrpc` : '',
+      ...TESTNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
+      ...TESTNET_SERVERS.map(s => `http://${s.host}:8444/jsonrpc`)
+    ].filter(Boolean);
+
+    const seenRpc = new Set();
+    const uniqueRpcCandidates = rpcCandidates.filter((url) => {
+      if (!url || seenRpc.has(url)) return false;
+      seenRpc.add(url);
+      return true;
     });
 
-    if (result?.error) return { success: false, error: result.error };
+    let result = null;
+    let lastRpcError = '';
+
+    for (const candidateUrl of uniqueRpcCandidates) {
+      try {
+        const rpcRes = await zionRpcCall(candidateUrl, 'sendtransaction', {
+          from: fromAddr,
+          to: toAddr,
+          amount: amt,
+          purpose: (purpose || '').toString()
+        });
+        if (rpcRes && !rpcRes.error) {
+          result = rpcRes;
+          break;
+        }
+        // If the node returned an explicit application error (e.g. "insufficient balance"),
+        // propagate it immediately — no point trying other servers.
+        if (rpcRes?.error) {
+          return { success: false, error: rpcRes.error };
+        }
+      } catch (err) {
+        lastRpcError = err?.message || String(err);
+      }
+    }
+
+    if (!result) {
+      return {
+        success: false,
+        error: `RPC unavailable — node unreachable on all servers. Last error: ${lastRpcError || 'no reachable endpoint'}`
+      };
+    }
+
     return {
       success: true,
       txId: result?.tx_id || result?.txid || result?.hash,
