@@ -85,6 +85,8 @@
 
 ## 5) Rozhodnutí token supply: 144B vs 144M
 
+Detailní ekonomické porovnání je v `docs/2.9.7/TOKENOMICS_AB_144B_vs_144M.md`.
+
 ### Shrnutí
 - **Technicky** jsou možné obě varianty.
 - **Pro UX a ekonomický narativ** je v této fázi obvykle bezpečnější držet vyšší nominální supply (např. 144B) a řešit hodnotu přes tokenomics (emise, burn, utility), než dělat tvrdé snížení na 144M těsně před mainnetem.
