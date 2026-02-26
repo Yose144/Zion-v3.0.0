@@ -1843,6 +1843,11 @@ function setupWalletControls() {
   const sendPurposeEl = document.getElementById('send-purpose');
   const sendTxBtn = document.getElementById('send-tx-btn');
   const sendStatusEl = document.getElementById('send-status');
+  const sendFromDisplay = document.getElementById('send-from-display');
+  const sendFromBalance = document.getElementById('send-from-balance');
+  const sendFromBalanceStatus = document.getElementById('send-from-balance-status');
+  const sendNoWalletWarn = document.getElementById('send-no-wallet-warn');
+  const sendRefreshFromBtn = document.getElementById('send-refresh-from-btn');
 
   const getRpcUrl = () => {
     let url = (config?.rpcUrl || 'http://77.42.31.72:8444/jsonrpc').trim();
@@ -1856,6 +1861,49 @@ function setupWalletControls() {
     const v = activeWalletInput && 'value' in activeWalletInput ? activeWalletInput.value : '';
     return (v || config.wallet || '').toString().trim();
   };
+
+  // ── Refresh "from" address display + balance in the Send tab ──
+  const refreshSendFrom = async () => {
+    // Always re-read config so we pick up wallet changes made after init
+    try {
+      const freshCfg = await window.electronAPI.getConfig();
+      if (freshCfg?.wallet) config.wallet = freshCfg.wallet;
+      if (freshCfg?.rpcUrl) config.rpcUrl = freshCfg.rpcUrl;
+    } catch { /* keep cached */ }
+
+    const addr = getActiveAddress();
+    const hasWallet = !!(addr && addr.startsWith('zion1'));
+
+    if (sendFromDisplay) sendFromDisplay.textContent = hasWallet ? addr : '— not configured —';
+    if (sendNoWalletWarn) sendNoWalletWarn.style.display = hasWallet ? 'none' : 'block';
+    if (sendFromBalance) sendFromBalance.textContent = '…';
+    if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = '';
+
+    if (!hasWallet) return;
+
+    if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = 'loading…';
+    try {
+      const result = await window.electronAPI.walletGetBalance({ rpcUrl: getRpcUrl(), address: addr });
+      if (result?.success) {
+        const bal = result.balance_zion ?? (result.balance_atomic != null ? result.balance_atomic / 1e6 : null);
+        if (sendFromBalance) sendFromBalance.textContent = bal != null ? `${bal.toFixed(6)} ZION` : 'n/a';
+        if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = '';
+      } else {
+        if (sendFromBalance) sendFromBalance.textContent = '—';
+        if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = result?.error || 'error';
+      }
+    } catch (e) {
+      if (sendFromBalance) sendFromBalance.textContent = '—';
+      if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = 'network error';
+    }
+  };
+
+  // Refresh button in Send tab
+  sendRefreshFromBtn?.addEventListener('click', refreshSendFrom);
+
+  // Auto-refresh when switching to the Send tab
+  document.querySelector('.section-tab[data-section="wallet-send"]')
+    ?.addEventListener('click', () => { setTimeout(refreshSendFrom, 80); });
 
   const syncActiveWallet = () => {
     if (activeWalletInput && 'value' in activeWalletInput) {
@@ -1997,6 +2045,9 @@ function setupWalletControls() {
   // Seed wallet actions with current config
   syncActiveWallet();
 
+  // Populate the Send-tab "From" display on startup
+  refreshSendFrom();
+
   setActiveWalletBtn?.addEventListener('click', async () => {
     const address = getActiveAddress();
     if (!address) {
@@ -2019,6 +2070,7 @@ function setupWalletControls() {
     updateSettingsUI();
     addLogEntry(`Active wallet set: ${address}`, 'info');
     alert(`Active wallet set:\n\n${address}`);
+    refreshSendFrom(); // update the Send tab from-address display
   });
 
   refreshBalanceBtn?.addEventListener('click', async () => {
@@ -2191,37 +2243,64 @@ function setupWalletControls() {
   });
 
   sendTxBtn?.addEventListener('click', async () => {
+    if (sendStatusEl) sendStatusEl.textContent = '';
+
+    // Refresh config + from-address display before sending
+    await refreshSendFrom();
+
     const from = getActiveAddress();
     const to = (sendToEl && 'value' in sendToEl ? sendToEl.value : '').toString().trim();
-    const amount = (sendAmountEl && 'value' in sendAmountEl ? sendAmountEl.value : '').toString().trim();
+    const amountRaw = (sendAmountEl && 'value' in sendAmountEl ? sendAmountEl.value : '').toString().trim();
     const purpose = (sendPurposeEl && 'value' in sendPurposeEl ? sendPurposeEl.value : '').toString();
 
-    if (sendStatusEl) sendStatusEl.textContent = 'Sending...';
-
-    const fromCheck = await window.electronAPI.validateAddress(from);
-    const toCheck = await window.electronAPI.validateAddress(to);
-    if (!fromCheck?.valid || !toCheck?.valid) {
-      if (sendStatusEl) sendStatusEl.textContent = 'Both from/to must be valid zion1... addresses.';
+    // Validate from
+    if (!from || !from.startsWith('zion1')) {
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ No active wallet. Go to Overview tab → set your wallet address.';
+      if (sendNoWalletWarn) sendNoWalletWarn.style.display = 'block';
       return;
     }
+
+    // Validate to
+    if (!to || !to.startsWith('zion1')) {
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ Recipient address must be a valid zion1... address.';
+      return;
+    }
+
+    // Validate amount
+    const parsedAmount = parseFloat(amountRaw.replace(',', '.'));
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ Enter a valid amount greater than 0.';
+      return;
+    }
+
+    if (from === to) {
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ Cannot send to yourself.';
+      return;
+    }
+
+    if (sendStatusEl) sendStatusEl.textContent = '⏳ Confirming…';
 
     const result = await window.electronAPI.walletSendTransaction({
       rpcUrl: getRpcUrl(),
       from,
       to,
-      amount,
+      amount: parsedAmount,
       purpose
     });
 
     if (!result?.success) {
-      if (sendStatusEl) sendStatusEl.textContent = `Error: ${result?.error || 'send failed'}`;
+      const err = result?.error || 'send failed';
+      const hint = err.includes('Insufficient') ? ' (check your balance)' : err.includes('RPC') ? ' (node unreachable — try again)' : '';
+      if (sendStatusEl) sendStatusEl.textContent = `❌ ${err}${hint}`;
       return;
     }
 
-    if (sendStatusEl) sendStatusEl.textContent = `OK · ${result.status || 'pending'} · tx: ${result.txId || 'n/a'}`;
+    if (sendStatusEl) sendStatusEl.textContent = `✅ Sent! Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`;
     if (sendToEl) sendToEl.value = '';
     if (sendAmountEl) sendAmountEl.value = '';
     if (sendPurposeEl) sendPurposeEl.value = '';
+    // Refresh balance after successful send
+    setTimeout(refreshSendFrom, 1500);
   });
 
   // Transaction lookup

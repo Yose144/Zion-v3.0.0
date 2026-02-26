@@ -4926,19 +4926,39 @@
               <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
               <span>Send Transaction</span>
             </h2>
+
+            <!-- From address card -->
+            <div id="send-no-wallet-warn" class="status-warning" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.35);border-radius:10px;color:#f87171;font-size:12px;">
+              ⚠ No wallet configured. Go to <strong>Overview</strong> tab → set your active wallet address first.
+            </div>
+
+            <div class="wallet-card" style="margin-bottom:16px;padding:12px 16px;">
+              <div class="wallet-kicker">SENDING FROM</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;flex-wrap:wrap;">
+                <span id="send-from-display" style="font-family:monospace;font-size:12px;color:rgba(255,255,255,.75);word-break:break-all;">—</span>
+                <button class="btn btn-ghost btn-sm" id="send-refresh-from-btn" style="flex-shrink:0;font-size:10px;padding:4px 10px;">
+                  <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg> Refresh
+                </button>
+              </div>
+              <div style="margin-top:5px;font-size:11px;color:rgba(255,255,255,.35);">
+                Balance: <span id="send-from-balance" style="color:var(--zion-gold);font-family:monospace;">—</span>
+                <span id="send-from-balance-status" style="margin-left:6px;font-size:10px;color:rgba(255,255,255,.25);"></span>
+              </div>
+            </div>
+
             <div class="send-grid">
               <div class="form-group form-group-no-margin">
                 <label>To Address</label>
                 <input type="text" id="send-to-address" placeholder="zion1..." class="input-mono" />
               </div>
               <div class="form-group form-group-no-margin">
-                <label>Amount</label>
-                <input type="number" id="send-amount" min="0" step="0.00000001" placeholder="0.0" />
+                <label>Amount (ZION)</label>
+                <input type="number" id="send-amount" min="0" step="0.000001" placeholder="0.0" />
               </div>
             </div>
             <div class="form-group form-group-mt-14">
               <label>Purpose (optional)</label>
-              <input type="text" id="send-purpose" placeholder="e.g. payout" />
+              <input type="text" id="send-purpose" placeholder="e.g. payout, tip, transfer" />
             </div>
             <button class="btn btn-primary btn-mt-8" id="send-tx-btn">
               <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
