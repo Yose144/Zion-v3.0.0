@@ -172,6 +172,19 @@ impl DualMode {
         self.to_external_coin().zpool_url(region)
     }
 
+    /// HeroMiners stratum URL (deleguje na `ExternalCoin::herominers_url`).
+    /// Vrací `None` pro coiny které HeroMiners nepodporuje (EPIC, FLUX, DCR, EVR, MEWC).
+    pub fn herominers_url(&self, region: &str) -> Option<String> {
+        self.to_external_coin().herominers_url(region)
+    }
+
+    /// NiceHash stratum URL (deleguje na `ExternalCoin::nicehash_url`).
+    /// Výplata vždy v BTC — uživatelské jméno = BTC adresa, heslo = `x`.
+    /// Vrací `None` pro coiny které NiceHash nepodporuje (ALPH, FLUX, DCR, ZANO, EPIC, EVR, MEWC).
+    pub fn nicehash_url(&self, region: &str) -> Option<String> {
+        self.to_external_coin().nicehash_url(region)
+    }
+
     /// Map to `ExternalCoin` (used by `ExternalMiner` / `EthStratumClient`)
     pub fn to_external_coin(&self) -> ExternalCoin {
         match self {
