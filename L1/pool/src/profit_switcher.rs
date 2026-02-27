@@ -154,9 +154,23 @@ impl Default for ProfitSwitchConfig {
             check_interval_secs: 300,
             switch_threshold_pct: 10.0,
             min_switch_interval_secs: 1800,
-            preferred_coins: vec!["ETC".to_string(), "XMR".to_string(), "RVN".to_string()],
+            // GPU coins ranked by typical Feb 2026 profitability:
+            // KAS (kHeavyHash), ETC (Ethash), ALPH (Blake3), FLUX (ZelHash),
+            // RVN (KawPow), ERG (Autolykos v2), CLORE (KawPow), NEXA (NexaPoW)
+            // XMR included as CPU fallback (MoneroOcean auto-algo)
+            preferred_coins: vec![
+                "KAS".to_string(),
+                "ETC".to_string(),
+                "ALPH".to_string(),
+                "FLUX".to_string(),
+                "RVN".to_string(),
+                "ERG".to_string(),
+                "CLORE".to_string(),
+                "NEXA".to_string(),
+                "XMR".to_string(),
+            ],
             excluded_coins: vec![],
-            fallback_coin: "XMR".to_string(),
+            fallback_coin: "ETC".to_string(),
         }
     }
 }
@@ -369,13 +383,19 @@ async fn fetch_wtm_endpoint(
 fn estimate_profitability_fallback(coins: &[String]) -> Vec<CoinProfitData> {
     let now = Utc::now().timestamp();
 
-    // Static estimates based on typical February 2026 values
-    // Updated periodically when WhatToMine data is available
+    // Static estimates based on typical February 2026 values.
+    // Scores are WhatToMine-normalised profitability (higher = mine this first).
+    // Order: KAS > ETC > ALPH > FLUX > RVN > ERG > CLORE > NEXA > XMR(CPU)
     let estimates: Vec<(&str, &str, f64)> = vec![
-        ("XMR", "RandomX", 90.0), // CPU-minable, most profitable for our servers
-        ("ETC", "Ethash", 60.0),
-        ("RVN", "KawPow", 40.0),
-        ("ERG", "Autolykos", 35.0),
+        ("KAS",   "kHeavyHash",  85.0), // ASIC+GPU, consistently top GPU coin
+        ("ETC",   "Ethash",      60.0), // high liquidity, stable revenue
+        ("ALPH",  "Blake3",      55.0), // ASIC‑resistant Blake3, rising network
+        ("FLUX",  "ZelHash",     50.0), // Equihash 125,4 — ASIC‑resistant
+        ("RVN",   "KawPow",      40.0), // GPU-only KawPow
+        ("ERG",   "Autolykos2",  35.0), // Autolykos v2 — memory-hard GPU
+        ("CLORE", "KawPow",      28.0), // KawPow clone, smaller market
+        ("NEXA",  "NexaPoW",     22.0), // NexaPoW SHA3d — smaller cap
+        ("XMR",   "RandomX",     90.0), // CPU fallback via MoneroOcean
     ];
 
     estimates
@@ -784,9 +804,13 @@ impl ProfitSwitcher {
                 vec![
                     "KAS".to_string(),
                     "ETC".to_string(),
+                    "ALPH".to_string(),
+                    "FLUX".to_string(),
                     "RVN".to_string(),
                     "ERG".to_string(),
-                    "ALPH".to_string(),
+                    "CLORE".to_string(),
+                    "NEXA".to_string(),
+                    "XMR".to_string(),
                 ]
             } else {
                 self.config.preferred_coins.clone()
