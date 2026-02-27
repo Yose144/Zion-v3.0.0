@@ -193,6 +193,33 @@ struct Cli {
     /// The remaining GPU % stays on primary ZION CHv3 mining.
     #[arg(long, default_value_t = 0.30)]
     dual_alloc: f32,
+
+    // ─── Triple-stream mining (ZION + secondary + tertiary coin) ──────────
+    /// Triple mining mode — adds a third coin stream alongside dual mining.
+    ///
+    /// Requires --dualmode to also be set (triple needs a dual partner first).
+    /// GPU allocation is shared: primary + dual + triple = 100%.
+    ///
+    /// Same mode names as --dualmode (ALEPHDUAL, KASPADUAL, ETCHDUAL, etc.).
+    ///
+    /// Example (ZION + ETC dual + ALPH triple):
+    ///   zion-miner --pool ... --wallet zion1...
+    ///              --dualmode ETCHDUAL --dualuser 0xETC...
+    ///              --triplemode ALEPHDUAL --tripleuser 1AlphWallet...
+    #[arg(long)]
+    triplemode: Option<String>,
+
+    /// Triple mining pool URL (host:port). Auto-detected from --triplemode.
+    #[arg(long)]
+    triplepool: Option<String>,
+
+    /// Wallet/user for the tertiary (triple) pool.
+    #[arg(long)]
+    tripleuser: Option<String>,
+
+    /// GPU allocation for the triple stream (0.05–0.60, default 0.20 = 20%).
+    #[arg(long, default_value_t = 0.20)]
+    triple_alloc: f32,
 }
 
 #[tokio::main]
@@ -450,7 +477,7 @@ async fn main() -> anyhow::Result<()> {
     let dual_stream_cfg = if let Some(ref mode_str) = cli.dualmode {
         let mode = DualMode::from_str(mode_str).ok_or_else(|| {
             anyhow::anyhow!(
-                "Unknown dualmode '{}'. Use: ALEPHDUAL, KASPADUAL, ETCHDUAL, ERGDUAL, RVNDUAL, FLUXDUAL",
+                "Unknown dualmode '{}'. Use: ALEPHDUAL, KASPADUAL, ETCHDUAL, ERGDUAL, RVNDUAL, FLUXDUAL, DCRDUAL, EPICDUAL, CFXDUAL",
                 mode_str
             )
         })?;
@@ -476,8 +503,38 @@ async fn main() -> anyhow::Result<()> {
         None
     };
 
-    // Auto-set g=dual if --dualmode is specified and no explicit --group override
-    let effective_group_hint = if dual_stream_cfg.is_some() && cli.group.is_none() {
+    let triple_stream_cfg = if let Some(ref mode_str) = cli.triplemode {
+        let mode = DualMode::from_str(mode_str).ok_or_else(|| {
+            anyhow::anyhow!(
+                "Unknown triplemode '{}'. Use same names as --dualmode (ALEPHDUAL, KASPADUAL, ETCHDUAL, ...)" ,
+                mode_str
+            )
+        })?;
+        let triple_user = cli.tripleuser.clone().unwrap_or_else(|| {
+            warn!("[TRIPLE] --tripleuser not specified, using primary wallet for triple pool");
+            cli.wallet.clone()
+        });
+        let triple_cfg = DualStreamConfig::from_cli_with_label(
+            mode,
+            cli.triplepool.clone(),
+            triple_user,
+            &worker,
+            cli.triple_alloc,
+            "triple",
+        );
+        println!(
+            "{}  {:<12} {}",
+            "   ".bright_black(),
+            "triple-mode".bright_black(),
+            triple_cfg.summary().bright_cyan().bold()
+        );
+        Some(triple_cfg)
+    } else {
+        None
+    };
+
+    // Auto-set g=dual if --dualmode or --triplemode is specified and no explicit --group override
+    let effective_group_hint = if (dual_stream_cfg.is_some() || triple_stream_cfg.is_some()) && cli.group.is_none() {
         Some("dual".to_string())
     } else {
         cli.group.clone()
@@ -496,6 +553,7 @@ async fn main() -> anyhow::Result<()> {
         stats_file: cli.stats_file.as_deref().map(PathBuf::from),
         stats_interval_secs: cli.stats_interval.max(1),
         dual_stream: dual_stream_cfg,
+        triple_stream: triple_stream_cfg,
     };
 
     println!();
@@ -721,6 +779,7 @@ async fn main() -> anyhow::Result<()> {
             stats_file: None,
             stats_interval_secs: cli.stats_interval.max(1),
             dual_stream: None,
+            triple_stream: None,
         };
 
         let xmr_miner = Arc::new(miner::UniversalMiner::new(xmr_config)?);
@@ -763,6 +822,36 @@ async fn main() -> anyhow::Result<()> {
             "⛏️  Dual-stream miner started ({} → {})",
             dual_cfg.mode.name(),
             dual_pool_url
+        );
+    }
+
+    // ═══ Triple-Stream Mining ═══
+    // If --triplemode is set, spawn a third DualStreamMiner for the tertiary coin.
+    // Architecture: primary ZION + dual coin (GPU X%) + triple coin (GPU Y%).
+    // GPU budget: primary = (100 - dual_alloc - triple_alloc)%.
+    if let Some(ref triple_cfg) = config.triple_stream {
+        let triple_mode_name = triple_cfg.mode.coin_ticker().to_string();
+        let triple_pool_url = triple_cfg.pool_url.clone();
+        let triple_miner = Arc::new(DualStreamMiner::new(triple_cfg.clone()));
+        let triple_miner_clone = Arc::clone(&triple_miner);
+
+        tokio::spawn(async move {
+            if let Err(e) = triple_miner_clone.start().await {
+                error!("❌ Triple-stream ({}) miner failed: {}", triple_mode_name, e);
+            }
+        });
+
+        // Graceful shutdown for triple miner
+        let triple_shutdown = Arc::clone(&triple_miner);
+        tokio::spawn(async move {
+            signal::ctrl_c().await.ok();
+            triple_shutdown.stop();
+        });
+
+        info!(
+            "⛏️  Triple-stream miner started ({} → {})",
+            triple_cfg.mode.name(),
+            triple_pool_url
         );
     }
 

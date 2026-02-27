@@ -191,6 +191,10 @@ pub struct MinerConfig {
     /// When set, a second stratum connection is opened to an external pool
     /// and GPU idle cycles are used to mine the secondary coin.
     pub dual_stream: Option<dual_stream::DualStreamConfig>,
+    /// Triple-stream tertiary mining config (LolMiner-style triple mining).
+    /// When set, a third stratum connection is opened to a third external pool.
+    /// Requires --dualmode to also be set for the secondary coin.
+    pub triple_stream: Option<dual_stream::DualStreamConfig>,
 }
 
 pub struct UniversalMiner {
