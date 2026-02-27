@@ -169,6 +169,7 @@ impl Default for ProfitSwitchConfig {
                 "DCR".to_string(),
                 "EPIC".to_string(),
                 "CFX".to_string(),
+                "ZANO".to_string(),
                 "CLORE".to_string(),
                 "NEXA".to_string(),
                 "XMR".to_string(),
@@ -345,6 +346,7 @@ async fn fetch_wtm_endpoint(
         ("Decred", "DCR"),
         ("Epic Cash", "EPIC"),
         ("Conflux", "CFX"),
+        ("Zano", "ZANO"),
     ]
     .iter()
     .cloned()
@@ -403,6 +405,7 @@ fn estimate_profitability_fallback(coins: &[String]) -> Vec<CoinProfitData> {
         ("DCR",   "blake3-dcr",  45.0), // Decred Blake3 — high-profit, ASIC+GPU
         ("EPIC",  "progpow-epic",38.0), // Epic Cash ProgPow GPU
         ("CFX",   "octopus",     42.0), // Conflux Octopus — SHA3 DAG, 4 GB+
+        ("ZANO",  "progpowz",    36.0), // Zano ProgPowZ — identické konstanty jako ProgPow 0.9.2
         ("CLORE", "KawPow",      28.0), // KawPow clone, smaller market
         ("NEXA",  "NexaPoW",     22.0), // NexaPoW SHA3d — smaller cap
         ("XMR",   "RandomX",     90.0), // CPU fallback via MoneroOcean
