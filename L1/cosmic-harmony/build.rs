@@ -87,6 +87,10 @@ fn main() {
         compile("blake3_zion", "blake3_native.c");
     }
 
+    if cfg!(feature = "native-octopus") {
+        compile("octopus_zion", "octopus_native.c");
+    }
+
     if cfg!(feature = "native-cosmic-harmony") {
         compile("cosmic_harmony_zion", "cosmic_harmony_v2_native.c");
     }

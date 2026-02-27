@@ -33,12 +33,13 @@ native-equihash = []
 native-progpow = []
 native-argon2d = []
 native-blake3 = []
+native-octopus = []           # Conflux CFX Octopus (cache-based DAG, ~16 MB)
 native-cosmic-harmony-v3 = []
 native-all = [
     "native-randomx", "native-yescrypt", "native-cosmic-harmony",
     "native-autolykos", "native-kawpow", "native-kawpow-gpu",
     "native-ethash", "native-kheavyhash", "native-equihash",
-    "native-progpow", "native-argon2d", "native-blake3",
+    "native-progpow", "native-argon2d", "native-blake3", "native-octopus",
     "native-cosmic-harmony-v3"
 ]
 

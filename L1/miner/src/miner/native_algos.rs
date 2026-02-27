@@ -632,6 +632,56 @@ mod blake3_ffi {
 }
 
 // ============================================================================
+// OCTOPUS FFI  (Conflux CFX — cache-based DAG, ~16 MB, ported from conflux-rust)
+// ============================================================================
+
+#[cfg(feature = "native-octopus")]
+mod octopus_ffi {
+    use super::*;
+
+    extern "C" {
+        fn octopus_hash(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            output: *mut u8,
+        );
+        fn octopus_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            height: u32,
+            target: *const u8,
+        ) -> i32;
+        fn octopus_benchmark(iterations: i32) -> f64;
+    }
+
+    pub fn hash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
+        let mut output = [0u8; 32];
+        unsafe {
+            octopus_hash(
+                header.as_ptr(), header.len(),
+                nonce, height,
+                output.as_mut_ptr(),
+            );
+        }
+        output
+    }
+
+    pub fn verify(header: &[u8], nonce: u64, height: u32, target: &[u8]) -> bool {
+        if target.len() != 32 { return false; }
+        unsafe {
+            octopus_verify(header.as_ptr(), header.len(), nonce, height, target.as_ptr()) != 0
+        }
+    }
+
+    pub fn benchmark(iterations: i32) -> f64 {
+        unsafe { octopus_benchmark(iterations) }
+    }
+}
+
+// ============================================================================
 // UNIFIED INTERFACE
 // ============================================================================
 
@@ -785,8 +835,15 @@ pub fn compute_hash(
         //   mix1   = keccak256(mix0  || height_le4)
         //   result = keccak256(mix1  || seed)
         //
-        // This is a lightweight stand-in.  For production GPU mining with the full
-        // DAG, use LolMiner/T-Rex with `--algo OCTOPUS`.
+        // Octopus (Conflux/CFX) — full cache-based DAG algorithm ported from conflux-rust.
+        // Cache: ~16 MB base, keccak512-seeded + 3 RANDMEMOHASH rounds.
+        // Compute: SipHash-1-3 mixing + polynomial evaluation mod 1032193.
+        #[cfg(feature = "native-octopus")]
+        NativeAlgorithm::Octopus => Ok(octopus_ffi::hash(header, nonce, height).to_vec()),
+
+        // Fallback stub when native-octopus is not compiled.
+        // Uses keccak256 primitives for structurally correct pool test submissions.
+        #[cfg(not(feature = "native-octopus"))]
         NativeAlgorithm::Octopus => {
             use sha3::{Digest, Keccak256};
 
@@ -879,11 +936,17 @@ pub fn verify_hash(
         #[cfg(feature = "native-progpow")]
         NativeAlgorithm::ProgPow => progpow_ffi::verify(header, nonce, height, target),
 
+        #[cfg(feature = "native-progpow")]
+        NativeAlgorithm::ProgPowEpic => progpow_ffi::verify(header, nonce, height, target),
+
         #[cfg(feature = "native-argon2d")]
         NativeAlgorithm::Argon2d => argon2d_ffi::verify(header, nonce, target),
 
         #[cfg(feature = "native-blake3")]
         NativeAlgorithm::Blake3 => blake3_ffi::verify(header, nonce, target),
+
+        #[cfg(feature = "native-octopus")]
+        NativeAlgorithm::Octopus => octopus_ffi::verify(header, nonce, height, target),
 
         _ => false,
     }
@@ -913,11 +976,17 @@ pub fn benchmark(algo: NativeAlgorithm, _iterations: i32) -> Result<f64> {
         #[cfg(feature = "native-progpow")]
         NativeAlgorithm::ProgPow => Ok(progpow_ffi::benchmark(iterations)),
 
+        #[cfg(feature = "native-progpow")]
+        NativeAlgorithm::ProgPowEpic => Ok(progpow_ffi::benchmark(iterations)),
+
         #[cfg(feature = "native-argon2d")]
         NativeAlgorithm::Argon2d => Ok(argon2d_ffi::benchmark(iterations)),
 
         #[cfg(feature = "native-blake3")]
         NativeAlgorithm::Blake3 => Ok(blake3_ffi::benchmark(iterations)),
+
+        #[cfg(feature = "native-octopus")]
+        NativeAlgorithm::Octopus => Ok(octopus_ffi::benchmark(iterations)),
 
         _ => Err(anyhow!("Algorithm {:?} not compiled", algo)),
     }
