@@ -458,6 +458,21 @@ let minerProcess = null;
 let revenueProcess = null; // 2nd miner process: --group revenue → pool routes to XMR/RandomX
 let gpuRevenueProcess = null; // 3rd miner process: --group revenue --gpu → GPU algorithms (kawpow/ethash)
 let gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
+
+// ── CH3 Multi-Stream state (dual/triple mining) ───────────────────────────
+// Tracks which GPU coin is active, profit-switch poll, and stream status
+// exposed to renderer via IPC ('multi-stream-status' event).
+let multiStreamCurrentCoin = 'ETC';   // active GPU coin (direct-pool mode)
+let profitPollTimer = null;            // setInterval handle
+let multiStreamStatus = {
+  active: false,
+  zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony_v3' },
+  gpuCoin:    { name: 'ETC', running: false, hashrate: 0, pool: '', algorithm: 'ethash', directPool: false },
+  revenueCpu: { running: false, hashrate: 0, algorithm: 'randomx' },
+  lastPollAt: 0,
+  pollSource: 'none',   // 'pool-api' | 'none'
+};
+// ─────────────────────────────────────────────────────────────────────────
 let minerStopping = false;
 let minerStopPromise = null;
 let minerAutoStopTimer = null;
@@ -1618,6 +1633,263 @@ function detectGPU() {
 }
 
 // ============================================================================
+// CH3 MULTI-STREAM: Dual/Triple Mining Support
+// ZION (50% CPU) + Best GPU Coin (25% GPU, direct to external pool) +
+// Revenue CPU (25% CPU → pool --group revenue → XMR/MoneroOcean)
+//
+// Pool REST API endpoint: GET :8080/api/v1/profit/status
+//   → { profit_switching: { active_coin: "ETC" } }
+// Profit poll every 60 s; auto-restarts GPU process on coin switch.
+// ============================================================================
+
+// Supported GPU coins for direct external-pool connection.
+// Pool URL + algorithm + protocol for miner --external-coin flag.
+const GPU_COIN_POOLS = {
+  ETC:  { pool: 'etc.2miners.com:1010',       algo: 'ethash',    protocol: 'ethstratum' },
+  RVN:  { pool: 'rvn.2miners.com:6060',       algo: 'kawpow',    protocol: 'ethstratum' },
+  ERG:  { pool: 'erg.2miners.com:8888',       algo: 'autolykos', protocol: 'ethstratum' },
+  KAS:  { pool: 'kas.2miners.com:2020',       algo: 'kaspow',    protocol: 'stratum'    },
+  ALPH: { pool: 'alph.herominers.com:1199',   algo: 'blake3',    protocol: 'stratum'    },
+  FLUX: { pool: 'flux.woolypooly.com:3000',   algo: 'zelhash',   protocol: 'stratum'    },
+  CLORE:{ pool: 'clore.woolypooly.com:3090',  algo: 'kawpow',    protocol: 'ethstratum' },
+  XMR:  { pool: 'gulf.moneroocean.stream:10001', algo: 'randomx', protocol: 'stratum'  },
+};
+
+/** Fetch current best coin from pool REST API (non-blocking). */
+async function pollProfitStatus(poolHost, apiPort) {
+  const http = require('http');
+  const url = `http://${poolHost || '127.0.0.1'}:${apiPort || 8080}/api/v1/profit/status`;
+  return new Promise((resolve) => {
+    try {
+      const req = http.get(url, { timeout: 4000 }, (res) => {
+        let body = '';
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => {
+          try {
+            const data = JSON.parse(body);
+            const activeCoin = String(
+              data?.profit_switching?.active_coin ||
+              data?.active_coin || ''
+            ).toUpperCase().trim();
+            resolve({ ok: true, activeCoin, raw: data });
+          } catch {
+            resolve({ ok: false, activeCoin: '' });
+          }
+        });
+      });
+      req.on('error', () => resolve({ ok: false, activeCoin: '' }));
+      req.on('timeout', () => { try { req.destroy(); } catch {} resolve({ ok: false, activeCoin: '' }); });
+    } catch {
+      resolve({ ok: false, activeCoin: '' });
+    }
+  });
+}
+
+/**
+ * Spawn a GPU revenue miner process connecting DIRECTLY to an external pool
+ * using --external-coin <COIN> --gpu.
+ * Used when config.gpuRevenueDirectPool === true or ZION_GPU_DIRECT_POOL=1.
+ */
+function spawnGpuRevenueDirect(coin, config, spawnCmd, minerCwd, envVars) {
+  const upperCoin = String(coin || 'ETC').toUpperCase();
+  const poolInfo = GPU_COIN_POOLS[upperCoin] || GPU_COIN_POOLS.ETC;
+  const gpuRevenueStatsPath = (STATS_PATH || 'data/stats.json').replace(/\.json$/, '_gpu_revenue.json');
+  // Use revenueWallet (BTC addr for payouts) if set, otherwise fall back to main wallet
+  const revenueWallet = String(
+    config?.revenueWallet ||
+    process.env.ZION_REVENUE_WALLET ||
+    'bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw'
+  ).trim();
+
+  const args = [
+    '--external-coin', upperCoin.toLowerCase(),
+    '--external-pool',   poolInfo.pool,
+    '--external-wallet', revenueWallet,
+    '--gpu',
+    '--threads', '1',
+    '--group', 'revenue',
+    '--stats-file', gpuRevenueStatsPath,
+    '--stats-interval', String(STATS_INTERVAL_SEC || 10),
+    '--no-color',
+  ];
+  if (config?.worker) args.push('--worker', `${String(config.worker)}_gpu`);
+
+  dbg('[CH3-MULTI] spawnGpuRevenueDirect', upperCoin, poolInfo.pool, args);
+  logApp('multi-stream-direct-spawn', JSON.stringify({ coin: upperCoin, pool: poolInfo.pool, args }));
+  return spawn(spawnCmd, args, { cwd: minerCwd, env: envVars });
+}
+
+/**
+ * Wire up event handlers on a GPU revenue direct process.
+ * Updates gpuRevenueHealth, auto-disables on repeated rejects.
+ */
+function wireGpuRevenueDirectProcess(proc, label) {
+  if (!proc) return;
+  const maybeDisable = (reason) => {
+    try {
+      if (!proc || gpuRevenueHealth.disabled || gpuRevenueHealth.accepted > 0) return;
+      if (gpuRevenueHealth.rejected < 8) return;
+      if (Date.now() - gpuRevenueHealth.startedAt > 180000) return;
+      gpuRevenueHealth.disabled = true;
+      logApp(`${label}-auto-disabled`, JSON.stringify({ reason, ...gpuRevenueHealth }));
+      try { proc.kill(process.platform === 'win32' ? undefined : 'SIGTERM'); } catch {}
+    } catch {}
+  };
+  proc.stdout?.on('data', (d) => {
+    const o = d.toString();
+    if (/\baccepted\b/i.test(o)) gpuRevenueHealth.accepted += 1;
+    if (/\brejected\b/i.test(o)) gpuRevenueHealth.rejected += 1;
+    maybeDisable('stdout');
+    try { appendToFileBuffered(LOG_PATH, `[${label}-STDOUT] ${o}`); } catch {}
+  });
+  proc.stderr?.on('data', (d) => {
+    const o = d.toString();
+    if (/\baccepted\b/i.test(o)) gpuRevenueHealth.accepted += 1;
+    if (/\brejected\b/i.test(o)) gpuRevenueHealth.rejected += 1;
+    maybeDisable('stderr');
+    try { appendToFileBuffered(LOG_PATH, `[${label}-STDERR] ${o}`); } catch {}
+  });
+  proc.on('error', (err) => {
+    logApp(`${label}-error`, err?.message || String(err));
+    gpuRevenueProcess = null;
+    multiStreamStatus.gpuCoin.running = false;
+    sendToRenderer('multi-stream-status', buildMultiStreamPayload());
+  });
+  proc.on('close', (code, signal) => {
+    dbg(`${label} exited (code=${code} signal=${signal})`);
+    logApp(`${label}-exit`, JSON.stringify({ code, signal }));
+    gpuRevenueProcess = null;
+    gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
+    multiStreamStatus.gpuCoin.running = false;
+    sendToRenderer('multi-stream-status', buildMultiStreamPayload());
+    if (minerProcess && !minerStopping && !minerUserStopRequested && code !== 0) {
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stderr',
+          text: `[CH3-GPU] GPU revenue (direct) exited (code=${code}). Direct pool revenue paused.\n`
+        });
+      } catch {}
+    }
+  });
+}
+
+/** Build the complete multi-stream payload for IPC/events. */
+function buildMultiStreamPayload() {
+  const poolInfo = GPU_COIN_POOLS[multiStreamCurrentCoin] || GPU_COIN_POOLS.ETC;
+  return {
+    active: !!(minerProcess || revenueProcess || gpuRevenueProcess),
+    zion: {
+      running: !!minerProcess,
+      hashrate: typeof minerStats?.hashrate === 'number' ? minerStats.hashrate : 0,
+      algorithm: 'cosmic_harmony_v3',
+    },
+    gpuCoin: {
+      name: multiStreamCurrentCoin,
+      running: !!gpuRevenueProcess,
+      pool: poolInfo?.pool || '',
+      algorithm: poolInfo?.algo || '',
+      directPool: multiStreamStatus.gpuCoin.directPool,
+      hashrate: 0,
+    },
+    revenueCpu: {
+      running: !!revenueProcess,
+      hashrate: 0,
+      algorithm: 'randomx',
+    },
+    lastPollAt: multiStreamStatus.lastPollAt,
+    pollSource: multiStreamStatus.pollSource,
+  };
+}
+
+/**
+ * Start the profit-status polling loop.
+ * Every 60 s: GET /api/v1/profit/status → get active_coin.
+ * In direct-pool mode: if coin changed, kill old GPU process and restart.
+ * Always: emit 'multi-stream-status' to renderer.
+ */
+function startProfitPoll(poolHost, apiPort, spawnCmd, minerCwd, config, envVars) {
+  stopProfitPoll();
+
+  const directPoolMode = (
+    config?.gpuRevenueDirectPool === true ||
+    String(process.env.ZION_GPU_DIRECT_POOL || '').trim() === '1'
+  );
+
+  const doPoll = async () => {
+    if (!minerProcess) return; // mining stopped — nothing to do
+
+    const result = await pollProfitStatus(poolHost, apiPort);
+    multiStreamStatus.lastPollAt = Date.now();
+
+    if (!result.ok || !result.activeCoin) {
+      multiStreamStatus.pollSource = 'none';
+      sendToRenderer('multi-stream-status', buildMultiStreamPayload());
+      return;
+    }
+
+    multiStreamStatus.pollSource = 'pool-api';
+    const newCoin = result.activeCoin;
+
+    // Update UI regardless of whether we switch
+    if (multiStreamCurrentCoin !== newCoin) {
+      const oldCoin = multiStreamCurrentCoin;
+      multiStreamCurrentCoin = newCoin;
+      multiStreamStatus.gpuCoin.name = newCoin;
+
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[CH3-MULTI] Profit-switch signal: ${oldCoin} → ${newCoin} (pool API)\n`
+        });
+      } catch {}
+
+      // In direct-pool mode: restart GPU revenue with new coin
+      if (directPoolMode && gpuRevenueProcess && MINER_IS_RUST) {
+        logApp('multi-stream-coin-switch', JSON.stringify({ from: oldCoin, to: newCoin, source: 'pool-api' }));
+        try {
+          gpuRevenueProcess.kill(process.platform === 'win32' ? undefined : 'SIGTERM');
+        } catch {}
+        gpuRevenueProcess = null;
+
+        // Small delay to let old process die
+        setTimeout(() => {
+          if (!minerProcess || minerStopping) return;
+          try {
+            gpuRevenueHealth = { startedAt: Date.now(), accepted: 0, rejected: 0, disabled: false };
+            gpuRevenueProcess = spawnGpuRevenueDirect(newCoin, config, spawnCmd, minerCwd, envVars);
+            wireGpuRevenueDirectProcess(gpuRevenueProcess, 'GPU-REV-DIRECT');
+            sendToRenderer('miner-output', {
+              stream: 'stdout',
+              text: `[CH3-MULTI] GPU revenue restarted on ${newCoin} — pool: ${GPU_COIN_POOLS[newCoin]?.pool || '?'}\n`
+            });
+          } catch (err) {
+            logApp('multi-stream-restart-failed', err?.message || String(err));
+          }
+          sendToRenderer('multi-stream-status', buildMultiStreamPayload());
+        }, 2500);
+        return; // payload will be sent by the setTimeout callback
+      }
+    }
+
+    sendToRenderer('multi-stream-status', buildMultiStreamPayload());
+  };
+
+  // First poll after 4 s (give miners time to initialize), then every 60 s
+  setTimeout(doPoll, 4000);
+  profitPollTimer = setInterval(doPoll, 60000);
+  dbg('[CH3-MULTI] Profit poll started (pool:', poolHost + ':' + apiPort + ')');
+}
+
+/** Stop the profit-status polling loop. */
+function stopProfitPoll() {
+  if (profitPollTimer) {
+    clearInterval(profitPollTimer);
+    profitPollTimer = null;
+  }
+  multiStreamStatus.pollSource = 'none';
+}
+
+// ── End CH3 Multi-Stream helpers ──────────────────────────────────────────
 // TESTNET SERVER MONITORING (CH3 Architecture)
 // ============================================================================
 
@@ -3391,6 +3663,82 @@ function startMining(config) {
     }
   }
 
+  // ────────────────────────────────────────────────────────────────────────
+  // CH3 MULTI-STREAM — Direct external-pool mode
+  // When config.gpuRevenueDirectPool === true (or ZION_GPU_DIRECT_POOL=1),
+  // spawn a SEPARATE GPU miner that connects DIRECTLY to the best external pool
+  // (e.g. etc.2miners.com:1010) instead of routing through the ZION pool.
+  // This enables TRUE dual/triple mining without needing the pool server running:
+  //   Stream 1 (50%): ZION CPU → ZION pool   (main miner process, above)
+  //   Stream 2 (25%): GPU → external coin pool (this block, direct connection)
+  //   Stream 3 (25%): CPU → ZION pool --group revenue → XMR (revenue process, above)
+  // ────────────────────────────────────────────────────────────────────────
+  const gpuDirectPoolMode = (
+    config.gpuRevenueDirectPool === true ||
+    String(process.env.ZION_GPU_DIRECT_POOL || '').trim() === '1'
+  );
+
+  if (MINER_IS_RUST && gpuDirectPoolMode && effectiveGpu && !mainMinerGpu && !gpuRevenueProcess) {
+    // Not yet spawned by pool-routed path (gpuRevenueProcess still null), spawn directly
+    try {
+      const directCoin = String(
+        config.gpuRevenueCoin ||
+        process.env.ZION_DIRECT_GPU_COIN ||
+        multiStreamCurrentCoin ||
+        'ETC'
+      ).toUpperCase();
+      multiStreamCurrentCoin = directCoin;
+      multiStreamStatus.gpuCoin.directPool = true;
+      multiStreamStatus.gpuCoin.name = directCoin;
+
+      const gpuDirectEnv = { ...env, ZION_NONCE_BASE: String(sessionNonceBaseGpuRevenue) };
+      gpuRevenueHealth = { startedAt: Date.now(), accepted: 0, rejected: 0, disabled: false };
+      gpuRevenueProcess = spawnGpuRevenueDirect(directCoin, config, spawnCommand, minerCwd, gpuDirectEnv);
+      wireGpuRevenueDirectProcess(gpuRevenueProcess, 'GPU-REV-DIRECT');
+
+      logApp('multi-stream-direct-pool-started', JSON.stringify({
+        pid: gpuRevenueProcess?.pid,
+        coin: directCoin,
+        pool: GPU_COIN_POOLS[directCoin]?.pool || 'unknown',
+      }));
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[CH3-MULTI] Direct-pool GPU stream started: coin=${directCoin} pool=${GPU_COIN_POOLS[directCoin]?.pool || '?'} PID=${gpuRevenueProcess?.pid}\n`
+        });
+      } catch {}
+    } catch (err) {
+      logApp('multi-stream-direct-pool-spawn-failed', err?.message || String(err));
+      gpuRevenueProcess = null;
+    }
+  }
+
+  // ── Emit initial multi-stream status + start profit-status poll ──────────
+  // Profit poll fetches /api/v1/profit/status from the ZION pool every 60 s.
+  // Used for: 1) UI display of current best coin  2) auto-switch in direct-pool mode
+  {
+    const poolApiHost = String(config?.pool?.host || '127.0.0.1').trim();
+    const poolApiPort = Number(config?.pool?.apiPort || process.env.ZION_POOL_API_PORT || 8080);
+    multiStreamStatus.active = !!(minerProcess || revenueProcess || gpuRevenueProcess);
+    sendToRenderer('multi-stream-status', buildMultiStreamPayload());
+    startProfitPoll(poolApiHost, poolApiPort, spawnCommand, minerCwd, config, env);
+    logApp('multi-stream-started', JSON.stringify({
+      zion: !!minerProcess, gpuCoin: multiStreamCurrentCoin, gpuDirect: gpuDirectPoolMode,
+      revenueCpu: !!revenueProcess, gpuRevenue: !!gpuRevenueProcess,
+    }));
+    try {
+      const streamDesc = [
+        minerProcess  ? `ZION(${effectiveThreads}T)` : null,
+        gpuRevenueProcess ? `GPU:${multiStreamCurrentCoin}` : null,
+        revenueProcess ? 'XMR(CPU)' : null,
+      ].filter(Boolean).join(' + ') || 'single';
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: `[CH3-MULTI] Active streams: ${streamDesc} — profit-switch poll: ${poolApiHost}:${poolApiPort}\n`
+      });
+    } catch {}
+  }
+
   // Start Afterburner service (best-effort, non-blocking) when enabled.
   if (config.aiAfterburner !== false) {
     void ensureAfterburnerServiceRunning()
@@ -4556,6 +4904,22 @@ if ($procs) { '1' } else { '0' }
     // ignore
   }
 
+  // Stop profit-status polling loop (multi-stream).
+  try {
+    stopProfitPoll();
+    multiStreamStatus = {
+      active: false,
+      zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony_v3' },
+      gpuCoin:    { name: multiStreamCurrentCoin, running: false, hashrate: 0, pool: '', algorithm: '', directPool: false },
+      revenueCpu: { running: false, hashrate: 0, algorithm: 'randomx' },
+      lastPollAt: 0,
+      pollSource: 'none',
+    };
+    sendToRenderer('multi-stream-status', { ...multiStreamStatus });
+  } catch {
+    // ignore
+  }
+
   return minerStopPromise;
 }
 
@@ -4996,6 +5360,11 @@ function enqueueMinerOutputToRenderer(stream, text) {
 // IPC handlers
 ipcMain.handle('get-config', () => {
   return loadConfig();
+});
+
+// CH3 Multi-stream status (dual/triple mining: ZION + GPU coin + CPU revenue)
+ipcMain.handle('get-multi-stream-status', () => {
+  return buildMultiStreamPayload();
 });
 
 // First-run detection: true if no wallets exist yet

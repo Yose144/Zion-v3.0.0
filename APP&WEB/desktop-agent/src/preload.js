@@ -104,6 +104,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onStatsUpdate: (callback) => {
     ipcRenderer.on('stats-update', (event, data) => callback(data));
   },
+
+  // ── CH3 Multi-Stream (dual/triple mining: ZION + GPU coin + CPU revenue) ──
+  getMultiStreamStatus: () => ipcRenderer.invoke('get-multi-stream-status'),
+  onMultiStreamStatus: (callback) => {
+    ipcRenderer.on('multi-stream-status', (event, data) => callback(data));
+  },
   onMinerBackend: (callback) => {
     ipcRenderer.on('miner-backend', (event, data) => callback(data));
   },
