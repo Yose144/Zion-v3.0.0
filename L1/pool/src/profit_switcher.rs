@@ -534,6 +534,152 @@ async fn fetch_minerstat(coins: &[String]) -> Result<Vec<CoinProfitData>, String
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ZPool.ca API Feed
+// ═══════════════════════════════════════════════════════════════
+
+/// ZPool /api/status response entry pro jeden algoritmus
+#[derive(Debug, Deserialize)]
+struct ZpoolAlgoEntry {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    hashrate: f64,
+    #[serde(default)]
+    estimate_current: String,
+    #[serde(default)]
+    estimate_last24h: String,
+    #[serde(default)]
+    mbtc_mh_factor: f64,
+}
+
+/// Fetch profitability z zpool.ca /api/status.
+///
+/// ZPool je algo-based: těžíš algoritmus a zpool automaticky volí nejziskovější
+/// coin v daném algu, vyplácí v BTC. Mapujeme algo → náš coin tag.
+/// Profit score = estimate_last24h × mbtc_mh_factor × 1000 (mBTC/MH/day).
+async fn fetch_zpool(coins: &[String]) -> Result<Vec<CoinProfitData>, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("HTTP client error: {}", e))?;
+
+    let body = client
+        .get("https://www.zpool.ca/api/status")
+        .header("User-Agent", "zion-pool/2.9.6")
+        .send()
+        .await
+        .map_err(|e| format!("ZPool request failed: {}", e))?
+        .text()
+        .await
+        .map_err(|e| format!("ZPool body error: {}", e))?;
+
+    let map: HashMap<String, ZpoolAlgoEntry> =
+        serde_json::from_str(&body).map_err(|e| format!("ZPool parse error: {}", e))?;
+
+    // ZPool algo → náš coin tag
+    // ZPool aggreguje více coinů per algo; estimate reflektuje nejziskovější coin v algu.
+    let algo_map: HashMap<&str, &str> = [
+        ("kawpow",     "RVN"),   // Ravencoin (KawPow)
+        ("ethash",     "ETC"),   // Ethereum Classic (Ethash)
+        ("autolykos",  "ERG"),   // Ergo (Autolykos v2)
+        ("kheavyhash", "KAS"),   // Kaspa (kHeavyHash)
+        ("blake3",     "ALPH"),  // Alephium dominuje ZPool blake3 pool
+        ("firopow",    "EPIC"),  // Epic Cash (FiroPow ≈ ProgPow variant)
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
+    let now = Utc::now().timestamp();
+    let mut results: Vec<CoinProfitData> = map
+        .into_values()
+        .filter_map(|entry| {
+            let coin_tag = algo_map.get(entry.name.as_str())?;
+            if !coins.is_empty() && !coins.iter().any(|c| c.eq_ignore_ascii_case(coin_tag)) {
+                return None;
+            }
+            let est_24h: f64 = entry.estimate_last24h.parse().unwrap_or(0.0);
+            let est_cur: f64 = entry.estimate_current.parse().unwrap_or(0.0);
+            let estimate = if est_24h > 0.0 { est_24h } else { est_cur };
+            if estimate <= 0.0 || entry.mbtc_mh_factor <= 0.0 {
+                return None;
+            }
+            // mBTC/MH/day
+            let profit_raw = estimate * entry.mbtc_mh_factor * 1000.0;
+            Some(CoinProfitData {
+                coin: coin_tag.to_string(),
+                algorithm: entry.name.clone(),
+                price_usd: 0.0,
+                btc_revenue_24h: estimate,
+                usd_revenue_24h: profit_raw,
+                difficulty: 0.0,
+                block_reward: 0.0,
+                nethash: entry.hashrate,
+                profit_score: profit_raw,
+                timestamp: now,
+            })
+        })
+        .collect();
+
+    if results.is_empty() {
+        return Err("ZPool returned no matching coins".to_string());
+    }
+
+    // Normalizace: max = 100 (kompatibilní s WhatToMine / Minerstat)
+    if let Some(max_score) = results
+        .iter()
+        .map(|c| c.profit_score)
+        .reduce(f64::max)
+        .filter(|&m| m > 0.0)
+    {
+        let scale = 100.0 / max_score;
+        for r in &mut results {
+            r.profit_score *= scale;
+        }
+    }
+
+    results.sort_by(|a, b| {
+        b.profit_score
+            .partial_cmp(&a.profit_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    Ok(results)
+}
+
+/// Sloučení dvou profit feedů — pro coiny přítomné v obou se průměrují skóre,
+/// pro coiny jen v jednom feedu se skóre zachovává. Výsledek seřazen sestupně.
+fn merge_profit_feeds(
+    primary: Vec<CoinProfitData>,
+    secondary: Vec<CoinProfitData>,
+) -> Vec<CoinProfitData> {
+    let mut merged: HashMap<String, CoinProfitData> = primary
+        .into_iter()
+        .map(|c| (c.coin.to_uppercase(), c))
+        .collect();
+    for coin in secondary {
+        let key = coin.coin.to_uppercase();
+        match merged.entry(key) {
+            std::collections::hash_map::Entry::Occupied(mut e) => {
+                // Průměr obou feedů — křížová validace snižuje šum
+                let ex = e.get_mut();
+                ex.profit_score = (ex.profit_score + coin.profit_score) / 2.0;
+            }
+            std::collections::hash_map::Entry::Vacant(e) => {
+                e.insert(coin);
+            }
+        }
+    }
+    let mut result: Vec<CoinProfitData> = merged.into_values().collect();
+    result.sort_by(|a, b| {
+        b.profit_score
+            .partial_cmp(&a.profit_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    result
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Outlier Protection — rolling-median clamp
 // ═══════════════════════════════════════════════════════════════
 
@@ -824,6 +970,7 @@ impl ProfitSwitcher {
                     "DCR".to_string(),
                     "EPIC".to_string(),
                     "CFX".to_string(),
+                    "ZANO".to_string(),
                     "CLORE".to_string(),
                     "NEXA".to_string(),
                     "XMR".to_string(),
@@ -832,63 +979,82 @@ impl ProfitSwitcher {
                 self.config.preferred_coins.clone()
             };
 
-            // ── 4-tier data feed chain ────────────────────────────────────
-            // 1. WhatToMine (primary — best data quality)
-            // 2. Minerstat  (secondary — independent source, no API key)
-            // 3. LastValidSnapshot (tertiary — last known good data)
-            // 4. Static estimates (quaternary — conservative hardcoded values)
-            let profit_result = fetch_whattomine(&coins).await;
+            // ── Feed chain: WTM + ZPool parallel → Minerstat → Snapshot → Static ───
+            // Tier 1a: WhatToMine (primární — coin-level data)
+            // Tier 1b: ZPool.ca   (algo-level, nezávislý, parallel) → sloučeno s WTM
+            // Tier 2:  Minerstat  (sekundární — nezávislý zdroj, bez API klíče)
+            // Tier 3:  LastValidSnapshot (poslední dobrá data)
+            // Tier 4:  Static estimates  (hardcoded konzervativní hodnoty)
+            let (wtm_result, zpool_result) = tokio::join!(
+                fetch_whattomine(&coins),
+                fetch_zpool(&coins),
+            );
 
-            let (mut profit_data, feed_name) = match profit_result {
-                Ok(data) if !data.is_empty() => {
-                    self.api_fetches.fetch_add(1, Ordering::Relaxed);
-                    info!(
-                        "💹 [WhatToMine] {} coins, top={} (score={:.1})",
-                        data.len(),
-                        data[0].coin,
-                        data[0].profit_score,
-                    );
-                    (data, "whattomine")
-                }
-                wtm_err => {
-                    if let Err(ref e) = wtm_err {
-                        warn!("💹 WhatToMine error: {} — trying Minerstat", e);
-                    } else {
-                        warn!("💹 WhatToMine returned no coins — trying Minerstat");
+            let wtm_ok   = matches!(&wtm_result,   Ok(d) if !d.is_empty());
+            let zpool_ok = matches!(&zpool_result, Ok(d) if !d.is_empty());
+
+            let (mut profit_data, feed_name): (Vec<CoinProfitData>, &str) = if wtm_ok || zpool_ok {
+                self.api_fetches.fetch_add(1, Ordering::Relaxed);
+                match (wtm_result, zpool_result) {
+                    (Ok(wtm), Ok(zp)) if !wtm.is_empty() && !zp.is_empty() => {
+                        info!(
+                            "💹 [WTM+ZPool] WhatToMine={} ZPool={} coins — merging feeds",
+                            wtm.len(), zp.len()
+                        );
+                        (merge_profit_feeds(wtm, zp), "wtm+zpool")
                     }
-                    self.api_errors.fetch_add(1, Ordering::Relaxed);
+                    (Ok(wtm), zp_r) if !wtm.is_empty() => {
+                        if let Err(e) = zp_r { warn!("💹 ZPool error: {}", e); }
+                        info!(
+                            "💹 [WhatToMine] {} coins, top={} (score={:.1})",
+                            wtm.len(), wtm[0].coin, wtm[0].profit_score
+                        );
+                        (wtm, "whattomine")
+                    }
+                    (wtm_r, Ok(zp)) if !zp.is_empty() => {
+                        if let Err(e) = wtm_r { warn!("💹 WhatToMine error: {}", e); }
+                        info!(
+                            "💹 [ZPool] {} coins, top={} (score={:.1})",
+                            zp.len(), zp[0].coin, zp[0].profit_score
+                        );
+                        (zp, "zpool")
+                    }
+                    _ => unreachable!("wtm_ok || zpool_ok garantuje aspoň jeden Ok"),
+                }
+            } else {
+                // Oba primární feedy selhaly → Tier 2: Minerstat
+                let wtm_msg   = match &wtm_result   { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
+                let zpool_msg = match &zpool_result { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
+                warn!("💹 WhatToMine: {} / ZPool: {} — trying Minerstat", wtm_msg, zpool_msg);
+                self.api_errors.fetch_add(1, Ordering::Relaxed);
 
-                    // Tier 2: Minerstat
-                    match fetch_minerstat(&coins).await {
-                        Ok(data) if !data.is_empty() => {
-                            info!(
-                                "💹 [Minerstat] {} coins, top={} (score={:.1})",
-                                data.len(),
-                                data[0].coin,
-                                data[0].profit_score,
-                            );
-                            (data, "minerstat")
+                match fetch_minerstat(&coins).await {
+                    Ok(data) if !data.is_empty() => {
+                        info!(
+                            "💹 [Minerstat] {} coins, top={} (score={:.1})",
+                            data.len(), data[0].coin, data[0].profit_score,
+                        );
+                        (data, "minerstat")
+                    }
+                    ms_err => {
+                        if let Err(ref e) = ms_err {
+                            warn!("💹 Minerstat error: {} — checking last-valid snapshot", e);
+                        } else {
+                            warn!("💹 Minerstat returned no coins — checking last-valid snapshot");
                         }
-                        ms_err => {
-                            if let Err(ref e) = ms_err {
-                                warn!("💹 Minerstat error: {} — checking last-valid snapshot", e);
-                            } else {
-                                warn!("💹 Minerstat returned no coins — checking last-valid snapshot");
-                            }
 
-                            // Tier 3: LastValidSnapshot
-                            let snapshot = self.last_valid_snapshot.read().await.clone();
-                            if let Some(snap) = snapshot {
-                                warn!(
-                                    "💹 [Snapshot] Using cached data ({} coins) — live feeds down",
-                                    snap.len()
-                                );
-                                (snap, "snapshot")
-                            } else {
-                                // Tier 4: Static estimates
-                                error!("💹 [StaticFallback] All feeds failed and no snapshot — using hardcoded estimates");
-                                (estimate_profitability_fallback(&coins), "static")
-                            }
+                        // Tier 3: LastValidSnapshot
+                        let snapshot = self.last_valid_snapshot.read().await.clone();
+                        if let Some(snap) = snapshot {
+                            warn!(
+                                "💹 [Snapshot] Using cached data ({} coins) — live feeds down",
+                                snap.len()
+                            );
+                            (snap, "snapshot")
+                        } else {
+                            // Tier 4: Static estimates
+                            error!("💹 [StaticFallback] All feeds failed and no snapshot — using hardcoded estimates");
+                            (estimate_profitability_fallback(&coins), "static")
                         }
                     }
                 }

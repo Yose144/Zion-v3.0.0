@@ -31,7 +31,7 @@
 //! | DCRDUAL       | DCR  | Blake3 (DCP-11) | dcr.2miners.com:3333     |
 //! | EPICDUAL      | EPIC | ProgPow         | epic.2miners.com:20595   |
 //! | CFXDUAL       | CFX  | Octopus         | cfx.2miners.com:6060     |
-//! | ZANODUAL      | ZANO | ProgPowZ        | zano.2miners.com:9090    |
+//! | ZANODUAL      | ZANO | ProgPowZ        | zano.herominers.com:1110 |
 //!
 //! ## Architecture
 //!
@@ -147,8 +147,17 @@ impl DualMode {
             Self::DcrDual => "dcr.2miners.com:3333",
             Self::EpicDual => "epic.2miners.com:20595",
             Self::CfxDual => "cfx.2miners.com:6060",
-            Self::ZanoDual => "zano.2miners.com:9090",
+            Self::ZanoDual => "zano.herominers.com:1110",  // HeroMiners ZANO ProgPowZ
         }
+    }
+
+    /// ZPool.ca stratum URL pro těto dual-mode coin (deleguje na `ExternalCoin::zpool_url`).
+    ///
+    /// ZPool auto-přepíná coiny v rámci algoritmu a vyplácí v BTC.
+    /// Heslo k pool URL musí obsahovat `c=BTC` (např. `--dual-pass c=BTC` nebo `c=BTC,zap=RVN`).
+    /// Vrací `None` pokud ZPool tento algoritmus nepodporuje (FLUX, CFX, ZANO).
+    pub fn zpool_url(&self, region: &str) -> Option<String> {
+        self.to_external_coin().zpool_url(region)
     }
 
     /// Map to `ExternalCoin` (used by `ExternalMiner` / `EthStratumClient`)
