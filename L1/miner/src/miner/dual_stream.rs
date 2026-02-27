@@ -31,6 +31,7 @@
 //! | DCRDUAL       | DCR  | Blake3 (DCP-11) | dcr.2miners.com:3333     |
 //! | EPICDUAL      | EPIC | ProgPow         | epic.2miners.com:20595   |
 //! | CFXDUAL       | CFX  | Octopus         | cfx.2miners.com:6060     |
+//! | ZANODUAL      | ZANO | ProgPowZ        | zano.2miners.com:9090    |
 //!
 //! ## Architecture
 //!
@@ -78,6 +79,8 @@ pub enum DualMode {
     EpicDual,
     /// CFX (Octopus) — Conflux, SHA3-based memory-hard algorithm
     CfxDual,
+    /// ZANO (ProgPowZ) — Zano coin, identical ProgPow 0.9.2 constants
+    ZanoDual,
 }
 
 impl DualMode {
@@ -95,6 +98,7 @@ impl DualMode {
             "DCRDUAL" | "DCR" | "DECRED" | "BLAKE3DCR" | "BLAKE3-DCR" => Some(Self::DcrDual),
             "EPICDUAL" | "EPIC" | "EPICCASH" | "EPIC-CASH" | "PROGPOW-EPIC" => Some(Self::EpicDual),
             "CFXDUAL" | "CFX" | "CONFLUX" | "OCTOPUS" => Some(Self::CfxDual),
+            "ZANODUAL" | "ZANO" | "ZAN" | "PROGPOWZ" | "PROGPOW-ZANO" => Some(Self::ZanoDual),
             _ => None,
         }
     }
@@ -111,6 +115,7 @@ impl DualMode {
             Self::DcrDual => "DCRDUAL",
             Self::EpicDual => "EPICDUAL",
             Self::CfxDual => "CFXDUAL",
+            Self::ZanoDual => "ZANODUAL",
         }
     }
 
@@ -126,6 +131,7 @@ impl DualMode {
             Self::DcrDual => "DCR",
             Self::EpicDual => "EPIC",
             Self::CfxDual => "CFX",
+            Self::ZanoDual => "ZANO",
         }
     }
 
@@ -141,6 +147,7 @@ impl DualMode {
             Self::DcrDual => "dcr.2miners.com:3333",
             Self::EpicDual => "epic.2miners.com:20595",
             Self::CfxDual => "cfx.2miners.com:6060",
+            Self::ZanoDual => "zano.2miners.com:9090",
         }
     }
 
@@ -156,12 +163,13 @@ impl DualMode {
             Self::DcrDual => ExternalCoin::DCR,
             Self::EpicDual => ExternalCoin::EPIC,
             Self::CfxDual => ExternalCoin::CFX,
+            Self::ZanoDual => ExternalCoin::ZANO,
         }
     }
 
     /// Whether the algorithm uses GPU memory/DAG (affects gpu_alloc behaviour)
     pub fn is_dag_algo(&self) -> bool {
-        matches!(self, Self::EtchDual | Self::CfxDual)
+        matches!(self, Self::EtchDual | Self::CfxDual | Self::ZanoDual)
     }
 }
 

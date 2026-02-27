@@ -95,7 +95,8 @@ pub enum NativeAlgorithm {
     KHeavyHash,  // KAS
     Equihash,    // ZEC
     ProgPow,     // VEIL
-    ProgPowEpic, // EPIC Cash (ProgPow variant)
+    ProgPowEpic,  // EPIC Cash (ProgPow variant)
+    ProgPowZano,  // ZANO (ProgPowZ — identical constants to ProgPow 0.9.2)
     Blake3,      // ALPH
     Blake3Dcr,   // DCR  (DCP-0011 standard Blake3, different pool protocol)
     Octopus,     // CFX  (Conflux — SHA3-based memory-hard DAG algorithm)
@@ -119,6 +120,7 @@ impl NativeAlgorithm {
             "equihash" | "equihash_200_9" => Some(Self::Equihash),
             "progpow" => Some(Self::ProgPow),
             "progpow-epic" | "progpow_epic" | "epicpow" => Some(Self::ProgPowEpic),
+            "progpowz" | "progpow-zano" | "progpow_zano" | "zano" | "zan" => Some(Self::ProgPowZano),
             "argon2d" => Some(Self::Argon2d),
             "blake3" => Some(Self::Blake3),
             "blake3-dcr" | "blake3dcr" | "decred" | "dcr" => Some(Self::Blake3Dcr),
@@ -140,6 +142,7 @@ impl NativeAlgorithm {
             Self::Equihash => "ZEC",
             Self::ProgPow => "VEIL",
             Self::ProgPowEpic => "EPIC",
+            Self::ProgPowZano => "ZANO",
             Self::Argon2d => "DYN",
             Self::Blake3 => "ALPH",
             Self::Blake3Dcr => "DCR",
@@ -157,6 +160,7 @@ impl NativeAlgorithm {
                 | Self::KHeavyHash
                 | Self::ProgPow
                 | Self::ProgPowEpic
+                | Self::ProgPowZano
                 | Self::Octopus
         )
     }
@@ -820,6 +824,11 @@ pub fn compute_hash(
         #[cfg(feature = "native-progpow")]
         NativeAlgorithm::ProgPowEpic => Ok(progpow_ffi::hash(header, nonce, height).to_vec()),
 
+        // ProgPowZ (ZANO) — identical ProgPow 0.9.2 constants (period=50, regs=32, lanes=16).
+        // Reuses the same native progpow FFI as VEIL/EPIC.
+        #[cfg(feature = "native-progpow")]
+        NativeAlgorithm::ProgPowZano => Ok(progpow_ffi::hash(header, nonce, height).to_vec()),
+
         // Octopus (Conflux/CFX) — SHA3-based memory-hard algorithm.
         //
         // Full Octopus requires a 4 GB+ DAG seeded from a keccak512 seed hash,
@@ -937,6 +946,9 @@ pub fn verify_hash(
         #[cfg(feature = "native-progpow")]
         NativeAlgorithm::ProgPowEpic => progpow_ffi::verify(header, nonce, height, target),
 
+        #[cfg(feature = "native-progpow")]
+        NativeAlgorithm::ProgPowZano => progpow_ffi::verify(header, nonce, height, target),
+
         #[cfg(feature = "native-argon2d")]
         NativeAlgorithm::Argon2d => argon2d_ffi::verify(header, nonce, target),
 
@@ -977,6 +989,9 @@ pub fn benchmark(algo: NativeAlgorithm, iterations: i32) -> Result<f64> {
         #[cfg(feature = "native-progpow")]
         NativeAlgorithm::ProgPowEpic => Ok(progpow_ffi::benchmark(iterations)),
 
+        #[cfg(feature = "native-progpow")]
+        NativeAlgorithm::ProgPowZano => Ok(progpow_ffi::benchmark(iterations)),
+
         #[cfg(feature = "native-argon2d")]
         NativeAlgorithm::Argon2d => Ok(argon2d_ffi::benchmark(iterations)),
 
@@ -992,7 +1007,7 @@ pub fn benchmark(algo: NativeAlgorithm, iterations: i32) -> Result<f64> {
 
 /// List available native algorithms
 pub fn available_algorithms() -> Vec<NativeAlgorithm> {
-    let algos = Vec::new();
+    let mut algos = Vec::new();
 
     #[cfg(feature = "native-ethash")]
     algos.push(NativeAlgorithm::Ethash);
@@ -1015,11 +1030,23 @@ pub fn available_algorithms() -> Vec<NativeAlgorithm> {
     #[cfg(feature = "native-progpow")]
     algos.push(NativeAlgorithm::ProgPow);
 
+    #[cfg(feature = "native-progpow")]
+    algos.push(NativeAlgorithm::ProgPowEpic);
+
+    #[cfg(feature = "native-progpow")]
+    algos.push(NativeAlgorithm::ProgPowZano);
+
     #[cfg(feature = "native-argon2d")]
     algos.push(NativeAlgorithm::Argon2d);
 
     #[cfg(feature = "native-blake3")]
     algos.push(NativeAlgorithm::Blake3);
+
+    #[cfg(feature = "native-blake3")]
+    algos.push(NativeAlgorithm::Blake3Dcr);
+
+    #[cfg(feature = "native-octopus")]
+    algos.push(NativeAlgorithm::Octopus);
 
     algos
 }
