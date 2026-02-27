@@ -253,6 +253,54 @@ impl Default for StreamDynamicGpuConfig {
             },
         );
 
+        // FLUX (Flux) — ZelHash / Equihash 125,4 — ASIC-resistant GPU coin
+        pools.insert(
+            "flux".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "FLUX".to_string(),
+                stratum: "stratum+tcp://flux.woolypooly.com:3000".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("zelhash".to_string()),
+                protocol: Some("stratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
+        // CLORE (Clore.ai) — KawPow — same algorithm as RVN, different market
+        pools.insert(
+            "clore".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "CLORE".to_string(),
+                stratum: "stratum+tcp://clore.woolypooly.com:3090".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("kawpow".to_string()),
+                protocol: Some("ethstratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
+        // NEXA (Nexa) — NexaPoW / SHA3-256d — small cap, enabled=false until pool is stable
+        pools.insert(
+            "nexa".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "NEXA".to_string(),
+                stratum: "stratum+tcp://nexa.hashpool.pro:3333".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: false, // enable manually once revenue_proxy supports SHA3-256d
+                algorithm: Some("nexapow".to_string()),
+                protocol: Some("stratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
         Self {
             enabled: true,
             mode: "auto".to_string(),
