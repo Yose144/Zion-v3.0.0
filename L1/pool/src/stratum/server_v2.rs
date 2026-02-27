@@ -590,7 +590,11 @@ impl StratumServer {
     }
 
     fn parse_group_hint(pass: &str) -> Option<MinerGroup> {
-        // Supports: g=zion|revenue|ncl (also group=...)
+        // Supports: g=zion|revenue|ncl|dual (also group=...)
+        // Example password strings:
+        //   "algo=cosmic_harmony_v3,g=zion"
+        //   "algo=cosmic_harmony_v3,g=dual"   ← LolMiner-style dual-stream miner
+        //   "g=revenue"
         for part in pass.split([',', ';', ' ']) {
             let part = part.trim();
             let Some(v) = part
@@ -604,6 +608,8 @@ impl StratumServer {
                 "z" | "zion" => Some(MinerGroup::Zion),
                 "r" | "rev" | "revenue" => Some(MinerGroup::Revenue),
                 "n" | "ncl" => Some(MinerGroup::Ncl),
+                // Dual-stream miner: self-routes secondary coin, pool sends ZION jobs only
+                "d" | "dual" => Some(MinerGroup::Dual),
                 _ => None,
             };
         }
@@ -2193,7 +2199,8 @@ impl StratumServer {
             if per_miner_mode {
                 if let Some(sched) = scheduler_opt.as_ref() {
                     let group = sched.get_miner_group(session_id).await;
-                    if group != MinerGroup::Zion {
+                    // Dual miners self-route secondary coin but still receive ZION jobs
+                    if group != MinerGroup::Zion && group != MinerGroup::Dual {
                         continue;
                     }
                 }
