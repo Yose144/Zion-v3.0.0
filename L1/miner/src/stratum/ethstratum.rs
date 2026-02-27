@@ -167,6 +167,46 @@ impl ExternalCoin {
         };
         Some(format!("{}.{}.herominers.com:{}", region, subdomain, port))
     }
+
+    /// NiceHash stratum URL pro tento coin.
+    ///
+    /// NiceHash je marketplace hashrate — těžíš pro kupující a dostáváš BTC.
+    /// Žádné nastavení výplatní měny — vždy BTC na tvoji peněženku.
+    ///
+    /// Stratum formát: `<algo>.<region>.nicehash.com:<port>`
+    /// Uživatelské jméno: BTC adresa (volitelně `<btc_addr>.<worker>`)
+    /// Heslo:            `x` (ignorováno, ale stratum protokol ho vyžaduje)
+    ///
+    /// `region`: `"eu"` → eu.nicehash.com
+    ///           `"na"` / `"us"` → usa.nicehash.com
+    ///           cokoliv jiného  → auto.nicehash.com (globální)
+    ///
+    /// Ověřeno přes NiceHash simplemultialgo API (02.2026):
+    ///   ETC(etchash:9013) RVN(kawpow:9017) ERG(autolykos:9018)
+    ///   KAS(kheavyhash:9024) CFX(octopus:9020)
+    ///   Nepodporováno: ALPH, FLUX, DCR, ZANO, EPIC, EVR, MEWC
+    pub fn nicehash_url(&self, region: &str) -> Option<String> {
+        let (algo, port): (&str, u16) = match self {
+            Self::ETC  => ("etchash",    9013), // Etchash (Ethereum Classic)
+            Self::RVN  => ("kawpow",     9017), // KawPow  (Ravencoin)
+            Self::ERG  => ("autolykos",  9018), // Autolykos v2 (Ergo)
+            Self::KAS  => ("kheavyhash", 9024), // kHeavyHash (Kaspa)
+            Self::CFX  => ("octopus",    9020), // Octopus (Conflux)
+            // ALPH: Blake3 není na NiceHash jako samostatný algo
+            // FLUX: ZelHash 125,4 není mapovatelný na NH ZHASH (144,5)
+            // DCR: Blake3-DCR / X11 není na NiceHash
+            // ZANO: ProgPowZ není na NiceHash
+            // EPIC: FiroPow není na NiceHash
+            // EVR, MEWC: EvrProgPow / MeowPoW není na NiceHash
+            _ => return None,
+        };
+        let nh_region = match region.to_lowercase().as_str() {
+            "eu"          => "eu",
+            "na" | "us"   => "usa",
+            _             => "auto",
+        };
+        Some(format!("{}.{}.nicehash.com:{}", algo, nh_region, port))
+    }
 }
 
 /// EthStratum job from mining.notify
