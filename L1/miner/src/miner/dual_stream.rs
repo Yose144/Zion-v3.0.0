@@ -175,7 +175,7 @@ impl std::fmt::Display for DualMode {
 // DualStreamConfig
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Configuration for dual-stream mining
+/// Configuration for dual/triple-stream mining
 #[derive(Debug, Clone)]
 pub struct DualStreamConfig {
     /// Dual mining mode (secondary coin)
@@ -184,17 +184,19 @@ pub struct DualStreamConfig {
     pub pool_url: String,
     /// Wallet/user for secondary pool login
     pub wallet: String,
-    /// Worker name for dual stream (auto-suffixed with `-dual`)
+    /// Worker name for this stream
     pub worker: String,
-    /// GPU allocation fraction for dual stream (0.05 – 0.90, default 0.30)
+    /// GPU allocation fraction for this stream (0.05 – 0.90, default 0.30)
     ///
     /// 0.30 = 30% of GPU goes to secondary coin (ALPH/KAS/etc.),
-    ///        70% stays on primary ZION CHv3 mining.
+    ///        remaining % stays on primary ZION CHv3 mining.
     pub gpu_alloc: f32,
+    /// Stream label used in log output: "dual" or "triple"
+    pub stream_label: String,
 }
 
 impl DualStreamConfig {
-    /// Create config from CLI args, auto-filling pool URL defaults
+    /// Create dual-stream config from CLI args (stream label = "dual")
     pub fn from_cli(
         mode: DualMode,
         pool_url: Option<String>,
@@ -202,12 +204,25 @@ impl DualStreamConfig {
         worker: &str,
         gpu_alloc: f32,
     ) -> Self {
+        Self::from_cli_with_label(mode, pool_url, wallet, worker, gpu_alloc, "dual")
+    }
+
+    /// Create config with explicit stream label ("dual" or "triple")
+    pub fn from_cli_with_label(
+        mode: DualMode,
+        pool_url: Option<String>,
+        wallet: String,
+        worker: &str,
+        gpu_alloc: f32,
+        label: &str,
+    ) -> Self {
         Self {
             pool_url: pool_url.unwrap_or_else(|| mode.default_pool_url().to_string()),
             mode,
             wallet,
-            worker: format!("{}-dual", worker),
+            worker: format!("{}-{}", worker, label),
             gpu_alloc: gpu_alloc.clamp(0.05, 0.90),
+            stream_label: label.to_string(),
         }
     }
 
@@ -257,19 +272,21 @@ impl DualStreamMiner {
 
         let coin = self.config.mode.to_external_coin();
         let alloc_pct = (self.config.gpu_alloc * 100.0) as u8;
+        let label = self.config.stream_label.to_uppercase();
 
         let ext_config = ExternalPoolConfig {
             coin,
             pool_url: self.config.pool_url.clone(),
             wallet: self.config.wallet.clone(),
             worker: self.config.worker.clone(),
-            cpu_threads: 0,     // dual stream is GPU-only
+            cpu_threads: 0,  // dual/triple streams are GPU-only
             gpu_enabled: true,
             hashpower_percent: alloc_pct,
         };
 
         info!(
-            "[DUAL] {} stream starting → pool={} wallet={}...{} alloc={}% worker={}",
+            "[{}] {} stream starting → pool={} wallet={}...{} alloc={}% worker={}",
+            label,
             self.config.mode.coin_ticker(),
             self.config.pool_url,
             &self.config.wallet[..self.config.wallet.len().min(8)],
@@ -285,14 +302,16 @@ impl DualStreamMiner {
             match miner.start().await {
                 Ok(_) => {
                     info!(
-                        "[DUAL] {} stream ended cleanly",
+                        "[{}] {} stream ended cleanly",
+                        label,
                         self.config.mode.coin_ticker()
                     );
                     break;
                 }
                 Err(e) => {
                     warn!(
-                        "[DUAL] {} stream error: {} — reconnecting in 15s",
+                        "[{}] {} stream error: {} — reconnecting in 15s",
+                        label,
                         self.config.mode.coin_ticker(),
                         e
                     );
@@ -303,7 +322,7 @@ impl DualStreamMiner {
             }
         }
 
-        info!("[DUAL] {} stream stopped", self.config.mode.coin_ticker());
+        info!("[{}] {} stream stopped", label, self.config.mode.coin_ticker());
         Ok(())
     }
 
