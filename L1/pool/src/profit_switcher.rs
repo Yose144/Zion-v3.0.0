@@ -157,6 +157,7 @@ impl Default for ProfitSwitchConfig {
             // GPU coins ranked by typical Feb 2026 profitability:
             // KAS (kHeavyHash), ETC (Ethash), ALPH (Blake3), FLUX (ZelHash),
             // RVN (KawPow), ERG (Autolykos v2), CLORE (KawPow), NEXA (NexaPoW)
+            // DCR (Blake3/DCP-0011), EPIC (ProgPow), CFX/Conflux (Octopus)
             // XMR included as CPU fallback (MoneroOcean auto-algo)
             preferred_coins: vec![
                 "KAS".to_string(),
@@ -165,6 +166,9 @@ impl Default for ProfitSwitchConfig {
                 "FLUX".to_string(),
                 "RVN".to_string(),
                 "ERG".to_string(),
+                "DCR".to_string(),
+                "EPIC".to_string(),
+                "CFX".to_string(),
                 "CLORE".to_string(),
                 "NEXA".to_string(),
                 "XMR".to_string(),
@@ -338,6 +342,9 @@ async fn fetch_wtm_endpoint(
         ("Clore.ai", "CLORE"),
         ("Monero", "XMR"),
         ("Litecoin", "LTC"),
+        ("Decred", "DCR"),
+        ("Epic Cash", "EPIC"),
+        ("Conflux", "CFX"),
     ]
     .iter()
     .cloned()
@@ -385,7 +392,7 @@ fn estimate_profitability_fallback(coins: &[String]) -> Vec<CoinProfitData> {
 
     // Static estimates based on typical February 2026 values.
     // Scores are WhatToMine-normalised profitability (higher = mine this first).
-    // Order: KAS > ETC > ALPH > FLUX > RVN > ERG > CLORE > NEXA > XMR(CPU)
+    // Order: KAS > ETC > ALPH > FLUX > RVN > ERG > DCR > EPIC > CFX > CLORE > NEXA > XMR(CPU)
     let estimates: Vec<(&str, &str, f64)> = vec![
         ("KAS",   "kHeavyHash",  85.0), // ASIC+GPU, consistently top GPU coin
         ("ETC",   "Ethash",      60.0), // high liquidity, stable revenue
@@ -393,6 +400,9 @@ fn estimate_profitability_fallback(coins: &[String]) -> Vec<CoinProfitData> {
         ("FLUX",  "ZelHash",     50.0), // Equihash 125,4 — ASIC‑resistant
         ("RVN",   "KawPow",      40.0), // GPU-only KawPow
         ("ERG",   "Autolykos2",  35.0), // Autolykos v2 — memory-hard GPU
+        ("DCR",   "blake3-dcr",  45.0), // Decred Blake3 — high-profit, ASIC+GPU
+        ("EPIC",  "progpow-epic",38.0), // Epic Cash ProgPow GPU
+        ("CFX",   "octopus",     42.0), // Conflux Octopus — SHA3 DAG, 4 GB+
         ("CLORE", "KawPow",      28.0), // KawPow clone, smaller market
         ("NEXA",  "NexaPoW",     22.0), // NexaPoW SHA3d — smaller cap
         ("XMR",   "RandomX",     90.0), // CPU fallback via MoneroOcean
@@ -808,6 +818,9 @@ impl ProfitSwitcher {
                     "FLUX".to_string(),
                     "RVN".to_string(),
                     "ERG".to_string(),
+                    "DCR".to_string(),
+                    "EPIC".to_string(),
+                    "CFX".to_string(),
                     "CLORE".to_string(),
                     "NEXA".to_string(),
                     "XMR".to_string(),

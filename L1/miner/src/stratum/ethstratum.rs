@@ -32,6 +32,9 @@ pub enum ExternalCoin {
     KAS,  // Kaspa (kHeavyHash)
     ALPH, // Alephium (Blake3)
     FLUX, // Flux (ZelHash/Equihash)
+    DCR,  // Decred (Blake3 — DCP-0011 standard Blake3 since Oct 2022)
+    EPIC, // Epic Cash (ProgPow GPU primary / RandomX CPU)
+    CFX,  // Conflux (Octopus — modified Ethash with SHA3-based DAG)
 }
 
 impl ExternalCoin {
@@ -43,6 +46,9 @@ impl ExternalCoin {
             Self::KAS => "KAS",
             Self::ALPH => "ALPH",
             Self::FLUX => "FLUX",
+            Self::DCR => "DCR",
+            Self::EPIC => "EPIC",
+            Self::CFX => "CFX",
         }
     }
 
@@ -54,6 +60,9 @@ impl ExternalCoin {
             Self::KAS => "kheavyhash",
             Self::ALPH => "blake3",
             Self::FLUX => "equihash",
+            Self::DCR => "blake3-dcr",   // standard Blake3 (DCP-0011)
+            Self::EPIC => "progpow-epic", // ProgPow variant for Epic Cash GPU
+            Self::CFX => "octopus",      // Conflux Octopus (SHA3-based DAG)
         }
     }
 
@@ -65,6 +74,9 @@ impl ExternalCoin {
             "kas" | "kaspa" | "kheavyhash" | "heavyhash" => Some(Self::KAS),
             "alph" | "alephium" | "blake3" => Some(Self::ALPH),
             "flux" | "zelcash" | "equihash" => Some(Self::FLUX),
+            "dcr" | "decred" | "blake3-dcr" | "blake3dcr" => Some(Self::DCR),
+            "epic" | "epiccash" | "epic-cash" | "progpow-epic" | "progpow_epic" => Some(Self::EPIC),
+            "cfx" | "conflux" | "octopus" => Some(Self::CFX),
             _ => None,
         }
     }
@@ -78,6 +90,9 @@ impl ExternalCoin {
             Self::KAS => "kas.2miners.com:1111",
             Self::ALPH => "alph.2miners.com:1199",
             Self::FLUX => "flux.2miners.com:9090",
+            Self::DCR => "dcr.2miners.com:3333",      // 2miners DCR stratum
+            Self::EPIC => "epic.2miners.com:20595",   // 2miners EPIC ProgPow
+            Self::CFX => "cfx.2miners.com:6060",      // 2miners Conflux Octopus
         }
     }
 }

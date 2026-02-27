@@ -28,6 +28,9 @@
 //! | ERGDUAL       | ERG  | Autolykos2      | erg.2miners.com:8888     |
 //! | RVNDUAL       | RVN  | KawPow          | rvn.2miners.com:6060     |
 //! | FLUXDUAL      | FLUX | ZelHash         | flux.2miners.com:9090    |
+//! | DCRDUAL       | DCR  | Blake3 (DCP-11) | dcr.2miners.com:3333     |
+//! | EPICDUAL      | EPIC | ProgPow         | epic.2miners.com:20595   |
+//! | CFXDUAL       | CFX  | Octopus         | cfx.2miners.com:6060     |
 //!
 //! ## Architecture
 //!
@@ -69,6 +72,12 @@ pub enum DualMode {
     RvnDual,
     /// FLUX (ZelHash/Equihash125,4)
     FluxDual,
+    /// DCR (Blake3/DCP-0011) — Decred, high-profit Blake3 coin
+    DcrDual,
+    /// EPIC (ProgPow) — Epic Cash GPU primary
+    EpicDual,
+    /// CFX (Octopus) — Conflux, SHA3-based memory-hard algorithm
+    CfxDual,
 }
 
 impl DualMode {
@@ -83,6 +92,9 @@ impl DualMode {
             "ERGDUAL" | "ERG" | "ERGO" | "AUTOLYKOS" | "AUTOLYKOS2" => Some(Self::ErgDual),
             "RVNDUAL" | "RVN" | "RAVENCOIN" | "KAWPOW" => Some(Self::RvnDual),
             "FLUXDUAL" | "FLUX" | "ZELCASH" | "ZELHASH" => Some(Self::FluxDual),
+            "DCRDUAL" | "DCR" | "DECRED" | "BLAKE3DCR" | "BLAKE3-DCR" => Some(Self::DcrDual),
+            "EPICDUAL" | "EPIC" | "EPICCASH" | "EPIC-CASH" | "PROGPOW-EPIC" => Some(Self::EpicDual),
+            "CFXDUAL" | "CFX" | "CONFLUX" | "OCTOPUS" => Some(Self::CfxDual),
             _ => None,
         }
     }
@@ -96,6 +108,9 @@ impl DualMode {
             Self::ErgDual => "ERGDUAL",
             Self::RvnDual => "RVNDUAL",
             Self::FluxDual => "FLUXDUAL",
+            Self::DcrDual => "DCRDUAL",
+            Self::EpicDual => "EPICDUAL",
+            Self::CfxDual => "CFXDUAL",
         }
     }
 
@@ -108,6 +123,9 @@ impl DualMode {
             Self::ErgDual => "ERG",
             Self::RvnDual => "RVN",
             Self::FluxDual => "FLUX",
+            Self::DcrDual => "DCR",
+            Self::EpicDual => "EPIC",
+            Self::CfxDual => "CFX",
         }
     }
 
@@ -120,6 +138,9 @@ impl DualMode {
             Self::ErgDual => "erg.2miners.com:8888",
             Self::RvnDual => "rvn.2miners.com:6060",
             Self::FluxDual => "flux.2miners.com:9090",
+            Self::DcrDual => "dcr.2miners.com:3333",
+            Self::EpicDual => "epic.2miners.com:20595",
+            Self::CfxDual => "cfx.2miners.com:6060",
         }
     }
 
@@ -132,12 +153,15 @@ impl DualMode {
             Self::ErgDual => ExternalCoin::ERG,
             Self::RvnDual => ExternalCoin::RVN,
             Self::FluxDual => ExternalCoin::FLUX,
+            Self::DcrDual => ExternalCoin::DCR,
+            Self::EpicDual => ExternalCoin::EPIC,
+            Self::CfxDual => ExternalCoin::CFX,
         }
     }
 
     /// Whether the algorithm uses GPU memory/DAG (affects gpu_alloc behaviour)
     pub fn is_dag_algo(&self) -> bool {
-        matches!(self, Self::EtchDual)
+        matches!(self, Self::EtchDual | Self::CfxDual)
     }
 }
 
@@ -335,6 +359,13 @@ mod tests {
         assert_eq!(DualMode::from_str("ERGDUAL"), Some(DualMode::ErgDual));
         assert_eq!(DualMode::from_str("RVNDUAL"), Some(DualMode::RvnDual));
         assert_eq!(DualMode::from_str("FLUXDUAL"), Some(DualMode::FluxDual));
+        // New coins
+        assert_eq!(DualMode::from_str("DCRDUAL"), Some(DualMode::DcrDual));
+        assert_eq!(DualMode::from_str("dcr"), Some(DualMode::DcrDual));
+        assert_eq!(DualMode::from_str("EPICDUAL"), Some(DualMode::EpicDual));
+        assert_eq!(DualMode::from_str("epic"), Some(DualMode::EpicDual));
+        assert_eq!(DualMode::from_str("CFXDUAL"), Some(DualMode::CfxDual));
+        assert_eq!(DualMode::from_str("octopus"), Some(DualMode::CfxDual));
         assert_eq!(DualMode::from_str("UNKNOWN"), None);
     }
 
@@ -343,12 +374,18 @@ mod tests {
         assert_eq!(DualMode::AlephDual.coin_ticker(), "ALPH");
         assert_eq!(DualMode::KasDual.coin_ticker(), "KAS");
         assert_eq!(DualMode::EtchDual.coin_ticker(), "ETC");
+        assert_eq!(DualMode::DcrDual.coin_ticker(), "DCR");
+        assert_eq!(DualMode::EpicDual.coin_ticker(), "EPIC");
+        assert_eq!(DualMode::CfxDual.coin_ticker(), "CFX");
     }
 
     #[test]
     fn test_default_pool_urls() {
         assert_eq!(DualMode::AlephDual.default_pool_url(), "alph.2miners.com:1199");
         assert_eq!(DualMode::KasDual.default_pool_url(), "kas.2miners.com:1111");
+        assert_eq!(DualMode::DcrDual.default_pool_url(), "dcr.2miners.com:3333");
+        assert_eq!(DualMode::EpicDual.default_pool_url(), "epic.2miners.com:20595");
+        assert_eq!(DualMode::CfxDual.default_pool_url(), "cfx.2miners.com:6060");
     }
 
     #[test]
