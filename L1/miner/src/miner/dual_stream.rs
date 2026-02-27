@@ -81,6 +81,10 @@ pub enum DualMode {
     CfxDual,
     /// ZANO (ProgPowZ) — Zano coin, identical ProgPow 0.9.2 constants
     ZanoDual,
+    /// EVR (EvrProgPow) — Evrmore, ProgPow variant, on ZPool port 1330
+    EVRDual,
+    /// MEWC (MeowPoW) — MeowCoin, ProgPow variant, on ZPool port 1327
+    MEWCDual,
 }
 
 impl DualMode {
@@ -99,6 +103,8 @@ impl DualMode {
             "EPICDUAL" | "EPIC" | "EPICCASH" | "EPIC-CASH" | "PROGPOW-EPIC" => Some(Self::EpicDual),
             "CFXDUAL" | "CFX" | "CONFLUX" | "OCTOPUS" => Some(Self::CfxDual),
             "ZANODUAL" | "ZANO" | "ZAN" | "PROGPOWZ" | "PROGPOW-ZANO" => Some(Self::ZanoDual),
+            "EVRDUAL" | "EVR" | "EVRMORE" | "EVRPROGPOW" | "EVR-PROGPOW" => Some(Self::EVRDual),
+            "MEWCDUAL" | "MEOWDUAL" | "MEWC" | "MEOWCOIN" | "MEOWPOW" => Some(Self::MEWCDual),
             _ => None,
         }
     }
@@ -107,15 +113,17 @@ impl DualMode {
     pub fn name(&self) -> &'static str {
         match self {
             Self::AlephDual => "ALEPHDUAL",
-            Self::KasDual => "KASPADUAL",
-            Self::EtchDual => "ETCHDUAL",
-            Self::ErgDual => "ERGDUAL",
-            Self::RvnDual => "RVNDUAL",
-            Self::FluxDual => "FLUXDUAL",
-            Self::DcrDual => "DCRDUAL",
-            Self::EpicDual => "EPICDUAL",
-            Self::CfxDual => "CFXDUAL",
-            Self::ZanoDual => "ZANODUAL",
+            Self::KasDual   => "KASPADUAL",
+            Self::EtchDual  => "ETCHDUAL",
+            Self::ErgDual   => "ERGDUAL",
+            Self::RvnDual   => "RVNDUAL",
+            Self::FluxDual  => "FLUXDUAL",
+            Self::DcrDual   => "DCRDUAL",
+            Self::EpicDual  => "EPICDUAL",
+            Self::CfxDual   => "CFXDUAL",
+            Self::ZanoDual  => "ZANODUAL",
+            Self::EVRDual   => "EVRDUAL",
+            Self::MEWCDual  => "MEWCDUAL",
         }
     }
 
@@ -123,15 +131,17 @@ impl DualMode {
     pub fn coin_ticker(&self) -> &'static str {
         match self {
             Self::AlephDual => "ALPH",
-            Self::KasDual => "KAS",
-            Self::EtchDual => "ETC",
-            Self::ErgDual => "ERG",
-            Self::RvnDual => "RVN",
-            Self::FluxDual => "FLUX",
-            Self::DcrDual => "DCR",
-            Self::EpicDual => "EPIC",
-            Self::CfxDual => "CFX",
-            Self::ZanoDual => "ZANO",
+            Self::KasDual   => "KAS",
+            Self::EtchDual  => "ETC",
+            Self::ErgDual   => "ERG",
+            Self::RvnDual   => "RVN",
+            Self::FluxDual  => "FLUX",
+            Self::DcrDual   => "DCR",
+            Self::EpicDual  => "EPIC",
+            Self::CfxDual   => "CFX",
+            Self::ZanoDual  => "ZANO",
+            Self::EVRDual   => "EVR",
+            Self::MEWCDual  => "MEWC",
         }
     }
 
@@ -139,15 +149,17 @@ impl DualMode {
     pub fn default_pool_url(&self) -> &'static str {
         match self {
             Self::AlephDual => "alph.2miners.com:1199",
-            Self::KasDual => "kas.2miners.com:1111",
-            Self::EtchDual => "etc.2miners.com:1010",
-            Self::ErgDual => "erg.2miners.com:8888",
-            Self::RvnDual => "rvn.2miners.com:6060",
-            Self::FluxDual => "flux.2miners.com:9090",
-            Self::DcrDual => "dcr.2miners.com:3333",
-            Self::EpicDual => "epic.2miners.com:20595",
-            Self::CfxDual => "cfx.2miners.com:6060",
-            Self::ZanoDual => "zano.herominers.com:1110",  // HeroMiners ZANO ProgPowZ
+            Self::KasDual   => "kas.2miners.com:1111",
+            Self::EtchDual  => "etc.2miners.com:1010",
+            Self::ErgDual   => "erg.2miners.com:8888",
+            Self::RvnDual   => "rvn.2miners.com:6060",
+            Self::FluxDual  => "flux.2miners.com:9090",
+            Self::DcrDual   => "dcr.2miners.com:3333",
+            Self::EpicDual  => "epic.2miners.com:20595",
+            Self::CfxDual   => "cfx.2miners.com:6060",
+            Self::ZanoDual  => "zano.herominers.com:1110",  // HeroMiners ZANO ProgPowZ
+            Self::EVRDual   => "evrprogpow.eu.mine.zpool.ca:1330",  // ZPool EVR (EvrProgPow)
+            Self::MEWCDual  => "meowpow.eu.mine.zpool.ca:1327",     // ZPool MEWC (MeowPoW)
         }
     }
 
@@ -164,15 +176,17 @@ impl DualMode {
     pub fn to_external_coin(&self) -> ExternalCoin {
         match self {
             Self::AlephDual => ExternalCoin::ALPH,
-            Self::KasDual => ExternalCoin::KAS,
-            Self::EtchDual => ExternalCoin::ETC,
-            Self::ErgDual => ExternalCoin::ERG,
-            Self::RvnDual => ExternalCoin::RVN,
-            Self::FluxDual => ExternalCoin::FLUX,
-            Self::DcrDual => ExternalCoin::DCR,
-            Self::EpicDual => ExternalCoin::EPIC,
-            Self::CfxDual => ExternalCoin::CFX,
-            Self::ZanoDual => ExternalCoin::ZANO,
+            Self::KasDual   => ExternalCoin::KAS,
+            Self::EtchDual  => ExternalCoin::ETC,
+            Self::ErgDual   => ExternalCoin::ERG,
+            Self::RvnDual   => ExternalCoin::RVN,
+            Self::FluxDual  => ExternalCoin::FLUX,
+            Self::DcrDual   => ExternalCoin::DCR,
+            Self::EpicDual  => ExternalCoin::EPIC,
+            Self::CfxDual   => ExternalCoin::CFX,
+            Self::ZanoDual  => ExternalCoin::ZANO,
+            Self::EVRDual   => ExternalCoin::EVR,
+            Self::MEWCDual  => ExternalCoin::MEWC,
         }
     }
 

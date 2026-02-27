@@ -35,36 +35,42 @@ pub enum ExternalCoin {
     EPIC, // Epic Cash (ProgPow GPU primary / RandomX CPU)
     CFX,  // Conflux (Octopus — modified Ethash with SHA3-based DAG)
     ZANO, // Zano (ProgPowZ — identical ProgPow 0.9.2 constants)
+    EVR,  // Evrmore (EvrProgPow — ProgPow variant, on ZPool port 1330)
+    MEWC, // MeowCoin (MeowPoW — ProgPow variant, on ZPool port 1327)
 }
 
 impl ExternalCoin {
     pub fn name(&self) -> &'static str {
         match self {
-            Self::ETC => "ETC",
-            Self::RVN => "RVN",
-            Self::ERG => "ERG",
-            Self::KAS => "KAS",
+            Self::ETC  => "ETC",
+            Self::RVN  => "RVN",
+            Self::ERG  => "ERG",
+            Self::KAS  => "KAS",
             Self::ALPH => "ALPH",
             Self::FLUX => "FLUX",
-            Self::DCR => "DCR",
+            Self::DCR  => "DCR",
             Self::EPIC => "EPIC",
-            Self::CFX => "CFX",
+            Self::CFX  => "CFX",
             Self::ZANO => "ZANO",
+            Self::EVR  => "EVR",
+            Self::MEWC => "MEWC",
         }
     }
 
     pub fn algorithm(&self) -> &'static str {
         match self {
-            Self::ETC => "etchash",
-            Self::RVN => "kawpow",
-            Self::ERG => "autolykos2",
-            Self::KAS => "kheavyhash",
+            Self::ETC  => "etchash",
+            Self::RVN  => "kawpow",
+            Self::ERG  => "autolykos2",
+            Self::KAS  => "kheavyhash",
             Self::ALPH => "blake3",
             Self::FLUX => "equihash",
-            Self::DCR => "blake3-dcr",   // standard Blake3 (DCP-0011)
-            Self::EPIC => "progpow-epic", // ProgPow variant for Epic Cash GPU
-            Self::CFX => "octopus",      // Conflux Octopus (SHA3-based DAG)
-            Self::ZANO => "progpowz",    // ProgPowZ for Zano (same constants as ProgPow 0.9.2)
+            Self::DCR  => "blake3-dcr",    // standard Blake3 (DCP-0011)
+            Self::EPIC => "progpow-epic",  // ProgPow variant for Epic Cash GPU
+            Self::CFX  => "octopus",       // Conflux Octopus (SHA3-based DAG)
+            Self::ZANO => "progpowz",      // ProgPowZ for Zano (same constants as ProgPow 0.9.2)
+            Self::EVR  => "evrprogpow",    // EvrProgPow — ProgPow variant used by Evrmore
+            Self::MEWC => "meowpow",       // MeowPoW — ProgPow variant used by MeowCoin
         }
     }
 
@@ -80,23 +86,27 @@ impl ExternalCoin {
             "epic" | "epiccash" | "epic-cash" | "progpow-epic" | "progpow_epic" => Some(Self::EPIC),
             "cfx" | "conflux" | "octopus" => Some(Self::CFX),
             "zano" | "zan" | "progpowz" | "progpow-zano" | "progpow_zano" => Some(Self::ZANO),
+            "evr" | "evrmore" | "evrprogpow" | "evr-progpow" => Some(Self::EVR),
+            "mewc" | "meowcoin" | "meowpow" | "meow-pow" => Some(Self::MEWC),
             _ => None,
         }
     }
 
-    /// Default pool URLs (2miners)
+    /// Default pool URLs (2miners / ZPool for coins not on 2miners)
     pub fn default_pool_url(&self) -> &'static str {
         match self {
-            Self::ETC => "etc.2miners.com:1010",
-            Self::RVN => "rvn.2miners.com:6060",
-            Self::ERG => "erg.2miners.com:8888",
-            Self::KAS => "kas.2miners.com:1111",
+            Self::ETC  => "etc.2miners.com:1010",
+            Self::RVN  => "rvn.2miners.com:6060",
+            Self::ERG  => "erg.2miners.com:8888",
+            Self::KAS  => "kas.2miners.com:1111",
             Self::ALPH => "alph.2miners.com:1199",
             Self::FLUX => "flux.2miners.com:9090",
-            Self::DCR => "dcr.2miners.com:3333",      // 2miners DCR stratum
-            Self::EPIC => "epic.2miners.com:20595",   // 2miners EPIC ProgPow
-            Self::CFX => "cfx.2miners.com:6060",      // 2miners Conflux Octopus
-            Self::ZANO => "zano.herominers.com:1110",  // HeroMiners ZANO ProgPowZ
+            Self::DCR  => "dcr.2miners.com:3333",             // 2miners DCR stratum
+            Self::EPIC => "epic.2miners.com:20595",            // 2miners EPIC ProgPow
+            Self::CFX  => "cfx.2miners.com:6060",             // 2miners Conflux Octopus
+            Self::ZANO => "zano.herominers.com:1110",          // HeroMiners ZANO ProgPowZ
+            Self::EVR  => "evrprogpow.eu.mine.zpool.ca:1330", // ZPool EVR (EvrProgPow)
+            Self::MEWC => "meowpow.eu.mine.zpool.ca:1327",    // ZPool MEWC (MeowPoW)
         }
     }
 
@@ -107,18 +117,24 @@ impl ExternalCoin {
     /// Heslo: `c=BTC` (měna výplaty) + volitelně `zap=COIN` pro pinní na konkrétní coin.
     /// `region`: `"eu"` (Evropa) nebo `"na"` (Severní Amerika).
     /// Vrací `None` pokud ZPool tento algoritmus nepodporuje.
+    ///
+    /// Ověřeno přes https://www.zpool.ca/api/status (27.02.2026):
+    ///   Aktivní GPU algos: kawpow(RVN), firopow(EPIC), evrprogpow(EVR), meowpow(MEWC)
+    ///   Neaktivní / chybí: ethash, autolykos, kheavyhash, blake3, zelHash, octopus, progpowz
     pub fn zpool_url(&self, region: &str) -> Option<String> {
         let (algo, port): (&str, u16) = match self {
-            Self::ETC  => ("ethash",     20535),
+            Self::ETC  => return None,  // Ethash není na ZPool (od ETH Merge)
             Self::RVN  => ("kawpow",      1325),
-            Self::ERG  => ("autolykos",   3526),
-            Self::KAS  => ("kheavyhash",  5133),
-            Self::ALPH => ("blake3",      6633),
-            Self::FLUX => return None,  // ZelHash (equihash 125,4) není na ZPool
-            Self::DCR  => ("blake3",      6633),  // ZPool blake3; přidej zap=DCR do hesla
+            Self::ERG  => return None,  // Autolykos v2 není na ZPool
+            Self::KAS  => return None,  // kHeavyHash není na ZPool (heavyhash=jiný coin)
+            Self::ALPH => return None,  // Blake3 není na ZPool
+            Self::FLUX => return None,  // ZelHash 125,4 není na ZPool
+            Self::DCR  => return None,  // Blake3-DCR není na ZPool
             Self::EPIC => ("firopow",     1326),
             Self::CFX  => return None,  // Octopus není na ZPool
             Self::ZANO => return None,  // ProgPowZ není na ZPool
+            Self::EVR  => ("evrprogpow",  1330),  // Evrmore ProgPow varianta
+            Self::MEWC => ("meowpow",     1327),  // MeowCoin ProgPow varianta
         };
         Some(format!("{}.{}.mine.zpool.ca:{}", algo, region, port))
     }
