@@ -2,7 +2,7 @@
 
 **Datum:** 27. února 2026  
 **Branch:** `main`  
-**Commity této session:** `b70efac`, `c3dd4a8`, `b3eb3c8`, `d1a2697`
+**Commity této session:** `b70efac`, `c3dd4a8`, `b3eb3c8`, `d1a2697`, `fff2061`, `e39faa7`
 
 ---
 
@@ -209,3 +209,133 @@ cargo build --release -p zion-miner -p zion-pool
 | `c3dd4a8` | feat: NiceHash Tier1d + CoinGecko price oracle |
 | `b3eb3c8` | feat: nicehash_url() on ExternalCoin + DualMode |
 | `d1a2697` | feat(2.9.7): complete CHv3 revenue system — PoolPreference + all GPU coins |
+| `fff2061` | agent: CHv3 pool preference + 11-coin GPU switcher in desktop agent |
+| `e39faa7` | tests: add local_pool_stream_test.py for local pool stratum validation |
+
+---
+
+## 5. CHv3 implementace do Desktop Agenta (`fff2061`)
+
+**Soubory:** `APP&WEB/desktop-agent/src/main.js`, `APP&WEB/desktop-agent/src/ui/renderer.js`, `APP&WEB/desktop-agent/src/ui/index.html`  
+**Rozsah:** +204 −19 lines (3 soubory)
+
+### main.js — backend změny:
+
+**`GPU_COIN_POOLS`** — kompletně přepsáno (9 → 13 coinů, HeroMiners EU jako default):
+| Coin | Pool | Algo |
+|------|------|------|
+| ETC | `de.etc.herominers.com:1150` | ethash |
+| KAS | `de.kaspa.herominers.com:1206` | kheavyhash |
+| ALPH | `de.alephium.herominers.com:1220` | blake3 |
+| ERG | `de.ergo.herominers.com:1180` | autolykos |
+| CFX | `de.conflux.herominers.com:1170` | octopus ✨ |
+| RVN | `de.ravencoin.herominers.com:1140` | kawpow |
+| ZANO | `de.zano.herominers.com:1110` | progpowz ✨ |
+| EVR | `evrprogpow.eu.mine.zpool.ca:1330` | evrprogpow ✨ |
+| MEWC | `meowpow.eu.mine.zpool.ca:1327` | meowpow ✨ |
+| EPIC | `firopow.eu.mine.zpool.ca:1326` | firopow |
+| FLUX | `flux.woolypooly.com:3000` | zelhash |
+| CLORE | `clore.woolypooly.com:3090` | kawpow |
+| XMR | `gulf.moneroocean.stream:10001` | randomx |
+
+**`NICEHASH_COIN_POOLS`** — nový const (NiceHash stratum pro 5 coinů: ETC/RVN/ERG/KAS/CFX)
+
+**`getBestPoolInfo(coin, preference, region, nhBtcAddr)`** — nová funkce (mirrors Rust `ExternalCoin::best_pool_url()`):
+```
+nicehash  → NiceHash → HeroMiners → ZPool → default
+herominers→ HeroMiners → ZPool → default
+zpool     → ZPool → default
+default   → 2miners/built-in
+```
+Region switching: eu/de → na/us → hk (HeroMiners) + eu/na (ZPool) + eu/usa (NiceHash)
+
+**`DEFAULT_REVENUE_PROFILE.gpu.coins`**: `['KAS','ETC','ALPH','ERG','RVN','CFX','ZANO','EVR','MEWC','FLUX','CLORE']` (bylo 5, teď 11)
+
+**`normalizeRevenueProfile()`**: gpu sekce rozšířena o `poolPreference`, `poolRegion`, `nicehashBtcAddr`
+
+**`DEFAULT_CONFIG`**: nová pole `poolPreference`, `poolRegion`, `nicehashBtcAddr`, `revenueWallet`
+
+**`env` objektu** (miner spawn): přidány `ZION_POOL_PREFERENCE`, `ZION_POOL_REGION`, `ZION_NH_BTC_ADDR`
+
+**`spawnGpuRevenueDirect()`**: přepsáno — volá `getBestPoolInfo()` místo hardcoded `GPU_COIN_POOLS[coin]`
+
+### index.html — Revenue Routing UI:
+- Mode pill text: `PROFIT SWITCH • KAS/ETC/ERG/RVN/CFX/ZANO/EVR/MEWC`
+- `#pool-preference` select: herominers / nicehash / zpool / default
+- `#pool-region` select: eu / na / hk
+- `#nicehash-btc-addr` text input (BTC adresa pro NiceHash)
+- `#revenue-wallet` text input (BTC výplatní adresa)
+- GPU coins placeholder: `KAS,ETC,ALPH,ERG,RVN,CFX,ZANO,EVR,MEWC`
+
+### renderer.js — UI logika:
+- `DEFAULT_REVENUE_PROFILE.gpu.coins`: 11 coinů (shodné s main.js)
+- `normalizeRevenueProfile()`: gpu sekce + poolPreference/poolRegion/nicehashBtcAddr
+- Form **read** (save config): 4 nová pole z DOMu → `nextRevenue.gpu` + outer `config`
+- Config **populate** (load config): `poolPrefEl`, `poolRegionEl`, `nhBtcEl`, `revWalletEl` z `revenue.gpu.*` / `config.*`
+
+---
+
+## 6. Test miner stream + pool stream (`e39faa7`)
+
+Provedeno lokální testování obou streamů (`zion-pool` + `zion-miner` debug build).
+
+### Build
+```
+cargo build -p zion-pool -p zion-miner
+→ Finished dev profile in 3m 44s ✅
+→ zion-pool.exe  19.3 MB  (debug)
+→ zion-miner.exe 10.4 MB  (debug)
+```
+
+### Pool stream — výsledky
+Spuštěno lokálně: `ZION_POOL_WALLET=zion1e2etest... zion-pool.exe`
+
+| Test | Výsledek |
+|------|----------|
+| Stratum server bind `0.0.0.0:3333` | ✅ LISTENING |
+| HTTP API bind `0.0.0.0:8080` | ✅ LISTENING |
+| Stratum LOGIN (Python test client) | ✅ `status=OK`, session UUID, `algo=cosmic_harmony`, `diff=500000` |
+| Job NOTIFY push (upstream XMR/MoneroOcean) | ✅ `ext-xmr-68875254`, `height=3619206`, `algo=randomx` |
+| Upstream ETC (2miners) | ✅ Login accepted, jobs forwarded (`id=a5244..a524a`) |
+| Upstream ERG (2miners) | ✅ Subscribed, jobs forwarded (`h=1731057`) |
+| Upstream XMR (MoneroOcean) | ✅ CN jobs real-time (`diff=10000`) |
+| Upstream KAS (WoolyPooly) | ⚠️ Auth rejected — `bc1q...` testnet wallet format |
+| Upstream ALPH/FLUX/CLORE | ⚠️ DNS failure (lokální síť bez přístupu) |
+| Stream TimeSplit scheduler | ✅ `Z:50% R:25% N:25%` → rotace každých 5s |
+| Buyback engine | ✅ startup OK, XMR earned=0.000330 (MoneroOcean) |
+
+### Miner stream — výsledky
+Spuštěno: `zion-miner --pool stratum+tcp://127.0.0.1:3333 --wallet zion1e2etest... --threads 2 --algorithm cosmic_harmony`
+
+| Test | Výsledek |
+|------|----------|
+| Připojení k lokálnímu poolu | ✅ connected |
+| Job přijat | ✅ `cosmic_harmony_v3`, `job_id=initial` |
+| Hashrate (debug, 2 threads) | ✅ ~4.5 kH/s |
+| NCL | ✅ ENABLED, `0.5 TFLOPS`, 30% alloc |
+| Shares | A:0 R:0 — pool `height=0` (bez blockchain node = diff příliš vysoká) |
+| Graceful shutdown (Ctrl+C) | ✅ čisté ukončení |
+
+### Live testnet Helsinki (`77.42.31.72:3333`) — referenční
+| Test | Výsledek |
+|------|----------|
+| Stratum login | ✅ `height=7917`, `algo=cosmic_harmony` |
+| Share flow | ✅ rejected low-diff (expected) |
+| HTTP API `/stats` | ✅ `miners=1`, `height=7917`, `hashrate=3.5 MH/s` |
+
+### Desktop agent miner (`zion-universal-miner` — běžel souběžně)
+```
+pool      stratum+tcp://77.42.31.72:3333 (Helsinki)
+algo      cosmic_harmony_v3
+hashrate  ~670 kH/s CPU (5 threads)
+hashes    162M+
+shares    sent=2, accepted=0, rejected=2
+uptime    242s
+```
+
+### Nový test skript
+[tests/local_pool_stream_test.py](tests/local_pool_stream_test.py) — automatizovaný lokální stratum test:
+- Login + session UUID verifikace
+- Share submit + reply
+- Upstream job notify (12s timeout)
+- HTTP API probe (porty 8080/8444/3334)
