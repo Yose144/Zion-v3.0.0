@@ -35,7 +35,7 @@ const DEFAULT_REVENUE_PROFILE = {
   },
   cpu: { coin: 'auto' },
   merged: { etcEnabled: false, nxsEnabled: false },
-  gpu: { enabled: false, coins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH'] },
+  gpu: { enabled: false, coins: ['KAS', 'ETC', 'ALPH', 'ERG', 'RVN', 'CFX', 'ZANO', 'EVR', 'MEWC', 'FLUX', 'CLORE'] },
   ncl: { enabled: false },
   nclEnabled: false,
   freeStreams: { mysterium: true, nkn: true, aiGateway: true },
@@ -68,6 +68,9 @@ function normalizeRevenueProfile(input = {}) {
     gpu: {
       enabled: input?.gpu?.enabled !== undefined ? !!input.gpu.enabled : DEFAULT_REVENUE_PROFILE.gpu.enabled,
       coins: coins.length ? coins : [...DEFAULT_REVENUE_PROFILE.gpu.coins],
+      poolPreference: String(input?.gpu?.poolPreference || input?.poolPreference || 'herominers').toLowerCase(),
+      poolRegion: String(input?.gpu?.poolRegion || input?.poolRegion || 'eu').toLowerCase(),
+      nicehashBtcAddr: String(input?.gpu?.nicehashBtcAddr || input?.nicehashBtcAddr || '').trim() || null,
     },
     ncl: {
       enabled: input?.ncl?.enabled !== undefined ? !!input.ncl.enabled : DEFAULT_REVENUE_PROFILE.ncl.enabled,
@@ -826,6 +829,9 @@ function setupControls() {
       gpu: {
         enabled: !!document.getElementById('revenue-gpu-enabled')?.checked || selectedMode === 'gpu-revenue',
         coins: revenueGpuCoins,
+        poolPreference: document.getElementById('pool-preference')?.value || 'herominers',
+        poolRegion: document.getElementById('pool-region')?.value || 'eu',
+        nicehashBtcAddr: document.getElementById('nicehash-btc-addr')?.value?.trim() || null,
       },
       ncl: { enabled: !!document.getElementById('revenue-ncl-enabled')?.checked },
       freeStreams: {
@@ -855,6 +861,10 @@ function setupControls() {
       // GPU Revenue Mining configuration
       gpuRevenue: selectedMode === 'gpu-revenue' || nextRevenue.gpu.enabled,
       gpuRevenueCoins: nextRevenue.gpu.coins,
+      poolPreference: nextRevenue.gpu.poolPreference || 'herominers',
+      poolRegion: nextRevenue.gpu.poolRegion || 'eu',
+      nicehashBtcAddr: nextRevenue.gpu.nicehashBtcAddr || '',
+      revenueWallet: document.getElementById('revenue-wallet')?.value?.trim() || config.revenueWallet || '',
       revenue: nextRevenue,
       // Miner backend preference: auto | rust | python
       minerBackend: document.querySelector('input[name="miner-backend"]:checked')?.value || 'auto',
@@ -991,7 +1001,17 @@ function updateSettingsUI() {
   if (revenueMysteriumEl) revenueMysteriumEl.checked = revenue.freeStreams.mysterium;
   if (revenueNknEl) revenueNknEl.checked = revenue.freeStreams.nkn;
   if (revenueAiEl) revenueAiEl.checked = revenue.freeStreams.aiGateway;
-  
+
+  // Pool preference / region / NiceHash
+  const poolPrefEl = document.getElementById('pool-preference');
+  const poolRegionEl = document.getElementById('pool-region');
+  const nhBtcEl = document.getElementById('nicehash-btc-addr');
+  const revWalletEl = document.getElementById('revenue-wallet');
+  if (poolPrefEl) poolPrefEl.value = revenue.gpu?.poolPreference || config.poolPreference || 'herominers';
+  if (poolRegionEl) poolRegionEl.value = revenue.gpu?.poolRegion || config.poolRegion || 'eu';
+  if (nhBtcEl) nhBtcEl.value = revenue.gpu?.nicehashBtcAddr || config.nicehashBtcAddr || '';
+  if (revWalletEl) revWalletEl.value = config.revenueWallet || '';
+
   // Sync hidden gpu-checkbox for backwards compatibility
   const gpuEl = document.getElementById('gpu-checkbox');
   if (gpuEl) {
