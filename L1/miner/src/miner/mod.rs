@@ -29,13 +29,16 @@ pub enum Algorithm {
     VerusHash,
     Yescrypt,
     Blake3,
+    Blake3Dcr, // Decred Blake3 (DCP-0011) — same hash as Blake3 but DCR-specific pool protocol
     Ethash,
     KawPow,
     Autolykos,
     KHeavyHash,
     Equihash,
     ProgPow,
+    ProgPowEpic, // Epic Cash ProgPow variant
     Argon2d,
+    Octopus, // Conflux (CFX) — SHA3-based DAG algorithm
 }
 
 impl Algorithm {
@@ -48,13 +51,16 @@ impl Algorithm {
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
             "blake3" => Some(Self::Blake3),
+            "blake3-dcr" | "blake3dcr" | "decred" | "dcr" => Some(Self::Blake3Dcr),
             "ethash" | "etchash" => Some(Self::Ethash),
             "kawpow" => Some(Self::KawPow),
             "autolykos" | "autolykos2" => Some(Self::Autolykos),
             "kheavyhash" | "heavyhash" => Some(Self::KHeavyHash),
             "equihash" => Some(Self::Equihash),
             "progpow" => Some(Self::ProgPow),
+            "progpow-epic" | "progpow_epic" | "epicpow" => Some(Self::ProgPowEpic),
             "argon2d" => Some(Self::Argon2d),
+            "octopus" | "cfx" | "conflux" => Some(Self::Octopus),
             _ => None,
         }
     }
@@ -66,13 +72,16 @@ impl Algorithm {
             Self::VerusHash => "verushash",
             Self::Yescrypt => "yescrypt",
             Self::Blake3 => "blake3",
+            Self::Blake3Dcr => "blake3-dcr",
             Self::Ethash => "ethash",
             Self::KawPow => "kawpow",
             Self::Autolykos => "autolykos",
             Self::KHeavyHash => "kheavyhash",
             Self::Equihash => "equihash",
             Self::ProgPow => "progpow",
+            Self::ProgPowEpic => "progpow-epic",
             Self::Argon2d => "argon2d",
+            Self::Octopus => "octopus",
         }
     }
 
@@ -83,13 +92,16 @@ impl Algorithm {
             Self::VerusHash => NativeAlgorithm::VerusHash,
             Self::Yescrypt => NativeAlgorithm::Yescrypt,
             Self::Blake3 => NativeAlgorithm::Blake3,
+            Self::Blake3Dcr => NativeAlgorithm::Blake3Dcr,
             Self::Ethash => NativeAlgorithm::Ethash,
             Self::KawPow => NativeAlgorithm::KawPow,
             Self::Autolykos => NativeAlgorithm::Autolykos,
             Self::KHeavyHash => NativeAlgorithm::KHeavyHash,
             Self::Equihash => NativeAlgorithm::Equihash,
             Self::ProgPow => NativeAlgorithm::ProgPow,
+            Self::ProgPowEpic => NativeAlgorithm::ProgPowEpic,
             Self::Argon2d => NativeAlgorithm::Argon2d,
+            Self::Octopus => NativeAlgorithm::Octopus,
         }
     }
 }

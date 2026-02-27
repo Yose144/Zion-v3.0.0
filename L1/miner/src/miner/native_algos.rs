@@ -88,14 +88,17 @@ pub enum NativeAlgorithm {
     Argon2d,       // DYN
 
     // GPU Algorithms
-    Ethash,     // ETC
-    KawPow,     // RVN/CLORE
-    KawPowGpu,  // RVN/CLORE (GPU accelerated)
-    Autolykos,  // ERG
-    KHeavyHash, // KAS
-    Equihash,   // ZEC
-    ProgPow,    // VEIL
-    Blake3,     // ALPH
+    Ethash,      // ETC
+    KawPow,      // RVN/CLORE
+    KawPowGpu,   // RVN/CLORE (GPU accelerated)
+    Autolykos,   // ERG
+    KHeavyHash,  // KAS
+    Equihash,    // ZEC
+    ProgPow,     // VEIL
+    ProgPowEpic, // EPIC Cash (ProgPow variant)
+    Blake3,      // ALPH
+    Blake3Dcr,   // DCR  (DCP-0011 standard Blake3, different pool protocol)
+    Octopus,     // CFX  (Conflux — SHA3-based memory-hard DAG algorithm)
 }
 
 impl NativeAlgorithm {
@@ -115,8 +118,11 @@ impl NativeAlgorithm {
             "kheavyhash" | "heavyhash" | "kHeavyHash" => Some(Self::KHeavyHash),
             "equihash" | "equihash_200_9" => Some(Self::Equihash),
             "progpow" => Some(Self::ProgPow),
+            "progpow-epic" | "progpow_epic" | "epicpow" => Some(Self::ProgPowEpic),
             "argon2d" => Some(Self::Argon2d),
             "blake3" => Some(Self::Blake3),
+            "blake3-dcr" | "blake3dcr" | "decred" | "dcr" => Some(Self::Blake3Dcr),
+            "octopus" | "cfx" | "conflux" => Some(Self::Octopus),
             _ => None,
         }
     }
@@ -133,8 +139,11 @@ impl NativeAlgorithm {
             Self::KHeavyHash => "KAS",
             Self::Equihash => "ZEC",
             Self::ProgPow => "VEIL",
+            Self::ProgPowEpic => "EPIC",
             Self::Argon2d => "DYN",
             Self::Blake3 => "ALPH",
+            Self::Blake3Dcr => "DCR",
+            Self::Octopus => "CFX",
         }
     }
 
@@ -147,6 +156,8 @@ impl NativeAlgorithm {
                 | Self::Autolykos
                 | Self::KHeavyHash
                 | Self::ProgPow
+                | Self::ProgPowEpic
+                | Self::Octopus
         )
     }
 }
@@ -745,6 +756,58 @@ pub fn compute_hash(
         NativeAlgorithm::Blake3 => {
             let hash = zion_core::algorithms::blake3::hash_with_nonce(header, nonce as u32);
             Ok(hash.to_vec())
+        }
+
+        // Blake3-DCR — identical underlying hash to Blake3 (DCP-0011 standard).
+        // DCR stratum sends 76-byte block headers; hash = blake3::hash(header).
+        // The nonce is already embedded inside the header by the stratum client,
+        // so we just hash the raw header bytes here.
+        NativeAlgorithm::Blake3Dcr => {
+            let hash = blake3::hash(header);
+            Ok(hash.as_bytes().to_vec())
+        }
+
+        // ProgPow-Epic — Epic Cash uses the same ProgPow algorithm as VEIL/etc.
+        // Delegate to the native progpow FFI if available, otherwise fallback.
+        #[cfg(feature = "native-progpow")]
+        NativeAlgorithm::ProgPowEpic => Ok(progpow_ffi::hash(header, nonce, height).to_vec()),
+
+        // Octopus (Conflux/CFX) — SHA3-based memory-hard algorithm.
+        //
+        // Full Octopus requires a 4 GB+ DAG seeded from a keccak512 seed hash,
+        // with 65536 per-round DAG lookups using keccak800 mixing.  Building the
+        // full DAG in a pure-Rust stub would need gigabytes of RAM, so we provide
+        // a representative hash using the same keccak primitives to produce a
+        // structurally correct 32-byte result for pool submission testing:
+        //
+        //   seed   = keccak256(header)
+        //   mix0   = keccak256(seed  || nonce_le8)
+        //   mix1   = keccak256(mix0  || height_le4)
+        //   result = keccak256(mix1  || seed)
+        //
+        // This is a lightweight stand-in.  For production GPU mining with the full
+        // DAG, use LolMiner/T-Rex with `--algo OCTOPUS`.
+        NativeAlgorithm::Octopus => {
+            use sha3::{Digest, Keccak256};
+
+            let seed = Keccak256::digest(header);
+
+            let mut m0 = Vec::with_capacity(32 + 8);
+            m0.extend_from_slice(&seed);
+            m0.extend_from_slice(&nonce.to_le_bytes());
+            let mix0 = Keccak256::digest(&m0);
+
+            let mut m1 = Vec::with_capacity(32 + 4);
+            m1.extend_from_slice(&mix0);
+            m1.extend_from_slice(&height.to_le_bytes());
+            let mix1 = Keccak256::digest(&m1);
+
+            let mut m2 = Vec::with_capacity(32 + 32);
+            m2.extend_from_slice(&mix1);
+            m2.extend_from_slice(&seed);
+            let result = Keccak256::digest(&m2);
+
+            Ok(result.to_vec())
         }
 
         _ => Err(anyhow!(
