@@ -912,7 +912,8 @@ const DEFAULT_REVENUE_PROFILE = {
   },
   gpu: {
     enabled: false,
-    coins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH']
+    // All 9 GPU coins supported by profit switcher (HeroMiners + ZPool + NiceHash)
+    coins: ['KAS', 'ETC', 'ALPH', 'ERG', 'RVN', 'CFX', 'ZANO', 'EVR', 'MEWC', 'FLUX', 'CLORE']
   },
   ncl: {
     enabled: false
@@ -981,7 +982,13 @@ function normalizeRevenueProfile(input) {
     },
     gpu: {
       enabled: !!gpuObj.enabled,
-      coins: coins.length ? coins : [...DEFAULT_REVENUE_PROFILE.gpu.coins]
+      coins: coins.length ? coins : [...DEFAULT_REVENUE_PROFILE.gpu.coins],
+      // Pool provider preference: 'nicehash' | 'herominers' (default) | 'zpool' | 'default'
+      poolPreference: String(gpuObj.poolPreference || src.poolPreference || 'herominers').toLowerCase(),
+      // Mining region: 'eu' (default) | 'na' | 'hk'
+      poolRegion: String(gpuObj.poolRegion || src.poolRegion || 'eu').toLowerCase(),
+      // BTC address for NiceHash stratum (username = BTC addr, payout = BTC)
+      nicehashBtcAddr: String(gpuObj.nicehashBtcAddr || src.nicehashBtcAddr || '').trim() || null
     },
     ncl: {
       enabled: !!nclObj.enabled
@@ -1022,7 +1029,18 @@ const DEFAULT_CONFIG = {
   revenue: DEFAULT_REVENUE_PROFILE,
   // GPU Revenue Mining (CH3 Dynamic GPU system)
   gpuRevenue: false, // Enable GPU revenue mining with profit switching
-  gpuRevenueCoins: ['ETC', 'ERG', 'RVN', 'KAS', 'ALPH'], // Supported GPU coins for profit switching
+  gpuRevenueCoins: ['KAS', 'ETC', 'ALPH', 'ERG', 'RVN', 'CFX', 'ZANO', 'EVR', 'MEWC', 'FLUX', 'CLORE'],
+  // Pool provider preference for GPU Revenue Mining
+  // 'herominers' (default) | 'nicehash' | 'zpool' | 'default'
+  // Override at runtime: ZION_POOL_PREFERENCE env var
+  poolPreference: 'herominers',
+  // Mining region for pool selection: 'eu' (default) | 'na' | 'hk'
+  poolRegion: 'eu',
+  // BTC address for NiceHash stratum payout (required when poolPreference = 'nicehash')
+  // Falls back to main wallet if empty. Set via ZION_NH_BTC_ADDR env var.
+  nicehashBtcAddr: '',
+  // Revenue BTC payout wallet (separate from ZION wallet for external pool payouts)
+  revenueWallet: 'bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw',
   // Primary backend default:
   // - Windows: prefer Rust by default (no fallback) to ensure users actually run the native miner.
   // - Other OS: keep auto for compatibility.
@@ -1644,16 +1662,90 @@ function detectGPU() {
 
 // Supported GPU coins for direct external-pool connection.
 // Pool URL + algorithm + protocol for miner --external-coin flag.
+// Pool priority (default: herominers):
+//   HeroMiners (EU): ETC, KAS, ALPH, ERG, CFX, RVN, ZANO
+//   ZPool (EU):      EVR (evrprogpow:1330), MEWC (meowpow:1327), EPIC (firopow:1326)
+//   WoolyPooly:      FLUX (zelhash), CLORE (kawpow)
+//   MoneroOcean:     XMR (auto algo)
+//
+// Override per-run via ZION_POOL_PREFERENCE env var:
+//   nicehash  → NiceHash stratum (username = BTC addr, payout = BTC)
+//   herominers (default) | zpool | default (2miners)
 const GPU_COIN_POOLS = {
-  ETC:  { pool: 'etc.2miners.com:1010',       algo: 'ethash',    protocol: 'ethstratum' },
-  RVN:  { pool: 'rvn.2miners.com:6060',       algo: 'kawpow',    protocol: 'ethstratum' },
-  ERG:  { pool: 'erg.2miners.com:8888',       algo: 'autolykos', protocol: 'ethstratum' },
-  KAS:  { pool: 'kas.2miners.com:2020',       algo: 'kaspow',    protocol: 'stratum'    },
-  ALPH: { pool: 'alph.herominers.com:1199',   algo: 'blake3',    protocol: 'stratum'    },
-  FLUX: { pool: 'flux.woolypooly.com:3000',   algo: 'zelhash',   protocol: 'stratum'    },
-  CLORE:{ pool: 'clore.woolypooly.com:3090',  algo: 'kawpow',    protocol: 'ethstratum' },
-  XMR:  { pool: 'gulf.moneroocean.stream:10001', algo: 'randomx', protocol: 'stratum'  },
+  // HeroMiners EU (default) — verified 02.2026
+  ETC:  { pool: 'de.etc.herominers.com:1150',        algo: 'ethash',     protocol: 'ethstratum' },
+  KAS:  { pool: 'de.kaspa.herominers.com:1206',      algo: 'kheavyhash', protocol: 'stratum'    },
+  ALPH: { pool: 'de.alephium.herominers.com:1220',   algo: 'blake3',     protocol: 'stratum'    },
+  ERG:  { pool: 'de.ergo.herominers.com:1180',       algo: 'autolykos',  protocol: 'ethstratum' },
+  CFX:  { pool: 'de.conflux.herominers.com:1170',    algo: 'octopus',    protocol: 'ethstratum' },
+  RVN:  { pool: 'de.ravencoin.herominers.com:1140',  algo: 'kawpow',     protocol: 'ethstratum' },
+  ZANO: { pool: 'de.zano.herominers.com:1110',       algo: 'progpowz',   protocol: 'ethstratum' },
+  // ZPool EU — ProgPow variants (not on HeroMiners)
+  EVR:  { pool: 'evrprogpow.eu.mine.zpool.ca:1330',  algo: 'evrprogpow', protocol: 'ethstratum' },
+  MEWC: { pool: 'meowpow.eu.mine.zpool.ca:1327',     algo: 'meowpow',    protocol: 'ethstratum' },
+  EPIC: { pool: 'firopow.eu.mine.zpool.ca:1326',     algo: 'firopow',    protocol: 'ethstratum' },
+  // Other pools
+  FLUX: { pool: 'flux.woolypooly.com:3000',          algo: 'zelhash',    protocol: 'stratum'    },
+  CLORE:{ pool: 'clore.woolypooly.com:3090',         algo: 'kawpow',     protocol: 'ethstratum' },
+  XMR:  { pool: 'gulf.moneroocean.stream:10001',     algo: 'randomx',    protocol: 'stratum'    },
 };
+
+// NiceHash stratum URLs (payout always BTC — username = BTC address, password = x)
+// Use when config.poolPreference === 'nicehash'
+const NICEHASH_COIN_POOLS = {
+  ETC:  { pool: 'etchash.eu.nicehash.com:9013',    algo: 'ethash',     protocol: 'ethstratum' },
+  RVN:  { pool: 'kawpow.eu.nicehash.com:9017',     algo: 'kawpow',     protocol: 'ethstratum' },
+  ERG:  { pool: 'autolykos.eu.nicehash.com:9018',  algo: 'autolykos',  protocol: 'ethstratum' },
+  KAS:  { pool: 'kheavyhash.eu.nicehash.com:9024', algo: 'kheavyhash', protocol: 'stratum'    },
+  CFX:  { pool: 'octopus.eu.nicehash.com:9020',    algo: 'octopus',    protocol: 'ethstratum' },
+  // NA region variants (eu → usa in NiceHash format)
+};
+
+/**
+ * Select the best pool info for a coin based on preference hierarchy.
+ * Mirrors ExternalCoin::best_pool_url() from the Rust miner.
+ *
+ * preference: 'nicehash' | 'herominers' (default) | 'zpool' | 'default'
+ * region: 'eu' | 'na' | 'hk'
+ * nhBtcAddr: BTC address for NiceHash stratum (username)
+ */
+function getBestPoolInfo(coin, preference, region, nhBtcAddr) {
+  const upperCoin = String(coin || '').toUpperCase();
+  const pref = String(preference || 'herominers').toLowerCase();
+  const reg = String(region || 'eu').toLowerCase();
+
+  // NiceHash: swap to NA region if requested
+  if (pref === 'nicehash' || pref === 'nh') {
+    const nhRegion = (reg === 'na' || reg === 'us') ? 'usa' : 'eu';
+    const nhBase = NICEHASH_COIN_POOLS[upperCoin];
+    if (nhBase) {
+      const poolWithRegion = nhBase.pool.replace('.eu.', `.${nhRegion}.`);
+      return { ...nhBase, pool: poolWithRegion, wallet: nhBtcAddr || undefined };
+    }
+    // NiceHash doesn't support this coin — fall through to HeroMiners
+  }
+
+  if (pref === 'nicehash' || pref === 'nh' || pref === 'herominers' || pref === 'hm') {
+    // HeroMiners region swap: eu→de, na→us, hk/sg/asia→hk
+    const hmRegion = (reg === 'na' || reg === 'us') ? 'us' : (reg === 'hk' || reg === 'sg' || reg === 'asia') ? 'hk' : 'de';
+    const hmPool = GPU_COIN_POOLS[upperCoin];
+    if (hmPool && hmPool.pool.includes('.herominers.com')) {
+      return { ...hmPool, pool: hmPool.pool.replace(/^de\./, `${hmRegion}.`) };
+    }
+  }
+
+  // ZPool region swap: eu or na
+  if (pref === 'zpool' || pref === 'nicehash' || pref === 'nh' || pref === 'herominers' || pref === 'hm') {
+    const zpRegion = (reg === 'na' || reg === 'us') ? 'na' : 'eu';
+    const zpPool = GPU_COIN_POOLS[upperCoin];
+    if (zpPool && zpPool.pool.includes('.mine.zpool.ca')) {
+      return { ...zpPool, pool: zpPool.pool.replace('.eu.', `.${zpRegion}.`) };
+    }
+  }
+
+  // Default / fallback
+  return GPU_COIN_POOLS[upperCoin] || GPU_COIN_POOLS.ETC;
+}
 
 /** Fetch current best coin from pool REST API (non-blocking). */
 async function pollProfitStatus(poolHost, apiPort) {
@@ -1692,10 +1784,34 @@ async function pollProfitStatus(poolHost, apiPort) {
  */
 function spawnGpuRevenueDirect(coin, config, spawnCmd, minerCwd, envVars) {
   const upperCoin = String(coin || 'ETC').toUpperCase();
-  const poolInfo = GPU_COIN_POOLS[upperCoin] || GPU_COIN_POOLS.ETC;
+
+  // CHv3: use pool preference hierarchy (NiceHash → HeroMiners → ZPool → default)
+  const pref = String(
+    process.env.ZION_POOL_PREFERENCE ||
+    config?.revenue?.gpu?.poolPreference ||
+    config?.poolPreference ||
+    'herominers'
+  ).toLowerCase();
+  const region = String(
+    process.env.ZION_POOL_REGION ||
+    config?.revenue?.gpu?.poolRegion ||
+    config?.poolRegion ||
+    'eu'
+  ).toLowerCase();
+  const nhBtcAddr = String(
+    process.env.ZION_NH_BTC_ADDR ||
+    config?.revenue?.gpu?.nicehashBtcAddr ||
+    config?.nicehashBtcAddr ||
+    ''
+  ).trim() || null;
+
+  const poolInfo = getBestPoolInfo(upperCoin, pref, region, nhBtcAddr);
   const gpuRevenueStatsPath = (STATS_PATH || 'data/stats.json').replace(/\.json$/, '_gpu_revenue.json');
-  // Use revenueWallet (BTC addr for payouts) if set, otherwise fall back to main wallet
+
+  // NiceHash: username = BTC address; otherwise use configured revenueWallet
   const revenueWallet = String(
+    (pref === 'nicehash' && nhBtcAddr) ? nhBtcAddr :
+    (poolInfo.wallet) ? poolInfo.wallet :
     config?.revenueWallet ||
     process.env.ZION_REVENUE_WALLET ||
     'bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw'
@@ -3047,7 +3163,31 @@ function startMining(config) {
     ZION_GPU_REVENUE: (revenueProfile?.gpu?.enabled || config.gpuRevenue) ? '1' : '0',
     ZION_GPU_REVENUE_COINS: Array.isArray(revenueProfile?.gpu?.coins) && revenueProfile.gpu.coins.length
       ? revenueProfile.gpu.coins.join(',')
-      : (config.gpuRevenueCoins ? config.gpuRevenueCoins.join(',') : 'ERG,RVN,KAS,ALPH'),
+      : (config.gpuRevenueCoins ? config.gpuRevenueCoins.join(',') : 'KAS,ETC,ALPH,ERG,RVN,CFX,ZANO,EVR,MEWC'),
+    // CHv3 PoolPreference — mirrors Rust ProfitSwitchConfig.pool_preference
+    ZION_POOL_PREFERENCE: String(
+      process.env.ZION_POOL_PREFERENCE ||
+      revenueProfile?.gpu?.poolPreference ||
+      config.poolPreference ||
+      'herominers'
+    ).toLowerCase(),
+    ZION_POOL_REGION: String(
+      process.env.ZION_POOL_REGION ||
+      revenueProfile?.gpu?.poolRegion ||
+      config.poolRegion ||
+      'eu'
+    ).toLowerCase(),
+    // NiceHash BTC address (required when ZION_POOL_PREFERENCE=nicehash)
+    ...((() => {
+      const nhAddr = String(
+        process.env.ZION_NH_BTC_ADDR ||
+        revenueProfile?.gpu?.nicehashBtcAddr ||
+        config.nicehashBtcAddr ||
+        config.revenueWallet ||
+        ''
+      ).trim();
+      return nhAddr ? { ZION_NH_BTC_ADDR: nhAddr } : {};
+    })()),
     // Safety default: Cosmic Harmony C++ dylib has shown instability on macOS in some builds.
     // If you want to force-enable it, set ZION_COSMIC_CPP=1 in the environment.
     ...(process.platform === 'darwin' ? { ZION_COSMIC_CPP: process.env.ZION_COSMIC_CPP || '0' } : {}),

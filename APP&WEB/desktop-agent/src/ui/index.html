@@ -5416,11 +5416,11 @@
                   <input type="radio" name="mining-mode" value="gpu-revenue" id="mode-gpu-revenue" />
                   <div>
                     <div class="mode-title">GPU Revenue Mining</div>
-                    <p class="text-warning">PROFIT SWITCH • ERG/RVN/KAS/ALPH</p>
+                    <p class="text-warning">PROFIT SWITCH • KAS/ETC/ERG/RVN/CFX/ZANO/EVR/MEWC</p>
                   </div>
                 </label>
               </div>
-              <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously. GPU Revenue Mining automatically switches between ERG, RVN, KAS, and ALPH based on profitability.</div>
+              <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously. GPU Revenue Mining automatically switches between KAS, ETC, ERG, RVN, CFX, ZANO, EVR, and MEWC based on profitability.</div>
 
               <div class="section-divider">Revenue Routing</div>
 
@@ -5435,7 +5435,32 @@
                 </label>
                 <label class="floating-field">
                   <span>GPU Revenue Coins</span>
-                  <input type="text" id="revenue-gpu-coins" placeholder="ERG,RVN,KAS,ALPH" />
+                  <input type="text" id="revenue-gpu-coins" placeholder="KAS,ETC,ALPH,ERG,RVN,CFX,ZANO,EVR,MEWC" />
+                </label>
+                <label class="floating-field">
+                  <span>Pool Provider</span>
+                  <select id="pool-preference">
+                    <option value="herominers">HeroMiners (recommended)</option>
+                    <option value="nicehash">NiceHash (BTC direct)</option>
+                    <option value="zpool">ZPool (BTC auto-exchange)</option>
+                    <option value="default">Default / 2miners</option>
+                  </select>
+                </label>
+                <label class="floating-field">
+                  <span>Pool Region</span>
+                  <select id="pool-region">
+                    <option value="eu">Europe (default)</option>
+                    <option value="na">North America</option>
+                    <option value="hk">Asia / HK</option>
+                  </select>
+                </label>
+                <label class="floating-field">
+                  <span>NiceHash BTC Address</span>
+                  <input type="text" id="nicehash-btc-addr" placeholder="bc1q... (required for NiceHash)" />
+                </label>
+                <label class="floating-field">
+                  <span>Revenue Payout Wallet</span>
+                  <input type="text" id="revenue-wallet" placeholder="bc1q... BTC payout address" />
                 </label>
                 <label class="floating-field">
                   <span>ZION %</span>
