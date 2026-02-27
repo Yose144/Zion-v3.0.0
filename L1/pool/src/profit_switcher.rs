@@ -584,13 +584,23 @@ async fn fetch_zpool(coins: &[String]) -> Result<Vec<CoinProfitData>, String> {
 
     // ZPool algo → náš coin tag
     // ZPool aggreguje více coinů per algo; estimate reflektuje nejziskovější coin v algu.
+    //
+    // ── Ověřeno aktivní na ZPool (02.2026) ──────────────────────────────────────
+    //   kawpow(RVN:1325)  firopow(EPIC:1326)  evrprogpow(EVR:1330)  meowpow(MEWC:1327)
+    // ── Historické — nízká/nulová aktivita, ale ponecháno pro zpětnou kompatibilitu ──
+    //   ethash (ETC) — od ETH Merge  |  autolykos (ERG)  |  kheavyhash (KAS)  |  blake3 (ALPH)
+    //   estimate=0 → filtrováno v `if estimate <= 0.0` níže
     let algo_map: HashMap<&str, &str> = [
-        ("kawpow",     "RVN"),   // Ravencoin (KawPow)
-        ("ethash",     "ETC"),   // Ethereum Classic (Ethash)
-        ("autolykos",  "ERG"),   // Ergo (Autolykos v2)
-        ("kheavyhash", "KAS"),   // Kaspa (kHeavyHash)
-        ("blake3",     "ALPH"),  // Alephium dominuje ZPool blake3 pool
-        ("firopow",    "EPIC"),  // Epic Cash (FiroPow ≈ ProgPow variant)
+        // ── Aktivní GPU algos ──
+        ("kawpow",     "RVN"),   // Ravencoin (KawPow) — port 1325
+        ("firopow",    "EPIC"),  // Epic Cash (FiroPow ≈ ProgPow GPU) — port 1326
+        ("evrprogpow", "EVR"),   // Evrmore (EvrProgPow) — port 1330
+        ("meowpow",    "MEWC"),  // MeowCoin (MeowPoW) — port 1327
+        // ── Historické / potenciálně neaktivní ──
+        ("ethash",     "ETC"),   // Ethereum Classic — nízká aktivita od ETH Merge
+        ("autolykos",  "ERG"),   // Ergo Autolykos v2
+        ("kheavyhash", "KAS"),   // Kaspa kHeavyHash
+        ("blake3",     "ALPH"),  // Alephium Blake3
     ]
     .iter()
     .cloned()
@@ -683,6 +693,204 @@ fn merge_profit_feeds(
             .unwrap_or(std::cmp::Ordering::Equal)
     });
     result
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HeroMiners API Feed (Tier 1c)
+// ═══════════════════════════════════════════════════════════════
+
+/// HeroMiners `/api/stats` — config block
+#[derive(Debug, Deserialize)]
+struct HmConfig {
+    #[serde(rename = "coinUnits", default = "hm_default_units")]
+    coin_units: f64,
+    /// Average block time in seconds (pool target difficulty period).
+    #[serde(rename = "coinDifficultyTarget", default = "hm_default_block_time")]
+    coin_difficulty_target: f64,
+    #[serde(default)]
+    symbol: String,
+}
+
+fn hm_default_units() -> f64 { 1.0 }
+fn hm_default_block_time() -> f64 { 60.0 }
+
+/// HeroMiners `/api/stats` — price block
+#[derive(Debug, Deserialize)]
+struct HmPrice {
+    #[serde(default)]
+    usd: f64,
+}
+
+/// HeroMiners `/api/stats` — lastblock block
+#[derive(Debug, Deserialize)]
+struct HmLastBlock {
+    #[serde(default)]
+    reward: f64,
+}
+
+/// HeroMiners `/api/stats` — charts block (1-day network hashrate)
+#[derive(Debug, Deserialize)]
+struct HmCharts {
+    #[serde(default)]
+    hashrate_1d: f64,
+}
+
+/// HeroMiners `/api/stats` — top-level response (only fields we need)
+#[derive(Debug, Deserialize)]
+struct HmStats {
+    config: HmConfig,
+    price: HmPrice,
+    #[serde(rename = "lastblock")]
+    last_block: HmLastBlock,
+    charts: HmCharts,
+}
+
+/// Fetch profitability from HeroMiners.com (Tier 1c).
+///
+/// API: `https://<subdomain>.herominers.com/api/stats`
+///
+/// Computes `daily_usd_per_TH = (reward / coinUnits) × price × (86400 / block_time) / (net_hr_TH)`
+/// for each supported coin. All requests run in parallel via `tokio::spawn`.
+/// Result normalised to 0-100 scale for compatibility with WTM / ZPool feeds.
+///
+/// Verified subdomains & GPU ports (02.2026):
+///   ETC(etc:1150)  KAS(kaspa:1206)  ALPH(alephium:1220)  ERG(ergo:1180)
+///   CFX(conflux:1170)  RVN(ravencoin:1140)  ZANO(zano:1110)
+///   Not on HeroMiners: EPIC, FLUX, DCR, EVR, MEWC
+async fn fetch_herominers(coins: &[String]) -> Result<Vec<CoinProfitData>, String> {
+    // Catalog: (tag, subdomain) — only coins verified on HeroMiners
+    const CATALOG: &[(&str, &str)] = &[
+        ("ETC",  "etc"),
+        ("KAS",  "kaspa"),
+        ("ALPH", "alephium"),
+        ("ERG",  "ergo"),
+        ("CFX",  "conflux"),
+        ("RVN",  "ravencoin"),
+        ("ZANO", "zano"),
+    ];
+
+    // Filter to coins we actually want to track
+    let targets: Vec<(&'static str, &'static str)> = CATALOG
+        .iter()
+        .filter(|(tag, _)| {
+            coins.is_empty() || coins.iter().any(|c| c.eq_ignore_ascii_case(tag))
+        })
+        .copied()
+        .collect();
+
+    if targets.is_empty() {
+        return Err("No HeroMiners-supported coins in requested list".to_string());
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("HTTP client: {}", e))?;
+
+    // Spawn all fetches in parallel
+    let handles: Vec<tokio::task::JoinHandle<Result<(String, HmStats), String>>> = targets
+        .iter()
+        .map(|(tag, subdomain)| {
+            let url = format!("https://{}.herominers.com/api/stats", subdomain);
+            let client = client.clone();
+            let tag = tag.to_string();
+            tokio::spawn(async move {
+                let resp = client
+                    .get(&url)
+                    .header("User-Agent", "zion-pool/2.9.6")
+                    .send()
+                    .await
+                    .map_err(|e| format!("{}: request failed: {}", tag, e))?;
+                if !resp.status().is_success() {
+                    return Err(format!("{}: HTTP {}", tag, resp.status()));
+                }
+                let body = resp
+                    .text()
+                    .await
+                    .map_err(|e| format!("{}: body read: {}", tag, e))?;
+                let stats: HmStats =
+                    serde_json::from_str(&body).map_err(|e| format!("{}: parse: {}", tag, e))?;
+                Ok((tag, stats))
+            })
+        })
+        .collect();
+
+    let now = Utc::now().timestamp();
+    let mut profit_data: Vec<CoinProfitData> = Vec::new();
+
+    for handle in handles {
+        let result = match handle.await {
+            Ok(r) => r,
+            Err(e) => {
+                warn!("💹 HeroMiners: task join error: {}", e);
+                continue;
+            }
+        };
+        match result {
+            Ok((tag, stats)) => {
+                let price_usd = stats.price.usd;
+                let coin_units = stats.config.coin_units.max(1.0);
+                let reward_coins = stats.last_block.reward / coin_units;
+                let block_time = stats.config.coin_difficulty_target.max(0.001);
+                let net_hr = stats.charts.hashrate_1d;
+
+                // daily_usd_per_TH = reward_coins × price × (86400 / block_time) / net_hr_TH
+                let blocks_per_day = 86400.0 / block_time;
+                let net_hr_ths = (net_hr / 1e12).max(1e-9);
+                let daily_usd_per_th = reward_coins * price_usd * blocks_per_day / net_hr_ths;
+
+                if daily_usd_per_th > 0.0 && price_usd > 0.0 {
+                    info!(
+                        "💹 HeroMiners {}: price=${:.4}, net={:.1}GH/s, daily_usd/TH={:.6}",
+                        tag, price_usd, net_hr / 1e9, daily_usd_per_th,
+                    );
+                    profit_data.push(CoinProfitData {
+                        coin: tag,
+                        algorithm: stats.config.symbol,
+                        price_usd,
+                        btc_revenue_24h: 0.0,
+                        usd_revenue_24h: daily_usd_per_th,
+                        difficulty: 0.0,
+                        block_reward: reward_coins,
+                        nethash: net_hr,
+                        profit_score: daily_usd_per_th,
+                        timestamp: now,
+                    });
+                } else {
+                    warn!(
+                        "💹 HeroMiners {}: insufficient data (price={}, net_hr={})",
+                        tag, price_usd, net_hr
+                    );
+                }
+            }
+            Err(e) => warn!("💹 HeroMiners: {}", e),
+        }
+    }
+
+    if profit_data.is_empty() {
+        return Err("HeroMiners: no valid coin profit data returned".to_string());
+    }
+
+    // Normalise: max = 100 (compatible with WTM / ZPool scale)
+    if let Some(max_score) = profit_data
+        .iter()
+        .map(|c| c.profit_score)
+        .reduce(f64::max)
+        .filter(|&m| m > 0.0)
+    {
+        let scale = 100.0 / max_score;
+        for r in &mut profit_data {
+            r.profit_score *= scale;
+        }
+    }
+
+    profit_data.sort_by(|a, b| {
+        b.profit_score
+            .partial_cmp(&a.profit_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    Ok(profit_data)
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -985,53 +1193,87 @@ impl ProfitSwitcher {
                 self.config.preferred_coins.clone()
             };
 
-            // ── Feed chain: WTM + ZPool parallel → Minerstat → Snapshot → Static ───
-            // Tier 1a: WhatToMine (primární — coin-level data)
-            // Tier 1b: ZPool.ca   (algo-level, nezávislý, parallel) → sloučeno s WTM
-            // Tier 2:  Minerstat  (sekundární — nezávislý zdroj, bez API klíče)
+            // ── Feed chain: WTM + ZPool + HeroMiners parallel → Minerstat → Snapshot → Static ──
+            // Tier 1a: WhatToMine  (primární — coin-level data, BTC revenue)
+            // Tier 1b: ZPool.ca    (algo-level, nezávislý, algo→coin mapování)
+            // Tier 1c: HeroMiners  (coin-level, vlastní pool API, daily_usd/TH)
+            //          → všechny tři Tier1 feedy běží paralelně a výsledky se slučují
+            // Tier 2:  Minerstat   (sekundární — nezávislý zdroj, bez API klíče)
             // Tier 3:  LastValidSnapshot (poslední dobrá data)
             // Tier 4:  Static estimates  (hardcoded konzervativní hodnoty)
-            let (wtm_result, zpool_result) = tokio::join!(
+            let (wtm_result, zpool_result, hm_result) = tokio::join!(
                 fetch_whattomine(&coins),
                 fetch_zpool(&coins),
+                fetch_herominers(&coins),
             );
 
             let wtm_ok   = matches!(&wtm_result,   Ok(d) if !d.is_empty());
             let zpool_ok = matches!(&zpool_result, Ok(d) if !d.is_empty());
+            let hm_ok    = matches!(&hm_result,    Ok(d) if !d.is_empty());
 
-            let (mut profit_data, feed_name): (Vec<CoinProfitData>, &str) = if wtm_ok || zpool_ok {
+            let (mut profit_data, feed_name): (Vec<CoinProfitData>, String) = if wtm_ok || zpool_ok || hm_ok {
                 self.api_fetches.fetch_add(1, Ordering::Relaxed);
-                match (wtm_result, zpool_result) {
-                    (Ok(wtm), Ok(zp)) if !wtm.is_empty() && !zp.is_empty() => {
+
+                // Step 1: Merge WTM + ZPool (same logic as before)
+                let tier1_base: Option<(Vec<CoinProfitData>, &'static str)> =
+                    match (wtm_result, zpool_result) {
+                        (Ok(wtm), Ok(zp)) if !wtm.is_empty() && !zp.is_empty() => {
+                            info!(
+                                "💹 [WTM+ZPool] WhatToMine={} ZPool={} coins — merging feeds",
+                                wtm.len(), zp.len()
+                            );
+                            Some((merge_profit_feeds(wtm, zp), "wtm+zpool"))
+                        }
+                        (Ok(wtm), zp_r) if !wtm.is_empty() => {
+                            if let Err(e) = zp_r { warn!("💹 ZPool error: {}", e); }
+                            Some((wtm, "whattomine"))
+                        }
+                        (wtm_r, Ok(zp)) if !zp.is_empty() => {
+                            if let Err(e) = wtm_r { warn!("💹 WhatToMine error: {}", e); }
+                            Some((zp, "zpool"))
+                        }
+                        (wtm_r, zp_r) => {
+                            if let Err(e) = wtm_r { warn!("💹 WhatToMine error: {}", e); }
+                            if let Err(e) = zp_r { warn!("💹 ZPool error: {}", e); }
+                            None
+                        }
+                    };
+
+                // Step 2: Cross-validate / extend with HeroMiners (Tier 1c)
+                match (tier1_base, hm_result) {
+                    (Some((base, base_name)), Ok(hm)) if !hm.is_empty() => {
+                        let merged = merge_profit_feeds(base, hm);
+                        let name = format!("{}+herominers", base_name);
                         info!(
-                            "💹 [WTM+ZPool] WhatToMine={} ZPool={} coins — merging feeds",
-                            wtm.len(), zp.len()
+                            "💹 [{}] {} coins merged, top={} (score={:.1})",
+                            name, merged.len(), merged[0].coin, merged[0].profit_score
                         );
-                        (merge_profit_feeds(wtm, zp), "wtm+zpool")
+                        (merged, name)
                     }
-                    (Ok(wtm), zp_r) if !wtm.is_empty() => {
-                        if let Err(e) = zp_r { warn!("💹 ZPool error: {}", e); }
+                    (Some((base, base_name)), hm_r) => {
+                        if let Err(e) = hm_r { warn!("💹 HeroMiners error: {}", e); }
                         info!(
-                            "💹 [WhatToMine] {} coins, top={} (score={:.1})",
-                            wtm.len(), wtm[0].coin, wtm[0].profit_score
+                            "💹 [{}] {} coins, top={} (score={:.1})",
+                            base_name, base.len(), base[0].coin, base[0].profit_score
                         );
-                        (wtm, "whattomine")
+                        (base, base_name.to_string())
                     }
-                    (wtm_r, Ok(zp)) if !zp.is_empty() => {
-                        if let Err(e) = wtm_r { warn!("💹 WhatToMine error: {}", e); }
+                    (None, Ok(hm)) if !hm.is_empty() => {
+                        // WTM + ZPool both failed, but HeroMiners succeeded
                         info!(
-                            "💹 [ZPool] {} coins, top={} (score={:.1})",
-                            zp.len(), zp[0].coin, zp[0].profit_score
+                            "💹 [herominers] {} coins, top={} (score={:.1})",
+                            hm.len(), hm[0].coin, hm[0].profit_score
                         );
-                        (zp, "zpool")
+                        (hm, "herominers".to_string())
                     }
-                    _ => unreachable!("wtm_ok || zpool_ok garantuje aspoň jeden Ok"),
+                    _ => unreachable!("wtm_ok || zpool_ok || hm_ok garantuje aspoň jeden Ok"),
                 }
             } else {
-                // Oba primární feedy selhaly → Tier 2: Minerstat
+                // Všechny Tier 1 feedy selhaly → Tier 2: Minerstat
                 let wtm_msg   = match &wtm_result   { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
                 let zpool_msg = match &zpool_result { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
-                warn!("💹 WhatToMine: {} / ZPool: {} — trying Minerstat", wtm_msg, zpool_msg);
+                let hm_msg    = match &hm_result    { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
+                warn!("💹 WTM: {} / ZPool: {} / HeroMiners: {} — trying Minerstat", wtm_msg, zpool_msg, hm_msg);
                 self.api_errors.fetch_add(1, Ordering::Relaxed);
 
                 match fetch_minerstat(&coins).await {
@@ -1040,7 +1282,7 @@ impl ProfitSwitcher {
                             "💹 [Minerstat] {} coins, top={} (score={:.1})",
                             data.len(), data[0].coin, data[0].profit_score,
                         );
-                        (data, "minerstat")
+                        (data, "minerstat".to_string())
                     }
                     ms_err => {
                         if let Err(ref e) = ms_err {
@@ -1056,11 +1298,11 @@ impl ProfitSwitcher {
                                 "💹 [Snapshot] Using cached data ({} coins) — live feeds down",
                                 snap.len()
                             );
-                            (snap, "snapshot")
+                            (snap, "snapshot".to_string())
                         } else {
                             // Tier 4: Static estimates
                             error!("💹 [StaticFallback] All feeds failed and no snapshot — using hardcoded estimates");
-                            (estimate_profitability_fallback(&coins), "static")
+                            (estimate_profitability_fallback(&coins), "static".to_string())
                         }
                     }
                 }
@@ -1103,7 +1345,7 @@ impl ProfitSwitcher {
             *self.profit_data.write().await = profit_data.clone();
 
             // Evaluate switch
-            self.evaluate_switch(&profit_data, feed_name).await;
+            self.evaluate_switch(&profit_data, &feed_name).await;
 
             // Wait for next interval
             interval.tick().await;
