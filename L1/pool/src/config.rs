@@ -169,16 +169,16 @@ fn default_coin_threads() -> usize {
 impl Default for StreamDynamicGpuConfig {
     fn default() -> Self {
         // CH v3 spec: Dynamic GPU = 20% compute (part of 25% external allocation)
-        // Profit-switched between ETC/ERG/RVN/KAS/ALPH via external pools
-        // ETC prioritized as highest profitability GPU coin (Etchash algorithm)
+        // Profit-switched between all GPU coins via best available pool.
+        // Pool priority: HeroMiners (7 coins) > ZPool (EVR/MEWC/EPIC/RVN) > 2miners fallback
         let mut pools = std::collections::HashMap::new();
 
-        // ETC (Ethereum Classic) - highest profitability GPU coin
+        // ETC (Ethereum Classic) — HeroMiners etc:1150 (BTC payout via auto-convert)
         pools.insert(
             "etc".to_string(),
             StreamDynamicPoolEntry {
                 coin: "ETC".to_string(),
-                stratum: "stratum+tcp://etc.2miners.com:1010".to_string(),
+                stratum: "stratum+tcp://de.etc.herominers.com:1150".to_string(),
                 wallet: default_btc_wallet(),
                 worker: "zion_dynamic".to_string(),
                 enabled: true,
@@ -189,12 +189,12 @@ impl Default for StreamDynamicGpuConfig {
             },
         );
 
-        // ERG (Ergo)
+        // ERG (Ergo) — HeroMiners ergo:1180
         pools.insert(
             "erg".to_string(),
             StreamDynamicPoolEntry {
                 coin: "ERG".to_string(),
-                stratum: "stratum+tcp://erg.2miners.com:8888".to_string(),
+                stratum: "stratum+tcp://de.ergo.herominers.com:1180".to_string(),
                 wallet: default_btc_wallet(),
                 worker: "zion_dynamic".to_string(),
                 enabled: true,
@@ -205,12 +205,12 @@ impl Default for StreamDynamicGpuConfig {
             },
         );
 
-        // RVN (Ravencoin)
+        // RVN (Ravencoin) — HeroMiners ravencoin:1140
         pools.insert(
             "rvn".to_string(),
             StreamDynamicPoolEntry {
                 coin: "RVN".to_string(),
-                stratum: "stratum+tcp://rvn.2miners.com:6060".to_string(),
+                stratum: "stratum+tcp://de.ravencoin.herominers.com:1140".to_string(),
                 wallet: default_btc_wallet(),
                 worker: "zion_dynamic".to_string(),
                 enabled: true,
@@ -221,12 +221,12 @@ impl Default for StreamDynamicGpuConfig {
             },
         );
 
-        // KAS (Kaspa)
+        // KAS (Kaspa) — HeroMiners kaspa:1206
         pools.insert(
             "kas".to_string(),
             StreamDynamicPoolEntry {
                 coin: "KAS".to_string(),
-                stratum: "stratum+tcp://pool.woolypooly.com:3112".to_string(),
+                stratum: "stratum+tcp://de.kaspa.herominers.com:1206".to_string(),
                 wallet: default_btc_wallet(),
                 worker: "zion_dynamic".to_string(),
                 enabled: true,
@@ -237,12 +237,12 @@ impl Default for StreamDynamicGpuConfig {
             },
         );
 
-        // ALPH (Alephium)
+        // ALPH (Alephium) — HeroMiners alephium:1220
         pools.insert(
             "alph".to_string(),
             StreamDynamicPoolEntry {
                 coin: "ALPH".to_string(),
-                stratum: "stratum+tcp://alph.2miners.com:2020".to_string(),
+                stratum: "stratum+tcp://de.alephium.herominers.com:1220".to_string(),
                 wallet: default_btc_wallet(),
                 worker: "zion_dynamic".to_string(),
                 enabled: true,
@@ -253,7 +253,39 @@ impl Default for StreamDynamicGpuConfig {
             },
         );
 
-        // FLUX (Flux) — ZelHash / Equihash 125,4 — ASIC-resistant GPU coin
+        // CFX (Conflux) — HeroMiners conflux:1170 (Octopus algo, 4 GB+ VRAM)
+        pools.insert(
+            "cfx".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "CFX".to_string(),
+                stratum: "stratum+tcp://de.conflux.herominers.com:1170".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("octopus".to_string()),
+                protocol: Some("ethstratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
+        // ZANO — HeroMiners zano:1110 (ProgPowZ algo)
+        pools.insert(
+            "zano".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "ZANO".to_string(),
+                stratum: "stratum+tcp://de.zano.herominers.com:1110".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("progpowz".to_string()),
+                protocol: Some("ethstratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
+        // FLUX (Flux) — ZelHash / Equihash 125,4 — WoolyPooly (not on HeroMiners)
         pools.insert(
             "flux".to_string(),
             StreamDynamicPoolEntry {
@@ -264,6 +296,38 @@ impl Default for StreamDynamicGpuConfig {
                 enabled: true,
                 algorithm: Some("zelhash".to_string()),
                 protocol: Some("stratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
+        // EVR (Evrmore) — ZPool EvrProgPow eu:1330 (not on HeroMiners/2miners)
+        pools.insert(
+            "evr".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "EVR".to_string(),
+                stratum: "stratum+tcp://evrprogpow.eu.mine.zpool.ca:1330".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("evrprogpow".to_string()),
+                protocol: Some("ethstratum".to_string()),
+                proxy_listen: None,
+                threads: 0, // GPU only
+            },
+        );
+
+        // MEWC (MeowCoin) — ZPool MeowPoW eu:1327 (not on HeroMiners)
+        pools.insert(
+            "mewc".to_string(),
+            StreamDynamicPoolEntry {
+                coin: "MEWC".to_string(),
+                stratum: "stratum+tcp://meowpow.eu.mine.zpool.ca:1327".to_string(),
+                wallet: default_btc_wallet(),
+                worker: "zion_dynamic".to_string(),
+                enabled: true,
+                algorithm: Some("meowpow".to_string()),
+                protocol: Some("ethstratum".to_string()),
                 proxy_listen: None,
                 threads: 0, // GPU only
             },

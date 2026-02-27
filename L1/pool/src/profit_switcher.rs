@@ -105,6 +105,43 @@ fn detect_gpu_available() -> bool {
 // Configuration
 // ═══════════════════════════════════════════════════════════════
 
+/// Which external pool provider to prefer for revenue stream.
+///
+/// Priority hierarchy when `NiceHash` is chosen:
+///   NiceHash → HeroMiners (if NH doesn't support coin) → ZPool → Default (2miners)
+/// When `HeroMiners` (default):
+///   HeroMiners → ZPool (for EVR/MEWC/EPIC) → Default (2miners)
+/// When `ZPool`:
+///   ZPool → Default (2miners)
+/// When `Default`:
+///   Always 2miners / built-in defaults
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum PoolPreference {
+    /// NiceHash — pays BTC directly, uses nicehash_btc_addr as username
+    NiceHash,
+    /// HeroMiners — multi-coin pool with per-coin REST API + stratum
+    HeroMiners,
+    /// ZPool — multi-algo pool, auto-switches within algo, pays BTC
+    ZPool,
+    /// Default — 2miners per-coin pools (most established)
+    Default,
+}
+
+impl Default for PoolPreference {
+    fn default() -> Self {
+        Self::HeroMiners
+    }
+}
+
+fn default_pool_preference() -> PoolPreference {
+    PoolPreference::HeroMiners
+}
+
+fn default_pool_region() -> String {
+    "eu".to_string()
+}
+
 /// Profit switching configuration
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ProfitSwitchConfig {
@@ -129,6 +166,20 @@ pub struct ProfitSwitchConfig {
     /// Default coin when no profitability data available
     #[serde(default = "default_fallback")]
     pub fallback_coin: String,
+    /// Preferred external pool provider.
+    /// nicehash | herominers (default) | zpool | default
+    /// Set via ZION_POOL_PREFERENCE env var or config.
+    #[serde(default = "default_pool_preference")]
+    pub pool_preference: PoolPreference,
+    /// Mining region for pool selection.
+    /// "eu" (Europe, default), "na" / "us" (North America), "asia" / "hk" / "sg"
+    #[serde(default = "default_pool_region")]
+    pub pool_region: String,
+    /// BTC address for NiceHash stratum (username = BTC addr).
+    /// Required when pool_preference = NiceHash.
+    /// Falls back to ZION_BTC_WALLET env var if not set.
+    #[serde(default)]
+    pub nicehash_btc_addr: Option<String>,
 }
 
 fn default_true() -> bool {
@@ -149,16 +200,35 @@ fn default_fallback() -> String {
 
 impl Default for ProfitSwitchConfig {
     fn default() -> Self {
+        // Pool preference: read from ZION_POOL_PREFERENCE env var first
+        let pool_preference = match std::env::var("ZION_POOL_PREFERENCE")
+            .unwrap_or_default()
+            .to_lowercase()
+            .as_str()
+        {
+            "nicehash" | "nh" => PoolPreference::NiceHash,
+            "zpool"           => PoolPreference::ZPool,
+            "default" | "2miners" => PoolPreference::Default,
+            _                 => PoolPreference::HeroMiners, // default
+        };
+        let pool_region = std::env::var("ZION_POOL_REGION")
+            .unwrap_or_else(|_| "eu".to_string())
+            .to_lowercase();
+        let nicehash_btc_addr = std::env::var("ZION_NH_BTC_ADDR")
+            .or_else(|_| std::env::var("ZION_BTC_WALLET"))
+            .ok();
+
         Self {
             enabled: true,
             check_interval_secs: 300,
             switch_threshold_pct: 10.0,
             min_switch_interval_secs: 1800,
-            // GPU coins ranked by typical Feb 2026 profitability:
-            // KAS (kHeavyHash), ETC (Ethash), ALPH (Blake3), FLUX (ZelHash),
-            // RVN (KawPow), ERG (Autolykos v2), CLORE (KawPow), NEXA (NexaPoW)
-            // DCR (Blake3/DCP-0011), EPIC (ProgPow), CFX/Conflux (Octopus)
-            // EVR (EvrProgPow) + MEWC (MeowPoW) — ProgPow varianty dostupné na ZPool
+            // GPU coins ranked by typical Feb 2026 profitability (all sources:WTM+ZPool+HeroMiners+NiceHash):
+            // KAS (kHeavyHash), ETC (Ethash/HeroMiners), ALPH (Blake3/HeroMiners),
+            // FLUX (ZelHash), RVN (KawPow/HeroMiners+NH), ERG (Autolykos/HeroMiners+NH),
+            // CFX (Octopus/HeroMiners+NH), ZANO (ProgPowZ/HeroMiners),
+            // EVR (EvrProgPow/ZPool), MEWC (MeowPoW/ZPool),
+            // DCR (Blake3-DCP), EPIC (ProgPow/ZPool), CLORE (KawPow), NEXA (NexaPoW)
             // XMR included as CPU fallback (MoneroOcean auto-algo)
             preferred_coins: vec![
                 "KAS".to_string(),
@@ -167,18 +237,21 @@ impl Default for ProfitSwitchConfig {
                 "FLUX".to_string(),
                 "RVN".to_string(),
                 "ERG".to_string(),
-                "DCR".to_string(),
-                "EPIC".to_string(),
                 "CFX".to_string(),
                 "ZANO".to_string(),
                 "EVR".to_string(),
                 "MEWC".to_string(),
+                "DCR".to_string(),
+                "EPIC".to_string(),
                 "CLORE".to_string(),
                 "NEXA".to_string(),
                 "XMR".to_string(),
             ],
             excluded_coins: vec![],
             fallback_coin: "ETC".to_string(),
+            pool_preference,
+            pool_region,
+            nicehash_btc_addr,
         }
     }
 }
