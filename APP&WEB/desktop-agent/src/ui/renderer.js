@@ -23,6 +23,9 @@ let currentView = 'dashboard';
 let config = {};
 let isRunning = false;
 
+// CH3 Multi-stream status cache (updated via 'multi-stream-status' IPC event)
+let _lastMultiStreamStatus = null;
+
 const DEFAULT_REVENUE_PROFILE = {
   enabled: true,
   allocation: {
@@ -1338,6 +1341,11 @@ function setupEventListeners() {
       `Mining stopped (exit code: ${code}${signal ? `, signal: ${signal}` : ''})`,
       'warning'
     );
+
+    // Hide multi-stream bar
+    _lastMultiStreamStatus = null;
+    const msBar = document.getElementById('multi-stream-bar');
+    if (msBar) msBar.classList.remove('active');
     
     // Reset stats
     updateStats({
@@ -2460,6 +2468,26 @@ async function initCH3Features() {
         updateStreamIndicator(data.mode, data.to);
       });
     }
+
+    // ── CH3 Multi-stream status event ──────────────────────────────────────
+    // Fires from main process: every 60 s (profit poll) + on coin switches
+    if (typeof window.electronAPI.onMultiStreamStatus === 'function') {
+      window.electronAPI.onMultiStreamStatus((status) => {
+        dbg('[CH3-MULTI] status:', status);
+        _lastMultiStreamStatus = status || null;
+        updateMultiStreamBar(status);
+      });
+    }
+    // Initial fetch (handles page reload while mining is active)
+    if (typeof window.electronAPI.getMultiStreamStatus === 'function') {
+      window.electronAPI.getMultiStreamStatus().then((status) => {
+        if (status) {
+          _lastMultiStreamStatus = status;
+          updateMultiStreamBar(status);
+        }
+      }).catch(() => {});
+    }
+    // ──────────────────────────────────────────────────────────────────────
   } catch (err) {
     console.error('CH3 init failed:', err);
   }
@@ -2583,6 +2611,56 @@ function updateCH3Dashboard(stats) {
     }
   }
 
+  // Multi-stream allocation bar
+  if (_lastMultiStreamStatus) {
+    updateMultiStreamBar(_lastMultiStreamStatus);
+  }
+
+}
+
+/**
+ * Update the CH3 multi-stream allocation bar UI.
+ * Called with the multiStreamStatus payload from main process.
+ * Shows: ZION 50% ▏ GPU:ETC 25% ▏ CPU:XMR 25%
+ * @param {object} status - buildMultiStreamPayload() result
+ */
+function updateMultiStreamBar(status) {
+  const bar = document.getElementById('multi-stream-bar');
+  if (!bar) return;
+
+  const zionRunning = !!(status?.zion?.running);
+  const gpuRunning  = !!(status?.gpuCoin?.running);
+  const cpuRunning  = !!(status?.revenueCpu?.running);
+  const anyActive   = zionRunning || gpuRunning || cpuRunning;
+
+  if (!anyActive) {
+    bar.classList.remove('active');
+    return;
+  }
+
+  bar.classList.add('active');
+
+  // Update GPU coin name badge
+  const gpuCoinName = String(status?.gpuCoin?.name || 'GPU').toUpperCase();
+  const gpuLabelEl  = document.getElementById('ms-gpu-coin-name');
+  if (gpuLabelEl) gpuLabelEl.textContent = gpuCoinName;
+
+  // Dim labels for streams not running
+  const gpuLabelRow = document.getElementById('ms-gpu-label');
+  const cpuLabelRow = document.getElementById('ms-cpu-label');
+  if (gpuLabelRow) gpuLabelRow.style.opacity = gpuRunning ? '1' : '0.35';
+  if (cpuLabelRow) cpuLabelRow.style.opacity = cpuRunning ? '1' : '0.35';
+
+  // Poll-source indicator (shows ⟳ when pool API is alive)
+  const pollBadge = document.getElementById('ms-poll-badge');
+  if (pollBadge) {
+    if (status?.pollSource === 'pool-api') {
+      pollBadge.style.display = '';
+      pollBadge.title = 'Profit switch: pool API active';
+    } else {
+      pollBadge.style.display = 'none';
+    }
+  }
 }
 
 
