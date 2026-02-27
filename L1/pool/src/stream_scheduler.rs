@@ -70,6 +70,10 @@ pub enum MinerGroup {
     Revenue,
     /// Performs NCL AI inference tasks (25% compute)
     Ncl,
+    /// Dual-stream miner: self-routes secondary coin (LolMiner --dualmode style).
+    /// Always receives ZION jobs from the pool; manages external pool connection independently.
+    /// Announced via `g=dual` in the stratum password.
+    Dual,
 }
 
 /// A unified job that can be sent to a miner, regardless of stream
@@ -502,12 +506,16 @@ impl StreamScheduler {
             .filter(|g| **g == MinerGroup::Revenue)
             .count();
         let ncl_count = groups.values().filter(|g| **g == MinerGroup::Ncl).count();
-        let total = zion_count + revenue_count + ncl_count + 1; // +1 for this new miner
+        let dual_count = groups.values().filter(|g| **g == MinerGroup::Dual).count();
+        let total = zion_count + revenue_count + ncl_count + dual_count + 1; // +1 for this new miner
 
         let group = if let Some(hint) = group_hint {
             match hint {
                 MinerGroup::Revenue if self.revenue_share > 0.0 => MinerGroup::Revenue,
                 MinerGroup::Ncl if self.ncl_share > 0.0 => MinerGroup::Ncl,
+                // Dual miners always accepted — they self-route secondary coin,
+                // ZION pool just provides primary CHv3 jobs.
+                MinerGroup::Dual => MinerGroup::Dual,
                 _ => MinerGroup::Zion,
             }
         } else {
@@ -553,16 +561,20 @@ impl StreamScheduler {
         let new_zion = zion_count + if group == MinerGroup::Zion { 1 } else { 0 };
         let new_rev = revenue_count + if group == MinerGroup::Revenue { 1 } else { 0 };
         let new_ncl = ncl_count + if group == MinerGroup::Ncl { 1 } else { 0 };
+        let new_dual = dual_count + if group == MinerGroup::Dual { 1 } else { 0 };
         info!(
-            "📊 Miner {} → {:?} group (ZION:{}, Revenue:{}, NCL:{}, total:{})",
-            sid_short, group, new_zion, new_rev, new_ncl, total
+            "📊 Miner {} → {:?} group (ZION:{}, Revenue:{}, NCL:{}, Dual:{}, total:{})",
+            sid_short, group, new_zion, new_rev, new_ncl, new_dual, total
         );
 
         // Get the right job for this miner
         let job = match &group {
             MinerGroup::Zion => self.zion_job.read().await.clone(),
             MinerGroup::Revenue => self.get_revenue_job().await,
-            MinerGroup::Ncl => self.zion_job.read().await.clone(), // NCL miners get ZION jobs when not doing AI work
+            // NCL miners get ZION jobs when not doing AI inference work
+            MinerGroup::Ncl => self.zion_job.read().await.clone(),
+            // Dual miners always get ZION jobs — they self-route secondary coin
+            MinerGroup::Dual => self.zion_job.read().await.clone(),
         };
 
         (group, job)
@@ -641,7 +653,8 @@ impl StreamScheduler {
                 if moved >= to_move {
                     break;
                 }
-                if *group != MinerGroup::Zion {
+                // Never forcibly rebalance Dual miners — they are pinned
+                if *group != MinerGroup::Zion && *group != MinerGroup::Dual {
                     *group = MinerGroup::Zion;
                     changes.push((sid.clone(), MinerGroup::Zion, None));
                     moved += 1;
@@ -659,6 +672,7 @@ impl StreamScheduler {
                 MinerGroup::Zion => zion_job.clone(),
                 MinerGroup::Revenue => revenue_job.clone(),
                 MinerGroup::Ncl => zion_job.clone(), // NCL gets ZION jobs when not doing AI
+                MinerGroup::Dual => zion_job.clone(), // Dual gets ZION jobs; self-routes secondary
             };
         }
 
@@ -853,6 +867,7 @@ impl StreamScheduler {
                     MinerGroup::Zion => self.zion_job.read().await.clone(),
                     MinerGroup::Revenue => self.get_revenue_job().await,
                     MinerGroup::Ncl => self.zion_job.read().await.clone(), // NCL gets ZION when not doing AI
+                    MinerGroup::Dual => self.zion_job.read().await.clone(), // Dual self-routes secondary
                 }
             }
         }

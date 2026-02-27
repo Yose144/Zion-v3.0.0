@@ -1,4 +1,5 @@
 mod cpu;
+pub mod dual_stream;
 pub mod external_pool;
 pub mod gpu;
 pub mod multichain;
@@ -167,13 +168,17 @@ pub struct MinerConfig {
     pub worker_name: String,
     pub algorithm: Algorithm,
     pub difficulty: Option<u64>,
-    /// Optional pool-side scheduler hint (zion|revenue|ncl). Encoded as `g=`.
+    /// Optional pool-side scheduler hint (zion|revenue|ncl|dual). Encoded as `g=`.
     pub group_hint: Option<String>,
     pub cpu_threads: usize,
     pub gpu_enabled: bool,
     pub gpu_devices: Vec<usize>,
     pub stats_file: Option<PathBuf>,
     pub stats_interval_secs: u64,
+    /// Dual-stream secondary mining config (LolMiner --dualmode style).
+    /// When set, a second stratum connection is opened to an external pool
+    /// and GPU idle cycles are used to mine the secondary coin.
+    pub dual_stream: Option<dual_stream::DualStreamConfig>,
 }
 
 pub struct UniversalMiner {
