@@ -138,6 +138,35 @@ impl ExternalCoin {
         };
         Some(format!("{}.{}.mine.zpool.ca:{}", algo, region, port))
     }
+
+    /// HeroMiners.com stratum URL pro tento coin.
+    ///
+    /// HeroMiners je multi-coin pool s individuálním stratumem a REST API per coin.
+    /// API:     `https://<subdomain>.herominers.com/api/stats`
+    /// Stratum: `<region>.<subdomain>.herominers.com:<port>`
+    ///          Dostupné regiony: `"de"` (DE), `"us"` (USA), `"hk"` (HK), `"sg"` (SG), ...
+    /// Vrací `Some(url)` nebo `None` pokud HeroMiners coin nepodporuje.
+    ///
+    /// Ověřeno přes API (02.2026):
+    ///   ETC(etc:1150) KAS(kaspa:1206) ALPH(alephium:1220) ERG(ergo:1180)
+    ///   CFX(conflux:1170) RVN(ravencoin:1140) ZANO(zano:1110)
+    ///   Nepodporováno: EPIC (endpoint nedostupný) — fallback na ZPool firopow
+    ///                  FLUX, DCR, EVR, MEWC — není na HeroMiners
+    pub fn herominers_url(&self, region: &str) -> Option<String> {
+        let (subdomain, port): (&str, u16) = match self {
+            Self::ETC  => ("etc",       1150),
+            Self::KAS  => ("kaspa",     1206),
+            Self::ALPH => ("alephium",  1220),
+            Self::ERG  => ("ergo",      1180),
+            Self::CFX  => ("conflux",   1170),
+            Self::RVN  => ("ravencoin", 1140),
+            Self::ZANO => ("zano",      1110),
+            // EPIC: epic.herominers.com nedostupné → fallback na ZPool firopow:1326
+            // FLUX, DCR, EVR, MEWC: není na HeroMiners
+            _ => return None,
+        };
+        Some(format!("{}.{}.herominers.com:{}", region, subdomain, port))
+    }
 }
 
 /// EthStratum job from mining.notify
