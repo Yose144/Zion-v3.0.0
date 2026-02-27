@@ -102,7 +102,32 @@ impl StratumClient {
     pub async fn connect(&self) -> Result<()> {
         debug!("Connecting to pool: {}", self.pool_url);
 
-        let stream = TcpStream::connect(&self.pool_url).await?;
+        let pool_url = self.pool_url.clone();
+        let std_stream = tokio::task::spawn_blocking(move || {
+            use std::net::ToSocketAddrs;
+            let addrs: Vec<_> = pool_url
+                .to_socket_addrs()
+                .map_err(|e| anyhow!("DNS resolution failed for {}: {}", pool_url, e))?
+                .collect();
+            for addr in &addrs {
+                match std::net::TcpStream::connect_timeout(
+                    addr,
+                    std::time::Duration::from_secs(30),
+                ) {
+                    Ok(s) => {
+                        s.set_nonblocking(true).ok();
+                        return Ok(s);
+                    }
+                    Err(e) => {
+                        log::debug!("Address {} failed: {}", addr, e);
+                    }
+                }
+            }
+            Err(anyhow!("All addresses unreachable for {}", pool_url))
+        })
+        .await
+        .map_err(|e| anyhow!("spawn_blocking panicked: {}", e))??;
+        let stream = TcpStream::from_std(std_stream)?;
 
         debug!("Connected to pool");
 
