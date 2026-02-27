@@ -35,6 +35,7 @@ pub enum ExternalCoin {
     DCR,  // Decred (Blake3 — DCP-0011 standard Blake3 since Oct 2022)
     EPIC, // Epic Cash (ProgPow GPU primary / RandomX CPU)
     CFX,  // Conflux (Octopus — modified Ethash with SHA3-based DAG)
+    ZANO, // Zano (ProgPowZ — identical ProgPow 0.9.2 constants)
 }
 
 impl ExternalCoin {
@@ -49,6 +50,7 @@ impl ExternalCoin {
             Self::DCR => "DCR",
             Self::EPIC => "EPIC",
             Self::CFX => "CFX",
+            Self::ZANO => "ZANO",
         }
     }
 
@@ -63,6 +65,7 @@ impl ExternalCoin {
             Self::DCR => "blake3-dcr",   // standard Blake3 (DCP-0011)
             Self::EPIC => "progpow-epic", // ProgPow variant for Epic Cash GPU
             Self::CFX => "octopus",      // Conflux Octopus (SHA3-based DAG)
+            Self::ZANO => "progpowz",    // ProgPowZ for Zano (same constants as ProgPow 0.9.2)
         }
     }
 
@@ -77,6 +80,7 @@ impl ExternalCoin {
             "dcr" | "decred" | "blake3-dcr" | "blake3dcr" => Some(Self::DCR),
             "epic" | "epiccash" | "epic-cash" | "progpow-epic" | "progpow_epic" => Some(Self::EPIC),
             "cfx" | "conflux" | "octopus" => Some(Self::CFX),
+            "zano" | "zan" | "progpowz" | "progpow-zano" | "progpow_zano" => Some(Self::ZANO),
             _ => None,
         }
     }
@@ -93,6 +97,7 @@ impl ExternalCoin {
             Self::DCR => "dcr.2miners.com:3333",      // 2miners DCR stratum
             Self::EPIC => "epic.2miners.com:20595",   // 2miners EPIC ProgPow
             Self::CFX => "cfx.2miners.com:6060",      // 2miners Conflux Octopus
+            Self::ZANO => "zano.2miners.com:9090",    // 2miners Zano ProgPowZ
         }
     }
 }
