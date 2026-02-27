@@ -23,6 +23,7 @@ use tokio::signal;
 
 use miner::gpu::{auto_tune, print_benchmark_results, run_benchmark, AutoTuneConfig};
 use miner::python_fallback::{PythonFallbackConfig, PythonFallbackMiner, PythonMinerVariant};
+use miner::dual_stream::{DualMode, DualStreamConfig, DualStreamMiner};
 use miner::Algorithm;
 use miner::MinerConfig;
 use ncl::{NCLClient, NCLConfig, NpuType};
@@ -160,6 +161,38 @@ struct Cli {
     /// Number of CPU threads dedicated to XMR mining (default: 1)
     #[arg(long, default_value_t = 1)]
     xmr_threads: usize,
+
+    // ─── Dual-stream mining (LolMiner --dualmode style) ───────────────────
+    /// Dual mining mode — mines a secondary coin concurrently on GPU idle cycles.
+    ///
+    /// LolMiner-compatible mode names (case-insensitive):
+    ///   ALEPHDUAL  — ALPH (Blake3, alph.2miners.com:1199)
+    ///   KASPADUAL  — KAS  (kHeavyHash, kas.2miners.com:1111)
+    ///   ETCHDUAL   — ETC  (Etchash, etc.2miners.com:1010)
+    ///   ERGDUAL    — ERG  (Autolykos2, erg.2miners.com:8888)
+    ///   RVNDUAL    — RVN  (KawPow, rvn.2miners.com:6060)
+    ///   FLUXDUAL   — FLUX (ZelHash, flux.2miners.com:9090)
+    ///
+    /// Example (ZION + ALPH dual):
+    ///   zion-miner --pool stratum+tcp://77.42.31.72:3333 --wallet zion1...
+    ///              --dualmode ALEPHDUAL --dualuser 1mmHfNEEWgDL...
+    #[arg(long)]
+    dualmode: Option<String>,
+
+    /// Dual mining pool URL (host:port).
+    /// Auto-detected from --dualmode if not specified.
+    #[arg(long)]
+    dualpool: Option<String>,
+
+    /// Wallet / user address for the secondary dual pool.
+    /// Required when --dualmode is set.
+    #[arg(long)]
+    dualuser: Option<String>,
+
+    /// GPU allocation for the dual stream (0.05–0.90, default 0.30 = 30%).
+    /// The remaining GPU % stays on primary ZION CHv3 mining.
+    #[arg(long, default_value_t = 0.30)]
+    dual_alloc: f32,
 }
 
 #[tokio::main]
@@ -414,18 +447,55 @@ async fn main() -> anyhow::Result<()> {
     );
 
     // Build miner config
+    let dual_stream_cfg = if let Some(ref mode_str) = cli.dualmode {
+        let mode = DualMode::from_str(mode_str).ok_or_else(|| {
+            anyhow::anyhow!(
+                "Unknown dualmode '{}'. Use: ALEPHDUAL, KASPADUAL, ETCHDUAL, ERGDUAL, RVNDUAL, FLUXDUAL",
+                mode_str
+            )
+        })?;
+        let dual_user = cli.dualuser.clone().unwrap_or_else(|| {
+            warn!("[DUAL] --dualuser not specified, using primary wallet for dual pool");
+            cli.wallet.clone()
+        });
+        let dual_cfg = DualStreamConfig::from_cli(
+            mode,
+            cli.dualpool.clone(),
+            dual_user,
+            &worker,
+            cli.dual_alloc,
+        );
+        println!(
+            "{}  {:<12} {}",
+            "   ".bright_black(),
+            "dual-mode".bright_black(),
+            dual_cfg.summary().bright_yellow().bold()
+        );
+        Some(dual_cfg)
+    } else {
+        None
+    };
+
+    // Auto-set g=dual if --dualmode is specified and no explicit --group override
+    let effective_group_hint = if dual_stream_cfg.is_some() && cli.group.is_none() {
+        Some("dual".to_string())
+    } else {
+        cli.group.clone()
+    };
+
     let config = MinerConfig {
         pool_url: cli.pool.clone(),
         wallet_address: cli.wallet.clone(),
         worker_name: worker.clone(),
         algorithm,
         difficulty: cli.difficulty,
-        group_hint: cli.group.clone(),
+        group_hint: effective_group_hint,
         cpu_threads: threads,
         gpu_enabled,
         gpu_devices: parse_gpu_devices(cli.gpu_devices.as_deref()),
         stats_file: cli.stats_file.as_deref().map(PathBuf::from),
         stats_interval_secs: cli.stats_interval.max(1),
+        dual_stream: dual_stream_cfg,
     };
 
     println!();
@@ -650,6 +720,7 @@ async fn main() -> anyhow::Result<()> {
             gpu_devices: vec![],
             stats_file: None,
             stats_interval_secs: cli.stats_interval.max(1),
+            dual_stream: None,
         };
 
         let xmr_miner = Arc::new(miner::UniversalMiner::new(xmr_config)?);
@@ -662,6 +733,36 @@ async fn main() -> anyhow::Result<()> {
         info!(
             "⛏️  XMR parallel miner started ({} threads → {})",
             xmr_threads, xmr_pool
+        );
+    }
+
+    // ═══ Dual-Stream Mining (LolMiner --dualmode style) ═══
+    // If --dualmode is set, spawn a DualStreamMiner that mines the secondary
+    // coin concurrently. The primary ZION miner still runs normally; the
+    // dual miner uses GPU idle cycles. Pool is notified via g=dual group hint.
+    if let Some(ref dual_cfg) = config.dual_stream {
+        let dual_mode_name = dual_cfg.mode.coin_ticker().to_string();
+        let dual_pool_url = dual_cfg.pool_url.clone();
+        let dual_miner = Arc::new(DualStreamMiner::new(dual_cfg.clone()));
+        let dual_miner_clone = Arc::clone(&dual_miner);
+
+        tokio::spawn(async move {
+            if let Err(e) = dual_miner_clone.start().await {
+                error!("❌ Dual-stream ({}) miner failed: {}", dual_mode_name, e);
+            }
+        });
+
+        // Graceful shutdown for dual miner
+        let dual_shutdown = Arc::clone(&dual_miner);
+        tokio::spawn(async move {
+            signal::ctrl_c().await.ok();
+            dual_shutdown.stop();
+        });
+
+        info!(
+            "⛏️  Dual-stream miner started ({} → {})",
+            dual_cfg.mode.name(),
+            dual_pool_url
         );
     }
 

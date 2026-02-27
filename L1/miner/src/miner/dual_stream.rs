@@ -1,0 +1,379 @@
+//! Dual-Stream Mining — Parallel secondary coin alongside primary ZION stream
+//!
+//! Inspired by LolMiner's `--dualmode` flag (see docs/Miners/LolMiner1.93/):
+//!
+//!   ```bat
+//!   lolMiner --algo ETCHASH --pool <ZION_OR_ETC_POOL> --user <WALLET>
+//!             --dualmode ALEPHDUAL --dualpool alph.2miners.com:2020 --dualuser <ALPH_WALLET>
+//!   ```
+//!
+//! Usage in zion-miner:
+//!
+//!   ```sh
+//!   zion-miner \
+//!     --pool stratum+tcp://77.42.31.72:3333 --wallet zion1... \
+//!     --dualmode ALEPHDUAL \
+//!     --dualpool alph.2miners.com:2020 \
+//!     --dualuser 1mmHfNEEWgDLbEUqqxkSjzgJjDt7AqgkutD64AnBUeXz \
+//!     --dual-alloc 0.30
+//!   ```
+//!
+//! Supported dual modes (LolMiner-compatible names):
+//!
+//! | --dualmode    | Coin | Algorithm       | Default pool             |
+//! |---------------|------|-----------------|--------------------------|
+//! | ALEPHDUAL     | ALPH | Blake3          | alph.2miners.com:1199    |
+//! | KASPADUAL     | KAS  | kHeavyHash      | kas.2miners.com:1111     |
+//! | ETCHDUAL      | ETC  | Etchash/Ethash  | etc.2miners.com:1010     |
+//! | ERGDUAL       | ERG  | Autolykos2      | erg.2miners.com:8888     |
+//! | RVNDUAL       | RVN  | KawPow          | rvn.2miners.com:6060     |
+//! | FLUXDUAL      | FLUX | ZelHash         | flux.2miners.com:9090    |
+//!
+//! ## Architecture
+//!
+//! - Primary stream  : CHv3 → ZION pool  (CPU primary + GPU at ~70% default)
+//! - Secondary stream: DualMode coin → external pool (GPU at ~30% idle cycles)
+//!
+//! Both streams run concurrently via `tokio::spawn`. The dual stream only uses
+//! GPU idle cycles that would otherwise be wasted, similar to ZIL/ALPH dual
+//! mining in LolMiner.
+//!
+//! The pool-side `g=dual` group hint tells the ZION pool StreamScheduler that
+//! this miner is self-routing the secondary stream, so it always receives ZION
+//! jobs (not Revenue pool-routed jobs).
+
+use anyhow::Result;
+use log::{info, warn};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
+use super::external_pool::{ExternalMiner, ExternalPoolConfig};
+use crate::stratum::ethstratum::ExternalCoin;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DualMode enum — LolMiner-compatible mode names
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Dual mining mode — maps 1:1 to LolMiner `--dualmode` argument names
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DualMode {
+    /// ALPH (Blake3) — most popular GPU dual partner, uses DAG-idle cycles
+    AlephDual,
+    /// KAS (kHeavyHash) — Kaspa, highest profit GPU coin
+    KasDual,
+    /// ETC (Etchash) — classic secondary fallback
+    EtchDual,
+    /// ERG (Autolykos2) — Ergo
+    ErgDual,
+    /// RVN (KawPow) — Ravencoin
+    RvnDual,
+    /// FLUX (ZelHash/Equihash125,4)
+    FluxDual,
+}
+
+impl DualMode {
+    /// Parse from LolMiner-compatible string (case-insensitive)
+    ///
+    /// Accepts both long form (`ALEPHDUAL`) and short form (`ALPH`, `alph`).
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_uppercase().as_str() {
+            "ALEPHDUAL" | "ALPH" | "ALEPHIUM" => Some(Self::AlephDual),
+            "KASPADUAL" | "KASDUAL" | "KAS" | "KASPA" => Some(Self::KasDual),
+            "ETCHDUAL" | "ETCDUAL" | "ETC" | "ETCHASH" => Some(Self::EtchDual),
+            "ERGDUAL" | "ERG" | "ERGO" | "AUTOLYKOS" | "AUTOLYKOS2" => Some(Self::ErgDual),
+            "RVNDUAL" | "RVN" | "RAVENCOIN" | "KAWPOW" => Some(Self::RvnDual),
+            "FLUXDUAL" | "FLUX" | "ZELCASH" | "ZELHASH" => Some(Self::FluxDual),
+            _ => None,
+        }
+    }
+
+    /// LolMiner-compatible mode name (what --dualmode expects/produces)
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::AlephDual => "ALEPHDUAL",
+            Self::KasDual => "KASPADUAL",
+            Self::EtchDual => "ETCHDUAL",
+            Self::ErgDual => "ERGDUAL",
+            Self::RvnDual => "RVNDUAL",
+            Self::FluxDual => "FLUXDUAL",
+        }
+    }
+
+    /// Human-readable coin ticker
+    pub fn coin_ticker(&self) -> &'static str {
+        match self {
+            Self::AlephDual => "ALPH",
+            Self::KasDual => "KAS",
+            Self::EtchDual => "ETC",
+            Self::ErgDual => "ERG",
+            Self::RvnDual => "RVN",
+            Self::FluxDual => "FLUX",
+        }
+    }
+
+    /// Default 2miners-compatible pool URL (no auth required for standard miners)
+    pub fn default_pool_url(&self) -> &'static str {
+        match self {
+            Self::AlephDual => "alph.2miners.com:1199",
+            Self::KasDual => "kas.2miners.com:1111",
+            Self::EtchDual => "etc.2miners.com:1010",
+            Self::ErgDual => "erg.2miners.com:8888",
+            Self::RvnDual => "rvn.2miners.com:6060",
+            Self::FluxDual => "flux.2miners.com:9090",
+        }
+    }
+
+    /// Map to `ExternalCoin` (used by `ExternalMiner` / `EthStratumClient`)
+    pub fn to_external_coin(&self) -> ExternalCoin {
+        match self {
+            Self::AlephDual => ExternalCoin::ALPH,
+            Self::KasDual => ExternalCoin::KAS,
+            Self::EtchDual => ExternalCoin::ETC,
+            Self::ErgDual => ExternalCoin::ERG,
+            Self::RvnDual => ExternalCoin::RVN,
+            Self::FluxDual => ExternalCoin::FLUX,
+        }
+    }
+
+    /// Whether the algorithm uses GPU memory/DAG (affects gpu_alloc behaviour)
+    pub fn is_dag_algo(&self) -> bool {
+        matches!(self, Self::EtchDual)
+    }
+}
+
+impl std::fmt::Display for DualMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DualStreamConfig
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Configuration for dual-stream mining
+#[derive(Debug, Clone)]
+pub struct DualStreamConfig {
+    /// Dual mining mode (secondary coin)
+    pub mode: DualMode,
+    /// Secondary pool URL (host:port — no stratum+tcp:// prefix needed)
+    pub pool_url: String,
+    /// Wallet/user for secondary pool login
+    pub wallet: String,
+    /// Worker name for dual stream (auto-suffixed with `-dual`)
+    pub worker: String,
+    /// GPU allocation fraction for dual stream (0.05 – 0.90, default 0.30)
+    ///
+    /// 0.30 = 30% of GPU goes to secondary coin (ALPH/KAS/etc.),
+    ///        70% stays on primary ZION CHv3 mining.
+    pub gpu_alloc: f32,
+}
+
+impl DualStreamConfig {
+    /// Create config from CLI args, auto-filling pool URL defaults
+    pub fn from_cli(
+        mode: DualMode,
+        pool_url: Option<String>,
+        wallet: String,
+        worker: &str,
+        gpu_alloc: f32,
+    ) -> Self {
+        Self {
+            pool_url: pool_url.unwrap_or_else(|| mode.default_pool_url().to_string()),
+            mode,
+            wallet,
+            worker: format!("{}-dual", worker),
+            gpu_alloc: gpu_alloc.clamp(0.05, 0.90),
+        }
+    }
+
+    /// Return a human-readable summary for banner printing
+    pub fn summary(&self) -> String {
+        format!(
+            "{} → {} ({:.0}% GPU alloc, worker={})",
+            self.mode.name(),
+            self.pool_url,
+            self.gpu_alloc * 100.0,
+            self.worker,
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DualStreamMiner
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Dual-stream miner — runs the secondary coin stream concurrently with primary.
+///
+/// Lifecycle:
+/// 1. Caller creates `DualStreamMiner::new(config)`
+/// 2. Wrap in `Arc` and `tokio::spawn(async move { miner.start().await })`
+/// 3. The miner auto-reconnects on errors (15 s backoff)
+/// 4. Call `miner.stop()` to halt all activity
+pub struct DualStreamMiner {
+    config: DualStreamConfig,
+    running: Arc<AtomicBool>,
+}
+
+impl DualStreamMiner {
+    /// Create a new dual-stream miner
+    pub fn new(config: DualStreamConfig) -> Self {
+        Self {
+            config,
+            running: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    /// Start the dual-stream miner.
+    ///
+    /// Internally wraps `ExternalMiner` for the selected secondary coin.
+    /// Reconnects automatically on pool disconnect or error.
+    pub async fn start(&self) -> Result<()> {
+        self.running.store(true, Ordering::SeqCst);
+
+        let coin = self.config.mode.to_external_coin();
+        let alloc_pct = (self.config.gpu_alloc * 100.0) as u8;
+
+        let ext_config = ExternalPoolConfig {
+            coin,
+            pool_url: self.config.pool_url.clone(),
+            wallet: self.config.wallet.clone(),
+            worker: self.config.worker.clone(),
+            cpu_threads: 0,     // dual stream is GPU-only
+            gpu_enabled: true,
+            hashpower_percent: alloc_pct,
+        };
+
+        info!(
+            "[DUAL] {} stream starting → pool={} wallet={}...{} alloc={}% worker={}",
+            self.config.mode.coin_ticker(),
+            self.config.pool_url,
+            &self.config.wallet[..self.config.wallet.len().min(8)],
+            &self.config.wallet[self.config.wallet.len().saturating_sub(4)..],
+            alloc_pct,
+            self.config.worker,
+        );
+
+        let miner = ExternalMiner::new(ext_config);
+        let running = Arc::clone(&self.running);
+
+        while running.load(Ordering::SeqCst) {
+            match miner.start().await {
+                Ok(_) => {
+                    info!(
+                        "[DUAL] {} stream ended cleanly",
+                        self.config.mode.coin_ticker()
+                    );
+                    break;
+                }
+                Err(e) => {
+                    warn!(
+                        "[DUAL] {} stream error: {} — reconnecting in 15s",
+                        self.config.mode.coin_ticker(),
+                        e
+                    );
+                    if running.load(Ordering::SeqCst) {
+                        tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+                    }
+                }
+            }
+        }
+
+        info!("[DUAL] {} stream stopped", self.config.mode.coin_ticker());
+        Ok(())
+    }
+
+    /// Stop the dual-stream miner
+    pub fn stop(&self) {
+        info!(
+            "[DUAL] Stopping {} stream...",
+            self.config.mode.coin_ticker()
+        );
+        self.running.store(false, Ordering::SeqCst);
+    }
+
+    /// Whether the miner is currently running
+    pub fn is_running(&self) -> bool {
+        self.running.load(Ordering::SeqCst)
+    }
+
+    /// Current dual mode
+    pub fn mode(&self) -> DualMode {
+        self.config.mode
+    }
+
+    /// Current pool URL
+    pub fn pool_url(&self) -> &str {
+        &self.config.pool_url
+    }
+
+    /// GPU allocation fraction
+    pub fn gpu_alloc(&self) -> f32 {
+        self.config.gpu_alloc
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Triple-stream support (ZIL epoch + primary + dual)
+// ─────────────────────────────────────────────────────────────────────────────
+// Future: LolMiner triple mining (ZIL+ETC+ALPH) uses ZIL epoch windows to
+// inject a third stratum connection. We reserve this for a future milestone
+// once dual is stable. CLI: --triplemode ZILDUAL --triplepool ...
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dualmode_from_str() {
+        assert_eq!(DualMode::from_str("ALEPHDUAL"), Some(DualMode::AlephDual));
+        assert_eq!(DualMode::from_str("alph"), Some(DualMode::AlephDual));
+        assert_eq!(DualMode::from_str("kaspadual"), Some(DualMode::KasDual));
+        assert_eq!(DualMode::from_str("KAS"), Some(DualMode::KasDual));
+        assert_eq!(DualMode::from_str("ETCHDUAL"), Some(DualMode::EtchDual));
+        assert_eq!(DualMode::from_str("etc"), Some(DualMode::EtchDual));
+        assert_eq!(DualMode::from_str("ERGDUAL"), Some(DualMode::ErgDual));
+        assert_eq!(DualMode::from_str("RVNDUAL"), Some(DualMode::RvnDual));
+        assert_eq!(DualMode::from_str("FLUXDUAL"), Some(DualMode::FluxDual));
+        assert_eq!(DualMode::from_str("UNKNOWN"), None);
+    }
+
+    #[test]
+    fn test_dualmode_coin_tickers() {
+        assert_eq!(DualMode::AlephDual.coin_ticker(), "ALPH");
+        assert_eq!(DualMode::KasDual.coin_ticker(), "KAS");
+        assert_eq!(DualMode::EtchDual.coin_ticker(), "ETC");
+    }
+
+    #[test]
+    fn test_default_pool_urls() {
+        assert_eq!(DualMode::AlephDual.default_pool_url(), "alph.2miners.com:1199");
+        assert_eq!(DualMode::KasDual.default_pool_url(), "kas.2miners.com:1111");
+    }
+
+    #[test]
+    fn test_config_from_cli_defaults() {
+        let cfg = DualStreamConfig::from_cli(
+            DualMode::AlephDual,
+            None,
+            "1mmHfTestWallet".to_string(),
+            "my-worker",
+            0.30,
+        );
+        assert_eq!(cfg.pool_url, "alph.2miners.com:1199");
+        assert_eq!(cfg.worker, "my-worker-dual");
+        assert!((cfg.gpu_alloc - 0.30).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_gpu_alloc_clamp() {
+        let cfg = DualStreamConfig::from_cli(
+            DualMode::KasDual,
+            None,
+            "wallet".to_string(),
+            "w",
+            1.5, // should clamp to 0.90
+        );
+        assert!((cfg.gpu_alloc - 0.90).abs() < 0.001);
+    }
+}
