@@ -158,6 +158,7 @@ impl Default for ProfitSwitchConfig {
             // KAS (kHeavyHash), ETC (Ethash), ALPH (Blake3), FLUX (ZelHash),
             // RVN (KawPow), ERG (Autolykos v2), CLORE (KawPow), NEXA (NexaPoW)
             // DCR (Blake3/DCP-0011), EPIC (ProgPow), CFX/Conflux (Octopus)
+            // EVR (EvrProgPow) + MEWC (MeowPoW) — ProgPow varianty dostupné na ZPool
             // XMR included as CPU fallback (MoneroOcean auto-algo)
             preferred_coins: vec![
                 "KAS".to_string(),
@@ -170,6 +171,8 @@ impl Default for ProfitSwitchConfig {
                 "EPIC".to_string(),
                 "CFX".to_string(),
                 "ZANO".to_string(),
+                "EVR".to_string(),
+                "MEWC".to_string(),
                 "CLORE".to_string(),
                 "NEXA".to_string(),
                 "XMR".to_string(),
@@ -395,20 +398,23 @@ fn estimate_profitability_fallback(coins: &[String]) -> Vec<CoinProfitData> {
     // Static estimates based on typical February 2026 values.
     // Scores are WhatToMine-normalised profitability (higher = mine this first).
     // Order: KAS > ETC > ALPH > FLUX > RVN > ERG > DCR > EPIC > CFX > CLORE > NEXA > XMR(CPU)
+    // ZPool-only: EVR (evrprogpow), MEWC (meowpow)
     let estimates: Vec<(&str, &str, f64)> = vec![
-        ("KAS",   "kHeavyHash",  85.0), // ASIC+GPU, consistently top GPU coin
-        ("ETC",   "Ethash",      60.0), // high liquidity, stable revenue
-        ("ALPH",  "Blake3",      55.0), // ASIC‑resistant Blake3, rising network
-        ("FLUX",  "ZelHash",     50.0), // Equihash 125,4 — ASIC‑resistant
-        ("RVN",   "KawPow",      40.0), // GPU-only KawPow
-        ("ERG",   "Autolykos2",  35.0), // Autolykos v2 — memory-hard GPU
-        ("DCR",   "blake3-dcr",  45.0), // Decred Blake3 — high-profit, ASIC+GPU
-        ("EPIC",  "progpow-epic",38.0), // Epic Cash ProgPow GPU
-        ("CFX",   "octopus",     42.0), // Conflux Octopus — SHA3 DAG, 4 GB+
-        ("ZANO",  "progpowz",    36.0), // Zano ProgPowZ — identické konstanty jako ProgPow 0.9.2
-        ("CLORE", "KawPow",      28.0), // KawPow clone, smaller market
-        ("NEXA",  "NexaPoW",     22.0), // NexaPoW SHA3d — smaller cap
-        ("XMR",   "RandomX",     90.0), // CPU fallback via MoneroOcean
+        ("KAS",   "kHeavyHash",   85.0), // ASIC+GPU, consistently top GPU coin
+        ("ETC",   "Ethash",       60.0), // high liquidity, stable revenue
+        ("ALPH",  "Blake3",       55.0), // ASIC‑resistant Blake3, rising network
+        ("FLUX",  "ZelHash",      50.0), // Equihash 125,4 — ASIC‑resistant
+        ("DCR",   "blake3-dcr",   45.0), // Decred Blake3 — high-profit, ASIC+GPU
+        ("CFX",   "octopus",      42.0), // Conflux Octopus — SHA3 DAG, 4 GB+
+        ("RVN",   "KawPow",       40.0), // GPU-only KawPow
+        ("EPIC",  "progpow-epic", 38.0), // Epic Cash ProgPow GPU
+        ("ZANO",  "progpowz",     36.0), // Zano ProgPowZ — identické konstanty jako ProgPow 0.9.2
+        ("ERG",   "Autolykos2",   35.0), // Autolykos v2 — memory-hard GPU
+        ("MEWC",  "meowpow",      32.0), // MeowCoin MeowPoW — ProgPow varianta, ZPool port 1327
+        ("EVR",   "evrprogpow",   30.0), // Evrmore EvrProgPow — ProgPow varianta, ZPool port 1330
+        ("CLORE", "KawPow",       28.0), // KawPow clone, smaller market
+        ("NEXA",  "NexaPoW",      22.0), // NexaPoW SHA3d — smaller cap
+        ("XMR",   "RandomX",      90.0), // CPU fallback via MoneroOcean
     ];
 
     estimates
