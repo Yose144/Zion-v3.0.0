@@ -637,8 +637,6 @@ mod blake3_ffi {
 
 #[cfg(feature = "native-octopus")]
 mod octopus_ffi {
-    use super::*;
-
     extern "C" {
         fn octopus_hash(
             header: *const u8,
@@ -915,10 +913,10 @@ fn cosmic_harmony_hash(data: &[u8], nonce: u32) -> [u8; 32] {
 /// Verify hash meets target
 pub fn verify_hash(
     algo: NativeAlgorithm,
-    _header: &[u8],
-    _nonce: u64,
-    _height: u32,
-    _target: &[u8],
+    header: &[u8],
+    nonce: u64,
+    height: u32,
+    target: &[u8],
 ) -> bool {
     match algo {
         #[cfg(feature = "native-ethash")]
@@ -953,7 +951,7 @@ pub fn verify_hash(
 }
 
 /// Run benchmark for algorithm
-pub fn benchmark(algo: NativeAlgorithm, _iterations: i32) -> Result<f64> {
+pub fn benchmark(algo: NativeAlgorithm, iterations: i32) -> Result<f64> {
     match algo {
         #[cfg(feature = "native-ethash")]
         NativeAlgorithm::Ethash => Ok(ethash_ffi::benchmark(iterations)),
