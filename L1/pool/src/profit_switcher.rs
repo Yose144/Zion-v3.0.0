@@ -894,6 +894,243 @@ async fn fetch_herominers(coins: &[String]) -> Result<Vec<CoinProfitData>, Strin
 }
 
 // ═══════════════════════════════════════════════════════════════
+// NiceHash Public API Feed (Tier 1d)
+// ═══════════════════════════════════════════════════════════════
+
+/// NiceHash simplemultialgo API response
+#[derive(Debug, Deserialize)]
+struct NhResponse {
+    #[serde(rename = "miningAlgorithms")]
+    mining_algorithms: Vec<NhAlgo>,
+}
+
+#[derive(Debug, Deserialize)]
+struct NhAlgo {
+    algorithm: String,
+    paying: f64,
+}
+
+/// Fetch profitability from NiceHash public simplemultialgo API (Tier 1d).
+///
+/// Endpoint: `https://api2.nicehash.com/main/api/v2/public/simplemultialgo/info`
+/// No API key required.
+///
+/// The `paying` field is in BTC per algo-speed-unit per day. For the standard
+/// GPU algos included here (KAWPOW, ETCHASH, OCTOPUS, AUTOLYKOS) paying is
+/// comparable on a GH/s scale, so relative ordering is valid.
+///
+/// KHEAVYHASH / ALEPHIUM use a different speed base (TH/s range) — excluded
+/// to avoid scale mismatch; those coins are covered by WTM + HeroMiners.
+///
+/// Result normalised to 0-100 scale for compatibility with other feeds.
+async fn fetch_nicehash(coins: &[String]) -> Result<Vec<CoinProfitData>, String> {
+    // NiceHash algo name → our coin tag
+    // Only GH/s-scale GPU algos with mutually comparable paying units included
+    const ALGO_MAP: &[(&str, &str)] = &[
+        ("KAWPOW",        "RVN"),   // Ravencoin    — KawPow,    ~GH/s base
+        ("ETCHASH",       "ETC"),   // Etchash      — Etchash,   ~GH/s base
+        ("OCTOPUS",       "CFX"),   // Conflux      — Octopus,   ~GH/s base
+        ("AUTOLYKOS",     "ERG"),   // Ergo         — Autolykos2,~GH/s base
+        ("RANDOMXMONERO", "XMR"),   // Monero       — RandomX (CPU; different scale but useful)
+        ("FISHHASH",      "ETC"),   // IronFish; shares Etchash buyer pool on NH → proxy for ETC demand
+    ];
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("HTTP client: {}", e))?;
+
+    let body = client
+        .get("https://api2.nicehash.com/main/api/v2/public/simplemultialgo/info")
+        .header("User-Agent", "zion-pool/2.9.6")
+        .send()
+        .await
+        .map_err(|e| format!("NiceHash request: {}", e))?
+        .text()
+        .await
+        .map_err(|e| format!("NiceHash body: {}", e))?;
+
+    let resp: NhResponse =
+        serde_json::from_str(&body).map_err(|e| format!("NiceHash parse: {}", e))?;
+
+    let now = Utc::now().timestamp();
+    let mut results: Vec<CoinProfitData> = Vec::new();
+
+    for algo in &resp.mining_algorithms {
+        // Match algo name case-insensitively
+        let coin_tag = match ALGO_MAP
+            .iter()
+            .find(|(a, _)| a.eq_ignore_ascii_case(&algo.algorithm))
+        {
+            Some((_, tag)) => *tag,
+            None => continue,
+        };
+
+        if !coins.is_empty() && !coins.iter().any(|c| c.eq_ignore_ascii_case(coin_tag)) {
+            continue;
+        }
+        if algo.paying <= 0.0 {
+            continue;
+        }
+
+        // Check if we already have this coin (e.g. FISHHASH duplicate for ETC)
+        if results.iter().any(|r| r.coin.eq_ignore_ascii_case(coin_tag)) {
+            // Keep whichever paying is higher
+            if let Some(existing) = results.iter_mut().find(|r| r.coin.eq_ignore_ascii_case(coin_tag)) {
+                if algo.paying > existing.profit_score {
+                    existing.profit_score = algo.paying;
+                    existing.btc_revenue_24h = algo.paying;
+                    existing.algorithm = algo.algorithm.clone();
+                }
+            }
+            continue;
+        }
+
+        results.push(CoinProfitData {
+            coin: coin_tag.to_string(),
+            algorithm: algo.algorithm.clone(),
+            price_usd: 0.0,
+            btc_revenue_24h: algo.paying,
+            usd_revenue_24h: 0.0,
+            difficulty: 0.0,
+            block_reward: 0.0,
+            nethash: 0.0,
+            profit_score: algo.paying, // raw BTC/unit/day — normalised below
+            timestamp: now,
+        });
+    }
+
+    if results.is_empty() {
+        return Err("NiceHash: no matching coin algos".to_string());
+    }
+
+    // Normalise: max = 100 (compatible with WTM / ZPool / HeroMiners scale)
+    if let Some(max) = results
+        .iter()
+        .map(|c| c.profit_score)
+        .reduce(f64::max)
+        .filter(|&m| m > 0.0)
+    {
+        let scale = 100.0 / max;
+        for r in &mut results {
+            r.profit_score *= scale;
+        }
+    }
+
+    results.sort_by(|a, b| {
+        b.profit_score
+            .partial_cmp(&a.profit_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    info!(
+        "💹 NiceHash: {} algos, top={} (paying={:.2e} BTC/unit/day)",
+        results.len(),
+        results[0].coin,
+        results[0].btc_revenue_24h
+    );
+
+    Ok(results)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CoinGecko Price Oracle
+// ═══════════════════════════════════════════════════════════════
+
+/// CoinGecko coin ID for each of our tracked coin tags.
+const COINGECKO_IDS: &[(&str, &str)] = &[
+    ("BTC",   "bitcoin"),
+    ("ETC",   "ethereum-classic"),
+    ("KAS",   "kaspa"),
+    ("ALPH",  "alephium"),
+    ("ERG",   "ergo"),
+    ("CFX",   "conflux-token"),
+    ("RVN",   "ravencoin"),
+    ("ZANO",  "zano"),
+    ("XMR",   "monero"),
+    ("FLUX",  "flux"),
+    ("DCR",   "decred"),
+    ("EVR",   "evrmore"),
+    ("MEWC",  "meowcoin"),
+    ("EPIC",  "epic-cash"),
+    ("CLORE", "clore-ai"),
+    ("NEXA",  "nexacoin"),
+];
+
+/// Fetch current USD prices for all tracked coins from CoinGecko (free tier, no API key).
+///
+/// Returns a `HashMap<coin_tag, price_usd>`. Always requests BTC ("BTC") as well
+/// so callers can convert BTC-denominated revenue to USD.
+/// API: `https://api.coingecko.com/api/v3/simple/price?ids=...&vs_currencies=usd`
+async fn fetch_coingecko_prices() -> Result<HashMap<String, f64>, String> {
+    // Always include BTC for revenue conversion by other feeds
+    let ids: Vec<&str> = COINGECKO_IDS.iter().map(|(_, cg_id)| *cg_id).collect();
+    let ids_str = ids.join(",");
+    let url = format!(
+        "https://api.coingecko.com/api/v3/simple/price?ids={}&vs_currencies=usd&include_24hr_change=true",
+        ids_str
+    );
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("HTTP client: {}", e))?;
+
+    let body = client
+        .get(&url)
+        .header("User-Agent", "zion-pool/2.9.6")
+        .send()
+        .await
+        .map_err(|e| format!("CoinGecko request: {}", e))?
+        .text()
+        .await
+        .map_err(|e| format!("CoinGecko body: {}", e))?;
+
+    // Response: {"ethereum-classic": {"usd": 8.76, "usd_24h_change": -1.85}}
+    let raw: HashMap<String, HashMap<String, f64>> =
+        serde_json::from_str(&body).map_err(|e| format!("CoinGecko parse: {}", e))?;
+
+    let mut result: HashMap<String, f64> = HashMap::new();
+    for (tag, cg_id) in COINGECKO_IDS {
+        if let Some(coin_data) = raw.get(*cg_id) {
+            if let Some(&price) = coin_data.get("usd") {
+                if price > 0.0 {
+                    result.insert(tag.to_string(), price);
+                }
+            }
+        }
+    }
+
+    if result.is_empty() {
+        return Err("CoinGecko returned no prices".to_string());
+    }
+
+    let btc = result.get("BTC").copied().unwrap_or(0.0);
+    info!(
+        "💹 CoinGecko: {}/{} coins priced (BTC=${:.0})",
+        result.len(),
+        COINGECKO_IDS.len(),
+        btc
+    );
+
+    Ok(result)
+}
+
+/// Enrich merged profit data with CoinGecko prices.
+/// Fills `price_usd` where it is 0 (ZPool, NiceHash) and, if CoinGecko has the price
+/// AND the feed's own price already exists, replaces it with the CoinGecko live price
+/// (more accurate/real-time than WTM cached data).
+fn enrich_prices(data: &mut Vec<CoinProfitData>, prices: &HashMap<String, f64>) {
+    for coin in data.iter_mut() {
+        if let Some(&p) = prices.get(coin.coin.to_uppercase().as_str()) {
+            if p > 0.0 {
+                coin.price_usd = p;
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Outlier Protection — rolling-median clamp
 // ═══════════════════════════════════════════════════════════════
 
@@ -1193,28 +1430,46 @@ impl ProfitSwitcher {
                 self.config.preferred_coins.clone()
             };
 
-            // ── Feed chain: WTM + ZPool + HeroMiners parallel → Minerstat → Snapshot → Static ──
-            // Tier 1a: WhatToMine  (primární — coin-level data, BTC revenue)
+            // ── Feed chain ────────────────────────────────────────────────────────────────
+            // Tier 1a: WhatToMine  (coin-level BTC revenue data)
             // Tier 1b: ZPool.ca    (algo-level, nezávislý, algo→coin mapování)
-            // Tier 1c: HeroMiners  (coin-level, vlastní pool API, daily_usd/TH)
-            //          → všechny tři Tier1 feedy běží paralelně a výsledky se slučují
-            // Tier 2:  Minerstat   (sekundární — nezávislý zdroj, bez API klíče)
-            // Tier 3:  LastValidSnapshot (poslední dobrá data)
-            // Tier 4:  Static estimates  (hardcoded konzervativní hodnoty)
-            let (wtm_result, zpool_result, hm_result) = tokio::join!(
+            // Tier 1c: HeroMiners  (coin-level pool API, daily_usd/TH)
+            // Tier 1d: NiceHash    (algo-level buyer demand, BTC/unit/day)
+            // Price:   CoinGecko   (real-time USD prices — enriches ALL feeds)
+            //          → Tier 1a-1d všechny paralelně, výsledky sloučeny
+            // Tier 2:  Minerstat   (sekundární — fallback když všechny Tier1 selžou)
+            // Tier 3:  LastValidSnapshot
+            // Tier 4:  Static estimates
+            let (wtm_result, zpool_result, hm_result, nh_result, cg_result) = tokio::join!(
                 fetch_whattomine(&coins),
                 fetch_zpool(&coins),
                 fetch_herominers(&coins),
+                fetch_nicehash(&coins),
+                fetch_coingecko_prices(),
             );
 
             let wtm_ok   = matches!(&wtm_result,   Ok(d) if !d.is_empty());
             let zpool_ok = matches!(&zpool_result, Ok(d) if !d.is_empty());
             let hm_ok    = matches!(&hm_result,    Ok(d) if !d.is_empty());
+            let nh_ok    = matches!(&nh_result,    Ok(d) if !d.is_empty());
 
-            let (mut profit_data, feed_name): (Vec<CoinProfitData>, String) = if wtm_ok || zpool_ok || hm_ok {
+            // Log CoinGecko status (non-fatal — used only for enrichment)
+            let cg_prices: Option<HashMap<String, f64>> = match cg_result {
+                Ok(p) if !p.is_empty() => {
+                    debug!("💹 CoinGecko: {} prices available for enrichment", p.len());
+                    Some(p)
+                }
+                Err(e) => {
+                    warn!("💹 CoinGecko price oracle failed: {} — price_usd may be 0", e);
+                    None
+                }
+                Ok(_) => None,
+            };
+
+            let (mut profit_data, feed_name): (Vec<CoinProfitData>, String) = if wtm_ok || zpool_ok || hm_ok || nh_ok {
                 self.api_fetches.fetch_add(1, Ordering::Relaxed);
 
-                // Step 1: Merge WTM + ZPool (same logic as before)
+                // Step 1: Merge WTM + ZPool
                 let tier1_base: Option<(Vec<CoinProfitData>, &'static str)> =
                     match (wtm_result, zpool_result) {
                         (Ok(wtm), Ok(zp)) if !wtm.is_empty() && !zp.is_empty() => {
@@ -1239,41 +1494,62 @@ impl ProfitSwitcher {
                         }
                     };
 
-                // Step 2: Cross-validate / extend with HeroMiners (Tier 1c)
-                match (tier1_base, hm_result) {
-                    (Some((base, base_name)), Ok(hm)) if !hm.is_empty() => {
-                        let merged = merge_profit_feeds(base, hm);
-                        let name = format!("{}+herominers", base_name);
+                // Step 2: Cross-validate/extend with HeroMiners (Tier 1c)
+                let tier1_hm: Option<(Vec<CoinProfitData>, String)> =
+                    match (tier1_base, hm_result) {
+                        (Some((base, base_name)), Ok(hm)) if !hm.is_empty() => {
+                            let merged = merge_profit_feeds(base, hm);
+                            Some((merged, format!("{}+herominers", base_name)))
+                        }
+                        (Some((base, base_name)), hm_r) => {
+                            if let Err(e) = hm_r { warn!("💹 HeroMiners error: {}", e); }
+                            Some((base, base_name.to_string()))
+                        }
+                        (None, Ok(hm)) if !hm.is_empty() => {
+                            Some((hm, "herominers".to_string()))
+                        }
+                        (None, hm_r) => {
+                            if let Err(e) = hm_r { warn!("💹 HeroMiners error: {}", e); }
+                            None
+                        }
+                    };
+
+                // Step 3: Cross-validate/extend with NiceHash (Tier 1d)
+                match (tier1_hm, nh_result) {
+                    (Some((base, base_name)), Ok(nh)) if !nh.is_empty() => {
+                        let merged = merge_profit_feeds(base, nh);
+                        let name = format!("{}+nicehash", base_name);
                         info!(
                             "💹 [{}] {} coins merged, top={} (score={:.1})",
                             name, merged.len(), merged[0].coin, merged[0].profit_score
                         );
                         (merged, name)
                     }
-                    (Some((base, base_name)), hm_r) => {
-                        if let Err(e) = hm_r { warn!("💹 HeroMiners error: {}", e); }
+                    (Some((base, base_name)), nh_r) => {
+                        if let Err(e) = nh_r { warn!("💹 NiceHash error: {}", e); }
                         info!(
                             "💹 [{}] {} coins, top={} (score={:.1})",
                             base_name, base.len(), base[0].coin, base[0].profit_score
                         );
-                        (base, base_name.to_string())
+                        (base, base_name)
                     }
-                    (None, Ok(hm)) if !hm.is_empty() => {
-                        // WTM + ZPool both failed, but HeroMiners succeeded
+                    (None, Ok(nh)) if !nh.is_empty() => {
                         info!(
-                            "💹 [herominers] {} coins, top={} (score={:.1})",
-                            hm.len(), hm[0].coin, hm[0].profit_score
+                            "💹 [nicehash] {} coins, top={} (score={:.1})",
+                            nh.len(), nh[0].coin, nh[0].profit_score
                         );
-                        (hm, "herominers".to_string())
+                        (nh, "nicehash".to_string())
                     }
-                    _ => unreachable!("wtm_ok || zpool_ok || hm_ok garantuje aspoň jeden Ok"),
+                    _ => unreachable!("wtm_ok || zpool_ok || hm_ok || nh_ok garantuje aspoň jeden Ok"),
                 }
             } else {
                 // Všechny Tier 1 feedy selhaly → Tier 2: Minerstat
                 let wtm_msg   = match &wtm_result   { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
                 let zpool_msg = match &zpool_result { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
                 let hm_msg    = match &hm_result    { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
-                warn!("💹 WTM: {} / ZPool: {} / HeroMiners: {} — trying Minerstat", wtm_msg, zpool_msg, hm_msg);
+                let nh_msg    = match &nh_result    { Err(e) => e.clone(), Ok(_) => "empty".to_string() };
+                warn!("💹 WTM: {} / ZPool: {} / HeroMiners: {} / NiceHash: {} — trying Minerstat",
+                    wtm_msg, zpool_msg, hm_msg, nh_msg);
                 self.api_errors.fetch_add(1, Ordering::Relaxed);
 
                 match fetch_minerstat(&coins).await {
@@ -1307,6 +1583,13 @@ impl ProfitSwitcher {
                     }
                 }
             };
+
+            // ── CoinGecko price enrichment ──────────────────────────────────
+            // Fill / overwrite price_usd on all merged coins using CoinGecko live prices.
+            // This corrects price_usd=0 from ZPool/NiceHash and refreshes WTM's cached price.
+            if let Some(ref prices) = cg_prices {
+                enrich_prices(&mut profit_data, prices);
+            }
 
             // ── Outlier protection: rolling-median clamp ─────────────────
             let history = self.rolling_history.read().await;
