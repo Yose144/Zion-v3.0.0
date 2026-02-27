@@ -185,6 +185,17 @@ impl DualMode {
         self.to_external_coin().nicehash_url(region)
     }
 
+    /// Best pool URL based on preference hierarchy (deleguje na `ExternalCoin::best_pool_url`).
+    ///
+    /// `preference` — "nicehash" | "herominers" (default) | "zpool" | "default"
+    /// `region`     — "eu" | "na" | "hk"
+    /// `nh_btc_addr`— BTC address for NiceHash payout
+    ///
+    /// Priority: NiceHash → HeroMiners → ZPool → 2miners default
+    pub fn best_pool_url(&self, preference: &str, region: &str, nh_btc_addr: Option<&str>) -> String {
+        self.to_external_coin().best_pool_url(preference, region, nh_btc_addr)
+    }
+
     /// Map to `ExternalCoin` (used by `ExternalMiner` / `EthStratumClient`)
     pub fn to_external_coin(&self) -> ExternalCoin {
         match self {

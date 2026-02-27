@@ -207,6 +207,56 @@ impl ExternalCoin {
         };
         Some(format!("{}.{}.nicehash.com:{}", algo, nh_region, port))
     }
+
+    /// Select the best pool URL for this coin based on a preference hierarchy.
+    ///
+    /// `preference` — "nicehash" | "herominers" (default) | "zpool" | "default"
+    /// `region`     — "eu" (default) | "na"/"us" | "hk"/"sg"/"asia"
+    /// `nh_btc_addr`— BTC address for NiceHash payout (username in NiceHash stratum)
+    ///
+    /// Hierarchy:
+    ///   nicehash  → NiceHash → HeroMiners → ZPool → default_pool_url
+    ///   herominers→ HeroMiners → ZPool → default_pool_url
+    ///   zpool     → ZPool → default_pool_url
+    ///   default   → default_pool_url
+    pub fn best_pool_url(&self, preference: &str, region: &str, _nh_btc_addr: Option<&str>) -> String {
+        let pref = preference.to_lowercase();
+        let reg = if region.is_empty() { "eu" } else { region };
+
+        if pref == "nicehash" || pref == "nh" {
+            if let Some(url) = self.nicehash_url(reg) {
+                return url;
+            }
+            // Fallthrough to HeroMiners if NiceHash doesn't support this coin
+        }
+
+        if pref == "nicehash" || pref == "nh" || pref == "herominers" || pref == "hm" {
+            // HeroMiners region: "eu"→"de", "na"/"us"→"us", "hk"/"sg"/"asia"→"hk"
+            let hm_region = match reg {
+                "eu"                   => "de",
+                "na" | "us"            => "us",
+                "hk" | "sg" | "asia"   => "hk",
+                _                      => "de",
+            };
+            if let Some(url) = self.herominers_url(hm_region) {
+                return url;
+            }
+        }
+
+        if pref == "nicehash" || pref == "nh"
+            || pref == "herominers" || pref == "hm"
+            || pref == "zpool"
+        {
+            // ZPool region: "eu" or "na"
+            let zp_region = if reg.starts_with("na") || reg == "us" { "na" } else { "eu" };
+            if let Some(url) = self.zpool_url(zp_region) {
+                return url;
+            }
+        }
+
+        // Fallback: hardcoded default pools (2miners / etc.)
+        self.default_pool_url().to_string()
+    }
 }
 
 /// EthStratum job from mining.notify
