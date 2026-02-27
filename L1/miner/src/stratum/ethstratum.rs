@@ -19,7 +19,6 @@ use std::sync::{
     Arc,
 };
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::TcpStream;
 use tokio::sync::{oneshot, watch, Mutex};
 use tokio::time::{timeout, Duration};
 
@@ -97,8 +96,31 @@ impl ExternalCoin {
             Self::DCR => "dcr.2miners.com:3333",      // 2miners DCR stratum
             Self::EPIC => "epic.2miners.com:20595",   // 2miners EPIC ProgPow
             Self::CFX => "cfx.2miners.com:6060",      // 2miners Conflux Octopus
-            Self::ZANO => "zano.2miners.com:9090",    // 2miners Zano ProgPowZ
+            Self::ZANO => "zano.herominers.com:1110",  // HeroMiners ZANO ProgPowZ
         }
+    }
+
+    /// ZPool.ca stratum URL pro algoritmus tohoto coinu.
+    ///
+    /// ZPool auto-přepíná coiny v rámci algoritmu a vyplácí v BTC.
+    /// Formát: `<algo>.<region>.mine.zpool.ca:<port>`
+    /// Heslo: `c=BTC` (měna výplaty) + volitelně `zap=COIN` pro pinní na konkrétní coin.
+    /// `region`: `"eu"` (Evropa) nebo `"na"` (Severní Amerika).
+    /// Vrací `None` pokud ZPool tento algoritmus nepodporuje.
+    pub fn zpool_url(&self, region: &str) -> Option<String> {
+        let (algo, port): (&str, u16) = match self {
+            Self::ETC  => ("ethash",     20535),
+            Self::RVN  => ("kawpow",      1325),
+            Self::ERG  => ("autolykos",   3526),
+            Self::KAS  => ("kheavyhash",  5133),
+            Self::ALPH => ("blake3",      6633),
+            Self::FLUX => return None,  // ZelHash (equihash 125,4) není na ZPool
+            Self::DCR  => ("blake3",      6633),  // ZPool blake3; přidej zap=DCR do hesla
+            Self::EPIC => ("firopow",     1326),
+            Self::CFX  => return None,  // Octopus není na ZPool
+            Self::ZANO => return None,  // ProgPowZ není na ZPool
+        };
+        Some(format!("{}.{}.mine.zpool.ca:{}", algo, region, port))
     }
 }
 
@@ -181,9 +203,40 @@ impl EthStratumClient {
             self.pool_url
         );
 
-        let stream = timeout(Duration::from_secs(30), TcpStream::connect(&self.pool_url))
-            .await
-            .map_err(|_| anyhow!("Connection timeout"))??;
+        // Use spawn_blocking + std::net::TcpStream for the initial connection.
+        // This avoids Tokio's async DNS/TCP stack which can fail on some Windows
+        // configurations with os error 11001 (WSAHOST_NOT_FOUND) even for valid hosts.
+        // The synchronous std connect uses the OS getaddrinfo/connect pair directly,
+        // matching the behaviour of PowerShell's Test-NetConnection.
+        let pool_url = self.pool_url.clone();
+        let std_stream = tokio::task::spawn_blocking(move || {
+            use std::net::TcpStream;
+            use std::time::Duration as StdDuration;
+            // Resolve via std (synchronous getaddrinfo), then connect each addr
+            use std::net::ToSocketAddrs;
+            let addrs: Vec<_> = pool_url.to_socket_addrs()
+                .map_err(|e| anyhow!("DNS resolution failed: {}", e))?
+                .collect();
+            for addr in &addrs {
+                let stream = TcpStream::connect_timeout(addr, StdDuration::from_secs(30));
+                match stream {
+                    Ok(s) => {
+                        s.set_nonblocking(true).ok();
+                        return Ok(s);
+                    }
+                    Err(e) => {
+                        debug!("connect_timeout to {} failed: {}", addr, e);
+                    }
+                }
+            }
+            Err(anyhow!("All {} addresses failed for {}", addrs.len(), pool_url))
+        })
+        .await
+        .map_err(|e| anyhow!("spawn_blocking error: {}", e))??;
+
+        // Convert std TcpStream → tokio TcpStream
+        let stream = tokio::net::TcpStream::from_std(std_stream)
+            .map_err(|e| anyhow!("TcpStream conversion failed: {}", e))?;
 
         debug!("[{}] TCP connected to {}", self.coin.name(), self.pool_url);
 
