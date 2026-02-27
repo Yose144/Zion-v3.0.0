@@ -5,13 +5,17 @@
 //! most profitable coin, respecting hysteresis and cooldown.
 //!
 //! Architecture:
-//!   ProfitSwitcher ──poll──→ WhatToMine API
-//!       │                       │
-//!       │  ← CoinProfitData ────┘
+//!   ProfitSwitcher ──poll──→ WhatToMine API (primary)
+//!       │                  ↘  Minerstat API   (secondary)
+//!       │                  ↘  LastValidSnapshot (tertiary)
+//!       │                  ↘  Static estimates  (quaternary)
 //!       │
+//!       │  ← CoinProfitData (outlier-clamped) ─────────────┘
+//!       │
+//!       ├── Outlier clamp: rolling-median × OUTLIER_MAX_RATIO
 //!       ├── Compare: current vs best coin
-//!       ├── If best > current + threshold → switch
-//!       └── Notify pool via broadcast channel
+//!       ├── If best > current + threshold → switch (stability > profitability spike)
+//!       └── Audit log: reason written on every decision
 //!
 //! Integration:
 //!   - main.rs spawns ProfitSwitcher::run()
@@ -21,11 +25,18 @@
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::{watch, RwLock};
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
+
+// ── Outlier protection constants ────────────────────────────────
+/// Maximum ratio over rolling median before a profit score is clamped.
+/// e.g. if median is 50 and a coin reports 400, it gets clamped to 50 * 5 = 250.
+const OUTLIER_MAX_RATIO: f64 = 5.0;
+/// How many polling rounds to keep in the rolling history (≈25 min at 300s interval)
+const ROLLING_HISTORY_ROUNDS: usize = 5;
 
 // ═══════════════════════════════════════════════════════════════
 // GPU Detection — CH3 Rule: No GPU → 25% CPU → XMR (MoneroOcean)
@@ -386,6 +397,172 @@ fn estimate_profitability_fallback(coins: &[String]) -> Vec<CoinProfitData> {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Minerstat Secondary Feed
+// ═══════════════════════════════════════════════════════════════
+
+/// Minerstat API coin entry (free endpoint, no API key)
+#[derive(Debug, Deserialize)]
+struct MinerstatCoin {
+    #[serde(default)]
+    coin: String,
+    #[serde(default)]
+    algorithm: String,
+    #[serde(default)]
+    price: f64,
+    #[serde(default)]
+    reward_block: f64,
+    #[serde(default)]
+    network_hashrate: f64,
+    #[serde(default)]
+    difficulty: f64,
+}
+
+/// Fetch profitability data from minerstat.com as a secondary/fallback feed.
+/// https://api.minerstat.com/v2/coins?list=ETC,RVN,ERG,KAS,XMR
+async fn fetch_minerstat(coins: &[String]) -> Result<Vec<CoinProfitData>, String> {
+    if coins.is_empty() {
+        return Err("No coins specified".to_string());
+    }
+
+    let list = coins.join(",").to_uppercase();
+    let url = format!("https://api.minerstat.com/v2/coins?list={}", list);
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("HTTP client error: {}", e))?;
+
+    let response = client
+        .get(&url)
+        .header("User-Agent", "zion-pool/2.9.6")
+        .send()
+        .await
+        .map_err(|e| format!("Minerstat request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("Minerstat HTTP {}", response.status()));
+    }
+
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("Minerstat body read failed: {}", e))?;
+
+    // Minerstat returns a JSON object keyed by UPPERCASE coin symbol
+    let map: HashMap<String, MinerstatCoin> =
+        serde_json::from_str(&body).map_err(|e| format!("Minerstat parse error: {}", e))?;
+
+    let now = Utc::now().timestamp();
+    let mut results: Vec<CoinProfitData> = map
+        .into_values()
+        .filter(|c| !c.coin.is_empty())
+        .map(|c| {
+            // Estimate a profit score proportional to price/difficulty (no BTC revenue in this API)
+            let pseudo_score = if c.difficulty > 0.0 {
+                c.price * c.reward_block / (c.difficulty * 1e-12).max(1e-12)
+            } else {
+                c.price
+            };
+            CoinProfitData {
+                coin: c.coin.to_uppercase(),
+                algorithm: c.algorithm,
+                price_usd: c.price,
+                btc_revenue_24h: 0.0,
+                usd_revenue_24h: pseudo_score,
+                difficulty: c.difficulty,
+                block_reward: c.reward_block,
+                nethash: c.network_hashrate,
+                profit_score: pseudo_score,
+                timestamp: now,
+            }
+        })
+        .collect();
+
+    // Normalise so the max score = 100 (for compatibility with WhatToMine's scale)
+    if let Some(max_score) = results
+        .iter()
+        .map(|c| c.profit_score)
+        .reduce(f64::max)
+        .filter(|&m| m > 0.0)
+    {
+        let scale = 100.0 / max_score;
+        for r in &mut results {
+            r.profit_score *= scale;
+        }
+    }
+
+    results.sort_by(|a, b| {
+        b.profit_score
+            .partial_cmp(&a.profit_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    Ok(results)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Outlier Protection — rolling-median clamp
+// ═══════════════════════════════════════════════════════════════
+
+/// Clamp outlier profit scores using a rolling median across recent rounds.
+///
+/// Any coin whose `profit_score` exceeds `median * OUTLIER_MAX_RATIO` is
+/// clamped down to that ceiling.  This prevents a single bad data point
+/// (WhatToMine glitch, tiny-hashrate coin with inflated mBTC) from causing
+/// an immediate algo switch.
+///
+/// Returns the number of coins clamped.
+fn apply_outlier_clamp(data: &mut Vec<CoinProfitData>, history: &VecDeque<Vec<(String, f64)>>) -> usize {
+    if data.is_empty() {
+        return 0;
+    }
+
+    // Build a flat view of all per-coin scores across all history rounds.
+    let all_scores: Vec<f64> = if history.is_empty() {
+        data.iter().map(|c| c.profit_score).collect()
+    } else {
+        history
+            .iter()
+            .flat_map(|round| round.iter().map(|(_, s)| *s))
+            .filter(|s| *s > 0.0)
+            .collect()
+    };
+
+    if all_scores.is_empty() {
+        return 0;
+    }
+
+    // Compute median of the historical distribution
+    let mut sorted = all_scores.clone();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let median = if sorted.len() % 2 == 0 {
+        (sorted[sorted.len() / 2 - 1] + sorted[sorted.len() / 2]) / 2.0
+    } else {
+        sorted[sorted.len() / 2]
+    };
+
+    let ceiling = median * OUTLIER_MAX_RATIO;
+    let mut clamped = 0;
+
+    for coin in data.iter_mut() {
+        if coin.profit_score > ceiling && ceiling > 0.0 {
+            warn!(
+                "💹 Outlier clamp: {} score {:.1} → {:.1} (median={:.1}, ratio={:.1}x)",
+                coin.coin,
+                coin.profit_score,
+                ceiling,
+                median,
+                coin.profit_score / median
+            );
+            coin.profit_score = ceiling;
+            clamped += 1;
+        }
+    }
+
+    clamped
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Profit Switcher
 // ═══════════════════════════════════════════════════════════════
 
@@ -399,6 +576,12 @@ pub struct ProfitSwitcher {
     coin_rx: watch::Receiver<String>,
     /// Latest profitability data
     profit_data: RwLock<Vec<CoinProfitData>>,
+    /// Last-valid snapshot from any successful feed fetch.
+    /// Used when all live feeds fail so we don't degrade to static estimates.
+    last_valid_snapshot: RwLock<Option<Vec<CoinProfitData>>>,
+    /// Rolling history of per-coin scores for outlier detection
+    /// Each entry is a round: Vec<(coin, score)>
+    rolling_history: RwLock<VecDeque<Vec<(String, f64)>>>,
     /// History of switch events
     switch_history: RwLock<Vec<SwitchEvent>>,
     /// Timestamp of last switch
@@ -447,6 +630,8 @@ impl ProfitSwitcher {
             coin_tx,
             coin_rx,
             profit_data: RwLock::new(Vec::new()),
+            last_valid_snapshot: RwLock::new(None),
+            rolling_history: RwLock::new(VecDeque::with_capacity(ROLLING_HISTORY_ROUNDS + 1)),
             switch_history: RwLock::new(Vec::new()),
             last_switch_time: AtomicU64::new(0),
             total_switches: AtomicU64::new(0),
@@ -486,6 +671,8 @@ impl ProfitSwitcher {
         let active = self.active_coin.read().await.clone();
         let profit = self.profit_data.read().await.clone();
         let history = self.switch_history.read().await.clone();
+        let has_snapshot = self.last_valid_snapshot.read().await.is_some();
+        let rolling_rounds = self.rolling_history.read().await.len();
 
         // Build profitability table
         let profit_table: Vec<serde_json::Value> = profit
@@ -530,6 +717,9 @@ impl ProfitSwitcher {
             "total_switches": self.total_switches.load(Ordering::Relaxed),
             "api_fetches": self.api_fetches.load(Ordering::Relaxed),
             "api_errors": self.api_errors.load(Ordering::Relaxed),
+            "has_snapshot": has_snapshot,
+            "rolling_history_rounds": rolling_rounds,
+            "outlier_max_ratio": OUTLIER_MAX_RATIO,
             "profitability": profit_table,
             "recent_switches": recent_switches,
         })
@@ -602,44 +792,115 @@ impl ProfitSwitcher {
                 self.config.preferred_coins.clone()
             };
 
+            // ── 4-tier data feed chain ────────────────────────────────────
+            // 1. WhatToMine (primary — best data quality)
+            // 2. Minerstat  (secondary — independent source, no API key)
+            // 3. LastValidSnapshot (tertiary — last known good data)
+            // 4. Static estimates (quaternary — conservative hardcoded values)
             let profit_result = fetch_whattomine(&coins).await;
 
-            let profit_data = match profit_result {
+            let (mut profit_data, feed_name) = match profit_result {
                 Ok(data) if !data.is_empty() => {
                     self.api_fetches.fetch_add(1, Ordering::Relaxed);
                     info!(
-                        "💹 WhatToMine: {} coins fetched, top={} (score={:.1})",
+                        "💹 [WhatToMine] {} coins, top={} (score={:.1})",
                         data.len(),
                         data[0].coin,
                         data[0].profit_score,
                     );
-                    data
+                    (data, "whattomine")
                 }
-                Ok(_) => {
-                    warn!("💹 WhatToMine returned no matching coins, using fallback");
+                wtm_err => {
+                    if let Err(ref e) = wtm_err {
+                        warn!("💹 WhatToMine error: {} — trying Minerstat", e);
+                    } else {
+                        warn!("💹 WhatToMine returned no coins — trying Minerstat");
+                    }
                     self.api_errors.fetch_add(1, Ordering::Relaxed);
-                    estimate_profitability_fallback(&coins)
-                }
-                Err(e) => {
-                    warn!("💹 WhatToMine error: {}, using fallback estimates", e);
-                    self.api_errors.fetch_add(1, Ordering::Relaxed);
-                    estimate_profitability_fallback(&coins)
+
+                    // Tier 2: Minerstat
+                    match fetch_minerstat(&coins).await {
+                        Ok(data) if !data.is_empty() => {
+                            info!(
+                                "💹 [Minerstat] {} coins, top={} (score={:.1})",
+                                data.len(),
+                                data[0].coin,
+                                data[0].profit_score,
+                            );
+                            (data, "minerstat")
+                        }
+                        ms_err => {
+                            if let Err(ref e) = ms_err {
+                                warn!("💹 Minerstat error: {} — checking last-valid snapshot", e);
+                            } else {
+                                warn!("💹 Minerstat returned no coins — checking last-valid snapshot");
+                            }
+
+                            // Tier 3: LastValidSnapshot
+                            let snapshot = self.last_valid_snapshot.read().await.clone();
+                            if let Some(snap) = snapshot {
+                                warn!(
+                                    "💹 [Snapshot] Using cached data ({} coins) — live feeds down",
+                                    snap.len()
+                                );
+                                (snap, "snapshot")
+                            } else {
+                                // Tier 4: Static estimates
+                                error!("💹 [StaticFallback] All feeds failed and no snapshot — using hardcoded estimates");
+                                (estimate_profitability_fallback(&coins), "static")
+                            }
+                        }
+                    }
                 }
             };
+
+            // ── Outlier protection: rolling-median clamp ─────────────────
+            let history = self.rolling_history.read().await;
+            let clamped = apply_outlier_clamp(&mut profit_data, &history);
+            drop(history);
+            if clamped > 0 {
+                info!("💹 Outlier clamp applied to {} coin(s) from {} feed", clamped, feed_name);
+            }
+
+            // Update rolling history (keep ROLLING_HISTORY_ROUNDS rounds)
+            {
+                let round: Vec<(String, f64)> = profit_data
+                    .iter()
+                    .map(|c| (c.coin.clone(), c.profit_score))
+                    .collect();
+                let mut hist = self.rolling_history.write().await;
+                hist.push_back(round);
+                while hist.len() > ROLLING_HISTORY_ROUNDS {
+                    hist.pop_front();
+                }
+            }
+
+            // Update last-valid snapshot when data comes from a live feed
+            if feed_name != "static" && feed_name != "snapshot" {
+                *self.last_valid_snapshot.write().await = Some(profit_data.clone());
+            }
+
+            // Re-sort after outlier clamp (scores may have changed)
+            profit_data.sort_by(|a, b| {
+                b.profit_score
+                    .partial_cmp(&a.profit_score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
             // Store latest data
             *self.profit_data.write().await = profit_data.clone();
 
             // Evaluate switch
-            self.evaluate_switch(&profit_data).await;
+            self.evaluate_switch(&profit_data, feed_name).await;
 
             // Wait for next interval
             interval.tick().await;
         }
     }
 
-    /// Evaluate whether to switch coins based on profitability data
-    async fn evaluate_switch(&self, profit_data: &[CoinProfitData]) {
+    /// Evaluate whether to switch coins based on profitability data.
+    /// Every decision (switch, hold, or block) is emitted as a structured AUDIT log line.
+    async fn evaluate_switch(&self, profit_data: &[CoinProfitData], feed: &str) {
         if profit_data.is_empty() {
             return;
         }
@@ -683,6 +944,10 @@ impl ProfitSwitcher {
 
         // Already mining the best coin?
         if best.coin.eq_ignore_ascii_case(&current_coin) {
+            info!(
+                "AUDIT profit_switch decision=hold coin={} score={:.1} feed={} reason=already_optimal",
+                current_coin, current_profit, feed
+            );
             debug!(
                 "💹 Already mining best coin: {} (score={:.1})",
                 current_coin, current_profit
@@ -690,8 +955,12 @@ impl ProfitSwitcher {
             return;
         }
 
-        // Check threshold
+        // Check threshold (stability > profitability spike)
         if advantage_pct < self.config.switch_threshold_pct {
+            info!(
+                "AUDIT profit_switch decision=hold coin={} best={} advantage_pct={:.1} threshold={:.1} feed={} reason=below_threshold",
+                current_coin, best.coin, advantage_pct, self.config.switch_threshold_pct, feed
+            );
             debug!(
                 "💹 {} is better ({:.1} vs {:.1}, +{:.1}%) but below threshold ({}%)",
                 best.coin,
@@ -709,6 +978,10 @@ impl ProfitSwitcher {
         if last_switch > 0 && (now - last_switch) < self.config.min_switch_interval_secs {
             let remaining = self.config.min_switch_interval_secs - (now - last_switch);
             info!(
+                "AUDIT profit_switch decision=hold coin={} best={} advantage_pct={:.1} cooldown_remaining_secs={} feed={} reason=cooldown",
+                current_coin, best.coin, advantage_pct, remaining, feed
+            );
+            info!(
                 "💹 Want to switch {} → {} (+{:.1}%) but cooldown active ({}s remaining)",
                 current_coin, best.coin, advantage_pct, remaining
             );
@@ -717,8 +990,12 @@ impl ProfitSwitcher {
 
         // === SWITCH! ===
         info!(
-            "🔄 PROFIT SWITCH: {} → {} (advantage: +{:.1}%, score: {:.1} vs {:.1})",
-            current_coin, best.coin, advantage_pct, best.profit_score, current_profit
+            "AUDIT profit_switch decision=switch from={} to={} advantage_pct={:.1} score_new={:.1} score_old={:.1} feed={} reason=profitability",
+            current_coin, best.coin, advantage_pct, best.profit_score, current_profit, feed
+        );
+        info!(
+            "🔄 PROFIT SWITCH: {} → {} (advantage: +{:.1}%, score: {:.1} vs {:.1}) [feed={}]",
+            current_coin, best.coin, advantage_pct, best.profit_score, current_profit, feed
         );
 
         // Update active coin
@@ -732,8 +1009,8 @@ impl ProfitSwitcher {
             from_coin: current_coin,
             to_coin: best.coin.clone(),
             reason: format!(
-                "Profitability advantage: +{:.1}% (score {:.1} vs {:.1})",
-                advantage_pct, best.profit_score, current_profit
+                "Profitability advantage: +{:.1}% (score {:.1} vs {:.1}) via {}",
+                advantage_pct, best.profit_score, current_profit, feed
             ),
             profit_advantage_pct: advantage_pct,
             timestamp: now as i64,

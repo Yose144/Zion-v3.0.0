@@ -31,7 +31,7 @@
 ///
 /// This is the core L1 revenue architecture of ZION TerraNova.
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{broadcast, watch, Notify, RwLock};
@@ -182,6 +182,12 @@ pub struct StreamScheduler {
 
     /// Preferred CPU revenue coin (xmr / vrsc), configurable via env.
     cpu_revenue_coin: String,
+
+    // ── Fleet-level switch guardrails ───────────────────────────────────────
+    /// Unix timestamp of the last fleet coin switch (0 = never)
+    last_fleet_switch_at: AtomicU64,
+    /// Count of total fleet-level coin switches (for audit/metrics)
+    fleet_switch_count: AtomicU64,
 }
 
 impl StreamScheduler {
@@ -309,6 +315,8 @@ impl StreamScheduler {
             total_miners: RwLock::new(0),
             cpu_only: AtomicBool::new(cpu_only),
             cpu_revenue_coin,
+            last_fleet_switch_at: AtomicU64::new(0),
+            fleet_switch_count: AtomicU64::new(0),
         }
     }
 
@@ -382,6 +390,10 @@ impl StreamScheduler {
 
     /// Called when ProfitSwitcher changes the best coin.
     /// Only the Revenue group needs to switch — ZION group is unaffected.
+    ///
+    /// Fleet guardrail: enforces `ZION_FLEET_SWITCH_MIN_SECS` (default 120s) between
+    /// consecutive fleet-level algo switches to prevent cluster thrashing.
+    /// This is a second layer of protection in addition to ProfitSwitcher's own cooldown.
     pub async fn set_best_coin(&self, coin: &str) -> Option<ScheduledJob> {
         let old = self.best_coin.read().await.clone();
         let new_coin = coin.to_lowercase();
@@ -390,16 +402,75 @@ impl StreamScheduler {
             return None;
         }
 
+        // ── Fleet-level cooldown guardrail ───────────────────────────────
+        let fleet_min_secs: u64 = std::env::var("ZION_FLEET_SWITCH_MIN_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(120); // 2 minutes between fleet switches (belt+suspenders)
+
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        let last_switch = self.last_fleet_switch_at.load(Ordering::Relaxed);
+        if last_switch > 0 {
+            let elapsed = now.saturating_sub(last_switch);
+            if elapsed < fleet_min_secs {
+                let remaining = fleet_min_secs - elapsed;
+                warn!(
+                    "🛡️  Fleet guardrail: suppressing {} → {} switch (cooldown {}s remaining). \
+                     ProfitSwitcher approved but fleet protection active.",
+                    old.to_uppercase(), new_coin.to_uppercase(), remaining
+                );
+                info!(
+                    "AUDIT fleet_switch decision=blocked from={} to={} cooldown_remaining_secs={} reason=fleet_guardrail",
+                    old.to_uppercase(), new_coin.to_uppercase(), remaining
+                );
+                return None;
+            }
+        }
+        // ────────────────────────────────────────────────────────────────
+
         info!(
             "💹 StreamScheduler: Best coin changed {} → {} — Revenue miners will switch",
             old.to_uppercase(),
             new_coin.to_uppercase()
         );
+        info!(
+            "AUDIT fleet_switch decision=approved from={} to={}",
+            old.to_uppercase(), new_coin.to_uppercase()
+        );
 
         *self.best_coin.write().await = new_coin.clone();
+        self.last_fleet_switch_at.store(now, Ordering::Relaxed);
+        self.fleet_switch_count.fetch_add(1, Ordering::Relaxed);
 
         // Return the new job for broadcasting to Revenue miners
         self.get_revenue_job().await
+    }
+
+    /// Return fleet switch stats for the /metrics API
+    pub fn fleet_stats(&self) -> serde_json::Value {
+        let fleet_min_secs: u64 = std::env::var("ZION_FLEET_SWITCH_MIN_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(120);
+
+        let last = self.last_fleet_switch_at.load(Ordering::Relaxed);
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let elapsed = if last > 0 { now.saturating_sub(last) } else { u64::MAX };
+        let remaining = if elapsed < fleet_min_secs { fleet_min_secs - elapsed } else { 0 };
+
+        serde_json::json!({
+            "fleet_switch_count": self.fleet_switch_count.load(Ordering::Relaxed),
+            "last_fleet_switch_unix": last,
+            "fleet_cooldown_secs": fleet_min_secs,
+            "fleet_cooldown_remaining_secs": remaining,
+        })
     }
 
     // ═══════════════════════════════════════════════════════════

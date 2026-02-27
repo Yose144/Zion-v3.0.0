@@ -101,11 +101,15 @@ pub struct GpuMiningStats {
     pub etc_hashes: AtomicU64,
     pub etc_shares_submitted: AtomicU64,
     pub etc_shares_accepted: AtomicU64,
+    pub etc_shares_invalid: AtomicU64,
+    pub etc_shares_stale: AtomicU64,
     pub etc_current_job: Mutex<String>,
 
     pub erg_hashes: AtomicU64,
     pub erg_shares_submitted: AtomicU64,
     pub erg_shares_accepted: AtomicU64,
+    pub erg_shares_invalid: AtomicU64,
+    pub erg_shares_stale: AtomicU64,
     pub erg_current_job: Mutex<String>,
 }
 
@@ -116,13 +120,183 @@ impl GpuMiningStats {
                 "hashes": self.etc_hashes.load(Ordering::Relaxed),
                 "shares_submitted": self.etc_shares_submitted.load(Ordering::Relaxed),
                 "shares_accepted": self.etc_shares_accepted.load(Ordering::Relaxed),
+                "shares_invalid": self.etc_shares_invalid.load(Ordering::Relaxed),
+                "shares_stale": self.etc_shares_stale.load(Ordering::Relaxed),
             },
             "erg": {
                 "hashes": self.erg_hashes.load(Ordering::Relaxed),
                 "shares_submitted": self.erg_shares_submitted.load(Ordering::Relaxed),
                 "shares_accepted": self.erg_shares_accepted.load(Ordering::Relaxed),
+                "shares_invalid": self.erg_shares_invalid.load(Ordering::Relaxed),
+                "shares_stale": self.erg_shares_stale.load(Ordering::Relaxed),
             },
         })
+    }
+}
+
+// ============================  GPU TELEMETRY  ================================
+
+/// Real-time GPU hardware telemetry collected via nvidia-smi / rocm-smi.
+///
+/// Polled every `TELEMETRY_POLL_SECS` seconds in a background task.
+/// All fields are atomics for lock-free reading by the metrics/API threads.
+///
+/// nvidia-smi query:
+///   --query-gpu=utilization.gpu,memory.used,memory.total,power.draw,temperature.gpu
+#[derive(Debug, Default)]
+pub struct GpuTelemetry {
+    /// GPU utilisation 0-100%
+    pub gpu_util_pct: AtomicU64,
+    /// VRAM used (MiB)
+    pub vram_used_mib: AtomicU64,
+    /// VRAM total (MiB)
+    pub vram_total_mib: AtomicU64,
+    /// Power draw (mW, stored as integer milliwatts for atomic ops)
+    pub power_mw: AtomicU64,
+    /// Temperature (°C)
+    pub temp_celsius: AtomicU64,
+    /// Derived: hash rate estimate (hashes/sec) — rolling 10s window
+    pub hashrate_10s: AtomicU64,
+    /// Timestamp of last telemetry update (Unix seconds)
+    pub last_update: AtomicU64,
+    /// true if nvidia-smi/rocm-smi call succeeded last round
+    pub hw_available: AtomicBool,
+    /// Number of consecutive telemetry errors (triggers watchdog alert at threshold)
+    pub consecutive_errors: AtomicU64,
+}
+
+impl GpuTelemetry {
+    /// Number of consecutive errors that triggers the GPU watchdog warning.
+    const WATCHDOG_THRESHOLD: u64 = 5;
+
+    pub fn to_json(&self) -> Value {
+        let hw = self.hw_available.load(Ordering::Relaxed);
+        json!({
+            "hw_available": hw,
+            "last_update": self.last_update.load(Ordering::Relaxed),
+            "gpu_util_pct": self.gpu_util_pct.load(Ordering::Relaxed),
+            "vram_used_mib": self.vram_used_mib.load(Ordering::Relaxed),
+            "vram_total_mib": self.vram_total_mib.load(Ordering::Relaxed),
+            "power_watts": self.power_mw.load(Ordering::Relaxed) as f64 / 1000.0,
+            "temp_celsius": self.temp_celsius.load(Ordering::Relaxed),
+            "hashrate_10s": self.hashrate_10s.load(Ordering::Relaxed),
+            "watchdog_errors": self.consecutive_errors.load(Ordering::Relaxed),
+        })
+    }
+
+    /// Check watchdog condition — returns Some(error_count) if threshold exceeded.
+    pub fn watchdog_triggered(&self) -> Option<u64> {
+        let n = self.consecutive_errors.load(Ordering::Relaxed);
+        if n >= Self::WATCHDOG_THRESHOLD {
+            Some(n)
+        } else {
+            None
+        }
+    }
+}
+
+/// Seconds between nvidia-smi / rocm-smi polls
+const TELEMETRY_POLL_SECS: u64 = 30;
+
+/// Try to collect GPU telemetry via nvidia-smi.
+/// Returns `true` on success.
+fn collect_nvidia_telemetry(t: &GpuTelemetry) -> bool {
+    // nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,power.draw,temperature.gpu --format=csv,noheader,nounits
+    let output = std::process::Command::new("nvidia-smi")
+        .args([
+            "--query-gpu=utilization.gpu,memory.used,memory.total,power.draw,temperature.gpu",
+            "--format=csv,noheader,nounits",
+        ])
+        .output();
+
+    match output {
+        Ok(out) if out.status.success() => {
+            let text = String::from_utf8_lossy(&out.stdout);
+            // First GPU line only (e.g.: "42, 4096, 8192, 120.5, 68")
+            let line = text.lines().next().unwrap_or("").trim();
+            let parts: Vec<&str> = line.split(',').map(str::trim).collect();
+            if parts.len() >= 5 {
+                let util: u64 = parts[0].parse().unwrap_or(0);
+                let vram_used: u64 = parts[1].parse().unwrap_or(0);
+                let vram_total: u64 = parts[2].parse().unwrap_or(0);
+                // power.draw may be float like "120.57"
+                let power_mw: u64 = parts[3]
+                    .parse::<f64>()
+                    .map(|w| (w * 1000.0) as u64)
+                    .unwrap_or(0);
+                let temp: u64 = parts[4].parse().unwrap_or(0);
+
+                t.gpu_util_pct.store(util, Ordering::Relaxed);
+                t.vram_used_mib.store(vram_used, Ordering::Relaxed);
+                t.vram_total_mib.store(vram_total, Ordering::Relaxed);
+                t.power_mw.store(power_mw, Ordering::Relaxed);
+                t.temp_celsius.store(temp, Ordering::Relaxed);
+                t.last_update.store(
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs(),
+                    Ordering::Relaxed,
+                );
+                t.hw_available.store(true, Ordering::Relaxed);
+                t.consecutive_errors.store(0, Ordering::Relaxed);
+                return true;
+            }
+            false
+        }
+        _ => false,
+    }
+}
+
+/// Try AMD rocm-smi fallback (returns false if unavailable or parse fails)
+fn collect_rocm_telemetry(t: &GpuTelemetry) -> bool {
+    // rocm-smi --showuse --showmemuse --showpower --showtemp --json (simplified)
+    let output = std::process::Command::new("rocm-smi")
+        .args(["--showuse", "--showmemuse", "--showpower", "--showtemp", "--json"])
+        .output();
+
+    match output {
+        Ok(out) if out.status.success() => {
+            // Minimal parse: look for first card0 entry
+            let text = String::from_utf8_lossy(&out.stdout);
+            let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::Value::Null);
+            if v.is_null() {
+                return false;
+            }
+            // rocm-smi JSON keys like "card0": {"GPU use (%)": "45", ...}
+            if let Some(card) = v.as_object().and_then(|m| m.values().next()) {
+                let util: u64 = card["GPU use (%)"]
+                    .as_str()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0);
+                let temp: u64 = card["Temperature (Sensor edge) (C)"]
+                    .as_str()
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .map(|v| v as u64)
+                    .unwrap_or(0);
+                let power_mw: u64 = card["Average Graphics Package Power (W)"]
+                    .as_str()
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .map(|w| (w * 1000.0) as u64)
+                    .unwrap_or(0);
+
+                t.gpu_util_pct.store(util, Ordering::Relaxed);
+                t.temp_celsius.store(temp, Ordering::Relaxed);
+                t.power_mw.store(power_mw, Ordering::Relaxed);
+                t.last_update.store(
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs(),
+                    Ordering::Relaxed,
+                );
+                t.hw_available.store(true, Ordering::Relaxed);
+                t.consecutive_errors.store(0, Ordering::Relaxed);
+                return true;
+            }
+            false
+        }
+        _ => false,
     }
 }
 
@@ -132,6 +306,8 @@ impl GpuMiningStats {
 pub struct GpuMiner {
     config: GpuMiningConfig,
     pub stats: Arc<GpuMiningStats>,
+    /// Real-time hardware telemetry (nvidia-smi / rocm-smi)
+    pub telemetry: Arc<GpuTelemetry>,
     running: Arc<AtomicBool>,
 }
 
@@ -141,11 +317,12 @@ impl GpuMiner {
         Arc::new(Self {
             config: cfg,
             stats: Arc::new(GpuMiningStats::default()),
+            telemetry: Arc::new(GpuTelemetry::default()),
             running: Arc::new(AtomicBool::new(false)),
         })
     }
 
-    /// Start all enabled mining tasks
+    /// Start all enabled mining tasks + the telemetry polling task
     pub async fn start(self: Arc<Self>) {
         if self.running.swap(true, Ordering::SeqCst) {
             warn!("[GpuMiner] Already running");
@@ -169,6 +346,65 @@ impl GpuMiner {
             let m = Arc::clone(&self);
             tokio::spawn(async move { m.run_erg_loop().await });
         }
+
+        // Start GPU hardware telemetry polling task (nvidia-smi / rocm-smi)
+        {
+            let tele = Arc::clone(&self.telemetry);
+            let stats = Arc::clone(&self.stats);
+            tokio::spawn(async move {
+                Self::run_telemetry_loop(tele, stats).await;
+            });
+        }
+    }
+
+    /// Telemetry polling loop — runs every TELEMETRY_POLL_SECS seconds.
+    /// Tries nvidia-smi first, then rocm-smi.  On consecutive failures triggers watchdog.
+    async fn run_telemetry_loop(tele: Arc<GpuTelemetry>, stats: Arc<GpuMiningStats>) {
+        tracing::info!("[GpuTelemetry] Starting hardware monitor (poll={}s)", TELEMETRY_POLL_SECS);
+        let mut interval = tokio::time::interval(Duration::from_secs(TELEMETRY_POLL_SECS));
+        let mut prev_hashes_etc: u64 = 0;
+        let mut prev_hashes_erg: u64 = 0;
+
+        loop {
+            interval.tick().await;
+
+            let ok = collect_nvidia_telemetry(&tele) || collect_rocm_telemetry(&tele);
+
+            if !ok {
+                let errs = tele.consecutive_errors.fetch_add(1, Ordering::Relaxed) + 1;
+                tele.hw_available.store(false, Ordering::Relaxed);
+                if let Some(n) = tele.watchdog_triggered() {
+                    tracing::warn!(
+                        "[GpuTelemetry] ⚠️  GPU watchdog: nvidia-smi/rocm-smi failed {} consecutive times — GPU unreachable or CPU-only mode",
+                        n
+                    );
+                } else {
+                    tracing::debug!("[GpuTelemetry] telemetry collect failed (attempt {})", errs);
+                }
+            }
+
+            // Update hash-rate estimate (rolling window = TELEMETRY_POLL_SECS seconds)
+            let cur_etc = stats.etc_hashes.load(Ordering::Relaxed);
+            let cur_erg = stats.erg_hashes.load(Ordering::Relaxed);
+            let delta = (cur_etc.saturating_sub(prev_hashes_etc))
+                .saturating_add(cur_erg.saturating_sub(prev_hashes_erg));
+            let hr = delta / TELEMETRY_POLL_SECS.max(1);
+            tele.hashrate_10s.store(hr, Ordering::Relaxed);
+            prev_hashes_etc = cur_etc;
+            prev_hashes_erg = cur_erg;
+
+            if ok {
+                tracing::debug!(
+                    "[GpuTelemetry] util={}% vram={}/{} MiB power={:.1}W temp={}°C hr={} H/s",
+                    tele.gpu_util_pct.load(Ordering::Relaxed),
+                    tele.vram_used_mib.load(Ordering::Relaxed),
+                    tele.vram_total_mib.load(Ordering::Relaxed),
+                    tele.power_mw.load(Ordering::Relaxed) as f64 / 1000.0,
+                    tele.temp_celsius.load(Ordering::Relaxed),
+                    hr,
+                );
+            }
+        }
     }
 
     pub fn is_running(&self) -> bool {
@@ -176,7 +412,17 @@ impl GpuMiner {
     }
 
     pub fn stats_json(&self) -> Value {
-        self.stats.to_json()
+        let mut v = self.stats.to_json();
+        // Merge telemetry into the same JSON object
+        if let (Some(obj), Some(tele)) = (v.as_object_mut(), Some(self.telemetry.to_json())) {
+            obj.insert("telemetry".to_string(), tele);
+        }
+        v
+    }
+
+    /// Return GPU telemetry JSON directly (for /metrics endpoint)
+    pub fn telemetry_json(&self) -> Value {
+        self.telemetry.to_json()
     }
 }
 
@@ -293,7 +539,14 @@ impl GpuMiner {
                             }
                         } else {
                             let err = msg.get("error").cloned().unwrap_or(Value::Null);
-                            warn!("[ETC] Share #{req_id} rejected: {err}");
+                            let err_str = err.to_string().to_lowercase();
+                            if err_str.contains("stale") || err_str.contains("too late") || err_str.contains("old") {
+                                warn!("[ETC] Share #{req_id} stale: {err}");
+                                self.stats.etc_shares_stale.fetch_add(1, Ordering::Relaxed);
+                            } else {
+                                warn!("[ETC] Share #{req_id} rejected: {err}");
+                                self.stats.etc_shares_invalid.fetch_add(1, Ordering::Relaxed);
+                            }
                         }
                     }
                     // Ping / pong
@@ -572,12 +825,19 @@ impl GpuMiner {
                                 warn!("[ERG] Auth rejected: {err}");
                             }
                         } else if result.as_bool() == Some(true) {
-                            info!("[ERG] Share #{req_id} accepted ✅");
-                            self.stats.erg_shares_accepted.fetch_add(1, Ordering::Relaxed);
-                        } else {
-                            let err = msg.get("error").cloned().unwrap_or(Value::Null);
-                            warn!("[ERG] Response rejected: {err}");
-                        }
+                                info!("[ERG] Share #{req_id} accepted ✅");
+                                self.stats.erg_shares_accepted.fetch_add(1, Ordering::Relaxed);
+                            } else {
+                                let err = msg.get("error").cloned().unwrap_or(Value::Null);
+                                let err_str = err.to_string().to_lowercase();
+                                if err_str.contains("stale") || err_str.contains("too late") || err_str.contains("old") {
+                                    warn!("[ERG] Share #{req_id} stale: {err}");
+                                    self.stats.erg_shares_stale.fetch_add(1, Ordering::Relaxed);
+                                } else {
+                                    warn!("[ERG] Response rejected: {err}");
+                                    self.stats.erg_shares_invalid.fetch_add(1, Ordering::Relaxed);
+                                }
+                            }
                     } else if let Some(err) = msg.get("error") {
                         warn!("[ERG] Error from pool: {err}");
                     }
