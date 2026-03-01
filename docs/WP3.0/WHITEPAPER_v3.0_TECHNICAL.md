@@ -62,7 +62,7 @@ Síť je implementována v jazyce **Rust** na vrstvách L1–L4:
 | Block time | 60 sekund |
 | Mining horizon | 100+ let + tail emission |
 | Premine | 16 280 000 000 ZION (11,31 %) |
-| Nejmenší jednotka | 1 ZION = 1 000 000 flower (alias atomické jednotky, 6 desetinných míst) |
+| Nejmenší jednotka | 1 ZION = 1 000 000 000 000 flower (12 desetinných míst) |
 | Konsensus | CosmicHarmony v3 (paměťově náročný PoW) |
 | Algoritmus DAA | LWMA, okno 60 bloků, max. ±25 % |
 | Distribuce bloku | 89 % miners / 5 % humanitarian / 5 % L5–L6 / 1 % pool |
@@ -178,7 +178,7 @@ Mining pool implementuje **Stratum v2** protokol:
 
 ### 3.7 Poplatky
 
-Transakční poplatky jsou **burnovány** (fee_policy = "burn"), nikoliv přidělovány těžařům. Minimální poplatek: 1 atomická jednotka/bajt.
+Transakční poplatky jsou **burnovány** (fee_policy = "burn"), nikoliv přidělovány těžařům. Minimální poplatek: 1 flower/bajt.
 
 ---
 
@@ -242,8 +242,7 @@ Block Time:                60 sekund
 Decade Decay:              −20 % každých 5 256 000 bloků (10 let)
 Tail emission (2126+):     724,785 ZION/blok navěky
 
-Flower units:           1 000 000 flower/ZION (6 des. míst)
-Atomic alias:           1 flower = 1 atomická jednotka
+Flower units:           1 000 000 000 000 flower/ZION (12 des. míst)
 ```
 
 ### 5.2 Matematický důkaz emise (Dekáda 1)
