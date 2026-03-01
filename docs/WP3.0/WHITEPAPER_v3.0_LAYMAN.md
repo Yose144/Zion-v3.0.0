@@ -69,6 +69,15 @@ ZION má základní emisní cíl 144 000 000 000 tokenů (premine + hlavní emis
 
 Pro srovnání: Bitcoin má maximálně 21 milionů kusů. ZION má víc, protože se hodí jako každodenní platidlo, ne jen jako "digitální zlato".
 
+### Nejmenší jednotka: flower
+
+Stejně jako má Bitcoin satoshi, ZION má **flower**. Platí:
+
+- **1 ZION = 1 000 000 flower**
+- **1 flower = nejmenší převoditelná jednotka v síti**
+
+Díky tomu lze pohodlně posílat i velmi malé částky bez zaokrouhlovacích problémů.
+
 ### Jak ZION přichází do oběhu
 
 Každých 60 sekund přibyde nový blok a s ním 5 400 nových ZION. Každých 10 let odměna klesne o 20 % (Decade Decay) — mírně, ne najednou na polovinu jako u Bitcoinu. Těžaři tak mají předvídatelný příjem na 100+ let. Od roku 2126 běží síť navěky na trvalé minimální odměně.
