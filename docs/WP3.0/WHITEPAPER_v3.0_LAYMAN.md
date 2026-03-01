@@ -73,10 +73,12 @@ Pro srovnání: Bitcoin má maximálně 21 milionů kusů. ZION má víc, proto�
 
 Stejně jako má Bitcoin satoshi, ZION má **flower**. Platí:
 
-- **1 ZION = 1 000 000 000 000 flower**
+- **Spec 2.9.7 (Flowers): 1 ZION = 1 000 000 000 000 flower**
 - **1 flower = nejmenší převoditelná jednotka v síti**
 
 Díky tomu lze pohodlně posílat i velmi malé částky bez zaokrouhlovacích problémů.
+
+Poznámka: runtime/API v aktuálním L1 kódu zatím pracují s 1 ZION = 1 000 000 atomic units; Flowers.md popisuje cílovou migrační specifikaci.
 
 ### Jak ZION přichází do oběhu
 
