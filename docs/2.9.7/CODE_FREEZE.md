@@ -12,7 +12,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 
 ### Infrastruktura
 - [ ] Pool Docker běží na Helsinki (port 3333+8080) — `curl http://77.42.31.72:8080/stats`
-- [ ] Alertmanager Telegram tokeny aktivní + test-incident doručen
+- [x] Alertmanager Discord webhooky nakonfigurovány (`DISCORD_WEBHOOK_OPS` + `DISCORD_WEBHOOK_CRITICAL`, native discord_configs) — commit `<next>` ✅ 2026-03-01
 - [ ] `peers` health endpoint vrací číslo (ne null) — FIXED v kódu (`#[serde(rename="peers")]`) commit `c521c38`, ověřit na produkci
 - [ ] SeedDE + Usa1 offline a odpojeny ze seed listu
 
