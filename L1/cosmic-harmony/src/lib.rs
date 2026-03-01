@@ -53,6 +53,7 @@
 
 pub mod algorithm_library; // CH v3 Algorithm Module Library (12+ algorithms)
 pub mod algorithms;
+pub mod algorithms_npu; // CHv4 NPU Mixing Step — deterministický INT8 MLP
 pub mod algorithms_opt; // Optimized versions (no nightly required)
 pub mod config;
 pub mod engine;
@@ -69,7 +70,8 @@ pub mod scratchpad;
 pub mod whattomine; // WhatToMine/CoinGecko API integration
 
 pub use algorithm_library::{AlgorithmInfo, AlgorithmModuleLibrary, PipelineExecutionResult};
-pub use algorithms_opt::{cosmic_harmony_v3, Hash32, Hash64};
+pub use algorithms_npu::{CHV4_NPU_FORK_HEIGHT, CHV4_MLP_GENESIS_SEED, npu_mixing_step, npu_mixing_hash64};
+pub use algorithms_opt::{cosmic_harmony_v3, cosmic_harmony_v4, cosmic_harmony_with_height, Hash32, Hash64};
 pub use config::Config;
 pub use config::{ExternalPoolConfig, MultiChainMiningConfig};
 pub use engine::CosmicHarmonyV3;
