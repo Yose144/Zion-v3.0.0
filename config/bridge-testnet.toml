@@ -72,6 +72,17 @@ enabled               = false
 gas_strategy          = "legacy"
 max_gas_gwei          = 10
 
+# ── Ankr RPC Backend ───────────────────────────────────────
+#
+#  Ankr poskytuje HTTP/WS RPC pro všechny EVM chainy.
+#  api_key = premium tier (vyšší rate limity, SLA)
+#  Bez api_key = free tier (~30 req/s, sdílené)
+
+[ankr]
+enabled = true
+api_key = "d036dcf6e89c08c7a36d0b2d723d2d8ac27090965fa5925f60cab30b9c02f152"
+# Alternativa: env var ANKR_API_KEY (přepíše api_key výše)
+
 # ── Validator Config ────────────────────────────────────────
 
 [validator]

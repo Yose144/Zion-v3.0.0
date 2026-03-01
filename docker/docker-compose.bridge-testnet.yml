@@ -31,6 +31,9 @@ services:
       # Validator private key for signing EVM transactions (podepisuje EVM TX)
       # Loaded from /data/bridge/keys/validator.key OR from this env var
       ZION_VALIDATOR_PRIVATE_KEY: "${ZION_VALIDATOR_PRIVATE_KEY}"
+      # Ankr API key — premium RPC tier (higher rate limits)
+      # Set in docker/.env or export ANKR_API_KEY=...
+      ANKR_API_KEY: "${ANKR_API_KEY}"
       # Log level (trace, debug, info, warn, error)
       RUST_LOG: "info,zion_bridge=debug"
     command:
