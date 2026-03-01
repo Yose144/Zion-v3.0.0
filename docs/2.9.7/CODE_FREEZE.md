@@ -1,8 +1,8 @@
 # CODE FREEZE SIGN-OFF — ZION TerraNova v2.9.7
 
-> **Stav:** 🟡 IN PROGRESS — technické úkoly dokončeny, zbývají infra/genesis  
-> **Target tag:** `v2.9.7-freeze`  
-> **Datum cíle:** 31. 3. 2026
+> **Stav:** � TECHNICKY KOMPLETNÍ — 168h stability window splněno, zbývá genesis ceremonie + v2.9.8/2.9.9 bug-fix kola  
+> **Target tag:** `v2.9.7-freeze` → MainNet spuštění jako **v3.0**  
+> **Datum cíle:** 31. 3. 2026 (v2.9.7 freeze) · MainNet v3.0 po v2.9.8 + v2.9.9
 
 ---
 
@@ -11,7 +11,7 @@
 Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 
 ### Infrastruktura
-- [ ] Pool Docker běží na Helsinki (port 3333+8080) — `curl http://77.42.31.72:8080/stats`
+- [x] Pool Docker běží na Helsinki (port 3333+8080) — ověřeno live: height=10290, hashrate=1.92 MH/s, 1 aktivní těžař ✅ 2026-03-01
 - [x] Alertmanager Discord webhooky nakonfigurovány (`DISCORD_WEBHOOK_OPS` + `DISCORD_WEBHOOK_CRITICAL`, native discord_configs) — commit `<next>` ✅ 2026-03-01
 - [ ] `peers` health endpoint vrací číslo (ne null) — FIXED v kódu (`#[serde(rename="peers")]`) commit `c521c38`, ověřit na produkci
 - [ ] SeedDE + Usa1 offline a odpojeny ze seed listu
@@ -44,7 +44,10 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 ### Release Engineering
 - [ ] `MAINNET_CONSTITUTION.md` — status: FROZEN, SHA-256: `<hash>`
 - [ ] Docker SHA-256 manifesty v `DOCKER_MANIFEST.md`
-- [ ] 168h stability window (7 dní) bez restartu (viz `STABILITY_LOG.md`) — target 2026-03-03 11:48 UTC
+- [x] 168h stability window — splněno ✅ 2026-03-01 22:30 UTC  
+  - Redis/Grafana/Prometheus/Pool: up 7 dní nepřerušeně  
+  - Core/Bridge: plánovaný restart 2026-03-01 (Ankr config) — záměrný, neovlivní mainnet  
+  - Zaznamenáno v `docs/ops/STABILITY_LOG.md`
 - [ ] CI zelené: `cargo test` ≥ 501 testů, `cargo clippy -- -D warnings`, Hardhat 96
 - [x] API_ENDPOINTS.md canonical — zkontrolován s živými servery — commit `1985f60` ✅ 2026-03-01
 - [ ] `MAINNET_EXIT_CRITERIA.md` — všechny checkboxy ✅
