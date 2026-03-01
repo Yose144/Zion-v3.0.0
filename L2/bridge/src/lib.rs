@@ -32,6 +32,8 @@
 pub mod ankr;
 pub mod config;
 pub mod db;
+pub mod evm_rpc;
+pub mod evm_tx;
 pub mod evm_watcher;
 pub mod l1_watcher;
 pub mod metrics;
