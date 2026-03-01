@@ -563,14 +563,17 @@ mod tests {
                 TxOutput {
                     amount: 500_000_000,
                     address: "zion1someuser".to_string(),
+                    ..Default::default()
                 },
                 TxOutput {
                     amount: 1_000_000_000,
                     address: BURN_ADDRESS.to_string(),
+                    ..Default::default()
                 },
                 TxOutput {
                     amount: 200_000_000,
                     address: BURN_ADDRESS.to_string(),
+                    ..Default::default()
                 },
             ],
             fee: 1_000,
@@ -590,6 +593,7 @@ mod tests {
             outputs: vec![TxOutput {
                 amount: 1_000_000,
                 address: "zion1user".to_string(),
+                ..Default::default()
             }],
             fee: 1_000,
             timestamp: 100,

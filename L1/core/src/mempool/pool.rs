@@ -284,6 +284,7 @@ mod tests {
                 .map(|amt| TxOutput {
                     amount: *amt,
                     address: "zion1test".to_string(),
+                    ..Default::default()
                 })
                 .collect(),
             fee,

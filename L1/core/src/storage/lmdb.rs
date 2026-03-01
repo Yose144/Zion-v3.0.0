@@ -467,6 +467,7 @@ impl ZionStorage {
         let output = TxOutput {
             amount: amount_atomic,
             address: address.to_string(),
+            ..Default::default()
         };
 
         self.utxos.put(&mut wtxn, &key, &output)?;
@@ -614,6 +615,7 @@ mod tests {
             outputs: vec![TxOutput {
                 amount,
                 address: address.to_string(),
+                ..Default::default()
             }],
             fee: 0,
             timestamp: 1000,
@@ -642,6 +644,7 @@ mod tests {
                 .map(|(a, amt)| TxOutput {
                     amount: amt,
                     address: a.to_string(),
+                    ..Default::default()
                 })
                 .collect(),
             fee: 0,
@@ -900,10 +903,12 @@ mod tests {
                 TxOutput {
                     amount: 2000,
                     address: "alice".to_string(),
+                    ..Default::default()
                 },
                 TxOutput {
                     amount: 3000,
                     address: "bob".to_string(),
+                    ..Default::default()
                 },
             ],
             fee: 0,

@@ -6713,7 +6713,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
   }
 });
 
-ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amount, purpose }) => {
+ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amount, purpose, memo }) => {
   try {
     const fromAddr = (from || '').toString().trim();
     const toAddr = (to || '').toString().trim();
@@ -6733,7 +6733,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       type: 'warning',
       title: 'Confirm Transaction',
       message: `Send ${amt} ZION?`,
-      detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}\n\nThis action cannot be undone.`,
+      detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}${memo ? '\nMemo: ' + memo : ''}\n\nThis action cannot be undone.`,
       buttons: ['Send', 'Cancel'],
       defaultId: 1,
       cancelId: 1
@@ -6786,7 +6786,8 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
           from: fromAddr,
           to: toAddr,
           amount: amt,
-          purpose: (purpose || '').toString()
+          purpose: (purpose || '').toString(),
+          ...(memo ? { memo: memo.toString().trim() } : {})
         });
         if (rpcRes && !rpcRes.error) {
           result = rpcRes;

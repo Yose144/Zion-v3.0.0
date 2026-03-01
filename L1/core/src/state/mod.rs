@@ -88,6 +88,7 @@ impl Inner {
                             &TxOutput {
                                 amount: entry.amount,
                                 address: entry.address.clone(),
+                                memo: None,
                             },
                         )
                         .unwrap();

@@ -379,13 +379,17 @@ pub async fn get_address_utxos_rest(
             let list: Vec<serde_json::Value> = utxos
                 .into_iter()
                 .map(|(key, output)| {
-                    serde_json::json!({
+                    let mut entry = serde_json::json!({
                         "key": key,
                         "amount": output.amount,
                         "amount_atomic": output.amount,
                         "amount_zion": output.amount / 1_000_000,
                         "address": output.address,
-                    })
+                    });
+                    if let Some(m) = &output.memo {
+                        entry["memo"] = serde_json::Value::String(m.clone());
+                    }
+                    entry
                 })
                 .collect();
             Json(serde_json::json!({
@@ -568,11 +572,13 @@ pub async fn bridge_unlock(
     let mut outputs = vec![TxOutput {
         amount: req.amount_atomic,
         address: req.recipient.clone(),
+        memo: None,
     }];
     if change > 0 {
         outputs.push(TxOutput {
             amount: change,
             address: vault_address.clone(),
+            memo: None,
         });
     }
 

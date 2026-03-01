@@ -296,6 +296,7 @@ async fn generate_transactions_advanced(
             outputs: vec![TxOutput {
                 amount: rng.gen_range(1..1000),
                 address: format!("ZION{:036x}", rng.gen::<u128>()),
+                memo: None,
             }],
             fee: rng.gen_range(1..100),
             timestamp: start.elapsed().as_secs(),

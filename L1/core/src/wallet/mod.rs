@@ -217,11 +217,13 @@ pub fn build_and_sign(
     let mut outputs = vec![TxOutput {
         amount: params.amount,
         address: params.to_address.clone(),
+        memo: None,
     }];
     if change > 0 {
         outputs.push(TxOutput {
             amount: change,
             address: params.change_address.clone(),
+            memo: None,
         });
     }
 
