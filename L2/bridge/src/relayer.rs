@@ -2,26 +2,24 @@
 //!
 //! - L1→EVM: After L1 lock is confirmed + finalized, submits `submitLockProof()` to ZIONBridge.sol
 //! - EVM→L1: After wZION burn is confirmed, submits L1 unlock TX + `confirmBurnRelease()` to ZIONBridge.sol
-//!
-//! ## Ankr Integration
-//!
-//! EVM RPC calls now go through Ankr's HTTP endpoints instead of per-chain WebSocket
-//! connections.  The `AnkrClient` handles JSON-RPC over HTTP for all supported chains.
-//!
-//! The on-chain proof submission (`submitLockProof`, `confirmBurnRelease`) requires ABI
-//! encoding + transaction signing.  For the simplified initial implementation these calls
-//! are performed via `eth_sendRawTransaction` using manually-ABI-encoded calldata.
-//! A full production implementation would use a lightweight ABI encoder.
 
-use crate::ankr::AnkrClient;
 use crate::config::BridgeConfig;
 use crate::config::ValidatorConfig;
+use crate::evm_rpc::EvmHttpClient;
+use crate::evm_tx::{build_and_sign_eip1559_tx, derive_evm_address, encode_submit_lock_proof, hash_to_bytes32};
 use crate::types::{EvmBurnEvent, L1LockEvent};
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 use zeroize::Zeroizing;
+
+/// Gas limit safety margin (multiply estimate by this fraction numerator/denominator).
+const GAS_MARGIN_NUM: u64 = 130; // 130%
+const GAS_MARGIN_DEN: u64 = 100;
+
+/// Maximum gas price override (10 gwei safety cap for testnet).
+const MAX_GAS_GWEI: u64 = 10;
 
 /// Load the validator private key securely.
 ///
@@ -110,7 +108,7 @@ impl Relayer {
         Ok(())
     }
 
-    /// Handle an L1 lock event: submit lock proof to ZIONBridge on EVM via Ankr.
+    /// Handle an L1 lock event: encode + sign + submit `submitLockProof()` to ZIONBridge.
     async fn handle_l1_lock(&self, lock: L1LockEvent) -> Result<()> {
         info!(
             "📤 Processing L1→EVM lock: {} ZION → {} on {} (TX: {})",
@@ -120,75 +118,132 @@ impl Relayer {
             lock.l1_tx_hash,
         );
 
-        // Find the target EVM chain config
+        // ── Find EVM chain config ─────────────────────────────────────
         let chain_config = self
             .config
             .evm_chains
             .iter()
             .find(|c| c.chain_id == lock.target_chain && c.enabled)
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "Target chain '{}' not configured or disabled",
-                    lock.target_chain
-                )
-            })?;
+            .ok_or_else(|| anyhow::anyhow!("Target chain '{}' not configured or disabled", lock.target_chain))?;
 
-        // Build Ankr client for this chain
-        let ankr = AnkrClient::new(self.config.ankr.effective_api_key());
+        // ── Load validator key ────────────────────────────────────────
+        let key = load_validator_key(&self.config.validator)?;
+        let validator_address = derive_evm_address(key.as_str())?;
+        info!("   Validator address: {}", validator_address);
+
+        // ── Build calldata ────────────────────────────────────────────
+        let l1_tx_hash_bytes = hash_to_bytes32(&lock.l1_tx_hash);
+        let calldata = encode_submit_lock_proof(
+            &l1_tx_hash_bytes,
+            &lock.evm_recipient,
+            &lock.amount_wzion,
+            lock.l1_block_height,
+            &lock.l1_sender,
+        )?;
+        let calldata_hex = format!("0x{}", hex::encode(&calldata));
 
         info!(
-            "   Submitting lock proof to ZIONBridge on {} via Ankr (bridge: {})",
-            chain_config.name, chain_config.bridge_contract_address
+            "   Calldata: {} bytes — bridge: {}",
+            calldata.len(),
+            chain_config.bridge_contract_address
         );
 
-        // Load validator key (kept in Zeroizing memory, wiped on drop)
-        let _key = load_validator_key(&self.config.validator).map_err(|e| {
-            anyhow::anyhow!("Failed to load validator key: {}", e)
-        })?;
+        // ── Setup EVM HTTP client ─────────────────────────────────────
+        let rpc_url = chain_config
+            .rpc_url
+            .as_deref()
+            .unwrap_or("https://base-sepolia.publicnode.com");
+        let evm = EvmHttpClient::from_rpc_url(rpc_url);
 
-        // TODO[L2-ankr]: Encode and submit submitLockProof() via eth_sendRawTransaction.
-        //
-        // Full implementation steps:
-        //   1. ABI-encode: submitLockProof(l1TxHash, recipient, amount, l1BlockHeight, l1Sender)
-        //   2. Sign transaction with validator key (secp256k1 + RLP encoding)
-        //   3. ankr.send_raw_transaction(&lock.target_chain, &raw_tx).await?
-        //
-        // For initial deployment the L1→EVM direction is handled by the bridge vault
-        // coordinator, so this stub is sufficient for testnet launch.
+        // ── Get nonce ─────────────────────────────────────────────────
+        let nonce = evm.get_nonce(&validator_address).await
+            .map_err(|e| anyhow::anyhow!("Failed to get nonce: {}", e))?;
+        info!("   Nonce: {}", nonce);
+
+        // ── Get gas params ────────────────────────────────────────────
+        let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000); // 2 gwei default
+        let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000); // 1.5 gwei default
+        // max_fee = 2 * base_fee + priority_fee (common formula), capped at MAX_GAS_GWEI
+        let max_fee_cap = MAX_GAS_GWEI * 1_000_000_000;
+        let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);
+        let max_priority = priority_fee.min(max_fee);
+        info!("   Gas: base_fee={} gwei, priority={} gwei, max_fee={} gwei",
+            base_fee / 1_000_000_000, priority_fee / 1_000_000_000, max_fee / 1_000_000_000);
+
+        // ── Estimate gas ──────────────────────────────────────────────
+        let gas_estimate = evm
+            .estimate_gas(&validator_address, &chain_config.bridge_contract_address, &calldata_hex)
+            .await
+            .unwrap_or(200_000); // fallback to 200k gas if estimation fails
+        let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
+        info!("   Gas estimate: {} → limit with margin: {}", gas_estimate, gas_limit);
+
+        // ── Build + sign EIP-1559 TX ──────────────────────────────────
+        let raw_tx = build_and_sign_eip1559_tx(
+            chain_config.evm_chain_id,
+            nonce,
+            max_priority,
+            max_fee,
+            gas_limit,
+            &chain_config.bridge_contract_address,
+            &calldata,
+            key.as_str(),
+        )?;
+        info!("   Signed TX: {} bytes (0x02...)", raw_tx.len() / 2);
+
+        // ── Submit TX ─────────────────────────────────────────────────
+        let tx_hash = evm.send_raw_transaction(&raw_tx).await
+            .map_err(|e| anyhow::anyhow!("Failed to submit submitLockProof TX: {}", e))?;
+
         info!(
-            "   ✅ L1 lock proof logged — EVM mint will be triggered by bridge vault coordinator",
+            "   ✅ submitLockProof TX submitted! hash: {} | chain: {} | bridge: {}",
+            tx_hash,
+            chain_config.name,
+            chain_config.bridge_contract_address,
         );
 
-        // Health-check connectivity to the target chain
-        let healthy = ankr.health_check(&lock.target_chain).await.unwrap_or(false);
-        if !healthy {
-            warn!(
-                "   ⚠️ Ankr health check failed for chain '{}' — EVM submission deferred",
-                lock.target_chain
-            );
-        }
+        // ── Poll for receipt ──────────────────────────────────────────
+        tokio::spawn({
+            let evm_url = rpc_url.to_string();
+            let tx = tx_hash.clone();
+            let chain_name = chain_config.name.clone();
+            async move {
+                let evm2 = EvmHttpClient::from_rpc_url(&evm_url);
+                for attempt in 1..=20 {
+                    tokio::time::sleep(std::time::Duration::from_secs(6)).await;
+                    match evm2.get_receipt(&tx).await {
+                        Ok(Some(receipt)) => {
+                            let status = receipt["status"].as_str().unwrap_or("0x0");
+                            if status == "0x1" {
+                                info!("   🟢 submitLockProof CONFIRMED on {} (attempt {}) — tx: {}", chain_name, attempt, tx);
+                            } else {
+                                error!("   🔴 submitLockProof REVERTED on {} (attempt {}) — tx: {}", chain_name, attempt, tx);
+                            }
+                            return;
+                        }
+                        Ok(None) => {
+                            if attempt < 20 {
+                                continue; // not mined yet
+                            }
+                            warn!("   ⏱️ submitLockProof receipt not found after 20 attempts — tx: {}", tx);
+                        }
+                        Err(e) => {
+                            warn!("   Receipt poll error (attempt {}): {}", attempt, e);
+                        }
+                    }
+                }
+            }
+        });
 
         Ok(())
     }
 
-    /// Handle an EVM burn event: submit unlock on L1 + confirm on ZIONBridge.
+    /// Handle an EVM burn event: submit L1 unlock TX and confirm on ZIONBridge.
     async fn handle_evm_burn(&self, burn: EvmBurnEvent) -> Result<()> {
         info!(
             "📤 Processing EVM→L1 burn: {} wZION → {} on L1 (chain: {}, burn_id: {})",
             burn.amount_wzion, burn.l1_recipient, burn.evm_chain, burn.burn_id,
         );
-
-        // ── Step 1: Submit L1 unlock transaction via L1 RPC ──────────
-        //
-        // POST to L1 node RPC: /api/bridge/unlock
-        // The L1 node has a bridge vault that holds locked ZION.
-        // When the bridge relay requests an unlock, the node creates
-        // a TX from the vault to l1_recipient for the specified amount.
-        //
-        // L1 RPC format:
-        //   POST /api/bridge/unlock
-        //   { "recipient": "zion1q...", "amount_atomic": 1000000000, "burn_id": "0x...", "evm_chain": "base" }
-        //   Response: { "tx_hash": "abc123...", "status": "submitted" }
 
         let l1_amount = burn.amount_l1_atomic;
         info!(
@@ -261,19 +316,20 @@ impl Relayer {
             .find(|c| c.chain_id == burn.evm_chain && c.enabled)
             .ok_or_else(|| anyhow::anyhow!("Burn chain '{}' not configured", burn.evm_chain))?;
 
-        // Build Ankr client for EVM calls
-        let ankr = AnkrClient::new(self.config.ankr.effective_api_key());
+        let rpc_url = chain_config
+            .rpc_url
+            .as_deref()
+            .unwrap_or("https://base-sepolia.publicnode.com");
+        let evm = EvmHttpClient::from_rpc_url(rpc_url);
 
-        // Verify burn tx receipt exists on EVM via Ankr
-        match ankr
-            .get_transaction_receipt(&burn.evm_chain, &burn.evm_tx_hash)
-            .await
-        {
+        // Verify burn tx receipt exists on EVM
+        match evm.get_receipt(&burn.evm_tx_hash).await {
             Ok(Some(receipt)) => {
-                if receipt.is_success() {
+                let status = receipt["status"].as_str().unwrap_or("0x0");
+                if status == "0x1" {
                     info!(
-                        "   ✅ Burn TX confirmed on {} (block {:?})",
-                        chain_config.name, receipt.block_number
+                        "   ✅ Burn TX confirmed on {} — tx: {}",
+                        chain_config.name, burn.evm_tx_hash
                     );
                 } else {
                     warn!(
@@ -291,7 +347,7 @@ impl Relayer {
                 return Ok(());
             }
             Err(e) => {
-                warn!("   ⚠️ Failed to fetch burn receipt via Ankr: {}", e);
+                warn!("   ⚠️ Failed to fetch burn receipt: {}", e);
             }
         }
 
