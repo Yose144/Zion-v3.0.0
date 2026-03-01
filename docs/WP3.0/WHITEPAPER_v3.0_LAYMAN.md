@@ -42,7 +42,7 @@ Představte si, že stát vydá úlohu: "Najděte číslo, které po zpracován�
 
 Počítač tuto úlohu řeší tak, že zkouší jedno číslo za druhým — miliardkrát za sekundu. Tomu se říká těžba (mining). Čím více počítačů zkouší, tím bezpečnější je síť.
 
-V ZION dostane ten, jejímž počítač úlohu vydřeší, odměnu **5 400 ZION** (plus případný bonus). Odměna každých 10 let mírně klesne o 20 % (tzv. Decade Decay) — na rozdíl od Bitcoinu, kde klesá najednou na polovinu. Síť tak funguje 100+ let a od roku 2126 vyplácí těžařům trvalou minimalní odměnu navěky.
+V ZION dostane ten, jehož počítač úlohu vyřeší, odměnu **5 400 ZION** (plus případný bonus). Odměna každých 10 let mírně klesne o 20 % (tzv. Decade Decay) — na rozdíl od Bitcoinu, kde klesá skokově na polovinu. Síť tak funguje 100+ let a od roku 2126 vyplácí těžařům trvalou minimální odměnu navěky.
 
 ### Proč právě já mohu těžit?
 
@@ -90,7 +90,7 @@ Při spuštění sítě bylo vytvořeno 16,28 miliardy ZION předem (tzv. premin
 
 ### Co je to Consciousness Mining?
 
-Imagine, že těžba je jako trénink. Čím déle a pravidelněji trénujete, tím lepší výsledky máte — a tím víc vám síť dá.
+Představte si, že těžba je jako trénink. Čím déle a pravidelněji trénujete, tím lepší výsledky máte — a tím víc vám síť dá.
 
 ZION má 9 úrovní "vědomí", které odrážejí vaši angažovanost v síti:
 
@@ -127,13 +127,13 @@ Místo aby šli všechny odměny jen těm s nejdražšími stroji, ZION odměňu
 
 ### Jak to funguje v praxi
 
-Každý blok, který kdekoli na světě někdo vytěží, automaticky posle:
+Každý blok, který kdekoli na světě někdo vytěží, automaticky pošle:
 - **5 %** → Humanitární fond (dětské projekty, čistá voda, vzdělání)
 - **5 %** → L5/L6 Issobella Fund (věda, volná energie, vesmírná stanice)
 
-Žádná neziskovka, žádný správce, žádné schvalovací víbory ve smokingu. Jen kód, on-chain hlasování a lidé, kteří chtějí změnit svět. **Zapsano přímo v kódu** (`reward_calculator.rs`), nedá se změnit bez konsenzu sítě.
+Žádná neziskovka, žádný správce, žádné schvalovací výbory ve smokingu. Jen kód, on-chain hlasování a lidé, kteří chtějí změnit svět. **Zapsáno přímo v kódu** (`reward_calculator.rs`), nedá se změnit bez konsenzu sítě.
 
-### Co se s těmito penĞzi děje?
+### Co se s těmito penězi děje?
 
 Organizace po celém světě mohou podat žádost o grant přes ZION DAO (hlasovací systém). Komunita hlasuje, jestli projekt schválí. Pokud ano, peníze jdou přímo na adresu organizace — ověřitelně, transparentně.
 
@@ -148,7 +148,7 @@ L5 je humanitární vrstva financovaná přímo protokolem. Cílem je:
 
 ### L6 ZION Issobella (cíl 2040+)
 
-Issobella je vesmirná observatoř na nízké oběžné dráze Země (LEO), řízená DAO. Každá vytěžená mince dnes přispívá k jejímu postavení. Vědecká data budou otevřená pro celou komunitu. Od roku 2126 bude financována trvalou emisní odměnou navěky.
+Issobella je vesmírná observatoř na nízké oběžné dráze Země (LEO), řízená DAO. Každá vytěžená mince dnes přispívá k jejímu vybudování. Vědecká data budou otevřená pro celou komunitu. Od roku 2126 bude financována trvalou emisní odměnou navěky.
 
 ---
 
@@ -156,7 +156,7 @@ Issobella je vesmirná observatoř na nízké oběžné dráze Země (LEO), ří
 
 ### Co znamená DAO?
 
-DAO (Decentralized Autonomous Organization) je způsob, jak skupina lidí rozhoduje o věcech beze středu moci. Žádný CEO, žádna rada, žádné tajné schůzky.
+DAO (Decentralized Autonomous Organization) je způsob, jak skupina lidí rozhoduje o věcech bez středu moci. Žádný CEO, žádná rada, žádné tajné schůzky.
 
 V ZION: **1 ZION = 1 hlas**.
 
