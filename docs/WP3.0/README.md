@@ -37,7 +37,8 @@ Tail reward:     724,785 ZION/blok (od 2126 navěky)
 Block time:      60 sekund
 Mining horizon:  100+ let + perpetual tail emission
 Premine:         16 280 000 000 ZION (11,31 %)
-Unit:            1 ZION = 1 000 000 000 000 flower (12 des. míst)
+Unit (spec):     1 ZION = 1 000 000 000 000 flower (12 des. míst)
+Unit (runtime):  1 ZION = 1 000 000 atomic units (aktuální API/L1)
 Consensus:       CosmicHarmony v3 (PoW, ASIC-resistant)
 Fair Launch:     ✅ Žádný presale, žádné ICO, žádné VC
 Distribution:    89 % miners / 5 % humanitarian / 5 % L5-L6 / 1 % pool
@@ -50,3 +51,4 @@ Distribution:    89 % miners / 5 % humanitarian / 5 % L5-L6 / 1 % pool
 	- `L1/pool/src/blockchain/reward_calculator.rs`
 	- `L1/core/src/blockchain/premine.rs`
 - Jednotka `flower` vychází ze specifikace: `docs/2.9.7/Flowers.md` (12 desetinných míst)
+- Aktuální implementace L1/API stále používá 1 000 000 atomic units/ZION (viz `L1/core/src/blockchain/reward.rs`, `docs/2.9.7/API_ENDPOINTS.md`)
