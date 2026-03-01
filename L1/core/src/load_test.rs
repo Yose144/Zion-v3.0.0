@@ -80,6 +80,7 @@ async fn generate_transactions(state: State, tps: u32, duration_secs: u64) {
             outputs: vec![TxOutput {
                 amount: rng.gen_range(100..10000),
                 address: format!("ZION_loadtest_{}", rng.gen::<u32>()),
+                memo: None,
             }],
             fee: rng.gen_range(10..100),
             timestamp: i,

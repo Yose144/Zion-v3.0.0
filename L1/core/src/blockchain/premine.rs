@@ -33,6 +33,10 @@ pub const TOTAL_SUPPLY: u64 = 144_000_000_000_000_000;
 /// Mining emission in atomic units
 pub const MINING_EMISSION: u64 = TOTAL_SUPPLY - PREMINE_TOTAL;
 
+/// Block height at which DAO Treasury unlocks (B-01)
+/// 525_600 blocks ≈ 1 year at 1 block/min
+pub const DAO_TREASURY_LOCK_HEIGHT: u64 = 525_600;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -163,14 +167,14 @@ pub fn get_all_premine_addresses() -> Vec<PremineAddress> {
         });
     }
 
-    // DAO Treasury — distribution governed by DAO vote (off-chain governance)
+    // DAO Treasury — time-locked until height DAO_TREASURY_LOCK_HEIGHT (B-01)
     for (addr, purpose, amount) in DAO_TREASURY {
         addresses.push(PremineAddress {
             address: addr.to_string(),
             purpose: purpose.to_string(),
             amount: *amount,
             category: "dao_treasury".to_string(),
-            unlock_height: None, // No on-chain lock — governed by DAO vote
+            unlock_height: Some(DAO_TREASURY_LOCK_HEIGHT), // Cliff lock ≈ 1 year
         });
     }
 
@@ -197,6 +201,25 @@ pub fn get_all_premine_addresses() -> Vec<PremineAddress> {
     }
 
     addresses
+}
+
+/// Check whether a premine transfer from the given address is allowed at current_height.
+///
+/// Returns `Ok(())` if the address is either not time-locked or its lock has expired.
+/// Returns `Err(reason)` if the transfer is still locked.
+pub fn is_transfer_allowed(address: &str, current_height: u64) -> Result<(), String> {
+    let all = get_all_premine_addresses();
+    if let Some(entry) = all.iter().find(|e| e.address == address) {
+        if let Some(unlock) = entry.unlock_height {
+            if current_height < unlock {
+                return Err(format!(
+                    "Address {} is time-locked until block {} (current: {})",
+                    address, unlock, current_height
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Validate premine structure (sanity check)

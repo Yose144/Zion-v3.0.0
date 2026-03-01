@@ -484,6 +484,7 @@ fn generate_random_transaction(rng: &mut ChaCha8Rng) -> Transaction {
         outputs: vec![TxOutput {
             address: format!("zion1{:039x}", rng.gen::<u128>()),
             amount: rng.gen::<u64>() % 1_000_000,
+            memo: None,
         }],
         fee: 100,
         timestamp: std::time::SystemTime::now()
@@ -524,6 +525,7 @@ fn generate_large_transaction(
         .map(|_| TxOutput {
             address: format!("zion1{:039x}", rng.gen::<u128>()),
             amount: rng.gen::<u64>() % 1_000_000,
+            memo: None,
         })
         .collect();
 
@@ -581,6 +583,7 @@ fn generate_fuzzed_transaction(rng: &mut ChaCha8Rng) -> Transaction {
                 .map(|_| format!("{:x}", rng.gen::<u8>()))
                 .collect(),
             amount: rng.gen::<u64>(),
+            memo: None,
         })
         .collect();
 
@@ -607,6 +610,7 @@ fn generate_transaction_with_amount(rng: &mut ChaCha8Rng, amount: u64) -> Transa
         outputs: vec![TxOutput {
             address: format!("zion1{:039x}", rng.gen::<u128>()),
             amount,
+            memo: None,
         }],
         fee: 100,
         timestamp: std::time::SystemTime::now()

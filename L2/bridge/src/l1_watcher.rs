@@ -10,7 +10,7 @@ use anyhow::Result;
 use chrono::Utc;
 use reqwest::Client;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
@@ -98,6 +98,22 @@ struct L1Health {
     pub status: String,
 }
 
+/// Single UTXO entry from REST /api/address/:addr/utxos
+#[derive(Debug, Deserialize)]
+struct L1UtxoEntry {
+    pub key: String,
+    pub amount: u64,
+    #[serde(default)]
+    pub memo: Option<String>,
+}
+
+/// Response from REST /api/address/:addr/utxos
+#[derive(Debug, Deserialize)]
+struct L1UtxoResponse {
+    #[serde(default)]
+    pub utxos: Vec<L1UtxoEntry>,
+}
+
 /// L1 watcher that polls for lock transactions.
 pub struct L1Watcher {
     config: L1Config,
@@ -105,6 +121,8 @@ pub struct L1Watcher {
     last_processed_height: u64,
     /// Pending lock events waiting for finality
     pending_locks: HashMap<String, L1LockEvent>,
+    /// UTXO keys already seen via direct-UTXO scanning (sendTransaction path)
+    seen_utxo_keys: HashSet<String>,
 }
 
 impl L1Watcher {
@@ -117,6 +135,7 @@ impl L1Watcher {
                 .expect("Failed to create HTTP client"),
             last_processed_height: start_height.unwrap_or(0),
             pending_locks: HashMap::new(),
+            seen_utxo_keys: HashSet::new(),
         }
     }
 
@@ -172,6 +191,12 @@ impl L1Watcher {
                     break; // Stop and retry next cycle
                 }
             }
+        }
+
+        // Also scan bridge address UTXOs for sendTransaction-originated locks
+        // (sendTransaction writes UTXOs directly without going through mined blocks)
+        if let Err(e) = self.scan_utxos_for_bridge_locks(current_height).await {
+            warn!("L1: UTXO scan error: {:?}", e);
         }
 
         // Check finality for pending locks
@@ -302,6 +327,77 @@ impl L1Watcher {
             .json::<ApiBlockResponse>()
             .await?;
         Ok(L1Block::from(resp))
+    }
+
+    /// Scan bridge address UTXOs for locks submitted via sendTransaction (which
+    /// bypasses mined blocks and writes UTXOs directly). Any UTXO at the bridge
+    /// address with a valid BRIDGE memo that hasn't been seen yet is treated as
+    /// a new lock event, using current_height as the finality baseline.
+    async fn scan_utxos_for_bridge_locks(&mut self, current_height: u64) -> Result<()> {
+        let url = format!(
+            "{}/api/address/{}/utxos",
+            self.config.rpc_url, self.config.bridge_address
+        );
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await?
+            .json::<L1UtxoResponse>()
+            .await?;
+
+        for utxo in &resp.utxos {
+            // Skip already-processed UTXOs
+            if self.seen_utxo_keys.contains(&utxo.key) {
+                continue;
+            }
+            self.seen_utxo_keys.insert(utxo.key.clone());
+
+            // Only process UTXOs with a valid BRIDGE memo
+            let memo_str = match &utxo.memo {
+                Some(m) if !m.is_empty() => m.as_str(),
+                _ => continue,
+            };
+
+            let (target_chain, evm_recipient) = match self.parse_bridge_memo(Some(memo_str)) {
+                Some(parsed) => parsed,
+                None => {
+                    debug!("L1 UTXO {}: memo '{}' not a valid bridge memo, skipping", utxo.key, memo_str);
+                    continue;
+                }
+            };
+
+            // Use UTXO key as pseudo tx_hash (unique per UTXO)
+            let pseudo_tx_hash = format!("utxo:{}", utxo.key);
+
+            if self.pending_locks.contains_key(&pseudo_tx_hash) {
+                continue;
+            }
+
+            let lock_event = L1LockEvent {
+                l1_tx_hash: pseudo_tx_hash.clone(),
+                l1_block_height: current_height,
+                l1_sender: String::from("sendTransaction"),
+                amount_atomic: utxo.amount,
+                amount_wzion: crate::types::conversion::l1_atomic_to_wzion_wei(utxo.amount),
+                target_chain,
+                evm_recipient,
+                detected_at: Utc::now(),
+                status: BridgeStatus::Pending,
+                confirmations: 0,
+            };
+
+            info!(
+                "🔒 L1 UTXO Lock detected: {} ZION via sendTransaction (key: {}) — waiting {} blocks",
+                crate::types::conversion::atomic_to_zion_display(utxo.amount),
+                utxo.key,
+                self.config.finality_blocks,
+            );
+
+            self.pending_locks.insert(pseudo_tx_hash, lock_event);
+        }
+
+        Ok(())
     }
 }
 

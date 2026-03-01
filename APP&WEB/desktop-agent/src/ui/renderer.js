@@ -1869,6 +1869,7 @@ function setupWalletControls() {
   const sendToEl = document.getElementById('send-to-address');
   const sendAmountEl = document.getElementById('send-amount');
   const sendPurposeEl = document.getElementById('send-purpose');
+  const sendMemoEl = document.getElementById('send-memo');
   const sendTxBtn = document.getElementById('send-tx-btn');
   const sendStatusEl = document.getElementById('send-status');
   const sendFromDisplay = document.getElementById('send-from-display');
@@ -2280,6 +2281,7 @@ function setupWalletControls() {
     const to = (sendToEl && 'value' in sendToEl ? sendToEl.value : '').toString().trim();
     const amountRaw = (sendAmountEl && 'value' in sendAmountEl ? sendAmountEl.value : '').toString().trim();
     const purpose = (sendPurposeEl && 'value' in sendPurposeEl ? sendPurposeEl.value : '').toString();
+    const memo = (sendMemoEl && 'value' in sendMemoEl ? sendMemoEl.value : '').toString().trim();
 
     // Validate from
     if (!from || !from.startsWith('zion1')) {
@@ -2313,7 +2315,8 @@ function setupWalletControls() {
       from,
       to,
       amount: parsedAmount,
-      purpose
+      purpose,
+      memo: memo || undefined
     });
 
     if (!result?.success) {
@@ -2327,6 +2330,7 @@ function setupWalletControls() {
     if (sendToEl) sendToEl.value = '';
     if (sendAmountEl) sendAmountEl.value = '';
     if (sendPurposeEl) sendPurposeEl.value = '';
+    if (sendMemoEl) sendMemoEl.value = '';
     // Refresh balance after successful send
     setTimeout(refreshSendFrom, 1500);
   });

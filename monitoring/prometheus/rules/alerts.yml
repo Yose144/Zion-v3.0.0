@@ -97,6 +97,31 @@ groups:
   # ════════════════════════════════════
   - name: zion_core_alerts
     rules:
+      # Blocks rejected rate > 5% over 10 min window (B-05)
+      - alert: CoreBlocksRejectedHigh
+        expr: |
+          rate(zion_blocks_rejected_total{job=~"zion-core-.*"}[10m])
+          / (rate(zion_blocks_processed_total{job=~"zion-core-.*"}[10m]) + 0.001)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Core {{ $labels.server }} — block rejection rate > 5%"
+          description: "Block rejection rate is {{ $value | humanizePercentage }} on {{ $labels.server }} for 10 minutes. Possible fork or validation issue."
+
+      # Absolute rejected blocks > 10/min — potential attack or consensus split
+      - alert: CoreBlocksRejectedSurge
+        expr: rate(zion_blocks_rejected_total{job=~"zion-core-.*"}[2m]) * 60 > 10
+        for: 3m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Core {{ $labels.server }} — block rejection surge ({{ $value }}/min)"
+          description: "More than 10 blocks/min rejected on {{ $labels.server }}. Possible network split or attack."
+
       # Core node down
       - alert: CoreNodeDown
         expr: up{job=~"zion-core-.*"} == 0

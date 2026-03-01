@@ -243,6 +243,9 @@ pub struct HealthStatus {
     pub uptime_seconds: u64,
     pub height: u64,
     pub difficulty: u64,
+    /// Number of connected peers.
+    /// JSON key is `peers` for monitoring compatibility (A-05 fix).
+    #[serde(rename = "peers")]
     pub peers_connected: usize,
     pub mempool_size: usize,
     pub time_since_last_block: u64,
