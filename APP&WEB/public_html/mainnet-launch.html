@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZION TerraNova MainNet — Spuštění</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+    :root {
+      --bg-deep:    #02040f;
+      --bg-mid:     #050c26;
+      --neon-gold:  #ffd700;
+      --neon-purple:#a855f7;
+      --neon-cyan:  #22d3ee;
+      --neon-green: #22c55e;
+      --glass:      rgba(8, 12, 30, 0.78);
+      --stroke:     rgba(255, 255, 255, 0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #010208;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      padding: 24px;
+      color: #fff;
+    }
+
+    /* ── MAIN BANNER (1200×630) ────────────────────────────────────── */
+    .banner {
+      width: 1200px;
+      height: 630px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 26px;
+      background: var(--bg-deep);
+      box-shadow: 0 30px 110px rgba(0,0,0,.82);
+      isolation: isolate;
+    }
+
+    /* Warp grid background */
+    .warp-grid {
+      position: absolute;
+      inset: -12%;
+      border-radius: inherit;
+      background-image:
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(0deg,  rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 64px 64px;
+      transform: perspective(800px) rotateX(22deg) scale(1.15);
+      transform-origin: center bottom;
+      opacity: .55;
+      z-index: 0;
+    }
+
+    /* Gradient bubbles */
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: .38;
+      z-index: 0;
+      animation: pulse 6s ease-in-out infinite alternate;
+    }
+    .bubble-1 { width:420px; height:420px; background:var(--neon-purple); top:-120px; left:-80px; }
+    .bubble-2 { width:340px; height:340px; background:var(--neon-cyan);   bottom:-80px; right:60px; animation-delay:2s; }
+    .bubble-3 { width:240px; height:240px; background:var(--neon-gold);   top:60%; left:38%; opacity:.22; animation-delay:4s; }
+    @keyframes pulse { from { opacity:.28; transform:scale(1); } to { opacity:.44; transform:scale(1.06); } }
+
+    /* Content layer */
+    .content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 52px 68px 44px;
+    }
+
+    /* Top row */
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-block {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo-hex {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--neon-gold), #ff8c00);
+      clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+      display: grid; place-items: center;
+      font-size: 20px; font-weight: 900; color: #000;
+    }
+    .logo-name {
+      font-size: 24px; font-weight: 800; letter-spacing: .08em;
+      background: linear-gradient(90deg, var(--neon-gold), #fff 60%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .logo-tag {
+      font-size: 11px; color: rgba(255,255,255,.45); letter-spacing: .15em;
+      text-transform: uppercase; margin-top: 2px;
+    }
+
+    /* Status pill */
+    .status-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(34,197,94,.12);
+      border: 1px solid rgba(34,197,94,.35);
+      border-radius: 999px;
+      padding: 8px 20px;
+      font-size: 13px; font-weight: 600; color: var(--neon-green);
+      letter-spacing: .06em;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--neon-green);
+      animation: blink 1.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.25;} }
+
+    /* Center block */
+    .center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .headline {
+      font-size: 72px; font-weight: 900; line-height: 1.0;
+      letter-spacing: -.02em;
+    }
+    .headline .line1 {
+      background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,.7) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .headline .line2 {
+      background: linear-gradient(90deg, var(--neon-gold) 0%, #ff8c00 50%, var(--neon-purple) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .subline {
+      font-size: 19px; color: rgba(255,255,255,.58); font-weight: 400;
+      max-width: 560px; line-height: 1.5;
+    }
+    .subline em {
+      font-style: normal; color: var(--neon-cyan); font-weight: 600;
+    }
+
+    /* Stats row */
+    .stats {
+      display: flex; gap: 32px; margin-top: 8px;
+    }
+    .stat {
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .stat-val {
+      font-size: 26px; font-weight: 800;
+      background: linear-gradient(90deg, var(--neon-cyan), #fff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .12em;
+      color: rgba(255,255,255,.35);
+    }
+    .stat-sep {
+      width: 1px; background: var(--stroke); align-self: stretch; margin: 4px 0;
+    }
+
+    /* Bottom row */
+    .bottom-row {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .links {
+      display: flex; gap: 20px;
+    }
+    .link-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-size: 13px; font-weight: 600; text-decoration: none;
+      transition: opacity .2s;
+    }
+    .link-btn:hover { opacity: .8; }
+    .link-discord {
+      background: linear-gradient(135deg, #5865f2, #7c5cfc);
+      color: #fff;
+    }
+    .link-github {
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--stroke);
+      color: rgba(255,255,255,.8);
+    }
+
+    .version-block {
+      text-align: right;
+    }
+    .version-num {
+      font-size: 28px; font-weight: 900; letter-spacing: -.01em;
+      color: rgba(255,255,255,.12);
+    }
+    .version-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .18em;
+      color: rgba(255,255,255,.2);
+    }
+
+    /* ── MOBILE CARD (below banner) ──────────────────────────────── */
+    .mobile-card {
+      display: none;
+      width: 100%;
+      max-width: 460px;
+      margin-top: 32px;
+      background: rgba(5, 12, 38, 0.92);
+      border: 1px solid rgba(255,215,0,.18);
+      border-radius: 20px;
+      padding: 32px 28px;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .mc-logo { font-size: 22px; font-weight: 900; color: var(--neon-gold); }
+    .mc-headline { font-size: 32px; font-weight: 900; line-height: 1.1; }
+    .mc-headline .hl { color: var(--neon-gold); }
+    .mc-sub { font-size: 15px; color: rgba(255,255,255,.55); line-height: 1.6; }
+    .mc-status { display:flex; align-items:center; gap:8px; color:var(--neon-green); font-size:13px; font-weight:600; }
+    .mc-links { display:flex; flex-direction:column; gap:10px; }
+    .mc-btn {
+      display:block; text-align:center; text-decoration:none;
+      padding: 13px; border-radius:12px; font-weight:700; font-size:14px;
+    }
+    .mc-btn-discord { background:linear-gradient(135deg,#5865f2,#7c5cfc); color:#fff; }
+    .mc-btn-github  { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.8); }
+
+    @media (max-width: 1260px) {
+      .banner { display: none !important; }
+      .mobile-card { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── 1200×630 BANNER ──────────────────────────────────────────────── -->
+  <div class="banner">
+    <div class="warp-grid"></div>
+    <div class="bubble bubble-1"></div>
+    <div class="bubble bubble-2"></div>
+    <div class="bubble bubble-3"></div>
+
+    <div class="content">
+      <!-- TOP -->
+      <div class="top-row">
+        <div class="logo-block">
+          <div class="logo-hex">Z</div>
+          <div>
+            <div class="logo-name">ZION TerraNova</div>
+            <div class="logo-tag">Layer 1 · Proof of Useful Work</div>
+          </div>
+        </div>
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          MainNet LIVE
+        </div>
+      </div>
+
+      <!-- CENTER -->
+      <div class="center">
+        <div class="headline">
+          <div class="line1">Nestav&iacute;li&nbsp;jsme&nbsp;banku.</div>
+          <div class="line2">Postavili&nbsp;jsme&nbsp;most.</div>
+        </div>
+        <div class="subline">
+          ZION&nbsp;v2.9.6 mainnet je&nbsp;spuštěn.
+          Těžba s&nbsp;<em>Proof&nbsp;of&nbsp;Useful&nbsp;Work</em>,
+          AI&nbsp;vrstva L3, DeFi&nbsp;most&nbsp;L2 —
+          vše v&nbsp;jednom.
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-val">PoUW</span>
+            <span class="stat-label">Algoritmus</span>
+          </div>
+          <div class="stat-sep"></div>
+          <div class="stat">
+            <span class="stat-val">L1–L4</span>
+            <span class="stat-label">Vrstvy</span>
+          </div>
+          <div class="stat-sep"></div>
+          <div class="stat">
+            <span class="stat-val">Open</span>
+            <span class="stat-label">Source</span>
+          </div>
+          <div class="stat-sep"></div>
+          <div class="stat">
+            <span class="stat-val">0</span>
+            <span class="stat-label">Poplatky&nbsp;VC</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM -->
+      <div class="bottom-row">
+        <div class="links">
+          <a class="link-btn link-discord" href="https://discord.gg/zionterranova">
+            <!-- Discord icon SVG inline -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+            Připoj se na Discord
+          </a>
+          <a class="link-btn link-github" href="https://github.com/zionterranova/zion">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+            </svg>
+            GitHub
+          </a>
+        </div>
+        <div class="version-block">
+          <div class="version-num">v2.9.6</div>
+          <div class="version-label">MainNet</div>
+        </div>
+      </div>
+    </div><!-- /content -->
+  </div><!-- /banner -->
+
+  <!-- ── MOBILE FALLBACK ───────────────────────────────────────────────── -->
+  <div class="mobile-card">
+    <div class="mc-logo">⬡ ZION TerraNova</div>
+    <div class="mc-headline">
+      Nestav&iacute;li&nbsp;jsme&nbsp;banku.<br>
+      <span class="hl">Postavili&nbsp;jsme&nbsp;most.</span>
+    </div>
+    <div class="mc-sub">
+      ZION v2.9.6 mainnet spuštěn. Proof of Useful Work, AI vrstva L3, DeFi most L2.
+    </div>
+    <div class="mc-status">
+      <span class="status-dot"></span> MainNet LIVE
+    </div>
+    <div class="mc-links">
+      <a class="mc-btn mc-btn-discord" href="https://discord.gg/zionterranova">Připoj se na Discord</a>
+      <a class="mc-btn mc-btn-github"  href="https://github.com/zionterranova/zion">GitHub — zdrojový kód</a>
+    </div>
+  </div>
+
+</body>
+</html>

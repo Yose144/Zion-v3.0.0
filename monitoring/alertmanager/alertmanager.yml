@@ -1,11 +1,15 @@
 # ╔══════════════════════════════════════════════════════════════╗
 # ║  ZION TerraNova — Alertmanager Configuration                 ║
-# ║  Routing: critical → Telegram, warning → Telegram            ║
+# ║  Routing: critical → Discord #critical, warning → #ops-alerts║
 # ╚══════════════════════════════════════════════════════════════╝
 #
 # Potřebné ENV proměnné (nastavit v .env nebo přímo na serveru):
-#   TELEGRAM_BOT_TOKEN  — token Telegram bota (od @BotFather)
-#   TELEGRAM_CHAT_ID    — ID skupiny/kanálu (získat přes @userinfobot)
+#   DISCORD_WEBHOOK_OPS      — webhook URL #ops-alerts kanálu
+#   DISCORD_WEBHOOK_CRITICAL — webhook URL #critical kanálu (může být shodný)
+#
+# Jak vytvořit webhook:
+#   Discord server → kanál → Nastavení → Integrace → Webhooky → Nový webhook
+#   URL formát: https://discord.com/api/webhooks/<id>/<token>
 #
 # Deploy:
 #   docker compose -f docker/docker-compose.monitoring.yml up -d alertmanager
@@ -17,7 +21,6 @@
 
 global:
   resolve_timeout: 5m
-  # Jak dlouho čekat po resolve než poslat "RESOLVED" notifikaci
   smtp_require_tls: true
 
 templates:
@@ -25,40 +28,35 @@ templates:
 
 # ── Routing ──────────────────────────────────────────────────────────────
 route:
-  # Výchozí příjemce
-  receiver: "telegram-ops"
+  receiver: "discord-ops"
   group_by: ["alertname", "server", "severity"]
-  group_wait: 30s        # Čekat na první report před odesláním
-  group_interval: 5m     # Minimum mezi skupinovými zprávami
-  repeat_interval: 4h    # Opakovat pokud alert stále trvá
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
 
   routes:
-    # Critical alertes → okamžitý Telegram
     - match:
         severity: critical
-      receiver: "telegram-ops"
+      receiver: "discord-critical"
       group_wait: 10s
       repeat_interval: 1h
       continue: false
 
-    # Warning alertes → Telegram, méně urgentní
     - match:
         severity: warning
-      receiver: "telegram-ops"
+      receiver: "discord-ops"
       group_wait: 1m
       repeat_interval: 6h
       continue: false
 
-    # Infra alertes (disk, RAM)
     - match:
         team: infra
-      receiver: "telegram-ops"
+      receiver: "discord-ops"
       group_wait: 30s
       repeat_interval: 2h
 
-# ── Inhibition (potlačení duplicitních alertů) ──────────────────────────
+# ── Inhibition ───────────────────────────────────────────────────────────
 inhibit_rules:
-  # Pokud je node DOWN, potlač všechny ostatní warning z toho serveru
   - source_match:
       severity: "critical"
       alertname: "CoreNodeDown"
@@ -78,22 +76,38 @@ inhibit_rules:
 
 # ── Receivers ────────────────────────────────────────────────────────────
 receivers:
-  - name: "telegram-ops"
-    telegram_configs:
-      - bot_token: "${TELEGRAM_BOT_TOKEN}"
-        chat_id: ${TELEGRAM_CHAT_ID}
-        parse_mode: "HTML"
+  - name: "discord-ops"
+    discord_configs:
+      - webhook_url: "${DISCORD_WEBHOOK_OPS}"
+        title: '{{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} ZION Alert — {{ .GroupLabels.alertname }}'
         message: |
-          {{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} <b>{{ .GroupLabels.alertname }}</b>
-          🖥️ Server: <code>{{ .CommonLabels.server }}</code>
-          ⚠️ Severity: <b>{{ .CommonLabels.severity }}</b>
-          📊 Alerts: {{ len .Alerts }}
+          **Server:** `{{ .CommonLabels.server }}`
+          **Severity:** {{ .CommonLabels.severity }}
+          **Alerts:** {{ len .Alerts }}
 
-          {{ range .Alerts }}
-          ▸ <b>{{ .Annotations.summary }}</b>
+          {{ range .Alerts -}}
+          › **{{ .Annotations.summary }}**
           {{ .Annotations.description }}
-          🕐 Started: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
-          {{ end }}
+          _Started: {{ .StartsAt.Format "2006-01-02 15:04 UTC" }}_
 
-          🌐 <a href="http://77.42.31.72:9093">Alertmanager</a> | <a href="http://77.42.31.72:3001">Grafana</a>
+          {{ end -}}
+          [Alertmanager](http://77.42.31.72:9093) · [Grafana](http://77.42.31.72:3001)
+        send_resolved: true
+
+  - name: "discord-critical"
+    discord_configs:
+      - webhook_url: "${DISCORD_WEBHOOK_CRITICAL}"
+        title: '🚨 CRITICAL — {{ .GroupLabels.alertname }}'
+        message: |
+          **Server:** `{{ .CommonLabels.server }}`
+          **Alerts:** {{ len .Alerts }}
+
+          {{ range .Alerts -}}
+          › **{{ .Annotations.summary }}**
+          {{ .Annotations.description }}
+          _Started: {{ .StartsAt.Format "2006-01-02 15:04 UTC" }}_
+
+          {{ end -}}
+          **@here** — akce vyžadována
+          [Alertmanager](http://77.42.31.72:9093) · [Grafana](http://77.42.31.72:3001)
         send_resolved: true
