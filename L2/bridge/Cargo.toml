@@ -27,6 +27,8 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 sha3 = "0.10"   # Keccak256 (same family as Ethereum's hash function)
 sha2 = "0.10"
 hex = "0.4"
+# secp256k1 signing for EVM transactions (submitLockProof)
+k256 = { version = "0.13", features = ["ecdsa"] }
 
 # Database (bridge state persistence)
 rusqlite = { version = "0.31", features = ["bundled"] }
