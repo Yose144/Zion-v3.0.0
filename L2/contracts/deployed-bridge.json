@@ -1,0 +1,13 @@
+{
+  "network": "base-sepolia",
+  "chainId": "84532",
+  "wzion": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+  "oldBridge": "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721",
+  "newBridge": "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1",
+  "validators": [
+    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+    "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787"
+  ],
+  "threshold": 1,
+  "deployedAt": "2026-03-01T22:31:59.402Z"
+}
