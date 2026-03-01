@@ -14,7 +14,8 @@ pub struct TxOutput {
     pub amount: u64,
     pub address: String,
     /// Optional memo / OP_RETURN data (e.g. "BRIDGE:base:0x..." for bridge locks)
-    #[serde(skip_serializing_if = "Option::is_none", default)]
+    /// NOTE: no skip_serializing_if — bincode (LMDB) requires all fields present
+    #[serde(default)]
     pub memo: Option<String>,
 }
 

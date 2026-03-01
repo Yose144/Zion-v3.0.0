@@ -1535,11 +1535,15 @@ mod tests {
     // Uses a unique temp dir per call to avoid LMDB conflicts when tests run in parallel.
     fn test_state() -> State {
         let id = TEST_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let ts = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
         // Set testnet network (OnceLock — only first call wins, ignore err)
         let _ = std::panic::catch_unwind(|| {
             crate::network::set_network(crate::network::NetworkType::Testnet);
         });
-        crate::state::Inner::new(&format!("/tmp/zion_rpc_test_{}", id))
+        crate::state::Inner::new(&format!("/tmp/zion_rpc_test_{}_{}", ts, id))
     }
 
     fn make_request(method: &str, params: Option<serde_json::Value>) -> Request {
