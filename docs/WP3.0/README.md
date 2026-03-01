@@ -31,12 +31,21 @@ Použijte `WHITEPAPER_v3.0_LAYMAN.md` — obsahuje:
 ## Klíčová fakta (pro rychlé reference)
 
 ```
-Total supply:    144 000 000 000 ZION
-Block reward:    5 400,067 ZION (konstantní, bez halvingu)
+Base supply:     144 000 000 000 ZION (+ tail emission od 2126)
+Block reward:    5 400,067 ZION (Decade Decay −20 % / 10 let)
+Tail reward:     724,785 ZION/blok (od 2126 navěky)
 Block time:      60 sekund
-Mining period:   ~45 let (2025–2070)
+Mining horizon:  100+ let + perpetual tail emission
 Premine:         16 280 000 000 ZION (11,31 %)
+Unit:            1 ZION = 1 000 000 flower
 Consensus:       CosmicHarmony v3 (PoW, ASIC-resistant)
 Fair Launch:     ✅ Žádný presale, žádné ICO, žádné VC
-Humanitarian:    10–25 % z každého bloku → fond
+Distribution:    89 % miners / 5 % humanitarian / 5 % L5-L6 / 1 % pool
 ```
+
+## Stav dokumentů
+
+- `WHITEPAPER_v3.0_TECHNICAL.md` a `WHITEPAPER_v3.0_LAYMAN.md` jsou po finálním konsistenčním auditu (03/2026).
+- Tokenomics a reward schedule jsou sladěny se zdrojovým kódem:
+	- `L1/pool/src/blockchain/reward_calculator.rs`
+	- `L1/core/src/blockchain/premine.rs`
