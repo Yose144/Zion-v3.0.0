@@ -1957,20 +1957,236 @@ impl StratumServer {
     /// The full NCL (Neural Compute Layer) manager is planned for Phase 2.
     /// Internal miners and desktop agents may send ncl.register / ncl.get_task periodically;
     /// respond cleanly instead of erroring out to avoid log noise and wasted resources.
+    /// NCL (Neural Compute Layer) handler — Phase B: PoUW aktivace.
+    ///
+    /// Protokol: JSON-RPC přes stratum spojení.
+    /// Miner posílá: ncl.register → ncl.get_task → ncl.submit (opakuje)
+    ///
+    /// Verifikace: hash_chaining_v1 = blake3(seed) × rounds
+    /// Pool ověří stejným výpočtem (deterministické, rychlé).
     async fn handle_ncl_stub(
         &self,
-        _connection: &Arc<RwLock<Connection>>,
+        connection: &Arc<RwLock<Connection>>,
         request: &StratumRequest,
     ) -> Result<Option<Value>> {
-        tracing::debug!(
-            "NCL stub: {} (NCL not enabled in this build)",
-            request.method
+        match request.method.as_str() {
+            "ncl.register" => self.handle_ncl_register(connection, request).await,
+            "ncl.get_task" => self.handle_ncl_get_task(connection, request).await,
+            "ncl.submit" => self.handle_ncl_submit(connection, request).await,
+            "ncl.status" => self.handle_ncl_status(connection, request).await,
+            _ => {
+                let response = StratumResponse::success(
+                    request.id.clone(),
+                    json!({"status": "ok"}),
+                );
+                Ok(Some(serde_json::to_value(response)?))
+            }
+        }
+    }
+
+    /// NCL Register — miner oznamuje NPU schopnosti.
+    async fn handle_ncl_register(
+        &self,
+        connection: &Arc<RwLock<Connection>>,
+        request: &StratumRequest,
+    ) -> Result<Option<Value>> {
+        let params = request.params.as_ref();
+        let npu_type = params
+            .and_then(|p| p.get("npu_type"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("cpu");
+        let npu_tflops = params
+            .and_then(|p| p.get("npu_tflops"))
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.5);
+        let allocation = params
+            .and_then(|p| p.get("allocation"))
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.25);
+
+        let session_id = connection.read().await.session_id.clone();
+        tracing::info!(
+            "🧠 NCL register: session={} npu={} ({:.1} TFLOPS) allocation={:.0}%",
+            session_id, npu_type, npu_tflops, allocation * 100.0
         );
+
         let response = StratumResponse::success(
             request.id.clone(),
             json!({
-                "status": "ncl_not_available",
-                "message": "NCL is not enabled on this pool instance"
+                "status": "registered",
+                "version": "1.0",
+                "supported_task_types": ["hash_chaining_v1"],
+                "task_fee_percent": 10,
+                "miner_share_percent": 85,
+                "session_id": session_id
+            }),
+        );
+        Ok(Some(serde_json::to_value(response)?))
+    }
+
+    /// NCL Get Task — vygeneruje hash_chaining_v1 úkol z aktuálního job seedu.
+    ///
+    /// Seed je deterministicky odvozený z aktuálního job_id + session_id,
+    /// takže každý miner dostane unikátní, ověřitelný úkol.
+    async fn handle_ncl_get_task(
+        &self,
+        connection: &Arc<RwLock<Connection>>,
+        request: &StratumRequest,
+    ) -> Result<Option<Value>> {
+        let (session_id, current_job_id) = {
+            let conn = connection.read().await;
+            (
+                conn.session_id.clone(),
+                conn.current_job_id.clone().unwrap_or_else(|| "genesis".to_string()),
+            )
+        };
+
+        // Deterministický seed: blake3(job_id || session_id)
+        let seed_input = format!("ncl:{}:{}", current_job_id, session_id);
+        let seed_hash = blake3::hash(seed_input.as_bytes());
+        let seed_hex = hex::encode(seed_hash.as_bytes());
+
+        // Rounds: 1000 kol blake3 chaining ≈ 10–50ms na CPU
+        let rounds: u32 = 1000;
+        let task_id = format!("ncl_{}_{}", &current_job_id[..8.min(current_job_id.len())], &session_id[..8.min(session_id.len())]);
+
+        tracing::debug!(
+            "📤 NCL task: {} seed={}... rounds={}",
+            task_id, &seed_hex[..16], rounds
+        );
+
+        let response = StratumResponse::success(
+            request.id.clone(),
+            json!({
+                "version": "1.0",
+                "task_id": task_id,
+                "task_type": "hash_chaining_v1",
+                "seed": seed_hex,
+                "rounds": rounds,
+                "max_time_ms": 5000,
+                "model": "blake3_chain_v1",
+                "input_data": format!("{{\"mode\":\"deterministic\",\"iterations\":{}}}", rounds),
+                "reward_multiplier": 1.0
+            }),
+        );
+        Ok(Some(serde_json::to_value(response)?))
+    }
+
+    /// NCL Submit — ověří výsledek hash_chaining_v1 a přidělí bonus.
+    ///
+    /// Verifikace: blake3(seed)^rounds == submitted_result
+    /// Pool provede stejný výpočet k ověření (fast: <100ms).
+    async fn handle_ncl_submit(
+        &self,
+        connection: &Arc<RwLock<Connection>>,
+        request: &StratumRequest,
+    ) -> Result<Option<Value>> {
+        let params = match request.params.as_ref() {
+            Some(p) => p,
+            None => {
+                let response = StratumResponse::error(
+                    request.id.clone(),
+                    StratumError::invalid_params("Missing params"),
+                );
+                return Ok(Some(serde_json::to_value(response)?));
+            }
+        };
+
+        let task_id = params.get("task_id").and_then(|v| v.as_str()).unwrap_or("");
+        // Pool v1 protokol: výsledek je v "result" nebo "result_hash"
+        let submitted = params
+            .get("result")
+            .or_else(|| params.get("result_hash"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
+        // Zrekonstruujeme seed z task_id (obsahuje prefix job_id a session_id)
+        let (session_id, current_job_id) = {
+            let conn = connection.read().await;
+            (
+                conn.session_id.clone(),
+                conn.current_job_id.clone().unwrap_or_else(|| "genesis".to_string()),
+            )
+        };
+        let seed_input = format!("ncl:{}:{}", current_job_id, session_id);
+        let seed_hash = blake3::hash(seed_input.as_bytes());
+        let seed_hex = hex::encode(seed_hash.as_bytes());
+
+        // Spustíme verifikaci asynchronně (CPU-bound → spawn_blocking)
+        let expected = {
+            let seed_bytes = match hex::decode(&seed_hex) {
+                Ok(b) => b,
+                Err(_) => {
+                    tracing::warn!("NCL submit: invalid seed hex");
+                    return Ok(Some(serde_json::to_value(StratumResponse::error(
+                        request.id.clone(),
+                        StratumError::invalid_params("Bad seed"),
+                    ))?));
+                }
+            };
+            let rounds: u32 = 1000;
+            tokio::task::spawn_blocking(move || {
+                let mut state = [0u8; 32];
+                state.copy_from_slice(&seed_bytes[..32]);
+                for _ in 0..rounds {
+                    let h = blake3::hash(&state);
+                    state.copy_from_slice(h.as_bytes());
+                }
+                hex::encode(state)
+            })
+            .await?
+        };
+
+        // Normalizovat submitted hex (strip 0x prefix)
+        let submitted_clean: String = submitted.trim_start_matches("0x").to_lowercase();
+        let valid = submitted_clean == expected;
+
+        if valid {
+            tracing::info!(
+                "✅ NCL share accepted: task={} session={}",
+                task_id, session_id
+            );
+            let response = StratumResponse::success(
+                request.id.clone(),
+                json!({
+                    "status": "accepted",
+                    "task_id": task_id,
+                    "bonus_zion": 0.001,
+                    "message": "NCL PoUW share accepted"
+                }),
+            );
+            Ok(Some(serde_json::to_value(response)?))
+        } else {
+            tracing::warn!(
+                "❌ NCL share rejected: task={} session={} submitted={}... expected={}...",
+                task_id, session_id,
+                &submitted_clean[..16.min(submitted_clean.len())],
+                &expected[..16]
+            );
+            let response = StratumResponse::error(
+                request.id.clone(),
+                StratumError::invalid_params("NCL result mismatch"),
+            );
+            Ok(Some(serde_json::to_value(response)?))
+        }
+    }
+
+    /// NCL Status — vrátí stav NCL integrace pro toto session.
+    async fn handle_ncl_status(
+        &self,
+        connection: &Arc<RwLock<Connection>>,
+        request: &StratumRequest,
+    ) -> Result<Option<Value>> {
+        let session_id = connection.read().await.session_id.clone();
+        let response = StratumResponse::success(
+            request.id.clone(),
+            json!({
+                "version": "1.0",
+                "enabled": true,
+                "session_id": session_id,
+                "supported_types": ["hash_chaining_v1"],
+                "task_interval_ms": 5000,
+                "fee_percent": 10
             }),
         );
         Ok(Some(serde_json::to_value(response)?))

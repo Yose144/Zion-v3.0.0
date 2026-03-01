@@ -409,6 +409,60 @@ pub fn cosmic_harmony_v3(block_header: &[u8], nonce: u64) -> Hash32 {
     cosmic_fusion_opt(&step4.data)
 }
 
+/// ============================================================================
+/// COSMIC HARMONY v4 PIPELINE — NPU Mixing Step
+/// ============================================================================
+
+/// Full Cosmic Harmony v4 pipeline:
+/// Keccak → SHA3 → GoldenMatrix → MemoryHard → [NPU Mixing] → CosmicFusion
+///
+/// NPU Mixing: deterministický INT8 MLP 64→128→64 s residual connection.
+/// Aktivuje se od výšky CHV4_NPU_FORK_HEIGHT.
+/// CPU fallback produkuje identický výsledek (integer aritmetika).
+#[inline]
+pub fn cosmic_harmony_v4(block_header: &[u8], nonce: u64) -> Hash32 {
+    use crate::algorithms_npu::npu_mixing_hash64;
+
+    let mut input = [0u8; 88];
+    let copy_len = block_header.len().min(80);
+    input[..copy_len].copy_from_slice(&block_header[..copy_len]);
+    input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+    // Step 1: Keccak-256
+    let step1 = keccak256_opt(&input);
+
+    // Step 2: SHA3-512
+    let step2 = sha3_512_opt(&step1.data);
+
+    // Step 3: Golden Matrix
+    let step3 = golden_matrix_opt(&step2.data);
+
+    // Step 4: Memory-hard scratchpad
+    let step4 = scratchpad::memory_hard_transform(&step3.data);
+
+    // Step 5 (NEW v4): NPU Mixing — deterministický INT8 MLP
+    let step5 = npu_mixing_hash64(&step4.data);
+
+    // Step 6: Cosmic Fusion
+    cosmic_fusion_opt(&step5.data)
+}
+
+/// Height-aware selektor CHv3 vs CHv4 pro bezpečný fork rollout.
+///
+/// < CHV3_MEMORY_HARD_FORK_HEIGHT → legacy (no memory-hard)
+/// < CHV4_NPU_FORK_HEIGHT         → CHv3 (memory-hard, no NPU)
+/// ≥ CHV4_NPU_FORK_HEIGHT         → CHv4 (memory-hard + NPU mixing)
+#[inline]
+pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32 {
+    use crate::algorithms_npu::CHV4_NPU_FORK_HEIGHT;
+
+    if height >= CHV4_NPU_FORK_HEIGHT {
+        cosmic_harmony_v4(block_header, nonce)
+    } else {
+        cosmic_harmony_v3_with_height(block_header, nonce, height)
+    }
+}
+
 /// Height-aware CHv3 selector pro bezpečný fork rollout.
 #[inline]
 pub fn cosmic_harmony_v3_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32 {

@@ -20,6 +20,10 @@ cpu = ["dep:randomx-rs"]
 parallel = ["dep:rayon", "dep:num_cpus"]
 simd = []
 
+# CHv4 NPU Mixing backend
+native-npu = []           # ONNX Runtime / CoreML backend (budoucí, CPU INT8 fallback je vždy aktivní)
+npu-fallback-cpu = []     # Vynutit CPU cestu i na NPU hardware (testování deterministnosti)
+
 # Native library features
 native-randomx = []
 native-yescrypt = []
