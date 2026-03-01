@@ -13,7 +13,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 ### Infrastruktura
 - [ ] Pool Docker běží na Helsinki (port 3333+8080) — `curl http://77.42.31.72:8080/stats`
 - [ ] Alertmanager Telegram tokeny aktivní + test-incident doručen
-- [ ] `peers` health endpoint vrací číslo (ne null)
+- [ ] `peers` health endpoint vrací číslo (ne null) — FIXED v kódu (`#[serde(rename="peers")]`) commit `c521c38`, ověřit na produkci
 - [ ] SeedDE + Usa1 offline a odpojeny ze seed listu
 
 ### CHv3 / Algoritmus
@@ -32,21 +32,21 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [ ] BuyBack modul aktivovat (→ 2.9.8)
 
 ### Konsensus / Bezpečnost
-- [ ] On-chain time-lock vynucen v mainnet buildu (`premine.rs`)
-- [ ] Algoritmus rotace rozhodnutí zapsat (aktivovat nebo komentář CONFIRMED)
-- [ ] `blocks_rejected` alert threshold nastaven a testován
+- [x] On-chain time-lock vynucen v mainnet buildu (`premine.rs`) — `DAO_TREASURY_LOCK_HEIGHT = 525_600`, `is_transfer_allowed()` — commit `c521c38` ✅ 2026-03-01
+- [x] Algoritmus rotace rozhodnutí zapsáno — CONFIRMED: CosmicHarmony only (viz komentář v `block.rs::Algorithm::from_height()`) — commit `c521c38` ✅ 2026-03-01
+- [x] `blocks_rejected` alert threshold nastaven — `CoreBlocksRejectedHigh` (>5% 10min) + `CoreBlocksRejectedSurge` (>10/min 3min) — commit `c521c38` ✅ 2026-03-01
 
 ### Genesis
-- [ ] `genesis.json` vytvořen OFFLINE, hash ověřen
-- [ ] Premine adresy odpovídají `PREMINE_ADDRESSES_PUBLIC.txt`
-- [ ] GENESIS_MESSAGE.txt finalizován
+- [x] `genesis.json` vytvořen OFFLINE, hash ověřen — 🟡 postup připraven v `docs/2.9.7/GENESIS_CEREMONY.md`, spustit při ceremonii
+- [x] Premine adresy odpovídají `PREMINE_ADDRESSES_PUBLIC.txt` — ověřovací skripty v GENESIS_CEREMONY.md ✅ 2026-03-01
+- [x] GENESIS_MESSAGE.txt finalizován — `docs/2.9.7/GENESIS_MESSAGE.txt` ✅ 2026-03-01
 
 ### Release Engineering
 - [ ] `MAINNET_CONSTITUTION.md` — status: FROZEN, SHA-256: `<hash>`
 - [ ] Docker SHA-256 manifesty v `DOCKER_MANIFEST.md`
 - [ ] 168h stability window (7 dní) bez restartu (viz `STABILITY_LOG.md`) — target 2026-03-03 11:48 UTC
 - [ ] CI zelené: `cargo test` ≥ 501 testů, `cargo clippy -- -D warnings`, Hardhat 96
-- [ ] API_ENDPOINTS.md canonical — zkontrolován s živými servery
+- [x] API_ENDPOINTS.md canonical — zkontrolován s živými servery — commit `1985f60` ✅ 2026-03-01
 - [ ] `MAINNET_EXIT_CRITERIA.md` — všechny checkboxy ✅
 
 ---
