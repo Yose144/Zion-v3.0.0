@@ -23,7 +23,7 @@
 6. [Vědomostní těžba (Consciousness Mining)](#6-vědomostní-těžba-consciousness-mining)
 7. [Fair Launch](#7-fair-launch)
 8. [DAO Governance](#8-dao-governance)
-9. [Humanitární desátek](#9-humanitární-desátek)
+9. [Humanitární fond + L5/L6 alokace](#9-humanitární-fond--l5l6-alokace)
 10. [L2 — wZION Bridge + DAO](#10-l2--wzion-bridge--dao)
 11. [L3 — NCL + WARP + AI-native](#11-l3--ncl--warp--ai-native)
 12. [L4 — ZION OASIS Game World](#12-l4--zion-oasis-game-world)
@@ -38,7 +38,7 @@
 
 ## 1. Abstrakt
 
-ZION TerraNova je vrstvená blockchain síť s důkazem práce (Proof-of-Work), navržená s třemi základními principy: **spravedlivý spuštění** bez venture capital ani ICO, **vědomostní těžba** jako gamifikační vrstva odměňující dlouhodobou angažovanost, a **povinný humanitární desátek** embedded přímo do každého nalezeného bloku.
+ZION TerraNova je vrstvená blockchain síť s důkazem práce (Proof-of-Work), navržená s třemi základními principy: **spravedlivé spuštění** bez venture capital ani ICO, **vědomostní těžba** jako gamifikační vrstva odměňující dlouhodobou angažovanost a **protokolová redistribuce odměn** (5 % humanitární fond + 5 % L5/L6 Issobella fund) embedded přímo do každého nalezeného bloku.
 
 Síť je implementována v jazyce **Rust** na vrstvách L1–L4:
 
@@ -58,7 +58,7 @@ Síť je implementována v jazyce **Rust** na vrstvách L1–L4:
 | Total supply | 144 000 000 000 ZION (144 miliard) |
 | Block reward (dekáda 1) | 5 400,067 ZION |
 | Decay schedule | Decade Decay −20 % / 10 let (viz §5.4) |
-| Tail emission | 724,785 ZION/blok od roku 2126 (навěky) |
+| Tail emission | 724,785 ZION/blok od roku 2126 (navěky) |
 | Block time | 60 sekund |
 | Mining horizon | 100+ let + tail emission |
 | Premine | 16 280 000 000 ZION (11,31 %) |
@@ -87,7 +87,7 @@ ZION řeší každý z těchto problémů konkrétním protokolárním mechanism
 |---------|-------------|
 | ASIC dominance | CosmicHarmony v3 — paměťově náročný algoritmus, CPU-/GPU-first |
 | Nerovné podmínky | Fair Launch — nula presale, nula VC, tým těží jako všichni ostatní |
-| Technologie bez hodnot | Humanitární desátek — 10 % z každého bloku povinně do humanitárního fondu |
+| Technologie bez hodnot | Povinná redistribuce — 5 % humanitární fond + 5 % L5/L6 Issobella fund |
 
 ### 2.3 Vizionářský rámec
 
@@ -237,10 +237,10 @@ Total Supply:       144 000 000 000 ZION (144B)
 Mining Emission:    127 720 000 000 ZION (88,69 %)
 Genesis Premine:     16 280 000 000 ZION (11,31 %)
 
-Block Reward:           5 400,067 ZION (konstantní)
-Block Time:             60 sekund
-Mining Duration:        ~45 let (bloky 0–23 651 999)
-Total Mining Blocks:    23 652 000
+Block Reward (dekáda 1):   5 400,067 ZION
+Block Time:                60 sekund
+Decade Decay:              −20 % každých 5 256 000 bloků (10 let)
+Tail emission (2126+):     724,785 ZION/blok navěky
 
 Atomic Units:           1 000 000 atomů/ZION (6 des. míst)
 ```
@@ -549,15 +549,21 @@ Fáze 3 (2027+):     Plná decentralizace, quadratic voting
 
 ---
 
-## 9. Humanitární desátek
+## 9. Humanitární fond + L5/L6 alokace
 
 ### 9.1 Mechanismus
 
-Z každého nalezeného bloku je **automaticky odečteno 10 %** a posláno na adresu Humanitarian Fund (`Children Future Fund — Humanitarian DAO` v genesis). Toto je enforced v reward_calculator.
+Z každého nalezeného bloku je **automaticky odečteno 5 %** a posláno na adresu Humanitarian Fund (`Children Future Fund — Humanitarian DAO` v genesis). Dalších **5 %** směřuje do L5/L6 Issobella fund. Toto je enforced v `reward_calculator.rs`.
 
 ### 9.2 Konstantní podíl
 
-Humanitární tithe je **pevně 5 %** (plus 5 % L5/L6 Issobella fund). Přesné nastavení podléhá governance hlasování — spodní hranice 5 %, horní hranice 10 % per kategorie. Progresivní plán (10 → 25 %) byl součástí staršího WP v2.9.5, v kódu v2.9.6 je implementováno 5+5.
+Distribuce je v kódu nastavena jako:
+- 5 % Humanitarian Fund
+- 5 % L5/L6 Issobella Fund
+- 1 % Pool fee
+- 89 % Miners (PPLNS)
+
+Progresivní plán (10 → 25 %) byl součástí staršího WP v2.9.5, ale v kódu v2.9.6 je implementováno fixní schéma 5+5+1+89.
 
 ### 9.3 Governance humanitárního fondu
 
@@ -615,11 +621,11 @@ L3 se skládá ze tří vzájemně provázaných modulů:
 | WARP | `zion-warp` | ~2 400 | 164 | Cross-chain swap protokol |
 | AI-native | `zion-ai-native` | ~500 | 45 | AI agenti, on-chain inteligence |
 
-### 11.1 NCL — Neural Compute Layer
+### 11.2 NCL — Neural Compute Layer
 
 **NCL (Neural Compute Layer)** přeměňuje těžební infrastrukturu v distribuovanou AI computing síť. Minéři mohou paralelně s těžbou zpracovávat AI inference tasky a získávat za ně dodatečné NCL odměny.
 
-### 11.2 Protokol
+### 11.3 Protokol
 
 ```
 Životní cyklus tasku:
@@ -632,7 +638,7 @@ Protokol verze: 1.0
 Rate limit:     60 requestů/minutu
 ```
 
-### 11.3 Typy tasků a base odměny
+### 11.4 Typy tasků a base odměny
 
 | Task Type | Base odměna | Verifikace |
 |-----------|-------------|------------|
@@ -644,7 +650,7 @@ Rate limit:     60 requestů/minutu
 | Speech to Text | ~0,005 ZION | CER/WER scoring |
 | Model Training | ~0,100 ZION | Loss convergence |
 
-### 11.4 Deterministická verifikace (Hash Chaining)
+### 11.5 Deterministická verifikace (Hash Chaining)
 
 Pro auditovatelné AI tasky je implementován Blake3 hash chaining:
 
@@ -658,7 +664,7 @@ pub fn verify_hash_chain(seed: &str, rounds: u32, expected: &str) -> bool {
 }
 ```
 
-### 11.5 NPU Runtime Detection
+### 11.6 NPU Runtime Detection
 
 NCL automaticky detekuje nejrychlejší dostupný AI backend:
 
@@ -669,17 +675,17 @@ Intel CPU/GPU:   OpenVINO
 Ostatní:         ONNX Runtime (fallback)
 ```
 
-### 11.6 Časové dělení
+### 11.7 Časové dělení
 
 Výchozí alokace: **70 % mining / 30 % NCL**. Konfigurovatelné v rozsahu 50–90 % mining. Mining má vždy prioritu.
 
-### 11.7 NCL + Consciousness bonus
+### 11.8 NCL + Consciousness bonus
 
 NCL odměny jsou rovněž násobeny consciousness level multiplierem. Miner na úrovni L6 (Enlightened, 2,0×) dostane dvojnásobnou NCL odměnu oproti L1.
 
 ---
 
-### 11.2 WARP — Cross-chain Swap Protocol
+### 11.9 WARP — Cross-chain Swap Protocol
 
 **WARP** je cross-chain swap protokol umožňující atomické výměny ZION s tokeny na 7 chain families:
 
@@ -695,7 +701,7 @@ NCL odměny jsou rovněž násobeny consciousness level multiplierem. Miner na �
 
 WARP REST API běží na portu **8092** (Axum). Persistence přes SQLite (`WarpDb`). **XP Bridge** — WARP swapy akumulují XP body na L1 (on-chain XP přes WARP transakce).
 
-### 11.3 AI-native
+### 11.10 AI-native
 
 AI-native vrstva implementuje AI agenty jako first-class objekty protokolu: on-chain model registry, AI-assisted governance pro DAO rozhodnutí, analýza on-chain dat.
 
@@ -792,8 +798,6 @@ L5 je humanitární a vědecká vrstva financovaná přímo z blockchainového p
 
 ---
 
----
-
 ## 15. Bezpečnost a kryptografické primitiva
 
 ### 15.1 Využité primitiva
@@ -852,7 +856,7 @@ v3.0    ─ MainNet Genesis (Block #0)                       📅 Q4 2026
 | NCL + WARP live | Q1 2027 | 1 000 NCL tasků/den, WARP swapy aktivní |
 | L3 DAO (Fáze 2) | 2027 | On-chain voting |
 | L5 Free World | 2030 | Foundation + výzkumná lab |
-| 1. Lite Halving | 2036 | Block reward −20 % → 4 320 ZION |
+| 1. Decade Decay event | 2036 | Block reward −20 % → 4 320 ZION |
 | L6 Issobella start | 2040 | Space Division zahájen |
 | Tail emission | 2126 | 724,785 ZION/blok navěky |
 
