@@ -1,7 +1,19 @@
-# ZION TerraNova v3.0 "MainNet Genesis"
-## Whitepaper — Druhé vydání
+# ⚠️ SUPERSEDED — Tento soubor byl nahrazen
 
-**Verze:** 3.0 | **Datum:** Březen 2026 | **Status:** Pre-Release Draft  
+> **Tento soubor je zastaralý quick draft ze session 2026-03-01.**
+>
+> Aktuální whitepapery jsou:
+> - [`WHITEPAPER_v3.0_TECHNICAL.md`](WHITEPAPER_v3.0_TECHNICAL.md) — technická verze pro CoinGecko/vývojáře
+> - [`WHITEPAPER_v3.0_LAYMAN.md`](WHITEPAPER_v3.0_LAYMAN.md) — laická verze pro veřejnost
+>
+> Tento soubor je zachován pouze pro archivní účely.
+
+---
+
+# ZION TerraNova v3.0 "MainNet Genesis"
+## Whitepaper — DRAFT (SUPERSEDED)
+
+**Verze:** 3.0 DRAFT ARCHIV | **Datum:** Březen 2026 | **Status:** ❌ ZASTARALÝ  
 **Autoři:** ZION Core Team | **Jazyk:** CS/EN bilingual summary (CS primární)
 
 ---
