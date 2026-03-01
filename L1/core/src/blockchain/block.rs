@@ -19,18 +19,33 @@ pub enum Algorithm {
 
 impl Algorithm {
     pub fn from_height(_height: u64) -> Self {
-        // TESTNET: Use only Cosmic Harmony for all heights
-        // TODO: Restore rotation for mainnet
+        // DECISION (v2.9.7, 2026-03-01): Single-algorithm PoW — CosmicHarmony only.
+        //
+        // Multi-algo rotation (CHv3 / Blake3 / RandomX / Yescrypt per height % 4)
+        // was considered but REJECTED for the following reasons:
+        //
+        //  1. Merged-mining via byproducts — CosmicHarmony pipeline already produces
+        //     Keccak-256 (Phase 1, ETC-compatible) and SHA3-512 (Phase 2, Nexus-compatible)
+        //     as FREE byproducts. Rotation would break these merged-mining guarantees.
+        //
+        //  2. Difficulty continuity — rotating algorithms causes difficulty resets
+        //     between blocks and requires per-algo difficulty windows. Single-algo
+        //     retargeting is simpler and more predictable.
+        //
+        //  3. Pool compatibility — stratum v2 (server_v2.rs) validates shares via
+        //     the CosmicHarmony pipeline. Supporting 4 independent sharecheck paths
+        //     adds significant attack surface at launch.
+        //
+        //  4. CHv4 fork path — NPU Mixing upgrade (height ≥ 200_000) is expressed
+        //     as a vertical upgrade WITHIN CosmicHarmony, not a horizontal rotation.
+        //
+        // Blake3 / RandomX / Yescrypt variants REMAIN in the enum for:
+        //   - historical test-vector compatibility
+        //   - future hard-fork governance (requires MAINNET_CONSTITUTION amendment)
+        //
+        // To restore rotation: amend MAINNET_CONSTITUTION.md, bump FORK_HEIGHT,
+        // implement per-algo difficulty windows, update stratum server_v2.rs.
         Algorithm::CosmicHarmony
-        /*
-        match height % 4 {
-            0 => Algorithm::CosmicHarmony,
-            1 => Algorithm::Blake3,
-            2 => Algorithm::RandomX,
-            3 => Algorithm::Yescrypt,
-            _ => unreachable!(),
-        }
-        */
     }
 
     pub fn name(&self) -> &'static str {
