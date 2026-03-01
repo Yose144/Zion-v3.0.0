@@ -55,7 +55,7 @@ Síť je implementována v jazyce **Rust** na vrstvách L1–L4:
 
 | Parametr | Hodnota |
 |----------|---------|
-| Total supply | 144 000 000 000 ZION (144 miliard) |
+| Base supply target | 144 000 000 000 ZION (144 miliard) |
 | Block reward (dekáda 1) | 5 400,067 ZION |
 | Decay schedule | Decade Decay −20 % / 10 let (viz §5.4) |
 | Tail emission | 724,785 ZION/blok od roku 2126 (navěky) |
@@ -230,11 +230,11 @@ Cíl:    60 sekund/blok
 
 ### 5.1 Klíčové konstanty
 
-Všechny ekonomické parametry jsou **immutable** — zakódované v genesis bloku. Jsou ověřitelné v `config/mainnet.toml` a `L1/core/src/blockchain/premine.rs`.
+Ekonomické parametry jsou ověřitelné v kódu: `L1/core/src/blockchain/premine.rs` (premine + base supply) a `L1/pool/src/blockchain/reward_calculator.rs` (Decade Decay + tail emission + distribuce).
 
 ```
-Total Supply:       144 000 000 000 ZION (144B)
-Mining Emission:    127 720 000 000 ZION (88,69 %)
+Base Supply Target: 144 000 000 000 ZION (144B)
+Legacy Mining Param: 127 720 000 000 ZION (88,69 %)
 Genesis Premine:     16 280 000 000 ZION (11,31 %)
 
 Block Reward (dekáda 1):   5 400,067 ZION
@@ -251,7 +251,7 @@ Atomic Units:           1 000 000 atomů/ZION (6 des. míst)
 MINING_EMISSION = 127_720_000_000          # ZION  
 BLOCKS_PER_DECADE = 5_256_000             # 10 let × 525 600 bloků/rok
 
-BASE_BLOCK_REWARD = 5_400.067 ZION        # Dekáda 1 (z mainnet.toml)
+BASE_BLOCK_REWARD = 5_400.067 ZION        # Dekáda 1 (z reward_calculator.rs)
                                            # Zdroj: reward_calculator.rs::BASE_BLOCK_REWARD
 ```
 
@@ -885,7 +885,7 @@ Viz také:
 
 | Odkaz | Popis |
 |-------|-------|
-| `config/mainnet.toml` | Kanonické mainnet parametry |
+| `config/mainnet.toml` | Mainnet síťové parametry (část emisních hodnot je legacy) |
 | `L1/core/src/blockchain/premine.rs` | Genesis premine kód |
 | `L1/core/src/blockchain/block.rs` | Block struktura a algoritmus |
 | `docs/2.9.7/API_ENDPOINTS.md` | Kompletní API reference |
