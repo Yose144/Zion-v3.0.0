@@ -63,9 +63,9 @@ Pool je jako "skupinová loterie" — jednotliví těžaři spojí výpočetní 
 
 ## Část 3: Peněžní struktura — kolik ZION existuje?
 
-### Pevný strop: 144 miliard ZION
+### Základní emise: 144 miliard ZION + tail
 
-ZION existuje přesně 144 000 000 000 kusů — ani o jeden víc, ani o jeden méně. Toto číslo je zakódováno v programu a nikdo ho nemůže změnit.
+ZION má základní emisní cíl 144 000 000 000 tokenů (premine + hlavní emisní fáze). Poté běží tzv. tail emission — trvalá minimální odměna pro těžaře, aby síť měla dlouhodobě bezpečnostní budget.
 
 Pro srovnání: Bitcoin má maximálně 21 milionů kusů. ZION má víc, protože se hodí jako každodenní platidlo, ne jen jako "digitální zlato".
 
@@ -248,7 +248,7 @@ Discord a GitHub jsou primární kanály. Odkaz najdete na https://zionterranova
 
 ## Závěr: ZION v jednom odstavci
 
-ZION je digitální měna s pevnou nabídkou 144 miliard tokenů, těžená běžnými počítači bez ASIC přednosti, spuštěná čestně bez předprodeje. 5 % každého bloku jde na humanitární projekty, dalších 5 % na L5/L6 Issobella (volná energie + vesmírná stanice). Odměna každých 10 let klesne o 20 % (Decade Decay) — síť tak funguje 100+ let.  
+ZION je digitální měna s emisním cílem 144 miliard tokenů v hlavní fázi, těžená běžnými počítači bez ASIC přednosti, spuštěná čestně bez předprodeje. 5 % každého bloku jde na humanitární projekty, dalších 5 % na L5/L6 Issobella (volná energie + vesmírná stanice). Odměna každých 10 let klesne o 20 % (Decade Decay) a od roku 2126 běží tail emission — síť tak funguje dlouhodobě bez emisního šoku.  
 Síť odměňuje věrné těžaře bonusy až 10×, funguje přes AI výpočtovou vrstvu a je plně řízena komunitou přes on-chain hlasování.
 
 Nejde o obohacení jednotlivců. Jde o experiment: **může technologie přirozeně sloužit hodnotám?**
