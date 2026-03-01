@@ -221,6 +221,7 @@ pub fn build_and_sign_batch(
         .map(|r| TxOutput {
             amount: r.amount,
             address: r.address.clone(),
+            memo: None,
         })
         .collect();
 
@@ -228,6 +229,7 @@ pub fn build_and_sign_batch(
         outputs.push(TxOutput {
             amount: change,
             address: params.change_address.clone(),
+            memo: None,
         });
     }
 

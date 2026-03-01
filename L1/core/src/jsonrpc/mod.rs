@@ -58,6 +58,7 @@ pub async fn handle(
             coinbase.outputs = vec![TxOutput {
                 amount: r,
                 address: wallet_address.to_string(),
+                memo: None,
             }];
             coinbase.id = coinbase.calculate_hash();
 
@@ -200,12 +201,16 @@ pub async fn handle(
                         let list: Vec<serde_json::Value> = utxos
                             .into_iter()
                             .map(|(key, output)| {
-                                serde_json::json!({
+                                let mut entry = serde_json::json!({
                                     "key": key,
                                     "amount_atomic": output.amount,
                                     "amount_zion": output.amount / 1_000_000,
                                     "address": output.address,
-                                })
+                                });
+                                if let Some(m) = &output.memo {
+                                    entry["memo"] = serde_json::Value::String(m.clone());
+                                }
+                                entry
                             })
                             .collect();
                         Response {
@@ -714,10 +719,10 @@ pub async fn handle(
             }
         }
         "sendTransaction" | "sendtransaction" => {
-            // Pool payout transaction
+            // Pool payout / user transaction
             // params: [from_addr, to_addr, amount, purpose]
-            // OR: {"from": "...", "to": "...", "amount": 1.0, "purpose": "..."}
-            let (from_opt, to_opt, amount_opt, purpose) = req
+            // OR: {"from": "...", "to": "...", "amount": 1.0, "purpose": "...", "memo": "BRIDGE:base:0x..."}
+            let (from_opt, to_opt, amount_opt, purpose, memo) = req
                 .params
                 .as_ref()
                 .map(|v| {
@@ -730,7 +735,8 @@ pub async fn handle(
                             .and_then(|x| x.as_str())
                             .unwrap_or("")
                             .to_string();
-                        (from, to, amt, purp)
+                        let memo = arr.get(4).and_then(|x| x.as_str()).map(|s| s.to_string());
+                        (from, to, amt, purp, memo)
                     } else {
                         let from = v
                             .get("from")
@@ -743,10 +749,15 @@ pub async fn handle(
                             .and_then(|x| x.as_str())
                             .unwrap_or("")
                             .to_string();
-                        (from, to, amt, purp)
+                        // Prefer explicit "memo" field; fall back to "purpose" if it looks like a bridge memo
+                        let memo = v
+                            .get("memo")
+                            .and_then(|x| x.as_str())
+                            .map(|s| s.to_string());
+                        (from, to, amt, purp, memo)
                     }
                 })
-                .unwrap_or((None, None, None, String::new()));
+                .unwrap_or((None, None, None, String::new(), None));
 
             match (from_opt, to_opt, amount_opt) {
                 (Some(from), Some(to), Some(amount)) if amount > 0.0 => {
@@ -781,6 +792,7 @@ pub async fn handle(
                         tx.outputs = vec![TxOutput {
                             amount: amount_atomic,
                             address: to.clone(),
+                            memo: memo.clone(),
                         }];
                         tx.id = tx.calculate_hash();
 
@@ -804,6 +816,7 @@ pub async fn handle(
                         let credit_output = TxOutput {
                             amount: amount_atomic,
                             address: to.clone(),
+                            memo: memo.clone(),
                         };
                         let credit_key = format!("{}:0", tx_id);
                         if let Err(e) = state.storage.add_utxo(&credit_key, &credit_output) {
@@ -829,6 +842,7 @@ pub async fn handle(
                                     let change = TxOutput {
                                         amount: utxo.amount - remaining,
                                         address: from.clone(),
+                                        memo: None,
                                     };
                                     let change_key = format!("change:{}:{}", tx_id, key);
                                     let _ = state.storage.add_utxo(&change_key, &change);
@@ -852,7 +866,8 @@ pub async fn handle(
                                 "to": to,
                                 "amount_atomic": amount_atomic,
                                 "amount_zion": amount,
-                                "purpose": purpose
+                                "purpose": purpose,
+                                "memo": memo
                             })),
                             error: None,
                         }
@@ -1010,6 +1025,7 @@ pub async fn handle(
                                     coinbase.outputs = vec![TxOutput {
                                         amount: reward,
                                         address: wallet.to_string(),
+                                        memo: None,
                                     }];
                                     coinbase.id = coinbase.calculate_hash();
 

@@ -471,8 +471,13 @@ mod tests {
         assert_eq!(client.rpc_url("base"), "https://rpc.ankr.com/base/");
     }
 
+    // Mutex for tests that mutate the ANKR_API_KEY environment variable.
+    // Without this, parallel test execution causes race conditions.
+    static ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn test_ankr_from_env_without_key() {
+        let _guard = ENV_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         // Without ANKR_API_KEY set, should build free-tier client
         std::env::remove_var("ANKR_API_KEY");
         let client = AnkrClient::from_env();
@@ -481,6 +486,7 @@ mod tests {
 
     #[test]
     fn test_ankr_from_env_with_key() {
+        let _guard = ENV_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         std::env::set_var("ANKR_API_KEY", "env_key_abc");
         let client = AnkrClient::from_env();
         assert_eq!(

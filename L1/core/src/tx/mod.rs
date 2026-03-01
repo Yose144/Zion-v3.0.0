@@ -9,10 +9,13 @@ pub struct TxInput {
     pub public_key: String, // Hex encoded 32-byte Ed25519 public key
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TxOutput {
     pub amount: u64,
     pub address: String,
+    /// Optional memo / OP_RETURN data (e.g. "BRIDGE:base:0x..." for bridge locks)
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub memo: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +56,9 @@ impl Transaction {
         for output in &self.outputs {
             data.extend_from_slice(&output.amount.to_le_bytes());
             data.extend_from_slice(output.address.as_bytes());
+            if let Some(memo) = &output.memo {
+                data.extend_from_slice(memo.as_bytes());
+            }
         }
         data.extend_from_slice(&self.fee.to_le_bytes());
         data.extend_from_slice(&self.timestamp.to_le_bytes());

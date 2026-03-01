@@ -58,6 +58,7 @@ mod tests {
             outputs: vec![TxOutput {
                 amount: 1_000_000,
                 address: "zion1test".to_string(),
+                ..Default::default()
             }],
             fee,
             timestamp,

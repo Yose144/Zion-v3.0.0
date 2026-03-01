@@ -296,6 +296,7 @@ mod tests {
             outputs: vec![TxOutput {
                 amount: 5_400_067_000,
                 address: "miner".to_string(),
+                ..Default::default()
             }],
             fee: 0,
             timestamp: 0,
