@@ -24,13 +24,15 @@
 7. [Fair Launch](#7-fair-launch)
 8. [DAO Governance](#8-dao-governance)
 9. [Humanitární desátek](#9-humanitární-desátek)
-10. [L2 — wZION Bridge](#10-l2--wzion-bridge)
-11. [L3 — Neural Compute Layer (NCL)](#11-l3--neural-compute-layer-ncl)
-12. [L4 — OASIS Platform](#12-l4--oasis-platform)
-13. [Bezpečnost a kryptografické primitiva](#13-bezpečnost-a-kryptografické-primitiva)
-14. [Roadmap](#14-roadmap)
-15. [Právní disclaimer](#15-právní-disclaimer)
-16. [Reference](#16-reference)
+10. [L2 — wZION Bridge + DAO](#10-l2--wzion-bridge--dao)
+11. [L3 — NCL + WARP + AI-native](#11-l3--ncl--warp--ai-native)
+12. [L4 — ZION OASIS Game World](#12-l4--zion-oasis-game-world)
+13. [L5 — ZION Free World](#13-l5--zion-free-world)
+14. [L6 — ZION Issobella](#14-l6--zion-issobella)
+15. [Bezpečnost a kryptografické primitiva](#15-bezpečnost-a-kryptografické-primitiva)
+16. [Roadmap](#16-roadmap)
+17. [Právní disclaimer](#17-právní-disclaimer)
+18. [Reference](#18-reference)
 
 ---
 
@@ -40,25 +42,30 @@ ZION TerraNova je vrstvená blockchain síť s důkazem práce (Proof-of-Work), 
 
 Síť je implementována v jazyce **Rust** na vrstvách L1–L4:
 
-| Vrstva | Název | Technologie | Stav |
-|--------|-------|-------------|------|
+| Vrstva | Název | Technologie | Target |
+|--------|-------|-------------|--------|
 | L1 | Core blockchain | Rust, LMDB, Tokio, Axum | ✅ TestNet live |
-| L2 | wZION bridge | Solidity, ERC-20 | ✅ Base Sepolia live |
-| L3 | NCL AI compute | Rust, ONNX/CoreML/TensorRT | ⏳ Implementace |
-| L4 | OASIS platform | Rust + Web | 📅 Plánováno |
+| L2 | wZION Bridge + DAO | Solidity, ERC-20, Rust Axum | ✅ Base Sepolia live |
+| L3 | NCL + WARP + AI-native | Rust, ONNX/CoreML/TensorRT | ⏳ Implementace |
+| L4 | OASIS Game World | Rust, Axum, SQLite, UE5 | 📅 2029 |
+| L5 | Free World | DAO-funded, real-world | 📅 2030 |
+| L6 | ZION Issobella | Orbital station | 📅 2040+ |
 
 **Klíčové parametry MainNet:**
 
 | Parametr | Hodnota |
 |----------|---------|
 | Total supply | 144 000 000 000 ZION (144 miliard) |
-| Block reward | 5 400,067 ZION (konstantní, bez halvingu) |
+| Block reward (dekáda 1) | 5 400,067 ZION |
+| Decay schedule | Decade Decay −20 % / 10 let (viz §5.4) |
+| Tail emission | 724,785 ZION/blok od roku 2126 (навěky) |
 | Block time | 60 sekund |
-| Mining duration | ~45 let (2025–2070) |
+| Mining horizon | 100+ let + tail emission |
 | Premine | 16 280 000 000 ZION (11,31 %) |
 | Atomická jednotka | 1 ZION = 1 000 000 atomů (6 desetinných míst) |
 | Konsensus | CosmicHarmony v3 (paměťově náročný PoW) |
 | Algoritmus DAA | LWMA, okno 60 bloků, max. ±25 % |
+| Distribuce bloku | 89 % miners / 5 % humanitarian / 5 % L5–L6 / 1 % pool |
 
 ---
 
@@ -238,21 +245,51 @@ Total Mining Blocks:    23 652 000
 Atomic Units:           1 000 000 atomů/ZION (6 des. míst)
 ```
 
-### 5.2 Matematický důkaz emise
+### 5.2 Matematický důkaz emise (Dekáda 1)
 
 ```python
-MINING_EMISSION = 127_720_000_000          # ZION
-TOTAL_BLOCKS    = 45 × 525_600 = 23_652_000
+MINING_EMISSION = 127_720_000_000          # ZION  
+BLOCKS_PER_DECADE = 5_256_000             # 10 let × 525 600 bloků/rok
 
-BASE_BLOCK_REWARD = 127_720_000_000 / 23_652_000
-                  = 5 400,067 ZION/blok  ✓
-
-Ověření zpětně:
-5 400,067 × 23 652 000 = 127 720 384 400 ZION
-Zaokrouhlovací chyba:         384 400 ZION  (< 0,001 %)
+BASE_BLOCK_REWARD = 5_400.067 ZION        # Dekáda 1 (z mainnet.toml)
+                                           # Zdroj: reward_calculator.rs::BASE_BLOCK_REWARD
 ```
 
-### 5.3 Premine — rozdělení
+### 5.3 Decade Decay — emisní schedule
+
+Od v2.9.6 je implementován **Decade Decay (Model A)**: každých 10 let (5 256 000 bloků) klesá block reward o 20 %. Po dekádě 10 začíná **tail emission** — věčná minimální odměna.
+
+```
+DECAY_FACTOR = 0.80  (−20 % / dekáda)
+TAIL_REWARD  = 724.785 ZION/blok (od roku ~2126 navěky)
+```
+
+| Dekáda | Roky | Block reward | Emise za dekádu |
+|--------|------|--------------|------------------|
+| 1 | 2026–2036 | 5 400,067 ZION | ~28,38 B |
+| 2 | 2036–2046 | 4 320,054 ZION | ~22,71 B |
+| 3 | 2046–2056 | 3 456,043 ZION | ~18,16 B |
+| 4 | 2056–2066 | 2 764,834 ZION | ~14,53 B |
+| 5 | 2066–2076 | 2 211,867 ZION | ~11,63 B |
+| 6 | 2076–2086 | 1 769,494 ZION | ~9,30 B |
+| 7 | 2086–2096 | 1 415,595 ZION | ~7,44 B |
+| 8 | 2096–2106 | 1 132,476 ZION | ~5,95 B |
+| 9 | 2106–2116 | 905,981 ZION | ~4,76 B |
+| 10 | 2116–2126 | 724,785 ZION | ~3,81 B |
+| 11+ | 2126+ | **724,785 ZION** (tail) | ∞ věčná |
+
+```
+Celková emise (100 let):  ~126,67 B ZION
+Tail od 2126:             724,785 ZION/blok navěky
+```
+
+**Proč Decade Decay?**
+- Zachovává motivaci minerů na 100+ let díky tail emission
+- Financuje L5 Free World (2030) a L6 Issobella (2040+)
+- Mírnější šok než Bitcoin halving (−20 % vs −50 %)
+- Předvídatelný: přesný schedule zapsán v kódu (`reward_calculator.rs`)
+
+### 5.4 Premine — rozdělení
 
 | Kategorie | ZION | % z premine | Účel |
 |-----------|------|-------------|------|
@@ -266,7 +303,25 @@ Zaokrouhlovací chyba:         384 400 ZION  (< 0,001 %)
 
 DAO Treasury (4B ZION) je zablokováno na **525 600 bloků ≈ 1 rok** od genesis. Toto je vynuceno na protokolové úrovni v `premine.rs::DAO_TREASURY_LOCK_HEIGHT`.
 
-### 5.4 Vědomostní odměna (Consciousness Period 2025–2035)
+### 5.5 Distribuce odměny za blok (aktuální v2.9.6)
+
+```
+Block Reward (celkový)
+  ├── 5 %  → Humanitarian Tithe  (Children Future Fund)
+  ├── 5 %  → L5/L6 Issobella Fund (vesmírná stanice + Free World)
+  ├── 1 %  → Pool Fee
+  └── 89 % → Miners (rozděleno přes PPLNS)
+```
+
+**Zdroj:** `L1/pool/src/blockchain/reward_calculator.rs`
+```rust
+pub const DEFAULT_TITHE_PERCENT:         Decimal = dec!(5.0);
+pub const DEFAULT_ISSOBELLA_FUND_PERCENT: Decimal = dec!(5.0);
+pub const DEFAULT_POOL_FEE_PERCENT:       Decimal = dec!(1.0);
+// miner_share = total − tithe − issobella − pool_fee  → 89 %
+```
+
+### 5.6 Vědomostní odměna (Consciousness Period 2025–2035)
 
 V první dekádě existence sítě jsou dostupné **bonusové odměny z OASIS poolu**:
 
@@ -294,45 +349,41 @@ Výsledná odměna (consciousness period):
 
 Po roce 2035: Bonus pool vyčerpán. Veškeré mining odbaveno pouze base reward 5 400,067 ZION.
 
-### 5.5 Distribuce odměny za blok
+### 5.7 Vědomostní distribuce
 
 ```
-Block Reward (celkový) = base + consciousness bonus
-  ↓
-Humanitarian Tithe (10 %): → Humanitarian Fund address
-  ↓
-Pool Fee (1 %): → Pool operator
-  ↓
-Miner Share (89 %): → Rozděleno přes PPLNS mezi těžaře
+Block Reward = base + consciousness_bonus × multiplier
+  ├── 5 %  → Humanitarian Fund
+  ├── 5 %  → L5/L6 Issobella Fund
+  ├── 1 %  → Pool
+  └── 89 % → PPLNS miners
 ```
 
-### 5.6 Roční emise
+### 5.8 Kumulativní supply (s Decade Decay)
 
-```python
-Per Year: 525 600 bloků × 5 400,067 ZION = 2 838 275 215 ZION (~2,84B)
-
-Kumulativní supply:
-  2025: 19,1B ZION  (13,3 % z total)
-  2030: 30,5B ZION  (21,2 %)
-  2035: 44,7B ZION  (31,0 %)
-  2040: 58,9B ZION  (40,9 %)
-  2050: 87,3B ZION  (60,6 %)
-  2070: 144B ZION   (100 %)
+```
+Kumulativní mining emise (dekáda 1–10):
+  2036: ~28,38B + 16,28B premine = ~44,66B  (31 %)
+  2046: ~51,09B + 16,28B        = ~67,37B  (47 %)
+  2056: ~69,25B + 16,28B        = ~85,53B  (59 %)
+  2126: ~126,67B + 16,28B       = ~142,95B (99 %)
+  2126+: tail 724.785 ZION/blok navěky
 ```
 
-### 5.7 Srovnání s konkurencí
+### 5.9 Srovnání s konkurencí
 
 | Parametr | Bitcoin | Monero | Ethereum | ZION |
 |----------|---------|--------|----------|------|
-| Total supply | 21M (2140) | ∞ tail | ∞ EIP-1559 | **144B (2070)** |
+| Total supply | 21M (2140) | ∞ tail | ∞ EIP-1559 | **144B + tail** |
 | Block time | 10 min | 2 min | 12 sec | **60 sec** |
-| Halving | Každé 4 roky | Postupný | N/A | **Žádný** |
-| ASIC resistant | Ne | Delší | N/A | **Ano (CHv3)** |
-| Humanitární | Ne | Ne | Ne | **10–25 % tithe** |
+| Halving | −50 % / 4 roky | Postupný | N/A | **−20 % / 10 let (Decade Decay)** |
+| Mining end | ~2140 | Nikdy | N/A | **Nikdy (tail 2126+)** |
+| ASIC resistant | Ne | Ano | N/A | **Ano (CHv3, score 90/100)** |
+| Humanitární | Ne | Ne | Ne | **5 % tithe + 5 % L5/L6** |
 | Fair Launch | ✅ | ✅ | ⚠️ | **✅** |
 | Premine | 0 % | 0 % | ~7 % | **11,31 %** |
 
-**Proč žádný halving?** Konstantní odměna zajišťuje předvídatelný security budget pro těžaře a eliminuje cenové šoky způsobené skokovou změnou emise.
+**Proč Decade Decay místo halvingu?** Postupné snížení o 20 % každých 10 let zajišťuje předvídatelný security budget pro těžaře, eliminuje prudké cenové šoky a financuje L5 Free World i L6 Issobella po celou dobu existence sítě.
 
 ---
 
@@ -504,14 +555,9 @@ Fáze 3 (2027+):     Plná decentralizace, quadratic voting
 
 Z každého nalezeného bloku je **automaticky odečteno 10 %** a posláno na adresu Humanitarian Fund (`Children Future Fund — Humanitarian DAO` v genesis). Toto je enforced v reward_calculator.
 
-### 9.2 Progresivní schedule
+### 9.2 Konstantní podíl
 
-```
-Rok 1 (2027):      10 %
-Roky 2–3:          15 %
-Roky 4–5:          20 %
-Rok 6+:            25 %
-```
+Humanitární tithe je **pevně 5 %** (plus 5 % L5/L6 Issobella fund). Přesné nastavení podléhá governance hlasování — spodní hranice 5 %, horní hranice 10 % per kategorie. Progresivní plán (10 → 25 %) byl součástí staršího WP v2.9.5, v kódu v2.9.6 je implementováno 5+5.
 
 ### 9.3 Governance humanitárního fondu
 
@@ -557,9 +603,19 @@ wZION (EVM)  ──[burn]──→ Bridge Contract ──[unlock]──→ ZION 
 
 ---
 
-## 11. L3 — Neural Compute Layer (NCL)
+## 11. L3 — NCL + WARP + AI-native
 
 ### 11.1 Záměr
+
+L3 se skládá ze tří vzájemně provázaných modulů:
+
+| Modul | Crate | LOC | Testů | Účel |
+|-------|-------|-----|-------|------|
+| NCL | `zion-ncl` | ~688 | 40 | Distribuované AI inference |
+| WARP | `zion-warp` | ~2 400 | 164 | Cross-chain swap protokol |
+| AI-native | `zion-ai-native` | ~500 | 45 | AI agenti, on-chain inteligence |
+
+### 11.1 NCL — Neural Compute Layer
 
 **NCL (Neural Compute Layer)** přeměňuje těžební infrastrukturu v distribuovanou AI computing síť. Minéři mohou paralelně s těžbou zpracovávat AI inference tasky a získávat za ně dodatečné NCL odměny.
 
@@ -623,22 +679,124 @@ NCL odměny jsou rovněž násobeny consciousness level multiplierem. Miner na �
 
 ---
 
-## 12. L4 — OASIS Platform
+### 11.2 WARP — Cross-chain Swap Protocol
 
-OASIS je hravá aplikační vrstva nad ZION ekonomikou. Plánuje:
+**WARP** je cross-chain swap protokol umožňující atomické výměny ZION s tokeny na 7 chain families:
 
-- Výherní mechanismy (Golden Egg — 8,25B ZION pool)
-- In-game tokeny vázané na ZION L1
-- Cross-chain integrace přes wZION bridge
-- Consciousness score jako vstup do herní mechaniky
+| Chain Family | Příklady | Status |
+|---|---|---|
+| EVM (via Ankr) | Base, Arbitrum, BSC, ETH | ✅ Implementováno |
+| Cosmos IBC | ATOM, OSMO | ✅ |
+| Bitcoin | BTC, LTC | ✅ |
+| Solana | SOL, SPL | ✅ |
+| NEAR | NEAR | ✅ |
+| Polkadot | DOT | ✅ |
+| TON | TON | ✅ |
 
-**Status:** Specifikace Q3 2026, implementace Q4 2026+.
+WARP REST API běží na portu **8092** (Axum). Persistence přes SQLite (`WarpDb`). **XP Bridge** — WARP swapy akumulují XP body na L1 (on-chain XP přes WARP transakce).
+
+### 11.3 AI-native
+
+AI-native vrstva implementuje AI agenty jako first-class objekty protokolu: on-chain model registry, AI-assisted governance pro DAO rozhodnutí, analýza on-chain dat.
 
 ---
 
-## 13. Bezpečnost a kryptografické primitiva
+## 12. L4 — ZION OASIS Game World
 
-### 13.1 Využité primitiva
+OASIS je Unreal Engine 5 open-world propojený s ZION blockchainem. Je to vrstva, kde se herní ekonomika stýká s reálnými tokeny L1.
+
+**Klíčové koncepty:**
+- **8 Genesis Territories** (Mount Zion, Cedar Forest, …)
+- **9 Consciousness Levels** (Kabbalah Sefira: Malkuth → Keter)
+- **8,25B ZION reward pool** (5 slotů × 1,65B, 10letá distribuce)
+- **XP off-chain** — SQLite `oasis.db`, L1 zůstává čistý
+
+**REST API** (port 8094): health, player, XP award, leaderboard, guild CRUD, territory map, reward pools — celkem 9 endpointů.
+
+**Status:** Specifikace Q3 2026, game implementation Q4 2026+.
+
+---
+
+## 13. L5 — ZION Free World
+
+> *"Freedom is not given — it is built, block by block."*
+
+**Cíl:** 2030 | **Status:** Vize & Specifikace
+
+L5 je humanitární a vědecká vrstva financovaná přímo z blockchainového protokolu. Jejím záměrem je vybudovat infrastrukturu svobodných komunit, výzkum kvantové volné energie a realizace humanitárních misí.
+
+### Financování L5
+
+| Zdroj | Mechanismus | Podíl |
+|-------|-------------|-------|
+| Block reward | 5 % z každého bloku → L5/L6 Issobella Fund | Automatický |
+| Humanitarian Tithe | 5 % z každého bloku | Automatický |
+| DAO Granty | Hlasování komunity | Variabilní |
+| L4 OASIS revenue | % z ekonomické aktivity | Variabilní |
+
+### Pilíře L5
+
+1. **Free Energy Research** — výzkum kvantové a volné energie, open-source hardware
+2. **Humanitarian Missions** — čistá voda, vzdělání, zdravotnictví, potravinová bezpečnost
+3. **Free Communities** — energeticky nezávislé obce, mesh sítě, lokální ZION ekonomiky
+4. **Education & Awareness** — open-source vzdělávací platformy, consciousness mining
+
+### Milníky
+
+| Rok | Milník |
+|-----|--------|
+| 2030 | Launched ZION Free World Foundation |
+| 2031 | První výzkumná laboratoř (kvantová energie) |
+| 2033 | Prototyp energetického generátoru |
+| 2035 | Pilotní nasazení v 10 komunitách |
+| 2037 | Open-source release hardware specifikací |
+| 2040 | Masová produkce — energie pro miliony |
+
+---
+
+## 14. L6 — ZION Issobella (Orbitální stanice)
+
+> *"The star is not the destination — it is the beginning."*
+
+**Cíl:** 2040+ | **Status:** Dlouhodobá vize
+
+**ZION Issobella** (kombinace _ISS_ + vlastní jméno) je vrcholná vrstva ekosystému — vědecká observatoř a výzkumná stanice na nízké oběžné dráze Země (LEO). Decentralizovaná správa přes ZION DAO, veškerá vědecká data veřejná.
+
+### Mise L6
+
+- **Astronomický výzkum** (bez atmosférického zkreslení)
+- **Monitoring klimatu** (podpora L5 Free World)
+- **Satelitní mesh síť** — redundantní P2P ZION uzly v orbitu
+- **Výzkumné centrum** — mikrogravitace, kvantové experimenty
+- **Vzdělávání** — live-streamy z vesmíru pro komunitu
+
+### Financování L6
+
+| Zdroj | Mechanismus |
+|-------|-------------|
+| L5/L6 Issobella Fund | 5 % z každého bloku (automaticky z reward_calculator) |
+| Tail emission (2126+) | 724,785 ZION/blok navěky |
+| DAO Treasury | Dlouhodobá vyhrazení fondů |
+| L4 OASIS NFT | Speciální kosmické NFT kolekce |
+
+### Milníky
+
+| Rok | Milník |
+|-----|--------|
+| 2040 | ZION Space Division — projekt Issobella zahájen |
+| 2042 | Design a feasibility study |
+| 2045 | Výroba prvního modulu |
+| 2048 | První modul na orbitě |
+| 2050 | Plně operační stanice |
+| 2126 | Issobella financována z tail emission navěky |
+
+---
+
+---
+
+## 15. Bezpečnost a kryptografické primitiva
+
+### 15.1 Využité primitiva
 
 | Primitivum | Použití |
 |------------|---------|
@@ -647,11 +805,11 @@ OASIS je hravá aplikační vrstva nad ZION ekonomikou. Plánuje:
 | **Argon2id** | Memory-hard element konsenzu (ASIC resistance) |
 | **ChaCha20-Poly1305** | P2P šifrovaná komunikace |
 
-### 13.2 Stromy transakcí
+### 15.2 Stromy transakcí
 
 Každý blok obsahuje Merkle root transakcí pro efektivní SPV ověření.
 
-### 13.3 Známé limity a jejich řešení
+### 15.3 Známé limity a jejich řešení
 
 | Omezení | Mitigace |
 |---------|----------|
@@ -660,26 +818,28 @@ Každý blok obsahuje Merkle root transakcí pro efektivní SPV ověření.
 | Velké modely (>7B) | IPFS chunked download |
 | Real-time inference latency | Geobalanování tasků |
 
-### 13.4 Security audit
+### 15.4 Security audit
 
 Nezávislý bezpečnostní audit je naplánován na Q2 2026. Výsledky budou zveřejněny v `docs/AUDIT.md`.
 
 ---
 
-## 14. Roadmap
+## 16. Roadmap
 
-### 14.1 Verze
+### 16.1 Verze
 
 ```
-v2.9.5  ─ TestNet genesis, Rust L1 stack         ✅ Dokončeno
-v2.9.6  ─ CHv4 A+B, discord alerting, bridge     ✅ Dokončeno
-v2.9.7  ─ Code freeze, 168h stability test       ✅ Dokončeno
-v2.9.8  ─ Bug fix round 1                         📅 Plánováno
-v2.9.9  ─ Bug fix round 2                         📅 Plánováno
-v3.0    ─ MainNet Genesis                         📅 Cíl: 2026
+v2.9.5  ─ TestNet genesis, Rust L1 stack (Leden 2026)      ✅
+v2.9.6  ─ L2/L3/L4 implementace, CHv4 A+B, Decade Decay,  ✅
+           WARP 7-chain, OASIS REST, Discord alerting,
+           Ankr RPC, nonce u64, ASIC score 90/100
+v2.9.7  ─ Code freeze, 168h stability test, API docs       ✅
+v2.9.8  ─ Bug fix round 1                                  📅
+v2.9.9  ─ Bug fix round 2                                  📅
+v3.0    ─ MainNet Genesis (Block #0)                       📅 Q4 2026
 ```
 
-### 14.2 Milníky
+### 16.2 Milníky
 
 | Milestone | Datum | Kritéria úspěchu |
 |-----------|-------|------------------|
@@ -689,12 +849,16 @@ v3.0    ─ MainNet Genesis                         📅 Cíl: 2026
 | Mobile wallet | Q3 2026 | iOS + Android App Store |
 | MainNet Genesis | Q4 2026 | Block #0, genesis premine distribuován |
 | wZION mainnet | Q4 2026 | Live na Base/Arbitrum/BSC |
-| NCL LLM support | Q1 2027 | 1 000 tasků/den |
-| Full DAO (Fáze 2) | 2027 | On-chain voting |
+| NCL + WARP live | Q1 2027 | 1 000 NCL tasků/den, WARP swapy aktivní |
+| L3 DAO (Fáze 2) | 2027 | On-chain voting |
+| L5 Free World | 2030 | Foundation + výzkumná lab |
+| 1. Lite Halving | 2036 | Block reward −20 % → 4 320 ZION |
+| L6 Issobella start | 2040 | Space Division zahájen |
+| Tail emission | 2126 | 724,785 ZION/blok navěky |
 
 ---
 
-## 15. Právní disclaimer
+## 17. Právní disclaimer
 
 ZION je **open-source software** a **experimentální technologie**. ZION **není**:
 - Cenný papír (security) dle MiCA ani žádné jiné regulace
@@ -713,7 +877,7 @@ Viz také:
 
 ---
 
-## 16. Reference
+## 18. Reference
 
 | Odkaz | Popis |
 |-------|-------|

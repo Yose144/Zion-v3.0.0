@@ -12,7 +12,7 @@
 
 ## Úvod: Co je ZION jednou větou?
 
-ZION je digitální měna (podobně jako Bitcoin), kterou může těžit kdokoli s běžným počítačem — a každá vytěžená mince automaticky přispívá desetinou svou hodnotou na humanitární projekty po celém světě.
+ZION je digitální měna (podobně jako Bitcoin), kterou může těžit kdokoli s běžným počítačem — a každá vytěžená mince automaticky přispívá částí své hodnoty na humanitární projekty a financování vesmírné stanice ZION Issobella.
 
 ---
 
@@ -30,7 +30,7 @@ ZION říká: **ne tak**.
 
 1. **Žádný předprodej.** Nikdo — ani zakladatelé — nemohl koupit ZION před ostatními. Kdo chce ZION, musí si ho vytěžit.
 2. **Každý počítač se počítá.** ZION je navržen tak, aby byl odolný vůči průmyslovým těžebním strojům (tzv. ASIC). Váš domácí počítač má stejnou šanci jako velká farma.
-3. **Každý blok pomáhá světu.** 10 % z každého vytěženého bloku jde automaticky do humanitárního fondu. Nedobrovolně, neodvolatelně — je to přímo v kódu.
+3. **Každý blok pomáhá světu.** 5 % z každého vytěženého bloku jde do humanitárního fondu a dalších 5 % do fondu L5/L6 Issobella (věda a vesmírný program). Nedobrovolně, neodvolatelně — je to přímo v kódu.
 
 ---
 
@@ -42,7 +42,7 @@ Představte si, že stát vydá úlohu: "Najděte číslo, které po zpracován�
 
 Počítač tuto úlohu řeší tak, že zkouší jedno číslo za druhým — miliardkrát za sekundu. Tomu se říká těžba (mining). Čím více počítačů zkouší, tím bezpečnější je síť.
 
-V ZION dostane ten, jehož počítač úlohu vyřeší, odměnu **5 400 ZION** (plus případný bonus). Tato odměna je konstantní celých 45 let — žádné snižování jako u Bitcoinu.
+V ZION dostane ten, jejímž počítač úlohu vydřeší, odměnu **5 400 ZION** (plus případný bonus). Odměna každých 10 let mírně klesne o 20 % (tzv. Decade Decay) — na rozdíl od Bitcoinu, kde klesá najednou na polovinu. Síť tak funguje 100+ let a od roku 2126 vyplácí těžařům trvalou minimalní odměnu navěky.
 
 ### Proč právě já mohu těžit?
 
@@ -71,7 +71,7 @@ Pro srovnání: Bitcoin má maximálně 21 milionů kusů. ZION má víc, proto�
 
 ### Jak ZION přichází do oběhu
 
-Každých 60 sekund přibyde nový blok a s ním 5 400 nových ZION — celých 45 let, každý den, každou hodinu. Není tu žádné "snižování na polovinu" jako u Bitcoinu. Těžaři ví přesně, kolik dostanou.
+Každých 60 sekund přibyde nový blok a s ním 5 400 nových ZION. Každých 10 let odměna klesne o 20 % (Decade Decay) — mírně, ne najednou na polovinu jako u Bitcoinu. Těžaři tak mají předvídatelný příjem na 100+ let. Od roku 2126 běží síť navěky na trvalé minimální odměně.
 
 ### Genesis: Co bylo na začátku?
 
@@ -123,24 +123,32 @@ Místo aby šli všechny odměny jen těm s nejdražšími stroji, ZION odměňu
 
 ---
 
-## Část 5: Humanitární desátek — peníze, které mění svět
+## Část 5: Humanitární fond a L5/L6 — peníze, které mění svět
 
 ### Jak to funguje v praxi
 
-Každý blok, který kdekoli na světě někdo vytěží, automaticky pošle 10 % odměny na speciální adresu. Tato adresa je Humanitární fond — a její obsah rozhoduje komunita hlasováním.
+Každý blok, který kdekoli na světě někdo vytěží, automaticky posle:
+- **5 %** → Humanitární fond (dětské projekty, čistá voda, vzdělání)
+- **5 %** → L5/L6 Issobella Fund (věda, volná energie, vesmírná stanice)
 
-Žádná neziskovka, žádný správce, žádné schvalovací výbory ve smokingu. Jen kód, on-chain hlasování a lidé, kteří chtějí změnit svět.
+Žádná neziskovka, žádný správce, žádné schvalovací víbory ve smokingu. Jen kód, on-chain hlasování a lidé, kteří chtějí změnit svět. **Zapsano přímo v kódu** (`reward_calculator.rs`), nedá se změnit bez konsenzu sítě.
 
-### Co se s těmito penězi děje?
+### Co se s těmito penĞzi děje?
 
 Organizace po celém světě mohou podat žádost o grant přes ZION DAO (hlasovací systém). Komunita hlasuje, jestli projekt schválí. Pokud ano, peníze jdou přímo na adresu organizace — ověřitelně, transparentně.
 
-Typy projektů: studny s čistou vodou, solární panely pro školy, potravinová bezpečnost, nouzová pomoc po katastrofách, zalesnění.
+Typy projektů: studny s čistou vodou, solární panely pro školy, potravinová bezpečnost, nouzová pomoc po katastrofech, zalesňování.
 
-### Roste s věkem sítě
+### L5 Free World (cíl 2030)
 
-V prvním roce jde 10 % každého bloku do fondu. Po dvou letech 15 %. Po pěti letech 20 %. Od šestého roku dál 25 %.  
-**Čím déle síť existuje, tím více dává světu.**
+L5 je humanitární vrstva financovaná přímo protokolem. Cílem je:
+- Výzkum kvantové a volné energie (open-source hardware)
+- Svobodné komunity s lokálními energetickými zdroji
+- Humanitární mise, vzdělání, zdravotnictví
+
+### L6 ZION Issobella (cíl 2040+)
+
+Issobella je vesmirná observatoř na nízké oběžné dráze Země (LEO), řízená DAO. Každá vytěžená mince dnes přispívá k jejímu postavení. Vědecká data budou otevřená pro celou komunitu. Od roku 2126 bude financována trvalou emisní odměnou navěky.
 
 ---
 
@@ -198,11 +206,16 @@ To je záměrný kontrast s projekty, kde insideři mají miliony tokenů před 
 
 ```
 2024          Vývoj Rust technologie
-2025          TestNet spuštěn — testujete nyní
+2025          TestNet spuštěn
+v2.9.6        Decade Decay, WARP cross-chain, L2/L3/L4 implementace
 v2.9.7        Kód zmrazen — no features, jen stabilita (nyní)
 v2.9.8–2.9.9  Opravy chyb a testování
-v3.0          MainNet Genesis — ostrý start, skutečné tokeny
+v3.0          MainNet Genesis — ostrý start, skutečné tokeny (Q4 2026)
 2027+         DAO, NCL AI marketplace, mobile wallet, DEX
+2030          L5 Free World Foundation (volná energie, humanit. mise)
+2036          1. Decade Decay: odměna klesne 5 400 → 4 320 ZION (−20 %)
+2040+         L6 ZION Issobella — vznik vesmírné stanice
+2126          Tail emission navěky: 724,785 ZION/blok (síť neskončí)
 ```
 
 ---
@@ -235,7 +248,7 @@ Discord a GitHub jsou primární kanály. Odkaz najdete na https://zionterranova
 
 ## Závěr: ZION v jednom odstavci
 
-ZION je digitální měna s pevnou nabídkou 144 miliard tokenů, těžená běžnými počítači bez ASIC přednosti, spuštěná čestně bez předprodeje, s 10 % každého bloku automaticky směřovaných na humanitární projekty.  
+ZION je digitální měna s pevnou nabídkou 144 miliard tokenů, těžená běžnými počítači bez ASIC přednosti, spuštěná čestně bez předprodeje. 5 % každého bloku jde na humanitární projekty, dalších 5 % na L5/L6 Issobella (volná energie + vesmírná stanice). Odměna každých 10 let klesne o 20 % (Decade Decay) — síť tak funguje 100+ let.  
 Síť odměňuje věrné těžaře bonusy až 10×, funguje přes AI výpočtovou vrstvu a je plně řízena komunitou přes on-chain hlasování.
 
 Nejde o obohacení jednotlivců. Jde o experiment: **může technologie přirozeně sloužit hodnotám?**
