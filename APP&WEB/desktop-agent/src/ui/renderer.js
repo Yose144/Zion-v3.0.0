@@ -2968,13 +2968,19 @@ function initBridgeView() {
 /** Load EVM address from wallet context (derive from mnemonic via IPC) */
 async function bridgeLoadEvmAddress() {
   try {
-    // Desktop wallet stores mnemonic in keychain; ask main process for EVM address
-    const res = await window.electronAPI?.invoke?.('wallet-get-evm-address') || null;
+    const res = await window.electronAPI?.walletGetEvmAddress?.() || null;
     if (res?.address) {
       _bridgeEvmAddress = res.address;
       const el = document.getElementById('bridge-evm-address');
       if (el) el.textContent = res.address;
+      const panel = document.getElementById('bridge-evm-unlock-panel');
+      if (panel) panel.classList.add('d-none');
       bridgeLoadWzionBalance(res.address);
+    } else if (res?.needsPassword) {
+      const addrEl = document.getElementById('bridge-evm-address');
+      if (addrEl) addrEl.textContent = 'Click below to unlock';
+      const panel = document.getElementById('bridge-evm-unlock-panel');
+      if (panel) panel.classList.remove('d-none');
     } else {
       const el = document.getElementById('bridge-evm-address');
       if (el) el.textContent = 'Unlock wallet first';
@@ -3054,14 +3060,125 @@ window.bridgePrepareLock = async function () {
     const res = await window.electronAPI.bridgePrepareLock(_bridgeEvmAddress);
     if (!res.success) { alert(`Error: ${res.error}`); return; }
     _bridgeMemo = res.memo;
-    const vaultEl = document.getElementById('bridge-vault-addr');
-    const memoEl  = document.getElementById('bridge-memo-text');
-    const boxEl   = document.getElementById('bridge-memo-box');
-    if (vaultEl) vaultEl.textContent = res.vaultAddress;
-    if (memoEl)  memoEl.textContent  = res.memo;
-    if (boxEl)   boxEl.style.display  = 'block';
+    const vaultEl   = document.getElementById('bridge-vault-addr');
+    const memoEl    = document.getElementById('bridge-memo-text');
+    const boxEl     = document.getElementById('bridge-memo-box');
+    const sendBtnEl = document.getElementById('bridge-send-lock');
+    if (vaultEl)   vaultEl.textContent  = res.vaultAddress;
+    if (memoEl)    memoEl.textContent   = res.memo;
+    if (boxEl)     boxEl.style.display  = 'block';
+    if (sendBtnEl) sendBtnEl.classList.remove('d-none');
   } catch (e) {
     alert(`Error: ${e.message}`);
+  }
+};
+
+/** Show status in the shared bridge status box */
+function bridgeShowStatus(text, type, explorerUrl) {
+  const box     = document.getElementById('bridge-tx-status');
+  const spinner = document.getElementById('bridge-status-spinner');
+  const textEl  = document.getElementById('bridge-status-text');
+  const link    = document.getElementById('bridge-status-link');
+  if (!box) return;
+  box.classList.remove('d-none');
+  box.className = `bridge-status-box ${type || ''}`;
+  if (textEl)  textEl.textContent  = text;
+  if (spinner) spinner.style.display = (type === 'pending') ? 'inline-block' : 'none';
+  if (link) {
+    if (explorerUrl) {
+      link.href = explorerUrl;
+      link.classList.remove('d-none');
+    } else {
+      link.classList.add('d-none');
+    }
+  }
+}
+
+/** Auto-send ZION to bridge vault (ZION → wZION) */
+window.bridgeSendLock = async function () {
+  if (!_bridgeEvmAddress) { alert('EVM key not loaded — unlock first.'); return; }
+  const amount = parseFloat(document.getElementById('bridge-l1-amount')?.value || '0');
+  if (!amount || amount < 100) { alert('Minimum amount is 100 ZION.'); return; }
+
+  // Get L1 from address from config
+  let fromAddress;
+  try {
+    const cfg = await window.electronAPI.getConfig();
+    fromAddress = cfg.wallet;
+  } catch { fromAddress = null; }
+  if (!fromAddress) { alert('Could not determine L1 wallet address from config.'); return; }
+
+  bridgeShowStatus('Sending L1 transaction…', 'pending');
+  try {
+    const res = await window.electronAPI.bridgeSendLock({ amount, fromAddress });
+    if (!res.success) {
+      bridgeShowStatus(`❌ Error: ${res.error}`, 'error');
+      return;
+    }
+    bridgeShowStatus(
+      `✅ Sent ${amount} ZION to vault. TX: ${res.txId || 'submitted'}. wZION will arrive in ~1 min.`,
+      'success',
+      null
+    );
+  } catch (e) {
+    bridgeShowStatus(`❌ ${e.message}`, 'error');
+  }
+};
+
+/** Burn wZION on Base → receive ZION on L1 */
+window.bridgeBurnWzion = async function () {
+  const amount      = parseFloat(document.getElementById('bridge-burn-amount')?.value || '0');
+  const l1Recipient = (document.getElementById('bridge-burn-l1addr')?.value || '').trim();
+  if (!amount || amount <= 0) { alert('Enter an amount to burn.'); return; }
+  if (!l1Recipient) { alert('Enter your L1 ZION recipient address.'); return; }
+
+  bridgeShowStatus('Signing EVM transaction…', 'pending');
+  try {
+    const res = await window.electronAPI.bridgeBurnWzion({ amount, l1Recipient });
+    if (res?.needsEvmKey) {
+      // Show inline password box inside the EVM→L1 form
+      bridgeShowStatus('EVM key not loaded — enter your wallet password below.', 'warn');
+      const box = document.getElementById('bridge-evm-key-box');
+      if (box) box.classList.remove('d-none');
+      return;
+    }
+    if (!res.success) {
+      bridgeShowStatus(`❌ Error: ${res.error}`, 'error');
+      return;
+    }
+    bridgeShowStatus(
+      `✅ Burn TX submitted. ZION will arrive on L1 after relay confirmation.`,
+      'success',
+      res.explorerUrl
+    );
+  } catch (e) {
+    bridgeShowStatus(`❌ ${e.message}`, 'error');
+  }
+};
+
+/** Unlock EVM key from the inline password box inside EVM→L1 form, then retry burn */
+window.bridgeBurnWzionWithPassword = async function () {
+  const password    = (document.getElementById('bridge-evm-password')?.value || '').trim();
+  const amount      = parseFloat(document.getElementById('bridge-burn-amount')?.value || '0');
+  const l1Recipient = (document.getElementById('bridge-burn-l1addr')?.value || '').trim();
+  if (!password) { alert('Enter your wallet password.'); return; }
+
+  bridgeShowStatus('Deriving EVM key & signing…', 'pending');
+  try {
+    const res = await window.electronAPI.bridgeBurnWzion({ amount, l1Recipient, password });
+    if (!res.success) {
+      bridgeShowStatus(`❌ Error: ${res.error}`, 'error');
+      return;
+    }
+    const box = document.getElementById('bridge-evm-key-box');
+    if (box) box.classList.add('d-none');
+    bridgeShowStatus(
+      `✅ Burn TX submitted. ZION will arrive on L1 after relay confirmation.`,
+      'success',
+      res.explorerUrl
+    );
+  } catch (e) {
+    bridgeShowStatus(`❌ ${e.message}`, 'error');
   }
 };
 
@@ -3186,9 +3303,29 @@ function bridgeCopyText(text) {
   on('bridge-copy-evm',      'click', () => window.bridgeCopyEvm());
   on('bridge-copy-memo',     'click', () => window.bridgeCopyMemo());
   on('bridge-prepare-lock',  'click', () => window.bridgePrepareLock());
+  on('bridge-send-lock',     'click', () => window.bridgeSendLock());
   on('bridge-refresh-stats', 'click', () => window.bridgeLoadStats());
+  on('bridge-burn-wzion',    'click', () => window.bridgeBurnWzion());
+  on('bridge-evm-unlock',    'click', () => window.bridgeBurnWzionWithPassword());
+
+  // EVM key unlock panel (for wallets without stored evmAddress)
+  on('bridge-derive-evm', 'click', async () => {
+    const pw = (document.getElementById('bridge-wallet-password')?.value || '').trim();
+    if (!pw) { alert('Enter your wallet password.'); return; }
+    const res = await window.electronAPI.walletGetEvmAddress(pw);
+    if (res?.address) {
+      _bridgeEvmAddress = res.address;
+      const el = document.getElementById('bridge-evm-address');
+      if (el) el.textContent = res.address;
+      document.getElementById('bridge-evm-unlock-panel')?.classList.add('d-none');
+      bridgeLoadWzionBalance(res.address);
+    } else {
+      alert(`Error: ${res?.error || 'Wrong password or no mnemonic'}`);
+    }
+  });
+
   on('bridge-open-basescan', 'click', () => {
-    window.open('https://sepolia.basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721#writeContract', '_blank');
+    window.open('https://sepolia.basescan.org/address/0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1#writeContract', '_blank');
   });
 
   // DEX tab
@@ -3206,12 +3343,9 @@ function bridgeCopyText(text) {
   });
 
   // Stats tab — copy buttons
-  on('stats-copy-wzion', 'click', () => bridgeCopyText('0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721'));
-  on('stats-copy-bridge', 'click', () => {
-    const el = document.getElementById('stats-bridge-contract');
-    if (el) bridgeCopyText(el.textContent);
-  });
-  on('stats-copy-vault', 'click', () => bridgeCopyText('zion1bridge000000000000000000000000000vault'));
+  on('stats-copy-wzion',  'click', () => bridgeCopyText('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6'));
+  on('stats-copy-bridge', 'click', () => bridgeCopyText('0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1'));
+  on('stats-copy-vault',  'click', () => bridgeCopyText('zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5'));
 })();
 
 // Hook into switchView to initialize bridge when tab is opened

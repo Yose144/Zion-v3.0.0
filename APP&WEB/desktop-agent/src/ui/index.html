@@ -2097,6 +2097,65 @@
       cursor: pointer;
     }
 
+    /* Bridge status feedback box */
+    .bridge-status-box {
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.25);
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+      line-height: 1.5;
+    }
+    .bridge-status-box.pending { border-color: rgba(247,184,1,0.35); background: rgba(247,184,1,0.06); }
+    .bridge-status-box.success { border-color: rgba(0,255,153,0.3);  background: rgba(0,255,153,0.05); }
+    .bridge-status-box.error   { border-color: rgba(255,80,80,0.35); background: rgba(255,80,80,0.06); }
+    .bridge-status-box.warn    { border-color: rgba(255,180,0,0.3);  background: rgba(255,180,0,0.05); }
+
+    .bridge-spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(247,184,1,0.3);
+      border-top-color: var(--zion-gold);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .bridge-explorer-link {
+      display: block;
+      width: 100%;
+      font-size: 11px;
+      color: var(--zion-cyan);
+      text-decoration: none;
+      margin-top: 4px;
+    }
+    .bridge-explorer-link:hover { text-decoration: underline; }
+
+    .bridge-password-box {
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(247,184,1,0.25);
+      background: rgba(247,184,1,0.04);
+    }
+
+    .bridge-send-btn {
+      background: linear-gradient(135deg,#00d4aa,#009977);
+      color: #000;
+    }
+    .bridge-burn-btn {
+      background: linear-gradient(135deg,#a855f7,#7c3aed);
+      color: #fff;
+    }
+
     /* ── DEX & Atomic Swap ──────────────────────────────── */
 
     .dex-chain-table {
@@ -6395,6 +6454,16 @@
             </div>
           </div>
 
+          <!-- EVM key unlock panel (shown when evmAddress not yet derived) -->
+          <div id="bridge-evm-unlock-panel" class="control-panel mb-14 p-bridge-sm d-none">
+            <div class="bridge-label" style="color:var(--zion-gold)">&#128274; EVM key not loaded</div>
+            <p class="bridge-help">Enter your wallet password to derive your EVM address and enable bridge operations.</p>
+            <div class="bridge-inline-row">
+              <input id="bridge-wallet-password" type="password" placeholder="Wallet password" class="bridge-input" style="flex:1" />
+              <button id="bridge-derive-evm" class="bridge-primary-btn">Derive EVM key</button>
+            </div>
+          </div>
+
           <!-- Form: L1→EVM -->
           <div id="bridge-form-l1toevm" class="control-panel mb-14 p-bridge-form">
             <h3 class="bridge-form-title">Lock ZION on L1 → receive wZION on Base</h3>
@@ -6419,31 +6488,50 @@
             <button id="bridge-prepare-lock" class="bridge-primary-btn">
               Generate memo
             </button>
+            <button id="bridge-send-lock" class="bridge-primary-btn bridge-send-btn d-none">
+              &#9654; Send Now
+            </button>
           </div>
 
           <!-- Form: EVM→L1 -->
           <div id="bridge-form-evmtol1" class="control-panel mb-14 p-bridge-form d-none">
             <h3 class="bridge-form-title cyan">Burn wZION on Base → receive ZION on L1</h3>
             <p class="bridge-help">
-              Use the mobile wallet to sign and broadcast the <code>bridgeBurn()</code> transaction,
-              or call the contract directly via BaseScan write interface. The Rust relay will
-              release L1 ZION after confirmation.
+              Signs and broadcasts <code>bridgeBurn()</code> on Base. The relay releases your ZION on L1 after confirmation.
             </p>
+            <div class="mb-10">
+              <label class="bridge-label">Amount wZION to burn</label>
+              <input id="bridge-burn-amount" type="number" min="1" step="any" placeholder="e.g. 200"
+                class="bridge-input" />
+            </div>
+            <div class="mb-10">
+              <label class="bridge-label">L1 recipient address (zion1...)</label>
+              <input id="bridge-burn-l1addr" type="text" placeholder="zion1..."
+                class="bridge-input" />
+            </div>
             <div class="mb-10">
               <label class="bridge-label">Contract on Base Sepolia</label>
               <div class="bridge-inline-row">
-                <code class="bridge-code-block bridge-code-nomargin">0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721</code>
+                <code class="bridge-code-block bridge-code-nomargin">0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1</code>
                 <button id="bridge-open-basescan" class="bridge-btn-small">Open ↗</button>
               </div>
             </div>
-            <div class="bridge-note-box">
-              <div class="bridge-note-text">
-                <b>Function:</b> <code>bridgeBurn(uint256 amount, string l1Recipient, bytes32 burnId)</code><br/>
-                <b>amount:</b> ZION × 10<sup>18</sup> × 10<sup>6</sup> (e.g. 500 ZION → <code>500000000000000000000</code>)<br/>
-                <b>l1Recipient:</b> your ZION L1 address (<code>zion1...</code>)<br/>
-                <b>burnId:</b> unique bytes32 (e.g. <code>0x000...001</code>)
-              </div>
+            <button id="bridge-burn-wzion" class="bridge-primary-btn bridge-burn-btn">
+              🔥 Burn wZION
+            </button>
+            <!-- EVM key lock: shown if EVM key not yet loaded -->
+            <div id="bridge-evm-key-box" class="bridge-password-box d-none">
+              <label class="bridge-label">Wallet password (to sign EVM TX)</label>
+              <input id="bridge-evm-password" type="password" placeholder="Your wallet password" class="bridge-input" />
+              <button id="bridge-evm-unlock" class="bridge-primary-btn">Unlock &amp; Sign</button>
             </div>
+          </div>
+
+          <!-- TX Status box — shared: shown below whichever form is active -->
+          <div id="bridge-tx-status" class="bridge-status-box d-none">
+            <div id="bridge-status-spinner" class="bridge-spinner"></div>
+            <div id="bridge-status-text"></div>
+            <a id="bridge-status-link" href="#" target="_blank" class="bridge-explorer-link d-none">View on explorer ↗</a>
           </div>
         </div>
 
