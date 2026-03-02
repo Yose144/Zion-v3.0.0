@@ -30,6 +30,7 @@ import {
   BRIDGE_CONTRACTS,
   type BridgeStatus,
 } from '@/lib/bridge-api';
+import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 
 // ─── Steps data ───────────────────────────────────────────────────────────────
 
@@ -313,8 +314,56 @@ export default function BridgePage() {
           </motion.div>
         </div>
 
-        {/* ── BRIDGE MEMO GUIDE ──────────────────────────────────────────── */}
+        {/* ── TRY IT LIVE — interactive burn widget ──────────────────────── */}
         <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="rounded-[28px] border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-black/60 p-6 md:p-10"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <Flame className="h-5 w-5 text-orange-400" />
+            <h2 className="text-xl font-semibold text-white">Try it live — Burn wZION</h2>
+          </div>
+          <p className="text-sm text-gray-400 mb-8 ml-8">
+            Have wZION on Base Sepolia? Connect MetaMask and burn directly from this page. No download required.
+          </p>
+          <div className="grid gap-6 md:grid-cols-2 items-start">
+            <BridgeBurnWidget />
+            {/* Quick-ref panel */}
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-3">
+                <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">What happens after you burn</p>
+                <ol className="space-y-2 text-sm">
+                  <li className="flex gap-2 text-gray-300">
+                    <span className="text-orange-400 font-bold shrink-0">1.</span>
+                    <span><code className="text-orange-300 rounded bg-white/10 px-1 text-xs">BurnForBridge</code> event emitted on Base Sepolia</span>
+                  </li>
+                  <li className="flex gap-2 text-gray-300">
+                    <span className="text-orange-400 font-bold shrink-0">2.</span>
+                    <span>EVM watcher detects event, waits <strong className="text-white">64 block</strong> confirmations (~2 min)</span>
+                  </li>
+                  <li className="flex gap-2 text-gray-300">
+                    <span className="text-orange-400 font-bold shrink-0">3.</span>
+                    <span>Relay submits <code className="text-cyan-300 rounded bg-white/10 px-1 text-xs">POST /api/bridge/unlock</code> to ZION L1</span>
+                  </li>
+                  <li className="flex gap-2 text-gray-300">
+                    <span className="text-orange-400 font-bold shrink-0">4.</span>
+                    <span>L1 releases escrowed ZION to your recipient address</span>
+                  </li>
+                </ol>
+              </div>
+              <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+                <p className="text-xs font-semibold text-yellow-400 uppercase tracking-wider mb-2">Testnet only</p>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  This widget operates on <strong className="text-white">Base Sepolia</strong>. wZION has no real value. Do NOT send mainnet ETH or wZION to testnet addresses.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ── BRIDGE MEMO GUIDE ──────────────────────────────────────────── */}        <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

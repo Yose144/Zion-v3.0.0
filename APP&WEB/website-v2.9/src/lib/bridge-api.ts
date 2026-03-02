@@ -29,7 +29,7 @@ export interface BridgeContractInfo {
 
 export const BRIDGE_CONTRACTS: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-  bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+  bridge_address: '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
   network: 'Base Sepolia (Testnet)',
   chain_id: 84532,
   explorer_base: 'https://sepolia.basescan.org/address/',
@@ -83,4 +83,60 @@ export function bridgeEfficiency(status: BridgeStatus): number {
   const { l1_locks_finalized, l1_locks_detected } = status;
   if (l1_locks_detected === 0) return 100;
   return Math.round((l1_locks_finalized / l1_locks_detected) * 100);
+}
+
+// ─── wZION contract ABI (minimal) ─────────────────────────────────────────────
+
+export const WZION_ABI = [
+  // ERC-20 standard
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
+  'function totalSupply() view returns (uint256)',
+  'function balanceOf(address account) view returns (uint256)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function transfer(address to, uint256 amount) returns (bool)',
+  // Bridge-specific
+  'function burn(uint256 amount, string calldata l1Recipient) external',
+  // Events
+  'event Transfer(address indexed from, address indexed to, uint256 value)',
+  'event BurnForBridge(address indexed burner, uint256 amount, string l1Recipient)',
+] as const;
+
+/** Base Sepolia chain ID */
+export const BASE_SEPOLIA_CHAIN_ID = 84532;
+export const BASE_SEPOLIA_HEX_ID = '0x14A34'; // 84532 in hex
+
+/** Add / switch MetaMask to Base Sepolia */
+export async function switchToBaseSepolia(): Promise<void> {
+  const { ethereum } = window as Window & { ethereum?: unknown };
+  if (!ethereum) throw new Error('MetaMask not found');
+  const eth = ethereum as {
+    request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+  };
+  try {
+    await eth.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: BASE_SEPOLIA_HEX_ID }],
+    });
+  } catch (e: unknown) {
+    // 4902 = chain not added yet
+    if ((e as { code?: number }).code === 4902) {
+      await eth.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: BASE_SEPOLIA_HEX_ID,
+            chainName: 'Base Sepolia',
+            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+            rpcUrls: ['https://sepolia.base.org'],
+            blockExplorerUrls: ['https://sepolia.basescan.org'],
+          },
+        ],
+      });
+    } else {
+      throw e;
+    }
+  }
 }
