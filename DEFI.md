@@ -62,30 +62,22 @@ L2/atomic-swap (Rust daemon)
 | ZIONStaking.sol (APR 12%) | ✅ LIVE | `34dc5c2` |
 | Uniswap V3 pool (inicializován) | ✅ LIVE | `34dc5c2` |
 
-## 🔲 Testnet — zbývá dokončit
+## ✅ Testnet — dokončeno (2026-03-02)
 
-| # | Úkol | Příkaz | Poznámka |
+| # | Úkol | Status | Poznámka |
 |---|------|--------|----------|
-| T-1 | Seed Uni V3 likvidity | `npm run dex:seed:sepolia` | Potřeba ~0.01 ETH + 100 wZION — získat z faucetu |
-| T-2 | Fund ZIONStaking reward pool | viz níže | Z deployer adresy, 100 wZION stačí na testnet |
-| T-3 | E2E atomic swap test | manuální | ZION → lock → EVM claim → ZION release |
-| T-4 | Ověření kontraktů na BaseScan | `npm run verify:sepolia` | Volitelné |
+| T-1 | Seed Uni V3 likvidity | ✅ DONE | 100 wZION + 0.005 WETH, Position NFT tokenId=78238, TX `0x05240f...` |
+| T-2 | Fund ZIONStaking reward pool | ✅ DONE | 50 wZION, APR 12%, TX `0x3d9168...` |
+| T-3 | E2E atomic swap test | ✅ DONE | 33/33 hardhat tests passing (incl. full HTLC + E2E bridge cycles) |
+| T-4 | Ověření kontraktů na BaseScan | 🔲 čeká na API klíč | Přidej `BASESCAN_API_KEY` do `.env`, pak `npm run verify:sepolia` |
 
 ```powershell
-# T-1: seed Uniswap V3 likvidity
+# T-4: ověření na BaseScan (jakmile máš API klíč z basescan.org/myapikey)
 cd L2/contracts
-npx hardhat run scripts/seed-liquidity.ts --network base-sepolia
-
-# T-2: fund staking rewards
-# V Hardhat skriptu nebo přímo:
-npx hardhat console --network base-sepolia
-# > const staking = await ethers.getContractAt("ZIONStaking", "0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913")
-# > const wzion = await ethers.getContractAt("WZION", "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6")
-# > await wzion.approve(staking.target, ethers.parseUnits("100", 8))
-# > await staking.fundRewardPool(ethers.parseUnits("100", 8))
+# přidej do .env: BASESCAN_API_KEY=tvuj_klic
+npx hardhat run scripts/verify.ts --network base-sepolia
 ```
 
----
 
 ## 🚀 Mainnet — příprava (podrobný návod)
 
@@ -354,10 +346,10 @@ L2/atomic-swap (Rust daemon)
 
 | # | Úkol | Skript | Odhadovaný čas |
 |---|------|--------|----------------|
-| D-01 | Deploy Governance + Treasury + Staking | `deploy-defi.ts` | 30 min |
-| D-02 | Ověření na BaseScan | `verify.ts` | 30 min |
-| D-03 | Seed rewardů do ZIONStaking (fundRewardPool) | ruční TX | 15 min |
-| D-04 | Nastavit `stakingContract` v Governance | deploy-defi.ts auto | — |
+| D-01 | Deploy Governance + Treasury + Staking | `deploy-defi.ts` | ✅ DONE |
+| D-02 | Ověření na BaseScan | `verify.ts` | 🔲 čeká na BASESCAN_API_KEY |
+| D-03 | Seed rewardů do ZIONStaking (fundRewardPool) | `fund-staking.ts` | ✅ DONE (50 wZION) |
+| D-04 | Nastavit `stakingContract` v Governance | deploy-defi.ts auto | ✅ DONE |
 
 ```bash
 # D-01
@@ -369,9 +361,9 @@ npx hardhat run scripts/deploy-defi.ts --network base-sepolia
 
 | # | Úkol | Skript | Odhadovaný čas |
 |---|------|--------|----------------|
-| P-01 | Deploy wZION/WETH pool (0.3% fee tier) | `deploy-pool.ts` | 20 min |
-| P-02 | Seed počáteční likvidity (full-range position) | `seed-liquidity.ts` | 30 min |
-| P-03 | Ověřit cenu + tick na BaseScan / Uniswap UI | ruční | 15 min |
+| P-01 | Deploy wZION/WETH pool (0.3% fee tier) | `deploy-pool.ts` | ✅ DONE |
+| P-02 | Seed počáteční likvidity (full-range position) | `seed-liquidity.ts` | ✅ DONE (tokenId=78238, 100 wZION + 0.005 WETH) |
+| P-03 | Ověřit cenu + tick na BaseScan / Uniswap UI | ruční | 🔲 volitelné |
 
 ```bash
 # P-01
@@ -389,7 +381,7 @@ npx hardhat run scripts/seed-liquidity.ts --network base-sepolia
 | S-07 | Testy ZIONAtomicSwap (19/19) | ✅ |
 | S-08 | Deploy na Base Sepolia | ✅ commit `c696d99` |
 | S-09 | EVM watcher (`evm_watcher.rs`, 15/15 testů) | ✅ commit `c696d99` |
-| S-10 | E2E test: ZION ↔ ETH swap (testnet) | 🔲 pending |
+| S-10 | E2E test: ZION ↔ ETH swap (testnet) | ✅ DONE (33/33 hardhat tests) |
 
 ### Fáze 4 — Yield Farming ✅ DONE
 
