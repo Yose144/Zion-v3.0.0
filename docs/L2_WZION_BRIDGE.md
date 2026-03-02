@@ -1,7 +1,7 @@
 # 🌉 ZION L2 wZION Bridge — Architecture & Design
 
-**Verze: 0.1.0 | Datum: 16. února 2026**  
-**Status: 🏗️ PŘÍPRAVA (Sprint 3.4.5-3.4.6)**  
+**Verze: 0.1.0 | Datum: 2. března 2026**  
+**Status: ✅ TESTNET LIVE — L1→wZION funkční (E2E ověřeno 2.3.2026)**  
 **Cíl: Wrapped ZION (wZION) na EVM chains → DEX likvidita → price discovery**
 
 ---
@@ -258,4 +258,4 @@ Zion-2.9.5/
 ---
 
 *Tento dokument je živý — aktualizuje se s postupem implementace.*  
-*Poslední aktualizace: 16. únor 2026*
+*Poslední aktualizace: 2. března 2026 — L1→wZION E2E test úspěšný (500 ZION → 500 wZION na Base Sepolia)*
