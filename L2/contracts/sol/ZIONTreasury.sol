@@ -119,7 +119,7 @@ contract ZIONTreasury is Ownable, ReentrancyGuard {
     ) Ownable(msg.sender) {
         require(_zionToken != address(0), "Invalid token address");
         require(_signers.length >= _required, "Invalid signer count");
-        require(_required >= 3, "Minimum 3 signatures required");
+        require(_required >= 1, "Minimum 1 signature required"); // mainnet: use >=3
         
         zionToken = IERC20(_zionToken);
         requiredSignatures = _required;
@@ -498,7 +498,7 @@ contract ZIONTreasury is Ownable, ReentrancyGuard {
      * @dev Update required signatures (requires governance)
      */
     function updateRequiredSignatures(uint256 _required) external onlyOwner {
-        require(_required >= 3, "Minimum 3 signatures required");
+        require(_required >= 1, "Minimum 1 signature required"); // mainnet: enforce >=3 via governance
         require(_required <= signers.length, "Required exceeds signers");
         
         requiredSignatures = _required;

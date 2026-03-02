@@ -1,0 +1,18 @@
+{
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "wzion": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+  "governance": "0x039F730e3e1c3f36da95187697118791762290a1",
+  "treasury": "0x178d85323dC94Ce2477269Dfb93a12D04B9bE537",
+  "staking": "0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913",
+  "config": {
+    "stakingAprBps": 1200,
+    "cooldownSeconds": 604800,
+    "treasurySigners": [
+      "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186"
+    ],
+    "treasuryThreshold": 1,
+    "guardian": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186"
+  },
+  "deployedAt": "2026-03-02T10:32:43.229Z"
+}
