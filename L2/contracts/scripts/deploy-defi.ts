@@ -48,8 +48,8 @@ async function main() {
   console.log(`Deployer: ${deployer.address}`);
   console.log(`Balance:  ${ethers.formatEther(balance)} ETH`);
 
-  if (balance < ethers.parseEther("0.01")) {
-    console.error("❌ Insufficient ETH balance (need ≥ 0.01 ETH)");
+  if (balance < ethers.parseEther("0.005")) {
+    console.error("❌ Insufficient ETH balance (need ≥ 0.005 ETH)");
     console.error("   Get Base Sepolia ETH at: https://faucet.quicknode.com/base/sepolia");
     process.exit(1);
   }
@@ -81,12 +81,16 @@ async function main() {
   console.log(`Guardian: ${guardianAddr}`);
   console.log(`APR:      ${aprBps / 100}% (${aprBps} bps)`);
 
+  // ── Nonce management (avoids "nonce too low" on fast testnets) ─────────────
+  let nonce = await ethers.provider.getTransactionCount(deployer.address, "pending");
+  const nextNonce = () => nonce++;
+
   // ── Step 1: ZIONGovernance ────────────────────────────────────────────────
 
   console.log("\n📜 Step 1: Deploying ZIONGovernance...");
   // constructor(address _zionToken)
   const Governance = await ethers.getContractFactory("ZIONGovernance");
-  const governance = await Governance.deploy(finalWzion);
+  const governance = await Governance.deploy(finalWzion, { nonce: nextNonce() });
   await governance.waitForDeployment();
   const govAddr = await governance.getAddress();
   console.log(`   ✅ ZIONGovernance: ${govAddr}`);
@@ -105,25 +109,22 @@ async function main() {
       treasurySigners.push(addr);
     }
   }
-  // Pad to minimum 3 on testnets (deployer occupies all seats)
+  // Testnet: use only unique signers, threshold = 1 if only deployer available
   const isTestnet = isLocal || networkName.includes("sepolia") || networkName.includes("testnet");
-  if (isTestnet) {
-    while (treasurySigners.length < 3) treasurySigners.push(deployer.address);
-  }
-  if (treasurySigners.length < 3) {
-    console.error("❌ ZIONTreasury requires >= 3 signers. Set TREASURY_SIGNER2 + TREASURY_SIGNER3.");
+  if (!isTestnet && treasurySigners.length < 3) {
+    console.error("❌ ZIONTreasury requires >= 3 signers on mainnet. Set TREASURY_SIGNER2 + TREASURY_SIGNER3.");
     process.exit(1);
   }
-  const threshold = Math.max(3, Math.ceil(treasurySigners.filter((v,i,a)=>a.indexOf(v)===i).length * 0.6));
+  const uniqueSigners = [...new Set(treasurySigners)];
+  const threshold = isTestnet ? 1 : Math.max(3, Math.ceil(uniqueSigners.length * 0.6));
 
   const Treasury  = await ethers.getContractFactory("ZIONTreasury");
-  const treasury  = await Treasury.deploy(finalWzion, treasurySigners, threshold);
+  const treasury  = await Treasury.deploy(finalWzion, uniqueSigners, threshold, { nonce: nextNonce() });
   await treasury.waitForDeployment();
   const treasuryAddr = await treasury.getAddress();
   console.log(`   ✅ ZIONTreasury: ${treasuryAddr}`);
-  console.log(`      Signers: ${[...new Set(treasurySigners)].join(", ")} (${isTestnet ? "testnet: deployer×" + treasurySigners.length : ""})`);
-  console.log(`      Threshold: ${threshold}-of-${treasurySigners.length}`);
-  console.log(`      Threshold: ${threshold}-of-${treasurySigners.length}`);
+  console.log(`      Signers: ${uniqueSigners.join(", ")}`);
+  console.log(`      Threshold: ${threshold}-of-${uniqueSigners.length}`);
 
   // ── Step 3: ZIONStaking ───────────────────────────────────────────────────
 
@@ -133,7 +134,8 @@ async function main() {
     finalWzion,
     deployer.address,   // admin
     guardianAddr,       // guardian
-    aprBps
+    aprBps,
+    { nonce: nextNonce() }
   );
   await staking.waitForDeployment();
   const stakingAddr = await staking.getAddress();
@@ -143,7 +145,7 @@ async function main() {
   // Grant REWARD_FUNDER_ROLE to treasury so it can fund the staking pool
   console.log("\n🔐 Step 4: Grant REWARD_FUNDER_ROLE to ZIONTreasury...");
   const REWARD_FUNDER_ROLE = await staking.REWARD_FUNDER_ROLE();
-  const grantTx = await staking.grantRole(REWARD_FUNDER_ROLE, treasuryAddr);
+  const grantTx = await staking.grantRole(REWARD_FUNDER_ROLE, treasuryAddr, { nonce: nextNonce() });
   await grantTx.wait();
   console.log(`   ✅ REWARD_FUNDER_ROLE granted to treasury`);
 
@@ -156,8 +158,8 @@ async function main() {
       setStakingContract?: (addr: string) => Promise<{ wait: () => Promise<void> }>;
     };
     if (typeof govContract.setStakingContract === "function") {
-      const stakeTx = await govContract.setStakingContract(stakingAddr);
-      await stakeTx.wait();
+      const stakeTx = await govContract.setStakingContract(stakingAddr, { nonce: nextNonce() } as never);
+      await (stakeTx as unknown as { wait: () => Promise<void> }).wait();
       console.log(`   ✅ Governance staking contract set to ${stakingAddr}`);
     } else {
       console.log(`   ℹ️  ZIONGovernance.setStakingContract() not implemented — skipped`);

@@ -50,31 +50,63 @@ async function main() {
   );
 
   if (poolAddress !== ethers.ZeroAddress) {
-    console.log(`\n✅ Pool already exists: ${poolAddress}`);
-    await printPoolState(poolAddress, deployer);
-    return;
+    console.log(`\nPool already exists: ${poolAddress} — checking if initialized...`);
+    const existingPool = new ethers.Contract(poolAddress, POOL_ABI, deployer);
+    const slot0 = await existingPool.slot0();
+    if (slot0.sqrtPriceX96 !== 0n) {
+      console.log(`✅ Pool already initialized: ${poolAddress}`);
+      await printPoolState(poolAddress, deployer);
+      return;
+    }
+    console.log(`⚠️  Pool exists but NOT initialized — running initialize...`);
   }
 
-  // ── 3. Create pool ──────────────────────────────────────────────────────────
+  // ── 3. Create pool (skip if already exists) ────────────────────────────────
+  if (poolAddress === ethers.ZeroAddress) {
   console.log(`\nCreating pool...`);
   const createTx = await factory.createPool(
     cfg.wzionAddress,
     cfg.wethAddress,
     cfg.feeTier
   );
-  const receipt = await createTx.wait();
-  console.log(`createPool tx: ${createTx.hash}`);
+  const receipt = await createTx.wait(2); // wait 2 confirmations
+  console.log(`createPool tx: ${createTx.hash} (status: ${receipt?.status})`);
 
-  poolAddress = await factory.getPool(
-    cfg.wzionAddress,
-    cfg.wethAddress,
-    cfg.feeTier
-  );
+  // Retry getPool up to 10 times with 3 s delay
+  for (let i = 0; i < 10; i++) {
+    poolAddress = await factory.getPool(
+      cfg.wzionAddress,
+      cfg.wethAddress,
+      cfg.feeTier
+    );
+    if (poolAddress !== ethers.ZeroAddress) break;
+    console.log(`  getPool returned zero, retry ${i + 1}/10...`);
+    await new Promise((r) => setTimeout(r, 3000));
+  }
 
   if (poolAddress === ethers.ZeroAddress) {
-    throw new Error("Pool creation failed — address still zero after tx");
+    // Extract pool from PoolCreated event as fallback
+    const iface = new ethers.Interface([
+      "event PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)"
+    ]);
+    const logs = receipt?.logs ?? [];
+    for (const log of logs) {
+      try {
+        const parsed = iface.parseLog({ topics: [...log.topics], data: log.data });
+        if (parsed?.name === "PoolCreated") {
+          poolAddress = parsed.args.pool as string;
+          console.log(`Pool address recovered from event: ${poolAddress}`);
+          break;
+        }
+      } catch { /* not this event */ }
+    }
+  }
+
+  if (poolAddress === ethers.ZeroAddress) {
+    throw new Error("Pool creation failed — address still zero after tx + retries");
   }
   console.log(`Pool deployed at: ${poolAddress}`);
+  } // end create-pool block
 
   // ── 4. Determine token order ────────────────────────────────────────────────
   const pool = new ethers.Contract(poolAddress, POOL_ABI, deployer);
@@ -97,11 +129,18 @@ async function main() {
   console.log(`sqrtPriceX96:  ${sqrtPriceX96.toString()}`);
   console.log(`Initial tick:  ${initialTick} (tickSpacing: ${tickSpacing})`);
 
-  // ── 6. Initialize pool ──────────────────────────────────────────────────────
+  // ── 6. Initialize pool (re-check, prev tx may have landed) ─────────────────
+  const slot0Check = await pool.slot0();
+  if (slot0Check.sqrtPriceX96 !== 0n) {
+    console.log(`\nPool already initialized (sqrtPriceX96: ${slot0Check.sqrtPriceX96})`);
+  } else {
   console.log(`\nInitializing pool...`);
   const initTx = await pool.initialize(sqrtPriceX96);
-  await initTx.wait();
-  console.log(`initialize tx: ${initTx.hash}`);
+  const initReceipt = await initTx.wait(2);
+  console.log(`initialize tx: ${initTx.hash} (status: ${initReceipt?.status})`);
+  if (initReceipt?.status === 0) throw new Error("initialize() reverted");
+  await new Promise((r) => setTimeout(r, 3000)); // let RPC index the new state
+  }
 
   // ── 7. Print state ──────────────────────────────────────────────────────────
   await printPoolState(poolAddress, deployer);

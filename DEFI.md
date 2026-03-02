@@ -16,10 +16,10 @@ L1 (ZION chain)
 L2 (Base / EVM)
   ├── wZION.sol              ERC-20 wrapped ZION           ✅ LIVE
   ├── ZIONBridge.sol         lock/mint/burn bridge         ✅ LIVE
-  ├── ZIONGovernance.sol     token governance + staking    🔨 ready → deploy
-  ├── ZIONTreasury.sol       multi-sig treasury + DAO      🔨 ready → deploy
-  ├── ZIONStaking.sol        stake wZION, earn APR         🔨 ready → deploy
-  ├── Uniswap V3 pool        wZION/WETH 0.3%               🔲 deploy + seed
+  ├── ZIONGovernance.sol     token governance + staking    ✅ LIVE (Base Sepolia)
+  ├── ZIONTreasury.sol       multi-sig treasury + DAO      ✅ LIVE (Base Sepolia)
+  ├── ZIONStaking.sol        stake wZION, earn APR         ✅ LIVE (Base Sepolia)
+  ├── Uniswap V3 pool        wZION/WETH 0.3%               ✅ LIVE (Base Sepolia) — seed pending
   ├── ZIONAtomicSwap.sol     EVM HTLC (ETH/ERC-20 strana)  ✅ LIVE (Base Sepolia)
   └── ZIONFarm.sol           MasterChef yield farming       ✅ LIVE (Base Sepolia)
 
@@ -37,14 +37,15 @@ L2/atomic-swap (Rust daemon)
 |---|---|
 | wZION ERC-20 | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
 | ZIONBridge | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` |
-| ZIONGovernance | *nasadit* |
-| ZIONTreasury | *nasadit* |
-| ZIONStaking | *nasadit* |
-| wZION/WETH Uni V3 pool | *nasadit* |
+| **ZIONGovernance** | **`0x039F730e3e1c3f36da95187697118791762290a1`** |
+| **ZIONTreasury** | **`0x178d85323dC94Ce2477269Dfb93a12D04B9bE537`** (1-of-1, testnet) |
+| **ZIONStaking** | **`0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913`** (APR 12%) |
+| **wZION/WETH Uni V3 pool** | **`0xcCEaD51568E8d701f7db7e6699F3986031F07C7B`** (0.3%, initialized) |
 | **ZIONAtomicSwap** | **`0xAf1E0645Ac409485EDA5EabD87b4eE3C3a5BA3Fc`** |
-| **ZIONFarm** | **`0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843`** |
+| **ZIONFarm** | **`0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843`** (Pool 0: 500 wZION seeded) |
 
-> Po deployi aktualizuj tabulku z `deployed-defi.json`.
+> Stav k **2026-03-** — Base Sepolia. Před Mainnetem nutný audit + testery.  
+> `deployed-defi.json` uložen v `L2/contracts/`.
 
 ---
 
@@ -122,33 +123,24 @@ npx hardhat run scripts/deploy-pool.ts --network base-sepolia
 npx hardhat run scripts/seed-liquidity.ts --network base-sepolia
 ```
 
-### Fáze 3 — EVM HTLC kontrakt (Atomic Swaps EVM strana)
+### Fáze 3 — EVM HTLC kontrakt ✅ DONE
 
-| # | Úkol | Soubor | Odhadovaný čas |
-|---|------|--------|----------------|
-| S-06 | Napsat `ZIONAtomicSwap.sol` — HTLC pro ETH/ERC-20 | `L2/contracts/sol/` | 4h |
-| S-07 | Testy ZIONAtomicSwap | `test/` | 2h |
-| S-08 | Deploy na Base Sepolia | `scripts/deploy-atomic-swap.ts` | 30 min |
-| S-09 | Propojit s Rust daemonem (watcher pro EVM HTLC events) | `L2/atomic-swap/src/evm_watcher.rs` | 4h |
-| S-10 | E2E test: ZION ↔ ETH swap (testnet) | ruční + skript | 2h |
+| # | Úkol | Stav |
+|---|------|------|
+| S-06 | `ZIONAtomicSwap.sol` — HTLC pro ETH/ERC-20 | ✅ LIVE `0xAf1E0645...` |
+| S-07 | Testy ZIONAtomicSwap (19/19) | ✅ |
+| S-08 | Deploy na Base Sepolia | ✅ commit `c696d99` |
+| S-09 | EVM watcher (`evm_watcher.rs`, 15/15 testů) | ✅ commit `c696d99` |
+| S-10 | E2E test: ZION ↔ ETH swap (testnet) | 🔲 pending |
 
-```solidity
-// ZIONAtomicSwap.sol — rozhraní
-interface IZIONAtomicSwap {
-    function lock(bytes32 hash, address token, uint amount, uint timelock) external payable;
-    function claim(bytes32 hash, bytes32 preimage) external;
-    function refund(bytes32 hash) external;
-}
-```
+### Fáze 4 — Yield Farming ✅ DONE
 
-### Fáze 4 — Yield Farming / Liquidity Mining
-
-| # | Úkol | Soubor | Odhadovaný čas |
-|---|------|--------|----------------|
-| F-01 | `ZIONFarm.sol` — stake LP tokeny, earn wZION | `L2/contracts/sol/` | 6h |
-| F-02 | Reward schedule (halving každých 90 dní) | `ZIONFarm.sol` | 1h |
-| F-03 | Frontend widget (staking + farming dashboard) | `website-v2.9/` | 4h |
-| F-04 | Deploy + seed farmingových rewardů | `deploy-farm.ts` | 1h |
+| # | Úkol | Stav |
+|---|------|------|
+| F-01 | `ZIONFarm.sol` — MasterChef, stake LP, earn wZION | ✅ LIVE `0x1B8BA9...` |
+| F-02 | 17/17 testů | ✅ |
+| F-03 | Pool 0 seeded (500 wZION) | ✅ |
+| F-04 | Frontend widget | 🔲 pending |
 
 ### Fáze 5 — Mainnet deploy (po auditu)
 
@@ -171,52 +163,35 @@ CLAIM:   SWAP:CLAIM:<hash64hex>:<preimage64hex>
 REFUND:  SWAP:REFUND:<hash64hex>
 ```
 
-**Příklad (ZION ↔ BTC):**
-1. Alice vygeneruje `S` (32B náhodný), spočítá `H = SHA256(S)`
-2. Alice pošle 10 ZION na escrow adresu, memo: `SWAP:LOCK:<H>:120:btc:bc1qbobaddress`
-3. Bob vidí LOCK, vytvoří BTC HTLC s `H`, timelock 1h
-4. Alice claimne BTC (odhalí `S` na BTC chain)
-5. Bob pošle CLAIM TX (nebo zavolá `POST /swap/claim`): `SWAP:CLAIM:<H>:<S>`
-6. Daemon ověří `SHA256(S) == H`, uvolní 10 ZION Bobovi
-7. Pokud Bob neclaimne do 2h → daemon auto-refunduje ZION Alici
-
 ---
 
 ## Přehledová tabulka stavu
 
-| Komponenta | Stav | Commit |
+| Komponenta | Stav | Commit/Adresa |
 |---|---|---|
-| wZION ERC-20 nasazen | ✅ LIVE | — |
-| ZIONBridge nasazen | ✅ LIVE | — |
+| wZION ERC-20 | ✅ LIVE | `0x0c4937...` |
+| ZIONBridge | ✅ LIVE | `0xF4BF85...` |
 | BridgeBurnWidget (web) | ✅ hotovo | `3d7e8e3` |
-| ZIONStaking.sol | ✅ kompiluje | `847336b` |
-| ZIONGovernance.sol | ✅ kompiluje | `847336b` |
-| ZIONTreasury.sol | ✅ kompiluje | `847336b` |
-| deploy-defi.ts | ✅ hotovo | `847336b` |
-| deploy-pool.ts + dex-config | ✅ hotovo | `847336b` |
-| zion-atomic-swap daemon | ✅ 8/8 testů | `93da81c` |
-| L1 /api/swap/escrow-address | ✅ hotovo | `93da81c` |
-| **Deploy DeFi kontraktů (testnet)** | 🔲 TODO | — |
-| **Uniswap V3 pool + seed** | 🔲 TODO | — |
-| **ZIONAtomicSwap.sol (EVM HTLC)** | ✅ LIVE Base Sepolia | `c696d99` |
-| **ZIONFarm.sol (yield farming)** | ✅ LIVE Base Sepolia | `c696d99` |
-| **Mainnet deploy** | 🔲 po auditu | — |
+| ZIONAtomicSwap.sol | ✅ LIVE Base Sepolia | `0xAf1E06...` |
+| ZIONFarm.sol + Pool 0 seeded | ✅ LIVE Base Sepolia | `0x1B8BA9...` |
+| **ZIONGovernance.sol** | **✅ LIVE Base Sepolia** | **`0x039F73...`** |
+| **ZIONTreasury.sol** (1-of-1 testnet) | **✅ LIVE Base Sepolia** | **`0x178d85...`** |
+| **ZIONStaking.sol** (APR 12%) | **✅ LIVE Base Sepolia** | **`0x487D87...`** |
+| **wZION/WETH Uni V3 pool** (0.3%) | **✅ LIVE Base Sepolia** | **`0xcCEaD5...`** |
+| seed-liquidity (LP pozice) | 🔲 TODO | — |
+| E2E atomic swap test | 🔲 TODO | — |
+| Mainnet deploy | 🔲 po auditu | — |
 
 ---
 
 ## Rychlý start pro další session
 
 ```powershell
-# 1. Deploy DeFi kontraktů
+# Seed likvidity do Uniswap V3 poolu
 cd L2/contracts
-$env:DEPLOYER_PRIVATE_KEY = "..."
-npx hardhat run scripts/deploy-defi.ts --network base-sepolia
-
-# 2. Uniswap V3 pool
-npx hardhat run scripts/deploy-pool.ts --network base-sepolia
 npx hardhat run scripts/seed-liquidity.ts --network base-sepolia
 
-# 3. Spustit atomic-swap daemon lokálně
+# Spustit atomic-swap daemon lokálně
 $env:ZION_SWAP_ESCROW_KEY = "..."
 $env:ZION_RPC_TOKEN = "..."
 cargo run -p zion-atomic-swap -- --config L2/atomic-swap/atomic-swap-testnet.toml
