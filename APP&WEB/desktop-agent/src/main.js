@@ -2010,11 +2010,9 @@ function stopProfitPoll() {
 // ============================================================================
 
 const TESTNET_SERVERS = [
-  { id: 'helsinki', name: 'Helsinki', host: '77.42.31.72', flag: 'FI', location: 'Finland' },
-  { id: 'seedde', name: 'SeedDE', host: '46.225.126.243', flag: 'DE', location: 'Nuremberg, DE' },
-  { id: 'usa1', name: 'Usa1', host: '5.78.178.227', flag: 'US', location: 'Hillsboro, US' },
-  { id: 'usa2', name: 'Usa2', host: '178.156.240.160', flag: 'US', location: 'Ashburn, US' },
-  { id: 'asia3', name: 'Asia3', host: '5.223.43.93', flag: 'SG', location: 'Singapore, SG' }
+  { id: 'helsinki', name: 'Helsinki', host: '77.42.31.72',    flag: 'FI', location: 'Finland' },
+  { id: 'usa2',    name: 'Usa2',    host: '178.156.240.160', flag: 'US', location: 'Ashburn, US' },
+  { id: 'asia3',   name: 'Asia3',   host: '5.223.43.93',     flag: 'SG', location: 'Singapore, SG' }
 ];
 
 async function checkServerPort(host, port, timeout = 3000) {
