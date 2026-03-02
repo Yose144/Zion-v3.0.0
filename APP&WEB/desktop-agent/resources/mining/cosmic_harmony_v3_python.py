@@ -21,8 +21,9 @@ from typing import List, Optional
 
 # ---------------------------------------------------------------------------
 # Memory-hard fork height — below this we use legacy (fast) pipeline
+# MUST match L1/cosmic-harmony/src/algorithms_opt.rs CHV3_MEMORY_HARD_FORK_HEIGHT
 # ---------------------------------------------------------------------------
-CHV3_MEMORY_HARD_FORK_HEIGHT = 50_000
+CHV3_MEMORY_HARD_FORK_HEIGHT = 100_000
 
 # ---------------------------------------------------------------------------
 # Keccak-256 (pre-SHA3, padding byte 0x01)
@@ -259,22 +260,24 @@ def cosmic_harmony_v3_legacy(block_header: bytes, nonce: int) -> bytes:
 def cosmic_harmony_v3_hash(block_header: bytes, nonce: int, height: int = 0) -> bytes:
     """
     Compute CHv3 hash with height-aware variant selection.
-    
-    - height < 50,000: legacy (fast, no scratchpad)
-    - height >= 50,000: full (memory-hard) — NOT YET IMPLEMENTED in Python fallback
-    
-    The nonce is XORed with height (consensus rule from FFI audit C-04).
-    """
-    effective_nonce = (nonce ^ height) & _U64_MASK
 
+    - height < 100,000 : legacy (fast, no scratchpad)
+    - height >= 100,000: full (memory-hard) — NOT IMPLEMENTED in Python fallback;
+                         raises NotImplementedError so the GPU worker's strict-verify
+                         falls back to using the GPU hash directly (correct behaviour).
+
+    NOTE: nonce is used AS-IS (no XOR with height). The Rust pool validator and the
+    OpenCL GPU kernel both use the raw nonce. An earlier 'nonce ^ height' XOR was
+    incorrect and caused every GPU share to be silently dropped by strict-verify.
+    """
     if height >= CHV3_MEMORY_HARD_FORK_HEIGHT:
         raise NotImplementedError(
             f"Python CHv3 fallback does not support memory-hard pipeline "
             f"(height={height} >= {CHV3_MEMORY_HARD_FORK_HEIGHT}). "
-            f"Build the native Rust library."
+            f"Build the native Rust library or set ZION_CHV3_GPU_STRICT_VERIFY=0."
         )
 
-    return cosmic_harmony_v3_legacy(block_header, effective_nonce)
+    return cosmic_harmony_v3_legacy(block_header, nonce & _U64_MASK)
 
 
 # ---------------------------------------------------------------------------
