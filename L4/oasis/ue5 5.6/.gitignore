@@ -1,0 +1,42 @@
+# Unreal Engine Project Files
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# Mac
+.DS_Store
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# Linux
+*~
+.fuse_hidden*
+
+# Large binaries — use Git LFS for these in production
+# *.uasset
+# *.umap
+# *.ubulk
+# *.upk
