@@ -16,6 +16,7 @@ Usage:
 """
 
 import numpy as np
+import os
 import time
 from typing import Optional, Tuple, List, Union
 from dataclasses import dataclass
@@ -73,6 +74,28 @@ __constant uchar COSMIC_XOR_MASK[32] = {
     0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60,
     0x74, 0x9D, 0x30, 0x60, 0x74, 0x9D, 0x30, 0x60
 };
+
+// LE load/store helpers (used by memory-hard scratchpad)
+#define LOAD_U64_LE(arr, off) \
+    ( ((ulong)(arr)[(off)+0])        \
+    | ((ulong)(arr)[(off)+1] <<  8)  \
+    | ((ulong)(arr)[(off)+2] << 16)  \
+    | ((ulong)(arr)[(off)+3] << 24)  \
+    | ((ulong)(arr)[(off)+4] << 32)  \
+    | ((ulong)(arr)[(off)+5] << 40)  \
+    | ((ulong)(arr)[(off)+6] << 48)  \
+    | ((ulong)(arr)[(off)+7] << 56)  )
+
+#define STORE_U64_LE(arr, off, w) do { \
+    (arr)[(off)+0] = (uchar)((w));        \
+    (arr)[(off)+1] = (uchar)((w) >>  8);  \
+    (arr)[(off)+2] = (uchar)((w) >> 16);  \
+    (arr)[(off)+3] = (uchar)((w) >> 24);  \
+    (arr)[(off)+4] = (uchar)((w) >> 32);  \
+    (arr)[(off)+5] = (uchar)((w) >> 40);  \
+    (arr)[(off)+6] = (uchar)((w) >> 48);  \
+    (arr)[(off)+7] = (uchar)((w) >> 56);  \
+} while (0)
 
 inline ulong rotl64(ulong x, int n) {
     return (x << n) | (x >> (64 - n));
@@ -214,6 +237,181 @@ void cosmic_fusion(__private uchar *input, __private uchar *output) {
     }
 }
 
+// ============================================================================
+// Memory-hard scratchpad  (512 KiB per thread in global memory)
+// Mirrors Rust: cosmic-harmony/src/scratchpad.rs  memory_hard_transform()
+// Active when height >= 100 000  (CHV3_MEMORY_HARD_FORK_HEIGHT)
+// ============================================================================
+
+#define CL_SCRATCHPAD_BYTES (512u * 1024u)   // 524288 bytes
+#define CL_BLOCK_SIZE        64u
+#define CL_BLOCK_COUNT       8192u           // SCRATCHPAD_BYTES / BLOCK_SIZE
+#define CL_PASSES            4u
+#define CL_RANDOM_READS      256u
+
+// SHA3-512(state[64] ++ counter_u64_le)  –  exactly 72 bytes = 1 full rate block
+void sha3_512_state_counter(const uchar state[64], ulong counter, uchar out64[64]) {
+    ulong st[25];
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    for (int i = 0; i < 8; i++) st[i] = LOAD_U64_LE(state, i*8);
+    st[8] = counter;
+    keccak_f1600(st);
+    // Padding: second permutation block is empty → 0x06 at byte 0, 0x80 at byte 71
+    st[0] ^= 0x06UL;
+    st[8] ^= 0x8000000000000000UL;
+    keccak_f1600(st);
+    for (int i = 0; i < 8; i++) STORE_U64_LE(out64, i*8, st[i]);
+}
+
+// Keccak-256(acc[64] ++ chunk[64] ++ r_val[8])  =  136 bytes = 1 full rate block
+void keccak256_136_mix(const uchar acc[64], const uchar chunk[64], ulong r_val, uchar out32[32]) {
+    ulong st[25];
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    for (int i = 0; i < 8; i++) st[i]   ^= LOAD_U64_LE(acc,   i*8);
+    for (int i = 0; i < 8; i++) st[8+i] ^= LOAD_U64_LE(chunk, i*8);
+    st[16] ^= r_val;
+    keccak_f1600(st);
+    // Padding: next block is empty → 0x01 at byte 0, 0x80 at byte 135 (word 16)
+    st[0]  ^= 0x01UL;
+    st[16] ^= 0x8000000000000000UL;
+    keccak_f1600(st);
+    STORE_U64_LE(out32,  0, st[0]);
+    STORE_U64_LE(out32,  8, st[1]);
+    STORE_U64_LE(out32, 16, st[2]);
+    STORE_U64_LE(out32, 24, st[3]);
+}
+
+// SHA3-512(acc[64] ++ pad[0..63] ++ pad[SP-64..SP])  =  192 bytes
+void sha3_512_random_final(
+    const uchar acc[64],
+    __global const uchar* pad_first,
+    __global const uchar* pad_last,
+    uchar out64[64])
+{
+    ulong st[25];
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    // Block 1 (72 bytes): acc[0..63](8w) + pad_first[0..7](1w)
+    for (int i = 0; i < 8; i++) st[i] ^= LOAD_U64_LE(acc, i*8);
+    st[8] ^= LOAD_U64_LE(pad_first, 0);
+    keccak_f1600(st);
+    // Block 2 (72 bytes): pad_first[8..63](7w) + pad_last[0..15](2w)
+    for (int i = 1; i < 8; i++) st[i-1] ^= LOAD_U64_LE(pad_first, i*8);
+    st[7] ^= LOAD_U64_LE(pad_last, 0);
+    st[8] ^= LOAD_U64_LE(pad_last, 8);
+    keccak_f1600(st);
+    // Partial (48 bytes): pad_last[16..63](6w) → padding at byte 48
+    for (int i = 2; i < 8; i++) st[i-2] ^= LOAD_U64_LE(pad_last, i*8);
+    st[6] ^= 0x06UL;
+    st[8] ^= 0x8000000000000000UL;
+    keccak_f1600(st);
+    for (int i = 0; i < 8; i++) STORE_U64_LE(out64, i*8, st[i]);
+}
+
+// Step 1: fill 8192 × 64B blocks via SHA3-512 chain
+void cl_init_scratchpad(__global uchar* pad, const uchar seed[64]) {
+    uchar state[64];
+    for (int i = 0; i < 64; i++) state[i] = seed[i];
+    for (uint ci = 0; ci < CL_BLOCK_COUNT; ci++) {
+        uchar block[64];
+        sha3_512_state_counter(state, (ulong)ci, block);
+        uint off = ci * CL_BLOCK_SIZE;
+        for (int j = 0; j < 64; j++) {
+            pad[off + j] = block[j];
+            state[j]     = block[j];
+        }
+    }
+}
+
+// Mix one block: SHA3-512(current||prev||rand||pass||index) XOR'd into block
+void cl_mix_block(
+    __global uchar* pad,
+    ulong cur_off, ulong prev_off, ulong rand_off,
+    ulong pass_val, ulong index_val)
+{
+    ulong st[25];
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    // Block 1 (72B): current[0..63] + prev[0..7]
+    for (int i = 0; i < 8; i++) st[i] ^= LOAD_U64_LE(pad, cur_off + (ulong)(i*8));
+    st[8] ^= LOAD_U64_LE(pad, prev_off);
+    keccak_f1600(st);
+    // Block 2 (72B): prev[8..63] + rand[0..15]
+    for (int i = 1; i < 8; i++) st[i-1] ^= LOAD_U64_LE(pad, prev_off + (ulong)(i*8));
+    st[7] ^= LOAD_U64_LE(pad, rand_off);
+    st[8] ^= LOAD_U64_LE(pad, rand_off + 8UL);
+    keccak_f1600(st);
+    // Partial (64B): rand[16..63](6w) + pass(8B) + index(8B)
+    for (int i = 2; i < 8; i++) st[i-2] ^= LOAD_U64_LE(pad, rand_off + (ulong)(i*8));
+    st[6] ^= pass_val;
+    st[7] ^= index_val;
+    st[8] ^= 0x8000000000000006UL;  // 0x06 at byte 0, 0x80 at byte 7 of word 8
+    keccak_f1600(st);
+    for (int j = 0; j < 8; j++) {
+        ulong existing = LOAD_U64_LE(pad, cur_off + (ulong)(j*8));
+        ulong result   = existing ^ st[j];
+        for (int b = 0; b < 8; b++)
+            pad[cur_off + (ulong)(j*8 + b)] = (uchar)(result >> (b*8));
+    }
+}
+
+// 4 sequential passes (even=forward, odd=backward)
+void cl_sequential_passes(__global uchar* pad) {
+    for (uint pass = 0; pass < CL_PASSES; pass++) {
+        if ((pass & 1u) == 0u) {
+            for (ulong i = 0; i < (ulong)CL_BLOCK_COUNT; i++) {
+                ulong cur_off  = i * CL_BLOCK_SIZE;
+                ulong prev_off = (i == 0 ? (ulong)(CL_BLOCK_COUNT - 1) : (i - 1)) * CL_BLOCK_SIZE;
+                ulong idx_val  = LOAD_U64_LE(pad, cur_off);
+                ulong rand_idx = (idx_val ^ (ulong)pass ^ i) % (ulong)CL_BLOCK_COUNT;
+                cl_mix_block(pad, cur_off, prev_off, rand_idx * CL_BLOCK_SIZE, (ulong)pass, i);
+            }
+        } else {
+            for (long ic = (long)(CL_BLOCK_COUNT - 1); ic >= 0; ic--) {
+                ulong i        = (ulong)ic;
+                ulong cur_off  = i * CL_BLOCK_SIZE;
+                ulong next_i   = (i + 1 == (ulong)CL_BLOCK_COUNT) ? 0UL : (i + 1);
+                ulong prev_off = next_i * CL_BLOCK_SIZE;
+                ulong idx_val  = LOAD_U64_LE(pad, cur_off);
+                ulong rand_idx = (idx_val ^ (ulong)pass ^ i) % (ulong)CL_BLOCK_COUNT;
+                cl_mix_block(pad, cur_off, prev_off, rand_idx * CL_BLOCK_SIZE, (ulong)pass, i);
+            }
+        }
+    }
+}
+
+// 256 pseudo-random reads + final SHA3-512
+void cl_random_read_mix(const uchar seed[64], __global const uchar* pad, uchar out64[64]) {
+    uchar acc[64];
+    for (int i = 0; i < 64; i++) acc[i] = seed[i];
+    ulong pos = (LOAD_U64_LE(seed, 0)) % (ulong)CL_BLOCK_COUNT;
+    for (uint r = 0; r < CL_RANDOM_READS; r++) {
+        ulong chunk_off = pos * CL_BLOCK_SIZE;
+        uchar chunk[64];
+        for (int j = 0; j < 64; j++) chunk[j] = pad[chunk_off + j];
+        uchar d[32];
+        keccak256_136_mix(acc, chunk, (ulong)r, d);
+        for (int i = 0; i < 32; i++) acc[i]    ^= d[i];
+        for (int i = 0; i < 32; i++) acc[32+i] += d[i];
+        ulong next_word = LOAD_U64_LE(d, 0);
+        pos = (next_word ^ pos ^ (ulong)r) % (ulong)CL_BLOCK_COUNT;
+    }
+    sha3_512_random_final(acc, pad, pad + (CL_SCRATCHPAD_BYTES - CL_BLOCK_SIZE), out64);
+}
+
+// Full memory-hard transform: golden_matrix_u64[8] → output_u64[8]
+void cl_memory_hard_transform(
+    const uchar gm_bytes[64],
+    __global uchar* pad,
+    uchar out64[64])
+{
+    cl_init_scratchpad(pad, gm_bytes);
+    cl_sequential_passes(pad);
+    cl_random_read_mix(gm_bytes, pad, out64);
+}
+
+// ============================================================================
+// Mining kernels
+// ============================================================================
+
 __kernel void cosmic_harmony_v3_mine(
     __global const uchar *block_header,
     uint header_len,
@@ -222,7 +420,9 @@ __kernel void cosmic_harmony_v3_mine(
     uint state0_big_endian,
     __global ulong *found_nonce,
     __global uchar *found_hash,
-    __global uint *solution_count
+    __global uint *solution_count,
+    uint memory_hard,
+    __global uchar *scratchpad_buf
 ) {
     uint gid = get_global_id(0);
     ulong nonce = start_nonce + gid;
@@ -258,8 +458,18 @@ __kernel void cosmic_harmony_v3_mine(
     keccak256(input, 88, step1);
     sha3_512(step1, 32, step2);
     golden_matrix(step2, step3);
-    cosmic_fusion(step3, final_hash);
-    
+
+    if (memory_hard) {
+        // Height >= 100k: insert memory-hard scratchpad between GoldenMatrix and CosmicFusion
+        __global uchar* my_pad = scratchpad_buf + (ulong)gid * (ulong)CL_SCRATCHPAD_BYTES;
+        uchar step4[64];
+        cl_memory_hard_transform(step3, my_pad, step4);
+        cosmic_fusion(step4, final_hash);
+    } else {
+        // Legacy pipeline (height < 100k)
+        cosmic_fusion(step3, final_hash);
+    }
+
     // Pool target model for Cosmic Harmony v3: compare first 4 bytes (state0) against 32-bit target.
     uint state0 = 0;
     if (state0_big_endian != 0) {
@@ -346,13 +556,20 @@ class GpuDevice:
 class CosmicHarmonyV3GPU:
     """GPU Miner for Cosmic Harmony v3"""
     
-    def __init__(self, device_id: int = 0, batch_size: int = 1_000_000, work_group_size: int = 256):
+    def __init__(self, device_id: int = 0, batch_size: int = 1_000_000, work_group_size: int = 256,
+                 mh_batch_size: Optional[int] = None):
         if not GPU_AVAILABLE:
             raise RuntimeError("PyOpenCL not available")
         
         self.device_id = device_id
         self.batch_size = batch_size
         self.work_group_size = work_group_size
+        # Memory-hard batch: max threads when scratchpad is active (512 KiB each)
+        self.mh_batch_size = max(
+            1,
+            mh_batch_size if mh_batch_size is not None
+            else int(os.environ.get("ZION_GPU_MH_BATCH", "256"))
+        )
         
         # Initialize OpenCL
         platforms = cl.get_platforms()
@@ -402,6 +619,18 @@ class CosmicHarmonyV3GPU:
         self.found_nonce_buf = cl.Buffer(self.ctx, cl.mem_flags.WRITE_ONLY, 8)
         self.found_hash_buf = cl.Buffer(self.ctx, cl.mem_flags.WRITE_ONLY, 32)
         self.solution_count_buf = cl.Buffer(self.ctx, cl.mem_flags.READ_WRITE, 4)
+
+        # Scratchpad buffer: 512 KiB × mh_batch_size (for memory-hard height >= 100k)
+        _mh_sp_bytes = self.mh_batch_size * 512 * 1024
+        try:
+            self.scratchpad_buf = cl.Buffer(self.ctx, cl.mem_flags.READ_WRITE, _mh_sp_bytes)
+            print(f"[GPU] Scratchpad buffer: {_mh_sp_bytes // (1024*1024)} MiB ({self.mh_batch_size} MH threads)")
+        except cl.Error as e:
+            print(f"[GPU] WARNING: failed to allocate scratchpad ({_mh_sp_bytes // (1024*1024)} MiB): {e}")
+            print(f"[GPU]   Memory-hard mining (height>=100k) will FALL BACK to CPU verify.")
+            self.scratchpad_buf = None
+        # Pre-allocate tiny placeholder so mine() never has to allocate on the hot path
+        self._dummy_sp_buf = cl.Buffer(self.ctx, cl.mem_flags.READ_WRITE, 64)
 
         # Reusable host-side buffers for deterministic transfer semantics.
         self._zero_u32 = np.array([0], dtype=np.uint32)
@@ -453,6 +682,7 @@ class CosmicHarmonyV3GPU:
         target: Union[int, bytes, bytearray],
         start_nonce: int = 0,
         state0_endian: str = "little",
+        height: int = 0,
     ) -> Optional[Tuple[int, bytes]]:
         """
         Mine for a valid nonce.
@@ -490,14 +720,31 @@ class CosmicHarmonyV3GPU:
         target32 = np.uint32(target_int & 0xFFFFFFFF)
         state0_big = np.uint32(1 if str(state0_endian).lower() == "big" else 0)
 
+        # Determine memory-hard mode (height >= 100 000  =  CHV3_MEMORY_HARD_FORK_HEIGHT)
+        mh_flag = np.uint32(1 if height >= 100_000 else 0)
+        if mh_flag and self.scratchpad_buf is None:
+            # Scratchpad allocation failed at init → cannot do GPU MH, skip hash count
+            mh_flag = np.uint32(0)
+
         # Adjust work group size to device limits
         max_wg = min(self.work_group_size, self.device.max_work_group_size)
         adjusted_batch = (self.batch_size // max_wg) * max_wg
         if adjusted_batch == 0:
             adjusted_batch = max_wg
 
+        # When memory-hard: cap to mh_batch_size (VRAM budget: mh_batch_size * 512 KiB)
+        if mh_flag:
+            mh_cap = (self.mh_batch_size // max_wg) * max_wg
+            if mh_cap == 0:
+                mh_cap = max_wg
+            adjusted_batch = min(adjusted_batch, mh_cap)
+
         global_size = (adjusted_batch,)
         local_size = (max_wg,)
+
+        # Scratchpad buffer: use the real one (or dummy placeholder when unavailable)
+        # kernel ignores it when memory_hard=0, so safe to pass always
+        sp_buf = self.scratchpad_buf if self.scratchpad_buf is not None else self._dummy_sp_buf
 
         t0 = time.perf_counter()
         self.kernel_mine(
@@ -512,6 +759,8 @@ class CosmicHarmonyV3GPU:
             self.found_nonce_buf,
             self.found_hash_buf,
             self.solution_count_buf,
+            mh_flag,
+            sp_buf,
         )
         self.queue.finish()
         kernel_ms = (time.perf_counter() - t0) * 1000.0

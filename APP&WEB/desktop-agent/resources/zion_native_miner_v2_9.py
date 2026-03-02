@@ -2870,6 +2870,7 @@ class ZionNativeMiner:
                             int(target_cosmic32),
                             nonce_start,
                             state0_endian=endian,
+                            height=job_height,
                         )
 
                         with stats_lock:
