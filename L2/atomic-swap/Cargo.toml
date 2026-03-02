@@ -34,6 +34,7 @@ tower-http = { version = "0.5", features = ["cors", "trace"] }
 
 # Crypto
 sha2 = "0.10"          # SHA-256 for preimage verification
+sha3 = "0.10"          # Keccak-256 for EVM event topic hashing (evm_watcher)
 hex = "0.4"
 ed25519-dalek = { version = "2", features = ["serde"] }  # Sign L1 TX from escrow key
 rand = "0.8"
