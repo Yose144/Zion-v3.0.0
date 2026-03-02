@@ -2846,8 +2846,14 @@ class ZionNativeMiner:
                     version = snap["version"]
                     job_height = int(snap.get("height") or 0)
 
-                    batch_size = min(int(self.config.gpu_batch_size), 50_000)
-                    nonce_start = _alloc_nonces(batch_size)
+                    # Advance nonce counter by the actual GPU batch size so we
+                    # don't re-scan the same nonces. The old cap of 50k caused
+                    # 90% nonce overlap and ~10x wasted GPU compute.
+                    _gpu_actual_batch = int(
+                        getattr(self.gpu_miner, "batch_size", self.config.gpu_batch_size)
+                        if self.gpu_miner else self.config.gpu_batch_size
+                    )
+                    nonce_start = _alloc_nonces(_gpu_actual_batch)
                     
                     # Cosmic Harmony v3 has different GPU API (mine with target)
                     if self.config.algorithm == Algorithm.COSMIC_HARMONY_V3 and COSMIC_V3_GPU_AVAILABLE:
