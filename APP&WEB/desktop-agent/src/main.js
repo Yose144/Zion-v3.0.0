@@ -5100,23 +5100,24 @@ function parseMinerOutput(output) {
   }
 
   // ─── XMRig accepted: "accepted 42/0 (+1) diff 256 [38 ms] (100.0%)" ───
-  const acceptedMatch = output.match(/accepted\s+(\d+)\/(\d+)\s+\(\+1\)\s+diff\s+([\d.]+[TGMK]?)\s+\[([^\]]+)\]\s+\(([\d.]+)%\)/i);
+  const acceptedMatch = output.match(/accepted\s+(\d+)\/(\d+)\s+\(\+1\)\s+diff\s+([\d.]+[TGMK]?)(?:\s+\[([^\]]+)\])?\s+\(([\d.]+)%\)/i);
   if (acceptedMatch) {
     minerStats.accepted = parseInt(acceptedMatch[1]);
     minerStats.rejected = parseInt(acceptedMatch[2]);
     minerStats.shares = minerStats.accepted + minerStats.rejected;
     minerStats.last_share_diff = acceptedMatch[3];
-    minerStats.last_share_latency = acceptedMatch[4];
+    minerStats.last_share_latency = acceptedMatch[4] || null;
     minerStats.accept_rate = parseFloat(acceptedMatch[5]);
   }
 
-  // ─── XMRig rejected: "rejected 42/1 (+1) "reason"" ───
-  const rejectedMatch = output.match(/rejected\s+(\d+)\/(\d+)\s+\(\+1\)\s+"([^"]+)"/i);
+  // ─── XMRig rejected: "rejected 42/1 (+1) \"reason\"" ───
+  // Rust miner event: "rejected 42/1 — reason" (em-dash, no +1)
+  const rejectedMatch = output.match(/rejected\s+(\d+)\/(\d+)(?:\s+\(\+1\))?\s+(?:"([^"]+)"|[—–-]\s*(\S[^\n]*))/i);
   if (rejectedMatch) {
     minerStats.accepted = parseInt(rejectedMatch[1]);
     minerStats.rejected = parseInt(rejectedMatch[2]);
     minerStats.shares = minerStats.accepted + minerStats.rejected;
-    minerStats.last_reject_reason = rejectedMatch[3];
+    minerStats.last_reject_reason = (rejectedMatch[3] || rejectedMatch[4] || '').trim();
   }
 
   // ─── XMRig new job: "new job height 1523 diff 256 algo cosmic_harmony_v3" ───
