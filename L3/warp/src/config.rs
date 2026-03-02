@@ -15,6 +15,10 @@ pub struct WarpConfig {
     pub l1_rpc_url: String,
     pub l1_vault_address: String,
 
+    /// Poll interval for chain watchers in seconds (default: 15).
+    #[serde(default)]
+    pub poll_interval_secs: Option<u64>,
+
     #[serde(default)]
     pub chains: Vec<ChainConfig>,
 }
@@ -27,6 +31,19 @@ pub struct ChainConfig {
     pub rpc_url: String,
     pub contract_address: Option<String>,
     pub finality_blocks: u64,
+}
+
+impl Default for ChainConfig {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            family: "Evm".into(),
+            enabled: false,
+            rpc_url: String::new(),
+            contract_address: None,
+            finality_blocks: 12,
+        }
+    }
 }
 
 impl Default for WarpConfig {
@@ -42,6 +59,7 @@ impl Default for WarpConfig {
             l1_rpc_url: "http://localhost:8443".into(),
             l1_vault_address: "zion1warp_vault_address".into(),
             chains: vec![],
+            poll_interval_secs: None,
         }
     }
 }

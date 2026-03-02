@@ -27,12 +27,13 @@ poll_interval_secs = 15
 id = "base"
 family = "Evm"
 name = "Base Sepolia (Testnet)"
-rpc_url = "wss://base-sepolia.g.alchemy.com/v2/YOUR_API_KEY"
-vault_address = "0x0000000000000000000000000000000000000000"  # TBD after deploy
-wzion_address = "0x0000000000000000000000000000000000000000"  # TBD after deploy
+rpc_url = "https://sepolia.base.org"  # public RPC, no API key needed
+rpc_url_backup = "https://base-sepolia-rpc.publicnode.com"
+vault_address = "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1"  # ZIONBridge
+wzion_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"  # wZION ERC-20
 evm_chain_id = 84532
-finality_blocks = 12
-enabled = false  # Enable after contract deployment
+finality_blocks = 3   # Base Sepolia is fast
+enabled = true
 max_single_amount = 5000000000000   # 5M ZION
 daily_limit = 10000000000000        # 10M ZION
 min_amount = 100000000              # 100 ZION
@@ -155,26 +156,27 @@ min_amount = 500000000  # 500 ZION minimum for BTC (higher due to BTC fees)
 # VALIDATORS — 3 of 5 multisig
 # ═══════════════════════════════════════════════════════════════════════════
 [validators]
-threshold = 3
+# Testnet: 1-of-1 (deployer). Mainnet: change to 3-of-5.
+threshold = 1
 private_key_file = "keys/warp-validator.key"
 
 [[validators.validators]]
-name = "WARP Validator 1 (Helsinki)"
-evm_address = "0x0000000000000000000000000000000000000001"
-ed25519_pubkey = "ed25519_pubkey_validator_1_placeholder"
+name = "WARP Validator 1 (Testnet / Deployer)"
+evm_address = "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186"
+ed25519_pubkey = "testnet_placeholder_replace_with_real_key"
 active = true
 
 [[validators.validators]]
-name = "WARP Validator 2 (Germany)"
+name = "WARP Validator 2 (Reserve)"
 evm_address = "0x0000000000000000000000000000000000000002"
 ed25519_pubkey = "ed25519_pubkey_validator_2_placeholder"
-active = true
+active = false
 
 [[validators.validators]]
-name = "WARP Validator 3 (Community)"
+name = "WARP Validator 3 (Reserve)"
 evm_address = "0x0000000000000000000000000000000000000003"
 ed25519_pubkey = "ed25519_pubkey_validator_3_placeholder"
-active = true
+active = false
 
 [[validators.validators]]
 name = "WARP Validator 4 (Reserve)"
