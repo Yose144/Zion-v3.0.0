@@ -93,6 +93,32 @@ impl ZionStorage {
         let utxos_raw = env.create_database(&mut wtxn, Some("utxos"))?;
         wtxn.commit()?;
 
+        // ── Startup migration: clear balance cache when TxOutput schema changed ───────
+        // Schema v1 = original (no memo), Schema v2 = memo field added (c521c38).
+        // Old cache entries are wrong (0 balance) because old iterator panicked/skipped.
+        // Magic key "\x00balance_schema_v\x00" cannot be a valid bech32 address.
+        const SCHEMA_KEY: &str = "\x00balance_schema_v\x00";
+        const CURRENT_SCHEMA: u64 = 2;
+        {
+            let rtxn = env.read_txn()?;
+            let cached_schema: u64 = balance_cache
+                .get(&rtxn, SCHEMA_KEY)?
+                .map(|(v, _)| v)
+                .unwrap_or(0);
+            drop(rtxn);
+            if cached_schema < CURRENT_SCHEMA {
+                let mut wtxn2 = env.write_txn()?;
+                balance_cache.clear(&mut wtxn2)?;
+                balance_cache.put(&mut wtxn2, SCHEMA_KEY, &(CURRENT_SCHEMA, 0u64))?;
+                wtxn2.commit()?;
+                eprintln!(
+                    "[MIGRATION] Balance cache cleared (schema v{} → v{}). \
+                     Balances will be recalculated on first access.",
+                    cached_schema, CURRENT_SCHEMA
+                );
+            }
+        }
+
         Ok(Self {
             env,
             blocks,
