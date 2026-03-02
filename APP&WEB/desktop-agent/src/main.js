@@ -464,6 +464,8 @@ let gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false
 // exposed to renderer via IPC ('multi-stream-status' event).
 let multiStreamCurrentCoin = 'ETC';   // active GPU coin (direct-pool mode)
 let profitPollTimer = null;            // setInterval handle
+let revenueHashrateCpu = 0;            // from _revenue.json stats file
+let revenueHashrateGpu = 0;            // from _gpu_revenue.json stats file
 let multiStreamStatus = {
   active: false,
   zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony_v3' },
@@ -1905,11 +1907,11 @@ function buildMultiStreamPayload() {
       pool: poolInfo?.pool || '',
       algorithm: poolInfo?.algo || '',
       directPool: multiStreamStatus.gpuCoin.directPool,
-      hashrate: 0,
+      hashrate: revenueHashrateGpu,
     },
     revenueCpu: {
       running: !!revenueProcess,
-      hashrate: 0,
+      hashrate: revenueHashrateCpu,
       algorithm: 'randomx',
     },
     lastPollAt: multiStreamStatus.lastPollAt,
@@ -3612,14 +3614,16 @@ function startMining(config) {
         // ignore
       }
 
-      // Pipe revenue process output to the miner log (prefixed)
+      // Pipe revenue process output to the miner log AND renderer console (prefixed)
       revenueProcess.stdout?.on('data', (data) => {
         const output = data.toString();
         safeMinerLogWrite(`[REV-STDOUT] ${output}`);
+        try { sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3-REV] ${output}` }); } catch {}
       });
       revenueProcess.stderr?.on('data', (data) => {
         const output = data.toString();
         safeMinerLogWrite(`[REV-STDERR] ${output}`);
+        try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CH3-REV] ${output}` }); } catch {}
       });
 
       revenueProcess.on('error', (err) => {
@@ -4660,6 +4664,32 @@ function tryUpdateStatsFromFile() {
     // Ignore stats parsing issues; keep UI responsive
     return false;
   }
+}
+
+function tryUpdateRevenueStatsFromFile() {
+  const toNum = (v) => {
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim() !== '') {
+      const n = Number(v); if (Number.isFinite(n)) return n;
+    }
+    return null;
+  };
+  try {
+    const cpuPath = STATS_PATH.replace(/\.json$/, '_revenue.json');
+    if (fs.existsSync(cpuPath)) {
+      const p = JSON.parse(fs.readFileSync(cpuPath, 'utf8'));
+      const hr = toNum(p.hashrate_10s) ?? toNum(p.hashrate_window_hs) ?? toNum(p.hashrate);
+      if (hr != null) revenueHashrateCpu = hr;
+    }
+  } catch { /* ignore */ }
+  try {
+    const gpuPath = STATS_PATH.replace(/\.json$/, '_gpu_revenue.json');
+    if (fs.existsSync(gpuPath)) {
+      const p = JSON.parse(fs.readFileSync(gpuPath, 'utf8'));
+      const hr = toNum(p.hashrate_10s) ?? toNum(p.hashrate_window_hs) ?? toNum(p.hashrate);
+      if (hr != null) revenueHashrateGpu = hr;
+    }
+  } catch { /* ignore */ }
 }
 
 async function stopMiningAsync() {
@@ -7603,6 +7633,7 @@ setInterval(() => {
   if (minerProcess) {
     const updated = tryUpdateStatsFromFile();
     if (!updated) minerStats.uptime += STATS_INTERVAL_SEC;
+    tryUpdateRevenueStatsFromFile();
 
     // Track rolling hashrate samples for xmrig-like averages.
     try {
