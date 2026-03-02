@@ -1102,7 +1102,8 @@ function appendMiningConsole(raw) {
   if (!body) return;
 
   // Skip panel lines (handled by updateStaticPanel)
-  if (/^[\u250c\u2502\u2514]/.test(raw) || /^\s*(SPEED|SHARES|DIFF|UPTIME|HW|NET|EVENT)\b/i.test(raw)) return;
+  // Note: T-Rex style lines use "KEYWORD   : value" format — keep those (negative lookahead (?!\s*:))
+  if (/^[\u250c\u2502\u2514]/.test(raw) || /^\s*(SPEED|SHARES|DIFF|UPTIME|HW|NET|EVENT)\b(?!\s*:)/i.test(raw)) return;
   if (/^\[STATUS\]/i.test(raw)) return;
 
   const html = colorizeConsoleLine(raw);
@@ -1226,9 +1227,28 @@ function colorizeConsoleLine(raw) {
     return { html: `${tsHtml}<span class="mc-warn">${esc(raw)}</span>` };
   }
 
-  // ── Status panel lines (┌│└ or SPEED/SHARES/DIFF/UPTIME/HW/NET/EVENT) ──
-  // These are handled by updateStaticPanel() — skip them in scrolling log
-  if (/^[│┌└]|^\s*(HASHRATE|SHARES|DIFF|UPTIME|THREADS|SPEED|HW|NET|EVENT)/i.test(raw)) {
+  // ── T-Rex dashboard: " HASHRATE : TOTAL X | CPU Y | GPU Z" ──
+  m = raw.match(/HASHRATE\s*:\s*TOTAL\s+([\d.]+\s*\S+\/s)\s*\|\s*CPU\s+([\d.]+\s*\S+\/s)\s*\|\s*GPU\s+([\d.]+\s*\S+\/s)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-speed">HASHRATE</span> TOTAL <span class="mc-hr">${esc(m[1])}</span> | CPU <span class="mc-hr">${esc(m[2])}</span> | GPU <span class="mc-hr">${esc(m[3])}</span>` };
+  }
+
+  // ── T-Rex dashboard: " SHARES : ACCEPTED 5 | REJECTED 0 | SENT 5 | ACC 100.0%" ──
+  m = raw.match(/SHARES\s*:\s*ACCEPTED\s+(\d+)\s*\|\s*REJECTED\s+(\d+)\s*\|\s*SENT\s+(\d+)\s*\|\s*ACC\s+([\d.]+%)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-speed">SHARES</span> <span class="mc-accepted">ACCEPTED ${m[1]}</span> | <span class="mc-rejected">REJECTED ${m[2]}</span> | SENT ${m[3]} | ACC <span class="mc-info">${m[4]}</span>` };
+  }
+
+  // ── T-Rex dashboard: " UPTIME : 00:05:42 | GPU: ON | JOB: abcdef" ──
+  m = raw.match(/UPTIME\s*:\s*([\d:hms]+)\s*\|\s*GPU:\s*(\w+)\s*\|\s*JOB:\s*(\S*)/i);
+  if (m) {
+    const gpuCls = m[2].toUpperCase() === 'ON' ? 'mc-ok' : 'mc-warn';
+    return { html: `${tsHtml}<span class="mc-info">UPTIME</span> <span class="mc-hr">${esc(m[1])}</span> | GPU: <span class="${gpuCls}">${esc(m[2])}</span> | JOB: <span class="mc-ts">${esc(m[3])}</span>` };
+  }
+
+  // ── Status panel lines (┌│└ or XMRig-style SPEED/SHARES/DIFF/UPTIME/HW/NET/EVENT without colon) ──
+  // T-Rex "KEY   : value" lines are already handled above; skip only XMRig panel lines
+  if (/^[│┌└]|^\s*(HASHRATE|SHARES|DIFF|UPTIME|THREADS|SPEED|HW|NET|EVENT)(?!\s*:)/i.test(raw)) {
     return null; // Signal to skip this line
   }
 
