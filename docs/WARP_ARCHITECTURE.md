@@ -48,10 +48,10 @@
 
 | Chain     | Family   | Token Standard | Decimals | Finality     | Status      |
 |-----------|----------|----------------|----------|--------------|-------------|
-| **Base**      | EVM      | ERC-20         | 18       | ~2 min       | 🟡 Skeleton |
-| **Arbitrum**  | EVM      | ERC-20         | 18       | ~15 min      | 🟡 Skeleton |
-| **BSC**       | EVM      | BEP-20         | 18       | ~15 sec      | 🟡 Skeleton |
-| **Polygon**   | EVM      | ERC-20         | 18       | ~5 min       | 🟡 Skeleton |
+| **Base**      | EVM      | ERC-20         | 18       | ~2 min       | � Signing live |
+| **Arbitrum**  | EVM      | ERC-20         | 18       | ~15 min      | 🟢 Signing live |
+| **BSC**       | EVM      | BEP-20         | 18       | ~15 sec      | 🟢 Signing live |
+| **Polygon**   | EVM      | ERC-20         | 18       | ~5 min       | 🟢 Signing live |
 | **Solana**    | Solana   | SPL Token      | 9        | ~12 sec      | 🟡 Skeleton |
 | **Tron**      | Tron     | TRC-20         | 18       | ~57 sec      | 🟡 Skeleton |
 | **Stellar**   | Stellar  | Stellar Asset  | 7        | ~5 sec       | 🟡 Skeleton |
@@ -227,15 +227,92 @@ WARP extends it to the full multi-chain universe.
 | Phase | Scope | Target |
 |-------|-------|--------|
 | **Phase 1** ✅ | L2 wZION Bridge (EVM) | Done (Sprint 3.4) |
-| **Phase 2** 🟡 | WARP Skeleton (all adapters) | Done (Sprint 3.4.15-3.4.20) |
-| **Phase 3** ⬜ | Solana SPL + Anchor program | 2026 Q3 |
-| **Phase 4** ⬜ | Tron TRC-20 + bridge | 2026 Q3 |
-| **Phase 5** ⬜ | Stellar asset + Soroban | 2026 Q4 |
-| **Phase 6** ⬜ | Cardano native token + Plutus | 2026 Q4 |
-| **Phase 7** ⬜ | Cosmos IBC integration | 2027 Q1 |
-| **Phase 8** ⬜ | Bitcoin HTLC atomic swaps | 2027 Q1 |
+| **Phase 2** ✅ | WARP Skeleton (all adapters) | Done (Sprint 3.4.15-3.4.20) |
+| **Phase 2.5** ✅ | EVM `execute_mint` — real EIP-155 signing | Done (2026-03-03) |
+| **Phase 3** ⬜ | Bitcoin HTLC adapter — HTLC reveal TX signing | 2026 Q2 |
+| **Phase 4** ⬜ | Stellar asset + Soroban mint | 2026 Q2 |
+| **Phase 5** ⬜ | Solana SPL + Anchor program | 2026 Q3 |
+| **Phase 6** ⬜ | Tron TRC-20 + bridge | 2026 Q3 |
+| **Phase 7** ⬜ | Cardano native token + Plutus | 2026 Q4 |
+| **Phase 8** ⬜ | Cosmos IBC integration | 2027 Q1 |
 | **Phase 9** ⬜ | Full E2E testing + audit | 2027 Q2 |
 | **Phase 10** ⬜ | MainNet launch | 2027 Q3 |
+
+---
+
+## 🔏 EVM Signing Implementation (Phase 2.5)
+
+> Implemented: 2026-03-03 | Commit: `5e6dc58` | Tests: 180 pass
+
+### Overview
+
+The EVM adapter now performs **real on-chain transactions** for `execute_mint` without
+any external ethers-rs dependency — pure Rust using `k256`, `sha3`, and `rlp`.
+
+### Module: `evm_signer.rs`
+
+```rust
+// Key public API:
+pub struct EvmSigner { /* secp256k1 SigningKey */ }
+
+impl EvmSigner {
+    pub fn from_env() -> WarpResult<Self>   // reads WARP_EVM_RELAY_KEY env var
+    pub fn from_hex(key: &str) -> WarpResult<Self>
+    pub async fn send_tx(
+        &self, client: &Client, rpc_url: &str,
+        chain_id: u64, to: &str,
+        calldata: &[u8], value: u128, gas_limit: u64,
+    ) -> WarpResult<String>                 // returns 0x tx hash
+}
+
+pub fn abi_encode_bridge_mint(
+    recipient: &str, amount: u128, msg_hash: &[u8; 32],
+) -> WarpResult<Vec<u8>>
+```
+
+### EIP-155 Signing Flow
+
+```
+1. Fetch nonce  → eth_getTransactionCount (latest)
+2. Fetch gasPrice → eth_gasPrice
+3. Build TX fields: nonce, gasPrice, gasLimit=300_000, to, value=0, data=calldata
+4. RLP-encode pre-sign tuple + (chainId, 0, 0)  ← EIP-155
+5. hash = Keccak256(rlp_bytes)
+6. (sig, recid) = k256 ECDSA sign(hash)
+7. v = recid + 2*chainId + 35            ← EIP-155 replay protection
+8. RLP-encode final TX (nonce, gasPrice, gasLimit, to, value, data, v, r, s)
+9. eth_sendRawTransaction("0x" + hex(raw_tx)) → tx_hash
+```
+
+### ABI Encoding for `bridgeMint(address, uint256, bytes32)`
+
+```
+Bytes  0- 3: selector = keccak256("bridgeMint(address,uint256,bytes32)")[0..4]
+Bytes  4-35: address  = 12×0x00 + 20 addr bytes   (left-padded to 32)
+Bytes 36-67: amount   = 16×0x00 + u128.to_be_bytes (right-aligned uint256)
+Bytes 68-99: msgHash  = 32 bytes verbatim
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `WARP_EVM_RELAY_KEY` | Yes (for live minting) | Hex-encoded secp256k1 private key of relay wallet |
+| `WARP_EVM_GAS_LIMIT` | No (default 300,000) | Override per-call gas limit |
+
+If `WARP_EVM_RELAY_KEY` is **not set**, `execute_mint` falls back to a dry-run
+`eth_call` simulation and returns a clear error — no silent failures.
+
+### Supported Chains & Chain IDs
+
+| Chain | Chain ID |
+|-------|----------|
+| Base | 8453 |
+| Base Sepolia | 84532 |
+| Arbitrum One | 42161 |
+| BSC | 56 |
+| Polygon | 137 |
+| Ethereum Mainnet | 1 (default) |
 
 ---
 
