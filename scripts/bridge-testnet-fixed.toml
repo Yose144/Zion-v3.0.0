@@ -1,0 +1,115 @@
+# ──────────────────────────────────────────────────────────────
+#  ZION Bridge Relay Configuration — TestNet
+# ──────────────────────────────────────────────────────────────
+#
+#  This config is for TESTNET only. MainNet config will have
+#  different addresses, higher thresholds, and production RPCs.
+#
+#  Usage: ZION_BRIDGE_CONFIG=config/bridge-testnet.toml zion-bridge
+
+[bridge]
+name   = "ZION Bridge Relay"
+version = "0.1.0"
+network = "testnet"
+
+# ── ZION L1 Connection ──────────────────────────────────────
+
+[l1]
+rpc_url        = "http://77.42.31.72:8444"
+rpc_url_backup = "http://46.225.126.243:8444"
+bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
+finality_blocks     = 3        # TESTNET: fast finality
+poll_interval_secs  = 15       # Check for new blocks every 15s
+# start_block_height = 0       # Uncomment to start from specific height
+l1_rpc_token = "5812008eeb500c923a3f5f678cc136d4997d5854b216fba699112ca2039dc8a1"  # ZION_RPC_TOKEN on L1 node
+# ── EVM Chains ──────────────────────────────────────────────
+#
+#  Priority order:
+#   1. Base (Uniswap v3) — legitimacy, low fees
+#   2. Arbitrum (Uniswap v3) — low fees
+#   3. BNB Chain (PancakeSwap) — retail, cheap
+#   4. Polygon (QuickSwap) — low fees, large ecosystem
+
+# -- Base Sepolia (Testnet) --
+[[evm_chains]]
+chain_id              = "base"
+name                  = "Base Sepolia (TestNet)"
+evm_chain_id          = 84532
+rpc_url               = "wss://base-sepolia.publicnode.com"
+rpc_url_backup        = "wss://base-sepolia.g.alchemy.com/v2/YOUR_KEY"  # TODO: vlastni Alchemy klic pro prod
+wzion_address          = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"  # Base Sepolia deploy 21.2.2026
+bridge_contract_address = "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1"  # Base Sepolia deploy 21.2.2026
+finality_blocks       = 12
+enabled               = true   # LIVE on Base Sepolia testnet
+gas_strategy          = "eip1559"
+max_gas_gwei          = 5
+start_block           = 38057800  # Bridge deployed 23.2.2026 — skip genesis scan
+
+# -- Arbitrum Sepolia (Testnet) --
+[[evm_chains]]
+chain_id              = "arbitrum-sepolia"
+name                  = "Arbitrum Sepolia (TestNet)"
+evm_chain_id          = 421614
+rpc_url               = "wss://arb-sepolia.g.alchemy.com/v2/YOUR_KEY"
+wzion_address          = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks       = 10
+enabled               = false
+gas_strategy          = "eip1559"
+max_gas_gwei          = 2
+
+# -- BSC Testnet --
+[[evm_chains]]
+chain_id              = "bsc-testnet"
+name                  = "BNB Chain TestNet"
+evm_chain_id          = 97
+rpc_url               = "wss://bsc-testnet-rpc.publicnode.com"
+wzion_address          = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks       = 15
+enabled               = false
+gas_strategy          = "legacy"
+max_gas_gwei          = 10
+
+# ── Validator Config ────────────────────────────────────────
+
+
+# -- Ankr RPC Backend --
+[ankr]
+enabled = true
+api_key = "d036dcf6e89c08c7a36d0b2d723d2d8ac27090965fa5925f60cab30b9c02f152"
+
+[validator]
+private_key_file   = "keys/validator.key"
+validator_id       = "validator-1"
+threshold          = 1          # 1-of-2 testnet (bridge relay auto-confirms) (min allowed by contract)
+total_validators   = 2
+validator_addresses = [
+    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",  # validator-1 (deployer)
+    "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787",  # validator-2 (server relay key)
+    # Mainnet: 5 independent validator addresses
+]
+
+# ── Security ────────────────────────────────────────────────
+
+[security]
+max_single_amount   = "5000000000000000000000000"    # 5M wZION
+daily_limit         = "10000000000000000000000000"    # 10M wZION
+min_bridge_amount   = "100000000000000000000"         # 100 wZION
+timelock_threshold  = "1000000000000000000000000"     # 1M wZION → 24h delay
+max_ops_per_hour    = 100
+l1_block_timeout_secs = 300      # Alert if no L1 blocks for 5 min
+auto_pause_on_anomaly = true
+
+# ── Database ────────────────────────────────────────────────
+
+[database]
+path = "data/bridge-testnet.db"
+backup_interval_secs = 3600      # Backup every hour
+
+# ── Metrics ─────────────────────────────────────────────────
+
+[metrics]
+enabled   = true
+port      = 9101
+log_level = "info"
