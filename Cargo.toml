@@ -14,6 +14,7 @@ members = [
     # ═══════════════════════════════════════════════
     "L2/bridge",        # wZION EVM bridge relay (Rust)
     "L2/dao",           # DAO governance + humanitarian fund
+    "L2/atomic-swap",   # HTLC atomic-swap daemon (cross-chain trustless swaps)
     # L2/contracts/     # wZION Solidity (non-Cargo, Hardhat)
 
     # ═══════════════════════════════════════════════

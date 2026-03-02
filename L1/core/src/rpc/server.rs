@@ -67,7 +67,8 @@ pub fn build(state: State) -> Router {
             "/api/address/:address/utxos",
             get(methods::get_address_utxos_rest).with_state(state.clone()),
         )
-        .route("/api/sync/status", get(methods::get_sync_status_rest));
+        .route("/api/sync/status", get(methods::get_sync_status_rest))
+        .route("/api/swap/escrow-address", get(methods::swap_escrow_address));
 
     public.merge(protected).merge(metrics_router)
 }

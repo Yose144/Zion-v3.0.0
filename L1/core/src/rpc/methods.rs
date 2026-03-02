@@ -641,3 +641,52 @@ pub async fn bridge_unlock(
         })),
     }
 }
+
+// ─── Atomic Swap Escrow Endpoint (S-00) ─────────────────────────────────────
+
+/// GET /api/swap/escrow-address
+///
+/// Returns the L1 escrow address that users should send locked ZION to when
+/// initiating an atomic swap.  The address is derived from the
+/// `ZION_SWAP_ESCROW_KEY` environment variable (same pattern as bridge vault).
+///
+/// Memo format for the LOCK transaction:
+///   `SWAP:LOCK:<hash64hex>:<timeout_minutes>:<chain>:<counterparty_address>`
+///
+/// Example:
+///   `SWAP:LOCK:abcd...64chars...:120:btc:bc1qalicebtcaddress`
+pub async fn swap_escrow_address() -> Json<serde_json::Value> {
+    let key_hex = match std::env::var("ZION_SWAP_ESCROW_KEY").ok() {
+        Some(k) if k.len() == 64 => k,
+        _ => {
+            return Json(serde_json::json!({
+                "status": "error",
+                "message": "ZION_SWAP_ESCROW_KEY not configured on this node"
+            }));
+        }
+    };
+
+    let key_bytes: [u8; 32] = match keys::from_hex(&key_hex)
+        .and_then(|b| b.try_into().ok())
+    {
+        Some(b) => b,
+        None => {
+            return Json(serde_json::json!({
+                "status": "error",
+                "message": "ZION_SWAP_ESCROW_KEY is not valid hex"
+            }));
+        }
+    };
+
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&key_bytes);
+    let public_key_bytes = signing_key.verifying_key();
+    let escrow_address =
+        keys::zion1_address_from_public_key_bytes(public_key_bytes.as_bytes());
+
+    Json(serde_json::json!({
+        "status": "ok",
+        "escrow_address": escrow_address,
+        "memo_format": "SWAP:LOCK:<hash64hex>:<timeout_min>:<chain>:<counterparty_addr>",
+        "example": "SWAP:LOCK:abcd...64chars...:120:btc:bc1qyourbtcaddress",
+    }))
+}
