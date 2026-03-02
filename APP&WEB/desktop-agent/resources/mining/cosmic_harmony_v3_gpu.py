@@ -413,6 +413,8 @@ class CosmicHarmonyV3GPU:
         self.total_hashes = 0
         self.solutions_found = 0
         self.last_batch_hashes = 0
+        self.last_kernel_ms: float = 0.0
+        self.last_global_size: int = 0
         self._warned_header_trim = False
     
     @staticmethod
@@ -507,8 +509,12 @@ class CosmicHarmonyV3GPU:
             self.solution_count_buf,
         )
 
+        t0 = time.perf_counter()
         self.queue.finish()
+        kernel_ms = (time.perf_counter() - t0) * 1000.0
         self.last_batch_hashes = int(adjusted_batch)
+        self.last_kernel_ms = kernel_ms
+        self.last_global_size = int(adjusted_batch)
         self.total_hashes += int(adjusted_batch)
 
         # Check results
