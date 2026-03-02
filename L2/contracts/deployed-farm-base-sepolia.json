@@ -1,0 +1,17 @@
+{
+  "network": "base-sepolia",
+  "deployedAt": "2026-03-02T10:21:57.407Z",
+  "deployer": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+  "ZIONFarm": "0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843",
+  "rewardToken": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+  "rewardPerSecond": "3000000000000000000",
+  "halvingInterval": 7776000,
+  "pools": [
+    {
+      "pid": 0,
+      "name": "wZION Single",
+      "lpToken": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+      "allocPoints": 100
+    }
+  ]
+}
