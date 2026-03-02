@@ -388,14 +388,23 @@ impl ZionStorage {
         let rtxn = self.env.read_txn()?;
         let mut total: u64 = 0;
         let mut count: usize = 0;
+        let mut skipped: usize = 0;
 
         let mut iter = self.utxos.iter(&rtxn)?;
         while let Some(result) = iter.next() {
-            let (_key, output) = result?;
+            // Skip corrupted/old-schema entries (e.g. UTXOs stored before TxOutput.memo was added).
+            // Bincode is positional — old records missing the memo field cause "unexpected end of file".
+            let (_key, output) = match result {
+                Ok(v) => v,
+                Err(_) => { skipped += 1; continue; }
+            };
             if output.address == address {
                 total = total.saturating_add(output.amount);
                 count += 1;
             }
+        }
+        if skipped > 0 {
+            eprintln!("[WARN] get_balance_for_address: skipped {} undecodable UTXO entries (old schema pre-memo)", skipped);
         }
         drop(iter);
         drop(rtxn);
@@ -422,7 +431,11 @@ impl ZionStorage {
             let mut count: u64 = 0;
             let mut iter = self.utxos.iter(&rtxn)?;
             while let Some(result) = iter.next() {
-                let (_key, output) = result?;
+                // Skip old-schema / corrupt entries gracefully
+                let (_key, output) = match result {
+                    Ok(v) => v,
+                    Err(_) => continue,
+                };
                 if output.address == *address {
                     total = total.saturating_add(output.amount);
                     count += 1;
@@ -493,7 +506,11 @@ impl ZionStorage {
 
         let mut iter = self.utxos.iter(&rtxn)?;
         while let Some(result) = iter.next() {
-            let (key, output) = result?;
+            // Skip old-schema / corrupt entries (bincode positional — memo field added later)
+            let (key, output) = match result {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
             if output.address != address {
                 continue;
             }
