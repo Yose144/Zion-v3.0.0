@@ -8,7 +8,7 @@ L3 vrstva poskytuje cross-chain bridge framework, AI compute marketplace a auton
 
 | Crate | Package | LOC | Testů | Popis |
 |-------|---------|-----|-------|-------|
-| `warp/` | `zion-warp` | ~5,400 | 180 | Multi-chain bridge — 7 chain families, EVM signing live, fee router |
+| `warp/` | `zion-warp` | ~5,800 | 192 | Multi-chain bridge — EVM + Bitcoin signing live, 7 chain families |
 | `ncl/` | `zion-ncl` | ~1,800 | 34 | Neural Compute Layer — scheduler, reputation, REST API (axum) |
 | `ai-native/` | `zion-ai-native` | ~2,200 | 59 | AI Agent framework — orchestrátor, consciousness engine, memory, WARP |
 

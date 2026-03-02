@@ -17,6 +17,7 @@
 //! ```
 
 pub mod adapter;
+pub mod btc_signer;
 pub mod config;
 pub mod db;
 pub mod error;
