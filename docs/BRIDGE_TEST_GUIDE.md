@@ -5,6 +5,9 @@ _Aktualizováno: 2. března 2026 | Síť: TestNet_
 > **✅ FIRST SUCCESSFUL E2E TEST: 2. března 2026**  
 > 500 ZION → 500 wZION mintováno na Base Sepolia.  
 > TX: [`0xc5b72ba9...a59e7f`](https://sepolia.basescan.org/tx/0xc5b72ba9afcf43f53488d8db8b3bf3e874cc12f3507e60fbc253777861a59e7f) · Block 38333860 · Status: **SUCCESS**
+>
+> **✅ BRIDGE AUTOMATION: 2. března 2026** (commit `d18906e`)  
+> Desktop Agent „Bridge" záložka plně automatická — žádný ruční copy/paste.
 
 ---
 
@@ -33,17 +36,37 @@ BRIDGE:base:0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186
 
 ## 2. POSTUP TESTU (desktop agent)
 
-### Krok 1 — Odeslání z desktop agenta
+> **⚡ Nyní plně automatické** — záložka **Bridge** v Desktop Agentu provede celý flow sám.
 
-Otevři záložku **Send** a vyplň:
+### ZION → wZION (automaticky)
+
+1. Otevři záložku **Bridge** v Desktop Agentu
+2. EVM adresa se načte automaticky z `evmAddress` uloženého v peněžence  
+   _(při prvním otevření po aktualizaci vyžaduje heslo pro odvození EVM klíče)_
+3. Zůstaň na směru **ZION → wZION**
+4. Zadej částku (min. 100 ZION)
+5. Klikni **Generate memo** — zobrazí se vault adresa + memo
+6. Klikni **▶ Send Now** → potvrzovací dialog → TX odeslán automaticky
+7. wZION dorazí do ~1 minuty
+
+### wZION → ZION (automaticky — ⚠️ zatím blokováno vault klíčem)
+
+1. Klikni na **wZION → ZION**
+2. Zadej množství wZION + svou L1 adresu (`zion1...`)
+3. Klikni **🔥 Burn wZION** → potvrzovací dialog → EVM TX podepsán + odeslán
+4. ZION přijde na L1 po potvrzení relay
+
+> ⚠️ Krok 4 selže dokud není opraven vault klíč mismatch (viz sekce 4.1).
+
+---
+
+### Manuální odeslání (záložka Send — fallback)
 
 | Pole    | Hodnota                                                    |
 |---------|------------------------------------------------------------|
 | To      | `zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5`            |
 | Amount  | `100`                                                      |
 | Memo    | `BRIDGE:base:0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`  |
-
-Stiskni **Send** → potvrď dialog.
 
 ### Krok 2 — Sleduj bridge logy (na serveru)
 
@@ -109,15 +132,17 @@ bridge.getLockProof('0xL1_TX_HASH_SEM').then(r => console.log('votes:', r.votes,
 
 | Komponenta            | Stav     | Detail                                                   |
 |-----------------------|----------|----------------------------------------------------------|
-| L1 core node          | ✅ Běží  | `http://77.42.31.72:8444` (`zion-core:2.9.6-fix2`)       |
-| Bridge relay          | ✅ Běží  | `zion-bridge:2.9.6-fix3` na serveru                      |
+| L1 core node          | ✅ Běží  | `http://77.42.31.72:8444` (`zion-core:2.9.6-fix3`)       |
+| Bridge relay          | ✅ Běží  | `zion-bridge:2.9.6-fix4` — HTTP polling, bez Ankr        |
 | L1 UTXO scanning      | ✅ Hotovo | poll_cycle skenuje UTXO každý cyklus (i bez nových bloků)|
-| submitLockProof TX    | ✅ **OVĚŘENO** | E2E test 2.3.2026 — 500 ZION → 500 wZION         |
+| submitLockProof TX    | ✅ **OVĚŘENO** | E2E test 2.3.2026 — 700 ZION → 700 wZION celkem  |
 | ZIONBridge kontrakt   | ✅ Deploy | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` Base Sep.  |
 | wZION kontrakt        | ✅ Deploy | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` Base Sep.   |
+| EVM Watcher (burn)    | ✅ Opraveno | HTTP polling přes `publicnode.com` (fix4, commit `265a455`)|
+| Desktop Agent Bridge  | ✅ **Automatické** | Send Now + Burn wZION (commit `d18906e`)         |
 | Threshold             | 1-of-2   | validator-1 (server) nebo deployer (lokálně)             |
 | Finality              | okamžitá | sendTransaction UTXOs: l1_block_height=0, finalizuje ihned|
-| EVM watcher (burn)    | ⚠️ Ankr 403 | wZION→ZION směr nefunguje zatím (viz sekce 4)         |
+| wZION→ZION unlock     | ⚠️ Vault klíč | `vault.key` derivuje jinou adresu než drží UTXOs — viz 4.1|
 
 ### Adresy:
 
@@ -133,31 +158,24 @@ bridge.getLockProof('0xL1_TX_HASH_SEM').then(r => console.log('votes:', r.votes,
 
 ## 4. CO JEŠTĚ CHYBÍ PRO TESTNET (wZION → ZION směr)
 
-### 4.1 EVM Watcher — Ankr 403
+### 4.1 Vault klíč mismatch — BLOCKER pro wZION→ZION
 
-Ankr free tier nepodporuje `base-sepolia` slug. EVM Watcher crashuje a nemonitoruje burn eventy.
+`vault.key` na serveru (`272b825e...`) derivuje adresu `zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0`  
+Ale 700 ZION UTXOs leží na `zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5`.
 
-**Řešení:** Nahradit Ankr přímým public RPC (již máme `https://base-sepolia.publicnode.com`).
+Bridge proto při unlock fázi nemá klíč k UTXOs → vrátí `Insufficient vault balance: have 0`.
 
-```toml
-# bridge.toml — nahradit wss:// na https://
-rpc_url = "https://base-sepolia.publicnode.com"
-```
+**Řešení A (doporučeno):** Najít původní private key peněženky `zion1wn5nv4snx...` a nastavit jej jako `ZION_BRIDGE_VAULT_KEY` v docker-compose.
 
-Kód v `evm_watcher.rs` používá WebSocket klienta — potřebuje refactor na HTTP polling (stejně jako jsme udělali v `evm_rpc.rs`).
+**Řešení B:** Vygenerovat novou adresu z aktuálního `vault.key`, nastavit tuto adresu jako `bridge_address` v `bridge.toml`, a posílat ZION na ni.
 
-**Pracnost:** ~2-3h
+**Pracnost:** ~30 min
 
-### 4.2 `handle_evm_burn` — L1 unlock endpoint
+### 4.2 EVM Watcher ✅ (opraveno v fix4, commit `265a455`)
 
-Burn handler volá `POST /api/bridge/unlock` na L1 node, ale tento endpoint na L1 core neexistuje.
+HTTP polling přes `https://base-sepolia.publicnode.com` — Ankr 403 vyřešen.
 
-**Chybí implementovat:**
-- `L1/core/src/api/bridge.rs` — endpoint `/api/bridge/unlock`
-- Zpracování: ověřit podpis, odeslat ZION z vault escrow na `l1_recipient`
-- Vrátit `{"tx_hash": "...", "status": "submitted"}`
-
-**Pracnost:** ~4-6h
+### 4.3 L1 `/api/bridge/unlock` endpoint ✅ (implementováno v fix3)
 
 ### 4.3 Stratum pool — `handle_submit` bulk přijmutí
 
@@ -167,16 +185,17 @@ Stávající pool zatím odpovídá na share submit ale `shares_accepted` se nep
 
 ## 5. PLÁN PRO MAINNET BRIDGE
 
-### Fáze 1 — TestNet dokončení (odhad: ~1 týden)
+### Fáze 1 — TestNet dokončení
 
-| Úkol | Priorita | Pracnost |
-|------|----------|----------|
-| EVM Watcher: náhrada Ankr za HTTP polling | 🔴 blocker | 2-3h |
-| L1 `/api/bridge/unlock` endpoint | 🔴 blocker | 4-6h |
-| `handle_evm_burn` — confirm TX on EVM | 🟡 potřeba | 2-3h |
-| End-to-end test: wZION → ZION | 🟡 potřeba | test |
-| Desktop agent: "Bridge" záložka s historií | 🟢 nice | 1-2 dny |
-| Memo validace na L1 node (striktní formát) | 🟢 nice | 2-4h |
+| Úkol | Priorita | Stav |
+|------|----------|------|
+| EVM Watcher: náhrada Ankr za HTTP polling | 🔴 blocker | ✅ Hotovo (fix4) |
+| L1 `/api/bridge/unlock` endpoint | 🔴 blocker | ✅ Hotovo (fix3) |
+| Vault klíč mismatch — opravit key pro `zion1wn5nv4snx...` | 🔴 blocker | ⚠️ Zbývá |
+| End-to-end test: wZION → ZION | 🟡 potřeba | ⏳ Blokováno vault klíčem |
+| Desktop agent: „Bridge" záložka automatická | 🟢 done | ✅ Hotovo (d18906e) |
+| web2.9: Bridge widget (Next.js) | 🟢 nice | ⏳ Zbývá |
+| Memo validace na L1 node (striktní formát) | 🟢 nice | ⏳ 2-4h |
 
 ### Fáze 2 — Audit & Security (odhad: 2-4 týdny)
 
