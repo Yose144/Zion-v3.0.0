@@ -33,7 +33,7 @@ export interface DexChainConfig {
 export const BASE_SEPOLIA_CONFIG: DexChainConfig = {
   name: "base-sepolia",
   chainId: 84532,
-  wzionAddress: process.env.WZION_ADDRESS_SEPOLIA || "0x0c49000000000000000000000000000000000001",
+  wzionAddress: process.env.WZION_ADDRESS_SEPOLIA || "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
   wethAddress: "0x4200000000000000000000000000000000000006",
   uniswapV3Factory: "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",
   uniswapV3NonfungiblePositionManager: "0x27F971cb582BF9E50F397e4d29a5C7A34f11faA2",

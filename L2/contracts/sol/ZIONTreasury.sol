@@ -116,7 +116,7 @@ contract ZIONTreasury is Ownable, ReentrancyGuard {
         address _zionToken,
         address[] memory _signers,
         uint256 _required
-    ) {
+    ) Ownable(msg.sender) {
         require(_zionToken != address(0), "Invalid token address");
         require(_signers.length >= _required, "Invalid signer count");
         require(_required >= 3, "Minimum 3 signatures required");
@@ -183,7 +183,7 @@ contract ZIONTreasury is Ownable, ReentrancyGuard {
         uint256 _amount,
         string memory _reason,
         string memory _milestoneHash
-    ) external onlySigner returns (uint256) {
+    ) public onlySigner returns (uint256) {
         require(budgets[_category].active, "Budget not active");
         require(_recipient != address(0), "Invalid recipient");
         require(_amount > 0, "Invalid amount");
