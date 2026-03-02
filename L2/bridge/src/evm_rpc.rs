@@ -4,6 +4,7 @@
 //! Bypasses the Ankr integration (which is for event watching, not TX sending).
 //! Converts WebSocket URLs (wss://) to HTTP (https://) automatically.
 
+use crate::ankr::AnkrLog;
 use anyhow::{anyhow, Context, Result};
 use serde_json::{json, Value};
 use tracing::debug;
@@ -100,6 +101,47 @@ impl EvmHttpClient {
             )
             .await?;
         parse_hex_u64(&result)
+    }
+
+    /// Get current block number.
+    pub async fn block_number(&self) -> Result<u64> {
+        let result = self.call("eth_blockNumber", json!([])).await?;
+        parse_hex_u64(&result)
+    }
+
+    /// Get logs via direct `eth_getLogs` (no Ankr dependency).
+    ///
+    /// Returns a `Vec<AnkrLog>` — same struct as the Ankr variant since both
+    /// are standard Ethereum JSON-RPC log objects.
+    pub async fn get_logs(
+        &self,
+        address: &str,
+        from_block: u64,
+        to_block: u64,
+        topics: &[Option<&str>],
+    ) -> Result<Vec<AnkrLog>> {
+        let topics_json: Vec<Value> = topics
+            .iter()
+            .map(|t| match t {
+                Some(s) => Value::String(s.to_string()),
+                None => Value::Null,
+            })
+            .collect();
+
+        let result = self
+            .call(
+                "eth_getLogs",
+                json!([{
+                    "address": address,
+                    "fromBlock": format!("0x{:x}", from_block),
+                    "toBlock":   format!("0x{:x}", to_block),
+                    "topics":    topics_json,
+                }]),
+            )
+            .await?;
+
+        serde_json::from_value::<Vec<AnkrLog>>(result)
+            .context("Failed to parse eth_getLogs response into Vec<AnkrLog>")
     }
 
     /// Broadcast a signed raw transaction, returning the tx hash.
