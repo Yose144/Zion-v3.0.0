@@ -116,8 +116,10 @@ async function main() {
   console.log(`  WETH approve:  ${approveTx1.hash}`);
 
   // ── 7. Compute tick range (full-range, rounded to tickSpacing) ──────────────
-  const tickLower = roundTick(MIN_TICK, tickSpacing);
-  const tickUpper = roundTick(MAX_TICK, tickSpacing);
+  // Must use ceil for lower (rounds toward 0) and floor for upper (rounds toward 0)
+  // Math.round would produce -887280 which exceeds MIN_TICK (-887272) → revert "T"
+  const tickLower = Math.ceil(MIN_TICK / tickSpacing) * tickSpacing;  // e.g. -887220 for spacing=60
+  const tickUpper = Math.floor(MAX_TICK / tickSpacing) * tickSpacing; // e.g.  887220 for spacing=60
   console.log(`\nTick range: [${tickLower}, ${tickUpper}] (full-range)`);
 
   // ── 8. Mint position ────────────────────────────────────────────────────────
