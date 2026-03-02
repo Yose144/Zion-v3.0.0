@@ -1,6 +1,7 @@
 use crate::adapter::ChainAdapter;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
+use crate::stellar_signer::StellarSigner;
 use crate::types::ChainFamily;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -224,14 +225,31 @@ impl ChainAdapter for StellarAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        // Soroban contract mint requires signing keypair (D-04 TODO)
-        Err(WarpError::AdapterError {
-            chain: "stellar".into(),
-            reason: format!(
-                "Signing service (D-04) pending — would mint {} wZION to {} on {}",
-                instruction.amount_dest_atomic, instruction.recipient, self.network
-            ),
-        })
+        // amount_dest_atomic is in Stellar stroops (7 decimals)
+        let amount_stroops = instruction.amount_dest_atomic as i64;
+
+        let signer = match StellarSigner::from_env() {
+            Ok(s) => s,
+            Err(_) => {
+                return Err(WarpError::AdapterError {
+                    chain: "stellar".into(),
+                    reason: format!(
+                        "WARP_STELLAR_RELAY_KEY not set — cannot send {} stroops to {}. \
+                         Set env var with a funded Stellar relay wallet secret key (S...).",
+                        amount_stroops, instruction.recipient
+                    ),
+                });
+            }
+        };
+
+        info!(
+            "[WARP][stellar] execute_mint: {} stroops → {} (relay: {})",
+            amount_stroops, instruction.recipient, signer.address()
+        );
+
+        signer
+            .send_payment(&self.client, &self.horizon_url, &instruction.recipient, amount_stroops)
+            .await
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
