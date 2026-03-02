@@ -908,11 +908,11 @@ GENESIS BLOCK VERIFICATION:
 
 | # | Úkol | Stav |
 |---|------|------|
-| 6.8 | **Deploy wZION ERC-20** na Base/Arbitrum | ⬜ |
-| 6.9 | **Bridge backend spuštěn** — ZION L1 ↔ wZION | ⬜ |
-| 6.10 | **Uniswap pool vytvořen** — wZION/ETH | ⬜ |
-| 6.11 | **Počáteční likvidita** — malá, kontrolovaná | ⬜ |
-| 6.12 | **Price discovery** — první reálná cena ZION | ⬜ |
+| 6.8 | **Deploy wZION ERC-20** na Base/Arbitrum | ✅ TESTNET hotovo (`0x0c4937...`) |
+| 6.9 | **Bridge backend spuštěn** — ZION L1 ↔ wZION | ✅ TESTNET hotovo |
+| 6.10 | **Uniswap pool vytvořen** — wZION/ETH | ✅ TESTNET hotovo (`0xcCEaD5...`, tick -99040) |
+| 6.11 | **Počáteční likvidita** — malá, kontrolovaná | 🔲 seed-liquidity.ts připraven |
+| 6.12 | **Price discovery** — první reálná cena ZION | 🔲 po seeding |
 
 **DEX strategie (správná sekvence):**
 ```

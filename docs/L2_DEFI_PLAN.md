@@ -30,11 +30,13 @@ Testů: bridge 71    | dao 18   | contracts 94/96
 | ZIONBridge | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | ✅ LIVE Base Sepolia |
 | Bridge relay | `77.42.31.72` (Helsinki) | ✅ Běží |
 | 700 wZION | `0xdde17506...` | ✅ Zmintováno |
-| ZIONGovernance.sol | nasadit | ☔ Připravený |
-| ZIONTreasury.sol | nasadit | ☔ Připravený |
-| ZIONStaking.sol | nasadit | ☔ Připravený (nový) |
-| Uniswap V3 pool | nesazený | ☔ Script hotový |
-| DAO daemon | lokalni | ☔ Kód hotový, nestřelá |
+| ZIONGovernance.sol | `0x039F730e3e1c3f36da95187697118791762290a1` | ✅ LIVE Base Sepolia |
+| ZIONTreasury.sol | `0x178d85323dC94Ce2477269Dfb93a12D04B9bE537` | ✅ LIVE Base Sepolia (1-of-1) |
+| ZIONStaking.sol | `0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913` | ✅ LIVE Base Sepolia (APR 12%) |
+| Uniswap V3 pool | `0xcCEaD51568E8d701f7db7e6699F3986031F07C7B` | ✅ LIVE Base Sepolia — seed pending |
+| ZIONAtomicSwap.sol | `0xAf1E0645Ac409485EDA5EabD87b4eE3C3a5BA3Fc` | ✅ LIVE Base Sepolia |
+| ZIONFarm.sol | `0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843` | ✅ LIVE Base Sepolia (500 wZION) |
+| DAO daemon | lokální | ☔ Kód hotový, nestřílí |
 
 ---
 
@@ -46,25 +48,27 @@ Testů: bridge 71    | dao 18   | contracts 94/96
 HOTOVO (Q1 2026):
   ✅ wZION + ZIONBridge LIVE na Base Sepolia
   ✅ 700 wZION zmintováno, E2E ověřeno
-  ✅ ZIONStaking.sol — nový kontrakt (APR, cooldown, gov. váha)
-  ✅ ZIONGovernance.sol — stake-weighted voting přidáno
-  ✅ Hardhat viaIR + OZ v5 compat opraveny, 94/96 testů
-  ✅ DAO daemon: SQLite + HTTP API + L1 scanner kompletní
+  ✅ ZIONStaking.sol — APR 12%, 7-day cooldown, gov. váha
+  ✅ ZIONGovernance.sol — stake-weighted voting
+  ✅ ZIONTreasury.sol — multi-sig treasury (1-of-1 testnet)
+  ✅ ZIONAtomicSwap.sol — EVM HTLC (19/19 testů)
+  ✅ ZIONFarm.sol — MasterChef yield farming (17/17 testů, Pool 0 seeded 500 wZION)
+  ✅ evm_watcher.rs — Rust EVM watcher (15/15 testů)
+  ✅ Uniswap V3 wZION/WETH pool — inicializován (0.3%, tick -99040)
+  ✅ Hardhat viaIR + OZ v5 compat, deployed-defi.json uložen
 
 NEJBLIŽŠÍ KROKY (Březen 2026):
-  □ DEX-01: Nasadit Uniswap V3 wZION/WETH pool na Base Sepolia
-            npx hardhat run scripts/deploy-pool.ts --network base-sepolia
-  □ DEX-02: Seed liquidity (100 wZION + 0.005 ETH)
+  □ Seed Uni V3 likvidity (100 wZION + ETH z faucetu)
             npx hardhat run scripts/seed-liquidity.ts --network base-sepolia
-  □ DeFi-01: Nasadit ZIONGovernance + ZIONTreasury + ZIONStaking
-             npx hardhat run scripts/deploy-defi.ts --network base-sepolia
-  □ DAO: Spustit zion-dao daemon na serveru (docker-compose)
-  □ Atomic Swaps S-01: HTLC typy (Rust) — začít implementaci
+  □ Fund ZIONStaking rewardPool (staking.fundRewardPool)
+  □ DAO daemon: Spustit zion-dao daemon na serveru (docker-compose)
+  □ E2E atomic swap test (ZION ↔ ETH testnet)
 
 MAINNET PŘÍPRAVA (Q2-Q3 2026):
-  □ ZIONBridge mainnet audit (Base Mainnet)
+  □ ZIONBridge + ZIONStaking + ZIONGovernance mainnet audit
   □ L1 MainNet launch (finální checklist)
-  □ wZION/WETH pool na Base Mainnet
+  □ Redeploy DeFi stack na Base Mainnet (3-of-5 treasury)
+  □ Uniswap V3 mainnet pool + seed likvidita
   □ Staking program live
 ```
 
