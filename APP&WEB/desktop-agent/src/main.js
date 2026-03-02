@@ -5537,6 +5537,7 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
       publicKey: wallet.publicKey,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
+      evmAddress: wallet.mnemonic ? deriveEvmAddressFromMnemonic(wallet.mnemonic) : null,
       createdAt: wallet.createdAt,
       lastUsed: new Date().toISOString()
     };
@@ -5725,13 +5726,27 @@ ipcMain.handle('ai-native-system-health', async () => {
 // wZION BRIDGE IPC HANDLERS  (L1 ↔ Base EVM)
 // ============================================================================
 
+/** In-memory session cache: EVM wallet derived from mnemonic (cleared on app close) */
+let _sessionEvmWallet = null;
+
+/** Correct L1 bridge vault address (holds locked UTXOs) */
+const BRIDGE_VAULT_ADDR = 'zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5';
+
 const BRIDGE_NET = {
   CHAIN_ID   : 84532,                /* Base Sepolia (testnet). Switch to 8453 for mainnet */
   RPC_URL    : 'https://sepolia.base.org',
   WZION_ADDR : '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-  BRIDGE_ADDR: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+  BRIDGE_ADDR: '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
   EXPLORER   : 'https://sepolia.basescan.org',
 };
+
+/** Derive EVM address (secp256k1, BIP44 m/44'/60'/0'/0/0) from a BIP39 mnemonic */
+function deriveEvmAddressFromMnemonic(mnemonic) {
+  try {
+    const { ethers } = require('ethers');
+    return ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/60'/0'/0/0").address;
+  } catch { return null; }
+}
 
 const BRIDGE_SEL_BALANCE_OF    = '0x70a08231'; // balanceOf(address)
 const BRIDGE_SEL_BRIDGE_STATS  = bridgeSelector('bridgeStats()');
@@ -5825,11 +5840,192 @@ ipcMain.handle('bridge-prepare-lock', async (event, evmRecipient) => {
       return { success: false, error: 'Invalid EVM address format (0x + 40 hex chars)' };
     }
     return {
-      success        : true,
-      vaultAddress   : 'zion1bridge000000000000000000000000000vault',
-      memo           : `BRIDGE:BASE:${evmRecipient.toLowerCase()}`,
-      minAmount      : 100,
-      network        : 'Base Sepolia',
+      success      : true,
+      vaultAddress : BRIDGE_VAULT_ADDR,
+      memo         : `BRIDGE:base:${evmRecipient.toLowerCase()}`,
+      minAmount    : 100,
+      network      : 'Base Sepolia',
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Get EVM address (Base/Ethereum) for the active wallet.
+ * - If already cached in session or persisted in wallet file → returns immediately.
+ * - If password is supplied → decrypts mnemonic, derives BIP44 EVM key, caches it.
+ * - If neither available → returns { needsPassword: true }.
+ */
+ipcMain.handle('wallet-get-evm-address', async (event, password) => {
+  try {
+    // 1. Session cache hit (EVM key already in memory)
+    if (_sessionEvmWallet) {
+      return { success: true, address: _sessionEvmWallet.address, cached: true };
+    }
+
+    // 2. Find active wallet file
+    const config    = loadConfig();
+    const walletAddr = config.wallet?.toString().trim();
+    if (!walletAddr) return { success: false, error: 'No active wallet configured' };
+
+    if (!fs.existsSync(WALLETS_PATH)) return { success: false, error: 'Wallets directory not found' };
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    const walletFile = files.find(f => {
+      try { return JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, f), 'utf8'))?.address === walletAddr; }
+      catch { return false; }
+    });
+    if (!walletFile) return { success: false, error: 'Wallet file not found' };
+
+    const wFilePath = path.join(WALLETS_PATH, walletFile);
+    const walletData = JSON.parse(fs.readFileSync(wFilePath, 'utf8'));
+
+    // 3. EVM address already persisted (no private key needed)
+    if (walletData.evmAddress && !password) {
+      return { success: true, address: walletData.evmAddress };
+    }
+
+    // 4. Need password to decrypt mnemonic
+    if (!password) return { success: true, needsPassword: true };
+
+    // 5. Decrypt mnemonic and derive EVM wallet
+    if (!walletData.encryptedMnemonic) {
+      return { success: false, error: 'Wallet has no encrypted mnemonic — cannot derive EVM key' };
+    }
+    const mnemonic  = WalletGenerator.decryptPrivateKey(walletData.encryptedMnemonic, password);
+    const { ethers } = require('ethers');
+    const evmW      = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/60'/0'/0/0");
+    _sessionEvmWallet = evmW;
+
+    // Persist EVM address only (never the private key) for future sessions
+    walletData.evmAddress = evmW.address;
+    fs.writeFileSync(wFilePath, JSON.stringify(walletData, null, 2));
+
+    return { success: true, address: evmW.address };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Automatically send ZION to the bridge vault on L1.
+ * Constructs the correct memo from the session EVM address.
+ * Shows a confirmation dialog before broadcasting.
+ */
+ipcMain.handle('bridge-send-lock', async (event, { amount, fromAddress }) => {
+  try {
+    const amt = parseFloat(amount);
+    if (!Number.isFinite(amt) || amt < 100) {
+      return { success: false, error: 'Minimum bridge amount is 100 ZION' };
+    }
+    if (!_sessionEvmWallet) {
+      return { success: false, error: 'EVM address not loaded — unlock your EVM key first' };
+    }
+
+    const memo = `BRIDGE:base:${_sessionEvmWallet.address.toLowerCase()}`;
+
+    const confirmation = await dialog.showMessageBox(mainWindow, {
+      type     : 'question',
+      title    : 'Bridge: Lock ZION → wZION',
+      message  : `Send ${amt} ZION to bridge vault?`,
+      detail   : `Amount : ${amt} ZION\nVault  : ${BRIDGE_VAULT_ADDR}\nMemo   : ${memo}\n\nYou will receive ~${amt} wZION on Base Sepolia within a few minutes.\nThis action cannot be undone.`,
+      buttons  : ['Send', 'Cancel'],
+      defaultId: 1,
+      cancelId : 1,
+    });
+    if (confirmation.response !== 0) return { success: false, error: 'Cancelled by user' };
+
+    const rpcUrl = 'http://77.42.31.72:8444/jsonrpc';
+    const res    = await zionRpcCall(rpcUrl, 'sendtransaction', {
+      from  : fromAddress,
+      to    : BRIDGE_VAULT_ADDR,
+      amount: amt,
+      memo,
+    });
+    if (res?.error) return { success: false, error: res.error };
+
+    return {
+      success: true,
+      txId   : res?.tx_id || res?.txid || res?.hash,
+      vault  : BRIDGE_VAULT_ADDR,
+      memo,
+      amount : amt,
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Burn wZION on Base EVM → receive ZION on L1.
+ * Signs + broadcasts bridgeBurn(amount, l1Recipient, burnId) using the session EVM wallet.
+ * Requires wallet-get-evm-address to have been called with password first.
+ */
+ipcMain.handle('bridge-burn-wzion', async (event, { amount, l1Recipient, password }) => {
+  try {
+    let evmWallet = _sessionEvmWallet;
+
+    // If EVM key not cached, try to derive it now
+    if (!evmWallet) {
+      if (!password) return { success: false, needsEvmKey: true };
+      const config    = loadConfig();
+      const walletAddr = config.wallet?.toString().trim();
+      if (!walletAddr) return { success: false, error: 'No active wallet configured' };
+      const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+      const wf    = files.find(f => {
+        try { return JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, f), 'utf8'))?.address === walletAddr; }
+        catch { return false; }
+      });
+      if (!wf) return { success: false, error: 'Wallet file not found' };
+      const wData   = JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, wf), 'utf8'));
+      const mnemonic = WalletGenerator.decryptPrivateKey(wData.encryptedMnemonic, password);
+      const { ethers } = require('ethers');
+      evmWallet = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/60'/0'/0/0");
+      _sessionEvmWallet = evmWallet;
+    }
+
+    const { ethers } = require('ethers');
+    const amt = parseFloat(amount);
+    if (!Number.isFinite(amt) || amt <= 0) return { success: false, error: 'Invalid amount' };
+    if (!l1Recipient || !/^zion1[a-z0-9]{38,45}$/i.test(l1Recipient)) {
+      return { success: false, error: 'Invalid L1 recipient (must be zion1...)' };
+    }
+
+    const amountWei = ethers.utils.parseUnits(amt.toString(), 18);
+    const burnId    = ethers.utils.hexZeroPad(
+      ethers.utils.hexlify(ethers.utils.randomBytes(32)), 32
+    );
+
+    const iface = new ethers.utils.Interface([
+      'function bridgeBurn(uint256 amount, string calldata l1Recipient, bytes32 burnId)'
+    ]);
+    const data = iface.encodeFunctionData('bridgeBurn', [amountWei, l1Recipient, burnId]);
+
+    const confirmation = await dialog.showMessageBox(mainWindow, {
+      type     : 'warning',
+      title    : 'Bridge: Burn wZION → ZION',
+      message  : `Burn ${amt} wZION on Base?`,
+      detail   : `Amount      : ${amt} wZION\nL1 Recipient: ${l1Recipient}\nNetwork     : Base Sepolia\n\nSigns an EVM transaction. You will receive ZION on L1 after relay confirmation.\nThis cannot be undone.`,
+      buttons  : ['Burn wZION', 'Cancel'],
+      defaultId: 1,
+      cancelId : 1,
+    });
+    if (confirmation.response !== 0) return { success: false, error: 'Cancelled by user' };
+
+    const provider = new ethers.providers.JsonRpcProvider(BRIDGE_NET.RPC_URL);
+    const signer   = evmWallet.connect(provider);
+    const tx       = await signer.sendTransaction({
+      to      : BRIDGE_NET.BRIDGE_ADDR,
+      data,
+      gasLimit: ethers.BigNumber.from('250000'),
+    });
+
+    return {
+      success    : true,
+      txHash     : tx.hash,
+      explorerUrl: `${BRIDGE_NET.EXPLORER}/tx/${tx.hash}`,
+      amount     : amt,
+      l1Recipient,
     };
   } catch (error) {
     return { success: false, error: error.message };
@@ -6370,6 +6566,7 @@ ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
       publicKey: wallet.publicKey,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
+      evmAddress: wallet.mnemonic ? deriveEvmAddressFromMnemonic(wallet.mnemonic) : null,
       createdAt: wallet.createdAt,
       lastUsed: new Date().toISOString()
     };
@@ -6437,6 +6634,7 @@ ipcMain.handle('import-wallet', (event, { mnemonic, password, name }) => {
       publicKey: wallet.publicKey,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
+      evmAddress: wallet.mnemonic ? deriveEvmAddressFromMnemonic(wallet.mnemonic) : null,
       createdAt: wallet.recoveredAt,
       lastUsed: new Date().toISOString()
     };
