@@ -3531,7 +3531,7 @@ function startMining(config) {
   // via RevenueProxy (→ MoneroOcean → BTC). No direct external pool connection.
   // Supports both Rust (--group flag) and Python (--group CLI arg) miners.
   // ═══════════════════════════════════════════════════════════════
-  const allowRevenueWithMainGpu = String(process.env.ZION_ALLOW_REVENUE_WITH_MAIN_GPU || '').trim() === '1';
+  const allowRevenueWithMainGpu = String(process.env.ZION_ALLOW_REVENUE_WITH_MAIN_GPU || '1').trim() !== '0';
   const revenueSuppressedForGpuInit = mainMinerGpu && !allowRevenueWithMainGpu;
   const canSpawnRevenue =
     !revenueSuppressedForGpuInit &&
