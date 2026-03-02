@@ -78,11 +78,32 @@ L4/oasis/ue5/
 
 ## Opening the Project
 
-1. Ensure UE 5.4 is installed via Epic Games Launcher.
-2. Right-click `ZionOasis.uproject` → **Generate Visual Studio project files**.
-3. Open `ZionOasis.sln` in Visual Studio 2022.
-4. Build configuration: **Development Editor | Win64**.
-5. Press **F5** or launch from the UE Editor toolbar.
+### Step-by-step (first time)
+
+1. Ensure **Unreal Engine 5.4** is installed via Epic Games Launcher.
+2. Right-click `ZionOasis.uproject` → **Generate Visual Studio project files**.  
+   *(This requires UE5 to be the default handler for `.uproject` files — set it in Epic Launcher → Library → right-click engine → "Set as default".)*
+3. Open `ZionOasis.sln` in **Visual Studio 2022** (C++ Desktop workload required).
+4. Set build configuration: **Development Editor | Win64**.
+5. Build solution: **Ctrl+Shift+B** (first build takes 5–15 min, ~1 600 files).
+6. When the build succeeds, double-click `ZionOasis.uproject` to open in UE5 Editor.
+
+### Create the startup map (required on first launch)
+
+The file `Content/Maps/L_Startup.umap` is a binary UE5 asset — it must be created inside the Editor:
+
+1. In the UE5 Editor: **File → New Level → Empty Level**.
+2. **File → Save Current Level As…** → navigate to `Content/Maps/` → name it `L_Startup`.
+3. Open **Edit → Project Settings → Maps & Modes**:
+   - Set **Game Default Map** = `L_Startup`
+   - Set **Transition Map** = `L_Startup`
+4. Save project settings (**Ctrl+S**).
+
+After saving `L_Startup.umap` you can reload the project and it will start correctly.
+
+### Subsequent launches
+
+Simply double-click `ZionOasis.uproject` — no Visual Studio needed unless C++ files changed.
 
 ---
 
