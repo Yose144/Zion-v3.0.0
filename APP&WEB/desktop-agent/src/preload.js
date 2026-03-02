@@ -122,6 +122,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   bridgeGetStats: () => ipcRenderer.invoke('bridge-get-stats'),
   bridgeTxStatus: (txHash) => ipcRenderer.invoke('bridge-tx-status', txHash),
   bridgePrepareLock: (evmRecipient) => ipcRenderer.invoke('bridge-prepare-lock', evmRecipient),
+  walletGetEvmAddress: (password) => ipcRenderer.invoke('wallet-get-evm-address', password),
+  bridgeSendLock: (data) => ipcRenderer.invoke('bridge-send-lock', data),
+  bridgeBurnWzion: (data) => ipcRenderer.invoke('bridge-burn-wzion', data),
 
   // ── L2 DAO (Governance, Treasury, Proposals) ─────────────────────────────
   daoGetStats: () => ipcRenderer.invoke('dao-get-stats'),
