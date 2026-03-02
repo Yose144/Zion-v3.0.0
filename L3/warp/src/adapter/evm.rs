@@ -1,10 +1,12 @@
 use crate::adapter::ChainAdapter;
 use crate::error::{WarpError, WarpResult};
+use crate::evm_signer::{abi_encode_bridge_mint, EvmSigner};
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use sha2::Digest;
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,6 +37,17 @@ fn default_rpc(chain: &str) -> &'static str {
         "bsc"          => "https://bsc-dataseed.binance.org",
         "polygon"      => "https://polygon-rpc.com",
         _              => "https://mainnet.base.org",
+    }
+}
+
+fn evm_chain_id(chain: &str) -> u64 {
+    match chain {
+        "base"          => 8453,
+        "base-sepolia"  => 84532,
+        "arbitrum"      => 42161,
+        "bsc"           => 56,
+        "polygon"       => 137,
+        _               => 1,
     }
 }
 
@@ -301,50 +314,85 @@ impl ChainAdapter for EvmAdapter {
 
     /// Execute mint on destination chain.
     ///
-    /// NOTE: Private key management lives outside the WARP layer.
-    /// The WARP daemon calls a signing service (or hardware wallet) and
-    /// broadcasts the signed TX. For now we return a descriptive error
-    /// until the signing service (D-04) is implemented.
+    /// Loads relay private key from `WARP_EVM_RELAY_KEY` env var.
+    /// When key is not set, performs a simulation-only eth_call and returns an error
+    /// so the operator can diagnose connectivity before keying the relayer.
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
         let contract = wzion_contract(&self.chain_name).ok_or_else(|| WarpError::AdapterError {
             chain: self.chain_name.clone(),
             reason: "No wZION contract address for this chain".into(),
         })?;
 
-        // ABI encode bridgeMint(address recipient, uint256 amount, bytes32 msgHash)
-        // selector = keccak256("bridgeMint(address,uint256,bytes32)")[0..4]
-        let selector = "0x9d6ca9f3"; // pre-computed
-        let recip = instruction.recipient.trim_start_matches("0x");
-        let amount_hex = format!("{:064x}", instruction.amount_dest_atomic);
-        let msg_hash = {
-            use sha2::Digest;
+        // Derive bytes32 msg_hash from warp_message_hash string
+        let msg_hash: [u8; 32] = {
             let mut h = sha2::Sha256::new();
             h.update(instruction.warp_message_hash.as_bytes());
-            hex::encode(h.finalize())
+            h.finalize().into()
         };
-        let calldata = format!("{}{:0>64}{}{:0>64}", selector, recip, amount_hex, msg_hash);
 
-        // Build eth_call to verify (won't broadcast without a signer)
-        let call_result = rpc_call(
-            &self.client,
-            &self.rpc_url,
-            "eth_call",
-            json!([{
-                "to": contract,
-                "data": calldata,
-            }, "latest"]),
-        )
-        .await;
+        // ABI-encode bridgeMint(address, uint256, bytes32)
+        let calldata = abi_encode_bridge_mint(
+            &instruction.recipient,
+            instruction.amount_dest_atomic,
+            &msg_hash,
+        )?;
 
-        match call_result {
-            Ok(_) => Err(WarpError::AdapterError {
-                chain: self.chain_name.clone(),
-                reason: "Signing service (D-04) not yet connected — TX simulation passed but not broadcast".into(),
-            }),
-            Err(e) => Err(WarpError::AdapterError {
-                chain: self.chain_name.clone(),
-                reason: format!("bridgeMint simulation failed: {}", e),
-            }),
+        // ── Attempt signing if relay key is configured ────────────────────────
+        match EvmSigner::from_env() {
+            Ok(signer) => {
+                // Determine chain_id from chain name
+                let chain_id = evm_chain_id(&self.chain_name);
+
+                info!(
+                    "[WARP][{}] execute_mint: relay={} contract={} amount={} recipient={}",
+                    self.chain_name,
+                    signer.address,
+                    contract,
+                    instruction.amount_dest_atomic,
+                    instruction.recipient,
+                );
+
+                let tx_hash = signer
+                    .send_tx(
+                        &self.client,
+                        &self.rpc_url,
+                        chain_id,
+                        contract,
+                        &calldata,
+                        0,          // value: 0 ETH
+                        300_000,    // gas limit
+                    )
+                    .await?;
+
+                info!("[WARP][{}] bridgeMint TX submitted: {}", self.chain_name, tx_hash);
+                Ok(tx_hash)
+            }
+
+            Err(_no_key) => {
+                // Key not configured — run simulation so operators can see if the
+                // contract call would succeed, then return a clear error.
+                let calldata_hex = hex::encode(&calldata);
+                let sim = rpc_call(
+                    &self.client,
+                    &self.rpc_url,
+                    "eth_call",
+                    json!([{ "to": contract, "data": format!("0x{}", calldata_hex) }, "latest"]),
+                )
+                .await;
+
+                match sim {
+                    Ok(_) => Err(WarpError::AdapterError {
+                        chain: self.chain_name.clone(),
+                        reason: "WARP_EVM_RELAY_KEY not set — simulation OK but TX not broadcast. \
+                                 Set relay key to enable live minting."
+                            .into(),
+                    }),
+                    Err(e) => Err(WarpError::AdapterError {
+                        chain: self.chain_name.clone(),
+                        reason: format!("bridgeMint sim failed (key also missing): {}", e),
+                    }),
+                }
+            }
         }
     }
 
