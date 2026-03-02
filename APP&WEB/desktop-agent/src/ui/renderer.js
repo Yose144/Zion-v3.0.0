@@ -1151,15 +1151,19 @@ function colorizeConsoleLine(raw) {
   }
 
   // ── XMRig accepted: "accepted 42/0 (+1) diff 256 [38 ms] (100.0%)" ──
-  m = raw.match(/accepted\s+(\d+)\/(\d+)\s+\(\+1\)\s+diff\s+([\d.]+[TGMK]?)\s+\[([^\]]+)\]\s+\(([\d.]+)%\)/i);
+  // Rust miner event: "accepted 42/0 (+1) diff 256 (100.0%)" — no latency
+  m = raw.match(/accepted\s+(\d+)\/(\d+)\s+\(\+1\)\s+diff\s+([\d.]+[TGMK]?)(?:\s+\[([^\]]+)\])?\s+\(([\d.]+)%\)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-accepted">accepted</span> <span class="mc-hr">${m[1]}</span>/<span class="mc-rejected">${m[2]}</span> <span class="mc-ok">(+1)</span> diff <span class="mc-diff">${m[3]}</span> <span class="mc-ts">[${m[4]}]</span> <span class="mc-info">(${m[5]}%)</span>`, _cls: ' mc-highlight' };
+    const latencyPart = m[4] ? ` <span class="mc-ts">[${m[4]}]</span>` : '';
+    return { html: `${tsHtml}<span class="mc-accepted">accepted</span> <span class="mc-hr">${m[1]}</span>/<span class="mc-rejected">${m[2]}</span> <span class="mc-ok">(+1)</span> diff <span class="mc-diff">${m[3]}</span>${latencyPart} <span class="mc-info">(${m[5]}%)</span>`, _cls: ' mc-highlight' };
   }
 
   // ── XMRig rejected: "rejected 42/1 (+1) \"reason\"" ──
-  m = raw.match(/rejected\s+(\d+)\/(\d+)\s+\(\+1\)\s+"([^"]+)"/i);
+  // Rust miner event: "rejected 42/1 — reason"
+  m = raw.match(/rejected\s+(\d+)\/(\d+)(?:\s+\(\+1\))?\s+(?:"([^"]+)"|[—–-]\s*(\S[^\n]*))/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-rejected">rejected</span> ${m[1]}/<span class="mc-rejected">${m[2]}</span> <span class="mc-err">(+1)</span> <span class="mc-err">"${esc(m[3])}"</span>` };
+    const reason = esc((m[3] || m[4] || '').trim());
+    return { html: `${tsHtml}<span class="mc-rejected">rejected</span> ${m[1]}/<span class="mc-rejected">${m[2]}</span> <span class="mc-err">${reason}</span>` };
   }
 
   // ── new job: "new job  height 1523  diff 256  algo cosmic_harmony_v3" ──
