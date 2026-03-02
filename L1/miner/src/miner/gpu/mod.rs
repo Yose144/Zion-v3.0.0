@@ -54,6 +54,7 @@ pub trait GpuMiner: Send + Sync {
         target: &[u8; 32],
         nonce_start: u64,
         batch_size: u64,
+        height: u64,
     ) -> Result<Option<(u64, [u8; 32])>>;
 
     /// Get device information

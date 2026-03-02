@@ -873,21 +873,11 @@ impl UniversalMiner {
             // ═══ Algorithm dispatch: GPU shader vs CPU fallback ═══
             let _batch_start = std::time::Instant::now();
             let result = if Self::is_gpu_mineable(active_algo, device_platform, job.height as u32) {
-                // Use GPU shader (fast path)
-                miner.mine_batch(&blob_bytes, &target_bytes, nonce_start, batch_size)
+                // Use GPU shader (fast path). For CosmicHarmony, the kernel handles both
+                // legacy (height < 100k) and memory-hard scratchpad (height >= 100k).
+                miner.mine_batch(&blob_bytes, &target_bytes, nonce_start, batch_size, job.height)
             } else {
                 // CPU fallback for algos GPU can't mine (RandomX, Yescrypt, etc.)
-                // Still runs on this thread so GPU thread isn't wasted
-                if matches!(active_algo, Algorithm::CosmicHarmony)
-                    && job.height
-                        >= zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT
-                {
-                    log::debug!(
-                        "GPU fallback: CHv3 memory-hard active at height {} (fork={}) → CPU path",
-                        job.height,
-                        zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT
-                    );
-                }
                 Self::cpu_fallback_batch(
                     active_algo,
                     &blob_bytes,
@@ -1040,13 +1030,11 @@ impl UniversalMiner {
 
     /// Check if an algorithm can run on GPU shader
     fn is_gpu_mineable(algo: Algorithm, platform: gpu::GpuPlatform, height: u32) -> bool {
+        let _ = height;
         match algo {
-            // CosmicHarmony v3 — GPU shader only before memory-hard fork activation.
-            // After fork, use CPU path until GPU scratchpad parity is implemented.
-            Algorithm::CosmicHarmony => {
-                (height as u64)
-                    < zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT
-            }
+            // CosmicHarmony v3/v4 — GPU implements both legacy and memory-hard scratchpad.
+            // The OpenCL kernel dispatches based on memory_hard flag passed from the host.
+            Algorithm::CosmicHarmony => true,
             // Ethash/Autolykos — Metal has shaders, CUDA/OpenCL planned
             Algorithm::Ethash | Algorithm::Autolykos => {
                 matches!(platform, gpu::GpuPlatform::Metal)

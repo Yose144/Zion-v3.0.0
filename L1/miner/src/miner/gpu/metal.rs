@@ -96,9 +96,11 @@ impl GpuMiner for MetalGpuMiner {
         target: &[u8; 32],
         nonce_start: u64,
         batch_size: u64,
+        height: u64,
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(all(feature = "metal", target_os = "macos"))]
         {
+            let _ = height; // Metal scratchpad not yet implemented
             let inner = self
                 .inner
                 .as_mut()
@@ -129,7 +131,7 @@ impl GpuMiner for MetalGpuMiner {
 
         #[cfg(not(all(feature = "metal", target_os = "macos")))]
         {
-            let _ = (header, target, nonce_start, batch_size);
+            let _ = (header, target, nonce_start, batch_size, height);
             Err(anyhow!("Metal GPU not available"))
         }
     }
