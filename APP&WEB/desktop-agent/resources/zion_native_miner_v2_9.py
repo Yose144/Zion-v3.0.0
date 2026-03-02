@@ -2928,7 +2928,8 @@ class ZionNativeMiner:
                                                 f"(count={chv3_gpu_verify_mismatches}, limit={chv3_gpu_mismatch_limit}). "
                                                 "Continuing in CPU-only mode."
                                             )
-                                    result_hash = verified_hash
+                                    # NOTE: do NOT overwrite result_hash with verified_hash here.
+                                    # GPU hash is submitted as-is; mismatches are logged above.
                                 except Exception as e:
                                     logger.warning(f"⚠️ CHv3 native verify failed for nonce {int(nonce):08x}: {e}")
 

@@ -59,13 +59,13 @@ __constant int KECCAK_PILN[24] = {
     15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
 };
 
+// PHI_POWERS_FP: matches L1/cosmic-harmony/src/algorithms_opt.rs PHI_POWERS_FP[16]
+// Values = floor(phi^k * 2^32) for k=0..15, same as Python cosmic_harmony_v3_python.py
 __constant ulong PHI_POWERS[16] = {
-    0x0000000100000000UL, 0x00000001A09E667FUL, 0x000000029E3779B9UL,
-    0x00000004428F5C28UL, 0x0000000700000000UL, 0x00000000B09E667FUL,
-    0x0000001200000000UL, 0x000000001D000000UL, 0x0000002F00000000UL,
-    0x0000004C00000000UL, 0x0000007B00000000UL, 0x000000C700000000UL,
-    0x0000014200000000UL, 0x0000020900000000UL, 0x0000034B00000000UL,
-    0x0000055400000000UL
+    4294967296UL,    6949403065UL,    11244370361UL,   18193773427UL,
+    29438143788UL,   47631917215UL,   77070061004UL,   124701978219UL,
+    201772039223UL,  326474017443UL,  528246056666UL,  854720074109UL,
+    1382966130776UL, 2237686204885UL, 3620652335660UL, 5858338540545UL
 };
 
 __constant uchar COSMIC_XOR_MASK[32] = {
@@ -180,61 +180,53 @@ void sha3_512(__private uchar *input, int input_len, __private uchar *output) {
     }
 }
 
+// golden_matrix: sum-based algorithm matching algorithms_opt.rs golden_matrix_opt
+// result[i] = (sum_{j=0..7} input[i*8+j] * PHI_POWERS[i+j]) >> 32, stored LE
 void golden_matrix(__private uchar *input, __private uchar *output) {
-    ulong rows[8];
     for (int i = 0; i < 8; i++) {
-        rows[i] = ((ulong*)input)[i];
-    }
-    
-    for (int i = 0; i < 8; i++) {
-        ulong phi = PHI_POWERS[i % 16];
-        rows[i] = rows[i] ^ (rows[(i + 1) % 8] * phi);
-        rows[i] = rotl64(rows[i], (i * 7) % 64);
-    }
-    
-    for (int i = 0; i < 8; i++) {
-        rows[i] ^= rows[(i + 3) % 8];
-        rows[i] += rows[(i + 5) % 8];
-    }
-    
-    for (int i = 0; i < 8; i++) {
-        ((ulong*)output)[i] = rows[i];
+        ulong sum = 0;
+        for (int j = 0; j < 8; j++) {
+            sum += (ulong)input[i*8+j] * PHI_POWERS[i+j];
+        }
+        ulong val = sum >> 32;
+        output[i*8+0] = (uchar)(val);
+        output[i*8+1] = (uchar)(val >>  8);
+        output[i*8+2] = (uchar)(val >> 16);
+        output[i*8+3] = (uchar)(val >> 24);
+        output[i*8+4] = (uchar)(val >> 32);
+        output[i*8+5] = (uchar)(val >> 40);
+        output[i*8+6] = (uchar)(val >> 48);
+        output[i*8+7] = (uchar)(val >> 56);
     }
 }
 
+// cosmic_fusion: Keccak-256 + static XOR mask (4 rounds) then SHA3-512
+// Matches cosmic_harmony_v3_python.py cosmic_fusion() — the pool-validated reference
+// Input: 64 bytes (only first 32 used); Output: 32 bytes
 void cosmic_fusion(__private uchar *input, __private uchar *output) {
-    ulong state[8];
-    for (int i = 0; i < 8; i++) {
-        state[i] = ((ulong*)input)[i];
-    }
-    
-    for (int round = 0; round < 7; round++) {
-        for (int i = 0; i < 8; i++) {
-            state[i] ^= GOLDEN_RATIO;
-            state[i] = rotl64(state[i], 13);
-            state[i] += state[(i + 1) % 8];
+    uchar state[32];
+    for (int i = 0; i < 32; i++) state[i] = input[i];
+
+    for (int round = 0; round < 4; round++) {
+        // kin = state[0..32] || round_byte  (33 bytes)
+        uchar kin[33];
+        for (int i = 0; i < 32; i++) kin[i] = state[i];
+        kin[32] = (uchar)round;
+
+        // intermediate = Keccak-256(kin)  (0x01 padding, rate=136)
+        uchar intermediate[32];
+        keccak256(kin, 33, intermediate);
+
+        // state[i] = intermediate[i] ^ COSMIC_XOR_MASK[i]
+        for (int i = 0; i < 32; i++) {
+            state[i] = intermediate[i] ^ COSMIC_XOR_MASK[i];
         }
-        
-        ulong temp = state[0];
-        for (int i = 0; i < 7; i++) {
-            state[i] ^= state[i + 1];
-        }
-        state[7] ^= temp;
     }
-    
-    ulong final_state[4];
-    final_state[0] = state[0] ^ state[4];
-    final_state[1] = state[1] ^ state[5];
-    final_state[2] = state[2] ^ state[6];
-    final_state[3] = state[3] ^ state[7];
-    
-    for (int i = 0; i < 4; i++) {
-        ((ulong*)output)[i] = final_state[i];
-    }
-    
-    for (int i = 0; i < 32; i++) {
-        output[i] ^= COSMIC_XOR_MASK[i];
-    }
+
+    // final = SHA3-512(state[0..32]) → take first 32 bytes  (0x06 padding, rate=72)
+    uchar final64[64];
+    sha3_512(state, 32, final64);
+    for (int i = 0; i < 32; i++) output[i] = final64[i];
 }
 
 // ============================================================================
