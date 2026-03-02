@@ -29,6 +29,7 @@ pub mod server;
 pub mod state;
 pub mod types;
 pub mod validator;
+pub mod watcher;
 pub mod xp_bridge;
 
 pub use config::WarpConfig;
@@ -40,6 +41,7 @@ pub use protocol::{DepositProof, MintInstruction, WarpMessage};
 pub use registry::ChainRegistry;
 pub use router::WarpRouter;
 pub use server::{WarpState, create_router as create_api_router};
+pub use watcher::WarpWatcher;
 pub use state::TransferStateMachine;
 pub use types::{Asset, ChainFamily, ChainId, WarpStatus, WarpTransfer};
 pub use validator::WarpValidatorSet;
