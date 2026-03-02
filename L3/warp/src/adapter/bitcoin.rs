@@ -1,8 +1,10 @@
 use crate::adapter::ChainAdapter;
+use crate::btc_signer::BtcSigner;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
 use crate::types::ChainFamily;
 use async_trait::async_trait;
+use bitcoin::Network;
 use serde::Deserialize;
 use tracing::{debug, info, warn};
 
@@ -189,16 +191,38 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        // Bitcoin HTLC: preimage reveal TX — requires signing key (D-04)
-        // This is the outbound side: we send BTC from HTLC back, or
-        // unlock on ZION side. Full HTLC flow is separate module.
-        Err(WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: format!(
-                "HTLC signing (D-04) pending — would unlock {} sats for {}",
-                instruction.amount_dest_atomic, instruction.recipient
-            ),
-        })
+        let amount_sats = instruction.amount_dest_atomic as u64;
+
+        // Attempt to load the relay key from env
+        let network_str = std::env::var("BITCOIN_NETWORK").unwrap_or_else(|_| "mainnet".into());
+        let network = match network_str.as_str() {
+            "testnet" => Network::Testnet,
+            "signet"  => Network::Signet,
+            "regtest" => Network::Regtest,
+            _         => Network::Bitcoin,
+        };
+
+        let signer = match BtcSigner::from_env() {
+            Ok(s) => s,
+            Err(_) => {
+                // No key set — run a balance check as dry-run verification
+                return Err(WarpError::AdapterError {
+                    chain: "bitcoin".into(),
+                    reason: format!(
+                        "WARP_BTC_RELAY_KEY not set — cannot send {} sats to {}. \
+                         Set the env var with a funded P2WPKH relay wallet WIF key.",
+                        amount_sats, instruction.recipient
+                    ),
+                });
+            }
+        };
+
+        info!(
+            "[WARP][bitcoin] execute_mint: {} sats → {} (relay: {})",
+            amount_sats, instruction.recipient, signer.address()
+        );
+
+        signer.send_btc(&self.client, &self.api_url, &instruction.recipient, amount_sats).await
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
