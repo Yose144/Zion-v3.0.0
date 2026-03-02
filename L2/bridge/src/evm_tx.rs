@@ -12,7 +12,6 @@
 use anyhow::{anyhow, Context, Result};
 use k256::{
     ecdsa::{signature::hazmat::PrehashSigner, RecoveryId, Signature, SigningKey},
-    elliptic_curve::sec1::ToEncodedPoint as _,
 };
 use sha3::{Digest, Keccak256};
 
@@ -118,6 +117,84 @@ pub fn encode_submit_lock_proof(
     data.extend_from_slice(l1_sender_bytes);
     if l1_sender_bytes.len() < padded_len {
         data.extend(std::iter::repeat(0u8).take(padded_len - l1_sender_bytes.len()));
+    }
+
+    Ok(data)
+}
+
+/// Compute keccak256("confirmBurnRelease(bytes32,address,uint256,string)")
+/// and return the first 4 bytes as a function selector.
+pub fn confirm_burn_release_selector() -> [u8; 4] {
+    let mut h = Keccak256::new();
+    h.update(b"confirmBurnRelease(bytes32,address,uint256,string)");
+    let digest = h.finalize();
+    [digest[0], digest[1], digest[2], digest[3]]
+}
+
+/// ABI-encode `confirmBurnRelease(bytes32,address,uint256,string)`.
+///
+/// Matches ZIONBridge.sol:
+///   confirmBurnRelease(bytes32 burnId, address evmBurner, uint256 amount, string l1Recipient)
+///
+/// # Parameters
+/// - `burn_id`      — 32-byte burn ID (keccak256 of the burn_id string if not already bytes32)
+/// - `evm_burner`   — EVM address "0x..." (20 bytes)
+/// - `amount_wei`   — decimal string, e.g. "5000000000000000000"
+/// - `l1_recipient` — bech32 ZION L1 address (dynamic string)
+pub fn encode_confirm_burn_release(
+    burn_id: &[u8; 32],
+    evm_burner: &str,
+    amount_wei: &str,
+    l1_recipient: &str,
+) -> Result<Vec<u8>> {
+    // Parse evm_burner address (20 bytes)
+    let burner_hex = evm_burner.trim_start_matches("0x");
+    if burner_hex.len() != 40 {
+        return Err(anyhow!("Invalid EVM burner address length: {}", evm_burner));
+    }
+    let burner_bytes = hex::decode(burner_hex)
+        .with_context(|| format!("Invalid burner hex: {}", evm_burner))?;
+
+    // Parse amount as u128
+    let amount_u128: u128 = amount_wei
+        .parse()
+        .with_context(|| format!("Invalid amount: {}", amount_wei))?;
+
+    // Static part (4 slots × 32 bytes) + dynamic string
+    let l1_recipient_bytes = l1_recipient.as_bytes();
+    let padded_len = (l1_recipient_bytes.len() + 31) / 32 * 32;
+
+    let mut data = Vec::with_capacity(4 + 4 * 32 + 32 + padded_len);
+
+    // 4-byte selector
+    data.extend_from_slice(&confirm_burn_release_selector());
+
+    // Slot 0: bytes32 burnId (already 32 bytes)
+    data.extend_from_slice(burn_id);
+
+    // Slot 1: address evmBurner (left-pad to 32 bytes: 12 zeros + 20 addr bytes)
+    data.extend_from_slice(&[0u8; 12]);
+    data.extend_from_slice(&burner_bytes);
+
+    // Slot 2: uint256 amount (big-endian 32 bytes)
+    let mut slot2 = [0u8; 32];
+    slot2[16..32].copy_from_slice(&amount_u128.to_be_bytes());
+    data.extend_from_slice(&slot2);
+
+    // Slot 3: string offset = 4 * 32 = 128 = 0x80
+    let offset: u64 = 4 * 32;
+    let mut slot3 = [0u8; 32];
+    slot3[24..32].copy_from_slice(&offset.to_be_bytes());
+    data.extend_from_slice(&slot3);
+
+    // Dynamic section: string length + string data (padded to 32-byte boundary)
+    let mut len_slot = [0u8; 32];
+    let slen = l1_recipient_bytes.len() as u64;
+    len_slot[24..32].copy_from_slice(&slen.to_be_bytes());
+    data.extend_from_slice(&len_slot);
+    data.extend_from_slice(l1_recipient_bytes);
+    if l1_recipient_bytes.len() < padded_len {
+        data.extend(std::iter::repeat(0u8).take(padded_len - l1_recipient_bytes.len()));
     }
 
     Ok(data)
@@ -359,6 +436,28 @@ mod tests {
         let hash = format!("0x{}", "ab".repeat(32));
         let result = hash_to_bytes32(&hash);
         assert_eq!(result, [0xabu8; 32]);
+    }
+
+    #[test]
+    fn test_confirm_burn_release_selector() {
+        let sel = confirm_burn_release_selector();
+        assert_eq!(sel.len(), 4);
+        println!("confirmBurnRelease selector: {}", hex::encode(sel));
+    }
+
+    #[test]
+    fn test_encode_confirm_burn_release_length() {
+        let burn_id = hash_to_bytes32("burn:abc123");
+        let calldata = encode_confirm_burn_release(
+            &burn_id,
+            "0xdde17506bc2d2dce1d594bd1d85b0babb389d186",
+            "1000000000000000000",
+            "zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5",
+        )
+        .unwrap();
+        // 4 (selector) + 4*32 (static slots) + 32 (string length) + padded string
+        assert!(calldata.len() >= 4 + 4 * 32 + 32);
+        println!("confirmBurnRelease calldata: 0x{}", hex::encode(&calldata));
     }
 
     #[test]
