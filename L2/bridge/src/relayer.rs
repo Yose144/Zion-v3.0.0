@@ -6,7 +6,7 @@
 use crate::config::BridgeConfig;
 use crate::config::ValidatorConfig;
 use crate::evm_rpc::EvmHttpClient;
-use crate::evm_tx::{build_and_sign_eip1559_tx, derive_evm_address, encode_submit_lock_proof, hash_to_bytes32};
+use crate::evm_tx::{build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release, encode_submit_lock_proof, hash_to_bytes32};
 use crate::types::{EvmBurnEvent, L1LockEvent};
 use anyhow::Result;
 use std::sync::Arc;
@@ -351,21 +351,116 @@ impl Relayer {
             }
         }
 
-        // Load validator key (kept in Zeroizing memory, wiped on drop)
-        let _key = load_validator_key(&self.config.validator).map_err(|e| {
+        // ── Step 3: Submit confirmBurnRelease() to ZIONBridge EVM contract ──
+        let key = load_validator_key(&self.config.validator).map_err(|e| {
             anyhow::anyhow!("Failed to load validator key: {}", e)
         })?;
+        let validator_address = derive_evm_address(key.as_str())?;
+        info!("   Validator address: {}", validator_address);
 
-        // TODO[L2-ankr]: Encode and submit confirmBurnRelease() via eth_sendRawTransaction.
-        //
-        // Full implementation steps:
-        //   1. ABI-encode: confirmBurnRelease(burnId, evmBurner, amount, l1Recipient)
-        //   2. Sign transaction with validator key (secp256k1 + RLP encoding)
-        //   3. ankr.send_raw_transaction(&burn.evm_chain, &raw_tx).await?
+        // ABI-encode confirmBurnRelease(bytes32 burnId, address evmBurner, uint256 amount, string l1Recipient)
+        let burn_id_bytes = hash_to_bytes32(&burn.burn_id);
+        let calldata = encode_confirm_burn_release(
+            &burn_id_bytes,
+            &burn.evm_burner,
+            &burn.amount_wzion,
+            &burn.l1_recipient,
+        )?;
+        let calldata_hex = format!("0x{}", hex::encode(&calldata));
+
         info!(
-            "   ✅ Burn release logged — burn_id: {}, L1 TX: {}",
-            burn.burn_id, l1_tx_hash,
+            "   confirmBurnRelease calldata: {} bytes — bridge: {}",
+            calldata.len(),
+            chain_config.bridge_contract_address
         );
+
+        // EVM HTTP client
+        let rpc_url = chain_config
+            .rpc_url
+            .as_deref()
+            .unwrap_or("https://base-sepolia.publicnode.com");
+        let evm = EvmHttpClient::from_rpc_url(rpc_url);
+
+        // Get nonce + gas params
+        let nonce = evm.get_nonce(&validator_address).await
+            .map_err(|e| anyhow::anyhow!("confirmBurnRelease: get_nonce failed: {}", e))?;
+        let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000);
+        let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000);
+        let max_fee_cap = MAX_GAS_GWEI * 1_000_000_000;
+        let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);
+        let max_priority = priority_fee.min(max_fee);
+
+        let gas_estimate = evm
+            .estimate_gas(&validator_address, &chain_config.bridge_contract_address, &calldata_hex)
+            .await
+            .unwrap_or(150_000);
+        let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
+
+        info!(
+            "   Gas: nonce={} base_fee={} gwei priority={} gwei estimate={} limit={}",
+            nonce,
+            base_fee / 1_000_000_000,
+            priority_fee / 1_000_000_000,
+            gas_estimate,
+            gas_limit,
+        );
+
+        // Build + sign + submit EIP-1559 TX
+        let raw_tx = build_and_sign_eip1559_tx(
+            chain_config.evm_chain_id,
+            nonce,
+            max_priority,
+            max_fee,
+            gas_limit,
+            &chain_config.bridge_contract_address,
+            &calldata,
+            key.as_str(),
+        )?;
+
+        let cbr_tx_hash = evm.send_raw_transaction(&raw_tx).await
+            .map_err(|e| anyhow::anyhow!("confirmBurnRelease TX submit failed: {}", e))?;
+
+        info!(
+            "   ✅ confirmBurnRelease TX submitted! hash: {} | chain: {} | burn_id: {} | L1 TX: {}",
+            cbr_tx_hash,
+            chain_config.name,
+            burn.burn_id,
+            l1_tx_hash,
+        );
+
+        // Poll for receipt in background
+        tokio::spawn({
+            let evm_url = rpc_url.to_string();
+            let tx = cbr_tx_hash.clone();
+            let chain_name = chain_config.name.clone();
+            let burn_id = burn.burn_id.clone();
+            async move {
+                let evm2 = EvmHttpClient::from_rpc_url(&evm_url);
+                for attempt in 1..=20 {
+                    tokio::time::sleep(std::time::Duration::from_secs(6)).await;
+                    match evm2.get_receipt(&tx).await {
+                        Ok(Some(receipt)) => {
+                            let status = receipt["status"].as_str().unwrap_or("0x0");
+                            if status == "0x1" {
+                                info!("   🟢 confirmBurnRelease CONFIRMED on {} (attempt {}) — burn_id: {} tx: {}",
+                                    chain_name, attempt, burn_id, tx);
+                            } else {
+                                error!("   🔴 confirmBurnRelease REVERTED on {} (attempt {}) — burn_id: {} tx: {}",
+                                    chain_name, attempt, burn_id, tx);
+                            }
+                            return;
+                        }
+                        Ok(None) => {
+                            if attempt < 20 { continue; }
+                            warn!("   ⏱️ confirmBurnRelease receipt not found after 20 attempts — tx: {}", tx);
+                        }
+                        Err(e) => {
+                            warn!("   Receipt poll error (attempt {}): {}", attempt, e);
+                        }
+                    }
+                }
+            }
+        });
 
         Ok(())
     }
