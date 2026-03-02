@@ -5,6 +5,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+/// @dev Minimal interface to ZIONStaking — used for stake-weighted voting
+interface IZIONStaking {
+    function votingWeight(address account) external view returns (uint256);
+}
+
 /**
  * @title ZIONGovernance
  * @dev On-chain governance system for ZION blockchain
@@ -12,8 +17,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  */
 contract ZIONGovernance is Ownable, ReentrancyGuard {
     IERC20 public zionToken;
-    
-    // Governance parameters
+    /// @notice Optional: ZIONStaking contract. When set, voting power includes staked wZION.
+    IZIONStaking public stakingContract;
     uint256 public proposalThreshold = 1_000_000 * 1e18;  // 1M ZION to propose
     uint256 public votingPeriod = 7 days;
     uint256 public timelockDuration = 2 days;
@@ -94,9 +99,29 @@ contract ZIONGovernance is Ownable, ReentrancyGuard {
         uint256 quorumPercentage
     );
     
-    constructor(address _zionToken) {
+    constructor(address _zionToken) Ownable(msg.sender) {
         require(_zionToken != address(0), "Invalid token address");
         zionToken = IERC20(_zionToken);
+    }
+
+    /**
+     * @notice Set or update the staking contract address.
+     *         Once set, voting power = wZION balance + staked wZION.
+     * @param _staking ZIONStaking contract address, or address(0) to disable.
+     */
+    function setStakingContract(address _staking) external onlyOwner {
+        stakingContract = IZIONStaking(_staking);
+    }
+
+    /**
+     * @dev Combined voting power: raw wZION holdings + staked wZION (if staking set).
+     */
+    function _votingPower(address account) internal view returns (uint256) {
+        uint256 power = zionToken.balanceOf(account);
+        if (address(stakingContract) != address(0)) {
+            power += stakingContract.votingWeight(account);
+        }
+        return power;
     }
     
     /**
@@ -118,7 +143,7 @@ contract ZIONGovernance is Ownable, ReentrancyGuard {
         bytes[] memory _calldatas
     ) external returns (uint256) {
         require(
-            zionToken.balanceOf(msg.sender) >= proposalThreshold,
+            _votingPower(msg.sender) >= proposalThreshold,
             "Insufficient ZION to propose"
         );
         require(
@@ -219,7 +244,7 @@ contract ZIONGovernance is Ownable, ReentrancyGuard {
         
         require(!receipt.hasVoted, "Already voted");
         
-        uint256 votes = zionToken.balanceOf(_voter);
+        uint256 votes = _votingPower(_voter);
         require(votes > 0, "No voting power");
         
         if (_support == VoteType.Against) {
@@ -296,7 +321,7 @@ contract ZIONGovernance is Ownable, ReentrancyGuard {
         Proposal storage proposal = proposals[_proposalId];
         require(
             msg.sender == proposal.proposer ||
-            zionToken.balanceOf(proposal.proposer) < proposalThreshold,
+            _votingPower(proposal.proposer) < proposalThreshold,
             "Proposer above threshold"
         );
         
