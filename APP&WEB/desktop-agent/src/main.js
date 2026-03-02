@@ -878,8 +878,8 @@ const LOG_PATH = path.join(USER_DATA_PATH, 'miner.log');
 const WALLETS_PATH = path.join(USER_DATA_PATH, 'wallets');
 const STATS_PATH = path.join(USER_DATA_PATH, 'miner_stats.json');
 const STATS_INTERVAL_SEC = (() => {
-  const raw = Number(String(process.env.ZION_STATS_INTERVAL_SEC || '10').trim());
-  if (!Number.isFinite(raw) || raw < 2) return 10;
+  const raw = Number(String(process.env.ZION_STATS_INTERVAL_SEC || '5').trim());
+  if (!Number.isFinite(raw) || raw < 2) return 5;
   return Math.floor(raw);
 })();
 const STATS_TICK_MS = STATS_INTERVAL_SEC * 1000;
@@ -5204,6 +5204,31 @@ function parseMinerOutput(output) {
     minerStats.rejected = parseInt(sharesPanelMatch[2]);
     minerStats.shares = minerStats.accepted + minerStats.rejected;
     minerStats.accept_rate = parseFloat(sharesPanelMatch[3]);
+  }
+
+  // ─── T-Rex dashboard: " HASHRATE : TOTAL 3.14 MH/s | CPU 0.00 H/s | GPU 3.14 MH/s" ───
+  const trexHrMatch = output.match(/HASHRATE\s*:\s*TOTAL\s+([\d.]+)\s*([kKmMgGtT]?H\/s)\s*\|\s*CPU\s+([\d.]+)\s*([kKmMgGtT]?H\/s)\s*\|\s*GPU\s+([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
+  if (trexHrMatch) {
+    const toHs = (v, u) => { const n = parseFloat(v); const s = u.toLowerCase(); return n * (s.startsWith('th') ? 1e12 : s.startsWith('gh') ? 1e9 : s.startsWith('mh') ? 1e6 : s.startsWith('kh') ? 1e3 : 1); };
+    minerStats.hashrate     = toHs(trexHrMatch[1], trexHrMatch[2]);
+    minerStats.hashrate_10s = minerStats.hashrate;
+    minerStats.hashrate_cpu = toHs(trexHrMatch[3], trexHrMatch[4]);
+    minerStats.hashrate_gpu = toHs(trexHrMatch[5], trexHrMatch[6]);
+  }
+
+  // ─── T-Rex dashboard: " SHARES : ACCEPTED 5 | REJECTED 0 | SENT 5 | ACC 100.0%" ───
+  const trexSharesMatch = output.match(/SHARES\s*:\s*ACCEPTED\s+(\d+)\s*\|\s*REJECTED\s+(\d+)\s*\|\s*SENT\s+(\d+)\s*\|\s*ACC\s+([\d.]+)%/i);
+  if (trexSharesMatch) {
+    minerStats.accepted    = parseInt(trexSharesMatch[1]);
+    minerStats.rejected    = parseInt(trexSharesMatch[2]);
+    minerStats.shares      = parseInt(trexSharesMatch[3]);
+    minerStats.accept_rate = parseFloat(trexSharesMatch[4]);
+  }
+
+  // ─── T-Rex dashboard: " UPTIME : 00:05:42 | GPU: ON | JOB: abcdef" ───
+  const trexUptimeMatch = output.match(/UPTIME\s*:\s*([\d:]+)\s*\|\s*GPU:\s*(\w+)\s*\|\s*JOB:\s*(\S*)/i);
+  if (trexUptimeMatch) {
+    minerStats.uptime_display = trexUptimeMatch[1];
   }
 
   // Old format: "DIFF    pool: 256   best: 1024   height: 1523   blocks: 0"

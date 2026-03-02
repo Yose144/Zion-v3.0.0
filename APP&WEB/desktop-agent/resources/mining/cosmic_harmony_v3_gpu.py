@@ -416,6 +416,7 @@ class CosmicHarmonyV3GPU:
         self.last_kernel_ms: float = 0.0
         self.last_global_size: int = 0
         self._warned_header_trim = False
+        self._last_header_key: bytes = b''  # cached to skip redundant GPU header uploads
     
     @staticmethod
     def list_devices() -> List[GpuDevice]:
@@ -466,11 +467,14 @@ class CosmicHarmonyV3GPU:
         header = np.zeros(80, dtype=np.uint8)
         header[:len(header_prefix)] = list(header_prefix)
 
-        # Upload to GPU
-        cl.enqueue_copy(self.queue, self.header_buf, header)
+        # Upload header only when job changes (every 500k-batch would waste GPU bandwidth)
+        header_key = bytes(header)
+        if header_key != self._last_header_key:
+            cl.enqueue_copy(self.queue, self.header_buf, header)
+            self._last_header_key = header_key
 
-        # Reset solution count
-        cl.enqueue_copy(self.queue, self.solution_count_buf, self._zero_u32, is_blocking=True)
+        # Reset solution count — non-blocking: queue ordering guarantees it runs before kernel
+        cl.enqueue_copy(self.queue, self.solution_count_buf, self._zero_u32, is_blocking=False)
 
         # Normalize target to 32-bit, matching pool semantics (state0 vs u32 target).
         if isinstance(target, (bytes, bytearray)):
@@ -495,6 +499,7 @@ class CosmicHarmonyV3GPU:
         global_size = (adjusted_batch,)
         local_size = (max_wg,)
 
+        t0 = time.perf_counter()
         self.kernel_mine(
             self.queue,
             global_size,
@@ -508,8 +513,6 @@ class CosmicHarmonyV3GPU:
             self.found_hash_buf,
             self.solution_count_buf,
         )
-
-        t0 = time.perf_counter()
         self.queue.finish()
         kernel_ms = (time.perf_counter() - t0) * 1000.0
         self.last_batch_hashes = int(adjusted_batch)
