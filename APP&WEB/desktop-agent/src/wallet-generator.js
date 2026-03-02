@@ -223,8 +223,8 @@ class ZionWalletGenerator {
 
     // Canonical chain format
     if (a.startsWith('zion1')) {
-      if (a.length < 42 || a.length > 90) return 'invalid';
-      const validChars = /^[0-9acdefghjklmnpqrstuvwxyz]+$/;
+      if (a.length < 40 || a.length > 90) return 'invalid';
+      const validChars = /^[0-9a-z]+$/;
       const data = a.slice(5);
       if (!data || !validChars.test(data)) return 'invalid';
       return 'zion1';
