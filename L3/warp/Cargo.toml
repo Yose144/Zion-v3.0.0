@@ -28,8 +28,10 @@ async-trait = "0.1"
 rand = "0.8"
 anyhow = "1"
 
-# EVM support (optional, for real adapter impl)
-# ethers = { version = "2", features = ["legacy"], optional = true }
+# EVM transaction signing (secp256k1 + keccak256 + RLP)
+k256 = { version = "0.13", features = ["ecdsa"] }
+sha3 = "0.10"
+rlp = "0.5"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
@@ -41,4 +43,3 @@ path = "src/main.rs"
 
 [features]
 default = []
-# evm = ["ethers"]
