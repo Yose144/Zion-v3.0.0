@@ -4994,18 +4994,16 @@
               ⚠ No wallet configured. Go to <strong>Overview</strong> tab → set your active wallet address first.
             </div>
 
-            <div class="wallet-card" style="margin-bottom:16px;padding:12px 16px;">
-              <div class="wallet-kicker">SENDING FROM</div>
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;flex-wrap:wrap;">
-                <span id="send-from-display" style="font-family:monospace;font-size:12px;color:rgba(255,255,255,.75);word-break:break-all;">—</span>
-                <button class="btn btn-ghost btn-sm" id="send-refresh-from-btn" style="flex-shrink:0;font-size:10px;padding:4px 10px;">
-                  <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg> Refresh
-                </button>
+            <!-- Compact from-address row -->
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.07);border-radius:12px;margin-bottom:14px;flex-wrap:wrap;">
+              <div style="min-width:0;">
+                <span style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.35);font-weight:600;">From</span>
+                <div id="send-from-display" style="font-family:monospace;font-size:11px;color:rgba(255,255,255,.7);word-break:break-all;margin-top:2px;">—</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;">Balance: <span id="send-from-balance" style="color:var(--zion-gold);font-family:monospace;">—</span> <span id="send-from-balance-status" style="font-size:9px;color:rgba(255,255,255,.2);"></span></div>
               </div>
-              <div style="margin-top:5px;font-size:11px;color:rgba(255,255,255,.35);">
-                Balance: <span id="send-from-balance" style="color:var(--zion-gold);font-family:monospace;">—</span>
-                <span id="send-from-balance-status" style="margin-left:6px;font-size:10px;color:rgba(255,255,255,.25);"></span>
-              </div>
+              <button class="btn btn-ghost btn-sm" id="send-refresh-from-btn" style="flex-shrink:0;font-size:10px;padding:3px 9px;">
+                <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+              </button>
             </div>
 
             <div class="send-grid">
@@ -5019,15 +5017,15 @@
               </div>
             </div>
             <div class="form-group form-group-mt-14">
-              <label>Purpose (optional)</label>
-              <input type="text" id="send-purpose" placeholder="e.g. payout, tip, transfer" />
-            </div>
-            <div class="form-group form-group-mt-14">
               <label style="display:flex;align-items:center;gap:6px;">
                 Memo
                 <span style="font-size:10px;color:rgba(255,255,255,.4);font-weight:400;">(required for bridge: BRIDGE:base:0x…)</span>
               </label>
               <input type="text" id="send-memo" placeholder="BRIDGE:base:0xYourEvmAddress" class="input-mono" style="font-size:12px;" />
+            </div>
+            <div class="form-group form-group-mt-14">
+              <label>Purpose <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,.35);">(optional)</span></label>
+              <input type="text" id="send-purpose" placeholder="e.g. payout, tip, transfer" />
             </div>
             <button class="btn btn-primary btn-mt-8" id="send-tx-btn">
               <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
