@@ -1,16 +1,15 @@
-// Cosmic Harmony v3 - OpenCL Kernel  (PERF-OPT: unrolled + vectorized)
-// Pipeline: Keccak-256(88B) -> SHA3-512(32B) -> GoldenMatrix -> CosmicFusion -> 32B hash
+// Cosmic Harmony v3 - OpenCL Kernel  (PERF-OPT: unrolled + vectorized + scratchpad)
+// Pipeline legacy  (height < 100k): Keccak-256(88B) -> SHA3-512 -> GoldenMatrix -> CosmicFusion
+// Pipeline memory-hard (height >= 100k): ...GoldenMatrix -> MemoryHardScratchpad -> CosmicFusion
 //
 // Pool verification:  hash[0..4] as u32-LE  <=  target_u32
 //
-// Optimisations vs baseline:
-//   1. keccak_f1600 outer loop unrolled (#pragma unroll 4) - fast AMD JIT, low register pressure
-//   2. Rho+Pi inlined (no PILN/ROTC table lookups, no loop)
-//   3. Chi inlined per row macro (5 independent data-parallel rows)
-//   4. Byte-to-word packing via LOAD_U64_LE macro (single instruction sequence)
-//   5. Golden Matrix column sums unrolled
-//   6. Build flags: -cl-mad-enable -cl-fast-relaxed-math (set on host side)
-//   7. Default batch size bumped to 16M on host side
+// Optimisations:
+//   1. keccak_f1600 outer loop unrolled (#pragma unroll 4)
+//   2. Rho+Pi inlined, Chi inlined per row macro
+//   3. LOAD_U64_LE / STORE_U64_LE byte-packing macros
+//   4. Scratchpad: 512 KiB/thread in global memory, batch limited to ~4096 when active
+//   5. Build flags: -cl-mad-enable -cl-fast-relaxed-math
 
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_int64_extended_atomics : enable
@@ -248,6 +247,245 @@ void cosmic_fusion(const ulong *gm_words, uchar *output) {
 }
 
 // ============================================================================
+// SHA3-512 helpers for memory-hard scratchpad
+// ============================================================================
+
+// SHA3-512(state[64] ++ counter_le[8]) — exactly 1 rate block (72 bytes).
+// Used in init_scratchpad: output → pad chunk + new state.
+void sha3_512_state_counter(const uchar state[64], ulong counter, uchar out64[64]) {
+    ulong st[25];
+    #pragma unroll 25
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    // Absorb 64B state (8 words) + 8B counter (1 word) = 72B = 1 full rate block
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) st[i] = LOAD_U64_LE(state, i*8);
+    st[8] = counter;  // counter.to_le_bytes() absorbed as LE word
+    keccak_f1600(st);
+    // Full rate block → padding starts new block: 0x06 at byte 0, 0x80 at byte 71
+    st[0] ^= 0x06UL;
+    st[8] ^= 0x8000000000000000UL;
+    keccak_f1600(st);
+    // Squeeze 64 bytes (8 words)
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) STORE_U64_LE(out64, i*8, st[i]);
+}
+
+// Keccak-256(acc[64] ++ chunk[64] ++ r_val[8]) — exactly 1 rate block (136 bytes).
+// Domain = 0x01 (Keccak, not SHA3). Used in random_read_mix per-round.
+void keccak256_136_mix(const uchar acc[64], const uchar chunk[64], ulong r_val, uchar out32[32]) {
+    ulong st[25];
+    #pragma unroll 25
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    // 17 words × 8 = 136 bytes = 1 full Keccak-256 rate block
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) st[i]    ^= LOAD_U64_LE(acc,   i*8);
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) st[8+i]  ^= LOAD_U64_LE(chunk, i*8);
+    st[16] ^= r_val;
+    keccak_f1600(st);
+    // Padding: 0 remaining bytes → 0x01 at word[0] bit 0, 0x80 at word[16] bit 63
+    st[0]  ^= 0x01UL;
+    st[16] ^= 0x8000000000000000UL;
+    keccak_f1600(st);
+    // Squeeze 32 bytes
+    STORE_U64_LE(out32,  0, st[0]);
+    STORE_U64_LE(out32,  8, st[1]);
+    STORE_U64_LE(out32, 16, st[2]);
+    STORE_U64_LE(out32, 24, st[3]);
+}
+
+// SHA3-512(acc[64] ++ pad_first[64] ++ pad_last[64]) = 192 bytes = 2 full + 48 partial.
+// Used as the final step of random_read_mix.
+void sha3_512_random_final(
+    const uchar acc[64],
+    __global const uchar* pad_first,   // pad[0..63]
+    __global const uchar* pad_last,    // pad[SCRATCHPAD_SIZE-64..]
+    uchar out64[64])
+{
+    ulong st[25];
+    #pragma unroll 25
+    for (int i = 0; i < 25; i++) st[i] = 0;
+
+    // Block 1 (bytes 0..71): acc[0..63](8w) + pad_first[0..7](1w) = 72 bytes
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) st[i] ^= LOAD_U64_LE(acc, i*8);
+    st[8] ^= LOAD_U64_LE(pad_first, 0);
+    keccak_f1600(st);
+
+    // Block 2 (bytes 72..143): pad_first[8..63](7w) + pad_last[0..15](2w) = 72 bytes
+    #pragma unroll 7
+    for (int i = 1; i < 8; i++) st[i-1] ^= LOAD_U64_LE(pad_first, i*8);
+    st[7] ^= LOAD_U64_LE(pad_last, 0);
+    st[8] ^= LOAD_U64_LE(pad_last, 8);
+    keccak_f1600(st);
+
+    // Partial (bytes 144..191): pad_last[16..63](6w) = 48 bytes → padding at byte 48
+    #pragma unroll 6
+    for (int i = 2; i < 8; i++) st[i-2] ^= LOAD_U64_LE(pad_last, i*8);
+    // SHA3 padding: 0x06 at byte 48 (word 6 byte 0), 0x80 at byte 71 (word 8 byte 7)
+    st[6] ^= 0x06UL;
+    st[8] ^= 0x8000000000000000UL;
+    keccak_f1600(st);
+
+    // Squeeze 64 bytes
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) STORE_U64_LE(out64, i*8, st[i]);
+}
+
+// ============================================================================
+// Memory-hard scratchpad  (512 KiB per thread, in global memory)
+// Mirrors Rust: cosmic-harmony/src/scratchpad.rs  memory_hard_transform()
+// ============================================================================
+
+#define CL_SCRATCHPAD_BYTES (512u * 1024u)  // 524288 bytes
+#define CL_BLOCK_SIZE       64u
+#define CL_BLOCK_COUNT      8192u           // SCRATCHPAD_BYTES / BLOCK_SIZE
+#define CL_PASSES           4u
+#define CL_RANDOM_READS     256u
+
+// Step 1: deterministic SHA3-512 chain initialises all 8192 × 64B blocks.
+void cl_init_scratchpad(__global uchar* pad, const uchar seed[64]) {
+    uchar state[64];
+    #pragma unroll 64
+    for (int i = 0; i < 64; i++) state[i] = seed[i];
+
+    for (uint ci = 0; ci < CL_BLOCK_COUNT; ci++) {
+        uchar block[64];
+        sha3_512_state_counter(state, (ulong)ci, block);
+        uint off = ci * CL_BLOCK_SIZE;
+        #pragma unroll 64
+        for (int j = 0; j < 64; j++) {
+            pad[off + j] = block[j];
+            state[j]     = block[j];
+        }
+    }
+}
+
+// mix_block: SHA3-512(current||prev||rand||pass||index) XOR'd into current block.
+// Input layout (208 bytes):
+//   current[0..63]  prev[0..63]  rand[0..63]  pass[8]  index[8]
+// SHA3-512 rate=72: 2 full blocks + 64 partial → 3 keccak calls.
+void cl_mix_block(
+    __global uchar* pad,
+    ulong cur_off, ulong prev_off, ulong rand_off,
+    ulong pass_val, ulong index_val)
+{
+    ulong st[25];
+    #pragma unroll 25
+    for (int i = 0; i < 25; i++) st[i] = 0;
+
+    // Block 1 (bytes 0..71): current[0..63](8w) + prev[0..7](1w)
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) st[i] ^= LOAD_U64_LE(pad, cur_off + (ulong)(i*8));
+    st[8] ^= LOAD_U64_LE(pad, prev_off);
+    keccak_f1600(st);
+
+    // Block 2 (bytes 72..143): prev[8..63](7w) + rand[0..15](2w)
+    #pragma unroll 7
+    for (int i = 1; i < 8; i++) st[i-1] ^= LOAD_U64_LE(pad, prev_off + (ulong)(i*8));
+    st[7] ^= LOAD_U64_LE(pad, rand_off);
+    st[8] ^= LOAD_U64_LE(pad, rand_off + 8UL);
+    keccak_f1600(st);
+
+    // Partial (bytes 144..207): rand[16..63](6w) + pass(8) + index(8) = 64 bytes
+    #pragma unroll 6
+    for (int i = 2; i < 8; i++) st[i-2] ^= LOAD_U64_LE(pad, rand_off + (ulong)(i*8));
+    st[6] ^= pass_val;
+    st[7] ^= index_val;
+    // Padding at byte 64 of this partial block: word 8 low=0x06 + high=0x80
+    st[8] ^= 0x8000000000000006UL;
+    keccak_f1600(st);
+
+    // XOR first 64 bytes (8 words) of hash result into current block
+    #pragma unroll 8
+    for (int j = 0; j < 8; j++) {
+        ulong existing = LOAD_U64_LE(pad, cur_off + (ulong)(j*8));
+        ulong result   = existing ^ st[j];
+        #pragma unroll 8
+        for (int b = 0; b < 8; b++)
+            pad[cur_off + (ulong)(j*8 + b)] = (uchar)(result >> (b*8));
+    }
+}
+
+// 4 sequential passes over the 8192-block scratchpad.
+// Even passes: forward; odd passes: backward.
+void cl_sequential_passes(__global uchar* pad) {
+    for (uint pass = 0; pass < CL_PASSES; pass++) {
+        if ((pass & 1u) == 0u) {
+            // Forward
+            for (ulong i = 0; i < (ulong)CL_BLOCK_COUNT; i++) {
+                ulong cur_off  = i * CL_BLOCK_SIZE;
+                ulong prev_off = (i == 0 ? (ulong)(CL_BLOCK_COUNT - 1) : (i - 1)) * CL_BLOCK_SIZE;
+                ulong idx_val  = LOAD_U64_LE(pad, cur_off);
+                ulong rand_idx = (idx_val ^ (ulong)pass ^ i) % (ulong)CL_BLOCK_COUNT;
+                cl_mix_block(pad, cur_off, prev_off, rand_idx * CL_BLOCK_SIZE,
+                             (ulong)pass, i);
+            }
+        } else {
+            // Backward
+            for (long ic = (long)(CL_BLOCK_COUNT - 1); ic >= 0; ic--) {
+                ulong i        = (ulong)ic;
+                ulong cur_off  = i * CL_BLOCK_SIZE;
+                ulong next_i   = (i + 1 == (ulong)CL_BLOCK_COUNT) ? 0UL : (i + 1);
+                ulong prev_off = next_i * CL_BLOCK_SIZE;
+                ulong idx_val  = LOAD_U64_LE(pad, cur_off);
+                ulong rand_idx = (idx_val ^ (ulong)pass ^ i) % (ulong)CL_BLOCK_COUNT;
+                cl_mix_block(pad, cur_off, prev_off, rand_idx * CL_BLOCK_SIZE,
+                             (ulong)pass, i);
+            }
+        }
+    }
+}
+
+// 256 pseudo-random reads with Keccak-256, then final SHA3-512.
+void cl_random_read_mix(const uchar seed[64], __global const uchar* pad, uchar out64[64]) {
+    uchar acc[64];
+    #pragma unroll 64
+    for (int i = 0; i < 64; i++) acc[i] = seed[i];
+
+    ulong pos = (LOAD_U64_LE(seed, 0)) % (ulong)CL_BLOCK_COUNT;
+
+    for (uint r = 0; r < CL_RANDOM_READS; r++) {
+        ulong chunk_off = pos * CL_BLOCK_SIZE;
+        // Copy 64-byte chunk from global to private
+        uchar chunk[64];
+        #pragma unroll 64
+        for (int j = 0; j < 64; j++) chunk[j] = pad[chunk_off + j];
+
+        uchar d[32];
+        keccak256_136_mix(acc, chunk, (ulong)r, d);
+
+        #pragma unroll 32
+        for (int i = 0; i < 32; i++) acc[i]    ^= d[i];
+        #pragma unroll 32
+        for (int i = 0; i < 32; i++) acc[32+i] += d[i];  // wrapping uchar add
+
+        ulong next_word = LOAD_U64_LE(d, 0);
+        pos = (next_word ^ pos ^ (ulong)r) % (ulong)CL_BLOCK_COUNT;
+    }
+
+    // Final SHA3-512(acc || pad[0..63] || pad[SCRATCHPAD-64..])
+    sha3_512_random_final(acc, pad, pad + (CL_SCRATCHPAD_BYTES - CL_BLOCK_SIZE), out64);
+}
+
+// Public entry: memory_hard_transform(golden_matrix_64B → 64B output for CosmicFusion)
+void cl_memory_hard_transform(const ulong gm_words[8], __global uchar* pad, ulong out_words[8]) {
+    // Convert golden-matrix 64B words to byte seed
+    uchar seed[64];
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) STORE_U64_LE(seed, i*8, gm_words[i]);
+
+    cl_init_scratchpad(pad, seed);
+    cl_sequential_passes(pad);
+
+    uchar result[64];
+    cl_random_read_mix(seed, pad, result);
+
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) out_words[i] = LOAD_U64_LE(result, i*8);
+}
+
+// ============================================================================
 // Main Kernel
 // ============================================================================
 
@@ -259,7 +497,9 @@ void cosmic_harmony_v3_mine(
     const uint  target_u32,
     __global ulong* results,
     __global uint*  result_count,
-    __global uchar* result_hash
+    __global uchar* result_hash,
+    const uint  memory_hard,          // 0 = legacy, 1 = scratchpad (height >= 100k)
+    __global uchar* scratchpad_buf    // [global_size × CL_SCRATCHPAD_BYTES], ignored when memory_hard=0
 ) {
     uint  tid   = get_global_id(0);
     ulong nonce = start_nonce + (ulong)tid;
@@ -285,7 +525,17 @@ void cosmic_harmony_v3_mine(
     golden_matrix(step2, step3);
 
     uchar final_hash[32];
-    cosmic_fusion(step3, final_hash);
+
+    if (memory_hard) {
+        // Height >= 100k: scratchpad phase between GoldenMatrix and CosmicFusion
+        __global uchar* my_pad = scratchpad_buf + (ulong)tid * (ulong)CL_SCRATCHPAD_BYTES;
+        ulong step4[8];
+        cl_memory_hard_transform(step3, my_pad, step4);
+        cosmic_fusion(step4, final_hash);
+    } else {
+        // Legacy: GoldenMatrix → CosmicFusion directly
+        cosmic_fusion(step3, final_hash);
+    }
 
     uint state0 = (uint)final_hash[0]
                 | ((uint)final_hash[1] <<  8)

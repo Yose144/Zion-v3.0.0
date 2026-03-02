@@ -106,7 +106,7 @@ pub fn run_benchmark(miner: &mut dyn GpuMiner, config: &AutoTuneConfig) -> Resul
 
         // Warmup
         for _ in 0..config.warmup_iterations {
-            let _ = miner.mine_batch(&header, &easy_target, 0, batch_size);
+            let _ = miner.mine_batch(&header, &easy_target, 0, batch_size, 0);
         }
 
         // Timed runs
@@ -116,7 +116,7 @@ pub fn run_benchmark(miner: &mut dyn GpuMiner, config: &AutoTuneConfig) -> Resul
         for i in 0..config.iterations {
             let nonce_start = (i as u64) * batch_size;
             let start = Instant::now();
-            let _ = miner.mine_batch(&header, &easy_target, nonce_start, batch_size);
+            let _ = miner.mine_batch(&header, &easy_target, nonce_start, batch_size, 0);
             total_time += start.elapsed();
             total_hashes += batch_size;
         }
