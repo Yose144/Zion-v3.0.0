@@ -17,7 +17,16 @@
     "verify": "npx hardhat verify --network",
     "flatten:wzion": "npx hardhat flatten contracts/wZION.sol > flat/wZION_flat.sol",
     "flatten:bridge": "npx hardhat flatten contracts/ZIONBridge.sol > flat/ZIONBridge_flat.sol",
-    "size": "npx hardhat size-contracts"
+    "size": "npx hardhat size-contracts",
+    "defi:deploy:sepolia": "npx hardhat run scripts/deploy-defi.ts --network base-sepolia",
+    "defi:deploy:mainnet": "npx hardhat run scripts/deploy-defi.ts --network base",
+    "swap:deploy:sepolia": "npx hardhat run scripts/deploy-atomic-swap.ts --network base-sepolia",
+    "swap:deploy:mainnet": "npx hardhat run scripts/deploy-atomic-swap.ts --network base",
+    "farm:deploy:sepolia": "npx hardhat run scripts/deploy-farm.ts --network base-sepolia",
+    "farm:deploy:mainnet": "npx hardhat run scripts/deploy-farm.ts --network base",
+    "test:swap": "npx hardhat test test/ZIONAtomicSwap.test.ts",
+    "test:farm": "npx hardhat test test/ZIONFarm.test.ts",
+    "test:all": "npx hardhat test"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
