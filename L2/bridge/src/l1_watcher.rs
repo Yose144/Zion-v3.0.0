@@ -173,33 +173,35 @@ impl L1Watcher {
 
         if current_height <= self.last_processed_height {
             debug!("L1: no new blocks (height={})", current_height);
-            return Ok(());
-        }
+            // Fall through — still need UTXO scan and finality check below
+        } else {
+            // Process new blocks
+            let from = self.last_processed_height + 1;
+            let to = current_height;
+            debug!("L1: scanning blocks {} → {}", from, to);
 
-        // Process new blocks
-        let from = self.last_processed_height + 1;
-        let to = current_height;
-        debug!("L1: scanning blocks {} → {}", from, to);
-
-        for height in from..=to {
-            match self.get_block(height).await {
-                Ok(block) => {
-                    self.scan_block_for_locks(&block);
-                }
-                Err(e) => {
-                    warn!("L1: failed to fetch block {}: {:?}", height, e);
-                    break; // Stop and retry next cycle
+            for height in from..=to {
+                match self.get_block(height).await {
+                    Ok(block) => {
+                        self.scan_block_for_locks(&block);
+                    }
+                    Err(e) => {
+                        warn!("L1: failed to fetch block {}: {:?}", height, e);
+                        break; // Stop and retry next cycle
+                    }
                 }
             }
+
+            self.last_processed_height = to;
         }
 
-        // Also scan bridge address UTXOs for sendTransaction-originated locks
+        // Always scan bridge address UTXOs for sendTransaction-originated locks
         // (sendTransaction writes UTXOs directly without going through mined blocks)
         if let Err(e) = self.scan_utxos_for_bridge_locks(current_height).await {
             warn!("L1: UTXO scan error: {:?}", e);
         }
 
-        // Check finality for pending locks
+        // Always check finality for pending locks (must run even when height is static)
         let finalized_height = current_height.saturating_sub(self.config.finality_blocks);
         let mut finalized: Vec<String> = vec![];
 
@@ -227,7 +229,6 @@ impl L1Watcher {
             self.pending_locks.remove(&tx_hash);
         }
 
-        self.last_processed_height = to;
         Ok(())
     }
 
@@ -333,7 +334,7 @@ impl L1Watcher {
     /// bypasses mined blocks and writes UTXOs directly). Any UTXO at the bridge
     /// address with a valid BRIDGE memo that hasn't been seen yet is treated as
     /// a new lock event, using current_height as the finality baseline.
-    async fn scan_utxos_for_bridge_locks(&mut self, current_height: u64) -> Result<()> {
+    async fn scan_utxos_for_bridge_locks(&mut self, _current_height: u64) -> Result<()> {
         let url = format!(
             "{}/api/address/{}/utxos",
             self.config.rpc_url, self.config.bridge_address
@@ -376,7 +377,9 @@ impl L1Watcher {
 
             let lock_event = L1LockEvent {
                 l1_tx_hash: pseudo_tx_hash.clone(),
-                l1_block_height: current_height,
+                // sendTransaction bypasses block mining entirely — use height 0
+                // so finality check (l1_block_height <= current - finality_blocks) always passes
+                l1_block_height: 0,
                 l1_sender: String::from("sendTransaction"),
                 amount_atomic: utxo.amount,
                 amount_wzion: crate::types::conversion::l1_atomic_to_wzion_wei(utxo.amount),
@@ -388,10 +391,9 @@ impl L1Watcher {
             };
 
             info!(
-                "🔒 L1 UTXO Lock detected: {} ZION via sendTransaction (key: {}) — waiting {} blocks",
+                "🔒 L1 UTXO Lock detected: {} ZION via sendTransaction (key: {}) — finalizing immediately",
                 crate::types::conversion::atomic_to_zion_display(utxo.amount),
                 utxo.key,
-                self.config.finality_blocks,
             );
 
             self.pending_locks.insert(pseudo_tx_hash, lock_event);
