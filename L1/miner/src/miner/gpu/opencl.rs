@@ -7,6 +7,7 @@ use super::GpuPlatform;
 use super::{GpuDevice, GpuMiner};
 use anyhow::{anyhow, Result};
 use std::time::Instant;
+use zion_cosmic_harmony_v3;
 
 #[cfg(feature = "gpu")]
 use ocl::{Buffer, Device, DeviceType, Platform, Program, ProQue};
@@ -16,12 +17,19 @@ use ocl::enums::{DeviceInfo, DeviceInfoResult};
 
 const OPENCL_KERNEL: &str = include_str!("kernels/cosmic_harmony_v3.cl");
 
+/// Scratchpad size per thread (must match CL_SCRATCHPAD_BYTES in kernel)
+const SCRATCHPAD_BYTES: usize = 512 * 1024;
+/// Max parallel threads when memory-hard is active (scratchpad × threads ≤ ~2 GB)
+const MH_BATCH_DEFAULT: usize = 4096;
+
 /// OpenCL miner implementation
 pub struct OpenCLMiner {
     device_id: usize,
     device_info: GpuDevice,
     hashes_computed: u64,
     start_time: Instant,
+    /// Max threads for memory-hard mining (limited by VRAM/scratchpad size)
+    mh_batch_size: usize,
     #[cfg(feature = "gpu")]
     pro_que: Option<ProQue>,
     #[cfg(feature = "gpu")]
@@ -32,6 +40,9 @@ pub struct OpenCLMiner {
     result_count_buf: Option<Buffer<u32>>,
     #[cfg(feature = "gpu")]
     result_hash_buf: Option<Buffer<u8>>,
+    /// Scratchpad buffer: mh_batch_size × SCRATCHPAD_BYTES bytes in GPU global mem
+    #[cfg(feature = "gpu")]
+    scratchpad_buf: Option<Buffer<u8>>,
 }
 
 impl OpenCLMiner {
@@ -44,16 +55,26 @@ impl OpenCLMiner {
                 .ok_or_else(|| anyhow!("OpenCL device {} not found", device_id))?
                 .clone();
 
+            // Allow overriding MH batch via env (for memory tuning)
+            let mh_batch_size = std::env::var("ZION_GPU_MH_BATCH")
+                .ok()
+                .and_then(|v| v.trim().parse::<usize>().ok())
+                .unwrap_or(MH_BATCH_DEFAULT)
+                .max(64)
+                .min(32768);
+
             Ok(Self {
                 device_id,
                 device_info,
                 hashes_computed: 0,
                 start_time: Instant::now(),
+                mh_batch_size,
                 pro_que: None,
                 header_buf: None,
                 results_buf: None,
                 result_count_buf: None,
                 result_hash_buf: None,
+                scratchpad_buf: None,
             })
         }
 
@@ -113,11 +134,22 @@ impl GpuMiner for OpenCLMiner {
             let result_count_buf = pro_que.buffer_builder::<u32>().len(1).build()?;
             let result_hash_buf = pro_que.buffer_builder::<u8>().len(32).build()?;
 
+            // Scratchpad buffer: mh_batch_size × 512 KiB = ~2 GB for default 4096 threads.
+            // Allocated once at init; only used when memory_hard=1 in the kernel.
+            let scratchpad_len = self.mh_batch_size * SCRATCHPAD_BYTES;
+            println!("[OpenCL] Allocating scratchpad: {} MiB ({} threads × 512 KiB)",
+                scratchpad_len / (1024 * 1024), self.mh_batch_size);
+            let scratchpad_buf = pro_que.buffer_builder::<u8>()
+                .len(scratchpad_len)
+                .fill_val(0u8)
+                .build()?;
+
             self.pro_que = Some(pro_que);
             self.header_buf = Some(header_buf);
             self.results_buf = Some(results_buf);
             self.result_count_buf = Some(result_count_buf);
             self.result_hash_buf = Some(result_hash_buf);
+            self.scratchpad_buf = Some(scratchpad_buf);
 
             Ok(())
         }
@@ -136,6 +168,7 @@ impl GpuMiner for OpenCLMiner {
         target: &[u8; 32],
         nonce_start: u64,
         batch_size: u64,
+        height: u64,
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(feature = "gpu")]
         {
@@ -159,17 +192,24 @@ impl GpuMiner for OpenCLMiner {
                 .result_hash_buf
                 .as_ref()
                 .ok_or_else(|| anyhow!("OpenCL result hash buffer not initialized"))?;
+            let scratchpad_buf = self
+                .scratchpad_buf
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL scratchpad buffer not initialized"))?;
 
             if batch_size == 0 {
                 return Ok(None);
             }
 
+            // Memory-hard flag: activate scratchpad for heights >= CHV3_MEMORY_HARD_FORK_HEIGHT
+            let memory_hard: u32 =
+                if height >= zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT {
+                    1
+                } else {
+                    0
+                };
+
             // ═══ CHv3 target: pool sends full 32-byte target hex.
-            // Pool validator does:  u32::from_le_bytes(hash[0..4]) ≤ target_int
-            //   where target_int = u32::from_str_radix(&hex[0..8], 16)
-            //                    = u32::from_be_bytes(decoded[0..4])
-            // parse_target_bytes places decoded bytes at natural positions:
-            // target[0..4] = first 4 bytes = the most significant part.
             let target_u32: u32 = u32::from_be_bytes([
                 target[0], target[1], target[2], target[3],
             ]);
@@ -182,23 +222,26 @@ impl GpuMiner for OpenCLMiner {
             let hash_init = [0u8; 32];
             result_hash_buf.write(&hash_init[..]).enq()?;
 
-            // Upload header — cap at 80 bytes (CPU/pool only uses first 80).
-            // Pad to 144 bytes to match buffer allocation size.
+            // Upload header — cap at 80 bytes, pad to 144.
             let header_len = header.len().min(80);
             let mut padded_header = [0u8; 144];
             padded_header[..header_len].copy_from_slice(&header[..header_len]);
             header_buf.write(&padded_header[..]).enq()?;
 
-            // Optimal local work size — 256 fully occupies AMD wavefronts (64)
-            // and Nvidia warps (32).  Query device max and cap.
+            // Work size: when memory_hard active, limit to mh_batch_size (scratchpad budget).
             let max_wg = pro_que.device().max_wg_size().unwrap_or(256);
             let local_work_size = 256usize.min(max_wg);
-            let raw_global = (batch_size.min(u32::MAX as u64)) as usize;
-            let raw_global = raw_global.max(local_work_size); // at least one workgroup
+            let effective_batch = if memory_hard == 1 {
+                // Limit to pre-allocated scratchpad slots
+                (batch_size as usize).min(self.mh_batch_size)
+            } else {
+                (batch_size.min(u32::MAX as u64)) as usize
+            };
+            let raw_global = effective_batch.max(local_work_size);
             let global_work_size =
                 ((raw_global + local_work_size - 1) / local_work_size) * local_work_size;
 
-            // "cosmic_harmony_v3_mine"
+            // Build kernel with 2 new trailing args: memory_hard flag + scratchpad_buf
             let kernel = pro_que
                 .kernel_builder("cosmic_harmony_v3_mine")
                 .arg(header_buf)
@@ -208,6 +251,8 @@ impl GpuMiner for OpenCLMiner {
                 .arg(results_buf)
                 .arg(result_count_buf)
                 .arg(result_hash_buf)
+                .arg(memory_hard)
+                .arg(scratchpad_buf)
                 .global_work_size(global_work_size)
                 .local_work_size(local_work_size)
                 .build()?;
@@ -221,7 +266,7 @@ impl GpuMiner for OpenCLMiner {
             let mut count_res = [0u32; 1];
             result_count_buf.read(&mut count_res[..]).enq()?;
 
-            self.hashes_computed += batch_size;
+            self.hashes_computed += effective_batch as u64;
 
             if count_res[0] > 0 {
                 let mut res = [0u64; 2];
@@ -237,7 +282,7 @@ impl GpuMiner for OpenCLMiner {
 
         #[cfg(not(feature = "gpu"))]
         {
-            let _ = (header, target, nonce_start, batch_size);
+            let _ = (header, target, nonce_start, batch_size, height);
             Err(anyhow!(
                 "OpenCL support not enabled. Build with --features gpu"
             ))

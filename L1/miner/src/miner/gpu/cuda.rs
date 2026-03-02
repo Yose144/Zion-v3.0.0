@@ -110,9 +110,11 @@ impl GpuMiner for CudaMiner {
         target: &[u8; 32],
         nonce_start: u64,
         batch_size: u64,
+        height: u64,
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(feature = "cuda")]
         {
+            let _ = height; // CUDA scratchpad not yet implemented; pool-compatible at heights < 100k
             let device = self
                 .device
                 .as_ref()
@@ -192,10 +194,8 @@ impl GpuMiner for CudaMiner {
 
         #[cfg(not(feature = "cuda"))]
         {
-            let _ = (header, target, nonce_start, batch_size);
-            Err(anyhow!(
-                "CUDA support not enabled. Build with --features cuda"
-            ))
+            let _ = (header, target, nonce_start, batch_size, height);
+            Err(anyhow!("CUDA support not compiled. Rebuild with --features cuda"))
         }
     }
 
