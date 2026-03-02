@@ -1,9 +1,8 @@
-//! EVM Chain Watcher — polls for wZION BridgeBurn events via Ankr HTTP RPC.
+//! EVM Chain Watcher — polls for wZION BridgeBurn events.
 //!
-//! Instead of maintaining a WebSocket connection per chain, this module uses
-//! Ankr's HTTP JSON-RPC endpoint and polls `eth_getLogs` on a configurable
-//! interval.  This eliminates the `ethers` dependency and per-chain WebSocket
-//! URL configuration.
+//! Uses the chain’s configured `rpc_url` (e.g. `https://base-sepolia.publicnode.com`)
+//! as the **primary** RPC and falls back to Ankr if the primary is unavailable.
+//! `wss://` URLs are automatically converted to `https://`.
 //!
 //! ## Auto-reconnect
 //!
@@ -13,6 +12,7 @@
 
 use crate::ankr::{AnkrClient, AnkrLog, LogFilter, BRIDGE_BURN_TOPIC};
 use crate::config::{AnkrConfig, EvmChainConfig};
+use crate::evm_rpc::EvmHttpClient;
 use crate::types::{BridgeStatus, EvmBurnEvent};
 use anyhow::Result;
 use chrono::Utc;
@@ -41,11 +41,13 @@ const MAX_BLOCK_RANGE: u64 = 3_000;
 
 /// EVM watcher for a single chain.
 ///
-/// Polls `eth_getLogs` via Ankr HTTP to detect wZION `BridgeBurn` events.
+/// Polls `eth_getLogs` via direct HTTP RPC (primary) with Ankr as fallback.
 pub struct EvmWatcher {
     config: EvmChainConfig,
     ankr_config: AnkrConfig,
     last_processed_block: u64,
+    /// Direct HTTP client built from `config.rpc_url` (wss:// auto-converted to https://).
+    direct_rpc: EvmHttpClient,
 }
 
 impl EvmWatcher {
@@ -54,10 +56,18 @@ impl EvmWatcher {
     /// - `start_block`: Resume scanning from this block (from persisted state or chain config).
     pub fn new(config: EvmChainConfig, ankr_config: AnkrConfig, start_block: Option<u64>) -> Self {
         let last = start_block.or(config.start_block).unwrap_or(0);
+        // Build direct HTTP client from chain's configured rpc_url.
+        // Falls back to the Ankr URL pattern if rpc_url is not set.
+        let direct_rpc_url = config
+            .rpc_url
+            .clone()
+            .unwrap_or_else(|| format!("https://rpc.ankr.com/{}", config.chain_id));
+        let direct_rpc = EvmHttpClient::from_rpc_url(&direct_rpc_url);
         Self {
             config,
             ankr_config,
             last_processed_block: last,
+            direct_rpc,
         }
     }
 
@@ -74,10 +84,14 @@ impl EvmWatcher {
             self.config.finality_blocks,
         );
 
-        let rpc_url = self.config.effective_rpc_url(&self.ankr_config);
+        let direct_rpc_url = self
+            .config
+            .rpc_url
+            .as_deref()
+            .unwrap_or("(ankr fallback)");
         info!(
-            "   RPC: {} (Ankr enabled: {})",
-            rpc_url, self.ankr_config.enabled
+            "   Primary RPC: {} | Ankr fallback: {}",
+            direct_rpc_url, self.ankr_config.enabled
         );
 
         let ankr = AnkrClient::new(self.ankr_config.effective_api_key());
@@ -149,12 +163,25 @@ impl EvmWatcher {
     }
 
     /// Fetch new burn logs from `last_processed_block + 1` to `finalized_block`.
+    ///
+    /// Tries `self.direct_rpc` (chain's configured `rpc_url`) first.
+    /// Falls back to Ankr on any error.
     async fn poll_burns(
         &mut self,
         ankr: &AnkrClient,
         burn_tx: &mpsc::Sender<EvmBurnEvent>,
     ) -> Result<usize> {
-        let current_block = ankr.block_number(&self.config.chain_id).await?;
+        // ── Block number: direct RPC → Ankr fallback ──────────────────────
+        let current_block = match self.direct_rpc.block_number().await {
+            Ok(n) => n,
+            Err(e) => {
+                debug!(
+                    "[{}] Direct RPC block_number failed ({}) — trying Ankr",
+                    self.config.name, e
+                );
+                ankr.block_number(&self.config.chain_id).await?
+            }
+        };
         let finalized_block = current_block.saturating_sub(self.config.finality_blocks);
 
         if finalized_block <= self.last_processed_block {
@@ -173,14 +200,34 @@ impl EvmWatcher {
             self.config.name, from_block, to_block, current_block, finalized_block
         );
 
-        let filter = LogFilter {
-            from_block,
-            to_block,
-            address: self.config.wzion_address.clone(),
-            topics: vec![Some(BRIDGE_BURN_TOPIC.to_string())],
+        // ── eth_getLogs: direct RPC → Ankr fallback ───────────────────────
+        let topics_ref: Vec<Option<&str>> = vec![Some(BRIDGE_BURN_TOPIC)];
+        let logs: Vec<AnkrLog> = match self
+            .direct_rpc
+            .get_logs(
+                &self.config.wzion_address,
+                from_block,
+                to_block,
+                &topics_ref,
+            )
+            .await
+        {
+            Ok(l) => l,
+            Err(e) => {
+                debug!(
+                    "[{}] Direct RPC get_logs failed ({}) — trying Ankr",
+                    self.config.name, e
+                );
+                let filter = LogFilter {
+                    from_block,
+                    to_block,
+                    address: self.config.wzion_address.clone(),
+                    topics: vec![Some(BRIDGE_BURN_TOPIC.to_string())],
+                };
+                ankr.get_logs(&self.config.chain_id, &filter).await?
+            }
         };
 
-        let logs = ankr.get_logs(&self.config.chain_id, &filter).await?;
         let count = logs.len();
 
         for log in logs {
