@@ -489,7 +489,7 @@ pub async fn bridge_unlock(
         keys::zion1_address_from_public_key_bytes(public_key_bytes.as_bytes());
 
     // ── 3. Validate request ───────────────────────────────────────────────
-    if !keys::is_valid_zion1_address(&req.recipient) {
+    if !keys::is_valid_zion1_address_format(&req.recipient) {
         return Json(serde_json::json!({
             "status": "error",
             "message": format!("Invalid recipient address: {}", req.recipient)
