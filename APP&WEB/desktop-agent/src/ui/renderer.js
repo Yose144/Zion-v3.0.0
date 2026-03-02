@@ -3345,7 +3345,7 @@ function bridgeCopyText(text) {
   // Stats tab — copy buttons
   on('stats-copy-wzion',  'click', () => bridgeCopyText('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6'));
   on('stats-copy-bridge', 'click', () => bridgeCopyText('0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1'));
-  on('stats-copy-vault',  'click', () => bridgeCopyText('zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5'));
+  on('stats-copy-vault',  'click', () => bridgeCopyText('zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0'));
 })();
 
 // Hook into switchView to initialize bridge when tab is opened
