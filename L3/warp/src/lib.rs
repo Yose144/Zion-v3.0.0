@@ -20,6 +20,7 @@ pub mod adapter;
 pub mod config;
 pub mod db;
 pub mod error;
+pub mod evm_signer;
 pub mod fees;
 pub mod metrics;
 pub mod protocol;
