@@ -62,14 +62,14 @@ describe("ZIONBridge (Multisig Validator Controller)", function () {
       ).to.be.reverted;
     });
 
-    it("should revert with threshold < 2", async function () {
+    it("should revert with threshold = 0", async function () {
       const [admin, guardian, v1, v2, v3] = await ethers.getSigners();
       const WZION = await ethers.getContractFactory("WZION");
       const wzion = await WZION.deploy(admin.address, admin.address, guardian.address);
 
       const ZIONBridge = await ethers.getContractFactory("ZIONBridge");
       await expect(
-        ZIONBridge.deploy(admin.address, guardian.address, await wzion.getAddress(), [v1.address, v2.address, v3.address], 1)
+        ZIONBridge.deploy(admin.address, guardian.address, await wzion.getAddress(), [v1.address, v2.address, v3.address], 0)
       ).to.be.reverted;
     });
 
@@ -329,9 +329,9 @@ describe("ZIONBridge (Multisig Validator Controller)", function () {
       expect(await bridge.threshold()).to.equal(4);
     });
 
-    it("should revert threshold below 2", async function () {
+    it("should revert threshold = 0", async function () {
       const { bridge, admin } = await loadFixture(deployFixture);
-      await expect(bridge.connect(admin).updateThreshold(1))
+      await expect(bridge.connect(admin).updateThreshold(0))
         .to.be.revertedWithCustomError(bridge, "InvalidThreshold");
     });
 
