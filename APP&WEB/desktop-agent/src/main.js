@@ -5730,7 +5730,7 @@ ipcMain.handle('ai-native-system-health', async () => {
 let _sessionEvmWallet = null;
 
 /** Correct L1 bridge vault address (holds locked UTXOs) */
-const BRIDGE_VAULT_ADDR = 'zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5';
+const BRIDGE_VAULT_ADDR = 'zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0';
 
 const BRIDGE_NET = {
   CHAIN_ID   : 84532,                /* Base Sepolia (testnet). Switch to 8453 for mainnet */
