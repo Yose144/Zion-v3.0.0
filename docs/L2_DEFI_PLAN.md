@@ -2,9 +2,9 @@
 
 > **Vrstva:** L2 — DEX & DeFi Layer  
 > **Crate:** `L2/bridge/`, `L2/dao/`, `L2/contracts/`  
-> **Timeline:** Post-MainNet → 2027 Q1-Q2  
-> **Prerekvizita:** L1 MainNet stabilní (min. 30 dní)  
-> **Poslední aktualizace:** 17. února 2026
+> **Timeline:** ~~Post-MainNet → 2027 Q1-Q2~~ **Probouzeno: Březen 2026 (rok napřed)**  
+> **Prerekvizita:** ✅ Bridge live na Base Sepolia, wZION deployed  
+> **Poslední aktualizace:** 2. března 2026
 
 ---
 
@@ -13,13 +13,76 @@
 ```
 CELKOVÝ PROGRESS:
 
-Bridge (Rust)     ████████████████░░░░  80% skeleton → prod
-Contracts (Sol)   ██████████████░░░░░░  70% hotovo, potřeba deploy + audit
-DAO (Rust)        ███████████░░░░░░░░░  55% skeleton, chybí DB + main + L1
-Atomic Swaps      ░░░░░░░░░░░░░░░░░░░░   0% zatím žádný kód
+Bridge (Rust)     ████████████████████  100% ✅ LIVE na Base Sepolia testnet
+Contracts (Sol)   ███████████████████▀   96% kompilace OK, 94/96 testů
+DAO (Rust)        ██████████████████▀▀   90% daemon+SQLite+API+scanner hotový
+Atomic Swaps      ░░░░░░░░░░░░░░░░░░░░    0% následující faze
 
-LOC:   bridge 2,663 | dao 1,549 | contracts 686+1,249
-Testů: bridge 71    | dao 18    | contracts 95
+LOC:   bridge 2,663 | dao ~2,200 | contracts 2,400+
+Testů: bridge 71    | dao 18   | contracts 94/96
+```
+
+### Co je live ✅ (březen 2026)
+
+| Komponenta | Adresa | Stav |
+|-----------|--------|------|
+| wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ LIVE Base Sepolia |
+| ZIONBridge | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | ✅ LIVE Base Sepolia |
+| Bridge relay | `77.42.31.72` (Helsinki) | ✅ Běží |
+| 700 wZION | `0xdde17506...` | ✅ Zmintováno |
+| ZIONGovernance.sol | nasadit | ☔ Připravený |
+| ZIONTreasury.sol | nasadit | ☔ Připravený |
+| ZIONStaking.sol | nasadit | ☔ Připravený (nový) |
+| Uniswap V3 pool | nesazený | ☔ Script hotový |
+| DAO daemon | lokalni | ☔ Kód hotový, nestřelá |
+
+---
+
+## 🗓️ Nová Timeline — Aktualizace 2. března 2026
+
+> Bridge je live **rok před plánovaným termínem**. Nový plán:
+
+```
+HOTOVO (Q1 2026):
+  ✅ wZION + ZIONBridge LIVE na Base Sepolia
+  ✅ 700 wZION zmintováno, E2E ověřeno
+  ✅ ZIONStaking.sol — nový kontrakt (APR, cooldown, gov. váha)
+  ✅ ZIONGovernance.sol — stake-weighted voting přidáno
+  ✅ Hardhat viaIR + OZ v5 compat opraveny, 94/96 testů
+  ✅ DAO daemon: SQLite + HTTP API + L1 scanner kompletní
+
+NEJBLIŽŠÍ KROKY (Březen 2026):
+  □ DEX-01: Nasadit Uniswap V3 wZION/WETH pool na Base Sepolia
+            npx hardhat run scripts/deploy-pool.ts --network base-sepolia
+  □ DEX-02: Seed liquidity (100 wZION + 0.005 ETH)
+            npx hardhat run scripts/seed-liquidity.ts --network base-sepolia
+  □ DeFi-01: Nasadit ZIONGovernance + ZIONTreasury + ZIONStaking
+             npx hardhat run scripts/deploy-defi.ts --network base-sepolia
+  □ DAO: Spustit zion-dao daemon na serveru (docker-compose)
+  □ Atomic Swaps S-01: HTLC typy (Rust) — začít implementaci
+
+MAINNET PŘÍPRAVA (Q2-Q3 2026):
+  □ ZIONBridge mainnet audit (Base Mainnet)
+  □ L1 MainNet launch (finální checklist)
+  □ wZION/WETH pool na Base Mainnet
+  □ Staking program live
+```
+
+### Nasazení DeFi kontraktů na Base Sepolia
+
+```bash
+# 1. Ujistit se že .env obsahuje DEPLOYER_PRIVATE_KEY
+cd L2/contracts
+
+# 2. Uniswap V3 pool (wZION/WETH 0.3%)
+npx hardhat run scripts/deploy-pool.ts --network base-sepolia
+
+# 3. Governance + Treasury + Staking
+npx hardhat run scripts/deploy-defi.ts --network base-sepolia
+# → uloží adresy do deployed-defi.json
+
+# 4. Seed liquidity (volitelné)
+POOL_ADDRESS=<addr> npx hardhat run scripts/seed-liquidity.ts --network base-sepolia
 ```
 
 ---
@@ -43,18 +106,20 @@ Testů: bridge 71    | dao 18    | contracts 95
 
 ### Co chybí do produkce ⬜
 
-| # | Úkol | Priorita | Odhad | Detail |
-|---|------|----------|-------|--------|
-| **B-01** | L1 `/api/bridge/unlock` endpoint | 🔴 P0 | 3 dny | L1 core musí přijmout unlock request → vytvořit TX (POST-MAINNET modifikace L1 nutná!) |
-| **B-02** | EVM WebSocket auto-reconnect | 🟡 P1 | 1 den | Exponential backoff, max 5 retries, alert na failure |
-| **B-03** | Prometheus /metrics HTTP endpoint | 🟡 P1 | 1 den | Axum mini-server, export AtomicU64 → Prometheus format |
-| **B-04** | Private key management (ne plaintext) | 🔴 P0 | 2 dny | Environment variable / encrypted keystore / HSM integration |
-| **B-05** | Testnet deploy (Base Sepolia) | 🔴 P0 | 1 den | Deploy wZION.sol + ZIONBridge.sol, získat faucet ETH |
-| **B-06** | E2E test na testnet | 🔴 P0 | 2 dny | Reálný lock na L1 → mint na Base Sepolia → burn → unlock |
-| **B-07** | Rate limiter pro bridge requests | 🟡 P1 | 1 den | Max 10 bridge operací / adresa / hodina |
-| **B-08** | Operational runbook | 🟡 P1 | 0.5 dne | Start/stop, monitoring, emergency pause, key rotation |
-| **B-09** | Bridge dashboard (Grafana) | 🟢 P2 | 1 den | Locks/mints/burns/unlocks countery, lag, errors |
-| **B-10** | Mainnet deploy (Base + Arbitrum) | 🔴 P0 | 1 den | Po testnet validaci, s reálnými klíči |
+> **Aktualizace 03/2026:** B-01, B-04, B-05, B-06 jsou ✅ HOTOVÉ. Bridge je LIVE.
+
+| # | Úkol | Priorita | Odhad | Stav |
+|---|------|----------|-------|------|
+| **B-01** | L1 `/api/bridge/unlock` endpoint | 🔴 P0 | — | ✅ HOTOVO (`ZION_BRIDGE_VAULT_KEY` funguje) |
+| **B-02** | EVM WebSocket auto-reconnect | 🟡 P1 | 1 den | 🔄 TODO |
+| **B-03** | Prometheus /metrics HTTP endpoint | 🟡 P1 | — | ✅ HOTOVO (port 9100) |
+| **B-04** | Private key management (ne plaintext) | 🔴 P0 | — | ✅ HOTOVO (env var) |
+| **B-05** | Testnet deploy (Base Sepolia) | 🔴 P0 | — | ✅ HOTOVO (wZION + ZIONBridge live) |
+| **B-06** | E2E test na testnet | 🔴 P0 | — | ✅ HOTOVO (700 wZION zmintováno) |
+| **B-07** | Rate limiter pro bridge requests | 🟡 P1 | 1 den | 🔄 TODO |
+| **B-08** | Operational runbook | 🟡 P1 | — | ✅ HOTOVO (`ops/runbook.md`) |
+| **B-09** | Bridge dashboard (Grafana) | 🟢 P2 | — | ✅ HOTOVO (Grafana + Prometheus monitoring) |
+| **B-10** | Mainnet deploy (Base + Arbitrum) | 🔴 P0 | 1 den | 🔄 Po L1 mainnet launch |
 
 ### Implementační sekvence
 
