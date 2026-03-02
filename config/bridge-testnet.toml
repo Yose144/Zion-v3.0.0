@@ -17,7 +17,7 @@ network = "testnet"
 [l1]
 rpc_url        = "http://77.42.31.72:8444"
 rpc_url_backup = "http://46.225.126.243:8444"
-bridge_address = "zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5"
+bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
 finality_blocks     = 60       # ~60 minutes (60 blocks × 60s)
 poll_interval_secs  = 15       # Check for new blocks every 15s
 # start_block_height = 0       # Uncomment to start from specific height
