@@ -20,7 +20,8 @@ L2 (Base / EVM)
   ├── ZIONTreasury.sol       multi-sig treasury + DAO      🔨 ready → deploy
   ├── ZIONStaking.sol        stake wZION, earn APR         🔨 ready → deploy
   ├── Uniswap V3 pool        wZION/WETH 0.3%               🔲 deploy + seed
-  └── ZIONAtomicSwap.sol     EVM HTLC (ETH/ERC-20 strana)  🔲 todo
+  ├── ZIONAtomicSwap.sol     EVM HTLC (ETH/ERC-20 strana)  ✅ LIVE (Base Sepolia)
+  └── ZIONFarm.sol           MasterChef yield farming       ✅ LIVE (Base Sepolia)
 
 L2/atomic-swap (Rust daemon)
   ├── HTLC watcher           čte L1 SWAP:LOCK/CLAIM/REFUND ✅ hotovo
@@ -40,6 +41,8 @@ L2/atomic-swap (Rust daemon)
 | ZIONTreasury | *nasadit* |
 | ZIONStaking | *nasadit* |
 | wZION/WETH Uni V3 pool | *nasadit* |
+| **ZIONAtomicSwap** | **`0xAf1E0645Ac409485EDA5EabD87b4eE3C3a5BA3Fc`** |
+| **ZIONFarm** | **`0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843`** |
 
 > Po deployi aktualizuj tabulku z `deployed-defi.json`.
 
@@ -195,8 +198,8 @@ REFUND:  SWAP:REFUND:<hash64hex>
 | L1 /api/swap/escrow-address | ✅ hotovo | `93da81c` |
 | **Deploy DeFi kontraktů (testnet)** | 🔲 TODO | — |
 | **Uniswap V3 pool + seed** | 🔲 TODO | — |
-| **ZIONAtomicSwap.sol (EVM HTLC)** | 🔲 TODO | — |
-| **ZIONFarm.sol (yield farming)** | 🔲 TODO | — |
+| **ZIONAtomicSwap.sol (EVM HTLC)** | ✅ LIVE Base Sepolia | `c696d99` |
+| **ZIONFarm.sol (yield farming)** | ✅ LIVE Base Sepolia | `c696d99` |
 | **Mainnet deploy** | 🔲 po auditu | — |
 
 ---

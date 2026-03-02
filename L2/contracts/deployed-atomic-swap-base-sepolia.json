@@ -1,0 +1,8 @@
+{
+  "network": "base-sepolia",
+  "deployedAt": "2026-03-02T10:21:06.649Z",
+  "deployer": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+  "ZIONAtomicSwap": "0xAf1E0645Ac409485EDA5EabD87b4eE3C3a5BA3Fc",
+  "admin": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+  "guardian": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186"
+}
