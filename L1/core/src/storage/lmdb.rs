@@ -7,6 +7,34 @@ use heed::{Database, Env, EnvOpenOptions};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+/// Legacy TxOutput schema — before `memo: Option<String>` was added in commit c521c38.
+/// Used for backward-compatible deserialization of old UTXO records stored without memo.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TxOutputLegacy {
+    pub amount: u64,
+    pub address: String,
+}
+
+/// Decode raw UTXO bytes with schema fallback.
+/// Tries current schema (with memo) first, then legacy schema (without memo).
+/// Returns None only when both fail (truly corrupt record).
+#[inline]
+fn decode_utxo_compat(bytes: &[u8]) -> Option<TxOutput> {
+    // Try current schema (amount + address + Option<String> memo)
+    if let Ok(out) = bincode::deserialize::<TxOutput>(bytes) {
+        return Some(out);
+    }
+    // Fallback: old schema (amount + address only) — upgrade to new with memo=None
+    if let Ok(legacy) = bincode::deserialize::<TxOutputLegacy>(bytes) {
+        return Some(TxOutput {
+            amount: legacy.amount,
+            address: legacy.address,
+            memo: None,
+        });
+    }
+    None
+}
+
 /// Undo data for a single block — stores all UTXOs that were spent when the
 /// block was applied.  During rollback we restore these without needing to
 /// traverse the block-chain to reconstruct them.
@@ -31,6 +59,9 @@ pub struct ZionStorage {
     undo_blocks: Database<U64<BigEndian>, SerdeBincode<BlockUndoData>>,
     /// Balance cache: address -> (balance_atomic, utxo_count) serialized as [u64; 2]
     balance_cache: Database<Str, SerdeBincode<(u64, u64)>>,
+    /// Raw-bytes view of the utxos table — used for manual compat deserialization
+    /// (old-schema records without memo field need fallback via decode_utxo_compat).
+    utxos_raw: Database<Str, Bytes>,
 }
 
 impl ZionStorage {
@@ -58,6 +89,8 @@ impl ZionStorage {
         let hash_to_height = env.create_database(&mut wtxn, Some("hash_to_height"))?;
         let undo_blocks = env.create_database(&mut wtxn, Some("undo_blocks"))?;
         let balance_cache = env.create_database(&mut wtxn, Some("balance_cache"))?;
+        // Raw-bytes handle to the same "utxos" table — for fallback deserialization
+        let utxos_raw = env.create_database(&mut wtxn, Some("utxos"))?;
         wtxn.commit()?;
 
         Ok(Self {
@@ -69,6 +102,7 @@ impl ZionStorage {
             tx_to_block,
             undo_blocks,
             balance_cache,
+            utxos_raw,
         })
     }
 
@@ -390,13 +424,15 @@ impl ZionStorage {
         let mut count: usize = 0;
         let mut skipped: usize = 0;
 
-        let mut iter = self.utxos.iter(&rtxn)?;
+        let mut iter = self.utxos_raw.iter(&rtxn)?;
         while let Some(result) = iter.next() {
-            // Skip corrupted/old-schema entries (e.g. UTXOs stored before TxOutput.memo was added).
-            // Bincode is positional — old records missing the memo field cause "unexpected end of file".
-            let (_key, output) = match result {
+            let (_key, raw) = match result {
                 Ok(v) => v,
                 Err(_) => { skipped += 1; continue; }
+            };
+            let output = match decode_utxo_compat(&raw) {
+                Some(o) => o,
+                None => { skipped += 1; continue; }
             };
             if output.address == address {
                 total = total.saturating_add(output.amount);
@@ -404,7 +440,7 @@ impl ZionStorage {
             }
         }
         if skipped > 0 {
-            eprintln!("[WARN] get_balance_for_address: skipped {} undecodable UTXO entries (old schema pre-memo)", skipped);
+            eprintln!("[WARN] get_balance_for_address: skipped {} truly corrupt UTXO entries", skipped);
         }
         drop(iter);
         drop(rtxn);
@@ -429,12 +465,15 @@ impl ZionStorage {
         for address in addresses {
             let mut total: u64 = 0;
             let mut count: u64 = 0;
-            let mut iter = self.utxos.iter(&rtxn)?;
+            let mut iter = self.utxos_raw.iter(&rtxn)?;
             while let Some(result) = iter.next() {
-                // Skip old-schema / corrupt entries gracefully
-                let (_key, output) = match result {
+                let (_key, raw) = match result {
                     Ok(v) => v,
                     Err(_) => continue,
+                };
+                let output = match decode_utxo_compat(&raw) {
+                    Some(o) => o,
+                    None => continue,
                 };
                 if output.address == *address {
                     total = total.saturating_add(output.amount);
@@ -504,12 +543,15 @@ impl ZionStorage {
         let mut out: Vec<(String, TxOutput)> = Vec::new();
         let mut seen: usize = 0;
 
-        let mut iter = self.utxos.iter(&rtxn)?;
+        let mut iter = self.utxos_raw.iter(&rtxn)?;
         while let Some(result) = iter.next() {
-            // Skip old-schema / corrupt entries (bincode positional — memo field added later)
-            let (key, output) = match result {
+            let (key, raw) = match result {
                 Ok(v) => v,
                 Err(_) => continue,
+            };
+            let output = match decode_utxo_compat(&raw) {
+                Some(o) => o,
+                None => continue,
             };
             if output.address != address {
                 continue;
