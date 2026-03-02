@@ -33,6 +33,7 @@
 pub mod config;
 pub mod db;
 pub mod error;
+pub mod evm_watcher;
 pub mod executor;
 pub mod handlers;
 pub mod types;
