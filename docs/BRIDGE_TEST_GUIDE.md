@@ -2,6 +2,10 @@
 
 _Aktualizováno: 2. března 2026 | Síť: TestNet_
 
+> **✅ FIRST SUCCESSFUL E2E TEST: 2. března 2026**  
+> 500 ZION → 500 wZION mintováno na Base Sepolia.  
+> TX: [`0xc5b72ba9...a59e7f`](https://sepolia.basescan.org/tx/0xc5b72ba9afcf43f53488d8db8b3bf3e874cc12f3507e60fbc253777861a59e7f) · Block 38333860 · Status: **SUCCESS**
+
 ---
 
 ## 1. KAM POSLAT ZION (L1 → wZION test)
@@ -50,14 +54,17 @@ ssh helsinki 'docker logs -f zion-bridge'
 **Očekávaná sekvence logů:**
 
 ```
-🔒 L1 UTXO Lock detected: 100 ZION via sendTransaction — waiting 3 blocks
-📤 Processing L1→EVM lock: 100 ZION → 0xdde17506... on base (TX: abc123...)
+🔒 L1 UTXO Lock detected: 100 ZION via sendTransaction — finalizing immediately
+✅ L1 Lock finalized: 100 ZION from sendTransaction → 0xdde17506... (TX: utxo:...)
+📤 Processing L1→EVM lock: 100 ZION → 0xdde17506... on base (TX: utxo:...)
    Validator address: 0x8cc6F931edDAf5F14D0071727Ed1640752B5c787
    Calldata: 228 bytes — bridge: 0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1
    Gas estimate: 85000 → limit with margin: 110500
    ✅ submitLockProof TX submitted! hash: 0x...
-   🟢 submitLockProof CONFIRMED on Base Sepolia (TestNet)
 ```
+
+> **Poznámka:** `sendTransaction` zapisuje UTXO přímo do LMDB bez těžby bloku.  
+> Bridge proto finalizuje lock okamžitě (l1_block_height=0 ≤ libovolný finalized_height).
 
 ### Krok 3 — Ověř wZION balance
 
@@ -102,14 +109,14 @@ bridge.getLockProof('0xL1_TX_HASH_SEM').then(r => console.log('votes:', r.votes,
 
 | Komponenta            | Stav     | Detail                                                   |
 |-----------------------|----------|----------------------------------------------------------|
-| L1 core node          | ✅ Běží  | `http://77.42.31.72:8444`                                |
-| Bridge relay          | ✅ Běží  | `zion-bridge:2.9.6-tx` na serveru                        |
-| L1 UTXO scanning      | ✅ Hotovo | detekuje BRIDGE: memo v UTXO                             |
-| submitLockProof TX    | ✅ Hotovo | EIP-1559, ABI encode, k256 podepisování                  |
+| L1 core node          | ✅ Běží  | `http://77.42.31.72:8444` (`zion-core:2.9.6-fix2`)       |
+| Bridge relay          | ✅ Běží  | `zion-bridge:2.9.6-fix3` na serveru                      |
+| L1 UTXO scanning      | ✅ Hotovo | poll_cycle skenuje UTXO každý cyklus (i bez nových bloků)|
+| submitLockProof TX    | ✅ **OVĚŘENO** | E2E test 2.3.2026 — 500 ZION → 500 wZION         |
 | ZIONBridge kontrakt   | ✅ Deploy | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` Base Sep.  |
 | wZION kontrakt        | ✅ Deploy | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` Base Sep.   |
 | Threshold             | 1-of-2   | validator-1 (server) nebo deployer (lokálně)             |
-| Finality              | 3 bloky  | rychlý test (~45s po transakci)                          |
+| Finality              | okamžitá | sendTransaction UTXOs: l1_block_height=0, finalizuje ihned|
 | EVM watcher (burn)    | ⚠️ Ankr 403 | wZION→ZION směr nefunguje zatím (viz sekce 4)         |
 
 ### Adresy:
@@ -239,7 +246,45 @@ curl -s https://base-sepolia.publicnode.com -H 'Content-Type: application/json' 
 
 ---
 
-## 7. TROUBLESHOOTING
+## 8. VÝSLEDKY PRVNÍHO E2E TESTU (2. března 2026)
+
+### Transakce
+
+| Pole | Hodnota |
+|------|---------|
+| L1 TX | `dfd0596c899498895dbf6c781d6026ad142e85985a98798bc41dd2f1a9c8c132` |
+| Odesílatel | `zion1gfhhxm5hg87cflh6vuyazfklp3c6agx0gfhhxm5` |
+| Bridge escrow | `zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5` |
+| Memo | `BRIDGE:base:0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` |
+| Částka | 500 ZION (500,000,000 atomů) |
+
+### submitLockProof na Base Sepolia
+
+| Pole | Hodnota |
+|------|---------|
+| EVM TX | [`0xc5b72ba9...a59e7f`](https://sepolia.basescan.org/tx/0xc5b72ba9afcf43f53488d8db8b3bf3e874cc12f3507e60fbc253777861a59e7f) |
+| Block | 38 333 860 |
+| Status | ✅ SUCCESS |
+| Gas použitý | 323 014 |
+| Logs (events) | 4 |
+
+### Výsledek
+
+```
+wZION balance 0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186 = 500.0 wZION ✅
+```
+
+### Opravené bugy v rámci testu
+
+| Bug | Příčina | Fix (commit) |
+|-----|---------|--------------|
+| Memo pole mimo obrazovku | CSS layout — Purpose nad Memo | `ee37893` |
+| Address validator odmítal `b` v zion1 adrese | Bech32 charset bez `b` | `baa3876` |
+| Bridge nedetekoval UTXO bez nových bloků | `poll_cycle()` brzy vracel, přeskakoval scan | `a5f1bff` |
+| sendTransaction UTXO nikdy nefinalizovalo | `l1_block_height=current` ≤ `current-3` = false | `a5f1bff` |
+| chain_id neshoda (`base-sepolia` vs `base`) | Relayer matchuje přesně dle `chain_id` v config | `5eec8d6` |
+
+---
 
 ### "L1: failed to fetch block: missing field `block`"
 
