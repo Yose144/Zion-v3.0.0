@@ -60,6 +60,18 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
+    // ── Watcher ───────────────────────────────────────────────────────────────
+    // Extract router/db references before consuming `state` into Axum
+    let watcher_router = state.router.clone();
+    let watcher_db = state.db.clone();
+    let watcher = zion_warp::WarpWatcher::from_config(
+        config.clone(),
+        watcher_router,
+        watcher_db,
+    );
+    tokio::spawn(watcher.run());
+    info!("Chain watcher spawned");
+
     // ── Router ────────────────────────────────────────────────────────────────
     let app = zion_warp::create_api_router(state);
 

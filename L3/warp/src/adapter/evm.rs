@@ -18,8 +18,8 @@ const BRIDGE_BURN_TOPIC: &str =
 
 fn wzion_contract(chain: &str) -> Option<&'static str> {
     match chain {
-        "base"          => Some("0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2"),
-        "base-sepolia"  => Some("0x5678901234567890123456789012345678901234"),
+        "base"          => Some("0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2"),  // TODO: update after mainnet deploy
+        "base-sepolia"  => Some("0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"),  // wZION Base Sepolia
         "arbitrum"      => Some("0x8B3a85D1d0a7B99dC5b1C6c36f7894D8E4C99aA"),
         "bsc"           => Some("0x3c9B8D7e9f1A2b5C6d4E3F2a1B0c9D8e7F6a5B4"),
         "polygon"       => Some("0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0"),
@@ -213,13 +213,35 @@ impl EvmAdapter {
         let sender_topic = log.topics.get(1)?;
         let sender = format!("0x{}", &sender_topic[26..]);
 
-        // data: 32b amount + offset + len + string → parse first 32 bytes as u256 (take low 64 bits)
+        // ABI layout of data for BridgeBurn(address indexed, uint256 amount, string destAddr):
+        //   [0x00..0x1F]  amount  (uint256)
+        //   [0x20..0x3F]  offset  (= 0x40)
+        //   [0x40..0x5F]  string length
+        //   [0x60..    ]  string bytes (padded to 32-byte boundary)
         let data = log.data.trim_start_matches("0x");
-        if data.len() < 64 {
+        if data.len() < 128 {
             return None;
         }
         let amount_hex = &data[0..64];
         let amount = u64::from_str_radix(amount_hex.trim_start_matches('0').max("0"), 16).ok()?;
+
+        // Decode destAddr string
+        let str_len_hex = &data[128..192]; // offset 0x40 * 2 chars
+        let str_len = usize::from_str_radix(str_len_hex.trim_start_matches('0').max("0"), 16)
+            .unwrap_or(0)
+            .min(256); // sanity cap
+        let str_start = 192; // 0x60 * 2
+        let str_end = str_start + str_len * 2;
+        let dest_addr = if str_len > 0 && data.len() >= str_end {
+            let hex_bytes = &data[str_start..str_end];
+            (0..hex_bytes.len())
+                .step_by(2)
+                .filter_map(|i| u8::from_str_radix(&hex_bytes[i..i + 2], 16).ok())
+                .map(|b| b as char)
+                .collect::<String>()
+        } else {
+            String::new()
+        };
 
         let block_num = hex_to_u64(&log.block_number);
         let confirmations = current_block.saturating_sub(block_num);
@@ -230,7 +252,8 @@ impl EvmAdapter {
             block_hash: log.block_hash.clone(),
             sender,
             amount_atomic: amount,
-            memo: format!("BridgeBurn@{}", self.chain_name),
+            // Encode dest ZION address in memo so watcher can route inbound
+            memo: format!("WARP_INBOUND:{}:{}", self.chain_name, dest_addr),
             confirmations,
         })
     }
