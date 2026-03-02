@@ -54,7 +54,7 @@
 | **Polygon**   | EVM      | ERC-20         | 18       | ~5 min       | 🟢 Signing live |
 | **Solana**    | Solana   | SPL Token      | 9        | ~12 sec      | 🟡 Skeleton |
 | **Tron**      | Tron     | TRC-20         | 18       | ~57 sec      | 🟡 Skeleton |
-| **Stellar**   | Stellar  | Stellar Asset  | 7        | ~5 sec       | 🟡 Skeleton |
+| **Stellar**   | Stellar  | Stellar Asset  | 7        | ~5 sec       | � Signing live |
 | **Cardano**   | Cardano  | Native Token   | 6        | ~7 min       | 🟡 Skeleton |
 | **Cosmos**    | Cosmos   | IBC / CW20     | 6        | ~6 sec       | 🟡 Skeleton |
 | **Bitcoin**   | Bitcoin  | HTLC           | 8        | ~60 min      | � Signing live |
@@ -196,7 +196,7 @@ warp/
         ├── evm.rs              # EVM adapter (Base, Arbitrum, BSC, Polygon)
         ├── solana.rs           # Solana adapter (SPL Token, Anchor)
         ├── tron.rs             # Tron adapter (TRC-20, TVM)
-        ├── stellar.rs          # Stellar adapter (Stellar Asset, Soroban)
+        ├── stellar.rs          # 🟢 Stellar adapter — live payment via stellar_signer
         ├── cardano.rs          # Cardano adapter (Native Token, Plutus)
         ├── cosmos.rs           # Cosmos adapter (IBC, CW20)
         └── bitcoin.rs          # 🟢 Bitcoin adapter — live P2WPKH sending via btc_signer
@@ -230,7 +230,8 @@ WARP extends it to the full multi-chain universe.
 | **Phase 2** ✅ | WARP Skeleton (all adapters) | Done (Sprint 3.4.15-3.4.20) |
 | **Phase 2.5** ✅ | EVM `execute_mint` — real EIP-155 signing | Done (2026-03-03) |
 | **Phase 3** ✅ | Bitcoin P2WPKH `execute_mint` — BIP143 signing | Done (2026-03-03) |
-| **Phase 4** ⬜ | Stellar asset + Soroban mint | 2026 Q2 |
+| **Phase 4** ✅ | Stellar classic Payment signing — ed25519, XDR, StrKey | Done (2026-03-03) |
+| **Phase 5** ⬜ | Solana SPL + Anchor program | 2026 Q3 |
 | **Phase 5** ⬜ | Solana SPL + Anchor program | 2026 Q3 |
 | **Phase 6** ⬜ | Tron TRC-20 + bridge | 2026 Q3 |
 | **Phase 7** ⬜ | Cardano native token + Plutus | 2026 Q4 |

@@ -29,6 +29,7 @@ pub mod registry;
 pub mod router;
 pub mod server;
 pub mod state;
+pub mod stellar_signer;
 pub mod types;
 pub mod validator;
 pub mod watcher;
