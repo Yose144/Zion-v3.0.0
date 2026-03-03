@@ -82,6 +82,40 @@
 
 ---
 
+## Session 3. Března 2026 — CHv4 komplexní implementace do minera, Python minera a agenta (commit `78a4cb3`)
+
+### ⛏️ CHv4 — Rust Miner (L1/miner)
+
+| Soubor | Změna |
+|--------|-------|
+| `native_algos.rs` | CHv4 aliasy: `chv4` / `ch4` / `cosmic_harmony_v4` → `CosmicHarmony`; opraven stale komentář (200_000 → 0) |
+| `miner/mod.rs` | `Algorithm::name()` → `"cosmic_harmony"` (pool-kanonické jméno CHv4 éry); CHv4 aliasy |
+| `gpu/opencl.rs` | Opraven stale komentář `CHV4_NPU_FORK_HEIGHT (200_000)` → `(=0, always active)` |
+| `gpu/kernels/cosmic_harmony_v3.cu` | **Kompletní přepis CUDA kernelu** z CHv3 na CHv4 — memory-hard 512KB scratchpad + NPU mixing INT8 MLP 64→128→64; nová 16-arg signatura kernelu |
+| `gpu/cuda.rs` | `init()`: alokace scratchpad + upload NPU vah; `mine_batch()`: 16-arg volání kernelu, target jako `u32 LE[0..4]` (shodné s OpenCL) |
+| `gpu/metal.rs` | Aktualizace docstringu + `log::warn!` v `init()` — Metal backend **NEimplementuje CHv4** (hashes nevalidní), TODO port |
+
+**Kritická oprava CUDA:** Starý CUDA kernel produkoval vždy nesprávné hashe — chyběl memory-hard krok (CHV3_MEMORY_HARD_FORK_HEIGHT=0) i NPU mixing krok (CHV4_NPU_FORK_HEIGHT=0). Kernel byl přepsán a odpovídá OpenCL implementaci.
+
+### 🐍 Python Miner (`tests/zion_native_miner_v2_9.py`)
+
+- Banner aktualizován na **v2.9.6** s CHv4 výkonnostními statistikami
+- Přidány konstanty: `CHV4_NPU_FORK_HEIGHT = 0`, `CHV3_MEMORY_HARD_FORK_HEIGHT = 0`
+- Přidány revenue konstanty: `MINERS_PCT=89`, `POOL_FEE_PCT=1`, `HUMANITARIAN_PCT=5`, `ISSOBELLA_PCT=5`
+- `Algorithm.COSMIC_HARMONY_V4 = "cosmic_harmony"` — nový alias; V3 označen jako deprecated
+- Pool endpoints: `POOL_HELSINKI`, `POOL_USA`, `POOL_ASIA` konstanty
+
+### 🖥️ Desktop Agent (`APP&WEB/desktop-agent/src/main.js`)
+
+- Všechny výchozí hodnoty/fallbacky `'cosmic_harmony_v3'` → `'cosmic_harmony'` (5 míst)
+- Přidány module-level konstanty:
+  - `CHV4_NPU_FORK_HEIGHT = 0`
+  - `CHV3_MEMORY_HARD_FORK_HEIGHT = 0`
+  - `MINERS_PCT = 89`, `POOL_FEE_PCT = 1`, `HUMANITARIAN_PCT = 5`, `ISSOBELLA_PCT = 5`
+- Komentář v `DEFAULT_CONFIG.algorithm` aktualizován na CHv4
+
+---
+
 ## Session 3. Března 2026 — WARP D-04 Podepisování transakcí (Phase 2.5–6)
 
 ### 🌀 L3 — WARP Signing Engine (všechny hlavní chains live)
