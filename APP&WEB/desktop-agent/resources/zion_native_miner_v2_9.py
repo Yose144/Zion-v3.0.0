@@ -892,6 +892,9 @@ class StratumClient:
 
                 if accepted:
                     self.shares_accepted += 1
+                    # Clear stale error after a successful submit so dashboard
+                    # does not keep showing an old reject code forever.
+                    self.last_share_error = None
                     # Keep Mining Logs alive but avoid spam.
                     if self.shares_accepted == 1 or (self.shares_accepted % 100) == 0:
                         logger.info(f"✅ Share accepted by pool (accepted={self.shares_accepted}, sent={self.shares_sent})")
