@@ -4,8 +4,8 @@ import Link from 'next/link';
 
 export default function AdminDashboard() {
   return (
-    <div className="min-h-screen pt-32 pb-20 px-4">
-      <div className="container mx-auto max-w-7xl space-y-12">
+    <div className="zion-shell min-h-screen pt-32 pb-20 overflow-x-hidden">
+      <div className="zion-container max-w-7xl space-y-12">
         <div className="rounded-[32px] border border-white/10 bg-black/60 p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Build</p>
-              <p className="mt-2 text-3xl font-semibold text-white">v2.9.6</p>
+              <p className="mt-2 text-3xl font-semibold text-white">v2.9.7</p>
               <p className="text-sm text-gray-300">admin UX shell</p>
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="text-center text-sm text-gray-500">
-          ZION Admin v2.9.6 · zabezpečeno middleware Basic Auth (pokud je nastaveno)
+          ZION Admin v2.9.7 · zabezpečeno middleware Basic Auth (pokud je nastaveno)
         </div>
       </div>
     </div>

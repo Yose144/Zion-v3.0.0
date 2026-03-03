@@ -57,7 +57,7 @@ const timeline = [
 export default function Features() {
   return (
     <section className="py-24 px-4">
-      <div className="container mx-auto space-y-12">
+      <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-end gap-6">
           <div className="flex-1">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Continuum</p>

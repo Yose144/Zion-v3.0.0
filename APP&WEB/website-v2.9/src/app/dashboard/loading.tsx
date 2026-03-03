@@ -1,7 +1,7 @@
 export default function DashboardLoading() {
   return (
     <div className="min-h-screen pt-32 pb-24 px-4">
-      <div className="container mx-auto max-w-7xl space-y-10">
+      <div className="zion-container max-w-7xl space-y-10">
         {/* Hero skeleton */}
         <div className="rounded-4xl border border-white/10 bg-black/60 p-10 animate-pulse">
           <div className="h-6 w-56 rounded-full bg-white/10 mb-6" />

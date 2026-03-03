@@ -68,7 +68,7 @@ export default function Hero() {
 
   return (
     <section className="relative pt-32 pb-24 px-4">
-      <div className="container mx-auto">
+      <div className="zion-container">
         <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-12 xl:gap-20 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -78,7 +78,7 @@ export default function Hero() {
           >
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-6 py-2 text-sm uppercase tracking-wide text-zion-gold">
               <Sparkles className="w-4 h-4 animate-pulse" />
-              On the Star v2.9.6 · Testnet Live
+              On the Star v2.9.7 · Testnet Live
             </div>
 
             <div>

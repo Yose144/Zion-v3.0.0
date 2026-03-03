@@ -304,7 +304,7 @@ export default function SplineTreeOfLife() {
         }}
       />
 
-      <div className="container mx-auto relative z-10">
+      <div className="zion-container relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -140,8 +140,8 @@ export default function DownloadPage() {
   const tool = tools.find((t) => t.id === activeTool)!;
 
   return (
-    <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4">
-      <div className="container mx-auto max-w-5xl space-y-16">
+    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
+      <div className="zion-container max-w-5xl space-y-16">
 
         {/* ─── Hero ─── */}
         <motion.section
@@ -152,7 +152,7 @@ export default function DownloadPage() {
           <div className="flex flex-col gap-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
               <ArrowDownToLine className="h-4 w-4" />
-              Official v2.9.6 Release
+              Official v2.9.7 Release
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">12 native Rust binaries · 4 platforms</p>
@@ -161,7 +161,7 @@ export default function DownloadPage() {
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              Official ZION v2.9.6 CLI tools — <span className="text-zion-gold font-semibold">Miner</span>,{' '}
+              Official ZION v2.9.7 CLI tools — <span className="text-zion-gold font-semibold">Miner</span>,{' '}
               <span className="text-zion-cyan font-semibold">Wallet</span> &{' '}
               <span className="text-zion-purple font-semibold">Node</span> — for Windows, Linux & macOS.
               Pre-compiled native Rust binaries. No dependencies.
@@ -283,7 +283,7 @@ export default function DownloadPage() {
         >
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Coming Soon</p>
-            <h2 className="text-3xl font-semibold text-white">Desktop Agent · v2.9.6</h2>
+            <h2 className="text-3xl font-semibold text-white">Desktop Agent · v2.9.7</h2>
             <p className="text-gray-400">One-click GUI for mining, wallet management and monitoring — no terminal needed</p>
           </div>
 

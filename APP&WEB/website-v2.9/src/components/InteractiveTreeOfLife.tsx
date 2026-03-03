@@ -762,7 +762,7 @@ export default function InteractiveTreeOfLife() {
           style={{ bottom: '20%', left: '35%', width: '300px', height: '200px', backgroundColor: 'rgba(255,120,30,0.03)', animationDuration: '6s' }} />
       </div>
 
-      <div className="container mx-auto">
+      <div className="zion-container">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

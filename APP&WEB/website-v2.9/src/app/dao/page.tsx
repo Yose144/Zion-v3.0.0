@@ -168,8 +168,8 @@ export default function DaoPage() {
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-24 px-4">
-      <div className="container mx-auto max-w-7xl space-y-16">
+    <div className="zion-shell min-h-screen pt-32 pb-24 overflow-x-hidden">
+      <div className="zion-container max-w-7xl space-y-16">
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl md:rounded-[32px] border border-white/10 bg-black/60 p-6 md:p-10 backdrop-blur-xl">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
