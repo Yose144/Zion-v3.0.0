@@ -21,10 +21,10 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://zionterranova.com'),
   title: {
-    default: 'ZION Blockchain v2.9.7 — On the Star',
+    default: 'ZION Blockchain v2.9.7 — Pre-MainNet Gate',
     template: '%s | ZION TerraNova',
   },
-  description: "ZION Terra Nova: Native Rust mining pool, consciousness-based blockchain, Cosmic Harmony algorithm, and multi-chain WARP bridges",
+  description: "ZION TerraNova v2.9.7: Native Rust blockchain (52k LOC), Cosmic Harmony CHv3/CHv4 PoW, 6-layer architecture, TestNet live — MainNet target Dec 2026",
   keywords: "blockchain, consciousness mining, ZION, cryptocurrency, native rust, cosmic harmony, WARP bridge, testnet",
   openGraph: {
     type: 'website',
