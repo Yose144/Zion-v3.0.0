@@ -329,6 +329,41 @@ pub fn npu_mixing_hash64(mem_hard_output: &[u8]) -> Hash64 {
 }
 
 // ============================================================================
+// PUBLIC WEIGHT EXPORT (for GPU backends: OpenCL, CUDA)
+// ============================================================================
+
+/// Flat INT8 MLP weights for CHv4 NPU Mixing step.
+/// GPU backends (OpenCL, CUDA) use this to upload weights once at init.
+pub struct ChV4WeightsFlat {
+    /// W1 [128×64] int8, row-major — Linear(64→128)
+    pub w1: Vec<i8>,
+    /// b1 [128] int8
+    pub b1: Vec<i8>,
+    /// W2 [64×128] int8, row-major — Linear(128→64)
+    pub w2: Vec<i8>,
+    /// b2 [64] int8
+    pub b2: Vec<i8>,
+    /// scale1 [128] int16 — LayerNorm scale layer 1 (Q8: 256=1.0)
+    pub scale1: Vec<i16>,
+    /// scale2 [64] int16 — LayerNorm scale layer 2
+    pub scale2: Vec<i16>,
+}
+
+/// Return CHv4 MLP weights as flat arrays ready for GPU buffer upload.
+/// Lazy-initialized once (thread-safe via OnceLock).
+pub fn chv4_npu_weights_flat() -> ChV4WeightsFlat {
+    let w = get_weights();
+    ChV4WeightsFlat {
+        w1:     w.w1.iter().flat_map(|row| row.iter().copied()).collect(),
+        b1:     w.b1.to_vec(),
+        w2:     w.w2.iter().flat_map(|row| row.iter().copied()).collect(),
+        b2:     w.b2.to_vec(),
+        scale1: w.scale1.to_vec(),
+        scale2: w.scale2.to_vec(),
+    }
+}
+
+// ============================================================================
 // TESTS
 // ============================================================================
 

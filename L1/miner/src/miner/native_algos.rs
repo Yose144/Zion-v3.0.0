@@ -697,7 +697,11 @@ pub fn compute_hash(
     match algo {
         // Cosmic Harmony v3 - use the canonical implementation (same as pool native lib)
         NativeAlgorithm::CosmicHarmony => {
-            let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_v3_with_height(
+            // Height-aware dispatch matches block.rs + pool validator.rs:
+            //   height < 100_000           → CHv3 legacy
+            //   100_000 ≤ height < 200_000 → CHv3 ASIC-hardened (scratchpad)
+            //   height ≥ 200_000           → CHv4 (CHv3 + NPU Mixing INT8 MLP)
+            let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_with_height(
                 header,
                 nonce,
                 height as u64,

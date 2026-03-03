@@ -486,6 +486,94 @@ void cl_memory_hard_transform(const ulong gm_words[8], __global uchar* pad, ulon
 }
 
 // ============================================================================
+// CHv4 NPU Mixing Step — INT8 MLP 64→28→64 + residual
+// Mirrors Rust: L1/cosmic-harmony/src/algorithms_npu.rs :: npu_mixing_cpu_int8()
+// Active when height >= 200 000  (CHV4_NPU_FORK_HEIGHT)
+// Input/output: ulong[8] (LE word representation of 64-byte state)
+// ============================================================================
+
+int gelu_int8_npu(int x) {
+    int v = (x * (128 + x)) >> 8;
+    v = max(v, -128);
+    v = min(v,  127);
+    return v;
+}
+
+void layer_norm_int8_npu(int *data, int n, __global const short* scale) {
+    long sum = 0;
+    for (int i = 0; i < n; i++) sum += (long)data[i];
+    int mean = (int)(sum / (long)n);
+    long var_sum = 0;
+    for (int i = 0; i < n; i++) {
+        long d = (long)(data[i] - mean);
+        var_sum += d * d;
+    }
+    int std_approx = (int)sqrt((float)(var_sum / (long)n)) + 1;
+    for (int i = 0; i < n; i++) {
+        int normalized = ((data[i] - mean) * 128) / std_approx;
+        data[i] = (normalized * (int)scale[i]) >> 8;
+        data[i] = max(data[i], -128);
+        data[i] = min(data[i],  127);
+    }
+}
+
+// CHv4 NPU Mixing: takes ulong[8] from MemoryHard, returns ulong[8] for CosmicFusion.
+void npu_mixing_words(
+    const ulong inp_words[8],
+    ulong out_words[8],
+    __global const char*  w1,
+    __global const char*  b1,
+    __global const char*  w2,
+    __global const char*  b2,
+    __global const short* scale1,
+    __global const short* scale2
+) {
+    // ulong[8] → int[64] (LE bytes, centered: subtract 128)
+    int input_i32[64];
+    for (int i = 0; i < 8; i++) {
+        for (int b = 0; b < 8; b++) {
+            input_i32[i*8+b] = (int)((uchar)(inp_words[i] >> (b*8))) - 128;
+        }
+    }
+
+    // ── Layer 1: Linear(64→128) ──────────────────────────────────
+    int hidden[128];
+    for (int i = 0; i < 128; i++) {
+        int acc = (int)b1[i] * 32;
+        for (int j = 0; j < 64; j++)
+            acc += input_i32[j] * (int)w1[i * 64 + j];
+        hidden[i] = acc >> 12;
+        hidden[i] = max(hidden[i], -128);
+        hidden[i] = min(hidden[i],  127);
+    }
+    layer_norm_int8_npu(hidden, 128, scale1);
+    for (int i = 0; i < 128; i++) hidden[i] = gelu_int8_npu(hidden[i]);
+
+    // ── Layer 2: Linear(128→64) ─────────────────────────────────
+    int output_i32[64];
+    for (int i = 0; i < 64; i++) {
+        int acc = (int)b2[i] * 32;
+        for (int j = 0; j < 128; j++)
+            acc += hidden[j] * (int)w2[i * 128 + j];
+        output_i32[i] = acc >> 12;
+        output_i32[i] = max(output_i32[i], -128);
+        output_i32[i] = min(output_i32[i],  127);
+    }
+    layer_norm_int8_npu(output_i32, 64, scale2);
+
+    // ── Residual add + uchar[64] → ulong[8] ────────────────────
+    for (int i = 0; i < 8; i++) {
+        out_words[i] = 0;
+        for (int b = 0; b < 8; b++) {
+            int v = output_i32[i*8+b] + input_i32[i*8+b];
+            v = max(v, -128);
+            v = min(v,  127);
+            out_words[i] |= ((ulong)((uchar)(v + 128))) << (b * 8);
+        }
+    }
+}
+
+// ============================================================================
 // Main Kernel
 // ============================================================================
 
@@ -498,8 +586,15 @@ void cosmic_harmony_v3_mine(
     __global ulong* results,
     __global uint*  result_count,
     __global uchar* result_hash,
-    const uint  memory_hard,          // 0 = legacy, 1 = scratchpad (height >= 100k)
-    __global uchar* scratchpad_buf    // [global_size × CL_SCRATCHPAD_BYTES], ignored when memory_hard=0
+    const uint  memory_hard,          // 0 = legacy (<100k)  1 = scratchpad (>=100k)
+    __global uchar* scratchpad_buf,    // ignored when memory_hard=0
+    const uint  chv4,                  // 1 = CHv4 NPU Mixing (height >= 200k)
+    __global const char*  npu_w1,      // [128*64] int8
+    __global const char*  npu_b1,      // [128]    int8
+    __global const char*  npu_w2,      // [64*128] int8
+    __global const char*  npu_b2,      // [64]     int8
+    __global const short* npu_scale1,  // [128]    int16
+    __global const short* npu_scale2   // [64]     int16
 ) {
     uint  tid   = get_global_id(0);
     ulong nonce = start_nonce + (ulong)tid;
@@ -526,14 +621,22 @@ void cosmic_harmony_v3_mine(
 
     uchar final_hash[32];
 
-    if (memory_hard) {
-        // Height >= 100k: scratchpad phase between GoldenMatrix and CosmicFusion
+    if (chv4 && memory_hard) {
+        // CHv4 (height >= 200k): GoldenMatrix → MemoryHard → NPU Mixing → CosmicFusion
+        __global uchar* my_pad = scratchpad_buf + (ulong)tid * (ulong)CL_SCRATCHPAD_BYTES;
+        ulong step4[8];
+        cl_memory_hard_transform(step3, my_pad, step4);
+        ulong step5[8];
+        npu_mixing_words(step4, step5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+        cosmic_fusion(step5, final_hash);
+    } else if (memory_hard) {
+        // CHv3 ASIC-hardened (100k – 200k): GoldenMatrix → MemoryHard → CosmicFusion
         __global uchar* my_pad = scratchpad_buf + (ulong)tid * (ulong)CL_SCRATCHPAD_BYTES;
         ulong step4[8];
         cl_memory_hard_transform(step3, my_pad, step4);
         cosmic_fusion(step4, final_hash);
     } else {
-        // Legacy: GoldenMatrix → CosmicFusion directly
+        // Legacy (height < 100k): GoldenMatrix → CosmicFusion directly
         cosmic_fusion(step3, final_hash);
     }
 
