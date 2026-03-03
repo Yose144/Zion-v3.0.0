@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Book, BookOpen, Code2, Rocket, Shield, Zap, FileText, Github, ExternalLink, ChevronRight, ChevronDown, Sparkles, Menu, X, Infinity, Users, HelpCircle, Globe, GitBranch, Lock, Layers, Coins } from 'lucide-react';
+import { Book, BookOpen, Code2, Rocket, Shield, Zap, FileText, Github, ExternalLink, ChevronRight, ChevronDown, Sparkles, Menu, X, Infinity, Users, HelpCircle, Globe, GitBranch, Lock, Layers, Coins, Cpu, Map, AlertTriangle, Building2, LayoutList } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import PhilosophyContent from '@/components/docs/PhilosophyContent';
@@ -203,11 +203,85 @@ const versions: Version[] = [
   },
 ];
 
+/* ═══════════════════════════════════════════
+   Resources — static sections (non-versioned)
+   ═══════════════════════════════════════════ */
+
+interface Section {
+  id: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  accentText: string;
+  accentBorder: string;
+  docs: Doc[];
+}
+
+const sections: Section[] = [
+  {
+    id: 'whitepaper',
+    title: 'WhitePaper',
+    icon: FileText,
+    accentText: 'text-zion-gold',
+    accentBorder: 'border-zion-gold/30',
+    docs: [
+      { id: 'wp-v297', title: 'Whitepaper v2.9.7 (EN)', file: 'whitepaper/ZION_Whitepaper_v2.9.7.md' },
+      { id: 'wp-v295-full', title: 'Whitepaper v2.9.5 (full)', file: 'whitepaper/ZION_Whitepaper_v2.9.5_FULL.md' },
+      { id: 'wp-lite', title: 'Whitepaper Lite (CS)', file: 'whitepaper-lite.md' },
+    ],
+  },
+  {
+    id: 'architecture',
+    title: 'Architecture',
+    icon: Cpu,
+    accentText: 'text-zion-cyan',
+    accentBorder: 'border-zion-cyan/30',
+    docs: [
+      { id: 'arch-overview', title: '6-Layer Stack', file: 'architecture/README.md' },
+      { id: 'arch-consensus', title: 'CHv3 → CHv4 Roadmap', file: 'architecture/consensus.md' },
+    ],
+  },
+  {
+    id: 'mainnet',
+    title: 'MainNet Launch',
+    icon: Rocket,
+    accentText: 'text-emerald-400',
+    accentBorder: 'border-emerald-400/30',
+    docs: [
+      { id: 'mainnet-plan', title: 'Launch Plan 2026', file: 'mainnet/README.md' },
+      { id: 'mainnet-checklist', title: 'Pre-MainNet Checklist', file: 'v2.9.7/mainnet-gate.md' },
+    ],
+  },
+  {
+    id: 'listing',
+    title: 'Listing / CoinGecko',
+    icon: Map,
+    accentText: 'text-violet-400',
+    accentBorder: 'border-violet-400/30',
+    docs: [
+      { id: 'coingecko-checklist', title: 'CoinGecko Checklist', file: 'mainnet/coingecko.md' },
+    ],
+  },
+  {
+    id: 'legal',
+    title: 'Legal',
+    icon: AlertTriangle,
+    accentText: 'text-orange-400',
+    accentBorder: 'border-orange-400/30',
+    docs: [
+      { id: 'legal-disclaimer', title: 'Disclaimer', file: 'legal/disclaimer.md' },
+      { id: 'legal-risk', title: 'Risk Disclosure', file: 'legal/risk.md' },
+      { id: 'legal-token', title: 'Token Not Security', file: 'legal/token.md' },
+    ],
+  },
+];
+
 function findCategoryIdByDoc(docId: string): string | null {
   const category = versions
     .flatMap((version) => version.categories)
     .find((cat) => cat.docs.some((doc) => doc.id === docId));
-  return category?.id ?? null;
+  if (category) return category.id;
+  const section = sections.find(s => s.docs.some(d => d.id === docId));
+  return section?.id ?? null;
 }
 
 export default function DocsPage() {
@@ -217,17 +291,21 @@ export default function DocsPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': false, 'v2.9.7': true, 'v2.9': false, 'v2.8.x': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': false, 'v2.9.7': true, 'v2.9': false, 'v2.8.x': false, 'whitepaper': true, 'architecture': true, 'mainnet': false, 'listing': false, 'legal': false });
+  const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
 
   // Get current version data
   const currentVersion = versions.find(v => v.id === activeVersion) || versions[1];
   const docCategories = currentVersion.categories;
 
-  // Find current doc across all versions
-  const currentDoc = versions
-    .flatMap(v => v.categories)
-    .flatMap(cat => cat.docs)
-    .find(doc => doc.id === selectedDoc);
+  // Find current doc across all versions AND sections
+  const currentDoc = [
+    ...versions.flatMap(v => v.categories).flatMap(cat => cat.docs),
+    ...sections.flatMap(s => s.docs),
+  ].find(doc => doc.id === selectedDoc);
+
+  // Check if selected doc belongs to a resource section (not versioned)
+  const currentSection = sections.find(s => s.docs.some(d => d.id === selectedDoc));
 
   // Sync with URL hash
   useEffect(() => {
@@ -459,16 +537,85 @@ export default function DocsPage() {
           {/* ═══ Sidebar — Version Tree ═══ */}
           <aside className="hidden lg:block w-72 shrink-0">
             <div className="sticky top-24 border border-white/10 rounded-2xl bg-black/60 backdrop-blur-xl overflow-hidden">
-              {/* Version Selector Header */}
-              <div className="px-5 pt-5 pb-3">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2 mb-3">
+              {/* Sidebar Tab Switcher */}
+              <div className="flex border-b border-white/10">
+                <button
+                  onClick={() => setSidebarTab('resources')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-all ${
+                    sidebarTab === 'resources'
+                      ? 'text-zion-cyan border-b-2 border-zion-cyan bg-zion-cyan/5'
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                  Resources
+                </button>
+                <button
+                  onClick={() => setSidebarTab('history')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-all ${
+                    sidebarTab === 'history'
+                      ? 'text-zion-gold border-b-2 border-zion-gold bg-zion-gold/5'
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
                   <GitBranch className="w-3.5 h-3.5" />
-                  Version Tree
-                </h3>
+                  History
+                </button>
               </div>
 
               {/* Scrollable nav area */}
-              <nav className="px-3 pb-4 max-h-[calc(100vh-180px)] overflow-y-auto space-y-1">
+              <nav className="px-3 pb-4 max-h-[calc(100vh-180px)] overflow-y-auto space-y-1 pt-2">
+                {sidebarTab === 'resources' ? (
+                  /* ── Resources Panel ── */
+                  <div className="space-y-1">
+                    {sections.map(section => {
+                      const Icon = section.icon;
+                      const isExpanded = expandedVersions[section.id] ?? false;
+                      const hasActiveDoc = section.docs.some(d => d.id === selectedDoc);
+                      return (
+                        <div key={section.id}>
+                          <button
+                            onClick={() => toggleVersion(section.id)}
+                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all text-sm ${
+                              hasActiveDoc ? 'bg-white/5 border border-white/10' : 'hover:bg-white/5'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon className={`w-4 h-4 ${section.accentText}`} />
+                              <span className={`font-semibold ${hasActiveDoc ? 'text-white' : 'text-gray-400'}`}>
+                                {section.title}
+                              </span>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+                          {isExpanded && (
+                            <div className="ml-3 mt-1 border-l border-white/5 pl-2 space-y-0.5 pb-2">
+                              {section.docs.map(doc => (
+                                <button
+                                  key={doc.id}
+                                  onClick={() => {
+                                    setSelectedDoc(doc.id);
+                                    setActiveCategory(section.id);
+                                  }}
+                                  className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm flex items-center gap-2 ${
+                                    selectedDoc === doc.id
+                                      ? `${section.accentText} font-medium bg-white/5`
+                                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                  }`}
+                                >
+                                  <FileText className="w-3.5 h-3.5 shrink-0" />
+                                  <span className="text-xs">{doc.title}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                /* ── Version Tree ── */
+                <div className="space-y-1">
                 {versions.map(version => {
                   const isExpanded = expandedVersions[version.id];
                   const isActiveVersion = activeVersion === version.id;
@@ -544,6 +691,8 @@ export default function DocsPage() {
                     </div>
                   );
                 })}
+                </div>
+                )}
               </nav>
             </div>
           </aside>
@@ -558,11 +707,21 @@ export default function DocsPage() {
                 {currentDoc && (
                   <div className="mb-10 pb-8 border-b border-white/10">
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                      <span className="font-mono text-zion-cyan">{currentVersion.label}</span>
-                      <ChevronRight className="w-3 h-3" />
-                      <span>{docCategories.find(cat => cat.docs.some(d => d.id === currentDoc.id))?.title}</span>
-                      <ChevronRight className="w-3 h-3" />
-                      <span className="text-zion-gold">{currentDoc.title}</span>
+                      {currentSection ? (
+                        <>
+                          <span className={currentSection.accentText}>{currentSection.title}</span>
+                          <ChevronRight className="w-3 h-3" />
+                          <span className="text-zion-gold">{currentDoc.title}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-mono text-zion-cyan">{currentVersion.label}</span>
+                          <ChevronRight className="w-3 h-3" />
+                          <span>{docCategories.find(cat => cat.docs.some(d => d.id === currentDoc.id))?.title}</span>
+                          <ChevronRight className="w-3 h-3" />
+                          <span className="text-zion-gold">{currentDoc.title}</span>
+                        </>
+                      )}
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight text-gradient">
                       {currentDoc.title}
