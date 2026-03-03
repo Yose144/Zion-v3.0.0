@@ -1,6 +1,7 @@
 use crate::adapter::ChainAdapter;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
+use crate::tron_signer::TronSigner;
 use crate::types::ChainFamily;
 use async_trait::async_trait;
 use serde::Deserialize;
@@ -173,14 +174,27 @@ impl ChainAdapter for TronAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        // TRC-20 mint requires TriggerSmartContract + signing key (D-04 TODO)
-        Err(WarpError::AdapterError {
+        let contract = match wzion_contract(&self.network) {
+            Some(c) => c,
+            None => {
+                return Err(WarpError::AdapterError {
+                    chain: "tron".into(),
+                    reason: format!("no wZION contract configured for network '{}'", self.network),
+                });
+            }
+        };
+        let signer = TronSigner::from_env().map_err(|e| WarpError::AdapterError {
             chain: "tron".into(),
-            reason: format!(
-                "Signing service (D-04) pending — would mint {} wZION to {} on {}",
-                instruction.amount_dest_atomic, instruction.recipient, self.network
-            ),
-        })
+            reason: format!("relay key unavailable: {}", e),
+        })?;
+        let amount = instruction.amount_dest_atomic as u64;
+        info!(
+            "[WARP][tron] minting {} wZION to {} on {} (contract {})",
+            amount, instruction.recipient, self.network, contract
+        );
+        signer
+            .mint_trc20(&self.client, &self.api_url, contract, &instruction.recipient, amount)
+            .await
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
