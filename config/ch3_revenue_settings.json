@@ -1,7 +1,7 @@
 {
-  "version": "3.1.0",
-  "description": "CH v3 Revenue Settings — 50/25/25 Model (ZION / Multi-Algo / NCL) — 2.9.7",
-  "last_updated": "2026-02-27T00:00:00Z",
+  "version": "3.2.0",
+  "description": "CH v3 Revenue Settings — 50/25/25 Model (ZION / Multi-Algo / NCL) — 2.9.7 (E-06: production wallets + buyback enabled)",
+  "last_updated": "2026-03-04T00:00:00Z",
   "streams": {
     "zion": {
       "stream": 1,
@@ -277,9 +277,17 @@
     "btc_wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
     "poll_interval_secs": 600,
     "min_buyback_btc": 0.001,
-    "auto_buyback_enabled": false,
-    "exchange": "manual",
+    "auto_buyback_enabled": true,
+    "exchange": "moneroocean",
     "reserve_pct": 10.0,
+    "risk_limits": {
+      "max_buyback_btc_per_day": 0.05,
+      "max_slippage_pct": 2.0,
+      "min_reserve_btc": 0.005,
+      "max_single_tx_btc": 0.02,
+      "pause_on_slippage_breach": true,
+      "_comment": "Safety caps: max 0.05 BTC/day, max 2% slippage, keep ≥0.005 BTC reserve, single tx ≤0.02 BTC"
+    },
     "split": {
       "burn_pct": 0,
       "dao_pct": 100
