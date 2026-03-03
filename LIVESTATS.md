@@ -1,8 +1,9 @@
 # ZION TerraNova — Live Stats
-> **Aktualizováno:** 2026-03-03T21:30 UTC  
+> **Aktualizováno:** 2026-03-03T22:30 UTC  
 > **E-07 Canary:** 🟢 IN PROGRESS — start `2026-03-03T21:00Z` → end `2026-03-06T21:00Z`  
-> **Build:** `zion-core:2.9.7` / `zion-miner:2.9.7-amd64` / `zion-pool:2.9.7`  
-> **CHv4 (cosmic_harmony_v3):** active from genesis block 0
+> **Build:** `zion-core:2.9.7` / `zion-miner:2.9.7` (ARM64+AMD64) / `zion-pool:2.9.7`  
+> **CHv4 (cosmic_harmony_v3):** active from genesis block 0  
+> **Fix:** Invalid shares ~3-4/min → ~0.2/min ✅ (Helsinki ARM64 miner v2.9.7 rebuild)
 
 ---
 
@@ -13,10 +14,8 @@
 | **Status**        | ✅ Running                | ✅ Running                | ✅ Running                |
 | **Block Height**  | 1                         | 1 (sync)                  | 1 (sync)                  |
 | **Genesis Hash**  | `bacd6027ecb0f5dc…`       | `bacd6027ecb0f5dc…`       | `bacd6027ecb0f5dc…`       |
-| **P2P**           | Reconnecting (post-reset) | Reconnecting (post-reset) | Reconnecting (post-reset) |
-| **Uptime**        | ~33 min                   | ~33 min                   | ~32 min                   |
-
-> ℹ️ P2P timeouts jsou normální bezprostředně po chain-reset — uzly se postupně znovupřipojí.
+| **P2P**           | Connected (testnet peers) | Connected (testnet peers) | Connected (testnet peers) |
+| **Uptime**        | ~1h 35min                 | ~1h 35min                 | ~1h 35min                 |
 
 ---
 
@@ -24,18 +23,18 @@
 
 | Metrika                | Hodnota                         |
 |------------------------|---------------------------------|
-| **Hashrate (live)**    | 0.104 MH/s                      |
-| **Hashrate (1h)**      | 0.104 MH/s                      |
-| **Hashrate (24h avg)** | 0.004 MH/s *(chain jen 33 min)* |
+| **Hashrate (live)**    | 0.145 MH/s                      |
+| **Hashrate (1h)**      | 0.145 MH/s                      |
+| **Hashrate (24h avg)** | 0.0104 MH/s *(chain ~1.5h)*     |
 | **Difficulty**         | 1 000                           |
 | **Active miners**      | 1                               |
 | **Total miners**       | 1                               |
-| **Valid shares**       | 80                              |
-| **Invalid shares**     | 188 *(stale po restartu)*       |
+| **Valid shares**       | 206                             |
+| **Invalid shares**     | 316 *(315 legacy — před opravou)* |
 | **Blocks found**       | 0                               |
-| **PPLNS window**       | 67 shares                       |
+| **PPLNS window**       | 166 shares                      |
 | **Pending payouts**    | 0 ZION                          |
-| **Pool version**       | 2.9.6 (binary string cosmetic, build 2.9.7) |
+| **Pool version**       | 2.9.6 (cosmetic, build 2.9.7)   |
 
 ### Fee Split
 | Příjemce            | Podíl  |
@@ -49,12 +48,14 @@
 
 ## 🌍 Minery — Per-Node
 
-| Node        | Algoritmus             | Accepted | Rejected | Accept Rate | Hashes | Uptime |
-|-------------|------------------------|----------|----------|-------------|--------|--------|
-| **USA**     | `cosmic_harmony_v3`    | 52       | 0        | 100.0 %     | 50.2 K | 33 min |
-| **Asia**    | `cosmic_harmony_v3`    | 7        | 1        | 87.5 %      | 26.9 K | 32 min |
+| Node            | Algoritmus             | Binary   | Worker     | Status        |
+|-----------------|------------------------|----------|------------|---------------|
+| **Helsinki**    | `cosmic_harmony_v3`    | v2.9.7   | `helsinki` | ✅ Running    |
+| **USA**         | `cosmic_harmony_v3`    | v2.9.7   | `usa`      | ✅ Running    |
+| **Asia**        | `cosmic_harmony_v3`    | v2.9.7   | `asia`     | ✅ Running    |
 
-> ✅ Oba minerové používají **CHv4 (cosmic_harmony_v3)** — algoritmus aktivní od genesis bloku 0.
+> ✅ Všechny 3 minerové používají **CHv4 (cosmic_harmony_v3)** — algoritmus aktivní od genesis bloku 0.  
+> ℹ️ Helsinki ARM64: nový binary sestaven přímo na serveru (`docker build`, `zion-miner:2.9.7`, 110 MB ARM64).
 
 ---
 
