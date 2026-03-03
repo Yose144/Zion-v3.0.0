@@ -15,7 +15,7 @@ function SplineFallbackScene() {
             'linear-gradient(to bottom, #08081a 0%, #0c0c28 35%, #15122a 60%, #0b0908 100%)',
         }}
       />
-      <div className="container mx-auto relative z-10">
+      <div className="zion-container relative z-10">
         <div className="text-center mb-7 md:mb-10">
           <p className="text-[10px] uppercase tracking-[0.6em] mb-3 font-light" style={{ color: 'rgba(249,217,118,0.42)' }}>
             The Eternal Network · 3D Experience

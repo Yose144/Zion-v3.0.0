@@ -111,7 +111,7 @@ export default function NodeSetupClient() {
   const [activeNetwork, setActiveNetwork] = useState(0);
 
   return (
-    <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4 overflow-x-hidden">
+    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
       {/* ── Background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-cyan/8" />
@@ -119,7 +119,7 @@ export default function NodeSetupClient() {
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-cyan/15 to-transparent" />
       </div>
 
-      <div className="relative z-10 container mx-auto max-w-5xl space-y-12">
+      <div className="relative z-10 zion-container max-w-5xl space-y-12">
         {/* ═══════ HERO ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}

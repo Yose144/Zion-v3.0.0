@@ -190,14 +190,14 @@ export default function CH3SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="zion-shell min-h-screen flex items-center justify-center">
         <div className="text-yellow-400 text-2xl animate-pulse">Loading CH v3 Settings...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="zion-shell min-h-screen text-white p-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-yellow-400 mb-2">

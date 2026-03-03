@@ -25,7 +25,7 @@ export default function AINavtivePage() {
   ];
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="zion-shell min-h-screen pb-20 overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative py-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-zion-purple/20 via-transparent to-transparent" />

@@ -10,15 +10,15 @@ export const metadata: Metadata = {
 
 export default function AdvancedPoolPage() {
   return (
-    <div className="min-h-screen bg-black text-white pb-16">
-      <div className="container mx-auto max-w-6xl px-4 pt-20">
+    <div className="zion-shell min-h-screen text-white pb-16">
+      <div className="zion-container max-w-6xl pt-20">
         <div className="mb-6">
           <p className="text-xs uppercase tracking-[0.35em] text-gray-400">Monitoring</p>
           <h1 className="text-3xl md:text-4xl font-semibold text-gradient">Advanced Pool Dashboard</h1>
           <p className="mt-2 text-sm text-gray-300">PromQL explorer · custom queries · live metrics</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-3 shadow-lg">
+        <div className="zion-panel p-3">
           <iframe
             src={IFRAME_SRC}
             title="Prometheus Graph"

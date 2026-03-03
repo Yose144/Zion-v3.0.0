@@ -140,8 +140,8 @@ export default function BridgePage() {
   const memoString = `BRIDGE:${memoChain}:${memoAddr}`;
 
   return (
-    <div className="min-h-screen pt-32 pb-24 px-4">
-      <div className="container mx-auto max-w-7xl space-y-12">
+    <div className="zion-shell min-h-screen pt-32 pb-24 overflow-x-hidden">
+      <div className="zion-container max-w-7xl space-y-12">
 
         {/* ── HERO ───────────────────────────────────────────────────────── */}
         <motion.section

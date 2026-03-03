@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'ZION Blockchain v2.9.6 — On the Star';
+export const alt = 'ZION Blockchain v2.9.7 — On the Star';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -75,7 +75,7 @@ export default async function Image() {
             marginBottom: '24px',
           }}
         >
-          v2.9.6 · On the Star · TestNet
+          v2.9.7 · On the Star · TestNet
         </div>
 
         {/* Title */}

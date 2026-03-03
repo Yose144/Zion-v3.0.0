@@ -55,8 +55,8 @@ const alternativeStacks = [
 
 export default function MiningClient() {
   return (
-    <div className="min-h-screen px-4 pt-32 pb-20">
-      <div className="container mx-auto max-w-5xl space-y-10">
+    <div className="zion-shell min-h-screen pt-32 pb-20 overflow-x-hidden">
+      <div className="zion-container max-w-5xl space-y-10">
   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-4xl border border-white/10 bg-black/60 p-10 backdrop-blur-xl text-center">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Quantum Leap mining stack</p>
           <h1 className="text-5xl md:text-6xl font-semibold text-gradient mt-4">Universal miner + ML orchestrator</h1>

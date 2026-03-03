@@ -57,11 +57,11 @@
     width: 100%;
     max-width: 80rem;
     margin-inline: auto;
-    padding-inline: 1rem;
+    padding-inline: clamp(1rem, 4vw, 2rem);
   }
 
   .zion-panel {
-    border-radius: 1.5rem;
+    border-radius: clamp(1rem, 2.5vw, 1.5rem);
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(20px);
@@ -84,16 +84,34 @@
   }
 
   .zion-section-title {
-    font-size: 1.8rem;
-    line-height: 1.2;
-    font-weight: 600;
+    font-size: clamp(1.6rem, 4vw, 3rem);
+    line-height: 1.15;
+    font-weight: 700;
     color: rgb(255 255 255);
+    letter-spacing: -0.02em;
   }
 
   .zion-section-sub {
-    margin-top: 0.4rem;
-    font-size: 0.9rem;
+    margin-top: 0.75rem;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    line-height: 1.75;
     color: rgb(156 163 175);
+    max-width: 65ch;
+  }
+
+  /* Fluid hero heading — used for page-level H1s */
+  .zion-page-heading {
+    font-size: clamp(2.2rem, 7vw, 5.5rem);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  /* Stat card grid — responsive columns */
+  .zion-stat-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   }
 
   .text-gradient {

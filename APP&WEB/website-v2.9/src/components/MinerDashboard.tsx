@@ -255,7 +255,7 @@ export default function MinerDashboard({ address }: { address: string }) {
   /* ── Loading state ── */
   if (loading) {
     return (
-      <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4 flex items-center justify-center">
+      <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-400">
           <RefreshCw className="h-5 w-5 animate-spin" />
           <span>Loading miner data...</span>
@@ -267,8 +267,8 @@ export default function MinerDashboard({ address }: { address: string }) {
   /* ── Error / Not Found ── */
   if (error || !data) {
     return (
-      <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4">
-        <div className="container mx-auto max-w-3xl">
+      <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24">
+        <div className="zion-container max-w-3xl">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -295,14 +295,9 @@ export default function MinerDashboard({ address }: { address: string }) {
   const s = data.stats;
 
   return (
-    <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4 overflow-x-hidden">
-      {/* ── Background glows ── */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
-        <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
-      </div>
+    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
 
-      <div className="relative z-10 container mx-auto max-w-7xl space-y-14">
+      <div className="relative z-10 zion-container max-w-7xl space-y-14">
 
         {/* ═══════ BREADCRUMB + HEADER ═══════ */}
         <motion.section

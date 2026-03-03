@@ -35,10 +35,44 @@ interface Version {
 
 const versions: Version[] = [
   {
-    id: 'v2.9.6',
-    label: 'v2.9.6',
+    id: 'v2.9.7',
+    label: 'v2.9.7',
     tag: 'CURRENT',
     tagColor: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/5',
+    description: 'Pre-MainNet Gate — unified design, stable TestNet',
+    categories: [
+      {
+        id: 'v297-overview',
+        title: 'Overview',
+        icon: Rocket,
+        docs: [
+          { id: 'v297-readme', title: 'ZION v2.9.7 Overview', file: 'v2.9.7/README.md' },
+          { id: 'v297-changelog', title: 'Changelog', file: 'v2.9.7/changelog.md' },
+        ]
+      },
+      {
+        id: 'v297-design',
+        title: 'Design System',
+        icon: Sparkles,
+        docs: [
+          { id: 'v297-design-system', title: 'UI Design System', file: 'v2.9.7/design-system.md' },
+        ]
+      },
+      {
+        id: 'v297-mainnet',
+        title: 'MainNet Gate',
+        icon: Shield,
+        docs: [
+          { id: 'v297-mainnet-gate', title: 'Pre-MainNet Gate Checklist', file: 'v2.9.7/mainnet-gate.md' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'v2.9.6',
+    label: 'v2.9.6',
+    tag: 'PREVIOUS',
+    tagColor: 'text-blue-400 border-blue-400/30 bg-blue-400/5',
     description: 'Pre-Mainnet Fork — 6-Layer „On the Star“ + Decade Decay',
     categories: [
       {
@@ -90,9 +124,9 @@ const versions: Version[] = [
   {
     id: 'v2.9.5',
     label: 'v2.9.5',
-    tag: 'PREVIOUS',
-    tagColor: 'text-gray-400 border-gray-400/30 bg-gray-400/5',
-    description: 'Native Awakening — předchozí verze',
+    tag: 'ARCHIVE',
+    tagColor: 'text-gray-500 border-gray-500/30 bg-gray-500/5',
+    description: 'Native Awakening — archived release',
     categories: [
       {
         id: 'getting-started',
@@ -188,13 +222,13 @@ function findCategoryIdByDoc(docId: string): string | null {
 }
 
 export default function DocsPage() {
-  const [activeVersion, setActiveVersion] = useState('v2.9.6');
-  const [selectedDoc, setSelectedDoc] = useState('v296-readme');
-  const [activeCategory, setActiveCategory] = useState('v296-overview');
+  const [activeVersion, setActiveVersion] = useState('v2.9.7');
+  const [selectedDoc, setSelectedDoc] = useState('v297-readme');
+  const [activeCategory, setActiveCategory] = useState('v297-overview');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': false, 'v2.9.7': true });
 
   // Get current version data
   const currentVersion = versions.find(v => v.id === activeVersion) || versions[1];
@@ -291,10 +325,10 @@ export default function DocsPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="zion-shell min-h-screen">
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-white/10 bg-linear-to-b from-zion-cyan/10 via-transparent to-transparent">
-        <div className="container mx-auto px-4 py-20 relative">
+        <div className="zion-container py-20 relative">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 mb-6">
               <BookOpen className="w-4 h-4 text-zion-cyan" />
@@ -362,7 +396,7 @@ export default function DocsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-3 lg:px-2 xl:px-0 py-12">
+      <div className="zion-container py-12">
         {/* Mobile Navigation Toggle */}
         <div className="lg:hidden mb-6">
           <button
