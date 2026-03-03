@@ -16,10 +16,10 @@ use serde_json;
 pub const COINBASE_MATURITY: u64 = 100;
 
 /// Maximum allowed timestamp drift from the previous block.
-/// TestNet: 24 hours (86400 s) to survive restarts and long mining pauses.
+/// TestNet: 30 days (2 592 000 s) to survive long maintenance windows / restarts.
 /// MainNet: reduce to 7200 s (2 hours) before launch.
 /// LWMA internally clamps solve times to prevent manipulation.
-pub const MAX_TIMESTAMP_DRIFT_TESTNET: u64 = 86400;
+pub const MAX_TIMESTAMP_DRIFT_TESTNET: u64 = 2_592_000; // 30 days
 pub const MAX_TIMESTAMP_DRIFT_MAINNET: u64 = 7200;
 /// Default timestamp drift (mainnet = 2 hours, matches Bitcoin)
 pub const MAX_TIMESTAMP_DRIFT: u64 = MAX_TIMESTAMP_DRIFT_MAINNET;
