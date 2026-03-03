@@ -1,8 +1,10 @@
 # CODE FREEZE SIGN-OFF — ZION TerraNova v2.9.7
 
-> **Stav:** � TECHNICKY KOMPLETNÍ — 168h stability window splněno, zbývá genesis ceremonie + v2.9.8/2.9.9 bug-fix kola  
+> **Stav:** 🟡 PRE-MAINNET GATE OTEVŘENÁ — 168h stability window splněno; zbývá CHv4 upgrade completion, revenue activation canary a genesis/freeze artefakty  
 > **Target tag:** `v2.9.7-freeze` → MainNet spuštění jako **v3.0**  
 > **Datum cíle:** 31. 3. 2026 (v2.9.7 freeze) · MainNet v3.0 po v2.9.8 + v2.9.9
+
+> Canonical status: `docs/2.9.7/MAINNET_READINESS_UNIFIED.md`
 
 ---
 
@@ -30,6 +32,11 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [x] `config/ch3_revenue_settings.json` v3.0.0 — 5 streamů nakonfigurováno ✅
 - [ ] Produkční wallet adresy nastavit (→ 2.9.8)
 - [ ] BuyBack modul aktivovat (→ 2.9.8)
+
+### CHv4 / MainNet gate
+- [ ] CHv4 activation policy final (fork-height/governance + rollout pravidla)
+- [ ] CHv4 production E2E run (pool + miner + telemetry) bez kritických incidentů
+- [ ] Revenue 72h canary payout run (audit ledger + rollback plán)
 
 ### Konsensus / Bezpečnost
 - [x] On-chain time-lock vynucen v mainnet buildu (`premine.rs`) — `DAO_TREASURY_LOCK_HEIGHT = 525_600`, `is_transfer_allowed()` — commit `c521c38` ✅ 2026-03-01

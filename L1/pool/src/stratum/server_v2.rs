@@ -410,6 +410,7 @@ impl StratumServer {
             || algo == "cosmic"
             || algo == "cosmic_harmony_v1"
             || algo == "cosmic_harmony_v3"
+            || algo == "cosmic_harmony_v4"
         {
             // Cosmic share validator compares a 32-bit value (state0) to a u32 target.
             // Prefer explicit target_u32 from core template, else fall back to low32 of `target`.
@@ -475,6 +476,9 @@ impl StratumServer {
             "cosmic" | "cosmic_harmony" | "cosmicharmony" => "cosmic_harmony",
             "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2" => "cosmic_harmony_v2",
             "cosmic_harmony_v3" | "cosmicharmonyv3" | "cosmic-harmony-v3" => "cosmic_harmony_v3",
+            "cosmic_harmony_v4" | "cosmicharmonyv4" | "cosmic-harmony-v4" | "chv4" | "ch4" => {
+                "cosmic_harmony_v4"
+            }
             "yescrypt" => "yescrypt",
             "blake3" => "blake3",
             "autolykos" | "autolykos_v2" | "autolykosv2" | "autolykos2" | "autolykos_v2_gpu" => {
@@ -623,7 +627,7 @@ impl StratumServer {
                 let t = u64::MAX / diff;
                 format!("{:016x}", t)
             }
-            "cosmic_harmony" | "cosmic_harmony_v3" | "cosmic" => {
+            "cosmic_harmony" | "cosmic_harmony_v3" | "cosmic_harmony_v4" | "cosmic" => {
                 let t = (u32::MAX as u64) / diff;
                 let t = (t.min(u32::MAX as u64)) as u32;
                 format!("{:08x}", t)
@@ -979,11 +983,9 @@ impl StratumServer {
             "mining.submit" => self.handle_submit(connection, &request).await,
             "keepalived" => self.handle_keepalive(connection, &request).await,
             "getjob" => self.handle_getjob(connection, &request).await,
-            // NCL (Neural Compute Layer) stubs — full NCL manager is planned for Phase 2.
-            // The internal miner sends these periodically; respond gracefully instead of
-            // returning an error that pollutes logs and wastes resources.
+            // NCL (Neural Compute Layer) JSON-RPC methods.
             "ncl.register" | "ncl.get_task" | "ncl.submit" | "ncl.status" => {
-                self.handle_ncl_stub(connection, &request).await
+                self.handle_ncl(connection, &request).await
             }
             _ => Err(anyhow!("Unknown method: {}", method)),
         }
@@ -1953,10 +1955,6 @@ impl StratumServer {
         Ok(Some(serde_json::to_value(response)?))
     }
 
-    /// NCL stub — returns a graceful "not available" response.
-    /// The full NCL (Neural Compute Layer) manager is planned for Phase 2.
-    /// Internal miners and desktop agents may send ncl.register / ncl.get_task periodically;
-    /// respond cleanly instead of erroring out to avoid log noise and wasted resources.
     /// NCL (Neural Compute Layer) handler — Phase B: PoUW aktivace.
     ///
     /// Protokol: JSON-RPC přes stratum spojení.
@@ -1964,11 +1962,34 @@ impl StratumServer {
     ///
     /// Verifikace: hash_chaining_v1 = blake3(seed) × rounds
     /// Pool ověří stejným výpočtem (deterministické, rychlé).
-    async fn handle_ncl_stub(
+    async fn handle_ncl(
         &self,
         connection: &Arc<RwLock<Connection>>,
         request: &StratumRequest,
     ) -> Result<Option<Value>> {
+        if !Self::ncl_enabled() {
+            let response = StratumResponse::success(
+                request.id.clone(),
+                json!({
+                    "enabled": false,
+                    "status": "ncl_disabled",
+                    "message": "NCL is disabled on this pool"
+                }),
+            );
+            return Ok(Some(serde_json::to_value(response)?));
+        }
+
+        {
+            let conn = connection.read().await;
+            if conn.state != ConnectionState::Authenticated {
+                let response = StratumResponse::error(
+                    request.id.clone(),
+                    StratumError::invalid_params("Not authenticated"),
+                );
+                return Ok(Some(serde_json::to_value(response)?));
+            }
+        }
+
         match request.method.as_str() {
             "ncl.register" => self.handle_ncl_register(connection, request).await,
             "ncl.get_task" => self.handle_ncl_get_task(connection, request).await,
@@ -1982,6 +2003,23 @@ impl StratumServer {
                 Ok(Some(serde_json::to_value(response)?))
             }
         }
+    }
+
+    fn ncl_enabled() -> bool {
+        std::env::var("ZION_NCL_ENABLED")
+            .map(|v| {
+                let s = v.trim().to_lowercase();
+                s == "1" || s == "true" || s == "yes" || s == "on"
+            })
+            .unwrap_or(true)
+    }
+
+    fn ncl_rounds() -> u32 {
+        std::env::var("ZION_NCL_ROUNDS")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .map(|n| n.clamp(100, 20_000))
+            .unwrap_or(1000)
     }
 
     /// NCL Register — miner oznamuje NPU schopnosti.
@@ -2009,6 +2047,7 @@ impl StratumServer {
             "🧠 NCL register: session={} npu={} ({:.1} TFLOPS) allocation={:.0}%",
             session_id, npu_type, npu_tflops, allocation * 100.0
         );
+        metrics::inc_ncl_registered();
 
         let response = StratumResponse::success(
             request.id.clone(),
@@ -2046,8 +2085,8 @@ impl StratumServer {
         let seed_hash = blake3::hash(seed_input.as_bytes());
         let seed_hex = hex::encode(seed_hash.as_bytes());
 
-        // Rounds: 1000 kol blake3 chaining ≈ 10–50ms na CPU
-        let rounds: u32 = 1000;
+        // Bounded rounds for production safety (env override via ZION_NCL_ROUNDS).
+        let rounds: u32 = Self::ncl_rounds();
         let task_id = format!("ncl_{}_{}", &current_job_id[..8.min(current_job_id.len())], &session_id[..8.min(session_id.len())]);
 
         tracing::debug!(
@@ -2069,6 +2108,7 @@ impl StratumServer {
                 "reward_multiplier": 1.0
             }),
         );
+        metrics::inc_ncl_tasks_created();
         Ok(Some(serde_json::to_value(response)?))
     }
 
@@ -2100,6 +2140,14 @@ impl StratumServer {
             .and_then(|v| v.as_str())
             .unwrap_or("");
 
+        if task_id.trim().is_empty() {
+            let response = StratumResponse::error(
+                request.id.clone(),
+                StratumError::invalid_params("Missing task_id"),
+            );
+            return Ok(Some(serde_json::to_value(response)?));
+        }
+
         // Zrekonstruujeme seed z task_id (obsahuje prefix job_id a session_id)
         let (session_id, current_job_id) = {
             let conn = connection.read().await;
@@ -2113,6 +2161,7 @@ impl StratumServer {
         let seed_hex = hex::encode(seed_hash.as_bytes());
 
         // Spustíme verifikaci asynchronně (CPU-bound → spawn_blocking)
+        let rounds: u32 = Self::ncl_rounds();
         let expected = {
             let seed_bytes = match hex::decode(&seed_hex) {
                 Ok(b) => b,
@@ -2124,7 +2173,6 @@ impl StratumServer {
                     ))?));
                 }
             };
-            let rounds: u32 = 1000;
             tokio::task::spawn_blocking(move || {
                 let mut state = [0u8; 32];
                 state.copy_from_slice(&seed_bytes[..32]);
@@ -2139,6 +2187,15 @@ impl StratumServer {
 
         // Normalizovat submitted hex (strip 0x prefix)
         let submitted_clean: String = submitted.trim_start_matches("0x").to_lowercase();
+        if submitted_clean.len() != 64 || !Self::is_hex(&submitted_clean) {
+            metrics::inc_ncl_tasks_rejected();
+            let response = StratumResponse::error(
+                request.id.clone(),
+                StratumError::invalid_params("Invalid result format"),
+            );
+            return Ok(Some(serde_json::to_value(response)?));
+        }
+        metrics::inc_ncl_tasks_submitted();
         let valid = submitted_clean == expected;
 
         if valid {
@@ -2155,6 +2212,7 @@ impl StratumServer {
                     "message": "NCL PoUW share accepted"
                 }),
             );
+            metrics::inc_ncl_tasks_accepted();
             Ok(Some(serde_json::to_value(response)?))
         } else {
             tracing::warn!(
@@ -2167,6 +2225,7 @@ impl StratumServer {
                 request.id.clone(),
                 StratumError::invalid_params("NCL result mismatch"),
             );
+            metrics::inc_ncl_tasks_rejected();
             Ok(Some(serde_json::to_value(response)?))
         }
     }
@@ -2186,6 +2245,7 @@ impl StratumServer {
                 "session_id": session_id,
                 "supported_types": ["hash_chaining_v1"],
                 "task_interval_ms": 5000,
+                "rounds": Self::ncl_rounds(),
                 "fee_percent": 10
             }),
         );

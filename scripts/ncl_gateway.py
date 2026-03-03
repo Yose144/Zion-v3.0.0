@@ -53,14 +53,47 @@ log = logging.getLogger(__name__)
 # ── Runtime detection ──────────────────────────────────────────
 ONNX_AVAILABLE   = False
 TORCH_AVAILABLE  = False
+ONNX_PROVIDERS   = []
+NPU_PROVIDER     = ""
+NPU_ENABLED      = False
+
+
+def _detect_npu_provider(providers: list[str]) -> str:
+    if not providers:
+        return ""
+    providers_l = [str(p) for p in providers]
+    preferred = [
+        "QNNExecutionProvider",
+        "CoreMLExecutionProvider",
+        "NnapiExecutionProvider",
+        "OpenVINOExecutionProvider",
+    ]
+    for p in preferred:
+        if p in providers_l:
+            return p
+    for p in providers_l:
+        low = p.lower()
+        if "npu" in low or "neural" in low:
+            return p
+    return ""
 
 try:
     import onnxruntime as ort
     ONNX_AVAILABLE = True
-    providers = ort.get_available_providers()
-    log.info(f"ONNX Runtime available — providers: {providers}")
+    ONNX_PROVIDERS = ort.get_available_providers()
+    log.info(f"ONNX Runtime available — providers: {ONNX_PROVIDERS}")
 except ImportError:
     log.info("ONNX Runtime not installed — using hash-based fallback tasks")
+
+NPU_PROVIDER = _detect_npu_provider(ONNX_PROVIDERS)
+NPU_ENABLED = bool(NPU_PROVIDER)
+
+# Optional operator override (force on/off independent of provider autodetect)
+raw_npu_env = os.environ.get("NCL_NPU_ENABLED", "").strip().lower()
+if raw_npu_env in ("1", "true", "yes", "on"):
+    NPU_ENABLED = True
+elif raw_npu_env in ("0", "false", "no", "off"):
+    NPU_ENABLED = False
 
 try:
     import torch
@@ -79,6 +112,9 @@ stats = {
     "worker": NCL_WORKER,
     "gpu_enabled": GPU_ENABLED,
     "onnx_available": ONNX_AVAILABLE,
+    "onnx_providers": ONNX_PROVIDERS,
+    "npu_enabled": NPU_ENABLED,
+    "npu_provider": NPU_PROVIDER,
 }
 
 
@@ -201,6 +237,8 @@ def ncl_poll_loop():
                 "capabilities": {
                     "gpu":  GPU_ENABLED,
                     "onnx": ONNX_AVAILABLE,
+                    "npu": NPU_ENABLED,
+                    "npu_provider": NPU_PROVIDER,
                     "tasks": list(TASK_HANDLERS.keys()),
                 }
             })
@@ -261,7 +299,10 @@ def main():
     log.info("══════════════════════════════════════════")
     log.info("  ZION NCL Gateway — Neural Compute Layer")
     log.info(f"  Stream 5 | Port: {NCL_PORT}")
-    log.info(f"  GPU: {GPU_ENABLED} | ONNX: {ONNX_AVAILABLE} | Torch: {TORCH_AVAILABLE}")
+    log.info(
+        f"  GPU: {GPU_ENABLED} | ONNX: {ONNX_AVAILABLE} | NPU: {NPU_ENABLED}"
+        f"{f' ({NPU_PROVIDER})' if NPU_PROVIDER else ''} | Torch: {TORCH_AVAILABLE}"
+    )
     log.info(f"  Pool: {NCL_POOL_URL}")
     log.info(f"  Worker: {NCL_WORKER}")
     log.info("══════════════════════════════════════════")

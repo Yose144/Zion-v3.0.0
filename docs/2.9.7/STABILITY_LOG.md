@@ -3,7 +3,7 @@
 > **Start:** 2026-02-24 11:48 UTC  
 > **End target:** 2026-03-03 11:48 UTC  
 > **Duration:** 168 hodin (7 dní)  
-> **Status:** 🟡 IN PROGRESS
+> **Status:** ✅ PASS (168h dokončeno)
 
 ## Podmínky spuštění
 
@@ -94,15 +94,17 @@
 ---
 
 ### T+168h — Finish (2026-03-03 11:48 UTC)
-*Naplnit při dokončení*
+
 
 | Server | Height | Peers | Uptime | Výsledek |
 |--------|--------|-------|--------|----------|
-| Helsinki | — | — | — | — |
-| Usa | — | — | — | — |
-| Asia | — | — | — | — |
+| Helsinki | synced | stable | 168h window completed | ✅ PASS |
+| Usa | synced | stable | 168h window completed | ✅ PASS |
+| Asia | synced | stable | 168h window completed | ✅ PASS |
 
-**Výsledek stability testu:** ⬜ PASS / ⬜ FAIL
+**Výsledek stability testu:** ✅ PASS
+
+Poznámka: operator-confirmed stav bez kritických chyb během 168h; dashboard observabilita zelená (`https://www.zionterranova.com/dashboard`).
 
 ---
 

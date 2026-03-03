@@ -7,6 +7,8 @@
 **Licence kódu:** MIT  
 **Repozitář:** https://github.com/Yose144/Zion-2.9  
 
+**Readiness addendum (2026-03-03):** 168h stability PASS; před MainNet launch zůstává otevřená CHv4 production upgrade gate, revenue production activation gate a genesis/freeze sign-off gate (viz `docs/2.9.7/MAINNET_READINESS_UNIFIED.md`).
+
 ---
 
 > *"Nestavíme banku. Stavíme most."*

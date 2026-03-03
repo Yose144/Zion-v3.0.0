@@ -47,7 +47,8 @@ impl Algorithm {
             // All cosmic_harmony variants now map to CHv3
             "cosmic_harmony" | "cosmic" | "cosmic_harmony_v3" | "cosmic_v3" | "cosmic3"
             | "cosmicharmony" | "cosmic-harmony" | "cosmic-harmony-v3" | "cosmicharmonyv3"
-            | "chv3" | "ch3" | "cosmic_harmony_v1" | "cosmic_harmony_v2" | "cosmicharmonyv2"
+            | "chv3" | "ch3" | "chv4" | "ch4" | "cosmic_harmony_v4" | "cosmicharmonyv4"
+            | "cosmic-harmony-v4" | "cosmic_harmony_v1" | "cosmic_harmony_v2" | "cosmicharmonyv2"
             | "cosmic-harmony-v2" => Algorithm::CosmicHarmony,
             "blake3" => Algorithm::Blake3,
             "autolykos" | "autolykos_v2" => Algorithm::AutolykovV2,
@@ -615,6 +616,10 @@ mod tests {
             Algorithm::CosmicHarmony
         );
         assert_eq!(
+            Algorithm::from_str("cosmic_harmony_v4"),
+            Algorithm::CosmicHarmony
+        );
+        assert_eq!(
             Algorithm::from_str("cosmic_harmony_v1"),
             Algorithm::CosmicHarmony
         );
@@ -628,9 +633,10 @@ mod tests {
 
     #[test]
     fn test_algorithm_all_known_aliases() {
-        // CHv3 aliases
+        // CHv3/CHv4 aliases (currently mapped to the same CosmicHarmony validator)
         for alias in &["ch3", "cosmic3", "cosmicharmony", "cosmic-harmony", 
-                       "cosmic-harmony-v3", "cosmicharmonyv3", "cosmicharmonyv2",
+                   "cosmic-harmony-v3", "cosmicharmonyv3", "cosmic_harmony_v4",
+                   "cosmic-harmony-v4", "cosmicharmonyv4", "ch4", "chv4", "cosmicharmonyv2",
                        "cosmic-harmony-v2", "cosmic_v3"] {
             assert_eq!(Algorithm::from_str(alias), Algorithm::CosmicHarmony,
                 "Expected CosmicHarmony for alias '{}'", alias);
