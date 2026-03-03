@@ -401,6 +401,90 @@ void cl_memory_hard_transform(
 }
 
 // ============================================================================
+// CHv4 NPU Mixing Step — INT8 MLP 64→128→64 + residual
+// Mirrors Rust: L1/cosmic-harmony/src/algorithms_npu.rs :: npu_mixing_cpu_int8()
+// Active when height >= 200 000  (CHV4_NPU_FORK_HEIGHT)
+// ============================================================================
+
+// GELU approx: gelu(x) ≈ x*(128+x)/256, clamped [-128,127]
+int gelu_int8_cl(int x) {
+    int v = (x * (128 + x)) >> 8;
+    if (v < -128) v = -128;
+    if (v >  127) v =  127;
+    return v;
+}
+
+// LayerNorm (stats-free integer, matches Rust layer_norm_int8)
+void layer_norm_int8_cl(int *data, int n, __global const short* scale) {
+    long sum = 0;
+    for (int i = 0; i < n; i++) sum += (long)data[i];
+    int mean = (int)(sum / (long)n);
+    long var_sum = 0;
+    for (int i = 0; i < n; i++) {
+        long d = (long)(data[i] - mean);
+        var_sum += d * d;
+    }
+    int std_approx = (int)sqrt((double)(var_sum / (long)n)) + 1;
+    for (int i = 0; i < n; i++) {
+        int normalized = ((data[i] - mean) * 128) / std_approx;
+        data[i] = (normalized * (int)scale[i]) >> 8;
+        if (data[i] < -128) data[i] = -128;
+        if (data[i] >  127) data[i] =  127;
+    }
+}
+
+// CHv4 NPU Mixing: INT8 MLP forward pass with residual add
+// W1 [128*64], b1 [128], W2 [64*128], b2 [64], scale1 [128], scale2 [64]
+void npu_mixing_step_cl(
+    const uchar inp[64],
+    uchar out64[64],
+    __global const char*  w1,
+    __global const char*  b1,
+    __global const char*  w2,
+    __global const char*  b2,
+    __global const short* scale1,
+    __global const short* scale2
+) {
+    // Input u8 → i32 (center: subtract 128)
+    int input_i32[64];
+    for (int i = 0; i < 64; i++) input_i32[i] = (int)inp[i] - 128;
+
+    // ── Layer 1: Linear(64→128) ──────────────────────────────────
+    int hidden[128];
+    for (int i = 0; i < 128; i++) {
+        int acc = (int)b1[i] * 32;        // bias upscale (Q5)
+        for (int j = 0; j < 64; j++)
+            acc += input_i32[j] * (int)w1[i * 64 + j];
+        hidden[i] = acc >> 12;
+        if (hidden[i] < -128) hidden[i] = -128;
+        if (hidden[i] >  127) hidden[i] =  127;
+    }
+    // LayerNorm + GELU
+    layer_norm_int8_cl(hidden, 128, scale1);
+    for (int i = 0; i < 128; i++) hidden[i] = gelu_int8_cl(hidden[i]);
+
+    // ── Layer 2: Linear(128→64) ──────────────────────────────────
+    int output_i32[64];
+    for (int i = 0; i < 64; i++) {
+        int acc = (int)b2[i] * 32;
+        for (int j = 0; j < 128; j++)
+            acc += hidden[j] * (int)w2[i * 128 + j];
+        output_i32[i] = acc >> 12;
+        if (output_i32[i] < -128) output_i32[i] = -128;
+        if (output_i32[i] >  127) output_i32[i] =  127;
+    }
+    layer_norm_int8_cl(output_i32, 64, scale2);
+
+    // ── Residual add + output i32 → u8 ──────────────────────────
+    for (int i = 0; i < 64; i++) {
+        int v = output_i32[i] + input_i32[i];
+        if (v < -128) v = -128;
+        if (v >  127) v =  127;
+        out64[i] = (uchar)(v + 128);
+    }
+}
+
+// ============================================================================
 // Mining kernels
 // ============================================================================
 
@@ -414,7 +498,15 @@ __kernel void cosmic_harmony_v3_mine(
     __global uchar *found_hash,
     __global uint *solution_count,
     uint memory_hard,
-    __global uchar *scratchpad_buf
+    __global uchar *scratchpad_buf,
+    // CHv4 args (height >= 200 000) — ignored when chv4==0
+    uint chv4,
+    __global const char*  npu_w1,
+    __global const char*  npu_b1,
+    __global const char*  npu_w2,
+    __global const char*  npu_b2,
+    __global const short* npu_scale1,
+    __global const short* npu_scale2
 ) {
     uint gid = get_global_id(0);
     ulong nonce = start_nonce + gid;
@@ -451,14 +543,22 @@ __kernel void cosmic_harmony_v3_mine(
     sha3_512(step1, 32, step2);
     golden_matrix(step2, step3);
 
-    if (memory_hard) {
-        // Height >= 100k: insert memory-hard scratchpad between GoldenMatrix and CosmicFusion
+    if (chv4 && memory_hard) {
+        // CHv4 (height >= 200k): GoldenMatrix → MemoryHard → NPU Mixing → CosmicFusion
+        __global uchar* my_pad = scratchpad_buf + (ulong)gid * (ulong)CL_SCRATCHPAD_BYTES;
+        uchar step4[64];
+        cl_memory_hard_transform(step3, my_pad, step4);
+        uchar step5[64];
+        npu_mixing_step_cl(step4, step5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+        cosmic_fusion(step5, final_hash);
+    } else if (memory_hard) {
+        // CHv3 (height 100k–200k): GoldenMatrix → MemoryHard → CosmicFusion
         __global uchar* my_pad = scratchpad_buf + (ulong)gid * (ulong)CL_SCRATCHPAD_BYTES;
         uchar step4[64];
         cl_memory_hard_transform(step3, my_pad, step4);
         cosmic_fusion(step4, final_hash);
     } else {
-        // Legacy pipeline (height < 100k)
+        // Legacy pipeline (height < 100k): GoldenMatrix → CosmicFusion
         cosmic_fusion(step3, final_hash);
     }
 
@@ -528,6 +628,72 @@ __kernel void cosmic_harmony_v3_batch(
     }
 }
 '''
+
+
+# ============================================================================
+# CHv4 Weight Derivation  (matches Rust algorithms_npu.rs :: MlpWeights::from_genesis_seed)
+# ============================================================================
+
+def _derive_chv4_weights() -> dict:
+    """
+    Derive CHv4 INT8 MLP weights from genesis seed.
+    Must match Rust exactly: blake3::Hasher::new_keyed(CHV4_MLP_GENESIS_SEED),
+    update b"CHv4_weights_v1", then counter-based expansion.
+
+    Returns dict with numpy arrays:
+      w1     [128*64] int8   W1 matrix flattened
+      b1     [128]    int8
+      w2     [64*128] int8   W2 matrix flattened
+      b2     [64]     int8
+      scale1 [128]    int16  LayerNorm scale layer 1
+      scale2 [64]     int16  LayerNorm scale layer 2
+    """
+    GENESIS_SEED = b"ZION_CHv4_mixing_v1_genesis_seed"  # 32 bytes
+    TOTAL_CHUNKS = 17 * 32  # 544 × 32B = 17408 bytes (> 16768 needed)
+
+    expanded = bytearray()
+    try:
+        import blake3 as _blake3  # pip install blake3
+        hasher = _blake3.blake3(key=GENESIS_SEED)
+        hasher.update(b"CHv4_weights_v1")
+        for chunk_idx in range(TOTAL_CHUNKS):
+            h = hasher.copy()
+            h.update(chunk_idx.to_bytes(4, "little"))
+            expanded.extend(h.digest())
+    except ImportError:
+        import hashlib, warnings
+        warnings.warn(
+            "\n[CHv4 GPU] blake3 Python package not installed.\n"
+            "  CHv4 GPU weights use SHA3 fallback — will NOT match Rust/pool!\n"
+            "  Fix: pip install blake3\n",
+            RuntimeWarning, stacklevel=3,
+        )
+        # SHA3 fallback (consensus-incompatible — for testing only)
+        base = hashlib.sha3_512(GENESIS_SEED + b"CHv4_weights_v1").digest()
+        for chunk_idx in range(TOTAL_CHUNKS):
+            chunk = hashlib.sha3_256(base + chunk_idx.to_bytes(4, "little")).digest()
+            expanded.extend(chunk)
+
+    pos = 0
+    # W1 [128×64] int8
+    w1 = np.frombuffer(bytes(expanded[pos: pos + 8192]), dtype=np.int8).copy()
+    pos += 8192
+    # b1 [128] int8
+    b1 = np.frombuffer(bytes(expanded[pos: pos + 128]), dtype=np.int8).copy()
+    pos += 128
+    # W2 [64×128] int8
+    w2 = np.frombuffer(bytes(expanded[pos: pos + 8192]), dtype=np.int8).copy()
+    pos += 8192
+    # b2 [64] int8
+    b2 = np.frombuffer(bytes(expanded[pos: pos + 64]), dtype=np.int8).copy()
+    pos += 64
+    # scale1 [128] int16 — Q8: 224 + (byte & 0x3F)
+    scale1 = np.array([224 + (expanded[pos + i] & 0x3F) for i in range(128)], dtype=np.int16)
+    pos += 128
+    # scale2 [64] int16
+    scale2 = np.array([224 + (expanded[pos + i] & 0x3F) for i in range(64)], dtype=np.int16)
+
+    return {"w1": w1, "b1": b1, "w2": w2, "b2": b2, "scale1": scale1, "scale2": scale2}
 
 
 @dataclass
@@ -624,6 +790,17 @@ class CosmicHarmonyV3GPU:
         # Pre-allocate tiny placeholder so mine() never has to allocate on the hot path
         self._dummy_sp_buf = cl.Buffer(self.ctx, cl.mem_flags.READ_WRITE, 64)
 
+        # CHv4 NPU weight buffers (derived once from genesis seed, static for lifetime)
+        _chv4_w = _derive_chv4_weights()
+        _ro = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
+        self.npu_w1_buf     = cl.Buffer(self.ctx, _ro, hostbuf=_chv4_w["w1"])    # 8192 B int8
+        self.npu_b1_buf     = cl.Buffer(self.ctx, _ro, hostbuf=_chv4_w["b1"])    #  128 B int8
+        self.npu_w2_buf     = cl.Buffer(self.ctx, _ro, hostbuf=_chv4_w["w2"])    # 8192 B int8
+        self.npu_b2_buf     = cl.Buffer(self.ctx, _ro, hostbuf=_chv4_w["b2"])    #   64 B int8
+        self.npu_scale1_buf = cl.Buffer(self.ctx, _ro, hostbuf=_chv4_w["scale1"])#  256 B int16
+        self.npu_scale2_buf = cl.Buffer(self.ctx, _ro, hostbuf=_chv4_w["scale2"])#  128 B int16
+        print(f"[GPU] CHv4 NPU weights loaded ({sum(a.nbytes for a in _chv4_w.values())} B)")
+
         # Reusable host-side buffers for deterministic transfer semantics.
         self._zero_u32 = np.array([0], dtype=np.uint32)
         self._solution_count_host = np.zeros(1, dtype=np.uint32)
@@ -718,6 +895,13 @@ class CosmicHarmonyV3GPU:
             # Scratchpad allocation failed at init → cannot do GPU MH, skip hash count
             mh_flag = np.uint32(0)
 
+        # CHv4 flag (height >= 200 000  =  CHV4_NPU_FORK_HEIGHT)
+        # chv4 implies memory_hard — both flags passed as 1 for CHv4
+        chv4_flag = np.uint32(1 if height >= 200_000 else 0)
+        if chv4_flag and not mh_flag:
+            # Should not happen (200k > 100k), but guard: chv4 requires scratchpad
+            chv4_flag = np.uint32(0)
+
         # Adjust work group size to device limits
         max_wg = min(self.work_group_size, self.device.max_work_group_size)
         adjusted_batch = (self.batch_size // max_wg) * max_wg
@@ -753,6 +937,14 @@ class CosmicHarmonyV3GPU:
             self.solution_count_buf,
             mh_flag,
             sp_buf,
+            # CHv4 NPU mixing args
+            chv4_flag,
+            self.npu_w1_buf,
+            self.npu_b1_buf,
+            self.npu_w2_buf,
+            self.npu_b2_buf,
+            self.npu_scale1_buf,
+            self.npu_scale2_buf,
         )
         self.queue.finish()
         kernel_ms = (time.perf_counter() - t0) * 1000.0
