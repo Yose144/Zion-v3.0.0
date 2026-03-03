@@ -28,6 +28,9 @@ interface NodeStatus {
   hashrate: number;
   miners: number;
   uptime: number;
+  rpcLatencyMs?: number;
+  poolLatencyMs?: number;
+  blockLag?: number;
   lastChecked: string;
   error?: string;
 }
@@ -38,7 +41,10 @@ interface NetworkStatus {
   summary: {
     total: number;
     online: number;
+    onlinePct?: number;
     maxHeight: number;
+    minHeight?: number;
+    heightGap?: number;
     totalHashrate: number;
     totalMiners: number;
     inSync: boolean;
@@ -105,6 +111,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
           label="Nodes Online"
           value={`${status.summary.online}/${status.summary.total}`}
           accent={status.summary.online === status.summary.total ? 'green' : 'yellow'}
+          sub={status.summary.onlinePct != null ? `${status.summary.onlinePct}%` : undefined}
         />
         <SummaryCard
           icon={Activity}
@@ -114,9 +121,10 @@ export default function NetworkStatus({ className }: { className?: string }) {
         />
         <SummaryCard
           icon={Gauge}
-          label="Network Hashrate"
-          value={formatHashrate(status.summary.totalHashrate)}
+          label="Height Gap"
+          value={`${status.summary.heightGap ?? 0}`}
           accent="purple"
+          sub={status.summary.inSync ? 'in sync' : 'syncing'}
         />
         <SummaryCard
           icon={Users}
@@ -183,12 +191,14 @@ function SummaryCard({
   icon: Icon, 
   label, 
   value, 
-  accent 
+  accent,
+  sub,
 }: { 
   icon: LucideIcon;
   label: string; 
   value: string; 
   accent: 'green' | 'yellow' | 'blue' | 'purple' | 'gold';
+  sub?: string;
 }) {
   const accentMap: Record<'green' | 'yellow' | 'blue' | 'purple' | 'gold', { border: string; value: string }> = {
     green: { border: 'border-emerald-400/40', value: 'text-emerald-200' },
@@ -207,6 +217,7 @@ function SummaryCard({
         <span className="text-xs uppercase tracking-[0.3em]">{label}</span>
       </div>
       <div className={`text-2xl font-bold ${accentClasses.value}`}>{value}</div>
+      {sub && <div className="text-[11px] text-gray-500 mt-1">{sub}</div>}
     </div>
   );
 }
@@ -240,6 +251,9 @@ function NodeCard({ node }: { node: NodeStatus }) {
               {node.online && (
                 <>
                   <span>Height: {node.height ? node.height.toLocaleString() : '—'}</span>
+                  {node.blockLag != null && <span>Lag: {node.blockLag}</span>}
+                  {node.rpcLatencyMs != null && <span>RPC: {node.rpcLatencyMs} ms</span>}
+                  {node.poolLatencyMs != null && <span>Pool: {node.poolLatencyMs} ms</span>}
                   {node.miners > 0 && (
                     <span className="text-zion-gold">
                       {node.miners} miner{node.miners !== 1 ? 's' : ''}
