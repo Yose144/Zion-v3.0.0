@@ -1,8 +1,25 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 3. března 2026 (Session 58 — A-05/B-01/B-02/B-05/C-03/C-04/D-04/D-05 ✅ DONE; 168h PASS; Phase 1.12 stress test)  
+> **Aktualizace:** 3. března 2026 (Session 59 — Chain restart + oprava algoritmu; všechny uzly v konsenzu; bloky nalezeny; ~108 ZION payout pending)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
+
+---
+
+## 0.0) Infrastruktura — Oprava Chain (2026-03-03) ✅ HOTOVO
+
+- [x] Chain reset na všech 3 serverech (výška 0, nová genesis `0742cf6b...`)
+- [x] Synchronizace `algorithms_opt.rs` (1203 ř.) + `algorithms_npu.rs` z lokálního workspace na Usa
+- [x] Přestavba `zion-pool:2.9.7` ARM64 na Helsinki
+- [x] Přestavba `zion-core:2.9.7-amd64` AMD64 na Usa, přenos na Asia
+- [x] Přestavba `zion-miner:2.9.7-amd64` AMD64 na Usa, přenos na Asia
+- [x] Oprava `--difficulty 1` (pool-miner diff mismatch) → shares accepted ✅
+- [x] Všechny 3 uzly v konsenzu, chain roste, ~108 ZION payout pending
+
+### Follow-up (nízká priorita)
+- [ ] Zablokovat peer `193.201.105.84` na Helsinki (IBD spam ze starého řetězu)
+- [ ] Zvýšit `--difficulty` na 8–16 po stabilizaci VarDiff (>10 bloků in a row)
+- [ ] Přidat CI check: `wc -l algorithms_opt.rs == 1203` před deployment
 
 ---
 
