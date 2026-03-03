@@ -156,14 +156,23 @@ fn test_no_unknown_categories() {
 fn test_all_premine_immediately_available() {
     let all = premine::get_all_premine_addresses();
 
-    // v2.9.5: No on-chain timelocks — all categories governed off-chain
+    // v2.9.6: dao_treasury has an on-chain cliff lock (B-01, ≈ 1 year).
+    // All other categories are governed off-chain and have no on-chain lock.
     for entry in &all {
-        assert!(
-            entry.unlock_height.is_none(),
-            "{} ({}) should have no on-chain lock — governance is off-chain in v2.9.5",
-            entry.address,
-            entry.category
-        );
+        if entry.category == "dao_treasury" {
+            assert!(
+                entry.unlock_height.is_some(),
+                "{} (dao_treasury) should have a cliff lock in v2.9.6 (B-01)",
+                entry.address
+            );
+        } else {
+            assert!(
+                entry.unlock_height.is_none(),
+                "{} ({}) should have no on-chain lock — governance is off-chain in v2.9.6",
+                entry.address,
+                entry.category
+            );
+        }
     }
 }
 
@@ -177,10 +186,16 @@ fn test_dao_treasury_governance_metadata() {
 
     assert!(!dao.is_empty());
     for entry in &dao {
-        // DAO treasury has no on-chain lock — governed by off-chain DAO vote
+        // v2.9.6 (B-01): DAO treasury has a cliff lock of ≈ 1 year (height 525_600)
         assert!(
-            entry.unlock_height.is_none(),
-            "DAO treasury {} should have no on-chain lock (governed by DAO vote)",
+            entry.unlock_height.is_some(),
+            "DAO treasury {} should have a cliff lock in v2.9.6 (B-01)",
+            entry.address
+        );
+        assert_eq!(
+            entry.unlock_height,
+            Some(premine::DAO_TREASURY_LOCK_HEIGHT),
+            "DAO treasury {} lock height should be DAO_TREASURY_LOCK_HEIGHT",
             entry.address
         );
     }

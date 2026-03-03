@@ -313,6 +313,10 @@ impl Default for BridgeConfig {
 mod tests {
     use super::*;
 
+    /// Mutex to serialize tests that mutate the process environment.
+    /// Without this, parallel tests racing on ANKR_API_KEY cause flaky failures.
+    static ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn test_default_config() {
         let cfg = BridgeConfig::default();
@@ -458,6 +462,7 @@ log_level = "info"
 
     #[test]
     fn test_ankr_effective_api_key_from_env() {
+        let _guard = ENV_MUTEX.lock().unwrap();
         std::env::set_var("ANKR_API_KEY", "env_key_test");
         let ankr = AnkrConfig { enabled: true, api_key: None };
         assert_eq!(ankr.effective_api_key(), Some("env_key_test".into()));
@@ -466,6 +471,7 @@ log_level = "info"
 
     #[test]
     fn test_ankr_effective_api_key_config_takes_priority_over_env() {
+        let _guard = ENV_MUTEX.lock().unwrap();
         std::env::set_var("ANKR_API_KEY", "env_key");
         let ankr = AnkrConfig {
             enabled: true,

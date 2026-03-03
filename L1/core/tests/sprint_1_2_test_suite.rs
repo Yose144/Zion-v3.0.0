@@ -80,6 +80,7 @@ fn make_coinbase(height: u64) -> Transaction {
         outputs: vec![TxOutput {
             amount: 5_400_067_000,
             address: "zion1miner".to_string(),
+            memo: None,
         }],
         fee: 0,
         timestamp: height * 60,
@@ -105,6 +106,7 @@ fn make_tx(id: &str, fee: u64, inputs: Vec<(&str, u32)>, outputs: Vec<u64>) -> T
             .map(|amt| TxOutput {
                 amount: *amt,
                 address: "zion1test".to_string(),
+                memo: None,
             })
             .collect(),
         fee,
@@ -276,6 +278,7 @@ fn test_restore_skips_coinbase() {
         outputs: vec![TxOutput {
             amount: 5_400_067_000,
             address: "zion1miner".to_string(),
+            memo: None,
         }],
         fee: 0,
         timestamp: 0,
@@ -314,6 +317,7 @@ fn test_double_spend_block_level_rejected() {
         outputs: vec![TxOutput {
             amount: 5_400_067_000,
             address: "zion1miner".to_string(),
+            memo: None,
         }],
         fee: 0,
         timestamp: current_ts,
@@ -562,6 +566,7 @@ fn test_mempool_invalid_signature_rejected() {
         outputs: vec![TxOutput {
             amount: 1_000_000,
             address: "zion1test".to_string(),
+            memo: None,
         }],
         fee: 5_000,
         timestamp: 100,

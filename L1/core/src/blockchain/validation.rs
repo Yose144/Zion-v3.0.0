@@ -211,7 +211,26 @@ pub fn validate_block(
         }
     }
 
-    // 8. Proof-of-Work validation
+    // 8. Block-level duplicate-input (double-spend within same block).
+    //    This is a cheap structural O(n) check — run BEFORE PoW to reject
+    //    malformed blocks without wasting hash computation.
+    if block.header.height > 0 {
+        let mut seen_outpoints: std::collections::HashSet<(String, u32)> =
+            std::collections::HashSet::new();
+        for tx in block.transactions.iter().skip(1) {
+            for input in &tx.inputs {
+                let key = (input.prev_tx_hash.clone(), input.output_index);
+                if !seen_outpoints.insert(key) {
+                    return Err(format!(
+                        "Block contains duplicate input (double-spend within block): {}:{}",
+                        input.prev_tx_hash, input.output_index
+                    ));
+                }
+            }
+        }
+    }
+
+    // 9. Proof-of-Work validation
     validate_pow(block)?;
 
     // 9. Transaction validation (structural + signature checks)
@@ -241,24 +260,9 @@ pub fn validate_block(
             ));
         }
 
-        // 9b. Block-level duplicate-input check (double-spend within same block).
-        //     Collect all (prev_tx_hash, output_index) pairs across all non-coinbase
-        //     transactions.  If any pair appears more than once the block is invalid.
-        {
-            let mut seen_outpoints: std::collections::HashSet<(String, u32)> =
-                std::collections::HashSet::new();
-            for tx in block.transactions.iter().skip(1) {
-                for input in &tx.inputs {
-                    let key = (input.prev_tx_hash.clone(), input.output_index);
-                    if !seen_outpoints.insert(key) {
-                        return Err(format!(
-                            "Block contains duplicate input (double-spend within block): {}:{}",
-                            input.prev_tx_hash, input.output_index
-                        ));
-                    }
-                }
-            }
-        }
+        // 9b. Block-level duplicate-input check (double-spend within same block)
+        //     is performed in step 8 (before PoW) for early rejection.
+        //     Nothing to do here.
 
         for tx in block.transactions.iter().skip(1) {
             if tx.inputs.is_empty() {
