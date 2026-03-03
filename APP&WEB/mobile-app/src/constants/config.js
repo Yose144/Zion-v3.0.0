@@ -1,27 +1,38 @@
-// ZION Configuration v2.9.5
+// ZION Configuration v2.9.6 — synchronized with desktop-agent/src/main.js
 export const CONFIG = {
-  // Network settings — real server nodes
+  // ── Network settings — live mainnet nodes (3. března 2026) ─────────────────────────────────
   RPC_NODES: [
-    'http://77.42.31.72:8444',     // Helsinki (seed)
-    'http://5.78.145.234:8444',    // USA
-    'http://5.223.56.124:8444',    // Singapore
+    'http://77.42.31.72:8444',       // Helsinki (EU, primární seed)
+    'http://178.156.240.160:8444',   // USA (US-East)
+    'http://5.223.43.93:8444',       // Asia (AP-Singapore)
   ],
   POOL_API_NODES: [
-    'http://77.42.31.72:8080',     // Helsinki pool API
-    'http://5.78.145.234:8080',    // USA pool API
-    'http://5.223.56.124:8080',    // Singapore pool API
+    'http://77.42.31.72:8080',       // Helsinki pool API
+    'http://178.156.240.160:8080',   // USA pool API
+    'http://5.223.43.93:8080',       // Asia pool API
   ],
   POOL_URL: 'https://pool.zionterranova.com',
   API_URL: 'https://api.zionterranova.com',
   EXPLORER_URL: 'https://explorer.zionterranova.com',
-  
-  // Pool stratum connection
+
+  // Pool stratum endpoints
   POOL_HOST: '77.42.31.72',
   POOL_PORT: 3333,
-  
+  POOL_HOSTS: [
+    { host: '77.42.31.72',       name: 'Helsinki' },
+    { host: '178.156.240.160',   name: 'USA' },
+    { host: '5.223.43.93',       name: 'Asia' },
+  ],
+
   // P2P network
   P2P_PORT: 8334,
-  
+
+  // ── CHv4 — NPU Mixing, aktivní od genesis bloku 0 ───────────────────────────────────
+  CHV4_NPU_FORK_HEIGHT: 0,          // CHv4 (NPU Mixing INT8 MLP) vždy aktivní
+  CHV3_MEMORY_HARD_FORK_HEIGHT: 0,  // 512 KB memory-hard scratchpad vždy aktivní
+  ALGORITHM: 'cosmic_harmony',       // Pool-kanonické jméno CHv4 éry
+  ALGORITHM_DISPLAY: 'Cosmic Harmony v4',
+
   // Mining settings
   MINING: {
     MAX_DURATION_MINUTES: 30,
@@ -91,8 +102,8 @@ export const CONFIG = {
   AUTO_LOCK_MINUTES: 5,
   
   // Version
-  VERSION: '2.9.5',
-  BUILD_NUMBER: 5,
+  VERSION: '2.9.6',
+  BUILD_NUMBER: 6,
   CODENAME: 'TerraNova',
 
   // ── wZION Bridge (L1 ↔ EVM) ──────────────────────────────

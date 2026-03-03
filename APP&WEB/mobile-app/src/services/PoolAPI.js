@@ -2,7 +2,7 @@ import axios from 'axios';
 import {CONFIG} from '../constants/config';
 
 /**
- * Pool API Service v2.9.5
+ * Pool API Service v2.9.6
  * Komunikace s ZION mining pool (port 8080)
  *
  * Endpoints match Rust pool server:
@@ -11,13 +11,18 @@ import {CONFIG} from '../constants/config';
  *   GET /api/miner/:addr/payments — Payout history
  *   GET /api/pool/blocks       — Recent pool blocks
  *   GET /api/network/info      — Chain info forwarded from core
+ *
+ * Uzly (synchronizováno s desktop-agent, 2026-03-03):
+ *   Helsinki  77.42.31.72:8080    (primární)
+ *   USA       178.156.240.160:8080
+ *   Asia      5.223.43.93:8080
  */
 
-// Pool server URLs with failover
+// Pool server URLs with failover (shodné s desktop-agent)
 const POOL_NODES = [
-  'http://77.42.31.72:8080',     // Helsinki
-  'http://5.78.145.234:8080',    // USA
-  'http://5.223.56.124:8080',    // Singapore
+  'http://77.42.31.72:8080',       // Helsinki (EU, primární)
+  'http://178.156.240.160:8080',   // USA (US-East)
+  'http://5.223.43.93:8080',       // Asia (AP-Singapore)
 ];
 
 class PoolAPI {

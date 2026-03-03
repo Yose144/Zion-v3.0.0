@@ -1,6 +1,6 @@
 {
   "name": "zion-mobile",
-  "version": "2.9.5",
+  "version": "2.9.6",
   "description": "ZION TerraNova Mobile Wallet & Mining Manager",
   "main": "index.js",
   "scripts": {
