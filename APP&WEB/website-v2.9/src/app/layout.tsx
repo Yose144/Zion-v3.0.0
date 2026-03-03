@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ObservatoryProvider } from "@/contexts/ObservatoryContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import ClientBackgrounds from "@/components/ClientBackgrounds";
 
 const inter = Inter({ 
@@ -47,6 +48,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${jetbrains.variable} antialiased bg-black text-white overflow-x-hidden`}>
         <ThemeProvider>
           <ObservatoryProvider>
+            <LanguageProvider>
             <ClientBackgrounds />
             <div className="relative z-10">
               <Navigation />
@@ -55,6 +57,7 @@ export default function RootLayout({
               </main>
               <Footer />
             </div>
+            </LanguageProvider>
           </ObservatoryProvider>
         </ThemeProvider>
       </body>

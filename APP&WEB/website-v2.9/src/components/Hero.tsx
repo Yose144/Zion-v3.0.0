@@ -15,34 +15,10 @@ import {
 } from 'lucide-react';
 import { useObservatory } from '@/contexts/ObservatoryContext';
 import type { ObservatoryMode } from '@/contexts/ObservatoryContext';
+import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 import CosmicFlowers from './CosmicFlowers';
 
-const missionSignals = [
-  {
-    title: 'L1 Core',
-    status: 'Phase 1 · 82 %',
-    value: '52 590 LOC · 780+ tests · Rust',
-    accent: 'text-emerald-300',
-  },
-  {
-    title: 'Validator Grid',
-    status: '3 / 3 nodes online',
-    value: 'Helsinki · USA · Asia',
-    accent: 'text-zion-cyan',
-  },
-  {
-    title: 'MainNet Gate',
-    status: '31. 12. 2026',
-    value: 'Phases 2–5 in pipeline',
-    accent: 'text-zion-purple',
-  },
-];
-
-const heroMetrics = [
-  { label: 'Rust LOC', value: '52 590', icon: Zap },
-  { label: 'Nodes Online', value: '3 / 3', icon: Satellite },
-  { label: 'Tests Passing', value: '780+', icon: Gauge },
-];
 
 const observatoryMeta: Record<
   ObservatoryMode,
@@ -102,6 +78,18 @@ const miniPetals = [
 export default function Hero() {
   const { mode, setMode, availableModes } = useObservatory();
   const active = observatoryMeta[mode];
+  const { lang } = useLang();
+
+  const missionSignals = [
+    { title: tr('hero', 'signal_l1', lang),      status: tr('hero', 'signal_status_l1', lang),      value: '52 590 LOC · 780+ tests · Rust', accent: 'text-emerald-300' },
+    { title: tr('hero', 'signal_nodes', lang),   status: tr('hero', 'signal_status_nodes', lang),   value: 'Helsinki · USA · Asia',          accent: 'text-zion-cyan' },
+    { title: tr('hero', 'signal_mainnet', lang), status: tr('hero', 'signal_status_mainnet', lang), value: tr('hero', 'signal_target', lang),  accent: 'text-zion-purple' },
+  ];
+  const heroMetrics = [
+    { label: tr('hero', 'metric_loc', lang),   value: '52 590', icon: Zap },
+    { label: tr('hero', 'metric_nodes', lang), value: '3 / 3',   icon: Satellite },
+    { label: tr('hero', 'metric_tests', lang), value: '780+',    icon: Gauge },
+  ];
 
   return (
     <section className="relative pt-32 pb-28 px-4 overflow-hidden">
@@ -130,11 +118,11 @@ export default function Hero() {
         >
           <div className="inline-flex items-center gap-2 bg-zion-gold/10 border border-zion-gold/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-zion-gold font-semibold">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-            Pre-MainNet Gate · v2.9.7 · TestNet Live
+            {tr('hero', 'badge_version', lang)}
           </div>
           <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-pink-300 font-semibold">
             <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
-            CHv4 Neural Bloom — roadmap 2026
+            {tr('hero', 'badge_chv4', lang)}
           </div>
         </motion.div>
 
@@ -149,24 +137,20 @@ export default function Hero() {
             {/* headline */}
             <div>
               <p className="text-lg md:text-xl text-zion-cyan font-semibold mb-3 tracking-wide">
-                Native Rust Mining Infrastructure
+                {tr('hero', 'tagline', lang)}
               </p>
               <h1 className="text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
                 <span className="text-gradient">ZION</span>
                 <span className="block text-white mt-1">Terra Nova</span>
                 <span className="block text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
-                  Pre-MainNet Gate &nbsp;·&nbsp; v2.9.7
+                  {tr('hero', 'title_sub', lang)}
                 </span>
               </h1>
             </div>
 
             {/* paragraph */}
             <p className="text-lg md:text-xl text-gray-300 max-w-xl leading-relaxed">
-              52 590 lines of native Rust. 780+ tests. Cosmic Harmony PoW algorithm, real-time
-              P2P network, and a mining pool running on 3 live EU/US/Asia nodes.
-              CHv4 <span className="text-pink-300 font-semibold">Neural Bloom</span> algorithm
-              upgrade targets MainNet hard-fork 2026 — doubling memory hardness with an
-              anti-ASIC perceptron barrier.
+              {tr('hero', 'description', lang)}
             </p>
 
             {/* CTA buttons */}
@@ -259,7 +243,7 @@ export default function Hero() {
               {/* HUD header */}
               <header className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase text-gray-500 tracking-[0.3em] mb-1">Observatory Mode</p>
+                  <p className="text-xs uppercase text-gray-500 tracking-[0.3em] mb-1">{tr('hero', 'observatory_label', lang)}</p>
                   <h3 className="text-xl font-bold text-white">
                     {availableModes.find((m) => m.id === mode)?.label}
                   </h3>
@@ -310,7 +294,7 @@ export default function Hero() {
 
               {/* mission signals */}
               <div className="space-y-2">
-                <p className="text-xs uppercase text-gray-600 tracking-[0.2em]">Mission Status</p>
+                <p className="text-xs uppercase text-gray-600 tracking-[0.2em]">{tr('hero', 'section_signals', lang)}</p>
                 {missionSignals.map((signal) => (
                   <div
                     key={signal.title}

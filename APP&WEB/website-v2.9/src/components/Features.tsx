@@ -2,59 +2,64 @@
 
 import { motion } from 'framer-motion';
 import { Brain, Cpu, Landmark, Rocket, Shield, Sparkles, Zap } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import t, { tx, tr } from '@/lib/translations';
 
-const continuumTracks = [
-  {
-    title: 'Cosmic Harmony PoW',
-    description: 'Custom multi-algorithm mining: RandomX + Yescrypt + Blake3, difficulty auto-retarget every 720 blocks.',
-    icon: Brain,
-    badge: 'L1 Core',
-    spectrum: 'from-zion-cyan/20 via-zion-purple/10 to-transparent',
-  },
-  {
-    title: 'Native Miner Fleet',
-    description: 'Rust-compiled miners for macOS (ARM64), Linux (x86_64), and Windows with stratum-v2 pool protocol.',
-    icon: Cpu,
-    badge: 'TestNet',
-    spectrum: 'from-zion-gold/20 via-orange-500/10 to-transparent',
-  },
-  {
-    title: 'DAO Governance',
-    description: 'On-chain voting for treasury allocation, protocol upgrades, and community proposals. Planned for Phase 3.',
-    icon: Landmark,
-    badge: 'Planned',
-    spectrum: 'from-rose-500/20 via-zion-purple/10 to-transparent',
-  },
-  {
-    title: 'WARP Bridges',
-    description: 'Cross-chain bridges (ETH, SOL, Cosmos) via HTLC and relay protocols. Planned for L3 layer (2027+).',
-    icon: Rocket,
-    badge: 'L3 · 2027+',
-    spectrum: 'from-emerald-500/20 via-zion-cyan/10 to-transparent',
-  },
-  {
-    title: 'P2P Network',
-    description: 'libp2p-based peer discovery, block propagation, and mempool sync across 2 EU validator nodes.',
-    icon: Shield,
-    badge: 'Live',
-    spectrum: 'from-blue-500/20 via-cyan-400/10 to-transparent',
-  },
-  {
-    title: 'Block Explorer',
-    description: 'Real-time block, transaction, and address explorer with live telemetry dashboard and REST API.',
-    icon: Sparkles,
-    badge: 'Live',
-    spectrum: 'from-violet-500/20 via-fuchsia-400/10 to-transparent',
-  },
-];
-
-const timeline = [
-  { phase: 'Fáze 1 · Now', detail: 'Hardened TestNet — Rust pool, Cosmic Harmony mining, P2P sync. 80 % done.' },
-  { phase: 'Fáze 2–3 · Q2–Q3 2026', detail: 'Node UX, wallet CLI/GUI, infrastructure, security audits, legal.' },
-  { phase: 'Fáze 4–5 · Q4 2026', detail: 'Dress rehearsal, genesis config, MainNet launch 31. 12. 2026.' },
-];
 
 export default function Features() {
+  const { lang } = useLang();
+
+  const continuumTracks = [
+    {
+      title: tx(t.features.tracks.chv3.title, lang),
+      description: tx(t.features.tracks.chv3.desc, lang),
+      icon: Brain,
+      badge: tx(t.features.tracks.chv3.badge, lang),
+      spectrum: 'from-zion-cyan/20 via-zion-purple/10 to-transparent',
+    },
+    {
+      title: tx(t.features.tracks.miner.title, lang),
+      description: tx(t.features.tracks.miner.desc, lang),
+      icon: Cpu,
+      badge: tx(t.features.tracks.miner.badge, lang),
+      spectrum: 'from-zion-gold/20 via-orange-500/10 to-transparent',
+    },
+    {
+      title: tx(t.features.tracks.dao.title, lang),
+      description: tx(t.features.tracks.dao.desc, lang),
+      icon: Landmark,
+      badge: tx(t.features.tracks.dao.badge, lang),
+      spectrum: 'from-rose-500/20 via-zion-purple/10 to-transparent',
+    },
+    {
+      title: tx(t.features.tracks.warp.title, lang),
+      description: tx(t.features.tracks.warp.desc, lang),
+      icon: Rocket,
+      badge: tx(t.features.tracks.warp.badge, lang),
+      spectrum: 'from-emerald-500/20 via-zion-cyan/10 to-transparent',
+    },
+    {
+      title: tx(t.features.tracks.p2p.title, lang),
+      description: tx(t.features.tracks.p2p.desc, lang),
+      icon: Shield,
+      badge: tx(t.features.tracks.p2p.badge, lang),
+      spectrum: 'from-blue-500/20 via-cyan-400/10 to-transparent',
+    },
+    {
+      title: tx(t.features.tracks.explorer.title, lang),
+      description: tx(t.features.tracks.explorer.desc, lang),
+      icon: Sparkles,
+      badge: tx(t.features.tracks.explorer.badge, lang),
+      spectrum: 'from-violet-500/20 via-fuchsia-400/10 to-transparent',
+    },
+  ];
+
+  const timeline = [
+    { phase: tx(t.features.timeline.ph1.phase, lang), detail: tx(t.features.timeline.ph1.detail, lang) },
+    { phase: tx(t.features.timeline.ph2.phase, lang), detail: tx(t.features.timeline.ph2.detail, lang) },
+    { phase: tx(t.features.timeline.ph3.phase, lang), detail: tx(t.features.timeline.ph3.detail, lang) },
+  ];
+
   return (
     <section className="py-24 px-4">
       <div className="zion-container space-y-12">
@@ -62,12 +67,11 @@ export default function Features() {
           <div className="flex-1">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Continuum</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              Pillars of the <span className="text-gradient">ZION Native Stack</span>
+              {tr('features', 'heading', lang)}
             </h2>
           </div>
           <p className="text-lg text-gray-300 max-w-2xl">
-            Native Rust L1 infrastructure powering miners, P2P network, and block explorer.
-            Everything open-source on TestNet 2.9.5 with 2 EU validator nodes.
+            {tr('features', 'subheading', lang)}
           </p>
         </div>
 
@@ -106,7 +110,7 @@ export default function Features() {
           >
             <div className="flex items-center gap-3 text-sm text-gray-400">
               <Zap className="w-5 h-5 text-zion-gold" />
-              MainNet Timeline
+              {tr('features', 'upgrade_heading', lang)}
             </div>
 
             <div className="space-y-5">
