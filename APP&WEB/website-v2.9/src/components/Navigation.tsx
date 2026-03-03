@@ -125,7 +125,7 @@ export default function Navigation() {
             </div>
             <span className="text-2xl font-bold text-gradient tracking-tight">ZION</span>
             <span className="text-[11px] px-2 py-1 rounded bg-white/5 border border-white/10 uppercase tracking-widest">
-              2.9.7 &ldquo;On the Star&rdquo;
+              2.9.7 &ldquo;Pre-MainNet Gate&rdquo;
             </span>
           </Link>
 
