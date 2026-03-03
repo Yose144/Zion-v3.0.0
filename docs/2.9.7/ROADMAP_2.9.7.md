@@ -38,7 +38,7 @@ F-06: height dispatch (CHV4=0, hotovo) Minéři přihlášeni: HEL/USA/ASIA ✅
 |------|----|------|---------|--------|
 | 1 | **F-05** | GPU CUDA + OpenCL + Python kernel — CHv4 NPU Mixing Phase 5 | `cosmic_harmony_v3.cu`, `cosmic_harmony_v3.cl`, `cosmic_harmony_v3_gpu.py` | ✅ DONE 2026-03-03 |
 | 2 | **F-06** | Miner height-aware dispatch | `mod.rs` — `CHV4_NPU_FORK_HEIGHT=0` → vždy CHv4, žádný dispatch potřeba | ✅ DONE (n/a, CHV4=0) |
-| 3 | **F-04** | CHv4 E2E test — pool + miner live, CHv4 hash ověřen | `tests/chv4_e2e.rs` (vyřešit v prostředí) | ⬜ P0 |
+| 3 | **F-04** | CHv4 E2E test — pool + miner live, CHv4 hash ověřen | `tests/chv4_e2e.rs` | ✅ DONE 11/11 PASS 49.8s 2026-03-03 |
 
 **Výsledek fáze 1:** CHv4 je plně funkční — CPU i GPU path, pool akceptuje shares od výšky 200k.
 
