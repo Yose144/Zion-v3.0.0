@@ -52,8 +52,8 @@
 | **Arbitrum**  | EVM      | ERC-20         | 18       | ~15 min      | 🟢 Signing live |
 | **BSC**       | EVM      | BEP-20         | 18       | ~15 sec      | 🟢 Signing live |
 | **Polygon**   | EVM      | ERC-20         | 18       | ~5 min       | 🟢 Signing live |
-| **Solana**    | Solana   | SPL Token      | 9        | ~12 sec      | 🟡 Skeleton |
-| **Tron**      | Tron     | TRC-20         | 18       | ~57 sec      | 🟡 Skeleton |
+| **Solana**    | Solana   | SPL Token      | 9        | ~12 sec      | 🟢 Signing live |
+| **Tron**      | Tron     | TRC-20         | 18       | ~57 sec      | 🟢 Signing live |
 | **Stellar**   | Stellar  | Stellar Asset  | 7        | ~5 sec       | � Signing live |
 | **Cardano**   | Cardano  | Native Token   | 6        | ~7 min       | 🟡 Skeleton |
 | **Cosmos**    | Cosmos   | IBC / CW20     | 6        | ~6 sec       | 🟡 Skeleton |
@@ -193,9 +193,9 @@ warp/
     ├── metrics.rs              # Atomic counters + MetricsSnapshot
     └── adapter/
         ├── mod.rs              # ChainAdapter trait + create_adapter factory
-        ├── evm.rs              # EVM adapter (Base, Arbitrum, BSC, Polygon)
-        ├── solana.rs           # Solana adapter (SPL Token, Anchor)
-        ├── tron.rs             # Tron adapter (TRC-20, TVM)
+        ├── evm.rs              # 🟢 EVM adapter — live EIP-155 signing via evm_signer
+        ├── solana.rs           # 🟢 Solana adapter — live SPL mintTo via solana_signer
+        ├── tron.rs             # 🟢 Tron adapter — live TRC-20 mint via tron_signer
         ├── stellar.rs          # 🟢 Stellar adapter — live payment via stellar_signer
         ├── cardano.rs          # Cardano adapter (Native Token, Plutus)
         ├── cosmos.rs           # Cosmos adapter (IBC, CW20)
@@ -231,13 +231,156 @@ WARP extends it to the full multi-chain universe.
 | **Phase 2.5** ✅ | EVM `execute_mint` — real EIP-155 signing | Done (2026-03-03) |
 | **Phase 3** ✅ | Bitcoin P2WPKH `execute_mint` — BIP143 signing | Done (2026-03-03) |
 | **Phase 4** ✅ | Stellar classic Payment signing — ed25519, XDR, StrKey | Done (2026-03-03) |
-| **Phase 5** ⬜ | Solana SPL + Anchor program | 2026 Q3 |
-| **Phase 5** ⬜ | Solana SPL + Anchor program | 2026 Q3 |
-| **Phase 6** ⬜ | Tron TRC-20 + bridge | 2026 Q3 |
-| **Phase 7** ⬜ | Cardano native token + Plutus | 2026 Q4 |
-| **Phase 8** ⬜ | Cosmos IBC integration | 2027 Q1 |
-| **Phase 9** ⬜ | Full E2E testing + audit | 2027 Q2 |
-| **Phase 10** ⬜ | MainNet launch | 2027 Q3 |
+| **Phase 5** ✅ | Solana SPL `mintTo` — ed25519, compact-u16, ATA derivation, no SDK | Done (2026-03-03) |
+| **Phase 6** ✅ | Tron TRC-20 `mint` — secp256k1, base58check, TronGrid REST | Done (2026-03-03) |
+| **Phase 7** ⬜ | Cardano native token + Plutus | 2026 Q3 |
+| **Phase 8** ⬜ | Cosmos IBC integration | 2026 Q4 |
+| **Phase 9** ⬜ | Full E2E testing + audit | 2027 Q1 |
+| **Phase 10** ⬜ | MainNet launch | 2027 Q2 |
+
+---
+
+## 🦀 Solana Signing Implementation (Phase 5)
+
+> Implemented: 2026-03-03 | Commit: `39d4d58` | Tests: 228 pass
+
+### Overview
+
+The Solana adapter now performs **real on-chain SPL Token `mintTo` transactions**
+with zero dependency on `solana-sdk` or `solana-client` — pure Rust using
+`ed25519-dalek`, `bs58`, and `sha2` (all already present).
+
+### Module: `solana_signer.rs`
+
+```rust
+pub struct SolanaSigner { /* ed25519 SigningKey */ }
+
+impl SolanaSigner {
+    pub fn from_env() -> WarpResult<Self>           // reads WARP_SOLANA_RELAY_KEY
+    pub fn from_base58(key_b58: &str) -> WarpResult<Self>  // 32 or 64-byte keypair
+    pub fn pubkey(&self) -> [u8; 32]
+    pub async fn mint_to(
+        &self, client: &Client, rpc_url: &str,
+        recipient_wallet: &str, mint_addr: &str, amount: u64,
+    ) -> WarpResult<String>                         // returns base58 tx signature
+}
+
+pub fn derive_ata(owner: &[u8;32], mint: &[u8;32]) -> WarpResult<[u8;32]>
+pub async fn get_latest_blockhash(client: &Client, rpc_url: &str) -> WarpResult<[u8;32]>
+```
+
+### Transaction Building (legacy format, no SDK)
+
+```
+1. derive_ata(recipient_wallet, mint_addr)
+            via findProgramAddress(seeds=[wallet, TOKEN_PROGRAM, mint], ATA_PROGRAM)
+            SHA-256 hash of seeds, off-curve check (not a valid Ed25519 point)
+            bump nonce 255→0 search
+
+2. getLatestBlockhash → 32-byte blockhash
+
+3. build_mint_to_message(authority, mint, dest_ata, blockhash, amount)
+   Message header: [1, 0, 1]   (1 signer, 0 readonly-signed, 1 readonly-unsigned)
+   Accounts (compact-u16 = 4):
+     [0] authority      (signer, writable)
+     [1] mint           (writable)
+     [2] dest_ata       (writable)
+     [3] TOKEN_PROGRAM  (read-only)
+   Instruction: program_idx=3, accounts=[1,2,0], data=[0x07, amount_u64_le]
+
+4. sig = ed25519.sign(message_bytes)   ← Solana: no pre-hashing, sign raw
+
+5. serialize_transaction: compact-u16(1) || sig[64] || message
+   → base64 encode → sendTransaction
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `WARP_SOLANA_RELAY_KEY` | Base58-encoded keypair (64-byte seed\|\|pubkey or 32-byte seed) |
+| `SOLANA_CLUSTER` | `mainnet-beta` \| `devnet` \| `testnet` (default: mainnet-beta) |
+| `WARP_SOLANA_RPC` | Custom RPC endpoint override |
+
+---
+
+## 🔴 Tron Signing Implementation (Phase 6)
+
+> Implemented: 2026-03-03 | Commit: `1ad0aca` | Tests: 252 pass
+
+### Overview
+
+The Tron adapter now performs **real on-chain TRC-20 `mint` transactions** via
+TronGrid REST API, using the same `k256` secp256k1 crate already present for EVM.
+
+### Module: `tron_signer.rs`
+
+```rust
+pub struct TronSigner { /* k256 secp256k1 SigningKey */ }
+
+impl TronSigner {
+    pub fn from_env() -> WarpResult<Self>           // reads WARP_TRON_RELAY_KEY
+    pub fn from_hex(hex_key: &str) -> WarpResult<Self>
+    pub fn address(&self) -> String                 // Tron base58check address
+    pub async fn mint_trc20(
+        &self, client: &Client, api_url: &str,
+        contract: &str, recipient: &str, amount: u64,
+    ) -> WarpResult<String>                         // returns txID
+}
+
+pub fn tron_address_from_key(key: &SigningKey) -> String
+pub fn tron_base58check_encode(payload: &[u8]) -> String
+pub fn tron_base58check_decode(addr: &str) -> WarpResult<[u8;21]>
+pub fn abi_encode_mint_params(recipient: &str, amount: u64) -> WarpResult<String>
+```
+
+### Transaction Flow
+
+```
+1. abi_encode_mint_params(recipient, amount)
+   Tron ABI (64 bytes / 128 hex chars):
+     Bytes  0-11: 0x00 padding
+     Bytes 12-31: Tron address bytes (drop 0x41 prefix)
+     Bytes 32-55: 0x00 padding
+     Bytes 56-63: amount as u64 big-endian
+
+2. POST /wallet/triggersmartcontract
+   {
+     owner_address: relay_wallet_address,
+     contract_address: wzion_contract,
+     function_selector: "mint(address,uint256)",
+     parameter: <abi_hex>,
+     fee_limit: 50_000_000   ← 50 TRX max
+   }
+   → unsigned tx JSON + txID = SHA256(raw_data)
+
+3. tron_sign_txid(key, txID)
+   (sig, recid) = sign_prehash_recoverable(txid_bytes)
+   out = r[32] || s[32] || v[1]   v = recid (0 or 1, NOT +27)
+
+4. tx["signature"] = [sig_hex]
+
+5. POST /wallet/broadcasttransaction → result=true → txID returned
+```
+
+### Address Derivation
+
+```
+Keccak256(uncompressed_pubkey[1..])  → 32 bytes
+→ last 20 bytes = EVM-style address
+→ prepend 0x41 → 21 bytes
+→ SHA256(SHA256(21 bytes))[0..4] = checksum
+→ base58(21 bytes + 4 checksum bytes) = Tron address (starts with 'T')
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `WARP_TRON_RELAY_KEY` | 32-byte secp256k1 private key, hex-encoded |
+| `TRON_NETWORK` | `mainnet` \| `nile` \| `shasta` (default: mainnet) |
+| `WARP_TRON_API` | TronGrid API base URL override |
+| `TRON_API_KEY` | TronGrid API key (added as `TRON-PRO-API-KEY` header) |
 
 ---
 
