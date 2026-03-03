@@ -76,10 +76,10 @@ export default function BlocksPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="zion-shell min-h-screen">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-zion-gold/10 via-transparent to-transparent" />
 
-      <div className="relative z-10 container mx-auto px-4 py-10 max-w-6xl space-y-6">
+      <div className="relative z-10 zion-container py-10 max-w-6xl space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
@@ -99,7 +99,7 @@ export default function BlocksPage() {
         </div>
 
         {/* Table */}
-        <div className="rounded-[28px] border border-white/[0.08] bg-black/60 backdrop-blur-2xl overflow-hidden">
+        <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

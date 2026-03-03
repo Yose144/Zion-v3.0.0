@@ -428,7 +428,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
 
   /* ── Full-page mode: wrapper + background + breadcrumb + hero ── */
   return (
-    <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4 overflow-x-hidden">
+    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
       {/* ── Background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-gold/8" />
@@ -436,7 +436,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-gold/15 to-transparent" />
       </div>
 
-      <div className="relative z-10 container mx-auto max-w-7xl space-y-10">
+      <div className="relative z-10 zion-container max-w-7xl space-y-10">
         {/* ── Breadcrumb ── */}
         <div className="flex items-center gap-2 text-sm text-white/40">
           <Link
@@ -455,7 +455,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-8 md:p-12 overflow-hidden"
+          className="relative zion-panel rounded-4xl bg-black/60 p-8 md:p-12 overflow-hidden"
         >
           <div className="absolute inset-0 bg-linear-to-br from-zion-gold/5 via-transparent to-zion-purple/5 pointer-events-none" />
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
