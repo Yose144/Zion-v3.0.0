@@ -2964,14 +2964,14 @@ function startMining(config) {
     }
   }
 
-  // CHv3 acceptance-first guard (Windows/OpenCL rigs):
-  // If user did not explicitly force Rust, prefer Python backend for CHv3 GPU
-  // because current Rust OpenCL path can show unstable acceptance on some pools.
-  // Override with ZION_FORCE_RUST_CHV3=1.
+  // CHv4/Cosmic backend guard:
+  // Keep Rust backend as default for Cosmic Harmony family.
+  // Python backend can be forced explicitly via ZION_PREFER_PYTHON_CH=1.
   try {
     const algoLowerStable = normalizeAlgorithmName(config.algorithm || '');
     const isChv3Stable = isCosmicHarmonyFamily(algoLowerStable);
     const forceRustChv3 = String(process.env.ZION_FORCE_RUST_CHV3 || '').trim() === '1';
+    const preferPythonCh = String(process.env.ZION_PREFER_PYTHON_CH || '').trim() === '1';
     const canAutoSwitch = preferredBackend === 'auto' || preferredBackend === 'rust';
     if (
       process.platform === 'win32' &&
@@ -2979,7 +2979,8 @@ function startMining(config) {
       isChv3Stable &&
       MINER_IS_RUST &&
       canAutoSwitch &&
-      !forceRustChv3
+      !forceRustChv3 &&
+      preferPythonCh
     ) {
       const pyStablePath = findPythonMiner();
       if (pyStablePath && fs.existsSync(pyStablePath)) {
@@ -2989,10 +2990,10 @@ function startMining(config) {
         minerBackendResolved = 'python';
         minerBackendPath = pyStablePath;
         try {
-          logApp('gpu-backend-switch', JSON.stringify({ reason: 'chv3-acceptance-first', path: pyStablePath }));
+          logApp('gpu-backend-switch', JSON.stringify({ reason: 'ch-python-opt-in', path: pyStablePath }));
           sendToRenderer('miner-output', {
             stream: 'stdout',
-            text: '[INFO] CHv3 stability mode: using Python GPU backend for higher share acceptance (set ZION_FORCE_RUST_CHV3=1 to force Rust).\n'
+            text: '[INFO] Cosmic Harmony: using Python backend (opt-in via ZION_PREFER_PYTHON_CH=1).\n'
           });
           sendToRenderer('miner-backend', {
             preferred: minerBackendPreferred,
@@ -3547,6 +3548,10 @@ function startMining(config) {
       const algoLower = normalizeAlgorithmName(algorithmForMiner || '');
       const isChv3 = isCosmicHarmonyFamily(algoLower);
       if (!isChv3) return;
+
+      // Keep Cosmic Harmony on Rust by default; Python fallback must be explicit.
+      const allowPythonFallback = String(process.env.ZION_ALLOW_PYTHON_FALLBACK_CH || '').trim() === '1';
+      if (!allowPythonFallback) return;
 
       const text = String(outputText || '');
       const mentionsReject = /rejected|share rejected|duplicate|does not meet target|low difficulty/i.test(text);
