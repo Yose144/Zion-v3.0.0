@@ -660,19 +660,12 @@ def _derive_chv4_weights() -> dict:
             h = hasher.copy()
             h.update(chunk_idx.to_bytes(4, "little"))
             expanded.extend(h.digest())
-    except ImportError:
-        import hashlib, warnings
-        warnings.warn(
-            "\n[CHv4 GPU] blake3 Python package not installed.\n"
-            "  CHv4 GPU weights use SHA3 fallback — will NOT match Rust/pool!\n"
-            "  Fix: pip install blake3\n",
-            RuntimeWarning, stacklevel=3,
-        )
-        # SHA3 fallback (consensus-incompatible — for testing only)
-        base = hashlib.sha3_512(GENESIS_SEED + b"CHv4_weights_v1").digest()
-        for chunk_idx in range(TOTAL_CHUNKS):
-            chunk = hashlib.sha3_256(base + chunk_idx.to_bytes(4, "little")).digest()
-            expanded.extend(chunk)
+    except ImportError as e:
+        raise RuntimeError(
+            "[CHv4 GPU] Missing dependency: blake3. "
+            "GPU CHv4 weights must use keyed BLAKE3 to match Rust/pool consensus. "
+            "Install with: pip install blake3"
+        ) from e
 
     pos = 0
     # W1 [128×64] int8

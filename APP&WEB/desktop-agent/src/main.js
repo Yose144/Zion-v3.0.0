@@ -1093,9 +1093,21 @@ const DEFAULT_CONFIG = {
 };
 
 function algoSupportsGpu(algo) {
-  // Mainnet Phase 1: Cosmic Harmony v3 only — always supports GPU
-  const a = String(algo || 'cosmic_harmony').toLowerCase();
-  return a === 'cosmic_harmony' || a === 'cosmic_harmony_v3';
+  const a = normalizeAlgorithmName(algo || 'cosmic_harmony');
+  return isCosmicHarmonyFamily(a);
+}
+
+function normalizeAlgorithmName(algo) {
+  const raw = String(algo || '').trim().toLowerCase().replace(/-/g, '_');
+  if (raw === 'cosmic_harmony_v3' || raw === 'cosmic_harmony_v4') {
+    return 'cosmic_harmony';
+  }
+  return raw || 'cosmic_harmony';
+}
+
+function isCosmicHarmonyFamily(algo) {
+  const a = String(algo || '').trim().toLowerCase().replace(/-/g, '_');
+  return a === 'cosmic_harmony' || a === 'cosmic_harmony_v3' || a === 'cosmic_harmony_v4';
 }
 
 // Load or create config
@@ -2830,7 +2842,7 @@ function startMining(config) {
   
   // GPU mode guardrails: do not attempt GPU for algorithms that don't support it.
   const wantsGpu = miningMode === 'gpu' || miningMode === 'dual' || miningMode === 'gpu-revenue';
-  const algoForGpu = String(config.algorithm || '').toLowerCase();
+  const algoForGpu = normalizeAlgorithmName(config.algorithm || '');
   const gpuAllowed = algoSupportsGpu(algoForGpu);
   const effectiveGpu = wantsGpu && gpuAllowed;
 
@@ -2838,8 +2850,8 @@ function startMining(config) {
   // On some Ryzen/AMD OpenCL rigs, too many CPU threads steal memory/cache bandwidth
   // and reduce GPU hashrate significantly. Cap CPU threads while GPU mining is active.
   try {
-    const algoLowerPerf = String(config.algorithm || '').toLowerCase();
-    const isChv3Perf = algoLowerPerf === 'cosmic_harmony' || algoLowerPerf === 'cosmic_harmony_v3';
+    const algoLowerPerf = normalizeAlgorithmName(config.algorithm || '');
+    const isChv3Perf = isCosmicHarmonyFamily(algoLowerPerf);
     if (effectiveGpu && isChv3Perf) {
       const cfgGpuCpuCap = Number(config?.gpuCpuThreads);
       const envGpuCpuCap = Number(String(process.env.ZION_GPU_CPU_THREADS || '').trim());
@@ -2957,8 +2969,8 @@ function startMining(config) {
   // because current Rust OpenCL path can show unstable acceptance on some pools.
   // Override with ZION_FORCE_RUST_CHV3=1.
   try {
-    const algoLowerStable = String(config.algorithm || '').toLowerCase();
-    const isChv3Stable = algoLowerStable === 'cosmic_harmony' || algoLowerStable === 'cosmic_harmony_v3';
+    const algoLowerStable = normalizeAlgorithmName(config.algorithm || '');
+    const isChv3Stable = isCosmicHarmonyFamily(algoLowerStable);
     const forceRustChv3 = String(process.env.ZION_FORCE_RUST_CHV3 || '').trim() === '1';
     const canAutoSwitch = preferredBackend === 'auto' || preferredBackend === 'rust';
     if (
@@ -3389,8 +3401,8 @@ function startMining(config) {
   // - larger CH CPU batch for better per-thread efficiency
   // All remain overrideable by explicit environment variables.
   try {
-    const algoLower = String(algorithmForMiner || requestedAlgorithmLower || '').toLowerCase();
-    const isChv3 = algoLower === 'cosmic_harmony' || algoLower === 'cosmic_harmony_v3';
+    const algoLower = normalizeAlgorithmName(algorithmForMiner || requestedAlgorithmLower || '');
+    const isChv3 = isCosmicHarmonyFamily(algoLower);
     if (isChv3 && mainMinerGpu) {
       if (!String(process.env.ZION_GPU_BATCH_SIZE || '').trim()) {
         const tunedBatch = chooseGpuBatchSize(gpuInfo, config?.gpuBatchSize);
@@ -3532,8 +3544,8 @@ function startMining(config) {
       const enabled = String(process.env.ZION_ENABLE_REJECT_WATCHDOG || '1').trim() !== '0';
       if (!enabled) return;
 
-      const algoLower = String(algorithmForMiner || '').toLowerCase();
-      const isChv3 = algoLower === 'cosmic_harmony' || algoLower === 'cosmic_harmony_v3';
+      const algoLower = normalizeAlgorithmName(algorithmForMiner || '');
+      const isChv3 = isCosmicHarmonyFamily(algoLower);
       if (!isChv3) return;
 
       const text = String(outputText || '');
