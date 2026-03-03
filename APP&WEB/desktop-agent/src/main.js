@@ -3083,8 +3083,38 @@ function startMining(config) {
   // Spawn miner - use Python on macOS/Linux, executable on Windows
   let spawnCommand, spawnArgs;
   if (MINER_IS_PYTHON) {
-    // macOS/Linux use python3, Windows uses python
-    spawnCommand = process.platform === 'win32' ? 'python' : 'python3';
+    // Prefer local venv interpreter when available (stable deps for GPU OpenCL path).
+    // Fallback to system python/python3 when no venv is found.
+    const venvCandidates = process.platform === 'win32'
+      ? [
+          path.join(APP_ROOT, '.venv', 'Scripts', 'python.exe'),
+          path.join(APP_ROOT, '..', '.venv', 'Scripts', 'python.exe'),
+          path.join(APP_ROOT, '..', '..', '.venv', 'Scripts', 'python.exe')
+        ]
+      : [
+          path.join(APP_ROOT, '.venv', 'bin', 'python3'),
+          path.join(APP_ROOT, '..', '.venv', 'bin', 'python3'),
+          path.join(APP_ROOT, '..', '..', '.venv', 'bin', 'python3')
+        ];
+
+    const envVenv = String(process.env.VIRTUAL_ENV || '').trim();
+    if (envVenv) {
+      venvCandidates.unshift(
+        process.platform === 'win32'
+          ? path.join(envVenv, 'Scripts', 'python.exe')
+          : path.join(envVenv, 'bin', 'python3')
+      );
+    }
+
+    const resolvedPython = venvCandidates.find((candidate) => {
+      try {
+        return !!candidate && fs.existsSync(candidate);
+      } catch {
+        return false;
+      }
+    });
+
+    spawnCommand = resolvedPython || (process.platform === 'win32' ? 'python' : 'python3');
     spawnArgs = [MINER_PATH, ...args];
   } else {
     // Windows: use .exe directly
@@ -3389,6 +3419,40 @@ function startMining(config) {
     }, gpuWatchdogMs);
     }
   }
+
+  // Rust GPU immediate fallback:
+  // If Rust backend in GPU mode explicitly reports no GPU detected, switch to Python now
+  // instead of waiting full watchdog timeout.
+  let rustGpuNoDeviceFallbackTriggered = false;
+  const maybeTriggerRustGpuNoDeviceFallback = (outputText) => {
+    try {
+      if (rustGpuNoDeviceFallbackTriggered) return;
+      if (!MINER_IS_RUST || !mainMinerGpu || minerStopping || minerUserStopRequested) return;
+      const text = String(outputText || '');
+      const noGpuDetected = /\bgpu\s+none\s+detected\b/i.test(text);
+      const gpuDisabled = /\bgpu\s+disabled\b/i.test(text);
+      if (!noGpuDetected && !gpuDisabled) return;
+
+      rustGpuNoDeviceFallbackTriggered = true;
+      const reason = noGpuDetected ? 'rust reported no GPU device' : 'rust reported GPU disabled';
+      try {
+        logApp('gpu-no-device-fallback', JSON.stringify({ reason, backend: minerBackendResolved, worker: config?.worker || '' }));
+      } catch {
+        // ignore
+      }
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stderr',
+          text: `[WARN] Rust backend did not detect a usable GPU (${reason}). Switching to Python OpenCL backend...\n`
+        });
+      } catch {
+        // ignore
+      }
+      void maybeFallbackToPython(reason, false);
+    } catch {
+      // ignore
+    }
+  };
 
   // Windows DLL resolution: our native algo DLLs are built with MinGW and may depend on
   // libstdc++/libgcc/libwinpthread/libgomp/libcrypto. Ensure the loader can find them.
@@ -4075,6 +4139,7 @@ function startMining(config) {
     if (!skip) enqueueMinerOutputToRenderer('stdout', output);
     maybeEmitBlockFound(output);
     parseMinerOutput(output);
+    maybeTriggerRustGpuNoDeviceFallback(output);
   });
 
   minerProcess.stderr.on('data', (data) => {
@@ -4086,6 +4151,7 @@ function startMining(config) {
     if (!skip) enqueueMinerOutputToRenderer('stderr', output);
     maybeEmitBlockFound(output);
     parseMinerOutput(output);
+    maybeTriggerRustGpuNoDeviceFallback(output);
   });
 
   minerProcess.on('close', (code, signal) => {
