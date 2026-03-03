@@ -35,12 +35,14 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [ ] **72h canary revenue run** s audit ledgerem + rollback plánem — P0 v 2.9.7
 
 ### CHv4 / MainNet gate (REQUIRED v 2.9.7)
-- [x] CHv4 activation policy final (fork-height 200 000 FROZEN, governance sign-off) — `docs/2.9.7/CHV4_ACTIVATION_POLICY.md` ✅ 2026-03-03
+- [x] CHv4 activation policy final (fork-height **0** od genesis FROZEN, governance sign-off) — `docs/2.9.7/CHV4_ACTIVATION_POLICY.md` ✅ 2026-03-03
 - [x] `block.rs` height-aware dispatch `cosmic_harmony_with_height()` — commit `885dc94` ✅ 2026-03-03
-- [x] Pool share validator height-aware dispatch `cosmic_harmony_with_height()` — commit případá tato session ✅ 2026-03-03
-- [ ] CHv4 E2E production run (pool + miner + telemetrie, simulovaná výška ≥ 200 000) — P0 v 2.9.7
-- [ ] GPU OpenCL kernel — NPU Mixing step (Phase 5) do `cosmic_harmony_v3_gpu.py` — P0 v 2.9.7
-- [ ] Revenue 72h canary payout run (audit ledger + rollback plán) — P0 v 2.9.7
+- [x] Pool share validator height-aware dispatch `cosmic_harmony_with_height()` — commit `791e0ff` ✅ 2026-03-03
+- [x] GPU CUDA kernel — CHv4 NPU Mixing (Phase 5) v `cosmic_harmony_v3.cu` ✅ 2026-03-03
+- [x] GPU OpenCL kernel — CHv4 NPU Mixing (Phase 5) v `cosmic_harmony_v3.cl` ✅ 2026-03-03
+- [x] Python GPU miner — `chv4_flag = np.uint32(1)` vždy, `mh_flag = np.uint32(1)` vždy ✅ 2026-03-03
+- [ ] CHv4 E2E production run (pool + miner live, CHv4 hash ověřen, telemetrie) — P0 v 2.9.7
+- [ ] Revenue 72h canary payout run (audit ledger + rollback plán) — RESET 2026-03-03T21:00Z, končí 2026-03-06T21:00Z
 - [ ] Multi-algo 50/25/25 scheduler aktivace na Helsinki poolu — P0 v 2.9.7
 
 ### Konsensus / Bezpečnost

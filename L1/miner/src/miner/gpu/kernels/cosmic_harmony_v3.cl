@@ -488,7 +488,7 @@ void cl_memory_hard_transform(const ulong gm_words[8], __global uchar* pad, ulon
 // ============================================================================
 // CHv4 NPU Mixing Step — INT8 MLP 64→28→64 + residual
 // Mirrors Rust: L1/cosmic-harmony/src/algorithms_npu.rs :: npu_mixing_cpu_int8()
-// Active when height >= 200 000  (CHV4_NPU_FORK_HEIGHT)
+// Active always from genesis (CHV4_NPU_FORK_HEIGHT = 0)
 // Input/output: ulong[8] (LE word representation of 64-byte state)
 // ============================================================================
 
@@ -588,7 +588,7 @@ void cosmic_harmony_v3_mine(
     __global uchar* result_hash,
     const uint  memory_hard,          // 0 = legacy (<100k)  1 = scratchpad (>=100k)
     __global uchar* scratchpad_buf,    // ignored when memory_hard=0
-    const uint  chv4,                  // 1 = CHv4 NPU Mixing (height >= 200k)
+    const uint  chv4,                  // 1 = CHv4 NPU Mixing (od genesis, vždy 1)
     __global const char*  npu_w1,      // [128*64] int8
     __global const char*  npu_b1,      // [128]    int8
     __global const char*  npu_w2,      // [64*128] int8
@@ -622,7 +622,7 @@ void cosmic_harmony_v3_mine(
     uchar final_hash[32];
 
     if (chv4 && memory_hard) {
-        // CHv4 (height >= 200k): GoldenMatrix → MemoryHard → NPU Mixing → CosmicFusion
+        // CHv4 od genesis: GoldenMatrix → MemoryHard → NPU Mixing → CosmicFusion
         __global uchar* my_pad = scratchpad_buf + (ulong)tid * (ulong)CL_SCRATCHPAD_BYTES;
         ulong step4[8];
         cl_memory_hard_transform(step3, my_pad, step4);
@@ -630,7 +630,7 @@ void cosmic_harmony_v3_mine(
         npu_mixing_words(step4, step5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
         cosmic_fusion(step5, final_hash);
     } else if (memory_hard) {
-        // CHv3 ASIC-hardened (100k – 200k): GoldenMatrix → MemoryHard → CosmicFusion
+        // CHv3-only path (dead code: CHV4_NPU_FORK_HEIGHT=0 → vzždy chv4=1)
         __global uchar* my_pad = scratchpad_buf + (ulong)tid * (ulong)CL_SCRATCHPAD_BYTES;
         ulong step4[8];
         cl_memory_hard_transform(step3, my_pad, step4);
