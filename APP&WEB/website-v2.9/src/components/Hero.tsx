@@ -159,7 +159,7 @@ export default function Hero() {
                 href="/warp"
                 className="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan text-base font-semibold shadow-[0_0_45px_rgba(147,51,234,0.40)] hover:shadow-[0_0_60px_rgba(147,51,234,0.55)] transition-shadow"
               >
-                Launch WARP Deck
+                {tr('hero', 'btn_warp', lang)}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
@@ -167,14 +167,14 @@ export default function Hero() {
                 className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl border border-white/15 bg-white/5 text-base font-semibold hover:border-white/35 transition"
               >
                 <ShieldHalf className="w-5 h-5 text-zion-cyan" />
-                Guardian Docs
+                {tr('hero', 'btn_guardian_docs', lang)}
               </Link>
               <Link
                 href="/download"
                 className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl border border-white/15 text-base font-semibold hover:border-zion-gold/60 transition"
               >
                 <CircuitBoard className="w-5 h-5 text-zion-gold" />
-                Native Miner
+                {tr('hero', 'btn_native_miner', lang)}
               </Link>
             </div>
 
