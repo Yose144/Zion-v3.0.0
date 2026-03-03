@@ -42,7 +42,7 @@ Target: **31 December 2026**
 - [ ] Security audit of bridge contracts
 - [ ] Base Mainnet deployment
 
-### L3 Warp / AI ⏳
+### L3 ZION DAO / WARP ⏳
 
 - [ ] BTC HTLC design finalized
 - [ ] ETH Ethereum bridge audit
