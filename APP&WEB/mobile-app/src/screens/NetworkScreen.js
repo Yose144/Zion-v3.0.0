@@ -1,8 +1,9 @@
 /**
- * ZION Network Screen v2.9.5
+ * ZION Network Screen v2.9.6
  *
  * Shows real-time network topology, node health, chain info,
  * and sync status from the Rust core via RPC / Pool API.
+ * Uses POOL_HOSTS (Helsinki / USA / Asia) — CHv4 era.
  */
 
 import React, {useState, useEffect} from 'react';
@@ -18,6 +19,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import GlassCard from '../components/common/GlassCard';
 import {colors, spacing, typography, borderRadius} from '../constants/theme';
 import {CONFIG} from '../constants/config';
+import {ALGORITHM_DISPLAY} from '../constants/blockchain';
 import BlockchainRPC from '../services/BlockchainRPC';
 import PoolAPI from '../services/PoolAPI';
 import {
@@ -57,9 +59,10 @@ const NetworkScreen = () => {
       setChainInfo(network);
       setPoolStats(pool);
 
-      // Ping all RPC nodes for status
+      // Ping all nodes from POOL_HOSTS (Helsinki / USA / Asia)
       const statuses = await Promise.all(
-        CONFIG.RPC_NODES.map(async (url) => {
+        CONFIG.POOL_HOSTS.map(async (node) => {
+          const url = `http://${node.host}:8444`;
           const start = Date.now();
           try {
             const res = await fetch(`${url}/`, {
@@ -71,13 +74,14 @@ const NetworkScreen = () => {
             const latency = Date.now() - start;
             const data = await res.json();
             return {
-              url,
+              name: node.name,
+              host: node.host,
               online: true,
               latency,
               height: data?.result?.height || '?',
             };
           } catch {
-            return {url, online: false, latency: null, height: null};
+            return {name: node.name, host: node.host, online: false, latency: null, height: null};
           }
         }),
       );
@@ -149,7 +153,9 @@ const NetworkScreen = () => {
               color={node.online ? colors.status.success : colors.status.error}
             />
             <View style={styles.nodeInfo}>
-              <Text style={styles.nodeUrl}>{node.url}</Text>
+              <Text style={styles.nodeUrl}>
+                {node.name} <Text style={styles.nodeHost}>({node.host})</Text>
+              </Text>
               {node.online ? (
                 <Text style={styles.nodeDetail}>
                   {node.latency}ms · Block #{node.height}
@@ -186,6 +192,7 @@ const NetworkScreen = () => {
         <View style={styles.grid}>
           <InfoRow label="App Version" value={`v${CONFIG.VERSION}`} />
           <InfoRow label="Codename" value={CONFIG.CODENAME} />
+          <InfoRow label="Algorithm" value={ALGORITHM_DISPLAY} />
           <InfoRow label="P2P Port" value={CONFIG.P2P_PORT?.toString()} />
           <InfoRow label="RPC Port" value="8444" />
           <InfoRow label="Stratum Port" value={CONFIG.POOL_PORT?.toString()} />
@@ -274,6 +281,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text.primary,
     fontWeight: '600',
+  },
+  nodeHost: {
+    ...typography.caption,
+    color: colors.text.muted,
+    fontWeight: '400',
   },
   nodeDetail: {
     ...typography.caption,
