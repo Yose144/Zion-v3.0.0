@@ -25,12 +25,12 @@ ZION TerraNova není jen blockchain — je to **vrstvená civilizační infrastr
                         ╰──────────┬───────────╯
                                    │
                         ╭──────────┴───────────╮
-                   L3   │  🏛️ ZION DAO         │  2027
+                   L3   │  🏛️ ZION DAO         │  2028
                         │  Governance Layer    │
                         ╰──────────┬───────────╯
                                    │
                         ╭──────────┴───────────╮
-                   L2   │  🧠 NCL              │  2028
+                   L2   │  🧠 NCL              │  2027
                         │  Neural Conscious    │
                         ╰──────────┬───────────╯
                                    │
@@ -71,7 +71,7 @@ Základ celého ekosystému. Proof-of-Work blockchain postavený v Rustu s vlast
 
 ## L2 — NCL (Neural Conscious Layer)
 
-> **Status:** 🔵 PLÁNOVÁNO (2028)
+> **Status:** 🔵 PLÁNOVÁNO (2027)
 
 AI nativní vrstva integrovaná přímo do protokolu. NCL není "AI jako služba" — je to **vědomá inteligence jako součást blockchainu**.
 
@@ -91,7 +91,7 @@ AI nativní vrstva integrovaná přímo do protokolu. NCL není "AI jako služba
 
 ## L3 — ZION DAO (Governance Layer)
 
-> **Status:** 🟡 V PŘÍPRAVĚ (2027)
+> **Status:** 🟡 V PŘÍPRAVĚ (2028)
 
 Decentralizovaná autonomní organizace řídící celý ekosystém. DAO Treasury (4B ZION z genesis) slouží jako komunitní pokladna.
 
@@ -113,7 +113,7 @@ Decentralizovaná autonomní organizace řídící celý ekosystém. DAO Treasur
 
 ## L4 — ZION Oasis (Economic Ecosystem)
 
-> **Status:** 🟢 GENESE READY (2026, spuštění s mainnet)
+> **Status:** 🟢 PLÁNOVÁNO (2029)
 
 ZION Oasis je kompletní ekonomický ekosystém zahrnující herní vrstvu, NFT, Golden Egg mechanismus a Winners experience. Je to místo, kde se blockchain setkává s reálnou ekonomikou.
 
@@ -274,13 +274,15 @@ L1 TerraNova ←──── základ ──── PoW mining, UTXO, consensus
 ```
 2026 ───── L1 MainNet Genesis ──────────────────────────────────
   │         Cosmic Harmony v3 mining begins
-  │         L4 ZION Oasis activated
   │
-2027 ───── L3 DAO goes live ────────────────────────────────────
+2027 ───── L2 NCL prototype ────────────────────────────────────
+  │         AI-native protocol features active
+  │
+2028 ───── L3 DAO goes live ────────────────────────────────────
   │         Community governance begins
   │
-2028 ───── L2 NCL integration ──────────────────────────────────
-  │         AI-native protocol features
+2029 ───── L4 ZION Oasis launched ──────────────────────────────
+  │         Golden Egg, XP economy, Winners program
   │
 2030 ───── L5 ZION FREE WORLD launched ─────────────────────────
   │         Quantum engine R&D begins
