@@ -768,7 +768,6 @@ mod tests {
     /// CHv4 must produce a DIFFERENT hash than CHv3 for the same (blob, nonce).
     #[test]
     fn test_chv4_hash_differs_from_chv3() {
-        use crate::shares::validator::ShareValidator;
         use zion_cosmic_harmony_v3::algorithms_opt;
 
         let blob = vec![0xBEu8; 80];
