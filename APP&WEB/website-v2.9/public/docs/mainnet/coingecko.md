@@ -15,7 +15,7 @@
 | **Ticker** | 3–5 znaků | ✅ | ZION |
 | **Website** | HTTPS, funkční | ✅ | https://zionterranova.com |
 | **Whitepaper** | Veřejná URL, EN | 🔄 | /docs (WP v2.9.7 EN) |
-| **GitHub** | Public repo, aktivní | ✅ | github.com/Yose144/2.9.6 |
+| **GitHub** | Public repo, aktivní | ✅ | https://github.com/Zion-TerraNova |
 | **Block explorer** | Funkční, veřejný | 📋 | https://zionterranova.com/explorer |
 | **Algoritmus** | Název | ✅ | Cosmic Harmony v4 (CHv4) |
 | **Consensus** | PoW / PoS / ... | ✅ | Proof of Work |
@@ -82,7 +82,7 @@ Key features:
 - No halving — constant 5,400 ZION/block + Decade Decay model
 - Decade Decay: -20% every 10 years, tail emission 725 ZION/block (permanent)
 - Total supply: 144 billion ZION (88.7% fair-mined, 11.3% premine for dev/humanitarian)
-- Native 6-layer architecture: L1 Core → L2 DeFi → L3 WARP/AI → L4 Oasis → L5 Social → L6 DAO
+- Native 6-layer architecture: L1 TerraNova → L2 NCL → L3 DAO → L4 Oasis → L5 Free World → L6 Issobella
 - wZION ERC-20 bridge to Ethereum Base and other EVM chains
 - Ed25519 signatures, LMDB storage, LWMA difficulty adjustment
 - 3-node TestNet live (Helsinki, USA, Asia)

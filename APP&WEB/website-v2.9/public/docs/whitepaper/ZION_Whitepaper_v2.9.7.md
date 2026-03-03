@@ -4,7 +4,7 @@
 **Date:** March 2026  
 **Status:** TestNet Live · MainNet target December 31, 2026  
 **Website:** https://zionterranova.com  
-**Repository:** https://github.com/Yose144/2.9.6
+**Repository:** https://github.com/Zion-TerraNova
 
 ---
 
@@ -72,14 +72,16 @@ Starting at block **5,256,000** (approximately year 10 from genesis):
 
 ### 2.5 Premine Allocation
 
-| Purpose | Share | Amount |
-|---------|-------|--------|
-| Humanitarian reserve | 40% | 6,512,000,000 ZION |
-| Development & infrastructure | 30% | 4,884,000,000 ZION |
-| Ecosystem & partnerships | 20% | 3,256,000,000 ZION |
-| Founding team | 10% | 1,628,000,000 ZION |
+Celkový premine: **16 280 000 000 ZION** (11.31% z total supply) — on-chain verifikovatelné, plně odčlokováno od genesis.
 
-Founding team allocation vests linearly over 4 years. Humanitarian reserve is managed by the L6 DAO.
+| Kategorie | Částka | Podíl |
+|-----------|--------|-------|
+| ZION OASIS + Winners Golden Egg/Xp | 8 250 000 000 ZION | 50.7% |
+| DAO Treasury | 4 000 000 000 ZION | 24.6% |
+| Infrastructure | 2 590 000 000 ZION | 15.9% |
+| Humanitarian | 1 440 000 000 ZION | 8.8% |
+
+Veškeré preminové adresy jsou veřejně zveřejněny na https://zionterranova.com/docs a v genesis bloku.
 
 ---
 
@@ -164,12 +166,12 @@ $$D_{\text{new}} = D_{\text{ref}} \cdot \frac{T_{\text{target}} \cdot N(N+1)}{2 
 
 | Layer | Name | Status | Description |
 |-------|------|--------|-------------|
-| L1 | Core Protocol | ✅ Live | Rust blockchain, CHv3/CHv4, pool |
-| L2 | DeFi / Bridge | 🔄 Dev | wZION ERC-20, DEX, DAO contracts |
-| L3 | WARP / AI-Native | 🔄 Prototype | Cross-chain messages, NCL, AI inference |
-| L4 | Oasis | 📋 Design | Real-world asset bridge, oracle |
-| L5 | Social | 📋 Design | Guardian identity, consciousness score |
-| L6 | Governance | 📋 Design | Constitutional DAO, upgrade votes |
+| L1 | ZION TerraNova ⛏️ | ✅ Live | Rust blockchain, CHv3/CHv4, pool |
+| L2 | NCL — Neural Conscious Layer 🧠 | 🔄 Dev | AI-native protokol, wZION bridge, on-chain inference |
+| L3 | ZION DAO 🏛️ | 📋 Design | Governance, Treasury 4B ZION, community grants |
+| L4 | ZION Oasis 🎮 | 📋 Design | Golden Egg, XP economy, winners, gaming layer |
+| L5 | ZION Free World 🌍 | 📋 Vision | Humanitarian, free energy, off-grid communities |
+| L6 | ZION Issobella 🔭 | 📋 2040+ | Orbitní observatoř, výzkumná stanice, LEO orbit |
 
 ### L2 — wZION Bridge
 
@@ -188,25 +190,30 @@ $$D_{\text{new}} = D_{\text{ref}} \cdot \frac{T_{\text{target}} \cdot N(N+1)}{2 
 
 ## 6. Governance
 
-### 6.1 L6 Constitutional Layer
+### 6.1 L3 ZION DAO
 
-The ZION Constitution defines immutable principles that cannot be changed by any vote:
-- Proof-of-Work consensus (no PoS conversion without supermajority)
-- Fair launch preservation (no retroactive premine increase)
-- Humanitarian reserve usage scope
-- Open-source license requirement
+Governance probíhá na L3 — ZION DAO. Kády držitel ZION může návrhy podat, hlasovat a sledovat výsledky on-chain:
 
-### 6.2 DAO Process
+1. **Návrh** — libovolný držitel s ≥1 M ZION může podat návrh
+2. **Diskuze** — 14-denní komunitní debata
+3. **Hlasování** — on-chain, 10% quorum
+4. **Vykonání** — smart kontrakt auto-execute nebo koordinovaný hard fork
 
-1. **Proposal** — any ZION holder with ≥1M ZION can submit
-2. **Discussion** — 14-day community debate period
-3. **Vote** — on-chain, 10% quorum required
-4. **Execution** — smart contract auto-executes or hard fork coordinated
+### 6.2 Block Reward Distribution
 
-### 6.3 Development Governance
+Každý blok automaticky rozděluje odměnu:
 
-Until MainNet: core team decisions with community advisory input.  
-After MainNet: gradual decentralization, targeting full DAO governance by year 3.
+| Příjemce | Podíl | Účel |
+|----------|-------|-------|
+| ⛏️ Těžaři | 89% | Mining security |
+| 🌍 L5 Humanitarian Tithe | 5% | Humanitární fond |
+| 🔭 L6 Issobella Fund | 5% | Orbitní výzkum |
+| 🏊 Pool Fee | 1% | Pool provoz |
+
+### 6.3 Vývoj governance
+
+Do MainNet: rozhodování core teamu s komunitním vstupem.  
+Po MainNet: postupná decentralizace, cíl plné DAO governance do 3 let od launche.
 
 ---
 
@@ -253,5 +260,5 @@ ZION TerraNova is open-source software. ZION tokens are **not securities**. They
 ---
 
 *ZION TerraNova Dev Team — March 2026*  
-*GitHub: https://github.com/Yose144/2.9.6*  
+*GitHub: https://github.com/Zion-TerraNova*  
 *License: MIT*
