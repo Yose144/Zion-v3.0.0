@@ -729,13 +729,13 @@ export default function MissionControlDashboard() {
                 </tbody></table>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Globe className="h-6 w-6 text-yellow-400" />} title="Fáze 3 — Infrastructure & Legal" pct={50} status="PROBÍHÁ" statusColor="border-yellow-400/30 bg-yellow-400/10 text-yellow-200">
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Srpen — Září 2026 | Early-start: kód + konfigurace hotové, deploy pending</p>
+              <PhaseAccordion icon={<Globe className="h-6 w-6 text-yellow-400" />} title="Fáze 3 — Infrastructure & Legal" pct={55} status="PROBÍHÁ" statusColor="border-yellow-400/30 bg-yellow-400/10 text-yellow-200">
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Srpen — Září 2026 | HEL/USA/ASIA online, monitoring live, bridge testnet ready</p>
                 <table className="w-full text-left"><tbody>
                   <SprintRow name="3.1 Seed Nodes" content="Prom+Grafana DEPLOYED ✅ (Helsinki+Germany 14/14 targets UP), dashboardy 3×, alerty 13×, 72h stability run zahájen 12.2. — seed nody 0/5" status={<span className="text-emerald-400">LIVE</span>} />
                   <SprintRow name="3.2 Docker & Deploy" content="mainnet.yml ✅, runbook ✅, CI/CD ⬜, images ⬜" status={<span className="text-yellow-400">2/5</span>} />
                   <SprintRow name="3.3 Legal" content="6 legal docs ✅, footer ✅, comm guidelines ⬜" status={<span className="text-emerald-400">7/8</span>} />
-                  <SprintRow name="3.4 Exchange Ready" content="Supply API ✅, whitepaper ⬜, wZION ⬜, bridge ⬜" status={<span className="text-yellow-400">1/6</span>} />
+                  <SprintRow name="3.4 Exchange Ready" content="Supply API ✅, whitepaper ⬜, wZION bridge (Base Sepolia) ✅, listing prep ⬜" status={<span className="text-yellow-400">3/6</span>} />
                 </tbody></table>
               </PhaseAccordion>
 
@@ -789,8 +789,8 @@ export default function MissionControlDashboard() {
                   { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-rose-500/5', title: 'Orbital Consciousness Station', desc: 'Vesmírná stanice ZION Issobella — decentralizovaný výzkum, orbital mining, 5% block reward fund', tags: ['Space Station', 'Orbital Mining', '5% Fund', 'Deep Research'], date: '2040+', labelColor: 'text-rose-400', active: false, Icon: Rocket },
                   { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-amber-500/5', title: 'Sovereign Governance Layer', desc: 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic', tags: ['Governance', 'Sovereignty', 'Community', 'Freedom'], date: '2030+', labelColor: 'text-amber-400', active: false, Icon: Globe2 },
                   { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-pink-500/5', title: 'Consciousness Mining as Gameplay', desc: 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-pink-400', active: false, Icon: Gamepad2 },
-                  { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-purple-500/5', title: 'Neural Compute Layer & AI Agents', desc: 'NCL — decentralizovaný AI marketplace, Warp Bridges, AI Native SDK', tags: ['NCL Tasks', 'AI Orchestrátor', 'Warp Bridges', 'GPU za ZION'], date: '2027 Q3+', labelColor: 'text-purple-400', active: false, Icon: Brain },
-                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-blue-500/5', title: 'Atomic Swaps, AMM & DAO', desc: 'Atomic Swaps (ZION ↔ BTC/ETH/XMR), wZION ERC-20, AMM DEX, DAO Governance', tags: ['HTLC Swaps', 'wZION Bridge', 'Uniswap', 'DAO Voting'], date: '2027 Q1-Q2', labelColor: 'text-blue-400', active: false, Icon: ArrowLeftRight },
+                  { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-purple-500/5', title: 'Neural Compute Layer & AI Agents', desc: 'WARP adapters 7/7 hotovo, NCL gateway online, AI Native SDK navazuje', tags: ['WARP 7/7', 'NCL Gateway', 'AI Orchestrátor', 'GPU za ZION'], date: '2026 Q1–Q2 (testnet hotovo)', labelColor: 'text-purple-400', active: true, Icon: Brain },
+                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-blue-500/5', title: 'Atomic Swaps, AMM & DAO', desc: 'wZION bridge na Base Sepolia testnet ready, další DeFi kroky navazují', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Sepolia', 'DAO Voting'], date: '2026 Q1–Q2 (testnet ready)', labelColor: 'text-blue-400', active: true, Icon: ArrowLeftRight },
                   { label: 'L1 — ZION BLOCKCHAIN ← ZDE', color: 'border-l-cyan-400 bg-cyan-500/[0.08] border-2 border-cyan-500/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Cosmic Harmony v3', desc: 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, dual-mining ZION+VRSC', tags: ['ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Dual Mining'], date: 'MainNet 31. 12. 2026', labelColor: 'text-cyan-400', active: true, Icon: Link },
                 ].map((l, idx) => (
                   <motion.div
@@ -1052,8 +1052,8 @@ export default function MissionControlDashboard() {
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-gray-700 space-y-4 sm:space-y-6">
                     {[
                       { date: 'Leden — Červen 2027', title: 'Fáze 6 — Post-Launch', desc: 'Silent MainNet, DEX, CMC/CoinGecko', color: 'text-white' },
-                      { date: '2027 Q1-Q2', title: 'L2 — DEX & DeFi', desc: 'Atomic Swaps, wZION Bridge, AMM', color: 'text-blue-400' },
-                      { date: '2027 Q3+', title: 'L3 — Warp & AI Native', desc: 'NCL, AI Orchestrátor, AI SDK', color: 'text-purple-400' },
+                      { date: '2026 Q1–Q2', title: 'L2 — DEX & DeFi', desc: 'wZION bridge Base Sepolia testnet ready', color: 'text-blue-400' },
+                      { date: '2026 Q1–Q2', title: 'L3 — Warp & AI Native', desc: 'WARP adapters 7/7 hotovo, NCL online', color: 'text-purple-400' },
                       { date: '2029+', title: 'L4 — ZION Oasis', desc: 'UE5 World, XP System, Play-to-Mine', color: 'text-pink-400' },
                       { date: '2030+', title: 'L5 — Free World', desc: 'Sovereignty, decentralizovaná governance', color: 'text-amber-400' },
                       { date: '2040+', title: 'L6 — ZION Issobella', desc: 'Orbital station, 5% block reward fund', color: 'text-rose-400' },
@@ -1080,8 +1080,8 @@ export default function MissionControlDashboard() {
               <div className="space-y-3 sm:space-y-4 overflow-x-auto">
                 {[
                   { layer: 'L1 Blockchain', period: '2026', phases: 'Fáze 0 → 1 → 2–4 → MainNet', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
-                  { layer: 'L2 DEX / DeFi', period: '2027 Q1–Q2', phases: 'Atomic Swaps · wZION · AMM', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
-                  { layer: 'L3 Warp / AI', period: '2027 Q3+', phases: 'NCL · AI · Warp Bridges', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
+                  { layer: 'L2 DEX / DeFi', period: '2026 Q1–Q2', phases: 'wZION Bridge · Base Sepolia', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
+                  { layer: 'L3 Warp / AI', period: '2026 Q1–Q2', phases: 'WARP 7/7 · NCL · AI', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
                   { layer: 'L4 Oasis', period: '2029+', phases: 'UE5 · Play-to-Mine · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
                   { layer: 'L5 Free World', period: '2030+', phases: 'Governance · Sovereignty', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
                   { layer: 'L6 Issobella', period: '2040+', phases: 'Orbital Station · Fund', color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' }
