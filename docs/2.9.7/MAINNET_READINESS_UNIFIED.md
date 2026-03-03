@@ -61,5 +61,6 @@ Go pro mainnet pouze pokud:
 - `docs/2.9.7/CODE_FREEZE.md`
 - `docs/2.9.7/STABILITY_LOG.md`
 - `docs/2.9.7/MAINNET_CHV3_CUDA_REVENUE.md`
+- `docs/2.9.7/MAINNET_GO_NO_GO.md`
 - `docs/2.9.7/RELEASE_2.9.7_PRODUCTION_BASE.md`
 - `docs/WP3.0/README.md`
