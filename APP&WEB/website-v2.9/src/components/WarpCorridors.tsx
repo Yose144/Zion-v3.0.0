@@ -37,7 +37,7 @@ const validatorDeck = [
   {
     title: 'Guardian Nodes',
     value: '3 regions',
-    description: 'Helsinki · Usa · Asia — global coverage for MainNet',
+    description: 'Helsinki · USA · Asia — global coverage for MainNet',
   },
   {
     title: 'Telemetry',
@@ -55,7 +55,7 @@ export default function WarpCorridors() {
             <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">WARP NETWORK</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
               Liquidity corridors tuned for{' '}
-              <span className="text-gradient">On the Star 2.9.6</span>
+              <span className="text-gradient">On the Star 2.9.7</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
               HTLC-grade swaps, SPL warp programs, and DAO-guarded liquidity pools stitched into a single

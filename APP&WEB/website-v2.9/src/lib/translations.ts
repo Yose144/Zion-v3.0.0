@@ -15,6 +15,13 @@ const t = {
     genesis:  { cs: 'Genesis', en: 'Genesis' },
     api:      { cs: 'API', en: 'API' },
     docs:     { cs: 'Dokumentace', en: 'Docs' },
+    dashboard:  { cs: 'Dashboard',  en: 'Dashboard' },
+    warp:       { cs: 'WARP',        en: 'WARP' },
+    dao:        { cs: 'DAO',         en: 'DAO' },
+    bridge:     { cs: 'Most',        en: 'Bridge' },
+    pool:       { cs: 'Pool',        en: 'Pool' },
+    philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
+    ai_native:  { cs: 'AI Native',   en: 'AI Native' },
   },
 
   /* ─── Hero ─── */
@@ -43,6 +50,9 @@ const t = {
     metric_tests:   { cs: 'Testy úspěšně', en: 'Tests Passing' },
     observatory_label: { cs: 'Observatory mód', en: 'Observatory mode' },
     section_signals: { cs: 'Misi signály', en: 'Mission signals' },
+    btn_warp:          { cs: 'Spustit WARP Deck',      en: 'Launch WARP Deck' },
+    btn_guardian_docs: { cs: 'Dokumentace Guardian',   en: 'Guardian Docs' },
+    btn_native_miner:  { cs: 'Stáhnout Miner',          en: 'Native Miner' },
   },
 
   /* ─── Features ─── */

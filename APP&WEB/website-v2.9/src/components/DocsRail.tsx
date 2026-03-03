@@ -31,7 +31,7 @@ const resources = [
 const ctas = [
   {
     title: 'Roadmap → MainNet 2026',
-    description: 'Full roadmap: Fáze 0–5, Layer Architecture, Constitution, and post-launch strategy.',
+    description: 'Full roadmap: Phases 0–5, Layer Architecture, Constitution, and post-launch strategy.',
     icon: Route,
     href: '/roadmap',
   },
