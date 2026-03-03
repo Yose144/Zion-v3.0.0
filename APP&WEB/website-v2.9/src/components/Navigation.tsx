@@ -110,8 +110,8 @@ export default function Navigation() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
   <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-zion-purple/30 via-transparent to-zion-cyan/30 blur-3xl opacity-40" />
-      <div className="container mx-auto px-4 py-4 relative">
-        <div className="flex items-center justify-between rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+      <div className="zion-container py-4 relative">
+        <div className="zion-panel flex items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="w-12 h-12 rounded-lg flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-gold/50 transition-colors bg-black/40">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,215,0,0.3),transparent_60%)]" />
@@ -125,7 +125,7 @@ export default function Navigation() {
             </div>
             <span className="text-2xl font-bold text-gradient tracking-tight">ZION</span>
             <span className="text-[11px] px-2 py-1 rounded bg-white/5 border border-white/10 uppercase tracking-widest">
-              2.9.6 &ldquo;On the Star&rdquo;
+              2.9.7 &ldquo;On the Star&rdquo;
             </span>
           </Link>
 

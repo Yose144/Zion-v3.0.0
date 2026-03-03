@@ -5,21 +5,21 @@ const IFRAME_SRC = `${GRAFANA_BASE_URL}/d/system-metrics/full-system-dashboard?o
 const DASHBOARD_URL = `${GRAFANA_BASE_URL}/d/system-metrics/full-system-dashboard`;
 
 export const metadata: Metadata = {
-  title: "Full System Dashboard · ZION v2.9.6 On the Star",
-  description: "End-to-end system metrics: CPU, RAM, RPC latency, API health, and uptime for ZION v2.9.6 On the Star.",
+  title: "Full System Dashboard · ZION v2.9.7 On the Star",
+  description: "End-to-end system metrics: CPU, RAM, RPC latency, API health, and uptime for ZION v2.9.7 On the Star.",
 };
 
 export default function SystemMetricsPage() {
   return (
-    <div className="min-h-screen bg-black text-white pb-16">
-      <div className="container mx-auto max-w-6xl px-4 pt-20">
+    <div className="zion-shell min-h-screen text-white pb-16">
+      <div className="zion-container max-w-6xl pt-20">
         <div className="mb-6">
-          <p className="text-xs uppercase tracking-[0.35em] text-gray-400">Monitoring</p>
-          <h1 className="text-3xl md:text-4xl font-semibold text-gradient">Full System Dashboard</h1>
-          <p className="mt-2 text-sm text-gray-300">CPU/RAM · RPC latency · API health · uptime</p>
+          <p className="zion-kicker">Monitoring</p>
+          <h1 className="zion-section-title mt-3">Full System Dashboard</h1>
+          <p className="zion-section-sub mt-2">CPU/RAM · RPC latency · API health · uptime</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-3 shadow-lg">
+        <div className="zion-panel p-3 shadow-lg">
           <iframe
             src={IFRAME_SRC}
             title="Full System Dashboard"

@@ -38,7 +38,7 @@ const missionMetrics = [
   },
   {
     label: 'Version',
-    value: 'v2.9.6',
+    value: 'v2.9.7',
     description: 'On the Star TestNet',
     icon: Gauge
   },
@@ -115,20 +115,20 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
   };
 
   return (
-    <div className="min-h-screen pt-32 pb-20 px-4">
-      <div className="container mx-auto max-w-7xl space-y-12">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-[32px] border border-white/10 bg-black/60 p-10 backdrop-blur-xl">
+    <div className="zion-shell min-h-screen pt-32 pb-20">
+      <div className="zion-container max-w-7xl space-y-12">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="zion-panel rounded-[32px] bg-black/60 p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Mission control</p>
               <h1 className="text-5xl md:text-6xl font-semibold text-gradient">Live systems dashboard</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from ZION On the Star v2.9.6 TestNet: health checks, node status, blockchain vitals, and mining pool metrics across 2 EU regions.
+                Real-time telemetry from ZION On the Star v2.9.7 TestNet: health checks, node status, blockchain vitals, and mining pool metrics across 2 EU regions.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {missionMetrics.map((metric) => (
-                <div key={metric.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div key={metric.label} className="zion-panel p-5">
                   <metric.icon className="h-6 w-6 text-zion-gold" />
                   <p className="mt-3 text-xs uppercase tracking-[0.3em] text-gray-400">{metric.label}</p>
                   <p className="text-3xl font-semibold text-white">{metric.value}</p>
@@ -140,7 +140,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         </motion.div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-black/50 p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Activity className={`w-6 h-6 ${
@@ -167,7 +167,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               </div>
             </div>
             <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="zion-panel p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Status</p>
                 <p className={`mt-2 text-2xl font-semibold ${
                   health?.status === 'ok' || health?.status === 'operational' || health?.status === 'healthy' 
@@ -182,15 +182,15 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                    '○ Checking...'}
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="zion-panel p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Version</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{health?.version || 'v2.9.6'}</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{health?.version || 'v2.9.7'}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="zion-panel p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Uptime</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{computedUptime}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="zion-panel p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Services</p>
                 <div className="mt-2 space-y-1 text-sm text-gray-300">
                   <p>
@@ -222,7 +222,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-black/50 p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="w-6 h-6 text-zion-gold" />
               <h2 className="text-2xl font-semibold text-white">Blockchain vitals</h2>
@@ -237,7 +237,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                   <MetricCard label="Difficulty" value={stats.difficulty || '—'} />
                 </div>
                 {stats.latest_block && (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="zion-panel p-4">
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Latest block</p>
                     <div className="mt-3 grid gap-3 text-sm">
                       <div className="flex justify-between text-gray-300">
@@ -266,7 +266,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           </motion.div>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-black/50 p-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Activity className="w-6 h-6 text-zion-purple" />
@@ -301,7 +301,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="zion-panel p-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Pool configuration</p>
                   <div className="mt-3 space-y-2 text-sm text-gray-300">
                     <div className="flex justify-between">
@@ -322,7 +322,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                     </div>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="zion-panel p-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Network stats</p>
                   <div className="mt-3 space-y-2 text-sm text-gray-300">
                     <div className="flex justify-between">
@@ -356,7 +356,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[28px] border border-white/10 bg-black/50 p-6"
+          className="zion-panel rounded-[28px] bg-black/50 p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -382,7 +382,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <Link
                 key={card.title}
                 href={card.href}
-                className="group rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-zion-cyan/60 hover:bg-black/60 transition-all"
+                className="group zion-panel p-5 hover:border-zion-cyan/60 hover:bg-black/60 transition-all"
               >
                 <div className="flex items-center gap-3">
                   <card.icon className={`w-6 h-6 ${card.accent}`} />
@@ -441,7 +441,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] p-6">
           <div className="flex items-center gap-3 mb-4">
             <Cpu className="w-6 h-6 text-zion-gold" />
             <h2 className="text-2xl font-semibold text-white">Recent blocks</h2>
@@ -469,7 +469,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           )}
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[32px] border-zion-gold/30 bg-gradient-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.4em] text-gray-200">What&apos;s next</p>

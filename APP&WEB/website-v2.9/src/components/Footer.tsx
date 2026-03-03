@@ -40,7 +40,7 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer className="border-t border-white/10 bg-black/60 backdrop-blur-xl mt-20">
-      <div className="container mx-auto px-4 py-12">
+      <div className="zion-container py-12">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand column */}
           <div className="md:col-span-2 space-y-4">
@@ -103,7 +103,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-4 pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-600">
-            © 2026 ZION Blockchain · v2.9.6 On the Star
+            © 2026 ZION Blockchain · v2.9.7 On the Star
           </p>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
