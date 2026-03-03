@@ -130,7 +130,7 @@ export default function Hero() {
         >
           <div className="inline-flex items-center gap-2 bg-zion-gold/10 border border-zion-gold/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-zion-gold font-semibold">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-            On the Star · v2.9.7 · TestNet Live
+            Pre-MainNet Gate · v2.9.7 · TestNet Live
           </div>
           <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-pink-300 font-semibold">
             <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
@@ -155,7 +155,7 @@ export default function Hero() {
                 <span className="text-gradient">ZION</span>
                 <span className="block text-white mt-1">Terra Nova</span>
                 <span className="block text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
-                  On the Star &nbsp;·&nbsp; v2.9.7
+                  Pre-MainNet Gate &nbsp;·&nbsp; v2.9.7
                 </span>
               </h1>
             </div>
