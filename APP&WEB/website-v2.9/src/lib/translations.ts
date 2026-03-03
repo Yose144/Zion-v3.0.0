@@ -49,8 +49,8 @@ const t = {
   features: {
     heading: { cs: 'Vrstvy protokolu', en: 'Protocol Layers' },
     subheading: {
-      cs: 'Šestisložková architektura od L1 Rust jádra až po L6 DAO vrstev.',
-      en: 'Six-layer architecture from L1 Rust core to L6 DAO governance.',
+      cs: 'Šestisložková architektura: L1 Rust jádro, L2 NCL, L3 DAO, L4 Oasis, L5 Free World, L6 Issobella.',
+      en: 'Six-layer architecture: L1 Rust core, L2 NCL, L3 DAO, L4 Oasis, L5 Free World, L6 Issobella.',
     },
     tracks: {
       chv3: {
@@ -126,6 +126,10 @@ const t = {
       },
     },
     upgrade_heading: { cs: 'Vývoj upgradu · Timeline', en: 'Upgrade development · Timeline' },
+    community_cta: {
+      cs: 'Governance DAO otevírá na L3 (2028). Přidej se k diskuzi na GitHub’u — navrhuj funkce, odměny nebo upgrady protokolu.',
+      en: 'DAO governance opens at L3 (2028). Join the discussion on GitHub — propose features, bounties, or protocol upgrades.',
+    },
   },
 
   /* ─── CHv4 Upgrade section ─── */
