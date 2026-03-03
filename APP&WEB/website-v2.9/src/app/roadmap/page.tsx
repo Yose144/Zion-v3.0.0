@@ -28,10 +28,10 @@ import {
    ═══════════════════════════════════════════════════════════ */
 
 const heroStats = [
-  { label: 'Rust LOC', value: '46,690', descriptor: '4 crates' },
-  { label: 'Tests passing', value: '512', descriptor: '0 failing · 2 ignored' },
-  { label: 'Block Height', value: '1,220+', descriptor: '2 nodes synced' },
-  { label: 'MainNet', value: '31.12.2026', descriptor: 'Hard deadline' }
+  { label: 'Rust LOC', value: '52,590', descriptor: '5 crates' },
+  { label: 'Tests passing', value: '780+', descriptor: '0 failing' },
+  { label: 'Network', value: '3/3 online', descriptor: 'Helsinki · USA · Asia' },
+  { label: 'MainNet Gate', value: 'NO-GO', descriptor: 'B-CRIT-01..03 open' }
 ];
 
 const layerStack = [
@@ -60,12 +60,12 @@ const layerStack = [
     layer: 'L2',
     emoji: '💱',
     title: 'DEX & DeFi Layer',
-    period: '2027 Q1–Q2',
+    period: '2026 testnet ready · 2027 production',
     color: 'from-blue-500 to-cyan-500',
     border: 'border-blue-500/40',
     items: [
       'Atomic Swaps (ZION ↔ BTC/ETH/XMR)',
-      'Wrapped ZION (wZION na EVM chains)',
+      'wZION Bridge — Base Sepolia testnet ready ✅',
       'Liquidity Pools & AMM DEX',
       'DAO Governance v1'
     ],
@@ -75,13 +75,13 @@ const layerStack = [
     layer: 'L3',
     emoji: '🧠',
     title: 'Warp & AI Native',
-    period: '2027 Q3+',
+    period: '2026 implementation done · 2027 production',
     color: 'from-purple-500 to-pink-500',
     border: 'border-purple-500/40',
     items: [
       'NCL — AI task marketplace',
       'AI Orchestrátor — agent routing',
-      'Warp Bridges — cross-chain teleportation',
+      'WARP adapters 7/7 implemented ✅ (2026-03-02)',
       'AI Native SDK'
     ],
     active: false
@@ -163,10 +163,11 @@ const componentStatus = [
   { name: 'core/ (blockchain)', loc: '~17k', tests: 275, status: '✅', readiness: 90 },
   { name: 'cosmic-harmony/ (PoW)', loc: '~11k', tests: 68, status: '✅', readiness: 88 },
   { name: 'pool/ (mining pool)', loc: '~12k', tests: 132, status: '✅', readiness: 90 },
-  { name: 'miner/ (universal)', loc: '~6k', tests: 37, status: '✅', readiness: 85 },
+  { name: 'miner/ (universal)', loc: '~6k', tests: 73, status: '✅', readiness: 85 },
   { name: 'desktop-agent/', loc: '~3k', tests: 0, status: '✅', readiness: 80 },
   { name: 'website-v2.9/', loc: '~5k', tests: 0, status: '🔄', readiness: 75 },
-  { name: 'mobile-app/', loc: '~2k', tests: 0, status: '🔴', readiness: 55 }
+  { name: 'mobile-app/', loc: '~2k', tests: 0, status: '🔴', readiness: 55 },
+  { name: 'warp/ (L3 multichain)', loc: '~9k', tests: 252, status: '✅', readiness: 90 }
 ];
 
 /* ─── PHASES ─── */
@@ -214,9 +215,9 @@ const phases: PhaseData[] = [
     title: 'Hardened TestNet',
     period: 'Únor — Květen 2026',
     priority: 'P0 Blocker',
-    progress: 80,
+    progress: 92,
     status: 'active',
-    description: '420 testů (235 lib + 185 integration). 10 sprintů dokončeno, zbývají 3 (72h stability, partition, 100 miners).',
+    description: '168h stability PASS (2026-03-03), 3-node mesh online. Sprint 1.10 uzavřen, zbývá partition + 100 miners.',
     sprints: [
       { id: '1.0', title: 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
       { id: '1.1', title: 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
@@ -228,7 +229,7 @@ const phases: PhaseData[] = [
       { id: '1.7', title: 'P2P Rate-Limiting — 200 msgs/peer/60s, escalating bans', tests: 13, done: true },
       { id: '1.8', title: 'Health Check & Metrics — getHealthCheck, getMetrics', tests: 8, done: true },
       { id: '1.9', title: 'Stress Test Suite — high TX, rapid blocks, partition', tests: 21, done: true },
-      { id: '1.10', title: '72h Stability Run — 3+ nody, CPU mining, žádný restart', done: false },
+      { id: '1.10', title: '168h Stability Run — 3 nody, žádný kritický incident', done: true },
       { id: '1.11', title: 'Live Partition Test — izolace node 30 min, reconnect', done: false },
       { id: '1.12', title: '100 Miners Stress — simulace 100 Stratum klientů', done: false }
     ],
@@ -241,7 +242,7 @@ const phases: PhaseData[] = [
       { text: 'RPC API kompletní (36 testů)', done: true },
       { text: 'DoS ochrana (MessageRateLimiter)', done: true },
       { text: 'Stress test suite (21 testů)', done: true },
-      { text: '72h+ stability run bez pádu', done: false },
+      { text: '168h stability run bez kritického incidentu', done: true },
       { text: 'Orphan rate < 2%', done: false },
       { text: 'Žádný critical bug 14 dní', done: false }
     ]
@@ -271,21 +272,21 @@ const phases: PhaseData[] = [
     title: 'Infrastructure & Legal',
     period: 'Srpen — Září 2026',
     priority: 'P1 Important',
-    progress: 0,
-    status: 'upcoming',
-    description: '5+ seed nodů, Prometheus + Grafana, legal docs, exchange readiness, wZION ERC-20.',
+    progress: 55,
+    status: 'active',
+    description: 'HEL/USA/Asia infrastruktura běží, monitoring aktivní, legal/docs postupuje. wZION bridge je live na Base Sepolia testnetu.',
     sprints: [
-      { id: '3.1', title: 'Seed Nodes & Monitoring — 5+ nodů, Prometheus, Grafana, alerts', done: false },
-      { id: '3.2', title: 'Docker & Deploy — docker-compose.mainnet, runbook, CI/CD', done: false },
-      { id: '3.3', title: 'Legal & Compliance — disclaimers, token-not-security, risk', done: false },
-      { id: '3.4', title: 'Exchange Readiness — node guide, whitepaper PDF, wZION, bridge', done: false }
+      { id: '3.1', title: 'Seed Nodes & Monitoring — HEL/USA/Asia live, Prometheus + Grafana', done: true },
+      { id: '3.2', title: 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
+      { id: '3.3', title: 'Legal & Compliance — disclaimers, token-not-security, risk', done: true },
+      { id: '3.4', title: 'Exchange Readiness — wZION + Bridge live on Base Sepolia (testnet)', done: true }
     ],
     exitCriteria: [
-      { text: '5+ seed nodů v 3+ regionech', done: false },
-      { text: 'Monitoring + alerting aktivní', done: false },
-      { text: 'Legal docs kompletní', done: false },
-      { text: 'Exchange materiály připraveny', done: false },
-      { text: 'Docker images publikované', done: false }
+      { text: '3 seed nody ve 3 regionech (HEL/USA/Asia) stabilně online', done: true },
+      { text: 'Monitoring + alerting aktivní', done: true },
+      { text: 'Legal docs kompletní', done: true },
+      { text: 'wZION + Bridge testnet-ready na Base Sepolia', done: true },
+      { text: 'Produkční mainnet exchange rollout', done: false }
     ]
   },
   {
@@ -393,7 +394,7 @@ export default function RoadmapPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
                 <Target className="h-4 w-4" />
-                ZION v2.9.6 · Roadmap
+                ZION v2.9.7 · Roadmap
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Mission Control</p>
@@ -402,19 +403,19 @@ export default function RoadmapPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Realistický plán: stabilní TestNet s 2 nody → fair launch Q1–Q2 → bezpečnostní audit Q2–Q3 → MainNet launch{' '}
+                Realistický plán: stabilní TestNet se 3 nody (HEL/USA/Asia) → Base Sepolia bridge ready → WARP implementation complete → MainNet launch{' '}
                 <strong className="text-white">31. 12. 2026</strong>.
                 Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 9. Feb 2026
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 3. Mar 2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> MainNet · 31.12.2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 512 testů passing
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 780+ testů passing
                 </span>
               </div>
             </div>
@@ -814,9 +815,9 @@ export default function RoadmapPage() {
           </div>
           <div className="space-y-4">
             {[
-              { layer: 'L1 Blockchain', period: '2026', phases: 'Fáze 0 ✅ → 1 🔄 → 2–4 → MainNet 🚀', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
-              { layer: 'L2 DEX / DeFi', period: '2027 Q1–Q2', phases: 'Atomic Swaps · wZION · AMM', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
-              { layer: 'L3 Warp / AI', period: '2027 Q3+', phases: 'NCL · AI · Warp Bridges', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
+              { layer: 'L1 Blockchain', period: '2026', phases: 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → MainNet 🚀', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
+              { layer: 'L2 DEX / DeFi', period: '2026 testnet · 2027 Q1–Q2 prod', phases: 'wZION Bridge (Base Sepolia) ✅ · AMM', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
+              { layer: 'L3 Warp / AI', period: '2026 impl ✅ · 2027 prod', phases: 'WARP 7/7 adapterů ✅ · NCL · AI', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
               { layer: 'L4 Oasis', period: '2029+', phases: 'UE5 · Play-to-Mine · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
               { layer: 'L5 Free World', period: '2030+', phases: 'Governance · Sovereignty', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
               { layer: 'L6 Issobella', period: '2040+', phases: 'Orbital Station · Fund', color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' }
@@ -890,7 +891,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella · &quot;On the Star — 6-Layer Architecture&quot; · Poslední aktualizace: 2026
+          ZION TerraNova v2.9.7 — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella · &quot;On the Star — 6-Layer Architecture&quot; · Poslední aktualizace: 2026-03-03
         </p>
       </div>
     </div>
