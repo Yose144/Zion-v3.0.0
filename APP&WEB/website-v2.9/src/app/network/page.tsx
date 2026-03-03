@@ -52,7 +52,7 @@ const infraFeatures = [
   },
   {
     icon: Server,
-    title: 'Usa 🇺🇸 (US-EAST)',
+    title: 'USA 🇺🇸 (US-EAST)',
     detail: 'Seed node — AMD64 4GB',
     ip: '178.156.240.160',
     status: 'Seed',
@@ -89,7 +89,7 @@ const guideBlocks = [
     description: 'Native Rust JSON-RPC endpoint for explorers and tooling.',
     items: [
       'Helsinki: http://77.42.31.72:8444/jsonrpc',
-      'Usa:      http://178.156.240.160:8444/jsonrpc',
+      'USA:      http://178.156.240.160:8444/jsonrpc',
       'Asia:     http://5.223.43.93:8444/jsonrpc',
       'Method: POST',
     ],
@@ -100,7 +100,7 @@ const guideBlocks = [
     description: 'Native libp2p network for blockchain synchronization.',
     items: [
       'Helsinki: 77.42.31.72:8334',
-      'Usa:      178.156.240.160:8334',
+      'USA:      178.156.240.160:8334',
       'Asia:     5.223.43.93:8334',
     ],
   },
@@ -166,7 +166,7 @@ export default function NetworkPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from native Rust nodes. Helsinki (primary + pool), Usa (Ashburn US-EAST), Asia (Singapore AP-SOUTHEAST)
+                Real-time telemetry from native Rust nodes. Helsinki (primary + pool), USA (Ashburn US-EAST), Asia (Singapore AP-SOUTHEAST)
                 forming the TestNet mesh. All data refreshes every 30 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">

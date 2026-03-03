@@ -202,7 +202,7 @@ export default function LiveDashboard() {
 
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
               Blockchain telemetry pulled live from TestNet API every 12 s.
-              3 seed nodes (Helsinki, Usa, Asia) synced and mining.
+              3 seed nodes (Helsinki, USA, Asia) synced and mining.
             </div>
           </motion.div>
         </div>

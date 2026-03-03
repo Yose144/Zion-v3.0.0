@@ -553,7 +553,7 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-5">
                 <ServerCard node={data.helsinki} name="Helsinki" flag="🇫🇮" ip="77.42.31.72 · 8GB · aarch64" />
-                <ServerCard node={data.usa}     name="Usa"      flag="🇺🇸" ip="178.156.240.160 · 4GB · amd64" />
+                <ServerCard node={data.usa}     name="USA"      flag="🇺🇸" ip="178.156.240.160 · 4GB · amd64" />
                 <ServerCard node={data.asia}    name="Asia"     flag="🌏" ip="5.223.43.93 · 4GB · amd64" />
               </div>
             </motion.section>
@@ -1079,9 +1079,9 @@ export default function MissionControlDashboard() {
             >
               <div className="space-y-3 sm:space-y-4 overflow-x-auto">
                 {[
-                  { layer: 'L1 Blockchain', period: '2026', phases: 'Fáze 0 → 1 → 2–4 → MainNet', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
-                  { layer: 'L2 DEX / DeFi', period: '2026 Q1–Q2', phases: 'wZION Bridge · Base Sepolia', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
-                  { layer: 'L3 Warp / AI', period: '2026 Q1–Q2', phases: 'WARP 7/7 · NCL · AI', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
+                  { layer: 'L1 Blockchain', period: '2026', phases: 'Phase 0 → 1 → 2–4 → MainNet', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
+                  { layer: 'L2 NCL / Neural Conscious', period: '2027', phases: 'wZION Bridge · Base Sepolia', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
+                  { layer: 'L3 ZION DAO', period: '2028', phases: 'WARP Protocol · NCL · AI', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
                   { layer: 'L4 Oasis', period: '2029+', phases: 'UE5 · Play-to-Mine · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
                   { layer: 'L5 Free World', period: '2030+', phases: 'Governance · Sovereignty', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
                   { layer: 'L6 Issobella', period: '2040+', phases: 'Orbital Station · Fund', color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' }
