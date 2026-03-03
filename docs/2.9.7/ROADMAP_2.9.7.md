@@ -3,7 +3,7 @@
 > **Dokument:** `docs/2.9.7/ROADMAP_2.9.7.md`  
 > **Vytvořen:** 2026-03-03  
 > **Cíl:** Jediná mapa podle které jedeme — od dnešního dne do `v2.9.7-freeze` tagu a server upgradu.  
-> **Stav dnes:** 168h stability PASS ✅ · CHv4 dispatch fixnutý ✅ · Revenue implementováno ✅ · Zbývá: GPU kernel, E2E test, produkční aktivace, genesis
+> **Stav dnes:** 168h stability PASS ✅ · CHv4 dispatch fixnutý ✅ · Revenue implementováno ✅ · Chain restart + infra oprava ✅ (2026-03-03 večer) · Zbývá: GPU kernel, E2E test, genesis
 
 ---
 
@@ -15,13 +15,19 @@
 168h stability (Helsinki/Usa/Asia)      F-05: GPU OpenCL CHv4 kernel
 CHv4 fork height FROZEN (200 000)       F-06: Miner height-aware dispatch
 block.rs height-aware dispatch          F-04: CHv4 E2E test (≥ 200k)
-pool validator.rs CHv4 dispatch         E-06: Wallet adresy (BTC/XMR/ZION)
-CHv4 activation policy doc             E-07: 72h canary revenue run
-Phase 1.12 stress test (100 miners)    E-08: Multi-algo 50/25/25 aktivace
-Revenue proxy/scheduler/switcher       B-CRIT-03: Genesis ceremony
-CHv3 ASIC hardening + Haraka AES-NI    Server upgrade (Helsinki → Usa → Asia)
-On-chain time-lock, double-spend fix   CODE_FREEZE sign-off + git tag
-API_ENDPOINTS.md, GENESIS_MESSAGE      
+pool validator.rs CHv4 dispatch         E-07: 72h canary revenue run (IN PROG)
+CHv4 activation policy doc             B-CRIT-03: Genesis ceremony
+Phase 1.12 stress test (100 miners)    Server upgrade CHv4 (Helsinki fáze 1+2)
+Revenue proxy/scheduler/switcher       CODE_FREEZE sign-off + git tag
+CHv3 ASIC hardening + Haraka AES-NI
+On-chain time-lock, double-spend fix   ✅ HOTOVO (2026-03-03 večer)
+API_ENDPOINTS.md, GENESIS_MESSAGE      ──────────────────────────────
+E-06: Produkční wallet adresy          Chain restart (genesis 0742cf6b)
+E-08: Multi-algo 50/25/25 aktivace     algorithms_opt.rs sync Usa (1203 ř.)
+                                       zion-core:2.9.7-amd64 Usa + Asia
+                                       zion-pool:2.9.7 Helsinki (rebuild)
+                                       zion-miner:2.9.7-amd64 Usa + Asia
+                                       Chain běží ✅ · ~108 ZION payout pending
 ```
 
 ---
@@ -61,11 +67,13 @@ API_ENDPOINTS.md, GENESIS_MESSAGE
 > Tuto fázi spouštíme až po ✅ FÁZE 1 + ✅ FÁZE 2.  
 > Pořadí nasazení: **Helsinki → Usa → Asia** (Helsinki je primární pool, last to fall first to upgrade).
 
+> **⚠️ Poznámka (2026-03-03):** Usa + Asia byly upgradnuty na `zion-core:2.9.7-amd64` + `zion-miner:2.9.7-amd64` v rámci emergency chain restart (oprava algoritmu). Tato fáze se týká finálního upgradu **na CHv4 + Revenue stack** po dokončení Fáze 1+2.
+
 ```
-Pořadí upgradu:
-  1. Helsinki (77.42.31.72)  — pool + miner + revenue stack
-  2. Usa      (178.156.240.160) — seed node + Mysterium
-  3. Asia     (5.223.43.93)    — seed node + Mysterium
+Pořadí upgradu:                         Stav 2026-03-03
+  1. Helsinki (77.42.31.72)  — pool + miner + revenue stack       🔄 pool:2.9.7 ✅, CHv4 ⬜
+  2. Usa      (178.156.240.160) — seed node + miner              ✅ core+miner:2.9.7-amd64
+  3. Asia     (5.223.43.93)    — seed node + miner               ✅ core+miner:2.9.7-amd64
 ```
 
 #### 3a. Helsinki upgrade (CAX21 arm · hlavní pool)
@@ -195,7 +203,7 @@ MainNet       31. 12. 2026   genesis.json spuštěn       v3.0 launch
 | 4 | E-06 | Produkční wallet adresy | Fáze 2 | ✅ `baab947` |
 | 5 | E-08 | Multi-algo 50/25/25 aktivace Helsinki | Fáze 2 | ✅ `11fc008` |
 | 6 | E-07 | 72h canary revenue run | Fáze 2 sign-off | 🔄 IN PROGRESS — started 2026-03-03T14:30Z, ends 2026-03-06T14:30Z |
-| 7 | — | Server upgrade Helsinki → Usa → Asia | Fáze 3 | ⬜ čeká na Fázi 1+2 |
+| 7 | — | Server upgrade CHv4 full stack (Helsinki) | Fáze 3 | 🔄 Usa+Asia: `2.9.7-amd64` ✅ · Helsinki CHv4: ⬜ čeká na Fázi 1+2 |
 | 8 | C-01 | genesis.json air-gapped tvorba | Fáze 4 | ⬜ TODO |
 | 9 | D-01..D-03 | Docker SHA, FROZEN constitution, exit criteria | Fáze 5 | ⬜ TODO |
 | 10 | D-06/D-07 | git tag + CODE_FREEZE sign-off | Release | ⬜ TODO |
