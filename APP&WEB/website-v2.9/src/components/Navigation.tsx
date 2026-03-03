@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { Menu, X, SignalHigh, Orbit, ArrowUpRight, ChevronDown, LayoutDashboard, Pickaxe, Server, BookOpen, TrendingUp } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 type NavItem = { href: string; label: string; children?: NavItem[] };
 type NavGroup = { title: string; items: NavItem[] };
@@ -49,6 +51,12 @@ export default function Navigation() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const pathname = usePathname();
   const activeGroup = navGroups.find((group) => group.title === openGroup);
+  const { lang, setLang } = useLang();
+  const groupLabels: Record<string, string> = {
+    Mission: tr('nav', 'mission', lang),
+    Stacks:  tr('nav', 'stacks', lang),
+    Knowledge: tr('nav', 'knowledge', lang),
+  };
 
   /* Close mobile menu on route change */
   useEffect(() => {
@@ -144,7 +152,7 @@ export default function Navigation() {
                       }`}
                       aria-expanded={isActive}
                     >
-                      {group.title}
+                      {groupLabels[group.title] ?? group.title}
                       <ChevronDown className={`h-3 w-3 transition-transform ${isActive ? 'rotate-180' : ''}`} />
                     </button>
                   );
@@ -152,7 +160,7 @@ export default function Navigation() {
               </div>
               {activeGroup && (
                 <div className="absolute right-0 mt-3 w-72 rounded-3xl border border-white/10 bg-black/80 p-4 shadow-[0_15px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500">{activeGroup.title}</p>
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
                   <div className="mt-3 flex flex-col gap-1">
                     {activeGroup.items.map((item) => (
                       <div key={item.href}>
@@ -216,6 +224,13 @@ export default function Navigation() {
               <LayoutDashboard className="w-4 h-4 text-white" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Dashboard</span>
             </Link>
+            <button
+              onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-gray-300 hover:text-white"
+              title={lang === 'cs' ? 'Switch to English' : 'Přepnout do češtiny'}
+            >
+              {lang === 'cs' ? '🇨🇿 CS' : '🇬🇧 EN'}
+            </button>
           </div>
 
           <button
@@ -259,7 +274,7 @@ export default function Navigation() {
               <div className="p-4 space-y-5">
                 {navGroups.map((group) => (
                   <div key={group.title}>
-                    <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-2 px-1">{group.title}</p>
+                    <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-2 px-1">{groupLabels[group.title] ?? group.title}</p>
                     {group.items.map((item) => (
                       <div key={item.href}>
                         <Link
@@ -289,6 +304,14 @@ export default function Navigation() {
                   </div>
                 ))}
                 <div className="h-px w-full bg-white/10" />
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-gray-300 hover:text-white"
+                  >
+                    {lang === 'cs' ? '🇨🇿 Česky → English' : '🇬🇧 English → Česky'}
+                  </button>
+                </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <Link
                     href="/explorer"
