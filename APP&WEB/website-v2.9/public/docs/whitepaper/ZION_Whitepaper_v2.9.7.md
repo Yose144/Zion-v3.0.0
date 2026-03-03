@@ -10,7 +10,7 @@
 
 ## Abstract
 
-ZION TerraNova is a Proof-of-Work blockchain written entirely in native **Rust**, designed for long-term fair mining, decentralization, and multi-layer DeFi interoperability. It introduces the **Cosmic Harmony** algorithm family — ASIC-resistant, GPU/CPU optimized — and a unique **Decade Decay** emission model replacing traditional halving. The 6-layer architecture (L1 Core through L6 Governance) enables a complete decentralized civilization stack built on immutable consensus principles.
+ZION TerraNova is a Proof-of-Work blockchain written entirely in native **Rust**, designed for long-term fair mining, decentralization, and multi-layer DeFi interoperability. It introduces the **Cosmic Harmony** algorithm family — ASIC-resistant, GPU/CPU optimized — and a unique **Decade Decay** emission model replacing traditional halving. The 6-layer architecture (L1 TerraNova → L2 NCL → L3 DAO → L4 Oasis → L5 Free World → L6 Issobella) enables a complete decentralized civilization stack built on immutable consensus principles.
 
 ---
 
@@ -180,9 +180,10 @@ $$D_{\text{new}} = D_{\text{ref}} \cdot \frac{T_{\text{target}} \cdot N(N+1)}{2 
 - Mainnet: Base, Ethereum, Polygon (target 2026)
 - Smart contracts audited (pending mainnet audit)
 
-### L3 — WARP Protocol
+### L3 — ZION DAO & WARP Protocol
 
-- Cross-chain message passing (beyond token bridging)
+- DAO governance: on-chain voting, 10% quorum, Treasury 4B ZION
+- WARP: cross-chain message passing (beyond token bridging)
 - NCL (Native Contract Language): domain-specific, compiled to ZION bytecode
 - AI inference nodes: proof-of-inference → L1 transaction
 
@@ -247,8 +248,11 @@ Po MainNet: postupná decentralizace, cíl plné DAO governance do 3 let od laun
 2026 Q2  CHv4 upgrade · L2 bridge mainnet · Explorer 
 2026 Q3  WARP beta · DEX liquidity · wallet binaries · CoinGecko
 2026 Q4  🚀 MainNet launch · L2 full · listing
-2027     L3 NCL · L4 Oasis · L5 Guardian system
-2028+    L6 full DAO · humanitarian programs · L5 ecosystem
+2027     L2 NCL mainnet · AI-native protocol
+2028     L3 ZION DAO live · community governance begins
+2029     L4 ZION Oasis launched · Golden Egg · Winners
+2030+    L5 Free World · humanitarian missions · free energy R&D
+2040+    L6 Issobella · orbital observatory · space research station
 ```
 
 ---
