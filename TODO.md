@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 24. února 2026 (Session 57 — CHv3 ASIC hardening + AES-NI + MSVC fix + docs 2.9.7)  
+> **Aktualizace:** 3. března 2026 (Session 58 — A-05/B-01/B-02/B-05/C-03/C-04/D-04/D-05 ✅ DONE; 168h PASS; Phase 1.12 stress test)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
@@ -20,20 +20,31 @@
 ## 0.2) 2.9.7 Code Freeze — otevřené P0 blokkery
 
 ### Lze udělat lokálně (kód)
-- [ ] **A-05** — opravit `peers: null` v `/health` endpointu (`L1/core/src/api/`)
-- [ ] **B-01** — on-chain time-lock enforcement aktivovat v mainnet buildu (`premine.rs`) + unit test
-- [ ] **B-02** — algo rotace: zdokumentovat rozhodnutí v `block.rs` + `CODE_FREEZE.md`
-- [ ] **B-05** — Prometheus rule `blocks_rejected_alert` + Grafana panel (`monitoring/`)
-- [ ] **C-03** — `docs/2.9.7/GENESIS_CEREMONY.md` — key ceremony runbook
-- [ ] **C-04** — `Genesis/GENESIS_MESSAGE.txt` — finalizovat text
-- [ ] **D-04** — `docs/2.9.7/API_ENDPOINTS.md` — canonical single source of truth
+- [x] **A-05** — `peers: null` OPRAVENO — `#[serde(rename="peers")]` v `core_metrics.rs` — commit `c521c38` ✅ 2026-03-01
+- [x] **B-01** — on-chain time-lock VYNUCEN — `DAO_TREASURY_LOCK_HEIGHT = 525_600`, `is_transfer_allowed()` v `premine.rs` — commit `c521c38` ✅ 2026-03-01
+- [x] **B-02** — algo rotace zdokumentována — CosmicHarmony only, komentář v `block.rs::Algorithm::from_height()` + sekce v `CODE_FREEZE.md` — commit `c521c38` ✅ 2026-03-01
+- [x] **B-05** — Prometheus rules PŘIDÁNY — `CoreBlocksRejectedHigh` (>5% 10min) + `CoreBlocksRejectedSurge` (>10/min 3min) v `monitoring/prometheus/rules/alerts.yml` — commit `c521c38` ✅ 2026-03-01
+- [x] **C-03** — `docs/2.9.7/GENESIS_CEREMONY.md` VYTVOŘEN — 7396 B, klíčový ceremony runbook ✅ 2026-03-01
+- [x] **C-04** — `docs/2.9.7/GENESIS_MESSAGE.txt` FINALIZOVÁN ✅ 2026-03-01
+- [x] **D-04** — `docs/2.9.7/API_ENDPOINTS.md` VYTVOŘEN — 13726 B, canonical source ✅ 2026-03-01
+- [x] **D-05** — 168h stability window ✅ PASS 2026-03-03 11:48 UTC
 
 ### Potřebuje server / ceremonii
 - [ ] **A-03/A-04** — Alertmanager Telegram tokeny nastavit na Helsinki + test-incident
 - [ ] **C-01/C-02** — `genesis.json` OFFLINE vytvořit + ověřit adresy vs. `PREMINE_ADDRESSES_PUBLIC.txt`
 - [ ] **D-01** — Docker SHA-256 manifest (Helsinki `docker inspect`)
-- [ ] **D-05** — 168h stability window (🟡 běží, cíl **2026-03-03 11:48 UTC**)
+- [x] **D-05** — 168h stability window ✅ PASS 2026-03-03 11:48 UTC
 - [ ] **D-06/D-07** — `v2.9.7-freeze` tag + `CODE_FREEZE.md` podpis
+
+### Phase 1 exit criteria (11/11 cíl)
+- [x] 1.0–1.10: Všechny dokončeny vč. 168h stability PASS ✅ 2026-03-03
+- [ ] **1.11** — Live partition test (server access — Helsinki node isolation 30min + reconnect)
+- [ ] **1.12** — 100 miners stress test — `tests/stress_100_miners.py` ✅ VYTVOŘEN 2026-03-03
+
+### B-CRIT (MainNet gate — blokující)
+- [ ] **B-CRIT-01** — CHv4 activation policy (fork-height/governance + E2E run)
+- [ ] **B-CRIT-02** — Revenue production activation (prod wallets + buyback + 72h canary)
+- [ ] **B-CRIT-03** — Genesis ceremony + freeze artifacts (genesis.json offline + podpisy)
 
 ### Revenue (implementováno, aktivace v 2.9.8)
 - [x] `revenue_proxy.rs` 1869 ř. — StratumProtocol EthStratum/CryptoNoteStratum/ZcashStratum
@@ -244,5 +255,10 @@
 - ✅ **Session 56:** Windows MSVC build fix (haraka.c, VLA, SDK auto-detect) — commit `243e4b8`
 - ✅ **Session 57:** `docs/2.9.7/` aktualizovány — revenue IS implemented, B-06/07/08, Skupina E, CHANGELOG_2.9.7.md — commit `43322cf`
 - ✅ **Session 57:** L4 Oasis architektura, changelog, README aktualizovány — commit pushnut
-- ⏭️ **Další P0 (lokálně):** A-05 `peers:null`, B-01 time-lock, B-02 algo rotace rozhodnutí, B-05 Prometheus blocks_rejected, D-04 API_ENDPOINTS.md
-- ⏭️ **Další P0 (server):** Alertmanager Telegram tokeny, genesis.json OFFLINE, Docker SHA-256, constitution FROZEN, v2.9.7-freeze tag
+  - ✅ **Session 58 (2026-03-03):** 8 test failures opraveny (TxOutput.memo, fee validation, PoW order, genesis verify, addr checksum, env race, blob size) — 252 tests passing — commit `26d3807`
+  - ✅ **Session 58:** A-05 `peers:null` DONE, B-01 time-lock DONE, B-02 algo rotace DONE, B-05 alerts DONE, C-03/C-04/D-04 DONE — TODO.md aktualizován
+  - ✅ **Session 58:** 168h stability ✅ PASS (2026-03-03 11:48 UTC), STABILITY_LOG.md T+168h zapsán
+  - ✅ **Session 58:** `tests/stress_100_miners.py` VYTVOŘEN — Phase 1.12 (100 simulovaných minerů)
+- ⏭️ **Další P0 (lokálně):** B-CRIT-01 CHv4 activation policy, Phase 1.12 výsledky zaznamenat
+- ⏭️ **Další P0 (server):** 1.11 partition test, Alertmanager Telegram tokeny, genesis.json OFFLINE, Docker SHA-256, constitution FROZEN, v2.9.7-freeze tag
+- ⏭️ **Hlavní MainNet gate:** B-CRIT-02 revenue wallets + B-CRIT-03 genesis ceremony
