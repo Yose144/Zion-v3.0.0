@@ -400,6 +400,17 @@ export default function MissionControlDashboard() {
   const onlineCount = allNodes.filter(n => n?.stats?.status === 'OK' || n?.stats?.status === 'ok' || n?.stats?.status === 'healthy').length;
   const allHealthy = onlineCount === 3;
   const anyHealthy = onlineCount > 0;
+  const stabilityPct = sr?.progress_pct ?? 0;
+  const stabilityFinalWindow = stabilityPct >= 90 && stabilityPct < 100;
+  const stabilityReady = stabilityFinalWindow && allHealthy;
+  const stabilityStatus = stabilityPct >= 100 ? 'PASS' : stabilityReady ? 'READY' : (hH > 0 || sH > 0) ? 'RUNNING' : 'ISSUE';
+  const stabilityStatusColor = stabilityPct >= 100
+    ? 'text-emerald-400'
+    : stabilityReady
+    ? 'text-yellow-400'
+    : (hH > 0 || sH > 0)
+    ? 'text-cyan-400'
+    : 'text-red-400';
 
   return (
     <div className="min-h-screen pt-24 sm:pt-32 pb-16 sm:pb-24 px-3 sm:px-4">
@@ -513,7 +524,7 @@ export default function MissionControlDashboard() {
                 <Stat label="Elapsed" value={fmtTime(sr?.elapsed_secs)} color="text-cyan-400" mono />
                 <Stat label="Remaining" value={fmtTime(sr?.remaining_secs)} mono />
                 <Stat label="Block Height" value={fmt(Math.max(hH, sH))} color="text-purple-400" mono />
-                <Stat label="Status" value={(sr?.progress_pct ?? 0) >= 100 ? 'PASS' : (hH > 0 || sH > 0) ? 'RUNNING' : 'ISSUE'} color={(sr?.progress_pct ?? 0) >= 100 ? 'text-emerald-400' : (hH > 0 || sH > 0) ? 'text-cyan-400' : 'text-red-400'} />
+                <Stat label="Status" value={stabilityStatus} color={stabilityStatusColor} />
               </div>
             </motion.section>
 
