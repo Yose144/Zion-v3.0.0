@@ -1,202 +1,153 @@
-# Design System — ZION Pre-MainNet Gate
+# Mining ZION
 
-> Version: v2.9.7 · CSS Utilities for the "On the Star" interface
-
----
-
-## Overview
-
-The ZION design system is a set of CSS utility classes built on Tailwind v4. They provide visual consistency across all pages while keeping the observatory warp background system fully intact.
-
-All utilities are defined in `globals.css` under `@layer utilities`.
+> ZION is mined via Proof-of-Work using the **Cosmic Harmony v3** algorithm. Mining is the sole mechanism for new coin issuance — no staking, no ICO, no presale.
 
 ---
 
-## Core Classes
+## Cosmic Harmony v3 (CHv3)
 
-### `zion-shell`
+CHv3 is a custom PoW algorithm designed for ZION:
 
-The transparent page wrapper. Replaces all `min-h-screen bg-black` and `min-h-screen bg-slate-950` patterns.
+- **CPU-friendly** — balanced for commodity hardware (x86, ARM)
+- **GPU-accelerated** — OpenCL/CUDA competitive, not dominant
+- **ASIC-resistant** — memory-hard design discourages specialized hardware
+- **Anti-botnet** — calibrated to be feasible on consumer hardware but not profitable on compromised machines
 
-```html
-<div class="zion-shell min-h-screen">
-  <!-- page content -->
-</div>
-```
-
-**Properties:**
-- `min-height: 100vh`
-- `position: relative`
-- `background: transparent` — critical: lets the observatory canvas show through
-- `::before` pseudo-element adds subtle color overlays (purple 12%, cyan 8%) at `z-index: -1`
-
-**Observatory Compatibility:**
-The `BackgroundOrchestrator` renders `StarfieldBackground`, `MatrixRain`, `CyberGrid`, and `QuantumBubbles` on a `fixed` canvas managed by `ObservatoryContext`. The transparent shell ensures these render correctly under page content.
-
-Available observatory modes:
-- `deep-space` — warm gold star field, 260 stars, 2.4× speed
-- `planet-orbit` — blue star field, 300 stars, 3× speed
-- `galactic-core` — purple-pink field, 320 stars, 3.2× speed
+The algorithm is implemented in Rust in `L1/miner/` and exposed via native C bindings for cross-platform use.
 
 ---
 
-### `zion-container`
+## Block Reward
 
-Responsive centered content wrapper.
+| Epoch | Reward / Block | Years |
+|-------|---------------|-------|
+| Genesis (2026) | 5,400.067 ZION | 0–10 |
+| Decade 2 | ~4,320 ZION | 10–20 |
+| Decade 3 | ~3,456 ZION | 20–30 |
+| … (−20%/decade) | … | … |
+| Tail (permanent) | 725 ZION | 100+ |
 
-```html
-<div class="zion-container max-w-7xl">
-  <!-- constrained content -->
-</div>
-```
+Decay is automatic at the protocol level — no miner vote, no soft fork required.
 
-**Properties:**
-```css
-width: 100%;
-max-width: 80rem;       /* 1280px — same as max-w-7xl */
-margin-inline: auto;    /* centered */
-padding-inline: 1rem;   /* 16px horizontal padding */
-```
+Each block, the reward is split:
 
-For narrower containers, add Tailwind `max-w-*` to override:
-```html
-<div class="zion-container max-w-5xl">  <!-- 960px max -->
-<div class="zion-container max-w-6xl">  <!-- 1152px max -->
-```
+| Recipient | Share |
+|-----------|-------|
+| **Miner** | 89% |
+| Humanitarian Fund | 5% |
+| Issobella Foundation | 5% |
+| Mining Pool | 1% |
+
+All **transaction fees are burned**. There is no separate dev fee.
 
 ---
 
-### `zion-panel`
+## Mining the Pool
 
-Glass panel for cards, sections, and sidebars.
+The ZION public pool runs on the **Helsinki node** and uses Stratum v2 with PPLNS reward distribution.
 
-```html
-<div class="zion-panel p-6">
-  <!-- panel content -->
-</div>
+**Pool address:** `stratum+tcp://77.42.31.72:3333`
+
+```bash
+zion-miner \
+  --pool stratum+tcp://77.42.31.72:3333 \
+  --wallet YOUR_ZION_ADDRESS \
+  --threads 4
 ```
 
-**Properties:**
-```css
-border-radius: 1.5rem;                      /* rounded-2xl */
-border: 1px solid rgba(255, 255, 255, 0.1);
-background: rgba(0, 0, 0, 0.6);
-backdrop-filter: blur(20px);
-box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+PPLNS window: proportional to shares submitted in the last N shares. The longer you mine, the more stable your payouts.
+
+---
+
+## Solo Mining
+
+Connect directly to any seed node's RPC:
+
+```bash
+zion-miner \
+  --rpc http://77.42.31.72:8444 \
+  --wallet YOUR_ZION_ADDRESS \
+  --solo
 ```
 
-For larger panels with 28–32px radius, add Tailwind modifier:
-```html
-<div class="zion-panel rounded-[28px] p-8">
-<div class="zion-panel rounded-[32px] p-10">
+Solo mining gives you 100% of the miner share (89%) if you find a block. At current difficulty it favors miners with significant hashrate.
+
+---
+
+## Dual Mining (ZION + VRSC)
+
+ZION supports dual mining — running **Cosmic Harmony v3** alongside **VerusHash** simultaneously. This allows miners to earn ZION and VRSC from the same hardware without significant performance loss.
+
+```bash
+zion-miner \
+  --pool stratum+tcp://77.42.31.72:3333 \
+  --wallet YOUR_ZION_ADDRESS \
+  --dual-pool stratum+tcp://VERUS_POOL:PORT \
+  --dual-wallet YOUR_VRSC_ADDRESS
 ```
 
 ---
 
-### Typography Utilities
+## Wallet Setup
 
-#### `zion-kicker`
-Micro uppercase label above titles.
+Generate a new wallet locally — keys never leave your machine:
 
-```html
-<p class="zion-kicker">Layer 1 Protocol</p>
+```bash
+# Generate a BIP39 mnemonic wallet
+zion-wallet gen-mnemonic --out wallet.json --print
+
+# Show address from existing wallet
+zion-wallet address --from wallet.json
+
+# Check balance via RPC
+zion-wallet balance --address YOUR_ZION_ADDRESS --rpc http://77.42.31.72:8444
 ```
-→ `0.65rem · 0.45em tracking · gray-400 · uppercase`
 
-#### `zion-section-title`
-Large responsive section headings.
-
-```html
-<h2 class="zion-section-title">Mainnet Architecture</h2>
-```
-→ `2.5rem → 3.5rem → 4.5rem · bold · text-white`
-
-#### `zion-section-sub`
-Description text below section titles.
-
-```html
-<p class="zion-section-sub max-w-2xl">Protocol overview...</p>
-```
-→ `1.125rem · gray-400 · 1.75 line-height`
+Wallet files use Ed25519 key pairs (BIP39 seed → Ed25519). Keep the mnemonic phrase offline and secure.
 
 ---
 
-## Color Tokens
+## Running a Full Node
 
-Defined as CSS custom properties in `:root`:
+Full nodes validate blocks, relay transactions, and strengthen the network. The more nodes, the more resilient the network.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--color-zion-gold` | `#f5c842` | Primary accent, titles |
-| `--color-zion-cyan` | `#22d3ee` | Active states, links |
-| `--color-zion-purple` | `#9333ea` | Overlay accent |
-| `--color-bg` | `#030712` | Base background (via observatory) |
+```bash
+# Start a TestNet full node
+zion-node \
+  --network testnet \
+  --rpc-port 8444 \
+  --p2p-port 8334 \
+  --data-dir ~/.zion/testnet
 
-Tailwind access: `text-zion-gold`, `border-zion-cyan/30`, `bg-zion-purple/10`, etc.
+# Sync status
+curl -X POST http://localhost:8444/jsonrpc \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"getblockchaininfo","id":1}'
+```
+
+Seed nodes for initial sync:
+- `77.42.31.72:8334` (Helsinki)
+- `178.156.240.160:8334` (USA)
+- `5.223.43.93:8334` (Asia)
 
 ---
 
-## Usage Patterns
+## DAA — Difficulty Adjustment
 
-### Standard Page
-
-```tsx
-export default function MyPage() {
-  return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
-      <div className="zion-container max-w-7xl space-y-12">
-
-        {/* Hero card */}
-        <section className="zion-panel rounded-[32px] p-6 md:p-10">
-          <p className="zion-kicker">Section label</p>
-          <h1 className="zion-section-title text-gradient">Page Title</h1>
-          <p className="zion-section-sub">Description text here.</p>
-        </section>
-
-        {/* Content grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="zion-panel p-6">...</div>
-          <div className="zion-panel p-6">...</div>
-          <div className="zion-panel p-6">...</div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-```
-
-### Sidebar Layout (Docs/Genesis pattern)
-
-```tsx
-<div className="zion-shell min-h-screen">
-  {/* Hero */}
-  <div className="border-b border-white/10 bg-linear-to-b from-zion-cyan/10 ...">
-    <div className="zion-container py-20">...</div>
-  </div>
-  {/* Content */}
-  <div className="zion-container py-12">
-    <div className="flex gap-8">
-      <aside className="hidden lg:block w-72 shrink-0">
-        <div className="zion-panel sticky top-24 ..." />
-      </aside>
-      <main className="flex-1">...</main>
-    </div>
-  </div>
-</div>
-```
+ZION uses **LWMA** (Linearly Weighted Moving Average) with a 60-block window and ±25% adjustment cap per window. This keeps block times stable at 60 seconds even during sudden hashrate changes.
 
 ---
 
-## Observatory System Reference
+## Downloads
 
-The observatory is mounted globally in `layout.tsx` via `<ClientBackgrounds />` before `<main>`. It uses `ObservatoryContext` to switch between three visual modes:
+Pre-built CLI binaries for Linux, Windows, macOS:
 
-```tsx
-const { mode, setMode } = useObservatory();
-setMode('deep-space');    // warm gold starfield
-setMode('planet-orbit');  // blue starfield  
-setMode('galactic-core'); // purple starfield
-```
+[zionterranova.com/download](https://zionterranova.com/download)
 
-**Critical:** Never apply an opaque background to `zion-shell` or any full-page wrapper. The observatory renders on `fixed` z-index below the content stack. Any `background-color` with opacity > 0 on a full-viewport element will block the effect.
+Binaries include: `zion-node`, `zion-miner`, `zion-wallet`, `zion-pool`
+
+
+
+
+
+
