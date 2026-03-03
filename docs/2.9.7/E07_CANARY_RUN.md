@@ -1,6 +1,6 @@
 # E-07 — 72h Canary Revenue Run
 
-**Status:** ⬜ TODO — vyžaduje SSH přístup na Helsinki  
+**Status:** 🔄 IN PROGRESS — started `2026-03-03T14:30:09Z`, ends `2026-03-06T14:30:47Z`  
 **Blocker pro:** Fáze 2 sign-off, E-07 completion → Fáze 3 (server upgrade)  
 **Server:** Helsinki (77.42.31.72) — `ssh zion-helsinki`  
 **Předpoklady:** E-06 ✅ (wallet adresy) + E-08 ✅ (PerMiner scheduler)
@@ -123,12 +123,12 @@ docker logs zion-revenue-dero-miner --since 24h 2>&1 | grep -E 'ERROR|speed|acce
 
 | Čas (UTC) | Akce | Výsledek | Poznámka |
 |-----------|------|---------|----------|
-| T+0h | Canary start | ⬜ | |
+| 2026-03-03T14:30:09Z (T+0h) | Canary start | ✅ | Pool restarted ZION_HAS_GPU=1 + PERMINER_MIN_MINERS=2 + revenue config mounted. PerMiner activated at 2 miners. xmrig MoneroOcean deployed (building). |
 | T+6h | Pool status check | ⬜ | Scheduler mode PerMiner? |
 | T+12h | Revenue earnings check | ⬜ | BTC/XMR earned? |
 | T+24h | First payout cycle? | ⬜ | min_buyback_btc = 0.001 BTC |
 | T+48h | Mid-run status | ⬜ | Incidenty? |
-| T+72h | Canary end | ⬜ | 72h splněno bez incidentu? |
+| T+72h (2026-03-06T14:30:47Z) | Canary end | ⬜ | 72h splněno bez incidentu? |
 
 ---
 
