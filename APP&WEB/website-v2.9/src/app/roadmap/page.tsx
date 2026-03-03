@@ -109,10 +109,10 @@ const layerStack = [
     color: 'from-amber-500 to-yellow-500',
     border: 'border-amber-500/40',
     items: [
-      'Plně decentralizovaná governance',
-      'Komunitní správa sítě',
-      'Sovereignty bez hranic',
-      'Integrace se všemi L1–L4 vrstvami'
+      'Humanitární mise — financováno 5% block reward',
+      'Výzkum a vývoj kvantového motoru na volnou energii',
+      'Off-grid komunity a decentralizovaná infrastruktura',
+      'Humanitární desátek — 540 ZION/block (L1 Genesis)'
     ],
     active: false
   },
@@ -155,8 +155,8 @@ const constitution = [
 const premineAllocation = [
   { category: 'ZION OASIS + Winners Golden Egg/Xp', zion: '8,250,000,000', share: '50.7%', lock: 'Okamžitě dostupné' },
   { category: 'DAO Treasury', zion: '4,000,000,000', share: '24.6%', lock: 'Okamžitě dostupné' },
-  { category: 'Infrastructure & Dev', zion: '2,500,000,000', share: '15.4%', lock: 'Okamžitě dostupné' },
-  { category: 'Humanitarian Fund', zion: '1,530,000,000', share: '9.4%', lock: 'Okamžitě dostupné' }
+  { category: 'Infrastructure & Dev', zion: '2,590,000,000', share: '15.9%', lock: 'Okamžitě dostupné' },
+  { category: 'Humanitarian Fund', zion: '1,440,000,000', share: '8.8%', lock: 'Okamžitě dostupné' }
 ];
 
 const componentStatus = [
@@ -167,7 +167,7 @@ const componentStatus = [
   { name: 'desktop-agent/', loc: '~3k', tests: 0, status: '✅', readiness: 80 },
   { name: 'website-v2.9/', loc: '~5k', tests: 0, status: '🔄', readiness: 75 },
   { name: 'mobile-app/', loc: '~2k', tests: 0, status: '🔴', readiness: 55 },
-  { name: 'warp/ (L3 multichain)', loc: '~9k', tests: 252, status: '✅', readiness: 90 }
+  { name: 'warp/ (L2 NCL multichain)', loc: '~9k', tests: 252, status: '✅', readiness: 90 }
 ];
 
 /* ─── PHASES ─── */
