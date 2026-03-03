@@ -1,8 +1,8 @@
 # 🖥️ ZION TerraNova — Seed Nodes
 
-> **Aktualizace:** 24. února 2026 (Session 54 — P2P fix + 168h stability test restart)  
+> **Aktualizace:** 3. března 2026 (Session 54 — 168h stability test dokončen)  
 > **Cíl:** 3 seed nody (mainnet topologie)  
-> **Stability test:** 🟡 168h test spuštěn 2026-02-24 11:48 UTC → target 2026-03-03 11:48 UTC
+> **Stability test:** ✅ 168h test dokončen 2026-03-03 11:48 UTC (PASS)
 
 
 Asia
@@ -31,6 +31,10 @@ Helsinki
 
 > ~~Usa1 (5.78.178.227 — Hillsboro, OR)~~ — decommissioned po stability testu  
 > ~~SeedDE (46.225.126.243 — Nuremberg)~~ — decommissioned (geografická diverzita)
+
+> **Rychlá konektivita (2026-03-03):**
+> - Aktivní nody (`77.42.31.72`, `178.156.240.160`, `5.223.43.93`) mají otevřené P2P/RPC porty (`8334`, `8444`), Helsinki má navíc otevřené `3333` a `8080`.
+> - Decommissioned seedy (`46.225.126.243`, `5.78.178.227`) jsou na `8334` nedostupné.
 
 ## Aktivní servery
 

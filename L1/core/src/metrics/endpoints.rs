@@ -51,13 +51,18 @@ async fn health_check(AxumState(metrics): AxumState<Arc<Metrics>>) -> impl IntoR
 /// GET /readiness
 async fn readiness_check(AxumState(metrics): AxumState<Arc<Metrics>>) -> impl IntoResponse {
     let health = metrics.health_check();
+    let max_block_gap_secs = if health.network.eq_ignore_ascii_case("testnet") {
+        172_800
+    } else {
+        900
+    };
 
     // Ready if:
     // - Has peers
-    // - Recent block (< 15 min) — testnet can have longer gaps
+    // - Recent-enough block for network profile
     // - Mempool not full
     let is_ready = health.peers_connected > 0
-        && health.time_since_last_block < 900
+        && health.time_since_last_block < max_block_gap_secs
         && health.mempool_size < 50_000;
 
     if is_ready {
