@@ -11,7 +11,7 @@ async fn validates_share_and_detects_duplicate() {
         nonce: "00000001".to_string(),
         result: Some("00".repeat(32)),
         algorithm: "randomx".to_string(),
-        job_blob: "00".repeat(152),
+        job_blob: "00".repeat(165),
         job_target: "ffffffffffffffff".to_string(),
         block_target: None,
         height: None,

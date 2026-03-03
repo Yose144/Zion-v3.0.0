@@ -36,6 +36,7 @@ fn make_coinbase(height: u64) -> Transaction {
     tx.outputs = vec![TxOutput {
         amount: r,
         address: format!("zion1stress_miner_{:06}", height),
+        memo: None,
     }];
     tx.id = tx.calculate_hash();
     tx
@@ -47,6 +48,7 @@ fn make_tx(id_seed: u64, amount: u64) -> Transaction {
     tx.outputs = vec![TxOutput {
         amount,
         address: format!("zion1stress_recipient_{:06}", id_seed),
+        memo: None,
     }];
     tx.fee = 1_000; // min fee
     tx.id = tx.calculate_hash();

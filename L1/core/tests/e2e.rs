@@ -50,7 +50,7 @@ fn make_signed_spend_tx(
             signature: String::new(),
             public_key: public_key_hex,
         }],
-        outputs: vec![TxOutput { amount, address: to_address }],
+        outputs: vec![TxOutput { amount, address: to_address, memo: None }],
         fee,
         timestamp,
     };
@@ -91,6 +91,7 @@ async fn test_e2e_mining_workflow() {
         .add_utxo(&faucet_key, &TxOutput {
             amount: 1_000,
             address: owner_address,
+            memo: None,
         })
         .unwrap();
 
@@ -120,6 +121,7 @@ async fn test_e2e_mining_workflow() {
         outputs: vec![TxOutput {
             amount: 1,
             address: "miner_address".to_string(),
+            memo: None,
         }],
         fee: 0,
         timestamp: SystemTime::now()
@@ -202,8 +204,9 @@ async fn test_e2e_transaction_flow() {
     state
         .storage
         .add_utxo(&faucet_key, &TxOutput {
-            amount: 1_000,
+            amount: 100_000,
             address: owner_address,
+            memo: None,
         })
         .unwrap();
 
@@ -212,9 +215,9 @@ async fn test_e2e_transaction_flow() {
         faucet_out_index,
         &signing_key,
         "recipient_address".to_string(),
-        900,
-        100,
-        1000,
+        99_000,
+        1_000,
+        1_770_552_000,
     );
 
     let result = state.process_transaction(tx.clone());
@@ -239,6 +242,7 @@ async fn test_e2e_transaction_flow() {
         outputs: vec![TxOutput {
             amount: 1,
             address: "miner_address".to_string(),
+            memo: None,
         }],
         fee: 0,
         timestamp,
