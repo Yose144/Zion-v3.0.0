@@ -21,7 +21,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://zionterranova.com'),
   title: {
-    default: 'ZION Blockchain v2.9.6 — On the Star',
+    default: 'ZION Blockchain v2.9.7 — On the Star',
     template: '%s | ZION TerraNova',
   },
   description: "ZION Terra Nova: Native Rust mining pool, consciousness-based blockchain, Cosmic Harmony algorithm, and multi-chain WARP bridges",
@@ -50,7 +50,7 @@ export default function RootLayout({
             <ClientBackgrounds />
             <div className="relative z-10">
               <Navigation />
-              <main className="min-h-screen">
+              <main className="zion-shell min-h-screen">
                 {children}
               </main>
               <Footer />
