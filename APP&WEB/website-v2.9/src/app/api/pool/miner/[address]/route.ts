@@ -2,7 +2,6 @@ import { NextResponse, NextRequest } from 'next/server';
 
 const POOL_SERVERS = [
   { id: 'helsinki', host: '77.42.31.72', port: 8080 },
-  { id: 'helsinki', host: '77.42.31.72', port: 8080 },
   // Usa/Asia are seed-only nodes — no pool
 ];
 

@@ -2,7 +2,7 @@ import PoolDashboard from '@/components/PoolDashboard';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'ZION Mining Pool · TerraNova v2.9.6',
+  title: 'ZION Mining Pool · TerraNova v2.9.7',
   description: 'Mine ZION with Cosmic Harmony PoW. PPLNS rewards, 89% miner share, 5% humanitarian tithe, 5% Issobella fund. Real-time pool stats, miner dashboard, and getting started guide.',
   openGraph: {
     title: 'ZION Mining Pool',
