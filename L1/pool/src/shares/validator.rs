@@ -290,11 +290,10 @@ impl ShareValidator {
         match algo {
             Algorithm::CosmicHarmony => {
                 // Height-aware CosmicHarmony dispatch (matches block.rs):
-                //   height < 100_000             → CHv3 legacy
-                //   100_000 ≤ height < 200_000   → CHv3 ASIC-hardened (512 KiB scratchpad)
-                //   height ≥ 200_000             → CHv4  (CHv3 + NPU Mixing INT8 MLP)
+                //   CHV4_NPU_FORK_HEIGHT = 0 → CHv4 (NPU Mixing) always active from genesis.
+                //   All heights → cosmic_harmony_with_height → CHv4 path.
                 // Using cosmic_harmony_with_height() — same logic as block.rs compute.
-                // Governed by CHV4_NPU_FORK_HEIGHT = 200_000 in algorithms_npu.rs.
+                // Governed by CHV4_NPU_FORK_HEIGHT = 0 in algorithms_npu.rs.
                 if full_blob.len() < 80 {
                     tracing::warn!(
                         "Blob too short for CosmicHarmony: {} bytes, need at least 80",
@@ -741,7 +740,8 @@ mod tests {
 
     // ── CHv4 E2E tests ─────────────────────────────────────────────────────────
 
-    /// F-04: CHv4 share at height >= 200_000 must be accepted (with max target).
+    /// F-04: CHv4 share at genesis height (0) must be accepted (with max target).
+    /// CHV4_NPU_FORK_HEIGHT = 0 → CHv4 active from block 0.
     #[tokio::test]
     async fn test_chv4_share_accepted_at_fork_height() {
         let validator = ShareValidator::new("little");
@@ -754,13 +754,13 @@ mod tests {
             job_blob: "ab".repeat(160), // 160 hex chars = 80 bytes (minimum for CosmicHarmony)
             job_target: "ffffffff".to_string(), // max target — any hash passes
             block_target: None,
-            height: Some(200_000),          // CHV4_NPU_FORK_HEIGHT
+            height: Some(0),   // genesis block — CHV4_NPU_FORK_HEIGHT = 0
         };
 
         let result = validator.validate_share(&share, "miner_chv4").await;
         assert!(
             result.valid,
-            "CHv4 share at height=200_000 must be accepted, got: {}",
+            "CHv4 share at genesis height=0 must be accepted, got: {}",
             result.reason
         );
     }
@@ -794,8 +794,8 @@ mod tests {
         let blob = vec![0x5Au8; 80];
         let nonce: u32 = 0xDEAD_BEEF;
 
-        let h1 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 200_001);
-        let h2 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 200_001);
+        let h1 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 0);
+        let h2 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 0);
 
         assert_eq!(h1.data, h2.data, "CHv4 must be deterministic");
     }
