@@ -88,8 +88,8 @@ export default function TxDetailClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950">
-        <div className="container mx-auto px-4 py-20 max-w-6xl">
+      <div className="zion-shell min-h-screen">
+        <div className="zion-container py-20 max-w-6xl">
           <div className="animate-pulse space-y-6">
             <div className="h-8 w-48 bg-white/5 rounded" />
             <div className="h-12 w-96 bg-white/5 rounded" />
@@ -106,7 +106,7 @@ export default function TxDetailClient() {
 
   if (error || !tx) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="zion-shell min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <ArrowRightLeft className="h-16 w-16 text-red-400/50 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Transaction Not Found</h1>
@@ -124,10 +124,10 @@ export default function TxDetailClient() {
   const isCoinbase = tx.inputs.some((inp) => inp.type === "coinbase");
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="zion-shell min-h-screen">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-zion-cyan/15 via-transparent to-transparent" />
 
-      <div className="relative z-10 container mx-auto px-4 py-10 max-w-6xl space-y-6">
+      <div className="relative z-10 zion-container py-10 max-w-6xl space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
@@ -180,7 +180,7 @@ export default function TxDetailClient() {
 
         {/* TX Details */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="rounded-[28px] border border-white/[0.08] bg-black/60 backdrop-blur-2xl p-6">
+          className="zion-panel rounded-[28px] bg-black/60 p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
               <Layers className="h-4 w-4 text-zion-cyan" />
@@ -205,7 +205,7 @@ export default function TxDetailClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Inputs */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="rounded-[28px] border border-white/[0.08] bg-black/60 backdrop-blur-2xl p-6">
+            className="zion-panel rounded-[28px] bg-black/60 p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
                 <ArrowRight className="h-4 w-4 text-blue-400 rotate-180" />

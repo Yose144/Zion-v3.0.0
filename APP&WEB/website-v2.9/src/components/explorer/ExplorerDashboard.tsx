@@ -84,7 +84,7 @@ export default function ExplorerDashboard() {
 
   if (loading) {
     return (
-      <div className="rounded-[28px] border border-white/10 bg-black/60 p-6">
+      <div className="zion-panel rounded-[28px] bg-black/60 p-6">
         <div className="animate-pulse">
           <div className="h-5 bg-white/10 rounded mb-4 w-2/3" />
           <div className="grid grid-cols-2 gap-3">
@@ -102,7 +102,7 @@ export default function ExplorerDashboard() {
 
   if (!data) {
     return (
-      <div className="rounded-[28px] border border-red-500/20 bg-black/60 p-6">
+      <div className="zion-panel rounded-[28px] border-red-500/20 bg-black/60 p-6">
         <div className="flex items-center gap-2 text-red-400 mb-2">
           <Activity className="w-5 h-5" />
           <span className="font-semibold">Network Dashboard</span>
@@ -156,7 +156,7 @@ export default function ExplorerDashboard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-[28px] border border-white/10 bg-black/60 p-6"
+      className="zion-panel rounded-[28px] bg-black/60 p-6"
     >
       <div className="flex items-center gap-3 mb-5">
         <Activity className="h-5 w-5 text-purple-400" />
@@ -170,7 +170,7 @@ export default function ExplorerDashboard() {
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="rounded-2xl border border-white/10 bg-white/5 p-3"
+            className="zion-panel p-3"
           >
             <div className="flex items-center gap-2 mb-1">
               <m.icon className={`h-3.5 w-3.5 ${m.color}`} />
@@ -189,7 +189,7 @@ export default function ExplorerDashboard() {
       </div>
 
       {/* Block reward info */}
-      <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3">
+      <div className="mt-4 zion-panel p-3">
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">
           Block Reward
         </p>

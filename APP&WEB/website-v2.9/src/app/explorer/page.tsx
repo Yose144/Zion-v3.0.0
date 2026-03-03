@@ -71,7 +71,7 @@ const quickLinks = [
 
 export default function ExplorerPage() {
   return (
-    <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4 overflow-x-hidden">
+    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
       {/* ── Subtle background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
@@ -79,10 +79,10 @@ export default function ExplorerPage() {
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple/15 to-transparent" />
       </div>
 
-      <div className="relative z-10 container mx-auto max-w-7xl space-y-14">
+      <div className="relative z-10 zion-container max-w-7xl space-y-14">
 
         {/* ── Live network ticker ── */}
-        <div className="rounded-2xl border border-white/10 overflow-hidden">
+        <div className="zion-panel overflow-hidden">
           <NetworkTicker />
         </div>
 
@@ -90,7 +90,7 @@ export default function ExplorerPage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+          className="zion-panel rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -191,7 +191,7 @@ export default function ExplorerPage() {
               </Suspense>
 
               {/* Quick Navigator */}
-              <div className="rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <div className="zion-panel rounded-4xl bg-black/60 p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-gold/10">
                     <Compass className="h-4.5 w-4.5 text-zion-gold" />
