@@ -1,6 +1,6 @@
 # ZION 2.9.7 — MainNet Readiness (Unified)
 
-> Datum aktualizace: 2026-03-03  
+> Datum aktualizace: 2026-03-03 (scope update: CHv4, Revenue, Multi-algo → 2.9.7)  
 > Účel: jednotný stav pro pre-mainnet rozhodnutí (single source of truth).
 
 ---
@@ -8,9 +8,9 @@
 ## 1) Aktuální stav
 
 - 2.9.7 codebase je technicky stabilní a připravená jako pre-mainnet baseline.
-- 168h stability test byl dokončen bez kritických chyb (operator-reported; dashboard uptime green).
-- CHv4 Phase A/B je implementováno v kódu, ale před mainnetem je nutné dokončit produkční upgrade path a activation policy.
-- Revenue systém je implementován, ale produkční aktivace (wallets + buyback + canary payouts) je stále otevřená.
+- 168h stability test byl dokončen bez kritických chyb ✅
+- CHv4 activation policy FROZEN (200 000), `block.rs` + pool `validator.rs` používají height-aware dispatch.
+- **Scope aktualizace 2026-03-03:** CHv4 GPU kernel, Revenue wallets/canary a Multi-algo scheduler jsou **P0 v 2.9.7** (ne v 2.9.8).
 
 ---
 
@@ -20,8 +20,9 @@
 - CHv4 kompatibilní aliasing a pool/miner wiring je integrovaný.
 - NCL RPC flow (`ncl.register`, `ncl.get_task`, `ncl.submit`, `ncl.status`) je aktivní.
 - NCL runtime guardy jsou doplněny (enable flag, input validation, bounded rounds, metriky).
-- Revenue scheduler/proxy/switcher jsou v repo implementované.
-
+- Revenue scheduler/proxy/switcher jsou v repo implementované.- **Pool share validator** používá `cosmic_harmony_with_height()` — CHv4 shares (≥ 200 000) validovány správně. ✅ 2026-03-03
+- **block.rs** height-aware dispatch `cosmic_harmony_with_height()`. ✅ 2026-03-03
+- **Phase 1.12** — 100 miners stress test PASS (100/100, p99=9ms). ✅ 2026-03-03
 ---
 
 ## 3) Blokery před MainNet launch
@@ -29,14 +30,17 @@
 ### B-CRIT-01 — CHv4 produkční upgrade
 
 - [x] Activation policy finalizována — `CHV4_NPU_FORK_HEIGHT = 200_000` FROZEN — `docs/2.9.7/CHV4_ACTIVATION_POLICY.md` ✅ 2026-03-03
-- [x] Production hardening — `block.rs` nyní volá `cosmic_harmony_with_height()` (výšková dispatching CHv3/CHv4) — `cargo check` OK ✅ 2026-03-03
-- [ ] E2E production run — pool + miner + telemetry s simulovanou výškou ≥ 200_000 bez kritických incidentů (**zbývá**)
+- [x] Production hardening — `block.rs` volá `cosmic_harmony_with_height()` ✅ 2026-03-03
+- [x] Pool share validator — height-aware dispatch `cosmic_harmony_with_height()` ✅ 2026-03-03
+- [ ] GPU OpenCL kernel — NPU Mixing step (Phase 5) do `cosmic_harmony_v3_gpu.py` (**P0 2.9.7**)
+- [ ] E2E production run — pool + miner + telemetrie, simulovaná výška ≥ 200 000 (**P0 2.9.7**)
 
-### B-CRIT-02 — Revenue produkční aktivace
+### B-CRIT-02 — Revenue produkční aktivace (P0 v 2.9.7)
 
-- Nastavit produkční wallet adresy v revenue configu.
-- Zapnout buyback flow s limity rizika (slippage, cooldown, max order size).
-- Projít 72h revenue canary run s auditovatelným payout ledgerem.
+- [ ] Nastavit produkční wallet adresy v revenue configu (`config/ch3_revenue_settings.json`).
+- [ ] Zapnout buyback flow s limity rizika (slippage, cooldown, max order size).
+- [ ] Multi-algo scheduler aktivace: 50/25/25 PerMiner mode na Helsinki poolu.
+- [ ] 72h revenue canary run s auditovatelným payout ledgerem.
 
 ### B-CRIT-03 — Genesis + freeze artefakty
 

@@ -25,18 +25,23 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [x] Windows MSVC build fix (haraka.c, VLA, SDK cesty, build.rs) — commit `243e4b8` ✅ 2026-02-24
 - [x] `cargo check` exit 0: zion-core + zion-pool + zion-miner ✅ 2026-02-24
 
-### Revenue systém (implementován v kódu, produkční aktivace → 2.9.8)
-- [x] `L1/pool/src/revenue_proxy.rs` (1 869 řádků) — StratumProtocol pro ETC/ERG/RVN/XMR/VRSC ✅
+### Revenue systém (produkční aktivace REQUIRED v 2.9.7)
+- [x] `L1/pool/src/revenue_proxy.rs` (1 869 řádků) — StratumProtocol pro ETC/ERG/RVN/XMR/VRSC ✅
 - [x] `L1/pool/src/stream_scheduler.rs` — 50/25/25 (ZION/Revenue/NCL), PerMiner + TimeSplit ✅
 - [x] `L1/pool/src/profit_switcher.rs` — WhatToMine API, GPU detekce, hysteresis ✅
 - [x] `config/ch3_revenue_settings.json` v3.0.0 — 5 streamů nakonfigurováno ✅
-- [ ] Produkční wallet adresy nastavit (→ 2.9.8)
-- [ ] BuyBack modul aktivovat (→ 2.9.8)
+- [ ] **Produkční wallet adresy nastavit** — P0 v 2.9.7 (bez toto nebude freeze)
+- [ ] **BuyBack modul aktivovat** s limity rizika (slippage, cooldown, max order size) — P0 v 2.9.7
+- [ ] **72h canary revenue run** s audit ledgerem + rollback plánem — P0 v 2.9.7
 
-### CHv4 / MainNet gate
-- [ ] CHv4 activation policy final (fork-height/governance + rollout pravidla)
-- [ ] CHv4 production E2E run (pool + miner + telemetry) bez kritických incidentů
-- [ ] Revenue 72h canary payout run (audit ledger + rollback plán)
+### CHv4 / MainNet gate (REQUIRED v 2.9.7)
+- [x] CHv4 activation policy final (fork-height 200 000 FROZEN, governance sign-off) — `docs/2.9.7/CHV4_ACTIVATION_POLICY.md` ✅ 2026-03-03
+- [x] `block.rs` height-aware dispatch `cosmic_harmony_with_height()` — commit `885dc94` ✅ 2026-03-03
+- [x] Pool share validator height-aware dispatch `cosmic_harmony_with_height()` — commit případá tato session ✅ 2026-03-03
+- [ ] CHv4 E2E production run (pool + miner + telemetrie, simulovaná výška ≥ 200 000) — P0 v 2.9.7
+- [ ] GPU OpenCL kernel — NPU Mixing step (Phase 5) do `cosmic_harmony_v3_gpu.py` — P0 v 2.9.7
+- [ ] Revenue 72h canary payout run (audit ledger + rollback plán) — P0 v 2.9.7
+- [ ] Multi-algo 50/25/25 scheduler aktivace na Helsinki poolu — P0 v 2.9.7
 
 ### Konsensus / Bezpečnost
 - [x] On-chain time-lock vynucen v mainnet buildu (`premine.rs`) — `DAO_TREASURY_LOCK_HEIGHT = 525_600`, `is_transfer_allowed()` — commit `c521c38` ✅ 2026-03-01

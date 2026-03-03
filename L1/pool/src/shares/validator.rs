@@ -289,17 +289,21 @@ impl ShareValidator {
 
         match algo {
             Algorithm::CosmicHarmony => {
-                // CHv3 unified: canonical 5-phase pipeline, no height XOR.
-                // Pass the raw template blob bytes; the hasher uses first 80 bytes.
+                // Height-aware CosmicHarmony dispatch (matches block.rs):
+                //   height < 100_000             → CHv3 legacy
+                //   100_000 ≤ height < 200_000   → CHv3 ASIC-hardened (512 KiB scratchpad)
+                //   height ≥ 200_000             → CHv4  (CHv3 + NPU Mixing INT8 MLP)
+                // Using cosmic_harmony_with_height() — same logic as block.rs compute.
+                // Governed by CHV4_NPU_FORK_HEIGHT = 200_000 in algorithms_npu.rs.
                 if full_blob.len() < 80 {
                     tracing::warn!(
-                        "Blob too short for CHv3: {} bytes, need at least 80",
+                        "Blob too short for CosmicHarmony: {} bytes, need at least 80",
                         full_blob.len()
                     );
                     return None;
                 }
                 let h =
-                    algorithms_opt::cosmic_harmony_v3_with_height(&full_blob, nonce as u64, height);
+                    algorithms_opt::cosmic_harmony_with_height(&full_blob, nonce as u64, height);
                 Some(hex::encode(h.data))
             }
             Algorithm::RandomX => {
