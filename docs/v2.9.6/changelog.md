@@ -8,13 +8,14 @@
 
 ### ⚙️ Konsenzus
 
-- **CHv3 unifikace** — Cosmic Harmony v3 je nyní jediný PoW algoritmus
+- **CHv4 od genesis** (2026-03-03) — `CHV4_NPU_FORK_HEIGHT = 0`, NPU mixing step aktivní od bloku 0
+- **CHv3 unifikace** — Cosmic Harmony v3 je nyní jediný PoW algoritmus (CHv4 = rozšírení CHv3 + NPU mixing)
   - CH v1 (12 rundů, u32 nonce, XOR bridge) — odstraněn, archivován
   - CH v2 (4 MB scratchpad, 8 rundů) — odstraněn, archivován
   - Jediná kanonická funkce: `cosmic_harmony_v3_with_height(blob, nonce, height)`
   - Miner, pool i node volají identickou hash funkci — žádná divergence
 - **Memory-hard scratchpad** (Phase 4) — 256 KiB, 4 průchody, 512 random reads
-  - Fork height: 50 000 (`CHV3_MEMORY_HARD_FORK_HEIGHT`)
+  - Fork height: ~~50 000~~ → **0** od 2026-03-03 (`CHV3_MEMORY_HARD_FORK_HEIGHT=0`, CHv4 aktivní od genesis)
   - Runtime overrides pro testování: `ZION_CHV3_MEMORY_HARD_FORCE`, `ZION_CHV3_MEMORY_HARD_DISABLE`
 - **ASIC resistance score**: 75 → 90 (díky memory-hard vrstvě)
 - **Nonce**: u32 → u64 (64-bit nonce pro budoucí GPU mining)

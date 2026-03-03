@@ -59,7 +59,7 @@
 - [ ] **1.12** — 100 miners stress test — `tests/stress_100_miners.py` ✅ VYTVOŘEN 2026-03-03
 
 ### B-CRIT (MainNet gate — blokující)
-- [ ] **B-CRIT-01** — CHv4 activation policy (fork-height/governance + E2E run)
+- [x] **B-CRIT-01** — CHv4 activation policy — `CHV4_NPU_FORK_HEIGHT=0` od genesis ✅ 2026-03-03
 - [ ] **B-CRIT-02** — Revenue production activation (prod wallets + buyback + 72h canary)
 - [ ] **B-CRIT-03** — Genesis ceremony + freeze artifacts (genesis.json offline + podpisy)
 

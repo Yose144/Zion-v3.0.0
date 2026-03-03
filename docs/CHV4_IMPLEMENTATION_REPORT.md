@@ -1,7 +1,7 @@
 # CosmicHarmony v4 — Implementační report
 
-> **Datum:** 2026-03-01  
-> **Status:** Phase A + Phase B IMPLEMENTOVÁNO ✅  
+> **Datum:** 2026-03-01 (update 2026-03-03)  
+> **Status:** Phase A + Phase B IMPLEMENTOVÁNO ✅ | CHv4 aktivní od genesis (fork height = 0)  
 > **Testy:** 8/8 NPU tests OK, cargo check OK (cosmic-harmony + pool + miner)
 
 ---
@@ -47,7 +47,7 @@ Block Header + Nonce
 - **Deterministický**: integer-only aritmetika, identický výsledek na CPU/NEON/AVX2/CoreML
 - **Váhy**: odvozeny z genesis seedu `ZION_CHv4_mixing_v1_genesis_seed` přes Blake3 expanzi
 - **Hardwarové zrychlení**: NEON path připraven pro Apple M1/M2 (CoreML backend za `native-npu` feature)
-- **Fork height**: `CHV4_NPU_FORK_HEIGHT = 200_000`
+- **Fork height**: `CHV4_NPU_FORK_HEIGHT = 0` — **CHv4 aktivní od genesis** (nastaveno 2026-03-03)
 - **CPU fallback**: identická výsledek (INT8 integer path, žádná FP divergence)
 
 #### Nové funkce v `algorithms_opt.rs`:
@@ -57,10 +57,11 @@ pub fn cosmic_harmony_v4(block_header: &[u8], nonce: u64) -> Hash32
 pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32
 ```
 
-Výšková selekce:
-- `height < 100_000` → legacy (bez memory-hard)
-- `100_000 ≤ height < 200_000` → CHv3 (memory-hard, bez NPU)
-- `height ≥ 200_000` → **CHv4** (memory-hard + NPU mixing)
+Výšková selekce (aktuální stav od 2026-03-03):
+- `height ≥ 0` (vždy) → **CHv4** (memory-hard + NPU mixing) — aktivní od genesis
+
+> **Poznámka:** Původní plán počítal s postupnou aktivací (legacy < 100k → CHv3 < 200k → CHv4 ≥ 200k).
+> Rozhodnutím 2026-03-03 je CHv4 aktivní od genesis — žádný hard-fork risk, jednodušší konsenzus.
 
 #### Cargo.toml změny:
 ```toml
@@ -209,7 +210,7 @@ Rezervováno pro L3 NCL marketplace implementaci.
 
 1. **M1 Mac test**: `cargo test -p zion-cosmic-harmony-v3` na Apple Silicon → ověřit CoreML path aktivuje
 2. **End-to-end test**: spustit pool + miner, sledovat NCL logy (`ncl.register → ncl.get_task → ncl.submit accepted`)
-3. **Fork height volba**: deklarovat `CHV4_NPU_FORK_HEIGHT = 200_000` jako finální pro governance hlasování
+3. **Fork height**: `CHV4_NPU_FORK_HEIGHT = 0` — CHv4 aktivní od genesis od 2026-03-03 ✅ (governance hlasování nepotřebné, rozhodnuto incore)
 4. **ONNX model**: vytrénovat a zkontrolovat `ch_mixing_v4.onnx`, zakomponovat hash do genesis konstant
 5. **Pool bonus accounting**: připojit NCL bonus ke PPLNS výplatnímu systému (nyní jen response, bez DB záznamu)
 
@@ -217,7 +218,7 @@ Rezervováno pro L3 NCL marketplace implementaci.
 
 ## Poznámky pro mainnet
 
-- CHv4 fork height `200_000` nebyl ještě hlasován governance
+- CHv4 je aktivní od genesis (`CHV4_NPU_FORK_HEIGHT = 0`) od 2026-03-03 — žádný pending fork
 - CPU INT8 path produkuje identický hash na všech platformách → konsenzu BEZpečné
 - NCL bonus 0.001 ZION/share je placeholder — finální hodnotu určí pool ekonomika
 - `native-npu` feature nemusí být aktivní pro validaci bloků, jen pro výkonnostní zrychlení
