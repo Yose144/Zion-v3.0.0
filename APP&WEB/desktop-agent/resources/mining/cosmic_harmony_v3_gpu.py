@@ -232,7 +232,7 @@ void cosmic_fusion(__private uchar *input, __private uchar *output) {
 // ============================================================================
 // Memory-hard scratchpad  (512 KiB per thread in global memory)
 // Mirrors Rust: cosmic-harmony/src/scratchpad.rs  memory_hard_transform()
-// Active when height >= 100 000  (CHV3_MEMORY_HARD_FORK_HEIGHT)
+// Active always from genesis (CHV3_MEMORY_HARD_FORK_HEIGHT = 0, CHV4_NPU_FORK_HEIGHT = 0)
 // ============================================================================
 
 #define CL_SCRATCHPAD_BYTES (512u * 1024u)   // 524288 bytes
@@ -403,7 +403,7 @@ void cl_memory_hard_transform(
 // ============================================================================
 // CHv4 NPU Mixing Step — INT8 MLP 64→128→64 + residual
 // Mirrors Rust: L1/cosmic-harmony/src/algorithms_npu.rs :: npu_mixing_cpu_int8()
-// Active when height >= 200 000  (CHV4_NPU_FORK_HEIGHT)
+// Active always from genesis (CHV4_NPU_FORK_HEIGHT = 0)
 // ============================================================================
 
 // GELU approx: gelu(x) ≈ x*(128+x)/256, clamped [-128,127]
@@ -499,7 +499,7 @@ __kernel void cosmic_harmony_v3_mine(
     __global uint *solution_count,
     uint memory_hard,
     __global uchar *scratchpad_buf,
-    // CHv4 args (height >= 200 000) — ignored when chv4==0
+    // CHv4 args — always active (CHV4_NPU_FORK_HEIGHT = 0, from genesis)
     uint chv4,
     __global const char*  npu_w1,
     __global const char*  npu_b1,
@@ -544,7 +544,7 @@ __kernel void cosmic_harmony_v3_mine(
     golden_matrix(step2, step3);
 
     if (chv4 && memory_hard) {
-        // CHv4 (height >= 200k): GoldenMatrix → MemoryHard → NPU Mixing → CosmicFusion
+        // CHv4 od genesis: GoldenMatrix → MemoryHard → NPU Mixing → CosmicFusion
         __global uchar* my_pad = scratchpad_buf + (ulong)gid * (ulong)CL_SCRATCHPAD_BYTES;
         uchar step4[64];
         cl_memory_hard_transform(step3, my_pad, step4);
@@ -552,7 +552,7 @@ __kernel void cosmic_harmony_v3_mine(
         npu_mixing_step_cl(step4, step5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
         cosmic_fusion(step5, final_hash);
     } else if (memory_hard) {
-        // CHv3 (height 100k–200k): GoldenMatrix → MemoryHard → CosmicFusion
+        // CHv3-only path (dead code: CHV3_MEMORY_HARD_FORK_HEIGHT=0, CHV4_NPU_FORK_HEIGHT=0 → vzždy oba flagy 1)
         __global uchar* my_pad = scratchpad_buf + (ulong)gid * (ulong)CL_SCRATCHPAD_BYTES;
         uchar step4[64];
         cl_memory_hard_transform(step3, my_pad, step4);
@@ -889,17 +889,16 @@ class CosmicHarmonyV3GPU:
         target32 = np.uint32(target_int & 0xFFFFFFFF)
         state0_big = np.uint32(1 if str(state0_endian).lower() == "big" else 0)
 
-        # Determine memory-hard mode (height >= 100 000  =  CHV3_MEMORY_HARD_FORK_HEIGHT)
-        mh_flag = np.uint32(1 if height >= 100_000 else 0)
-        if mh_flag and self.scratchpad_buf is None:
+        # Determine memory-hard mode — always active from genesis (CHV3_MEMORY_HARD_FORK_HEIGHT = 0)
+        mh_flag = np.uint32(1)
+        if self.scratchpad_buf is None:
             # Scratchpad allocation failed at init → cannot do GPU MH, skip hash count
             mh_flag = np.uint32(0)
 
-        # CHv4 flag (height >= 200 000  =  CHV4_NPU_FORK_HEIGHT)
-        # chv4 implies memory_hard — both flags passed as 1 for CHv4
-        chv4_flag = np.uint32(1 if height >= 200_000 else 0)
-        if chv4_flag and not mh_flag:
-            # Should not happen (200k > 100k), but guard: chv4 requires scratchpad
+        # CHv4 flag — always active from genesis (CHV4_NPU_FORK_HEIGHT = 0)
+        chv4_flag = np.uint32(1)
+        if not mh_flag:
+            # Guard: chv4 requires scratchpad (should not happen in normal ops)
             chv4_flag = np.uint32(0)
 
         # Adjust work group size to device limits

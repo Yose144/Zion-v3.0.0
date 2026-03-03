@@ -12,37 +12,33 @@
 ```
 ✅ HOTOVO                               ⬜ ZBÝVÁ
 ──────────────────────────────          ──────────────────────────────
-168h stability (Helsinki/Usa/Asia)      F-05: GPU OpenCL CHv4 kernel
-CHv4 fork height FROZEN (200 000)       F-06: Miner height-aware dispatch
-block.rs height-aware dispatch          F-04: CHv4 E2E test (≥ 200k)
-pool validator.rs CHv4 dispatch         E-07: 72h canary revenue run (IN PROG)
-CHv4 activation policy doc             B-CRIT-03: Genesis ceremony
-Phase 1.12 stress test (100 miners)    Server upgrade CHv4 (Helsinki fáze 1+2)
-Revenue proxy/scheduler/switcher       CODE_FREEZE sign-off + git tag
+168h stability (Helsinki/Usa/Asia)      F-04: CHv4 E2E test (pool+miner live)
+CHv4 od genesis (fork height = 0)       E-07: 72h canary run (RESET 21:00 UTC)
+block.rs height-aware dispatch          B-CRIT-03: Genesis ceremony
+pool validator.rs CHv4 dispatch         Server upgrade (Helsinki fáze 1+2)
+CHv4 activation policy doc             CODE_FREEZE sign-off + git tag
+Phase 1.12 stress test (100 miners)
+Revenue proxy/scheduler/switcher
 CHv3 ASIC hardening + Haraka AES-NI
-On-chain time-lock, double-spend fix   ✅ HOTOVO (2026-03-03 večer)
-API_ENDPOINTS.md, GENESIS_MESSAGE      ──────────────────────────────
-E-06: Produkční wallet adresy          Chain restart (genesis 0742cf6b)
-E-08: Multi-algo 50/25/25 aktivace     algorithms_opt.rs sync Usa (1203 ř.)
-                                       zion-core:2.9.7-amd64 Usa + Asia
-                                       zion-pool:2.9.7 Helsinki (rebuild)
-                                       zion-miner:2.9.7-amd64 Usa + Asia
-                                       Chain běží ✅ · ~108 ZION payout pending
+On-chain time-lock, double-spend fix    ✅ HOTOVO (2026-03-03 večer)
+API_ENDPOINTS.md, GENESIS_MESSAGE       ──────────────────────────────
+E-06: Produkční wallet adresy          Chain reset (genesis bacd6027, CHv4)
+E-08: Multi-algo 50/25/25 aktivace     Docker image cleanup (všechny servery)
+F-05: GPU CL/CUDA/Python CHv4 kernel   zion-core/miner/pool:2.9.7 v produkci
+F-06: height dispatch (CHV4=0, hotovo) Minéři přihlášeni: HEL/USA/ASIA ✅
 ```
 
 ---
 
 ## Plán — 5 fází po sobě
 
-### FÁZE 1 — CHv4 dokončení (P0 · cíl: 14. 3. 2026)
+### FÁZE 1 — CHv4 GPU + E2E ✅ (skoro hotovo · zbývá: F-04)
 
-**Pořadí:** F-05 → F-06 → F-04 (GPU kernel musí být první, na něm závisí F-06 a E2E test)
-
-| Krok | ID | Úkol | Soubory | Hotový když |
-|------|----|------|---------|------------|
-| 1 | **F-05** | GPU OpenCL kernel — přidat Phase 5 (NPU Mixing INT8 MLP) | `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v3_gpu.py` | Kernel se zkompiluje + daný hash odpovídá Rust referenční implementaci |
-| 2 | **F-06** | Miner height-aware dispatch — pokud height ≥ 200k → CHv4 path | `L1/miner/src/` + případně `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_native.py` | Miner logguje "CHv4" od výšky 200 000 |
-| 3 | **F-04** | CHv4 E2E test — pool + miner, simulovaná výška ≥ 200 000 | `tests/chv4_e2e.rs` (nový) | `cargo test chv4` → share accepted, CHv4 hash ověřen |
+| Krok | ID | Úkol | Soubory | Status |
+|------|----|------|---------|--------|
+| 1 | **F-05** | GPU CUDA + OpenCL + Python kernel — CHv4 NPU Mixing Phase 5 | `cosmic_harmony_v3.cu`, `cosmic_harmony_v3.cl`, `cosmic_harmony_v3_gpu.py` | ✅ DONE 2026-03-03 |
+| 2 | **F-06** | Miner height-aware dispatch | `mod.rs` — `CHV4_NPU_FORK_HEIGHT=0` → vždy CHv4, žádný dispatch potřeba | ✅ DONE (n/a, CHV4=0) |
+| 3 | **F-04** | CHv4 E2E test — pool + miner live, CHv4 hash ověřen | `tests/chv4_e2e.rs` (vyřešit v prostředí) | ⬜ P0 |
 
 **Výsledek fáze 1:** CHv4 je plně funkční — CPU i GPU path, pool akceptuje shares od výšky 200k.
 

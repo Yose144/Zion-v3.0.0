@@ -19,49 +19,50 @@ Aktivace je **plně hardcoded** v konsensuální konstantě — nevyžaduje gove
 
 ## 2. Výšková politika (fork-height schedule)
 
+> **Update 2026-03-03:** CHv4 aktivní od genesis. `CHV4_NPU_FORK_HEIGHT = 0` FROZEN.
+
 | Výška bloků | Algoritmus | Popis |
 |-------------|------------|-------|
-| 0 – 99 999 | CHv3 legacy | Bez memory-hard scratchpadu |
-| 100 000 – 199 999 | CHv3 ASIC-hardened | 512 KiB scratchpad / 4 průchody / 256 random reads; dynamic XOR |
-| **≥ 200 000** | **CHv4** | CHv3 + NPU Mixing Step (INT8 MLP 64→128→64 + residual) |
+| **0 → ∞** | **CHv4** (aktivní od genesis) | memory-hard scratchpad + NPU Mixing Step (INT8 MLP 64→128→64 + residual) |
 
 Konstanty v kódu:
 ```rust
 // L1/cosmic-harmony/src/algorithms_npu.rs
-pub const CHV4_NPU_FORK_HEIGHT: u64 = 200_000;
+pub const CHV4_NPU_FORK_HEIGHT: u64 = 0;  // CHv4 aktivní od genesis (2026-03-03)
 pub const CHV4_MLP_GENESIS_SEED: &[u8; 32] = b"ZION_CHv4_mixing_v1_genesis_seed";
 
+// L1/cosmic-harmony/src/algorithms_opt.rs
+pub const CHV3_MEMORY_HARD_FORK_HEIGHT: u64 = 0;  // memory-hard od genesis
+
 // L1/core/src/blockchain/block.rs
-// přechod řízen výškou přes cosmic_harmony_with_height()
+// cosmic_harmony_with_height() → CHv4 pro všechny výšky (≥ 0)
 ```
 
-**Fork height je FROZEN na 200 000** — změna vyžaduje:
+**Fork height je FROZEN na 0** (aktivní od genesis, 2026-03-03) — změna vyžaduje:
 1. Nový governance návrh v `docs/mainnet/MAINNET_CONSTITUTION.md`
 2. Dva nezávislé podpisy (Lead Dev + Infra)
-3. Patch release s novým fork height + emergency announcement
+3. Patch release s novým fork height + chain reset
 
 ---
 
 ## 3. Rollout pravidla
 
-### 3.1 Soft fork (nody)
-CHv4 je **hard fork** — nody starší verze odmítnou bloky s CHv4 hashemi.  
-Postupný rollout:
-1. Testnet: aktivní od genesis (výška 0 projde CHv3; testnet nedosáhne 200k)
-2. MainNet: nody v2.9.7+ obsahují CHv4 kód ready; aktivace nastane organicky po dosažení bloku 200 000
+### 3.1 Rollout (nody)
+CHv4 je hardcoded od genesis — žádný postupný rollout potřeba.  
+Všechny nody od genesis (blok 0) používají CHv4; není zpětně kompatibilní s hypotetickým starším chainem.
 
 ### 3.2 Pool
-Pool validuje sdílené share přes `cosmic_harmony_with_height()` — automaticky správná cesta.  
-Sdílenky pod výškou 200 000 jsou validovány CHv3; nad ní CHv4.
+Pool validuje shares přes `cosmic_harmony_with_height()` — CHv4 pro všechny výšky (≥ 0).  
+žádná height-based větev — vždy CHv4 path.
 
 ### 3.3 Miner
-Minery dostanou informaci o výšce v každém jobu (pole `height` v Stratum/XMRig protokolu).  
-Miner musí volat `cosmic_harmony_v3` pro height < 200 000, `cosmic_harmony_v4` pro ≥ 200 000.
+Minéř má vždy `chv4=1` a `memory_hard=1` — výška nerozhoduje.  
+Kernel (CUDA/OpenCL/Python GPU) dostane flag `chv4=1` pro každý job bez ohledu na height.
 
 ### 3.4 Nouzový rollback
-Pokud by CHv4 způsobil síťovou nestabilitu (fork, hash-divergence, crash) před dosažením výšky 200 000:
-- Bezpečný: Snížit `CHV4_NPU_FORK_HEIGHT` na hodnotu > aktuální výšky + 50 000 (patch release)
-- Nouzový: Hardcode výjimku přes `--disable-chv4` flag (runtime override, pouze pro emergency)
+Pokud by CHv4 způsobil síťovou nestabilitu:
+- Nastavit `CHV4_NPU_FORK_HEIGHT` na velkou hodnotu (patch release + chain reset)
+- Nouzový: `--disable-chv4` flag (runtime override, pouze pro emergency)
 
 ---
 
@@ -86,17 +87,17 @@ Pokud by CHv4 způsobil síťovou nestabilitu (fork, hash-divergence, crash) př
 
 ## 5. Governance sign-off
 
-Fork height je **finální** (nehlasováno veřejnou governance — rozhodnutí Lead Dev před MainNet launch):
+Fork height je **finální** (rozhodnutí Lead Dev 2026-03-03 — bez veřejného governance hlasování):
 
 | Role | Rozhodnutí | Datum |
 |------|-----------|-------|
-| Lead Dev | `CHV4_NPU_FORK_HEIGHT = 200_000` CONFIRMED | 2026-03-03 |
-| Infra | Protocol kompatibilní — pool/core/miner otestovány | 2026-03-03 |
+| Lead Dev | `CHV4_NPU_FORK_HEIGHT = 0` — CHv4 od genesis CONFIRMED | 2026-03-03 |
+| Infra | Protocol kompatibilní — pool/core/miner otestovány, chain reset proveden | 2026-03-03 |
 
-**Odůvodnění volby výšky 200 000:**
-- Dává těžařům ~4–6 měsíců po MainNet genesis na upgrade miner klientů
-- Výška 200k je snadno zapamatovatelná (100k = CHv3 ASIC fork, 200k = CHv4 NPU fork)
-- Dostatečný buffer pro nouzový rollback bez nutnosti emergency hard-fork
+**Odůvodnění volby výšky 0 (od genesis):**
+- Žádný hard-fork risk — všichni nody startují se stejným algoritmem
+- Žádná přechodová fáze — není třeba spravovat CHv3/CHv4 legacy větve
+- Nový genesis hash `bacd6027` generován 2026-03-03 — čistý start s CHv4
 
 ---
 
