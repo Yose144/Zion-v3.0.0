@@ -1,6 +1,6 @@
 # ZION 2.9.7 — MainNet Readiness (Unified)
 
-> Datum aktualizace: 2026-03-03 (scope update: CHv4, Revenue, Multi-algo → 2.9.7)  
+> Datum aktualizace: 2026-03-03 (scope update: CHv4 od genesis, GPU kernels, Revenue, canary reset)  
 > Účel: jednotný stav pro pre-mainnet rozhodnutí (single source of truth).
 
 ---
@@ -9,8 +9,10 @@
 
 - 2.9.7 codebase je technicky stabilní a připravená jako pre-mainnet baseline.
 - 168h stability test byl dokončen bez kritických chyb ✅
-- CHv4 activation policy FROZEN (200 000), `block.rs` + pool `validator.rs` používají height-aware dispatch.
-- **Scope aktualizace 2026-03-03:** CHv4 GPU kernel, Revenue wallets/canary a Multi-algo scheduler jsou **P0 v 2.9.7** (ne v 2.9.8).
+- CHv4 aktivní od genesis (`CHV4_NPU_FORK_HEIGHT = 0`), `block.rs` + pool `validator.rs` používají height-aware dispatch.
+- CUDA + OpenCL GPU kernely mají CHv4 NPU Mixing implementován ✅ 2026-03-03
+- Python GPU miner dispatch opraven na `chv4=1` vždy ✅ 2026-03-03
+- **Scope aktualizace 2026-03-03:** Revenue wallets/canary a Multi-algo scheduler jsou **P0 v 2.9.7** (ne v 2.9.8). E2E test (F-04) a genesis ceremony (B-CRIT-03) zbývají.
 
 ---
 
@@ -29,11 +31,13 @@
 
 ### B-CRIT-01 — CHv4 produkční upgrade
 
-- [x] Activation policy finalizována — `CHV4_NPU_FORK_HEIGHT = 200_000` FROZEN — `docs/2.9.7/CHV4_ACTIVATION_POLICY.md` ✅ 2026-03-03
+- [x] Activation policy finalizována — `CHV4_NPU_FORK_HEIGHT = 0` od genesis — `docs/2.9.7/CHV4_ACTIVATION_POLICY.md` ✅ 2026-03-03
 - [x] Production hardening — `block.rs` volá `cosmic_harmony_with_height()` ✅ 2026-03-03
 - [x] Pool share validator — height-aware dispatch `cosmic_harmony_with_height()` ✅ 2026-03-03
-- [ ] GPU OpenCL kernel — NPU Mixing step (Phase 5) do `cosmic_harmony_v3_gpu.py` (**P0 2.9.7**)
-- [ ] E2E production run — pool + miner + telemetrie, simulovaná výška ≥ 200 000 (**P0 2.9.7**)
+- [x] GPU CUDA kernel — CHv4 NPU Mixing (Phase 5) v `cosmic_harmony_v3.cu` ✅ 2026-03-03
+- [x] GPU OpenCL kernel — CHv4 NPU Mixing (Phase 5) v `cosmic_harmony_v3.cl` ✅ 2026-03-03
+- [x] Python GPU miner — `chv4_flag = np.uint32(1)` vždy aktivní ✅ 2026-03-03
+- [ ] E2E production run — pool + miner + telemetrie, CHv4 hash ověřen na produkci (**P0 2.9.7**)
 
 ### B-CRIT-02 — Revenue produkční aktivace (P0 v 2.9.7)
 
