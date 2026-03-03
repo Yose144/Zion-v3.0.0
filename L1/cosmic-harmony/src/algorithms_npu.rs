@@ -38,7 +38,10 @@ pub const CHV4_MLP_SEED_HASH: &str =
     "1e2f3a4b5c6d7e8f9a0b1c2d3e4f5061728394a5b6c7d8e9f0a1b2c3d4e5f607";
 
 /// Výška bloku pro aktivaci CHv4 NPU Mixing stepu.
-pub const CHV4_NPU_FORK_HEIGHT: u64 = 200_000;
+/// Nastaveno na 0 — CHv4 je aktivní od genesis (blok 0).
+/// Výhoda: žádný hard-fork risk, konzistentní hash od prvního bloku.
+/// CHv3 legacy i memory-hard fáze jsou zcela přeskočeny.
+pub const CHV4_NPU_FORK_HEIGHT: u64 = 0;
 
 // ============================================================================
 // MLP WEIGHTS (INT8, deterministické z genesis seedu)
