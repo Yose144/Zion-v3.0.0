@@ -1,6 +1,6 @@
 /**
- * BridgeScreen.js — wZION L1 ↔ EVM Bridge
- * ──────────────────────────────────────────────────────────────────────────
+ * BridgeScreen.js — wZION L1 ↔ EVM Bridge v2.9.6
+ * ──────────────────────────────────────────────────────────────────────
  * Lets users bridge ZION between the native L1 chain and Base network (EVM).
  *
  * L1 → EVM: User sends ZION to vault on L1 (memo generated here).
@@ -8,6 +8,7 @@
  * EVM → L1: User burns wZION here (app signs EVM TX locally).
  *           Rust relay monitors Base and releases ZION on L1.
  *
+ * Testnet: Base Sepolia (live 21.2.2026) — WZION 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6
  * Design: follows SendScreen.js pattern (GlassCard, GradientButton, theme).
  */
 

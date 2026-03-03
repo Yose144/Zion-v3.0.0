@@ -1,5 +1,5 @@
 /**
- * ZION Send Transaction Screen v2.9.5
+ * ZION Send Transaction Screen v2.9.6
  * 
  * Features:
  * - UTXO-based transaction building (matches Rust core)
