@@ -51,11 +51,11 @@ const versions: Version[] = [
         ]
       },
       {
-        id: 'v297-design',
-        title: 'Design System',
-        icon: Sparkles,
+        id: 'v297-mining',
+        title: 'Mining',
+        icon: Zap,
         docs: [
-          { id: 'v297-design-system', title: 'UI Design System', file: 'v2.9.7/design-system.md' },
+          { id: 'v297-mining-guide', title: 'Mining Guide', file: 'v2.9.7/design-system.md' },
         ]
       },
       {
