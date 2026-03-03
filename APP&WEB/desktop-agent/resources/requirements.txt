@@ -12,8 +12,10 @@
 # - If pyopencl isn't available, GPU mode will fall back to CPU.
 # - `blake3` is REQUIRED for CHv4 GPU weight derivation parity with Rust/pool.
 
-numpy
-pyopencl
+# Keep the base requirements lightweight and stable.
+# Optional GPU deps are installed manually when GPU mining is enabled:
+#   pip install numpy pyopencl
+# blake3 is safe to keep in base env (small, pure dependency, used by CHv4 GPU path).
 blake3
 
 # ============================================
