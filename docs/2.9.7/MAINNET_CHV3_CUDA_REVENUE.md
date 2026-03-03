@@ -1,8 +1,10 @@
-# Mainnet příprava — CUDA + Multialgo Mining + CHv3 Revenue
+# Mainnet příprava — CUDA + Multialgo Mining + CHv4 Upgrade + Revenue
 
 > **Verze:** draft pro 2.9.7 kontext  
 > **Datum:** 26. února 2026  
-> **Scope:** co je nutné dokončit, aby šlo bezpečně spustit produkční mining + revenue vrstvu v navazující fázi (2.9.8).
+> **Scope:** co je nutné dokončit, aby šlo bezpečně spustit produkční mining + revenue vrstvu a uzavřít CHv4 pre-mainnet upgrade gate.
+
+> Canonical status: `docs/2.9.7/MAINNET_READINESS_UNIFIED.md`
 
 ---
 

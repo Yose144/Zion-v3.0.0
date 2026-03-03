@@ -1,0 +1,60 @@
+{
+  "version": "4.0.0",
+  "description": "CH v4 Revenue Settings — 50/25/25 (ZION CHv4 / Revenue / NCL+NPU)",
+  "last_updated": "2026-03-03T00:00:00Z",
+  "streams": {
+    "zion": {
+      "enabled": true,
+      "target_share": 0.50,
+      "algorithm": "cosmic_harmony_v4"
+    },
+    "etc": {
+      "enabled": true,
+      "pool": {
+        "stratum": "stratum+tcp://etc.2miners.com:1010",
+        "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        "worker": "zion_merged"
+      },
+      "target_share": 0.05
+    },
+    "nxs": {
+      "enabled": false,
+      "pool": {
+        "stratum": "stratum+tcp://pool.nexus.io:9549",
+        "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        "worker": "zion_merged"
+      },
+      "target_share": 0.00
+    },
+    "dynamic_gpu": {
+      "enabled": true,
+      "mode": "auto",
+      "target_share": 0.20,
+      "pools": {
+        "xmr": {
+          "coin": "XMR",
+          "stratum": "stratum+tcp://gulf.moneroocean.stream:10001",
+          "wallet": "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK",
+          "worker": "zion_pool",
+          "enabled": true,
+          "algorithm": "auto",
+          "protocol": "stratum",
+          "threads": 1
+        }
+      }
+    },
+    "ncl": {
+      "enabled": true,
+      "npu_allocation": 0.30,
+      "target_share": 0.25,
+      "gateway_url": "http://localhost:8002",
+      "npu_required": false,
+      "preferred_npu_providers": [
+        "QNNExecutionProvider",
+        "CoreMLExecutionProvider",
+        "NnapiExecutionProvider",
+        "OpenVINOExecutionProvider"
+      ]
+    }
+  }
+}

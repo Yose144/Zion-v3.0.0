@@ -12,6 +12,8 @@ use anyhow::{anyhow, Result};
 use hex::FromHex;
 use log::debug;
 use serde_json::Value;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use tokio::sync::RwLock as AsyncRwLock;
@@ -761,15 +763,69 @@ impl UniversalMiner {
             })
             .unwrap_or(false);
 
-        let mut nonce_start = 0u64;
-        // GPU batch size: configurable via ZION_GPU_BATCH_SIZE, default 4M.
-        // Larger batches = better GPU utilisation (less kernel launch overhead).
-        // 4M is optimal for ≥4 GB VRAM on compute-bound CosmicHarmony.
+        let session_nonce_base = std::env::var("ZION_NONCE_BASE")
+            .ok()
+            .and_then(|v| v.trim().parse::<u64>().ok())
+            .map(|v| v & (u32::MAX as u64))
+            .unwrap_or(0);
+        let device_nonce_salt = {
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            device_name.hash(&mut hasher);
+            (hasher.finish() as u32) as u64
+        };
+        let nonce_seed = ((session_nonce_base as u32).wrapping_add(device_nonce_salt as u32)) as u64;
+        let mut nonce_start = nonce_seed;
+        // GPU batch size: per-device auto tuning by backend + VRAM.
+        // Can be overridden globally via ZION_GPU_BATCH_SIZE.
+        let device_info = miner.device_info().clone();
         let mut batch_size: u64 = std::env::var("ZION_GPU_BATCH_SIZE")
             .ok()
             .and_then(|v| v.trim().parse().ok())
-            .unwrap_or(16_000_000);
+            .filter(|v: &u64| *v >= 100_000)
+            .unwrap_or_else(|| {
+                let vram = device_info.memory_mb;
+                match device_platform {
+                    gpu::GpuPlatform::Cuda => {
+                        if vram >= 20_000 {
+                            24_000_000
+                        } else if vram >= 12_000 {
+                            20_000_000
+                        } else if vram >= 8_000 {
+                            16_000_000
+                        } else if vram >= 6_000 {
+                            12_000_000
+                        } else {
+                            8_000_000
+                        }
+                    }
+                    gpu::GpuPlatform::Metal => {
+                        if vram >= 12_000 {
+                            8_000_000
+                        } else if vram >= 8_000 {
+                            6_000_000
+                        } else {
+                            4_000_000
+                        }
+                    }
+                    gpu::GpuPlatform::OpenCL => {
+                        if vram >= 16_000 {
+                            12_000_000
+                        } else if vram >= 8_000 {
+                            8_000_000
+                        } else if vram >= 6_000 {
+                            6_000_000
+                        } else {
+                            4_000_000
+                        }
+                    }
+                }
+            })
+            .clamp(100_000, 32_000_000);
         let mut last_job_id: Option<String> = None;
+        let mut nonce_bookmarks: HashMap<String, u32> = HashMap::new();
+        let mut submit_dedup_seen: HashSet<u64> = HashSet::new();
+        let mut submit_dedup_order: VecDeque<u64> = VecDeque::new();
+        const SUBMIT_DEDUP_MAX: usize = 300_000;
         let mut gpu_total_hashes: u64 = 0;
         let gpu_start_time = std::time::Instant::now();
         let mut gpu_shares_found: u64 = 0;
@@ -783,10 +839,11 @@ impl UniversalMiner {
             .unwrap_or(false);
 
         log::debug!(
-            "GPU mining loop: {} [{:?}] batch={}",
+            "GPU mining loop: {} [{:?}] batch={} vram={}MB",
             device_name,
             device_platform,
-            batch_size
+            batch_size,
+            device_info.memory_mb
         );
 
         loop {
@@ -804,7 +861,22 @@ impl UniversalMiner {
             };
 
             if last_job_id.as_deref() != Some(job.job_id.as_str()) {
-                nonce_start = 0;
+                if let Some(old_id) = last_job_id.take() {
+                    nonce_bookmarks.insert(old_id, nonce_start as u32);
+                }
+
+                let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                job.job_id.hash(&mut hasher);
+                job.height.hash(&mut hasher);
+                let job_nonce_seed = ((hasher.finish() as u32)
+                    .wrapping_add(session_nonce_base as u32)
+                    .wrapping_add(device_nonce_salt as u32)) as u64;
+
+                nonce_start = nonce_bookmarks
+                    .get(job.job_id.as_str())
+                    .copied()
+                    .map(|v| v as u64)
+                    .unwrap_or(job_nonce_seed);
                 last_job_id = Some(job.job_id.clone());
 
                 // ═══ Stream Scheduler v2: Dynamic algorithm detection (opt-in) ═══
@@ -966,6 +1038,27 @@ impl UniversalMiner {
                         log::warn!("Skipping GPU share: nonce {} > u32::MAX", nonce);
                         // Don't submit — pool would get wrong nonce
                     } else {
+                    let nonce_u32 = nonce as u32;
+                    let dedup_key = {
+                        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                        job_id.hash(&mut hasher);
+                        ((hasher.finish() as u32) as u64) << 32 | (nonce_u32 as u64)
+                    };
+                    if submit_dedup_seen.contains(&dedup_key) {
+                        log::debug!(
+                            "GPU dedup skip: job={} nonce={:08x}",
+                            job_id,
+                            nonce_u32
+                        );
+                        continue;
+                    }
+                    submit_dedup_seen.insert(dedup_key);
+                    submit_dedup_order.push_back(dedup_key);
+                    while submit_dedup_order.len() > SUBMIT_DEDUP_MAX {
+                        if let Some(old_key) = submit_dedup_order.pop_front() {
+                            submit_dedup_seen.remove(&old_key);
+                        }
+                    }
 
                     log::debug!(
                         "GPU SHARE algo {} nonce {} hash {}...{}",
@@ -1017,7 +1110,11 @@ impl UniversalMiner {
 
             // Advance nonce, wrap to 0 if it would exceed u32 range
             let next = nonce_start.wrapping_add(batch_size);
-            nonce_start = if next > u32::MAX as u64 { 0u64 } else { next };
+            nonce_start = if next > u32::MAX as u64 {
+                nonce_seed
+            } else {
+                next
+            };
 
             // Check if connection is still alive
             if !connection_alive.load(std::sync::atomic::Ordering::Relaxed) {

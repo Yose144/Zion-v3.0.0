@@ -153,6 +153,28 @@ function rustMinerSupportsGroupFlag(minerPath) {
   }
 }
 
+function cleanupStrayMinerProcesses(preferRustBackend) {
+  try {
+    if (process.platform !== 'win32') return;
+    const enabled = String(process.env.ZION_KILL_STRAY_MINERS || '1').trim() !== '0';
+    if (!enabled) return;
+    if (!preferRustBackend) return;
+
+    try {
+      execFileSync('taskkill', ['/F', '/T', '/IM', 'zion-universal-miner.exe'], {
+        windowsHide: true,
+        timeout: 5000,
+        stdio: 'ignore'
+      });
+      logApp('stray-miner-cleanup', 'taskkill zion-universal-miner.exe');
+    } catch {
+      // ignore (no stray process or insufficient perms)
+    }
+  } catch {
+    // ignore
+  }
+}
+
 // Keep cache clean on Windows without overriding userData paths.
 // (We must NOT set userData to a different path; only set cache.)
 app.disableHardwareAcceleration();
@@ -736,13 +758,14 @@ function findRustMiner() {
     ? [process.resourcesPath]
     : [
         path.join(APP_ROOT, 'resources'),
-        path.join(APP_ROOT, '..', 'target', 'release'),
-        path.join(APP_ROOT, '..', 'miner', 'target', 'release'),
-        path.join(APP_ROOT, '..', 'zion-universal-miner', 'target', 'release'),
-        path.join(APP_ROOT, '..', '2.9.5OLD', 'zion-universal-miner', 'target', 'release'),
-        path.join(APP_ROOT, '..', '2.9.5OLD', 'target', 'release'),
-        path.join(APP_ROOT, '..', '2.9.5', 'zion-universal-miner', 'target', 'release'),
-        path.join(APP_ROOT, '..', '2.9.5', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'L1', 'miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'zion-universal-miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', '2.9.5OLD', 'zion-universal-miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', '2.9.5OLD', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', '2.9.5', 'zion-universal-miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', '2.9.5', 'target', 'release'),
         path.join(APP_ROOT, '..', 'builds')
       ];
 
@@ -1569,7 +1592,9 @@ function detectGPU() {
 
   const result = {
     available: false, type: 'none', name: '', driver: '',
-    memory: '', temperature: '', utilization: '', cpuOnly: true
+    memory: '', temperature: '', utilization: '', cpuOnly: true,
+    backendPreferred: 'opencl',
+    cudaCapable: false
   };
 
   // 1. Environment override: ZION_HAS_GPU=1/0
@@ -1626,6 +1651,8 @@ function detectGPU() {
         result.driver = parts[2] || '';
         result.temperature = parts[3] ? `${parts[3]}°C` : '';
         result.utilization = parts[4] ? `${parts[4]}%` : '';
+        result.backendPreferred = 'cuda';
+        result.cudaCapable = true;
       }
     } catch {}
   }
@@ -1642,14 +1669,65 @@ function detectGPU() {
         result.cpuOnly = false;
         result.type = 'amd';
         result.name = nameMatch[1].trim();
+        result.backendPreferred = 'opencl';
       }
     } catch {}
+  }
+
+  if (result.available && process.platform === 'darwin') {
+    result.backendPreferred = 'metal';
+  } else if (result.available && result.type === 'nvidia') {
+    result.backendPreferred = 'cuda';
+  } else if (result.available) {
+    result.backendPreferred = 'opencl';
   }
 
   cachedGpuInfo = result;
   gpuInfoLastProbeMs = now;
   try { logApp('gpu-detect', JSON.stringify(result)); } catch {}
   return result;
+}
+
+function parseGpuMemoryMb(gpuInfo) {
+  try {
+    const raw = String(gpuInfo?.memory || '').trim();
+    const match = raw.match(/(\d+(?:\.\d+)?)/);
+    if (!match) return 0;
+    const val = Number(match[1]);
+    if (!Number.isFinite(val) || val <= 0) return 0;
+    return Math.floor(val);
+  } catch {
+    return 0;
+  }
+}
+
+function chooseGpuBatchSize(gpuInfo, configuredBatch) {
+  const cfg = Number(configuredBatch);
+  if (Number.isFinite(cfg) && cfg >= 100_000) {
+    return Math.max(100_000, Math.min(32_000_000, Math.floor(cfg)));
+  }
+
+  const memoryMb = parseGpuMemoryMb(gpuInfo);
+  const kind = String(gpuInfo?.backendPreferred || gpuInfo?.type || '').toLowerCase();
+
+  if (kind === 'cuda' || kind === 'nvidia') {
+    if (memoryMb >= 20_000) return 24_000_000;
+    if (memoryMb >= 12_000) return 20_000_000;
+    if (memoryMb >= 8_000) return 16_000_000;
+    if (memoryMb >= 6_000) return 12_000_000;
+    return 8_000_000;
+  }
+
+  if (kind === 'metal') {
+    if (memoryMb >= 12_000) return 8_000_000;
+    if (memoryMb >= 8_000) return 6_000_000;
+    return 4_000_000;
+  }
+
+  if (memoryMb >= 16_000) return 12_000_000;
+  if (memoryMb >= 8_000) return 8_000_000;
+  if (memoryMb >= 6_000) return 6_000_000;
+  return 4_000_000;
 }
 
 // ============================================================================
@@ -2572,14 +2650,6 @@ function startMining(config) {
       MINER_IS_RUST = false;
       MINER_IS_PYTHON = true;
       MINER_PATH = emergencyPythonPath;
-      // Persist so we don't keep trying Rust on every start
-      try {
-        const persisted = loadConfig();
-        if (String(persisted?.minerBackend || '').toLowerCase() !== 'python') {
-          persisted.minerBackend = 'python';
-          saveConfig(persisted);
-        }
-      } catch { /* ignore */ }
       minerBackendPreferred = preferredBackend;
       minerBackendResolved = 'python';
       minerBackendPath = emergencyPythonPath;
@@ -2664,6 +2734,12 @@ function startMining(config) {
     MINER_IS_RUST &&
     !!fallbackPythonPath &&
     preferredBackend === 'auto';
+
+  try {
+    cleanupStrayMinerProcesses(MINER_IS_RUST);
+  } catch {
+    // ignore
+  }
   if (minerProcess) {
     dbg('Miner already running');
     return { success: false, error: 'Miner is already running' };
@@ -2707,13 +2783,6 @@ function startMining(config) {
       MINER_IS_PYTHON = true;
       MINER_PATH = fallbackPythonPath;
       minerBackendLastError = 'Rust miner was removed (Windows Defender quarantine?). Switched to Python miner automatically.';
-      try {
-        const persisted = loadConfig();
-        if (String(persisted?.minerBackend || '').toLowerCase() !== 'python') {
-          persisted.minerBackend = 'python';
-          saveConfig(persisted);
-        }
-      } catch { /* ignore */ }
       try {
         sendToRenderer('miner-output', {
           stream: 'stderr',
@@ -2869,6 +2938,51 @@ function startMining(config) {
     }
   }
 
+  // CHv3 acceptance-first guard (Windows/OpenCL rigs):
+  // If user did not explicitly force Rust, prefer Python backend for CHv3 GPU
+  // because current Rust OpenCL path can show unstable acceptance on some pools.
+  // Override with ZION_FORCE_RUST_CHV3=1.
+  try {
+    const algoLowerStable = String(config.algorithm || '').toLowerCase();
+    const isChv3Stable = algoLowerStable === 'cosmic_harmony' || algoLowerStable === 'cosmic_harmony_v3';
+    const forceRustChv3 = String(process.env.ZION_FORCE_RUST_CHV3 || '').trim() === '1';
+    const canAutoSwitch = preferredBackend === 'auto' || preferredBackend === 'rust';
+    if (
+      process.platform === 'win32' &&
+      effectiveGpu &&
+      isChv3Stable &&
+      MINER_IS_RUST &&
+      canAutoSwitch &&
+      !forceRustChv3
+    ) {
+      const pyStablePath = findPythonMiner();
+      if (pyStablePath && fs.existsSync(pyStablePath)) {
+        MINER_PATH = pyStablePath;
+        MINER_IS_RUST = false;
+        MINER_IS_PYTHON = true;
+        minerBackendResolved = 'python';
+        minerBackendPath = pyStablePath;
+        try {
+          logApp('gpu-backend-switch', JSON.stringify({ reason: 'chv3-acceptance-first', path: pyStablePath }));
+          sendToRenderer('miner-output', {
+            stream: 'stdout',
+            text: '[INFO] CHv3 stability mode: using Python GPU backend for higher share acceptance (set ZION_FORCE_RUST_CHV3=1 to force Rust).\n'
+          });
+          sendToRenderer('miner-backend', {
+            preferred: minerBackendPreferred,
+            resolved: 'python',
+            path: pyStablePath,
+            lastError: minerBackendLastError
+          });
+        } catch {
+          // ignore
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   const rustGroupSupported = MINER_IS_RUST ? rustMinerSupportsGroupFlag(MINER_PATH) : false;
 
   // ═══════════════════════════════════════════════════════════
@@ -2999,11 +3113,17 @@ function startMining(config) {
     // Python miner / legacy .exe miner (shared CLI)
     const pythonUi = String(config?.pythonUi || process.env.ZION_PY_UI || 'trex').trim().toLowerCase();
     const pythonUiResolved = ['lines', 'xmrig', 'trex'].includes(pythonUi) ? pythonUi : 'trex';
+    const currentGpuInfo = detectGPU();
+    const pythonGpuBatch = chooseGpuBatchSize(
+      currentGpuInfo,
+      config?.gpuBatchSize || process.env.ZION_CHV3_GPU_BATCH || process.env.ZION_GPU_BATCH_SIZE
+    );
     args = [
       '--pool', `${config.pool.host}:${config.pool.port}`,
       '--wallet', config.wallet,
       '--worker', config.worker,
       '--threads', String(zionThreads),
+      '--gpu-batch', String(pythonGpuBatch),
       '--group', 'zion',
       '--ui', pythonUiResolved,
       '--stats-interval', String(STATS_INTERVAL_SEC),
@@ -3235,6 +3355,20 @@ function startMining(config) {
     ZION_NONCE_BASE: String(sessionNonceBaseMain)
   };
 
+  // Prefer best GPU backend by detected vendor/platform (unless explicitly overridden).
+  try {
+    const explicitBackend = String(process.env.ZION_GPU_BACKEND || '').trim().toLowerCase();
+    if (!explicitBackend && gpuInfo.available) {
+      env.ZION_GPU_BACKEND = String(gpuInfo.backendPreferred || 'opencl').toLowerCase();
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: `[CH3] GPU backend auto: ${env.ZION_GPU_BACKEND} (${gpuInfo.name || gpuInfo.type})\n`
+      });
+    }
+  } catch {
+    // ignore
+  }
+
   // CHv3 performance defaults (speed-first):
   // - higher GPU batch for better OpenCL occupancy
   // - no CPU inter-batch sleep for maximum CPU throughput
@@ -3245,11 +3379,16 @@ function startMining(config) {
     const isChv3 = algoLower === 'cosmic_harmony' || algoLower === 'cosmic_harmony_v3';
     if (isChv3 && mainMinerGpu) {
       if (!String(process.env.ZION_GPU_BATCH_SIZE || '').trim()) {
-        const cfgBatch = Number(config?.gpuBatchSize);
-        const tunedBatch = Number.isFinite(cfgBatch) && cfgBatch >= 1_000_000
-          ? Math.floor(cfgBatch)
-          : 16_000_000;
+        const tunedBatch = chooseGpuBatchSize(gpuInfo, config?.gpuBatchSize);
         env.ZION_GPU_BATCH_SIZE = String(tunedBatch);
+      }
+      if (!String(process.env.ZION_CHV3_GPU_BATCH || '').trim()) {
+        const fallbackBatch = chooseGpuBatchSize(gpuInfo, env.ZION_GPU_BATCH_SIZE || config?.gpuBatchSize);
+        env.ZION_CHV3_GPU_BATCH = String(
+          Number.isFinite(fallbackBatch)
+            ? Math.max(100_000, Math.min(32_000_000, Math.floor(fallbackBatch)))
+            : 4_000_000
+        );
       }
       if (!String(process.env.ZION_CPU_SLEEP_MS || '').trim()) {
         env.ZION_CPU_SLEEP_MS = '0';
@@ -3368,6 +3507,65 @@ function startMining(config) {
     return true;
   };
 
+  let rejectRateFallbackTriggered = false;
+  const maybeFallbackOnHighRejectRate = (outputText) => {
+    try {
+      if (rejectRateFallbackTriggered) return;
+      if (!MINER_IS_RUST || !mainMinerGpu) return;
+      if (minerStopping || minerUserStopRequested) return;
+      if (!fallbackPythonPath) return;
+
+      const enabled = String(process.env.ZION_ENABLE_REJECT_WATCHDOG || '1').trim() !== '0';
+      if (!enabled) return;
+
+      const algoLower = String(algorithmForMiner || '').toLowerCase();
+      const isChv3 = algoLower === 'cosmic_harmony' || algoLower === 'cosmic_harmony_v3';
+      if (!isChv3) return;
+
+      const text = String(outputText || '');
+      const mentionsReject = /rejected|share rejected|duplicate|does not meet target|low difficulty/i.test(text);
+      if (!mentionsReject) return;
+
+      const accepted = Number(minerStats.accepted || 0);
+      const rejected = Number(minerStats.rejected || 0);
+      const total = accepted + rejected;
+      if (total < 40) return;
+      const rejPct = total > 0 ? (rejected / total) : 0;
+
+      const maxRej = Number(String(process.env.ZION_REJECT_WATCHDOG_MAX || '0.10').trim());
+      const maxRejectRatio = Number.isFinite(maxRej) && maxRej > 0 ? maxRej : 0.10;
+      if (rejPct < maxRejectRatio) return;
+
+      rejectRateFallbackTriggered = true;
+      const reason = `high reject ratio ${(rejPct * 100).toFixed(1)}% (${accepted}/${rejected})`;
+      try {
+        logApp('reject-watchdog-fallback', JSON.stringify({
+          reason,
+          accepted,
+          rejected,
+          total,
+          backend: minerBackendResolved,
+          worker: config?.worker || ''
+        }));
+      } catch {
+        // ignore
+      }
+
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stderr',
+          text: `[WARN] Rust GPU reject rate too high (${(rejPct * 100).toFixed(1)}%). Switching to Python backend for share stability...\n`
+        });
+      } catch {
+        // ignore
+      }
+
+      void maybeFallbackToPython(reason, true);
+    } catch {
+      // ignore
+    }
+  };
+
   // Rust GPU watchdog:
   // If main Rust miner runs with --gpu but produces no hashrate/shares after warmup,
   // it is typically stuck in OpenCL init/kernel build. Auto-fallback to Python miner.
@@ -3396,15 +3594,6 @@ function startMining(config) {
         const reason = `GPU init watchdog: ${Math.round(gpuWatchdogMs / 1000)}s no hashrate/shares`;
         logApp('gpu-init-watchdog', JSON.stringify({ reason, backend: minerBackendResolved, worker: config?.worker || '' }));
         try {
-          const persisted = loadConfig();
-          if (String(persisted?.minerBackend || '').toLowerCase() !== 'python') {
-            persisted.minerBackend = 'python';
-            saveConfig(persisted);
-          }
-        } catch {
-          // ignore
-        }
-        try {
           sendToRenderer('miner-output', {
             stream: 'stderr',
             text: `[WARN] Rust GPU miner appears stuck (no hashrate/shares after ${Math.round(gpuWatchdogMs / 1000)}s). Switching to Python fallback...\n`
@@ -3431,16 +3620,25 @@ function startMining(config) {
       const text = String(outputText || '');
       const noGpuDetected = /\bgpu\s+none\s+detected\b/i.test(text);
       const gpuDisabled = /\bgpu\s+disabled\b/i.test(text);
-      if (!noGpuDetected && !gpuDisabled) return;
+      const cudaNotCompiled = /cuda support not compiled|build with --features cuda/i.test(text);
+      if (!noGpuDetected && !gpuDisabled && !cudaNotCompiled) return;
 
       rustGpuNoDeviceFallbackTriggered = true;
-      const reason = noGpuDetected ? 'rust reported no GPU device' : 'rust reported GPU disabled';
+      const reason = cudaNotCompiled
+        ? 'rust binary missing CUDA feature'
+        : (noGpuDetected ? 'rust reported no GPU device' : 'rust reported GPU disabled');
       try {
         logApp('gpu-no-device-fallback', JSON.stringify({ reason, backend: minerBackendResolved, worker: config?.worker || '' }));
       } catch {
         // ignore
       }
       try {
+        if (cudaNotCompiled) {
+          sendToRenderer('miner-output', {
+            stream: 'stderr',
+            text: '[WARN] NVIDIA detected but Rust miner was built without CUDA. Rebuild via: node scripts/prepare-rust-miner.js --auto\n'
+          });
+        }
         sendToRenderer('miner-output', {
           stream: 'stderr',
           text: `[WARN] Rust backend did not detect a usable GPU (${reason}). Switching to Python OpenCL backend...\n`
@@ -4141,6 +4339,7 @@ function startMining(config) {
     maybeEmitBlockFound(output);
     parseMinerOutput(output);
     maybeTriggerRustGpuNoDeviceFallback(output);
+    maybeFallbackOnHighRejectRate(output);
   });
 
   minerProcess.stderr.on('data', (data) => {
@@ -4153,6 +4352,7 @@ function startMining(config) {
     maybeEmitBlockFound(output);
     parseMinerOutput(output);
     maybeTriggerRustGpuNoDeviceFallback(output);
+    maybeFallbackOnHighRejectRate(output);
   });
 
   minerProcess.on('close', (code, signal) => {
