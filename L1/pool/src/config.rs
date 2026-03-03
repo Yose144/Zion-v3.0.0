@@ -539,16 +539,20 @@ impl Config {
             }
         }
 
-        // Load CH v3 Revenue Settings (if available)
+        // Load Revenue Settings (CH v4 preferred, CH v3 fallback)
         // Checks: env var ZION_REVENUE_CONFIG, local directory, /config/ mount, and up two levels
         let mut revenue_paths: Vec<String> = Vec::new();
         if let Ok(p) = std::env::var("ZION_REVENUE_CONFIG") {
             revenue_paths.push(p);
         }
         revenue_paths.extend([
+            "ch4_revenue_settings.json".to_string(),
             "ch3_revenue_settings.json".to_string(),
+            "/config/ch4_revenue_settings.json".to_string(),
             "/config/ch3_revenue_settings.json".to_string(),
+            "/app/config/ch4_revenue_settings.json".to_string(),
             "/app/config/ch3_revenue_settings.json".to_string(),
+            "../../config/ch4_revenue_settings.json".to_string(),
             "../../config/ch3_revenue_settings.json".to_string(),
         ]);
         for path in &revenue_paths {

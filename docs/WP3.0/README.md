@@ -52,3 +52,11 @@ Distribution:    89 % miners / 5 % humanitarian / 5 % L5-L6 / 1 % pool
 	- `L1/core/src/blockchain/premine.rs`
 - Jednotka `flower` vychází ze specifikace: `docs/2.9.7/Flowers.md` (12 desetinných míst)
 - Aktuální implementace L1/API stále používá 1 000 000 atomic units/ZION (viz `L1/core/src/blockchain/reward.rs`, `docs/2.9.7/API_ENDPOINTS.md`)
+
+## MainNet readiness sync (2026-03-03)
+
+Pro pre-mainnet rozhodnutí používejte jako autoritativní zdroj:
+
+- `docs/2.9.7/MAINNET_READINESS_UNIFIED.md`
+
+WP3 dokumenty popisují architekturu a směr v3.0; launch gate (co je ještě povinné uzavřít) je řízena 2.9.7 readiness dokumentací.

@@ -20,6 +20,7 @@ import ctypes
 import os
 import sys
 import time
+import random
 import socket
 import json
 import threading
@@ -68,6 +69,25 @@ _cosmic_v3_native = None
 _cosmic_v3_python = None
 _cosmic_v3_gpu = None
 
+
+def _read_env_int(name: str, default: int, min_value: int, max_value: int) -> int:
+    try:
+        raw = str(os.getenv(name, "")).strip()
+        if not raw:
+            return int(default)
+        val = int(float(raw))
+        return max(min_value, min(max_value, val))
+    except Exception:
+        return int(default)
+
+
+_CHV3_GPU_BATCH_DEFAULT = _read_env_int(
+    "ZION_CHV3_GPU_BATCH",
+    _read_env_int("ZION_GPU_BATCH_SIZE", 1_000_000, 100_000, 8_000_000),
+    100_000,
+    8_000_000,
+)
+
 # Search paths for CH v3 modules
 _ch3_search_paths = [
     os.path.dirname(__file__),  # Same directory as miner
@@ -103,9 +123,12 @@ if not COSMIC_V3_AVAILABLE and COSMIC_V3_PYTHON_AVAILABLE:
 try:
     from cosmic_harmony_v3_gpu import CosmicHarmonyV3GPU, GPU_AVAILABLE as CV3_GPU
     if CV3_GPU:
-        _cosmic_v3_gpu = CosmicHarmonyV3GPU(batch_size=500_000)
+        _cosmic_v3_gpu = CosmicHarmonyV3GPU(batch_size=_CHV3_GPU_BATCH_DEFAULT)
         COSMIC_V3_GPU_AVAILABLE = True
-        print(f"[OK] Cosmic Harmony v3 GPU loaded: {_cosmic_v3_gpu.device_info.name}")
+        print(
+            f"[OK] Cosmic Harmony v3 GPU loaded: {_cosmic_v3_gpu.device_info.name} "
+            f"(batch={int(getattr(_cosmic_v3_gpu, 'batch_size', _CHV3_GPU_BATCH_DEFAULT)):,})"
+        )
 except Exception as e:
     print(f"[WARN] Cosmic Harmony v3 GPU not available: {e}")
 
@@ -121,6 +144,7 @@ class Algorithm(Enum):
     COSMIC_HARMONY = "cosmic_harmony"
     COSMIC_HARMONY_V2 = "cosmic_harmony_v2"  # Quantum-resistant, memory-hard
     COSMIC_HARMONY_V3 = "cosmic_harmony_v3"  # Native Rust + GPU (21+ MH/s)
+    COSMIC_HARMONY_V4 = "cosmic_harmony_v4"  # CHv4 runtime alias (uses v3 backend)
     RANDOMX = "randomx"
     YESCRYPT = "yescrypt"
 
@@ -147,7 +171,7 @@ class MinerConfig:
     
     # Performance
     cpu_threads: int = 1
-    gpu_batch_size: int = 500000  # Optimized for RX 5600 XT
+    gpu_batch_size: int = _CHV3_GPU_BATCH_DEFAULT
     gpu_work_size: int = 256  # OpenCL work group size
     gpu_id: int = 0  # GPU device ID
     use_gpu_autolykos: bool = True  # Enable Autolykos v2 GPU mining
@@ -232,13 +256,16 @@ class StratumClient:
         self.last_share_error: Optional[str] = None
         self._pending_submit_ids = set()
         self._pending_submit_meta: Dict[int, Dict[str, Any]] = {}
+        self.reject_error23_count = 0
+        self.reject_stale_count = 0
+        self.reject_target_count = 0
 
         # Client-side duplicate-share guard (pool code 22 = DUPLICATE_SHARE).
         # Keyed by (job_id, nonce_hex); bounded FIFO to keep memory stable.
         self._submit_dedup_lock = threading.Lock()
         self._submit_dedup_keys = set()
         self._submit_dedup_fifo = deque()
-        self._submit_dedup_max = 20000
+        self._submit_dedup_max = 300000
 
         # Cosmic Harmony v3 pool state0 endianness.
         # Current pool default is little-endian; allow explicit override via env.
@@ -542,7 +569,8 @@ class StratumClient:
         try:
             # Use XMRig-style submit so the pool can validate difficulty using the
             # provided result hash even when it can't compute RandomX locally.
-            nonce_hex = hex(nonce)[2:].zfill(8)
+            nonce_u32 = int(nonce) & 0xFFFFFFFF
+            nonce_hex = f"{nonce_u32:08x}"
             result_hex = result_hash.hex()
 
             if not self._reserve_submit_once(job_id, nonce_hex):
@@ -822,14 +850,48 @@ class StratumClient:
                     self.shares_rejected += 1
                     self.last_share_error = str(err)
 
+                    err_code = None
+                    err_msg = ""
+                    if isinstance(err, dict):
+                        try:
+                            err_code = int(err.get("code")) if err.get("code") is not None else None
+                        except Exception:
+                            err_code = None
+                        err_msg = str(err.get("message") or "")
+                    else:
+                        err_msg = str(err)
+
+                    err_msg_l = err_msg.lower()
+                    is_target_reject = (
+                        err_code == 23
+                        or "does not meet target difficulty" in err_msg_l
+                        or "low difficulty" in err_msg_l
+                    )
+                    reject_kind = "other"
+                    if is_target_reject:
+                        self.reject_error23_count += 1
+                        current_job_id = ""
+                        try:
+                            current_job_id = str((self.current_job or {}).get("job_id") or "")
+                        except Exception:
+                            current_job_id = ""
+                        meta_job_id = str((meta or {}).get("job_id") or "") if isinstance(meta, dict) else ""
+                        stale_hint = (
+                            (meta_job_id and current_job_id and meta_job_id != current_job_id)
+                            or ("stale" in err_msg_l)
+                            or ("job not found" in err_msg_l)
+                            or ("too late" in err_msg_l)
+                            or ("old" in err_msg_l)
+                        )
+                        if stale_hint:
+                            reject_kind = "stale"
+                            self.reject_stale_count += 1
+                        else:
+                            reject_kind = "target"
+                            self.reject_target_count += 1
+
                     # Auto-detect Cosmic endianness mismatch (LE vs BE) from rejects.
                     try:
-                        err_msg = ""
-                        if isinstance(err, dict):
-                            err_msg = str(err.get("message") or "")
-                        else:
-                            err_msg = str(err)
-
                         if (
                             self._cosmic_endian_autoswitch
                             and (not self._cosmic_endian_autodetected)
@@ -876,7 +938,36 @@ class StratumClient:
                                 f" | job {job_short} nonce {nonce_hex} "
                                 f"state0[{endian}] {state0_hex} <= target {target32_hex}"
                             )
-                        logger.warning(f"❌ Share rejected by pool: {err}{suffix}{meta_suffix}")
+                        if isinstance(meta, dict):
+                            try:
+                                submit_t = float(meta.get("submit_t", 0.0) or 0.0)
+                                if submit_t > 0:
+                                    age_ms = max(0.0, (time.time() - submit_t) * 1000.0)
+                                    meta_suffix += f" age={age_ms:.1f}ms"
+                            except Exception:
+                                pass
+                            try:
+                                kernel_ms = float(meta.get("kernel_ms", 0.0) or 0.0)
+                                if kernel_ms > 0:
+                                    meta_suffix += f" kernel={kernel_ms:.2f}ms"
+                            except Exception:
+                                pass
+                            try:
+                                batch_hashes = int(meta.get("batch_hashes", 0) or 0)
+                                if batch_hashes > 0:
+                                    meta_suffix += f" batch={batch_hashes:,}"
+                            except Exception:
+                                pass
+
+                        if is_target_reject:
+                            logger.warning(
+                                "❌ Share rejected by pool: "
+                                f"{err} [target-reject:{reject_kind} e23={self.reject_error23_count} "
+                                f"stale={self.reject_stale_count} target={self.reject_target_count}]"
+                                f"{suffix}{meta_suffix}"
+                            )
+                        else:
+                            logger.warning(f"❌ Share rejected by pool: {err}{suffix}{meta_suffix}")
                         self._last_reject_log_time = now
                         self._reject_log_suppressed = 0
                     else:
@@ -1402,7 +1493,7 @@ class CPUMiningThreadWrapper:
                 results.append(result)
                 self.hashes += 1
         
-        elif self.algorithm == Algorithm.COSMIC_HARMONY_V3:
+        elif self.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4):
             # Cosmic Harmony v3 - use native Rust library (batch mode)
             if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
                 results = _cosmic_v3_native.batch_hash(data, nonce_start, nonce_count)
@@ -1437,7 +1528,7 @@ class CPUMiningThreadWrapper:
                 _ = cosmic_hash_v2(data, nonce_start + i, prev_hash, block_height)
                 hashes_computed += 1
         
-        elif self.algorithm == Algorithm.COSMIC_HARMONY_V3:
+        elif self.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4):
             # Cosmic Harmony v3 - batch mode is most efficient
             if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
                 _ = _cosmic_v3_native.batch_hash(data, nonce_start, nonce_count)
@@ -1731,7 +1822,7 @@ class ZionNativeMiner:
             logger.info(f"✅ CPU mining ready ({self.config.cpu_threads} threads)")
             logger.info("⚠️  GPU mining not yet supported for Cosmic Harmony v2")
         
-        elif algo == Algorithm.COSMIC_HARMONY_V3:
+        elif algo in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4):
             # Cosmic Harmony v3: Native Rust + GPU (21+ MH/s)
             self._gpu_init_error = None
             
@@ -1740,7 +1831,21 @@ class ZionNativeMiner:
             if want_gpu and _cosmic_v3_gpu:
                 try:
                     self.gpu_miner = _cosmic_v3_gpu
-                    logger.info(f"✅ Cosmic Harmony v3 GPU initialized: {_cosmic_v3_gpu.device_info}")
+                    configured_batch = int(
+                        max(
+                            100_000,
+                            min(
+                                8_000_000,
+                                int(self.config.gpu_batch_size or getattr(_cosmic_v3_gpu, "batch_size", _CHV3_GPU_BATCH_DEFAULT)),
+                            ),
+                        )
+                    )
+                    if int(getattr(self.gpu_miner, "batch_size", 0) or 0) != configured_batch:
+                        self.gpu_miner.batch_size = configured_batch
+                    logger.info(
+                        f"✅ Cosmic Harmony v3 GPU initialized: {_cosmic_v3_gpu.device_info} "
+                        f"(batch={int(getattr(self.gpu_miner, 'batch_size', configured_batch)):,})"
+                    )
                 except Exception as e:
                     self.gpu_miner = None
                     self._gpu_init_error = str(e)
@@ -1883,7 +1988,7 @@ class ZionNativeMiner:
             else:
                 raise RuntimeError("Cosmic Harmony v2 wrapper not available")
         
-        elif algo == Algorithm.COSMIC_HARMONY_V3:
+        elif algo in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4):
             if not hasattr(self, "_hash_impl_logged"):
                 self._hash_impl_logged = set()
             # Cosmic Harmony v3: Height-aware hash (legacy < 50k, memory-hard >= 50k)
@@ -1995,7 +2100,7 @@ class ZionNativeMiner:
             hashes = int(hashrate * duration)
         
         # Cosmic Harmony v3 GPU (21+ MH/s on Apple M1)
-        elif self.config.algorithm == Algorithm.COSMIC_HARMONY_V3 and COSMIC_V3_GPU_AVAILABLE and self.gpu_miner:
+        elif self.config.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4) and COSMIC_V3_GPU_AVAILABLE and self.gpu_miner:
             print(f"   >>> Cosmic Harmony v3 GPU ({getattr(self.gpu_miner, 'device_info', 'Unknown')})")
             print(f"   Pipeline: Keccak256 → SHA3-512 → GoldenMatrix → CosmicFusion")
             hashrate = self.gpu_miner.benchmark(duration)
@@ -2289,7 +2394,11 @@ class ZionNativeMiner:
             # Cosmic Harmony v1 has OpenCL GPU path (COSMIC_AVAILABLE)
             # Cosmic Harmony v3 has native OpenCL GPU (COSMIC_V3_GPU_AVAILABLE)
             # Cosmic Harmony v2 is CPU-only (memory-hard, quantum-resistant)
-            return self.config.algorithm in (Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V3)
+            return self.config.algorithm in (
+                Algorithm.COSMIC_HARMONY,
+                Algorithm.COSMIC_HARMONY_V3,
+                Algorithm.COSMIC_HARMONY_V4,
+            )
 
         # UI
         ui_mode = (self.config.ui or "lines").strip().lower()
@@ -2385,7 +2494,7 @@ class ZionNativeMiner:
                     return bool(self.cpu_threads) and (self.thread_pool is not None)
                 if self.config.algorithm == Algorithm.COSMIC_HARMONY_V2:
                     return bool(self.cpu_threads) and (self.thread_pool is not None) and COSMIC_V2_WRAPPER_AVAILABLE
-                if self.config.algorithm == Algorithm.COSMIC_HARMONY_V3:
+                if self.config.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4):
                     return bool(self.cpu_threads) and (self.thread_pool is not None) and COSMIC_V3_AVAILABLE
                 if self.config.algorithm == Algorithm.RANDOMX:
                     return 'randomx' in self.loader.libs
@@ -2463,6 +2572,8 @@ class ZionNativeMiner:
             job_lock = threading.Lock()
             nonce_lock = threading.Lock()
             stats_lock = threading.Lock()
+            nonce_wrap_reconnect = threading.Event()
+            nonce_wrap_logged = False
             job_state: Dict[str, Any] = {
                 "job_id": None,
                 "blob_hex": None,
@@ -2528,13 +2639,29 @@ class ZionNativeMiner:
 
             def _alloc_nonces(count: int) -> int:
                 nonlocal nonce_cursor
+                nonlocal nonce_wrap_logged
                 with nonce_lock:
-                    start = nonce_cursor
-                    nonce_cursor += count
+                    start_full = int(nonce_cursor)
+                    start = start_full & 0xFFFFFFFF
+                    end_full = start_full + int(count)
+                    if end_full > 0xFFFFFFFF and not nonce_wrap_reconnect.is_set():
+                        nonce_wrap_reconnect.set()
+                        if not nonce_wrap_logged:
+                            nonce_wrap_logged = True
+                            try:
+                                current_job = str(job_state.get("job_id") or "")
+                            except Exception:
+                                current_job = ""
+                            logger.warning(
+                                "⚠️ Nonce space wrap detected for current job "
+                                f"{current_job[:16] if current_job else '-'}; requesting reconnect to avoid duplicate shares"
+                            )
+                    nonce_cursor = end_full & 0xFFFFFFFF
                     return start
 
             def _update_job_from_stratum(job: Dict[str, Any]):
                 nonlocal nonce_cursor
+                nonlocal nonce_wrap_logged
                 job_id = job.get("job_id")
                 blob_hex = job.get("blob")
                 # Pool difficulty is usually provided explicitly.
@@ -2589,7 +2716,7 @@ class ZionNativeMiner:
                     # first 4 bytes (state0) against a 32-bit job target.
                     # Always derive from difficulty for reliability. Pool's `target`
                     # field format varies and incorrect parsing causes 0 shares.
-                    if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
+                    if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4]:
                         target_cosmic32 = max(1, int(((1 << 32) - 1) // max(1, difficulty)))
                     else:
                         target_cosmic32 = None
@@ -2627,7 +2754,34 @@ class ZionNativeMiner:
                         job_state["version"] = int(job_state.get("version") or 0) + 1
                         if job_template_changed:
                             with nonce_lock:
-                                nonce_cursor = nonce_base
+                                # Randomize nonce start per job to avoid reusing the same
+                                # nonce window after reconnects (pool may still remember
+                                # submitted shares for unchanged job_id).
+                                # Keep a deterministic offset anchor from session nonce_base,
+                                # but stir in job/time entropy.
+                                job_mix = 0
+                                try:
+                                    job_mix = int.from_bytes(
+                                        str(job_id).encode("utf-8", "ignore")[:8].ljust(8, b"\x00"),
+                                        "little",
+                                        signed=False,
+                                    )
+                                except Exception:
+                                    job_mix = 0
+                                # Keep nonce starts in the lower 30-bit window so we always
+                                # have enough headroom before 32-bit wrap. Full 32-bit random
+                                # reseed can land near 0xFFFFFFFF and force reconnect in seconds.
+                                nonce_window_mask = 0x3FFFFFFF
+                                entropy = (
+                                    int(time.time_ns())
+                                    ^ random.getrandbits(32)
+                                    ^ job_mix
+                                    ^ int(nonce_base)
+                                ) & nonce_window_mask
+                                base_low = int(nonce_base) & nonce_window_mask
+                                nonce_cursor = (base_low + entropy) & nonce_window_mask
+                            nonce_wrap_reconnect.clear()
+                            nonce_wrap_logged = False
                         
                         # Update Cosmic Harmony v2 parameters
                         if self.config.algorithm == Algorithm.COSMIC_HARMONY_V2:
@@ -2637,7 +2791,7 @@ class ZionNativeMiner:
                         
                         # � Výpis jobu a targetu
                         algo_name = self.config.algorithm.value
-                        if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
+                        if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4] and target_cosmic32 is not None:
                             logger.info(
                                 f"🎯 [{algo_name}] target_cosmic32=0x{int(target_cosmic32):08x} (from diff={difficulty})"
                             )
@@ -2679,6 +2833,9 @@ class ZionNativeMiner:
                 last_job_version = None
 
                 while not stop_event.is_set():
+                    if nonce_wrap_reconnect.is_set():
+                        time.sleep(0.05)
+                        continue
                     if pause_event.is_set():
                         time.sleep(0.1)
                         continue
@@ -2719,7 +2876,7 @@ class ZionNativeMiner:
                                 break
 
                         nonce = start + i
-                        if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
+                        if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4]:
                             try:
                                 result_hash = self.hash_single_cpu(blob_bytes, nonce, height=job_height)
                             except Exception as e:
@@ -2767,7 +2924,7 @@ class ZionNativeMiner:
                             if (i % 10000) == 0:
                                 logger.debug(f"[RandomX] Worker {worker_index}: hash_low64={hash_low64:016x} target={target_64:016x} meets={meets}")
                         elif target_256 is not None:
-                            if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
+                            if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4] and target_cosmic32 is not None:
                                 # Cosmic Harmony (pool-compat): state0 (first 4 bytes, LE) <= top32(target_256)
                                 if result_hash is None:
                                     hb = bytes(output_array)
@@ -2790,7 +2947,7 @@ class ZionNativeMiner:
                             if result_hash is None:
                                 result_hash = bytes(output_array)
                             submit_meta = None
-                            if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
+                            if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4] and target_cosmic32 is not None:
                                 hb = result_hash
                                 state0_le_dbg = int.from_bytes(hb[:4], "little", signed=False)
                                 state0_be_dbg = int.from_bytes(hb[:4], "big", signed=False)
@@ -2830,6 +2987,9 @@ class ZionNativeMiner:
                 nonlocal chv3_gpu_last_mismatch_summary_t
                 nonlocal chv3_gpu_last_mismatch_summary_count
                 while not stop_event.is_set():
+                    if nonce_wrap_reconnect.is_set():
+                        time.sleep(0.05)
+                        continue
                     if not gpu_enabled.is_set() or pause_event.is_set():
                         time.sleep(0.1)
                         continue
@@ -2859,7 +3019,7 @@ class ZionNativeMiner:
                     nonce_start = _alloc_nonces(_gpu_actual_batch)
                     
                     # Cosmic Harmony v3 has different GPU API (mine with target)
-                    if self.config.algorithm == Algorithm.COSMIC_HARMONY_V3 and COSMIC_V3_GPU_AVAILABLE:
+                    if self.config.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4) and COSMIC_V3_GPU_AVAILABLE:
                         # CH v3 pool validation uses state0 (first 4 bytes) vs target_cosmic32.
                         if target_cosmic32 is None:
                             time.sleep(0.05)
@@ -2946,7 +3106,7 @@ class ZionNativeMiner:
 
                             submit_meta = {
                                 "job_id": job_id,
-                                "nonce_hex": f"{int(nonce):08x}",
+                                "nonce_hex": f"{(int(nonce) & 0xFFFFFFFF):08x}",
                                 "state0_hex": f"0x{int(state0_used):08x}",
                                 "state0_le": int(state0_le),
                                 "state0_be": int(state0_be),
@@ -2954,6 +3114,10 @@ class ZionNativeMiner:
                                 "target32_hex": f"0x{int(target_cosmic32):08x}",
                                 "target32": int(target_cosmic32),
                                 "chv3_gpu": True,
+                                "submit_t": time.time(),
+                                "job_version": int(version),
+                                "kernel_ms": float(getattr(self.gpu_miner, "last_kernel_ms", 0.0) or 0.0),
+                                "batch_hashes": int(getattr(self.gpu_miner, "last_batch_hashes", 0) or 0),
                             }
                             stratum.submit_share(job_id, nonce, result_hash, meta=submit_meta)
                         continue
@@ -3105,6 +3269,11 @@ class ZionNativeMiner:
                     new_job = stratum.get_job()
                     if new_job:
                         _update_job_from_stratum(new_job)
+
+                    if nonce_wrap_reconnect.is_set():
+                        print("⚠️  Nonce space exhausted for current job, reconnecting to refresh job")
+                        session_action = "reconnect"
+                        break
 
                     if self.config.stats_interval and (now - last_stats_t) >= float(self.config.stats_interval or 10.0):
                         elapsed = now - global_start
@@ -3301,17 +3470,17 @@ def main():
     
     parser = argparse.ArgumentParser(description="ZION Native Miner v2.9.0")
     parser.add_argument("--algorithm", "-a", 
-                       choices=["cosmic_harmony", "cosmic_harmony_v2", "cosmic_harmony_v3", "randomx", "yescrypt"],
+                       choices=["cosmic_harmony", "cosmic_harmony_v2", "cosmic_harmony_v3", "cosmic_harmony_v4", "randomx", "yescrypt"],
                        default="cosmic_harmony",
-                       help="Mining algorithm (cosmic_harmony_v3: GPU 21+ MH/s, Native Rust)")
+                       help="Mining algorithm (cosmic_harmony_v3/v4: GPU 21+ MH/s, Native Rust)")
     parser.add_argument("--mode", "-m",
                        choices=["cpu", "gpu", "auto"],
                        default="auto",
                        help="Mining mode")
     parser.add_argument("--threads", "-t", type=int, default=None,
                        help="CPU threads (default: auto-detect)")
-    parser.add_argument("--gpu-batch", type=int, default=500000,
-                       help="GPU batch size (default: 500000)")
+    parser.add_argument("--gpu-batch", type=int, default=_CHV3_GPU_BATCH_DEFAULT,
+                       help=f"GPU batch size (default: {_CHV3_GPU_BATCH_DEFAULT})")
     parser.add_argument("--benchmark", "-b", action="store_true",
                        help="Run benchmark only")
     parser.add_argument("--duration", "-d", type=float, default=10.0,

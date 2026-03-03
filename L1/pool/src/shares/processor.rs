@@ -151,6 +151,7 @@ impl ShareProcessor {
                 // Only for CHv3/ZION shares (avoid extra work on other algos)
                 if share.algorithm.eq_ignore_ascii_case("cosmic_harmony")
                     || share.algorithm.eq_ignore_ascii_case("cosmic_harmony_v3")
+                    || share.algorithm.eq_ignore_ascii_case("cosmic_harmony_v4")
                     || share.algorithm.eq_ignore_ascii_case("cosmic")
                 {
                     let height = share.height.unwrap_or(0);

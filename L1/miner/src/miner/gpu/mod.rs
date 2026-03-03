@@ -32,6 +32,17 @@ pub enum GpuPlatform {
     Metal,
 }
 
+impl GpuPlatform {
+    fn from_env(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "cuda" | "nvidia" => Some(Self::Cuda),
+            "opencl" | "ocl" | "amd" | "intel" => Some(Self::OpenCL),
+            "metal" | "apple" => Some(Self::Metal),
+            _ => None,
+        }
+    }
+}
+
 /// GPU device information
 #[derive(Debug, Clone)]
 pub struct GpuDevice {
@@ -97,6 +108,27 @@ pub fn detect_gpus() -> Result<Vec<GpuDevice>> {
                 }
             }
         }
+    }
+
+    let preferred = std::env::var("ZION_GPU_BACKEND")
+        .ok()
+        .and_then(|v| GpuPlatform::from_env(&v));
+
+    let platform_rank = |platform: GpuPlatform| -> usize {
+        match preferred {
+            Some(pref) if platform == pref => 0,
+            _ => match platform {
+                GpuPlatform::Metal => 0,
+                GpuPlatform::Cuda => 1,
+                GpuPlatform::OpenCL => 2,
+            },
+        }
+    };
+
+    devices.sort_by_key(|d| platform_rank(d.platform));
+
+    if let Some(pref) = preferred {
+        log::info!("🎯 GPU backend preference: {:?} (ZION_GPU_BACKEND)", pref);
     }
 
     Ok(devices)

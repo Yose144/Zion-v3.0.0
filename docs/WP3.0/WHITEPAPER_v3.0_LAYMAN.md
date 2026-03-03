@@ -4,6 +4,8 @@
 **Verze:** 3.0 — MainNet Genesis  
 **Pro:** Každého, kdo chce pochopit ZION bez technického vzdělání
 
+**Aktuální stav (2026-03-03):** 168h stabilita proběhla úspěšně, ale před ostrým MainNet spuštěním ještě dokončujeme CHv4 produkční upgrade a revenue produkční aktivaci (viz `docs/2.9.7/MAINNET_READINESS_UNIFIED.md`).
+
 ---
 
 > *"Nestavíme banku. Stavíme most."*

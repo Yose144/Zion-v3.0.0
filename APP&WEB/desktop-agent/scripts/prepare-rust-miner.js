@@ -56,8 +56,13 @@ function detectPlatformFeatures() {
   }
 
   if (platform === 'win32') {
-    console.log('[prepare-rust-miner] 🪟 Windows detected → enabling OpenCL + CUDA');
-    return 'gpu,cuda';
+    const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
+    if (forceCuda) {
+      console.log('[prepare-rust-miner] 🪟 Windows detected → enabling OpenCL + CUDA (forced)');
+      return 'gpu,cuda';
+    }
+    console.log('[prepare-rust-miner] 🪟 Windows detected → enabling OpenCL GPU (safe default)');
+    return 'gpu';
   }
 
   console.log('[prepare-rust-miner] ⚠️  Unknown platform → enabling OpenCL GPU');
@@ -122,16 +127,18 @@ function main() {
   const args = parseArgs(process.argv);
 
   const desktopAgentRoot = path.resolve(__dirname, '..');
-  const workspaceRoot = path.resolve(desktopAgentRoot, '..');
+  const workspaceRoot = path.resolve(desktopAgentRoot, '..', '..');
   const rustMinerRootCandidates = [
-    // Prefer the up-to-date miner crate in the main workspace.
-    // Historical folders (2.9.5OLD/...) may contain older CLI/feature sets and can
-    // lead to bundling the wrong binary (e.g. missing Metal GPU, missing flags).
+    // Main workspace layouts
+    path.join(workspaceRoot, 'L1', 'miner'),
     path.join(workspaceRoot, 'miner'),
+    path.join(workspaceRoot, 'zion-universal-miner'),
+    // APP&WEB-local fallback layouts
+    path.join(desktopAgentRoot, '..', 'miner'),
+    path.join(desktopAgentRoot, '..', 'zion-universal-miner'),
+    // Historical folders (legacy)
     path.join(workspaceRoot, '2.9.5', 'zion-universal-miner'),
     path.join(workspaceRoot, '2.9.5OLD', 'zion-universal-miner'),
-    path.join(workspaceRoot, 'zion-universal-miner'),
-    // Fallbacks (legacy locations)
   ];
   const rustMinerRoot = rustMinerRootCandidates.find((p) => isDirectory(p));
 
@@ -177,23 +184,36 @@ function main() {
       throw new Error(`Rust miner directory not found. Tried: ${rustMinerRootCandidates.join(', ')}`);
     }
 
-    const cargoArgs = ['build', '--release'];
-    if (args.features) {
-      cargoArgs.push('--features', args.features);
-    }
+    const attemptBuild = (features) => {
+      const cargoArgs = ['build', '--release'];
+      if (features) {
+        cargoArgs.push('--features', features);
+      }
+      console.log(`[prepare-rust-miner] Building Rust miner in ${rustMinerRoot} (features=${features || 'default'})`);
+      return spawnSync('cargo', cargoArgs, {
+        cwd: rustMinerRoot,
+        stdio: 'inherit',
+        env: process.env
+      });
+    };
 
-    console.log(`[prepare-rust-miner] Building Rust miner in ${rustMinerRoot}`);
-    const res = spawnSync('cargo', cargoArgs, {
-      cwd: rustMinerRoot,
-      stdio: 'inherit',
-      env: process.env
-    });
-
+    let res = attemptBuild(args.features);
     if (res.error) {
       throw res.error;
     }
     if (res.status !== 0) {
-      throw new Error(`cargo build failed with exit code ${res.status}`);
+      const requested = String(args.features || '').toLowerCase();
+      const canFallbackGpu = requested.includes('cuda') && requested !== 'gpu';
+      if (canFallbackGpu) {
+        console.warn('[prepare-rust-miner] ⚠️ CUDA build failed, retrying with OpenCL-only features=gpu');
+        res = attemptBuild('gpu');
+      }
+      if (res.error) {
+        throw res.error;
+      }
+      if (res.status !== 0) {
+        throw new Error(`cargo build failed with exit code ${res.status}`);
+      }
     }
   } else {
     console.log('[prepare-rust-miner] --no-build set; skipping cargo build');
