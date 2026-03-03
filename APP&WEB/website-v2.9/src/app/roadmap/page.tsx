@@ -810,16 +810,16 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Timeline</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <CalendarDays className="h-7 w-7 text-zion-gold" />
-              Master Timeline 2026 – 2028
+              Master Timeline 2026 – 2040+
             </h2>
           </div>
           <div className="space-y-4">
             {[
               { layer: 'L1 Blockchain', period: '2026', phases: 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → MainNet 🚀', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
-              { layer: 'L2 DEX / DeFi', period: '2026 testnet · 2027 Q1–Q2 prod', phases: 'wZION Bridge (Base Sepolia) ✅ · AMM', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
-              { layer: 'L3 Warp / AI', period: '2026 impl ✅ · 2027 prod', phases: 'WARP 7/7 adapterů ✅ · NCL · AI', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
+              { layer: 'L2 NCL', period: '2027', phases: 'Neural Conscious Layer · wZION Bridge ✅ · AI-native', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
+              { layer: 'L3 ZION DAO', period: '2028', phases: 'Governance · Treasury 4B ZION · WARP 7/7 ✅', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
               { layer: 'L4 Oasis', period: '2029+', phases: 'UE5 · Play-to-Mine · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
-              { layer: 'L5 Free World', period: '2030+', phases: 'Governance · Sovereignty', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
+              { layer: 'L5 Free World', period: '2030+', phases: 'Humanitární mise · Volná energie', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
               { layer: 'L6 Issobella', period: '2040+', phases: 'Orbital Station · Fund', color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' }
             ].map((row) => (
               <div key={row.layer} className="flex items-center gap-4">
