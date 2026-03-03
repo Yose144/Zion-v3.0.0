@@ -2,16 +2,21 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║                                                                          ║
-║                  🔥 ZION NATIVE MINER v2.9.0 🔥                         ║
+║                  🔥 ZION NATIVE MINER v2.9.6 🔥                         ║
 ║                                                                          ║
 ║          Unified Native Mining Client - CPU + GPU Support                ║
-║             ⚡ Optimized Multi-Threading                                ⚡                           
+║             ⚡ Optimized Multi-Threading                                ⚡║
 ║                                                                          ║
 ║  Algorithms:                                                             ║
-║    • Cosmic Harmony (CPU: 600 kH/s | GPU: 1.63 MH/s)                     ║
+║    • Cosmic Harmony v4 [CHv4] — ACTIVE from genesis block 0             ║
+║        CPU: ~600 kH/s  |  GPU OpenCL: ~1.6 MH/s                         ║
+║        NPU Mixing: INT8 MLP 64→128→64 + memory-hard 512KB/thread        ║
 ║    • Cosmic Harmony v2 (CPU: 50-100 kH/s | ASIC-resistant)               ║
-║    • RandomX (CPU: 640 H/s) ⚠️ ASIC EXISTS (Antminer X5)                 ║
+║    • RandomX (CPU: 640 H/s) ⚠️ ASIC EXISTS (Antminer X5)                ║
 ║    • Yescrypt (CPU: 176 H/s)                                             ║
+║                                                                          ║
+║  Revenue split:  Miners 89%  |  Pool 1%  |                              ║
+║                  Humanitarian (L5) 5%  |  Issobella (L6) 5%             ║
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
@@ -198,12 +203,37 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ZionNativeMiner")
 
+# ─── CHv4 Fork Heights ────────────────────────────────────────────────────────
+# Both fork heights are 0: CHv4 (NPU Mixing + memory-hard) is active from
+# genesis block 0.  The native libcosmic_harmony dispatches CHv4 internally
+# via cosmic_harmony_with_height(header, nonce, height).
+CHV4_NPU_FORK_HEIGHT: int = 0          # CHv4 NPU Mixing INT8 MLP always active
+CHV3_MEMORY_HARD_FORK_HEIGHT: int = 0  # 512 KB memory-hard scratchpad always active
+
+# ─── Revenue / Funding Split ──────────────────────────────────────────────────
+# Pool distributes block rewards as follows:
+#   89%  → Miners (proportional to submitted shares)
+#    1%  → Pool fee
+#    5%  → Humanitarian fund (L5 — Free World)
+#    5%  → Issobella fund (L6)
+MINERS_PCT: int = 89
+POOL_FEE_PCT: int = 1
+HUMANITARIAN_PCT: int = 5   # L5 Free World
+ISSOBELLA_PCT: int = 5      # L6 Issobella
+
+# ─── Pool Endpoints ───────────────────────────────────────────────────────────
+POOL_HELSINKI = "77.42.31.72"      # Primary (Helsinki)
+POOL_USA      = "178.156.240.160"  # Secondary (USA)
+POOL_ASIA     = "5.223.43.93"      # Tertiary (Asia)
+POOL_PORT     = 3333
+
 
 class Algorithm(Enum):
     """Supported mining algorithms"""
-    COSMIC_HARMONY = "cosmic_harmony"
+    COSMIC_HARMONY = "cosmic_harmony"    # CHv4 canonical pool name (active from genesis)
+    COSMIC_HARMONY_V4 = "cosmic_harmony" # alias — same value as COSMIC_HARMONY
     COSMIC_HARMONY_V2 = "cosmic_harmony_v2"  # Quantum-resistant, memory-hard
-    COSMIC_HARMONY_V3 = "cosmic_harmony_v3"  # Native Rust + GPU (21+ MH/s)
+    COSMIC_HARMONY_V3 = "cosmic_harmony_v3"  # Legacy CHv3 name (deprecated — use COSMIC_HARMONY)
     RANDOMX = "randomx"
     YESCRYPT = "yescrypt"
 

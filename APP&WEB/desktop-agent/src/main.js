@@ -490,7 +490,7 @@ let revenueHashrateCpu = 0;            // from _revenue.json stats file
 let revenueHashrateGpu = 0;            // from _gpu_revenue.json stats file
 let multiStreamStatus = {
   active: false,
-  zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony_v3' },
+  zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony' },  // CHv4 canonical name
   gpuCoin:    { name: 'ETC', running: false, hashrate: 0, pool: '', algorithm: 'ethash', directPool: false },
   revenueCpu: { running: false, hashrate: 0, algorithm: 'randomx' },
   lastPollAt: 0,
@@ -920,6 +920,20 @@ const MAX_MINER_LOG_BYTES = 10 * 1024 * 1024; // 10MB
 const MAX_MINER_LOG_BACKUPS = 0;
 const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+// ── CHv4 Fork Heights ─────────────────────────────────────────────────────────
+// CHV4_NPU_FORK_HEIGHT=0: CHv4 (NPU Mixing INT8 MLP + memory-hard) is active
+// from genesis block 0. Pool canonical algorithm name is 'cosmic_harmony'.
+const CHV4_NPU_FORK_HEIGHT = 0;
+const CHV3_MEMORY_HARD_FORK_HEIGHT = 0;
+
+// ── Revenue / Funding Split ───────────────────────────────────────────────────
+// Pool distributes block rewards:  89% miners, 1% pool, 5% humanitarian (L5),
+// 5% Issobella (L6).
+const MINERS_PCT = 89;
+const POOL_FEE_PCT = 1;
+const HUMANITARIAN_PCT = 5;   // L5 Free World
+const ISSOBELLA_PCT = 5;      // L6 Issobella
+
 // Default configuration
 const DEFAULT_REVENUE_PROFILE = {
   enabled: true,
@@ -1028,9 +1042,9 @@ const DEFAULT_CONFIG = {
   },
   // ZION chain JSON-RPC endpoint (native core)
   rpcUrl: 'http://77.42.31.72:8444/jsonrpc',
-  // Mining algorithm — Mainnet Phase 1: Cosmic Harmony v3 only
-  // Rust miner CLI accepts 'cosmic_harmony' which internally runs CH v3 engine
-  algorithm: 'cosmic_harmony_v3',
+  // Mining algorithm — CHv4 (NPU Mixing INT8 MLP, active from genesis block 0)
+  // CHV4_NPU_FORK_HEIGHT=0: CHv4 always active. Pool canonical name: 'cosmic_harmony'
+  algorithm: 'cosmic_harmony',
   // AI Afterburner integration (controls env ZION_AI_AFTERBURNER)
   // Enabled by default: monitors GPU power draw and computes H/W efficiency metric
   aiAfterburner: true,
@@ -1977,7 +1991,7 @@ function buildMultiStreamPayload() {
     zion: {
       running: !!minerProcess,
       hashrate: typeof minerStats?.hashrate === 'number' ? minerStats.hashrate : 0,
-      algorithm: 'cosmic_harmony_v3',
+      algorithm: 'cosmic_harmony',  // CHv4 canonical
     },
     gpuCoin: {
       name: multiStreamCurrentCoin,
@@ -3011,11 +3025,11 @@ function startMining(config) {
     }
   }
 
-  // Mainnet Phase 1: Cosmic Harmony v3 only
-  // Use explicit CHv3 token for both Rust and Python so pool job routing stays consistent.
-  const requestedAlgorithm = 'cosmic_harmony_v3';
-  const requestedAlgorithmLower = 'cosmic_harmony_v3';
-  const algorithmForMiner = 'cosmic_harmony_v3';
+  // CHv4 (NPU Mixing INT8 MLP, CHV4_NPU_FORK_HEIGHT=0): CHv4 always active from genesis.
+  // Pool canonical name for CHv4-era mining is 'cosmic_harmony'.
+  const requestedAlgorithm = 'cosmic_harmony';
+  const requestedAlgorithmLower = 'cosmic_harmony';
+  const algorithmForMiner = 'cosmic_harmony';
 
   // GPU is exclusive: only the main ZION miner OR the GPU Revenue process gets --gpu, never both.
   // Two OpenCL contexts on the same GPU cause severe context-switching overhead (120→20 MH/s).
@@ -3828,7 +3842,7 @@ function startMining(config) {
       if (MINER_IS_PYTHON) {
         const revArgs = [
           MINER_PATH,
-          '--algorithm', String(algorithmForMiner || 'cosmic_harmony_v3'),
+          '--algorithm', String(algorithmForMiner || 'cosmic_harmony'),
           '--mode', 'cpu',
           '--pool', `${config.pool.host}:${config.pool.port}`,
           '--wallet', config.wallet || '',
@@ -5344,7 +5358,7 @@ if ($procs) { '1' } else { '0' }
     stopProfitPoll();
     multiStreamStatus = {
       active: false,
-      zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony_v3' },
+      zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony' },  // CHv4 canonical
       gpuCoin:    { name: multiStreamCurrentCoin, running: false, hashrate: 0, pool: '', algorithm: '', directPool: false },
       revenueCpu: { running: false, hashrate: 0, algorithm: 'randomx' },
       lastPollAt: 0,
@@ -6836,7 +6850,7 @@ ipcMain.handle('get-ch3-status', () => {
       gpu,
       stream: {
         mode: minerStats.stream_mode || 'ZION',
-        algorithm: minerStats.stream_algorithm || minerStats.algorithm || 'cosmic_harmony_v3',
+        algorithm: minerStats.stream_algorithm || minerStats.algorithm || 'cosmic_harmony',
         allocation: minerStats.stream_allocation || 'Z:50% R:25% N:25%',
         revenueCoin: minerStats.revenue_coin || '',
         revenueHashrate: minerStats.revenue_hashrate || 0
