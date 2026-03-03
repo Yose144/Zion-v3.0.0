@@ -43,6 +43,19 @@ pub struct OpenCLMiner {
     /// Scratchpad buffer: mh_batch_size × SCRATCHPAD_BYTES bytes in GPU global mem
     #[cfg(feature = "gpu")]
     scratchpad_buf: Option<Buffer<u8>>,
+    /// CHv4 NPU weight buffers (derived once from genesis seed, static for lifetime)
+    #[cfg(feature = "gpu")]
+    npu_w1_buf: Option<Buffer<i8>>,
+    #[cfg(feature = "gpu")]
+    npu_b1_buf: Option<Buffer<i8>>,
+    #[cfg(feature = "gpu")]
+    npu_w2_buf: Option<Buffer<i8>>,
+    #[cfg(feature = "gpu")]
+    npu_b2_buf: Option<Buffer<i8>>,
+    #[cfg(feature = "gpu")]
+    npu_scale1_buf: Option<Buffer<i16>>,
+    #[cfg(feature = "gpu")]
+    npu_scale2_buf: Option<Buffer<i16>>,
 }
 
 impl OpenCLMiner {
@@ -75,6 +88,12 @@ impl OpenCLMiner {
                 result_count_buf: None,
                 result_hash_buf: None,
                 scratchpad_buf: None,
+                npu_w1_buf: None,
+                npu_b1_buf: None,
+                npu_w2_buf: None,
+                npu_b2_buf: None,
+                npu_scale1_buf: None,
+                npu_scale2_buf: None,
             })
         }
 
@@ -151,6 +170,30 @@ impl GpuMiner for OpenCLMiner {
             self.result_hash_buf = Some(result_hash_buf);
             self.scratchpad_buf = Some(scratchpad_buf);
 
+            // CHv4 NPU weights — derived once from genesis seed, uploaded to GPU
+            let npu_w = zion_cosmic_harmony_v3::algorithms_npu::chv4_npu_weights_flat();
+            let npu_w1_buf = self.pro_que.as_ref().unwrap().buffer_builder::<i8>().len(npu_w.w1.len()).build()?;
+            npu_w1_buf.write(&npu_w.w1[..]).enq()?;
+            let npu_b1_buf = self.pro_que.as_ref().unwrap().buffer_builder::<i8>().len(npu_w.b1.len()).build()?;
+            npu_b1_buf.write(&npu_w.b1[..]).enq()?;
+            let npu_w2_buf = self.pro_que.as_ref().unwrap().buffer_builder::<i8>().len(npu_w.w2.len()).build()?;
+            npu_w2_buf.write(&npu_w.w2[..]).enq()?;
+            let npu_b2_buf = self.pro_que.as_ref().unwrap().buffer_builder::<i8>().len(npu_w.b2.len()).build()?;
+            npu_b2_buf.write(&npu_w.b2[..]).enq()?;
+            let npu_scale1_buf = self.pro_que.as_ref().unwrap().buffer_builder::<i16>().len(npu_w.scale1.len()).build()?;
+            npu_scale1_buf.write(&npu_w.scale1[..]).enq()?;
+            let npu_scale2_buf = self.pro_que.as_ref().unwrap().buffer_builder::<i16>().len(npu_w.scale2.len()).build()?;
+            npu_scale2_buf.write(&npu_w.scale2[..]).enq()?;
+            println!("[OpenCL] CHv4 NPU weights uploaded ({} B)",
+                npu_w.w1.len() + npu_w.b1.len() + npu_w.w2.len() + npu_w.b2.len()
+                + npu_w.scale1.len() * 2 + npu_w.scale2.len() * 2);
+            self.npu_w1_buf    = Some(npu_w1_buf);
+            self.npu_b1_buf    = Some(npu_b1_buf);
+            self.npu_w2_buf    = Some(npu_w2_buf);
+            self.npu_b2_buf    = Some(npu_b2_buf);
+            self.npu_scale1_buf = Some(npu_scale1_buf);
+            self.npu_scale2_buf = Some(npu_scale2_buf);
+
             Ok(())
         }
 
@@ -196,6 +239,18 @@ impl GpuMiner for OpenCLMiner {
                 .scratchpad_buf
                 .as_ref()
                 .ok_or_else(|| anyhow!("OpenCL scratchpad buffer not initialized"))?;
+            let npu_w1_buf = self.npu_w1_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU w1 buffer not initialized"))?;
+            let npu_b1_buf = self.npu_b1_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU b1 buffer not initialized"))?;
+            let npu_w2_buf = self.npu_w2_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU w2 buffer not initialized"))?;
+            let npu_b2_buf = self.npu_b2_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU b2 buffer not initialized"))?;
+            let npu_scale1_buf = self.npu_scale1_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU scale1 buffer not initialized"))?;
+            let npu_scale2_buf = self.npu_scale2_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU scale2 buffer not initialized"))?;
 
             if batch_size == 0 {
                 return Ok(None);
@@ -204,6 +259,14 @@ impl GpuMiner for OpenCLMiner {
             // Memory-hard flag: activate scratchpad for heights >= CHV3_MEMORY_HARD_FORK_HEIGHT
             let memory_hard: u32 =
                 if height >= zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT {
+                    1
+                } else {
+                    0
+                };
+
+            // CHv4 flag: NPU Mixing active for height >= CHV4_NPU_FORK_HEIGHT (200_000)
+            let chv4: u32 =
+                if height >= zion_cosmic_harmony_v3::algorithms_npu::CHV4_NPU_FORK_HEIGHT {
                     1
                 } else {
                     0
@@ -253,6 +316,13 @@ impl GpuMiner for OpenCLMiner {
                 .arg(result_hash_buf)
                 .arg(memory_hard)
                 .arg(scratchpad_buf)
+                .arg(chv4)
+                .arg(npu_w1_buf)
+                .arg(npu_b1_buf)
+                .arg(npu_w2_buf)
+                .arg(npu_b2_buf)
+                .arg(npu_scale1_buf)
+                .arg(npu_scale2_buf)
                 .global_work_size(global_work_size)
                 .local_work_size(local_work_size)
                 .build()?;
