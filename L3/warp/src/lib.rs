@@ -31,6 +31,7 @@ pub mod server;
 pub mod state;
 pub mod solana_signer;
 pub mod stellar_signer;
+pub mod tron_signer;
 pub mod types;
 pub mod validator;
 pub mod watcher;
