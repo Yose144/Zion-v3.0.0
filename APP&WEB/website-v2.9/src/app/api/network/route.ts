@@ -24,6 +24,9 @@ interface NodeStatus {
   miners: number;
   blocks: number;
   uptime: number;
+  rpcLatencyMs?: number;
+  poolLatencyMs?: number;
+  blockLag?: number;
   lastChecked: string;
   error?: string;
 }
@@ -34,7 +37,10 @@ interface NetworkStatus {
   summary: {
     total: number;
     online: number;
+    onlinePct: number;
     maxHeight: number;
+    minHeight: number;
+    heightGap: number;
     totalHashrate: number;
     totalMiners: number;
     totalBlocks: number;
@@ -90,6 +96,7 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
     const rpcUrl = computeRpcUrl(node);
     
     // Get block info - use POST with JSON-RPC (ZION uses get_info method)
+    const rpcStart = Date.now();
     const blockRes = await fetch(rpcUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -97,11 +104,13 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
       signal: AbortSignal.timeout(5000),
       cache: 'no-store'
     });
+    status.rpcLatencyMs = Date.now() - rpcStart;
     
     if (blockRes.ok) {
       const blockData = await blockRes.json();
       // ZION RPC returns { result: { height, difficulty, status, tip } }
       status.height = blockData.result?.height || 0;
+      status.peers = (blockData.result?.incoming_connections_count || 0) + (blockData.result?.outgoing_connections_count || 0);
       status.online = blockData.result?.status === 'OK';
     }
   } catch (e) {
@@ -111,10 +120,12 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
   // Try Pool API for mining stats
   try {
     const poolApiBase = computePoolApiBaseUrl(node).replace(/\/+$/, '');
+    const poolStart = Date.now();
     const poolRes = await fetchWithTimeout(
       `${poolApiBase}/stats`,
       5000
     );
+    status.poolLatencyMs = Date.now() - poolStart;
     
     if (poolRes.ok) {
       const poolData = await poolRes.json();
@@ -146,6 +157,11 @@ export async function GET() {
     const heights = onlineNodes.map(n => n.height).filter(h => h > 0);
     const maxHeight = heights.length > 0 ? Math.max(...heights) : 0;
     const minHeight = heights.length > 0 ? Math.min(...heights) : 0;
+    const heightGap = Math.max(0, maxHeight - minHeight);
+
+    for (const node of nodeStatuses) {
+      node.blockLag = node.height > 0 ? Math.max(0, maxHeight - node.height) : undefined;
+    }
 
     const networkStatus: NetworkStatus = {
       timestamp: new Date().toISOString(),
@@ -153,11 +169,14 @@ export async function GET() {
       summary: {
         total: nodeStatuses.length,
         online: onlineNodes.length,
+        onlinePct: nodeStatuses.length > 0 ? Number(((onlineNodes.length / nodeStatuses.length) * 100).toFixed(2)) : 0,
         maxHeight,
+        minHeight,
+        heightGap,
         totalHashrate: nodeStatuses.reduce((sum, n) => sum + n.hashrate, 0),
         totalMiners: nodeStatuses.reduce((sum, n) => sum + n.miners, 0),
         totalBlocks: nodeStatuses.reduce((sum, n) => sum + n.blocks, 0),
-        inSync: maxHeight - minHeight <= 2
+        inSync: heightGap <= 2
       }
     };
 

@@ -84,7 +84,7 @@ export async function GET() {
 
   return NextResponse.json({
     status,
-    version: process.env.NEXT_PUBLIC_APP_VERSION || 'v2.9.6',
+    version: process.env.NEXT_PUBLIC_APP_VERSION || 'v2.9.7',
     environment: process.env.NODE_ENV || 'production',
     uptime_seconds: Math.floor(process.uptime()),
     dependencies: {
