@@ -5,11 +5,14 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json* ./
+RUN npm config delete script-shell || true
+ENV npm_config_script_shell=/bin/sh
 RUN npm ci
 
 # Builder
 FROM base AS builder
 WORKDIR /app
+ENV npm_config_script_shell=/bin/sh
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
