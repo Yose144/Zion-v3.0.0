@@ -37,7 +37,7 @@
 [FINAL] Phase 4 — MainNet Launch (Nov–Dec 2026)
          📋 Genesis 2 (MainNet block 0)
          📋 Public launch event
-         📋 L2 DEX live
+         📋 L2 NCL / wZION Bridge live
          📋 Listing (CoinGecko, CMC)
 ```
 

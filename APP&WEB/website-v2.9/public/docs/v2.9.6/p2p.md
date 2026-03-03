@@ -26,8 +26,8 @@ ZION používá vlastní P2P protokol nad TCP s JSON-RPC zprávami.
 |--------|------|--------|------|
 | Helsinki | `77.42.31.72:8334` | Finsko | Seed + web + pool |
 | SeedDE | `46.225.126.243:8334` | Německo | Seed node |
-| Usa1 | `5.78.178.227:8334` | USA West | Seed node |
-| Usa2 | `178.156.240.160:8334` | USA East | Seed node |
+| USA1 | `5.78.178.227:8334` | USA West | Seed node |
+| USA2 | `178.156.240.160:8334` | USA East | Seed node |
 | Asia3 | `5.223.43.93:8334` | Asie (SG) | Seed node |
 
 ### Mainnet (plánováno)
