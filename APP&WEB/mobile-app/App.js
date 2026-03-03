@@ -1,12 +1,14 @@
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {createStackNavigator} from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {StatusBar, StyleSheet} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import {StatusBar} from 'react-native';
 
 import GalacticBackground from './src/components/common/GalacticBackground';
 import WalletScreen from './src/screens/WalletScreen';
+import SendScreen from './src/screens/SendScreen';
+import TransactionHistoryScreen from './src/screens/TransactionHistoryScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import MiningScreen from './src/screens/MiningScreen';
 import NetworkScreen from './src/screens/NetworkScreen';
@@ -17,8 +19,41 @@ import {MiningProvider} from './src/context/MiningContext';
 import {colors} from './src/constants/theme';
 
 const Tab = createBottomTabNavigator();
+const WalletStack = createStackNavigator();
 
-/** Force NavigationContainer background to transparent */
+/** Stack navigator for Wallet tab — Wallet → Send, Transactions */
+const WalletNavigator = () => (
+  <WalletStack.Navigator
+    screenOptions={{
+      headerStyle: {
+        backgroundColor: 'rgba(10, 12, 28, 0.95)',
+        elevation: 0,
+        shadowOpacity: 0,
+        borderBottomWidth: 0,
+      },
+      headerTintColor: colors.text.primary,
+      headerTitleStyle: {fontWeight: 'bold', fontSize: 20},
+      cardStyle: {backgroundColor: 'transparent'},
+    }}>
+    <WalletStack.Screen
+      name="WalletMain"
+      component={WalletScreen}
+      options={{headerShown: false}}
+    />
+    <WalletStack.Screen
+      name="Send"
+      component={SendScreen}
+      options={{headerShown: false}}
+    />
+    <WalletStack.Screen
+      name="Transactions"
+      component={TransactionHistoryScreen}
+      options={{headerShown: false}}
+    />
+  </WalletStack.Navigator>
+);
+
+/** NavigationContainer theme */
 const navTheme = {
   dark: true,
   colors: {
@@ -98,8 +133,8 @@ const App = () => {
               })}>
               <Tab.Screen
               name="Wallet"
-              component={WalletScreen}
-              options={{title: 'ZION Wallet'}}
+              component={WalletNavigator}
+              options={{title: 'ZION Wallet', headerShown: false}}
             />
             <Tab.Screen
               name="Dashboard"
