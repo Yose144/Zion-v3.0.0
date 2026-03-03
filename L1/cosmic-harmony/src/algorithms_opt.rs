@@ -13,9 +13,9 @@ use crate::scratchpad;
 
 /// Fork height pro aktivaci memory-hard scratchpad fáze v CHv3.
 ///
-/// Aktivuje se od bloku 100 000 (mainnet hard-fork).
-/// Testnety pod tímto číslem stále běží legacy pipeline.
-pub const CHV3_MEMORY_HARD_FORK_HEIGHT: u64 = 100_000;
+/// Nastaveno na 0 — CHv4 (CHV4_NPU_FORK_HEIGHT=0) se aktivuje dříve a tato
+/// větev je při normálním dispatchi nedosažená. Ponecháno pro přímé unit testy.
+pub const CHV3_MEMORY_HARD_FORK_HEIGHT: u64 = 0;
 
 /// Runtime override pro memory-hard scratchpad fázi.
 ///
