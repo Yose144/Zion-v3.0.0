@@ -81,6 +81,56 @@
 
 ---
 
+## Session 3. Března 2026 — WARP D-04 Podepisování transakcí (Phase 2.5–6)
+
+### 🌀 L3 — WARP Signing Engine (všechny hlavní chains live)
+
+Všechny execute_mint stuby (D-04 placeholder) nahrazeny reálnými Rust implementacemi.
+Zero nových Cargo dependencí — vše postaveno nad již existujícími craty.
+
+**Implementované siginery:**
+
+| Modul | Chain | Šifrování | Mechanismus | Tests |
+|-------|-------|-----------|-------------|-------|
+| `evm_signer.rs` | Base / Arb / BSC / Polygon | k256 secp256k1 | EIP-155 legacy TX, RLP, Keccak256 | 180 |
+| `btc_signer.rs` | Bitcoin | k256 secp256k1 | P2WPKH, BIP143 sighash, greedy UTXO | 192 |
+| `stellar_signer.rs` | Stellar | ed25519-dalek | manuální XDR, StrKey, SHA-256d sig hash | 205 |
+| `solana_signer.rs` | Solana SPL | ed25519-dalek | compact-u16, ATA derivation (PDA), offline | 228 |
+| `tron_signer.rs` | Tron TRC-20 | k256 secp256k1 | base58check, ABI enc, TronGrid REST | 252 |
+
+**Detaily implementace:**
+
+- **EVM** (Phase 2.5, commit `5e6dc58`) — `EvmSigner::send_tx()`:
+  - EIP-155 replay protection, `eth_getTransactionCount`, `eth_gasPrice`, `eth_sendRawTransaction`
+  - `abi_encode_bridge_mint(recipient, amount, msg_hash)` — selektor + ABI padding
+  - Env: `WARP_EVM_RELAY_KEY`
+
+- **Bitcoin** (Phase 3, commit `e1db86c`) — `BtcSigner::send_btc()`:
+  - P2WPKH segwit výstupy, BIP143 sighash, greedy UTXO výběr (largest-first)
+  - broadcast přes mempool.space API
+  - Env: `WARP_BTC_RELAY_KEY`, `WARP_BTC_FEERATE`, `BITCOIN_NETWORK`
+
+- **Stellar** (Phase 4, commit `81b8fb9`) — `StellarSigner::send_payment()`:
+  - Manuální XDR writer (bez externího XDR cratu), AlphaNum4/AlphaNum12 asset typy
+  - Sig hash = `SHA256(SHA256(passphrase) || u32be(2) || tx_xdr)`
+  - Env: `WARP_STELLAR_RELAY_KEY`, `WARP_STELLAR_WZION_ISSUER`, `STELLAR_NETWORK`
+
+- **Solana** (Phase 5, commit `39d4d58`) — `SolanaSigner::mint_to()`:
+  - Žádný `solana-sdk` / `solana-client` — čistý Rust, compact-u16 TX serializace
+  - `derive_ata()` = offline `findProgramAddress` přes SHA-256 + Ed25519 off-curve check
+  - SPL Token instrukce: discriminator `0x07` + u64 LE amount
+  - Env: `WARP_SOLANA_RELAY_KEY`, `SOLANA_CLUSTER`, `WARP_SOLANA_RPC`
+
+- **Tron** (Phase 6, commit `1ad0aca`) — `TronSigner::mint_trc20()`:
+  - Tron adresa = `Keccak256(pubkey[1..])[12..] → prepend 0x41 → SHA256d base58check`
+  - `triggersmartcontract` → sign `txID` (prehash) → `broadcasttransaction`
+  - v byte = 0 nebo 1 (ne +27 jako Ethereum)
+  - Env: `WARP_TRON_RELAY_KEY`, `TRON_NETWORK`, `TRON_API_KEY`
+
+**Celkový počet testů zion-warp: 252** (bylo 164 na začátku session)
+
+---
+
 ## Session 9–17 Únor + 24. Únor 2026 — L2/L3/L4 implementace
 
 ### 🔗 L2 — Bridge + DAO
