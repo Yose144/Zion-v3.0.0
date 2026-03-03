@@ -106,7 +106,11 @@ function InfoRow({ label, value, copyable, mono, color, link, badge }: {
 export default function BlockDetailClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const id = useMemo(() => String(searchParams.get("id") || "").trim(), [searchParams]);
+  const id = useMemo(() => {
+    const blockId = String(searchParams.get("id") || "").trim();
+    if (blockId) return blockId;
+    return String(searchParams.get("height") || "").trim();
+  }, [searchParams]);
 
   const [block, setBlock] = useState<BlockDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,7 +120,7 @@ export default function BlockDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setBlock(null);
-        if (!id) { setError("Missing block id"); return; }
+        if (!id) { setError("Missing block id/height"); return; }
         const isHash = /^[a-f0-9]{64}$/i.test(id);
         const query = isHash ? `/blockchain/block?hash=${id}` : `/blockchain/block?height=${id}`;
         const data = await apiClient<BlockDetail>(query);
