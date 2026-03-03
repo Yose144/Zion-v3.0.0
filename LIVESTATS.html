@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION TerraNova — Live Dashboard</title>
+<style>
+  :root {
+    --bg:      #0a0c10;
+    --card:    #111318;
+    --border:  #1e2230;
+    --accent:  #00d4ff;
+    --green:   #00ff9d;
+    --yellow:  #f5c400;
+    --red:     #ff4060;
+    --purple:  #9b59ff;
+    --text:    #cdd3e0;
+    --muted:   #5a6070;
+    --radius:  10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 14px;
+  }
+
+  /* ── Topbar ───────────────────────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 10px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
+  .logo span { color: var(--green); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .badge-green  { background: rgba(0,255,157,.12); color: var(--green); border: 1px solid rgba(0,255,157,.3); }
+  .badge-yellow { background: rgba(245,196,0,.12); color: var(--yellow); border: 1px solid rgba(245,196,0,.3); }
+  .badge-red    { background: rgba(255,64,96,.12); color: var(--red);    border: 1px solid rgba(255,64,96,.3); }
+  .badge-blue   { background: rgba(0,212,255,.12); color: var(--accent); border: 1px solid rgba(0,212,255,.3); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-red    { background: var(--red); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--muted); }
+  #refresh-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--accent);
+    border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 11px;
+    font-family: inherit; transition: all .2s;
+  }
+  #refresh-btn:hover { background: rgba(0,212,255,.1); }
+  #countdown { color: var(--muted); font-size: 11px; min-width: 55px; text-align: right; }
+  #last-updated { color: var(--muted); font-size: 11px; }
+  #status-dot { transition: all .3s; }
+
+  /* ── Grid ─────────────────────────────────────────────────────── */
+  .grid { display: grid; gap: 12px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) {
+    .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* ── Card ─────────────────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .card.updated::before { opacity: 1; }
+
+  .card-title {
+    font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title .icon { margin-right: 5px; }
+  .card-value {
+    font-size: 28px; font-weight: 700; color: var(--accent);
+    line-height: 1; margin-bottom: 4px;
+    transition: color .3s;
+  }
+  .card-value.green  { color: var(--green); }
+  .card-value.yellow { color: var(--yellow); }
+  .card-value.red    { color: var(--red); }
+  .card-value.purple { color: var(--purple); }
+  .card-sub { font-size: 11px; color: var(--muted); }
+
+  /* ── Section header ───────────────────────────────────────────── */
+  .section-header {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 6px 0 6px 4px;
+    border-left: 2px solid var(--accent);
+    padding-left: 10px;
+    margin-bottom: 10px;
+    margin-top: 8px;
+  }
+
+  /* ── Table ────────────────────────────────────────────────────── */
+  .tbl { width: 100%; border-collapse: collapse; }
+  .tbl th {
+    text-align: left; font-size: 10px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 5px 8px; border-bottom: 1px solid var(--border);
+  }
+  .tbl td { padding: 6px 8px; border-bottom: 1px solid rgba(30,34,48,.5); }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: rgba(255,255,255,.02); }
+  .tbl td.val { color: var(--text); font-weight: 600; }
+  .tbl td.accent { color: var(--accent); }
+  .tbl td.green  { color: var(--green); }
+  .tbl td.yellow { color: var(--yellow); }
+  .tbl td.red    { color: var(--red); }
+  .tbl td.muted  { color: var(--muted); }
+
+  /* ── Node cards ───────────────────────────────────────────────── */
+  .node-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+  }
+  .node-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .node-name { font-weight: 700; font-size: 13px; color: var(--text); }
+  .node-ip { font-size: 10px; color: var(--muted); }
+  .node-kv { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+  .node-kv-item { display: flex; flex-direction: column; gap: 2px; }
+  .node-kv-item .k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .node-kv-item .v { font-size: 14px; font-weight: 700; color: var(--accent); }
+  .node-kv-item .v.green { color: var(--green); }
+
+  /* ── Revenue bar ──────────────────────────────────────────────── */
+  .fee-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0 6px; gap: 1px; }
+  .fee-seg { height: 100%; transition: width .5s; }
+
+  /* ── Canary timer ─────────────────────────────────────────────── */
+  .canary-bar-wrap { margin: 8px 0 4px; }
+  .canary-bar-bg {
+    height: 8px; border-radius: 4px;
+    background: rgba(255,255,255,.06);
+    overflow: hidden;
+  }
+  .canary-bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--green), var(--accent));
+    transition: width 1s;
+  }
+  .canary-labels {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--muted); margin-top: 4px;
+  }
+
+  /* ── Sparkline placeholder ────────────────────────────────────── */
+  .mini-chart { margin-top: 8px; }
+  canvas.sparkline { width: 100%; height: 40px; }
+
+  /* ── Error banner ─────────────────────────────────────────────── */
+  #error-banner {
+    display: none;
+    background: rgba(255,64,96,.1); border: 1px solid rgba(255,64,96,.3);
+    border-radius: var(--radius); padding: 10px 14px;
+    color: var(--red); font-size: 12px; margin-bottom: 12px;
+  }
+
+  /* ── Blinking cursor ──────────────────────────────────────────── */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .cursor { display: inline-block; animation: blink 1s infinite; }
+
+  /* ── Pulse on update ──────────────────────────────────────────── */
+  @keyframes pulse-green { 0%{opacity:1} 50%{opacity:.4} 100%{opacity:1} }
+  .pulse { animation: pulse-green .6s ease; }
+
+  /* ── Scrollbar ────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ──────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">ZION <span>TerraNova</span></div>
+    <div class="badge badge-blue">v2.9.7</div>
+    <div class="badge badge-green" id="chain-badge">
+      <span class="dot dot-green" id="status-dot"></span>
+      <span id="chain-status">∙∙∙</span>
+    </div>
+    <div class="badge badge-yellow" id="canary-badge">
+      <span>⏱ E-07 Canary</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span id="last-updated">—</span>
+    <button id="refresh-btn" onclick="fetchNow()">↻ refresh</button>
+    <span id="countdown">—</span>
+  </div>
+</div>
+
+<!-- ── Error banner ───────────────────────────────────────────────── -->
+<div id="error-banner">
+  ⚠ Nelze se připojit k proxy. Spusť: <code>python scripts/stats_proxy.py</code>
+  &nbsp;→&nbsp; pak otevři <strong>http://localhost:9999/</strong>
+</div>
+
+<!-- ── KPI row ────────────────────────────────────────────────────── -->
+<div class="section-header">⛏ Pool — Real-time</div>
+<div class="grid grid-4" style="margin-bottom:12px">
+  <div class="card" id="card-hr">
+    <div class="card-title"><span class="icon">📡</span>Hashrate (live)</div>
+    <div class="card-value accent" id="kpi-hr">—</div>
+    <div class="card-sub" id="kpi-hr-1h">1h: —</div>
+    <canvas class="sparkline" id="spark-hr" width="200" height="40"></canvas>
+  </div>
+  <div class="card" id="card-diff">
+    <div class="card-title"><span class="icon">🎯</span>Difficulty</div>
+    <div class="card-value yellow" id="kpi-diff">—</div>
+    <div class="card-sub">PPLNS window: <span id="kpi-pplns">—</span></div>
+  </div>
+  <div class="card" id="card-shares">
+    <div class="card-title"><span class="icon">✅</span>Shares</div>
+    <div class="card-value green" id="kpi-valid">—</div>
+    <div class="card-sub">Invalid: <span id="kpi-invalid" style="color:var(--red)">—</span> &nbsp;·&nbsp; Accept: <span id="kpi-accept-rate" style="color:var(--green)">—</span></div>
+  </div>
+  <div class="card" id="card-miners">
+    <div class="card-title"><span class="icon">⚡</span>Miners</div>
+    <div class="card-value purple" id="kpi-miners">—</div>
+    <div class="card-sub">Blocks found: <span id="kpi-blocks">—</span> &nbsp;·&nbsp; Height: <span id="kpi-height">—</span></div>
+  </div>
+</div>
+
+<!-- ── Node cards ─────────────────────────────────────────────────── -->
+<div class="section-header">🖥 Uzly — Per-Node Stats</div>
+<div class="grid grid-3" id="nodes-grid" style="margin-bottom:12px">
+  <!-- Helsinki (pool node) -->
+  <div class="node-card" id="node-helsinki">
+    <div class="node-header">
+      <div>
+        <div class="node-name">🇫🇮 Helsinki</div>
+        <div class="node-ip">77.42.31.72 · ARM64 · pool+core</div>
+      </div>
+      <div class="badge badge-green"><span class="dot dot-green"></span> online</div>
+    </div>
+    <table class="tbl">
+      <tr><td class="muted">Algorithm</td><td class="accent val" id="hel-algo">cosmic_harmony_v3</td></tr>
+      <tr><td class="muted">Block Height</td><td class="val" id="hel-height">—</td></tr>
+      <tr><td class="muted">Difficulty</td><td class="val" id="hel-diff">—</td></tr>
+      <tr><td class="muted">Hashrate</td><td class="green val" id="hel-hr">—</td></tr>
+      <tr><td class="muted">Valid / Invalid</td><td class="val" id="hel-shares">—</td></tr>
+    </table>
+  </div>
+
+  <!-- USA -->
+  <div class="node-card" id="node-usa">
+    <div class="node-header">
+      <div>
+        <div class="node-name">🇺🇸 USA</div>
+        <div class="node-ip">178.156.240.160 · AMD64 · core+miner</div>
+      </div>
+      <div class="badge badge-blue" id="usa-status-badge">loading…</div>
+    </div>
+    <table class="tbl" id="usa-tbl">
+      <tr><td class="muted">Algorithm</td><td class="accent val" id="usa-algo">—</td></tr>
+      <tr><td class="muted">Hashes</td><td class="green val" id="usa-hashes">—</td></tr>
+      <tr><td class="muted">Accepted/Rejected</td><td class="val" id="usa-shares">—</td></tr>
+      <tr><td class="muted">Uptime</td><td class="val" id="usa-uptime">—</td></tr>
+    </table>
+  </div>
+
+  <!-- Asia -->
+  <div class="node-card" id="node-asia">
+    <div class="node-header">
+      <div>
+        <div class="node-name">🌏 Asia</div>
+        <div class="node-ip">5.223.43.93 · AMD64 · core+miner</div>
+      </div>
+      <div class="badge badge-blue" id="asia-status-badge">loading…</div>
+    </div>
+    <table class="tbl" id="asia-tbl">
+      <tr><td class="muted">Algorithm</td><td class="accent val" id="asia-algo">—</td></tr>
+      <tr><td class="muted">Hashes</td><td class="green val" id="asia-hashes">—</td></tr>
+      <tr><td class="muted">Accepted/Rejected</td><td class="val" id="asia-shares">—</td></tr>
+      <tr><td class="muted">Uptime</td><td class="val" id="asia-uptime">—</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ── Revenue + CHv4 ─────────────────────────────────────────────── -->
+<div class="grid grid-2" style="margin-bottom:12px">
+  <!-- Revenue -->
+  <div class="card">
+    <div class="card-title"><span class="icon">💰</span>CH v3 Revenue Orchestration</div>
+    <div class="fee-bar" id="fee-bar">
+      <div class="fee-seg" style="width:84%;background:var(--green)" title="Miner 84%"></div>
+      <div class="fee-seg" style="width:10%;background:var(--yellow)" title="Humanitarian 10%"></div>
+      <div class="fee-seg" style="width:5%;background:var(--purple)" title="Issobella 5%"></div>
+      <div class="fee-seg" style="width:1%;background:var(--muted)" title="Pool 1%"></div>
+    </div>
+    <div style="display:flex;gap:12px;font-size:11px;margin-bottom:10px;flex-wrap:wrap">
+      <span><span style="color:var(--green)">■</span> Miners 84%</span>
+      <span><span style="color:var(--yellow)">■</span> Humanitarian 10%</span>
+      <span><span style="color:var(--purple)">■</span> Issobella 5%</span>
+      <span><span style="color:var(--muted)">■</span> Pool 1%</span>
+    </div>
+    <table class="tbl">
+      <tr><td class="muted">Mode</td><td class="val accent">auto (TimeSplit / PerMiner)</td></tr>
+      <tr><td class="muted">Profit Switch</td><td class="green val">✅ enabled</td></tr>
+      <tr><td class="muted">Scheduler</td><td class="green val">✅ enabled</td></tr>
+      <tr><td class="muted">Buyback</td><td class="green val">✅ enabled</td></tr>
+      <tr><td class="muted">Current Coin</td><td class="yellow val" id="rev-coin">ZANO (+588.5%)</td></tr>
+      <tr><td class="muted">Feed</td><td class="val">WTM + ZPool + NiceHash</td></tr>
+      <tr><td class="muted">Revenue Compute</td><td class="val">21.1% výpočtu</td></tr>
+      <tr><td class="muted">Pending Payout</td><td class="val" id="rev-pending">—</td></tr>
+    </table>
+  </div>
+
+  <!-- CHv4 + E-07 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🧬</span>CHv4 — cosmic_harmony_v3</div>
+    <table class="tbl" style="margin-bottom:12px">
+      <tr><td class="muted">Fork height</td><td class="green val">0 ← genesis</td></tr>
+      <tr><td class="muted">NPU MH fork</td><td class="green val">0 ← genesis</td></tr>
+      <tr><td class="muted">E2E tests</td><td class="green val">11/11 PASS ✅</td></tr>
+      <tr><td class="muted">GPU (OpenCL)</td><td class="green val">active always</td></tr>
+      <tr><td class="muted">GPU (CUDA)</td><td class="green val">active always</td></tr>
+      <tr><td class="muted">Genesis hash</td><td class="accent val" style="font-size:11px">bacd6027ecb0f5dc…</td></tr>
+    </table>
+
+    <div class="card-title" style="margin-top:8px"><span class="icon">⏱</span>E-07 Canary Run</div>
+    <div class="canary-bar-wrap">
+      <div class="canary-bar-bg">
+        <div class="canary-bar-fill" id="canary-fill" style="width:0%"></div>
+      </div>
+      <div class="canary-labels">
+        <span>2026-03-03 21:00Z</span>
+        <span id="canary-elapsed" style="color:var(--accent)">—</span>
+        <span>2026-03-06 21:00Z</span>
+      </div>
+    </div>
+    <table class="tbl" style="margin-top:6px">
+      <tr><td class="muted">Status</td><td class="green val">🟢 IN PROGRESS</td></tr>
+      <tr><td class="muted">Duration</td><td class="val">72 hodin</td></tr>
+      <tr><td class="muted">Zbývá</td><td class="accent val" id="canary-remaining">—</td></tr>
+      <tr><td class="muted">B-CRIT-02</td><td class="yellow val">⏳ čeká na 72h</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ── Milestones ─────────────────────────────────────────────────── -->
+<div class="section-header">📋 Milníky 2.9.7</div>
+<div class="card" style="margin-bottom:12px">
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Popis</th>
+        <th>Stav</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="muted">B-CRIT-01</td><td>CHv4 od genesis, E2E 11/11 PASS</td><td class="green val">✅ UZAVŘEN</td></tr>
+      <tr><td class="muted">B-CRIT-02</td><td>E-07 canary 72h bez krit. selhání</td><td class="yellow val">⏳ IN PROGRESS</td></tr>
+      <tr><td class="muted">B-CRIT-03</td><td>Genesis ceremony sign-off</td><td class="muted">🔜 PENDING</td></tr>
+      <tr><td class="muted">F-04</td><td>CHv4 E2E test suite</td><td class="green val">✅ DONE</td></tr>
+      <tr><td class="muted">F-05</td><td>GPU kernels CHv4 NPU Mixing (CUDA+OpenCL+Python)</td><td class="green val">✅ DONE</td></tr>
+      <tr><td class="muted">F-06</td><td>Height dispatch (N/A — fork_height=0)</td><td class="green val">✅ DONE</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="text-align:center;color:var(--muted);font-size:10px;padding:8px 0">
+  ZION TerraNova v2.9.7 · Live Dashboard · Auto-refresh 15s · Proxy: http://localhost:9999 <span class="cursor">█</span>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const PROXY_BASE   = 'http://localhost:9999';
+const COMBINED_URL = `${PROXY_BASE}/api/combined`;
+const POOL_URL     = `${PROXY_BASE}/api/stats`;
+const REFRESH_SEC  = 15;
+
+// Canary window
+const CANARY_START = new Date('2026-03-03T21:00:00Z').getTime();
+const CANARY_END   = new Date('2026-03-06T21:00:00Z').getTime();
+
+// Sparkline data
+const hrHistory = [];
+const MAX_HISTORY = 40;
+
+// ── Util ────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmtHash(mhs) {
+  if (mhs == null) return '—';
+  if (mhs >= 1000) return (mhs/1000).toFixed(2) + ' GH/s';
+  if (mhs >= 1)    return mhs.toFixed(3) + ' MH/s';
+  return (mhs * 1000).toFixed(1) + ' KH/s';
+}
+
+function fmtNum(n) {
+  if (n == null) return '—';
+  return n.toLocaleString('cs-CZ');
+}
+
+function pct(a, b) {
+  if (!a && !b) return '—';
+  return ((a / (a + b)) * 100).toFixed(1) + '%';
+}
+
+function setText(id, val, cls) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = val;
+  if (cls) {
+    el.className = el.className.replace(/(green|yellow|red|accent|muted)/g, '').trim();
+    el.classList.add(cls);
+  }
+  el.classList.add('pulse');
+  setTimeout(() => el.classList.remove('pulse'), 600);
+}
+
+// ── Canary timer ────────────────────────────────────────────────────────────
+function updateCanary() {
+  const now  = Date.now();
+  const total = CANARY_END - CANARY_START;
+  const elapsed = Math.max(0, now - CANARY_START);
+  const pctDone = Math.min(100, (elapsed / total) * 100);
+
+  const fillEl = $('canary-fill');
+  if (fillEl) fillEl.style.width = pctDone.toFixed(1) + '%';
+
+  // Elapsed human
+  const elH = Math.floor(elapsed / 3600000);
+  const elM = Math.floor((elapsed % 3600000) / 60000);
+  setText('canary-elapsed', `${elH}h ${elM}m (${pctDone.toFixed(1)}%)`);
+
+  // Remaining
+  const rem = Math.max(0, CANARY_END - now);
+  const remH = Math.floor(rem / 3600000);
+  const remM = Math.floor((rem % 3600000) / 60000);
+  setText('canary-remaining', `${remH}h ${remM}m`);
+}
+
+// ── Sparkline ───────────────────────────────────────────────────────────────
+function drawSpark() {
+  const canvas = $('spark-hr');
+  if (!canvas || hrHistory.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 200;
+  const H = 40;
+  canvas.width  = W;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  const min = Math.min(...hrHistory);
+  const max = Math.max(...hrHistory) || 1;
+  const range = max - min || 1;
+
+  ctx.beginPath();
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 1.5;
+  hrHistory.forEach((v, i) => {
+    const x = (i / (hrHistory.length - 1)) * W;
+    const y = H - ((v - min) / range) * (H - 6) - 3;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Fill under
+  ctx.lineTo(W, H);
+  ctx.lineTo(0, H);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,212,255,0.08)';
+  ctx.fill();
+}
+
+// ── Countdown ───────────────────────────────────────────────────────────────
+let refreshTimer = REFRESH_SEC;
+let countdownInterval;
+
+function startCountdown() {
+  clearInterval(countdownInterval);
+  refreshTimer = REFRESH_SEC;
+  countdownInterval = setInterval(() => {
+    refreshTimer--;
+    const el = $('countdown');
+    if (el) el.textContent = `↻ ${refreshTimer}s`;
+    if (refreshTimer <= 0) {
+      fetchNow();
+    }
+  }, 1000);
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderPool(data) {
+  if (!data || !data.ok) return;
+  const b = data.blockchain || {};
+  const s = data.shares     || {};
+  const h = data.hashrate   || {};
+  const m = data.miners     || {};
+  const p = data.pool       || {};
+  const py = data.payouts   || {};
+
+  // KPIs
+  const hrMhs = (h.pool || 0) * 1000;
+  const hr1Mhs = (h.pool_1h || 0) * 1000;
+  hrHistory.push(hrMhs);
+  if (hrHistory.length > MAX_HISTORY) hrHistory.shift();
+
+  setText('kpi-hr',      fmtHash(hrMhs));
+  setText('kpi-hr-1h',   `1h: ${fmtHash(hr1Mhs)}`);
+  setText('kpi-diff',    fmtNum(b.difficulty));
+  setText('kpi-pplns',   fmtNum(data.pplns_window_size));
+  setText('kpi-valid',   fmtNum(s.valid));
+  setText('kpi-invalid', fmtNum(s.invalid));
+  setText('kpi-accept-rate', pct(s.valid, s.invalid));
+  setText('kpi-miners',  m.active ?? '—');
+  setText('kpi-blocks',  data.blocks?.found ?? '—');
+  setText('kpi-height',  fmtNum(b.height));
+
+  // Helsinki node table
+  setText('hel-height', fmtNum(b.height));
+  setText('hel-diff',   fmtNum(b.difficulty));
+  setText('hel-hr',     fmtHash(hrMhs));
+  setText('hel-shares', `${fmtNum(s.valid)} / ${fmtNum(s.invalid)}`);
+
+  // Revenue
+  setText('rev-pending', (py.pending_total_atomic || 0) === 0 ? '0 ZION' : `${py.pending_total_atomic} atomic`);
+
+  // Chain status badge
+  const connected = b.connected !== false;
+  $('chain-status').textContent = connected ? 'chain ok' : 'disconnected';
+  $('chain-badge').className = 'badge ' + (connected ? 'badge-green' : 'badge-red');
+  $('status-dot').className  = 'dot '   + (connected ? 'dot-green'   : 'dot-red');
+
+  drawSpark();
+}
+
+function renderMiners(miners) {
+  for (const [name, d] of Object.entries(miners || {})) {
+    const pfx = name === 'usa' ? 'usa' : 'asia';
+    const badge = $(`${pfx}-status-badge`);
+
+    if (d.error) {
+      if (badge) { badge.textContent = 'ssh err'; badge.className = 'badge badge-red'; }
+      continue;
+    }
+
+    if (badge) { badge.textContent = 'online'; badge.className = 'badge badge-green'; }
+    setText(`${pfx}-algo`,   d.algo || 'cosmic_harmony_v3');
+    setText(`${pfx}-hashes`, d.hashes || '—');
+    setText(`${pfx}-uptime`, d.uptime || '—');
+    if (d.accepted) {
+      const [acc, rej] = d.accepted.split('/');
+      const total = parseInt(acc||0) + parseInt(rej||0);
+      const rate  = total > 0 ? ((parseInt(acc||0)/total)*100).toFixed(1)+'%' : '—';
+      setText(`${pfx}-shares`, `${d.accepted} (${rate})`);
+    }
+  }
+}
+
+// ── Fetch ────────────────────────────────────────────────────────────────────
+let isFetching = false;
+
+async function fetchNow() {
+  if (isFetching) return;
+  isFetching = true;
+
+  const btn = $('refresh-btn');
+  if (btn) { btn.textContent = '⟳ …'; btn.style.opacity = '.6'; }
+
+  try {
+    // Try combined endpoint (proxy running)
+    let data;
+    try {
+      const res = await fetch(COMBINED_URL, { signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        data = await res.json();
+        $('error-banner').style.display = 'none';
+      }
+    } catch (_e) {
+      // Fall back to direct pool API (no miner SSH) — might hit CORS
+      try {
+        const res2 = await fetch(POOL_URL, { signal: AbortSignal.timeout(5000) });
+        if (res2.ok) {
+          const pool = await res2.json();
+          data = { pool, miners: {} };
+          $('error-banner').style.display = 'none';
+        }
+      } catch (_e2) {
+        $('error-banner').style.display = 'block';
+      }
+    }
+
+    if (data) {
+      renderPool(data.pool || {});
+      renderMiners(data.miners || {});
+      // Flash cards
+      document.querySelectorAll('.card').forEach(c => {
+        c.classList.add('updated');
+        setTimeout(() => c.classList.remove('updated'), 1000);
+      });
+      const ts = data._generated
+        ? data._generated.replace('T', ' ')
+        : new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+      setText('last-updated', `Updated: ${ts}`);
+    }
+  } finally {
+    isFetching = false;
+    if (btn) { btn.textContent = '↻ refresh'; btn.style.opacity = '1'; }
+    startCountdown();
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+updateCanary();
+setInterval(updateCanary, 10000);
+fetchNow();
+</script>
+</body>
+</html>
