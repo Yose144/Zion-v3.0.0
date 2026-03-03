@@ -3448,7 +3448,8 @@ function startMining(config) {
       } catch {
         // ignore
       }
-      void maybeFallbackToPython(reason, false);
+      // Force fallback regardless of preferred backend pinning (e.g. minerBackend='rust').
+      void maybeFallbackToPython(reason, true);
     } catch {
       // ignore
     }
