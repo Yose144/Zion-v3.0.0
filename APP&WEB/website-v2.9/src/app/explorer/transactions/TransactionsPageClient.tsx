@@ -109,10 +109,10 @@ export default function TransactionsPageClient() {
   /* ── render ──────────────────────────────────────────────── */
 
   return (
-    <div className="min-h-screen bg-slate-950 relative">
+    <div className="zion-shell min-h-screen relative">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zion-purple/10 via-transparent to-transparent" />
 
-      <div className="relative z-10 container mx-auto max-w-[1400px] px-4 py-8">
+      <div className="relative z-10 zion-container max-w-[1400px] py-8">
 
         {/* breadcrumb */}
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
@@ -143,7 +143,7 @@ export default function TransactionsPageClient() {
         )}
 
         {/* table card */}
-        <div className="mt-6 rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] overflow-hidden">
+        <div className="mt-6 zion-panel rounded-[28px] bg-black/60 overflow-hidden">
           {/* table header */}
           <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/[0.06]">
             <span />

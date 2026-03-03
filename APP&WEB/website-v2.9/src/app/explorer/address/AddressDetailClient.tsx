@@ -124,7 +124,7 @@ export default function AddressDetailClient() {
   /* ── loading ─────────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="zion-shell min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-white/30 animate-spin" />
       </div>
     );
@@ -133,15 +133,15 @@ export default function AddressDetailClient() {
   /* ── error ───────────────────────────────────────────────── */
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-slate-950 relative">
+      <div className="zion-shell min-h-screen relative">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-red-500/5 via-transparent to-transparent" />
-        <div className="relative z-10 container mx-auto max-w-3xl px-4 py-12">
+        <div className="relative z-10 zion-container max-w-3xl py-12">
           <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
             <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
             <ChevronRight className="w-3 h-3" />
             <span className="text-white/70">Address</span>
           </nav>
-          <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-red-500/20 p-10 text-center">
+          <div className="zion-panel rounded-[28px] bg-black/60 border border-red-500/20 p-10 text-center">
             <XCircle className="h-10 w-10 text-red-400/60 mx-auto mb-4" />
             <h1 className="text-xl font-bold text-white mb-2">Address Not Found</h1>
             <p className="text-white/40 text-sm mb-6 font-mono break-all">{error || addr}</p>
@@ -159,10 +159,10 @@ export default function AddressDetailClient() {
   const CIcon = cStyle.icon;
 
   return (
-    <div className="min-h-screen bg-slate-950 relative">
+    <div className="zion-shell min-h-screen relative">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zion-purple/10 via-transparent to-transparent" />
 
-      <div className="relative z-10 container mx-auto max-w-[1200px] px-4 py-8">
+      <div className="relative z-10 zion-container max-w-[1200px] py-8">
 
         {/* breadcrumb */}
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
@@ -200,7 +200,7 @@ export default function AddressDetailClient() {
             { label: "Locked", value: `${data.balance.locked.toFixed(4)} ZION`, color: "text-cyan-400" },
             { label: "Transactions", value: String(data.transaction_count), color: "text-white" },
           ].map((s) => (
-            <div key={s.label} className="rounded-[20px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] p-5">
+            <div key={s.label} className="zion-panel rounded-[20px] bg-black/60 p-5">
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1.5">{s.label}</p>
               <p className={`text-xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
             </div>
@@ -210,7 +210,7 @@ export default function AddressDetailClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
           {/* ── Address Details card ─────────────────────────── */}
-          <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] p-6">
+          <div className="zion-panel rounded-[28px] bg-black/60 p-6">
             <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-purple-400" />
               Address Details
@@ -226,7 +226,7 @@ export default function AddressDetailClient() {
 
           {/* ── Mining Stats card (or placeholder) ──────────── */}
           {data.is_miner && data.mining_stats ? (
-            <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] p-6">
+            <div className="zion-panel rounded-[28px] bg-black/60 p-6">
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Pickaxe className="w-4 h-4 text-emerald-400" />
                 Mining Stats
@@ -253,7 +253,7 @@ export default function AddressDetailClient() {
               </div>
             </div>
           ) : (
-            <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] p-6 flex flex-col items-center justify-center text-center">
+            <div className="zion-panel rounded-[28px] bg-black/60 p-6 flex flex-col items-center justify-center text-center">
               <Pickaxe className="w-8 h-8 text-white/10 mb-3" />
               <p className="text-white/30 text-sm">Not an active miner</p>
               <p className="text-white/15 text-xs mt-1">Mining stats will appear once this address starts mining.</p>
@@ -262,7 +262,7 @@ export default function AddressDetailClient() {
         </div>
 
         {/* ── Transaction history table ──────────────────────── */}
-        <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] overflow-hidden">
+        <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden">
           <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white/70">
               Transactions ({data.transactions.length})
