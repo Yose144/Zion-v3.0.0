@@ -1,6 +1,6 @@
 # ZION TerraNova v2.9.7 — Pre-MainNet Gate
 
-> **"On the Star" — unified, resilient, ready for launch.**
+> **"On the Star" — from blockchain to the stars.**
 
 [![Network](https://img.shields.io/badge/Network-TestNet-blue)](https://zionterranova.com)
 [![Build](https://img.shields.io/badge/Build-Passing-green)](https://github.com/Zion-TerraNova)
@@ -9,70 +9,86 @@
 
 ---
 
-## What is v2.9.7?
+## What is ZION?
 
-ZION v2.9.7 is the **Pre-MainNet Gate** release — a precision iteration on the v2.9.6 "On the Star" foundation. It focuses on **stability, visual coherence, and production readiness** across all six protocol layers and the public-facing web infrastructure.
+ZION is a **Layer 1 Proof-of-Work blockchain** built from scratch in Rust. It uses the custom **Cosmic Harmony v3** mining algorithm — CPU-friendly, GPU-accelerated, ASIC-resistant. All transaction fees are permanently burned.
 
-This release does not change the core consensus rules, emission schedule, or cryptographic primitives. It closes operational gaps, unifies the UX surface, and makes the network inspector-ready for the audit cycle leading into MainNet.
+v2.9.7 is the **Pre-MainNet Gate** release — a stability and documentation iteration on top of v2.9.6. No consensus rules, emission schedule, or cryptographic primitives were changed. The network is live on TestNet with three seed nodes running continuously.
 
 ---
 
-## Core Protocol (Unchanged from v2.9.6)
+## Protocol at a Glance
 
 | Parameter | Value |
 |-----------|-------|
-| **Total Supply** | 144,000,000,000 ZION |
-| **Block Reward** | 5,400.067 → Decade Decay (-20%/10y), tail 725 ZION |
+| **Total Supply** | 144,000,000,000 ZION (hard cap) |
+| **Initial Block Reward** | 5,400.067 ZION |
+| **Emission Decay** | −20% every 10 years (Decade Decay) |
+| **Tail Emission** | 725 ZION/block (permanent, post-decay) |
+| **Mining Horizon** | 100+ years |
 | **Block Time** | 60 seconds |
-| **Mining Horizon** | 100+ years + tail emission |
-| **Consensus** | Cosmic Harmony v3 (ASIC-resistant, CPU-friendly) |
-| **Transaction Model** | UTXO + Ed25519 signatures |
+| **Consensus** | Cosmic Harmony v3 (PoW) |
+| **Transaction Model** | UTXO — Ed25519 signatures |
 | **Storage** | LMDB |
-| **DAA** | LWMA 60-block (±25%) |
+| **DAA** | LWMA — 60-block window, ±25% |
 | **Fee Policy** | 100% burn |
-| **Network** | TestNet — 3 nodes (Helsinki · USA · Asia) |
+| **Presale / ICO** | None — Fair Launch |
+| **Network** | TestNet — Helsinki · USA · Asia |
 
 ---
 
-## What Changed in v2.9.7
+## Genesis Premine
 
-### Website & UX — Pre-MainNet Gate Design System
+11.31% of total supply (16.28B ZION) was created in the genesis block.  
+The remaining **88.69%** (127.72B ZION) is emitted entirely through Proof-of-Work mining.
 
-The entire public web surface was unified under a consistent design language:
+| Category | ZION | % of Supply |
+|----------|------|-------------|
+| ZION OASIS + Winners | 8,250,000,000 | 5.73% |
+| DAO Treasury | 4,000,000,000 | 2.78% |
+| Infrastructure | 2,590,000,000 | 1.80% |
+| Humanitarian Reserve | 1,440,000,000 | 1.00% |
+| **Total** | **16,280,000,000** | **11.31%** |
 
-- **`zion-shell`** — transparent page wrapper preserving the observatory warp background system
-- **`zion-container`** — responsive width-constrained layout wrapper (80rem max, auto margins)
-- **`zion-panel`** — unified glass panel (blur + border + shadow) applied across all cards
-- **Observatory Backgrounds** — Deep Space, Planet Orbit, Galactic Core modes now visible on every page
-
-All 30+ page/component files across Explorer, Dashboard, Admin, Mining, Network, Bridge, DAO, Warp, Docs, Genesis, Download, and API Reference now use the unified design system.
-
-### Stability & Operations
-
-- All 780+ protocol test suites passing (0 failures)
-- P2P connectivity stable across 3 seed regions
-- Pool PPLNS telemetry: 30s refresh interval
-- Block discovery rate normalized
-
-### Documentation
-
-- Version tree: v2.9.7 (Current), v2.9.6 (Previous), v2.9.5 (Archive)
-- All public-facing docs reviewed for consistency
-- Internal operations data removed from public docs
+All premine addresses are publicly disclosed in `/PREMINE_ADDRESSES_PUBLIC.txt` and verifiable on-chain from the genesis block.  
+No private or hidden allocations. Governance of DAO Treasury is community-controlled.
 
 ---
 
-## 6-Layer Architecture — Status
+## 6-Layer "On the Star" Architecture
 
-| Layer | Name | Status |
-|-------|------|--------|
-| **L1** | ZION Blockchain | ✅ TestNet Live |
-| **L2** | wZION Bridge (Base EVM) | 🔄 In Progress |
-| **L3** | Warp Corridors (BTC·ETH·SOL) | 📐 Architecture |
-| **L3** | AI Native | 📐 Design Phase |
-| **L4** | OASIS Game Layer | 📋 Planned |
-| **L5** | Consciousness Layer | 📋 Planned |
-| **L6** | Planetary Infrastructure | 📋 Planned |
+ZION is designed as a multi-layer civilization infrastructure — from a PoW blockchain to an Earth orbital station.
+
+```
+                   ╭─────────────────────────────╮
+              L6   │  🔭  ZION Issobella          │  2040+
+                   ╰─────────────┬───────────────╯
+                   ╭─────────────┴───────────────╮
+              L5   │  🌍  ZION Free World         │  2030
+                   ╰─────────────┬───────────────╯
+                   ╭─────────────┴───────────────╮
+              L4   │  🎮  ZION Oasis              │  2029
+                   ╰─────────────┬───────────────╯
+                   ╭─────────────┴───────────────╮
+              L3   │  🏛️  ZION DAO + Warp         │  2027–2028
+                   ╰─────────────┬───────────────╯
+                   ╭─────────────┴───────────────╮
+              L2   │  🧠  NCL Neural Layer        │  2027
+                   ╰─────────────┬───────────────╯
+              ╭────────────────────────────────────╮
+         L1   │  ⛏️  ZION TerraNova               │  2026
+              ╰────────────────────────────────────╯
+```
+
+| Layer | Name | Target | Status |
+|-------|------|--------|--------|
+| **L1** | ZION TerraNova — PoW blockchain | 2026 | ✅ TestNet Live |
+| **L2** | NCL — Neural Conscious Layer (AI) | 2027 | 🔄 Design Phase |
+| **L2** | wZION Bridge (Base EVM) | 2026 | 🔄 Testnet contracts deployed |
+| **L3** | ZION DAO — Governance + Warp Corridors | 2027–2028 | 📐 Architecture |
+| **L4** | ZION Oasis — Game + Economy layer | 2029 | 📋 Planned |
+| **L5** | ZION Free World — Free energy + Humanitarian | 2030 | 📋 Planned |
+| **L6** | ZION Issobella — Orbital observatory | 2040+ | 📋 Planned |
 
 ---
 
@@ -84,7 +100,7 @@ All 30+ page/component files across Explorer, Dashboard, Admin, Mining, Network,
 | USA 🇺🇸 | `178.156.240.160:8444` | `178.156.240.160:8334` | — |
 | Asia 🌏 | `5.223.43.93:8444` | `5.223.43.93:8334` | — |
 
-> All RPC endpoints accept `POST /jsonrpc` with standard JSON-RPC 2.0 payload.
+RPC: `POST /jsonrpc` — standard JSON-RPC 2.0.
 
 ---
 
@@ -105,31 +121,32 @@ Download CLI binaries: [zionterranova.com/download](https://zionterranova.com/do
 
 ---
 
-## Reward Distribution (unchanged)
+## Block Reward Distribution
 
-| Recipient | Share |
-|-----------|-------|
-| Miners | 89% |
-| Humanitarian Fund | 5% |
-| Issobella Foundation | 5% |
-| Mining Pool | 1% |
+Each block reward is split automatically by the protocol:
 
-All transaction fees are **burned** (deflationary pressure on the 144B supply).
+| Recipient | Share | Purpose |
+|-----------|-------|---------|
+| **Miners** | 89% | Proof-of-Work reward |
+| Humanitarian Fund | 5% | Clean water, healthcare, education missions |
+| Issobella Foundation | 5% | L6 — Earth orbital research station |
+| Mining Pool | 1% | Pool infrastructure and operations |
+
+All transaction fees are **burned** (100%). No developer fee, no foundation pre-tax.
 
 ---
 
-## MainNet Gate Criteria
+## MainNet Gate
 
-Before MainNet launch the following must be satisfied:
+Three blocking criteria must be cleared before MainNet launch:
 
-- [ ] **B-CRIT-01** — Security audit complete (no critical findings)
-- [ ] **B-CRIT-02** — 3-week TestNet stability window (zero consensus splits)
+- [ ] **B-CRIT-01** — Security audit complete (zero critical findings)
+- [ ] **B-CRIT-02** — 3-week TestNet stability window (no consensus splits)
 - [ ] **B-CRIT-03** — Community governance vote (quorum reached)
-- [ ] P2P: 50+ geographically distributed seed nodes
-- [ ] Mining pool: tested at 100+ MH/s aggregate
-- [ ] Bridge: wZION Base Sepolia audit complete
 
-Target: **MainNet 31 December 2026**
+Additional targets: 50+ distributed seed nodes, pool tested at 100+ MH/s, bridge audit complete.
+
+Target: **31 December 2026**
 
 ---
 
