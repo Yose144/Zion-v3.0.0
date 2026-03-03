@@ -48,10 +48,10 @@ export default function GenesisPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="zion-shell min-h-screen">
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-white/10 bg-linear-to-b from-zion-purple/10 via-transparent to-transparent">
-        <div className="container mx-auto px-4 py-20 relative">
+        <div className="zion-container py-20 relative">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 mb-6">
               <Sparkles className="w-4 h-4 text-zion-gold" />
@@ -72,7 +72,7 @@ export default function GenesisPage() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="zion-container py-12">
         {/* Mobile Navigation Toggle */}
         <div className="lg:hidden mb-6">
           <button

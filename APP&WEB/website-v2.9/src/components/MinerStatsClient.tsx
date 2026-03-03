@@ -104,11 +104,9 @@ export default function MinerStatsClient() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      {/* Background */}
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.65),rgba(0,0,0,0.95))] -z-10" />
+    <div className="zion-shell min-h-screen text-white relative overflow-x-hidden">
       
-      <div className="container mx-auto px-4 py-24">
+      <div className="zion-container py-24">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

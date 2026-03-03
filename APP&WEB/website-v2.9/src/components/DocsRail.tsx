@@ -47,7 +47,7 @@ const ctas = [
 export default function DocsRail() {
   return (
     <section className="py-24 px-4">
-      <div className="container mx-auto space-y-10">
+      <div className="zion-container space-y-10">
         <div className="flex flex-col md:flex-row md:items-end gap-4">
           <div className="flex-1">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Navigation</p>

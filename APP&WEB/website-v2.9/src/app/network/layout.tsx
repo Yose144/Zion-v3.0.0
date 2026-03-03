@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Network Status · ZION TerraNova v2.9.6",
+  title: "Network Status · ZION TerraNova v2.9.7",
   description:
     "Real-time status of ZION native Rust blockchain nodes, mining pools, and P2P network health",
   keywords:

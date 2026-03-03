@@ -413,8 +413,8 @@ export default function MissionControlDashboard() {
     : 'text-red-400';
 
   return (
-    <div className="min-h-screen pt-24 sm:pt-32 pb-16 sm:pb-24 px-3 sm:px-4">
-      <div className="container mx-auto max-w-7xl space-y-6 sm:space-y-8 lg:space-y-10">
+    <div className="zion-shell min-h-screen pt-24 sm:pt-32 pb-16 sm:pb-24 overflow-x-hidden">
+      <div className="zion-container max-w-7xl space-y-6 sm:space-y-8 lg:space-y-10">
 
         {/* ══════════════ HERO SECTION ══════════════ */}
         <motion.section
