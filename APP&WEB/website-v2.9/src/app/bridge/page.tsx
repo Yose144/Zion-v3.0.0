@@ -773,9 +773,9 @@ export default function BridgePage() {
                 external: true,
               },
               {
-                label: 'L2 DEX — swap wZION',
+                label: 'L2 NCL — wZION Swap DEX',
                 href: '/roadmap',
-                desc: 'Uniswap V3 pool coming in DEX-03. wZION/WETH 0.3% fee tier.',
+                desc: 'Uniswap V3 pool coming in NCL-DEX sprint. wZION/WETH 0.3% fee tier.',
               },
             ].map((link) => (
               <div
