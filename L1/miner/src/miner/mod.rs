@@ -46,7 +46,9 @@ pub enum Algorithm {
 impl Algorithm {
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            "cosmic_harmony" | "cosmicharmony" | "cosmic-harmony" | "cosmic_harmony_v3"
+            // CHv4 canonical + legacy aliases — all map to the same internal variant
+            "cosmic_harmony" | "cosmic_harmony_v4" | "chv4" | "ch4"
+            | "cosmicharmony" | "cosmic-harmony" | "cosmic_harmony_v3"
             | "cosmic-harmony-v3" | "chv3" | "ch3" | "cosmic_harmony_v2" | "cosmicharmonyv2"
             | "cosmic-harmony-v2" | "cosmic-harmony_v2" => Some(Self::CosmicHarmony),
             "randomx" | "random-x" | "rx/0" => Some(Self::RandomX),
@@ -69,7 +71,8 @@ impl Algorithm {
 
     pub fn name(&self) -> &'static str {
         match self {
-            Self::CosmicHarmony => "cosmic_harmony_v3",
+            // "cosmic_harmony" is the pool-canonical name for CHv4-era (CHV4_NPU_FORK_HEIGHT=0)
+            Self::CosmicHarmony => "cosmic_harmony",
             Self::RandomX => "randomx",
             Self::VerusHash => "verushash",
             Self::Yescrypt => "yescrypt",

@@ -84,7 +84,7 @@ pub enum NativeAlgorithm {
     RandomX,       // XMR
     VerusHash,     // VRSC
     Yescrypt,      // LTC/YTN
-    CosmicHarmony, // ZION (CHv3 unified)
+    CosmicHarmony, // ZION (CHv4 — NPU Mixing INT8 MLP, active from genesis block 0)
     Argon2d,       // DYN
 
     // GPU Algorithms
@@ -108,7 +108,9 @@ impl NativeAlgorithm {
             "randomx" | "rx/0" => Some(Self::RandomX),
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
-            "cosmic_harmony" | "cosmic_harmony_v3" | "cosmicharmony" | "chv3" | "ch3"
+            // CHv4 canonical names (pool submits "cosmic_harmony", also accepts legacy v2/v3 aliases)
+            "cosmic_harmony" | "cosmic_harmony_v4" | "chv4" | "ch4"
+            | "cosmic_harmony_v3" | "cosmicharmony" | "chv3" | "ch3"
             | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2" => {
                 Some(Self::CosmicHarmony)
             }
@@ -697,10 +699,8 @@ pub fn compute_hash(
     match algo {
         // Cosmic Harmony v3 - use the canonical implementation (same as pool native lib)
         NativeAlgorithm::CosmicHarmony => {
-            // Height-aware dispatch matches block.rs + pool validator.rs:
-            //   height < 100_000           → CHv3 legacy
-            //   100_000 ≤ height < 200_000 → CHv3 ASIC-hardened (scratchpad)
-            //   height ≥ 200_000           → CHv4 (CHv3 + NPU Mixing INT8 MLP)
+            // Height-aware dispatch: CHV4_NPU_FORK_HEIGHT = 0, so CHv4 is always active
+            // (CHv3 + NPU Mixing INT8 MLP, genesis seed: b"ZION_CHv4_mixing_v1_genesis_seed")
             let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_with_height(
                 header,
                 nonce,
