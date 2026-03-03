@@ -84,6 +84,9 @@ services:
       - ZION_CPU_REVENUE_COIN=VRSC
       - ZION_VRSC_WALLET=RWrHVj8e7fkvfUw4Jf6qJNUHdr6baAsoF5
       - ZION_VRSC_POOL_URL=eu.luckpool.net:3956
+      # E-08: 50/25/25 PerMiner scheduler activation
+      - ZION_HAS_GPU=1
+      - ZION_SCHEDULER_PERMINER_MIN_MINERS=2
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8080/stats"]
       interval: 30s
