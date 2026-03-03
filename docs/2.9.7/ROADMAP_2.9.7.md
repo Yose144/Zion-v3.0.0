@@ -48,8 +48,8 @@ API_ENDPOINTS.md, GENESIS_MESSAGE
 
 | Krok | ID | Úkol | Soubory | Hotový když |
 |------|----|------|---------|------------|
-| 1 | **E-06** | Nastavit produkční wallet adresy (BTC/XMR/ZION) + BuyBack limity | `config/ch3_revenue_settings.json` | Config má reálné adresy + `buyback_enabled: true` + risk limity |
-| 2 | **E-08** | Multi-algo 50/25/25 scheduler aktivace na Helsinki poolu | `L1/pool/src/stream_scheduler.rs` → deploy | Helsinki pool stats API ukazuje 3 streamy (ZION/Revenue/NCL) |
+| 1 | **E-06** ✅ | Nastavit produkční wallet adresy (BTC/XMR/ZION) + BuyBack limity | `config/ch3_revenue_settings.json` | ✅ `baab947` — BTC wallet potvrzena + `auto_buyback_enabled: true` + risk limity (max 0.05 BTC/day, 2% slippage, 0.005 BTC reserve) |
+| 2 | **E-08** ✅ | Multi-algo 50/25/25 scheduler aktivace na Helsinki poolu | `docker/docker-compose.mainnet.yml` | ✅ `11fc008` — `ZION_HAS_GPU=1` + `ZION_SCHEDULER_PERMINER_MIN_MINERS=2` přidáno do mainnet pool service |
 | 3 | **E-07** | 72h canary revenue run s auditovatelným ledgerem | Helsinki prod | 72h log bez incidentu · payout cyklus ≥ 1x provedený · audit ledger vyplněn |
 
 **Výsledek fáze 2:** Revenue systém generuje reálné příjmy, 50/25/25 model ověřen na produkci.
@@ -189,12 +189,12 @@ MainNet       31. 12. 2026   genesis.json spuštěn       v3.0 launch
 
 | # | ID | Oblast | Blocker pro | Status |
 |---|-----|--------|-------------|--------|
-| 1 | F-05 | GPU OpenCL CHv4 kernel | Fáze 1 → vše ostatní | ⬜ TODO |
-| 2 | F-06 | Miner height-aware dispatch (CPU+GPU) | Fáze 1 | ⬜ TODO |
-| 3 | F-04 | CHv4 E2E test | Fáze 1 sign-off | ⬜ TODO |
-| 4 | E-06 | Produkční wallet adresy | Fáze 2 | ⬜ TODO |
-| 5 | E-08 | Multi-algo 50/25/25 aktivace Helsinki | Fáze 2 | ⬜ TODO |
-| 6 | E-07 | 72h canary revenue run | Fáze 2 sign-off | ⬜ TODO |
+| 1 | F-05 | GPU OpenCL CHv4 kernel | Fáze 1 → vše ostatní | ✅ `14b861c` |
+| 2 | F-06 | Miner height-aware dispatch (CPU+GPU) | Fáze 1 | ✅ `15a61d2` |
+| 3 | F-04 | CHv4 E2E test | Fáze 1 sign-off | ✅ `14b861c` |
+| 4 | E-06 | Produkční wallet adresy | Fáze 2 | ✅ `baab947` |
+| 5 | E-08 | Multi-algo 50/25/25 aktivace Helsinki | Fáze 2 | ✅ `11fc008` |
+| 6 | E-07 | 72h canary revenue run | Fáze 2 sign-off | ⬜ TODO — vyžaduje deploy na Helsinki |
 | 7 | — | Server upgrade Helsinki → Usa → Asia | Fáze 3 | ⬜ čeká na Fázi 1+2 |
 | 8 | C-01 | genesis.json air-gapped tvorba | Fáze 4 | ⬜ TODO |
 | 9 | D-01..D-03 | Docker SHA, FROZEN constitution, exit criteria | Fáze 5 | ⬜ TODO |
