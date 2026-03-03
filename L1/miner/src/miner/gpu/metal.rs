@@ -1,8 +1,15 @@
 //! Metal GPU mining backend for Apple Silicon
 //!
-//! Native Metal GPU acceleration for Cosmic Harmony v3 on M1/M2/M3/M4/M5.
+//! Native Metal GPU acceleration for Apple Silicon on M1/M2/M3/M4/M5.
 //! Achieves 2-3+ MH/s on M1 (8 GPU cores).
-//! Full CHv3 pipeline on GPU: Keccak→SHA3→GoldenMatrix→CosmicFusion
+//!
+//! ⚠️  WARNING: Metal backend does NOT implement CHv4 (NPU Mixing INT8 MLP).
+//!     CHV4_NPU_FORK_HEIGHT = 0 means CHv4 is active from genesis block 0.
+//!     Hashes produced by this backend WILL NOT match the pool/consensus.
+//!     Use OpenCL or CPU (Rust native) backend for correct CHv4 hashes.
+//!
+//! TODO: Port CHv4 memory-hard + NPU mixing to Metal compute shader and
+//!       update MetalMiner in zion-cosmic-harmony-v3 to accept block height.
 //!
 //! Uses zion-cosmic-harmony-v3 crate's MetalMiner with correct
 //! packed struct buffer layout matching the Metal compute shader.
@@ -79,6 +86,13 @@ impl GpuMiner for MetalGpuMiner {
                 return Err(anyhow!("Metal device not available"));
             }
             self.start_time = Instant::now();
+            log::warn!(
+                "⚠️ Metal GPU backend does NOT implement CHv4 (NPU Mixing INT8 MLP). \
+                 CHV4_NPU_FORK_HEIGHT=0 means CHv4 is active from genesis block 0. \
+                 Hashes produced WILL NOT be accepted by the pool. \
+                 Use OpenCL or CPU (Rust native) backend for correct CHv4 hashes. \
+                 TODO: port CHv4 pipeline to Metal compute shader."
+            );
             log::debug!("Metal GPU initialized: {}", self.device_info.name);
             log::debug!("   Batch size: {}", self.batch_size);
             Ok(())
@@ -100,7 +114,7 @@ impl GpuMiner for MetalGpuMiner {
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(all(feature = "metal", target_os = "macos"))]
         {
-            let _ = height; // Metal scratchpad not yet implemented
+            let _ = height; // Metal CHv4 NPU mixing not yet implemented
             let inner = self
                 .inner
                 .as_mut()

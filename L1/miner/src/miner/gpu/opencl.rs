@@ -264,7 +264,7 @@ impl GpuMiner for OpenCLMiner {
                     0
                 };
 
-            // CHv4 flag: NPU Mixing active for height >= CHV4_NPU_FORK_HEIGHT (200_000)
+            // CHv4 flag: NPU Mixing active for height >= CHV4_NPU_FORK_HEIGHT (=0, always active)
             let chv4: u32 =
                 if height >= zion_cosmic_harmony_v3::algorithms_npu::CHV4_NPU_FORK_HEIGHT {
                     1
