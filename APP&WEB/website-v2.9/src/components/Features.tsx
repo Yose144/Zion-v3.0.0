@@ -123,8 +123,7 @@ export default function Features() {
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-6 text-gray-100 text-sm">
-              Community governance opens in Fáze 3. Join the discussion on GitHub
-              to propose features, bounties, or protocol improvements.
+              {tr('features', 'community_cta', lang)}
             </div>
           </motion.div>
         </div>

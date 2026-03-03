@@ -11,22 +11,22 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built in native *
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  L6  GOVERNANCE / CIVILIZATION LAYER                      │
-│       DAO · Constitutional rules · upgrade votes          │
+│  L6  🔭 ZION Issobella                                    │
+│       Orbitální observatoř · Výzkumná stanice · 2040+     │
 ├─────────────────────────────────────────────────────────┤
-│  L5  SOCIAL / CONSCIOUSNESS LAYER                         │
-│       Guardians · identity · reputation                   │
+│  L5  🌍 ZION Free World                                   │
+│       Humanitární mise · Volná energie · Komunity · 2030  │
 ├─────────────────────────────────────────────────────────┤
-│  L4  OASIS — REAL WORLD BRIDGE                            │
-│       Legal anchoring · RWA · off-chain oracle            │
+│  L4  🎮 ZION Oasis                                        │
+│       Golden Egg · XP ekonomika · Herní vrstva · 2029     │
 ├─────────────────────────────────────────────────────────┤
-│  L3  WARP / AI-NATIVE LAYER                               │
-│       AI inference · NCL contracts · warp bridges         │
+│  L3  🏛️  ZION DAO                                         │
+│       Governance · Treasury 4B ZION · proposals · 2028    │
 ├─────────────────────────────────────────────────────────┤
-│  L2  DEFI / BRIDGE LAYER                                  │
-│       wZION ERC-20 · DEX · liquidity · DAO contracts      │
+│  L2  🧠 NCL — Neural Conscious Layer                      │
+│       AI-native protokol · wZION bridge · on-chain · 2027 │
 ├─────────────────────────────────────────────────────────┤
-│  L1  CORE PROTOCOL                                        │
+│  L1  ⛏️  ZION TerraNova                                   │
 │       Rust blockchain · CHv3/CHv4 · pool · P2P · LMDB    │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -64,98 +64,97 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built in native *
 
 ---
 
-## L2 — DeFi / Bridge Layer
+## L2 — NCL (Neural Conscious Layer)
 
-**Status:** 🔄 In development  
-**Target:** Q2–Q3 2026
+**Status:** 🔄 V vývoji  
+**Target:** 2027
 
-### wZION Bridge
+### Neural Conscious Layer
+
+- AI-native protokol přímo v blockchainu
+- On-chain model registry — modely zaznamenány jako L1 transakce
+- Proof-of-Inference: hash(model + input) → deterministický výstup
+
+### wZION Bridge (součást L2)
 
 - Native ZION ↔ wZION (ERC-20) wrapping
-- Deployed on **Base Sepolia** testnet
+- Aktuálně: **Base Sepolia** testnet
 - Smart contract: `L2/contracts/wZION.sol`
 - Bridge UI: `/bridge` page
+- Mainnet target: Base, Ethereum (Q3–Q4 2026)
 
-### DEX Integration
+---
 
-- Uniswap V3 compatible liquidity pool (wZION/USDC, wZION/ETH)
-- AMM: constant product formula $x \cdot y = k$
-- Target TVL at MainNet: seed $500k
+## L3 — ZION DAO (Governance)
 
-### DAO Contracts
+**Status:** 📋 Design fáze  
+**Target:** 2028
 
-- On-chain governance smart contracts (`L2/dao/`)
+- On-chain governance smart kontrakty (`L2/dao/`)
+- Treasury: 4 000 000 000 ZION (DAO fond z preminingu)
 - Proposal lifecycle: Draft → Vote → Execute
-- Quorum: 10% of staked ZION supply
+- Quorum: 10% staked ZION supply
+- Komunitní granty, protokolové upgrady, treasury alokace
 
 ---
 
-## L3 — WARP / AI-Native Layer
+## L4 — ZION Oasis (Gaming & XP Economy)
 
-**Status:** 🔄 Prototype phase  
-**Target:** Q3 2026
+**Status:** 📋 Design fáze  
+**Target:** 2029
 
-### WARP Protocol
-
-- Cross-chain message passing (not just token bridging)
-- Inspired by IBC (Cosmos) but ZION-native
-- WARP nodes relay messages with proof-of-relay rewards
-
-### NCL — Native Contract Language
-
-- Domain-specific language compiled to ZION bytecode
-- Designed for simplicity: no gas-heavy EVM overhead
-- Focus: payment contracts, oracle subscriptions, DAO actions
-
-### AI Inference Node
-
-- L3 nodes can serve AI inference (edge model hosting)
-- Results recorded as L1 transactions
-- Proof-of-Inference: hash of model + input → deterministic output hash
+- **Golden Egg** — herní ekonomika postavená na ZION
+- **XP systém** — zkušenostní body za mining, bridge, DAO aktivity
+- **Winners** — soutěžní vrstva s ZION odměnami
+- 8 250 000 000 ZION vyhrazeno z preminingu (ZION OASIS + Winners)
 
 ---
 
-## L4 — Oasis (Real World Bridge)
+## L5 — ZION Free World (Humanitarian)
 
-**Status:** 📋 Design phase  
-**Target:** 2027
+**Status:** 📋 Vision & Planning  
+**Target:** 2030
 
-- Legal anchoring of real-world assets on-chain
-- Oracle network for off-chain data (price feeds, identity, etc.)
-- Designed to interface with L2 contracts
-
----
-
-## L5 — Social / Consciousness Layer
-
-**Status:** 📋 Design phase  
-**Target:** 2027
-
-- Guardian identity system — pseudonymous on-chain reputation
-- Consciousness score: accumulated through mining, DAO participation, bridge activity
-- Foundation for future humanitarían impact allocation
+- **Free Energy Research** — výzkum kvantové a volné energie, open-source hardware
+- **Humanitarian Missions** — 5% block reward automaticky do Humanitarian Fund
+- **Free Communities** — off-grid komunity, ZION jako nativní platidlo
+- **Education** — open-source vzdělávací platformy
+- Fondová podpora: 1 440 000 000 ZION z preminingu + 5% z každého bloku
 
 ---
 
-## L6 — Governance / Civilization Layer
+## L6 — ZION Issobella (Orbital Observatory)
 
-**Status:** 📋 Constitutional draft phase  
-**Target:** 2027
+**Status:** 📋 Long-term Vision  
+**Target:** 2040+
 
-- Supreme constitutional rules encoded on-chain
-- Immutable core principles (cannot be voted away)
-- Upgrade process: L6 vote → L1 hard fork
-- Guardian council: multi-sig emergency key
+- **Earth Orbital Observatory** na nízké oběžné dráze (LEO)
+- Vědecká výzkumná stanice řízená ZION DAO
+- Open data — veškerá pozorování veřejná a on-chain
+- **ZION Space Network** — satelitní mesh síť pro P2P redundanci
+- **Název**: kombinace ISS (International Space Station) + vlastní jméno Issobella
+- Fond: 1% block reward (Issobella Fund) + sdílený fond s L5
 
 ---
+
+## Přehled vrstev
+
+| Vrstva | Název | Rok | Účel |
+|--------|-------|-----|------|
+| **L1** | ZION TerraNova ⛏️ | 2026 | PoW blockchain — CHv3/CHv4, UTXO, fee burn, LWMA |
+| **L2** | NCL 🧠 | 2027 | Neural Conscious Layer — AI-native, wZION bridge |
+| **L3** | ZION DAO 🏛️ | 2028 | Governance, Treasury 4B ZION, community grants |
+| **L4** | ZION Oasis 🎮 | 2029 | Golden Egg, XP sytém, Winners, herní vrstva |
+| **L5** | ZION Free World 🌍 | 2030 | Kwantová energie, humanitární mise, free komunity |
+| **L6** | ZION Issobella 🔭 | 2040+ | Orbitální observatoř a výzkumná stanice |
 
 ## Development Priorities 2026
 
 ```
-Q1 2026 (current): L1 stability · docs · MainNet Gate
-Q2 2026:           L2 wZION bridge mainnet · L1 CHv4 upgrade
-Q3 2026:           L3 WARP beta · NCL v0.1 · DEX liquidity
-Q4 2026:           MainNet Launch · L2 full · CoinGecko listing
+Q1 2026 (nyní): L1 stabilizace · docs · MainNet Gate
+Q2 2026:        CHv4 upgrade · wZION bridge testnet → mainnet  
+Q3 2026:        L2 NCL prototype · wallet binaries · CoinGecko  
+Q4 2026:        🚀 MainNet Launch · L2 full · listing
 ```
 
 ---

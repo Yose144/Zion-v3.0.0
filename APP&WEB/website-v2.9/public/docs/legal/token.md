@@ -29,7 +29,7 @@ ZION tokeny jsou:
 
 - ✅ **Mining rewards** — výsledek Proof-of-Work výpočtu
 - ✅ **Platební prostředek** v síti ZION (transakční poplatky)
-- ✅ **Utility token** — přístup k L2 DeFi, L3 WARP, L6 DAO hlasování
+- ✅ **Utility token** — přístup k L2 wZION bridge, L3 DAO hlasování, L2 DeFi
 - ✅ **Decentralizované** — žádný centrální emitent, žádný admin klíč
 
 ZION tokeny **nejsou**:
