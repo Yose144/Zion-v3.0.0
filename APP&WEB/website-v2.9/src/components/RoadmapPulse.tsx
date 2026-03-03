@@ -1,58 +1,66 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, CalendarDays, CheckCircle2, Rocket, Target } from 'lucide-react';
+import { ArrowRight, CalendarDays, CheckCircle2, Rocket } from 'lucide-react';
 import Link from 'next/link';
 
 const phaseCards = [
   {
-    name: 'On the Star TestNet',
+    name: 'L1 TerraNova — TestNet Live',
     window: 'Jan 2026 – Now',
     progress: 90,
     highlights: [
-      'Rust mining pool with Cosmic Harmony algorithm',
-      'P2P network with libp2p + real-time sync',
-      'Native miner binaries for all platforms',
+      'Rust mining pool — Cosmic Harmony v3',
+      'P2P network libp2p + real-time sync',
+      'Native miner binaries — all platforms',
     ],
   },
   {
-    name: 'Security & Audit Phase',
-    window: 'Q2 2026',
-    progress: 15,
+    name: 'Security & MainNet Prep',
+    window: 'Q2–Q3 2026',
+    progress: 20,
     highlights: [
-      'Security audit (external firm TBD)',
+      'External security audit (Q2 2026)',
       'Hardware wallet integration (Ledger/Trezor)',
-      'Bug bounty program launch',
+      'CHv4 Neural Bloom upgrade',
     ],
   },
   {
-    name: 'MainNet Preparation',
-    window: 'Q3–Q4 2026',
+    name: 'MainNet Genesis Launch',
+    window: 'Q4 2026',
     progress: 5,
     highlights: [
-      'Full P2P network stress testing',
-      'Genesis block configuration',
-      'MainNet launch Q4 2026',
+      'Genesis block — 16.28B ZION premine',
+      'Full P2P network — production mining live',
+      'CoinGecko listing + wZION bridge',
     ],
   },
 ];
 
 const timeline = [
   {
-    title: 'Phase 1 · Q1 2026',
-    focus: 'Native Rust pool deployment, Cosmic Harmony mining',
+    title: '⛏️ L1 TerraNova · 2026',
+    focus: 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
   },
   {
-    title: 'Phase 2 · Q2 2026',
-    focus: 'Security audits, wallet integrations, WARP bridges',
+    title: '🧠 L2 NCL · 2027',
+    focus: 'Neural Conscious Layer, AI-native protocol, wZION bridge',
   },
   {
-    title: 'Phase 3 · Q3-Q4 2026',
-    focus: 'Performance optimization, network stress testing',
+    title: '🏛️ L3 DAO · 2028',
+    focus: 'Community governance, Treasury 4B ZION, on-chain voting',
   },
   {
-    title: 'Phase 4 · Q4 2026',
-    focus: 'MainNet launch, full P2P network, production mining live',
+    title: '🎮 L4 Oasis · 2029',
+    focus: 'Golden Egg, XP economy, Winners program, game layer',
+  },
+  {
+    title: '🌍 L5 Free World · 2030',
+    focus: 'Humanitarian missions, free energy R&D, off-grid communities',
+  },
+  {
+    title: '🔭 L6 Issobella · 2040+',
+    focus: 'Orbital observatory, LEO research station, On the Star ⭐',
   },
 ];
 
@@ -64,7 +72,7 @@ export default function RoadmapPulse() {
           <div className="flex-1 space-y-3">
             <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">Roadmap</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              On the Star <span className="text-gradient">v2.9.6 → MainNet 2026</span>
+              On the Star <span className="text-gradient">v2.9.7 → MainNet 2026</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
               TestNet live with native Rust pool, Cosmic Harmony mining, and P2P network.
@@ -139,12 +147,12 @@ export default function RoadmapPulse() {
           <div className="flex items-center gap-3 mb-6">
             <Rocket className="w-6 h-6 text-zion-cyan" />
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Sprint Timeline</p>
-              <h3 className="text-2xl font-semibold text-white">30-day execution tapes</h3>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">6-Layer Vision</p>
+              <h3 className="text-2xl font-semibold text-white">On the Star — 100 let ke hvězdám</h3>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
             {timeline.map((entry, idx) => (
               <div key={entry.title} className="rounded-2xl border border-white/10 bg-black/40 p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{entry.title}</p>
