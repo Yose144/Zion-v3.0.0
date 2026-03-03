@@ -1765,7 +1765,6 @@ class ZionNativeMiner:
 
             # CPU init (best-effort). If the DLL is missing and we're in GPU
             # mode, we can still mine on GPU only.
-            logger.info(f"🔍 COSMIC_WRAPPER_AVAILABLE: {COSMIC_WRAPPER_AVAILABLE}")
             lib = self.loader.load_cosmic_harmony()
             if lib:
                 self.thread_pool = ThreadPoolExecutor(max_workers=self.config.cpu_threads)
@@ -1773,27 +1772,11 @@ class ZionNativeMiner:
                     thread = CPUMiningThread(i, lib, algo)
                     self.cpu_threads.append(thread)
                 logger.info(f"✅ CPU initialized for Cosmic Harmony ({self.config.cpu_threads} threads)")
-            elif COSMIC_WRAPPER_AVAILABLE:
-                # Use Python wrapper with C++ library for correct hashes
-                # NOTE: C++ library becomes non-thread-safe after initialize()
-                # so we MUST use single-threaded mode for Cosmic Harmony CPU mining
-                logger.info("📚 Cosmic Harmony: Using wrapper with C++ library (single-threaded)")
-                self.cosmic_hasher = CosmicHarmonyHasher(use_cpp=True)  # C++ for correct hash!
-                
-                # Force single thread due to C++ thread-safety issue after initialize()
-                effective_threads = 1
-                logger.warning(f"⚠️  Cosmic Harmony C++ limited to 1 thread (thread-safety limitation)")
-                
-                self.thread_pool = ThreadPoolExecutor(max_workers=effective_threads)
-                for i in range(effective_threads):
-                    thread = CPUMiningThreadWrapper(i, self.cosmic_hasher, algo)
-                    self.cpu_threads.append(thread)
-                logger.info(f"✅ CPU initialized for Cosmic Harmony using C++ wrapper ({effective_threads} thread)")
             else:
-                logger.error(f"❌ COSMIC_WRAPPER_AVAILABLE is False, GPU_AVAILABLE: {GPU_AVAILABLE}, gpu_miner: {self.gpu_miner}")
+                logger.error(f"❌ Cosmic Harmony native CPU library unavailable. GPU_AVAILABLE: {GPU_AVAILABLE}, gpu_miner: {self.gpu_miner}")
                 if not self.gpu_miner:
-                    raise RuntimeError("Failed to load Cosmic Harmony library, wrapper not available, and GPU init unavailable")
-                logger.warning("⚠️  Cosmic Harmony CPU library and wrapper not available; running GPU-only")
+                    raise RuntimeError("Failed to load Cosmic Harmony native library and GPU init unavailable")
+                logger.warning("⚠️  Cosmic Harmony CPU library not available; running GPU-only")
 
             if self.gpu_miner and self.cpu_threads:
                 logger.info("✅ Dual mining ready (CPU+GPU)")
@@ -3547,8 +3530,14 @@ def main():
         else:
             pool_host = args.pool
     
+    algo_arg = str(args.algorithm or "cosmic_harmony").strip().lower().replace("-", "_")
+    if algo_arg == "cosmic_harmony":
+        resolved_algorithm = Algorithm.COSMIC_HARMONY_V4
+    else:
+        resolved_algorithm = Algorithm(algo_arg)
+
     config = MinerConfig(
-        algorithm=Algorithm(args.algorithm),
+        algorithm=resolved_algorithm,
         mode=MiningMode(args.mode),
         cpu_threads=cpu_threads,
         gpu_batch_size=args.gpu_batch,
