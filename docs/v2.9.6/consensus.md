@@ -1,24 +1,25 @@
-# ⚙️ Konsenzus v2.9.6 — Cosmic Harmony v3 (CHv3)
+# ⚙️ Konsenzus v2.9.6 — Cosmic Harmony v4 (CHv4)
 
-> *Jediný PoW algoritmus ZION mainnetu. 5-fázová pipeline s memory-hard scratchpadem.*
+> *Jediný PoW algoritmus ZION mainnetu. 6-fázová pipeline s memory-hard scratchpadem a NPU mixing step. Aktivní od genesis.*
 
 ---
 
 ## 1. Přehled
 
-ZION v2.9.6 používá **Cosmic Harmony v3 (CHv3)** jako jediný Proof-of-Work algoritmus.
-Historické varianty CH v1 a v2 byly odstraněny z kompilace a archivovány.
+ZION v2.9.6 používá **Cosmic Harmony v4 (CHv4)** jako jediný Proof-of-Work algoritmus.
+CHv4 je aktivní od genesis (blok 0) od 2026-03-03. Zahrnuje memory-hard scratchpad a NPU mixing step.
+Historické varianty CH v1, v2 a původní CHv3 (bez NPU) jsou archivovány.
 
 | Parametr | Hodnota |
 |----------|---------|
-| **Algoritmus** | Cosmic Harmony v3 (CHv3) |
+| **Algoritmus** | Cosmic Harmony v4 (CHv4) — aktivní od genesis |
 | **Crate** | `zion-cosmic-harmony-v3` v3.0.0 |
 | **Hash výstup** | 32 bajtů (256 bitů) |
 | **Nonce** | u64 (64 bitů) |
 | **Block time** | 60 sekund |
 | **Difficulty adjustment** | LWMA (okno 60 bloků) |
-| **Fork height (CHv3)** | 0 (aktivní od genesis) |
-| **Fork height (memory-hard)** | 50 000 |
+| **Fork height (CHv4)** | 0 (aktivní od genesis, 2026-03-03) |
+| **Fork height (memory-hard)** | 0 (CHv4 zahrnuje memory-hard od genesis) |
 | **ASIC resistance score** | 90/100 |
 
 ---
