@@ -1,10 +1,12 @@
 /**
- * ZION TerraNova v2.9.5 — Blockchain Constants
+ * ZION TerraNova v2.9.6 — Blockchain Constants
  *
  * Mirror of Rust core: core/src/blockchain/emission.rs + premine.rs
  * These values are IMMUTABLE after MainNet genesis.
  *
  * 1 ZION = 1,000,000 atomic units (6 decimal places)
+ *
+ * Synchronizováno s desktop-agent/src/main.js (CHv4, revenue split 89/5/5/1)
  */
 
 // ---------------------------------------------------------------------------
@@ -50,14 +52,18 @@ export const DAILY_EMISSION = BLOCK_REWARD_ZION * 1440;
 export const ANNUAL_EMISSION = BLOCK_REWARD_ZION * BLOCKS_PER_YEAR;
 
 // ---------------------------------------------------------------------------
-// Reward distribution (per block)
+// Reward distribution (per block) — v2.9.6: 89% / 5% / 5% / 1%
 // ---------------------------------------------------------------------------
 
 /** Miner share: 89% */
 export const MINER_SHARE_PERCENT = 89;
 
-/** Humanitarian tithe: 10% */
-export const TITHE_PERCENT = 10;
+/** Humanitarian fund (L5 Free World): 5% (bylo 10% v v2.9.5) */
+export const HUMANITARIAN_PCT = 5;
+export const TITHE_PERCENT = 5; // zpětná kompatibilita
+
+/** ZION Issobella (L6): 5% */
+export const ISSOBELLA_PCT = 5;
 
 /** Pool fee: 1% */
 export const POOL_FEE_PERCENT = 1;
@@ -65,8 +71,11 @@ export const POOL_FEE_PERCENT = 1;
 /** Miner reward per block: 4,806.05963 ZION */
 export const MINER_REWARD_ZION = BLOCK_REWARD_ZION * MINER_SHARE_PERCENT / 100;
 
-/** Tithe per block: 540.0067 ZION */
-export const TITHE_REWARD_ZION = BLOCK_REWARD_ZION * TITHE_PERCENT / 100;
+/** Humanitarian per block: 270.00335 ZION */
+export const HUMANITARIAN_REWARD_ZION = BLOCK_REWARD_ZION * HUMANITARIAN_PCT / 100;
+
+/** Issobella per block: 270.00335 ZION */
+export const ISSOBELLA_REWARD_ZION = BLOCK_REWARD_ZION * ISSOBELLA_PCT / 100;
 
 /** Pool fee per block: 54.00067 ZION */
 export const POOL_FEE_ZION = BLOCK_REWARD_ZION * POOL_FEE_PERCENT / 100;
@@ -123,8 +132,13 @@ export const SOFT_FINALITY = 60;
 export const DAA_WINDOW = 60;
 export const DAA_MAX_CHANGE_PERCENT = 25;
 
-/** Mining algorithm */
-export const ALGORITHM = 'cosmic-harmony-v3';
+/** Mining algorithm — CHv4 kanonické jméno (pool-compatible) */
+export const ALGORITHM = 'cosmic_harmony';
+export const ALGORITHM_DISPLAY = 'Cosmic Harmony v4';
+
+// ── CHv4 Fork Heights (obě = 0, vždy aktivní od genesis) ──────────────────────────
+export const CHV4_NPU_FORK_HEIGHT = 0;         // NPU Mixing INT8 MLP vždy aktivní
+export const CHV3_MEMORY_HARD_FORK_HEIGHT = 0; // 512 KB scratchpad vždy aktivní
 
 /** Transaction model */
 export const TX_MODEL = 'UTXO';

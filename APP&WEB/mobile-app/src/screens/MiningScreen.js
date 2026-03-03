@@ -19,9 +19,12 @@ import {CONFIG} from '../constants/config';
 import {
   BLOCK_REWARD_ZION,
   MINER_SHARE_PERCENT,
-  TITHE_PERCENT,
+  HUMANITARIAN_PCT,
+  ISSOBELLA_PCT,
   POOL_FEE_PERCENT,
   TARGET_BLOCK_TIME_SEC,
+  ALGORITHM_DISPLAY,
+  CHV4_NPU_FORK_HEIGHT,
   formatZion,
 } from '../constants/blockchain';
 
@@ -299,14 +302,22 @@ const MiningScreen = () => {
       {/* Block Reward Info */}
       <GlassCard style={styles.card}>
         <Text style={styles.sectionTitle}>⛏️ Reward Structure</Text>
+        {/* CHv4 algo badge */}
+        <View style={styles.algoBadge}>
+          <Icon name="cpu-64-bit" size={14} color={colors.primary.gold} />
+          <Text style={styles.algoBadgeText}>{ALGORITHM_DISPLAY} — NPU Mixing aktivní</Text>
+        </View>
         <Text style={styles.limitText}>
           💰 Block Reward: {formatZion(BLOCK_REWARD_ZION)} ZION / block
         </Text>
         <Text style={styles.limitText}>
-          ⛏️ Miner: {MINER_SHARE_PERCENT}% ({formatZion(BLOCK_REWARD_ZION * MINER_SHARE_PERCENT / 100)} ZION)
+          ⛏️ Miners: {MINER_SHARE_PERCENT}% ({formatZion(BLOCK_REWARD_ZION * MINER_SHARE_PERCENT / 100)} ZION)
         </Text>
         <Text style={styles.limitText}>
-          🏛️ DAO Tithe: {TITHE_PERCENT}% ({formatZion(BLOCK_REWARD_ZION * TITHE_PERCENT / 100)} ZION)
+          🌍 Humanitarian (L5): {HUMANITARIAN_PCT}% ({formatZion(BLOCK_REWARD_ZION * HUMANITARIAN_PCT / 100)} ZION)
+        </Text>
+        <Text style={styles.limitText}>
+          🔭 Issobella (L6): {ISSOBELLA_PCT}% ({formatZion(BLOCK_REWARD_ZION * ISSOBELLA_PCT / 100)} ZION)
         </Text>
         <Text style={styles.limitText}>
           🏊 Pool Fee: {POOL_FEE_PERCENT}%
@@ -534,6 +545,23 @@ const styles = StyleSheet.create({
   limitText: {
     ...typography.body,
     marginBottom: spacing.sm,
+  },
+  algoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,215,0,0.08)',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.25)',
+  },
+  algoBadgeText: {
+    fontSize: 12,
+    color: '#FFD700',
+    fontWeight: '600',
   },
   warningCard: {
     backgroundColor: 'rgba(245,158,11,0.1)',
