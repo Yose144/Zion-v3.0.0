@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import NetworkStatus from '@/components/NetworkStatus';
@@ -9,6 +10,8 @@ import {
   Activity,
   BookOpen,
   CheckCircle2,
+  Copy,
+  Download,
   ExternalLink,
   Globe,
   Globe2,
@@ -33,7 +36,7 @@ const heroStats = [
   { label: 'Seed Regions', value: '3', descriptor: 'EU · US-EAST · AP' },
   { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
   { label: 'Sync Cohesion', value: '100%', descriptor: '3/3 nodes synced' },
-  { label: 'Network', value: 'TestNet', descriptor: 'v2.9.6 · Rust native' },
+  { label: 'Network', value: 'TestNet', descriptor: 'v2.9.7 · Rust native' },
 ];
 
 const infraFeatures = [
@@ -111,13 +114,27 @@ const networkFacts = [
   { text: '24/7 Docker containers with auto-restart', done: true },
   { text: 'LWMA DAA — target 60s block time', done: true },
   { text: '3 nodes across 3 regions', done: true },
-  { text: 'Prometheus + Grafana monitoring', done: false },
+  { text: 'Prometheus + Grafana monitoring', done: true },
   { text: 'Geographic load balancing', done: false },
 ];
 
 export default function NetworkPage() {
+  const [copied, setCopied] = useState<string | null>(null);
   const factsDone = networkFacts.filter((f) => f.done).length;
   const factsTotal = networkFacts.length;
+
+  const copyText = async (id: string, value: string) => {
+    await navigator.clipboard.writeText(value);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 1500);
+  };
+
+  const primaryPool = '77.42.31.72:3333';
+  const backupPoolA = '178.156.240.160:3333';
+  const backupPoolB = '5.223.43.93:3333';
+  const xmrigFailover = `./xmrig -o stratum+tcp://${primaryPool} --url-backup=stratum+tcp://${backupPoolA} --url-backup=stratum+tcp://${backupPoolB} -u YOUR_ZION_ADDRESS -p x`;
+  const healthCurl = 'curl -s https://www.zionterranova.com/api/health';
+  const networkCurl = 'curl -s https://www.zionterranova.com/api/network';
 
   return (
     <div className="min-h-screen pt-28 md:pt-32 pb-24 px-4 overflow-x-hidden">
@@ -140,7 +157,7 @@ export default function NetworkPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-300 uppercase">
                 <Radio className="h-4 w-4" />
-                ZION v2.9.6 · Network
+                ZION v2.9.7 · Network
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Live Status</p>
@@ -157,7 +174,7 @@ export default function NetworkPage() {
                   <Sparkles className="h-3 w-3 text-zion-gold" /> Native Rust
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Orbit className="h-3 w-3 text-zion-cyan" /> TestNet 2.9.6
+                  <Orbit className="h-3 w-3 text-zion-cyan" /> TestNet 2.9.7
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" /> 3 Nodes Synced
@@ -172,6 +189,64 @@ export default function NetworkPage() {
                   <p className="text-sm text-gray-300">{chip.descriptor}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ OPERATOR TOOLKIT ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="rounded-4xl border border-white/10 bg-black/40 p-8"
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Operator Toolkit</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Terminal className="h-7 w-7 text-zion-cyan" />
+              Network Ops Pro
+            </h2>
+            <p className="text-sm text-gray-400">Failover templates, health probes, and machine-readable monitoring endpoints.</p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Failover Mining</p>
+              <p className="text-sm text-gray-300 mb-3">Primary + 2 backup stratum endpoints for operational continuity.</p>
+              <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{xmrigFailover}</code>
+              <button onClick={() => copyText('xmrig-failover', xmrigFailover)} className="mt-3 inline-flex items-center gap-2 text-xs text-zion-cyan hover:text-white transition">
+                <Copy className="h-3.5 w-3.5" /> {copied === 'xmrig-failover' ? 'Copied' : 'Copy command'}
+              </button>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Health Probes</p>
+              <div className="space-y-2">
+                <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{healthCurl}</code>
+                <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{networkCurl}</code>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button onClick={() => copyText('health-curl', healthCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'health-curl' ? 'Copied' : 'Copy health'}</button>
+                <button onClick={() => copyText('network-curl', networkCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'network-curl' ? 'Copied' : 'Copy network'}</button>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Export & Docs</p>
+              <div className="space-y-2.5 text-sm">
+                <a href="/api/network" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
+                  <span className="font-mono text-xs text-gray-200">/api/network</span>
+                  <Download className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <a href="/api/health" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
+                  <span className="font-mono text-xs text-gray-200">/api/health</span>
+                  <Download className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <Link href="/api-reference" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
+                  <span className="text-gray-200">API Reference</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
+                </Link>
+              </div>
             </div>
           </div>
         </motion.section>
@@ -391,7 +466,7 @@ export default function NetworkPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — P2P Network · Native Rust Infrastructure · 3 Seed Nodes · 3 Continents · MainNet 31.12.2026
+          ZION TerraNova v2.9.7 — P2P Network Pro · Native Rust Infrastructure · 3 Seed Nodes · 3 Continents · MainNet 31.12.2026
         </p>
       </div>
     </div>
