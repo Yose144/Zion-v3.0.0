@@ -95,6 +95,26 @@ const endpointGroups = [
         latency: '90 ms avg'
       }
     ]
+  },
+  {
+    title: 'Listings (CoinGecko / CMC)',
+    description: 'Machine-readable project, supply, and on-chain metadata feeds for listing review.',
+    icon: Sparkles,
+    port: '443',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/listing/coingecko',
+        description: 'CoinGecko-ready payload: links, supply, tokenomics, and live chain telemetry.',
+        latency: '55 ms avg'
+      },
+      {
+        method: 'GET',
+        path: '/api/listing/coinmarketcap',
+        description: 'CoinMarketCap-style payload with project URLs, supply metrics, and on-chain snapshot.',
+        latency: '55 ms avg'
+      }
+    ]
   }
 ];
 
