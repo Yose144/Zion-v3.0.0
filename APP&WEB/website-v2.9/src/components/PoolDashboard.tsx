@@ -7,11 +7,13 @@ import { motion } from "framer-motion";
 import {
   Activity,
   ArrowRight,
+  Bell,
   Box,
   Check,
   CircleDot,
   Copy,
   Cpu,
+  Download,
   ExternalLink,
   Globe,
   HardHat,
@@ -150,6 +152,35 @@ function atomicToZion(atomic: number): string {
   return (atomic / 1e6).toFixed(4);
 }
 
+function parseHashrateInput(value: string): number {
+  const cleaned = value.trim().replace(/,/g, '');
+  if (!cleaned) return 0;
+  const match = cleaned.match(/^([0-9]*\.?[0-9]+)\s*([kKmMgGtTpP])?$/);
+  if (!match) return Number(cleaned) || 0;
+  const base = Number(match[1]) || 0;
+  const unit = (match[2] || '').toUpperCase();
+  const mult: Record<string, number> = {
+    '': 1,
+    K: 1e3,
+    M: 1e6,
+    G: 1e9,
+    T: 1e12,
+    P: 1e15,
+  };
+  return base * (mult[unit] ?? 1);
+}
+
+function estimateBlocksPerDay(blocks: Block[]): number {
+  if (blocks.length < 2) return 1440;
+  const sorted = [...blocks].sort((a, b) => b.timestamp - a.timestamp);
+  const newest = sorted[0].timestamp;
+  const oldest = sorted[sorted.length - 1].timestamp;
+  const span = Math.max(1, newest - oldest);
+  const intervals = Math.max(1, sorted.length - 1);
+  const avgInterval = span / intervals;
+  return Math.max(1, Math.min(10000, 86400 / avgInterval));
+}
+
 /* ═══════════════════════ COPY BUTTON ═══════════════════════ */
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -173,7 +204,29 @@ export default function PoolDashboard() {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [minerSearch, setMinerSearch] = useState("");
   const [searchError, setSearchError] = useState("");
+  const [myHashrateInput, setMyHashrateInput] = useState('100M');
+  const [activeOnly, setActiveOnly] = useState(true);
   const router = useRouter();
+
+  const onlineServers = (data?.servers ?? []).filter((s) => s.online);
+  const primaryServer = onlineServers[0] ?? data?.servers?.[0];
+  const backupServer = onlineServers[1] ?? data?.servers?.[1] ?? onlineServers[0] ?? data?.servers?.[0];
+  const myHashrate = parseHashrateInput(myHashrateInput);
+  const poolHashrate = data?.aggregate.hashrate ?? 0;
+  const rewardPerBlock = data?.recent_blocks?.[0]?.reward ? data.recent_blocks[0].reward / 1e6 : 5400;
+  const blocksPerDay = estimateBlocksPerDay(data?.recent_blocks ?? []);
+  const mySharePct = poolHashrate > 0 ? (myHashrate / poolHashrate) * 100 : 0;
+  const myDailyZion = poolHashrate > 0
+    ? (myHashrate / poolHashrate) * blocksPerDay * rewardPerBlock * ((data?.fee.miner_share ?? 89) / 100)
+    : 0;
+
+  const miners = data?.miners ?? [];
+  const visibleMiners = miners.filter((m) => !activeOnly || now - m.last_share < 600);
+
+  const primaryEndpoint = primaryServer ? `${primaryServer.host}:${primaryServer.stratum}` : '77.42.31.72:3333';
+  const backupEndpoint = backupServer ? `${backupServer.host}:${backupServer.stratum}` : primaryEndpoint;
+  const xmrigFailoverCmd = `./xmrig -o stratum+tcp://${primaryEndpoint} --url-backup=stratum+tcp://${backupEndpoint} -u YOUR_ZION_ADDRESS -p x`;
+  const nativeFailoverCmd = `python zion_native_miner_v2_9.py --pool ${primaryEndpoint} --pool-backup ${backupEndpoint} --wallet YOUR_ZION_ADDRESS`;
 
   const fetchData = useCallback(async () => {
     try {
@@ -222,7 +275,7 @@ export default function PoolDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <Pickaxe className="h-4 w-4" />
-                ZION v2.9.6 · Mining Pool
+                ZION v2.9.7 · Mining Pool
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Cosmic Harmony</p>
@@ -264,6 +317,78 @@ export default function PoolDashboard() {
                 <a href="#start-mining" className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                   Getting started guide <ArrowRight className="h-3.5 w-3.5" />
                 </a>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ PRO TOOLS ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.03 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Pro Tools</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <TrendingUp className="h-7 w-7 text-zion-cyan" />
+              Operator Toolkit
+            </h2>
+            <p className="text-sm text-gray-400">Profit estimate, failover templates, monitoring API, and export-ready endpoints.</p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Profit Estimator</p>
+              <label className="text-xs text-gray-400">Your hashrate (supports K/M/G/T)</label>
+              <input
+                value={myHashrateInput}
+                onChange={(e) => setMyHashrateInput(e.target.value)}
+                placeholder="e.g. 250M"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 font-mono outline-none focus:border-zion-cyan/50"
+              />
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between"><span className="text-gray-500">Parsed hashrate</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">Pool share</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">Observed blocks/day</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
+                <div className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 flex items-center justify-between">
+                  <span className="text-emerald-200 text-xs uppercase tracking-wider">Estimated daily reward</span>
+                  <span className="text-emerald-300 font-bold font-mono">{myDailyZion.toFixed(4)} ZION</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Failover Config</p>
+              <div className="space-y-3">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">XMRig (primary + backup)</p>
+                  <code className="block text-xs text-zion-cyan break-all">{xmrigFailoverCmd}</code>
+                  <div className="mt-2"><CopyButton text={xmrigFailoverCmd} /></div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">Native Miner failover</p>
+                  <code className="block text-xs text-zion-cyan break-all">{nativeFailoverCmd}</code>
+                  <div className="mt-2"><CopyButton text={nativeFailoverCmd} /></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Automation & Export</p>
+              <div className="space-y-2.5 text-sm">
+                <a href="/api/pool/stats" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
+                  <span className="text-gray-200 font-mono text-xs">/api/pool/stats</span>
+                  <Download className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <a href="/api-reference" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
+                  <span className="text-gray-200">API reference</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
+                  <Bell className="h-3.5 w-3.5 mt-0.5" />
+                  <span>Set alert: if `last share &gt; 10 min` or `efficiency &lt; 95%`, rotate to backup endpoint.</span>
+                </div>
               </div>
             </div>
           </div>
@@ -507,9 +632,23 @@ export default function PoolDashboard() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Directory</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Users className="h-7 w-7 text-zion-cyan" />
-              Active Miners ({data?.miners.length ?? 0})
+              Active Miners ({visibleMiners.length})
             </h2>
             <p className="text-sm text-gray-400">All registered mining addresses across pool servers.</p>
+            <div className="mt-1 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
+              <button
+                onClick={() => setActiveOnly(true)}
+                className={`px-3 py-1.5 text-xs rounded-lg transition ${activeOnly ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}
+              >
+                Active only
+              </button>
+              <button
+                onClick={() => setActiveOnly(false)}
+                className={`px-3 py-1.5 text-xs rounded-lg transition ${!activeOnly ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}
+              >
+                All miners
+              </button>
+            </div>
           </div>
 
           <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
@@ -525,7 +664,7 @@ export default function PoolDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data?.miners ?? []).map((m, i) => {
+                  {visibleMiners.map((m, i) => {
                     const isActive = now - m.last_share < 600;
                     const serverObj = data?.servers.find(s => s.id === m.server);
                     return (
@@ -552,7 +691,7 @@ export default function PoolDashboard() {
                       </tr>
                     );
                   })}
-                  {(!data?.miners || data.miners.length === 0) && (
+                  {visibleMiners.length === 0 && (
                     <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">No miners registered yet</td></tr>
                   )}
                 </tbody>
@@ -800,7 +939,7 @@ export default function PoolDashboard() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — Mining Pool · Real-time data from stratum servers · Helsinki (primary pool)
+          ZION TerraNova v2.9.7 — Mining Pool Pro · Real-time data from stratum servers · Helsinki (primary pool)
           {lastUpdate && <> · Last update: {lastUpdate.toLocaleTimeString()}</>}
         </p>
       </div>
