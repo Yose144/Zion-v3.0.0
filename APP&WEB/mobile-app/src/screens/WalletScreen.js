@@ -31,7 +31,7 @@ import {parseZionUri, extractMnemonic, canImport} from '../utils/zionUri';
 import QRScanner from '../components/QRScanner';
 import {CHAINS, CHAIN_IDS} from '../constants/chains';
 
-const WalletScreen = () => {
+const WalletScreen = ({navigation}) => {
   const {
     wallets,
     activeWallet,
@@ -237,17 +237,27 @@ const WalletScreen = () => {
 
         {/* Action Buttons */}
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('Send')}>
             <Icon name="arrow-up" size={24} color={colors.primary.cyan} />
             <Text style={styles.actionText}>Send</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => setShowQRModal(true)}>
             <Icon name="arrow-down" size={24} color={colors.primary.gold} />
             <Text style={styles.actionText}>Receive</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('Transactions')}>
+            <Icon name="format-list-bulleted" size={24} color={colors.primary.purple} />
+            <Text style={styles.actionText}>History</Text>
+          </TouchableOpacity>
           {activeWallet.walletType !== 'external' && (
             <TouchableOpacity style={styles.actionButton} onPress={handleExportWallet}>
-              <Icon name="export" size={24} color={colors.primary.purple} />
+              <Icon name="export" size={24} color={colors.text.muted} />
               <Text style={styles.actionText}>Export</Text>
             </TouchableOpacity>
           )}
