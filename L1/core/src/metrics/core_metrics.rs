@@ -45,6 +45,14 @@ pub struct Metrics {
 }
 
 impl Metrics {
+    fn max_block_gap_secs_for_health(network: &str) -> u64 {
+        if network.eq_ignore_ascii_case("testnet") {
+            172_800 // 48h tolerance on testnet
+        } else {
+            900 // 15m default for mainnet-like environments
+        }
+    }
+
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
             blocks_processed: AtomicU64::new(0),
@@ -196,6 +204,7 @@ zion_time_since_last_block_seconds {}
     /// Get health check status
     pub fn health_check(&self) -> HealthStatus {
         let uptime = self.start_time.elapsed().as_secs();
+        let network = crate::network::get_network().name().to_string();
         let last_block = self.last_block_time.load(Ordering::Relaxed);
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -208,14 +217,14 @@ zion_time_since_last_block_seconds {}
             0
         };
 
-        // Health criteria — 15 min threshold for testnet (low hashrate = longer gaps)
-        let is_healthy = time_since_last_block < 900; // 15 minutes
+        let max_block_gap_secs = Self::max_block_gap_secs_for_health(&network);
+        let is_fresh = time_since_last_block < max_block_gap_secs;
         let peers_ok = self.peers_connected.load(Ordering::Relaxed) > 0;
         let mempool_ok = self.txs_in_mempool.load(Ordering::Relaxed) < 50_000;
 
-        let status = if is_healthy && peers_ok && mempool_ok {
+        let status = if peers_ok && mempool_ok && is_fresh {
             "healthy"
-        } else if is_healthy {
+        } else if peers_ok && mempool_ok {
             "degraded"
         } else {
             "unhealthy"
@@ -223,7 +232,7 @@ zion_time_since_last_block_seconds {}
 
         HealthStatus {
             status: status.to_string(),
-            network: crate::network::get_network().name().to_string(),
+            network,
             uptime_seconds: uptime,
             height: self.current_height.load(Ordering::Relaxed),
             difficulty: self.current_difficulty.load(Ordering::Relaxed),
@@ -294,5 +303,26 @@ mod tests {
         assert_eq!(health.status, "healthy");
         assert_eq!(health.height, 100);
         assert_eq!(health.peers_connected, 5);
+    }
+
+    #[test]
+    fn test_health_check_stale_is_degraded_when_connected() {
+        let metrics = Metrics::new();
+        metrics.current_height.store(100, Ordering::Relaxed);
+        metrics.peers_connected.store(8, Ordering::Relaxed);
+        metrics
+            .txs_in_mempool
+            .store(100, Ordering::Relaxed);
+        metrics.last_block_time.store(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .saturating_sub(200_000),
+            Ordering::Relaxed,
+        );
+
+        let health = metrics.health_check();
+        assert_eq!(health.status, "degraded");
     }
 }
