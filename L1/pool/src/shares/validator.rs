@@ -738,4 +738,82 @@ mod tests {
             result3.reason
         );
     }
+
+    // ── CHv4 E2E tests ─────────────────────────────────────────────────────────
+
+    /// F-04: CHv4 share at height >= 200_000 must be accepted (with max target).
+    #[tokio::test]
+    async fn test_chv4_share_accepted_at_fork_height() {
+        let validator = ShareValidator::new("little");
+
+        let share = SubmittedShare {
+            job_id: "chv4_job".to_string(),
+            nonce: "00000042".to_string(),
+            result: None,
+            algorithm: "chv4".to_string(), // alias for CosmicHarmony via CHv4 path
+            job_blob: "ab".repeat(160), // 160 hex chars = 80 bytes (minimum for CosmicHarmony)
+            job_target: "ffffffff".to_string(), // max target — any hash passes
+            block_target: None,
+            height: Some(200_000),          // CHV4_NPU_FORK_HEIGHT
+        };
+
+        let result = validator.validate_share(&share, "miner_chv4").await;
+        assert!(
+            result.valid,
+            "CHv4 share at height=200_000 must be accepted, got: {}",
+            result.reason
+        );
+    }
+
+    /// CHv4 must produce a DIFFERENT hash than CHv3 for the same (blob, nonce).
+    #[test]
+    fn test_chv4_hash_differs_from_chv3() {
+        use crate::shares::validator::ShareValidator;
+        use zion_cosmic_harmony_v3::algorithms_opt;
+
+        let blob = vec![0xBEu8; 80];
+        let nonce: u32 = 0x1234_5678;
+
+        // CHv3 ASIC-hardened path (height 150_000)
+        let h_chv3 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 150_000);
+
+        // CHv4 path (height 200_000)
+        let h_chv4 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 200_000);
+
+        assert_ne!(
+            h_chv3.data, h_chv4.data,
+            "CHv4 hash must differ from CHv3 hash for same (blob, nonce)"
+        );
+    }
+
+    /// CHv4 output must be deterministic.
+    #[test]
+    fn test_chv4_hash_is_deterministic() {
+        use zion_cosmic_harmony_v3::algorithms_opt;
+
+        let blob = vec![0x5Au8; 80];
+        let nonce: u32 = 0xDEAD_BEEF;
+
+        let h1 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 200_001);
+        let h2 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 200_001);
+
+        assert_eq!(h1.data, h2.data, "CHv4 must be deterministic");
+    }
+
+    /// Legacy path (height < 100k) differs from CHv4 path.
+    #[test]
+    fn test_chv4_hash_differs_from_legacy() {
+        use zion_cosmic_harmony_v3::algorithms_opt;
+
+        let blob = vec![0x7Fu8; 80];
+        let nonce: u32 = 0xCAFE_BABE;
+
+        let h_legacy = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 0);
+        let h_chv4   = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 200_000);
+
+        assert_ne!(
+            h_legacy.data, h_chv4.data,
+            "CHv4 hash must differ from legacy CHv3 hash"
+        );
+    }
 }
