@@ -28,9 +28,9 @@
 
 ### B-CRIT-01 — CHv4 produkční upgrade
 
-- Finalizovat activation policy (fork-height governance + rollout strategie).
-- Dokončit production hardening CHv4 execution path (release profil, fallback policy, observabilita).
-- Uzavřít E2E mining test scénář pro CHv4 na produkčním profilování.
+- [x] Activation policy finalizována — `CHV4_NPU_FORK_HEIGHT = 200_000` FROZEN — `docs/2.9.7/CHV4_ACTIVATION_POLICY.md` ✅ 2026-03-03
+- [x] Production hardening — `block.rs` nyní volá `cosmic_harmony_with_height()` (výšková dispatching CHv3/CHv4) — `cargo check` OK ✅ 2026-03-03
+- [ ] E2E production run — pool + miner + telemetry s simulovanou výškou ≥ 200_000 bez kritických incidentů (**zbývá**)
 
 ### B-CRIT-02 — Revenue produkční aktivace
 
