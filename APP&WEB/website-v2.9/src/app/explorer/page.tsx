@@ -277,7 +277,7 @@ export default function ExplorerPage() {
               <Globe className="h-7 w-7 text-zion-cyan" />
               Network Peers
             </h2>
-            <p className="text-sm text-gray-400">Global node connectivity — Helsinki · Usa · Asia (3 seed nodes).</p>
+            <p className="text-sm text-gray-400">Global node connectivity — Helsinki · USA · Asia (3 seed nodes).</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[280px]" />}>
             <NetworkPeers />
