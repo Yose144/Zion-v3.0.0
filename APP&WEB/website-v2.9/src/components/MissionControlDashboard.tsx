@@ -426,7 +426,7 @@ export default function MissionControlDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/40 bg-cyan-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-cyan-400 uppercase">
                 <Activity className="h-4 w-4" />
-                ZION v2.9.6 · Mission Control
+                ZION v2.9.7 · Pre-MainNet Gate
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Live Telemetry</p>
@@ -444,6 +444,9 @@ export default function MissionControlDashboard() {
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Sparkles className="h-3 w-3 text-zion-gold" /> 3 Nodes · 3 Continents
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-yellow-200">
+                  <AlertTriangle className="h-3 w-3" /> MainNet Go/No-Go: NO-GO
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? 'All Systems Healthy' : anyHealthy ? 'Partial Systems Up' : 'Systems Monitoring'}
@@ -574,8 +577,8 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Codebase" value="52,590" sub="lines of Rust" color="text-cyan-400" />
-                <Stat label="Tests" value="502" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="MainNet Ready" value="~92%" color="text-purple-400" />
+                <Stat label="Tests" value="780+" sub="passing / 0 failing" color="text-emerald-400" />
+                <Stat label="MainNet Gate" value="NO-GO" sub="B-CRIT-01..03 open" color="text-yellow-400" />
                 <Stat label="Crates" value="5" sub="core, pool, miner, cosmic-harmony, native-libs" />
               </div>
             </motion.section>
@@ -671,11 +674,11 @@ export default function MissionControlDashboard() {
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — MainNet 31. 12. 2026
                 </h2>
-                <p className="text-sm text-gray-400">Fáze 0 (Feb) → Fáze 5 (Dec 2026) · Cíl: 31. 12. 2026</p>
+                <p className="text-sm text-gray-400">Fáze 0 (Feb) → Fáze 5 (Dec 2026) · 168h stability PASS · pre-mainnet gate otevřená</p>
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-purple-400 to-pink-400" initial={{ width: 0 }} animate={{ width: '45%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">~45% → MainNet</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">Pre-MainNet Gate · NO-GO (3 kritické blokery)</span>
               </div>
             </motion.section>
 
@@ -699,7 +702,7 @@ export default function MissionControlDashboard() {
               </PhaseAccordion>
 
               <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Hardened TestNet" pct={77} status="PROBÍHÁ" statusColor="border-cyan-400/30 bg-cyan-400/10 text-cyan-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Únor — Květen 2026 | 420 testů dosud</p>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Únor — Březen 2026 | 168h stability PASS (2026-03-03)</p>
                 <table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Obsah</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Testy</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Stav</th></tr></thead><tbody>
                   <SprintRow name="1.0 Network Deploy" content="Chain reset, Docker, 3-server" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.1 Config Validation" content="TOML parsing, boundary checks" tests="70" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -711,7 +714,7 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.7 P2P Rate-Limit" content="200 msgs/peer/60s, escalating bans" tests="13" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.8 Health & Metrics" content="getHealthCheck, getMetrics" tests="8" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.9 Stress Tests" content="High-throughput TX, rapid blocks" tests="21" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.10 168h Stability" content="5 nodů · 5 kontinentů · 7 dní — GATE" tests="—" status={<span className="text-cyan-400 inline-flex items-center gap-1"><Timer className="h-3.5 w-3.5" /> NOW</span>} highlight />
+                  <SprintRow name="1.10 168h Stability" content="3 nody · 3 kontinenty · 7 dní — GATE" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> PASS</span>} highlight />
                   <SprintRow name="1.11 Partition Test" content="Izolace node 30 min, reconnect" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.12 100 Miners" content="Simulace 100 Stratum klientů" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                 </tbody></table>
@@ -1029,7 +1032,7 @@ export default function MissionControlDashboard() {
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-white/20 space-y-4 sm:space-y-6">
                     {[
                       { done: true, date: 'Únor 2026', title: 'Fáze 0 — Spec Freeze', desc: 'Core rewrite, 155 testů', color: 'text-emerald-400' },
-                      { active: true, date: 'Únor — Květen 2026', title: 'Fáze 1 — Hardened TestNet', desc: '420 testů, 72h stability run', color: 'text-cyan-400' },
+                      { active: true, date: 'Únor — Březen 2026', title: 'Fáze 1 — Hardened TestNet', desc: '168h stability PASS, 3-node mesh', color: 'text-cyan-400' },
                       { done: true, date: 'Červen — Červenec', title: 'Fáze 2 — Node UX & Mining', desc: 'Explorer, mining guides, node setup — HOTOVO', color: 'text-emerald-400' },
                       { active: true, date: 'Srpen — Září', title: 'Fáze 3 — Infra & Legal', desc: 'Monitoring ✅, legal ✅, seed nody TODO', color: 'text-yellow-400' },
                       { date: 'Říjen — Listopad', title: 'Fáze 4 — Dress Rehearsal', desc: '7-day run, security audit, code freeze' },
@@ -1141,9 +1144,10 @@ export default function MissionControlDashboard() {
                   </thead>
                   <tbody>
                     {[
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: '72h stability run', phase: '1.10', status: 'PROBÍHÁ', sColor: 'text-cyan-400', bg: 'bg-red-500/5' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Live partition test', phase: '1.11', status: 'TODO', sColor: 'text-gray-500', bg: 'bg-red-500/5' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: '100 miners stress test', phase: '1.12', status: 'TODO', sColor: 'text-gray-500', bg: 'bg-red-500/5' },
+                      { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: '168h stability run', phase: '1.10', status: 'PASS', sColor: 'text-emerald-400' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'CHv4 activation policy + E2E', phase: 'B-CRIT-01', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Revenue wallets + 72h canary', phase: 'B-CRIT-02', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Genesis/freeze artefakty + sign-off', phase: 'B-CRIT-03', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Block explorer', phase: '2.3', status: 'HOTOVO', sColor: 'text-emerald-400' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Node UX ("10 min setup")', phase: '2.1', status: 'HOTOVO', sColor: 'text-emerald-400' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Mining guides', phase: '2.2', status: 'HOTOVO', sColor: 'text-emerald-400' },
@@ -1171,7 +1175,7 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova v2.9.6 — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella<br />
+          ZION TerraNova v2.9.7 — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella<br />
           <em>&quot;On the Star — 6-Layer Architecture&quot;</em><br /><br />
           Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
         </div>
