@@ -1,6 +1,7 @@
 use crate::adapter::ChainAdapter;
 use crate::error::{WarpError, WarpResult};
 use crate::protocol::{DepositProof, MintInstruction};
+use crate::solana_signer::SolanaSigner;
 use crate::types::ChainFamily;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -222,15 +223,27 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        // SPL token mint instruction requires serialized Solana transaction +
-        // program authority keypair. Signing handled by signing service (D-04).
-        Err(WarpError::AdapterError {
+        let mint = match wzion_mint(&self.cluster) {
+            Some(m) => m,
+            None => {
+                return Err(WarpError::AdapterError {
+                    chain: "solana".into(),
+                    reason: format!("no wZION mint configured for cluster '{}'", self.cluster),
+                });
+            }
+        };
+        let signer = SolanaSigner::from_env().map_err(|e| WarpError::AdapterError {
             chain: "solana".into(),
-            reason: format!(
-                "Signing service (D-04) pending — would mint {} wZION to {} on {}",
-                instruction.amount_dest_atomic, instruction.recipient, self.cluster
-            ),
-        })
+            reason: format!("relay key unavailable: {}", e),
+        })?;
+        let amount = instruction.amount_dest_atomic as u64;
+        info!(
+            "[WARP][solana] minting {} wZION to {} on {} (mint {})",
+            amount, instruction.recipient, self.cluster, mint
+        );
+        signer
+            .mint_to(&self.client, &self.rpc_url, &instruction.recipient, mint, amount)
+            .await
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
