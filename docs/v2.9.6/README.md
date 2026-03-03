@@ -21,7 +21,7 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 | **Block Reward** | 5,400.067 ZION (constant) | 5,400.067 → Decade Decay (-20%/10y), tail 725 |
 | **Block Time** | 60 seconds | 60 seconds (unchanged) |
 | **Mining Horizon** | ~45 years (2026–2071) | **100+ years + tail emission (725 ZION/block)** |
-| **Consensus** | Cosmic Harmony v3 | Cosmic Harmony v3 (unchanged) |
+| **Consensus** | Cosmic Harmony v3 | **Cosmic Harmony v4** (CHv4: memory-hard + NPU mixing, active from genesis block 0) |
 | **Transaction Model** | UTXO with Ed25519 | UTXO with Ed25519 (unchanged) |
 | **Storage** | LMDB | LMDB (unchanged) |
 | **DAA** | LWMA (60-block, ±25%) | LWMA (unchanged) |

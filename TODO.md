@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 3. března 2026 (Session 59 — Chain restart + oprava algoritmu; všechny uzly v konsenzu; bloky nalezeny; ~108 ZION payout pending)  
+> **Aktualizace:** 3. března 2026 (Session 59+60 — Chain restart + oprava algoritmu + CHv4 komplexní implementace do minera; všechny uzly v konsenzu)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
@@ -60,6 +60,7 @@
 
 ### B-CRIT (MainNet gate — blokující)
 - [x] **B-CRIT-01** — CHv4 activation policy — `CHV4_NPU_FORK_HEIGHT=0` od genesis ✅ 2026-03-03
+- [x] **B-CRIT-01b** — CHv4 implementace do Rust minera (CUDA/OpenCL), Python minera, desktop agenta ✅ 2026-03-03 (commit `78a4cb3`)
 - [ ] **B-CRIT-02** — Revenue production activation (prod wallets + buyback + 72h canary)
 - [ ] **B-CRIT-03** — Genesis ceremony + freeze artifacts (genesis.json offline + podpisy)
 
@@ -276,6 +277,7 @@
   - ✅ **Session 58:** A-05 `peers:null` DONE, B-01 time-lock DONE, B-02 algo rotace DONE, B-05 alerts DONE, C-03/C-04/D-04 DONE — TODO.md aktualizován
   - ✅ **Session 58:** 168h stability ✅ PASS (2026-03-03 11:48 UTC), STABILITY_LOG.md T+168h zapsán
   - ✅ **Session 58:** `tests/stress_100_miners.py` VYTVOŘEN — Phase 1.12 (100 simulovaných minerů)
-- ⏭️ **Další P0 (lokálně):** B-CRIT-01 CHv4 activation policy, Phase 1.12 výsledky zaznamenat
+- ✅ **Session 59–60:** CHv4 kompletní implementace do Rust minera (CUDA kernel přepsán, cuda.rs 16-arg, opencl.rs komentář), Python minera (v2.9.6 banner, CHv4/revenue konstanty) a desktop agenta (algo `cosmic_harmony`, CHv4/revenue konstanty) — commit `78a4cb3`
+- ⏭️ **Další P0 (lokálně):** B-CRIT-01 ✅ DONE; Phase 1.12 výsledky zaznamenat; Metal GPU CHv4 port (TODO)
 - ⏭️ **Další P0 (server):** 1.11 partition test, Alertmanager Telegram tokeny, genesis.json OFFLINE, Docker SHA-256, constitution FROZEN, v2.9.7-freeze tag
 - ⏭️ **Hlavní MainNet gate:** B-CRIT-02 revenue wallets + B-CRIT-03 genesis ceremony
