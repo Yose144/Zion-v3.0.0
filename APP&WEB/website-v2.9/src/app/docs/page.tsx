@@ -5,6 +5,8 @@ import { Book, BookOpen, Code2, Rocket, Shield, Zap, FileText, Github, ExternalL
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import PhilosophyContent from '@/components/docs/PhilosophyContent';
+import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 /* ═══════════════════════════════════════════
    Version Tree — each version is a "branch"
@@ -293,6 +295,7 @@ export default function DocsPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': false, 'v2.9.7': true, 'v2.9': false, 'v2.8.x': false, 'whitepaper': true, 'architecture': true, 'mainnet': false, 'listing': false, 'legal': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
+  const { lang } = useLang();
 
   // Get current version data
   const currentVersion = versions.find(v => v.id === activeVersion) || versions[1];
@@ -402,10 +405,10 @@ export default function DocsPage() {
               <span className="text-sm text-zion-cyan font-semibold">Knowledge Base</span>
             </div>
             <h1 className="text-6xl md:text-7xl font-bold mb-6 text-gradient">
-              ZION DOKUMENTACE
+              {tr('docs', 'title', lang)}
             </h1>
             <p className="text-xl text-gray-400 mb-4">
-              Kompletní průvodci, API reference &amp; architektura protokolu
+              {tr('docs', 'subtitle', lang)}
             </p>
             <div className="flex items-center justify-center gap-3 mb-8">
               {versions.map(v => (
@@ -548,7 +551,7 @@ export default function DocsPage() {
                   }`}
                 >
                   <LayoutList className="w-3.5 h-3.5" />
-                  Resources
+                  {tr('docs', 'resources_tab', lang)}
                 </button>
                 <button
                   onClick={() => setSidebarTab('history')}
@@ -559,7 +562,7 @@ export default function DocsPage() {
                   }`}
                 >
                   <GitBranch className="w-3.5 h-3.5" />
-                  History
+                  {tr('docs', 'history_tab', lang)}
                 </button>
               </div>
 

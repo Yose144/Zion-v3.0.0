@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import t, { tr, tx } from '@/lib/translations';
 
 const phases = [
   {
@@ -82,6 +84,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function CHv4Upgrade() {
+  const { lang } = useLang();
   return (
     <section className="relative py-32 px-4 overflow-hidden">
       {/* background glow */}
@@ -101,7 +104,7 @@ export default function CHv4Upgrade() {
         >
           <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-pink-300 font-semibold">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-            Algorithm Upgrade · Roadmap 2026
+            {tr('chv4', 'badge', lang)}
           </div>
 
           <h2 className="text-4xl md:text-5xl xl:text-6xl font-bold">
@@ -110,9 +113,7 @@ export default function CHv4Upgrade() {
           </h2>
 
           <p className="text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            CHv4 introduces a 5th algorithm phase — <strong className="text-white">Neural Bloom</strong> — doubling
-            memory hardness to 4 MB and adding an 8-round Feistel perceptron that dynamically
-            resists ASIC fabrication. Planned activation: MainNet launch hard-fork.
+            {tr('chv4', 'subheading', lang)}
           </p>
         </motion.div>
 
@@ -136,7 +137,7 @@ export default function CHv4Upgrade() {
                   <span className="text-xs text-gray-500 font-mono">Phase {phase.id}</span>
                   {phase.badge && (
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusColors[phase.status]}`}>
-                      {phase.badge}
+                      {phase.badge === 'NEW' ? tx(t.chv4.new_badge, lang) : phase.badge}
                     </span>
                   )}
                 </div>
