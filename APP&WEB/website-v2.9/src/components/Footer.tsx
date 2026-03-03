@@ -1,5 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { Github, MessageCircle, Globe, BookOpen, Compass, Map, Download, Pickaxe, Crown, FileText, Orbit, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 const footerGroups = [
   {
@@ -38,6 +42,7 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const { lang } = useLang();
   return (
     <footer className="border-t border-white/10 bg-black/60 backdrop-blur-xl mt-20">
       <div className="zion-container py-12">
@@ -46,8 +51,7 @@ export default function Footer() {
           <div className="md:col-span-2 space-y-4">
             <h3 className="text-xl font-bold text-gradient">ZION TerraNova</h3>
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
-              Consciousness-based L1 blockchain built in Rust. Cosmic Harmony PoW algorithm,
-              multi-chain WARP bridges, and humanitarian DAO governance.
+              {tr('footer', 'tagline', lang)}
             </p>
             <div className="flex items-center gap-3 pt-2">
               {socialLinks.map(({ href, label, Icon }) => (

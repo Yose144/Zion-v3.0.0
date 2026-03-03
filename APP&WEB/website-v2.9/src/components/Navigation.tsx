@@ -11,47 +11,45 @@ import { tr } from '@/lib/translations';
 type NavItem = { href: string; label: string; children?: NavItem[] };
 type NavGroup = { title: string; items: NavItem[] };
 
-const navGroups: NavGroup[] = [
-  {
-    title: 'Mission',
-    items: [
-      { href: '/', label: 'Home' },
-      { href: '/dashboard', label: 'Dashboard' },
-      { href: '/network', label: 'Network' },
-      { href: '/roadmap', label: 'Roadmap' },
-    ],
-  },
-  {
-    title: 'Stacks',
-    items: [
-      { href: '/warp', label: 'Warp' },
-      { href: '/dao', label: 'DAO' },
-      { href: '/bridge', label: 'Bridge' },
-      { href: '/download', label: 'Download' },
-      { href: '/pool', label: 'Pool' },
-      {
-        href: '/mining',
-        label: 'Mining & Node',
-      },
-    ],
-  },
-  {
-    title: 'Knowledge',
-    items: [
-      { href: '/explorer', label: 'Explorer' },
-      { href: '/genesis', label: 'Genesis' },
-      { href: '/api-reference', label: 'API' },
-      { href: '/docs', label: 'Docs' },
-    ],
-  },
-];
-
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const pathname = usePathname();
-  const activeGroup = navGroups.find((group) => group.title === openGroup);
   const { lang, setLang } = useLang();
+
+  const navGroups: NavGroup[] = [
+    {
+      title: 'Mission',
+      items: [
+        { href: '/',          label: tr('nav', 'home', lang) },
+        { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
+        { href: '/network',   label: tr('nav', 'network', lang) },
+        { href: '/roadmap',   label: tr('nav', 'roadmap', lang) },
+      ],
+    },
+    {
+      title: 'Stacks',
+      items: [
+        { href: '/warp',     label: tr('nav', 'warp', lang) },
+        { href: '/dao',      label: tr('nav', 'dao', lang) },
+        { href: '/bridge',   label: tr('nav', 'bridge', lang) },
+        { href: '/download', label: tr('nav', 'download', lang) },
+        { href: '/pool',     label: tr('nav', 'pool', lang) },
+        { href: '/mining',   label: tr('nav', 'mining', lang) },
+      ],
+    },
+    {
+      title: 'Knowledge',
+      items: [
+        { href: '/explorer',     label: tr('nav', 'explorer', lang) },
+        { href: '/genesis',      label: tr('nav', 'genesis', lang) },
+        { href: '/api-reference',label: tr('nav', 'api', lang) },
+        { href: '/docs',         label: tr('nav', 'docs', lang) },
+      ],
+    },
+  ];
+
+  const activeGroup = navGroups.find((group) => group.title === openGroup);
   const groupLabels: Record<string, string> = {
     Mission: tr('nav', 'mission', lang),
     Stacks:  tr('nav', 'stacks', lang),
