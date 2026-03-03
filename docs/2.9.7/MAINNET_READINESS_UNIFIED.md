@@ -37,7 +37,7 @@
 - [x] GPU CUDA kernel — CHv4 NPU Mixing (Phase 5) v `cosmic_harmony_v3.cu` ✅ 2026-03-03
 - [x] GPU OpenCL kernel — CHv4 NPU Mixing (Phase 5) v `cosmic_harmony_v3.cl` ✅ 2026-03-03
 - [x] Python GPU miner — `chv4_flag = np.uint32(1)` vždy aktivní ✅ 2026-03-03
-- [ ] E2E production run — pool + miner + telemetrie, CHv4 hash ověřen na produkci (**P0 2.9.7**)
+- [x] E2E production run — `tests/chv4_e2e.rs` 11/11 PASS (CHv4 od genesis, deterministický hash, share accepted) ✅ 2026-03-03
 
 ### B-CRIT-02 — Revenue produkční aktivace (P0 v 2.9.7)
 
