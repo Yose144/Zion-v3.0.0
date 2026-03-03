@@ -1,11 +1,12 @@
 /**
- * ZION Transaction History Screen v2.9.5
+ * ZION Transaction History Screen v2.9.6
  * 
  * Features:
- * - List all transactions
- * - Filter by type (send/receive)
- * - Transaction details
+ * - List all transactions (ZION)
+ * - Filter by type (all / sent / received)
+ * - Transaction detail modal with full TX info
  * - Pull to refresh
+ * - Accessible from WalletScreen via Stack navigation
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
