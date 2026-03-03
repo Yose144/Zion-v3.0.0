@@ -1,7 +1,7 @@
 # ZION TerraNova — Website Roadmap 2026
 
-**Stav k:** 3. 3. 2026  
-**Repo:** `2.9.6-main` / branch `main`  
+**Stav k:** 3. 3. 2026 (aktualizováno)  
+**Repo:** `2.9.6-main` / branch `main` · HEAD: `dbd9ba8`  
 **Live:** https://zionterranova.com  
 
 ---
@@ -23,8 +23,21 @@ Cílem je mít plně lokalizovaný, profesionální web připravený pro:
 | Codename "Pre-MainNet Gate" všude správně | ✅ `043e8e8` |
 | Docs stránka — Version Tree (v2.8.x → v2.9.7) | ✅ |
 | Historical docs (v2.8.x, v2.9, v2.9.5, v2.9.6) | ✅ |
-| Navigation: Mission / Stacks / Knowledge | ✅ |
+| Navigation: Mission / Stacks / Knowledge — plně i18n | ✅ `ec30b16` |
 | Server Helsinki — Docker deploy, HTTPS | ✅ |
+| **translations.ts** — nav + hero button klíče (CZ/EN) | ✅ `ec30b16` |
+| **Hero.tsx** — 3 CTA tlačítka přeložena přes `tr()` | ✅ `ec30b16` |
+| **Footer.tsx** — tagline přes `tr()`, `use client` | ✅ `ec30b16` |
+| **WarpCorridors.tsx** — verze 2.9.7, USA kapitalizace | ✅ `ec30b16` |
+| **DocsRail.tsx** — "Fáze 0–5" → "Phases 0–5" (EN fix) | ✅ `ec30b16` |
+| **roadmap/layout.tsx** — správná metadata L1–L6 | ✅ `ec30b16` |
+| **roadmap/page.tsx** — L2 NCL/L3 DAO layer stack, premine, timeline 2026–2040+ | ✅ `da2f9b3` · `ce92cb9` |
+| **bridge/page.tsx** — "L2 NCL — wZION Swap DEX" | ✅ `ce92cb9` |
+| **network/warp/explorer/components** — USA kapitalizace všude | ✅ `bdfe51c` |
+| **MissionControlDashboard.tsx** — L2 NCL · L3 DAO v timeline | ✅ `bdfe51c` |
+| **docs/mainnet, v2.9.7, v2.9.6** — layer labels, USA1/USA2 | ✅ `dbd9ba8` |
+| **layer-architecture.md** — L2=2027, L3=2028, L4=2029 | ✅ `c25a7af` |
+| **ZION_Whitepaper_v2.9.7.md** — L3 DAO+WARP, roadmap roky | ✅ `3280285` |
 
 ---
 
@@ -116,19 +129,21 @@ Resources
 
 ```
 WEEK 1 — Infrastructure
-  - [ ] LanguageContext + toggle komponent
-  - [ ] Layout.tsx: lang prop flow
-  - [ ] Docs page: lang-aware file loading
+  - [x] LanguageContext → implementováno jako `useLang()` + `translations.ts`
+  - [x] Navigation.tsx: všechny položky přes `tr('nav', key, lang)`
+  - [x] Hero.tsx: 3 CTA tlačítka přeložena
+  - [x] Footer.tsx: tagline přeložen
+  - [ ] Docs page: lang-aware file loading (CS/EN fallback)
 
 WEEK 2–3 — Kritický obsah (EN)
-  - [ ] Whitepaper v2.9.7 EN
-  - [ ] Architecture EN
+  - [x] Whitepaper v2.9.7 EN — `public/docs/whitepaper/ZION_Whitepaper_v2.9.7.md`
+  - [ ] Architecture docs EN
   - [ ] CoinGecko checklist EN
 
 WEEK 4+ — Zbylé stránky
-  - [ ] Hero EN texty
-  - [ ] CHv4Upgrade EN
-  - [ ] Roadmap EN
+  - [ ] Hero EN texty rozšířit
+  - [ ] CHv4Upgrade EN (`improvements` tabulka)
+  - [ ] Roadmap stránka EN překlad
 ```
 
 ---
@@ -156,9 +171,9 @@ Mission
 └── Roadmap
 
 Stacks  
-├── Warp (L3 bridge)
-├── DAO
-├── Bridge (wZION ↔ ETH)
+├── Warp (WARP Protocol · L3 DAO 2028)
+├── DAO (L3 ZION DAO · Treasury 4B)
+├── Bridge (wZION ↔ ETH · L2 NCL)
 ├── Pool (mining pool)
 ├── Mining & Node
 └── Download
