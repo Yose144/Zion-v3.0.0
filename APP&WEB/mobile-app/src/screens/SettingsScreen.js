@@ -32,7 +32,15 @@ const SettingsScreen = () => {
           <View>
             <Text style={styles.appName}>ZION Mobile</Text>
             <Text style={styles.appVersion}>v{CONFIG.VERSION} (Build {CONFIG.BUILD_NUMBER})</Text>
+            <Text style={styles.appCodename}>{CONFIG.CODENAME}</Text>
           </View>
+        </View>
+        {/* CHv4 Badge */}
+        <View style={styles.chv4Badge}>
+          <Icon name="cpu-64-bit" size={14} color={colors.primary.gold} />
+          <Text style={styles.chv4BadgeText}>
+            {CONFIG.ALGORITHM_DISPLAY} — aktiví od genesis (fork_height=0)
+          </Text>
         </View>
       </GlassCard>
 
@@ -104,22 +112,28 @@ const SettingsScreen = () => {
       {/* Network Settings */}
       <GlassCard style={styles.card}>
         <Text style={styles.sectionTitle}>Network</Text>
-        
+
         <SettingItem
           icon="server"
-          label="Pool URL"
-          value={CONFIG.POOL_URL}
+          label="Pool Primary"
+          value={`Helsinki  •  ${CONFIG.POOL_HOST}:${CONFIG.POOL_PORT}`}
         />
-        
+        {CONFIG.POOL_HOSTS?.slice(1).map((n) => (
+          <SettingItem
+            key={n.host}
+            icon="server-network"
+            label={`Pool ${n.name}`}
+            value={`${n.host}:${CONFIG.POOL_PORT}`}
+          />
+        ))}
         <SettingItem
           icon="api"
-          label="API URL"
-          value={CONFIG.API_URL}
+          label="Pool API"
+          value={CONFIG.POOL_API_NODES?.[0] || CONFIG.API_URL}
         />
-        
         <SettingItem
           icon="web"
-          label="Explorer URL"
+          label="Explorer"
           value={CONFIG.EXPLORER_URL}
         />
       </GlassCard>
@@ -267,6 +281,29 @@ const styles = StyleSheet.create({
   appVersion: {
     ...typography.caption,
     marginTop: spacing.xs,
+  },
+  appCodename: {
+    ...typography.caption,
+    color: colors.text.muted,
+    marginTop: 2,
+  },
+  chv4Badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,215,0,0.08)',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.25)',
+  },
+  chv4BadgeText: {
+    fontSize: 12,
+    color: '#FFD700',
+    fontWeight: '600',
+    flex: 1,
   },
   sectionTitle: {
     ...typography.h3,

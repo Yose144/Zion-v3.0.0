@@ -20,9 +20,13 @@ import {
   MINING_EMISSION,
   GENESIS_PREMINE,
   MINER_SHARE_PERCENT,
-  TITHE_PERCENT,
+  HUMANITARIAN_PCT,
+  ISSOBELLA_PCT,
   POOL_FEE_PERCENT,
   TARGET_BLOCK_TIME_SEC,
+  ALGORITHM,
+  ALGORITHM_DISPLAY,
+  CHV4_NPU_FORK_HEIGHT,
   formatZion,
   circulatingSupply,
   remainingMining,
@@ -189,22 +193,33 @@ const DashboardScreen = () => {
       {/* Emission & Tokenomics */}
       <GlassCard style={styles.card}>
         <Text style={styles.sectionTitle}>💰 Emission & Tokenomics</Text>
+        {/* CHv4 Algorithm Badge */}
+        <View style={styles.algoBadge}>
+          <Icon name="cpu-64-bit" size={16} color={colors.primary.gold} />
+          <Text style={styles.algoBadgeText}>
+            {ALGORITHM_DISPLAY} — NPU Mixing INT8 MLP (CHV4_FORK=0)
+          </Text>
+        </View>
         <View style={styles.networkGrid}>
           <NetworkItem
             label="Block Reward"
             value={`${formatZion(BLOCK_REWARD_ZION)} ZION`}
           />
           <NetworkItem
-            label="Miner Share"
-            value={`${MINER_SHARE_PERCENT}% (${formatZion(BLOCK_REWARD_ZION * MINER_SHARE_PERCENT / 100)} ZION)`}
+            label="⛏️ Miners (89%)"
+            value={`${formatZion(BLOCK_REWARD_ZION * MINER_SHARE_PERCENT / 100)} ZION`}
           />
           <NetworkItem
-            label="DAO Tithe"
-            value={`${TITHE_PERCENT}% (${formatZion(BLOCK_REWARD_ZION * TITHE_PERCENT / 100)} ZION)`}
+            label="🌍 Humanitarian L5 (5%)"
+            value={`${formatZion(BLOCK_REWARD_ZION * HUMANITARIAN_PCT / 100)} ZION`}
           />
           <NetworkItem
-            label="Pool Fee"
-            value={`${POOL_FEE_PERCENT}%`}
+            label="🔭 Issobella L6 (5%)"
+            value={`${formatZion(BLOCK_REWARD_ZION * ISSOBELLA_PCT / 100)} ZION`}
+          />
+          <NetworkItem
+            label="🏊 Pool Fee (1%)"
+            value={`${formatZion(BLOCK_REWARD_ZION * POOL_FEE_PERCENT / 100)} ZION`}
           />
           <NetworkItem
             label="Daily Emission"
@@ -217,10 +232,6 @@ const DashboardScreen = () => {
           <NetworkItem
             label="Total Supply"
             value={`${(TOTAL_SUPPLY / 1e9).toFixed(1)}B ZION`}
-          />
-          <NetworkItem
-            label="Remaining Mining"
-            value={`${formatZion(remainingMining(networkInfo?.height || 0))} ZION`}
           />
           <NetworkItem
             label="Fee Policy"
@@ -356,6 +367,24 @@ const styles = StyleSheet.create({
   },
   networkGrid: {
     gap: spacing.sm,
+  },
+  algoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,215,0,0.08)',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.25)',
+  },
+  algoBadgeText: {
+    fontSize: 12,
+    color: '#FFD700',
+    fontWeight: '600',
+    flex: 1,
   },
   networkItem: {
     flexDirection: 'row',

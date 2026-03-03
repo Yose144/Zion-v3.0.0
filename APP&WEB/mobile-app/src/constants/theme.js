@@ -1,10 +1,12 @@
 /**
- * ZION TerraNova v2.9.5 — Unified Design System
+ * ZION TerraNova v2.9.6 — Unified Design System
  * Synchronized with: website-v2.9, desktop-agent
  *
  * Color tokens match:
  *   - desktop-agent/src/styles/main.css  (CSS vars)
  *   - website-v2.9/src/components/BackgroundOrchestrator (galactic-core)
+ *
+ * v2.9.6: CHv4 aktivní od genesis (CHV4_NPU_FORK_HEIGHT=0), revenue 89/5/5/1
  */
 
 export const colors = {
