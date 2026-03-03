@@ -60,6 +60,13 @@ const quickLinks = [
     accent: "from-emerald-500/80 to-teal-600/80",
     icon: BarChart3,
   },
+  {
+    title: "Explorer API",
+    description: "Direct JSON endpoints for integration and monitoring",
+    href: "/api-reference",
+    accent: "from-fuchsia-500/80 to-violet-600/80",
+    icon: ExternalLink,
+  },
 ];
 
 export default function ExplorerPage() {
@@ -89,7 +96,7 @@ export default function ExplorerPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <SearchCode className="h-4 w-4" />
-                ZION v2.9.6 · Explorer
+                ZION v2.9.7 · Explorer Pro
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Real-Time</p>
@@ -99,7 +106,7 @@ export default function ExplorerPage() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 Search blocks, transactions, and addresses on the ZION TerraNova network.
-                Live data from all seed nodes with auto-refresh every 10 seconds.
+                Smart hash resolver, live data from all seed nodes, and auto-refresh every 10 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -332,7 +339,7 @@ export default function ExplorerPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.6 — Blockchain Explorer · Real-time data from native Rust nodes · 3 Seed Nodes · 3 Continents
+          ZION TerraNova v2.9.7 — Blockchain Explorer Pro · Real-time data from native Rust nodes · 3 Seed Nodes · 3 Continents
         </p>
       </div>
     </div>

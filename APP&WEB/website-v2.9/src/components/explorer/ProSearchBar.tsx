@@ -8,6 +8,11 @@ import { type LucideIcon, Search, Box, ArrowRightLeft, Wallet, Hash, X, Loader2 
 
 type SearchType = "block_height" | "block_hash" | "tx_hash" | "address" | "unknown";
 
+interface ParsedQuery {
+  value: string;
+  forcedType?: SearchType;
+}
+
 interface SearchPreview {
   type: SearchType;
   label: string;
@@ -16,7 +21,29 @@ interface SearchPreview {
   meta?: string;
 }
 
-function detectType(q: string): SearchType {
+function parseQuery(q: string): ParsedQuery {
+  const s = q.trim();
+  if (!s) return { value: "" };
+
+  const m = /^([a-z]+)\s*:\s*(.+)$/i.exec(s);
+  if (!m) return { value: s };
+
+  const prefix = m[1].toLowerCase();
+  const value = m[2].trim();
+  if (!value) return { value: "" };
+
+  if (prefix === "block" || prefix === "b") return { value, forcedType: "block_hash" };
+  if (prefix === "tx" || prefix === "t") return { value, forcedType: "tx_hash" };
+  if (prefix === "addr" || prefix === "address" || prefix === "a") return { value, forcedType: "address" };
+
+  return { value: s };
+}
+
+function detectType(q: string, forcedType?: SearchType): SearchType {
+  if (forcedType) {
+    if (forcedType === "block_hash" && /^\d+$/.test(q)) return "block_height";
+    return forcedType;
+  }
   const s = q.trim();
   if (/^\d+$/.test(s)) return "block_height";
   if (/^[a-fA-F0-9]{64}$/.test(s)) return "tx_hash"; // Could be block or tx hash
@@ -27,10 +54,11 @@ function detectType(q: string): SearchType {
 }
 
 function buildPreviews(query: string): SearchPreview[] {
-  const s = query.trim();
+  const parsed = parseQuery(query);
+  const s = parsed.value;
   if (!s) return [];
 
-  const type = detectType(s);
+  const type = detectType(s, parsed.forcedType);
   const previews: SearchPreview[] = [];
 
   switch (type) {
@@ -51,13 +79,15 @@ function buildPreviews(query: string): SearchPreview[] {
         href: `/explorer/tx?hash=${s}`,
         meta: "Search as transaction hash",
       });
-      previews.push({
-        type: "block_hash",
-        label: `Block ${s.slice(0, 12)}…${s.slice(-8)}`,
-        icon: Box,
-        href: `/explorer/block?id=${s}`,
-        meta: "Search as block hash",
-      });
+      if (!parsed.forcedType || parsed.forcedType === "block_hash") {
+        previews.push({
+          type: "block_hash",
+          label: `Block ${s.slice(0, 12)}…${s.slice(-8)}`,
+          icon: Box,
+          href: `/explorer/block?id=${s}`,
+          meta: "Search as block hash",
+        });
+      }
       break;
     case "address":
       previews.push({
@@ -92,6 +122,35 @@ function buildPreviews(query: string): SearchPreview[] {
   return previews;
 }
 
+async function resolveTarget(query: string, fallbackHref?: string): Promise<string | undefined> {
+  const parsed = parseQuery(query);
+  const s = parsed.value;
+  if (!s) return fallbackHref;
+
+  const type = detectType(s, parsed.forcedType);
+
+  if (type === "block_height") return `/explorer/block?id=${s}`;
+  if (type === "address") return `/explorer/address?addr=${encodeURIComponent(s)}`;
+  if (parsed.forcedType === "tx_hash") return `/explorer/tx?hash=${s}`;
+  if (parsed.forcedType === "block_hash") return `/explorer/block?id=${s}`;
+
+  if (/^[a-fA-F0-9]{64}$/.test(s)) {
+    try {
+      const tx = await apiClient<{ tx_hash?: string }>(`/blockchain/transactions?hash=${s}`);
+      if (tx?.tx_hash) return `/explorer/tx?hash=${s}`;
+    } catch {}
+
+    try {
+      const block = await apiClient<{ hash?: string }>(`/blockchain/block?hash=${s}`);
+      if (block?.hash) return `/explorer/block?id=${s}`;
+    } catch {}
+
+    return `/explorer/tx?hash=${s}`;
+  }
+
+  return fallbackHref || `/explorer/block?id=${encodeURIComponent(s)}`;
+}
+
 export default function ProSearchBar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -104,15 +163,19 @@ export default function ProSearchBar() {
   const previews = buildPreviews(query);
 
   const handleSubmit = useCallback(
-    (href?: string) => {
-      const target = href || previews[selected]?.href;
-      if (!target) return;
+    async (href?: string) => {
       setLoading(true);
-      setFocused(false);
-      router.push(target);
-      setTimeout(() => setLoading(false), 1500);
+      try {
+        const fallback = href || previews[selected]?.href;
+        const target = await resolveTarget(query, fallback);
+        if (!target) return;
+        setFocused(false);
+        router.push(target);
+      } finally {
+        setTimeout(() => setLoading(false), 400);
+      }
     },
-    [previews, selected, router]
+    [previews, selected, router, query]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -243,6 +306,27 @@ export default function ProSearchBar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-gray-500">
+        {[
+          { label: "block:123456", value: "block:123456" },
+          { label: "tx:<hash>", value: "tx:" },
+          { label: "addr:<address>", value: "addr:" },
+        ].map((hint) => (
+          <button
+            key={hint.label}
+            type="button"
+            onClick={() => {
+              setQuery(hint.value);
+              setFocused(true);
+              inputRef.current?.focus();
+            }}
+            className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 hover:bg-white/10 transition"
+          >
+            {hint.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
