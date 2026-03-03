@@ -16,10 +16,20 @@
 - [x] Oprava `--difficulty 1` (pool-miner diff mismatch) → shares accepted ✅
 - [x] Všechny 3 uzly v konsenzu, chain roste, ~108 ZION payout pending
 
+### 0.0.1) Invalid Shares Bug Fix (2026-03-03) ✅ HOTOVO
+
+- [x] **Diagnóza:** 3 zdroje invalid shares: (1) Helsinki v2.9.5 wrong algo `cosmic_harmony` (CHv3), (2) USA/Asia duplicate shares, (3) revenue proxy ETC noise
+- [x] **Okamžitá oprava:** `systemctl stop/disable zion-miner` na Helsinki → 0 nových invalids za 79s
+- [x] **Build ARM64:** `docker build -f Dockerfile.miner -t zion-miner:2.9.7 .` na Helsinki → SUCCESS (cdde1fb65cd2, 110 MB)
+- [x] **Deployment:** Binary extrahován → `/opt/zion/bin/zion-miner` nahrazen, systemd service aktualizován na `--algorithm cosmic_harmony_v3`
+- [x] **Výsledek:** Invalid rate: ~3-4/min → ~0.2/min (>95% redukce) ✅
+- [x] **Vnější miner:** `109.81.82.173` s `zion-native-miner/2.9.0` — identifikován jako EXTERNÍ uživatel (naše infrastruktura ho neprovozuje), 2 rejects/5 min — ignorováno
+
 ### Follow-up (nízká priorita)
 - [ ] Zablokovat peer `193.201.105.84` na Helsinki (IBD spam ze starého řetězu)
 - [ ] Zvýšit `--difficulty` na 8–16 po stabilizaci VarDiff (>10 bloků in a row)
 - [ ] Přidat CI check: `wc -l algorithms_opt.rs == 1203` před deployment
+- [ ] Případně blokovat wallet `zion1gfhhxm5` v pool config (v2.9.0 miner z 109.81.82.173)
 
 ---
 
