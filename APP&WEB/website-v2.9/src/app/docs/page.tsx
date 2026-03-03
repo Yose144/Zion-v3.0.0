@@ -126,88 +126,77 @@ const versions: Version[] = [
     label: 'v2.9.5',
     tag: 'ARCHIVE',
     tagColor: 'text-gray-500 border-gray-500/30 bg-gray-500/5',
-    description: 'Native Awakening — archived release',
+    description: 'Native Awakening — complete Rust rewrite, Fair Launch',
     categories: [
       {
-        id: 'getting-started',
-        title: 'Začínáme',
+        id: 'v295-overview',
+        title: 'Overview',
         icon: Rocket,
         docs: [
-          { id: 'index', title: 'Úvod do dokumentace', file: 'index.md' },
-          { id: 'getting-started', title: 'Quick Start', file: 'getting-started.md' },
-          { id: 'setup', title: 'Pokročilý Setup', file: 'setup.md' },
-          { id: 'faq', title: 'Často kladené otázky', file: 'faq.md' },
+          { id: 'v295-readme', title: 'ZION v2.9.5 Overview', file: 'v2.9.5/README.md' },
+          { id: 'v295-changelog', title: 'Changelog from v2.9', file: 'v2.9.5/changelog.md' },
         ]
       },
       {
-        id: 'architecture',
-        title: 'Architektura',
+        id: 'v295-protocol',
+        title: 'Protokol',
         icon: Code2,
         docs: [
-          { id: 'arch-overview', title: 'Přehled architektury', file: 'architecture/overview.md' },
-          { id: 'arch-mining', title: 'Mining architektura', file: 'architecture/mining.md' },
+          { id: 'v295-tokenomics', title: 'Tokenomics & Economic Model', file: 'v2.9.5/tokenomics.md' },
+          { id: 'v295-consensus', title: 'Cosmic Harmony v3', file: 'v2.9.5/consensus.md' },
         ]
       },
       {
-        id: 'guides',
-        title: 'Průvodci',
-        icon: BookOpen,
-        docs: [
-          { id: 'mining-guide', title: 'Mining průvodce', file: 'mining-guide.md' },
-          { id: 'pool-setup', title: 'Pool Setup', file: 'pool-setup.md' },
-          { id: 'api', title: 'API Reference', file: 'api.md' },
-        ]
-      },
-      {
-        id: 'tutorials',
-        title: 'Tutoriály',
-        icon: Zap,
-        docs: [
-          { id: 'tutorial-index', title: 'Přehled tutoriálů', file: 'tutorials/index.md' },
-          { id: 'tutorial-dapp', title: 'První DApp', file: 'tutorials/first-dapp.md' },
-        ]
-      },
-      {
-        id: 'whitepaper',
+        id: 'v295-whitepaper',
         title: 'Whitepaper',
         icon: FileText,
         docs: [
           { id: 'whitepaper-295-full', title: 'Whitepaper v2.9.5 (kompletní)', file: 'whitepaper/ZION_Whitepaper_v2.9.5_FULL.md' },
           { id: 'whitepaper-lite', title: 'Whitepaper Lite', file: 'whitepaper-lite.md' },
-          { id: 'whitepaper-governance', title: 'Governance', file: 'whitepaper/governance.md' },
-          { id: 'whitepaper-security', title: 'Bezpečnost', file: 'whitepaper/security.md' },
-          { id: 'whitepaper-roadmap', title: 'Roadmap', file: 'whitepaper/roadmap.md' },
-          { id: 'whitepaper-285', title: 'Whitepaper v2.8.5 (archiv)', file: 'whitepaper/ZION_Whitepaper_v2.8.5.md' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'v2.9',
+    label: 'v2.9',
+    tag: 'LEGACY',
+    tagColor: 'text-gray-600 border-gray-600/30 bg-gray-600/5',
+    description: 'Quantum Leap — first multi-node TestNet, Python era',
+    categories: [
+      {
+        id: 'v29-overview',
+        title: 'Overview',
+        icon: Rocket,
+        docs: [
+          { id: 'v29-readme', title: 'ZION v2.9 — Quantum Leap', file: 'v2.9/README.md' },
+          { id: 'v29-origins', title: 'Origins — Sep 26, 2025', file: 'v2.9/origins.md' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'v2.8.x',
+    label: 'v2.8.x',
+    tag: 'LEGACY',
+    tagColor: 'text-gray-600 border-gray-600/30 bg-gray-600/5',
+    description: 'Python era — v2.8.5 genesis, v2.8.9 Polish Sprint',
+    categories: [
+      {
+        id: 'v28-overview',
+        title: 'Overview',
+        icon: Layers,
+        docs: [
+          { id: 'v28-readme', title: 'v2.8.x Legacy Era', file: 'v2.8.x/README.md' },
         ]
       },
       {
-        id: 'cosmic',
-        title: 'Cosmic Map',
-        icon: Sparkles,
+        id: 'v28-archive',
+        title: 'Archiv',
+        icon: FileText,
         docs: [
-          { id: 'cosmic-map-full', title: 'Cosmic Map (veřejná edice)', file: 'whitepaper/COSMIC_MAP_2.8.5_PUBLIC_EDITION.md' },
-          { id: 'cosmic-map-complete', title: 'Cosmic Map Atlas', file: 'whitepaper/COSMIC_MAP_2.8.5_COMPLETE.md' },
-        ]
-      },
-      {
-        id: 'ecosystem',
-        title: 'Ekosystém',
-        icon: Globe,
-        docs: [
-          { id: 'core-tech', title: 'Core dokumentace', file: 'whitepaper/CORE_2.8.5.md' },
-          { id: 'humanitarian-tithe', title: 'Humanitarian Tithe', file: 'whitepaper/HUMANITARIAN_TITHE_2.8.5.md' },
-          { id: 'sacred-knowledge', title: 'Sacred Knowledge', file: 'whitepaper/SACRED_KNOWLEDGE_2.8.5.md' },
-          { id: 'zion-oasis', title: 'ZION Oasis', file: 'whitepaper/ZION_OASIS_2.8.5.md' },
-          { id: 'zion-victory', title: 'Victory 2025', file: 'whitepaper/ZION_VICTORY_2025.md' },
-          { id: 'community', title: 'Komunita & Ekosystém', file: 'community.md' },
-        ]
-      },
-      {
-        id: 'philosophy',
-        title: 'Filozofie',
-        icon: Infinity,
-        docs: [
-          { id: 'philosophy', title: 'Native Philosophy', file: '__philosophy__' },
+          { id: 'whitepaper-285', title: 'Whitepaper v2.8.5', file: 'whitepaper/ZION_Whitepaper_v2.8.5.md' },
+          { id: 'cosmic-map-public', title: 'Cosmic Map (veřejná edice)', file: 'whitepaper/COSMIC_MAP_2.8.5_PUBLIC_EDITION.md' },
         ]
       },
     ]
@@ -228,7 +217,7 @@ export default function DocsPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': false, 'v2.9.7': true });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': false, 'v2.9.7': true, 'v2.9': false, 'v2.8.x': false });
 
   // Get current version data
   const currentVersion = versions.find(v => v.id === activeVersion) || versions[1];
