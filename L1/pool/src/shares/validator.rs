@@ -773,11 +773,12 @@ mod tests {
         let blob = vec![0xBEu8; 80];
         let nonce: u32 = 0x1234_5678;
 
-        // CHv3 ASIC-hardened path (height 150_000)
-        let h_chv3 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 150_000);
+        // CHv3 ASIC-hardened path — voláme přímo, obejdeme height dispatch
+        // (CHV4_NPU_FORK_HEIGHT=0 → cosmic_harmony_with_height vždy jde na CHv4)
+        let h_chv3 = algorithms_opt::cosmic_harmony_v3(&blob, nonce as u64);
 
-        // CHv4 path (height 200_000)
-        let h_chv4 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 200_000);
+        // CHv4 path (jakákoli výška → CHv4 dispatch)
+        let h_chv4 = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 0);
 
         assert_ne!(
             h_chv3.data, h_chv4.data,
@@ -807,8 +808,10 @@ mod tests {
         let blob = vec![0x7Fu8; 80];
         let nonce: u32 = 0xCAFE_BABE;
 
-        let h_legacy = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 0);
-        let h_chv4   = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 200_000);
+        // Legacy path — voláme přímo, obejdeme height dispatch
+        // (CHV4_NPU_FORK_HEIGHT=0 → cosmic_harmony_with_height vždy jde na CHv4)
+        let h_legacy = algorithms_opt::cosmic_harmony_v3_legacy(&blob, nonce as u64);
+        let h_chv4   = algorithms_opt::cosmic_harmony_with_height(&blob, nonce as u64, 0);
 
         assert_ne!(
             h_legacy.data, h_chv4.data,
