@@ -1,3 +1,13 @@
+/**
+ * ZION Wallet Screen v2.9.6
+ *
+ * Multi-chain wallet management:
+ * - Create / import wallets (ZION, BTC, ETH, SOL, TRX, XLM)
+ * - QR code receive + clipboard copy
+ * - Export private key / mnemonic to clipboard
+ * - Consciousness level & XP display
+ * - Switch between wallets
+ */
 import React, {useState} from 'react';
 import {
   View,
@@ -8,6 +18,7 @@ import {
   TextInput,
   Alert,
   Modal,
+  Clipboard,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import QRCode from 'react-native-qrcode-svg';
@@ -145,7 +156,16 @@ const WalletScreen = () => {
       Alert.alert(
         'Wallet Export',
         lines.join('\n'),
-        [{text: 'Copy', onPress: () => {/* Copy to clipboard */}}, {text: 'Close'}]
+        [
+          {
+            text: 'Copy',
+            onPress: () => {
+              Clipboard.setString(lines.join('\n'));
+              Alert.alert('Copied', 'Wallet data copied to clipboard.\n\u26a0\ufe0f Keep it safe!');
+            },
+          },
+          {text: 'Close'},
+        ]
       );
     } catch (error) {
       Alert.alert('Error', error?.message || 'Failed to export wallet');
@@ -414,7 +434,10 @@ const WalletScreen = () => {
             </Text>
             <GradientButton
               title="Copy Address"
-              onPress={() => {/* Copy to clipboard */}}
+              onPress={() => {
+                Clipboard.setString(activeWallet.address);
+                Alert.alert('Copied!', 'Address copied to clipboard.');
+              }}
               style={styles.modalButton}
             />
             <TouchableOpacity onPress={() => setShowQRModal(false)}>
