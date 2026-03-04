@@ -27,12 +27,13 @@ soft_finality = 60
 min_difficulty = 1000
 
 [emission]
+# Decade Decay: -20% každých 10 let (viz reward_calculator.rs); tail 724.785 ZION/blok navždy po 100 letech
 block_reward_atomic = 5_400_067_000
 atomic_units_per_zion = 1_000_000
-max_mining_blocks = 23_652_000
+max_mining_blocks = 52_560_000       # ~100 let (10 × 5_256_000 bloků = Decade Decay); pak tail emission
 mining_supply = 127_720_000_000
 total_supply = 144_000_000_000
-halving = false
+halving = false                      # Decade Decay, ne Bitcoin halving
 
 [genesis]
 premine_total = 16_280_000_000
