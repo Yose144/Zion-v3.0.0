@@ -381,18 +381,24 @@ async fn main() -> anyhow::Result<()> {
     let mode_lower = cli.mode.as_deref().unwrap_or("").to_lowercase();
     let mut gpu_enabled = cli.gpu || mode_lower == "gpu" || mode_lower == "dual";
 
-    // CHv3 memory-hard guard:
-    // GPU kernels ještě neobsahují scratchpad fázi, takže při aktivním memory-hard režimu
-    // by CH shares z GPU byly nevalidní. Dočasně přepneme CH mining na CPU-only path.
+    // CHv4 runtime:
+    // cosmic_harmony now maps to CHv4 path (NPU mixing + memory-hard aware flow),
+    // so GPU must remain enabled when requested. Keep a legacy emergency kill-switch
+    // for incident response only.
     if gpu_enabled
         && matches!(algorithm, Algorithm::CosmicHarmony)
-        && zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT == 0
+        && std::env::var("ZION_LEGACY_CH_GPU_GUARD")
+            .map(|v| {
+                let s = v.trim().to_ascii_lowercase();
+                s == "1" || s == "true" || s == "yes" || s == "on"
+            })
+            .unwrap_or(false)
     {
         println!(
             "{}  {:<12} {}",
             "   ".bright_black(),
             "gpu-guard".bright_black(),
-            "CHv3 memory-hard aktivní → GPU CH dočasně vypnuto (CPU path)".bright_yellow()
+            "legacy guard enabled via ZION_LEGACY_CH_GPU_GUARD → GPU CH disabled".bright_yellow()
         );
         gpu_enabled = false;
     }

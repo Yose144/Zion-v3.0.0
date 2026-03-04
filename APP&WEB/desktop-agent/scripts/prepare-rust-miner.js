@@ -220,30 +220,38 @@ function main() {
   }
 
   const builtBinary = builtBinaryCandidates.find((p) => exists(p));
-  if (!builtBinary) {
+  let selectedBinary = builtBinary;
+  if (!selectedBinary) {
     const existingResourceBinary = existingResourceCandidates.find((p) => p && exists(p));
     if (existingResourceBinary) {
       console.log(`[prepare-rust-miner] Existing miner binary already present: ${existingResourceBinary}`);
+      selectedBinary = existingResourceBinary;
+    } else {
+      const msg = `Rust miner binary not found. Tried: ${builtBinaryCandidates.join(', ')}`;
+      if (args.requireBinary) throw new Error(msg);
+      console.warn('[prepare-rust-miner] ' + msg);
       return;
     }
-    const msg = `Rust miner binary not found. Tried: ${builtBinaryCandidates.join(', ')}`;
-    if (args.requireBinary) throw new Error(msg);
-    console.warn('[prepare-rust-miner] ' + msg);
-    return;
   }
 
   const outMain = path.join(resourcesDir, exeName);
   const outAlias = path.join(resourcesDir, process.platform === 'win32' ? 'zion-miner.exe' : 'zion-miner');
 
-  console.log(`[prepare-rust-miner] Copying ${builtBinary} -> ${outMain}`);
-  copyFileIfExists(builtBinary, outMain);
+  console.log(`[prepare-rust-miner] Copying ${selectedBinary} -> ${outMain}`);
+  copyFileIfExists(selectedBinary, outMain);
+  if (process.platform !== 'win32') {
+    try { fs.chmodSync(outMain, 0o755); } catch { /* ignore */ }
+  }
 
   console.log(`[prepare-rust-miner] Copying alias -> ${outAlias}`);
-  copyFileIfExists(builtBinary, outAlias);
+  copyFileIfExists(selectedBinary, outAlias);
+  if (process.platform !== 'win32') {
+    try { fs.chmodSync(outAlias, 0o755); } catch { /* ignore */ }
+  }
 
   // Best-effort: copy any DLLs that are next to the built exe (some toolchains drop runtime deps there)
   try {
-    const builtDir = path.dirname(builtBinary);
+    const builtDir = path.dirname(selectedBinary);
     const files = fs.readdirSync(builtDir);
     const dlls = files.filter((f) => f.toLowerCase().endsWith('.dll'));
     for (const dll of dlls) {
@@ -273,6 +281,8 @@ function main() {
   // Search for native-libs directory
   const nativeSearchPaths = [
     path.join(workspaceRoot, 'native-libs'),
+    path.join(workspaceRoot, 'L1', 'native-libs'),
+    path.join(workspaceRoot, 'L1', 'native-libs', 'all'),
     path.join(workspaceRoot, '2.9.5OLD', 'native-libs'),
     rustMinerRoot ? path.join(rustMinerRoot, '..', 'native-libs') : null,
   ].filter(Boolean);
