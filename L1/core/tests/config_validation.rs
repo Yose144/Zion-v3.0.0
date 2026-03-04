@@ -17,23 +17,23 @@ use zion_core::network::NetworkType;
 #[test]
 fn test_block_reward_matches_spec() {
     // MAINNET_CONSTITUTION: 5,400.067 ZION per block
-    assert_eq!(reward::BLOCK_REWARD_ATOMIC, 5_400_067_000);
+    assert_eq!(reward::BLOCK_REWARD_ATOMIC, 5_400_067_000_000_000);
     let reward_zion = reward::BLOCK_REWARD_ATOMIC as f64 / reward::ATOMIC_UNITS_PER_ZION as f64;
     assert!((reward_zion - 5400.067).abs() < 0.001);
 }
 
 #[test]
 fn test_total_supply_matches_spec() {
-    // 144,000,000,000 ZION × 1,000,000 atomic units
-    assert_eq!(reward::TOTAL_SUPPLY, 144_000_000_000_000_000);
+    // 144,000,000,000 ZION × 1_000_000_000_000 flowers (12 des. míst)
+    assert_eq!(reward::TOTAL_SUPPLY, 144_000_000_000_000_000_000_000u128);
     assert_eq!(reward::total_supply(), 144_000_000_000.0);
 }
 
 #[test]
 fn test_premine_total_matches_spec() {
-    // 16,280,000,000 ZION
-    assert_eq!(reward::GENESIS_PREMINE, 16_280_000_000_000_000);
-    assert_eq!(premine::PREMINE_TOTAL, 16_280_000_000_000_000);
+    // 16,280,000,000 ZION × 1_000_000_000_000 flowers
+    assert_eq!(reward::GENESIS_PREMINE, 16_280_000_000_000_000_000_000u128);
+    assert_eq!(premine::PREMINE_TOTAL, 16_280_000_000_000_000_000_000u128);
     // reward.rs and premine.rs must agree
     assert_eq!(reward::GENESIS_PREMINE, premine::PREMINE_TOTAL);
 }
@@ -44,7 +44,7 @@ fn test_mining_emission_equals_supply_minus_premine() {
         reward::MINING_EMISSION,
         reward::TOTAL_SUPPLY - reward::GENESIS_PREMINE
     );
-    assert_eq!(reward::MINING_EMISSION, 127_720_000_000_000_000);
+    assert_eq!(reward::MINING_EMISSION, 127_720_000_000_000_000_000_000u128);
     // premine.rs must also agree
     assert_eq!(premine::MINING_EMISSION, reward::MINING_EMISSION);
 }
@@ -73,8 +73,9 @@ fn test_reward_distribution_percentages() {
 
 #[test]
 fn test_atomic_units_per_zion() {
-    // 6 decimal places
-    assert_eq!(reward::ATOMIC_UNITS_PER_ZION, 1_000_000);
+    // WP3.0 Flowers spec: 12 decimal places
+    assert_eq!(reward::ATOMIC_UNITS_PER_ZION, 1_000_000_000_000);
+    assert_eq!(reward::FLOWERS_PER_ZION, 1_000_000_000_000);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

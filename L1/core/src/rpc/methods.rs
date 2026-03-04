@@ -82,9 +82,9 @@ pub async fn get_block_template(AxumState(state): AxumState<State>) -> Json<Temp
 
 pub async fn get_premine_total() -> Json<serde_json::Value> {
     Json(serde_json::json!({
-        "total_zion": premine::PREMINE_TOTAL / 1_000_000,
-        "total_atomic": premine::PREMINE_TOTAL,
-        "total_supply": premine::TOTAL_SUPPLY / 1_000_000
+        "total_zion": (premine::PREMINE_TOTAL / reward::ATOMIC_UNITS_PER_ZION as u128) as u64,
+        "total_atomic": premine::PREMINE_TOTAL.to_string(),
+        "total_supply": (premine::TOTAL_SUPPLY / reward::ATOMIC_UNITS_PER_ZION as u128) as u64
     }))
 }
 

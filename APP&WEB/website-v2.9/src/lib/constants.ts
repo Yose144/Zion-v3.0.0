@@ -13,8 +13,8 @@
 
 // ─── Unit Conversion ─────────────────────────────────────────────────────────
 
-/** 1 ZION = 1,000,000 atomic units (6 decimal places). NOT 1e9 (Monero) or 1e8 (Bitcoin). */
-export const ATOMIC_UNITS_PER_ZION = 1_000_000;
+/** 1 ZION = 1,000,000,000,000 flowers (12 decimal places) — WP3.0 spec. */
+export const ATOMIC_UNITS_PER_ZION = 1_000_000_000_000;
 
 /** Convert atomic units to ZION */
 export function atomicToZion(atomic: number): number {
@@ -31,8 +31,8 @@ export function zionToAtomic(zion: number): number {
 /** Base block reward (Decade 1): 5,400.067 ZION per block */
 export const BLOCK_REWARD_ZION = 5_400.067;
 
-/** Block reward in atomic units: 5,400,067,000 */
-export const BLOCK_REWARD_ATOMIC = 5_400_067_000;
+/** Block reward in flowers: 5,400,067,000,000,000 (5400.067 ZION × 1e12) — WP3.0 Decade 1 */
+export const BLOCK_REWARD_ATOMIC = 5_400_067_000_000_000;
 
 /** Decay factor per decade: ×0.8 (-20%) */
 export const DECAY_FACTOR = 0.8;

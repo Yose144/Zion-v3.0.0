@@ -27,8 +27,8 @@ min_difficulty = 1000
 [emission]
 # Decade Decay: -20% každých 10 let po dobu 100 let, poté tail emission 724.785 ZION/blok (navždy)
 # Dekáda 1: 5400.067 → Dekáda 10: ~724.785 ZION/blok  | reward_calculator.rs: BLOCKS_PER_DECADE=5_256_000
-block_reward_atomic = 5_400_067_000  # 5,400.067 ZION — Dekáda 1 (startovní hodnota; Decade Decay = pool reward_calculator.rs)
-atomic_units_per_zion = 1_000_000
+block_reward_atomic = 5_400_067_000_000_000  # 5,400.067 ZION — Dekáda 1 (startovní hodnota; Decade Decay = pool reward_calculator.rs)
+atomic_units_per_zion = 1_000_000_000_000  # 1 ZION = 1e12 flowers (12 des. míst) — WP3.0 spec
 max_mining_blocks = 52_560_000       # ~100 let Decade Decay (10 × 5_256_000); po dosažení: tail emission 724.785 ZION/blok navždy
 mining_supply = 127_720_000_000      # ZION (Decade Decay celkem ~126.67 B + tail)
 total_supply = 144_000_000_000       # ZION
