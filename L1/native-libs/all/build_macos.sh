@@ -134,5 +134,45 @@ print(f'   CH v3: {lib.cosmic_harmony_v3_get_info().decode()}')
 print('   ✅ CH v3 loads correctly!')
 " 2>/dev/null || echo "   ⚠️  CH v3 Python test skipped"
 
+# ============================================================================
+# BUILD COSMIC HARMONY v4  (NPU + 512 KiB scratchpad)
+# ============================================================================
+
+echo
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔨 Building Cosmic Harmony v4 (NPU + Memory-Hard Scratchpad)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ -f cosmic_harmony_v4_native.c ]; then
+    if [ "$ARCH" == "arm64" ]; then
+        echo "🏗️  Building CHv4 for Apple Silicon (ARM64 + NEON)..."
+        clang $COMMON_FLAGS -lm cosmic_harmony_v4_native.c -o libcosmic_harmony_v4.dylib
+        # Also build as the canonical libcosmic_harmony.dylib (pool-facing)
+        clang $COMMON_FLAGS -lm cosmic_harmony_v4_native.c -o libcosmic_harmony.dylib
+    else
+        echo "🏗️  Building CHv4 for Intel (x86_64 + AVX2)..."
+        clang $COMMON_FLAGS -mavx2 -lm cosmic_harmony_v4_native.c -o libcosmic_harmony_v4.dylib
+        clang $COMMON_FLAGS -mavx2 -lm cosmic_harmony_v4_native.c -o libcosmic_harmony.dylib
+    fi
+
+    echo "✅ CHv4 library created!"
+    ls -lh libcosmic_harmony_v4.dylib libcosmic_harmony.dylib
+    nm -gU libcosmic_harmony_v4.dylib | grep cosmic | head -8
+    cp libcosmic_harmony_v4.dylib libcosmic_harmony.dylib ../
+    echo "✅ Copied to parent directory!"
+
+    # Quick load test
+    python3 -c "
+import ctypes
+lib = ctypes.CDLL('$SCRIPT_DIR/libcosmic_harmony_v4.dylib')
+lib.cosmic_harmony_v4_get_info.restype = ctypes.c_char_p
+print(f'   CH v4: {lib.cosmic_harmony_v4_get_info().decode()}')
+print('   ✅ CH v4 loads correctly!')
+" 2>/dev/null || echo "   ⚠️  CH v4 Python test skipped"
+else
+    echo "⚠️  cosmic_harmony_v4_native.c not found"
+    echo "   Hint: run combine_v4.sh to assemble from p1/weights/p2 parts"
+fi
+
 echo
 echo "🎉 Build complete!"
