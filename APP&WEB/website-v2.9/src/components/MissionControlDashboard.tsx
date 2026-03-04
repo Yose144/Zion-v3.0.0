@@ -55,6 +55,7 @@ interface StabilityRun {
 interface DashData {
   timestamp?: string;
   stability_run?: StabilityRun;
+  canary_run?: StabilityRun;
   helsinki?: ServerNode;
   usa?: ServerNode;
   asia?: ServerNode;
@@ -150,6 +151,29 @@ function BigProgress({ sr }: { sr?: StabilityRun }) {
           transition={{ duration: 1.2, ease: 'easeOut' }}
         >
           <div className="absolute right-0 inset-y-0 w-14 bg-linear-to-r from-transparent to-white/25 animate-pulse" />
+        </motion.div>
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{pct}%</span>
+      </div>
+    </div>
+  );
+}
+
+function CanaryProgress({ cr }: { cr?: StabilityRun }) {
+  const pct = cr?.progress_pct ?? 0;
+  return (
+    <div className="mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between text-[10px] sm:text-xs text-gray-500 mb-2 gap-0.5">
+        <span>Start: {cr?.start ? new Date(cr.start).toLocaleString() : '—'}</span>
+        <span>End: {cr?.start && cr?.duration_secs ? new Date(new Date(cr.start).getTime() + cr.duration_secs * 1000).toLocaleString() : '—'}</span>
+      </div>
+      <div className="relative h-9 rounded-2xl border border-amber-500/30 bg-black/40 overflow-hidden">
+        <motion.div
+          className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-amber-400 via-orange-400 to-red-400"
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.min(pct, 100)}%` }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+        >
+          {pct < 100 && <div className="absolute right-0 inset-y-0 w-14 bg-linear-to-r from-transparent to-white/25 animate-pulse" />}
         </motion.div>
         <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{pct}%</span>
       </div>
@@ -392,6 +416,7 @@ export default function MissionControlDashboard() {
   }, [refresh]);
 
   const sr = data?.stability_run;
+  const cr = data?.canary_run;
   const hStats = data?.helsinki?.stats;
   const sStats = data?.usa?.stats;
   const hH = hStats?.height ?? 0;
@@ -456,7 +481,7 @@ export default function MissionControlDashboard() {
             <div className="grid w-full gap-3 grid-cols-2 lg:w-auto lg:min-w-[340px]">
               {[
                 { label: 'Block Height', value: fmt(Math.max(hH, sH)), descriptor: 'latest block' },
-                { label: 'Stability', value: `${sr?.progress_pct ?? 0}%`, descriptor: '168h stability run' },
+                { label: 'Canary', value: `${cr?.progress_pct ?? 0}%`, descriptor: `72h B-CRIT-02 · ${(cr?.progress_pct ?? 0) >= 100 ? 'PASS ✅' : 'IN PROG'}` },
                 { label: 'Network Peers', value: fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0)), descriptor: 'unique peers' },
                 { label: 'Status', value: allHealthy ? 'PASS' : (hH > 0 || sH > 0) ? 'RUN' : 'DOWN', descriptor: allHealthy ? 'all systems go' : (hH > 0 || sH > 0) ? 'monitoring...' : 'nodes offline' },
               ].map((chip) => (
@@ -538,6 +563,34 @@ export default function MissionControlDashboard() {
                 <Stat label="Remaining" value={fmtTime(sr?.remaining_secs)} mono />
                 <Stat label="Block Height" value={fmt(Math.max(hH, sH))} color="text-purple-400" mono />
                 <Stat label="Status" value={stabilityStatus} color={stabilityStatusColor} />
+              </div>
+            </motion.section>
+
+            {/* 72h Canary Run — B-CRIT-02 */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.09 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-amber-500/30 bg-black/40 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <div className="flex items-center gap-3">
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Canary</p>
+                  <span className="text-[10px] uppercase tracking-widest border border-amber-500/40 bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
+                    B-CRIT-02 · {(cr?.progress_pct ?? 0) >= 100 ? 'PASS ✅' : 'IN PROG'}
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Activity className="h-7 w-7 text-amber-400" />
+                  72h Canary Run — E-07 Validation · Helsinki Pool
+                </h2>
+              </div>
+              <CanaryProgress cr={cr} />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <Stat label="Elapsed" value={fmtTime(cr?.elapsed_secs)} color="text-amber-400" mono />
+                <Stat label="Remaining" value={fmtTime(cr?.remaining_secs)} mono />
+                <Stat label="Progress" value={`${cr?.progress_pct ?? 0}%`} color={(cr?.progress_pct ?? 0) >= 100 ? 'text-emerald-400' : 'text-amber-400'} mono />
+                <Stat label="Status" value={(cr?.progress_pct ?? 0) >= 100 ? 'PASS ✅' : (cr?.elapsed_secs ?? 0) > 0 ? 'RUNNING' : 'STARTING'} color={(cr?.progress_pct ?? 0) >= 100 ? 'text-emerald-400' : 'text-amber-400'} />
               </div>
             </motion.section>
 
@@ -1156,7 +1209,7 @@ export default function MissionControlDashboard() {
                     {[
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: '168h stability run · 3 nodes PASS ✅', phase: '1.10', status: 'PASS', sColor: 'text-emerald-400' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'CHv4 E2E 11/11 PASS + cosmic_harmony_v3', phase: 'B-CRIT-01', status: 'DONE', sColor: 'text-emerald-400' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'E-07 canary 72h + invalid shares fix', phase: 'B-CRIT-02', status: 'IN PROG', sColor: 'text-cyan-400', bg: 'bg-cyan-500/5' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'E-07 canary 72h + invalid shares fix', phase: 'B-CRIT-02', status: `IN PROG · ${cr?.progress_pct ?? 0}%`, sColor: 'text-amber-400', bg: 'bg-amber-500/5' },
                       { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Genesis/freeze artefakty + sign-off', phase: 'B-CRIT-03', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Block explorer', phase: '2.3', status: 'HOTOVO', sColor: 'text-emerald-400' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Node UX ("10 min setup")', phase: '2.1', status: 'HOTOVO', sColor: 'text-emerald-400' },
