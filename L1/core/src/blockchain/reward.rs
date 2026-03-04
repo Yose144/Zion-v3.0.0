@@ -30,23 +30,26 @@
 ///
 /// Additional funding (off-chain): ZION Oasis (L4) revenue share
 ///
-/// All values in atomic units (1 ZION = 1,000,000 atomic units).
+/// All values in flowers (1 ZION = 1_000_000_000_000 flowers, 12 decimal places — WP3.0 spec).
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/// 1 ZION = 1,000,000 atomic units (6 decimal places)
-pub const ATOMIC_UNITS_PER_ZION: u64 = 1_000_000;
+/// 1 ZION = 1_000_000_000_000 flowers (12 decimal places) — WP3.0 Flowers spec
+pub const ATOMIC_UNITS_PER_ZION: u64 = 1_000_000_000_000;
 
-/// Total supply: 144,000,000,000 ZION
-pub const TOTAL_SUPPLY: u64 = 144_000_000_000 * ATOMIC_UNITS_PER_ZION;
+/// Alias: flowers per ZION (canonical WP3.0 name)
+pub const FLOWERS_PER_ZION: u64 = ATOMIC_UNITS_PER_ZION;
 
-/// Genesis premine: 16,280,000,000 ZION
-pub const GENESIS_PREMINE: u64 = 16_280_000_000 * ATOMIC_UNITS_PER_ZION;
+/// Total supply: 144,000,000,000 ZION in flowers (u128 — exceeds u64)
+pub const TOTAL_SUPPLY: u128 = 144_000_000_000u128 * ATOMIC_UNITS_PER_ZION as u128;
 
-/// Mining emission: 127,720,000,000 ZION (TOTAL_SUPPLY − GENESIS_PREMINE)
-pub const MINING_EMISSION: u64 = TOTAL_SUPPLY - GENESIS_PREMINE;
+/// Genesis premine: 16,280,000,000 ZION in flowers
+pub const GENESIS_PREMINE: u128 = 16_280_000_000u128 * ATOMIC_UNITS_PER_ZION as u128;
+
+/// Mining emission: 127,720,000,000 ZION in flowers
+pub const MINING_EMISSION: u128 = TOTAL_SUPPLY - GENESIS_PREMINE;
 
 /// Block time target: 60 seconds
 pub const BLOCK_TIME_SECONDS: u64 = 60;
@@ -70,13 +73,13 @@ pub const MINING_YEARS: u64 = MAX_DECAY_DECADES * 10;
 /// Total blocks in the decay emission period (before perpetual tail)
 pub const TOTAL_MINING_BLOCKS: u64 = MINING_YEARS * BLOCKS_PER_YEAR;
 
-/// Base block reward (Decade 1): 5,400.067 ZION = 5,400,067,000 atomic units
-pub const BASE_BLOCK_REWARD_ATOMIC: u64 = 5_400_067_000;
+/// Base block reward (Decade 1): 5,400.067 ZION = 5_400_067_000_000_000 flowers
+pub const BASE_BLOCK_REWARD_ATOMIC: u64 = 5_400_067_000_000_000;
 
-/// Tail emission reward: ~725 ZION = 724,785,000 atomic units
+/// Tail emission reward: ~724.785 ZION = 724_785_000_000_000 flowers
 /// Computed: BASE × (4/5)^10 ≈ 724.785 ZION
 /// This reward continues forever after decade 10.
-pub const TAIL_REWARD_ATOMIC: u64 = 724_785_000;
+pub const TAIL_REWARD_ATOMIC: u64 = 724_785_000_000_000;
 
 /// Humanitarian tithe: 5% of block reward
 pub const TITHE_PERCENT: u64 = 5;
@@ -153,7 +156,7 @@ pub fn pool_fee_reward(height: u64, difficulty: u64) -> u64 {
 }
 
 /// Calculate the theoretical total mining emission over 100 years + tail.
-/// Returns value in ZION (not atomic units).
+/// Returns value in ZION (not flowers).
 pub fn max_mining_supply_100y() -> f64 {
     let mut total: u128 = 0;
     // Sum over 10 decades
@@ -165,7 +168,7 @@ pub fn max_mining_supply_100y() -> f64 {
     total as f64 / ATOMIC_UNITS_PER_ZION as f64
 }
 
-/// Returns the total supply in ZION (not atomic units).
+/// Returns the total supply in ZION (not flowers).
 pub fn total_supply() -> f64 {
     TOTAL_SUPPLY as f64 / ATOMIC_UNITS_PER_ZION as f64
 }
@@ -210,7 +213,7 @@ mod tests {
     #[test]
     fn test_block_1_reward() {
         assert_eq!(calculate(1, 1000), BASE_BLOCK_REWARD_ATOMIC);
-        assert_eq!(calculate(1, 1000), 5_400_067_000);
+        assert_eq!(calculate(1, 1000), 5_400_067_000_000_000);
     }
 
     #[test]
@@ -227,7 +230,7 @@ mod tests {
         let d2_start = BLOCKS_PER_DECADE + 1;
         let expected = BASE_BLOCK_REWARD_ATOMIC * 4 / 5; // 80%
         assert_eq!(calculate(d2_start, 0), expected);
-        assert_eq!(expected, 4_320_053_600); // 4,320.0536 ZION
+        assert_eq!(expected, 4_320_053_600_000_000); // 4,320.0536 ZION
     }
 
     #[test]
@@ -349,6 +352,9 @@ mod tests {
     #[test]
     fn test_constants_consistency() {
         assert_eq!(MINING_EMISSION, TOTAL_SUPPLY - GENESIS_PREMINE);
+        assert_eq!(TOTAL_SUPPLY,    144_000_000_000_000_000_000_000u128);
+        assert_eq!(GENESIS_PREMINE, 16_280_000_000_000_000_000_000u128);
+        assert_eq!(MINING_EMISSION, 127_720_000_000_000_000_000_000u128);
         assert_eq!(BLOCKS_PER_DECADE, 5_256_000);
         assert_eq!(BLOCKS_PER_YEAR, 525_600);
     }

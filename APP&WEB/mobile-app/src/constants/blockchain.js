@@ -14,7 +14,7 @@
 // ---------------------------------------------------------------------------
 
 /** Atomic units per 1 ZION (6 decimals) */
-export const ATOMIC_UNITS_PER_ZION = 1_000_000;
+export const ATOMIC_UNITS_PER_ZION = 1_000_000_000_000; // 1 ZION = 1e12 flowers (12 des. míst) — WP3.0 spec
 
 /** Total supply: 144,000,000,000 ZION */
 export const TOTAL_SUPPLY = 144_000_000_000;
@@ -36,14 +36,14 @@ export const BLOCK_TIME_SECONDS = 60;
 export const BLOCKS_PER_YEAR = 525_600;
 
 /** Mining duration: 45 years */
-export const MINING_YEARS = 45;
+export const MINING_YEARS = 100; // 10 dekád Decade Decay — WP3.0 spec
 
 /** Total mineable blocks: 23,652,000 */
 export const TOTAL_MINING_BLOCKS = MINING_YEARS * BLOCKS_PER_YEAR;
 
 /** Constant block reward: 5,400.067 ZION (= 5,400,067,000 atomic) */
 export const BLOCK_REWARD_ZION = 5400.067;
-export const BLOCK_REWARD_ATOMIC = 5_400_067_000;
+export const BLOCK_REWARD_ATOMIC = 5_400_067_000_000_000; // 5400.067 ZION × 1e12 flowers — WP3.0 Decade 1
 
 /** Daily emission: 5,400.067 × 1440 blocks = ~7,776,096.48 ZION/day */
 export const DAILY_EMISSION = BLOCK_REWARD_ZION * 1440;
