@@ -112,6 +112,11 @@ export async function GET() {
   const nowSec = Math.floor(Date.now() / 1000);
   const elapsed = Math.min(Math.max(0, nowSec - STABILITY_START_EPOCH), STABILITY_DURATION);
 
+  // 72h canary run — B-CRIT-02, E-07 validation: started 2026-03-04T06:00:00Z
+  const CANARY_START_EPOCH = 1772604000; // 2026-03-04T06:00:00Z UTC
+  const CANARY_DURATION = 72 * 3600;    // 259200s = 3 days
+  const canaryElapsed = Math.min(Math.max(0, nowSec - CANARY_START_EPOCH), CANARY_DURATION);
+
   const data = {
     timestamp: new Date().toISOString(),
     stability_run: {
@@ -120,6 +125,13 @@ export async function GET() {
       remaining_secs: Math.max(0, STABILITY_DURATION - elapsed),
       duration_secs: STABILITY_DURATION,
       progress_pct: Math.min(100, Math.round((elapsed / STABILITY_DURATION) * 100)),
+    },
+    canary_run: {
+      start: '2026-03-04T06:00:00Z',
+      elapsed_secs: canaryElapsed,
+      remaining_secs: Math.max(0, CANARY_DURATION - canaryElapsed),
+      duration_secs: CANARY_DURATION,
+      progress_pct: Math.min(100, Math.round((canaryElapsed / CANARY_DURATION) * 100)),
     },
     helsinki,
     usa,
