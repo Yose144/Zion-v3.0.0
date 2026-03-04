@@ -193,13 +193,15 @@ Klíčový řádek 1241:
 ## Stav implementace
 
 - [x] Plán napsán
-- [ ] B: Rebuild libcosmic_harmony.dylib
-- [ ] C+D: Bundle dylib do resources, fix prepare-rust-miner.js
-- [ ] E: Python miner CHv4 upgrade
-- [ ] A+F: Fix is_gpu_mineable + Rust rebuild metal+parallel
-- [ ] G: Parity test
-- [ ] H: main.js Python path fine-tuning
-- [ ] Commit + push
+- [x] B: Rebuild libcosmic_harmony.dylib (67 KB, arm64, sha256 parity OK)
+- [x] C+D: Bundle dylib do `resources/native-libs/`, fix `prepare-rust-miner.js`
+- [x] E: Python miner CHv4 upgrade (`_CHv4CompatWrapper`, `COSMIC_V4_AVAILABLE`)
+- [x] A+F: Fix `is_gpu_mineable` CosmicHarmony → true (Metal) + Rust rebuild metal+parallel (42.5s)
+- [x] G: Parity test → `134f268c...` Rust == C == Python(dylib) ✅
+- [x] H: main.js Python path fine-tuning (quarantine xattr, binaryNames update)
+- [x] `cosmic_harmony_v4_native.py` search path + `resources/native-libs/`
+- [x] `L1/miner/Cargo.toml` — `parallel` feature přidán
+- [x] Commit + push
 
 ---
 
