@@ -33,6 +33,8 @@ native-all = [
 gpu = ["zion-cosmic-harmony-v3/gpu", "ocl"]
 metal = ["zion-cosmic-harmony-v3/metal"]
 cuda = []
+# Rayon parallel CPU mining (batch nonce search via rayon find_map_any + AtomicBool early exit)
+parallel = ["zion-cosmic-harmony-v3/parallel"]
 
 [dependencies]
 tokio = { version = "1.35", features = ["full"] }

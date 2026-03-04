@@ -1239,6 +1239,8 @@ function fixSecurityBlocks() {
     'mining/cosmic_harmony_native.py',
     'mining/cosmic_harmony_v3_gpu.py',
     'mining/cosmic_harmony_v3_python.py',
+    'mining/cosmic_harmony_v4_native.py',  // CHv4 dylib FFI (Python binding)
+    'native-libs/libcosmic_harmony.dylib', // CHv4 native lib (macOS)
   ];
 
   // Platform-specific exe names
