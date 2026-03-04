@@ -101,10 +101,9 @@ impl BlockHeader {
         match self.algorithm {
             Algorithm::CosmicHarmony => {
                 // Height-aware unified PoW dispatcher (B-CRIT-01).
-                //   height < 100_000             → CHv3 legacy (no memory-hard)
-                //   100_000 ≤ height < 200_000   → CHv3 ASIC-hardened (512KiB scratchpad)
-                //   height ≥ 200_000             → CHv4 (CHv3 + NPU Mixing INT8 MLP)
-                // Governed by CHV4_NPU_FORK_HEIGHT = 200_000 in algorithms_npu.rs.
+                //   CHV4_NPU_FORK_HEIGHT = 0 → CHv4 (NPU Mixing INT8 MLP) always active from genesis.
+                //   CHV3_MEMORY_HARD_FORK_HEIGHT = 0 → memory-hard (512 KiB scratchpad) always active.
+                // Governed by CHV4_NPU_FORK_HEIGHT = 0 in algorithms_npu.rs.
                 // Fork-height policy sign-off: docs/2.9.7/CHV4_ACTIVATION_POLICY.md
                 let blob_hex = Block::build_template_blob(
                     self.version,
