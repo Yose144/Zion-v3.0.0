@@ -132,6 +132,59 @@ try:
 except Exception as e:
     print(f"[WARN] Cosmic Harmony v3 GPU not available: {e}")
 
+# ── Cosmic Harmony v4 — Native dylib (CHv4 primary engine) ────────────────────
+# CosmicHarmonyV4Native wraps libcosmic_harmony.dylib/.so via ctypes FFI.
+# CHv4 pipeline: Keccak-256 → SHA3-512 → GoldenMatrix → MemoryHard (512 KiB)
+#                → NPU Mixing (INT8 MLP 64→128→64) → CosmicFusion
+# Active from genesis (height 0). Parity: Rust == C == Metal GPU ✅ (f0ebf20).
+# ─────────────────────────────────────────────────────────────────────────────
+COSMIC_V4_AVAILABLE = False
+_cosmic_v4_raw = None
+
+
+class _CHv4CompatWrapper:
+    """Drop-in replacement for CosmicHarmonyNative backed by CHv4 dylib FFI.
+
+    Provides the same interface used throughout this miner:
+      hash(header, nonce) -> bytes
+      hash_with_height(header, nonce, height) -> bytes
+      batch_hash(header, start_nonce, count) -> list[bytes]
+      batch_hash_with_height(header, start_nonce, count, height) -> list[bytes]
+    """
+
+    def __init__(self, v4_instance):
+        self._v4 = v4_instance
+        self.cpu_count = os.cpu_count() or 4
+
+    def hash(self, block_header: bytes, nonce: int) -> bytes:
+        return self._v4.hash(block_header, nonce, height=0)
+
+    def hash_with_height(self, block_header: bytes, nonce: int, height: int) -> bytes:
+        return self._v4.hash(block_header, nonce, height=height)
+
+    def batch_hash(self, block_header: bytes, start_nonce: int, count: int) -> list:
+        return [self._v4.hash(block_header, start_nonce + i, height=0) for i in range(count)]
+
+    def batch_hash_with_height(self, block_header: bytes, start_nonce: int,
+                               count: int, height: int) -> list:
+        return [self._v4.hash(block_header, start_nonce + i, height=height) for i in range(count)]
+
+
+try:
+    from cosmic_harmony_v4_native import CosmicHarmonyV4Native
+    _cosmic_v4_raw = CosmicHarmonyV4Native()
+    COSMIC_V4_AVAILABLE = True
+    print(f"[OK] Cosmic Harmony v4 NATIVE loaded (CHv4 dylib, {os.cpu_count() or 4} cores)")
+except Exception as _e:
+    print(f"[WARN] Cosmic Harmony v4 native not available: {_e}")
+
+# CHv4 takes precedence over CHv3: override the primary hash engine if available.
+# All existing code paths using _cosmic_v3_native.hash() will transparently use CHv4.
+if COSMIC_V4_AVAILABLE and _cosmic_v4_raw is not None:
+    _cosmic_v3_native = _CHv4CompatWrapper(_cosmic_v4_raw)
+    COSMIC_V3_AVAILABLE = True
+    print("[OK] Cosmic Harmony: CHv4 native engine active (replaces CHv3 for consensus)")
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s'

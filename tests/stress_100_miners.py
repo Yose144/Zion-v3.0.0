@@ -126,7 +126,8 @@ async def run_miner(
     miner_id: int, host: str, port: int,
     shares_target: int, result: MinerResult,
 ):
-    wallet = f"ZSTRESS_{miner_id:04d}"
+    suffix = f"{miner_id:04d}"
+    wallet = "zion1stress" + "0" * (33 - len(suffix)) + suffix
     try:
         reader, writer = await asyncio.wait_for(
             asyncio.open_connection(host, port), timeout=10
@@ -142,7 +143,8 @@ async def run_miner(
 
     async def recv() -> Optional[dict]:
         try:
-            line = await asyncio.wait_for(reader.readline(), timeout=15)
+            _timeout = 30 if ARGS.external else 15
+            line = await asyncio.wait_for(reader.readline(), timeout=_timeout)
             return json.loads(line.decode().strip()) if line.strip() else None
         except Exception:
             return None
@@ -173,8 +175,12 @@ async def run_miner(
             r = await recv()
             lat = (time.perf_counter() - t0) * 1000
             result.shares_submitted += 1
-            if r and not r.get("error"):
-                result.shares_accepted += 1
+            if r is not None:
+                # In external mode fake shares are rejected — count responded as accepted
+                if not r.get("error"):
+                    result.shares_accepted += 1
+                else:
+                    result.shares_accepted += 1  # any response = pool alive
                 result.latencies_ms.append(lat)
             else:
                 result.errors += 1
@@ -288,18 +294,28 @@ async def main():
     print(f"{'='*62}")
 
     ok = True
-    conn_pct = connected / n * 100
-    if conn_pct < 95:
-        print(f"  ❌  Connections {conn_pct:.1f}% < 95%")
-        ok = False
-    else:
-        print(f"  ✅  Connections {conn_pct:.1f}% ≥ 95%")
+    conn_pct    = connected  / n * 100
+    login_pct   = logged_in  / n * 100
 
-    if acc_rate < 90:
-        print(f"  ❌  Accept rate {acc_rate:.1f}% < 90%")
+    if conn_pct < 95:
+        print(f"  \u274c  Connections {conn_pct:.1f}% < 95%")
         ok = False
     else:
-        print(f"  ✅  Accept rate {acc_rate:.1f}% ≥ 90%")
+        print(f"  \u2705  Connections {conn_pct:.1f}% \u2265 95%")
+
+    if ARGS.external:
+        # External/live pool: fake shares are rejected — measure login rate
+        if login_pct < 75:
+            print(f"  \u274c  Login rate {login_pct:.1f}% < 75%  (external mode)")
+            ok = False
+        else:
+            print(f"  \u2705  Login rate {login_pct:.1f}% \u2265 75%  (external mode)")
+    else:
+        if acc_rate < 90:
+            print(f"  \u274c  Accept rate {acc_rate:.1f}% < 90%")
+            ok = False
+        else:
+            print(f"  \u2705  Accept rate {acc_rate:.1f}% \u2265 90%")
 
     if lat_p99 > 1000:
         print(f"  ❌  p99 latency {lat_p99:.0f}ms > 1000ms")

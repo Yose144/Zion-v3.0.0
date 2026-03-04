@@ -92,7 +92,7 @@ impl PoolWallet {
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
                     .to_string();
-                let amount = u.get("amount_atomic").and_then(|v| v.as_u64()).unwrap_or(0);
+                let amount = u.get("amount_atomic").and_then(|v| v.as_u64()).unwrap_or(0) as u128;
                 let addr = u
                     .get("address")
                     .and_then(|v| v.as_str())
@@ -120,7 +120,7 @@ impl PoolWallet {
         tracing::info!(
             "💰 Pool wallet UTXOs: {} found, total balance = {} ZION",
             all_utxos.len(),
-            all_utxos.iter().map(|u| u.amount).sum::<u64>() as f64 / 1_000_000.0
+            all_utxos.iter().map(|u| u.amount).sum::<u128>() as f64 / 1_000_000.0
         );
 
         Ok(all_utxos)
@@ -202,7 +202,7 @@ impl PoolWallet {
     pub async fn send_single_payout(&self, to_address: &str, amount_atomic: u64) -> Result<String> {
         let recipients = vec![Recipient {
             address: to_address.to_string(),
-            amount: amount_atomic,
+            amount: amount_atomic as u128,
         }];
 
         let result = self.send_batch_payout(recipients).await?;

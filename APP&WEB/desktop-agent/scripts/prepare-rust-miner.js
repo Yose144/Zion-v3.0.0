@@ -287,6 +287,26 @@ function main() {
     rustMinerRoot ? path.join(rustMinerRoot, '..', 'native-libs') : null,
   ].filter(Boolean);
 
+  // Explicitly bundle libcosmic_harmony from L1/ root (CHv4 canonical dylib/so/dll)
+  // This ensures the CHv4 native Python miner always has the dylib available.
+  const explicitCHv4Lib = path.join(workspaceRoot, 'L1', `libcosmic_harmony${libExt}`);
+  if (fs.existsSync(explicitCHv4Lib)) {
+    const dst = path.join(nativeLibDir, `libcosmic_harmony${libExt}`);
+    try {
+      fs.copyFileSync(explicitCHv4Lib, dst);
+      if (process.platform !== 'win32') { try { fs.chmodSync(dst, 0o755); } catch {} }
+      // Also remove quarantine flag on macOS to allow loading
+      if (process.platform === 'darwin') {
+        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dst}" 2>/dev/null`); } catch {}
+      }
+      console.log(`[prepare-rust-miner] ✅ Bundled libcosmic_harmony${libExt} (CHv4 native lib)`);
+    } catch (e) {
+      console.warn(`[prepare-rust-miner] ⚠️ Could not copy libcosmic_harmony: ${e.message}`);
+    }
+  } else {
+    console.warn(`[prepare-rust-miner] ⚠️ libcosmic_harmony${libExt} not found at ${explicitCHv4Lib} — Python CHv4 miner will use Rust fallback`);
+  }
+
   let nativeLibsSource = null;
   for (const p of nativeSearchPaths) {
     if (isDirectory(p)) {
