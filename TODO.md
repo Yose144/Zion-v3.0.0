@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 4. mřeze 2026 (Session 63 — 2miners BTC revenue, fail2ban, 1.12 live PASS, D-01 Docker manifest, CODE_FREEZE podpis; commit `5bd1664`)  
+> **Aktualizace:** 4. března 2026 (Session 64 — Interní audit zahájení, A-03/A-04 ZRUŠENO, ceremony blocked by audit; commit `2a7c8e5`)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
@@ -57,16 +57,32 @@
 - [x] **D-05** — 168h stability window ✅ PASS 2026-03-03 11:48 UTC
 
 ### Potřebuje server / ceremonii
-- [ ] **A-03/A-04** — Alertmanager Telegram tokeny nastavit na Helsinki + test-incident
-- [ ] **C-01/C-02** — `genesis.json` OFFLINE vytvořit + ověřit adresy vs. `PREMINE_ADDRESSES_PUBLIC.txt`
+- [x] ~~**A-03/A-04**~~ — ❌ **ZRUŠENO** (2026-03-04) — Discord webhook dostačuje, Telegram bot tokeny nejsou k dispozici
+- [ ] **C-01/C-02** — `genesis.json` OFFLINE vytvořit + ověřit adresy vs. `PREMINE_ADDRESSES_PUBLIC.txt` — 🚫 **BLOCKED:** čeká na uzavření interního auditu
 - [x] **D-01** — Docker SHA-256 manifest ✅ 2026-03-04 — `docs/2.9.7/DOCKER_MANIFEST.md`; pool `20db3a4d...`, core `f58c79ea...`
 - [x] **D-05** — 168h stability window ✅ PASS 2026-03-03 11:48 UTC
 - [x] **D-06/D-07** — `v2.9.7-freeze` tag + `CODE_FREEZE.md` podpis ✅ 2026-03-04
 
 ### Phase 1 exit criteria (11/11 cíl)
 - [x] 1.0–1.10: Všechny dokončeny vč. 168h stability PASS ✅ 2026-03-03
-- [ ] **1.11** — Live partition test (server access — Helsinki node isolation 30min + reconnect)
+- [ ] **1.11** — Live partition test (server access — Helsinki node isolation 30min + reconnect) — 🔶 viz audit sekce G-01f
 - [x] **1.12** — 100 miners stress test ✅ PASS 2026-03-04 LIVE — 100/100 connected, 365/389 accepted (93.8%), p99=230ms, 3.9 shares/s @ 77.42.31.72:3333
+
+### 🔍 INTERNÍ AUDIT — mainnet gate (spuštěno 2026-03-04)
+
+> **Dokument:** `docs/2.9.7/INTERNAL_AUDIT.md` — 100 kontrolních bodů, 9 sekcí  
+> **Gate:** Všechna KRITICKÁ 🔴 items musí být ✅ **před** C-01/C-02 Genesis Ceremony
+
+- [ ] **A — Konsensus & Blockchain** (chain.rs 32× unwrap, double-spend, LWMA edge cases)
+- [ ] **B — Algoritmus CHv4** (OpenCL live parity, Python parity, AES timing)
+- [ ] **C — Pool / Stratum** (rate limit, share replay attack, template manager)
+- [ ] **D — Revenue Proxy** (scheduler aritmetika, WhatToMine fallback, KAS IPv6)
+- [ ] **E — Bezpečnost & Síť** (RPC auth, firewall USA+Asia, SSH lockdown)
+- [ ] **F — Infrastruktura & Docker** (secrets v env, RAM alert, SeedDE/Usa1 offline)
+- [ ] **G — Testy** (`cargo test --release` fresh, reorg 6-bloků test, 1.11 partition)
+- [ ] **H — Tokenomika & Premine** (144M ověření, Constitution FROZEN, key custody)
+- [ ] **I — L2/L3 Interface** (bridge scope, cross-layer auth)
+- [ ] **AUDIT UZAVŘEN** — všechna kritická 🔴 ✅ → povolena ceremonie
 
 ### B-CRIT (MainNet gate — blokující)
 - [x] **B-CRIT-01** — CHv4 activation policy — `CHV4_NPU_FORK_HEIGHT=0` od genesis ✅ 2026-03-03
@@ -84,7 +100,7 @@
   - Hash: `134f268c41b4dc9ca91111c7a0cda5fcc864788a438e88aebc16ca843492a6db` C==Rust
   - Parity test: `cargo test test_chv4_vs_c_native_parity` panics on mismatch
 - [x] **B-CRIT-02** — Revenue production activation ✅ 2026-03-04 — všechny GPU pooly na 2miners.com, BTC `bc1qvujra09...hd8mw`, canary běží →2026-03-06T21:37Z; commit `5bd1664`
-- [ ] **B-CRIT-03** — Genesis ceremony + freeze artifacts (genesis.json offline + podpisy)
+- [ ] **B-CRIT-03** — Genesis ceremony + freeze artifacts (genesis.json offline + podpisy) — 🚫 **BLOCKED:** čeká na `INTERNAL_AUDIT.md` uzavření (všechny kritické ✅)
 
 ### Revenue (implementováno, aktivace v 2.9.8)
 - [x] `revenue_proxy.rs` 1869 ř. — StratumProtocol EthStratum/CryptoNoteStratum/ZcashStratum
@@ -301,7 +317,7 @@
   - ✅ **Session 58:** `tests/stress_100_miners.py` VYTVOŘEN — Phase 1.12 (100 simulovaných minerů)
 - ✅ **Session 59–60:** CHv4 kompletní implementace do Rust minera (CUDA kernel přepsán, cuda.rs 16-arg, opencl.rs komentář), Python minera (v2.9.6 banner, CHv4/revenue konstanty) a desktop agenta (algo `cosmic_harmony`, CHv4/revenue konstanty) — commit `78a4cb3`
 - ✅ **Session 61:** CHv4 C/Rust parity fix — C native lib == Rust hash `134f268c...`, NPU int8, scratchpad, AES-128 — commit `f0ebf20`
-- ✅ **Session 62 (2026-03-04):** GPU CUDA/OpenCL CHv4 parity — AES-128 fusion (nahrazena PHI_POWERS/XOR), NPU int8 fix; 64/64 tests; Phase 1.12 PASS — commit `22f0515`
-- ⏭️ **Další P0 (lokálně):** wallet-generator zion1 validace ✅; Metal GPU CHv4 port (TODO)
-- ⏭️ **Další P0 (server):** 1.11 partition test, Alertmanager Telegram tokeny, genesis.json OFFLINE, Docker SHA-256, constitution FROZEN, v2.9.7-freeze tag
+- ✅ **Session 63 (2026-03-04):** B-CRIT-02 revenue 2miners BTC, fail2ban Helsinki, Phase 1.12 LIVE PASS, D-01 Docker manifest, CODE_FREEZE sign-off 🟢, `v2.9.7-freeze` tag — commit `2a7c8e5`
+- ✅ **Session 64 (2026-03-04):** Interní audit zahájen — `docs/2.9.7/INTERNAL_AUDIT.md` (100 bodů, 9 sekcí); A-03/A-04 ZRUŠENO; C-01/C-02 ceremony BLOCKED do auditu; TODO + CODE_FREEZE aktualizovány
+- ⏭️ **Další P0:** Spustit audit sekce A → I, opravit nálezy, uzavřít audit → ceremony gate
 - ⏭️ **Hlavní MainNet gate:** B-CRIT-02 revenue wallets + B-CRIT-03 genesis ceremony
