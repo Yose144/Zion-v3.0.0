@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 4. března 2026 (Session 61 — CHv4 C/Rust full parity fix; C native hash == Rust hash; commit `f0ebf20`)  
+> **Aktualizace:** 4. března 2026 (Session 62 — GPU CUDA/OpenCL CHv4 parity fix; 64/64 tests; Phase 1.12 PASS; commit `22f0515`)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
@@ -66,13 +66,18 @@
 ### Phase 1 exit criteria (11/11 cíl)
 - [x] 1.0–1.10: Všechny dokončeny vč. 168h stability PASS ✅ 2026-03-03
 - [ ] **1.11** — Live partition test (server access — Helsinki node isolation 30min + reconnect)
-- [ ] **1.12** — 100 miners stress test — `tests/stress_100_miners.py` ✅ VYTVOŘEN 2026-03-03
+- [x] **1.12** — 100 miners stress test ✅ PASS 2026-03-04 — 100/100 connected, 1000/1000 accepted, p99=2ms, 302 shares/s
 
 ### B-CRIT (MainNet gate — blokující)
 - [x] **B-CRIT-01** — CHv4 activation policy — `CHV4_NPU_FORK_HEIGHT=0` od genesis ✅ 2026-03-03
 - [x] **B-CRIT-01b** — CHv4 E2E test — `tests/chv4_e2e.rs` 11/11 PASS ✅ 2026-03-03
 - [x] **B-CRIT-01b** — CHv4 implementace do Rust minera (CUDA/OpenCL), Python minera, desktop agenta ✅ 2026-03-03 (commit `78a4cb3`)
 - [x] **B-CRIT-01c** — CHv4 C/Rust parity fix — C native lib == Rust pool hash ✅ 2026-03-04 (commit `f0ebf20`)
+- [x] **B-CRIT-01d** — GPU CUDA/OpenCL CHv4 parity fix ✅ 2026-03-04 (commit `22f0515`)
+  - CUDA `cosmic_fusion`: AES-128 FIPS-197 (nahrazena PHI_POWERS rotation)
+  - OpenCL `cosmic_fusion`: AES-128 FIPS-197 (nahrazen XOR-mask)
+  - CUDA+OpenCL NPU: `(signed char)(unsigned char)` + `(unsigned char)(v)` ← two's complement
+  - Rust test: `gpu_cosmic_harmony_v3_mh` (CHv3+MemHard, bez NPU) → 64/64 PASS
   - NPU: `(b as i8) as i32` + `v as u8` (Rust); integer MLP (C)
   - Scratchpad: mix_block rand XOR, random_read_mix SHA3-final, seed=gm_out
   - CosmicFusion: software AES-128 FIPS-197 matching `aes::Aes128`
@@ -295,6 +300,8 @@
   - ✅ **Session 58:** 168h stability ✅ PASS (2026-03-03 11:48 UTC), STABILITY_LOG.md T+168h zapsán
   - ✅ **Session 58:** `tests/stress_100_miners.py` VYTVOŘEN — Phase 1.12 (100 simulovaných minerů)
 - ✅ **Session 59–60:** CHv4 kompletní implementace do Rust minera (CUDA kernel přepsán, cuda.rs 16-arg, opencl.rs komentář), Python minera (v2.9.6 banner, CHv4/revenue konstanty) a desktop agenta (algo `cosmic_harmony`, CHv4/revenue konstanty) — commit `78a4cb3`
-- ⏭️ **Další P0 (lokálně):** B-CRIT-01 ✅ DONE; Phase 1.12 výsledky zaznamenat; Metal GPU CHv4 port (TODO)
+- ✅ **Session 61:** CHv4 C/Rust parity fix — C native lib == Rust hash `134f268c...`, NPU int8, scratchpad, AES-128 — commit `f0ebf20`
+- ✅ **Session 62 (2026-03-04):** GPU CUDA/OpenCL CHv4 parity — AES-128 fusion (nahrazena PHI_POWERS/XOR), NPU int8 fix; 64/64 tests; Phase 1.12 PASS — commit `22f0515`
+- ⏭️ **Další P0 (lokálně):** wallet-generator zion1 validace ✅; Metal GPU CHv4 port (TODO)
 - ⏭️ **Další P0 (server):** 1.11 partition test, Alertmanager Telegram tokeny, genesis.json OFFLINE, Docker SHA-256, constitution FROZEN, v2.9.7-freeze tag
 - ⏭️ **Hlavní MainNet gate:** B-CRIT-02 revenue wallets + B-CRIT-03 genesis ceremony
