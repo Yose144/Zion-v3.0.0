@@ -224,4 +224,53 @@ git push origin main --tags
 
 ---
 
-*Runbook udržován v `docs/2.9.7/GENESIS_CEREMONY.md` · verze 1.0 · 2026-03-01*
+## Custody Runbook — Premine Key Security (H-02e)
+
+> Tento oddíl adresuje audit gate **H-02e**: air-gapped machine + dual backup.
+
+### A. Air-gapped machine (povinné)
+
+1. **Dedikovaný offline stroj** — nikdy nepřipojen k internetu po vygenerování klíčů
+2. Před ceremonií: stáhnout repo + rust toolchain na USB na jiném stroji, ověřit SHA-256
+3. Přenést USB na offline stroj → kompilace → generování klíčů → ověření
+4. Po ceremonii: `shred -u` privátní klíče na offline stroji (pokud se neuchovávají záměrně)
+
+### B. Dual backup (povinné — minimálně 2 kopie na 2 nezávislých médiích)
+
+| Záloha | Médium | Umístění | Šifrování |
+|--------|--------|----------|-----------|
+| Backup 1 | Hardware wallet (Ledger/Trezor) nebo zašifrovaný USB | Fyzicky u zakladatele | AES-256 passphrase |
+| Backup 2 | Papírová záloha BIP39 mnemonic | Bezpečnostní schránka (bankovní sejf nebo ekvivalent) | N/A — fyzická bezpečnost |
+| (Doporučeno) Backup 3 | Shamir Secret Sharing split | Dvě důvěryhodné osoby / Geografia oddělení | — |
+
+### C. Postup zálohy
+
+```bash
+# Na OFFLINE stroji — po vygenerování klíčů:
+# 1. Vypsat BIP39 mnemonic na papír (ručně — nepoužívat printer)
+# 2. Ověřit mnemonic → adresa odpovídá PREMINE_ADDRESSES_PUBLIC.txt
+# 3. Zašifrovat JSON backup:
+gpg --symmetric --cipher-algo AES256 PREMINE_WALLETS_BACKUP.json
+# Výsledný .gpg soubor přenést na USB Backup 1
+
+# 4. Smazat plaintext backup:
+shred -u PREMINE_WALLETS_BACKUP.json
+```
+
+### D. Ověření custody (před ceremonií)
+
+- [ ] Backup 1 přístupný a dešifrovatelný (test decrypt na offline stroji)
+- [ ] Backup 2 fyzicky zajištěn (osobní potvrzení zakladatele)
+- [ ] DAO Treasury adresy: multi-sig — min 2 ze 3 podpisů (pokud implementováno)
+- [ ] Záznamy do tabulky "Záznam ceremony" výše
+
+### E. Obnovení (emergency recovery)
+
+Pokud je jeden backup ztracen:
+1. Okamžitě informovat Core Dev team
+2. Použít zbývající backup k přesunutí fondů na nové adresy
+3. Zveřejnit migrace on-chain s podpisem (transparency)
+
+---
+
+*Runbook udržován v `docs/2.9.7/GENESIS_CEREMONY.md` · verze 1.1 · 2026-03-05*
