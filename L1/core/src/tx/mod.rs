@@ -11,7 +11,8 @@ pub struct TxInput {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TxOutput {
-    pub amount: u64,
+    /// Amount in flowers (atomic units). u128 to accommodate premine amounts > u64::MAX.
+    pub amount: u128,
     pub address: String,
     /// Optional memo / OP_RETURN data (e.g. "BRIDGE:base:0x..." for bridge locks)
     /// NOTE: no skip_serializing_if — bincode (LMDB) requires all fields present

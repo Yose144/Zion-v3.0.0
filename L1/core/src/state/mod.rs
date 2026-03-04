@@ -207,7 +207,7 @@ impl Inner {
                 return Err("Non-coinbase tx contains coinbase input".to_string());
             }
 
-            let mut input_sum: u64 = 0;
+            let mut input_sum: u128 = 0;
 
             for input in &tx.inputs {
                 let key = format!("{}:{}", input.prev_tx_hash, input.output_index);
@@ -279,10 +279,10 @@ impl Inner {
                     .ok_or_else(|| format!("Input sum overflow in tx {}", tx.id))?;
             }
 
-            let output_sum: u64 = tx.outputs.iter().map(|o| o.amount).sum();
+            let output_sum: u128 = tx.outputs.iter().map(|o| o.amount).sum();
 
             // Check balance (input >= output + fee)
-            if input_sum < output_sum.checked_add(tx.fee).unwrap_or(u64::MAX) {
+            if input_sum < output_sum.saturating_add(tx.fee as u128) {
                 return Err(format!(
                     "Insufficient balance in tx {}: input {} < output {} + fee {}",
                     tx.id, input_sum, output_sum, tx.fee

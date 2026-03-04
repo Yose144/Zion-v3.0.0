@@ -27,7 +27,7 @@ fn decode_utxo_compat(bytes: &[u8]) -> Option<TxOutput> {
     // Fallback: old schema (amount + address only) — upgrade to new with memo=None
     if let Ok(legacy) = bincode::deserialize::<TxOutputLegacy>(bytes) {
         return Some(TxOutput {
-            amount: legacy.amount,
+            amount: legacy.amount as u128,
             address: legacy.address,
             memo: None,
         });
@@ -57,8 +57,8 @@ pub struct ZionStorage {
     hash_to_height: Database<Str, U64<BigEndian>>, // Block hash -> Height
     /// Undo log: height -> BlockUndoData (spent UTXOs for safe rollback)
     undo_blocks: Database<U64<BigEndian>, SerdeBincode<BlockUndoData>>,
-    /// Balance cache: address -> (balance_atomic, utxo_count) serialized as [u64; 2]
-    balance_cache: Database<Str, SerdeBincode<(u64, u64)>>,
+    /// Balance cache: address -> (balance_atomic, utxo_count) — u128 balance for 12dp flowers
+    balance_cache: Database<Str, SerdeBincode<(u128, u64)>>,
     /// Raw-bytes view of the utxos table — used for manual compat deserialization
     /// (old-schema records without memo field need fallback via decode_utxo_compat).
     utxos_raw: Database<Str, Bytes>,
@@ -98,21 +98,23 @@ impl ZionStorage {
         // Old cache entries are wrong (0 balance) because old iterator panicked/skipped.
         // Magic key "\x00balance_schema_v\x00" cannot be a valid bech32 address.
         const SCHEMA_KEY: &str = "\x00balance_schema_v\x00";
-        const CURRENT_SCHEMA: u64 = 2;
+        const CURRENT_SCHEMA: u64 = 3;  // v3: balance changed to u128 for 12dp flowers (WP3.0)
         {
             let rtxn = env.read_txn()?;
             let cached_schema: u64 = balance_cache
-                .get(&rtxn, SCHEMA_KEY)?
-                .map(|(v, _)| v)
+                .get(&rtxn, SCHEMA_KEY)
+                .ok()  // handle deserialization error from old (u64,u64) schema
+                .flatten()
+                .map(|(v, _)| v as u64)
                 .unwrap_or(0);
             drop(rtxn);
             if cached_schema < CURRENT_SCHEMA {
                 let mut wtxn2 = env.write_txn()?;
                 balance_cache.clear(&mut wtxn2)?;
-                balance_cache.put(&mut wtxn2, SCHEMA_KEY, &(CURRENT_SCHEMA, 0u64))?;
+                balance_cache.put(&mut wtxn2, SCHEMA_KEY, &(CURRENT_SCHEMA as u128, 0u64))?;
                 wtxn2.commit()?;
                 eprintln!(
-                    "[MIGRATION] Balance cache cleared (schema v{} → v{}). \
+                    "[MIGRATION] Balance cache cleared (schema v{} -> v{}). \
                      Balances will be recalculated on first access.",
                     cached_schema, CURRENT_SCHEMA
                 );
@@ -436,7 +438,7 @@ impl ZionStorage {
     /// Fast path: check balance_cache first (O(1)).
     /// Slow path (cache miss): scan UTXO set, then populate cache.
     /// Returns (total_amount_atomic, utxo_count).
-    pub fn get_balance_for_address(&self, address: &str) -> Result<(u64, usize)> {
+    pub fn get_balance_for_address(&self, address: &str) -> Result<(u128, usize)> {
         // Fast path: cached balance
         let rtxn = self.env.read_txn()?;
         if let Some((balance, count)) = self.balance_cache.get(&rtxn, address)? {
@@ -446,7 +448,7 @@ impl ZionStorage {
 
         // Slow path: full UTXO scan (only on first access or after cache invalidation)
         let rtxn = self.env.read_txn()?;
-        let mut total: u64 = 0;
+        let mut total: u128 = 0;
         let mut count: usize = 0;
         let mut skipped: usize = 0;
 
@@ -486,10 +488,10 @@ impl ZionStorage {
     /// Call this after inserting/removing UTXOs for a block.
     pub fn update_balance_cache(&self, addresses: &[String]) -> Result<()> {
         let rtxn = self.env.read_txn()?;
-        let mut updates: Vec<(String, u64, u64)> = Vec::new();
+        let mut updates: Vec<(String, u128, u64)> = Vec::new();
 
         for address in addresses {
-            let mut total: u64 = 0;
+            let mut total: u128 = 0;
             let mut count: u64 = 0;
             let mut iter = self.utxos_raw.iter(&rtxn)?;
             while let Some(result) = iter.next() {
@@ -532,7 +534,7 @@ impl ZionStorage {
     /// Used for testing payouts in TestNet without real mining.
     /// Compile-time gated: only available with `--features dev-tools`.
     #[cfg(feature = "dev-tools")]
-    pub fn credit_balance(&self, address: &str, amount_atomic: u64) -> Result<()> {
+    pub fn credit_balance(&self, address: &str, amount_atomic: u128) -> Result<()> {
         let mut wtxn = self.env.write_txn()?;
 
         // Generate unique key for synthetic UTXO

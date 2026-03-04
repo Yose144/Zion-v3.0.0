@@ -85,7 +85,7 @@ impl Mempool {
         }
 
         // 3. Output amount check
-        let outputs: Vec<(u64, &str)> = tx
+        let outputs: Vec<(u128, &str)> = tx
             .outputs
             .iter()
             .map(|o| (o.amount, o.address.as_str()))
