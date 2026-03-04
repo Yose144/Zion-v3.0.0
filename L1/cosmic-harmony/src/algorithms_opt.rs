@@ -567,6 +567,70 @@ pub fn cosmic_harmony_v3_parallel(
         .collect()
 }
 
+/// CHv4 parallel batch mining using rayon.
+///
+/// Každé rayon vlákno má vlastní thread-local scratchpad buffer (512 KiB) —
+/// žádný mutex, žádná alokace per hash. Ideální pro maximální throughput
+/// na vícejádrových CPU (M1/M2: 8-12 vláken × ~15 H/s = ~120–180 H/s).
+///
+/// Pro target-based mining viz `cosmic_harmony_v4_find_nonce_parallel`.
+#[cfg(feature = "parallel")]
+pub fn cosmic_harmony_v4_parallel(
+    block_header: &[u8],
+    start_nonce: u64,
+    count: usize,
+) -> Vec<Hash32> {
+    use rayon::prelude::*;
+
+    (0..count)
+        .into_par_iter()
+        .map(|i| cosmic_harmony_v4(block_header, start_nonce + i as u64))
+        .collect()
+}
+
+/// CHv4 parallel nonce search — najde první nonce splňující target (hash ≤ target).
+///
+/// Vrací `Some((nonce, hash))` nebo `None` pokud nenašel v rozsahu `[start, start+count)`.
+///
+/// Algoritmus:
+///   - Rozdělí nonce rozsah rovnoměrně mezi všechna dostupná vlákna (rayon)
+///   - Hledání je kooperativní: první vlákno které najde řešení nastaví AtomicBool
+///     a ostatní vlákna se krátce zastaví
+///   - Thread-local scratchpad zajišťuje nulový overhead alokace
+#[cfg(feature = "parallel")]
+pub fn cosmic_harmony_v4_find_nonce_parallel(
+    block_header: &[u8],
+    start_nonce: u64,
+    count: usize,
+    target: &[u8; 32],
+) -> Option<(u64, Hash32)> {
+    use rayon::prelude::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+
+    let found = Arc::new(AtomicBool::new(false));
+    let found_clone = found.clone();
+
+    let result = (0..count)
+        .into_par_iter()
+        .find_map_any(|i| {
+            // Early exit pokud jiné vlákno už našlo
+            if found_clone.load(Ordering::Relaxed) {
+                return None;
+            }
+            let nonce = start_nonce + i as u64;
+            let hash = cosmic_harmony_v4(block_header, nonce);
+            if meets_difficulty(&hash, target) {
+                found_clone.store(true, Ordering::Relaxed);
+                Some((nonce, hash))
+            } else {
+                None
+            }
+        });
+
+    result
+}
+
 // ============================================================================
 // DIFFICULTY CHECKING - SIMD accelerated
 // ============================================================================

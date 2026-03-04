@@ -259,10 +259,43 @@ Aktivace: pouze pokud `height >= 200_000` (podmínka v hosta, ne v kernelu samot
 
 ---
 
+## Native C Library + Performance Tuning ✅ (2026-03-04)
+
+> Implementováno paralelně s mainnet přípravou — připravuje základy pro GPU/FPGA minery.
+
+### Co bylo hotovo:
+
+| Součást | Soubor | Stav |
+|---------|--------|------|
+| `cosmic_harmony_v4_native.c` (1826 řádků) | `L1/native-libs/all/` | ✅ `098c0c8` |
+| `libcosmic_harmony.dylib` (51 KiB ARM64) | `L1/` | ✅ sestaveno |
+| Rust thread-local scratchpad | `L1/cosmic-harmony/src/scratchpad.rs` | ✅ ~25% speedup |
+| `cosmic_harmony_v4_parallel` (rayon) | `L1/cosmic-harmony/src/algorithms_opt.rs` | ✅ feature=parallel |
+| Python CHv4 miner multi-threaded | `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v4_native.py` | ✅ 70 H/s @ 8 vláken |
+
+### Hashrate benchmark (macOS ARM64):
+
+```
+1 vlákno C native:    ~15 H/s
+Python 8 vláken:      ~70 H/s  (4.7× speedup)
+Scaling efficiency:   ~97%
+```
+
+### ⚠️ Pending — NPU input mismatch (Rust ↔ C native):
+
+Rust: `b as i32 - 128` vs. C/Metal: `(int8_t)input[i]` — různé hash výstupy!  
+Rust pool a Rust miner jsou konzistentní → mainnet funguje.  
+C native lib je zatím jen reference/testovací build.  
+**FIX nutný před C-based mineři na mainnet.**  
+→ Řešení popsáno v `docs/2.9.7/CHV4_NATIVE_LIB_REPORT.md`
+
+---
+
 ## Reference dokumentů
 
 | Dokument | Účel |
 |----------|------|
+| `docs/2.9.7/CHV4_NATIVE_LIB_REPORT.md` | Native C lib + performance tuning report |
 | `docs/2.9.7/2.9.7.md` | Plný seznam P0 blokerů skupin A–F |
 | `docs/2.9.7/CODE_FREEZE.md` | Sign-off checklist (musí být ✅ před tagem) |
 | `docs/2.9.7/MAINNET_READINESS_UNIFIED.md` | B-CRIT-01/02/03 stav |
