@@ -72,6 +72,12 @@ pub mod whattomine; // WhatToMine/CoinGecko API integration
 pub use algorithm_library::{AlgorithmInfo, AlgorithmModuleLibrary, PipelineExecutionResult};
 pub use algorithms_npu::{CHV4_NPU_FORK_HEIGHT, CHV4_MLP_GENESIS_SEED, npu_mixing_step, npu_mixing_hash64};
 pub use algorithms_opt::{cosmic_harmony_v3, cosmic_harmony_v4, cosmic_harmony_with_height, Hash32, Hash64};
+#[cfg(feature = "parallel")]
+pub use algorithms_opt::{
+    cosmic_harmony_v3_parallel,
+    cosmic_harmony_v4_parallel,
+    cosmic_harmony_v4_find_nonce_parallel,
+};
 pub use config::Config;
 pub use config::{ExternalPoolConfig, MultiChainMiningConfig};
 pub use engine::CosmicHarmonyV3;
