@@ -703,6 +703,73 @@ mod tests {
     }
 
     #[test]
+    fn test_trace_steps() {
+        // Print intermediate CHv4 steps for C parity debugging
+        let mut header = [0u8; 80];
+        header[..24].copy_from_slice(b"ZION block header v2.9.6");
+        let nonce: u64 = 12345;
+
+        let mut input = [0u8; 88];
+        input[..80].copy_from_slice(&header);
+        input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+        let s1 = keccak256_opt(&input);
+        println!("Rust step1 keccak256: {}", s1.data.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+
+        let s2 = sha3_512_opt(&s1.data);
+        println!("Rust step2 sha3_512:  {}", s2.data.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+
+        let s3 = golden_matrix_opt(&s2.data);
+        println!("Rust step3 golden:    {}", s3.data.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+
+        let s4 = crate::scratchpad::memory_hard_transform(&s3.data);
+        println!("Rust step4 mem_hard:  {}", s4.data.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+
+        let s5 = crate::algorithms_npu::npu_mixing_hash64(&s4.data);
+        println!("Rust step5 npu:       {}", s5.data.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+
+        let final_hash = cosmic_harmony_v4(&header, nonce);
+        println!("Rust final hash:      {}", final_hash.data.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+    }
+
+    #[test]
+    fn test_chv4_vs_c_native_parity() {
+        // Referenční vstup shodný s C native lib testem:
+        // header = b"ZION block header v2.9.6" + \x00*56, nonce=12345
+        // C native (libcosmic_harmony.dylib) produkuje:
+        //   5429b0227c36f7f463334a575236f12b5618180b11caf00565fed65aea82f7fb
+        // Po NPU fixu by Rust měl produkovat stejný hash.
+        let mut header = [0u8; 80];
+        let label = b"ZION block header v2.9.6";
+        header[..label.len()].copy_from_slice(label);
+
+        let rust_hash = cosmic_harmony_v4(&header, 12345);
+        let rust_hex: String = rust_hash.data.iter().map(|b| format!("{:02x}", b)).collect();
+
+        println!("Rust CHv4 hash (nonce=12345): {}", rust_hex);
+        println!("C    CHv4 hash (nonce=12345): 134f268c41b4dc9ca91111c7a0cda5fcc864788a438e88aebc16ca843492a6db");
+
+        // Determinismus (vždy musí platit)
+        let rust_hash2 = cosmic_harmony_v4(&header, 12345);
+        assert_eq!(rust_hash.data, rust_hash2.data, "CHv4 must be deterministic");
+
+        // Různý nonce = různý hash
+        let rust_hash3 = cosmic_harmony_v4(&header, 12346);
+        assert_ne!(rust_hash.data, rust_hash3.data, "Different nonce must give different hash");
+
+        // Parity check s C native lib (po NPU + scratchpad + fusion fixu)
+        let c_expected = "134f268c41b4dc9ca91111c7a0cda5fcc864788a438e88aebc16ca843492a6db";
+        if rust_hex == c_expected {
+            println!("✅ PARITY OK: Rust == C native (všechny kroky shodné)");
+        } else {
+            println!("❌ PARITY FAIL: Rust != C native — hash mismatch:");
+            println!("   Got:      {}", rust_hex);
+            println!("   Expected: {}", c_expected);
+            panic!("CHv4 Rust/C parity failed!");
+        }
+    }
+
+    #[test]
     fn test_full_pipeline() {
         let header = b"ZION block header v2.9.5";
         let hash = cosmic_harmony_v3(header, 12345);
