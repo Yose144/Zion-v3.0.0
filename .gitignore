@@ -25,8 +25,8 @@ Thumbs.db
 *.log
 logs/
 
-# Data (runtime)
-data/
+# Data (runtime) — only root-level; nested dirs like APP&WEB/**/data/ are allowed
+/data/
 *.db
 *.lmdb
 *.lmdb-lock
