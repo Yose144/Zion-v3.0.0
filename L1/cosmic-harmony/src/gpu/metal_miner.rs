@@ -1,12 +1,23 @@
-//! Metal GPU backend for macOS/iOS
+//! Metal GPU backend for macOS/iOS — CHv4 (Cosmic Harmony v4)
 //!
 //! Uses Apple Metal API for native GPU acceleration on Apple Silicon.
-//! Full CHv3 pipeline on GPU: Keccak→SHA3→GoldenMatrix→CosmicFusion
-//! Typically 10x+ faster than CPU on M1/M2/M3/M4 chips.
+//! Full CHv4 pipeline on GPU:
+//!   Keccak-256 → SHA3-512 → Golden Matrix
+//!   → Memory-Hard Scratchpad (512 KiB/thread)
+//!   → NPU Mixing (INT8 MLP 64→128→64 + residual)
+//!   → Cosmic Fusion
+//! CHV4_NPU_FORK_HEIGHT = 0: CHv4 always active from genesis.
 //!
 //! Buffer layout matches Metal shader structs:
-//!   buffer(0) = CHv3MiningParams { start_nonce: u64, header_len: u32, header: [u8;80], target: [u8;32] }
-//!   buffer(1) = CHv3MiningResult { found_nonce: u64, found_hash: [u8;32], found: u32 }
+//!   buffer(0) = CHv4MiningParams { start_nonce, header_len, header[80], target[32], block_height }
+//!   buffer(1) = CHv4MiningResult { found_nonce, found_hash[32], found }
+//!   buffer(2) = scratchpad_buf  (batch_size × 512 KiB)
+//!   buffer(3) = npu_w1   [128×64  i8]  Layer-1 weights
+//!   buffer(4) = npu_b1   [128     i8]  Layer-1 bias
+//!   buffer(5) = npu_w2   [64×128  i8]  Layer-2 weights
+//!   buffer(6) = npu_b2   [64      i8]  Layer-2 bias
+//!   buffer(7) = npu_scale1 [128   i16] Layer-1 scale
+//!   buffer(8) = npu_scale2 [64    i16] Layer-2 scale
 
 use std::path::Path;
 
@@ -17,22 +28,24 @@ use metal::{
 
 use super::{GpuBackend, GpuDevice};
 
-/// CHv3 Mining Parameters — matches Metal shader struct exactly
+/// CHv4 Mining Parameters — matches Metal shader CHv4MiningParams exactly
 /// Metal MSL layout (uint8_t has alignment 1, NO padding after u32):
-///   offset 0:  uint64_t start_nonce  (8 bytes, align 8)
-///   offset 8:  uint32_t header_len   (4 bytes, align 4)
-///   offset 12: uint8_t header[80]    (80 bytes, align 1) ← NO PADDING before!
-///   offset 92: uint8_t target[32]    (32 bytes, align 1)
-///   Total: 124 bytes (struct alignment 8 → padded to 128)
+///   offset   0: uint64_t start_nonce   (8 bytes, align 8)
+///   offset   8: uint32_t header_len    (4 bytes, align 4)
+///   offset  12: uint8_t  header[80]    (80 bytes, align 1) ← NO PADDING
+///   offset  92: uint8_t  target[32]    (32 bytes, align 1)
+///   offset 124: uint32_t block_height  (4 bytes)
+///   Total: 128 bytes (struct alignment 8, naturally aligned)
 #[cfg(target_os = "macos")]
 #[repr(C)]
 #[derive(Clone)]
 pub struct CHv3MiningParams {
-    pub start_nonce: u64, // offset 0,  size 8
-    pub header_len: u32,  // offset 8,  size 4
-    pub header: [u8; 80], // offset 12, size 80 (NO padding — u8 has align 1)
-    pub target: [u8; 32], // offset 92, size 32
-} // total: 124 → padded to 128
+    pub start_nonce:  u64,    // offset   0, size 8
+    pub header_len:   u32,    // offset   8, size 4
+    pub header:       [u8; 80], // offset 12, size 80
+    pub target:       [u8; 32], // offset 92, size 32
+    pub block_height: u32,    // offset 124, size 4
+} // total: 128 bytes
 
 /// CHv3 Mining Result — matches Metal shader struct exactly
 /// Metal MSL layout:
@@ -49,7 +62,7 @@ pub struct CHv3MiningResult {
     pub found: u32,           // offset 40, size 4
 } // total: 44 → padded to 48
 
-/// Metal miner for Cosmic Harmony v3
+/// Metal miner for Cosmic Harmony v4
 #[cfg(target_os = "macos")]
 pub struct MetalMiner {
     device: Device,
@@ -57,10 +70,21 @@ pub struct MetalMiner {
     pipeline_mine: ComputePipelineState,
     pipeline_benchmark: ComputePipelineState,
 
-    // Packed struct buffers matching shader
+    // Core buffers
     params_buf: Buffer,
     result_buf: Buffer,
     hashes_buf: Option<Buffer>,
+
+    // CHv4: per-thread scratchpad (batch_size × 512 KiB)
+    scratchpad_buf: Buffer,
+
+    // CHv4: NPU weight buffers (uploaded once at init, never change)
+    npu_w1_buf:     Buffer,   // [128 × 64  i8]  8 192 bytes
+    npu_b1_buf:     Buffer,   // [128       i8]    128 bytes
+    npu_w2_buf:     Buffer,   // [64  × 128 i8]  8 192 bytes
+    npu_b2_buf:     Buffer,   // [64        i8]     64 bytes
+    npu_scale1_buf: Buffer,   // [128       i16]   256 bytes
+    npu_scale2_buf: Buffer,   // [64        i16]   128 bytes
 
     // Config
     batch_size: usize,
@@ -122,7 +146,7 @@ impl MetalMiner {
         log::debug!("   Threads per threadgroup: {}", threads_per_threadgroup);
         log::debug!("   Batch size: {}", batch_size);
 
-        // Allocate packed struct buffers
+        // ── Core struct buffers ──
         let options = MTLResourceOptions::StorageModeShared;
 
         let params_size = std::mem::size_of::<CHv3MiningParams>() as u64;
@@ -131,16 +155,16 @@ impl MetalMiner {
         let params_buf = device.new_buffer(params_size, options);
         let result_buf = device.new_buffer(result_size, options);
 
-        // Verify struct sizes match Metal shader expectations
-        log::debug!("   Params struct: {} bytes (expected 124-128)", params_size);
+        // Verify struct sizes and field offsets at runtime
+        log::debug!("   Params struct: {} bytes (expected 128)", params_size);
         log::debug!("   Result struct: {} bytes (expected 44-48)", result_size);
 
-        // Verify field offsets at runtime
         let dummy_params = CHv3MiningParams {
-            start_nonce: 0,
-            header_len: 0,
-            header: [0u8; 80],
-            target: [0u8; 32],
+            start_nonce:  0,
+            header_len:   0,
+            header:       [0u8; 80],
+            target:       [0u8; 32],
+            block_height: 0,
         };
         let base = &dummy_params as *const _ as usize;
         let header_offset = &dummy_params.header as *const _ as usize - base;
@@ -154,6 +178,57 @@ impl MetalMiner {
             ));
         }
 
+        // ── CHv4: derive NPU weights from genesis seed (deterministic) ──
+        let weights = crate::algorithms_npu::chv4_npu_weights_flat();
+
+        // w1: [128×64 i8] — 8 192 bytes
+        let npu_w1_buf = device.new_buffer_with_data(
+            weights.w1.as_ptr() as *const _,
+            8192u64,
+            options,
+        );
+        // b1: [128 i8] — 128 bytes
+        let npu_b1_buf = device.new_buffer_with_data(
+            weights.b1.as_ptr() as *const _,
+            128u64,
+            options,
+        );
+        // w2: [64×128 i8] — 8 192 bytes
+        let npu_w2_buf = device.new_buffer_with_data(
+            weights.w2.as_ptr() as *const _,
+            8192u64,
+            options,
+        );
+        // b2: [64 i8] — 64 bytes
+        let npu_b2_buf = device.new_buffer_with_data(
+            weights.b2.as_ptr() as *const _,
+            64u64,
+            options,
+        );
+        // scale1: [128 i16] — 256 bytes
+        let npu_scale1_buf = device.new_buffer_with_data(
+            weights.scale1.as_ptr() as *const _,
+            256u64,
+            options,
+        );
+        // scale2: [64 i16] — 128 bytes
+        let npu_scale2_buf = device.new_buffer_with_data(
+            weights.scale2.as_ptr() as *const _,
+            128u64,
+            options,
+        );
+
+        log::debug!("   NPU weights uploaded ({} bytes total)", 8192 + 128 + 8192 + 64 + 256 + 128);
+
+        // ── CHv4: scratchpad buffer — each thread gets 512 KiB ──
+        let scratchpad_bytes = (batch_size as u64) * 524_288u64;
+        let scratchpad_buf = device.new_buffer(scratchpad_bytes, options);
+        log::debug!(
+            "   Scratchpad: {} MiB total ({} threads × 512 KiB)",
+            scratchpad_bytes / (1024 * 1024),
+            batch_size
+        );
+
         Ok(Self {
             device,
             command_queue,
@@ -162,6 +237,13 @@ impl MetalMiner {
             params_buf,
             result_buf,
             hashes_buf: None,
+            scratchpad_buf,
+            npu_w1_buf,
+            npu_b1_buf,
+            npu_w2_buf,
+            npu_b2_buf,
+            npu_scale1_buf,
+            npu_scale2_buf,
             batch_size,
             threads_per_threadgroup,
             total_hashes: 0,
@@ -218,27 +300,28 @@ impl MetalMiner {
         self.batch_size
     }
 
-    /// Mine for a valid nonce — uses packed struct buffers matching shader
+    /// Mine for a valid nonce — CHv4 full pipeline
     pub fn mine(
         &mut self,
         header: &[u8],
         target: &[u8; 32],
         start_nonce: u64,
+        height: u64,
     ) -> Option<(u64, [u8; 32])> {
-        // Build params struct matching Metal CHv3MiningParams (packed, no padding)
+        // Build params struct matching Metal CHv4MiningParams
         unsafe {
             let ptr = self.params_buf.contents() as *mut CHv3MiningParams;
             let params = &mut *ptr;
-            params.start_nonce = start_nonce;
-            params.header_len = header.len().min(80) as u32;
-            // Zero header first, then copy
-            params.header = [0u8; 80];
+            params.start_nonce  = start_nonce;
+            params.header_len   = header.len().min(80) as u32;
+            params.header       = [0u8; 80];
             std::ptr::copy_nonoverlapping(
                 header.as_ptr(),
                 params.header.as_mut_ptr(),
                 header.len().min(80),
             );
             params.target.copy_from_slice(target);
+            params.block_height = height as u32;
         }
 
         // Reset result struct
@@ -246,20 +329,27 @@ impl MetalMiner {
             let ptr = self.result_buf.contents() as *mut CHv3MiningResult;
             let result = &mut *ptr;
             result.found_nonce = 0;
-            result.found_hash = [0u8; 32];
-            result.found = 0;
+            result.found_hash  = [0u8; 32];
+            result.found       = 0;
         }
 
-        // Create command buffer and encode
         let command_buffer = self.command_queue.new_command_buffer();
         let encoder = command_buffer.new_compute_command_encoder();
 
         encoder.set_compute_pipeline_state(&self.pipeline_mine);
-        encoder.set_buffer(0, Some(&self.params_buf), 0); // CHv3MiningParams
-        encoder.set_buffer(1, Some(&self.result_buf), 0); // CHv3MiningResult
+        // Core buffers
+        encoder.set_buffer(0, Some(&self.params_buf),   0);
+        encoder.set_buffer(1, Some(&self.result_buf),   0);
+        // CHv4 buffers
+        encoder.set_buffer(2, Some(&self.scratchpad_buf),  0);
+        encoder.set_buffer(3, Some(&self.npu_w1_buf),      0);
+        encoder.set_buffer(4, Some(&self.npu_b1_buf),      0);
+        encoder.set_buffer(5, Some(&self.npu_w2_buf),      0);
+        encoder.set_buffer(6, Some(&self.npu_b2_buf),      0);
+        encoder.set_buffer(7, Some(&self.npu_scale1_buf),  0);
+        encoder.set_buffer(8, Some(&self.npu_scale2_buf),  0);
 
-        // Dispatch
-        let grid_size = MTLSize::new(self.batch_size as u64, 1, 1);
+        let grid_size        = MTLSize::new(self.batch_size as u64, 1, 1);
         let threadgroup_size = MTLSize::new(self.threads_per_threadgroup as u64, 1, 1);
 
         encoder.dispatch_threads(grid_size, threadgroup_size);
@@ -270,24 +360,20 @@ impl MetalMiner {
 
         self.total_hashes += self.batch_size as u64;
 
-        // Read result struct
         let result = unsafe { &*(self.result_buf.contents() as *const CHv3MiningResult) };
 
         if result.found > 0 {
             self.solutions_found += 1;
-
             let mut found_hash = [0u8; 32];
             found_hash.copy_from_slice(&result.found_hash);
-
             Some((result.found_nonce, found_hash))
         } else {
             None
         }
     }
 
-    /// Compute batch of hashes — uses benchmark kernel
+    /// Compute batch of hashes — benchmark kernel, CHv4
     pub fn batch_hash(&mut self, header: &[u8], start_nonce: u64, count: usize) -> Vec<[u8; 32]> {
-        // Ensure hashes buffer is large enough
         let required_size = (count * 32) as u64;
         if self.hashes_buf.is_none() || self.hashes_buf.as_ref().unwrap().length() < required_size {
             self.hashes_buf = Some(
@@ -296,29 +382,38 @@ impl MetalMiner {
             );
         }
 
-        // Build params struct (packed, no padding)
         unsafe {
             let ptr = self.params_buf.contents() as *mut CHv3MiningParams;
             let params = &mut *ptr;
-            params.start_nonce = start_nonce;
-            params.header_len = header.len().min(80) as u32;
-            params.header = [0u8; 80];
+            params.start_nonce  = start_nonce;
+            params.header_len   = header.len().min(80) as u32;
+            params.header       = [0u8; 80];
             std::ptr::copy_nonoverlapping(
                 header.as_ptr(),
                 params.header.as_mut_ptr(),
                 header.len().min(80),
             );
-            params.target = [0u8; 32]; // not used in benchmark kernel
+            params.target       = [0u8; 32];
+            params.block_height = 0u32;
         }
 
         let command_buffer = self.command_queue.new_command_buffer();
         let encoder = command_buffer.new_compute_command_encoder();
 
         encoder.set_compute_pipeline_state(&self.pipeline_benchmark);
-        encoder.set_buffer(0, Some(&self.params_buf), 0); // CHv3MiningParams
-        encoder.set_buffer(1, self.hashes_buf.as_ref().map(|v| &**v), 0); // output hashes
+        // Core buffers
+        encoder.set_buffer(0, Some(&self.params_buf), 0);
+        encoder.set_buffer(1, self.hashes_buf.as_ref().map(|v| &**v), 0);
+        // CHv4 buffers
+        encoder.set_buffer(2, Some(&self.scratchpad_buf),  0);
+        encoder.set_buffer(3, Some(&self.npu_w1_buf),      0);
+        encoder.set_buffer(4, Some(&self.npu_b1_buf),      0);
+        encoder.set_buffer(5, Some(&self.npu_w2_buf),      0);
+        encoder.set_buffer(6, Some(&self.npu_b2_buf),      0);
+        encoder.set_buffer(7, Some(&self.npu_scale1_buf),  0);
+        encoder.set_buffer(8, Some(&self.npu_scale2_buf),  0);
 
-        let grid_size = MTLSize::new(count as u64, 1, 1);
+        let grid_size        = MTLSize::new(count as u64, 1, 1);
         let threadgroup_size = MTLSize::new(self.threads_per_threadgroup as u64, 1, 1);
 
         encoder.dispatch_threads(grid_size, threadgroup_size);
@@ -329,7 +424,6 @@ impl MetalMiner {
 
         self.total_hashes += count as u64;
 
-        // Read results
         let mut results = Vec::with_capacity(count);
         unsafe {
             let ptr = self.hashes_buf.as_ref().unwrap().contents() as *const u8;
@@ -339,7 +433,6 @@ impl MetalMiner {
                 results.push(hash);
             }
         }
-
         results
     }
 
@@ -355,7 +448,7 @@ impl MetalMiner {
         let mut nonce = 0u64;
 
         while start.elapsed().as_secs_f64() < duration_secs {
-            self.mine(header, &target, nonce);
+            self.mine(header, &target, nonce, 0);
             nonce += self.batch_size as u64;
             total += self.batch_size as u64;
         }
@@ -371,10 +464,7 @@ impl MetalMiner {
         hashrate
     }
 
-    /// GPU↔CPU parity check pro legacy CHv3 pipeline (bez memory-hard scratchpadu).
-    ///
-    /// Pozn.: Metal shader aktuálně implementuje legacy CHv3 path,
-    /// proto porovnáváme proti `cosmic_harmony_v3_legacy`.
+    /// GPU↔CPU CHv4 parity check (compares GPU output against CPU CHv4 reference).
     pub fn parity_check_legacy(
         &mut self,
         header: &[u8],
@@ -386,13 +476,14 @@ impl MetalMiner {
 
         for (i, gpu_hash) in gpu_hashes.iter().enumerate() {
             let nonce = start_nonce + i as u64;
-            let cpu = crate::algorithms_opt::cosmic_harmony_v3_legacy(header, nonce);
+            // CHV4_NPU_FORK_HEIGHT = 0, so height 0 already exercises CHv4
+            let cpu = crate::algorithms_opt::cosmic_harmony_v3_with_height(header, nonce, 0u64);
 
             if gpu_hash != &cpu.data {
                 mismatches += 1;
                 if mismatches <= 3 {
                     log::warn!(
-                        "Metal parity mismatch at nonce {} (idx={}): gpu={} cpu={}",
+                        "Metal CHv4 parity mismatch at nonce {} (idx={}): gpu={} cpu={}",
                         nonce,
                         i,
                         hex::encode(gpu_hash),

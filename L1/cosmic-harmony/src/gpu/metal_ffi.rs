@@ -92,8 +92,8 @@ pub unsafe extern "C" fn metal_miner_mine(
         arr
     };
 
-    // Mine
-    match handle.inner.mine(header_slice, &target_arr, start_nonce) {
+    // Mine  (height=0: CHv4 always active from genesis, fork height = 0)
+    match handle.inner.mine(header_slice, &target_arr, start_nonce, 0u64) {
         Some((nonce, hash)) => {
             if !out_nonce.is_null() {
                 *out_nonce = nonce;
