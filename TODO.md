@@ -1,6 +1,6 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 3. března 2026 (Session 59+60 — Chain restart + oprava algoritmu + CHv4 komplexní implementace do minera; všechny uzly v konsenzu)  
+> **Aktualizace:** 4. března 2026 (Session 61 — CHv4 C/Rust full parity fix; C native hash == Rust hash; commit `f0ebf20`)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
@@ -72,6 +72,12 @@
 - [x] **B-CRIT-01** — CHv4 activation policy — `CHV4_NPU_FORK_HEIGHT=0` od genesis ✅ 2026-03-03
 - [x] **B-CRIT-01b** — CHv4 E2E test — `tests/chv4_e2e.rs` 11/11 PASS ✅ 2026-03-03
 - [x] **B-CRIT-01b** — CHv4 implementace do Rust minera (CUDA/OpenCL), Python minera, desktop agenta ✅ 2026-03-03 (commit `78a4cb3`)
+- [x] **B-CRIT-01c** — CHv4 C/Rust parity fix — C native lib == Rust pool hash ✅ 2026-03-04 (commit `f0ebf20`)
+  - NPU: `(b as i8) as i32` + `v as u8` (Rust); integer MLP (C)
+  - Scratchpad: mix_block rand XOR, random_read_mix SHA3-final, seed=gm_out
+  - CosmicFusion: software AES-128 FIPS-197 matching `aes::Aes128`
+  - Hash: `134f268c41b4dc9ca91111c7a0cda5fcc864788a438e88aebc16ca843492a6db` C==Rust
+  - Parity test: `cargo test test_chv4_vs_c_native_parity` panics on mismatch
 - [ ] **B-CRIT-02** — Revenue production activation (prod wallets + buyback + 72h canary)
 - [ ] **B-CRIT-03** — Genesis ceremony + freeze artifacts (genesis.json offline + podpisy)
 

@@ -182,28 +182,56 @@ CHv4 je navržen tak, že i specializovaný ASIC musí implementovat:
 
 ## 4. Kompatibilita Rust ↔ C native library
 
-> ⚠️ **Známý issue — vyžaduje vyšetření před mainnet hashrate scaling**
+> ✅ **VYŘEŠENO — commit `f0ebf20` (2026-03-04)**
+
+### Původní issue (commit `098c0c8` — ARCHIVOVÁNO)
 
 Rust NPU vstupní konverze: `b as i32 - 128` (u8 → centered i32)  
 C/Metal NPU vstupní konverze: `(int8_t)input[i]` (u8 → signed i8 → i32)
 
-Tyto jsou ekvivalentní: oba dávají rozsah -128..127, ale na různých vstupech jinak:
-- `b=0`: Rust → `-128`, C/Metal → `0` ← **ROZDÍL**
-- `b=128`: Rust → `0`, C/Metal → `-128` ← **ROZDÍL**
+Tyto na hodnotě `b=0` dávaly odlišné výsledky: Rust → `-128`, C → `0`.  
+**Důsledek:** Hash C native library ≠ Hash Rust → shares z Python/C mineru zamítány.
 
-**Důsledek:** Hash z C native library (pool) ≠ Hash z Rust CPU (miner PoW).  
-Pool shares z C-based mineru by byly zamítnuty.
+### Kompletní oprava — 8 nalezených a opravených bugů
 
-**Řešení (TODO před ostrým nasazením):**
-- Možnost A: Opravit C native lib na `((int32_t)input[i] - 128)` → C ≡ Rust
-- Možnost B: Opravit Rust na `(b as i8) as i32` → Rust ≡ C/Metal
+| # | Místo | Problém | Oprava |
+|---|-------|---------|--------|
+| 1 | Rust `algorithms_npu.rs` | `b as i32 - 128` offset encoding | `(b as i8) as i32` signed reinterpret |
+| 2 | Rust `algorithms_npu.rs` | `v + 128` de-center na výstupu | `v as u8` two's complement lower 8 bits |
+| 3 | C `chv4_npu_mixing` | float aritmetika (≠ Rust integer) | Integer MAC + LayerNorm/sqrt + GELU `x*(128+x)>>8` + residual |
+| 4 | C `chv4_mix_block` | `rand_idx` z PREV bloku (read_le32) | `rand_idx` z CUR XOR pass XOR index (u64_le), vstup `cur\|\|prev\|\|rand\|\|pass_le8\|\|idx_le8` |
+| 5 | C `chv4_sequential_passes` | Stará 5-parametrová signatúra | Nová 4-parametrová signatúra (pad, index, pass, forward) |
+| 6 | C `chv4_random_read_mix` | Žiadna pos evolúcia, žiadne finálne SHA3-512 | `u64_le` pos init, XOR-evolving pos, finálne `SHA3-512(acc\|\|pad[:64]\|\|pad[-64:])` |
+| 7 | C `chv4_memory_hard_transform` | Seed = `s2` (SHA3-512 output) | Seed = `s3` (golden matrix output) ✓ |
+| 8 | C `fusion_round` | XOR s `COSMIC_XOR_MASK` (statická) | Software AES-128 (FIPS 197) matching Rust `aes::Aes128` |
 
-Pool a Rust miner jsou konzistentní (oba Rust) → mainnet funguje.  
-C native lib je zatím pouze pro offline testování / reference implementace.
+### Verifikace
+
+```
+Kanonický testovací vektor:
+  header = "ZION block header v2.9.6" + \x00*56  (80 B)
+  nonce  = 12345
+
+Rust hash: 134f268c41b4dc9ca91111c7a0cda5fcc864788a438e88aebc16ca843492a6db
+C hash:    134f268c41b4dc9ca91111c7a0cda5fcc864788a438e88aebc16ca843492a6db
+Shoda:     ✅ MATCH
+
+Kroky pipeline:
+  step1 (Keccak256)     Rust == C ✅
+  step2 (SHA3-512)      Rust == C ✅
+  step3 (GoldenMatrix)  Rust == C ✅
+  step4 (MemHard)       Rust == C ✅
+  step5 (NPU mixing)    Rust == C ✅
+  final (CosmicFusion)  Rust == C ✅
+```
+
+**Regresní test:** `cargo test test_chv4_vs_c_native_parity` — panic při jakékoli odchylce.
+
+**Dopad:** Python miner (libcosmic_harmony.dylib/so) nyní produkuje validní shares pro Rust pool.
 
 ---
 
-## 5. Soubory commit `098c0c8`
+## 5. Soubory commit `098c0c8` (původní implementace)
 
 ```
 L1/native-libs/all/cosmic_harmony_v4_native.c    (nový, 1826 řádků)
@@ -213,16 +241,31 @@ L1/native-libs/all/combine_v4.sh                (nový, helper)
 L1/native-libs/all/build_macos.sh               (upraven, CHv4 sekce)
 ```
 
-## 6. Soubory perf commit (tento)
+## 6. Soubory perf commit
 
 ```
 L1/cosmic-harmony/src/scratchpad.rs             (thread-local buffer)
 L1/cosmic-harmony/src/algorithms_opt.rs         (cosmic_harmony_v4_parallel + find_nonce)
 L1/cosmic-harmony/src/lib.rs                    (re-export parallel funkce)
 APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v4_native.py  (nový)
-docs/2.9.7/CHV4_NATIVE_LIB_REPORT.md           (tento soubor)
 ```
+
+## 7. Soubory parity fix — commit `f0ebf20` (2026-03-04)
+
+```
+L1/cosmic-harmony/src/algorithms_npu.rs         (NPU vstup/výstup konverze + warning fix + parity testy)
+L1/cosmic-harmony/src/algorithms_opt.rs         (trace test + parity assertion test)
+L1/native-libs/all/cosmic_harmony_v4_native.c   (kompletní přepis: NPU integer, scratchpad, AES-128 fusion)
+```
+
+### Přidaný C kód — hlavní součásti
+
+- `AES_SBOX[256]`, `AES_RCON[11]`, `aes_xtime()`, `aes_mul()` — AES primitiva
+- `aes128_key_expand(key, rk[176])` — FIPS 197 key schedule
+- `aes128_encrypt_block(rk, blk)` — SubBytes/ShiftRows/MixColumns/AddRoundKey
+- `chv4_layer_norm()`, `chv4_clamp128()` — NPU pomocné funkce
+- `cosmic_harmony_v4_memory_hard()` — exportovaná debug funkce pro step4 izolaci
 
 ---
 
-*Vygenerováno: 2026-03-04 | ZION AI Native Team*
+*Vygenerováno: 2026-03-04 | Aktualizováno: 2026-03-04 (f0ebf20) | ZION AI Native Team*
