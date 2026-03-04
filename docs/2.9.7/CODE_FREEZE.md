@@ -41,7 +41,10 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [x] GPU CUDA kernel — CHv4 NPU Mixing (Phase 5) v `cosmic_harmony_v3.cu` ✅ 2026-03-03
 - [x] GPU OpenCL kernel — CHv4 NPU Mixing (Phase 5) v `cosmic_harmony_v3.cl` ✅ 2026-03-03
 - [x] Python GPU miner — `chv4_flag = np.uint32(1)` vždy, `mh_flag = np.uint32(1)` vždy ✅ 2026-03-03
-- [x] CHv4 E2E production run — `tests/chv4_e2e.rs` 11/11 PASS, CHv4 hash ověřen, fork_height=0 potvrzen ✅ 2026-03-03
+- [x] CHv4 E2E production run — `tests/chv4_e2e.rs` 11/11 PASS, CHv4 hash overify, fork_height=0 potvrzen ✅ 2026-03-03
+- [x] CHv4 C native / Rust full parity — C hash == Rust hash == `134f268c...42a6db` ✅ 2026-03-04 (commit `f0ebf20`)
+  - NPU int8 konverze, scratchpad (mix_block/random_read_mix/seed), software AES-128 fusion
+  - Regresní test: `cargo test test_chv4_vs_c_native_parity` (panikuje při odchylce)
 - [ ] Revenue 72h canary payout run (audit ledger + rollback plán) — RESET 2026-03-03T21:00Z, končí 2026-03-06T21:00Z
 - [ ] Multi-algo 50/25/25 scheduler aktivace na Helsinki poolu — P0 v 2.9.7
 
