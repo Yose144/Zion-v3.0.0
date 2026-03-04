@@ -1,13 +1,21 @@
 /*
- * ZION Cosmic Harmony v3 - Metal GPU Compute Shader
- * 
- * Native GPU implementation for Apple Silicon (M1-M5)
- * Implements full CHv3 pipeline on GPU:
- *   Keccak-256 → SHA3-512 → Golden Matrix → Cosmic Fusion
+ * ZION Cosmic Harmony v4 - Metal GPU Compute Shader
+ *
+ * Native GPU acceleration for Apple Silicon (M1-M5), version 2.9.7.
+ * Implements full CHv4 pipeline on GPU:
+ *   Keccak-256 → SHA3-512 → Golden Matrix
+ *   → Memory-Hard Scratchpad (512 KiB/thread)
+ *   → NPU Mixing (INT8 MLP 64→128→64 + residual)
+ *   → Cosmic Fusion
+ *
+ * CHV4_NPU_FORK_HEIGHT = 0: CHv4 always active from genesis block 0.
+ * Mirrors Rust: algorithms_opt.rs :: cosmic_harmony_with_height()
+ *               scratchpad.rs    :: memory_hard_transform()
+ *               algorithms_npu.rs:: npu_mixing_cpu_int8()
  *
  * Author: ZION AI Native Team
- * Version: 2.9.5
- * Date: February 2026
+ * Version: 2.9.7
+ * Date: March 2026
  */
 
 #include <metal_stdlib>
@@ -327,135 +335,363 @@ void cosmic_fusion_gpu(thread const uint8_t *input, thread uint8_t *output) {
 }
 
 // ============================================================================
-// Full CHv3 Pipeline on GPU
+// CHv4 Constants — memory-hard scratchpad
 // ============================================================================
 
-void cosmic_harmony_v3_gpu(
-    thread const uint8_t *header,
-    int header_len,
-    uint64_t nonce,
-    thread uint8_t *output
+constant uint METAL_SCRATCHPAD_BYTES = 524288u;   // 512 KiB per thread
+constant uint METAL_BLOCK_SIZE       = 64u;
+constant uint METAL_BLOCK_COUNT      = 8192u;     // 8192 × 64 = 524288
+constant uint METAL_PASSES           = 4u;
+constant uint METAL_RANDOM_READS     = 256u;
+
+// ============================================================================
+// CHv4 Scratchpad helpers (reuse existing sha3_512_gpu / keccak256_gpu)
+// ============================================================================
+
+// Write 64-byte block to device scratchpad at block_idx position
+void metal_pad_write(device uint8_t* pad, uint block_idx, thread const uint8_t src[64]) {
+    device uint8_t* dst = pad + block_idx * METAL_BLOCK_SIZE;
+    for (uint i = 0; i < 64u; i++) dst[i] = src[i];
+}
+
+// SHA3-512(state[64] || counter_le8) → 64 bytes  (exact 72-byte input = one SHA3-512 block)
+void metal_sha3_512_state_counter(
+    thread const uint8_t state[64],
+    uint64_t counter,
+    thread uint8_t output[64]
 ) {
-    // Prepare input: header[0:80] + nonce(8B LE)
-    uint8_t input[88];
-    for (int i = 0; i < 88; i++) input[i] = 0;
-    int copy_len = min(header_len, 80);
-    for (int i = 0; i < copy_len; i++) input[i] = header[i];
-    
-    input[80] = uint8_t(nonce >>  0);
-    input[81] = uint8_t(nonce >>  8);
-    input[82] = uint8_t(nonce >> 16);
-    input[83] = uint8_t(nonce >> 24);
-    input[84] = uint8_t(nonce >> 32);
-    input[85] = uint8_t(nonce >> 40);
-    input[86] = uint8_t(nonce >> 48);
-    input[87] = uint8_t(nonce >> 56);
-    
-    // Step 1: Keccak-256
-    uint8_t step1[32];
-    keccak256_gpu(input, 88, step1);
-    
-    // Step 2: SHA3-512
-    uint8_t step2[64];
-    sha3_512_gpu(step1, 32, step2);
-    
-    // Step 3: Golden Matrix
-    uint8_t step3[64];
-    golden_matrix_gpu(step2, step3);
-    
-    // Step 4: Cosmic Fusion
-    cosmic_fusion_gpu(step3, output);
+    uint8_t input[72];
+    for (int i = 0; i < 64; i++) input[i] = state[i];
+    for (int b = 0; b < 8; b++) input[64+b] = uint8_t(counter >> (b * 8));
+    sha3_512_gpu(input, 72, output);
+}
+
+// Initialise scratchpad from 64-byte seed (= SHA3-512(header||nonce)).
+// Each of the METAL_BLOCK_COUNT blocks is SHA3-512(prev_block || block_index_le8).
+void metal_init_scratchpad(device uint8_t* pad, thread const uint8_t seed[64]) {
+    uint8_t state[64];
+    for (int i = 0; i < 64; i++) state[i] = seed[i];
+
+    for (uint blk = 0u; blk < METAL_BLOCK_COUNT; blk++) {
+        uint8_t next[64];
+        metal_sha3_512_state_counter(state, uint64_t(blk), next);
+        metal_pad_write(pad, blk, next);
+        for (int i = 0; i < 64; i++) state[i] = next[i];
+    }
+}
+
+// Mix a single scratchpad block: XOR with SHA3-512(cur || prev || rand || context[16])
+void metal_mix_block(
+    device uint8_t* pad,
+    uint cur_idx, uint prev_idx, uint rand_idx,
+    uint pass_num
+) {
+    device uint8_t* cur_blk  = pad + cur_idx  * METAL_BLOCK_SIZE;
+    device uint8_t* prev_blk = pad + prev_idx * METAL_BLOCK_SIZE;
+    device uint8_t* rand_blk = pad + rand_idx * METAL_BLOCK_SIZE;
+
+    // combined = cur[64] || prev[64] || rand[64] || ctx[16]   (total 208 bytes)
+    uint8_t combined[208];
+    for (int i = 0; i < 64; i++) {
+        combined[i]       = cur_blk[i];
+        combined[64 + i]  = prev_blk[i];
+        combined[128 + i] = rand_blk[i];
+    }
+    // 16-byte context: pass | cur | prev | rand (each 4 bytes LE)
+    for (int b = 0; b < 4; b++) {
+        combined[192 + b] = uint8_t(pass_num >> (b * 8));
+        combined[196 + b] = uint8_t(cur_idx  >> (b * 8));
+        combined[200 + b] = uint8_t(prev_idx >> (b * 8));
+        combined[204 + b] = uint8_t(rand_idx >> (b * 8));
+    }
+
+    uint8_t hash[64];
+    sha3_512_gpu(combined, 208, hash);
+
+    for (int i = 0; i < 64; i++) cur_blk[i] ^= hash[i];
+}
+
+// 4 sequential passes over the pad (alternating forward / backward)
+void metal_sequential_passes(device uint8_t* pad) {
+    for (uint pass = 0u; pass < METAL_PASSES; pass++) {
+        bool fwd = (pass % 2u == 0u);
+        for (uint i = 0u; i < METAL_BLOCK_COUNT; i++) {
+            uint cur  = fwd ? i : (METAL_BLOCK_COUNT - 1u - i);
+            uint prev = fwd
+                ? ((cur == 0u) ? METAL_BLOCK_COUNT - 1u : cur - 1u)
+                : ((cur == METAL_BLOCK_COUNT - 1u) ? 0u : cur + 1u);
+
+            // rand_idx: low 32 bits of the previous block's first 4 bytes
+            device uint8_t* pb = pad + prev * METAL_BLOCK_SIZE;
+            uint32_t rv = uint32_t(pb[0])
+                        | (uint32_t(pb[1]) << 8)
+                        | (uint32_t(pb[2]) << 16)
+                        | (uint32_t(pb[3]) << 24);
+            uint rand_idx = rv % METAL_BLOCK_COUNT;
+
+            metal_mix_block(pad, cur, prev, rand_idx, pass);
+        }
+    }
+}
+
+// 256 pseudo-random reads into scratchpad; returns 64-byte accumulator.
+void metal_random_read_mix(
+    thread const uint8_t seed[64],
+    device const uint8_t* pad,
+    thread uint8_t output[64]
+) {
+    uint8_t acc[64];
+    for (int i = 0; i < 64; i++) acc[i] = seed[i];
+
+    for (uint r = 0u; r < METAL_RANDOM_READS; r++) {
+        // block index from first 4 bytes of accumulator
+        uint32_t rv = uint32_t(acc[0])
+                    | (uint32_t(acc[1]) << 8)
+                    | (uint32_t(acc[2]) << 16)
+                    | (uint32_t(acc[3]) << 24);
+        uint blk_idx = rv % METAL_BLOCK_COUNT;
+
+        // keccak256(acc[64] || pad_block[64] || r_le8)  = 136 bytes
+        uint8_t inp[136];
+        for (int i = 0; i < 64; i++) inp[i] = acc[i];
+        device const uint8_t* blk = pad + blk_idx * METAL_BLOCK_SIZE;
+        for (int i = 0; i < 64; i++) inp[64 + i] = blk[i];
+        for (int b = 0; b < 8; b++) inp[128 + b] = uint8_t(uint64_t(r) >> (b * 8));
+
+        uint8_t h[32];
+        keccak256_gpu(inp, 136, h);
+
+        // XOR accumulator (cycle h over 64 bytes)
+        for (int i = 0; i < 64; i++) acc[i] ^= h[i % 32];
+    }
+
+    for (int i = 0; i < 64; i++) output[i] = acc[i];
+}
+
+// Main memory-hard transform: init → passes → random-read-mix → XOR residual
+void metal_memory_hard_transform(
+    thread const uint8_t gm_out[64],    // Golden-Matrix output (64 bytes)
+    thread const uint8_t seed[64],      // SHA3-512(header||nonce) scratchpad seed
+    device uint8_t* pad,               // per-thread 512 KiB scratch area
+    thread uint8_t output[64]
+) {
+    metal_init_scratchpad(pad, seed);
+    metal_sequential_passes(pad);
+
+    uint8_t mix[64];
+    metal_random_read_mix(gm_out, pad, mix);
+
+    // Residual XOR with Golden-Matrix output
+    for (int i = 0; i < 64; i++) output[i] = mix[i] ^ gm_out[i];
 }
 
 // ============================================================================
-// Mining Parameters
+// CHv4 NPU Mixing — INT8 MLP 64→128→64 + residual
+// Mirrors algorithms_npu.rs :: npu_mixing_cpu_int8()
 // ============================================================================
 
-struct CHv3MiningParams {
-    uint64_t start_nonce;
-    uint32_t header_len;
-    uint8_t header[80];
-    uint8_t target[32];
+// Approximate GELU: x * sigmoid(1.702 * x)
+float metal_gelu(float x) {
+    return x / (1.0f + exp(-1.702f * x));
+}
+
+// NPU mixing: 64-byte input → 64-byte output
+// Weight buffers supplied as flat i8/i16 arrays:
+//   npu_w1[128*64 i8], npu_b1[128 i8], npu_w2[64*128 i8], npu_b2[64 i8]
+//   npu_scale1[128 i16], npu_scale2[64 i16]
+void metal_npu_mixing(
+    thread const uint8_t input[64],
+    thread uint8_t output[64],
+    device const char*  npu_w1,
+    device const char*  npu_b1,
+    device const char*  npu_w2,
+    device const char*  npu_b2,
+    device const short* npu_scale1,
+    device const short* npu_scale2
+) {
+    // ── Layer 1: 64 → 128 (INT8 weight, float accumulation, GELU) ──
+    float h[128];
+    for (int j = 0; j < 128; j++) {
+        float acc = float(npu_b1[j]);
+        device const char* row = npu_w1 + j * 64;
+        for (int i = 0; i < 64; i++) {
+            acc += float(row[i]) * float(int8_t(input[i]));
+        }
+        float scale = float(npu_scale1[j]);
+        float val   = (scale != 0.0f) ? (acc / scale) : acc;
+        h[j] = metal_gelu(val);
+    }
+
+    // ── Layer 2: 128 → 64 (INT8 weight, float accumulation) ──
+    for (int i = 0; i < 64; i++) {
+        float acc = float(npu_b2[i]);
+        device const char* row = npu_w2 + i * 128;
+        for (int j = 0; j < 128; j++) {
+            acc += float(row[j]) * h[j];
+        }
+        float scale = float(npu_scale2[i]);
+        float val   = (scale != 0.0f) ? (acc / scale) : acc;
+
+        // residual + clamp → i8 → store as u8
+        float residual = float(int8_t(input[i]));
+        int32_t out_i  = int32_t(clamp(val + residual, -128.0f, 127.0f));
+        output[i] = uint8_t(out_i & 0xFF);
+    }
+}
+
+// ============================================================================
+// CHv4 Full Pipeline on GPU
+// ============================================================================
+
+void cosmic_harmony_v4_gpu(
+    thread const uint8_t *header,
+    int header_len,
+    uint64_t nonce,
+    device uint8_t* pad,
+    device const char*  npu_w1,
+    device const char*  npu_b1,
+    device const char*  npu_w2,
+    device const char*  npu_b2,
+    device const short* npu_scale1,
+    device const short* npu_scale2,
+    thread uint8_t *output            // 32 bytes
+) {
+    // Build 88-byte input: header[0..80] || nonce(8 LE)
+    uint8_t inp[88];
+    for (int i = 0; i < 88; i++) inp[i] = 0;
+    int h_len = min(header_len, 80);
+    for (int i = 0; i < h_len; i++) inp[i] = header[i];
+    for (int b = 0; b < 8; b++) inp[80 + b] = uint8_t(nonce >> (b * 8));
+
+    // Step 1: Keccak-256 → 32 bytes
+    uint8_t s1[32];
+    keccak256_gpu(inp, 88, s1);
+
+    // Step 2: SHA3-512 → 64 bytes  (also used as scratchpad seed)
+    uint8_t s2[64];
+    sha3_512_gpu(s1, 32, s2);
+
+    // Step 3: Golden Matrix → 64 bytes
+    uint8_t s3[64];
+    golden_matrix_gpu(s2, s3);
+
+    // Step 4: Memory-hard scratchpad transform (CHv4)
+    uint8_t s4[64];
+    metal_memory_hard_transform(s3, s2, pad, s4);
+
+    // Step 5: NPU Mixing (CHv4)
+    uint8_t s5[64];
+    metal_npu_mixing(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+
+    // Step 6: Cosmic Fusion → 32 bytes
+    cosmic_fusion_gpu(s5, output);
+}
+
+// ============================================================================
+// Mining Parameters  (CHv4 — 128-byte struct, same base layout as CHv3)
+// ============================================================================
+
+struct CHv4MiningParams {
+    uint64_t start_nonce;   // offset   0
+    uint32_t header_len;    // offset   8
+    uint8_t  header[80];    // offset  12
+    uint8_t  target[32];    // offset  92
+    uint32_t block_height;  // offset 124
+    // total 128 bytes (4-byte pad implicit on GPU)
 };
 
-struct CHv3MiningResult {
+struct CHv4MiningResult {
     uint64_t found_nonce;
-    uint8_t found_hash[32];
-    uint32_t found;  // atomic: 0 = not found, 1 = found
+    uint8_t  found_hash[32];
+    uint32_t found;  // atomic flag: 0 = nothing, 1 = solution
 };
 
 // ============================================================================
-// Main Mining Kernel
+// Main Mining Kernel — CHv4
 // ============================================================================
 
 kernel void cosmic_harmony_v3_mine(
-    device const CHv3MiningParams& params [[buffer(0)]],
-    device CHv3MiningResult& result [[buffer(1)]],
+    device const CHv4MiningParams& params  [[buffer(0)]],
+    device CHv4MiningResult&       result  [[buffer(1)]],
+    device uint8_t*                scratchpad_buf [[buffer(2)]],
+    device const char*             npu_w1  [[buffer(3)]],
+    device const char*             npu_b1  [[buffer(4)]],
+    device const char*             npu_w2  [[buffer(5)]],
+    device const char*             npu_b2  [[buffer(6)]],
+    device const short*            npu_scale1 [[buffer(7)]],
+    device const short*            npu_scale2 [[buffer(8)]],
     uint32_t thread_id [[thread_position_in_grid]]
 ) {
-    uint64_t nonce = params.start_nonce + thread_id;
-    
-    // Copy header to thread-local memory
+    uint64_t nonce = params.start_nonce + uint64_t(thread_id);
+
+    // Each thread gets its own 512 KiB slice of the scratchpad
+    device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
+
+    // Copy header to thread-local stack
     uint8_t header[80];
     for (int i = 0; i < 80; i++) header[i] = params.header[i];
-    
-    // Compute CHv3 hash
+
+    // Compute CHv4 hash
     uint8_t hash[32];
-    cosmic_harmony_v3_gpu(header, int(params.header_len), nonce, hash);
-    
-    // Check against target — MUST match pool/CPU validator logic:
-    // state0 = u32 little-endian from hash[0..4]
-    // target_u32 = u32 big-endian from target[28..32]  (pad-left 32-byte format)
-    // Condition: state0 <= target_u32
-    uint32_t state0 = uint32_t(hash[0])
-                     | (uint32_t(hash[1]) << 8)
-                     | (uint32_t(hash[2]) << 16)
-                     | (uint32_t(hash[3]) << 24);
-    
+    cosmic_harmony_v4_gpu(
+        header, int(params.header_len), nonce,
+        my_pad,
+        npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2,
+        hash
+    );
+
+    // Difficulty check: state0 (u32 LE from hash[0..4]) <= target_u32 (u32 BE from target[28..32])
+    uint32_t state0    = uint32_t(hash[0])
+                       | (uint32_t(hash[1]) << 8)
+                       | (uint32_t(hash[2]) << 16)
+                       | (uint32_t(hash[3]) << 24);
     uint32_t target_u32 = (uint32_t(params.target[28]) << 24)
                         | (uint32_t(params.target[29]) << 16)
                         | (uint32_t(params.target[30]) << 8)
                         |  uint32_t(params.target[31]);
-    
-    bool below_target = (state0 <= target_u32);
-    
-    // If found, store result atomically
-    if (below_target) {
-        uint32_t expected = 0;
+
+    if (state0 <= target_u32) {
+        uint32_t expected = 0u;
         if (atomic_compare_exchange_weak_explicit(
-            (device atomic_uint*)&result.found,
-            &expected, 1u,
-            memory_order_relaxed,
-            memory_order_relaxed
-        )) {
+                (device atomic_uint*)&result.found,
+                &expected, 1u,
+                memory_order_relaxed, memory_order_relaxed)) {
             result.found_nonce = nonce;
-            for (int i = 0; i < 32; i++) {
-                result.found_hash[i] = hash[i];
-            }
+            for (int i = 0; i < 32; i++) result.found_hash[i] = hash[i];
         }
     }
 }
 
 // ============================================================================
-// Benchmark Kernel (no target check)
+// Benchmark Kernel — CHv4 (no target check, writes 32-byte hashes)
 // ============================================================================
 
 kernel void cosmic_harmony_v3_benchmark(
-    device const CHv3MiningParams& params [[buffer(0)]],
-    device uint8_t* output_hashes [[buffer(1)]],
+    device const CHv4MiningParams& params  [[buffer(0)]],
+    device uint8_t*                output_hashes [[buffer(1)]],
+    device uint8_t*                scratchpad_buf [[buffer(2)]],
+    device const char*             npu_w1  [[buffer(3)]],
+    device const char*             npu_b1  [[buffer(4)]],
+    device const char*             npu_w2  [[buffer(5)]],
+    device const char*             npu_b2  [[buffer(6)]],
+    device const short*            npu_scale1 [[buffer(7)]],
+    device const short*            npu_scale2 [[buffer(8)]],
     uint32_t thread_id [[thread_position_in_grid]]
 ) {
-    uint64_t nonce = params.start_nonce + thread_id;
-    
+    uint64_t nonce = params.start_nonce + uint64_t(thread_id);
+    device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
+
     uint8_t header[80];
     for (int i = 0; i < 80; i++) header[i] = params.header[i];
-    
+
     uint8_t hash[32];
-    cosmic_harmony_v3_gpu(header, int(params.header_len), nonce, hash);
-    
-    // Write output
-    device uint8_t* my_output = output_hashes + thread_id * 32;
-    for (int i = 0; i < 32; i++) {
-        my_output[i] = hash[i];
-    }
+    cosmic_harmony_v4_gpu(
+        header, int(params.header_len), nonce,
+        my_pad,
+        npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2,
+        hash
+    );
+
+    device uint8_t* dst = output_hashes + thread_id * 32;
+    for (int i = 0; i < 32; i++) dst[i] = hash[i];
 }

@@ -1,20 +1,16 @@
-//! Metal GPU mining backend for Apple Silicon
+//! Metal GPU mining backend for Apple Silicon — CHv4
 //!
 //! Native Metal GPU acceleration for Apple Silicon on M1/M2/M3/M4/M5.
-//! Achieves 2-3+ MH/s on M1 (8 GPU cores).
+//! Full CHv4 pipeline: Keccak → SHA3 → GoldenMatrix → Scratchpad(512KiB)
+//! → NPU Mixing (INT8 MLP 64→128→64) → CosmicFusion.
 //!
-//! ⚠️  WARNING: Metal backend does NOT implement CHv4 (NPU Mixing INT8 MLP).
-//!     CHV4_NPU_FORK_HEIGHT = 0 means CHv4 is active from genesis block 0.
-//!     Hashes produced by this backend WILL NOT match the pool/consensus.
-//!     Use OpenCL or CPU (Rust native) backend for correct CHv4 hashes.
+//! CHV4_NPU_FORK_HEIGHT = 0: CHv4 always active from genesis block 0.
+//! Hashes are fully pool-compatible.
 //!
-//! TODO: Port CHv4 memory-hard + NPU mixing to Metal compute shader and
-//!       update MetalMiner in zion-cosmic-harmony-v3 to accept block height.
-//!
-//! Uses zion-cosmic-harmony-v3 crate's MetalMiner with correct
+//! Uses zion-cosmic-harmony-v3 crate’s MetalMiner with correct
 //! packed struct buffer layout matching the Metal compute shader.
 
-use super::{GpuDevice, GpuMiner};
+use super::{GpuDevice, GpuMiner, GpuPlatform};
 use anyhow::{anyhow, Result};
 use std::time::Instant;
 
@@ -86,15 +82,11 @@ impl GpuMiner for MetalGpuMiner {
                 return Err(anyhow!("Metal device not available"));
             }
             self.start_time = Instant::now();
-            log::warn!(
-                "⚠️ Metal GPU backend does NOT implement CHv4 (NPU Mixing INT8 MLP). \
-                 CHV4_NPU_FORK_HEIGHT=0 means CHv4 is active from genesis block 0. \
-                 Hashes produced WILL NOT be accepted by the pool. \
-                 Use OpenCL or CPU (Rust native) backend for correct CHv4 hashes. \
-                 TODO: port CHv4 pipeline to Metal compute shader."
+            log::info!(
+                "Metal GPU initialized (CHv4): {} | batch_size={}",
+                self.device_info.name,
+                self.batch_size
             );
-            log::debug!("Metal GPU initialized: {}", self.device_info.name);
-            log::debug!("   Batch size: {}", self.batch_size);
             Ok(())
         }
 
@@ -114,7 +106,6 @@ impl GpuMiner for MetalGpuMiner {
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(all(feature = "metal", target_os = "macos"))]
         {
-            let _ = height; // Metal CHv4 NPU mixing not yet implemented
             let inner = self
                 .inner
                 .as_mut()
@@ -128,10 +119,7 @@ impl GpuMiner for MetalGpuMiner {
             while nonce < end_nonce {
                 let this_batch = (end_nonce - nonce).min(chunk_size);
 
-                // Temporarily adjust batch size if needed
-                // MetalMiner always dispatches self.batch_size threads
-                // so we mine in chunks of the configured batch_size
-                if let Some((found_nonce, found_hash)) = inner.mine(header, target, nonce) {
+                if let Some((found_nonce, found_hash)) = inner.mine(header, target, nonce, height) {
                     self.hashes_computed += (found_nonce - nonce_start) + 1;
                     return Ok(Some((found_nonce, found_hash)));
                 }
