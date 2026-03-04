@@ -1358,17 +1358,142 @@ static void golden_matrix(const uint8_t input[64], uint8_t output[64]) {
 }
 
 /* ============================================================================
- * Cosmic Fusion
+ * AES-128 software implementation (FIPS 197)
+ * Used in Cosmic Fusion — matches Rust `aes` crate Aes128 output exactly.
+ * ============================================================================ */
+
+static const uint8_t AES_SBOX[256] = {
+    0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
+    0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
+    0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
+    0x04,0xc7,0x23,0xc3,0x18,0x96,0x05,0x9a,0x07,0x12,0x80,0xe2,0xeb,0x27,0xb2,0x75,
+    0x09,0x83,0x2c,0x1a,0x1b,0x6e,0x5a,0xa0,0x52,0x3b,0xd6,0xb3,0x29,0xe3,0x2f,0x84,
+    0x53,0xd1,0x00,0xed,0x20,0xfc,0xb1,0x5b,0x6a,0xcb,0xbe,0x39,0x4a,0x4c,0x58,0xcf,
+    0xd0,0xef,0xaa,0xfb,0x43,0x4d,0x33,0x85,0x45,0xf9,0x02,0x7f,0x50,0x3c,0x9f,0xa8,
+    0x51,0xa3,0x40,0x8f,0x92,0x9d,0x38,0xf5,0xbc,0xb6,0xda,0x21,0x10,0xff,0xf3,0xd2,
+    0xcd,0x0c,0x13,0xec,0x5f,0x97,0x44,0x17,0xc4,0xa7,0x7e,0x3d,0x64,0x5d,0x19,0x73,
+    0x60,0x81,0x4f,0xdc,0x22,0x2a,0x90,0x88,0x46,0xee,0xb8,0x14,0xde,0x5e,0x0b,0xdb,
+    0xe0,0x32,0x3a,0x0a,0x49,0x06,0x24,0x5c,0xc2,0xd3,0xac,0x62,0x91,0x95,0xe4,0x79,
+    0xe7,0xc8,0x37,0x6d,0x8d,0xd5,0x4e,0xa9,0x6c,0x56,0xf4,0xea,0x65,0x7a,0xae,0x08,
+    0xba,0x78,0x25,0x2e,0x1c,0xa6,0xb4,0xc6,0xe8,0xdd,0x74,0x1f,0x4b,0xbd,0x8b,0x8a,
+    0x70,0x3e,0xb5,0x66,0x48,0x03,0xf6,0x0e,0x61,0x35,0x57,0xb9,0x86,0xc1,0x1d,0x9e,
+    0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
+    0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
+};
+static const uint8_t AES_RCON[11] = {
+    0x00,0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36
+};
+
+static inline uint8_t aes_xtime(uint8_t a) {
+    return (uint8_t)(((a << 1) ^ (((a >> 7) & 1) ? 0x1b : 0x00)) & 0xFF);
+}
+
+static inline uint8_t aes_mul(uint8_t a, uint8_t b) {
+    uint8_t r = 0, aa = a;
+    for (int i = 0; i < 8; i++) {
+        if (b & 1) r ^= aa;
+        aa = aes_xtime(aa);
+        b >>= 1;
+    }
+    return r;
+}
+
+/* Expand 128-bit key into 11 round keys (176 bytes) */
+static void aes128_key_expand(const uint8_t key[16], uint8_t rk[176]) {
+    memcpy(rk, key, 16);
+    for (int i = 1; i <= 10; i++) {
+        uint8_t *prev = rk + (i-1)*16;
+        uint8_t *cur  = rk +  i   *16;
+        cur[ 0] = prev[ 0] ^ AES_SBOX[prev[13]] ^ AES_RCON[i];
+        cur[ 1] = prev[ 1] ^ AES_SBOX[prev[14]];
+        cur[ 2] = prev[ 2] ^ AES_SBOX[prev[15]];
+        cur[ 3] = prev[ 3] ^ AES_SBOX[prev[12]];
+        for (int j = 4; j < 16; j++) cur[j] = prev[j] ^ cur[j-4];
+    }
+}
+
+/* Encrypt one 16-byte block in-place */
+static void aes128_encrypt_block(const uint8_t rk[176], uint8_t blk[16]) {
+    uint8_t s[16];
+    memcpy(s, blk, 16);
+    /* AddRoundKey initial */
+    for (int i = 0; i < 16; i++) s[i] ^= rk[i];
+    for (int round = 1; round <= 10; round++) {
+        /* SubBytes */
+        for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
+        /* ShiftRows */
+        uint8_t t;
+        t=s[1]; s[1]=s[5]; s[5]=s[9]; s[9]=s[13]; s[13]=t;
+        t=s[2]; s[2]=s[10]; s[10]=t; t=s[6]; s[6]=s[14]; s[14]=t;
+        t=s[15]; s[15]=s[11]; s[11]=s[7]; s[7]=s[3]; s[3]=t;
+        /* MixColumns (skipped in round 10) */
+        if (round < 10) {
+            for (int c = 0; c < 4; c++) {
+                uint8_t a0=s[c*4],a1=s[c*4+1],a2=s[c*4+2],a3=s[c*4+3];
+                s[c*4  ] = aes_mul(a0,2)^aes_mul(a1,3)^a2^a3;
+                s[c*4+1] = a0^aes_mul(a1,2)^aes_mul(a2,3)^a3;
+                s[c*4+2] = a0^a1^aes_mul(a2,2)^aes_mul(a3,3);
+                s[c*4+3] = aes_mul(a0,3)^a1^a2^aes_mul(a3,2);
+            }
+        }
+        /* AddRoundKey */
+        for (int i = 0; i < 16; i++) s[i] ^= rk[round*16 + i];
+    }
+    memcpy(blk, s, 16);
+}
+
+/* ============================================================================
+ * Cosmic Fusion — matches Rust fusion_round / cosmic_fusion_opt
+ *
+ * fusion_round(state[64], round):
+ *   1. intermediate = Keccak256(state[0..32] || round)
+ *   2. key1[16] = intermediate[0..16]
+ *   3. block0 = AES128_encrypt(key=key1, state[32..48])
+ *   4. key2 = key1 XOR tweaks: key2[0] ^= round, key2[15] ^= 0xAB
+ *   5. block1 = AES128_encrypt(key=key2, state[48..64])
+ *   6. mask[32] = block0 || block1
+ *   7. state[32+i] ^= intermediate[i]   (upper half evolves)
+ *      state[i]    = intermediate[i] ^ mask[i]  (lower half updates)
  * ============================================================================ */
 
 static void fusion_round(uint8_t state[64], uint8_t round_num) {
+    /* Step 1: Keccak256(state[0..32] || round_num) → intermediate[32] */
     uint8_t tmp[33];
     memcpy(tmp, state, 32);
     tmp[32] = round_num;
     uint8_t intermediate[32];
     keccak256(tmp, 33, intermediate);
-    for (int i = 0; i < 32; i++)
-        state[i] = intermediate[i] ^ COSMIC_XOR_MASK[i];
+
+    /* Step 2-3: AES128 block0 */
+    uint8_t key1[16];
+    memcpy(key1, intermediate, 16);
+    uint8_t rk1[176];
+    aes128_key_expand(key1, rk1);
+    uint8_t block0[16];
+    memcpy(block0, state + 32, 16);
+    aes128_encrypt_block(rk1, block0);
+
+    /* Step 4-5: AES128 block1 with tweaked key */
+    uint8_t key2[16];
+    memcpy(key2, key1, 16);
+    key2[0]  ^= round_num;
+    key2[15] ^= 0xAB;
+    uint8_t rk2[176];
+    aes128_key_expand(key2, rk2);
+    uint8_t block1[16];
+    memcpy(block1, state + 48, 16);
+    aes128_encrypt_block(rk2, block1);
+
+    /* Step 6: mask[32] = block0 || block1 */
+    uint8_t mask[32];
+    memcpy(mask,      block0, 16);
+    memcpy(mask + 16, block1, 16);
+
+    /* Step 7: update state (non-AVX2 path, matches Rust's #[cfg(not(avx2))] */
+    for (int i = 0; i < 32; i++) {
+        state[32 + i] ^= intermediate[i];           /* upper half evolves */
+        state[i]       = intermediate[i] ^ mask[i]; /* lower half updates */
+    }
 }
 
 static void cosmic_fusion(const uint8_t input[64], uint8_t output[32]) {
@@ -1378,10 +1503,12 @@ static void cosmic_fusion(const uint8_t input[64], uint8_t output[32]) {
     fusion_round(state, 1);
     fusion_round(state, 2);
     fusion_round(state, 3);
+    /* Final: SHA3-512(state[0..32]) → truncate to 32 bytes */
     uint8_t full[64];
     sha3_512(state, 32, full);
     memcpy(output, full, 32);
 }
+
 
 /* ============================================================================
  * CHv4 Scratchpad — Helper: read 4 bytes little-endian
@@ -1426,155 +1553,250 @@ static void chv4_init_scratchpad(uint8_t *pad, const uint8_t seed[64]) {
 }
 
 /* ============================================================================
- * CHv4 Scratchpad — mix_block(pad, cur, prev, rand_idx, pass)
- * combined[208] = cur[64] || prev[64] || rand[64] || ctx[16]
- * ctx = pass_le4 || cur_le4 || prev_le4 || rand_le4
+ * CHv4 Scratchpad — mix_block  [mirrors Rust scratchpad.rs:mix_block]
+ *
+ * rand_index = (u64_le(pad[cur:8]) XOR pass XOR index) % blocks
+ * SHA3-512(current[64] || prev[64] || random[64] || pass_le8 || index_le8)
+ * pad[cur] ^= hash[64]
  * ============================================================================ */
 
-static void chv4_mix_block(uint8_t *pad,
-                            uint32_t cur_idx,
-                            uint32_t prev_idx,
-                            uint32_t rand_idx,
-                            uint32_t pass)
-{
-    uint8_t *cur_blk  = pad + (size_t)cur_idx  * CHV4_BLOCK_SIZE;
-    uint8_t *prev_blk = pad + (size_t)prev_idx * CHV4_BLOCK_SIZE;
-    uint8_t *rand_blk = pad + (size_t)rand_idx * CHV4_BLOCK_SIZE;
+static void chv4_mix_block(uint8_t *pad, uint32_t index, uint64_t pass, int forward) {
+    uint32_t blocks = CHV4_BLOCK_COUNT;
+    uint32_t prev_index;
+    if (forward) {
+        prev_index = (index == 0) ? (blocks - 1) : (index - 1);
+    } else {
+        prev_index = ((index + 1) == blocks) ? 0 : (index + 1);
+    }
 
-    uint8_t combined[208];
-    memcpy(combined,      cur_blk,  64);
-    memcpy(combined + 64, prev_blk, 64);
-    memcpy(combined +128, rand_blk, 64);
+    size_t cur_off  = (size_t)index      * CHV4_BLOCK_SIZE;
+    size_t prev_off = (size_t)prev_index * CHV4_BLOCK_SIZE;
 
-    /* ctx[16] = pass_le4 || cur_le4 || prev_le4 || rand_le4 */
-    uint8_t *ctx = combined + 192;
-    ctx[ 0] = (uint8_t)(pass     >>  0); ctx[ 1] = (uint8_t)(pass     >>  8);
-    ctx[ 2] = (uint8_t)(pass     >> 16); ctx[ 3] = (uint8_t)(pass     >> 24);
-    ctx[ 4] = (uint8_t)(cur_idx  >>  0); ctx[ 5] = (uint8_t)(cur_idx  >>  8);
-    ctx[ 6] = (uint8_t)(cur_idx  >> 16); ctx[ 7] = (uint8_t)(cur_idx  >> 24);
-    ctx[ 8] = (uint8_t)(prev_idx >>  0); ctx[ 9] = (uint8_t)(prev_idx >>  8);
-    ctx[10] = (uint8_t)(prev_idx >> 16); ctx[11] = (uint8_t)(prev_idx >> 24);
-    ctx[12] = (uint8_t)(rand_idx >>  0); ctx[13] = (uint8_t)(rand_idx >>  8);
-    ctx[14] = (uint8_t)(rand_idx >> 16); ctx[15] = (uint8_t)(rand_idx >> 24);
+    /* rand_index = (u64_le(pad[cur:8]) XOR pass XOR index) % blocks */
+    uint64_t idx_u64;
+    memcpy(&idx_u64, pad + cur_off, 8);
+    uint64_t rand_u64 = idx_u64 ^ pass ^ (uint64_t)index;
+    uint32_t rand_index = (uint32_t)(rand_u64 % (uint64_t)blocks);
+    size_t rand_off = (size_t)rand_index * CHV4_BLOCK_SIZE;
 
-    uint8_t hash[64];
-    sha3_512(combined, 208, hash);
+    /* Snapshot all three blocks before writing */
+    uint8_t current[64], prev[64], random_blk[64];
+    memcpy(current,    pad + cur_off,  64);
+    memcpy(prev,       pad + prev_off, 64);
+    memcpy(random_blk, pad + rand_off, 64);
 
-    for (int i = 0; i < 64; i++) cur_blk[i] ^= hash[i];
+    /* inp[208] = current || prev || random || pass_le8 || index_le8 */
+    uint8_t inp[208];
+    memcpy(inp,       current,    64);
+    memcpy(inp + 64,  prev,       64);
+    memcpy(inp + 128, random_blk, 64);
+    /* pass as LE64 */
+    inp[192] = (uint8_t)(pass >>  0); inp[193] = (uint8_t)(pass >>  8);
+    inp[194] = (uint8_t)(pass >> 16); inp[195] = (uint8_t)(pass >> 24);
+    inp[196] = (uint8_t)(pass >> 32); inp[197] = (uint8_t)(pass >> 40);
+    inp[198] = (uint8_t)(pass >> 48); inp[199] = (uint8_t)(pass >> 56);
+    /* index as LE64 */
+    uint64_t idx64 = (uint64_t)index;
+    inp[200] = (uint8_t)(idx64 >>  0); inp[201] = (uint8_t)(idx64 >>  8);
+    inp[202] = (uint8_t)(idx64 >> 16); inp[203] = (uint8_t)(idx64 >> 24);
+    inp[204] = (uint8_t)(idx64 >> 32); inp[205] = (uint8_t)(idx64 >> 40);
+    inp[206] = (uint8_t)(idx64 >> 48); inp[207] = (uint8_t)(idx64 >> 56);
+
+    uint8_t mixed[64];
+    sha3_512(inp, 208, mixed);
+
+    for (int i = 0; i < 64; i++) pad[cur_off + i] ^= mixed[i];
 }
 
 /* ============================================================================
- * CHv4 Scratchpad — sequential_passes(pad)
- * 4 passes alternating fwd/bwd
+ * CHv4 Scratchpad — sequential_passes  [mirrors Rust sequential_passes]
  * ============================================================================ */
 
 static void chv4_sequential_passes(uint8_t *pad) {
+    uint32_t blocks = CHV4_BLOCK_COUNT;
     for (uint32_t pass = 0; pass < CHV4_PASSES; pass++) {
         int fwd = (pass % 2 == 0);
-        for (uint32_t i = 0; i < CHV4_BLOCK_COUNT; i++) {
-            uint32_t cur  = fwd ? i : (CHV4_BLOCK_COUNT - 1 - i);
-            uint32_t prev;
-            if (fwd) {
-                prev = (cur == 0) ? (CHV4_BLOCK_COUNT - 1) : (cur - 1);
-            } else {
-                prev = (cur == CHV4_BLOCK_COUNT - 1) ? 0 : (cur + 1);
-            }
-            uint32_t rv = chv4_read_le32(pad + (size_t)prev * CHV4_BLOCK_SIZE);
-            uint32_t rand_idx = rv % CHV4_BLOCK_COUNT;
-            chv4_mix_block(pad, cur, prev, rand_idx, pass);
+        if (fwd) {
+            for (uint32_t i = 0; i < blocks; i++)
+                chv4_mix_block(pad, i, (uint64_t)pass, 1);
+        } else {
+            for (uint32_t i = blocks; i-- > 0;)
+                chv4_mix_block(pad, i, (uint64_t)pass, 0);
         }
     }
 }
 
 /* ============================================================================
- * CHv4 Scratchpad — random_read_mix(gm_out[64], pad, output[64])
- * 256 iterations: acc ^= keccak256(acc[64] || pad[blk][64] || r_le8[8])
+ * CHv4 Scratchpad — random_read_mix  [mirrors Rust random_read_mix]
+ *
+ * seed = gm_out (step3), same as Rust — NOT s2!
+ * pos  = u64_le(seed[:8]) % blocks
+ * 256 iters: d = Keccak256(acc[64] || chunk[64] || r_le8);
+ *            acc[:32] ^= d; acc[32:] += d;
+ *            pos = (u64_le(d[:8]) XOR pos XOR r) % blocks
+ * final: SHA3-512(acc || pad[:64] || pad[-64:]) → output[64]
  * ============================================================================ */
 
-static void chv4_random_read_mix(const uint8_t gm_out[64],
+static void chv4_random_read_mix(const uint8_t seed[64],
                                   const uint8_t *pad,
                                   uint8_t output[64])
 {
+    uint32_t blocks = CHV4_BLOCK_COUNT;
     uint8_t acc[64];
-    memcpy(acc, gm_out, 64);
+    memcpy(acc, seed, 64);
 
-    uint8_t inp[136];  /* acc[64] || pad_blk[64] || r_le8[8] */
+    /* pos = u64_le(seed[:8]) % blocks */
+    uint64_t pos_u64;
+    memcpy(&pos_u64, seed, 8);
+    uint32_t pos = (uint32_t)(pos_u64 % (uint64_t)blocks);
+
+    uint8_t inp[136];  /* acc[64] || chunk[64] || r_le8[8] */
 
     for (uint32_t r = 0; r < CHV4_RANDOM_READS; r++) {
-        uint32_t blk = chv4_read_le32(acc) % CHV4_BLOCK_COUNT;
-        memcpy(inp,      acc,                              64);
-        memcpy(inp + 64, pad + (size_t)blk * CHV4_BLOCK_SIZE, 64);
+        size_t off = (size_t)pos * CHV4_BLOCK_SIZE;
+        memcpy(inp,      acc,         64);
+        memcpy(inp + 64, pad + off,   64);
         uint64_t r64 = (uint64_t)r;
         inp[128] = (uint8_t)(r64 >>  0); inp[129] = (uint8_t)(r64 >>  8);
         inp[130] = (uint8_t)(r64 >> 16); inp[131] = (uint8_t)(r64 >> 24);
         inp[132] = (uint8_t)(r64 >> 32); inp[133] = (uint8_t)(r64 >> 40);
         inp[134] = (uint8_t)(r64 >> 48); inp[135] = (uint8_t)(r64 >> 56);
 
-        uint8_t h[32];
-        keccak256(inp, 136, h);
-        for (int i = 0; i < 64; i++) acc[i] ^= h[i % 32];
+        uint8_t d[32];
+        keccak256(inp, 136, d);
+
+        /* acc[:32] ^= d;  acc[32:64] += d (wrapping) */
+        for (int i = 0; i < 32; i++) {
+            acc[i] ^= d[i];
+            acc[32 + i] = (uint8_t)((acc[32 + i] + d[i]) & 0xFF);
+        }
+
+        /* next pos = (u64_le(d[:8]) XOR pos XOR r) % blocks */
+        uint64_t next_u64;
+        memcpy(&next_u64, d, 8);
+        pos = (uint32_t)((next_u64 ^ (uint64_t)pos ^ (uint64_t)r) % (uint64_t)blocks);
     }
 
-    memcpy(output, acc, 64);
+    /* final: SHA3-512(acc || pad[:64] || pad[last_64:]) */
+    uint8_t final_inp[192];
+    memcpy(final_inp,       acc,                                             64);
+    memcpy(final_inp + 64,  pad,                                             64);
+    memcpy(final_inp + 128, pad + (size_t)(blocks - 1) * CHV4_BLOCK_SIZE,   64);
+
+    sha3_512(final_inp, 192, output);
 }
 
 /* ============================================================================
- * CHv4 Scratchpad — memory_hard_transform
+ * CHv4 Scratchpad — memory_hard_transform  [mirrors Rust memory_hard_transform]
+ *
+ * Uses gm_out (step3) as seed for BOTH init_scratchpad and random_read_mix.
+ * This matches Rust: memory_hard_transform(input=step3)
+ *   → init_scratchpad(input, pad)
+ *   → sequential_passes(pad)
+ *   → random_read_mix(input, pad)  ← same input = gm_out
  * ============================================================================ */
 
 static void chv4_memory_hard_transform(const uint8_t gm_out[64],
-                                        const uint8_t seed[64],
                                         uint8_t *pad,
                                         uint8_t output[64])
 {
-    chv4_init_scratchpad(pad, seed);
+    chv4_init_scratchpad(pad, gm_out);   /* seed = gm_out = step3 */
     chv4_sequential_passes(pad);
-    uint8_t mix[64];
-    chv4_random_read_mix(gm_out, pad, mix);
-    for (int i = 0; i < 64; i++) output[i] = mix[i] ^ gm_out[i];
+    chv4_random_read_mix(gm_out, pad, output);
 }
 
 /* ============================================================================
- * CHv4 NPU Mixing — GELU activation: x / (1 + exp(-1.702*x))
+ * CHv4 NPU Mixing — integer implementation matching Rust algorithms_npu.rs
+ *
+ * Exact mirror of Rust npu_mixing_cpu_int8():
+ *   Input:   (int8_t)input[i]  reinterpret (NOT -128 offset)
+ *   Layer1:  acc = b1*32 + Σ(w1*input), h = clamp(acc>>12, -128,127)
+ *   Norm1:   mean/variance LayerNorm with sqrt (data-dependent)
+ *   GELU:    x*(128+x)>>8
+ *   Layer2:  acc = b2*32 + Σ(w2*h), out = clamp(acc>>12, -128,127)
+ *   Norm2:   same as Norm1
+ *   Residual: out[i] = clamp(out[i] + input[i], -128, 127)
+ *   Output:  (uint8_t)(out[i] & 0xFF)  two's complement
  * ============================================================================ */
 
-static inline float chv4_gelu(float x) {
-    return x / (1.0f + expf(-1.702f * x));
+static inline int32_t chv4_clamp128(int32_t x) {
+    return x < -128 ? -128 : (x > 127 ? 127 : x);
 }
 
-/* ============================================================================
- * CHv4 NPU Mixing — 2-layer quantised neural network
- * Layer 1: 64 → 128 (int8 weights + int8 bias, scale1, GELU)
- * Layer 2: 128 → 64 (int8 weights + int8 bias, scale2, residual)
- * ============================================================================ */
+static void chv4_layer_norm(int32_t *data, int n, const int16_t *scale) {
+    int64_t sum = 0;
+    for (int i = 0; i < n; i++) sum += data[i];
+    int32_t mean = (int32_t)(sum / n);
 
-#define CLAMPF(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
+    int64_t var_sum = 0;
+    for (int i = 0; i < n; i++) {
+        int64_t d = (int64_t)(data[i] - mean);
+        var_sum += d * d;
+    }
+    int32_t std_approx = (int32_t)sqrt((double)(var_sum / (int64_t)n)) + 1;
+
+    for (int i = 0; i < n; i++) {
+        int32_t norm = (data[i] - mean) * 128 / std_approx;
+        int32_t v = (norm * (int32_t)scale[i]) >> 8;
+        data[i] = chv4_clamp128(v);
+    }
+}
 
 static void chv4_npu_mixing(const uint8_t input[64], uint8_t output[64]) {
-    float h[128];
+    /* 1. Input: signed reinterpret — (int8_t)input[i] → i32 */
+    int32_t input_i32[64];
+    for (int i = 0; i < 64; i++)
+        input_i32[i] = (int32_t)(int8_t)input[i];
 
-    /* Layer 1: 64 → 128 */
-    for (int j = 0; j < 128; j++) {
-        float acc = (float)chv4_b1(j);
-        for (int i = 0; i < 64; i++)
-            acc += (float)chv4_w1(j, i) * (float)(int8_t)input[i];
-        float scale = (float)chv4_scale1(j);
-        float val = (scale != 0.0f) ? acc / scale : acc;
-        h[j] = chv4_gelu(val);
+    /* 2. Layer 1: 64 → 128
+     *    acc = b1[i]*32 + Σ(input_i32[j] * w1[i][j])
+     *    h[i] = clamp(acc >> 12, -128, 127)                             */
+    int32_t h[128];
+    for (int i = 0; i < 128; i++) {
+        int32_t acc = (int32_t)chv4_b1(i) * 32;
+        for (int j = 0; j < 64; j++)
+            acc += input_i32[j] * (int32_t)chv4_w1(i, j);
+        h[i] = chv4_clamp128(acc >> 12);
     }
 
-    /* Layer 2: 128 → 64 with residual */
+    /* 3. LayerNorm1 + GELU */
+    {
+        int16_t scale1[128];
+        for (int i = 0; i < 128; i++) scale1[i] = chv4_scale1(i);
+        chv4_layer_norm(h, 128, scale1);
+    }
+    for (int i = 0; i < 128; i++) {
+        int32_t v = (h[i] * (128 + h[i])) >> 8;  /* gelu_int8 */
+        h[i] = chv4_clamp128(v);
+    }
+
+    /* 4. Layer 2: 128 → 64
+     *    acc = b2[i]*32 + Σ(h[j] * w2[i][j])
+     *    out[i] = clamp(acc >> 12, -128, 127)                           */
+    int32_t out_i32[64];
     for (int i = 0; i < 64; i++) {
-        float acc = (float)chv4_b2(i);
+        int32_t acc = (int32_t)chv4_b2(i) * 32;
         for (int j = 0; j < 128; j++)
-            acc += (float)chv4_w2(i, j) * h[j];
-        float scale = (float)chv4_scale2(i);
-        float val = (scale != 0.0f) ? acc / scale : acc;
-        float residual = (float)(int8_t)input[i];
-        int32_t out_i = (int32_t)CLAMPF(val + residual, -128.0f, 127.0f);
-        output[i] = (uint8_t)(out_i & 0xFF);
+            acc += h[j] * (int32_t)chv4_w2(i, j);
+        out_i32[i] = chv4_clamp128(acc >> 12);
     }
+
+    /* 5. LayerNorm2 */
+    {
+        int16_t scale2[64];
+        for (int i = 0; i < 64; i++) scale2[i] = chv4_scale2(i);
+        chv4_layer_norm(out_i32, 64, scale2);
+    }
+
+    /* 6. Residual add: out[i] = clamp(out[i] + input_i32[i], -128, 127) */
+    for (int i = 0; i < 64; i++)
+        out_i32[i] = chv4_clamp128(out_i32[i] + input_i32[i]);
+
+    /* 7. Output: two's complement lower 8 bits (uint8_t)(v & 0xFF) */
+    for (int i = 0; i < 64; i++)
+        output[i] = (uint8_t)(out_i32[i] & 0xFF);
 }
+
 
 /* ============================================================================
  * Full CHv4 Pipeline (internal)
@@ -1615,7 +1837,7 @@ static void cosmic_harmony_v4_compute(
         return;
     }
     uint8_t s4[64];
-    chv4_memory_hard_transform(s3, s2, pad, s4);
+    chv4_memory_hard_transform(s3, pad, s4);
     free(pad);
 
     /* Step 5: NPU Mixing → s5[64] */
@@ -1750,6 +1972,12 @@ EXPORT void cosmic_harmony_v4_cosmic_fusion(const uint8_t *in, uint8_t *out) {
 }
 EXPORT void cosmic_harmony_v4_npu_mixing(const uint8_t *in, uint8_t *out) {
     chv4_npu_mixing(in, out);
+}
+EXPORT void cosmic_harmony_v4_memory_hard(const uint8_t *gm_out_64, uint8_t *output_64) {
+    uint8_t *pad = (uint8_t *)malloc(CHV4_SCRATCHPAD_BYTES);
+    if (!pad) { memset(output_64, 0xFF, 64); return; }
+    chv4_memory_hard_transform(gm_out_64, pad, output_64);
+    free(pad);
 }
 
 /* --- Info / capabilities --- */

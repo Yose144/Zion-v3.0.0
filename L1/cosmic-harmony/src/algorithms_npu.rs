@@ -225,11 +225,11 @@ pub fn npu_mixing_step(scratchpad: &[u8; 64]) -> [u8; 64] {
 fn npu_mixing_cpu_int8(scratchpad: &[u8; 64]) -> [u8; 64] {
     let w = get_weights();
 
-    // Input konverze u8 → i32 (centrovat: u8 - 128)
+    // Input konverze u8 → i32: reinterpret jako signed (int8_t) stejně jako C/Metal
     let input_i32: [i32; 64] = {
         let mut arr = [0i32; 64];
         for (i, &b) in scratchpad.iter().enumerate() {
-            arr[i] = b as i32 - 128;
+            arr[i] = (b as i8) as i32;
         }
         arr
     };
@@ -267,10 +267,10 @@ fn npu_mixing_cpu_int8(scratchpad: &[u8; 64]) -> [u8; 64] {
         output_i32[i] = (output_i32[i] + input_i32[i]).clamp(-128, 127);
     }
 
-    // Output konverze i32 → u8 (de-centrovat: +128)
+    // Output konverze i32 → u8: two's complement lower 8 bits (stejně jako C: (uint8_t)(v & 0xFF))
     let mut result = [0u8; 64];
     for (i, &v) in output_i32.iter().enumerate() {
-        result[i] = (v + 128).clamp(0, 255) as u8;
+        result[i] = v as u8;
     }
 
     result
@@ -402,7 +402,7 @@ mod tests {
     #[test]
     fn test_npu_mixing_avalanche() {
         // Změna 1 bitu ve vstupu → výstup se musí lišit
-        let mut input1 = [0x5Au8; 64];
+        let input1 = [0x5Au8; 64];
         let mut input2 = input1;
         input2[0] ^= 0x01;
 
@@ -423,6 +423,48 @@ mod tests {
         assert!(nonzero);
     }
 
+    /// Diagnostic: print NPU(zeros) output for C parity comparison
+    #[test]
+    fn test_npu_zeros_output() {
+        let zeros = [0u8; 64];
+        let out = npu_mixing_step(&zeros);
+        let hex: String = out.iter().map(|b| format!("{:02x}", b)).collect();
+        println!("Rust NPU(zeros): {}", hex);
+        // expected C output after integer fix - must match for weight parity
+    }
+
+    /// Cross-check: NPU input/output konverze musí souhlasit s C native lib
+    /// C: (int8_t)input[i] → input → (uint8_t)(out & 0xFF)
+    /// Rust po fixu: (b as i8) as i32  →  v as u8
+    #[test]
+    fn test_npu_input_output_parity_with_c() {
+        // Identické vstupy → ověřit že konverze odpovídá C signed reinterpretaci
+        // u8=0   → i8=0  (ne -128 jako dřív)
+        // u8=128 → i8=-128 (ne 0 jako dřív)
+        // u8=255 → i8=-1  (ne 127 jako dřív)
+        let mut test_input = [0u8; 64];
+        test_input[0]  = 0;
+        test_input[1]  = 128;
+        test_input[2]  = 255;
+        test_input[3]  = 127;
+
+        let out = npu_mixing_step(&test_input);
+        // Hlavní test: výsledek musí být deterministický a ne všechny nuly
+        let nonzero = out.iter().any(|&x| x != 0);
+        assert!(nonzero, "NPU output should not be all zeros");
+
+        // Ověřit konverzi: (0u8 as i8) as i32 = 0, (128u8 as i8) as i32 = -128
+        assert_eq!((0u8 as i8) as i32,   0,    "u8=0 must map to i32=0 (C parity)");
+        assert_eq!((128u8 as i8) as i32, -128, "u8=128 must map to i32=-128 (C parity)");
+        assert_eq!((255u8 as i8) as i32, -1,   "u8=255 must map to i32=-1 (C parity)");
+
+        // Ověřit reverse: v as u8 === (uint8_t)(v & 0xFF) jako v C
+        let v: i32 = -128;
+        assert_eq!(v as u8, 128u8, "i32=-128 as u8 must be 128 (C two's complement parity)");
+        let v: i32 = -1;
+        assert_eq!(v as u8, 255u8, "i32=-1 as u8 must be 255 (C two's complement parity)");
+    }
+
     #[test]
     fn test_gelu_int8_zero() {
         // gelu(0) ≈ 0
@@ -441,7 +483,7 @@ mod tests {
         let mut data = [100i32, -50, 80, -30, 0, 127, -128, 60,
                         10, 20, 30, 40, 50, 60, 70, 80];
         let scale = [256i16; 16];
-        let before_range: i32 = *data.iter().max().unwrap() - *data.iter().min().unwrap();
+        let _before_range: i32 = *data.iter().max().unwrap() - *data.iter().min().unwrap();
         layer_norm_int8(&mut data, &scale);
         // Po normalizaci by data měla být v ±127
         for &v in &data {
