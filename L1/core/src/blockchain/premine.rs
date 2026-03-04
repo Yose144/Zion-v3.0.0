@@ -21,17 +21,31 @@
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
+// Serde helper: serialize u128 amount as JSON string (u128 > JS safe integer)
+// ---------------------------------------------------------------------------
+mod amount_serde {
+    pub fn serialize<S: serde::Serializer>(v: &u128, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(&v.to_string())
+    }
+    pub fn deserialize<'de, D: serde::Deserializer<'de>>(d: D) -> Result<u128, D::Error> {
+        use serde::Deserialize;
+        let s = String::deserialize(d)?;
+        s.parse::<u128>().map_err(serde::de::Error::custom)
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Total premine in atomic units: 16,280,000,000 ZION × 1,000,000
-pub const PREMINE_TOTAL: u64 = 16_280_000_000_000_000;
+/// Total premine in flowers: 16,280,000,000 ZION × 1_000_000_000_000 (WP3.0 — 12 des. míst)
+pub const PREMINE_TOTAL: u128 = 16_280_000_000u128 * 1_000_000_000_000;
 
-/// Total supply in atomic units: 144,000,000,000 ZION × 1,000,000
-pub const TOTAL_SUPPLY: u64 = 144_000_000_000_000_000;
+/// Total supply in flowers: 144,000,000,000 ZION × 1_000_000_000_000
+pub const TOTAL_SUPPLY: u128 = 144_000_000_000u128 * 1_000_000_000_000;
 
-/// Mining emission in atomic units
-pub const MINING_EMISSION: u64 = TOTAL_SUPPLY - PREMINE_TOTAL;
+/// Mining emission in flowers
+pub const MINING_EMISSION: u128 = TOTAL_SUPPLY - PREMINE_TOTAL;
 
 /// Block height at which DAO Treasury unlocks (B-01)
 /// 525_600 blocks ≈ 1 year at 1 block/min
@@ -48,8 +62,10 @@ pub struct PremineAddress {
     pub address: String,
     /// Human-readable purpose
     pub purpose: String,
-    /// Amount in atomic units (1 ZION = 1,000,000 atomic units)
-    pub amount: u64,
+    /// Amount in flowers (1 ZION = 1_000_000_000_000 flowers — WP3.0 12 des. míst)
+    /// Serialized as string in JSON (u128 > JavaScript safe integer range)
+    #[serde(with = "amount_serde")]
+    pub amount: u128,
     /// Category: oasis_golden_egg, dao_treasury, infrastructure, humanitarian
     pub category: String,
     /// Block height at which funds unlock (None = immediately available)
@@ -66,31 +82,31 @@ pub struct PremineAddress {
 /// Reserved for OASIS game rewards and Winners Golden Egg/Xp distribution.
 /// These funds are NOT distributed via L1 consensus; they sit in
 /// time-locked addresses and will be spent by the OASIS game contract / DAO vote.
-pub const OASIS_GOLDEN_EGG_POOL: &[(&str, &str, u64)] = &[
+pub const OASIS_GOLDEN_EGG_POOL: &[(&str, &str, u128)] = &[
     (
         "zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p",
         "ZION OASIS + Winners Golden Egg/Xp (Slot 1)",
-        1_650_000_000_000_000, // 1.65B ZION
+        1_650_000_000_000_000_000_000, // 1.65B ZION
     ),
     (
         "zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a",
         "ZION OASIS + Winners Golden Egg/Xp (Slot 2)",
-        1_650_000_000_000_000, // 1.65B ZION
+        1_650_000_000_000_000_000_000, // 1.65B ZION
     ),
     (
         "zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a",
         "ZION OASIS + Winners Golden Egg/Xp (Slot 3)",
-        1_650_000_000_000_000, // 1.65B ZION
+        1_650_000_000_000_000_000_000, // 1.65B ZION
     ),
     (
         "zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23",
         "ZION OASIS + Winners Golden Egg/Xp (Slot 4)",
-        1_650_000_000_000_000, // 1.65B ZION
+        1_650_000_000_000_000_000_000, // 1.65B ZION
     ),
     (
         "zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u",
         "ZION OASIS + Winners Golden Egg/Xp (Slot 5)",
-        1_650_000_000_000_000, // 1.65B ZION
+        1_650_000_000_000_000_000_000, // 1.65B ZION
     ),
 ];
 
@@ -99,52 +115,52 @@ pub const OASIS_GOLDEN_EGG_POOL: &[(&str, &str, u64)] = &[
 /// Includes the former DAO Winners (1.75B) and cancelled Presale (500M)
 /// allocations, merged into a single community governance pool.
 /// Unlocks linearly over 10 years from genesis (block-height based).
-pub const DAO_TREASURY: &[(&str, &str, u64)] = &[
+pub const DAO_TREASURY: &[(&str, &str, u128)] = &[
     (
         "zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s",
         "DAO Treasury — Community Governance (main)",
-        2_500_000_000_000_000, // 2.5B ZION
+        2_500_000_000_000_000_000_000, // 2.5B ZION
     ),
     (
         "zion12643n776r3m8f340484756q06485h5w4c2l405m",
         "DAO Treasury — Grants & Bounties",
-        1_000_000_000_000_000, // 1.0B ZION
+        1_000_000_000_000_000_000_000, // 1.0B ZION
     ),
     (
         "zion1k8w734x422f3t6t536r287k2c6n3z0e05257606",
         "DAO Treasury — Ecosystem Bootstrap",
-        500_000_000_000_000, // 0.5B ZION
+        500_000_000_000_000_000_000, // 0.5B ZION
     ),
 ];
 
 /// Infrastructure — 2,590,000,000 ZION (15.9% of premine)
 ///
 /// Core development, P2P nodes, security audits.
-pub const INFRASTRUCTURE: &[(&str, &str, u64)] = &[
+pub const INFRASTRUCTURE: &[(&str, &str, u128)] = &[
     (
         "zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c",
         "Core Development Fund",
-        1_000_000_000_000_000, // 1.0B ZION
+        1_000_000_000_000_000_000_000, // 1.0B ZION
     ),
     (
         "zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43",
         "Network Infrastructure — P2P Seed Nodes",
-        1_000_000_000_000_000, // 1.0B ZION
+        1_000_000_000_000_000_000_000, // 1.0B ZION
     ),
     (
         "zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f",
         "Genesis Creator — Lifetime Rent",
-        590_000_000_000_000, // 0.59B ZION
+        590_000_000_000_000_000_000, // 0.59B ZION
     ),
 ];
 
 /// Humanitarian Fund — 1,440,000,000 ZION (8.8% of premine)
 ///
 /// Children's Future Fund + humanitarian initiatives.
-pub const HUMANITARIAN: &[(&str, &str, u64)] = &[(
+pub const HUMANITARIAN: &[(&str, &str, u128)] = &[(
     "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
     "Children Future Fund — Humanitarian DAO",
-    1_440_000_000_000_000, // 1.44B ZION
+    1_440_000_000_000_000_000_000, // 1.44B ZION
 )];
 
 // ---------------------------------------------------------------------------
@@ -224,44 +240,44 @@ pub fn is_transfer_allowed(address: &str, current_height: u64) -> Result<(), Str
 
 /// Validate premine structure (sanity check)
 pub fn validate_premine() -> Result<(), String> {
-    let mut total: u64 = 0;
+    let mut total: u128 = 0;
 
     // OASIS + Golden Egg: must total 8.25B
-    let oasis_total: u64 = OASIS_GOLDEN_EGG_POOL.iter().map(|x| x.2).sum();
-    if oasis_total != 8_250_000_000_000_000 {
+    let oasis_total: u128 = OASIS_GOLDEN_EGG_POOL.iter().map(|x| x.2).sum();
+    if oasis_total != 8_250_000_000_000_000_000_000 {
         return Err(format!(
             "OASIS + Golden Egg total {} != 8.25B",
-            oasis_total / 1_000_000
+            oasis_total / 1_000_000_000_000
         ));
     }
     total += oasis_total;
 
     // DAO Treasury: must total 4.0B
-    let dao_total: u64 = DAO_TREASURY.iter().map(|x| x.2).sum();
-    if dao_total != 4_000_000_000_000_000 {
+    let dao_total: u128 = DAO_TREASURY.iter().map(|x| x.2).sum();
+    if dao_total != 4_000_000_000_000_000_000_000 {
         return Err(format!(
             "DAO Treasury total {} != 4.0B",
-            dao_total / 1_000_000
+            dao_total / 1_000_000_000_000
         ));
     }
     total += dao_total;
 
     // Infrastructure: must total 2.59B
-    let infra_total: u64 = INFRASTRUCTURE.iter().map(|x| x.2).sum();
-    if infra_total != 2_590_000_000_000_000 {
+    let infra_total: u128 = INFRASTRUCTURE.iter().map(|x| x.2).sum();
+    if infra_total != 2_590_000_000_000_000_000_000 {
         return Err(format!(
             "Infrastructure total {} != 2.59B",
-            infra_total / 1_000_000
+            infra_total / 1_000_000_000_000
         ));
     }
     total += infra_total;
 
     // Humanitarian: must total 1.44B
-    let humanitarian_total: u64 = HUMANITARIAN.iter().map(|x| x.2).sum();
-    if humanitarian_total != 1_440_000_000_000_000 {
+    let humanitarian_total: u128 = HUMANITARIAN.iter().map(|x| x.2).sum();
+    if humanitarian_total != 1_440_000_000_000_000_000_000 {
         return Err(format!(
             "Humanitarian total {} != 1.44B",
-            humanitarian_total / 1_000_000
+            humanitarian_total / 1_000_000_000_000
         ));
     }
     total += humanitarian_total;
@@ -270,8 +286,8 @@ pub fn validate_premine() -> Result<(), String> {
     if total != PREMINE_TOTAL {
         return Err(format!(
             "Grand total {} != PREMINE_TOTAL {}",
-            total / 1_000_000,
-            PREMINE_TOTAL / 1_000_000
+            total / 1_000_000_000_000,
+            PREMINE_TOTAL / 1_000_000_000_000
         ));
     }
 
@@ -294,36 +310,36 @@ mod tests {
     #[test]
     fn test_premine_total() {
         let all = get_all_premine_addresses();
-        let total: u64 = all.iter().map(|a| a.amount).sum();
+        let total: u128 = all.iter().map(|a| a.amount).sum();
         assert_eq!(total, PREMINE_TOTAL);
     }
 
     #[test]
     fn test_oasis_golden_egg() {
         assert_eq!(OASIS_GOLDEN_EGG_POOL.len(), 5);
-        let total: u64 = OASIS_GOLDEN_EGG_POOL.iter().map(|x| x.2).sum();
-        assert_eq!(total, 8_250_000_000_000_000);
+        let total: u128 = OASIS_GOLDEN_EGG_POOL.iter().map(|x| x.2).sum();
+        assert_eq!(total, 8_250_000_000_000_000_000_000u128);
     }
 
     #[test]
     fn test_dao_treasury() {
         assert_eq!(DAO_TREASURY.len(), 3);
-        let total: u64 = DAO_TREASURY.iter().map(|x| x.2).sum();
-        assert_eq!(total, 4_000_000_000_000_000);
+        let total: u128 = DAO_TREASURY.iter().map(|x| x.2).sum();
+        assert_eq!(total, 4_000_000_000_000_000_000_000u128);
     }
 
     #[test]
     fn test_infrastructure() {
         assert_eq!(INFRASTRUCTURE.len(), 3);
-        let total: u64 = INFRASTRUCTURE.iter().map(|x| x.2).sum();
-        assert_eq!(total, 2_590_000_000_000_000);
+        let total: u128 = INFRASTRUCTURE.iter().map(|x| x.2).sum();
+        assert_eq!(total, 2_590_000_000_000_000_000_000u128);
     }
 
     #[test]
     fn test_humanitarian() {
         assert_eq!(HUMANITARIAN.len(), 1);
-        let total: u64 = HUMANITARIAN.iter().map(|x| x.2).sum();
-        assert_eq!(total, 1_440_000_000_000_000);
+        let total: u128 = HUMANITARIAN.iter().map(|x| x.2).sum();
+        assert_eq!(total, 1_440_000_000_000_000_000_000u128);
     }
 
     #[test]
@@ -338,9 +354,9 @@ mod tests {
 
     #[test]
     fn test_supply_constants() {
-        assert_eq!(TOTAL_SUPPLY, 144_000_000_000_000_000);
-        assert_eq!(PREMINE_TOTAL, 16_280_000_000_000_000);
-        assert_eq!(MINING_EMISSION, 127_720_000_000_000_000);
+        assert_eq!(TOTAL_SUPPLY,    144_000_000_000_000_000_000_000u128);
+        assert_eq!(PREMINE_TOTAL,    16_280_000_000_000_000_000_000u128);
+        assert_eq!(MINING_EMISSION, 127_720_000_000_000_000_000_000u128);
         assert_eq!(MINING_EMISSION, TOTAL_SUPPLY - PREMINE_TOTAL);
     }
 

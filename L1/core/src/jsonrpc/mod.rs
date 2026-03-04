@@ -1146,7 +1146,7 @@ pub async fn handle(
             let tracker = BuybackTracker::in_memory();
             let stats = tracker.get_stats();
             let burned = stats.combined_burn_atomic;
-            let circulating = total_supply.saturating_sub(burned);
+            let circulating = total_supply.saturating_sub(burned as u128);
 
             let supply_mined_pct = if mining_emission > 0 {
                 (mined_atomic as f64 / mining_emission as f64) * 100.0
@@ -1158,21 +1158,21 @@ pub async fn handle(
                 jsonrpc: "2.0".to_string(),
                 id: req.id,
                 result: Some(serde_json::json!({
-                    "total_supply_atomic": total_supply,
-                    "total_supply_zion": total_supply / 1_000_000,
-                    "premine_atomic": premine_total,
-                    "premine_zion": premine_total / 1_000_000,
-                    "mining_emission_atomic": mining_emission,
-                    "mining_emission_zion": mining_emission / 1_000_000,
+                    "total_supply_atomic": total_supply.to_string(),
+                    "total_supply_zion": (total_supply / reward::ATOMIC_UNITS_PER_ZION as u128) as u64,
+                    "premine_atomic": premine_total.to_string(),
+                    "premine_zion": (premine_total / reward::ATOMIC_UNITS_PER_ZION as u128) as u64,
+                    "mining_emission_atomic": mining_emission.to_string(),
+                    "mining_emission_zion": (mining_emission / reward::ATOMIC_UNITS_PER_ZION as u128) as u64,
                     "mined_so_far_atomic": mined_atomic,
-                    "mined_so_far_zion": mined_atomic / 1_000_000,
+                    "mined_so_far_zion": mined_atomic / reward::ATOMIC_UNITS_PER_ZION,
                     "supply_mined_percent": format!("{:.6}", supply_mined_pct),
                     "burned_atomic": burned,
-                    "burned_zion": burned / 1_000_000,
-                    "circulating_supply_atomic": circulating,
-                    "circulating_supply_zion": circulating / 1_000_000,
+                    "burned_zion": burned / reward::ATOMIC_UNITS_PER_ZION,
+                    "circulating_supply_atomic": circulating.to_string(),
+                    "circulating_supply_zion": (circulating / reward::ATOMIC_UNITS_PER_ZION as u128) as u64,
                     "block_reward_atomic": block_reward,
-                    "block_reward_zion": block_reward as f64 / 1_000_000.0,
+                    "block_reward_zion": block_reward as f64 / reward::ATOMIC_UNITS_PER_ZION as f64,
                     "height": height,
                     "deflation_rate_percent": stats.deflation_rate_percent,
                 })),

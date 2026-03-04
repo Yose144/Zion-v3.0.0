@@ -21,9 +21,9 @@ soft_finality = 60
 min_difficulty = 100
 
 [emission]
-block_reward_atomic = 5_400_067_000
-atomic_units_per_zion = 1_000_000
-max_mining_blocks = 23_652_000
+block_reward_atomic = 5_400_067_000_000_000  # 5,400.067 ZION — Dekáda 1 — WP3.0 spec
+atomic_units_per_zion = 1_000_000_000_000  # 1 ZION = 1e12 flowers (12 des. míst) — WP3.0 spec
+max_mining_blocks = 52_560_000  # 100 let Decade Decay — WP3.0 spec
 mining_supply = 127_720_000_000
 total_supply = 144_000_000_000
 halving = false

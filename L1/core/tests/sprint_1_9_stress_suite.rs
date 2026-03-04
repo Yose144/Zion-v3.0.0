@@ -704,8 +704,8 @@ fn test_stress_blacklist_mass_banning() {
 #[test]
 fn test_stability_summary_all_invariants() {
     // === Supply invariants ===
-    assert_eq!(premine::TOTAL_SUPPLY, 144_000_000_000_000_000);
-    assert_eq!(premine::PREMINE_TOTAL, 16_280_000_000_000_000);
+    assert_eq!(premine::TOTAL_SUPPLY,    144_000_000_000_000_000_000_000u128);
+    assert_eq!(premine::PREMINE_TOTAL,    16_280_000_000_000_000_000_000u128);
     assert_eq!(
         premine::MINING_EMISSION,
         premine::TOTAL_SUPPLY - premine::PREMINE_TOTAL
