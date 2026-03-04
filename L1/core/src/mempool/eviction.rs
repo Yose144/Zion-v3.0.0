@@ -56,7 +56,7 @@ mod tests {
                 public_key: "b".repeat(64),
             }],
             outputs: vec![TxOutput {
-                amount: 1_000_000,
+                amount: 1_000_000u128,
                 address: "zion1test".to_string(),
                 ..Default::default()
             }],

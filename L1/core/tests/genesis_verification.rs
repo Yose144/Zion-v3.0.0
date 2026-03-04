@@ -12,40 +12,40 @@ use zion_core::blockchain::premine;
 #[test]
 fn test_premine_grand_total() {
     let all = premine::get_all_premine_addresses();
-    let total: u64 = all.iter().map(|a| a.amount).sum();
+    let total: u128 = all.iter().map(|a| a.amount).sum();
     assert_eq!(total, premine::PREMINE_TOTAL);
-    assert_eq!(total, 16_280_000_000_000_000); // 16.28B ZION
+    assert_eq!(total, 16_280_000_000_000_000_000_000u128); // 16.28B ZION at 1e12
 }
 
 #[test]
 fn test_premine_category_totals() {
     let all = premine::get_all_premine_addresses();
 
-    let oasis: u64 = all
+    let oasis: u128 = all
         .iter()
         .filter(|a| a.category == "oasis_golden_egg")
         .map(|a| a.amount)
         .sum();
-    let dao: u64 = all
+    let dao: u128 = all
         .iter()
         .filter(|a| a.category == "dao_treasury")
         .map(|a| a.amount)
         .sum();
-    let infra: u64 = all
+    let infra: u128 = all
         .iter()
         .filter(|a| a.category == "infrastructure")
         .map(|a| a.amount)
         .sum();
-    let humanitarian: u64 = all
+    let humanitarian: u128 = all
         .iter()
         .filter(|a| a.category == "humanitarian")
         .map(|a| a.amount)
         .sum();
 
-    assert_eq!(oasis, 8_250_000_000_000_000, "OASIS + Golden Egg: 8.25B");
-    assert_eq!(dao, 4_000_000_000_000_000, "DAO treasury: 4.0B");
-    assert_eq!(infra, 2_590_000_000_000_000, "Infrastructure: 2.59B");
-    assert_eq!(humanitarian, 1_440_000_000_000_000, "Humanitarian: 1.44B");
+    assert_eq!(oasis, 8_250_000_000_000_000_000_000u128, "OASIS + Golden Egg: 8.25B");
+    assert_eq!(dao, 4_000_000_000_000_000_000_000u128, "DAO treasury: 4.0B");
+    assert_eq!(infra, 2_590_000_000_000_000_000_000u128, "Infrastructure: 2.59B");
+    assert_eq!(humanitarian, 1_440_000_000_000_000_000_000u128, "Humanitarian: 1.44B");
 
     assert_eq!(oasis + dao + infra + humanitarian, premine::PREMINE_TOTAL);
 }
@@ -57,7 +57,7 @@ fn test_mining_emission_correct() {
         premine::TOTAL_SUPPLY - premine::PREMINE_TOTAL,
         premine::MINING_EMISSION
     );
-    assert_eq!(premine::MINING_EMISSION, 127_720_000_000_000_000);
+    assert_eq!(premine::MINING_EMISSION, 127_720_000_000_000_000_000_000u128); // 127.72B ZION @ 1e12
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

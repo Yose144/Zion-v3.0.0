@@ -50,7 +50,7 @@ fn make_signed_spend_tx(
             signature: String::new(),
             public_key: public_key_hex,
         }],
-        outputs: vec![TxOutput { amount, address: to_address, memo: None }],
+        outputs: vec![TxOutput { amount: amount as u128, address: to_address, memo: None }],
         fee,
         timestamp,
     };

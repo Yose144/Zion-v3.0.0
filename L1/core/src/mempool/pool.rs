@@ -266,7 +266,7 @@ mod tests {
     use super::*;
     use crate::tx::{Transaction, TxInput, TxOutput};
 
-    fn make_tx(id: &str, fee: u64, inputs: Vec<(&str, u32)>, outputs: Vec<u64>) -> Transaction {
+    fn make_tx(id: &str, fee: u64, inputs: Vec<(&str, u32)>, outputs: Vec<u128>) -> Transaction {
         Transaction {
             id: id.to_string(),
             version: 1,

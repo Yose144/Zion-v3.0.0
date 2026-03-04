@@ -1146,7 +1146,7 @@ pub async fn handle(
             let tracker = BuybackTracker::in_memory();
             let stats = tracker.get_stats();
             let burned = stats.combined_burn_atomic;
-            let circulating = total_supply.saturating_sub(burned as u128);
+            let circulating = total_supply.saturating_sub(burned);
 
             let supply_mined_pct = if mining_emission > 0 {
                 (mined_atomic as f64 / mining_emission as f64) * 100.0
@@ -1167,8 +1167,8 @@ pub async fn handle(
                     "mined_so_far_atomic": mined_atomic,
                     "mined_so_far_zion": mined_atomic / reward::ATOMIC_UNITS_PER_ZION,
                     "supply_mined_percent": format!("{:.6}", supply_mined_pct),
-                    "burned_atomic": burned,
-                    "burned_zion": burned / reward::ATOMIC_UNITS_PER_ZION,
+                    "burned_atomic": burned.to_string(),
+                    "burned_zion": burned / reward::ATOMIC_UNITS_PER_ZION as u128,
                     "circulating_supply_atomic": circulating.to_string(),
                     "circulating_supply_zion": (circulating / reward::ATOMIC_UNITS_PER_ZION as u128) as u64,
                     "block_reward_atomic": block_reward,
@@ -1570,8 +1570,8 @@ mod tests {
         let resp = call_rpc(state, "getSupplyInfo", None).await;
         assert!(resp.error.is_none(), "Expected no error: {:?}", resp.error);
         let r = resp.result.unwrap();
-        assert_eq!(r["total_supply_atomic"], 144_000_000_000_000_000u64);
-        assert_eq!(r["premine_atomic"], 16_280_000_000_000_000u64);
+        assert_eq!(r["total_supply_atomic"], "144000000000000000000000"); // 144B ZION × 1e12
+        assert_eq!(r["premine_atomic"], "16280000000000000000000"); // 16.28B ZION × 1e12
         assert!(r["height"].as_u64().is_some());
         assert!(r["block_reward_atomic"].as_u64().unwrap() > 0);
     }
@@ -1597,9 +1597,9 @@ mod tests {
         let state = test_state();
         let resp = call_rpc(state, "getSupplyInfo", None).await;
         let r = resp.result.unwrap();
-        let total = r["total_supply_atomic"].as_u64().unwrap();
-        let premine = r["premine_atomic"].as_u64().unwrap();
-        let emission = r["mining_emission_atomic"].as_u64().unwrap();
+        let total: u128 = r["total_supply_atomic"].as_str().unwrap().parse().unwrap();
+        let premine: u128 = r["premine_atomic"].as_str().unwrap().parse().unwrap();
+        let emission: u128 = r["mining_emission_atomic"].as_str().unwrap().parse().unwrap();
         assert_eq!(emission, total - premine);
     }
 
@@ -1609,8 +1609,8 @@ mod tests {
         let resp = call_rpc(state, "getSupplyInfo", None).await;
         let r = resp.result.unwrap();
         // With in_memory tracker and no burns, circulating == total
-        let total = r["total_supply_atomic"].as_u64().unwrap();
-        let circ = r["circulating_supply_atomic"].as_u64().unwrap();
+        let total: u128 = r["total_supply_atomic"].as_str().unwrap().parse().unwrap();
+        let circ: u128 = r["circulating_supply_atomic"].as_str().unwrap().parse().unwrap();
         assert_eq!(circ, total);
     }
 

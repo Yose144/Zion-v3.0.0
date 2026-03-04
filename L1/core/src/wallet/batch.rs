@@ -407,7 +407,7 @@ mod tests {
     fn test_batch_no_change() {
         let (pool_addr, secret) = pool_address_and_key();
         let fee_amount = fee::minimum_fee_for_size(fee::estimate_tx_size(1, 1));
-        let utxos = vec![make_utxo("tx1", 0, 50_000_000 + fee_amount, &pool_addr)];
+        let utxos = vec![make_utxo("tx1", 0, 50_000_000u128 + fee_amount as u128, &pool_addr)];
 
         let params = BatchParams {
             recipients: vec![Recipient {
@@ -539,7 +539,7 @@ mod tests {
     #[test]
     fn test_batch_too_many_recipients() {
         let (pool_addr, secret) = pool_address_and_key();
-        let utxos = vec![make_utxo("tx1", 0, u64::MAX / 2, &pool_addr)];
+        let utxos = vec![make_utxo("tx1", 0, u64::MAX as u128 / 2, &pool_addr)];
 
         let recipients: Vec<Recipient> = (0..MAX_BATCH_RECIPIENTS + 1)
             .map(|_| Recipient {
@@ -599,7 +599,7 @@ mod tests {
 
     #[test]
     fn test_min_payout_amount() {
-        assert_eq!(MIN_PAYOUT_AMOUNT, 10_000_000); // 10 ZION
+        assert_eq!(MIN_PAYOUT_AMOUNT, 10_000_000_000_000); // 10 ZION at 1e12 atomic
     }
 
     #[test]

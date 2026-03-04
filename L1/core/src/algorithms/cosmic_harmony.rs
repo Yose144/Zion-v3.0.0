@@ -97,11 +97,13 @@ mod tests {
         let hash1 = hash(input, nonce, 0);
         let hash2 = hash(input, nonce, 100000);
 
-        // Heights below/above memory-hard fork should produce different hashes
-        // (different pipeline path: legacy vs scratchpad)
-        assert_ne!(
+        // Both heights use CHv4 path (CHV4_NPU_FORK_HEIGHT = 0, CHV3_MEMORY_HARD_FORK_HEIGHT = 0).
+        // Height is used only for algorithm path selection, NOT as hash input — the
+        // block header data (containing height) is the caller's responsibility.
+        // Different heights on the same path → same output for same input+nonce.
+        assert_eq!(
             hash1, hash2,
-            "Different heights (across fork) should produce different hashes"
+            "Both heights use CHv4 path: same input+nonce gives same hash"
         );
     }
 

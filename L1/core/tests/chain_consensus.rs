@@ -314,14 +314,14 @@ fn test_reward_at_various_heights() {
     // Height 0: no reward (genesis)
     assert_eq!(reward::calculate(0, 1000), 0);
 
-    // Height 1: first mined block — Decade 1 base reward
-    assert_eq!(reward::calculate(1, 1000), 5_400_067_000);
+    // Height 1: first mined block — Decade 1 base reward (5400.067 ZION @ 1e12)
+    assert_eq!(reward::calculate(1, 1000), 5_400_067_000_000_000);
 
     // Height 1,000,000: still Decade 1 (< 5,256,000)
-    assert_eq!(reward::calculate(1_000_000, 1000), 5_400_067_000);
+    assert_eq!(reward::calculate(1_000_000, 1000), 5_400_067_000_000_000);
 
-    // Height 5,256,001: Decade 2 starts — reward = BASE * (4/5)^1 = 4,320,053,600
-    let d2 = 5_400_067_000u64 * 4 / 5;
+    // Height 5,256,001: Decade 2 starts — reward = BASE * (4/5)^1
+    let d2 = 5_400_067_000_000_000u64 * 4 / 5;
     assert_eq!(reward::calculate(5_256_001, 1000), d2);
 
     // Height 52,560,001: Decade 11+ — perpetual tail emission

@@ -33,7 +33,7 @@ fn miner_address(n: u8) -> String {
     zion1_address_from_public_key_bytes(&seed)
 }
 
-fn make_utxo(tx_hash: &str, index: u32, amount: u64, address: &str) -> SpendableUtxo {
+fn make_utxo(tx_hash: &str, index: u32, amount: u128, address: &str) -> SpendableUtxo {
     SpendableUtxo {
         key: format!("{}:{}", tx_hash, index),
         tx_hash: tx_hash.to_string(),
@@ -183,7 +183,7 @@ fn test_batch_utxo_largest_first() {
 fn test_batch_exact_amount_no_change() {
     let (secret, _, pool_addr) = pool_keypair();
     let min_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(1, 1));
-    let utxos = vec![make_utxo("exact", 0, 50_000_000 + min_fee, &pool_addr)];
+    let utxos = vec![make_utxo("exact", 0, 50_000_000u128 + min_fee as u128, &pool_addr)];
 
     let params = BatchParams {
         recipients: vec![Recipient {
@@ -279,7 +279,7 @@ fn test_batch_tamper_output_invalidates() {
 #[test]
 fn test_batch_fee_scales_with_outputs() {
     let (secret, _, pool_addr) = pool_keypair();
-    let utxos = vec![make_utxo("big", 0, u64::MAX / 2, &pool_addr)];
+    let utxos = vec![make_utxo("big", 0, u64::MAX as u128 / 2, &pool_addr)];
 
     // 1 recipient
     let r1 = build_and_sign_batch(
@@ -443,7 +443,7 @@ fn test_batch_error_no_utxos() {
 #[test]
 fn test_batch_error_over_max_recipients() {
     let (secret, _, pool_addr) = pool_keypair();
-    let utxos = vec![make_utxo("u1", 0, u64::MAX / 2, &pool_addr)];
+    let utxos = vec![make_utxo("u1", 0, u64::MAX as u128 / 2, &pool_addr)];
 
     let recipients: Vec<Recipient> = (0..=MAX_BATCH_RECIPIENTS as u8)
         .map(|i| Recipient {
@@ -529,7 +529,7 @@ fn test_batch_more_efficient_than_singles() {
 
 #[test]
 fn test_min_payout_is_10_zion() {
-    assert_eq!(MIN_PAYOUT_AMOUNT, 10_000_000);
+    assert_eq!(MIN_PAYOUT_AMOUNT, 10_000_000_000_000); // 10 ZION @ 1e12 atomic
 }
 
 #[test]
@@ -599,7 +599,7 @@ fn test_batch_tx_has_correct_structure() {
     assert_eq!(tx.outputs[2].amount, 1_000_000_000);
     // Last output is change to pool
     assert_eq!(tx.outputs[3].address, pool_addr);
-    let expected_change = 5_400_067_000u64 * 2 - 6_000_000_000 - 10_000;
+    let expected_change = 5_400_067_000u128 * 2 - 6_000_000_000 - 10_000;
     assert_eq!(tx.outputs[3].amount, expected_change);
     // All inputs have pool pubkey
     for inp in &tx.inputs {
@@ -650,17 +650,17 @@ fn test_pool_reward_split_89_10_1() {
 
     // Miner share can be distributed via batch TX
     let (secret, _, pool_addr) = pool_keypair();
-    let utxos = vec![make_utxo("reward", 0, block_reward, &pool_addr)];
+    let utxos = vec![make_utxo("reward", 0, block_reward as u128, &pool_addr)];
 
     let params = BatchParams {
         recipients: vec![
             Recipient {
                 address: miner_address(0),
-                amount: miner_share,
+                amount: miner_share as u128,
             },
             Recipient {
                 address: miner_address(1),
-                amount: tithe_share,
+                amount: tithe_share as u128,
             }, // humanitarian
         ],
         fee: Some(2_000),
@@ -668,8 +668,8 @@ fn test_pool_reward_split_89_10_1() {
     };
 
     let result = build_and_sign_batch(&params, &utxos, &secret).unwrap();
-    assert_eq!(result.total_sent, miner_share + tithe_share);
+    assert_eq!(result.total_sent, miner_share as u128 + tithe_share as u128);
     assert!(result.transaction.verify_signatures());
     // Change should be pool_fee - tx_fee
-    assert_eq!(result.change, pool_fee - 2_000);
+    assert_eq!(result.change, pool_fee as u128 - 2_000);
 }

@@ -104,7 +104,7 @@ fn make_tx(id: &str, fee: u64, inputs: Vec<(&str, u32)>, outputs: Vec<u64>) -> T
         outputs: outputs
             .iter()
             .map(|amt| TxOutput {
-                amount: *amt,
+                amount: *amt as u128,
                 address: "zion1test".to_string(),
                 memo: None,
             })
@@ -201,6 +201,76 @@ fn test_reorg_old_blocks_removed() {
     // Original tip hash should no longer be the current tip
     assert_ne!(chain.tip, original_tip_hash);
     assert_eq!(chain.tip, fork_blocks.last().unwrap().calculate_hash());
+}
+
+/// G-01g Regression — 6-block orphan scenario
+///
+/// Simulates a real-world attack/natural fork where a competing miner
+/// produces a 6-block chain with higher total work, triggering a reorg
+/// that orphans 6 blocks from the main chain.
+///
+/// Verifies:
+///   1. Reorg succeeds (new chain wins by total work)
+///   2. Old chain tip hash is no longer the canonical tip
+///   3. New fork blocks are now canonical at the same heights
+///   4. After reorg, fork-chain tip is addressable at correct height
+#[test]
+fn test_reorg_6_blocks_orphan_scenario() {
+    // Main chain: 12 blocks at difficulty 1000
+    let mut chain = build_chain(12, 1000);
+    assert_eq!(chain.height, 12, "Initial chain should be 12 blocks");
+
+    // Record original tip and hash of block 12 (to-be-orphaned tip)
+    let original_tip_hash = chain.tip.clone();
+    let original_block_12 = chain.get_block(12).unwrap();
+
+    // Competing fork: starting at height 6, 6 new blocks at difficulty 2000
+    // Main chain work (past fork point):  fork_point_work = genesis + 6 = 7000
+    //   + original 6 remaining blocks at 1000 each = 13000 total
+    // Fork chain work: 7000 + 6 × 2000 = 19000 > 13000 → fork wins
+    let fork_blocks = build_fork_blocks(&chain, 6, 6, 2000);
+    assert_eq!(fork_blocks.len(), 6, "Fork should have 6 blocks");
+
+    // Verify fork block heights start at 7 and end at 12
+    assert_eq!(fork_blocks.first().unwrap().header.height, 7);
+    assert_eq!(fork_blocks.last().unwrap().header.height, 12);
+
+    // Perform reorg
+    let result = chain.try_reorg_unchecked(6, &fork_blocks);
+    assert!(
+        result.is_ok(),
+        "6-block reorg by higher-difficulty fork should succeed: {:?}",
+        result
+    );
+
+    // Chain height remains 12 (fork occupies same height range)
+    assert_eq!(chain.height, 12, "Height after reorg should still be 12");
+
+    // New canonical tip = last block of the fork
+    let fork_tip_hash = fork_blocks.last().unwrap().calculate_hash();
+    assert_eq!(
+        chain.tip, fork_tip_hash,
+        "Canonical tip must be the fork chain tip after reorg"
+    );
+
+    // Original tip hash is no longer canonical
+    assert_ne!(
+        chain.tip, original_tip_hash,
+        "Original chain tip must be orphaned after reorg"
+    );
+
+    // Canonical block-12 entry is now the fork block (different hash)
+    let canonical_block_12 = chain.get_block(12).unwrap();
+    assert_ne!(
+        canonical_block_12.calculate_hash(),
+        original_block_12.calculate_hash(),
+        "Canonical block 12 must be the fork block (orphan block 12 evicted)"
+    );
+    assert_eq!(
+        canonical_block_12.calculate_hash(),
+        fork_tip_hash,
+        "Canonical block 12 hash must match fork tip"
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
