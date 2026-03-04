@@ -372,6 +372,29 @@ impl UniversalMiner {
                             // XMRig-style new job notification (printed by stats)
                             let mut stats = stats_job.write().await;
                             stats.set_pool_height(j.height);
+                            // Derive display difficulty from target hex (for stats DIFF line).
+                            // cosmic_harmony: 8-char hex u32 target.  diff = 0xFFFFFFFF / target.
+                            // randomx: 16-char hex u64 target.  diff = 0xFFFFFFFFFFFFFFFF / target.
+                            // If target absent / parse fails, leave existing difficulty unchanged.
+                            let target_str = j.target.trim();
+                            if !target_str.is_empty() {
+                                let display_diff: u64 = if target_str.len() <= 8 {
+                                    u32::from_str_radix(target_str, 16)
+                                        .ok()
+                                        .filter(|&t| t > 0)
+                                        .map(|t| 0xFFFF_FFFFu64 / t as u64)
+                                        .unwrap_or(0)
+                                } else {
+                                    u64::from_str_radix(&target_str[target_str.len().saturating_sub(16)..], 16)
+                                        .ok()
+                                        .filter(|&t| t > 0)
+                                        .map(|t| u64::MAX / t)
+                                        .unwrap_or(0)
+                                };
+                                if display_diff > 0 {
+                                    stats.set_difficulty(display_diff as f64);
+                                }
+                            }
                             stats.print_new_job();
                         }
                         if let Ok(mut state) = job_state.write() {
@@ -946,11 +969,22 @@ impl UniversalMiner {
             };
 
             // ═══ Algorithm dispatch: GPU shader vs CPU fallback ═══
+            // NOTE: CosmicHarmony CHv4 is consensus-critical from height 0.
+            // The current OpenCL/CUDA kernel path is CHv3-era, so route Cosmic to CPU fallback.
             let _batch_start = std::time::Instant::now();
-            let result = if Self::is_gpu_mineable(active_algo, device_platform, job.height as u32) {
+            let use_gpu_path = Self::is_gpu_mineable(active_algo, device_platform, job.height as u32);
+            let attempted_batch_size = if use_gpu_path {
+                batch_size
+            } else {
+                // CPU fallback must stay responsive on GPU thread.
+                // Keep small chunks to avoid long stalls and stale submissions.
+                batch_size.min(100)
+            };
+
+            let result = if use_gpu_path {
                 // Use GPU shader (fast path). For CosmicHarmony, the kernel handles both
                 // legacy (height < 100k) and memory-hard scratchpad (height >= 100k).
-                miner.mine_batch(&blob_bytes, &target_bytes, nonce_start, batch_size, job.height)
+                miner.mine_batch(&blob_bytes, &target_bytes, nonce_start, attempted_batch_size, job.height)
             } else {
                 // CPU fallback for algos GPU can't mine (RandomX, Yescrypt, etc.)
                 Self::cpu_fallback_batch(
@@ -959,12 +993,12 @@ impl UniversalMiner {
                     &job.target,
                     job.cosmic_state0_endian.as_deref(),
                     nonce_start,
-                    batch_size,
+                    attempted_batch_size,
                     job.height as u32,
                 )
             };
 
-            gpu_total_hashes += batch_size;
+            gpu_total_hashes += attempted_batch_size;
             batch_count += 1;
 
             // Report GPU hashrate every 10 batches (debug only)
@@ -982,7 +1016,7 @@ impl UniversalMiner {
 
             // Update shared stats with GPU hashes
             if let Ok(mut stats) = stats.try_write() {
-                stats.add_gpu_hashes(batch_size);
+                stats.add_gpu_hashes(attempted_batch_size);
             }
 
             match result {
@@ -991,9 +1025,23 @@ impl UniversalMiner {
                     let result_hex = hex::encode(hash);
                     let job_id = job.job_id.clone();
 
+                    // If job switched while we were hashing this batch, drop stale share.
+                    let current_job_id = {
+                        let guard = job_state.read().unwrap();
+                        guard.as_ref().map(|j| j.job_id.clone())
+                    };
+                    if current_job_id.as_deref() != Some(job_id.as_str()) {
+                        log::debug!(
+                            "GPU stale share dropped: solved_job={} current_job={}",
+                            job_id,
+                            current_job_id.unwrap_or_default()
+                        );
+                        continue;
+                    }
+
                     // ═══ GPU→CPU verification: re-hash on CPU and compare (debug opt-in) ═══
                     if gpu_verify_enabled {
-                        let cpu_hash = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_v3_with_height(
+                        let cpu_hash = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_with_height(
                             &blob_bytes, nonce, job.height,
                         );
                         let cpu_hex = hex::encode(&cpu_hash.data);
@@ -1074,7 +1122,22 @@ impl UniversalMiner {
                     // Submit share ASYNC — don't block GPU thread!
                     let submit_stratum = Arc::clone(&stratum);
                     let submit_stats = Arc::clone(&stats);
+                    let submit_job_state = Arc::clone(&job_state);
+                    let submit_job_id = job_id.clone();
                     tokio::runtime::Handle::current().spawn(async move {
+                        let current_job_id = {
+                            let guard = submit_job_state.read().unwrap();
+                            guard.as_ref().map(|j| j.job_id.clone())
+                        };
+                        if current_job_id.as_deref() != Some(submit_job_id.as_str()) {
+                            log::debug!(
+                                "GPU async stale submit dropped: solved_job={} current_job={}",
+                                submit_job_id,
+                                current_job_id.unwrap_or_default()
+                            );
+                            return;
+                        }
+
                         match submit_stratum
                             .submit_share(&job_id, nonce as u32, &result_hex)
                             .await
@@ -1112,7 +1175,7 @@ impl UniversalMiner {
             }
 
             // Advance nonce, wrap to 0 if it would exceed u32 range
-            let next = nonce_start.wrapping_add(batch_size);
+            let next = nonce_start.wrapping_add(attempted_batch_size);
             nonce_start = if next > u32::MAX as u64 {
                 nonce_seed
             } else {
@@ -1132,9 +1195,9 @@ impl UniversalMiner {
     fn is_gpu_mineable(algo: Algorithm, platform: gpu::GpuPlatform, height: u32) -> bool {
         let _ = height;
         match algo {
-            // CosmicHarmony v3/v4 — GPU implements both legacy and memory-hard scratchpad.
-            // The OpenCL kernel dispatches based on memory_hard flag passed from the host.
-            Algorithm::CosmicHarmony => true,
+            // CosmicHarmony CHv4 from genesis: route through CPU/native consensus hash path.
+            // GPU shader implementation is currently CHv3-era and may produce invalid shares.
+            Algorithm::CosmicHarmony => false,
             // Ethash/Autolykos — Metal has shaders, CUDA/OpenCL planned
             Algorithm::Ethash | Algorithm::Autolykos => {
                 matches!(platform, gpu::GpuPlatform::Metal)
