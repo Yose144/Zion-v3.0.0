@@ -101,6 +101,16 @@ impl Connection {
             format!("{:08x}", (h & 0xFFFF_FFFF) as u32)
         };
 
+        // Initial difficulty: read from ZION_POOL_INITIAL_DIFFICULTY env (default 500).
+        // At 26 H/s (CPU ARM64): diff 500 → share every ~19s — VarDiff calibrates immediately.
+        // At 3 MH/s (GPU):       diff 500 → ~6000 shares/s — VarDiff ramps up in first 30s.
+        // Hardcoded 500_000 was GPU-only and caused CPU miners to never submit a share.
+        let initial_difficulty: u64 = std::env::var("ZION_POOL_INITIAL_DIFFICULTY")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(500)
+            .max(1);
+
         Self {
             session_id,
             peer_addr,
@@ -112,9 +122,7 @@ impl Connection {
             user_agent: None,
             subscription_id: None,
             extranonce1,
-            difficulty: 500_000, // Default share difficulty for Cosmic Harmony
-            // GPU miners at 2-3 MH/s find ~1 share/15s at diff ~38M.
-            // Start lower so VarDiff can tune up quickly.
+            difficulty: initial_difficulty,
             last_activity: now,
             connected_at: now,
             shares_submitted: 0,
