@@ -34,7 +34,7 @@ fn make_coinbase(height: u64) -> Transaction {
     let mut tx = Transaction::new();
     tx.timestamp = 1770552000 + height * 60;
     tx.outputs = vec![TxOutput {
-        amount: r,
+        amount: r as u128,
         address: format!("zion1stress_miner_{:06}", height),
         memo: None,
     }];
@@ -46,7 +46,7 @@ fn make_tx(id_seed: u64, amount: u64) -> Transaction {
     let mut tx = Transaction::new();
     tx.timestamp = 1770552000 + id_seed;
     tx.outputs = vec![TxOutput {
-        amount,
+        amount: amount as u128,
         address: format!("zion1stress_recipient_{:06}", id_seed),
         memo: None,
     }];
@@ -145,9 +145,10 @@ fn test_stress_100_blocks_chain() {
     let elapsed = start.elapsed();
 
     assert_eq!(chain.height, 100);
+    // CHv4 with 512KB scratchpad is active from genesis — timing varies by hardware.
     assert!(
-        elapsed.as_millis() < 2000,
-        "100 blocks took {}ms",
+        elapsed.as_millis() < 60_000,
+        "100 blocks took {}ms (CHv4-adjusted limit: 60000ms)",
         elapsed.as_millis()
     );
     println!(
@@ -164,9 +165,10 @@ fn test_stress_500_blocks_chain() {
     let elapsed = start.elapsed();
 
     assert_eq!(chain.height, 500);
+    // CHv4 with 512KB scratchpad is active from genesis — timing varies by hardware.
     assert!(
-        elapsed.as_millis() < 10000,
-        "500 blocks took {}ms",
+        elapsed.as_millis() < 300_000,
+        "500 blocks took {}ms (CHv4-adjusted limit: 300000ms)",
         elapsed.as_millis()
     );
     println!(
@@ -542,7 +544,7 @@ fn test_supply_invariant_under_stress() {
     // With 100% DAO model, combined_burn == only fee burns (0 here)
     let reconstructed = stats
         .circulating_supply_atomic
-        .checked_add(stats.combined_burn_atomic)
+        .checked_add(stats.combined_burn_atomic as u128)
         .unwrap();
     assert_eq!(
         reconstructed,

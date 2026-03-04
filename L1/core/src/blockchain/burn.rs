@@ -127,9 +127,9 @@ pub struct BuybackStats {
     /// Total ZION sent to DAO (atomic units)
     pub total_zion_creators_rent_atomic: u64,
     /// Total ZION burned via L1 fee burning (tracked separately)
-    pub total_fees_burned_atomic: u64,
+    pub total_fees_burned_atomic: u128,
     /// Combined burn total (only fees — no BTC revenue burn)
-    pub combined_burn_atomic: u64,
+    pub combined_burn_atomic: u128,
     /// Number of revenue events
     pub buyback_count: u64,
     /// Timestamp of last event
@@ -158,7 +158,7 @@ pub struct BuybackStats {
 #[derive(Clone)]
 pub struct BuybackTracker {
     events: Arc<RwLock<Vec<BuybackEvent>>>,
-    fees_burned: Arc<RwLock<u64>>,
+    fees_burned: Arc<RwLock<u128>>,
     ledger_path: String,
 }
 
@@ -169,7 +169,7 @@ impl BuybackTracker {
         let events = Self::load_from_disk(&ledger_path);
         Self {
             events: Arc::new(RwLock::new(events)),
-            fees_burned: Arc::new(RwLock::new(0)),
+            fees_burned: Arc::new(RwLock::new(0u128)),
             ledger_path,
         }
     }
@@ -178,7 +178,7 @@ impl BuybackTracker {
     pub fn in_memory() -> Self {
         Self {
             events: Arc::new(RwLock::new(Vec::new())),
-            fees_burned: Arc::new(RwLock::new(0)),
+            fees_burned: Arc::new(RwLock::new(0u128)),
             ledger_path: String::new(),
         }
     }
@@ -223,7 +223,7 @@ impl BuybackTracker {
 
     /// Record fees burned in a block (called by state.process_block).
     /// Note: This is L1 fee burning, NOT BTC revenue burn.
-    pub fn add_fees_burned(&self, amount_atomic: u64) {
+    pub fn add_fees_burned(&self, amount_atomic: u128) {
         let mut fees = self.fees_burned.write().unwrap();
         *fees = fees.saturating_add(amount_atomic);
     }

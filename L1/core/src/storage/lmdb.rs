@@ -689,7 +689,7 @@ mod tests {
     }
 
     /// Helper: coinbase transaction paying `amount` to `address`.
-    fn coinbase_tx(address: &str, amount: u64) -> Transaction {
+    fn coinbase_tx(address: &str, amount: u128) -> Transaction {
         Transaction {
             id: ZERO_HASH.to_string(),
             version: 1,
@@ -712,7 +712,7 @@ mod tests {
     /// Helper: spending transaction — consumes `inputs` and creates `outputs`.
     fn spend_tx(
         inputs: Vec<(&str, u32)>,  // (prev_tx_hash, output_index)
-        outputs: Vec<(&str, u64)>, // (address, amount)
+        outputs: Vec<(&str, u128)>, // (address, amount)
     ) -> Transaction {
         let tx = Transaction {
             id: String::new(), // will be replaced by calculate_hash

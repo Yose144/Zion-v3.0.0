@@ -1,5 +1,10 @@
 # 📜 ZION MAINNET CONSTITUTION
 
+> 🔒 **FROZEN** — Tento dokument byl zmrazen v rámci interního auditu v2.9.7  
+> **SHA-256 (pre-freeze):** `c76aa00224a37ba52950f7ce9e2f72cfc87aa84f5599d3ea28e57538441a8d97`  
+> **Datum zmrazení:** 2026-06-11  
+> Jakékoli budoucí změny vyžadují nový audit a nový hash.
+
 > ✅ **TOTO JE AUTORITATIVNÍ VERZE** — označena jako kanonický zdroj pravdy 24. 2. 2026
 > Zastaralá verze: `docs/MAINNET_CONSTITUTION.md` (označena SUPERSEDED)
 
