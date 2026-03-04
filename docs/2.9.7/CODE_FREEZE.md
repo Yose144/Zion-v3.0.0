@@ -1,6 +1,6 @@
 # CODE FREEZE SIGN-OFF — ZION TerraNova v2.9.7
 
-> **Stav:** � FREEZE READY — všechny P0 gates splněny; Revenue 72h canary běží do 2026-03-06T21:00Z    
+> **Stav:** 🟢 FREEZE READY — všechny P0 gates splněny; **C-01/C-02 Genesis Ceremony 🚫 BLOCKED** — čeká na uzavření interního auditu (`docs/2.9.7/INTERNAL_AUDIT.md`)  
 > **Target tag:** `v2.9.7-freeze` → MainNet spuštění jako **v3.0**  
 > **Datum cíle:** 31. 3. 2026 (v2.9.7 freeze) · MainNet v3.0 po v2.9.8 + v2.9.9
 
@@ -8,13 +8,32 @@
 
 ---
 
-## Checklist sign-off
+## Audit Gate (REQUIRED před ceremonii)
+
+> Interní audit byl zahájen 2026-03-04. Dokument: `docs/2.9.7/INTERNAL_AUDIT.md`  
+> **Ceremonie NESMÍ proběhnout** dokud nejsou všechna KRITICKÁ 🔴 items v auditu označena ✅.
+
+- [ ] `INTERNAL_AUDIT.md` — sekce A: Konsensus ✅
+- [ ] `INTERNAL_AUDIT.md` — sekce B: Algoritmus CHv4 ✅
+- [ ] `INTERNAL_AUDIT.md` — sekce C: Pool ✅
+- [ ] `INTERNAL_AUDIT.md` — sekce D: Revenue ✅
+- [ ] `INTERNAL_AUDIT.md` — sekce E: Bezpečnost ✅
+- [ ] `INTERNAL_AUDIT.md` — sekce F: Infra ✅
+- [ ] `INTERNAL_AUDIT.md` — sekce G: Testy ✅
+- [ ] `INTERNAL_AUDIT.md` — sekce H: Tokenomika ✅
+- [ ] `INTERNAL_AUDIT.md` — sekce I: L2 Interface ✅
+- [ ] **AUDIT UZAVŘEN** — všechna kritická 🔴 ✅ → ceremonie povolená
+
+---
+
+## Checklis sign-off
 
 Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 
 ### Infrastruktura
 - [x] Pool Docker běží na Helsinki (port 3333+8080) — ověřeno live: height=10290, hashrate=1.92 MH/s, 1 aktivní těžař ✅ 2026-03-01
 - [x] Alertmanager Discord webhooky nakonfigurovány (`DISCORD_WEBHOOK_OPS` + `DISCORD_WEBHOOK_CRITICAL`, native discord_configs) — commit `<next>` ✅ 2026-03-01
+- [x] ~~Alertmanager Telegram tokeny~~ — ❌ **ZRUŠENO** 2026-03-04 (tokeny nejsou k dispozici, Discord dostačuje)
 - [x] `peers` health endpoint vrací číslo (ne null) — FIXED v kódu (`#[serde(rename="peers")]`) commit `c521c38`, ověřeno live na Helsinki pool ✅ 2026-03-04
 - [ ] SeedDE + Usa1 offline a odpojeny ze seed listu
 
@@ -54,7 +73,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [x] `blocks_rejected` alert threshold nastaven — `CoreBlocksRejectedHigh` (>5% 10min) + `CoreBlocksRejectedSurge` (>10/min 3min) — commit `c521c38` ✅ 2026-03-01
 
 ### Genesis
-- [x] `genesis.json` vytvořen OFFLINE, hash ověřen — 🟡 postup připraven v `docs/2.9.7/GENESIS_CEREMONY.md`, spustit při ceremonii
+- [x] `genesis.json` vytvořen OFFLINE, hash ověřen — � **BLOCKED:** C-01/C-02 ceremony čeká na `INTERNAL_AUDIT.md` uzavření (post audit gate)
 - [x] Premine adresy odpovídají `PREMINE_ADDRESSES_PUBLIC.txt` — ověřovací skripty v GENESIS_CEREMONY.md ✅ 2026-03-01
 - [x] GENESIS_MESSAGE.txt finalizován — `docs/2.9.7/GENESIS_MESSAGE.txt` ✅ 2026-03-01
 
