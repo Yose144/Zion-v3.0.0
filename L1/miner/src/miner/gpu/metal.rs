@@ -156,8 +156,9 @@ impl GpuMiner for MetalGpuMiner {
 pub fn detect_metal_devices() -> Result<Vec<GpuDevice>> {
     #[cfg(all(feature = "metal", target_os = "macos"))]
     {
-        // Try to create a MetalMiner to detect device
-        match zion_cosmic_harmony_v3::gpu::metal_miner::MetalMiner::new(500_000) {
+        // Try to create a MetalMiner to detect device — use tiny batch_size (no hashing).
+        // Large batch would allocate a huge scratchpad (batch × 512 KiB), causing OOM.
+        match zion_cosmic_harmony_v3::gpu::metal_miner::MetalMiner::new(64) {
             Ok(miner) => {
                 let info = miner.device_info();
                 Ok(vec![GpuDevice {
