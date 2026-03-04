@@ -426,7 +426,7 @@ export default function MissionControlDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/40 bg-cyan-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-cyan-400 uppercase">
                 <Activity className="h-4 w-4" />
-                ZION v2.9.7 · Pre-MainNet Gate
+                ZION v2.9.7 · 168h Stability PASS ✅
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Live Telemetry</p>
@@ -446,7 +446,7 @@ export default function MissionControlDashboard() {
                   <Sparkles className="h-3 w-3 text-zion-gold" /> 3 Nodes · 3 Continents
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-yellow-200">
-                  <AlertTriangle className="h-3 w-3" /> MainNet Go/No-Go: NO-GO
+                  <AlertTriangle className="h-3 w-3" /> MainNet Go/No-Go: NO-GO · 2 blokery
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? 'All Systems Healthy' : anyHealthy ? 'Partial Systems Up' : 'Systems Monitoring'}
@@ -503,12 +503,22 @@ export default function MissionControlDashboard() {
           </div>
         )}
 
+        {/* ══════════════ API OFFLINE FALLBACK ══════════════ */}
+        {!loading && !data && (
+          <div className="text-center py-16 text-gray-500 rounded-2xl border border-orange-500/20 bg-orange-500/5">
+            <Radio className="h-8 w-8 text-orange-400 mx-auto mb-3" />
+            <p className="text-orange-300 font-semibold">Live telemetry unavailable</p>
+            <p className="text-sm mt-1">Node API temporarily unreachable — roadmap &amp; constitution tabs still work.</p>
+            <button onClick={refresh} className="mt-4 px-4 py-2 text-xs rounded-xl border border-orange-400/30 text-orange-300 hover:bg-orange-500/10 transition-colors">Retry</button>
+          </div>
+        )}
+
         {/* ═══════════════════════════════════════════════
             TAB 1: DASHBOARD
            ═══════════════════════════════════════════════ */}
         {activeTab === 'dashboard' && data && (
           <div className="space-y-8">
-            {/* 72h Stability Run */}
+            {/* 168h Stability Run */}
             <motion.section
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -519,7 +529,7 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Stability</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Gauge className="h-7 w-7 text-cyan-400" />
-                  168h Stability Run — 3 Nodes · 3 Continents
+                  168h Stability Run — PASS ✅ · 3 Nodes · 3 Continents
                 </h2>
               </div>
               <BigProgress sr={sr} />
@@ -578,7 +588,7 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Codebase" value="52,590" sub="lines of Rust" color="text-cyan-400" />
                 <Stat label="Tests" value="780+" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="MainNet Gate" value="NO-GO" sub="B-CRIT-01..03 open" color="text-yellow-400" />
+                <Stat label="MainNet Gate" value="NO-GO" sub="B-CRIT-02+03 open · B-CRIT-01 ✓" color="text-yellow-400" />
                 <Stat label="Crates" value="5" sub="core, pool, miner, cosmic-harmony, native-libs" />
               </div>
             </motion.section>
@@ -677,8 +687,8 @@ export default function MissionControlDashboard() {
                 <p className="text-sm text-gray-400">Fáze 0 (Feb) → Fáze 5 (Dec 2026) · 168h stability PASS · pre-mainnet gate otevřená</p>
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
-                <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-purple-400 to-pink-400" initial={{ width: 0 }} animate={{ width: '45%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">Pre-MainNet Gate · NO-GO (3 kritické blokery)</span>
+                <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-purple-400 to-pink-400" initial={{ width: 0 }} animate={{ width: '52%' }} transition={{ duration: 1.2 }} />
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">Pre-MainNet Gate · NO-GO · 168h ✅ B-CRIT-01 ✅ · zbývá B-CRIT-02+03</span>
               </div>
             </motion.section>
 
@@ -701,7 +711,7 @@ export default function MissionControlDashboard() {
                 </tbody></table>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Hardened TestNet" pct={77} status="PROBÍHÁ" statusColor="border-cyan-400/30 bg-cyan-400/10 text-cyan-200" defaultOpen>
+              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Hardened TestNet" pct={85} status="PROBÍHÁ" statusColor="border-cyan-400/30 bg-cyan-400/10 text-cyan-200" defaultOpen>
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Únor — Březen 2026 | 168h stability PASS (2026-03-03)</p>
                 <table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Obsah</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Testy</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Stav</th></tr></thead><tbody>
                   <SprintRow name="1.0 Network Deploy" content="Chain reset, Docker, 3-server" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -714,7 +724,7 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.7 P2P Rate-Limit" content="200 msgs/peer/60s, escalating bans" tests="13" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.8 Health & Metrics" content="getHealthCheck, getMetrics" tests="8" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.9 Stress Tests" content="High-throughput TX, rapid blocks" tests="21" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.10 168h Stability" content="3 nody · 3 kontinenty · 7 dní — GATE" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> PASS</span>} highlight />
+                  <SprintRow name="1.10 168h Stability" content="3 nody · 3 kontinenty · 7 dní — GATE" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> PASS · 2026-03-03</span>} highlight />
                   <SprintRow name="1.11 Partition Test" content="Izolace node 30 min, reconnect" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.12 100 Miners" content="Simulace 100 Stratum klientů" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                 </tbody></table>
@@ -1144,9 +1154,9 @@ export default function MissionControlDashboard() {
                   </thead>
                   <tbody>
                     {[
-                      { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: '168h stability run', phase: '1.10', status: 'PASS', sColor: 'text-emerald-400' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'CHv4 activation policy + E2E', phase: 'B-CRIT-01', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Revenue wallets + 72h canary', phase: 'B-CRIT-02', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
+                      { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: '168h stability run · 3 nodes PASS ✅', phase: '1.10', status: 'PASS', sColor: 'text-emerald-400' },
+                      { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'CHv4 E2E 11/11 PASS + cosmic_harmony_v3', phase: 'B-CRIT-01', status: 'DONE', sColor: 'text-emerald-400' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'E-07 canary 72h + invalid shares fix', phase: 'B-CRIT-02', status: 'IN PROG', sColor: 'text-cyan-400', bg: 'bg-cyan-500/5' },
                       { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Genesis/freeze artefakty + sign-off', phase: 'B-CRIT-03', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Block explorer', phase: '2.3', status: 'HOTOVO', sColor: 'text-emerald-400' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Node UX ("10 min setup")', phase: '2.1', status: 'HOTOVO', sColor: 'text-emerald-400' },
@@ -1175,7 +1185,7 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova v2.9.7 — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella<br />
+          ZION TerraNova v2.9.7 · 168h Stability PASS ✅ · CHv4 cosmic_harmony_v3 live · B-CRIT-01 DONE<br />
           <em>&quot;On the Star — 6-Layer Architecture&quot;</em><br /><br />
           Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
         </div>
