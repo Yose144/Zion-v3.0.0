@@ -40,7 +40,7 @@ pub const MAX_TX_SIZE_BYTES: usize = 100_000;
 ///
 /// No single transaction output can exceed the total supply. This prevents
 /// overflow exploits and clearly invalid amounts.
-pub const MAX_OUTPUT_AMOUNT: u64 = 144_000_000_000 * 1_000_000; // 144B × 10^6
+pub const MAX_OUTPUT_AMOUNT: u128 = 144_000_000_000u128 * 1_000_000_000_000; // 144B x 10^12 flowers -- WP3.0
 
 // ---------------------------------------------------------------------------
 // Fee Calculation
@@ -107,7 +107,7 @@ pub fn validate_fee(fee: u64, tx_size_bytes: usize) -> Result<(), String> {
 /// - No output can be zero.
 /// - No output can exceed MAX_OUTPUT_AMOUNT.
 /// - Total outputs cannot exceed MAX_OUTPUT_AMOUNT.
-pub fn validate_output_amounts(outputs: &[(u64, &str)]) -> Result<(), String> {
+pub fn validate_output_amounts(outputs: &[(u128, &str)]) -> Result<(), String> {
     let mut total: u128 = 0;
 
     for (i, (amount, _addr)) in outputs.iter().enumerate() {
@@ -120,10 +120,10 @@ pub fn validate_output_amounts(outputs: &[(u64, &str)]) -> Result<(), String> {
                 i, amount, MAX_OUTPUT_AMOUNT
             ));
         }
-        total += *amount as u128;
+        total += *amount;
     }
 
-    if total > MAX_OUTPUT_AMOUNT as u128 {
+    if total > MAX_OUTPUT_AMOUNT {
         return Err(format!(
             "Total output amount {} exceeds maximum {}",
             total, MAX_OUTPUT_AMOUNT
@@ -329,6 +329,6 @@ mod tests {
 
     #[test]
     fn test_max_output_amount_equals_total_supply() {
-        assert_eq!(MAX_OUTPUT_AMOUNT, 144_000_000_000_000_000);
+        assert_eq!(MAX_OUTPUT_AMOUNT, 144_000_000_000_000_000_000_000u128);
     }
 }

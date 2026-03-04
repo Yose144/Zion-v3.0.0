@@ -135,7 +135,8 @@ pub struct BuybackStats {
     /// Timestamp of last event
     pub last_buyback_timestamp: u64,
     /// Effective circulating supply = TOTAL_SUPPLY - fee_burns
-    pub circulating_supply_atomic: u64,
+    /// Circulating supply in atomic units (total minus burned fees)
+    pub circulating_supply_atomic: u128,
     /// Deflation rate (%) = fee_burns / TOTAL_SUPPLY × 100
     pub deflation_rate_percent: f64,
     /// Revenue split: burn share (%) — always 0
@@ -238,7 +239,7 @@ impl BuybackTracker {
         let combined = fees_burned;
 
         let total_supply = crate::blockchain::premine::TOTAL_SUPPLY;
-        let circulating = total_supply.saturating_sub(combined);
+        let circulating = total_supply.saturating_sub(combined as u128);
         let deflation = if total_supply > 0 {
             (combined as f64 / total_supply as f64) * 100.0
         } else {
@@ -306,7 +307,7 @@ impl BuybackTracker {
 ///
 /// Returns the total amount burned (sum of outputs to BURN_ADDRESS), or 0
 /// if no outputs go to the burn address.
-pub fn verify_burn_tx(tx: &crate::tx::Transaction) -> u64 {
+pub fn verify_burn_tx(tx: &crate::tx::Transaction) -> u128 {
     tx.outputs
         .iter()
         .filter(|o| is_burn_address(&o.address))
@@ -315,13 +316,13 @@ pub fn verify_burn_tx(tx: &crate::tx::Transaction) -> u64 {
 }
 
 /// Format ZION amount from atomic units to human-readable string.
-pub fn format_zion(atomic: u64) -> String {
-    let whole = atomic / 1_000_000;
-    let frac = atomic % 1_000_000;
+pub fn format_zion(atomic: u128) -> String {
+    let whole = atomic / 1_000_000_000_000;
+    let frac = atomic % 1_000_000_000_000;
     if frac == 0 {
         format!("{} ZION", whole)
     } else {
-        format!("{}.{:06} ZION", whole, frac)
+        format!("{}.{:012} ZION", whole, frac)
     }
 }
 
@@ -534,7 +535,7 @@ mod tests {
         let stats = tracker.get_stats();
         assert_eq!(
             stats.circulating_supply_atomic,
-            crate::blockchain::premine::TOTAL_SUPPLY - 1_000_000
+            crate::blockchain::premine::TOTAL_SUPPLY - 1_000_000u128
         );
     }
 
@@ -620,10 +621,10 @@ mod tests {
 
     #[test]
     fn test_format_zion() {
-        assert_eq!(format_zion(1_000_000), "1 ZION");
-        assert_eq!(format_zion(5_400_067_000), "5400.067000 ZION");
+        assert_eq!(format_zion(1_000_000_000_000), "1 ZION");
+        assert_eq!(format_zion(5_400_067_000_000_000), "5400.067000000000 ZION");
         assert_eq!(format_zion(0), "0 ZION");
-        assert_eq!(format_zion(500_000), "0.500000 ZION");
+        assert_eq!(format_zion(500_000_000_000), "0.500000000000 ZION");
     }
 
     #[test]

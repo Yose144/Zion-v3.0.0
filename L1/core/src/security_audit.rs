@@ -344,9 +344,9 @@ async fn test_fuzz_transaction_parsing(state: &State, results: &mut SecurityAudi
 /// Test edge case values
 async fn test_edge_case_values(state: &State, results: &mut SecurityAuditResults) {
     // Test with edge values
-    let edge_cases = vec![
-        (u64::MAX, "u64::MAX amount"),
-        (u64::MIN, "u64::MIN amount"),
+    let edge_cases: Vec<(u128, &str)> = vec![
+        (u64::MAX as u128, "u64::MAX amount"),
+        (u64::MIN as u128, "u64::MIN amount"),
         (1, "1 satoshi"),
     ];
 
@@ -359,7 +359,7 @@ async fn test_edge_case_values(state: &State, results: &mut SecurityAuditResults
         let result = state.process_transaction(tx);
 
         // u64::MAX should be rejected (overflow risk)
-        if amount == u64::MAX && result.is_ok() {
+        if amount == u64::MAX as u128 && result.is_ok() {
             issues += 1;
         }
     }
@@ -483,7 +483,7 @@ fn generate_random_transaction(rng: &mut ChaCha8Rng) -> Transaction {
         }],
         outputs: vec![TxOutput {
             address: format!("zion1{:039x}", rng.gen::<u128>()),
-            amount: rng.gen::<u64>() % 1_000_000,
+            amount: (rng.gen::<u64>() % 1_000_000) as u128,
             memo: None,
         }],
         fee: 100,
@@ -524,7 +524,7 @@ fn generate_large_transaction(
     let outputs: Vec<TxOutput> = (0..num_outputs)
         .map(|_| TxOutput {
             address: format!("zion1{:039x}", rng.gen::<u128>()),
-            amount: rng.gen::<u64>() % 1_000_000,
+            amount: (rng.gen::<u64>() % 1_000_000) as u128,
             memo: None,
         })
         .collect();
@@ -582,7 +582,7 @@ fn generate_fuzzed_transaction(rng: &mut ChaCha8Rng) -> Transaction {
             address: (0..rng.gen::<usize>() % 64)
                 .map(|_| format!("{:x}", rng.gen::<u8>()))
                 .collect(),
-            amount: rng.gen::<u64>(),
+            amount: rng.gen::<u64>() as u128,
             memo: None,
         })
         .collect();
@@ -597,7 +597,7 @@ fn generate_fuzzed_transaction(rng: &mut ChaCha8Rng) -> Transaction {
     }
 }
 
-fn generate_transaction_with_amount(rng: &mut ChaCha8Rng, amount: u64) -> Transaction {
+fn generate_transaction_with_amount(rng: &mut ChaCha8Rng, amount: u128) -> Transaction {
     Transaction {
         id: format!("{:064x}", rng.gen::<u64>()),
         version: 1,

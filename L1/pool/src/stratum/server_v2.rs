@@ -2055,8 +2055,8 @@ impl StratumServer {
                 "status": "registered",
                 "version": "1.0",
                 "supported_task_types": ["hash_chaining_v1"],
-                "task_fee_percent": 10,
-                "miner_share_percent": 85,
+                "task_fee_percent": 1,
+                "miner_share_percent": 89, // WP3.0 §5.5: 89% miners
                 "session_id": session_id
             }),
         );
