@@ -1,6 +1,6 @@
 {
   "name": "zion-desktop-agent",
-  "version": "2.9.6",
+  "version": "2.9.7",
   "description": "ZION TerraNova Desktop Mining Agent - Professional mining software with consciousness evolution",
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
