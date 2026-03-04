@@ -79,6 +79,10 @@ def _find_chv4_library() -> str:
         project_root / "L1" / "native-libs" / name,
         project_root / "L1" / "native-libs" / "all" / name,
         project_root / name,
+        # Electron packaged: resources/native-libs/ (bundled by prepare-rust-miner.js)
+        this_file.parent.parent / "native-libs" / name,
+        # Also directly in resources/
+        this_file.parent.parent / name,
         this_file.parent / name,
         this_file.parent / "lib" / name,
         Path("/usr/local/lib") / name,

@@ -425,7 +425,9 @@ impl Chain {
                 .ok_or_else(|| format!("Missing block at height {}", height))?;
 
             let prev_block = if height > 0 {
-                Some(blocks.get(&(height - 1)).unwrap())
+                Some(blocks.get(&(height - 1)).ok_or_else(|| {
+                    format!("Chain gap: missing block at height {}", height - 1)
+                })?)
             } else {
                 None
             };
