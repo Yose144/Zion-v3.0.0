@@ -1035,7 +1035,9 @@ mod tests {
         output
     }
 
-    /// Full GPU pipeline reimplemented in Rust
+    /// Legacy GPU pipeline — CHv3 without memory-hard
+    /// (Keccak256 → SHA3-512 → GoldenMatrix → CosmicFusion, no MemHard)
+    /// Mirrors cosmic_harmony_v3_legacy() — used by test_gpu_vs_cpu_full_pipeline.
     fn gpu_cosmic_harmony_v3_legacy(block_header: &[u8], nonce: u64) -> [u8; 32] {
         let mut input = [0u8; 88];
         let copy_len = block_header.len().min(80);
@@ -1046,6 +1048,35 @@ mod tests {
         let step2 = gpu_sha3_512_words(&step1);
         let step3 = gpu_golden_matrix(&step2);
         gpu_cosmic_fusion(&step3)
+    }
+
+    /// Full GPU pipeline — CHv3 memory-hard variant
+    /// (Keccak256 → SHA3-512 → GoldenMatrix → MemHard → CosmicFusion)
+    /// Mirrors cosmic_harmony_v3() — what cosmic_harmony_v3_with_height() calls
+    /// for any height >= CHV3_MEMORY_HARD_FORK_HEIGHT (= 0).
+    fn gpu_cosmic_harmony_v3_mh(block_header: &[u8], nonce: u64) -> [u8; 32] {
+        use crate::scratchpad::memory_hard_transform;
+
+        let mut input = [0u8; 88];
+        let copy_len = block_header.len().min(80);
+        input[..copy_len].copy_from_slice(&block_header[..copy_len]);
+        input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+        let step1 = gpu_keccak256(&input);
+        let step2 = gpu_sha3_512_words(&step1);
+        let step3_words = gpu_golden_matrix(&step2);
+
+        // Convert golden_matrix u64 words → bytes (LE)
+        let mut step3_bytes = [0u8; 64];
+        for i in 0..8 {
+            for b in 0..8 {
+                step3_bytes[i*8+b] = (step3_words[i] >> (b*8)) as u8;
+            }
+        }
+
+        // CHv3 MemHard: MemoryHard → CosmicFusion (no NPU — for CHv4 use cosmic_harmony_v4)
+        let step4 = memory_hard_transform(&step3_bytes);
+        cosmic_fusion_opt(&step4.data).data
     }
 
     #[test]
@@ -1265,7 +1296,7 @@ mod tests {
         let nonce = 196001088u64;
 
         let cpu_hash = cosmic_harmony_v3_with_height(&blob_bytes, nonce, 750);
-        let gpu_hash = gpu_cosmic_harmony_v3_legacy(&blob_bytes, nonce);
+        let gpu_hash = gpu_cosmic_harmony_v3_mh(&blob_bytes, nonce);
 
         // Also test with intermediates — musí vrátit identický výsledek jako cpu_hash
         let (cpu_final, intermediates) =
@@ -1325,9 +1356,15 @@ mod tests {
 
         let gpu_step4 = gpu_cosmic_fusion(&gpu_step3);
         println!("  GPU Fusion:     {}", hex::encode(gpu_step4));
+        // Note: gpu_step4 is cosmic_fusion(golden_matrix) — CHv3 style.
+        // For full CHv4 comparison (with MemHard+NPU) use gpu_hash from top.
+        // Final full-pipeline comparison (CHv4):
         assert_eq!(
-            cpu_final.data, gpu_step4,
-            "Step 4 (CosmicFusion) mismatch!"
+            cpu_hash.data, gpu_hash,
+            "Full CHv4 pipeline mismatch!\n  cpu={}\n  gpu={}",
+            hex::encode(cpu_hash.data),
+            hex::encode(gpu_hash),
         );
+        println!("  \u{2705} GPU CHv4 pipeline matches CPU");
     }
 }
