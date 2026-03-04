@@ -223,6 +223,17 @@ impl MetalMiner {
         // ── CHv4: scratchpad buffer — each thread gets 512 KiB ──
         let scratchpad_bytes = (batch_size as u64) * 524_288u64;
         let scratchpad_buf = device.new_buffer(scratchpad_bytes, options);
+        // Guard against Metal returning nil (OOM) — buffer.length() would be 0.
+        let allocated = scratchpad_buf.length();
+        if allocated < scratchpad_bytes {
+            return Err(MetalError::InitFailed(format!(
+                "Scratchpad buffer allocation failed: requested {} MiB, got {} bytes. \
+                 Reduce batch_size (current={}) or free VRAM.",
+                scratchpad_bytes / (1024 * 1024),
+                allocated,
+                batch_size,
+            )));
+        }
         log::debug!(
             "   Scratchpad: {} MiB total ({} threads × 512 KiB)",
             scratchpad_bytes / (1024 * 1024),
@@ -562,6 +573,7 @@ pub enum MetalError {
     CompileError(String),
     PipelineError(String),
     BufferError(String),
+    InitFailed(String),
 }
 
 impl std::fmt::Display for MetalError {
@@ -572,6 +584,7 @@ impl std::fmt::Display for MetalError {
             Self::CompileError(s) => write!(f, "Shader compile error: {}", s),
             Self::PipelineError(s) => write!(f, "Pipeline error: {}", s),
             Self::BufferError(s) => write!(f, "Buffer error: {}", s),
+            Self::InitFailed(s) => write!(f, "Init failed: {}", s),
         }
     }
 }

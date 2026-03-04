@@ -138,8 +138,21 @@ pub fn detect_gpus() -> Result<Vec<GpuDevice>> {
 pub fn create_miner(device: &GpuDevice) -> Result<Box<dyn GpuMiner>> {
     match device.platform {
         GpuPlatform::Metal => {
-            // Metal: use 500K batch for optimal throughput on Apple Silicon
-            let miner = MetalGpuMiner::new(500_000)?;
+            // CHv4 scratchpad: 524288 bytes (512 KiB) per thread.
+            // Limit to ~20% of available Metal VRAM to avoid OOM.
+            // Example: M1 5461 MB → 1092 MB / 512 KiB = 2184 threads (≈1 GB scratchpad).
+            let scratchpad_per_thread_bytes: usize = 524_288;
+            let safe_vram_bytes = (device.memory_mb as usize * 1024 * 1024) / 5; // 20%
+            let batch = (safe_vram_bytes / scratchpad_per_thread_bytes)
+                .max(512)
+                .min(8192);
+            log::info!(
+                "Metal CHv4 batch_size={} ({} MiB scratchpad, VRAM={} MiB)",
+                batch,
+                batch * scratchpad_per_thread_bytes / (1024 * 1024),
+                device.memory_mb
+            );
+            let miner = MetalGpuMiner::new(batch)?;
             Ok(Box::new(miner))
         }
         GpuPlatform::Cuda => {
