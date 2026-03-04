@@ -29,8 +29,8 @@ use ed25519_dalek::{Signer, SigningKey};
 pub struct Recipient {
     /// Destination zion1 address
     pub address: String,
-    /// Amount in atomic units
-    pub amount: u64,
+    /// Amount in flowers (atomic units)
+    pub amount: u128,
 }
 
 /// Parameters for building a batch transaction.
@@ -50,13 +50,13 @@ pub struct BatchResult {
     /// The signed, ready-to-broadcast transaction
     pub transaction: Transaction,
     /// Total input amount consumed
-    pub total_input: u64,
+    pub total_input: u128,
     /// Total amount sent to all recipients (sum of outputs, excl. change)
-    pub total_sent: u64,
+    pub total_sent: u128,
     /// Fee paid (burned)
     pub fee: u64,
     /// Change returned to sender
-    pub change: u64,
+    pub change: u128,
     /// Number of UTXOs consumed
     pub inputs_used: usize,
     /// Number of recipients paid
@@ -72,8 +72,8 @@ pub struct BatchResult {
 /// We cap at 200 for safety (leaving room for inputs + overhead).
 pub const MAX_BATCH_RECIPIENTS: usize = 200;
 
-/// Minimum payout amount: 10 ZION = 10_000_000 atomic
-pub const MIN_PAYOUT_AMOUNT: u64 = 10_000_000;
+/// Minimum payout amount: 10 ZION = 10_000_000_000_000 flowers (12 decimal places — WP3.0)
+pub const MIN_PAYOUT_AMOUNT: u128 = 10_000_000_000_000;
 
 // ---------------------------------------------------------------------------
 // UTXO Selection for Batch
@@ -83,7 +83,7 @@ pub const MIN_PAYOUT_AMOUNT: u64 = 10_000_000;
 /// Uses largest-first strategy (same as single tx).
 fn select_utxos_for_batch(
     available: &[SpendableUtxo],
-    total_amount: u64,
+    total_amount: u128,
     num_recipients: usize,
     explicit_fee: Option<u64>,
 ) -> Result<(Vec<SpendableUtxo>, u64), WalletError> {
@@ -95,7 +95,7 @@ fn select_utxos_for_batch(
     sorted.sort_by(|a, b| b.amount.cmp(&a.amount));
 
     let mut selected: Vec<SpendableUtxo> = Vec::new();
-    let mut total: u64 = 0;
+    let mut total: u128 = 0;
 
     for utxo in &sorted {
         selected.push(utxo.clone());
@@ -105,17 +105,17 @@ fn select_utxos_for_batch(
         let fee_no_change = estimate_batch_fee(selected.len(), num_recipients, explicit_fee);
         let fee_with_change = estimate_batch_fee(selected.len(), num_recipients + 1, explicit_fee);
 
-        if total == total_amount + fee_no_change {
+        if total == total_amount + fee_no_change as u128 {
             // Exact match, no change needed
             return Ok((selected, fee_no_change));
         }
-        if total >= total_amount + fee_with_change {
+        if total >= total_amount + fee_with_change as u128 {
             // Enough to cover amount + fee + change output
             return Ok((selected, fee_with_change));
         }
     }
 
-    let needed = total_amount + estimate_batch_fee(sorted.len(), num_recipients + 1, explicit_fee);
+    let needed = total_amount + estimate_batch_fee(sorted.len(), num_recipients + 1, explicit_fee) as u128;
     Err(WalletError::InsufficientFunds {
         available: total,
         needed,
@@ -178,7 +178,7 @@ pub fn build_and_sign_batch(
     }
 
     // 2. Calculate total payout amount
-    let total_payout: u64 = params.recipients.iter().map(|r| r.amount).sum();
+    let total_payout: u128 = params.recipients.iter().map(|r| r.amount).sum();
 
     // 3. Select UTXOs
     let (selected, tx_fee) = select_utxos_for_batch(
@@ -187,8 +187,8 @@ pub fn build_and_sign_batch(
         params.recipients.len(),
         params.fee,
     )?;
-    let total_input: u64 = selected.iter().map(|u| u.amount).sum();
-    let change = total_input - total_payout - tx_fee;
+    let total_input: u128 = selected.iter().map(|u| u.amount).sum();
+    let change = total_input - total_payout - tx_fee as u128;
 
     // 4. Validate fee
     let num_outputs = params.recipients.len() + if change > 0 { 1 } else { 0 };
@@ -312,7 +312,7 @@ mod tests {
         (addr, secret)
     }
 
-    fn make_utxo(tx_hash: &str, index: u32, amount: u64, address: &str) -> SpendableUtxo {
+    fn make_utxo(tx_hash: &str, index: u32, amount: u128, address: &str) -> SpendableUtxo {
         SpendableUtxo {
             key: format!("{}:{}", tx_hash, index),
             tx_hash: tx_hash.to_string(),

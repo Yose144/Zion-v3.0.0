@@ -402,7 +402,7 @@ pub struct Config {
     pub core_rpc_url: String,
     #[serde(default)]
     pub pool_wallet: String,
-    /// Humanitarian tithe destination wallet (10% of block reward)
+    /// Humanitarian tithe destination wallet (5% of block reward — WP3.0 §5.5)
     #[serde(default)]
     pub humanitarian_wallet: String,
     pub api_listen: String,
@@ -422,7 +422,7 @@ pub struct Config {
     pub payout_confirm_timeout_seconds: u64,
     #[serde(default)]
     pub pool_fee_percent: f64,
-    /// Humanitarian tithe percentage (default 10%)
+    /// Humanitarian tithe percentage (default 5% — WP3.0 §5.5: 5% humanitarian / 5% issobella / 1% pool / 89% miners)
     #[serde(default = "default_tithe_percent")]
     pub humanitarian_tithe_percent: f64,
     #[serde(default)]
@@ -430,7 +430,7 @@ pub struct Config {
 }
 
 fn default_tithe_percent() -> f64 {
-    10.0
+    5.0
 }
 
 impl Config {
@@ -452,7 +452,7 @@ impl Config {
             payout_batch_limit: 50,
             payout_confirm_timeout_seconds: 3600,
             pool_fee_percent: 1.0,
-            humanitarian_tithe_percent: 10.0,
+            humanitarian_tithe_percent: 5.0, // WP3.0 §5.5: 5% humanitarian
             revenue: RevenueSettings::default(),
         };
         if let Ok(l) = std::env::var("ZION_POOL_LISTEN") {
@@ -489,7 +489,7 @@ impl Config {
             cfg.humanitarian_wallet = w;
         }
         if let Ok(p) = std::env::var("ZION_HUMANITARIAN_TITHE_PERCENT") {
-            cfg.humanitarian_tithe_percent = p.parse().unwrap_or(10.0);
+            cfg.humanitarian_tithe_percent = p.parse().unwrap_or(5.0);
         }
         if let Ok(a) = std::env::var("ZION_POOL_API") {
             cfg.api_listen = a;
@@ -595,12 +595,12 @@ impl Config {
             cfg.pool_fee_percent = 1.0;
         }
         if cfg.humanitarian_tithe_percent <= 0.0 {
-            cfg.humanitarian_tithe_percent = 10.0;
+            cfg.humanitarian_tithe_percent = 5.0; // WP3.0 §5.5
         }
         // Warn if humanitarian wallet is not configured
         if cfg.humanitarian_wallet.is_empty() {
             eprintln!(
-                "⚠️  ZION_HUMANITARIAN_WALLET not set — 10% tithe will accumulate in pool wallet"
+                "⚠️  ZION_HUMANITARIAN_WALLET not set — 5% tithe will accumulate in pool wallet"
             );
         } else {
             println!(

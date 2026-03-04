@@ -56,7 +56,7 @@ pub async fn handle(
             let mut coinbase = Transaction::new();
             coinbase.timestamp = timestamp;
             coinbase.outputs = vec![TxOutput {
-                amount: r,
+                amount: r as u128,
                 address: wallet_address.to_string(),
                 memo: None,
             }];
@@ -148,8 +148,8 @@ pub async fn handle(
                         result: Some(serde_json::json!({
                             "address": addr,
                             "utxo_count": count,
-                            "balance_atomic": total,
-                            "balance_zion": (total as f64) / 1_000_000.0
+                            "balance_atomic": total.to_string(),
+                            "balance_zion": (total as f64) / 1_000_000_000_000.0
                         })),
                         error: None,
                     },
@@ -663,7 +663,7 @@ pub async fn handle(
 
                     match (addr_opt, amount_opt) {
                         (Some(addr), Some(amount)) if amount > 0.0 => {
-                            let amount_atomic = (amount * 1_000_000.0) as u64;
+                            let amount_atomic = (amount * 1_000_000_000_000.0) as u128;
 
                             // Credit balance directly to storage
                             if let Err(e) = state.storage.credit_balance(&addr, amount_atomic) {
@@ -689,10 +689,10 @@ pub async fn handle(
                                     result: Some(serde_json::json!({
                                         "status": "OK",
                                         "address": addr,
-                                        "credited_atomic": amount_atomic,
+                                        "credited_atomic": amount_atomic.to_string(),
                                         "credited_zion": amount,
-                                        "new_balance_atomic": new_balance,
-                                        "new_balance_zion": (new_balance as f64) / 1_000_000.0
+                                        "new_balance_atomic": new_balance.to_string(),
+                                        "new_balance_zion": (new_balance as f64) / 1_000_000_000_000.0
                                     })),
                                     error: None,
                                 }
@@ -761,7 +761,7 @@ pub async fn handle(
 
             match (from_opt, to_opt, amount_opt) {
                 (Some(from), Some(to), Some(amount)) if amount > 0.0 => {
-                    let amount_atomic = (amount * 1_000_000.0) as u64;
+                    let amount_atomic = (amount * 1_000_000_000_000.0) as u128;
 
                     // Check sender balance
                     let sender_balance = state
@@ -827,7 +827,7 @@ pub async fn handle(
                         if let Ok(sender_utxos) =
                             state.storage.get_utxos_for_address(&from, 1000, 0)
                         {
-                            let mut remaining = amount_atomic;
+                            let mut remaining: u128 = amount_atomic;
                             for (key, utxo) in sender_utxos {
                                 if remaining == 0 {
                                     break;
@@ -1023,7 +1023,7 @@ pub async fn handle(
                                     let mut coinbase = Transaction::new();
                                     coinbase.timestamp = header.timestamp; // MUST match template timestamp
                                     coinbase.outputs = vec![TxOutput {
-                                        amount: reward,
+                                        amount: reward as u128,
                                         address: wallet.to_string(),
                                         memo: None,
                                     }];
@@ -1230,12 +1230,12 @@ pub async fn handle(
                     "total_btc_burn_sats": stats.total_btc_burn_sats,
                     "total_btc_creators_sats": stats.total_btc_creators_sats,
                     "total_zion_burned_atomic": stats.total_zion_burned_atomic,
-                    "total_zion_burned_zion": stats.total_zion_burned_atomic / 1_000_000,
+                    "total_zion_burned_zion": stats.total_zion_burned_atomic / 1_000_000_000_000u64,
                     "total_zion_creators_rent_atomic": stats.total_zion_creators_rent_atomic,
-                    "total_zion_creators_rent_zion": stats.total_zion_creators_rent_atomic / 1_000_000,
+                    "total_zion_creators_rent_zion": stats.total_zion_creators_rent_atomic / 1_000_000_000_000u64,
                     "total_fees_burned_atomic": stats.total_fees_burned_atomic,
                     "combined_burn_atomic": stats.combined_burn_atomic,
-                    "circulating_supply_atomic": stats.circulating_supply_atomic,
+                    "circulating_supply_atomic": stats.circulating_supply_atomic.to_string(),
                     "deflation_rate_percent": stats.deflation_rate_percent,
                     "buyback_count": stats.buyback_count,
                     "last_buyback_timestamp": stats.last_buyback_timestamp,

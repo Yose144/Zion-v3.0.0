@@ -396,9 +396,9 @@ fn main() -> Result<()> {
             let sk_bytes = hex_to_32(&w.secret_key_hex)
                 .ok_or_else(|| anyhow!("Invalid secret key in wallet file"))?;
 
-            // Convert ZION amounts to atomic units (1 ZION = 1,000,000 atomic)
-            let amount_atomic = (amount * 1_000_000.0) as u64;
-            let fee_atomic = fee.map(|f| (f * 1_000_000.0) as u64);
+            // Convert ZION amounts to flowers (1 ZION = 1,000,000,000,000 flowers — WP3.0)
+            let amount_atomic: u128 = (amount * 1_000_000_000_000.0) as u128;
+            let fee_atomic = fee.map(|f| (f * 1_000_000_000_000.0) as u64);
 
             if amount_atomic == 0 {
                 return Err(anyhow!("Amount must be > 0"));
@@ -428,7 +428,9 @@ fn main() -> Result<()> {
                         key: key.to_string(),
                         tx_hash,
                         output_index,
-                        amount: u["amount"].as_u64()?,
+                        amount: u["amount"].as_str()
+                            .and_then(|s| s.parse::<u128>().ok())
+                            .or_else(|| u["amount"].as_u64().map(|x| x as u128))?,
                         address: u["address"].as_str()?.to_string(),
                     })
                 })
@@ -454,7 +456,7 @@ fn main() -> Result<()> {
             println!("TX ID:      {}", result.transaction.id);
             println!("To:         {}", to);
             println!(
-                "Amount:     {:.6} ZION",
+                "Amount:     {:.12} ZION",
                 result.amount_sent as f64 / 1_000_000.0
             );
             println!(

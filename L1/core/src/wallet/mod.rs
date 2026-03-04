@@ -30,8 +30,8 @@ pub struct SpendableUtxo {
     pub tx_hash: String,
     /// The output index within that transaction
     pub output_index: u32,
-    /// Amount in atomic units
-    pub amount: u64,
+    /// Amount in flowers (atomic units)
+    pub amount: u128,
     /// Owner address
     pub address: String,
 }
@@ -42,7 +42,7 @@ pub struct SendParams {
     /// Destination address
     pub to_address: String,
     /// Amount to send (atomic units)
-    pub amount: u64,
+    pub amount: u128,
     /// Optional explicit fee (atomic units). If None, auto-calculated.
     pub fee: Option<u64>,
     /// Change address (sender's own address)
@@ -55,13 +55,13 @@ pub struct BuildResult {
     /// The signed, ready-to-broadcast transaction
     pub transaction: Transaction,
     /// Total input amount
-    pub total_input: u64,
+    pub total_input: u128,
     /// Amount sent to recipient
-    pub amount_sent: u64,
+    pub amount_sent: u128,
     /// Fee paid (burned)
     pub fee: u64,
     /// Change returned to sender
-    pub change: u64,
+    pub change: u128,
     /// Number of UTXOs consumed
     pub inputs_used: usize,
 }
@@ -73,7 +73,7 @@ pub struct BuildResult {
 #[derive(Debug, Clone, PartialEq)]
 pub enum WalletError {
     /// Not enough balance to cover amount + fee
-    InsufficientFunds { available: u64, needed: u64 },
+    InsufficientFunds { available: u128, needed: u128 },
     /// No UTXOs available
     NoUtxos,
     /// Invalid destination address
@@ -115,7 +115,7 @@ impl std::fmt::Display for WalletError {
 /// The fee is recalculated based on the number of inputs/outputs selected.
 pub fn select_utxos(
     available: &[SpendableUtxo],
-    target_amount: u64,
+    target_amount: u128,
     explicit_fee: Option<u64>,
 ) -> Result<(Vec<SpendableUtxo>, u64), WalletError> {
     if available.is_empty() {
@@ -128,7 +128,7 @@ pub fn select_utxos(
 
     // Iteratively select UTXOs until we cover amount + fee
     let mut selected: Vec<SpendableUtxo> = Vec::new();
-    let mut total: u64 = 0;
+    let mut total: u128 = 0;
 
     for utxo in &sorted {
         selected.push(utxo.clone());
@@ -136,17 +136,17 @@ pub fn select_utxos(
 
         // Estimate fee based on current selection
         // Outputs: 1 (recipient) + potentially 1 (change)
-        let has_change = total > target_amount + estimate_fee(selected.len(), 2, explicit_fee);
+        let has_change = total > target_amount + estimate_fee(selected.len(), 2, explicit_fee) as u128;
         let num_outputs = if has_change { 2 } else { 1 };
         let current_fee = estimate_fee(selected.len(), num_outputs, explicit_fee);
 
-        if total >= target_amount + current_fee {
+        if total >= target_amount + current_fee as u128 {
             return Ok((selected, current_fee));
         }
     }
 
     // Not enough
-    let needed = target_amount + estimate_fee(sorted.len(), 2, explicit_fee);
+    let needed = target_amount + estimate_fee(sorted.len(), 2, explicit_fee) as u128;
     Err(WalletError::InsufficientFunds {
         available: total,
         needed,
@@ -193,8 +193,8 @@ pub fn build_and_sign(
 
     // 2. Select UTXOs
     let (selected, tx_fee) = select_utxos(available_utxos, params.amount, params.fee)?;
-    let total_input: u64 = selected.iter().map(|u| u.amount).sum();
-    let change = total_input - params.amount - tx_fee;
+    let total_input: u128 = selected.iter().map(|u| u.amount).sum();
+    let change = total_input - params.amount - tx_fee as u128;
 
     // 3. Validate fee
     let num_outputs = if change > 0 { 2 } else { 1 };
@@ -315,7 +315,7 @@ mod tests {
         keys::address_from_public_key_hex(&pk_hex)
     }
 
-    fn make_utxo(key: &str, tx_hash: &str, index: u32, amount: u64) -> SpendableUtxo {
+    fn make_utxo(key: &str, tx_hash: &str, index: u32, amount: u128) -> SpendableUtxo {
         SpendableUtxo {
             key: key.to_string(),
             tx_hash: tx_hash.to_string(),

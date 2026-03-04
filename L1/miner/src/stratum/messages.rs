@@ -117,6 +117,7 @@ pub struct StratumResponse {
 pub struct StratumError {
     pub code: i32,
     pub message: String,
+    pub data: Option<Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

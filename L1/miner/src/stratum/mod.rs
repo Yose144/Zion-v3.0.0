@@ -407,6 +407,14 @@ impl StratumClient {
         match timeout(Duration::from_secs(10), rx).await {
             Ok(Ok(resp)) => {
                 if let Some(err) = &resp.error {
+                    if let Some(data) = &err.data {
+                        return Err(anyhow!(
+                            "Stratum error {}: {} data={}",
+                            err.code,
+                            err.message,
+                            data
+                        ));
+                    }
                     return Err(anyhow!("Stratum error {}: {}", err.code, err.message));
                 }
                 Ok(resp)

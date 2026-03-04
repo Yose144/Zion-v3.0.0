@@ -251,9 +251,9 @@ pub fn validate_block(
         }
 
         // Validate coinbase reward — FEES ARE BURNED, coinbase ≤ block reward only
-        let total_output: u64 = coinbase.outputs.iter().map(|o| o.amount).sum();
+        let total_output: u128 = coinbase.outputs.iter().map(|o| o.amount).sum();
         let max_allowed = fee::max_coinbase_output(block.header.height);
-        if total_output > max_allowed {
+        if total_output > max_allowed as u128 {
             return Err(format!(
                 "Coinbase output {} exceeds max allowed {} (fee burning: fees are NOT paid to miner)",
                 total_output, max_allowed
@@ -311,7 +311,7 @@ pub fn validate_transaction(tx: &crate::tx::Transaction) -> Result<(), String> {
     }
 
     // 4. Output amount validation (no zero, no overflow, within total supply)
-    let outputs: Vec<(u64, &str)> = tx
+    let outputs: Vec<(u128, &str)> = tx
         .outputs
         .iter()
         .map(|o| (o.amount, o.address.as_str()))

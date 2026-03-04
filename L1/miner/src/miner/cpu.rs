@@ -11,6 +11,7 @@ use crate::stratum::{Job, StratumClient};
 #[derive(Debug, Clone)]
 struct PendingShare {
     job_id: String,
+    target_hex: String,
     nonce: u32,
     result_hex: String,
 }
@@ -76,6 +77,12 @@ impl CpuMiner {
                             .expect("job_state poisoned")
                             .as_ref()
                             .map(|j| j.job_id.clone());
+                        let current_target = job_state_submit
+                            .read()
+                            .expect("job_state poisoned")
+                            .as_ref()
+                            .map(|j| j.target.trim().to_string())
+                            .unwrap_or_default();
                         if current_job_id.as_deref() != Some(&share.job_id) {
                             stale_dropped += 1;
                             log::debug!(
@@ -83,6 +90,17 @@ impl CpuMiner {
                                 stale_dropped,
                                 share.job_id,
                                 current_job_id.unwrap_or_default()
+                            );
+                            continue;
+                        }
+                        if current_target != share.target_hex {
+                            stale_dropped += 1;
+                            log::debug!(
+                                "📤 Dropping stale share #{}: target changed for job={} (solved={} current={})",
+                                stale_dropped,
+                                share.job_id,
+                                share.target_hex,
+                                current_target
                             );
                             continue;
                         }
@@ -872,6 +890,7 @@ impl CpuMiner {
 
                     let pending = PendingShare {
                         job_id: job.job_id.clone(),
+                        target_hex: job.target.trim().to_string(),
                         nonce,
                         result_hex: hex::encode(hash),
                     };

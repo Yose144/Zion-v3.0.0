@@ -94,7 +94,7 @@ pub async fn get_premine_summary() -> Json<serde_json::Value> {
         .iter()
         .fold(std::collections::HashMap::new(), |mut map, addr| {
             let cat = addr.category.clone();
-            let entry = map.entry(cat).or_insert((0u64, 0usize));
+            let entry = map.entry(cat).or_insert((0u128, 0usize));
             entry.0 += addr.amount;
             entry.1 += 1;
             map
@@ -105,8 +105,8 @@ pub async fn get_premine_summary() -> Json<serde_json::Value> {
             serde_json::json!({
                 "category": cat,
                 "count": cnt,
-                "total_atomic": amt,
-                "total_zion": amt / 1_000_000
+                "total_atomic": amt.to_string(),
+                "total_zion": (amt / reward::ATOMIC_UNITS_PER_ZION as u128)
             })
         })
         .collect();
@@ -191,8 +191,8 @@ pub async fn get_premine_list() -> Json<Vec<serde_json::Value>> {
             serde_json::json!({
                 "address": addr.address,
                 "purpose": addr.purpose,
-                "amount_atomic": addr.amount,
-                "amount_zion": addr.amount / 1_000_000,
+                "amount_atomic": addr.amount.to_string(),
+                "amount_zion": addr.amount / reward::ATOMIC_UNITS_PER_ZION as u128,
                 "category": addr.category,
                 "unlock_height": addr.unlock_height,
             })
@@ -356,8 +356,8 @@ pub async fn get_address_balance_rest(
             "status": "ok",
             "address": address,
             "utxo_count": count,
-            "balance_atomic": total,
-            "balance_zion": (total as f64) / 1_000_000.0,
+            "balance_atomic": total.to_string(),
+            "balance_zion": (total as f64) / 1_000_000_000_000.0,
         })),
         Err(e) => Json(serde_json::json!({
             "status": "error",
@@ -381,9 +381,9 @@ pub async fn get_address_utxos_rest(
                 .map(|(key, output)| {
                     let mut entry = serde_json::json!({
                         "key": key,
-                        "amount": output.amount,
-                        "amount_atomic": output.amount,
-                        "amount_zion": output.amount / 1_000_000,
+                        "amount": output.amount.to_string(),
+                        "amount_atomic": output.amount.to_string(),
+                        "amount_zion": output.amount / 1_000_000_000_000u128,
                         "address": output.address,
                     });
                     if let Some(m) = &output.memo {
@@ -516,13 +516,13 @@ pub async fn bridge_unlock(
     // ── 5. Coin selection (largest-first) ─────────────────────────────────
     // Estimate fee: 1 input, 2 outputs ≈ 600 bytes × 1 atomic/byte = 600 atomic
     let fee_atomic: u64 = 1_000; // conservative flat fee for bridge TX
-    let needed = req.amount_atomic.saturating_add(fee_atomic);
+    let needed: u128 = req.amount_atomic as u128 + fee_atomic as u128;
 
     let mut sorted_utxos = utxos;
     sorted_utxos.sort_by(|a, b| b.1.amount.cmp(&a.1.amount)); // largest first
 
     let mut selected: Vec<(String, TxOutput)> = Vec::new();
-    let mut total_in: u64 = 0;
+    let mut total_in: u128 = 0;
     for utxo in sorted_utxos {
         selected.push(utxo);
         total_in = selected.iter().map(|u| u.1.amount).sum();
@@ -541,7 +541,7 @@ pub async fn bridge_unlock(
         }));
     }
 
-    let change = total_in - req.amount_atomic - fee_atomic;
+    let change = total_in - req.amount_atomic as u128 - fee_atomic as u128;
 
     // ── 6. Build transaction ──────────────────────────────────────────────
     let timestamp = std::time::SystemTime::now()
@@ -570,7 +570,7 @@ pub async fn bridge_unlock(
         .collect();
 
     let mut outputs = vec![TxOutput {
-        amount: req.amount_atomic,
+        amount: req.amount_atomic as u128,
         address: req.recipient.clone(),
         memo: None,
     }];
