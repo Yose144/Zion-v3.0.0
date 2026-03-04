@@ -221,12 +221,12 @@ class ZionWalletGenerator {
     const a = address.trim();
     if (!a) return 'invalid';
 
-    // Canonical chain format
+    // Canonical chain format: zion1 + exactly 39 lowercase alphanumeric chars = 44 total
+    // Matches L1 Rust validation: is_valid_zion1_address() accepts [0-9a-z] for body
     if (a.startsWith('zion1')) {
-      if (a.length < 40 || a.length > 90) return 'invalid';
-      const validChars = /^[0-9a-z]+$/;
+      if (a.length !== 44) return 'invalid';
       const data = a.slice(5);
-      if (!data || !validChars.test(data)) return 'invalid';
+      if (!/^[0-9a-z]{39}$/.test(data)) return 'invalid';
       return 'zion1';
     }
 
