@@ -7,6 +7,10 @@ license.workspace = true
 repository.workspace = true
 description = "ZION Universal Miner - Multi-algorithm CPU+GPU mining"
 
+[[bin]]
+name = "zion-universal-miner"
+path = "src/main.rs"
+
 [features]
 default = []
 native-randomx = ["zion-cosmic-harmony-v3/native-randomx"]
