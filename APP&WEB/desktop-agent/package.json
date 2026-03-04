@@ -5,7 +5,7 @@
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
   "scripts": {
-    "prestart": "node scripts/prepare-rust-miner.js --auto",
+    "prestart": "node scripts/prepare-rust-miner.js --no-build --require || node scripts/prepare-rust-miner.js --auto",
     "start": "node scripts/launch-electron.js",
     "dev": "node scripts/launch-electron.js",
     "prepare:rust-miner": "node scripts/prepare-rust-miner.js --no-build --require",

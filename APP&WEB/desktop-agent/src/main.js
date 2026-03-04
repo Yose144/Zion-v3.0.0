@@ -839,13 +839,18 @@ function resolveMinerSelection(preferred) {
 }
 
 const rustMinerPath = findRustMiner();
+const allowPackagedPythonFallback = String(process.env.ZION_ALLOW_PACKAGED_PYTHON_FALLBACK || '').trim() === '1';
 if (rustMinerPath) {
   MINER_PATH = rustMinerPath;
   MINER_IS_RUST = true;
   MINER_IS_PYTHON = false;
   dbg('[MINER] Using Rust native miner:', rustMinerPath);
 } else if (process.platform === 'darwin') {
-  // macOS: use Python script
+  // macOS: packaged release must use native Rust backend one-click.
+  if (IS_PACKAGED && !allowPackagedPythonFallback) {
+    throw new Error('Rust miner binary not found in packaged app resources. Rebuild release with prepare-rust-miner.');
+  }
+  // Dev fallback: use Python script
   MINER_IS_PYTHON = true;
   MINER_IS_RUST = false;
   MINER_PATH = findPythonMiner() || (IS_PACKAGED
@@ -853,7 +858,11 @@ if (rustMinerPath) {
     : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py'));
   dbg('[MINER] Using Python miner (macOS fallback)');
 } else if (process.platform === 'linux') {
-  // Linux: use Python script
+  // Linux: packaged release must use native Rust backend one-click.
+  if (IS_PACKAGED && !allowPackagedPythonFallback) {
+    throw new Error('Rust miner binary not found in packaged app resources. Rebuild release with prepare-rust-miner.');
+  }
+  // Dev fallback: use Python script
   MINER_IS_PYTHON = true;
   MINER_IS_RUST = false;
   MINER_PATH = findPythonMiner() || (IS_PACKAGED
@@ -2800,6 +2809,21 @@ function startMining(config) {
     return { success: false, error: 'Invalid wallet address' };
   }
 
+  // Guard against bridge escrow address used as mining wallet.
+  // This address is valid for L1 bridge deposits, but pool rejects it for mining login.
+  const knownBridgeEscrow = new Set([
+    'zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5'
+  ]);
+  if (knownBridgeEscrow.has(addr)) {
+    dialog.showErrorBox(
+      'Wrong Wallet for Mining',
+      'Bridge escrow address was entered as mining wallet.\n\n' +
+      'Use your personal zion1... wallet from Wallet tab for mining rewards.\n' +
+      'Bridge address is only for transfer memo BRIDGE:... tests.'
+    );
+    return { success: false, error: 'Bridge escrow cannot be used as mining wallet' };
+  }
+
   // Check if miner executable exists
   if (!fs.existsSync(MINER_PATH)) {
     // On Windows, Defender may quarantine the Rust binary after app startup.
@@ -3482,6 +3506,7 @@ function startMining(config) {
 
   let spawnDiagLine = null;
   const maybeFallbackToPython = (reason, force = false) => {
+    if (IS_PACKAGED && !allowPackagedPythonFallback) return false;
     if (!fallbackPythonPath) return false;
     if (!force && !rustFallbackEligible) return false;
     if (minerStopping || minerFallbackInProgress || minerUserStopRequested) return false;
