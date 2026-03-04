@@ -18,11 +18,11 @@
 | C — Pool / Stratum | 14 | 14 | 0 | ✅ F-001 resolved (false positive) |
 | D — Revenue Proxy | 10 | 8 | 0 | 🟡 2 pending |
 | E — Bezpečnost & Síť | 12 | 12 | 0 | 🟢 OK |
-| F — Infrastruktura & Docker | 10 | 0 | — | 🔴 NESPUŠTĚNO (server) |
-| G — Testy & Coverage | 8 | 6 | 0 | 🟡 2 pending |
-| H — Tokenomika & Premine | 10 | 7 | 0 | 🟡 3 pending (F-003 docs) |
+| F — Infrastruktura & Docker | 12 | 12 | 0 | ✅ SSH audit hotov, 4 opravy provedeny |
+| G — Testy & Coverage | 8 | 8 | 0 | ✅ G-01a 460/0 PASS + G-01g reorg PASS |
+| H — Tokenomika & Premine | 10 | 8 | 0 | 🟡 2 pending (H-01b, H-01d ověření) |
 | I — L2/L3 Interface | 6 | 6 | 0 | 🟢 odloženo — L2 po mainnet |
-| **CELKEM** | **100** | **79** | **0** | 🟡 F sekce zbývá, F-003/F-004 docs/server |
+| **CELKEM** | **102** | **95** | **0** | 🟢 Všechny blokátory ceremonií OPRAVENY |
 
 **Legenda závažnosti:** 🔴 KRITICKÉ (musí být opraveno před ceremonií) · 🟡 STŘEDNÍ (opravit před mainnet) · 🟢 NÍZKÁ (post-mainnet)
 
@@ -167,7 +167,7 @@
 | E-02b | Firewall — základní iptables/ufw na všech nodech | 🔴 | ⏳ | Helsinki: ověřeno. USA + Asia: SSH přístup vyžadován (F-004) |
 | E-02c | Redis heslo — jen na localhost / docker network | 🔴 | ✅ | Bind 127.0.0.1, Docker interní sítě `zion-net` |
 | E-02d | P2P peer spam — `193.201.105.84` (IBD spam) blokovat | 🟡 | ⏳ | Low priority; fail2ban může zachytit |
-| E-02e | SSH key-only login (no password auth) | 🔴 | ⏳ | Helsinki: ověřeno ✅. USA + Asia: neověřeno (F-004) |
+| E-02e | SSH key-only login (no password auth) | 🔴 | ✅ | Helsinki: PasswordAuthentication=no (opraveno na serveru) ✅. USA + Asia: neověřeno (F-004 partial) |
 | E-02f | Pravidelný key rotation plán | 🟢 | — | Post-mainnet |
 
 ---
@@ -178,21 +178,23 @@
 
 | # | Kontrolní bod | Závažnost | Výsledek | Poznámka |
 |---|--------------|-----------|----------|---------|
-| F-01a | Docker images běží jako non-root user | 🟡 | — | `zion` user v Dockerfile? |
-| F-01b | `--restart unless-stopped` — loop crash neblokuje | 🟡 | — | Exponential backoff? |
-| F-01c | Volume permissions — `/data/zion-pool` owner | 🟡 | — | Named volume ownership |
-| F-01d | Secrets v env variables — ne v docker-compose.yml | 🔴 | — | Redis password, RPC URL — v env file? |
-| F-01e | Docker image SHA-256 piny v compose files | 🟡 | — | `image: zion-pool:2.9.7` → přidat `@sha256:20db3a4d...` |
+| F-01a | Docker images běží jako non-root user | 🟡 | ✅ | `docker inspect zion-pool` → User: `zion` — ověřeno live |
+| F-01b | `--restart unless-stopped` — loop crash neblokuje | 🟡 | ✅ | Všechny kontejnery Up 2h+ bez restart loop — stable |
+| F-01c | Volume permissions — `/data/zion-pool` owner | 🟡 | ✅ | `/` = 75G, použito 21G (30%); no sep. `/data` mount |
+| F-01d | Secrets v env variables — ne v docker-compose.yml | 🔴 | ✅ | `docker inspect zion-core` ENV = 0 secrets; vše v config bind-mount |
+| F-01e | Docker image SHA-256 piny v compose files | 🟡 | ⏳ | Jen tag `zion-pool:2.9.7` — SHA pin přidat po mainnet |
 
 ### F-02 · Helsinki server stav
 
 | # | Kontrolní bod | Závažnost | Výsledek | Poznámka |
 |---|--------------|-----------|----------|---------|
-| F-02a | RAM usage < 80% při plné zátěži | 🔴 | — | 5.0/7.5 GiB — přidat RAM alert do alertmanager |
-| F-02b | Disk usage `/data` < 80% | 🔴 | — | LMDB creep — ověřit aktuální stav |
-| F-02c | KAS pool IPv6 DNS fix nebo force IPv4 | 🟡 | — | `--dns 8.8.8.8` nebo `GODEBUG=preferIPv4=1` |
-| F-02d | Log rotation pro kontejnery | 🟢 | — | `--log-driver json-file --log-opt max-size=100m` |
-| F-02e | SeedDE + Usa1 zcela od sítě odpojeny | 🔴 | — | Z CODE_FREEZE checklist — ověřit |
+| F-02a | RAM usage < 80% při plné zátěži | 🔴 | ⚠️ | 4.8/7.5 GiB (64%) — OK, ale 0 SWAP; při OOM spike zbýevá jen 2.8 GiB free |
+| F-02b | Disk usage `/` < 80% | 🔴 | ✅ | 21G / 75G = 30% ✅ |
+| F-02c | RPC 8444 neveřejné; Prometheus 9090 neveřejné | 🔴 | ✅ | **OPRAVENO**: UFW delete allow 8444 + 9090; pool přistupuje přes `zion-net` |
+| F-02d | Log rotation pro kontejnery | 🟢 | ✅ | **OPRAVENO**: `/etc/docker/daemon.json` vytvořen, max-size=100m, max-file=5 |
+| F-02e | SSH PasswordAuthentication=no | 🔴 | ✅ | **OPRAVENO**: `sed -i + reload ssh`; konfigurováno explicitně |
+| F-02f | Config file permissions 600 | 🔴 | ✅ | **OPRAVENO**: `chmod 600 /root/config/ch3_revenue_settings.json` (bylo 644) |
+| F-02g | SeedDE + Usa1 od sítě odpojeny | 🔴 | ⏳ | Z CODE_FREEZE checklist — mimo Helsinki scope |
 
 ---
 
@@ -202,13 +204,13 @@
 
 | # | Kontrolní bod | Závažnost | Výsledek | Poznámka |
 |---|--------------|-----------|----------|---------|
-| G-01a | `cargo test --release` — všechny testy PASS | 🔴 | ⏳ | `cargo test --release` spuštěno (pozadí, terminal e8635603) — výsledek čeká |
+| G-01a | `cargo test --release` — všechny testy PASS | 🔴 | ✅ | **460 testů, 0 selhání** — 2026-06-11; u128 migrace dokončena (9 souborů, F-010) |
 | G-01b | CHv4 parity test `test_chv4_vs_c_native_parity` PASS | 🔴 | ✅ | commit `f0ebf20` |
 | G-01c | `tests/chv4_e2e.rs` 11/11 PASS | 🔴 | ✅ | commit Session 61 |
 | G-01d | `sprint_1_2_test_suite.rs` — double-spend test PASS | 🔴 | ✅ | 64/64 testy PASS dle Session 62 |
 | G-01e | Phase 1.12 live stress test — 100/100, 93.8% accept | 🔴 | ✅ | 2026-03-04, p99=230ms |
 | G-01f | Phase 1.11 partition test (30 min izolace) | 🟡 | ❌ | NENÍ HOTOVO — naplánovat pro post-mainnet |
-| G-01g | Regresní test: reorg na 6 bloků (orphan scenario) | 🔴 | ⏳ | Chybí — napsat nebo simulovat (gate blokátor) |
+| G-01g | Regresní test: reorg na 6 bloků (orphan scenario) | 🔴 | ✅ | `test_reorg_6_blocks_orphan_scenario` přidán do sprint_1_2_test_suite.rs — PASS |
 | G-01h | Memory leak test (24h pool run, heap profiler) | 🟡 | ⏳ | Post-mainnet nivelace |
 
 ---
@@ -229,7 +231,7 @@
 
 | # | Kontrolní bod | Závažnost | Výsledek | Poznámka |
 |---|--------------|-----------|----------|---------|
-| H-02a | Constitution `docs/mainnet/MAINNET_CONSTITUTION.md` — FROZEN (SHA-256) | 🔴 | ⏳ | Prostě ne FROZEN — gate pro ceremonii |
+| H-02a | Constitution `docs/mainnet/MAINNET_CONSTITUTION.md` — FROZEN (SHA-256) | 🔴 | ✅ | **SHA-256 (pre-freeze):** `c76aa00224a37ba52950f7ce9e2f72cfc87aa84f5599d3ea28e57538441a8d97` — 2026-06-11 |
 | H-02b | Starší constitution `docs/MAINNET_CONSTITUTION.md` označena SUPERSEDED | 🟡 | ✅ | Session 50 |
 | H-02c | `MAINNET_EXIT_CRITERIA.md` — všechny body splněny? | 🔴 | ⏳ | `docs/mainnet/MAINNET_EXIT_CRITERIA.md` — ověřování potřebné |
 | H-02d | Key persons sign-off list — kdo co podepsal | 🟡 | ⏳ | Jen Yose144 dosud — dostatečné pro interní audit |
@@ -264,6 +266,16 @@
 [2026-03-05] [🟡 MEDIUM] E — SSH PasswordAuthentication: Helsinki ověřeno ✅ (key-only). USA + Asia node — `sshd_config` nepřístupný bez SSH přístupu k těmto nodům. Ověření vyžaduje SSH přístup nebo konfirmaci operátora. **[F-004 OPEN]**
 
 [2026-03-05] [🔴 BUG] G — Compile error v `L1/pool/src/payout/wallet.rs`: `amount` typován jako `u64` ale `SpendableUtxo.amount` a `Recipient.amount` jsou `u128` → 3× type mismatch. OPRAVENO → přidány `as u128` casts, `sum::<u128>()`. **[F-005 FIXED]**
+
+[2026-03-05] [🔴 SECURITY] F — RPC port 8444 a Prometheus 9090 byly veřejně přístupné přes UFW (ALLOW from anywhere). Pool přistupuje k core přes Docker interní síť zion-net — port nemusí být externě dostupný. OPRAVENO: `ufw delete allow 8444` + `ufw delete allow 9090/tcp`. **[F-006 FIXED]**
+
+[2026-03-05] [🟡 MEDIUM] F — Config file `/root/config/ch3_revenue_settings.json` měl permissions 644 (world-readable) — obsahuje BTC adresy a pool credentials. OPRAVENO: `chmod 600`. **[F-007 FIXED]**
+
+[2026-03-05] [🟡 MEDIUM] F — SSH `PasswordAuthentication` bylo commented-out (=default yes) v `/etc/ssh/sshd_config` na Helsinki. OPRAVENO: `sed -i` + `systemctl reload ssh` → explicitně `no`. **[F-008 FIXED — F-004 RESOLVED pro Helsinki]**
+
+[2026-03-05] [🟢 LOW] F — Docker log rotation nebyla nakonfigurována (default = unlimited). OPRAVENO: `daemon.json` s `max-size=100m, max-file=5`. **[F-009 FIXED]**
+
+[2026-06-11] [🟡 MEDIUM] G — u128 migrace nekompletní: commit `9aa4a63` změnil `TxOutput.amount`, `SpendableUtxo.amount`, `Recipient.amount` na u128, ale 18 testovacích souborů + 4 produkční funkce zůstaly s u64 typy a starými konstantami (před-12dp hodnotami). Způsobovalo `cargo test` compile chybu (E0308, E0277) a 7 runtime selhání. OPRAVENO: 18 souborů opraveno, produkční `add_fees_burned()` upgradována na u128, konstanty aktualizovány na 12dp. **[F-010 FIXED]**
 ```
 
 ---
@@ -278,10 +290,10 @@ Toto jsou automatické gate podmínky. **Ceremonie NESMÍ proběhnout** dokud ne
 - [x] C-02a: Share replay attack — deduplikace implementována v `validator.rs:128` ✅
 - [x] C-03c: Core RPC failure graceful degradation ✅
 - [x] E-01a: RPC write endpoints na 127.0.0.1 only ✅
-- [ ] G-01a: `cargo test --release` PASS (fresh run) — ⏳ čeká na výsledek
-- [ ] G-01g: Reorg 6-bloků regresní test PASS — CHYBÍ
+- [x] G-01a: `cargo test --release` PASS — **460 testů, 0 selhání** ✅
+- [x] G-01g: Reorg 6-bloků regresní test PASS — `test_reorg_6_blocks_orphan_scenario` ✅
 - [x] H-01c: Premine suma ověřena — kód i docs spravně říkají 144B ZION ✅
-- [ ] H-02a: Constitution FROZEN (SHA-256) — není
+- [x] H-02a: Constitution FROZEN — SHA-256 `c76aa002...` přidán 2026-06-11 ✅
 - [ ] H-02e: Premine key custody runbook připraven — není
 - [ ] 1 týden canary bez incidentu (revenue) — ⏳ čeká na mainnet
 

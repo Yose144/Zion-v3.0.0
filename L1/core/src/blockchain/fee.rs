@@ -232,15 +232,15 @@ mod tests {
     #[test]
     fn test_validate_output_amounts_ok() {
         let outputs = vec![
-            (1_000_000u64, "addr1"), // 1 ZION
-            (5_000_000u64, "addr2"), // 5 ZION
+            (1_000_000u128, "addr1"), // 1 ZION
+            (5_000_000u128, "addr2"), // 5 ZION
         ];
         assert!(validate_output_amounts(&outputs).is_ok());
     }
 
     #[test]
     fn test_validate_output_zero() {
-        let outputs = vec![(0u64, "addr1")];
+        let outputs = vec![(0u128, "addr1")];
         assert!(validate_output_amounts(&outputs).is_err());
     }
 
@@ -262,7 +262,7 @@ mod tests {
     fn test_max_coinbase_output() {
         // Block 1: should equal block reward (Decade 1)
         let max = max_coinbase_output(1);
-        assert_eq!(max, 5_400_067_000);
+        assert_eq!(max, 5_400_067_000_000_000); // 5400.067 ZION at 1e12 atomic
 
         // Genesis: no coinbase reward
         assert_eq!(max_coinbase_output(0), 0);
@@ -273,7 +273,7 @@ mod tests {
 
         // Tail emission block: should be ~724.785 ZION
         let tail_block = 10 * 5_256_000 + 1; // first tail block
-        assert_eq!(max_coinbase_output(tail_block), 724_785_000);
+        assert_eq!(max_coinbase_output(tail_block), 724_785_000_000_000);
     }
 
     #[test]

@@ -365,7 +365,7 @@ mod tests {
     fn test_select_utxos_exact() {
         // UTXO exactly covers amount + fee
         let min_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(1, 1));
-        let utxos = vec![make_utxo("tx1:0", "tx1", 0, 1_000_000 + min_fee)];
+        let utxos = vec![make_utxo("tx1:0", "tx1", 0, 1_000_000u128 + min_fee as u128)];
         let (selected, fee_paid) = select_utxos(&utxos, 1_000_000, None).unwrap();
         assert_eq!(selected.len(), 1);
         assert_eq!(fee_paid, min_fee);
@@ -436,7 +436,7 @@ mod tests {
             key: "tx1:0".to_string(),
             tx_hash: "tx1".to_string(),
             output_index: 0,
-            amount: 50_000_000 + fee_amount,
+            amount: 50_000_000u128 + fee_amount as u128,
             address: sender_addr.clone(),
         }];
 
