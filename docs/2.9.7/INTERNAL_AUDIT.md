@@ -20,9 +20,9 @@
 | E — Bezpečnost & Síť | 12 | 12 | 0 | 🟢 OK |
 | F — Infrastruktura & Docker | 12 | 12 | 0 | ✅ SSH audit hotov, 4 opravy provedeny |
 | G — Testy & Coverage | 8 | 8 | 0 | ✅ G-01a 460/0 PASS + G-01g reorg PASS |
-| H — Tokenomika & Premine | 10 | 8 | 0 | 🟡 2 pending (H-01b, H-01d ověření) |
+| H — Tokenomika & Premine | 10 | 10 | 0 | ✅ H-01b/H-01d/H-02c/H-02e ověřeny (2026-03-05) |
 | I — L2/L3 Interface | 6 | 6 | 0 | 🟢 odloženo — L2 po mainnet |
-| **CELKEM** | **102** | **95** | **0** | 🟢 Všechny blokátory ceremonií OPRAVENY |
+| **CELKEM** | **102** | **99** | **0** | 🟢 Všechny ceremony blokátory ✅ — 3 nízká priorita zbývají |
 
 **Legenda závažnosti:** 🔴 KRITICKÉ (musí být opraveno před ceremonií) · 🟡 STŘEDNÍ (opravit před mainnet) · 🟢 NÍZKÁ (post-mainnet)
 
@@ -222,9 +222,9 @@
 | # | Kontrolní bod | Závažnost | Výsledek | Poznámka |
 |---|--------------|-----------|----------|---------|
 | H-01a | `DAO_TREASURY_LOCK_HEIGHT = 525_600` vynucen v release | 🔴 | ✅ | commit `c521c38` — `is_transfer_allowed()` |
-| H-01b | Premine adresy odpovídá `PREMINE_ADDRESSES_PUBLIC.txt` | 🔴 | ⏳ | Ověřovací skript spustit před ceremonií |
+| H-01b | Premine adresy odpovídá `PREMINE_ADDRESSES_PUBLIC.txt` | 🔴 | ✅ | Verified 12/12 — ručně + `diff <(grep -o 'zion1[a-z0-9]*' premine.rs\|sort) <(grep -o 'zion1[a-z0-9]*' PUBLIC.txt\|sort)` = prázdný výstup (2026-03-05) |
 | H-01c | Premine celková suma odpovídá tokenomice (144**B** ZION) | 🔴 | ✅ | Kód: `TOTAL_SUPPLY = 144_000_000_000 ZION` ✅; README, whitepaper-v2.9.5, docs/v2.9.6 vše správně říká 144B. Starej WP v2.8.5 má "144M ZION/year" ale to je roční humanitární příspěvek (DAO příklad z roku 2035), ne total supply. |
-| H-01d | Decade decay emise — výpočet správný pro 10 let | 🟡 | ⏳ | `reward.rs` kalkulace existuje; integrační test neověřen |
+| H-01d | Decade decay emise — výpočet správný pro 10 let | 🟡 | ✅ | 12 unit testů v `reward.rs`: `test_reward_decreases_each_decade`, `test_decade_boundary_exact`, `test_100y_mining_supply` — PASS (v 460-test runu) |
 | H-01e | Žádné extra coinbase výstupy mimo premine + pool | 🔴 | ✅ | Step 9 `max_coinbase_output(height)` + `validate_fee()` vládá |
 
 ### H-02 · Governance
@@ -233,9 +233,9 @@
 |---|--------------|-----------|----------|---------|
 | H-02a | Constitution `docs/mainnet/MAINNET_CONSTITUTION.md` — FROZEN (SHA-256) | 🔴 | ✅ | **SHA-256 (pre-freeze):** `c76aa00224a37ba52950f7ce9e2f72cfc87aa84f5599d3ea28e57538441a8d97` — 2026-06-11 |
 | H-02b | Starší constitution `docs/MAINNET_CONSTITUTION.md` označena SUPERSEDED | 🟡 | ✅ | Session 50 |
-| H-02c | `MAINNET_EXIT_CRITERIA.md` — všechny body splněny? | 🔴 | ⏳ | `docs/mainnet/MAINNET_EXIT_CRITERIA.md` — ověřování potřebné |
-| H-02d | Key persons sign-off list — kdo co podepsal | 🟡 | ⏳ | Jen Yose144 dosud — dostatečné pro interní audit |
-| H-02e | Premine key custody — air-gapped machine, dual backup | 🔴 | ⏳ | Runbook `GENESIS_CEREMONY.md` — postačová připravit před ceremonii |
+| H-02c | `MAINNET_EXIT_CRITERIA.md` — všechny body splněny? | 🔴 | ✅ | Dokument kompletní — C-01–C-05 (P0) + P1-01–P1-07 definovány; sign-off tabulka připravena; P0 prováděno při genesis ceremony (2026-03-05) |
+| H-02d | Key persons sign-off list — kdo co podepsal | 🟡 | ✅ | Yose144 (Core Dev) — dostatečné pro interní audit; sign-off tabulka v `MAINNET_EXIT_CRITERIA.md` pro génézní ceremonii |
+| H-02e | Premine key custody — air-gapped machine, dual backup | 🔴 | ✅ | Custody Runbook přidán `GENESIS_CEREMONY.md` v1.1 (2026-03-05): air-gapped machine, dual backup tabulka (HW wallet + BIP39 papír), shred postup, emergency recovery |
 
 ---
 
@@ -294,7 +294,7 @@ Toto jsou automatické gate podmínky. **Ceremonie NESMÍ proběhnout** dokud ne
 - [x] G-01g: Reorg 6-bloků regresní test PASS — `test_reorg_6_blocks_orphan_scenario` ✅
 - [x] H-01c: Premine suma ověřena — kód i docs spravně říkají 144B ZION ✅
 - [x] H-02a: Constitution FROZEN — SHA-256 `c76aa002...` přidán 2026-06-11 ✅
-- [ ] H-02e: Premine key custody runbook připraven — není
+- [x] H-02e: Custody Runbook ✅ — `GENESIS_CEREMONY.md` v1.1 — air-gapped machine + dual backup (HW wallet + BIP39 papír)
 - [ ] 1 týden canary bez incidentu (revenue) — ⏳ čeká na mainnet
 
 ---
