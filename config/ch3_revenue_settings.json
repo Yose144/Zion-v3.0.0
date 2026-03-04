@@ -1,7 +1,7 @@
 {
   "version": "3.2.0",
-  "description": "CH v3 Revenue Settings — 50/25/25 Model (ZION / Multi-Algo / NCL) — 2.9.7 (E-06: production wallets + buyback enabled)",
-  "last_updated": "2026-03-04T00:00:00Z",
+  "description": "CH v3 Revenue Settings — 50/25/25 Model (ZION / Multi-Algo / NCL) — 2.9.7 (E-07: ALL on 2miners, BTC payout bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw)",
+  "last_updated": "2026-03-04T23:00:00Z",
   "streams": {
     "zion": {
       "stream": 1,
@@ -50,7 +50,7 @@
       "description": "Profit-switched multi-algo mining (25% compute allocation → BTC payouts)",
       "enabled": true,
       "mode": "auto",
-      "preferred_coins": ["KAS", "ETC", "ALPH", "ERG", "RVN", "CFX", "ZANO", "EVR", "MEWC", "FLUX", "CLORE", "XMR"],
+      "preferred_coins": ["KAS", "ERG", "ALPH", "RVN", "ETC", "EVR", "MEWC", "FLUX", "CLORE", "XMR"],
       "current_coin": null,
       "switching": {
         "min_profit_usd": 0.1,
@@ -60,44 +60,44 @@
       "pools": {
         "KAS": {
           "coin": "KAS",
-          "stratum": "stratum+tcp://de.kaspa.herominers.com:1206",
+          "stratum": "stratum+tcp://kas.2miners.com:4444",
           "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
           "worker": "zion_dynamic",
           "algorithm": "kheavyhash",
           "protocol": "stratum",
           "enabled": true,
-          "note": "HeroMiners kaspa:1206 — highest profitability GPU coin (kHeavyHash ASIC+GPU)"
+          "note": "2miners KAS:4444 — BTC payout, kHeavyHash"
         },
         "ETC": {
           "coin": "ETC",
-          "stratum": "stratum+tcp://de.etc.herominers.com:1150",
+          "stratum": "stratum+tcp://etc.2miners.com:1010",
           "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
           "worker": "zion_dynamic",
           "algorithm": "ethash",
           "protocol": "ethstratum",
           "enabled": true,
-          "note": "HeroMiners etc:1150 — Ethash GPU coin, free byproduct of CosmicHarmony Keccak stage"
+          "note": "2miners ETC:1010 — BTC payout, Ethash"
         },
         "ERG": {
           "coin": "ERG",
-          "stratum": "stratum+tcp://de.ergo.herominers.com:1180",
+          "stratum": "stratum+tcp://erg.2miners.com:3056",
           "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
           "worker": "zion_dynamic",
           "algorithm": "autolykos",
           "protocol": "ethstratum",
           "enabled": true,
           "proxy_listen": "0.0.0.0:3343",
-          "note": "HeroMiners ergo:1180 — Autolykos v2"
+          "note": "2miners ERG:3056 — BTC payout, Autolykos v2"
         },
         "RVN": {
           "coin": "RVN",
-          "stratum": "stratum+tcp://de.ravencoin.herominers.com:1140",
+          "stratum": "stratum+tcp://rvn.2miners.com:6060",
           "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
           "worker": "zion_dynamic",
           "algorithm": "kawpow",
           "protocol": "ethstratum",
           "enabled": true,
-          "note": "HeroMiners ravencoin:1140 — KawPow GPU coin"
+          "note": "2miners RVN:6060 — BTC payout, KawPow"
         },
         "CFX": {
           "coin": "CFX",
@@ -106,8 +106,8 @@
           "worker": "zion_dynamic",
           "algorithm": "octopus",
           "protocol": "ethstratum",
-          "enabled": true,
-          "note": "HeroMiners conflux:1170 — Octopus algo (Conflux), 4 GB+ VRAM required"
+          "enabled": false,
+          "note": "DISABLED — 2miners nepodporuje CFX (Octopus). Reaktivovat az bude nativni CFX adresa."
         },
         "ZANO": {
           "coin": "ZANO",
@@ -116,8 +116,8 @@
           "worker": "zion_dynamic",
           "algorithm": "progpowz",
           "protocol": "ethstratum",
-          "enabled": true,
-          "note": "HeroMiners zano:1110 — ProgPowZ (ProgPow 0.9.2 constants)"
+          "enabled": false,
+          "note": "DISABLED — 2miners nepodporuje ZANO. HeroMiners vyžaduje nativní adresu."
         },
         "EVR": {
           "coin": "EVR",
@@ -160,12 +160,13 @@
         },
         "ALPH": {
           "coin": "ALPH",
-          "stratum": "stratum+tcp://de.alephium.herominers.com:1220",
+          "stratum": "stratum+tcp://alph.2miners.com:4545",
           "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
           "worker": "zion_dynamic",
           "algorithm": "blake3",
           "protocol": "stratum",
-          "enabled": true
+          "enabled": true,
+          "note": "2miners ALPH:4545 — BTC payout, Blake3"
         },
         "FLUX": {
           "coin": "FLUX",
@@ -263,13 +264,14 @@
     "check_interval_secs": 300,
     "switch_threshold_pct": 10.0,
     "min_switch_interval_secs": 1800,
-    "preferred_coins": ["KAS", "ETC", "ALPH", "ERG", "RVN", "CFX", "ZANO", "EVR", "MEWC", "FLUX", "CLORE", "NEXA", "XMR"],
-    "excluded_coins": [],
+    "preferred_coins": ["KAS", "ERG", "ALPH", "RVN", "ETC", "EVR", "MEWC", "FLUX", "CLORE", "XMR"],
+    "excluded_coins": ["CFX", "ZANO"],
     "fallback_coin": "ETC",
-    "pool_preference": "herominers",
+    "pool_preference": "2miners",
     "pool_region": "eu",
     "nicehash_btc_addr": null,
-    "_comment_pool_preference": "nicehash | herominers (default) | zpool | default  — set ZION_POOL_PREFERENCE env to override",
+    "btc_payout_addr": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+    "_comment_pool_preference": "2miners | nicehash | herominers | default — 2miners akceptuje BTC adresu pro všechny GPU coiny",
     "_comment_nicehash": "Set pool_preference=nicehash and nicehash_btc_addr=<your BTC addr> to mine on NiceHash (payout always BTC)"
   },
   "buyback": {
@@ -299,39 +301,29 @@
         "url": "https://api.moneroocean.stream/miner/42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK/stats"
       },
       {
-        "name": "herominers-ETC",
+        "name": "2miners-ETC",
         "coin": "ETC",
-        "url": "https://etc.herominers.com/api/accounts?address=bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+        "url": "https://etc.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
       },
       {
-        "name": "herominers-ERG",
+        "name": "2miners-ERG",
         "coin": "ERG",
-        "url": "https://ergo.herominers.com/api/accounts?address=bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+        "url": "https://erg.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
       },
       {
-        "name": "herominers-RVN",
+        "name": "2miners-RVN",
         "coin": "RVN",
-        "url": "https://ravencoin.herominers.com/api/accounts?address=bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+        "url": "https://rvn.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
       },
       {
-        "name": "herominers-KAS",
+        "name": "2miners-KAS",
         "coin": "KAS",
-        "url": "https://kaspa.herominers.com/api/accounts?address=bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+        "url": "https://kas.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
       },
       {
-        "name": "herominers-ALPH",
+        "name": "2miners-ALPH",
         "coin": "ALPH",
-        "url": "https://alephium.herominers.com/api/accounts?address=bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
-      },
-      {
-        "name": "herominers-CFX",
-        "coin": "CFX",
-        "url": "https://conflux.herominers.com/api/accounts?address=bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
-      },
-      {
-        "name": "herominers-ZANO",
-        "coin": "ZANO",
-        "url": "https://zano.herominers.com/api/accounts?address=bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+        "url": "https://alph.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
       },
       {
         "name": "zpool-EVR",
