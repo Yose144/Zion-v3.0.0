@@ -73,6 +73,14 @@ pub trait GpuMiner: Send + Sync {
 
     /// Get current hashrate
     fn hashrate(&self) -> f64;
+
+    /// Natural (chip) batch size: how many nonces one GPU dispatch processes.
+    /// The mining loop should call mine_batch with this granularity so that job
+    /// changes are picked up quickly between dispatches.
+    /// Returns None for backends that self-manage iteration (CUDA/OpenCL).
+    fn natural_batch_size(&self) -> Option<u64> {
+        None
+    }
 }
 
 /// Detect available GPU devices

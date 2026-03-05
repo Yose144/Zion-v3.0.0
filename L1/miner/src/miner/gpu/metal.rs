@@ -101,7 +101,7 @@ impl GpuMiner for MetalGpuMiner {
         header: &[u8],
         target: &[u8; 32],
         nonce_start: u64,
-        batch_size: u64,
+        _batch_size: u64,
         height: u64,
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(all(feature = "metal", target_os = "macos"))]
@@ -111,29 +111,21 @@ impl GpuMiner for MetalGpuMiner {
                 .as_mut()
                 .ok_or_else(|| anyhow!("Metal miner not initialized"))?;
 
-            // Process in chunks of our configured batch_size
-            let chunk_size = self.batch_size as u64;
-            let mut nonce = nonce_start;
-            let end_nonce = nonce_start + batch_size;
-
-            while nonce < end_nonce {
-                let this_batch = (end_nonce - nonce).min(chunk_size);
-
-                if let Some((found_nonce, found_hash)) = inner.mine(header, target, nonce, height) {
-                    self.hashes_computed += (found_nonce - nonce_start) + 1;
-                    return Ok(Some((found_nonce, found_hash)));
-                }
-
-                self.hashes_computed += this_batch;
-                nonce += chunk_size;
+            // ONE GPU dispatch per mine_batch call = self.batch_size nonces in parallel.
+            // The outer gpu_mining_loop handles iteration — this keeps job-switching latency
+            // equal to one GPU dispatch (~seconds) instead of millions of nonces * seconds.
+            if let Some((found_nonce, found_hash)) = inner.mine(header, target, nonce_start, height) {
+                self.hashes_computed += self.batch_size as u64;
+                return Ok(Some((found_nonce, found_hash)));
             }
 
+            self.hashes_computed += self.batch_size as u64;
             Ok(None)
         }
 
         #[cfg(not(all(feature = "metal", target_os = "macos")))]
         {
-            let _ = (header, target, nonce_start, batch_size, height);
+            let _ = (header, target, nonce_start, _batch_size, height);
             Err(anyhow!("Metal GPU not available"))
         }
     }
@@ -149,6 +141,12 @@ impl GpuMiner for MetalGpuMiner {
         } else {
             0.0
         }
+    }
+
+    fn natural_batch_size(&self) -> Option<u64> {
+        // Expose the actual Metal chip batch so the mining loop calls us
+        // with the right granularity (1 GPU dispatch per mine_batch call).
+        Some(self.batch_size as u64)
     }
 }
 

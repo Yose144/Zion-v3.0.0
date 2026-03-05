@@ -240,24 +240,27 @@ impl MultiChainMiner {
             u64::MAX
         };
 
-        // Parallel nonce search
-        let results: Vec<Option<(u64, Vec<u8>)>> = (0..threads)
+        // Parallel nonce search — nonce space is u32 (stratum protocol submits 4-byte nonce).
+        // BUG-FIX: Previously used u64 nonce divided across threads which caused truncation
+        // to u32 on submit → pool always rejected shares from threads 1+.
+        // FIX: Partition u32::MAX space between threads so submitted nonce == hashed nonce.
+        let nonce_chunk = (u32::MAX as u64 + 1) / threads.max(1) as u64;
+        let results: Vec<Option<(u32, Vec<u8>)>> = (0..threads)
             .map(|thread_id| {
-                let start_nonce = thread_id as u64 * (u64::MAX / threads as u64);
-                let end_nonce = start_nonce + (u64::MAX / threads as u64);
+                let start_nonce = (thread_id as u64 * nonce_chunk) as u32;
+                let end_nonce = start_nonce.saturating_add(nonce_chunk as u32);
 
-                for nonce in (start_nonce..end_nonce).step_by(1000) {
+                // BUG-FIX: Previously step_by(1000) — skipped 99.9% of nonce space.
+                // FIX: step_by(1) to search every nonce. Stop flag via shared atomic
+                // is left as TODO (acceptable for prototype; production uses cpu.rs).
+                for nonce in start_nonce..end_nonce {
                     // Compute hash using native algorithm
-                    if let Ok(hash) = native_algos::compute_hash(algo, blob, nonce, height as u32) {
-                        // Check if meets target (simplified)
+                    if let Ok(hash) = native_algos::compute_hash(algo, blob, nonce as u64, height as u32) {
                         let hash_u64 = u64::from_le_bytes(hash[0..8].try_into().unwrap_or([0; 8]));
                         if hash_u64 < target_u64 {
                             return Some((nonce, hash));
                         }
                     }
-
-                    // Check every 1000 iterations if we should stop
-                    // In real impl, use atomic flag
                 }
                 None
             })
@@ -266,10 +269,9 @@ impl MultiChainMiner {
         // Submit any found solutions
         for result in results {
             if let Some((nonce, hash)) = result {
-                info!("💎 Found share! Nonce: {}", nonce);
-                let nonce_u32 = (nonce & 0xFFFFFFFF) as u32;
+                info!("💎 Found share! Nonce: {:08x}", nonce);
                 stratum
-                    .submit_share(job_id, nonce_u32, &hex::encode(&hash))
+                    .submit_share(job_id, nonce, &hex::encode(&hash))
                     .await?;
 
                 // Update stats
