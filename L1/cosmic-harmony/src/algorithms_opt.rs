@@ -569,7 +569,7 @@ pub fn cosmic_harmony_v3_parallel(
 
 /// CHv4 parallel batch mining using rayon.
 ///
-/// Každé rayon vlákno má vlastní thread-local scratchpad buffer (512 KiB) —
+/// Každé rayon vlákno má vlastní thread-local scratchpad buffer (64 KiB) —
 /// žádný mutex, žádná alokace per hash. Ideální pro maximální throughput
 /// na vícejádrových CPU (M1/M2: 8-12 vláken × ~15 H/s = ~120–180 H/s).
 ///
@@ -747,7 +747,7 @@ mod tests {
         let rust_hex: String = rust_hash.data.iter().map(|b| format!("{:02x}", b)).collect();
 
         println!("Rust CHv4 hash (nonce=12345): {}", rust_hex);
-        println!("C    CHv4 hash (nonce=12345): 134f268c41b4dc9ca91111c7a0cda5fcc864788a438e88aebc16ca843492a6db");
+        println!("CHv4.1 reference hash (nonce=12345): 655348e35abb6732cf0229a3b5fa0827ee5424f36d92e515827030b843cdc4b0");
 
         // Determinismus (vždy musí platit)
         let rust_hash2 = cosmic_harmony_v4(&header, 12345);
@@ -757,15 +757,15 @@ mod tests {
         let rust_hash3 = cosmic_harmony_v4(&header, 12346);
         assert_ne!(rust_hash.data, rust_hash3.data, "Different nonce must give different hash");
 
-        // Parity check s C native lib (po NPU + scratchpad + fusion fixu)
-        let c_expected = "134f268c41b4dc9ca91111c7a0cda5fcc864788a438e88aebc16ca843492a6db";
-        if rust_hex == c_expected {
-            println!("✅ PARITY OK: Rust == C native (všechny kroky shodné)");
+        // CHv4.1 test vector (light memory-hard profile)
+        let chv41_expected = "655348e35abb6732cf0229a3b5fa0827ee5424f36d92e515827030b843cdc4b0";
+        if rust_hex == chv41_expected {
+            println!("✅ VECTOR OK: Rust matches CHv4.1 reference");
         } else {
-            println!("❌ PARITY FAIL: Rust != C native — hash mismatch:");
+            println!("❌ VECTOR FAIL: Rust != CHv4.1 reference — hash mismatch:");
             println!("   Got:      {}", rust_hex);
-            println!("   Expected: {}", c_expected);
-            panic!("CHv4 Rust/C parity failed!");
+            println!("   Expected: {}", chv41_expected);
+            panic!("CHv4.1 reference vector failed!");
         }
     }
 

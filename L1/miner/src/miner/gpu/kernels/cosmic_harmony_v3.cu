@@ -50,10 +50,10 @@ __constant__ int KECCAK_ROTC[24] = {
 
 // Memory-hard scratchpad constants (must match OpenCL kernel + Rust impl)
 #define CUDA_BLOCK_SIZE      64
-#define CUDA_BLOCK_COUNT     8192
-#define CUDA_SCRATCHPAD_BYTES (CUDA_BLOCK_SIZE * CUDA_BLOCK_COUNT)  // 512 KiB per thread
-#define CUDA_PASSES          4
-#define CUDA_RANDOM_READS    256
+#define CUDA_BLOCK_COUNT     1024
+#define CUDA_SCRATCHPAD_BYTES (CUDA_BLOCK_SIZE * CUDA_BLOCK_COUNT)  // 64 KiB per thread
+#define CUDA_PASSES          2
+#define CUDA_RANDOM_READS    64
 
 // ============================================================================
 // Helper Functions
@@ -482,7 +482,7 @@ __global__ void cosmic_harmony_v3_mine(
     unsigned int* __restrict__ result_count,
     unsigned char* __restrict__ result_hash,
     unsigned int memory_hard,             // 1 = always (CHV3_MEMORY_HARD_FORK_HEIGHT=0)
-    unsigned char* __restrict__ scratchpad_buf, // per-thread 512 KiB
+    unsigned char* __restrict__ scratchpad_buf, // per-thread 64 KiB
     unsigned int chv4,                    // 1 = always (CHV4_NPU_FORK_HEIGHT=0)
     const char*  __restrict__ npu_w1,     // [128*64] int8
     const char*  __restrict__ npu_b1,     // [128]    int8

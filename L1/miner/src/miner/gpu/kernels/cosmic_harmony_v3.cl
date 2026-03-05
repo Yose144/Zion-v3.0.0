@@ -8,7 +8,7 @@
 //   1. keccak_f1600 outer loop unrolled (#pragma unroll 4)
 //   2. Rho+Pi inlined, Chi inlined per row macro
 //   3. LOAD_U64_LE / STORE_U64_LE byte-packing macros
-//   4. Scratchpad: 512 KiB/thread in global memory, batch limited to ~4096 when active
+//   4. Scratchpad: 64 KiB/thread in global memory
 //   5. Build flags: -cl-mad-enable -cl-fast-relaxed-math
 
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
@@ -407,17 +407,17 @@ void sha3_512_random_final(
 }
 
 // ============================================================================
-// Memory-hard scratchpad  (512 KiB per thread, in global memory)
+// Memory-hard scratchpad  (64 KiB per thread, in global memory)
 // Mirrors Rust: cosmic-harmony/src/scratchpad.rs  memory_hard_transform()
 // ============================================================================
 
-#define CL_SCRATCHPAD_BYTES (512u * 1024u)  // 524288 bytes
+#define CL_SCRATCHPAD_BYTES (64u * 1024u)   // 65536 bytes
 #define CL_BLOCK_SIZE       64u
-#define CL_BLOCK_COUNT      8192u           // SCRATCHPAD_BYTES / BLOCK_SIZE
-#define CL_PASSES           4u
-#define CL_RANDOM_READS     256u
+#define CL_BLOCK_COUNT      1024u           // SCRATCHPAD_BYTES / BLOCK_SIZE
+#define CL_PASSES           2u
+#define CL_RANDOM_READS     64u
 
-// Step 1: deterministic SHA3-512 chain initialises all 8192 × 64B blocks.
+// Step 1: deterministic SHA3-512 chain initialises all 1024 × 64B blocks.
 void cl_init_scratchpad(__global uchar* pad, const uchar seed[64]) {
     uchar state[64];
     #pragma unroll 64
@@ -481,7 +481,7 @@ void cl_mix_block(
     }
 }
 
-// 4 sequential passes over the 8192-block scratchpad.
+// 2 sequential passes over the 1024-block scratchpad.
 // Even passes: forward; odd passes: backward.
 void cl_sequential_passes(__global uchar* pad) {
     for (uint pass = 0; pass < CL_PASSES; pass++) {

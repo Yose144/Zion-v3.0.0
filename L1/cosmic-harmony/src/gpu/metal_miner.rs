@@ -3,7 +3,7 @@
 //! Uses Apple Metal API for native GPU acceleration on Apple Silicon.
 //! Full CHv4 pipeline on GPU:
 //!   Keccak-256 → SHA3-512 → Golden Matrix
-//!   → Memory-Hard Scratchpad (512 KiB/thread)
+//!   → Memory-Hard Scratchpad (64 KiB/thread)
 //!   → NPU Mixing (INT8 MLP 64→128→64 + residual)
 //!   → Cosmic Fusion
 //! CHV4_NPU_FORK_HEIGHT = 0: CHv4 always active from genesis.
@@ -11,7 +11,7 @@
 //! Buffer layout matches Metal shader structs:
 //!   buffer(0) = CHv4MiningParams { start_nonce, header_len, header[80], target[32], block_height }
 //!   buffer(1) = CHv4MiningResult { found_nonce, found_hash[32], found }
-//!   buffer(2) = scratchpad_buf  (batch_size × 512 KiB)
+//!   buffer(2) = scratchpad_buf  (batch_size × 64 KiB)
 //!   buffer(3) = npu_w1   [128×64  i8]  Layer-1 weights
 //!   buffer(4) = npu_b1   [128     i8]  Layer-1 bias
 //!   buffer(5) = npu_w2   [64×128  i8]  Layer-2 weights
@@ -75,7 +75,7 @@ pub struct MetalMiner {
     result_buf: Buffer,
     hashes_buf: Option<Buffer>,
 
-    // CHv4: per-thread scratchpad (batch_size × 512 KiB)
+    // CHv4: per-thread scratchpad (batch_size × 64 KiB)
     scratchpad_buf: Buffer,
 
     // CHv4: NPU weight buffers (uploaded once at init, never change)
@@ -220,8 +220,8 @@ impl MetalMiner {
 
         log::debug!("   NPU weights uploaded ({} bytes total)", 8192 + 128 + 8192 + 64 + 256 + 128);
 
-        // ── CHv4: scratchpad buffer — each thread gets 512 KiB ──
-        let scratchpad_bytes = (batch_size as u64) * 524_288u64;
+        // ── CHv4: scratchpad buffer — each thread gets 64 KiB ──
+        let scratchpad_bytes = (batch_size as u64) * 65_536u64;
         let scratchpad_buf = device.new_buffer(scratchpad_bytes, options);
         // Guard against Metal returning nil (OOM) — buffer.length() would be 0.
         let allocated = scratchpad_buf.length();
@@ -235,7 +235,7 @@ impl MetalMiner {
             )));
         }
         log::debug!(
-            "   Scratchpad: {} MiB total ({} threads × 512 KiB)",
+            "   Scratchpad: {} MiB total ({} threads × 64 KiB)",
             scratchpad_bytes / (1024 * 1024),
             batch_size
         );

@@ -230,16 +230,16 @@ void cosmic_fusion(__private uchar *input, __private uchar *output) {
 }
 
 // ============================================================================
-// Memory-hard scratchpad  (512 KiB per thread in global memory)
+// Memory-hard scratchpad  (64 KiB per thread in global memory)
 // Mirrors Rust: cosmic-harmony/src/scratchpad.rs  memory_hard_transform()
 // Active always from genesis (CHV3_MEMORY_HARD_FORK_HEIGHT = 0, CHV4_NPU_FORK_HEIGHT = 0)
 // ============================================================================
 
-#define CL_SCRATCHPAD_BYTES (512u * 1024u)   // 524288 bytes
+#define CL_SCRATCHPAD_BYTES (64u * 1024u)    // 65536 bytes
 #define CL_BLOCK_SIZE        64u
-#define CL_BLOCK_COUNT       8192u           // SCRATCHPAD_BYTES / BLOCK_SIZE
-#define CL_PASSES            4u
-#define CL_RANDOM_READS      256u
+#define CL_BLOCK_COUNT       1024u           // SCRATCHPAD_BYTES / BLOCK_SIZE
+#define CL_PASSES            2u
+#define CL_RANDOM_READS      64u
 
 // SHA3-512(state[64] ++ counter_u64_le)  –  exactly 72 bytes = 1 full rate block
 void sha3_512_state_counter(const uchar state[64], ulong counter, uchar out64[64]) {
@@ -299,7 +299,7 @@ void sha3_512_random_final(
     for (int i = 0; i < 8; i++) STORE_U64_LE(out64, i*8, st[i]);
 }
 
-// Step 1: fill 8192 × 64B blocks via SHA3-512 chain
+// Step 1: fill 1024 × 64B blocks via SHA3-512 chain
 void cl_init_scratchpad(__global uchar* pad, const uchar seed[64]) {
     uchar state[64];
     for (int i = 0; i < 64; i++) state[i] = seed[i];
@@ -715,7 +715,7 @@ class CosmicHarmonyV3GPU:
         self.device_id = device_id
         self.batch_size = batch_size
         self.work_group_size = work_group_size
-        # Memory-hard batch: max threads when scratchpad is active (512 KiB each)
+        # Memory-hard batch: max threads when scratchpad is active (64 KiB each)
         self.mh_batch_size = max(
             1,
             mh_batch_size if mh_batch_size is not None
@@ -771,8 +771,8 @@ class CosmicHarmonyV3GPU:
         self.found_hash_buf = cl.Buffer(self.ctx, cl.mem_flags.WRITE_ONLY, 32)
         self.solution_count_buf = cl.Buffer(self.ctx, cl.mem_flags.READ_WRITE, 4)
 
-        # Scratchpad buffer: 512 KiB × mh_batch_size (for memory-hard height >= 100k)
-        _mh_sp_bytes = self.mh_batch_size * 512 * 1024
+        # Scratchpad buffer: 64 KiB × mh_batch_size
+        _mh_sp_bytes = self.mh_batch_size * 64 * 1024
         try:
             self.scratchpad_buf = cl.Buffer(self.ctx, cl.mem_flags.READ_WRITE, _mh_sp_bytes)
             print(f"[GPU] Scratchpad buffer: {_mh_sp_bytes // (1024*1024)} MiB ({self.mh_batch_size} MH threads)")
@@ -900,7 +900,7 @@ class CosmicHarmonyV3GPU:
         if adjusted_batch == 0:
             adjusted_batch = max_wg
 
-        # When memory-hard: cap to mh_batch_size (VRAM budget: mh_batch_size * 512 KiB)
+        # When memory-hard: cap to mh_batch_size (VRAM budget: mh_batch_size * 64 KiB)
         if mh_flag:
             mh_cap = (self.mh_batch_size // max_wg) * max_wg
             if mh_cap == 0:

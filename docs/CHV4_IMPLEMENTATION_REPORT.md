@@ -208,6 +208,7 @@ Rezervováno pro L3 NCL marketplace implementaci.
 
 ## Dalš kroky
 
+0. **Parametrický redesign PoW (golden middle):** viz [docs/v2.9.6/CHV4_GOLDEN_MIDDLE_PROPOSAL.md](v2.9.6/CHV4_GOLDEN_MIDDLE_PROPOSAL.md)
 1. **M1 Mac test**: `cargo test -p zion-cosmic-harmony-v3` na Apple Silicon → ověřit CoreML path aktivuje
 2. **End-to-end test**: spustit pool + miner, sledovat NCL logy (`ncl.register → ncl.get_task → ncl.submit accepted`)
 3. **Fork height**: `CHV4_NPU_FORK_HEIGHT = 0` — CHv4 aktivní od genesis od 2026-03-03 ✅ (governance hlasování nepotřebné, rozhodnuto incore)

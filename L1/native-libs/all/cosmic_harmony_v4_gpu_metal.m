@@ -10,7 +10,7 @@
  * Algorithm: Full CHv4 pipeline executed on GPU via MTLComputeCommandEncoder.
  *   Each Metal thread computes one nonce:
  *     Keccak-256 → SHA3-512 → Golden Matrix
- *     → Memory-Hard Scratchpad (512 KiB/thread)
+ *     → Memory-Hard Scratchpad (64 KiB/thread)
  *     → NPU Mixing (INT8 MLP 64→128→64 + residual)
  *     → Cosmic Fusion
  *
@@ -63,7 +63,7 @@ typedef struct {
     uint32_t found;         /* 0 = nothing found, 1 = solution */
 } CHv4MetalResult;
 
-#define CHV4_SCRATCHPAD_BYTES 524288u   /* 512 KiB per thread */
+#define CHV4_SCRATCHPAD_BYTES 65536u    /* 64 KiB per thread */
 
 /* ============================================================================
  * Metal GPU state (single global — one GPU device)
@@ -78,7 +78,7 @@ static id<MTLBuffer>               g_w2_buf        = nil;   /* int8[8192]  */
 static id<MTLBuffer>               g_b2_buf        = nil;   /* int8[64]    */
 static id<MTLBuffer>               g_scale1_buf    = nil;   /* int16[128]  */
 static id<MTLBuffer>               g_scale2_buf    = nil;   /* int16[64]   */
-static id<MTLBuffer>               g_scratch_buf   = nil;   /* batch * 512 KiB */
+static id<MTLBuffer>               g_scratch_buf   = nil;   /* batch * 64 KiB */
 static uint32_t                    g_batch_size    = 0;
 static int                         g_initialized   = 0;
 
@@ -238,9 +238,9 @@ int32_t cosmic_harmony_v4_gpu_init(uint32_t device_id, uint32_t batch_size) {
     @autoreleasepool {
         (void)device_id;
 
-        /* Clamp batch_size: 1..2048 (scratchpad: up to 1 GiB for b=2048) */
+        /* Clamp batch_size: 1..8192 (scratchpad: up to 512 MiB for b=8192) */
         if (batch_size == 0) batch_size = 256;
-        if (batch_size > 2048) batch_size = 2048;
+        if (batch_size > 8192) batch_size = 8192;
 
         /* Cleanup any previous state */
         cosmic_harmony_v4_gpu_cleanup();
@@ -291,7 +291,7 @@ int32_t cosmic_harmony_v4_gpu_init(uint32_t device_id, uint32_t batch_size) {
             return -5;
         }
 
-        /* 7. Allocate per-thread scratchpad buffer (batch_size × 512 KiB) */
+        /* 7. Allocate per-thread scratchpad buffer (batch_size × 64 KiB) */
         size_t scratch_total = (size_t)batch_size * CHV4_SCRATCHPAD_BYTES;
         g_scratch_buf = [g_device newBufferWithLength:scratch_total
                                               options:MTLResourceStorageModePrivate];
@@ -304,7 +304,7 @@ int32_t cosmic_harmony_v4_gpu_init(uint32_t device_id, uint32_t batch_size) {
         g_batch_size  = batch_size;
         g_initialized = 1;
 
-        printf("[CHv4 Metal] GPU ready: %u threads × 512 KiB = %zu MiB scratchpad\n",
+        printf("[CHv4 Metal] GPU ready: %u threads × 64 KiB = %zu MiB scratchpad\n",
                batch_size, scratch_total / (1024 * 1024));
         return 0;
     }

@@ -1,7 +1,7 @@
 //! Metal GPU mining backend for Apple Silicon — CHv4
 //!
 //! Native Metal GPU acceleration for Apple Silicon on M1/M2/M3/M4/M5.
-//! Full CHv4 pipeline: Keccak → SHA3 → GoldenMatrix → Scratchpad(512KiB)
+//! Full CHv4 pipeline: Keccak → SHA3 → GoldenMatrix → Scratchpad(64KiB)
 //! → NPU Mixing (INT8 MLP 64→128→64) → CosmicFusion.
 //!
 //! CHV4_NPU_FORK_HEIGHT = 0: CHv4 always active from genesis block 0.
@@ -155,7 +155,7 @@ pub fn detect_metal_devices() -> Result<Vec<GpuDevice>> {
     #[cfg(all(feature = "metal", target_os = "macos"))]
     {
         // Try to create a MetalMiner to detect device — use tiny batch_size (no hashing).
-        // Large batch would allocate a huge scratchpad (batch × 512 KiB), causing OOM.
+        // Large batch would allocate a huge scratchpad (batch × 64 KiB), causing OOM.
         match zion_cosmic_harmony_v3::gpu::metal_miner::MetalMiner::new(64) {
             Ok(miner) => {
                 let info = miner.device_info();
