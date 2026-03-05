@@ -1,14 +1,21 @@
-//! Metal GPU mining backend for Apple Silicon — CHv4
+//! Metal GPU mining backend for Apple Silicon — CHv4.1 + CHv4.2
 //!
 //! Native Metal GPU acceleration for Apple Silicon on M1/M2/M3/M4/M5.
-//! Full CHv4 pipeline: Keccak → SHA3 → GoldenMatrix → Scratchpad(64KiB)
+//! Full CHv4.1 pipeline: Keccak → SHA3 → GoldenMatrix → Scratchpad(64KiB)
 //! → NPU Mixing (INT8 MLP 64→128→64) → CosmicFusion.
 //!
-//! CHV4_NPU_FORK_HEIGHT = 0: CHv4 always active from genesis block 0.
-//! Hashes are fully pool-compatible.
+//! CHv4.2 Merkabah Dual-Spin dispatch:
+//!   mine_batch předává výšku bloku (height) do MetalMiner, který volá
+//!   cosmic_harmony_with_height(header, nonce, height). Jakmile height >=
+//!   CHV4_2_FORK_HEIGHT (nebo ZION_CHV4_2_FORK_HEIGHT env override), Metal
+//!   miner automaticky přepne na CHv4.2 Merkabah Dual-Spin.
+//!   Scratchpad zůstává 64 KiB — žádná změna VRAM kalkulace.
 //!
-//! Uses zion-cosmic-harmony-v3 crate’s MetalMiner with correct
-//! packed struct buffer layout matching the Metal compute shader.
+//! CHV4_2_FORK_HEIGHT = u64::MAX: CHv4.2 deaktivováno do community vote.
+//! Testnet: ZION_CHV4_2_FORK_HEIGHT=10000 (override přes env var).
+//!
+//! Používá zion-cosmic-harmony-v3 crate's MetalMiner s packed struct buffer
+//! layoutem odpovídajícím Metal compute shaderu.
 
 use super::{GpuDevice, GpuMiner, GpuPlatform};
 use anyhow::{anyhow, Result};
