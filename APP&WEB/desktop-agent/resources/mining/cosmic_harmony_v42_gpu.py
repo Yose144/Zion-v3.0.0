@@ -160,6 +160,12 @@ class MetalBackend:
         self._objc_device = None
         self._objc_pipeline = None
         self._objc_queue = None
+        # NPU mix pipeline (M3+ only — chv42_npu_mix, #if __METAL_VERSION__ >= 300)
+        # Bezi soubeznne s hlavnim mine kernem na AMX matrix units (Apple Silicon)
+        self._npu_pipeline = None
+        self._npu_w_A = None   # weight_A [64x128] float32 — z HIC konstant
+        self._npu_w_B = None   # weight_B [128x64] float32
+        self._npu_ready = False
         self._setup()
 
     def _setup(self) -> None:
@@ -212,6 +218,40 @@ class MetalBackend:
             self._ready         = True
             dev_name = device.name() if hasattr(device, "name") else "Apple GPU"
             log.info("[Metal] PyObjC Metal device: %s", dev_name)
+
+            # Pokus o kompilaci NPU mix kernelu (M3+ only, Metal >= 3.0, simdgroup_matrix)
+            try:
+                import numpy as _np
+                npu_fn = lib.newFunctionWithName_("chv42_npu_mix")
+                if npu_fn is not None:
+                    npu_pl, _er = device.newComputePipelineStateWithFunction_error_(npu_fn, None)
+                    if npu_pl is not None:
+                        # Vahy inicializovany deterministicky z HIC konstant
+                        _H = [
+                            0x9E3779B97F4A7C15, 0x6C62272E07BB0142, 0xD37F5B21975B4D6C,
+                            0xA0761D6478BD642F, 0xE7037ED1A0B428DB, 0x9545CCAC3E89EA53,
+                            0xD41490F7D7B3A609, 0x85F21F6B2C23E9B3, 0xDB0C2E0D64F98FA4,
+                            0x4A62D0B9F7E7C9A1, 0xF4CCD5F9FB8F9B6E, 0x2B6E5E8A9C4D7F3B,
+                            0x8F14E45FCEEA367F, 0xC4CEB9FE1A85EC53, 0x94D049BB133111EB,
+                            0xBF58476D1CE4E5B9, 0x6C62272E07BB0142, 0xE7037ED1A0B428DB,
+                            0x9E3779B97F4A7C55, 0xA0761D6478BD6435, 0x95F519AFDB7ED4C9,
+                            0xDB0C2E0D64F98FA7,
+                        ]
+                        n22 = len(_H)
+                        # weight_A [64x128]: Xavier-like init z HIC
+                        self._npu_w_A = _np.array(
+                            [((_H[i % n22] >> ((i * 3) % 48)) & 0xFF) / 127.5 - 1.0
+                             for i in range(64 * 128)], dtype=_np.float32)
+                        # weight_B [128x64]: posunuty index pro nezavislost
+                        self._npu_w_B = _np.array(
+                            [((_H[(i + 11) % n22] >> ((i * 5) % 48)) & 0xFF) / 127.5 - 1.0
+                             for i in range(128 * 64)], dtype=_np.float32)
+                        self._npu_pipeline = npu_pl
+                        self._npu_ready = True
+                        log.info("[Metal/NPU] chv42_npu_mix pipeline aktivni (M3+ AMX matrix units)")
+            except Exception as _npu_e:
+                log.debug("[Metal/NPU] NPU mix pipeline skip (M3+ vyzadovan): %s", _npu_e)
+
             return
         except Exception as e:
             log.warning("[Metal] PyObjC Metal setup selhalo: %s", e)
@@ -279,8 +319,39 @@ class MetalBackend:
         n_groups = _MTL.MTLSizeMake((nonce_count + 63) // 64, 1, 1)
         enc.dispatchThreadgroups_threadsPerThreadgroup_(n_groups, tg_size)
         enc.endEncoding()
+
+        # NPU mix pass — soucasne s mine kernem na AMX matrix units (M3+ only)
+        # Oba command buffery jsou odeslany pred waitUntilCompleted → soubeznne GPU + AMX
+        _cmd_npu = None
+        if self._npu_ready and self._npu_pipeline is not None:
+            try:
+                n_npu = max(1, min(nonce_count // 64, 64))
+                # Float reprezentace hlavicky jako vstupni matice pro NPU mix
+                hdr_f = np.array(
+                    [(header[i % len(header)] / 127.5 - 1.0) for i in range(n_npu * 64)],
+                    dtype=np.float32)
+                npu_out = np.zeros(n_npu * 64, dtype=np.float32)
+                _cmd_npu = queue.commandBuffer()
+                _enc_npu = _cmd_npu.computeCommandEncoder()
+                _enc_npu.setComputePipelineState_(self._npu_pipeline)
+                for _ii, _b in enumerate([
+                    _np_buf(hdr_f), _np_buf(npu_out),
+                    _np_buf(self._npu_w_A), _np_buf(self._npu_w_B),
+                ]):
+                    _enc_npu.setBuffer_offset_atIndex_(_b, 0, _ii)
+                _enc_npu.dispatchThreadgroups_threadsPerThreadgroup_(
+                    _MTL.MTLSizeMake(n_npu, 1, 1), _MTL.MTLSizeMake(64, 1, 1))
+                _enc_npu.endEncoding()
+                _cmd_npu.commit()  # odeslano pred main cmd — soubeznne spusteni
+            except Exception as _npu_e:
+                log.debug("[Metal/NPU] dispatch skip: %s", _npu_e)
+                _cmd_npu = None
+
         cmd.commit()
         cmd.waitUntilCompleted()
+        if _cmd_npu is not None:
+            try: _cmd_npu.waitUntilCompleted()
+            except Exception: pass
 
         # Výstup je přímo v numpy polích (unified memory — žádné kopírování)
         out_nonce = int(result_n_arr[0])
