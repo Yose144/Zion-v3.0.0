@@ -185,6 +185,24 @@ if COSMIC_V4_AVAILABLE and _cosmic_v4_raw is not None:
     COSMIC_V3_AVAILABLE = True
     print("[OK] Cosmic Harmony: CHv4 native engine active (replaces CHv3 for consensus)")
 
+# ── Cosmic Harmony v4 — Metal GPU (macOS only) ────────────────────────────────
+# libcosmic_harmony_v4_metal.dylib: 1 GPU dispatch per mine_batch call (~2048 threads).
+# Výkon: ~100-200 H/s na M1 (limit = 40960 SHA3-512 ops/hash, memory-hard design).
+# Parity verified: GPU hash == CPU hash ✅
+# ─────────────────────────────────────────────────────────────────────────────
+COSMIC_V4_METAL_GPU_AVAILABLE = False
+_cosmic_v4_metal_gpu = None
+
+try:
+    from cosmic_harmony_v4_metal_gpu import CosmicHarmonyV4MetalGPU, METAL_GPU_AVAILABLE as _METAL_AVAIL
+    if _METAL_AVAIL:
+        _chv4_metal_batch = _read_env_int("ZION_GPU_BATCH_SIZE", 2048, 64, 8192)
+        _cosmic_v4_metal_gpu = CosmicHarmonyV4MetalGPU(batch_size=_chv4_metal_batch)
+        COSMIC_V4_METAL_GPU_AVAILABLE = True
+        print(f"[OK] Cosmic Harmony v4 Metal GPU loaded: {_cosmic_v4_metal_gpu.device_info.name} (batch={_chv4_metal_batch})")
+except Exception as _e:
+    print(f"[WARN] Cosmic Harmony v4 Metal GPU not available: {_e}")
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s'
@@ -1859,12 +1877,28 @@ class ZionNativeMiner:
             logger.info("⚠️  GPU mining not yet supported for Cosmic Harmony v2")
         
         elif algo in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4):
-            # Cosmic Harmony v3: Native Rust + GPU (21+ MH/s)
+            # Cosmic Harmony v4/v3: Native Rust + GPU
             self._gpu_init_error = None
-            
-            # Try GPU first (21+ MH/s on Apple M1)
-            want_gpu = (self.config.mode in [MiningMode.GPU, MiningMode.AUTO]) and COSMIC_V3_GPU_AVAILABLE
-            if want_gpu and _cosmic_v3_gpu:
+            want_gpu = self.config.mode in [MiningMode.GPU, MiningMode.AUTO]
+
+            # ── Metal GPU (macOS, highest priority on Apple Silicon) ──────────
+            if want_gpu and COSMIC_V4_METAL_GPU_AVAILABLE and _cosmic_v4_metal_gpu:
+                try:
+                    self.gpu_miner = _cosmic_v4_metal_gpu
+                    configured_batch = _read_env_int("ZION_GPU_BATCH_SIZE", 2048, 64, 8192)
+                    if int(getattr(self.gpu_miner, "batch_size", 0) or 0) != configured_batch:
+                        self.gpu_miner.batch_size = configured_batch
+                    logger.info(
+                        f"✅ Cosmic Harmony v4 Metal GPU active: {_cosmic_v4_metal_gpu.device_info.name} "
+                        f"(batch={configured_batch}, ~{configured_batch // 11} H/s)"
+                    )
+                except Exception as e:
+                    self.gpu_miner = None
+                    self._gpu_init_error = str(e)
+                    logger.warning(f"CHv4 Metal GPU init failed: {e}")
+
+            # ── OpenCL GPU (Linux/Win/macOS with PyOpenCL) ────────────────────
+            if not self.gpu_miner and want_gpu and COSMIC_V3_GPU_AVAILABLE and _cosmic_v3_gpu:
                 try:
                     self.gpu_miner = _cosmic_v3_gpu
                     configured_batch = int(
@@ -1900,9 +1934,11 @@ class ZionNativeMiner:
                 logger.warning("⚠️  CH v3 CPU not available; running GPU-only")
             
             if self.gpu_miner and self.cpu_threads:
-                logger.info("🚀 Cosmic Harmony v3 DUAL mining ready (CPU + GPU)")
+                gpu_label = "Metal GPU" if COSMIC_V4_METAL_GPU_AVAILABLE and self.gpu_miner is _cosmic_v4_metal_gpu else "OpenCL GPU"
+                logger.info(f"🚀 Cosmic Harmony DUAL mining ready (CPU + {gpu_label})")
             elif self.gpu_miner:
-                logger.info("🚀 Cosmic Harmony v3 GPU mining ready (21+ MH/s)")
+                gpu_label = "Metal GPU" if COSMIC_V4_METAL_GPU_AVAILABLE and self.gpu_miner is _cosmic_v4_metal_gpu else "OpenCL GPU"
+                logger.info(f"🚀 Cosmic Harmony {gpu_label} mining ready")
             else:
                 logger.info(f"✅ Cosmic Harmony v3 CPU mining ready ({self.config.cpu_threads} threads)")
         
