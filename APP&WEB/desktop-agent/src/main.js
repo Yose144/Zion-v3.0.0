@@ -2732,6 +2732,62 @@ function startMining(config) {
       if (minerProcess) sendToRenderer('miner-started', {});
       updateTrayMenu(minerStats);
     }, 450);
+
+    // ── CHv4.2 Revenue CPU proces ─────────────────────────────────────────────
+    // Pokud je revenue povoleno, spustime CPU miner s --group revenue na stejnem poolu.
+    // Pool StreamScheduler presmeruje g=revenue minery na XMR/RandomX → MoneroOcean → BTC.
+    // GPU zuostava plne pro CHv4.2 Merkabah mining — revenue bezi na volnych CPU vlaknech.
+    const chv42RevEnabled = !!(config?.revenue?.enabled);
+    if (chv42RevEnabled) {
+      try {
+        const chv42RevThreads = Math.max(1, Math.min(Number(config?.revenue?.threads) || 1, 2));
+        const revenueStatsPath = STATS_PATH.replace(/\.json$/, '_chv42_revenue.json');
+        const revMinerPath = findPythonMiner() || MINER_PATH;
+        const revArgs = [
+          revMinerPath,
+          '--algorithm', 'cosmic_harmony',
+          '--mode', 'cpu',
+          '--pool', pool,
+          '--wallet', wallet,
+          '--threads', String(chv42RevThreads),
+          '--group', 'revenue',
+          '--stats-file', revenueStatsPath,
+          '--stats-interval', String(STATS_INTERVAL_SEC || 30),
+        ];
+        if (worker) revArgs.push('--worker', `${worker}_rev`);
+        revenueProcess = spawn(pyExe, revArgs, {
+          env: { ...process.env },
+          stdio: ['pipe', 'pipe', 'pipe'],
+          windowsHide: true,
+        });
+        log(`[CHv4.2-REV] Revenue CPU spusten (PID ${revenueProcess?.pid}) — ${chv42RevThreads}T -> ${pool} g=revenue`);
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[CHv4.2-REV] Revenue CPU miner spusten (PID ${revenueProcess?.pid}) — ${chv42RevThreads}T CPU -> ${pool} (g=revenue)\n`,
+        });
+        revenueProcess.stdout?.on('data', (d) => {
+          try { sendToRenderer('miner-output', { stream: 'stdout', text: `[CHv4.2-REV] ${d.toString()}` }); } catch {}
+        });
+        revenueProcess.stderr?.on('data', (d) => {
+          try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CHv4.2-REV] ${d.toString()}` }); } catch {}
+        });
+        revenueProcess.on('error', (err) => {
+          log(`[CHv4.2-REV] Revenue process error: ${err}`);
+          revenueProcess = null;
+        });
+        revenueProcess.on('close', (code) => {
+          revenueProcess = null;
+          if (minerProcess && code !== 0) {
+            try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CHv4.2-REV] Revenue process exited (code=${code}).\n` }); } catch {}
+          }
+        });
+      } catch (revErr) {
+        log(`[CHv4.2-REV] Revenue spawn selhal: ${revErr}`);
+        revenueProcess = null;
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     return { success: true };
   }
   // ─────────────────────────────────────────────────────────────────────────
