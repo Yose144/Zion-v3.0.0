@@ -5,7 +5,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.core
-    image: zion-core:2.9.6-testnet
+    image: zion-core:2.9.7
     container_name: zion-core
     restart: unless-stopped
     ports:
@@ -23,7 +23,7 @@ services:
       - "--network"
       - "testnet"
       - "--peers"
-      - "${SEED_PEERS:-77.42.31.72:8334}"
+      - "${SEED_PEERS:-77.42.31.72:8334,178.156.240.160:8334,5.223.43.93:8334}"
     environment:
       - RUST_LOG=info
       - ZION_NETWORK=testnet
@@ -41,7 +41,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.pool
-    image: zion-pool:2.9.6-testnet
+    image: zion-pool:2.9.7
     container_name: zion-pool
     restart: unless-stopped
     ports:
@@ -76,7 +76,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.miner
-    image: zion-miner:2.9.6-testnet
+    image: zion-miner:2.9.7
     container_name: zion-miner
     restart: unless-stopped
     depends_on:
@@ -89,7 +89,7 @@ services:
       - "--worker"
       - "testnet-miner"
       - "--algorithm"
-      - "cosmic_harmony_v3"
+      - "cosmic_harmony_v4_2"
       - "--threads"
       - "1"
       - "--xmr-pool"

@@ -480,6 +480,8 @@ let minerProcess = null;
 let revenueProcess = null; // 2nd miner process: --group revenue → pool routes to XMR/RandomX
 let gpuRevenueProcess = null; // 3rd miner process: --group revenue --gpu → GPU algorithms (kawpow/ethash)
 let gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
+let chv42GpuProcess = null; // CHv4.2 Merkabah GPU miner (Metal/CUDA/OpenCL)
+let chv42GpuStats = { running: false, hashrate: 0, accepted: 0, rejected: 0, backend: 'cpu', startedAt: 0 };
 
 // ── CH3 Multi-Stream state (dual/triple mining) ───────────────────────────
 // Tracks which GPU coin is active, profit-switch poll, and stream status
@@ -2673,6 +2675,66 @@ function startMining(config) {
   }
   minerGpuInitWatchdogTimer = null;
   gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
+
+  // ── CHv4.2 Merkabah GPU fast-path ─────────────────────────────────────────
+  // When the user selects CHv4.2, we spawn the GPU wrapper as the main
+  // minerProcess so that stop-mining, stats, and log output all work as normal.
+  if (String(config?.algorithm || '').toLowerCase() === 'cosmic_harmony_v4_2') {
+    const isPackaged = app.isPackaged;
+    const gpuScript = isPackaged
+      ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_v42_gpu.py')
+      : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_v42_gpu.py');
+
+    // Stejná venv resoluce jako pro ostatní Python minery
+    const _venvCandidates = process.platform === 'win32'
+      ? [path.join(APP_ROOT, '.venv', 'Scripts', 'python.exe'),
+         path.join(APP_ROOT, '..', '.venv', 'Scripts', 'python.exe'),
+         path.join(APP_ROOT, '..', '..', '.venv', 'Scripts', 'python.exe')]
+      : [path.join(APP_ROOT, '.venv', 'bin', 'python3'),
+         path.join(APP_ROOT, '..', '.venv', 'bin', 'python3'),
+         path.join(APP_ROOT, '..', '..', '.venv', 'bin', 'python3')];
+    const _envVenv = String(process.env.VIRTUAL_ENV || '').trim();
+    if (_envVenv) {
+      _venvCandidates.unshift(process.platform === 'win32'
+        ? path.join(_envVenv, 'Scripts', 'python.exe')
+        : path.join(_envVenv, 'bin', 'python3'));
+    }
+    const _resolvedPy = _venvCandidates.find(c => { try { return !!c && fs.existsSync(c); } catch { return false; } });
+    const pyExe = _resolvedPy || (process.platform === 'win32' ? 'python' : 'python3');
+
+    const pool = `${config.pool?.host || '77.42.31.72'}:${config.pool?.port || 3333}`;
+    const wallet = config.wallet || '';
+    const worker = config.worker || 'desktop-agent';
+    log(`[CHv4.2] Starting GPU miner → ${pyExe} ${gpuScript} --pool ${pool}`);
+    sendToRenderer('miner-output', { stream: 'stdout', text: `[CHv4.2] Spouštím Merkabah GPU miner...\n[CHv4.2] Python: ${pyExe}\n[CHv4.2] Pool: ${pool} | Worker: ${worker}\n` });
+    try {
+      minerProcess = spawn(pyExe, [gpuScript, '--pool', pool, '--wallet', wallet, '--worker', worker, '--backend', 'auto'], {
+        env: { ...process.env },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        windowsHide: true
+      });
+    } catch (e) {
+      const msg = `[CHv4.2] Failed to spawn GPU miner: ${e}\n`;
+      sendToRenderer('miner-output', { stream: 'stderr', text: msg });
+      return { success: false, error: String(e) };
+    }
+    sendToRenderer('miner-backend', { preferred: 'python', resolved: 'chv42-gpu', path: pyExe, lastError: '' });
+    minerProcess.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
+    minerProcess.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
+    minerProcess.on('exit', (code) => {
+      log(`[CHv4.2] GPU miner exited (code ${code})`);
+      minerProcess = null;
+      minerStopping = false;
+      sendToRenderer('miner-stopped', { code });
+      updateTrayMenu(minerStats);
+    });
+    setTimeout(() => {
+      if (minerProcess) sendToRenderer('miner-started', {});
+      updateTrayMenu(minerStats);
+    }, 450);
+    return { success: true };
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
   const selection = resolveMinerSelection(preferredBackend);
@@ -5987,6 +6049,64 @@ ipcMain.handle('start-mining', (event, config) => {
 ipcMain.handle('stop-mining', async () => {
   const result = await stopMiningAsync();
   return result.success ? { success: true } : { success: false, error: result.error };
+});
+
+// ─── CHv4.2 Merkabah GPU Mining ───────────────────────────────────────────
+ipcMain.handle('start-chv42-gpu', (event, cfg) => {
+  if (chv42GpuProcess) return { success: false, error: 'CHv4.2 GPU already running' };
+  const conf = cfg || loadConfig();
+  const pool = `${conf.pool?.host || '77.42.31.72'}:${conf.pool?.port || 3333}`;
+  const wallet = conf.wallet || '';
+  const worker = conf.worker || 'desktop-agent';
+  const isPackaged = app.isPackaged;
+  const gpuScript = isPackaged
+    ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_v42_gpu.py')
+    : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_v42_gpu.py');
+  const pyExe = process.platform === 'win32' ? 'python' : 'python3';
+  const args = [gpuScript, '--pool', pool, '--wallet', wallet, '--worker', worker, '--backend', 'auto'];
+  log(`[CHv4.2] Spawning GPU miner: ${pyExe} ${args.join(' ')}`);
+  try {
+    chv42GpuProcess = spawn(pyExe, args, { env: { ...process.env } });
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+  chv42GpuStats = { running: true, hashrate: 0, accepted: 0, rejected: 0, backend: 'auto', startedAt: Date.now() };
+  chv42GpuProcess.stdout.on('data', (d) => {
+    const txt = d.toString();
+    const hrMatch = txt.match(/Hashrate:\s*([\d.]+)\s*H\/s/i);
+    if (hrMatch) chv42GpuStats.hashrate = parseFloat(hrMatch[1]);
+    const backendMatch = txt.match(/\[(METAL|CUDA|OPENCL|CPU)\]/i);
+    if (backendMatch) chv42GpuStats.backend = backendMatch[1].toLowerCase();
+    const accMatch = txt.match(/accepted[:\s]+(\d+)/i);
+    if (accMatch) chv42GpuStats.accepted = parseInt(accMatch[1]);
+    const rejMatch = txt.match(/rejected[:\s]+(\d+)/i);
+    if (rejMatch) chv42GpuStats.rejected = parseInt(rejMatch[1]);
+    sendToRenderer('chv42-output', { text: txt });
+  });
+  chv42GpuProcess.stderr.on('data', (d) => {
+    sendToRenderer('chv42-output', { text: `[stderr] ${d.toString()}` });
+  });
+  chv42GpuProcess.on('exit', (code) => {
+    log(`[CHv4.2] GPU miner exited (code ${code})`);
+    chv42GpuProcess = null;
+    chv42GpuStats.running = false;
+    sendToRenderer('chv42-stopped', { code });
+  });
+  return { success: true };
+});
+
+ipcMain.handle('stop-chv42-gpu', async () => {
+  if (chv42GpuProcess) {
+    try { chv42GpuProcess.kill('SIGTERM'); } catch {}
+    chv42GpuProcess = null;
+  }
+  chv42GpuStats.running = false;
+  sendToRenderer('chv42-stopped', { code: 0 });
+  return { success: true };
+});
+
+ipcMain.handle('get-chv42-status', () => {
+  return { ...chv42GpuStats };
 });
 
 ipcMain.handle('get-stats', () => {

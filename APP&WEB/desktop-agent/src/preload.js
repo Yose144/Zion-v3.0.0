@@ -19,6 +19,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Mining control
   startMining: (config) => ipcRenderer.invoke('start-mining', config),
   stopMining: () => ipcRenderer.invoke('stop-mining'),
+
+  // CHv4.2 Merkabah GPU mining
+  startChv42Gpu: (config) => ipcRenderer.invoke('start-chv42-gpu', config),
+  stopChv42Gpu: () => ipcRenderer.invoke('stop-chv42-gpu'),
+  getChv42Status: () => ipcRenderer.invoke('get-chv42-status'),
+  onChv42Output: (callback) => ipcRenderer.on('chv42-output', (event, data) => callback(data)),
+  onChv42Stopped: (callback) => ipcRenderer.on('chv42-stopped', (event, data) => callback(data)),
   
   // Stats
   getStats: () => ipcRenderer.invoke('get-stats'),

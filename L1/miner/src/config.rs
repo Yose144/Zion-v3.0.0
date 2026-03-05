@@ -202,7 +202,10 @@ impl Config {
         let valid_algos = [
             "cosmic_harmony",
             "cosmic_harmony_v3",
+            "cosmic_harmony_v4_2",
             "chv3",
+            "chv4_2",
+            "merkabah",
             "randomx",
             "yescrypt",
             "blake3",
