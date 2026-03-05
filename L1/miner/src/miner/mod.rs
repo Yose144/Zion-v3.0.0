@@ -315,13 +315,36 @@ impl UniversalMiner {
                 let current = job_rx.borrow_and_update();
                 log::debug!("Job state after subscribe: {:?}", current.is_some());
                 if let Some(ref j) = *current {
-                    log::debug!(
-                        "Initial job already available: id={}, height={}",
+                    log::warn!(
+                        "✅ Initial job: id={} height={} target={:.8}… algo={:?}",
                         j.job_id,
-                        j.height
+                        j.height,
+                        j.target,
+                        j.algo,
                     );
                     if let Ok(mut state) = job_state.write() {
                         *state = Some(j.clone());
+                    }
+                    // Update stats with initial job (borrow_and_update consumes the
+                    // changed event so the stats watcher below never fires for it).
+                    let target_str = j.target.trim();
+                    let algo_str = j.algo.as_deref().unwrap_or("").to_lowercase();
+                    let is_cosmic = algo_str.contains("cosmic");
+                    if let Ok(mut stats) = self.stats.try_write() {
+                        stats.set_pool_height(j.height);
+                        if !target_str.is_empty() {
+                            let display_diff: u64 = if target_str.len() <= 8 || is_cosmic {
+                                let t8 = &target_str[..target_str.len().min(8)];
+                                u32::from_str_radix(t8, 16).ok().filter(|&t| t > 0)
+                                    .map(|t| 0xFFFF_FFFFu64 / t as u64).unwrap_or(0)
+                            } else {
+                                u64::from_str_radix(&target_str[target_str.len().saturating_sub(16)..], 16)
+                                    .ok().filter(|&t| t > 0).map(|t| u64::MAX / t).unwrap_or(0)
+                            };
+                            if display_diff > 0 {
+                                stats.set_difficulty(display_diff as f64);
+                            }
+                        }
                     }
                 }
             }
@@ -335,13 +358,35 @@ impl UniversalMiner {
                     Ok(Ok(())) => {
                         let job = job_rx.borrow().clone();
                         if let Some(ref j) = job {
-                            log::debug!(
-                                "Initial job received: id={}, height={}",
+                            log::warn!(
+                                "✅ Initial job (waited): id={} height={} target={:.8}… algo={:?}",
                                 j.job_id,
-                                j.height
+                                j.height,
+                                j.target,
+                                j.algo,
                             );
                             if let Ok(mut state) = job_state.write() {
                                 *state = Some(j.clone());
+                            }
+                            // Update stats for initial job received via wait.
+                            let target_str = j.target.trim();
+                            let algo_str = j.algo.as_deref().unwrap_or("").to_lowercase();
+                            let is_cosmic = algo_str.contains("cosmic");
+                            if let Ok(mut stats) = self.stats.try_write() {
+                                stats.set_pool_height(j.height);
+                                if !target_str.is_empty() {
+                                    let display_diff: u64 = if target_str.len() <= 8 || is_cosmic {
+                                        let t8 = &target_str[..target_str.len().min(8)];
+                                        u32::from_str_radix(t8, 16).ok().filter(|&t| t > 0)
+                                            .map(|t| 0xFFFF_FFFFu64 / t as u64).unwrap_or(0)
+                                    } else {
+                                        u64::from_str_radix(&target_str[target_str.len().saturating_sub(16)..], 16)
+                                            .ok().filter(|&t| t > 0).map(|t| u64::MAX / t).unwrap_or(0)
+                                    };
+                                    if display_diff > 0 {
+                                        stats.set_difficulty(display_diff as f64);
+                                    }
+                                }
                             }
                         }
                     }
@@ -373,18 +418,25 @@ impl UniversalMiner {
                             let mut stats = stats_job.write().await;
                             stats.set_pool_height(j.height);
                             // Derive display difficulty from target hex (for stats DIFF line).
-                            // cosmic_harmony: 8-char hex u32 target.  diff = 0xFFFFFFFF / target.
+                            // cosmic_harmony: target is 8-char hex u32 OR 64-char hex 256-bit big-endian.
+                            //   For 64-char, first 8 hex chars = the u32 state0 comparison target.
+                            //   diff = 0xFFFFFFFF / target_u32
                             // randomx: 16-char hex u64 target.  diff = 0xFFFFFFFFFFFFFFFF / target.
                             // If target absent / parse fails, leave existing difficulty unchanged.
                             let target_str = j.target.trim();
+                            let algo_str = j.algo.as_deref().unwrap_or("").to_lowercase();
+                            let is_cosmic = algo_str.contains("cosmic");
                             if !target_str.is_empty() {
-                                let display_diff: u64 = if target_str.len() <= 8 {
-                                    u32::from_str_radix(target_str, 16)
+                                let display_diff: u64 = if target_str.len() <= 8 || is_cosmic {
+                                    // Cosmic harmony (8 or 64 char): first 8 chars = u32 target
+                                    let t8 = &target_str[..target_str.len().min(8)];
+                                    u32::from_str_radix(t8, 16)
                                         .ok()
                                         .filter(|&t| t > 0)
                                         .map(|t| 0xFFFF_FFFFu64 / t as u64)
                                         .unwrap_or(0)
                                 } else {
+                                    // RandomX/Blake3: last 16 chars = u64 target
                                     u64::from_str_radix(&target_str[target_str.len().saturating_sub(16)..], 16)
                                         .ok()
                                         .filter(|&t| t > 0)
@@ -847,6 +899,19 @@ impl UniversalMiner {
                 }
             })
             .clamp(100_000, 32_000_000);
+
+        // For backends with a fixed chip dispatch size (e.g. Metal ~2184 threads),
+        // override batch_size so each mine_batch call = exactly ONE GPU kernel dispatch.
+        // This keeps job-switching latency to ~one dispatch duration (seconds, not hours).
+        if let Some(chip_batch) = miner.natural_batch_size() {
+            batch_size = chip_batch;
+            log::debug!(
+                "GPU [{:?}]: using natural_batch_size {} (chip dispatch granularity)",
+                device_platform,
+                chip_batch
+            );
+        }
+
         let mut last_job_id: Option<String> = None;
         let mut nonce_bookmarks: HashMap<String, u32> = HashMap::new();
         let mut submit_dedup_seen: HashSet<u64> = HashSet::new();
@@ -932,13 +997,15 @@ impl UniversalMiner {
                         }
                         active_algo = job_algo;
 
-                        // Adjust batch size for the new algorithm
-                        batch_size = match active_algo {
+                        // Adjust batch size for the new algorithm.
+                        // If this backend has a fixed chip dispatch size, keep using it
+                        // across algo switches so responsiveness stays consistent.
+                        batch_size = miner.natural_batch_size().unwrap_or_else(|| match active_algo {
                             Algorithm::CosmicHarmony => 16_000_000,
                             Algorithm::Ethash | Algorithm::Autolykos | Algorithm::KawPow => 100_000,
                             Algorithm::RandomX | Algorithm::Yescrypt => 5_000,
                             _ => 250_000,
-                        };
+                        });
                     }
                 }
 

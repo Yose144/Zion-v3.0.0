@@ -76,10 +76,12 @@ pub const TOTAL_MINING_BLOCKS: u64 = MINING_YEARS * BLOCKS_PER_YEAR;
 /// Base block reward (Decade 1): 5,400.067 ZION = 5_400_067_000_000_000 flowers
 pub const BASE_BLOCK_REWARD_ATOMIC: u64 = 5_400_067_000_000_000;
 
-/// Tail emission reward: ~724.785 ZION = 724_785_000_000_000 flowers
-/// Computed: BASE × (4/5)^10 ≈ 724.785 ZION
+/// Tail emission reward: ~724.785 ZION in flowers.
+/// Computed analytically: BASE_BLOCK_REWARD_ATOMIC × (4/5)^10 with integer division
+///   = 5_400_067_000_000_000 × 4^10 / 5^10 = 724_784_723_787_776 flowers
+/// (= ~724.784723 ZION, matching exactly the integer decay applied in calculate()).
 /// This reward continues forever after decade 10.
-pub const TAIL_REWARD_ATOMIC: u64 = 724_785_000_000_000;
+pub const TAIL_REWARD_ATOMIC: u64 = 724_784_723_787_776;
 
 /// Humanitarian tithe: 5% of block reward
 pub const TITHE_PERCENT: u64 = 5;
