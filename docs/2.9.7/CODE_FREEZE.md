@@ -106,4 +106,8 @@ Pokud je po podpisu nalezena kritická chyba, zaznamenat zde:
 
 | Datum | Popis | Hotfix verze | Commit |
 |-------|-------|--------------|--------|
-| — | — | — | — |
+| 2026-03-05 | P2P-BUG-01: `peers_connected` counter leakoval — RAII `ConnectionGuard` fix | hot-patch-P2P-01 | `773c931` |
+| 2026-03-05 | P2P-BUG-02: Persistované ephemeral porty způsobovaly dead reconnects — filtr portů ≥32768 + IP dedup | hot-patch-P2P-02 | `773c931` |
+| 2026-03-05 | Pool: `ZION_HAS_GPU=1` způsoboval xmrig restart smyčku každých 30s — opraveno `ZION_HAS_GPU=0` | server-config | ENV fix |
+| 2026-03-05 | Pool: stale `payout:sent` záznamy ze staré genesis způsobovaly "Transaction not found" spam — `payout:sent` vyčištěn | server-ops | Redis fix |
+| 2026-03-05 | Pool VarDiff: příliš agresivní retargeting (30s/25%) způsoboval race condition share rejectiony — zvýšeno na 60s/50% variance | server-config | ENV fix |

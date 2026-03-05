@@ -211,3 +211,32 @@ Všechny komponenty volají `cosmic_harmony_v3_with_height(blob, nonce, height)`
 | `c6189c4` | CHv3: AES-NI Haraka-inspired maska v Cosmic Fusion |
 | `55a5b75` | docs: Session 56 — ASIC hardening, L1 kompatibilita, test výsledky |
 | `243e4b8` | fix(core): Windows MSVC build pro verushash-native + zion-core |
+| `773c931` | fix(p2p): peers_connected leak (ConnectionGuard RAII) + ephemeral port reconnect |
+
+---
+
+## [P2P] Hot-patch: peers_connected leak + ephemeral port bug (2026-03-05)
+
+**Commit:** `773c931`  
+**Soubory:** `L1/core/src/p2p/mod.rs`, `L1/core/src/p2p/persistence.rs`
+
+### P2P-BUG-01: peers_connected counter leak
+
+**Problém:** Funkce `handle_peer_connection()` měla 13+ `return Err()` exit cest, které nikdy nesqualy
+`peers_connected` counter. Způsobovalo to zdánlivě high peer count (17+ zobrazeno) i když byly sockety zavřeny.
+
+**Oprava:** `ConnectionGuard` RAII struct — při `drop()` automaticky volá `remove_peer()` + `fetch_sub(1)`.
+
+### P2P-BUG-02: Dead reconnect na ephemeral porty
+
+**Problém:** `peers.json` ukládal ephemeral source porty (>32768) inbound spojení. Heartbeat se pak
+pokoušel reconnectovat na tyto mrtvé porty (systém je náhodně přiděluje, jsou platné jen po dobu spojení).
+
+**Oprava 1:** `get_best_peers()` filtruje porty ≥32768.  
+**Oprava 2:** Přeskočení saved peers jejichž IP je už v `--peers` seed listu (dedup).
+
+### Server Ops (2026-03-05)
+
+- USA + Asia: zastavena XMR těžba (`zion-xmr-x86`), CPU load 47→6 (USA), 7.77→5 (Asia)
+- USA + Asia: minery upgradovány na CHv4 (`zion-miner:2.9.7-amd64 --algorithm cosmic_harmony`)
+- Helsinki pool: opraveny 3 problémy (xmrig restart loop, stale payout TX, VarDiff oscilace)
