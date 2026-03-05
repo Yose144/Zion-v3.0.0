@@ -84,8 +84,9 @@ pub enum NativeAlgorithm {
     RandomX,       // XMR
     VerusHash,     // VRSC
     Yescrypt,      // LTC/YTN
-    CosmicHarmony, // ZION (CHv4 — NPU Mixing INT8 MLP, active from genesis block 0)
-    Argon2d,       // DYN
+    CosmicHarmony,   // ZION (CHv4.1 — Golden Middle 64 KiB, height-aware dispatch)
+    CosmicHarmonyV42, // ZION (CHv4.2 — Merkabah Dual-Spin, explicit override)
+    Argon2d,          // DYN
 
     // GPU Algorithms
     Ethash,      // ETC
@@ -114,6 +115,11 @@ impl NativeAlgorithm {
             | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2" => {
                 Some(Self::CosmicHarmony)
             }
+            // CHv4.2 Merkabah Dual-Spin — explicitní override (bypass fork height)
+            "cosmic_harmony_v4_2" | "chv4_2" | "ch4_2" | "chv4.2"
+            | "cosmic_harmony_v42" | "ch42" | "merkabah" => {
+                Some(Self::CosmicHarmonyV42)
+            }
             "ethash" | "etchash" => Some(Self::Ethash),
             "kawpow" => Some(Self::KawPow),
             "kawpow_gpu" | "kawpow-gpu" => Some(Self::KawPowGpu),
@@ -136,7 +142,7 @@ impl NativeAlgorithm {
             Self::RandomX => "XMR",
             Self::VerusHash => "VRSC",
             Self::Yescrypt => "LTC",
-            Self::CosmicHarmony => "ZION",
+            Self::CosmicHarmony | Self::CosmicHarmonyV42 => "ZION",
             Self::Ethash => "ETC",
             Self::KawPow | Self::KawPowGpu => "RVN",
             Self::Autolykos => "ERG",
@@ -699,13 +705,41 @@ pub fn compute_hash(
     match algo {
         // Cosmic Harmony v3 - use the canonical implementation (same as pool native lib)
         NativeAlgorithm::CosmicHarmony => {
-            // Height-aware dispatch: CHV4_NPU_FORK_HEIGHT = 0, so CHv4 is always active
-            // (CHv3 + NPU Mixing INT8 MLP, genesis seed: b"ZION_CHv4_mixing_v1_genesis_seed")
+            // Height-aware dispatch:
+            //   height >= CHV4_2_FORK_HEIGHT → CHv4.2 Merkabah Dual-Spin
+            //   else                         → CHv4.1 Golden Middle (64 KiB)
+            //
+            // ZION_CHV4_2_FORK_HEIGHT env var overrides the compiled constant
+            // (testnet: 10000, mainnet: TBD community vote).
+            let effective_height = {
+                if let Ok(env_h) = std::env::var("ZION_CHV4_2_FORK_HEIGHT") {
+                    if let Ok(parsed) = env_h.trim().parse::<u64>() {
+                        let h = height as u64;
+                        // remap: if height >= env override → u64::MAX (activate CHv4.2)
+                        if h >= parsed {
+                            u64::MAX
+                        } else {
+                            h
+                        }
+                    } else {
+                        height as u64
+                    }
+                } else {
+                    height as u64
+                }
+            };
             let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_with_height(
                 header,
                 nonce,
-                height as u64,
+                effective_height,
             );
+            Ok(h.data.to_vec())
+        }
+
+        NativeAlgorithm::CosmicHarmonyV42 => {
+            // CHv4.2 explicitní — vždy Merkabah Dual-Spin, ignoruje výšku bloku.
+            // Používat pro testování CHv4.2 nebo pokud pool explicitně posílá "chv4_2".
+            let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_v4_2(header, nonce);
             Ok(h.data.to_vec())
         }
 

@@ -272,6 +272,13 @@ impl GpuMiner for OpenCLMiner {
                     0
                 };
 
+            // CHv4.2 flag: Merkabah Dual-Spin — u64::MAX by default (testnet: ZION_CHV4_2_FORK_HEIGHT)
+            let chv4_2_fork_height: u64 = std::env::var("ZION_CHV4_2_FORK_HEIGHT")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(u64::MAX);
+            let chv4_2: u32 = if height >= chv4_2_fork_height { 1 } else { 0 };
+
             // ═══ CHv3 target: pool sends full 32-byte target hex.
             let target_u32: u32 = u32::from_be_bytes([
                 target[0], target[1], target[2], target[3],
@@ -323,6 +330,7 @@ impl GpuMiner for OpenCLMiner {
                 .arg(npu_b2_buf)
                 .arg(npu_scale1_buf)
                 .arg(npu_scale2_buf)
+                .arg(chv4_2)
                 .global_work_size(global_work_size)
                 .local_work_size(local_work_size)
                 .build()?;

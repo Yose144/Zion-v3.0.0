@@ -664,6 +664,77 @@ void npu_mixing_words(
 }
 
 // ============================================================================
+// CHv4.2 Merkabah Dual-Spin — helper funkce
+// ============================================================================
+
+// Phase 3: Merkabah backward passes — 2× reverzní průchod bloky se spinem.
+// Ka (sestup) a Ra (vzestup) — bidirektionální tórické pole.
+void cl_merkabah_backward_passes(__global uchar* pad) {
+    for (uint p = 0u; p < CL_BACKWARD_PASSES; p++) {
+        for (int blk = (int)(CL_BLOCK_COUNT) - 1; blk >= 0; blk--) {
+            ulong hic_val = CL_HIC[(uint)blk % 22u];
+            uint  cur_off  = (uint)blk * CL_BLOCK_SIZE;
+            uint  next_off = ((uint)blk + 1u) % CL_BLOCK_COUNT * CL_BLOCK_SIZE;
+            #pragma unroll 8
+            for (uint j = 0u; j < 8u; j++) {
+                ulong cur  = LOAD_U64_LE(pad, (ulong)(cur_off  + j*8u));
+                ulong nxt  = LOAD_U64_LE(pad, (ulong)(next_off + j*8u));
+                // XOR + merkabah spin (levá rotace o 17)
+                ulong val  = (cur ^ nxt ^ hic_val);
+                val = (val << 17u) | (val >> 47u);
+                STORE_U64_LE(pad, (ulong)(cur_off + j*8u), val);
+            }
+        }
+    }
+}
+
+// Phase 5: Kabala phase — 22 reads s HIC[k] XOR state % blocks.
+void cl_kabala_phase(__global const uchar* pad, ulong state[8]) {
+    for (uint k = 0u; k < CL_KABALA_READS; k++) {
+        ulong hic = CL_HIC[k];
+        uint  bid = (uint)((state[k % 8u] ^ hic) % (ulong)CL_BLOCK_COUNT);
+        uint  off = bid * CL_BLOCK_SIZE;
+        #pragma unroll 8
+        for (uint j = 0u; j < 8u; j++)
+            state[j % 8u] ^= LOAD_U64_LE(pad, (ulong)(off + j*8u));
+    }
+}
+
+// Phase 6: Brahma-jyoti finalize — Keccak-256 per round + HIC[r].
+// KEY_ROUNDS=22 iterací, výstup = 32 bajtů finálního hashe.
+void cl_brahma_jyoti_finalize(const ulong state_in[8], uchar out32[32]) {
+    uchar data[72]; // 8 × u64 + 8 (HIC) = 72B → vejde se do jednoho keccak bloku
+    uchar tmp[32];
+
+    // Serialize state
+    #pragma unroll 8
+    for (uint i = 0u; i < 8u; i++) {
+        ulong v = state_in[i];
+        #pragma unroll 8
+        for (uint b = 0u; b < 8u; b++)
+            data[i*8u+b] = (uchar)(v >> (b*8u));
+    }
+
+    // KEY_ROUNDS = 22
+    for (uint r = 0u; r < CL_KEY_ROUNDS; r++) {
+        // Append HIC[r] (little-endian 8 bytes) → 72-byte input
+        ulong hic = CL_HIC[r];
+        #pragma unroll 8
+        for (uint b = 0u; b < 8u; b++)
+            data[64u+b] = (uchar)(hic >> (b*8u));
+        keccak256_bytes(data, 72u, tmp);
+        // tmp → next data[0..32], data[32..63] = 0
+        #pragma unroll 32
+        for (uint i = 0u; i < 32u; i++) data[i] = tmp[i];
+        #pragma unroll 32
+        for (uint i = 32u; i < 64u; i++) data[i] = 0;
+    }
+
+    #pragma unroll 32
+    for (uint i = 0u; i < 32u; i++) out32[i] = tmp[i];
+}
+
+// ============================================================================
 // Main Kernel
 // ============================================================================
 
@@ -684,7 +755,8 @@ void cosmic_harmony_v3_mine(
     __global const char*  npu_w2,      // [64*128] int8
     __global const char*  npu_b2,      // [64]     int8
     __global const short* npu_scale1,  // [128]    int16
-    __global const short* npu_scale2   // [64]     int16
+    __global const short* npu_scale2,  // [64]     int16
+    const uint  chv4_2                 // 1 = CHv4.2 Merkabah Dual-Spin
 ) {
     uint  tid   = get_global_id(0);
     ulong nonce = start_nonce + (ulong)tid;
@@ -711,8 +783,27 @@ void cosmic_harmony_v3_mine(
 
     uchar final_hash[32];
 
-    if (chv4 && memory_hard) {
-        // CHv4 od genesis: GoldenMatrix → MemoryHard → NPU Mixing → CosmicFusion
+    if (chv4_2 && memory_hard) {
+        // CHv4.2 Merkabah Dual-Spin:
+        //   GoldenMatrix → MemoryHard → NPU Mixing
+        //   → Merkabah Backward (2×) → Kabala Phase (22 reads)
+        //   → Brahma-jyoti Finalize (22× Keccak + HIC)
+        __global uchar* my_pad = scratchpad_buf + (ulong)tid * (ulong)CL_SCRATCHPAD_BYTES;
+        ulong step4[8];
+        cl_memory_hard_transform(step3, my_pad, step4);
+        ulong step5[8];
+        npu_mixing_words(step4, step5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+        // Phase 3: Merkabah backward
+        cl_merkabah_backward_passes(my_pad);
+        // Phase 5: Kabala phase (re-read scratchpad with HIC indexing)
+        ulong kab_state[8];
+        #pragma unroll 8
+        for (int i = 0; i < 8; i++) kab_state[i] = step5[i];
+        cl_kabala_phase(my_pad, kab_state);
+        // Phase 6: Brahma-jyoti finalize
+        cl_brahma_jyoti_finalize(kab_state, final_hash);
+    } else if (chv4 && memory_hard) {
+        // CHv4.1 Golden Middle: GoldenMatrix → MemoryHard → NPU Mixing → CosmicFusion
         __global uchar* my_pad = scratchpad_buf + (ulong)tid * (ulong)CL_SCRATCHPAD_BYTES;
         ulong step4[8];
         cl_memory_hard_transform(step3, my_pad, step4);
