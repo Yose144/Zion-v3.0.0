@@ -711,11 +711,18 @@ function setupControls() {
     hashrateUnitEl.addEventListener('click', cycleHashrateUnit);
   }
 
+  const ALGO_LABELS = {
+    cosmic_harmony_v3:  'Cosmic Harmony v3 — CPU/GPU PoW',
+    cosmic_harmony_v4_2: '⚡ CHv4.2 Merkabah — GPU (Metal/CUDA/OpenCL)'
+  };
+
   const syncAlgoUi = () => {
-    // Mainnet Phase 1: Cosmic Harmony v3 only — no user selection needed
-    if (algoStatusEl) {
-      algoStatusEl.textContent = 'Cosmic Harmony v3 — ZION PoW algorithm';
-    }
+    const algo = algoSelect?.value || config.algorithm || 'cosmic_harmony_v3';
+    const label = ALGO_LABELS[algo] || algo;
+    if (algoStatusEl) algoStatusEl.textContent = label;
+    // update the display chip in the control panel
+    const algoDisplayChip = document.querySelector('#algo-display .font-semibold');
+    if (algoDisplayChip) algoDisplayChip.textContent = algo === 'cosmic_harmony_v4_2' ? 'CHv4.2 GPU' : 'Cosmic Harmony v3';
   };
 
   const algoSupportsGpu = (algo) => {
@@ -733,18 +740,18 @@ function setupControls() {
     gpuCheckbox.disabled = false;
   };
 
-  const applyAlgo = async () => {
-    // Mainnet Phase 1: algorithm is fixed to cosmic_harmony_v3
-    config.algorithm = 'cosmic_harmony_v3';
-    await window.electronAPI.saveConfig(config);
-    if (algoStatusEl) {
-      algoStatusEl.textContent = 'Cosmic Harmony v3 — ZION PoW algorithm';
+  // Sync config.algorithm from the select whenever user changes it
+  if (algoSelect) {
+    algoSelect.addEventListener('change', () => {
+      config.algorithm = algoSelect.value;
+      syncAlgoUi();
+    });
+    // init from persisted config
+    if (config.algorithm && algoSelect.querySelector(`option[value="${config.algorithm}"]`)) {
+      algoSelect.value = config.algorithm;
     }
-  };
+  }
 
-  // Mainnet Phase 1: algo is fixed, no user interaction needed
-  // Keep applyAlgo available for programmatic use only
-  
   startBtn.addEventListener('click', async () => {
     if (!config.wallet) {
       alert('Please configure your wallet address in Settings first.');
@@ -786,7 +793,7 @@ function setupControls() {
       console.log('Mining stopped');
     }
   });
-  
+
   saveSettingsBtn.addEventListener('click', async () => {
     // Read settings from UI - Pool selection with radio buttons
     const poolRadio = document.querySelector('input[name="pool-select"]:checked');
@@ -848,7 +855,7 @@ function setupControls() {
         port: poolPort
       },
       rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl,
-      algorithm: 'cosmic_harmony_v3',  // Mainnet Phase 1: CH v3 only
+      algorithm: config.algorithm || 'cosmic_harmony_v3',
       wallet: document.getElementById('wallet-input').value,
       worker: document.getElementById('worker-input').value,
       threads: Math.min(

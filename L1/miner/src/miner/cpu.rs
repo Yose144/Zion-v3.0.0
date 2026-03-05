@@ -414,7 +414,7 @@ impl CpuMiner {
                 }
 
                 let t = job.target.trim();
-                if matches!(active_algorithm, Algorithm::CosmicHarmony) {
+                if matches!(active_algorithm, Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyV42) {
                     let tu = parse_cosmic_target_to_u32(t);
                     let endian = job.cosmic_state0_endian.as_deref().unwrap_or("little");
                     log::debug!(
@@ -1023,9 +1023,10 @@ impl CpuMiner {
             Algorithm::RandomX => 100,
             // VerusHash v2.2 (VRSC): CPU-oriented, keep medium batch for low latency.
             Algorithm::VerusHash => 5_000,
-            // CH v3: keep batch much smaller than 250k so we react quickly
+            // CH v3/v4.2: keep batch much smaller than 250k so we react quickly
             // to template/stream switches and reduce stale+duplicate rejects.
             Algorithm::CosmicHarmony => 25_000,
+            Algorithm::CosmicHarmonyV42 => 25_000,
             Algorithm::Ethash => 50_000,
             Algorithm::Autolykos => 50_000,
             Algorithm::KawPow => 50_000,
@@ -1094,8 +1095,8 @@ impl CpuMiner {
                 }
                 true
             }
-            Algorithm::CosmicHarmony => {
-                // Match native pool validator logic for Cosmic Harmony v1/v3:
+            Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyV42 => {
+                // Match native pool validator logic for Cosmic Harmony (CHv4 / CHv4.2 Merkabah):
                 // - state0 is derived from the first 4 bytes of the hash
                 // - endian is configurable (pool currently uses little)
                 // - job target is a u32 hex string (8 chars) computed from difficulty

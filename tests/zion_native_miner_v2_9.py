@@ -197,6 +197,19 @@ except ImportError:
     except Exception as e:
         print(f"[WARN] Cosmic Harmony v3 GPU not available: {e}")
 
+# ─── CHv4.2 GPU (CUDA / Metal / OpenCL / NPU) ─────────────────────────────────
+COSMIC_V42_GPU_AVAILABLE = False
+_chv42_gpu = None
+try:
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', 'APP&WEB', 'desktop-agent', 'resources', 'mining'))
+    from cosmic_harmony_v42_gpu import CHv42GPU, detect_best_backend as _chv42_detect_backend
+    _chv42_gpu = CHv42GPU(backend="auto")
+    COSMIC_V42_GPU_AVAILABLE = True
+    print(f"[OK] CHv4.2 GPU loaded: backend={_chv42_gpu.backend_name}")
+except Exception as _e:
+    print(f"[WARN] CHv4.2 GPU not available: {_e}")
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s'
@@ -230,8 +243,9 @@ POOL_PORT     = 3333
 
 class Algorithm(Enum):
     """Supported mining algorithms"""
-    COSMIC_HARMONY = "cosmic_harmony"    # CHv4 canonical pool name (active from genesis)
-    COSMIC_HARMONY_V4 = "cosmic_harmony" # alias — same value as COSMIC_HARMONY
+    COSMIC_HARMONY = "cosmic_harmony"       # CHv4.1 — pool canonical name (active from genesis)
+    COSMIC_HARMONY_V4 = "cosmic_harmony"    # alias — same value as COSMIC_HARMONY
+    COSMIC_HARMONY_V4_2 = "cosmic_harmony_v4_2"  # CHv4.2 Merkabah Dual-Spin (explicit override)
     COSMIC_HARMONY_V2 = "cosmic_harmony_v2"  # Quantum-resistant, memory-hard
     COSMIC_HARMONY_V3 = "cosmic_harmony_v3"  # Legacy CHv3 name (deprecated — use COSMIC_HARMONY)
     RANDOMX = "randomx"
@@ -1353,7 +1367,7 @@ class CPUMiningThreadWrapper:
         """Hash a range of nonces using wrapper"""
         results = []
         
-        if self.algorithm == Algorithm.COSMIC_HARMONY:
+        if self.algorithm in (Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V4_2):
             for i in range(nonce_count):
                 result = self.hasher.hash(data, nonce_start + i)
                 results.append(result)
@@ -1391,7 +1405,7 @@ class CPUMiningThreadWrapper:
         
         hashes_computed = 0
         
-        if self.algorithm == Algorithm.COSMIC_HARMONY:
+        if self.algorithm in (Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V4_2):
             for i in range(nonce_count):
                 _ = self.hasher.hash(data, nonce_start + i)
                 hashes_computed += 1
@@ -1731,7 +1745,23 @@ class ZionNativeMiner:
                 logger.info("🚀 Cosmic Harmony v3 GPU mining ready (21+ MH/s)")
             else:
                 logger.info(f"✅ Cosmic Harmony v3 CPU mining ready ({self.config.cpu_threads} threads)")
-        
+
+        elif algo == Algorithm.COSMIC_HARMONY_V4_2:
+            # CHv4.2 Merkabah Dual-Spin — CUDA / Metal / OpenCL / CPU fallback
+            self._gpu_init_error = None
+            want_gpu = (self.config.mode in [MiningMode.GPU, MiningMode.AUTO]) and COSMIC_V42_GPU_AVAILABLE
+            if want_gpu and _chv42_gpu is not None:
+                try:
+                    self.gpu_miner = _chv42_gpu
+                    logger.info(f"✅ CHv4.2 GPU mining ready: backend={_chv42_gpu.backend_name}")
+                except Exception as e:
+                    self.gpu_miner = None
+                    self._gpu_init_error = str(e)
+                    logger.warning(f"CHv4.2 GPU init failed: {e}")
+            if not self.gpu_miner:
+                # CPU fallback přes cosmic_harmony_v42_fallback.py
+                logger.info(f"✅ CHv4.2 CPU fallback ready ({self.config.cpu_threads} thread(s))")
+
         elif algo == Algorithm.RANDOMX:
             lib = self.loader.load_randomx()
             if not lib:
@@ -1963,7 +1993,16 @@ class ZionNativeMiner:
             hashrate = self.gpu_miner.benchmark(duration)
             elapsed = duration
             hashes = int(hashrate * duration)
-        
+
+        # CHv4.2 GPU (CUDA / Metal / OpenCL)
+        elif self.config.algorithm == Algorithm.COSMIC_HARMONY_V4_2 and COSMIC_V42_GPU_AVAILABLE and self.gpu_miner:
+            backend = getattr(self.gpu_miner, 'backend_name', 'gpu')
+            print(f"   >>> CHv4.2 Merkabah Dual-Spin GPU ({backend.upper()})")
+            print(f"   Pipeline: Keccak256 → Keccak512 → Scratchpad(64KiB) → Forward×2 → Merkabah×2 → Kabala → Brahma-jyoti")
+            hashrate = self.gpu_miner.benchmark()
+            elapsed = duration
+            hashes = int(hashrate * duration)
+
         elif self.gpu_miner:
             # GPU benchmark - optimized batch processing
             batch_size = self.config.gpu_batch_size
@@ -2461,7 +2500,7 @@ class ZionNativeMiner:
                     # of the 256-bit target (see src/pool/mining/share_validator.py).
                     # To avoid invalid submits (and possible disconnect/ban), mirror
                     # that exact rule here.
-                    if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
+                    if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V4_2, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
                         target_cosmic32 = None
 
                         # Prefer pool-provided 32-bit target (8 hex chars) when present.
@@ -2526,7 +2565,7 @@ class ZionNativeMiner:
                         
                         # � Výpis jobu a targetu
                         algo_name = self.config.algorithm.value
-                        if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
+                        if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V4_2, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
                             logger.info(
                                 f"🎯 [{algo_name}] target_cosmic32=0x{int(target_cosmic32):08x} (from diff={difficulty})"
                             )
@@ -2602,7 +2641,7 @@ class ZionNativeMiner:
                                 break
 
                         nonce = start + i
-                        if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
+                        if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V4_2, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3]:
                             result_hash = self.hash_single_cpu(blob_bytes, nonce, height)
                         else:
                             assert work_buf is not None and input_array is not None
@@ -2633,7 +2672,7 @@ class ZionNativeMiner:
                             if (i % 10000) == 0:
                                 logger.debug(f"[RandomX] Worker {worker_index}: hash_low64={hash_low64:016x} target={target_64:016x} meets={meets}")
                         elif target_256 is not None:
-                            if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
+                            if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V4_2, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
                                 # Cosmic Harmony (pool-compat): state0 (first 4 bytes, LE) <= top32(target_256)
                                 if result_hash is None:
                                     hb = bytes(output_array)
@@ -2656,7 +2695,7 @@ class ZionNativeMiner:
                             if result_hash is None:
                                 result_hash = bytes(output_array)
                             submit_meta = None
-                            if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
+                            if self.config.algorithm in [Algorithm.COSMIC_HARMONY, Algorithm.COSMIC_HARMONY_V4_2, Algorithm.COSMIC_HARMONY_V2, Algorithm.COSMIC_HARMONY_V3] and target_cosmic32 is not None:
                                 hb = result_hash
                                 state0_le_dbg = int.from_bytes(hb[:4], "little", signed=False)
                                 state0_be_dbg = int.from_bytes(hb[:4], "big", signed=False)
@@ -2751,7 +2790,38 @@ class ZionNativeMiner:
                             }
                             stratum.submit_share(job_id, nonce, result_hash, meta=submit_meta)
                         continue
-                    
+
+                    # CHv4.2 Merkabah Dual-Spin GPU (CUDA / Metal / OpenCL)
+                    elif self.config.algorithm == Algorithm.COSMIC_HARMONY_V4_2 and COSMIC_V42_GPU_AVAILABLE and self.gpu_miner:
+                        if target_cosmic32 is None:
+                            time.sleep(0.05)
+                            continue
+
+                        batch_v42 = min(int(self.config.gpu_batch_size), 65536)
+                        result = self.gpu_miner.mine(
+                            blob_bytes,
+                            nonce_start,
+                            batch_v42,
+                            int(target_cosmic32),
+                        )
+                        with stats_lock:
+                            gpu_hashes += batch_v42
+                        if result is not None:
+                            nonce, result_hash = result
+                            state0_le = int.from_bytes(result_hash[:4], "little", signed=False)
+                            submit_meta = {
+                                "job_id": job_id,
+                                "nonce_hex": f"{int(nonce):08x}",
+                                "state0_hex": f"0x{state0_le:08x}",
+                                "state0_le": state0_le,
+                                "target32_hex": f"0x{int(target_cosmic32):08x}",
+                                "target32": int(target_cosmic32),
+                                "chv42_gpu": True,
+                                "gpu_backend": self.gpu_miner.backend_name,
+                            }
+                            stratum.submit_share(job_id, nonce, result_hash, meta=submit_meta)
+                        continue
+
                     # Original CH v1/v2 GPU path
                     hashes_out = self.gpu_miner.hash_batch(blob_bytes, nonce_start, batch_size)
 
