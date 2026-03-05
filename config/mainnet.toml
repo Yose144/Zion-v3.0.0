@@ -15,7 +15,7 @@ nodes = [
 ]
 
 [consensus]
-algorithm = "cosmic-harmony-v3"
+algorithm = "cosmic-harmony-v4_2"
 block_time_target = 60
 daa_type = "lwma"
 daa_window = 60
@@ -23,9 +23,9 @@ daa_max_change_percent = 25
 max_reorg_depth = 10
 soft_finality = 60
 min_difficulty = 1000
-# CHv4.1 Golden Middle: aktivní od genesis (fork_height=0 v kódu)
-# CHv4.2 Merkabah Dual-Spin: TBD — komunitní hlasování (DAO governance)
-# chv4_2_fork_height = TBD
+# CHv4.2 Merkabah Dual-Spin: aktivní od bloku 0 (CHV4_2_FORK_HEIGHT=0)
+# CHv4.1 (NPU Mixing) a CHv3 (MemoryHard) jsou nahrazeny — žádný fork height fork
+chv4_2_fork_height = 0
 
 [emission]
 # Decade Decay: -20% každých 10 let po dobu 100 let, poté tail emission 724.785 ZION/blok (navždy)

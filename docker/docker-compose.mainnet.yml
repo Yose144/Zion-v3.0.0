@@ -5,7 +5,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.core
-    image: zion-core:2.9.5-mainnet
+    image: zion-core:2.9.7
     container_name: zion-core
     restart: unless-stopped
     # P2-08: Read-only root filesystem
@@ -55,7 +55,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.pool
-    image: zion-pool:2.9.5-mainnet
+    image: zion-pool:2.9.7
     container_name: zion-pool
     restart: unless-stopped
     read_only: true
@@ -108,7 +108,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.miner
-    image: zion-miner:2.9.5-mainnet
+    image: zion-miner:2.9.7
     container_name: zion-miner
     restart: unless-stopped
     depends_on:
