@@ -146,10 +146,10 @@ pub fn detect_gpus() -> Result<Vec<GpuDevice>> {
 pub fn create_miner(device: &GpuDevice) -> Result<Box<dyn GpuMiner>> {
     match device.platform {
         GpuPlatform::Metal => {
-            // CHv4 scratchpad: 524288 bytes (512 KiB) per thread.
+            // CHv4.1 scratchpad: 65536 bytes (64 KiB) per thread.
             // Limit to ~20% of available Metal VRAM to avoid OOM.
-            // Example: M1 5461 MB → 1092 MB / 512 KiB = 2184 threads (≈1 GB scratchpad).
-            let scratchpad_per_thread_bytes: usize = 524_288;
+            // Example: M1 5461 MB → 1092 MB / 64 KiB = 17472 threads.
+            let scratchpad_per_thread_bytes: usize = 65_536;
             let safe_vram_bytes = (device.memory_mb as usize * 1024 * 1024) / 5; // 20%
             let batch = (safe_vram_bytes / scratchpad_per_thread_bytes)
                 .max(512)

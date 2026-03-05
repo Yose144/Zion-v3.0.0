@@ -2,7 +2,7 @@
  * ZION Cosmic Harmony v4 - Native C Implementation  (PART 1 of 2)
  *
  * Full CHv4 pipeline:
- *   Keccak-256 → SHA3-512 → Golden Matrix → Memory-Hard (512 KiB scratchpad)
+ *   Keccak-256 → SHA3-512 → Golden Matrix → Memory-Hard (64 KiB scratchpad)
  *   → NPU Mixing (2-layer quantised NN) → Cosmic Fusion
  *
  * Build (after combining p1+weights+p2):
@@ -14,7 +14,7 @@
  *                   > cosmic_harmony_v4_native.c
  *
  * Weights:     BLAKE3-keyed("ZION_CHv4_mixing_v1_genesis_seed") + "CHv4_weights_v1" → 16960 bytes
- * Scratchpad:  512 KiB (8192 × 64-byte blocks), 4 sequential passes + 256 random reads
+ * Scratchpad:  64 KiB (1024 × 64-byte blocks), 2 sequential passes + 64 random reads
  * NPU layers:  Layer1: 64→128 (GELU), Layer2: 128→64 (residual add)
  *
  * Author:  ZION AI Native Team
@@ -114,11 +114,11 @@ static const uint8_t COSMIC_XOR_MASK[32] = {
  * CHv4 Scratchpad Constants
  * ============================================================================ */
 
-#define CHV4_SCRATCHPAD_BYTES  524288u   /* 512 KiB */
+#define CHV4_SCRATCHPAD_BYTES  65536u    /* 64 KiB */
 #define CHV4_BLOCK_SIZE        64u
-#define CHV4_BLOCK_COUNT       8192u
-#define CHV4_PASSES            4u
-#define CHV4_RANDOM_READS      256u
+#define CHV4_BLOCK_COUNT       1024u
+#define CHV4_PASSES            2u
+#define CHV4_RANDOM_READS      64u
 
 /* ============================================================================
  * CHv4 NPU Weight Data (16960 bytes)
@@ -1523,7 +1523,7 @@ static inline uint32_t chv4_read_le32(const uint8_t *p) {
 
 /* ============================================================================
  * CHv4 Scratchpad — init_scratchpad(pad, seed[64])
- * 8192 blocks, each = SHA3-512(prev_state[64] || block_idx_le8[8])
+ * 1024 blocks, each = SHA3-512(prev_state[64] || block_idx_le8[8])
  * ============================================================================ */
 
 static void chv4_init_scratchpad(uint8_t *pad, const uint8_t seed[64]) {

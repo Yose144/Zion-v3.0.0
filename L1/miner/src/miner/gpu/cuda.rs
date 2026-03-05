@@ -21,7 +21,7 @@ use cudarc::nvrtc::compile_ptx;
 const CUDA_KERNEL: &str = include_str!("kernels/cosmic_harmony_v3.cu");
 
 /// Scratchpad bytes per thread (must match CUDA_SCRATCHPAD_BYTES in kernel)
-const CUDA_SCRATCHPAD_BYTES: usize = 64 * 8192;  // 512 KiB
+const CUDA_SCRATCHPAD_BYTES: usize = 64 * 1024;  // 64 KiB
 /// Max parallel threads when memory-hard is active
 const CUDA_MH_BATCH_DEFAULT: usize = 512;
 
@@ -31,7 +31,7 @@ pub struct CudaMiner {
     device_info: GpuDevice,
     hashes_computed: u64,
     start_time: Instant,
-    /// Max threads for memory-hard (limited by VRAM: ~512 KiB × threads)
+    /// Max threads for memory-hard (limited by VRAM: ~64 KiB × threads)
     mh_batch_size: usize,
     #[cfg(feature = "cuda")]
     device: Option<std::sync::Arc<CudaDevice>>,
@@ -128,9 +128,9 @@ impl GpuMiner for CudaMiner {
             let result_count_buf = device.alloc_zeros::<u32>(1)?;
             let result_hash_buf = device.alloc_zeros::<u8>(32)?;
 
-            // Scratchpad: mh_batch_size × 512 KiB
+            // Scratchpad: mh_batch_size × 64 KiB
             let scratchpad_len = self.mh_batch_size * CUDA_SCRATCHPAD_BYTES;
-            println!("[CUDA] Allocating scratchpad: {} MiB ({} threads × 512 KiB)",
+            println!("[CUDA] Allocating scratchpad: {} MiB ({} threads × 64 KiB)",
                 scratchpad_len / (1024 * 1024), self.mh_batch_size);
             let scratchpad_buf = device.alloc_zeros::<u8>(scratchpad_len)?;
 

@@ -10,6 +10,9 @@ ZION v2.9.6 používá **Cosmic Harmony v4 (CHv4)** jako jediný Proof-of-Work a
 CHv4 je aktivní od genesis (blok 0) od 2026-03-03. Zahrnuje memory-hard scratchpad a NPU mixing step.
 Historické varianty CH v1, v2 a původní CHv3 (bez NPU) jsou archivovány.
 
+> Poznámka k výkonu a dalšímu směru: návrh kompromisního profilu CHv4.1 je v [CHV4_GOLDEN_MIDDLE_PROPOSAL.md](CHV4_GOLDEN_MIDDLE_PROPOSAL.md).
+> Kompatibilita se staršími PC bez NPU + rollout plán je v [CHV4_1_ROLLOUT_SPEC.md](CHV4_1_ROLLOUT_SPEC.md).
+
 | Parametr | Hodnota |
 |----------|---------|
 | **Algoritmus** | Cosmic Harmony v4 (CHv4) — aktivní od genesis |
@@ -20,7 +23,7 @@ Historické varianty CH v1, v2 a původní CHv3 (bez NPU) jsou archivovány.
 | **Difficulty adjustment** | LWMA (okno 60 bloků) |
 | **Fork height (CHv4)** | 0 (aktivní od genesis, 2026-03-03) |
 | **Fork height (memory-hard)** | 0 (CHv4 zahrnuje memory-hard od genesis) |
-| **ASIC resistance score** | 90/100 |
+| **ASIC resistance score** | 90/100 (CHv4.1 light profil) |
 
 ---
 
@@ -50,9 +53,9 @@ Input: blob (≥80 B) + nonce (u64) + block_height (u64)
 └─────────────┬───────────────────────────────────┘
               ▼
 ┌─────────────────────────────────────────────────┐
-│  Phase 4: Memory-Hard Scratchpad (≥ height 50k) │
-│  256 KiB scratchpad, 64 B bloky                 │
-│  4 sekvenční průchody + 512 random reads         │
+│  Phase 4: Memory-Hard Scratchpad                │
+│  64 KiB scratchpad, 64 B bloky                  │
+│  2 sekvenční průchody + 64 random reads         │
 │  SHA3-512 chain init → AES-like mixing           │
 │  → 64 B output                                 │
 └─────────────┬───────────────────────────────────┘
@@ -92,10 +95,10 @@ Aktivní od výšky **50 000** (`CHV3_MEMORY_HARD_FORK_HEIGHT`).
 
 | Parametr | Hodnota |
 |----------|---------|
-| Scratchpad size | 256 KiB |
+| Scratchpad size | 64 KiB |
 | Block size | 64 B |
-| Sequential passes | 4 |
-| Random reads | 512 |
+| Sequential passes | 2 |
+| Random reads | 64 |
 | Init chain | SHA3-512 |
 
 **Cíl**: Zvýšit paměťovou náročnost → odolnost proti ASIC. Bez 256 KiB cache nelze hash efektivně počítat.
