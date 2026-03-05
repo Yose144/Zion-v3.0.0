@@ -14,6 +14,83 @@ dokončení revenue systému, infrastrukturní stabilizace.
 
 ---
 
+## [CHv4.1] Golden Middle — Parametry a Implementace
+
+**Commit:** `b7496ad` (5. března 2026)  
+**Soubory:** `scratchpad.rs`, `algorithms_opt.rs`, GPU kernels (OpenCL/CUDA/Metal), C native lib, Python miner
+
+### Přehled změn oproti CHv4 Heavy
+
+| Parametr | CHv4 Heavy (previous) | CHv4.1 Golden Middle |
+|----------|----------------------|---------------------|
+| SCRATCHPAD_SIZE | 512 KiB | **64 KiB** (L2 cache-resident) |
+| BLOCK_COUNT | 1024 | 1024 |
+| PASSES | 2 | 2 |
+| RANDOM_READS | 64 | 64 |
+| CPU/GPU poměr | ~1:8 | **~1:2** (zlatý střed) |
+
+### Výsledky
+- Rust testy: **64/64 PASS**
+- Pool E2E testy: **11/11 PASS**
+- Rust/C native parity: **shoda** ✅
+- Reference hash: `655348e35abb6732cf0229a3b5fa0827ee5424f36d92e515827030b843cdc4b0`
+
+---
+
+## [CHv4.2] Merkabah Dual-Spin — Plná Implementace
+
+**Commit:** `b7496ad` (5. března 2026, 13 souborů, 743 insertions)  
+**Soubory:** `hic.rs` (nový), `scratchpad.rs`, `algorithms_opt.rs`, OpenCL/CUDA/Metal kernely, C native, Python miner
+
+### Nové parametry (nad CHv4.1)
+
+| Parametr | Hodnota | Filosofický základ |
+|----------|---------|-------------------|
+| BACKWARD_PASSES | 2 | Merkabah Ka↓/Ra↑ dualita |
+| KABALA_READS | 22 | 22 pólů vědomí (Sefirot) |
+| KEY_ROUNDS | 22 | 22 pismen hebrejské abecedy |
+| HIC[22] | φ-odvozené konstanty | Hiranyagarbha Initialization Constants |
+
+### Nový modul `hic.rs`
+```rust
+pub const HIC: [u64; 22] = [
+    0x9E3779B97F4A7C15, // φ fraction × 2^64  = Kether
+    // ... 22 konstant, HIC[21] = 0xDB0C2E0D64F98FA7 (Ain Soph Aur = Brahma-jyoti)
+];
+pub const BACKWARD_PASSES: usize = 2;
+pub const KABALA_READS: usize = 22;
+pub const KEY_ROUNDS: usize = 22;
+```
+
+### Nové funkce v `scratchpad.rs`
+- `memory_hard_transform_v4_2(input: &[u8; 64]) -> Hash64`
+  - Fáze 3: `merkabah_backward_passes()` — reverzní průchod s HIC indexováním
+  - Fáze 5: `kabala_phase()` — 22 čtení s `HIC[k] XOR state_u64 % blocks`
+  - Fáze 6: `brahma_jyoti_finalize()` — Keccak per round + HIC[r]
+
+### Fork dispatch v `algorithms_opt.rs`
+```rust
+pub const CHV4_2_FORK_HEIGHT: u64 = u64::MAX; // Deaktivováno — čeká mainnet vote
+// Testnet: chv4_2_fork_height = 10000 (testnet.toml)
+```
+
+### Výsledky
+- Rust testy: **72/72 PASS** (8 nových CHv4.2 testů)  
+- Pool E2E testy: **11/11 PASS**
+- Rust/C native parity: **100% shoda** ✅
+- Reference hash CHv4.2: `4fa66192c0e9b154e3d33c94c1533850ae871f2affa8ccc74952ee9ca074f32f`
+- ASIC odolnost: +~6× oproti CHv4.1
+
+### Server Deployment
+| Server | IP | Build | Status |
+|--------|-----|-------|--------|
+| Helsinki 🇫🇮 | 77.42.31.72 | 2026-03-05 | ✅ UP, `zion-core + zion-pool:2.9.6-testnet` |
+| USA 🇺🇸 | 178.156.240.160 | 2026-03-05 | ✅ UP, `zion-core + zion-miner:2.9.7-amd64` |
+| Asia 🌏 | 5.223.43.93 | 2026-03-05 | ✅ UP, `zion-core:2.9.7 + zion-miner:2.9.6-testnet` |
+
+
+---
+
 ## [CHv3] ASIC Resistance Hardening
 
 **Commit:** `8a2b295`  
