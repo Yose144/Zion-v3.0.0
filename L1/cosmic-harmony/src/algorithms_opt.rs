@@ -453,9 +453,9 @@ pub fn cosmic_harmony_v4(block_header: &[u8], nonce: u64) -> Hash32 {
 
 /// Fork výška pro aktivaci CHv4.2 Merkabah Dual-Spin.
 ///
-/// Nastaveno na `u64::MAX` (deaktivováno) — bude stanoveno komunitním hlasováním.
-/// Testnet: 10_000, Mainnet: TBD (community vote).
-pub const CHV4_2_FORK_HEIGHT: u64 = u64::MAX; // TBD — deaktivováno do mainnet vote
+/// Aktivní od genesis bloku 0 — CHv4.2 Merkabah Dual-Spin je výchozí algoritmus.
+/// Nahrazuje CHv4.1 (NPU Mixing) od startu mainnetu.
+pub const CHV4_2_FORK_HEIGHT: u64 = 0; // Aktivní od genesis — výchozí algoritmus mainnetu
 
 /// Full Cosmic Harmony v4.2 pipeline — "Merkabah Dual-Spin":
 /// Keccak → SHA3 → GoldenMatrix → MemoryHard_v4.2 → NPU → CosmicFusion
