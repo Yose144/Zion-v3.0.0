@@ -2705,7 +2705,7 @@ function startMining(config) {
     const pool = `${config.pool?.host || '77.42.31.72'}:${config.pool?.port || 3333}`;
     const wallet = config.wallet || '';
     const worker = config.worker || 'desktop-agent';
-    log(`[CHv4.2] Starting GPU miner → ${pyExe} ${gpuScript} --pool ${pool}`);
+    logApp('chv42-main-start', JSON.stringify({ pyExe, gpuScript, pool, worker }));
     sendToRenderer('miner-output', { stream: 'stdout', text: `[CHv4.2] Spouštím Merkabah GPU miner...\n[CHv4.2] Python: ${pyExe}\n[CHv4.2] Pool: ${pool} | Worker: ${worker}\n` });
     try {
       minerProcess = spawn(pyExe, [gpuScript, '--pool', pool, '--wallet', wallet, '--worker', worker, '--backend', 'auto'], {
@@ -2722,7 +2722,7 @@ function startMining(config) {
     minerProcess.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
     minerProcess.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
     minerProcess.on('exit', (code) => {
-      log(`[CHv4.2] GPU miner exited (code ${code})`);
+      logApp('chv42-main-exit', JSON.stringify({ code }));
       minerProcess = null;
       minerStopping = false;
       sendToRenderer('miner-stopped', { code });
@@ -2767,8 +2767,11 @@ function startMining(config) {
 
     const allowRevenueWithMainGpu = String(process.env.ZION_ALLOW_REVENUE_WITH_MAIN_GPU || '1').trim() !== '0';
     const revenueSuppressedForGpuInit = mainMinerGpu && !allowRevenueWithMainGpu;
-    const revenueEnv = { ...process.env, ZION_NONCE_BASE: String(sessionNonceBaseRevenue) };
-    const gpuRevenueEnv = { ...process.env, ZION_NONCE_BASE: String(sessionNonceBaseGpuRevenue) };
+    const chv42SessionNonceBaseMain = (Date.now() >>> 0) & 0x1fffffff;
+    const chv42SessionNonceBaseRevenue = chv42SessionNonceBaseMain + 0x40000000;
+    const chv42SessionNonceBaseGpuRevenue = chv42SessionNonceBaseMain + 0x80000000;
+    const revenueEnv = { ...process.env, ZION_NONCE_BASE: String(chv42SessionNonceBaseRevenue) };
+    const gpuRevenueEnv = { ...process.env, ZION_NONCE_BASE: String(chv42SessionNonceBaseGpuRevenue) };
 
     if (revenueSuppressedForGpuInit && xmrRevenueThreads > 0) {
       try {
@@ -2802,7 +2805,7 @@ function startMining(config) {
           stdio: ['pipe', 'pipe', 'pipe'],
           windowsHide: true,
         });
-        log(`[CH4-REV] Revenue CPU started (PID ${revenueProcess?.pid}) — ${xmrRevenueThreads}T -> ${pool} g=revenue`);
+        logApp('chv42-revenue-started', JSON.stringify({ pid: revenueProcess?.pid, threads: xmrRevenueThreads, pool }));
         sendToRenderer('miner-output', {
           stream: 'stdout',
           text: `[CH4-REV] Revenue CPU miner started (PID ${revenueProcess?.pid}) — ${xmrRevenueThreads}T CPU -> ${pool} (g=revenue)\n`,
@@ -2818,7 +2821,7 @@ function startMining(config) {
           try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CH4-REV] ${output}` }); } catch {}
         });
         revenueProcess.on('error', (err) => {
-          log(`[CH4-REV] Revenue process error: ${err}`);
+          logApp('chv42-revenue-error', err?.message || String(err));
           revenueProcess = null;
         });
         revenueProcess.on('close', (code) => {
@@ -2828,7 +2831,7 @@ function startMining(config) {
           }
         });
       } catch (revErr) {
-        log(`[CH4-REV] Revenue spawn failed: ${revErr}`);
+        logApp('chv42-revenue-spawn-failed', revErr?.message || String(revErr));
         revenueProcess = null;
       }
     }
@@ -2893,7 +2896,7 @@ function startMining(config) {
         gpuRevenueProcess.on('error', (err) => {
           gpuRevenueProcess = null;
           gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
-          log(`[CH4-GPU] GPU revenue process error: ${err}`);
+          logApp('chv42-gpu-revenue-error', err?.message || String(err));
         });
         gpuRevenueProcess.on('close', (code) => {
           gpuRevenueProcess = null;
@@ -2904,7 +2907,7 @@ function startMining(config) {
         });
       }
     } catch (gpuRevErr) {
-      log(`[CH4-GPU] GPU revenue setup failed: ${gpuRevErr}`);
+      logApp('chv42-gpu-revenue-setup-failed', gpuRevErr?.message || String(gpuRevErr));
       gpuRevenueProcess = null;
     }
     // ─────────────────────────────────────────────────────────────────────────
@@ -6241,7 +6244,7 @@ ipcMain.handle('start-chv42-gpu', (event, cfg) => {
     : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_v42_gpu.py');
   const pyExe = process.platform === 'win32' ? 'python' : 'python3';
   const args = [gpuScript, '--pool', pool, '--wallet', wallet, '--worker', worker, '--backend', 'auto'];
-  log(`[CHv4.2] Spawning GPU miner: ${pyExe} ${args.join(' ')}`);
+  logApp('chv42-ipc-start', JSON.stringify({ pyExe, args }));
   try {
     chv42GpuProcess = spawn(pyExe, args, { env: { ...process.env } });
   } catch (e) {
@@ -6264,7 +6267,7 @@ ipcMain.handle('start-chv42-gpu', (event, cfg) => {
     sendToRenderer('chv42-output', { text: `[stderr] ${d.toString()}` });
   });
   chv42GpuProcess.on('exit', (code) => {
-    log(`[CHv4.2] GPU miner exited (code ${code})`);
+    logApp('chv42-ipc-exit', JSON.stringify({ code }));
     chv42GpuProcess = null;
     chv42GpuStats.running = false;
     sendToRenderer('chv42-stopped', { code });
