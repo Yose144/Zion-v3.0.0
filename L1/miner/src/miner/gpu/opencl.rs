@@ -272,11 +272,12 @@ impl GpuMiner for OpenCLMiner {
                     0
                 };
 
-            // CHv4.2 flag: Merkabah Dual-Spin — u64::MAX by default (testnet: ZION_CHV4_2_FORK_HEIGHT)
+            // CHv4.2 flag: Merkabah Dual-Spin — aktivní od genesis (height >= 0)
+            // Env var ZION_CHV4_2_FORK_HEIGHT umožňuje dočasný override pro testování CHv4.1
             let chv4_2_fork_height: u64 = std::env::var("ZION_CHV4_2_FORK_HEIGHT")
                 .ok()
                 .and_then(|v| v.parse().ok())
-                .unwrap_or(u64::MAX);
+                .unwrap_or(zion_cosmic_harmony_v3::algorithms_opt::CHV4_2_FORK_HEIGHT);
             let chv4_2: u32 = if height >= chv4_2_fork_height { 1 } else { 0 };
 
             // ═══ CHv3 target: pool sends full 32-byte target hex.
