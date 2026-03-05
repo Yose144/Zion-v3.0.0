@@ -149,9 +149,13 @@ class MetalBackend:
     def __init__(self) -> None:
         self._mc = None
         self._device = None
-        self._kernel_src: Optional[str] = None
         self._pipeline = None
         self._ready = False
+        # PyObjC Metal path (pyobjc-framework-Metal)
+        self._use_objc = False
+        self._objc_device = None
+        self._objc_pipeline = None
+        self._objc_queue = None
         self._setup()
 
     def _setup(self) -> None:
@@ -160,6 +164,7 @@ class MetalBackend:
             log.warning("[Metal] cosmic_harmony_v42.metal nenalezen v %s", _KERNEL_DIR)
             return
 
+        # Cesta 1: metalcompute (nejrychlejší, pokud dostupné)
         mc = _try_import("metalcompute")
         if mc is not None:
             try:
@@ -171,50 +176,132 @@ class MetalBackend:
                 self._pipeline.function("chv42_mine")
                 self._ready = True
                 name = getattr(self._device, "name", lambda: "Apple GPU")
-                if callable(name):
-                    name = name()
-                log.info("[Metal] Device: %s", name)
+                if callable(name): name = name()
+                log.info("[Metal] metalcompute device: %s", name)
                 return
             except Exception as e:
                 log.warning("[Metal] metalcompute setup selhalo: %s", e)
 
-        # Fallback: kompilace metallibu přes xcrun + ctypes přes Metal C API
-        metallib = _KERNEL_DIR / "cosmic_harmony_v42.metallib"
-        if not metallib.exists():
-            self._compile_metallib(metal_src, metallib)
-        if metallib.exists():
-            # Pokus o načtení přes metalcompute nebo MTLDevice přes ctypes
-            log.info("[Metal] metallib kompilován: %s", metallib)
-            self._ready = True  # minimální ready flag, mine() použije subprocess fallback
-        else:
-            log.warning("[Metal] xcrun kompilace selhala, Metal backend nedostupný")
-
-    @staticmethod
-    def _compile_metallib(src: Path, out: Path) -> bool:
-        import subprocess
-        air = out.with_suffix(".air")
+        # Cesta 2: pyobjc-framework-Metal (kompilace zdrojáku za runtime přes MTLDevice)
+        # Funguje bez Xcode — pyobjc volá nativní Metal.framework přímo
         try:
-            subprocess.run(
-                ["xcrun", "-sdk", "macosx", "metal", "-c", str(src), "-o", str(air)],
-                check=True, capture_output=True
-            )
-            subprocess.run(
-                ["xcrun", "-sdk", "macosx", "metallib", str(air), "-o", str(out)],
-                check=True, capture_output=True
-            )
-            return True
+            import Metal as _MTL  # pyobjc-framework-Metal
+            device = _MTL.MTLCreateSystemDefaultDevice()
+            if device is None:
+                raise RuntimeError("žádný Metal device")
+            with open(metal_src) as f:
+                src = f.read()
+            opts = _MTL.MTLCompileOptions.new()
+            lib, err = device.newLibraryWithSource_options_error_(src, opts, None)
+            if lib is None:
+                raise RuntimeError(f"Metal compile: {err}")
+            fn = lib.newFunctionWithName_("chv42_mine")
+            if fn is None:
+                raise RuntimeError("chv42_mine function not found in metallib")
+            pipeline, err = device.newComputePipelineStateWithFunction_error_(fn, None)
+            if pipeline is None:
+                raise RuntimeError(f"Pipeline state: {err}")
+            self._objc_device   = device
+            self._objc_pipeline = pipeline
+            self._objc_queue    = device.newCommandQueue()
+            self._use_objc      = True
+            self._ready         = True
+            dev_name = device.name() if hasattr(device, "name") else "Apple GPU"
+            log.info("[Metal] PyObjC Metal device: %s", dev_name)
+            return
         except Exception as e:
-            log.warning("[Metal] xcrun kompilace: %s", e)
-            return False
+            log.warning("[Metal] PyObjC Metal setup selhalo: %s", e)
+
+        log.warning("[Metal] žádný Metal backend nedostupný (nainstaluj pyobjc-framework-Metal)")
 
     @property
     def available(self) -> bool:
         return self._ready
 
+    def _mine_objc(
+        self, header: bytes, nonce_base: int, nonce_count: int, target_u32: int
+    ) -> Optional[Tuple[int, bytes]]:
+        """Metal compute dispatch přes pyobjc-framework-Metal.
+        Používá numpy pole sdílená s Metal bufferem (unified memory, Apple Silicon).
+        """
+        import struct as _s
+        import ctypes
+        import numpy as np
+        import Metal as _MTL
+
+        dev = self._objc_device
+        pipeline = self._objc_pipeline
+        queue = self._objc_queue
+        MTL_SHARED = 0  # MTLResourceStorageModeShared (0 << 4 = 0)
+
+        # Vstupní numpy pole → Metal buffer bez kopírování (unified memory)
+        hdr_padded   = np.frombuffer((header + bytes(128))[:128], dtype=np.uint8).copy()
+        hlen_arr     = np.array([len(header)], dtype=np.uint32)
+        nb_arr       = np.array([nonce_base], dtype=np.uint64)
+        tgt_arr      = np.array([target_u32], dtype=np.uint32)
+        sp_arr       = np.zeros(nonce_count * 1024, dtype=np.uint64)  # scratchpad
+        result_n_arr = np.zeros(1, dtype=np.uint64)
+        result_h_arr = np.zeros(32, dtype=np.uint8)
+
+        def _np_buf(arr: "np.ndarray"):
+            """Vytvoří MTLBuffer sdílící paměť s numpy polem (zero-copy, APC unified)."""
+            ptr = int(arr.ctypes.data)
+            nbytes = int(arr.nbytes)
+            return dev.newBufferWithBytesNoCopy_length_options_deallocator_(
+                ptr, nbytes, MTL_SHARED, None
+            )
+
+        try:
+            buffers = [
+                _np_buf(hdr_padded),
+                _np_buf(hlen_arr),
+                _np_buf(nb_arr),
+                _np_buf(sp_arr),
+                _np_buf(tgt_arr),
+                _np_buf(result_n_arr),
+                _np_buf(result_h_arr),
+            ]
+        except Exception as e:
+            log.warning("[Metal] buffer allocation: %s", e)
+            return None
+
+        cmd = queue.commandBuffer()
+        enc = cmd.computeCommandEncoder()
+        enc.setComputePipelineState_(pipeline)
+        for idx, buf in enumerate(buffers):
+            enc.setBuffer_offset_atIndex_(buf, 0, idx)
+
+        tg_size  = _MTL.MTLSizeMake(64, 1, 1)
+        n_groups = _MTL.MTLSizeMake((nonce_count + 63) // 64, 1, 1)
+        enc.dispatchThreadgroups_threadsPerThreadgroup_(n_groups, tg_size)
+        enc.endEncoding()
+        cmd.commit()
+        cmd.waitUntilCompleted()
+
+        # Výstup je přímo v numpy polích (unified memory — žádné kopírování)
+        out_nonce = int(result_n_arr[0])
+        out_hash  = bytes(result_h_arr.tobytes())
+
+        if out_nonce != 0:
+            return (out_nonce, out_hash)
+        return None
+
     def mine(
         self, header: bytes, nonce_base: int, nonce_count: int, target_u32: int
     ) -> Optional[Tuple[int, bytes]]:
-        if not self._ready or self._mc is None or self._pipeline is None:
+        if not self._ready:
+            return self._mine_cpu_fallback(header, nonce_base, nonce_count, target_u32)
+
+        # PyObjC Metal path
+        if self._use_objc:
+            try:
+                return self._mine_objc(header, nonce_base, nonce_count, target_u32)
+            except Exception as e:
+                log.warning("[Metal] PyObjC mine error: %s — CPU fallback", e)
+                return self._mine_cpu_fallback(header, nonce_base, nonce_count, target_u32)
+
+        # metalcompute path
+        if self._mc is None or self._pipeline is None:
             return self._mine_cpu_fallback(header, nonce_base, nonce_count, target_u32)
 
         mc = self._mc
@@ -227,7 +314,7 @@ class MetalBackend:
         header_arr   = np.frombuffer(header[:128].ljust(128, b"\x00"), dtype=np.uint8)
         hlen_arr     = np.array([len(header)], dtype=np.uint32)
         nb_arr       = np.array([nonce_base], dtype=np.uint64)
-        sp_arr       = np.zeros(nonce_count * 8192, dtype=np.uint64)  # 64 KiB/nonce
+        sp_arr       = np.zeros(nonce_count * 8192, dtype=np.uint64)
         tgt_arr      = np.array([target_u32], dtype=np.uint32)
         result_n     = np.zeros(1, dtype=np.uint64)
         result_h     = np.zeros(32, dtype=np.uint8)
