@@ -1849,8 +1849,21 @@ static void cosmic_harmony_v4_compute(
 }
 
 /* ============================================================================
- * GPU State (stub — Metal pipeline handles real GPU work)
+ * Weight byte accessor — exported so Metal ObjC backend can retrieve weights
+ * without duplicating the 16 KiB static array.
  * ============================================================================ */
+EXPORT const uint8_t* cosmic_harmony_v4_get_weights(size_t *out_len) {
+    if (out_len) *out_len = 16960;
+    return CHV4_WEIGHT_BYTES;
+}
+
+/* ============================================================================
+ * GPU State — CPU fallback stubs (compiled only when Metal backend absent)
+ *
+ * When building with -DHAVE_METAL_GPU_RUNTIME these stubs are omitted and the
+ * real Metal implementation from cosmic_harmony_v4_gpu_metal.m is linked in.
+ * ============================================================================ */
+#ifndef HAVE_METAL_GPU_RUNTIME
 
 typedef struct {
     uint8_t  header[80];
@@ -1865,13 +1878,9 @@ static CHv4GPUState g_gpu_state = {0};
 /* Forward declaration */
 EXPORT const char* cosmic_harmony_v4_get_info(void);
 
-/* ============================================================================
- * Exported API
- * ============================================================================ */
-
 EXPORT uint32_t cosmic_harmony_v4_gpu_count(void) {
 #if defined(__APPLE__)
-    return 1;
+    return 1;  /* CPU fallback — still reports 1 so callers don't disable mining */
 #else
     return 0;
 #endif
@@ -1881,7 +1890,7 @@ EXPORT int32_t cosmic_harmony_v4_gpu_init(uint32_t device_id, uint32_t batch_siz
     g_gpu_state.device_id   = device_id;
     g_gpu_state.batch_size  = batch_size;
     g_gpu_state.initialized = 1;
-    printf("[CHv4 Native] GPU init: device=%u, batch_size=%u\n", device_id, batch_size);
+    printf("[CHv4 Native] GPU init (CPU fallback): device=%u, batch_size=%u\n", device_id, batch_size);
     printf("[CHv4 Native] Library: %s\n", cosmic_harmony_v4_get_info());
     return 0;
 }
@@ -1915,8 +1924,10 @@ EXPORT int32_t cosmic_harmony_v4_gpu_mine(
 
 EXPORT void cosmic_harmony_v4_gpu_cleanup(void) {
     g_gpu_state.initialized = 0;
-    printf("[CHv4 Native] GPU cleanup done\n");
+    printf("[CHv4 Native] GPU cleanup done (CPU fallback)\n");
 }
+
+#endif /* HAVE_METAL_GPU_RUNTIME */
 
 /* ---  Hash functions  --- */
 
