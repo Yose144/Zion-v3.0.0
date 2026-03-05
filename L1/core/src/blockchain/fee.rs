@@ -271,9 +271,10 @@ mod tests {
         // Block 23,652,001 is still within decade 5 → has non-zero reward
         assert!(max_coinbase_output(23_652_001) > 0);
 
-        // Tail emission block: should be ~724.785 ZION
+        // Tail emission block: should be ~724.784723 ZION
+        // Value = BASE_BLOCK_REWARD_ATOMIC × (4/5)^10 with integer division
         let tail_block = 10 * 5_256_000 + 1; // first tail block
-        assert_eq!(max_coinbase_output(tail_block), 724_785_000_000_000);
+        assert_eq!(max_coinbase_output(tail_block), 724_784_723_787_776);
     }
 
     #[test]

@@ -144,15 +144,33 @@ echo "🔨 Building Cosmic Harmony v4 (NPU + Memory-Hard Scratchpad)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [ -f cosmic_harmony_v4_native.c ]; then
-    if [ "$ARCH" == "arm64" ]; then
-        echo "🏗️  Building CHv4 for Apple Silicon (ARM64 + NEON)..."
-        clang $COMMON_FLAGS -lm cosmic_harmony_v4_native.c -o libcosmic_harmony_v4.dylib
-        # Also build as the canonical libcosmic_harmony.dylib (pool-facing)
-        clang $COMMON_FLAGS -lm cosmic_harmony_v4_native.c -o libcosmic_harmony.dylib
+    # ───── Compile CHv4 Metal GPU shader (requires Xcode Metal toolchain) ──────
+    CHV4_METAL_FLAGS=""
+    if xcrun --find metal > /dev/null 2>&1; then
+        if [ -f cosmic_harmony_v4_metal.metal ]; then
+            echo "🏗️  Compiling CHv4 Metal GPU shader..."
+            xcrun -sdk macosx metal -c cosmic_harmony_v4_metal.metal -o cosmic_harmony_v4_metal.air
+            xcrun -sdk macosx metallib cosmic_harmony_v4_metal.air -o cosmic_harmony_v4.metallib
+            rm -f cosmic_harmony_v4_metal.air
+            cp cosmic_harmony_v4.metallib ../
+            echo "✅ CHv4 Metal shader compiled → cosmic_harmony_v4.metallib ($(ls -sh cosmic_harmony_v4.metallib | awk '{print $1}'))"
+            CHV4_METAL_FLAGS="-framework Metal -framework Foundation -DHAVE_METAL_GPU_RUNTIME cosmic_harmony_v4_gpu_metal.m"
+        else
+            echo "⚠️  cosmic_harmony_v4_metal.metal not found, building CPU-only"
+        fi
     else
-        echo "🏗️  Building CHv4 for Intel (x86_64 + AVX2)..."
-        clang $COMMON_FLAGS -mavx2 -lm cosmic_harmony_v4_native.c -o libcosmic_harmony_v4.dylib
-        clang $COMMON_FLAGS -mavx2 -lm cosmic_harmony_v4_native.c -o libcosmic_harmony.dylib
+        echo "⚠️  Metal compiler (xcrun metal) not available, building CPU-only"
+    fi
+
+    if [ "$ARCH" == "arm64" ]; then
+        echo "🏗️  Building CHv4 for Apple Silicon (ARM64 + NEON${CHV4_METAL_FLAGS:+ + Metal GPU})..."
+        clang $COMMON_FLAGS -lm $CHV4_METAL_FLAGS cosmic_harmony_v4_native.c -o libcosmic_harmony_v4.dylib
+        # Also build as the canonical libcosmic_harmony.dylib (pool-facing)
+        clang $COMMON_FLAGS -lm $CHV4_METAL_FLAGS cosmic_harmony_v4_native.c -o libcosmic_harmony.dylib
+    else
+        echo "🏗️  Building CHv4 for Intel (x86_64 + AVX2${CHV4_METAL_FLAGS:+ + Metal GPU})..."
+        clang $COMMON_FLAGS -mavx2 -lm $CHV4_METAL_FLAGS cosmic_harmony_v4_native.c -o libcosmic_harmony_v4.dylib
+        clang $COMMON_FLAGS -mavx2 -lm $CHV4_METAL_FLAGS cosmic_harmony_v4_native.c -o libcosmic_harmony.dylib
     fi
 
     echo "✅ CHv4 library created!"

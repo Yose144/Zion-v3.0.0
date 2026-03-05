@@ -100,21 +100,23 @@ mod tests {
 
     #[test]
     fn test_best_peers_sorting() {
+        // NOTE: get_best_peers filters via SocketAddr::parse → requires numeric IPs.
+        // Hostname-based addresses (e.g. "bad.peer:8089") would be silently dropped.
         let peers = vec![
             PersistedPeer {
-                addr: "bad.peer:8089".to_string(),
+                addr: "10.0.0.3:8089".to_string(),
                 last_seen: 1000,
                 success_count: 5,
                 fail_count: 10, // High failures
             },
             PersistedPeer {
-                addr: "good.peer:8089".to_string(),
+                addr: "10.0.0.1:8089".to_string(),
                 last_seen: 2000,
                 success_count: 20,
                 fail_count: 0, // No failures
             },
             PersistedPeer {
-                addr: "stale.peer:8089".to_string(),
+                addr: "10.0.0.2:8089".to_string(),
                 last_seen: 500, // Old
                 success_count: 15,
                 fail_count: 0,
@@ -123,7 +125,7 @@ mod tests {
 
         let best = get_best_peers(&peers, 2);
         assert_eq!(best.len(), 2);
-        assert_eq!(best[0], "good.peer:8089"); // Best: no failures, recent
-        assert_eq!(best[1], "stale.peer:8089"); // Second: no failures, but older
+        assert_eq!(best[0], "10.0.0.1:8089"); // Best: no failures, recent
+        assert_eq!(best[1], "10.0.0.2:8089"); // Second: no failures, but older
     }
 }
