@@ -169,6 +169,8 @@
 | E-02d | P2P peer spam — `193.201.105.84` (IBD spam) blokovat | 🟡 | ⏳ | Low priority; fail2ban může zachytit |
 | E-02e | SSH key-only login (no password auth) | 🔴 | ✅ | Helsinki: PasswordAuthentication=no (opraveno na serveru) ✅. USA + Asia: neověřeno (F-004 partial) |
 | E-02f | Pravidelný key rotation plán | 🟢 | — | Post-mainnet |
+| E-02g | **P2P-BUG-01**: `peers_connected` counter leak — RAII ConnectionGuard | 🔴 | ✅ | OPRAVENO commit `773c931` 2026-03-05 |
+| E-02h | **P2P-BUG-02**: Ephemeral port reconnect loop — filtr ≥32768 + IP dedup | 🔴 | ✅ | OPRAVENO commit `773c931` 2026-03-05 |
 
 ---
 
@@ -276,6 +278,16 @@
 [2026-03-05] [🟢 LOW] F — Docker log rotation nebyla nakonfigurována (default = unlimited). OPRAVENO: `daemon.json` s `max-size=100m, max-file=5`. **[F-009 FIXED]**
 
 [2026-06-11] [🟡 MEDIUM] G — u128 migrace nekompletní: commit `9aa4a63` změnil `TxOutput.amount`, `SpendableUtxo.amount`, `Recipient.amount` na u128, ale 18 testovacích souborů + 4 produkční funkce zůstaly s u64 typy a starými konstantami (před-12dp hodnotami). Způsobovalo `cargo test` compile chybu (E0308, E0277) a 7 runtime selhání. OPRAVENO: 18 souborů opraveno, produkční `add_fees_burned()` upgradována na u128, konstanty aktualizovány na 12dp. **[F-010 FIXED]**
+
+[2026-03-05] [🔴 BUG] E — P2P-BUG-01: `peers_connected` AtomicU32 counter nikdy nedecrementoval na 13+ exit paths v `handle_peer_connection()`. Counter dosahoval 107 i s 17 skutečnými peers. OPRAVENO: `ConnectionGuard` RAII struct s `Drop` impl → `remove_peer() + fetch_sub(1)` na VŠECH exit paths. commit `773c931`. **[F-011 FIXED]**
+
+[2026-03-05] [🔴 BUG] E — P2P-BUG-02: `peers.json` ukládal ephemeral source porty (>32768) z inbound spojení. Heartbeat se reconnectoval na tyto mrtvé porty každou hodinu. OPRAVENO: `get_best_peers()` filtruje port ≥32768; skip saved peers pokud IP v seed listu. commit `773c931`. **[F-012 FIXED]**
+
+[2026-03-05] [🟡 MEDIUM] F — Pool: `ZION_HAS_GPU=1` na Helsinki způsoboval `xmrig_monitor()` smyčku (restart každých 30s) i když xmrig nebyl nainstalován. OPRAVENO: ENV `ZION_HAS_GPU=0` na pool kontejneru. **[F-013 FIXED]**
+
+[2026-03-05] [🟡 MEDIUM] D — Pool: 82 stale `payout:sent` záznamy ze staré genesis způsobovaly spam "Transaction not found (-32004)" každých 30s. OPRAVENO: `payout:sent` sorted set vyčištěn (záloha `/root/payout_sent_backup_20260305.txt`). **[F-014 FIXED]**
+
+[2026-03-05] [🟡 MEDIUM] C — Pool VarDiff: retarget_time=30s + variance=0.25 způsoboval race condition — miner měl shares v letu pro nižší diff, VarDiff vyskočil nahoru → rejection. OPRAVENO: ENV `ZION_VARDIFF_RETARGET_SECS=60 ZION_VARDIFF_VARIANCE=0.5 ZION_POOL_INITIAL_DIFFICULTY=100`. **[F-015 FIXED]**
 ```
 
 ---
