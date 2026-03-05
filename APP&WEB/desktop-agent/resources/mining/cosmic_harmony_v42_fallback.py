@@ -387,9 +387,26 @@ class StratumMiner:
     # Stratum protokol
     # -----------------------------------------------------------------------
 
-    def _connect(self) -> None:
-        self._sock = socket.create_connection((self.host, self.port), timeout=30)
-        log.info(f"[Stratum] Connected to {self.host}:{self.port}")
+    def _connect(self, attempts: int = 3, timeout_sec: int = 10) -> None:
+        last_err: Optional[Exception] = None
+        for attempt in range(1, attempts + 1):
+            try:
+                self._sock = socket.create_connection((self.host, self.port), timeout=timeout_sec)
+                log.info(f"[Stratum] Connected to {self.host}:{self.port}")
+                return
+            except Exception as exc:
+                last_err = exc
+                if attempt < attempts:
+                    log.warning(
+                        f"[Stratum] Connect failed ({attempt}/{attempts}) to {self.host}:{self.port}: {exc} — retrying..."
+                    )
+                    time.sleep(min(2 * attempt, 5))
+                else:
+                    log.error(
+                        f"[Stratum] Connect failed ({attempt}/{attempts}) to {self.host}:{self.port}: {exc}"
+                    )
+
+        raise ConnectionError(f"Unable to connect to {self.host}:{self.port}") from last_err
 
     def _send(self, msg: dict) -> None:
         data = json.dumps(msg) + "\n"
@@ -548,32 +565,53 @@ class StratumMiner:
         log.info(f"  Wallet: {self.wallet}")
         log.info(f"  Worker: {self.worker}-py42")
 
-        self._connect()
-        self._login()
-        self._running = True
         self._start_time = time.time()
+        should_stop = False
 
-        threads = []
-        for i in range(self.threads):
-            t = threading.Thread(target=self._mine_thread, args=(i,), daemon=True)
-            t.start()
-            threads.append(t)
+        while not should_stop:
+            try:
+                self._connect(attempts=3, timeout_sec=10)
+                self._login()
+            except Exception as exc:
+                log.error(f"[Stratum] Initial connect/login failed: {exc}")
+                log.info("[Stratum] Reconnect in 5s...")
+                time.sleep(5)
+                continue
 
-        stats_t = threading.Thread(target=self._stats_thread, daemon=True)
-        stats_t.start()
+            self._running = True
+            threads = []
+            for i in range(self.threads):
+                t = threading.Thread(target=self._mine_thread, args=(i,), daemon=True)
+                t.start()
+                threads.append(t)
 
-        listen_t = threading.Thread(target=self._listener_thread, daemon=True)
-        listen_t.start()
+            stats_t = threading.Thread(target=self._stats_thread, daemon=True)
+            stats_t.start()
 
-        try:
-            while self._running:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            log.info("[CHv4.2 Miner] Stopping...")
-            self._running = False
+            listen_t = threading.Thread(target=self._listener_thread, daemon=True)
+            listen_t.start()
 
-        for t in threads:
-            t.join(timeout=2)
+            try:
+                while self._running:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                log.info("[CHv4.2 Miner] Stopping...")
+                should_stop = True
+                self._running = False
+
+            try:
+                if self._sock is not None:
+                    self._sock.close()
+            except Exception:
+                pass
+            self._sock = None
+
+            for t in threads:
+                t.join(timeout=2)
+
+            if not should_stop:
+                log.warning("[Stratum] Disconnected, reconnecting in 3s...")
+                time.sleep(3)
 
 
 # ---------------------------------------------------------------------------
