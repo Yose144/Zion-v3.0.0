@@ -1262,7 +1262,7 @@ impl UniversalMiner {
     fn is_gpu_mineable(algo: Algorithm, platform: gpu::GpuPlatform, height: u32) -> bool {
         let _ = height;
         match algo {
-            // CosmicHarmony CHv4: Metal GPU shader is fully implemented (NPU + 512 KiB scratchpad).
+            // CosmicHarmony CHv4.1: Metal GPU shader is fully implemented (NPU + 64 KiB scratchpad).
             // Parity fix applied (commit f0ebf20): Rust == C native == Metal GPU confirmed.
             // Enabled for Metal (macOS M1/M2/M3). CUDA/OpenCL shaders not yet implemented.
             Algorithm::CosmicHarmony => matches!(platform, gpu::GpuPlatform::Metal),

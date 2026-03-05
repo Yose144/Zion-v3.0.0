@@ -199,7 +199,7 @@ static inline uint32_t chv4_read_le32(const uint8_t *p) {
 
 /* ============================================================================
  * CHv4 Scratchpad — init_scratchpad(pad, seed[64])
- * 8192 blocks, each = SHA3-512(prev_state[64] || block_idx_le8[8])
+ * 1024 blocks, each = SHA3-512(prev_state[64] || block_idx_le8[8])
  * ============================================================================ */
 
 static void chv4_init_scratchpad(uint8_t *pad, const uint8_t seed[64]) {

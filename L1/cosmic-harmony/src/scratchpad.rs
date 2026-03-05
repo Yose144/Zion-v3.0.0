@@ -4,7 +4,7 @@
 //! Golden Matrix a Cosmic Fusion fází.
 //!
 //! Performance: používáme thread-local scratchpad buffer — vyhýbáme se
-//! 512 KiB heap allocation per hash, což dává ~20-35% zrychlení při
+//! opakované heap allocation per hash, což dává ~20-35% zrychlení při
 //! paralelním mining (rayon), kde každé vlákno reusuje svůj buffer.
 
 use sha3::{Digest, Keccak256, Sha3_512};
@@ -12,7 +12,7 @@ use std::cell::RefCell;
 
 use crate::algorithms_opt::Hash64;
 
-// Thread-local 512 KiB scratchpad — každé vlákno má vlastní buffer,
+// Thread-local scratchpad — každé vlákno má vlastní buffer,
 // žádný malloc/free per hash. Reuse je bezpečný protože scratchpad
 // je vždy plně přepsán v init_scratchpad() před použitím.
 thread_local! {
@@ -36,24 +36,17 @@ where
     })
 }
 
-/// Scratchpad velikost v bajtech (512 KiB).
-///
-/// 512 KiB přesahuje L1/L2 cache reálných ASIC čipů a většiny FPGA —
-/// útočník musí použít pomalou DRAM nebo eDRAM, čímž ztrácí výhodu paralelismu.
-/// Oproti 2 MiB variantě zachovává ASIC odolnost při praktickém hashratu ~50–100 H/s.
-/// (Benchmark: 256 KiB → ~300–600 H/s, 512 KiB → ~50–100 H/s, 2 MiB → ~1 H/s)
-pub const SCRATCHPAD_SIZE: usize = 512 * 1024;
+/// Scratchpad velikost v bajtech (64 KiB) — CHv4.1 light profil.
+pub const SCRATCHPAD_SIZE: usize = 64 * 1024;
 
 /// Velikost jednoho bloku scratchpadu.
 const BLOCK_SIZE: usize = 64;
 
-/// Počet sekvenčních průchodů scratchpadem.
-/// 4 průchody × 512 KiB = 2 MiB sekvenčního čtení/zápisu per hash.
-const PASSES: usize = 4;
+/// Počet sekvenčních průchodů scratchpadem (CHv4.1 light profil).
+const PASSES: usize = 2;
 
-/// Počet pseudo-random čtení pro finální mix.
-/// 256 reads při 8192 blocích = 3.1% pokrytí per hash — dostatečné pro data-dependency.
-const RANDOM_READS: usize = 256;
+/// Počet pseudo-random čtení pro finální mix (CHv4.1 light profil).
+const RANDOM_READS: usize = 64;
 
 #[inline]
 fn block_count() -> usize {

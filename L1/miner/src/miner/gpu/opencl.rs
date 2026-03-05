@@ -18,7 +18,7 @@ use ocl::enums::{DeviceInfo, DeviceInfoResult};
 const OPENCL_KERNEL: &str = include_str!("kernels/cosmic_harmony_v3.cl");
 
 /// Scratchpad size per thread (must match CL_SCRATCHPAD_BYTES in kernel)
-const SCRATCHPAD_BYTES: usize = 512 * 1024;
+const SCRATCHPAD_BYTES: usize = 64 * 1024;
 /// Max parallel threads when memory-hard is active (scratchpad × threads ≤ ~2 GB)
 const MH_BATCH_DEFAULT: usize = 4096;
 
@@ -153,10 +153,10 @@ impl GpuMiner for OpenCLMiner {
             let result_count_buf = pro_que.buffer_builder::<u32>().len(1).build()?;
             let result_hash_buf = pro_que.buffer_builder::<u8>().len(32).build()?;
 
-            // Scratchpad buffer: mh_batch_size × 512 KiB = ~2 GB for default 4096 threads.
+            // Scratchpad buffer: mh_batch_size × 64 KiB.
             // Allocated once at init; only used when memory_hard=1 in the kernel.
             let scratchpad_len = self.mh_batch_size * SCRATCHPAD_BYTES;
-            println!("[OpenCL] Allocating scratchpad: {} MiB ({} threads × 512 KiB)",
+            println!("[OpenCL] Allocating scratchpad: {} MiB ({} threads × 64 KiB)",
                 scratchpad_len / (1024 * 1024), self.mh_batch_size);
             let scratchpad_buf = pro_que.buffer_builder::<u8>()
                 .len(scratchpad_len)

@@ -4,7 +4,7 @@
  * Native GPU acceleration for Apple Silicon (M1-M5), version 2.9.7.
  * Implements full CHv4 pipeline on GPU:
  *   Keccak-256 → SHA3-512 → Golden Matrix
- *   → Memory-Hard Scratchpad (512 KiB/thread)
+ *   → Memory-Hard Scratchpad (64 KiB/thread)
  *   → NPU Mixing (INT8 MLP 64→128→64 + residual)
  *   → Cosmic Fusion
  *
@@ -466,11 +466,11 @@ void cosmic_fusion_gpu(thread const uint8_t *input, thread uint8_t *output) {
 // CHv4 Constants — memory-hard scratchpad
 // ============================================================================
 
-constant uint METAL_SCRATCHPAD_BYTES = 524288u;   // 512 KiB per thread
+constant uint METAL_SCRATCHPAD_BYTES = 65536u;    // 64 KiB per thread
 constant uint METAL_BLOCK_SIZE       = 64u;
-constant uint METAL_BLOCK_COUNT      = 8192u;     // 8192 × 64 = 524288
-constant uint METAL_PASSES           = 4u;
-constant uint METAL_RANDOM_READS     = 256u;
+constant uint METAL_BLOCK_COUNT      = 1024u;     // 1024 × 64 = 65536
+constant uint METAL_PASSES           = 2u;
+constant uint METAL_RANDOM_READS     = 64u;
 
 // ============================================================================
 // CHv4 Scratchpad helpers (reuse existing sha3_512_gpu / keccak256_gpu)
@@ -541,7 +541,7 @@ void metal_mix_block(
     for (int i = 0; i < 64; i++) cur_blk[i] ^= hash[i];
 }
 
-// 4 sequential passes over the pad (alternating forward / backward)
+// 2 sequential passes over the pad (alternating forward / backward)
 // Matches CPU sequential_passes + mix_block rand_idx logic EXACTLY:
 //   idx_bytes = pad[cur_off..cur_off+8]  (current block, u64 LE)
 //   rand_index = (u64_from_le(idx_bytes) XOR pass XOR index) % blocks
@@ -572,7 +572,7 @@ void metal_sequential_passes(device uint8_t* pad) {
     }
 }
 
-// 256 pseudo-random reads into scratchpad; returns 64-byte SHA3-512 output.
+// 64 pseudo-random reads into scratchpad; returns 64-byte SHA3-512 output.
 // Matches CPU random_read_mix EXACTLY:
 //   pos_init  = u64_le(seed[0..8]) % blocks
 //   h[32]     = keccak256(acc[64] || chunk[64] || r_le8[8])
@@ -646,7 +646,7 @@ void metal_random_read_mix(
 //   random_read_mix(input, pad)       ← returns SHA3-512(acc || pad[0] || pad[-1])
 void metal_memory_hard_transform(
     thread const uint8_t gm_out[64],    // Golden-Matrix output — seed for init AND mix
-    device uint8_t* pad,               // per-thread 512 KiB scratch area
+    device uint8_t* pad,               // per-thread 64 KiB scratch area
     thread uint8_t output[64]
 ) {
     metal_init_scratchpad(pad, gm_out);   // seed = golden_matrix (was: s2 SHA3-512 — BUG FIXED)
@@ -890,7 +890,7 @@ kernel void cosmic_harmony_v3_mine(
 ) {
     uint64_t nonce = params.start_nonce + uint64_t(thread_id);
 
-    // Each thread gets its own 512 KiB slice of the scratchpad
+    // Each thread gets its own 64 KiB slice of the scratchpad
     device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
 
     // Copy header to thread-local stack
