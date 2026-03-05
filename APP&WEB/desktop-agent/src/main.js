@@ -2733,14 +2733,56 @@ function startMining(config) {
       updateTrayMenu(minerStats);
     }, 450);
 
-    // ── CHv4.2 Revenue CPU proces ─────────────────────────────────────────────
-    // Pokud je revenue povoleno, spustime CPU miner s --group revenue na stejnem poolu.
-    // Pool StreamScheduler presmeruje g=revenue minery na XMR/RandomX → MoneroOcean → BTC.
-    // GPU zuostava plne pro CHv4.2 Merkabah mining — revenue bezi na volnych CPU vlaknech.
-    const chv42RevEnabled = !!(config?.revenue?.enabled);
-    if (chv42RevEnabled) {
+    // ── CHv4.2 Revenue system parity with CH3 ─────────────────────────────────
+    // Aktivuje stejnou revenue logiku jako CH3: CPU revenue stream + (volitelně)
+    // GPU revenue stream přes Rust miner s --group revenue.
+    const effectiveThreads = computeEffectiveThreads(config);
+    const revenueProfile = normalizeRevenueProfile(config?.revenue || {});
+    const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
+    const wantsGpu = miningMode === 'gpu' || miningMode === 'dual' || miningMode === 'gpu-revenue';
+    const algoForGpu = normalizeAlgorithmName(config.algorithm || '');
+    const gpuAllowed = algoSupportsGpu(algoForGpu);
+    const effectiveGpu = wantsGpu && gpuAllowed;
+    const mainMinerGpu = effectiveGpu && miningMode !== 'gpu-revenue';
+
+    const envDisableRevenue = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+    const envEnableRevenue = String(process.env.ZION_ENABLE_REVENUE || '').trim() === '1';
+    const revenueEnabled = envDisableRevenue ? false : (envEnableRevenue ? true : revenueProfile.enabled !== false);
+
+    let xmrRevenueThreads = 0;
+    if (revenueEnabled && effectiveThreads >= 3) {
+      const multiPct = Math.max(0, Math.min(100, Number(revenueProfile?.allocation?.multiAlgoPct ?? 25)));
+      const nclPct = Math.max(0, Math.min(100, Number(revenueProfile?.allocation?.nclPct ?? 25)));
+      const nclEnabled = revenueProfile?.nclEnabled !== false;
+
+      const suggestedMulti = Math.max(1, Math.round(effectiveThreads * (multiPct / 100)));
+      const suggestedNcl = nclEnabled ? Math.max(1, Math.round(effectiveThreads * (nclPct / 100))) : 0;
+      const maxRevenue = Math.max(0, effectiveThreads - 2);
+      const totalRevenue = Math.min(maxRevenue, suggestedMulti + suggestedNcl);
+      if (totalRevenue > 0 && suggestedMulti + suggestedNcl > 0) {
+        const ratio = totalRevenue / (suggestedMulti + suggestedNcl);
+        xmrRevenueThreads = Math.max(1, Math.round(suggestedMulti * ratio));
+      }
+    }
+
+    const allowRevenueWithMainGpu = String(process.env.ZION_ALLOW_REVENUE_WITH_MAIN_GPU || '1').trim() !== '0';
+    const revenueSuppressedForGpuInit = mainMinerGpu && !allowRevenueWithMainGpu;
+    const revenueEnv = { ...process.env, ZION_NONCE_BASE: String(sessionNonceBaseRevenue) };
+    const gpuRevenueEnv = { ...process.env, ZION_NONCE_BASE: String(sessionNonceBaseGpuRevenue) };
+
+    if (revenueSuppressedForGpuInit && xmrRevenueThreads > 0) {
       try {
-        const chv42RevThreads = Math.max(1, Math.min(Number(config?.revenue?.threads) || 1, 2));
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: '[CH4-REV] Revenue CPU process skipped while main GPU mining is active (stability guard). Set ZION_ALLOW_REVENUE_WITH_MAIN_GPU=1 to override.\n'
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!revenueSuppressedForGpuInit && xmrRevenueThreads > 0) {
+      try {
         const revenueStatsPath = STATS_PATH.replace(/\.json$/, '_chv42_revenue.json');
         const revMinerPath = findPythonMiner() || MINER_PATH;
         const revArgs = [
@@ -2749,42 +2791,121 @@ function startMining(config) {
           '--mode', 'cpu',
           '--pool', pool,
           '--wallet', wallet,
-          '--threads', String(chv42RevThreads),
+          '--threads', String(xmrRevenueThreads),
           '--group', 'revenue',
           '--stats-file', revenueStatsPath,
           '--stats-interval', String(STATS_INTERVAL_SEC || 30),
         ];
         if (worker) revArgs.push('--worker', `${worker}_rev`);
         revenueProcess = spawn(pyExe, revArgs, {
-          env: { ...process.env },
+          env: revenueEnv,
           stdio: ['pipe', 'pipe', 'pipe'],
           windowsHide: true,
         });
-        log(`[CHv4.2-REV] Revenue CPU spusten (PID ${revenueProcess?.pid}) — ${chv42RevThreads}T -> ${pool} g=revenue`);
+        log(`[CH4-REV] Revenue CPU started (PID ${revenueProcess?.pid}) — ${xmrRevenueThreads}T -> ${pool} g=revenue`);
         sendToRenderer('miner-output', {
           stream: 'stdout',
-          text: `[CHv4.2-REV] Revenue CPU miner spusten (PID ${revenueProcess?.pid}) — ${chv42RevThreads}T CPU -> ${pool} (g=revenue)\n`,
+          text: `[CH4-REV] Revenue CPU miner started (PID ${revenueProcess?.pid}) — ${xmrRevenueThreads}T CPU -> ${pool} (g=revenue)\n`,
         });
         revenueProcess.stdout?.on('data', (d) => {
-          try { sendToRenderer('miner-output', { stream: 'stdout', text: `[CHv4.2-REV] ${d.toString()}` }); } catch {}
+          const output = d.toString();
+          safeMinerLogWrite(`[CH4-REV-STDOUT] ${output}`);
+          try { sendToRenderer('miner-output', { stream: 'stdout', text: `[CH4-REV] ${output}` }); } catch {}
         });
         revenueProcess.stderr?.on('data', (d) => {
-          try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CHv4.2-REV] ${d.toString()}` }); } catch {}
+          const output = d.toString();
+          safeMinerLogWrite(`[CH4-REV-STDERR] ${output}`);
+          try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CH4-REV] ${output}` }); } catch {}
         });
         revenueProcess.on('error', (err) => {
-          log(`[CHv4.2-REV] Revenue process error: ${err}`);
+          log(`[CH4-REV] Revenue process error: ${err}`);
           revenueProcess = null;
         });
         revenueProcess.on('close', (code) => {
           revenueProcess = null;
           if (minerProcess && code !== 0) {
-            try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CHv4.2-REV] Revenue process exited (code=${code}).\n` }); } catch {}
+            try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CH4-REV] Revenue process exited (code=${code}).\n` }); } catch {}
           }
         });
       } catch (revErr) {
-        log(`[CHv4.2-REV] Revenue spawn selhal: ${revErr}`);
+        log(`[CH4-REV] Revenue spawn failed: ${revErr}`);
         revenueProcess = null;
       }
+    }
+
+    // GPU revenue stream (CH3 parity): používá Rust miner s --group revenue + --gpu.
+    try {
+      const rustSelection = resolveMinerSelection('rust');
+      const rustRevenuePath = rustSelection?.isRust ? rustSelection.path : '';
+      const rustGroupSupported = rustRevenuePath ? rustMinerSupportsGroupFlag(rustRevenuePath) : false;
+      const gpuRevenueEnabled = !!(revenueProfile?.gpu?.enabled || config.gpuRevenue);
+      const gpuRevenueAllowed = gpuRevenueEnabled && effectiveGpu && !mainMinerGpu;
+
+      if (gpuRevenueEnabled && mainMinerGpu) {
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stdout',
+            text: '[CH4-GPU] GPU dedicated to main CHv4 miner — GPU Revenue skipped (prevents dual-GPU contention).\n'
+          });
+        } catch {
+          // ignore
+        }
+      }
+
+      if (rustRevenuePath && gpuRevenueAllowed && rustGroupSupported) {
+        const gpuRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_chv42_gpu_revenue.json');
+        const gpuRevenueArgs = [
+          '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
+          '--wallet', config.wallet,
+          '--threads', '1',
+          '--group', 'revenue',
+          '--gpu',
+          '--stats-file', gpuRevenueStatsPath,
+          '--stats-interval', String(STATS_INTERVAL_SEC || 30),
+          '--no-color'
+        ];
+        if (config.worker) gpuRevenueArgs.push('--worker', `${String(config.worker)}_gpu_rev`);
+
+        gpuRevenueProcess = spawn(rustRevenuePath, gpuRevenueArgs, {
+          cwd: minerCwd,
+          env: gpuRevenueEnv,
+          stdio: ['pipe', 'pipe', 'pipe'],
+          windowsHide: true,
+        });
+
+        gpuRevenueHealth = { startedAt: Date.now(), accepted: 0, rejected: 0, disabled: false };
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[CH4-GPU] GPU Revenue process started (PID ${gpuRevenueProcess?.pid}) — algo=pool-assigned g=revenue\n`
+        });
+        gpuRevenueProcess.stdout?.on('data', (data) => {
+          const output = data.toString();
+          if (/\baccepted\b/i.test(output)) gpuRevenueHealth.accepted += 1;
+          if (/\brejected\b/i.test(output)) gpuRevenueHealth.rejected += 1;
+          safeMinerLogWrite(`[CH4-GPU-REV-STDOUT] ${output}`);
+        });
+        gpuRevenueProcess.stderr?.on('data', (data) => {
+          const output = data.toString();
+          if (/\baccepted\b/i.test(output)) gpuRevenueHealth.accepted += 1;
+          if (/\brejected\b/i.test(output)) gpuRevenueHealth.rejected += 1;
+          safeMinerLogWrite(`[CH4-GPU-REV-STDERR] ${output}`);
+        });
+        gpuRevenueProcess.on('error', (err) => {
+          gpuRevenueProcess = null;
+          gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
+          log(`[CH4-GPU] GPU revenue process error: ${err}`);
+        });
+        gpuRevenueProcess.on('close', (code) => {
+          gpuRevenueProcess = null;
+          gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
+          if (minerProcess && code !== 0) {
+            try { sendToRenderer('miner-output', { stream: 'stderr', text: `[CH4-GPU] GPU Revenue process exited (code=${code}).\n` }); } catch {}
+          }
+        });
+      }
+    } catch (gpuRevErr) {
+      log(`[CH4-GPU] GPU revenue setup failed: ${gpuRevErr}`);
+      gpuRevenueProcess = null;
     }
     // ─────────────────────────────────────────────────────────────────────────
 
