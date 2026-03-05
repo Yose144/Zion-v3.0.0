@@ -98,12 +98,12 @@ constant ulong KECCAK_RC[24] = {
 
 inline void keccak_f1600(thread ulong *st)
 {
-    constant int rho[24] = {
+    int rho[24] = {
          1,  3,  6, 10, 15, 21, 28, 36,
         45, 55,  2, 14, 27, 41, 56,  8,
         25, 43, 62, 18, 39, 61, 20, 44
     };
-    constant int pi[24] = {
+    int pi[24] = {
         10,  7, 11, 17, 18,  3,  5, 16,
          8, 21, 24,  4, 15, 23, 19, 13,
         12,  2, 20, 14, 22,  9,  6,  1
@@ -321,15 +321,8 @@ kernel void chv42_mine(
                 | ((uint)hash[3] << 24);
 
     if (state0 <= target_u32) {
-        // Atomický CAS — only first winner writes
-        ulong zero = 0;
-        ulong expected = 0;
-        bool won = atomic_compare_exchange_weak_explicit(
-            (device atomic_ulong *)result_nonce,
-            &expected, nonce,
-            memory_order_relaxed, memory_order_relaxed
-        );
-        if (won) {
+        if (result_nonce[0] == 0) {
+            result_nonce[0] = nonce;
             for (int i = 0; i < 32; i++) result_hash[i] = hash[i];
         }
     }
@@ -357,8 +350,7 @@ kernel void chv42_bench_phase2(
         }
     }
 
-    atomic_fetch_add_explicit((device atomic_ulong *)throughput_count,
-                              1uL, memory_order_relaxed);
+    throughput_count[0] += 1;
 }
 
 // ============================================================================
