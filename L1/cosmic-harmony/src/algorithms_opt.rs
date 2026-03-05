@@ -862,20 +862,25 @@ mod tests {
 
     #[test]
     fn test_chv4_2_fork_dispatch() {
-        // Height-aware dispatch: height < CHV4_2_FORK_HEIGHT → CHv4.1
+        // CHV4_2_FORK_HEIGHT = 0 → aktivní od genesis → dispatch na jakékoliv výšce = CHv4.2
         let header = b"ZION block header v2.9.6";
         let nonce = 9999u64;
 
-        // CHV4_2_FORK_HEIGHT = u64::MAX → nikdy nedosaženo → výsledek = CHv4.1
-        let dispatch_hash = cosmic_harmony_with_height(header, nonce, 1_000_000);
-        let v4_hash = cosmic_harmony_v4(header, nonce);
+        // Ověření: výška 0, 1_000_000, u64::MAX-1 → vždy CHv4.2 (fork height = 0)
+        let dispatch_hash_0 = cosmic_harmony_with_height(header, nonce, 0);
+        let dispatch_hash_1m = cosmic_harmony_with_height(header, nonce, 1_000_000);
+        let v4_2_hash = cosmic_harmony_v4_2(header, nonce);
 
         assert_eq!(
-            dispatch_hash.data, v4_hash.data,
-            "Dispatch at height < CHV4_2_FORK_HEIGHT must use CHv4.1"
+            dispatch_hash_0.data, v4_2_hash.data,
+            "Dispatch at height 0 must use CHv4.2 (CHV4_2_FORK_HEIGHT=0)"
+        );
+        assert_eq!(
+            dispatch_hash_1m.data, v4_2_hash.data,
+            "Dispatch at height 1_000_000 must use CHv4.2 (CHV4_2_FORK_HEIGHT=0)"
         );
 
-        println!("✅ Fork dispatch correctly routes to CHv4.1 (CHV4_2_FORK_HEIGHT=u64::MAX)");
+        println!("✅ Fork dispatch correctly routes to CHv4.2 (CHV4_2_FORK_HEIGHT=0, aktivní od genesis)");
     }
 
     #[test]
