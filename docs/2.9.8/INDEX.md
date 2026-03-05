@@ -7,6 +7,8 @@
 ## Dokumenty
 
 - [DEEKSHA_PHILOSOPHY.md](DEEKSHA_PHILOSOPHY.md) — **FILOZOFIE** (proč): záměr, Oneness, tapas, beautiful state, strom vědomí → strom sítě
+- [DEEKSHA_COSMOLOGY.md](DEEKSHA_COSMOLOGY.md) — **KOSMOLOGIE**: pipeline jako kosmogonie, zlatý řez, Sefírotský strom, Indra's Net, Hiranyagarbha genesis seed
+- [DEEKSHA_SCIENCE.md](DEEKSHA_SCIENCE.md) — **VĚDA**: kryptografický základ (NIST SHA-3/AES), memory-hard fyzika (roofline model), INT8 MLP (informační teorie), game theory minerů
 - [CHV_DEEKSHA_ARCHITECTURE.md](CHV_DEEKSHA_ARCHITECTURE.md) — **ARCHITEKTURA** (co a jak): modul mapa, pipeline, NpuBackend trait, dispatch, fáze implementace
 - [COSMIC_HARMONY_DEEKSHA_SPEC.md](COSMIC_HARMONY_DEEKSHA_SPEC.md) — jednotná algoritmická specifikace (konsenzusní parametry)
 - [REVENUE_UNIFICATION_2.9.8.md](REVENUE_UNIFICATION_2.9.8.md) — zachování CHv3 revenue modelu bez regresí
