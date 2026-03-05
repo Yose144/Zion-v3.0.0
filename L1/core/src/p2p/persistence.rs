@@ -43,6 +43,17 @@ pub fn to_persisted(info: &crate::p2p::peers::PeerInfo) -> PersistedPeer {
 pub fn get_best_peers(peers: &[PersistedPeer], limit: usize) -> Vec<String> {
     let mut sorted = peers.to_vec();
 
+    // P2P-BUG-02 fix: Filter out ephemeral/dynamic ports saved from inbound
+    // connections. Ephemeral range: Linux 32768-60999, IANA 49152-65535.
+    // We only reconnect to peers on well-known/registered ports (< 32768).
+    sorted.retain(|p| {
+        p.addr
+            .parse::<std::net::SocketAddr>()
+            .ok()
+            .map(|sa| sa.port() > 0 && sa.port() < 32768)
+            .unwrap_or(false)
+    });
+
     // Sort by: low fail_count, then high last_seen
     sorted.sort_by(|a, b| {
         let fail_cmp = a.fail_count.cmp(&b.fail_count);

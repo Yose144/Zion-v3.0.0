@@ -111,11 +111,30 @@ pub async fn start(state: State, port: u16, mut initial_peers: Vec<String>) -> R
 
     if let Ok(saved_peers) = peers.load_from_disk(&peers_file).await {
         if !saved_peers.is_empty() {
-            println!(
-                "[P2P] Adding {} saved peers to initial_peers",
-                saved_peers.len()
-            );
-            initial_peers.extend(saved_peers);
+            // P2P-BUG-02 fix: skip saved peers whose IP is already covered by
+            // an explicitly configured seed (--peers flag). Prevents the node
+            // from preferring a saved ephemeral-port entry over the canonical
+            // seed port, and avoids duplicate connections to the same host.
+            let seed_ips: std::collections::HashSet<std::net::IpAddr> = initial_peers
+                .iter()
+                .filter_map(|p| p.parse::<std::net::SocketAddr>().ok().map(|sa| sa.ip()))
+                .collect();
+            let new_peers: Vec<String> = saved_peers
+                .into_iter()
+                .filter(|p| {
+                    p.parse::<std::net::SocketAddr>()
+                        .ok()
+                        .map(|sa| !seed_ips.contains(&sa.ip()))
+                        .unwrap_or(false)
+                })
+                .collect();
+            if !new_peers.is_empty() {
+                println!(
+                    "[P2P] Adding {} saved peers to initial_peers",
+                    new_peers.len()
+                );
+                initial_peers.extend(new_peers);
+            }
         }
     }
 
@@ -286,6 +305,30 @@ pub async fn start(state: State, port: u16, mut initial_peers: Vec<String>) -> R
     }
 }
 
+/// RAII guard: automatically cleans up peer state when connection ends,
+/// regardless of whether it ends normally or via early return/bail.
+/// Fixes P2P-BUG-01: `peers_connected` was only decremented at the normal
+/// loop-exit path, causing the counter to leak on every early return.
+struct ConnectionGuard {
+    peers: Arc<PeerManager>,
+    state: State,
+    addr: SocketAddr,
+}
+
+impl Drop for ConnectionGuard {
+    fn drop(&mut self) {
+        self.peers.remove_peer(&self.addr);
+        self.state
+            .metrics
+            .peers_connected
+            .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+        self.state.metrics.peers_total.store(
+            self.peers.get_peers().len(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+    }
+}
+
 pub async fn handle_connection(
     socket: TcpStream,
     addr: SocketAddr,
@@ -309,6 +352,12 @@ pub async fn handle_connection(
         .metrics
         .peers_connected
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // P2P-BUG-01 fix: RAII guard ensures cleanup on every return path
+    let _conn_guard = ConnectionGuard {
+        peers: peers.clone(),
+        state: state.clone(),
+        addr: scalar_addr,
+    };
 
     // Spawn Writer Task
     tokio::spawn(async move {
@@ -1041,15 +1090,8 @@ pub async fn handle_connection(
         }
     }
 
-    peers.remove_peer(&scalar_addr);
-    state
-        .metrics
-        .peers_connected
-        .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
-    state.metrics.peers_total.store(
-        peers.get_peers().len(),
-        std::sync::atomic::Ordering::Relaxed,
-    );
+    // Cleanup is handled by `_conn_guard` (ConnectionGuard Drop impl) — no
+    // need to repeat it here. The guard fires on this Ok(()) return too.
     Ok(())
 }
 
