@@ -130,6 +130,32 @@ Poznámka: operator-confirmed stav bez kritických chyb během 168h; dashboard o
 
 ---
 
+## Checkpoint 2026-03-05 (Server Ops Session)
+
+### Zjištěné problémy a opravy
+
+| Problém | Server | Závažnost | Stav |
+|---------|--------|-----------|------|
+| xmrig CPU 104% (zbytečná těžba XMR) | USA + Asia | Střední | ✅ OPRAVENO: `docker stop zion-xmr-x86` |
+| Miner na CHv3 místo CHv4 | USA + Asia | Střední | ✅ OPRAVENO: upgrade na `zion-miner:2.9.7-amd64` CHv4 |
+| P2P-BUG-01: `peers_connected` counter leak | USA + Asia | Vysoká | ✅ OPRAVENO: `ConnectionGuard` RAII — commit `773c931` |
+| P2P-BUG-02: Reconnect na ephemeral porty | USA + Asia | Střední | ✅ OPRAVENO: port filter ≥32768 + IP dedup — commit `773c931` |
+| Pool `ZION_HAS_GPU=1` → xmrig restart smyčka každých 30s | Helsinki | Nízká | ✅ OPRAVENO: `ZION_HAS_GPU=0` |
+| Pool `payout:sent` 82 stale TX ze staré genesis | Helsinki | Střední | ✅ OPRAVENO: `payout:sent` vyčištěn (záloha: `/root/payout_sent_backup_20260305.txt`) |
+| Pool VarDiff race condition → ~30% share rejectiony | Helsinki | Střední | ✅ OPRAVENO: `ZION_VARDIFF_RETARGET_SECS=60 ZION_VARDIFF_VARIANCE=0.5` |
+
+### Stav serverů po opravách (2026-03-05T07:20 UTC)
+
+| Server | Load | Kontejnery | Poznámka |
+|--------|------|-----------|---------|
+| Helsinki (77.42.31.72) | <2 | pool+core+miner UP | Pool čistý, shares ACCEPTED, CHv4 ✅ |
+| USA (178.156.240.160) | <2 | core+miner UP | P2P fix build DONE (EXIT=0), miner CHv4 ✅ |
+| Asia (5.223.43.93) | <3 | core+miner UP | P2P fix build RUNNING (background) ✅ |
+
+
+
+---
+
 ## Příkazy pro monitoring
 
 ```bash
