@@ -108,6 +108,9 @@ dist/
 *.dll
 *.so
 *.dylib
+# Výjimky: nativní knihovny dodávané s agentem (one-click)
+!APP&WEB/desktop-agent/resources/mining/*.dylib
+!L1/native-libs/all/libcosmic_harmony_v42.dylib
 
 # Build logs
 build-check.log
