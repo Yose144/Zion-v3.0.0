@@ -2,6 +2,9 @@ mod cpu;
 pub mod dual_stream;
 pub mod external_pool;
 pub mod gpu;
+/// M1 Unified Agent — Apple Silicon GPU/CPU/NPU orchestrátor
+#[cfg(target_os = "macos")]
+pub mod m1_agent;
 pub mod multichain;
 pub mod native_algos;
 pub mod python_fallback;
@@ -26,7 +29,8 @@ pub use native_algos::NativeAlgorithm;
 // Local Algorithm enum - independent from zion_core
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Algorithm {
-    CosmicHarmony,
+    CosmicHarmony,    // CHv4.1 Golden Middle (height-aware, aktivuje CHv4.2 dle fork height)
+    CosmicHarmonyV42, // CHv4.2 Merkabah Dual-Spin (explicitní override)
     RandomX,
     VerusHash,
     Yescrypt,
@@ -51,6 +55,9 @@ impl Algorithm {
             | "cosmicharmony" | "cosmic-harmony" | "cosmic_harmony_v3"
             | "cosmic-harmony-v3" | "chv3" | "ch3" | "cosmic_harmony_v2" | "cosmicharmonyv2"
             | "cosmic-harmony-v2" | "cosmic-harmony_v2" => Some(Self::CosmicHarmony),
+            // CHv4.2 explicitní override (Merkabah Dual-Spin)
+            "cosmic_harmony_v4_2" | "chv4_2" | "ch4_2" | "chv4.2"
+            | "cosmic_harmony_v42" | "ch42" | "merkabah" => Some(Self::CosmicHarmonyV42),
             "randomx" | "random-x" | "rx/0" => Some(Self::RandomX),
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
@@ -73,6 +80,7 @@ impl Algorithm {
         match self {
             // "cosmic_harmony" is the pool-canonical name for CHv4-era (CHV4_NPU_FORK_HEIGHT=0)
             Self::CosmicHarmony => "cosmic_harmony",
+            Self::CosmicHarmonyV42 => "cosmic_harmony_v4_2",
             Self::RandomX => "randomx",
             Self::VerusHash => "verushash",
             Self::Yescrypt => "yescrypt",
@@ -93,6 +101,7 @@ impl Algorithm {
     pub fn to_native(&self) -> NativeAlgorithm {
         match self {
             Self::CosmicHarmony => NativeAlgorithm::CosmicHarmony,
+            Self::CosmicHarmonyV42 => NativeAlgorithm::CosmicHarmonyV42,
             Self::RandomX => NativeAlgorithm::RandomX,
             Self::VerusHash => NativeAlgorithm::VerusHash,
             Self::Yescrypt => NativeAlgorithm::Yescrypt,

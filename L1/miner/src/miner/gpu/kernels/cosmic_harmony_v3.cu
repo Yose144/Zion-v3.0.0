@@ -486,6 +486,91 @@ __device__ void npu_mixing_words(
 }
 
 // ============================================================================
+// CHv4.2 Merkabah Dual-Spin — GPU helper functions
+// ============================================================================
+
+// Phase 3: Merkabah backward passes (2×, direction = Ra-spin)
+__device__ void cuda_merkabah_backward_passes(unsigned char* pad) {
+    unsigned long long n = (unsigned long long)(CUDA_SCRATCHPAD_BYTES / 64);
+    for (int pass = 0; pass < CUDA_BACKWARD_PASSES; pass++) {
+        for (unsigned long long bi = n; bi-- > 0; ) {
+            unsigned char* blk = pad + bi * 64;
+            unsigned long long idx_hic = bi % 22;
+            unsigned long long hval = CUDA_HIC[idx_hic];
+            for (int b = 0; b < 8; b++) {
+                unsigned long long prev_idx = ((bi == 0 ? n - 1 : bi - 1)) % n;
+                unsigned char* prev_blk = pad + prev_idx * 64;
+                unsigned long long pv;
+                pv  = (unsigned long long)prev_blk[b*8+0];
+                pv |= (unsigned long long)prev_blk[b*8+1] << 8;
+                pv |= (unsigned long long)prev_blk[b*8+2] << 16;
+                pv |= (unsigned long long)prev_blk[b*8+3] << 24;
+                pv |= (unsigned long long)prev_blk[b*8+4] << 32;
+                pv |= (unsigned long long)prev_blk[b*8+5] << 40;
+                pv |= (unsigned long long)prev_blk[b*8+6] << 48;
+                pv |= (unsigned long long)prev_blk[b*8+7] << 56;
+                unsigned long long cv;
+                cv  = (unsigned long long)blk[b*8+0];
+                cv |= (unsigned long long)blk[b*8+1] << 8;
+                cv |= (unsigned long long)blk[b*8+2] << 16;
+                cv |= (unsigned long long)blk[b*8+3] << 24;
+                cv |= (unsigned long long)blk[b*8+4] << 32;
+                cv |= (unsigned long long)blk[b*8+5] << 40;
+                cv |= (unsigned long long)blk[b*8+6] << 48;
+                cv |= (unsigned long long)blk[b*8+7] << 56;
+                unsigned long long out = cv ^ pv ^ hval;
+                out = rotl64(out, (int)(hval & 63));
+                for (int bb = 0; bb < 8; bb++) blk[b*8+bb] = (unsigned char)(out >> (bb*8));
+            }
+        }
+    }
+}
+
+// Phase 5: Kabala phase — 22 HIC-indexed scratchpad reads into state
+__device__ void cuda_kabala_phase(const unsigned char* pad, unsigned long long state[8]) {
+    unsigned long long n = (unsigned long long)(CUDA_SCRATCHPAD_BYTES / 64);
+    for (int i = 0; i < 22; i++) {
+        unsigned long long hval = CUDA_HIC[i];
+        unsigned long long idx = (state[i % 8] ^ hval) % n;
+        const unsigned char* blk = pad + idx * 64;
+        for (int j = 0; j < 8; j++) {
+            unsigned long long v;
+            v  = (unsigned long long)blk[j*8+0];
+            v |= (unsigned long long)blk[j*8+1] << 8;
+            v |= (unsigned long long)blk[j*8+2] << 16;
+            v |= (unsigned long long)blk[j*8+3] << 24;
+            v |= (unsigned long long)blk[j*8+4] << 32;
+            v |= (unsigned long long)blk[j*8+5] << 40;
+            v |= (unsigned long long)blk[j*8+6] << 48;
+            v |= (unsigned long long)blk[j*8+7] << 56;
+            state[j % 8] ^= v ^ hval;
+            state[j % 8] = rotl64(state[j % 8], 17);
+        }
+    }
+}
+
+// Phase 6: Brahma-jyoti finalize — 22× Keccak-256 mixing with HIC, produce 32-byte hash
+__device__ void cuda_brahma_jyoti_finalize(const unsigned long long state_in[8], unsigned char out32[32]) {
+    unsigned char buf[72];
+    for (int i = 0; i < 8; i++) {
+        unsigned long long v = state_in[i];
+        for (int b = 0; b < 8; b++) buf[i*8+b] = (unsigned char)(v >> (b*8));
+    }
+    unsigned char h[32];
+    keccak256_bytes(buf, 64, h);
+    for (int r = 0; r < 22; r++) {
+        unsigned long long hval = CUDA_HIC[r];
+        // Mix HIC into hash
+        for (int b = 0; b < 8; b++) {
+            h[b]    ^= (unsigned char)(hval >> (b*8));
+            h[8+b]  ^= (unsigned char)(hval >> ((7-b)*8));
+        }
+        keccak256_bytes(h, 32, h);
+    }
+    for (int i = 0; i < 32; i++) out32[i] = h[i];
+}
+
+// ============================================================================
 // Main Kernel — CHv4 full pipeline
 // ============================================================================
 
@@ -505,7 +590,8 @@ __global__ void cosmic_harmony_v3_mine(
     const char*  __restrict__ npu_w2,     // [64*128] int8
     const char*  __restrict__ npu_b2,     // [64]     int8
     const short* __restrict__ npu_scale1, // [128]    int16
-    const short* __restrict__ npu_scale2  // [64]     int16
+    const short* __restrict__ npu_scale2, // [64]     int16
+    unsigned int chv4_2                   // 1 = CHv4.2 Merkabah Dual-Spin
 ) {
     unsigned int tid = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned long long nonce = start_nonce + (unsigned long long)tid;
@@ -528,8 +614,20 @@ __global__ void cosmic_harmony_v3_mine(
 
     unsigned char final_hash[32] = {0};
 
-    if (chv4 && memory_hard) {
-        // CHv4: MemoryHard -> NPU Mixing -> CosmicFusion
+    if (chv4_2 && memory_hard) {
+        // CHv4.2 Merkabah Dual-Spin
+        unsigned char* my_pad = scratchpad_buf + (unsigned long long)tid * CUDA_SCRATCHPAD_BYTES;
+        unsigned long long step4[8];
+        cuda_memory_hard_transform(step2, my_pad, step4);
+        unsigned long long step5[8];
+        npu_mixing_words(step4, step5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+        cuda_merkabah_backward_passes(my_pad);
+        unsigned long long kab_state[8];
+        for (int i = 0; i < 8; i++) kab_state[i] = step5[i];
+        cuda_kabala_phase(my_pad, kab_state);
+        cuda_brahma_jyoti_finalize(kab_state, final_hash);
+    } else if (chv4 && memory_hard) {
+        // CHv4.1: MemoryHard -> NPU Mixing -> CosmicFusion
         unsigned char* my_pad = scratchpad_buf + (unsigned long long)tid * CUDA_SCRATCHPAD_BYTES;
         unsigned long long step4[8];
         cuda_memory_hard_transform(step2, my_pad, step4);
