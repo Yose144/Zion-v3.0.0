@@ -24,7 +24,9 @@
 //! use zion_cosmic_harmony_v3::hic::{HIC, KEY_ROUNDS, KABALA_READS, BACKWARD_PASSES};
 //!
 //! // CHv4.2 backward pass mixing s HIC[0]
+//! let state_word: u64 = 0xDEADBEEF_CAFEF00D;
 //! let mixed_word: u64 = state_word ^ HIC[0];
+//! assert_eq!(mixed_word, state_word ^ 0x9E3779B97F4A7C15u64);
 //! ```
 
 // ============================================================================
