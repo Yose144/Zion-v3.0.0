@@ -88,7 +88,7 @@ def _try_import(module: str) -> Optional[object]:
 
 def detect_best_backend() -> str:
     """
-    Vrátí nejlepší dostupný backend: 'metal' | 'cuda' | 'opencl' | 'cpu'
+    Vrátí nejlepší dostupný backend: 'metal' | 'cuda' | 'opencl' | 'native' | 'cpu'
     """
     sys = platform.system()
     machine = platform.machine()
@@ -116,6 +116,10 @@ def detect_best_backend() -> str:
     # 3. OpenCL
     if _try_import("pyopencl"):
         return "opencl"
+
+    # 4. Native C dylib (ctypes) — rychlejší než Python fallback
+    if _find_lib("libcosmic_harmony_v42") is not None:
+        return "native"
 
     return "cpu"
 
@@ -688,6 +692,84 @@ class OpenCLBackend:
 
 
 # =============================================================================
+# NativeLib Backend (ctypes — libcosmic_harmony_v42.dylib/.so/.dll)
+# =============================================================================
+
+class NativeLibBackend:
+    """
+    ctypes wrapper pro libcosmic_harmony_v42 — C batch mine loop.
+    Rychlejší než Python fallback, funguje všude kde je k dispozici dylib.
+    Priority v detect_best_backend: Metal → CUDA → OpenCL → NativeLib → CPU
+    """
+
+    def __init__(self) -> None:
+        self._lib = None
+        self._fn  = None
+        self._ready = False
+
+        lib_path = _find_lib("libcosmic_harmony_v42")
+        if lib_path is None:
+            log.debug("[NativeLib] libcosmic_harmony_v42 nenalezena")
+            return
+
+        try:
+            lib = ctypes.CDLL(str(lib_path))
+            fn = lib.cosmic_harmony_v4_2_batch_mine
+            fn.restype  = ctypes.c_int
+            fn.argtypes = [
+                ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32,   # header, header_len
+                ctypes.c_uint64, ctypes.c_uint32, ctypes.c_uint32, # nonce_start, count, target
+                ctypes.POINTER(ctypes.c_uint64),                    # out_nonce
+                ctypes.POINTER(ctypes.c_uint8),                     # out_hash[32]
+            ]
+            self._fn   = fn
+            self._lib  = lib
+            self._ready = True
+            log.info("[NativeLib] CHv4.2 native dylib načtena: %s", lib_path)
+        except Exception as exc:
+            log.warning("[NativeLib] načtení selhalo: %s", exc)
+
+    @property
+    def available(self) -> bool:
+        return self._ready
+
+    def mine(
+        self,
+        header:      bytes,
+        nonce_start: int,
+        nonce_count: int,
+        target_u32:  int,
+    ) -> Optional[Tuple[int, bytes]]:
+        hdr    = (ctypes.c_uint8 * len(header))(*header)
+        out_n  = ctypes.c_uint64(0)
+        out_h  = (ctypes.c_uint8 * 32)()
+        r = self._fn(
+            hdr, len(header),
+            ctypes.c_uint64(nonce_start), ctypes.c_uint32(nonce_count),
+            ctypes.c_uint32(target_u32),
+            ctypes.byref(out_n), out_h,
+        )
+        if r == 1:
+            return (int(out_n.value), bytes(out_h))
+        return None
+
+    def benchmark(self, nonce_count: int = 2048) -> float:
+        try:
+            fn = self._lib.cosmic_harmony_v42_benchmark
+            fn.restype  = ctypes.c_double
+            fn.argtypes = [ctypes.c_uint32]
+            hs = fn(ctypes.c_uint32(nonce_count))
+            log.info("[NativeLib] Benchmark: %.1f H/s", hs)
+            return hs
+        except Exception:
+            dummy = b"ZION CHv4.2 native bench" + b"\x00" * 40
+            t0 = time.monotonic()
+            self.mine(dummy, 0, min(nonce_count, 16), 0xFFFFFFFF)
+            dt = time.monotonic() - t0
+            return min(nonce_count, 16) / max(dt, 0.001)
+
+
+# =============================================================================
 # Unified GPU Interface
 # =============================================================================
 
@@ -743,7 +825,16 @@ class CHv42GPU:
                 self._backend = b
                 self._name    = "opencl"
                 return
-            log.warning("[CHv42GPU] OpenCL nedostupný, fallback na CPU")
+            log.warning("[CHv42GPU] OpenCL nedostupný, zkouším NativeLib")
+            backend = "native"
+
+        if backend == "native":
+            b = NativeLibBackend()
+            if b.available:
+                self._backend = b
+                self._name    = "native"
+                return
+            log.warning("[CHv42GPU] NativeLib nedostupný, fallback na CPU")
 
         # CPU fallback
         self._name = "cpu"
