@@ -447,16 +447,64 @@ pub fn cosmic_harmony_v4(block_header: &[u8], nonce: u64) -> Hash32 {
     cosmic_fusion_opt(&step5.data)
 }
 
-/// Height-aware selektor CHv3 vs CHv4 pro bezpečný fork rollout.
+/// ============================================================================
+/// COSMIC HARMONY v4.2 PIPELINE — Merkabah Dual-Spin
+/// ============================================================================
+
+/// Fork výška pro aktivaci CHv4.2 Merkabah Dual-Spin.
+///
+/// Nastaveno na `u64::MAX` (deaktivováno) — bude stanoveno komunitním hlasováním.
+/// Testnet: 10_000, Mainnet: TBD (community vote).
+pub const CHV4_2_FORK_HEIGHT: u64 = u64::MAX; // TBD — deaktivováno do mainnet vote
+
+/// Full Cosmic Harmony v4.2 pipeline — "Merkabah Dual-Spin":
+/// Keccak → SHA3 → GoldenMatrix → MemoryHard_v4.2 → NPU → CosmicFusion
+///
+/// Nové prvky oproti CHv4.1:
+/// - Merkabah Backward Passes (Ra spirála) × 2
+/// - Kabalistická fáze — 22 HIC-adresovaných čtení
+/// - Brahma-jyoti finalizace — 22-kolo SHA3 key schedule
+#[inline]
+pub fn cosmic_harmony_v4_2(block_header: &[u8], nonce: u64) -> Hash32 {
+    use crate::algorithms_npu::npu_mixing_hash64;
+
+    let mut input = [0u8; 88];
+    let copy_len = block_header.len().min(80);
+    input[..copy_len].copy_from_slice(&block_header[..copy_len]);
+    input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+    // Step 1: Keccak-256
+    let step1 = keccak256_opt(&input);
+
+    // Step 2: SHA3-512
+    let step2 = sha3_512_opt(&step1.data);
+
+    // Step 3: Golden Matrix
+    let step3 = golden_matrix_opt(&step2.data);
+
+    // Step 4: Memory-hard scratchpad v4.2 (Merkabah Dual-Spin)
+    let step4 = scratchpad::memory_hard_transform_v4_2(&step3.data);
+
+    // Step 5: NPU Mixing — stejný jako CHv4.1
+    let step5 = npu_mixing_hash64(&step4.data);
+
+    // Step 6: Cosmic Fusion
+    cosmic_fusion_opt(&step5.data)
+}
+
+/// Height-aware selektor CHv3 vs CHv4 vs CHv4.2 pro bezpečný fork rollout.
 ///
 /// < CHV3_MEMORY_HARD_FORK_HEIGHT → legacy (no memory-hard)
 /// < CHV4_NPU_FORK_HEIGHT         → CHv3 (memory-hard, no NPU)
-/// ≥ CHV4_NPU_FORK_HEIGHT         → CHv4 (memory-hard + NPU mixing)
+/// < CHV4_2_FORK_HEIGHT           → CHv4 (memory-hard + NPU mixing)
+/// ≥ CHV4_2_FORK_HEIGHT           → CHv4.2 (Merkabah Dual-Spin)
 #[inline]
 pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32 {
     use crate::algorithms_npu::CHV4_NPU_FORK_HEIGHT;
 
-    if height >= CHV4_NPU_FORK_HEIGHT {
+    if height >= CHV4_2_FORK_HEIGHT {
+        cosmic_harmony_v4_2(block_header, nonce)
+    } else if height >= CHV4_NPU_FORK_HEIGHT {
         cosmic_harmony_v4(block_header, nonce)
     } else {
         cosmic_harmony_v3_with_height(block_header, nonce, height)
@@ -767,6 +815,79 @@ mod tests {
             println!("   Expected: {}", chv41_expected);
             panic!("CHv4.1 reference vector failed!");
         }
+    }
+
+    // ============================================================================
+    // CHv4.2 Merkabah Dual-Spin Tests
+    // ============================================================================
+
+    #[test]
+    fn test_chv4_2_deterministic() {
+        // CHv4.2 musí být deterministický — stejný vstup → stejný výstup
+        let mut header = [0u8; 80];
+        header[..24].copy_from_slice(b"ZION block header v2.9.6");
+
+        let hash1 = cosmic_harmony_v4_2(&header, 12345);
+        let hash2 = cosmic_harmony_v4_2(&header, 12345);
+        assert_eq!(hash1.data, hash2.data, "CHv4.2 must be deterministic");
+
+        // Různý nonce = různý hash (avalanche)
+        let hash3 = cosmic_harmony_v4_2(&header, 12346);
+        assert_ne!(hash1.data, hash3.data, "CHv4.2: different nonce must give different hash");
+
+        let hex = hash1.data.iter().map(|b| format!("{:02x}", b)).collect::<String>();
+        println!("✅ CHv4.2 hash (nonce=12345): {}", hex);
+    }
+
+    #[test]
+    fn test_chv4_2_differs_from_chv4_1() {
+        // CHv4.2 musí produkovat jiný hash než CHv4.1 (jiný algoritmus)
+        let mut header = [0u8; 80];
+        header[..24].copy_from_slice(b"ZION block header v2.9.6");
+
+        let hash_v41 = cosmic_harmony_v4(&header, 12345);
+        let hash_v42 = cosmic_harmony_v4_2(&header, 12345);
+
+        assert_ne!(
+            hash_v41.data, hash_v42.data,
+            "CHv4.2 must produce different hash than CHv4.1 (Merkabah extension)"
+        );
+
+        let hex41 = hash_v41.data.iter().map(|b| format!("{:02x}", b)).collect::<String>();
+        let hex42 = hash_v42.data.iter().map(|b| format!("{:02x}", b)).collect::<String>();
+        println!("CHv4.1 hash: {}", hex41);
+        println!("CHv4.2 hash: {}", hex42);
+        println!("✅ CHv4.2 correctly differs from CHv4.1");
+    }
+
+    #[test]
+    fn test_chv4_2_fork_dispatch() {
+        // Height-aware dispatch: height < CHV4_2_FORK_HEIGHT → CHv4.1
+        let header = b"ZION block header v2.9.6";
+        let nonce = 9999u64;
+
+        // CHV4_2_FORK_HEIGHT = u64::MAX → nikdy nedosaženo → výsledek = CHv4.1
+        let dispatch_hash = cosmic_harmony_with_height(header, nonce, 1_000_000);
+        let v4_hash = cosmic_harmony_v4(header, nonce);
+
+        assert_eq!(
+            dispatch_hash.data, v4_hash.data,
+            "Dispatch at height < CHV4_2_FORK_HEIGHT must use CHv4.1"
+        );
+
+        println!("✅ Fork dispatch correctly routes to CHv4.1 (CHV4_2_FORK_HEIGHT=u64::MAX)");
+    }
+
+    #[test]
+    fn test_hic_constants_in_scratchpad() {
+        // HIC konstanty musí být použitelné ze crate::hic
+        use crate::hic::{HIC, KABALA_READS, KEY_ROUNDS, BACKWARD_PASSES};
+        assert_eq!(HIC.len(), 22);
+        assert_eq!(KABALA_READS, 22);
+        assert_eq!(KEY_ROUNDS, 22);
+        assert_eq!(BACKWARD_PASSES, 2);
+        assert_eq!(HIC[0], 0x9E3779B97F4A7C15u64, "HIC[0] must be φ hash constant");
+        println!("✅ HIC[21] (Ain Soph Aur) = 0x{:016X}", HIC[21]);
     }
 
     #[test]

@@ -23,6 +23,9 @@ daa_max_change_percent = 25
 max_reorg_depth = 10
 soft_finality = 60
 min_difficulty = 1000
+# CHv4.1 Golden Middle: aktivní od genesis (fork_height=0 v kódu)
+# CHv4.2 Merkabah Dual-Spin: TBD — komunitní hlasování (DAO governance)
+# chv4_2_fork_height = TBD
 
 [emission]
 # Decade Decay: -20% každých 10 let po dobu 100 let, poté tail emission 724.785 ZION/blok (navždy)

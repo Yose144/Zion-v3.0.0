@@ -55,6 +55,22 @@ __constant__ int KECCAK_ROTC[24] = {
 #define CUDA_PASSES          2
 #define CUDA_RANDOM_READS    64
 
+// CHv4.2 Merkabah Dual-Spin constants
+#define CUDA_BACKWARD_PASSES 2           // Ra — backward passes
+#define CUDA_KABALA_READS    22          // 22 poles of consciousness
+#define CUDA_KEY_ROUNDS      22          // 22-round key schedule
+
+__constant__ unsigned long long CUDA_HIC[22] = {
+    0x9E3779B97F4A7C15ULL, 0x6C62272E07BB0142ULL, 0x94D049BB133111EBULL,
+    0xBF58476D1CE4E5B9ULL, 0x94D049BB133111EBULL, 0x6C62272E07BB0142ULL,
+    0x9E3779B97F4A7C15ULL, 0x517CC1B727220A95ULL, 0xBB67AE8584CAA73BULL,
+    0x3C6EF372FE94F82BULL, 0xA54FF53A5F1D36F1ULL, 0x510E527FADE682D1ULL,
+    0x9B05688C2B3E6C1FULL, 0x1F83D9ABFB41BD6BULL, 0x5BE0CD19137E2179ULL,
+    0xCBBB9D5DC1059ED8ULL, 0x629A292A367CD507ULL, 0x9159015A3070DD17ULL,
+    0x152FECD8F70E5939ULL, 0x67332667FFC00B31ULL, 0x8EB44A8768581511ULL,
+    0xDB0C2E0D64F98FA7ULL,
+};
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
