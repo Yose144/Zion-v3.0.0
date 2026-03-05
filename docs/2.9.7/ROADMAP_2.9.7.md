@@ -3,7 +3,7 @@
 > **Dokument:** `docs/2.9.7/ROADMAP_2.9.7.md`  
 > **Vytvořen:** 2026-03-03  
 > **Cíl:** Jediná mapa podle které jedeme — od dnešního dne do `v2.9.7-freeze` tagu a server upgradu.  
-> **Stav dnes:** 168h stability PASS ✅ · CHv4 dispatch fixnutý ✅ · Revenue implementováno ✅ · Chain restart + infra oprava ✅ (2026-03-03 večer) · Zbývá: GPU kernel, E2E test, genesis
+> **Stav dnes:** 168h stability PASS ✅ · CHv4 dispatch fixnutý ✅ · Revenue implementováno ✅ · Chain restart + infra oprava ✅ (2026-03-03) · **CHv4.2 Merkabah Dual-Spin IMPLEMENTOVÁNO ✅ (2026-03-05, commit `b7496ad`, 72/72 testy)** · Zbývá: genesis, mainnet vote pro aktivaci CHv4.2
 
 ---
 
@@ -12,7 +12,8 @@
 ```
 ✅ HOTOVO                               ⬜ ZBÝVÁ
 ──────────────────────────────          ──────────────────────────────
-168h stability (Helsinki/Usa/Asia)      F-04: CHv4 E2E test (pool+miner live)
+168h stability (Helsinki/Usa/Asia)      CHv4.2 Merkabah Dual-Spin ✅ DONE 2026-03-05
+CHv4.2 Merkabah Dual-Spin (72/72 PASS)  F-04: CHv4 E2E test (pool+miner live)
 CHv4 od genesis (fork height = 0)       E-07: 72h canary run (RESET 21:00 UTC)
 block.rs height-aware dispatch          B-CRIT-03: Genesis ceremony
 pool validator.rs CHv4 dispatch         Server upgrade (Helsinki fáze 1+2)
@@ -31,6 +32,30 @@ F-06: height dispatch (CHV4=0, hotovo) Minéři přihlášeni: HEL/USA/ASIA ✅
 ---
 
 ## Plán — 5 fází po sobě
+
+### FÁZE 0 — CHv4.2 Merkabah Dual-Spin ✅ DOKONČENO (2026-03-05)
+
+> Implementováno MIMO původní plán fází — přidáno jako přirozený upgrade CHv4.1.
+
+| Krok | ID | Úkol | Soubory | Status |
+|------|----|------|---------|--------|
+| 1 | CHv4.2-01 | HIC[22] konstantní modul (`hic.rs`) | `L1/cosmic-harmony/src/hic.rs` | ✅ DONE |
+| 2 | CHv4.2-02 | Merkabah backward passes + Kabala phase + Brahma-jyoti finalize | `scratchpad.rs` | ✅ DONE |
+| 3 | CHv4.2-03 | Fork dispatch `cosmic_harmony_v4_2()`, `CHV4_2_FORK_HEIGHT=u64::MAX` | `algorithms_opt.rs` | ✅ DONE |
+| 4 | CHv4.2-04 | GPU kernely — OpenCL `HIC[22]` + `CL_BACKWARD_PASSES=2` | `cosmic_harmony_v3.cl` | ✅ DONE |
+| 5 | CHv4.2-05 | GPU kernely — CUDA `HIC[22]` + `CUDA_BACKWARD_PASSES=2` | `cosmic_harmony_v3.cu` | ✅ DONE |
+| 6 | CHv4.2-06 | Metal shader + desktop agent | `cosmic_harmony_v4_metal.metal` | ✅ DONE |
+| 7 | CHv4.2-07 | C native lib `cosmic_harmony_v4_2_hash()` + parity test | `cosmic_harmony_v4_native.c` | ✅ DONE |
+| 8 | CHv4.2-08 | Python OpenCL miner CHv4.2 defines | `cosmic_harmony_v3_gpu.py` | ✅ DONE |
+| 9 | CHv4.2-09 | 72/72 Rust testy (8 nových CHv4.2 testů) | `algorithms_opt.rs` + `hic.rs` | ✅ 72/72 PASS |
+| 10 | CHv4.2-10 | Server deploy Helsinki + USA + Asia | nohup docker build + restart | ✅ DONE |
+| 11 | CHv4.2-11 | Testnet config `chv4_2_fork_height = 10000` | `config/testnet.toml` | ✅ DONE |
+
+**Reference hash CHv4.2:** `4fa66192c0e9b154e3d33c94c1533850ae871f2affa8ccc74952ee9ca074f32f`  
+**Commit:** `b7496ad` (13 souborů, 743 insertions)  
+**Fork aktivace mainnet:** ⏳ čeká community vote — `CHV4_2_FORK_HEIGHT = u64::MAX` deaktivováno
+
+---
 
 ### FÁZE 1 — CHv4 GPU + E2E ✅ (skoro hotovo · zbývá: F-04)
 
@@ -295,6 +320,8 @@ C native lib je zatím jen reference/testovací build.
 
 | Dokument | Účel |
 |----------|------|
+| `docs/2.9.7/CHV4_2_UPGRADE_SPEC.md` | CHv4.2 Merkabah Dual-Spin — full spec + implementation results |
+| `docs/2.9.7/CHANGELOG_2.9.7.md` | CHv4.1 + CHv4.2 changelog |
 | `docs/2.9.7/CHV4_NATIVE_LIB_REPORT.md` | Native C lib + performance tuning report |
 | `docs/2.9.7/2.9.7.md` | Plný seznam P0 blokerů skupin A–F |
 | `docs/2.9.7/CODE_FREEZE.md` | Sign-off checklist (musí být ✅ před tagem) |
