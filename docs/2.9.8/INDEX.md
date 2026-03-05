@@ -6,7 +6,8 @@
 
 ## Dokumenty
 
-- [CHV_DEEKSHA_ARCHITECTURE.md](CHV_DEEKSHA_ARCHITECTURE.md) — **ARCHITEKTURA** (začít zde): modul mapa, pipeline, NpuBackend trait, dispatch, fáze implementace
+- [DEEKSHA_PHILOSOPHY.md](DEEKSHA_PHILOSOPHY.md) — **FILOZOFIE** (proč): záměr, Oneness, tapas, beautiful state, strom vědomí → strom sítě
+- [CHV_DEEKSHA_ARCHITECTURE.md](CHV_DEEKSHA_ARCHITECTURE.md) — **ARCHITEKTURA** (co a jak): modul mapa, pipeline, NpuBackend trait, dispatch, fáze implementace
 - [COSMIC_HARMONY_DEEKSHA_SPEC.md](COSMIC_HARMONY_DEEKSHA_SPEC.md) — jednotná algoritmická specifikace (konsenzusní parametry)
 - [REVENUE_UNIFICATION_2.9.8.md](REVENUE_UNIFICATION_2.9.8.md) — zachování CHv3 revenue modelu bez regresí
 - [MIGRATION_PLAN_2.9.8.md](MIGRATION_PLAN_2.9.8.md) — implementační kroky, testy, rollout (fáze A→E)
