@@ -3627,6 +3627,12 @@ function startMining(config) {
   // Rust GPU watchdog:
   // If main Rust miner runs with --gpu but produces no hashrate/shares after warmup,
   // it is typically stuck in OpenCL init/kernel build. Auto-fallback to Python miner.
+  //
+  // Metal timing: each GPU dispatch (~2184 threads) takes ~11s. After 2 dispatches
+  // (~22s) hashrate_10s > 0 is visible in the stats file. Watchdog default = 150s,
+  // so by the time it fires the GPU should have reported hashrate. The watchdog only
+  // triggers if BOTH hashrate == 0 AND accepted == 0 AND rejected == 0 — meaning the
+  // process is truly stuck (Metal init failure), not just slow to produce shares.
   if (MINER_IS_RUST && mainMinerGpu) {
     const enableGpuInitWatchdog = String(process.env.ZION_ENABLE_GPU_INIT_WATCHDOG || '1').trim() !== '0';
     if (!enableGpuInitWatchdog) {
@@ -3977,7 +3983,10 @@ function startMining(config) {
 
   // ═══════════════════════════════════════════════════════════════
   // GPU Revenue Process: 3rd miner instance for GPU-accelerated revenue mining.
-  // macOS (Metal): cosmic_harmony + --gpu (Metal active, 12+ MH/s on M1). ✅
+  // macOS (Metal): cosmic_harmony + --gpu (Metal active, ~200 H/s on M1). ✅
+  //   Note: Metal bottleneck = 40960 SHA3-512 ops/hash (memory-hard scratchpad).
+  //   mine_batch dispatches 1 GPU kernel per call (~2184 threads, ~11s) so the
+  //   outer loop checks for new pool jobs every ~11s (no stale share issue).
   // Linux/Win (OpenCL): kawpow (RVN) + --gpu.
   // Only spawns when: gpuRevenue=true, GPU detected, Rust miner, --group supported.
   // ═══════════════════════════════════════════════════════════════
