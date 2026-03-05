@@ -1,27 +1,26 @@
-/// ZION Cosmic Harmony — Unified CHv3 Wrapper
+/// ZION Cosmic Harmony — Unified CHv3/CHv4/CHv4.2 Wrapper
 ///
 /// This module delegates ALL hashing to the canonical `zion-cosmic-harmony-v3` crate.
 /// Legacy CH v1/v2 implementations have been archived to `archive/legacy-algorithms/`.
 ///
-/// CHv3 Pipeline:
-///   Phase 1: Keccak-256
-///   Phase 2: SHA3-512
-///   Phase 3: Golden Matrix (8×8, φ fixed-point)
-///   Phase 4: Memory-Hard Scratchpad (256KB, fork-gated)
-///   Phase 5: Cosmic Fusion (4 rounds)
+/// Dispatch podle výšky bloku (height-aware):
+///   ≥ CHV4_2_FORK_HEIGHT  → CHv4.2 Merkabah Dual-Spin (backward passes + kabala)
+///   ≥ CHV4_NPU_FORK_HEIGHT → CHv4 (memory-hard + NPU mixing)
+///   ≥ CHV3_MEMORY_HARD_FORK_HEIGHT → CHv3 (memory-hard scratchpad)
+///   else → CHv3 legacy (no memory-hard)
 
 /// Blockchain convenience: algorithm-specific PoW hash.
 ///
 /// This is the ONLY entry point for consensus hashing.
-/// Uses `cosmic_harmony_v3_with_height()` which handles the memory-hard
-/// fork gate internally (legacy vs scratchpad path).
+/// Delegates to `cosmic_harmony_with_height()` — universal fork-aware dispatch
+/// covering CHv3 → CHv4 → CHv4.2 (Merkabah Dual-Spin).
 ///
 /// # Arguments
 /// * `data` - Block header bytes (156 bytes from calculate_hash, or 80+ byte template blob)
 /// * `nonce` - 64-bit nonce
-/// * `block_height` - Current block height (used for fork-gate + memory-hard selection)
+/// * `block_height` - Current block height (used for fork-gate + algorithm selection)
 pub fn hash(data: &[u8], nonce: u64, block_height: u64) -> Vec<u8> {
-    let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_v3_with_height(
+    let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_with_height(
         data,
         nonce,
         block_height,

@@ -121,6 +121,40 @@ static const uint8_t COSMIC_XOR_MASK[32] = {
 #define CHV4_RANDOM_READS      64u
 
 /* ============================================================================
+ * CHv4.2 Merkabah Dual-Spin Constants
+ * ============================================================================ */
+
+#define CHV4_2_BACKWARD_PASSES 2u        /* Ra — vzestupná spirála (zpětné průchody) */
+#define CHV4_2_KABALA_READS    22u       /* 22 pólů vědomí — Sefirot + cesty */
+#define CHV4_2_KEY_ROUNDS      22u       /* 22-kolo Brahma-jyoti finalizace */
+
+/* Hiranyagarbha Initialization Constants — odvozeny z zlatého řezu φ a SHA-512 IH */
+static const uint64_t CHV4_2_HIC[22] = {
+    0x9E3779B97F4A7C15ULL, /* 0  Kether  — φ frakce × 2^64 */
+    0x6C62272E07BB0142ULL, /* 1  Chokmah */
+    0x94D049BB133111EBULL, /* 2  Binah   */
+    0xBF58476D1CE4E5B9ULL, /* 3  Chesed  */
+    0x94D049BB133111EBULL, /* 4  Geburah */
+    0x6C62272E07BB0142ULL, /* 5  Tiphareth */
+    0x9E3779B97F4A7C15ULL, /* 6  Netzach */
+    0x517CC1B727220A95ULL, /* 7  Hod     */
+    0xBB67AE8584CAA73BULL, /* 8  Yesod   */
+    0x3C6EF372FE94F82BULL, /* 9  Malkuth */
+    0xA54FF53A5F1D36F1ULL, /* 10 Da'at   */
+    0x510E527FADE682D1ULL, /* 11 Alef    */
+    0x9B05688C2B3E6C1FULL, /* 12 Bet     */
+    0x1F83D9ABFB41BD6BULL, /* 13 Gimel   */
+    0x5BE0CD19137E2179ULL, /* 14 Dalet   */
+    0xCBBB9D5DC1059ED8ULL, /* 15 Heh     */
+    0x629A292A367CD507ULL, /* 16 Vav     */
+    0x9159015A3070DD17ULL, /* 17 Zayin   */
+    0x152FECD8F70E5939ULL, /* 18 Chet    */
+    0x67332667FFC00B31ULL, /* 19 Tet     */
+    0x8EB44A8768581511ULL, /* 20 Yod     */
+    0xDB0C2E0D64F98FA7ULL, /* 21 Ain Soph Aur — věčné světlo (Brahma-jyoti) */
+};
+
+/* ============================================================================
  * CHv4 NPU Weight Data (16960 bytes)
  * Generated: BLAKE3-keyed("ZION_CHv4_mixing_v1_genesis_seed") + "CHv4_weights_v1"
  *
@@ -1846,6 +1880,190 @@ static void cosmic_harmony_v4_compute(
 
     /* Step 6: Cosmic Fusion → output[32] */
     cosmic_fusion(s5, output);
+}
+
+/* ============================================================================
+ * CHv4.2 Merkabah Dual-Spin — Implementační funkce
+ * ============================================================================ */
+
+/* Merkabah Backward Passes — Ra (vzestupná spirála světla).
+ * Prochází scratchpad od bloku N-1 do 0, mixing každý blok s HIC konstantou.
+ */
+static void chv4_2_backward_passes(uint8_t *pad, const uint8_t seed[64]) {
+    uint32_t blocks = CHV4_BLOCK_COUNT;
+
+    for (uint32_t pass = 0; pass < CHV4_2_BACKWARD_PASSES; pass++) {
+        /* Zpětný průchod: Malkuth (1023) → Kether (0) */
+        for (int32_t b = (int32_t)blocks - 1; b >= 0; b--) {
+            uint32_t next_b   = ((uint32_t)b + 1) % blocks;
+            uint32_t hic_idx  = (blocks - 1 - (uint32_t)b) % CHV4_2_KEY_ROUNDS;
+
+            uint32_t cur_off  = (uint32_t)b * CHV4_BLOCK_SIZE;
+            uint32_t next_off = next_b * CHV4_BLOCK_SIZE;
+
+            uint8_t cur_blk[64], next_blk[64];
+            memcpy(cur_blk,  pad + cur_off,  64);
+            memcpy(next_blk, pad + next_off, 64);
+
+            /* SHA3-512 mixing: cur || next || HIC[hic_idx] || seed || pass || b */
+            uint8_t mix_in[64 + 64 + 8 + 64 + 8 + 8];
+            uint8_t *p = mix_in;
+            memcpy(p, cur_blk, 64);  p += 64;
+            memcpy(p, next_blk, 64); p += 64;
+            uint64_t hic = CHV4_2_HIC[hic_idx];
+            for (int j = 0; j < 8; j++) *p++ = (uint8_t)(hic >> (j * 8));
+            memcpy(p, seed, 64);     p += 64;
+            uint64_t pass64 = pass;
+            for (int j = 0; j < 8; j++) *p++ = (uint8_t)(pass64 >> (j * 8));
+            uint64_t b64 = (uint64_t)(uint32_t)b;
+            for (int j = 0; j < 8; j++) *p++ = (uint8_t)(b64 >> (j * 8));
+
+            uint8_t mixed[64];
+            sha3_512(mix_in, sizeof(mix_in), mixed);
+
+            for (int j = 0; j < 64; j++)
+                pad[cur_off + j] ^= mixed[j];
+        }
+    }
+}
+
+/* Kabalistická fáze — 22 deterministických čtení (22 pólů vědomí).
+ * Každá adresa: HIC[k] XOR state_word → index bloku.
+ */
+static void chv4_2_kabala_phase(const uint8_t *pad, const uint8_t seed[64],
+                                uint8_t output[64]) {
+    uint32_t blocks = CHV4_BLOCK_COUNT;
+    uint8_t acc[64];
+    memcpy(acc, seed, 64);
+
+    for (uint32_t k = 0; k < CHV4_2_KABALA_READS; k++) {
+        /* Deterministická adresa */
+        uint64_t state_word = 0;
+        for (int j = 0; j < 8; j++)
+            state_word |= ((uint64_t)acc[j]) << (j * 8);
+        uint64_t kabala_addr = (CHV4_2_HIC[k] ^ state_word) % blocks;
+
+        uint32_t kab_off      = (uint32_t)kabala_addr * CHV4_BLOCK_SIZE;
+        const uint8_t *chunk  = pad + kab_off;
+
+        /* Keccak-256 mixing: acc || chunk || HIC[k] || k */
+        uint8_t mix_in[64 + 64 + 8 + 8];
+        uint8_t *p = mix_in;
+        memcpy(p, acc, 64);   p += 64;
+        memcpy(p, chunk, 64); p += 64;
+        uint64_t hic = CHV4_2_HIC[k];
+        for (int j = 0; j < 8; j++) *p++ = (uint8_t)(hic >> (j * 8));
+        uint64_t k64 = k;
+        for (int j = 0; j < 8; j++) *p++ = (uint8_t)(k64 >> (j * 8));
+
+        uint8_t d[32];
+        keccak256(mix_in, sizeof(mix_in), d);
+
+        for (int i = 0; i < 32; i++) {
+            acc[i]      ^= d[i];
+            acc[32 + i]  = (uint8_t)((acc[32 + i] + d[i]) & 0xFF);
+        }
+    }
+    memcpy(output, acc, 64);
+}
+
+/* Brahma-jyoti finalizace — 22-kolo SHA3-512 key schedule.
+ * Jedno kolo za každou cestu Stromu Života (věčné světlo).
+ */
+static void chv4_2_brahma_finalize(const uint8_t state[64], uint8_t output[64]) {
+    uint8_t acc[64];
+    memcpy(acc, state, 64);
+
+    for (uint32_t r = 0; r < CHV4_2_KEY_ROUNDS; r++) {
+        /* SHA3-512(acc || HIC[r] || r) */
+        uint8_t mix_in[64 + 8 + 8];
+        uint8_t *p = mix_in;
+        memcpy(p, acc, 64); p += 64;
+        uint64_t hic = CHV4_2_HIC[r];
+        for (int j = 0; j < 8; j++) *p++ = (uint8_t)(hic >> (j * 8));
+        uint64_t r64 = r;
+        for (int j = 0; j < 8; j++) *p++ = (uint8_t)(r64 >> (j * 8));
+
+        uint8_t out64[64];
+        sha3_512(mix_in, sizeof(mix_in), out64);
+
+        for (int i = 0; i < 32; i++) {
+            acc[i]      ^= out64[i];
+            acc[32 + i]  = (uint8_t)((acc[32 + i] + out64[32 + i]) & 0xFF);
+        }
+    }
+    memcpy(output, acc, 64);
+}
+
+/* CHv4.2 Memory-hard transform — Merkabah Dual-Spin.
+ * Fáze 1: init scratchpad (SHA3-512 chain)
+ * Fáze 2: dopředné průchody (Ka — descent)  [z CHv4]
+ * Fáze 3: zpětné průchody   (Ra — ascent)    [NOVÉ]
+ * Fáze 4: random read mix 64×               [z CHv4]
+ * Fáze 5: kabala 22-reads                   [NOVÉ]
+ * Fáze 6: brahma-jyoti 22-round finalize    [NOVÉ]
+ */
+static void chv4_2_memory_hard_transform(const uint8_t gm_out[64],
+                                          uint8_t *pad,
+                                          uint8_t output[64]) {
+    chv4_init_scratchpad(pad, gm_out);
+    chv4_sequential_passes(pad);
+    chv4_2_backward_passes(pad, gm_out);          /* Ra spirála [NOVÉ] */
+
+    uint8_t mh_output[64];
+    chv4_random_read_mix(gm_out, pad, mh_output);
+
+    uint8_t kabala_state[64];
+    chv4_2_kabala_phase(pad, mh_output, kabala_state);  /* Kabala [NOVÉ] */
+
+    chv4_2_brahma_finalize(kabala_state, output);       /* Brahma-jyoti [NOVÉ] */
+}
+
+/* CHv4.2 full pipeline: same as v4 but uses chv4_2_memory_hard_transform */
+static void cosmic_harmony_v4_2_compute(
+    const uint8_t *block_header,
+    size_t header_len,
+    uint64_t nonce,
+    uint8_t output[32]
+) {
+    uint8_t inp[88];
+    memset(inp, 0, 88);
+    size_t clen = header_len < 80 ? header_len : 80;
+    memcpy(inp, block_header, clen);
+    inp[80] = (uint8_t)(nonce >>  0); inp[81] = (uint8_t)(nonce >>  8);
+    inp[82] = (uint8_t)(nonce >> 16); inp[83] = (uint8_t)(nonce >> 24);
+    inp[84] = (uint8_t)(nonce >> 32); inp[85] = (uint8_t)(nonce >> 40);
+    inp[86] = (uint8_t)(nonce >> 48); inp[87] = (uint8_t)(nonce >> 56);
+
+    uint8_t s1[32]; keccak256(inp, 88, s1);
+    uint8_t s2[64]; sha3_512(s1, 32, s2);
+    uint8_t s3[64]; golden_matrix(s2, s3);
+
+    uint8_t *pad = (uint8_t *)malloc(CHV4_SCRATCHPAD_BYTES);
+    if (!pad) { memset(output, 0xFF, 32); return; }
+
+    uint8_t s4[64];
+    chv4_2_memory_hard_transform(s3, pad, s4);
+    free(pad);
+
+    uint8_t s5[64]; chv4_npu_mixing(s4, s5);
+    cosmic_fusion(s5, output);
+}
+
+/* ============================================================================
+ * CHv4.2 Exported Hash API
+ * ============================================================================ */
+
+EXPORT int cosmic_harmony_v4_2_hash(
+    const uint8_t *block_header,
+    uint32_t header_len,
+    uint64_t nonce,
+    uint8_t *output,
+    uint32_t output_len
+) {
+    if (!block_header || !output || output_len < 32) return -1;
+    cosmic_harmony_v4_2_compute(block_header, header_len, nonce, output);
+    return 0;
 }
 
 /* ============================================================================

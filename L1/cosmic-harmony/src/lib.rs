@@ -59,6 +59,7 @@ pub mod config;
 pub mod engine;
 pub mod ffi; // C-compatible FFI for Python/Node.js
 pub mod gpu; // GPU mining (OpenCL/Metal)
+pub mod hic; // CHv4.2 Hiranyagarbha Initialization Constants (HIC)
 pub mod modules;
 pub mod multichain; // Multi-chain GPU mining for external pools (ETC, RVN, ERG, KAS)
 pub mod native_ffi; // FFI to native C libraries (RandomX, Yescrypt, CH v2)
@@ -71,7 +72,7 @@ pub mod whattomine; // WhatToMine/CoinGecko API integration
 
 pub use algorithm_library::{AlgorithmInfo, AlgorithmModuleLibrary, PipelineExecutionResult};
 pub use algorithms_npu::{CHV4_NPU_FORK_HEIGHT, CHV4_MLP_GENESIS_SEED, npu_mixing_step, npu_mixing_hash64};
-pub use algorithms_opt::{cosmic_harmony_v3, cosmic_harmony_v4, cosmic_harmony_with_height, Hash32, Hash64};
+pub use algorithms_opt::{cosmic_harmony_v3, cosmic_harmony_v4, cosmic_harmony_v4_2, cosmic_harmony_with_height, CHV4_2_FORK_HEIGHT, Hash32, Hash64};
 #[cfg(feature = "parallel")]
 pub use algorithms_opt::{
     cosmic_harmony_v3_parallel,

@@ -411,11 +411,28 @@ void sha3_512_random_final(
 // Mirrors Rust: cosmic-harmony/src/scratchpad.rs  memory_hard_transform()
 // ============================================================================
 
-#define CL_SCRATCHPAD_BYTES (64u * 1024u)   // 65536 bytes
+#define CL_SCRATCHPAD_BYTES (64u * 1024u)   // 65536 bytes — zlatý střed
 #define CL_BLOCK_SIZE       64u
 #define CL_BLOCK_COUNT      1024u           // SCRATCHPAD_BYTES / BLOCK_SIZE
-#define CL_PASSES           2u
+#define CL_PASSES           2u             // Ka — dopředné průchody
 #define CL_RANDOM_READS     64u
+
+/* CHv4.2 Merkabah Dual-Spin constants (active when CHV4_2_FORK_HEIGHT reached) */
+#define CL_BACKWARD_PASSES  2u             /* Ra — zpětné průchody */
+#define CL_KABALA_READS     22u            /* 22 pólů vědomí */
+#define CL_KEY_ROUNDS       22u            /* 22-kolo Brahma-jyoti finalizace */
+
+/* Hiranyagarbha Initialization Constants — odvozeny z zlatého řezu φ */
+constant ulong CL_HIC[22] = {
+    0x9E3779B97F4A7C15UL, 0x6C62272E07BB0142UL, 0x94D049BB133111EBUL,
+    0xBF58476D1CE4E5B9UL, 0x94D049BB133111EBUL, 0x6C62272E07BB0142UL,
+    0x9E3779B97F4A7C15UL, 0x517CC1B727220A95UL, 0xBB67AE8584CAA73BUL,
+    0x3C6EF372FE94F82BUL, 0xA54FF53A5F1D36F1UL, 0x510E527FADE682D1UL,
+    0x9B05688C2B3E6C1FUL, 0x1F83D9ABFB41BD6BUL, 0x5BE0CD19137E2179UL,
+    0xCBBB9D5DC1059ED8UL, 0x629A292A367CD507UL, 0x9159015A3070DD17UL,
+    0x152FECD8F70E5939UL, 0x67332667FFC00B31UL, 0x8EB44A8768581511UL,
+    0xDB0C2E0D64F98FA7UL,
+};
 
 // Step 1: deterministic SHA3-512 chain initialises all 1024 × 64B blocks.
 void cl_init_scratchpad(__global uchar* pad, const uchar seed[64]) {
