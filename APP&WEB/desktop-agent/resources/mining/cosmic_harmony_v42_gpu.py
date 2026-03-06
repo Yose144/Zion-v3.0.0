@@ -1,5 +1,5 @@
 """
-ZION Cosmic Harmony v4.2 — Merkabah Dual-Spin
+ZION Cosmic Harmony Deeksha — Canonical GPU Wrapper
 GPU Mining Wrapper — CUDA / OpenCL / Metal (M1-M5) / NPU
 =========================================================
 
@@ -7,7 +7,7 @@ Automatická detekce GPU backendu s fallbackem:
   1. Metal (Apple Silicon M1-M5) — preferováno na macOS arm64
   2. CUDA (NVIDIA)               — preferováno na Linux/Windows + CUDA GPU
   3. OpenCL (AMD / Intel Arc)    — obecný fallback pro GPU
-  4. CPU (pure Python ref)       — viz cosmic_harmony_v42_fallback.py
+    4. CPU (pure Python ref)       — viz cosmic_harmony_deeksha_fallback.py
 
 NPU podpora:
   - Apple ANE: Metal 3 simdgroup_matrix kernely (M2+) + Metal Performance Shaders
@@ -30,8 +30,8 @@ Usage (standalone):
       --backend auto        # auto | cuda | opencl | metal | cpu
       --batch  65536        # nonces per GPU batch
 
-Version: 2.9.7 — CHv4.2 GPU
-Date:    5. března 2026
+Version: 2.9.8 — Deeksha canonical GPU
+Date:    6. března 2026
 """
 
 from __future__ import annotations
@@ -71,8 +71,16 @@ for _ in range(12):
 
 # Kernely jsou primárně vedle scriptu (resources/mining/), dev fallback je L1/native-libs/all/
 _KERNEL_DIR = _HERE
-if not (_HERE / "cosmic_harmony_v42.metal").exists():
+if not ((_HERE / "cosmic_harmony_deeksha.metal").exists() or (_HERE / "cosmic_harmony_v42.metal").exists()):
     _KERNEL_DIR = _ROOT / "L1" / "native-libs" / "all"
+
+
+def _kernel_path(deeksha_name: str, legacy_name: str) -> Path:
+    """Prefer Deeksha-named kernel asset, fallback na legacy v42 název."""
+    p_deeksha = _KERNEL_DIR / deeksha_name
+    if p_deeksha.exists():
+        return p_deeksha
+    return _KERNEL_DIR / legacy_name
 
 # =============================================================================
 # Detekce backendů
@@ -108,8 +116,8 @@ def detect_best_backend() -> str:
     # 2. CUDA (pycuda nebo cupy, nebo nativní DSO)
     if _try_import("pycuda") or _try_import("cupy"):
         return "cuda"
-    # Nativní libchv42_cuda.so
-    cuda_lib = _find_lib("libchv42_cuda")
+    # Nativní CUDA knihovna (Deeksha-first)
+    cuda_lib = _find_lib("libcosmic_harmony_deeksha_cuda") or _find_lib("libchv42_cuda")
     if cuda_lib is not None:
         return "cuda"
 
@@ -117,8 +125,8 @@ def detect_best_backend() -> str:
     if _try_import("pyopencl"):
         return "opencl"
 
-    # 4. Native C dylib (ctypes) — rychlejší než Python fallback
-    if _find_lib("libcosmic_harmony_v42") is not None:
+    # 4. Native dylib (ctypes) — Deeksha unified + legacy fallback
+    if _find_lib("libcosmic_harmony_deeksha") is not None or _find_lib("libcosmic_harmony_v42") is not None:
         return "native"
 
     return "cpu"
@@ -169,9 +177,9 @@ class MetalBackend:
         self._setup()
 
     def _setup(self) -> None:
-        metal_src = _KERNEL_DIR / "cosmic_harmony_v42.metal"
+        metal_src = _kernel_path("cosmic_harmony_deeksha.metal", "cosmic_harmony_v42.metal")
         if not metal_src.exists():
-            log.warning("[Metal] cosmic_harmony_v42.metal nenalezen v %s", _KERNEL_DIR)
+            log.warning("[Metal] deeksha/legacy .metal kernel nenalezen v %s", _KERNEL_DIR)
             return
 
         # Cesta 1: metalcompute (nejrychlejší, pokud dostupné)
@@ -423,10 +431,13 @@ class MetalBackend:
         self, header: bytes, nonce_base: int, nonce_count: int, target_u32: int
     ) -> Optional[Tuple[int, bytes]]:
         """Nouzový CPU fallback pro ladění."""
-        from cosmic_harmony_v42_fallback import hash_chv42
+        try:
+            from cosmic_harmony_deeksha_fallback import hash_deeksha as _hash_cpu
+        except Exception:
+            from cosmic_harmony_v42_fallback import hash_chv42 as _hash_cpu
         for i in range(min(nonce_count, 256)):
             nonce = nonce_base + i
-            h = hash_chv42(header, nonce)
+            h = _hash_cpu(header, nonce)
             s0 = struct.unpack_from("<I", h)[0]
             if s0 <= target_u32:
                 return (nonce, h)
@@ -434,7 +445,7 @@ class MetalBackend:
 
     def benchmark(self, nonce_count: int = 4096) -> float:
         """Vrátí H/s."""
-        dummy_header = b"ZION CHv4.2 GPU bench" + b"\x00" * 44
+        dummy_header = b"ZION Deeksha GPU bench" + b"\x00" * 44
         target = 0xFFFFFFFF
         t0 = time.monotonic()
         self.mine(dummy_header, 0, nonce_count, target)
@@ -450,7 +461,7 @@ class MetalBackend:
 
 class CUDABackend:
     """
-    CUDA backend — vyžaduje pycuda nebo cupy, nebo nativní libchv42_cuda.so.
+    CUDA backend — vyžaduje pycuda nebo cupy, nebo nativní Deeksha/legacy CUDA knihovnu.
     """
 
     def __init__(self) -> None:
@@ -469,7 +480,7 @@ class CUDABackend:
                 import pycuda.autoinit  # noqa: F401
                 from pycuda.compiler import SourceModule
 
-                cu_src = _KERNEL_DIR / "cosmic_harmony_v42.cu"
+                cu_src = _kernel_path("cosmic_harmony_deeksha.cu", "cosmic_harmony_v42.cu")
                 if not cu_src.exists():
                     log.warning("[CUDA] .cu soubor nenalezen: %s", cu_src)
                     return
@@ -488,12 +499,18 @@ class CUDABackend:
             except Exception as e:
                 log.warning("[CUDA] pycuda setup: %s", e)
 
-        # Pokus 2: nativní libchv42_cuda.so přes ctypes
-        lib_path = _find_lib("libchv42_cuda")
+        # Pokus 2: nativní CUDA knihovna přes ctypes (Deeksha-first)
+        lib_path = _find_lib("libcosmic_harmony_deeksha_cuda") or _find_lib("libchv42_cuda")
         if lib_path is not None:
             try:
                 lib = ctypes.CDLL(str(lib_path))
-                fn  = lib.chv42_cuda_mine
+                fn = None
+                for symbol in ("zion_deeksha_cuda_mine", "cosmic_harmony_deeksha_cuda_mine", "chv42_cuda_mine"):
+                    if hasattr(lib, symbol):
+                        fn = getattr(lib, symbol)
+                        break
+                if fn is None:
+                    raise AttributeError("no compatible CUDA mine symbol found")
                 fn.argtypes = [
                     ctypes.POINTER(ctypes.c_uint8),  # header
                     ctypes.c_uint32,                  # header_len
@@ -506,7 +523,7 @@ class CUDABackend:
                 fn.restype = ctypes.c_int
                 self._native = (lib, fn)
                 self._ready  = True
-                log.info("[CUDA] nativní lib: %s", lib_path)
+                log.info("[CUDA] nativní lib (deeksha/legacy): %s", lib_path)
                 return
             except Exception as e:
                 log.warning("[CUDA] native lib setup: %s", e)
@@ -515,7 +532,7 @@ class CUDABackend:
         cupy = _try_import("cupy")
         if cupy is not None:
             try:
-                cu_src = _KERNEL_DIR / "cosmic_harmony_v42.cu"
+                cu_src = _kernel_path("cosmic_harmony_deeksha.cu", "cosmic_harmony_v42.cu")
                 if cu_src.exists():
                     with open(cu_src) as f:
                         src = f.read()
@@ -621,7 +638,7 @@ class CUDABackend:
         return None
 
     def benchmark(self, nonce_count: int = 8192) -> float:
-        dummy = b"ZION CHv4.2 CUDA bench" + b"\x00" * 42
+        dummy = b"ZION Deeksha CUDA bench" + b"\x00" * 42
         t0 = time.monotonic()
         self.mine(dummy, 0, nonce_count, 0xFFFFFFFF)
         dt = time.monotonic() - t0
@@ -659,7 +676,7 @@ class OpenCLBackend:
             log.warning("[OpenCL] pyopencl není nainstalován (pip install pyopencl)")
             return
 
-        cl_src = _KERNEL_DIR / "cosmic_harmony_v42.cl"
+        cl_src = _kernel_path("cosmic_harmony_deeksha.cl", "cosmic_harmony_v42.cl")
         if not cl_src.exists():
             log.warning("[OpenCL] .cl soubor nenalezen: %s", cl_src)
             return
@@ -753,7 +770,7 @@ class OpenCLBackend:
         return None
 
     def benchmark(self, nonce_count: int = 8192) -> float:
-        dummy = b"ZION CHv4.2 OpenCL bench" + b"\x00" * 40
+        dummy = b"ZION Deeksha OpenCL bench" + b"\x00" * 40
         t0 = time.monotonic()
         self.mine(dummy, 0, nonce_count, 0xFFFFFFFF)
         dt = time.monotonic() - t0
@@ -763,12 +780,12 @@ class OpenCLBackend:
 
 
 # =============================================================================
-# NativeLib Backend (ctypes — libcosmic_harmony_v42.dylib/.so/.dll)
+# NativeLib Backend (ctypes — deeksha/legacy dylib/.so/.dll)
 # =============================================================================
 
 class NativeLibBackend:
     """
-    ctypes wrapper pro libcosmic_harmony_v42 — C batch mine loop.
+    ctypes wrapper pro Deeksha/legacy native knihovny.
     Rychlejší než Python fallback, funguje všude kde je k dispozici dylib.
     Priority v detect_best_backend: Metal → CUDA → OpenCL → NativeLib → CPU
     """
@@ -778,14 +795,22 @@ class NativeLibBackend:
         self._fn  = None
         self._ready = False
 
-        lib_path = _find_lib("libcosmic_harmony_v42")
+        lib_path = _find_lib("libcosmic_harmony_deeksha")
         if lib_path is None:
-            log.debug("[NativeLib] libcosmic_harmony_v42 nenalezena")
+            lib_path = _find_lib("libcosmic_harmony_v42")
+        if lib_path is None:
+            log.debug("[NativeLib] deeksha/legacy knihovna nenalezena")
             return
 
         try:
             lib = ctypes.CDLL(str(lib_path))
-            fn = lib.cosmic_harmony_v4_2_batch_mine
+            fn = None
+            for symbol in ("zion_deeksha_batch_mine", "cosmic_harmony_deeksha_batch_mine", "cosmic_harmony_v4_2_batch_mine"):
+                if hasattr(lib, symbol):
+                    fn = getattr(lib, symbol)
+                    break
+            if fn is None:
+                raise AttributeError("no compatible batch mine symbol found")
             fn.restype  = ctypes.c_int
             fn.argtypes = [
                 ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32,   # header, header_len
@@ -796,7 +821,7 @@ class NativeLibBackend:
             self._fn   = fn
             self._lib  = lib
             self._ready = True
-            log.info("[NativeLib] CHv4.2 native dylib načtena: %s", lib_path)
+            log.info("[NativeLib] Deeksha/legacy native dylib načtena: %s", lib_path)
         except Exception as exc:
             log.warning("[NativeLib] načtení selhalo: %s", exc)
 
@@ -826,14 +851,20 @@ class NativeLibBackend:
 
     def benchmark(self, nonce_count: int = 2048) -> float:
         try:
-            fn = self._lib.cosmic_harmony_v42_benchmark
+            fn = None
+            for symbol in ("zion_deeksha_benchmark", "cosmic_harmony_deeksha_benchmark", "cosmic_harmony_v42_benchmark"):
+                if hasattr(self._lib, symbol):
+                    fn = getattr(self._lib, symbol)
+                    break
+            if fn is None:
+                raise AttributeError("no compatible benchmark symbol found")
             fn.restype  = ctypes.c_double
             fn.argtypes = [ctypes.c_uint32]
             hs = fn(ctypes.c_uint32(nonce_count))
             log.info("[NativeLib] Benchmark: %.1f H/s", hs)
             return hs
         except Exception:
-            dummy = b"ZION CHv4.2 native bench" + b"\x00" * 40
+            dummy = b"ZION Deeksha native bench" + b"\x00" * 40
             t0 = time.monotonic()
             self.mine(dummy, 0, min(nonce_count, 16), 0xFFFFFFFF)
             dt = time.monotonic() - t0
@@ -846,7 +877,7 @@ class NativeLibBackend:
 
 class CHv42GPU:
     """
-    Unified interface pro GPU mining CHv4.2 Merkabah Dual-Spin.
+    Unified interface pro GPU mining Deeksha canonical path.
 
     Automaticky vybírá nejlepší backend: Metal → CUDA → OpenCL → CPU.
 
@@ -932,10 +963,13 @@ class CHv42GPU:
             return self._backend.mine(header, nonce_start, nonce_count, target_u32)
 
         # CPU fallback
-        from cosmic_harmony_v42_fallback import hash_chv42
+        try:
+            from cosmic_harmony_deeksha_fallback import hash_deeksha as _hash_cpu
+        except Exception:
+            from cosmic_harmony_v42_fallback import hash_chv42 as _hash_cpu
         for i in range(nonce_count):
             nonce = nonce_start + i
-            h = hash_chv42(header, nonce)
+            h = _hash_cpu(header, nonce)
             s0 = struct.unpack_from("<I", h)[0]
             if s0 <= target_u32:
                 return (nonce, h)
@@ -947,11 +981,14 @@ class CHv42GPU:
         if self._backend is not None and hasattr(self._backend, "benchmark"):
             return self._backend.benchmark(nc)
         # CPU benchmark
-        from cosmic_harmony_v42_fallback import hash_chv42
+        try:
+            from cosmic_harmony_deeksha_fallback import hash_deeksha as _hash_cpu
+        except Exception:
+            from cosmic_harmony_v42_fallback import hash_chv42 as _hash_cpu
         dummy = b"bench" + b"\x00" * 59
         t0 = time.monotonic()
         for i in range(min(nc, 16)):
-            hash_chv42(dummy, i)
+            _hash_cpu(dummy, i)
         dt = time.monotonic() - t0
         hs = min(nc, 16) / max(dt, 0.001)
         log.info("[CPU] Benchmark: %.2f H/s", hs)
@@ -1015,7 +1052,7 @@ class CHv42GPU:
 
 
 # =============================================================================
-# Standalone GPU miner — integrace se stratumem z cosmic_harmony_v42_fallback.py
+# Standalone GPU miner — integrace se stratumem (Deeksha-first, legacy fallback)
 # =============================================================================
 
 def _run_gpu_stratum_miner(args: argparse.Namespace) -> None:
@@ -1043,7 +1080,10 @@ def _run_gpu_stratum_miner(args: argparse.Namespace) -> None:
     sys.path.insert(0, str(_HERE))
 
     try:
-        from cosmic_harmony_v42_fallback import StratumMiner
+        try:
+            from cosmic_harmony_deeksha_fallback import StratumMinerDeeksha as StratumMiner
+        except Exception:
+            from cosmic_harmony_v42_fallback import StratumMiner
         miner = StratumMiner(
             pool=args.pool,
             wallet=args.wallet,
@@ -1056,12 +1096,12 @@ def _run_gpu_stratum_miner(args: argparse.Namespace) -> None:
         log.info("[Main] Stratum miner spuštěn (GPU mode: %s)", gpu.backend_name)
         miner.run()
     except ImportError as e:
-        log.error("[Main] cosmic_harmony_v42_fallback.py nenalezen: %s", e)
+        log.error("[Main] deeksha/v42 fallback module nenalezen: %s", e)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="ZION CHv4.2 GPU Miner — Merkabah Dual-Spin",
+        description="ZION Deeksha GPU Miner — Canonical Path",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--pool",    default="testnet.zion.network:3333", help="Stratum pool URL")

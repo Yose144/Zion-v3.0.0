@@ -84,9 +84,9 @@ pub enum NativeAlgorithm {
     RandomX,       // XMR
     VerusHash,     // VRSC
     Yescrypt,      // LTC/YTN
-    CosmicHarmony,   // ZION (CHv4.1 — Golden Middle 64 KiB, height-aware dispatch)
-    CosmicHarmonyV42, // ZION (CHv4.2 — Merkabah Dual-Spin, explicit override)
-    CosmicHarmonyDeeksha, // ZION (CHvDeeksha canonical, v2.9.8 — přímé volání deeksha pipeline)
+    CosmicHarmony,   // ZION (legacy enum variant; mapped to Deeksha canonical runtime)
+    CosmicHarmonyV42, // ZION (legacy enum variant; mapped to Deeksha canonical runtime)
+    CosmicHarmonyDeeksha, // ZION (CHvDeeksha canonical, v2.9.8)
     Argon2d,          // DYN
 
     // GPU Algorithms
@@ -110,16 +110,17 @@ impl NativeAlgorithm {
             "randomx" | "rx/0" => Some(Self::RandomX),
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
-            // CHv4 canonical names (pool submits "cosmic_harmony", also accepts legacy v2/v3 aliases)
+            // Canonical Deeksha + legacy aliases (all unified to Deeksha runtime)
             "cosmic_harmony" | "cosmic_harmony_v4" | "chv4" | "ch4"
             | "cosmic_harmony_v3" | "cosmicharmony" | "chv3" | "ch3"
-            | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2" => {
-                Some(Self::CosmicHarmony)
+            | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2"
+            | "deeksha" | "cosmic_harmony_deeksha" | "ch_deeksha" | "chd" => {
+                Some(Self::CosmicHarmonyDeeksha)
             }
-            // CHv4.2 Merkabah Dual-Spin — explicitní override (bypass fork height)
+            // CHv4.2 historical aliases — unified to Deeksha v2.9.8 runtime
             "cosmic_harmony_v4_2" | "chv4_2" | "ch4_2" | "chv4.2"
             | "cosmic_harmony_v42" | "ch42" | "merkabah" => {
-                Some(Self::CosmicHarmonyV42)
+                Some(Self::CosmicHarmonyDeeksha)
             }
             "ethash" | "etchash" => Some(Self::Ethash),
             "kawpow" => Some(Self::KawPow),
@@ -704,49 +705,21 @@ pub fn compute_hash(
     height: u32,
 ) -> Result<Vec<u8>> {
     match algo {
-        // Cosmic Harmony v3 - use the canonical implementation (same as pool native lib)
+        // Cosmic Harmony unified runtime - Deeksha canonical path
         NativeAlgorithm::CosmicHarmony => {
-            // Height-aware dispatch:
-            //   height >= CHV4_2_FORK_HEIGHT → CHv4.2 Merkabah Dual-Spin
-            //   else                         → CHv4.1 Golden Middle (64 KiB)
-            //
-            // ZION_CHV4_2_FORK_HEIGHT env var overrides the compiled constant
-            // (testnet: 10000, mainnet: TBD community vote).
-            let effective_height = {
-                if let Ok(env_h) = std::env::var("ZION_CHV4_2_FORK_HEIGHT") {
-                    if let Ok(parsed) = env_h.trim().parse::<u64>() {
-                        let h = height as u64;
-                        // remap: if height >= env override → u64::MAX (activate CHv4.2)
-                        if h >= parsed {
-                            u64::MAX
-                        } else {
-                            h
-                        }
-                    } else {
-                        height as u64
-                    }
-                } else {
-                    height as u64
-                }
-            };
-            let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_with_height(
-                header,
-                nonce,
-                effective_height,
-            );
+            let _ = height;
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_deeksha(header, nonce);
             Ok(h.data.to_vec())
         }
 
         NativeAlgorithm::CosmicHarmonyV42 => {
-            // CHv4.2 explicitní — vždy Merkabah Dual-Spin, ignoruje výšku bloku.
-            // Používat pro testování CHv4.2 nebo pokud pool explicitně posílá "chv4_2".
-            let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_v4_2(header, nonce);
+            let _ = height;
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_deeksha(header, nonce);
             Ok(h.data.to_vec())
         }
 
         NativeAlgorithm::CosmicHarmonyDeeksha => {
-            // CHvDeeksha canonical (v2.9.8) — přímé volání deeksha pipeline.
-            // Nezávisí na fork height — vždy aktivní Deeksha path.
+            let _ = height;
             let h = zion_cosmic_harmony_v3::cosmic_harmony_deeksha(header, nonce);
             Ok(h.data.to_vec())
         }

@@ -21,7 +21,7 @@ parallel = ["dep:rayon", "dep:num_cpus"]
 simd = []
 
 # CHv4 NPU Mixing backend
-native-npu = []           # ONNX Runtime / CoreML backend (budoucí, CPU INT8 fallback je vždy aktivní)
+native-npu = ["dep:ort"]  # ONNX Runtime (CoreML/TensorRT), fallback CPU INT8
 npu-fallback-cpu = []     # Vynutit CPU cestu i na NPU hardware (testování deterministnosti)
 
 # Native library features
@@ -85,6 +85,7 @@ opencl3 = { version = "0.9", optional = true }
 metal = { version = "0.27", optional = true }
 randomx-rs = { version = "1.2", optional = true }
 reqwest = { version = "0.12", features = ["json"], optional = true }
+ort = { version = "2.0.0-rc.9", default-features = false, features = ["std", "coreml"], optional = true }
 
 [build-dependencies]
 cc = "1"
@@ -98,3 +99,4 @@ rayon = "1.10"
 [[bench]]
 name = "algorithm_bench"
 harness = false
+

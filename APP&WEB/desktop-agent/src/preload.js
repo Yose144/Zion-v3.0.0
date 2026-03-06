@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   startMining: (config) => ipcRenderer.invoke('start-mining', config),
   stopMining: () => ipcRenderer.invoke('stop-mining'),
 
-  // CHv4.2 Merkabah GPU mining
+  // Legacy CHv4.2 Merkabah GPU mining IPC bridge (backward compatibility)
   startChv42Gpu: (config) => ipcRenderer.invoke('start-chv42-gpu', config),
   stopChv42Gpu: () => ipcRenderer.invoke('stop-chv42-gpu'),
   getChv42Status: () => ipcRenderer.invoke('get-chv42-status'),
