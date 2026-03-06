@@ -54,6 +54,9 @@ pub enum PythonMinerVariant {
     /// CHv4.2 Merkabah Dual-Spin fallback miner (cosmic_harmony_v42_fallback.py)
     /// Používá libcosmic_harmony FFI nebo pure Python implementaci
     Chv42,
+    /// CHvDeeksha canonical fallback (cosmic_harmony_deeksha_fallback.py)
+    /// Volá libcosmic_harmony FFI zion_deeksha_hash() přímo
+    DeekshaCanonical,
     /// Legacy native miner (zion_native_miner_v2_9.py) - all algorithms
     Legacy,
 }
@@ -61,9 +64,10 @@ pub enum PythonMinerVariant {
 impl PythonMinerVariant {
     pub fn script_name(&self) -> &'static str {
         match self {
-            Self::Chv3Gpu => "zion_chv3_gpu_miner.py",
-            Self::Chv42  => "cosmic_harmony_v42_fallback.py",
-            Self::Legacy => "zion_native_miner_v2_9.py",
+            Self::Chv3Gpu          => "zion_chv3_gpu_miner.py",
+            Self::Chv42            => "cosmic_harmony_v42_fallback.py",
+            Self::DeekshaCanonical => "cosmic_harmony_deeksha_fallback.py",
+            Self::Legacy           => "zion_native_miner_v2_9.py",
         }
     }
 
@@ -71,6 +75,8 @@ impl PythonMinerVariant {
         match s.to_lowercase().as_str() {
             "chv3" | "chv3_gpu" | "chv3-gpu" | "gpu" => Some(Self::Chv3Gpu),
             "chv4_2" | "chv42" | "merkabah" | "v42"  => Some(Self::Chv42),
+            // CHvDeeksha canonical (v2.9.8)
+            "deeksha" | "chv_deeksha" | "cosmic_harmony_deeksha" | "deeksha_canonical" => Some(Self::DeekshaCanonical),
             "legacy" | "native" | "v2.9" | "v29"      => Some(Self::Legacy),
             _ => None,
         }
@@ -239,6 +245,24 @@ impl PythonFallbackMiner {
                 args.push(self.config.wallet.clone());
                 args.push("--worker".to_string());
                 args.push(format!("{}-py42", self.config.worker));
+                args.push("--threads".to_string());
+                args.push(self.config.threads.to_string());
+                if self.config.gpu {
+                    args.push("--gpu".to_string());
+                }
+                args.push("--stats-file".to_string());
+                args.push(self.config.stats_file.to_string_lossy().to_string());
+                args.push("--stats-interval".to_string());
+                args.push(self.config.stats_interval.to_string());
+            }
+            PythonMinerVariant::DeekshaCanonical => {
+                // cosmic_harmony_deeksha_fallback.py — volá libcosmic_harmony zion_deeksha_hash()
+                args.push("--pool".to_string());
+                args.push(self.pool_host_port());
+                args.push("--wallet".to_string());
+                args.push(self.config.wallet.clone());
+                args.push("--worker".to_string());
+                args.push(format!("{}-deeksha", self.config.worker));
                 args.push("--threads".to_string());
                 args.push(self.config.threads.to_string());
                 if self.config.gpu {
