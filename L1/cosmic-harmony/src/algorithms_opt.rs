@@ -492,23 +492,31 @@ pub fn cosmic_harmony_v4_2(block_header: &[u8], nonce: u64) -> Hash32 {
     cosmic_fusion_opt(&step5.data)
 }
 
-/// Height-aware selektor CHv3 vs CHv4 vs CHv4.2 pro bezpečný fork rollout.
+/// Height-aware dispatch — canonical entry point pro konsenzus hashovku.
 ///
-/// < CHV3_MEMORY_HARD_FORK_HEIGHT → legacy (no memory-hard)
-/// < CHV4_NPU_FORK_HEIGHT         → CHv3 (memory-hard, no NPU)
-/// < CHV4_2_FORK_HEIGHT           → CHv4 (memory-hard + NPU mixing)
-/// ≥ CHV4_2_FORK_HEIGHT           → CHv4.2 (Merkabah Dual-Spin)
+/// Dispatch tabulka (od nejnovějšího k nejstaršímu):
+///   height ≥ CHV_DEEKSHA_FORK_HEIGHT  → cosmic_harmony_deeksha()  [v2.9.8 default]
+///   height ≥ CHV4_2_FORK_HEIGHT        → cosmic_harmony_v4_2()     [legacy; nikdy nedostženo při DEEKSHA=0]
+///   jinak                               → cosmic_harmony_v4()        [legacy]
+///
+/// Pro mainnet 2.9.8: CHV_DEEKSHA_FORK_HEIGHT = 0 → vždy Deeksha.
+/// Legacy větve zachovány pouze pro unit testy specifických verzí.
 #[inline]
 pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32 {
+    use crate::deeksha::CHV_DEEKSHA_FORK_HEIGHT;
     use crate::algorithms_npu::CHV4_NPU_FORK_HEIGHT;
 
-    if height >= CHV4_2_FORK_HEIGHT {
-        cosmic_harmony_v4_2(block_header, nonce)
-    } else if height >= CHV4_NPU_FORK_HEIGHT {
-        cosmic_harmony_v4(block_header, nonce)
-    } else {
-        cosmic_harmony_v3_with_height(block_header, nonce, height)
+    if height >= CHV_DEEKSHA_FORK_HEIGHT {
+        return crate::deeksha::cosmic_harmony_deeksha(block_header, nonce);
     }
+    // Legacy — nedosažitelné při CHV_DEEKSHA_FORK_HEIGHT = 0
+    if height >= CHV4_2_FORK_HEIGHT {
+        return cosmic_harmony_v4_2(block_header, nonce);
+    }
+    if height >= CHV4_NPU_FORK_HEIGHT {
+        return cosmic_harmony_v4(block_header, nonce);
+    }
+    cosmic_harmony_v3_with_height(block_header, nonce, height)
 }
 
 /// Height-aware CHv3 selector pro bezpečný fork rollout.
