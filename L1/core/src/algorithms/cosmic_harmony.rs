@@ -1,19 +1,15 @@
-/// ZION Cosmic Harmony — Unified CHv3/CHv4/CHv4.2 Wrapper
+/// ZION Cosmic Harmony — Unified Deeksha Wrapper
 ///
 /// This module delegates ALL hashing to the canonical `zion-cosmic-harmony-v3` crate.
 /// Legacy CH v1/v2 implementations have been archived to `archive/legacy-algorithms/`.
 ///
-/// Dispatch podle výšky bloku (height-aware):
-///   ≥ CHV4_2_FORK_HEIGHT  → CHv4.2 Merkabah Dual-Spin (backward passes + kabala)
-///   ≥ CHV4_NPU_FORK_HEIGHT → CHv4 (memory-hard + NPU mixing)
-///   ≥ CHV3_MEMORY_HARD_FORK_HEIGHT → CHv3 (memory-hard scratchpad)
-///   else → CHv3 legacy (no memory-hard)
+/// Runtime pro v2.9.8 je sjednocen přes `cosmic_harmony_with_height()`
+/// s canonical Deeksha cestou (fork height = 0).
 
 /// Blockchain convenience: algorithm-specific PoW hash.
 ///
 /// This is the ONLY entry point for consensus hashing.
-/// Delegates to `cosmic_harmony_with_height()` — universal fork-aware dispatch
-/// covering CHv3 → CHv4 → CHv4.2 (Merkabah Dual-Spin).
+/// Delegates to `cosmic_harmony_with_height()` — canonical Deeksha dispatch.
 ///
 /// # Arguments
 /// * `data` - Block header bytes (156 bytes from calculate_hash, or 80+ byte template blob)
@@ -96,13 +92,13 @@ mod tests {
         let hash1 = hash(input, nonce, 0);
         let hash2 = hash(input, nonce, 100000);
 
-        // Both heights use CHv4 path (CHV4_NPU_FORK_HEIGHT = 0, CHV3_MEMORY_HARD_FORK_HEIGHT = 0).
+        // Both heights use the same canonical Deeksha path.
         // Height is used only for algorithm path selection, NOT as hash input — the
         // block header data (containing height) is the caller's responsibility.
         // Different heights on the same path → same output for same input+nonce.
         assert_eq!(
             hash1, hash2,
-            "Both heights use CHv4 path: same input+nonce gives same hash"
+            "Both heights use Deeksha path: same input+nonce gives same hash"
         );
     }
 

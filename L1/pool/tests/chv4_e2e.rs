@@ -1,62 +1,61 @@
-/// F-04: CHv4 E2E Test Suite
+/// F-04: CHv4/Deeksha E2E Test Suite
 ///
-/// Verifies that CHv4 (NPU Mixing INT8 MLP) is active from genesis (height 0)
-/// and that the pool ShareValidator correctly accepts CHv4 shares at genesis height.
+/// Verifies canonical v2.9.8 dispatch behavior:
+/// Deeksha is active from genesis (height 0), while CHv4 direct path remains testable.
 ///
-/// Key invariant: CHV4_NPU_FORK_HEIGHT = 0
-///   → cosmic_harmony_with_height(blob, nonce, h) uses CHv4 for ALL h ≥ 0
-///   → No miner or pool should ever produce a CHv3-only hash after chain reset.
+/// Key invariant: CHV_DEEKSHA_FORK_HEIGHT = 0
+///   → cosmic_harmony_with_height(blob, nonce, h) uses Deeksha for ALL h ≥ 0
+///   → CHv4 can still be tested directly via cosmic_harmony_v4().
 ///
 /// Run: cargo test -p zion-pool -- chv4 --nocapture
 
 use zion_cosmic_harmony_v3::{
-    algorithms_opt,
-    cosmic_harmony_v3, cosmic_harmony_v4, cosmic_harmony_with_height,
-    CHV4_NPU_FORK_HEIGHT,
+    algorithms_opt, cosmic_harmony_deeksha, cosmic_harmony_v3, cosmic_harmony_v4,
+    cosmic_harmony_with_height, CHV_DEEKSHA_FORK_HEIGHT,
 };
 use zion_pool::shares::validator::{Algorithm, ShareValidator, SubmittedShare};
 
 // ── Group A: CHv4 fork-height constant ──────────────────────────────────────
 
-/// Fork height must be 0 — CHv4 is active from genesis.
+/// Fork height must be 0 — Deeksha is active from genesis.
 #[test]
 fn test_chv4_fork_height_is_zero() {
     assert_eq!(
-        CHV4_NPU_FORK_HEIGHT, 0,
-        "CHV4_NPU_FORK_HEIGHT must be 0 (active from genesis). \
-         If this fails, algorithms_npu.rs was not updated correctly."
+        CHV_DEEKSHA_FORK_HEIGHT, 0,
+        "CHV_DEEKSHA_FORK_HEIGHT must be 0 (active from genesis). \
+         If this fails, deeksha.rs was not updated correctly."
     );
 }
 
 // ── Group B: CHv4 hash correctness ──────────────────────────────────────────
 
-/// cosmic_harmony_with_height at h=0 must equal cosmic_harmony_v4 directly.
+/// cosmic_harmony_with_height at h=0 must equal cosmic_harmony_deeksha directly.
 #[test]
-fn test_chv4_with_height_zero_equals_v4() {
+fn test_with_height_zero_equals_deeksha() {
     let blob = [0xABu8; 80];
     let nonce: u64 = 0x1234_5678_9ABC_DEF0;
 
     let h_height = cosmic_harmony_with_height(&blob, nonce, 0);
-    let h_v4 = cosmic_harmony_v4(&blob, nonce);
+    let h_deeksha = cosmic_harmony_deeksha(&blob, nonce);
 
     assert_eq!(
-        h_height.data, h_v4.data,
-        "cosmic_harmony_with_height(blob, nonce, 0) must equal cosmic_harmony_v4(blob, nonce)"
+        h_height.data, h_deeksha.data,
+        "cosmic_harmony_with_height(blob, nonce, 0) must equal cosmic_harmony_deeksha(blob, nonce)"
     );
 }
 
-/// CHv4 must be deterministic — same input always produces same hash.
+/// Canonical dispatch (Deeksha) must be deterministic.
 #[test]
-fn test_chv4_hash_is_deterministic() {
+fn test_canonical_hash_is_deterministic() {
     let blob = [0x5Au8; 80];
     let nonce: u64 = 0xDEAD_BEEF_CAFE_1234;
 
     let h1 = cosmic_harmony_with_height(&blob, nonce, 0);
     let h2 = cosmic_harmony_with_height(&blob, nonce, 0);
-    let h3 = cosmic_harmony_v4(&blob, nonce);
+    let h3 = cosmic_harmony_deeksha(&blob, nonce);
 
-    assert_eq!(h1.data, h2.data, "CHv4 must be deterministic (call 1 == call 2)");
-    assert_eq!(h1.data, h3.data, "cosmic_harmony_with_height(0) must equal cosmic_harmony_v4");
+    assert_eq!(h1.data, h2.data, "Canonical dispatch must be deterministic (call 1 == call 2)");
+    assert_eq!(h1.data, h3.data, "cosmic_harmony_with_height(0) must equal cosmic_harmony_deeksha");
 }
 
 /// CHv4 hash must differ from CHv3 for the same (blob, nonce).
@@ -225,22 +224,22 @@ async fn test_chv4_validator_returns_correct_hash() {
 
 // ── Group D: CHv4 from-genesis invariant ────────────────────────────────────
 
-/// cosmic_harmony_with_height must return CHv4 (same as v4) for ALL heights,
-/// because CHV4_NPU_FORK_HEIGHT = 0.
+/// cosmic_harmony_with_height must return Deeksha for ALL heights,
+/// because CHV_DEEKSHA_FORK_HEIGHT = 0.
 #[test]
-fn test_chv4_active_for_all_heights() {
+fn test_deeksha_active_for_all_heights() {
     let blob = [0x33u8; 80];
     let nonce: u64 = 0xABCD_EF01;
 
-    let h_v4 = cosmic_harmony_v4(&blob, nonce);
+    let h_deeksha = cosmic_harmony_deeksha(&blob, nonce);
 
-    // Test multiple heights — all should equal v4 since fork_height=0
+    // Test multiple heights — all should equal Deeksha since fork_height=0
     for &height in &[0u64, 1, 100, 1_000, 10_000, 100_000, 200_000, 999_999] {
         let h = cosmic_harmony_with_height(&blob, nonce, height);
         assert_eq!(
-            h.data, h_v4.data,
-            "cosmic_harmony_with_height at height={} must equal cosmic_harmony_v4 \
-             (CHV4_NPU_FORK_HEIGHT=0 means CHv4 always active)",
+            h.data, h_deeksha.data,
+            "cosmic_harmony_with_height at height={} must equal cosmic_harmony_deeksha \
+             (CHV_DEEKSHA_FORK_HEIGHT=0 means Deeksha always active)",
             height
         );
     }
