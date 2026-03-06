@@ -29,8 +29,9 @@ pub use native_algos::NativeAlgorithm;
 // Local Algorithm enum - independent from zion_core
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Algorithm {
-    CosmicHarmony,    // CHv4.1 Golden Middle (height-aware, aktivuje CHv4.2 dle fork height)
-    CosmicHarmonyV42, // CHv4.2 Merkabah Dual-Spin (explicitní override)
+    CosmicHarmony,       // CHv4.1 Golden Middle (height-aware, aktivuje CHv4.2 dle fork height)
+    CosmicHarmonyV42,    // CHv4.2 Merkabah Dual-Spin (explicitní override)
+    CosmicHarmonyDeeksha, // CHvDeeksha canonical (v2.9.8) — přímý Deeksha path
     RandomX,
     VerusHash,
     Yescrypt,
@@ -58,6 +59,9 @@ impl Algorithm {
             // CHv4.2 explicitní override (Merkabah Dual-Spin)
             "cosmic_harmony_v4_2" | "chv4_2" | "ch4_2" | "chv4.2"
             | "cosmic_harmony_v42" | "ch42" | "merkabah" => Some(Self::CosmicHarmonyV42),
+            // CHvDeeksha canonical (v2.9.8) — přímý Deeksha path
+            "deeksha" | "chv_deeksha" | "cosmic_harmony_deeksha" | "cosmic_deeksha"
+            | "chdeeksha" | "deeksha_canonical" => Some(Self::CosmicHarmonyDeeksha),
             "randomx" | "random-x" | "rx/0" => Some(Self::RandomX),
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
@@ -81,6 +85,7 @@ impl Algorithm {
             // "cosmic_harmony" is the pool-canonical name for CHv4-era (CHV4_NPU_FORK_HEIGHT=0)
             Self::CosmicHarmony => "cosmic_harmony",
             Self::CosmicHarmonyV42 => "cosmic_harmony_v4_2",
+            Self::CosmicHarmonyDeeksha => "cosmic_harmony_deeksha",
             Self::RandomX => "randomx",
             Self::VerusHash => "verushash",
             Self::Yescrypt => "yescrypt",
@@ -102,6 +107,7 @@ impl Algorithm {
         match self {
             Self::CosmicHarmony => NativeAlgorithm::CosmicHarmony,
             Self::CosmicHarmonyV42 => NativeAlgorithm::CosmicHarmonyV42,
+            Self::CosmicHarmonyDeeksha => NativeAlgorithm::CosmicHarmonyDeeksha,
             Self::RandomX => NativeAlgorithm::RandomX,
             Self::VerusHash => NativeAlgorithm::VerusHash,
             Self::Yescrypt => NativeAlgorithm::Yescrypt,
@@ -1010,7 +1016,7 @@ impl UniversalMiner {
                         // If this backend has a fixed chip dispatch size, keep using it
                         // across algo switches so responsiveness stays consistent.
                         batch_size = miner.natural_batch_size().unwrap_or_else(|| match active_algo {
-                            Algorithm::CosmicHarmony => 16_000_000,
+                            Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyDeeksha => 14_000_000,
                             Algorithm::Ethash | Algorithm::Autolykos | Algorithm::KawPow => 100_000,
                             Algorithm::RandomX | Algorithm::Yescrypt => 5_000,
                             _ => 250_000,

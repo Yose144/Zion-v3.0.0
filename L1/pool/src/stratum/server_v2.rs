@@ -411,6 +411,12 @@ impl StratumServer {
             || algo == "cosmic_harmony_v1"
             || algo == "cosmic_harmony_v3"
             || algo == "cosmic_harmony_v4"
+            // CHvDeeksha aliases (v2.9.8)
+            || algo == "cosmic_harmony_deeksha"
+            || algo == "deeksha"
+            || algo == "chv_deeksha"
+            || algo == "cosmic_deeksha"
+            || algo == "chdeeksha"
         {
             // Cosmic share validator compares a 32-bit value (state0) to a u32 target.
             // Prefer explicit target_u32 from core template, else fall back to low32 of `target`.
@@ -627,7 +633,10 @@ impl StratumServer {
                 let t = u64::MAX / diff;
                 format!("{:016x}", t)
             }
-            "cosmic_harmony" | "cosmic_harmony_v3" | "cosmic_harmony_v4" | "cosmic" => {
+            "cosmic_harmony" | "cosmic_harmony_v3" | "cosmic_harmony_v4" | "cosmic"
+            // CHvDeeksha aliases (v2.9.8) — stejný u32 target formát
+            | "cosmic_harmony_deeksha" | "deeksha" | "chv_deeksha" | "cosmic_deeksha"
+            | "chdeeksha" | "deeksha_canonical" => {
                 let t = (u32::MAX as u64) / diff;
                 let t = (t.min(u32::MAX as u64)) as u32;
                 format!("{:08x}", t)

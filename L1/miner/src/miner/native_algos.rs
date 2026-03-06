@@ -86,6 +86,7 @@ pub enum NativeAlgorithm {
     Yescrypt,      // LTC/YTN
     CosmicHarmony,   // ZION (CHv4.1 — Golden Middle 64 KiB, height-aware dispatch)
     CosmicHarmonyV42, // ZION (CHv4.2 — Merkabah Dual-Spin, explicit override)
+    CosmicHarmonyDeeksha, // ZION (CHvDeeksha canonical, v2.9.8 — přímé volání deeksha pipeline)
     Argon2d,          // DYN
 
     // GPU Algorithms
@@ -142,7 +143,7 @@ impl NativeAlgorithm {
             Self::RandomX => "XMR",
             Self::VerusHash => "VRSC",
             Self::Yescrypt => "LTC",
-            Self::CosmicHarmony | Self::CosmicHarmonyV42 => "ZION",
+            Self::CosmicHarmony | Self::CosmicHarmonyV42 | Self::CosmicHarmonyDeeksha => "ZION",
             Self::Ethash => "ETC",
             Self::KawPow | Self::KawPowGpu => "RVN",
             Self::Autolykos => "ERG",
@@ -740,6 +741,13 @@ pub fn compute_hash(
             // CHv4.2 explicitní — vždy Merkabah Dual-Spin, ignoruje výšku bloku.
             // Používat pro testování CHv4.2 nebo pokud pool explicitně posílá "chv4_2".
             let h = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_v4_2(header, nonce);
+            Ok(h.data.to_vec())
+        }
+
+        NativeAlgorithm::CosmicHarmonyDeeksha => {
+            // CHvDeeksha canonical (v2.9.8) — přímé volání deeksha pipeline.
+            // Nezávisí na fork height — vždy aktivní Deeksha path.
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_deeksha(header, nonce);
             Ok(h.data.to_vec())
         }
 
