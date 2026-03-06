@@ -2916,6 +2916,135 @@ function startMining(config) {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
+  // ── CHvDeeksha Canonical fast-path ────────────────────────────────────────
+  // Spouští cosmic_harmony_deeksha_fallback.py jako minerProcess.
+  // Worker suffix: '-deeksha', revenue nonce partition: 0x40000000 offset.
+  const _deekshaAlgoName = String(config?.algorithm || '').toLowerCase();
+  if (_deekshaAlgoName === 'cosmic_harmony_deeksha' || _deekshaAlgoName === 'deeksha' || _deekshaAlgoName === 'chv_deeksha') {
+    const isPackaged = app.isPackaged;
+    const deekshaScript = isPackaged
+      ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_deeksha_fallback.py')
+      : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_deeksha_fallback.py');
+
+    // Venv resoluce — identická s CHv4.2
+    const _dvenvCandidates = process.platform === 'win32'
+      ? [path.join(APP_ROOT, '.venv', 'Scripts', 'python.exe'),
+         path.join(APP_ROOT, '..', '.venv', 'Scripts', 'python.exe'),
+         path.join(APP_ROOT, '..', '..', '.venv', 'Scripts', 'python.exe')]
+      : [path.join(APP_ROOT, '.venv', 'bin', 'python3'),
+         path.join(APP_ROOT, '..', '.venv', 'bin', 'python3'),
+         path.join(APP_ROOT, '..', '..', '.venv', 'bin', 'python3')];
+    const _denvVenv = String(process.env.VIRTUAL_ENV || '').trim();
+    if (_denvVenv) {
+      _dvenvCandidates.unshift(process.platform === 'win32'
+        ? path.join(_denvVenv, 'Scripts', 'python.exe')
+        : path.join(_denvVenv, 'bin', 'python3'));
+    }
+    const _dResolvedPy = _dvenvCandidates.find(c => { try { return !!c && fs.existsSync(c); } catch { return false; } });
+    const pyExeDeeksha = _dResolvedPy || (process.platform === 'win32' ? 'python' : 'python3');
+
+    const pool = `${config.pool?.host || '77.42.31.72'}:${config.pool?.port || 3333}`;
+    const wallet = config.wallet || '';
+    const worker = config.worker || 'desktop-agent';
+    logApp('deeksha-main-start', JSON.stringify({ pyExeDeeksha, deekshaScript, pool, worker }));
+    sendToRenderer('miner-output', { stream: 'stdout', text: `[CHvDeeksha] Spouštím Deeksha canonical miner...\n[CHvDeeksha] Python: ${pyExeDeeksha}\n[CHvDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n` });
+    try {
+      minerProcess = spawn(pyExeDeeksha, [deekshaScript, '--pool', pool, '--wallet', wallet, '--worker', `${worker}-deeksha`, '--backend', 'auto'], {
+        env: { ...process.env },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        windowsHide: true,
+      });
+    } catch (e) {
+      const msg = `[CHvDeeksha] Failed to spawn Deeksha miner: ${e}\n`;
+      sendToRenderer('miner-output', { stream: 'stderr', text: msg });
+      return { success: false, error: String(e) };
+    }
+    sendToRenderer('miner-backend', { preferred: 'python', resolved: 'deeksha-fallback', path: pyExeDeeksha, lastError: '' });
+    minerProcess.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
+    minerProcess.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
+    minerProcess.on('exit', (code) => {
+      logApp('deeksha-main-exit', JSON.stringify({ code }));
+      minerProcess = null;
+      minerStopping = false;
+      sendToRenderer('miner-stopped', { code });
+      updateTrayMenu(minerStats);
+    });
+    setTimeout(() => {
+      if (minerProcess) sendToRenderer('miner-started', {});
+      updateTrayMenu(minerStats);
+    }, 450);
+
+    // ── Deeksha Revenue (parity s CHv4.2) ─────────────────────────────────
+    const effectiveThreadsDeeksha = computeEffectiveThreads(config);
+    const revenueProfileDeeksha = normalizeRevenueProfile(config?.revenue || {});
+
+    const envDisableRevenueDeeksha = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+    const envEnableRevenueDeeksha = String(process.env.ZION_ENABLE_REVENUE || '').trim() === '1';
+    const revenueEnabledDeeksha = envDisableRevenueDeeksha ? false : (envEnableRevenueDeeksha ? true : revenueProfileDeeksha.enabled !== false);
+
+    let deekshaRevenueThreads = 0;
+    if (revenueEnabledDeeksha && effectiveThreadsDeeksha >= 3) {
+      const multiPct = Math.max(0, Math.min(100, Number(revenueProfileDeeksha?.allocation?.multiAlgoPct ?? 25)));
+      const maxRevenue = Math.max(0, effectiveThreadsDeeksha - 2);
+      deekshaRevenueThreads = Math.min(maxRevenue, Math.max(1, Math.round(effectiveThreadsDeeksha * (multiPct / 100))));
+    }
+
+    // Nonce partition: hlavní miner 0x00..., revenue 0x40000000...
+    const deekshaSessionNonceBaseMain = (Date.now() >>> 0) & 0x1fffffff;
+    const deekshaSessionNonceBaseRevenue = deekshaSessionNonceBaseMain + 0x40000000;
+    const deekshaRevenueEnv = { ...process.env, ZION_NONCE_BASE: String(deekshaSessionNonceBaseRevenue) };
+
+    if (revenueEnabledDeeksha && deekshaRevenueThreads > 0) {
+      try {
+        const deekshaRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_deeksha_revenue.json');
+        const revArgs = [
+          deekshaScript,
+          '--pool', pool,
+          '--wallet', wallet,
+          '--threads', String(deekshaRevenueThreads),
+          '--stats-file', deekshaRevenueStatsPath,
+          '--stats-interval', String(STATS_INTERVAL_SEC || 30),
+        ];
+        if (worker) revArgs.push('--worker', `${worker}-deeksha-rev`);
+        revenueProcess = spawn(pyExeDeeksha, revArgs, {
+          env: deekshaRevenueEnv,
+          stdio: ['pipe', 'pipe', 'pipe'],
+          windowsHide: true,
+        });
+        logApp('deeksha-revenue-started', JSON.stringify({ pid: revenueProcess?.pid, threads: deekshaRevenueThreads, pool }));
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: `[DKS-REV] Revenue CPU miner started (PID ${revenueProcess?.pid}) — ${deekshaRevenueThreads}T -> ${pool}\n`,
+        });
+        revenueProcess.stdout?.on('data', (d) => {
+          safeMinerLogWrite(`[DKS-REV-STDOUT] ${d}`);
+          try { sendToRenderer('miner-output', { stream: 'stdout', text: `[DKS-REV] ${d}` }); } catch {}
+        });
+        revenueProcess.stderr?.on('data', (d) => {
+          safeMinerLogWrite(`[DKS-REV-STDERR] ${d}`);
+          try { sendToRenderer('miner-output', { stream: 'stderr', text: `[DKS-REV] ${d}` }); } catch {}
+        });
+        revenueProcess.on('error', (err) => {
+          logApp('deeksha-revenue-error', err?.message || String(err));
+          revenueProcess = null;
+        });
+        revenueProcess.on('close', (code) => {
+          revenueProcess = null;
+          if (minerProcess && code !== 0) {
+            try { sendToRenderer('miner-output', { stream: 'stderr', text: `[DKS-REV] Revenue miner exited (code=${code}).\n` }); } catch {}
+          }
+        });
+      } catch (revErr) {
+        logApp('deeksha-revenue-spawn-failed', revErr?.message || String(revErr));
+        revenueProcess = null;
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    return { success: true };
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
   const selection = resolveMinerSelection(preferredBackend);
   if (!selection) {
