@@ -414,7 +414,7 @@ impl CpuMiner {
                 }
 
                 let t = job.target.trim();
-                if matches!(active_algorithm, Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyV42) {
+                if matches!(active_algorithm, Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyV42 | Algorithm::CosmicHarmonyDeeksha) {
                     let tu = parse_cosmic_target_to_u32(t);
                     let endian = job.cosmic_state0_endian.as_deref().unwrap_or("little");
                     log::debug!(
@@ -1027,6 +1027,7 @@ impl CpuMiner {
             // to template/stream switches and reduce stale+duplicate rejects.
             Algorithm::CosmicHarmony => 25_000,
             Algorithm::CosmicHarmonyV42 => 25_000,
+            Algorithm::CosmicHarmonyDeeksha => 20_000, // Deeksha je těžší pipeline
             Algorithm::Ethash => 50_000,
             Algorithm::Autolykos => 50_000,
             Algorithm::KawPow => 50_000,
@@ -1095,7 +1096,7 @@ impl CpuMiner {
                 }
                 true
             }
-            Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyV42 => {
+            Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyV42 | Algorithm::CosmicHarmonyDeeksha => {
                 // Match native pool validator logic for Cosmic Harmony (CHv4 / CHv4.2 Merkabah):
                 // - state0 is derived from the first 4 bytes of the hash
                 // - endian is configurable (pool currently uses little)

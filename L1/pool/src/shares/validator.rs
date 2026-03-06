@@ -44,12 +44,15 @@ impl Algorithm {
         match s.to_lowercase().as_str() {
             "randomx" | "rx/0" => Algorithm::RandomX,
             "yescrypt" => Algorithm::Yescrypt,
-            // All cosmic_harmony variants now map to CHv3
+            // All cosmic_harmony variants now map to CHv3/Deeksha (v2.9.8)
             "cosmic_harmony" | "cosmic" | "cosmic_harmony_v3" | "cosmic_v3" | "cosmic3"
             | "cosmicharmony" | "cosmic-harmony" | "cosmic-harmony-v3" | "cosmicharmonyv3"
             | "chv3" | "ch3" | "chv4" | "ch4" | "cosmic_harmony_v4" | "cosmicharmonyv4"
             | "cosmic-harmony-v4" | "cosmic_harmony_v1" | "cosmic_harmony_v2" | "cosmicharmonyv2"
-            | "cosmic-harmony-v2" => Algorithm::CosmicHarmony,
+            | "cosmic-harmony-v2"
+            // CHvDeeksha aliases (v2.9.8)
+            | "deeksha" | "chv_deeksha" | "cosmic_harmony_deeksha" | "cosmic_deeksha"
+            | "chdeeksha" | "deeksha_canonical" => Algorithm::CosmicHarmony,
             "blake3" => Algorithm::Blake3,
             "autolykos" | "autolykos_v2" => Algorithm::AutolykovV2,
             // External algorithms — routed to external pool by StreamScheduler.
