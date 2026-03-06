@@ -480,7 +480,7 @@ let minerProcess = null;
 let revenueProcess = null; // 2nd miner process: --group revenue → pool routes to XMR/RandomX
 let gpuRevenueProcess = null; // 3rd miner process: --group revenue --gpu → GPU algorithms (kawpow/ethash)
 let gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
-let chv42GpuProcess = null; // CHv4.2 Merkabah GPU miner (Metal/CUDA/OpenCL)
+let chv42GpuProcess = null; // legacy CHv4.2 GPU miner process (kept for backward compatibility)
 let chv42GpuStats = { running: false, hashrate: 0, accepted: 0, rejected: 0, backend: 'cpu', startedAt: 0 };
 
 // ── CH3 Multi-Stream state (dual/triple mining) ───────────────────────────
@@ -492,7 +492,7 @@ let revenueHashrateCpu = 0;            // from _revenue.json stats file
 let revenueHashrateGpu = 0;            // from _gpu_revenue.json stats file
 let multiStreamStatus = {
   active: false,
-  zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony' },  // CHv4 canonical name
+  zion:       { running: false, hashrate: 0, algorithm: 'cosmic_harmony' },
   gpuCoin:    { name: 'ETC', running: false, hashrate: 0, pool: '', algorithm: 'ethash', directPool: false },
   revenueCpu: { running: false, hashrate: 0, algorithm: 'randomx' },
   lastPollAt: 0,
@@ -931,11 +931,8 @@ const MAX_MINER_LOG_BYTES = 10 * 1024 * 1024; // 10MB
 const MAX_MINER_LOG_BACKUPS = 0;
 const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// ── CHv4 Fork Heights ─────────────────────────────────────────────────────────
-// CHV4_NPU_FORK_HEIGHT=0: CHv4 (NPU Mixing INT8 MLP + memory-hard) is active
-// from genesis block 0. Pool canonical algorithm name is 'cosmic_harmony'.
-const CHV4_NPU_FORK_HEIGHT = 0;
-const CHV3_MEMORY_HARD_FORK_HEIGHT = 0;
+// ── Deeksha canonical runtime ────────────────────────────────────────────────
+// v2.9.8: `cosmic_harmony` resolves to Deeksha canonical path from genesis.
 
 // ── Revenue / Funding Split ───────────────────────────────────────────────────
 // Pool distributes block rewards:  89% miners, 1% pool, 5% humanitarian (L5),
@@ -1053,8 +1050,7 @@ const DEFAULT_CONFIG = {
   },
   // ZION chain JSON-RPC endpoint (native core)
   rpcUrl: 'http://77.42.31.72:8444/jsonrpc',
-  // Mining algorithm — CHv4 (NPU Mixing INT8 MLP, active from genesis block 0)
-  // CHV4_NPU_FORK_HEIGHT=0: CHv4 always active. Pool canonical name: 'cosmic_harmony'
+  // Mining algorithm — Deeksha canonical path (pool name: `cosmic_harmony`)
   algorithm: 'cosmic_harmony',
   // AI Afterburner integration (controls env ZION_AI_AFTERBURNER)
   // Enabled by default: monitors GPU power draw and computes H/W efficiency metric
@@ -1073,7 +1069,7 @@ const DEFAULT_CONFIG = {
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
   gpu: true,
-  // CHv3 GPU performance knobs (safe defaults for Ryzen 5 3600 + RX 5700 class rigs)
+  // Cosmic Harmony GPU performance knobs (safe defaults for Ryzen 5 3600 + RX 5700 class rigs)
   gpuCpuThreads: 5,
   gpuBatchSize: 16000000,
   revenue: DEFAULT_REVENUE_PROFILE,
@@ -1110,15 +1106,31 @@ function algoSupportsGpu(algo) {
 
 function normalizeAlgorithmName(algo) {
   const raw = String(algo || '').trim().toLowerCase().replace(/-/g, '_');
-  if (raw === 'cosmic_harmony_v3' || raw === 'cosmic_harmony_v4') {
+  if (
+    raw === 'cosmic_harmony_v3' ||
+    raw === 'cosmic_harmony_v4' ||
+    raw === 'cosmic_harmony_v4_2' ||
+    raw === 'cosmic_harmony_v42' ||
+    raw === 'chv3' ||
+    raw === 'ch3' ||
+    raw === 'chv4' ||
+    raw === 'ch4' ||
+    raw === 'chv4_2' ||
+    raw === 'ch4_2' ||
+    raw === 'chv4.2' ||
+    raw === 'ch42' ||
+    raw === 'merkabah' ||
+    raw === 'deeksha' ||
+    raw === 'cosmic_harmony_deeksha'
+  ) {
     return 'cosmic_harmony';
   }
   return raw || 'cosmic_harmony';
 }
 
 function isCosmicHarmonyFamily(algo) {
-  const a = String(algo || '').trim().toLowerCase().replace(/-/g, '_');
-  return a === 'cosmic_harmony' || a === 'cosmic_harmony_v3' || a === 'cosmic_harmony_v4';
+  const a = normalizeAlgorithmName(algo || 'cosmic_harmony');
+  return a === 'cosmic_harmony';
 }
 
 // Load or create config
@@ -1242,7 +1254,10 @@ function fixSecurityBlocks() {
     'mining/cosmic_harmony_v3_gpu.py',
     'mining/cosmic_harmony_v3_python.py',
     'mining/cosmic_harmony_v4_native.py',  // CHv4 dylib FFI (Python binding)
+    'mining/cosmic_harmony_deeksha_fallback.py',
+    'mining/cosmic_harmony_deeksha_gpu.py',
     'native-libs/libcosmic_harmony.dylib', // CHv4 native lib (macOS)
+    'native-libs/libcosmic_harmony_deeksha.dylib',
   ];
 
   // Platform-specific exe names
@@ -2676,14 +2691,19 @@ function startMining(config) {
   minerGpuInitWatchdogTimer = null;
   gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
 
-  // ── CHv4.2 Merkabah GPU fast-path ─────────────────────────────────────────
-  // When the user selects CHv4.2, we spawn the GPU wrapper as the main
-  // minerProcess so that stop-mining, stats, and log output all work as normal.
-  if (String(config?.algorithm || '').toLowerCase() === 'cosmic_harmony_v4_2') {
+  // ── Legacy CHv4.2 Merkabah GPU fast-path (disabled by default) ────────────
+  // v2.9.8 runs unified Deeksha path. Legacy CHv4.2 path can be re-enabled
+  // only for diagnostics via ZION_ENABLE_LEGACY_CHV42=1.
+  const legacyChv42Enabled = String(process.env.ZION_ENABLE_LEGACY_CHV42 || '').trim() === '1';
+  if (legacyChv42Enabled && String(config?.algorithm || '').toLowerCase() === 'cosmic_harmony_v4_2') {
     const isPackaged = app.isPackaged;
-    const gpuScript = isPackaged
+    const gpuScriptPrimary = isPackaged
+      ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_deeksha_gpu.py')
+      : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_deeksha_gpu.py');
+    const gpuScriptLegacy = isPackaged
       ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_v42_gpu.py')
       : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_v42_gpu.py');
+    const gpuScript = fs.existsSync(gpuScriptPrimary) ? gpuScriptPrimary : gpuScriptLegacy;
 
     // Stejná venv resoluce jako pro ostatní Python minery
     const _venvCandidates = process.platform === 'win32'
@@ -6368,9 +6388,13 @@ ipcMain.handle('start-chv42-gpu', (event, cfg) => {
   const wallet = conf.wallet || '';
   const worker = conf.worker || 'desktop-agent';
   const isPackaged = app.isPackaged;
-  const gpuScript = isPackaged
+  const gpuScriptPrimary = isPackaged
+    ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_deeksha_gpu.py')
+    : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_deeksha_gpu.py');
+  const gpuScriptLegacy = isPackaged
     ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_v42_gpu.py')
     : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_v42_gpu.py');
+  const gpuScript = fs.existsSync(gpuScriptPrimary) ? gpuScriptPrimary : gpuScriptLegacy;
   const pyExe = process.platform === 'win32' ? 'python' : 'python3';
   const args = [gpuScript, '--pool', pool, '--wallet', wallet, '--worker', worker, '--backend', 'auto'];
   logApp('chv42-ipc-start', JSON.stringify({ pyExe, args }));

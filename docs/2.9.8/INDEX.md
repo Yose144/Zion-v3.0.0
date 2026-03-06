@@ -1,8 +1,10 @@
 # ZION v2.9.8 — Cosmic Harmony Deeksha (Unified)
 
-> Status: DRAFT (stability-first)
+> Status: ACTIVE (single-track)
 > Date: 2026-03-05
 > Cíl: sjednotit CHv3 revenue + CHv4/4.2 bezpečnost do jedné jednoduché a rychlé větve.
+
+> **Jediná aktivní cesta:** 2.9.8 je source of truth pro roadmapu, implementaci i release verdict.
 
 ## Dokumenty
 
@@ -11,9 +13,18 @@
 - [DEEKSHA_SCIENCE.md](DEEKSHA_SCIENCE.md) — **VĚDA**: kryptografický základ (NIST SHA-3/AES), memory-hard fyzika (roofline model), INT8 MLP (informační teorie), game theory minerů
 - [CHV_DEEKSHA_ARCHITECTURE.md](CHV_DEEKSHA_ARCHITECTURE.md) — **ARCHITEKTURA** (co a jak): modul mapa, pipeline, NpuBackend trait, dispatch, fáze implementace
 - [COSMIC_HARMONY_DEEKSHA_SPEC.md](COSMIC_HARMONY_DEEKSHA_SPEC.md) — jednotná algoritmická specifikace (konsenzusní parametry)
+- [ROADMAP_2.9.8.md](ROADMAP_2.9.8.md) — jednotná realizační roadmapa (single track)
 - [REVENUE_UNIFICATION_2.9.8.md](REVENUE_UNIFICATION_2.9.8.md) — zachování CHv3 revenue modelu bez regresí
 - [MIGRATION_PLAN_2.9.8.md](MIGRATION_PLAN_2.9.8.md) — implementační kroky, testy, rollout (fáze A→E)
 - [DEEKSHA_EKAM_CONCEPT_BRIDGE.md](DEEKSHA_EKAM_CONCEPT_BRIDGE.md) — překlad konceptu Deeksha/Ekam do 5 technických pravidel (A-E)
+- [GO_NO_GO_2.9.8.md](GO_NO_GO_2.9.8.md) — uzavírací checklist a release verdict pro 2.9.8
+
+## Řízení release (2.9.8 only)
+
+- Plán práce: `ROADMAP_2.9.8.md`
+- Technická specifikace: `COSMIC_HARMONY_DEEKSHA_SPEC.md`
+- Rozhodnutí o release: `GO_NO_GO_2.9.8.md`
+- Historický kontext 2.9.7: pouze referenční, neřídí 2.9.8 scope
 
 ## Jednověté rozhodnutí
 

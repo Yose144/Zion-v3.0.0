@@ -89,7 +89,7 @@ CANONICAL_EXPECTED_HEX = "f72031a1f648050f05e6719fd6df895bbd319590277267857316ba
 
 class _NativeLib:
     """
-    Obal pro libcosmic_harmony FFI.
+    Obal pro Deeksha native FFI.
 
     Hledá tyto symboly (v pořadí preferencí):
       zion_deeksha_hash(header, header_len, nonce, output[32]) -> i32
@@ -105,13 +105,12 @@ class _NativeLib:
 
     def _find_lib_path(self) -> Optional[Path]:
         system = platform.system()
-        lib_names = {
-            "Darwin":  "libcosmic_harmony.dylib",
-            "Linux":   "libcosmic_harmony.so.2.9.0",
-            "Windows": "cosmic_harmony.dll",
+        preferred_names = {
+            "Darwin":  ["libcosmic_harmony_deeksha.dylib", "libcosmic_harmony.dylib"],
+            "Linux":   ["libcosmic_harmony_deeksha.so.2.9.8", "libcosmic_harmony_deeksha.so", "libcosmic_harmony.so.2.9.0", "libcosmic_harmony.so"],
+            "Windows": ["cosmic_harmony_deeksha.dll", "cosmic_harmony.dll"],
         }
-        name = lib_names.get(system, "libcosmic_harmony.so")
-        fallback_names = ["libcosmic_harmony.so", "libcosmic_harmony.so.2"]
+        names = preferred_names.get(system, ["libcosmic_harmony_deeksha.so", "libcosmic_harmony.so"])
 
         # Najdi root projektu podle Cargo.toml
         this = Path(__file__).resolve()
@@ -121,17 +120,16 @@ class _NativeLib:
                 break
             root = root.parent
 
-        candidates = [
-            root / "L1" / name,
-            root / "L1" / "native-libs" / name,
-            root / "L1" / "native-libs" / "all" / name,
-            root / "target" / "release" / name,
-            root / "target" / "debug" / name,
-            Path(name),
-        ]
-        if system == "Linux":
-            for fb in fallback_names:
-                candidates.extend([root / "L1" / fb, Path(fb)])
+        candidates = []
+        for name in names:
+            candidates.extend([
+                root / "L1" / name,
+                root / "L1" / "native-libs" / name,
+                root / "L1" / "native-libs" / "all" / name,
+                root / "target" / "release" / name,
+                root / "target" / "debug" / name,
+                Path(name),
+            ])
 
         for p in candidates:
             if p.exists():
@@ -141,7 +139,7 @@ class _NativeLib:
     def _load(self) -> None:
         p = self._find_lib_path()
         if p is None:
-            log.warning("[Deeksha] libcosmic_harmony not found — pure Python fallback active")
+            log.warning("[Deeksha] native library not found — pure Python fallback active")
             return
         try:
             lib = ctypes.CDLL(str(p))

@@ -145,13 +145,15 @@ impl ShareProcessor {
             // Per-miner Prometheus metric
             crate::metrics::prometheus::inc_miner_share(miner_address, true);
 
-            // CHv3 byproducts (safe scaffolding): observe valid shares and sample intermediates.
+            // Cosmic Harmony byproducts (safe scaffolding): observe valid shares and sample intermediates.
             // This does NOT affect share validity, payouts, or consensus.
             if let Some(mm) = &self.merged_mining {
-                // Only for CHv3/ZION shares (avoid extra work on other algos)
+                // Only for ZION/CosmicHarmony shares (avoid extra work on other algos)
                 if share.algorithm.eq_ignore_ascii_case("cosmic_harmony")
                     || share.algorithm.eq_ignore_ascii_case("cosmic_harmony_v3")
                     || share.algorithm.eq_ignore_ascii_case("cosmic_harmony_v4")
+                    || share.algorithm.eq_ignore_ascii_case("cosmic_harmony_deeksha")
+                    || share.algorithm.eq_ignore_ascii_case("deeksha")
                     || share.algorithm.eq_ignore_ascii_case("cosmic")
                 {
                     let height = share.height.unwrap_or(0);

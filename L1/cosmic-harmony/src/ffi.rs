@@ -99,6 +99,74 @@ pub extern "C" fn zion_deeksha_self_test() -> i32 {
     if crate::deeksha::self_test() { 0 } else { 1 }
 }
 
+/// Batch mining helper for native backends (Metal/OpenCL/CUDA wrappers).
+///
+/// Prochází nonce interval `[nonce_start, nonce_start + nonce_count)` a vrací
+/// první nonce, kde `state0_le <= target_u32`.
+///
+/// # Returns
+/// * 1  = nalezeno (`out_nonce`, `out_hash` vyplněny)
+/// * 0  = nenalezeno
+/// * -1 = null pointer
+/// * -2 = invalid header_len
+#[no_mangle]
+pub unsafe extern "C" fn zion_deeksha_batch_mine(
+    header_ptr: *const u8,
+    header_len: usize,
+    nonce_start: u64,
+    nonce_count: u32,
+    target_u32: u32,
+    out_nonce_ptr: *mut u64,
+    out_hash_ptr: *mut u8,
+) -> i32 {
+    if header_ptr.is_null() || out_nonce_ptr.is_null() || out_hash_ptr.is_null() {
+        return -1;
+    }
+    if header_len == 0 || header_len > 1024 {
+        return -2;
+    }
+
+    let header = slice::from_raw_parts(header_ptr, header_len);
+    let out_hash = slice::from_raw_parts_mut(out_hash_ptr, 32);
+
+    for i in 0..nonce_count {
+        let nonce = nonce_start.wrapping_add(i as u64);
+        let result = crate::deeksha::cosmic_harmony_deeksha(header, nonce);
+
+        let state0 = u32::from_le_bytes([
+            result.data[0],
+            result.data[1],
+            result.data[2],
+            result.data[3],
+        ]);
+
+        if state0 <= target_u32 {
+            *out_nonce_ptr = nonce;
+            out_hash.copy_from_slice(&result.data);
+            return 1;
+        }
+    }
+
+    0
+}
+
+/// Simple Deeksha benchmark helper (returns hash rate in H/s).
+#[no_mangle]
+pub extern "C" fn zion_deeksha_benchmark(nonce_count: u32) -> f64 {
+    use std::time::Instant;
+
+    let count = nonce_count.max(1);
+    let header = b"ZION_DEEKSHA_BENCHMARK_HEADER_V298";
+    let start = Instant::now();
+
+    for i in 0..count {
+        let _ = crate::deeksha::cosmic_harmony_deeksha(header, i as u64);
+    }
+
+    let elapsed = start.elapsed().as_secs_f64();
+    (count as f64) / elapsed.max(1e-9)
+}
+
 /// Vrátí hex-encoded kanonický test vektor (null-terminated, statický buffer).
 /// Pouze pro diagnostiku a parity testy.
 #[no_mangle]

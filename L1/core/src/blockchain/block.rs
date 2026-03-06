@@ -36,8 +36,8 @@ impl Algorithm {
         //     the CosmicHarmony pipeline. Supporting 4 independent sharecheck paths
         //     adds significant attack surface at launch.
         //
-        //  4. CHv4 fork path — NPU Mixing upgrade (height ≥ 200_000) is expressed
-        //     as a vertical upgrade WITHIN CosmicHarmony, not a horizontal rotation.
+        //  4. Deeksha canonical path — runtime is unified inside CosmicHarmony
+        //     instead of horizontal multi-algo rotation.
         //
         // Blake3 / RandomX / Yescrypt variants REMAIN in the enum for:
         //   - historical test-vector compatibility
@@ -100,11 +100,8 @@ impl BlockHeader {
         // Use algorithm-specific hash
         match self.algorithm {
             Algorithm::CosmicHarmony => {
-                // Height-aware unified PoW dispatcher (B-CRIT-01).
-                //   CHV4_NPU_FORK_HEIGHT = 0 → CHv4 (NPU Mixing INT8 MLP) always active from genesis.
-                //   CHV3_MEMORY_HARD_FORK_HEIGHT = 0 → memory-hard (512 KiB scratchpad) always active.
-                // Governed by CHV4_NPU_FORK_HEIGHT = 0 in algorithms_npu.rs.
-                // Fork-height policy sign-off: docs/2.9.7/CHV4_ACTIVATION_POLICY.md
+                // Height-aware unified PoW dispatcher (v2.9.8).
+                // Deeksha canonical path is active from genesis.
                 let blob_hex = Block::build_template_blob(
                     self.version,
                     self.height,

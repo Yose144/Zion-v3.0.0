@@ -5,7 +5,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.core
-    image: zion-core:2.9.7
+    image: zion-core:2.9.8
     container_name: zion-core
     restart: unless-stopped
     ports:
@@ -41,7 +41,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.pool
-    image: zion-pool:2.9.7
+    image: zion-pool:2.9.8
     container_name: zion-pool
     restart: unless-stopped
     ports:
@@ -76,7 +76,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.miner
-    image: zion-miner:2.9.7
+    image: zion-miner:2.9.8
     container_name: zion-miner
     restart: unless-stopped
     depends_on:
@@ -89,7 +89,7 @@ services:
       - "--worker"
       - "testnet-miner"
       - "--algorithm"
-      - "cosmic_harmony_v4_2"
+      - "cosmic_harmony"
       - "--threads"
       - "1"
       - "--xmr-pool"
@@ -108,7 +108,7 @@ services:
         hard: -1
     volumes:
       - /dev/hugepages:/dev/hugepages
-    cpus: 3.5
+    cpus: ${MINER_CPUS:-3.5}
     networks:
       - zion-net
 

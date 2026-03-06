@@ -237,14 +237,11 @@ fn npu_mixing_cpu_int8(scratchpad: &[u8; 64]) -> [u8; 64] {
     // ──────── VRSTVA 1: Linear(64→128) ────────
     let mut hidden = [0i32; 128];
 
-    #[cfg(target_feature = "neon")]
-    {
-        // ARM NEON optimalizace: vektorové MAC operace
-        // Prozatím skalární (NEON intrinsics budou přidány za native-npu)
-        layer1_scalar(&input_i32, &w.w1, &w.b1, &mut hidden);
+    #[cfg(target_arch = "aarch64")]
+    unsafe {
+        layer1_neon(&input_i32, &w.w1, &w.b1, &mut hidden);
     }
-
-    #[cfg(not(target_feature = "neon"))]
+    #[cfg(not(target_arch = "aarch64"))]
     {
         layer1_scalar(&input_i32, &w.w1, &w.b1, &mut hidden);
     }
@@ -257,7 +254,15 @@ fn npu_mixing_cpu_int8(scratchpad: &[u8; 64]) -> [u8; 64] {
 
     // ──────── VRSTVA 2: Linear(128→64) ────────
     let mut output_i32 = [0i32; 64];
-    layer2_scalar(&hidden, &w.w2, &w.b2, &mut output_i32);
+
+    #[cfg(target_arch = "aarch64")]
+    unsafe {
+        layer2_neon(&hidden, &w.w2, &w.b2, &mut output_i32);
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    {
+        layer2_scalar(&hidden, &w.w2, &w.b2, &mut output_i32);
+    }
 
     // LayerNorm pro output
     layer_norm_int8(&mut output_i32, &w.scale2);
@@ -307,6 +312,90 @@ fn layer2_scalar(
         for j in 0..128 {
             acc += hidden[j] * w2[i][j] as i32;
         }
+        output[i] = (acc >> 12).clamp(-128, 127);
+    }
+}
+
+// -----------------------------------------------------------------------
+// AARCH64 NEON IMPLEMENTATION FOR CPU FALLBACK
+// -----------------------------------------------------------------------
+#[cfg(target_arch = "aarch64")]
+use std::arch::aarch64::*;
+
+#[cfg(target_arch = "aarch64")]
+#[inline]
+pub unsafe fn layer1_neon(
+    input: &[i32; 64],
+    w1: &[[i8; 64]; 128],
+    b1: &[i8; 128],
+    hidden: &mut [i32; 128],
+) {
+    for i in 0..128 {
+        let mut sum_vec = vdupq_n_s32(0);
+        let mut j = 0;
+        while j < 64 {
+            let in0 = vld1q_s32(input.as_ptr().add(j));
+            let in1 = vld1q_s32(input.as_ptr().add(j + 4));
+            let in2 = vld1q_s32(input.as_ptr().add(j + 8));
+            let in3 = vld1q_s32(input.as_ptr().add(j + 12));
+            
+            let w_v = vld1q_s8(w1[i].as_ptr().add(j));
+            
+            let w_low16 = vmovl_s8(vget_low_s8(w_v));
+            let w_high16 = vmovl_s8(vget_high_s8(w_v));
+            
+            let w0 = vmovl_s16(vget_low_s16(w_low16));
+            let w1_vec = vmovl_s16(vget_high_s16(w_low16));
+            let w2 = vmovl_s16(vget_low_s16(w_high16));
+            let w3 = vmovl_s16(vget_high_s16(w_high16));
+            
+            sum_vec = vmlaq_s32(sum_vec, in0, w0);
+            sum_vec = vmlaq_s32(sum_vec, in1, w1_vec);
+            sum_vec = vmlaq_s32(sum_vec, in2, w2);
+            sum_vec = vmlaq_s32(sum_vec, in3, w3);
+            
+            j += 16;
+        }
+        let acc: i32 = vaddvq_s32(sum_vec) + (b1[i] as i32 * 32);
+        hidden[i] = (acc >> 12).clamp(-128, 127);
+    }
+}
+
+#[cfg(target_arch = "aarch64")]
+#[inline]
+pub unsafe fn layer2_neon(
+    hidden: &[i32; 128],
+    w2: &[[i8; 128]; 64],
+    b2: &[i8; 64],
+    output: &mut [i32; 64],
+) {
+    for i in 0..64 {
+        let mut sum_vec = vdupq_n_s32(0);
+        let mut j = 0;
+        while j < 128 {
+            let in0 = vld1q_s32(hidden.as_ptr().add(j));
+            let in1 = vld1q_s32(hidden.as_ptr().add(j + 4));
+            let in2 = vld1q_s32(hidden.as_ptr().add(j + 8));
+            let in3 = vld1q_s32(hidden.as_ptr().add(j + 12));
+            
+            let w_v = vld1q_s8(w2[i].as_ptr().add(j));
+            
+            let w_low16 = vmovl_s8(vget_low_s8(w_v));
+            let w_high16 = vmovl_s8(vget_high_s8(w_v));
+            
+            let w0 = vmovl_s16(vget_low_s16(w_low16));
+            let w1_vec = vmovl_s16(vget_high_s16(w_low16));
+            let w2_vec = vmovl_s16(vget_low_s16(w_high16));
+            let w3 = vmovl_s16(vget_high_s16(w_high16));
+            
+            sum_vec = vmlaq_s32(sum_vec, in0, w0);
+            sum_vec = vmlaq_s32(sum_vec, in1, w1_vec);
+            sum_vec = vmlaq_s32(sum_vec, in2, w2_vec);
+            sum_vec = vmlaq_s32(sum_vec, in3, w3);
+            
+            j += 16;
+        }
+        let acc: i32 = vaddvq_s32(sum_vec) + (b2[i] as i32 * 32);
         output[i] = (acc >> 12).clamp(-128, 127);
     }
 }
@@ -440,6 +529,106 @@ impl NpuBackend for CpuNpuBackend {
 }
 
 // -----------------------------------------------------------------------
+// ONNX NPU BACKEND (feature = "native-npu")
+// -----------------------------------------------------------------------
+
+#[cfg(feature = "native-npu")]
+use ort::{session::{Session, builder::GraphOptimizationLevel}};
+
+#[cfg(feature = "native-npu")]
+pub struct OnnxNpuBackend {
+    session: std::sync::Mutex<Session>,
+}
+
+#[cfg(feature = "native-npu")]
+impl OnnxNpuBackend {
+    pub fn new() -> Result<Self, String> {
+        // Inicializace ORT prostředí globálně (lze volat jen jednou)
+        let _ = ort::init()
+            .with_name("DeekshaNPU")
+            .commit(); // typ v ort 2.0+ vrací jiny typ, ignorujeme vysledek
+            
+        // Načíst model
+        let model_path = "deeksha_mlp.onnx";
+        
+        // V ort 2.0 se execution providers nastavuji trochu jinak
+        let mut builder = Session::builder().map_err(|e| e.to_string())?
+            .with_optimization_level(GraphOptimizationLevel::Level3).map_err(|e| e.to_string())?
+            .with_intra_threads(1).map_err(|e| e.to_string())?;
+            
+        // Pro jednoduchost zatim jedeme na defaulte (na macos to zkusí CoreML pres append_execution_provider)
+        // builder = builder.with_coreml(Default::default())? ... pokročilé
+            
+        let session = builder.commit_from_file(model_path).map_err(|e| e.to_string())?;
+
+        Ok(Self { session: std::sync::Mutex::new(session) })
+    }
+}
+
+#[cfg(feature = "native-npu")]
+impl NpuBackend for OnnxNpuBackend {
+    fn mix(&self, input: &[u8; 64]) -> [u8; 64] {
+        // Konverze vstupu na i64 tensor pro přesné operace bez přetečení v ONNX
+        let mut input_i64 = vec![0i64; 64];
+        for i in 0..64 {
+            input_i64[i] = (input[i] as i8) as i64;
+        }
+        
+        let shape = vec![1, 64];
+        
+        // Zpracování do ONNX tenzoru (ort 2.0 pouziva ndarray nebo Tensor::from_array)
+        let input_tensor = match ort::value::Tensor::from_array((shape, input_i64)) {
+            Ok(v) => v,
+            Err(_) => return npu_mixing_cpu_int8(input),
+        };
+        
+        // V ort 2.0.0 inputs makro vraci literal Vec 
+        let inputs_vec = ort::inputs!["input" => input_tensor];
+        
+        // Ziskani zamku (byl odmazan predchozim prikazem)
+        let mut session_lock = self.session.lock().unwrap();
+        let outputs = match session_lock.run(inputs_vec) {
+            Ok(v) => v,
+            Err(_) => return npu_mixing_cpu_int8(input),
+        };
+        
+        // Extrakce
+        let extracted = outputs["output"].try_extract_tensor::<i64>();
+        let out_tensor = match extracted {
+            Ok(v) => v,
+            Err(_) => return npu_mixing_cpu_int8(input),
+        };
+        
+        // Zpět do u8 - v ort 2.0 out_tensor je tuple (Shape, &[T])
+        let flat_data = out_tensor.1;
+        let mut result = [0u8; 64];
+        for i in 0..64 {
+            result[i] = (flat_data[i] as i32).clamp(-128, 127) as u8;
+        }
+        
+        result
+    }
+
+    fn name(&self) -> &'static str {
+        "onnx-npu"
+    }
+
+    fn self_test(&self) -> Result<(), NpuSelfTestError> {
+        let zeros = [0u8; 64];
+        let onnx_out = self.mix(&zeros);
+        let cpu_out = npu_mixing_cpu_int8(&zeros);
+        
+        if onnx_out != cpu_out {
+            return Err(NpuSelfTestError {
+                backend: self.name(),
+                detail: format!("deterministic unity failed! ONNX {:?} != CPU {:?}", &onnx_out[..4], &cpu_out[..4]),
+            });
+        }
+        Ok(())
+    }
+}
+
+// -----------------------------------------------------------------------
 // Circuit Breaker — Rule E: Operational Compassion
 // -----------------------------------------------------------------------
 
@@ -496,8 +685,20 @@ impl DeekshaCircuitBreaker {
     /// Vyber nejlepší dostupný backend a proveď self-test.
     /// CPU-only pokud primární selže self-test.
     pub fn build_best_available() -> Self {
-        // TODO: zkus ONNX backend (#[cfg(feature = "native-npu")])
-        // Pro 2.9.8: primární backend = CPU INT8
+        #[cfg(feature = "native-npu")]
+        {
+            if let Ok(onnx_backend) = OnnxNpuBackend::new() {
+                if onnx_backend.self_test().is_ok() {
+                    return Self::new(Box::new(onnx_backend));
+                } else {
+                    eprintln!("[Deeksha] NPU ONNX self-test failed, using CPU fallback");
+                }
+            } else {
+                eprintln!("[Deeksha] NPU ONNX initialization failed, using CPU fallback");
+            }
+        }
+
+        // Pro 2.9.8: primární backend = CPU INT8 fallback
         let primary = Box::new(CpuNpuBackend);
         let cb = Self::new(primary);
         if let Err(e) = cb.primary.self_test() {
@@ -717,7 +918,6 @@ mod tests {
         let mut data = [100i32, -50, 80, -30, 0, 127, -128, 60,
                         10, 20, 30, 40, 50, 60, 70, 80];
         let scale = [256i16; 16];
-        let _before_range: i32 = *data.iter().max().unwrap() - *data.iter().min().unwrap();
         layer_norm_int8(&mut data, &scale);
         // Po normalizaci by data měla být v ±127
         for &v in &data {

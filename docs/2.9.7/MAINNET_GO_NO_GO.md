@@ -3,6 +3,9 @@
 > Datum: 2026-03-05  
 > Zdroj pravdy: `docs/2.9.7/MAINNET_READINESS_UNIFIED.md`
 
+> Handoff (2026-03-06): Aktivní release řízení je sjednoceno do 2.9.8:  
+> `docs/2.9.8/INDEX.md` → `docs/2.9.8/ROADMAP_2.9.8.md` → `docs/2.9.8/GO_NO_GO_2.9.8.md`
+
 ## Rozhodnutí (aktuální)
 
 | Oblast | Kritérium | Stav | Důkaz / Odkaz | Poznámka |

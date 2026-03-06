@@ -1,5 +1,8 @@
 # Migration Plan — ZION v2.9.8 (Cosmic Harmony Deeksha)
 
+> Poznámka (2026-03-06): Tento dokument je implementační detail.  
+> Aktivní řízení release je centralizováno v `ROADMAP_2.9.8.md` + `GO_NO_GO_2.9.8.md`.
+
 ## Fáze A — Spec freeze (1 den)
 
 1. Označit `COSMIC_HARMONY_DEEKSHA_SPEC.md` jako jediný canonical source.
