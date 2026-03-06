@@ -367,6 +367,240 @@ pub fn chv4_npu_weights_flat() -> ChV4WeightsFlat {
 }
 
 // ============================================================================
+// NPUBACKEND TRAIT + DEEKSHA CIRCUIT BREAKER
+// ============================================================================
+
+/// Error vrácený při selhání NPU self-testu.
+#[derive(Debug)]
+pub struct NpuSelfTestError {
+    pub backend: &'static str,
+    pub detail: String,
+}
+
+impl std::fmt::Display for NpuSelfTestError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "NPU self-test failed [{}]: {}", self.backend, self.detail)
+    }
+}
+
+/// Trait pro NPU mixing backend.
+///
+/// Implementujeme:
+/// - `CpuNpuBackend` — vždy dostupný, reference truth
+/// - `DeekshaCircuitBreaker` — wrapper s fallback na CPU při chybě
+pub trait NpuBackend: Send + Sync {
+    /// Deterministický mix 64-bytového vstupu → 64-bytový výstup.
+    /// MUSÍ být bitově identický s `CpuNpuBackend` pro stejný vstup.
+    fn mix(&self, input: &[u8; 64]) -> [u8; 64];
+
+    /// Jméno backendu (pro telemetrii a diagnostiku).
+    fn name(&self) -> &'static str;
+
+    /// Self-test na referenčním vektoru.
+    fn self_test(&self) -> Result<(), NpuSelfTestError>;
+}
+
+// -----------------------------------------------------------------------
+// CPU backend — reference truth, vždy dostupný
+// -----------------------------------------------------------------------
+
+/// CPU INT8 MLP backend — reference truth pro konsenzus.
+pub struct CpuNpuBackend;
+
+impl NpuBackend for CpuNpuBackend {
+    #[inline]
+    fn mix(&self, input: &[u8; 64]) -> [u8; 64] {
+        npu_mixing_step(input)
+    }
+
+    fn name(&self) -> &'static str {
+        "cpu-int8"
+    }
+
+    fn self_test(&self) -> Result<(), NpuSelfTestError> {
+        // Referenční vektor: deterministický výstup pro nulový vstup
+        let zeros = [0u8; 64];
+        let out1 = npu_mixing_step(&zeros);
+        let out2 = npu_mixing_step(&zeros);
+        if out1 != out2 {
+            return Err(NpuSelfTestError {
+                backend: self.name(),
+                detail: "non-deterministic: two calls differ".into(),
+            });
+        }
+        // Výstup nesmí být celý nulový
+        if out1.iter().all(|&b| b == 0) {
+            return Err(NpuSelfTestError {
+                backend: self.name(),
+                detail: "output is all-zero (degenerate)".into(),
+            });
+        }
+        Ok(())
+    }
+}
+
+// -----------------------------------------------------------------------
+// Circuit Breaker — Rule E: Operational Compassion
+// -----------------------------------------------------------------------
+
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+
+/// Stav circuit breakeru.
+const CB_CLOSED: u32 = 0;   // normální provoz
+const CB_OPEN: u32 = 1;     // chyba: používá fallback
+const CB_HALF_OPEN: u32 = 2; // zkouší recovery
+
+/// Práh chyb před otevřením (Open stav).
+const CB_ERROR_THRESHOLD: u32 = 3;
+
+/// Cooldown v ms před pokusem o HalfOpen.
+const CB_COOLDOWN_MS: u64 = 30_000; // 30 s
+
+/// Circuit Breaker wrapper kolem NPU backendu.
+///
+/// Při opakovaných selháních přepne na CPU fallback.
+/// Po cooldownu zkusí obnovit primární backend (HalfOpen).
+pub struct DeekshaCircuitBreaker {
+    /// Primární backend (CPU nebo budoucí ONNX/SIMD).
+    primary: Box<dyn NpuBackend>,
+    /// CPU fallback — vždy k dispozici.
+    fallback: CpuNpuBackend,
+    /// Stav: CB_CLOSED | CB_OPEN | CB_HALF_OPEN
+    state: AtomicU32,
+    /// Počet po sobě jdoucích chyb.
+    error_count: AtomicU32,
+    /// Unix timestamp (ms) kdy se otevřel (0 = nikdy).
+    opened_at_ms: AtomicU64,
+    /// Počet hashů přesměrovaných na fallback (telemetrie).
+    pub fallback_count: AtomicU64,
+}
+
+impl DeekshaCircuitBreaker {
+    /// Inicializuj s daným primárním backendem.
+    pub fn new(primary: Box<dyn NpuBackend>) -> Self {
+        Self {
+            primary,
+            fallback: CpuNpuBackend,
+            state: AtomicU32::new(CB_CLOSED),
+            error_count: AtomicU32::new(0),
+            opened_at_ms: AtomicU64::new(0),
+            fallback_count: AtomicU64::new(0),
+        }
+    }
+
+    /// CPU-only instance (primární == CPU == fallback).
+    pub fn cpu_only() -> Self {
+        Self::new(Box::new(CpuNpuBackend))
+    }
+
+    /// Vyber nejlepší dostupný backend a proveď self-test.
+    /// CPU-only pokud primární selže self-test.
+    pub fn build_best_available() -> Self {
+        // TODO: zkus ONNX backend (#[cfg(feature = "native-npu")])
+        // Pro 2.9.8: primární backend = CPU INT8
+        let primary = Box::new(CpuNpuBackend);
+        let cb = Self::new(primary);
+        if let Err(e) = cb.primary.self_test() {
+            // Self-test selhal — log a switch na vždy-CPU
+            // (tracing nemusí být init; použij eprintln jako fallback)
+            eprintln!("[Deeksha] NPU self-test failed: {e}, using CPU fallback");
+        }
+        cb
+    }
+
+    #[inline]
+    fn now_ms() -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64
+    }
+
+    #[inline]
+    fn current_state(&self) -> u32 {
+        let state = self.state.load(Ordering::Relaxed);
+        if state == CB_OPEN {
+            // Zkontroluj cooldown → přechod do HalfOpen
+            let opened = self.opened_at_ms.load(Ordering::Relaxed);
+            if Self::now_ms().saturating_sub(opened) >= CB_COOLDOWN_MS {
+                // CAS: Open → HalfOpen
+                let _ = self.state.compare_exchange(
+                    CB_OPEN,
+                    CB_HALF_OPEN,
+                    Ordering::Relaxed,
+                    Ordering::Relaxed,
+                );
+                return CB_HALF_OPEN;
+            }
+        }
+        state
+    }
+
+    #[inline]
+    fn record_success(&self) {
+        self.error_count.store(0, Ordering::Relaxed);
+        // HalfOpen → Closed po úspěchu
+        let _ = self.state.compare_exchange(
+            CB_HALF_OPEN,
+            CB_CLOSED,
+            Ordering::Relaxed,
+            Ordering::Relaxed,
+        );
+    }
+
+    #[inline]
+    fn record_failure(&self) {
+        let prev = self.error_count.fetch_add(1, Ordering::Relaxed);
+        if prev + 1 >= CB_ERROR_THRESHOLD {
+            self.opened_at_ms.store(Self::now_ms(), Ordering::Relaxed);
+            self.state.store(CB_OPEN, Ordering::Relaxed);
+        }
+    }
+}
+
+impl NpuBackend for DeekshaCircuitBreaker {
+    fn mix(&self, input: &[u8; 64]) -> [u8; 64] {
+        match self.current_state() {
+            CB_CLOSED | CB_HALF_OPEN => {
+                // Zkus primární; při panice zachyť a degraduj
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    self.primary.mix(input)
+                }));
+                match result {
+                    Ok(out) => {
+                        self.record_success();
+                        out
+                    }
+                    Err(_) => {
+                        self.record_failure();
+                        self.fallback_count.fetch_add(1, Ordering::Relaxed);
+                        self.fallback.mix(input)
+                    }
+                }
+            }
+            _ => {
+                // CB_OPEN — přímý fallback, bez pokusu
+                self.fallback_count.fetch_add(1, Ordering::Relaxed);
+                self.fallback.mix(input)
+            }
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "deeksha-circuit-breaker"
+    }
+
+    fn self_test(&self) -> Result<(), NpuSelfTestError> {
+        self.primary.self_test()
+    }
+}
+
+// Safety: DeekshaCircuitBreaker drží Box<dyn NpuBackend + Send + Sync>
+// a CpuNpuBackend — obojí je Send + Sync.
+unsafe impl Send for DeekshaCircuitBreaker {}
+unsafe impl Sync for DeekshaCircuitBreaker {}
+
+// ============================================================================
 // TESTS
 // ============================================================================
 

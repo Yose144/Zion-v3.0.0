@@ -53,9 +53,10 @@
 
 pub mod algorithm_library; // CH v3 Algorithm Module Library (12+ algorithms)
 pub mod algorithms;
-pub mod algorithms_npu; // CHv4 NPU Mixing Step — deterministický INT8 MLP
+pub mod algorithms_npu; // CHv4 NPU Mixing Step + NpuBackend trait + CircuitBreaker
 pub mod algorithms_opt; // Optimized versions (no nightly required)
 pub mod config;
+pub mod deeksha; // v2.9.8 canonical consensus hash — ONE canonical path
 pub mod engine;
 pub mod ffi; // C-compatible FFI for Python/Node.js
 pub mod gpu; // GPU mining (OpenCL/Metal)
@@ -73,6 +74,7 @@ pub mod whattomine; // WhatToMine/CoinGecko API integration
 pub use algorithm_library::{AlgorithmInfo, AlgorithmModuleLibrary, PipelineExecutionResult};
 pub use algorithms_npu::{CHV4_NPU_FORK_HEIGHT, CHV4_MLP_GENESIS_SEED, npu_mixing_step, npu_mixing_hash64};
 pub use algorithms_opt::{cosmic_harmony_v3, cosmic_harmony_v4, cosmic_harmony_v4_2, cosmic_harmony_with_height, CHV4_2_FORK_HEIGHT, Hash32, Hash64};
+pub use deeksha::{cosmic_harmony_deeksha, CHV_DEEKSHA_FORK_HEIGHT, self_test as deeksha_self_test};
 #[cfg(feature = "parallel")]
 pub use algorithms_opt::{
     cosmic_harmony_v3_parallel,

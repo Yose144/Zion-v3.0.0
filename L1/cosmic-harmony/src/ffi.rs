@@ -26,7 +26,91 @@ use crate::algorithms_opt::{
 use std::slice;
 
 /// Version of the FFI interface
-pub const FFI_VERSION: u32 = 1;
+pub const FFI_VERSION: u32 = 2; // bumped pro Deeksha (v2.9.8)
+
+// ============================================================================
+// DEEKSHA CANONICAL HASH (v2.9.8) — nové FFI entry pointy
+// ============================================================================
+
+/// Cosmic Harmony Deeksha — canonical consensus hash (v2.9.8).
+///
+/// Doporučená funkce pro všechna nová volání z Python/Node.js/C.
+/// Nahrazuje `cosmic_harmony_v3_hash` pro mainnet 2.9.8+.
+///
+/// # Arguments
+/// * `header_ptr`  — ukazatel na blokový header (≤ 80 B)
+/// * `header_len`  — délka headeru
+/// * `nonce`       — těžební nonce (u64)
+/// * `output_ptr`  — ukazatel na 32 B výstupní buffer (caller-allocated)
+///
+/// # Returns
+/// * 0 = úspěch
+/// * -1 = null pointer
+/// * -2 = invalid header_len
+#[no_mangle]
+pub unsafe extern "C" fn zion_deeksha_hash(
+    header_ptr: *const u8,
+    header_len: usize,
+    nonce: u64,
+    output_ptr: *mut u8,
+) -> i32 {
+    if header_ptr.is_null() || output_ptr.is_null() {
+        return -1;
+    }
+    if header_len == 0 || header_len > 1024 {
+        return -2;
+    }
+    let header = slice::from_raw_parts(header_ptr, header_len);
+    let result = crate::deeksha::cosmic_harmony_deeksha(header, nonce);
+    let output = slice::from_raw_parts_mut(output_ptr, 32);
+    output.copy_from_slice(&result.data);
+    0
+}
+
+/// Height-aware Deeksha dispatch — automaticky vybere správnou verzi.
+///
+/// Pro height ≥ `CHV_DEEKSHA_FORK_HEIGHT` (= 0) volá Deeksha.
+/// Zpětně kompatibilní s pooly, které posílají height.
+#[no_mangle]
+pub unsafe extern "C" fn zion_deeksha_hash_with_height(
+    header_ptr: *const u8,
+    header_len: usize,
+    nonce: u64,
+    height: u64,
+    output_ptr: *mut u8,
+) -> i32 {
+    if header_ptr.is_null() || output_ptr.is_null() {
+        return -1;
+    }
+    if header_len == 0 || header_len > 1024 {
+        return -2;
+    }
+    let header = slice::from_raw_parts(header_ptr, header_len);
+    let result = crate::algorithms_opt::cosmic_harmony_with_height(header, nonce, height);
+    let output = slice::from_raw_parts_mut(output_ptr, 32);
+    output.copy_from_slice(&result.data);
+    0
+}
+
+/// Self-test Deeksha pipeline — vrátí 0 pokud OK, 1 pokud selže.
+/// Volat jednou při startu native libu pro rychlou sanitaci.
+#[no_mangle]
+pub extern "C" fn zion_deeksha_self_test() -> i32 {
+    if crate::deeksha::self_test() { 0 } else { 1 }
+}
+
+/// Vrátí hex-encoded kanonický test vektor (null-terminated, statický buffer).
+/// Pouze pro diagnostiku a parity testy.
+#[no_mangle]
+pub extern "C" fn zion_deeksha_test_vector_hex() -> *const std::ffi::c_char {
+    use std::sync::OnceLock;
+    static BUF: OnceLock<std::ffi::CString> = OnceLock::new();
+    let s = BUF.get_or_init(|| {
+        let hex = crate::deeksha::generate_test_vector();
+        std::ffi::CString::new(hex).unwrap_or_default()
+    });
+    s.as_ptr()
+}
 
 // ============================================================================
 // SINGLE HASH FUNCTIONS
