@@ -127,11 +127,7 @@ pub fn validate_block(
         //    c) Timestamp sanity — clamp ±2× target (±120 s)
         //       Reject blocks whose timestamp deviates more than MAX_TIMESTAMP_DRIFT
         //       from the previous block.  This limits manipulation of LWMA inputs.
-        let delta = if block.header.timestamp >= prev.header.timestamp {
-            block.header.timestamp - prev.header.timestamp
-        } else {
-            0 // Already rejected above, but be safe
-        };
+        let delta = block.header.timestamp.saturating_sub(prev.header.timestamp);
 
         // Maximum gap: prev_timestamp + MAX_TIMESTAMP_DRIFT
         // (We allow 0 delta for fast blocks, but cap the upper end.)

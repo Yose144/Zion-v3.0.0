@@ -21,6 +21,7 @@ struct TestEtcStream {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct TestPoolBlock {
     stratum: String,
     wallet: String,

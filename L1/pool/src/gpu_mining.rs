@@ -43,7 +43,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 // ============================  CONFIG  ======================================
 
@@ -429,6 +429,7 @@ impl GpuMiner {
 // ============================  ETC / ETHASH  ================================
 
 /// Current ETC job
+#[allow(dead_code)]
 #[derive(Clone, Debug, Default)]
 struct EtcJob {
     header_hash: Vec<u8>,   // 32 bytes
@@ -505,7 +506,7 @@ impl GpuMiner {
                 "eth_getWork" => {
                     if let Some(params) = msg["params"].as_array() {
                         let job = EtcJob {
-                            header_hash: hex_to_bytes(params.get(0).and_then(|v| v.as_str()).unwrap_or("")),
+                            header_hash: hex_to_bytes(params.first().and_then(|v| v.as_str()).unwrap_or("")),
                             seed_hash: hex_to_bytes(params.get(1).and_then(|v| v.as_str()).unwrap_or("")),
                             target: hex_to_bytes(params.get(2).and_then(|v| v.as_str()).unwrap_or("")),
                             height: params.get(3)
@@ -523,7 +524,7 @@ impl GpuMiner {
 
                         // Update stats job string
                         *self.stats.etc_current_job.lock().await =
-                            params.get(0).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                            params.first().and_then(|v| v.as_str()).unwrap_or("").to_string();
                     }
                 }
                 _ => {
@@ -574,17 +575,16 @@ impl GpuMiner {
 // ──── ETC mining thread (runs outside tokio) ─────────────────────────────────
 
 fn etc_mine_loop(
-    job_ref: Arc<Mutex<Option<EtcJob>>>,
-    new_job_flag: Arc<AtomicBool>,
-    stats: Arc<GpuMiningStats>,
-    write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+    _job_ref: Arc<Mutex<Option<EtcJob>>>,
+    _new_job_flag: Arc<AtomicBool>,
+    _stats: Arc<GpuMiningStats>,
+    _write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
     #[allow(dead_code)] _wallet: String,
     #[allow(dead_code)] _threads: usize,
 ) {
     #[cfg(not(feature = "native-ethash"))]
     {
         info!("[ETC] native-ethash feature not enabled — mining disabled, connection only");
-        return;
     }
 
     #[cfg(feature = "native-ethash")]
@@ -668,6 +668,7 @@ fn etc_mine_loop(
 // ============================  ERG / AUTOLYKOS  ==============================
 
 /// Current ERG job (Nicehash-stratum style)
+#[allow(dead_code)]
 #[derive(Clone, Debug, Default)]
 struct ErgJob {
     job_id: String,
@@ -757,7 +758,7 @@ impl GpuMiner {
                         // 4 params fallback: [job_id, msg_hex, nbits, height]
                         let (job_id, header_hex, height, target_raw) = if params.len() >= 7 {
                             (
-                                params.get(0).and_then(|v| v.as_str()).unwrap_or(""),
+                                params.first().and_then(|v| v.as_str()).unwrap_or(""),
                                 params.get(2).and_then(|v| v.as_str()).unwrap_or(""),
                                 params.get(1).and_then(|v| v.as_u64()).map(|n| n as u32).unwrap_or(0),
                                 // params[6] = target as decimal OR hex string
@@ -765,7 +766,7 @@ impl GpuMiner {
                             )
                         } else {
                             (
-                                params.get(0).and_then(|v| v.as_str()).unwrap_or(""),
+                                params.first().and_then(|v| v.as_str()).unwrap_or(""),
                                 params.get(1).and_then(|v| v.as_str()).unwrap_or(""),
                                 params.get(3).and_then(|v| v.as_u64()).map(|n| n as u32).unwrap_or(0),
                                 "",
@@ -851,15 +852,14 @@ impl GpuMiner {
 // ──── ERG mining thread ───────────────────────────────────────────────────────
 
 fn erg_mine_loop(
-    job_ref: Arc<Mutex<Option<ErgJob>>>,
-    new_job_flag: Arc<AtomicBool>,
-    stats: Arc<GpuMiningStats>,
-    write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+    _job_ref: Arc<Mutex<Option<ErgJob>>>,
+    _new_job_flag: Arc<AtomicBool>,
+    _stats: Arc<GpuMiningStats>,
+    _write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) {
     #[cfg(not(feature = "native-autolykos"))]
     {
         info!("[ERG] native-autolykos feature not enabled — mining disabled, connection only");
-        return;
     }
 
     #[cfg(feature = "native-autolykos")]
@@ -949,7 +949,7 @@ fn decimal_to_bytes32(s: &str) -> Vec<u8> {
     let mut result = [0u8; 32];
     for ch in s.chars() {
         if let Some(digit) = ch.to_digit(10) {
-            let mut carry = digit as u32;
+            let mut carry = digit;
             for i in (0..32).rev() {
                 let val = result[i] as u32 * 10 + carry;
                 result[i] = (val & 0xFF) as u8;
@@ -961,6 +961,7 @@ fn decimal_to_bytes32(s: &str) -> Vec<u8> {
 }
 
 /// Return true if a < b (32-byte big-endian comparison)
+#[allow(dead_code)]
 fn hash_lt(a: &[u8], b: &[u8]) -> bool {
     let a = if a.len() >= 32 { &a[..32] } else { return false };
     let b = if b.len() >= 32 { &b[..32] } else { return false };
@@ -972,6 +973,7 @@ fn hash_lt(a: &[u8], b: &[u8]) -> bool {
 }
 
 /// Random starting nonce (using simple XOR-shift for no-std compatibility)
+#[allow(dead_code)]
 fn rand_nonce() -> u64 {
     // Use process ID + addr of stack variable as entropy seed
     let mut x: u64 = std::time::SystemTime::now()

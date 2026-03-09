@@ -29,11 +29,12 @@ pub mod blake3 {
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum Algorithm {
     /// ZION native algorithm — Cosmic Harmony v3 (CHv3)
     /// 5-phase pipeline with memory-hard scratchpad (fork-gated)
+    #[default]
     CosmicHarmony,
     /// Monero-style RandomX (CPU optimized) — used for revenue mining
     RandomX,
@@ -45,6 +46,7 @@ pub enum Algorithm {
 
 impl Algorithm {
     /// Parse algorithm from string
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "cosmic" | "cosmic_harmony" | "cosmicharmony" | "cosmic-harmony"
@@ -109,8 +111,4 @@ impl std::fmt::Display for Algorithm {
     }
 }
 
-impl Default for Algorithm {
-    fn default() -> Self {
-        Self::CosmicHarmony
-    }
-}
+

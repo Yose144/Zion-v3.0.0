@@ -225,6 +225,7 @@ impl ConnectionLimiter {
 #[derive(Clone)]
 pub struct MessageRateLimiter {
     /// Peer IP → (timestamps of recent messages, misbehavior_score)
+    #[allow(clippy::type_complexity)]
     peers: Arc<Mutex<HashMap<IpAddr, (Vec<u64>, u32)>>>,
     /// Max messages per peer per window
     max_messages: usize,

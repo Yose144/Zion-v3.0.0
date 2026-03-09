@@ -17,7 +17,7 @@
 //! Používá zion-cosmic-harmony-v3 crate's MetalMiner s packed struct buffer
 //! layoutem odpovídajícím Metal compute shaderu.
 
-use super::{GpuDevice, GpuMiner, GpuPlatform};
+use super::{GpuDevice, GpuMiner};
 use anyhow::{anyhow, Result};
 use std::time::Instant;
 

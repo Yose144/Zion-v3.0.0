@@ -267,17 +267,15 @@ impl MultiChainMiner {
             .collect();
 
         // Submit any found solutions
-        for result in results {
-            if let Some((nonce, hash)) = result {
-                info!("💎 Found share! Nonce: {:08x}", nonce);
-                stratum
-                    .submit_share(job_id, nonce, &hex::encode(&hash))
-                    .await?;
+        for (nonce, hash) in results.into_iter().flatten() {
+            info!("💎 Found share! Nonce: {:08x}", nonce);
+            stratum
+                .submit_share(job_id, nonce, &hex::encode(&hash))
+                .await?;
 
-                // Update stats
-                let mut stats = self.stats.write().await;
-                stats.shares_found += 1;
-            }
+            // Update stats
+            let mut stats = self.stats.write().await;
+            stats.shares_found += 1;
         }
 
         Ok(())

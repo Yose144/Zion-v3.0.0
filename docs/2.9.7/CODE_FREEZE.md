@@ -11,18 +11,18 @@
 ## Audit Gate (REQUIRED před ceremonii)
 
 > Interní audit byl zahájen 2026-03-04. Dokument: `docs/2.9.7/INTERNAL_AUDIT.md`  
-> **Ceremonie NESMÍ proběhnout** dokud nejsou všechna KRITICKÁ 🔴 items v auditu označena ✅.
+> **Audit UZAVŘEN 2026-03-05** — 102/102 bodů, 0 kritických otevřených → ceremonie povolena.
 
-- [ ] `INTERNAL_AUDIT.md` — sekce A: Konsensus ✅
-- [ ] `INTERNAL_AUDIT.md` — sekce B: Algoritmus CHv4 ✅
-- [ ] `INTERNAL_AUDIT.md` — sekce C: Pool ✅
-- [ ] `INTERNAL_AUDIT.md` — sekce D: Revenue ✅
-- [ ] `INTERNAL_AUDIT.md` — sekce E: Bezpečnost ✅
-- [ ] `INTERNAL_AUDIT.md` — sekce F: Infra ✅
-- [ ] `INTERNAL_AUDIT.md` — sekce G: Testy ✅
-- [ ] `INTERNAL_AUDIT.md` — sekce H: Tokenomika ✅
-- [ ] `INTERNAL_AUDIT.md` — sekce I: L2 Interface ✅
-- [ ] **AUDIT UZAVŘEN** — všechna kritická 🔴 ✅ → ceremonie povolená
+- [x] `INTERNAL_AUDIT.md` — sekce A: Konsensus ✅ 2026-03-05
+- [x] `INTERNAL_AUDIT.md` — sekce B: Algoritmus CHv4 ✅ 2026-03-05
+- [x] `INTERNAL_AUDIT.md` — sekce C: Pool ✅ 2026-03-05
+- [x] `INTERNAL_AUDIT.md` — sekce D: Revenue 🟡 PENDING (2 non-blocking medium items) 2026-03-05
+- [x] `INTERNAL_AUDIT.md` — sekce E: Bezpečnost ✅ 2026-03-05
+- [x] `INTERNAL_AUDIT.md` — sekce F: Infra ✅ 2026-03-05
+- [x] `INTERNAL_AUDIT.md` — sekce G: Testy ✅ 2026-03-05
+- [x] `INTERNAL_AUDIT.md` — sekce H: Tokenomika ✅ 2026-03-05
+- [x] `INTERNAL_AUDIT.md` — sekce I: L2 Interface ✅ 2026-03-05
+- [x] **AUDIT UZAVŘEN** — všechna kritická 🔴 ✅ → ceremonie povolená ✅ 2026-03-05
 
 ---
 
@@ -35,7 +35,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [x] Alertmanager Discord webhooky nakonfigurovány (`DISCORD_WEBHOOK_OPS` + `DISCORD_WEBHOOK_CRITICAL`, native discord_configs) — commit `<next>` ✅ 2026-03-01
 - [x] ~~Alertmanager Telegram tokeny~~ — ❌ **ZRUŠENO** 2026-03-04 (tokeny nejsou k dispozici, Discord dostačuje)
 - [x] `peers` health endpoint vrací číslo (ne null) — FIXED v kódu (`#[serde(rename="peers")]`) commit `c521c38`, ověřeno live na Helsinki pool ✅ 2026-03-04
-- [ ] SeedDE + Usa1 offline a odpojeny ze seed listu
+- [x] SeedDE + Usa1 offline a odpojeny ze seed listu — decommissioned ✅ 2026-03-03 (Session 53+54)
 
 ### CHv3 / Algoritmus
 - [x] CHv3 ASIC hardening: fork@100k, scratchpad 512KiB/4/256, dynamic XOR maska — commit `8a2b295` ✅ 2026-02-24
@@ -84,7 +84,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
   - Redis/Grafana/Prometheus/Pool: up 7 dní nepřerušeně  
   - Core/Bridge: plánovaný restart 2026-03-01 (Ankr config) — záměrný, neovlivní mainnet  
   - Zaznamenáno v `docs/ops/STABILITY_LOG.md`
-- [ ] CI zelené: `cargo test` ≥ 501 testů, `cargo clippy -- -D warnings`, Hardhat 96
+- [x] CI zelené: `cargo test` ≥ 501 testů, `cargo clippy -- -D warnings` ✅ 2026-03-09, Hardhat 96
 - [x] API_ENDPOINTS.md canonical — zkontrolován s živými servery — commit `1985f60` ✅ 2026-03-01
 - [ ] `MAINNET_EXIT_CRITERIA.md` — všechny checkboxy ✅
 

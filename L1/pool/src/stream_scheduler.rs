@@ -467,7 +467,7 @@ impl StreamScheduler {
             .unwrap_or_default()
             .as_secs();
         let elapsed = if last > 0 { now.saturating_sub(last) } else { u64::MAX };
-        let remaining = if elapsed < fleet_min_secs { fleet_min_secs - elapsed } else { 0 };
+        let remaining = fleet_min_secs.saturating_sub(elapsed);
 
         serde_json::json!({
             "fleet_switch_count": self.fleet_switch_count.load(Ordering::Relaxed),

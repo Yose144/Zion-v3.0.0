@@ -66,7 +66,7 @@ pub fn start_dns_refresh(peers: Arc<PeerManager>) {
             println!("[Discovery] Refreshing DNS seeds...");
             for seed in SEED_NODES {
                 // Only non-IP seeds need DNS lookup
-                if seed.contains('.') && seed.split(':').next().map_or(true, |h| !h.parse::<std::net::IpAddr>().is_ok()) {
+                if seed.contains('.') && seed.split(':').next().is_none_or(|h| h.parse::<std::net::IpAddr>().is_err()) {
                     let domain = match seed.rsplit_once(':') {
                         Some((host, _port)) => host.to_string(),
                         None => seed.to_string(),

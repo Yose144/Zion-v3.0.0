@@ -409,9 +409,9 @@ pub fn cosmic_harmony_v3(block_header: &[u8], nonce: u64) -> Hash32 {
     cosmic_fusion_opt(&step4.data)
 }
 
-/// ============================================================================
-/// COSMIC HARMONY v4 PIPELINE — NPU Mixing Step
-/// ============================================================================
+// ============================================================================
+// COSMIC HARMONY v4 PIPELINE — NPU Mixing Step
+// ============================================================================
 
 /// Full Cosmic Harmony v4 pipeline:
 /// Keccak → SHA3 → GoldenMatrix → MemoryHard → [NPU Mixing] → CosmicFusion
@@ -447,9 +447,9 @@ pub fn cosmic_harmony_v4(block_header: &[u8], nonce: u64) -> Hash32 {
     cosmic_fusion_opt(&step5.data)
 }
 
-/// ============================================================================
-/// COSMIC HARMONY v4.2 PIPELINE — Merkabah Dual-Spin
-/// ============================================================================
+// ============================================================================
+// COSMIC HARMONY v4.2 PIPELINE — Merkabah Dual-Spin
+// ============================================================================
 
 /// Fork výška pro aktivaci CHv4.2 Merkabah Dual-Spin.
 ///
@@ -501,6 +501,9 @@ pub fn cosmic_harmony_v4_2(block_header: &[u8], nonce: u64) -> Hash32 {
 ///
 /// Pro mainnet 2.9.8: CHV_DEEKSHA_FORK_HEIGHT = 0 → vždy Deeksha.
 /// Legacy větve zachovány pouze pro unit testy specifických verzí.
+// CHV_DEEKSHA_FORK_HEIGHT = 0 → height >= 0 is always true for u64, which is intentional
+// (Deeksha canonical path is active from genesis). Legacy branches are fork-governance preserved.
+#[allow(clippy::absurd_extreme_comparisons)]
 #[inline]
 pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32 {
     use crate::deeksha::CHV_DEEKSHA_FORK_HEIGHT;
@@ -520,6 +523,8 @@ pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) 
 }
 
 /// Height-aware CHv3 selector pro bezpečný fork rollout.
+// CHV3_MEMORY_HARD_FORK_HEIGHT = 0 → height >= 0 always true for u64, intentional.
+#[allow(clippy::absurd_extreme_comparisons)]
 #[inline]
 pub fn cosmic_harmony_v3_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32 {
     if let Some(force) = runtime_memory_hard_override() {
@@ -553,6 +558,8 @@ pub struct Chv3Intermediates {
 }
 
 /// Height-aware CHv3 selector + intermediates.
+// CHV3_MEMORY_HARD_FORK_HEIGHT = 0 → height >= 0 always true for u64, intentional.
+#[allow(clippy::absurd_extreme_comparisons)]
 #[inline]
 pub fn cosmic_harmony_v3_with_height_intermediates(
     block_header: &[u8],

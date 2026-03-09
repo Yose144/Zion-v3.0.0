@@ -103,7 +103,7 @@ impl Algorithm {
         }
     }
 
-    pub fn to_native(&self) -> NativeAlgorithm {
+    pub fn to_native(self) -> NativeAlgorithm {
         match self {
             Self::CosmicHarmony => NativeAlgorithm::CosmicHarmony,
             Self::CosmicHarmonyV42 => NativeAlgorithm::CosmicHarmonyV42,
@@ -708,7 +708,7 @@ impl UniversalMiner {
 
                 // Occasionally fetch status snapshot for visibility.
                 status_tick = status_tick.wrapping_add(1);
-                if status_tick % 30 == 0 {
+                if status_tick.is_multiple_of(30) {
                     let status_id = stratum.next_request_id();
                     if let Ok(status_resp) = stratum
                         .send_custom_value(ncl.build_status_message(status_id))
@@ -1015,7 +1015,7 @@ impl UniversalMiner {
                         // Adjust batch size for the new algorithm.
                         // If this backend has a fixed chip dispatch size, keep using it
                         // across algo switches so responsiveness stays consistent.
-                        batch_size = miner.natural_batch_size().unwrap_or_else(|| match active_algo {
+                        batch_size = miner.natural_batch_size().unwrap_or(match active_algo {
                             Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyDeeksha => 14_000_000,
                             Algorithm::Ethash | Algorithm::Autolykos | Algorithm::KawPow => 100_000,
                             Algorithm::RandomX | Algorithm::Yescrypt => 5_000,
@@ -1084,7 +1084,7 @@ impl UniversalMiner {
             batch_count += 1;
 
             // Report GPU hashrate every 10 batches (debug only)
-            if batch_count % 10 == 0 {
+            if batch_count.is_multiple_of(10) {
                 let elapsed = gpu_start_time.elapsed().as_secs_f64();
                 let gpu_hashrate = gpu_total_hashes as f64 / elapsed;
                 log::debug!(
@@ -1126,7 +1126,7 @@ impl UniversalMiner {
                         let cpu_hash = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_with_height(
                             &blob_bytes, nonce, job.height,
                         );
-                        let cpu_hex = hex::encode(&cpu_hash.data);
+                        let cpu_hex = hex::encode(cpu_hash.data);
                         let gpu_state0 = u32::from_le_bytes([
                             hash[0], hash[1], hash[2], hash[3],
                         ]);

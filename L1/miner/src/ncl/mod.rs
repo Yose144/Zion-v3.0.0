@@ -680,7 +680,7 @@ impl NCLClient {
 
         // allocation 0.3 = every ~3rd cycle is AI
         let ai_frequency = (1.0 / self.config.allocation) as u64;
-        mining_cycle_count % ai_frequency == 0
+        mining_cycle_count.is_multiple_of(ai_frequency)
     }
 }
 
