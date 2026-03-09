@@ -1,6 +1,6 @@
 # ZION 2.9.8 — Go/No-Go Checklist
 
-> Datum: 2026-03-06 (aktualizace 2026-03-09)  
+> Datum: 2026-03-06 (aktualizace 2026-03-09, 2026-03-09T15:10Z)  
 > Scope: uzavření algoritmu 2.9.8 (Deeksha canonical path) + release readiness gate  
 > Zdroj pravdy: `docs/2.9.8/INDEX.md`, `L1/pool/tests/chv4_e2e.rs`, aktuální validační běhy
 
@@ -26,6 +26,7 @@
 | Produkční mining acceptance | Live accepted shares na Helsinki/USA/Asia rostou | ✅ PASS | 2026-03-09 10:44 UTC: shares ACCEPTED, algo=cosmic_harmony, job=h1-e673f633 |
 | Produkční block growth | Výška řetězce stabilně roste po upgradu | ✅ PASS | 2026-03-09 10:44 UTC: height=4→5, difficulty=1052, BLOCK FOUND potvrzeno |
 | LMDB chain recovery | Wipe + fresh genesis po data inconsistency | ✅ DONE | 2026-03-09: data.mdb wipe, restart, genesis e673f633 |
+| Asia node recovery | Asia genesis hash mismatch opravena — rebuild + IBD sync | ✅ DONE | 2026-03-09T15:10Z: 195 bloků staženo, mesh Helsinki+USA+Asia plný |
 
 ---
 
@@ -39,9 +40,10 @@
 
 ## Co zbývá pro GO
 
-1. Opravit/obnovit Helsinki pool službu (stratum + API endpointy).  
-2. Potvrdit live metriky: accepted shares trend, hashrate trend, block height growth.  
-3. Po 24h stabilním běhu přepnout verdict na **GO** a doplnit sign-off.
+1. ~~Opravit/obnovit Helsinki pool službu~~ → ✅ DONE  
+2. ~~Asia genesis hash mismatch~~ → ✅ DONE (rebuild + IBD)  
+3. Potvrdit 24h metriky: accepted shares trend, hashrate trend, block height growth.  
+4. Po 24h stabilním běhu (cíl: 2026-03-10 ~10:45 UTC) přepnout verdict na **GO** a doplnit sign-off.
 
 ---
 
