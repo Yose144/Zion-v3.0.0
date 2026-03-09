@@ -1,6 +1,6 @@
 # ZION 2.9.8 — Go/No-Go Checklist
 
-> Datum: 2026-03-06  
+> Datum: 2026-03-06 (aktualizace 2026-03-09)  
 > Scope: uzavření algoritmu 2.9.8 (Deeksha canonical path) + release readiness gate  
 > Zdroj pravdy: `docs/2.9.8/INDEX.md`, `L1/pool/tests/chv4_e2e.rs`, aktuální validační běhy
 
@@ -8,8 +8,8 @@
 
 ## Rozhodnutí (aktuální)
 
-- **Aktuální verdict:** **NO-GO**
-- **Důvod:** Kódový scope 2.9.8 je validovaný, ale produkční infra gate není ještě uzavřená (Helsinki pool recover + live acceptance/block growth potvrzení).
+- **Aktuální verdict:** **NO-GO → 24h PENDING (2026-03-09)**
+- **Důvod:** Chain recovery provedena 2026-03-09 — LMDB data inconsistency opravena (wipe + fresh genesis). Bloky rostou, shares přijímány. Čeká se na 24h stabilní běh.
 
 ---
 
@@ -23,8 +23,9 @@
 | Desktop agent syntax | JS syntax validní | ✅ PASS | `node --check APP&WEB/desktop-agent/src/main.js` |
 | Native backend ABI | Metal/OpenCL/CUDA wrappers používají Deeksha-native symboly s legacy fallbackem | ✅ PASS | `zion_deeksha_batch_mine` + fallback na `cosmic_harmony_v4_2_batch_mine` |
 | Alias kompatibilita | `cosmic_harmony/chv4/deeksha` aliasy pro pool flow | ✅ PASS | parser + validator coverage v `L1/pool/tests/chv4_e2e.rs` |
-| Produkční mining acceptance | Live accepted shares na Helsinki/USA/Asia rostou | ⏳ PENDING | nutné potvrdit po stabilizaci Helsinki pool služby |
-| Produkční block growth | Výška řetězce stabilně roste po upgradu | ⏳ PENDING | nutné potvrdit po obnově Helsinki orchestrace |
+| Produkční mining acceptance | Live accepted shares na Helsinki/USA/Asia rostou | ✅ PASS | 2026-03-09 10:44 UTC: shares ACCEPTED, algo=cosmic_harmony, job=h1-e673f633 |
+| Produkční block growth | Výška řetězce stabilně roste po upgradu | ✅ PASS | 2026-03-09 10:44 UTC: height=4→5, difficulty=1052, BLOCK FOUND potvrzeno |
+| LMDB chain recovery | Wipe + fresh genesis po data inconsistency | ✅ DONE | 2026-03-09: data.mdb wipe, restart, genesis e673f633 |
 
 ---
 
