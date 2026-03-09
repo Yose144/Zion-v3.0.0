@@ -32,7 +32,7 @@ static LOCAL_NODE_NONCE: OnceLock<u64> = OnceLock::new();
 
 /// Get this node's random nonce (generated once per process lifetime).
 fn node_nonce() -> u64 {
-    *LOCAL_NODE_NONCE.get_or_init(|| rand::random::<u64>())
+    *LOCAL_NODE_NONCE.get_or_init(rand::random::<u64>)
 }
 
 /// Get global sync status (for RPC/metrics).

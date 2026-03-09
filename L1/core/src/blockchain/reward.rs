@@ -1,36 +1,36 @@
-/// ZION Emission Schedule — Decade Decay (Model A)
-///
-/// Total Supply:      144,000,000,000 ZION (144B)
-/// Genesis Premine:    16,280,000,000 ZION (16.28B — 11.31%)
-/// Mining Emission:   127,720,000,000 ZION (127.72B — 88.69%)
-///
-/// Block time:   60 seconds
-/// Mining years: 100+ (2026–2126+)
-/// Decade Decay: -20% every 5,256,000 blocks (10 years)
-/// Tail emission: 725 ZION/block from decade 11+ (forever)
-///
-/// Decade schedule:
-///   D1  2026-2036   5,400.067 ZION   100%     ~28.38B
-///   D2  2036-2046   4,320.054 ZION    80%     ~22.71B
-///   D3  2046-2056   3,456.043 ZION    64%     ~18.16B
-///   D4  2056-2066   2,764.834 ZION    51.2%   ~14.53B
-///   D5  2066-2076   2,211.867 ZION    41.0%   ~11.63B
-///   D6  2076-2086   1,769.494 ZION    32.8%    ~9.30B
-///   D7  2086-2096   1,415.595 ZION    26.2%    ~7.44B
-///   D8  2096-2106   1,132.476 ZION    21.0%    ~5.95B
-///   D9  2106-2116     905.981 ZION    16.8%    ~4.76B
-///   D10 2116-2126     724.785 ZION    13.4%    ~3.81B
-///   D11 2126+         724.785 ZION    tail     ∞
-///
-/// Block reward distribution:
-///   89%  Miner
-///    5%  Humanitarian tithe
-///    5%  L5/L6 ZION Issobella fund
-///    1%  Pool fee
-///
-/// Additional funding (off-chain): ZION Oasis (L4) revenue share
-///
-/// All values in flowers (1 ZION = 1_000_000_000_000 flowers, 12 decimal places — WP3.0 spec).
+//! ZION Emission Schedule — Decade Decay (Model A)
+//!
+//! Total Supply:      144,000,000,000 ZION (144B)
+//! Genesis Premine:    16,280,000,000 ZION (16.28B — 11.31%)
+//! Mining Emission:   127,720,000,000 ZION (127.72B — 88.69%)
+//!
+//! Block time:   60 seconds
+//! Mining years: 100+ (2026–2126+)
+//! Decade Decay: -20% every 5,256,000 blocks (10 years)
+//! Tail emission: 725 ZION/block from decade 11+ (forever)
+//!
+//! Decade schedule:
+//!   D1  2026-2036   5,400.067 ZION   100%     ~28.38B
+//!   D2  2036-2046   4,320.054 ZION    80%     ~22.71B
+//!   D3  2046-2056   3,456.043 ZION    64%     ~18.16B
+//!   D4  2056-2066   2,764.834 ZION    51.2%   ~14.53B
+//!   D5  2066-2076   2,211.867 ZION    41.0%   ~11.63B
+//!   D6  2076-2086   1,769.494 ZION    32.8%    ~9.30B
+//!   D7  2086-2096   1,415.595 ZION    26.2%    ~7.44B
+//!   D8  2096-2106   1,132.476 ZION    21.0%    ~5.95B
+//!   D9  2106-2116     905.981 ZION    16.8%    ~4.76B
+//!   D10 2116-2126     724.785 ZION    13.4%    ~3.81B
+//!   D11 2126+         724.785 ZION    tail     ∞
+//!
+//! Block reward distribution:
+//!   89%  Miner
+//!    5%  Humanitarian tithe
+//!    5%  L5/L6 ZION Issobella fund
+//!    1%  Pool fee
+//!
+//! Additional funding (off-chain): ZION Oasis (L4) revenue share
+//!
+//! All values in flowers (1 ZION = 1_000_000_000_000 flowers, 12 decimal places — WP3.0 spec).
 
 // ---------------------------------------------------------------------------
 // Constants

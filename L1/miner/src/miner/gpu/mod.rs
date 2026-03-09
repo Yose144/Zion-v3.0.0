@@ -152,8 +152,7 @@ pub fn create_miner(device: &GpuDevice) -> Result<Box<dyn GpuMiner>> {
             let scratchpad_per_thread_bytes: usize = 65_536;
             let safe_vram_bytes = (device.memory_mb as usize * 1024 * 1024) / 5; // 20%
             let batch = (safe_vram_bytes / scratchpad_per_thread_bytes)
-                .max(512)
-                .min(8192);
+                .clamp(512, 8192);
             log::info!(
                 "Metal CHv4 batch_size={} ({} MiB scratchpad, VRAM={} MiB)",
                 batch,

@@ -117,10 +117,12 @@ fn detect_gpu_available() -> bool {
 ///   Always 2miners / built-in defaults
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum PoolPreference {
     /// NiceHash — pays BTC directly, uses nicehash_btc_addr as username
     NiceHash,
     /// HeroMiners — multi-coin pool with per-coin REST API + stratum
+    #[default]
     HeroMiners,
     /// ZPool — multi-algo pool, auto-switches within algo, pays BTC
     ZPool,
@@ -128,11 +130,6 @@ pub enum PoolPreference {
     Default,
 }
 
-impl Default for PoolPreference {
-    fn default() -> Self {
-        Self::HeroMiners
-    }
-}
 
 fn default_pool_preference() -> PoolPreference {
     PoolPreference::HeroMiners
@@ -1193,7 +1190,7 @@ async fn fetch_coingecko_prices() -> Result<HashMap<String, f64>, String> {
 /// Fills `price_usd` where it is 0 (ZPool, NiceHash) and, if CoinGecko has the price
 /// AND the feed's own price already exists, replaces it with the CoinGecko live price
 /// (more accurate/real-time than WTM cached data).
-fn enrich_prices(data: &mut Vec<CoinProfitData>, prices: &HashMap<String, f64>) {
+fn enrich_prices(data: &mut [CoinProfitData], prices: &HashMap<String, f64>) {
     for coin in data.iter_mut() {
         if let Some(&p) = prices.get(coin.coin.to_uppercase().as_str()) {
             if p > 0.0 {
@@ -1215,7 +1212,7 @@ fn enrich_prices(data: &mut Vec<CoinProfitData>, prices: &HashMap<String, f64>) 
 /// an immediate algo switch.
 ///
 /// Returns the number of coins clamped.
-fn apply_outlier_clamp(data: &mut Vec<CoinProfitData>, history: &VecDeque<Vec<(String, f64)>>) -> usize {
+fn apply_outlier_clamp(data: &mut [CoinProfitData], history: &VecDeque<Vec<(String, f64)>>) -> usize {
     if data.is_empty() {
         return 0;
     }
@@ -1238,7 +1235,7 @@ fn apply_outlier_clamp(data: &mut Vec<CoinProfitData>, history: &VecDeque<Vec<(S
     // Compute median of the historical distribution
     let mut sorted = all_scores.clone();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let median = if sorted.len() % 2 == 0 {
+    let median = if sorted.len().is_multiple_of(2) {
         (sorted[sorted.len() / 2 - 1] + sorted[sorted.len() / 2]) / 2.0
     } else {
         sorted[sorted.len() / 2]

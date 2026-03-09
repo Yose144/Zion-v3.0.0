@@ -13,7 +13,7 @@
 //!
 //! GPU Mining: Uses Metal (Apple Silicon) for Ethash with full DAG.
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use log::{debug, error, info, warn};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;

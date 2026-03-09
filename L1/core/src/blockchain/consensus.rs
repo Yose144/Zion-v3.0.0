@@ -1,15 +1,15 @@
-/// ZION Consensus — Difficulty Adjustment Algorithm
-///
-/// LWMA (Linearly Weighted Moving Average) as specified in MAINNET_CONSTITUTION:
-///   - Target block time:    60 seconds
-///   - Window size:          60 blocks
-///   - Max change per block: ±25%
-///   - Timestamp sanity:     clamp ±2× target (30–120s per solve time)
-///   - Min difficulty:       1,000
-///   - Max difficulty:       u64::MAX / 1000
-///
-/// Reference: Zawy's LWMA (used by Monero, Grin, LOKI, etc.)
-/// https://github.com/zawy12/difficulty-algorithms/issues/3
+//! ZION Consensus — Difficulty Adjustment Algorithm
+//!
+//! LWMA (Linearly Weighted Moving Average) as specified in MAINNET_CONSTITUTION:
+//!   - Target block time:    60 seconds
+//!   - Window size:          60 blocks
+//!   - Max change per block: ±25%
+//!   - Timestamp sanity:     clamp ±2× target (30–120s per solve time)
+//!   - Min difficulty:       1,000
+//!   - Max difficulty:       u64::MAX / 1000
+//!
+//! Reference: Zawy's LWMA (used by Monero, Grin, LOKI, etc.)
+//! https://github.com/zawy12/difficulty-algorithms/issues/3
 
 // AUDIT-FIX P1-02: Removed dead `check()` function that always returned true.
 
