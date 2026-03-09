@@ -467,7 +467,9 @@ mod connection_tests {
     #[test]
     fn test_default_difficulty() {
         let conn = Connection::new("s1".to_string(), test_addr());
-        assert_eq!(conn.difficulty, 500_000);
+        // Default 500 — CPU-friendly starting point; VarDiff calibrates up for GPU miners.
+        // Changed from 500_000 (GPU-only) which caused CPU miners to never submit a share.
+        assert_eq!(conn.difficulty, 500);
     }
 
     #[test]
