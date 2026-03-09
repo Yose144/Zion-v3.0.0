@@ -84,7 +84,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
   - Redis/Grafana/Prometheus/Pool: up 7 dní nepřerušeně  
   - Core/Bridge: plánovaný restart 2026-03-01 (Ankr config) — záměrný, neovlivní mainnet  
   - Zaznamenáno v `docs/ops/STABILITY_LOG.md`
-- [x] CI zelené: `cargo test` ≥ 501 testů, `cargo clippy -- -D warnings` ✅ 2026-03-09, Hardhat 96
+- [x] CI zelené: `cargo test` 557 testů (0 selhání) ✅ 2026-03-09, `cargo clippy -- -D warnings` ✅ 2026-03-09, Hardhat 96
 - [x] API_ENDPOINTS.md canonical — zkontrolován s živými servery — commit `1985f60` ✅ 2026-03-01
 - [ ] `MAINNET_EXIT_CRITERIA.md` — všechny checkboxy ✅
 
