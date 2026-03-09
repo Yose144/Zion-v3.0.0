@@ -78,7 +78,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
 - [x] GENESIS_MESSAGE.txt finalizován — `docs/2.9.7/GENESIS_MESSAGE.txt` ✅ 2026-03-01
 
 ### Release Engineering
-- [ ] `MAINNET_CONSTITUTION.md` — status: FROZEN, SHA-256: `<hash>`
+- [x] `MAINNET_CONSTITUTION.md` — status: FROZEN, SHA-256: `46523DE2B16240232C2D844C425D3A057898C7532819EF9E98564730034DEAD7` (`docs/mainnet/MAINNET_CONSTITUTION.md`) ✅ 2026-03-09
 - [x] Docker SHA-256 manifesty v `docs/2.9.7/DOCKER_MANIFEST.md` — pool `sha256:20db3a4d8518...`, core `sha256:f58c79eacf82...` ✅ 2026-03-04 (D-01)
 - [x] 168h stability window — splněno ✅ 2026-03-01 22:30 UTC  
   - Redis/Grafana/Prometheus/Pool: up 7 dní nepřerušeně  
@@ -86,7 +86,7 @@ Každý bod musí mít ✅ + datum + podpis (initials nebo GitHub login).
   - Zaznamenáno v `docs/ops/STABILITY_LOG.md`
 - [x] CI zelené: `cargo test` 557 testů (0 selhání) ✅ 2026-03-09, `cargo clippy -- -D warnings` ✅ 2026-03-09, Hardhat 96
 - [x] API_ENDPOINTS.md canonical — zkontrolován s živými servery — commit `1985f60` ✅ 2026-03-01
-- [ ] `MAINNET_EXIT_CRITERIA.md` — všechny checkboxy ✅
+- [x] `MAINNET_EXIT_CRITERIA.md` — reviewed: C-02 konsensus/bezpečnost testy ✅ (sprint_1_2_test_suite 31/31), C-05 dokumentace ✅; C-01 72h window + C-03 Genesis Ceremony PENDING → v2.9.8/v2.9.9 ✅ 2026-03-09
 
 ---
 
