@@ -1,18 +1,18 @@
-/// ZION Fee Market — Fee Burning Model
-///
-/// Design principles:
-/// 1. **All transaction fees are burned** — they are NOT paid to the miner.
-///    The coinbase output is capped at the block reward; fees are destroyed.
-/// 2. Minimum fee prevents dust spam and zero-cost DoS.
-/// 3. Fee rate = fee / tx_size_bytes — mempool sorts by highest fee rate.
-/// 4. Total supply is *deflationary* over time thanks to fee burning.
-///
-/// Fee burning rationale:
-///   - Miner incentive comes from the constant 5,400.067 ZION block reward.
-///   - Burning prevents miner-extractable fee games (MEV).
-///   - Long-term: as emission ends (2071), burned supply creates scarcity.
-///
-/// All values in atomic units (1 ZION = 1,000,000 atomic units).
+//! ZION Fee Market — Fee Burning Model
+//!
+//! Design principles:
+//! 1. **All transaction fees are burned** — they are NOT paid to the miner.
+//!    The coinbase output is capped at the block reward; fees are destroyed.
+//! 2. Minimum fee prevents dust spam and zero-cost DoS.
+//! 3. Fee rate = fee / tx_size_bytes — mempool sorts by highest fee rate.
+//! 4. Total supply is *deflationary* over time thanks to fee burning.
+//!
+//! Fee burning rationale:
+//!   - Miner incentive comes from the constant 5,400.067 ZION block reward.
+//!   - Burning prevents miner-extractable fee games (MEV).
+//!   - Long-term: as emission ends (2071), burned supply creates scarcity.
+//!
+//! All values in atomic units (1 ZION = 1,000,000 atomic units).
 
 // ---------------------------------------------------------------------------
 // Constants

@@ -468,6 +468,7 @@ impl Inner {
     /// When `force_allow` is `true` the `MAX_REORG_DEPTH` check is skipped.
     /// The IBD fork-resolution handler sets this to `true` because the global
     /// `is_ibd()` flag may already be cleared by the time we get here.
+    #[allow(clippy::question_mark)]
     pub fn reorg_to_fork(
         &self,
         fork_point_height: u64,

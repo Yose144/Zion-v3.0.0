@@ -1,10 +1,10 @@
-/// ZION Cosmic Harmony — Unified Deeksha Wrapper
-///
-/// This module delegates ALL hashing to the canonical `zion-cosmic-harmony-v3` crate.
-/// Legacy CH v1/v2 implementations have been archived to `archive/legacy-algorithms/`.
-///
-/// Runtime pro v2.9.8 je sjednocen přes `cosmic_harmony_with_height()`
-/// s canonical Deeksha cestou (fork height = 0).
+//! ZION Cosmic Harmony — Unified Deeksha Wrapper
+//!
+//! This module delegates ALL hashing to the canonical `zion-cosmic-harmony-v3` crate.
+//! Legacy CH v1/v2 implementations have been archived to `archive/legacy-algorithms/`.
+//!
+//! Runtime pro v2.9.8 je sjednocen přes `cosmic_harmony_with_height()`
+//! s canonical Deeksha cestou (fork height = 0).
 
 /// Blockchain convenience: algorithm-specific PoW hash.
 ///

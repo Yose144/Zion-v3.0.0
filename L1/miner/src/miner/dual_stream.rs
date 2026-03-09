@@ -59,6 +59,7 @@ use crate::stratum::ethstratum::ExternalCoin;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Dual mining mode — maps 1:1 to LolMiner `--dualmode` argument names
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DualMode {
     /// ALPH (Blake3) — most popular GPU dual partner, uses DAG-idle cycles
@@ -197,7 +198,7 @@ impl DualMode {
     }
 
     /// Map to `ExternalCoin` (used by `ExternalMiner` / `EthStratumClient`)
-    pub fn to_external_coin(&self) -> ExternalCoin {
+    pub fn to_external_coin(self) -> ExternalCoin {
         match self {
             Self::AlephDual => ExternalCoin::ALPH,
             Self::KasDual   => ExternalCoin::KAS,
