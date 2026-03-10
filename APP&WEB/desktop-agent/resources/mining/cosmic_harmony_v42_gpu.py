@@ -1044,7 +1044,7 @@ class DeekshaOpenCLBackend:
 
         hdr_arr = np.frombuffer(header[:128].ljust(128, b"\x00"), dtype=np.uint8)
         sp_arr  = np.zeros(nonce_count * 65536, dtype=np.uint8)  # scratchpad pool
-        rn_arr  = np.zeros(1, dtype=np.uint64)
+        rn_arr  = np.full(1, np.uint32(0xFFFFFFFF), dtype=np.uint32)
         rh_arr  = np.zeros(32, dtype=np.uint8)
 
         mf = cl.mem_flags
@@ -1076,14 +1076,14 @@ class DeekshaOpenCLBackend:
         )
         self._queue.finish()
 
-        out_nonce = np.empty(1, dtype=np.uint64)
+        out_nonce = np.empty(1, dtype=np.uint32)
         out_hash  = np.empty(32, dtype=np.uint8)
         cl.enqueue_copy(self._queue, out_nonce, buf_rn)
         cl.enqueue_copy(self._queue, out_hash,  buf_rh)
         self._queue.finish()
 
-        if out_nonce[0] != 0:
-            return (int(out_nonce[0]), bytes(out_hash))
+        if int(out_nonce[0]) != 0xFFFFFFFF:
+            return (int(nonce_base) + int(out_nonce[0]), bytes(out_hash))
         return None
 
     def benchmark(self, nonce_count: int = 256) -> float:
@@ -1221,8 +1221,13 @@ class CHv42GPU:
 
     def _setup(self, backend: str, device_idx: int) -> None:
         if backend == "auto":
-            # Priority: canonical Deeksha GPU → native DLL → legacy GPU → CPU
-            if _try_import("pyopencl") is not None:
+            # Prefer Metal on Apple Silicon when available; otherwise keep the
+            # canonical Deeksha GPU probe order.
+            preferred_backend = detect_best_backend()
+            if preferred_backend == "metal":
+                backend = "metal"
+                log.info("[CHv42GPU] Auto-detekce: metal")
+            elif _try_import("pyopencl") is not None:
                 dcl = DeekshaOpenCLBackend(device_idx=device_idx)
                 if dcl.available:
                     self._backend = dcl
@@ -1230,7 +1235,7 @@ class CHv42GPU:
                     self.batch_size = min(self.batch_size, 2048)
                     log.info("[CHv42GPU] Auto-detekce: deeksha-opencl (canonical Deeksha on GPU)")
                     return
-            if _has_exact_native_backend():
+            elif _has_exact_native_backend():
                 backend = "native"
                 log.info("[CHv42GPU] Auto-detekce: native (canonical exact, CPU-based)")
             else:
@@ -1449,6 +1454,8 @@ def _run_gpu_stratum_miner(args: argparse.Namespace) -> None:
             worker=args.worker,
             threads=1,  # GPU nepoužívá CPU threads pro hashing
             gpu=True,
+            stats_file=getattr(args, "stats_file", None),
+            stats_interval=getattr(args, "stats_interval", 30),
         )
         # Monkey-patch mining smyčku
         miner._gpu = gpu
@@ -1472,6 +1479,8 @@ def main() -> None:
     parser.add_argument("--batch",   type=int, default=65536,              help="Nonces per GPU batch")
     parser.add_argument("--device",  type=int, default=0,                  help="GPU device index")
     parser.add_argument("--bench",   action="store_true",                  help="Benchmark mode")
+    parser.add_argument("--stats-file", default=None,                       help="Cesta k JSON souboru pro statistiky")
+    parser.add_argument("--stats-interval", type=int, default=30,           help="Interval pro zápis statistik (sekundy)")
     parser.add_argument("--log-level", default="info",
                         choices=["debug", "info", "warning", "error"],     help="Log level")
     args = parser.parse_args()
