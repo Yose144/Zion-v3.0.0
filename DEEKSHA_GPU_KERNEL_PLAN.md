@@ -424,10 +424,21 @@ Additional verified shader improvements after this sweep:
 - fusion-round hash specialization now avoids generic `keccak256(state[0..32] || round)` setup
 - final fusion `SHA3-512(state[0..32])` now uses the fixed-size 32-byte helper
 - fusion/AES path now avoids some thread-local key/plaintext copies by passing pointers directly
+- AES-128 round keys can now be generated incrementally in place instead of materializing the full 176-byte schedule per encrypt call
 
 These later changes preserved CPU ↔ Metal parity and are worth keeping, but short benchmark runs
 remain noisy on Apple Silicon. Treat the current practical M1 release baseline as **roughly 2.3-2.5 kH/s**,
 with occasional higher spikes that should not yet be treated as a stable sustained throughput figure.
+
+Longer 10-run sample on M1 with `ZION_METAL_THREADS_PER_TG=64` showed exactly why short runs must be treated carefully:
+
+- min: **~1.96 kH/s**
+- median: **~3.51 kH/s**
+- mean: **~4.50 kH/s**
+- max: **~9.10 kH/s**
+
+The spread is too wide to use raw mean or max as a planning number. For engineering decisions, use the low-2 kH/s band
+as the conservative sustained expectation until a longer controlled benchmark harness is added.
 
 Note on batch-size tuning for the current Rust Metal backend:
 
@@ -492,8 +503,8 @@ Current practical recommendation for Apple M1:
       canonical `.metal` shader on Apple Silicon
   - Current verified baseline: ~1.1 kH/s on M1 via PyObjC Metal runtime
   - Current Rust miner release baseline: ~2.3-2.5 kH/s on M1 at fixed dispatch 8192 with `ZION_METAL_THREADS_PER_TG=64`
-  - Recent completed work: hot-path hash specialization, lower threadgroup default for M1, fusion hash specialization, reduced fusion stack copies
-  - Focus areas: keccak round-level register pressure, AES key schedule cost, scratchpad traffic, batch measurement stability, optional ANE/NPU mix acceleration
+  - Recent completed work: hot-path hash specialization, lower threadgroup default for M1, fusion hash specialization, reduced fusion stack copies, streaming AES round-key generation
+  - Focus areas: keccak round-level register pressure, scratchpad traffic, batch measurement stability, optional ANE/NPU mix acceleration
 - [ ] **Multi-GPU support** — split nonce range across multiple devices
 - [ ] **Persistent kernel** — keep kernel running across Stratum jobs, update header via
       device-mapped memory
