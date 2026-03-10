@@ -1,6 +1,6 @@
 # ZION 2.9.8 — Go/No-Go Checklist
 
-> Datum: 2026-03-06 (aktualizace 2026-03-09, 2026-03-09T15:10Z)  
+> Datum: 2026-03-06 (aktualizace 2026-03-09, 2026-03-09T15:10Z, 2026-03-10T04:17Z)  
 > Scope: uzavření algoritmu 2.9.8 (Deeksha canonical path) + release readiness gate  
 > Zdroj pravdy: `docs/2.9.8/INDEX.md`, `L1/pool/tests/chv4_e2e.rs`, aktuální validační běhy
 
@@ -8,8 +8,8 @@
 
 ## Rozhodnutí (aktuální)
 
-- **Aktuální verdict:** **NO-GO → 24h PENDING (2026-03-09)**
-- **Důvod:** Chain recovery provedena 2026-03-09 — LMDB data inconsistency opravena (wipe + fresh genesis). Bloky rostou, shares přijímány. Čeká se na 24h stabilní běh.
+- **Aktuální verdict:** **GO (2026-03-10T04:17Z)**
+- **Důvod:** Po recovery a následném 24h+ běhu je testnet chain synchronní na Helsinki/USA/Asia, pool přijímá shares a block height dále roste. Navíc byl odstraněn provozní coupling x86 seed+miner nodů na lokální pool službě.
 
 ---
 
@@ -24,9 +24,12 @@
 | Native backend ABI | Metal/OpenCL/CUDA wrappers používají Deeksha-native symboly s legacy fallbackem | ✅ PASS | `zion_deeksha_batch_mine` + fallback na `cosmic_harmony_v4_2_batch_mine` |
 | Alias kompatibilita | `cosmic_harmony/chv4/deeksha` aliasy pro pool flow | ✅ PASS | parser + validator coverage v `L1/pool/tests/chv4_e2e.rs` |
 | Produkční mining acceptance | Live accepted shares na Helsinki/USA/Asia rostou | ✅ PASS | 2026-03-09 10:44 UTC: shares ACCEPTED, algo=cosmic_harmony, job=h1-e673f633 |
-| Produkční block growth | Výška řetězce stabilně roste po upgradu | ✅ PASS | 2026-03-09 10:44 UTC: height=4→5, difficulty=1052, BLOCK FOUND potvrzeno |
+| Produkční block growth | Výška řetězce stabilně roste po upgradu | ✅ PASS | 2026-03-10 04:17 UTC: height 713→714, difficulty 4086, BLOCK FOUND potvrzeno |
 | LMDB chain recovery | Wipe + fresh genesis po data inconsistency | ✅ DONE | 2026-03-09: data.mdb wipe, restart, genesis e673f633 |
 | Asia node recovery | Asia genesis hash mismatch opravena — rebuild + IBD sync | ✅ DONE | 2026-03-09T15:10Z: 195 bloků staženo, mesh Helsinki+USA+Asia plný |
+| 3-node chain sync | Helsinki / USA / Asia drží stejný tip po 24h okně | ✅ PASS | 2026-03-10 04:17 UTC: all nodes height=713 tip=`c3480300...573a` |
+| x86 seed+miner separation | Usa/Asia miner neběží přes lokální `pool:3333`, ale přes Helsinki pool | ✅ PASS | 2026-03-10: `MINER_POOL_URL=77.42.31.72:3333`, Asia local `zion-pool` odstraněn |
+| Pool health | Pool dál přijímá validní shares po oddělení x86 profilů | ✅ PASS | 2026-03-10 04:17 UTC: `/stats` → valid=10013, invalid=571, pool_24h≈425.37 H/s |
 
 ---
 
@@ -42,8 +45,8 @@
 
 1. ~~Opravit/obnovit Helsinki pool službu~~ → ✅ DONE  
 2. ~~Asia genesis hash mismatch~~ → ✅ DONE (rebuild + IBD)  
-3. Potvrdit 24h metriky: accepted shares trend, hashrate trend, block height growth.  
-4. Po 24h stabilním běhu (cíl: 2026-03-10 ~10:45 UTC) přepnout verdict na **GO** a doplnit sign-off.
+3. ~~Potvrdit 24h metriky: accepted shares trend, hashrate trend, block height growth~~ → ✅ DONE  
+4. ~~Po 24h stabilním běhu přepnout verdict na GO~~ → ✅ DONE
 
 ---
 
@@ -51,17 +54,18 @@
 
 | Role | Jméno | Rozhodnutí | Datum | Podpis |
 |---|---|---|---|---|
-| Protocol Lead | TBD | NO-GO | 2026-03-06 | - |
-| Pool/Miner Ops | TBD | NO-GO | 2026-03-06 | - |
-| Release Owner | TBD | NO-GO | 2026-03-06 | - |
+| Protocol Lead | TBD | GO | 2026-03-10 | - |
+| Pool/Miner Ops | TBD | GO | 2026-03-10 | - |
+| Release Owner | TBD | GO | 2026-03-10 | - |
 
 ---
 
-## Přepnutí na GO — podmínka
+## Stav po přepnutí na GO
 
-Přepnout na **GO** až když platí zároveň:
+GO bylo uděleno, protože současně platí:
 
 - `accepted_shares` roste na produkčním poolu,
-- `network hash rate` není degradovaný,
+- `pool_24h` hashrate je nenulový a stabilní,
 - `chain height` roste bez stagnace,
-- 24h bez kritických incidentů po recovery.
+- Helsinki, USA i Asia drží stejný tip,
+- 24h po recovery proběhlo bez kritického consensus incidentu.

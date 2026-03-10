@@ -1,8 +1,8 @@
 # 🖥️ ZION TerraNova — Seed Nodes
 
-> **Aktualizace:** 3. března 2026 (Session 59 — Chain restart + oprava algoritmu, chain běží výška 6+)  
+> **Aktualizace:** 10. března 2026 (live check + Asia Redis/miner fix)  
 > **Cíl:** 3 seed nody (mainnet topologie)  
-> **Chain status:** ✅ Testnet běží — všechny 3 uzly v konsenzu, bloky nalezены, payouts ~108 ZION pending
+> **Chain status:** ✅ Testnet běží — všechny 3 uzly v konsenzu, výška 705+, Deeksha 2.9.8 active
 
 
 Asia
@@ -40,9 +40,9 @@ Helsinki
 
 | # | Název | Lokace | IP | HW | SSH alias | Klíč | Stav |
 |---|-------|--------|----|-----|-----------|------|------|
-| 1 | TreeOfLife-Zion | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | CAX21 arm 80 GB | `zion-helsinki` | `zion_hetzner_key` | ✅ Seed + Pool + Web + Monitoring — `zion-core:2.9.7` `zion-pool:2.9.7` |
-| 2 | Usa | 🇺🇸 Ashburn, VA (Hetzner) | 178.156.240.160 | CPX11 x86 40 GB | `zion-usa` | `zion_server_key` | ✅ Seed node + Miner — `zion-core:2.9.7-amd64` `zion-miner:2.9.7-amd64` |
-| 3 | Asia | 🌏 Singapore (Hetzner) | 5.223.43.93 | CPX12 x86 40 GB | `zion-asia` | `zion_server_key` | ✅ Seed node + Miner — `zion-core:2.9.7-amd64` `zion-miner:2.9.7-amd64` |
+| 1 | TreeOfLife-Zion | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | CAX21 arm 80 GB | `zion-helsinki` | `zion_hetzner_key` | ✅ Seed + Pool + Miner + Web + Monitoring — `zion-core:2.9.8` `zion-pool:2.9.8` `zion-miner:2.9.8` |
+| 2 | Usa | 🇺🇸 Ashburn, VA (Hetzner) | 178.156.240.160 | CPX11 x86 40 GB | `zion-usa` | `zion_hetzner_key` | ✅ Seed + Miner + Redis — `zion-core:2.9.8` `zion-miner:2.9.8` |
+| 3 | Asia | 🌏 Singapore (Hetzner) | 5.223.43.93 | CPX12 x86 40 GB | `zion-asia` | `zion_hetzner_key` | ✅ Seed + Miner + Redis — `zion-core:2.9.8` `zion-miner:2.9.8` |
 
 ### ❌ Decommissioned servery
 
@@ -51,26 +51,26 @@ Helsinki
 | SeedDE (Nuremberg) | 46.225.126.243 | Decommissioned — geografická diverzita |
 | Usa1 (Hillsboro, OR) | 5.78.178.227 | Decommissioned po stability testu |
 
-### 💰 Revenue stack (snapshot 24. 2. 2026 — 3 servery)
+### 💰 Revenue stack (snapshot 10. 3. 2026 — 3 servery)
 
 | Server | Revenue kontejnery | Mysterium ID | Stav |
 |---|---|---|---|
-| Helsinki (`77.42.31.72`) | `zion-bridge`, `zion-website`, `zion-mysterium`, `zion-nkn`, `zion-pool` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Active |
-| Usa (`178.156.240.160`) | `zion-mysterium`, `zion-xmr-x86`, `zion-miner` (2.9.7-amd64) | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Active |
-| Asia (`5.223.43.93`) | `zion-mysterium`, `zion-xmr-x86`, `zion-miner` (2.9.7-amd64) | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Active |
+| Helsinki (`77.42.31.72`) | `zion-bridge`, `zion-website`, `zion-mysterium`, `zion-nkn`, `zion-pool`, `zion-miner` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Active |
+| Usa (`178.156.240.160`) | `zion-mysterium`, `zion-miner`, `zion-redis` | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Active |
+| Asia (`5.223.43.93`) | `zion-mysterium`, `zion-miner`, `zion-redis` | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Active |
 
-### Docker image verze (po session 2026-03-03)
+### Docker image verze (live 2026-03-10)
 
 | Komponenta | Helsinki (ARM64) | Usa / Asia (AMD64) |
 |-----------|-----------------|--------------------|
-| Core | `zion-core:2.9.7` (orig) | `zion-core:2.9.7-amd64` (přestavěn 2026-03-03) |
-| Pool | `zion-pool:2.9.7` (přestavěn 2026-03-03) | — |
-| Miner | — | `zion-miner:2.9.7-amd64` (přestavěn 2026-03-03) |
+| Core | `zion-core:2.9.8` | `zion-core:2.9.8` |
+| Pool | `zion-pool:2.9.8` | only as compose dependency if explicitly started |
+| Miner | `zion-miner:2.9.8` | `zion-miner:2.9.8` |
 
-> **Kritická poznámka:** Všechny tři komponenty (core, pool, miner) musí být sestaveny ze **stejné verze `algorithms_opt.rs`** (1203 řádků, `CHV3_MEMORY_HARD_FORK_HEIGHT = 100_000`). Odchylka způsobí nekompatibilitu hashů.
+> **Kritická poznámka:** Všechny tři komponenty (core, pool, miner) musí být sestaveny ze stejné 2.9.8 Deeksha codebase. Odchylka v `algorithms_opt.rs` nebo Docker image tagu způsobí nekompatibilitu hashů.
 
 Poznámka: `nkn` je v produkci zatím vypnutý (wallet init flow ještě není idempotentně zautomatizovaný).
-Poznámka 2: Usa1/Usa2/Asia3 spouštějí jen Mysterium (`docker-compose.mysterium-only.yml`) — miner není potřeba.
+Poznámka 2: x86 nody používají oddělený seed+miner profil bez lokálního pool dependency. Miner se připojuje na Helsinki pool přes `MINER_POOL_URL=77.42.31.72:3333`, pro paralelní XMR větev používají `ZION_RANDOMX_FULL=0` a doporučené `XMR_THREADS=1`. Asia aktuálně vyžaduje `MINER_CPUS=1.0`, protože Docker host vystavuje jen 1 CPU.
 
 ### ❌ Suspendované servery (Vultr — pozastaveny)
 
@@ -114,9 +114,8 @@ ssh zion-asia       # 🌏 Singapore — Asia
 ## Deploy seed nodů
 
 ```bash
-# Nasadit core node na seed servery:
-ssh zion-usa   'bash -s' < scripts/deploy-testnet.sh
-ssh zion-asia  'bash -s' < scripts/deploy-testnet.sh
+# Preferovaný orchestrátor pro 2.9.8:
+bash scripts/autopilot-2.9.8.sh --remote --network testnet
 ```
 
 ## SEED_PEERS pro nody
@@ -131,12 +130,12 @@ ssh zion-asia  'bash -s' < scripts/deploy-testnet.sh
 
 | Klíč | Soubor | Použití |
 |------|--------|---------|
-| **Hetzner** | `~/.ssh/zion_hetzner_key` | Helsinki (77.42.31.72) |
-| **Testnet servery** | `~/.ssh/zion_server_key` | Usa (178.156.240.160), Asia (5.223.43.93) |
+| **Hetzner** | `~/.ssh/zion_hetzner_key` | Helsinki, Usa, Asia |
+| **Testnet servery** | `~/.ssh/zion_server_key` | historický klíč, nepoužívat pro 2.9.8 rollout |
 | **Deploy (starý)** | `~/.ssh/zion_deployment_key` | Starý server 91.98.122.165 — nepoužívat |
 
 - **Typ:** Ed25519
-- **Hlavní klíč pro Usa+Asia:** `~/.ssh/zion_server_key`
+- **Hlavní klíč pro všechny 3 aktivní servery:** `~/.ssh/zion_hetzner_key`
 - **Fingerprint:** `SHA256:inS+3Zmbn3ewfRb5AGwfcfbuXmh0Y0tR3riPl/GtOYo`
 
 ### SSH Config (`~/.ssh/config`)
@@ -152,20 +151,20 @@ Host zion-helsinki
 Host zion-usa
     HostName 178.156.240.160
     User root
-    IdentityFile ~/.ssh/zion_server_key
+    IdentityFile ~/.ssh/zion_hetzner_key
 
 Host zion-asia
     HostName 5.223.43.93
     User root
-    IdentityFile ~/.ssh/zion_server_key
+    IdentityFile ~/.ssh/zion_hetzner_key
 ```
 
 ### Přímé připojení (s explicitním klíčem)
 
 ```bash
 ssh -i ~/.ssh/zion_hetzner_key     root@77.42.31.72     # Helsinki (TreeOfLife)
-ssh -i ~/.ssh/zion_server_key root@178.156.240.160 # Usa (Ashburn)
-ssh -i ~/.ssh/zion_server_key root@5.223.43.93     # Asia (Singapore)
+ssh -i ~/.ssh/zion_hetzner_key     root@178.156.240.160 # Usa (Ashburn)
+ssh -i ~/.ssh/zion_hetzner_key     root@5.223.43.93     # Asia (Singapore)
 ```
 
 ## 🌐 Porty (Testnet)
