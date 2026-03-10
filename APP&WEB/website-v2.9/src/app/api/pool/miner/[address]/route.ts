@@ -1,8 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { SITE_PRIMARY_HOST } from '@/lib/site';
 
 const POOL_SERVERS = [
-  { id: 'helsinki', host: '77.42.31.72', port: 8080 },
-  // Usa/Asia are seed-only nodes — no pool
+  { id: 'primary', host: SITE_PRIMARY_HOST, port: 8080 },
 ];
 
 async function fetchPool(host: string, port: number, endpoint: string, timeout = 5000) {
