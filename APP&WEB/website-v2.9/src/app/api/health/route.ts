@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { SITE_VERSION } from '@/lib/site';
+import { SITE_PRIMARY_POOL_API_URL, SITE_PRIMARY_RPC_URL, SITE_VERSION } from '@/lib/site';
 
-// Use actual production URLs - Helsinki server
+// Default to the current primary host. Deployments can still override these via env.
 const POOL_API =
-  process.env.ZION_INTERNAL_POOL_URL || process.env.POOL_API_URL || 'http://77.42.31.72:8080';
+  process.env.ZION_INTERNAL_POOL_URL || process.env.POOL_API_URL || SITE_PRIMARY_POOL_API_URL;
 const RPC_URL =
-  process.env.ZION_INTERNAL_RPC_URL || process.env.BLOCKCHAIN_RPC_URL || 'http://77.42.31.72:8444/jsonrpc';
+  process.env.ZION_INTERNAL_RPC_URL || process.env.BLOCKCHAIN_RPC_URL || SITE_PRIMARY_RPC_URL;
 
 type DependencyStatus = {
   healthy: boolean;

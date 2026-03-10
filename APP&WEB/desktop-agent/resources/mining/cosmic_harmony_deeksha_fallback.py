@@ -64,6 +64,7 @@ log = logging.getLogger("chv_deeksha")
 # CHvDeeksha pipeline parametry (musí se shodovat s deeksha.rs!)
 # ---------------------------------------------------------------------------
 UINT64_MASK    = 0xFFFFFFFFFFFFFFFF
+UINT32_MASK    = 0xFFFFFFFF
 UINT8_MASK     = 0xFF
 SCRATCHPAD_SIZE = 65536   # 64 KiB
 BLOCK_SIZE      = 64
@@ -106,14 +107,23 @@ class _NativeLib:
     def _find_lib_path(self) -> Optional[Path]:
         system = platform.system()
         preferred_names = {
-            "Darwin":  ["libcosmic_harmony_deeksha.dylib", "libcosmic_harmony.dylib"],
-            "Linux":   ["libcosmic_harmony_deeksha.so.2.9.8", "libcosmic_harmony_deeksha.so", "libcosmic_harmony.so.2.9.0", "libcosmic_harmony.so"],
-            "Windows": ["cosmic_harmony_deeksha.dll", "cosmic_harmony.dll"],
+            "Darwin":  ["libcosmic_harmony_deeksha.dylib", "libzion_cosmic_harmony_v3.dylib", "libcosmic_harmony.dylib"],
+            "Linux":   ["libcosmic_harmony_deeksha.so.2.9.8", "libcosmic_harmony_deeksha.so", "libzion_cosmic_harmony_v3.so", "libcosmic_harmony.so.2.9.0", "libcosmic_harmony.so"],
+            "Windows": ["cosmic_harmony_deeksha.dll", "zion_cosmic_harmony_v3.dll", "cosmic_harmony.dll"],
         }
-        names = preferred_names.get(system, ["libcosmic_harmony_deeksha.so", "libcosmic_harmony.so"])
+        names = preferred_names.get(system, ["libcosmic_harmony_deeksha.so", "libzion_cosmic_harmony_v3.so", "libcosmic_harmony.so"])
+
+        this = Path(__file__).resolve()
+        here = this.parent
+
+        local_roots = [
+            here.parent,
+            here.parent / "native-libs",
+                here,
+                here / "native-libs",
+        ]
 
         # Najdi root projektu podle Cargo.toml
-        this = Path(__file__).resolve()
         root = this
         for _ in range(12):
             if (root / "Cargo.toml").exists():
@@ -122,6 +132,7 @@ class _NativeLib:
 
         candidates = []
         for name in names:
+            candidates.extend([base / name for base in local_roots])
             candidates.extend([
                 root / "L1" / name,
                 root / "L1" / "native-libs" / name,
@@ -427,35 +438,38 @@ def hash_deeksha(header: bytes, nonce: int, height: int = 0) -> bytes:
     return deeksha_hash_python(header, nonce)
 
 
-def meets_target(h: bytes, target: bytes) -> bool:
+def meets_target(h: bytes, target_u32: int, cosmic_state0_endian: str = "little") -> bool:
     """
     Zkontroluje, zda hash splňuje target.
-    Pool posílá u32 target (8 hex znaků) → porovnání prvních 4 bajtů (little-endian).
+    Pool pro cosmic_harmony posílá compact u32 target jako hex text.
+    state0 se čte z prvních 4 bajtů hashe, endian je defaultně little.
     """
-    if len(target) <= 4:
-        # compact u32 target (pool cosmic_harmony formát)
-        target_val = struct.unpack("<I", target[:4])[0]
+    if target_u32 <= 0:
+        return False
+
+    endian = str(cosmic_state0_endian or "little").strip().lower()
+    if endian == "big":
+        state0 = struct.unpack(">I", h[:4])[0]
+    else:
         state0 = struct.unpack("<I", h[:4])[0]
-        return state0 <= target_val
-
-    # Full 32-bajtový target — big-endian lexikografické porovnání
-    for a, b in zip(h[:len(target)], target):
-        if a < b:
-            return True
-        if a > b:
-            return False
-    return True
+    return state0 <= target_u32
 
 
-def parse_target(target_hex: str) -> bytes:
-    """Parsuje target hex string z pool jobu."""
-    t = target_hex.strip()
+def parse_target(target_hex: str) -> int:
+    """Parsuje cosmic_harmony target stejně jako Rust miner a pool validator."""
+    t = target_hex.strip().lower()
+    if t.startswith("0x"):
+        t = t[2:]
+    if not t:
+        return 0
     if len(t) <= 8:
-        # compact u32 (8 hex = 4 bajty)
-        return bytes.fromhex(t.zfill(8))
-    elif len(t) <= 16:
-        return bytes.fromhex(t.zfill(16))
-    return bytes.fromhex(t.ljust(64, "f"))[:32]
+        return int(t, 16)
+    return int(t[:8], 16)
+
+
+def submit_nonce_hex(nonce: int) -> str:
+    """Pool pro cosmic_harmony očekává 32bit nonce jako 8 hex znaků."""
+    return f"{(nonce & UINT32_MASK):08x}"
 
 
 # ---------------------------------------------------------------------------
@@ -511,6 +525,7 @@ class StratumMinerDeeksha:
         for attempt in range(1, attempts + 1):
             try:
                 self._sock = socket.create_connection((self.host, self.port), timeout=timeout_sec)
+                self._sock.settimeout(None)
                 log.info(f"[Stratum] Connected to {self.host}:{self.port}")
                 return
             except Exception as exc:
@@ -572,19 +587,20 @@ class StratumMinerDeeksha:
         )
 
     def _submit_share(self, job_id: str, nonce: int, result: bytes) -> None:
+        nonce_hex = submit_nonce_hex(nonce)
         self._send({
             "id": 4,
             "method": "submit",
             "params": {
                 "id": self._login_id,
                 "job_id": job_id,
-                "nonce": f"{nonce:016x}",
+                "nonce": nonce_hex,
                 "result": result.hex(),
             },
         })
         with self._stats_lock:
             self._shares += 1
-        log.info(f"[Share] Submitted! nonce={nonce:016x} hash={result.hex()[:16]}...")
+        log.info(f"[Share] Submitted! nonce={nonce_hex} hash={result.hex()[:16]}...")
 
     # ------------------------------------------------------------------
     # Mining
@@ -592,7 +608,7 @@ class StratumMinerDeeksha:
 
     def _mine_thread(self, thread_id: int) -> None:
         """Mining vlákno — iteruje nonce a hashuje přes Deeksha pipeline."""
-        nonce_base = int(os.environ.get("ZION_NONCE_BASE", "0")) or 0
+        nonce_base = (int(os.environ.get("ZION_NONCE_BASE", "0")) or 0) & UINT32_MASK
         while self._running:
             job = None
             with self._job_lock:
@@ -606,12 +622,13 @@ class StratumMinerDeeksha:
             try:
                 blob = bytes.fromhex(job.get("blob", "00" * 76))
                 raw_target = str(job.get("target", "ffffffff"))
-                target = parse_target(raw_target)
+                target_u32 = parse_target(raw_target)
                 height = int(job.get("height", 0))
                 job_id = str(job.get("job_id", ""))
+                cosmic_state0_endian = str(job.get("cosmic_state0_endian", "little") or "little")
 
                 # Každé vlákno začíná od jiného offsetu, s nonce_base pro revenue separation
-                nonce = (nonce_base + thread_id * (1 << 24)) & UINT64_MASK
+                nonce = (nonce_base + thread_id * (1 << 24)) & UINT32_MASK
 
                 while self._running:
                     with self._job_lock:
@@ -623,14 +640,14 @@ class StratumMinerDeeksha:
                     with self._stats_lock:
                         self._hashes += 1
 
-                    if meets_target(h, target):
+                    if meets_target(h, target_u32, cosmic_state0_endian):
                         log.info(
                             f"[Thread-{thread_id}] ✅ Share found! "
-                            f"nonce={nonce:016x} hash={h.hex()[:16]}..."
+                            f"nonce={submit_nonce_hex(nonce)} hash={h.hex()[:16]}..."
                         )
                         self._submit_share(job_id, nonce, h)
 
-                    nonce = (nonce + self.threads) & UINT64_MASK
+                    nonce = (nonce + self.threads) & UINT32_MASK
 
             except Exception as e:
                 log.error(f"[Thread-{thread_id}] Mining error: {e}", exc_info=True)

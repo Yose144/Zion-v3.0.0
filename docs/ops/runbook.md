@@ -24,8 +24,7 @@
 
 | Server | IP | Location | Role | Specs |
 |--------|-----|----------|------|-------|
-| **Helsinki** 🇫🇮 | `77.42.31.72` | Hetzner Helsinki | Seed Node + Web + Pool | ARM64, 8GB RAM, 75GB SSD |
-| **Germany** 🇩🇪 | `46.225.126.243` | Hetzner Nuremberg | Seed Node + Revenue | ARM64, 4GB RAM |
+| **Zion2** | `91.98.122.165` | current primary host | Core + Pool + Web + Redis | production VM |
 
 ### Network Ports
 
@@ -49,19 +48,13 @@
 ## SSH Access
 
 ```bash
-# Helsinki (Seed Node)
-ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72
-
-# Germany (Peer Node)
-ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243
+# Current primary server
+ssh -i ~/.ssh/zion_hetzner_key root@91.98.122.165
 ```
 
 ### SSH between servers
 
-Helsinki → Germany:
-```bash
-ssh root@46.225.126.243  # ed25519 key pre-configured
-```
+Aktuálně nepoužívat. Infrastruktura je dočasně konsolidovaná na jeden host.
 
 ---
 
@@ -221,9 +214,8 @@ curl -s http://localhost:8444/stats | jq '.peer_count'
 **Action:**
 ```bash
 # Check both servers
-HELSINKI=$(curl -s http://77.42.31.72:8444/stats | jq '.block_height')
-GERMANY=$(curl -s http://46.225.126.243:8444/stats | jq '.block_height')
-echo "Helsinki: $HELSINKI, Germany: $GERMANY"
+PRIMARY=$(curl -s http://91.98.122.165:8444/stats | jq '.block_height')
+echo "Primary: $PRIMARY"
 
 # If diverged > 10 blocks, the shorter chain will auto-reorg
 # Monitor logs for reorg activity:
@@ -313,15 +305,17 @@ docker compose -f docker/docker-compose.testnet.yml up -d
 # From local machine:
 rsync -avz --delete \
   -e "ssh -i ~/.ssh/zion_hetzner_key" \
-  website-v2.9/ root@77.42.31.72:/opt/zion/website-v2.9/ \
+  APP\&WEB/website-v2.9/ root@91.98.122.165:/root/zion-web-deploy/website-v2.9/ \
   --exclude node_modules --exclude .next --exclude .git
 
 # On server — rebuild:
-ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72
-cd /opt/zion/website-v2.9
-docker build -t zion-web:latest .
-docker stop zion-web && docker rm zion-web
-docker run -d --name zion-web --network zion-net -p 3000:3000 -e NODE_ENV=production zion-web:latest
+ssh -i ~/.ssh/zion_hetzner_key root@91.98.122.165
+mkdir -p /root/zion-web-deploy/docker
+cd /root/zion-web-deploy
+docker network create zion-net 2>/dev/null || true
+docker compose -f docker/docker-compose.website.yml build website
+docker rm -f zion-website || true
+docker compose -f docker/docker-compose.website.yml up -d website
 ```
 
 ### Pool (Rust)

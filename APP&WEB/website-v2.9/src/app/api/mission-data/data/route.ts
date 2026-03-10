@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
+import { SITE_PRIMARY_HOST, SITE_VERSION } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /* ── Node definitions ─────────────────────────────────────────────── */
-// Pool runs only on Helsinki (port 8080). Seed-only nodes get pool: 0 (skipped).
-const NODES = [
-  { id: 'helsinki', host: '77.42.31.72',    rpc: 8444, pool: 8080 },
-  { id: 'usa',      host: '178.156.240.160', rpc: 8444, pool: 0 },
-  { id: 'asia',     host: '5.223.43.93',     rpc: 8444, pool: 0 },
-];
+const PRIMARY_NODE = { id: 'primary', host: SITE_PRIMARY_HOST, rpc: 8444, pool: 8080 };
 
 const TIMEOUT = 6_000;
 
@@ -63,7 +59,7 @@ async function fetchNodeData(node: (typeof NODES)[number]) {
         tip: rpcInfo.top_block_hash ?? '',
         tps: 0,
         sync: { state: rpcInfo.synchronized ? 'synced' : 'syncing' },
-        network: 'TestNet 2.9.6', // node binary reports mainnet=true regardless; override to correct label
+        network: `TestNet ${SITE_VERSION}`,
       }
     : undefined;
 
@@ -88,7 +84,7 @@ async function fetchNodeData(node: (typeof NODES)[number]) {
         },
         pool: {
           fee: poolStats.pool?.fee ?? 0,
-          version: poolStats.pool?.version ?? 'v2.9.6',
+          version: poolStats.pool?.version ?? SITE_VERSION,
           uptime_secs: poolStats.pool?.uptime_secs ?? 0,
         },
         payouts: {
@@ -104,7 +100,7 @@ async function fetchNodeData(node: (typeof NODES)[number]) {
 
 /* ── GET handler ───────────────────────────────────────────────── */
 export async function GET() {
-  const [helsinki, usa, asia] = await Promise.all(NODES.map(fetchNodeData));
+  const primary = await fetchNodeData(PRIMARY_NODE);
 
   // 168h stability run — started 2026-02-24T11:48:00Z (3-node P2P verified)
   const STABILITY_START_EPOCH = 1771962480; // unix epoch UTC
@@ -133,10 +129,13 @@ export async function GET() {
       duration_secs: CANARY_DURATION,
       progress_pct: Math.min(100, Math.round((canaryElapsed / CANARY_DURATION) * 100)),
     },
-    helsinki,
-    usa,
-    asia,
-    log_tail: buildLogTail({ helsinki, usa, asia }),
+    current_topology: 'single-primary-host',
+    seed_containers: ['zion-seed-1', 'zion-seed-2'],
+    primary,
+    helsinki: primary,
+    usa: undefined,
+    asia: undefined,
+    log_tail: buildLogTail({ primary }),
   };
 
   return NextResponse.json(data, {
@@ -150,14 +149,10 @@ export async function GET() {
 /* ── Build monitoring log from live data ────────────────────────── */
 type NodeResult = Awaited<ReturnType<typeof fetchNodeData>> | undefined;
 
-function buildLogTail(nodes: { helsinki: NodeResult; usa: NodeResult; asia: NodeResult }) {
+function buildLogTail(nodes: { primary: NodeResult }) {
   const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const lines: string[] = [];
-  const entries = [
-    { label: 'HELSINKI    ', data: nodes.helsinki },
-    { label: 'USA         ', data: nodes.usa },
-    { label: 'ASIA        ', data: nodes.asia },
-  ];
+  const entries = [{ label: 'PRIMARY     ', data: nodes.primary }];
   for (const { label, data } of entries) {
     const s = data?.stats;
     if (s) {
@@ -166,9 +161,10 @@ function buildLogTail(nodes: { helsinki: NodeResult; usa: NodeResult; asia: Node
       lines.push(`[${now}] [${label}] OFFLINE — unable to reach node`);
     }
   }
-  const hp = nodes.helsinki?.pool;
+  const hp = nodes.primary?.pool;
   if (hp) {
     lines.push(`[${now}] [POOL        ] Miners:${hp.miners?.active} Blocks:${hp.blocks?.found} HR:${hp.hashrate?.pool}`);
   }
+  lines.push(`[${now}] [SEEDS       ] Internal seed containers: zion-seed-1, zion-seed-2`);
   return lines.join('\n');
 }

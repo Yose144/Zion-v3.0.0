@@ -98,10 +98,10 @@ const result = await pool.query(`
 ### 4. Deploy to Production
 ```bash
 # SSH to server
-ssh root@77.42.31.72
+ssh root@91.98.122.165
 
-# Navigate to project
-cd /root/zion-v2.9/website-v2.9
+# Navigate to deploy workspace
+cd /root/zion-web-deploy/website-v2.9
 
 # Pull latest changes
 git pull origin main
@@ -112,10 +112,11 @@ npm install --production
 # Build
 npm run build
 
-# Restart PM2 (or Docker)
-pm2 restart zion-web
-# OR
-docker-compose restart web
+# Restart website container
+cd /root/zion-web-deploy
+docker compose -f docker/docker-compose.website.yml build website
+docker rm -f zion-website || true
+docker compose -f docker/docker-compose.website.yml up -d website
 ```
 
 ### 5. Nginx Configuration
@@ -230,14 +231,15 @@ If issues occur:
 ### Quick Rollback
 ```bash
 # SSH to server
-ssh root@77.42.31.72
+ssh root@91.98.122.165
 
 # Revert to previous version
-cd /root/zion-v2.9/website-v2.9
+cd /root/zion-web-deploy/website-v2.9
 git log --oneline  # Find last good commit
 git reset --hard <commit-hash>
 npm run build
-pm2 restart zion-web
+cd /root/zion-web-deploy
+docker compose -f docker/docker-compose.website.yml up -d --build website
 ```
 
 ### Partial Disable

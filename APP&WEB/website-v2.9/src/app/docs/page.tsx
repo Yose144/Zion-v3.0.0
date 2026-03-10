@@ -228,6 +228,7 @@ const sections: Section[] = [
     accentBorder: 'border-emerald-400/30',
     docs: [
       { id: 'mainnet-plan', title: 'Launch Plan 2026', file: 'mainnet/README.md' },
+      { id: 'mainnet-genesis-book', title: 'Genesis Book of Awakening', file: 'mainnet/genesis-book.md' },
       { id: 'mainnet-checklist', title: 'MainNet Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
     ],
   },

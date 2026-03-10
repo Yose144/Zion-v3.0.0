@@ -202,7 +202,7 @@ export default function LiveDashboard() {
 
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
               Blockchain telemetry pulled live from the 2.9.8 Deeksha TestNet API every 30 s.
-              3 seed nodes (Helsinki, USA, Asia) synced and mining.
+              Current public runtime is one primary host with two internal seed containers behind it.
             </div>
           </motion.div>
         </div>

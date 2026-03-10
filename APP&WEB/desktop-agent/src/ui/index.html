@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- AUDIT-FIX E-04 (16 Feb 2026): Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://77.42.31.72:* http://46.225.126.243:* http://5.78.178.227:* http://178.156.240.160:* http://5.223.43.93:* https://openrouter.ai https://sepolia.basescan.org; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://91.98.122.165:* https://openrouter.ai https://sepolia.basescan.org; object-src 'none'; base-uri 'self'; form-action 'self';">
   <title>ZION Native Awakening v2.9.6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4776,11 +4776,11 @@
                 <span id="revenue-split-text"></span>
               </div>
               <!-- CH3 Multi-stream allocation bar (shown when dual/triple mining active) -->
-              <div id="multi-stream-bar" class="multi-stream-bar" title="Multi-stream: ZION 50% / GPU Coin 25% / CPU Revenue 25%">
+              <div id="multi-stream-bar" class="multi-stream-bar" title="Multi-stream allocation is only shown when revenue routing is active">
                 <div class="ms-labels">
                   <span class="ms-label"><span class="ms-dot ms-dot-zion"></span>ZION</span>
                   <span class="ms-label" id="ms-gpu-label"><span class="ms-dot ms-dot-gpu"></span><span id="ms-gpu-coin-name">ETC</span></span>
-                  <span class="ms-label" id="ms-cpu-label"><span class="ms-dot ms-dot-cpu-rev"></span>XMR</span>
+                  <span class="ms-label" id="ms-cpu-label"><span class="ms-dot ms-dot-cpu-rev"></span>REV</span>
                 </div>
                 <span id="ms-poll-badge" class="ms-coin-badge" style="display:none">⟳</span>
               </div>
@@ -5346,62 +5346,19 @@
 
               <div class="pool-grid">
                 <label class="pool-card">
-                  <input type="radio" name="pool-select" value="77.42.31.72:3333" id="pool-helsinki" checked />
+                  <input type="radio" name="pool-select" value="91.98.122.165:3333" id="pool-primary" checked />
                   <div class="pool-card-body">
                     <div class="pool-meta">
-                      <span class="pill pill-purple">Helsinki</span>
+                      <span class="pill pill-purple">Canonical</span>
                       <span class="pill pill-gold">Primary</span>
                     </div>
-                    <h4>Helsinki Pool (FI)</h4>
-                    <p>77.42.31.72:3333</p>
-                  </div>
-                </label>
-
-                <label class="pool-card">
-                  <input type="radio" name="pool-select" value="46.225.126.243:3333" id="pool-germany" />
                   <div class="pool-card-body">
                     <div class="pool-meta">
-                      <span class="pill pill-cyan">Germany</span>
-                      <span class="pill pill-gold">Mainnet</span>
+                      <span class="pill pill-cyan">Deeksha</span>
+                      <span class="pill pill-gold">ZION only</span>
                     </div>
-                    <h4>Germany Pool (DE)</h4>
-                    <p>46.225.126.243:3333</p>
-                  </div>
-                </label>
-
-                <label class="pool-card">
-                  <input type="radio" name="pool-select" value="5.78.178.227:3333" id="pool-usa1" />
-                  <div class="pool-card-body">
-                    <div class="pool-meta">
-                      <span class="pill pill-cyan">Usa1</span>
-                      <span class="pill pill-gold">Mainnet</span>
-                    </div>
-                    <h4>Usa1 Pool (US)</h4>
-                    <p>5.78.178.227:3333</p>
-                  </div>
-                </label>
-
-                <label class="pool-card">
-                  <input type="radio" name="pool-select" value="178.156.240.160:3333" id="pool-usa2" />
-                  <div class="pool-card-body">
-                    <div class="pool-meta">
-                      <span class="pill pill-cyan">Usa2</span>
-                      <span class="pill pill-gold">Mainnet</span>
-                    </div>
-                    <h4>Usa2 Pool (US)</h4>
-                    <p>178.156.240.160:3333</p>
-                  </div>
-                </label>
-
-                <label class="pool-card">
-                  <input type="radio" name="pool-select" value="5.223.43.93:3333" id="pool-asia3" />
-                  <div class="pool-card-body">
-                    <div class="pool-meta">
-                      <span class="pill pill-cyan">Asia3</span>
-                      <span class="pill pill-gold">Mainnet</span>
-                    </div>
-                    <h4>Asia3 Pool (SG)</h4>
-                    <p>5.223.43.93:3333</p>
+                    <h4>Canonical Pool</h4>
+                    <p>91.98.122.165:3333</p>
                   </div>
                 </label>
 
@@ -5476,7 +5433,7 @@
                     <p class="text-success">MAX POWER • balanced latency</p>
                   </div>
                 </label>
-                <label class="mode-pill">
+                <label class="mode-pill" id="mode-gpu-revenue-pill">
                   <input type="radio" name="mining-mode" value="gpu-revenue" id="mode-gpu-revenue" />
                   <div>
                     <div class="mode-title">GPU Revenue Mining</div>
@@ -5486,6 +5443,9 @@
               </div>
               <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously. GPU Revenue Mining automatically switches between KAS, ETC, ERG, RVN, CFX, ZANO, EVR, and MEWC based on profitability.</div>
 
+              <div id="pure-zion-note" class="mode-status" style="display:none">Pure ZION desktop mode is active. CPU and GPU both target the canonical ZION pool and revenue routing controls are hidden.</div>
+
+              <div id="revenue-routing-section">
               <div class="section-divider">Revenue Routing</div>
 
               <div class="form-grid two-col">
@@ -5575,6 +5535,7 @@
                   <input type="checkbox" id="revenue-ai-enabled" checked />
                   <div><p>AI Gateway stream</p></div>
                 </label>
+              </div>
               </div>
               <input type="checkbox" id="gpu-checkbox" class="input-hidden" />
             </section>
@@ -6053,7 +6014,7 @@
                   <span class="emoji-16">⛏️</span>
                   <span class="resource-item-label">Mining Pools</span>
                 </div>
-                <span class="resource-item-value">77.42.31.72:3333 · 46.225.126.243:3333 · 5.78.178.227:3333 · 178.156.240.160:3333 · 5.223.43.93:3333</span>
+                <span class="resource-item-value">91.98.122.165:3333 · custom endpoint supported</span>
               </div>
               <div class="resource-item">
                 <div class="resource-item-left">

@@ -364,6 +364,10 @@ async fn main() {
 
     println!("🚀 ZION Pool v2.9.6 — L1 MainNet with CH v3 Revenue Orchestration");
     let cfg = Config::load();
+    let revenue_runtime_enabled = cfg.revenue.streams.etc.enabled
+        || cfg.revenue.streams.nxs.enabled
+        || cfg.revenue.streams.dynamic_gpu.enabled
+        || cfg.revenue.streams.ncl.enabled;
 
     // ── CH v3 Revenue Subsystems ──
     // Architecture:
@@ -374,11 +378,13 @@ async fn main() {
 
     // Initialize External Revenue Proxy Manager (connects to external pools)
     let revenue_proxy = Arc::new(RevenueProxyManager::new(cfg.revenue.streams.clone()));
-    {
+    if revenue_runtime_enabled {
         let proxy_handle = revenue_proxy.clone();
         tokio::spawn(async move {
             proxy_handle.start().await;
         });
+    } else {
+        tracing::info!("💤 Revenue runtime disabled — running pure ZION mode");
     }
 
     // Start profit switcher (auto-switch to most profitable external coin)
@@ -401,7 +407,7 @@ async fn main() {
         ..ExternalMinerConfig::default()
     };
     let external_miner = Arc::new(PoolExternalMiner::new(miner_config, revenue_proxy.clone()));
-    {
+    if revenue_runtime_enabled {
         let miner_handle = external_miner.clone();
         let mode_str = if cpu_only {
             "CPU-only, 1 thread"
@@ -417,7 +423,7 @@ async fn main() {
             miner_handle.start().await;
         });
     }
-    {
+    if revenue_runtime_enabled {
         let switcher_handle = profit_switcher.clone();
         tokio::spawn(async move {
             // Give revenue proxy + miner time to connect first
@@ -428,7 +434,7 @@ async fn main() {
 
     // ── GPU-Algorithm Mining (ETC/ERG native stratum clients) ──
     // Requires --features native-ethash and/or native-autolykos
-    {
+    if revenue_runtime_enabled {
         let gpu_miner = GpuMiner::from_env();
         tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs(8)).await;
@@ -438,7 +444,7 @@ async fn main() {
 
     // Start BTC buyback monitoring engine (100% DAO treasury)
     let buyback_engine = BuybackEngine::new(cfg.revenue.buyback.clone());
-    {
+    if revenue_runtime_enabled {
         let buyback_handle = buyback_engine.clone();
         tokio::spawn(async move {
             // Give pools time to start earning

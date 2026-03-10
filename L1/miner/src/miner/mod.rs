@@ -708,7 +708,7 @@ impl UniversalMiner {
 
                 // Occasionally fetch status snapshot for visibility.
                 status_tick = status_tick.wrapping_add(1);
-                if status_tick.is_multiple_of(30) {
+                if status_tick % 30 == 0 {
                     let status_id = stratum.next_request_id();
                     if let Ok(status_resp) = stratum
                         .send_custom_value(ncl.build_status_message(status_id))
@@ -1084,7 +1084,7 @@ impl UniversalMiner {
             batch_count += 1;
 
             // Report GPU hashrate every 10 batches (debug only)
-            if batch_count.is_multiple_of(10) {
+            if batch_count % 10 == 0 {
                 let elapsed = gpu_start_time.elapsed().as_secs_f64();
                 let gpu_hashrate = gpu_total_hashes as f64 / elapsed;
                 log::debug!(

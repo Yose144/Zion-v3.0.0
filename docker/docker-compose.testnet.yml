@@ -23,7 +23,7 @@ services:
       - "--network"
       - "testnet"
       - "--peers"
-      - "${SEED_PEERS:-77.42.31.72:8334,178.156.240.160:8334,5.223.43.93:8334}"
+      - "${SEED_PEERS:-172.29.0.11:8334,172.29.0.12:8334}"
     environment:
       - RUST_LOG=info
       - ZION_NETWORK=testnet
@@ -35,7 +35,62 @@ services:
       retries: 5
       start_period: 60s
     networks:
-      - zion-net
+      zion-net:
+        ipv4_address: 172.29.0.10
+
+  seed1:
+    image: zion-core:2.9.8
+    container_name: zion-seed-1
+    restart: unless-stopped
+    depends_on:
+      - core
+    volumes:
+      - seed1-testnet-data:/data/zion
+    command:
+      - "--data-dir"
+      - "/data/zion"
+      - "--rpc-port"
+      - "8444"
+      - "--p2p-port"
+      - "8334"
+      - "--network"
+      - "testnet"
+      - "--peers"
+      - "172.29.0.10:8334"
+    environment:
+      - RUST_LOG=info
+      - ZION_NETWORK=testnet
+      - ZION_DATA_DIR=/data/zion
+    networks:
+      zion-net:
+        ipv4_address: 172.29.0.11
+
+  seed2:
+    image: zion-core:2.9.8
+    container_name: zion-seed-2
+    restart: unless-stopped
+    depends_on:
+      - core
+    volumes:
+      - seed2-testnet-data:/data/zion
+    command:
+      - "--data-dir"
+      - "/data/zion"
+      - "--rpc-port"
+      - "8444"
+      - "--p2p-port"
+      - "8334"
+      - "--network"
+      - "testnet"
+      - "--peers"
+      - "172.29.0.10:8334"
+    environment:
+      - RUST_LOG=info
+      - ZION_NETWORK=testnet
+      - ZION_DATA_DIR=/data/zion
+    networks:
+      zion-net:
+        ipv4_address: 172.29.0.12
 
   pool:
     build:
@@ -49,8 +104,7 @@ services:
       - "8080:8080"
     volumes:
       - pool-testnet-data:/data/zion-pool
-      - ../config/ch3_revenue_settings.json:/config/ch3_revenue_settings.json:ro
-      - /usr/local/bin/xmrig:/usr/local/bin/xmrig:ro
+      - ../config/ch3_zion_only_settings.json:/config/ch3_zion_only_settings.json:ro
     depends_on:
       core:
         condition: service_healthy
@@ -60,8 +114,7 @@ services:
       - RUST_LOG=info
       - ZION_CORE_RPC=http://core:8444/jsonrpc
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
-      - ZION_REVENUE_CONFIG=/config/ch3_revenue_settings.json
-      - ZION_CPU_REVENUE_COIN=XMR       # miner binary podporuje RandomX; VRSC (VerusHash) neni implementovano
+      - ZION_REVENUE_CONFIG=/config/ch3_zion_only_settings.json
       - ZION_HAS_GPU=0
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8080/stats"]
@@ -90,14 +143,8 @@ services:
       - "cosmic_harmony"
       - "--threads"
       - "1"
-      - "--xmr-pool"
-      - "45.155.102.89:10001"
-      - "--xmr-wallet"
-      - "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK"
-      - "--xmr-threads"
-      - "${XMR_THREADS:-2}"
     environment:
-      - ZION_ENABLE_STREAM_SWITCH=1
+      - ZION_ENABLE_STREAM_SWITCH=0
       - ZION_NONCE_BASE=${ZION_NONCE_BASE:-0}
       - ZION_RANDOMX_FULL=${ZION_RANDOMX_FULL:-1}
       - RUST_LOG=info
@@ -133,9 +180,14 @@ services:
 volumes:
   zion-testnet-data:
     external: true
+  seed1-testnet-data:
+  seed2-testnet-data:
   pool-testnet-data:
     external: true
 
 networks:
   zion-net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
