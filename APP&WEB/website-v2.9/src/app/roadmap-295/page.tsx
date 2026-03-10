@@ -476,7 +476,7 @@ export default function Roadmap295Page() {
             <h2 className="text-5xl font-bold mb-8">
               <div className="flex items-center justify-center gap-4 bg-linear-to-r from-zion-cyan via-zion-purple to-zion-gold bg-clip-text text-transparent">
                 <Sparkles className="w-12 h-12 text-zion-gold" />
-                <span>ON THE STAR!</span>
+                <span>TOWARD THE STAR</span>
               </div>
             </h2>
             <div className="prose prose-invert prose-lg text-center max-w-none">

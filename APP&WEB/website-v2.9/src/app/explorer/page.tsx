@@ -26,6 +26,7 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    EXPLORER PAGE — Redesigned to match Roadmap visual language
@@ -96,7 +97,7 @@ export default function ExplorerPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <SearchCode className="h-4 w-4" />
-                ZION v2.9.7 · Explorer Pro
+                {SITE_RELEASE_LABEL} · Explorer Pro
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Real-Time</p>
@@ -105,7 +106,7 @@ export default function ExplorerPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Search blocks, transactions, and addresses on the ZION TerraNova network.
+                Search blocks, transactions, and addresses on the live ZION TerraNova Deeksha network.
                 Smart hash resolver, live data from all seed nodes, and auto-refresh every 10 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
@@ -144,7 +145,7 @@ export default function ExplorerPage() {
             fallback={
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                 {[...Array(12)].map((_, i) => (
-                  <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 animate-pulse">
+                  <div key={i} className="rounded-2xl border border-white/8 bg-white/3 p-4 animate-pulse">
                     <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
                     <div className="h-3 w-16 bg-white/5 rounded mb-2" />
                     <div className="h-6 w-20 bg-white/5 rounded" />
@@ -174,19 +175,19 @@ export default function ExplorerPage() {
 
           <div className="grid gap-6 xl:grid-cols-3">
             <div className="xl:col-span-2 space-y-6">
-              <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[500px]" />}>
+              <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[500px]" />}>
                 <ProRecentBlocks />
               </Suspense>
-              <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[500px]" />}>
+              <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[500px]" />}>
                 <ProRecentTransactions />
               </Suspense>
             </div>
 
             <div className="space-y-6">
-              <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[320px]" />}>
+              <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-80" />}>
                 <ExplorerDashboard />
               </Suspense>
-              <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[280px]" />}>
+              <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
                 <MempoolFeed />
               </Suspense>
 
@@ -206,11 +207,11 @@ export default function ExplorerPage() {
                     <Link
                       key={link.title}
                       href={link.href}
-                      className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02]
-                        p-3 hover:border-white/15 hover:bg-white/[0.04] transition-all duration-200"
+                      className="group flex items-center gap-3 rounded-xl border border-white/6 bg-white/2
+                        p-3 transition-all duration-200 hover:border-white/15 hover:bg-white/4"
                     >
-                      <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br ${link.accent}
-                        opacity-80 group-hover:opacity-100 transition flex-shrink-0`}>
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br ${link.accent}
+                        opacity-80 transition group-hover:opacity-100`}>
                         <link.icon className="h-5 w-5 text-white" />
                       </div>
                       <div className="min-w-0">
@@ -240,7 +241,7 @@ export default function ExplorerPage() {
             </h2>
             <p className="text-sm text-gray-400">Historical difficulty, hashrate, emission, and block size trends.</p>
           </div>
-          <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[400px]" />}>
+          <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[400px]" />}>
             <ExplorerCharts />
           </Suspense>
         </motion.section>
@@ -259,7 +260,7 @@ export default function ExplorerPage() {
             </h2>
             <p className="text-sm text-gray-400">Track mining progress — Decade Decay: 5,400 → 724 ZION/block, 100+ years + tail ∞.</p>
           </div>
-          <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[280px]" />}>
+          <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
             <EmissionMonitor />
           </Suspense>
         </motion.section>
@@ -279,7 +280,7 @@ export default function ExplorerPage() {
             </h2>
             <p className="text-sm text-gray-400">Global node connectivity — Helsinki · USA · Asia (3 seed nodes).</p>
           </div>
-          <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[280px]" />}>
+          <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
             <NetworkPeers />
           </Suspense>
         </motion.section>
@@ -300,7 +301,7 @@ export default function ExplorerPage() {
             </h2>
             <p className="text-sm text-gray-400">Top ZION holders by balance — premine allocations, mining rewards, and network economics.</p>
           </div>
-          <Suspense fallback={<div className="rounded-4xl border border-white/[0.08] bg-black/60 animate-pulse h-[400px]" />}>
+          <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[400px]" />}>
             <RichListClient embedded />
           </Suspense>
         </motion.section>
@@ -339,7 +340,7 @@ export default function ExplorerPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.7 — Blockchain Explorer Pro · Real-time data from native Rust nodes · 3 Seed Nodes · 3 Continents
+          ZION TerraNova {SITE_RELEASE_LABEL} — Blockchain Explorer Pro · Real-time data from native Rust nodes · 3 Seed Nodes · 3 Continents
         </p>
       </div>
     </div>

@@ -475,7 +475,7 @@ export default function PhilosophyContent() {
           <h2 className="text-4xl font-bold mb-8">
             <div className="flex items-center justify-center gap-4 bg-linear-to-r from-zion-gold via-zion-cyan to-zion-purple bg-clip-text text-transparent">
               <Sparkles className="w-10 h-10 text-zion-gold" />
-              <span>ON THE STAR!</span>
+              <span>TOWARD THE STAR</span>
             </div>
           </h2>
           <div className="prose prose-invert prose-lg text-center max-w-none">

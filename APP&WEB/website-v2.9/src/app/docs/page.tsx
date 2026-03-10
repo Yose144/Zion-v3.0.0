@@ -37,45 +37,11 @@ interface Version {
 
 const versions: Version[] = [
   {
-    id: 'v2.9.7',
-    label: 'v2.9.7',
-    tag: 'CURRENT',
-    tagColor: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/5',
-    description: 'Pre-MainNet Gate — unified design, stable TestNet',
-    categories: [
-      {
-        id: 'v297-overview',
-        title: 'Overview',
-        icon: Rocket,
-        docs: [
-          { id: 'v297-readme', title: 'ZION v2.9.7 Overview', file: 'v2.9.7/README.md' },
-          { id: 'v297-changelog', title: 'Changelog', file: 'v2.9.7/changelog.md' },
-        ]
-      },
-      {
-        id: 'v297-mining',
-        title: 'Mining',
-        icon: Zap,
-        docs: [
-          { id: 'v297-mining-guide', title: 'Mining Guide', file: 'v2.9.7/design-system.md' },
-        ]
-      },
-      {
-        id: 'v297-mainnet',
-        title: 'MainNet Gate',
-        icon: Shield,
-        docs: [
-          { id: 'v297-mainnet-gate', title: 'Pre-MainNet Gate Checklist', file: 'v2.9.7/mainnet-gate.md' },
-        ]
-      },
-    ]
-  },
-  {
     id: 'v2.9.6',
     label: 'v2.9.6',
-    tag: 'PREVIOUS',
-    tagColor: 'text-blue-400 border-blue-400/30 bg-blue-400/5',
-    description: 'Pre-Mainnet Fork — 6-Layer „On the Star“ + Decade Decay',
+    tag: 'BASELINE',
+    tagColor: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/5',
+    description: 'Protocol baseline — architecture, economics, migration, consensus',
     categories: [
       {
         id: 'v296-overview',
@@ -220,13 +186,25 @@ interface Section {
 
 const sections: Section[] = [
   {
+    id: 'live-ops',
+    title: 'Live TestNet',
+    icon: Globe,
+    accentText: 'text-emerald-400',
+    accentBorder: 'border-emerald-400/30',
+    docs: [
+      { id: 'live-index', title: 'Aktuální snapshot sítě', file: 'index.md' },
+      { id: 'live-p2p', title: '3-node topologie', file: 'v2.9.6/p2p.md' },
+      { id: 'live-mainnet', title: 'Launch path', file: 'mainnet/README.md' },
+    ],
+  },
+  {
     id: 'whitepaper',
     title: 'WhitePaper',
     icon: FileText,
     accentText: 'text-zion-gold',
     accentBorder: 'border-zion-gold/30',
     docs: [
-      { id: 'wp-v297', title: 'Whitepaper v2.9.7 (EN)', file: 'whitepaper/ZION_Whitepaper_v2.9.7.md' },
+      { id: 'wp-v297', title: 'Whitepaper v2.9.7 (EN, archive)', file: 'whitepaper/ZION_Whitepaper_v2.9.7.md' },
       { id: 'wp-v295-full', title: 'Whitepaper v2.9.5 (full)', file: 'whitepaper/ZION_Whitepaper_v2.9.5_FULL.md' },
       { id: 'wp-lite', title: 'Whitepaper Lite (CS)', file: 'whitepaper-lite.md' },
     ],
@@ -250,7 +228,7 @@ const sections: Section[] = [
     accentBorder: 'border-emerald-400/30',
     docs: [
       { id: 'mainnet-plan', title: 'Launch Plan 2026', file: 'mainnet/README.md' },
-      { id: 'mainnet-checklist', title: 'Pre-MainNet Checklist', file: 'v2.9.7/mainnet-gate.md' },
+      { id: 'mainnet-checklist', title: 'MainNet Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
     ],
   },
   {
@@ -287,18 +265,19 @@ function findCategoryIdByDoc(docId: string): string | null {
 }
 
 export default function DocsPage() {
-  const [activeVersion, setActiveVersion] = useState('v2.9.7');
-  const [selectedDoc, setSelectedDoc] = useState('v297-readme');
-  const [activeCategory, setActiveCategory] = useState('v297-overview');
+  const [activeVersion, setActiveVersion] = useState('v2.9.6');
+  const [selectedDoc, setSelectedDoc] = useState('live-index');
+  const [activeCategory, setActiveCategory] = useState('live-ops');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': false, 'v2.9.7': true, 'v2.9': false, 'v2.8.x': false, 'whitepaper': true, 'architecture': true, 'mainnet': false, 'listing': false, 'legal': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
+  const primaryVersions = versions.filter((version) => version.id === 'v2.9.6' || version.id === 'v2.9.5');
 
   // Get current version data
-  const currentVersion = versions.find(v => v.id === activeVersion) || versions[1];
+  const currentVersion = versions.find(v => v.id === activeVersion) || versions[0];
   const docCategories = currentVersion.categories;
 
   // Find current doc across all versions AND sections
@@ -410,8 +389,11 @@ export default function DocsPage() {
             <p className="text-xl text-gray-400 mb-4">
               {tr('docs', 'subtitle', lang)}
             </p>
+            <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
+              Live testnet běží na v2.9.8 Deeksha canonical path. Nahoře jsou teď prioritně provozní a referenční materiály; hlubší historie zůstává v záložce History.
+            </div>
             <div className="flex items-center justify-center gap-3 mb-8">
-              {versions.map(v => (
+              {primaryVersions.map(v => (
                 <button
                   key={v.id}
                   onClick={() => {
@@ -599,6 +581,7 @@ export default function DocsPage() {
                                   onClick={() => {
                                     setSelectedDoc(doc.id);
                                     setActiveCategory(section.id);
+                                    setActiveVersion('v2.9.6');
                                   }}
                                   className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm flex items-center gap-2 ${
                                     selectedDoc === doc.id
@@ -659,7 +642,7 @@ export default function DocsPage() {
                                   onClick={() => { setActiveCategory(category.id); setActiveVersion(version.id); }}
                                   className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm ${
                                     isActiveCat
-                                      ? 'bg-zion-cyan/10 text-zion-cyan border-l-2 border-zion-cyan -ml-[2px]'
+                                      ? 'bg-zion-cyan/10 text-zion-cyan border-l-2 border-zion-cyan -ml-0.5'
                                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                                   }`}
                                 >

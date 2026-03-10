@@ -178,7 +178,7 @@ export default function Hero() {
               </Link>
             </div>
 
-            {/* CHv4 teaser card */}
+            {/* Release teaser card */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -192,21 +192,21 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-bold text-white">CHv4 Neural Bloom</span>
+                    <span className="text-sm font-bold text-white">Deeksha canonical path</span>
                     <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-semibold">
-                      Roadmap
+                      Live
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    5-phase algorithm · 4 MB scratchpad · 8-round Feistel perceptron · Ed448-Goldilocks ·
-                    Planned MainNet activation hard-fork.
+                    v2.9.8 běží na 3 aktivních uzlech. Web už nezdůrazňuje staré gate messagingy, ale aktuální síť,
+                    pool a provozní dokumentaci.
                   </p>
                 </div>
                 <a
-                  href="#chv4"
+                  href="#tree-of-life"
                   className="flex-none ml-auto text-xs text-pink-300 hover:text-pink-200 flex items-center gap-1 transition"
                 >
-                  Details <ArrowRight className="w-3.5 h-3.5" />
+                  Tree of Life <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>
             </motion.div>
@@ -313,7 +313,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  Pre-MainNet Gate · v2.9.7 · CHv4 upgrade in dev
+                  Live TestNet · v2.9.8 · Deeksha canonical · 3 nodes online
                 </span>
               </div>
             </div>

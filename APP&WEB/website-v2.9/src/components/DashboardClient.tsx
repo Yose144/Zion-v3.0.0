@@ -15,6 +15,7 @@ import {
   TreeDeciduous,
   Zap
 } from 'lucide-react';
+import { SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
 interface DashboardClientProps {
   stats: any;
@@ -38,8 +39,8 @@ const missionMetrics = [
   },
   {
     label: 'Version',
-    value: 'v2.9.7',
-    description: 'On the Star TestNet',
+    value: SITE_VERSION,
+    description: 'Deeksha Patch & Code Freeze',
     icon: Gauge
   },
   {
@@ -117,13 +118,13 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
   return (
     <div className="zion-shell min-h-screen pt-32 pb-20">
       <div className="zion-container max-w-7xl space-y-12">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="zion-panel rounded-[32px] bg-black/60 p-10 backdrop-blur-xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="zion-panel rounded-4xl bg-black/60 p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Mission control</p>
               <h1 className="text-5xl md:text-6xl font-semibold text-gradient">Live systems dashboard</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from ZION On the Star v2.9.7 TestNet: health checks, node status, blockchain vitals, and mining pool metrics across 2 EU regions.
+                Real-time telemetry from ZION {SITE_RELEASE_LABEL}: health checks, node status, blockchain vitals, and mining pool metrics across Helsinki, USA, and Asia.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -184,7 +185,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               </div>
               <div className="zion-panel p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Version</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{health?.version || 'v2.9.7'}</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{health?.version || SITE_VERSION}</p>
               </div>
               <div className="zion-panel p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Uptime</p>
@@ -469,7 +470,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           )}
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[32px] border-zion-gold/30 bg-gradient-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-4xl border-zion-gold/30 bg-linear-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.4em] text-gray-200">What&apos;s next</p>

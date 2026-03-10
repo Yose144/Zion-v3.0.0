@@ -8,7 +8,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
   {
     id: 'keter',
     name: 'KETER',
-    title: 'Crown - On The Star',
+    title: 'Crown - Orbital Horizon',
     cl: 9,
     levelName: 'ON_THE_STAR',
     multiplier: 10.0,

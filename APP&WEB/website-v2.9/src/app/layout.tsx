@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ObservatoryProvider } from "@/contexts/ObservatoryContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import ClientBackgrounds from "@/components/ClientBackgrounds";
+import { SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -22,10 +23,10 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://zionterranova.com'),
   title: {
-    default: 'ZION Blockchain v2.9.7 — Pre-MainNet Gate',
+    default: `ZION Blockchain ${SITE_RELEASE_LABEL}`,
     template: '%s | ZION TerraNova',
   },
-  description: "ZION TerraNova v2.9.7: Native Rust blockchain (52k LOC), Cosmic Harmony CHv3/CHv4 PoW, 6-layer architecture, TestNet live — MainNet target Dec 2026",
+  description: `ZION TerraNova ${SITE_VERSION}: native Rust blockchain, live 3-node TestNet, Deeksha Patch & Code Freeze release line, pool telemetry, mining guides, and protocol docs.`,
   keywords: "blockchain, consciousness mining, ZION, cryptocurrency, native rust, cosmic harmony, WARP bridge, testnet",
   openGraph: {
     type: 'website',

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Activity, ArrowRight, Shield, SignalHigh, Waves } from 'lucide-react';
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 const corridorStats = [
   {
@@ -55,7 +56,7 @@ export default function WarpCorridors() {
             <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">WARP NETWORK</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
               Liquidity corridors tuned for{' '}
-              <span className="text-gradient">On the Star 2.9.7</span>
+              <span className="text-gradient">{SITE_RELEASE_LABEL}</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
               HTLC-grade swaps, SPL warp programs, and DAO-guarded liquidity pools stitched into a single

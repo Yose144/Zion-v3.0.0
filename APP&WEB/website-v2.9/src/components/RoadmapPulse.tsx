@@ -6,13 +6,13 @@ import Link from 'next/link';
 
 const phaseCards = [
   {
-    name: 'L1 TerraNova — TestNet Live',
-    window: 'Jan 2026 – Now',
-    progress: 90,
+    name: 'L1 TerraNova — Deeksha Freeze',
+    window: 'Mar 2026 – Now',
+    progress: 96,
     highlights: [
-      'Rust mining pool — Cosmic Harmony v3',
-      'P2P network libp2p + real-time sync',
-      'Native miner binaries — all platforms',
+      '2.9.8 Deeksha Patch & Code Freeze live',
+      '3-node mesh, pool telemetry, and explorer synced',
+      'Native miner/runtime path hardened for ARM + x86',
     ],
   },
   {
@@ -22,7 +22,7 @@ const phaseCards = [
     highlights: [
       'External security audit (Q2 2026)',
       'Hardware wallet integration (Ledger/Trezor)',
-      'CHv4 Neural Bloom upgrade',
+      'Security hardening after Deeksha code freeze',
     ],
   },
   {
@@ -60,7 +60,7 @@ const timeline = [
   },
   {
     title: '🔭 L6 Issobella · 2040+',
-    focus: 'Orbital observatory, LEO research station, On the Star ⭐',
+    focus: 'Orbital observatory, LEO research station, long-range mission layer',
   },
 ];
 
@@ -72,11 +72,11 @@ export default function RoadmapPulse() {
           <div className="flex-1 space-y-3">
             <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">Roadmap</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              On the Star <span className="text-gradient">v2.9.7 → MainNet 2026</span>
+              Deeksha <span className="text-gradient">v2.9.8 "Patch & Code Freeze"</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              TestNet live with native Rust pool, Cosmic Harmony mining, and P2P network.
-              Security audits and performance optimization in progress for MainNet Q4 2026.
+              Live TestNet běží na Deeksha release linii. Teď je priorita stabilita, telemetrie,
+              dokumentace a provozní disciplína před MainNet Q4 2026.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -148,7 +148,7 @@ export default function RoadmapPulse() {
             <Rocket className="w-6 h-6 text-zion-cyan" />
             <div>
               <p className="text-xs uppercase tracking-[0.4em] text-gray-400">6-Layer Vision</p>
-              <h3 className="text-2xl font-semibold text-white">On the Star — 100 let ke hvězdám</h3>
+              <h3 className="text-2xl font-semibold text-white">6-layer vision — po Deeksha freeze</h3>
             </div>
           </div>
 

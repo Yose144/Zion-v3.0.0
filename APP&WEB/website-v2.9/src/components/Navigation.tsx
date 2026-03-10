@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu, X, SignalHigh, Orbit, ArrowUpRight, ChevronDown, LayoutDashboard, Pickaxe, Server, BookOpen, TrendingUp } from 'lucide-react';
+import { Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
@@ -19,41 +19,38 @@ export default function Navigation() {
 
   const navGroups: NavGroup[] = [
     {
-      title: 'Mission',
+      title: 'Core',
       items: [
         { href: '/',          label: tr('nav', 'home', lang) },
         { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
         { href: '/network',   label: tr('nav', 'network', lang) },
-        { href: '/roadmap',   label: tr('nav', 'roadmap', lang) },
+        { href: '/explorer',  label: tr('nav', 'explorer', lang) },
       ],
     },
     {
-      title: 'Stacks',
+      title: 'Build',
       items: [
-        { href: '/warp',     label: tr('nav', 'warp', lang) },
-        { href: '/dao',      label: tr('nav', 'dao', lang) },
-        { href: '/bridge',   label: tr('nav', 'bridge', lang) },
-        { href: '/download', label: tr('nav', 'download', lang) },
         { href: '/pool',     label: tr('nav', 'pool', lang) },
         { href: '/mining',   label: tr('nav', 'mining', lang) },
+        { href: '/download', label: tr('nav', 'download', lang) },
+        { href: '/roadmap',  label: tr('nav', 'roadmap', lang) },
       ],
     },
     {
-      title: 'Knowledge',
+      title: 'Reference',
       items: [
-        { href: '/explorer',     label: tr('nav', 'explorer', lang) },
-        { href: '/genesis',      label: tr('nav', 'genesis', lang) },
-        { href: '/api-reference',label: tr('nav', 'api', lang) },
-        { href: '/docs',         label: tr('nav', 'docs', lang) },
+        { href: '/docs',           label: tr('nav', 'docs', lang) },
+        { href: '/bridge',         label: tr('nav', 'bridge', lang) },
+        { href: '/api-reference',  label: tr('nav', 'api', lang) },
       ],
     },
   ];
 
   const activeGroup = navGroups.find((group) => group.title === openGroup);
   const groupLabels: Record<string, string> = {
-    Mission: tr('nav', 'mission', lang),
-    Stacks:  tr('nav', 'stacks', lang),
-    Knowledge: tr('nav', 'knowledge', lang),
+    Core: tr('nav', 'mission', lang),
+    Build:  tr('nav', 'stacks', lang),
+    Reference: tr('nav', 'knowledge', lang),
   };
 
   /* Close mobile menu on route change */
@@ -131,7 +128,7 @@ export default function Navigation() {
             </div>
             <span className="text-2xl font-bold text-gradient tracking-tight">ZION</span>
             <span className="text-[11px] px-2 py-1 rounded bg-white/5 border border-white/10 uppercase tracking-widest">
-              2.9.7 &ldquo;Pre-MainNet Gate&rdquo;
+              2.9.8 &ldquo;Live TestNet&rdquo;
             </span>
           </Link>
 
@@ -277,7 +274,7 @@ export default function Navigation() {
                       <div key={item.href}>
                         <Link
                           href={item.href}
-                          className={`block rounded-xl px-3 py-3 text-sm font-semibold transition min-h-[44px] flex items-center ${
+                          className={`rounded-xl px-3 py-3 text-sm font-semibold transition min-h-[44px] flex items-center ${
                             pathname === item.href ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5 active:bg-white/10'
                           }`}
                           onClick={() => setIsOpen(false)}
@@ -288,7 +285,7 @@ export default function Navigation() {
                           <Link
                             key={child.href}
                             href={child.href}
-                            className={`block rounded-xl pl-7 pr-3 py-2.5 text-[13px] transition min-h-[40px] flex items-center ${
+                            className={`rounded-xl pl-7 pr-3 py-2.5 text-[13px] transition min-h-[40px] flex items-center ${
                               pathname === child.href ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 active:bg-white/10'
                             }`}
                             onClick={() => setIsOpen(false)}

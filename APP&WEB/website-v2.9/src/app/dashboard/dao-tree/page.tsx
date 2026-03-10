@@ -202,7 +202,7 @@ export default function DaoDashboardPage() {
               <h2 className="text-3xl font-semibold text-white">Kabbalah Tree of Life · 144k Guardians</h2>
               <p className="text-gray-300 max-w-2xl">
                 9 vědomostních levelů namapovaných na 10 Sefirot. Každý DAO circle odpovídá různým consciousness levelům.
-                Interaktivní strom ukazuje, kde jste na své cestě od PHYSICAL (CL1) k ON THE STAR (CL9).
+                Interaktivní strom ukazuje, kde jste na své cestě od PHYSICAL (CL1) k orbital horizon vrstvě (CL9).
               </p>
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-sm">
