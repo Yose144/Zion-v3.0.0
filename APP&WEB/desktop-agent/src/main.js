@@ -934,6 +934,23 @@ const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 // ── Deeksha canonical runtime ────────────────────────────────────────────────
 // v2.9.8: `cosmic_harmony` resolves to Deeksha canonical path from genesis.
 
+const PRIMARY_TESTNET_HOST = String(process.env.ZION_PRIMARY_TESTNET_HOST || '91.98.122.165').trim() || '91.98.122.165';
+const PRIMARY_POOL_PORT = Number(String(process.env.ZION_PRIMARY_POOL_PORT || '3333').trim()) || 3333;
+const PRIMARY_RPC_PORT = Number(String(process.env.ZION_PRIMARY_RPC_PORT || '8444').trim()) || 8444;
+const PRIMARY_AI_NATIVE_PORT = Number(String(process.env.ZION_PRIMARY_AI_NATIVE_PORT || '8001').trim()) || 8001;
+const DEFAULT_RPC_URL = `http://${PRIMARY_TESTNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+const DEFAULT_AI_NATIVE_POOL_URL = `http://${PRIMARY_TESTNET_HOST}:${PRIMARY_AI_NATIVE_PORT}`;
+const DEFAULT_DAO_API_BASE = `http://${PRIMARY_TESTNET_HOST}:8080`;
+const DEFAULT_WARP_API_BASE = `http://${PRIMARY_TESTNET_HOST}:9333`;
+const DESKTOP_PURE_ZION_DEFAULT = String(process.env.ZION_DESKTOP_PURE_ZION || '1').trim() !== '0';
+const LEGACY_TESTNET_HOSTS = new Set([
+  '77.42.31.72',
+  '178.156.240.160',
+  '5.223.43.93',
+  'pool.zionterranova.com',
+  PRIMARY_TESTNET_HOST.toLowerCase(),
+]);
+
 // ── Revenue / Funding Split ───────────────────────────────────────────────────
 // Pool distributes block rewards:  89% miners, 1% pool, 5% humanitarian (L5),
 // 5% Issobella (L6).
@@ -944,11 +961,11 @@ const ISSOBELLA_PCT = 5;      // L6 Issobella
 
 // Default configuration
 const DEFAULT_REVENUE_PROFILE = {
-  enabled: true,
+  enabled: !DESKTOP_PURE_ZION_DEFAULT,
   allocation: {
-    zionPct: 50,
-    multiAlgoPct: 25,
-    nclPct: 25
+    zionPct: DESKTOP_PURE_ZION_DEFAULT ? 100 : 50,
+    multiAlgoPct: DESKTOP_PURE_ZION_DEFAULT ? 0 : 25,
+    nclPct: DESKTOP_PURE_ZION_DEFAULT ? 0 : 25
   },
   cpu: {
     coin: 'auto'
@@ -972,6 +989,14 @@ const DEFAULT_REVENUE_PROFILE = {
     aiGateway: true
   }
 };
+
+function isLegacyOrLocalHost(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  return raw === 'localhost'
+    || raw === '127.0.0.1'
+    || raw === '::1'
+    || LEGACY_TESTNET_HOSTS.has(raw);
+}
 
 function normalizeRevenueProfile(input) {
   const src = (input && typeof input === 'object') ? input : {};
@@ -1043,13 +1068,65 @@ function normalizeRevenueProfile(input) {
   };
 }
 
+function toPureZionRevenueProfile(profile) {
+  const base = normalizeRevenueProfile(profile || {});
+  return {
+    ...base,
+    enabled: false,
+    allocation: {
+      zionPct: 100,
+      multiAlgoPct: 0,
+      nclPct: 0
+    },
+    cpu: {
+      coin: 'auto'
+    },
+    merged: {
+      etcEnabled: false,
+      nxsEnabled: false
+    },
+    gpu: {
+      ...base.gpu,
+      enabled: false
+    },
+    ncl: {
+      enabled: false
+    },
+    nclEnabled: false
+  };
+}
+
+function isPureZionDesktopMode(config) {
+  const profile = normalizeRevenueProfile(config?.revenue || {});
+  return profile.enabled === false
+    && Number(profile?.allocation?.zionPct ?? 0) === 100
+    && Number(profile?.allocation?.multiAlgoPct ?? 0) === 0
+    && Number(profile?.allocation?.nclPct ?? 0) === 0
+    && !profile?.gpu?.enabled
+    && !profile?.ncl?.enabled
+    && !profile?.merged?.etcEnabled
+    && !profile?.merged?.nxsEnabled;
+}
+
+function isLegacyDefaultRevenueProfile(input) {
+  const profile = normalizeRevenueProfile(input || {});
+  return profile.enabled !== false
+    && Number(profile?.allocation?.zionPct ?? 0) === 50
+    && Number(profile?.allocation?.multiAlgoPct ?? 0) === 25
+    && Number(profile?.allocation?.nclPct ?? 0) === 25
+    && !profile?.gpu?.enabled
+    && !profile?.ncl?.enabled
+    && !profile?.merged?.etcEnabled
+    && !profile?.merged?.nxsEnabled;
+}
+
 const DEFAULT_CONFIG = {
   pool: {
-    host: '77.42.31.72',
-    port: 3333
+    host: PRIMARY_TESTNET_HOST,
+    port: PRIMARY_POOL_PORT
   },
   // ZION chain JSON-RPC endpoint (native core)
-  rpcUrl: 'http://77.42.31.72:8444/jsonrpc',
+  rpcUrl: DEFAULT_RPC_URL,
   // Mining algorithm — Deeksha canonical path (pool name: `cosmic_harmony`)
   algorithm: 'cosmic_harmony',
   // AI Afterburner integration (controls env ZION_AI_AFTERBURNER)
@@ -1057,7 +1134,7 @@ const DEFAULT_CONFIG = {
   aiAfterburner: true,
   // AI Native compute (earn ZION by processing AI tasks)
   aiNative: false, // OFF by default, user must enable
-  aiNativePoolUrl: 'http://77.42.31.72:8001',
+  aiNativePoolUrl: DEFAULT_AI_NATIVE_POOL_URL,
   aiNativeConsciousness: 1,
   // Local chat (optional)
   // Cloud chat (OpenAI-compatible). Keep endpoint editable for future ZION AI Native.
@@ -1148,12 +1225,22 @@ function loadConfig() {
       };
 
       merged.revenue = normalizeRevenueProfile(configOnDisk.revenue || merged.revenue);
+      const hasExplicitRevenue = Object.prototype.hasOwnProperty.call(configOnDisk || {}, 'revenue');
+      if (DESKTOP_PURE_ZION_DEFAULT) {
+        const shouldMigratePureZion = !hasExplicitRevenue || isLegacyDefaultRevenueProfile(configOnDisk.revenue);
+        if (shouldMigratePureZion) {
+          merged.revenue = toPureZionRevenueProfile(merged.revenue);
+        }
+      }
       // Backward compatibility with older top-level GPU revenue fields.
       if (typeof configOnDisk.gpuRevenue === 'boolean') {
         merged.revenue.gpu.enabled = configOnDisk.gpuRevenue;
       }
       if (Array.isArray(configOnDisk.gpuRevenueCoins) && configOnDisk.gpuRevenueCoins.length) {
         merged.revenue.gpu.coins = configOnDisk.gpuRevenueCoins.map((value) => String(value || '').trim().toUpperCase()).filter(Boolean);
+      }
+      if (DESKTOP_PURE_ZION_DEFAULT && shouldMigratePureZion) {
+        merged.revenue = toPureZionRevenueProfile(merged.revenue);
       }
       merged.gpuRevenue = !!merged.revenue.gpu.enabled;
       merged.gpuRevenueCoins = Array.isArray(merged.revenue.gpu.coins) && merged.revenue.gpu.coins.length
@@ -1190,16 +1277,34 @@ function loadConfig() {
       if (typeof merged.rpcUrl === 'string') {
         const trimmed = merged.rpcUrl.trim();
         if (trimmed === 'http://localhost:18081/json_rpc' || trimmed === 'http://127.0.0.1:18081/json_rpc') {
-          merged.rpcUrl = 'http://77.42.31.72:8444/jsonrpc';
+          merged.rpcUrl = DEFAULT_RPC_URL;
         }
         // Migrate localhost RPC to testnet server (user unlikely runs local node)
         if (trimmed === 'http://localhost:8444/jsonrpc' || trimmed === 'http://127.0.0.1:8444/jsonrpc') {
-          merged.rpcUrl = 'http://77.42.31.72:8444/jsonrpc';
+          merged.rpcUrl = DEFAULT_RPC_URL;
+        }
+        try {
+          const parsed = new URL(merged.rpcUrl);
+          if (isLegacyOrLocalHost(parsed.hostname)) {
+            merged.rpcUrl = DEFAULT_RPC_URL;
+          }
+        } catch {
+          // ignore malformed rpc url
         }
       }
-      // Migrate stale pool.host (DNS that doesn't resolve yet)
-      if (merged.pool && merged.pool.host === 'pool.zionterranova.com') {
-        merged.pool.host = '77.42.31.72';
+      if (merged.pool && isLegacyOrLocalHost(merged.pool.host)) {
+        merged.pool.host = PRIMARY_TESTNET_HOST;
+        merged.pool.port = PRIMARY_POOL_PORT;
+      }
+      if (typeof merged.aiNativePoolUrl === 'string') {
+        try {
+          const parsedAiNative = new URL(merged.aiNativePoolUrl.trim());
+          if (isLegacyOrLocalHost(parsedAiNative.hostname)) {
+            merged.aiNativePoolUrl = DEFAULT_AI_NATIVE_POOL_URL;
+          }
+        } catch {
+          merged.aiNativePoolUrl = DEFAULT_AI_NATIVE_POOL_URL;
+        }
       }
       return merged;
     }
@@ -2144,9 +2249,7 @@ function stopProfitPoll() {
 // ============================================================================
 
 const TESTNET_SERVERS = [
-  { id: 'helsinki', name: 'Helsinki', host: '77.42.31.72',    flag: 'FI', location: 'Finland' },
-  { id: 'usa2',    name: 'Usa2',    host: '178.156.240.160', flag: 'US', location: 'Ashburn, US' },
-  { id: 'asia3',   name: 'Asia3',   host: '5.223.43.93',     flag: 'SG', location: 'Singapore, SG' }
+  { id: 'zion2', name: 'Zion2', host: PRIMARY_TESTNET_HOST, flag: 'CZ', location: 'Primary TestNet' }
 ];
 
 async function checkServerPort(host, port, timeout = 3000) {
@@ -2519,7 +2622,7 @@ function createWindow() {
         cmd: 'start',
         config: {
           wallet: config.wallet,
-          pool_url: config.aiNativePoolUrl || 'http://77.42.31.72:8001',
+          pool_url: config.aiNativePoolUrl || DEFAULT_AI_NATIVE_POOL_URL,
           consciousness_level: config.aiNativeConsciousness || 1,
           gpu: config.gpu || false,
           threads: config.threads || 4
@@ -2722,7 +2825,7 @@ function startMining(config) {
     const _resolvedPy = _venvCandidates.find(c => { try { return !!c && fs.existsSync(c); } catch { return false; } });
     const pyExe = _resolvedPy || (process.platform === 'win32' ? 'python' : 'python3');
 
-    const pool = `${config.pool?.host || '77.42.31.72'}:${config.pool?.port || 3333}`;
+    const pool = `${config.pool?.host || PRIMARY_TESTNET_HOST}:${config.pool?.port || PRIMARY_POOL_PORT}`;
     const wallet = config.wallet || '';
     const worker = config.worker || 'desktop-agent';
     logApp('chv42-main-start', JSON.stringify({ pyExe, gpuScript, pool, worker }));
@@ -2758,6 +2861,7 @@ function startMining(config) {
     // GPU revenue stream přes Rust miner s --group revenue.
     const effectiveThreads = computeEffectiveThreads(config);
     const revenueProfile = normalizeRevenueProfile(config?.revenue || {});
+    const pureZionMode = isPureZionDesktopMode(config);
     const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
     const wantsGpu = miningMode === 'gpu' || miningMode === 'dual' || miningMode === 'gpu-revenue';
     const algoForGpu = normalizeAlgorithmName(config.algorithm || '');
@@ -2767,7 +2871,9 @@ function startMining(config) {
 
     const envDisableRevenue = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
     const envEnableRevenue = String(process.env.ZION_ENABLE_REVENUE || '').trim() === '1';
-    const revenueEnabled = envDisableRevenue ? false : (envEnableRevenue ? true : revenueProfile.enabled !== false);
+    const revenueEnabled = pureZionMode
+      ? false
+      : (envDisableRevenue ? false : (envEnableRevenue ? true : revenueProfile.enabled !== false));
 
     let xmrRevenueThreads = 0;
     if (revenueEnabled && effectiveThreads >= 3) {
@@ -2861,7 +2967,7 @@ function startMining(config) {
       const rustSelection = resolveMinerSelection('rust');
       const rustRevenuePath = rustSelection?.isRust ? rustSelection.path : '';
       const rustGroupSupported = rustRevenuePath ? rustMinerSupportsGroupFlag(rustRevenuePath) : false;
-      const gpuRevenueEnabled = !!(revenueProfile?.gpu?.enabled || config.gpuRevenue);
+      const gpuRevenueEnabled = !pureZionMode && !!(revenueProfile?.gpu?.enabled || config.gpuRevenue);
       const gpuRevenueAllowed = gpuRevenueEnabled && effectiveGpu && !mainMinerGpu;
 
       if (gpuRevenueEnabled && mainMinerGpu) {
@@ -2936,15 +3042,27 @@ function startMining(config) {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-  // ── CHvDeeksha Canonical fast-path ────────────────────────────────────────
-  // Spouští cosmic_harmony_deeksha_fallback.py jako minerProcess.
-  // Worker suffix: '-deeksha', revenue nonce partition: 0x40000000 offset.
-  const _deekshaAlgoName = String(config?.algorithm || '').toLowerCase();
-  if (_deekshaAlgoName === 'cosmic_harmony_deeksha' || _deekshaAlgoName === 'deeksha' || _deekshaAlgoName === 'chv_deeksha') {
+  // ── CHvDeeksha Canonical Python fast-path ─────────────────────────────────
+  // Pokud je pro canonical cosmic_harmony vybrán Python backend, musí jít
+  // přes Deeksha 2.9.8 scripts, ne přes legacy zion_native_miner_v2_9.py.
+  const _deekshaAlgoName = normalizeAlgorithmName(config?.algorithm || '');
+  const _deekshaPreferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
+  const _deekshaSelection = resolveMinerSelection(_deekshaPreferredBackend);
+  const _deekshaPythonSelected = !!_deekshaSelection?.isPython;
+  if (_deekshaAlgoName === 'cosmic_harmony' && _deekshaPythonSelected) {
     const isPackaged = app.isPackaged;
-    const deekshaScript = isPackaged
+    const deekshaCpuScript = isPackaged
       ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_deeksha_fallback.py')
       : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_deeksha_fallback.py');
+    const deekshaGpuScriptPrimary = isPackaged
+      ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_deeksha_gpu.py')
+      : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_deeksha_gpu.py');
+    const deekshaGpuScriptLegacy = isPackaged
+      ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_v42_gpu.py')
+      : path.join(APP_ROOT, 'resources', 'mining', 'cosmic_harmony_v42_gpu.py');
+    const deekshaGpuScript = fs.existsSync(deekshaGpuScriptPrimary)
+      ? deekshaGpuScriptPrimary
+      : deekshaGpuScriptLegacy;
 
     // Venv resoluce — identická s CHv4.2
     const _dvenvCandidates = process.platform === 'win32'
@@ -2963,14 +3081,83 @@ function startMining(config) {
     const _dResolvedPy = _dvenvCandidates.find(c => { try { return !!c && fs.existsSync(c); } catch { return false; } });
     const pyExeDeeksha = _dResolvedPy || (process.platform === 'win32' ? 'python' : 'python3');
 
-    const pool = `${config.pool?.host || '77.42.31.72'}:${config.pool?.port || 3333}`;
+    const effectiveThreadsDeeksha = computeEffectiveThreads(config);
+    const revenueProfileDeeksha = normalizeRevenueProfile(config?.revenue || {});
+    const pureZionModeDeeksha = isPureZionDesktopMode(config);
+    const miningModeDeeksha = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
+    const wantsGpuDeeksha = miningModeDeeksha === 'gpu' || miningModeDeeksha === 'dual' || miningModeDeeksha === 'gpu-revenue';
+    const gpuAllowedDeeksha = algoSupportsGpu(_deekshaAlgoName);
+    const effectiveGpuDeeksha = wantsGpuDeeksha && gpuAllowedDeeksha;
+    const mainMinerGpuDeeksha = effectiveGpuDeeksha && miningModeDeeksha !== 'gpu-revenue';
+    const currentGpuInfoDeeksha = detectGPU();
+    const deekshaGpuBatch = chooseGpuBatchSize(
+      currentGpuInfoDeeksha,
+      config?.gpuBatchSize || process.env.ZION_CHV3_GPU_BATCH || process.env.ZION_GPU_BATCH_SIZE
+    );
+
+    const envDisableRevenueDeeksha = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
+    const envEnableRevenueDeeksha = String(process.env.ZION_ENABLE_REVENUE || '').trim() === '1';
+    const revenueEnabledDeeksha = pureZionModeDeeksha
+      ? false
+      : (envDisableRevenueDeeksha ? false : (envEnableRevenueDeeksha ? true : revenueProfileDeeksha.enabled !== false));
+
+    let deekshaRevenueThreads = 0;
+    if (revenueEnabledDeeksha && effectiveThreadsDeeksha >= 3) {
+      const multiPct = Math.max(0, Math.min(100, Number(revenueProfileDeeksha?.allocation?.multiAlgoPct ?? 25)));
+      const maxRevenue = Math.max(0, effectiveThreadsDeeksha - 2);
+      deekshaRevenueThreads = Math.min(maxRevenue, Math.max(1, Math.round(effectiveThreadsDeeksha * (multiPct / 100))));
+    }
+    const zionThreadsDeeksha = Math.max(1, effectiveThreadsDeeksha - deekshaRevenueThreads);
+
+    // Nonce partition: hlavní miner 0x00..., revenue 0x40000000...
+    const deekshaSessionNonceBaseMain = (Date.now() >>> 0) & 0x1fffffff;
+    const deekshaSessionNonceBaseRevenue = deekshaSessionNonceBaseMain + 0x40000000;
+    const deekshaMainEnv = { ...process.env, ZION_NONCE_BASE: String(deekshaSessionNonceBaseMain) };
+    const deekshaRevenueEnv = { ...process.env, ZION_NONCE_BASE: String(deekshaSessionNonceBaseRevenue) };
+
+    const pool = `${config.pool?.host || PRIMARY_TESTNET_HOST}:${config.pool?.port || PRIMARY_POOL_PORT}`;
     const wallet = config.wallet || '';
     const worker = config.worker || 'desktop-agent';
-    logApp('deeksha-main-start', JSON.stringify({ pyExeDeeksha, deekshaScript, pool, worker }));
-    sendToRenderer('miner-output', { stream: 'stdout', text: `[CHvDeeksha] Spouštím Deeksha canonical miner...\n[CHvDeeksha] Python: ${pyExeDeeksha}\n[CHvDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n` });
+    const deekshaMainScript = mainMinerGpuDeeksha ? deekshaGpuScript : deekshaCpuScript;
+    const deekshaMainArgs = [
+      deekshaMainScript,
+      '--pool', pool,
+      '--wallet', wallet,
+      '--worker', `${worker}-deeksha`,
+      '--backend', 'auto',
+    ];
+    if (mainMinerGpuDeeksha) {
+      deekshaMainArgs.push('--batch', String(deekshaGpuBatch));
+    } else {
+      deekshaMainArgs.push(
+        '--threads', String(zionThreadsDeeksha),
+        '--stats-file', STATS_PATH,
+        '--stats-interval', String(STATS_INTERVAL_SEC),
+      );
+    }
+
+    logApp('deeksha-main-start', JSON.stringify({
+      pyExeDeeksha,
+      deekshaMainScript,
+      pool,
+      worker,
+      mainMinerGpuDeeksha,
+      zionThreadsDeeksha,
+      deekshaRevenueThreads,
+      deekshaGpuBatch,
+      gpuBackend: currentGpuInfoDeeksha?.backendPreferred || currentGpuInfoDeeksha?.type || 'cpu',
+    }));
+    sendToRenderer('miner-output', {
+      stream: 'stdout',
+      text:
+        `[CHvDeeksha] Spouštím Deeksha canonical miner...\n` +
+        `[CHvDeeksha] Python: ${pyExeDeeksha}\n` +
+        `[CHvDeeksha] Main path: ${mainMinerGpuDeeksha ? 'gpu/metal' : 'cpu'}\n` +
+        `[CHvDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n`
+    });
     try {
-      minerProcess = spawn(pyExeDeeksha, [deekshaScript, '--pool', pool, '--wallet', wallet, '--worker', `${worker}-deeksha`, '--backend', 'auto'], {
-        env: { ...process.env },
+      minerProcess = spawn(pyExeDeeksha, deekshaMainArgs, {
+        env: deekshaMainEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
         windowsHide: true,
       });
@@ -2979,7 +3166,12 @@ function startMining(config) {
       sendToRenderer('miner-output', { stream: 'stderr', text: msg });
       return { success: false, error: String(e) };
     }
-    sendToRenderer('miner-backend', { preferred: 'python', resolved: 'deeksha-fallback', path: pyExeDeeksha, lastError: '' });
+    sendToRenderer('miner-backend', {
+      preferred: 'python',
+      resolved: mainMinerGpuDeeksha ? 'deeksha-gpu' : 'deeksha-fallback',
+      path: pyExeDeeksha,
+      lastError: ''
+    });
     minerProcess.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
     minerProcess.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
     minerProcess.on('exit', (code) => {
@@ -2995,35 +3187,17 @@ function startMining(config) {
     }, 450);
 
     // ── Deeksha Revenue (parity s CHv4.2) ─────────────────────────────────
-    const effectiveThreadsDeeksha = computeEffectiveThreads(config);
-    const revenueProfileDeeksha = normalizeRevenueProfile(config?.revenue || {});
-
-    const envDisableRevenueDeeksha = String(process.env.ZION_DISABLE_REVENUE || '').trim() === '1';
-    const envEnableRevenueDeeksha = String(process.env.ZION_ENABLE_REVENUE || '').trim() === '1';
-    const revenueEnabledDeeksha = envDisableRevenueDeeksha ? false : (envEnableRevenueDeeksha ? true : revenueProfileDeeksha.enabled !== false);
-
-    let deekshaRevenueThreads = 0;
-    if (revenueEnabledDeeksha && effectiveThreadsDeeksha >= 3) {
-      const multiPct = Math.max(0, Math.min(100, Number(revenueProfileDeeksha?.allocation?.multiAlgoPct ?? 25)));
-      const maxRevenue = Math.max(0, effectiveThreadsDeeksha - 2);
-      deekshaRevenueThreads = Math.min(maxRevenue, Math.max(1, Math.round(effectiveThreadsDeeksha * (multiPct / 100))));
-    }
-
-    // Nonce partition: hlavní miner 0x00..., revenue 0x40000000...
-    const deekshaSessionNonceBaseMain = (Date.now() >>> 0) & 0x1fffffff;
-    const deekshaSessionNonceBaseRevenue = deekshaSessionNonceBaseMain + 0x40000000;
-    const deekshaRevenueEnv = { ...process.env, ZION_NONCE_BASE: String(deekshaSessionNonceBaseRevenue) };
-
     if (revenueEnabledDeeksha && deekshaRevenueThreads > 0) {
       try {
         const deekshaRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_deeksha_revenue.json');
         const revArgs = [
-          deekshaScript,
+          deekshaCpuScript,
           '--pool', pool,
           '--wallet', wallet,
           '--threads', String(deekshaRevenueThreads),
           '--stats-file', deekshaRevenueStatsPath,
           '--stats-interval', String(STATS_INTERVAL_SEC || 30),
+          '--backend', 'auto',
         ];
         if (worker) revArgs.push('--worker', `${worker}-deeksha-rev`);
         revenueProcess = spawn(pyExeDeeksha, revArgs, {
@@ -3252,6 +3426,7 @@ function startMining(config) {
   // We do not add new UI; we just clamp/auto-pick effective threads.
   let effectiveThreads = computeEffectiveThreads(config);
   const revenueProfile = normalizeRevenueProfile(config?.revenue || {});
+  const pureZionMode = isPureZionDesktopMode(config);
 
   // Mining mode: cpu, gpu, dual, gpu-revenue (new UI)
   // Backwards compatible: if miningMode not set, use legacy gpu checkbox
@@ -3729,7 +3904,7 @@ function startMining(config) {
 
     const modeLabel = gpuInfo.available ? `GPU: ${gpuInfo.name} (${gpuInfo.type})` : 'CPU-ONLY MODE (no GPU detected)';
     sendToRenderer('miner-output', { stream: 'stdout', text: `[CH3] ${modeLabel}\n` });
-    if (gpuInfo.cpuOnly) {
+    if (gpuInfo.cpuOnly && !pureZionMode) {
       sendToRenderer('miner-output', { stream: 'stdout', text: '[CH3] Revenue stream locked to XMR/RandomX (25% CPU time)\n' });
     }
   } catch {}
@@ -4252,6 +4427,7 @@ function startMining(config) {
   const allowRevenueWithMainGpu = String(process.env.ZION_ALLOW_REVENUE_WITH_MAIN_GPU || '1').trim() !== '0';
   const revenueSuppressedForGpuInit = mainMinerGpu && !allowRevenueWithMainGpu;
   const canSpawnRevenue =
+    !pureZionMode &&
     !revenueSuppressedForGpuInit &&
     xmrRevenueThreads > 0 &&
     ((MINER_IS_RUST && rustGroupSupported) || MINER_IS_PYTHON);
@@ -4385,7 +4561,7 @@ function startMining(config) {
   // Two OpenCL processes on the same GPU cause severe context-switching overhead
   // and can drop hashrate from >100 MH/s to <20 MH/s. GPU is exclusive to one process.
   // GPU Revenue only gets the GPU in 'gpu-revenue' mining mode.
-  const gpuRevenueEnabled = !!(revenueProfile?.gpu?.enabled || config.gpuRevenue);
+  const gpuRevenueEnabled = !pureZionMode && !!(revenueProfile?.gpu?.enabled || config.gpuRevenue);
   const gpuRevenueAllowed = gpuRevenueEnabled && effectiveGpu && !mainMinerGpu;
   if (gpuRevenueEnabled && mainMinerGpu) {
     // GPU is dedicated to ZION mining — skip GPU Revenue to avoid contention
@@ -4536,7 +4712,7 @@ function startMining(config) {
   //   Stream 2 (25%): GPU → external coin pool (this block, direct connection)
   //   Stream 3 (25%): CPU → ZION pool --group revenue → XMR (revenue process, above)
   // ────────────────────────────────────────────────────────────────────────
-  const gpuDirectPoolMode = (
+  const gpuDirectPoolMode = !pureZionMode && (
     config.gpuRevenueDirectPool === true ||
     String(process.env.ZION_GPU_DIRECT_POOL || '').trim() === '1'
   );
@@ -4584,7 +4760,9 @@ function startMining(config) {
     const poolApiPort = Number(config?.pool?.apiPort || process.env.ZION_POOL_API_PORT || 8080);
     multiStreamStatus.active = !!(minerProcess || revenueProcess || gpuRevenueProcess);
     sendToRenderer('multi-stream-status', buildMultiStreamPayload());
-    startProfitPoll(poolApiHost, poolApiPort, spawnCommand, minerCwd, config, env);
+    if (!pureZionMode) {
+      startProfitPoll(poolApiHost, poolApiPort, spawnCommand, minerCwd, config, env);
+    }
     logApp('multi-stream-started', JSON.stringify({
       zion: !!minerProcess, gpuCoin: multiStreamCurrentCoin, gpuDirect: gpuDirectPoolMode,
       revenueCpu: !!revenueProcess, gpuRevenue: !!gpuRevenueProcess,
@@ -4597,7 +4775,9 @@ function startMining(config) {
       ].filter(Boolean).join(' + ') || 'single';
       sendToRenderer('miner-output', {
         stream: 'stdout',
-        text: `[CH3-MULTI] Active streams: ${streamDesc} — profit-switch poll: ${poolApiHost}:${poolApiPort}\n`
+        text: pureZionMode
+          ? `[CH3-MULTI] Active streams: ${streamDesc} — pure ZION mode\n`
+          : `[CH3-MULTI] Active streams: ${streamDesc} — profit-switch poll: ${poolApiHost}:${poolApiPort}\n`
       });
     } catch {}
   }
@@ -6384,7 +6564,7 @@ ipcMain.handle('stop-mining', async () => {
 ipcMain.handle('start-chv42-gpu', (event, cfg) => {
   if (chv42GpuProcess) return { success: false, error: 'CHv4.2 GPU already running' };
   const conf = cfg || loadConfig();
-  const pool = `${conf.pool?.host || '77.42.31.72'}:${conf.pool?.port || 3333}`;
+  const pool = `${conf.pool?.host || PRIMARY_TESTNET_HOST}:${conf.pool?.port || PRIMARY_POOL_PORT}`;
   const wallet = conf.wallet || '';
   const worker = conf.worker || 'desktop-agent';
   const isPackaged = app.isPackaged;
@@ -6462,7 +6642,7 @@ ipcMain.handle('ai-native-start', async (event, config) => {
       cmd: 'start',
       config: {
         wallet: config.wallet,
-        pool_url: config.aiNativePoolUrl || 'http://77.42.31.72:8001',
+        pool_url: config.aiNativePoolUrl || DEFAULT_AI_NATIVE_POOL_URL,
         consciousness_level: config.aiNativeConsciousness || 1,
         gpu: config.gpu || false,
         threads: config.threads || 4
@@ -6778,7 +6958,7 @@ ipcMain.handle('bridge-send-lock', async (event, { amount, fromAddress }) => {
     });
     if (confirmation.response !== 0) return { success: false, error: 'Cancelled by user' };
 
-    const rpcUrl = 'http://77.42.31.72:8444/jsonrpc';
+    const rpcUrl = DEFAULT_RPC_URL;
     const res    = await zionRpcCall(rpcUrl, 'sendtransaction', {
       from  : fromAddress,
       to    : BRIDGE_VAULT_ADDR,
@@ -6880,7 +7060,7 @@ ipcMain.handle('bridge-burn-wzion', async (event, { amount, l1Recipient, passwor
 // Forwards to the zion-dao REST API running on :8080
 // ============================================================================
 
-const DAO_API_BASE = 'http://77.42.31.72:8080';
+const DAO_API_BASE = DEFAULT_DAO_API_BASE;
 const DAO_API_KEY  = process.env.ZION_DAO_API_KEY || '';
 
 async function daoFetch(path, opts = {}) {
@@ -6965,7 +7145,7 @@ ipcMain.handle('dao-get-treasury', async () => {
 // Forwards to the zion-warp REST API running on :9333
 // ============================================================================
 
-const WARP_API_BASE = 'http://77.42.31.72:9333';
+const WARP_API_BASE = DEFAULT_WARP_API_BASE;
 
 async function warpFetch(path, opts = {}) {
   const url = WARP_API_BASE + path;
@@ -7587,7 +7767,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
 
     const normalizeRpcUrl = (value) => {
       const raw = String(value || '').trim();
-      if (!raw) return 'http://77.42.31.72:8444/jsonrpc';
+      if (!raw) return DEFAULT_RPC_URL;
       if (/^https?:\/\//i.test(raw)) {
         if (raw.endsWith('/jsonrpc')) return raw;
         if (/:\d+\/?$/.test(raw)) return raw.replace(/\/+$/, '') + '/jsonrpc';
@@ -7784,7 +7964,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     // Build multi-server candidate list (same pattern as wallet-get-balance)
     const normalizeRpcUrl = (value) => {
       const raw = String(value || '').trim();
-      if (!raw) return 'http://77.42.31.72:8444/jsonrpc';
+      if (!raw) return DEFAULT_RPC_URL;
       if (/^https?:\/\//i.test(raw)) {
         if (raw.endsWith('/jsonrpc')) return raw;
         if (/:\d+\/?$/.test(raw)) return raw.replace(/\/+$/, '') + '/jsonrpc';

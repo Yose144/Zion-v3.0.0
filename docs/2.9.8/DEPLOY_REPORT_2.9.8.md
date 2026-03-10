@@ -5,6 +5,9 @@
 > **Síť:** Testnet  
 > **Autor:** Autopilot CI / Copilot  
 
+> Historická poznámka: tento dokument zachycuje původní 3-server deploy snapshot 2.9.8.
+> Aktuální live infrastruktura po resetu a konsolidaci běží na primárním hostu `91.98.122.165` a je popsána v `docs/reports/STATUS_REPORT_2026-03-10_NEW_SERVER.md`.
+
 ---
 
 ## Přehled
@@ -154,5 +157,5 @@ ssh -i ~/.ssh/zion_hetzner_key root@<ip>
 
 ---
 
-> **Verdict:** Testnet deployment 2.9.8 Deeksha je na 3/3 serverech funkční a chain je synchronní.  
-> x86 seed nody jsou oddělené od lokální pool dependency a míří na Helsinki pool přes `MINER_POOL_URL`.
+> **Verdict:** Tento dokument zůstává platný jako historický deploy snapshot 2.9.8 pro původní 3-server topologii.  
+> Pro aktuální live stav používej `docs/reports/STATUS_REPORT_2026-03-10_NEW_SERVER.md` a nové infra runbooky.

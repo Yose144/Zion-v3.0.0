@@ -1,3 +1,5 @@
+import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL, SITE_PRIMARY_RPC_URL } from '@/lib/site';
+
 export type SeedNodeConfig = {
   id: string;
   name: string;
@@ -25,54 +27,31 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
-// Active 3-node topology (24.2.2026): Helsinki + Usa (Ashburn) + Asia (Singapore)
-// Decommissioned: SeedDE (46.225.126.243), Usa1 (5.78.178.227)
+// Current public topology: one primary host with two internal seed containers.
 const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
   {
-    id: 'seed-helsinki',
-    name: 'Helsinki',
-    host: '77.42.31.72',
-    region: 'EU-NORTH',
-    lat: 60.17,
-    lon: 24.94,
+    id: 'primary-host',
+    name: 'Zion2 Primary',
+    host: SITE_PRIMARY_HOST,
+    region: 'PRIMARY',
+    lat: 0,
+    lon: 0,
     ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
-    rpcUrl: 'http://77.42.31.72:8444/jsonrpc',
-    poolApiUrl: 'http://77.42.31.72:8080',
-  },
-  {
-    id: 'seed-usa',
-    name: 'Usa',
-    host: '178.156.240.160',
-    region: 'US-EAST',
-    lat: 38.89,
-    lon: -77.04,
-    ports: { p2p: 8334, rpc: 8444, stratum: 0, pool_api: 0 },
-    rpcUrl: 'http://178.156.240.160:8444/jsonrpc',
-  },
-  {
-    id: 'seed-asia',
-    name: 'Asia',
-    host: '5.223.43.93',
-    region: 'AP-SOUTHEAST',
-    lat: 1.35,
-    lon: 103.82,
-    ports: { p2p: 8334, rpc: 8444, stratum: 0, pool_api: 0 },
-    rpcUrl: 'http://5.223.43.93:8444/jsonrpc',
+    rpcUrl: SITE_PRIMARY_RPC_URL,
+    poolApiUrl: SITE_PRIMARY_POOL_API_URL,
   },
 ];
 
 const DEFAULT_MINING_POOLS: MiningPoolConfig[] = [
   {
-    id: 'pool-helsinki',
-    name: 'Helsinki Pool (Primary)',
-    host: '77.42.31.72',
+    id: 'pool-primary',
+    name: 'Primary Pool',
+    host: SITE_PRIMARY_HOST,
     port: 3333,
-    region: 'EU-NORTH',
-    lat: 60.17,
-    lon: 24.94,
+    region: 'PRIMARY',
+    lat: 0,
+    lon: 0,
   },
-
-  // Usa/Asia are seed-only — no stratum pool
 ];
 
 function safeJsonParse<T>(raw: string | undefined | null): T | null {

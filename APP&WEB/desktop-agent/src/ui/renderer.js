@@ -23,15 +23,21 @@ let currentView = 'dashboard';
 let config = {};
 let isRunning = false;
 
+const PRIMARY_TESTNET_HOST = '91.98.122.165';
+const PRIMARY_POOL_PORT = 3333;
+const PRIMARY_RPC_PORT = 8444;
+const DEFAULT_RPC_URL = `http://${PRIMARY_TESTNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+const DESKTOP_PURE_ZION_DEFAULT = true;
+
 // CH3 Multi-stream status cache (updated via 'multi-stream-status' IPC event)
 let _lastMultiStreamStatus = null;
 
 const DEFAULT_REVENUE_PROFILE = {
-  enabled: true,
+  enabled: !DESKTOP_PURE_ZION_DEFAULT,
   allocation: {
-    zionPct: 50,
-    multiAlgoPct: 25,
-    nclPct: 25,
+    zionPct: DESKTOP_PURE_ZION_DEFAULT ? 100 : 50,
+    multiAlgoPct: DESKTOP_PURE_ZION_DEFAULT ? 0 : 25,
+    nclPct: DESKTOP_PURE_ZION_DEFAULT ? 0 : 25,
   },
   cpu: { coin: 'auto' },
   merged: { etcEnabled: false, nxsEnabled: false },
@@ -86,6 +92,55 @@ function normalizeRevenueProfile(input = {}) {
       aiGateway: input?.freeStreams?.aiGateway !== undefined ? !!input.freeStreams.aiGateway : DEFAULT_REVENUE_PROFILE.freeStreams.aiGateway,
     },
   };
+}
+
+function toPureZionRevenueProfile(input = {}) {
+  const base = normalizeRevenueProfile(input);
+  return {
+    ...base,
+    enabled: false,
+    allocation: {
+      zionPct: 100,
+      multiAlgoPct: 0,
+      nclPct: 0,
+    },
+    cpu: { coin: 'auto' },
+    gpu: {
+      ...base.gpu,
+      enabled: false,
+    },
+    ncl: { enabled: false },
+    nclEnabled: false,
+    merged: { etcEnabled: false, nxsEnabled: false },
+  };
+}
+
+function isPureZionDesktopMode(cfg = config) {
+  const revenue = normalizeRevenueProfile(cfg?.revenue || {});
+  return revenue.enabled === false
+    && Number(revenue?.allocation?.zionPct ?? 0) === 100
+    && Number(revenue?.allocation?.multiAlgoPct ?? 0) === 0
+    && Number(revenue?.allocation?.nclPct ?? 0) === 0
+    && !revenue?.gpu?.enabled
+    && !revenue?.ncl?.enabled
+    && !revenue?.merged?.etcEnabled
+    && !revenue?.merged?.nxsEnabled;
+}
+
+function normalizeMiningMode(mode, pureZionMode = isPureZionDesktopMode(config)) {
+  const raw = String(mode || '').trim().toLowerCase() || 'dual';
+  if (pureZionMode && raw === 'gpu-revenue') return 'dual';
+  return raw;
+}
+
+function applyPureZionUiState(cfg = config) {
+  const pureZionMode = isPureZionDesktopMode(cfg);
+  const revenueSection = document.getElementById('revenue-routing-section');
+  const pureNote = document.getElementById('pure-zion-note');
+  const gpuRevenuePill = document.getElementById('mode-gpu-revenue-pill');
+  if (revenueSection) revenueSection.style.display = pureZionMode ? 'none' : '';
+  if (pureNote) pureNote.style.display = pureZionMode ? 'block' : 'none';
+  if (gpuRevenuePill) gpuRevenuePill.style.display = pureZionMode ? 'none' : '';
 }
 
 let cpuThreadMax = 32;
@@ -644,11 +699,14 @@ function setupControls() {
   const backendStatusEl = document.getElementById('backend-status');
 
   const setModeStatus = (mode) => {
+    const pureZionMode = isPureZionDesktopMode(config);
     const labels = {
       'cpu': 'CPU mining only (~600 kH/s)',
       'gpu': 'GPU mining only (~8.5 GH/s)',
       'dual': 'Dual mining uses both CPU and GPU simultaneously (MAX POWER!)',
-      'gpu-revenue': 'GPU revenue mode routes GPU to profit-switch stream while CPU keeps ZION/revenue split'
+      'gpu-revenue': pureZionMode
+        ? 'GPU revenue mode is disabled in pure ZION desktop mode'
+        : 'GPU revenue mode routes GPU to profit-switch stream while CPU keeps ZION/revenue split'
     };
     if (modeStatusEl) modeStatusEl.textContent = labels[mode] || '';
   };
@@ -656,7 +714,11 @@ function setupControls() {
   // Mining mode radio button listeners
   document.querySelectorAll('input[name="mining-mode"]').forEach(radio => {
     radio.addEventListener('change', () => {
-      const mode = radio.value;
+      const mode = normalizeMiningMode(radio.value);
+      if (mode !== radio.value) {
+        const fallbackRadio = document.querySelector(`input[name="mining-mode"][value="${mode}"]`);
+        if (fallbackRadio) fallbackRadio.checked = true;
+      }
       setModeStatus(mode);
       // Sync hidden gpu checkbox for backwards compat
       if (gpuCheckbox) gpuCheckbox.checked = (mode === 'gpu' || mode === 'dual' || mode === 'gpu-revenue');
@@ -797,16 +859,16 @@ function setupControls() {
   saveSettingsBtn.addEventListener('click', async () => {
     // Read settings from UI - Pool selection with radio buttons
     const poolRadio = document.querySelector('input[name="pool-select"]:checked');
-    let poolHost = '77.42.31.72';
-    let poolPort = 3333;
+    let poolHost = PRIMARY_TESTNET_HOST;
+    let poolPort = PRIMARY_POOL_PORT;
     
     if (poolRadio) {
       if (poolRadio.value === 'custom') {
         // Custom pool - read from text input
         const customPool = document.getElementById('pool-input').value;
         const [h, p] = customPool.split(':');
-        poolHost = h || '77.42.31.72';
-        poolPort = parseInt(p) || 3333;
+        poolHost = h || PRIMARY_TESTNET_HOST;
+        poolPort = parseInt(p) || PRIMARY_POOL_PORT;
       } else {
         // Predefined pool
         const [h, p] = poolRadio.value.split(':');
@@ -815,7 +877,11 @@ function setupControls() {
       }
     }
     
-    const selectedMode = document.querySelector('input[name="mining-mode"]:checked')?.value || 'dual';
+    const pureZionMode = isPureZionDesktopMode(config);
+    const selectedMode = normalizeMiningMode(
+      document.querySelector('input[name="mining-mode"]:checked')?.value || 'dual',
+      pureZionMode,
+    );
     const revenueCpuCoin = (document.getElementById('revenue-cpu-coin')?.value || 'auto').toLowerCase();
     const revenueGpuCoinsRaw = document.getElementById('revenue-gpu-coins')?.value || '';
     const revenueGpuCoins = revenueGpuCoinsRaw
@@ -824,7 +890,7 @@ function setupControls() {
       .filter(Boolean);
 
     const currentRevenue = normalizeRevenueProfile(config?.revenue || {});
-    const nextRevenue = normalizeRevenueProfile({
+    let nextRevenue = normalizeRevenueProfile({
       ...currentRevenue,
       enabled: !!document.getElementById('revenue-enabled')?.checked,
       allocation: {
@@ -848,13 +914,17 @@ function setupControls() {
       },
     });
 
+    if (DESKTOP_PURE_ZION_DEFAULT || pureZionMode) {
+      nextRevenue = toPureZionRevenueProfile(nextRevenue);
+    }
+
     config = {
       ...config,
       pool: {
         host: poolHost,
         port: poolPort
       },
-      rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl,
+      rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl || DEFAULT_RPC_URL,
       algorithm: config.algorithm || 'cosmic_harmony_v3',
       wallet: document.getElementById('wallet-input').value,
       worker: document.getElementById('worker-input').value,
@@ -866,7 +936,7 @@ function setupControls() {
       miningMode: selectedMode,
       gpu: ['gpu', 'dual', 'gpu-revenue'].includes(selectedMode),
       // GPU Revenue Mining configuration
-      gpuRevenue: selectedMode === 'gpu-revenue' || nextRevenue.gpu.enabled,
+      gpuRevenue: !DESKTOP_PURE_ZION_DEFAULT && (selectedMode === 'gpu-revenue' || nextRevenue.gpu.enabled),
       gpuRevenueCoins: nextRevenue.gpu.coins,
       poolPreference: nextRevenue.gpu.poolPreference || 'herominers',
       poolRegion: nextRevenue.gpu.poolRegion || 'eu',
@@ -880,6 +950,8 @@ function setupControls() {
       minimizeToTray: true,
       startMinimized: false
     };
+
+    applyPureZionUiState(config);
     
     const result = await window.electronAPI.saveConfig(config);
     if (result) {
@@ -931,13 +1003,9 @@ function updateSettingsUI() {
   document.getElementById('wallet-input').value = config.wallet || '';
   
   // Pool selection - set correct radio button
-  const poolAddress = `${config.pool?.host || '77.42.31.72'}:${config.pool?.port || 3333}`;
+  const poolAddress = `${config.pool?.host || PRIMARY_TESTNET_HOST}:${config.pool?.port || PRIMARY_POOL_PORT}`;
   const poolRadios = {
-    '77.42.31.72:3333': 'pool-helsinki',
-    '46.225.126.243:3333': 'pool-germany',
-    '5.78.178.227:3333': 'pool-usa1',
-    '178.156.240.160:3333': 'pool-usa2',
-    '5.223.43.93:3333': 'pool-asia3'
+    [`${PRIMARY_TESTNET_HOST}:${PRIMARY_POOL_PORT}`]: 'pool-primary'
   };
   
   if (poolRadios[poolAddress]) {
@@ -955,7 +1023,7 @@ function updateSettingsUI() {
   }
   
   const rpcUrlEl = document.getElementById('rpc-url');
-  if (rpcUrlEl) rpcUrlEl.value = config.rpcUrl || 'http://77.42.31.72:8444/jsonrpc';
+  if (rpcUrlEl) rpcUrlEl.value = config.rpcUrl || DEFAULT_RPC_URL;
   document.getElementById('worker-input').value = config.worker || 'desktop-agent';
   const threadsInput = document.getElementById('threads-input');
   if (threadsInput) {
@@ -970,21 +1038,26 @@ function updateSettingsUI() {
   if (threadsMaxEl) threadsMaxEl.textContent = String(cpuThreadMax);
 
   // Mining Mode radio buttons (new UI)
-  const miningMode = config.miningMode || (config.gpu ? 'dual' : 'cpu');
+  const miningMode = normalizeMiningMode(config.miningMode || (config.gpu ? 'dual' : 'cpu'));
   const modeRadio = document.querySelector(`input[name="mining-mode"][value="${miningMode}"]`);
   if (modeRadio) modeRadio.checked = true;
   const modeStatusEl = document.getElementById('mode-status');
   if (modeStatusEl) {
+    const pureZionMode = isPureZionDesktopMode(config);
     const modeLabels = {
       'cpu': 'CPU mining only (~600 kH/s)',
       'gpu': 'GPU mining only (~8.5 GH/s)',
       'dual': 'Dual mining uses both CPU and GPU simultaneously (MAX POWER!)',
-      'gpu-revenue': 'GPU revenue mode routes GPU to profit-switch stream while CPU keeps ZION/revenue split'
+      'gpu-revenue': pureZionMode
+        ? 'GPU revenue mode is disabled in pure ZION desktop mode'
+        : 'GPU revenue mode routes GPU to profit-switch stream while CPU keeps ZION/revenue split'
     };
     modeStatusEl.textContent = modeLabels[miningMode] || '';
   }
 
-  const revenue = normalizeRevenueProfile(config?.revenue || {});
+  const revenue = DESKTOP_PURE_ZION_DEFAULT
+    ? toPureZionRevenueProfile(config?.revenue || {})
+    : normalizeRevenueProfile(config?.revenue || {});
   const revenueCpuCoinEl = document.getElementById('revenue-cpu-coin');
   const revenueGpuCoinsEl = document.getElementById('revenue-gpu-coins');
   const revenueEnabledEl = document.getElementById('revenue-enabled');
@@ -1027,6 +1100,7 @@ function updateSettingsUI() {
     // GPU checkbox is checked if mode is 'gpu' or 'dual' or 'gpu-revenue'
     gpuEl.checked = (miningMode === 'gpu' || miningMode === 'dual' || miningMode === 'gpu-revenue');
   }
+  applyPureZionUiState(config);
   document.getElementById('autostart-checkbox').checked = config.autoStart || false;
 
   const backendStatusEl = document.getElementById('backend-status');
@@ -1910,7 +1984,7 @@ function setupWalletControls() {
   const sendRefreshFromBtn = document.getElementById('send-refresh-from-btn');
 
   const getRpcUrl = () => {
-    let url = (config?.rpcUrl || 'http://77.42.31.72:8444/jsonrpc').trim();
+    let url = (config?.rpcUrl || DEFAULT_RPC_URL).trim();
     // Ensure /jsonrpc path is present (common misconfiguration: port without path)
     if (url && !url.endsWith('/jsonrpc') && /:\d+\/?$/.test(url)) {
       url = url.replace(/\/+$/, '') + '/jsonrpc';
@@ -2621,6 +2695,7 @@ function updateStreamIndicator(mode, algo) {
 }
 
 function updateCH3Dashboard(stats) {
+  const pureZionMode = isPureZionDesktopMode(config);
   // Stream indicator
   if (stats.isRunning) {
     const mode = stats.stream_mode || 'ZION';
@@ -2649,7 +2724,7 @@ function updateCH3Dashboard(stats) {
   const splitBadge = document.getElementById('revenue-split-badge');
   const splitText = document.getElementById('revenue-split-text');
   if (splitBadge && splitText) {
-    if (stats.isRunning && stats.dual_mining) {
+    if (!pureZionMode && stats.isRunning && stats.dual_mining) {
       const zT = stats.zion_threads || 0;
       const rT = stats.xmr_threads || 0;
       const nT = stats.ncl_threads || 0;
@@ -2682,6 +2757,11 @@ function updateCH3Dashboard(stats) {
 function updateMultiStreamBar(status) {
   const bar = document.getElementById('multi-stream-bar');
   if (!bar) return;
+
+  if (isPureZionDesktopMode(config)) {
+    bar.classList.remove('active');
+    return;
+  }
 
   const zionRunning = !!(status?.zion?.running);
   const gpuRunning  = !!(status?.gpuCoin?.running);

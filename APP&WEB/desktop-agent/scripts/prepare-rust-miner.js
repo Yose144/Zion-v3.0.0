@@ -268,7 +268,9 @@ function main() {
   // Native mining libraries (dylib/so/dll) — required for CH3
   // ═══════════════════════════════════════════════════════════
   const nativeLibDir = path.join(resourcesDir, 'native-libs');
+  const miningLibDir = path.join(resourcesDir, 'mining');
   ensureDir(nativeLibDir);
+  ensureDir(miningLibDir);
 
   // Platform-specific native library extensions
   const libExtMap = {
@@ -287,28 +289,62 @@ function main() {
     rustMinerRoot ? path.join(rustMinerRoot, '..', 'native-libs') : null,
   ].filter(Boolean);
 
-  // Explicitly bundle libcosmic_harmony from L1/ root (canonical Deeksha dylib/so/dll)
-  // This ensures the native Python miner always has the dylib available.
-  const explicitCHv4Lib = path.join(workspaceRoot, 'L1', `libcosmic_harmony${libExt}`);
-  if (fs.existsSync(explicitCHv4Lib)) {
+  // Explicitly bundle the Rust cdylib that exports zion_deeksha_hash.
+  // Prefer the freshly built target/release artifact over stale legacy libs.
+  const explicitNativeLibCandidates = [
+    path.join(workspaceRoot, 'target', 'release', `libzion_cosmic_harmony_v3${libExt}`),
+    path.join(workspaceRoot, 'L1', 'cosmic-harmony', 'target', 'release', `libzion_cosmic_harmony_v3${libExt}`),
+    path.join(workspaceRoot, 'L1', 'native-libs', 'all', `libzion_cosmic_harmony_v3${libExt}`),
+    path.join(workspaceRoot, 'L1', `libcosmic_harmony${libExt}`),
+  ];
+  const explicitDeekshaLib = explicitNativeLibCandidates.find((candidate) => fs.existsSync(candidate));
+  if (explicitDeekshaLib) {
     const dst = path.join(nativeLibDir, `libcosmic_harmony${libExt}`);
     const dstDeeksha = path.join(nativeLibDir, `libcosmic_harmony_deeksha${libExt}`);
+    const dstCanonical = path.join(nativeLibDir, `libzion_cosmic_harmony_v3${libExt}`);
+    const dstRoot = path.join(resourcesDir, `libcosmic_harmony${libExt}`);
+    const dstRootDeeksha = path.join(resourcesDir, `libcosmic_harmony_deeksha${libExt}`);
+    const dstRootCanonical = path.join(resourcesDir, `libzion_cosmic_harmony_v3${libExt}`);
+    const dstMining = path.join(miningLibDir, `libcosmic_harmony${libExt}`);
+    const dstMiningDeeksha = path.join(miningLibDir, `libcosmic_harmony_deeksha${libExt}`);
+    const dstMiningCanonical = path.join(miningLibDir, `libzion_cosmic_harmony_v3${libExt}`);
     try {
-      fs.copyFileSync(explicitCHv4Lib, dst);
-      fs.copyFileSync(explicitCHv4Lib, dstDeeksha);
+      fs.copyFileSync(explicitDeekshaLib, dst);
+      fs.copyFileSync(explicitDeekshaLib, dstDeeksha);
+      fs.copyFileSync(explicitDeekshaLib, dstCanonical);
+      fs.copyFileSync(explicitDeekshaLib, dstRoot);
+      fs.copyFileSync(explicitDeekshaLib, dstRootDeeksha);
+      fs.copyFileSync(explicitDeekshaLib, dstRootCanonical);
+      fs.copyFileSync(explicitDeekshaLib, dstMining);
+      fs.copyFileSync(explicitDeekshaLib, dstMiningDeeksha);
+      fs.copyFileSync(explicitDeekshaLib, dstMiningCanonical);
       if (process.platform !== 'win32') { try { fs.chmodSync(dst, 0o755); } catch {} }
       if (process.platform !== 'win32') { try { fs.chmodSync(dstDeeksha, 0o755); } catch {} }
+      if (process.platform !== 'win32') { try { fs.chmodSync(dstCanonical, 0o755); } catch {} }
+      if (process.platform !== 'win32') { try { fs.chmodSync(dstRoot, 0o755); } catch {} }
+      if (process.platform !== 'win32') { try { fs.chmodSync(dstRootDeeksha, 0o755); } catch {} }
+      if (process.platform !== 'win32') { try { fs.chmodSync(dstRootCanonical, 0o755); } catch {} }
+      if (process.platform !== 'win32') { try { fs.chmodSync(dstMining, 0o755); } catch {} }
+      if (process.platform !== 'win32') { try { fs.chmodSync(dstMiningDeeksha, 0o755); } catch {} }
+      if (process.platform !== 'win32') { try { fs.chmodSync(dstMiningCanonical, 0o755); } catch {} }
       // Also remove quarantine flag on macOS to allow loading
       if (process.platform === 'darwin') {
         try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dst}" 2>/dev/null`); } catch {}
         try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstDeeksha}" 2>/dev/null`); } catch {}
+        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstCanonical}" 2>/dev/null`); } catch {}
+        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstRoot}" 2>/dev/null`); } catch {}
+        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstRootDeeksha}" 2>/dev/null`); } catch {}
+        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstRootCanonical}" 2>/dev/null`); } catch {}
+        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstMining}" 2>/dev/null`); } catch {}
+        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstMiningDeeksha}" 2>/dev/null`); } catch {}
+        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstMiningCanonical}" 2>/dev/null`); } catch {}
       }
-      console.log(`[prepare-rust-miner] ✅ Bundled libcosmic_harmony${libExt} + libcosmic_harmony_deeksha${libExt}`);
+      console.log(`[prepare-rust-miner] ✅ Bundled canonical Deeksha lib from ${explicitDeekshaLib}`);
     } catch (e) {
-      console.warn(`[prepare-rust-miner] ⚠️ Could not copy libcosmic_harmony: ${e.message}`);
+      console.warn(`[prepare-rust-miner] ⚠️ Could not copy canonical Deeksha lib: ${e.message}`);
     }
   } else {
-    console.warn(`[prepare-rust-miner] ⚠️ libcosmic_harmony${libExt} not found at ${explicitCHv4Lib} — Python miner will use Rust fallback`);
+    console.warn(`[prepare-rust-miner] ⚠️ No canonical Deeksha cdylib found in explicit candidates — Python miner may fall back to legacy libs`);
   }
 
   let nativeLibsSource = null;
