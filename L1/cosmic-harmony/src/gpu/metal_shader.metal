@@ -544,22 +544,20 @@ inline uint8_t aes_xtime(uint8_t b) {
     return (b << 1) ^ ((b & 0x80u) ? 0x1bu : 0x00u);
 }
 
-// AES-128 key expansion: key[16] → round_keys[176] (11 × 16-byte keys)
-void aes128_key_expand(thread const uint8_t *key, thread uint8_t rk[176]) {
-    for (int i = 0; i < 16; i++) rk[i] = key[i];
-    for (int i = 4; i < 44; i++) {
-        uint8_t tmp[4];
-        for (int j = 0; j < 4; j++) tmp[j] = rk[(i-1)*4 + j];
-        if ((i & 3) == 0) {
-            // RotWord: [a,b,c,d] → [b,c,d,a]
-            uint8_t t = tmp[0]; tmp[0]=tmp[1]; tmp[1]=tmp[2]; tmp[2]=tmp[3]; tmp[3]=t;
-            // SubWord
-            for (int j = 0; j < 4; j++) tmp[j] = AES_SBOX[tmp[j]];
-            // XOR Rcon
-            tmp[0] ^= AES_RCON[i/4 - 1];
-        }
-        for (int j = 0; j < 4; j++) rk[i*4+j] = rk[(i-4)*4+j] ^ tmp[j];
-    }
+// Advance AES-128 round key in place.
+// This avoids materializing the full 176-byte expanded key schedule per encrypt call.
+void aes128_next_round_key(thread uint8_t rk[16], uint8_t rcon) {
+    uint8_t t0 = AES_SBOX[rk[13]] ^ rcon;
+    uint8_t t1 = AES_SBOX[rk[14]];
+    uint8_t t2 = AES_SBOX[rk[15]];
+    uint8_t t3 = AES_SBOX[rk[12]];
+
+    rk[0] ^= t0;
+    rk[1] ^= t1;
+    rk[2] ^= t2;
+    rk[3] ^= t3;
+
+    for (int i = 4; i < 16; i++) rk[i] ^= rk[i - 4];
 }
 
 // AES ShiftRows (state stored column-major: index = col*4+row)
@@ -591,8 +589,8 @@ void aes128_encrypt(
     thread const uint8_t *plaintext,
     thread uint8_t ciphertext[16]
 ) {
-    uint8_t rk[176];
-    aes128_key_expand(key, rk);
+    uint8_t rk[16];
+    for (int i = 0; i < 16; i++) rk[i] = key[i];
 
     // State: column-major, s[col*4+row] = byte[col*4+row]
     uint8_t s[16];
@@ -600,7 +598,7 @@ void aes128_encrypt(
     for (int i = 0; i < 16; i++) s[i] = plaintext[i] ^ rk[i];
 
     // 9 main rounds
-    for (int r = 1; r <= 9; r++) {
+    for (int r = 0; r < 9; r++) {
         // SubBytes
         for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
         // ShiftRows
@@ -611,12 +609,14 @@ void aes128_encrypt(
         aes_mix_column(s +  8);
         aes_mix_column(s + 12);
         // AddRoundKey
-        for (int i = 0; i < 16; i++) s[i] ^= rk[r*16 + i];
+        aes128_next_round_key(rk, AES_RCON[r]);
+        for (int i = 0; i < 16; i++) s[i] ^= rk[i];
     }
     // Final round (no MixColumns)
     for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
     aes_shift_rows(s);
-    for (int i = 0; i < 16; i++) s[i] ^= rk[160 + i];
+    aes128_next_round_key(rk, AES_RCON[9]);
+    for (int i = 0; i < 16; i++) s[i] ^= rk[i];
 
     for (int i = 0; i < 16; i++) ciphertext[i] = s[i];
 }
