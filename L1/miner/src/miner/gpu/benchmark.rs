@@ -52,8 +52,8 @@ pub struct AutoTuneConfig {
 impl Default for AutoTuneConfig {
     fn default() -> Self {
         Self {
-            min_batch: 100_000,
-            max_batch: 10_000_000,
+            min_batch: 64,
+            max_batch: 16_384,
             iterations: 5,
             warmup_iterations: 2,
         }
@@ -187,6 +187,19 @@ pub fn auto_tune(miner: &mut dyn GpuMiner) -> Result<u64> {
     if let Some(natural_batch_size) = miner.natural_batch_size() {
         let effective_batch_size = miner.effective_batch_size(natural_batch_size, 0);
         return Ok(effective_batch_size);
+    }
+
+    let effective_cap = miner.effective_batch_size(u64::MAX, 0).max(1);
+    if effective_cap <= 65_536 {
+        let min_batch = (effective_cap / 4).max(64).min(effective_cap);
+        let config = AutoTuneConfig {
+            min_batch,
+            max_batch: effective_cap,
+            iterations: 3,
+            warmup_iterations: 1,
+        };
+        let result = run_benchmark(miner, &config)?;
+        return Ok(result.optimal_batch_size);
     }
 
     // Start with calculated estimate

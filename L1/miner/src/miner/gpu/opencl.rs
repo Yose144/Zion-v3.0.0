@@ -20,7 +20,7 @@ const OPENCL_KERNEL: &str = include_str!("kernels/cosmic_harmony_deeksha.cl");
 /// Scratchpad size per thread (must match CL_SCRATCHPAD_BYTES in kernel)
 const SCRATCHPAD_BYTES: usize = 64 * 1024;
 /// Max parallel threads when memory-hard is active (scratchpad × threads ≤ ~2 GB)
-const MH_BATCH_DEFAULT: usize = 4096;
+const MH_BATCH_DEFAULT: usize = 2048;
 
 /// OpenCL miner implementation
 pub struct OpenCLMiner {

@@ -994,6 +994,46 @@ class DeekshaOpenCLBackend:
         self._buf_scale2  = None
         self._setup(platform_idx, device_idx)
 
+    @staticmethod
+    def _device_score(cl, platform_name: str, device) -> Tuple[int, int, int]:
+        name = getattr(device, "name", "") or ""
+        name_l = name.lower()
+        platform_l = (platform_name or "").lower()
+        vendor = ""
+        try:
+            vendor = (getattr(device, "vendor", "") or "").lower()
+        except Exception:
+            vendor = ""
+        score = 0
+        if "amd" in vendor or "amd" in name_l or "radeon" in name_l or "gfx" in name_l or "amd" in platform_l:
+            score += 5000
+        elif "intel" in vendor or "arc" in name_l or "intel" in platform_l:
+            score += 3000
+        elif "nvidia" in vendor or "nvidia" in name_l or "cuda" in platform_l:
+            score += 2000
+        try:
+            dev_type = int(device.type)
+            if dev_type & int(cl.device_type.GPU):
+                score += 1000
+            elif dev_type & int(cl.device_type.ACCELERATOR):
+                score += 500
+        except Exception:
+            pass
+        compute_units = int(getattr(device, "max_compute_units", 0) or 0)
+        memory_bytes = int(getattr(device, "global_mem_size", 0) or 0)
+        return (score, compute_units, memory_bytes)
+
+    @staticmethod
+    def _build_options(platform_name: str, device_name: str) -> str:
+        override = os.environ.get("ZION_OPENCL_BUILD_OPTS", "").strip()
+        if override:
+            return override
+        platform_l = (platform_name or "").lower()
+        device_l = (device_name or "").lower()
+        if "amd" in platform_l or "amd" in device_l or "gfx" in device_l or "radeon" in device_l:
+            return "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero"
+        return "-cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero"
+
     def _setup(self, platform_idx: int, device_idx: int) -> None:
         cl = _try_import("pyopencl")
         if cl is None:
@@ -1021,20 +1061,37 @@ class DeekshaOpenCLBackend:
                 return
 
             selected_device = None
+            selected_platform_name = ""
+            candidates = []
             for pi, plat in enumerate(platforms):
                 if platform_idx >= 0 and pi != platform_idx:
                     continue
-                devs = plat.get_devices(cl.device_type.GPU)
-                if not devs:
+                platform_name = getattr(plat, "name", "") or ""
+                try:
                     devs = plat.get_devices(cl.device_type.ALL)
-                if devs:
-                    di = device_idx if device_idx >= 0 else 0
-                    selected_device = devs[min(di, len(devs)-1)]
-                    break
+                except Exception:
+                    devs = []
+                for dev in devs:
+                    try:
+                        dev_type = int(dev.type)
+                        if dev_type & int(cl.device_type.CPU):
+                            continue
+                    except Exception:
+                        pass
+                    candidates.append((pi, platform_name, dev))
 
-            if selected_device is None:
+            if not candidates:
                 log.warning("[DeekshaOpenCL] no suitable GPU device")
                 return
+
+            if device_idx >= 0:
+                idx = min(device_idx, len(candidates) - 1)
+                _, selected_platform_name, selected_device = candidates[idx]
+            else:
+                _, selected_platform_name, selected_device = max(
+                    candidates,
+                    key=lambda item: self._device_score(cl, item[1], item[2]),
+                )
 
             self._ctx   = cl.Context([selected_device])
             self._queue = cl.CommandQueue(self._ctx)
@@ -1042,7 +1099,9 @@ class DeekshaOpenCLBackend:
             with open(cl_src) as f:
                 src = f.read()
 
-            build_opts = "-cl-std=CL2.0 -cl-mad-enable"
+            dname = selected_device.name.strip()
+            build_opts = self._build_options(selected_platform_name, dname)
+            log.info("[DeekshaOpenCL] Build opts: %s", build_opts)
             self._program = cl.Program(self._ctx, src).build(options=build_opts)
             self._kernel  = self._program.deeksha_mine
             self._cl      = cl
@@ -1064,7 +1123,6 @@ class DeekshaOpenCLBackend:
                                          hostbuf=np.frombuffer(weights["scale2"], dtype=np.int16))
 
             self._ready = True
-            dname = selected_device.name.strip()
             log.info("[DeekshaOpenCL] Canonical Deeksha GPU ready: %s", dname)
 
         except Exception as e:
@@ -1083,12 +1141,10 @@ class DeekshaOpenCLBackend:
         import numpy as np
         cl = self._cl
 
-        # Clamp batch size: each work-item uses 64 KiB scratchpad
-        nonce_count = min(nonce_count, 2048)  # cap at 128 MiB scratchpad total
-        nonce_count = max(nonce_count, 1)
+        # Clamp batch size: each work-item uses 64 KiB scratchpad.
+        nonce_count = _sanitize_gpu_batch_size(nonce_count, "deeksha-opencl")
 
         hdr_arr = np.frombuffer(header[:128].ljust(128, b"\x00"), dtype=np.uint8)
-        sp_arr  = np.zeros(nonce_count * 65536, dtype=np.uint8)  # scratchpad pool
         rn_arr  = np.full(1, np.uint32(0xFFFFFFFF), dtype=np.uint32)
         rh_arr  = np.zeros(32, dtype=np.uint8)
 
@@ -1133,7 +1189,7 @@ class DeekshaOpenCLBackend:
 
     def benchmark(self, nonce_count: int = 256) -> float:
         """Benchmark canonical Deeksha OpenCL kernel."""
-        nonce_count = min(nonce_count, 1024)
+        nonce_count = _sanitize_gpu_batch_size(nonce_count, "deeksha-opencl")
         dummy = b"ZION Deeksha OpenCL canonical bench" + b"\x00" * 30
         t0 = time.monotonic()
         self.mine(dummy, 0, nonce_count, 0xFFFFFFFF)
