@@ -86,7 +86,7 @@ Nově pool podporuje paralelní mining skupiny. Konfigurace:
 export ZION_SCHEDULER_PERMINER_MIN_MINERS=2
 
 # Miner připojení s group hintem
-./zion-miner --pool stratum+tcp://pool:3333 \
+./zion-miner --pool stratum+tcp://77.42.31.72:3333 \
              --user wallet.worker:p=zion,g=zion \
              --group zion
 ```

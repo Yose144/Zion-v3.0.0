@@ -221,7 +221,7 @@ pub fn self_test() -> bool {
 /// Generování testovacího vektoru pro code-freeze fixaci.
 /// Výstup zkopírovat do `EXPECTED_CANONICAL_HASH` po prvním produkčním run.
 ///
-/// ```
+/// ```text
 /// cargo test -- deeksha::tests::generate_test_vector --nocapture
 /// ```
 pub fn generate_test_vector() -> String {

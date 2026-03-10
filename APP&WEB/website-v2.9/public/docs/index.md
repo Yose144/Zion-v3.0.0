@@ -1,6 +1,7 @@
 # ZION TerraNova — Dokumentace v2.9.6
 
 > *„On the Star — where technology meets spirit, from blockchain to the stars."*
+> **Operational note (2026-03-10):** Live testnet source of truth is 2.9.8 Deeksha canonical with 3 active nodes: Helsinki, USA, Asia.
 
 ---
 
@@ -60,10 +61,10 @@ ZION je decentralizovaný Layer 1 blockchain postavený od nuly v **Rustu**. Vyu
 | Lokace | IP | P2P | RPC |
 |--------|-----|-----|-----|
 | 🇫🇮 Helsinki | 77.42.31.72 | :8334 | :8444 |
-| 🇩🇪 SeedDE | 46.225.126.243 | :8334 | :8444 |
-| 🇺🇸 Usa1 | 5.78.178.227 | :8334 | :8444 |
-| 🇺🇸 Usa2 | 178.156.240.160 | :8334 | :8444 |
-| 🌏 Asia3 | 5.223.43.93 | :8334 | :8444 |
+| 🇺🇸 USA | 178.156.240.160 | :8334 | :8444 |
+| 🌏 Asia | 5.223.43.93 | :8334 | :8444 |
+
+Decommissioned: SeedDE (`46.225.126.243`) a Usa1 (`5.78.178.227`).
 
 ---
 
