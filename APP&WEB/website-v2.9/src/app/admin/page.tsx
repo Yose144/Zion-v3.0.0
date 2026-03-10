@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { SITE_VERSION } from '@/lib/site';
 
 export default function AdminDashboard() {
   return (
@@ -51,7 +52,7 @@ export default function AdminDashboard() {
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Build</p>
-              <p className="mt-2 text-3xl font-semibold text-white">v2.9.7</p>
+              <p className="mt-2 text-3xl font-semibold text-white">{SITE_VERSION}</p>
               <p className="text-sm text-gray-300">admin UX shell</p>
             </div>
           </div>
@@ -114,7 +115,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="text-center text-sm text-gray-500">
-          ZION Admin v2.9.7 · zabezpečeno middleware Basic Auth (pokud je nastaveno)
+          ZION Admin {SITE_VERSION} · zabezpečeno middleware Basic Auth (pokud je nastaveno)
         </div>
       </div>
     </div>

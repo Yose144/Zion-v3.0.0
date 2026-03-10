@@ -8,6 +8,7 @@ import {
   ShoppingCart, ExternalLink, Github,
 } from 'lucide-react';
 import { useState } from 'react';
+import { SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
 /* ───────────────────────── data ───────────────────────── */
 
@@ -147,12 +148,12 @@ export default function DownloadPage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[32px] border border-white/10 bg-black/60 p-10 backdrop-blur-xl"
+          className="rounded-4xl border border-white/10 bg-black/60 p-10 backdrop-blur-xl"
         >
           <div className="flex flex-col gap-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
               <ArrowDownToLine className="h-4 w-4" />
-              Official v2.9.7 Release
+              {SITE_RELEASE_LABEL}
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">12 native Rust binaries · 4 platforms</p>
@@ -161,10 +162,11 @@ export default function DownloadPage() {
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              Official ZION v2.9.7 CLI tools — <span className="text-zion-gold font-semibold">Miner</span>,{' '}
+              ZION CLI bootstrap bundle pro live {SITE_VERSION} — <span className="text-zion-gold font-semibold">Miner</span>,{' '}
               <span className="text-zion-cyan font-semibold">Wallet</span> &{' '}
               <span className="text-zion-purple font-semibold">Node</span> — for Windows, Linux & macOS.
-              Pre-compiled native Rust binaries. No dependencies.
+              Pre-compiled native Rust binaries. Aktuální download artefakty jsou stále hostované pod release tagem v2.9.6,
+              ale zůstávají kompatibilní s Deeksha testnetem.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -283,17 +285,17 @@ export default function DownloadPage() {
         >
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Coming Soon</p>
-            <h2 className="text-3xl font-semibold text-white">Desktop Agent · v2.9.7</h2>
+            <h2 className="text-3xl font-semibold text-white">Desktop Agent · {SITE_VERSION}</h2>
             <p className="text-gray-400">One-click GUI for mining, wallet management and monitoring — no terminal needed</p>
           </div>
 
-          <div className="rounded-[32px] border border-zion-gold/20 bg-gradient-to-br from-zion-gold/5 via-black/40 to-zion-purple/5 p-8 relative overflow-hidden">
+          <div className="relative overflow-hidden rounded-4xl border border-zion-gold/20 bg-linear-to-br from-zion-gold/5 via-black/40 to-zion-purple/5 p-8">
             <div className="absolute top-4 right-4 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold tracking-wider text-zion-gold">
               🚧 IN DEVELOPMENT
             </div>
 
             <div className="flex items-start gap-4 mb-6">
-              <Monitor className="h-10 w-10 text-zion-gold flex-shrink-0 mt-1" />
+              <Monitor className="mt-1 h-10 w-10 shrink-0 text-zion-gold" />
               <div>
                 <h3 className="text-2xl font-semibold text-white">ZION Desktop Agent</h3>
                 <p className="text-gray-400 mt-1">
@@ -306,7 +308,7 @@ export default function DownloadPage() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-6">
               {desktopAgentFeatures.map((f) => (
                 <div key={f} className="flex items-start gap-2 text-sm text-gray-300">
-                  <CheckCircle2 className="h-4 w-4 text-zion-gold flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-zion-gold" />
                   <span>{f}</span>
                 </div>
               ))}
@@ -359,7 +361,7 @@ export default function DownloadPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-white/5 p-8"
+          className="rounded-4xl border border-white/10 bg-white/5 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Quick Start</p>
@@ -376,7 +378,7 @@ export default function DownloadPage() {
                 <ul className="mt-4 space-y-2 text-sm text-gray-300">
                   {step.items.map((item) => (
                     <li key={item} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-zion-gold mt-0.5 flex-shrink-0" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-zion-gold" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -391,7 +393,7 @@ export default function DownloadPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-black/40 p-8"
+          className="rounded-4xl border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Hardware</p>
@@ -420,7 +422,7 @@ export default function DownloadPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-white/10 bg-black/40 p-8"
+          className="rounded-4xl border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Support</p>
@@ -434,7 +436,7 @@ export default function DownloadPage() {
                   className="w-full flex items-center justify-between p-5 text-left hover:bg-white/5 transition-colors"
                 >
                   <span className="text-lg font-semibold text-white pr-4">{faq.q}</span>
-                  <ChevronDown className={`h-5 w-5 text-zion-gold flex-shrink-0 transition-transform ${openFaqIndex === idx ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-5 w-5 shrink-0 text-zion-gold transition-transform ${openFaqIndex === idx ? 'rotate-180' : ''}`} />
                 </button>
                 {openFaqIndex === idx && (
                   <motion.div
@@ -456,7 +458,7 @@ export default function DownloadPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-10 text-center"
+          className="rounded-4xl border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-10 text-center"
         >
           <TerminalSquare className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">Ready to mine?</h2>

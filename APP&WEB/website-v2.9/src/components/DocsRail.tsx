@@ -6,8 +6,8 @@ import { Book, Compass, Github, Route, ScrollText } from 'lucide-react';
 
 const resources = [
   {
-    title: 'Guardian Docs',
-    description: 'Installation, miner setup, API reference, and configuration guides.',
+    title: 'Live Docs',
+    description: 'Current network topology, protocol baseline, miner setup, and operational notes.',
     icon: Book,
     href: '/docs',
     accent: 'from-zion-gold/20 to-zion-purple/10',
@@ -31,13 +31,13 @@ const resources = [
 const ctas = [
   {
     title: 'Roadmap → MainNet 2026',
-    description: 'Full roadmap: Phases 0–5, Layer Architecture, Constitution, and post-launch strategy.',
+    description: 'Focused path from live 2.9.8 testnet to release readiness and launch sequencing.',
     icon: Route,
     href: '/roadmap',
   },
   {
     title: 'GitHub /Zion',
-    description: 'Full mono-repo with miners, AI agents, orchestrators, and dashboards.',
+    description: 'Mono-repo with core, miners, pool, dashboards, docs, and deployment scripts.',
     icon: Github,
     href: 'https://github.com/Zion-TerraNova',
     external: true,
@@ -52,12 +52,11 @@ export default function DocsRail() {
           <div className="flex-1">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Navigation</p>
             <h2 className="text-4xl font-bold text-white">
-              Access the <span className="text-gradient">docs, downloads, and source code</span>
+              Open the <span className="text-gradient">current docs, tools, and source</span>
             </h2>
           </div>
           <p className="text-gray-300 max-w-2xl">
-            Everything lives in the public repository: AI agents, miners, dashboards, Kubernetes, docs.
-            Jump in, fork, and deploy.
+            Web vstupy jsem stáhl zpět k tomu, co je teď skutečně potřeba: live síť, těžba, dokumentace a zdrojový kód.
           </p>
         </div>
 

@@ -10,6 +10,7 @@ import {
   Square, Target, Timer, TrendingUp, Wallet, Wrench, Zap, Code2, CalendarDays,
   CircleDot, XCircle, CheckCheck, Construction
 } from 'lucide-react';
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface NodeStats {
@@ -451,7 +452,7 @@ export default function MissionControlDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/40 bg-cyan-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-cyan-400 uppercase">
                 <Activity className="h-4 w-4" />
-                ZION v2.9.7 · 168h Stability PASS ✅
+                {SITE_RELEASE_LABEL} · Release Gate GO
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Live Telemetry</p>
@@ -471,7 +472,7 @@ export default function MissionControlDashboard() {
                   <Sparkles className="h-3 w-3 text-zion-gold" /> 3 Nodes · 3 Continents
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-yellow-200">
-                  <AlertTriangle className="h-3 w-3" /> MainNet Go/No-Go: NO-GO · 2 blokery
+                  <CheckCircle2 className="h-3 w-3" /> Deeksha Release Gate: GO · 3-node mesh live
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? 'All Systems Healthy' : anyHealthy ? 'Partial Systems Up' : 'Systems Monitoring'}
@@ -609,7 +610,7 @@ export default function MissionControlDashboard() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <Stat label="Network" value={hStats?.network ?? 'TestNet 2.9.6'} color="text-cyan-400" />
+                <Stat label="Network" value={hStats?.network ?? 'TestNet 2.9.8'} color="text-cyan-400" />
                 <Stat label="Total Peers" value={fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0))} sub={`${onlineCount}/3 nodes online`} mono />
                 <Stat label="Difficulty" value={fmt(hStats?.difficulty)} mono />
                 <Stat label="Sync Status" value={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'SYNCED ✓' : hH > 0 ? 'RUNNING' : '—'} color={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
@@ -641,7 +642,7 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Codebase" value="52,590" sub="lines of Rust" color="text-cyan-400" />
                 <Stat label="Tests" value="780+" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="MainNet Gate" value="NO-GO" sub="B-CRIT-02+03 open · B-CRIT-01 ✓" color="text-yellow-400" />
+                <Stat label="Release Gate" value="GO" sub="Deeksha freeze live · 3-node mesh ✓" color="text-emerald-400" />
                 <Stat label="Crates" value="5" sub="core, pool, miner, cosmic-harmony, native-libs" />
               </div>
             </motion.section>
@@ -737,11 +738,11 @@ export default function MissionControlDashboard() {
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — MainNet 31. 12. 2026
                 </h2>
-                <p className="text-sm text-gray-400">Fáze 0 (Feb) → Fáze 5 (Dec 2026) · 168h stability PASS · pre-mainnet gate otevřená</p>
+                <p className="text-sm text-gray-400">Fáze 0 (Feb) → Fáze 5 (Dec 2026) · 168h stability PASS · Deeksha release gate GO</p>
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-purple-400 to-pink-400" initial={{ width: 0 }} animate={{ width: '52%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">Pre-MainNet Gate · NO-GO · 168h ✅ B-CRIT-01 ✅ · zbývá B-CRIT-02+03</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · GO · 168h ✅ · 72h canary validating</span>
               </div>
             </motion.section>
 
@@ -1022,7 +1023,7 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Security</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Shield className="h-7 w-7 text-emerald-400" />
-                  Pre-MainNet Security Checklist
+                  MainNet Readiness Security Checklist
                 </h2>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1238,8 +1239,8 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova v2.9.7 · 168h Stability PASS ✅ · CHv4 cosmic_harmony_v3 live · B-CRIT-01 DONE<br />
-          <em>&quot;On the Star — 6-Layer Architecture&quot;</em><br /><br />
+          ZION TerraNova {SITE_RELEASE_LABEL} · 168h Stability PASS ✅ · Deeksha canonical path live<br />
+          <em>6-layer architecture · operations-first web shell</em><br /><br />
           Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
         </div>
       </div>

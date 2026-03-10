@@ -1345,7 +1345,7 @@ export default function GenesisPage() {
 
                 <div className="my-16 p-12 rounded-2xl border-4 border-zion-gold/70 bg-linear-to-b from-zion-purple/20 via-zion-cyan/10 to-black backdrop-blur-xl">
                   <p className="text-6xl font-bold mb-6">⭐</p>
-                  <p className="text-4xl font-bold text-zion-gold mb-4">ON THE STAR!</p>
+                  <p className="text-4xl font-bold text-zion-gold mb-4">Toward the Star</p>
                   <p className="text-xl text-gray-300">
                     Toto je Genesis.<br />
                     Toto je začátek cesty domů.<br /><br />

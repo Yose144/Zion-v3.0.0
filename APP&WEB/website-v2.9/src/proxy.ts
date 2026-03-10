@@ -1,12 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-// --- P1-36: In-memory IP-based rate limiter for API routes ---
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 120;  // max requests per window per IP
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 120;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-// Cleanup stale entries every 5 minutes
 setInterval(() => {
   const now = Date.now();
   for (const [key, value] of rateLimitMap) {
@@ -41,10 +39,9 @@ function unauthorizedResponse(): Response {
   });
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // P1-36: Rate limit all /api/* routes
   if (pathname.startsWith('/api/')) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip')
@@ -72,12 +69,9 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // Admin panel authentication
   const adminPassword = process.env.ADMIN_PASSWORD;
   const adminUser = process.env.ADMIN_USER || 'admin';
 
-  // P1-35: If ADMIN_PASSWORD is not set, DENY access entirely.
-  // The admin panel must never be accessible without authentication.
   if (!adminPassword) {
     console.warn('[SECURITY] ADMIN_PASSWORD not set — /admin access DENIED');
     return new Response('Admin panel disabled: ADMIN_PASSWORD not configured', {

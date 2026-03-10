@@ -27,6 +27,7 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react';
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    NETWORK PAGE — Redesigned to match Roadmap visual language
@@ -36,7 +37,7 @@ const heroStats = [
   { label: 'Seed Regions', value: '3', descriptor: 'EU · US-EAST · AP' },
   { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
   { label: 'Sync Cohesion', value: '100%', descriptor: '3/3 nodes synced' },
-  { label: 'Network', value: 'TestNet', descriptor: 'v2.9.7 · Rust native' },
+  { label: 'Network', value: 'TestNet', descriptor: 'v2.9.8 · Deeksha release line' },
 ];
 
 const infraFeatures = [
@@ -157,7 +158,7 @@ export default function NetworkPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-300 uppercase">
                 <Radio className="h-4 w-4" />
-                ZION v2.9.7 · Network
+                {SITE_RELEASE_LABEL} · Network
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Live Status</p>
@@ -174,7 +175,7 @@ export default function NetworkPage() {
                   <Sparkles className="h-3 w-3 text-zion-gold" /> Native Rust
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Orbit className="h-3 w-3 text-zion-cyan" /> TestNet 2.9.7
+                  <Orbit className="h-3 w-3 text-zion-cyan" /> Deeksha 2.9.8
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" /> 3 Nodes Synced
@@ -466,7 +467,7 @@ export default function NetworkPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.7 — P2P Network Pro · Native Rust Infrastructure · 3 Seed Nodes · 3 Continents · MainNet 31.12.2026
+          ZION TerraNova {SITE_RELEASE_LABEL} — P2P Network Pro · Native Rust Infrastructure · 3 Seed Nodes · 3 Continents · MainNet 31.12.2026
         </p>
       </div>
     </div>

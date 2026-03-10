@@ -22,6 +22,7 @@ import {
   Globe2,
   Orbit
 } from 'lucide-react';
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    DATA — sourced from authoritative ROADMAP.md (10 Feb 2026)
@@ -31,7 +32,7 @@ const heroStats = [
   { label: 'Rust LOC', value: '52,590', descriptor: '5 crates' },
   { label: 'Tests passing', value: '780+', descriptor: '0 failing' },
   { label: 'Network', value: '3/3 online', descriptor: 'Helsinki · USA · Asia' },
-  { label: 'MainNet Gate', value: 'NO-GO', descriptor: 'B-CRIT-01..03 open' }
+  { label: 'Release Gate', value: 'GO', descriptor: 'Deeksha code freeze live' }
 ];
 
 const layerStack = [
@@ -394,7 +395,7 @@ export default function RoadmapPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
                 <Target className="h-4 w-4" />
-                ZION v2.9.7 · Roadmap
+                {SITE_RELEASE_LABEL} · Roadmap
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Mission Control</p>
@@ -773,7 +774,7 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Security</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-emerald-400" />
-              Pre-MainNet Security Checklist
+              MainNet Readiness Security Checklist
             </h2>
           </div>
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -891,7 +892,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.7 — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella · &quot;On the Star — 6-Layer Architecture&quot; · Poslední aktualizace: 2026-03-03
+          ZION TerraNova {SITE_RELEASE_LABEL} — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella · 6-layer architecture · Poslední aktualizace: 2026-03-03
         </p>
       </div>
     </div>

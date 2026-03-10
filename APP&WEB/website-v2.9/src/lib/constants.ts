@@ -8,7 +8,7 @@
  *     Import from this file instead.
  *
  * v2.9.6: Decade Decay emission (-20%/10y), 5%+5% distribution,
- *         6-Layer "On the Star" (L5 Free World + L6 ZION Issobella)
+ *         6-layer architecture (L5 Free World + L6 ZION Issobella)
  */
 
 // ─── Unit Conversion ─────────────────────────────────────────────────────────
