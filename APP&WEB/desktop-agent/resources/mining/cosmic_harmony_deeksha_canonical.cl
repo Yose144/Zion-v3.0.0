@@ -656,7 +656,7 @@ __kernel void deeksha_mine(
     ulong                  nonce_base,     /* [2] starting nonce             */
     __global uchar        *scratchpad_pool,/* [3] N × 65536 bytes            */
     uint                   target_u32,     /* [4] LE u32 target              */
-    __global ulong        *result_nonce,   /* [5] output: winning nonce      */
+    __global uint         *result_nonce,   /* [5] output: winning nonce idx  */
     __global uchar        *result_hash,    /* [6] output: 32-byte hash       */
     __constant const char *npu_w1,         /* [7] MLP W1 [128×64]            */
     __constant const char *npu_b1,         /* [8] MLP b1 [128]               */
@@ -710,8 +710,8 @@ __kernel void deeksha_mine(
                 | ((uint)hash[3] << 24);
 
     if (state0 <= target_u32) {
-        ulong old = atom_cmpxchg(result_nonce, 0UL, nonce);
-        if (old == 0UL) {
+        uint old = atom_cmpxchg(result_nonce, 0xffffffffU, tid);
+        if (old == 0xffffffffU) {
             for (int i = 0; i < 32; i++)
                 result_hash[i] = hash[i];
         }

@@ -3189,14 +3189,14 @@ function startMining(config) {
       '--wallet', wallet,
       '--worker', `${worker}-deeksha`,
       '--backend', 'auto',
+      '--stats-file', STATS_PATH,
+      '--stats-interval', String(STATS_INTERVAL_SEC),
     ];
     if (mainMinerGpuDeeksha) {
       deekshaMainArgs.push('--batch', String(deekshaGpuBatch));
     } else {
       deekshaMainArgs.push(
         '--threads', String(zionThreadsDeeksha),
-        '--stats-file', STATS_PATH,
-        '--stats-interval', String(STATS_INTERVAL_SEC),
       );
     }
 
