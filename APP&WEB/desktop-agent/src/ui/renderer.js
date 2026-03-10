@@ -123,6 +123,9 @@ function toPureZionRevenueProfile(input = {}) {
 }
 
 function isPureZionDesktopMode(cfg = config) {
+  if (currentPureZionDefault(cfg)) {
+    return true;
+  }
   const revenue = normalizeRevenueProfile(cfg?.revenue || {});
   return revenue.enabled === false
     && Number(revenue?.allocation?.zionPct ?? 0) === 100
