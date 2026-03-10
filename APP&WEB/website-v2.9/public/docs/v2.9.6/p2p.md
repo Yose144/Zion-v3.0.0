@@ -1,6 +1,7 @@
 # 🌐 P2P síťový protokol v2.9.6
 
 > *Peer-to-peer komunikace ZION mainnetu.*
+> **Operational note (2026-03-10):** Aktuální live testnet běží jako 3-node mesh Helsinki + USA + Asia na 2.9.8 Deeksha canonical path. Níže uvedený 5-node model je historický kontext v2.9.6.
 
 ---
 
@@ -12,7 +13,7 @@ ZION používá vlastní P2P protokol nad TCP s JSON-RPC zprávami.
 |----------|---------|---------|
 | P2P port | 8334 | 8333 |
 | RPC port | 8444 | 8443 |
-| Seed nody | 5 | 3+ DNS (plán) |
+| Seed nody | 3 live / 5 historicky | 3+ DNS (plán) |
 | Max peers | 32 | 128 (plán) |
 | Block time | 60 s | 60 s |
 
@@ -20,15 +21,15 @@ ZION používá vlastní P2P protokol nad TCP s JSON-RPC zprávami.
 
 ## 2. Aktuální seed nody
 
-### Testnet (aktivní)
+### Testnet (live 2026-03-10)
 
 | Server | IP | Lokace | Role |
 |--------|------|--------|------|
 | Helsinki | `77.42.31.72:8334` | Finsko | Seed + web + pool |
-| SeedDE | `46.225.126.243:8334` | Německo | Seed node |
-| USA1 | `5.78.178.227:8334` | USA West | Seed node |
-| USA2 | `178.156.240.160:8334` | USA East | Seed node |
-| Asia3 | `5.223.43.93:8334` | Asie (SG) | Seed node |
+| USA | `178.156.240.160:8334` | USA East | Seed + miner |
+| Asia | `5.223.43.93:8334` | Asie (SG) | Seed + miner |
+
+Historicky decommissioned: `46.225.126.243` (SeedDE), `5.78.178.227` (USA1).
 
 ### Mainnet (plánováno)
 
@@ -111,22 +112,16 @@ Transakce se šíří mempool → peers broadcasting. Duplicate detection přes 
 ## 6. Síťová topologie
 
 ```
-                    ┌─────────────┐
-                    │  Seed Node  │
-                    │  Helsinki   │
-                    │ 77.42.31.72 │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-        ┌─────┴─────┐ ┌───┴───┐ ┌──────┴──────┐
-        │  SeedDE    │ │ Miner │ │  Pool Node  │
-        │46.225.126. │ │  (1)  │ │  Helsinki   │
-        │   243      │ └───────┘ └─────────────┘
-        └────────────┘
+          Helsinki (pool + seed)
+              77.42.31.72
+               /       \
+              /         \
+             /           \
+  USA seed + miner     Asia seed + miner
+   178.156.240.160        5.223.43.93
 ```
 
-    Aktuálně 5 seed nodů na 3 kontinentech.
+    Aktuálně 3 live nody na 3 kontinentech.
 
 ---
 
@@ -154,8 +149,6 @@ rpc_port = 8444
 [network.seeds]
 nodes = [
     "77.42.31.72:8334",
-    "46.225.126.243:8334",
-    "5.78.178.227:8334",
     "178.156.240.160:8334",
     "5.223.43.93:8334",
 ]
