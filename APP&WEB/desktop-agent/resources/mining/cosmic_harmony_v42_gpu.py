@@ -1223,26 +1223,39 @@ class CHv42GPU:
 
     def _setup(self, backend: str, device_idx: int) -> None:
         if backend == "auto":
-            # Prefer Metal on Apple Silicon when available; otherwise keep the
-            # canonical Deeksha GPU probe order.
+            # Metal remains experimental for canonical Deeksha: recent pool
+            # tests on Apple Silicon produced GPU candidates that failed the
+            # canonical CPU verify path. Keep auto on the canonical backends
+            # unless the operator explicitly opts into Metal debugging.
             preferred_backend = detect_best_backend()
-            if preferred_backend == "metal":
+            allow_experimental_metal = False
+            try:
+                allow_experimental_metal = str(os.getenv("ZION_ENABLE_EXPERIMENTAL_METAL_DEEKSHA", "")).strip() == "1"
+            except Exception:
+                allow_experimental_metal = False
+
+            if preferred_backend == "metal" and allow_experimental_metal:
                 backend = "metal"
-                log.info("[CHv42GPU] Auto-detekce: metal")
-            elif _try_import("pyopencl") is not None:
-                dcl = DeekshaOpenCLBackend(device_idx=device_idx)
-                if dcl.available:
-                    self._backend = dcl
-                    self._name    = "deeksha-opencl"
-                    self.batch_size = min(self.batch_size, 2048)
-                    log.info("[CHv42GPU] Auto-detekce: deeksha-opencl (canonical Deeksha on GPU)")
-                    return
-            elif _has_exact_native_backend():
-                backend = "native"
-                log.info("[CHv42GPU] Auto-detekce: native (canonical exact, CPU-based)")
+                log.info("[CHv42GPU] Auto-detekce: metal (experimental override)")
             else:
-                backend = detect_best_backend()
-                log.info("[CHv42GPU] Auto-detekce: %s", backend)
+                if preferred_backend == "metal":
+                    log.warning("[CHv42GPU] Metal backend skipped in auto mode until canonical Deeksha correctness is validated; set ZION_ENABLE_EXPERIMENTAL_METAL_DEEKSHA=1 to force it")
+                if _try_import("pyopencl") is not None:
+                    dcl = DeekshaOpenCLBackend(device_idx=device_idx)
+                    if dcl.available:
+                        self._backend = dcl
+                        self._name    = "deeksha-opencl"
+                        self.batch_size = min(self.batch_size, 2048)
+                        log.info("[CHv42GPU] Auto-detekce: deeksha-opencl (canonical Deeksha on GPU)")
+                        return
+                if _has_exact_native_backend():
+                    backend = "native"
+                    log.info("[CHv42GPU] Auto-detekce: native (canonical exact, CPU-based)")
+                else:
+                    backend = preferred_backend
+                    if backend == "metal":
+                        backend = "cpu"
+                    log.info("[CHv42GPU] Auto-detekce: %s", backend)
 
         if backend == "metal":
             b = MetalBackend()
