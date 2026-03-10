@@ -526,6 +526,7 @@ class StratumMinerDeeksha:
         self._shares: int = 0
         self._start_time: float = 0.0
         self._stats_lock = threading.Lock()
+        self._gpu_false_positive_logs: int = 0
 
     # ------------------------------------------------------------------
     # Stratum protokol
@@ -656,12 +657,23 @@ class StratumMinerDeeksha:
 
                         if result is not None:
                             found_nonce, found_hash = result
-                            if meets_target(found_hash, target_u32, cosmic_state0_endian):
+                            exact_hash = hash_deeksha(blob, found_nonce, height)
+                            if meets_target(exact_hash, target_u32, cosmic_state0_endian):
                                 log.info(
                                     f"[Thread-{thread_id}] ✅ Share found! "
-                                    f"nonce={submit_nonce_hex(found_nonce)} hash={found_hash.hex()[:16]}..."
+                                    f"nonce={submit_nonce_hex(found_nonce)} hash={exact_hash.hex()[:16]}..."
                                 )
-                                self._submit_share(job_id, found_nonce, found_hash)
+                                self._submit_share(job_id, found_nonce, exact_hash)
+                            elif self._gpu_false_positive_logs < 5:
+                                self._gpu_false_positive_logs += 1
+                                log.warning(
+                                    "[Thread-%d] GPU candidate rejected by canonical Deeksha verify: nonce=%s gpu_hash=%s exact_hash=%s target=%08x",
+                                    thread_id,
+                                    submit_nonce_hex(found_nonce),
+                                    found_hash.hex()[:16],
+                                    exact_hash.hex()[:16],
+                                    target_u32,
+                                )
 
                         nonce = (nonce + gpu_batch_size * self.threads) & UINT32_MASK
                         continue

@@ -89,6 +89,8 @@ def _gpu_batch_limits(backend: str) -> Tuple[int, int]:
         return (1024, 16384)
     if backend_name == "metal":
         return (2048, 65536)
+    if backend_name == "deeksha-opencl":
+        return (64, 2048)   # 64 KiB scratchpad per thread — memory-intensive
     return (1024, 8192)
 
 
@@ -180,6 +182,13 @@ def _find_lib(base: str) -> Optional[Path]:
         if p.is_file():
             return p
     return None
+
+
+def _has_exact_native_backend() -> bool:
+    return (
+        _find_lib("libcosmic_harmony_deeksha") is not None
+        or _find_lib("libcosmic_harmony_v42") is not None
+    )
 
 
 # =============================================================================
@@ -816,6 +825,281 @@ class OpenCLBackend:
 
 
 # =============================================================================
+# NPU Weight Generation (deterministic from Blake3 genesis seed)
+# =============================================================================
+
+_NPU_WEIGHTS_CACHE: Optional[dict] = None
+
+
+def _load_npu_weights() -> Optional[dict]:
+    """Load or generate canonical Deeksha NPU MLP weights.
+
+    Weights are deterministic: Blake3_keyed(SEED, "CHv4_weights_v1" || counter_LE).
+    Returns dict with keys: w1, b1, w2, b2, scale1, scale2 as bytes/arrays.
+    Falls back to binary cache file if blake3 is unavailable.
+    """
+    global _NPU_WEIGHTS_CACHE
+    if _NPU_WEIGHTS_CACHE is not None:
+        return _NPU_WEIGHTS_CACHE
+
+    import struct as _struct
+
+    # Try binary cache first (fastest path)
+    bin_path = _HERE / "deeksha_npu_weights.bin"
+    if bin_path.exists():
+        try:
+            blob = bin_path.read_bytes()
+            if len(blob) == 16960:
+                pos = 0
+                w1 = blob[pos:pos+8192]; pos += 8192
+                b1 = blob[pos:pos+128]; pos += 128
+                w2 = blob[pos:pos+8192]; pos += 8192
+                b2 = blob[pos:pos+64]; pos += 64
+                scale1 = blob[pos:pos+256]; pos += 256  # 128 × int16 LE
+                scale2 = blob[pos:pos+128]; pos += 128  # 64 × int16 LE
+                _NPU_WEIGHTS_CACHE = {
+                    "w1": w1, "b1": b1, "w2": w2, "b2": b2,
+                    "scale1": scale1, "scale2": scale2,
+                }
+                log.info("[NPU] Weights loaded from cache: %s", bin_path)
+                return _NPU_WEIGHTS_CACHE
+        except Exception as e:
+            log.warning("[NPU] Cache load failed: %s", e)
+
+    # Generate from blake3 (guarantees bit-exact match to Rust)
+    try:
+        import blake3 as _b3
+
+        SEED = b"ZION_CHv4_mixing_v1_genesis_seed"
+        TOTAL_CHUNKS = 17
+
+        base = _b3.blake3(key=SEED)
+        base.update(b"CHv4_weights_v1")
+
+        expanded = bytearray()
+        for idx in range(TOTAL_CHUNKS * 32):
+            h = base.copy()
+            h.update(_struct.pack("<I", idx))
+            expanded.extend(h.digest())
+
+        pos = 0
+        w1_raw = bytes(expanded[pos:pos+8192]); pos += 8192
+        b1_raw = bytes(expanded[pos:pos+128]); pos += 128
+        w2_raw = bytes(expanded[pos:pos+8192]); pos += 8192
+        b2_raw = bytes(expanded[pos:pos+64]); pos += 64
+        scale1_raw = bytes(expanded[pos:pos+128]); pos += 128
+        scale2_raw = bytes(expanded[pos:pos+64]); pos += 64
+
+        scale1_packed = b"".join(
+            _struct.pack("<h", 224 + (b & 0x3F)) for b in scale1_raw
+        )
+        scale2_packed = b"".join(
+            _struct.pack("<h", 224 + (b & 0x3F)) for b in scale2_raw
+        )
+
+        result = {
+            "w1": w1_raw, "b1": b1_raw,
+            "w2": w2_raw, "b2": b2_raw,
+            "scale1": scale1_packed, "scale2": scale2_packed,
+        }
+
+        # Write cache for next time
+        try:
+            blob = w1_raw + b1_raw + w2_raw + b2_raw + scale1_packed + scale2_packed
+            bin_path.write_bytes(blob)
+            log.info("[NPU] Weights generated and cached: %s", bin_path)
+        except Exception:
+            pass
+
+        _NPU_WEIGHTS_CACHE = result
+        return result
+
+    except ImportError:
+        log.warning("[NPU] blake3 not available and no weight cache found")
+        return None
+
+
+# =============================================================================
+# Deeksha Canonical OpenCL Backend (correct algorithm on GPU)
+# =============================================================================
+
+class DeekshaOpenCLBackend:
+    """
+    OpenCL backend using the canonical Deeksha kernel.
+    Implements the exact pipeline: Keccak-256 → SHA3-512 → GoldenMatrix →
+    MemoryHard(64KiB) → NpuMix → CosmicFusion.
+
+    Produces hashes that match the native DLL bit-for-bit.
+    Requires pyopencl + deeksha_npu_weights.bin (or blake3 for generation).
+    """
+
+    def __init__(self, platform_idx: int = -1, device_idx: int = -1) -> None:
+        self._ready   = False
+        self._cl      = None
+        self._ctx     = None
+        self._queue   = None
+        self._program = None
+        self._kernel  = None
+        # NPU weight buffers (created once, reused for all mine calls)
+        self._buf_w1      = None
+        self._buf_b1      = None
+        self._buf_w2      = None
+        self._buf_b2      = None
+        self._buf_scale1  = None
+        self._buf_scale2  = None
+        self._setup(platform_idx, device_idx)
+
+    def _setup(self, platform_idx: int, device_idx: int) -> None:
+        cl = _try_import("pyopencl")
+        if cl is None:
+            log.warning("[DeekshaOpenCL] pyopencl not installed")
+            return
+
+        # Load canonical kernel source
+        cl_src = _HERE / "cosmic_harmony_deeksha_canonical.cl"
+        if not cl_src.exists():
+            cl_src = _KERNEL_DIR / "cosmic_harmony_deeksha_canonical.cl"
+        if not cl_src.exists():
+            log.warning("[DeekshaOpenCL] canonical .cl kernel not found")
+            return
+
+        # Load NPU weights
+        weights = _load_npu_weights()
+        if weights is None:
+            log.warning("[DeekshaOpenCL] NPU weights unavailable — cannot use GPU")
+            return
+
+        try:
+            platforms = cl.get_platforms()
+            if not platforms:
+                log.warning("[DeekshaOpenCL] no OpenCL platforms")
+                return
+
+            selected_device = None
+            for pi, plat in enumerate(platforms):
+                if platform_idx >= 0 and pi != platform_idx:
+                    continue
+                devs = plat.get_devices(cl.device_type.GPU)
+                if not devs:
+                    devs = plat.get_devices(cl.device_type.ALL)
+                if devs:
+                    di = device_idx if device_idx >= 0 else 0
+                    selected_device = devs[min(di, len(devs)-1)]
+                    break
+
+            if selected_device is None:
+                log.warning("[DeekshaOpenCL] no suitable GPU device")
+                return
+
+            self._ctx   = cl.Context([selected_device])
+            self._queue = cl.CommandQueue(self._ctx)
+
+            with open(cl_src) as f:
+                src = f.read()
+
+            build_opts = "-cl-std=CL2.0 -cl-mad-enable"
+            self._program = cl.Program(self._ctx, src).build(options=build_opts)
+            self._kernel  = self._program.deeksha_mine
+            self._cl      = cl
+
+            # Create constant buffers for NPU weights (shared across invocations)
+            import numpy as np
+            mf = cl.mem_flags
+            self._buf_w1     = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                         hostbuf=np.frombuffer(weights["w1"], dtype=np.int8))
+            self._buf_b1     = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                         hostbuf=np.frombuffer(weights["b1"], dtype=np.int8))
+            self._buf_w2     = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                         hostbuf=np.frombuffer(weights["w2"], dtype=np.int8))
+            self._buf_b2     = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                         hostbuf=np.frombuffer(weights["b2"], dtype=np.int8))
+            self._buf_scale1 = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                         hostbuf=np.frombuffer(weights["scale1"], dtype=np.int16))
+            self._buf_scale2 = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                         hostbuf=np.frombuffer(weights["scale2"], dtype=np.int16))
+
+            self._ready = True
+            dname = selected_device.name.strip()
+            log.info("[DeekshaOpenCL] Canonical Deeksha GPU ready: %s", dname)
+
+        except Exception as e:
+            log.warning("[DeekshaOpenCL] setup failed: %s", e)
+
+    @property
+    def available(self) -> bool:
+        return self._ready
+
+    def mine(
+        self, header: bytes, nonce_base: int, nonce_count: int, target_u32: int
+    ) -> Optional[Tuple[int, bytes]]:
+        if not self._ready:
+            return None
+
+        import numpy as np
+        cl = self._cl
+
+        # Clamp batch size: each work-item uses 64 KiB scratchpad
+        nonce_count = min(nonce_count, 2048)  # cap at 128 MiB scratchpad total
+        nonce_count = max(nonce_count, 1)
+
+        hdr_arr = np.frombuffer(header[:128].ljust(128, b"\x00"), dtype=np.uint8)
+        sp_arr  = np.zeros(nonce_count * 65536, dtype=np.uint8)  # scratchpad pool
+        rn_arr  = np.zeros(1, dtype=np.uint64)
+        rh_arr  = np.zeros(32, dtype=np.uint8)
+
+        mf = cl.mem_flags
+        buf_hdr = cl.Buffer(self._ctx, mf.READ_ONLY  | mf.COPY_HOST_PTR, hostbuf=hdr_arr)
+        buf_sp  = cl.Buffer(self._ctx, mf.READ_WRITE, size=int(nonce_count * 65536))
+        buf_rn  = cl.Buffer(self._ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=rn_arr)
+        buf_rh  = cl.Buffer(self._ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=rh_arr)
+
+        # Work-group size: small due to heavy per-item computation + register pressure
+        local_size = min(64, nonce_count)
+        global_size = nonce_count
+
+        self._kernel(
+            self._queue,
+            (global_size,), (local_size,),
+            buf_hdr,
+            np.uint32(len(header)),
+            np.uint64(nonce_base),
+            buf_sp,
+            np.uint32(target_u32),
+            buf_rn,
+            buf_rh,
+            self._buf_w1,
+            self._buf_b1,
+            self._buf_w2,
+            self._buf_b2,
+            self._buf_scale1,
+            self._buf_scale2,
+        )
+        self._queue.finish()
+
+        out_nonce = np.empty(1, dtype=np.uint64)
+        out_hash  = np.empty(32, dtype=np.uint8)
+        cl.enqueue_copy(self._queue, out_nonce, buf_rn)
+        cl.enqueue_copy(self._queue, out_hash,  buf_rh)
+        self._queue.finish()
+
+        if out_nonce[0] != 0:
+            return (int(out_nonce[0]), bytes(out_hash))
+        return None
+
+    def benchmark(self, nonce_count: int = 256) -> float:
+        """Benchmark canonical Deeksha OpenCL kernel."""
+        nonce_count = min(nonce_count, 1024)
+        dummy = b"ZION Deeksha OpenCL canonical bench" + b"\x00" * 30
+        t0 = time.monotonic()
+        self.mine(dummy, 0, nonce_count, 0xFFFFFFFF)
+        dt = time.monotonic() - t0
+        hs = nonce_count / max(dt, 0.001)
+        log.info("[DeekshaOpenCL] Benchmark: %.1f H/s (%d nonces / %.3f s)",
+                 hs, nonce_count, dt)
+        return hs
+
+
+# =============================================================================
 # NativeLib Backend (ctypes — deeksha/legacy dylib/.so/.dll)
 # =============================================================================
 
@@ -937,8 +1221,21 @@ class CHv42GPU:
 
     def _setup(self, backend: str, device_idx: int) -> None:
         if backend == "auto":
-            backend = detect_best_backend()
-            log.info("[CHv42GPU] Auto-detekce: %s", backend)
+            # Priority: canonical Deeksha GPU → native DLL → legacy GPU → CPU
+            if _try_import("pyopencl") is not None:
+                dcl = DeekshaOpenCLBackend(device_idx=device_idx)
+                if dcl.available:
+                    self._backend = dcl
+                    self._name    = "deeksha-opencl"
+                    self.batch_size = min(self.batch_size, 2048)
+                    log.info("[CHv42GPU] Auto-detekce: deeksha-opencl (canonical Deeksha on GPU)")
+                    return
+            if _has_exact_native_backend():
+                backend = "native"
+                log.info("[CHv42GPU] Auto-detekce: native (canonical exact, CPU-based)")
+            else:
+                backend = detect_best_backend()
+                log.info("[CHv42GPU] Auto-detekce: %s", backend)
 
         if backend == "metal":
             b = MetalBackend()
@@ -959,6 +1256,13 @@ class CHv42GPU:
             backend = "opencl"
 
         if backend == "opencl":
+            # Try canonical Deeksha kernel first, then legacy
+            dcl = DeekshaOpenCLBackend(device_idx=device_idx)
+            if dcl.available:
+                self._backend = dcl
+                self._name    = "deeksha-opencl"
+                self.batch_size = min(self.batch_size, 2048)
+                return
             b = OpenCLBackend(device_idx=device_idx)
             if b.available:
                 self._backend = b
