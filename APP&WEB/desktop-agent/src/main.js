@@ -2838,6 +2838,24 @@ function startMining(config) {
   minerGpuInitWatchdogTimer = null;
   gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
 
+  function safeMinerLogWrite(text) {
+    try {
+      maybeRotateFileThrottled(
+        LOG_PATH,
+        MAX_MINER_LOG_BYTES,
+        MAX_MINER_LOG_BACKUPS,
+        MAX_MINER_LOG_AGE_MS,
+        5000
+      );
+      appendToFileBuffered(LOG_PATH, text, {
+        flushDelayMs: 120,
+        maxBufferedChars: 512 * 1024
+      });
+    } catch {
+      // ignore
+    }
+  }
+
   // ── Legacy CHv4.2 Merkabah GPU fast-path (diagnostics only) ───────────────
   // v2.9.8 canonical desktop mining uses the unified Deeksha path.
   // Keep the old branch available only behind an explicit double opt-in.
@@ -4940,26 +4958,6 @@ function startMining(config) {
 
   // Log output
   // Prevent log files from growing without bound (esp. if miner is too chatty).
-  rotateFileIfTooLarge(LOG_PATH, MAX_MINER_LOG_BYTES, MAX_MINER_LOG_BACKUPS, MAX_MINER_LOG_AGE_MS);
-  const logStream = fs.createWriteStream(LOG_PATH, { flags: 'a' });
-
-  logStream.on('error', (err) => {
-    try {
-      logApp('miner-logstream-error', JSON.stringify({ code: err?.code, message: err?.message }));
-    } catch {
-      // ignore
-    }
-  });
-
-  const safeMinerLogWrite = (text) => {
-    try {
-      if (logStream.destroyed) return;
-      logStream.write(text);
-    } catch {
-      // ignore
-    }
-  };
-
   try {
     safeMinerLogWrite(
       `\n===== MINER START ${new Date().toISOString()} algorithm=${config.algorithm || ''} mode=${config.gpu ? 'gpu' : 'cpu'} =====\n`
@@ -5047,7 +5045,7 @@ function startMining(config) {
   });
 
   minerProcess.on('close', (code, signal) => {
-    logStream.end();
+    flushBufferedFileAppendsSync();
     console.log(`Miner process exited with code ${code}${signal ? ` signal=${signal}` : ''}`);
     minerProcess = null;
 
