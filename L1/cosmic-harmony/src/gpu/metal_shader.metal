@@ -264,6 +264,34 @@ void keccak256_header_nonce_gpu(
     store_hash32_from_state(state, output);
 }
 
+// Specialized Keccak-256 for exact 33-byte input state32 || round_u8.
+void keccak256_state32_round_gpu(
+    thread const uint8_t *state32,
+    uint8_t round_num,
+    thread uint8_t *output
+) {
+    uint64_t state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    uint8_t block[136];
+    for (int i = 0; i < 136; i++) block[i] = 0;
+    for (int i = 0; i < 32; i++) block[i] = state32[i];
+    block[32] = round_num;
+    block[33] = 0x01;
+    block[135] |= 0x80;
+
+    for (int i = 0; i < 17; i++) {
+        uint64_t word = 0;
+        for (int j = 0; j < 8; j++) {
+            word |= uint64_t(block[i * 8 + j]) << (j * 8);
+        }
+        state[i] ^= word;
+    }
+    keccak_f1600(state);
+
+    store_hash32_from_state(state, output);
+}
+
 // ============================================================================
 // SHA3-512 (padding 0x06)
 // Rate = 72 bytes, output = 64 bytes
@@ -608,11 +636,8 @@ void aes128_encrypt(
 //   state[0..32]   = intermediate[0..32] ^ mask[0..32]
 void fusion_round_gpu(thread uint8_t *state, uint8_t round_num) {
     // Step 1: intermediate = Keccak256(state[0..32] || round_num)
-    uint8_t keccak_input[33];
-    for (int i = 0; i < 32; i++) keccak_input[i] = state[i];
-    keccak_input[32] = round_num;
     uint8_t intermediate[32];
-    keccak256_gpu(keccak_input, 33, intermediate);
+    keccak256_state32_round_gpu(state, round_num, intermediate);
 
     // Step 2: block0 = AES128(key=intermediate[0..16], plaintext=state[32..48])
     uint8_t key1[16];
@@ -649,7 +674,7 @@ void cosmic_fusion_gpu(thread const uint8_t *input, thread uint8_t *output) {
     
     // Final SHA3-512 of state[0:32], truncate to 32 bytes
     uint8_t full[64];
-    sha3_512_gpu(state, 32, full);
+    sha3_512_32_gpu(state, full);
     for (int i = 0; i < 32; i++) output[i] = full[i];
 }
 
