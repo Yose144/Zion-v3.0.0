@@ -110,14 +110,15 @@ impl NativeAlgorithm {
             "randomx" | "rx/0" => Some(Self::RandomX),
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
-            // Canonical Deeksha + legacy aliases (all unified to Deeksha runtime)
+            // All ZION aliases converge to the canonical Deeksha runtime implemented
+            // in L1/cosmic-harmony. These names remain only for backward compatibility.
             "cosmic_harmony" | "cosmic_harmony_v4" | "chv4" | "ch4"
             | "cosmic_harmony_v3" | "cosmicharmony" | "chv3" | "ch3"
             | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2"
             | "deeksha" | "cosmic_harmony_deeksha" | "ch_deeksha" | "chd" => {
                 Some(Self::CosmicHarmonyDeeksha)
             }
-            // CHv4.2 historical aliases — unified to Deeksha v2.9.8 runtime
+            // Historical CHv4.2 aliases — also resolved to the same canonical Deeksha runtime.
             "cosmic_harmony_v4_2" | "chv4_2" | "ch4_2" | "chv4.2"
             | "cosmic_harmony_v42" | "ch42" | "merkabah" => {
                 Some(Self::CosmicHarmonyDeeksha)
