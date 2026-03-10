@@ -28,7 +28,7 @@
 | LMDB chain recovery | Wipe + fresh genesis po data inconsistency | ✅ DONE | 2026-03-09: data.mdb wipe, restart, genesis e673f633 |
 | Asia node recovery | Asia genesis hash mismatch opravena — rebuild + IBD sync | ✅ DONE | 2026-03-09T15:10Z: 195 bloků staženo, mesh Helsinki+USA+Asia plný |
 | 3-node chain sync | Helsinki / USA / Asia drží stejný tip po 24h okně | ✅ PASS | 2026-03-10 04:17 UTC: all nodes height=713 tip=`c3480300...573a` |
-| x86 seed+miner separation | Usa/Asia miner neběží přes lokální `pool:3333`, ale přes Helsinki pool | ✅ PASS | 2026-03-10: `MINER_POOL_URL=77.42.31.72:3333`, Asia local `zion-pool` odstraněn |
+| x86 seed+miner separation | X86 miner profily neběží přes lokální `pool:3333`, ale přes kanonický primary pool | ✅ PASS | 2026-03-10: canonical pool endpoint `91.98.122.165:3333`, Asia local `zion-pool` odstraněn |
 | Pool health | Pool dál přijímá validní shares po oddělení x86 profilů | ✅ PASS | 2026-03-10 04:17 UTC: `/stats` → valid=10013, invalid=571, pool_24h≈425.37 H/s |
 
 ---

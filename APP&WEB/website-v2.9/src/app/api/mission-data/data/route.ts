@@ -6,6 +6,7 @@ export const revalidate = 0;
 
 /* ── Node definitions ─────────────────────────────────────────────── */
 const PRIMARY_NODE = { id: 'primary', host: SITE_PRIMARY_HOST, rpc: 8444, pool: 8080 };
+type NodeDefinition = typeof PRIMARY_NODE;
 
 const TIMEOUT = 6_000;
 
@@ -41,7 +42,7 @@ async function rpcCall<T = any>(url: string, method: string): Promise<T | null> 
 }
 
 /* ── Fetch data for a single node ─────────────────────────────────── */
-async function fetchNodeData(node: (typeof NODES)[number]) {
+async function fetchNodeData(node: NodeDefinition) {
   const rpcUrl = `http://${node.host}:${node.rpc}/jsonrpc`;
   const [rpcInfo, poolStats] = await Promise.all([
     rpcCall<any>(rpcUrl, 'get_info'),
