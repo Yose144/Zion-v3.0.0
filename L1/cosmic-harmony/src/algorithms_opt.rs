@@ -876,26 +876,26 @@ mod tests {
     }
 
     #[test]
-    fn test_chv4_2_fork_dispatch() {
-        // CHV4_2_FORK_HEIGHT = 0 → aktivní od genesis → dispatch na jakékoliv výšce = CHv4.2
+    fn test_deeksha_fork_dispatch() {
+        // CHV_DEEKSHA_FORK_HEIGHT = 0 → canonical dispatch od genesis vždy routuje do Deeksha.
         let header = b"ZION block header v2.9.6";
         let nonce = 9999u64;
 
-        // Ověření: výška 0, 1_000_000, u64::MAX-1 → vždy CHv4.2 (fork height = 0)
+        // Ověření: výška 0 i 1_000_000 musí vrátit stejný hash jako přímé Deeksha volání.
         let dispatch_hash_0 = cosmic_harmony_with_height(header, nonce, 0);
         let dispatch_hash_1m = cosmic_harmony_with_height(header, nonce, 1_000_000);
-        let v4_2_hash = cosmic_harmony_v4_2(header, nonce);
+        let deeksha_hash = crate::deeksha::cosmic_harmony_deeksha(header, nonce);
 
         assert_eq!(
-            dispatch_hash_0.data, v4_2_hash.data,
-            "Dispatch at height 0 must use CHv4.2 (CHV4_2_FORK_HEIGHT=0)"
+            dispatch_hash_0.data, deeksha_hash.data,
+            "Dispatch at height 0 must use Deeksha (CHV_DEEKSHA_FORK_HEIGHT=0)"
         );
         assert_eq!(
-            dispatch_hash_1m.data, v4_2_hash.data,
-            "Dispatch at height 1_000_000 must use CHv4.2 (CHV4_2_FORK_HEIGHT=0)"
+            dispatch_hash_1m.data, deeksha_hash.data,
+            "Dispatch at height 1_000_000 must use Deeksha (CHV_DEEKSHA_FORK_HEIGHT=0)"
         );
 
-        println!("✅ Fork dispatch correctly routes to CHv4.2 (CHV4_2_FORK_HEIGHT=0, aktivní od genesis)");
+        println!("✅ Fork dispatch correctly routes to Deeksha (CHV_DEEKSHA_FORK_HEIGHT=0, aktivní od genesis)");
     }
 
     #[test]

@@ -1513,25 +1513,32 @@ mod tests {
     }
 
     #[test]
-    fn chv3_gpu_mineable_only_before_memory_hard_fork() {
-        let fork = zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT as u32;
+    fn cosmic_harmony_gpu_mineable_on_metal_only() {
+        let genesis_height = 0;
+        let high_height = 1_000_000;
 
         assert!(UniversalMiner::is_gpu_mineable(
             Algorithm::CosmicHarmony,
             gpu::GpuPlatform::Metal,
-            fork.saturating_sub(1)
+            genesis_height
         ));
 
-        assert!(!UniversalMiner::is_gpu_mineable(
+        assert!(UniversalMiner::is_gpu_mineable(
             Algorithm::CosmicHarmony,
             gpu::GpuPlatform::Metal,
-            fork
+            high_height
         ));
 
         assert!(!UniversalMiner::is_gpu_mineable(
             Algorithm::CosmicHarmony,
             gpu::GpuPlatform::OpenCL,
-            fork
+            high_height
+        ));
+
+        assert!(!UniversalMiner::is_gpu_mineable(
+            Algorithm::CosmicHarmonyDeeksha,
+            gpu::GpuPlatform::Metal,
+            high_height
         ));
     }
 
