@@ -396,6 +396,48 @@ This establishes the current Rust Metal baseline on the same machine where the o
 desktop Python/PyObjC runtime measured roughly **~1.20 kH/s** at batch 2048. The Rust path is
 therefore currently the faster Apple Silicon reference for further tuning work.
 
+### 5.7 M1 Tuning Notes: DAG vs. Occupancy
+
+An Ethash-style DAG is **not** a good fit for Deeksha.
+
+- Ethash benefits from a large shared read-only DAG reused across many hashes.
+- Deeksha's 64 KiB scratchpad is **nonce-dependent** and is mutated by sequential passes,
+  so prebuilding a global DAG would not remove the real work.
+- For Deeksha, a DAG would mostly add VRAM traffic and setup cost without eliminating the
+  canonical memory-hard transform.
+
+What did help on Apple M1:
+
+- removing some hot-path thread-local copies in the native Metal shader
+- specializing fixed-size hash calls used in every nonce (`header||nonce` and `SHA3-512(32 B)`)
+- tuning `threads_per_threadgroup` down for this register-heavy kernel
+
+Observed M1 sweep for Rust Metal benchmark at dispatch 8192:
+
+- `ZION_METAL_THREADS_PER_TG=64` → **~2.43 kH/s** in clean sweep, with repeated best runs up to **~2.51 kH/s**
+- `ZION_METAL_THREADS_PER_TG=128` → **~2.18 kH/s**
+- `ZION_METAL_THREADS_PER_TG=256` → **~2.06 kH/s**
+- `ZION_METAL_THREADS_PER_TG=512` → **~2.01 kH/s**
+
+Note on batch-size tuning for the current Rust Metal backend:
+
+- `L1/miner` auto-tuning already sweeps requested batch sizes internally.
+- Metal exposes a fixed natural dispatch size to the benchmark harness.
+- On the current M1 path, all requested batch sizes collapse to the same effective dispatch of **8192**,
+  so threadgroup tuning is currently the meaningful tuning axis on this backend.
+
+This suggests the next useful Apple Silicon work is not DAG generation, but:
+
+- occupancy tuning
+- reducing stack/register pressure in `metal_shader.metal`
+- specializing the remaining fixed-size SHA3/Keccak helpers used inside the memory-hard stage
+
+Current practical recommendation for Apple M1:
+
+- default to `ZION_METAL_THREADS_PER_TG=64` for benchmarking and live tuning
+- treat `128` as secondary fallback
+- avoid `256+` for this kernel on M1 unless a later shader rewrite changes register pressure materially
+
 ---
 
 ## 6. Integration Points
