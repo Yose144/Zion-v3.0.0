@@ -36,7 +36,7 @@ native-all = [
 # GPU backends
 gpu = ["zion-cosmic-harmony-v3/gpu", "ocl"]
 metal = ["zion-cosmic-harmony-v3/metal"]
-cuda = []
+cuda = ["dep:cudarc"]
 # Rayon parallel CPU mining (batch nonce search via rayon find_map_any + AtomicBool early exit)
 parallel = ["zion-cosmic-harmony-v3/parallel"]
 
@@ -70,3 +70,4 @@ libc = "0.2"
 zion-core = { path = "../core", default-features = false }
 zion-cosmic-harmony-v3 = { path = "../cosmic-harmony" }
 ocl = { version = "0.19", optional = true }
+cudarc = { version = "0.12", optional = true, default-features = false, features = ["cuda-12000", "driver", "nvrtc"] }
