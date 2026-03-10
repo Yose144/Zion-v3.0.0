@@ -27,49 +27,36 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react';
-import { SITE_RELEASE_LABEL } from '@/lib/site';
+import {
+  SITE_NETWORK_TOPOLOGY,
+  SITE_POOL_PRIMARY,
+  SITE_PRIMARY_HOST,
+  SITE_PRIMARY_RPC_URL,
+  SITE_RELEASE_LABEL,
+} from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    NETWORK PAGE — Redesigned to match Roadmap visual language
    ═══════════════════════════════════════════════════════════ */
 
 const heroStats = [
-  { label: 'Seed Regions', value: '3', descriptor: 'EU · US-EAST · AP' },
+  { label: 'Public Host', value: '1', descriptor: 'Zion2 · public RPC + pool + web' },
+  { label: 'Internal Seeds', value: '2', descriptor: 'Container peers behind primary host' },
   { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
-  { label: 'Sync Cohesion', value: '100%', descriptor: '3/3 nodes synced' },
+  { label: 'Topology', value: 'Current', descriptor: 'Primary host + internal seeds' },
   { label: 'Network', value: 'TestNet', descriptor: 'v2.9.8 · Deeksha release line' },
 ];
 
 const infraFeatures = [
   {
     icon: Server,
-    title: 'Helsinki 🇫🇮 (EU-NORTH)',
-    detail: 'Primary seed + pool — ARM64 8GB',
-    ip: '77.42.31.72',
+    title: 'Zion2 Primary 🖥️',
+    detail: 'Current public host for chain, pool, explorer, and web',
+    ip: SITE_PRIMARY_HOST,
     status: 'Primary',
     color: 'text-emerald-400',
     border: 'border-emerald-500/30',
     bg: 'bg-emerald-500/5',
-  },
-  {
-    icon: Server,
-    title: 'USA 🇺🇸 (US-EAST)',
-    detail: 'Seed node — AMD64 4GB',
-    ip: '178.156.240.160',
-    status: 'Seed',
-    color: 'text-blue-400',
-    border: 'border-blue-500/30',
-    bg: 'bg-blue-500/5',
-  },
-  {
-    icon: Server,
-    title: 'Asia 🌏 (AP-SOUTHEAST)',
-    detail: 'Seed node — AMD64 4GB',
-    ip: '5.223.43.93',
-    status: 'Seed',
-    color: 'text-blue-400',
-    border: 'border-blue-500/30',
-    bg: 'bg-blue-500/5',
   },
 ];
 
@@ -77,9 +64,9 @@ const guideBlocks = [
   {
     icon: Zap,
     title: 'Mining',
-    description: 'Connect any Cosmic Harmony / CPU miner to the Helsinki pool.',
+    description: 'Connect any Cosmic Harmony / CPU miner to the current public pool on Zion2.',
     items: [
-      'Pool: 77.42.31.72:3333 (Helsinki — primary)',
+      `Pool: ${SITE_POOL_PRIMARY} (current primary)`,
       'Wallet: YOUR_ZION_ADDRESS',
       'Password: x',
     ],
@@ -87,36 +74,36 @@ const guideBlocks = [
   {
     icon: Terminal,
     title: 'RPC API',
-    description: 'Native Rust JSON-RPC endpoint for explorers and tooling.',
+    description: 'Native Rust JSON-RPC endpoint for explorers and tooling. Historical 3-host mesh is archived in release reports.',
     items: [
-      'Helsinki: http://77.42.31.72:8444/jsonrpc',
-      'USA:      http://178.156.240.160:8444/jsonrpc',
-      'Asia:     http://5.223.43.93:8444/jsonrpc',
+      `Primary: ${SITE_PRIMARY_RPC_URL}`,
+      'Scope: public runtime endpoint',
+      'Archive: docs/2.9.8 + March status reports',
       'Method: POST',
     ],
   },
   {
     icon: Globe,
     title: 'P2P Layer',
-    description: 'Native libp2p network for blockchain synchronization.',
+    description: 'Native libp2p network for blockchain synchronization on the current primary-host topology.',
     items: [
-      'Helsinki: 77.42.31.72:8334',
-      'USA:      178.156.240.160:8334',
-      'Asia:     5.223.43.93:8334',
+      `Public peer: ${SITE_PRIMARY_HOST}:8334`,
+      'Internal seeds: zion-seed-1 + zion-seed-2',
+      'Compose subnet: 172.29.0.0/24',
     ],
   },
 ];
 
 const networkFacts = [
   { text: 'Native Rust P2P — libp2p mesh', done: true },
-  { text: '3 seed nodes in full consensus', done: true },
-  { text: 'Stratum v2 mining on both pools', done: true },
+  { text: '1 public host + 2 internal seed containers', done: true },
+  { text: 'Primary stratum endpoint exposed on Zion2', done: true },
   { text: 'JSON-RPC endpoints live (port 8444)', done: true },
   { text: '24/7 Docker containers with auto-restart', done: true },
   { text: 'LWMA DAA — target 60s block time', done: true },
-  { text: '3 nodes across 3 regions', done: true },
+  { text: 'Archived 3-node validation preserved in reports', done: true },
   { text: 'Prometheus + Grafana monitoring', done: true },
-  { text: 'Geographic load balancing', done: false },
+  { text: 'Geo-distributed public topology currently archived', done: false },
 ];
 
 export default function NetworkPage() {
@@ -130,10 +117,8 @@ export default function NetworkPage() {
     setTimeout(() => setCopied(null), 1500);
   };
 
-  const primaryPool = '77.42.31.72:3333';
-  const backupPoolA = '178.156.240.160:3333';
-  const backupPoolB = '5.223.43.93:3333';
-  const xmrigFailover = `./xmrig -o stratum+tcp://${primaryPool} --url-backup=stratum+tcp://${backupPoolA} --url-backup=stratum+tcp://${backupPoolB} -u YOUR_ZION_ADDRESS -p x`;
+  const primaryPool = SITE_POOL_PRIMARY;
+  const xmrigConnect = `./xmrig -o stratum+tcp://${primaryPool} -u YOUR_ZION_ADDRESS -p x`;
   const healthCurl = 'curl -s https://www.zionterranova.com/api/health';
   const networkCurl = 'curl -s https://www.zionterranova.com/api/network';
 
@@ -167,8 +152,8 @@ export default function NetworkPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from native Rust nodes. Helsinki (primary + pool), USA (Ashburn US-EAST), Asia (Singapore AP-SOUTHEAST)
-                forming the TestNet mesh. All data refreshes every 30 seconds.
+                Real-time telemetry from the current public runtime on Zion2. The earlier Helsinki/USA/Asia mesh remains part of
+                archived validation history in the 2.9.8 deploy report and March status reports, but is no longer the live topology.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -178,7 +163,7 @@ export default function NetworkPage() {
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Deeksha 2.9.8
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 3 Nodes Synced
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 1 Public Host · 2 Internal Seeds
                 </span>
               </div>
             </div>
@@ -212,11 +197,11 @@ export default function NetworkPage() {
 
           <div className="grid gap-5 lg:grid-cols-3">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Failover Mining</p>
-              <p className="text-sm text-gray-300 mb-3">Primary + 2 backup stratum endpoints for operational continuity.</p>
-              <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{xmrigFailover}</code>
-              <button onClick={() => copyText('xmrig-failover', xmrigFailover)} className="mt-3 inline-flex items-center gap-2 text-xs text-zion-cyan hover:text-white transition">
-                <Copy className="h-3.5 w-3.5" /> {copied === 'xmrig-failover' ? 'Copied' : 'Copy command'}
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Primary Mining</p>
+              <p className="text-sm text-gray-300 mb-3">Current public stratum endpoint on Zion2. Historical multi-host failover belongs to archived topology docs.</p>
+              <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{xmrigConnect}</code>
+              <button onClick={() => copyText('xmrig-connect', xmrigConnect)} className="mt-3 inline-flex items-center gap-2 text-xs text-zion-cyan hover:text-white transition">
+                <Copy className="h-3.5 w-3.5" /> {copied === 'xmrig-connect' ? 'Copied' : 'Copy command'}
               </button>
             </div>
 
@@ -263,11 +248,11 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Infrastructure</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-zion-gold" />
-              Seed Nodes
+              Current Runtime
             </h2>
-            <p className="text-sm text-gray-400">Native Rust nodes in Docker containers — full P2P mesh with automatic peer discovery.</p>
+            <p className="text-sm text-gray-400">Current public runtime is a single primary host. The earlier 3-node mesh remains documented as archived validation history.</p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-1 lg:max-w-2xl">
             {infraFeatures.map((node, idx) => (
               <motion.div
                 key={node.title}
@@ -325,7 +310,7 @@ export default function NetworkPage() {
               <Activity className="h-7 w-7 text-emerald-400" />
               Node Status
             </h2>
-            <p className="text-sm text-gray-400">Real-time health, block height, hashrate, and sync status from all seed nodes.</p>
+            <p className="text-sm text-gray-400">Real-time health, block height, hashrate, and sync status from the current primary-host runtime.</p>
           </div>
           <NetworkStatus className="max-w-none" />
         </motion.section>
@@ -342,7 +327,7 @@ export default function NetworkPage() {
               <Globe2 className="h-7 w-7 text-zion-cyan" />
               Network Map &amp; Pool Finder
             </h2>
-            <p className="text-sm text-gray-400">Visualize global node distribution and find the best mining pool for your location.</p>
+            <p className="text-sm text-gray-400">Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
@@ -436,13 +421,13 @@ export default function NetworkPage() {
           <h2 className="mt-6 text-3xl font-semibold text-white">Join the ZION Network</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
             Three native Rust nodes running 24/7, forming a resilient P2P mesh.
-            Connect your miner, run your own node, or explore the blockchain.
+            Connect your miner, run your own node, or explore the blockchain from the current primary host while historical rollout context stays preserved in docs.
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · MainNet 31.12.2026
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
-            {['Cosmic Harmony PoW', 'Stratum v2', 'libp2p mesh', 'Docker native', 'Auto-failover'].map((item) => (
+            {['Cosmic Harmony PoW', 'Primary host live', 'Internal seeds', 'Docker native', 'Archived 3-node history'].map((item) => (
               <span key={item} className="rounded-full bg-white/80 px-4 py-2 font-semibold text-gray-900">
                 {item}
               </span>
@@ -467,7 +452,7 @@ export default function NetworkPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — P2P Network Pro · Native Rust Infrastructure · 3 Seed Nodes · 3 Continents · MainNet 31.12.2026
+          ZION TerraNova {SITE_RELEASE_LABEL} — P2P Network Pro · {SITE_NETWORK_TOPOLOGY} · Archived 3-node rollout preserved in docs
         </p>
       </div>
     </div>
