@@ -545,7 +545,7 @@ inline uint8_t aes_xtime(uint8_t b) {
 }
 
 // AES-128 key expansion: key[16] → round_keys[176] (11 × 16-byte keys)
-void aes128_key_expand(thread const uint8_t key[16], thread uint8_t rk[176]) {
+void aes128_key_expand(thread const uint8_t *key, thread uint8_t rk[176]) {
     for (int i = 0; i < 16; i++) rk[i] = key[i];
     for (int i = 4; i < 44; i++) {
         uint8_t tmp[4];
@@ -587,8 +587,8 @@ void aes_mix_column(thread uint8_t *c) {
 // AES-128 ECB encrypt one 16-byte block
 // Matches Rust aes::Aes128::encrypt_block() exactly (NIST AES standard)
 void aes128_encrypt(
-    thread const uint8_t key[16],
-    thread const uint8_t plaintext[16],
+    thread const uint8_t *key,
+    thread const uint8_t *plaintext,
     thread uint8_t ciphertext[16]
 ) {
     uint8_t rk[176];
@@ -640,21 +640,17 @@ void fusion_round_gpu(thread uint8_t *state, uint8_t round_num) {
     keccak256_state32_round_gpu(state, round_num, intermediate);
 
     // Step 2: block0 = AES128(key=intermediate[0..16], plaintext=state[32..48])
-    uint8_t key1[16];
-    for (int i = 0; i < 16; i++) key1[i] = intermediate[i];
-    uint8_t block0_in[16], block0_out[16];
-    for (int i = 0; i < 16; i++) block0_in[i] = state[32 + i];
-    aes128_encrypt(key1, block0_in, block0_out);
+    uint8_t block0_out[16];
+    aes128_encrypt(intermediate, state + 32, block0_out);
 
     // Step 3: block1 = AES128(key=key2, plaintext=state[48..64])
     // key2 = intermediate[0..16] with key2[0] ^= round_num, key2[15] ^= 0xAB
     uint8_t key2[16];
-    for (int i = 0; i < 16; i++) key2[i] = key1[i];
+    for (int i = 0; i < 16; i++) key2[i] = intermediate[i];
     key2[0]  ^= round_num;
     key2[15] ^= 0xABu;
-    uint8_t block1_in[16], block1_out[16];
-    for (int i = 0; i < 16; i++) block1_in[i] = state[48 + i];
-    aes128_encrypt(key2, block1_in, block1_out);
+    uint8_t block1_out[16];
+    aes128_encrypt(key2, state + 48, block1_out);
 
     // Step 4: Evolve upper half + update lower half (matches CPU non-AVX2 path)
     for (int i = 0; i < 32; i++) state[32 + i] ^= intermediate[i];  // upper half evolve
