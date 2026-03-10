@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import { SITE_VERSION } from '@/lib/site';
 
 // Use actual production URLs - Helsinki server
 const POOL_API =
@@ -84,7 +85,7 @@ export async function GET() {
 
   return NextResponse.json({
     status,
-    version: process.env.NEXT_PUBLIC_APP_VERSION || 'v2.9.7',
+    version: process.env.NEXT_PUBLIC_APP_VERSION || SITE_VERSION,
     environment: process.env.NODE_ENV || 'production',
     uptime_seconds: Math.floor(process.uptime()),
     dependencies: {

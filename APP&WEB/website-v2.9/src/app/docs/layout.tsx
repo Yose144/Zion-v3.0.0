@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Documentation · ZION v2.9.7',
-  description: 'ZION blockchain documentation — getting started, architecture, mining guides, tutorials, whitepaper, and advanced topics.',
+  title: 'Documentation · ZION v2.9.8',
+  description: 'ZION documentation focused on live testnet operations, protocol baseline, mining setup, and archived history.',
 };
 
 export default function DocsLayout({

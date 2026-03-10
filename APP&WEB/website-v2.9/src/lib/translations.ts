@@ -26,13 +26,13 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'Pre-MainNet Gate · v2.9.7 · TestNet Živý', en: 'Pre-MainNet Gate · v2.9.7 · TestNet Live' },
-    badge_chv4:     { cs: 'CHv4 Neural Bloom — vývojový roadmap 2026', en: 'CHv4 Neural Bloom — roadmap 2026' },
+    badge_version:  { cs: 'Live TestNet · v2.9.8 · Deeksha', en: 'Live TestNet · v2.9.8 · Deeksha' },
+    badge_chv4:     { cs: '3-node mesh · Helsinki · USA · Asia', en: '3-node mesh · Helsinki · USA · Asia' },
     tagline:        { cs: 'Nativní Rust těžební infrastruktura', en: 'Native Rust Mining Infrastructure' },
-    title_sub:      { cs: 'Pre-MainNet Gate · v2.9.7', en: 'Pre-MainNet Gate · v2.9.7' },
+    title_sub:      { cs: 'Live TestNet · v2.9.8', en: 'Live TestNet · v2.9.8' },
     description:    {
-      cs: '52 590 řádků nativního Rustu. 780+ testů. Cosmic Harmony PoW algoritmus, těžba v reálném čase na TestNetu — na cestě k MainNetu.',
-      en: '52 590 lines of native Rust. 780+ tests. Cosmic Harmony PoW algorithm, real-time TestNet mining — on the road to MainNet.',
+      cs: 'Nativní Rust chain s live 3-node testnetem, pool telemetrií a Deeksha canonical path od genesis. Web je teď vedený víc operativně a míň historicky.',
+      en: 'Native Rust chain with a live 3-node testnet, pool telemetry, and Deeksha canonical path from genesis. The web now prioritizes operations over archive noise.',
     },
     btn_start:      { cs: 'Začít těžit', en: 'Start Mining' },
     btn_docs:       { cs: 'Dokumentace', en: 'Docs' },
@@ -41,10 +41,10 @@ const t = {
     signal_nodes:   { cs: 'Validátor síť', en: 'Validator Grid' },
     signal_mainnet: { cs: 'MainNet Gate', en: 'MainNet Gate' },
     signal_loc:     { cs: 'Helsinki · USA · Asie', en: 'Helsinki · USA · Asia' },
-    signal_target:  { cs: 'Fáze 2–5 v přípravě', en: 'Phases 2–5 in pipeline' },
-    signal_status_l1: { cs: 'Fáze 1 · 82 %', en: 'Phase 1 · 82 %' },
+    signal_target:  { cs: 'GO · 3-node mesh aktivní', en: 'GO · 3-node mesh active' },
+    signal_status_l1: { cs: 'Deeksha live', en: 'Deeksha live' },
     signal_status_nodes: { cs: '3 / 3 nódy online', en: '3 / 3 nodes online' },
-    signal_status_mainnet: { cs: '31. 12. 2026', en: '31. 12. 2026' },
+    signal_status_mainnet: { cs: 'Release gate · GO', en: 'Release gate · GO' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },
     metric_nodes:   { cs: 'Nódy Online', en: 'Nodes Online' },
     metric_tests:   { cs: 'Testy úspěšně', en: 'Tests Passing' },

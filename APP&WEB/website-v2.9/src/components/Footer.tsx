@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, MessageCircle, Globe, BookOpen, Compass, Map, Download, Pickaxe, Crown, FileText, Orbit, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
+import { Github, MessageCircle, Globe, BookOpen, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
@@ -20,8 +20,7 @@ const footerGroups = [
     links: [
       { href: '/explorer', label: 'Explorer', Icon: Compass },
       { href: '/dashboard', label: 'Dashboard', Icon: Orbit },
-      { href: '/dao', label: 'DAO', Icon: Crown },
-      { href: '/warp', label: 'WARP', Icon: ArrowUpRight },
+      { href: '/pool', label: 'Pool', Icon: Pickaxe },
       { href: '/bridge', label: 'Bridge', Icon: ArrowLeftRight },
     ],
   },
@@ -30,8 +29,7 @@ const footerGroups = [
     links: [
       { href: '/docs', label: 'Docs', Icon: BookOpen },
       { href: '/api-reference', label: 'API Reference', Icon: FileText },
-      { href: '/genesis', label: 'Genesis', Icon: BookOpen },
-      { href: '/philosophy', label: 'Philosophy', Icon: BookOpen },
+      { href: '/download', label: 'Downloads', Icon: Download },
     ],
   },
 ];
@@ -107,7 +105,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-4 pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-600">
-            © 2026 ZION Blockchain · v2.9.7 On the Star
+            © 2026 ZION Blockchain · v2.9.8 Live TestNet
           </p>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

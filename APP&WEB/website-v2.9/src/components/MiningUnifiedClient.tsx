@@ -32,6 +32,7 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    SHARED HELPERS
@@ -233,7 +234,7 @@ export default function MiningUnifiedClient() {
                   Mining & Node Guide
                 </h1>
                 <p className="text-white/40 text-sm mt-0.5">
-                  ZION v2.9.7 · Cosmic Harmony v3 · CPU / GPU / Pool / Solo
+                  {SITE_RELEASE_LABEL} · Cosmic Harmony v3 · CPU / GPU / Pool / Solo
                 </p>
               </div>
             </div>

@@ -43,7 +43,7 @@ const CONSCIOUSNESS_NAMES: Record<number, string> = {
   3: "Mental",
   4: "Spiritual",
   5: "Cosmic",
-  6: "On The Star",
+  6: "Orbital",
 };
 
 const CONSCIOUSNESS_COLORS: Record<number, string> = {

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 const GRAFANA_BASE_URL = (process.env.NEXT_PUBLIC_GRAFANA_BASE_URL || "https://zionterranova.com/grafana").replace(/\/$/, "");
 const IFRAME_SRC = `${GRAFANA_BASE_URL}/d/system-metrics/full-system-dashboard?orgId=1&theme=dark&kiosk=tv`;
 const DASHBOARD_URL = `${GRAFANA_BASE_URL}/d/system-metrics/full-system-dashboard`;
 
 export const metadata: Metadata = {
-  title: "Full System Dashboard · ZION v2.9.7 On the Star",
-  description: "End-to-end system metrics: CPU, RAM, RPC latency, API health, and uptime for ZION v2.9.7 On the Star.",
+  title: `Full System Dashboard · ZION ${SITE_RELEASE_LABEL}`,
+  description: 'End-to-end system metrics: CPU, RAM, RPC latency, API health, and uptime for the live 2.9.8 Deeksha release line.',
 };
 
 export default function SystemMetricsPage() {

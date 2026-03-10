@@ -34,6 +34,7 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    ZION MINING POOL DASHBOARD
@@ -275,7 +276,7 @@ export default function PoolDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <Pickaxe className="h-4 w-4" />
-                ZION v2.9.7 · Mining Pool
+                {SITE_RELEASE_LABEL} · Mining Pool
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Cosmic Harmony</p>
@@ -939,7 +940,7 @@ export default function PoolDashboard() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova v2.9.7 — Mining Pool Pro · Real-time data from stratum servers · Helsinki (primary pool)
+          ZION TerraNova {SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from stratum servers · Helsinki (primary pool)
           {lastUpdate && <> · Last update: {lastUpdate.toLocaleTimeString()}</>}
         </p>
       </div>

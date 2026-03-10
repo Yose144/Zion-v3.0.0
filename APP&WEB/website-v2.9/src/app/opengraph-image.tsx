@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
+import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
-export const runtime = 'edge';
-export const alt = 'ZION Blockchain v2.9.7 — On the Star';
+export const alt = `ZION Blockchain ${SITE_RELEASE_LABEL}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -75,7 +75,7 @@ export default async function Image() {
             marginBottom: '24px',
           }}
         >
-          v2.9.7 · On the Star · TestNet
+          Live TestNet · {SITE_VERSION}
         </div>
 
         {/* Title */}
@@ -102,7 +102,7 @@ export default async function Image() {
             marginBottom: '8px',
           }}
         >
-          Terra Nova Blockchain
+          TerraNova Blockchain
         </div>
 
         {/* Description */}
@@ -116,7 +116,7 @@ export default async function Image() {
             marginBottom: '32px',
           }}
         >
-          Consciousness-based L1 · Cosmic Harmony PoW · Native Rust · WARP Bridges
+          Deeksha Patch & Code Freeze · Native Rust L1 · Cosmic Harmony PoW
         </div>
 
         {/* Stats row */}
@@ -127,9 +127,9 @@ export default async function Image() {
           }}
         >
           {[
-            { label: 'Lines of Code', value: '46,690+' },
-            { label: 'Algorithms', value: '4 PoW' },
-            { label: 'Seed Regions', value: '2' },
+            { label: 'Release', value: SITE_VERSION },
+            { label: 'Seed Nodes', value: '3' },
+            { label: 'Topology', value: SITE_NETWORK_TOPOLOGY },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -143,7 +143,7 @@ export default async function Image() {
                 background: 'rgba(255,255,255,0.05)',
               }}
             >
-              <div style={{ fontSize: '22px', fontWeight: 700, color: '#fbbf24' }}>
+              <div style={{ fontSize: stat.label === 'Topology' ? '15px' : '22px', fontWeight: 700, color: '#fbbf24', textAlign: 'center' as const }}>
                 {stat.value}
               </div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginTop: '4px' }}>

@@ -64,7 +64,7 @@ export default function LiveDashboard() {
     }
 
     fetchStats();
-    const interval = setInterval(fetchStats, 12000);
+    const interval = setInterval(fetchStats, 30000);
     return () => {
       active = false;
       clearInterval(interval);
@@ -111,7 +111,7 @@ export default function LiveDashboard() {
             <Activity className="w-5 h-5 text-zion-gold animate-pulse" />
             <span className="text-sm tracking-wide uppercase text-gray-300">Mission Console</span>
           </div>
-          <div className="text-3xl font-semibold text-gradient">Live Network Telemetry</div>
+          <div className="text-3xl font-semibold text-gradient">Deeksha Live Telemetry</div>
           {error && (
             <span className="text-xs text-amber-300 bg-amber-500/10 rounded-full px-3 py-1 border border-amber-500/30">
               ⚠️ {error}
@@ -201,7 +201,7 @@ export default function LiveDashboard() {
             </div>
 
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
-              Blockchain telemetry pulled live from TestNet API every 12 s.
+              Blockchain telemetry pulled live from the 2.9.8 Deeksha TestNet API every 30 s.
               3 seed nodes (Helsinki, USA, Asia) synced and mining.
             </div>
           </motion.div>

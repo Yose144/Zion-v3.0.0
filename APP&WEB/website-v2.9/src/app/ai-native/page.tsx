@@ -553,7 +553,7 @@ else:
             <h2 className="text-5xl font-bold mb-8">
               <div className="flex items-center justify-center gap-4 bg-linear-to-r from-zion-purple via-zion-cyan to-zion-gold bg-clip-text text-transparent">
                 <Cpu className="w-12 h-12 text-zion-purple" />
-                <span>ON THE STAR!</span>
+                <span>TOWARD THE STAR</span>
                 <Star className="w-12 h-12 text-zion-gold" />
               </div>
             </h2>
