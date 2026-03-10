@@ -335,6 +335,10 @@ impl GpuMiner for OpenCLMiner {
             0.0
         }
     }
+
+    fn effective_batch_size(&self, requested_batch_size: u64, _height: u64) -> u64 {
+        requested_batch_size.min(self.mh_batch_size as u64)
+    }
 }
 
 /// Detect OpenCL devices

@@ -210,9 +210,12 @@ class MetalBackend:
         # PyObjC Metal path (pyobjc-framework-Metal)
         self._use_objc = False
         self._objc_device = None
+        self._objc_mtl = None
         self._objc_pipeline = None
         self._objc_queue = None
         self._metal_weights = None
+        self._objc_static_buffers = {}
+        self._objc_dynamic_buffers = None
         # NPU mix pipeline (M3+ only — chv42_npu_mix, #if __METAL_VERSION__ >= 300)
         # Bezi soubeznne s hlavnim mine kernem na AMX matrix units (Apple Silicon)
         self._npu_pipeline = None
@@ -272,12 +275,18 @@ class MetalBackend:
             if pipeline is None:
                 raise RuntimeError(f"Pipeline state: {err}")
             self._objc_device   = device
+            self._objc_mtl      = _MTL
             self._objc_pipeline = pipeline
             self._objc_queue    = device.newCommandQueue()
             self._use_objc      = True
             self._ready         = True
             dev_name = device.name() if hasattr(device, "name") else "Apple GPU"
             log.info("[Metal] PyObjC Metal device: %s", dev_name)
+
+            try:
+                self._objc_static_buffers = self._create_objc_static_buffers()
+            except Exception as static_err:
+                raise RuntimeError(f"Metal static buffer init failed: {static_err}")
 
             # Pokus o kompilaci NPU mix kernelu (M3+ only, Metal >= 3.0, simdgroup_matrix)
             try:
@@ -322,6 +331,56 @@ class MetalBackend:
     def available(self) -> bool:
         return self._ready
 
+    def _objc_new_shared_buffer(self, payload) -> object:
+        dev = self._objc_device
+        if dev is None:
+            raise RuntimeError("Metal device not initialized")
+        MTL_SHARED = 0
+        return dev.newBufferWithBytes_length_options_(payload, int(len(payload)), MTL_SHARED)
+
+    def _objc_new_zero_buffer(self, size: int) -> object:
+        dev = self._objc_device
+        if dev is None:
+            raise RuntimeError("Metal device not initialized")
+        MTL_SHARED = 0
+        buf = dev.newBufferWithLength_options_(int(size), MTL_SHARED)
+        view = buf.contents().as_buffer(int(size))
+        view[:] = b"\x00" * int(size)
+        return buf
+
+    def _create_objc_static_buffers(self) -> dict:
+        weights = self._metal_weights
+        if weights is None:
+            raise RuntimeError("canonical weight buffers missing")
+        return {
+            "w1": self._objc_new_shared_buffer(weights["w1"]),
+            "b1": self._objc_new_shared_buffer(weights["b1"]),
+            "w2": self._objc_new_shared_buffer(weights["w2"]),
+            "b2": self._objc_new_shared_buffer(weights["b2"]),
+            "scale1": self._objc_new_shared_buffer(weights["scale1"]),
+            "scale2": self._objc_new_shared_buffer(weights["scale2"]),
+        }
+
+    def _ensure_objc_dynamic_buffers(self, rounded_nonce_count: int) -> dict:
+        existing = self._objc_dynamic_buffers
+        scratchpad_bytes = int(rounded_nonce_count * 65536)
+        if existing is not None and int(existing.get("rounded_nonce_count", 0)) == int(rounded_nonce_count):
+            return existing
+
+        dynamic = {
+            "rounded_nonce_count": int(rounded_nonce_count),
+            "header": self._objc_new_zero_buffer(128),
+            "header_len": self._objc_new_zero_buffer(4),
+            "nonce_base": self._objc_new_zero_buffer(8),
+            "scratchpad": self._objc_new_zero_buffer(scratchpad_bytes),
+            "target": self._objc_new_zero_buffer(4),
+            "result_nonce": self._objc_new_zero_buffer(4),
+            "result_hash": self._objc_new_zero_buffer(32),
+            "nonce_count": self._objc_new_zero_buffer(4),
+        }
+        self._objc_dynamic_buffers = dynamic
+        return dynamic
+
     def _mine_objc(
         self, header: bytes, nonce_base: int, nonce_count: int, target_u32: int
     ) -> Optional[Tuple[int, bytes]]:
@@ -329,61 +388,47 @@ class MetalBackend:
         Používá numpy pole sdílená s Metal bufferem (unified memory, Apple Silicon).
         """
         import numpy as np
-        import Metal as _MTL
 
-        dev = self._objc_device
         pipeline = self._objc_pipeline
         queue = self._objc_queue
-        MTL_SHARED = 0  # MTLResourceStorageModeShared (0 << 4 = 0)
+        _MTL = self._objc_mtl
 
-        weights = self._metal_weights
-        if weights is None:
+        if pipeline is None or queue is None or _MTL is None:
+            log.warning("[Metal] PyObjC runtime not initialized")
+            return None
+        if not self._objc_static_buffers:
             log.warning("[Metal] canonical weight buffers missing")
             return None
 
-        # Vstupní numpy pole → Metal buffer bez kopírování (unified memory)
         rounded_nonce_count = ((max(1, int(nonce_count)) + 63) // 64) * 64
-        hdr_padded   = np.frombuffer((header + bytes(128))[:128], dtype=np.uint8).copy()
-        hlen_arr     = np.array([len(header)], dtype=np.uint32)
-        nb_arr       = np.array([nonce_base], dtype=np.uint64)
-        nc_arr       = np.array([nonce_count], dtype=np.uint32)
-        tgt_arr      = np.array([target_u32], dtype=np.uint32)
-        sp_arr       = np.zeros(rounded_nonce_count * 65536, dtype=np.uint8)
-        result_n_arr = np.full(1, np.uint32(0xFFFFFFFF), dtype=np.uint32)
-        result_h_arr = np.zeros(32, dtype=np.uint8)
-        w1_arr       = np.frombuffer(weights["w1"], dtype=np.int8)
-        b1_arr       = np.frombuffer(weights["b1"], dtype=np.int8)
-        w2_arr       = np.frombuffer(weights["w2"], dtype=np.int8)
-        b2_arr       = np.frombuffer(weights["b2"], dtype=np.int8)
-        scale1_arr   = np.frombuffer(weights["scale1"], dtype=np.int16)
-        scale2_arr   = np.frombuffer(weights["scale2"], dtype=np.int16)
-
-        def _np_input_buf(arr: "np.ndarray"):
-            """Vytvoří MTLBuffer z numpy pole přes PyObjC-safe bytes bridge."""
-            return dev.newBufferWithBytes_length_options_(arr, int(arr.nbytes), MTL_SHARED)
-
-        def _empty_buf(size: int):
-            buf = dev.newBufferWithLength_options_(int(size), MTL_SHARED)
-            view = buf.contents().as_buffer(int(size))
-            view[:] = b"\x00" * int(size)
-            return buf
-
+        dynamic = self._ensure_objc_dynamic_buffers(rounded_nonce_count)
         try:
+            header_view = dynamic["header"].contents().as_buffer(128)
+            header_bytes = (header + bytes(128))[:128]
+            header_view[:] = header_bytes
+
+            dynamic["header_len"].contents().as_buffer(4)[:] = struct.pack("<I", len(header))
+            dynamic["nonce_base"].contents().as_buffer(8)[:] = struct.pack("<Q", int(nonce_base))
+            dynamic["target"].contents().as_buffer(4)[:] = struct.pack("<I", int(target_u32))
+            dynamic["nonce_count"].contents().as_buffer(4)[:] = struct.pack("<I", int(nonce_count))
+            dynamic["result_nonce"].contents().as_buffer(4)[:] = struct.pack("<I", 0xFFFFFFFF)
+            dynamic["result_hash"].contents().as_buffer(32)[:] = b"\x00" * 32
+
             buffers = [
-                _np_input_buf(hdr_padded),
-                _np_input_buf(hlen_arr),
-                _np_input_buf(nb_arr),
-                _np_input_buf(sp_arr),
-                _np_input_buf(tgt_arr),
-                _np_input_buf(result_n_arr),
-                _np_input_buf(result_h_arr),
-                _np_input_buf(w1_arr),
-                _np_input_buf(b1_arr),
-                _np_input_buf(w2_arr),
-                _np_input_buf(b2_arr),
-                _np_input_buf(scale1_arr),
-                _np_input_buf(scale2_arr),
-                _np_input_buf(nc_arr),
+                dynamic["header"],
+                dynamic["header_len"],
+                dynamic["nonce_base"],
+                dynamic["scratchpad"],
+                dynamic["target"],
+                dynamic["result_nonce"],
+                dynamic["result_hash"],
+                self._objc_static_buffers["w1"],
+                self._objc_static_buffers["b1"],
+                self._objc_static_buffers["w2"],
+                self._objc_static_buffers["b2"],
+                self._objc_static_buffers["scale1"],
+                self._objc_static_buffers["scale2"],
+                dynamic["nonce_count"],
             ]
         except Exception as e:
             log.warning("[Metal] buffer allocation: %s", e)
@@ -404,8 +449,8 @@ class MetalBackend:
         cmd.waitUntilCompleted()
 
         # Výstup je přímo v numpy polích (unified memory — žádné kopírování)
-        result_nonce_view = buffers[5].contents().as_buffer(int(result_n_arr.nbytes))
-        result_hash_view = buffers[6].contents().as_buffer(int(result_h_arr.nbytes))
+        result_nonce_view = buffers[5].contents().as_buffer(4)
+        result_hash_view = buffers[6].contents().as_buffer(32)
         out_nonce = int(np.frombuffer(result_nonce_view, dtype=np.uint32, count=1)[0])
         out_hash  = bytes(result_hash_view)
 
