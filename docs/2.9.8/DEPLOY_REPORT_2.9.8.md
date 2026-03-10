@@ -1,6 +1,6 @@
 # ZION 2.9.8 — Deployment Report
 
-> **Datum:** 2026-03-06  
+> **Datum:** 2026-03-10  
 > **Verze:** 2.9.8 (Deeksha canonical path)  
 > **Síť:** Testnet  
 > **Autor:** Autopilot CI / Copilot  
@@ -19,8 +19,8 @@ Zahrnuje upgrade core, pool, miner, redis se všemi Deeksha změnami.
 | Server | IP | Arch | Role | Image verze | Stav |
 |---|---|---|---|---|---|
 | Helsinki | 77.42.31.72 | ARM64 (CAX21) | seed + pool + miner + web + monitoring | 2.9.8 | ✅ UP (healthy) |
-| Usa | 178.156.240.160 | x86 (CPX11, 2 CPU) | seed + miner | 2.9.8 | ✅ UP (healthy) |
-| Asia | 5.223.43.93 | x86 (CPX12, 2 CPU) | seed + miner | 2.9.8 | 🔄 Build → Deploy |
+| Usa | 178.156.240.160 | x86 (CPX11, 2 CPU) | seed + miner + redis | 2.9.8 | ✅ UP (healthy chain) |
+| Asia | 5.223.43.93 | x86 (CPX12, Docker exposes 1 CPU) | seed + miner + redis | 2.9.8 | ✅ UP (healthy chain) |
 
 ---
 
@@ -44,9 +44,9 @@ Zahrnuje upgrade core, pool, miner, redis se všemi Deeksha změnami.
 ### Asia (x86)
 | Kontejner | Image | Status |
 |---|---|---|
-| zion-core | zion-core:2.9.8 | Čeká na build dokončení |
-| zion-miner | zion-miner:2.9.8 | Čeká na build dokončení |
-| zion-redis | redis:7-alpine | Čeká na build dokončení |
+| zion-core | zion-core:2.9.8 | UP (healthy) |
+| zion-miner | zion-miner:2.9.8 | UP |
+| zion-redis | redis:7-alpine | UP (healthy) |
 
 ---
 
@@ -62,6 +62,8 @@ Zahrnuje upgrade core, pool, miner, redis se všemi Deeksha změnami.
 - Image tagy: `zion-core:2.9.8`, `zion-pool:2.9.8`, `zion-miner:2.9.8`
 - Algoritmus v compose: `cosmic_harmony` (dříve `cosmic_harmony_v4_2`)
 - Miner CPU limit: konfigurovatelný přes `${MINER_CPUS:-3.5}` env var
+- x86 seed nody používají `MINER_POOL_URL=77.42.31.72:3333` místo lokálního `pool:3333`
+- XMR větev je env-driven: `XMR_THREADS` a `ZION_RANDOMX_FULL`
 - Redis vyžaduje `REDIS_PASSWORD` z `.env`
 
 ### Autopilot skript
@@ -86,10 +88,11 @@ Zahrnuje upgrade core, pool, miner, redis se všemi Deeksha změnami.
 |---|---|
 | SSH klíč `zion_server_key` nefungoval pro Usa/Asia | Zjištěno, že všechny servery akceptují `zion_hetzner_key` |
 | Port 3333 obsazen nativním procesem na Helsinki | Kill přes `fuser -k 3333/tcp` |
-| Redis restart loop | Chyběl `REDIS_PASSWORD` → bootstrapped `.env` |
+| Asia Redis restart loop | Stale kontejner byl vytvořen bez expandovaného `REDIS_PASSWORD` → rekreace přes `docker compose --env-file .env up -d redis` |
 | rsync mazal `.env` na serverech | Přidán `--exclude '.env'` do rsync |
 | Compose nenacházel `.env` | Přidán `--env-file .env` ke všem compose příkazům |
-| Miner žádal 3.5 CPU, Usa/Asia mají jen 2 | `MINER_CPUS=1.5` na malých serverech |
+| Miner žádal 3.5 CPU, Usa/Asia mají méně CPU než default | x86 profily přes `.env`: Usa `MINER_CPUS=1.5`, Asia `MINER_CPUS=1.0` |
+| XMR paralelní větev na x86 selhávala na 2 GB RandomX datasetu | Zaveden env-driven light profil: `ZION_RANDOMX_FULL=0`, `XMR_THREADS=1` |
 | `timeout` příkaz neexistuje na macOS | Portable `check_tcp_port()` s `nc` / Python fallback |
 | `Option<&i32>` dereference error v `algorithms_npu.rs` | Odstraněn nepoužitý výraz v testu |
 
@@ -107,7 +110,11 @@ NETWORK=testnet
 # Usa / Asia
 REDIS_PASSWORD=PEW6iTFw8a3bzYEHL7bYBZm1JUlvE
 NETWORK=testnet
-MINER_CPUS=1.5
+MINER_CPUS=1.5   # Usa
+MINER_CPUS=1.0   # Asia
+MINER_POOL_URL=77.42.31.72:3333
+ZION_RANDOMX_FULL=0
+XMR_THREADS=1
 ```
 
 ### SSH přístup (všechny servery)
@@ -119,11 +126,11 @@ ssh -i ~/.ssh/zion_hetzner_key root@<ip>
 
 ## Další kroky
 
-1. ✅ Počkat na dokončení Asia build → spustit kontejnery
-2. ⏳ Ověřit live metriky: accepted shares, hashrate, block height growth
-3. ⏳ 24h stabilní běh bez incidentů
-4. ⏳ Přepnout GO_NO_GO_2.9.8.md verdict na **GO**
-5. ⏳ Mainnet planning po testnet validaci
+1. ✅ Asia Redis + miner fix aplikován, chain sync potvrzen
+2. ✅ Live metriky ověřeny: accepted shares, hashrate, block height growth
+3. ✅ 24h stabilní běh bez incidentů po recovery potvrzen
+4. ✅ GO_NO_GO_2.9.8.md přepnuto na **GO**
+5. ✅ x86 seed+miner profily odděleny od lokální pool dependency přes `MINER_POOL_URL`
 
 ---
 
@@ -147,5 +154,5 @@ ssh -i ~/.ssh/zion_hetzner_key root@<ip>
 
 ---
 
-> **Verdict:** Testnet deployment 2.9.8 Deeksha je z 2/3 serverů úspěšně nasazen a funkční.  
-> Asia server build probíhá, nasazení bude dokončeno automaticky.
+> **Verdict:** Testnet deployment 2.9.8 Deeksha je na 3/3 serverech funkční a chain je synchronní.  
+> x86 seed nody jsou oddělené od lokální pool dependency a míří na Helsinki pool přes `MINER_POOL_URL`.

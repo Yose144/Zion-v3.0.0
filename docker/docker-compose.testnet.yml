@@ -79,11 +79,9 @@ services:
     image: zion-miner:2.9.8
     container_name: zion-miner
     restart: unless-stopped
-    depends_on:
-      - pool
     command:
       - "--pool"
-      - "pool:3333"
+      - "${MINER_POOL_URL:-pool:3333}"
       - "--wallet"
       - "${MINER_WALLET:-zion1q893q6c5j7y0e3r062g4m7c240t5g294k7z6729}"
       - "--worker"
@@ -97,10 +95,10 @@ services:
       - "--xmr-wallet"
       - "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK"
       - "--xmr-threads"
-      - "2"
+      - "${XMR_THREADS:-2}"
     environment:
       - ZION_ENABLE_STREAM_SWITCH=1
-      - ZION_RANDOMX_FULL=1
+      - ZION_RANDOMX_FULL=${ZION_RANDOMX_FULL:-1}
       - RUST_LOG=info
     ulimits:
       memlock:

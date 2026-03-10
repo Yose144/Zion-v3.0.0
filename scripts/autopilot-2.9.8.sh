@@ -164,6 +164,52 @@ ssh_run() {
   ssh -i "$key" -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new "${DEPLOY_USER}@${host}" "$cmd"
 }
 
+upsert_remote_env() {
+  local key="$1"
+  local host="$2"
+  local var_name="$3"
+  local var_value="$4"
+
+  ssh_run "$key" "$host" "python3 - <<'PY'
+from pathlib import Path
+
+path = Path('$DEPLOY_DIR/.env')
+text = path.read_text() if path.exists() else ''
+lines = text.splitlines()
+name = '$var_name'
+value = '$var_value'
+updated = []
+found = False
+for line in lines:
+    if line.startswith(f'{name}='):
+        updated.append(f'{name}={value}')
+        found = True
+    else:
+        updated.append(line)
+if not found:
+    updated.append(f'{name}={value}')
+path.write_text('\n'.join(updated) + '\n')
+PY"
+}
+
+ensure_remote_node_env() {
+  local key="$1"
+  local host="$2"
+  local name="$3"
+
+  if [[ "$NETWORK" != "testnet" || "$name" == "Helsinki" ]]; then
+    return
+  fi
+
+  upsert_remote_env "$key" "$host" "MINER_POOL_URL" "77.42.31.72:3333"
+  upsert_remote_env "$key" "$host" "ZION_RANDOMX_FULL" "0"
+  upsert_remote_env "$key" "$host" "XMR_THREADS" "1"
+
+  if [[ "$name" == "Asia" ]]; then
+    upsert_remote_env "$key" "$host" "MINER_CPUS" "1.0"
+  fi
+}
+
 check_tcp_port() {
   local host="$1"
   local port="$2"
@@ -347,6 +393,8 @@ phase_servers_deploy() {
         --chmod=Du=rwx,Fu=rw \
         -e "ssh -i $local_key -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
         "$ROOT_DIR/" "${DEPLOY_USER}@${ip}:${DEPLOY_DIR}/"
+
+      ensure_remote_node_env "$local_key" "$ip" "$name"
 
       ensure_remote_volumes "$local_key" "$ip"
 
