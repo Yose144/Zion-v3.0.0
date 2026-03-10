@@ -51,7 +51,8 @@ pub enum Algorithm {
 impl Algorithm {
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            // CHv4 canonical + legacy aliases — all map to the same internal variant
+            // Historical CosmicHarmony aliases kept for config/pool compatibility.
+            // Canonical hash source-of-truth lives in L1/cosmic-harmony Deeksha dispatch.
             "cosmic_harmony" | "cosmic_harmony_v4" | "chv4" | "ch4"
             | "cosmicharmony" | "cosmic-harmony" | "cosmic_harmony_v3"
             | "cosmic-harmony-v3" | "chv3" | "ch3" | "cosmic_harmony_v2" | "cosmicharmonyv2"
@@ -59,7 +60,7 @@ impl Algorithm {
             // CHv4.2 explicitní override (Merkabah Dual-Spin)
             "cosmic_harmony_v4_2" | "chv4_2" | "ch4_2" | "chv4.2"
             | "cosmic_harmony_v42" | "ch42" | "merkabah" => Some(Self::CosmicHarmonyV42),
-            // CHvDeeksha canonical (v2.9.8) — přímý Deeksha path
+            // Explicit canonical alias — same Deeksha runtime as above.
             "deeksha" | "chv_deeksha" | "cosmic_harmony_deeksha" | "cosmic_deeksha"
             | "chdeeksha" | "deeksha_canonical" => Some(Self::CosmicHarmonyDeeksha),
             "randomx" | "random-x" | "rx/0" => Some(Self::RandomX),
