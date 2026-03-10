@@ -419,6 +419,16 @@ Observed M1 sweep for Rust Metal benchmark at dispatch 8192:
 - `ZION_METAL_THREADS_PER_TG=256` → **~2.06 kH/s**
 - `ZION_METAL_THREADS_PER_TG=512` → **~2.01 kH/s**
 
+Additional verified shader improvements after this sweep:
+
+- fusion-round hash specialization now avoids generic `keccak256(state[0..32] || round)` setup
+- final fusion `SHA3-512(state[0..32])` now uses the fixed-size 32-byte helper
+- fusion/AES path now avoids some thread-local key/plaintext copies by passing pointers directly
+
+These later changes preserved CPU ↔ Metal parity and are worth keeping, but short benchmark runs
+remain noisy on Apple Silicon. Treat the current practical M1 release baseline as **roughly 2.3-2.5 kH/s**,
+with occasional higher spikes that should not yet be treated as a stable sustained throughput figure.
+
 Note on batch-size tuning for the current Rust Metal backend:
 
 - `L1/miner` auto-tuning already sweeps requested batch sizes internally.
@@ -481,8 +491,9 @@ Current practical recommendation for Apple M1:
 - [ ] **Metal optimization pass** — reduce register pressure and improve throughput of the
       canonical `.metal` shader on Apple Silicon
   - Current verified baseline: ~1.1 kH/s on M1 via PyObjC Metal runtime
-  - Current Rust miner release baseline: ~1.8-2.2 kH/s on M1 at dispatch 8192
-  - Focus areas: keccak absorb/finalize reuse, scratchpad traffic, batch sizing, optional ANE/NPU mix acceleration
+  - Current Rust miner release baseline: ~2.3-2.5 kH/s on M1 at fixed dispatch 8192 with `ZION_METAL_THREADS_PER_TG=64`
+  - Recent completed work: hot-path hash specialization, lower threadgroup default for M1, fusion hash specialization, reduced fusion stack copies
+  - Focus areas: keccak round-level register pressure, AES key schedule cost, scratchpad traffic, batch measurement stability, optional ANE/NPU mix acceleration
 - [ ] **Multi-GPU support** — split nonce range across multiple devices
 - [ ] **Persistent kernel** — keep kernel running across Stratum jobs, update header via
       device-mapped memory
