@@ -1,6 +1,7 @@
 # 🚀 ZION TerraNova v2.9.6 — "On the Star"
 
 > **From blockchain to the stars — where technology meets spirit.**
+> **Operational note (2026-03-10):** Live testnet source of truth is now 2.9.8 Deeksha canonical. For rollout, release readiness and active infra use `docs/2.9.8/INDEX.md`, not the historical 2.9.6 sections below.
 
 [![Build](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/actions/workflows/ci.yml/badge.svg)](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -12,6 +13,11 @@
 ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It uses Proof-of-Work consensus with the custom **Cosmic Harmony v3** (CHv3) mining algorithm — CPU-friendly with GPU acceleration support.
 
 **v2.9.6** is a hard fork extending v2.9.5 with a **6-Layer "On the Star" architecture**, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale projects including L6 space station **ZION Issobella**.
+
+Current operational release track:
+- Live testnet runs the 2.9.8 single-track Deeksha canonical PoW path.
+- Active infra topology is 3 nodes: Helsinki, USA, Asia.
+- Current release gate and deployment status live under `docs/2.9.8/`.
 
 ---
 
@@ -129,15 +135,13 @@ v2.9.6 supports parallel dual-mining with PerMiner thread groups:
 
 ---
 
-## Network — Active 5-Node Topology
+## Network — Active 3-Node Topology (live 2.9.8 testnet)
 
 | Node | Location | IP | Role | Ports |
 |------|----------|----|------|-------|
 | Helsinki | 🇫🇮 Europe | 77.42.31.72 | Seed + Pool + Web + Monitoring | P2P 8334, RPC 8444, Stratum 3333 |
-| SeedDE | 🇩🇪 Europe | 46.225.126.243 | Seed | P2P 8334, RPC 8444 |
-| Usa1 | 🇺🇸 N. America | 5.78.178.227 | Seed | P2P 8334, RPC 8444 |
-| Usa2 | 🇺🇸 N. America | 178.156.240.160 | Seed | P2P 8334, RPC 8444 |
-| Asia3 | 🌏 Asia | 5.223.43.93 | Seed | P2P 8334, RPC 8444 |
+| USA | 🇺🇸 N. America | 178.156.240.160 | Seed + Miner | P2P 8334, RPC 8444 |
+| Asia | 🌏 Asia | 5.223.43.93 | Seed + Miner | P2P 8334, RPC 8444 |
 | TestNet | — | — | — | P2P 8334, RPC 8444 |
 
 ---
