@@ -123,6 +123,19 @@ function copyFileIfExists(src, dst) {
   return true;
 }
 
+function copyCanonicalLibAliases(src, dirs, fileNames) {
+  for (const dir of dirs) {
+    ensureDir(dir);
+    for (const fileName of fileNames) {
+      const dst = path.join(dir, fileName);
+      fs.copyFileSync(src, dst);
+      if (process.platform !== 'win32') {
+        try { fs.chmodSync(dst, 0o755); } catch { /* ignore */ }
+      }
+    }
+  }
+}
+
 function main() {
   const args = parseArgs(process.argv);
 
@@ -141,6 +154,12 @@ function main() {
     path.join(workspaceRoot, '2.9.5OLD', 'zion-universal-miner'),
   ];
   const rustMinerRoot = rustMinerRootCandidates.find((p) => isDirectory(p));
+  const cosmicHarmonyRootCandidates = [
+    path.join(workspaceRoot, 'L1', 'cosmic-harmony'),
+    path.join(workspaceRoot, 'cosmic-harmony'),
+    path.join(workspaceRoot, '2.9.5OLD', 'L1', 'cosmic-harmony'),
+  ];
+  const cosmicHarmonyRoot = cosmicHarmonyRootCandidates.find((p) => isDirectory(p));
 
   const resourcesDir = path.join(desktopAgentRoot, 'resources');
   ensureDir(resourcesDir);
@@ -214,6 +233,23 @@ function main() {
       if (res.status !== 0) {
         throw new Error(`cargo build failed with exit code ${res.status}`);
       }
+    }
+
+    if (cosmicHarmonyRoot) {
+      console.log(`[prepare-rust-miner] Building canonical Deeksha cdylib in ${cosmicHarmonyRoot}`);
+      const libRes = spawnSync('cargo', ['build', '--release'], {
+        cwd: cosmicHarmonyRoot,
+        stdio: 'inherit',
+        env: process.env
+      });
+      if (libRes.error) {
+        throw libRes.error;
+      }
+      if (libRes.status !== 0) {
+        throw new Error(`cargo build for canonical Deeksha cdylib failed with exit code ${libRes.status}`);
+      }
+    } else {
+      console.warn(`[prepare-rust-miner] ⚠️ Canonical Deeksha crate not found. Tried: ${cosmicHarmonyRootCandidates.join(', ')}`);
     }
   } else {
     console.log('[prepare-rust-miner] --no-build set; skipping cargo build');
@@ -292,59 +328,45 @@ function main() {
   // Explicitly bundle the Rust cdylib that exports zion_deeksha_hash.
   // Prefer the freshly built target/release artifact over stale legacy libs.
   const explicitNativeLibCandidates = [
+    path.join(workspaceRoot, 'target', 'release', `zion_cosmic_harmony_v3${libExt}`),
     path.join(workspaceRoot, 'target', 'release', `libzion_cosmic_harmony_v3${libExt}`),
+    path.join(workspaceRoot, 'target', 'release', `cosmic_harmony_deeksha${libExt}`),
+    path.join(workspaceRoot, 'target', 'release', `cosmic_harmony${libExt}`),
+    path.join(workspaceRoot, 'L1', 'cosmic-harmony', 'target', 'release', `zion_cosmic_harmony_v3${libExt}`),
     path.join(workspaceRoot, 'L1', 'cosmic-harmony', 'target', 'release', `libzion_cosmic_harmony_v3${libExt}`),
+    path.join(workspaceRoot, 'L1', 'cosmic-harmony', 'target', 'release', `cosmic_harmony_deeksha${libExt}`),
+    path.join(workspaceRoot, 'L1', 'cosmic-harmony', 'target', 'release', `cosmic_harmony${libExt}`),
+    path.join(workspaceRoot, 'L1', 'native-libs', 'all', `zion_cosmic_harmony_v3${libExt}`),
     path.join(workspaceRoot, 'L1', 'native-libs', 'all', `libzion_cosmic_harmony_v3${libExt}`),
     path.join(workspaceRoot, 'L1', `libcosmic_harmony${libExt}`),
   ];
   const explicitDeekshaLib = explicitNativeLibCandidates.find((candidate) => fs.existsSync(candidate));
   if (explicitDeekshaLib) {
-    const dst = path.join(nativeLibDir, `libcosmic_harmony${libExt}`);
-    const dstDeeksha = path.join(nativeLibDir, `libcosmic_harmony_deeksha${libExt}`);
-    const dstCanonical = path.join(nativeLibDir, `libzion_cosmic_harmony_v3${libExt}`);
-    const dstRoot = path.join(resourcesDir, `libcosmic_harmony${libExt}`);
-    const dstRootDeeksha = path.join(resourcesDir, `libcosmic_harmony_deeksha${libExt}`);
-    const dstRootCanonical = path.join(resourcesDir, `libzion_cosmic_harmony_v3${libExt}`);
-    const dstMining = path.join(miningLibDir, `libcosmic_harmony${libExt}`);
-    const dstMiningDeeksha = path.join(miningLibDir, `libcosmic_harmony_deeksha${libExt}`);
-    const dstMiningCanonical = path.join(miningLibDir, `libzion_cosmic_harmony_v3${libExt}`);
+    const aliasNames = process.platform === 'win32'
+      ? [`cosmic_harmony${libExt}`, `cosmic_harmony_deeksha${libExt}`, `zion_cosmic_harmony_v3${libExt}`]
+      : [`libcosmic_harmony${libExt}`, `libcosmic_harmony_deeksha${libExt}`, `libzion_cosmic_harmony_v3${libExt}`];
+    const aliasDirs = [nativeLibDir, resourcesDir, miningLibDir];
     try {
-      fs.copyFileSync(explicitDeekshaLib, dst);
-      fs.copyFileSync(explicitDeekshaLib, dstDeeksha);
-      fs.copyFileSync(explicitDeekshaLib, dstCanonical);
-      fs.copyFileSync(explicitDeekshaLib, dstRoot);
-      fs.copyFileSync(explicitDeekshaLib, dstRootDeeksha);
-      fs.copyFileSync(explicitDeekshaLib, dstRootCanonical);
-      fs.copyFileSync(explicitDeekshaLib, dstMining);
-      fs.copyFileSync(explicitDeekshaLib, dstMiningDeeksha);
-      fs.copyFileSync(explicitDeekshaLib, dstMiningCanonical);
-      if (process.platform !== 'win32') { try { fs.chmodSync(dst, 0o755); } catch {} }
-      if (process.platform !== 'win32') { try { fs.chmodSync(dstDeeksha, 0o755); } catch {} }
-      if (process.platform !== 'win32') { try { fs.chmodSync(dstCanonical, 0o755); } catch {} }
-      if (process.platform !== 'win32') { try { fs.chmodSync(dstRoot, 0o755); } catch {} }
-      if (process.platform !== 'win32') { try { fs.chmodSync(dstRootDeeksha, 0o755); } catch {} }
-      if (process.platform !== 'win32') { try { fs.chmodSync(dstRootCanonical, 0o755); } catch {} }
-      if (process.platform !== 'win32') { try { fs.chmodSync(dstMining, 0o755); } catch {} }
-      if (process.platform !== 'win32') { try { fs.chmodSync(dstMiningDeeksha, 0o755); } catch {} }
-      if (process.platform !== 'win32') { try { fs.chmodSync(dstMiningCanonical, 0o755); } catch {} }
+      copyCanonicalLibAliases(explicitDeekshaLib, aliasDirs, aliasNames);
       // Also remove quarantine flag on macOS to allow loading
       if (process.platform === 'darwin') {
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dst}" 2>/dev/null`); } catch {}
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstDeeksha}" 2>/dev/null`); } catch {}
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstCanonical}" 2>/dev/null`); } catch {}
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstRoot}" 2>/dev/null`); } catch {}
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstRootDeeksha}" 2>/dev/null`); } catch {}
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstRootCanonical}" 2>/dev/null`); } catch {}
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstMining}" 2>/dev/null`); } catch {}
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstMiningDeeksha}" 2>/dev/null`); } catch {}
-        try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dstMiningCanonical}" 2>/dev/null`); } catch {}
+        for (const dir of aliasDirs) {
+          for (const fileName of aliasNames) {
+            const dst = path.join(dir, fileName);
+            try { require('child_process').execSync(`xattr -dr com.apple.quarantine "${dst}" 2>/dev/null`); } catch {}
+          }
+        }
       }
       console.log(`[prepare-rust-miner] ✅ Bundled canonical Deeksha lib from ${explicitDeekshaLib}`);
     } catch (e) {
       console.warn(`[prepare-rust-miner] ⚠️ Could not copy canonical Deeksha lib: ${e.message}`);
     }
   } else {
-    console.warn(`[prepare-rust-miner] ⚠️ No canonical Deeksha cdylib found in explicit candidates — Python miner may fall back to legacy libs`);
+    const msg = '[prepare-rust-miner] ⚠️ No canonical Deeksha cdylib found in explicit candidates — Python miner may fall back to legacy libs';
+    if (args.requireBinary) {
+      throw new Error(msg);
+    }
+    console.warn(msg);
   }
 
   let nativeLibsSource = null;

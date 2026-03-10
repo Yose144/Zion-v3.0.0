@@ -82,6 +82,28 @@ def _kernel_path(deeksha_name: str, legacy_name: str) -> Path:
         return p_deeksha
     return _KERNEL_DIR / legacy_name
 
+
+def _gpu_batch_limits(backend: str) -> Tuple[int, int]:
+    backend_name = str(backend or "auto").lower()
+    if backend_name in ("cuda", "nvidia"):
+        return (1024, 16384)
+    if backend_name == "metal":
+        return (2048, 65536)
+    return (1024, 8192)
+
+
+def _sanitize_gpu_batch_size(batch_size: int, backend: str) -> int:
+    try:
+        batch = int(batch_size)
+    except Exception:
+        batch = 0
+    min_batch, max_batch = _gpu_batch_limits(backend)
+    if batch < min_batch:
+        return min_batch
+    if batch > max_batch:
+        return max_batch
+    return batch
+
 # =============================================================================
 # Detekce backendů
 # =============================================================================
@@ -136,8 +158,15 @@ def _find_lib(base: str) -> Optional[Path]:
     sys = platform.system()
     exts = {"Darwin": ".dylib", "Windows": ".dll"}.get(sys, ".so")
     sibling_bases = [base]
+    if sys == "Windows" and base.startswith("lib"):
+        sibling_bases.append(base[3:])
     if base == "libcosmic_harmony_deeksha":
         sibling_bases.extend(["libzion_cosmic_harmony_v3", "libcosmic_harmony"])
+        if sys == "Windows":
+            sibling_bases.extend(["zion_cosmic_harmony_v3", "cosmic_harmony"])
+    if base == "libcosmic_harmony_v42" and sys == "Windows":
+        sibling_bases.append("cosmic_harmony_v42")
+    sibling_bases = list(dict.fromkeys(sibling_bases))
     candidates = [
         *[_HERE.parent / f"{name}{exts}" for name in sibling_bases],          # resources/ root (desktop packaging)
         *[_HERE.parent / "native-libs" / f"{name}{exts}" for name in sibling_bases],
@@ -740,6 +769,7 @@ class OpenCLBackend:
 
         import numpy as np
         cl = self._cl
+        nonce_count = _sanitize_gpu_batch_size(nonce_count, "opencl")
 
         hdr_arr = np.frombuffer(header[:128].ljust(128, b"\x00"), dtype=np.uint8)
         sp_arr  = np.zeros(nonce_count * 8192, dtype=np.uint64)
@@ -898,10 +928,11 @@ class CHv42GPU:
         batch_size:   int = 65536,
         device_idx:   int = 0,
     ) -> None:
-        self.batch_size = batch_size
+        self.batch_size = _sanitize_gpu_batch_size(batch_size, backend)
         self._backend_name = backend
         self._backend: Optional[object] = None
         self._name = "cpu"
+        self._last_batch_warning: Optional[Tuple[str, int, int]] = None
         self._setup(backend, device_idx)
 
     def _setup(self, backend: str, device_idx: int) -> None:
@@ -947,6 +978,7 @@ class CHv42GPU:
         # CPU fallback
         self._name = "cpu"
         log.info("[CHv42GPU] Aktivní backend: CPU (pure Python)")
+        self.batch_size = _sanitize_gpu_batch_size(self.batch_size, self._name)
 
     @property
     def backend_name(self) -> str:
@@ -965,15 +997,32 @@ class CHv42GPU:
         Returns:
             (nonce, hash_bytes) pokud nalezeno, jinak None.
         """
+        safe_nonce_count = _sanitize_gpu_batch_size(
+            nonce_count,
+            self._name if self._backend is not None else self._backend_name,
+        )
+        warning_key = (
+            self._name if self._backend is not None else str(self._backend_name),
+            int(nonce_count),
+            safe_nonce_count,
+        )
+        if safe_nonce_count != nonce_count and self._last_batch_warning != warning_key:
+            self._last_batch_warning = warning_key
+            log.warning(
+                "[CHv42GPU] batch clamp: requested=%d effective=%d backend=%s",
+                int(nonce_count),
+                safe_nonce_count,
+                self._name if self._backend is not None else self._backend_name,
+            )
         if self._backend is not None:
-            return self._backend.mine(header, nonce_start, nonce_count, target_u32)
+            return self._backend.mine(header, nonce_start, safe_nonce_count, target_u32)
 
         # CPU fallback
         try:
             from cosmic_harmony_deeksha_fallback import hash_deeksha as _hash_cpu
         except Exception:
             from cosmic_harmony_v42_fallback import hash_chv42 as _hash_cpu
-        for i in range(nonce_count):
+        for i in range(safe_nonce_count):
             nonce = nonce_start + i
             h = _hash_cpu(header, nonce)
             s0 = struct.unpack_from("<I", h)[0]
