@@ -7,6 +7,9 @@ license.workspace = true
 repository.workspace = true
 description = "ZION Mining Pool - Stratum v2, PPLNS"
 
+[lib]
+doctest = false
+
 [features]
 default = []
 verushash = ["zion-core/verushash"]
