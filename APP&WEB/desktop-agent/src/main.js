@@ -2815,6 +2815,21 @@ function startMining(config) {
   // New start resets any previous stop intent.
   minerUserStopRequested = false;
 
+  // Idempotent guard: renderer auto-start, one-click onboarding, and app-level
+  // autoStart can overlap. If a miner process is already alive, do not spawn a
+  // second canonical session.
+  if (minerProcess && !minerStopping) {
+    try {
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: '[INFO] Duplicate start request ignored: miner session is already active.\n'
+      });
+    } catch {
+      // ignore
+    }
+    return { success: true, alreadyRunning: true };
+  }
+
   // Cancel any pending timers from a previous run.
   if (poolFailoverTimer) { clearTimeout(poolFailoverTimer); poolFailoverTimer = null; }
   if (poolHealthTimer) { clearInterval(poolHealthTimer); poolHealthTimer = null; }
@@ -2894,29 +2909,36 @@ function startMining(config) {
     const worker = config.worker || 'desktop-agent';
     logApp('chv42-main-start', JSON.stringify({ pyExe, gpuScript, pool, worker }));
     sendToRenderer('miner-output', { stream: 'stdout', text: `[CHv4.2] Spouštím Merkabah GPU miner...\n[CHv4.2] Python: ${pyExe}\n[CHv4.2] Pool: ${pool} | Worker: ${worker}\n` });
+    const myStartToken = ++minerStartToken;
+    let spawnedMiner = null;
     try {
-      minerProcess = spawn(pyExe, [gpuScript, '--pool', pool, '--wallet', wallet, '--worker', worker, '--backend', 'auto'], {
+      spawnedMiner = spawn(pyExe, [gpuScript, '--pool', pool, '--wallet', wallet, '--worker', worker, '--backend', 'auto'], {
         env: { ...process.env },
         stdio: ['pipe', 'pipe', 'pipe'],
         windowsHide: true
       });
+      minerProcess = spawnedMiner;
     } catch (e) {
       const msg = `[CHv4.2] Failed to spawn GPU miner: ${e}\n`;
       sendToRenderer('miner-output', { stream: 'stderr', text: msg });
       return { success: false, error: String(e) };
     }
     sendToRenderer('miner-backend', { preferred: 'python', resolved: 'chv42-gpu', path: pyExe, lastError: '' });
-    minerProcess.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
-    minerProcess.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
-    minerProcess.on('exit', (code) => {
+    spawnedMiner.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
+    spawnedMiner.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
+    spawnedMiner.on('exit', (code) => {
       logApp('chv42-main-exit', JSON.stringify({ code }));
+      if (minerProcess !== spawnedMiner) return;
       minerProcess = null;
       minerStopping = false;
       sendToRenderer('miner-stopped', { code });
       updateTrayMenu(minerStats);
     });
     setTimeout(() => {
-      if (minerProcess) sendToRenderer('miner-started', {});
+      if (minerUserStopRequested || minerStopping) return;
+      if (!minerProcess || minerProcess !== spawnedMiner) return;
+      if (myStartToken !== minerStartToken) return;
+      sendToRenderer('miner-started', {});
       updateTrayMenu(minerStats);
     }, 450);
 
@@ -3226,12 +3248,15 @@ function startMining(config) {
     minerBackendResolved = deekshaResolvedBackend;
     minerBackendPath = deekshaMainScript;
     minerBackendLastError = '';
+    const myStartToken = ++minerStartToken;
+    let spawnedMiner = null;
     try {
-      minerProcess = spawn(pyExeDeeksha, deekshaMainArgs, {
+      spawnedMiner = spawn(pyExeDeeksha, deekshaMainArgs, {
         env: deekshaMainEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
         windowsHide: true,
       });
+      minerProcess = spawnedMiner;
     } catch (e) {
       const msg = `[CHvDeeksha] Failed to spawn Deeksha miner: ${e}\n`;
       sendToRenderer('miner-output', { stream: 'stderr', text: msg });
@@ -3243,17 +3268,21 @@ function startMining(config) {
       path: deekshaMainScript,
       lastError: ''
     });
-    minerProcess.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
-    minerProcess.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
-    minerProcess.on('exit', (code) => {
+    spawnedMiner.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
+    spawnedMiner.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
+    spawnedMiner.on('exit', (code) => {
       logApp('deeksha-main-exit', JSON.stringify({ code }));
+      if (minerProcess !== spawnedMiner) return;
       minerProcess = null;
       minerStopping = false;
       sendToRenderer('miner-stopped', { code });
       updateTrayMenu(minerStats);
     });
     setTimeout(() => {
-      if (minerProcess) sendToRenderer('miner-started', {});
+      if (minerUserStopRequested || minerStopping) return;
+      if (!minerProcess || minerProcess !== spawnedMiner) return;
+      if (myStartToken !== minerStartToken) return;
+      sendToRenderer('miner-started', {});
       updateTrayMenu(minerStats);
     }, 450);
 
