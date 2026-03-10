@@ -15,7 +15,7 @@ use ocl::{Buffer, Device, DeviceType, Platform, Program, ProQue};
 #[cfg(feature = "gpu")]
 use ocl::enums::{DeviceInfo, DeviceInfoResult};
 
-const OPENCL_KERNEL: &str = include_str!("kernels/cosmic_harmony_v3.cl");
+const OPENCL_KERNEL: &str = include_str!("kernels/cosmic_harmony_deeksha.cl");
 
 /// Scratchpad size per thread (must match CL_SCRATCHPAD_BYTES in kernel)
 const SCRATCHPAD_BYTES: usize = 64 * 1024;
@@ -35,9 +35,7 @@ pub struct OpenCLMiner {
     #[cfg(feature = "gpu")]
     header_buf: Option<Buffer<u8>>,
     #[cfg(feature = "gpu")]
-    results_buf: Option<Buffer<u64>>,
-    #[cfg(feature = "gpu")]
-    result_count_buf: Option<Buffer<u32>>,
+    result_nonce_buf: Option<Buffer<u64>>,
     #[cfg(feature = "gpu")]
     result_hash_buf: Option<Buffer<u8>>,
     /// Scratchpad buffer: mh_batch_size × SCRATCHPAD_BYTES bytes in GPU global mem
@@ -84,8 +82,7 @@ impl OpenCLMiner {
                 mh_batch_size,
                 pro_que: None,
                 header_buf: None,
-                results_buf: None,
-                result_count_buf: None,
+                result_nonce_buf: None,
                 result_hash_buf: None,
                 scratchpad_buf: None,
                 npu_w1_buf: None,
@@ -136,7 +133,7 @@ impl GpuMiner for OpenCLMiner {
                     }
                 });
 
-            println!("[OpenCL] Building Cosmic Harmony v3 kernel...");
+            println!("[OpenCL] Building Cosmic Harmony Deeksha kernel...");
             println!("[OpenCL] Compile opts: {}", compile_opts);
             let mut prog_bldr = Program::builder();
             prog_bldr.src(OPENCL_KERNEL);
@@ -149,8 +146,7 @@ impl GpuMiner for OpenCLMiner {
                 .build()?;
 
             let header_buf = pro_que.buffer_builder::<u8>().len(144).build()?;
-            let results_buf = pro_que.buffer_builder::<u64>().len(2).build()?;
-            let result_count_buf = pro_que.buffer_builder::<u32>().len(1).build()?;
+            let result_nonce_buf = pro_que.buffer_builder::<u64>().len(1).build()?;
             let result_hash_buf = pro_que.buffer_builder::<u8>().len(32).build()?;
 
             // Scratchpad buffer: mh_batch_size × 64 KiB.
@@ -165,8 +161,7 @@ impl GpuMiner for OpenCLMiner {
 
             self.pro_que = Some(pro_que);
             self.header_buf = Some(header_buf);
-            self.results_buf = Some(results_buf);
-            self.result_count_buf = Some(result_count_buf);
+            self.result_nonce_buf = Some(result_nonce_buf);
             self.result_hash_buf = Some(result_hash_buf);
             self.scratchpad_buf = Some(scratchpad_buf);
 
@@ -215,6 +210,7 @@ impl GpuMiner for OpenCLMiner {
     ) -> Result<Option<(u64, [u8; 32])>> {
         #[cfg(feature = "gpu")]
         {
+            let _ = height; // Deeksha is always active from genesis (fork height = 0)
             let pro_que = self
                 .pro_que
                 .as_ref()
@@ -223,14 +219,10 @@ impl GpuMiner for OpenCLMiner {
                 .header_buf
                 .as_ref()
                 .ok_or_else(|| anyhow!("OpenCL header buffer not initialized"))?;
-            let results_buf = self
-                .results_buf
+            let result_nonce_buf = self
+                .result_nonce_buf
                 .as_ref()
-                .ok_or_else(|| anyhow!("OpenCL results buffer not initialized"))?;
-            let result_count_buf = self
-                .result_count_buf
-                .as_ref()
-                .ok_or_else(|| anyhow!("OpenCL result count buffer not initialized"))?;
+                .ok_or_else(|| anyhow!("OpenCL result nonce buffer not initialized"))?;
             let result_hash_buf = self
                 .result_hash_buf
                 .as_ref()
@@ -256,40 +248,14 @@ impl GpuMiner for OpenCLMiner {
                 return Ok(None);
             }
 
-            // Memory-hard flag: activate scratchpad for heights >= CHV3_MEMORY_HARD_FORK_HEIGHT
-            let memory_hard: u32 =
-                if height >= zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT {
-                    1
-                } else {
-                    0
-                };
-
-            // CHv4 flag: NPU Mixing active for height >= CHV4_NPU_FORK_HEIGHT (=0, always active)
-            let chv4: u32 =
-                if height >= zion_cosmic_harmony_v3::algorithms_npu::CHV4_NPU_FORK_HEIGHT {
-                    1
-                } else {
-                    0
-                };
-
-            // CHv4.2 flag: Merkabah Dual-Spin — aktivní od genesis (height >= 0)
-            // Env var ZION_CHV4_2_FORK_HEIGHT umožňuje dočasný override pro testování CHv4.1
-            let chv4_2_fork_height: u64 = std::env::var("ZION_CHV4_2_FORK_HEIGHT")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(zion_cosmic_harmony_v3::algorithms_opt::CHV4_2_FORK_HEIGHT);
-            let chv4_2: u32 = if height >= chv4_2_fork_height { 1 } else { 0 };
-
-            // ═══ CHv3 target: pool sends full 32-byte target hex.
+            // ═══ Deeksha target: pool sends full 32-byte target hex.
             let target_u32: u32 = u32::from_be_bytes([
                 target[0], target[1], target[2], target[3],
             ]);
 
-            // Reset buffers
-            let result_init = [0u64, 0u64];
-            results_buf.write(&result_init[..]).enq()?;
-            let count_init = [0u32];
-            result_count_buf.write(&count_init[..]).enq()?;
+            // Reset result buffers
+            let nonce_init = [0u64];
+            result_nonce_buf.write(&nonce_init[..]).enq()?;
             let hash_init = [0u8; 32];
             result_hash_buf.write(&hash_init[..]).enq()?;
 
@@ -299,39 +265,30 @@ impl GpuMiner for OpenCLMiner {
             padded_header[..header_len].copy_from_slice(&header[..header_len]);
             header_buf.write(&padded_header[..]).enq()?;
 
-            // Work size: when memory_hard active, limit to mh_batch_size (scratchpad budget).
+            // Deeksha always uses memory-hard scratchpad — limit batch to pre-allocated slots.
             let max_wg = pro_que.device().max_wg_size().unwrap_or(256);
             let local_work_size = 256usize.min(max_wg);
-            let effective_batch = if memory_hard == 1 {
-                // Limit to pre-allocated scratchpad slots
-                (batch_size as usize).min(self.mh_batch_size)
-            } else {
-                (batch_size.min(u32::MAX as u64)) as usize
-            };
+            let effective_batch = (batch_size as usize).min(self.mh_batch_size);
             let raw_global = effective_batch.max(local_work_size);
             let global_work_size =
                 ((raw_global + local_work_size - 1) / local_work_size) * local_work_size;
 
-            // Build kernel with 2 new trailing args: memory_hard flag + scratchpad_buf
+            // Build canonical Deeksha kernel (13 args)
             let kernel = pro_que
-                .kernel_builder("cosmic_harmony_v3_mine")
+                .kernel_builder("deeksha_mine")
                 .arg(header_buf)
                 .arg(header_len as u32)
                 .arg(nonce_start)
-                .arg(target_u32)
-                .arg(results_buf)
-                .arg(result_count_buf)
-                .arg(result_hash_buf)
-                .arg(memory_hard)
                 .arg(scratchpad_buf)
-                .arg(chv4)
+                .arg(target_u32)
+                .arg(result_nonce_buf)
+                .arg(result_hash_buf)
                 .arg(npu_w1_buf)
                 .arg(npu_b1_buf)
                 .arg(npu_w2_buf)
                 .arg(npu_b2_buf)
                 .arg(npu_scale1_buf)
                 .arg(npu_scale2_buf)
-                .arg(chv4_2)
                 .global_work_size(global_work_size)
                 .local_work_size(local_work_size)
                 .build()?;
@@ -342,15 +299,13 @@ impl GpuMiner for OpenCLMiner {
 
             pro_que.queue().finish()?;
 
-            let mut count_res = [0u32; 1];
-            result_count_buf.read(&mut count_res[..]).enq()?;
+            let mut nonce_res = [0u64; 1];
+            result_nonce_buf.read(&mut nonce_res[..]).enq()?;
 
             self.hashes_computed += effective_batch as u64;
 
-            if count_res[0] > 0 {
-                let mut res = [0u64; 2];
-                results_buf.read(&mut res[..]).enq()?;
-                let nonce = res[1];
+            if nonce_res[0] != 0 {
+                let nonce = nonce_res[0];
                 let mut gpu_hash = [0u8; 32];
                 result_hash_buf.read(&mut gpu_hash[..]).enq()?;
                 return Ok(Some((nonce, gpu_hash)));
