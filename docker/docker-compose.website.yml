@@ -4,7 +4,7 @@
 services:
   website:
     build:
-      context: ../website-v2.9
+      context: ../APP&WEB/website-v2.9
       dockerfile: Dockerfile.production
     image: zion-website:2.9.6
     container_name: zion-website
