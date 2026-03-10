@@ -941,84 +941,84 @@ fn cosmic_harmony_hash(data: &[u8], nonce: u32) -> [u8; 32] {
 /// Verify hash meets target
 pub fn verify_hash(
     algo: NativeAlgorithm,
-    header: &[u8],
-    nonce: u64,
-    height: u32,
-    target: &[u8],
+    _header: &[u8],
+    _nonce: u64,
+    _height: u32,
+    _target: &[u8],
 ) -> bool {
     match algo {
         #[cfg(feature = "native-ethash")]
-        NativeAlgorithm::Ethash => ethash_ffi::verify(header, nonce, height, target),
+        NativeAlgorithm::Ethash => ethash_ffi::verify(_header, _nonce, _height, _target),
 
         #[cfg(feature = "native-kawpow")]
         NativeAlgorithm::KawPow => {
-            let (hash, mix) = kawpow_ffi::hash(header, nonce, height);
-            kawpow_ffi::verify(header, nonce, height, &mix, target)
+            let (_hash, mix) = kawpow_ffi::hash(_header, _nonce, _height);
+            kawpow_ffi::verify(_header, _nonce, _height, &mix, _target)
         }
 
         #[cfg(feature = "native-kheavyhash")]
-        NativeAlgorithm::KHeavyHash => kheavyhash_ffi::verify(header, nonce, target),
+        NativeAlgorithm::KHeavyHash => kheavyhash_ffi::verify(_header, _nonce, _target),
 
         #[cfg(feature = "native-progpow")]
-        NativeAlgorithm::ProgPow => progpow_ffi::verify(header, nonce, height, target),
+        NativeAlgorithm::ProgPow => progpow_ffi::verify(_header, _nonce, _height, _target),
 
         #[cfg(feature = "native-progpow")]
-        NativeAlgorithm::ProgPowEpic => progpow_ffi::verify(header, nonce, height, target),
+        NativeAlgorithm::ProgPowEpic => progpow_ffi::verify(_header, _nonce, _height, _target),
 
         #[cfg(feature = "native-progpow")]
-        NativeAlgorithm::ProgPowZano => progpow_ffi::verify(header, nonce, height, target),
+        NativeAlgorithm::ProgPowZano => progpow_ffi::verify(_header, _nonce, _height, _target),
 
         #[cfg(feature = "native-argon2d")]
-        NativeAlgorithm::Argon2d => argon2d_ffi::verify(header, nonce, target),
+        NativeAlgorithm::Argon2d => argon2d_ffi::verify(_header, _nonce, _target),
 
         #[cfg(feature = "native-blake3")]
-        NativeAlgorithm::Blake3 => blake3_ffi::verify(header, nonce, target),
+        NativeAlgorithm::Blake3 => blake3_ffi::verify(_header, _nonce, _target),
 
         #[cfg(feature = "native-octopus")]
-        NativeAlgorithm::Octopus => octopus_ffi::verify(header, nonce, height, target),
+        NativeAlgorithm::Octopus => octopus_ffi::verify(_header, _nonce, _height, _target),
 
         _ => false,
     }
 }
 
 /// Run benchmark for algorithm
-pub fn benchmark(algo: NativeAlgorithm, iterations: i32) -> Result<f64> {
+pub fn benchmark(algo: NativeAlgorithm, _iterations: i32) -> Result<f64> {
     match algo {
         #[cfg(feature = "native-ethash")]
-        NativeAlgorithm::Ethash => Ok(ethash_ffi::benchmark(iterations)),
+        NativeAlgorithm::Ethash => Ok(ethash_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-kawpow")]
-        NativeAlgorithm::KawPow => Ok(kawpow_ffi::benchmark(iterations)),
+        NativeAlgorithm::KawPow => Ok(kawpow_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-kawpow-gpu")]
-        NativeAlgorithm::KawPowGpu => Ok(kawpow_gpu_ffi::benchmark(iterations)),
+        NativeAlgorithm::KawPowGpu => Ok(kawpow_gpu_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-autolykos")]
-        NativeAlgorithm::Autolykos => Ok(autolykos_ffi::benchmark(iterations)),
+        NativeAlgorithm::Autolykos => Ok(autolykos_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-kheavyhash")]
-        NativeAlgorithm::KHeavyHash => Ok(kheavyhash_ffi::benchmark(iterations)),
+        NativeAlgorithm::KHeavyHash => Ok(kheavyhash_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-equihash")]
-        NativeAlgorithm::Equihash => Ok(equihash_ffi::benchmark(iterations)),
+        NativeAlgorithm::Equihash => Ok(equihash_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-progpow")]
-        NativeAlgorithm::ProgPow => Ok(progpow_ffi::benchmark(iterations)),
+        NativeAlgorithm::ProgPow => Ok(progpow_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-progpow")]
-        NativeAlgorithm::ProgPowEpic => Ok(progpow_ffi::benchmark(iterations)),
+        NativeAlgorithm::ProgPowEpic => Ok(progpow_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-progpow")]
-        NativeAlgorithm::ProgPowZano => Ok(progpow_ffi::benchmark(iterations)),
+        NativeAlgorithm::ProgPowZano => Ok(progpow_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-argon2d")]
-        NativeAlgorithm::Argon2d => Ok(argon2d_ffi::benchmark(iterations)),
+        NativeAlgorithm::Argon2d => Ok(argon2d_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-blake3")]
-        NativeAlgorithm::Blake3 => Ok(blake3_ffi::benchmark(iterations)),
+        NativeAlgorithm::Blake3 => Ok(blake3_ffi::benchmark(_iterations)),
 
         #[cfg(feature = "native-octopus")]
-        NativeAlgorithm::Octopus => Ok(octopus_ffi::benchmark(iterations)),
+        NativeAlgorithm::Octopus => Ok(octopus_ffi::benchmark(_iterations)),
 
         _ => Err(anyhow!("Algorithm {:?} not compiled", algo)),
     }
@@ -1026,6 +1026,7 @@ pub fn benchmark(algo: NativeAlgorithm, iterations: i32) -> Result<f64> {
 
 /// List available native algorithms
 pub fn available_algorithms() -> Vec<NativeAlgorithm> {
+    #[allow(unused_mut)]
     let mut algos = Vec::new();
 
     #[cfg(feature = "native-ethash")]

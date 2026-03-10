@@ -29,6 +29,13 @@ const PRIMARY_RPC_PORT = 8444;
 const DEFAULT_RPC_URL = `http://${PRIMARY_TESTNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
 const DESKTOP_PURE_ZION_DEFAULT = true;
 
+function currentPureZionDefault(cfg = config) {
+  if (cfg && typeof cfg.desktopPureZionDefault === 'boolean') {
+    return cfg.desktopPureZionDefault;
+  }
+  return DESKTOP_PURE_ZION_DEFAULT;
+}
+
 // CH3 Multi-stream status cache (updated via 'multi-stream-status' IPC event)
 let _lastMultiStreamStatus = null;
 
@@ -269,13 +276,19 @@ function renderBackendUi() {
 
     const preferred = String(config?.minerBackend || 'auto').toLowerCase();
     const resolved = resolvedMinerBackend ? String(resolvedMinerBackend).toLowerCase() : '';
-    const resolvedLabel = resolved === 'rust' ? 'Rust' : resolved === 'python' ? 'Python' : resolved === 'legacy' ? 'Legacy' : '';
+    const resolvedLabel =
+      resolved === 'rust' ? 'Rust' :
+      resolved === 'python' ? 'Python' :
+      resolved === 'legacy' ? 'Legacy' :
+      resolved === 'deeksha-gpu' ? 'Deeksha GPU' :
+      resolved === 'deeksha-fallback' ? 'Deeksha CPU' :
+      '';
 
     if (backendStatusEl) {
       const labels = {
-        auto: 'Auto selects Rust when available (Python fallback).',
-        rust: 'Rust v2.9.6 selected (no fallback).',
-        python: 'Python selected (no fallback).'
+        auto: 'Canonical cosmic_harmony uses the Deeksha 2.9.8 path automatically.',
+        rust: 'Canonical cosmic_harmony still uses the Deeksha path; Rust is bypassed for main CH mining.',
+        python: 'Canonical cosmic_harmony uses the Deeksha Python path.'
       };
       const base = labels[preferred] || '';
       const withResolved = resolvedLabel ? `${base} Resolved: ${resolvedLabel}.` : base;
@@ -285,7 +298,13 @@ function renderBackendUi() {
 
     if (backendPill) {
       const eff = resolved || preferred;
-      const label = eff === 'rust' ? 'Rust' : eff === 'python' ? 'Python' : eff === 'legacy' ? 'Legacy' : 'Auto';
+      const label =
+        eff === 'rust' ? 'Rust' :
+        eff === 'python' ? 'Python' :
+        eff === 'legacy' ? 'Legacy' :
+        eff === 'deeksha-gpu' ? 'Deeksha GPU' :
+        eff === 'deeksha-fallback' ? 'Deeksha CPU' :
+        'Auto';
       const suffix = preferred === 'auto' && eff !== 'auto' ? ' (Auto)' : '';
       backendPill.textContent = `Backend: ${label}${suffix}`;
     }
@@ -727,9 +746,9 @@ function setupControls() {
 
   const updateBackendStatus = (value) => {
     const labels = {
-      auto: 'Auto selects Rust when available (Python fallback).',
-      rust: 'Rust v2.9.6 selected (Python fallback on failure).',
-      python: 'Python selected (compatibility mode).'
+      auto: 'Canonical cosmic_harmony uses the Deeksha path automatically.',
+      rust: 'Canonical cosmic_harmony bypasses Rust and stays on the Deeksha path.',
+      python: 'Canonical cosmic_harmony uses the Deeksha Python path.'
     };
     if (backendStatusEl) backendStatusEl.textContent = labels[value] || '';
   };
@@ -774,17 +793,16 @@ function setupControls() {
   }
 
   const ALGO_LABELS = {
-    cosmic_harmony_v3:  'Cosmic Harmony v3 — CPU/GPU PoW',
-    cosmic_harmony_v4_2: '⚡ CHv4.2 Merkabah — GPU (Metal/CUDA/OpenCL)'
+    cosmic_harmony: 'Cosmic Harmony Deeksha — canonical 2.9.8 CPU/GPU path'
   };
 
   const syncAlgoUi = () => {
-    const algo = algoSelect?.value || config.algorithm || 'cosmic_harmony_v3';
+    const algo = algoSelect?.value || config.algorithm || 'cosmic_harmony';
     const label = ALGO_LABELS[algo] || algo;
     if (algoStatusEl) algoStatusEl.textContent = label;
     // update the display chip in the control panel
     const algoDisplayChip = document.querySelector('#algo-display .font-semibold');
-    if (algoDisplayChip) algoDisplayChip.textContent = algo === 'cosmic_harmony_v4_2' ? 'CHv4.2 GPU' : 'Cosmic Harmony v3';
+    if (algoDisplayChip) algoDisplayChip.textContent = 'Cosmic Harmony Deeksha';
   };
 
   const algoSupportsGpu = (algo) => {
@@ -914,7 +932,7 @@ function setupControls() {
       },
     });
 
-    if (DESKTOP_PURE_ZION_DEFAULT || pureZionMode) {
+    if (currentPureZionDefault(config) || pureZionMode) {
       nextRevenue = toPureZionRevenueProfile(nextRevenue);
     }
 
@@ -925,7 +943,7 @@ function setupControls() {
         port: poolPort
       },
       rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl || DEFAULT_RPC_URL,
-      algorithm: config.algorithm || 'cosmic_harmony_v3',
+      algorithm: config.algorithm || 'cosmic_harmony',
       wallet: document.getElementById('wallet-input').value,
       worker: document.getElementById('worker-input').value,
       threads: Math.min(
@@ -936,7 +954,7 @@ function setupControls() {
       miningMode: selectedMode,
       gpu: ['gpu', 'dual', 'gpu-revenue'].includes(selectedMode),
       // GPU Revenue Mining configuration
-      gpuRevenue: !DESKTOP_PURE_ZION_DEFAULT && (selectedMode === 'gpu-revenue' || nextRevenue.gpu.enabled),
+      gpuRevenue: !currentPureZionDefault(config) && (selectedMode === 'gpu-revenue' || nextRevenue.gpu.enabled),
       gpuRevenueCoins: nextRevenue.gpu.coins,
       poolPreference: nextRevenue.gpu.poolPreference || 'herominers',
       poolRegion: nextRevenue.gpu.poolRegion || 'eu',
@@ -1055,7 +1073,7 @@ function updateSettingsUI() {
     modeStatusEl.textContent = modeLabels[miningMode] || '';
   }
 
-  const revenue = DESKTOP_PURE_ZION_DEFAULT
+  const revenue = currentPureZionDefault(config)
     ? toPureZionRevenueProfile(config?.revenue || {})
     : normalizeRevenueProfile(config?.revenue || {});
   const revenueCpuCoinEl = document.getElementById('revenue-cpu-coin');
@@ -1117,9 +1135,9 @@ function updateSettingsUI() {
   const abToggle = document.getElementById('ai-afterburner-enabled');
   if (abToggle) abToggle.checked = config.aiAfterburner !== false;
 
-  // Dashboard quick controls — algorithm fixed to CH v3
+  // Dashboard quick controls — algorithm fixed to canonical Deeksha path
   const algoSelect = document.getElementById('algo-select');
-  if (algoSelect) algoSelect.value = 'cosmic_harmony_v3';
+  if (algoSelect) algoSelect.value = 'cosmic_harmony';
 }
 
 function escapeHtml(s) {
@@ -2699,7 +2717,7 @@ function updateCH3Dashboard(stats) {
   // Stream indicator
   if (stats.isRunning) {
     const mode = stats.stream_mode || 'ZION';
-    const algo = stats.stream_algorithm || stats.algorithm || 'cosmic_harmony_v3';
+    const algo = stats.stream_algorithm || stats.algorithm || 'cosmic_harmony';
     updateStreamIndicator(mode, algo);
   } else {
     updateStreamIndicator('—', '');
