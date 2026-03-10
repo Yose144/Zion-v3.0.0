@@ -1266,7 +1266,7 @@ function colorizeConsoleLine(raw) {
     return { html: `${tsHtml}<span class="mc-rejected">rejected</span> ${m[1]}/<span class="mc-rejected">${m[2]}</span> <span class="mc-err">${reason}</span>` };
   }
 
-  // ── new job: "new job  height 1523  diff 256  algo cosmic_harmony_v3" ──
+  // ── new job: "new job  height 1523  diff 256  algo cosmic_harmony" ──
   m = raw.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-job">new job</span> height <span class="mc-hr">${m[1]}</span> diff <span class="mc-diff">${m[2]}</span> algo <span class="mc-algo">${esc(m[3])}</span>` };
