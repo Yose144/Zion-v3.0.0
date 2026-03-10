@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
+import { SITE_PRIMARY_POOL_API_URL, SITE_PRIMARY_RPC_URL } from '@/lib/site';
 
 const SERVERS = [
-  { url: 'http://77.42.31.72:8444/jsonrpc',    name: 'Helsinki' },
-  { url: 'http://178.156.240.160:8444/jsonrpc', name: 'Usa' },
-  { url: 'http://5.223.43.93:8444/jsonrpc',     name: 'Asia' },
+  { url: SITE_PRIMARY_RPC_URL, name: 'Zion2 Primary' },
 ];
 
 const POOL_SERVERS = [
-  'http://77.42.31.72:8080',
+  SITE_PRIMARY_POOL_API_URL,
 ];
 
 async function rpc(method: string, params: unknown[] = []) {

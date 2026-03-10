@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import { SITE_PRIMARY_HOST } from '@/lib/site';
 
 const POOL_SERVERS = [
-  { id: 'helsinki', name: 'Helsinki (EU-North)', flag: '🇫🇮', host: '77.42.31.72', port: 8080, stratum: 3333, region: 'eu-north' },
+  { id: 'primary', name: 'Zion2 Primary', flag: '🖥️', host: SITE_PRIMARY_HOST, port: 8080, stratum: 3333, region: 'primary' },
 ];
 
 async function fetchPool(host: string, port: number, endpoint: string, timeout = 4000) {

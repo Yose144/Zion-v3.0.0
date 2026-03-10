@@ -34,7 +34,7 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
-import { SITE_RELEASE_LABEL } from '@/lib/site';
+import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    ZION MINING POOL DASHBOARD
@@ -224,7 +224,7 @@ export default function PoolDashboard() {
   const miners = data?.miners ?? [];
   const visibleMiners = miners.filter((m) => !activeOnly || now - m.last_share < 600);
 
-  const primaryEndpoint = primaryServer ? `${primaryServer.host}:${primaryServer.stratum}` : '77.42.31.72:3333';
+  const primaryEndpoint = primaryServer ? `${primaryServer.host}:${primaryServer.stratum}` : SITE_POOL_PRIMARY;
   const backupEndpoint = backupServer ? `${backupServer.host}:${backupServer.stratum}` : primaryEndpoint;
   const xmrigFailoverCmd = `./xmrig -o stratum+tcp://${primaryEndpoint} --url-backup=stratum+tcp://${backupEndpoint} -u YOUR_ZION_ADDRESS -p x`;
   const nativeFailoverCmd = `python zion_native_miner_v2_9.py --pool ${primaryEndpoint} --pool-backup ${backupEndpoint} --wallet YOUR_ZION_ADDRESS`;
@@ -286,7 +286,7 @@ export default function PoolDashboard() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 PPLNS rewards · 89% miner · 5% humanitarian · 5% Issobella fund.
-                Real-time pool metrics from all stratum servers with auto-refresh every 15 seconds.
+                Real-time pool metrics from the current public pool endpoint with auto-refresh every 15 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -296,7 +296,7 @@ export default function PoolDashboard() {
                   <Activity className="h-3 w-3 text-emerald-400" /> Auto-Refresh 15s
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> {data?.servers.length ?? 2} Stratum Servers
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {data?.servers.length ?? 1} Public Pool Host
                 </span>
               </div>
             </div>
@@ -451,7 +451,7 @@ export default function PoolDashboard() {
               <Activity className="h-7 w-7 text-emerald-400" />
               Pool Statistics
             </h2>
-            <p className="text-sm text-gray-400">Real-time metrics aggregated from all stratum servers.</p>
+            <p className="text-sm text-gray-400">Real-time metrics aggregated from the public pool API on Zion2.</p>
           </div>
 
           {loading ? (
@@ -515,7 +515,7 @@ export default function PoolDashboard() {
               <Server className="h-7 w-7 text-zion-gold" />
               Pool Servers
             </h2>
-            <p className="text-sm text-gray-400">Geographically distributed stratum servers for low-latency mining.</p>
+            <p className="text-sm text-gray-400">Current public pool host and stratum endpoint exposed on the primary server.</p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -831,14 +831,14 @@ export default function PoolDashboard() {
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">ZION Native Miner</p>
                   <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
 {`python zion_native_miner_v2_9.py \\
-  --pool 77.42.31.72:3333 \\
+  --pool ${SITE_POOL_PRIMARY} \\
   --wallet YOUR_ZION_ADDRESS`}
                   </pre>
                 </div>
                 <div>
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">XMRig</p>
                   <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
-{`./xmrig -o stratum+tcp://77.42.31.72:3333 \\
+{`./xmrig -o stratum+tcp://${SITE_POOL_PRIMARY} \\
   -u YOUR_ZION_ADDRESS -p x`}
                   </pre>
                 </div>
@@ -890,7 +890,7 @@ export default function PoolDashboard() {
             {[
               { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: "Cosmic Harmony Algorithm", desc: "Native ZION PoW algorithm, CPU-friendly, ASIC-resistant design for fair distribution." },
               { icon: <Heart className="h-5 w-5 text-white" />, color: "from-pink-500/80 to-rose-600/80", title: "Humanitarian Mission", desc: "5% humanitarian + 5% Issobella fund. Mining for consciousness." },
-              { icon: <Globe className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: "Multi-Region Servers", desc: "Low-latency stratum servers in Europe. More regions coming soon." },
+              { icon: <Globe className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: "Primary Host Pool", desc: "Public stratum access runs on Zion2 while internal seed containers stay behind the same host." },
               { icon: <Shield className="h-5 w-5 text-white" />, color: "from-emerald-500/80 to-teal-600/80", title: "PPLNS Rewards", desc: "Fair reward distribution based on your contributed shares. No luck variance." },
               { icon: <Signal className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: "Real-Time Monitoring", desc: "Live hashrate, shares, and earnings tracking via web dashboard." },
               { icon: <Cpu className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: "XMRig Compatible", desc: "Use standard mining software. No special tools required." },
@@ -940,7 +940,7 @@ export default function PoolDashboard() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from stratum servers · Helsinki (primary pool)
+          ZION TerraNova {SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Zion2 primary host
           {lastUpdate && <> · Last update: {lastUpdate.toLocaleTimeString()}</>}
         </p>
       </div>
