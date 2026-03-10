@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SITE_PRIMARY_HOST } from '@/lib/site';
 
 const POOL_SERVERS = [
-  { id: 'helsinki', host: '77.42.31.72', port: 8080 },
-  { id: 'helsinki', host: '77.42.31.72', port: 8080 },
-  // Usa/Asia are seed-only nodes — no pool
+  { id: 'primary', host: SITE_PRIMARY_HOST, port: 8080 },
 ];
 
 type MetricRow = {
