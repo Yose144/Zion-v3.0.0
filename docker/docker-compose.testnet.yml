@@ -85,7 +85,7 @@ services:
       - "--wallet"
       - "${MINER_WALLET:-zion1q893q6c5j7y0e3r062g4m7c240t5g294k7z6729}"
       - "--worker"
-      - "testnet-miner"
+      - "${MINER_WORKER:-testnet-miner}"
       - "--algorithm"
       - "cosmic_harmony"
       - "--threads"
@@ -98,6 +98,7 @@ services:
       - "${XMR_THREADS:-2}"
     environment:
       - ZION_ENABLE_STREAM_SWITCH=1
+      - ZION_NONCE_BASE=${ZION_NONCE_BASE:-0}
       - ZION_RANDOMX_FULL=${ZION_RANDOMX_FULL:-1}
       - RUST_LOG=info
     ulimits:

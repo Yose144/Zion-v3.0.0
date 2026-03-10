@@ -210,6 +210,33 @@ ensure_remote_node_env() {
   fi
 }
 
+ensure_remote_miner_identity() {
+  local key="$1"
+  local host="$2"
+  local name="$3"
+
+  local worker="testnet-miner"
+  local nonce_base="0"
+
+  case "$name" in
+    Helsinki)
+      worker="helsinki-miner"
+      nonce_base="268435456"
+      ;;
+    Usa|Usa2)
+      worker="usa-miner"
+      nonce_base="536870912"
+      ;;
+    Asia|Asia3)
+      worker="asia-miner"
+      nonce_base="805306368"
+      ;;
+  esac
+
+  upsert_remote_env "$key" "$host" "MINER_WORKER" "$worker"
+  upsert_remote_env "$key" "$host" "ZION_NONCE_BASE" "$nonce_base"
+}
+
 check_tcp_port() {
   local host="$1"
   local port="$2"
@@ -395,6 +422,7 @@ phase_servers_deploy() {
         "$ROOT_DIR/" "${DEPLOY_USER}@${ip}:${DEPLOY_DIR}/"
 
       ensure_remote_node_env "$local_key" "$ip" "$name"
+      ensure_remote_miner_identity "$local_key" "$ip" "$name"
 
       ensure_remote_volumes "$local_key" "$ip"
 
