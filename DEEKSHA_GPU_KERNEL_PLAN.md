@@ -10,8 +10,12 @@ The Deeksha proof-of-work algorithm is ZION's canonical mining hash function sin
 This document describes the complete GPU kernel implementation, its pipeline stages,
 architecture decisions, verification strategy, and future optimization roadmap.
 
-**Key result:** The canonical OpenCL kernel achieves **~15,000 H/s** on AMD RDNA 1 GPU
-(RX 5600/5700 class), a **~100× speedup** over the single-thread CPU native path (~155 H/s).
+**Key results:**
+- The canonical OpenCL kernel achieves **~15,000 H/s** on AMD RDNA 1 GPU
+  (RX 5600/5700 class), a **~100× speedup** over the single-thread CPU native path (~155 H/s).
+- The canonical native Metal backend now runs on **Apple M1** via PyObjC Metal,
+  passes bit-exact CPU/native verification, and was validated against the live pool at
+  **~1.1 kH/s** with accepted shares.
 
 ---
 
@@ -32,8 +36,13 @@ because the hash output was completely different from what the pool expected.
 | Step 5 | NPU Mix (INT8 MLP) | Missing entirely |
 | Step 6 | Cosmic Fusion (AES-128) | Simple XOR fusion |
 
-**Solution:** Write a new canonical OpenCL kernel (`cosmic_harmony_deeksha_canonical.cl`)
-that implements the exact same pipeline as the Rust reference implementation, bit-for-bit.
+**Solution:**
+- Write a canonical OpenCL kernel (`cosmic_harmony_deeksha_canonical.cl`) that implements
+  the exact same pipeline as the Rust reference implementation, bit-for-bit.
+- Port the same canonical pipeline to Metal (`cosmic_harmony_deeksha.metal`) and keep the
+  legacy alias asset (`cosmic_harmony_v42.metal`) synchronized to the same implementation.
+- Fix Stratum telemetry so `shares_sent`, `shares_accepted`, and `shares_rejected` reflect
+  actual pool responses rather than local candidate discovery.
 
 ---
 
@@ -217,8 +226,10 @@ First 4 bytes of the hash interpreted as little-endian u32, compared against poo
 APP&WEB/desktop-agent/resources/mining/
 ├── cosmic_harmony_deeksha_canonical.cl   ← NEW: Canonical GPU kernel (1045 lines)
 ├── deeksha_npu_weights.bin               ← NEW: Pre-computed NPU weights (16,960 B)
-├── cosmic_harmony_v42_gpu.py             ← MODIFIED: DeekshaOpenCLBackend class
-├── cosmic_harmony_deeksha_fallback.py    ← MODIFIED: GPU candidate re-verification gate
+├── cosmic_harmony_v42_gpu.py             ← MODIFIED: OpenCL + Metal backend wrapper
+├── cosmic_harmony_deeksha_fallback.py    ← MODIFIED: Stratum telemetry + candidate re-verification
+├── cosmic_harmony_deeksha.metal          ← MODIFIED: Canonical native Metal shader
+├── cosmic_harmony_v42.metal              ← MODIFIED: Synced alias of canonical Metal shader
 ├── cosmic_harmony_deeksha.cl             ← LEGACY: Old CHv4.2 kernel (kept for compat)
 ├── cosmic_harmony_deeksha.dll            ← Native DLL (CPU fallback)
 └── ...
@@ -227,13 +238,15 @@ APP&WEB/desktop-agent/resources/mining/
 ### 4.2 Backend Auto-Detection Priority
 
 ```
-1. DeekshaOpenCL  — Canonical GPU kernel via pyopencl (preferred)
-2. Native DLL     — cosmic_harmony_deeksha.dll via ctypes (CPU fallback)
-3. Legacy GPU     — Old CHv4.2 OpenCL/Metal/CUDA (deprecated, kept for compat)
+1. Metal          — Canonical native Metal on macOS arm64 (preferred on Apple Silicon)
+2. DeekshaOpenCL  — Canonical GPU kernel via pyopencl
+3. Native DLL     — cosmic_harmony_deeksha.dll via ctypes (CPU fallback)
 4. CPU Python     — Pure Python reference (last resort)
 ```
 
-The auto-detection logic lives in `CHv42GPU._setup()`, which tries each backend in order.
+The auto-detection logic lives in `CHv42GPU._setup()`. On Apple Silicon it now resolves to
+native Metal when the canonical shader compiles successfully; otherwise it falls back to the
+canonical OpenCL path or exact CPU/native verification path.
 
 ### 4.3 OpenCL Kernel Interface
 
@@ -313,6 +326,31 @@ matched exact canonical hash, zero false positives.
 Shares mined with the canonical GPU kernel are accepted by the pool at
 `91.98.122.165:3333` without difficulty rejections.
 
+### 5.4 Native Metal Verification
+
+The native Metal backend was validated in three stages on Apple M1:
+
+1. **Forced single-result correctness**
+  - `CHv42GPU(backend="metal")` returned a candidate hash that matched `hash_deeksha()` bit-for-bit.
+2. **Batch winner correctness**
+  - Over a 2048-nonce batch, Metal returned the same first winning nonce and hash as the CPU/native reference.
+3. **Live Stratum validation**
+  - A live pool run with `--backend metal` sustained roughly **1.1 kH/s** and produced accepted shares.
+
+Example live result summary:
+
+```json
+{
+  "backend": "gpu_metal",
+  "hashrate": 1113.509,
+  "shares_sent": 17,
+  "shares_accepted": 17,
+  "shares_rejected": 0,
+  "hashes_total": 61440,
+  "uptime_secs": 55.2
+}
+```
+
 ---
 
 ## 6. Integration Points
@@ -332,6 +370,8 @@ Shares mined with the canonical GPU kernel are accepted by the pool at
 
 - GPU candidate re-verification gate: `hash_deeksha()` check before pool submission
 - Safety net against any future kernel regression
+- Stratum stats JSON now separates `shares_found`, `shares_sent`, `shares_accepted`, and
+  `shares_rejected`, so the desktop dashboard reflects actual pool acknowledgements.
 
 ---
 
@@ -351,10 +391,10 @@ Shares mined with the canonical GPU kernel are accepted by the pool at
   - Target: sm_70+ (Volta/Turing/Ampere/Ada)
   - INT8 MLP via `__dp4a` intrinsic for Tensor Core acceleration
   - Expected: ~30-50 kH/s on RTX 3060 class
-- [ ] **Metal port** — translate to `.metal` for Apple Silicon
-  - Target: M1-M5 (Apple GPU + ANE)
-  - `simdgroup_matrix` for NPU mix stage
-  - Expected: ~20-40 kH/s on M2 Pro
+- [ ] **Metal optimization pass** — reduce register pressure and improve throughput of the
+      canonical `.metal` shader on Apple Silicon
+  - Current verified baseline: ~1.1 kH/s on M1 via PyObjC Metal runtime
+  - Focus areas: keccak absorb/finalize reuse, scratchpad traffic, batch sizing, optional ANE/NPU mix acceleration
 - [ ] **Multi-GPU support** — split nonce range across multiple devices
 - [ ] **Persistent kernel** — keep kernel running across Stratum jobs, update header via
       device-mapped memory
@@ -379,7 +419,8 @@ Shares mined with the canonical GPU kernel are accepted by the pool at
 | Windows x64 | Intel Arc | DeekshaOpenCL | 🟡 Expected | ~5-10 kH/s |
 | Linux x64 | AMD | DeekshaOpenCL | 🟡 Expected | ~15 kH/s |
 | Linux x64 | NVIDIA | CUDA (planned) | ❌ Not yet | — |
-| macOS arm64 | Apple M1-M5 | Metal (planned) | ❌ Not yet | — |
+| macOS arm64 | Apple M1 | Metal | ✅ Verified | ~1.1 kH/s |
+| macOS arm64 | Apple M2-M5 | Metal | 🟡 Expected | ~1-5 kH/s before optimization |
 
 ---
 
@@ -402,7 +443,9 @@ Shares mined with the canonical GPU kernel are accepted by the pool at
 | `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_canonical.cl` | 1,045 | Canonical OpenCL GPU kernel |
 | `APP&WEB/desktop-agent/resources/mining/deeksha_npu_weights.bin` | — | NPU weights binary (16,960 B) |
 | `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` | ~1,100 | GPU backend wrapper + auto-detection |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py` | ~600 | Stratum miner + re-verification |
+| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha.metal` | ~800 | Canonical native Metal shader |
+| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42.metal` | ~800 | Synced legacy alias of canonical Metal shader |
+| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py` | ~600 | Stratum miner + re-verification + accepted-share telemetry |
 | `APP&WEB/desktop-agent/src/main.js` | ~2,000 | Electron orchestrator |
 | `APP&WEB/desktop-agent/src/ui/renderer.js` | ~500 | Dashboard UI |
 | `L1/core/src/consensus/algorithms_opt.rs` | — | Rust reference implementation |

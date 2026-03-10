@@ -523,7 +523,10 @@ class StratumMinerDeeksha:
 
         # Stats
         self._hashes: int = 0
-        self._shares: int = 0
+        self._shares_found: int = 0
+        self._shares_sent: int = 0
+        self._shares_accepted: int = 0
+        self._shares_rejected: int = 0
         self._start_time: float = 0.0
         self._stats_lock = threading.Lock()
         self._gpu_false_positive_logs: int = 0
@@ -611,7 +614,7 @@ class StratumMinerDeeksha:
             },
         })
         with self._stats_lock:
-            self._shares += 1
+            self._shares_sent += 1
         log.info(f"[Share] Submitted! nonce={nonce_hex} hash={result.hex()[:16]}...")
 
     # ------------------------------------------------------------------
@@ -659,6 +662,8 @@ class StratumMinerDeeksha:
                             found_nonce, found_hash = result
                             exact_hash = hash_deeksha(blob, found_nonce, height)
                             if meets_target(exact_hash, target_u32, cosmic_state0_endian):
+                                with self._stats_lock:
+                                    self._shares_found += 1
                                 log.info(
                                     f"[Thread-{thread_id}] ✅ Share found! "
                                     f"nonce={submit_nonce_hex(found_nonce)} hash={exact_hash.hex()[:16]}..."
@@ -684,6 +689,8 @@ class StratumMinerDeeksha:
                         self._hashes += 1
 
                     if meets_target(h, target_u32, cosmic_state0_endian):
+                        with self._stats_lock:
+                            self._shares_found += 1
                         log.info(
                             f"[Thread-{thread_id}] ✅ Share found! "
                             f"nonce={submit_nonce_hex(nonce)} hash={h.hex()[:16]}..."
@@ -705,15 +712,22 @@ class StratumMinerDeeksha:
             backend_label = f"gpu_{gpu_backend_name}" if gpu_backend_name and gpu_backend_name != "cpu" else ("native_ffi" if _native.available else "pure_python")
             with self._stats_lock:
                 hr = self._hashes / elapsed if elapsed > 0 else 0.0
+                shares_found = self._shares_found
+                shares_sent = self._shares_sent
+                shares_accepted = self._shares_accepted
+                shares_rejected = self._shares_rejected
+                hashes_total = self._hashes
                 stats = {
                     "hashrate": round(hr, 3),
                     "hashrate_10s": round(hr, 3),
                     "hashrate_window_hs": round(hr, 3),
-                    "shares": self._shares,
-                    "shares_sent": self._shares,
-                    "shares_accepted": self._shares,
-                    "hashes_total": self._hashes,
-                    "total_hashes": self._hashes,
+                    "shares": shares_sent,
+                    "shares_found": shares_found,
+                    "shares_sent": shares_sent,
+                    "shares_accepted": shares_accepted,
+                    "shares_rejected": shares_rejected,
+                    "hashes_total": hashes_total,
+                    "total_hashes": hashes_total,
                     "algorithm": "cosmic_harmony_deeksha",
                     "backend": backend_label,
                     "threads": self.threads,
@@ -722,8 +736,8 @@ class StratumMinerDeeksha:
                     "canonical_hash": CANONICAL_EXPECTED_HEX,
                 }
             log.info(
-                f"[Stats] {hr:.3f} H/s | shares={self._shares} | "
-                f"hashes={self._hashes} | backend={backend_label.replace('gpu_', '')}"
+                f"[Stats] {hr:.3f} H/s | sent={shares_sent} | accepted={shares_accepted} | "
+                f"rejected={shares_rejected} | hashes={hashes_total} | backend={backend_label.replace('gpu_', '')}"
             )
             if self.stats_file:
                 try:
@@ -746,7 +760,14 @@ class StratumMinerDeeksha:
                     self._update_job(msg["params"])
                 elif isinstance(msg.get("result"), dict) and "job" in msg["result"]:
                     self._update_job(msg["result"]["job"])
+                elif msg.get("id") == 4 and msg.get("error") is None:
+                    with self._stats_lock:
+                        self._shares_accepted += 1
+                    log.info("[Stratum] Share accepted")
                 elif msg.get("error"):
+                    if msg.get("id") == 4:
+                        with self._stats_lock:
+                            self._shares_rejected += 1
                     log.warning(f"[Stratum] Server error: {msg['error']}")
             except Exception as e:
                 log.error(f"[Stratum] Listener error: {e}")
