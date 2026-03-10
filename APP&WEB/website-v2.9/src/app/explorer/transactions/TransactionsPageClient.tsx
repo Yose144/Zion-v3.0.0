@@ -54,6 +54,13 @@ interface Transaction {
   type?: string;
 }
 
+type TransactionsApiResponse =
+  | Transaction[]
+  | {
+      transactions?: any[];
+      items?: any[];
+    };
+
 /* ── component ───────────────────────────────────────────────── */
 
 export default function TransactionsPageClient() {
@@ -79,9 +86,16 @@ export default function TransactionsPageClient() {
       if (append) setLoadingMore(true); else setLoading(true);
       const offset = (pageNum - 1) * 50;
       const addressQuery = addressFilter ? `&address=${encodeURIComponent(addressFilter)}` : "";
-      const data = await apiClient<any[]>(`/blockchain/transactions?limit=50&offset=${offset}${addressQuery}`);
-      const newTxs: Transaction[] = (Array.isArray(data) ? data : []).map((tx) => ({
-        hash: String(tx.hash || tx.id || ""),
+      const data = await apiClient<TransactionsApiResponse>(`/blockchain/transactions?limit=50&offset=${offset}${addressQuery}`);
+      const rows = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.transactions)
+          ? data.transactions
+          : Array.isArray(data?.items)
+            ? data.items
+            : [];
+      const newTxs: Transaction[] = rows.map((tx) => ({
+        hash: String(tx.hash || tx.tx_hash || tx.id || tx.tx_id || ""),
         from: String(tx.from || tx.sender || ""),
         to: String(tx.to || tx.receiver || ""),
         amount: Number(tx.amount || 0),
@@ -90,7 +104,7 @@ export default function TransactionsPageClient() {
         block_height: tx.block_height === null || tx.block_height === undefined ? null : Number(tx.block_height),
         status: String(tx.status || (tx.block_height ? "confirmed" : "pending")),
         type: String(tx.type || "transfer"),
-      }));
+      })).filter((tx) => tx.hash);
       if (append) setTransactions((prev) => [...prev, ...newTxs]);
       else setTransactions(newTxs);
       setHasMore(newTxs.length === 50);

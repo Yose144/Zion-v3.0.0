@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const REVENUE_API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+const REVENUE_CONFIG_API = '/api/v2.9/revenue/config';
 
 interface PoolConfig {
   stratum: string;
@@ -33,7 +33,7 @@ export default function RevenueSettings() {
 
   const fetchConfig = async () => {
     try {
-      const res = await fetch(`${REVENUE_API_BASE}/v2.9/revenue/config`);
+      const res = await fetch(REVENUE_CONFIG_API);
       if (!res.ok) throw new Error('Failed to fetch config');
       const data = await res.json();
       setConfig(data);
@@ -50,7 +50,7 @@ export default function RevenueSettings() {
     setSaving(true);
     setStatus('Saving...');
     try {
-      const res = await fetch(`${REVENUE_API_BASE}/v2.9/revenue/config`, {
+      const res = await fetch(REVENUE_CONFIG_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
