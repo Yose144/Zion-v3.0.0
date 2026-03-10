@@ -176,42 +176,74 @@ async function checkFirstRun() {
     const result = await window.electronAPI.isFirstRun();
     if (!result?.firstRun) return;
 
-    // Show wizard overlay
-    const overlay = document.getElementById('wizard-overlay');
-    if (!overlay) return;
-    overlay.style.display = 'flex';
-
-    await runWizard(overlay);
+    await openOneClickWizard();
   } catch (err) {
     console.error('First-run check failed:', err);
   }
 }
 
+async function openOneClickWizard() {
+  const overlay = document.getElementById('wizard-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  await runWizard(overlay);
+}
+
 function runWizard(overlay) {
   return new Promise((resolve) => {
     const steps = overlay.querySelectorAll('.wizard-step');
+    const startBtn = document.getElementById('wizard-start-btn');
+    const skipBtn = document.getElementById('wizard-skip-btn');
+    const backBtn = document.getElementById('wizard-back-1');
+    const createBtn = document.getElementById('wizard-create-btn');
+    const createMineBtn = document.getElementById('wizard-create-mine-btn');
+    const mineBtn = document.getElementById('wizard-mine-btn');
+    const doneBtn = document.getElementById('wizard-done-btn');
+    const statusEl = document.getElementById('wizard-status');
+    const errorEl = document.getElementById('wizard-error');
+
     const showStep = (n) => {
       steps.forEach(s => s.style.display = 'none');
       const target = overlay.querySelector(`.wizard-step[data-step="${n}"]`);
       if (target) target.style.display = 'block';
     };
 
-    const closeWizard = () => {
-      overlay.style.display = 'none';
-      resolve();
+    const setWizardStatus = (text, isError = false) => {
+      if (!statusEl) return;
+      statusEl.style.display = text ? 'block' : 'none';
+      statusEl.textContent = text || '';
+      statusEl.style.color = isError ? '#fca5a5' : '#cbd5e1';
     };
 
-    // Step 1: Welcome
-    document.getElementById('wizard-start-btn')?.addEventListener('click', () => showStep(2));
-    document.getElementById('wizard-skip-btn')?.addEventListener('click', closeWizard);
-    document.getElementById('wizard-back-1')?.addEventListener('click', () => showStep(1));
+    const setSetupButtonsBusy = (busy, primaryLabel, secondaryLabel) => {
+      if (createBtn) {
+        createBtn.disabled = busy;
+        createBtn.innerHTML = primaryLabel;
+      }
+      if (createMineBtn) {
+        createMineBtn.disabled = busy;
+        createMineBtn.innerHTML = secondaryLabel;
+      }
+    };
 
-    // Step 2: Create wallet
-    document.getElementById('wizard-create-btn')?.addEventListener('click', async () => {
+    const startConfiguredMining = async () => {
+      config = await window.electronAPI.getConfig();
+      if (!config?.wallet) {
+        return { success: false, error: 'Wallet nebyla po quick setupu uložena.' };
+      }
+
+      const result = await window.electronAPI.startMining(config);
+      if (result?.success) {
+        isRunning = true;
+        try { updateControlButtons(); } catch {}
+      }
+      return result;
+    };
+
+    const performQuickSetup = async ({ autoStart }) => {
       const pw = document.getElementById('wizard-password')?.value || '';
       const pwConfirm = document.getElementById('wizard-password-confirm')?.value || '';
       const workerName = document.getElementById('wizard-worker')?.value?.trim() || 'desktop-agent';
-      const errorEl = document.getElementById('wizard-error');
 
       if (pw.length < 6) {
         if (errorEl) { errorEl.textContent = 'Heslo musí mít alespoň 6 znaků.'; errorEl.style.display = 'block'; }
@@ -222,53 +254,94 @@ function runWizard(overlay) {
         return;
       }
       if (errorEl) errorEl.style.display = 'none';
+      setWizardStatus('');
 
-      const btn = document.getElementById('wizard-create-btn');
-      if (btn) { btn.disabled = true; btn.textContent = 'Vytvářím...'; }
+      setSetupButtonsBusy(
+        true,
+        '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-key"></use></svg> Vytvářím... ',
+        '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg> Připravuji one-click start... '
+      );
 
       try {
         const result = await window.electronAPI.quickSetup({ password: pw, workerName });
         if (!result?.success) {
           if (errorEl) { errorEl.textContent = result?.error || 'Chyba při vytváření peněženky.'; errorEl.style.display = 'block'; }
-          if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-key"></use></svg> Vytvořit peněženku a nastavit'; }
+          setSetupButtonsBusy(
+            false,
+            '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-key"></use></svg> Vytvořit peněženku a nastavit',
+            '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg> One-Click: vytvořit a začít těžit'
+          );
           return;
         }
 
-        // Show step 3 with wallet details
         document.getElementById('wizard-address').textContent = result.wallet.address;
         document.getElementById('wizard-mnemonic').textContent = result.wallet.mnemonic;
-
-        // Update global config
         config = result.config || config;
-
         showStep(3);
+
+        if (autoStart) {
+          setWizardStatus('Spouštím mining profilem z quick setupu...');
+          const miningResult = await startConfiguredMining();
+          if (miningResult?.success) {
+            setWizardStatus('Mining běží. Recovery phrase si ještě teď bezpečně uložte.');
+            if (mineBtn) {
+              mineBtn.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-check"></use></svg> Mining běží';
+            }
+          } else {
+            setWizardStatus(`Wallet byla vytvořena, ale start miningu selhal: ${miningResult?.error || 'Neznámá chyba.'}`, true);
+          }
+        } else {
+          setWizardStatus('Wallet je připravená. Teď můžete jedním klikem spustit mining.');
+        }
       } catch (err) {
         if (errorEl) { errorEl.textContent = err?.message || 'Neočekávaná chyba.'; errorEl.style.display = 'block'; }
-        if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-key"></use></svg> Vytvořit peněženku a nastavit'; }
+      } finally {
+        setSetupButtonsBusy(
+          false,
+          '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-key"></use></svg> Vytvořit peněženku a nastavit',
+          '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg> One-Click: vytvořit a začít těžit'
+        );
       }
-    });
+    };
+
+    const closeWizard = () => {
+      setWizardStatus('');
+      overlay.style.display = 'none';
+      resolve();
+    };
+
+    // Step 1: Welcome
+    if (startBtn) startBtn.onclick = () => showStep(2);
+    if (skipBtn) skipBtn.onclick = closeWizard;
+    if (backBtn) backBtn.onclick = () => showStep(1);
+
+    // Step 2: Create wallet
+    if (createBtn) createBtn.onclick = () => performQuickSetup({ autoStart: false });
+    if (createMineBtn) createMineBtn.onclick = () => performQuickSetup({ autoStart: true });
 
     // Step 3: Success
-    document.getElementById('wizard-mine-btn')?.addEventListener('click', async () => {
-      closeWizard();
-      // Auto-start mining after a short delay (let the rest of UI init finish)
-      setTimeout(async () => {
+    if (mineBtn) {
+      mineBtn.onclick = async () => {
+        if (isRunning) {
+          closeWizard();
+          return;
+        }
         try {
-          config = await window.electronAPI.getConfig();
-          if (config?.wallet) {
-            const result = await window.electronAPI.startMining(config);
-            if (result?.success) {
-              isRunning = true;
-              try { updateControlButtons(); } catch { /* not yet initialized */ }
-            }
+          setWizardStatus('Spouštím mining...');
+          const result = await startConfiguredMining();
+          if (result?.success) {
+            setWizardStatus('Mining běží. Recovery phrase si ještě teď bezpečně uložte.');
+            mineBtn.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-check"></use></svg> Mining běží';
+          } else {
+            setWizardStatus(result?.error || 'Start miningu selhal.', true);
           }
         } catch (err) {
-          console.error('Auto-start mining failed:', err);
+          setWizardStatus(err?.message || 'Auto-start mining failed.', true);
         }
-      }, 1000);
-    });
+      };
+    }
 
-    document.getElementById('wizard-done-btn')?.addEventListener('click', closeWizard);
+    if (doneBtn) doneBtn.onclick = closeWizard;
   });
 }
 
@@ -847,8 +920,7 @@ function setupControls() {
 
   startBtn.addEventListener('click', async () => {
     if (!config.wallet) {
-      alert('Please configure your wallet address in Settings first.');
-      switchView('settings');
+      await openOneClickWizard();
       return;
     }
     
