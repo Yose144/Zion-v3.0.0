@@ -498,7 +498,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                         <td className="px-4 py-3 text-emerald-400 font-semibold">{fmtZion(p.amount)} ZION</td>
                         <td className="px-4 py-3 font-mono text-gray-400">
                           {p.tx_id ? (
-                            <Link href={`/explorer/transactions?txid=${p.tx_id}`} className="text-zion-cyan hover:text-white transition-colors">
+                            <Link href={`/explorer/tx?hash=${encodeURIComponent(p.tx_id)}`} className="text-zion-cyan hover:text-white transition-colors">
                               {shortHash(p.tx_id)}
                             </Link>
                           ) : "—"}
