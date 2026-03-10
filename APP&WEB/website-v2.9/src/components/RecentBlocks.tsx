@@ -74,7 +74,7 @@ export default function RecentBlocks() {
             <h2 className="text-3xl font-bold">Recent Blocks</h2>
           </div>
           <Link 
-            href="/blocks"
+            href="/explorer/blocks"
             className="text-sm text-zion-cyan hover:text-zion-gold transition-colors"
           >
             View all →

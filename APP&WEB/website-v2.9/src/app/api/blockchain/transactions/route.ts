@@ -11,6 +11,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION } from '@/lib/constants';
 
+function normalizeTxHash(rawHash: string): string {
+  const trimmed = rawHash.trim();
+  if (!trimmed) return '';
+  return trimmed.replace(/^0x/i, '').toLowerCase();
+}
+
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
 
@@ -18,7 +24,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
     const address = searchParams.get('address') || '';
-    const txHash = searchParams.get('hash') || searchParams.get('tx_hash') || '';
+    const txHash = normalizeTxHash(searchParams.get('hash') || searchParams.get('tx_hash') || '');
 
     // ── Single TX lookup by hash ──
     if (txHash) {

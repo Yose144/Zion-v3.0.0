@@ -5,6 +5,7 @@ export const SITE_TESTNET_LABEL = `Live TestNet · ${SITE_RELEASE_LABEL}`;
 export const SITE_PRIMARY_HOST = '91.98.122.165';
 export const SITE_PRIMARY_RPC_URL = `http://${SITE_PRIMARY_HOST}:8444/jsonrpc`;
 export const SITE_PRIMARY_POOL_API_URL = `http://${SITE_PRIMARY_HOST}:8080`;
+export const SITE_PRIMARY_DAO_API_URL = `http://${SITE_PRIMARY_HOST}:8081`;
 export const SITE_NETWORK_TOPOLOGY = 'Single primary host · Zion2 · internal seeds';
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:3333`;
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
