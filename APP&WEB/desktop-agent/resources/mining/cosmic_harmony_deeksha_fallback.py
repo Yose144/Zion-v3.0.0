@@ -104,12 +104,12 @@ class _NativeLib:
         self._self_test_fn = None
         self._load()
 
-    def _find_lib_path(self) -> Optional[Path]:
+    def _find_lib_paths(self) -> list[Path]:
         system = platform.system()
         preferred_names = {
             "Darwin":  ["libcosmic_harmony_deeksha.dylib", "libzion_cosmic_harmony_v3.dylib", "libcosmic_harmony.dylib"],
             "Linux":   ["libcosmic_harmony_deeksha.so.2.9.8", "libcosmic_harmony_deeksha.so", "libzion_cosmic_harmony_v3.so", "libcosmic_harmony.so.2.9.0", "libcosmic_harmony.so"],
-            "Windows": ["cosmic_harmony_deeksha.dll", "zion_cosmic_harmony_v3.dll", "cosmic_harmony.dll"],
+            "Windows": ["cosmic_harmony_deeksha.dll", "zion_cosmic_harmony_v3.dll", "cosmic_harmony.dll", "libcosmic_harmony_deeksha.dll", "libzion_cosmic_harmony_v3.dll", "libcosmic_harmony.dll"],
         }
         names = preferred_names.get(system, ["libcosmic_harmony_deeksha.so", "libzion_cosmic_harmony_v3.so", "libcosmic_harmony.so"])
 
@@ -142,58 +142,68 @@ class _NativeLib:
                 Path(name),
             ])
 
+        found: list[Path] = []
+        seen: set[str] = set()
         for p in candidates:
+            key = str(p)
+            if key in seen:
+                continue
+            seen.add(key)
             if p.exists():
-                return p
-        return None
+                found.append(p)
+        return found
 
     def _load(self) -> None:
-        p = self._find_lib_path()
-        if p is None:
+        paths = self._find_lib_paths()
+        if not paths:
             log.warning("[Deeksha] native library not found — pure Python fallback active")
             return
-        try:
-            lib = ctypes.CDLL(str(p))
-
-            # zion_deeksha_hash(header_ptr, header_len, nonce, output_ptr) -> i32
-            fn = lib.zion_deeksha_hash
-            fn.argtypes = [
-                ctypes.POINTER(ctypes.c_uint8),
-                ctypes.c_size_t,
-                ctypes.c_uint64,
-                ctypes.POINTER(ctypes.c_uint8),
-            ]
-            fn.restype = ctypes.c_int32
-            self._hash_fn = fn
-
-            # zion_deeksha_hash_with_height — volitelný
+        for p in paths:
             try:
-                fn_h = lib.zion_deeksha_hash_with_height
-                fn_h.argtypes = [
+                lib = ctypes.CDLL(str(p))
+
+                # zion_deeksha_hash(header_ptr, header_len, nonce, output_ptr) -> i32
+                fn = lib.zion_deeksha_hash
+                fn.argtypes = [
                     ctypes.POINTER(ctypes.c_uint8),
                     ctypes.c_size_t,
                     ctypes.c_uint64,
-                    ctypes.c_uint64,
                     ctypes.POINTER(ctypes.c_uint8),
                 ]
-                fn_h.restype = ctypes.c_int32
-                self._hash_height_fn = fn_h
-            except AttributeError:
-                pass
+                fn.restype = ctypes.c_int32
+                self._hash_fn = fn
 
-            # zion_deeksha_self_test — volitelný
-            try:
-                st = lib.zion_deeksha_self_test
-                st.argtypes = []
-                st.restype = ctypes.c_int32
-                self._self_test_fn = st
-            except AttributeError:
-                pass
+                # zion_deeksha_hash_with_height — volitelný
+                try:
+                    fn_h = lib.zion_deeksha_hash_with_height
+                    fn_h.argtypes = [
+                        ctypes.POINTER(ctypes.c_uint8),
+                        ctypes.c_size_t,
+                        ctypes.c_uint64,
+                        ctypes.c_uint64,
+                        ctypes.POINTER(ctypes.c_uint8),
+                    ]
+                    fn_h.restype = ctypes.c_int32
+                    self._hash_height_fn = fn_h
+                except AttributeError:
+                    pass
 
-            self._lib = lib
-            log.info(f"[Deeksha] Native lib loaded: {p}")
-        except (OSError, AttributeError) as e:
-            log.warning(f"[Deeksha] Failed to load {p}: {e} — pure Python fallback active")
+                # zion_deeksha_self_test — volitelný
+                try:
+                    st = lib.zion_deeksha_self_test
+                    st.argtypes = []
+                    st.restype = ctypes.c_int32
+                    self._self_test_fn = st
+                except AttributeError:
+                    pass
+
+                self._lib = lib
+                log.info(f"[Deeksha] Native lib loaded: {p}")
+                return
+            except (OSError, AttributeError) as e:
+                log.warning(f"[Deeksha] Failed to load {p}: {e} — trying next candidate")
+
+        log.warning("[Deeksha] no compatible native library found — pure Python fallback active")
 
     @property
     def available(self) -> bool:
@@ -509,6 +519,7 @@ class StratumMinerDeeksha:
         self._current_job: Optional[dict] = None
         self._running = False
         self._login_id: str = "0"
+        self._gpu = None
 
         # Stats
         self._hashes: int = 0
@@ -609,6 +620,7 @@ class StratumMinerDeeksha:
     def _mine_thread(self, thread_id: int) -> None:
         """Mining vlákno — iteruje nonce a hashuje přes Deeksha pipeline."""
         nonce_base = (int(os.environ.get("ZION_NONCE_BASE", "0")) or 0) & UINT32_MASK
+        gpu_backend = self._gpu if self.gpu else None
         while self._running:
             job = None
             with self._job_lock:
@@ -629,11 +641,30 @@ class StratumMinerDeeksha:
 
                 # Každé vlákno začíná od jiného offsetu, s nonce_base pro revenue separation
                 nonce = (nonce_base + thread_id * (1 << 24)) & UINT32_MASK
+                gpu_batch_size = max(1, int(getattr(gpu_backend, "batch_size", 65536))) if gpu_backend is not None else 0
 
                 while self._running:
                     with self._job_lock:
                         if self._current_job and str(self._current_job.get("job_id")) != job_id:
                             break  # nový job
+
+                    if gpu_backend is not None:
+                        result = gpu_backend.mine(blob, nonce, gpu_batch_size, target_u32)
+
+                        with self._stats_lock:
+                            self._hashes += gpu_batch_size
+
+                        if result is not None:
+                            found_nonce, found_hash = result
+                            if meets_target(found_hash, target_u32, cosmic_state0_endian):
+                                log.info(
+                                    f"[Thread-{thread_id}] ✅ Share found! "
+                                    f"nonce={submit_nonce_hex(found_nonce)} hash={found_hash.hex()[:16]}..."
+                                )
+                                self._submit_share(job_id, found_nonce, found_hash)
+
+                        nonce = (nonce + gpu_batch_size * self.threads) & UINT32_MASK
+                        continue
 
                     h = hash_deeksha(blob, nonce, height)
 
@@ -658,22 +689,29 @@ class StratumMinerDeeksha:
         while self._running:
             time.sleep(self.stats_interval)
             elapsed = time.time() - self._start_time
+            gpu_backend_name = getattr(self._gpu, "backend_name", None) if self.gpu else None
+            backend_label = f"gpu_{gpu_backend_name}" if gpu_backend_name and gpu_backend_name != "cpu" else ("native_ffi" if _native.available else "pure_python")
             with self._stats_lock:
                 hr = self._hashes / elapsed if elapsed > 0 else 0.0
                 stats = {
                     "hashrate": round(hr, 3),
+                    "hashrate_10s": round(hr, 3),
                     "hashrate_window_hs": round(hr, 3),
+                    "shares": self._shares,
+                    "shares_sent": self._shares,
                     "shares_accepted": self._shares,
                     "hashes_total": self._hashes,
+                    "total_hashes": self._hashes,
                     "algorithm": "cosmic_harmony_deeksha",
-                    "backend": "native_ffi" if _native.available else "pure_python",
+                    "backend": backend_label,
                     "threads": self.threads,
+                    "cpu_threads": self.threads,
                     "uptime_secs": round(elapsed, 1),
                     "canonical_hash": CANONICAL_EXPECTED_HEX,
                 }
             log.info(
                 f"[Stats] {hr:.3f} H/s | shares={self._shares} | "
-                f"hashes={self._hashes} | backend={'native' if _native.available else 'python'}"
+                f"hashes={self._hashes} | backend={backend_label.replace('gpu_', '')}"
             )
             if self.stats_file:
                 try:
@@ -704,13 +742,15 @@ class StratumMinerDeeksha:
                     time.sleep(2)
 
     def run(self) -> None:
-        back = "native_ffi" if _native.available else "pure_python"
+        worker_name = self.worker if self.worker.endswith("-deeksha") else f"{self.worker}-deeksha"
+        gpu_backend_name = getattr(self._gpu, "backend_name", None) if self.gpu else None
+        back = f"gpu_{gpu_backend_name}" if gpu_backend_name and gpu_backend_name != "cpu" else ("native_ffi" if _native.available else "pure_python")
         log.info(f"[CHvDeeksha Miner] Starting")
         log.info(f"  Backend:  {back}")
         log.info(f"  Threads:  {self.threads}")
         log.info(f"  Pool:     {self.pool}")
         log.info(f"  Wallet:   {self.wallet}")
-        log.info(f"  Worker:   {self.worker}-deeksha")
+        log.info(f"  Worker:   {worker_name}")
         log.info(f"  Pipeline: Keccak→SHA3→GoldenMatrix→MemoryHard(64KiB)→NpuMix→CosmicFusion")
 
         self._start_time = time.time()

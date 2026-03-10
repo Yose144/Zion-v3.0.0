@@ -8,7 +8,7 @@
     "prestart": "node scripts/prepare-rust-miner.js --no-build --require || node scripts/prepare-rust-miner.js --auto",
     "start": "node scripts/launch-electron.js",
     "dev": "node scripts/launch-electron.js",
-    "prepare:rust-miner": "node scripts/prepare-rust-miner.js --no-build --require",
+    "prepare:rust-miner": "node scripts/prepare-rust-miner.js --auto",
     "build": "npm run prepare:rust-miner && electron-builder",
     "build:win": "npm run prepare:rust-miner && electron-builder --win nsis --x64",
     "build:win:nsis": "npm run prepare:rust-miner && electron-builder --win nsis --x64",

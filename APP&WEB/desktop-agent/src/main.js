@@ -175,6 +175,11 @@ function cleanupStrayMinerProcesses(preferRustBackend) {
   }
 }
 
+if (process.platform === 'win32' && !app.isPackaged) {
+  // Keep dev `npm start` isolated from the installed app's singleton/userData namespace.
+  app.setName('zion-desktop-agent-dev');
+}
+
 // Keep cache clean on Windows without overriding userData paths.
 // (We must NOT set userData to a different path; only set cache.)
 app.disableHardwareAcceleration();
@@ -1303,6 +1308,7 @@ function loadConfig() {
           merged.aiNativePoolUrl = DEFAULT_AI_NATIVE_POOL_URL;
         }
       }
+      merged.algorithm = normalizeAlgorithmName(merged.algorithm || DEFAULT_CONFIG.algorithm);
       merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;
       return merged;
     }
@@ -1318,6 +1324,9 @@ function loadConfig() {
 function saveConfig(config) {
   try {
     const { desktopPureZionDefault, ...persistedConfig } = config || {};
+    persistedConfig.algorithm = normalizeAlgorithmName(
+      persistedConfig.algorithm || DEFAULT_CONFIG.algorithm
+    );
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(persistedConfig, null, 2));
     return true;
   } catch (err) {
@@ -1863,32 +1872,43 @@ function parseGpuMemoryMb(gpuInfo) {
 }
 
 function chooseGpuBatchSize(gpuInfo, configuredBatch) {
+  const kind = String(gpuInfo?.backendPreferred || gpuInfo?.type || '').toLowerCase();
+  const memoryMb = parseGpuMemoryMb(gpuInfo);
+
+  const getBatchBounds = () => {
+    if (kind === 'cuda' || kind === 'nvidia') {
+      return { min: 1024, max: 16384 };
+    }
+    if (kind === 'metal') {
+      return { min: 2048, max: 65536 };
+    }
+    return { min: 1024, max: 8192 };
+  };
+
+  const bounds = getBatchBounds();
   const cfg = Number(configuredBatch);
-  if (Number.isFinite(cfg) && cfg >= 100_000) {
-    return Math.max(100_000, Math.min(32_000_000, Math.floor(cfg)));
+  if (Number.isFinite(cfg) && cfg > 0) {
+    return Math.max(bounds.min, Math.min(bounds.max, Math.floor(cfg)));
   }
 
-  const memoryMb = parseGpuMemoryMb(gpuInfo);
-  const kind = String(gpuInfo?.backendPreferred || gpuInfo?.type || '').toLowerCase();
-
   if (kind === 'cuda' || kind === 'nvidia') {
-    if (memoryMb >= 20_000) return 24_000_000;
-    if (memoryMb >= 12_000) return 20_000_000;
-    if (memoryMb >= 8_000) return 16_000_000;
-    if (memoryMb >= 6_000) return 12_000_000;
-    return 8_000_000;
+    if (memoryMb >= 20_000) return 16384;
+    if (memoryMb >= 12_000) return 12288;
+    if (memoryMb >= 8_000) return 8192;
+    if (memoryMb >= 6_000) return 6144;
+    return 4096;
   }
 
   if (kind === 'metal') {
-    if (memoryMb >= 12_000) return 8_000_000;
-    if (memoryMb >= 8_000) return 6_000_000;
-    return 4_000_000;
+    if (memoryMb >= 12_000) return 65536;
+    if (memoryMb >= 8_000) return 32768;
+    return 16384;
   }
 
-  if (memoryMb >= 16_000) return 12_000_000;
-  if (memoryMb >= 8_000) return 8_000_000;
-  if (memoryMb >= 6_000) return 6_000_000;
-  return 4_000_000;
+  if (memoryMb >= 16_000) return 8192;
+  if (memoryMb >= 8_000) return 6144;
+  if (memoryMb >= 6_000) return 4096;
+  return 2048;
 }
 
 // ============================================================================
@@ -5563,9 +5583,11 @@ function tryUpdateStatsFromFile() {
     if (typeof payload.pool_latency_ms === 'number') minerStats.pool_latency_ms = payload.pool_latency_ms;
     if (typeof payload.blocks_found === 'number') minerStats.blocks_found = payload.blocks_found;
     if (typeof payload.total_hashes === 'number') minerStats.total_hashes = payload.total_hashes;
+    else if (typeof payload.hashes_total === 'number') minerStats.total_hashes = payload.hashes_total;
     if (typeof payload.algorithm === 'string') minerStats.stream_algorithm = payload.algorithm;
     if (typeof payload.worker === 'string') minerStats.worker = payload.worker;
     if (typeof payload.gpu_name === 'string' && payload.gpu_name !== 'none') minerStats.gpu_info = payload.gpu_name;
+    if (typeof payload.backend === 'string') minerStats.runtime_backend = payload.backend;
     if (typeof payload.cpu_threads === 'number') minerStats.cpu_threads = payload.cpu_threads;
     if (typeof payload.connection_count === 'number') minerStats.connection_count = payload.connection_count;
     if (Array.isArray(payload.threads)) minerStats.thread_snapshots = payload.threads;
@@ -5573,6 +5595,7 @@ function tryUpdateStatsFromFile() {
     if (typeof payload.shares_sent === 'number') minerStats.shares = payload.shares_sent;
     if (typeof payload.shares_accepted === 'number') minerStats.accepted = payload.shares_accepted;
     if (typeof payload.shares_rejected === 'number') minerStats.rejected = payload.shares_rejected;
+    else if (typeof payload.shares === 'number') minerStats.shares = payload.shares;
     if (typeof payload.uptime_sec === 'number') minerStats.uptime = Math.floor(payload.uptime_sec);
 
     return true;
@@ -6029,6 +6052,15 @@ function parseMinerOutput(output) {
     return Number.isFinite(n) ? n : null;
   };
 
+  const unitToMultiplier = (rawUnit) => {
+    const unit = String(rawUnit || 'H/s').toLowerCase();
+    return unit.startsWith('th') ? 1e12
+      : unit.startsWith('gh') ? 1e9
+      : unit.startsWith('mh') ? 1e6
+      : unit.startsWith('kh') ? 1e3
+      : 1;
+  };
+
   // ═══════════════════════════════════════════════════════════════
   // XMRig-STYLE OUTPUT PARSERS (v2.9.5 — professional metrics)
   // ═══════════════════════════════════════════════════════════════
@@ -6036,13 +6068,29 @@ function parseMinerOutput(output) {
   // ─── XMRig speed line: "speed 10s/60s/15m 1946.02 1938.50 1912.34 kH/s max 2014.88 kH/s" ───
   const speedMatch = output.match(/speed\s+10s\/60s\/15m\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*([kKmMgGtT]?H\/s)\s+max\s+([\d.]+)/i);
   if (speedMatch) {
-    const unit = String(speedMatch[4] || 'H/s').toLowerCase();
-    const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
+    const mult = unitToMultiplier(speedMatch[4]);
     minerStats.hashrate_10s = parseFloat(speedMatch[1]) * mult;
     minerStats.hashrate_60s = parseFloat(speedMatch[2]) * mult;
     minerStats.hashrate_15m = parseFloat(speedMatch[3]) * mult;
     minerStats.hashrate_max = parseFloat(speedMatch[5]) * mult;
     minerStats.hashrate = minerStats.hashrate_10s; // primary = 10s window
+  }
+
+  // ─── Deeksha stats line: "[Stats] 155.683 H/s | shares=5 | hashes=9368 | backend=native" ───
+  const deekshaStatsMatch = output.match(/\[Stats\]\s+([\d.,]+)\s*([kKmMgGtT]?H\/s)\s*\|\s*shares=(\d+)\s*\|\s*hashes=(\d+)\s*\|\s*backend=([a-z0-9_-]+)/i);
+  if (deekshaStatsMatch) {
+    const hs = (parseNum(deekshaStatsMatch[1]) || 0) * unitToMultiplier(deekshaStatsMatch[2]);
+    if (Number.isFinite(hs) && hs > 0) {
+      minerStats.hashrate = hs;
+      minerStats.hashrate_10s = hs;
+      if (!Number.isFinite(Number(minerStats.hashrate_60s)) || Number(minerStats.hashrate_60s) <= 0) minerStats.hashrate_60s = hs;
+      if (!Number.isFinite(Number(minerStats.hashrate_15m)) || Number(minerStats.hashrate_15m) <= 0) minerStats.hashrate_15m = hs;
+      if (!Number.isFinite(Number(minerStats.hashrate_max)) || Number(minerStats.hashrate_max) < hs) minerStats.hashrate_max = hs;
+    }
+    minerStats.shares = parseInt(deekshaStatsMatch[3], 10);
+    minerStats.total_hashes = parseInt(deekshaStatsMatch[4], 10);
+    minerStats.total_hashes_display = String(deekshaStatsMatch[4]);
+    minerStats.runtime_backend = String(deekshaStatsMatch[5] || '').toLowerCase();
   }
 
   // ─── XMRig accepted: "accepted 42/0 (+1) diff 256 [38 ms] (100.0%)" ───
@@ -6074,6 +6122,15 @@ function parseMinerOutput(output) {
     minerStats.stream_algorithm = newJobMatch[3];
   }
 
+  // ─── Deeksha job line: "[Job] id=h154-... height=154 target=00418937..." ───
+  const deekshaJobMatch = output.match(/\[Job\]\s+id=(\S+)\s+height=(\d+)\s+target=([0-9a-fA-F]+)/i);
+  if (deekshaJobMatch) {
+    minerStats.last_job_id = deekshaJobMatch[1];
+    minerStats.last_job_height = deekshaJobMatch[2];
+    minerStats.last_job_diff = deekshaJobMatch[3];
+    minerStats.last_pool_diff = deekshaJobMatch[3];
+  }
+
   // ─── XMRig block found: "█ BLOCK FOUND █ ★ height 1523 (total: 2)" ───
   const blockMatch = output.match(/BLOCK FOUND.*?height\s+(\d+).*?\(total:\s*(\d+)\)/i);
   if (blockMatch) {
@@ -6085,8 +6142,7 @@ function parseMinerOutput(output) {
   // Old format: "HASHRATE  10s: 1946.02 kH/s   60s: 1938.50   15m: 1912.34"
   const statusHrMatch = output.match(/HASHRATE\s+10s:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)\s+60s:\s*([\d.]+)\s+15m:\s*([\d.]+)/i);
   if (statusHrMatch) {
-    const unit = String(statusHrMatch[2] || 'H/s').toLowerCase();
-    const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
+    const mult = unitToMultiplier(statusHrMatch[2]);
     minerStats.hashrate_10s = parseFloat(statusHrMatch[1]) * mult;
     minerStats.hashrate_60s = parseFloat(statusHrMatch[3]) * mult;
     minerStats.hashrate_15m = parseFloat(statusHrMatch[4]) * mult;
@@ -6096,8 +6152,7 @@ function parseMinerOutput(output) {
   // New format: "SPEED   10s 3.75 MH/s  60s 3.75  15m 3.75"
   const speedPanelMatch = output.match(/SPEED\s+10s\s+([\d.]+)\s*([kKmMgGtT]?H\/s)\s+60s\s+([\d.]+)\s+15m\s+([\d.]+)/i);
   if (speedPanelMatch) {
-    const unit = String(speedPanelMatch[2] || 'H/s').toLowerCase();
-    const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
+    const mult = unitToMultiplier(speedPanelMatch[2]);
     minerStats.hashrate_10s = parseFloat(speedPanelMatch[1]) * mult;
     minerStats.hashrate_60s = parseFloat(speedPanelMatch[3]) * mult;
     minerStats.hashrate_15m = parseFloat(speedPanelMatch[4]) * mult;
@@ -6193,10 +6248,28 @@ function parseMinerOutput(output) {
   if (hwPanelMatch) {
     minerStats.cpu_threads = parseInt(hwPanelMatch[1]);
     const gpuValue = parseFloat(hwPanelMatch[2]);
-    const gpuUnit = String(hwPanelMatch[3] || 'H/s').toLowerCase();
-    const gpuMult = gpuUnit.startsWith('th') ? 1e12 : gpuUnit.startsWith('gh') ? 1e9 : gpuUnit.startsWith('mh') ? 1e6 : gpuUnit.startsWith('kh') ? 1e3 : 1;
+    const gpuMult = unitToMultiplier(hwPanelMatch[3]);
     minerStats.hashrate_gpu = gpuValue * gpuMult;
     minerStats.gpu_info = hwPanelMatch[4];
+  }
+
+  const deekshaGpuBackendMatch = output.match(/\[Main\]\s+GPU backend:\s*(\S+)/i);
+  if (deekshaGpuBackendMatch) {
+    const backendName = String(deekshaGpuBackendMatch[1] || '').trim().toLowerCase();
+    minerStats.runtime_backend = backendName;
+    if (backendName && backendName !== 'cpu' && backendName !== 'native') {
+      minerStats.gpu_detected = true;
+      minerStats.gpu_type = backendName;
+    }
+  }
+
+  const openclDeviceMatch = output.match(/\[OpenCL\]\s+Device:\s*(.+)/i);
+  if (openclDeviceMatch) {
+    const deviceName = openclDeviceMatch[1].trim();
+    minerStats.gpu_info = deviceName;
+    minerStats.gpu_name = deviceName;
+    minerStats.gpu_detected = true;
+    minerStats.gpu_type = 'opencl';
   }
 
   // New format HW with no GPU (just dash): "HW     cpu: 2T  gpu: —"
