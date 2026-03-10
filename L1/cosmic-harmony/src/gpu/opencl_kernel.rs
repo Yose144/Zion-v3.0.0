@@ -1,6 +1,7 @@
-//! OpenCL kernel for Cosmic Harmony v3
+//! OpenCL kernel for Cosmic Harmony v3 and Deeksha
 //!
-//! Pipeline: Keccak256 → SHA3-512 → GoldenMatrix → CosmicFusion
+//! Pipeline v3: Keccak256 → SHA3-512 → GoldenMatrix → CosmicFusion
+//! Pipeline Deeksha: Keccak256 → SHA3-512 → GoldenMatrix → MemoryHard → NpuMix → CosmicFusion
 
 /// OpenCL kernel source code
 pub const COSMIC_HARMONY_V3_KERNEL: &str = r#"
@@ -438,6 +439,15 @@ pub fn get_kernel_source(optimize: bool) -> String {
     }
 }
 
+/// Canonical Deeksha OpenCL kernel source code (full 6-step pipeline with memory-hard + NPU)
+pub const COSMIC_HARMONY_DEEKSHA_KERNEL: &str =
+    include_str!("kernels/cosmic_harmony_deeksha.cl");
+
+/// Get canonical Deeksha kernel source (always includes int64 atomics extension)
+pub fn get_deeksha_kernel_source() -> &'static str {
+    COSMIC_HARMONY_DEEKSHA_KERNEL
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -456,5 +466,21 @@ mod tests {
     fn test_optimized_kernel() {
         let source = get_kernel_source(true);
         assert!(source.contains("cl_khr_int64_base_atomics"));
+    }
+
+    #[test]
+    fn test_deeksha_kernel_not_empty() {
+        assert!(!COSMIC_HARMONY_DEEKSHA_KERNEL.is_empty());
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("deeksha_mine"));
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("keccak256"));
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("memory_hard_transform"));
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("npu_mix"));
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("cosmic_fusion"));
+    }
+
+    #[test]
+    fn test_deeksha_kernel_source_fn() {
+        let src = get_deeksha_kernel_source();
+        assert!(src.contains("deeksha_mine"));
     }
 }
