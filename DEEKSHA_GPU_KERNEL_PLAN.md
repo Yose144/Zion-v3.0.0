@@ -351,6 +351,51 @@ Example live result summary:
 }
 ```
 
+### 5.5 Native Metal Runtime Optimization
+
+The first verified Metal implementation still paid a significant host-side cost for
+per-batch buffer allocation. The runtime wrapper was then optimized to keep persistent
+PyObjC `MTLBuffer` objects for:
+
+- scratchpad storage
+- small scalar inputs (`header_len`, `nonce_base`, `target`, `nonce_count`)
+- result buffers
+- canonical NPU weight buffers
+
+This removed repeated allocation of large shared-memory buffers on every `mine()` call.
+
+Measured M1 benchmark result for batch 2048:
+
+- before persistent buffers: **~1077.5 H/s**
+- after persistent buffers: **~1199.3 H/s**
+
+That is an observed throughput gain of roughly **11.3%** without changing the canonical hash pipeline.
+
+### 5.6 Rust Miner Metal Benchmark Baseline
+
+The Rust miner already contains native GPU backends in `L1/miner/src/miner/gpu/` for:
+
+- Metal on macOS
+- OpenCL on AMD/Intel/NVIDIA
+- CUDA on NVIDIA
+
+During performance-tuning work, the Rust GPU benchmark path was corrected to measure the
+**effective dispatch size actually processed by the backend**, not the oversized requested
+batch size passed in by the benchmark harness. This matters most for:
+
+- Metal, which runs at a fixed natural dispatch size per call
+- OpenCL/CUDA memory-hard paths, which are limited by preallocated scratchpad capacity
+
+Measured on Apple M1 with:
+
+- command: `cargo run --release -p zion-miner --features metal -- --pool stratum+tcp://dummy:3333 --wallet short --benchmark`
+- effective Metal dispatch: **8192 nonces**
+- measured release hashrate: **~1.8-2.2 kH/s**
+
+This establishes the current Rust Metal baseline on the same machine where the optimized
+desktop Python/PyObjC runtime measured roughly **~1.20 kH/s** at batch 2048. The Rust path is
+therefore currently the faster Apple Silicon reference for further tuning work.
+
 ---
 
 ## 6. Integration Points
@@ -394,6 +439,7 @@ Example live result summary:
 - [ ] **Metal optimization pass** — reduce register pressure and improve throughput of the
       canonical `.metal` shader on Apple Silicon
   - Current verified baseline: ~1.1 kH/s on M1 via PyObjC Metal runtime
+  - Current Rust miner release baseline: ~1.8-2.2 kH/s on M1 at dispatch 8192
   - Focus areas: keccak absorb/finalize reuse, scratchpad traffic, batch sizing, optional ANE/NPU mix acceleration
 - [ ] **Multi-GPU support** — split nonce range across multiple devices
 - [ ] **Persistent kernel** — keep kernel running across Stratum jobs, update header via
@@ -415,12 +461,82 @@ Example live result summary:
 |----------|-----|---------|--------|-------------------|
 | Windows x64 | AMD RDNA 1+ | DeekshaOpenCL | ✅ Verified | ~15 kH/s |
 | Windows x64 | AMD RDNA 2/3 | DeekshaOpenCL | 🟡 Expected | ~20-30 kH/s |
-| Windows x64 | NVIDIA (CUDA) | Native DLL fallback | ✅ Works (CPU) | ~155 H/s |
+| Windows x64 | NVIDIA | OpenCL fallback | 🟡 Expected | ~8-20 kH/s |
+| Windows x64 | NVIDIA (CUDA) | Rust CUDA backend | 🟡 Plumbing exists, parity pending | TBD |
 | Windows x64 | Intel Arc | DeekshaOpenCL | 🟡 Expected | ~5-10 kH/s |
 | Linux x64 | AMD | DeekshaOpenCL | 🟡 Expected | ~15 kH/s |
 | Linux x64 | NVIDIA | CUDA (planned) | ❌ Not yet | — |
-| macOS arm64 | Apple M1 | Metal | ✅ Verified | ~1.1 kH/s |
-| macOS arm64 | Apple M2-M5 | Metal | 🟡 Expected | ~1-5 kH/s before optimization |
+| macOS arm64 | Apple M1 | Metal (desktop PyObjC) | ✅ Verified | ~1.2 kH/s |
+| macOS arm64 | Apple M1 | Metal (Rust miner release) | ✅ Measured | ~1.8-2.2 kH/s |
+| macOS arm64 | Apple M2-M5 | Metal | 🟡 Expected | ~1-5 kH/s before kernel-level optimization |
+
+### 8.1 Windows 11 OpenCL/CUDA Test Plan
+
+#### Phase A — Canonical OpenCL baseline on W11
+
+Goal: verify the existing canonical Deeksha OpenCL path before any CUDA-specific conclusions.
+
+Recommended matrix:
+
+- AMD RDNA 2/3 with latest Adrenalin driver
+- NVIDIA RTX with latest Studio or Game Ready driver
+- Intel Arc with latest production driver
+
+Recommended commands:
+
+```bash
+cargo run --release -p zion-miner --features gpu -- --pool stratum+tcp://dummy:3333 --wallet short --benchmark
+```
+
+Optional overrides:
+
+- `ZION_GPU_BACKEND=opencl`
+- `ZION_GPU_MH_BATCH=2048` or `4096`
+- `ZION_OPENCL_BUILD_OPTS="-cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero"`
+
+Acceptance criteria:
+
+- GPU is detected and initialized without manual source edits
+- benchmark reports a stable dispatch size and nonzero hashrate
+- live mining returns accepted shares with zero GPU→CPU verification mismatches
+
+#### Phase B — NVIDIA CUDA parity validation on W11
+
+Goal: validate whether the Rust CUDA path is already canonical enough for Deeksha benchmarking.
+
+Recommended commands:
+
+```bash
+cargo run --release -p zion-miner --features cuda -- --pool stratum+tcp://dummy:3333 --wallet short --benchmark
+```
+
+Optional overrides:
+
+- `ZION_GPU_BACKEND=cuda`
+- `ZION_CUDA_MH_BATCH=256` or `512`
+- `ZION_GPU_VERIFY=1` during live pool tests
+
+Required checks before calling CUDA production-ready:
+
+- CUDA hash matches CPU canonical `cosmic_harmony_with_height()` on fixed test vectors
+- CUDA share submissions are accepted by the pool under live load
+- CUDA benchmark remains stable across repeated runs without result corruption or nonce reuse
+
+#### Phase C — Compare W11 backends apples-to-apples
+
+For each Windows GPU, record:
+
+- driver version
+- backend used (`opencl` or `cuda`)
+- effective dispatch size
+- benchmark hashrate in release build
+- accepted/rejected share counts from a 10-15 minute live run
+
+Decision rule:
+
+- AMD and Intel should stay on canonical OpenCL unless there is a correctness issue
+- NVIDIA should use OpenCL as the fallback baseline first
+- NVIDIA should switch to CUDA only after parity and live-pool acceptance are both confirmed
 
 ---
 
@@ -448,6 +564,10 @@ Example live result summary:
 | `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py` | ~600 | Stratum miner + re-verification + accepted-share telemetry |
 | `APP&WEB/desktop-agent/src/main.js` | ~2,000 | Electron orchestrator |
 | `APP&WEB/desktop-agent/src/ui/renderer.js` | ~500 | Dashboard UI |
+| `L1/miner/src/miner/gpu/benchmark.rs` | ~200 | Rust GPU benchmark + effective dispatch accounting |
+| `L1/miner/src/miner/gpu/metal.rs` | ~180 | Rust Metal backend wrapper |
+| `L1/miner/src/miner/gpu/opencl.rs` | ~380 | Rust canonical Deeksha OpenCL backend |
+| `L1/miner/src/miner/gpu/cuda.rs` | ~360 | Rust CUDA backend under parity validation |
 | `L1/core/src/consensus/algorithms_opt.rs` | — | Rust reference implementation |
 | `L1/core/src/consensus/algorithms_npu.rs` | — | Rust NPU weight generation |
 
