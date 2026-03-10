@@ -212,6 +212,7 @@ class MetalBackend:
         self._objc_device = None
         self._objc_pipeline = None
         self._objc_queue = None
+        self._metal_weights = None
         # NPU mix pipeline (M3+ only — chv42_npu_mix, #if __METAL_VERSION__ >= 300)
         # Bezi soubeznne s hlavnim mine kernem na AMX matrix units (Apple Silicon)
         self._npu_pipeline = None
@@ -226,8 +227,15 @@ class MetalBackend:
             log.warning("[Metal] deeksha/legacy .metal kernel nenalezen v %s", _KERNEL_DIR)
             return
 
+        self._metal_weights = _load_npu_weights()
+        if self._metal_weights is None:
+            log.warning("[Metal] canonical NPU weights unavailable; Metal Deeksha backend disabled")
+            return
+
         # Cesta 1: metalcompute (nejrychlejší, pokud dostupné)
-        mc = _try_import("metalcompute")
+        mc = None
+        if os.environ.get("ZION_ENABLE_EXPERIMENTAL_METALCOMPUTE", "0") == "1":
+            mc = _try_import("metalcompute")
         if mc is not None:
             try:
                 self._mc = mc
@@ -328,14 +336,27 @@ class MetalBackend:
         queue = self._objc_queue
         MTL_SHARED = 0  # MTLResourceStorageModeShared (0 << 4 = 0)
 
+        weights = self._metal_weights
+        if weights is None:
+            log.warning("[Metal] canonical weight buffers missing")
+            return None
+
         # Vstupní numpy pole → Metal buffer bez kopírování (unified memory)
+        rounded_nonce_count = ((max(1, int(nonce_count)) + 63) // 64) * 64
         hdr_padded   = np.frombuffer((header + bytes(128))[:128], dtype=np.uint8).copy()
         hlen_arr     = np.array([len(header)], dtype=np.uint32)
         nb_arr       = np.array([nonce_base], dtype=np.uint64)
+        nc_arr       = np.array([nonce_count], dtype=np.uint32)
         tgt_arr      = np.array([target_u32], dtype=np.uint32)
-        sp_arr       = np.zeros(nonce_count * 1024, dtype=np.uint64)  # scratchpad
-        result_n_arr = np.zeros(1, dtype=np.uint64)
+        sp_arr       = np.zeros(rounded_nonce_count * 65536, dtype=np.uint8)
+        result_n_arr = np.full(1, np.uint32(0xFFFFFFFF), dtype=np.uint32)
         result_h_arr = np.zeros(32, dtype=np.uint8)
+        w1_arr       = np.frombuffer(weights["w1"], dtype=np.int8)
+        b1_arr       = np.frombuffer(weights["b1"], dtype=np.int8)
+        w2_arr       = np.frombuffer(weights["w2"], dtype=np.int8)
+        b2_arr       = np.frombuffer(weights["b2"], dtype=np.int8)
+        scale1_arr   = np.frombuffer(weights["scale1"], dtype=np.int16)
+        scale2_arr   = np.frombuffer(weights["scale2"], dtype=np.int16)
 
         def _np_input_buf(arr: "np.ndarray"):
             """Vytvoří MTLBuffer z numpy pole přes PyObjC-safe bytes bridge."""
@@ -354,8 +375,15 @@ class MetalBackend:
                 _np_input_buf(nb_arr),
                 _np_input_buf(sp_arr),
                 _np_input_buf(tgt_arr),
-                _empty_buf(result_n_arr.nbytes),
-                _empty_buf(result_h_arr.nbytes),
+                _np_input_buf(result_n_arr),
+                _np_input_buf(result_h_arr),
+                _np_input_buf(w1_arr),
+                _np_input_buf(b1_arr),
+                _np_input_buf(w2_arr),
+                _np_input_buf(b2_arr),
+                _np_input_buf(scale1_arr),
+                _np_input_buf(scale2_arr),
+                _np_input_buf(nc_arr),
             ]
         except Exception as e:
             log.warning("[Metal] buffer allocation: %s", e)
@@ -368,51 +396,21 @@ class MetalBackend:
             enc.setBuffer_offset_atIndex_(buf, 0, idx)
 
         tg_size  = _MTL.MTLSizeMake(64, 1, 1)
-        n_groups = _MTL.MTLSizeMake((nonce_count + 63) // 64, 1, 1)
+        n_groups = _MTL.MTLSizeMake(rounded_nonce_count // 64, 1, 1)
         enc.dispatchThreadgroups_threadsPerThreadgroup_(n_groups, tg_size)
         enc.endEncoding()
 
-        # NPU mix pass — soucasne s mine kernem na AMX matrix units (M3+ only)
-        # Oba command buffery jsou odeslany pred waitUntilCompleted → soubeznne GPU + AMX
-        _cmd_npu = None
-        if self._npu_ready and self._npu_pipeline is not None:
-            try:
-                n_npu = max(1, min(nonce_count // 64, 64))
-                # Float reprezentace hlavicky jako vstupni matice pro NPU mix
-                hdr_f = np.array(
-                    [(header[i % len(header)] / 127.5 - 1.0) for i in range(n_npu * 64)],
-                    dtype=np.float32)
-                npu_out = np.zeros(n_npu * 64, dtype=np.float32)
-                _cmd_npu = queue.commandBuffer()
-                _enc_npu = _cmd_npu.computeCommandEncoder()
-                _enc_npu.setComputePipelineState_(self._npu_pipeline)
-                for _ii, _b in enumerate([
-                    _np_input_buf(hdr_f), _empty_buf(npu_out.nbytes),
-                    _np_input_buf(self._npu_w_A), _np_input_buf(self._npu_w_B),
-                ]):
-                    _enc_npu.setBuffer_offset_atIndex_(_b, 0, _ii)
-                _enc_npu.dispatchThreadgroups_threadsPerThreadgroup_(
-                    _MTL.MTLSizeMake(n_npu, 1, 1), _MTL.MTLSizeMake(64, 1, 1))
-                _enc_npu.endEncoding()
-                _cmd_npu.commit()  # odeslano pred main cmd — soubeznne spusteni
-            except Exception as _npu_e:
-                log.debug("[Metal/NPU] dispatch skip: %s", _npu_e)
-                _cmd_npu = None
-
         cmd.commit()
         cmd.waitUntilCompleted()
-        if _cmd_npu is not None:
-            try: _cmd_npu.waitUntilCompleted()
-            except Exception: pass
 
         # Výstup je přímo v numpy polích (unified memory — žádné kopírování)
         result_nonce_view = buffers[5].contents().as_buffer(int(result_n_arr.nbytes))
         result_hash_view = buffers[6].contents().as_buffer(int(result_h_arr.nbytes))
-        out_nonce = int(np.frombuffer(result_nonce_view, dtype=np.uint64, count=1)[0])
+        out_nonce = int(np.frombuffer(result_nonce_view, dtype=np.uint32, count=1)[0])
         out_hash  = bytes(result_hash_view)
 
-        if out_nonce != 0:
-            return (out_nonce, out_hash)
+        if out_nonce != 0xFFFFFFFF:
+            return (int(nonce_base) + out_nonce, out_hash)
         return None
 
     def mine(
@@ -1223,23 +1221,11 @@ class CHv42GPU:
 
     def _setup(self, backend: str, device_idx: int) -> None:
         if backend == "auto":
-            # Metal remains experimental for canonical Deeksha: recent pool
-            # tests on Apple Silicon produced GPU candidates that failed the
-            # canonical CPU verify path. Keep auto on the canonical backends
-            # unless the operator explicitly opts into Metal debugging.
             preferred_backend = detect_best_backend()
-            allow_experimental_metal = False
-            try:
-                allow_experimental_metal = str(os.getenv("ZION_ENABLE_EXPERIMENTAL_METAL_DEEKSHA", "")).strip() == "1"
-            except Exception:
-                allow_experimental_metal = False
-
-            if preferred_backend == "metal" and allow_experimental_metal:
+            if preferred_backend == "metal":
                 backend = "metal"
-                log.info("[CHv42GPU] Auto-detekce: metal (experimental override)")
+                log.info("[CHv42GPU] Auto-detekce: metal (canonical Deeksha on Apple GPU)")
             else:
-                if preferred_backend == "metal":
-                    log.warning("[CHv42GPU] Metal backend skipped in auto mode until canonical Deeksha correctness is validated; set ZION_ENABLE_EXPERIMENTAL_METAL_DEEKSHA=1 to force it")
                 if _try_import("pyopencl") is not None:
                     dcl = DeekshaOpenCLBackend(device_idx=device_idx)
                     if dcl.available:
@@ -1253,8 +1239,6 @@ class CHv42GPU:
                     log.info("[CHv42GPU] Auto-detekce: native (canonical exact, CPU-based)")
                 else:
                     backend = preferred_backend
-                    if backend == "metal":
-                        backend = "cpu"
                     log.info("[CHv42GPU] Auto-detekce: %s", backend)
 
         if backend == "metal":
