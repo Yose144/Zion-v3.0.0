@@ -57,6 +57,9 @@ interface DashData {
   timestamp?: string;
   stability_run?: StabilityRun;
   canary_run?: StabilityRun;
+  current_topology?: string;
+  seed_containers?: string[];
+  primary?: ServerNode;
   helsinki?: ServerNode;
   usa?: ServerNode;
   asia?: ServerNode;
@@ -256,11 +259,11 @@ function MiniMetric({ label, value, color = 'text-white' }: { label: string; val
   );
 }
 
-function PoolSection({ helsinki }: { helsinki?: PoolData }) {
-  const hm = helsinki?.miners ?? {};
-  const hhr = helsinki?.hashrate ?? {};
-  const hsh = helsinki?.shares ?? {};
-  const hbl = helsinki?.blocks ?? {};
+function PoolSection({ primary }: { primary?: PoolData }) {
+  const hm = primary?.miners ?? {};
+  const hhr = primary?.hashrate ?? {};
+  const hsh = primary?.shares ?? {};
+  const hbl = primary?.blocks ?? {};
 
   const totalActive = hm.active ?? 0;
   const totalMiners = hm.total ?? 0;
@@ -281,7 +284,7 @@ function PoolSection({ helsinki }: { helsinki?: PoolData }) {
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Mining</p>
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
           <Pickaxe className="h-7 w-7 text-purple-400" />
-          Mining Pool — Live Metrics
+          Mining Pool — Primary Host
         </h2>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
@@ -291,7 +294,7 @@ function PoolSection({ helsinki }: { helsinki?: PoolData }) {
         <Stat label="Blocks Found" value={String(blocksFound)} color="text-orange-400" mono />
       </div>
       <div className="grid md:grid-cols-1 gap-4 sm:gap-5 max-w-md">
-        <PoolNodeCard name="Helsinki Pool" flag="🇫🇮" pool={helsinki} />
+        <PoolNodeCard name="Primary Pool" flag="🖥️" pool={primary} />
       </div>
     </motion.section>
   );
@@ -418,23 +421,21 @@ export default function MissionControlDashboard() {
 
   const sr = data?.stability_run;
   const cr = data?.canary_run;
-  const hStats = data?.helsinki?.stats;
-  const sStats = data?.usa?.stats;
-  const hH = hStats?.height ?? 0;
-  const sH = sStats?.height ?? 0;
-  const allNodes = [data?.helsinki, data?.usa, data?.asia];
-  const onlineCount = allNodes.filter(n => n?.stats?.status === 'OK' || n?.stats?.status === 'ok' || n?.stats?.status === 'healthy').length;
-  const allHealthy = onlineCount === 3;
+  const primaryNode = data?.primary ?? data?.helsinki;
+  const primaryStats = primaryNode?.stats;
+  const primaryHeight = primaryStats?.height ?? 0;
+  const onlineCount = primaryStats?.status === 'OK' || primaryStats?.status === 'ok' || primaryStats?.status === 'healthy' ? 1 : 0;
+  const allHealthy = onlineCount === 1;
   const anyHealthy = onlineCount > 0;
   const stabilityPct = sr?.progress_pct ?? 0;
   const stabilityFinalWindow = stabilityPct >= 90 && stabilityPct < 100;
   const stabilityReady = stabilityFinalWindow && allHealthy;
-  const stabilityStatus = stabilityPct >= 100 ? 'PASS' : stabilityReady ? 'READY' : (hH > 0 || sH > 0) ? 'RUNNING' : 'ISSUE';
+  const stabilityStatus = stabilityPct >= 100 ? 'PASS' : stabilityReady ? 'READY' : primaryHeight > 0 ? 'RUNNING' : 'ISSUE';
   const stabilityStatusColor = stabilityPct >= 100
     ? 'text-emerald-400'
     : stabilityReady
     ? 'text-yellow-400'
-    : (hH > 0 || sH > 0)
+    : primaryHeight > 0
     ? 'text-cyan-400'
     : 'text-red-400';
 
@@ -461,18 +462,18 @@ export default function MissionControlDashboard() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time monitoring, roadmap tracking, mining pool metrics a kompletní přehled stavu
-                ZION TerraNova — od TestNet stability po MainNet launch.
+                Real-time monitoring, roadmap tracking, mining pool metrics a přehled aktuálního
+                single-host provozu ZION TerraNova po přesunu na nový primární server.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE DATA · 30s refresh
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> 3 Nodes · 3 Continents
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> 1 public host · 2 internal seeds
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-yellow-200">
-                  <CheckCircle2 className="h-3 w-3" /> Deeksha Release Gate: GO · 3-node mesh live
+                  <CheckCircle2 className="h-3 w-3" /> Current infra: primary host live · internal seeds active
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? 'All Systems Healthy' : anyHealthy ? 'Partial Systems Up' : 'Systems Monitoring'}
@@ -481,10 +482,10 @@ export default function MissionControlDashboard() {
             </div>
             <div className="grid w-full gap-3 grid-cols-2 lg:w-auto lg:min-w-[340px]">
               {[
-                { label: 'Block Height', value: fmt(Math.max(hH, sH)), descriptor: 'latest block' },
-                { label: 'Canary', value: `${cr?.progress_pct ?? 0}%`, descriptor: `72h B-CRIT-02 · ${(cr?.progress_pct ?? 0) >= 100 ? 'PASS ✅' : 'IN PROG'}` },
-                { label: 'Network Peers', value: fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0)), descriptor: 'unique peers' },
-                { label: 'Status', value: allHealthy ? 'PASS' : (hH > 0 || sH > 0) ? 'RUN' : 'DOWN', descriptor: allHealthy ? 'all systems go' : (hH > 0 || sH > 0) ? 'monitoring...' : 'nodes offline' },
+                { label: 'Block Height', value: fmt(primaryHeight), descriptor: 'latest public chain tip' },
+                { label: 'Seeds', value: String(data?.seed_containers?.length ?? 2), descriptor: 'internal seed containers' },
+                { label: 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: 'public node peers' },
+                { label: 'Status', value: allHealthy ? 'LIVE' : primaryHeight > 0 ? 'RUN' : 'DOWN', descriptor: allHealthy ? 'primary infra healthy' : primaryHeight > 0 ? 'monitoring...' : 'node offline' },
               ].map((chip) => (
                 <div key={chip.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
@@ -552,17 +553,17 @@ export default function MissionControlDashboard() {
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Stability</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Historical Validation</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Gauge className="h-7 w-7 text-cyan-400" />
-                  168h Stability Run — PASS ✅ · 3 Nodes · 3 Continents
+                  168h Stability Snapshot — archived pre-reset validation
                 </h2>
               </div>
               <BigProgress sr={sr} />
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Elapsed" value={fmtTime(sr?.elapsed_secs)} color="text-cyan-400" mono />
                 <Stat label="Remaining" value={fmtTime(sr?.remaining_secs)} mono />
-                <Stat label="Block Height" value={fmt(Math.max(hH, sH))} color="text-purple-400" mono />
+                <Stat label="Block Height" value={fmt(primaryHeight)} color="text-purple-400" mono />
                 <Stat label="Status" value={stabilityStatus} color={stabilityStatusColor} />
               </div>
             </motion.section>
@@ -576,14 +577,14 @@ export default function MissionControlDashboard() {
             >
               <div className="flex flex-col gap-2 mb-6">
                 <div className="flex items-center gap-3">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Canary</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Historical Canary</p>
                   <span className="text-[10px] uppercase tracking-widest border border-amber-500/40 bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
                     B-CRIT-02 · {(cr?.progress_pct ?? 0) >= 100 ? 'PASS ✅' : 'IN PROG'}
                   </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Activity className="h-7 w-7 text-amber-400" />
-                  72h Canary Run — E-07 Validation · Helsinki Pool
+                  72h Canary Snapshot — archived validation window
                 </h2>
               </div>
               <CanaryProgress cr={cr} />
@@ -603,27 +604,28 @@ export default function MissionControlDashboard() {
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Network</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Current Infra</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Globe className="h-7 w-7 text-emerald-400" />
-                  Network Status
+                  Primary Host Status
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <Stat label="Network" value={hStats?.network ?? 'TestNet 2.9.8'} color="text-cyan-400" />
-                <Stat label="Total Peers" value={fmt(Math.max(hStats?.peers_connected ?? 0, sStats?.peers_connected ?? 0))} sub={`${onlineCount}/3 nodes online`} mono />
-                <Stat label="Difficulty" value={fmt(hStats?.difficulty)} mono />
-                <Stat label="Sync Status" value={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'SYNCED ✓' : hH > 0 ? 'RUNNING' : '—'} color={(hStats?.status === 'OK' || hStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
+                <Stat label="Network" value={primaryStats?.network ?? `TestNet ${SITE_RELEASE_LABEL}`} color="text-cyan-400" />
+                <Stat label="Total Peers" value={fmt(primaryStats?.peers_connected ?? 0)} sub={`${onlineCount}/1 public host online`} mono />
+                <Stat label="Difficulty" value={fmt(primaryStats?.difficulty)} mono />
+                <Stat label="Sync Status" value={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'SYNCED ✓' : primaryHeight > 0 ? 'RUNNING' : '—'} color={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
               </div>
-              <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-5">
-                <ServerCard node={data.helsinki} name="Helsinki" flag="🇫🇮" ip="77.42.31.72 · 8GB · aarch64" />
-                <ServerCard node={data.usa}     name="USA"      flag="🇺🇸" ip="178.156.240.160 · 4GB · amd64" />
-                <ServerCard node={data.asia}    name="Asia"     flag="🌏" ip="5.223.43.93 · 4GB · amd64" />
+              <div className="grid gap-5 lg:max-w-xl">
+                <ServerCard node={primaryNode} name="Zion2 Primary" flag="🖥️" ip="91.98.122.165 · public RPC + pool + web" />
+              </div>
+              <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300">
+                Two internal seed containers remain part of the chain runtime, but they are not exposed as separate public hosts. Dashboard live status is therefore keyed to the public primary node.
               </div>
             </motion.section>
 
             {/* Mining Pool */}
-            <PoolSection helsinki={data.helsinki?.pool} />
+            <PoolSection primary={primaryNode?.pool} />
 
             {/* Project Stats */}
             <motion.section
@@ -642,7 +644,7 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Codebase" value="52,590" sub="lines of Rust" color="text-cyan-400" />
                 <Stat label="Tests" value="780+" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="Release Gate" value="GO" sub="Deeksha freeze live · 3-node mesh ✓" color="text-emerald-400" />
+                <Stat label="Release Gate" value="GO" sub="Primary host live · internal seeds active" color="text-emerald-400" />
                 <Stat label="Crates" value="5" sub="core, pool, miner, cosmic-harmony, native-libs" />
               </div>
             </motion.section>
@@ -712,7 +714,7 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Logs</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Activity className="h-7 w-7 text-cyan-400" />
-                  Monitoring Log (3 Nodes)
+                  Monitoring Log (primary host)
                 </h2>
               </div>
               <LogConsole logTail={data.log_tail} />
@@ -738,11 +740,11 @@ export default function MissionControlDashboard() {
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — MainNet 31. 12. 2026
                 </h2>
-                <p className="text-sm text-gray-400">Fáze 0 (Feb) → Fáze 5 (Dec 2026) · 168h stability PASS · Deeksha release gate GO</p>
+                <p className="text-sm text-gray-400">Fáze 0 (Feb) → Fáze 5 (Dec 2026) · archived 168h stability PASS · current primary-host infra GO</p>
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-purple-400 to-pink-400" initial={{ width: 0 }} animate={{ width: '52%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · GO · 168h ✅ · 72h canary validating</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · GO · archived 168h ✅ · historical canary logged</span>
               </div>
             </motion.section>
 
@@ -768,7 +770,7 @@ export default function MissionControlDashboard() {
               <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Hardened TestNet" pct={85} status="PROBÍHÁ" statusColor="border-cyan-400/30 bg-cyan-400/10 text-cyan-200" defaultOpen>
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Únor — Březen 2026 | 168h stability PASS (2026-03-03)</p>
                 <table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Obsah</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Testy</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Stav</th></tr></thead><tbody>
-                  <SprintRow name="1.0 Network Deploy" content="Chain reset, Docker, 3-server" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="1.0 Network Deploy" content="Chain reset, Docker, historical 3-server rollout baseline" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.1 Config Validation" content="TOML parsing, boundary checks" tests="70" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.2 Security Edge-Case" content="Reorg, double-spend, fork-choice" tests="29" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.3 IBD Hardening" content="Timeouts, stall detect, peer scoring" tests="42" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -778,7 +780,7 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.7 P2P Rate-Limit" content="200 msgs/peer/60s, escalating bans" tests="13" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.8 Health & Metrics" content="getHealthCheck, getMetrics" tests="8" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.9 Stress Tests" content="High-throughput TX, rapid blocks" tests="21" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.10 168h Stability" content="3 nody · 3 kontinenty · 7 dní — GATE" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> PASS · 2026-03-03</span>} highlight />
+                  <SprintRow name="1.10 168h Stability" content="Archived 3-node / 3-continent validation gate · 7 dní" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> PASS · 2026-03-03</span>} highlight />
                   <SprintRow name="1.11 Partition Test" content="Izolace node 30 min, reconnect" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.12 100 Miners" content="Simulace 100 Stratum klientů" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                 </tbody></table>
@@ -794,9 +796,9 @@ export default function MissionControlDashboard() {
               </PhaseAccordion>
 
               <PhaseAccordion icon={<Globe className="h-6 w-6 text-yellow-400" />} title="Fáze 3 — Infrastructure & Legal" pct={55} status="PROBÍHÁ" statusColor="border-yellow-400/30 bg-yellow-400/10 text-yellow-200">
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Srpen — Září 2026 | HEL/USA/ASIA online, monitoring live, bridge testnet ready</p>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Srpen — Září 2026 | current primary-host ops live, archived HEL/USA/ASIA rollout retained in reports</p>
                 <table className="w-full text-left"><tbody>
-                  <SprintRow name="3.1 Seed Nodes" content="Prom+Grafana DEPLOYED ✅ (Helsinki+Germany 14/14 targets UP), dashboardy 3×, alerty 13×, 72h stability run zahájen 12.2. — seed nody 0/5" status={<span className="text-emerald-400">LIVE</span>} />
+                  <SprintRow name="3.1 Seed Nodes" content="Current public runtime consolidated on Zion2. Historical multi-host monitoring snapshot (Helsinki/Germany and later HEL/USA/ASIA) remains archived in reports." status={<span className="text-emerald-400">LIVE</span>} />
                   <SprintRow name="3.2 Docker & Deploy" content="mainnet.yml ✅, runbook ✅, CI/CD ⬜, images ⬜" status={<span className="text-yellow-400">2/5</span>} />
                   <SprintRow name="3.3 Legal" content="6 legal docs ✅, footer ✅, comm guidelines ⬜" status={<span className="text-emerald-400">7/8</span>} />
                   <SprintRow name="3.4 Exchange Ready" content="Supply API ✅, whitepaper ⬜, wZION bridge (Base Sepolia) ✅, listing prep ⬜" status={<span className="text-yellow-400">3/6</span>} />
@@ -1096,7 +1098,7 @@ export default function MissionControlDashboard() {
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-white/20 space-y-4 sm:space-y-6">
                     {[
                       { done: true, date: 'Únor 2026', title: 'Fáze 0 — Spec Freeze', desc: 'Core rewrite, 155 testů', color: 'text-emerald-400' },
-                      { active: true, date: 'Únor — Březen 2026', title: 'Fáze 1 — Hardened TestNet', desc: '168h stability PASS, 3-node mesh', color: 'text-cyan-400' },
+                      { active: true, date: 'Únor — Březen 2026', title: 'Fáze 1 — Hardened TestNet', desc: '168h stability PASS, archived 3-node validation', color: 'text-cyan-400' },
                       { done: true, date: 'Červen — Červenec', title: 'Fáze 2 — Node UX & Mining', desc: 'Explorer, mining guides, node setup — HOTOVO', color: 'text-emerald-400' },
                       { active: true, date: 'Srpen — Září', title: 'Fáze 3 — Infra & Legal', desc: 'Monitoring ✅, legal ✅, seed nody TODO', color: 'text-yellow-400' },
                       { date: 'Říjen — Listopad', title: 'Fáze 4 — Dress Rehearsal', desc: '7-day run, security audit, code freeze' },
@@ -1208,7 +1210,7 @@ export default function MissionControlDashboard() {
                   </thead>
                   <tbody>
                     {[
-                      { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: '168h stability run · 3 nodes PASS ✅', phase: '1.10', status: 'PASS', sColor: 'text-emerald-400' },
+                      { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: '168h stability snapshot · archived 3-node PASS ✅', phase: '1.10', status: 'PASS', sColor: 'text-emerald-400' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'CHv4 E2E 11/11 PASS + cosmic_harmony_v3', phase: 'B-CRIT-01', status: 'DONE', sColor: 'text-emerald-400' },
                       { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'E-07 canary 72h + invalid shares fix', phase: 'B-CRIT-02', status: `IN PROG · ${cr?.progress_pct ?? 0}%`, sColor: 'text-amber-400', bg: 'bg-amber-500/5' },
                       { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Genesis/freeze artefakty + sign-off', phase: 'B-CRIT-03', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
@@ -1239,7 +1241,7 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova {SITE_RELEASE_LABEL} · 168h Stability PASS ✅ · Deeksha canonical path live<br />
+          ZION TerraNova {SITE_RELEASE_LABEL} · Archived 168h stability PASS ✅ · Deeksha canonical path live<br />
           <em>6-layer architecture · operations-first web shell</em><br /><br />
           Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
         </div>
