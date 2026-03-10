@@ -1125,6 +1125,7 @@ const DEFAULT_CONFIG = {
     host: PRIMARY_TESTNET_HOST,
     port: PRIMARY_POOL_PORT
   },
+  desktopPureZionDefault: DESKTOP_PURE_ZION_DEFAULT,
   // ZION chain JSON-RPC endpoint (native core)
   rpcUrl: DEFAULT_RPC_URL,
   // Mining algorithm — Deeksha canonical path (pool name: `cosmic_harmony`)
@@ -1226,12 +1227,8 @@ function loadConfig() {
 
       merged.revenue = normalizeRevenueProfile(configOnDisk.revenue || merged.revenue);
       const hasExplicitRevenue = Object.prototype.hasOwnProperty.call(configOnDisk || {}, 'revenue');
-      if (DESKTOP_PURE_ZION_DEFAULT) {
-        const shouldMigratePureZion = !hasExplicitRevenue || isLegacyDefaultRevenueProfile(configOnDisk.revenue);
-        if (shouldMigratePureZion) {
-          merged.revenue = toPureZionRevenueProfile(merged.revenue);
-        }
-      }
+      const shouldMigratePureZion = DESKTOP_PURE_ZION_DEFAULT
+        && (!hasExplicitRevenue || isLegacyDefaultRevenueProfile(configOnDisk.revenue));
       // Backward compatibility with older top-level GPU revenue fields.
       if (typeof configOnDisk.gpuRevenue === 'boolean') {
         merged.revenue.gpu.enabled = configOnDisk.gpuRevenue;
@@ -1306,17 +1303,22 @@ function loadConfig() {
           merged.aiNativePoolUrl = DEFAULT_AI_NATIVE_POOL_URL;
         }
       }
+      merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;
       return merged;
     }
   } catch (err) {
     console.error('Failed to load config:', err);
   }
-  return DEFAULT_CONFIG;
+  return {
+    ...DEFAULT_CONFIG,
+    desktopPureZionDefault: DESKTOP_PURE_ZION_DEFAULT,
+  };
 }
 
 function saveConfig(config) {
   try {
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+    const { desktopPureZionDefault, ...persistedConfig } = config || {};
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(persistedConfig, null, 2));
     return true;
   } catch (err) {
     console.error('Failed to save config:', err);
@@ -2794,10 +2796,12 @@ function startMining(config) {
   minerGpuInitWatchdogTimer = null;
   gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
 
-  // ── Legacy CHv4.2 Merkabah GPU fast-path (disabled by default) ────────────
-  // v2.9.8 runs unified Deeksha path. Legacy CHv4.2 path can be re-enabled
-  // only for diagnostics via ZION_ENABLE_LEGACY_CHV42=1.
-  const legacyChv42Enabled = String(process.env.ZION_ENABLE_LEGACY_CHV42 || '').trim() === '1';
+  // ── Legacy CHv4.2 Merkabah GPU fast-path (diagnostics only) ───────────────
+  // v2.9.8 canonical desktop mining uses the unified Deeksha path.
+  // Keep the old branch available only behind an explicit double opt-in.
+  const legacyChv42Enabled =
+    String(process.env.ZION_ENABLE_LEGACY_CHV42 || '').trim() === '1' &&
+    String(process.env.ZION_FORCE_LEGACY_CHV42_PATH || '').trim() === '1';
   if (legacyChv42Enabled && String(config?.algorithm || '').toLowerCase() === 'cosmic_harmony_v4_2') {
     const isPackaged = app.isPackaged;
     const gpuScriptPrimary = isPackaged
@@ -3042,14 +3046,13 @@ function startMining(config) {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-  // ── CHvDeeksha Canonical Python fast-path ─────────────────────────────────
-  // Pokud je pro canonical cosmic_harmony vybrán Python backend, musí jít
-  // přes Deeksha 2.9.8 scripts, ne přes legacy zion_native_miner_v2_9.py.
+  // ── CHvDeeksha Canonical path (2.9.8) ─────────────────────────────────────
+  // canonical cosmic_harmony always runs through the Deeksha scripts.
+  // Do not send main CH mining through the Rust branch because the Rust miner
+  // intentionally guards CH GPU and falls back to CPU-only hashing.
   const _deekshaAlgoName = normalizeAlgorithmName(config?.algorithm || '');
   const _deekshaPreferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
-  const _deekshaSelection = resolveMinerSelection(_deekshaPreferredBackend);
-  const _deekshaPythonSelected = !!_deekshaSelection?.isPython;
-  if (_deekshaAlgoName === 'cosmic_harmony' && _deekshaPythonSelected) {
+  if (_deekshaAlgoName === 'cosmic_harmony') {
     const isPackaged = app.isPackaged;
     const deekshaCpuScript = isPackaged
       ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_deeksha_fallback.py')
@@ -3119,6 +3122,7 @@ function startMining(config) {
     const wallet = config.wallet || '';
     const worker = config.worker || 'desktop-agent';
     const deekshaMainScript = mainMinerGpuDeeksha ? deekshaGpuScript : deekshaCpuScript;
+    const deekshaResolvedBackend = mainMinerGpuDeeksha ? 'deeksha-gpu' : 'deeksha-fallback';
     const deekshaMainArgs = [
       deekshaMainScript,
       '--pool', pool,
@@ -3139,6 +3143,8 @@ function startMining(config) {
     logApp('deeksha-main-start', JSON.stringify({
       pyExeDeeksha,
       deekshaMainScript,
+      preferredBackend: _deekshaPreferredBackend,
+      resolvedBackend: deekshaResolvedBackend,
       pool,
       worker,
       mainMinerGpuDeeksha,
@@ -3152,9 +3158,14 @@ function startMining(config) {
       text:
         `[CHvDeeksha] Spouštím Deeksha canonical miner...\n` +
         `[CHvDeeksha] Python: ${pyExeDeeksha}\n` +
+        `[CHvDeeksha] Canonical path active: desktop-agent bypasses Rust for main cosmic_harmony mining.\n` +
         `[CHvDeeksha] Main path: ${mainMinerGpuDeeksha ? 'gpu/metal' : 'cpu'}\n` +
         `[CHvDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n`
     });
+    minerBackendPreferred = _deekshaPreferredBackend;
+    minerBackendResolved = deekshaResolvedBackend;
+    minerBackendPath = deekshaMainScript;
+    minerBackendLastError = '';
     try {
       minerProcess = spawn(pyExeDeeksha, deekshaMainArgs, {
         env: deekshaMainEnv,
@@ -3167,9 +3178,9 @@ function startMining(config) {
       return { success: false, error: String(e) };
     }
     sendToRenderer('miner-backend', {
-      preferred: 'python',
-      resolved: mainMinerGpuDeeksha ? 'deeksha-gpu' : 'deeksha-fallback',
-      path: pyExeDeeksha,
+      preferred: minerBackendPreferred,
+      resolved: deekshaResolvedBackend,
+      path: deekshaMainScript,
       lastError: ''
     });
     minerProcess.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));

@@ -575,10 +575,10 @@ impl GpuMiner {
 // ──── ETC mining thread (runs outside tokio) ─────────────────────────────────
 
 fn etc_mine_loop(
-    job_ref: Arc<Mutex<Option<EtcJob>>>,
-    new_job_flag: Arc<AtomicBool>,
-    stats: Arc<GpuMiningStats>,
-    write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+    _job_ref: Arc<Mutex<Option<EtcJob>>>,
+    _new_job_flag: Arc<AtomicBool>,
+    _stats: Arc<GpuMiningStats>,
+    _write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
     #[allow(dead_code)] _wallet: String,
     #[allow(dead_code)] _threads: usize,
 ) {
@@ -601,9 +601,9 @@ fn etc_mine_loop(
 
         loop {
             // Check for new job
-            if new_job_flag.swap(false, Ordering::AcqRel) {
+            if _new_job_flag.swap(false, Ordering::AcqRel) {
                 // Non-blocking lock attempt
-                if let Ok(guard) = job_ref.try_lock() {
+                if let Ok(guard) = _job_ref.try_lock() {
                     current = guard.clone();
                 }
             }
@@ -852,10 +852,10 @@ impl GpuMiner {
 // ──── ERG mining thread ───────────────────────────────────────────────────────
 
 fn erg_mine_loop(
-    job_ref: Arc<Mutex<Option<ErgJob>>>,
-    new_job_flag: Arc<AtomicBool>,
-    stats: Arc<GpuMiningStats>,
-    write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+    _job_ref: Arc<Mutex<Option<ErgJob>>>,
+    _new_job_flag: Arc<AtomicBool>,
+    _stats: Arc<GpuMiningStats>,
+    _write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) {
     #[cfg(not(feature = "native-autolykos"))]
     {
@@ -872,8 +872,8 @@ fn erg_mine_loop(
         let mut current: Option<ErgJob> = None;
 
         loop {
-            if new_job_flag.swap(false, Ordering::AcqRel) {
-                if let Ok(guard) = job_ref.try_lock() {
+            if _new_job_flag.swap(false, Ordering::AcqRel) {
+                if let Ok(guard) = _job_ref.try_lock() {
                     current = guard.clone();
                 }
             }
