@@ -320,8 +320,6 @@ class MetalBackend:
         """Metal compute dispatch přes pyobjc-framework-Metal.
         Používá numpy pole sdílená s Metal bufferem (unified memory, Apple Silicon).
         """
-        import struct as _s
-        import ctypes
         import numpy as np
         import Metal as _MTL
 
@@ -339,23 +337,25 @@ class MetalBackend:
         result_n_arr = np.zeros(1, dtype=np.uint64)
         result_h_arr = np.zeros(32, dtype=np.uint8)
 
-        def _np_buf(arr: "np.ndarray"):
-            """Vytvoří MTLBuffer sdílící paměť s numpy polem (zero-copy, APC unified)."""
-            ptr = int(arr.ctypes.data)
-            nbytes = int(arr.nbytes)
-            return dev.newBufferWithBytesNoCopy_length_options_deallocator_(
-                ptr, nbytes, MTL_SHARED, None
-            )
+        def _np_input_buf(arr: "np.ndarray"):
+            """Vytvoří MTLBuffer z numpy pole přes PyObjC-safe bytes bridge."""
+            return dev.newBufferWithBytes_length_options_(arr, int(arr.nbytes), MTL_SHARED)
+
+        def _empty_buf(size: int):
+            buf = dev.newBufferWithLength_options_(int(size), MTL_SHARED)
+            view = buf.contents().as_buffer(int(size))
+            view[:] = b"\x00" * int(size)
+            return buf
 
         try:
             buffers = [
-                _np_buf(hdr_padded),
-                _np_buf(hlen_arr),
-                _np_buf(nb_arr),
-                _np_buf(sp_arr),
-                _np_buf(tgt_arr),
-                _np_buf(result_n_arr),
-                _np_buf(result_h_arr),
+                _np_input_buf(hdr_padded),
+                _np_input_buf(hlen_arr),
+                _np_input_buf(nb_arr),
+                _np_input_buf(sp_arr),
+                _np_input_buf(tgt_arr),
+                _empty_buf(result_n_arr.nbytes),
+                _empty_buf(result_h_arr.nbytes),
             ]
         except Exception as e:
             log.warning("[Metal] buffer allocation: %s", e)
@@ -387,8 +387,8 @@ class MetalBackend:
                 _enc_npu = _cmd_npu.computeCommandEncoder()
                 _enc_npu.setComputePipelineState_(self._npu_pipeline)
                 for _ii, _b in enumerate([
-                    _np_buf(hdr_f), _np_buf(npu_out),
-                    _np_buf(self._npu_w_A), _np_buf(self._npu_w_B),
+                    _np_input_buf(hdr_f), _empty_buf(npu_out.nbytes),
+                    _np_input_buf(self._npu_w_A), _np_input_buf(self._npu_w_B),
                 ]):
                     _enc_npu.setBuffer_offset_atIndex_(_b, 0, _ii)
                 _enc_npu.dispatchThreadgroups_threadsPerThreadgroup_(
@@ -406,8 +406,10 @@ class MetalBackend:
             except Exception: pass
 
         # Výstup je přímo v numpy polích (unified memory — žádné kopírování)
-        out_nonce = int(result_n_arr[0])
-        out_hash  = bytes(result_h_arr.tobytes())
+        result_nonce_view = buffers[5].contents().as_buffer(int(result_n_arr.nbytes))
+        result_hash_view = buffers[6].contents().as_buffer(int(result_h_arr.nbytes))
+        out_nonce = int(np.frombuffer(result_nonce_view, dtype=np.uint64, count=1)[0])
+        out_hash  = bytes(result_hash_view)
 
         if out_nonce != 0:
             return (out_nonce, out_hash)
