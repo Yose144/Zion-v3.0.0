@@ -280,13 +280,18 @@ function renderBackendUi() {
       resolved === 'rust' ? 'Rust' :
       resolved === 'python' ? 'Python' :
       resolved === 'legacy' ? 'Legacy' :
+      resolved === 'deeksha-auto' ? 'Deeksha Auto' :
+      resolved === 'deeksha-native' ? 'Deeksha Native Exact' :
+      resolved === 'deeksha-opencl' ? 'Deeksha GPU (OpenCL)' :
+      resolved === 'deeksha-cuda' ? 'Deeksha CUDA' :
+      resolved === 'deeksha-metal' ? 'Deeksha Metal' :
       resolved === 'deeksha-gpu' ? 'Deeksha GPU' :
       resolved === 'deeksha-fallback' ? 'Deeksha CPU' :
       '';
 
     if (backendStatusEl) {
       const labels = {
-        auto: 'Canonical cosmic_harmony uses the Deeksha 2.9.8 path automatically.',
+        auto: 'Canonical cosmic_harmony uses the Deeksha 2.9.8 path automatically and resolves the exact runtime backend at launch.',
         rust: 'Canonical cosmic_harmony still uses the Deeksha path; Rust is bypassed for main CH mining.',
         python: 'Canonical cosmic_harmony uses the Deeksha Python path.'
       };
@@ -302,6 +307,11 @@ function renderBackendUi() {
         eff === 'rust' ? 'Rust' :
         eff === 'python' ? 'Python' :
         eff === 'legacy' ? 'Legacy' :
+        eff === 'deeksha-auto' ? 'Deeksha Auto' :
+        eff === 'deeksha-native' ? 'Deeksha Native Exact' :
+        eff === 'deeksha-opencl' ? 'Deeksha GPU (OpenCL)' :
+        eff === 'deeksha-cuda' ? 'Deeksha CUDA' :
+        eff === 'deeksha-metal' ? 'Deeksha Metal' :
         eff === 'deeksha-gpu' ? 'Deeksha GPU' :
         eff === 'deeksha-fallback' ? 'Deeksha CPU' :
         'Auto';

@@ -736,6 +736,28 @@ let minerBackendResolved = null;
 let minerBackendPath = '';
 let minerBackendLastError = '';
 
+function mapDeekshaRuntimeBackend(runtimeBackend) {
+  const backend = String(runtimeBackend || '').trim().toLowerCase();
+  if (!backend) return null;
+  if (backend === 'native') return 'deeksha-native';
+  if (backend === 'cpu' || backend === 'python') return 'deeksha-fallback';
+  if (backend === 'opencl' || backend === 'cuda' || backend === 'metal') return `deeksha-${backend}`;
+  return `deeksha-${backend}`;
+}
+
+function syncDeekshaResolvedBackend(runtimeBackend) {
+  const resolved = mapDeekshaRuntimeBackend(runtimeBackend);
+  if (!resolved || minerBackendResolved === resolved) return;
+  minerBackendResolved = resolved;
+  sendToRenderer('miner-backend', {
+    preferred: minerBackendPreferred,
+    resolved: minerBackendResolved,
+    path: minerBackendPath,
+    lastError: minerBackendLastError,
+  });
+  scheduleStatsEmit();
+}
+
 function composeStatsPayload() {
   return {
     ...minerStats,
@@ -3142,7 +3164,7 @@ function startMining(config) {
     const wallet = config.wallet || '';
     const worker = config.worker || 'desktop-agent';
     const deekshaMainScript = mainMinerGpuDeeksha ? deekshaGpuScript : deekshaCpuScript;
-    const deekshaResolvedBackend = mainMinerGpuDeeksha ? 'deeksha-gpu' : 'deeksha-fallback';
+    const deekshaResolvedBackend = mainMinerGpuDeeksha ? 'deeksha-auto' : 'deeksha-fallback';
     const deekshaMainArgs = [
       deekshaMainScript,
       '--pool', pool,
@@ -3179,7 +3201,7 @@ function startMining(config) {
         `[CHvDeeksha] Spouštím Deeksha canonical miner...\n` +
         `[CHvDeeksha] Python: ${pyExeDeeksha}\n` +
         `[CHvDeeksha] Canonical path active: desktop-agent bypasses Rust for main cosmic_harmony mining.\n` +
-        `[CHvDeeksha] Main path: ${mainMinerGpuDeeksha ? 'gpu/metal' : 'cpu'}\n` +
+        `[CHvDeeksha] Main path: ${mainMinerGpuDeeksha ? 'auto (runtime backend decides)' : 'cpu'}\n` +
         `[CHvDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n`
     });
     minerBackendPreferred = _deekshaPreferredBackend;
@@ -5587,7 +5609,16 @@ function tryUpdateStatsFromFile() {
     if (typeof payload.algorithm === 'string') minerStats.stream_algorithm = payload.algorithm;
     if (typeof payload.worker === 'string') minerStats.worker = payload.worker;
     if (typeof payload.gpu_name === 'string' && payload.gpu_name !== 'none') minerStats.gpu_info = payload.gpu_name;
-    if (typeof payload.backend === 'string') minerStats.runtime_backend = payload.backend;
+    if (typeof payload.backend === 'string') {
+      const runtimeBackend = String(payload.backend || '').toLowerCase();
+      minerStats.runtime_backend = runtimeBackend;
+      syncDeekshaResolvedBackend(runtimeBackend);
+      if (runtimeBackend === 'native' || runtimeBackend === 'cpu' || runtimeBackend === 'python') {
+        minerStats.gpu_detected = false;
+        minerStats.gpu_type = 'none';
+        minerStats.hashrate_gpu = 0;
+      }
+    }
     if (typeof payload.cpu_threads === 'number') minerStats.cpu_threads = payload.cpu_threads;
     if (typeof payload.connection_count === 'number') minerStats.connection_count = payload.connection_count;
     if (Array.isArray(payload.threads)) minerStats.thread_snapshots = payload.threads;
@@ -6090,7 +6121,14 @@ function parseMinerOutput(output) {
     minerStats.shares = parseInt(deekshaStatsMatch[3], 10);
     minerStats.total_hashes = parseInt(deekshaStatsMatch[4], 10);
     minerStats.total_hashes_display = String(deekshaStatsMatch[4]);
-    minerStats.runtime_backend = String(deekshaStatsMatch[5] || '').toLowerCase();
+    const runtimeBackend = String(deekshaStatsMatch[5] || '').toLowerCase();
+    minerStats.runtime_backend = runtimeBackend;
+    syncDeekshaResolvedBackend(runtimeBackend);
+    if (runtimeBackend === 'native' || runtimeBackend === 'cpu' || runtimeBackend === 'python') {
+      minerStats.gpu_detected = false;
+      minerStats.gpu_type = 'none';
+      minerStats.hashrate_gpu = 0;
+    }
   }
 
   // ─── XMRig accepted: "accepted 42/0 (+1) diff 256 [38 ms] (100.0%)" ───
@@ -6257,13 +6295,18 @@ function parseMinerOutput(output) {
   if (deekshaGpuBackendMatch) {
     const backendName = String(deekshaGpuBackendMatch[1] || '').trim().toLowerCase();
     minerStats.runtime_backend = backendName;
+    syncDeekshaResolvedBackend(backendName);
     if (backendName && backendName !== 'cpu' && backendName !== 'native') {
       minerStats.gpu_detected = true;
       minerStats.gpu_type = backendName;
+    } else {
+      minerStats.gpu_detected = false;
+      minerStats.gpu_type = 'none';
+      minerStats.hashrate_gpu = 0;
     }
   }
 
-  const openclDeviceMatch = output.match(/\[OpenCL\]\s+Device:\s*(.+)/i);
+  const openclDeviceMatch = output.match(/\[(?:OpenCL|DeekshaOpenCL)\]\s+(?:Device|Canonical Deeksha GPU ready):\s*(.+)/i);
   if (openclDeviceMatch) {
     const deviceName = openclDeviceMatch[1].trim();
     minerStats.gpu_info = deviceName;
