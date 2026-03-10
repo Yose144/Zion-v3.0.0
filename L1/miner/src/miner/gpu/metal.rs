@@ -44,7 +44,7 @@ impl MetalGpuMiner {
             let device_info = GpuDevice {
                 id: 0,
                 name: dev_info.name.clone(),
-                platform: GpuPlatform::Metal,
+                platform: super::GpuPlatform::Metal,
                 compute_units: dev_info.compute_units,
                 memory_mb: dev_info.global_memory / (1024 * 1024),
             };
@@ -155,6 +155,10 @@ impl GpuMiner for MetalGpuMiner {
         // with the right granularity (1 GPU dispatch per mine_batch call).
         Some(self.batch_size as u64)
     }
+
+    fn effective_batch_size(&self, _requested_batch_size: u64, _height: u64) -> u64 {
+        self.batch_size as u64
+    }
 }
 
 /// Detect Metal GPU devices (Apple Silicon only)
@@ -169,7 +173,7 @@ pub fn detect_metal_devices() -> Result<Vec<GpuDevice>> {
                 Ok(vec![GpuDevice {
                     id: 0,
                     name: info.name,
-                    platform: GpuPlatform::Metal,
+                    platform: super::GpuPlatform::Metal,
                     compute_units: info.compute_units,
                     memory_mb: info.global_memory / (1024 * 1024),
                 }])

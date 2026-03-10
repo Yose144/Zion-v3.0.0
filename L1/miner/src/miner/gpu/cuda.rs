@@ -341,6 +341,16 @@ impl GpuMiner for CudaMiner {
             0.0
         }
     }
+
+    fn effective_batch_size(&self, requested_batch_size: u64, height: u64) -> u64 {
+        let memory_hard_active =
+            height >= zion_cosmic_harmony_v3::algorithms_opt::CHV3_MEMORY_HARD_FORK_HEIGHT;
+        if memory_hard_active {
+            requested_batch_size.min(self.mh_batch_size as u64)
+        } else {
+            requested_batch_size
+        }
+    }
 }
 
 /// Detect CUDA devices

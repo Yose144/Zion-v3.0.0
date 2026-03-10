@@ -180,8 +180,8 @@ impl ExternalMiner {
                         break job;
                     }
                 }
-                Ok(Err(_)) => return Err(anyhow!("Job channel closed")),
-                Err(_) => return Err(anyhow!("Timeout waiting for initial ETC job")),
+                Ok(Err(_)) => return Err(anyhow::anyhow!("Job channel closed")),
+                Err(_) => return Err(anyhow::anyhow!("Timeout waiting for initial ETC job")),
             }
         };
 
@@ -417,8 +417,8 @@ impl ExternalMiner {
                         break job;
                     }
                 }
-                Ok(Err(_)) => return Err(anyhow!("Job channel closed")),
-                Err(_) => return Err(anyhow!("Timeout waiting for initial ERG job")),
+                Ok(Err(_)) => return Err(anyhow::anyhow!("Job channel closed")),
+                Err(_) => return Err(anyhow::anyhow!("Timeout waiting for initial ERG job")),
             }
         };
 

@@ -324,7 +324,7 @@ async fn main() -> anyhow::Result<()> {
         "{}  {:<12} {}...{}",
         "   ".bright_black(),
         "wallet".bright_black(),
-        &cli.wallet[..8].bright_white(),
+        &cli.wallet[..cli.wallet.len().min(8)].bright_white(),
         &cli.wallet[cli.wallet.len().saturating_sub(6)..].bright_white()
     );
 

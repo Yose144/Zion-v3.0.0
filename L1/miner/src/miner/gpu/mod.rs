@@ -81,6 +81,15 @@ pub trait GpuMiner: Send + Sync {
     fn natural_batch_size(&self) -> Option<u64> {
         None
     }
+
+    /// Effective batch size actually processed by one mine_batch call.
+    ///
+    /// Backends with fixed dispatch granularity or preallocated scratchpad
+    /// capacity should override this so benchmarking and auto-tune count only
+    /// real work performed on the device.
+    fn effective_batch_size(&self, requested_batch_size: u64, _height: u64) -> u64 {
+        self.natural_batch_size().unwrap_or(requested_batch_size)
+    }
 }
 
 /// Detect available GPU devices
