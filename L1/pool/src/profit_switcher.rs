@@ -1235,7 +1235,7 @@ fn apply_outlier_clamp(data: &mut [CoinProfitData], history: &VecDeque<Vec<(Stri
     // Compute median of the historical distribution
     let mut sorted = all_scores.clone();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let median = if sorted.len().is_multiple_of(2) {
+    let median = if sorted.len() % 2 == 0 {
         (sorted[sorted.len() / 2 - 1] + sorted[sorted.len() / 2]) / 2.0
     } else {
         sorted[sorted.len() / 2]

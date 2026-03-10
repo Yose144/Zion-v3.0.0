@@ -19,7 +19,6 @@ import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import CosmicFlowers from './CosmicFlowers';
 
-
 const observatoryMeta: Record<
   ObservatoryMode,
   { signal: string; focus: string }
@@ -37,43 +36,6 @@ const observatoryMeta: Record<
     focus: 'Governance + sacred ledgers',
   },
 };
-
-/* ─── tiny floating petal accent ─── */
-function MiniPetal({
-  cx, cy, delay, size, color,
-}: { cx: number; cy: number; delay: number; size: number; color: string }) {
-  return (
-    <motion.div
-      className="absolute rounded-full pointer-events-none"
-      style={{
-        left: `${cx}%`,
-        top: `${cy}%`,
-        width: size,
-        height: size * 2.4,
-        background: color,
-        borderRadius: '50% 50% 50% 50% / 80% 80% 20% 20%',
-        filter: 'blur(1px)',
-      }}
-      animate={{
-        y: [0, -14, 0],
-        rotate: [0, 20, 0],
-        opacity: [0.35, 0.7, 0.35],
-      }}
-      transition={{ duration: 5 + delay, repeat: Infinity, ease: 'easeInOut', delay }}
-    />
-  );
-}
-
-const miniPetals = [
-  { cx: 8,  cy: 30, delay: 0,   size: 6, color: 'rgba(147,51,234,0.7)' },
-  { cx: 12, cy: 55, delay: 1.2, size: 4, color: 'rgba(6,182,212,0.6)'  },
-  { cx: 5,  cy: 75, delay: 2.4, size: 7, color: 'rgba(255,215,0,0.55)' },
-  { cx: 91, cy: 20, delay: 0.6, size: 5, color: 'rgba(6,182,212,0.65)' },
-  { cx: 95, cy: 50, delay: 1.8, size: 8, color: 'rgba(147,51,234,0.6)' },
-  { cx: 88, cy: 78, delay: 3,   size: 4, color: 'rgba(255,215,0,0.5)'  },
-  { cx: 50, cy: 5,  delay: 0.9, size: 5, color: 'rgba(147,51,234,0.5)' },
-  { cx: 48, cy: 92, delay: 2.1, size: 6, color: 'rgba(6,182,212,0.55)' },
-];
 
 export default function Hero() {
   const { mode, setMode, availableModes } = useObservatory();
@@ -100,13 +62,8 @@ export default function Hero() {
         <div className="absolute bottom-0 left-1/3 w-[600px] h-[400px] rounded-full bg-zion-gold/6 blur-3xl" />
       </div>
 
-      {/* ── animated SVG flowers ── */}
-      <CosmicFlowers className="z-0" />
-
-      {/* ── mini floating petals ── */}
-      {miniPetals.map((p, i) => (
-        <MiniPetal key={i} {...p} />
-      ))}
+      {/* ── lightweight floral composition ── */}
+      <CosmicFlowers className="z-0 hidden md:block" />
 
       <div className="zion-container relative z-10">
         {/* ─── top badge row ─── */}
@@ -156,7 +113,7 @@ export default function Hero() {
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
               <Link
-                href="/warp"
+                href="/network"
                 className="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan text-base font-semibold shadow-[0_0_45px_rgba(147,51,234,0.40)] hover:shadow-[0_0_60px_rgba(147,51,234,0.55)] transition-shadow"
               >
                 {tr('hero', 'btn_warp', lang)}
@@ -192,21 +149,21 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-bold text-white">Deeksha canonical path</span>
+                    <span className="text-sm font-bold text-white">Live network, not a concept mockup</span>
                     <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-semibold">
                       Live
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    v2.9.8 běží na 3 aktivních uzlech. Web už nezdůrazňuje staré gate messagingy, ale aktuální síť,
-                    pool a provozní dokumentaci.
+                    Na jednom místě vidíš stav sítě, explorer, pool, downloady i dokumentaci. Homepage má teď fungovat jako vstupní bod
+                    pro veřejnost, ne jako interní release poznámka.
                   </p>
                 </div>
                 <a
                   href="#tree-of-life"
                   className="flex-none ml-auto text-xs text-pink-300 hover:text-pink-200 flex items-center gap-1 transition"
                 >
-                  Tree of Life <ArrowRight className="w-3.5 h-3.5" />
+                  Explore <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>
             </motion.div>

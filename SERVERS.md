@@ -1,76 +1,43 @@
-# 🖥️ ZION TerraNova — Seed Nodes
+# 🖥️ ZION TerraNova — Active Servers
 
-> **Aktualizace:** 10. března 2026 (live check + Asia Redis/miner fix)  
-> **Cíl:** 3 seed nody (mainnet topologie)  
-> **Chain status:** ✅ Testnet běží — všechny 3 uzly v konsenzu, výška 705+, Deeksha 2.9.8 active
+> **Aktualizace:** 10. března 2026  
+> **Aktuální topologie:** 1 nový primární server po resetu infrastruktury  
+> **Chain status:** přechod na nový host `91.98.122.165` jako aktuální source of truth pro deploy a web
 
+> Původní servery `77.42.31.72`, `178.156.240.160`, `5.223.43.93` a starší historické uzly jsou brané jako decommissioned. Nejsou už zdrojem pravdy pro operace ani dokumentaci.
 
-Asia
-CPX12 | x86 | 40 GB | ap-southeast
-5.223.43.93
-
-Singapore
-1 day ago
-
-
-Usa
-CPX11 | x86 | 40 GB | us-east
-178.156.240.160
-
-Ashburn, VA
-1 day ago
-
-
-TreeOfLife-Zion
-CAX21 | arm | 80 GB | eu-central
-77.42.31.72
-
-Helsinki
-27 days ago
-
-
-> ~~Usa1 (5.78.178.227 — Hillsboro, OR)~~ — decommissioned po stability testu  
-> ~~SeedDE (46.225.126.243 — Nuremberg)~~ — decommissioned (geografická diverzita)
-
-> **Rychlá konektivita (2026-03-03):**
-> - Aktivní nody (`77.42.31.72`, `178.156.240.160`, `5.223.43.93`) mají otevřené P2P/RPC porty (`8334`, `8444`), Helsinki má navíc otevřené `3333` a `8080`.
-> - Decommissioned seedy (`46.225.126.243`, `5.78.178.227`) jsou na `8334` nedostupné.
-
-## Aktivní servery
+## Aktivní server
 
 | # | Název | Lokace | IP | HW | SSH alias | Klíč | Stav |
 |---|-------|--------|----|-----|-----------|------|------|
-| 1 | TreeOfLife-Zion | 🇫🇮 Helsinki (Hetzner) | 77.42.31.72 | CAX21 arm 80 GB | `zion-helsinki` | `zion_hetzner_key` | ✅ Seed + Pool + Miner + Web + Monitoring — `zion-core:2.9.8` `zion-pool:2.9.8` `zion-miner:2.9.8` |
-| 2 | Usa | 🇺🇸 Ashburn, VA (Hetzner) | 178.156.240.160 | CPX11 x86 40 GB | `zion-usa` | `zion_hetzner_key` | ✅ Seed + Miner + Redis — `zion-core:2.9.8` `zion-miner:2.9.8` |
-| 3 | Asia | 🌏 Singapore (Hetzner) | 5.223.43.93 | CPX12 x86 40 GB | `zion-asia` | `zion_hetzner_key` | ✅ Seed + Miner + Redis — `zion-core:2.9.8` `zion-miner:2.9.8` |
+| 1 | Zion2 | primární produkční host | 91.98.122.165 | aktivní produkční VM | `zion-primary` | `zion_hetzner_key` | ✅ Core + Pool + Redis + Website deploy target |
 
 ### ❌ Decommissioned servery
 
 | Název | IP | Důvod |
 |-------|----|-------|
+| TreeOfLife-Zion | 77.42.31.72 | Nahrazeno novým primárním serverem |
+| Usa | 178.156.240.160 | Původní multi-node topologie zrušena |
+| Asia | 5.223.43.93 | Původní multi-node topologie zrušena |
 | SeedDE (Nuremberg) | 46.225.126.243 | Decommissioned — geografická diverzita |
 | Usa1 (Hillsboro, OR) | 5.78.178.227 | Decommissioned po stability testu |
 
-### 💰 Revenue stack (snapshot 10. 3. 2026 — 3 servery)
+### Runtime snapshot
 
 | Server | Revenue kontejnery | Mysterium ID | Stav |
 |---|---|---|---|
-| Helsinki (`77.42.31.72`) | `zion-bridge`, `zion-website`, `zion-mysterium`, `zion-nkn`, `zion-pool`, `zion-miner` | `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b` | ✅ Active |
-| Usa (`178.156.240.160`) | `zion-mysterium`, `zion-miner`, `zion-redis` | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Active |
-| Asia (`5.223.43.93`) | `zion-mysterium`, `zion-miner`, `zion-redis` | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Active |
+| Zion2 (`91.98.122.165`) | `zion-core`, `zion-pool`, `zion-redis`, `zion-seed-1`, `zion-seed-2` | n/a | ✅ Active |
 
 ### Docker image verze (live 2026-03-10)
 
-| Komponenta | Helsinki (ARM64) | Usa / Asia (AMD64) |
-|-----------|-----------------|--------------------|
-| Core | `zion-core:2.9.8` | `zion-core:2.9.8` |
-| Pool | `zion-pool:2.9.8` | only as compose dependency if explicitly started |
-| Miner | `zion-miner:2.9.8` | `zion-miner:2.9.8` |
+| Komponenta | Zion2 |
+|-----------|-------|
+| Core | `zion-core` |
+| Pool | `zion-pool` |
+| Redis | `zion-redis` |
+| Seeds | `zion-seed-1`, `zion-seed-2` |
 
-> **Kritická poznámka:** Všechny tři komponenty (core, pool, miner) musí být sestaveny ze stejné 2.9.8 Deeksha codebase. Odchylka v `algorithms_opt.rs` nebo Docker image tagu způsobí nekompatibilitu hashů.
-
-Poznámka: `nkn` je v produkci zatím vypnutý (wallet init flow ještě není idempotentně zautomatizovaný).
-Poznámka 2: x86 nody používají oddělený seed+miner profil bez lokálního pool dependency. Miner se připojuje na Helsinki pool přes `MINER_POOL_URL=77.42.31.72:3333`, pro paralelní XMR větev používají `ZION_RANDOMX_FULL=0` a doporučené `XMR_THREADS=1`. Asia aktuálně vyžaduje `MINER_CPUS=1.0`, protože Docker host vystavuje jen 1 CPU.
+> **Poznámka:** Dokumentace od 10. 3. 2026 používá jako aktivní deploy target jen `91.98.122.165`. Staré IP adresy zůstávají pouze v historických reportech a archivech.
 
 ### ❌ Suspendované servery (Vultr — pozastaveny)
 
@@ -81,47 +48,40 @@ Poznámka 2: x86 nody používají oddělený seed+miner profil bez lokálního 
 | 🇮🇳 Delhi | 139.84.170.133 | ❌ Suspendován |
 | 🇨🇱 Santiago | 64.176.13.76 | ❌ Suspendován |
 
-## 🌐 Síť — 3 nody (mainnet topologie)
+## 🌐 Síť — aktuální stav
 
 ```
-          ╔══════════════════════════════════════════════════╗
-          ║   🌟 ZION TerraNova — TestNet P2P Network 🌟   ║
-          ║   3 Seed Nodes · Port 8334 (testnet)           ║
-          ╚══════════════════════════════════════════════════╝
+                    ╔══════════════════════════════════════════════╗
+                    ║   🌟 ZION TerraNova — Current Infra 🌟      ║
+                    ║   Single primary host during rebuild        ║
+                    ╚══════════════════════════════════════════════╝
 
-          🇫🇮 Helsinki (TreeOfLife)
-             77.42.31.72
-               ╱       ╲
-              ╱         ╲
-     🇺🇸 Usa            Asia 🌏
-  178.156.240.160     5.223.43.93
+                                 Zion2 / primary
+                                 91.98.122.165
 ```
 
-| # | Název | IP | Region |
-|---|-------|----|--------|
-| 1 | TreeOfLife-Zion | 77.42.31.72 | 🇫🇮 EU (Hetzner Helsinki) |
-| 2 | Usa | 178.156.240.160 | 🇺🇸 US East (Ashburn, VA) |
-| 3 | Asia | 5.223.43.93 | 🌏 AP (Singapore) |
+| # | Název | IP | Role |
+|---|-------|----|------|
+| 1 | Zion2 | 91.98.122.165 | primární host pro chain + pool + web |
 
 ## Připojení
 
 ```bash
-ssh zion-helsinki   # 🇫🇮 Helsinki — TreeOfLife (seed + pool + monitoring)
-ssh zion-usa        # 🇺🇸 Ashburn VA — Usa
-ssh zion-asia       # 🌏 Singapore — Asia
+ssh zion-primary    # 91.98.122.165 — current primary host
 ```
 
 ## Deploy seed nodů
 
 ```bash
-# Preferovaný orchestrátor pro 2.9.8:
+# Preferovaný orchestrátor pro chain stack zůstává 2.9.8 autopilot,
+# ale website deploy se provádí samostatně na 91.98.122.165.
 bash scripts/autopilot-2.9.8.sh --remote --network testnet
 ```
 
-## SEED_PEERS pro nody
+## SEED_PEERS
 
 ```
-77.42.31.72:8334,178.156.240.160:8334,5.223.43.93:8334
+91.98.122.165:8334
 ```
 
 ## 🔑 SSH klíče a přístupy
@@ -130,9 +90,9 @@ bash scripts/autopilot-2.9.8.sh --remote --network testnet
 
 | Klíč | Soubor | Použití |
 |------|--------|---------|
-| **Hetzner** | `~/.ssh/zion_hetzner_key` | Helsinki, Usa, Asia |
+| **Hetzner** | `~/.ssh/zion_hetzner_key` | Zion2 / current primary |
 | **Testnet servery** | `~/.ssh/zion_server_key` | historický klíč, nepoužívat pro 2.9.8 rollout |
-| **Deploy (starý)** | `~/.ssh/zion_deployment_key` | Starý server 91.98.122.165 — nepoužívat |
+| **Deploy (starý)** | `~/.ssh/zion_deployment_key` | historický klíč, nepoužívat |
 
 - **Typ:** Ed25519
 - **Hlavní klíč pro všechny 3 aktivní servery:** `~/.ssh/zion_hetzner_key`
@@ -143,18 +103,8 @@ bash scripts/autopilot-2.9.8.sh --remote --network testnet
 Přidat/aktualizovat `~/.ssh/config`:
 
 ```
-Host zion-helsinki
-    HostName 77.42.31.72
-    User root
-    IdentityFile ~/.ssh/zion_hetzner_key
-
-Host zion-usa
-    HostName 178.156.240.160
-    User root
-    IdentityFile ~/.ssh/zion_hetzner_key
-
-Host zion-asia
-    HostName 5.223.43.93
+Host zion-primary
+    HostName 91.98.122.165
     User root
     IdentityFile ~/.ssh/zion_hetzner_key
 ```
@@ -162,20 +112,18 @@ Host zion-asia
 ### Přímé připojení (s explicitním klíčem)
 
 ```bash
-ssh -i ~/.ssh/zion_hetzner_key     root@77.42.31.72     # Helsinki (TreeOfLife)
-ssh -i ~/.ssh/zion_hetzner_key     root@178.156.240.160 # Usa (Ashburn)
-ssh -i ~/.ssh/zion_hetzner_key     root@5.223.43.93     # Asia (Singapore)
+ssh -i ~/.ssh/zion_hetzner_key     root@91.98.122.165   # Zion2 / current primary
 ```
 
 ## 🌐 Porty (Testnet)
 
 | Port | Služba | Popis | Kde |
 |------|--------|-------|-----|
-| **8334** | P2P | Testnet peer-to-peer | Všechny nody |
-| **8444** | RPC | Testnet JSON-RPC (`/jsonrpc`) | Všechny nody |
-| **3333** | Stratum | Mining pool | Helsinki |
-| **8080** | Pool API | Pool statistiky | Helsinki |
-| **3000** | Web | Dashboard / Website | Helsinki |
-| **3001** | Grafana | Monitoring | Helsinki |
-| **9090** | Prometheus | Metriky | Helsinki |
+| **8334** | P2P | Testnet peer-to-peer | Zion2 |
+| **8444** | RPC | Testnet JSON-RPC (`/jsonrpc`) | Zion2 |
+| **3333** | Stratum | Mining pool | Zion2 |
+| **8080** | Pool API | Pool statistiky | Zion2 |
+| **3000** | Web | Dashboard / Website | Zion2 |
+| **3001** | Grafana | Monitoring | Zion2 |
+| **9090** | Prometheus | Metriky | Zion2 |
 

@@ -1,0 +1,37 @@
+{
+  "streams": {
+    "zion": {
+      "enabled": true,
+      "target_share": 1.0
+    },
+    "etc": {
+      "enabled": false,
+      "pool": {
+        "stratum": "stratum+tcp://etc.2miners.com:1010",
+        "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        "worker": "zion_merged"
+      },
+      "target_share": 0.0
+    },
+    "nxs": {
+      "enabled": false,
+      "pool": {
+        "stratum": "stratum+tcp://pool.nexus.io:9549",
+        "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+        "worker": "zion_merged"
+      },
+      "target_share": 0.0
+    },
+    "dynamic_gpu": {
+      "enabled": false,
+      "mode": "auto",
+      "target_share": 0.0,
+      "pools": {}
+    },
+    "ncl": {
+      "enabled": false,
+      "npu_allocation": 0.0,
+      "target_share": 0.0
+    }
+  }
+}

@@ -135,11 +135,17 @@ def detect_best_backend() -> str:
 def _find_lib(base: str) -> Optional[Path]:
     sys = platform.system()
     exts = {"Darwin": ".dylib", "Windows": ".dll"}.get(sys, ".so")
+    sibling_bases = [base]
+    if base == "libcosmic_harmony_deeksha":
+        sibling_bases.extend(["libzion_cosmic_harmony_v3", "libcosmic_harmony"])
     candidates = [
-        _HERE / f"{base}{exts}",           # resources/mining/ (packaged)
-        _KERNEL_DIR / f"{base}{exts}",     # L1/native-libs/all/ (dev)
-        _ROOT / "target" / "release" / f"{base}{exts}",
-        Path(f"{base}{exts}"),
+        *[_HERE.parent / f"{name}{exts}" for name in sibling_bases],          # resources/ root (desktop packaging)
+        *[_HERE.parent / "native-libs" / f"{name}{exts}" for name in sibling_bases],
+        *[_HERE / f"{name}{exts}" for name in sibling_bases],                 # resources/mining/ (legacy packaged)
+        *[_HERE / "native-libs" / f"{name}{exts}" for name in sibling_bases],
+        *[_KERNEL_DIR / f"{name}{exts}" for name in sibling_bases],           # L1/native-libs/all/ (dev)
+        *[_ROOT / "target" / "release" / f"{name}{exts}" for name in sibling_bases],
+        *[Path(f"{name}{exts}") for name in sibling_bases],
     ]
     for p in candidates:
         if p.is_file():

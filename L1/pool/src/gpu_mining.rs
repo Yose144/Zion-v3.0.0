@@ -575,10 +575,10 @@ impl GpuMiner {
 // ──── ETC mining thread (runs outside tokio) ─────────────────────────────────
 
 fn etc_mine_loop(
-    _job_ref: Arc<Mutex<Option<EtcJob>>>,
-    _new_job_flag: Arc<AtomicBool>,
-    _stats: Arc<GpuMiningStats>,
-    _write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+    job_ref: Arc<Mutex<Option<EtcJob>>>,
+    new_job_flag: Arc<AtomicBool>,
+    stats: Arc<GpuMiningStats>,
+    write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
     #[allow(dead_code)] _wallet: String,
     #[allow(dead_code)] _threads: usize,
 ) {
@@ -852,10 +852,10 @@ impl GpuMiner {
 // ──── ERG mining thread ───────────────────────────────────────────────────────
 
 fn erg_mine_loop(
-    _job_ref: Arc<Mutex<Option<ErgJob>>>,
-    _new_job_flag: Arc<AtomicBool>,
-    _stats: Arc<GpuMiningStats>,
-    _write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
+    job_ref: Arc<Mutex<Option<ErgJob>>>,
+    new_job_flag: Arc<AtomicBool>,
+    stats: Arc<GpuMiningStats>,
+    write_half: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
 ) {
     #[cfg(not(feature = "native-autolykos"))]
     {
