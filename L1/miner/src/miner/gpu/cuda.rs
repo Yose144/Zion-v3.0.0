@@ -12,7 +12,7 @@ use anyhow::{anyhow, Result};
 use std::time::Instant;
 
 #[cfg(feature = "cuda")]
-use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
+use cudarc::driver::{CudaDevice, CudaSlice, DeviceRepr, LaunchAsync, LaunchConfig};
 #[cfg(feature = "cuda")]
 use cudarc::nvrtc::compile_ptx;
 
@@ -23,7 +23,15 @@ const CUDA_KERNEL: &str = include_str!("kernels/cosmic_harmony_v3.cu");
 /// Scratchpad bytes per thread (must match CUDA_SCRATCHPAD_BYTES in kernel)
 const CUDA_SCRATCHPAD_BYTES: usize = 64 * 1024;  // 64 KiB
 /// Max parallel threads when memory-hard is active
-const CUDA_MH_BATCH_DEFAULT: usize = 512;
+const CUDA_MH_BATCH_DEFAULT: usize = 2048;
+
+#[cfg(feature = "cuda")]
+fn cuda_result<T>(
+    result: std::result::Result<T, cudarc::driver::DriverError>,
+    context: &str,
+) -> Result<T> {
+    result.map_err(|e| anyhow!("{}: {:?}", context, e))
+}
 
 /// CUDA miner implementation — CHv4 full pipeline
 pub struct CudaMiner {
@@ -74,8 +82,8 @@ impl CudaMiner {
                 .ok()
                 .and_then(|v| v.trim().parse::<usize>().ok())
                 .unwrap_or(CUDA_MH_BATCH_DEFAULT)
-                .max(32)
-                .min(8192);
+                .max(64)
+                .min(16384);
 
             Ok(Self {
                 device_id,
@@ -114,34 +122,40 @@ impl GpuMiner for CudaMiner {
         {
             println!("[CUDA] Initializing device {}", self.device_id);
 
-            let device = CudaDevice::new(self.device_id)?;
+            let device = cuda_result(CudaDevice::new(self.device_id), "CUDA device init failed")?;
 
             // Compile PTX kernel (CHv4 full pipeline)
             println!("[CUDA] Compiling PTX for Cosmic Harmony v4...");
             let ptx =
                 compile_ptx(CUDA_KERNEL).map_err(|e| anyhow!("Failed to compile PTX: {:?}", e))?;
-            device.load_ptx(ptx, "cosmic_harmony", &["cosmic_harmony_v3_mine"])?;
+            cuda_result(
+                device.load_ptx(ptx, "cosmic_harmony", &["cosmic_harmony_v3_mine"]),
+                "CUDA PTX load failed",
+            )?;
 
             // Allocate core buffers
-            let header_buf = device.alloc_zeros::<u8>(80)?;
-            let results_buf = device.alloc_zeros::<u64>(2)?;
-            let result_count_buf = device.alloc_zeros::<u32>(1)?;
-            let result_hash_buf = device.alloc_zeros::<u8>(32)?;
+            let header_buf = cuda_result(device.alloc_zeros::<u8>(80), "CUDA header alloc failed")?;
+            let results_buf = cuda_result(device.alloc_zeros::<u64>(2), "CUDA results alloc failed")?;
+            let result_count_buf = cuda_result(device.alloc_zeros::<u32>(1), "CUDA result-count alloc failed")?;
+            let result_hash_buf = cuda_result(device.alloc_zeros::<u8>(32), "CUDA result-hash alloc failed")?;
 
             // Scratchpad: mh_batch_size × 64 KiB
             let scratchpad_len = self.mh_batch_size * CUDA_SCRATCHPAD_BYTES;
             println!("[CUDA] Allocating scratchpad: {} MiB ({} threads × 64 KiB)",
                 scratchpad_len / (1024 * 1024), self.mh_batch_size);
-            let scratchpad_buf = device.alloc_zeros::<u8>(scratchpad_len)?;
+            let scratchpad_buf = cuda_result(
+                device.alloc_zeros::<u8>(scratchpad_len),
+                "CUDA scratchpad alloc failed",
+            )?;
 
             // CHv4 NPU weights — derived once from genesis seed
             let npu_w = zion_cosmic_harmony_v3::algorithms_npu::chv4_npu_weights_flat();
-            let npu_w1_buf = device.htod_copy(npu_w.w1.clone())?;
-            let npu_b1_buf = device.htod_copy(npu_w.b1.to_vec())?;
-            let npu_w2_buf = device.htod_copy(npu_w.w2.clone())?;
-            let npu_b2_buf = device.htod_copy(npu_w.b2.to_vec())?;
-            let npu_scale1_buf = device.htod_copy(npu_w.scale1.to_vec())?;
-            let npu_scale2_buf = device.htod_copy(npu_w.scale2.to_vec())?;
+            let npu_w1_buf = cuda_result(device.htod_copy(npu_w.w1.clone()), "CUDA NPU W1 upload failed")?;
+            let npu_b1_buf = cuda_result(device.htod_copy(npu_w.b1.to_vec()), "CUDA NPU B1 upload failed")?;
+            let npu_w2_buf = cuda_result(device.htod_copy(npu_w.w2.clone()), "CUDA NPU W2 upload failed")?;
+            let npu_b2_buf = cuda_result(device.htod_copy(npu_w.b2.to_vec()), "CUDA NPU B2 upload failed")?;
+            let npu_scale1_buf = cuda_result(device.htod_copy(npu_w.scale1.to_vec()), "CUDA NPU scale1 upload failed")?;
+            let npu_scale2_buf = cuda_result(device.htod_copy(npu_w.scale2.to_vec()), "CUDA NPU scale2 upload failed")?;
             println!("[CUDA] CHv4 NPU weights uploaded ({} B)",
                 npu_w.w1.len() + npu_w.b1.len() + npu_w.w2.len() + npu_w.b2.len()
                 + npu_w.scale1.len() * 2 + npu_w.scale2.len() * 2);
@@ -253,12 +267,12 @@ impl GpuMiner for CudaMiner {
             // Upload header (pad to 80 bytes)
             let mut header80 = [0u8; 80];
             header80[..header.len()].copy_from_slice(header);
-            device.htod_copy_into(header80.to_vec(), header_buf)?;
+            cuda_result(device.htod_copy_into(header80.to_vec(), header_buf), "CUDA header upload failed")?;
 
             // Reset result buffers
-            device.htod_copy_into(vec![0u64, 0u64], results_buf)?;
-            device.htod_copy_into(vec![0u32], result_count_buf)?;
-            device.htod_copy_into(vec![0u8; 32], result_hash_buf)?;
+            cuda_result(device.htod_copy_into(vec![0u64, 0u64], results_buf), "CUDA results reset failed")?;
+            cuda_result(device.htod_copy_into(vec![0u32], result_count_buf), "CUDA result-count reset failed")?;
+            cuda_result(device.htod_copy_into(vec![0u8; 32], result_hash_buf), "CUDA result-hash reset failed")?;
 
             // Limit batch to scratchpad capacity
             let effective_batch = if memory_hard == 1 {
@@ -281,37 +295,42 @@ impl GpuMiner for CudaMiner {
                 shared_mem_bytes: 0,
             };
 
+            let header_len_u32 = header.len() as u32;
+            let nonce_start_u64 = nonce_start;
+            let target_u32_kernel = target_u32;
+            let memory_hard_u32 = memory_hard;
+            let chv4_u32 = chv4;
+            let chv4_2_u32 = chv4_2;
+            let mut kernel_params = vec![
+                header_buf.as_kernel_param(),
+                header_len_u32.as_kernel_param(),
+                nonce_start_u64.as_kernel_param(),
+                target_u32_kernel.as_kernel_param(),
+                results_buf.as_kernel_param(),
+                result_count_buf.as_kernel_param(),
+                result_hash_buf.as_kernel_param(),
+                memory_hard_u32.as_kernel_param(),
+                scratchpad_buf.as_kernel_param(),
+                chv4_u32.as_kernel_param(),
+                npu_w1_buf.as_kernel_param(),
+                npu_b1_buf.as_kernel_param(),
+                npu_w2_buf.as_kernel_param(),
+                npu_b2_buf.as_kernel_param(),
+                npu_scale1_buf.as_kernel_param(),
+                npu_scale2_buf.as_kernel_param(),
+                chv4_2_u32.as_kernel_param(),
+            ];
+
             unsafe {
-                func.launch(
-                    config,
-                    (
-                        header_buf,
-                        header.len() as u32,
-                        nonce_start,
-                        target_u32,
-                        results_buf,
-                        result_count_buf,
-                        result_hash_buf,
-                        memory_hard,
-                        scratchpad_buf,
-                        chv4,
-                        npu_w1_buf,
-                        npu_b1_buf,
-                        npu_w2_buf,
-                        npu_b2_buf,
-                        npu_scale1_buf,
-                        npu_scale2_buf,
-                        chv4_2,
-                    ),
-                )?;
+                cuda_result(func.launch(config, &mut kernel_params), "CUDA kernel launch failed")?;
             }
 
-            device.synchronize()?;
+            cuda_result(device.synchronize(), "CUDA synchronize failed")?;
 
-            let count_vec = device.dtoh_sync_copy(result_count_buf)?;
+            let count_vec = cuda_result(device.dtoh_sync_copy(result_count_buf), "CUDA result-count download failed")?;
             if count_vec[0] > 0 {
-                let res_vec = device.dtoh_sync_copy(results_buf)?;
-                let hash_vec = device.dtoh_sync_copy(result_hash_buf)?;
+                let res_vec = cuda_result(device.dtoh_sync_copy(results_buf), "CUDA results download failed")?;
+                let hash_vec = cuda_result(device.dtoh_sync_copy(result_hash_buf), "CUDA result-hash download failed")?;
                 let nonce = res_vec[1];
                 let mut hash = [0u8; 32];
                 hash.copy_from_slice(&hash_vec[..32]);
@@ -357,23 +376,20 @@ impl GpuMiner for CudaMiner {
 pub fn detect_cuda_devices() -> Result<Vec<GpuDevice>> {
     #[cfg(feature = "cuda")]
     {
-        let count = cudarc::driver::result::device::get_count()
+        let count = CudaDevice::count()
             .map_err(|e| anyhow!("Failed to get CUDA device count: {:?}", e))?;
 
         let mut devices = Vec::new();
         for i in 0..count {
-            if let Ok(device) = CudaDevice::new(i) {
+            let ordinal = i as usize;
+            if let Ok(device) = CudaDevice::new(ordinal) {
                 let name = device
                     .name()
-                    .unwrap_or_else(|_| format!("CUDA Device {}", i));
-
-                let memory_mb = device
-                    .total_memory()
-                    .map(|m| (m / (1024 * 1024)) as u64)
-                    .unwrap_or(0);
+                    .unwrap_or_else(|_| format!("CUDA Device {}", ordinal));
+                let memory_mb = 0;
 
                 devices.push(GpuDevice {
-                    id: i,
+                    id: ordinal,
                     name,
                     platform: GpuPlatform::Cuda,
                     compute_units: 0,
