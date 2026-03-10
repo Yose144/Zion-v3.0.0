@@ -433,12 +433,12 @@ int gelu_int8(int x)
 }
 
 void npu_mix(const uchar in64[64], uchar out64[64],
-             __constant const char *w1,      /* [128][64]  = 8192 bytes */
-             __constant const char *b1,      /* [128]      = 128 bytes  */
-             __constant const char *w2,      /* [64][128]  = 8192 bytes */
-             __constant const char *b2,      /* [64]       = 64 bytes   */
-             __constant const short *scale1, /* [128]      = 256 bytes  */
-             __constant const short *scale2) /* [64]       = 128 bytes  */
+             __global const char *w1,      /* [128][64]  = 8192 bytes */
+             __global const char *b1,      /* [128]      = 128 bytes  */
+             __global const char *w2,      /* [64][128]  = 8192 bytes */
+             __global const char *b2,      /* [64]       = 64 bytes   */
+             __global const short *scale1, /* [128]      = 256 bytes  */
+             __global const short *scale2) /* [64]       = 128 bytes  */
 {
     /* Input: u8 → signed i8 → i32 */
     int input_i32[64];
@@ -658,12 +658,12 @@ __kernel void deeksha_mine(
     uint                   target_u32,     /* [4] LE u32 target              */
     __global ulong        *result_nonce,   /* [5] output: winning nonce      */
     __global uchar        *result_hash,    /* [6] output: 32-byte hash       */
-    __constant const char *npu_w1,         /* [7] MLP W1 [128×64]            */
-    __constant const char *npu_b1,         /* [8] MLP b1 [128]               */
-    __constant const char *npu_w2,         /* [9] MLP W2 [64×128]            */
-    __constant const char *npu_b2,         /* [10] MLP b2 [64]               */
-    __constant const short *npu_scale1,    /* [11] LayerNorm scale1 [128]    */
-    __constant const short *npu_scale2     /* [12] LayerNorm scale2 [64]     */
+    __global const char *npu_w1,         /* [7] MLP W1 [128×64]            */
+    __global const char *npu_b1,         /* [8] MLP b1 [128]               */
+    __global const char *npu_w2,         /* [9] MLP W2 [64×128]            */
+    __global const char *npu_b2,         /* [10] MLP b2 [64]               */
+    __global const short *npu_scale1,    /* [11] LayerNorm scale1 [128]    */
+    __global const short *npu_scale2     /* [12] LayerNorm scale2 [64]     */
 )
 {
     uint tid   = get_global_id(0);
