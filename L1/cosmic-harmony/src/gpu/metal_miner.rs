@@ -137,11 +137,25 @@ impl MetalMiner {
             .new_compute_pipeline_state_with_function(&benchmark_fn)
             .map_err(|e| MetalError::PipelineError(format!("{:?}", e)))?;
 
-        // Calculate optimal threads per threadgroup
-        // M1/M2/M3 support up to 1024 threads per threadgroup.
-        // Use the pipeline's maximum to maximize GPU occupancy.
+        // Calculate threads per threadgroup.
+        // Deeksha is register-heavy and uses a large per-thread working set,
+        // so the raw Metal maximum often hurts occupancy on Apple Silicon.
+        // Default conservatively by chip family, with an env override for tuning.
         let max_threads = pipeline_mine.max_total_threads_per_threadgroup();
-        let threads_per_threadgroup = max_threads as usize;
+        let device_name = device.name().to_string();
+        let default_threads_per_threadgroup = if device_name.contains("M1") {
+            64usize
+        } else {
+            128usize
+        }
+        .min(max_threads as usize);
+
+        let threads_per_threadgroup = std::env::var("ZION_METAL_THREADS_PER_TG")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .filter(|v| *v > 0)
+            .map(|v| v.min(max_threads as usize))
+            .unwrap_or(default_threads_per_threadgroup);
 
         log::debug!("   Threads per threadgroup: {}", threads_per_threadgroup);
         log::debug!("   Batch size: {}", batch_size);

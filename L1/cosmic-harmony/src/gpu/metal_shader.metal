@@ -107,6 +107,38 @@ inline uint64_t rotl64(uint64_t x, int n) {
     return (x << n) | (x >> (64 - n));
 }
 
+inline uint64_t load_le_u64_thread(thread const uint8_t *src) {
+    uint64_t word = 0;
+    for (int j = 0; j < 8; j++) {
+        word |= uint64_t(src[j]) << (j * 8);
+    }
+    return word;
+}
+
+inline uint64_t load_le_u64_device(device const uint8_t *src) {
+    uint64_t word = 0;
+    for (int j = 0; j < 8; j++) {
+        word |= uint64_t(src[j]) << (j * 8);
+    }
+    return word;
+}
+
+inline void store_hash32_from_state(thread const uint64_t *state, thread uint8_t *output) {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 8; j++) {
+            output[i * 8 + j] = uint8_t(state[i] >> (j * 8));
+        }
+    }
+}
+
+inline void store_hash64_from_state(thread const uint64_t *state, thread uint8_t *output) {
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            output[i * 8 + j] = uint8_t(state[i] >> (j * 8));
+        }
+    }
+}
+
 // ============================================================================
 // Keccak-f[1600] Permutation (24 rounds) — thread-local
 // ============================================================================
@@ -196,11 +228,40 @@ void keccak256_gpu(thread const uint8_t *input, int input_len, thread uint8_t *o
     keccak_f1600(state);
     
     // Squeeze 32 bytes
-    for (int i = 0; i < 4; i++) {
+    store_hash32_from_state(state, output);
+}
+
+// Specialized Keccak-256 for fixed 88-byte input layout:
+// header[0..80] (zero-padded to 80 bytes) || nonce_le[8].
+// This avoids building a temporary 88-byte thread-local buffer on the hot path.
+void keccak256_header_nonce_gpu(
+    device const uint8_t *header,
+    int header_len,
+    uint64_t nonce,
+    thread uint8_t *output
+) {
+    uint64_t state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    uint8_t block[136];
+    for (int i = 0; i < 136; i++) block[i] = 0;
+
+    int h_len = min(header_len, 80);
+    for (int i = 0; i < h_len; i++) block[i] = header[i];
+    for (int b = 0; b < 8; b++) block[80 + b] = uint8_t(nonce >> (b * 8));
+    block[88] = 0x01;
+    block[135] |= 0x80;
+
+    for (int i = 0; i < 17; i++) {
+        uint64_t word = 0;
         for (int j = 0; j < 8; j++) {
-            output[i * 8 + j] = uint8_t(state[i] >> (j * 8));
+            word |= uint64_t(block[i * 8 + j]) << (j * 8);
         }
+        state[i] ^= word;
     }
+    keccak_f1600(state);
+
+    store_hash32_from_state(state, output);
 }
 
 // ============================================================================
@@ -248,11 +309,141 @@ void sha3_512_gpu(thread const uint8_t *input, int input_len, thread uint8_t *ou
     keccak_f1600(state);
     
     // Squeeze 64 bytes
-    for (int i = 0; i < 8; i++) {
+    store_hash64_from_state(state, output);
+}
+
+// Specialized SHA3-512 for 32-byte input.
+// Used immediately after Keccak-256 in the main Deeksha pipeline.
+void sha3_512_32_gpu(thread const uint8_t input[32], thread uint8_t *output) {
+    uint64_t state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    uint8_t block[72];
+    for (int i = 0; i < 72; i++) block[i] = 0;
+    for (int i = 0; i < 32; i++) block[i] = input[i];
+    block[32] = 0x06;
+    block[71] |= 0x80;
+
+    for (int i = 0; i < 9; i++) {
+        uint64_t word = 0;
         for (int j = 0; j < 8; j++) {
-            output[i * 8 + j] = uint8_t(state[i] >> (j * 8));
+            word |= uint64_t(block[i * 8 + j]) << (j * 8);
         }
+        state[i] ^= word;
     }
+    keccak_f1600(state);
+
+    store_hash64_from_state(state, output);
+}
+
+// Specialized SHA3-512 for exact 72-byte input state[64] || counter_le8.
+void sha3_512_state_counter_gpu(
+    thread const uint8_t state_bytes[64],
+    uint64_t counter,
+    thread uint8_t output[64]
+) {
+    uint64_t state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    for (int i = 0; i < 8; i++) {
+        state[i] ^= load_le_u64_thread(state_bytes + i * 8);
+    }
+    state[8] ^= counter;
+    keccak_f1600(state);
+
+    // Exact full-rate absorb means an empty padded block follows.
+    state[0] ^= 0x06ULL;
+    state[8] ^= 0x8000000000000000ULL;
+    keccak_f1600(state);
+
+    store_hash64_from_state(state, output);
+}
+
+// Specialized SHA3-512 for exact 208-byte input:
+// cur[64] || prev[64] || rand[64] || pass_le8 || cur_idx_le8.
+void sha3_512_mix_block_gpu(
+    device const uint8_t* cur_blk,
+    device const uint8_t* prev_blk,
+    device const uint8_t* rand_blk,
+    uint64_t pass64,
+    uint64_t cur64,
+    thread uint8_t output[64]
+) {
+    uint64_t state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    // Block 1: cur[64] || prev[0..7]
+    for (int i = 0; i < 8; i++) state[i] ^= load_le_u64_device(cur_blk + i * 8);
+    state[8] ^= load_le_u64_device(prev_blk);
+    keccak_f1600(state);
+
+    // Block 2: prev[8..63] || rand[0..15]
+    for (int i = 0; i < 7; i++) state[i] ^= load_le_u64_device(prev_blk + 8 + i * 8);
+    state[7] ^= load_le_u64_device(rand_blk);
+    state[8] ^= load_le_u64_device(rand_blk + 8);
+    keccak_f1600(state);
+
+    // Final block: rand[16..63] || pass64 || cur64 || padding
+    for (int i = 0; i < 6; i++) state[i] ^= load_le_u64_device(rand_blk + 16 + i * 8);
+    state[6] ^= pass64;
+    state[7] ^= cur64;
+    state[8] ^= 0x8000000000000006ULL;
+    keccak_f1600(state);
+
+    store_hash64_from_state(state, output);
+}
+
+// Specialized Keccak-256 for exact 136-byte input acc[64] || chunk[64] || round_le8.
+void keccak256_acc_chunk_round_gpu(
+    thread const uint8_t acc[64],
+    device const uint8_t* blk,
+    uint64_t round,
+    thread uint8_t output[32]
+) {
+    uint64_t state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    for (int i = 0; i < 8; i++) state[i] ^= load_le_u64_thread(acc + i * 8);
+    for (int i = 0; i < 8; i++) state[8 + i] ^= load_le_u64_device(blk + i * 8);
+    state[16] ^= round;
+    keccak_f1600(state);
+
+    // Exact full-rate absorb => final empty padded block.
+    state[0] ^= 0x01ULL;
+    state[16] ^= 0x8000000000000000ULL;
+    keccak_f1600(state);
+
+    store_hash32_from_state(state, output);
+}
+
+// Specialized SHA3-512 for exact 192-byte input acc[64] || first_blk[64] || last_blk[64].
+void sha3_512_acc_edges_gpu(
+    thread const uint8_t acc[64],
+    device const uint8_t* first_blk,
+    device const uint8_t* last_blk,
+    thread uint8_t output[64]
+) {
+    uint64_t state[25];
+    for (int i = 0; i < 25; i++) state[i] = 0;
+
+    // Block 1: acc[64] || first[0..7]
+    for (int i = 0; i < 8; i++) state[i] ^= load_le_u64_thread(acc + i * 8);
+    state[8] ^= load_le_u64_device(first_blk);
+    keccak_f1600(state);
+
+    // Block 2: first[8..63] || last[0..15]
+    for (int i = 0; i < 7; i++) state[i] ^= load_le_u64_device(first_blk + 8 + i * 8);
+    state[7] ^= load_le_u64_device(last_blk);
+    state[8] ^= load_le_u64_device(last_blk + 8);
+    keccak_f1600(state);
+
+    // Final block: last[16..63] || padding
+    for (int i = 0; i < 6; i++) state[i] ^= load_le_u64_device(last_blk + 16 + i * 8);
+    state[6] ^= 0x06ULL;
+    state[8] ^= 0x8000000000000000ULL;
+    keccak_f1600(state);
+
+    store_hash64_from_state(state, output);
 }
 
 // ============================================================================
@@ -488,10 +679,7 @@ void metal_sha3_512_state_counter(
     uint64_t counter,
     thread uint8_t output[64]
 ) {
-    uint8_t input[72];
-    for (int i = 0; i < 64; i++) input[i] = state[i];
-    for (int b = 0; b < 8; b++) input[64+b] = uint8_t(counter >> (b * 8));
-    sha3_512_gpu(input, 72, output);
+    sha3_512_state_counter_gpu(state, counter, output);
 }
 
 // Initialise scratchpad from 64-byte seed (= SHA3-512(header||nonce)).
@@ -520,23 +708,11 @@ void metal_mix_block(
     device uint8_t* prev_blk = pad + uint64_t(prev_idx) * uint64_t(METAL_BLOCK_SIZE);
     device uint8_t* rand_blk = pad + uint64_t(rand_idx) * uint64_t(METAL_BLOCK_SIZE);
 
-    // combined = cur[64] || prev[64] || rand[64] || pass_le8[8] || cur_idx_le8[8]  (total 208 bytes)
-    uint8_t combined[208];
-    for (int i = 0; i < 64; i++) {
-        combined[i]       = cur_blk[i];
-        combined[64 + i]  = prev_blk[i];
-        combined[128 + i] = rand_blk[i];
-    }
-    // 16-byte context: pass_le8 (8 bytes) || cur_idx_le8 (8 bytes) — matches CPU
     uint64_t pass64 = uint64_t(pass_num);
     uint64_t cur64  = uint64_t(cur_idx);
-    for (int b = 0; b < 8; b++) {
-        combined[192 + b] = uint8_t(pass64 >> (b * 8));
-        combined[200 + b] = uint8_t(cur64  >> (b * 8));
-    }
 
     uint8_t hash[64];
-    sha3_512_gpu(combined, 208, hash);
+    sha3_512_mix_block_gpu(cur_blk, prev_blk, rand_blk, pass64, cur64, hash);
 
     for (int i = 0; i < 64; i++) cur_blk[i] ^= hash[i];
 }
@@ -600,15 +776,10 @@ void metal_random_read_mix(
     uint64_t pos = pos64 % uint64_t(METAL_BLOCK_COUNT);
 
     for (uint64_t r = 0u; r < uint64_t(METAL_RANDOM_READS); r++) {
-        // keccak256(acc[64] || chunk[64] || r_le8[8]) = 136 bytes
-        uint8_t inp[136];
-        for (int i = 0; i < 64; i++) inp[i] = acc[i];
         device const uint8_t* blk = pad + pos * uint64_t(METAL_BLOCK_SIZE);
-        for (int i = 0; i < 64; i++) inp[64 + i] = blk[i];
-        for (int b = 0; b < 8; b++) inp[128 + b] = uint8_t(r >> (b * 8));
 
         uint8_t d[32];
-        keccak256_gpu(inp, 136, d);
+        keccak256_acc_chunk_round_gpu(acc, blk, r, d);
 
         // acc[0..32]  ^= d[i]           (XOR — matches CPU)
         // acc[32..64] wrapping_add d[i] (matches CPU)
@@ -629,14 +800,9 @@ void metal_random_read_mix(
         pos = (next_seed ^ pos ^ r) % uint64_t(METAL_BLOCK_COUNT);
     }
 
-    // Final: SHA3-512(acc[64] || pad[0..64] || pad[-64..]) — matches CPU
-    uint8_t final_inp[192];
-    for (int i = 0; i < 64; i++) final_inp[i] = acc[i];
     device const uint8_t* first_blk = pad;
     device const uint8_t* last_blk  = pad + uint64_t(METAL_BLOCK_COUNT - 1u) * uint64_t(METAL_BLOCK_SIZE);
-    for (int i = 0; i < 64; i++) final_inp[64  + i] = first_blk[i];
-    for (int i = 0; i < 64; i++) final_inp[128 + i] = last_blk[i];
-    sha3_512_gpu(final_inp, 192, output);
+    sha3_512_acc_edges_gpu(acc, first_blk, last_blk, output);
 }
 
 // Main memory-hard transform: init(gm_out) → passes → random-read-mix(gm_out) → output
@@ -809,7 +975,7 @@ void metal_npu_mixing(
 // ============================================================================
 
 void cosmic_harmony_v4_gpu(
-    thread const uint8_t *header,
+    device const uint8_t *header,
     int header_len,
     uint64_t nonce,
     device uint8_t* pad,
@@ -821,20 +987,13 @@ void cosmic_harmony_v4_gpu(
     device const short* npu_scale2,
     thread uint8_t *output            // 32 bytes
 ) {
-    // Build 88-byte input: header[0..80] || nonce(8 LE)
-    uint8_t inp[88];
-    for (int i = 0; i < 88; i++) inp[i] = 0;
-    int h_len = min(header_len, 80);
-    for (int i = 0; i < h_len; i++) inp[i] = header[i];
-    for (int b = 0; b < 8; b++) inp[80 + b] = uint8_t(nonce >> (b * 8));
-
     // Step 1: Keccak-256 → 32 bytes
     uint8_t s1[32];
-    keccak256_gpu(inp, 88, s1);
+    keccak256_header_nonce_gpu(header, header_len, nonce, s1);
 
     // Step 2: SHA3-512 → 64 bytes  (also used as scratchpad seed)
     uint8_t s2[64];
-    sha3_512_gpu(s1, 32, s2);
+    sha3_512_32_gpu(s1, s2);
 
     // Step 3: Golden Matrix → 64 bytes
     uint8_t s3[64];
@@ -893,14 +1052,10 @@ kernel void cosmic_harmony_v3_mine(
     // Each thread gets its own 64 KiB slice of the scratchpad
     device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
 
-    // Copy header to thread-local stack
-    uint8_t header[80];
-    for (int i = 0; i < 80; i++) header[i] = params.header[i];
-
     // Compute CHv4 hash
     uint8_t hash[32];
     cosmic_harmony_v4_gpu(
-        header, int(params.header_len), nonce,
+        params.header, int(params.header_len), nonce,
         my_pad,
         npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2,
         hash
@@ -951,12 +1106,9 @@ kernel void cosmic_harmony_v3_benchmark(
     uint64_t nonce = params.start_nonce + uint64_t(thread_id);
     device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
 
-    uint8_t header[80];
-    for (int i = 0; i < 80; i++) header[i] = params.header[i];
-
     uint8_t hash[32];
     cosmic_harmony_v4_gpu(
-        header, int(params.header_len), nonce,
+        params.header, int(params.header_len), nonce,
         my_pad,
         npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2,
         hash
