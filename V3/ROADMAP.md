@@ -278,7 +278,7 @@ Exit criteria:
 
 Migration source: `L1/core/src/blockchain/reward.rs` (audit, extract logic, rewrite clean)
 
-Status: pending
+Status: done
 
 ### Phase 5b: LWMA Difficulty Adjustment (G3)
 

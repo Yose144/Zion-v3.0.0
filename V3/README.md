@@ -32,6 +32,7 @@ Out of scope for the bootstrap:
 - `L1/core` now also applies stricter transaction validation, exposes explicit block-body and miner-reward metadata in template and accepted-block state, and uses a journal-assisted recovery path when snapshot state is missing or unusable
 - `L1/core` now also supports contiguous peer block synchronization over P2P with `get_blocks_since`, `blocks`, and validated `announce_block` import
 - `L1/core` now also supports bootstrap catch-up from `ZION_SEED_PEERS`, so a fresh node can import a contiguous accepted-block batch on startup without manual announce steps
+- `L1/core` now carries the constitutional emission schedule: atomic units (flowers), decade decay, tail emission, and subsidy validation in peer block import
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
