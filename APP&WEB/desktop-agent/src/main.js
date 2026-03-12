@@ -459,6 +459,95 @@ try { $p.PriorityBoostEnabled = $true } catch {}
   }
 }
 
+/**
+ * One-click Windows Large Pages enabler.
+ * Checks if the current user has SeLockMemoryPrivilege and, if not, attempts
+ * to grant it by adding the user to the "Lock pages in memory" policy via
+ * an elevated PowerShell process. Returns { enabled, alreadyEnabled, error }.
+ * This is a synchronous, best-effort operation used before miner spawn.
+ */
+let _winLargePagesChecked = false;
+let _winLargePagesEnabled = false;
+function ensureWindowsLargePages() {
+  if (process.platform !== 'win32') return { enabled: false, alreadyEnabled: false, error: 'not windows' };
+  if (_winLargePagesChecked) return { enabled: _winLargePagesEnabled, alreadyEnabled: true, error: '' };
+
+  _winLargePagesChecked = true;
+
+  // Quick check: can we already get large page minimum?
+  try {
+    const checkScript = `
+$sig = @'
+[DllImport("kernel32.dll", SetLastError = true)]
+public static extern UIntPtr GetLargePageMinimum();
+'@
+$k = Add-Type -MemberDefinition $sig -Name 'K32LP' -Namespace 'Win32' -PassThru
+$lpm = $k::GetLargePageMinimum()
+Write-Output $lpm
+`.trim();
+    const checkResult = execFileSync('powershell', ['-NoProfile', '-Command', checkScript], {
+      timeout: 8000, encoding: 'utf8', windowsHide: true
+    }).trim();
+    const lpMin = Number(checkResult);
+    if (Number.isFinite(lpMin) && lpMin > 0) {
+      _winLargePagesEnabled = true;
+      logApp('largepages-check', JSON.stringify({ status: 'already-available', lpMin }));
+      return { enabled: true, alreadyEnabled: true, error: '' };
+    }
+  } catch { /* not available yet */ }
+
+  // Attempt to enable: grant SeLockMemoryPrivilege to current user via ntrights or secedit.
+  // This requires elevation (admin) — we use Start-Process -Verb RunAs.
+  try {
+    const username = process.env.USERNAME || process.env.USER || '';
+    if (!username) {
+      _winLargePagesEnabled = false;
+      return { enabled: false, alreadyEnabled: false, error: 'cannot determine username' };
+    }
+
+    // Use secedit to export, modify, and re-import security policy.
+    // This is the standard way to add SeLockMemoryPrivilege without Group Policy Editor.
+    const safeUser = username.replace(/'/g, "''");
+    const enableScript = [
+      "$ErrorActionPreference = 'Stop'",
+      "$tmpDir = [System.IO.Path]::GetTempPath()",
+      "$cfgFile = Join-Path $tmpDir 'zion_secpol_export.cfg'",
+      "$dbFile = Join-Path $tmpDir 'zion_secpol.sdb'",
+      "secedit /export /cfg $cfgFile /quiet",
+      "$content = Get-Content $cfgFile -Raw",
+      "$user = '" + safeUser + "'",
+      "if ($content -match 'SeLockMemoryPrivilege\\s*=\\s*(.+)') {",
+      "  $existing = $Matches[1].Trim()",
+      "  if ($existing -match [regex]::Escape($user)) { Write-Output 'ALREADY_GRANTED'; exit 0 }",
+      "  $content = $content -replace '(SeLockMemoryPrivilege\\s*=\\s*)(.*)', (\"$1\" + \"$2,$user\")",
+      "} else {",
+      "  $content = $content -replace '(\\[Privilege Rights\\])', (\"$1\" + \"`r`nSeLockMemoryPrivilege = $user\")",
+      "}",
+      "Set-Content $cfgFile $content -Force",
+      "secedit /configure /db $dbFile /cfg $cfgFile /quiet",
+      "Write-Output 'GRANTED'"
+    ].join('; ');
+
+    // Run elevated
+    const innerCmd = enableScript.replace(/'/g, "''");
+    const result = spawnSync('powershell', [
+      '-NoProfile', '-Command',
+      "Start-Process powershell -ArgumentList '-NoProfile','-Command','" + innerCmd + "' -Verb RunAs -Wait -PassThru | Select-Object -ExpandProperty ExitCode"
+    ], { timeout: 30000, encoding: 'utf8', windowsHide: true });
+
+    if (result.status === 0) {
+      _winLargePagesEnabled = true;
+      logApp('largepages-enable', JSON.stringify({ status: 'granted', user: username }));
+      return { enabled: true, alreadyEnabled: false, error: '' };
+    }
+    logApp('largepages-enable-failed', JSON.stringify({ status: result.status, stderr: String(result.stderr || '').slice(0, 200) }));
+    return { enabled: false, alreadyEnabled: false, error: `secedit exit ${result.status}` };
+  } catch (err) {
+    logApp('largepages-enable-error', err?.message || String(err));
+    return { enabled: false, alreadyEnabled: false, error: err?.message || String(err) };
+  }
+}
+
 app.on('second-instance', () => {
   logApp('second-instance');
   if (mainWindow) {
@@ -1864,6 +1953,43 @@ function detectGPU() {
         result.type = 'amd';
         result.name = nameMatch[1].trim();
         result.backendPreferred = 'opencl';
+      }
+    } catch {}
+  }
+
+  // 5. Windows GPU detection via PowerShell (AMD/Intel GPUs not found by nvidia-smi)
+  if (!result.available && process.platform === 'win32') {
+    try {
+      const out = execFileSync('powershell', [
+        '-NoProfile', '-Command',
+        'Get-CimInstance Win32_VideoController | Select-Object -First 1 -ExpandProperty Name'
+      ], { timeout: 8000, encoding: 'utf8', windowsHide: true });
+      const gpuName = out.trim();
+      if (gpuName && !/microsoft basic|remote desktop/i.test(gpuName)) {
+        result.available = true;
+        result.cpuOnly = false;
+        result.name = gpuName;
+        if (/radeon|amd|gfx/i.test(gpuName)) {
+          result.type = 'amd';
+          result.backendPreferred = 'opencl';
+        } else if (/intel|iris|uhd|arc/i.test(gpuName)) {
+          result.type = 'intel';
+          result.backendPreferred = 'opencl';
+        } else {
+          result.type = 'gpu';
+          result.backendPreferred = 'opencl';
+        }
+        // Try to get VRAM
+        try {
+          const memOut = execFileSync('powershell', [
+            '-NoProfile', '-Command',
+            'Get-CimInstance Win32_VideoController | Select-Object -First 1 -ExpandProperty AdapterRAM'
+          ], { timeout: 5000, encoding: 'utf8', windowsHide: true });
+          const ramBytes = Number(memOut.trim());
+          if (Number.isFinite(ramBytes) && ramBytes > 0) {
+            result.memory = `${Math.round(ramBytes / (1024 * 1024))} MB`;
+          }
+        } catch { /* ignore */ }
       }
     } catch {}
   }
@@ -3291,7 +3417,8 @@ function startMining(config) {
         `[CHvEkamDeeksha] Canonical fallback active pro main cosmic_harmony mining.\n` +
         `[CHvEkamDeeksha] Main path: ${mainMinerGpuDeeksha ? 'auto (runtime backend decides)' : 'cpu'}\n` +
         `[CHvEkamDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n` +
-        `[CHvEkamDeeksha] Memory: HugePages=${deekshaMainEnv.ZION_HUGEPAGES} | Scratchpad=64 KiB\n` +
+        `[CHvEkamDeeksha] Memory: HugePages=${deekshaMainEnv.ZION_HUGEPAGES} | Scratchpad=64 KiB` +
+        (process.platform === 'win32' ? ' | Windows Large Pages (VirtualAlloc)' : '') + `\n` +
         `[CHvEkamDeeksha] Native libs: ${deekshaNativeLibDirs.length} dirs | PYTHONPATH: ${deekshaMiningDir}\n`
     });
     minerBackendPreferred = _deekshaPreferredBackend;
@@ -3933,6 +4060,16 @@ function startMining(config) {
       // and exit without mining. The miner already auto-calculates optimal batch
       // size via calculate_optimal_batch_size() based on GPU memory at runtime.
     }
+    // Rust miner Ekam Deeksha scratchpad thread count (GPU memory-hard PoW).
+    // ZION_GPU_MH_BATCH controls how many threads' scratchpads are allocated in VRAM.
+    // Default=4096 (256 MiB). Higher values need more VRAM but may improve occupancy.
+    if (mainMinerGpu && !String(process.env.ZION_GPU_MH_BATCH || '').trim()) {
+      const gpuMem = parseGpuMemoryMb(gpuInfo);
+      // 4096 × 64 KiB = 256 MiB — sweet spot for 4-8 GB GPUs.
+      // 8192 × 64 KiB = 512 MiB — for 8+ GB GPUs.
+      const mhBatch = gpuMem >= 8000 ? 8192 : 4096;
+      env.ZION_GPU_MH_BATCH = String(mhBatch);
+    }
   } else {
     // Python miner / legacy .exe miner (shared CLI)
     const pythonUi = String(config?.pythonUi || process.env.ZION_PY_UI || 'trex').trim().toLowerCase();
@@ -4543,6 +4680,16 @@ function startMining(config) {
       hpNote = 'macOS x86_64 superpages | mmap+mlock';
     } else if (process.platform === 'linux') {
       hpNote = 'Linux mmap | sysctl vm.nr_hugepages=128 for 2 MiB pages';
+    } else if (process.platform === 'win32') {
+      // One-click: attempt to enable SeLockMemoryPrivilege for Windows Large Pages.
+      const lpResult = ensureWindowsLargePages();
+      if (lpResult.enabled) {
+        hpNote = lpResult.alreadyEnabled
+          ? 'Windows Large Pages ACTIVE (VirtualAlloc + SeLockMemoryPrivilege)'
+          : 'Windows Large Pages ENABLED (SeLockMemoryPrivilege granted — reboot may be needed)';
+      } else {
+        hpNote = 'Windows Large Pages (VirtualAlloc) | enable: secpol.msc → Lock pages in memory';
+      }
     } else {
       hpNote = 'mmap fallback';
     }
