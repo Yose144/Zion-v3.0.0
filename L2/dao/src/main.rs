@@ -7,7 +7,7 @@
 //! ## Usage
 //!
 //! ```sh
-//! # Default (DB at ./dao.db, API on :8080, L1 RPC at http://77.42.31.72:8444/jsonrpc)
+//! # Default (DB at ./dao.db, API on :8080, L1 RPC at http://91.98.122.165:8444/jsonrpc)
 //! cargo run --bin zion-dao
 //!
 //! # Override via env vars

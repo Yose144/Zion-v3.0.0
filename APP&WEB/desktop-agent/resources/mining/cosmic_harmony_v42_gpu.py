@@ -83,6 +83,17 @@ def _kernel_path(deeksha_name: str, legacy_name: str) -> Path:
     return _KERNEL_DIR / legacy_name
 
 
+def _source_contains_symbol(source_text: str, symbol: str) -> bool:
+    return f"{symbol}(" in source_text
+
+
+def _pick_first_symbol(source_text: str, *symbols: str) -> Optional[str]:
+    for symbol in symbols:
+        if _source_contains_symbol(source_text, symbol):
+            return symbol
+    return None
+
+
 def _gpu_batch_limits(backend: str) -> Tuple[int, int]:
     backend_name = str(backend or "auto").lower()
     if backend_name in ("cuda", "nvidia"):
@@ -225,7 +236,9 @@ class MetalBackend:
         self._setup()
 
     def _setup(self) -> None:
-        metal_src = _kernel_path("cosmic_harmony_deeksha.metal", "cosmic_harmony_v42.metal")
+        metal_src = _kernel_path("cosmic_harmony_ekam_deeksha.metal", "cosmic_harmony_deeksha.metal")
+        if not metal_src.exists():
+            metal_src = _KERNEL_DIR / "cosmic_harmony_v42.metal"
         if not metal_src.exists():
             log.warning("[Metal] deeksha/legacy .metal kernel nenalezen v %s", _KERNEL_DIR)
             return
@@ -245,12 +258,15 @@ class MetalBackend:
                 self._device = mc.Device()
                 with open(metal_src) as f:
                     src = f.read()
+                entry = _pick_first_symbol(src, "cosmic_harmony_ekam_mine", "cosmic_harmony_v3_mine", "chv42_mine")
+                if entry is None:
+                    raise RuntimeError("no compatible Metal mining entrypoint found")
                 self._pipeline = self._device.kernel(src)
-                self._pipeline.function("chv42_mine")
+                self._pipeline.function(entry)
                 self._ready = True
                 name = getattr(self._device, "name", lambda: "Apple GPU")
                 if callable(name): name = name()
-                log.info("[Metal] metalcompute device: %s", name)
+                log.info("[Metal] metalcompute device: %s (%s)", name, entry)
                 return
             except Exception as e:
                 log.warning("[Metal] metalcompute setup selhalo: %s", e)
@@ -268,9 +284,12 @@ class MetalBackend:
             lib, err = device.newLibraryWithSource_options_error_(src, opts, None)
             if lib is None:
                 raise RuntimeError(f"Metal compile: {err}")
-            fn = lib.newFunctionWithName_("chv42_mine")
+            entry = _pick_first_symbol(src, "cosmic_harmony_ekam_mine", "cosmic_harmony_v3_mine", "chv42_mine")
+            if entry is None:
+                raise RuntimeError("no compatible Metal mining entrypoint found")
+            fn = lib.newFunctionWithName_(entry)
             if fn is None:
-                raise RuntimeError("chv42_mine function not found in metallib")
+                raise RuntimeError(f"{entry} function not found in metallib")
             pipeline, err = device.newComputePipelineStateWithFunction_error_(fn, None)
             if pipeline is None:
                 raise RuntimeError(f"Pipeline state: {err}")
@@ -281,7 +300,7 @@ class MetalBackend:
             self._use_objc      = True
             self._ready         = True
             dev_name = device.name() if hasattr(device, "name") else "Apple GPU"
-            log.info("[Metal] PyObjC Metal device: %s", dev_name)
+            log.info("[Metal] PyObjC Metal device: %s (%s)", dev_name, entry)
 
             try:
                 self._objc_static_buffers = self._create_objc_static_buffers()
@@ -369,14 +388,9 @@ class MetalBackend:
 
         dynamic = {
             "rounded_nonce_count": int(rounded_nonce_count),
-            "header": self._objc_new_zero_buffer(128),
-            "header_len": self._objc_new_zero_buffer(4),
-            "nonce_base": self._objc_new_zero_buffer(8),
+            "params": self._objc_new_zero_buffer(128),
             "scratchpad": self._objc_new_zero_buffer(scratchpad_bytes),
-            "target": self._objc_new_zero_buffer(4),
-            "result_nonce": self._objc_new_zero_buffer(4),
-            "result_hash": self._objc_new_zero_buffer(32),
-            "nonce_count": self._objc_new_zero_buffer(4),
+            "result": self._objc_new_zero_buffer(48),
         }
         self._objc_dynamic_buffers = dynamic
         return dynamic
@@ -403,32 +417,29 @@ class MetalBackend:
         rounded_nonce_count = ((max(1, int(nonce_count)) + 63) // 64) * 64
         dynamic = self._ensure_objc_dynamic_buffers(rounded_nonce_count)
         try:
-            header_view = dynamic["header"].contents().as_buffer(128)
-            header_bytes = (header + bytes(128))[:128]
-            header_view[:] = header_bytes
+            params_view = dynamic["params"].contents().as_buffer(128)
+            params_view[:] = b"\x00" * 128
+            header_bytes = header[:80].ljust(80, b"\x00")
+            params_view[0:8] = struct.pack("<Q", int(nonce_base))
+            params_view[8:12] = struct.pack("<I", min(len(header), 80))
+            params_view[12:92] = header_bytes
+            params_view[92:96] = struct.pack(">I", int(target_u32) & 0xFFFFFFFF)
+            params_view[96:124] = b"\x00" * 28
+            params_view[124:128] = struct.pack("<I", 0)
 
-            dynamic["header_len"].contents().as_buffer(4)[:] = struct.pack("<I", len(header))
-            dynamic["nonce_base"].contents().as_buffer(8)[:] = struct.pack("<Q", int(nonce_base))
-            dynamic["target"].contents().as_buffer(4)[:] = struct.pack("<I", int(target_u32))
-            dynamic["nonce_count"].contents().as_buffer(4)[:] = struct.pack("<I", int(nonce_count))
-            dynamic["result_nonce"].contents().as_buffer(4)[:] = struct.pack("<I", 0xFFFFFFFF)
-            dynamic["result_hash"].contents().as_buffer(32)[:] = b"\x00" * 32
+            result_view = dynamic["result"].contents().as_buffer(48)
+            result_view[:] = b"\x00" * 48
 
             buffers = [
-                dynamic["header"],
-                dynamic["header_len"],
-                dynamic["nonce_base"],
+                dynamic["params"],
+                dynamic["result"],
                 dynamic["scratchpad"],
-                dynamic["target"],
-                dynamic["result_nonce"],
-                dynamic["result_hash"],
                 self._objc_static_buffers["w1"],
                 self._objc_static_buffers["b1"],
                 self._objc_static_buffers["w2"],
                 self._objc_static_buffers["b2"],
                 self._objc_static_buffers["scale1"],
                 self._objc_static_buffers["scale2"],
-                dynamic["nonce_count"],
             ]
         except Exception as e:
             log.warning("[Metal] buffer allocation: %s", e)
@@ -449,13 +460,13 @@ class MetalBackend:
         cmd.waitUntilCompleted()
 
         # Výstup je přímo v numpy polích (unified memory — žádné kopírování)
-        result_nonce_view = buffers[5].contents().as_buffer(4)
-        result_hash_view = buffers[6].contents().as_buffer(32)
-        out_nonce = int(np.frombuffer(result_nonce_view, dtype=np.uint32, count=1)[0])
-        out_hash  = bytes(result_hash_view)
+        result_view = buffers[1].contents().as_buffer(48)
+        found_nonce = struct.unpack_from("<Q", result_view, 0)[0]
+        found_hash = bytes(result_view[8:40])
+        found_flag = struct.unpack_from("<I", result_view, 40)[0]
 
-        if out_nonce != 0xFFFFFFFF:
-            return (int(nonce_base) + out_nonce, out_hash)
+        if found_flag != 0:
+            return (int(found_nonce), found_hash)
         return None
 
     def mine(
@@ -578,11 +589,14 @@ class CUDABackend:
                     src = f.read()
 
                 # Odstraň extern "C" blok při kompilaci přes pycuda (dostupné jako C++)
+                entry = _pick_first_symbol(src, "ekam_deeksha_mine", "chv42_mine")
+                if entry is None:
+                    raise RuntimeError("no compatible CUDA kernel entrypoint found")
                 mod = SourceModule(src, no_extern_c=True, options=["-O3", "-arch=sm_70"])
-                self._pycuda = (drv, mod)
+                self._pycuda = (drv, mod, entry)
                 n_dev = drv.Device.count()
                 name = drv.Device(0).name() if n_dev > 0 else "Unknown"
-                log.info("[CUDA] pycuda OK, device[0]: %s", name)
+                log.info("[CUDA] pycuda OK, device[0]: %s (%s)", name, entry)
                 self._ready = True
                 return
             except Exception as e:
@@ -625,10 +639,13 @@ class CUDABackend:
                 if cu_src.exists():
                     with open(cu_src) as f:
                         src = f.read()
-                    kernel = cupy.RawKernel(src, "chv42_mine", options=("-O3",), backend="nvcc")
+                    entry = _pick_first_symbol(src, "ekam_deeksha_mine", "chv42_mine")
+                    if entry is None:
+                        raise RuntimeError("no compatible CUDA kernel entrypoint found")
+                    kernel = cupy.RawKernel(src, entry, options=("-O3",), backend="nvcc")
                     self._cupy = (cupy, kernel)
                     self._ready = True
-                    log.info("[CUDA] cupy RawKernel OK")
+                    log.info("[CUDA] cupy RawKernel OK (%s)", entry)
             except Exception as e:
                 log.warning("[CUDA] cupy setup: %s", e)
 
@@ -662,8 +679,8 @@ class CUDABackend:
             import numpy as np
             import pycuda.driver as drv
 
-            drv_mod, mod = self._pycuda
-            kernel = mod.get_function("chv42_mine")
+            drv_mod, mod, entry = self._pycuda
+            kernel = mod.get_function(entry)
 
             hdr_arr = np.frombuffer(header[:128].ljust(128, b"\x00"), dtype=np.uint8)
             sp_arr  = drv_mod.mem_alloc(nonce_count * 65536)  # 64 KiB/nonce
@@ -1201,6 +1218,45 @@ class DeekshaOpenCLBackend:
 
 
 # =============================================================================
+# Ekam Deeksha OpenCL Backend (Blake3 XOF scratchpad + 8-round fusion)
+# =============================================================================
+
+class EkamDeekshaOpenCLBackend(DeekshaOpenCLBackend):
+    """
+    Ekam Deeksha OpenCL backend — Blake3 XOF scratchpad init + Blake3 XOF
+    mixing, 8-round Cosmic Fusion.  Reuses the same canonical .cl source
+    which now includes the ``ekam_deeksha_mine`` kernel alongside
+    ``deeksha_mine``.
+    """
+
+    def __init__(self, device_idx: int = 0, platform_idx: int = -1) -> None:
+        # Initialise the parent — it compiles the .cl and creates buffers
+        super().__init__(device_idx=device_idx, platform_idx=platform_idx)
+
+        if not self._ready:
+            return
+
+        # Swap the kernel entry point to the Ekam variant
+        try:
+            self._kernel = self._program.ekam_deeksha_mine
+            log.info("[EkamDeekshaOpenCL] Ekam kernel activated")
+        except Exception:
+            log.warning("[EkamDeekshaOpenCL] ekam_deeksha_mine kernel not found in .cl source")
+            self._ready = False
+
+    def benchmark(self, nonce_count: int = 256) -> float:
+        nonce_count = _sanitize_gpu_batch_size(nonce_count, "ekam-deeksha-opencl")
+        dummy = b"ZION Ekam Deeksha OpenCL bench" + b"\x00" * 34
+        t0 = time.monotonic()
+        self.mine(dummy, 0, nonce_count, 0xFFFFFFFF)
+        dt = time.monotonic() - t0
+        hs = nonce_count / max(dt, 0.001)
+        log.info("[EkamDeekshaOpenCL] Benchmark: %.1f H/s (%d nonces / %.3f s)",
+                 hs, nonce_count, dt)
+        return hs
+
+
+# =============================================================================
 # NativeLib Backend (ctypes — deeksha/legacy dylib/.so/.dll)
 # =============================================================================
 
@@ -1226,7 +1282,7 @@ class NativeLibBackend:
         try:
             lib = ctypes.CDLL(str(lib_path))
             fn = None
-            for symbol in ("zion_deeksha_batch_mine", "cosmic_harmony_deeksha_batch_mine", "cosmic_harmony_v4_2_batch_mine"):
+            for symbol in ("ekam_cuda_mine", "zion_deeksha_batch_mine", "cosmic_harmony_deeksha_batch_mine", "cosmic_harmony_v4_2_batch_mine"):
                 if hasattr(lib, symbol):
                     fn = getattr(lib, symbol)
                     break
@@ -1328,6 +1384,13 @@ class CHv42GPU:
                 log.info("[CHv42GPU] Auto-detekce: metal (canonical Deeksha on Apple GPU)")
             else:
                 if _try_import("pyopencl") is not None:
+                    ecl = EkamDeekshaOpenCLBackend(device_idx=device_idx)
+                    if ecl.available:
+                        self._backend = ecl
+                        self._name    = "ekam-deeksha-opencl"
+                        self.batch_size = min(self.batch_size, 2048)
+                        log.info("[CHv42GPU] Auto-detekce: ekam-deeksha-opencl (Ekam Deeksha on GPU)")
+                        return
                     dcl = DeekshaOpenCLBackend(device_idx=device_idx)
                     if dcl.available:
                         self._backend = dcl
@@ -1361,7 +1424,13 @@ class CHv42GPU:
             backend = "opencl"
 
         if backend == "opencl":
-            # Try canonical Deeksha kernel first, then legacy
+            # Try Ekam Deeksha first, then canonical Deeksha, then legacy
+            ecl = EkamDeekshaOpenCLBackend(device_idx=device_idx)
+            if ecl.available:
+                self._backend = ecl
+                self._name    = "ekam-deeksha-opencl"
+                self.batch_size = min(self.batch_size, 2048)
+                return
             dcl = DeekshaOpenCLBackend(device_idx=device_idx)
             if dcl.available:
                 self._backend = dcl
@@ -1543,11 +1612,20 @@ def _run_gpu_stratum_miner(args: argparse.Namespace) -> None:
     import sys
     sys.path.insert(0, str(_HERE))
 
+    # Metal PyObjC runtime and the canonical dylib FFI loader still collide
+    # inside the same Python process on Apple Silicon. Keep FFI disabled for
+    # the imported fallback module; exact canonical verification is delegated
+    # to a separate helper process from inside the fallback miner itself.
+    if gpu.backend_name == "metal":
+        os.environ.setdefault("ZION_SKIP_NATIVE_DEEKSHA_FFI", "1")
+        log.info("[Main] Metal GPU path: forcing ZION_SKIP_NATIVE_DEEKSHA_FFI=1 for in-process fallback stability")
+
     try:
         try:
             from cosmic_harmony_deeksha_fallback import StratumMinerDeeksha as StratumMiner
         except Exception:
             from cosmic_harmony_v42_fallback import StratumMiner
+
         miner = StratumMiner(
             pool=args.pool,
             wallet=args.wallet,

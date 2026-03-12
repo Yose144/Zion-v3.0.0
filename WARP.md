@@ -124,8 +124,8 @@ pub const WARP_MEMO_VERSION: u32 = 1;
 | Item | Value |
 |---|---|
 | WARP Vault | `zion1warp0000000000000000000000000000vault` |
-| RPC primary | `http://77.42.31.72:8444` |
-| RPC backup | `http://46.225.126.243:8444` |
+| RPC primary | `http://91.98.122.165:8444` |
+| RPC backup | `http://127.0.0.1:8444` |
 | Validator | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` |
 
 ---
@@ -232,7 +232,7 @@ version = "0.1.0"
 network = "testnet"
 
 [l1]
-rpc_url = "http://77.42.31.72:8444"
+rpc_url = "http://91.98.122.165:8444"
 vault_address = "zion1warp0000000000000000000000000000vault"
 finality_blocks = 60
 poll_interval_secs = 15       # ← global poll cadence

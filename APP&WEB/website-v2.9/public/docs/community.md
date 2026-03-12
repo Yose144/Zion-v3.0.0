@@ -15,7 +15,7 @@
 
 | Repo | Popis |
 |------|-------|
-| [2.9.5-NativeAwakening](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening) | Nativní binárky, Docker, deployment |
+| [2.9.6](https://github.com/Zion-TerraNova/2.9.6) | Nativní binárky, Docker, deployment |
 | [v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet) | Mainnet příprava |
 | [2.9-QuantumLeap](https://github.com/Zion-TerraNova/2.9-QuantumLeap) | Python miner a nástroje |
 | [Zion-TestNet2.8.5](https://github.com/Zion-TerraNova/Zion-TestNet2.8.5) | Historický testnet |

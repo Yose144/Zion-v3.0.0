@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ZION Stats CORS Proxy
-Porušuje CORS bariéru — volá pool API z Helsinek a servíruje lokálně.
+Fetches pool/API data from the canonical Zion2 primary host and serves it locally.
 
 Použití:
     python scripts/stats_proxy.py
@@ -20,15 +20,13 @@ import time
 import os
 
 # ── Konfigurace ──────────────────────────────────────────────────────────────
-POOL_API      = "http://77.42.31.72:8080/stats"
+POOL_API      = "http://91.98.122.165:8080/stats"
 PROXY_PORT    = 9999
 STATIC_ROOT   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 
-# SSH přihlašovací údaje pro per-node docker stats
+# SSH přihlašovací údaje pro primární host
 NODES = {
-    "helsinki": {"host": "77.42.31.72",    "has_pool": True},
-    "usa":      {"host": "178.156.240.160", "has_pool": False},
-    "asia":     {"host": "5.223.43.93",     "has_pool": False},
+    "zion2": {"host": "91.98.122.165", "has_pool": True},
 }
 
 _cache: dict = {}
@@ -36,7 +34,7 @@ _cache_lock = threading.Lock()
 _cache_ttl = 10  # sekund
 
 def fetch_pool_stats() -> dict:
-    """Načte stats z pool API na Helsinkách."""
+    """Načte stats z pool API na primárním hostu Zion2."""
     try:
         req = urllib.request.Request(POOL_API, headers={"User-Agent": "zion-proxy/1.0"})
         with urllib.request.urlopen(req, timeout=5) as r:
@@ -95,13 +93,12 @@ def get_combined_stats() -> dict:
     miner_results = {}
     threads = []
     for name, cfg in NODES.items():
-        if not cfg["has_pool"]:
-            def _fetch(n=name, h=cfg["host"]):
-                miner_results[n] = fetch_miner_stats(h)
-            t = threading.Thread(target=_fetch)
-            t.daemon = True
-            threads.append(t)
-            t.start()
+        def _fetch(n=name, h=cfg["host"]):
+            miner_results[n] = fetch_miner_stats(h)
+        t = threading.Thread(target=_fetch)
+        t.daemon = True
+        threads.append(t)
+        t.start()
     for t in threads:
         t.join(timeout=10)
 

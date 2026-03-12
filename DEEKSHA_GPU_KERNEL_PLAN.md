@@ -637,4 +637,62 @@ Decision rule:
 
 ---
 
+## 11. Ekam Deeksha — Next-Generation GPU Pipeline (2026-03-11)
+
+Ekam Deeksha extends the canonical Deeksha pipeline with Blake3-based scratchpad
+operations and increased Cosmic Fusion rounds:
+
+### Changes from Canonical Deeksha
+
+| Stage | Canonical Deeksha | Ekam Deeksha |
+|-------|------------------|---------------|
+| Step 4 — Scratchpad Init | Keccak-256 chain fill | Blake3 XOF (domain: `EKAM_SCRATCHPAD_INIT_V1`, 87B input → 64 KiB) |
+| Step 4 — Scratchpad Mix | Keccak-256 per-block hash | Blake3 single-chunk hash (208B → 64B XOF, XOR into block) |
+| Step 6 — Cosmic Fusion | 4 rounds | 8 rounds (`EKAM_FUSION_ROUNDS = 8`) |
+| Steps 1-3, 5 | Unchanged | Unchanged |
+
+### GPU Kernel Entry Points
+
+| Backend | Kernel | Host API |
+|---------|--------|----------|
+| Metal | `cosmic_harmony_ekam_mine`, `cosmic_harmony_ekam_benchmark` | `MetalMiner::mine_ekam()`, `batch_hash_ekam()`, `parity_check_ekam()` |
+| OpenCL | `ekam_deeksha_mine` | `EkamDeekshaOpenCLBackend` (Python), `EKAM_DEEKSHA_KERNEL_NAME` (Rust) |
+| CUDA | `ekam_deeksha_mine` | `ekam_cuda_mine()` (extern "C") |
+
+### Blake3 GPU Implementation Notes
+
+- Hand-coded ~300 lines per platform (no GPU Blake3 library exists)
+- Standard mode (`Hasher::new()`) — NOT `new_derive_key()`
+- 7-round compression with ChaCha-like G function, message permutation
+- Counter-mode XOF: root node with all 16 state words (64 bytes per counter value)
+- Domain separator: `"EKAM_SCRATCHPAD_INIT_V1"` = 23 bytes
+- Init: 87B = 64B seed + 23B domain → single chunk (2 blocks)
+- Mix: 208B = cur(64) + prev(64) + rand(64) + pass(8) + idx(8) → single chunk (4 blocks)
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `L1/cosmic-harmony/src/gpu/metal_shader.metal` | +500 lines: Blake3 engine + Ekam pipeline + 2 kernels |
+| `L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl` | +335 lines: Blake3 + Ekam pipeline + 1 kernel |
+| `L1/native-libs/all/cosmic_harmony_deeksha.cu` | +550 lines: Blake3 + full Ekam + host API |
+| `L1/cosmic-harmony/src/gpu/metal_miner.rs` | +160 lines: Ekam pipelines + 3 methods |
+| `L1/cosmic-harmony/src/gpu/opencl_kernel.rs` | Ekam kernel name export + test |
+| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` | `EkamDeekshaOpenCLBackend` + CHv42GPU auto-detection |
+| `APP&WEB/desktop-agent/resources/zion_native_miner_v2_9.py` | `Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA` + dispatch |
+
+### Canonical Test Vector
+
+```
+Header: [0u8; 80], Nonce: 0
+Expected: 6339f2fb178fe2957a10d9e2a84cf9d5e340064f0d165e845b6a54eaf7924fbd
+```
+
+### Performance (Expected)
+
+- CPU: 2.3-2.5× speedup vs canonical Deeksha (Blake3 faster than Keccak chain)
+- GPU: TBD after live benchmarking on M1/AMD/NVIDIA
+
+---
+
 *Document authored by ZION AI Native Team — March 2026*

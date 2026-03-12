@@ -22,6 +22,9 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { SITE_POOL_PRIMARY, SITE_PRIMARY_HOST } from '@/lib/site';
+
+const PRIMARY_STRATUM_BASE = `stratum+tcp://${SITE_PRIMARY_HOST}`;
 
 /* ── copy helper ────────────────────────────────────────── */
 
@@ -70,19 +73,19 @@ const tabs: { id: GuideTab; label: string; icon: typeof Cpu; color: string }[] =
 
 const algorithms = [
   {
-    name: "Cosmic Harmony v3",
+    name: "Cosmic Harmony Deeksha",
     type: "CPU + GPU",
     memory: "256 KB",
     bestFor: "Balanced mining, anti-ASIC",
-    stratum: "stratum+tcp://pool.zionterranova.com:3333",
-    algo: "cosmic-harmony-v3",
+    stratum: `stratum+tcp://${SITE_POOL_PRIMARY}`,
+    algo: "cosmic_harmony",
   },
   {
     name: "RandomX",
     type: "CPU",
     memory: "2 GB",
     bestFor: "CPU-optimized, Monero-proven",
-    stratum: "stratum+tcp://pool.zionterranova.com:3334",
+    stratum: `${PRIMARY_STRATUM_BASE}:3334`,
     algo: "randomx",
   },
   {
@@ -90,7 +93,7 @@ const algorithms = [
     type: "CPU",
     memory: "4 KB",
     bestFor: "Low-memory devices, RPi",
-    stratum: "stratum+tcp://pool.zionterranova.com:3335",
+    stratum: `${PRIMARY_STRATUM_BASE}:3335`,
     algo: "yescrypt",
   },
   {
@@ -98,7 +101,7 @@ const algorithms = [
     type: "GPU",
     memory: "2.5 GB",
     bestFor: "GPU mining, Ergo-proven",
-    stratum: "stratum+tcp://pool.zionterranova.com:3336",
+    stratum: `${PRIMARY_STRATUM_BASE}:3336`,
     algo: "autolykos2",
   },
 ];
@@ -258,8 +261,8 @@ source ~/.cargo/env`}
 
                   <CodeBlock
                     title="Step 2 — Build the native miner"
-                    code={`git clone https://github.com/Zion-TerraNova/Zion-2.9.5.git
-cd Zion-2.9.5
+                    code={`git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 cargo build --release -p zion-miner
 
 # Binary location
@@ -269,8 +272,8 @@ ls -la target/release/zion-miner`}
                   <CodeBlock
                     title="Step 3 — Start mining (pool)"
                     code={`./target/release/zion-miner \\
-  --algo cosmic-harmony-v3 \\
-  --pool stratum+tcp://77.42.31.72:3333 \\
+  --algo cosmic_harmony \
+  --pool stratum+tcp://${SITE_POOL_PRIMARY} \
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc)      # use all CPU cores`}
                   />
@@ -283,7 +286,7 @@ tar xzf xmrig-*.tar.gz && cd xmrig-*
 
 # Start
 ./xmrig \\
-  -o stratum+tcp://77.42.31.72:3334 \\
+  -o ${PRIMARY_STRATUM_BASE}:3334 \
   -u YOUR_ZION_ADDRESS \\
   -p x \\
   -a rx/0 \\
@@ -332,13 +335,13 @@ tar xzf xmrig-*.tar.gz && cd xmrig-*
                   </div>
                   <CodeBlock
                     code={`# Build with Metal support
-cd Zion-2.9.5
+cd 2.9.6
 cargo build --release -p zion-miner --features metal
 
 # Run with Metal GPU
 ./target/release/zion-miner \\
-  --algo cosmic-harmony-v3 \\
-  --pool stratum+tcp://77.42.31.72:3333 \\
+  --algo cosmic_harmony \
+  --pool stratum+tcp://${SITE_POOL_PRIMARY} \
   --wallet YOUR_ZION_ADDRESS \\
   --gpu metal \\
   --gpu-intensity 80     # 0-100, lower = less heat`}
@@ -364,7 +367,7 @@ cargo build --release -p zion-miner --features cuda
 # Run with CUDA
 ./target/release/zion-miner \\
   --algo autolykos2 \\
-  --pool stratum+tcp://77.42.31.72:3336 \\
+  --pool ${PRIMARY_STRATUM_BASE}:3336 \
   --wallet YOUR_ZION_ADDRESS \\
   --gpu cuda \\
   --gpu-devices 0,1      # multi-GPU`}
@@ -390,7 +393,7 @@ cargo build --release -p zion-miner --features opencl
 # Run with OpenCL
 ./target/release/zion-miner \\
   --algo autolykos2 \\
-  --pool stratum+tcp://77.42.31.72:3336 \\
+  --pool ${PRIMARY_STRATUM_BASE}:3336 \
   --wallet YOUR_ZION_ADDRESS \\
   --gpu opencl`}
                   />
@@ -400,7 +403,7 @@ cargo build --release -p zion-miner --features opencl
                   <h4 className="text-sm font-medium text-zion-gold mb-2">⚡ GPU Tips</h4>
                   <ul className="text-sm text-white/40 space-y-1">
                     <li>• Autolykos v2 is the best algorithm for GPU mining — memory-hard, ASIC-resistant</li>
-                    <li>• Cosmic Harmony v3 works on both CPU and GPU simultaneously</li>
+                    <li>• Cosmic Harmony Deeksha works on both CPU and GPU simultaneously</li>
                     <li>• Undervolt your GPU for better efficiency (20–30% power saving)</li>
                     <li>• Keep GPU temp &lt; 80°C, VRAM &lt; 95°C</li>
                     <li>• Use <code className="text-zion-gold/60 text-xs">--gpu-intensity 60-80</code> for desktop use while mining</li>
@@ -435,10 +438,10 @@ cargo build --release -p zion-miner --features opencl
                   </h4>
                   <div className="space-y-2">
                     {[
-                      { algo: "Cosmic Harmony v3", endpoint: "stratum+tcp://77.42.31.72:3333", port: 3333 },
-                      { algo: "RandomX", endpoint: "stratum+tcp://77.42.31.72:3334", port: 3334 },
-                      { algo: "Yescrypt", endpoint: "stratum+tcp://77.42.31.72:3335", port: 3335 },
-                      { algo: "Autolykos v2", endpoint: "stratum+tcp://77.42.31.72:3336", port: 3336 },
+                      { algo: "Cosmic Harmony Deeksha", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:3333`, port: 3333 },
+                      { algo: "RandomX", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:3334`, port: 3334 },
+                      { algo: "Yescrypt", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:3335`, port: 3335 },
+                      { algo: "Autolykos v2", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:3336`, port: 3336 },
                     ].map((ep, i) => (
                       <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-1 py-2 border-b border-white/[0.04] last:border-0">
                         <span className="text-sm text-white/70">{ep.algo}</span>
@@ -451,8 +454,8 @@ cargo build --release -p zion-miner --features opencl
                 <CodeBlock
                   title="Quick start — Pool mining with native miner"
                   code={`./target/release/zion-miner \\
-  --algo cosmic-harmony-v3 \\
-  --pool stratum+tcp://77.42.31.72:3333 \\
+  --algo cosmic_harmony \
+  --pool stratum+tcp://${SITE_POOL_PRIMARY} \
   --wallet YOUR_ZION_ADDRESS \\
   --worker-name my-rig-01 \\
   --threads $(nproc)`}
@@ -532,7 +535,7 @@ cargo build --release -p zion-miner --features opencl
                   <CodeBlock
                     title="Step 2 — Mine against your node"
                     code={`./target/release/zion-miner \\
-  --algo cosmic-harmony-v3 \\
+  --algo cosmic_harmony \
   --node http://127.0.0.1:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc) \\
@@ -552,7 +555,7 @@ curl -s http://localhost:8444 \\
     "method": "getBlockTemplate",
     "params": [{
       "address": "YOUR_ZION_ADDRESS",
-      "algo": "cosmic-harmony-v3"
+      "algo": "cosmic_harmony"
     }]
   }' | jq .`}
                   />

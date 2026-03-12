@@ -1,34 +1,37 @@
 #!/usr/bin/env bash
+# ZION website deploy — Docker-based (standalone Next.js + nginx proxy)
+# Rsync source to server, rebuild Docker image, recreate container.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT_DIR="$ROOT_DIR/out"
 LOG_PREFIX="[deploy]"
 
-REMOTE_HOST="${REMOTE_HOST:-77.42.31.72}"
+REMOTE_HOST="${REMOTE_HOST:-91.98.122.165}"
 REMOTE_USER="${REMOTE_USER:-root}"
-REMOTE_PATH="${REMOTE_PATH:-/var/www/zionterranova.com}"
-SSH_KEY="${SSH_KEY:-$HOME/.ssh/zion_deployment_key}"
-SKIP_INSTALL=0
-SKIP_BUILD=0
+REMOTE_SRC="${REMOTE_SRC:-/root/zion-web-deploy/website-v2.9}"
+REMOTE_COMPOSE="${REMOTE_COMPOSE:-/root/zion-web-deploy/docker}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/zion_hetzner_key}"
+COMPOSE_FILE="docker-compose.website.yml"
+SKIP_SYNC=0
 DRY_RUN=0
 
 usage() {
   cat <<'EOF'
 Usage: scripts/deploy.sh [options]
 
+Docker-based website deployment: rsync source -> rebuild image -> recreate container.
+
 Options:
-  --host <hostname>        Target SSH host (default: $REMOTE_HOST or 77.42.31.72)
+  --host <hostname>        Target SSH host (default: $REMOTE_HOST or 91.98.122.165)
   --user <user>            SSH user (default: $REMOTE_USER or root)
-  --path <remote-path>     Remote deployment path (default: $REMOTE_PATH)
-  --ssh-key <path>         SSH private key (default: $SSH_KEY)
-  --skip-install           Skip npm install (assumes node_modules is ready)
-  --skip-build             Skip npm run build (assumes fresh out/ exists)
-  --dry-run                Build only; skip rsync + remote commands
+  --remote-src <path>      Remote source path (default: /root/zion-web-deploy/website-v2.9)
+  --ssh-key <path>         SSH private key (default: $SSH_KEY or ~/.ssh/zion_hetzner_key)
+  --skip-sync              Skip rsync (rebuild from existing remote source)
+  --dry-run                Sync only; skip Docker rebuild
   -h, --help               Show this help
 
 Environment overrides:
-  REMOTE_HOST, REMOTE_USER, REMOTE_PATH, SSH_KEY
+  REMOTE_HOST, REMOTE_USER, REMOTE_SRC, REMOTE_COMPOSE, SSH_KEY
 EOF
 }
 
@@ -43,112 +46,73 @@ require_cmd() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host)
-      shift
-      REMOTE_HOST="${1:?Missing value for --host}"
-      ;;
-    --user)
-      shift
-      REMOTE_USER="${1:?Missing value for --user}"
-      ;;
-    --path)
-      shift
-      REMOTE_PATH="${1:?Missing value for --path}"
-      ;;
-    --ssh-key)
-      shift
-      SSH_KEY="${1:?Missing value for --ssh-key}"
-      ;;
-    --skip-install)
-      SKIP_INSTALL=1
-      ;;
-    --skip-build)
-      SKIP_BUILD=1
-      ;;
-    --dry-run)
-      DRY_RUN=1
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      usage
-      exit 1
-      ;;
+    --host)       shift; REMOTE_HOST="${1:?Missing value for --host}" ;;
+    --user)       shift; REMOTE_USER="${1:?Missing value for --user}" ;;
+    --remote-src) shift; REMOTE_SRC="${1:?Missing value for --remote-src}" ;;
+    --ssh-key)    shift; SSH_KEY="${1:?Missing value for --ssh-key}" ;;
+    --skip-sync)  SKIP_SYNC=1 ;;
+    --dry-run)    DRY_RUN=1 ;;
+    -h|--help)    usage; exit 0 ;;
+    *)            echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
   shift
 done
 
-require_cmd npm
 require_cmd rsync
 require_cmd ssh
 
+SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new"
+REMOTE="$REMOTE_USER@$REMOTE_HOST"
+
 cd "$ROOT_DIR"
 
-# Prefer reproducible installs when lockfile exists
-if [[ -f package-lock.json ]]; then
-  NPM_INSTALL_CMD=(npm ci --no-audit --prefer-offline)
+# --- Local TypeScript check ---
+log "Running local TypeScript check"
+if command -v npx >/dev/null 2>&1; then
+  npx tsc --noEmit || { echo "Error: TypeScript check failed" >&2; exit 1; }
+fi
+
+# --- Rsync source to server ---
+if [[ $SKIP_SYNC -ne 1 ]]; then
+  log "Syncing source to $REMOTE_HOST:$REMOTE_SRC"
+  rsync -avz --delete \
+    --exclude='node_modules' \
+    --exclude='.next' \
+    --exclude='out' \
+    --exclude='*.tar.gz' \
+    --exclude='.env.local' \
+    -e "ssh $SSH_OPTS" \
+    ./ "$REMOTE:$REMOTE_SRC/"
 else
-  NPM_INSTALL_CMD=(npm install --no-audit --prefer-offline)
-fi
-
-if [[ $SKIP_INSTALL -ne 1 ]]; then
-  log "Installing dependencies (${NPM_INSTALL_CMD[*]})"
-  "${NPM_INSTALL_CMD[@]}" >/dev/null
-else
-  log "Skipping npm install"
-fi
-
-if [[ $SKIP_BUILD -ne 1 ]]; then
-  log "Running npm run build"
-  npm run build
-else
-  log "Skipping build step"
-fi
-
-if [[ ! -d "$OUT_DIR" ]]; then
-  echo "Error: export directory '$OUT_DIR' not found" >&2
-  exit 1
-fi
-
-# Sanity checks to avoid deploying a broken build (missing hashed assets)
-if [[ ! -d "$OUT_DIR/_next/static/chunks" ]]; then
-  echo "Error: missing directory '$OUT_DIR/_next/static/chunks' (Next export assets)" >&2
-  exit 1
-fi
-if ! find "$OUT_DIR/_next/static/chunks" -maxdepth 1 -type f \( -name "*.js" -o -name "*.css" \) | grep -q .; then
-  echo "Error: no chunk files (*.js/*.css) found in '_next/static/chunks' – build may have failed" >&2
-  exit 1
+  log "Skipping rsync (--skip-sync)"
 fi
 
 if [[ $DRY_RUN -eq 1 ]]; then
-  log "Dry run enabled – build finished, skipping deploy"
+  log "Dry run — source synced, skipping Docker rebuild"
   exit 0
 fi
 
-RSYNC_SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new"
-REMOTE="$REMOTE_USER@$REMOTE_HOST"
+# --- Docker rebuild & recreate on server ---
+log "Building Docker image on $REMOTE_HOST"
+ssh $SSH_OPTS "$REMOTE" "cd '$REMOTE_COMPOSE' && docker compose -f '$COMPOSE_FILE' build --no-cache website"
 
-TS="$(date -u +%Y%m%d%H%M%S)"
-STAGING_DIR="$REMOTE_PATH.tmp-$TS"
-BACKUP_DIR="$REMOTE_PATH.bak-$TS"
+log "Recreating container"
+ssh $SSH_OPTS "$REMOTE" "cd '$REMOTE_COMPOSE' && docker compose -f '$COMPOSE_FILE' up -d website"
 
-log "Preparing remote staging dir: $STAGING_DIR"
-ssh $RSYNC_SSH_OPTS "$REMOTE" "set -euo pipefail; mkdir -p '$(dirname "$REMOTE_PATH")'; rm -rf '$STAGING_DIR'; mkdir -p '$STAGING_DIR'"
+# --- Health check ---
+log "Waiting for container health check (up to 60s)"
+ssh $SSH_OPTS "$REMOTE" '
+  for i in $(seq 1 12); do
+    STATUS=$(docker inspect --format="{{.State.Health.Status}}" zion-website 2>/dev/null || echo "missing")
+    if [ "$STATUS" = "healthy" ]; then
+      echo "Container healthy after ~$((i*5))s"
+      exit 0
+    fi
+    sleep 5
+  done
+  echo "Warning: container not healthy after 60s (status: $STATUS)"
+  docker logs --tail 20 zion-website
+  exit 1
+'
 
-log "Uploading out/ -> $REMOTE_HOST:$STAGING_DIR (rsync --delete)"
-rsync -avz --delete -e "ssh $RSYNC_SSH_OPTS" "$OUT_DIR/" "$REMOTE:$STAGING_DIR/"
-
-log "Fixing permissions on staging and performing atomic swap"
-ssh $RSYNC_SSH_OPTS "$REMOTE" "set -euo pipefail; \
-  chown -R www-data:www-data '$STAGING_DIR'; \
-  if [ -d '$REMOTE_PATH' ]; then mv '$REMOTE_PATH' '$BACKUP_DIR'; fi; \
-  mv '$STAGING_DIR' '$REMOTE_PATH'; \
-  nginx -t && systemctl reload nginx || { echo 'nginx reload failed, rolling back'; rm -rf '$REMOTE_PATH'; [ -d '$BACKUP_DIR' ] && mv '$BACKUP_DIR' '$REMOTE_PATH'; exit 1; }"
-
-log "Cleanup old backup (optional)"
-ssh $RSYNC_SSH_OPTS "$REMOTE" "[ -d '$BACKUP_DIR' ] && find '$(dirname "$BACKUP_DIR")' -maxdepth 1 -name '$(basename "$REMOTE_PATH").bak-*' -mtime +7 -print0 | xargs -0r rm -rf || true"
-
-log "Deployment complete"
+log "Deployment complete — zion-website is healthy on $REMOTE_HOST"

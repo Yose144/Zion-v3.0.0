@@ -344,8 +344,8 @@ export default function NCLDashboard() {
             <h3 className="font-bold text-yellow-400 mb-2">Option 1: Miner Flag</h3>
             <pre className="bg-black p-4 rounded-lg text-sm overflow-x-auto">
               <code className="text-green-400">
-{`./zion_miner \\
-  --pool pool.zionterranova.com:3333 \\
+{`./zion_miner \
+  --pool 91.98.122.165:3333 \
   --wallet ZION_YOUR_ADDRESS \\
   --ncl-enabled \\
   --ncl-allocation 30`}

@@ -141,14 +141,14 @@ mod tests {
 
     #[test]
     fn test_login_request_structure() {
-        let req = StratumRequest::login(1, "zion1abc", "rig01", "x", "cosmic_harmony_v3");
+        let req = StratumRequest::login(1, "zion1abc", "rig01", "x", "cosmic_harmony");
         assert_eq!(req.method, "login");
         assert_eq!(req.id, 1);
         assert_eq!(req.jsonrpc, Some("2.0".to_string()));
         assert_eq!(req.params["login"], "zion1abc");
         assert_eq!(req.params["rigid"], "rig01");
         assert_eq!(req.params["pass"], "x");
-        assert_eq!(req.params["algo"], "cosmic_harmony_v3");
+        assert_eq!(req.params["algo"], "cosmic_harmony");
         assert!(req.params["agent"].as_str().unwrap().contains("zion"));
     }
 

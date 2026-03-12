@@ -21,7 +21,7 @@ use std::sync::OnceLock;
 
 use crate::algorithms_npu::{DeekshaCircuitBreaker, NpuBackend};
 use crate::algorithms_opt::{
-    cosmic_fusion_opt, golden_matrix_opt, keccak256_opt, sha3_512_opt, Hash32,
+    cosmic_fusion_opt, cosmic_fusion_opt_rounds, golden_matrix_opt, keccak256_opt, sha3_512_opt, Hash32,
 };
 use crate::scratchpad::memory_hard_transform;
 
@@ -36,6 +36,14 @@ use crate::scratchpad::memory_hard_transform;
 ///
 /// NIKDE JINDE — toto je jediné definitivní místo.
 pub const CHV_DEEKSHA_FORK_HEIGHT: u64 = 0;
+
+/// Fork výška pro aktivaci Ekam Deeksha (Tier 2 — Blake3 + AES cascade).
+///
+/// Ekam Deeksha nahrazuje SHA3-512 vnitřní mixing za Blake3 XOF + AES cascade.
+/// NOVÝ konsenzuální hash — nový test vector.
+///
+/// Ekam Deeksha is active from genesis (height 0).
+pub const CHV_EKAM_FORK_HEIGHT: u64 = 0;
 
 // ============================================================================
 // CONSENSUS PARAMETERS (single source of truth)
@@ -62,6 +70,9 @@ pub const DEEKSHA_MLP_DIM_OUT: usize = 64;
 /// Počet CosmicFusion kol.
 pub const DEEKSHA_FUSION_ROUNDS: usize = 4;
 
+/// Ekam Deeksha: Počet CosmicFusion kol (Tier 3: rozšířeno z 4 na 8).
+pub const EKAM_FUSION_ROUNDS: usize = 8;
+
 // ============================================================================
 // CANONICAL TEST VECTOR (code-freeze, 2025-01-xx)
 // ============================================================================
@@ -71,6 +82,11 @@ pub const DEEKSHA_FUSION_ROUNDS: usize = 4;
 /// Jakákoli změna v pipeline MUSÍ přinést nový test vektor + migration note.
 pub const DEEKSHA_CANONICAL_TEST_VECTOR_HEX: &str =
     "f72031a1f648050f05e6719fd6df895bbd319590277267857316ba6e6444f700";
+
+/// Ekam Deeksha kanonický test vektor — generován po Tier 2 implementaci.
+/// Musí být fixován po prvním produkčním build a canary runu.
+/// Placeholder — bude vyplněn po prvním `cargo test generate_ekam_test_vector_print`.
+pub const EKAM_CANONICAL_TEST_VECTOR_HEX: &str = "6339f2fb178fe2957a10d9e2a84cf9d5e340064f0d165e845b6a54eaf7924fbd";
 
 // ============================================================================
 // NPU BACKEND SINGLETON
@@ -137,6 +153,57 @@ pub fn cosmic_harmony_deeksha(block_header: &[u8], nonce: u64) -> Hash32 {
 }
 
 // ============================================================================
+// EKAM DEEKSHA PIPELINE (Tier 2 — Blake3 + AES cascade)
+// ============================================================================
+
+/// Cosmic Harmony Ekam Deeksha — Tier 2 consensus hash.
+///
+/// Same 6-step pipeline as original Deeksha, but Step 4 uses:
+/// - Blake3 XOF init (replaces 1024× SHA3-512)
+/// - AES cascade mixing (replaces 2048× SHA3-512)
+/// - Preserved: Keccak-256 random reads, SHA3-512 finalization
+///
+/// Expected: ~8–12× faster than original Deeksha.
+///
+/// # Arguments
+/// * `block_header` — raw block header buffer (≤ 80 B)
+/// * `nonce` — mining nonce (u64 little-endian)
+///
+/// # Returns
+/// [`Hash32`] — 32 B result hash (different from original Deeksha!)
+#[inline]
+pub fn cosmic_harmony_ekam_deeksha(block_header: &[u8], nonce: u64) -> Hash32 {
+    use crate::scratchpad_ekam::memory_hard_transform_ekam_light;
+
+    // Input buffer: header (≤80 B) + nonce (8 B LE)
+    let mut input = [0u8; 88];
+    let len = block_header.len().min(80);
+    input[..len].copy_from_slice(&block_header[..len]);
+    input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+    // Step 1: Keccak-256 (32 B) — preserved
+    let s1 = keccak256_opt(&input);
+
+    // Step 2: SHA3-512 (64 B) — preserved
+    let s2 = sha3_512_opt(&s1.data);
+
+    // Step 3: Golden Matrix — φ-based transform — preserved
+    let s3 = golden_matrix_opt(&s2.data);
+
+    // Step 4: Ekam Memory-Hard scratchpad (Blake3 XOF + AES cascade)
+    // Uses light variant: init + passes + random_read (same structure as original)
+    let s4 = memory_hard_transform_ekam_light(&s3.data);
+
+    // Step 5: NPU Deterministic Mix — preserved
+    let s5_bytes: [u8; 64] = npu().mix(&s4.data);
+    let mut s5 = crate::algorithms_opt::Hash64::new();
+    s5.data.copy_from_slice(&s5_bytes);
+
+    // Step 6: Cosmic Fusion (Keccak + AES-NI, 8 kol) → Hash32
+    cosmic_fusion_opt_rounds(&s5.data, EKAM_FUSION_ROUNDS)
+}
+
+// ============================================================================
 // PARALLEL MINING HELPERS
 // ============================================================================
 
@@ -172,6 +239,47 @@ pub fn deeksha_find_nonce(
     for i in 0..count {
         let nonce = start_nonce.wrapping_add(i);
         let hash = cosmic_harmony_deeksha(header, nonce);
+        if meets_target(&hash.data, target) {
+            return Some((nonce, hash));
+        }
+    }
+    None
+}
+
+// ============================================================================
+// EKAM DEEKSHA PARALLEL + BATCH HELPERS
+// ============================================================================
+
+/// Ekam Deeksha — paralelní nonce search.
+#[cfg(feature = "parallel")]
+pub fn ekam_find_nonce_parallel(
+    header: &[u8],
+    start_nonce: u64,
+    count: u64,
+    target: &[u8; 32],
+) -> Option<(u64, Hash32)> {
+    use rayon::prelude::*;
+    (0..count).into_par_iter().find_map_any(|i| {
+        let nonce = start_nonce.wrapping_add(i);
+        let hash = cosmic_harmony_ekam_deeksha(header, nonce);
+        if meets_target(&hash.data, target) {
+            Some((nonce, hash))
+        } else {
+            None
+        }
+    })
+}
+
+/// Ekam Deeksha — sequential batch.
+pub fn ekam_find_nonce(
+    header: &[u8],
+    start_nonce: u64,
+    count: u64,
+    target: &[u8; 32],
+) -> Option<(u64, Hash32)> {
+    for i in 0..count {
+        let nonce = start_nonce.wrapping_add(i);
+        let hash = cosmic_harmony_ekam_deeksha(header, nonce);
         if meets_target(&hash.data, target) {
             return Some((nonce, hash));
         }
@@ -228,6 +336,47 @@ pub fn generate_test_vector() -> String {
     const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
     const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
     let h = cosmic_harmony_deeksha(TEST_HEADER, TEST_NONCE);
+    h.data.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+// ============================================================================
+// EKAM DEEKSHA SELF-TEST + TEST VECTOR
+// ============================================================================
+
+/// Ekam Deeksha self-test — determinismus + kanonický vektor.
+pub fn ekam_self_test() -> bool {
+    const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
+    const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
+
+    let h1 = cosmic_harmony_ekam_deeksha(TEST_HEADER, TEST_NONCE);
+    let h2 = cosmic_harmony_ekam_deeksha(TEST_HEADER, TEST_NONCE);
+
+    // Determinism
+    if h1.data != h2.data {
+        return false;
+    }
+
+    // Nonzero
+    if h1.data.iter().all(|&b| b == 0) {
+        return false;
+    }
+
+    // Canonical vector check (skip if placeholder)
+    if EKAM_CANONICAL_TEST_VECTOR_HEX != "PLACEHOLDER_GENERATE_WITH_CARGO_TEST" {
+        let hex: String = h1.data.iter().map(|b| format!("{:02x}", b)).collect();
+        if hex != EKAM_CANONICAL_TEST_VECTOR_HEX {
+            return false;
+        }
+    }
+
+    true
+}
+
+/// Generate Ekam test vector for code-freeze fixation.
+pub fn generate_ekam_test_vector() -> String {
+    const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
+    const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
+    let h = cosmic_harmony_ekam_deeksha(TEST_HEADER, TEST_NONCE);
     h.data.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
@@ -291,17 +440,35 @@ mod tests {
 
     #[test]
     fn test_deeksha_dispatch_height() {
-        // Pro height >= CHV_DEEKSHA_FORK_HEIGHT musí dispatch volat Deeksha.
-        // Ověříme nepřímo: výstup dispatch == přímé volání deeksha.
+        // Dispatch at Ekam fork height routes to Ekam Deeksha.
+        // Pre-fork heights route to original Deeksha.
         use crate::algorithms_opt::cosmic_harmony_with_height;
         let header = b"dispatch height test";
         let nonce = 999u64;
 
-        let direct = cosmic_harmony_deeksha(header, nonce);
-        let dispatched = cosmic_harmony_with_height(header, nonce, CHV_DEEKSHA_FORK_HEIGHT);
+        // Dispatch at fork height routes to Ekam
+        let dispatched = cosmic_harmony_with_height(header, nonce, CHV_EKAM_FORK_HEIGHT);
+        let direct_ekam = cosmic_harmony_ekam_deeksha(header, nonce);
         assert_eq!(
-            direct.data, dispatched.data,
-            "Dispatch na fork height musí vrátit Deeksha hash"
+            dispatched.data, direct_ekam.data,
+            "Dispatch at Ekam fork height must route to Ekam pipeline"
+        );
+
+        // Pre-fork: original Deeksha
+        if CHV_EKAM_FORK_HEIGHT > 0 {
+            let pre_fork = cosmic_harmony_with_height(header, nonce, CHV_EKAM_FORK_HEIGHT - 1);
+            let direct_original = cosmic_harmony_deeksha(header, nonce);
+            assert_eq!(
+                pre_fork.data, direct_original.data,
+                "Below Ekam fork height must route to original Deeksha"
+            );
+        }
+
+        // Original Deeksha is still callable directly and differs from Ekam
+        let direct_original = cosmic_harmony_deeksha(header, nonce);
+        assert_ne!(
+            direct_original.data, direct_ekam.data,
+            "Ekam and original Deeksha must differ"
         );
     }
 
@@ -331,5 +498,84 @@ mod tests {
         // Ověř, že nalezený hash odpovídá nonce
         let verify = cosmic_harmony_deeksha(header, found_nonce);
         assert_eq!(hash.data, verify.data, "Nalezený hash musí odpovídat nonce");
+    }
+
+    // ================================================================
+    // EKAM DEEKSHA TESTS
+    // ================================================================
+
+    #[test]
+    fn generate_ekam_test_vector_print() {
+        let hex = generate_ekam_test_vector();
+        println!("\n=== EKAM DEEKSHA CANONICAL TEST VECTOR ===");
+        println!("header: ZION_DEEKSHA_GENESIS_V298_CANONICAL");
+        println!("nonce:  0x2980_0001_0000_0001");
+        println!("hash:   {}", hex);
+        println!("==========================================\n");
+    }
+
+    #[test]
+    fn test_ekam_self_test() {
+        assert!(ekam_self_test(), "Ekam Deeksha self-test failed");
+    }
+
+    #[test]
+    fn test_ekam_determinism() {
+        let header = b"test block header for ekam deeksha";
+        let nonce = 0x1234_5678_9abc_def0u64;
+        let h1 = cosmic_harmony_ekam_deeksha(header, nonce);
+        let h2 = cosmic_harmony_ekam_deeksha(header, nonce);
+        assert_eq!(h1.data, h2.data, "Ekam Deeksha must be deterministic");
+    }
+
+    #[test]
+    fn test_ekam_avalanche() {
+        let header = b"avalanche test header for ekam";
+        let h1 = cosmic_harmony_ekam_deeksha(header, 1000);
+        let h2 = cosmic_harmony_ekam_deeksha(header, 1001);
+        assert_ne!(h1.data, h2.data, "Different nonce must produce different hashes");
+    }
+
+    #[test]
+    fn test_ekam_differs_from_original() {
+        let header = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
+        let nonce = 0x2980_0001_0000_0001u64;
+        let original = cosmic_harmony_deeksha(header, nonce);
+        let ekam = cosmic_harmony_ekam_deeksha(header, nonce);
+        assert_ne!(
+            original.data, ekam.data,
+            "Ekam must produce different hash than original Deeksha"
+        );
+    }
+
+    #[test]
+    fn test_ekam_dispatch_height() {
+        use crate::algorithms_opt::cosmic_harmony_with_height;
+        let header = b"ekam dispatch height test";
+        let nonce = 999u64;
+
+        let direct = cosmic_harmony_ekam_deeksha(header, nonce);
+        let dispatched = cosmic_harmony_with_height(header, nonce, CHV_EKAM_FORK_HEIGHT);
+        assert_eq!(
+            direct.data, dispatched.data,
+            "Dispatch at Ekam fork height must call Ekam pipeline"
+        );
+    }
+
+    #[test]
+    fn test_ekam_sequential_find_nonce() {
+        let header = b"ekam find nonce test";
+        let target = [0xffu8; 32];
+        let result = ekam_find_nonce(header, 0, 10, &target);
+        assert!(result.is_some());
+        let (found_nonce, hash) = result.unwrap();
+        let verify = cosmic_harmony_ekam_deeksha(header, found_nonce);
+        assert_eq!(hash.data, verify.data);
+    }
+
+    #[test]
+    fn test_ekam_output_nonzero() {
+        let h = cosmic_harmony_ekam_deeksha(b"nonzero ekam test", 0);
+        assert!(h.data.iter().any(|&b| b != 0));
     }
 }

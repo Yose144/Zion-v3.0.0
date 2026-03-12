@@ -739,10 +739,14 @@ let minerBackendLastError = '';
 function mapDeekshaRuntimeBackend(runtimeBackend) {
   const backend = String(runtimeBackend || '').trim().toLowerCase();
   if (!backend) return null;
-  if (backend === 'native') return 'deeksha-native';
-  if (backend === 'cpu' || backend === 'python') return 'deeksha-fallback';
-  if (backend === 'opencl' || backend === 'cuda' || backend === 'metal') return `deeksha-${backend}`;
-  return `deeksha-${backend}`;
+  if (backend === 'ekam-auto' || backend === 'deeksha-auto' || backend === 'auto') return 'ekam-auto';
+  if (backend === 'ekam-native' || backend === 'deeksha-native' || backend === 'native' || backend === 'native_ffi') return 'ekam-native';
+  if (backend === 'ekam-fallback' || backend === 'deeksha-fallback' || backend === 'cpu' || backend === 'python' || backend === 'pure_python') return 'ekam-fallback';
+  if (backend === 'ekam-opencl' || backend === 'deeksha-opencl' || backend === 'ekam-deeksha-opencl' || backend === 'opencl' || backend === 'gpu_opencl') return 'ekam-opencl';
+  if (backend === 'ekam-cuda' || backend === 'deeksha-cuda' || backend === 'cuda' || backend === 'gpu_cuda') return 'ekam-cuda';
+  if (backend === 'ekam-metal' || backend === 'deeksha-metal' || backend === 'metal' || backend === 'gpu_metal') return 'ekam-metal';
+  if (backend === 'ekam-gpu' || backend === 'deeksha-gpu' || backend === 'gpu') return 'ekam-gpu';
+  return backend.startsWith('gpu_') ? `ekam-${backend.slice(4)}` : `ekam-${backend}`;
 }
 
 function syncDeekshaResolvedBackend(runtimeBackend) {
@@ -958,8 +962,8 @@ const MAX_MINER_LOG_BYTES = 10 * 1024 * 1024; // 10MB
 const MAX_MINER_LOG_BACKUPS = 0;
 const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// ── Deeksha canonical runtime ────────────────────────────────────────────────
-// v2.9.8: `cosmic_harmony` resolves to Deeksha canonical path from genesis.
+// ── Ekam Deeksha canonical runtime ────────────────────────────────────────────
+// v2.9.8+: `cosmic_harmony` resolves to Ekam Deeksha from genesis on the current single-host testnet.
 
 const PRIMARY_TESTNET_HOST = String(process.env.ZION_PRIMARY_TESTNET_HOST || '91.98.122.165').trim() || '91.98.122.165';
 const PRIMARY_POOL_PORT = Number(String(process.env.ZION_PRIMARY_POOL_PORT || '3333').trim()) || 3333;
@@ -1192,10 +1196,8 @@ const DEFAULT_CONFIG = {
   nicehashBtcAddr: '',
   // Revenue BTC payout wallet (separate from ZION wallet for external pool payouts)
   revenueWallet: 'bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw',
-  // Primary backend default:
-  // - Windows: prefer Rust by default (no fallback) to ensure users actually run the native miner.
-  // - Other OS: keep auto for compatibility.
-  minerBackend: process.platform === 'win32' ? 'rust' : 'auto',
+  // Primary backend default: Rust everywhere. Python is kept only as emergency fallback.
+  minerBackend: 'rust',
   // Python miner console style (used only when python backend is active).
   pythonUi: 'trex',
   autoStart: false,
@@ -1226,7 +1228,12 @@ function normalizeAlgorithmName(algo) {
     raw === 'ch42' ||
     raw === 'merkabah' ||
     raw === 'deeksha' ||
-    raw === 'cosmic_harmony_deeksha'
+    raw === 'cosmic_harmony_deeksha' ||
+    raw === 'ekam' ||
+    raw === 'ekam_deeksha' ||
+    raw === 'cosmic_harmony_ekam' ||
+    raw === 'ch_ekam' ||
+    raw === 'che'
   ) {
     return 'cosmic_harmony';
   }
@@ -1272,17 +1279,12 @@ function loadConfig() {
         : [...DEFAULT_REVENUE_PROFILE.gpu.coins];
 
       // Prefer Rust miner everywhere if it exists.
-      // Only respect Python if the user explicitly pinned `minerBackend` in the config.
+      // Upgrade legacy 'python' or 'auto' pins to 'rust' when the binary is available.
       try {
         const rustPath = findRustMiner();
-        const hasPinnedMinerBackend = Object.prototype.hasOwnProperty.call(configOnDisk || {}, 'minerBackend');
         const mb = String(merged?.minerBackend || '').toLowerCase();
-        if (rustPath) {
-          if (!hasPinnedMinerBackend) {
-            merged.minerBackend = 'rust';
-          } else if (!mb || mb === 'auto') {
-            merged.minerBackend = 'rust';
-          }
+        if (rustPath && (!mb || mb === 'auto' || mb === 'python')) {
+          merged.minerBackend = 'rust';
         }
       } catch {
         // ignore
@@ -2289,7 +2291,7 @@ function stopProfitPoll() {
 }
 
 // ── End CH3 Multi-Stream helpers ──────────────────────────────────────────
-// TESTNET SERVER MONITORING (CH3 Architecture)
+// PRIMARY-HOST TESTNET MONITORING
 // ============================================================================
 
 const TESTNET_SERVERS = [
@@ -2661,12 +2663,15 @@ function createWindow() {
 
   // AI Native service (OFF by default, user must enable in settings)
   if (config.aiNative === true) {
+    const aiNativeServerUrl = config.aiNativePoolUrl || DEFAULT_AI_NATIVE_POOL_URL;
     void ensureAiNativeServiceRunning()
       .then(() => aiNativeSend({ 
         cmd: 'start',
+        server_url: aiNativeServerUrl,
         config: {
           wallet: config.wallet,
-          pool_url: config.aiNativePoolUrl || DEFAULT_AI_NATIVE_POOL_URL,
+          server_url: aiNativeServerUrl,
+          pool_url: aiNativeServerUrl,
           consciousness_level: config.aiNativeConsciousness || 1,
           gpu: config.gpu || false,
           threads: config.threads || 4
@@ -3128,13 +3133,16 @@ function startMining(config) {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-  // ── CHvDeeksha Canonical path (2.9.8) ─────────────────────────────────────
-  // canonical cosmic_harmony always runs through the Deeksha scripts.
-  // Do not send main CH mining through the Rust branch because the Rust miner
-  // intentionally guards CH GPU and falls back to CPU-only hashing.
+  // ── CHvDeeksha Python fallback path (2.9.8) ───────────────────────────────
+  // Rust miner is the primary path. Python Deeksha scripts are used ONLY when
+  // the Rust binary is missing or the env override ZION_FORCE_DEEKSHA_PYTHON=1.
   const _deekshaAlgoName = normalizeAlgorithmName(config?.algorithm || '');
-  const _deekshaPreferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
-  if (_deekshaAlgoName === 'cosmic_harmony') {
+  const _deekshaPreferredBackend = String(config?.minerBackend || 'rust').toLowerCase();
+  const _deekshaRustPath = findRustMiner();
+  const _forceDeekshaPythonPath =
+    !_deekshaRustPath ||
+    String(process.env.ZION_FORCE_DEEKSHA_PYTHON || '').trim() === '1';
+  if (_deekshaAlgoName === 'cosmic_harmony' && _forceDeekshaPythonPath) {
     const isPackaged = app.isPackaged;
     const deekshaCpuScript = isPackaged
       ? path.join(process.resourcesPath, 'mining', 'cosmic_harmony_deeksha_fallback.py')
@@ -3197,14 +3205,54 @@ function startMining(config) {
     // Nonce partition: hlavní miner 0x00..., revenue 0x40000000...
     const deekshaSessionNonceBaseMain = (Date.now() >>> 0) & 0x1fffffff;
     const deekshaSessionNonceBaseRevenue = deekshaSessionNonceBaseMain + 0x40000000;
-    const deekshaMainEnv = { ...process.env, ZION_NONCE_BASE: String(deekshaSessionNonceBaseMain) };
-    const deekshaRevenueEnv = { ...process.env, ZION_NONCE_BASE: String(deekshaSessionNonceBaseRevenue) };
+
+    // ── Deeksha Python env — parity with Rust spawn path ──────────────
+    const deekshaMiningDir = isPackaged
+      ? path.join(process.resourcesPath, 'mining')
+      : path.join(APP_ROOT, 'resources', 'mining');
+    const deekshaNativeLibDirs = [
+      path.join(deekshaMiningDir, 'native-libs'),
+      deekshaMiningDir,
+    ].filter(d => { try { return fs.existsSync(d); } catch { return false; } });
+    const deekshaNativeLibPath = deekshaNativeLibDirs.join(path.delimiter);
+
+    const deekshaBaseEnv = {
+      ...process.env,
+      // Python runtime hygiene
+      PYTHONUNBUFFERED: '1',
+      PYTHONIOENCODING: 'utf-8',
+      PYTHONUTF8: '1',
+      PYTHONPATH: deekshaMiningDir + (process.env.PYTHONPATH ? path.delimiter + process.env.PYTHONPATH : ''),
+      // HugePages — 64 KiB Ekam Deeksha scratchpad (mmap+mlock)
+      ZION_HUGEPAGES: String(process.env.ZION_HUGEPAGES || '').trim() === '0' ? '0' : '1',
+    };
+
+    // Native library paths for ctypes FFI (libzion_cosmic_harmony_v3)
+    if (deekshaNativeLibPath) {
+      if (process.platform === 'darwin') {
+        deekshaBaseEnv.DYLD_LIBRARY_PATH = deekshaNativeLibPath + (process.env.DYLD_LIBRARY_PATH ? path.delimiter + process.env.DYLD_LIBRARY_PATH : '');
+        deekshaBaseEnv.DYLD_FALLBACK_LIBRARY_PATH = deekshaNativeLibPath;
+      } else if (process.platform === 'linux') {
+        deekshaBaseEnv.LD_LIBRARY_PATH = deekshaNativeLibPath + (process.env.LD_LIBRARY_PATH ? path.delimiter + process.env.LD_LIBRARY_PATH : '');
+      }
+    }
+
+    // GPU backend auto-detect for Deeksha GPU path
+    if (mainMinerGpuDeeksha && currentGpuInfoDeeksha?.backendPreferred) {
+      deekshaBaseEnv.ZION_GPU_BACKEND = String(currentGpuInfoDeeksha.backendPreferred).toLowerCase();
+    }
+    if (mainMinerGpuDeeksha && deekshaGpuBatch) {
+      deekshaBaseEnv.ZION_GPU_BATCH_SIZE = String(deekshaGpuBatch);
+    }
+
+    const deekshaMainEnv = { ...deekshaBaseEnv, ZION_NONCE_BASE: String(deekshaSessionNonceBaseMain) };
+    const deekshaRevenueEnv = { ...deekshaBaseEnv, ZION_NONCE_BASE: String(deekshaSessionNonceBaseRevenue) };
 
     const pool = `${config.pool?.host || PRIMARY_TESTNET_HOST}:${config.pool?.port || PRIMARY_POOL_PORT}`;
     const wallet = config.wallet || '';
     const worker = config.worker || 'desktop-agent';
     const deekshaMainScript = mainMinerGpuDeeksha ? deekshaGpuScript : deekshaCpuScript;
-    const deekshaResolvedBackend = mainMinerGpuDeeksha ? 'deeksha-auto' : 'deeksha-fallback';
+    const deekshaResolvedBackend = mainMinerGpuDeeksha ? 'ekam-auto' : 'ekam-fallback';
     const deekshaMainArgs = [
       deekshaMainScript,
       '--pool', pool,
@@ -3238,11 +3286,13 @@ function startMining(config) {
     sendToRenderer('miner-output', {
       stream: 'stdout',
       text:
-        `[CHvDeeksha] Spouštím Deeksha canonical miner...\n` +
-        `[CHvDeeksha] Python: ${pyExeDeeksha}\n` +
-        `[CHvDeeksha] Canonical path active: desktop-agent bypasses Rust for main cosmic_harmony mining.\n` +
-        `[CHvDeeksha] Main path: ${mainMinerGpuDeeksha ? 'auto (runtime backend decides)' : 'cpu'}\n` +
-        `[CHvDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n`
+        `[CHvEkamDeeksha] Spouštím Ekam canonical miner...\n` +
+        `[CHvEkamDeeksha] Python: ${pyExeDeeksha}\n` +
+        `[CHvEkamDeeksha] Canonical fallback active pro main cosmic_harmony mining.\n` +
+        `[CHvEkamDeeksha] Main path: ${mainMinerGpuDeeksha ? 'auto (runtime backend decides)' : 'cpu'}\n` +
+        `[CHvEkamDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n` +
+        `[CHvEkamDeeksha] Memory: HugePages=${deekshaMainEnv.ZION_HUGEPAGES} | Scratchpad=64 KiB\n` +
+        `[CHvEkamDeeksha] Native libs: ${deekshaNativeLibDirs.length} dirs | PYTHONPATH: ${deekshaMiningDir}\n`
     });
     minerBackendPreferred = _deekshaPreferredBackend;
     minerBackendResolved = deekshaResolvedBackend;
@@ -3270,13 +3320,68 @@ function startMining(config) {
     });
     spawnedMiner.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
     spawnedMiner.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
+
+    // ── Crash recovery + pool failover (parity with Rust spawn path) ──
+    const deekshaSpawnTime = Date.now();
+    let deekshaRetryCount = 0;
+    const DEEKSHA_MAX_RETRIES = 3;
+    const DEEKSHA_RETRY_DELAY_MS = 8000;
+
+    spawnedMiner.on('error', (err) => {
+      logApp('deeksha-spawn-error', err?.message || String(err));
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stderr',
+          text: `[CHvDeeksha] Miner spawn error: ${err?.message || err}\n`
+        });
+      } catch { /* ignore */ }
+      if (minerProcess === spawnedMiner) {
+        minerProcess = null;
+        minerStopping = false;
+        sendToRenderer('miner-stopped', { code: -1 });
+        updateTrayMenu(minerStats);
+      }
+    });
+
     spawnedMiner.on('exit', (code) => {
-      logApp('deeksha-main-exit', JSON.stringify({ code }));
+      logApp('deeksha-main-exit', JSON.stringify({ code, runtime: Date.now() - deekshaSpawnTime }));
       if (minerProcess !== spawnedMiner) return;
       minerProcess = null;
       minerStopping = false;
-      sendToRenderer('miner-stopped', { code });
-      updateTrayMenu(minerStats);
+
+      if (code === 0 || minerUserStopRequested) {
+        // normal / user-requested stop
+        sendToRenderer('miner-stopped', { code });
+        updateTrayMenu(minerStats);
+        return;
+      }
+
+      // Abnormal exit — try auto-restart with pool failover
+      const runMs = Date.now() - deekshaSpawnTime;
+      const crashMsg = `[CHvDeeksha] Miner exited (code=${code}) after ${Math.round(runMs / 1000)}s.`;
+      try { sendToRenderer('miner-output', { stream: 'stderr', text: crashMsg + '\n' }); } catch { /* ignore */ }
+
+      if (deekshaRetryCount < DEEKSHA_MAX_RETRIES) {
+        deekshaRetryCount++;
+        const retryMsg = `[CHvDeeksha] Auto-restart ${deekshaRetryCount}/${DEEKSHA_MAX_RETRIES} in ${DEEKSHA_RETRY_DELAY_MS / 1000}s...`;
+        try { sendToRenderer('miner-output', { stream: 'stdout', text: retryMsg + '\n' }); } catch { /* ignore */ }
+        logApp('deeksha-auto-restart', JSON.stringify({ attempt: deekshaRetryCount }));
+        setTimeout(() => {
+          if (minerUserStopRequested || minerStopping) return;
+          if (minerProcess) return; // something else started
+          if (myStartToken !== minerStartToken) return;
+          startMining(config);
+        }, DEEKSHA_RETRY_DELAY_MS);
+      } else {
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stderr',
+            text: `[CHvDeeksha] Max retries (${DEEKSHA_MAX_RETRIES}) reached. Mining stopped.\n`
+          });
+        } catch { /* ignore */ }
+        sendToRenderer('miner-stopped', { code });
+        updateTrayMenu(minerStats);
+      }
     });
     setTimeout(() => {
       if (minerUserStopRequested || minerStopping) return;
@@ -4418,6 +4523,35 @@ function startMining(config) {
     // Show users a friendly explanation in the UI log.
     try {
       sendToRenderer('miner-output', { stream: 'stdout', text: `${randomxAutoMessage}\n` });
+    } catch {
+      // ignore
+    }
+  }
+
+  // HugePages: enable for Ekam Deeksha scratchpad (64 KiB memory-hard PoW).
+  // ZION_HUGEPAGES=1 signals both Rust and Python backends to use mmap+mlock.
+  // On Linux, true 2 MiB huge pages require: sysctl vm.nr_hugepages=128
+  // On macOS arm64, 16K native pages are used (4 TLB entries for 64 KiB).
+  {
+    const hpEnv = String(process.env.ZION_HUGEPAGES || '').trim();
+    env.ZION_HUGEPAGES = hpEnv === '0' ? '0' : '1'; // default ON
+
+    let hpNote;
+    if (process.platform === 'darwin' && process.arch === 'arm64') {
+      hpNote = 'Apple Silicon 16K native pages | mmap+mlock | 4 TLB entries per 64 KiB';
+    } else if (process.platform === 'darwin') {
+      hpNote = 'macOS x86_64 superpages | mmap+mlock';
+    } else if (process.platform === 'linux') {
+      hpNote = 'Linux mmap | sysctl vm.nr_hugepages=128 for 2 MiB pages';
+    } else {
+      hpNote = 'mmap fallback';
+    }
+
+    try {
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: `[Memory] Ekam Deeksha scratchpad: 64 KiB | ${hpNote}\n`
+      });
     } catch {
       // ignore
     }
@@ -5639,11 +5773,15 @@ function tryUpdateStatsFromFile() {
     if (typeof payload.backend === 'string') {
       const runtimeBackend = String(payload.backend || '').toLowerCase();
       minerStats.runtime_backend = runtimeBackend;
+      const resolvedBackend = mapDeekshaRuntimeBackend(runtimeBackend);
       syncDeekshaResolvedBackend(runtimeBackend);
-      if (runtimeBackend === 'native' || runtimeBackend === 'cpu' || runtimeBackend === 'python') {
+      if (resolvedBackend === 'ekam-native' || resolvedBackend === 'ekam-fallback') {
         minerStats.gpu_detected = false;
         minerStats.gpu_type = 'none';
         minerStats.hashrate_gpu = 0;
+      } else if (resolvedBackend) {
+        minerStats.gpu_detected = true;
+        minerStats.gpu_type = resolvedBackend.replace(/^ekam-/, '');
       }
     }
     if (typeof payload.cpu_threads === 'number') minerStats.cpu_threads = payload.cpu_threads;
@@ -6150,11 +6288,15 @@ function parseMinerOutput(output) {
     minerStats.total_hashes_display = String(deekshaStatsMatch[4]);
     const runtimeBackend = String(deekshaStatsMatch[5] || '').toLowerCase();
     minerStats.runtime_backend = runtimeBackend;
+    const resolvedBackend = mapDeekshaRuntimeBackend(runtimeBackend);
     syncDeekshaResolvedBackend(runtimeBackend);
-    if (runtimeBackend === 'native' || runtimeBackend === 'cpu' || runtimeBackend === 'python') {
+    if (resolvedBackend === 'ekam-native' || resolvedBackend === 'ekam-fallback') {
       minerStats.gpu_detected = false;
       minerStats.gpu_type = 'none';
       minerStats.hashrate_gpu = 0;
+    } else if (resolvedBackend) {
+      minerStats.gpu_detected = true;
+      minerStats.gpu_type = resolvedBackend.replace(/^ekam-/, '');
     }
   }
 
@@ -6321,11 +6463,12 @@ function parseMinerOutput(output) {
   const deekshaGpuBackendMatch = output.match(/\[Main\]\s+GPU backend:\s*(\S+)/i);
   if (deekshaGpuBackendMatch) {
     const backendName = String(deekshaGpuBackendMatch[1] || '').trim().toLowerCase();
+    const resolvedBackend = mapDeekshaRuntimeBackend(backendName);
     minerStats.runtime_backend = backendName;
     syncDeekshaResolvedBackend(backendName);
-    if (backendName && backendName !== 'cpu' && backendName !== 'native') {
+    if (resolvedBackend && resolvedBackend !== 'ekam-native' && resolvedBackend !== 'ekam-fallback') {
       minerStats.gpu_detected = true;
-      minerStats.gpu_type = backendName;
+      minerStats.gpu_type = resolvedBackend.replace(/^ekam-/, '');
     } else {
       minerStats.gpu_detected = false;
       minerStats.gpu_type = 'none';
@@ -6333,9 +6476,9 @@ function parseMinerOutput(output) {
     }
   }
 
-  const openclDeviceMatch = output.match(/\[(?:OpenCL|DeekshaOpenCL)\]\s+(?:Device|Canonical Deeksha GPU ready):\s*(.+)/i);
+  const openclDeviceMatch = output.match(/\[(?:OpenCL|DeekshaOpenCL)\]\s+(?:Device|Canonical Deeksha GPU ready):\s*(.+)|\[EkamDeekshaOpenCL\]\s+(.+)/i);
   if (openclDeviceMatch) {
-    const deviceName = openclDeviceMatch[1].trim();
+    const deviceName = String(openclDeviceMatch[1] || openclDeviceMatch[2] || '').trim();
     minerStats.gpu_info = deviceName;
     minerStats.gpu_name = deviceName;
     minerStats.gpu_detected = true;
@@ -6792,11 +6935,14 @@ ipcMain.handle('open-logs', () => {
 
 ipcMain.handle('ai-native-start', async (event, config) => {
   try {
+    const aiNativeServerUrl = config.aiNativePoolUrl || DEFAULT_AI_NATIVE_POOL_URL;
     const result = await aiNativeSend({
       cmd: 'start',
+      server_url: aiNativeServerUrl,
       config: {
         wallet: config.wallet,
-        pool_url: config.aiNativePoolUrl || DEFAULT_AI_NATIVE_POOL_URL,
+        server_url: aiNativeServerUrl,
+        pool_url: aiNativeServerUrl,
         consciousness_level: config.aiNativeConsciousness || 1,
         gpu: config.gpu || false,
         threads: config.threads || 4
@@ -7990,8 +8136,8 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     const balanceAtomic = result?.balance_atomic ?? 0;
     const utxoCount = result?.utxo_count ?? 0;
 
-    // Fetch pool mined balance — prefer authoritative pool API (Helsinki), fallback to others.
-    const POOL_SERVER_PRIORITY = ['helsinki', 'seedde', 'usa1', 'usa2', 'asia3'];
+    // Fetch pool mined balance from the current public host.
+    const POOL_SERVER_PRIORITY = ['zion2'];
     const POOL_API_SERVERS = POOL_SERVER_PRIORITY
       .map(id => TESTNET_SERVERS.find(s => s.id === id))
       .filter(Boolean);

@@ -4,6 +4,8 @@
 **Datum vydání:** 3. listopadu 2025  
 **Status:** ✅ **KOMPLETNÍ - PRODUKČNÍ VERZE**
 
+> **Archival note (2026-03-12):** This whitepaper is kept as a historical 2.8.5 artifact. Embedded pool/IP examples below are archival and do not describe the current live 2.9.8 Deeksha deployment.
+
 ---
 
 ---

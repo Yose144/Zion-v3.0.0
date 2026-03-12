@@ -45,14 +45,15 @@ Dokumenty z 2.9.7 jsou pro historický kontext, ne pro aktivní plánování 2.9
 
 ---
 
-## Aktuální evidence (2026-03-10)
+## Aktuální evidence (2026-03-11)
 
+- `cargo test -p zion-cosmic-harmony-v3 --lib` → **96/96 PASS** (Ekam Deeksha Tier 2 canonical)
 - `cargo test -p zion-pool --test chv4_e2e` → **11/11 PASS**
-- `cargo test -p zion-cosmic-harmony-v3 deeksha::tests::` → **9/9 PASS**
+- `cargo check -p zion-core -p zion-cosmic-harmony-v3 -p zion-pool -p zion-miner` → **PASS (0 warnings)**
 - `node --check APP&WEB/desktop-agent/src/main.js` → **PASS**
 - `node --check APP&WEB/desktop-agent/src/ui/renderer.js` → **PASS**
-- `cargo check -p zion-core -p zion-cosmic-harmony-v3 -p zion-pool -p zion-miner` → **PASS**
 - Desktop canonical GPU entrypoint: `resources/mining/cosmic_harmony_deeksha_gpu.py` (fallback na legacy `cosmic_harmony_v42_gpu.py`)
+- Ekam Deeksha benchmark: **1.20 kH/s 1T, 5.43 kH/s 8T** (2.3–2.5× vs original)
 
 Kódový scope je zelený, ale ještě zbývá stabilizace po přechodu na nový host a doplnění provozních validací.
 
@@ -116,6 +117,17 @@ Kódový scope je zelený, ale ještě zbývá stabilizace po přechodu na nový
 - jasně oddělené 2.9.7 freeze artefakty vs 2.9.8 runtime hotfixy
 - žádné nové release rozhodnutí mimo `docs/2.9.8/*`
 - příprava na tag/maintenance point bez dokumentačního driftu
+
+### Workstream E — Ekam Deeksha (Tier 2 Optimization) ✅ DONE
+
+> Detail: `docs/2.9.8/EKAM_DEEKSHA_OPTIMIZATION_PLAN.md`
+
+- **Architektura:** Blake3 XOF init + Blake3 XOF mixing v scratchpadu (nahrazuje SHA3-512 chain), 8-round Cosmic Fusion
+- **Výsledek:** 2.3–2.5× speedup (M1: 511→1200 H/s 1T, 2.3→5.4 kH/s 8T)
+- **Kanonický vektor:** `6339f2fb178fe2957a10d9e2a84cf9d5e340064f0d165e845b6a54eaf7924fbd`
+- **Testy:** 96/96 cosmic-harmony, 11/11 pool E2E, miner/core clean (0 warnings)
+- **Soubory:** `scratchpad_ekam.rs` (nový), `deeksha.rs`, `algorithms_opt.rs`, `ffi.rs`, `lib.rs`, pool/miner/core integration, Python fallback, desktop agent
+- **Zbývá:** GPU kernel update (Metal/OpenCL), NIST SP 800-22 entropy test, 7-day canary run
 
 ---
 

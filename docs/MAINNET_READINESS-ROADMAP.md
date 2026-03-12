@@ -1,10 +1,10 @@
 # 🎯 ZION TerraNova — MainNet Readiness & Unified Roadmap
 
-> **Datum:** 17. února 2026  
-> **Verze:** 2.9.6 "Clean L1 → Full Stack"  
+> **Datum:** 17. února 2026 (aktualizováno 12. března 2026)  
+> **Verze:** 2.9.6 → 2.9.8 Deeksha  
 > **Branch:** `main`  
 > **Cíl:** MainNet Genesis **31. prosince 2026**  
-> **Repo:** [github.com/Zion-TerraNova/2.9.5-NativeAwakening](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening)  
+> **Repo:** [github.com/Zion-TerraNova/2.9.6](https://github.com/Zion-TerraNova/2.9.6)  
 > **Sjednocuje:** `ROADMAP.md` + `docs/L1-L4_ROADMAP.md` (oba dokumenty zůstávají jako reference)
 
 ---
@@ -25,44 +25,20 @@
 
 ---
 
-## 🖥️ Live stav serverů (17. února 2026)
+## 🖥️ Live stav serverů (12. března 2026)
 
-### Helsinki 🇫🇮 (`77.42.31.72`)
-
-| Metrika | Hodnota |
-|---------|---------|
-| **Uptime** | 1 den 16h |
-| **Load** | 2.17, 2.08, 2.02 |
-| **RAM** | 5.1 / 7.5 GB (68%) |
-| **Disk** | 16 / 75 GB (22%) |
-| **Kontejnery** | 9 running (core ✅, pool ✅, miner ✅, redis ✅, website ✅, grafana ✅, prometheus ✅, 2× exporter) |
-| **Blockchain** | Height **3169**, Difficulty 13,538,804 |
-| **Bloky nalezeny** | **1,720** |
-| **Pool** | ZION (CH) + XMR (RandomX) + VRSC (VerusHash) + ETC (Ethash) |
-| **Website** | Up 14h (healthy), port 3000 |
-
-### Germany 🇩🇪 (`46.225.126.243`)
+### Zion2 🇨🇿 (`91.98.122.165`) — Primární host
 
 | Metrika | Hodnota |
 |---------|---------|
-| **Uptime** | 7 dní 15h |
-| **Load** | 2.00, 2.02, 2.06 |
-| **RAM** | 3.3 / 7.6 GB (43%) |
-| **Disk** | 19 / 75 GB (27%) |
-| **Kontejnery** | 8 running (core ✅, pool ✅, miner ✅, redis ✅, grafana ✅, prometheus ✅, 2× exporter) |
-| **Blockchain** | Height **3148**, Difficulty 13,062,380 |
-| **Bloky nalezeny** | **1,748** |
-| **Pool** | ZION (CH) + XMR (RandomX) + VRSC (VerusHash) + ETC (Ethash) |
+| **Role** | core + pool + miner + website + monitoring + 2× internal seed |
+| **Image verze** | 2.9.8 (Deeksha canonical) |
+| **Blockchain** | Aktivní, Cosmic Harmony Deeksha od výšky 0 |
+| **Pool** | ZION (Cosmic Harmony Deeksha) |
+| **Website** | healthy, port 3000 |
 
-### Multi-Mining aktivní streamy
-
-| Stream | Algo | Status | Pool |
-|--------|------|--------|------|
-| **ZION** | Cosmic Harmony v3 | ✅ Shares accepted, ~8s/share | Own pool |
-| **XMR** | RandomX | ✅ Job forwarding, height 3,611,958 | MoneroOcean |
-| **VRSC** | VerusHash | ✅ ZC authorized, jobs forwarding (7,095 total) | Verus pool |
-| **ETC** | Ethash | ✅ Job forwarding (14,821 total) | ETC pool |
-| **ERG** | Autolykos | ⚠️ Read timeout, reconnecting | Ergo pool |
+> Původní 3-server topologie (Helsinki/Germany/USA/Asia) byla konsolidována
+> na jeden primární host během března 2026. Staré IPs jsou historické.
 
 ---
 
@@ -72,19 +48,20 @@
 
 | Crate | Vrstva | LOC | Testů | Stav |
 |-------|--------|-----|-------|------|
-| `L1/core/` | L1 ⛓️ | 16,202 | 419 | ✅ Produkční |
-| `L1/pool/` | L1 ⛏️ | 14,441 | 31 | ✅ Produkční |
-| `L1/cosmic-harmony/` | L1 🔐 | 12,421 | 46 | ✅ Produkční |
-| `L1/miner/` | L1 ⛏️ | 10,233 | 20 | ✅ Produkční |
-| `L3/warp/` | L3 🌐 | 4,859 | 192 | 🏗️ Skeleton + testy |
-| `L2/bridge/` | L2 🌉 | 2,663 | 71 | 🧪 Testováno |
-| `L4/oasis/` | L4 🎮 | 2,335 | 39 | 🏗️ Skeleton |
-| `L2/dao/` | L2 🏛️ | 1,549 | 18 | 🏗️ Skeleton |
-| `L3/ncl/` | L3 🧠 | 1,034 | 9 | 🏗️ Skeleton |
-| `L3/ai-native/` | L3 🤖 | 752 | 5 | 🏗️ Skeleton |
-| **Rust celkem** | | **66,489** | **850** | |
-| `L2/contracts/` | L2 📜 | 686 (+1,249 test) | 95 | 🧪 Testováno |
-| **CELKEM** | | **~68,424** | **945** | |
+| `L1/core/` | L1 ⛓️ | 22,684 | 433 | ✅ Produkční |
+| `L1/pool/` | L1 ⛏️ | 19,546 | 115 | ✅ Produkční |
+| `L1/cosmic-harmony/` | L1 🔐 | 17,944 | 95 | ✅ Produkční |
+| `L1/miner/` | L1 ⛏️ | 14,480 | 79 | ✅ Produkční |
+| `L3/warp/` | L3 🌐 | ~8,000 | 237 | ✅ Implementováno (7 chainů) |
+| `L2/bridge/` | L2 🌉 | ~7,000 | 167 | ✅ Implementováno |
+| `L2/dao/` | L2 🏛️ | ~5,000 | 63 | ✅ Implementováno |
+| `L2/atomic-swap/` | L2 🔄 | ~4,000 | 15 | ✅ Implementováno |
+| `L3/ai-native/` | L3 🤖 | ~3,500 | 82 | ✅ Implementováno |
+| `L4/oasis/` | L4 🎮 | 3,494 | 49 | ✅ Implementováno |
+| `L3/ncl/` | L3 🧠 | ~3,100 | 37 | ✅ Implementováno |
+| **Rust celkem** | | **~114,520** | **1,379** | |
+| `L2/contracts/` | L2 📜 | 7 kontrakty | 5 test suites | ✅ Testováno |
+| **CELKEM** | | **~115,000+** | **1,379+** | |
 
 ### Infrastruktura
 

@@ -8,6 +8,8 @@
 **Compiled from**: CORE folder documentation + Philosophy strategic plans
 **Purpose**: Complete technical foundation and strategic vision for ZION blockchain ecosystem
 
+> **Archival note (2026-03-12):** This is a preserved 2.8.5-era document. Endpoint examples and pool references inside are historical and should not be treated as the current live deployment. Current verified status is documented in `docs/STATUS_CURRENT_2026-03-12.md`.
+
 ---
 
 ## 📋 TABLE OF CONTENTS

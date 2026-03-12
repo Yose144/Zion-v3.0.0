@@ -19,7 +19,7 @@ const corridorStats = [
   {
     label: 'Guardian Mesh',
     value: '2 / 2',
-    detail: 'Multi-region guardians — 3 seed nodes · 3 continents',
+    detail: 'Primary host plus internal quorum lanes on the current Zion2 runtime',
   },
 ];
 
@@ -36,9 +36,9 @@ const warpCorridors = [
 
 const validatorDeck = [
   {
-    title: 'Guardian Nodes',
-    value: '3 regions',
-    description: 'Helsinki · USA · Asia — global coverage for MainNet',
+    title: 'Guardian Runtime',
+    value: 'Zion2 quorum',
+    description: 'Single public host with internal validator lanes on the live network',
   },
   {
     title: 'Telemetry',

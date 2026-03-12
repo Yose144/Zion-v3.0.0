@@ -107,7 +107,7 @@ export default function ExplorerPage() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 Search blocks, transactions, and addresses on the live ZION TerraNova Deeksha network.
-                Smart hash resolver, live data from all seed nodes, and auto-refresh every 10 seconds.
+                Smart hash resolver, live data from the current public runtime, and auto-refresh every 10 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -117,7 +117,7 @@ export default function ExplorerPage() {
                   <Activity className="h-3 w-3 text-emerald-400" /> Auto-Refresh 10s
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> 3 Seed Nodes
+                  <Globe className="h-3 w-3 text-zion-cyan" /> 1 Public Host
                 </span>
               </div>
             </div>
@@ -278,7 +278,7 @@ export default function ExplorerPage() {
               <Globe className="h-7 w-7 text-zion-cyan" />
               Network Peers
             </h2>
-            <p className="text-sm text-gray-400">Global node connectivity — Helsinki · USA · Asia (3 seed nodes).</p>
+            <p className="text-sm text-gray-400">Current public host connectivity with archived multi-host validation history.</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
             <NetworkPeers />
@@ -340,7 +340,7 @@ export default function ExplorerPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — Blockchain Explorer Pro · Real-time data from native Rust nodes · 3 Seed Nodes · 3 Continents
+          ZION TerraNova {SITE_RELEASE_LABEL} — Blockchain Explorer Pro · Real-time data from native Rust runtime · 1 Public Host
         </p>
       </div>
     </div>

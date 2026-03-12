@@ -6,8 +6,7 @@
 set -euo pipefail
 
 # ── Configuration ──
-SERVER_HELSINKI="77.42.31.72"
-SERVER_GERMANY="46.225.126.243"
+SERVER_PRIMARY="91.98.122.165"
 SSH_KEY="$HOME/.ssh/zion_hetzner_key"
 REMOTE_DIR="/opt/zion"
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -o ConnectTimeout=10"
@@ -31,19 +30,12 @@ echo "╚═══════════════════════�
 echo ""
 
 # ── Choose target server ──
-TARGET="${1:-helsinki}"
+TARGET="${1:-primary}"
 case "$TARGET" in
-  helsinki)  SERVER="$SERVER_HELSINKI"; ;;
-  germany)  SERVER="$SERVER_GERMANY"; ;;
-  all)
-    info "Deploying to ALL servers..."
-    $0 helsinki
-    $0 germany
-    exit 0
-    ;;
+  primary)  SERVER="$SERVER_PRIMARY"; ;;
   *)
     err "Unknown target: $TARGET"
-    echo "Usage: $0 [helsinki|germany|all]"
+    echo "Usage: $0 [primary]"
     exit 1
     ;;
 esac

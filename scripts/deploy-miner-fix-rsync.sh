@@ -40,16 +40,12 @@ echo "   Files: cpu.rs, mod.rs"
 echo "   Started: $(date)"
 echo "=========================================="
 
-# Run all 3 in parallel
-deploy_one "Helsinki"  "77.42.31.72"   > /tmp/deploy-Helsinki.log 2>&1 &
+# Run canonical primary deploy
+deploy_one "Zion2"  "91.98.122.165"   > /tmp/deploy-Zion2.log 2>&1 &
 pid1=$!
-deploy_one "USA"       "5.78.145.234"  > /tmp/deploy-USA.log 2>&1 &
-pid2=$!
-deploy_one "Singapore" "5.223.56.124"  > /tmp/deploy-Singapore.log 2>&1 &
-pid3=$!
 
-echo "⏳ Building on all 3 servers in parallel... (Rust compile ~2-5 min)"
-echo "   PIDs: Helsinki=$pid1, USA=$pid2, Singapore=$pid3"
+echo "⏳ Building on the primary host... (Rust compile ~2-5 min)"
+echo "   PID: Zion2=$pid1"
 
 # Wait and collect results
 failures=0

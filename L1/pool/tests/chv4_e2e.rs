@@ -1,25 +1,28 @@
-/// F-04: CHv4/Deeksha E2E Test Suite
+/// F-04: Cosmic Harmony canonical E2E test suite
 ///
-/// Verifies canonical v2.9.8 dispatch behavior:
-/// Deeksha is active from genesis (height 0), while CHv4 direct path remains testable.
+/// Verifies current v2.9.8 dispatch behavior:
+/// canonical Ekam Deeksha is active from genesis (height 0), while legacy direct
+/// CHv4 helpers remain testable for compatibility regression checks.
 ///
-/// Key invariant: CHV_DEEKSHA_FORK_HEIGHT = 0
-///   → cosmic_harmony_with_height(blob, nonce, h) uses Deeksha for ALL h ≥ 0
-///   → CHv4 can still be tested directly via cosmic_harmony_v4().
+/// Key invariants:
+///   → CHV_DEEKSHA_FORK_HEIGHT = 0
+///   → CHV_EKAM_FORK_HEIGHT = 0
+///   → cosmic_harmony_with_height(blob, nonce, h) uses Ekam Deeksha for ALL h ≥ 0
 ///
 /// Run: cargo test -p zion-pool -- chv4 --nocapture
 
 use zion_cosmic_harmony_v3::{
-    algorithms_opt, cosmic_harmony_deeksha, cosmic_harmony_v3, cosmic_harmony_v4,
+    algorithms_opt, cosmic_harmony_deeksha, cosmic_harmony_ekam_deeksha,
+    cosmic_harmony_v3, cosmic_harmony_v4,
     cosmic_harmony_with_height, CHV_DEEKSHA_FORK_HEIGHT,
 };
 use zion_pool::shares::validator::{Algorithm, ShareValidator, SubmittedShare};
 
-// ── Group A: CHv4 fork-height constant ──────────────────────────────────────
+// ── Group A: Canonical fork-height constants ────────────────────────────────
 
 /// Fork height must be 0 — Deeksha is active from genesis.
 #[test]
-fn test_chv4_fork_height_is_zero() {
+fn test_deeksha_fork_height_is_zero() {
     assert_eq!(
         CHV_DEEKSHA_FORK_HEIGHT, 0,
         "CHV_DEEKSHA_FORK_HEIGHT must be 0 (active from genesis). \
@@ -27,24 +30,32 @@ fn test_chv4_fork_height_is_zero() {
     );
 }
 
-// ── Group B: CHv4 hash correctness ──────────────────────────────────────────
+// ── Group B: Canonical and legacy hash correctness ──────────────────────────
 
-/// cosmic_harmony_with_height at h=0 must equal cosmic_harmony_deeksha directly.
+/// cosmic_harmony_with_height at h=0 must equal cosmic_harmony_ekam_deeksha directly.
+/// (CHV_EKAM_FORK_HEIGHT=0 means Ekam is active from genesis and takes precedence.)
 #[test]
-fn test_with_height_zero_equals_deeksha() {
+fn test_height_zero_equals_ekam_canonical() {
     let blob = [0xABu8; 80];
     let nonce: u64 = 0x1234_5678_9ABC_DEF0;
 
     let h_height = cosmic_harmony_with_height(&blob, nonce, 0);
-    let h_deeksha = cosmic_harmony_deeksha(&blob, nonce);
+    let h_ekam = cosmic_harmony_ekam_deeksha(&blob, nonce);
 
     assert_eq!(
+        h_height.data, h_ekam.data,
+        "cosmic_harmony_with_height(blob, nonce, 0) must equal cosmic_harmony_ekam_deeksha(blob, nonce)"
+    );
+
+    // Original Deeksha is still directly callable but differs from Ekam.
+    let h_deeksha = cosmic_harmony_deeksha(&blob, nonce);
+    assert_ne!(
         h_height.data, h_deeksha.data,
-        "cosmic_harmony_with_height(blob, nonce, 0) must equal cosmic_harmony_deeksha(blob, nonce)"
+        "Ekam dispatch must differ from original Deeksha"
     );
 }
 
-/// Canonical dispatch (Deeksha) must be deterministic.
+/// Canonical dispatch (Ekam Deeksha) must be deterministic.
 #[test]
 fn test_canonical_hash_is_deterministic() {
     let blob = [0x5Au8; 80];
@@ -52,16 +63,16 @@ fn test_canonical_hash_is_deterministic() {
 
     let h1 = cosmic_harmony_with_height(&blob, nonce, 0);
     let h2 = cosmic_harmony_with_height(&blob, nonce, 0);
-    let h3 = cosmic_harmony_deeksha(&blob, nonce);
+    let h3 = cosmic_harmony_ekam_deeksha(&blob, nonce);
 
     assert_eq!(h1.data, h2.data, "Canonical dispatch must be deterministic (call 1 == call 2)");
-    assert_eq!(h1.data, h3.data, "cosmic_harmony_with_height(0) must equal cosmic_harmony_deeksha");
+    assert_eq!(h1.data, h3.data, "cosmic_harmony_with_height(0) must equal cosmic_harmony_ekam_deeksha");
 }
 
-/// CHv4 hash must differ from CHv3 for the same (blob, nonce).
-/// NPU Mixing step is what distinguishes CHv4 from CHv3.
+/// Legacy CHv4 helper must differ from CHv3 for the same (blob, nonce).
+/// NPU mixing is what distinguishes legacy CHv4 from CHv3.
 #[test]
-fn test_chv4_differs_from_chv3() {
+fn test_legacy_v4_differs_from_chv3() {
     let blob = [0x42u8; 80];
     let nonce: u64 = 0x0000_0001;
 
@@ -70,13 +81,13 @@ fn test_chv4_differs_from_chv3() {
 
     assert_ne!(
         h_chv3.data, h_chv4.data,
-        "CHv4 hash (with NPU Mixing) must differ from CHv3 ASIC-hardened hash"
+        "Legacy CHv4 hash (with NPU mixing) must differ from CHv3 ASIC-hardened hash"
     );
 }
 
-/// CHv4 hash must differ from CHv3 legacy for the same (blob, nonce).
+    /// Canonical Ekam Deeksha dispatch must differ from CHv3 legacy for the same input.
 #[test]
-fn test_chv4_differs_from_chv3_legacy() {
+    fn test_canonical_dispatch_differs_from_chv3_legacy() {
     let blob = [0x7Fu8; 80];
     let nonce: u64 = 0xCAFE_BABE;
 
@@ -86,13 +97,13 @@ fn test_chv4_differs_from_chv3_legacy() {
 
     assert_ne!(
         h_legacy.data, h_chv4.data,
-        "CHv4 hash must differ from CHv3-legacy hash"
+        "Canonical Ekam Deeksha dispatch must differ from CHv3-legacy hash"
     );
 }
 
 /// Different nonces must produce different hashes (sanity check).
 #[test]
-fn test_chv4_different_nonces_produce_different_hashes() {
+    fn test_legacy_v4_different_nonces_produce_different_hashes() {
     let blob = [0x11u8; 80];
 
     let h1 = cosmic_harmony_v4(&blob, 1);
@@ -103,11 +114,11 @@ fn test_chv4_different_nonces_produce_different_hashes() {
     assert_ne!(h1.data, h3.data, "nonce=1 and nonce=100_000 must produce different hashes");
 }
 
-// ── Group C: Pool ShareValidator with CHv4 ──────────────────────────────────
+// ── Group C: Pool ShareValidator canonical path ─────────────────────────────
 
-/// All CHv4 algorithm name aliases must parse as Algorithm::CosmicHarmony.
+/// All public algorithm aliases must parse as Algorithm::CosmicHarmony.
 #[test]
-fn test_chv4_algorithm_aliases_parse_correctly() {
+fn test_canonical_algorithm_aliases_parse_correctly() {
     let chv4_aliases = [
         "cosmic_harmony",
         "cosmic_harmony_v4",
@@ -132,13 +143,13 @@ fn test_chv4_algorithm_aliases_parse_correctly() {
     }
 }
 
-/// CHv4 share at genesis height (0) must be accepted by the pool ShareValidator.
+/// Canonical share at genesis height (0) must be accepted by the pool ShareValidator.
 /// Uses max target (ffffffff) so any valid hash passes difficulty.
 #[tokio::test]
-async fn test_chv4_share_accepted_at_genesis_height() {
+async fn test_canonical_share_accepted_at_genesis_height() {
     let validator = ShareValidator::new("little");
 
-    // Compute a real CHv4 hash so result matches
+    // Compute a real canonical hash so result matches.
     let blob_bytes = vec![0xBEu8; 80];
     let nonce: u64 = 0x0000_0001;
     let hash = cosmic_harmony_with_height(&blob_bytes, nonce, 0);
@@ -151,13 +162,13 @@ async fn test_chv4_share_accepted_at_genesis_height() {
         job_blob: hex::encode(&blob_bytes),
         job_target: "ffffffff".to_string(), // max target — any hash passes
         block_target: None,
-        height: Some(0), // genesis block — CHV4_NPU_FORK_HEIGHT = 0
+        height: Some(0), // genesis block — canonical Ekam Deeksha active from height 0
     };
 
     let result = validator.validate_share(&share, "f04_miner").await;
     assert!(
         result.valid,
-        "CHv4 share at genesis height=0 must be accepted by ShareValidator. Reason: {}",
+        "Canonical share at genesis height=0 must be accepted by ShareValidator. Reason: {}",
         result.reason
     );
 }
@@ -190,9 +201,9 @@ async fn test_chv4_alias_share_accepted_at_genesis() {
     );
 }
 
-/// Verify hash_value returned by ShareValidator matches expected CHv4 hash.
+/// Verify hash_value returned by ShareValidator matches expected canonical hash.
 #[tokio::test]
-async fn test_chv4_validator_returns_correct_hash() {
+async fn test_validator_returns_canonical_hash() {
     let validator = ShareValidator::new("little");
 
     let blob_bytes = vec![0x99u8; 80];
@@ -222,24 +233,24 @@ async fn test_chv4_validator_returns_correct_hash() {
     }
 }
 
-// ── Group D: CHv4 from-genesis invariant ────────────────────────────────────
+// ── Group D: From-genesis canonical invariant ───────────────────────────────
 
-/// cosmic_harmony_with_height must return Deeksha for ALL heights,
-/// because CHV_DEEKSHA_FORK_HEIGHT = 0.
+/// cosmic_harmony_with_height must return Ekam Deeksha for ALL heights,
+/// because CHV_EKAM_FORK_HEIGHT = 0.
 #[test]
 fn test_deeksha_active_for_all_heights() {
     let blob = [0x33u8; 80];
     let nonce: u64 = 0xABCD_EF01;
 
-    let h_deeksha = cosmic_harmony_deeksha(&blob, nonce);
+    let h_ekam = cosmic_harmony_ekam_deeksha(&blob, nonce);
 
-    // Test multiple heights — all should equal Deeksha since fork_height=0
+    // Test multiple heights — all should equal Ekam Deeksha since ekam_fork_height=0
     for &height in &[0u64, 1, 100, 1_000, 10_000, 100_000, 200_000, 999_999] {
         let h = cosmic_harmony_with_height(&blob, nonce, height);
         assert_eq!(
-            h.data, h_deeksha.data,
-            "cosmic_harmony_with_height at height={} must equal cosmic_harmony_deeksha \
-             (CHV_DEEKSHA_FORK_HEIGHT=0 means Deeksha always active)",
+            h.data, h_ekam.data,
+            "cosmic_harmony_with_height at height={} must equal cosmic_harmony_ekam_deeksha \
+             (CHV_EKAM_FORK_HEIGHT=0 means Ekam always active)",
             height
         );
     }

@@ -54,7 +54,7 @@ impl Default for SwapIdentity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct L1Config {
-    /// L1 RPC base URL, e.g. `http://77.42.31.72:8444`
+    /// L1 RPC base URL, e.g. `http://91.98.122.165:8444`
     pub rpc_url: String,
 
     /// Bearer token for L1 RPC (value of `ZION_RPC_TOKEN` on node).

@@ -285,8 +285,8 @@ Zion-2.9.5/
 
 - **Website**: https://zionterranova.com
 - **Documentation**: https://zionterranova.com/docs
-- **GitHub**: https://github.com/Zion-TerraNova/2.9.5-NativeAwakening
-- **v2.9.5** (current): https://github.com/Zion-TerraNova/2.9.5-NativeAwakening
+- **GitHub**: https://github.com/Zion-TerraNova/2.9.6
+- **v2.9.6** (workspace baseline): https://github.com/Zion-TerraNova/2.9.6
 
 ---
 

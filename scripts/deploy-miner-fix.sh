@@ -1,5 +1,5 @@
 #!/bin/bash
-# Deploy miner bug fix to all 3 servers in parallel
+# Deploy miner bug fix to the canonical primary host
 # Fixes: reconnect on submit loop death + stale share dropping
 # Commit: 12efed5
 
@@ -10,12 +10,10 @@ SSH_KEY=~/.ssh/zion_hetzner_key
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
 # P1-30: Use dedicated deploy user instead of root when available
 DEPLOY_USER="${DEPLOY_USER:-root}"
-REPO_DIR="/root/Zion-2.9.5"
+REPO_DIR="/root/zion-2.9.6"
 
 SERVERS=(
-  "77.42.31.72:Helsinki"
-  "5.78.145.234:USA"
-  "5.223.56.124:Singapore"
+  "91.98.122.165:Zion2"
 )
 
 deploy_server() {
@@ -28,7 +26,7 @@ deploy_server() {
 
   ssh $SSH_OPTS ${DEPLOY_USER}@$ip bash -s <<'REMOTE_SCRIPT' > "$log" 2>&1
     set -e
-    cd /root/Zion-2.9.5
+    cd /root/zion-2.9.6
 
     echo "📥 Git pull..."
     git pull origin main

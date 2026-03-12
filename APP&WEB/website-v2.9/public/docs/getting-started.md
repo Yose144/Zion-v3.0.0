@@ -24,22 +24,22 @@ Rozjeď ZION node za méně než 10 minut.
 ### 1. Klonuj repozitář
 
 ```bash
-git clone https://github.com/Zion-TerraNova/2.9.5-NativeAwakening.git
-cd 2.9.5-NativeAwakening
+git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 ```
 
 ### 2. Nastav peněženku
 
 ```bash
 export MINER_WALLET="zion1qTVOJE_ADRESA"
-export SEED_PEERS="77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334"
+export SEED_PEERS="91.98.122.165:8334"
 ```
 
 ### 3. Spusť stack
 
 ```bash
 cd docker
-docker compose -f docker-compose.testnet.yml up -d
+docker compose -f docker-compose.testnet.yml --env-file ../.env up -d
 ```
 
 Spustí 4 kontejnery:
@@ -64,7 +64,7 @@ curl -s http://localhost:8444/jsonrpc \
 ### 5. Zastavení
 
 ```bash
-docker compose -f docker-compose.testnet.yml down
+docker compose -f docker-compose.testnet.yml --env-file ../.env down
 ```
 
 Data zůstanou v Docker volumes. Pro smazání dat: `docker compose down -v`
@@ -84,8 +84,8 @@ rustup default stable
 ### 2. Klonuj a builduj
 
 ```bash
-git clone https://github.com/Zion-TerraNova/2.9.5-NativeAwakening.git
-cd 2.9.5-NativeAwakening
+git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 
 sudo apt-get update && sudo apt-get install -y cmake g++ make pkg-config libssl-dev
 
@@ -105,40 +105,32 @@ Binárky budou v `target/release/`:
   --rpc-port 8444 \
   --p2p-port 8334 \
   --network testnet \
-  --peers "77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334"
+  --peers "91.98.122.165:8334"
 ```
 
 ### 4. Spusť miner (druhý terminál)
 
 ```bash
-# ZION mining (3 vlákna)
+# ZION mining (public canonical path)
 ./target/release/zion-miner \
   --pool localhost:3333 \
   --wallet "zion1qTVOJE_ADRESA" \
   --worker muj-miner \
   --threads 3 \
+  --algo cosmic_harmony \
   --group zion
-
-# VRSC dual-mining (1 vlákno, volitelné)
-./target/release/zion-miner \
-  --pool localhost:3333 \
-  --wallet "VRSC_ADRESA" \
-  --worker muj-miner-vrsc \
-  --threads 1 \
-  --algo verushash \
-  --group vrsc
 ```
 
 ---
 
 ## Varianta C: Stáhni hotové binárky
 
-Na stránce [Download](https://www.zionterranova.com/download) nebo přímo z [GitHub Releases](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/releases) si stáhni binárku pro svůj OS.
+Na stránce [Download](https://www.zionterranova.com/download) nebo přímo z [GitHub Releases](https://github.com/Zion-TerraNova/2.9.6/releases) si stáhni binárku pro svůj OS.
 
 ```bash
 chmod +x zion-core zion-miner
 ./zion-core --data-dir ./data --network testnet \
-  --peers "77.42.31.72:8334"
+  --peers "91.98.122.165:8334,seed1.zionterranova.com:8334"
 ```
 
 ---

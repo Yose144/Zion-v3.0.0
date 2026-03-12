@@ -1,4 +1,4 @@
-# Tutoriály — ZION v2.9.5
+# Tutoriály — ZION TerraNova
 
 Praktické návody pro práci s ZION blockchainem.
 
@@ -45,8 +45,8 @@ curl -s localhost:8444/jsonrpc \
 
 ## Přispěj tutoriálem
 
-Máš nápad na tutoriál? Pošli PR na [GitHub](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening).
+Máš nápad na tutoriál? Pošli PR na [GitHub](https://github.com/Zion-TerraNova/2.9.6).
 
 ---
 
-*ZION TerraNova v2.9.5*
+*ZION TerraNova v2.9.8 Deeksha*

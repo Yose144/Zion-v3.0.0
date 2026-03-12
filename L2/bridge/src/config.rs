@@ -93,7 +93,7 @@ pub struct BridgeIdentity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct L1Config {
-    /// ZION L1 RPC URL (e.g., "http://77.42.31.72:8444")
+    /// ZION L1 RPC URL (e.g., "http://91.98.122.165:8444")
     pub rpc_url: String,
 
     /// Backup L1 RPC URL
@@ -390,7 +390,7 @@ version = "0.1.0"
 network = "testnet"
 
 [l1]
-rpc_url = "http://77.42.31.72:8444"
+rpc_url = "http://91.98.122.165:8444"
 bridge_address = "zion1bridge000000000000000000000000000vault"
 finality_blocks = 60
 poll_interval_secs = 15
@@ -433,7 +433,7 @@ log_level = "info"
 "#;
         let config: BridgeConfig = toml::from_str(toml_str).unwrap();
         assert_eq!(config.bridge.name, "Test Bridge");
-        assert_eq!(config.l1.rpc_url, "http://77.42.31.72:8444");
+        assert_eq!(config.l1.rpc_url, "http://91.98.122.165:8444");
         assert_eq!(config.evm_chains.len(), 1);
         assert_eq!(config.evm_chains[0].chain_id, "base");
         assert_eq!(config.evm_chains[0].evm_chain_id, 84532);

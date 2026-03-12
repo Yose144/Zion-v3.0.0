@@ -193,7 +193,7 @@ const sections: Section[] = [
     accentBorder: 'border-emerald-400/30',
     docs: [
       { id: 'live-index', title: 'Aktuální snapshot sítě', file: 'index.md' },
-      { id: 'live-p2p', title: '3-node topologie', file: 'v2.9.6/p2p.md' },
+      { id: 'live-p2p', title: 'P2P topologie', file: 'v2.9.6/p2p.md' },
       { id: 'live-mainnet', title: 'Launch path', file: 'mainnet/README.md' },
     ],
   },

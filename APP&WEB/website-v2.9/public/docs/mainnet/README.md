@@ -11,12 +11,12 @@
 ```
 [DONE]  Phase 0 — Foundation (Sep–Dec 2025)
          ✅ Genesis blok, CHv3 algoritmus, Python prototype
-         ✅ 3-node TestNet, první GPU mining
+         ✅ TestNet proto (archivováno)
 
 [DONE]  Phase 1 — Native Core (Jan–Mar 2026)
          ✅ 100% Rust rewrite (52 590 LOC)
          ✅ 780+ testů, LMDB, Ed25519
-         ✅ 3-node live TestNet (Helsinki, USA, Asia)
+         ✅ Primary-host TestNet (Zion2, 91.98.122.165)
          ✅ wZION Bridge (Base Sepolia testnet)
          ✅ Unified website v2.9.7
 

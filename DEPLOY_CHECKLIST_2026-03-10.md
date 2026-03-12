@@ -54,3 +54,52 @@ Or redeploy previous known-good website source bundle.
 
 - Current environment issue in VS Code agent terminal: OpenSSH may fail with `getsockname failed: Not a socket`.
 - If that appears, run deploy commands from a normal local terminal (PowerShell/CMD/WSL) outside agent terminal.
+
+## 5) Ekam Deeksha chain rollout (2026-03-11)
+
+Použít pro plný chain reset a re-deploy canonical Ekam Deeksha stacku na `91.98.122.165`.
+
+### Server rebuild
+
+```bash
+cd /root/zion-2.9.6
+docker compose -f docker/docker-compose.testnet.yml build --no-cache core
+docker compose -f docker/docker-compose.testnet.yml build --no-cache pool
+docker compose -f docker/docker-compose.testnet.yml build --no-cache miner
+```
+
+### Clean reset volumes
+
+```bash
+cd /root/zion-2.9.6
+docker compose -f docker/docker-compose.testnet.yml down
+docker volume rm docker_seed1-testnet-data docker_seed2-testnet-data pool-testnet-data zion-testnet-data
+docker volume create zion-testnet-data
+docker volume create pool-testnet-data
+```
+
+### Start stack
+
+```bash
+cd /root/zion-2.9.6
+docker compose -f docker/docker-compose.testnet.yml --env-file .env up -d
+```
+
+### Critical validation
+
+```bash
+curl -s http://localhost:8444/jsonrpc \
+	-H "Content-Type: application/json" \
+	-d '{"jsonrpc":"2.0","method":"get_info","params":[],"id":1}'
+
+curl -s http://localhost:8080/stats
+docker logs zion-miner --tail 20
+docker logs zion-pool --tail 20
+```
+
+Expected signals:
+
+- core height roste od genesis (`height > 0` během pár minut)
+- miner reportuje `algo: cosmic_harmony` a accepted share bez rejectů
+- pool log obsahuje `Share ACCEPTED` a následně `BLOCK FOUND`
+- Redis je healthy; bez explicitního `--env-file .env` spadne na `requirepass wrong number of arguments`
