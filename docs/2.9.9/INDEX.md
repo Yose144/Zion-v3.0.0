@@ -32,6 +32,7 @@ algoritmus, ale **odemknout plný výkon** stávající cesty.
 | [HUGEPAGES.md](HUGEPAGES.md) | HugePages scratchpad allocator — XMRig-style paměťová optimalizace |
 | [V3_MIGRATION_STRATEGY.md](V3_MIGRATION_STRATEGY.md) | **Strategie: 2.9.9 archiv → v3.0 Mainnet nové repo** |
 | [MAINNET_READINESS_99.md](MAINNET_READINESS_99.md) | **99% readiness souhrn — co je hotovo, co zbývá, skóre** |
+| [V3_PURE_CODE_AUDIT.md](V3_PURE_CODE_AUDIT.md) | **V3 hloubkový audit — kompletní inventář co je/co není vs ústava** |
 
 ---
 
