@@ -679,6 +679,9 @@ void ekam_memory_hard_transform(const uchar input[64], __global uchar *pad,
     random_read_mix(input, pad, output);   /* Keccak-256 — unchanged */
 }
 
+/* Forward declaration needed by cosmic_fusion_ekam (defined after NPU section) */
+void fusion_round(uchar state[64], uchar round_num);
+
 /* Ekam Cosmic Fusion: 8 rounds (matches EKAM_FUSION_ROUNDS = 8) */
 void cosmic_fusion_ekam(const uchar in64[64], uchar hash32[32])
 {
