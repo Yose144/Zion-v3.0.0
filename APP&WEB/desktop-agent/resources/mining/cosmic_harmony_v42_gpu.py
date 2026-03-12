@@ -1171,9 +1171,9 @@ class DeekshaOpenCLBackend:
         buf_rn  = cl.Buffer(self._ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=rn_arr)
         buf_rh  = cl.Buffer(self._ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=rh_arr)
 
-        # Work-group size: small due to heavy per-item computation + register pressure
-        local_size = min(64, nonce_count)
-        global_size = nonce_count
+        # Work-group size: 256 for best GPU occupancy on AMD RDNA/GCN
+        local_size = min(256, nonce_count)
+        global_size = ((nonce_count + local_size - 1) // local_size) * local_size
 
         self._kernel(
             self._queue,
