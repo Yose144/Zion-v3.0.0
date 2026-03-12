@@ -32,19 +32,19 @@ const supportedAlgorithms = [
 const minerSteps = [
   {
     title: 'Clone & install',
-    code: 'git clone https://github.com/Zion-TerraNova/Zion-2.9.5.git\ncd Zion-2.9.5\nsource .venv/bin/activate\npip install -r requirements.txt'
+    code: 'git clone https://github.com/Zion-TerraNova/2.9.6.git\ncd 2.9.6\nsource .venv/bin/activate\npip install -r requirements.txt'
   },
   {
     title: 'Start native miner',
     code: `python zion_native_miner_v2_9.py \\
-  --pool 77.42.31.72:3333 \\
+  --pool 91.98.122.165:3333 \\
   --wallet YOUR_ZION_ADDRESS \\
   --worker my-worker \\
   --algorithm cosmic_harmony`
   },
   {
     title: 'Start XMRig (Alternative)',
-    code: './xmrig -o stratum+tcp://77.42.31.72:3333 -u YOUR_ZION_ADDRESS -p x'
+    code: './target/release/zion-miner --pool 91.98.122.165:3333 --wallet YOUR_ZION_ADDRESS --worker my-worker --algo cosmic_harmony'
   }
 ];
 
@@ -88,7 +88,7 @@ export default function MiningClient() {
               <h2 className="text-3xl font-semibold text-white">Stratum endpoints</h2>
               <p className="text-sm text-gray-400">Auto-detect or pin a specific algorithm port.</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-mono text-zion-cyan">stratum+tcp://77.42.31.72:3333</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-mono text-zion-cyan">stratum+tcp://91.98.122.165:3333</div>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {supportedAlgorithms.map((algo) => (

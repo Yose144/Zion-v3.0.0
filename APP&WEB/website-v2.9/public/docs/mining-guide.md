@@ -1,18 +1,18 @@
 # Mining průvodce — ZION v2.9.6
 
-Kompletní průvodce těžbou ZION blockchainu s dual-miningem.
+Kompletní průvodce těžbou ZION blockchainu po aktuální veřejné kanonické cestě.
 
 ---
 
 ## Přehled
 
-- **Algoritmus**: Cosmic Harmony v3 (CHv3, CPU-friendly)
+- **Algoritmus**: Cosmic Harmony Deeksha (`cosmic_harmony`)
 - **Block reward**: 5 400,067 ZION → Decade Decay (-20%/10 let), tail 725 ZION
 - **Block time**: 60 sekund
 - **DAA**: LWMA s oknem 60 bloků, max změna ±25 %
 - **Mining horizont**: 100+ let + perpetual tail emission
 - **Poplatky**: Spalovány (deflační mechanismus)
-- **Dual-mining**: ZION + VRSC (VerusCoin) paralelně
+- **Legacy revenue support**: runtime ji stále umí, ale veřejné nasazení je nyní pure-ZION
 
 ### Block Reward distribuce
 
@@ -41,27 +41,19 @@ Kompletní průvodce těžbou ZION blockchainu s dual-miningem.
 ## Varianta 1: ZION Native Miner
 
 ```bash
-git clone https://github.com/Zion-TerraNova/2.9.5-NativeAwakening.git
-cd 2.9.5-NativeAwakening
+git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 
 cargo build --release
 
-# ZION mining (3 vlákna)
+# ZION mining (public canonical path)
 ./target/release/zion-miner \
   --pool localhost:3333 \
   --wallet "zion1qTVOJE_ADRESA" \
   --worker muj-rig \
   --threads 3 \
+  --algo cosmic_harmony \
   --group zion
-
-# VRSC dual-mining (1 vlákno, volitelné)
-./target/release/zion-miner \
-  --pool localhost:3333 \
-  --wallet "VRSC_ADRESA" \
-  --worker muj-rig-vrsc \
-  --threads 1 \
-  --algo verushash \
-  --group vrsc
 ```
 
 ---
@@ -69,26 +61,23 @@ cargo build --release
 ## Varianta 2: Docker miner
 
 ```bash
-git clone https://github.com/Zion-TerraNova/2.9.5-NativeAwakening.git
-cd 2.9.5-NativeAwakening/docker
+git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6/docker
 
-docker compose -f docker-compose.testnet.yml up -d zion-miner
+docker compose -f docker-compose.testnet.yml --env-file ../.env up -d zion-miner
 docker logs -f zion-miner
 ```
 
 ---
 
-## Varianta 3: XMRig (RandomX kompatibilní)
+## Varianta 3: Přímé připojení na veřejný pool
 
 ```bash
-wget https://github.com/xmrig/xmrig/releases/latest/download/xmrig-6.21.0-linux-x64.tar.gz
-tar xzf xmrig-*.tar.gz && cd xmrig-*
-
-./xmrig \
-  -o stratum+tcp://77.42.31.72:3333 \
-  -u zion1qTVOJE_ADRESA \
-  -p muj-rig \
-  --algo rx/0
+./target/release/zion-miner \
+  --pool 91.98.122.165:3333 \
+  --wallet "zion1qTVOJE_ADRESA" \
+  --worker muj-rig \
+  --algo cosmic_harmony
 ```
 
 ---
@@ -99,13 +88,13 @@ tar xzf xmrig-*.tar.gz && cd xmrig-*
 
 | Pool | Stratum | Web |
 |------|---------|-----|
-| Helsinki (oficial) | `77.42.31.72:3333` | `http://77.42.31.72:8080` |
+| Zion2 (public host) | `91.98.122.165:3333` | `http://91.98.122.165:8080` |
 
 ### Konfigurace
 
 ```bash
 ./zion-miner \
-  --pool 77.42.31.72:3333 \
+  --pool 91.98.122.165:3333 \
   --wallet "zion1qTVOJE_ADRESA" \
   --worker muj-rig
 ```
@@ -118,7 +107,7 @@ Spusť vlastní node + pool:
 
 ```bash
 ./zion-core --data-dir ./data --network testnet \
-  --peers "77.42.31.72:8334"
+  --peers "91.98.122.165:8334"
 
 ./zion-pool --node localhost:8444 --stratum-port 3333
 
@@ -163,8 +152,8 @@ curl -s localhost:8444/jsonrpc \
 - [Pool Setup →](#pool-setup) — vlastní mining pool
 - [Pokročilý Setup →](#setup) — produkční konfigurace
 - [API Reference →](#api) — RPC endpointy
-- [GitHub](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening) — zdrojový kód
+- [GitHub](https://github.com/Zion-TerraNova/2.9.6) — zdrojový kód
 
 ---
 
-*ZION TerraNova v2.9.6*
+*ZION TerraNova v2.9.8 Deeksha*

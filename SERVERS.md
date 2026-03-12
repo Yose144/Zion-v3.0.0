@@ -1,8 +1,8 @@
 # 🖥️ ZION TerraNova — Active Servers
 
-> **Aktualizace:** 10. března 2026  
-> **Aktuální topologie:** 1 nový primární server po resetu infrastruktury  
-> **Chain status:** přechod na nový host `91.98.122.165` jako aktuální source of truth pro deploy a web
+> **Aktualizace:** 11. března 2026  
+> **Aktuální topologie:** 1 primární server  
+> **Chain status:** Ekam Deeksha testnet běží od genesis na hostu `91.98.122.165`
 
 > Původní servery `77.42.31.72`, `178.156.240.160`, `5.223.43.93` a starší historické uzly jsou brané jako decommissioned. Nejsou už zdrojem pravdy pro operace ani dokumentaci.
 
@@ -26,18 +26,20 @@
 
 | Server | Revenue kontejnery | Mysterium ID | Stav |
 |---|---|---|---|
-| Zion2 (`91.98.122.165`) | `zion-core`, `zion-pool`, `zion-redis`, `zion-seed-1`, `zion-seed-2` | n/a | ✅ Active |
+| Zion2 (`91.98.122.165`) | `zion-core`, `zion-pool`, `zion-miner`, `zion-redis`, `zion-seed-1`, `zion-seed-2`, `zion-website` | n/a | ✅ Active |
 
-### Docker image verze (live 2026-03-10)
+### Docker image verze (live 2026-03-11)
 
 | Komponenta | Zion2 |
 |-----------|-------|
-| Core | `zion-core` |
-| Pool | `zion-pool` |
-| Redis | `zion-redis` |
-| Seeds | `zion-seed-1`, `zion-seed-2` |
+| Core | `zion-core:2.9.8` |
+| Pool | `zion-pool:2.9.8` |
+| Miner | `zion-miner:2.9.8` |
+| Redis | `redis:7-alpine` |
+| Website | `zion-website:2.9.6` |
+| Seeds | `zion-seed-1`, `zion-seed-2` (`zion-core:2.9.8`) |
 
-> **Poznámka:** Dokumentace od 10. 3. 2026 používá jako aktivní deploy target jen `91.98.122.165`. Staré IP adresy zůstávají pouze v historických reportech a archivech.
+> **Poznámka:** Dokumentace od 10. 3. 2026 používá jako aktivní deploy target jen `91.98.122.165`. Dne 11. 3. 2026 byl na tomto hostu proveden clean reset chain volume a plný rebuild `core + pool + miner` pro Ekam Deeksha od výšky 0. Staré IP adresy zůstávají pouze v historických reportech a archivech.
 
 ### ❌ Suspendované servery (Vultr — pozastaveny)
 
@@ -74,8 +76,15 @@ ssh zion-primary    # 91.98.122.165 — current primary host
 
 ```bash
 # Preferovaný orchestrátor pro chain stack zůstává 2.9.8 autopilot,
-# ale website deploy se provádí samostatně na 91.98.122.165.
+# ale compose příkazy musí používat explicitní .env, jinak Redis naběhne bez hesla.
 bash scripts/autopilot-2.9.8.sh --remote --network testnet
+```
+
+Při ručním restartu stacku:
+
+```bash
+cd /root/zion-2.9.6
+docker compose -f docker/docker-compose.testnet.yml --env-file .env up -d
 ```
 
 ## SEED_PEERS
@@ -95,7 +104,7 @@ bash scripts/autopilot-2.9.8.sh --remote --network testnet
 | **Deploy (starý)** | `~/.ssh/zion_deployment_key` | historický klíč, nepoužívat |
 
 - **Typ:** Ed25519
-- **Hlavní klíč pro všechny 3 aktivní servery:** `~/.ssh/zion_hetzner_key`
+- **Hlavní klíč pro current primary:** `~/.ssh/zion_hetzner_key`
 - **Fingerprint:** `SHA256:inS+3Zmbn3ewfRb5AGwfcfbuXmh0Y0tR3riPl/GtOYo`
 
 ### SSH Config (`~/.ssh/config`)
@@ -124,6 +133,4 @@ ssh -i ~/.ssh/zion_hetzner_key     root@91.98.122.165   # Zion2 / current primar
 | **3333** | Stratum | Mining pool | Zion2 |
 | **8080** | Pool API | Pool statistiky | Zion2 |
 | **3000** | Web | Dashboard / Website | Zion2 |
-| **3001** | Grafana | Monitoring | Zion2 |
-| **9090** | Prometheus | Metriky | Zion2 |
 

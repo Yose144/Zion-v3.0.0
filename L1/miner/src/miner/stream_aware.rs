@@ -7,16 +7,16 @@
 //! This module handles:
 //! - Detecting algorithm changes in incoming jobs
 //! - Dynamically switching the active mining algorithm
-//! - Managing CH v3 as the primary ZION hashing engine
+//! - Managing canonical Ekam Deeksha as the primary ZION hashing engine
 //! - Supporting external coin algorithms (ethash, autolykos, randomx, etc.)
 //!
 //! ## Protocol
 //!
 //! Pool → Miner flow:
-//! 1. Miner connects, sends login with algo=cosmic_harmony_v3
+//! 1. Miner connects, sends login with algo=cosmic_harmony
 //! 2. Pool assigns miner to ZION or Revenue group
 //! 3. Pool sends job with `algo` field matching the assigned stream
-//!    - ZION group: algo="cosmic_harmony_v3"  
+//!    - ZION group: algo="cosmic_harmony"  
 //!    - Revenue group: algo="autolykos" / "ethash" / "randomx" etc.
 //! 4. If ProfitSwitcher changes coin, Revenue miners get new job with new algo
 //! 5. Miner detects algo change and switches hashing engine

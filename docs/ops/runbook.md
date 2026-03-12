@@ -1,8 +1,10 @@
 # 🛠️ ZION TerraNova — Operations Runbook
 
 > **Version:** 1.0  
-> **Last Updated:** 23. února 2026  
+> **Last Updated:** 11. března 2026  
 > **Environment:** TestNet (transition to MainNet planned 31.12.2026)
+
+> **Archival note:** This docs copy is retained for historical context. The canonical operational source is `ops/runbook.md`, and the current live topology is the single-host Zion2 model on `91.98.122.165`.
 
 ---
 
@@ -69,11 +71,13 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 | Container | Image | Ports | Healthcheck |
 |-----------|-------|-------|-------------|
-| `zion-core` | `zion-core:2.9.5-testnet` | 8334, 8444 | `curl http://localhost:8444/stats` |
-| `zion-pool` | `zion-pool:2.9.5-testnet` | 3333, 8080 | `curl http://localhost:8080/health` |
-| `zion-miner` | `zion-miner:2.9.5-testnet` | — | CPU mining process |
+| `zion-core` | `zion-core:2.9.8` | 8334, 8444 | `curl http://localhost:8444/stats` |
+| `zion-pool` | `zion-pool:2.9.8` | 3333, 8080 | `curl http://localhost:8080/health` |
+| `zion-miner` | `zion-miner:2.9.8` | — | CPU mining process |
+| `zion-seed-1` | `zion-core:2.9.8` | — | internal seed role |
+| `zion-seed-2` | `zion-core:2.9.8` | — | internal seed role |
 | `zion-redis` | `redis:7-alpine` | 6379 | `redis-cli ping` |
-| `zion-web` | `zion-web:latest` | 3000 | HTTP GET / |
+| `zion-website` | `zion-website:2.9.6` | 3000 | HTTP GET / |
 | `zion-prometheus` | `prom/prometheus:v2.53.0` | 9090 | `wget http://localhost:9090/-/healthy` |
 | `zion-grafana` | `grafana/grafana:11.1.0` | 3001 | `wget http://localhost:3000/api/health` |
 | `zion-node-exporter` | `prom/node-exporter:v1.8.1` | 9100 | — |
@@ -88,7 +92,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 # Real-time logs
 docker logs -f zion-core
 docker logs -f zion-pool
-docker logs -f zion-web
+docker logs -f zion-website
 
 # Last 100 lines
 docker logs --tail 100 zion-core
@@ -101,14 +105,14 @@ docker logs -f --timestamps zion-pool
 ```bash
 docker restart zion-core
 docker restart zion-pool
-docker restart zion-web
+docker restart zion-website
 ```
 
 ### Full stack restart
 ```bash
-cd /opt/zion
-docker compose -f docker/docker-compose.testnet.yml down
-docker compose -f docker/docker-compose.testnet.yml up -d
+cd /root/zion-2.9.6
+docker compose -f docker/docker-compose.testnet.yml --env-file .env down
+docker compose -f docker/docker-compose.testnet.yml --env-file .env up -d
 ```
 
 ### Check blockchain height
@@ -151,8 +155,8 @@ docker system df
 
 ### Prometheus
 - URL: `http://server:9090`
-- Config: `/opt/zion/monitoring/prometheus/prometheus.yml`
-- Rules: `/opt/zion/monitoring/prometheus/rules/alerts.yml`
+- Config: `/root/zion-2.9.6/monitoring/prometheus/prometheus.yml`
+- Rules: `/root/zion-2.9.6/monitoring/prometheus/rules/alerts.yml`
 - Data: Docker volume `zion-prometheus-data`
 
 ### Grafana
@@ -177,7 +181,7 @@ docker system df
 
 ### Start monitoring stack
 ```bash
-cd /opt/zion
+cd /root/zion-2.9.6
 docker compose -f docker/docker-compose.monitoring.yml up -d
 ```
 
@@ -210,14 +214,14 @@ curl -s http://localhost:8444/stats | jq '.peer_count'
 
 ### Level 3 — Fork Detected
 
-**Symptom:** Different block heights / hashes between servers  
+**Symptom:** Different block heights / hashes between containers or against an external observer  
 **Action:**
 ```bash
-# Check both servers
+# Check current public host
 PRIMARY=$(curl -s http://91.98.122.165:8444/stats | jq '.block_height')
 echo "Primary: $PRIMARY"
 
-# If diverged > 10 blocks, the shorter chain will auto-reorg
+# If diverged > 10 blocks, verify compose state and restart core/pool cleanly
 # Monitor logs for reorg activity:
 docker logs --tail 100 zion-core | grep -i "reorg\|fork\|stronger"
 ```

@@ -96,8 +96,8 @@ body{background:var(--bg);color:var(--text);font-family:'SF Mono','Fira Code','C
 <div class="servers">
   <div class="server" id="srv-helsinki">
     <div class="server-head">
-      <span class="flag">🇫🇮</span>
-      <div><div class="name">Helsinki</div><div class="ip">77.42.31.72</div></div>
+      <span class="flag">🟢</span>
+      <div><div class="name">Zion2</div><div class="ip">91.98.122.165</div></div>
       <span class="status status-ok" id="h-status">—</span>
     </div>
     <div class="metrics">
@@ -121,8 +121,8 @@ body{background:var(--bg);color:var(--text);font-family:'SF Mono','Fira Code','C
 
   <div class="server" id="srv-singapore">
     <div class="server-head">
-      <span class="flag">🇸🇬</span>
-      <div><div class="name">Singapore</div><div class="ip">5.223.56.124</div></div>
+      <span class="flag">🧩</span>
+      <div><div class="name">DNS Seed</div><div class="ip">seed1.zionterranova.com</div></div>
       <span class="status status-ok" id="s-status">—</span>
     </div>
     <div class="metrics">
@@ -146,17 +146,17 @@ body{background:var(--bg);color:var(--text);font-family:'SF Mono','Fira Code','C
 </div>
 
 <div class="console">
-  <div class="console-header"><span class="icon">▸</span> Monitoring Log (Helsinki)</div>
+  <div class="console-header"><span class="icon">▸</span> Monitoring Log (Zion2)</div>
   <div class="log-box" id="log-box">Loading...</div>
 </div>
 
 <div class="footer">
-  ZION TerraNova v2.9.5 • Last update: <span id="last-update">—</span> • Refresh interval: 30s
+  ZION TerraNova v2.9.8 • Last update: <span id="last-update">—</span> • Refresh interval: 30s
 </div>
 
 <script>
 const API = 'https://zionterranova.com/dash/data.json';
-const FALLBACK = 'http://77.42.31.72/dash/data.json';
+const FALLBACK = 'http://91.98.122.165/dash/data.json';
 
 function fmt(n) { return n != null ? n.toLocaleString() : '—'; }
 function fmtTime(s) {

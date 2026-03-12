@@ -1,6 +1,6 @@
 # 🌟 ZION Desktop Agent - AI Native Integration
 
-Desktop Agent je nyní plně integrován s **AI Native Server v2.9.2** běžícím na Helsinki (77.42.31.72:8003).
+Desktop Agent je nyní plně integrován s **AI Native Server** běžícím na aktuálním primárním hostu Zion2 (91.98.122.165:8001).
 
 ---
 
@@ -15,7 +15,7 @@ Python klient pro komunikaci s AI Native Server přes HTTP API.
 - ✅ **Memory System** - Ukládání a vyhledávání konverzací (ChromaDB)
 - ✅ **Self-Learning** - Analýza logů, pattern recognition
 - ✅ **Blockchain Monitoring** - Real-time blockchain status
-- ✅ **Pool Monitoring** - Multi-pool tracking (Helsinki/Germany/USA)
+- ✅ **Pool Monitoring** - Current public host + internal service visibility
 - ✅ **System Health** - Comprehensive health checks
 - ✅ **Dashboard Data** - All-in-one endpoint
 
@@ -67,7 +67,7 @@ window.electronAPI.aiNativeSystemHealth()
 ```python
 from resources.ai_native_client import AINativeClient
 
-client = AINativeClient("http://localhost:8003")
+client = AINativeClient("http://localhost:8001")
 await client.connect()
 
 # Knowledge search
@@ -118,10 +118,10 @@ Pro development/testing z lokalu:
 
 ```bash
 # Vytvoř SSH tunel
-ssh -i ~/.ssh/zion_hetzner_key -L 8003:localhost:8003 root@77.42.31.72 -N -f
+ssh -i ~/.ssh/zion_hetzner_key -L 8001:localhost:8001 root@91.98.122.165 -N -f
 
 # Připoj se přes localhost
-client = AINativeClient("http://localhost:8003")
+client = AINativeClient("http://localhost:8001")
 ```
 
 **Výhody:**
@@ -133,12 +133,10 @@ client = AINativeClient("http://localhost:8003")
 Pro produkci (vyžaduje otevřený firewall):
 
 ```python
-client = AINativeClient("http://77.42.31.72:8003")
+client = AINativeClient("http://91.98.122.165:8001")
 ```
 
-**Poznámka:** Port 8003 je aktuálně zablokován Hetzner Cloud firewallem. Pro přímé připojení je nutné:
-1. Povolit port v Hetzner Cloud Console
-2. Nebo použít nginx reverse proxy (port 80/443)
+**Poznámka:** Pokud není port 8001 dostupný přímo zvenku, použij SSH tunel nebo reverzní proxy.
 
 ---
 
@@ -159,7 +157,7 @@ python3 test_ai_native_client.py
 ✅ PASS: Memory stats retrieved (4 conversations, 2 learnings)
 ✅ PASS: Health score 100/100
 ✅ PASS: Blockchain height 5
-✅ PASS: 1/3 pools online
+✅ PASS: 1/1 public hosts online
 ✅ PASS: Dashboard data retrieved
 ✅ PASS: AI responded
 ✅ Stats: 12 queries, 0 errors, 0.00% error rate
@@ -176,8 +174,8 @@ node test_ai_native_integration.js
 ## 📡 AI Native Server Endpoints
 
 ### Base URL
-- **Helsinki**: `http://77.42.31.72:8003` (via SSH tunnel)
-- **Localhost**: `http://localhost:8003` (with tunnel)
+- **Zion2**: `http://91.98.122.165:8001`
+- **Localhost**: `http://localhost:8001` (with tunnel)
 
 ### Available Endpoints
 
@@ -239,17 +237,17 @@ GET  /system/health
 **Fix:**
 1. Ověř že AI Native Server běží:
    ```bash
-   ssh root@77.42.31.72 "ps aux | grep enhanced_knowledge_server"
+    ssh root@91.98.122.165 "ps aux | grep enhanced_knowledge_server"
    ```
 
 2. Vytvoř SSH tunel:
    ```bash
-   ssh -i ~/.ssh/zion_hetzner_key -L 8003:localhost:8003 root@77.42.31.72 -N -f
+    ssh -i ~/.ssh/zion_hetzner_key -L 8001:localhost:8001 root@91.98.122.165 -N -f
    ```
 
 3. Test:
    ```bash
-   curl http://localhost:8003/health
+    curl http://localhost:8001/health
    ```
 
 ### AI Response Timeout
@@ -280,12 +278,12 @@ ps aux | grep ai_native_client | grep -v grep | awk '{print $2}' | xargs kill
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| AI Native Server | ✅ RUNNING | Helsinki PID 301490, port 8003 |
+| AI Native Server | ✅ RUNNING | Zion2 primary host, port 8001 |
 | Knowledge Base | ✅ ACTIVE | 796 documents indexed |
 | Memory System | ✅ ACTIVE | 4 conversations, 2 learnings |
 | Self-Learning | ✅ ACTIVE | Pattern recognition operational |
 | Blockchain Monitor | ✅ HEALTHY | Height 5, Difficulty 1 |
-| Pool Monitor | ⚠️ PARTIAL | 1/3 pools online (Helsinki) |
+| Pool Monitor | ✅ CURRENT | 1/1 public host online |
 | Desktop Agent | ✅ INTEGRATED | IPC handlers ready |
 | Python Client | ✅ TESTED | 12 queries, 0% error rate |
 
@@ -306,7 +304,7 @@ ps aux | grep ai_native_client | grep -v grep | awk '{print $2}' | xargs kill
 3. Auto-reconnect při network issues
 
 ### Production
-1. Otevřít port 8003 v Hetzner Cloud firewall
+1. Otevřít port 8001 v Hetzner Cloud firewall
 2. Nebo nastavit nginx reverse proxy (port 80/443)
 3. SSL certifikát pro HTTPS
 4. Rate limiting + API key authentication
@@ -327,7 +325,7 @@ ps aux | grep ai_native_client | grep -v grep | awk '{print $2}' | xargs kill
 - API Exposure: 7 new methods in `preload.js`
 - Test Suite: `test_ai_native_client.py`
 
-**Location:** Helsinki Server (77.42.31.72:8003)  
+**Location:** Zion2 Primary Host (91.98.122.165:8001)  
 **Version:** v2.9.2 Complete  
 **Status:** ✅ OPERATIONAL
 

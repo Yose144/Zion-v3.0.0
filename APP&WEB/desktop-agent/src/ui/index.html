@@ -5563,14 +5563,14 @@
                   <input type="radio" name="miner-backend" value="auto" id="backend-auto" checked />
                   <div>
                     <div class="mode-title">Auto</div>
-                    <p>Prefer Rust v2.9.6, fallback to Python</p>
+                    <p>Prefer native Ekam Rust, fallback to Python only if needed</p>
                   </div>
                 </label>
                 <label class="mode-pill">
                   <input type="radio" name="miner-backend" value="rust" id="backend-rust" />
                   <div>
                     <div class="mode-title">Rust (v2.9.6)</div>
-                    <p>Fast native miner • CH v3 ready</p>
+                    <p>Fast native Ekam miner • primary desktop backend</p>
                   </div>
                 </label>
                 <label class="mode-pill">
@@ -5581,7 +5581,7 @@
                   </div>
                 </label>
               </div>
-              <div id="backend-status" class="mode-status">Auto selects Rust when available</div>
+              <div id="backend-status" class="mode-status">Auto prefers the native Ekam Rust miner when available</div>
 
               <div class="section-divider">AI Afterburner</div>
 
@@ -5670,9 +5670,9 @@
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-refresh"></use></svg>Infrastructure</div>
             <div class="web29-title-row">
               <h1 class="web29-title text-gradient">Network</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>CH3 TestNet Servers</div>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Current Primary Host</div>
             </div>
-            <div class="web29-subtitle">Live monitoring of ZION Native Awakening infrastructure</div>
+            <div class="web29-subtitle">Live monitoring of the current single-host ZION testnet</div>
           </div>
         </div>
 
@@ -5789,8 +5789,8 @@
                 <div class="metric-value blue" id="net-peers-known">—</div>
               </div>
               <div class="metric-card purple">
-                <div class="metric-kicker">SEED NODES</div>
-                <div class="metric-value purple">5</div>
+                <div class="metric-kicker">PUBLIC HOSTS</div>
+                <div class="metric-value purple">1</div>
               </div>
             </div>
             <!-- Peer list -->
@@ -5816,21 +5816,7 @@
             <div class="server-grid" id="server-grid">
               <div class="server-card offline">
                 <div class="server-header">
-                  <div class="server-name">Helsinki</div>
-                  <div class="server-status-dot off"></div>
-                </div>
-                <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
-              </div>
-              <div class="server-card offline">
-                <div class="server-header">
-                  <div class="server-name">USA</div>
-                  <div class="server-status-dot off"></div>
-                </div>
-                <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
-              </div>
-              <div class="server-card offline">
-                <div class="server-header">
-                  <div class="server-name">Singapore</div>
+                  <div class="server-name">Zion2</div>
                   <div class="server-status-dot off"></div>
                 </div>
                 <div class="server-detail"><span class="label">Status</span><span class="val">Checking...</span></div>
@@ -6819,28 +6805,28 @@
               </div>
               <div>
                 <p class="card-kicker">Consensus</p>
-                <h3>Bridge Validators (3-of-5)</h3>
+                <h3>Bridge Validators (single-host quorum)</h3>
               </div>
             </div>
             <div class="validator-grid">
               <div class="validator-card">
-                <div class="v-region">EU-1 (Helsinki)</div>
+                <div class="v-region">Primary Host (Zion2)</div>
                 <div class="v-status online">● Online</div>
               </div>
               <div class="validator-card">
-                <div class="v-region">EU-2 (Germany)</div>
+                <div class="v-region">Internal Seed A</div>
                 <div class="v-status online">● Online</div>
               </div>
               <div class="validator-card">
-                <div class="v-region">US-1 (East)</div>
+                <div class="v-region">Internal Seed B</div>
                 <div class="v-status online">● Online</div>
               </div>
               <div class="validator-card">
-                <div class="v-region">AS-1 (Singapore)</div>
+                <div class="v-region">Internal Seed C</div>
                 <div class="v-status offline">○ Standby</div>
               </div>
               <div class="validator-card">
-                <div class="v-region">AS-2 (Tokyo)</div>
+                <div class="v-region">Internal Seed D</div>
                 <div class="v-status offline">○ Standby</div>
               </div>
             </div>

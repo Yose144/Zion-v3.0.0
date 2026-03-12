@@ -53,7 +53,7 @@ Rust poskytuje bezpečnost na úrovni kompilátoru bez runtime overhead.
 
 1. **Firewall** — otevři pouze porty 8334 (P2P) a 8444 (RPC lokálně)
 2. **SSH** — key-only autentizace, Fail2ban
-3. **Aktualizace** — sleduj [GitHub releases](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/releases) pro security patche
+3. **Aktualizace** — sleduj [GitHub releases](https://github.com/Zion-TerraNova/2.9.6/releases) pro security patche
 4. **Monitoring** — loguj a sleduj neobvyklou aktivitu
 5. **Izolace** — spouštěj node pod separátním uživatelem
 
@@ -71,7 +71,7 @@ Rust poskytuje bezpečnost na úrovni kompilátoru bez runtime overhead.
 ## Responsible Disclosure
 
 Najdeš bezpečnostní chybu? Kontaktuj nás přes:
-- GitHub Security Advisory na [Zion-TerraNova](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/security)
+- GitHub Security Advisory na [Zion-TerraNova](https://github.com/Zion-TerraNova/2.9.6/security)
 - Neoznamuj veřejně — dej nám 90 dní na opravu
 
 ---

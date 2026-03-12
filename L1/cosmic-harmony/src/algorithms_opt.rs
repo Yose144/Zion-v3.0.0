@@ -177,22 +177,13 @@ pub fn keccak256_into(input: &[u8], output: &mut Hash32) {
 /// SHA3-512 optimized - zero allocation
 #[inline]
 pub fn sha3_512_opt(input: &[u8]) -> Hash64 {
-    let mut hasher = Sha3_512::new();
-    hasher.update(input);
-    let result = hasher.finalize();
-
-    let mut hash = Hash64::new();
-    hash.data.copy_from_slice(&result);
-    hash
+    crate::sha3_fast::sha3_512_bytes(input)
 }
 
 /// SHA3-512 with pre-allocated output
 #[inline]
 pub fn sha3_512_into(input: &[u8], output: &mut Hash64) {
-    let mut hasher = Sha3_512::new();
-    hasher.update(input);
-    let result = hasher.finalize();
-    output.data.copy_from_slice(&result);
+    crate::sha3_fast::sha3_512_into(input, output);
 }
 
 // ============================================================================
@@ -273,16 +264,21 @@ pub fn golden_matrix_simd(input: &[u8]) -> Hash64 {
 /// a sama se vyvíjí — ASIC nemůže hardwirovat žádnou konstantu.
 #[inline]
 pub fn cosmic_fusion_opt(input: &[u8]) -> Hash32 {
+    cosmic_fusion_opt_rounds(input, 4)
+}
+
+/// Parameterized Cosmic Fusion — `rounds` kol fusion s data-dependent maskou.
+/// Original Deeksha uses 4 rounds, Ekam Deeksha uses 8 rounds.
+#[inline]
+pub fn cosmic_fusion_opt_rounds(input: &[u8], rounds: usize) -> Hash32 {
     // State: dolní 32B = pracovní oblast, horní 32B = evolvující klíč
     let mut state = [0u8; 64];
     let copy_len = input.len().min(64);
     state[..copy_len].copy_from_slice(&input[..copy_len]);
 
-    // 4 kola fusion s data-dependent maskou
-    fusion_round(&mut state, 0);
-    fusion_round(&mut state, 1);
-    fusion_round(&mut state, 2);
-    fusion_round(&mut state, 3);
+    for r in 0..rounds {
+        fusion_round(&mut state, r as u8);
+    }
 
     // Final SHA3-512 and truncate
     let mut hasher = Sha3_512::new();
@@ -506,9 +502,14 @@ pub fn cosmic_harmony_v4_2(block_header: &[u8], nonce: u64) -> Hash32 {
 #[allow(clippy::absurd_extreme_comparisons)]
 #[inline]
 pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32 {
-    use crate::deeksha::CHV_DEEKSHA_FORK_HEIGHT;
+    use crate::deeksha::{CHV_DEEKSHA_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT};
     use crate::algorithms_npu::CHV4_NPU_FORK_HEIGHT;
 
+    // Ekam Deeksha (Tier 2) — Blake3 + AES cascade, active from CHV_EKAM_FORK_HEIGHT
+    if height >= CHV_EKAM_FORK_HEIGHT {
+        return crate::deeksha::cosmic_harmony_ekam_deeksha(block_header, nonce);
+    }
+    // Original Deeksha (SHA3-based)
     if height >= CHV_DEEKSHA_FORK_HEIGHT {
         return crate::deeksha::cosmic_harmony_deeksha(block_header, nonce);
     }
@@ -877,25 +878,42 @@ mod tests {
 
     #[test]
     fn test_deeksha_fork_dispatch() {
-        // CHV_DEEKSHA_FORK_HEIGHT = 0 → canonical dispatch od genesis vždy routuje do Deeksha.
+        use crate::deeksha::{CHV_EKAM_FORK_HEIGHT, CHV_DEEKSHA_FORK_HEIGHT};
         let header = b"ZION block header v2.9.6";
         let nonce = 9999u64;
 
-        // Ověření: výška 0 i 1_000_000 musí vrátit stejný hash jako přímé Deeksha volání.
-        let dispatch_hash_0 = cosmic_harmony_with_height(header, nonce, 0);
-        let dispatch_hash_1m = cosmic_harmony_with_height(header, nonce, 1_000_000);
+        let ekam_hash = crate::deeksha::cosmic_harmony_ekam_deeksha(header, nonce);
         let deeksha_hash = crate::deeksha::cosmic_harmony_deeksha(header, nonce);
 
+        // Pre-fork heights must use original Deeksha
+        if CHV_EKAM_FORK_HEIGHT > 0 {
+            let dispatch_pre = cosmic_harmony_with_height(header, nonce, 0);
+            assert_eq!(
+                dispatch_pre.data, deeksha_hash.data,
+                "Pre-fork height 0 must use original Deeksha"
+            );
+        }
+
+        // At and above fork height must use Ekam Deeksha
+        let dispatch_at_fork = cosmic_harmony_with_height(header, nonce, CHV_EKAM_FORK_HEIGHT);
         assert_eq!(
-            dispatch_hash_0.data, deeksha_hash.data,
-            "Dispatch at height 0 must use Deeksha (CHV_DEEKSHA_FORK_HEIGHT=0)"
-        );
-        assert_eq!(
-            dispatch_hash_1m.data, deeksha_hash.data,
-            "Dispatch at height 1_000_000 must use Deeksha (CHV_DEEKSHA_FORK_HEIGHT=0)"
+            dispatch_at_fork.data, ekam_hash.data,
+            "Dispatch at CHV_EKAM_FORK_HEIGHT must use Ekam Deeksha"
         );
 
-        println!("✅ Fork dispatch correctly routes to Deeksha (CHV_DEEKSHA_FORK_HEIGHT=0, aktivní od genesis)");
+        let dispatch_above = cosmic_harmony_with_height(header, nonce, CHV_EKAM_FORK_HEIGHT + 1_000_000);
+        assert_eq!(
+            dispatch_above.data, ekam_hash.data,
+            "Dispatch above fork height must use Ekam Deeksha"
+        );
+
+        // Ekam and original Deeksha must differ
+        assert_ne!(
+            ekam_hash.data, deeksha_hash.data,
+            "Ekam and original Deeksha must produce different hashes"
+        );
+
+        println!("✅ Fork dispatch correctly routes: pre-fork → original Deeksha, post-fork → Ekam Deeksha (CHV_EKAM_FORK_HEIGHT={})", CHV_EKAM_FORK_HEIGHT);
     }
 
     #[test]

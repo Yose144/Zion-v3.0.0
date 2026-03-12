@@ -13,11 +13,12 @@
 //! - Kabalistická fáze — 22 deterministických čtení
 //! - Brahma-jyoti finalizace — 22-kolo SHA3 key schedule
 
-use sha3::{Digest, Keccak256, Sha3_512};
+use sha3::{Digest, Keccak256};
 use std::cell::RefCell;
 
 use crate::algorithms_opt::Hash64;
 use crate::hic::{BACKWARD_PASSES, HIC, KABALA_READS, KEY_ROUNDS};
+use crate::sha3_fast;
 
 // Thread-local scratchpad — každé vlákno má vlastní buffer,
 // žádný malloc/free per hash. Reuse je bezpečný protože scratchpad
@@ -60,6 +61,130 @@ fn block_count() -> usize {
     SCRATCHPAD_SIZE / BLOCK_SIZE
 }
 
+#[inline]
+fn random_index_for_block(pad: &[u8], index: usize, pass: u64, blocks: usize) -> usize {
+    let cur_off = index * BLOCK_SIZE;
+    let mut idx_bytes = [0u8; 8];
+    idx_bytes.copy_from_slice(&pad[cur_off..cur_off + 8]);
+    ((u64::from_le_bytes(idx_bytes) ^ pass ^ (index as u64)) as usize) % blocks
+}
+
+#[inline]
+fn next_iteration_index(index: usize, blocks: usize, forward: bool) -> Option<usize> {
+    if forward {
+        if index + 1 < blocks {
+            Some(index + 1)
+        } else {
+            None
+        }
+    } else {
+        if index > 0 {
+            Some(index - 1)
+        } else {
+            None
+        }
+    }
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
+fn prefetch_next_random_block(pad: &[u8], index: usize, pass: u64, forward: bool) {
+    let blocks = block_count();
+    let Some(next_index) = next_iteration_index(index, blocks, forward) else {
+        return;
+    };
+
+    #[cfg(target_arch = "x86_64")]
+    unsafe {
+        use std::arch::x86_64::{_MM_HINT_T0, _mm_prefetch};
+
+        let next_rand_index = random_index_for_block(pad, next_index, pass, blocks);
+        let next_rand_off = next_rand_index * BLOCK_SIZE;
+
+        _mm_prefetch(pad.as_ptr().add(next_rand_off) as *const i8, _MM_HINT_T0);
+    }
+}
+
+#[inline]
+#[cfg(not(target_arch = "x86_64"))]
+fn prefetch_next_random_block(_pad: &[u8], _index: usize, _pass: u64, _forward: bool) {}
+
+#[inline(always)]
+fn xor_block_in_place(dest: &mut [u8], src: &[u8]) {
+    debug_assert_eq!(dest.len(), BLOCK_SIZE);
+    debug_assert_eq!(src.len(), BLOCK_SIZE);
+
+    xor_block_in_place_impl(dest, src);
+}
+
+#[cfg(all(target_arch = "x86_64"))]
+#[inline(always)]
+fn xor_block_in_place_impl(dest: &mut [u8], src: &[u8]) {
+    if std::is_x86_feature_detected!("avx2") {
+        unsafe {
+            xor_block_in_place_avx2(dest.as_mut_ptr(), src.as_ptr());
+        }
+        return;
+    }
+
+    for offset in 0..BLOCK_SIZE {
+        dest[offset] ^= src[offset];
+    }
+}
+
+#[cfg(all(target_arch = "aarch64"))]
+#[inline(always)]
+fn xor_block_in_place_impl(dest: &mut [u8], src: &[u8]) {
+    unsafe {
+        xor_block_in_place_neon(dest.as_mut_ptr(), src.as_ptr());
+    }
+}
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[inline(always)]
+fn xor_block_in_place_impl(dest: &mut [u8], src: &[u8]) {
+    for offset in 0..BLOCK_SIZE {
+        dest[offset] ^= src[offset];
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn xor_block_in_place_avx2(dest: *mut u8, src: *const u8) {
+    use std::arch::x86_64::{__m256i, _mm256_loadu_si256, _mm256_storeu_si256, _mm256_xor_si256};
+
+    let left0 = _mm256_loadu_si256(dest as *const __m256i);
+    let right0 = _mm256_loadu_si256(src as *const __m256i);
+    let mixed0 = _mm256_xor_si256(left0, right0);
+    _mm256_storeu_si256(dest as *mut __m256i, mixed0);
+
+    let left1 = _mm256_loadu_si256(dest.add(32) as *const __m256i);
+    let right1 = _mm256_loadu_si256(src.add(32) as *const __m256i);
+    let mixed1 = _mm256_xor_si256(left1, right1);
+    _mm256_storeu_si256(dest.add(32) as *mut __m256i, mixed1);
+}
+
+#[cfg(target_arch = "aarch64")]
+unsafe fn xor_block_in_place_neon(dest: *mut u8, src: *const u8) {
+    use std::arch::aarch64::{uint8x16_t, veorq_u8, vld1q_u8, vst1q_u8};
+
+    let left0: uint8x16_t = vld1q_u8(dest);
+    let right0: uint8x16_t = vld1q_u8(src);
+    vst1q_u8(dest, veorq_u8(left0, right0));
+
+    let left1: uint8x16_t = vld1q_u8(dest.add(16));
+    let right1: uint8x16_t = vld1q_u8(src.add(16));
+    vst1q_u8(dest.add(16), veorq_u8(left1, right1));
+
+    let left2: uint8x16_t = vld1q_u8(dest.add(32));
+    let right2: uint8x16_t = vld1q_u8(src.add(32));
+    vst1q_u8(dest.add(32), veorq_u8(left2, right2));
+
+    let left3: uint8x16_t = vld1q_u8(dest.add(48));
+    let right3: uint8x16_t = vld1q_u8(src.add(48));
+    vst1q_u8(dest.add(48), veorq_u8(left3, right3));
+}
+
 /// Inicializuje scratchpad ze seedu (64B) deterministicky přes SHA3-512 chain.
 fn init_scratchpad(seed: &[u8; 64], pad: &mut [u8]) {
     debug_assert_eq!(pad.len(), SCRATCHPAD_SIZE);
@@ -68,12 +193,10 @@ fn init_scratchpad(seed: &[u8; 64], pad: &mut [u8]) {
     let mut counter: u64 = 0;
 
     for chunk in pad.chunks_exact_mut(BLOCK_SIZE) {
-        let mut h = Sha3_512::new();
-        h.update(state);
-        h.update(counter.to_le_bytes());
-        let out = h.finalize();
-        chunk.copy_from_slice(&out[..BLOCK_SIZE]);
-        state.copy_from_slice(&out[..BLOCK_SIZE]);
+        let counter_bytes = counter.to_le_bytes();
+        let out = sha3_fast::sha3_512_64_8(&state, &counter_bytes);
+        chunk.copy_from_slice(&out.data[..BLOCK_SIZE]);
+        state.copy_from_slice(&out.data[..BLOCK_SIZE]);
         counter = counter.wrapping_add(1);
     }
 }
@@ -115,11 +238,10 @@ fn mix_block(pad: &mut [u8], index: usize, pass: u64, forward: bool) {
     };
     let prev_off = prev_index * BLOCK_SIZE;
 
-    let mut idx_bytes = [0u8; 8];
-    idx_bytes.copy_from_slice(&pad[cur_off..cur_off + 8]);
-    let mut rand_index = (u64::from_le_bytes(idx_bytes) ^ pass ^ (index as u64)) as usize;
-    rand_index %= blocks;
+    let rand_index = random_index_for_block(pad, index, pass, blocks);
     let rand_off = rand_index * BLOCK_SIZE;
+
+    prefetch_next_random_block(pad, index, pass, forward);
 
     // Snapshot blocků před zápisem
     let mut current = [0u8; BLOCK_SIZE];
@@ -130,17 +252,17 @@ fn mix_block(pad: &mut [u8], index: usize, pass: u64, forward: bool) {
     random.copy_from_slice(&pad[rand_off..rand_off + BLOCK_SIZE]);
 
     // Hash dependent na current + prev + random + metadata
-    let mut h = Sha3_512::new();
-    h.update(current);
-    h.update(prev);
-    h.update(random);
-    h.update(pass.to_le_bytes());
-    h.update((index as u64).to_le_bytes());
-    let mixed = h.finalize();
+    let pass_bytes = pass.to_le_bytes();
+    let index_bytes = (index as u64).to_le_bytes();
+    let mixed = sha3_fast::sha3_512_64_64_64_8_8(
+        &current,
+        &prev,
+        &random,
+        &pass_bytes,
+        &index_bytes,
+    );
 
-    for j in 0..BLOCK_SIZE {
-        pad[cur_off + j] ^= mixed[j];
-    }
+    xor_block_in_place(&mut pad[cur_off..cur_off + BLOCK_SIZE], &mixed.data[..BLOCK_SIZE]);
 }
 
 /// Finální random-read fáze, která generuje 64B výstup pro další pipeline fázi.
@@ -172,15 +294,11 @@ fn random_read_mix(seed: &[u8; 64], pad: &[u8]) -> Hash64 {
         pos = ((u64::from_le_bytes(next_seed) as usize) ^ pos ^ r) % blocks;
     }
 
-    let mut final_h = Sha3_512::new();
-    final_h.update(acc);
-    final_h.update(&pad[..BLOCK_SIZE]);
-    final_h.update(&pad[SCRATCHPAD_SIZE - BLOCK_SIZE..]);
-    let out = final_h.finalize();
-
-    let mut hash = Hash64::new();
-    hash.data.copy_from_slice(&out[..64]);
-    hash
+    let mut first_block = [0u8; BLOCK_SIZE];
+    first_block.copy_from_slice(&pad[..BLOCK_SIZE]);
+    let mut last_block = [0u8; BLOCK_SIZE];
+    last_block.copy_from_slice(&pad[SCRATCHPAD_SIZE - BLOCK_SIZE..]);
+    sha3_fast::sha3_512_64_64_64(&acc, &first_block, &last_block)
 }
 
 /// Veřejná memory-hard transformace 64B vstupu -> 64B výstup.
@@ -225,19 +343,20 @@ fn merkabah_backward_passes(pad: &mut [u8], seed: &[u8; 64]) {
             next_blk.copy_from_slice(&pad[next_off..next_off + BLOCK_SIZE]);
 
             // SHA3-512 mixing s HIC konstantou + sousedem (Ra spirála)
-            let mut h = Sha3_512::new();
-            h.update(cur_blk);
-            h.update(next_blk);
-            h.update(HIC[hic_idx].to_le_bytes());
-            h.update(seed);
-            h.update((pass as u64).to_le_bytes());
-            h.update((b as u64).to_le_bytes());
-            let mixed = h.finalize();
+            let hic_bytes = HIC[hic_idx].to_le_bytes();
+            let pass_bytes = (pass as u64).to_le_bytes();
+            let block_bytes = (b as u64).to_le_bytes();
+            let mixed = sha3_fast::sha3_512_64_64_8_64_8_8(
+                &cur_blk,
+                &next_blk,
+                &hic_bytes,
+                seed,
+                &pass_bytes,
+                &block_bytes,
+            );
 
             // XOR mixing (výsledek závislý na celém scratchpadu)
-            for j in 0..BLOCK_SIZE {
-                pad[cur_off + j] ^= mixed[j];
-            }
+            xor_block_in_place(&mut pad[cur_off..cur_off + BLOCK_SIZE], &mixed.data[..BLOCK_SIZE]);
         }
     }
 }
@@ -290,16 +409,14 @@ fn brahma_jyoti_finalize(state: &[u8; 64]) -> Hash64 {
     let mut acc = *state;
 
     for r in 0..KEY_ROUNDS {
-        let mut h = Sha3_512::new();
-        h.update(acc);
-        h.update(HIC[r].to_le_bytes());
-        h.update((r as u64).to_le_bytes());
-        let out = h.finalize();
+        let hic_bytes = HIC[r].to_le_bytes();
+        let round_bytes = (r as u64).to_le_bytes();
+        let out = sha3_fast::sha3_512_chunks([&acc, &hic_bytes, &round_bytes]);
 
         // Difuze: XOR první polovina, ADD druhá polovina
         for i in 0..32 {
-            acc[i] ^= out[i];
-            acc[32 + i] = acc[32 + i].wrapping_add(out[32 + i]);
+            acc[i] ^= out.data[i];
+            acc[32 + i] = acc[32 + i].wrapping_add(out.data[32 + i]);
         }
     }
 

@@ -76,7 +76,8 @@ impl PythonMinerVariant {
             "chv3" | "chv3_gpu" | "chv3-gpu" | "gpu" => Some(Self::Chv3Gpu),
             "chv4_2" | "chv42" | "merkabah" | "v42"  => Some(Self::Chv42),
             // CHvDeeksha canonical (v2.9.8)
-            "deeksha" | "chv_deeksha" | "cosmic_harmony_deeksha" | "deeksha_canonical" => Some(Self::DeekshaCanonical),
+            "deeksha" | "chv_deeksha" | "cosmic_harmony_deeksha" | "deeksha_canonical"
+            | "ekam" | "ekam_deeksha" | "cosmic_harmony_ekam" => Some(Self::DeekshaCanonical),
             "legacy" | "native" | "v2.9" | "v29"      => Some(Self::Legacy),
             _ => None,
         }
@@ -556,6 +557,10 @@ mod tests {
             Some(PythonMinerVariant::Legacy)
         );
         assert_eq!(
+            PythonMinerVariant::from_str("ekam"),
+            Some(PythonMinerVariant::DeekshaCanonical)
+        );
+        assert_eq!(
             PythonMinerVariant::from_str("native"),
             Some(PythonMinerVariant::Legacy)
         );
@@ -565,7 +570,7 @@ mod tests {
     #[test]
     fn test_pool_host_port() {
         let config = PythonFallbackConfig {
-            pool_url: "stratum+tcp://77.42.31.72:3333".to_string(),
+            pool_url: "stratum+tcp://91.98.122.165:3333".to_string(),
             wallet: "test".to_string(),
             worker: "w".to_string(),
             algorithm: "cosmic_harmony".to_string(),
@@ -578,7 +583,7 @@ mod tests {
             extra_args: vec![],
         };
         let miner = PythonFallbackMiner::new(config);
-        assert_eq!(miner.pool_host_port(), "77.42.31.72:3333");
+        assert_eq!(miner.pool_host_port(), "91.98.122.165:3333");
     }
 
     #[test]

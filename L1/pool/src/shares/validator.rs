@@ -53,7 +53,8 @@ impl Algorithm {
             | "cosmic-harmony-v2"
             // Explicit Deeksha aliases
             | "deeksha" | "chv_deeksha" | "cosmic_harmony_deeksha" | "cosmic_deeksha"
-            | "chdeeksha" | "deeksha_canonical" => Algorithm::CosmicHarmony,
+            | "chdeeksha" | "deeksha_canonical"
+            | "ekam" | "ekam_deeksha" | "cosmic_harmony_ekam" | "ch_ekam" | "che" => Algorithm::CosmicHarmony,
             "blake3" => Algorithm::Blake3,
             "autolykos" | "autolykos_v2" => Algorithm::AutolykovV2,
             // External algorithms — routed to external pool by StreamScheduler.

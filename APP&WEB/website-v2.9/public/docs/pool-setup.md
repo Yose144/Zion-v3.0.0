@@ -19,8 +19,8 @@ Miners → [Stratum :3333] → zion-pool → [RPC :8444] → zion-core
 ## Rychlý start (Docker)
 
 ```bash
-git clone https://github.com/Zion-TerraNova/2.9.5-NativeAwakening.git
-cd 2.9.5-NativeAwakening/docker
+git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6/docker
 
 docker compose -f docker-compose.testnet.yml up -d
 ```
@@ -39,7 +39,7 @@ Stack obsahuje: `zion-core`, `zion-pool`, `zion-miner`, `zion-redis`.
   --rpc-port 8444 \
   --p2p-port 8334 \
   --network testnet \
-  --peers "77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334"
+  --peers "91.98.122.165:8334,seed1.zionterranova.com:8334,seed2.zionterranova.com:8334,seed3.zionterranova.com:8334"
 ```
 
 ### 2. Spusť pool

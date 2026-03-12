@@ -75,10 +75,12 @@
 
 | Server | IP | Lokace | Služby |
 |--------|------|--------|--------|
-| Helsinki | 77.42.31.72 | Finsko | Seed node, pool, web, API |
-| Germany | 46.225.126.243 | Německo | Seed node |
+| Zion2 | 91.98.122.165 | Hetzner | Primary host, pool, web, API |
+| seed1.zionterranova.com | internal | Hetzner | Internal seed container |
 
 ### Mainnet cíl
+
+> Poznámka 2026-03-12: Tabulka níže je plánovaná cílová topologie, ne aktuální live stav testnetu.
 
 | Server | Lokace | Role |
 |--------|--------|------|

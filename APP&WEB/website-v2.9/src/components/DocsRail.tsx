@@ -56,7 +56,7 @@ export default function DocsRail() {
             </h2>
           </div>
           <p className="text-gray-300 max-w-2xl">
-            Web vstupy jsem stáhl zpět k tomu, co je teď skutečně potřeba: live síť, těžba, dokumentace a zdrojový kód.
+            Everything you need to work with the live network: documentation, mining tools, explorer, and source code.
           </p>
         </div>
 

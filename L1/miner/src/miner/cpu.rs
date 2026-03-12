@@ -1023,11 +1023,11 @@ impl CpuMiner {
             Algorithm::RandomX => 100,
             // VerusHash v2.2 (VRSC): CPU-oriented, keep medium batch for low latency.
             Algorithm::VerusHash => 5_000,
-            // CH v3/v4.2: keep batch much smaller than 250k so we react quickly
-            // to template/stream switches and reduce stale+duplicate rejects.
-            Algorithm::CosmicHarmony => 25_000,
-            Algorithm::CosmicHarmonyV42 => 25_000,
-            Algorithm::CosmicHarmonyDeeksha => 20_000, // Deeksha je těžší pipeline
+            // All ZION aliases now run through the same canonical Deeksha runtime,
+            // so use the smaller batch for quicker job-switch response.
+            Algorithm::CosmicHarmony
+            | Algorithm::CosmicHarmonyV42
+            | Algorithm::CosmicHarmonyDeeksha => 20_000,
             Algorithm::Ethash => 50_000,
             Algorithm::Autolykos => 50_000,
             Algorithm::KawPow => 50_000,

@@ -1,5 +1,7 @@
 # STATUS REPORT 2026-03-10
 
+> Update 2026-03-11: live Ekam Deeksha rollout na 91.98.122.165 je dokončen a ověřen.
+
 ## Kontext dne
 
 Tento dokument shrnuje aktuální stav repozitáře k 10. březnu 2026 a slouží jako root-level zdroj pravdy pro dnešní technickou práci.
@@ -12,6 +14,20 @@ Hlavní směr dnešních změn:
 - dotažení desktop-agentu pro Deeksha a kanonický pool flow
 - aktualizace website vrstvy, aby už neukazovala starou multi-node topologii jako live realitu
 - doplnění testů, podpůrných instrukcí a nových dokumentačních vstupů
+
+## Addendum — 2026-03-11: Ekam desktop-agent GPU
+
+Po tomto status reportu byla dokončena další důležitá vrstva 2.9.8 desktop-agent integrace: **nativní Ekam Deeksha GPU path přímo v agentu**.
+
+Aktuální ověřený stav:
+
+- `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` nyní preferuje Ekam shader a entrypointy místo legacy CHv4 symbolů.
+- `APP&WEB/desktop-agent/scripts/prepare-rust-miner.js` synchronizuje canonical GPU assety z `L1/native-libs/all/` do desktop resources.
+- Metal shader `cosmic_harmony_ekam_deeksha.metal` byl opraven tak, aby se na Apple Silicon korektně kompiloval i při runtime build path.
+- Desktop-agent bench přes `resources/mining/cosmic_harmony_deeksha_gpu.py` úspěšně inicializoval backend Metal s entrypointem `cosmic_harmony_ekam_mine`.
+- Ověřený výsledek na Apple M1 je přibližně **5575.5 H/s**.
+
+To znamená, že desktop-agent už má lokálně potvrzenou funkční native GPU Ekam cestu. Otevřené zůstává pouze plné end-to-end ověření Electron orchestrace a následná CPU↔GPU/pool parita v reálném běhu.
 
 ## 1. Infrastruktura a provozní topologie
 
@@ -280,3 +296,28 @@ Renderer i main process syntax check prošly.
 ## 12. Shrnutí jednou větou
 
 Repo je po dnešku přepnuté z historické multi-node a revenue-heavy prezentace do praktičtějšího stavu, kde je 91.98.122.165 kanonický host, pure-ZION je první volba a desktop-agent i website tomu konečně odpovídají.
+
+## 13. Live rollout update 2026-03-11
+
+Na primárním hostu 91.98.122.165 proběhl 11. 3. 2026 plný rebuild a clean restart testnet stacku pro Ekam Deeksha od genesis.
+
+Co bylo ověřeno v živém provozu:
+
+- `CHV_EKAM_FORK_HEIGHT = 0` je skutečně nasazen v serverové kopii zdrojáků
+- `zion-core:2.9.8`, `zion-pool:2.9.8` a `zion-miner:2.9.8` byly znovu sestaveny na serveru
+- chain volumes byly smazány a znovu vytvořeny pro čistý start od bloku 0
+- stack musel být spuštěn přes `docker compose --env-file .env`, jinak Redis startoval s prázdným `requirepass`
+- pool i miner po resetu přijímaly share bez rejectů a chain dál rostl
+
+Živé výsledky po restartu:
+
+- `get_info` v core: height 4 → 5 → 7 během validačního okna
+- miner: cca `1.23 kH/s`, accepted `61`, rejected `0`
+- pool API: connected `true`, difficulty `1209+`, blocks found `32+`
+- pool log: `BLOCK FOUND` na height 5 a `Share ACCEPTED` pro `algo=cosmic_harmony`
+
+Root cause bug nalezený až při server build testu:
+
+- `L1/pool/src/gpu_mining.rs` mělo parametry `_stats` a `_write_half`, ale uvnitř feature-gated bloků se používaly jako `stats` a `write_half`
+- lokální `cargo check -p zion-pool` bez feature flagů proto procházel, ale Docker build s `native-ethash,native-autolykos,native-kheavyhash` padal
+- fix byl nasazen a následný server rebuild poolu prošel čistě

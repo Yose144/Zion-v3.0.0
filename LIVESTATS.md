@@ -1,147 +1,84 @@
 # ZION TerraNova — Live Stats
-> **Aktualizováno:** 2026-03-03T22:30 UTC  
-> **E-07 Canary:** 🟢 IN PROGRESS — start `2026-03-03T21:00Z` → end `2026-03-06T21:00Z`  
-> **Build:** `zion-core:2.9.7` / `zion-miner:2.9.7` (ARM64+AMD64) / `zion-pool:2.9.7`  
-> **CHv4 (cosmic_harmony_v3):** active from genesis block 0  
-> **Fix:** Invalid shares ~3-4/min → ~0.2/min ✅ (Helsinki ARM64 miner v2.9.7 rebuild)
+> **Aktualizováno:** 2026-03-11T11:39 UTC  
+> **Síť:** testnet  
+> **Host:** `91.98.122.165`  
+> **Build:** `zion-core:2.9.8` / `zion-pool:2.9.8` / `zion-miner:2.9.8`  
+> **Algoritmus:** Ekam Deeksha přes alias `cosmic_harmony`, aktivní od genesis (`CHV_EKAM_FORK_HEIGHT = 0`)
 
 ---
 
 ## 🔗 Chain
 
-| Parametr          | Helsinki (ARM64)          | USA (AMD64)               | Asia (AMD64)              |
-|-------------------|---------------------------|---------------------------|---------------------------|
-| **Status**        | ✅ Running                | ✅ Running                | ✅ Running                |
-| **Block Height**  | 1                         | 1 (sync)                  | 1 (sync)                  |
-| **Genesis Hash**  | `bacd6027ecb0f5dc…`       | `bacd6027ecb0f5dc…`       | `bacd6027ecb0f5dc…`       |
-| **P2P**           | Connected (testnet peers) | Connected (testnet peers) | Connected (testnet peers) |
-| **Uptime**        | ~1h 35min                 | ~1h 35min                 | ~1h 35min                 |
+| Parametr | Hodnota |
+|---|---|
+| **Status** | ✅ Running |
+| **Topologie** | single-primary host + interní `zion-seed-1`, `zion-seed-2` |
+| **Height po resetu** | ověřeno `4 → 5 → 7` během validačního okna |
+| **Difficulty** | `1209 → 2015` |
+| **RPC** | `http://91.98.122.165:8444/jsonrpc` |
+| **P2P** | host + 2 interní seed kontejnery |
 
 ---
 
-## ⛏️ Pool (Helsinki `77.42.31.72:3333`)
+## ⛏️ Pool (`91.98.122.165:3333`)
 
-| Metrika                | Hodnota                         |
-|------------------------|---------------------------------|
-| **Hashrate (live)**    | 0.145 MH/s                      |
-| **Hashrate (1h)**      | 0.145 MH/s                      |
-| **Hashrate (24h avg)** | 0.0104 MH/s *(chain ~1.5h)*     |
-| **Difficulty**         | 1 000                           |
-| **Active miners**      | 1                               |
-| **Total miners**       | 1                               |
-| **Valid shares**       | 206                             |
-| **Invalid shares**     | 316 *(315 legacy — před opravou)* |
-| **Blocks found**       | 0                               |
-| **PPLNS window**       | 166 shares                      |
-| **Pending payouts**    | 0 ZION                          |
-| **Pool version**       | 2.9.6 (cosmetic, build 2.9.7)   |
+| Metrika | Hodnota |
+|---|---|
+| **Pool API** | `http://91.98.122.165:8080/stats` |
+| **Hashrate (snapshot)** | `101.63 H/s` |
+| **Difficulty (snapshot)** | `1209+` |
+| **Accepted shares** | `61` |
+| **Rejected shares** | `0` |
+| **Acceptance rate** | `100 %` |
+| **Blocks found** | `32+` |
+| **Pool mode** | pure-ZION, `algo=cosmic_harmony` |
 
 ### Fee Split
-| Příjemce            | Podíl  |
-|---------------------|--------|
-| Miner share         | 84 %   |
-| Humanitarian Tithe  | 10 %   |
-| Issobella Fund      | 5 %    |
-| Pool fee            | 1 %    |
+
+| Příjemce | Podíl |
+|---|---|
+| Miner share | 89 % |
+| Humanitarian Tithe | 5 % |
+| Issobella Fund | 5 % |
+| Pool fee | 1 % |
 
 ---
 
-## 🌍 Minery — Per-Node
+## 🌍 Miner
 
-| Node            | Algoritmus             | Binary   | Worker     | Status        |
-|-----------------|------------------------|----------|------------|---------------|
-| **Helsinki**    | `cosmic_harmony_v3`    | v2.9.7   | `helsinki` | ✅ Running    |
-| **USA**         | `cosmic_harmony_v3`    | v2.9.7   | `usa`      | ✅ Running    |
-| **Asia**        | `cosmic_harmony_v3`    | v2.9.7   | `asia`     | ✅ Running    |
+| Parametr | Hodnota |
+|---|---|
+| **Worker** | `testnet-miner-91` |
+| **Binary** | `zion-miner:2.9.8` |
+| **Algoritmus** | `cosmic_harmony` |
+| **Threads** | `1` |
+| **Hashrate** | `1.23 kH/s` |
+| **Uptime snapshot** | `00:01:06` při prvním live checku |
 
-> ✅ Všechny 3 minerové používají **CHv4 (cosmic_harmony_v3)** — algoritmus aktivní od genesis bloku 0.  
-> ℹ️ Helsinki ARM64: nový binary sestaven přímo na serveru (`docker build`, `zion-miner:2.9.7`, 110 MB ARM64).
+Pozorování z logů:
 
----
-
-## 💰 Revenue Orchestration (CH v3)
-
-| Parametr             | Hodnota                               |
-|----------------------|---------------------------------------|
-| **Mode**             | auto (TimeSplit <4 miners, PerMiner ≥4) |
-| **Revenue compute**  | 21.1 % výpočtu                        |
-| **Proxy**            | ✅ enabled                            |
-| **Scheduler**        | ✅ enabled                            |
-| **Profit switch**    | ✅ enabled                            |
-| **Buyback**          | ✅ enabled                            |
-| **Profit feed**      | WTM + ZPool + NiceHash                |
-| **Aktuální coin**    | ZANO (switched from ETC, +588.5 % advantage) |
-| **Fallback coin**    | MEWC (ERG/ZANO nedostupné)            |
-| **ERG pool**         | de.ergo.herominers.com:1180           |
-| **ZANO pool**        | de.zano.herominers.com:1110           |
-| **Miner skupiny**    | ZION:2 / Revenue:1 (při startu)       |
+- miner po restartu okamžitě přijímal joby pro height 5+
+- pool log potvrdil `Share ACCEPTED` bez rejectů
+- pool log potvrdil i `BLOCK FOUND` krátce po restartu
 
 ---
 
-## ✅ CHv4 (cosmic_harmony_v3) — Status
+## ✅ Rollout 2026-03-11
 
-| Test / Parametr              | Hodnota                          |
-|------------------------------|----------------------------------|
-| **CHV4_NPU_FORK_HEIGHT**     | 0 (aktivní od genesis)           |
-| **CHV3_MEMORY_HARD_FORK_HEIGHT** | 0 (aktivní od genesis)       |
-| **E2E testy**                | ✅ 11/11 PASS (49.8 s)           |
-| **GPU kernel (OpenCL)**      | ✅ aktivní vždy                  |
-| **GPU kernel (CUDA)**        | ✅ aktivní vždy                  |
-| **Python GPU wrapper**       | ✅ `chv4_flag = 1`, `mh_flag = 1` |
-| **Algoritmus na minerech**   | `cosmic_harmony_v3` (všechny nody) |
+| Krok | Stav |
+|---|---|
+| `CHV_EKAM_FORK_HEIGHT = 0` nasazeno | ✅ |
+| `core + pool + miner` rebuild na serveru | ✅ |
+| clean reset Docker volumes | ✅ |
+| start přes `docker compose --env-file .env` | ✅ |
+| chain growth ověřen | ✅ |
 
-### E2E Test Suite — `L1/pool/tests/chv4_e2e.rs`
-| Test                                        | Výsledek |
-|---------------------------------------------|----------|
-| `test_chv4_fork_height_is_zero`             | ✅ PASS  |
-| `test_chv4_active_for_all_heights`          | ✅ PASS  |
-| `test_chv4_share_accepted_at_genesis_height`| ✅ PASS  |
-| `test_chv4_with_height_zero_equals_v4`      | ✅ PASS  |
-| `test_chv4_hash_is_deterministic`           | ✅ PASS  |
-| `test_chv4_differs_from_chv3`               | ✅ PASS  |
-| `test_chv4_differs_from_chv3_legacy`        | ✅ PASS  |
-| `test_chv4_validator_returns_correct_hash`  | ✅ PASS  |
-| `test_chv4_different_nonces_produce_different_hashes` | ✅ PASS |
-| `test_chv4_algorithm_aliases_parse_correctly` | ✅ PASS |
-| `test_chv4_alias_share_accepted_at_genesis` | ✅ PASS  |
+### Operativní poznámky
+
+- `docker compose` bez explicitního `--env-file .env` nechá `REDIS_PASSWORD` prázdný a Redis spadne na `requirepass wrong number of arguments`
+- pool build na serveru odhalil skutečný feature-gated bug v `L1/pool/src/gpu_mining.rs`; po fixu build proběhl čistě
+- staré servery `77.42.31.72`, `178.156.240.160`, `5.223.43.93` jsou historické a nejsou live source of truth
 
 ---
 
-## 🧪 E-07 Canary Run
-
-| Parametr          | Hodnota                          |
-|-------------------|----------------------------------|
-| **Status**        | 🟢 IN PROGRESS                   |
-| **Start**         | 2026-03-03T21:00:00Z             |
-| **End**           | 2026-03-06T21:00:00Z             |
-| **Elapsed**       | ~30 min (of 72 h)                |
-| **Chain reset**   | ✅ genesis `bacd6027`             |
-| **Cíl**           | 72h bez kritického selhání       |
-| **B-CRIT-02**     | ⏳ čeká na dokončení 72h         |
-
----
-
-## 🏗️ Infrastruktura
-
-| Server       | IP              | Arch  | Kontejnery                              |
-|--------------|-----------------|-------|-----------------------------------------|
-| **Helsinki** | 77.42.31.72     | ARM64 | zion-pool, zion-core, zion-website, zion-bridge, zion-mysterium, zion-nkn, zion-grafana, zion-redis |
-| **USA**      | 178.156.240.160 | AMD64 | zion-miner, zion-core, zion-xmr-x86, zion-mysterium |
-| **Asia**     | 5.223.43.93     | AMD64 | zion-miner, zion-core, zion-xmr-x86, zion-mysterium |
-
----
-
-## 📌 Milníky (2.9.7)
-
-| ID          | Popis                         | Stav           |
-|-------------|-------------------------------|----------------|
-| B-CRIT-01   | CHv4 od genesis, E2E 11/11    | ✅ UZAVŘEN     |
-| B-CRIT-02   | E-07 canary 72h               | ⏳ IN PROGRESS |
-| B-CRIT-03   | Genesis ceremony sign-off     | 🔜 PENDING     |
-| F-04        | CHv4 E2E test suite           | ✅ DONE        |
-| F-05        | GPU kernels CHv4 NPU Mixing   | ✅ DONE        |
-| F-06        | Height dispatch (N/A - fork=0)| ✅ DONE        |
-
----
-
-*Generováno automaticky — data z pool API + docker logs — 2026-03-03T21:30Z*
+*Zdroj: live `docker ps`, `docker logs`, `curl /stats`, `get_info` z 2026-03-11.*

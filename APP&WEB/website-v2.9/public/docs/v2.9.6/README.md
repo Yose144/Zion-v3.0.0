@@ -2,7 +2,7 @@
 
 > **"On the Star" — where technology meets spirit, from blockchain to the stars.**
 
-[![Build](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/actions/workflows/ci.yml/badge.svg)](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/actions/workflows/ci.yml)
+[![Build](https://github.com/Zion-TerraNova/2.9.6/actions/workflows/ci.yml/badge.svg)](https://github.com/Zion-TerraNova/2.9.6/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -158,9 +158,8 @@ v2.9.6 supports parallel dual-mining:
 
 | Node | IP | Role | Ports |
 |------|----|------|-------|
-| Helsinki | 77.42.31.72 | Seed + Pool + Web | P2P 8333, RPC 8443 |
-| Germany | 46.225.126.243 | Peer | P2P 8333 |
-| TestNet | — | — | P2P 8334, RPC 8444 |
+| Zion2 (Primary) | 91.98.122.165 | Public host + Pool + Web | P2P 8334, RPC 8444 |
+| Internal seeds | — | Seed containers (behind primary) | P2P 8334 |
 
 > 📋 P2P protocol: [p2p.md](p2p.md)
 
@@ -182,9 +181,9 @@ cargo build --release
 ### Mine ZION (with dual-mining)
 
 ```bash
-# CPU mining via pool (3T ZION + 1T VRSC)
+# CPU mining via pool
 ./target/release/zion-miner \
-  --pool pool.zionterranova.com:3333 \
+  --pool 91.98.122.165:3333 \
   --wallet YOUR_ZION_ADDRESS \
   --worker my-miner \
   --threads 3 \
@@ -192,7 +191,7 @@ cargo build --release
 
 # VRSC dual-mining (separate thread group)
 ./target/release/zion-miner \
-  --pool pool.zionterranova.com:3333 \
+  --pool 91.98.122.165:3333 \
   --wallet YOUR_VRSC_ADDRESS \
   --worker my-miner-vrsc \
   --threads 1 \
@@ -214,11 +213,11 @@ cargo run --bin wallet-generator
 ## Project Structure
 
 ```
-Zion-2.9.5/
+2.9.6/
 ├── core/              # Blockchain node (consensus, P2P, storage, RPC)
 ├── pool/              # Mining pool (Stratum v2, PPLNS)
 ├── miner/             # Universal miner (CPU + GPU)
-├── cosmic-harmony/    # PoW algorithm library (Cosmic Harmony v3)
+├── cosmic-harmony/    # PoW algorithm library (Cosmic Harmony Deeksha)
 ├── desktop-agent/     # Desktop AI agent
 ├── config/            # Configuration files (mainnet, testnet, devnet)
 ├── docker/            # Docker deployment
@@ -285,8 +284,8 @@ Zion-2.9.5/
 
 - **Website**: https://zionterranova.com
 - **Documentation**: https://zionterranova.com/docs
-- **GitHub**: https://github.com/Zion-TerraNova/2.9.5-NativeAwakening
-- **v2.9.5** (current): https://github.com/Zion-TerraNova/2.9.5-NativeAwakening
+- **GitHub**: https://github.com/Zion-TerraNova/2.9.6
+- **v2.9.8 Deeksha** (current): https://github.com/Zion-TerraNova/2.9.6
 
 ---
 

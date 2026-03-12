@@ -1,10 +1,12 @@
-# 📜 ZION TerraNova — Whitepaper v2.9.5 "Native Awakening"
+# 📜 ZION TerraNova — Whitepaper Baseline v2.9.5 "Native Awakening"
 
 > **"Where Technology Meets Spirit — Pure Mathematical Freedom"**
 
 **Version:** 2.9.5 "Native Awakening"  
 **Date:** January 2026  
-**Status:** TestNet Active  
+**Status:** Historical baseline document for the current 2.9.6 → 2.9.8 line  
+
+> **March 2026 note:** This whitepaper folder is kept as the original v2.9.5 baseline. Current verified code and release status live in `docs/STATUS_CURRENT_2026-03-12.md` and the 2.9.8 release docs.
 
 ---
 

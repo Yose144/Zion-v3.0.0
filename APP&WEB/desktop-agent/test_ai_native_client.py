@@ -16,19 +16,21 @@ from ai_native_client import AINativeClient
 
 async def main():
     print("🧪 Testing AI Native Client Integration\n")
+    local_url = os.getenv("ZION_AI_NATIVE_URL", "http://localhost:8001")
+    primary_host = os.getenv("ZION_PRIMARY_TESTNET_HOST", "91.98.122.165")
     
     # Use local test server for now
-    # For production, Desktop Agent will create SSH tunnel automatically
+    # For production, Desktop Agent targets the current Zion2 host.
     print("⚠️  Testing with localhost (requires SSH tunnel):")
-    print("   ssh -i ~/.ssh/zion_hetzner_key -L 8003:localhost:8003 root@77.42.31.72 -N &")
+    print(f"   ssh -i ~/.ssh/zion_hetzner_key -L 8001:localhost:8001 root@{primary_host} -N &")
     print()
     
-    client = AINativeClient(server_url="http://localhost:8003")
+    client = AINativeClient(server_url=local_url)
     
     try:
         # Test 1: Connection
         print("Test 1: Connection")
-        print("   Connecting to http://localhost:8003...")
+        print(f"   Connecting to {local_url}...")
         result = await client.connect()
         if result.get("success"):
             print(f"✅ PASS: Connected to {result['server'].get('service', 'N/A')}")

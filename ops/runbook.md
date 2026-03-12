@@ -1,8 +1,10 @@
 # 🛠️ ZION TerraNova — Operations Runbook
 
 > **Version:** 1.0  
-> **Last Updated:** 23. února 2026  
+> **Last Updated:** 12. března 2026  
 > **Environment:** TestNet (transition to MainNet planned 31.12.2026)
+
+> **March 2026 note:** The canonical live topology is now a single primary host at `91.98.122.165` (Zion2). Older Helsinki/Germany multi-node references below are historical unless explicitly marked as archival.
 
 ---
 
@@ -24,8 +26,7 @@
 
 | Server | IP | Location | Role | Specs |
 |--------|-----|----------|------|-------|
-| **Helsinki** 🇫🇮 | `77.42.31.72` | Hetzner Helsinki | Seed Node + Web + Pool | ARM64, 8GB RAM, 75GB SSD |
-| **Germany** 🇩🇪 | `46.225.126.243` | Hetzner Nuremberg | Seed Node + Revenue | ARM64, 4GB RAM |
+| **Zion2** | `91.98.122.165` | Hetzner | Primary host: core + pool + miner + website + monitoring | Active source of truth |
 
 ### Network Ports
 
@@ -49,19 +50,13 @@
 ## SSH Access
 
 ```bash
-# Helsinki (Seed Node)
-ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72
-
-# Germany (Peer Node)
-ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243
+# Zion2 primary host
+ssh -i ~/.ssh/zion_hetzner_key root@91.98.122.165
 ```
 
 ### SSH between servers
 
-Helsinki → Germany:
-```bash
-ssh root@46.225.126.243  # ed25519 key pre-configured
-```
+Current canonical operations are single-host. Historical peer-to-peer SSH flows are retained only in archived infra reports.
 
 ---
 
@@ -76,9 +71,9 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 | Container | Image | Ports | Healthcheck |
 |-----------|-------|-------|-------------|
-| `zion-core` | `zion-core:2.9.5-testnet` | 8334, 8444 | `curl http://localhost:8444/stats` |
-| `zion-pool` | `zion-pool:2.9.5-testnet` | 3333, 8080 | `curl http://localhost:8080/health` |
-| `zion-miner` | `zion-miner:2.9.5-testnet` | — | CPU mining process |
+| `zion-core` | `zion-core:2.9.6-*` | 8334, 8444 | `curl http://localhost:8444/stats` |
+| `zion-pool` | `zion-pool:2.9.6-*` | 3333, 8080 | `curl http://localhost:8080/health` |
+| `zion-miner` | `zion-miner:2.9.6-*` | — | Mining process |
 | `zion-redis` | `redis:7-alpine` | 6379 | `redis-cli ping` |
 | `zion-web` | `zion-web:latest` | 3000 | HTTP GET / |
 | `zion-prometheus` | `prom/prometheus:v2.53.0` | 9090 | `wget http://localhost:9090/-/healthy` |
@@ -215,18 +210,17 @@ sleep 30
 curl -s http://localhost:8444/stats | jq '.peer_count'
 ```
 
-### Level 3 — Fork Detected
+### Level 3 — Fork / Divergence Suspected
 
-**Symptom:** Different block heights / hashes between servers  
+**Symptom:** Unexpected block height movement, tip mismatch in metrics, or reorg spam in logs  
 **Action:**
 ```bash
-# Check both servers
-HELSINKI=$(curl -s http://77.42.31.72:8444/stats | jq '.block_height')
-GERMANY=$(curl -s http://46.225.126.243:8444/stats | jq '.block_height')
-echo "Helsinki: $HELSINKI, Germany: $GERMANY"
+# Single-host model: inspect canonical node directly
+HEIGHT=$(curl -s http://127.0.0.1:8444/stats | jq '.block_height')
+TIP=$(curl -s http://127.0.0.1:8444/stats | jq -r '.top_block_hash')
+echo "Zion2: $HEIGHT / $TIP"
 
-# If diverged > 10 blocks, the shorter chain will auto-reorg
-# Monitor logs for reorg activity:
+# Monitor logs for reorg activity
 docker logs --tail 100 zion-core | grep -i "reorg\|fork\|stronger"
 ```
 
@@ -311,40 +305,26 @@ docker compose -f docker/docker-compose.testnet.yml up -d
 ### Website (Next.js)
 ```bash
 # From local machine:
-rsync -avz --delete \
-  -e "ssh -i ~/.ssh/zion_hetzner_key" \
-  website-v2.9/ root@77.42.31.72:/opt/zion/website-v2.9/ \
-  --exclude node_modules --exclude .next --exclude .git
-
-# On server — rebuild:
-ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72
-cd /opt/zion/website-v2.9
-docker build -t zion-web:latest .
-docker stop zion-web && docker rm zion-web
-docker run -d --name zion-web --network zion-net -p 3000:3000 -e NODE_ENV=production zion-web:latest
+cd APP&WEB/website-v2.9
+bash scripts/deploy.sh
 ```
 
 ### Pool (Rust)
 ```bash
-# On server:
-cd /root/zion-2.9.5
-docker build --no-cache -f Dockerfile.pool -t zion-pool:2.9.5-testnet .
-docker stop zion-pool && docker rm zion-pool
-# Use docker-compose to restart with correct env:
-docker compose -f docker/docker-compose.testnet.yml up -d zion-pool
+# From local machine:
+bash scripts/deploy-pool-core.sh --pool-only
 ```
 
 ### Core Node (Rust)
 ```bash
-cd /root/zion-2.9.5
-docker build --no-cache -f Dockerfile.core -t zion-core:2.9.5-testnet .
-docker compose -f docker/docker-compose.testnet.yml up -d zion-core
+# From local machine:
+bash scripts/deploy-pool-core.sh --core-only
 ```
 
 ### Monitoring Stack
 ```bash
 # From local machine:
-./scripts/deploy-monitoring.sh helsinki   # or germany or all
+./scripts/deploy-monitoring.sh primary
 ```
 
 ---
@@ -413,7 +393,9 @@ nginx -t
 systemctl reload nginx
 ```
 
-### Revenue blockers (Helsinki + SeedDE) — 23.02.2026
+### Revenue blockers (archival, pre-consolidation) — 23.02.2026
+
+> This section is historical and documents the old Helsinki + SeedDE topology before the March 2026 single-host consolidation.
 
 #### 1) DERO: `unregistered miner or you need to wait 15 mins`
 ```bash

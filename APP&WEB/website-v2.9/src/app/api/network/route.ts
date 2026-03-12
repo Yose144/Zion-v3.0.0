@@ -4,8 +4,8 @@ import { getSeedNodesConfig, type SeedNodeConfig } from '@/lib/network-config';
 /**
  * TREE_NODES Network API
  * 
- * Provides real-time status of all ZION network nodes
- * Integrates with TREE_NODES infrastructure toolkit
+ * Provides real-time status of the configured ZION public host topology.
+ * Supports a single-host default with env-configured overrides.
  */
 
 const SEED_NODES = getSeedNodesConfig();
@@ -147,7 +147,7 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
 
 export async function GET() {
   try {
-    // Fetch all nodes in parallel
+    // Fetch all configured hosts in parallel.
     const nodeStatuses = await Promise.all(
       SEED_NODES.map(node => getNodeStatus(node))
     );

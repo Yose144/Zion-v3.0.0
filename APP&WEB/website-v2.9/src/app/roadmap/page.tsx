@@ -29,9 +29,9 @@ import { SITE_RELEASE_LABEL } from '@/lib/site';
    ═══════════════════════════════════════════════════════════ */
 
 const heroStats = [
-  { label: 'Rust LOC', value: '52,590', descriptor: '5 crates' },
-  { label: 'Tests passing', value: '780+', descriptor: '0 failing' },
-  { label: 'Network', value: '3/3 online', descriptor: 'Helsinki · USA · Asia' },
+  { label: 'Rust LOC', value: '114,520', descriptor: '12 crates · L1–L4' },
+  { label: 'Tests passing', value: '1,379', descriptor: '0 failing' },
+  { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · internal seeds active' },
   { label: 'Release Gate', value: 'GO', descriptor: 'Deeksha code freeze live' }
 ];
 
@@ -46,14 +46,14 @@ const layerStack = [
     items: [
       'PoW Cosmic Harmony v3 — ASIC-resistant',
       'UTXO model + Ed25519 signatures',
-      'Decade Decay emise: 5,400 → 724 ZION/block (100+ let + tail ∞)',
+      'Decade Decay emission: 5,400 → 724 ZION/block (100+ years + tail ∞)',
       '16.28B genesis premine (immediately unlocked)',
       'LWMA DAA (60-block, ±25%)',
       'Fee burning — ALL fees destroyed',
-      'Distribuce: 89% miner · 5% humanit. · 5% Issobella · 1% pool',
+      'Distribution: 89% miner · 5% humanit. · 5% Issobella · 1% pool',
       'Dual-mining: ZION (CHv3) + VRSC (VerusHash)',
       'Mining pool (Stratum v2, PPLNS)',
-      'P2P síť, IBD sync, seed nodes'
+      'P2P network, IBD sync, bootstrap peers'
     ],
     active: true
   },
@@ -81,7 +81,7 @@ const layerStack = [
     border: 'border-purple-500/40',
     items: [
       'NCL — AI task marketplace',
-      'AI Orchestrátor — agent routing',
+      'AI Orchestrator — agent routing',
       'WARP adapters 7/7 implemented ✅ (2026-03-02)',
       'AI Native SDK'
     ],
@@ -96,9 +96,9 @@ const layerStack = [
     border: 'border-yellow-500/40',
     items: [
       'UE5 open-world (consciousness mining)',
-      'XP / Consciousness Level systém',
-      'NFT avatary, předměty, území',
-      'Play-to-Mine — herní aktivity → hashrate'
+      'XP / Consciousness Level system',
+      'NFT avatars, items, territories',
+      'Play-to-Mine — game activities → hashrate'
     ],
     active: false
   },
@@ -110,10 +110,10 @@ const layerStack = [
     color: 'from-amber-500 to-yellow-500',
     border: 'border-amber-500/40',
     items: [
-      'Humanitární mise — financováno 5% block reward',
-      'Výzkum a vývoj kvantového motoru na volnou energii',
-      'Off-grid komunity a decentralizovaná infrastruktura',
-      'Humanitární desátek — 540 ZION/block (L1 Genesis)'
+      'Humanitarian missions — funded by 5% block reward',
+      'Free energy quantum engine R&D',
+      'Off-grid communities and decentralized infrastructure',
+      'Humanitarian tithe — 540 ZION/block (L1 Genesis)'
     ],
     active: false
   },
@@ -125,8 +125,8 @@ const layerStack = [
     color: 'from-rose-500 to-red-500',
     border: 'border-rose-500/40',
     items: [
-      'Vesmírná stanice ZION Issobella',
-      '5% block reward fund (od bloku 1)',
+      'ZION Issobella Space Station',
+      '5% block reward fund (from block 1)',
       'Orbital mining & deep-space research',
       'Consciousness beyond Earth'
     ],
@@ -142,33 +142,36 @@ const constitution = [
   { param: 'Block Reward (D1)', value: '5,400.067 ZION' },
   { param: 'Emission Model', value: 'Decade Decay (-20%/10y)' },
   { param: 'Tail Emission', value: '724.785 ZION/block ∞' },
-  { param: 'Block Time', value: '60 sekund' },
+  { param: 'Block Time', value: '60 seconds' },
   { param: 'DAA', value: 'LWMA (60 bloků, ±25%)' },
-  { param: 'Max Reorg', value: '10 bloků' },
-  { param: 'Soft Finality', value: '60 bloků' },
-  { param: 'Coinbase Maturity', value: '100 bloků' },
+  { param: 'Max Reorg', value: '10 blocks' },
+  { param: 'Soft Finality', value: '60 blocks' },
+  { param: 'Coinbase Maturity', value: '100 blocks' },
   { param: 'Consensus', value: 'PoW · Cosmic Harmony v3 + VRSC' },
   { param: 'Distribution', value: '89% miner · 5% hum. · 5% Issobella · 1% pool' },
-  { param: 'Presale', value: '❌ NEEXISTUJE' },
-  { param: 'Mining Horizon', value: '100+ let + tail ∞' }
+  { param: 'Presale', value: '❌ NONE' },
+  { param: 'Mining Horizon', value: '100+ years + tail ∞' }
 ];
 
 const premineAllocation = [
-  { category: 'ZION OASIS + Winners Golden Egg/Xp', zion: '8,250,000,000', share: '50.7%', lock: 'Okamžitě dostupné' },
-  { category: 'DAO Treasury', zion: '4,000,000,000', share: '24.6%', lock: 'Okamžitě dostupné' },
-  { category: 'Infrastructure & Dev', zion: '2,590,000,000', share: '15.9%', lock: 'Okamžitě dostupné' },
-  { category: 'Humanitarian Fund', zion: '1,440,000,000', share: '8.8%', lock: 'Okamžitě dostupné' }
+  { category: 'ZION OASIS + Winners Golden Egg/Xp', zion: '8,250,000,000', share: '50.7%', lock: 'Immediately available' },
+  { category: 'DAO Treasury', zion: '4,000,000,000', share: '24.6%', lock: 'Immediately available' },
+  { category: 'Infrastructure & Dev', zion: '2,590,000,000', share: '15.9%', lock: 'Immediately available' },
+  { category: 'Humanitarian Fund', zion: '1,440,000,000', share: '8.8%', lock: 'Immediately available' }
 ];
 
 const componentStatus = [
-  { name: 'core/ (blockchain)', loc: '~17k', tests: 275, status: '✅', readiness: 90 },
-  { name: 'cosmic-harmony/ (PoW)', loc: '~11k', tests: 68, status: '✅', readiness: 88 },
-  { name: 'pool/ (mining pool)', loc: '~12k', tests: 132, status: '✅', readiness: 90 },
-  { name: 'miner/ (universal)', loc: '~6k', tests: 73, status: '✅', readiness: 85 },
+  { name: 'core/ (blockchain)', loc: '~22.7k', tests: 433, status: '✅', readiness: 94 },
+  { name: 'cosmic-harmony/ (PoW)', loc: '~17.9k', tests: 95, status: '✅', readiness: 92 },
+  { name: 'pool/ (mining pool)', loc: '~19.5k', tests: 115, status: '✅', readiness: 93 },
+  { name: 'miner/ (universal)', loc: '~14.5k', tests: 79, status: '✅', readiness: 90 },
+  { name: 'bridge/ (L2 wZION)', loc: '~7k', tests: 167, status: '✅', readiness: 85 },
+  { name: 'dao/ (L2 governance)', loc: '~5k', tests: 63, status: '✅', readiness: 80 },
+  { name: 'warp/ (L3 multichain)', loc: '~8k', tests: 237, status: '✅', readiness: 85 },
+  { name: 'ncl + ai-native/ (L3 AI)', loc: '~6.6k', tests: 119, status: '✅', readiness: 75 },
+  { name: 'oasis/ (L4 game)', loc: '~3.5k', tests: 49, status: '✅', readiness: 70 },
   { name: 'desktop-agent/', loc: '~3k', tests: 0, status: '✅', readiness: 80 },
-  { name: 'website-v2.9/', loc: '~5k', tests: 0, status: '🔄', readiness: 75 },
-  { name: 'mobile-app/', loc: '~2k', tests: 0, status: '🔴', readiness: 55 },
-  { name: 'warp/ (L2 NCL multichain)', loc: '~9k', tests: 252, status: '✅', readiness: 90 }
+  { name: 'website-v2.9/', loc: '~5k', tests: 0, status: '✅', readiness: 80 }
 ];
 
 /* ─── PHASES ─── */
@@ -189,13 +192,13 @@ const phases: PhaseData[] = [
   {
     id: '0',
     title: 'Spec Freeze & Core Rewrite',
-    period: 'Únor 2026 (dokončeno 9. 2.)',
-    priority: 'P0 Blocker → ✅ SPLNĚNO',
+    period: 'Feb 2026 (completed 9 Feb)',
+    priority: 'P0 Blocker → ✅ DONE',
     progress: 100,
     status: 'done',
-    description: '155 testů, 8 commitů. Emise, DAA, fee market, wallet, konsensus hardening — vše zmrazeno.',
+    description: '155 tests, 8 commits. Emission, DAA, fee market, wallet, consensus hardening — all frozen.',
     sprints: [
-      { id: '0.0', title: 'Repo Migrace — čisté repo, workspace, Docker, CI/CD', done: true },
+      { id: '0.0', title: 'Repo Migration — clean repo, workspace, Docker, CI/CD', done: true },
       { id: '0.1', title: 'Emission & Genesis — 5,400 ZION/block, 16.28B premine', done: true },
       { id: '0.2', title: 'DAA & Consensus — LWMA 60-blok, ±25%, fork-choice', done: true },
       { id: '0.3', title: 'Fee Market & Mempool — fee burning, double-spend, eviction', done: true },
@@ -203,22 +206,22 @@ const phases: PhaseData[] = [
       { id: '0.5', title: 'Consensus Hardening — maturity=100, reorg=10, finality=60', done: true }
     ],
     exitCriteria: [
-      { text: 'Unit testy pro nový reward model', done: true },
-      { text: 'Genesis generuje 16.28B premine', done: true },
-      { text: 'LWMA DAA deterministická', done: true },
-      { text: 'Max reorg depth = 10 enforcován', done: true },
-      { text: 'Coinbase maturity = 100 enforcována', done: true },
-      { text: 'Wallet send E2E funguje', done: true }
+      { text: 'Unit tests for new reward model', done: true },
+      { text: 'Genesis produces 16.28B premine', done: true },
+      { text: 'LWMA DAA deterministic', done: true },
+      { text: 'Max reorg depth = 10 enforced', done: true },
+      { text: 'Coinbase maturity = 100 enforced', done: true },
+      { text: 'Wallet send E2E working', done: true }
     ]
   },
   {
     id: '1',
     title: 'Hardened TestNet',
-    period: 'Únor — Květen 2026',
+    period: 'Feb — May 2026',
     priority: 'P0 Blocker',
     progress: 92,
     status: 'active',
-    description: '168h stability PASS (2026-03-03), 3-node mesh online. Sprint 1.10 uzavřen, zbývá partition + 100 miners.',
+    description: '168h stability PASS (2026-03-03), archived multi-host validation complete. Sprint 1.10 closed, remaining: partition + 100 miners stress test.',
     sprints: [
       { id: '1.0', title: 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
       { id: '1.1', title: 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
@@ -230,95 +233,95 @@ const phases: PhaseData[] = [
       { id: '1.7', title: 'P2P Rate-Limiting — 200 msgs/peer/60s, escalating bans', tests: 13, done: true },
       { id: '1.8', title: 'Health Check & Metrics — getHealthCheck, getMetrics', tests: 8, done: true },
       { id: '1.9', title: 'Stress Test Suite — high TX, rapid blocks, partition', tests: 21, done: true },
-      { id: '1.10', title: '168h Stability Run — 3 nody, žádný kritický incident', done: true },
-      { id: '1.11', title: 'Live Partition Test — izolace node 30 min, reconnect', done: false },
-      { id: '1.12', title: '100 Miners Stress — simulace 100 Stratum klientů', done: false }
+      { id: '1.10', title: '168h Stability Run — archived multi-host validation, no critical incident', done: true },
+      { id: '1.11', title: 'Live Partition Test — node isolation 30 min, reconnect', done: false },
+      { id: '1.12', title: '100 Miners Stress — simulate 100 Stratum clients', done: false }
     ],
     exitCriteria: [
-      { text: 'TestNet deploy na 3+ serverech', done: true },
-      { text: 'Reorg/double-spend/fork testy (29 testů)', done: true },
-      { text: 'IBD hardening (42 testů)', done: true },
-      { text: 'Pool payout batch TX (23 testů)', done: true },
-      { text: 'Buyback + DAO Treasury (28 testů)', done: true },
-      { text: 'RPC API kompletní (36 testů)', done: true },
-      { text: 'DoS ochrana (MessageRateLimiter)', done: true },
-      { text: 'Stress test suite (21 testů)', done: true },
-      { text: '168h stability run bez kritického incidentu', done: true },
+      { text: 'TestNet deployed on 3+ servers', done: true },
+      { text: 'Reorg/double-spend/fork tests (29 tests)', done: true },
+      { text: 'IBD hardening (42 tests)', done: true },
+      { text: 'Pool payout batch TX (23 tests)', done: true },
+      { text: 'Buyback + DAO Treasury (28 tests)', done: true },
+      { text: 'RPC API complete (36 tests)', done: true },
+      { text: 'DoS protection (MessageRateLimiter)', done: true },
+      { text: 'Stress test suite (21 tests)', done: true },
+      { text: '168h stability run without critical incident', done: true },
       { text: 'Orphan rate < 2%', done: false },
-      { text: 'Žádný critical bug 14 dní', done: false }
+      { text: 'No critical bug for 14 days', done: false }
     ]
   },
   {
     id: '2',
     title: 'Node UX & Mining',
-    period: 'Červen — Červenec 2026',
+    period: 'Jun — Jul 2026',
     priority: 'P1 Important',
     progress: 0,
     status: 'upcoming',
-    description: 'Node spustitelný za 10 min, block explorer, mining guides, RPC docs.',
+    description: 'Node bootable in 10 min, block explorer, mining guides, RPC documentation.',
     sprints: [
       { id: '2.1', title: 'Node UX — README, config.toml, structured logging, CLI', done: false },
       { id: '2.2', title: 'Mining Polish — CPU baseline, GPU produkce, pool failover', done: false },
       { id: '2.3', title: 'Block Explorer — indexer, web UI, supply API, rich list', done: false }
     ],
     exitCriteria: [
-      { text: 'Node spustitelný za 10 minut podle README', done: false },
-      { text: 'Block explorer běží a indexuje', done: false },
-      { text: 'Mining guides hotové', done: false },
-      { text: 'RPC API zdokumentováno', done: false }
+      { text: 'Node bootable in 10 min per README', done: false },
+      { text: 'Block explorer running and indexing', done: false },
+      { text: 'Mining guides complete', done: false },
+      { text: 'RPC API documented', done: false }
     ]
   },
   {
     id: '3',
     title: 'Infrastructure & Legal',
-    period: 'Srpen — Září 2026',
+    period: 'Aug — Sep 2026',
     priority: 'P1 Important',
     progress: 55,
     status: 'active',
-    description: 'HEL/USA/Asia infrastruktura běží, monitoring aktivní, legal/docs postupuje. wZION bridge je live na Base Sepolia testnetu.',
+    description: 'Primary-host infrastructure running, monitoring active, legal/docs progressing. wZION bridge live on Base Sepolia testnet.',
     sprints: [
-      { id: '3.1', title: 'Seed Nodes & Monitoring — HEL/USA/Asia live, Prometheus + Grafana', done: true },
+      { id: '3.1', title: 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana', done: true },
       { id: '3.2', title: 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
       { id: '3.3', title: 'Legal & Compliance — disclaimers, token-not-security, risk', done: true },
       { id: '3.4', title: 'Exchange Readiness — wZION + Bridge live on Base Sepolia (testnet)', done: true }
     ],
     exitCriteria: [
-      { text: '3 seed nody ve 3 regionech (HEL/USA/Asia) stabilně online', done: true },
-      { text: 'Monitoring + alerting aktivní', done: true },
-      { text: 'Legal docs kompletní', done: true },
-      { text: 'wZION + Bridge testnet-ready na Base Sepolia', done: true },
-      { text: 'Produkční mainnet exchange rollout', done: false }
+      { text: '1 public host + internal seeds stable online', done: true },
+      { text: 'Monitoring + alerting active', done: true },
+      { text: 'Legal docs complete', done: true },
+      { text: 'wZION + Bridge testnet-ready on Base Sepolia', done: true },
+      { text: 'Production mainnet exchange rollout', done: false }
     ]
   },
   {
     id: '4',
     title: 'Dress Rehearsal',
-    period: 'Říjen — Listopad 2026',
+    period: 'Oct — Nov 2026',
     priority: 'P0 Blocker',
     progress: 0,
     status: 'upcoming',
-    description: '168h (7-day) stability run, security audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty.',
+    description: '168h (7-day) stability run, security audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.',
     sprints: [
       { id: '4.1', title: 'Dress Rehearsal — staging chain, 1000 miners, disaster recovery', done: false },
       { id: '4.2', title: 'Security Audit — RFP, kickoff, mid-review, final, bug bounty', done: false },
       { id: '4.3', title: 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256', done: false }
     ],
     exitCriteria: [
-      { text: '7-day stability run bez pádu', done: false },
-      { text: 'Security audit — žádný critical/high', done: false },
-      { text: 'Code freeze — tag vytvořen', done: false },
-      { text: 'Binární releasy s SHA-256', done: false },
-      { text: 'Bug bounty program aktivní', done: false }
+      { text: '7-day stability run without crash', done: false },
+      { text: 'Security audit — no critical/high findings', done: false },
+      { text: 'Code freeze — tag created', done: false },
+      { text: 'Binary releases with SHA-256', done: false },
+      { text: 'Bug bounty program active', done: false }
     ]
   },
   {
     id: '5',
     title: 'MainNet Launch 🚀',
-    period: 'Prosinec 2026',
+    period: 'Dec 2026',
     priority: '🎯 Hard Deadline: 31.12.2026',
     progress: 0,
     status: 'upcoming',
-    description: 'Genesis block vytvořen OFFLINE (air-gapped). Seed nodes, pool mining, explorer, supply API — vše živě.',
+    description: 'Genesis block created OFFLINE (air-gapped). Public host bootstrap, pool mining, explorer, supply API — all live.',
     sprints: [
       { id: 'T-14', title: 'Genesis freeze — všechny parametry zmrazeny', done: false },
       { id: 'T-7', title: 'Community announcement + wallety ke stažení', done: false },
@@ -326,9 +329,9 @@ const phases: PhaseData[] = [
       { id: 'T-0', title: '🚀 MAINNET GENESIS — 31. 12. 2026', done: false }
     ],
     exitCriteria: [
-      { text: 'Genesis block hash publikován', done: false },
-      { text: 'Seed nodes online (5+)', done: false },
-      { text: 'Pool + solo mining otevřen', done: false },
+      { text: 'Genesis block hash published', done: false },
+      { text: 'Bootstrap hosts online (public + internal quorum)', done: false },
+      { text: 'Pool + solo mining open', done: false },
       { text: 'Block explorer live', done: false },
       { text: 'Supply API live', done: false }
     ]
@@ -404,19 +407,19 @@ export default function RoadmapPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Realistický plán: stabilní TestNet se 3 nody (HEL/USA/Asia) → Base Sepolia bridge ready → WARP implementation complete → MainNet launch{' '}
+                Realistic plan: stable TestNet with public host runtime → Base Sepolia bridge ready → WARP implementation complete → MainNet launch{' '}
                 <strong className="text-white">31. 12. 2026</strong>.
-                Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním.
+                A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 3. Mar 2026
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 12. Mar 2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> MainNet · 31.12.2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 780+ testů passing
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 1,379 tests passing
                 </span>
               </div>
             </div>
@@ -552,7 +555,7 @@ export default function RoadmapPage() {
           </div>
 
           <div className="relative">
-            <div className="absolute left-6 top-0 bottom-0 w-[2px] bg-linear-to-b from-emerald-400 via-zion-purple to-zion-gold hidden md:block" />
+            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-linear-to-b from-emerald-400 via-zion-purple to-zion-gold hidden md:block" />
             <div className="space-y-6">
               {phases.map((phase, idx) => {
                 const statusColor =

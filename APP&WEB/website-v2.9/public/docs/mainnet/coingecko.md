@@ -85,7 +85,7 @@ Key features:
 - Native 6-layer architecture: L1 TerraNova → L2 NCL → L3 DAO → L4 Oasis → L5 Free World → L6 Issobella
 - wZION ERC-20 bridge to Ethereum Base and other EVM chains
 - Ed25519 signatures, LMDB storage, LWMA difficulty adjustment
-- 3-node TestNet live (Helsinki, USA, Asia)
+- Public TestNet live (primary host Zion2 + internal seeds)
 - 780+ automated tests, security audit: 0 critical findings
 
 MainNet launch target: December 31, 2026.

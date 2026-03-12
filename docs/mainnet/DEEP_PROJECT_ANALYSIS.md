@@ -1,6 +1,6 @@
-# 🔬 ZION TerraNova v2.9.5 — HLUBOKÁ ANALÝZA PROJEKTU
+# 🔬 ZION TerraNova v2.9.5 → v2.9.8 — HLUBOKÁ ANALÝZA PROJEKTU
 
-**Datum:** 3. února 2026  
+**Datum:** 3. února 2026 (aktualizováno 12. března 2026)  
 **Scope:** Kompletní analýza celého projektu pro MainNet readiness  
 **Analyst:** AI Native Assistant  
 
@@ -8,20 +8,25 @@
 
 ## 📊 EXECUTIVE SUMMARY
 
-### Celkové hodnocení: **70-75% MainNet Ready**
+### Celkové hodnocení: **85-90% MainNet Ready** (L1)
+
+> **Aktualizace březen 2026:** Projekt výrazně pokročil od původního hodnocení.
+> Celkem 114 520 LOC Rust, 1 379 testů, všechny L1–L4 vrstvy implementovány.
+> Infra konsolidována na jediný primární host 91.98.122.165.
 
 | Oblast | Stav | Poznámka |
 |--------|------|----------|
-| **Core Blockchain (Rust)** | 🟢 85% | TX validace, UTXO, reorg - hotovo |
-| **Mining Pool (Rust)** | 🟢 80% | Stratum, PPLNS, payouts - funkční |
-| **P2P Network** | 🟡 65% | Seed discovery OK, sync nestabilní |
-| **Consensus/DAA** | 🟡 60% | Implementováno, ale placeholder params |
-| **Wallet** | 🔴 30% | Pouze Python legacy, Rust CLI chybí |
-| **Explorer API** | 🔴 20% | Základní endpointy, ne kompletní |
-| **Genesis/Premine** | 🟡 70% | Definováno v kódu, nezamčeno |
-| **Legal/Compliance** | 🟢 90% | Dokumenty hotové |
-| **Ops/Monitoring** | 🟢 75% | Prometheus, healthchecks OK |
-| **Security** | 🟡 55% | Rate limiting OK, audit chybí |
+| **Core Blockchain (Rust)** | 🟢 94% | 22 684 LOC, 433 testů, připravený |
+| **Mining Pool (Rust)** | 🟢 93% | 19 546 LOC, 115 testů, Stratum v2 |
+| **Miner (Universal)** | 🟢 90% | 14 480 LOC, 79 testů, GPU Metal/CUDA/OpenCL |
+| **Cosmic Harmony (Deeksha)** | 🟢 92% | 17 944 LOC, 95 testů, kanonický konsenzus |
+| **L2 Bridge + DAO + Swap** | 🟢 85% | 21 387 LOC, 245 testů, 7 Solidity kontraktů |
+| **L3 Warp + NCL + AI** | 🟢 80% | 14 654 LOC, 356 testů, 7-chain bridge |
+| **L4 Oasis** | 🟡 70% | 3 494 LOC, 49 testů, game mechanics |
+| **P2P Network** | 🟢 85% | Seed discovery, IBD sync, rate limiting |
+| **Legal/Compliance** | 🟢 95% | 7 legal dokumentů kompletní |
+| **Ops/Monitoring** | 🟢 85% | Prometheus, Grafana, healthchecks, Docker |
+| **Security** | 🟡 65% | Rate limiting OK, externí audit chybí |
 
 ---
 
@@ -60,13 +65,20 @@
 
 | Komponenta | Řádků kódu | Jazyk | Stav |
 |------------|------------|-------|------|
-| **2.9.5/zion-native/core** | ~6,550 | Rust | ✅ Production-ready |
-| **2.9.5/zion-native/pool** | ~6,861 | Rust | ✅ Production-ready |
-| **2.9.5/zion-universal-miner** | ~1,834 | Rust | ✅ CPU OK, GPU WIP |
-| **2.9.5/zion-cosmic-harmony-v3** | ~2,000 | Rust | ✅ Functional |
+| **L1/core** | ~22,684 | Rust | ✅ Production-ready |
+| **L1/pool** | ~19,546 | Rust | ✅ Production-ready |
+| **L1/miner** | ~14,480 | Rust | ✅ CPU + GPU (Metal/CUDA/OpenCL) |
+| **L1/cosmic-harmony** | ~17,944 | Rust | ✅ Deeksha canonical |
+| **L2/bridge** | ~7,000 | Rust | ✅ Implementováno |
+| **L2/dao** | ~5,000 | Rust | ✅ Implementováno |
+| **L2/atomic-swap** | ~4,000 | Rust | ✅ Implementováno |
+| **L3/warp** | ~8,000 | Rust | ✅ 7-chain bridge |
+| **L3/ncl** | ~3,100 | Rust | ✅ AI task marketplace |
+| **L3/ai-native** | ~3,500 | Rust | ✅ Agent orchestration |
+| **L4/oasis** | ~3,494 | Rust | ✅ Game mechanics |
+| **L2/contracts** | 7 kontrakty | Solidity | ✅ Testováno |
+| **Total Rust** | ~114,520 | Rust | ✅ Active |
 | **src/ (Python legacy)** | ~41,155 | Python | ⚠️ Legacy, nepoužívat |
-| **dao/ (Governance)** | ~2,500 | Solidity/TS | 🔴 Neintegrováno |
-| **Total Rust native** | ~17,245 | Rust | ✅ Active |
 
 ---
 

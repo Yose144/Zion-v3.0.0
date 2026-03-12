@@ -4,6 +4,11 @@
 > Scope: uzavření algoritmu 2.9.8 (Deeksha canonical path) + release readiness gate  
 > Zdroj pravdy: `docs/2.9.8/INDEX.md`, `L1/pool/tests/chv4_e2e.rs`, aktuální validační běhy
 
+> **Historická poznámka (2026-03-12):** Infrastruktura byla od 2026-03-10 konsolidována
+> na jediný primární host `91.98.122.165` (Zion2). Reference na Helsinki/USA/Asia
+> v tomto dokumentu odrážejí stav v čase validace, nikoli aktuální topologii.
+> Aktuální stav viz `STATUS_REPORT_2026-03-10.md` a `MAINNET_READINESS-ROADMAP.md`.
+
 ---
 
 ## Rozhodnutí (aktuální)

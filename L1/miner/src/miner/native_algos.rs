@@ -115,7 +115,8 @@ impl NativeAlgorithm {
             "cosmic_harmony" | "cosmic_harmony_v4" | "chv4" | "ch4"
             | "cosmic_harmony_v3" | "cosmicharmony" | "chv3" | "ch3"
             | "cosmic_harmony_v2" | "cosmicharmonyv2" | "cosmic-harmony-v2"
-            | "deeksha" | "cosmic_harmony_deeksha" | "ch_deeksha" | "chd" => {
+            | "deeksha" | "cosmic_harmony_deeksha" | "ch_deeksha" | "chd"
+            | "ekam" | "ekam_deeksha" | "cosmic_harmony_ekam" | "ch_ekam" | "che" => {
                 Some(Self::CosmicHarmonyDeeksha)
             }
             // Historical CHv4.2 aliases — also resolved to the same canonical Deeksha runtime.
@@ -706,22 +707,22 @@ pub fn compute_hash(
     height: u32,
 ) -> Result<Vec<u8>> {
     match algo {
-        // Cosmic Harmony unified runtime - Deeksha canonical path
+        // Cosmic Harmony unified runtime — Ekam Deeksha canonical path (Tier 2: Blake3 XOF + AES cascade)
         NativeAlgorithm::CosmicHarmony => {
             let _ = height;
-            let h = zion_cosmic_harmony_v3::cosmic_harmony_deeksha(header, nonce);
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha(header, nonce);
             Ok(h.data.to_vec())
         }
 
         NativeAlgorithm::CosmicHarmonyV42 => {
             let _ = height;
-            let h = zion_cosmic_harmony_v3::cosmic_harmony_deeksha(header, nonce);
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha(header, nonce);
             Ok(h.data.to_vec())
         }
 
         NativeAlgorithm::CosmicHarmonyDeeksha => {
             let _ = height;
-            let h = zion_cosmic_harmony_v3::cosmic_harmony_deeksha(header, nonce);
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha(header, nonce);
             Ok(h.data.to_vec())
         }
 

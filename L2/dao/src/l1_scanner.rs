@@ -80,7 +80,7 @@ struct BalanceInfo {
 
 #[derive(Debug, Clone)]
 pub struct ScannerConfig {
-    /// L1 RPC URL, e.g. `http://77.42.31.72:8444/jsonrpc`
+    /// L1 RPC URL, e.g. `http://91.98.122.165:8444/jsonrpc`
     pub rpc_url: String,
     /// Poll interval (how often to ask for new blocks)
     pub poll_interval: Duration,
@@ -93,7 +93,7 @@ pub struct ScannerConfig {
 impl Default for ScannerConfig {
     fn default() -> Self {
         Self {
-            rpc_url: "http://77.42.31.72:8444/jsonrpc".to_string(),
+            rpc_url: "http://91.98.122.165:8444/jsonrpc".to_string(),
             poll_interval: Duration::from_secs(30),
             min_vote_weight: 1_000_000, // 1 ZION
             finality_blocks: 6,

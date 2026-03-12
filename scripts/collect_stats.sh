@@ -1,8 +1,8 @@
 #!/bin/bash
-# ZION Mission Control — data collector v3
-# 5-node network: Helsinki + SeedDE + Usa1 + Usa2 + Asia3
+# ZION Mission Control — data collector v4
+# Single-host network: Zion2 primary host + internal seed containers
 # Runs every 30s via cron — generates /var/www/html/dash/data.json
-# Updated: 2026-02-22 — fixed JSON-RPC, new peer list
+# Updated: 2026-03-12 — single-host topology refresh
 
 OUT="/var/www/html/dash/data.json"
 mkdir -p /var/www/html/dash
@@ -13,8 +13,8 @@ rpc() {
     -d '{"jsonrpc":"2.0","method":"get_info","params":{},"id":1}' 2>/dev/null
 }
 
-# ── Helsinki (local) ──
-H_INFO=$(rpc 77.42.31.72)
+# ── Primary host (local) ──
+H_INFO=$(rpc 127.0.0.1)
 H_HEIGHT=$(echo "$H_INFO" | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(d.get('height','?'))"        2>/dev/null || echo "?")
 H_P_IN=$(echo "$H_INFO"  | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(d.get('incoming_connections_count',0))" 2>/dev/null || echo "?")
 H_P_OUT=$(echo "$H_INFO" | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(d.get('outgoing_connections_count',0))" 2>/dev/null || echo "?")
@@ -30,17 +30,9 @@ H_LOAD=$(cat /proc/loadavg | awk '{print $1}')
 H_HEALTHY=$(docker ps --filter "health=healthy" --format '.' 2>/dev/null | wc -l | tr -d ' ')
 H_TOTAL=$(docker ps --format '.' 2>/dev/null | wc -l | tr -d ' ')
 
-# ── Seed nodes (RPC heights) ──
-SEEDDE_H=$(rpc 46.225.126.243 | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(d.get('height','?'))" 2>/dev/null || echo "?")
-USA1_H=$(rpc   5.78.178.227   | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(d.get('height','?'))" 2>/dev/null || echo "?")
-USA2_H=$(rpc   178.156.240.160| python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(d.get('height','?'))" 2>/dev/null || echo "?")
-ASIA3_H=$(rpc  5.223.43.93    | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(d.get('height','?'))" 2>/dev/null || echo "?")
-
 # Online count
 ONLINE=0
-for hh in "$H_HEIGHT" "$SEEDDE_H" "$USA1_H" "$USA2_H" "$ASIA3_H"; do
-  [ "$hh" != "?" ] && ONLINE=$((ONLINE+1))
-done
+[ "$H_HEIGHT" != "?" ] && ONLINE=1
 
 # ── 168h Stability Run — started 2026-02-22T21:30:45Z ──
 START_EPOCH=1771795845
@@ -61,15 +53,15 @@ MEM_PCT=0
 ELAPSED_FMT=$(printf "%02dh%02dm" $((ELAPSED/3600)) $(((ELAPSED%3600)/60)))
 
 # Status based on actual data
-if [ "$H_HEIGHT" != "?" ] && [ "$ONLINE" -ge 4 ]; then
+if [ "$H_HEIGHT" != "?" ] && [ "$ONLINE" -ge 1 ]; then
   LINE_STATUS="OK"
 elif [ "$H_HEIGHT" = "?" ]; then
-  LINE_STATUS="[HELSINKI_RPC_FAIL]"
+  LINE_STATUS="[PRIMARY_RPC_FAIL]"
 else
-  LINE_STATUS="[NODES_PARTIAL_${ONLINE}/5]"
+  LINE_STATUS="[NODES_PARTIAL_${ONLINE}/1]"
 fi
 
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) | ${ELAPSED_FMT} | H:${H_HEIGHT} P:${H_P_IN}+${H_P_OUT} DIFF:${H_DIFF} | TIP:${H_TIP} | NODES:${ONLINE}/5 POOL:${H_POOL_UP}s | MEM:${H_MEM_USED}/${H_MEM_TOTAL}MB(${MEM_PCT}%) DISK:${H_DISK}% LOAD:${H_LOAD} | CTR:${H_TOTAL}/${H_HEALTHY} | ${LINE_STATUS}" >> "$LOG_FILE"
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) | ${ELAPSED_FMT} | H:${H_HEIGHT} P:${H_P_IN}+${H_P_OUT} DIFF:${H_DIFF} | TIP:${H_TIP} | NODES:${ONLINE}/1 POOL:${H_POOL_UP}s | MEM:${H_MEM_USED}/${H_MEM_TOTAL}MB(${MEM_PCT}%) DISK:${H_DISK}% LOAD:${H_LOAD} | CTR:${H_TOTAL}/${H_HEALTHY} | ${LINE_STATUS}" >> "$LOG_FILE"
 tail -500 "$LOG_FILE" > "${LOG_FILE}.tmp" && mv "${LOG_FILE}.tmp" "$LOG_FILE"
 
 LOG_TAIL=$(tail -24 "$LOG_FILE" 2>/dev/null | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
@@ -84,10 +76,10 @@ cat > "$OUT" << ENDJSON
     "duration_secs": $DURATION,
     "progress_pct": $PCT,
     "nodes_online": $ONLINE,
-    "nodes_total": 5
+    "nodes_total": 1
   },
   "helsinki": {
-    "ip": "77.42.31.72",
+    "ip": "91.98.122.165",
     "height": ${H_HEIGHT//\?/0},
     "peers_in": ${H_P_IN//\?/0},
     "peers_out": ${H_P_OUT//\?/0},
@@ -99,12 +91,7 @@ cat > "$OUT" << ENDJSON
     "containers_up": $H_TOTAL,
     "containers_healthy": $H_HEALTHY
   },
-  "nodes": {
-    "seedde": {"ip": "46.225.126.243", "height": ${SEEDDE_H//\?/0}},
-    "usa1":   {"ip": "5.78.178.227",   "height": ${USA1_H//\?/0}},
-    "usa2":   {"ip": "178.156.240.160","height": ${USA2_H//\?/0}},
-    "asia3":  {"ip": "5.223.43.93",    "height": ${ASIA3_H//\?/0}}
-  },
+  "nodes": {},
   "log_tail": "$LOG_TAIL"
 }
 ENDJSON

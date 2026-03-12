@@ -1,8 +1,8 @@
-//! Metal GPU mining backend for Apple Silicon — CHv4.1 + CHv4.2
+//! Metal GPU mining backend for Apple Silicon — canonical ZION Ekam runtime
 //!
 //! Native Metal GPU acceleration for Apple Silicon on M1/M2/M3/M4/M5.
-//! Full CHv4.1 pipeline: Keccak → SHA3 → GoldenMatrix → Scratchpad(64KiB)
-//! → NPU Mixing (INT8 MLP 64→128→64) → CosmicFusion.
+//! Canonical ZION runtime on Metal is Ekam Deeksha when the Ekam kernels are
+//! available in the underlying zion-cosmic-harmony-v3 Metal backend.
 //!
 //! CHv4.2 Merkabah Dual-Spin dispatch:
 //!   mine_batch předává výšku bloku (height) do MetalMiner, který volá
@@ -90,7 +90,7 @@ impl GpuMiner for MetalGpuMiner {
             }
             self.start_time = Instant::now();
             log::info!(
-                "Metal GPU initialized (CHv4): {} | batch_size={}",
+                "Metal GPU initialized (Ekam Deeksha preferred): {} | batch_size={}",
                 self.device_info.name,
                 self.batch_size
             );
@@ -119,9 +119,11 @@ impl GpuMiner for MetalGpuMiner {
                 .ok_or_else(|| anyhow!("Metal miner not initialized"))?;
 
             // ONE GPU dispatch per mine_batch call = self.batch_size nonces in parallel.
-            // The outer gpu_mining_loop handles iteration — this keeps job-switching latency
-            // equal to one GPU dispatch (~seconds) instead of millions of nonces * seconds.
-            if let Some((found_nonce, found_hash)) = inner.mine(header, target, nonce_start, height) {
+            // v2.9.9 Pure Code: mine() is now the canonical Ekam Deeksha path.
+            // Legacy CHv4 is archived in mine_legacy_chv4() for possible future use.
+            let result = inner.mine(header, target, nonce_start, height);
+
+            if let Some((found_nonce, found_hash)) = result {
                 self.hashes_computed += self.batch_size as u64;
                 return Ok(Some((found_nonce, found_hash)));
             }

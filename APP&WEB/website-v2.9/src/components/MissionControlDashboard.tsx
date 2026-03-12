@@ -58,8 +58,10 @@ interface DashData {
   stability_run?: StabilityRun;
   canary_run?: StabilityRun;
   current_topology?: string;
+  internal_seed_containers?: string[];
   seed_containers?: string[];
   primary?: ServerNode;
+  // Legacy aliases can still be present in older mission-data snapshots.
   helsinki?: ServerNode;
   usa?: ServerNode;
   asia?: ServerNode;
@@ -99,6 +101,10 @@ function barColor(pct: number) {
   if (pct > 85) return 'bg-red-500';
   if (pct > 70) return 'bg-yellow-500';
   return 'bg-emerald-500';
+}
+
+function getInternalSeedContainers(data?: DashData | null) {
+  return data?.internal_seed_containers ?? data?.seed_containers ?? [];
 }
 
 /* ═══════════════════════ TAB CONFIG ═══════════════════════ */
@@ -422,6 +428,7 @@ export default function MissionControlDashboard() {
   const sr = data?.stability_run;
   const cr = data?.canary_run;
   const primaryNode = data?.primary ?? data?.helsinki;
+  const internalSeedContainers = getInternalSeedContainers(data);
   const primaryStats = primaryNode?.stats;
   const primaryHeight = primaryStats?.height ?? 0;
   const onlineCount = primaryStats?.status === 'OK' || primaryStats?.status === 'ok' || primaryStats?.status === 'healthy' ? 1 : 0;
@@ -483,7 +490,7 @@ export default function MissionControlDashboard() {
             <div className="grid w-full gap-3 grid-cols-2 lg:w-auto lg:min-w-[340px]">
               {[
                 { label: 'Block Height', value: fmt(primaryHeight), descriptor: 'latest public chain tip' },
-                { label: 'Seeds', value: String(data?.seed_containers?.length ?? 2), descriptor: 'internal seed containers' },
+                { label: 'Seeds', value: String(internalSeedContainers.length || 2), descriptor: 'internal seed containers' },
                 { label: 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: 'public node peers' },
                 { label: 'Status', value: allHealthy ? 'LIVE' : primaryHeight > 0 ? 'RUN' : 'DOWN', descriptor: allHealthy ? 'primary infra healthy' : primaryHeight > 0 ? 'monitoring...' : 'node offline' },
               ].map((chip) => (
@@ -796,9 +803,9 @@ export default function MissionControlDashboard() {
               </PhaseAccordion>
 
               <PhaseAccordion icon={<Globe className="h-6 w-6 text-yellow-400" />} title="Fáze 3 — Infrastructure & Legal" pct={55} status="PROBÍHÁ" statusColor="border-yellow-400/30 bg-yellow-400/10 text-yellow-200">
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Srpen — Září 2026 | current primary-host ops live, archived HEL/USA/ASIA rollout retained in reports</p>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Srpen — Září 2026 | current primary-host ops live, historical multi-host rollout retained only in reports</p>
                 <table className="w-full text-left"><tbody>
-                  <SprintRow name="3.1 Seed Nodes" content="Current public runtime consolidated on Zion2. Historical multi-host monitoring snapshot (Helsinki/Germany and later HEL/USA/ASIA) remains archived in reports." status={<span className="text-emerald-400">LIVE</span>} />
+                  <SprintRow name="3.1 Public Host Runtime" content="Current public runtime is consolidated on Zion2 with internal seed containers behind the same host. Historical multi-host monitoring remains archived in reports." status={<span className="text-emerald-400">LIVE</span>} />
                   <SprintRow name="3.2 Docker & Deploy" content="mainnet.yml ✅, runbook ✅, CI/CD ⬜, images ⬜" status={<span className="text-yellow-400">2/5</span>} />
                   <SprintRow name="3.3 Legal" content="6 legal docs ✅, footer ✅, comm guidelines ⬜" status={<span className="text-emerald-400">7/8</span>} />
                   <SprintRow name="3.4 Exchange Ready" content="Supply API ✅, whitepaper ⬜, wZION bridge (Base Sepolia) ✅, listing prep ⬜" status={<span className="text-yellow-400">3/6</span>} />
@@ -1102,7 +1109,7 @@ export default function MissionControlDashboard() {
                       { done: true, date: 'Červen — Červenec', title: 'Fáze 2 — Node UX & Mining', desc: 'Explorer, mining guides, node setup — HOTOVO', color: 'text-emerald-400' },
                       { active: true, date: 'Srpen — Září', title: 'Fáze 3 — Infra & Legal', desc: 'Monitoring ✅, legal ✅, seed nody TODO', color: 'text-yellow-400' },
                       { date: 'Říjen — Listopad', title: 'Fáze 4 — Dress Rehearsal', desc: '7-day run, security audit, code freeze' },
-                      { date: '31. Prosince 2026', title: 'MAINNET GENESIS', desc: 'Genesis block, seed nodes, pool mining', color: 'text-pink-400' },
+                      { date: '31. Prosince 2026', title: 'MAINNET GENESIS', desc: 'Genesis block, public host bootstrap, pool mining', color: 'text-pink-400' },
                     ].map((item, i) => (
                       <div key={i} className="relative">
                         <div className={`absolute -left-[21px] sm:-left-[25px] top-1.5 w-3 h-3 rounded-full border-2 ${item.done ? 'bg-emerald-400 border-emerald-400' : item.active ? 'bg-cyan-400 border-cyan-400 shadow-[0_0_12px_var(--color-cyan-400)]' : 'bg-black border-gray-600'}`} />

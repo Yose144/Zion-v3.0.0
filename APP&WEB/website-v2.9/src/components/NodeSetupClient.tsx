@@ -100,7 +100,7 @@ const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
   { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
   { cmd: "zion-node --network mainnet --rpc-port 8444", desc: "Override RPC port" },
-  { cmd: "zion-node --peers 77.42.31.72:8334,178.156.240.160:8334,5.223.43.93:8334", desc: "Manual peer list (all 3 seeds)" },
+  { cmd: "zion-node --peers 91.98.122.165:8334", desc: "Manual peer list (current public host)" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
   { cmd: "zion-node --data-dir /custom/path", desc: "Custom data directory" },
 ];
@@ -199,8 +199,8 @@ export default function NodeSetupClient() {
                 <h3 className="text-white font-medium">Clone & Build from Source</h3>
               </div>
               <CodeBlock
-                code={`git clone https://github.com/Zion-TerraNova/Zion-2.9.5.git
-cd Zion-2.9.5
+                code={`git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 cargo build --release -p zion-node
 # Binary → target/release/zion-node`}
               />
@@ -218,7 +218,7 @@ cargo build --release -p zion-node
               </div>
               <CodeBlock
                 code={`# Pull official image
-docker pull ghcr.io/zion-terranova/zion-node:2.9.5
+docker pull ghcr.io/zion-terranova/zion-node:2.9.8
 
 # Run with persistent storage
 docker run -d \\
@@ -226,7 +226,7 @@ docker run -d \\
   -p 8334:8334 \\
   -p 8444:8444 \\
   -v zion-data:/data \\
-  ghcr.io/zion-terranova/zion-node:2.9.5 \\
+  ghcr.io/zion-terranova/zion-node:2.9.8 \\
   --config /etc/zion/mainnet.toml`}
               />
             </div>
@@ -297,7 +297,7 @@ rpc_port = 8444
 max_peers = 128
 
 [consensus]
-algorithm = "cosmic-harmony-v3"
+algorithm = "cosmic_harmony"
 block_time = 60       # seconds
 difficulty_adjustment = "per-block"
 
@@ -316,8 +316,7 @@ file = "zion.log"
 
 [peers]
 bootstrap = [
-  "77.42.31.72:8334",
-  "178.156.240.160:8334"
+  "91.98.122.165:8334"
 ]`}
             />
           </div>
@@ -484,7 +483,7 @@ curl -s http://localhost:8444 \\
               },
               {
                 q: "No peers connecting",
-                a: "Verify firewall allows TCP 8334. Try manual peers: `--peers 77.42.31.72:8334,178.156.240.160:8334`. Check DNS resolution.",
+                a: "Verify firewall allows TCP 8334. Try manual peers: `--peers 91.98.122.165:8334`. Check DNS resolution.",
               },
               {
                 q: "Sync stuck / slow",

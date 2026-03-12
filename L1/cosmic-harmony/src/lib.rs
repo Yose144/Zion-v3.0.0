@@ -68,13 +68,16 @@ pub mod ncl_integration; // NCL AI Bonus - 5th revenue stream
 pub mod pool_manager;
 pub mod profit_router;
 pub mod revenue;
+pub mod sha3_fast;
 pub mod scratchpad;
+pub mod scratchpad_ekam; // Ekam: Blake3 XOF init + Blake3 XOF mixing scratchpad (Tier 2)
+pub mod hugepages; // HugePages (2 MiB) scratchpad allocator — like XMRig for RandomX
 pub mod whattomine; // WhatToMine/CoinGecko API integration
 
 pub use algorithm_library::{AlgorithmInfo, AlgorithmModuleLibrary, PipelineExecutionResult};
 pub use algorithms_npu::{CHV4_NPU_FORK_HEIGHT, CHV4_MLP_GENESIS_SEED, npu_mixing_step, npu_mixing_hash64};
 pub use algorithms_opt::{cosmic_harmony_v3, cosmic_harmony_v4, cosmic_harmony_v4_2, cosmic_harmony_with_height, CHV4_2_FORK_HEIGHT, Hash32, Hash64};
-pub use deeksha::{cosmic_harmony_deeksha, CHV_DEEKSHA_FORK_HEIGHT, self_test as deeksha_self_test};
+pub use deeksha::{cosmic_harmony_deeksha, cosmic_harmony_ekam_deeksha, CHV_DEEKSHA_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, self_test as deeksha_self_test, ekam_self_test as deeksha_ekam_self_test};
 #[cfg(feature = "parallel")]
 pub use algorithms_opt::{
     cosmic_harmony_v3_parallel,

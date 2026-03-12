@@ -1,13 +1,13 @@
 # ZION TerraNova — Dokumentace v2.9.6
 
 > *„On the Star — where technology meets spirit, from blockchain to the stars."*
-> **Operational note (2026-03-10):** Live testnet source of truth is 2.9.8 Deeksha canonical with 3 active nodes: Helsinki, USA, Asia.
+> **Operational note (2026-03-11):** Live testnet source of truth is 2.9.8 Ekam Deeksha canonical on one public host: Zion2 (91.98.122.165), with internal seed containers behind the same stack.
 
 ---
 
 ## Přehled projektu
 
-ZION je decentralizovaný Layer 1 blockchain postavený od nuly v **Rustu**. Využívá Proof-of-Work konsenzus s vlastním algoritmem **Cosmic Harmony v3** (CHv3) — optimalizovaný pro CPU s podporou GPU akcelerace.
+ZION je decentralizovaný Layer 1 blockchain postavený od nuly v **Rustu**. Využívá Proof-of-Work konsenzus s kanonickou veřejnou cestou **Cosmic Harmony Deeksha** vystavenou jako `cosmic_harmony`, s CPU i GPU implementacemi.
 
 **v2.9.6** je hard fork rozšiřující v2.9.5 o **6-vrstvou architekturu „On the Star"**, emisní plán **Decade Decay** na **100+ let** a dedikované financování planetárních projektů včetně vesmírné stanice **ZION Issobella**.
 
@@ -20,7 +20,7 @@ ZION je decentralizovaný Layer 1 blockchain postavený od nuly v **Rustu**. Vyu
 | **Chain ID** | `zion-mainnet-1` | `zion-testnet-1` |
 | **P2P port** | 8333 | 8334 |
 | **RPC port** | 8443 | 8444 |
-| **Algoritmus** | Cosmic Harmony v3 | Cosmic Harmony v3 |
+| **Algoritmus** | Cosmic Harmony Deeksha (`cosmic_harmony`) | Cosmic Harmony Deeksha (`cosmic_harmony`) |
 | **Block time** | 60 s | 60 s |
 | **Block reward** | 5 400,067 → Decade Decay (-20%/10 let) | Decade Decay |
 | **Tail emission** | 724,785 ZION/blok (od 2126) | 724,785 ZION |
@@ -56,15 +56,13 @@ ZION je decentralizovaný Layer 1 blockchain postavený od nuly v **Rustu**. Vyu
 
 ---
 
-## Seed nody
+## Aktivní veřejný host
 
-| Lokace | IP | P2P | RPC |
-|--------|-----|-----|-----|
-| 🇫🇮 Helsinki | 77.42.31.72 | :8334 | :8444 |
-| 🇺🇸 USA | 178.156.240.160 | :8334 | :8444 |
-| 🌏 Asia | 5.223.43.93 | :8334 | :8444 |
+| Role | IP | P2P | RPC |
+|------|----|-----|-----|
+| Zion2 public host | 91.98.122.165 | :8334 | :8444 |
 
-Decommissioned: SeedDE (`46.225.126.243`) a Usa1 (`5.78.178.227`).
+Interní kontejnery `zion-seed-1` a `zion-seed-2` běží za tímto hostem a nejsou samostatné veřejné bootstrap entrypointy.
 
 ---
 
@@ -99,11 +97,11 @@ Vše on-chain ověřitelné, plně odemčeno od geneze. Governance spravuje DAO.
 
 | Repo | Popis |
 |------|-------|
-| [2.9.5-NativeAwakening](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening) | Hlavní repo — v2.9.6 kód, nativní binárky, Docker |
+| [2.9.6](https://github.com/Zion-TerraNova/2.9.6) | Hlavní repo — v2.9.8 Deeksha kód, nativní binárky, Docker |
 | [v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet) | Příprava Mainnet launche |
 | [2.9-QuantumLeap](https://github.com/Zion-TerraNova/2.9-QuantumLeap) | Python miner a nástroje |
 | [Zion-TestNet2.8.5](https://github.com/Zion-TerraNova/Zion-TestNet2.8.5) | Historický testnet |
 
 ---
 
-*ZION TerraNova v2.9.6 • Dokumentace aktualizována únor 2026*
+*ZION TerraNova v2.9.8 Deeksha • Dokumentace aktualizována březen 2026*

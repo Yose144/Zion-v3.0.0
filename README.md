@@ -16,7 +16,8 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 
 Current operational release track:
 - Live testnet runs the 2.9.8 single-track Deeksha canonical PoW path.
-- Active infra topology is 3 nodes: Helsinki, USA, Asia.
+- Active infra is currently consolidated to one public host: 91.98.122.165.
+- Desktop-agent Ekam Deeksha native GPU path is locally verified on Apple Silicon Metal (`cosmic_harmony_ekam_mine`, ~5575.5 H/s benchmark).
 - Current release gate and deployment status live under `docs/2.9.8/`.
 
 ---
@@ -123,26 +124,22 @@ Current operational release track:
 
 ---
 
-## Mining — Dual-Mining ZION + VRSC
+## Mining — Current Live Path
 
-v2.9.6 supports parallel dual-mining with PerMiner thread groups:
+Current live testnet mining is the single-track ZION Deeksha path exposed to miners as `cosmic_harmony`.
 
-| Parameter | ZION | VRSC (VerusCoin) |
-|-----------|------|-------------------|
-| Threads | 3T (default) | 1T |
-| Algorithm | Cosmic Harmony v3 | VerusHash v2.2 |
-| Pool group | `g=zion` | `g=vrsc` |
+Legacy revenue and external-mining support still exists in the pool/miner stack for ETC, RVN, ERG, KAS, VRSC and related streams, but the active public rollout on 2026-03-11 is pure-ZION by default.
 
 ---
 
-## Network — Active 3-Node Topology (live 2.9.8 testnet)
+## Network — Active Single-Host Topology (live 2.9.8 testnet)
 
 | Node | Location | IP | Role | Ports |
 |------|----------|----|------|-------|
-| Helsinki | 🇫🇮 Europe | 77.42.31.72 | Seed + Pool + Web + Monitoring | P2P 8334, RPC 8444, Stratum 3333 |
-| USA | 🇺🇸 N. America | 178.156.240.160 | Seed + Miner | P2P 8334, RPC 8444 |
-| Asia | 🌏 Asia | 5.223.43.93 | Seed + Miner | P2P 8334, RPC 8444 |
-| TestNet | — | — | — | P2P 8334, RPC 8444 |
+| Zion2 | current primary host | 91.98.122.165 | Core + Pool + Miner + Web + internal seeds | P2P 8334, RPC 8444, Stratum 3333, Pool API 8080 |
+| Seed 1 | internal container | internal only | additional seed role in compose | internal only |
+| Seed 2 | internal container | internal only | additional seed role in compose | internal only |
+| TestNet | — | — | public entrypoint | P2P 8334, RPC 8444 |
 
 ---
 
@@ -159,25 +156,16 @@ cargo build --release
 ./target/release/zion-core --config config/mainnet.toml
 ```
 
-### Mine ZION (with dual-mining)
+### Mine ZION
 
 ```bash
-# CPU mining via pool (3T ZION + 1T VRSC)
+# Pool mining against the active 2.9.8 testnet host
 ./target/release/zion-miner \
-  --pool pool.zionterranova.com:3333 \
+     --pool 91.98.122.165:3333 \
   --wallet YOUR_ZION_ADDRESS \
   --worker my-miner \
   --threads 3 \
-  --group zion
-
-# VRSC dual-mining (separate thread group)
-./target/release/zion-miner \
-  --pool pool.zionterranova.com:3333 \
-  --wallet YOUR_VRSC_ADDRESS \
-  --worker my-miner-vrsc \
-  --threads 1 \
-  --algo verushash \
-  --group vrsc
+     --algo cosmic_harmony
 
 # Solo mining
 ./target/release/zion-miner --solo --rpc localhost:8444
@@ -194,7 +182,7 @@ cargo run --bin wallet-generator
 ## Project Structure
 
 ```
-Zion-2.9.5/
+2.9.6/
 ├── L1/                # ⛏️ Blockchain Core (LOCKED for MainNet)
 │   ├── core/          #    Blockchain node (consensus, P2P, storage, RPC)
 │   ├── pool/          #    Mining pool (Stratum v2, PPLNS)

@@ -11,7 +11,7 @@ const phaseCards = [
     progress: 96,
     highlights: [
       '2.9.8 Deeksha Patch & Code Freeze live',
-      '3-node mesh, pool telemetry, and explorer synced',
+      'Primary host live, pool telemetry, and explorer synced',
       'Native miner/runtime path hardened for ARM + x86',
     ],
   },
@@ -75,8 +75,8 @@ export default function RoadmapPulse() {
               Deeksha <span className="text-gradient">v2.9.8 "Patch & Code Freeze"</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              Live TestNet běží na Deeksha release linii. Teď je priorita stabilita, telemetrie,
-              dokumentace a provozní disciplína před MainNet Q4 2026.
+              Live TestNet runs on the Deeksha release line. Current priority is stability, telemetry,
+              documentation, and operational discipline before MainNet Q4 2026.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
