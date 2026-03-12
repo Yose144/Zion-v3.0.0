@@ -4064,6 +4064,7 @@ function startMining(config) {
     // ZION_GPU_MH_BATCH controls how many threads' scratchpads are allocated in VRAM.
     // Default=4096 (256 MiB). Higher values need more VRAM but may improve occupancy.
     if (mainMinerGpu && !String(process.env.ZION_GPU_MH_BATCH || '').trim()) {
+      const gpuInfo = detectGPU();
       const gpuMem = parseGpuMemoryMb(gpuInfo);
       // 4096 × 64 KiB = 256 MiB — sweet spot for 4-8 GB GPUs.
       // 8192 × 64 KiB = 512 MiB — for 8+ GB GPUs.
