@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <title>ZION V3 Desktop</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient-grid"></div>
+  <div class="ambient-glow ambient-glow-left"></div>
+  <div class="ambient-glow ambient-glow-right"></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="eyebrow">V3 Pure-Code</span>
+        <h1>ZION Desktop</h1>
+        <p>Mainnet operator shell</p>
+      </div>
+
+      <section class="dock-strip" aria-label="Runtime stack quick actions">
+        <button id="start-stack" class="dock-button">Start Stack</button>
+        <button id="stop-stack" class="dock-button dock-button-danger">Stop Stack</button>
+      </section>
+
+      <nav class="level-nav">
+        <button class="nav-item active" data-panel="overview">Overview</button>
+        <button class="nav-item" data-panel="wallets">Wallets</button>
+        <button class="nav-item" data-panel="l1">L1 Core</button>
+        <button class="nav-item" data-panel="l2">L2 Bridge</button>
+        <button class="nav-item" data-panel="l3">L3 Identity</button>
+        <button class="nav-item" data-panel="l4">L4 AI</button>
+        <button class="nav-item" data-panel="l5">L5 Treasury</button>
+        <button class="nav-item" data-panel="l6">L6 Governance</button>
+      </nav>
+
+      <section class="sidebar-status">
+        <div class="status-card">
+          <span class="label">App</span>
+          <strong id="app-version">Loading</strong>
+        </div>
+        <div class="status-card">
+          <span class="label">Runtime Stack</span>
+          <strong id="stack-state">Unknown</strong>
+          <p id="stack-summary"></p>
+        </div>
+        <div class="status-card">
+          <span class="label">Updates</span>
+          <strong id="update-state">Unknown</strong>
+          <p id="update-message"></p>
+        </div>
+      </section>
+    </aside>
+
+    <main class="content">
+      <section class="panel active" id="panel-overview">
+        <header class="panel-header">
+          <span class="eyebrow">Operator Baseline</span>
+          <h2>Clean control plane for node, pool, miner and wallets</h2>
+        </header>
+        <div class="hero-grid">
+          <article class="metric-card">
+            <span class="label">Runtime Line</span>
+            <strong id="runtime-line">V3</strong>
+          </article>
+          <article class="metric-card">
+            <span class="label">Wallets</span>
+            <strong id="wallet-count">0</strong>
+          </article>
+          <article class="metric-card">
+            <span class="label">Stack Health</span>
+            <strong id="overview-stack-state">Offline</strong>
+          </article>
+        </div>
+        <div class="stack-grid">
+          <article class="stack-card">
+            <h3>L1-L6 shell</h3>
+            <p>Navigation stays close to the operator-facing testnet agent, while V3 runtime logic remains isolated and auditable.</p>
+          </article>
+          <article class="stack-card">
+            <h3>Wallet managers</h3>
+            <p>Wallet records now carry operator roles so treasury, bridge and validator roots can stay separated inside one shell.</p>
+          </article>
+          <article class="stack-card">
+            <h3>Runtime supervision</h3>
+            <p>The desktop shell now supervises prebuilt V3 node, pool and miner processes without inheriting legacy fallback orchestration.</p>
+          </article>
+        </div>
+        <article class="surface-card surface-card-wide">
+          <div class="split-row surface-heading">
+            <div>
+              <span class="eyebrow">Live Runtime</span>
+              <h3>Stack telemetry</h3>
+            </div>
+            <span id="surface-runtime-count" class="badge badge-muted">0 / 3 running</span>
+          </div>
+          <div id="overview-service-strip" class="overview-service-strip"></div>
+        </article>
+      </section>
+
+      <section class="panel" id="panel-wallets">
+        <header class="panel-header split">
+          <div>
+            <span class="eyebrow">Wallet Managers</span>
+            <h2>Operator wallets and signing roots</h2>
+          </div>
+          <button id="refresh-wallets" class="ghost-button">Refresh</button>
+        </header>
+
+        <div class="wallet-grid">
+          <article class="form-card">
+            <h3>Create wallet</h3>
+            <form id="create-wallet-form">
+              <label>
+                Wallet name
+                <input id="create-wallet-name" type="text" placeholder="Treasury signer">
+              </label>
+              <label>
+                Wallet role
+                <select id="create-wallet-role">
+                  <option value="operator">Operator</option>
+                  <option value="treasury">Treasury</option>
+                  <option value="bridge">Bridge</option>
+                  <option value="validator">Validator</option>
+                </select>
+              </label>
+              <button type="submit">Create</button>
+            </form>
+          </article>
+
+          <article class="form-card">
+            <h3>Import wallet</h3>
+            <form id="import-wallet-form">
+              <label>
+                Wallet name
+                <input id="import-wallet-name" type="text" placeholder="Bridge signer">
+              </label>
+              <label>
+                Wallet role
+                <select id="import-wallet-role">
+                  <option value="operator">Operator</option>
+                  <option value="treasury">Treasury</option>
+                  <option value="bridge">Bridge</option>
+                  <option value="validator">Validator</option>
+                </select>
+              </label>
+              <label>
+                Mnemonic or private key
+                <textarea id="import-wallet-secret" rows="4" placeholder="seed phrase or 0x..."></textarea>
+              </label>
+              <button type="submit">Import</button>
+            </form>
+          </article>
+        </div>
+
+        <article class="reveal-card" id="wallet-reveal-card" hidden>
+          <div class="split-row">
+            <h3>Wallet secret output</h3>
+            <button id="hide-wallet-reveal" class="ghost-button">Hide</button>
+          </div>
+          <pre id="wallet-reveal-output"></pre>
+        </article>
+
+        <article class="list-card">
+          <div class="split-row">
+            <h3>Stored wallets</h3>
+            <span id="wallet-protection-note" class="protection-note"></span>
+          </div>
+          <div id="wallet-list" class="wallet-list"></div>
+        </article>
+      </section>
+
+      <section class="panel" id="panel-l1">
+        <header class="panel-header split">
+          <div>
+            <span class="eyebrow">L1 Runtime Control</span>
+            <h2>Node, pool and miner supervision</h2>
+          </div>
+          <button id="refresh-runtime" class="ghost-button">Refresh State</button>
+        </header>
+
+        <div id="runtime-services" class="runtime-grid"></div>
+      </section>
+      <section class="panel" id="panel-l2"><div class="placeholder-card"><h2>L2 Bridge</h2><p>Bridge operators, routes and settlement tools.</p></div></section>
+      <section class="panel" id="panel-l3"><div class="placeholder-card"><h2>L3 Identity</h2><p>Identity, credentials and policy surfaces.</p></div></section>
+      <section class="panel" id="panel-l4"><div class="placeholder-card"><h2>L4 AI</h2><p>Future AI runtime and scheduling controls.</p></div></section>
+      <section class="panel" id="panel-l5"><div class="placeholder-card"><h2>L5 Treasury</h2><p>Treasury views and signer coordination.</p></div></section>
+      <section class="panel" id="panel-l6"><div class="placeholder-card"><h2>L6 Governance</h2><p>Governance and release control surfaces.</p></div></section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

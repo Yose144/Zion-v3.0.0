@@ -1,0 +1,23 @@
+pub const COSMIC_HARMONY_DEEKSHA_KERNEL: &str =
+    include_str!("kernels/cosmic_harmony_deeksha.cl");
+
+pub const EKAM_DEEKSHA_KERNEL_NAME: &str = "ekam_deeksha_mine";
+
+pub fn get_deeksha_kernel_source() -> &'static str {
+    COSMIC_HARMONY_DEEKSHA_KERNEL
+}
+
+pub fn has_ekam_deeksha_kernel() -> bool {
+    COSMIC_HARMONY_DEEKSHA_KERNEL.contains(EKAM_DEEKSHA_KERNEL_NAME)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deeksha_kernel_is_present() {
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("__kernel"));
+        assert!(has_ekam_deeksha_kernel());
+    }
+}

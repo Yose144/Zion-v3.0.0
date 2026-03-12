@@ -1,0 +1,45 @@
+{
+  "name": "zion-v3-desktop-app",
+  "version": "0.1.0",
+  "description": "Clean-room ZION v3 desktop control plane for mainnet operations",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "bip39": "^3.1.0",
+    "electron-updater": "^6.8.3",
+    "ethers": "^5.8.0"
+  },
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.zion.v3.desktopapp",
+    "productName": "ZION V3 Desktop",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Yose144",
+        "repo": "2.9.6"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "artifactName": "zion-v3-desktop-${version}-windows-${arch}.${ext}"
+    }
+  }
+}

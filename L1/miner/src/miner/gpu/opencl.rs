@@ -58,6 +58,8 @@ pub struct OpenCLMiner {
 }
 
 impl OpenCLMiner {
+    const EKAM_DEBUG_STAGE_BYTES: usize = 320;
+
     pub fn new(device_id: usize) -> Result<Self> {
         #[cfg(feature = "gpu")]
         {
@@ -94,13 +96,195 @@ impl OpenCLMiner {
                 npu_scale2_buf: None,
             })
         }
-
         #[cfg(not(feature = "gpu"))]
         {
             let _ = device_id;
             Err(anyhow!(
                 "OpenCL support not enabled. Build with --features gpu"
             ))
+        }
+    }
+
+    fn env_flag(name: &str) -> bool {
+        std::env::var(name)
+            .map(|v| {
+                let value = v.trim().to_ascii_lowercase();
+                value == "1" || value == "true" || value == "yes" || value == "on"
+            })
+            .unwrap_or(false)
+    }
+
+    fn run_ekam_parity_selftest(&mut self) -> Result<()> {
+        use zion_cosmic_harmony_v3::algorithms_npu::npu_mixing_hash64;
+        use zion_cosmic_harmony_v3::algorithms_opt::{
+            cosmic_fusion_opt_rounds, golden_matrix_opt, keccak256_opt, sha3_512_opt,
+        };
+        use zion_cosmic_harmony_v3::scratchpad_ekam::memory_hard_transform_ekam_light;
+
+        let sample_count = std::env::var("ZION_OPENCL_EKAM_SELFTEST_COUNT")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(4)
+            .clamp(1, 16);
+
+        let header = b"ZION_OPENCL_EKAM_SELFTEST_HEADER_V1";
+        let easy_target = [0xFFu8; 32];
+        let mut mismatches = 0usize;
+
+        for i in 0..sample_count {
+            let nonce = i as u64;
+            let gpu = self
+                .mine_batch(header, &easy_target, nonce, 1, 0)?
+                .ok_or_else(|| anyhow!("OpenCL parity self-test produced no hash for nonce {}", nonce))?;
+
+            let (gpu_nonce, gpu_hash) = gpu;
+            let cpu_hash = zion_cosmic_harmony_v3::deeksha::cosmic_harmony_ekam_deeksha(header, nonce);
+
+            if gpu_nonce != nonce || gpu_hash != cpu_hash.data {
+                mismatches += 1;
+                log::error!(
+                    "❌ OpenCL Ekam parity mismatch nonce={} gpu_nonce={} gpu_hash={} cpu_hash={}",
+                    nonce,
+                    gpu_nonce,
+                    hex::encode(gpu_hash),
+                    hex::encode(cpu_hash.data),
+                );
+
+                if mismatches == 1 {
+                    let gpu_stages = self.debug_ekam_stages(header, nonce)?;
+
+                    let s1 = keccak256_opt(&{
+                        let mut input = [0u8; 88];
+                        let copy_len = header.len().min(80);
+                        input[..copy_len].copy_from_slice(&header[..copy_len]);
+                        input[80..88].copy_from_slice(&nonce.to_le_bytes());
+                        input
+                    });
+                    let s2 = sha3_512_opt(&s1.data);
+                    let s3 = golden_matrix_opt(&s2.data);
+                    let s4 = memory_hard_transform_ekam_light(&s3.data);
+                    let s5 = npu_mixing_hash64(&s4.data);
+                    let final_hash = cosmic_fusion_opt_rounds(&s5.data, 8);
+
+                    let cpu_stages = [
+                        ("s1-keccak", s1.data.as_slice()),
+                        ("s2-sha3", s2.data.as_slice()),
+                        ("s3-golden", s3.data.as_slice()),
+                        ("s4-ekam-mh", s4.data.as_slice()),
+                        ("s5-npu", s5.data.as_slice()),
+                        ("s6-fusion", final_hash.data.as_slice()),
+                    ];
+                    let gpu_ranges = [
+                        (0usize, 32usize),
+                        (32, 96),
+                        (96, 160),
+                        (160, 224),
+                        (224, 288),
+                        (288, 320),
+                    ];
+
+                    for ((label, cpu_bytes), (start, end)) in cpu_stages.iter().zip(gpu_ranges) {
+                        let gpu_bytes = &gpu_stages[start..end];
+                        if gpu_bytes != *cpu_bytes {
+                            log::error!(
+                                "❌ OpenCL Ekam stage mismatch at {} nonce={} gpu={} cpu={}",
+                                label,
+                                nonce,
+                                hex::encode(gpu_bytes),
+                                hex::encode(cpu_bytes),
+                            );
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if mismatches == 0 {
+            println!(
+                "[OpenCL] Ekam parity self-test OK ({} sample nonce{})",
+                sample_count,
+                if sample_count == 1 { "" } else { "s" }
+            );
+            Ok(())
+        } else {
+            Err(anyhow!(
+                "OpenCL Ekam parity self-test failed: {} mismatch(es)",
+                mismatches
+            ))
+        }
+    }
+
+    fn debug_ekam_stages(&mut self, header: &[u8], nonce: u64) -> Result<Vec<u8>> {
+        #[cfg(feature = "gpu")]
+        {
+            let pro_que = self
+                .pro_que
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL not initialized"))?;
+            let header_buf = self
+                .header_buf
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL header buffer not initialized"))?;
+            let scratchpad_buf = self
+                .scratchpad_buf
+                .as_ref()
+                .ok_or_else(|| anyhow!("OpenCL scratchpad buffer not initialized"))?;
+            let npu_w1_buf = self.npu_w1_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU w1 buffer not initialized"))?;
+            let npu_b1_buf = self.npu_b1_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU b1 buffer not initialized"))?;
+            let npu_w2_buf = self.npu_w2_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU w2 buffer not initialized"))?;
+            let npu_b2_buf = self.npu_b2_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU b2 buffer not initialized"))?;
+            let npu_scale1_buf = self.npu_scale1_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU scale1 buffer not initialized"))?;
+            let npu_scale2_buf = self.npu_scale2_buf.as_ref()
+                .ok_or_else(|| anyhow!("OpenCL NPU scale2 buffer not initialized"))?;
+
+            let header_len = header.len().min(80);
+            let mut padded_header = [0u8; 144];
+            padded_header[..header_len].copy_from_slice(&header[..header_len]);
+            header_buf.write(&padded_header[..]).enq()?;
+
+            let stage_buf = pro_que
+                .buffer_builder::<u8>()
+                .len(Self::EKAM_DEBUG_STAGE_BYTES)
+                .fill_val(0u8)
+                .build()?;
+
+            let kernel = pro_que
+                .kernel_builder("ekam_deeksha_debug")
+                .arg(header_buf)
+                .arg(header_len as u32)
+                .arg(nonce)
+                .arg(scratchpad_buf)
+                .arg(&stage_buf)
+                .arg(npu_w1_buf)
+                .arg(npu_b1_buf)
+                .arg(npu_w2_buf)
+                .arg(npu_b2_buf)
+                .arg(npu_scale1_buf)
+                .arg(npu_scale2_buf)
+                .global_work_size(1usize)
+                .local_work_size(1usize)
+                .build()?;
+
+            unsafe {
+                kernel.enq()?;
+            }
+            pro_que.queue().finish()?;
+
+            let mut stages = vec![0u8; Self::EKAM_DEBUG_STAGE_BYTES];
+            stage_buf.read(&mut stages[..]).enq()?;
+            Ok(stages)
+        }
+
+        #[cfg(not(feature = "gpu"))]
+        {
+            let _ = (header, nonce);
+            Err(anyhow!("OpenCL support not enabled. Build with --features gpu"))
         }
     }
 }
@@ -190,6 +374,10 @@ impl GpuMiner for OpenCLMiner {
             self.npu_scale1_buf = Some(npu_scale1_buf);
             self.npu_scale2_buf = Some(npu_scale2_buf);
 
+            if Self::env_flag("ZION_OPENCL_EKAM_SELFTEST") {
+                self.run_ekam_parity_selftest()?;
+            }
+
             Ok(())
         }
 
@@ -256,7 +444,7 @@ impl GpuMiner for OpenCLMiner {
             ]);
 
             // Reset result buffers
-            let nonce_init = [0u64];
+            let nonce_init = [u64::MAX];
             result_nonce_buf.write(&nonce_init[..]).enq()?;
             let hash_init = [0u8; 32];
             result_hash_buf.write(&hash_init[..]).enq()?;
@@ -281,6 +469,7 @@ impl GpuMiner for OpenCLMiner {
                 .arg(header_buf)
                 .arg(header_len as u32)
                 .arg(nonce_start)
+                .arg(effective_batch as u32)
                 .arg(scratchpad_buf)
                 .arg(target_u32)
                 .arg(result_nonce_buf)
@@ -306,7 +495,7 @@ impl GpuMiner for OpenCLMiner {
 
             self.hashes_computed += effective_batch as u64;
 
-            if nonce_res[0] != 0 {
+            if nonce_res[0] != u64::MAX {
                 let nonce = nonce_res[0];
                 let mut gpu_hash = [0u8; 32];
                 result_hash_buf.read(&mut gpu_hash[..]).enq()?;
