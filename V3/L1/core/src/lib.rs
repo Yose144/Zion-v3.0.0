@@ -10,9 +10,10 @@ use zion_cosmic_harmony::{
 
 pub use zion_cosmic_harmony::RevenueSource;
 
+pub mod emission;
+
 pub const HEADER_SIZE: usize = 80;
 pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/0.1";
-pub const DEFAULT_BLOCK_REWARD_ZION: u64 = 5_400;
 pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;
 pub const MAX_MEMPOOL_TRANSACTIONS: usize = 4_096;
 
@@ -1234,6 +1235,13 @@ impl ChainState {
         if block.miner_reward_zion != block.subsidy_zion.saturating_add(block.total_fees_zion) {
             return Err("peer block miner reward does not match subsidy plus fees".to_string());
         }
+        let expected_subsidy = emission::block_subsidy(block.height);
+        if block.subsidy_zion != expected_subsidy {
+            return Err(format!(
+                "peer block subsidy {} does not match emission schedule {} at height {}",
+                block.subsidy_zion, expected_subsidy, block.height
+            ));
+        }
         parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
         Ok(())
     }
@@ -1414,7 +1422,7 @@ impl ChainState {
                 difficulty_bits: 0x1f00ffff,
             },
             target: core.consensus().default_target,
-            reward_zion: DEFAULT_BLOCK_REWARD_ZION,
+            reward_zion: emission::block_subsidy(next_height),
             transactions,
             total_fees_zion,
         }
@@ -1890,7 +1898,7 @@ mod tests {
         assert_eq!(template.transaction_ids, vec![transaction.tx_id]);
         assert_eq!(template.total_fees_zion, 9);
         assert_eq!(template.body_hash_hex, body_hash_hex(&[sample_transaction("tx-a", 9, 1)]));
-        assert_eq!(template.estimated_miner_reward_zion, DEFAULT_BLOCK_REWARD_ZION + 9);
+        assert_eq!(template.estimated_miner_reward_zion, emission::block_subsidy(1) + 9);
 
         let status = runtime.status();
         assert_eq!(status.mempool_transactions, 1);
@@ -1989,8 +1997,8 @@ mod tests {
         assert_eq!(runtime.active_template().height, 2);
         assert!(runtime.active_template().transaction_ids.is_empty());
         assert_eq!(runtime.accepted_blocks()[0].transaction_ids, vec![mined_transaction.tx_id]);
-        assert_eq!(runtime.accepted_blocks()[0].subsidy_zion, DEFAULT_BLOCK_REWARD_ZION);
-        assert_eq!(runtime.accepted_blocks()[0].miner_reward_zion, DEFAULT_BLOCK_REWARD_ZION + 3);
+        assert_eq!(runtime.accepted_blocks()[0].subsidy_zion, emission::block_subsidy(1));
+        assert_eq!(runtime.accepted_blocks()[0].miner_reward_zion, emission::block_subsidy(1) + 3);
     }
 
     #[test]
@@ -2319,7 +2327,7 @@ mod tests {
                 height: 2,
                 header_hex: hex(&sample_header().to_bytes()),
                 target_hex: DifficultyTarget::MAX.to_hex(),
-                reward_zion: DEFAULT_BLOCK_REWARD_ZION,
+                reward_zion: emission::block_subsidy(2),
                 transaction_ids: vec![tx_dup.tx_id.clone(), tx_mined.tx_id.clone()],
                 transaction_count: 2,
                 total_fees_zion: 8,
@@ -2327,7 +2335,7 @@ mod tests {
                     tx_dup.clone(),
                     tx_mined.clone(),
                 ]),
-                estimated_miner_reward_zion: DEFAULT_BLOCK_REWARD_ZION + 8,
+                estimated_miner_reward_zion: emission::block_subsidy(2) + 8,
             },
             accepted_blocks: vec![AcceptedBlock {
                 template_id: 1,
@@ -2338,8 +2346,8 @@ mod tests {
                 transactions: vec![tx_mined.clone()],
                 total_fees_zion: 2,
                 body_hash_hex: body_hash_hex(&[tx_mined.clone()]),
-                subsidy_zion: DEFAULT_BLOCK_REWARD_ZION,
-                miner_reward_zion: DEFAULT_BLOCK_REWARD_ZION + 2,
+                subsidy_zion: emission::block_subsidy(1),
+                miner_reward_zion: emission::block_subsidy(1) + 2,
             }],
             mempool: vec![
                 tx_dup.clone(),
@@ -2391,8 +2399,8 @@ mod tests {
             transactions: vec![tx.clone()],
             total_fees_zion: 6,
             body_hash_hex: body_hash_hex(&[tx.clone()]),
-            subsidy_zion: DEFAULT_BLOCK_REWARD_ZION,
-            miner_reward_zion: DEFAULT_BLOCK_REWARD_ZION + 6,
+            subsidy_zion: emission::block_subsidy(1),
+            miner_reward_zion: emission::block_subsidy(1) + 6,
         };
         let journal = [
             ChainJournalEntry::TransactionAccepted {
