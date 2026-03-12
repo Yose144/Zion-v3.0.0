@@ -257,8 +257,9 @@ impl GpuMiner for CudaMiner {
                 .unwrap_or(zion_cosmic_harmony_v3::algorithms_opt::CHV4_2_FORK_HEIGHT);
             let chv4_2: u32 = if height >= chv4_2_fork_height { 1 } else { 0 };
 
-            // target_u32: LE bytes 0-3 of the 32-byte target (matches OpenCL kernel)
-            let target_u32: u32 = u32::from_le_bytes([target[0], target[1], target[2], target[3]]);
+            // target_u32: pool sends 8-hex u32, right-justified in 32-byte array.
+            // Read last 4 bytes (BE) to recover the original u32 value.
+            let target_u32: u32 = u32::from_be_bytes([target[28], target[29], target[30], target[31]]);
 
             if header.len() > 80 {
                 return Err(anyhow!("Header len {} > 80 not supported", header.len()));

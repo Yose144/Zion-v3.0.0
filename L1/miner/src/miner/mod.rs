@@ -1309,10 +1309,13 @@ impl UniversalMiner {
         let _ = height;
         match algo {
             // All ZION aliases resolve to the same canonical Ekam Deeksha runtime.
-            // Metal GPU path is implemented and validated on Apple Silicon.
+            // GPU kernels: Metal (macOS), OpenCL (AMD/Intel), CUDA (NVIDIA).
             Algorithm::CosmicHarmony
             | Algorithm::CosmicHarmonyV42
-            | Algorithm::CosmicHarmonyDeeksha => matches!(platform, gpu::GpuPlatform::Metal),
+            | Algorithm::CosmicHarmonyDeeksha => matches!(
+                platform,
+                gpu::GpuPlatform::Metal | gpu::GpuPlatform::OpenCL | gpu::GpuPlatform::Cuda
+            ),
             // Ethash/Autolykos — Metal has shaders, CUDA/OpenCL planned
             Algorithm::Ethash | Algorithm::Autolykos => {
                 matches!(platform, gpu::GpuPlatform::Metal)

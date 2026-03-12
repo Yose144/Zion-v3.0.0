@@ -249,9 +249,10 @@ impl GpuMiner for OpenCLMiner {
                 return Ok(None);
             }
 
-            // ═══ Deeksha target: pool sends full 32-byte target hex.
+            // ═══ Deeksha target: pool sends 8-hex-char u32 target, right-justified
+            // in a 32-byte array by parse_target_bytes(). Read the last 4 bytes (BE).
             let target_u32: u32 = u32::from_be_bytes([
-                target[0], target[1], target[2], target[3],
+                target[28], target[29], target[30], target[31],
             ]);
 
             // Reset result buffers
