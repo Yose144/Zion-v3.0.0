@@ -127,10 +127,20 @@ impl HugePageScratchpad {
 impl Drop for HugePageScratchpad {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            if self.locked {
-                unsafe { libc::munlock(self.ptr as *const libc::c_void, self.mapped_size) };
+            #[cfg(unix)]
+            {
+                if self.locked {
+                    unsafe { libc::munlock(self.ptr as *const libc::c_void, self.mapped_size) };
+                }
+                unsafe { libc::munmap(self.ptr as *mut libc::c_void, self.mapped_size) };
             }
-            unsafe { libc::munmap(self.ptr as *mut libc::c_void, self.mapped_size) };
+            #[cfg(not(unix))]
+            {
+                use std::alloc::{Layout, dealloc};
+                if let Ok(layout) = Layout::from_size_align(self.mapped_size, HUGE_PAGE_SIZE) {
+                    unsafe { dealloc(self.ptr, layout) };
+                }
+            }
             self.ptr = ptr::null_mut();
         }
     }
@@ -246,6 +256,7 @@ fn alloc_huge_pages_inner(_size: usize) -> Option<*mut u8> {
 }
 
 /// Allocate regular mmap memory (fallback when huge pages unavailable).
+#[cfg(unix)]
 fn alloc_regular(size: usize) -> Option<*mut u8> {
     let ptr = unsafe {
         libc::mmap(
@@ -265,6 +276,15 @@ fn alloc_regular(size: usize) -> Option<*mut u8> {
     }
 }
 
+/// Windows fallback: aligned allocation via std::alloc.
+#[cfg(not(unix))]
+fn alloc_regular(size: usize) -> Option<*mut u8> {
+    use std::alloc::{Layout, alloc_zeroed};
+    let layout = Layout::from_size_align(size, HUGE_PAGE_SIZE).ok()?;
+    let ptr = unsafe { alloc_zeroed(layout) };
+    if ptr.is_null() { None } else { Some(ptr) }
+}
+
 /// Try to enable transparent huge pages for a memory region (Linux only).
 fn advise_huge_pages(ptr: *mut u8, size: usize) {
     #[cfg(target_os = "linux")]
@@ -280,8 +300,14 @@ fn advise_huge_pages(ptr: *mut u8, size: usize) {
 }
 
 /// Lock memory to prevent swapping (best-effort).
+#[cfg(unix)]
 fn mlock(ptr: *mut u8, size: usize) -> bool {
     unsafe { libc::mlock(ptr as *const libc::c_void, size) == 0 }
+}
+
+#[cfg(not(unix))]
+fn mlock(_ptr: *mut u8, _size: usize) -> bool {
+    false
 }
 
 /// Advise the kernel that access will be random.
