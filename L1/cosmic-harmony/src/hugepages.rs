@@ -10,6 +10,7 @@
 //! Platform support:
 //! - macOS (arm64/x86_64): VM_FLAGS_SUPERPAGE_SIZE_2MB via mmap
 //! - Linux: MAP_HUGETLB | MAP_POPULATE via mmap
+//! - Windows: VirtualAlloc with MEM_LARGE_PAGES (requires SeLockMemoryPrivilege)
 //! - Fallback: aligned standard allocation via mmap MAP_ANONYMOUS
 //!
 //! Usage:
@@ -136,9 +137,34 @@ impl Drop for HugePageScratchpad {
             }
             #[cfg(not(unix))]
             {
-                use std::alloc::{Layout, dealloc};
-                if let Ok(layout) = Layout::from_size_align(self.mapped_size, HUGE_PAGE_SIZE) {
-                    unsafe { dealloc(self.ptr, layout) };
+                #[cfg(target_os = "windows")]
+                {
+                    #[link(name = "kernel32")]
+                    extern "system" {
+                        fn VirtualUnlock(lp_address: *mut std::ffi::c_void, dw_size: usize) -> i32;
+                        fn VirtualFree(lp_address: *mut std::ffi::c_void, dw_size: usize, dw_free_type: u32) -> i32;
+                    }
+                    const MEM_RELEASE: u32 = 0x8000;
+                    unsafe {
+                        if self.locked {
+                            VirtualUnlock(self.ptr as *mut std::ffi::c_void, self.mapped_size);
+                        }
+                        if self.huge_pages {
+                            VirtualFree(self.ptr as *mut std::ffi::c_void, 0, MEM_RELEASE);
+                        } else {
+                            use std::alloc::{Layout, dealloc};
+                            if let Ok(layout) = Layout::from_size_align(self.mapped_size, HUGE_PAGE_SIZE) {
+                                dealloc(self.ptr, layout);
+                            }
+                        }
+                    }
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    use std::alloc::{Layout, dealloc};
+                    if let Ok(layout) = Layout::from_size_align(self.mapped_size, HUGE_PAGE_SIZE) {
+                        unsafe { dealloc(self.ptr, layout) };
+                    }
                 }
             }
             self.ptr = ptr::null_mut();
@@ -182,10 +208,27 @@ pub fn is_huge_pages_available() -> HugePagesInfo {
 
     #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
-        HugePagesInfo {
-            available: false,
-            allocated: false,
-            page_size: 4096,
+        #[cfg(target_os = "windows")]
+        {
+            #[link(name = "kernel32")]
+            extern "system" {
+                fn GetLargePageMinimum() -> usize;
+            }
+            let large_min = unsafe { GetLargePageMinimum() };
+            let available = large_min > 0;
+            HugePagesInfo {
+                available,
+                allocated: false,
+                page_size: if available { large_min } else { 4096 },
+            }
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            HugePagesInfo {
+                available: false,
+                allocated: false,
+                page_size: 4096,
+            }
         }
     }
 }
@@ -250,7 +293,119 @@ fn alloc_huge_pages_inner(size: usize) -> Option<*mut u8> {
     }
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+#[cfg(target_os = "windows")]
+fn alloc_huge_pages_inner(size: usize) -> Option<*mut u8> {
+    use std::ffi::c_void;
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn VirtualAlloc(
+            lp_address: *mut c_void,
+            dw_size: usize,
+            fl_allocation_type: u32,
+            fl_protect: u32,
+        ) -> *mut c_void;
+        fn GetLargePageMinimum() -> usize;
+        fn GetCurrentProcess() -> isize;
+    }
+
+    #[link(name = "advapi32")]
+    extern "system" {
+        fn OpenProcessToken(
+            process_handle: isize,
+            desired_access: u32,
+            token_handle: *mut isize,
+        ) -> i32;
+        fn LookupPrivilegeValueA(
+            lp_system_name: *const u8,
+            lp_name: *const u8,
+            lp_luid: *mut u64,
+        ) -> i32;
+        fn AdjustTokenPrivileges(
+            token_handle: isize,
+            disable_all: i32,
+            new_state: *const u8,
+            buffer_length: u32,
+            previous_state: *mut u8,
+            return_length: *mut u32,
+        ) -> i32;
+        fn CloseHandle(handle: isize) -> i32;
+    }
+
+    const MEM_COMMIT: u32 = 0x1000;
+    const MEM_RESERVE: u32 = 0x2000;
+    const MEM_LARGE_PAGES: u32 = 0x20000000;
+    const PAGE_READWRITE: u32 = 0x04;
+    const TOKEN_ADJUST_PRIVILEGES: u32 = 0x0020;
+    const TOKEN_QUERY: u32 = 0x0008;
+    const SE_PRIVILEGE_ENABLED: u32 = 0x00000002;
+
+    unsafe {
+        // Try to enable SeLockMemoryPrivilege
+        let mut token: isize = 0;
+        if OpenProcessToken(
+            GetCurrentProcess(),
+            TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+            &mut token,
+        ) != 0
+        {
+            let mut luid: u64 = 0;
+            if LookupPrivilegeValueA(
+                ptr::null(),
+                b"SeLockMemoryPrivilege\0".as_ptr(),
+                &mut luid,
+            ) != 0
+            {
+                // TOKEN_PRIVILEGES struct: count(u32) + padding(u32) + LUID(u64) + Attributes(u32)
+                #[repr(C)]
+                struct TokenPrivileges {
+                    count: u32,
+                    _pad: u32,
+                    luid: u64,
+                    attributes: u32,
+                }
+                let tp = TokenPrivileges {
+                    count: 1,
+                    _pad: 0,
+                    luid,
+                    attributes: SE_PRIVILEGE_ENABLED,
+                };
+                AdjustTokenPrivileges(
+                    token,
+                    0,
+                    &tp as *const _ as *const u8,
+                    0,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                );
+            }
+            CloseHandle(token);
+        }
+
+        let large_min = GetLargePageMinimum();
+        if large_min == 0 {
+            return None;
+        }
+        // Round size up to large page boundary
+        let alloc_size = (size + large_min - 1) & !(large_min - 1);
+
+        let ptr = VirtualAlloc(
+            ptr::null_mut(),
+            alloc_size,
+            MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES,
+            PAGE_READWRITE,
+        );
+
+        if ptr.is_null() {
+            None
+        } else {
+            // Zero-initialize (VirtualAlloc guarantees zeroed pages)
+            Some(ptr as *mut u8)
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn alloc_huge_pages_inner(_size: usize) -> Option<*mut u8> {
     None
 }
@@ -306,8 +461,20 @@ fn mlock(ptr: *mut u8, size: usize) -> bool {
 }
 
 #[cfg(not(unix))]
-fn mlock(_ptr: *mut u8, _size: usize) -> bool {
-    false
+fn mlock(ptr: *mut u8, size: usize) -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn VirtualLock(lp_address: *mut std::ffi::c_void, dw_size: usize) -> i32;
+        }
+        unsafe { VirtualLock(ptr as *mut std::ffi::c_void, size) != 0 }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (ptr, size);
+        false
+    }
 }
 
 /// Advise the kernel that access will be random.
@@ -404,7 +571,15 @@ pub fn memory_status_line(scratchpad_size: usize) -> String {
         "Linux (enable hugepages: sysctl vm.nr_hugepages=128)"
     };
     #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    let platform_note = "standard pages";
+    let platform_note = if cfg!(target_os = "windows") {
+        if info.available {
+            "Windows Large Pages (VirtualAlloc)"
+        } else {
+            "Windows (enable: secpol.msc → Lock pages in memory)"
+        }
+    } else {
+        "standard pages"
+    };
 
     format!(
         "{} KiB scratchpad | {} KiB pages | {} | {}",
