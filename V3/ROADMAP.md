@@ -153,7 +153,7 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | G1 | **Emission / Decade Decay** | Decade Decay (×4/5 per 5,256,000 blocks), tail ~724.785 ZION | ✅ `emission.rs` — 16 tests | `L1/core/src/blockchain/reward.rs` |
 | G2 | **Atomic units (flowers)** | 1 ZION = 1e12 flowers; reward = 5,400,067,000,000,000 flowers | ✅ Integrated in `emission.rs` | Same as G1 |
 | G3 | **LWMA DAA** | 60-block window, ±25% max change, 30–120 s solve-time clamp | ✅ `difficulty.rs` — 21 tests, integer-only ±25% clamp | `L1/core/src/blockchain/consensus.rs` |
-| G4 | **Genesis block + premine** | 16.28B ZION into 12 addresses as coinbase outputs in block 0 | No genesis builder, no premine module | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
+| G4 | **Genesis block + premine** | 16.28B ZION into 12 addresses as coinbase outputs in block 0 | ✅ `genesis.rs` — 17 tests, 12 premine outputs, frozen hash, ChainState init | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
 | G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | Single request/response TCP; no outbound push | New code (extend P2P handle + NodeRuntime) |
 
 #### HIGH — network security before production
@@ -332,7 +332,7 @@ Exit criteria:
 
 Migration source: `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` (data only; genesis builder is new V3 code)
 
-Status: pending
+Status: done
 
 ### Phase 5d: Block Propagation & Multi-Peer Sync (G5)
 
