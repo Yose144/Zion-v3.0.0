@@ -10,6 +10,7 @@ use zion_cosmic_harmony::{
 
 pub use zion_cosmic_harmony::RevenueSource;
 
+pub mod difficulty;
 pub mod emission;
 
 pub const HEADER_SIZE: usize = 80;
@@ -258,6 +259,8 @@ pub struct Transaction {
 pub struct AcceptedBlock {
     pub template_id: u64,
     pub height: u64,
+    pub timestamp: u64,
+    pub difficulty: u64,
     pub nonce: u64,
     pub hash_hex: String,
     pub transaction_ids: Vec<String>,
@@ -366,6 +369,7 @@ struct TemplateState {
     height: u64,
     header: MiningHeader,
     target: DifficultyTarget,
+    difficulty: u64,
     reward_zion: u64,
     transactions: Vec<Transaction>,
     total_fees_zion: u64,
@@ -874,6 +878,8 @@ impl NodeRuntime {
             let accepted_block = AcceptedBlock {
                 template_id,
                 height: active_template.height,
+                timestamp: active_template.header.timestamp,
+                difficulty: active_template.difficulty,
                 nonce: sealed_block.nonce,
                 hash_hex: hex(&sealed_block.hash),
                 transaction_ids: active_template
@@ -992,7 +998,7 @@ impl Transaction {
 impl ChainState {
     fn new(node_id: &str, core: &CoreRuntime) -> Self {
         let mempool = Vec::new();
-        let template = Self::build_template(node_id, core, 0, [0u8; 32], 1, &mempool);
+        let template = Self::build_template(node_id, core, 0, [0u8; 32], 1, &mempool, &[]);
         Self {
             height: 0,
             tip_hash: [0u8; 32],
@@ -1018,6 +1024,21 @@ impl ChainState {
             "persisted active template header",
         )?);
         let target = DifficultyTarget::from_hex(&snapshot.active_template.target_hex)?;
+        // Recover difficulty from accepted blocks via LWMA for the persisted template.
+        let recovered_difficulty = if snapshot.accepted_blocks.is_empty() {
+            difficulty::GENESIS_DIFFICULTY
+        } else {
+            let ab = &snapshot.accepted_blocks;
+            let start = ab.len().saturating_sub(difficulty::LWMA_WINDOW + 1);
+            let window: Vec<difficulty::BlockInfo> = ab[start..]
+                .iter()
+                .map(|b| difficulty::BlockInfo {
+                    timestamp: b.timestamp,
+                    difficulty: b.difficulty,
+                })
+                .collect();
+            difficulty::lwma_next_difficulty(&window)
+        };
         let mut chain_state = Self {
             height: snapshot.height,
             tip_hash,
@@ -1027,6 +1048,7 @@ impl ChainState {
                 height: snapshot.active_template.height,
                 header,
                 target,
+                difficulty: recovered_difficulty,
                 reward_zion: snapshot.active_template.reward_zion,
                 transactions: Vec::new(),
                 total_fees_zion: snapshot.active_template.total_fees_zion,
@@ -1085,6 +1107,7 @@ impl ChainState {
             self.tip_hash,
             next_template_id,
             &self.mempool,
+            &self.accepted_blocks,
         );
         self.next_template_id = self.next_template_id.wrapping_add(1);
     }
@@ -1242,6 +1265,26 @@ impl ChainState {
                 block.subsidy_zion, expected_subsidy, block.height
             ));
         }
+        // Validate difficulty against LWMA
+        let expected_difficulty = if self.accepted_blocks.is_empty() {
+            difficulty::GENESIS_DIFFICULTY
+        } else {
+            let start = self.accepted_blocks.len().saturating_sub(difficulty::LWMA_WINDOW + 1);
+            let window: Vec<difficulty::BlockInfo> = self.accepted_blocks[start..]
+                .iter()
+                .map(|b| difficulty::BlockInfo {
+                    timestamp: b.timestamp,
+                    difficulty: b.difficulty,
+                })
+                .collect();
+            difficulty::lwma_next_difficulty(&window)
+        };
+        if block.difficulty != expected_difficulty {
+            return Err(format!(
+                "peer block difficulty {} does not match expected {} at height {}",
+                block.difficulty, expected_difficulty, block.height
+            ));
+        }
         parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
         Ok(())
     }
@@ -1298,6 +1341,7 @@ impl ChainState {
             self.tip_hash,
             self.active_template.template_id,
             &self.mempool,
+            &self.accepted_blocks,
         );
         Ok(())
     }
@@ -1354,6 +1398,7 @@ impl ChainState {
                     self.tip_hash,
                     self.next_template_id.saturating_sub(1),
                     &self.mempool,
+                    &self.accepted_blocks,
                 );
                 return Ok(());
             };
@@ -1376,6 +1421,7 @@ impl ChainState {
                 self.tip_hash,
                 self.next_template_id.saturating_sub(1),
                 &self.mempool,
+                &self.accepted_blocks,
             );
         }
 
@@ -1395,11 +1441,12 @@ impl ChainState {
 
     fn build_template(
         node_id: &str,
-        core: &CoreRuntime,
+        _core: &CoreRuntime,
         current_height: u64,
         previous_hash: [u8; 32],
         template_id: u64,
         mempool: &[Transaction],
+        accepted_blocks: &[AcceptedBlock],
     ) -> TemplateState {
         let next_height = current_height.saturating_add(1);
         let transactions = select_template_transactions(mempool);
@@ -1411,6 +1458,23 @@ impl ChainState {
             previous_hash,
             &transactions,
         );
+
+        let next_difficulty = if accepted_blocks.is_empty() {
+            difficulty::GENESIS_DIFFICULTY
+        } else {
+            let start = accepted_blocks.len().saturating_sub(difficulty::LWMA_WINDOW + 1);
+            let window: Vec<difficulty::BlockInfo> = accepted_blocks[start..]
+                .iter()
+                .map(|b| difficulty::BlockInfo {
+                    timestamp: b.timestamp,
+                    difficulty: b.difficulty,
+                })
+                .collect();
+            difficulty::lwma_next_difficulty(&window)
+        };
+        let target = difficulty::difficulty_to_target(next_difficulty);
+        let bits = difficulty::target_to_compact(&target);
+
         TemplateState {
             template_id,
             height: next_height,
@@ -1418,10 +1482,11 @@ impl ChainState {
                 version: 3,
                 previous_hash,
                 merkle_root,
-                timestamp: now_ms(),
-                difficulty_bits: 0x1f00ffff,
+                timestamp: now_secs(),
+                difficulty_bits: bits,
             },
-            target: core.consensus().default_target,
+            target,
+            difficulty: next_difficulty,
             reward_zion: emission::block_subsidy(next_height),
             transactions,
             total_fees_zion,
@@ -1623,11 +1688,11 @@ fn derive_block_body_hash(transactions: &[Transaction]) -> [u8; 32] {
     cosmic_harmony_ekam_deeksha(&seed, transactions.len() as u64).data
 }
 
-fn now_ms() -> u64 {
+fn now_secs() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
-        .as_millis() as u64
+        .as_secs()
 }
 
 fn snapshot_temp_path(path: &Path) -> PathBuf {
@@ -1821,20 +1886,36 @@ mod tests {
         assert_eq!(decoded, message);
     }
 
+    /// Scan nonces to find one that meets the template target.
+    fn find_valid_nonce(template: &BlockTemplate) -> u64 {
+        let header = MiningHeader::from_bytes(
+            parse_fixed_hex::<HEADER_SIZE>(&template.header_hex, "test header").unwrap(),
+        );
+        let target = DifficultyTarget::from_hex(&template.target_hex).unwrap();
+        for nonce in 0..10_000_000 {
+            let candidate = BlockCandidate { header, nonce };
+            if target.allows(&candidate.hash()) {
+                return nonce;
+            }
+        }
+        panic!("no valid nonce found in 10M attempts");
+    }
+
     #[test]
     fn rpc_submit_candidate_accepts_active_template() {
         let mut runtime = NodeRuntime::new("node-rpc", NodeConfig::mainnet());
         let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
         let header = MiningHeader::from_bytes(
             parse_fixed_hex::<HEADER_SIZE>(&template.header_hex, "template header")
                 .expect("template header bytes"),
         );
-        let candidate = BlockCandidate { header, nonce: 77 };
+        let candidate = BlockCandidate { header, nonce };
 
         let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: template.template_id,
             header_hex: template.header_hex.clone(),
-            nonce: candidate.nonce,
+            nonce,
             target_hex: template.target_hex.clone(),
         });
 
@@ -1982,11 +2063,12 @@ mod tests {
         });
         let first_template = runtime.active_template();
         assert_eq!(first_template.transaction_ids, vec![mined_transaction.tx_id.clone()]);
+        let nonce = find_valid_nonce(&first_template);
 
         let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: first_template.template_id,
             header_hex: first_template.header_hex.clone(),
-            nonce: 12,
+            nonce,
             target_hex: first_template.target_hex.clone(),
         });
 
@@ -2005,10 +2087,11 @@ mod tests {
     fn stale_template_submission_is_rejected() {
         let mut runtime = NodeRuntime::new("node-stale", NodeConfig::mainnet());
         let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
         let _ = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: template.template_id,
             header_hex: template.header_hex.clone(),
-            nonce: 18,
+            nonce,
             target_hex: template.target_hex.clone(),
         });
 
@@ -2078,18 +2161,20 @@ mod tests {
             transaction: first_tx.clone(),
         });
         let first_template = runtime.active_template();
+        let nonce1 = find_valid_nonce(&first_template);
         let _ = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: first_template.template_id,
             header_hex: first_template.header_hex,
-            nonce: 21,
+            nonce: nonce1,
             target_hex: first_template.target_hex,
         });
 
         let second_template = runtime.active_template();
+        let nonce2 = find_valid_nonce(&second_template);
         let _ = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: second_template.template_id,
             header_hex: second_template.header_hex,
-            nonce: 22,
+            nonce: nonce2,
             target_hex: second_template.target_hex,
         });
 
@@ -2119,10 +2204,11 @@ mod tests {
             transaction: propagated_tx,
         });
         let template = source.active_template();
+        let nonce = find_valid_nonce(&template);
         let _ = source.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: template.template_id,
             header_hex: template.header_hex,
-            nonce: 31,
+            nonce,
             target_hex: template.target_hex,
         });
 
@@ -2147,19 +2233,21 @@ mod tests {
     fn p2p_announce_block_rejects_conflicting_height() {
         let mut left = NodeRuntime::new("node-left", NodeConfig::mainnet());
         let left_template = left.active_template();
+        let left_nonce = find_valid_nonce(&left_template);
         let _ = left.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: left_template.template_id,
             header_hex: left_template.header_hex,
-            nonce: 41,
+            nonce: left_nonce,
             target_hex: left_template.target_hex,
         });
 
         let mut right = NodeRuntime::new("node-right", NodeConfig::mainnet());
         let right_template = right.active_template();
+        let right_nonce = find_valid_nonce(&right_template);
         let _ = right.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: right_template.template_id,
             header_hex: right_template.header_hex,
-            nonce: 42,
+            nonce: right_nonce,
             target_hex: right_template.target_hex,
         });
 
@@ -2180,20 +2268,22 @@ mod tests {
             transaction: first_tx.clone(),
         });
         let first_template = source.active_template();
+        let nonce1 = find_valid_nonce(&first_template);
         let _ = source.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: first_template.template_id,
             header_hex: first_template.header_hex,
-            nonce: 51,
+            nonce: nonce1,
             target_hex: first_template.target_hex,
         });
         let _ = source.handle_rpc_request(RpcRequest::SubmitTransaction {
             transaction: second_tx.clone(),
         });
         let second_template = source.active_template();
+        let nonce2 = find_valid_nonce(&second_template);
         let _ = source.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: second_template.template_id,
             header_hex: second_template.header_hex,
-            nonce: 52,
+            nonce: nonce2,
             target_hex: second_template.target_hex,
         });
 
@@ -2214,17 +2304,19 @@ mod tests {
     fn import_peer_blocks_rejects_non_contiguous_batch() {
         let mut source = NodeRuntime::new("node-gap-source", NodeConfig::mainnet());
         let first_template = source.active_template();
+        let nonce1 = find_valid_nonce(&first_template);
         let _ = source.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: first_template.template_id,
             header_hex: first_template.header_hex,
-            nonce: 61,
+            nonce: nonce1,
             target_hex: first_template.target_hex,
         });
         let second_template = source.active_template();
+        let nonce2 = find_valid_nonce(&second_template);
         let _ = source.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: second_template.template_id,
             header_hex: second_template.header_hex,
-            nonce: 62,
+            nonce: nonce2,
             target_hex: second_template.target_hex,
         });
 
@@ -2242,11 +2334,12 @@ mod tests {
     fn accepted_block_indexes_are_available_after_submit() {
         let mut runtime = NodeRuntime::new("node-index", NodeConfig::mainnet());
         let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
 
         let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: template.template_id,
             header_hex: template.header_hex,
-            nonce: 33,
+            nonce,
             target_hex: template.target_hex,
         });
 
@@ -2267,7 +2360,7 @@ mod tests {
         let state_path = std::env::temp_dir().join(format!(
             "zion-v3-core-state-{}-{}.json",
             std::process::id(),
-            now_ms()
+            now_secs()
         ));
         let mut runtime = NodeRuntime::with_chain_store(
             "node-persist",
@@ -2280,11 +2373,12 @@ mod tests {
             transaction: persisted_transaction.clone(),
         });
         let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
 
         let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: template.template_id,
             header_hex: template.header_hex,
-            nonce: 44,
+            nonce,
             target_hex: template.target_hex,
         });
         assert!(matches!(response, RpcResponse::SubmitResult { accepted: true, .. }));
@@ -2314,7 +2408,7 @@ mod tests {
         let state_path = std::env::temp_dir().join(format!(
             "zion-v3-core-recovery-{}-{}.json",
             std::process::id(),
-            now_ms()
+            now_secs()
         ));
         let tx_dup = sample_transaction("tx-dup", 6, 1);
         let tx_mined = sample_transaction("tx-mined", 2, 2);
@@ -2340,6 +2434,8 @@ mod tests {
             accepted_blocks: vec![AcceptedBlock {
                 template_id: 1,
                 height: 1,
+                timestamp: 1_700_000_000,
+                difficulty: difficulty::GENESIS_DIFFICULTY,
                 nonce: 77,
                 hash_hex: hex(&[0x55; 32]),
                 transaction_ids: vec![tx_mined.tx_id.clone()],
@@ -2387,12 +2483,14 @@ mod tests {
         let state_path = std::env::temp_dir().join(format!(
             "zion-v3-core-journal-{}-{}.json",
             std::process::id(),
-            now_ms()
+            now_secs()
         ));
         let tx = sample_transaction("tx-journal", 6, 1);
         let accepted_block = AcceptedBlock {
             template_id: 1,
             height: 1,
+            timestamp: 1_700_000_060,
+            difficulty: difficulty::GENESIS_DIFFICULTY,
             nonce: 42,
             hash_hex: hex(&[0x66; 32]),
             transaction_ids: vec![tx.tx_id.clone()],
