@@ -12,6 +12,7 @@ pub use zion_cosmic_harmony::RevenueSource;
 
 pub mod difficulty;
 pub mod emission;
+pub mod genesis;
 
 pub const HEADER_SIZE: usize = 80;
 pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/0.1";
@@ -997,15 +998,21 @@ impl Transaction {
 
 impl ChainState {
     fn new(node_id: &str, core: &CoreRuntime) -> Self {
+        let genesis = genesis::genesis_block();
+        let genesis_hash = parse_fixed_hex::<32>(&genesis.hash_hex, "genesis hash")
+            .expect("genesis hash must be valid hex");
         let mempool = Vec::new();
-        let template = Self::build_template(node_id, core, 0, [0u8; 32], 1, &mempool, &[]);
+        let template =
+            Self::build_template(node_id, core, 0, genesis_hash, 1, &mempool, &[genesis.clone()]);
+        let mut accepted_by_height = BTreeMap::new();
+        accepted_by_height.insert(0, genesis.clone());
         Self {
             height: 0,
-            tip_hash: [0u8; 32],
+            tip_hash: genesis_hash,
             next_template_id: 2,
             active_template: template,
-            accepted_blocks: Vec::new(),
-            accepted_by_height: BTreeMap::new(),
+            accepted_blocks: vec![genesis],
+            accepted_by_height,
             accepted_by_template_id: HashMap::new(),
             mempool,
             mempool_by_id: HashMap::new(),
@@ -1187,6 +1194,20 @@ impl ChainState {
             return Ok(0);
         }
 
+        // Skip any leading blocks we already have (e.g. genesis).
+        let skip_count = blocks
+            .iter()
+            .take_while(|block| {
+                self.accepted_by_height
+                    .get(&block.height)
+                    .map_or(false, |existing| existing.hash_hex == block.hash_hex)
+            })
+            .count();
+        let blocks: Vec<AcceptedBlock> = blocks.into_iter().skip(skip_count).collect();
+        if blocks.is_empty() {
+            return Ok(0);
+        }
+
         let mut expected_height = self.height.saturating_add(1);
         let mut seen_heights = HashSet::new();
         let mut seen_template_ids = HashSet::new();
@@ -1228,6 +1249,14 @@ impl ChainState {
     }
 
     fn validate_peer_block(&self, block: &AcceptedBlock) -> Result<(), String> {
+        // Genesis block is hard-coded — only verify hash match.
+        if block.height == 0 {
+            let expected = genesis::genesis_block();
+            if block.hash_hex != expected.hash_hex {
+                return Err("genesis block hash does not match canonical genesis".to_string());
+            }
+            return Ok(());
+        }
         if block.transaction_ids.len() != block.transactions.len() {
             return Err("peer block transaction ids do not match block body length".to_string());
         }
@@ -1735,7 +1764,7 @@ fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N], St
     Ok(bytes)
 }
 
-fn hex(bytes: &[u8]) -> String {
+pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{:02x}", byte)).collect()
 }
 
@@ -2074,13 +2103,13 @@ mod tests {
 
         assert!(matches!(response, RpcResponse::SubmitResult { accepted: true, .. }));
         assert_eq!(runtime.status().chain_height, 1);
-        assert_eq!(runtime.accepted_blocks().len(), 1);
+        assert_eq!(runtime.accepted_blocks().len(), 2); // genesis + mined
         assert_ne!(runtime.active_template().template_id, first_template.template_id);
         assert_eq!(runtime.active_template().height, 2);
         assert!(runtime.active_template().transaction_ids.is_empty());
-        assert_eq!(runtime.accepted_blocks()[0].transaction_ids, vec![mined_transaction.tx_id]);
-        assert_eq!(runtime.accepted_blocks()[0].subsidy_zion, emission::block_subsidy(1));
-        assert_eq!(runtime.accepted_blocks()[0].miner_reward_zion, emission::block_subsidy(1) + 3);
+        assert_eq!(runtime.accepted_blocks()[1].transaction_ids, vec![mined_transaction.tx_id]);
+        assert_eq!(runtime.accepted_blocks()[1].subsidy_zion, emission::block_subsidy(1));
+        assert_eq!(runtime.accepted_blocks()[1].miner_reward_zion, emission::block_subsidy(1) + 3);
     }
 
     #[test]
@@ -2212,7 +2241,7 @@ mod tests {
             target_hex: template.target_hex,
         });
 
-        let block = source.accepted_blocks()[0].clone();
+        let block = source.accepted_blocks()[1].clone(); // skip genesis
         let mut target = NodeRuntime::new("node-target", NodeConfig::mainnet());
         let response = target
             .handle_p2p_message(P2pMessage::AnnounceBlock { block: block.clone() })
@@ -2221,11 +2250,11 @@ mod tests {
         match response {
             P2pMessage::Status { status } => {
                 assert_eq!(status.chain_height, 1);
-                assert_eq!(status.accepted_blocks, 1);
+                assert_eq!(status.accepted_blocks, 2); // genesis + imported
             }
             other => panic!("unexpected announce response: {other:?}"),
         }
-        assert_eq!(target.accepted_blocks()[0], block);
+        assert_eq!(target.accepted_blocks()[1], block);
         assert_eq!(target.active_template().height, 2);
     }
 
@@ -2253,7 +2282,7 @@ mod tests {
 
         let error = right
             .handle_p2p_message(P2pMessage::AnnounceBlock {
-                block: left.accepted_blocks()[0].clone(),
+                block: left.accepted_blocks()[1].clone(), // skip genesis
             })
             .expect_err("conflicting height should fail");
         assert!(error.contains("conflicting peer block"));
@@ -2292,11 +2321,11 @@ mod tests {
             .import_peer_blocks(source.accepted_blocks().to_vec())
             .expect("batch import should succeed");
 
-        assert_eq!(imported, 2);
+        assert_eq!(imported, 2); // genesis skipped, 2 new blocks imported
         assert_eq!(target.chain_height(), 2);
-        assert_eq!(target.accepted_blocks().len(), 2);
-        assert_eq!(target.accepted_blocks()[0].transaction_ids, vec![first_tx.tx_id]);
-        assert_eq!(target.accepted_blocks()[1].transaction_ids, vec![second_tx.tx_id]);
+        assert_eq!(target.accepted_blocks().len(), 3); // genesis + 2
+        assert_eq!(target.accepted_blocks()[1].transaction_ids, vec![first_tx.tx_id]);
+        assert_eq!(target.accepted_blocks()[2].transaction_ids, vec![second_tx.tx_id]);
         assert_eq!(target.active_template().height, 3);
     }
 
@@ -2322,11 +2351,11 @@ mod tests {
 
         let mut target = NodeRuntime::new("node-gap-target", NodeConfig::mainnet());
         let error = target
-            .import_peer_blocks(vec![source.accepted_blocks()[1].clone()])
+            .import_peer_blocks(vec![source.accepted_blocks()[2].clone()]) // height 2, skip 1
             .expect_err("non-contiguous batch should fail");
 
         assert!(error.contains("not contiguous"));
-        assert_eq!(target.accepted_blocks().len(), 0);
+        assert_eq!(target.accepted_blocks().len(), 1); // only genesis
         assert_eq!(target.chain_height(), 0);
     }
 
@@ -2391,10 +2420,10 @@ mod tests {
         .expect("restored runtime with chain store");
 
         assert_eq!(restored.status().chain_height, 1);
-        assert_eq!(restored.accepted_blocks().len(), 1);
+        assert_eq!(restored.accepted_blocks().len(), 2); // genesis + 1
         assert!(restored.accepted_block_by_height(1).is_some());
         assert!(restored.accepted_block_by_template_id(template.template_id).is_some());
-        assert_eq!(restored.accepted_blocks()[0].transaction_ids, vec![persisted_transaction.tx_id]);
+        assert_eq!(restored.accepted_blocks()[1].transaction_ids, vec![persisted_transaction.tx_id]);
         assert!(matches!(
             restored.handle_rpc_request(RpcRequest::GetMempool),
             RpcResponse::Mempool { ref transactions } if transactions.is_empty()
@@ -2522,8 +2551,8 @@ mod tests {
         .expect("restore from journal");
 
         assert_eq!(restored.status().chain_height, 1);
-        assert_eq!(restored.accepted_blocks().len(), 1);
-        assert_eq!(restored.accepted_blocks()[0], accepted_block);
+        assert_eq!(restored.accepted_blocks().len(), 2); // genesis + journal block
+        assert_eq!(restored.accepted_blocks()[1], accepted_block);
         assert!(restored.active_template().transaction_ids.is_empty());
         assert!(!journal_path(&state_path).exists());
 
