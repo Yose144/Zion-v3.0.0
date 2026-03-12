@@ -91,8 +91,10 @@ pub fn run_benchmark(miner: &mut dyn GpuMiner, config: &AutoTuneConfig) -> Resul
 
     // Test header (dummy data)
     let header = vec![0u8; 80];
-    // Very easy target for benchmark (almost always finds solution)
-    let easy_target = [0xFFu8; 32];
+    // Benchmark with a practical no-hit target.
+    // An all-0xFF target causes every lane to hit, which serializes atomics and
+    // measures result-buffer contention rather than Ekam hashing throughput.
+    let easy_target = [0u8; 32];
 
     let mut results = Vec::new();
     let mut best_hashrate = 0.0f64;

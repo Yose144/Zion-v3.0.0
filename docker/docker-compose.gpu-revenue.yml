@@ -190,7 +190,7 @@ services:
     container_name: zion-ncl-gateway
     restart: unless-stopped
     environment:
-      NCL_POOL_URL: "${ZION_POOL_URL:-http://77.42.31.72:8444}"
+      NCL_POOL_URL: "${ZION_POOL_URL:-http://91.98.122.165:8444}"
       NCL_WALLET: "${ZION_BTC_WALLET:-bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw}"
       NCL_WORKER: "${ZION_WORKER:-zion_gpu}"
       NCL_PORT: "8002"

@@ -528,6 +528,16 @@ void b3_compress(const uint cv[8], const uint bw[16],
         b3_round(st, msg);
         b3_permute(msg);
     }
+
+    /* BLAKE3 feed-forward output:
+     *   out[0..7]  = state[0..7]  ^ state[8..15]
+     *   out[8..15] = state[8..15] ^ chaining_value
+     */
+    for (int i = 0; i < 8; i++) {
+        st[i] ^= st[i + 8];
+        st[i + 8] ^= cv[i];
+    }
+
     for (int i = 0; i < 16; i++) output[i] = st[i];
 }
 
@@ -537,7 +547,7 @@ void b3_compress_cv(const uint cv[8], const uint bw[16],
 {
     uint full[16];
     b3_compress(cv, bw, counter, block_len, flags, full);
-    for (int i = 0; i < 8; i++) out_cv[i] = full[i] ^ full[i + 8];
+    for (int i = 0; i < 8; i++) out_cv[i] = full[i];
 }
 
 void b3_load_words(const uchar *buf, int len, uint words[16]) {
@@ -573,11 +583,10 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
     uint cv[8];
     for (int i = 0; i < 8; i++) cv[i] = BLAKE3_IV[i];
     uint offset = 0;
-    ulong block_counter = 0;
     while (offset < input_len) {
         uint remaining = input_len - offset;
         uint this_len = (remaining > 64u) ? 64u : remaining;
-        int is_first = (block_counter == 0);
+        int is_first = (offset == 0);
         int is_last  = (offset + this_len >= input_len);
         uint fl = 0u;
         if (is_first) fl |= BLAKE3_CHUNK_START;
@@ -591,9 +600,11 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
             out.flags = fl;
             return out;
         }
-        b3_compress_cv(cv, bw, block_counter, this_len, fl, cv);
+        /* BLAKE3 counter is the chunk counter, not the block index.
+         * These inputs fit into a single chunk, so the counter stays 0.
+         */
+        b3_compress_cv(cv, bw, 0UL, this_len, fl, cv);
         offset += this_len;
-        block_counter++;
     }
     for (int i = 0; i < 8; i++) out.input_cv[i] = BLAKE3_IV[i];
     for (int i = 0; i < 16; i++) out.block_words[i] = 0;
@@ -684,15 +695,15 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 
     /* Block 0: cur[0..64], CHUNK_START */
     b3_load_words_global(pad + cur_off, 64, bw);
-    b3_compress_cv(cv, bw, 0, 64, BLAKE3_CHUNK_START, cv);
+    b3_compress_cv(cv, bw, 0UL, 64, BLAKE3_CHUNK_START, cv);
 
     /* Block 1: prev[0..64] */
     b3_load_words_global(pad + prev_off, 64, bw);
-    b3_compress_cv(cv, bw, 1, 64, 0, cv);
+    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
 
     /* Block 2: rand[0..64] */
     b3_load_words_global(pad + rand_off, 64, bw);
-    b3_compress_cv(cv, bw, 2, 64, 0, cv);
+    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
 
     /* Block 3: pass(8) || idx(8) = 16 bytes, CHUNK_END */
     for (int i = 0; i < 16; i++) bw[i] = 0;
@@ -1082,8 +1093,8 @@ __kernel void deeksha_mine(
                 | ((uint)hash[3] << 24);
 
     if (state0 <= target_u32) {
-        ulong old = atom_cmpxchg(result_nonce, 0UL, nonce);
-        if (old == 0UL) {
+        ulong old = atom_cmpxchg(result_nonce, 0xFFFFFFFFFFFFFFFFUL, nonce);
+        if (old == 0xFFFFFFFFFFFFFFFFUL) {
             for (int i = 0; i < 32; i++)
                 result_hash[i] = hash[i];
         }
@@ -1100,6 +1111,7 @@ void ekam_deeksha_mine(
     __global const uchar  *header,
     uint                   header_len,
     ulong                  nonce_base,
+    uint                   nonce_count,
     __global uchar        *scratchpad_pool,
     uint                   target_u32,
     __global ulong        *result_nonce,
@@ -1113,6 +1125,7 @@ void ekam_deeksha_mine(
 )
 {
     uint tid   = get_global_id(0);
+    if (tid >= nonce_count) return;
     ulong nonce = nonce_base + (ulong)tid;
     __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
 
@@ -1153,8 +1166,8 @@ void ekam_deeksha_mine(
     uint state0 = *(uint *)hash;
 
     if (state0 <= target_u32) {
-        ulong old = atom_cmpxchg(result_nonce, 0UL, nonce);
-        if (old == 0UL) {
+        ulong old = atom_cmpxchg(result_nonce, 0xFFFFFFFFFFFFFFFFUL, nonce);
+        if (old == 0xFFFFFFFFFFFFFFFFUL) {
             /* Word-level hash copy (8 × uint = 32 bytes) */
             __global uint *rh32 = (__global uint *)result_hash;
             uint *h32 = (uint *)hash;
@@ -1162,4 +1175,59 @@ void ekam_deeksha_mine(
                 rh32[i] = h32[i];
         }
     }
+}
+
+__kernel void ekam_deeksha_debug(
+    __global const uchar  *header,
+    uint                   header_len,
+    ulong                  nonce,
+    __global uchar        *scratchpad_pool,
+    __global uchar        *stage_out,
+    __global const char   *npu_w1,
+    __global const char   *npu_b1,
+    __global const char   *npu_w2,
+    __global const char   *npu_b2,
+    __global const short  *npu_scale1,
+    __global const short  *npu_scale2
+)
+{
+    if (get_global_id(0) != 0) return;
+
+    __global uchar *pad = scratchpad_pool;
+
+    uchar input[88];
+    ulong *inp64 = (ulong *)input;
+    for (int i = 0; i < 11; i++) inp64[i] = 0;
+    uint hlen = min(header_len, (uint)80);
+    __global const uint *hdr32 = (__global const uint *)header;
+    uint *inp32 = (uint *)input;
+    uint hwords = hlen >> 2;
+    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
+    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
+    inp64[10] = nonce;
+
+    uchar s1[32];
+    keccak256(input, 88, s1);
+
+    uchar s2[64];
+    sha3_512(s1, 32, s2);
+
+    uchar s3[64];
+    golden_matrix(s2, s3);
+
+    uchar s4[64];
+    ekam_memory_hard_transform(s3, pad, s4);
+
+    uchar s5[64];
+    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+
+    uchar hash[32];
+    cosmic_fusion_ekam(s5, hash);
+
+    for (int i = 0; i < 32; i++) stage_out[i] = s1[i];
+    for (int i = 0; i < 64; i++) stage_out[32 + i] = s2[i];
+    for (int i = 0; i < 64; i++) stage_out[96 + i] = s3[i];
+    for (int i = 0; i < 64; i++) stage_out[160 + i] = s4[i];
+    for (int i = 0; i < 64; i++) stage_out[224 + i] = s5[i];
+    for (int i = 0; i < 32; i++) stage_out[288 + i] = hash[i];
 }
