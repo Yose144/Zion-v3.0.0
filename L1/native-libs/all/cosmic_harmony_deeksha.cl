@@ -144,8 +144,21 @@ void keccak_absorb(ulong *st, int *pos, int rate,
     while (inlen > 0) {
         int chunk = rate - *pos;
         if (chunk > inlen) chunk = inlen;
-        for (int i = 0; i < chunk; i++)
-            ((uchar *)st)[*pos + i] ^= in[i];
+        int off = *pos;
+        int i = 0;
+        /* Fast path: ulong-width XOR when position is 8-byte aligned */
+        if ((off & 7) == 0) {
+            int ulongs = chunk >> 3;
+            for (int u = 0; u < ulongs; u++) {
+                ulong v = 0;
+                for (int b = 0; b < 8; b++)
+                    v |= (ulong)in[u * 8 + b] << (b * 8);
+                st[(off >> 3) + u] ^= v;
+            }
+            i = ulongs << 3;
+        }
+        for (; i < chunk; i++)
+            ((uchar *)st)[off + i] ^= in[i];
         in    += chunk;
         inlen -= chunk;
         *pos  += chunk;
@@ -165,8 +178,20 @@ void keccak_absorb_global(ulong *st, int *pos, int rate,
     while (inlen > 0) {
         int chunk = rate - *pos;
         if (chunk > inlen) chunk = inlen;
-        for (int i = 0; i < chunk; i++)
-            ((uchar *)st)[*pos + i] ^= in[i];
+        int off = *pos;
+        int i = 0;
+        if ((off & 7) == 0) {
+            int ulongs = chunk >> 3;
+            for (int u = 0; u < ulongs; u++) {
+                ulong v = 0;
+                for (int b = 0; b < 8; b++)
+                    v |= (ulong)in[u * 8 + b] << (b * 8);
+                st[(off >> 3) + u] ^= v;
+            }
+            i = ulongs << 3;
+        }
+        for (; i < chunk; i++)
+            ((uchar *)st)[off + i] ^= in[i];
         in    += chunk;
         inlen -= chunk;
         *pos  += chunk;
@@ -186,7 +211,11 @@ void keccak_finalize(ulong *st, int pos, int rate,
     ((uchar *)st)[pos]      ^= pad_byte;
     ((uchar *)st)[rate - 1] ^= 0x80;
     keccak_f1600(st);
-    for (int i = 0; i < outlen; i++)
+    /* Word-level squeeze when output is ulong-aligned (32 or 64 bytes) */
+    int ulongs = outlen >> 3;
+    ulong *out64 = (ulong *)out;
+    for (int i = 0; i < ulongs; i++) out64[i] = st[i];
+    for (int i = (ulongs << 3); i < outlen; i++)
         out[i] = ((uchar *)st)[i];
 }
 
@@ -357,7 +386,8 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
                      uchar out[64])
 {
     uchar acc[64];
-    for (int i = 0; i < 64; i++) acc[i] = seed[i];
+    { ulong *d = (ulong *)acc; const ulong *s = (const ulong *)seed;
+      for (int i = 0; i < 8; i++) d[i] = s[i]; }
 
     /* Initial position from seed[0:8] */
     ulong pos_val = *(const ulong *)seed;
@@ -372,10 +402,9 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
         ulong *ldst = (ulong *)chunk;
         for (int i = 0; i < 8; i++) ldst[i] = gsrc[i];
 
-        /* r as u64 LE */
+        /* r as u64 LE — direct ulong write */
         uchar r_bytes[8];
-        ulong r_val = (ulong)r;
-        for (int b = 0; b < 8; b++) r_bytes[b] = (uchar)(r_val >> (b * 8));
+        *(ulong *)r_bytes = (ulong)r;
 
         /* d = Keccak-256(acc || chunk || r_le) */
         ulong st[25]; int spos = 0;
@@ -386,16 +415,18 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
         uchar d[32];
         keccak_finalize(st, spos, 136, 0x01, d, 32);
 
-        /* Update accumulator */
-        for (int i = 0; i < 32; i++) {
-            acc[i]      ^= d[i];
-            acc[32 + i]  = (uchar)((uint)acc[32 + i] + (uint)d[i]);
+        /* Update accumulator — ulong XOR for first 32 bytes */
+        {
+            ulong *a64 = (ulong *)acc;
+            ulong *d64 = (ulong *)d;
+            for (int u = 0; u < 4; u++) a64[u] ^= d64[u];
         }
+        for (int i = 0; i < 32; i++)
+            acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d[i]);
 
-        /* Next position */
-        ulong next_val = 0;
-        for (int b = 0; b < 8; b++) next_val |= (ulong)d[b] << (b * 8);
-        pos = (uint)(((ulong)(uint)next_val ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
+        /* Next position — direct ulong read */
+        ulong next_val = *(ulong *)d;
+        pos = (uint)((next_val ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
     }
 
     /* Final hash: SHA3-512(acc || pad[0:64] || pad[last_64:]) */
@@ -600,7 +631,11 @@ void b3_xof_fill_private(B3ChunkOut co, uchar *buf, uint buf_len) {
         b3_compress(co.input_cv, co.block_words, (ulong)ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
         uint to_write = min(64u, buf_len - written);
-        for (uint i = 0; i < to_write; i++)
+        /* Word-level copy */
+        uint full_words = to_write >> 2;
+        uint *dst32 = (uint *)(buf + written);
+        for (uint w = 0; w < full_words; w++) dst32[w] = st[w];
+        for (uint i = (full_words << 2); i < to_write; i++)
             buf[written + i] = (uchar)(st[i / 4] >> ((i % 4) * 8));
         written += to_write;
         ob++;
@@ -712,14 +747,16 @@ void fusion_round(uchar state[64], uchar round_num);
 void cosmic_fusion_ekam(const uchar in64[64], uchar hash32[32])
 {
     uchar state[64];
-    for (int i = 0; i < 64; i++) state[i] = in64[i];
+    { ulong *d = (ulong *)state; const ulong *s = (const ulong *)in64;
+      for (int i = 0; i < 8; i++) d[i] = s[i]; }
 
     for (uchar r = 0; r < 8; r++)
         fusion_round(state, r);
 
     uchar full[64];
     sha3_512(state, 32, full);
-    for (int i = 0; i < 32; i++) hash32[i] = full[i];
+    { ulong *d = (ulong *)hash32; ulong *s = (ulong *)full;
+      for (int i = 0; i < 4; i++) d[i] = s[i]; }
 }
 
 /* ========================================================================== */
@@ -896,7 +933,11 @@ void fusion_round(uchar state[64], uchar round_num)
 {
     /* Keccak-256(state[0..32] || round_byte) */
     uchar hash_input[33];
-    for (int i = 0; i < 32; i++) hash_input[i] = state[i];
+    {
+        ulong *hi64 = (ulong *)hash_input;
+        ulong *st64 = (ulong *)state;
+        for (int i = 0; i < 4; i++) hi64[i] = st64[i];
+    }
     hash_input[32] = round_num;
 
     uchar intermediate[32];
@@ -904,36 +945,65 @@ void fusion_round(uchar state[64], uchar round_num)
 
     /* AES block 0: key = intermediate[0:16], plaintext = state[32:48] */
     uchar aes_key[16], block0[16], block1[16];
-    for (int i = 0; i < 16; i++) aes_key[i] = intermediate[i];
-    for (int i = 0; i < 16; i++) block0[i] = state[32 + i];
+    {
+        ulong *k64 = (ulong *)aes_key;
+        ulong *i64 = (ulong *)intermediate;
+        k64[0] = i64[0]; k64[1] = i64[1];
+    }
+    {
+        ulong *b64 = (ulong *)block0;
+        ulong *s64 = (ulong *)(state + 32);
+        b64[0] = s64[0]; b64[1] = s64[1];
+    }
     aes128_encrypt(aes_key, block0);
 
     /* AES block 1: tweak key, plaintext = state[48:64] */
     uchar key2[16];
-    for (int i = 0; i < 16; i++) key2[i] = aes_key[i];
+    {
+        ulong *k264 = (ulong *)key2;
+        ulong *k64  = (ulong *)aes_key;
+        k264[0] = k64[0]; k264[1] = k64[1];
+    }
     key2[0]  ^= round_num;
     key2[15] ^= 0xAB;
-    for (int i = 0; i < 16; i++) block1[i] = state[48 + i];
+    {
+        ulong *b64 = (ulong *)block1;
+        ulong *s64 = (ulong *)(state + 48);
+        b64[0] = s64[0]; b64[1] = s64[1];
+    }
     aes128_encrypt(key2, block1);
 
     /* mask = block0 || block1 */
     uchar mask[32];
-    for (int i = 0; i < 16; i++) mask[i]      = block0[i];
-    for (int i = 0; i < 16; i++) mask[16 + i]  = block1[i];
+    {
+        ulong *m64 = (ulong *)mask;
+        ulong *b064 = (ulong *)block0;
+        ulong *b164 = (ulong *)block1;
+        m64[0] = b064[0]; m64[1] = b064[1];
+        m64[2] = b164[0]; m64[3] = b164[1];
+    }
 
     /* state[32..64] ^= intermediate   (evolve upper half FIRST) */
-    for (int i = 0; i < 32; i++)
-        state[32 + i] ^= intermediate[i];
+    {
+        ulong *s64 = (ulong *)(state + 32);
+        ulong *i64 = (ulong *)intermediate;
+        for (int i = 0; i < 4; i++) s64[i] ^= i64[i];
+    }
 
     /* state[0..32] = intermediate ^ mask   (overwrite lower half) */
-    for (int i = 0; i < 32; i++)
-        state[i] = intermediate[i] ^ mask[i];
+    {
+        ulong *s64 = (ulong *)state;
+        ulong *i64 = (ulong *)intermediate;
+        ulong *m64 = (ulong *)mask;
+        for (int i = 0; i < 4; i++) s64[i] = i64[i] ^ m64[i];
+    }
 }
 
 void cosmic_fusion(const uchar in64[64], uchar hash32[32])
 {
     uchar state[64];
-    for (int i = 0; i < 64; i++) state[i] = in64[i];
+    { ulong *d = (ulong *)state; const ulong *s = (const ulong *)in64;
+      for (int i = 0; i < 8; i++) d[i] = s[i]; }
 
     /* 4 fusion rounds */
     fusion_round(state, 0);
@@ -944,7 +1014,8 @@ void cosmic_fusion(const uchar in64[64], uchar hash32[32])
     /* Final: SHA3-512(state[0:32]) → truncate to 32 B */
     uchar full[64];
     sha3_512(state, 32, full);
-    for (int i = 0; i < 32; i++) hash32[i] = full[i];
+    { ulong *d = (ulong *)hash32; ulong *s = (ulong *)full;
+      for (int i = 0; i < 4; i++) d[i] = s[i]; }
 }
 
 /* ========================================================================== */
@@ -1024,7 +1095,8 @@ __kernel void deeksha_mine(
 /* Steps 1-3: same. Step 4: Blake3 XOF scratchpad. Step 6: 8-round fusion.    */
 /* ========================================================================== */
 
-__kernel void ekam_deeksha_mine(
+__kernel __attribute__((work_group_size_hint(256, 1, 1)))
+void ekam_deeksha_mine(
     __global const uchar  *header,
     uint                   header_len,
     ulong                  nonce_base,
