@@ -1070,8 +1070,8 @@ impl UniversalMiner {
             };
 
             // ═══ Algorithm dispatch: GPU shader vs CPU fallback ═══
-            // NOTE: CosmicHarmony CHv4 is consensus-critical from height 0.
-            // The current OpenCL/CUDA kernel path is CHv3-era, so route Cosmic to CPU fallback.
+            // NOTE: CosmicHarmony Ekam Deeksha is consensus-critical from height 0.
+            // GPU kernels (OpenCL/CUDA) implement the full Ekam Deeksha pipeline.
             let _batch_start = std::time::Instant::now();
             let use_gpu_path = Self::is_gpu_mineable(active_algo, device_platform, job.height as u32);
             let attempted_batch_size = if use_gpu_path {
@@ -1550,10 +1550,11 @@ mod tests {
     }
 
     #[test]
-    fn cosmic_harmony_gpu_mineable_on_metal_only() {
+    fn cosmic_harmony_gpu_mineable_on_all_platforms() {
         let genesis_height = 0;
         let high_height = 1_000_000;
 
+        // Metal
         assert!(UniversalMiner::is_gpu_mineable(
             Algorithm::CosmicHarmony,
             gpu::GpuPlatform::Metal,
@@ -1572,9 +1573,16 @@ mod tests {
             high_height
         ));
 
-        assert!(!UniversalMiner::is_gpu_mineable(
+        // OpenCL + CUDA — now enabled for Ekam Deeksha
+        assert!(UniversalMiner::is_gpu_mineable(
             Algorithm::CosmicHarmony,
             gpu::GpuPlatform::OpenCL,
+            high_height
+        ));
+
+        assert!(UniversalMiner::is_gpu_mineable(
+            Algorithm::CosmicHarmony,
+            gpu::GpuPlatform::Cuda,
             high_height
         ));
 
@@ -1582,6 +1590,18 @@ mod tests {
             Algorithm::CosmicHarmonyDeeksha,
             gpu::GpuPlatform::Metal,
             high_height
+        ));
+
+        assert!(UniversalMiner::is_gpu_mineable(
+            Algorithm::CosmicHarmonyDeeksha,
+            gpu::GpuPlatform::OpenCL,
+            genesis_height
+        ));
+
+        assert!(UniversalMiner::is_gpu_mineable(
+            Algorithm::CosmicHarmonyDeeksha,
+            gpu::GpuPlatform::Cuda,
+            genesis_height
         ));
     }
 
