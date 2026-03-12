@@ -100,8 +100,8 @@ def _gpu_batch_limits(backend: str) -> Tuple[int, int]:
         return (1024, 16384)
     if backend_name == "metal":
         return (2048, 65536)
-    if backend_name == "deeksha-opencl":
-        return (64, 2048)   # 64 KiB scratchpad per thread — memory-intensive
+    if backend_name in ("deeksha-opencl", "ekam-deeksha-opencl"):
+        return (64, 8192)   # 64 KiB scratchpad per thread — 8192×64K = 512 MiB
     return (1024, 8192)
 
 
@@ -1244,7 +1244,7 @@ class EkamDeekshaOpenCLBackend(DeekshaOpenCLBackend):
             log.warning("[EkamDeekshaOpenCL] ekam_deeksha_mine kernel not found in .cl source")
             self._ready = False
 
-    def benchmark(self, nonce_count: int = 256) -> float:
+    def benchmark(self, nonce_count: int = 4096) -> float:
         nonce_count = _sanitize_gpu_batch_size(nonce_count, "ekam-deeksha-opencl")
         dummy = b"ZION Ekam Deeksha OpenCL bench" + b"\x00" * 34
         t0 = time.monotonic()
@@ -1388,14 +1388,14 @@ class CHv42GPU:
                     if ecl.available:
                         self._backend = ecl
                         self._name    = "ekam-deeksha-opencl"
-                        self.batch_size = min(self.batch_size, 2048)
+                        self.batch_size = min(self.batch_size, 8192)
                         log.info("[CHv42GPU] Auto-detekce: ekam-deeksha-opencl (Ekam Deeksha on GPU)")
                         return
                     dcl = DeekshaOpenCLBackend(device_idx=device_idx)
                     if dcl.available:
                         self._backend = dcl
                         self._name    = "deeksha-opencl"
-                        self.batch_size = min(self.batch_size, 2048)
+                        self.batch_size = min(self.batch_size, 8192)
                         log.info("[CHv42GPU] Auto-detekce: deeksha-opencl (canonical Deeksha on GPU)")
                         return
                 if _has_exact_native_backend():
@@ -1429,13 +1429,13 @@ class CHv42GPU:
             if ecl.available:
                 self._backend = ecl
                 self._name    = "ekam-deeksha-opencl"
-                self.batch_size = min(self.batch_size, 2048)
+                self.batch_size = min(self.batch_size, 8192)
                 return
             dcl = DeekshaOpenCLBackend(device_idx=device_idx)
             if dcl.available:
                 self._backend = dcl
                 self._name    = "deeksha-opencl"
-                self.batch_size = min(self.batch_size, 2048)
+                self.batch_size = min(self.batch_size, 8192)
                 return
             b = OpenCLBackend(device_idx=device_idx)
             if b.available:

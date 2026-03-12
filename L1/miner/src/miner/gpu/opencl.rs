@@ -20,7 +20,8 @@ const OPENCL_KERNEL: &str = include_str!("kernels/cosmic_harmony_deeksha.cl");
 /// Scratchpad size per thread (must match CL_SCRATCHPAD_BYTES in kernel)
 const SCRATCHPAD_BYTES: usize = 64 * 1024;
 /// Max parallel threads when memory-hard is active (scratchpad × threads ≤ ~2 GB)
-const MH_BATCH_DEFAULT: usize = 2048;
+/// 4096 × 64 KiB = 256 MiB — fits comfortably in 4+ GB VRAM
+const MH_BATCH_DEFAULT: usize = 4096;
 
 /// OpenCL miner implementation
 pub struct OpenCLMiner {
@@ -273,9 +274,9 @@ impl GpuMiner for OpenCLMiner {
             let global_work_size =
                 ((raw_global + local_work_size - 1) / local_work_size) * local_work_size;
 
-            // Build canonical Deeksha kernel (13 args)
+            // Build Ekam Deeksha kernel (Blake3 XOF scratchpad, 8-round fusion)
             let kernel = pro_que
-                .kernel_builder("deeksha_mine")
+                .kernel_builder("ekam_deeksha_mine")
                 .arg(header_buf)
                 .arg(header_len as u32)
                 .arg(nonce_start)

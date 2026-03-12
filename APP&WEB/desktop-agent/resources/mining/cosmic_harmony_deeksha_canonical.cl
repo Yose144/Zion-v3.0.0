@@ -360,16 +360,17 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
     for (int i = 0; i < 64; i++) acc[i] = seed[i];
 
     /* Initial position from seed[0:8] */
-    ulong pos_val = 0;
-    for (int b = 0; b < 8; b++) pos_val |= (ulong)seed[b] << (b * 8);
+    ulong pos_val = *(const ulong *)seed;
     uint pos = (uint)(pos_val % BLOCK_COUNT);
 
     for (int r = 0; r < RANDOM_READS; r++) {
         uint off = pos * BLOCK_SIZE;
 
-        /* Copy chunk from global scratchpad to private */
+        /* Copy chunk from global scratchpad — ulong-width (8× fewer loads) */
         uchar chunk[BLOCK_SIZE];
-        for (int i = 0; i < BLOCK_SIZE; i++) chunk[i] = pad[off + i];
+        __global const ulong *gsrc = (__global const ulong *)(pad + off);
+        ulong *ldst = (ulong *)chunk;
+        for (int i = 0; i < 8; i++) ldst[i] = gsrc[i];
 
         /* r as u64 LE */
         uchar r_bytes[8];
@@ -399,9 +400,15 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
 
     /* Final hash: SHA3-512(acc || pad[0:64] || pad[last_64:]) */
     uchar first_blk[BLOCK_SIZE], last_blk[BLOCK_SIZE];
-    for (int i = 0; i < BLOCK_SIZE; i++) {
-        first_blk[i] = pad[i];
-        last_blk[i]  = pad[SCRATCHPAD_SIZE - BLOCK_SIZE + i];
+    {
+        __global const ulong *fp = (__global const ulong *)pad;
+        __global const ulong *lp = (__global const ulong *)(pad + SCRATCHPAD_SIZE - BLOCK_SIZE);
+        ulong *fd = (ulong *)first_blk;
+        ulong *ld = (ulong *)last_blk;
+        for (int i = 0; i < 8; i++) {
+            fd[i] = fp[i];
+            ld[i] = lp[i];
+        }
     }
 
     ulong fst[25]; int fpos = 0;
@@ -509,9 +516,18 @@ void b3_load_words(const uchar *buf, int len, uint words[16]) {
 }
 
 void b3_load_words_global(__global const uchar *buf, int len, uint words[16]) {
-    for (int i = 0; i < 16; i++) words[i] = 0;
-    for (int i = 0; i < len; i++)
-        words[i / 4] |= (uint)buf[i] << ((i % 4) * 8);
+    __global const uint *buf32 = (__global const uint *)buf;
+    int wcount = len >> 2;
+    for (int i = 0; i < wcount; i++) words[i] = buf32[i];
+    for (int i = wcount; i < 16; i++) words[i] = 0;
+    /* Handle trailing bytes (only if len % 4 != 0) */
+    int done = wcount << 2;
+    if (done < len) {
+        uint w = 0;
+        for (int i = done; i < len; i++)
+            w |= (uint)buf[i] << ((i - done) * 8);
+        words[wcount] = w;
+    }
 }
 
 typedef struct {
@@ -556,13 +572,21 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
 }
 
 void b3_xof_fill_global(B3ChunkOut co, __global uchar *buf, uint buf_len) {
+    __global uint *buf32 = (__global uint *)buf;
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
         b3_compress(co.input_cv, co.block_words, (ulong)ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
         uint to_write = min(64u, buf_len - written);
-        for (uint i = 0; i < to_write; i++)
+        /* Word-level write: 16 uint writes instead of 64 byte writes */
+        uint words = to_write >> 2;
+        uint base = written >> 2;
+        for (uint i = 0; i < words; i++)
+            buf32[base + i] = st[i];
+        /* Handle trailing bytes (only at very end if buf_len % 4 != 0) */
+        uint done = words << 2;
+        for (uint i = done; i < to_write; i++)
             buf[written + i] = (uchar)(st[i / 4] >> ((i % 4) * 8));
         written += to_write;
         ob++;
@@ -613,9 +637,8 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uint cur_off  = index * BLOCK_SIZE;
     uint prev_off = prev_index * BLOCK_SIZE;
 
-    ulong idx_val = 0;
-    for (int b = 0; b < 8; b++)
-        idx_val |= (ulong)pad[cur_off + b] << (b * 8);
+    /* Read first 8 bytes as ulong for random index derivation */
+    ulong idx_val = *((__global const ulong *)(pad + cur_off));
     uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
     uint rand_off = rand_index * BLOCK_SIZE;
 
@@ -652,8 +675,11 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uchar mixed[64];
     b3_xof_fill_private(co, mixed, 64u);
 
-    for (int i = 0; i < BLOCK_SIZE; i++)
-        pad[cur_off + i] ^= mixed[i];
+    /* XOR result into current block — ulong-width (8× fewer ops) */
+    __global ulong *dst = (__global ulong *)(pad + cur_off);
+    ulong *src = (ulong *)mixed;
+    for (int i = 0; i < 8; i++)
+        dst[i] ^= src[i];
 }
 
 void ekam_sequential_passes(__global uchar *pad)
@@ -1018,11 +1044,20 @@ __kernel void ekam_deeksha_mine(
     ulong nonce = nonce_base + (ulong)tid;
     __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
 
+    /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];
-    for (int i = 0; i < 88; i++) input[i] = 0;
+    /* Zero-init with ulong writes (11x ulong = 88 bytes) */
+    ulong *inp64 = (ulong *)input;
+    for (int i = 0; i < 11; i++) inp64[i] = 0;
     uint hlen = min(header_len, (uint)80);
-    for (uint i = 0; i < hlen; i++) input[i] = header[i];
-    for (int b = 0; b < 8; b++) input[80 + b] = (uchar)(nonce >> (b * 8));
+    /* Word-level header copy */
+    __global const uint *hdr32 = (__global const uint *)header;
+    uint *inp32 = (uint *)input;
+    uint hwords = hlen >> 2;
+    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
+    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
+    /* Nonce as direct ulong write */
+    inp64[10] = nonce;
 
     uchar s1[32];
     keccak256(input, 88, s1);
@@ -1042,16 +1077,17 @@ __kernel void ekam_deeksha_mine(
     uchar hash[32];
     cosmic_fusion_ekam(s5, hash);
 
-    uint state0 = (uint)hash[0]
-                | ((uint)hash[1] <<  8)
-                | ((uint)hash[2] << 16)
-                | ((uint)hash[3] << 24);
+    /* Target check: LE u32 from first 4 bytes */
+    uint state0 = *(uint *)hash;
 
     if (state0 <= target_u32) {
         ulong old = atom_cmpxchg(result_nonce, 0UL, nonce);
         if (old == 0UL) {
-            for (int i = 0; i < 32; i++)
-                result_hash[i] = hash[i];
+            /* Word-level hash copy (8 × uint = 32 bytes) */
+            __global uint *rh32 = (__global uint *)result_hash;
+            uint *h32 = (uint *)hash;
+            for (int i = 0; i < 8; i++)
+                rh32[i] = h32[i];
         }
     }
 }
