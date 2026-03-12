@@ -4060,17 +4060,6 @@ function startMining(config) {
       // and exit without mining. The miner already auto-calculates optimal batch
       // size via calculate_optimal_batch_size() based on GPU memory at runtime.
     }
-    // Rust miner Ekam Deeksha scratchpad thread count (GPU memory-hard PoW).
-    // ZION_GPU_MH_BATCH controls how many threads' scratchpads are allocated in VRAM.
-    // Default=4096 (256 MiB). Higher values need more VRAM but may improve occupancy.
-    if (mainMinerGpu && !String(process.env.ZION_GPU_MH_BATCH || '').trim()) {
-      const gpuInfo = detectGPU();
-      const gpuMem = parseGpuMemoryMb(gpuInfo);
-      // 4096 × 64 KiB = 256 MiB — sweet spot for 4-8 GB GPUs.
-      // 8192 × 64 KiB = 512 MiB — for 8+ GB GPUs.
-      const mhBatch = gpuMem >= 8000 ? 8192 : 4096;
-      env.ZION_GPU_MH_BATCH = String(mhBatch);
-    }
   } else {
     // Python miner / legacy .exe miner (shared CLI)
     const pythonUi = String(config?.pythonUi || process.env.ZION_PY_UI || 'trex').trim().toLowerCase();
@@ -4329,6 +4318,17 @@ function startMining(config) {
     }
   } catch {
     // ignore
+  }
+
+  // Rust miner Ekam Deeksha scratchpad thread count (GPU memory-hard PoW).
+  // ZION_GPU_MH_BATCH controls how many threads' scratchpads are allocated in VRAM.
+  // Default=4096 (256 MiB). Higher values need more VRAM but may improve occupancy.
+  if (MINER_IS_RUST && mainMinerGpu && !String(process.env.ZION_GPU_MH_BATCH || '').trim()) {
+    const gpuMem = parseGpuMemoryMb(gpuInfo);
+    // 4096 × 64 KiB = 256 MiB — sweet spot for 4-8 GB GPUs.
+    // 8192 × 64 KiB = 512 MiB — for 8+ GB GPUs.
+    const mhBatch = gpuMem >= 8000 ? 8192 : 4096;
+    env.ZION_GPU_MH_BATCH = String(mhBatch);
   }
 
   // CHv3 performance defaults (speed-first):
