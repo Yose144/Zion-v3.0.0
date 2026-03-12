@@ -150,9 +150,9 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 
 | ID | Missing module | What constitution requires | V3 current state | Migration source |
 |----|----------------|---------------------------|------------------|------------------|
-| G1 | **Emission / Decade Decay** | Decade Decay (×4/5 per 5,256,000 blocks), tail ~724.785 ZION | `DEFAULT_BLOCK_REWARD_ZION = 5_400` (constant, no decay, integer-only) | `L1/core/src/blockchain/reward.rs` |
-| G2 | **Atomic units (flowers)** | 1 ZION = 1e12 flowers; reward = 5,400,067,000,000,000 flowers | V3 uses plain integer `5_400` | Same as G1 |
-| G3 | **LWMA DAA** | 60-block window, ±25% max change, ±120 s timestamp clamp | Difficulty hardcoded (`0x1f00ffff`), no adjustment algorithm | `L1/core/src/blockchain/difficulty.rs` (verify) |
+| G1 | **Emission / Decade Decay** | Decade Decay (×4/5 per 5,256,000 blocks), tail ~724.785 ZION | ✅ `emission.rs` — 16 tests | `L1/core/src/blockchain/reward.rs` |
+| G2 | **Atomic units (flowers)** | 1 ZION = 1e12 flowers; reward = 5,400,067,000,000,000 flowers | ✅ Integrated in `emission.rs` | Same as G1 |
+| G3 | **LWMA DAA** | 60-block window, ±25% max change, 30–120 s solve-time clamp | ✅ `difficulty.rs` — 21 tests, integer-only ±25% clamp | `L1/core/src/blockchain/consensus.rs` |
 | G4 | **Genesis block + premine** | 16.28B ZION into 12 addresses as coinbase outputs in block 0 | No genesis builder, no premine module | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
 | G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | Single request/response TCP; no outbound push | New code (extend P2P handle + NodeRuntime) |
 
@@ -286,23 +286,29 @@ Goal: implement the constitutional DAA so the network self-regulates to 60 s blo
 
 Required work:
 
-- implement LWMA with 60-block window over `(timestamp, cumulative_work)` pairs
-- enforce ±25% max adjustment per block
-- add ±120 s timestamp sanity clamp on incoming blocks
-- integrate DAA into template creation (next_target from chain tip)
-- integrate DAA into block validation (verify target matches DAA output)
-- remove hardcoded `difficulty_bits: 0x1f00ffff` default for non-genesis blocks
+- implement LWMA with 60-block window over `(timestamp, difficulty)` pairs
+- enforce ±25% max adjustment per block (integer arithmetic, no f64)
+- add 30–120 s solve-time clamp per interval
+- integrate DAA into template creation (next_difficulty from accepted_blocks)
+- integrate DAA into block validation (verify difficulty matches LWMA output)
+- remove hardcoded `difficulty_bits: 0x1f00ffff` — replaced by compact nBits encoding
+- add `timestamp` (seconds) and `difficulty` (u64) fields to AcceptedBlock
+- target ↔ difficulty conversion: `difficulty_to_target()`, `target_to_compact()`, `compact_to_target()`
+- switch header timestamp from ms to seconds (`now_secs()`)
+- 21 new unit tests (14 LWMA algorithm + 7 target/compact conversion)
 
 Exit criteria:
 
-- DAA produces correct targets for synthetic 60-block histories
-- fast blocks → difficulty rises; slow blocks → difficulty falls
-- ±25% clamp holds under adversarial input
-- all existing tests remain green
+- DAA produces correct targets for synthetic 60-block histories ✓
+- fast blocks → difficulty rises; slow blocks → difficulty falls ✓
+- ±25% clamp holds under adversarial input ✓
+- stability simulation (200 blocks, varied solve times) converges ✓
+- all existing tests remain green (updated to use `find_valid_nonce`) ✓
+- 118 tests pass, 0 fail, 1 ignored ✓
 
-Migration source: `L1/core/src/blockchain/difficulty.rs` (verify existence, audit, extract)
+Migration source: `L1/core/src/blockchain/consensus.rs` → `V3/L1/core/src/difficulty.rs`
 
-Status: pending
+Status: done
 
 ### Phase 5c: Genesis Block & Premine (G4)
 
