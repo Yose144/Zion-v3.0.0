@@ -69,6 +69,8 @@ pub struct MetalMiner {
     command_queue: CommandQueue,
     pipeline_mine: ComputePipelineState,
     pipeline_benchmark: ComputePipelineState,
+    pipeline_ekam_mine: Option<ComputePipelineState>,
+    pipeline_ekam_benchmark: Option<ComputePipelineState>,
 
     // Core buffers
     params_buf: Buffer,
@@ -136,6 +138,22 @@ impl MetalMiner {
         let pipeline_benchmark = device
             .new_compute_pipeline_state_with_function(&benchmark_fn)
             .map_err(|e| MetalError::PipelineError(format!("{:?}", e)))?;
+
+        // Create Ekam Deeksha compute pipelines (optional — graceful degradation)
+        let pipeline_ekam_mine = library
+            .get_function("cosmic_harmony_ekam_mine", None)
+            .ok()
+            .and_then(|f| device.new_compute_pipeline_state_with_function(&f).ok());
+        let pipeline_ekam_benchmark = library
+            .get_function("cosmic_harmony_ekam_benchmark", None)
+            .ok()
+            .and_then(|f| device.new_compute_pipeline_state_with_function(&f).ok());
+
+        if pipeline_ekam_mine.is_some() {
+            log::info!("   Ekam Deeksha GPU kernels loaded (Blake3 XOF + 8-round fusion)");
+        } else {
+            log::warn!("   Ekam Deeksha GPU kernels not available — falling back to CPU for Ekam hashing");
+        }
 
         // Calculate threads per threadgroup.
         // Deeksha is register-heavy and uses a large per-thread working set,
@@ -259,6 +277,8 @@ impl MetalMiner {
             command_queue,
             pipeline_mine,
             pipeline_benchmark,
+            pipeline_ekam_mine,
+            pipeline_ekam_benchmark,
             params_buf,
             result_buf,
             hashes_buf: None,
@@ -325,8 +345,8 @@ impl MetalMiner {
         self.batch_size
     }
 
-    /// Mine for a valid nonce — CHv4 full pipeline
-    pub fn mine(
+    /// Mine for a valid nonce — legacy CHv4 pipeline (archived, use mine() for Ekam Deeksha)
+    pub fn mine_legacy_chv4(
         &mut self,
         header: &[u8],
         target: &[u8; 32],
@@ -397,8 +417,8 @@ impl MetalMiner {
         }
     }
 
-    /// Compute batch of hashes — benchmark kernel, CHv4
-    pub fn batch_hash(&mut self, header: &[u8], start_nonce: u64, count: usize) -> Vec<[u8; 32]> {
+    /// Compute batch of hashes — legacy CHv4 benchmark kernel (archived)
+    pub fn batch_hash_legacy_chv4(&mut self, header: &[u8], start_nonce: u64, count: usize) -> Vec<[u8; 32]> {
         let required_size = (count * 32) as u64;
         if self.hashes_buf.is_none() || self.hashes_buf.as_ref().unwrap().length() < required_size {
             self.hashes_buf = Some(
@@ -461,7 +481,186 @@ impl MetalMiner {
         results
     }
 
-    /// Run benchmark
+    /// Check if Ekam Deeksha GPU kernels are available
+    pub fn has_ekam_kernels(&self) -> bool {
+        self.pipeline_ekam_mine.is_some()
+    }
+
+    /// Canonical mine — Ekam Deeksha (Blake3 XOF scratchpad + 8-round fusion)
+    ///
+    /// This is the primary mining function since v2.9.9 Pure Code migration.
+    /// For legacy CHv4, see `mine_legacy_chv4()`.
+    pub fn mine(
+        &mut self,
+        header: &[u8],
+        target: &[u8; 32],
+        start_nonce: u64,
+        height: u64,
+    ) -> Option<(u64, [u8; 32])> {
+        let pipeline = self.pipeline_ekam_mine.as_ref()?;
+
+        unsafe {
+            let ptr = self.params_buf.contents() as *mut CHv3MiningParams;
+            let params = &mut *ptr;
+            params.start_nonce  = start_nonce;
+            params.header_len   = header.len().min(80) as u32;
+            params.header       = [0u8; 80];
+            std::ptr::copy_nonoverlapping(
+                header.as_ptr(),
+                params.header.as_mut_ptr(),
+                header.len().min(80),
+            );
+            params.target.copy_from_slice(target);
+            params.block_height = height as u32;
+        }
+
+        unsafe {
+            let ptr = self.result_buf.contents() as *mut CHv3MiningResult;
+            let result = &mut *ptr;
+            result.found_nonce = 0;
+            result.found_hash  = [0u8; 32];
+            result.found       = 0;
+        }
+
+        let command_buffer = self.command_queue.new_command_buffer();
+        let encoder = command_buffer.new_compute_command_encoder();
+
+        encoder.set_compute_pipeline_state(pipeline);
+        encoder.set_buffer(0, Some(&self.params_buf),      0);
+        encoder.set_buffer(1, Some(&self.result_buf),      0);
+        encoder.set_buffer(2, Some(&self.scratchpad_buf),  0);
+        encoder.set_buffer(3, Some(&self.npu_w1_buf),      0);
+        encoder.set_buffer(4, Some(&self.npu_b1_buf),      0);
+        encoder.set_buffer(5, Some(&self.npu_w2_buf),      0);
+        encoder.set_buffer(6, Some(&self.npu_b2_buf),      0);
+        encoder.set_buffer(7, Some(&self.npu_scale1_buf),  0);
+        encoder.set_buffer(8, Some(&self.npu_scale2_buf),  0);
+
+        let grid_size        = MTLSize::new(self.batch_size as u64, 1, 1);
+        let threadgroup_size = MTLSize::new(self.threads_per_threadgroup as u64, 1, 1);
+
+        encoder.dispatch_threads(grid_size, threadgroup_size);
+        encoder.end_encoding();
+
+        command_buffer.commit();
+        command_buffer.wait_until_completed();
+
+        self.total_hashes += self.batch_size as u64;
+
+        let result = unsafe { &*(self.result_buf.contents() as *const CHv3MiningResult) };
+
+        if result.found > 0 {
+            self.solutions_found += 1;
+            let mut found_hash = [0u8; 32];
+            found_hash.copy_from_slice(&result.found_hash);
+            Some((result.found_nonce, found_hash))
+        } else {
+            None
+        }
+    }
+
+    /// Canonical batch hash — Ekam Deeksha benchmark kernel
+    pub fn batch_hash(&mut self, header: &[u8], start_nonce: u64, count: usize) -> Vec<[u8; 32]> {
+        let pipeline = match self.pipeline_ekam_benchmark.as_ref() {
+            Some(p) => p,
+            None => return Vec::new(),
+        };
+
+        let required_size = (count * 32) as u64;
+        if self.hashes_buf.is_none() || self.hashes_buf.as_ref().unwrap().length() < required_size {
+            self.hashes_buf = Some(
+                self.device
+                    .new_buffer(required_size, MTLResourceOptions::StorageModeShared),
+            );
+        }
+
+        unsafe {
+            let ptr = self.params_buf.contents() as *mut CHv3MiningParams;
+            let params = &mut *ptr;
+            params.start_nonce  = start_nonce;
+            params.header_len   = header.len().min(80) as u32;
+            params.header       = [0u8; 80];
+            std::ptr::copy_nonoverlapping(
+                header.as_ptr(),
+                params.header.as_mut_ptr(),
+                header.len().min(80),
+            );
+            params.target       = [0u8; 32];
+            params.block_height = 0u32;
+        }
+
+        let command_buffer = self.command_queue.new_command_buffer();
+        let encoder = command_buffer.new_compute_command_encoder();
+
+        encoder.set_compute_pipeline_state(pipeline);
+        encoder.set_buffer(0, Some(&self.params_buf), 0);
+        encoder.set_buffer(1, self.hashes_buf.as_ref().map(|v| &**v), 0);
+        encoder.set_buffer(2, Some(&self.scratchpad_buf),  0);
+        encoder.set_buffer(3, Some(&self.npu_w1_buf),      0);
+        encoder.set_buffer(4, Some(&self.npu_b1_buf),      0);
+        encoder.set_buffer(5, Some(&self.npu_w2_buf),      0);
+        encoder.set_buffer(6, Some(&self.npu_b2_buf),      0);
+        encoder.set_buffer(7, Some(&self.npu_scale1_buf),  0);
+        encoder.set_buffer(8, Some(&self.npu_scale2_buf),  0);
+
+        let grid_size        = MTLSize::new(count as u64, 1, 1);
+        let threadgroup_size = MTLSize::new(self.threads_per_threadgroup as u64, 1, 1);
+
+        encoder.dispatch_threads(grid_size, threadgroup_size);
+        encoder.end_encoding();
+
+        command_buffer.commit();
+        command_buffer.wait_until_completed();
+
+        self.total_hashes += count as u64;
+
+        let mut results = Vec::with_capacity(count);
+        unsafe {
+            let ptr = self.hashes_buf.as_ref().unwrap().contents() as *const u8;
+            for i in 0..count {
+                let mut hash = [0u8; 32];
+                std::ptr::copy_nonoverlapping(ptr.add(i * 32), hash.as_mut_ptr(), 32);
+                results.push(hash);
+            }
+        }
+        results
+    }
+
+    /// GPU↔CPU parity check — canonical Ekam Deeksha
+    pub fn parity_check_ekam(
+        &mut self,
+        header: &[u8],
+        start_nonce: u64,
+        count: usize,
+    ) -> Result<usize, MetalError> {
+        let gpu_hashes = self.batch_hash(header, start_nonce, count);
+        if gpu_hashes.is_empty() {
+            return Err(MetalError::FunctionNotFound(
+                "Ekam Deeksha GPU kernels not available".to_string(),
+            ));
+        }
+
+        let mut mismatches = 0usize;
+        for (i, gpu_hash) in gpu_hashes.iter().enumerate() {
+            let nonce = start_nonce + i as u64;
+            let cpu = crate::deeksha::cosmic_harmony_ekam_deeksha(header, nonce);
+
+            if gpu_hash != &cpu.data {
+                mismatches += 1;
+                if mismatches <= 5 {
+                    eprintln!(
+                        "[ekam-parity] MISMATCH nonce={}: gpu={} cpu={}",
+                        nonce,
+                        hex::encode(gpu_hash),
+                        hex::encode(&cpu.data),
+                    );
+                }
+            }
+        }
+        Ok(mismatches)
+    }
+
+    /// Run benchmark — always uses canonical Ekam Deeksha path
     pub fn benchmark(&mut self, duration_secs: f64) -> f64 {
         use std::time::Instant;
 
@@ -490,13 +689,14 @@ impl MetalMiner {
     }
 
     /// GPU↔CPU CHv4 parity check (compares GPU output against CPU CHv4 reference).
+    /// Uses the archived legacy CHv4 batch hash path.
     pub fn parity_check_legacy(
         &mut self,
         header: &[u8],
         start_nonce: u64,
         count: usize,
     ) -> Result<usize, MetalError> {
-        let gpu_hashes = self.batch_hash(header, start_nonce, count);
+        let gpu_hashes = self.batch_hash_legacy_chv4(header, start_nonce, count);
         let mut mismatches = 0usize;
 
         for (i, gpu_hash) in gpu_hashes.iter().enumerate() {
@@ -529,7 +729,7 @@ impl MetalMiner {
         Ok(mismatches)
     }
 
-    /// GPU↔CPU parity check proti výškově řízené CPU referenci.
+    /// GPU↔CPU parity check proti výškově řízené CPU referenci (legacy CHv4).
     ///
     /// Používá `cosmic_harmony_with_height` (CHv4-aware), takže:
     /// - pod CHV4_NPU_FORK_HEIGHT → CHv3 (memory-hard, no NPU),
@@ -541,7 +741,7 @@ impl MetalMiner {
         count: usize,
         height: u32,
     ) -> Result<usize, MetalError> {
-        let gpu_hashes = self.batch_hash(header, start_nonce, count);
+        let gpu_hashes = self.batch_hash_legacy_chv4(header, start_nonce, count);
         let mut mismatches = 0usize;
 
         for (i, gpu_hash) in gpu_hashes.iter().enumerate() {

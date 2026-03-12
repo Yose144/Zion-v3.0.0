@@ -29,9 +29,9 @@ pub use native_algos::NativeAlgorithm;
 // Local Algorithm enum - independent from zion_core
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Algorithm {
-    CosmicHarmony,       // CHv4.1 Golden Middle (height-aware, aktivuje CHv4.2 dle fork height)
-    CosmicHarmonyV42,    // CHv4.2 Merkabah Dual-Spin (explicitní override)
-    CosmicHarmonyDeeksha, // CHvDeeksha canonical (v2.9.8) — přímý Deeksha path
+    CosmicHarmony,       // Pool-canonical ZION name; resolves through the current height-aware canonical dispatch.
+    CosmicHarmonyV42,    // Historical explicit V4.2 alias kept only for compatibility/testing.
+    CosmicHarmonyDeeksha, // Explicit Ekam Deeksha alias for the same canonical runtime.
     RandomX,
     VerusHash,
     Yescrypt,
@@ -57,12 +57,13 @@ impl Algorithm {
             | "cosmicharmony" | "cosmic-harmony" | "cosmic_harmony_v3"
             | "cosmic-harmony-v3" | "chv3" | "ch3" | "cosmic_harmony_v2" | "cosmicharmonyv2"
             | "cosmic-harmony-v2" | "cosmic-harmony_v2" => Some(Self::CosmicHarmony),
-            // CHv4.2 explicitní override (Merkabah Dual-Spin)
+            // Historical explicit V4.2 override retained for compatibility.
             "cosmic_harmony_v4_2" | "chv4_2" | "ch4_2" | "chv4.2"
             | "cosmic_harmony_v42" | "ch42" | "merkabah" => Some(Self::CosmicHarmonyV42),
-            // Explicit canonical alias — same Deeksha runtime as above.
+            // Explicit canonical aliases — same Ekam Deeksha runtime as the pool-canonical name.
             "deeksha" | "chv_deeksha" | "cosmic_harmony_deeksha" | "cosmic_deeksha"
-            | "chdeeksha" | "deeksha_canonical" => Some(Self::CosmicHarmonyDeeksha),
+            | "chdeeksha" | "deeksha_canonical"
+            | "ekam" | "ekam_deeksha" | "cosmic_harmony_ekam" | "ch_ekam" | "che" => Some(Self::CosmicHarmonyDeeksha),
             "randomx" | "random-x" | "rx/0" => Some(Self::RandomX),
             "verushash" | "verushash2" | "verushash2.2" | "vrsc" => Some(Self::VerusHash),
             "yescrypt" => Some(Self::Yescrypt),
@@ -83,7 +84,7 @@ impl Algorithm {
 
     pub fn name(&self) -> &'static str {
         match self {
-            // "cosmic_harmony" is the pool-canonical name for CHv4-era (CHV4_NPU_FORK_HEIGHT=0)
+            // "cosmic_harmony" is the pool-canonical public name for the current ZION runtime.
             Self::CosmicHarmony => "cosmic_harmony",
             Self::CosmicHarmonyV42 => "cosmic_harmony_v4_2",
             Self::CosmicHarmonyDeeksha => "cosmic_harmony_deeksha",
@@ -101,6 +102,21 @@ impl Algorithm {
             Self::ProgPowEpic => "progpow-epic",
             Self::Argon2d => "argon2d",
             Self::Octopus => "octopus",
+        }
+    }
+
+    pub fn is_zion_runtime(self) -> bool {
+        matches!(
+            self,
+            Self::CosmicHarmony | Self::CosmicHarmonyV42 | Self::CosmicHarmonyDeeksha
+        )
+    }
+
+    pub fn pool_name(&self) -> &'static str {
+        if self.is_zion_runtime() {
+            "cosmic_harmony"
+        } else {
+            self.name()
         }
     }
 
@@ -288,7 +304,7 @@ impl UniversalMiner {
             &self.config.pool_url,
             &self.config.wallet_address,
             &self.config.worker_name,
-            self.config.algorithm.name(),
+            self.config.algorithm.pool_name(),
             self.config.difficulty,
             self.config.group_hint.as_deref(),
         )?;
@@ -1017,7 +1033,9 @@ impl UniversalMiner {
                         // If this backend has a fixed chip dispatch size, keep using it
                         // across algo switches so responsiveness stays consistent.
                         batch_size = miner.natural_batch_size().unwrap_or(match active_algo {
-                            Algorithm::CosmicHarmony | Algorithm::CosmicHarmonyDeeksha => 14_000_000,
+                            Algorithm::CosmicHarmony
+                            | Algorithm::CosmicHarmonyV42
+                            | Algorithm::CosmicHarmonyDeeksha => 14_000_000,
                             Algorithm::Ethash | Algorithm::Autolykos | Algorithm::KawPow => 100_000,
                             Algorithm::RandomX | Algorithm::Yescrypt => 5_000,
                             _ => 250_000,
@@ -1124,16 +1142,28 @@ impl UniversalMiner {
 
                     // ═══ GPU→CPU verification: re-hash on CPU and compare (debug opt-in) ═══
                     if gpu_verify_enabled {
-                        let cpu_hash = zion_cosmic_harmony_v3::algorithms_opt::cosmic_harmony_with_height(
-                            &blob_bytes, nonce, job.height,
-                        );
-                        let cpu_hex = hex::encode(cpu_hash.data);
+                        let cpu_hash = match native_algos::compute_hash(
+                            active_algo.to_native(),
+                            &blob_bytes,
+                            nonce,
+                            job.height as u32,
+                        ) {
+                            Ok(hash) => hash,
+                            Err(error) => {
+                                log::error!(
+                                    "GPU verify CPU re-hash failed for algo {}: {}",
+                                    active_algo.name(),
+                                    error
+                                );
+                                continue;
+                            }
+                        };
+                        let cpu_hex = hex::encode(&cpu_hash);
                         let gpu_state0 = u32::from_le_bytes([
                             hash[0], hash[1], hash[2], hash[3],
                         ]);
                         let cpu_state0 = u32::from_le_bytes([
-                            cpu_hash.data[0], cpu_hash.data[1],
-                            cpu_hash.data[2], cpu_hash.data[3],
+                            cpu_hash[0], cpu_hash[1], cpu_hash[2], cpu_hash[3],
                         ]);
                         // Parse target for comparison (first 4 bytes = pool's target_int)
                         let target_val = u32::from_be_bytes([
@@ -1278,10 +1308,11 @@ impl UniversalMiner {
     fn is_gpu_mineable(algo: Algorithm, platform: gpu::GpuPlatform, height: u32) -> bool {
         let _ = height;
         match algo {
-            // CosmicHarmony CHv4.1: Metal GPU shader is fully implemented (NPU + 64 KiB scratchpad).
-            // Parity fix applied (commit f0ebf20): Rust == C native == Metal GPU confirmed.
-            // Enabled for Metal (macOS M1/M2/M3). CUDA/OpenCL shaders not yet implemented.
-            Algorithm::CosmicHarmony => matches!(platform, gpu::GpuPlatform::Metal),
+            // All ZION aliases resolve to the same canonical Ekam Deeksha runtime.
+            // Metal GPU path is implemented and validated on Apple Silicon.
+            Algorithm::CosmicHarmony
+            | Algorithm::CosmicHarmonyV42
+            | Algorithm::CosmicHarmonyDeeksha => matches!(platform, gpu::GpuPlatform::Metal),
             // Ethash/Autolykos — Metal has shaders, CUDA/OpenCL planned
             Algorithm::Ethash | Algorithm::Autolykos => {
                 matches!(platform, gpu::GpuPlatform::Metal)
@@ -1466,6 +1497,8 @@ mod tests {
     fn test_algorithm_name_roundtrip() {
         let algorithms = [
             Algorithm::CosmicHarmony,
+            Algorithm::CosmicHarmonyV42,
+            Algorithm::CosmicHarmonyDeeksha,
             Algorithm::RandomX,
             Algorithm::VerusHash,
             Algorithm::Yescrypt,
@@ -1525,6 +1558,12 @@ mod tests {
         ));
 
         assert!(UniversalMiner::is_gpu_mineable(
+            Algorithm::CosmicHarmonyV42,
+            gpu::GpuPlatform::Metal,
+            genesis_height
+        ));
+
+        assert!(UniversalMiner::is_gpu_mineable(
             Algorithm::CosmicHarmony,
             gpu::GpuPlatform::Metal,
             high_height
@@ -1536,11 +1575,19 @@ mod tests {
             high_height
         ));
 
-        assert!(!UniversalMiner::is_gpu_mineable(
+        assert!(UniversalMiner::is_gpu_mineable(
             Algorithm::CosmicHarmonyDeeksha,
             gpu::GpuPlatform::Metal,
             high_height
         ));
+    }
+
+    #[test]
+    fn zion_algorithms_use_pool_canonical_name() {
+        assert_eq!(Algorithm::CosmicHarmony.pool_name(), "cosmic_harmony");
+        assert_eq!(Algorithm::CosmicHarmonyV42.pool_name(), "cosmic_harmony");
+        assert_eq!(Algorithm::CosmicHarmonyDeeksha.pool_name(), "cosmic_harmony");
+        assert_eq!(Algorithm::RandomX.pool_name(), "randomx");
     }
 
     #[test]

@@ -52,9 +52,19 @@ interface NetworkStatus {
 }
 
 const regionFlags: Record<string, string> = {
-  'EU-NORTH': '🇫🇮',
-  'US-EAST': '🇺🇸',
-  'ASIA-SE': '🇸🇬',
+  'PRIMARY': '🟡',
+  'INTERNAL': '🔹',
+  'EU-NORTH': '🟡',
+  'US-EAST': '🔹',
+  'ASIA-SE': '🔹',
+};
+
+const regionLabels: Record<string, string> = {
+  'PRIMARY': 'Primary host',
+  'INTERNAL': 'Internal quorum',
+  'EU-NORTH': 'Primary host',
+  'US-EAST': 'Internal quorum',
+  'ASIA-SE': 'Internal quorum',
 };
 
 export default function NetworkStatus({ className }: { className?: string }) {
@@ -108,7 +118,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard
           icon={Server}
-          label="Nodes Online"
+          label="Hosts Online"
           value={`${status.summary.online}/${status.summary.total}`}
           accent={status.summary.online === status.summary.total ? 'green' : 'yellow'}
           sub={status.summary.onlinePct != null ? `${status.summary.onlinePct}%` : undefined}
@@ -156,7 +166,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <Globe className="w-5 h-5 text-zion-gold" />
-          Seed Nodes
+          Network Hosts
         </h3>
         
         <div className="grid gap-3">
@@ -246,7 +256,7 @@ function NodeCard({ node }: { node: NodeStatus }) {
             <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
-                {node.region}
+                {regionLabels[node.region] || node.region}
               </span>
               {node.online && (
                 <>

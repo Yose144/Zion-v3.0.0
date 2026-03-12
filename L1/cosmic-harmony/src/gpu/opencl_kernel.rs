@@ -448,6 +448,14 @@ pub fn get_deeksha_kernel_source() -> &'static str {
     COSMIC_HARMONY_DEEKSHA_KERNEL
 }
 
+/// OpenCL kernel entry point name for Ekam Deeksha mining
+pub const EKAM_DEEKSHA_KERNEL_NAME: &str = "ekam_deeksha_mine";
+
+/// Check whether the loaded kernel source contains the Ekam Deeksha kernel
+pub fn has_ekam_deeksha_kernel() -> bool {
+    COSMIC_HARMONY_DEEKSHA_KERNEL.contains(EKAM_DEEKSHA_KERNEL_NAME)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -482,5 +490,13 @@ mod tests {
     fn test_deeksha_kernel_source_fn() {
         let src = get_deeksha_kernel_source();
         assert!(src.contains("deeksha_mine"));
+    }
+
+    #[test]
+    fn test_ekam_deeksha_kernel_present() {
+        assert!(has_ekam_deeksha_kernel());
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("ekam_deeksha_mine"));
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("ekam_init_scratchpad"));
+        assert!(COSMIC_HARMONY_DEEKSHA_KERNEL.contains("b3_compress"));
     }
 }

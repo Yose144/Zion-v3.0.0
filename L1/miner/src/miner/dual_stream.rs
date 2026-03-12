@@ -11,7 +11,7 @@
 //!
 //!   ```sh
 //!   zion-miner \
-//!     --pool stratum+tcp://77.42.31.72:3333 --wallet zion1... \
+//!     --pool stratum+tcp://91.98.122.165:3333 --wallet zion1... \
 //!     --dualmode ALEPHDUAL \
 //!     --dualpool alph.2miners.com:2020 \
 //!     --dualuser 1mmHfNEEWgDLbEUqqxkSjzgJjDt7AqgkutD64AnBUeXz \
@@ -35,7 +35,7 @@
 //!
 //! ## Architecture
 //!
-//! - Primary stream  : CHv3 → ZION pool  (CPU primary + GPU at ~70% default)
+//! - Primary stream  : Ekam Deeksha → ZION pool  (CPU primary + GPU at ~70% default)
 //! - Secondary stream: DualMode coin → external pool (GPU at ~30% idle cycles)
 //!
 //! Both streams run concurrently via `tokio::spawn`. The dual stream only uses
@@ -245,7 +245,7 @@ pub struct DualStreamConfig {
     /// GPU allocation fraction for this stream (0.05 – 0.90, default 0.30)
     ///
     /// 0.30 = 30% of GPU goes to secondary coin (ALPH/KAS/etc.),
-    ///        remaining % stays on primary ZION CHv3 mining.
+    ///        remaining % stays on primary ZION Ekam Deeksha mining.
     pub gpu_alloc: f32,
     /// Stream label used in log output: "dual" or "triple"
     pub stream_label: String,

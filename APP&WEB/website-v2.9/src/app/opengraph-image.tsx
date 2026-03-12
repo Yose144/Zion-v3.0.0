@@ -128,7 +128,7 @@ export default async function Image() {
         >
           {[
             { label: 'Release', value: SITE_VERSION },
-            { label: 'Seed Nodes', value: '3' },
+            { label: 'Public Hosts', value: '1' },
             { label: 'Topology', value: SITE_NETWORK_TOPOLOGY },
           ].map((stat) => (
             <div

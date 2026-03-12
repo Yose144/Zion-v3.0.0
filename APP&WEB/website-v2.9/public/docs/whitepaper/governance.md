@@ -66,7 +66,7 @@ Tyto parametry jsou pevně zakódované a nelze je změnit žádným hlasování
 
 ## Odkazy
 
-- [GitHub Issues](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/issues) — návrhy
+- [GitHub Issues](https://github.com/Zion-TerraNova/2.9.6/issues) — návrhy
 - [Discord](https://discord.gg/zion-terranova) — diskuse
 - [Bezpečnost →](#whitepaper-security)
 - [Roadmap →](#whitepaper-roadmap)

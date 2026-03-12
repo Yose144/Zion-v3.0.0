@@ -1,14 +1,15 @@
-# 📋 Publikační plán — `Zion-TerraNova/2.9.5-NativeAwakening`
+# 📋 Publikační plán — `Zion-TerraNova/2.9.6`
 
 > **Datum:** 13. února 2026  
-> **Cílový repo:** https://github.com/Zion-TerraNova/2.9.5-NativeAwakening  
-> **Zdrojový repo (private):** `Yose144/Zion-2.9.5`
+> **Aktualizace:** 12. března 2026  
+> **Cílový repo:** https://github.com/Zion-TerraNova/2.9.6  
+> **Zdrojový repo (private):** `Yose144/2.9.6`
 
 ---
 
 ## 🎯 Cíl
 
-Zveřejnit čistou verzi ZION TerraNova v2.9.5 — Rust node, miner, pool, mining algoritmus, dokumentace. **Žádné privátní klíče, hesla, IP adresy serverů, SSH přístupy, ani interní ops skripty.**
+Zveřejnit čistou verzi ZION TerraNova v2.9.6 jako workspace baseline pro současnou release větev 2.9.8. Rust node, miner, pool, mining algoritmus, dokumentace. **Žádné privátní klíče, hesla, IP adresy serverů, SSH přístupy, ani interní ops skripty.**
 
 ---
 

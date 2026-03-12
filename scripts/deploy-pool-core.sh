@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
-# ZION 2.9.6 — Deploy Pool + Core to Helsinki (TreeofLife)
+# ZION 2.9.6 — Deploy Pool + Core to Zion2
 #
 # Rsyncs latest source and rebuilds/restarts pool + core.
 # Use this after any Rust changes to L1/ (pool/core/cosmic-harmony).
@@ -16,7 +16,7 @@ set -euo pipefail
 
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/zion_hetzner_key}"
 DEPLOY_USER="${DEPLOY_USER:-root}"
-HELSINKI="77.42.31.72"
+PRIMARY_HOST="91.98.122.165"
 DEPLOY_DIR="/root/zion-2.9.6"
 COMPOSE_FILE="docker/docker-compose.testnet.yml"
 LOCAL_SRC="$(cd "$(dirname "$0")/.." && pwd)"
@@ -46,7 +46,7 @@ info() { echo -e "${CYAN}[INFO]${NC} $1"; }
 
 ssh_run() {
     ssh -i "$SSH_KEY" -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new \
-        "${DEPLOY_USER}@${HELSINKI}" "$1"
+    "${DEPLOY_USER}@${PRIMARY_HOST}" "$1"
 }
 
 # ── SSH key check ────────────────────────────────────────────────────────────
@@ -55,9 +55,9 @@ if [[ ! -f "$SSH_KEY" ]]; then
 fi
 
 # ── Connectivity check ───────────────────────────────────────────────────────
-log "Pinging Helsinki ($HELSINKI)..."
+log "Pinging Zion2 ($PRIMARY_HOST)..."
 if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
-        -o BatchMode=yes "${DEPLOY_USER}@${HELSINKI}" "echo OK" 2>/dev/null; then
+    -o BatchMode=yes "${DEPLOY_USER}@${PRIMARY_HOST}" "echo OK" 2>/dev/null; then
     err "Cannot reach $HELSINKI — check SSH key and connectivity."
 fi
 log "Connection OK"

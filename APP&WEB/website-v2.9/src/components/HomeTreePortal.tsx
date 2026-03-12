@@ -27,8 +27,8 @@ export default function HomeTreePortal() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Interactive layer</p>
             <h2 className="mt-2 text-3xl font-semibold text-white md:text-5xl">Tree of Life</h2>
             <p className="mt-3 max-w-2xl text-base text-gray-300 md:text-lg">
-              Interaktivní strom je načítaný až na vyžádání. Díky tomu homepage zůstává rychlá i pro běžného návštěvníka,
-              ale hlubší symbolická vrstva je pořád dostupná jedním klikem.
+              The interactive tree loads on demand. This keeps the homepage fast for every visitor
+              while the deeper symbolic layer stays one click away.
             </p>
           </div>
           {!revealed && (
@@ -54,8 +54,8 @@ export default function HomeTreePortal() {
                   Performance-safe preview
                 </div>
                 <p className="text-lg leading-relaxed text-gray-300">
-                  Tohle je záměrně lehký preview stav. Interaktivní Tree of Life se spustí až po kliknutí,
-                  takže první render není blokovaný canvasy, dynamickými scénami ani přemírou efektů.
+                  This is an intentionally lightweight preview state. The interactive Tree of Life launches only after clicking,
+                  so the first render is not blocked by canvases, dynamic scenes, or excessive effects.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">

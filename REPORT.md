@@ -1,8 +1,24 @@
 # 📊 ZION TerraNova — Project Report
 
 > **Datum:** 24. února 2026  
-> **Verze:** v2.9.6 "On the Star"  
+> **Aktualizace:** 12. března 2026  
+> **Verze:** workspace 2.9.6 / release line 2.9.8 Deeksha  
 > **MainNet cíl:** 31. prosince 2026
+
+> **Poznámka:** Tento report obsahuje historické session logy z února 2026. Aktuální kanonický stav metrik a topologie je v `docs/STATUS_CURRENT_2026-03-12.md`.
+
+## Addendum — 11. 3. 2026
+
+Aktuální 2.9.8 workstream posunul canonical PoW cestu z historického CHv3 směru na **Cosmic Harmony Ekam Deeksha** a tato cesta je už implementovaná napříč core, minerem, poolem i desktop-agentem.
+
+Nejdůležitější nový ověřený stav v tomto workspace:
+
+- Tier 1 + Tier 2 optimalizace Ekam Deeksha jsou implementované a benchmarkované.
+- Desktop-agent už preferuje canonical Ekam resource dispatch místo legacy Deeksha/CHv4 symbolů.
+- Native GPU Ekam path v desktop-agentu je **ověřený na Apple Silicon Metal backendu**.
+- Samostatný bench přes desktop-agent mining resources doběhl přes entrypoint `cosmic_harmony_ekam_mine` na přibližně **5575.5 H/s**.
+
+Zbývající otevřený krok není návrh algoritmu, ale praktické **end-to-end ověření plného Electron mining flow** nad tímto již funkčním Metal/Ekam runtime path.
 
 ---
 
@@ -10,15 +26,15 @@
 
 | Metrika | Hodnota |
 |---------|---------|
-| **Rust LOC (L1–L4, deep scan)** | 64,288 |
-| **Crate count** | 11 (L1–L4), deep scan ověřil 10/11 |
-| **Testy celkem (ověřeno)** | 500 Rust + 96 Hardhat (+1 block-level double-spend) |
+| **Rust LOC (L1–L4, deep scan)** | 114,520 |
+| **Crate count** | 12 aktivních crate/modules napříč L1–L4 |
+| **Testy celkem (ověřeno)** | 1,379 Rust `#[test]` + Solidity suites |
 | **CI Build** | ✅ 4-job pipeline (L1, L2-L4, fmt, clippy) |
 | **Clippy warnings (deep scan)** | 46+ (core/verushash scan blokován) |
 | **cargo fmt** | ✅ čistý (zero diffs) |
 | **L1 připravenost** | **92%** |
 | **MainNet blokery** | 7 zbývá (viz Session 54 níže) |
-| **Desktop Agent** | AI Afterburner ✅ LIVE — 59.5 MH/s @ 150W → 397 kH/W |
+| **Desktop Agent** | Ekam Deeksha path ✅ verified — ~5575.5 H/s on Apple Silicon Metal |
 
 ---
 

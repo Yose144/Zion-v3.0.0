@@ -1,4 +1,4 @@
-# První DApp — ZION v2.9.5
+# První DApp — ZION TerraNova
 
 Postav webovou aplikaci, která čte data z ZION blockchainu.
 
@@ -124,9 +124,9 @@ Kompletní reference: [API →](#api)
 ## Zdroje
 
 - [API Reference →](#api) — všechny RPC metody
-- [GitHub](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening) — zdrojový kód
+- [GitHub](https://github.com/Zion-TerraNova/2.9.6) — zdrojový kód
 - [Quick Start →](#getting-started) — rozjetí nodu
 
 ---
 
-*ZION TerraNova v2.9.5*
+*ZION TerraNova v2.9.8 Deeksha*

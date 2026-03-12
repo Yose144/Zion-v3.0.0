@@ -131,11 +131,9 @@ export async function GET() {
       progress_pct: Math.min(100, Math.round((canaryElapsed / CANARY_DURATION) * 100)),
     },
     current_topology: 'single-primary-host',
+    internal_seed_containers: ['zion-seed-1', 'zion-seed-2'],
     seed_containers: ['zion-seed-1', 'zion-seed-2'],
     primary,
-    helsinki: primary,
-    usa: undefined,
-    asia: undefined,
     log_tail: buildLogTail({ primary }),
   };
 

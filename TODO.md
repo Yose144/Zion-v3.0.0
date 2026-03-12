@@ -109,6 +109,27 @@
 - [x] `config/ch3_revenue_settings.json` v3.0.0 — 5 streamů
 - [x] Produkční aktivace: wallet adresy BTC 2miners, BuyBack enabled, canary running ✅ 2026-03-04 (commit `5bd1664`)
 
+### Ekam Deeksha GPU (implementováno 2026-03-11, aktualizováno 2026-03-12)
+- [x] Blake3 XOF scratchpad init + Blake3 XOF mixing — CPU Tier 1+2 ✅ (97/97 testů)
+- [x] 8-round Cosmic Fusion (`EKAM_FUSION_ROUNDS = 8`) ✅
+- [x] Metal GPU kernel (`cosmic_harmony_ekam_mine`) ✅
+- [x] OpenCL GPU kernel (`ekam_deeksha_mine`) ✅
+- [x] CUDA GPU kernel + host API (`ekam_cuda_mine`) ✅
+- [x] Rust Metal dispatch — konsolidováno: `mine()` = Ekam, `mine_legacy_chv4()` = archiv ✅
+- [x] Python GPU wrapper (`EkamDeekshaOpenCLBackend`, `Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA`) ✅
+- [x] Kernel sync to all distribution paths — SHA-256 audit ✅
+  - OpenCL: `6f7f6292...` 4/4 sync
+  - CUDA: `b9477cfd...` 2/2 sync
+  - Metal (Ekam): `fb9d5d9f...` 3/3 sync
+- [x] Autopilot script updated for Ekam kernel validation ✅
+- [x] Live GPU benchmark on M1 Metal ✅ — **29.18 kH/s** (dispatch 8192)
+- [x] HugePages scratchpad allocator (XMRig-style mmap) ✅
+- [x] Phase A Pure Code consolidation (mine_ekam→mine, metal wrapper simplified) ✅
+- [ ] **PENDING**: Live GPU benchmark on AMD OpenCL / NVIDIA CUDA — ⏳ vyžaduje HW
+- [ ] **PENDING**: CPU↔GPU parity verification on live pool — ⏳ vyžaduje --gpu runtime
+- [ ] **PENDING**: Pool fork-height activation for Ekam Deeksha — ⏳ čeká na genesis ceremony
+- [ ] **PENDING**: End-to-end Electron desktop mining flow — ⏳ manuální GUI test
+
 ---
 
 ## 0) Co bylo při této analýze ověřeno

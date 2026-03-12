@@ -15,8 +15,8 @@ network = "testnet"
 # ── ZION L1 Connection ──────────────────────────────────────
 
 [l1]
-rpc_url        = "http://77.42.31.72:8444"
-rpc_url_backup = "http://46.225.126.243:8444"
+rpc_url        = "http://91.98.122.165:8444"
+rpc_url_backup = "http://127.0.0.1:8444"
 bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
 finality_blocks     = 3        # TESTNET: fast finality
 poll_interval_secs  = 15       # Check for new blocks every 15s

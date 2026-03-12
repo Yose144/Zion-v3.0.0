@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 🌟 ZION AI Native Client for Desktop Agent
-Connects to AI Native Server (Helsinki) for full AI capabilities
+Connects to the AI Native server on the current Zion2 host for full AI capabilities
 """
 
 import sys
@@ -16,6 +16,15 @@ from typing import Dict, List, Optional
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger("AIClient")
 
+DEFAULT_SERVER_URL = "http://91.98.122.165:8001"
+LOCAL_FALLBACK_URL = "http://localhost:8001"
+
+
+def resolve_server_url(explicit_url: Optional[str] = None) -> str:
+    env_url = os.getenv("ZION_AI_NATIVE_URL") or os.getenv("ZION_HELSINKI_URL")
+    effective_url = (env_url or explicit_url or "").strip() or DEFAULT_SERVER_URL
+    return effective_url.rstrip('/')
+
 
 class AINativeClient:
     """
@@ -23,12 +32,10 @@ class AINativeClient:
     Provides: Knowledge search, Memory, Self-learning, AI Q&A
     """
     
-    # Default to Helsinki production server (direct on port 8002).
-    # Can be overridden by env var for dev/tunnel setups.
-    def __init__(self, server_url: str = "http://77.42.31.72:8002"):
-        env_url = os.getenv("ZION_HELSINKI_URL")
-        effective_url = (env_url or server_url or "").strip() or "http://77.42.31.72:8002"
-        self.server_url = effective_url.rstrip('/')
+    # Default to the current Zion2 AI Native endpoint.
+    # Can be overridden by env var or constructor for dev/tunnel setups.
+    def __init__(self, server_url: str = DEFAULT_SERVER_URL):
+        self.server_url = resolve_server_url(server_url)
         self.session: Optional[aiohttp.ClientSession] = None
         self.connected = False
         self.server_info: Optional[Dict] = None
@@ -53,12 +60,12 @@ class AINativeClient:
             attempted: List[str] = []
             last_error: Optional[str] = None
 
-            env_url = os.getenv("ZION_HELSINKI_URL")
+            env_url = os.getenv("ZION_AI_NATIVE_URL") or os.getenv("ZION_HELSINKI_URL")
             allow_fallback = not (isinstance(env_url, str) and env_url.strip())
 
             candidates = [self.server_url]
-            if allow_fallback and self.server_url.rstrip('/') != "http://localhost:8002":
-                candidates.append("http://localhost:8002")
+            if allow_fallback and self.server_url.rstrip('/') != LOCAL_FALLBACK_URL:
+                candidates.append(LOCAL_FALLBACK_URL)
 
             for url in candidates:
                 attempted.append(url)
@@ -322,7 +329,7 @@ class AINativeClient:
         conn = await self.ensure_connected()
         if not conn.get("success"):
             return {
-                "error": f"Not connected to Helsinki: {conn.get('error')}",
+                "error": f"Not connected to AI Native server: {conn.get('error')}",
                 "attempted": conn.get("attempted") or self.last_connect_attempted,
                 "server_url": self.server_url,
             }
@@ -409,7 +416,7 @@ async def handle_stdin():
     # Need to signal ready even if connection fails, otherwise main.js waits 12s then throws
     is_connected = result.get("success", False)
     if is_connected:
-        logger.info("✅ Connected to Helsinki")
+        logger.info(f"✅ Connected to AI Native server @ {client.server_url}")
     else:
         logger.warning(f"⚠️ Connection failed: {result.get('error')} (Client running in offline mode)")
     
@@ -441,7 +448,13 @@ async def handle_stdin():
                 if cmd == "start":
                     # Compatibility shim for older desktop-agent main.js.
                     # Optionally allow overriding server url.
-                    requested_url = cmd_data.get("server_url") or cmd_data.get("url")
+                    start_config = cmd_data.get("config") if isinstance(cmd_data.get("config"), dict) else {}
+                    requested_url = (
+                        cmd_data.get("server_url")
+                        or cmd_data.get("url")
+                        or start_config.get("server_url")
+                        or start_config.get("pool_url")
+                    )
                     if isinstance(requested_url, str) and requested_url.strip():
                         new_url = requested_url.strip()
                         if new_url.rstrip('/') != client.server_url:

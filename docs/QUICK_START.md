@@ -24,8 +24,8 @@
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Yose144/Zion-2.9.5.git
-cd Zion-2.9.5
+git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 ```
 
 ### 2. Configure your wallet address
@@ -34,24 +34,26 @@ cd Zion-2.9.5
 # Set your ZION wallet address for mining rewards
 export MINER_WALLET="zion1qYOUR_ADDRESS_HERE"
 
-# Optional: set seed peers (default: Helsinki seed node)
-export SEED_PEERS="77.42.31.72:8334,5.78.145.234:8334,5.223.56.124:8334"
+# Optional: explicit public peer list for the active single-host testnet
+export SEED_PEERS="91.98.122.165:8334"
 ```
 
 ### 3. Start the full stack
 
 ```bash
 cd docker
-docker compose -f docker-compose.testnet.yml up -d
+docker compose -f docker-compose.testnet.yml --env-file ../.env up -d
 ```
 
-This starts 4 containers:
+This starts the active 2.9.8 single-host stack:
 | Container | Port | Description |
 |-----------|------|-------------|
 | `zion-core` | 8334, 8444 | Blockchain node (P2P + RPC) |
 | `zion-pool` | 3333, 8080 | Mining pool (Stratum + Stats API) |
 | `zion-miner` | — | CPU miner (auto-starts mining) |
 | `zion-redis` | — | Share tracking cache |
+| `zion-seed-1` | — | Internal seed container |
+| `zion-seed-2` | — | Internal seed container |
 
 ### 4. Verify it's working
 
@@ -72,7 +74,7 @@ curl -s http://localhost:8444/jsonrpc \
 
 ```bash
 # All services
-docker compose -f docker-compose.testnet.yml logs -f
+docker compose -f docker-compose.testnet.yml --env-file ../.env logs -f
 
 # Just the node
 docker logs -f zion-core
@@ -84,10 +86,10 @@ docker logs -f zion-miner
 ### 6. Stop
 
 ```bash
-docker compose -f docker-compose.testnet.yml down
+docker compose -f docker-compose.testnet.yml --env-file ../.env down
 ```
 
-Data persists in Docker volumes. To remove data too: `docker compose down -v`
+Data persists in Docker volumes. To remove data too: `docker compose -f docker-compose.testnet.yml --env-file ../.env down -v`
 
 ---
 
@@ -104,8 +106,8 @@ rustup default stable
 ### 2. Clone and build
 
 ```bash
-git clone https://github.com/Yose144/Zion-2.9.5.git
-cd Zion-2.9.5
+git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 
 # Install build dependencies (Ubuntu/Debian)
 sudo apt-get update && sudo apt-get install -y cmake g++ make pkg-config libssl-dev
@@ -127,7 +129,7 @@ Binaries will be in `target/release/`:
   --rpc-port 8444 \
   --p2p-port 8334 \
   --network testnet \
-  --peers "77.42.31.72:8334,5.78.145.234:8334,5.223.56.124:8334"
+  --peers "91.98.122.165:8334"
 ```
 
 ### 4. Run the miner (in another terminal)
@@ -137,7 +139,7 @@ Binaries will be in `target/release/`:
   --pool localhost:3333 \
   --wallet "zion1qYOUR_ADDRESS_HERE" \
   --worker my-miner \
-  --algorithm cosmic_harmony_v3
+  --algorithm cosmic_harmony
 ```
 
 ---
@@ -169,13 +171,11 @@ curl -s localhost:8444/jsonrpc \
 
 ## 🌐 Network Info
 
-### TestNet Seed Nodes
+### TestNet Public Entry
 
 | Location | IP | P2P | RPC |
 |----------|-----|-----|-----|
-| 🇫🇮 Helsinki (primary) | 77.42.31.72 | :8334 | :8444 |
-| 🇺🇸 USA | 5.78.145.234 | :8334 | :8444 |
-| 🇸🇬 Singapore | 5.223.56.124 | :8334 | :8444 |
+| Current primary host | 91.98.122.165 | :8334 | :8444 |
 
 ### Chain Parameters
 
@@ -184,7 +184,7 @@ curl -s localhost:8444/jsonrpc \
 | Network | `ZION-TESTNET-V1` |
 | Block time | 60 seconds |
 | Block reward | 5,400.067 ZION (constant) |
-| Algorithm | Cosmic Harmony v3 (multi-algo) |
+| Algorithm | Cosmic Harmony Deeksha (`cosmic_harmony`) |
 | DAA | LWMA (60-block window) |
 | Consensus | Proof-of-Work, highest accumulated work |
 
@@ -198,8 +198,8 @@ curl -s localhost:8444/jsonrpc \
 docker logs zion-core 2>&1 | grep -i "peer\|connect"
 
 # Restart with fresh data
-docker compose down -v
-docker compose -f docker-compose.testnet.yml up -d
+docker compose -f docker-compose.testnet.yml --env-file ../.env down -v
+docker compose -f docker-compose.testnet.yml --env-file ../.env up -d
 ```
 
 ### Port already in use

@@ -356,20 +356,20 @@ function renderBackendUi() {
       resolved === 'rust' ? 'Rust' :
       resolved === 'python' ? 'Python' :
       resolved === 'legacy' ? 'Legacy' :
-      resolved === 'deeksha-auto' ? 'Deeksha Auto' :
-      resolved === 'deeksha-native' ? 'Deeksha Native Exact' :
-      resolved === 'deeksha-opencl' ? 'Deeksha GPU (OpenCL)' :
-      resolved === 'deeksha-cuda' ? 'Deeksha CUDA' :
-      resolved === 'deeksha-metal' ? 'Deeksha Metal' :
-      resolved === 'deeksha-gpu' ? 'Deeksha GPU' :
-      resolved === 'deeksha-fallback' ? 'Deeksha CPU' :
+      resolved === 'ekam-auto' || resolved === 'deeksha-auto' ? 'Ekam Auto' :
+      resolved === 'ekam-native' || resolved === 'deeksha-native' ? 'Ekam Native Exact' :
+      resolved === 'ekam-opencl' || resolved === 'deeksha-opencl' ? 'Ekam GPU (OpenCL)' :
+      resolved === 'ekam-cuda' || resolved === 'deeksha-cuda' ? 'Ekam CUDA' :
+      resolved === 'ekam-metal' || resolved === 'deeksha-metal' ? 'Ekam Metal' :
+      resolved === 'ekam-gpu' || resolved === 'deeksha-gpu' ? 'Ekam GPU' :
+      resolved === 'ekam-fallback' || resolved === 'deeksha-fallback' ? 'Ekam CPU' :
       '';
 
     if (backendStatusEl) {
       const labels = {
-        auto: 'Canonical cosmic_harmony uses the Deeksha 2.9.8 path automatically and resolves the exact runtime backend at launch.',
-        rust: 'Canonical cosmic_harmony still uses the Deeksha path; Rust is bypassed for main CH mining.',
-        python: 'Canonical cosmic_harmony uses the Deeksha Python path.'
+        auto: 'Canonical cosmic_harmony prefers the native Ekam Rust miner and falls back only when that runtime is unavailable.',
+        rust: 'Canonical cosmic_harmony runs on the native Ekam Rust miner.',
+        python: 'Canonical cosmic_harmony uses the Ekam Python fallback path only when you explicitly pin Python or Rust is unavailable.'
       };
       const base = labels[preferred] || '';
       const withResolved = resolvedLabel ? `${base} Resolved: ${resolvedLabel}.` : base;
@@ -383,13 +383,13 @@ function renderBackendUi() {
         eff === 'rust' ? 'Rust' :
         eff === 'python' ? 'Python' :
         eff === 'legacy' ? 'Legacy' :
-        eff === 'deeksha-auto' ? 'Deeksha Auto' :
-        eff === 'deeksha-native' ? 'Deeksha Native Exact' :
-        eff === 'deeksha-opencl' ? 'Deeksha GPU (OpenCL)' :
-        eff === 'deeksha-cuda' ? 'Deeksha CUDA' :
-        eff === 'deeksha-metal' ? 'Deeksha Metal' :
-        eff === 'deeksha-gpu' ? 'Deeksha GPU' :
-        eff === 'deeksha-fallback' ? 'Deeksha CPU' :
+        eff === 'ekam-auto' || eff === 'deeksha-auto' ? 'Ekam Auto' :
+        eff === 'ekam-native' || eff === 'deeksha-native' ? 'Ekam Native Exact' :
+        eff === 'ekam-opencl' || eff === 'deeksha-opencl' ? 'Ekam GPU (OpenCL)' :
+        eff === 'ekam-cuda' || eff === 'deeksha-cuda' ? 'Ekam CUDA' :
+        eff === 'ekam-metal' || eff === 'deeksha-metal' ? 'Ekam Metal' :
+        eff === 'ekam-gpu' || eff === 'deeksha-gpu' ? 'Ekam GPU' :
+        eff === 'ekam-fallback' || eff === 'deeksha-fallback' ? 'Ekam CPU' :
         'Auto';
       const suffix = preferred === 'auto' && eff !== 'auto' ? ' (Auto)' : '';
       backendPill.textContent = `Backend: ${label}${suffix}`;
@@ -832,9 +832,9 @@ function setupControls() {
 
   const updateBackendStatus = (value) => {
     const labels = {
-      auto: 'Canonical cosmic_harmony uses the Deeksha path automatically.',
-      rust: 'Canonical cosmic_harmony bypasses Rust and stays on the Deeksha path.',
-      python: 'Canonical cosmic_harmony uses the Deeksha Python path.'
+      auto: 'Canonical cosmic_harmony prefers the native Ekam Rust miner and falls back only if needed.',
+      rust: 'Canonical cosmic_harmony runs on the native Ekam Rust miner.',
+      python: 'Canonical cosmic_harmony uses the Ekam Python fallback path.'
     };
     if (backendStatusEl) backendStatusEl.textContent = labels[value] || '';
   };
@@ -879,7 +879,7 @@ function setupControls() {
   }
 
   const ALGO_LABELS = {
-    cosmic_harmony: 'Cosmic Harmony Deeksha — canonical 2.9.8 CPU/GPU path'
+    cosmic_harmony: 'Cosmic Harmony Ekam Deeksha — canonical 2.9.8+ CPU/GPU path'
   };
 
   const syncAlgoUi = () => {
@@ -888,7 +888,7 @@ function setupControls() {
     if (algoStatusEl) algoStatusEl.textContent = label;
     // update the display chip in the control panel
     const algoDisplayChip = document.querySelector('#algo-display .font-semibold');
-    if (algoDisplayChip) algoDisplayChip.textContent = 'Cosmic Harmony Deeksha';
+    if (algoDisplayChip) algoDisplayChip.textContent = 'Cosmic Harmony Ekam Deeksha';
   };
 
   const algoSupportsGpu = (algo) => {

@@ -5,7 +5,7 @@ import { getMiningPoolsConfig } from '@/lib/network-config';
  * Best Pool API
  * 
  * Returns the best mining pool based on user's geographic location.
- * Implements geographic load balancing from TREE_NODES.
+ * Defaults to the current public Zion2 host and supports env overrides.
  */
 
 const POOLS = getMiningPoolsConfig();
@@ -30,12 +30,12 @@ export async function GET(request: NextRequest) {
   const lon = parseFloat(searchParams.get('lon') || '0');
 
   if (lat === 0 && lon === 0) {
-    // No location provided, return all pools sorted by region
+    // No location provided, return configured pools with the primary pool first.
     const allPools = POOLS.map(p => ({
       ...p,
       stratumUrl: `stratum+tcp://${p.host}:${p.port}`,
     }));
-    const defaultRecommended = allPools[0]; // Helsinki (Primary)
+    const defaultRecommended = allPools[0];
     return NextResponse.json({
       pools: allPools,
       recommended: defaultRecommended ?? null,

@@ -136,6 +136,16 @@ function copyCanonicalLibAliases(src, dirs, fileNames) {
   }
 }
 
+function copyFileVariants(srcPaths, destPaths) {
+  const existingSrc = srcPaths.find((src) => src && exists(src));
+  if (!existingSrc) return false;
+  for (const dest of destPaths) {
+    ensureDir(path.dirname(dest));
+    fs.copyFileSync(existingSrc, dest);
+  }
+  return true;
+}
+
 function main() {
   const args = parseArgs(process.argv);
 
@@ -410,6 +420,44 @@ function main() {
     }
   } else {
     console.warn('[prepare-rust-miner] ⚠️ No native-libs directory found — native algorithms will use Rust fallback');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Canonical GPU kernel assets — keep desktop resources synced with L1/native-libs/all
+  // ═══════════════════════════════════════════════════════════
+  const canonicalGpuAssetSourceDir = path.join(workspaceRoot, 'L1', 'native-libs', 'all');
+  if (isDirectory(canonicalGpuAssetSourceDir)) {
+    const gpuAssetCopies = [
+      {
+        src: [path.join(canonicalGpuAssetSourceDir, 'cosmic_harmony_ekam_deeksha.metal')],
+        dest: [path.join(miningLibDir, 'cosmic_harmony_ekam_deeksha.metal')]
+      },
+      {
+        src: [path.join(canonicalGpuAssetSourceDir, 'cosmic_harmony_deeksha.metal')],
+        dest: [path.join(miningLibDir, 'cosmic_harmony_deeksha.metal')]
+      },
+      {
+        src: [path.join(canonicalGpuAssetSourceDir, 'cosmic_harmony_deeksha.cl')],
+        dest: [
+          path.join(miningLibDir, 'cosmic_harmony_deeksha.cl'),
+          path.join(miningLibDir, 'cosmic_harmony_deeksha_canonical.cl')
+        ]
+      },
+      {
+        src: [path.join(canonicalGpuAssetSourceDir, 'cosmic_harmony_deeksha.cu')],
+        dest: [path.join(miningLibDir, 'cosmic_harmony_deeksha.cu')]
+      }
+    ];
+
+    let syncedGpuAssets = 0;
+    for (const asset of gpuAssetCopies) {
+      if (copyFileVariants(asset.src, asset.dest)) {
+        syncedGpuAssets += 1;
+      }
+    }
+    console.log(`[prepare-rust-miner] ✅ Synced ${syncedGpuAssets} canonical GPU asset groups into desktop resources`);
+  } else {
+    console.warn('[prepare-rust-miner] ⚠️ Canonical GPU asset source not found at L1/native-libs/all');
   }
 
   console.log('[prepare-rust-miner] Done');

@@ -32,7 +32,7 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
-import { SITE_RELEASE_LABEL } from '@/lib/site';
+import { SITE_RELEASE_LABEL, SITE_POOL_PRIMARY, SITE_PRIMARY_HOST } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    SHARED HELPERS
@@ -77,15 +77,15 @@ function SectionAnchor({ id }: { id: string }) {
    ═══════════════════════════════════════════════════════════ */
 
 const GH_GUIDE =
-  "https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/blob/main/docs/MINING_GUIDE.md";
+  "https://github.com/Zion-TerraNova/2.9.6/blob/main/docs/MINING_GUIDE.md";
 const GH_RELEASE =
-  "https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/releases/tag/v2.9.6";
-const POOL = "pool.zionterranova.com";
+  "https://github.com/Zion-TerraNova/2.9.6/releases/tag/v2.9.8";
+const POOL = SITE_PRIMARY_HOST;
 
 /* ── Algorithms ── */
 const algorithms = [
   {
-    name: "Cosmic Harmony v3",
+    name: "Cosmic Harmony Deeksha",
     type: "CPU + GPU",
     memory: "256 KB",
     bestFor: "Balanced mining, anti-ASIC",
@@ -189,11 +189,11 @@ const sections = [
 
 /* ── FAQ ── */
 const faqItems = [
-  { q: "Do I need a Node to mine?", a: "No. Connect your miner to the public pool (pool.zionterranova.com:3333). The pool handles blockchain communication. A node is only needed for solo mining or if you want to verify transactions yourself." },
+  { q: "Do I need a Node to mine?", a: `No. Connect your miner to the public pool (${SITE_POOL_PRIMARY}). The pool handles blockchain communication. A node is only needed for solo mining or if you want to verify transactions yourself.` },
   { q: "Windows Defender blocks the binary?", a: 'Click "More info" → "Run anyway". The binaries are open-source (MIT license) but unsigned. You can also add C:\\ZION\\ to exclusions in Windows Security.' },
   { q: "macOS says 'cannot be opened'?", a: "Run: xattr -d com.apple.quarantine zion-miner-macos-arm64 — or go to System Settings → Privacy & Security → Allow Anyway." },
   { q: "What is Consciousness Mining?", a: "Your consciousness level (PHYSICAL → COSMIC) multiplies block rewards up to 15×. Level up by consistent mining, discovering blocks, and contributing to network health." },
-  { q: "Node won't start / No peers connecting?", a: "Check Rust ≥ 1.75 (rustc --version). Ensure port 8334 is free (lsof -i :8334). Verify firewall allows TCP 8334. Try manual peers: --peers pool.zionterranova.com:8334." },
+  { q: "Node won't start / No peers connecting?", a: `Check Rust ≥ 1.75 (rustc --version). Ensure port 8334 is free (lsof -i :8334). Verify firewall allows TCP 8334. Try manual peers: --peers ${SITE_PRIMARY_HOST}:8334.` },
   { q: "Can I mine on Raspberry Pi?", a: "Yes! Download the linux-arm64 version. RPi 4/5 works well with Yescrypt algorithm for best perf/watt." },
 ];
 
@@ -357,7 +357,7 @@ export default function MiningUnifiedClient() {
             </p>
             <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
               <span className="text-gray-500">$</span>{" "}
-              curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.5-NativeAwakening/main/install.sh | bash
+              curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.6/main/install.sh | bash
             </div>
           </div>
         </motion.section>
@@ -457,10 +457,10 @@ export default function MiningUnifiedClient() {
                   <CodeBlock
                     title="Option A — Pre-compiled binary (recommended)"
                     code={`# Download from GitHub Release
-# → https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/releases/tag/v2.9.6
+# → https://github.com/Zion-TerraNova/2.9.6/releases/tag/v2.9.8
 
 # Linux/macOS — one-line install:
-curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.5-NativeAwakening/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.6/main/install.sh | bash
 
 # Or download manually and make executable:
 chmod +x zion-miner-linux-x86_64
@@ -468,15 +468,15 @@ chmod +x zion-miner-linux-x86_64
                   />
                   <CodeBlock
                     title="Option B — Build from source"
-                    code={`git clone https://github.com/Zion-TerraNova/Zion-2.9.5.git
-cd Zion-2.9.5
+                    code={`git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 cargo build --release -p zion-miner
 ls -la target/release/zion-miner`}
                   />
                   <CodeBlock
                     title="Start mining (pool)"
                     code={`zion-miner \\
-  --algo cosmic-harmony-v3 \\
+  --algo cosmic_harmony \\
   --pool stratum+tcp://${POOL}:3333 \\
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc)`}
@@ -525,7 +525,7 @@ ls -la target/release/zion-miner`}
                     code={`cargo build --release -p zion-miner --features metal
 
 ./target/release/zion-miner \\
-  --algo cosmic-harmony-v3 \\
+  --algo cosmic_harmony \\
   --pool stratum+tcp://${POOL}:3333 \\
   --wallet YOUR_ZION_ADDRESS \\
   --gpu metal --gpu-intensity 80`}
@@ -607,7 +607,7 @@ cargo build --release -p zion-miner --features opencl
                 <CodeBlock
                   title="Quick start — Pool mining"
                   code={`zion-miner \\
-  --algo cosmic-harmony-v3 \\
+  --algo cosmic_harmony \\
   --pool stratum+tcp://${POOL}:3333 \\
   --wallet YOUR_ZION_ADDRESS \\
   --worker-name my-rig-01 \\
@@ -669,7 +669,7 @@ cargo build --release -p zion-miner --features opencl
                   <CodeBlock
                     title="Step 2 — Mine against your node"
                     code={`zion-miner \\
-  --algo cosmic-harmony-v3 \\
+  --algo cosmic_harmony \\
   --node http://127.0.0.1:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc) \\
@@ -794,7 +794,7 @@ cargo build --release -p zion-miner --features opencl
 # → ${GH_RELEASE}
 
 # Or use one-line install:
-curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.5-NativeAwakening/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.6/main/install.sh | bash
 
 # Manual:
 chmod +x zion-node-linux-x86_64
@@ -808,8 +808,8 @@ chmod +x zion-node-linux-x86_64
                 <h4 className="text-white font-medium">Build from Source</h4>
               </div>
               <CodeBlock
-                code={`git clone https://github.com/Zion-TerraNova/Zion-2.9.5.git
-cd Zion-2.9.5
+                code={`git clone https://github.com/Zion-TerraNova/2.9.6.git
+cd 2.9.6
 cargo build --release -p zion-node
 # Binary → target/release/zion-node`}
               />
@@ -821,13 +821,13 @@ cargo build --release -p zion-node
                 <h4 className="text-white font-medium">Docker</h4>
               </div>
               <CodeBlock
-                code={`docker pull ghcr.io/zion-terranova/zion-node:2.9.5
+                code={`docker pull ghcr.io/zion-terranova/zion-node:2.9.8
 
 docker run -d \\
   --name zion-node \\
   -p 8334:8334 -p 8444:8444 \\
   -v zion-data:/data \\
-  ghcr.io/zion-terranova/zion-node:2.9.5 \\
+  ghcr.io/zion-terranova/zion-node:2.9.8 \\
   --config /etc/zion/mainnet.toml`}
               />
             </div>
@@ -872,7 +872,7 @@ rpc_port = 8444
 max_peers = 128
 
 [consensus]
-algorithm = "cosmic-harmony-v3"
+algorithm = "cosmic_harmony"
 block_time = 60
 difficulty_adjustment = "per-block"
 

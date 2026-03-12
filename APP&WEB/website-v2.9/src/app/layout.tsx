@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ObservatoryProvider } from "@/contexts/ObservatoryContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import ClientBackgrounds from "@/components/ClientBackgrounds";
-import { SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
+import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     default: `ZION Blockchain ${SITE_RELEASE_LABEL}`,
     template: '%s | ZION TerraNova',
   },
-  description: `ZION TerraNova ${SITE_VERSION}: native Rust blockchain, live 3-node TestNet, Deeksha Patch & Code Freeze release line, pool telemetry, mining guides, and protocol docs.`,
+  description: `ZION TerraNova ${SITE_VERSION}: native Rust blockchain, live ${SITE_NETWORK_TOPOLOGY} TestNet, Deeksha Patch & Code Freeze release line, pool telemetry, mining guides, and protocol docs.`,
   keywords: "blockchain, consciousness mining, ZION, cryptocurrency, native rust, cosmic harmony, WARP bridge, testnet",
   openGraph: {
     type: 'website',

@@ -96,9 +96,9 @@ ZION is designed as a multi-layer civilization infrastructure — from a PoW blo
 
 | Region | RPC | P2P | Pool (Stratum) |
 |--------|-----|-----|----------------|
-| Helsinki 🇫🇮 | `77.42.31.72:8444` | `77.42.31.72:8334` | `77.42.31.72:3333` |
-| USA 🇺🇸 | `178.156.240.160:8444` | `178.156.240.160:8334` | — |
-| Asia 🌏 | `5.223.43.93:8444` | `5.223.43.93:8334` | — |
+| Zion2 | `91.98.122.165:8444` | `91.98.122.165:8334` | `91.98.122.165:3333` |
+| DNS seed 1 | — | `seed1.zionterranova.com:8334` | — |
+| DNS seed 2 | — | `seed2.zionterranova.com:8334` | — |
 
 RPC: `POST /jsonrpc` — standard JSON-RPC 2.0.
 
@@ -108,7 +108,7 @@ RPC: `POST /jsonrpc` — standard JSON-RPC 2.0.
 
 ```bash
 # Mine ZION on the public pool
-zion-miner --pool stratum+tcp://77.42.31.72:3333 --wallet YOUR_ZION_ADDRESS
+zion-miner --pool stratum+tcp://91.98.122.165:3333 --wallet YOUR_ZION_ADDRESS
 
 # Generate a new wallet
 zion-wallet gen-mnemonic --out my-wallet.json --print

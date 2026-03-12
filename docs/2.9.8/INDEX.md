@@ -18,6 +18,8 @@
 - [MIGRATION_PLAN_2.9.8.md](MIGRATION_PLAN_2.9.8.md) — implementační kroky, testy, rollout (fáze A→E)
 - [DEEKSHA_EKAM_CONCEPT_BRIDGE.md](DEEKSHA_EKAM_CONCEPT_BRIDGE.md) — překlad konceptu Deeksha/Ekam do 5 technických pravidel (A-E)
 - [GO_NO_GO_2.9.8.md](GO_NO_GO_2.9.8.md) — uzavírací checklist a release verdict pro 2.9.8
+- [EKAM_DEPLOY_REPORT_2026-03-11.md](EKAM_DEPLOY_REPORT_2026-03-11.md) — live rollout report pro single-host Ekam Deeksha reset a ověření na 91.98.122.165
+- [RELEASE_NOTE_2026-03-11.md](RELEASE_NOTE_2026-03-11.md) — stručný release note pro live 2.9.8 Ekam rollout a zachování revenue kompatibility
 
 ## Řízení release (2.9.8 only)
 

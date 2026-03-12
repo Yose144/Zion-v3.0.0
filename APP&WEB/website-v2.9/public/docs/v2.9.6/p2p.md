@@ -1,7 +1,7 @@
 # 🌐 P2P síťový protokol v2.9.6
 
 > *Peer-to-peer komunikace ZION mainnetu.*
-> **Operational note (2026-03-10):** Aktuální live testnet běží jako 3-node mesh Helsinki + USA + Asia na 2.9.8 Deeksha canonical path. Níže uvedený 5-node model je historický kontext v2.9.6.
+> **Operational note (2026-03-12):** Aktuální live testnet běží na jednom veřejném hostu Zion2 (91.98.122.165) s interními seed kontejnery, na 2.9.8 Deeksha canonical path. Dřívější 3-node Helsinki/USA/Asia topologie je archivována.
 
 ---
 
@@ -13,7 +13,7 @@ ZION používá vlastní P2P protokol nad TCP s JSON-RPC zprávami.
 |----------|---------|---------|
 | P2P port | 8334 | 8333 |
 | RPC port | 8444 | 8443 |
-| Seed nody | 3 live / 5 historicky | 3+ DNS (plán) |
+| Seed nody | 1 public + 2 internal | 3+ DNS (plán) |
 | Max peers | 32 | 128 (plán) |
 | Block time | 60 s | 60 s |
 
@@ -21,15 +21,15 @@ ZION používá vlastní P2P protokol nad TCP s JSON-RPC zprávami.
 
 ## 2. Aktuální seed nody
 
-### Testnet (live 2026-03-10)
+### Testnet (live 2026-03-12)
 
 | Server | IP | Lokace | Role |
 |--------|------|--------|------|
-| Helsinki | `77.42.31.72:8334` | Finsko | Seed + web + pool |
-| USA | `178.156.240.160:8334` | USA East | Seed + miner |
-| Asia | `5.223.43.93:8334` | Asie (SG) | Seed + miner |
+| Zion2 (Primary) | `91.98.122.165:8334` | Německo (Hetzner) | Public host + pool + web |
+| Internal seed 1 | — | Za primárním hostem | Seed kontejner |
+| Internal seed 2 | — | Za primárním hostem | Seed kontejner |
 
-Historicky decommissioned: `46.225.126.243` (SeedDE), `5.78.178.227` (USA1).
+Archivováno: `77.42.31.72` (Helsinki), `178.156.240.160` (USA), `5.223.43.93` (Asia), `46.225.126.243` (SeedDE), `5.78.178.227` (USA1).
 
 ### Mainnet (plánováno)
 
@@ -112,16 +112,16 @@ Transakce se šíří mempool → peers broadcasting. Duplicate detection přes 
 ## 6. Síťová topologie
 
 ```
-          Helsinki (pool + seed)
-              77.42.31.72
-               /       \
-              /         \
-             /           \
-  USA seed + miner     Asia seed + miner
-   178.156.240.160        5.223.43.93
+         Zion2 public host
+          91.98.122.165
+            /      \
+           /        \
+          /          \
+   seed1 internal   seed2 internal
+   DNS/container    DNS/container
 ```
 
-    Aktuálně 3 live nody na 3 kontinentech.
+    Aktuálně 1 veřejný host + interní seed kontejnery. Starší multi-node topologie je archivována.
 
 ---
 
@@ -148,9 +148,10 @@ rpc_port = 8444
 
 [network.seeds]
 nodes = [
-    "77.42.31.72:8334",
-    "178.156.240.160:8334",
-    "5.223.43.93:8334",
+    "91.98.122.165:8334",
+    "seed1.zionterranova.com:8334",
+    "seed2.zionterranova.com:8334",
+    "seed3.zionterranova.com:8334",
 ]
 
 [network.limits]

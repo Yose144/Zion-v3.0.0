@@ -36,7 +36,7 @@ from datetime import datetime
 from typing import Optional
 
 # ── Config ─────────────────────────────────────────────────────
-NCL_POOL_URL    = os.environ.get("NCL_POOL_URL",   "http://77.42.31.72:8444")
+NCL_POOL_URL    = os.environ.get("NCL_POOL_URL",   "http://91.98.122.165:8444")
 NCL_WALLET      = os.environ.get("NCL_WALLET",     "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw")
 NCL_WORKER      = os.environ.get("NCL_WORKER",     "zion_ncl")
 NCL_PORT        = int(os.environ.get("NCL_PORT",   "8002"))

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # ZION 2.9.8 Autopilot
-# Phases: upgrade -> core -> nodes -> miners -> servers deploy -> servers test
+# Phases: upgrade -> core -> nodes -> miners -> server deploy -> server test
 # ==============================================================================
 
 set -euo pipefail
@@ -14,18 +14,16 @@ DEPLOY_DIR="${DEPLOY_DIR:-/root/zion-2.9.6}"
 COMPOSE_FILE_TESTNET="docker/docker-compose.testnet.yml"
 COMPOSE_FILE_MAINNET="docker/docker-compose.mainnet.yml"
 SKIP_BUILD=0
-HELSINKI_POOL_MANAGED=1
+PRIMARY_POOL_MANAGED=1
 PROFILE="${PROFILE:-relaxed}"
 STRICT_MODE=0
 
-SSH_KEY_HELSINKI="${SSH_KEY_HELSINKI:-$HOME/.ssh/zion_hetzner_key}"
+SSH_KEY_PRIMARY="${SSH_KEY_PRIMARY:-${SSH_KEY_HELSINKI:-$HOME/.ssh/zion_hetzner_key}}"
 SSH_KEY_NODES="${SSH_KEY_NODES:-$HOME/.ssh/zion_hetzner_key}"
 
 # name|ip|key_type|services_testnet|services_mainnet
 SERVERS=(
-  "Helsinki|77.42.31.72|helsinki|core pool miner redis|core pool miner redis"
-  "Usa|178.156.240.160|nodes|core miner redis|core miner redis"
-  "Asia|5.223.43.93|nodes|core miner redis|core miner redis"
+  "Zion2|91.98.122.165|primary|core pool miner redis|core pool miner redis"
 )
 
 RED='\033[0;31m'
@@ -51,14 +49,14 @@ Options:
   --profile <name>        relaxed|prod-run (default: relaxed)
   --strict                Alias for --profile prod-run
   --skip-build            Skip docker compose build on remote servers
-  --no-helsinki-pool      Do not deploy/manage pool service on Helsinki
+  --no-primary-pool       Do not deploy/manage pool service on the primary host
   -h, --help              Show this help
 
 Environment:
   DEPLOY_USER             SSH user (default: root)
   DEPLOY_DIR              Remote repo dir (default: /root/zion-2.9.6)
-  SSH_KEY_HELSINKI        SSH key for Helsinki
-  SSH_KEY_NODES           SSH key for USA/Asia
+  SSH_KEY_PRIMARY         SSH key for the primary host (falls back to SSH_KEY_HELSINKI)
+  SSH_KEY_NODES           Reserved for future multi-node topology
 EOF
 }
 
@@ -69,7 +67,7 @@ while [[ $# -gt 0 ]]; do
     --profile) PROFILE="${2:-}"; shift 2 ;;
     --strict) PROFILE="prod-run"; shift ;;
     --skip-build) SKIP_BUILD=1; shift ;;
-    --no-helsinki-pool) HELSINKI_POOL_MANAGED=0; shift ;;
+    --no-primary-pool|--no-helsinki-pool) PRIMARY_POOL_MANAGED=0; shift ;;
     -h|--help) usage; exit 0 ;;
     *) err "Unknown argument: $1" ;;
   esac
@@ -93,11 +91,10 @@ preflight_profile_checks() {
   fi
 
   [[ "$REMOTE" -eq 1 ]] || err "prod-run profile requires --remote"
-  [[ "$HELSINKI_POOL_MANAGED" -eq 1 ]] || err "prod-run profile forbids --no-helsinki-pool"
+  [[ "$PRIMARY_POOL_MANAGED" -eq 1 ]] || err "prod-run profile forbids --no-primary-pool"
   [[ -n "${REDIS_PASSWORD:-}" ]] || err "prod-run profile requires REDIS_PASSWORD environment variable"
 
-  [[ -f "$SSH_KEY_HELSINKI" ]] || err "Missing SSH key: $SSH_KEY_HELSINKI"
-  [[ -f "$SSH_KEY_NODES" ]] || err "Missing SSH key: $SSH_KEY_NODES"
+  [[ -f "$SSH_KEY_PRIMARY" ]] || err "Missing SSH key: $SSH_KEY_PRIMARY"
 
   for entry in "${SERVERS[@]}"; do
     IFS='|' read -r name ip key_type _ _ <<< "$entry"
@@ -137,11 +134,11 @@ services_for_network() {
     services="$services_testnet"
   fi
 
-  if [[ "$name" == "Helsinki" && "$HELSINKI_POOL_MANAGED" -eq 0 ]]; then
+  if [[ "$name" == "Zion2" && "$PRIMARY_POOL_MANAGED" -eq 0 ]]; then
     services="$(echo "$services" | sed -E 's/(^| )(pool|miner)( |$)/ /g' | xargs)"
   fi
 
-  if [[ "$HELSINKI_POOL_MANAGED" -eq 0 ]]; then
+  if [[ "$PRIMARY_POOL_MANAGED" -eq 0 ]]; then
     services="$(echo "$services" | sed -E 's/(^| )miner( |$)/ /g' | xargs)"
   fi
 
@@ -150,8 +147,8 @@ services_for_network() {
 
 ssh_key_for_type() {
   local key_type="$1"
-  if [[ "$key_type" == "helsinki" ]]; then
-    echo "$SSH_KEY_HELSINKI"
+  if [[ "$key_type" == "primary" ]]; then
+    echo "$SSH_KEY_PRIMARY"
   else
     echo "$SSH_KEY_NODES"
   fi
@@ -197,11 +194,11 @@ ensure_remote_node_env() {
   local host="$2"
   local name="$3"
 
-  if [[ "$NETWORK" != "testnet" || "$name" == "Helsinki" ]]; then
+  if [[ "$NETWORK" != "testnet" || "$name" == "Zion2" ]]; then
     return
   fi
 
-  upsert_remote_env "$key" "$host" "MINER_POOL_URL" "77.42.31.72:3333"
+  upsert_remote_env "$key" "$host" "MINER_POOL_URL" "91.98.122.165:3333"
   upsert_remote_env "$key" "$host" "ZION_RANDOMX_FULL" "0"
   upsert_remote_env "$key" "$host" "XMR_THREADS" "1"
 
@@ -219,8 +216,8 @@ ensure_remote_miner_identity() {
   local nonce_base="0"
 
   case "$name" in
-    Helsinki)
-      worker="helsinki-miner"
+    Zion2)
+      worker="zion2-miner"
       nonce_base="268435456"
       ;;
     Usa|Usa2)
@@ -292,7 +289,7 @@ free_remote_ports() {
     ports+=(8334 8444)
   fi
 
-  if [[ "$name" == "Helsinki" ]]; then
+  if [[ "$name" == "Zion2" ]]; then
     ports+=(3333 8080)
   fi
 
@@ -364,6 +361,14 @@ phase_miners() {
 
   node --check "APP&WEB/desktop-agent/src/main.js"
 
+  # Ekam Deeksha kernel sync check
+  if ! grep -q "ekam_deeksha_mine" "APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_canonical.cl" 2>/dev/null; then
+    warn "Ekam Deeksha kernel not found in canonical .cl — sync needed"
+  fi
+  if ! grep -q "ekam_deeksha_mine" "L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl" 2>/dev/null; then
+    err "Ekam Deeksha kernel missing from source .cl"
+  fi
+
   log "Miner/Desktop phase PASS"
 }
 
@@ -385,8 +390,7 @@ phase_servers_deploy() {
     warn "REDIS_PASSWORD není nastaven lokálně; remote compose použije .env/default"
   fi
 
-  [[ -f "$SSH_KEY_HELSINKI" ]] || err "Missing SSH key: $SSH_KEY_HELSINKI"
-  [[ -f "$SSH_KEY_NODES" ]] || err "Missing SSH key: $SSH_KEY_NODES"
+  [[ -f "$SSH_KEY_PRIMARY" ]] || err "Missing SSH key: $SSH_KEY_PRIMARY"
 
   local -a deploy_failed=()
 
@@ -494,12 +498,12 @@ phase_servers_test() {
     if ! {
       ssh_run "$local_key" "$ip" "curl -sf http://localhost:${rpc_port}/stats >/dev/null"
 
-      if [[ "$name" == "Helsinki" && "$HELSINKI_POOL_MANAGED" -eq 1 ]]; then
+      if [[ "$name" == "Zion2" && "$PRIMARY_POOL_MANAGED" -eq 1 ]]; then
         ssh_run "$local_key" "$ip" "curl -sf http://localhost:8080/stats >/dev/null"
         check_tcp_port "$ip" 3333
         check_tcp_port "$ip" 8080
-      elif [[ "$name" == "Helsinki" ]]; then
-        warn "Helsinki pool checks skipped (--no-helsinki-pool)"
+      elif [[ "$name" == "Zion2" ]]; then
+        warn "Primary host pool checks skipped (--no-primary-pool)"
       fi
 
       check_tcp_port "$ip" "$p2p_port"

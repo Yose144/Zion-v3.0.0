@@ -80,8 +80,8 @@ impl Default for OasisConfig {
             reward_slot_allocation: 1_650_000_000,
 
             l1_rpc_endpoints: vec![
-                "http://77.42.31.72:8332".to_string(),    // Helsinki
-                "http://46.225.126.243:8332".to_string(), // SeedDE (Germany)
+                "http://91.98.122.165:8332".to_string(),          // Zion2 primary host
+                "http://seed1.zionterranova.com:8332".to_string(), // Internal/DNS seed
             ],
             ncl_endpoint: Some("http://localhost:8090".to_string()),
             ai_native_endpoint: Some("http://localhost:8091".to_string()),

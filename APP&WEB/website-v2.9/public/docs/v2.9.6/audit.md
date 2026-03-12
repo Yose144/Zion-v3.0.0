@@ -2,6 +2,8 @@
 
 > *Audit stav a plán před mainnet spuštěním.*
 
+> **Historical note (2026-03-12):** This audit captures the original v2.9.6 multi-node testnet period. Server/IP references below are archival and do not represent the current live Zion2 single-host deployment.
+
 ---
 
 ## 1. Stav auditu

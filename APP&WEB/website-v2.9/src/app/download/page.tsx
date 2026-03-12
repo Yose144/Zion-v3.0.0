@@ -8,12 +8,12 @@ import {
   ShoppingCart, ExternalLink, Github,
 } from 'lucide-react';
 import { useState } from 'react';
-import { SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
+import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
 /* ───────────────────────── data ───────────────────────── */
 
-const GH = 'https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/releases/download/v2.9.6';
-const GH_RELEASE = 'https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/releases/tag/v2.9.6';
+const GH = 'https://github.com/Zion-TerraNova/2.9.6/releases/download/v2.9.6';
+const GH_RELEASE = 'https://github.com/Zion-TerraNova/2.9.6/releases/tag/v2.9.6';
 
 type CLIBuild = {
   os: string;
@@ -47,7 +47,7 @@ const tools: ToolInfo[] = [
     icon: <Zap className="h-6 w-6" />,
     prefix: 'zion-miner',
     color: 'text-zion-gold',
-    quickCmd: 'zion-miner --pool stratum+tcp://pool.zionterranova.com:3333 --wallet YOUR_ADDRESS',
+    quickCmd: `zion-miner --pool stratum+tcp://${SITE_POOL_PRIMARY} --wallet YOUR_ADDRESS`,
   },
   {
     name: 'Wallet',
@@ -81,7 +81,7 @@ const desktopAgentFeatures = [
 const faqItems = [
   {
     q: 'Do I need a Node to mine?',
-    a: 'No. Connect your miner to the public pool (pool.zionterranova.com:3333). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.',
+    a: `No. Connect your miner to the public pool (${SITE_POOL_PRIMARY}). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.`,
   },
   {
     q: 'How do I create a wallet?',
@@ -118,7 +118,7 @@ const steps = [
     title: '2. Start Mining',
     items: [
       'Download zion-miner for your OS',
-      'Run: zion-miner --pool stratum+tcp://pool.zionterranova.com:3333 --wallet YOUR_ADDRESS',
+      `Run: zion-miner --pool stratum+tcp://${SITE_POOL_PRIMARY} --wallet YOUR_ADDRESS`,
       'Watch hashrate & accepted shares in console',
     ],
   },
@@ -180,7 +180,7 @@ export default function DownloadPage() {
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
-                href="https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/blob/main/docs/MINING_GUIDE.md"
+                href="https://github.com/Zion-TerraNova/2.9.6/blob/main/docs/QUICK_START.md"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors"
@@ -271,7 +271,7 @@ export default function DownloadPage() {
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">One-line install (Linux / macOS)</p>
             <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
               <span className="text-gray-500">$</span>{' '}
-              curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.5-NativeAwakening/main/install.sh | bash
+              curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.6/main/install.sh | bash
             </div>
           </div>
         </motion.section>

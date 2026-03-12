@@ -88,6 +88,8 @@ _CHV3_GPU_BATCH_DEFAULT = _read_env_int(
     8_000_000,
 )
 
+_SKIP_EAGER_GPU_INIT = str(os.getenv("ZION_SKIP_EAGER_GPU_INIT", "")).strip() == "1"
+
 # Search paths for CH v3 modules
 _ch3_search_paths = [
     os.path.dirname(__file__),  # Same directory as miner
@@ -120,17 +122,20 @@ if not COSMIC_V3_AVAILABLE and COSMIC_V3_PYTHON_AVAILABLE:
     COSMIC_V3_AVAILABLE = True
     print("[OK] Cosmic Harmony v3 using PYTHON FALLBACK (Rust DLL unavailable)")
 
-try:
-    from cosmic_harmony_v3_gpu import CosmicHarmonyV3GPU, GPU_AVAILABLE as CV3_GPU
-    if CV3_GPU:
-        _cosmic_v3_gpu = CosmicHarmonyV3GPU(batch_size=_CHV3_GPU_BATCH_DEFAULT)
-        COSMIC_V3_GPU_AVAILABLE = True
-        print(
-            f"[OK] Cosmic Harmony v3 GPU loaded: {_cosmic_v3_gpu.device_info.name} "
-            f"(batch={int(getattr(_cosmic_v3_gpu, 'batch_size', _CHV3_GPU_BATCH_DEFAULT)):,})"
-        )
-except Exception as e:
-    print(f"[WARN] Cosmic Harmony v3 GPU not available: {e}")
+if not _SKIP_EAGER_GPU_INIT:
+    try:
+        from cosmic_harmony_v3_gpu import CosmicHarmonyV3GPU, GPU_AVAILABLE as CV3_GPU
+        if CV3_GPU:
+            _cosmic_v3_gpu = CosmicHarmonyV3GPU(batch_size=_CHV3_GPU_BATCH_DEFAULT)
+            COSMIC_V3_GPU_AVAILABLE = True
+            print(
+                f"[OK] Cosmic Harmony v3 GPU loaded: {_cosmic_v3_gpu.device_info.name} "
+                f"(batch={int(getattr(_cosmic_v3_gpu, 'batch_size', _CHV3_GPU_BATCH_DEFAULT)):,})"
+            )
+    except Exception as e:
+        print(f"[WARN] Cosmic Harmony v3 GPU not available: {e}")
+else:
+    print("[INFO] Skipping eager GPU init for Cosmic Harmony v3 (ZION_SKIP_EAGER_GPU_INIT=1)")
 
 # ── Cosmic Harmony v4 — Native dylib (CHv4 primary engine) ────────────────────
 # CosmicHarmonyV4Native wraps libcosmic_harmony.dylib/.so via ctypes FFI.
@@ -193,31 +198,37 @@ if COSMIC_V4_AVAILABLE and _cosmic_v4_raw is not None:
 COSMIC_V4_METAL_GPU_AVAILABLE = False
 _cosmic_v4_metal_gpu = None
 
-try:
-    from cosmic_harmony_v4_metal_gpu import CosmicHarmonyV4MetalGPU, METAL_GPU_AVAILABLE as _METAL_AVAIL
-    if _METAL_AVAIL:
-        _chv4_metal_batch = _read_env_int("ZION_GPU_BATCH_SIZE", 2048, 64, 8192)
-        _cosmic_v4_metal_gpu = CosmicHarmonyV4MetalGPU(batch_size=_chv4_metal_batch)
-        COSMIC_V4_METAL_GPU_AVAILABLE = True
-        print(f"[OK] Cosmic Harmony v4 Metal GPU loaded: {_cosmic_v4_metal_gpu.device_info.name} (batch={_chv4_metal_batch})")
-except Exception as _e:
-    print(f"[WARN] Cosmic Harmony v4 Metal GPU not available: {_e}")
+if not _SKIP_EAGER_GPU_INIT:
+    try:
+        from cosmic_harmony_v4_metal_gpu import CosmicHarmonyV4MetalGPU, METAL_GPU_AVAILABLE as _METAL_AVAIL
+        if _METAL_AVAIL:
+            _chv4_metal_batch = _read_env_int("ZION_GPU_BATCH_SIZE", 2048, 64, 8192)
+            _cosmic_v4_metal_gpu = CosmicHarmonyV4MetalGPU(batch_size=_chv4_metal_batch)
+            COSMIC_V4_METAL_GPU_AVAILABLE = True
+            print(f"[OK] Cosmic Harmony v4 Metal GPU loaded: {_cosmic_v4_metal_gpu.device_info.name} (batch={_chv4_metal_batch})")
+    except Exception as _e:
+        print(f"[WARN] Cosmic Harmony v4 Metal GPU not available: {_e}")
+else:
+    print("[INFO] Skipping eager Metal GPU init (ZION_SKIP_EAGER_GPU_INIT=1)")
 
-# ── Cosmic Harmony Deeksha — Canonical GPU (CHv42GPU wrapper) ─────────────────
+# ── Cosmic Harmony Ekam Deeksha — Canonical GPU (CHv42GPU wrapper) ────────────
 # Imports CHv42GPU from cosmic_harmony_v42_gpu.py, which auto-selects the best
-# backend: DeekshaOpenCL → native DLL → legacy GPU → CPU.
-# This is the unified Deeksha mining engine with ~15 kH/s on AMD RDNA1 GPUs.
+# backend: EkamDeekshaOpenCL → canonical/native path → legacy GPU → CPU.
+# This is the unified Ekam mining engine for the desktop agent.
 # ─────────────────────────────────────────────────────────────────────────────
 COSMIC_DEEKSHA_GPU_AVAILABLE = False
 _cosmic_deeksha_gpu = None
 
-try:
-    from cosmic_harmony_v42_gpu import CHv42GPU as _CHv42GPUClass
-    _cosmic_deeksha_gpu = _CHv42GPUClass(backend="auto", batch_size=2048)
-    COSMIC_DEEKSHA_GPU_AVAILABLE = _cosmic_deeksha_gpu.backend_name != "cpu"
-    print(f"[OK] Cosmic Harmony Deeksha GPU loaded: {_cosmic_deeksha_gpu.backend_name} (batch={_cosmic_deeksha_gpu.batch_size})")
-except Exception as _e:
-    print(f"[WARN] Cosmic Harmony Deeksha GPU not available: {_e}")
+if not _SKIP_EAGER_GPU_INIT:
+    try:
+        from cosmic_harmony_v42_gpu import CHv42GPU as _CHv42GPUClass
+        _cosmic_deeksha_gpu = _CHv42GPUClass(backend="auto", batch_size=2048)
+        COSMIC_DEEKSHA_GPU_AVAILABLE = _cosmic_deeksha_gpu.backend_name != "cpu"
+        print(f"[OK] Cosmic Harmony Ekam GPU loaded: {_cosmic_deeksha_gpu.backend_name} (batch={_cosmic_deeksha_gpu.batch_size})")
+    except Exception as _e:
+        print(f"[WARN] Cosmic Harmony Ekam GPU not available: {_e}")
+else:
+    print("[INFO] Skipping eager Ekam GPU init (ZION_SKIP_EAGER_GPU_INIT=1)")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -232,7 +243,8 @@ class Algorithm(Enum):
     COSMIC_HARMONY_V2 = "cosmic_harmony_v2"  # Quantum-resistant, memory-hard
     COSMIC_HARMONY_V3 = "cosmic_harmony_v3"  # Native Rust + GPU (21+ MH/s)
     COSMIC_HARMONY_V4 = "cosmic_harmony_v4"  # CHv4 runtime alias (uses v3 backend)
-    COSMIC_HARMONY_DEEKSHA = "cosmic_harmony_deeksha"  # Canonical Deeksha GPU (CHv42GPU)
+    COSMIC_HARMONY_DEEKSHA = "cosmic_harmony_deeksha"  # Legacy alias resolved to Ekam canonical runtime
+    COSMIC_HARMONY_EKAM_DEEKSHA = "cosmic_harmony_ekam_deeksha"  # Ekam Deeksha — Blake3 XOF + 8-round fusion
     RANDOMX = "randomx"
     YESCRYPT = "yescrypt"
 
@@ -1581,15 +1593,30 @@ class CPUMiningThreadWrapper:
                 results.append(result)
                 self.hashes += 1
         
-        elif self.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4):
+        elif self.algorithm in (
+            Algorithm.COSMIC_HARMONY_V3,
+            Algorithm.COSMIC_HARMONY_V4,
+            Algorithm.COSMIC_HARMONY_DEEKSHA,
+            Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA,
+        ):
             # Cosmic Harmony v3 - use native Rust library (batch mode)
             if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
-                results = _cosmic_v3_native.batch_hash(data, nonce_start, nonce_count)
-                self.hashes += nonce_count
+                block_height = getattr(self, '_current_block_height', 0)
+                if hasattr(_cosmic_v3_native, 'batch_hash_with_height'):
+                    results = _cosmic_v3_native.batch_hash_with_height(
+                        data, nonce_start, nonce_count, block_height
+                    )
+                else:
+                    results = _cosmic_v3_native.batch_hash(data, nonce_start, nonce_count)
+                self.hashes += len(results)
             else:
                 # Fallback to single hash mode
                 for i in range(nonce_count):
-                    result = _cosmic_v3_native.hash(data, nonce_start + i) if _cosmic_v3_native else b'\x00' * 32
+                    block_height = getattr(self, '_current_block_height', 0)
+                    if _cosmic_v3_native and hasattr(_cosmic_v3_native, 'hash_with_height'):
+                        result = _cosmic_v3_native.hash_with_height(data, nonce_start + i, block_height)
+                    else:
+                        result = _cosmic_v3_native.hash(data, nonce_start + i) if _cosmic_v3_native else b'\x00' * 32
                     results.append(result)
                     self.hashes += 1
         
@@ -1616,14 +1643,30 @@ class CPUMiningThreadWrapper:
                 _ = cosmic_hash_v2(data, nonce_start + i, prev_hash, block_height)
                 hashes_computed += 1
         
-        elif self.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4):
+        elif self.algorithm in (
+            Algorithm.COSMIC_HARMONY_V3,
+            Algorithm.COSMIC_HARMONY_V4,
+            Algorithm.COSMIC_HARMONY_DEEKSHA,
+            Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA,
+        ):
             # Cosmic Harmony v3 - batch mode is most efficient
             if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
-                _ = _cosmic_v3_native.batch_hash(data, nonce_start, nonce_count)
-                hashes_computed = nonce_count
+                block_height = getattr(self, '_current_block_height', 0)
+                if hasattr(_cosmic_v3_native, 'batch_hash_with_height'):
+                    results = _cosmic_v3_native.batch_hash_with_height(
+                        data, nonce_start, nonce_count, block_height
+                    )
+                    hashes_computed = len(results)
+                else:
+                    _ = _cosmic_v3_native.batch_hash(data, nonce_start, nonce_count)
+                    hashes_computed = nonce_count
             else:
+                block_height = getattr(self, '_current_block_height', 0)
                 for i in range(nonce_count):
-                    _ = _cosmic_v3_native.hash(data, nonce_start + i) if _cosmic_v3_native else None
+                    if _cosmic_v3_native and hasattr(_cosmic_v3_native, 'hash_with_height'):
+                        _ = _cosmic_v3_native.hash_with_height(data, nonce_start + i, block_height)
+                    else:
+                        _ = _cosmic_v3_native.hash(data, nonce_start + i) if _cosmic_v3_native else None
                     hashes_computed += 1
                 
         # Update total hash counter
@@ -1649,14 +1692,14 @@ class _DeekshaGPUCompat:
 
     @property
     def device_info(self):
-        return getattr(self._gpu, 'backend_name', 'deeksha-gpu')
+        return getattr(self._gpu, 'backend_name', 'ekam-gpu')
 
     @property
     def device(self):
         class _DevProxy:
             def __init__(self, name):
                 self.name = name
-        return _DevProxy(getattr(self._gpu, 'backend_name', 'deeksha-gpu'))
+        return _DevProxy(getattr(self._gpu, 'backend_name', 'ekam-gpu'))
 
     @property
     def work_size(self):
@@ -2010,7 +2053,7 @@ class ZionNativeMiner:
                 logger.info(f"✅ Cosmic Harmony v3 CPU mining ready ({self.config.cpu_threads} threads)")
         
         elif algo == Algorithm.COSMIC_HARMONY_DEEKSHA:
-            # Canonical Deeksha: CHv42GPU with DeekshaOpenCLBackend (~15 kH/s GPU)
+            # Legacy Deeksha alias routed to the same Ekam canonical GPU/CPU runtime.
             self._gpu_init_error = None
             want_gpu = self.config.mode in [MiningMode.GPU, MiningMode.AUTO]
 
@@ -2018,32 +2061,67 @@ class ZionNativeMiner:
                 try:
                     self.gpu_miner = _DeekshaGPUCompat(_cosmic_deeksha_gpu)
                     logger.info(
-                        f"✅ Cosmic Harmony Deeksha GPU active: {_cosmic_deeksha_gpu.backend_name} "
+                        f"✅ Cosmic Harmony Ekam GPU active: {_cosmic_deeksha_gpu.backend_name} "
                         f"(batch={_cosmic_deeksha_gpu.batch_size})"
                     )
                 except Exception as e:
                     self.gpu_miner = None
                     self._gpu_init_error = str(e)
-                    logger.warning(f"Deeksha GPU init failed: {e}")
+                    logger.warning(f"Ekam GPU init failed: {e}")
 
-            # CPU fallback using Deeksha native or CHv3/v4
+            # CPU fallback uses the same native Ekam/CH runtime alias path.
             if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
                 self.thread_pool = ThreadPoolExecutor(max_workers=self.config.cpu_threads)
                 for i in range(self.config.cpu_threads):
                     thread = CPUMiningThreadWrapper(i, _cosmic_v3_native, algo)
                     self.cpu_threads.append(thread)
-                logger.info(f"✅ Cosmic Harmony Deeksha CPU initialized ({self.config.cpu_threads} threads)")
+                logger.info(f"✅ Cosmic Harmony Ekam CPU initialized ({self.config.cpu_threads} threads)")
             else:
                 if not self.gpu_miner:
-                    raise RuntimeError("Cosmic Harmony Deeksha requires GPU or native library")
-                logger.warning("⚠️  Deeksha CPU not available; running GPU-only")
+                    raise RuntimeError("Cosmic Harmony Ekam requires GPU or native library")
+                logger.warning("⚠️  Ekam CPU not available; running GPU-only")
 
             if self.gpu_miner and self.cpu_threads:
-                logger.info(f"🚀 Cosmic Harmony Deeksha DUAL mining ready (CPU + GPU)")
+                logger.info(f"🚀 Cosmic Harmony Ekam DUAL mining ready (CPU + GPU)")
             elif self.gpu_miner:
-                logger.info(f"🚀 Cosmic Harmony Deeksha GPU mining ready")
+                logger.info(f"🚀 Cosmic Harmony Ekam GPU mining ready")
             else:
-                logger.info(f"✅ Cosmic Harmony Deeksha CPU mining ready ({self.config.cpu_threads} threads)")
+                logger.info(f"✅ Cosmic Harmony Ekam CPU mining ready ({self.config.cpu_threads} threads)")
+
+        elif algo == Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA:
+            # Ekam Deeksha: Blake3 XOF scratchpad + 8-round fusion (same GPU infra)
+            self._gpu_init_error = None
+            want_gpu = self.config.mode in [MiningMode.GPU, MiningMode.AUTO]
+
+            if want_gpu and COSMIC_DEEKSHA_GPU_AVAILABLE and _cosmic_deeksha_gpu:
+                try:
+                    self.gpu_miner = _DeekshaGPUCompat(_cosmic_deeksha_gpu)
+                    logger.info(
+                        f"✅ Ekam Deeksha GPU active: {_cosmic_deeksha_gpu.backend_name} "
+                        f"(batch={_cosmic_deeksha_gpu.batch_size})"
+                    )
+                except Exception as e:
+                    self.gpu_miner = None
+                    self._gpu_init_error = str(e)
+                    logger.warning(f"Ekam Deeksha GPU init failed: {e}")
+
+            if COSMIC_V3_AVAILABLE and _cosmic_v3_native:
+                self.thread_pool = ThreadPoolExecutor(max_workers=self.config.cpu_threads)
+                for i in range(self.config.cpu_threads):
+                    thread = CPUMiningThreadWrapper(i, _cosmic_v3_native, algo)
+                    self.cpu_threads.append(thread)
+                logger.info(f"✅ Ekam Deeksha CPU initialized ({self.config.cpu_threads} threads)")
+            else:
+                if not self.gpu_miner:
+                    raise RuntimeError("Ekam Deeksha requires GPU or native library")
+                logger.warning("⚠️  Ekam Deeksha CPU not available; running GPU-only")
+
+            if self.gpu_miner and self.cpu_threads:
+                logger.info(f"🚀 Ekam Deeksha DUAL mining ready (CPU + GPU)")
+            elif self.gpu_miner:
+                logger.info(f"🚀 Ekam Deeksha GPU mining ready")
+            else:
+                logger.info(f"✅ Ekam Deeksha CPU mining ready ({self.config.cpu_threads} threads)")
 
         elif algo == Algorithm.RANDOMX:
             lib = self.loader.load_randomx()
@@ -2250,10 +2328,13 @@ class ZionNativeMiner:
         print()
         
         # Update job parameters for dynamic algorithms
+        benchmark_height = 12345
+        benchmark_prev_hash = b'ZION_TEST_PREV_HASH' + b'\x00' * 13
+
         if self.cpu_threads:
             for thread in self.cpu_threads:
                 if hasattr(thread, 'update_job_params'):
-                    thread.update_job_params(block_height=12345, prev_hash=b'ZION_TEST_PREV_HASH' + b'\x00' * 13)
+                    thread.update_job_params(block_height=benchmark_height, prev_hash=benchmark_prev_hash)
         
         test_data = b"ZION_TEST_BLOCK_" + b"0" * 64
         hashes = 0
@@ -2275,7 +2356,7 @@ class ZionNativeMiner:
             hashes = int(hashrate * duration)
         
         # Cosmic Harmony v3/v4/Deeksha GPU
-        elif self.config.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4, Algorithm.COSMIC_HARMONY_DEEKSHA) and (COSMIC_V3_GPU_AVAILABLE or COSMIC_DEEKSHA_GPU_AVAILABLE) and self.gpu_miner:
+        elif self.config.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4, Algorithm.COSMIC_HARMONY_DEEKSHA, Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA) and (COSMIC_V3_GPU_AVAILABLE or COSMIC_DEEKSHA_GPU_AVAILABLE) and self.gpu_miner:
             print(f"   >>> Cosmic Harmony GPU ({getattr(self.gpu_miner, 'device_info', 'Unknown')})")
             print(f"   Pipeline: Keccak256 → SHA3-512 → GoldenMatrix → MemoryHard → NpuMix → CosmicFusion")
             hashrate = self.gpu_miner.benchmark(duration)
@@ -2319,8 +2400,8 @@ class ZionNativeMiner:
                     print("   Using sequential hashing for accurate benchmark...")
                     
                     # Use single-threaded sequential hashing for accurate benchmark
-                    prev_hash = getattr(self, '_current_prev_hash', b'\x00' * 32)
-                    block_height = getattr(self, '_current_block_height', 0)
+                    prev_hash = benchmark_prev_hash
+                    block_height = benchmark_height
                     nonce = 0
                     
                     while time.perf_counter() - start < duration:
@@ -2357,7 +2438,15 @@ class ZionNativeMiner:
                         last_update = now
                 else:
                     # Standard CPU benchmark for non-memory-hard algorithms
-                    batch_per_thread = 1000
+                    if self.config.algorithm in (
+                        Algorithm.COSMIC_HARMONY_DEEKSHA,
+                        Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA,
+                    ):
+                        # Ekam/Deeksha is slow enough that large batches make short
+                        # benchmarks overshoot badly before the duration check runs again.
+                        batch_per_thread = 8
+                    else:
+                        batch_per_thread = 1000
                     futures = []
                     nonce = 0
                     
@@ -2391,7 +2480,7 @@ class ZionNativeMiner:
                 # Single-threaded fallback
                 nonce = 0
                 while time.perf_counter() - start < duration:
-                    self.hash_single_cpu(test_data, nonce)
+                    self.hash_single_cpu(test_data, nonce, benchmark_height)
                     hashes += 1
                     nonce += 1
         
@@ -3194,7 +3283,7 @@ class ZionNativeMiner:
                     nonce_start = _alloc_nonces(_gpu_actual_batch)
                     
                     # Cosmic Harmony v3/v4/Deeksha: GPU API with mine(header, target, nonce) 
-                    if self.config.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4, Algorithm.COSMIC_HARMONY_DEEKSHA) and (COSMIC_V3_GPU_AVAILABLE or COSMIC_DEEKSHA_GPU_AVAILABLE):
+                    if self.config.algorithm in (Algorithm.COSMIC_HARMONY_V3, Algorithm.COSMIC_HARMONY_V4, Algorithm.COSMIC_HARMONY_DEEKSHA, Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA) and (COSMIC_V3_GPU_AVAILABLE or COSMIC_DEEKSHA_GPU_AVAILABLE):
                         # CH v3 pool validation uses state0 (first 4 bytes) vs target_cosmic32.
                         if target_cosmic32 is None:
                             time.sleep(0.05)
@@ -3645,9 +3734,9 @@ def main():
     
     parser = argparse.ArgumentParser(description="ZION Native Miner v2.9.0")
     parser.add_argument("--algorithm", "-a", 
-                       choices=["cosmic_harmony", "cosmic_harmony_v2", "cosmic_harmony_v3", "cosmic_harmony_v4", "randomx", "yescrypt"],
+                       choices=["cosmic_harmony", "cosmic_harmony_v2", "cosmic_harmony_v3", "cosmic_harmony_v4", "cosmic_harmony_deeksha", "cosmic_harmony_ekam_deeksha", "randomx", "yescrypt"],
                        default="cosmic_harmony",
-                       help="Mining algorithm (cosmic_harmony_v3/v4: GPU 21+ MH/s, Native Rust)")
+                       help="Mining algorithm (cosmic_harmony resolves to the current Ekam canonical runtime)")
     parser.add_argument("--mode", "-m",
                        choices=["cpu", "gpu", "auto"],
                        default="auto",
@@ -3724,7 +3813,7 @@ def main():
     
     algo_arg = str(args.algorithm or "cosmic_harmony").strip().lower().replace("-", "_")
     if algo_arg == "cosmic_harmony":
-        resolved_algorithm = Algorithm.COSMIC_HARMONY_V4
+        resolved_algorithm = Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA
     else:
         resolved_algorithm = Algorithm(algo_arg)
 

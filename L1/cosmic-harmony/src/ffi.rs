@@ -181,6 +181,166 @@ pub extern "C" fn zion_deeksha_test_vector_hex() -> *const std::ffi::c_char {
 }
 
 // ============================================================================
+// EKAM DEEKSHA FFI (Tier 2 — Blake3 + AES cascade)
+// ============================================================================
+
+/// Ekam Deeksha — Tier 2 consensus hash (Blake3 XOF + AES cascade).
+///
+/// Same interface as `zion_deeksha_hash` but uses the optimized Ekam pipeline.
+/// Produces DIFFERENT output than original Deeksha.
+#[no_mangle]
+pub unsafe extern "C" fn zion_ekam_deeksha_hash(
+    header_ptr: *const u8,
+    header_len: usize,
+    nonce: u64,
+    output_ptr: *mut u8,
+) -> i32 {
+    if header_ptr.is_null() || output_ptr.is_null() {
+        return -1;
+    }
+    if header_len == 0 || header_len > 1024 {
+        return -2;
+    }
+    let header = slice::from_raw_parts(header_ptr, header_len);
+    let result = crate::deeksha::cosmic_harmony_ekam_deeksha(header, nonce);
+    let output = slice::from_raw_parts_mut(output_ptr, 32);
+    output.copy_from_slice(&result.data);
+    0
+}
+
+/// Ekam self-test — returns 0 if OK, 1 if failed.
+#[no_mangle]
+pub extern "C" fn zion_ekam_deeksha_self_test() -> i32 {
+    if crate::deeksha::ekam_self_test() { 0 } else { 1 }
+}
+
+/// Ekam batch mining — search nonce range for target.
+#[no_mangle]
+pub unsafe extern "C" fn zion_ekam_deeksha_batch_mine(
+    header_ptr: *const u8,
+    header_len: usize,
+    nonce_start: u64,
+    nonce_count: u32,
+    target_u32: u32,
+    out_nonce_ptr: *mut u64,
+    out_hash_ptr: *mut u8,
+) -> i32 {
+    if header_ptr.is_null() || out_nonce_ptr.is_null() || out_hash_ptr.is_null() {
+        return -1;
+    }
+    if header_len == 0 || header_len > 1024 {
+        return -2;
+    }
+
+    let header = slice::from_raw_parts(header_ptr, header_len);
+    let out_hash = slice::from_raw_parts_mut(out_hash_ptr, 32);
+
+    for i in 0..nonce_count {
+        let nonce = nonce_start.wrapping_add(i as u64);
+        let result = crate::deeksha::cosmic_harmony_ekam_deeksha(header, nonce);
+
+        let state0 = u32::from_le_bytes([
+            result.data[0],
+            result.data[1],
+            result.data[2],
+            result.data[3],
+        ]);
+
+        if state0 <= target_u32 {
+            *out_nonce_ptr = nonce;
+            out_hash.copy_from_slice(&result.data);
+            return 1;
+        }
+    }
+
+    0
+}
+
+/// Ekam benchmark helper (returns hash rate in H/s).
+#[no_mangle]
+pub extern "C" fn zion_ekam_deeksha_benchmark(nonce_count: u32) -> f64 {
+    use std::time::Instant;
+
+    let count = nonce_count.max(1);
+    let header = b"ZION_EKAM_DEEKSHA_BENCHMARK_V298";
+    let start = Instant::now();
+
+    for i in 0..count {
+        let _ = crate::deeksha::cosmic_harmony_ekam_deeksha(header, i as u64);
+    }
+
+    let elapsed = start.elapsed().as_secs_f64();
+    (count as f64) / elapsed.max(1e-9)
+}
+
+/// Ekam canonical test vector hex (null-terminated).
+#[no_mangle]
+pub extern "C" fn zion_ekam_deeksha_test_vector_hex() -> *const std::ffi::c_char {
+    use std::sync::OnceLock;
+    static BUF: OnceLock<std::ffi::CString> = OnceLock::new();
+    let s = BUF.get_or_init(|| {
+        let hex = crate::deeksha::generate_ekam_test_vector();
+        std::ffi::CString::new(hex).unwrap_or_default()
+    });
+    s.as_ptr()
+}
+
+// ============================================================================
+// HUGEPAGES STATUS (for Python/Node.js/Desktop agent)
+// ============================================================================
+
+/// Query HugePages availability and scratchpad memory status.
+///
+/// Writes a JSON-like status into the caller buffer:
+///   `{"available":true,"page_size":2097152,"scratchpad_kb":64,"locked":false}`
+///
+/// # Arguments
+/// * `buf_ptr`  — caller-allocated output buffer
+/// * `buf_len`  — buffer capacity (recommend ≥ 256)
+///
+/// # Returns
+/// Actual bytes written (excluding null), or -1 on null pointer, -2 if buffer too small.
+#[no_mangle]
+pub unsafe extern "C" fn zion_hugepages_status(
+    buf_ptr: *mut u8,
+    buf_len: usize,
+) -> i32 {
+    if buf_ptr.is_null() {
+        return -1;
+    }
+    let info = crate::hugepages::is_huge_pages_available();
+    let line = crate::hugepages::memory_status_line(crate::scratchpad_ekam::SCRATCHPAD_SIZE);
+    let json = format!(
+        r#"{{"available":{},"page_size":{},"scratchpad_kb":{},"status":"{}"}}"#,
+        info.available,
+        info.page_size,
+        crate::scratchpad_ekam::SCRATCHPAD_SIZE / 1024,
+        line,
+    );
+    let bytes = json.as_bytes();
+    if bytes.len() + 1 > buf_len {
+        return -2;
+    }
+    let out = std::slice::from_raw_parts_mut(buf_ptr, buf_len);
+    out[..bytes.len()].copy_from_slice(bytes);
+    out[bytes.len()] = 0; // null-terminate
+    bytes.len() as i32
+}
+
+/// Trigger a HugePages scratchpad allocation on the current thread.
+///
+/// Returns 1 if huge pages were obtained, 0 if fallback (regular mmap).
+/// This pre-warms the thread-local pool so the first hash call is fast.
+#[no_mangle]
+pub extern "C" fn zion_hugepages_prewarm() -> i32 {
+    crate::hugepages::with_huge_page_scratchpad(
+        crate::scratchpad_ekam::SCRATCHPAD_SIZE,
+        |_| (),
+    );
+    if crate::hugepages::current_thread_has_huge_pages() { 1 } else { 0 }
+}
+
+// ============================================================================
 // SINGLE HASH FUNCTIONS
 // ============================================================================
 

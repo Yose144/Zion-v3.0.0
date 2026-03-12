@@ -101,7 +101,7 @@ const networkFacts = [
   { text: 'JSON-RPC endpoints live (port 8444)', done: true },
   { text: '24/7 Docker containers with auto-restart', done: true },
   { text: 'LWMA DAA — target 60s block time', done: true },
-  { text: 'Archived 3-node validation preserved in reports', done: true },
+  { text: 'Archived multi-host validation preserved in reports', done: true },
   { text: 'Prometheus + Grafana monitoring', done: true },
   { text: 'Geo-distributed public topology currently archived', done: false },
 ];
@@ -152,8 +152,8 @@ export default function NetworkPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from the current public runtime on Zion2. The earlier Helsinki/USA/Asia mesh remains part of
-                archived validation history in the 2.9.8 deploy report and March status reports, but is no longer the live topology.
+                Real-time telemetry from the current public runtime on Zion2. Earlier multi-host validation remains preserved in
+                archived 2.9.8 deploy and March status reports, but is no longer the live topology.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -250,7 +250,7 @@ export default function NetworkPage() {
               <Shield className="h-7 w-7 text-zion-gold" />
               Current Runtime
             </h2>
-            <p className="text-sm text-gray-400">Current public runtime is a single primary host. The earlier 3-node mesh remains documented as archived validation history.</p>
+            <p className="text-sm text-gray-400">Current public runtime is a single primary host. Earlier multi-host validation remains documented as archived validation history.</p>
           </div>
           <div className="grid gap-5 md:grid-cols-1 lg:max-w-2xl">
             {infraFeatures.map((node, idx) => (
@@ -420,14 +420,14 @@ export default function NetworkPage() {
           <Radio className="mx-auto h-12 w-12 text-emerald-400" />
           <h2 className="mt-6 text-3xl font-semibold text-white">Join the ZION Network</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            Three native Rust nodes running 24/7, forming a resilient P2P mesh.
-            Connect your miner, run your own node, or explore the blockchain from the current primary host while historical rollout context stays preserved in docs.
+            Native Rust infrastructure running 24/7 from the current primary host with internal quorum support.
+            Connect your miner, run your own node, or explore the blockchain while historical rollout context stays preserved in docs.
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · MainNet 31.12.2026
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
-            {['Cosmic Harmony PoW', 'Primary host live', 'Internal seeds', 'Docker native', 'Archived 3-node history'].map((item) => (
+            {['Cosmic Harmony PoW', 'Primary host live', 'Internal seeds', 'Docker native', 'Archived multi-host history'].map((item) => (
               <span key={item} className="rounded-full bg-white/80 px-4 py-2 font-semibold text-gray-900">
                 {item}
               </span>
@@ -452,7 +452,7 @@ export default function NetworkPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — P2P Network Pro · {SITE_NETWORK_TOPOLOGY} · Archived 3-node rollout preserved in docs
+          ZION TerraNova {SITE_RELEASE_LABEL} — P2P Network Pro · {SITE_NETWORK_TOPOLOGY} · Archived multi-host rollout preserved in docs
         </p>
       </div>
     </div>

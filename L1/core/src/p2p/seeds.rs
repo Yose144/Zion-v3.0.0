@@ -6,12 +6,8 @@ use tokio::time::timeout;
 
 /// Hardcoded seed nodes for bootstrapping
 pub const SEED_NODES: &[&str] = &[
-    // ZION Foundation nodes
-    "77.42.31.72:8334",      // Helsinki (PRIMARY)
-    "46.225.126.243:8334",   // SeedDE (Germany)
-    "5.78.178.227:8334",     // Usa1
-    "178.156.240.160:8334",  // Usa2
-    "5.223.43.93:8334",      // Asia3
+    // Current live topology: single primary host + DNS/internal seed containers.
+    "91.98.122.165:8334",          // Zion2 primary host
     "seed1.zionterranova.com:8334",
     "seed2.zionterranova.com:8334",
     "seed3.zionterranova.com:8334",

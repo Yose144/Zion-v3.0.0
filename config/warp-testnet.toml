@@ -12,8 +12,8 @@ network = "testnet"
 
 # ── ZION L1 Connection ────────────────────────────────────────────────────
 [l1]
-rpc_url = "http://77.42.31.72:8444"
-rpc_url_backup = "http://46.225.126.243:8444"
+rpc_url = "http://91.98.122.165:8444"
+rpc_url_backup = "http://127.0.0.1:8444"
 vault_address = "zion1warp0000000000000000000000000000vault"
 finality_blocks = 60
 poll_interval_secs = 15

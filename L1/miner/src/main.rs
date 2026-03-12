@@ -136,7 +136,7 @@ struct Cli {
     stats_interval: u64,
 
     /// Enable Python fallback miner (spawns Python process).
-    /// Values: "chv3" (CHv3 GPU miner), "legacy" (v2.9 native miner), or "auto".
+    /// Values: "deeksha"/"ekam" (canonical Ekam fallback), "legacy" (v2.9 native miner), or "auto".
     /// Use when Rust GPU/Metal isn't available or for algorithm fallback.
     #[arg(long)]
     python_fallback: Option<String>,
@@ -174,7 +174,7 @@ struct Cli {
     ///   FLUXDUAL   — FLUX (ZelHash, flux.2miners.com:9090)
     ///
     /// Example (ZION + ALPH dual):
-    ///   zion-miner --pool stratum+tcp://77.42.31.72:3333 --wallet zion1...
+    ///   zion-miner --pool stratum+tcp://91.98.122.165:3333 --wallet zion1...
     ///              --dualmode ALEPHDUAL --dualuser 1mmHfNEEWgDL...
     #[arg(long)]
     dualmode: Option<String>,
@@ -190,7 +190,7 @@ struct Cli {
     dualuser: Option<String>,
 
     /// GPU allocation for the dual stream (0.05–0.90, default 0.30 = 30%).
-    /// The remaining GPU % stays on primary ZION CHv3 mining.
+    /// The remaining GPU % stays on primary ZION Ekam Deeksha mining.
     #[arg(long, default_value_t = 0.30)]
     dual_alloc: f32,
 
@@ -386,7 +386,7 @@ async fn main() -> anyhow::Result<()> {
     // so GPU must remain enabled when requested. Keep a legacy emergency kill-switch
     // for incident response only.
     if gpu_enabled
-        && matches!(algorithm, Algorithm::CosmicHarmony)
+        && algorithm.is_zion_runtime()
         && std::env::var("ZION_LEGACY_CH_GPU_GUARD")
             .map(|v| {
                 let s = v.trim().to_ascii_lowercase();
@@ -647,19 +647,23 @@ async fn main() -> anyhow::Result<()> {
     if let Some(ref fallback_mode) = cli.python_fallback {
         let variant = match fallback_mode.to_lowercase().as_str() {
             "auto" => {
-                // Auto-select: CHv3 GPU on macOS, legacy everywhere else
-                if cfg!(target_os = "macos") && algorithm == Algorithm::CosmicHarmony {
-                    PythonMinerVariant::Chv3Gpu
+                // ZION aliases all resolve to the canonical Deeksha fallback.
+                if algorithm.is_zion_runtime() {
+                    PythonMinerVariant::DeekshaCanonical
                 } else {
                     PythonMinerVariant::Legacy
                 }
             }
             other => PythonMinerVariant::from_str(other).unwrap_or_else(|| {
                 warn!(
-                    "Unknown Python fallback variant '{}', defaulting to 'chv3'",
+                    "Unknown Python fallback variant '{}', selecting fallback from algorithm type",
                     other
                 );
-                PythonMinerVariant::Chv3Gpu
+                if algorithm.is_zion_runtime() {
+                    PythonMinerVariant::DeekshaCanonical
+                } else {
+                    PythonMinerVariant::Legacy
+                }
             }),
         };
 
@@ -986,6 +990,20 @@ fn print_banner() {
         "{}{}{}",
         " ║ ".bright_cyan(),
         " NCL Bonus    Neural Compute Layer — AI task rewards         ".white(),
+        " ║".bright_cyan()
+    );
+    println!(
+        "{}",
+        " ╠──────────────────────────────────────────────────────────────────╣".bright_cyan()
+    );
+    // HugePages memory status line (XMRig-style)
+    let hp_status = zion_cosmic_harmony_v3::hugepages::memory_status_line(64 * 1024);
+    let hp_line = format!(" Memory      {}", hp_status);
+    let padded = format!("{:<62}", hp_line);
+    println!(
+        "{}{}{}",
+        " ║ ".bright_cyan(),
+        padded.white(),
         " ║".bright_cyan()
     );
     println!(

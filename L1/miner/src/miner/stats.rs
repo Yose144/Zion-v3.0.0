@@ -601,9 +601,9 @@ mod tests {
     #[test]
     fn test_set_config_appears_in_json() {
         let mut stats = MinerStats::new();
-        stats.set_config("cosmic_harmony_v3", "rig01", "pool.zion.com:3333", 4);
+        stats.set_config("cosmic_harmony", "rig01", "pool.zion.com:3333", 4);
         let json = stats.to_json();
-        assert_eq!(json["algorithm"], "cosmic_harmony_v3");
+        assert_eq!(json["algorithm"], "cosmic_harmony");
         assert_eq!(json["worker"], "rig01");
         assert_eq!(json["pool"], "pool.zion.com:3333");
         assert_eq!(json["cpu_threads"], 4);

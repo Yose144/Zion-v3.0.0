@@ -1,9 +1,10 @@
 # 🐨 KOALA — ZION TerraNova v2.9.6 Status Report
 
 > **Datum**: 19. února 2026  
-> **Verze**: 2.9.6 "On the Star"  
+> **Aktualizace**: 12. března 2026  
+> **Verze**: workspace 2.9.6 / release line 2.9.8 Deeksha  
 > **Repo**: github.com/Yose144/2.9.6 (private)  
-> **Stav**: ✅ All layers operational, 450 tests passing, clippy ~280→15 warnings
+> **Stav**: ✅ All layers operational, 1,379 Rust tests verified, single-host topology on 91.98.122.165
 
 ---
 
@@ -12,10 +13,10 @@
 ```
   L6   │  🔭  ZION Issobella      │  2040+   │ vision only
   L5   │  🌍  ZION Free World     │  2030    │ vision only
-  L4   │  🎮  ZION Oasis          │  2029    │ 1 crate, 40 tests ✅
-  L3   │  🧠  Warp + AI           │  2028    │ 3 crates, 148 tests ✅
-  L2   │  💱  DeFi + DAO          │  2027    │ 3 crates, 89 tests ✅
-  L1   │  ⛏️  Core Blockchain     │  2026    │ 5 crates, 690 tests ✅
+  L4   │  🎮  ZION Oasis          │  2029    │ 1 crate, 49 tests ✅
+  L3   │  🧠  Warp + AI           │  2028    │ 3 crates, 356 tests ✅
+  L2   │  💱  DeFi + DAO          │  2027    │ 3 crates, 245 tests ✅
+  L1   │  ⛏️  Core Blockchain     │  2026    │ 5 crates, 729 tests ✅
 ```
 
 ---
@@ -126,7 +127,7 @@ bdd0bf4 feat: koala.md status report + L5/L6 vision + cleanup
 |--------|--------|------------|-----------------|
 | **L1** | ✅ Production | 51,337 LOC, 690 testů | ⚠️ verushash-native needs C sources |
 | **L2** | ✅ Feature-complete | 4,020 LOC, 89 testů | ⚠️ DAO executor stubbed, bridge needs L1 RPC |
-| **L3** | ✅ Skeleton + tests | 3,322 LOC, 148 testů | ⚠️ Adaptery stub, NCL backendy stub |
+| **L3** | ✅ Implemented + tested | 14,654 LOC, 356 testů | ⚠️ Některé chain/NCL backendy zůstávají záměrně stubbed |
 | **L4** | ✅ Game-logic done | 2,082 LOC, 40 testů | ⚠️ Offline engine, chybí UE5 binding |
 | **L5** | 📋 Vision only | README.md | Humanitární mise, 2030 |
 | **L6** | 📋 Vision only | README.md | Orbitální stanice, 2040+ |

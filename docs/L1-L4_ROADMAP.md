@@ -118,7 +118,7 @@ Základní blockchain vrstva — PoW mining, UTXO transakce, consensus, síťov�
 | Sprint | Úkol | Stav |
 |--------|------|------|
 | 0.1–0.5 | Core implementace | ✅ HOTOVO |
-| 1.0–1.5 | TestNet + 391 testů | ✅ HOTOVO |
+| 1.0–1.5 | TestNet + 729 testů | ✅ HOTOVO |
 | 1.6 | 72h stability run | ⬜ DALŠÍ |
 | 2.0 | Security audit | ⬜ |
 | 3.0 | MainNet Genesis | ⬜ Cíl: Q4 2026 |
@@ -145,8 +145,9 @@ Finanční vrstva — wZION bridging, cross-chain přístupy, DEX, liquidity, a 
 ### Crates
 | Crate | Popis | Stav |
 |-------|-------|------|
-| `bridge/` | wZION ERC-20 lock/mint/burn relay (EVM only) | ✅ Skeleton |
-| `dao/` | On-chain governance, proposals, voting, treasury | 🟡 **VYTVOŘIT** |
+| `bridge/` | wZION ERC-20 lock/mint/burn relay (EVM only) | ✅ Implementováno |
+| `dao/` | On-chain governance, proposals, voting, treasury | ✅ Implementováno |
+| `atomic-swap/` | HTLC daemon, SHA-256 preimage, EVM watcher | ✅ Implementováno |
 
 ### L2 Komponenty
 
@@ -206,9 +207,9 @@ Inteligentní vrstva — cross-chain interoperabilita (WARP), decentralizovaný 
 ### Crates
 | Crate | Popis | Stav |
 |-------|-------|------|
-| `warp/` | Universal cross-chain bridges (7 chain families) | ✅ Skeleton |
-| `ncl/` | Neural Compute Layer (AI task marketplace) | 🟡 **VYTVOŘIT** |
-| `ai-native/` | AI Agent orchestration, memory, knowledge | 🟡 **VYTVOŘIT** |
+| `warp/` | Universal cross-chain bridges (7 chain families) | ✅ Implementováno |
+| `ncl/` | Neural Compute Layer (AI task marketplace) | ✅ Implementováno |
+| `ai-native/` | AI Agent orchestration, memory, knowledge | ✅ Implementováno |
 
 ### L3 Komponenty
 

@@ -1,9 +1,8 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
-# ZION 2.9.6 TestNet Deploy — Seed Nodes
-# Deploys zion-core seed node to all 4 peer servers
-# Helsinki (TreeofLife) already runs full stack — skipped
-# Updated: 22.2.2026
+# ZION 2.9.6 TestNet Deploy — Primary Host
+# Deploys the canonical single-host testnet stack to Zion2.
+# Updated: 12.3.2026
 # ═══════════════════════════════════════════════════════════════
 
 set -euo pipefail
@@ -14,18 +13,14 @@ DEPLOY_DIR="/root/zion-2.9.6"
 COMPOSE_FILE="docker/docker-compose.testnet.yml"
 LOCAL_SRC="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Seed peers (all 5 nodes)
-SEED_PEERS="77.42.31.72:8334,46.225.126.243:8334,5.78.178.227:8334,178.156.240.160:8334,5.223.43.93:8334"
+# Seed peers (single host + DNS/internal seed containers)
+SEED_PEERS="91.98.122.165:8334,seed1.zionterranova.com:8334,seed2.zionterranova.com:8334,seed3.zionterranova.com:8334"
 
-# Server list (Helsinki skipped — already running full stack)
-HELSINKI="77.42.31.72"
-SEEDDE="46.225.126.243"
-USA1="5.78.178.227"
-USA2="178.156.240.160"
-ASIA3="5.223.43.93"
+# Server list
+PRIMARY="91.98.122.165"
 
-ALL_SERVERS=("$SEEDDE" "$USA1" "$USA2" "$ASIA3")
-SERVER_NAMES=("SeedDE" "Usa1" "Usa2" "Asia3")
+ALL_SERVERS=("$PRIMARY")
+SERVER_NAMES=("Zion2")
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -66,11 +61,11 @@ deploy_server() {
         docker compose -f $COMPOSE_FILE build --no-cache 2>&1 | tail -10
     "
     
-    # 4. Start only core (seed node — no pool/miner/monitoring on peers)
-    log "[$name] Starting zion-core seed node..."
+    # 4. Start canonical single-host stack
+    log "[$name] Starting canonical testnet stack..."
     ssh_cmd "$ip" "
         cd $DEPLOY_DIR
-        SEED_PEERS='$SEED_PEERS' docker compose -f $COMPOSE_FILE up -d core redis 2>&1
+        SEED_PEERS='$SEED_PEERS' docker compose -f $COMPOSE_FILE up -d core pool miner redis 2>&1
     "
     
     # 4. Wait for health
@@ -94,7 +89,7 @@ verify_server() {
     local containers
     containers=$(ssh_cmd "$ip" "docker ps --format '{{.Names}}:{{.Status}}' | grep -c 'Up'" 2>/dev/null || echo "0")
     
-    if [ "$containers" -ge 3 ]; then
+    if [ "$containers" -ge 4 ]; then
         log "[$name] ✅ $containers containers running"
     else
         err "[$name] ❌ Only $containers containers up!"
@@ -111,13 +106,10 @@ verify_server() {
 # ─── Main ────────────────────────────────────
 
 case "${1:-all}" in
-    seedde)   deploy_server "$SEEDDE" "SeedDE" ;;
-    usa1)     deploy_server "$USA1"   "Usa1"   ;;
-    usa2)     deploy_server "$USA2"   "Usa2"   ;;
-    asia3)    deploy_server "$ASIA3"  "Asia3"  ;;
+    primary)  deploy_server "$PRIMARY" "Zion2" ;;
     all)
-        log "🚀 ZION 2.9.6 TestNet Seed Node Deploy"
-        log "Servers: SeedDE, Usa1, Usa2, Asia3 (Helsinki již běží)"
+        log "🚀 ZION 2.9.6 TestNet Primary Host Deploy"
+        log "Server: Zion2 ($PRIMARY)"
         echo ""
         
         for i in "${!ALL_SERVERS[@]}"; do
@@ -140,14 +132,14 @@ case "${1:-all}" in
         done
         ;;
     clean)
-        log "━━━ Stopping All Seed Nodes ━━━"
+        log "━━━ Stopping TestNet Stack ━━━"
         for i in "${!ALL_SERVERS[@]}"; do
             log "[${SERVER_NAMES[$i]}] Stopping..."
             ssh_cmd "${ALL_SERVERS[$i]}" "cd $DEPLOY_DIR && docker compose -f $COMPOSE_FILE down 2>/dev/null; echo done" || true
         done
         ;;
     *)
-        echo "Usage: $0 {all|seedde|usa1|usa2|asia3|verify|clean}"
+        echo "Usage: $0 {all|primary|verify|clean}"
         exit 1
         ;;
 esac

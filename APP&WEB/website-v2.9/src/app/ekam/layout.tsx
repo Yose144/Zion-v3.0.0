@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 export const metadata: Metadata = {
-  title: `EKAM · Golden Egg · ZION TerraNova ${SITE_RELEASE_LABEL}`,
+  title: `EKAM · Virtual Tour · ZION TerraNova ${SITE_RELEASE_LABEL}`,
   description:
-    'A public-facing concept page for the ZION Golden Egg, Hiranyagarbha, and a future lightweight museum path from cosmic origin to consciousness.',
+    'Virtual tour of Ekam — sacred architecture, Surya Yantra geometry, Sri Chakra, Deeksha ceremony, and the Hiranyagarbha Golden Egg temple.',
   keywords:
-    'EKAM, Hiranyagarbha, Golden Egg, cosmology museum, consciousness, ZION TerraNova',
+    'EKAM, Hiranyagarbha, Golden Egg, Deeksha, Sri Chakra, Surya Yantra, sacred geometry, Oneness, ZION TerraNova',
 };
 
 export default function EkamLayout({ children }: { children: React.ReactNode }) {
