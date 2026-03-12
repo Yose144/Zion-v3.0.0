@@ -1,4 +1,4 @@
-# ZION TerraNova — Website v2.9.6
+# ZION TerraNova — Website v2.9.8
 # Next.js production build behind nginx reverse proxy
 
 services:
@@ -6,7 +6,7 @@ services:
     build:
       context: ../APP&WEB/website-v2.9
       dockerfile: Dockerfile.production
-    image: zion-website:2.9.6
+    image: zion-website:2.9.8
     container_name: zion-website
     restart: unless-stopped
     ports:
@@ -26,7 +26,7 @@ services:
       start_period: 45s
     labels:
       - "com.zion.service=website"
-      - "com.zion.version=2.9.6"
+      - "com.zion.version=2.9.8"
     networks:
       - zion-net
 

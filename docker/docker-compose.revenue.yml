@@ -260,7 +260,7 @@ services:
     restart: unless-stopped
     profiles: ["ncl"]
     environment:
-      - NCL_POOL_URL=http://77.42.31.72:8444
+      - NCL_POOL_URL=http://91.98.122.165:8444
       - NCL_WALLET=42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK
       - NCL_PORT=8002
       - NCL_GPU_ENABLED=0

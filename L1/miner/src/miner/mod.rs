@@ -1082,6 +1082,12 @@ impl UniversalMiner {
                 batch_size.min(100)
             };
 
+            let processed_batch_size = if use_gpu_path {
+                miner.effective_batch_size(attempted_batch_size, job.height)
+            } else {
+                attempted_batch_size
+            };
+
             let result = if use_gpu_path {
                 // Use GPU shader (fast path). For CosmicHarmony, the kernel handles both
                 // legacy (height < 100k) and memory-hard scratchpad (height >= 100k).
@@ -1099,7 +1105,7 @@ impl UniversalMiner {
                 )
             };
 
-            gpu_total_hashes += attempted_batch_size;
+            gpu_total_hashes += processed_batch_size;
             batch_count += 1;
 
             // Report GPU hashrate every 10 batches (debug only)
@@ -1117,7 +1123,7 @@ impl UniversalMiner {
 
             // Update shared stats with GPU hashes
             if let Ok(mut stats) = stats.try_write() {
-                stats.add_gpu_hashes(attempted_batch_size);
+                stats.add_gpu_hashes(processed_batch_size);
             }
 
             match result {
@@ -1288,7 +1294,7 @@ impl UniversalMiner {
             }
 
             // Advance nonce, wrap to 0 if it would exceed u32 range
-            let next = nonce_start.wrapping_add(attempted_batch_size);
+            let next = nonce_start.wrapping_add(processed_batch_size);
             nonce_start = if next > u32::MAX as u64 {
                 nonce_seed
             } else {

@@ -482,11 +482,10 @@ __device__ B3ChunkOut b3_hash_single_chunk(const uint8_t *input, uint32_t input_
     uint32_t cv[8];
     for (int i = 0; i < 8; i++) cv[i] = BLAKE3_IV[i];
     uint32_t offset = 0;
-    uint64_t block_counter = 0;
     while (offset < input_len) {
         uint32_t remaining = input_len - offset;
         uint32_t this_len = (remaining > 64u) ? 64u : remaining;
-        int is_first = (block_counter == 0);
+        int is_first = (offset == 0);
         int is_last  = (offset + this_len >= input_len);
         uint32_t fl = 0u;
         if (is_first) fl |= BLAKE3_CHUNK_START;
@@ -500,9 +499,8 @@ __device__ B3ChunkOut b3_hash_single_chunk(const uint8_t *input, uint32_t input_
             out.flags = fl;
             return out;
         }
-        b3_compress_cv(cv, bw, block_counter, this_len, fl, cv);
+        b3_compress_cv(cv, bw, 0ULL, this_len, fl, cv);
         offset += this_len;
-        block_counter++;
     }
     for (int i = 0; i < 8; i++) out.input_cv[i] = BLAKE3_IV[i];
     for (int i = 0; i < 16; i++) out.block_words[i] = 0;
@@ -743,13 +741,13 @@ __device__ void ekam_mix_block(uint8_t *pad, uint32_t index, uint64_t pass, int 
     uint32_t bw[16];
 
     b3_load_words_global(pad+cur_off, 64, bw);
-    b3_compress_cv(cv, bw, 0, 64, BLAKE3_CHUNK_START, cv);
+    b3_compress_cv(cv, bw, 0ULL, 64, BLAKE3_CHUNK_START, cv);
 
     b3_load_words_global(pad+prev_off, 64, bw);
-    b3_compress_cv(cv, bw, 1, 64, 0, cv);
+    b3_compress_cv(cv, bw, 0ULL, 64, 0, cv);
 
     b3_load_words_global(pad+rand_off, 64, bw);
-    b3_compress_cv(cv, bw, 2, 64, 0, cv);
+    b3_compress_cv(cv, bw, 0ULL, 64, 0, cv);
 
     for(int i=0;i<16;i++) bw[i]=0;
     bw[0]=(uint32_t)(pass & 0xFFFFFFFFu);
