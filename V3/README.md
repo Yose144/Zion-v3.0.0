@@ -155,7 +155,7 @@ ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-main
 ### Live Server
 
 - **157.180.41.213** (Helsinki, Hetzner) — 8 vCPU AMD EPYC, 16 GB RAM, 150 GB SSD, Ubuntu 24.04
-- Chain height: 30+ (first deploy 2026-03-13)
+- Chain height: 80+ (first deploy 2026-03-13, JSON-RPC 2.0 live since Phase 9)
 - Node P2P: `157.180.41.213:8334`
 - Node RPC: `157.180.41.213:8332`
 - Pool stratum: `157.180.41.213:8444`
@@ -191,7 +191,7 @@ Current template and accepted-block metadata now includes:
 2. ~~**Phase 7: Production Infrastructure**~~ ✅ done — LMDB storage, IBD, RPC, peer manager, metrics.
 3. ~~**Phase 8: Docker & Deployment**~~ ✅ done — multi-stage Docker images, compose stack, deployed to Helsinki.
 4. ~~**Phase 9: JSON-RPC 2.0 Live Methods**~~ ✅ done — 11 methods bound to NodeRuntime, auto-detected on RPC port, 371 tests.
-5. Extend persistent P2P connections and parallel multi-peer catch-up.
-5. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
-6. BFG scrub of premine private keys from git history before public launch.
-7. CI/CD pipeline with automated image builds.
+5. **Phase 10: P2P Hardening** — persistent connections, parallel multi-peer catch-up, peer scoring integration.
+6. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
+7. BFG scrub of premine private keys from git history before public launch.
+8. CI/CD pipeline with automated image builds.
