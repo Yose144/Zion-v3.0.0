@@ -52,6 +52,14 @@ fn main() -> Result<()> {
 
     bootstrap_peer_sync(&runtime, config.sync_batch_limit)?;
 
+    // Persist peers after bootstrap (captures any new peers learned)
+    {
+        let rt = runtime.lock().expect("lock");
+        if let Err(e) = rt.persist_peers() {
+            eprintln!("peers_persist_err err={e}");
+        }
+    }
+
     // Shared propagation state
     let seen_blocks = Arc::new(Mutex::new(SeenBlocks::new()));
     let prop_stats = Arc::new(PropagationStats::new());
@@ -671,8 +679,13 @@ fn relay_block_to_peers(
 }
 
 /// Outbound peer loop: periodically connects to known peers, syncs new blocks,
-/// sends heartbeat pings, and runs PeerManager maintenance.
+/// sends heartbeat pings, discovers new peers via GetPeers, and runs
+/// PeerManager maintenance.
 const OUTBOUND_CYCLE_SECS: u64 = 30;
+/// Run peer discovery (GetPeers) every N cycles (~5 min).
+const DISCOVERY_EVERY_N_CYCLES: u64 = 10;
+/// Persist known_peers to disk every N cycles (~5 min).
+const PERSIST_PEERS_EVERY_N_CYCLES: u64 = 10;
 
 fn outbound_peer_loop(
     runtime: &Arc<Mutex<NodeRuntime>>,
@@ -682,9 +695,11 @@ fn outbound_peer_loop(
     batch_limit: u16,
 ) {
     let mut last_heartbeat = Instant::now();
+    let mut cycle_count: u64 = 0;
 
     loop {
         thread::sleep(Duration::from_secs(OUTBOUND_CYCLE_SECS));
+        cycle_count += 1;
 
         // Run PeerManager heartbeat
         let actions = {
@@ -756,6 +771,58 @@ fn outbound_peer_loop(
                     // Peer unreachable — will be cleaned up by heartbeat timeout
                 }
                 _ => {}
+            }
+        }
+
+        // ── Peer discovery: ask a peer for its known peers ─────────────
+        if cycle_count % DISCOVERY_EVERY_N_CYCLES == 0 && !peers.is_empty() {
+            let idx = (cycle_count / DISCOVERY_EVERY_N_CYCLES) as usize % peers.len();
+            let target = &peers[idx];
+            match p2p_roundtrip(target, &P2pMessage::GetPeers) {
+                Ok(P2pMessage::Peers { peers: discovered }) => {
+                    let new_count = discovered.len();
+                    if new_count > 0 {
+                        let mut rt = runtime.lock().expect("lock");
+                        let before = rt.peer_count();
+                        rt.register_peers(discovered.clone());
+                        let after = rt.peer_count();
+                        drop(rt);
+                        if after > before {
+                            println!(
+                                "peer_discovery from={} new={} total={}",
+                                target.address(),
+                                after - before,
+                                after,
+                            );
+                            // Add new peers as seeds in PeerManager
+                            let new_seeds: Vec<(IpAddr, u16)> = discovered
+                                .iter()
+                                .filter_map(|p| {
+                                    p.address()
+                                        .rsplit_once(':')
+                                        .and_then(|(h, port)| {
+                                            let ip: IpAddr = h.parse().ok()?;
+                                            let port: u16 = port.parse().ok()?;
+                                            Some((ip, port))
+                                        })
+                                })
+                                .collect();
+                            peer_mgr.lock().expect("lock").add_seeds(&new_seeds);
+                        }
+                    }
+                }
+                Ok(_) => {} // unexpected response — ignore
+                Err(e) => {
+                    eprintln!("peer_discovery_err peer={} err={e}", target.address());
+                }
+            }
+        }
+
+        // ── Persist known_peers to disk ────────────────────────────────
+        if cycle_count % PERSIST_PEERS_EVERY_N_CYCLES == 0 {
+            let rt = runtime.lock().expect("lock");
+            if let Err(e) = rt.persist_peers() {
+                eprintln!("peers_persist_err err={e}");
             }
         }
 
