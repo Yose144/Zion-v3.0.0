@@ -102,7 +102,7 @@ This roadmap follows the release progression already defined in the repository d
   - **UTXO transaction model: TxInput/TxOutput/Transaction, SegWit-style BLAKE3 txid, signature verification** (`tx.rs`)
   - **Fee policy: MIN_TX_FEE=1000, MIN_FEE_RATE=1, MAX_TX_SIZE=100KB, 100% burn, burn/DAO addresses** (`fee.rs`)
   - **Wallet: largest-first coin selection, build_and_sign with zeroize, batch PPLNS payouts up to 200 recipients** (`wallet.rs`)
-  - **Full 10-step block validation: structure, timestamp, Merkle root, signatures, double-spend, coinbase maturity, fees, subsidy** (`validation.rs`)
+  - **Full 11-step block validation: structure, timestamp, Merkle root, signatures, double-spend, coinbase maturity, fees, subsidy, DAO treasury lock** (`validation.rs`)
   - **Chain reorg with fork choice, undo blocks, MAX_REORG_DEPTH=10** (`chain.rs`)
   - **Hardened mempool with double-spend, byte/count limits, fee-rate eviction** (`mempool_v2.rs`)
   - **P2P security: rate limiter, escalating bans, connection limiter** (`p2p_security.rs`)
@@ -112,6 +112,8 @@ This roadmap follows the release progression already defined in the repository d
   - **JSON-RPC 2.0 protocol handler: method registry, batch requests, 11 node method stubs** (`rpc.rs`)
   - **Peer manager: scoring, banning, subnet diversity (MAX_PER_SUBNET=4), heartbeat, idle timeout** (`peer_manager.rs`)
   - **Metrics: atomic counters/gauges, Prometheus text exposition, health check** (`metrics.rs`)
+  - **Genesis ceremony: frozen genesis hash, checkpoint system, 9 launch readiness checks** (`launch.rs`)
+  - **Node bootstrap orchestrator: wires ChainDb + IbdEngine + PeerManager + NodeMetrics + RpcRouter into NodeHandle** (`node_builder.rs`)
 - `L1/pool`
   - share validation and revenue tracking
   - session-oriented wire protocol
@@ -150,14 +152,16 @@ This roadmap follows the release progression already defined in the repository d
 - **78 new tests across crypto (19), tx (10), fee (15), wallet (9), validation (25) — all green**
 - **46 new tests across chain (14), mempool_v2 (12), p2p_security (10), orphan (10) — all green**
 - **62 new tests across storage (12), ibd (13), rpc (14), peer_manager (13), metrics (10) — all green**
+- **23 new tests across launch (10), node_builder (11), validation DAO lock (2) — all green**
 
 ### Not Done Yet
 
 - fuller propagation and multi-peer catch-up beyond the current one-block contiguous sync path
 - richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting
-- mainnet genesis ceremony assets and deploy pipeline for `V3/`
-- production CI/CD, docker, monitoring, and ops assets for the new tree
+- BFG scrub of premine private keys from git history
+- production CI/CD, docker images, monitoring, and ops assets for the new tree
 - DesktopApp runtime supervision for node, pool, miner, release provenance, and signing workflows
+- end-to-end multi-node acceptance and propagation flow validation
 
 ### L1 Testnet → V3 Mainnet Migration Tracker
 
@@ -167,7 +171,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 318 pass, 0 fail, 1 ignored |
+| Tests | ~200+ | 341 pass, 0 fail, 1 ignored |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | Account-style (simplified) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ekam Deeksha only |
@@ -175,7 +179,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 
 #### Module Status (35 items)
 
-**Done (22):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (10-step pipeline, Merkle tree, signatures, maturity, fees), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (protocol handler, 11 method stubs), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check)
+**Done (24):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (protocol handler, 11 method stubs), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems)
 
 **Partial (4):** P2P (missing async, connection pool, outbound relay, multi-peer sync, peer scoring), RPC (11/~40 methods), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
 
@@ -218,8 +222,8 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | G6 | Max reorg depth | 10 blocks | ✅ `chain.rs` — MAX_REORG_DEPTH=10, enforced in evaluate_reorg | ~~Phase 6a~~ done |
 | G7 | Coinbase maturity | 100 blocks | ✅ `validation.rs` — COINBASE_MATURITY=100, enforced in validate_block | ~~Phase 6b~~ done |
 | G8 | Fee burn | 100% of fees burned | ✅ `fee.rs` — 100% burn, BURN_ADDRESS defined | ~~Phase 6b~~ done |
-| G9 | Seed peers | 5+ required for eclipse resistance | 1 hardcoded (`91.98.122.165:8334`) | **Phase 8** |
-| G10 | Premine unlock_height | DAO Treasury cliff at ~525,600 | No unlock enforcement in V3 | **Phase 6b** |
+| G9 | Seed peers | 5+ required for eclipse resistance | ✅ 5 geographically distributed peers in `NodeConfig::mainnet()` | ~~Phase 8~~ done |
+| G10 | Premine unlock_height | DAO Treasury cliff at ~525,600 | ✅ `validation.rs` Step 11: `validate_premine_locks()` calls `genesis::is_premine_transfer_allowed()` | ~~Phase 8~~ done |
 
 #### MEDIUM — required before production launch, not for testnet
 
@@ -706,7 +710,7 @@ Critical path — next up (sequential):
 Critical path — next up (sequential):
 
 9. ~~**Phase 7: Production Infrastructure** — LMDB storage (7a), IBD sync (7b), RPC expansion (7c), peer manager (7d), metrics (7e).~~ ✅ done
-10. **Phase 8: Mainnet Launch Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.
+10. ~~**Phase 8: Mainnet Launch Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.~~ ✅ code done (launch.rs, node_builder.rs, DAO lock, 5 seed peers)
 
 ## Implementation Dependencies
 
