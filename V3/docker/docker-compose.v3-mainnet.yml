@@ -1,0 +1,70 @@
+# ZION V3 Mainnet Stack
+#
+# Runs the full V3 mainnet node + pool + miner on one host.
+#
+# Usage:
+#   docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
+#   docker compose -f V3/docker/docker-compose.v3-mainnet.yml logs -f
+#   docker compose -f V3/docker/docker-compose.v3-mainnet.yml down
+
+services:
+  node:
+    build:
+      context: ../..
+      dockerfile: V3/docker/Dockerfile.node
+    image: zion-v3-node:latest
+    container_name: zion-v3-node
+    restart: unless-stopped
+    ports:
+      - "8334:8334"   # P2P
+      - "8332:8332"   # RPC (bind to localhost in production)
+    volumes:
+      - zion-node-data:/data/zion
+    environment:
+      ZION_NODE_ID: v3-mainnet-helsinki
+      ZION_NODE_STATE_PATH: /data/zion/state
+      ZION_P2P_BIND: "0.0.0.0:8334"
+      ZION_RPC_BIND: "0.0.0.0:8332"
+      ZION_SEED_PEERS: "91.98.122.165:8334,seed-eu1.zionchain.org:8334,seed-us1.zionchain.org:8334,seed-us2.zionchain.org:8334,seed-ap1.zionchain.org:8334"
+    networks:
+      - zion-v3
+
+  pool:
+    build:
+      context: ../..
+      dockerfile: V3/docker/Dockerfile.pool
+    image: zion-v3-pool:latest
+    container_name: zion-v3-pool
+    restart: unless-stopped
+    ports:
+      - "8444:8444"   # Pool stratum
+    environment:
+      ZION_POOL_BIND: "0.0.0.0:8444"
+      ZION_NODE_RPC_ADDR: "node:8332"
+    depends_on:
+      - node
+    networks:
+      - zion-v3
+
+  miner:
+    build:
+      context: ../..
+      dockerfile: V3/docker/Dockerfile.miner
+    image: zion-v3-miner:latest
+    container_name: zion-v3-miner
+    restart: unless-stopped
+    environment:
+      ZION_POOL_ADDR: "pool:8444"
+      ZION_MINER_THREADS: "2"
+    depends_on:
+      - pool
+    networks:
+      - zion-v3
+
+volumes:
+  zion-node-data:
+    driver: local
+
+networks:
+  zion-v3:
+    driver: bridge
