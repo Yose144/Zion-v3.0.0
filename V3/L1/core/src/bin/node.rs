@@ -7,6 +7,7 @@ use std::thread;
 use zion_core::{
     decode_p2p_message, decode_rpc_request, encode_p2p_message, encode_rpc_response,
     node_protocol_version, propagation::{PropagationStats, SeenBlocks},
+    rpc::{build_node_router, RpcRouter},
     AcceptedBlock, NodeConfig, NodeRuntime, P2pMessage, PeerEndpoint,
 };
 
@@ -51,6 +52,9 @@ fn main() -> Result<()> {
     let seen_blocks = Arc::new(Mutex::new(SeenBlocks::new()));
     let prop_stats = Arc::new(PropagationStats::new());
 
+    // JSON-RPC 2.0 router (shared across all RPC client threads)
+    let jsonrpc_router = Arc::new(build_node_router(Arc::clone(&runtime)));
+
     let p2p_listener = TcpListener::bind(config.node_config.p2p_bind.address())
         .context("failed to bind P2P listener")?;
     let rpc_listener = TcpListener::bind(config.node_config.rpc_bind.address())
@@ -87,6 +91,7 @@ fn main() -> Result<()> {
     let rpc_runtime = Arc::clone(&runtime);
     let rpc_seen = Arc::clone(&seen_blocks);
     let rpc_stats = Arc::clone(&prop_stats);
+    let rpc_router = Arc::clone(&jsonrpc_router);
     let rpc_limit = config.rpc_accept_limit;
     let rpc_thread = thread::spawn(move || -> Result<()> {
         let mut handles = Vec::new();
@@ -100,8 +105,9 @@ fn main() -> Result<()> {
             let runtime = Arc::clone(&rpc_runtime);
             let seen = Arc::clone(&rpc_seen);
             let stats = Arc::clone(&rpc_stats);
+            let router = Arc::clone(&rpc_router);
             handles.push(thread::spawn(move || {
-                handle_rpc_stream(stream, &runtime, &seen, &stats)
+                handle_rpc_stream(stream, &runtime, &seen, &stats, &router)
             }));
             accepted = accepted.saturating_add(1);
         }
@@ -178,6 +184,7 @@ fn handle_rpc_stream(
     runtime: &Arc<Mutex<NodeRuntime>>,
     seen: &Arc<Mutex<SeenBlocks>>,
     stats: &Arc<PropagationStats>,
+    jsonrpc_router: &Arc<RpcRouter>,
 ) -> Result<()> {
     let reader_stream = stream.try_clone().context("failed to clone RPC stream")?;
     let mut reader = BufReader::new(reader_stream);
@@ -185,6 +192,28 @@ fn handle_rpc_stream(
 
     let line = read_line(&mut reader)?;
     println!("rpc_in={line}");
+
+    // Protocol detection: JSON-RPC 2.0 requests contain "jsonrpc" key
+    let parsed: serde_json::Value = serde_json::from_str(&line)
+        .unwrap_or(serde_json::Value::Null);
+
+    let is_jsonrpc = parsed.get("jsonrpc").is_some()
+        || parsed.as_array().map_or(false, |arr| {
+            arr.first().and_then(|v| v.get("jsonrpc")).is_some()
+        });
+
+    if is_jsonrpc {
+        // JSON-RPC 2.0 protocol
+        let response_bytes = jsonrpc_router.handle_raw(line.as_bytes());
+        writer.write_all(&response_bytes).context("failed to write JSON-RPC response")?;
+        writer.write_all(b"\n").context("failed to write newline")?;
+        writer.flush().context("failed to flush JSON-RPC response")?;
+        let trimmed = String::from_utf8_lossy(&response_bytes);
+        println!("jsonrpc_out={trimmed}");
+        return Ok(());
+    }
+
+    // Simple line-delimited protocol (used by pool/miner)
     let request = decode_rpc_request(&line).context("failed to decode RPC request")?;
 
     // Check if this is a submit that might produce a new block
