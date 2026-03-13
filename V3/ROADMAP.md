@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-15
+Status date: 2026-03-13
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -114,6 +114,8 @@ This roadmap follows the release progression already defined in the repository d
   - **Metrics: atomic counters/gauges, Prometheus text exposition, health check** (`metrics.rs`)
   - **Genesis ceremony: frozen genesis hash, checkpoint system, 9 launch readiness checks** (`launch.rs`)
   - **Node bootstrap orchestrator: wires ChainDb + IbdEngine + PeerManager + NodeMetrics + RpcRouter into NodeHandle** (`node_builder.rs`)
+  - **Genesis dedication message: ASCII art + ZION banner + dedication embedded in coinbase tx_id hash** (`GENESIS_MESSAGE.txt`, `genesis.rs`)
+  - **Flood-fill block propagation: SeenBlocks dedup cache, plan_relay() logic, PropagationStats, node binary relay on peer announce and RPC submit** (`propagation.rs`)
 - `L1/pool`
   - share validation and revenue tracking
   - session-oriented wire protocol
@@ -153,10 +155,12 @@ This roadmap follows the release progression already defined in the repository d
 - **46 new tests across chain (14), mempool_v2 (12), p2p_security (10), orphan (10) — all green**
 - **62 new tests across storage (12), ibd (13), rpc (14), peer_manager (13), metrics (10) — all green**
 - **23 new tests across launch (10), node_builder (11), validation DAO lock (2) — all green**
+- **15 new tests across propagation (15) — all green**
+- **3 new tests for genesis message embedding — all green**
 
 ### Not Done Yet
 
-- fuller propagation and multi-peer catch-up beyond the current one-block contiguous sync path
+- fuller propagation and multi-peer catch-up beyond the current one-block contiguous sync path → **flood-fill relay implemented; persistent connections and parallel multi-peer catch-up remain**
 - richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting
 - BFG scrub of premine private keys from git history
 - production CI/CD, docker images, monitoring, and ops assets for the new tree
@@ -171,7 +175,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 341 pass, 0 fail, 1 ignored |
+| Tests | ~200+ | 359 pass, 0 fail, 1 ignored |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | Account-style (simplified) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ekam Deeksha only |
@@ -179,7 +183,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 
 #### Module Status (35 items)
 
-**Done (24):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (protocol handler, 11 method stubs), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems)
+**Done (25):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (protocol handler, 11 method stubs), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats)
 
 **Partial (4):** P2P (missing async, connection pool, outbound relay, multi-peer sync, peer scoring), RPC (11/~40 methods), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
 
@@ -203,7 +207,7 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | G2 | **Atomic units (flowers)** | 1 ZION = 1e12 flowers; reward = 5,400,067,000,000,000 flowers | ✅ Integrated in `emission.rs` | Same as G1 |
 | G3 | **LWMA DAA** | 60-block window, ±25% max change, 30–120 s solve-time clamp | ✅ `difficulty.rs` — 21 tests, integer-only ±25% clamp | `L1/core/src/blockchain/consensus.rs` |
 | G4 | **Genesis block + premine** | 16.28B ZION into 12 addresses as coinbase outputs in block 0 | ✅ `genesis.rs` — 17 tests, 12 premine outputs, frozen hash, ChainState init | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
-| G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | Single request/response TCP; no outbound push | New code (extend P2P handle + NodeRuntime) → **Phase 5d** |
+| G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | ✅ `propagation.rs` — SeenBlocks dedup, plan_relay(), node binary relay on announce+submit | ~~Phase 5d~~ done |
 
 #### CRITICAL — cryptographic & transaction foundation (added 2026-03-13 from L1 audit)
 
@@ -320,7 +324,7 @@ Exit criteria:
 - pool and node services can hold state across repeated client sessions
 - node can carry a basic mempool into templates and recover the resulting chain snapshot after restart
 
-Status: in progress — single-host path works; propagation and multi-peer catch-up remain
+Status: in progress — single-host path works; persistent connections and parallel multi-peer catch-up remain
 
 ### Phase 5a: Emission & Atomic Units (G1, G2)
 
@@ -422,7 +426,7 @@ Exit criteria:
 - no duplicate block relay loops (seen-set or similar)
 - two-node and three-node rehearsals pass
 
-Status: pending
+Status: done — `propagation.rs` (200 LoC, 15 tests), node binary relay on announce+submit
 
 ### Phase 5e: Cryptographic Foundation (G16)
 
@@ -701,7 +705,7 @@ Completed:
 
 Parallel track:
 
-8. **Phase 5d: Propagation** — outbound block push + multi-peer catch-up. Required for multi-node testnet.
+8. ~~**Phase 5d: Propagation** — flood-fill relay, SeenBlocks dedup, PropagationStats (`propagation.rs`).~~ ✅ done
 
 Critical path — next up (sequential):
 
@@ -722,7 +726,7 @@ Critical path — next up (sequential):
                                      │                          ▼                                ▼
                                      │                     5h (validation) ✅ ──→ Phase 6 ✅ ──→ Phase 7 ✅ ──→ Phase 8
                                      │
-5d (propagation) ─────────────────────────────────────────────────────────→ Phase 7 ✅ ──→ Phase 8
+5d (propagation) ✅ ──────────────────────────────────────────────────────→ Phase 7 ✅ ──→ Phase 8
 ```
 
 ## Frozen Constants Reference
