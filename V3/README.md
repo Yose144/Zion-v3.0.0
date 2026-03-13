@@ -44,6 +44,11 @@ Out of scope for the bootstrap:
 - `L1/core` now carries a hardened mempool: double-spend outpoint tracking, byte/count limits (20 MB / 10K txs), fee-rate eviction, structured rejection (`mempool_v2.rs`)
 - `L1/core` now carries P2P security: per-IP rate limiter, escalating bans (5 min → 30 min → 2 hr → permanent), connection limiter (128 max) (`p2p_security.rs`)
 - `L1/core` now carries orphan block handling: orphan pool with FIFO eviction (200 max, 10 min expiry), chain ID enforcement (`zion-mainnet-1`) (`orphan.rs`)
+- `L1/core` now carries LMDB persistent storage via heed: 8 databases (blocks, utxos, tx_index, balance_cache, undo_blocks, height_to_hash, hash_to_height, meta), atomic block+UTXO writes, rollback, balance cache, schema versioning (`storage.rs`)
+- `L1/core` now carries the IBD state machine: batch sync (500 blocks/request), stall detection (120 s timeout, 3 retries), peer round-robin, SyncStatus tracking (Ibd/Syncing/Synced) (`ibd.rs`)
+- `L1/core` now carries a JSON-RPC 2.0 protocol handler: method registry, batch requests, standard error codes, 11 node method stubs via `build_node_router()` (`rpc.rs`)
+- `L1/core` now carries the peer manager: scoring with ban threshold, subnet diversity (MAX_PER_SUBNET=4), heartbeat with idle timeout, inbound/outbound tracking, seed management (`peer_manager.rs`)
+- `L1/core` now carries metrics: atomic counters/gauges (blocks, txs, mempool, peers, difficulty), Prometheus text exposition format with `zion_` prefix, health check JSON (`metrics.rs`)
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
