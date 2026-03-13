@@ -1,0 +1,477 @@
+//! ZION Wallet — UTXO coin selection, transaction building, and signing.
+//!
+//! Provides the core logic for constructing and signing UTXO transactions:
+//! - Largest-first coin selection
+//! - Explicit change output generation
+//! - Ed25519 signing with post-sign `zeroize`
+//! - Multi-recipient batch payouts (pool PPLNS)
+
+use crate::crypto;
+use crate::fee;
+use crate::tx::{Transaction, TxInput, TxOutput};
+use ed25519_dalek::SigningKey;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+// ── Constants ──────────────────────────────────────────────────────────
+
+/// Maximum recipients in a single batch payout transaction.
+pub const MAX_BATCH_RECIPIENTS: usize = 200;
+
+/// Minimum payout amount: 10 ZION in flowers.
+pub const MIN_PAYOUT_AMOUNT: u64 = 10_000_000_000_000;
+
+// ── Types ──────────────────────────────────────────────────────────────
+
+/// A spendable UTXO known to the wallet.
+#[derive(Debug, Clone)]
+pub struct SpendableUtxo {
+    pub tx_hash: [u8; 32],
+    pub output_index: u32,
+    pub amount: u64,
+    pub address: String,
+}
+
+/// Parameters for a single send operation.
+#[derive(Debug, Clone)]
+pub struct SendParams {
+    pub to_address: String,
+    pub amount: u64,
+    pub fee: u64,
+}
+
+/// Result of building a transaction.
+#[derive(Debug, Clone)]
+pub struct BuildResult {
+    pub transaction: Transaction,
+    /// The change UTXO returned to the sender (if any).
+    pub change_amount: u64,
+}
+
+/// Wallet errors.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WalletError {
+    InsufficientFunds { available: u64, needed: u64 },
+    NoUtxos,
+    InvalidAddress(String),
+    FeeTooLow { fee: u64, minimum: u64 },
+    AmountTooSmall(u64),
+    TooManyRecipients(usize),
+    SigningFailed,
+}
+
+impl std::fmt::Display for WalletError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InsufficientFunds { available, needed } =>
+                write!(f, "insufficient funds: have {available}, need {needed}"),
+            Self::NoUtxos => write!(f, "no spendable UTXOs"),
+            Self::InvalidAddress(a) => write!(f, "invalid address: {a}"),
+            Self::FeeTooLow { fee, minimum } =>
+                write!(f, "fee {fee} below minimum {minimum}"),
+            Self::AmountTooSmall(a) => write!(f, "amount {a} too small"),
+            Self::TooManyRecipients(n) =>
+                write!(f, "too many recipients: {n} (max {MAX_BATCH_RECIPIENTS})"),
+            Self::SigningFailed => write!(f, "signing failed"),
+        }
+    }
+}
+
+// ── Coin selection ─────────────────────────────────────────────────────
+
+/// Select UTXOs using largest-first strategy.
+///
+/// Returns selected UTXOs and total selected amount, or error if insufficient.
+fn select_utxos(
+    available: &[SpendableUtxo],
+    target: u64,
+) -> Result<(Vec<&SpendableUtxo>, u64), WalletError> {
+    if available.is_empty() {
+        return Err(WalletError::NoUtxos);
+    }
+
+    let mut sorted: Vec<&SpendableUtxo> = available.iter().collect();
+    sorted.sort_by(|a, b| b.amount.cmp(&a.amount));
+
+    let mut selected = Vec::new();
+    let mut total: u64 = 0;
+    for utxo in sorted {
+        selected.push(utxo);
+        total = total.saturating_add(utxo.amount);
+        if total >= target {
+            return Ok((selected, total));
+        }
+    }
+    Err(WalletError::InsufficientFunds {
+        available: total,
+        needed: target,
+    })
+}
+
+// ── Build & sign ───────────────────────────────────────────────────────
+
+/// Build and sign a single-recipient transaction.
+///
+/// - Selects UTXOs (largest-first) to cover `params.amount + params.fee`
+/// - Creates change output if excess > 0
+/// - Signs all inputs with Ed25519
+/// - Zeroizes signing key bytes after use
+pub fn build_and_sign(
+    signing_key: &SigningKey,
+    change_address: &str,
+    params: &SendParams,
+    available_utxos: &[SpendableUtxo],
+) -> Result<BuildResult, WalletError> {
+    // Validate
+    if !crypto::is_valid_address(&params.to_address) {
+        return Err(WalletError::InvalidAddress(params.to_address.clone()));
+    }
+
+    let num_inputs_est = available_utxos.len().min(10); // rough estimate
+    let num_outputs_est = 2; // send + change
+    let estimated_size = fee::estimate_tx_size(num_inputs_est, num_outputs_est);
+    let min_fee = fee::minimum_fee_for_size(estimated_size);
+    if params.fee < min_fee {
+        return Err(WalletError::FeeTooLow {
+            fee: params.fee,
+            minimum: min_fee,
+        });
+    }
+
+    let target = params.amount.checked_add(params.fee)
+        .ok_or(WalletError::InsufficientFunds {
+            available: 0,
+            needed: u64::MAX,
+        })?;
+
+    let (selected, total) = select_utxos(available_utxos, target)?;
+
+    let change = total - target;
+
+    // Build outputs
+    let mut outputs = vec![TxOutput {
+        amount: params.amount,
+        address: params.to_address.clone(),
+        memo: None,
+    }];
+    if change > 0 {
+        outputs.push(TxOutput {
+            amount: change,
+            address: change_address.to_string(),
+            memo: None,
+        });
+    }
+
+    // Build inputs (unsigned)
+    let vk = signing_key.verifying_key();
+    let inputs: Vec<TxInput> = selected
+        .iter()
+        .map(|utxo| TxInput {
+            prev_tx_hash: utxo.tx_hash,
+            output_index: utxo.output_index,
+            signature: vec![],
+            public_key: vk.as_bytes().to_vec(),
+        })
+        .collect();
+
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let mut tx = Transaction {
+        id: [0u8; 32],
+        version: 1,
+        inputs,
+        outputs,
+        fee: params.fee,
+        timestamp: now,
+    };
+
+    // Finalize hash (before signing)
+    tx.finalize_id();
+
+    // Sign each input
+    let mut key_bytes = signing_key.to_bytes();
+    for input in &mut tx.inputs {
+        let sig = crypto::sign_and_zeroize(key_bytes, &tx.id)
+            .map_err(|_| WalletError::SigningFailed)?;
+        input.signature = sig.to_vec();
+        // Re-derive key for next input (zeroize happens inside sign_and_zeroize)
+        key_bytes = signing_key.to_bytes();
+    }
+    // Final zeroize
+    use zeroize::Zeroize;
+    key_bytes.zeroize();
+
+    Ok(BuildResult {
+        change_amount: change,
+        transaction: tx,
+    })
+}
+
+// ── Batch payouts ──────────────────────────────────────────────────────
+
+/// Recipient for a batch payout.
+#[derive(Debug, Clone)]
+pub struct BatchRecipient {
+    pub address: String,
+    pub amount: u64,
+}
+
+/// Build and sign a multi-recipient batch payout transaction (for pool PPLNS).
+pub fn build_batch_payout(
+    signing_key: &SigningKey,
+    change_address: &str,
+    recipients: &[BatchRecipient],
+    fee: u64,
+    available_utxos: &[SpendableUtxo],
+) -> Result<BuildResult, WalletError> {
+    if recipients.len() > MAX_BATCH_RECIPIENTS {
+        return Err(WalletError::TooManyRecipients(recipients.len()));
+    }
+
+    let total_payout: u64 = recipients.iter().map(|r| r.amount).sum();
+    let target = total_payout.checked_add(fee)
+        .ok_or(WalletError::InsufficientFunds {
+            available: 0,
+            needed: u64::MAX,
+        })?;
+
+    let (selected, total) = select_utxos(available_utxos, target)?;
+    let change = total - target;
+
+    // Build outputs
+    let mut outputs: Vec<TxOutput> = recipients
+        .iter()
+        .map(|r| TxOutput {
+            amount: r.amount,
+            address: r.address.clone(),
+            memo: None,
+        })
+        .collect();
+    if change > 0 {
+        outputs.push(TxOutput {
+            amount: change,
+            address: change_address.to_string(),
+            memo: None,
+        });
+    }
+
+    let vk = signing_key.verifying_key();
+    let inputs: Vec<TxInput> = selected
+        .iter()
+        .map(|utxo| TxInput {
+            prev_tx_hash: utxo.tx_hash,
+            output_index: utxo.output_index,
+            signature: vec![],
+            public_key: vk.as_bytes().to_vec(),
+        })
+        .collect();
+
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let mut tx = Transaction {
+        id: [0u8; 32],
+        version: 1,
+        inputs,
+        outputs,
+        fee,
+        timestamp: now,
+    };
+    tx.finalize_id();
+
+    let mut key_bytes = signing_key.to_bytes();
+    for input in &mut tx.inputs {
+        let sig = crypto::sign_and_zeroize(key_bytes, &tx.id)
+            .map_err(|_| WalletError::SigningFailed)?;
+        input.signature = sig.to_vec();
+        key_bytes = signing_key.to_bytes();
+    }
+    use zeroize::Zeroize;
+    key_bytes.zeroize();
+
+    Ok(BuildResult {
+        change_amount: change,
+        transaction: tx,
+    })
+}
+
+// ── Tests ──────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::crypto::{derive_address, generate_keypair};
+
+    fn make_utxos(amounts: &[u64], address: &str) -> Vec<SpendableUtxo> {
+        amounts
+            .iter()
+            .enumerate()
+            .map(|(i, &amount)| SpendableUtxo {
+                tx_hash: [i as u8; 32],
+                output_index: 0,
+                amount,
+                address: address.to_string(),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn build_and_sign_single_send() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let utxos = make_utxos(&[5_000_000_000_000], &addr); // 5 ZION
+
+        let params = SendParams {
+            to_address: derive_address(&[99u8; 32]),
+            amount: 2_000_000_000_000, // 2 ZION
+            fee: 1_000,
+        };
+
+        let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
+        assert!(result.transaction.verify_signatures());
+        assert_eq!(result.transaction.outputs[0].amount, 2_000_000_000_000);
+        assert_eq!(result.change_amount, 5_000_000_000_000 - 2_000_000_000_000 - 1_000);
+    }
+
+    #[test]
+    fn build_and_sign_exact_amount_no_change() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let utxos = make_utxos(&[1_001_000], &addr);
+
+        let params = SendParams {
+            to_address: derive_address(&[99u8; 32]),
+            amount: 1_000_000,
+            fee: 1_000,
+        };
+
+        let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
+        assert_eq!(result.change_amount, 0);
+        assert_eq!(result.transaction.outputs.len(), 1); // no change output
+    }
+
+    #[test]
+    fn insufficient_funds_error() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let utxos = make_utxos(&[500], &addr);
+
+        let params = SendParams {
+            to_address: derive_address(&[99u8; 32]),
+            amount: 1_000_000,
+            fee: 1_000,
+        };
+
+        let err = build_and_sign(&sk, &addr, &params, &utxos).unwrap_err();
+        assert!(matches!(err, WalletError::InsufficientFunds { .. }));
+    }
+
+    #[test]
+    fn no_utxos_error() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+
+        let params = SendParams {
+            to_address: derive_address(&[99u8; 32]),
+            amount: 1_000,
+            fee: 1_000,
+        };
+
+        let err = build_and_sign(&sk, &addr, &params, &[]).unwrap_err();
+        assert_eq!(err, WalletError::NoUtxos);
+    }
+
+    #[test]
+    fn invalid_address_rejected() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let utxos = make_utxos(&[1_000_000], &addr);
+
+        let params = SendParams {
+            to_address: "invalid_address".to_string(),
+            amount: 1_000,
+            fee: 1_000,
+        };
+
+        let err = build_and_sign(&sk, &addr, &params, &utxos).unwrap_err();
+        assert!(matches!(err, WalletError::InvalidAddress(_)));
+    }
+
+    #[test]
+    fn largest_first_coin_selection() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        // 3 UTXOs: 100, 500, 200 → should select 500 first
+        let utxos = make_utxos(&[100_000, 500_000, 200_000], &addr);
+
+        let params = SendParams {
+            to_address: derive_address(&[99u8; 32]),
+            amount: 400_000,
+            fee: 1_000,
+        };
+
+        let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
+        // Should use the 500K UTXO only
+        assert_eq!(result.transaction.inputs.len(), 1);
+        assert_eq!(result.change_amount, 500_000 - 400_000 - 1_000);
+    }
+
+    #[test]
+    fn batch_payout_basic() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let utxos = make_utxos(&[100_000_000_000_000], &addr); // 100 ZION
+
+        let recipients: Vec<BatchRecipient> = (0..5)
+            .map(|i| BatchRecipient {
+                address: derive_address(&[i as u8; 32]),
+                amount: MIN_PAYOUT_AMOUNT,
+            })
+            .collect();
+
+        let result = build_batch_payout(&sk, &addr, &recipients, 5_000, &utxos).unwrap();
+        assert!(result.transaction.verify_signatures());
+        assert_eq!(result.transaction.outputs.len(), 6); // 5 recipients + change
+        let total_out: u64 = result.transaction.outputs.iter().map(|o| o.amount).sum();
+        assert_eq!(total_out + result.transaction.fee, 100_000_000_000_000);
+    }
+
+    #[test]
+    fn batch_too_many_recipients() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let utxos = make_utxos(&[u64::MAX / 2], &addr);
+
+        let recipients: Vec<BatchRecipient> = (0..201)
+            .map(|i| BatchRecipient {
+                address: derive_address(&[i as u8; 32]),
+                amount: 1_000,
+            })
+            .collect();
+
+        let err = build_batch_payout(&sk, &addr, &recipients, 1_000, &utxos).unwrap_err();
+        assert!(matches!(err, WalletError::TooManyRecipients(201)));
+    }
+
+    #[test]
+    fn signatures_verify_after_build() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let utxos = make_utxos(&[1_000_000, 2_000_000], &addr);
+
+        let params = SendParams {
+            to_address: derive_address(&[42u8; 32]),
+            amount: 2_500_000,
+            fee: 1_000,
+        };
+
+        let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
+        assert!(result.transaction.verify_signatures());
+        // Should use both UTXOs (2M + 1M = 3M, need 2.501M)
+        assert_eq!(result.transaction.inputs.len(), 2);
+    }
+}

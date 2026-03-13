@@ -14,6 +14,12 @@ path = "src/bin/node.rs"
 
 [dependencies]
 anyhow.workspace = true
+blake3.workspace = true
+ed25519-dalek.workspace = true
+rand.workspace = true
+ripemd.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
+zeroize.workspace = true
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
