@@ -161,7 +161,7 @@ This roadmap follows the release progression already defined in the repository d
 
 ### Not Done Yet
 
-- persistent peer connections and parallel multi-peer catch-up (flood-fill relay is done, but each P2P exchange still opens a new TCP connection)
+- persistent peer connections and parallel multi-peer catch-up (Phase 10 delivered persistent inbound + outbound peer thread with heartbeat; full async multiplexing and parallel IBD remain)
 - richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting
 - BFG scrub of premine private keys from git history
 - ~~production Docker images for node, pool, miner~~ → ✅ done (multi-stage Dockerfiles + compose stack)
@@ -188,9 +188,9 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 
 **Done (26):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (11 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitBlock — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats)
 
-**Partial (3):** P2P (missing async, connection pool, outbound relay, multi-peer sync, peer scoring), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
+**Partial (3):** P2P (Phase 10 added persistent connections, outbound peer thread, heartbeat, PeerManager+PeerSecurity wiring; missing full async networking, parallel multi-peer IBD), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
 
-**Missing (7):** P2P sync (full async networking with IBD integration), peer discovery, checkpoints, heartbeat protocol, peer persistence, security audit tools, load tests
+**Missing (7):** P2P sync (full async networking with IBD integration), peer discovery, checkpoints, ~~heartbeat protocol~~ → ✅ Phase 10 (Ping/Pong outbound loop), peer persistence, security audit tools, load tests
 
 #### Open Architectural Decisions
 

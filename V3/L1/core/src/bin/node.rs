@@ -1,12 +1,16 @@
 use anyhow::{anyhow, Context, Result};
 use std::collections::{HashSet, VecDeque};
 use std::io::{BufRead, BufReader, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{IpAddr, TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use zion_core::{
     decode_p2p_message, decode_rpc_request, encode_p2p_message, encode_rpc_response,
-    node_protocol_version, propagation::{PropagationStats, SeenBlocks},
+    node_protocol_version,
+    p2p_security::PeerSecurity,
+    peer_manager::{PeerAction, PeerDirection, PeerManager},
+    propagation::{PropagationStats, SeenBlocks},
     rpc::{build_node_router, RpcRouter},
     AcceptedBlock, NodeConfig, NodeRuntime, P2pMessage, PeerEndpoint,
 };
@@ -52,6 +56,30 @@ fn main() -> Result<()> {
     let seen_blocks = Arc::new(Mutex::new(SeenBlocks::new()));
     let prop_stats = Arc::new(PropagationStats::new());
 
+    // Peer manager — scoring, tracking, subnet diversity
+    let peer_mgr = Arc::new(Mutex::new(PeerManager::new()));
+    {
+        let seeds: Vec<(IpAddr, u16)> = runtime
+            .lock()
+            .expect("lock")
+            .known_peers()
+            .iter()
+            .filter_map(|p| {
+                p.address()
+                    .rsplit_once(':')
+                    .and_then(|(h, port)| {
+                        let ip: IpAddr = h.parse().ok()?;
+                        let port: u16 = port.parse().ok()?;
+                        Some((ip, port))
+                    })
+            })
+            .collect();
+        peer_mgr.lock().expect("lock").add_seeds(&seeds);
+    }
+
+    // P2P security — rate limiting, banning, connection limits
+    let peer_sec = Arc::new(Mutex::new(PeerSecurity::new()));
+
     // JSON-RPC 2.0 router (shared across all RPC client threads)
     let jsonrpc_router = Arc::new(build_node_router(Arc::clone(&runtime)));
 
@@ -60,9 +88,22 @@ fn main() -> Result<()> {
     let rpc_listener = TcpListener::bind(config.node_config.rpc_bind.address())
         .context("failed to bind RPC listener")?;
 
+    // ── Outbound peer thread ───────────────────────────────────────────
+    let ob_runtime = Arc::clone(&runtime);
+    let ob_seen = Arc::clone(&seen_blocks);
+    let ob_stats = Arc::clone(&prop_stats);
+    let ob_peer_mgr = Arc::clone(&peer_mgr);
+    let ob_batch_limit = config.sync_batch_limit;
+    let outbound_thread = thread::spawn(move || {
+        outbound_peer_loop(&ob_runtime, &ob_seen, &ob_stats, &ob_peer_mgr, ob_batch_limit);
+    });
+
+    // ── P2P accept loop ────────────────────────────────────────────────
     let p2p_runtime = Arc::clone(&runtime);
     let p2p_seen = Arc::clone(&seen_blocks);
     let p2p_stats = Arc::clone(&prop_stats);
+    let p2p_peer_mgr = Arc::clone(&peer_mgr);
+    let p2p_peer_sec = Arc::clone(&peer_sec);
     let p2p_limit = config.p2p_accept_limit;
     let p2p_thread = thread::spawn(move || -> Result<()> {
         let mut handles = Vec::new();
@@ -72,13 +113,32 @@ fn main() -> Result<()> {
                 break;
             }
             let (stream, peer_addr) = p2p_listener.accept().context("failed to accept P2P peer")?;
+
+            // Security gate: check ban + connection limit
+            let peer_ip = peer_addr.ip();
+            let now_epoch = epoch_secs();
+            {
+                let mut sec = p2p_peer_sec.lock().expect("lock");
+                if !sec.try_accept_connection(&peer_ip, now_epoch) {
+                    println!("p2p_rejected ip={peer_ip} (banned or at limit)");
+                    drop(stream);
+                    continue;
+                }
+            }
+
             println!("p2p_peer_addr={peer_addr}");
             let runtime = Arc::clone(&p2p_runtime);
             let seen = Arc::clone(&p2p_seen);
             let stats = Arc::clone(&p2p_stats);
+            let mgr = Arc::clone(&p2p_peer_mgr);
+            let sec = Arc::clone(&p2p_peer_sec);
             let source = peer_addr.to_string();
+            let source_ip = peer_ip;
             handles.push(thread::spawn(move || {
-                handle_p2p_stream(stream, &runtime, &seen, &stats, &source)
+                let result = handle_p2p_stream(stream, &runtime, &seen, &stats, &source, &mgr, &sec, source_ip);
+                // Release connection slot when stream ends
+                sec.lock().expect("lock").release_connection();
+                result
             }));
             accepted = accepted.saturating_add(1);
         }
@@ -119,6 +179,7 @@ fn main() -> Result<()> {
 
     p2p_thread.join().map_err(|_| anyhow!("P2P thread panicked"))??;
     rpc_thread.join().map_err(|_| anyhow!("RPC thread panicked"))??;
+    let _ = outbound_thread.join();
 
     let status = runtime.lock().expect("node runtime lock poisoned").status();
     let snap = prop_stats.snapshot();
@@ -136,45 +197,135 @@ fn handle_p2p_stream(
     seen: &Arc<Mutex<SeenBlocks>>,
     stats: &Arc<PropagationStats>,
     source_addr: &str,
+    peer_mgr: &Arc<Mutex<PeerManager>>,
+    peer_sec: &Arc<Mutex<PeerSecurity>>,
+    source_ip: IpAddr,
 ) -> Result<()> {
+    // Set read timeout so idle connections are cleaned up
+    stream
+        .set_read_timeout(Some(Duration::from_secs(330)))
+        .ok();
     let reader_stream = stream.try_clone().context("failed to clone P2P stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
-    let line = read_line(&mut reader)?;
-    println!("p2p_in={line}");
-    let message = decode_p2p_message(&line).context("failed to decode P2P message")?;
+    // Peer ID assigned after Hello handshake
+    let mut peer_id: Option<String> = None;
 
-    // Detect AnnounceBlock for relay
-    let is_announce = matches!(&message, P2pMessage::AnnounceBlock { .. });
+    loop {
+        let line = match read_line(&mut reader) {
+            Ok(line) => line,
+            Err(_) => break, // Connection closed or timeout
+        };
 
-    let response = runtime
-        .lock()
-        .expect("node runtime lock poisoned")
-        .handle_p2p_message(message)
-        .map_err(|reason| anyhow!(reason))?;
-    let response_line = encode_p2p_message(&response).context("failed to encode P2P response")?;
-    writer
-        .write_all(response_line.as_bytes())
-        .context("failed to write P2P response")?;
-    writer.flush().context("failed to flush P2P response")?;
-    println!("p2p_out={}", response_line.trim());
+        // Rate limiting per message
+        {
+            let now_epoch = epoch_secs();
+            let mut sec = peer_sec.lock().expect("lock");
+            if let Err(_reason) = sec.record_message(source_ip, now_epoch) {
+                eprintln!("p2p_rate_limited ip={source_ip}");
+                break;
+            }
+        }
 
-    // Relay newly accepted block to other peers (flood-fill)
-    if is_announce {
-        let rt = runtime.lock().expect("node runtime lock poisoned");
-        if let Some(block) = rt.last_accepted_block().cloned() {
-            let peers = rt.known_peers().to_vec();
-            drop(rt);
-            relay_block_to_peers(
-                block,
-                &peers,
-                Some(source_addr),
-                seen,
-                stats,
-            );
+        println!("p2p_in={line}");
+        let message = match decode_p2p_message(&line) {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("p2p_decode_err source={source_addr} err={e}");
+                // Punish for protocol violation
+                peer_sec.lock().expect("lock").punish(
+                    source_ip,
+                    epoch_secs(),
+                    zion_core::p2p_security::BanReason::ProtocolViolation,
+                );
+                break;
+            }
+        };
+
+        // Register peer in PeerManager on Hello
+        if let P2pMessage::Hello { ref node_id, ref listen_addr, .. } = message {
+            let now = Instant::now();
+            if let Some((host, port_str)) = listen_addr.rsplit_once(':') {
+                if let (Ok(ip), Ok(port)) = (host.parse::<IpAddr>(), port_str.parse::<u16>()) {
+                    peer_mgr.lock().expect("lock").register_peer(
+                        node_id,
+                        ip,
+                        port,
+                        PeerDirection::Inbound,
+                        now,
+                    );
+                    peer_id = Some(node_id.clone());
+                }
+            }
+        }
+
+        // Update last_seen in PeerManager
+        if let Some(ref pid) = peer_id {
+            let now = Instant::now();
+            peer_mgr
+                .lock()
+                .expect("lock")
+                .record_message(pid, line.len() as u64, now);
+        }
+
+        // Detect AnnounceBlock for relay
+        let is_announce = matches!(&message, P2pMessage::AnnounceBlock { .. });
+
+        let response = match runtime
+            .lock()
+            .expect("node runtime lock poisoned")
+            .handle_p2p_message(message)
+        {
+            Ok(r) => r,
+            Err(reason) => {
+                eprintln!("p2p_handle_err source={source_addr} reason={reason}");
+                if let Some(ref pid) = peer_id {
+                    peer_mgr
+                        .lock()
+                        .expect("lock")
+                        .penalize(pid, zion_core::peer_manager::PENALTY_PROTOCOL_VIOLATION);
+                }
+                break;
+            }
+        };
+
+        // Reward valid block imports
+        if is_announce {
+            if let Some(ref pid) = peer_id {
+                peer_mgr
+                    .lock()
+                    .expect("lock")
+                    .reward(pid, zion_core::peer_manager::REWARD_VALID_BLOCK);
+            }
+        }
+
+        let response_line =
+            encode_p2p_message(&response).context("failed to encode P2P response")?;
+        if writer.write_all(response_line.as_bytes()).is_err() {
+            break;
+        }
+        if writer.flush().is_err() {
+            break;
+        }
+        println!("p2p_out={}", response_line.trim());
+
+        // Relay newly accepted block to other peers (flood-fill)
+        if is_announce {
+            let rt = runtime.lock().expect("node runtime lock poisoned");
+            if let Some(block) = rt.last_accepted_block().cloned() {
+                let peers = rt.known_peers().to_vec();
+                drop(rt);
+                relay_block_to_peers(block, &peers, Some(source_addr), seen, stats);
+            }
         }
     }
+
+    // Unregister peer when connection ends
+    if let Some(ref pid) = peer_id {
+        peer_mgr.lock().expect("lock").unregister_peer(pid);
+    }
+    println!("p2p_disconnected source={source_addr}");
 
     Ok(())
 }
@@ -517,4 +668,110 @@ fn relay_block_to_peers(
             }
         });
     }
+}
+
+/// Outbound peer loop: periodically connects to known peers, syncs new blocks,
+/// sends heartbeat pings, and runs PeerManager maintenance.
+const OUTBOUND_CYCLE_SECS: u64 = 30;
+
+fn outbound_peer_loop(
+    runtime: &Arc<Mutex<NodeRuntime>>,
+    seen: &Arc<Mutex<SeenBlocks>>,
+    stats: &Arc<PropagationStats>,
+    peer_mgr: &Arc<Mutex<PeerManager>>,
+    batch_limit: u16,
+) {
+    let mut last_heartbeat = Instant::now();
+
+    loop {
+        thread::sleep(Duration::from_secs(OUTBOUND_CYCLE_SECS));
+
+        // Run PeerManager heartbeat
+        let actions = {
+            let now = Instant::now();
+            if now.duration_since(last_heartbeat) >= Duration::from_secs(60) {
+                last_heartbeat = now;
+                peer_mgr.lock().expect("lock").heartbeat(now)
+            } else {
+                Vec::new()
+            }
+        };
+
+        for action in &actions {
+            match action {
+                PeerAction::Disconnect { peer_id, reason } => {
+                    println!("peer_action_disconnect peer={peer_id} reason={reason}");
+                }
+                PeerAction::Ban { peer_id, reason } => {
+                    println!("peer_action_ban peer={peer_id} reason={reason}");
+                }
+                PeerAction::ConnectOutbound { addr, port } => {
+                    println!("peer_action_connect_outbound addr={addr}:{port}");
+                    let endpoint = match PeerEndpoint::parse(&format!("{addr}:{port}")) {
+                        Ok(e) => e,
+                        Err(_) => continue,
+                    };
+                    // Try sync from this new peer
+                    match sync_from_peer(runtime, &endpoint, batch_limit.max(1)) {
+                        Ok(_) => println!("outbound_sync_ok peer={addr}:{port}"),
+                        Err(e) => eprintln!("outbound_sync_err peer={addr}:{port} err={e}"),
+                    }
+                }
+            }
+        }
+
+        // Proactive sync: check each known peer for new blocks
+        let peers = runtime.lock().expect("lock").known_peers().to_vec();
+        let our_height = runtime.lock().expect("lock").chain_height();
+
+        for peer in &peers {
+            // Quick status check via Ping to keep connection alive
+            match p2p_roundtrip(peer, &P2pMessage::Ping { nonce: epoch_secs() }) {
+                Ok(P2pMessage::Pong { .. }) => {
+                    // Peer alive — check if it has new blocks
+                    match p2p_roundtrip(peer, &P2pMessage::GetStatus) {
+                        Ok(P2pMessage::Status { status }) => {
+                            if status.chain_height > our_height {
+                                println!(
+                                    "outbound_sync peer={} remote_height={} our_height={}",
+                                    peer.address(),
+                                    status.chain_height,
+                                    our_height,
+                                );
+                                match sync_from_peer(runtime, peer, batch_limit.max(1)) {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        eprintln!(
+                                            "outbound_sync_err peer={} err={e}",
+                                            peer.address()
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                Err(_) => {
+                    // Peer unreachable — will be cleaned up by heartbeat timeout
+                }
+                _ => {}
+            }
+        }
+
+        // Relay our latest block to any peer that might be behind
+        let rt = runtime.lock().expect("lock");
+        if let Some(block) = rt.last_accepted_block().cloned() {
+            let known = rt.known_peers().to_vec();
+            drop(rt);
+            relay_block_to_peers(block, &known, None, seen, stats);
+        }
+    }
+}
+
+fn epoch_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
 }
