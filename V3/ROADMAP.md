@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-12
+Status date: 2026-03-13
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -142,6 +142,34 @@ This roadmap follows the release progression already defined in the repository d
 - production CI/CD, docker, monitoring, and ops assets for the new tree
 - DesktopApp runtime supervision for node, pool, miner, release provenance, and signing workflows
 
+### L1 Testnet → V3 Mainnet Migration Tracker
+
+Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
+
+| Metric | L1 testnet | V3 mainnet |
+|--------|-----------|------------|
+| Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
+| Total LoC | ~17,500 | ~8,300 |
+| Tests | ~200+ | 135 pass, 0 fail |
+| Persistence | LMDB (7 databases) | JSON snapshot + journal |
+| Tx model | UTXO (Bitcoin-style) | Account-style (simplified) |
+| Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ekam Deeksha only |
+| Addresses | `zion1...` 44 chars, checksum | Plain strings |
+
+#### Module Status (35 items)
+
+**Done (8):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic)
+
+**Partial (6):** mempool (missing double-spend tracking, byte limits, eviction), block validation (missing merkle verify, signature verify, coinbase maturity, block size limit, timestamp drift), P2P (missing async, connection pool, outbound relay, multi-peer sync, peer scoring), RPC (7/~40 methods), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree)
+
+**Missing (21):** crypto/keys (Ed25519, `zion1...` addresses), UTXO tx model, wallet (coin selection, build_and_sign), batch payouts, fee model, chain reorg, burn addresses, chain safety rules (reorg depth, total_work), LMDB storage, P2P security (rate limiter, blacklist, escalating bans), P2P sync (IBD, batch download, stall detection), peer manager, metrics/Prometheus, peer discovery, checkpoints, heartbeat, peer persistence, security audit tools, load tests, multi-algo dispatch (intentionally skipped)
+
+#### Open Architectural Decisions
+
+1. **UTXO vs Account model** — L1 uses UTXO (TxInput/TxOutput), V3 uses account-style (from/to/amount/nonce). Recommendation: UTXO for L1 testnet compatibility and constitutional consistency.
+2. **General hashing** — L1 uses BLAKE3 for tx/merkle, Ekam Deeksha for PoW only. V3 currently uses Ekam Deeksha for everything. Decision needed.
+3. **Reward distribution** — L1 has 4-way split (89% miner, 5% tithe, 5% issobella, 1% pool). V3 gives 100% to miner. Is split L1-level or L3+?
+
 ### Gap Inventory (V3 code vs constitutional requirements)
 
 Audit date: 2026-03-12. Each item maps to the constitutional parameter table above.
@@ -154,27 +182,47 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | G2 | **Atomic units (flowers)** | 1 ZION = 1e12 flowers; reward = 5,400,067,000,000,000 flowers | ✅ Integrated in `emission.rs` | Same as G1 |
 | G3 | **LWMA DAA** | 60-block window, ±25% max change, 30–120 s solve-time clamp | ✅ `difficulty.rs` — 21 tests, integer-only ±25% clamp | `L1/core/src/blockchain/consensus.rs` |
 | G4 | **Genesis block + premine** | 16.28B ZION into 12 addresses as coinbase outputs in block 0 | ✅ `genesis.rs` — 17 tests, 12 premine outputs, frozen hash, ChainState init | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
-| G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | Single request/response TCP; no outbound push | New code (extend P2P handle + NodeRuntime) |
+| G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | Single request/response TCP; no outbound push | New code (extend P2P handle + NodeRuntime) → **Phase 5d** |
+
+#### CRITICAL — cryptographic & transaction foundation (added 2026-03-13 from L1 audit)
+
+| ID | Missing module | What is needed | V3 current state | Target phase |
+|----|----------------|----------------|------------------|--------------|
+| G16 | **Crypto / Ed25519** | Ed25519 keygen, sign/verify, `zion1...` address derivation, BLAKE3 general hash | No key management, no address derivation, no signatures | **Phase 5e** |
+| G17 | **UTXO tx model** | `TxInput`/`TxOutput`/`Transaction`, SegWit-style hash, `verify_signatures()` | Account-style `Transaction{from,to,amount,nonce}` — no signatures | **Phase 5f** |
+| G18 | **Fee model** | MIN_TX_FEE, fee-rate, MAX_TX_SIZE, 100% burn | `fee_zion` field exists but no enforcement | **Phase 5f** |
+| G19 | **Wallet** | UTXO coin selection, `build_and_sign()`, `zeroize`, batch payouts | No wallet module | **Phase 5g** |
+| G20 | **Full block validation** | 10-step pipeline: merkle, signatures, maturity, size, timestamp, double-spend | PoW + subsidy check only | **Phase 5h** |
 
 #### HIGH — network security before production
 
-| ID | Missing rule | Constitutional value | V3 current state |
-|----|-------------|---------------------|------------------|
-| G6 | Max reorg depth | 10 blocks | Not enforced in ChainState |
-| G7 | Coinbase maturity | 100 blocks | Not enforced |
-| G8 | Fee burn | 100% of fees burned | Implicit (fees collected in template but not routed); no explicit burn |
-| G9 | Seed peers | 5+ required for eclipse resistance | 1 hardcoded (`91.98.122.165:8334`) |
-| G10 | Premine unlock_height | DAO Treasury cliff at ~525,600 | No unlock enforcement in V3 |
+| ID | Missing rule | Constitutional value | V3 current state | Target phase |
+|----|-------------|---------------------|------------------|--------------|
+| G6 | Max reorg depth | 10 blocks | Not enforced in ChainState | **Phase 6a** |
+| G7 | Coinbase maturity | 100 blocks | Not enforced | **Phase 6b** |
+| G8 | Fee burn | 100% of fees burned | Implicit (fees collected in template but not routed); no explicit burn | **Phase 6b** |
+| G9 | Seed peers | 5+ required for eclipse resistance | 1 hardcoded (`91.98.122.165:8334`) | **Phase 8** |
+| G10 | Premine unlock_height | DAO Treasury cliff at ~525,600 | No unlock enforcement in V3 | **Phase 6b** |
 
 #### MEDIUM — required before production launch, not for testnet
 
-| ID | Item |
-|----|------|
-| G11 | Fork choice rule: highest accumulated work (chain selection) |
-| G12 | Orphan block handling and relay |
-| G13 | Eclipse protection (peer diversity, connection limits) |
-| G14 | Timestamp validation on incoming P2P blocks |
-| G15 | Chain ID enforcement in wire messages |
+| ID | Item | Target phase |
+|----|------|--------------|
+| G11 | Fork choice rule: highest accumulated work (chain selection) | **Phase 6a** |
+| G12 | Orphan block handling and relay | **Phase 6e** |
+| G13 | Eclipse protection (peer diversity, connection limits) | **Phase 6d** |
+| G14 | Timestamp validation on incoming P2P blocks | **Phase 6e** |
+| G15 | Chain ID enforcement in wire messages | **Phase 6e** |
+
+#### PRODUCTION — infrastructure for mainnet operations
+
+| ID | Item | Target phase |
+|----|------|--------------|
+| G21 | LMDB persistent storage (replace JSON snapshot) | **Phase 7a** |
+| G22 | IBD state machine (batch sync, stall detection) | **Phase 7b** |
+| G23 | HTTP JSON-RPC 2.0 server (~40 methods) | **Phase 7c** |
+| G24 | Peer manager (scoring, banning, connection tracking) | **Phase 7d** |
+| G25 | Metrics / Prometheus export | **Phase 7e** |
 
 ## Build Order
 
@@ -355,42 +403,256 @@ Exit criteria:
 
 Status: pending
 
-### Phase 6: Chain Safety Rules (G6–G8, G11–G14)
+### Phase 5e: Cryptographic Foundation (Audit items #15, G-new)
 
-Goal: enforce constitutional chain rules that protect against attacks.
+Goal: introduce Ed25519 key management, BLAKE3 general hashing, and canonical `zion1...` address derivation.
+
+This phase is a **mainnet launch blocker** — without it, transactions cannot be signed or verified.
 
 Required work:
 
-- max reorg depth: reject chain reorganizations deeper than 10 blocks (G6)
-- coinbase maturity: coinbase outputs unspendable for 100 blocks (G7)
-- fee burn: fees in accepted blocks are provably destroyed, not routed (G8)
-- fork choice: select chain tip by highest accumulated work, not just height (G11)
-- orphan handling: buffer orphan blocks, re-evaluate when parent arrives (G12)
-- eclipse protection: max connections per IP/subnet, peer diversity checks (G13)
-- timestamp validation: reject P2P blocks with timestamps outside ±120 s of median (G14)
-- chain ID: include `zion-mainnet-1` in P2P Hello and reject mismatched peers (G15)
+- implement `crypto.rs` module:
+  - Ed25519 keypair generation, sign, verify (`ed25519_dalek` crate)
+  - BLAKE3 general hash (for tx hashing, merkle roots — separate from Ekam Deeksha PoW)
+  - `zion1...` address derivation: `SHA256(pubkey) → RIPEMD160 → base32 + 4-char checksum`
+  - frozen constant: `ZION_BASE32_ALPHABET = "023456789acdefghjklmnpqrstuvwxyz"`
+  - `is_valid_zion1_address()` validation (44 chars, prefix, checksum)
+  - `derive_address(pubkey) -> String`
+- add `ed25519-dalek`, `blake3`, `sha2`, `ripemd` to `Cargo.toml` dependencies
+- unit tests: key gen/sign/verify round-trip, address derivation determinism, checksum validation, invalid address rejection
+
+Exit criteria:
+
+- `Keypair::generate()` → sign → verify round-trip passes
+- `derive_address(known_pubkey)` produces deterministic `zion1...` 44-char address
+- invalid addresses (wrong length, bad checksum, wrong prefix) are rejected
+- all existing tests remain green
+
+Migration source: `L1/core/src/crypto/keys.rs` (260 LoC) → rewrite clean
+
+Status: pending
+
+### Phase 5f: Transaction Model (Audit items #16, #19)
+
+Goal: implement the canonical UTXO transaction model with fee enforcement.
+
+This phase is a **mainnet launch blocker** — without it, value transfer has no cryptographic integrity.
+
+Required work:
+
+- implement `tx.rs` module:
+  - `TxInput { prev_tx_hash: [u8;32], output_index: u32, signature: Vec<u8>, public_key: Vec<u8> }`
+  - `TxOutput { amount: u64, address: String, memo: Option<String> }` (amount in flowers)
+  - `Transaction { id: [u8;32], version: u32, inputs: Vec<TxInput>, outputs: Vec<TxOutput>, fee: u64, timestamp: u64 }`
+  - `calculate_hash()` — SegWit-style: exclude signatures from hash preimage
+  - `verify_signatures()` — Ed25519 verify each input against its public_key
+  - `is_coinbase()` detection
+- implement `fee.rs` module:
+  - `MIN_TX_FEE = 1_000` flowers (0.001 ZION)
+  - `MIN_FEE_RATE = 1` flower/byte
+  - `MAX_TX_SIZE = 100_000` bytes
+  - `MAX_OUTPUT_AMOUNT = 144_000_000_000_000_000_000_000` flowers (total supply cap)
+  - `validate_fee(tx) -> Result<(), FeeError>`
+  - Fee destination: 100% burned (coinbase = reward only, no fee routing)
+- decide and implement: account-style `Transaction` in `lib.rs` deprecated or migrated to UTXO
+- unit tests: tx construction, hash determinism, signature verify, fee validation, coinbase detection
+
+Exit criteria:
+
+- UTXO transaction round-trips through serialize → hash → sign → verify
+- fee below MIN_TX_FEE is rejected
+- tx larger than MAX_TX_SIZE is rejected
+- coinbase transactions are correctly identified
+- all existing tests remain green
+
+Migration source: `L1/core/src/tx/mod.rs` (189 LoC) + `L1/core/src/blockchain/fee.rs` (335 LoC) → rewrite clean
+
+Status: pending
+
+### Phase 5g: Wallet (Audit items #17, #18)
+
+Goal: enable users to build, sign, and broadcast transactions.
+
+Required work:
+
+- implement `wallet.rs` module:
+  - `SpendableUtxo { tx_hash, output_index, amount, address }`
+  - `SendParams { from_keypair, to_address, amount, fee }`
+  - `BuildResult { transaction, change_utxo }`
+  - `WalletError` enum
+  - UTXO coin selection (largest-first)
+  - `build_and_sign(params, available_utxos) -> Result<BuildResult, WalletError>`
+  - `zeroize` secret keys after signing
+- implement `batch.rs` module (for pool PPLNS payouts):
+  - `MAX_BATCH_RECIPIENTS = 200`
+  - `MIN_PAYOUT_AMOUNT = 10_000_000_000_000` flowers (10 ZION)
+  - multi-recipient transaction builder
+- unit tests: single send, batch send, insufficient funds, coin selection, zeroize verification
+
+Exit criteria:
+
+- `build_and_sign()` produces valid signed transaction
+- change output is correct
+- batch with 200 recipients produces valid transaction
+- insufficient funds returns proper error
+- all existing tests remain green
+
+Migration source: `L1/core/src/wallet/mod.rs` (300 LoC) + `L1/core/src/wallet/batch.rs` (609 LoC) → rewrite clean
+
+Status: pending
+
+### Phase 5h: Full Block Validation (Audit items #10)
+
+Goal: make block acceptance cryptographically secure with a complete 10-step validation pipeline.
+
+Required work:
+
+- implement `validation.rs` module (or expand existing validation in `lib.rs`):
+  - Step 1: Block structure (non-empty, within MAX_BLOCK_SIZE = 1,048,576 bytes)
+  - Step 2: PoW validation (existing `DifficultyTarget::allows()`)
+  - Step 3: Difficulty matches LWMA output (existing in `difficulty.rs`)
+  - Step 4: Timestamp within ±7,200 s of median-time-past
+  - Step 5: Binary Merkle root verification (BLAKE3 hash pairs, not XOR-fold)
+  - Step 6: Transaction signature validation (Ed25519 per input)
+  - Step 7: UTXO double-spend check (no input references spent output)
+  - Step 8: Coinbase maturity enforcement (100 blocks)
+  - Step 9: Fee validation (MIN_TX_FEE, fee-rate, explicit burn)
+  - Step 10: Subsidy validation (existing, ensure coinbase ≤ reward, no fee in coinbase)
+- frozen constants:
+  - `COINBASE_MATURITY = 100`
+  - `MAX_BLOCK_SIZE = 1_048_576` bytes
+  - `MAX_TIMESTAMP_DRIFT = 7_200` seconds
+- unit tests: valid block passes all 10 steps, each step rejects malformed input individually
+
+Exit criteria:
+
+- block with invalid merkle root is rejected
+- block with forged transaction signature is rejected
+- block spending immature coinbase is rejected
+- block exceeding 1 MB size limit is rejected
+- block with future timestamp beyond 2 hours is rejected
+- all existing tests remain green
+
+Migration source: `L1/core/src/blockchain/validation.rs` (556 LoC) → rewrite clean
+
+Status: pending
+
+### Phase 6: Chain Safety Rules (G6–G8, G11–G15, Audit P0/P1)
+
+Goal: enforce constitutional chain rules and security audit fixes.
+
+This phase closes all HIGH-priority gaps and L1 security audit findings.
+
+Required work:
+
+#### 6a — Chain reorg and fork choice (G6, G11, Audit P0-07, P1-01)
+- `total_work` tracking per chain tip (cumulative difficulty)
+- fork choice: strictly most-work wins (`>` not `>=`, per audit P1-01)
+- `try_reorg()` with UTXO rollback via undo blocks
+- `MAX_REORG_DEPTH = 10` blocks (constitutional, stricter than L1's 50)
+- `SOFT_FINALITY_DEPTH = 60` blocks
+- `find_fork_point()` and `is_stronger_chain()`
+- reject reorganizations deeper than MAX_REORG_DEPTH
+- `try_reorg_unchecked` only available in test/dev builds (audit P1-06)
+
+#### 6b — Coinbase maturity and fee burn (G7, G8)
+- coinbase outputs unspendable for 100 blocks
+- fees in accepted blocks are provably destroyed, not routed to any address
+- burn address: `zion1burn0000000000000000000000000000000dead`
+- DAO address: `zion1dao00000000000000000000000000000treasury`
+
+#### 6c — Mempool hardening (Audit P1-15, P1-16)
+- double-spend outpoint tracking (reject tx spending already-queued output)
+- `MAX_MEMPOOL_SIZE = 10_000` transactions
+- `MAX_MEMPOOL_BYTES = 20_971_520` (20 MB)
+- `MempoolError` enum for structured rejection
+- fee-rate eviction when limits are hit
+- no unvalidated transaction entry (audit P1-16)
+- `restore_transactions()` for reorg-displaced txs
+
+#### 6d — P2P security (G13, Audit P1-10)
+- `RateLimiter`: per-IP connection rate limiting
+- `Blacklist`: permanent + temporary bans
+- `ConnectionLimiter`: global max connections
+- `MessageRateLimiter`: escalating ban durations (5 min → 30 min → 2 hours, audit P1-10)
+
+#### 6e — Orphan and timestamp handling (G12, G14, G15)
+- orphan block buffer: store blocks whose parent is unknown, re-evaluate when parent arrives
+- timestamp validation: reject P2P blocks outside ±120 s of median-time-past
+- chain ID: include `zion-mainnet-1` in P2P Hello, reject mismatched peers
 
 Exit criteria:
 
 - 11-block reorg attempt is rejected
 - spending a coinbase before height+100 is rejected
 - fork choice selects higher-work chain over higher-height chain
+- mempool rejects double-spend and enforces byte/count limits
+- rate-limited peer gets escalating bans
+- orphan block is buffered and accepted when parent arrives
+- mismatched chain ID peer is disconnected
 - all existing tests remain green
 
 Status: pending
 
-### Phase 7: Mainnet Readiness
+### Phase 7: Production Infrastructure
 
-Goal: make `V3/` the operational mainnet code line rather than just a clean prototype.
+Goal: replace prototype subsystems with production-grade components.
+
+#### 7a — Persistent Storage (Audit #23, P0-05, P0-09)
+- LMDB via `heed` crate, 10 GB default map size
+- 7 databases: blocks, utxos, tx_index, balance_cache, undo_blocks, height_to_hash, hash_to_height
+- `save_block_and_apply_utxos()` — single LMDB write transaction (atomic, per audit P0-05/P0-09)
+- schema migration support
+- JSON snapshot retained as optional export/import format
+
+#### 7b — IBD & Sync (Audit #25)
+- IBD state machine: `IBD_THRESHOLD = 50` blocks behind triggers IBD mode
+- batch sync: `IBD_BATCH_SIZE = 500` blocks per request
+- stall detection: 120 s timeout, 3 retries before peer demotion
+- `SyncStatus` tracking (IBD, Syncing, Synced)
+- block processing lock to prevent race conditions (audit P0-08)
+
+#### 7c — RPC Expansion (Audit #12)
+- migrate from line-delimited TCP JSON to HTTP (Axum)
+- JSON-RPC 2.0 standard
+- priority methods: `getBalance`, `getBlock`, `getTransaction`, `sendRawTransaction`, `getBlockTemplate`, `getMempoolInfo`, `getPeerInfo`
+- auth middleware for write operations
+
+#### 7d — Peer Manager (Audit #26)
+- peer scoring (latency, validity, contribution)
+- connection tracking with diversity checks (IP/subnet)
+- automatic banning for misbehavior
+- dead peer detection and cleanup
+
+#### 7e — Metrics & Monitoring (Audit #27)
+- atomic counters: blocks_accepted, txs_processed, mempool_size, peer_count, block_time
+- Prometheus-compatible export endpoint
+- health check endpoint
+
+Exit criteria:
+
+- LMDB stores and retrieves blocks atomically
+- fresh node syncs from genesis via IBD in acceptable time
+- HTTP RPC serves wallet and explorer queries
+- Prometheus scrape returns current metrics
+- restart after crash recovers without data loss
+
+Status: pending
+
+### Phase 8: Mainnet Launch Readiness
+
+Goal: make `V3/` the operational mainnet code line.
 
 Required work:
 
-- restart hardening, corruption drills, and replay validation around the current snapshot plus journal persistence
+- restart hardening, corruption drills, and replay validation
 - release checks and reproducible build path
 - genesis ceremony: freeze genesis block hash, timestamp, and nonce
 - BFG scrub of private keys from git history
 - seed peer infrastructure: 5+ geographically distributed nodes
 - deploy/monitoring assets migrated only after runtime shape stabilizes
+- wallet secret key `zeroize` after signing confirmed (audit P1-17)
+- production Docker images for node, pool, miner
 
 Exit criteria:
 
@@ -400,32 +662,146 @@ Exit criteria:
 - acceptance and propagation flows are validated end-to-end
 - private key material is confirmed absent from any reachable git ref
 - non-code assets are aligned with the final runtime shape
+- all audit P0 and P1 findings verified resolved
 
 Status: pending
 
 ## Immediate Next Steps
 
-Critical path (sequential — each depends on the previous):
+Completed:
 
-1. **Phase 5a: Emission** — flowers + decade decay (`emission.rs`). Foundation for everything else.
-2. **Phase 5b: LWMA DAA** — difficulty adjustment (`difficulty.rs`). Required for valid block production.
-3. **Phase 5c: Genesis** — genesis block with 12 premine outputs (`genesis.rs`). Required for chain initialization.
+1. ~~**Phase 5a: Emission** — flowers + decade decay (`emission.rs`).~~ ✅ done
+2. ~~**Phase 5b: LWMA DAA** — difficulty adjustment (`difficulty.rs`).~~ ✅ done
+3. ~~**Phase 5c: Genesis** — genesis block with 12 premine outputs (`genesis.rs`).~~ ✅ done
 
-Parallel track (can proceed alongside 5a–5c):
+Critical path — next up (sequential):
 
-4. **Phase 5d: Propagation** — outbound block push + multi-peer catch-up. Required for multi-node testnet.
+4. **Phase 5e: Crypto** — Ed25519 + BLAKE3 + `zion1...` addresses (`crypto.rs`). Blocks everything else.
+5. **Phase 5f: Tx Model** — UTXO transactions + fee enforcement (`tx.rs`, `fee.rs`). Blocks wallet and validation.
+6. **Phase 5g: Wallet** — coin selection, build & sign (`wallet.rs`, `batch.rs`). Blocks testnet operations.
+7. **Phase 5h: Validation** — 10-step block validation pipeline (`validation.rs`). Blocks chain security.
 
-After 5a–5d are complete:
+Parallel track (can proceed alongside 5e–5h):
 
-5. **Phase 6: Chain Safety** — reorg limits, maturity, fork choice, eclipse protection.
-6. **Phase 7: Mainnet Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.
+8. **Phase 5d: Propagation** — outbound block push + multi-peer catch-up. Required for multi-node testnet.
+
+After 5d–5h are complete:
+
+9. **Phase 6: Chain Safety** — reorg, mempool hardening, P2P security, orphan handling.
+10. **Phase 7: Production Infrastructure** — LMDB storage, IBD sync, RPC expansion, metrics.
+11. **Phase 8: Mainnet Launch Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.
 
 ## Implementation Dependencies
 
 ```
-5a (emission) ──→ 5c (genesis) ──→ Phase 6 (chain rules) ──→ Phase 7 (mainnet)
-5b (LWMA)    ──→ 5c (genesis) ──↗
-5d (propagation) ─────────────────────────────────────────→ Phase 7 (mainnet)
+5a (emission) ✅ ──→ 5c (genesis) ✅ ─┐
+5b (LWMA) ✅   ──→ 5c (genesis) ✅ ─┤
+                                     ├──→ 5e (crypto) ──→ 5f (tx model) ──→ 5g (wallet) ──┐
+                                     │                        │                            │
+                                     │                        ▼                            ▼
+                                     │                   5h (validation) ──→ Phase 6 ──→ Phase 7 ──→ Phase 8
+                                     │
+5d (propagation) ─────────────────────────────────────────────────────────→ Phase 7 ──→ Phase 8
+```
+
+## Frozen Constants Reference
+
+All values below are constitutional or L1-testnet-frozen. V3 implementations must match exactly.
+
+### Cryptography
+```
+ZION_BASE32_ALPHABET   = "023456789acdefghjklmnpqrstuvwxyz"
+Address format         = "zion1" + 35-char base32 body + 4-char checksum = 44 chars
+Address derivation     = SHA256(pubkey) → RIPEMD160 → base32(35) → checksum(4)
+Signature algorithm    = Ed25519 (ed25519_dalek)
+General hash           = BLAKE3 (tx hash, merkle root, block body hash)
+PoW hash               = Ekam Deeksha (cosmic_harmony)
+```
+
+### Emission (V3 emission.rs ✅)
+```
+FLOWERS_PER_ZION       = 1_000_000_000_000
+TOTAL_SUPPLY           = 144_000_000_000 × FLOWERS_PER_ZION
+GENESIS_PREMINE        = 16_280_000_000 × FLOWERS_PER_ZION
+BASE_BLOCK_REWARD      = 5_400_067_000_000_000
+TAIL_REWARD            = 724_784_723_787_776
+BLOCKS_PER_DECADE      = 5_256_000
+Decay                  = ×(4/5) per decade, max 10 decades
+```
+
+### Difficulty (V3 difficulty.rs ✅)
+```
+TARGET_BLOCK_TIME      = 60 s
+LWMA_WINDOW            = 60 blocks
+MIN_SOLVE_TIME         = 30 s
+MAX_SOLVE_TIME         = 120 s
+MIN_DIFFICULTY         = 1_000
+MAX_DIFFICULTY         = u64::MAX / 1_000
+Clamp                  = ±25%
+```
+
+### Genesis (V3 genesis.rs ✅)
+```
+DAO_TREASURY_LOCK_HEIGHT = 525_600
+12 addresses, 4 categories:
+  oasis_golden_egg:  5 × 1.65B = 8.25B ZION
+  dao_treasury:      3 slots   = 4.00B ZION (locked until 525,600)
+  infrastructure:    3 slots   = 2.59B ZION
+  humanitarian:      1 × 1.44B = 1.44B ZION
+  TOTAL:                        16.28B ZION
+```
+
+### Chain Safety (Phase 6 — pending)
+```
+MAX_REORG_DEPTH        = 10 blocks (constitutional, stricter than L1's 50)
+SOFT_FINALITY_DEPTH    = 60 blocks
+COINBASE_MATURITY      = 100 blocks
+MAX_BLOCK_SIZE         = 1_048_576 bytes (1 MB)
+MAX_TIMESTAMP_DRIFT    = 7_200 s (2 hours)
+```
+
+### Fee Model (Phase 5f — pending)
+```
+MIN_TX_FEE             = 1_000 flowers (0.001 ZION)
+MIN_FEE_RATE           = 1 flower/byte
+MAX_TX_SIZE            = 100_000 bytes (100 KB)
+MAX_OUTPUT_AMOUNT      = 144_000_000_000_000_000_000_000 flowers
+Fee destination        = 100% BURNED (deflationary)
+Coinbase               = reward only (no fee routing)
+```
+
+### Mempool (Phase 6c — pending)
+```
+MAX_MEMPOOL_SIZE       = 10_000 transactions
+MAX_MEMPOOL_BYTES      = 20_971_520 (20 MB)
+```
+
+### P2P Security (Phase 6d — pending)
+```
+Escalating bans        = 300s → 1800s → 7200s
+IBD_THRESHOLD          = 50 blocks behind
+IBD_BATCH_SIZE         = 500 blocks per request
+IBD_STALL_TIMEOUT      = 120s, 3 retries
+```
+
+### Burn Addresses (Phase 6b — pending)
+```
+BURN_ADDRESS           = "zion1burn0000000000000000000000000000000dead"
+DAO_ADDRESS            = "zion1dao00000000000000000000000000000treasury"
+```
+
+### Reward Distribution (TBD — L1 vs L3 decision)
+```
+MINER_SHARE            = 89%
+TITHE                  = 5%  (humanitarian DAO)
+ISSOBELLA_FUND         = 5%  (L5/L6 development)
+POOL_FEE               = 1%
+```
+
+### Batch Payouts (Phase 5g — pending)
+```
+MAX_BATCH_RECIPIENTS   = 200
+MIN_PAYOUT_AMOUNT      = 10_000_000_000_000 flowers (10 ZION)
 ```
 
 ## Rules For Future Work
