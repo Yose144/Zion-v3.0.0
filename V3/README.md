@@ -34,6 +34,12 @@ Out of scope for the bootstrap:
 - `L1/core` now also supports bootstrap catch-up from `ZION_SEED_PEERS`, so a fresh node can import a contiguous accepted-block batch on startup without manual announce steps
 - `L1/core` now carries the constitutional emission schedule: atomic units (flowers), decade decay, tail emission, and subsidy validation in peer block import
 - `L1/core` now carries the LWMA difficulty adjustment algorithm: 60-block window, integer-only ±25% clamp, solve-time bounds 30–120 s, target ↔ difficulty conversion, compact nBits encoding, and difficulty validation in both template creation and peer block import
+- `L1/core` now carries the canonical genesis block with all 12 constitutional premine outputs, frozen genesis hash, and ChainState initialization from genesis
+- `L1/core` now carries the full cryptographic foundation: Ed25519 keygen/sign/verify, BLAKE3 general hashing, and `zion1...` 44-character address derivation with checksum (`crypto.rs`)
+- `L1/core` now carries the UTXO transaction model: `TxInput`/`TxOutput`/`Transaction` with SegWit-style BLAKE3 txid and Ed25519 signature verification (`tx.rs`)
+- `L1/core` now carries fee policy enforcement: MIN_TX_FEE=1000, MIN_FEE_RATE=1, MAX_TX_SIZE=100KB, 100% fee burn, burn/DAO addresses (`fee.rs`)
+- `L1/core` now carries the wallet module: largest-first UTXO coin selection, `build_and_sign()` with zeroize, batch PPLNS payouts up to 200 recipients (`wallet.rs`)
+- `L1/core` now carries full 10-step block validation: structure, timestamp, Merkle root, signatures, double-spend, coinbase maturity, fees, subsidy (`validation.rs`)
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
@@ -119,7 +125,8 @@ Current template and accepted-block metadata now includes:
 
 ## Next Steps
 
-1. Extend the new peer block sync path into fuller propagation and multi-peer catch-up instead of one-block contiguous import only.
-2. Add richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting.
-3. Extend restart hardening beyond journal-assisted replay into stronger crash-window and corruption drills.
-4. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows, without reintroducing legacy desktop-agent orchestration.
+1. **Phase 6: Chain Safety** — reorg handling (max depth 10), fork choice by total_work, coinbase maturity sspend-time enforcement, mempool hardening (double-spend, byte/count limits), P2P security (rate limiter, escalating bans), orphan block handling.
+2. Extend the new peer block sync path into fuller propagation and multi-peer catch-up instead of one-block contiguous import only.
+3. **Phase 7: Production Infrastructure** — LMDB persistent storage, IBD state machine, HTTP JSON-RPC 2.0, peer manager, metrics/Prometheus.
+4. Extend restart hardening beyond journal-assisted replay into stronger crash-window and corruption drills.
+5. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows, without reintroducing legacy desktop-agent orchestration.
