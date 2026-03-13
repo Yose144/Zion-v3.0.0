@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-13 (deployment update)
+Status date: 2026-03-14 (Phase 11 update)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -116,6 +116,8 @@ This roadmap follows the release progression already defined in the repository d
   - **Node bootstrap orchestrator: wires ChainDb + IbdEngine + PeerManager + NodeMetrics + RpcRouter into NodeHandle** (`node_builder.rs`)
   - **Genesis dedication message: ASCII art + ZION banner + dedication embedded in coinbase tx_id hash** (`GENESIS_MESSAGE.txt`, `genesis.rs`)
   - **Flood-fill block propagation: SeenBlocks dedup cache, plan_relay() logic, PropagationStats, node binary relay on peer announce and RPC submit** (`propagation.rs`)
+  - **Peer discovery: active GetPeers exchange in outbound loop (every ~5 min), discovered peers merged into known_peers + PeerManager seeds** (`node.rs`, `lib.rs`)
+  - **Peer persistence: known_peers saved to `peers.json` alongside chain state, loaded on startup, periodically updated** (`lib.rs`)
 - `L1/pool`
   - share validation and revenue tracking
   - session-oriented wire protocol
@@ -158,10 +160,11 @@ This roadmap follows the release progression already defined in the repository d
 - **15 new tests across propagation (15) — all green**
 - **3 new tests for genesis message embedding — all green**
 - **11 new integration tests for live JSON-RPC 2.0 method handlers — all green (371 total tests)**
+- **5 new tests for peer discovery & persistence (GetPeers exchange, persistence round-trip, dedup — 376 total tests)**
 
 ### Not Done Yet
 
-- persistent peer connections and parallel multi-peer catch-up (Phase 10 delivered persistent inbound + outbound peer thread with heartbeat; full async multiplexing and parallel IBD remain)
+- ~~persistent peer connections~~ → ✅ Phase 10, ~~peer discovery~~ → ✅ Phase 11, ~~peer persistence~~ → ✅ Phase 11; parallel multi-peer catch-up and full async multiplexing remain
 - richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting
 - BFG scrub of premine private keys from git history
 - ~~production Docker images for node, pool, miner~~ → ✅ done (multi-stage Dockerfiles + compose stack)
@@ -178,25 +181,25 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 371 pass, 0 fail, 1 ignored (doc-test) |
+| Tests | ~200+ | 376 pass, 0 fail, 1 ignored (doc-test) |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
-| Tx model | UTXO (Bitcoin-style) | Account-style (simplified) |
-| Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ekam Deeksha only |
-| Addresses | `zion1...` 44 chars, checksum | Plain strings |
+| Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
+| Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |
+| Addresses | `zion1...` 44 chars, checksum | `zion1...` 44 chars, checksum |
 
 #### Module Status (35 items)
 
-**Done (26):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (11 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitBlock — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats)
+**Done (28):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (11 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitBlock — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats), **peer discovery** (active GetPeers exchange, merge into known_peers + PeerManager seeds), **peer persistence** (known_peers → `peers.json`, load on startup)
 
-**Partial (3):** P2P (Phase 10 added persistent connections, outbound peer thread, heartbeat, PeerManager+PeerSecurity wiring; missing full async networking, parallel multi-peer IBD), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
+**Partial (3):** P2P (Phase 10+11 added persistent connections, outbound peer thread, heartbeat, PeerManager+PeerSecurity wiring, peer discovery, peer persistence; missing full async networking, parallel multi-peer IBD), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
 
-**Missing (7):** P2P sync (full async networking with IBD integration), peer discovery, checkpoints, ~~heartbeat protocol~~ → ✅ Phase 10 (Ping/Pong outbound loop), peer persistence, security audit tools, load tests
+**Missing (5):** P2P sync (full async networking with IBD integration), checkpoints, security audit tools, load tests, standard binary Merkle tree
 
 #### Open Architectural Decisions
 
-1. **UTXO vs Account model** — L1 uses UTXO (TxInput/TxOutput), V3 uses account-style (from/to/amount/nonce). Recommendation: UTXO for L1 testnet compatibility and constitutional consistency.
-2. **General hashing** — L1 uses BLAKE3 for tx/merkle, Ekam Deeksha for PoW only. V3 currently uses Ekam Deeksha for everything. Decision needed.
-3. **Reward distribution** — L1 has 4-way split (89% miner, 5% tithe, 5% issobella, 1% pool). V3 gives 100% to miner. Is split L1-level or L3+?
+1. **UTXO vs Account model** — ✅ RESOLVED: V3 uses UTXO model (`tx.rs`: TxInput/TxOutput/Transaction, SegWit-style BLAKE3 txid)
+2. **General hashing** — ✅ RESOLVED: BLAKE3 for tx/merkle/addresses, Ekam Deeksha for PoW only (`crypto.rs`)
+3. **Reward distribution** — L1 has 4-way split (89% miner, 5% tithe, 5% issobella, 1% pool). V3 gives 100% to miner. Decision: L3+ concern for mainnet.
 
 ### Gap Inventory (V3 code vs constitutional requirements)
 

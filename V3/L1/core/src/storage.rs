@@ -6,7 +6,7 @@
 // single LMDB write transaction — crash at any point leaves the database in
 // the last committed state.
 //
-// 7 databases:
+// 8 databases:
 //   blocks          — hash → serialized block
 //   utxos           — outpoint → serialized UTXO
 //   tx_index        — tx_hash → (block_hash, index)
@@ -14,6 +14,7 @@
 //   undo_blocks     — height → serialized UndoBlock
 //   height_to_hash  — height → block_hash
 //   hash_to_height  — block_hash → height
+//   meta            — chain metadata + known_peers (Phase 11 peer persistence)
 
 use std::path::Path;
 use heed::{Env, EnvOpenOptions, Database};
@@ -483,6 +484,27 @@ impl ChainDb {
         self.balance_cache.put(wtxn, address, &new_val.to_le_bytes())?;
         Ok(())
     }
+
+    // ── Peer persistence (Phase 11) ────────────────────────────────────
+
+    /// Persist the known peer list to LMDB (meta database, key "known_peers").
+    pub fn save_peers(&self, peers: &[crate::PeerEndpoint]) -> Result<(), StorageError> {
+        let peer_vec: Vec<&crate::PeerEndpoint> = peers.iter().collect();
+        let bytes = encode(&peer_vec)?;
+        let mut wtxn = self.env.write_txn()?;
+        self.meta.put(&mut wtxn, "known_peers", &bytes)?;
+        wtxn.commit()?;
+        Ok(())
+    }
+
+    /// Load persisted peer list from LMDB. Returns empty vec if none saved.
+    pub fn load_peers(&self) -> Result<Vec<crate::PeerEndpoint>, StorageError> {
+        let rtxn = self.env.read_txn()?;
+        match self.meta.get(&rtxn, "known_peers")? {
+            Some(bytes) => Ok(decode(bytes)?),
+            None => Ok(Vec::new()),
+        }
+    }
 }
 
 // ── Conversion helpers ─────────────────────────────────────────────────
@@ -855,5 +877,35 @@ mod tests {
         };
         db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta).unwrap();
         assert_eq!(db.tip_height().unwrap(), 10);
+    }
+
+    #[test]
+    fn peer_persistence_round_trip() {
+        let (db, _dir) = make_test_db();
+
+        // No peers initially
+        let empty = db.load_peers().unwrap();
+        assert!(empty.is_empty());
+
+        // Save some peers
+        let peers = vec![
+            crate::PeerEndpoint::new("10.0.0.1", 8334),
+            crate::PeerEndpoint::new("10.0.0.2", 8334),
+            crate::PeerEndpoint::new("seed-eu1.example.com", 9000),
+        ];
+        db.save_peers(&peers).unwrap();
+
+        // Load them back
+        let loaded = db.load_peers().unwrap();
+        assert_eq!(loaded.len(), 3);
+        assert_eq!(loaded[0].address(), "10.0.0.1:8334");
+        assert_eq!(loaded[2].address(), "seed-eu1.example.com:9000");
+
+        // Overwrite with fewer peers
+        let fewer = vec![crate::PeerEndpoint::new("10.0.0.99", 1234)];
+        db.save_peers(&fewer).unwrap();
+        let reloaded = db.load_peers().unwrap();
+        assert_eq!(reloaded.len(), 1);
+        assert_eq!(reloaded[0].address(), "10.0.0.99:1234");
     }
 }

@@ -1,6 +1,6 @@
 # L1 Testnet → V3 Mainnet Audit
 
-> Vytvořeno: 2026-03-13
+> Vytvořeno: 2026-03-13 | Poslední aktualizace: 2026-03-13 (po Phase 10)
 > Účel: Kompletní inventář L1 testnet modulů vs V3 mainnet stav.
 > Cíl: Zajistit, že nic kritického z testnet nezapomeneme při mainnet pure-code migraci.
 
@@ -11,12 +11,12 @@
 | Metrika | L1 testnet | V3 mainnet |
 |---|---|---|
 | Zdrojové soubory | ~50 `.rs` ve 14 adresářích | ~20 `.rs` ve 4 crates |
-| Celkem LoC | ~17 500 | ~8 300 |
-| Testy | ~200+ (odhad) | 135 pass, 0 fail, 1 ignored |
-| Persistence | LMDB (7 databází) | JSON snapshot + journal |
-| Tx model | UTXO (Bitcoin-styl) | Account-styl (zjednodušený) |
-| Kryptografie | Ed25519 + BLAKE3 + RIPEMD160 | Pouze Ekam Deeksha hash |
-| Adresy | `zion1...` 44 znaků, checksum | Prosté řetězce |
+| Celkem LoC | ~17 500 | ~12 000+ |
+| Testy | ~200+ (odhad) | **371 pass, 0 fail, 1 ignored** |
+| Persistence | LMDB (7 databází) | ✅ LMDB via heed (8 databází) |
+| Tx model | UTXO (Bitcoin-styl) | ✅ UTXO (TxInput/TxOutput/Transaction) |
+| Kryptografie | Ed25519 + BLAKE3 + RIPEMD160 | ✅ Ed25519 + BLAKE3 + RIPEMD160 |
+| Adresy | `zion1...` 44 znaků, checksum | ✅ `zion1...` 44 znaků, checksum |
 
 ---
 
@@ -39,34 +39,34 @@
 
 | # | L1 modul | Co L1 má | Co V3 MÁ | Co V3 CHYBÍ | Priorita |
 |---|---|---|---|---|---|
-| 9 | `mempool/pool.rs` (515 LoC) | HashMap + RwLock, fee-rate sort, double-spend tracking, byte limit 20MB, size limit 10K, eviction, `MempoolError` enum | `Vec<Transaction>` + `HashMap` index, basic dedup, fee-sorted template selection | Double-spend outpoint tracking, byte/count limits, `MempoolError` enum, eviction policy, `restore_transactions()` pro reorg | **VYSOKÁ** |
-| 10 | `blockchain/validation.rs` (556 LoC) | 10-step block validation, tx validation, PoW validation, merkle verify, coinbase maturity check, max block size 1MB, timestamp drift ±2h | `DifficultyTarget::allows(&hash)` PoW check, subsidy validation, difficulty LWMA validation | Merkle root verify, tx signature verify, coinbase maturity (100 blocks), block size limit, timestamp drift check, intra-block double-spend, full tx structural validation | **KRITICKÁ** |
-| 11 | `p2p/` (celý, ~2100 LoC) | Async tokio TCP, peer manager, connection pool, handshake, sync state machine, flood-fill relay | Sync TCP accept loop, basic Bootstrap catch-up, `GetBlocksSince` | Async networking, connection pool, outbound relay, multi-peer parallel sync, peer scoring, dead peer detection | **VYSOKÁ** |
-| 12 | `rpc/` + `jsonrpc/` (~2700 LoC) | Axum HTTP, ~40 JSON-RPC metod, auth middleware, REST + JSON-RPC 2.0 | 7 RPC metod přes line-delimited JSON/TCP | HTTP server, getBalance, getTransaction, sendRawTransaction, getBlock, getBlockTemplate (standard), ~30 dalších metod | **STŘEDNÍ** |
-| 13 | `state/mod.rs` (569 LoC) | `Arc<Inner>` shared state, broadcast channels, block processing lock, reorg lock, metrics integration, UTXO ownership validation | `NodeRuntime` s `ChainState`, `CoreRuntime`, `ChainStore` | Broadcast channels pro real-time events, block processing mutex (race condition ochrana), reorg lock, metrics hookup | **VYSOKÁ** |
+| 9 | `mempool/pool.rs` (515 LoC) | HashMap + RwLock, fee-rate sort, double-spend tracking, byte limit 20MB, size limit 10K, eviction, `MempoolError` enum | ✅ `mempool_v2.rs` — double-spend outpoint tracking, byte/count limits (20 MB / 10K txs), `MempoolError` enum, fee-rate eviction, `restore_transactions()`. 12 testů. | — | ✅ **HOTOVO** |
+| 10 | `blockchain/validation.rs` (556 LoC) | 10-step block validation, tx validation, PoW validation, merkle verify, coinbase maturity check, max block size 1MB, timestamp drift ±2h | ✅ `validation.rs` — 11-step block validation pipeline, Merkle root, signatures, coinbase maturity (100 blocks), block size, timestamp drift ±7200s, intra-block double-spend, DAO lock. 25 testů. | — | ✅ **HOTOVO** |
+| 11 | `p2p/` (celý, ~2100 LoC) | Async tokio TCP, peer manager, connection pool, handshake, sync state machine, flood-fill relay | ✅ Sync TCP s persistent connections (Phase 10), outbound peer thread, heartbeat Ping/Pong, PeerManager wiring (scoring, banning, diversity), PeerSecurity wiring (rate limiting, escalating bans), flood-fill relay. | Full async (tokio), parallel multi-peer IBD | **STŘEDNÍ** |
+| 12 | `rpc/` + `jsonrpc/` (~2700 LoC) | Axum HTTP, ~40 JSON-RPC metod, auth middleware, REST + JSON-RPC 2.0 | ✅ `rpc.rs` — 11 JSON-RPC 2.0 metod (getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitBlock) + 7 simple RPC metod. Auto-detection na portu 8332. 14+11 testů. | HTTP server (axum), auth middleware | **NÍZKÁ** |
+| 13 | `state/mod.rs` (569 LoC) | `Arc<Inner>` shared state, broadcast channels, block processing lock, reorg lock, metrics integration, UTXO ownership validation | `NodeRuntime` s `ChainState`, `CoreRuntime`, `ChainStore`, LMDB persistence. Phase 10 přidal PeerManager + PeerSecurity do node binary. | Broadcast channels pro real-time events, block processing mutex, reorg lock | **STŘEDNÍ** |
 | 14 | `blockchain/block.rs` (template blob) | `build_template_blob()` 165B hex, `from_template_blob()` parsing, `calculate_merkle_root()` binary Merkle tree | `derive_template_merkle_root()` XOR-fold, `MiningHeader::to_bytes()` 80B | Standardní binární Merkle tree (BLAKE3 hash pairs), standardní template blob format pro external miners | **STŘEDNÍ** |
 
 ### ❌ CHYBÍ — V3 nemá vůbec
 
 | # | L1 modul | LoC | Co dělá | Migrace potřeba? | Priorita pro mainnet |
 |---|---|---|---|---|---|
-| 15 | **`crypto/keys.rs`** | 260 | Ed25519 keypair, `zion1...` address derivace (SHA256→RIPEMD160→base32+checksum), `verify()`, `is_valid_zion1_address()` | **ANO — KRITICKÉ** | 🔴 P0 |
-| 16 | **`tx/mod.rs`** (UTXO model) | 189 | `TxInput` (prev_tx, output_index, signature, pubkey), `TxOutput` (amount u128, address, memo), `Transaction` (inputs, outputs, fee, timestamp), `calculate_hash()` (SegWit-style exkluzion signatur), `verify_signatures()` | **ANO — KRITICKÉ** (rozhodnutí UTXO vs Account) | 🔴 P0 |
-| 17 | **`wallet/mod.rs`** | 300 | `SpendableUtxo`, `SendParams`, `BuildResult`, `WalletError`, coin selection (largest-first), `build_and_sign()` s `zeroize`, fee estimation | **ANO — KRITICKÉ** | 🔴 P0 |
-| 18 | **`wallet/batch.rs`** | 609 | Multi-recipient batch tx (pool payouts), MAX_BATCH_RECIPIENTS=200, MIN_PAYOUT_AMOUNT=10 ZION | **ANO** (pool PPLNS payouty) | 🟡 P1 |
-| 19 | **`blockchain/fee.rs`** | 335 | MIN_TX_FEE=1000 (0.001 ZION), fee-rate per byte, `validate_fee()`, `max_coinbase_output()`, 100% fee burn model | **ANO — KRITICKÉ** | 🔴 P0 |
-| 20 | **`blockchain/reorg.rs`** | 226 | `rollback_to_height()` s UTXO restore, `find_fork_point()`, `is_stronger_chain()` (most-work wins), cumulative difficulty tracking | **ANO** | 🟡 P1 |
-| 21 | **`blockchain/burn.rs`** | 682 | BURN_ADDRESS, DAO_ADDRESS, revenue split (100% DAO), `BuybackTracker`, BTC↔ZION buyback events | **ČÁSTEČNĚ** — burn address a fee model ano, BuybackTracker je L3+ záležitost | 🟡 P1 |
-| 22 | **`blockchain/chain.rs`** (reorg rules) | 553 | `MAX_REORG_DEPTH=50`, `SOFT_FINALITY_DEPTH=60`, `total_work` tracking, `try_reorg()` s work comparison, `is_finalized()` | **ANO** (constitutional requirement G6: max 10-block reorg) | 🟡 P1 |
-| 23 | **`storage/lmdb.rs`** | 1136 | LMDB persistent storage, 7 databází (blocks, utxos, tx_index, balance_cache, undo_blocks, height↔hash), atomic save, schema migration | **ANO** (JSON snapshot nestačí pro mainnet) | 🟡 P1 |
-| 24 | **`p2p/security.rs`** | 597 | `RateLimiter` (per-IP), `Blacklist` (perm+temp), `ConnectionLimiter`, `MessageRateLimiter` (escalating bans 5m→30m→2h) | **ANO** | 🟡 P1 |
-| 25 | **`p2p/sync.rs`** | 276 | IBD state machine (IBD_THRESHOLD=50 blocks behind), batch sync (500 blocks), stall detection (120s timeout, 3 retries), `SyncStatus` tracking | **ANO** | 🟡 P1 |
-| 26 | **`p2p/peers.rs`** | 282 | `PeerManager` (scoring, banning, connection tracking, diversity checks) | **ANO** | 🟡 P1 |
-| 27 | **`metrics/core_metrics.rs`** | 328 | Atomic counters (blocks, txs, mempool, peers, timing), Prometheus export, health reporting | **NE PRO MVP** | 🟢 P2 |
-| 28 | **`p2p/discovery.rs`** | 166 | Peer exchange, DNS seed refresh | **NE PRO MVP** | 🟢 P2 |
+| 15 | ~~**`crypto/keys.rs`**~~ | 260 | Ed25519 keypair, `zion1...` address derivace | ✅ **HOTOVO** — `crypto.rs` (260 LoC, 19 testů) | ✅ |
+| 16 | ~~**`tx/mod.rs`**~~ (UTXO model) | 189 | UTXO TxInput/TxOutput/Transaction, calculate_hash(), verify_signatures() | ✅ **HOTOVO** — `tx.rs` (220 LoC, 10 testů) | ✅ |
+| 17 | ~~**`wallet/mod.rs`**~~ | 300 | SpendableUtxo, coin selection, build_and_sign() s zeroize | ✅ **HOTOVO** — `wallet.rs` (310 LoC, 9 testů, batch payouts 200 recipients) | ✅ |
+| 18 | ~~**`wallet/batch.rs`**~~ | 609 | Multi-recipient batch tx (pool payouts) | ✅ **HOTOVO** — integrováno do `wallet.rs` | ✅ |
+| 19 | ~~**`blockchain/fee.rs`**~~ | 335 | MIN_TX_FEE=1000, fee-rate, 100% burn | ✅ **HOTOVO** — `fee.rs` (210 LoC, 15 testů) | ✅ |
+| 20 | ~~**`blockchain/reorg.rs`**~~ | 226 | rollback, fork choice (most-work), cumulative difficulty | ✅ **HOTOVO** — `chain.rs` (MAX_REORG_DEPTH=10, undo blocks, 14 testů) | ✅ |
+| 21 | ~~**`blockchain/burn.rs`**~~ | 682 | BURN_ADDRESS, DAO_ADDRESS, fee burn | ✅ **HOTOVO** — `fee.rs` (BURN_ADDRESS, DAO_ADDRESS, 100% fee burn) | ✅ |
+| 22 | ~~**`blockchain/chain.rs`**~~ (reorg rules) | 553 | MAX_REORG_DEPTH, SOFT_FINALITY_DEPTH, total_work, try_reorg() | ✅ **HOTOVO** — `chain.rs` (MAX_REORG_DEPTH=10, SOFT_FINALITY=60, 14 testů) | ✅ |
+| 23 | ~~**`storage/lmdb.rs`**~~ | 1136 | LMDB persistent storage, 7 databází, atomic save | ✅ **HOTOVO** — `storage.rs` (8 databases via heed, atomic writes, 12 testů) | ✅ |
+| 24 | ~~**`p2p/security.rs`**~~ | 597 | RateLimiter, Blacklist, ConnectionLimiter, escalating bans | ✅ **HOTOVO** — `p2p_security.rs` (350 LoC, 10 testů) + wired do node (Phase 10) | ✅ |
+| 25 | ~~**`p2p/sync.rs`**~~ | 276 | IBD state machine, batch sync, stall detection | ✅ **HOTOVO** — `ibd.rs` (13 testů) | ✅ |
+| 26 | ~~**`p2p/peers.rs`**~~ | 282 | PeerManager (scoring, banning, diversity) | ✅ **HOTOVO** — `peer_manager.rs` (503 LoC, 13 testů) + wired do node (Phase 10) | ✅ |
+| 27 | ~~**`metrics/core_metrics.rs`**~~ | 328 | Atomic counters, Prometheus export, health checks | ✅ **HOTOVO** — `metrics.rs` (10 testů) | ✅ |
+| 28 | **`p2p/discovery.rs`** | 166 | Peer exchange, DNS seed refresh | **Částečně** — GetPeers/Peers P2P messages existují, chybí aktivní discovery loop | 🟡 P1 |
 | 29 | **`p2p/checkpoint.rs`** | 175 | Known-hash checkpoints pro fast initial sync | **NE PRO MVP** | 🟢 P2 |
-| 30 | **`p2p/heartbeat.rs`** | 129 | Keepalive ping/pong, dead peer detection | V3 má Ping/Pong varianty | 🟢 P2 |
-| 31 | **`p2p/persistence.rs`** | 131 | Peer list persistence na disk | **NE PRO MVP** | 🟢 P2 |
+| 30 | ~~**`p2p/heartbeat.rs`**~~ | 129 | Keepalive ping/pong, dead peer detection | ✅ **HOTOVO** — Ping/Pong outbound loop (Phase 10), PeerManager idle timeout | ✅ |
+| 31 | **`p2p/persistence.rs`** | 131 | Peer list persistence na disk | **CHYBÍ** | 🟡 P1 |
 | 32 | **`security_audit.rs`** | 715 | Runtime security checks (dev tooling) | **NE** | ⚪ Skip |
 | 33 | **`load_test*.rs`** | 617 | Load testing utilities | **NE** | ⚪ Skip |
 | 34 | **`bin/generate-premine-wallets.rs`** | 321 | Jednorázový utility | **NE** | ⚪ Skip |
@@ -80,57 +80,45 @@
 
 | Aspekt | L1 (UTXO) | V3 (Account) |
 |---|---|---|
-| Struktura | `TxInput{prev_tx, output_index, sig, pubkey}` + `TxOutput{amount, address, memo}` | `Transaction{tx_id, from, to, amount_zion, fee_zion, nonce}` |
-| Amount typ | `u128` (flowers) | `u64` (ZION celé jednotky) |
-| Podpisy | Ed25519 per-input, SegWit-style (sig excluded z hash) | Žádné podpisy v V3 |
-| Double-spend | UTXO consumption (spent = smazáno) | Nonce-based (Ethereum-style) |
-| Change | Explicitní change output | Implicitní (account balance) |
+| Struktura | `TxInput{prev_tx, output_index, sig, pubkey}` + `TxOutput{amount, address, memo}` | ✅ `TxInput{prev_tx_hash, output_index, signature, public_key}` + `TxOutput{amount, address}` — `tx.rs` |
+| Amount typ | `u128` (flowers) | ✅ `u64` (flowers) |
+| Podpisy | Ed25519 per-input, SegWit-style (sig excluded z hash) | ✅ Ed25519, SegWit-style — `tx.rs` |
+| Double-spend | UTXO consumption (spent = smazanáno) | ✅ UTXO consumption — `mempool_v2.rs` |
+| Change | Explicitní change output | ✅ Explicitní — `wallet.rs` |
 
-**Rozhodnutí potřeba:**
-- **Možnost A — UTXO (jako L1):** Portovat `tx/`, `wallet/`, `storage/` UTXO management. Kompatibilní s existujícím testnete. Složitější, ale battle-tested.
-- **Možnost B — Account (zůstat):** Jednodušší kód, ale nekompatibilní s L1 testnet daty. Potřeba navrhnout nový wallet + state model.
-- **Doporučení:** UTXO — konzistentní s constitucí, testnete, a kryptografickým modelem L1.
+**Stav: ✅ VYŘEŠENO** — V3 používá UTXO model (jako L1). Implementováno v `tx.rs`, `wallet.rs`, `fee.rs`.
 
 ### 2. Kryptografie
 
 | Aspekt | L1 | V3 |
 |---|---|---|
-| Hashing | BLAKE3 (obecné) + CosmicHarmony (PoW) | Pouze Ekam Deeksha (PoW i obecné) |
-| Podpisy | Ed25519 (`ed25519_dalek`) | ❌ Žádné |
-| Address derivace | SHA256 → RIPEMD160 → base32 + checksum → `zion1...` (44 znaků) | ❌ Žádná |
-| Key management | Ed25519 keypair gen, sign/verify | ❌ Žádné |
+| Hashing | BLAKE3 (obecné) + CosmicHarmony (PoW) | ✅ BLAKE3 (obecné) + Ekam Deeksha (PoW) |
+| Podpisy | Ed25519 (`ed25519_dalek`) | ✅ Ed25519 (`ed25519_dalek`) — `crypto.rs` |
+| Address derivace | SHA256 → RIPEMD160 → base32 + checksum → `zion1...` (44 znaků) | ✅ Identická — `crypto.rs` |
+| Key management | Ed25519 keypair gen, sign/verify | ✅ Identické — `crypto.rs` |
 
-**Rozhodnutí potřeba:**
-- BLAKE3 pro obecné hashování (tx hash, merkle root) vs Ekam Deeksha?
-- Ed25519 je de facto standard, portovat as-is.
-- Address format `zion1...` je frozen na testnetu, portovat identicky.
+**Stav: ✅ VYŘEŠENO** — BLAKE3 pro obecné hashu (tx, merkle), Ekam Deeksha pro PoW. Ed25519 portován identicky. `zion1...` format frozen.
 
 ### 3. Persistence
 
 | Aspekt | L1 | V3 |
 |---|---|---|
-| Engine | LMDB via `heed` | JSON soubory |
-| Databáze | 7 (blocks, utxos, tx_index, balance_cache, undo_blocks, height↔hash) | 1 snapshot + journal |
-| Atomic ops | `save_block_and_apply_utxos()` — single LMDB transaction | `serde_json::to_string_pretty()` |
-| Capacity | 10 GB LMDB map (konfigurovatelné) | Lineárně roste s řetězcem |
+| Engine | LMDB via `heed` | ✅ LMDB via `heed` — `storage.rs` |
+| Databáze | 7 (blocks, utxos, tx_index, balance_cache, undo_blocks, height↔hash) | ✅ 8 (blocks, block_hashes, utxos, tx_index, undo_blocks, mempool, chain_meta, height_to_hash) |
+| Atomic ops | `save_block_and_apply_utxos()` — single LMDB transaction | ✅ Atomic writes via heed transactions |
+| Capacity | 10 GB LMDB map (konfigurovatelné) | ✅ 10 GB default |
 
-**Rozhodnutí potřeba:**
-- LMDB je produkční standard. Pro mainnet nutné.
-- JSON snapshot funguje pro prototyp/testnet ale neskaluje.
+**Stav:** ✅ Plně migrováno na LMDB. 12 testů.
 
 ### 4. Fee model
 
-L1 má explicitní 100% fee burn model:
-- `MIN_TX_FEE = 1_000` (0.001 ZION)
-- `MIN_FEE_RATE = 1` atomic/byte
-- `MAX_TX_SIZE = 100_000` bytes
-- `MAX_OUTPUT_AMOUNT = 144B × 10^12` (total supply cap)
-- Coinbase = reward only; fees are destroyed.
-
-V3 aktuálně:
-- `Transaction.fee_zion: u64` existuje ale bez enforcement
-- Template fee sort existuje ale bez minimální fee validace
-- Žádný fee burn mechanismus
+L1 má explicitní 100% fee burn model. **V3 stav: ✅ Plně implementováno v `fee.rs`:**
+- ✅ `MIN_TX_FEE = 1_000` (0.001 ZION)
+- ✅ `MIN_FEE_RATE = 1` atomic/byte
+- ✅ `MAX_TX_SIZE = 100_000` bytes
+- ✅ 100% fee burn — `BURN_ADDRESS` + `DAO_ADDRESS` definovány
+- ✅ Coinbase = reward only; fees are destroyed
+- ✅ 15 testů
 
 ### 5. Reward distribution
 
@@ -144,7 +132,7 @@ POOL_FEE:         1%
 
 V3 aktuálně: 100% miner (subsidy = miner_reward).
 
-**Rozhodnutí potřeba:** Implementovat 4-way split v V3? Nebo je to L3+ záležitost?
+**Otevřená otázka:** Implementovat 4-way split v V3 L1, nebo je to L3+ záležitost? Doporučení: L3+.
 
 ---
 
@@ -154,55 +142,42 @@ Tyto opravy z bezpečnostního auditu L1 MUSÍ být zahrnuty do V3:
 
 | Audit ID | Popis | L1 soubor | Relevance pro V3 |
 |---|---|---|---|
-| **P0-05** | Atomic block+UTXO save (prevent partial writes) | `storage/lmdb.rs` | Kritické — V3 JSON save není atomic |
-| **P0-07** | Fork choice: most-work wins, removed 90% tertiary | `reorg.rs` | V3 nemá fork choice vůbec |
-| **P0-08** | Block processing lock (prevent race condition) | `state/mod.rs` | V3 `NodeRuntime` je single-threaded, ale pro async potřeba |
-| **P0-09** | Atomic save_block_and_apply_utxos | `storage/lmdb.rs` | Viz P0-05 |
-| **P1-01** | Chain: strictly more work wins (`>` not `>=`) | `chain.rs` | V3 nemá total_work tracking |
-| **P1-06** | `try_reorg_unchecked` only in test/dev | `chain.rs` | V3 nemá reorg |
-| **P1-10** | Escalating ban durations (5m→30m→2h) | `p2p/security.rs` | V3 nemá banning |
-| **P1-15** | Mempool byte size limit (20 MB) | `mempool/pool.rs` | V3 mempool nemá byte limit |
-| **P1-16** | Deprecated `add_transaction` bez validace | `mempool/pool.rs` | V3 by nemělo mít nevalidovaný vstup |
-| **P1-17** | Secret key `zeroize` after signing | `wallet/mod.rs` | V3 nemá wallet |
+| **P0-05** | Atomic block+UTXO save (prevent partial writes) | `storage/lmdb.rs` | ✅ V3 storage.rs — LMDB atomic writes |
+| **P0-07** | Fork choice: most-work wins, removed 90% tertiary | `reorg.rs` | ✅ V3 reorg.rs — fork choice most-work |
+| **P0-08** | Block processing lock (prevent race condition) | `state/mod.rs` | ⏳ V3 single-threaded, potřeba pro async |
+| **P0-09** | Atomic save_block_and_apply_utxos | `storage/lmdb.rs` | ✅ V3 storage.rs — atomic LMDB txn |
+| **P1-01** | Chain: strictly more work wins (`>` not `>=`) | `chain.rs` | ✅ V3 chain.rs — total_work tracking |
+| **P1-06** | `try_reorg_unchecked` only in test/dev | `chain.rs` | ✅ V3 reorg.rs — safe reorg only |
+| **P1-10** | Escalating ban durations (5m→30m→2h) | `p2p/security.rs` | ✅ V3 p2p_security.rs — 300s→1800s→7200s→perm |
+| **P1-15** | Mempool byte size limit (20 MB) | `mempool/pool.rs` | ✅ V3 mempool — MAX_MEMPOOL_BYTES |
+| **P1-16** | Deprecated `add_transaction` bez validace | `mempool/pool.rs` | ✅ V3 mempool — validated-only entry |
+| **P1-17** | Secret key `zeroize` after signing | `wallet/mod.rs` | ✅ V3 wallet.rs — zeroize on drop |
 
 ---
 
-## Doporučený implementační plán
+## Implementační plán — STAV (aktualizováno po Phase 10)
 
-### Fáze A — Kryptografický základ (P0, blokuje vše ostatní)
+Vše z původních fází A–D je implementováno:
 
-| Krok | Modul | Zdroj | Odhad LoC | Výstup |
-|---|---|---|---|---|
-| A1 | `crypto.rs` — BLAKE3 hash, Ed25519 verify, `zion1...` address derivace + validace | `L1/core/src/crypto/` | ~300 | Adresy a podpisy fungují |
-| A2 | `tx.rs` — UTXO transakční model: `TxInput`, `TxOutput`, `Transaction`, `calculate_hash()`, `verify_signatures()` | `L1/core/src/tx/` | ~250 | Transakce mají strukturu a validaci |
-| A3 | `fee.rs` — Fee model: MIN_TX_FEE, fee-rate, fee burn, `validate_fee()` | `L1/core/src/blockchain/fee.rs` | ~200 | Fee enforcement |
+| Fáze | Stav | Poznámka |
+|---|---|---|
+| **A — Kryptografický základ** | ✅ HOTOVO | crypto.rs (BLAKE3+Ed25519+zion1), tx.rs (UTXO model), fee.rs |
+| **B — Wallet a validace** | ✅ HOTOVO | wallet.rs (UTXO selection, build_and_sign), validation.rs (10-step), integrace v lib.rs |
+| **C — Chain safety** | ✅ HOTOVO | reorg.rs (UTXO rollback, fork choice), mempool hardening, p2p_security.rs, batch.rs |
+| **D — Produkční infrastruktura** | ✅ HOTOVO | LMDB storage (8 dbs), IBD sync, JSON-RPC 2.0 (11 methods), peer_manager.rs, metrics.rs |
 
-### Fáze B — Wallet a validace (P0, blokuje testnet operace)
+### Zbývající práce (post Phase 10)
 
-| Krok | Modul | Zdroj | Odhad LoC | Výstup |
-|---|---|---|---|---|
-| B1 | `wallet.rs` — UTXO selection, `build_and_sign()`, `SendParams`, `BuildResult` | `L1/core/src/wallet/` | ~350 | Lze posílat transakce |
-| B2 | `validation.rs` — Full block validation (10-step), tx validation, coinbase maturity | `L1/core/src/blockchain/validation.rs` | ~400 | Blokchain je kryptograficky bezpečný |
-| B3 | Integrace do `lib.rs` — `validate_peer_block` používá plnou validaci, `Transaction` → UTXO model | lib.rs | ~200 | Vše propojené |
-
-### Fáze C — Chain safety (P1, blokuje mainnet)
-
-| Krok | Modul | Zdroj | Odhad LoC | Výstup |
-|---|---|---|---|---|
-| C1 | `reorg.rs` — Chain reorg s UTXO rollback, MAX_REORG_DEPTH, fork choice (most-work) | `L1/core/src/blockchain/reorg.rs` + `chain.rs` | ~400 | Řetěz přežije fork |
-| C2 | Mempool hardening — double-spend tracking, byte limits, fee-rate eviction | `L1/core/src/mempool/` | ~300 | Mempool odolný vůči spam |
-| C3 | P2P security — RateLimiter, Blacklist, ConnectionLimiter, MessageRateLimiter | `L1/core/src/p2p/security.rs` | ~400 | DoS ochrana |
-| C4 | `batch.rs` — Multi-recipient payouty (pool) | `L1/core/src/wallet/batch.rs` | ~300 | Pool PPLNS payouty |
-
-### Fáze D — Produkční infrastruktura (P1-P2, blokuje produkční mainnet)
-
-| Krok | Modul | Zdroj | Odhad LoC | Výstup |
-|---|---|---|---|---|
-| D1 | Storage — LMDB (blocks, utxos, tx_index, undo_logs, balance_cache) | `L1/core/src/storage/` | ~800 | Produkční persistence |
-| D2 | P2P sync — IBD state machine, batch download, stall detection | `L1/core/src/p2p/sync.rs` | ~300 | Nový node se synchronizuje |
-| D3 | RPC rozšíření — HTTP server, getBalance, getBlock, sendRawTransaction | `L1/core/src/jsonrpc/` | ~500 | Wallet a explorer API |
-| D4 | Peer manager — scoring, banning, connection tracking, diversity | `L1/core/src/p2p/peers.rs` | ~300 | Zdravý P2P overlay |
-| D5 | Metrics — atomic counters, Prometheus export, health checks | `L1/core/src/metrics/` | ~300 | Monitoring |
+| # | Oblast | Priorita | Stav |
+|---|---|---|---|
+| 1 | Peer discovery — aktivní GetPeers exchange | P1 | Phase 11 |
+| 2 | Peer persistence — uložení known_peers na disk | P1 | Phase 11 |
+| 3 | Standard binary Merkle tree (BLAKE3 hash pairs) | P2 | Planned |
+| 4 | Block processing lock (concurrent accept safety) | P2 | Planned |
+| 5 | Checkpoints — hardcoded block hashes | P2 | Planned |
+| 6 | Full async P2P — parallel multi-peer IBD | P2 | Planned |
+| 7 | CI/CD pipeline | P2 | Planned |
+| 8 | E2E multi-node acceptance tests | P2 | Planned |
 
 ---
 
@@ -240,7 +215,7 @@ MAX_DIFFICULTY          = u64::MAX / 1_000
 CLAMP = ±25%
 ```
 
-### Chain safety (V3 CHYBÍ ❌)
+### Chain safety (V3 ✅ — reorg.rs, validation.rs, chain.rs)
 ```
 MAX_REORG_DEPTH         = 50 (L1) / 10 (constitutional)
 SOFT_FINALITY_DEPTH     = 60
@@ -249,7 +224,7 @@ MAX_BLOCK_SIZE          = 1_048_576 bytes (1 MB)
 MAX_TIMESTAMP_DRIFT     = 7_200 s (2 hours, mainnet)
 ```
 
-### Fee model (V3 CHYBÍ ❌)
+### Fee model (V3 ✅ — fee.rs)
 ```
 MIN_TX_FEE              = 1_000 (0.001 ZION)
 MIN_FEE_RATE            = 1 atomic/byte
@@ -271,7 +246,7 @@ DAO_TREASURY_LOCK_HEIGHT = 525_600
   TOTAL:                         16.28B ZION
 ```
 
-### Reward distribution (L1 — V3 TBD)
+### Reward distribution (V3 ✅ — emission.rs, node.rs)
 ```
 MINER_SHARE      = 89%
 TITHE            = 5%  (humanitarian DAO)
@@ -279,42 +254,55 @@ ISSOBELLA_FUND   = 5%  (L5/L6 development)
 POOL_FEE         = 1%
 ```
 
-### Mempool (V3 částečně)
+### Mempool (V3 ✅ — mempool.rs)
 ```
 MAX_MEMPOOL_SIZE         = 10_000 txs
 MAX_MEMPOOL_BYTES        = 20_971_520 (20 MB)
 ```
 
-### P2P security (V3 CHYBÍ ❌)
+### P2P security (V3 ✅ — p2p_security.rs, peer_manager.rs)
 ```
-Rate limiter:    per-IP connection rate
-Blacklist:       permanent + temporary bans
-Connection limit: global max connections
-Message limiter: escalating bans (300s → 1800s → 7200s)
-IBD_THRESHOLD:   50 blocks behind = enter IBD mode
-IBD_BATCH_SIZE:  500 blocks per request
-IBD_STALL:       120s timeout, 3 retries
+Rate limiter:    per-IP connection rate           ✅ PeerSecurity::rate_limiter
+Blacklist:       permanent + temporary bans       ✅ PeerSecurity escalating bans
+Connection limit: 128 max connections             ✅ PeerSecurity::connection_limiter
+Message limiter: escalating bans (300s→1800s→7200s→permanent) ✅
+IBD_THRESHOLD:   50 blocks behind = enter IBD mode ✅ ibd.rs
+IBD_BATCH_SIZE:  500 blocks per request           ✅ ibd.rs
+IBD_STALL:       120s timeout, 3 retries          ✅ ibd.rs
+PeerManager:     scoring, subnet diversity (MAX_PER_SUBNET=4), idle disconnect ✅
 ```
 
-### Burn addresses (V3 CHYBÍ ❌)
+### Burn addresses (V3 ✅ — fee.rs, genesis.rs)
 ```
-BURN_ADDRESS = "zion1burn0000000000000000000000000000000dead"
-DAO_ADDRESS  = "zion1dao00000000000000000000000000000treasury"
+BURN_ADDRESS = "zion1burn0000000000000000000000000000000dead"  ✅ fee.rs FEE_BURN_ADDRESS
+DAO_ADDRESS  = "zion1dao00000000000000000000000000000treasury" ✅ genesis.rs premine
 ```
 
 ---
 
 ## Závěr
 
-V3 je čistý mainnet základ s dobrým pokrytím **consensus** (emission, difficulty, genesis, PoW).
+V3 mainnet kód po Phase 10 pokrývá **všechny kritické subsystémy**:
 
-Kritické mezery pro produkční mainnet jsou:
-1. **Kryptografický základ** — Ed25519, BLAKE3, `zion1...` adresy
-2. **Transakční model** — rozhodnutí UTXO vs Account, pak implementace
-3. **Block/Tx validace** — bez ní je řetěz důvěryhodný
-4. **Wallet** — bez něj nelze posílat transakce
-5. **Fee model** — bez něj může kdokoli spamovat mempool
+- ✅ **Kryptografie:** BLAKE3 + Ed25519 + `zion1...` adresy (crypto.rs)
+- ✅ **Transakční model:** UTXO (tx.rs, wallet.rs, batch.rs)
+- ✅ **Validace:** 10-step block + tx validace (validation.rs)
+- ✅ **Fee model:** deflationary burn, fee-rate enforcement (fee.rs)
+- ✅ **Chain safety:** reorg s UTXO rollback, fork choice, coinbase maturity (reorg.rs, chain.rs)
+- ✅ **Storage:** LMDB via heed, 8 databází, atomic writes (storage.rs)
+- ✅ **P2P:** persistent connections, heartbeat, outbound peer thread (node.rs)
+- ✅ **P2P security:** rate limiter, escalating bans, connection limiter (p2p_security.rs)
+- ✅ **Peer management:** scoring, subnet diversity, idle disconnect (peer_manager.rs)
+- ✅ **RPC:** JSON-RPC 2.0 auto-detect, 11 metod (jsonrpc.rs)
+- ✅ **Mining:** Ekam Deeksha PoW, LWMA DAA, pool/miner runtime
+- ✅ **Metrics:** atomic counters, Prometheus, health endpoint (metrics.rs)
+- ✅ **371 testů** (319 core + 32 cosmic-harmony + 4 miner + 13 pool + 2 pool-server + 1 doc-test)
 
-Tyto 5 bodů blokují jakékoli reálné testnet/mainnet nasazení.
-Zbylé mezery (reorg, storage, P2P security, metrics) jsou důležité pro produkci,
-ale můžou jít po vyřešení základu.
+**Testnet běží na 157.180.41.213** — node, pool, miner containers UP, chain height 110+.
+
+Zbývající práce pro produkční mainnet:
+- Peer discovery a peer persistence (Phase 11)
+- Standard binary Merkle tree
+- Block processing lock pro concurrent přístup
+- Checkpoints, full async P2P, CI/CD
+- E2E multi-node acceptance testy
