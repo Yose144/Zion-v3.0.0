@@ -292,6 +292,10 @@ pub struct AcceptedBlock {
     pub difficulty: u64,
     pub nonce: u64,
     pub hash_hex: String,
+    /// Serialized 80-byte MiningHeader as hex. Enables PoW verification for
+    /// peer-imported blocks.  Empty for legacy persisted blocks (pre-Phase 12).
+    #[serde(default)]
+    pub header_hex: String,
     pub transaction_ids: Vec<String>,
     pub transactions: Vec<Transaction>,
     pub total_fees_zion: u64,
@@ -988,6 +992,7 @@ impl NodeRuntime {
                 difficulty: active_template.difficulty,
                 nonce: sealed_block.nonce,
                 hash_hex: hex(&sealed_block.hash),
+                header_hex: hex(&active_template.header.to_bytes()),
                 transaction_ids: active_template
                     .transactions
                     .iter()
@@ -1362,6 +1367,69 @@ impl ChainState {
             }
             return Ok(());
         }
+
+        // ── Checkpoint verification ────────────────────────────────────
+        launch::verify_checkpoint(block.height, &block.hash_hex)?;
+
+        // ── PoW verification (when header is available) ────────────────
+        let block_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
+        if !block.header_hex.is_empty() {
+            let header_bytes = parse_fixed_hex::<HEADER_SIZE>(
+                &block.header_hex,
+                "peer block header",
+            )?;
+            let header = MiningHeader::from_bytes(header_bytes);
+
+            // Header fields must be consistent with block metadata
+            if header.timestamp != block.timestamp {
+                return Err("peer block header timestamp does not match block timestamp".to_string());
+            }
+            let expected_target = difficulty::difficulty_to_target(block.difficulty);
+            let expected_bits = difficulty::target_to_compact(&expected_target);
+            if header.difficulty_bits != expected_bits {
+                return Err(format!(
+                    "peer block header difficulty_bits {} does not match expected {}",
+                    header.difficulty_bits, expected_bits
+                ));
+            }
+
+            // Verify PoW: recompute hash from header + nonce
+            let candidate = BlockCandidate {
+                header,
+                nonce: block.nonce,
+            };
+            let computed_hash = candidate.hash();
+            if computed_hash != block_hash {
+                return Err(
+                    "peer block hash does not match PoW computation from header and nonce"
+                        .to_string(),
+                );
+            }
+
+            // Verify hash meets difficulty target
+            let target = difficulty::difficulty_to_target(block.difficulty);
+            if !target.allows(&computed_hash) {
+                return Err("peer block PoW hash does not meet difficulty target".to_string());
+            }
+        }
+
+        // ── Timestamp sanity ───────────────────────────────────────────
+        let current_time = now_secs();
+        let median_time_past = if self.accepted_blocks.is_empty() {
+            0
+        } else {
+            let start = self.accepted_blocks.len().saturating_sub(11);
+            let mut timestamps: Vec<u64> = self.accepted_blocks[start..]
+                .iter()
+                .map(|b| b.timestamp)
+                .collect();
+            timestamps.sort_unstable();
+            timestamps[timestamps.len() / 2]
+        };
+        validation::validate_timestamp(block.timestamp, median_time_past, current_time)
+            .map_err(|e| format!("peer block timestamp invalid: {e}"))?;
+
+        // ── Transaction structure ──────────────────────────────────────
         if block.transaction_ids.len() != block.transactions.len() {
             return Err("peer block transaction ids do not match block body length".to_string());
         }
@@ -1419,7 +1487,6 @@ impl ChainState {
                 block.difficulty, expected_difficulty, block.height
             ));
         }
-        parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
         Ok(())
     }
 
@@ -2572,6 +2639,7 @@ mod tests {
                 difficulty: difficulty::GENESIS_DIFFICULTY,
                 nonce: 77,
                 hash_hex: hex(&[0x55; 32]),
+                header_hex: String::new(),
                 transaction_ids: vec![tx_mined.tx_id.clone()],
                 transactions: vec![tx_mined.clone()],
                 total_fees_zion: 2,
@@ -2627,6 +2695,7 @@ mod tests {
             difficulty: difficulty::GENESIS_DIFFICULTY,
             nonce: 42,
             hash_hex: hex(&[0x66; 32]),
+            header_hex: String::new(),
             transaction_ids: vec![tx.tx_id.clone()],
             transactions: vec![tx.clone()],
             total_fees_zion: 6,
@@ -2746,5 +2815,187 @@ mod tests {
             }
             other => panic!("expected Peers, got {other:?}"),
         }
+    }
+
+    // ── Phase 12: Block Validation Hardening tests ─────────────────────
+
+    /// Helper: mine a block on `source` and return its accepted blocks.
+    fn mine_one_block(runtime: &mut NodeRuntime) {
+        let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
+        let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
+            template_id: template.template_id,
+            header_hex: template.header_hex.clone(),
+            nonce,
+            target_hex: template.target_hex.clone(),
+        });
+        assert!(matches!(response, RpcResponse::SubmitResult { accepted: true, .. }));
+    }
+
+    #[test]
+    fn peer_block_has_header_hex_after_mining() {
+        let mut runtime = NodeRuntime::new("node-hdr", NodeConfig::mainnet());
+        mine_one_block(&mut runtime);
+        let block = &runtime.accepted_blocks()[1];
+        assert!(!block.header_hex.is_empty(), "mined block must have header_hex");
+        assert_eq!(block.header_hex.len(), HEADER_SIZE * 2); // 80 bytes = 160 hex chars
+    }
+
+    #[test]
+    fn peer_import_verifies_pow_via_header_hex() {
+        let mut source = NodeRuntime::new("node-pow-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        // Import with valid header_hex should succeed
+        let mut target = NodeRuntime::new("node-pow-tgt", NodeConfig::mainnet());
+        let imported = target
+            .import_peer_blocks(source.accepted_blocks().to_vec())
+            .expect("import with valid PoW should succeed");
+        assert_eq!(imported, 1);
+    }
+
+    #[test]
+    fn peer_import_rejects_bad_pow_hash() {
+        let mut source = NodeRuntime::new("node-badpow-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        // Tamper with hash_hex while keeping header_hex intact
+        block.hash_hex = hex(&[0xAA; 32]);
+
+        let mut target = NodeRuntime::new("node-badpow-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(vec![block])
+            .expect_err("tampered hash should be rejected");
+        assert!(
+            err.contains("PoW computation"),
+            "expected PoW computation error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn peer_import_rejects_bad_header_timestamp() {
+        let mut source = NodeRuntime::new("node-badhdr-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        // Tamper with header timestamp field (make it inconsistent with block.timestamp)
+        let mut header_bytes = parse_fixed_hex::<HEADER_SIZE>(
+            &block.header_hex,
+            "test header",
+        )
+        .unwrap();
+        // Overwrite timestamp bytes (offset 68..76) with a different value
+        header_bytes[68..76].copy_from_slice(&(block.timestamp + 999).to_le_bytes());
+        block.header_hex = hex(&header_bytes);
+
+        let mut target = NodeRuntime::new("node-badhdr-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(vec![block])
+            .expect_err("header with wrong timestamp should be rejected");
+        assert!(
+            err.contains("header timestamp"),
+            "expected header timestamp error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn peer_import_rejects_future_timestamp() {
+        let mut source = NodeRuntime::new("node-future-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        let far_future = now_secs() + validation::MAX_TIMESTAMP_DRIFT + 3_600;
+        block.timestamp = far_future;
+        // Rebuild header with the far-future timestamp so header consistency passes
+        let mut header_bytes = parse_fixed_hex::<HEADER_SIZE>(
+            &block.header_hex,
+            "test header",
+        )
+        .unwrap();
+        header_bytes[68..76].copy_from_slice(&far_future.to_le_bytes());
+        let header = MiningHeader::from_bytes(header_bytes);
+        // Re-mine to get a valid hash for the tampered header
+        let target_val = difficulty::difficulty_to_target(block.difficulty);
+        let mut found = false;
+        for nonce in 0..10_000_000u64 {
+            let candidate = BlockCandidate { header, nonce };
+            let h = candidate.hash();
+            if target_val.allows(&h) {
+                block.nonce = nonce;
+                block.hash_hex = hex(&h);
+                block.header_hex = hex(&header.to_bytes());
+                found = true;
+                break;
+            }
+        }
+        assert!(found, "should find valid nonce for tampered header");
+
+        let mut target = NodeRuntime::new("node-future-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(vec![block])
+            .expect_err("far-future timestamp should be rejected");
+        assert!(
+            err.contains("timestamp"),
+            "expected timestamp error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn peer_import_rejects_wrong_subsidy() {
+        let mut source = NodeRuntime::new("node-subsidy-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        block.subsidy_zion += 1; // inflate subsidy by 1
+
+        let mut target = NodeRuntime::new("node-subsidy-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(vec![block])
+            .expect_err("wrong subsidy should be rejected");
+        assert!(
+            err.contains("subsidy") || err.contains("reward"),
+            "expected subsidy error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn genesis_block_has_header_hex() {
+        let genesis = genesis::genesis_block();
+        assert!(!genesis.header_hex.is_empty(), "genesis must have header_hex");
+        assert_eq!(genesis.header_hex.len(), HEADER_SIZE * 2);
+    }
+
+    #[test]
+    fn peer_import_legacy_blocks_without_header_hex_still_accepted() {
+        let mut source = NodeRuntime::new("node-legacy-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        // Simulate legacy block without header_hex
+        block.header_hex = String::new();
+
+        let mut target = NodeRuntime::new("node-legacy-tgt", NodeConfig::mainnet());
+        let imported = target
+            .import_peer_blocks(vec![block])
+            .expect("legacy block without header_hex should still be accepted");
+        assert_eq!(imported, 1);
+    }
+
+    #[test]
+    fn checkpoint_violation_rejects_peer_block() {
+        // This test verifies the checkpoint check is wired in by importing
+        // genesis with a wrong hash.
+        let mut target = NodeRuntime::new("node-cp", NodeConfig::mainnet());
+        let mut bad_genesis = genesis::genesis_block();
+        bad_genesis.hash_hex = hex(&[0xBB; 32]);
+
+        let err = target
+            .import_peer_blocks(vec![bad_genesis])
+            .expect_err("checkpoint violation should be rejected");
+        assert!(
+            err.contains("does not match canonical genesis") || err.contains("checkpoint"),
+            "expected checkpoint or genesis hash error, got: {err}"
+        );
     }
 }

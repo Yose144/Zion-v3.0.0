@@ -166,18 +166,20 @@ Vše z původních fází A–D je implementováno:
 | **C — Chain safety** | ✅ HOTOVO | reorg.rs (UTXO rollback, fork choice), mempool hardening, p2p_security.rs, batch.rs |
 | **D — Produkční infrastruktura** | ✅ HOTOVO | LMDB storage (8 dbs), IBD sync, JSON-RPC 2.0 (11 methods), peer_manager.rs, metrics.rs |
 
-### Zbývající práce (post Phase 10)
+### Zbývající práce (post Phase 12)
 
 | # | Oblast | Priorita | Stav |
 |---|---|---|---|
-| 1 | Peer discovery — aktivní GetPeers exchange | P1 | Phase 11 |
-| 2 | Peer persistence — uložení known_peers na disk | P1 | Phase 11 |
-| 3 | Standard binary Merkle tree (BLAKE3 hash pairs) | P2 | Planned |
-| 4 | Block processing lock (concurrent accept safety) | P2 | Planned |
-| 5 | Checkpoints — hardcoded block hashes | P2 | Planned |
-| 6 | Full async P2P — parallel multi-peer IBD | P2 | Planned |
-| 7 | CI/CD pipeline | P2 | Planned |
-| 8 | E2E multi-node acceptance tests | P2 | Planned |
+| 1 | ~~Peer discovery — aktivní GetPeers exchange~~ | ~~P1~~ | ✅ Phase 11 |
+| 2 | ~~Peer persistence — uložení known_peers na disk~~ | ~~P1~~ | ✅ Phase 11 |
+| 3 | ~~Peer-block PoW verification (header_hex)~~ | ~~P1~~ | ✅ Phase 12 |
+| 4 | ~~Peer-block timestamp sanity~~ | ~~P1~~ | ✅ Phase 12 |
+| 5 | ~~Peer-block checkpoint enforcement~~ | ~~P1~~ | ✅ Phase 12 |
+| 6 | Standard binary Merkle tree (BLAKE3 hash pairs) | P2 | Planned |
+| 7 | Block processing lock (concurrent accept safety) | P2 | Planned |
+| 8 | Full async P2P — parallel multi-peer IBD | P2 | Planned |
+| 9 | CI/CD pipeline | P2 | Planned |
+| 10 | E2E multi-node acceptance tests | P2 | Planned |
 
 ---
 
@@ -297,12 +299,13 @@ V3 mainnet kód po Phase 10 pokrývá **všechny kritické subsystémy**:
 - ✅ **Mining:** Ekam Deeksha PoW, LWMA DAA, pool/miner runtime
 - ✅ **Metrics:** atomic counters, Prometheus, health endpoint (metrics.rs)
 - ✅ **371 testů** (319 core + 32 cosmic-harmony + 4 miner + 13 pool + 2 pool-server + 1 doc-test)
+- ✅ **Phase 11:** peer discovery (GetPeers exchange), peer persistence (known_peers → peers.json) — 376 testů
+- ✅ **Phase 12:** block validation hardening — PoW via header_hex, timestamp sanity, checkpoint enforcement — 385 testů (333 core + 32 CH + 4 miner + 13 pool + 2 pool-server + 1 doc-test)
 
 **Testnet běží na 157.180.41.213** — node, pool, miner containers UP, chain height 110+.
 
 Zbývající práce pro produkční mainnet:
-- Peer discovery a peer persistence (Phase 11)
 - Standard binary Merkle tree
 - Block processing lock pro concurrent přístup
-- Checkpoints, full async P2P, CI/CD
+- Full async P2P, CI/CD
 - E2E multi-node acceptance testy
