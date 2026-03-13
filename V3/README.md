@@ -55,6 +55,8 @@ Out of scope for the bootstrap:
 - `L1/core` now has 5 geographically distributed seed peers in `NodeConfig::mainnet()` (EU Prague, EU Frankfurt, US East, US West, APAC Singapore)
 - `L1/core` now carries the genesis dedication message embedded in block 0 coinbase hash: ASCII art + ZION banner + dedication to Sarah Issobel, Maitreya Buddha, family, and humanity (`GENESIS_MESSAGE.txt`, `genesis.rs`)
 - `L1/core` now carries flood-fill block propagation: `SeenBlocks` dedup cache, `plan_relay()` flood-fill logic, `PropagationStats` telemetry, and node binary relay on both peer announce and RPC submit (`propagation.rs`)
+- Docker images: multi-stage production builds for node, pool, miner (self-contained V3/ context, `rust:1.85-bookworm` builder → `debian:bookworm-slim` runtime)
+- Deployed to Helsinki (157.180.41.213): 3-service Docker compose stack running live, chain height 30+
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
@@ -75,6 +77,11 @@ V3/
     core/
     pool/
     miner/
+  docker/
+    Dockerfile.node
+    Dockerfile.pool
+    Dockerfile.miner
+    docker-compose.v3-mainnet.yml
 ```
 
 ## Runtime Knobs
@@ -113,6 +120,44 @@ The `node` binary in `L1/core` supports:
 - `ZION_P2P_ACCEPT_LIMIT`
 - `ZION_RPC_ACCEPT_LIMIT`
 - `ZION_NODE_STATE_PATH`
+- `ZION_SEED_PEERS`
+
+## Docker Deployment
+
+Production Docker images use multi-stage builds (`rust:1.85-bookworm` → `debian:bookworm-slim`). The build context is `V3/` itself — no repository root needed.
+
+### Quick Start
+
+```bash
+cd V3
+docker compose -f docker/docker-compose.v3-mainnet.yml build
+docker compose -f docker/docker-compose.v3-mainnet.yml up -d
+```
+
+### Services
+
+| Service | Image | Ports | Volume |
+|---------|-------|-------|--------|
+| `node` | `zion-v3-node` | 8334 (P2P), 8332 (RPC) | `zion-node-data:/data/zion` |
+| `pool` | `zion-v3-pool` | 8444 (stratum) | — |
+| `miner` | `zion-v3-miner` | — | — |
+
+### Remote Deploy (rsync)
+
+Only `V3/` is needed on target host:
+
+```bash
+rsync -avz --exclude target --exclude .git V3/ root@SERVER:/opt/zion/
+ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-mainnet.yml build && docker compose -f docker/docker-compose.v3-mainnet.yml up -d"
+```
+
+### Live Server
+
+- **157.180.41.213** (Helsinki, Hetzner) — 8 vCPU AMD EPYC, 16 GB RAM, 150 GB SSD, Ubuntu 24.04
+- Chain height: 30+ (first deploy 2026-03-13)
+- Node P2P: `157.180.41.213:8334`
+- Node RPC: `157.180.41.213:8332`
+- Pool stratum: `157.180.41.213:8444`
 
 ## Wire Protocol
 
@@ -141,7 +186,9 @@ Current template and accepted-block metadata now includes:
 ## Next Steps
 
 1. ~~**Phase 6: Chain Safety**~~ ✅ done — reorg, fork choice, mempool hardening, P2P security, orphan handling.
-2. Extend the new peer block sync path into fuller propagation and multi-peer catch-up instead of one-block contiguous import only.
-3. **Phase 7: Production Infrastructure** — LMDB persistent storage (7a), IBD state machine (7b), HTTP JSON-RPC 2.0 (7c), peer manager (7d), metrics/Prometheus (7e).
-4. Extend restart hardening beyond journal-assisted replay into stronger crash-window and corruption drills.
-5. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows, without reintroducing legacy desktop-agent orchestration.
+2. ~~**Phase 7: Production Infrastructure**~~ ✅ done — LMDB storage, IBD, RPC, peer manager, metrics.
+3. ~~**Phase 8: Docker & Deployment**~~ ✅ done — multi-stage Docker images, compose stack, deployed to Helsinki.
+4. Extend persistent P2P connections and parallel multi-peer catch-up.
+5. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
+6. BFG scrub of premine private keys from git history before public launch.
+7. CI/CD pipeline with automated image builds.
