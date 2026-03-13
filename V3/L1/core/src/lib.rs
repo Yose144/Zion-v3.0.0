@@ -24,6 +24,7 @@ pub mod node_builder;
 pub mod orphan;
 pub mod p2p_security;
 pub mod peer_manager;
+pub mod propagation;
 pub mod rpc;
 pub mod storage;
 pub mod tx;
@@ -777,7 +778,7 @@ impl NodeRuntime {
                 blocks: self.accepted_blocks_since(from_height, limit.max(1) as usize),
             }),
             P2pMessage::AnnounceBlock { block } => {
-                self.import_peer_block(block)?;
+                let _newly_accepted = self.import_peer_block(block)?;
                 Ok(P2pMessage::Status {
                     status: self.status(),
                 })
@@ -786,9 +787,31 @@ impl NodeRuntime {
         }
     }
 
-    fn import_peer_block(&mut self, block: AcceptedBlock) -> Result<(), String> {
+    /// Handle an `AnnounceBlock` from a peer. Returns the newly accepted
+    /// block if it was new (for relay), or `None` if it was a duplicate.
+    /// The caller is responsible for relaying to other peers.
+    pub fn handle_announce_block(&mut self, block: AcceptedBlock) -> Result<Option<AcceptedBlock>, String> {
+        self.import_peer_block(block)
+    }
+
+    /// Return the last accepted block, if any. Useful after RPC
+    /// `submit_candidate` to relay the newly mined block.
+    pub fn last_accepted_block(&self) -> Option<&AcceptedBlock> {
+        self.chain_state.accepted_blocks.last()
+    }
+
+    /// Import a single peer block. Returns `Ok(Some(block))` if the block
+    /// was newly accepted (and should be relayed), `Ok(None)` if it was a
+    /// duplicate, or `Err` on validation failure.
+    fn import_peer_block(&mut self, block: AcceptedBlock) -> Result<Option<AcceptedBlock>, String> {
+        let height_before = self.chain_state.height;
         self.chain_state.import_peer_block(&self.node_id, &self.core, block)?;
-        self.persist_chain_state()
+        self.persist_chain_state()?;
+        if self.chain_state.height > height_before {
+            Ok(self.chain_state.accepted_blocks.last().cloned())
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn import_peer_blocks(&mut self, blocks: Vec<AcceptedBlock>) -> Result<usize, String> {

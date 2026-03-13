@@ -6,7 +6,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use zion_core::{
     decode_p2p_message, decode_rpc_request, encode_p2p_message, encode_rpc_response,
-    node_protocol_version, NodeConfig, NodeRuntime, PeerEndpoint,
+    node_protocol_version, propagation::{PropagationStats, SeenBlocks},
+    AcceptedBlock, NodeConfig, NodeRuntime, P2pMessage, PeerEndpoint,
 };
 
 fn main() -> Result<()> {
@@ -46,12 +47,18 @@ fn main() -> Result<()> {
 
     bootstrap_peer_sync(&runtime, config.sync_batch_limit)?;
 
+    // Shared propagation state
+    let seen_blocks = Arc::new(Mutex::new(SeenBlocks::new()));
+    let prop_stats = Arc::new(PropagationStats::new());
+
     let p2p_listener = TcpListener::bind(config.node_config.p2p_bind.address())
         .context("failed to bind P2P listener")?;
     let rpc_listener = TcpListener::bind(config.node_config.rpc_bind.address())
         .context("failed to bind RPC listener")?;
 
     let p2p_runtime = Arc::clone(&runtime);
+    let p2p_seen = Arc::clone(&seen_blocks);
+    let p2p_stats = Arc::clone(&prop_stats);
     let p2p_limit = config.p2p_accept_limit;
     let p2p_thread = thread::spawn(move || -> Result<()> {
         let mut handles = Vec::new();
@@ -63,7 +70,12 @@ fn main() -> Result<()> {
             let (stream, peer_addr) = p2p_listener.accept().context("failed to accept P2P peer")?;
             println!("p2p_peer_addr={peer_addr}");
             let runtime = Arc::clone(&p2p_runtime);
-            handles.push(thread::spawn(move || handle_p2p_stream(stream, &runtime)));
+            let seen = Arc::clone(&p2p_seen);
+            let stats = Arc::clone(&p2p_stats);
+            let source = peer_addr.to_string();
+            handles.push(thread::spawn(move || {
+                handle_p2p_stream(stream, &runtime, &seen, &stats, &source)
+            }));
             accepted = accepted.saturating_add(1);
         }
         for handle in handles {
@@ -73,6 +85,8 @@ fn main() -> Result<()> {
     });
 
     let rpc_runtime = Arc::clone(&runtime);
+    let rpc_seen = Arc::clone(&seen_blocks);
+    let rpc_stats = Arc::clone(&prop_stats);
     let rpc_limit = config.rpc_accept_limit;
     let rpc_thread = thread::spawn(move || -> Result<()> {
         let mut handles = Vec::new();
@@ -84,7 +98,11 @@ fn main() -> Result<()> {
             let (stream, peer_addr) = rpc_listener.accept().context("failed to accept RPC client")?;
             println!("rpc_client_addr={peer_addr}");
             let runtime = Arc::clone(&rpc_runtime);
-            handles.push(thread::spawn(move || handle_rpc_stream(stream, &runtime)));
+            let seen = Arc::clone(&rpc_seen);
+            let stats = Arc::clone(&rpc_stats);
+            handles.push(thread::spawn(move || {
+                handle_rpc_stream(stream, &runtime, &seen, &stats)
+            }));
             accepted = accepted.saturating_add(1);
         }
         for handle in handles {
@@ -97,12 +115,22 @@ fn main() -> Result<()> {
     rpc_thread.join().map_err(|_| anyhow!("RPC thread panicked"))??;
 
     let status = runtime.lock().expect("node runtime lock poisoned").status();
+    let snap = prop_stats.snapshot();
     println!("known_peers={}", status.known_peers.len());
+    println!("blocks_relayed={}", snap.blocks_relayed);
+    println!("relay_successes={}", snap.relay_successes);
+    println!("relay_failures={}", snap.relay_failures);
     println!("revenue_total_usd={:.2}", status.revenue.total_earnings_usd);
     Ok(())
 }
 
-fn handle_p2p_stream(stream: TcpStream, runtime: &Arc<Mutex<NodeRuntime>>) -> Result<()> {
+fn handle_p2p_stream(
+    stream: TcpStream,
+    runtime: &Arc<Mutex<NodeRuntime>>,
+    seen: &Arc<Mutex<SeenBlocks>>,
+    stats: &Arc<PropagationStats>,
+    source_addr: &str,
+) -> Result<()> {
     let reader_stream = stream.try_clone().context("failed to clone P2P stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
@@ -110,6 +138,10 @@ fn handle_p2p_stream(stream: TcpStream, runtime: &Arc<Mutex<NodeRuntime>>) -> Re
     let line = read_line(&mut reader)?;
     println!("p2p_in={line}");
     let message = decode_p2p_message(&line).context("failed to decode P2P message")?;
+
+    // Detect AnnounceBlock for relay
+    let is_announce = matches!(&message, P2pMessage::AnnounceBlock { .. });
+
     let response = runtime
         .lock()
         .expect("node runtime lock poisoned")
@@ -121,10 +153,32 @@ fn handle_p2p_stream(stream: TcpStream, runtime: &Arc<Mutex<NodeRuntime>>) -> Re
         .context("failed to write P2P response")?;
     writer.flush().context("failed to flush P2P response")?;
     println!("p2p_out={}", response_line.trim());
+
+    // Relay newly accepted block to other peers (flood-fill)
+    if is_announce {
+        let rt = runtime.lock().expect("node runtime lock poisoned");
+        if let Some(block) = rt.last_accepted_block().cloned() {
+            let peers = rt.known_peers().to_vec();
+            drop(rt);
+            relay_block_to_peers(
+                block,
+                &peers,
+                Some(source_addr),
+                seen,
+                stats,
+            );
+        }
+    }
+
     Ok(())
 }
 
-fn handle_rpc_stream(stream: TcpStream, runtime: &Arc<Mutex<NodeRuntime>>) -> Result<()> {
+fn handle_rpc_stream(
+    stream: TcpStream,
+    runtime: &Arc<Mutex<NodeRuntime>>,
+    seen: &Arc<Mutex<SeenBlocks>>,
+    stats: &Arc<PropagationStats>,
+) -> Result<()> {
     let reader_stream = stream.try_clone().context("failed to clone RPC stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
@@ -132,6 +186,11 @@ fn handle_rpc_stream(stream: TcpStream, runtime: &Arc<Mutex<NodeRuntime>>) -> Re
     let line = read_line(&mut reader)?;
     println!("rpc_in={line}");
     let request = decode_rpc_request(&line).context("failed to decode RPC request")?;
+
+    // Check if this is a submit that might produce a new block
+    let is_submit = matches!(&request, zion_core::RpcRequest::SubmitCandidate { .. });
+    let height_before = runtime.lock().expect("lock").chain_height();
+
     let response = runtime
         .lock()
         .expect("node runtime lock poisoned")
@@ -142,6 +201,19 @@ fn handle_rpc_stream(stream: TcpStream, runtime: &Arc<Mutex<NodeRuntime>>) -> Re
         .context("failed to write RPC response")?;
     writer.flush().context("failed to flush RPC response")?;
     println!("rpc_out={}", response_line.trim());
+
+    // Relay newly mined block to all peers
+    if is_submit {
+        let rt = runtime.lock().expect("lock");
+        if rt.chain_height() > height_before {
+            if let Some(block) = rt.last_accepted_block().cloned() {
+                let peers = rt.known_peers().to_vec();
+                drop(rt);
+                relay_block_to_peers(block, &peers, None, seen, stats);
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -360,4 +432,60 @@ fn p2p_roundtrip(peer: &PeerEndpoint, message: &zion_core::P2pMessage) -> Result
     let mut reader = BufReader::new(stream);
     let response = read_line(&mut reader)?;
     decode_p2p_message(&response).context("failed to decode inbound P2P response")
+}
+
+/// Relay a newly accepted block to all eligible peers via flood-fill.
+/// Spawns a background thread per peer so the caller is not blocked.
+fn relay_block_to_peers(
+    block: AcceptedBlock,
+    peers: &[PeerEndpoint],
+    source_addr: Option<&str>,
+    seen: &Arc<Mutex<SeenBlocks>>,
+    stats: &Arc<PropagationStats>,
+) {
+    use zion_core::propagation::plan_relay;
+
+    let plan = {
+        let mut seen_guard = seen.lock().expect("seen lock poisoned");
+        plan_relay(
+            &block.hash_hex,
+            block.height,
+            peers,
+            source_addr,
+            &mut seen_guard,
+        )
+    };
+
+    let plan = match plan {
+        Some(p) => p,
+        None => {
+            stats.record_duplicate();
+            return;
+        }
+    };
+
+    let target_count = plan.targets.len() as u64;
+    stats.record_relay(target_count);
+    println!(
+        "relay_block height={} hash={:.16}… targets={}",
+        plan.block_height, plan.block_hash, target_count
+    );
+
+    for target in plan.targets {
+        let block = block.clone();
+        let stats = Arc::clone(stats);
+        thread::spawn(move || {
+            let msg = P2pMessage::AnnounceBlock { block };
+            match p2p_roundtrip(&target.peer, &msg) {
+                Ok(_) => {
+                    println!("relay_ok peer={}", target.peer.address());
+                    stats.record_success();
+                }
+                Err(e) => {
+                    eprintln!("relay_err peer={} reason={e}", target.peer.address());
+                    stats.record_failure();
+                }
+            }
+        });
+    }
 }
