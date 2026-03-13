@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-13
+Status date: 2026-03-13 (deployment update)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -160,12 +160,14 @@ This roadmap follows the release progression already defined in the repository d
 
 ### Not Done Yet
 
-- fuller propagation and multi-peer catch-up beyond the current one-block contiguous sync path → **flood-fill relay implemented; persistent connections and parallel multi-peer catch-up remain**
+- persistent peer connections and parallel multi-peer catch-up (flood-fill relay is done, but each P2P exchange still opens a new TCP connection)
 - richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting
 - BFG scrub of premine private keys from git history
-- production CI/CD, docker images, monitoring, and ops assets for the new tree
+- ~~production Docker images for node, pool, miner~~ → ✅ done (multi-stage Dockerfiles + compose stack)
+- CI/CD pipeline, automated image builds, and monitoring dashboards
 - DesktopApp runtime supervision for node, pool, miner, release provenance, and signing workflows
 - end-to-end multi-node acceptance and propagation flow validation
+- difficulty auto-tuning in live mining (current testnet difficulty ramps fast with short nonce windows)
 
 ### L1 Testnet → V3 Mainnet Migration Tracker
 
@@ -175,7 +177,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 359 pass, 0 fail, 1 ignored |
+| Tests | ~200+ | 359 pass, 0 fail, 1 ignored (doc-test) |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | Account-style (simplified) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ekam Deeksha only |
@@ -689,7 +691,39 @@ Exit criteria:
 - non-code assets are aligned with the final runtime shape
 - all audit P0 and P1 findings verified resolved
 
-Status: pending
+Status: in progress — code done; Docker images built and deployed to Helsinki; BFG scrub and CI/CD remain
+
+### Phase 8a: Docker & Deployment
+
+Goal: production Docker images and single-command deployment.
+
+Completed work:
+
+- multi-stage Dockerfiles (`rust:1.85-bookworm` builder → `debian:bookworm-slim` runtime)
+- self-contained build context: only `V3/` needed (no repo root dependency)
+- `docker-compose.v3-mainnet.yml`: 3-service stack (node + pool + miner) with bridge network
+- deployed to 157.180.41.213 (Helsinki, Hetzner, 8 vCPU AMD EPYC, 16 GB RAM, 150 GB SSD)
+- chain synced to height 30+ with live mining, LWMA difficulty active
+- build time: ~35 s for node, ~25 s for pool+miner (cached layers)
+
+Docker images:
+
+| Image | Binary | Base | Ports |
+|-------|--------|------|-------|
+| `zion-v3-node` | `node` | debian:bookworm-slim | 8334 (P2P), 8332 (RPC) |
+| `zion-v3-pool` | `server` | debian:bookworm-slim | 8444 (stratum) |
+| `zion-v3-miner` | `zion-miner` | debian:bookworm-slim | — |
+
+Build & run:
+
+```bash
+cd V3
+docker compose -f docker/docker-compose.v3-mainnet.yml build
+docker compose -f docker/docker-compose.v3-mainnet.yml up -d
+docker compose -f docker/docker-compose.v3-mainnet.yml logs -f
+```
+
+Status: done
 
 ## Immediate Next Steps
 
@@ -715,6 +749,7 @@ Critical path — next up (sequential):
 
 9. ~~**Phase 7: Production Infrastructure** — LMDB storage (7a), IBD sync (7b), RPC expansion (7c), peer manager (7d), metrics (7e).~~ ✅ done
 10. ~~**Phase 8: Mainnet Launch Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.~~ ✅ code done (launch.rs, node_builder.rs, DAO lock, 5 seed peers)
+11. **Docker + Deploy** — production Docker images (multi-stage, self-contained V3/ context), compose stack, deployed to Helsinki (157.180.41.213), chain height 30+ ✅
 
 ## Implementation Dependencies
 
