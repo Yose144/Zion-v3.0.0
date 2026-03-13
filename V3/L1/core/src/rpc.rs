@@ -9,8 +9,11 @@
 // Spec: https://www.jsonrpc.org/specification
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+use crate::NodeRuntime;
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -207,32 +210,257 @@ impl Default for RpcRouter {
 
 // ── Helper: build a router with standard node methods ──────────────────
 
-/// Create a router pre-seeded with the priority RPC methods.
-/// The caller must provide closures that access real node state.
-pub fn build_node_router() -> RpcRouter {
+/// Create a stub router with all method names registered but no live state.
+/// Used by node_builder and other modules that don't have a NodeRuntime.
+pub fn build_stub_router() -> RpcRouter {
     let mut router = RpcRouter::new();
-
-    // Placeholder stubs — real implementations plug in via `register()`
-    // These return descriptive errors so callers know the method exists
-    // but needs a real implementation bound.
     let stub = |method_name: &'static str| -> HandlerFn {
         Box::new(move |_params: &Value| {
             Err((INTERNAL_ERROR, format!("{method_name}: not yet bound to node state")))
         })
     };
+    for method in [
+        "getBalance", "getBlock", "getBlockByHeight", "getTransaction",
+        "sendRawTransaction", "getBlockTemplate", "getMempoolInfo",
+        "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock",
+    ] {
+        router.register(method, stub(method));
+    }
+    router
+}
 
-    // Priority methods from roadmap spec
-    router.register("getBalance", stub("getBalance"));
-    router.register("getBlock", stub("getBlock"));
-    router.register("getBlockByHeight", stub("getBlockByHeight"));
-    router.register("getTransaction", stub("getTransaction"));
-    router.register("sendRawTransaction", stub("sendRawTransaction"));
-    router.register("getBlockTemplate", stub("getBlockTemplate"));
-    router.register("getMempoolInfo", stub("getMempoolInfo"));
-    router.register("getPeerInfo", stub("getPeerInfo"));
-    router.register("getChainInfo", stub("getChainInfo"));
-    router.register("getNodeInfo", stub("getNodeInfo"));
-    router.register("submitBlock", stub("submitBlock"));
+/// Create a router pre-seeded with the priority RPC methods.
+/// Each handler captures an `Arc<Mutex<NodeRuntime>>` for live state access.
+pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
+    let mut router = RpcRouter::new();
+
+    // ── getChainInfo ───────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getChainInfo", Box::new(move |_params: &Value| {
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let status = rt.status();
+            Ok(json!({
+                "network": status.network,
+                "consensus_profile": status.consensus_profile,
+                "chain_height": status.chain_height,
+                "tip_hash": status.tip_hash_hex,
+                "accepted_blocks": status.accepted_blocks,
+                "mempool_transactions": status.mempool_transactions,
+                "protocol_version": status.protocol_version,
+            }))
+        }));
+    }
+
+    // ── getNodeInfo ────────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getNodeInfo", Box::new(move |_params: &Value| {
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let status = rt.status();
+            Ok(json!({
+                "node_id": status.node_id,
+                "protocol_version": status.protocol_version,
+                "network": status.network,
+                "chain_height": status.chain_height,
+                "p2p_bind": status.p2p_bind.address(),
+                "rpc_bind": status.rpc_bind.address(),
+                "pool_bind": status.pool_bind.address(),
+                "known_peers": status.known_peers.len(),
+                "accepted_blocks": status.accepted_blocks,
+                "mempool_transactions": status.mempool_transactions,
+            }))
+        }));
+    }
+
+    // ── getBlockByHeight ───────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getBlockByHeight", Box::new(move |params: &Value| {
+            let height = params.get("height")
+                .or_else(|| params.get(0))
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'height' param".into()))?;
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            match rt.accepted_block_by_height(height) {
+                Some(block) => Ok(serde_json::to_value(block).unwrap_or(Value::Null)),
+                None => Err((BLOCK_NOT_FOUND, format!("no block at height {height}"))),
+            }
+        }));
+    }
+
+    // ── getBlock (by hash) ─────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getBlock", Box::new(move |params: &Value| {
+            let hash = params.get("hash")
+                .or_else(|| params.get(0))
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'hash' param".into()))?;
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            for block in rt.accepted_blocks() {
+                if block.hash_hex == hash {
+                    return Ok(serde_json::to_value(block).unwrap_or(Value::Null));
+                }
+            }
+            Err((BLOCK_NOT_FOUND, format!("no block with hash {hash}")))
+        }));
+    }
+
+    // ── getTransaction ─────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getTransaction", Box::new(move |params: &Value| {
+            let txid = params.get("txid")
+                .or_else(|| params.get(0))
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'txid' param".into()))?;
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            // Search confirmed blocks
+            for block in rt.accepted_blocks() {
+                for tx in &block.transactions {
+                    if tx.tx_id == txid {
+                        return Ok(json!({
+                            "transaction": tx,
+                            "block_height": block.height,
+                            "block_hash": block.hash_hex,
+                            "confirmed": true,
+                        }));
+                    }
+                }
+            }
+            Err((TX_NOT_FOUND, format!("transaction {txid} not found")))
+        }));
+    }
+
+    // ── getBalance ─────────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getBalance", Box::new(move |params: &Value| {
+            let address = params.get("address")
+                .or_else(|| params.get(0))
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'address' param".into()))?;
+            if address.is_empty() {
+                return Err((INVALID_ADDRESS, "empty address".into()));
+            }
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let mut balance: i128 = 0;
+            for block in rt.accepted_blocks() {
+                for tx in &block.transactions {
+                    if tx.to == address {
+                        balance += tx.amount_zion as i128;
+                    }
+                    if tx.from == address {
+                        balance -= (tx.amount_zion + tx.fee_zion) as i128;
+                    }
+                }
+            }
+            Ok(json!({
+                "address": address,
+                "balance_zion": balance.max(0) as u64,
+                "chain_height": rt.chain_height(),
+            }))
+        }));
+    }
+
+    // ── getBlockTemplate ───────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getBlockTemplate", Box::new(move |_params: &Value| {
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let template = rt.active_template();
+            Ok(serde_json::to_value(&template).unwrap_or(Value::Null))
+        }));
+    }
+
+    // ── getMempoolInfo ─────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getMempoolInfo", Box::new(move |_params: &Value| {
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let status = rt.status();
+            Ok(json!({
+                "size": status.mempool_transactions,
+                "template_transactions": status.active_template_transactions,
+                "template_total_fees_zion": status.active_template_total_fees_zion,
+            }))
+        }));
+    }
+
+    // ── getPeerInfo ────────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getPeerInfo", Box::new(move |_params: &Value| {
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let peers: Vec<Value> = rt.known_peers().iter().map(|peer| {
+                json!({ "host": peer.host, "port": peer.port, "address": peer.address() })
+            }).collect();
+            Ok(json!({ "peers": peers, "count": peers.len() }))
+        }));
+    }
+
+    // ── sendRawTransaction ─────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("sendRawTransaction", Box::new(move |params: &Value| {
+            let tx: crate::Transaction = serde_json::from_value(
+                params.get("transaction").cloned().unwrap_or_else(|| params.clone())
+            ).map_err(|e| (INVALID_PARAMS, format!("invalid transaction: {e}")))?;
+            let mut rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let resp = rt.handle_rpc_request(crate::RpcRequest::SubmitTransaction { transaction: tx });
+            match resp {
+                crate::RpcResponse::TransactionResult { accepted, tx_id, reason } => {
+                    if accepted {
+                        Ok(json!({ "accepted": true, "tx_id": tx_id }))
+                    } else {
+                        Err((TX_REJECTED, reason.unwrap_or_else(|| "rejected".into())))
+                    }
+                }
+                _ => Err((INTERNAL_ERROR, "unexpected response".into())),
+            }
+        }));
+    }
+
+    // ── submitBlock ────────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("submitBlock", Box::new(move |params: &Value| {
+            let template_id = params.get("template_id")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| (INVALID_PARAMS, "missing 'template_id'".into()))?;
+            let header_hex = params.get("header_hex")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing 'header_hex'".into()))?
+                .to_string();
+            let nonce = params.get("nonce")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| (INVALID_PARAMS, "missing 'nonce'".into()))?;
+            let target_hex = params.get("target_hex")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing 'target_hex'".into()))?
+                .to_string();
+            let mut rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let resp = rt.handle_rpc_request(crate::RpcRequest::SubmitCandidate {
+                template_id,
+                header_hex,
+                nonce,
+                target_hex,
+            });
+            match resp {
+                crate::RpcResponse::SubmitResult { accepted, template_id, block_height, hash_hex, reason } => {
+                    Ok(json!({
+                        "accepted": accepted,
+                        "template_id": template_id,
+                        "block_height": block_height,
+                        "hash_hex": hash_hex,
+                        "reason": reason,
+                    }))
+                }
+                _ => Err((INTERNAL_ERROR, "unexpected response".into())),
+            }
+        }));
+    }
 
     router
 }
@@ -380,9 +608,27 @@ mod tests {
         assert_eq!(err.code, INVALID_REQUEST);
     }
 
+    /// Create a stub router for tests that don't need real node state.
+    fn stub_node_router() -> RpcRouter {
+        let mut router = RpcRouter::new();
+        let stub = |method_name: &'static str| -> HandlerFn {
+            Box::new(move |_params: &Value| {
+                Err((INTERNAL_ERROR, format!("{method_name}: stub")))
+            })
+        };
+        for method in [
+            "getBalance", "getBlock", "getBlockByHeight", "getTransaction",
+            "sendRawTransaction", "getBlockTemplate", "getMempoolInfo",
+            "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock",
+        ] {
+            router.register(method, stub(method));
+        }
+        router
+    }
+
     #[test]
     fn node_router_has_priority_methods() {
-        let router = build_node_router();
+        let router = stub_node_router();
         assert!(router.has_method("getBalance"));
         assert!(router.has_method("getBlock"));
         assert!(router.has_method("getBlockByHeight"));
@@ -399,7 +645,7 @@ mod tests {
 
     #[test]
     fn node_router_stubs_return_error() {
-        let router = build_node_router();
+        let router = stub_node_router();
         let req = RpcRequest {
             jsonrpc: "2.0".to_string(),
             method: "getBalance".to_string(),
@@ -430,5 +676,137 @@ mod tests {
         );
         let err = resp.error.unwrap();
         assert_eq!(err.data.unwrap(), json!({"reason": "double-spend"}));
+    }
+
+    // ── Live router integration tests ──────────────────────────────────
+
+    fn live_router() -> RpcRouter {
+        use std::sync::{Arc, Mutex};
+        let runtime = Arc::new(Mutex::new(
+            crate::NodeRuntime::new("rpc-test", crate::NodeConfig::mainnet()),
+        ));
+        build_node_router(runtime)
+    }
+
+    fn rpc_call(router: &RpcRouter, method: &str, params: Value) -> RpcResponse {
+        router.handle_request(&RpcRequest {
+            jsonrpc: "2.0".into(),
+            method: method.into(),
+            params,
+            id: json!(1),
+        })
+    }
+
+    #[test]
+    fn live_get_chain_info() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getChainInfo", json!(null));
+        assert!(resp.error.is_none(), "getChainInfo failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["chain_height"], 0);
+        assert!(result["network"].is_string());
+        assert!(result["consensus_profile"].is_string());
+    }
+
+    #[test]
+    fn live_get_node_info() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getNodeInfo", json!(null));
+        assert!(resp.error.is_none(), "getNodeInfo failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["node_id"], "rpc-test");
+        assert!(result["protocol_version"].is_string());
+        assert!(result["known_peers"].is_number());
+    }
+
+    #[test]
+    fn live_get_block_by_height_genesis() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getBlockByHeight", json!({"height": 0}));
+        assert!(resp.error.is_none(), "getBlockByHeight(0) failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["height"], 0);
+        assert!(result["hash_hex"].is_string());
+    }
+
+    #[test]
+    fn live_get_block_by_height_not_found() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getBlockByHeight", json!({"height": 9999}));
+        assert!(resp.error.is_some());
+        assert_eq!(resp.error.unwrap().code, BLOCK_NOT_FOUND);
+    }
+
+    #[test]
+    fn live_get_block_by_hash() {
+        let router = live_router();
+        // First get genesis block hash
+        let resp = rpc_call(&router, "getBlockByHeight", json!({"height": 0}));
+        let genesis_hash = resp.result.unwrap()["hash_hex"].as_str().unwrap().to_string();
+        // Now fetch by hash
+        let resp = rpc_call(&router, "getBlock", json!({"hash": genesis_hash}));
+        assert!(resp.error.is_none(), "getBlock by hash failed: {:?}", resp.error);
+        assert_eq!(resp.result.unwrap()["height"], 0);
+    }
+
+    #[test]
+    fn live_get_balance_empty() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getBalance", json!({"address": "zion1nobody"}));
+        assert!(resp.error.is_none());
+        let result = resp.result.unwrap();
+        assert_eq!(result["balance_zion"], 0);
+    }
+
+    #[test]
+    fn live_get_block_template() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getBlockTemplate", json!(null));
+        assert!(resp.error.is_none(), "getBlockTemplate failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert!(result["template_id"].is_number());
+        assert!(result["height"].is_number());
+        assert!(result["header_hex"].is_string());
+    }
+
+    #[test]
+    fn live_get_mempool_info() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getMempoolInfo", json!(null));
+        assert!(resp.error.is_none());
+        let result = resp.result.unwrap();
+        assert_eq!(result["size"], 0);
+    }
+
+    #[test]
+    fn live_get_peer_info() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getPeerInfo", json!(null));
+        assert!(resp.error.is_none());
+        let result = resp.result.unwrap();
+        assert!(result["count"].is_number());
+        assert!(result["peers"].is_array());
+    }
+
+    #[test]
+    fn live_get_transaction_not_found() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getTransaction", json!({"txid": "nonexistent"}));
+        assert!(resp.error.is_some());
+        assert_eq!(resp.error.unwrap().code, TX_NOT_FOUND);
+    }
+
+    #[test]
+    fn live_send_raw_transaction_invalid() {
+        let router = live_router();
+        let resp = rpc_call(&router, "sendRawTransaction", json!({"bad": true}));
+        assert!(resp.error.is_some());
+        assert_eq!(resp.error.unwrap().code, INVALID_PARAMS);
+    }
+
+    #[test]
+    fn live_router_method_count() {
+        let router = live_router();
+        assert_eq!(router.method_count(), 11);
     }
 }

@@ -46,7 +46,8 @@ Out of scope for the bootstrap:
 - `L1/core` now carries orphan block handling: orphan pool with FIFO eviction (200 max, 10 min expiry), chain ID enforcement (`zion-mainnet-1`) (`orphan.rs`)
 - `L1/core` now carries LMDB persistent storage via heed: 8 databases (blocks, utxos, tx_index, balance_cache, undo_blocks, height_to_hash, hash_to_height, meta), atomic block+UTXO writes, rollback, balance cache, schema versioning (`storage.rs`)
 - `L1/core` now carries the IBD state machine: batch sync (500 blocks/request), stall detection (120 s timeout, 3 retries), peer round-robin, SyncStatus tracking (Ibd/Syncing/Synced) (`ibd.rs`)
-- `L1/core` now carries a JSON-RPC 2.0 protocol handler: method registry, batch requests, standard error codes, 11 node method stubs via `build_node_router()` (`rpc.rs`)
+- `L1/core` JSON-RPC 2.0 methods are now **live** (no longer stubs): all 11 methods bind to real `NodeRuntime` state via `Arc<Mutex<NodeRuntime>>`. Auto-detected on the existing RPC TCP port alongside the simple line-delimited protocol used by the pool/miner.
+- `L1/core` now carries a JSON-RPC 2.0 protocol handler: method registry, batch requests, standard error codes, 11 node methods via `build_node_router()` (`rpc.rs`)
 - `L1/core` now carries the peer manager: scoring with ban threshold, subnet diversity (MAX_PER_SUBNET=4), heartbeat with idle timeout, inbound/outbound tracking, seed management (`peer_manager.rs`)
 - `L1/core` now carries metrics: atomic counters/gauges (blocks, txs, mempool, peers, difficulty), Prometheus text exposition format with `zion_` prefix, health check JSON (`metrics.rs`)
 - `L1/core` now carries genesis ceremony and launch readiness: frozen genesis hash, checkpoint system, 9 launch readiness checks (genesis integrity, emission, decay, tail, difficulty, DAO lock, premine addresses, checkpoints, zeroize) (`launch.rs`)
@@ -176,6 +177,7 @@ Current `zion-core` node scaffolding supports:
 
 - P2P: `hello`, `welcome`, `ping`, `pong`, `get_peers`, `peers`, `get_status`, `status`, `get_blocks_since`, `blocks`, `announce_block`
 - RPC: `get_status`, `get_peers`, `get_revenue`, `get_mempool`, `get_template`, `submit_transaction`, `submit_candidate`
+- JSON-RPC 2.0: `getChainInfo`, `getNodeInfo`, `getBlock`, `getBlockByHeight`, `getBalance`, `getTransaction`, `getBlockTemplate`, `getMempoolInfo`, `getPeerInfo`, `sendRawTransaction`, `submitBlock`
 
 Current template and accepted-block metadata now includes:
 
@@ -188,7 +190,8 @@ Current template and accepted-block metadata now includes:
 1. ~~**Phase 6: Chain Safety**~~ ✅ done — reorg, fork choice, mempool hardening, P2P security, orphan handling.
 2. ~~**Phase 7: Production Infrastructure**~~ ✅ done — LMDB storage, IBD, RPC, peer manager, metrics.
 3. ~~**Phase 8: Docker & Deployment**~~ ✅ done — multi-stage Docker images, compose stack, deployed to Helsinki.
-4. Extend persistent P2P connections and parallel multi-peer catch-up.
+4. ~~**Phase 9: JSON-RPC 2.0 Live Methods**~~ ✅ done — 11 methods bound to NodeRuntime, auto-detected on RPC port, 371 tests.
+5. Extend persistent P2P connections and parallel multi-peer catch-up.
 5. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
 6. BFG scrub of premine private keys from git history before public launch.
 7. CI/CD pipeline with automated image builds.
