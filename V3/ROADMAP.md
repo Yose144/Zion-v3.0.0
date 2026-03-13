@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-13
+Status date: 2026-03-14
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -139,13 +139,10 @@ This roadmap follows the release progression already defined in the repository d
 - live bootstrap rehearsal confirms a fresh node can catch up from `ZION_SEED_PEERS` without manual block announce steps
 - canonical Ekam vector remains stable
 - **78 new tests across crypto (19), tx (10), fee (15), wallet (9), validation (25) — all green**
+- **46 new tests across chain (14), mempool_v2 (12), p2p_security (10), orphan (10) — all green**
 
 ### Not Done Yet
 
-- chain safety rules: reorg depth enforcement, fork choice by total_work, coinbase maturity spend-time enforcement
-- mempool hardening: double-spend tracking, byte/count limits, fee-rate eviction
-- P2P security: rate limiter, blacklist, escalating bans, connection limiter
-- orphan block handling and relay
 - fuller propagation and multi-peer catch-up beyond the current one-block contiguous sync path
 - richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting
 - mainnet genesis ceremony assets and deploy pipeline for `V3/`
@@ -160,7 +157,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 211 pass, 0 fail, 1 ignored |
+| Tests | ~200+ | 257 pass, 0 fail, 1 ignored |
 | Persistence | LMDB (7 databases) | JSON snapshot + journal |
 | Tx model | UTXO (Bitcoin-style) | Account-style (simplified) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ekam Deeksha only |
@@ -168,11 +165,11 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 
 #### Module Status (35 items)
 
-**Done (13):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (10-step pipeline, Merkle tree, signatures, maturity, fees)
+**Done (17):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (10-step pipeline, Merkle tree, signatures, maturity, fees), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement)
 
-**Partial (5):** mempool (missing double-spend tracking, byte limits, eviction), P2P (missing async, connection pool, outbound relay, multi-peer sync, peer scoring), RPC (7/~40 methods), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
+**Partial (4):** P2P (missing async, connection pool, outbound relay, multi-peer sync, peer scoring), RPC (7/~40 methods), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
 
-**Missing (16):** chain reorg, chain safety rules (reorg depth, total_work), LMDB storage, P2P security (rate limiter, blacklist, escalating bans), P2P sync (IBD, batch download, stall detection), peer manager, metrics/Prometheus, peer discovery, checkpoints, heartbeat, peer persistence, security audit tools, load tests, orphan block handling, mempool hardening, multi-algo dispatch (intentionally skipped)
+**Missing (12):** LMDB storage, P2P sync (IBD, batch download, stall detection), peer manager, metrics/Prometheus, peer discovery, checkpoints, heartbeat, peer persistence, security audit tools, load tests, multi-algo dispatch (intentionally skipped)
 
 #### Open Architectural Decisions
 
@@ -208,21 +205,21 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 
 | ID | Missing rule | Constitutional value | V3 current state | Target phase |
 |----|-------------|---------------------|------------------|--------------|
-| G6 | Max reorg depth | 10 blocks | Not enforced in ChainState | **Phase 6a** |
-| G7 | Coinbase maturity | 100 blocks | Not enforced | **Phase 6b** |
-| G8 | Fee burn | 100% of fees burned | Implicit (fees collected in template but not routed); no explicit burn | **Phase 6b** |
+| G6 | Max reorg depth | 10 blocks | ✅ `chain.rs` — MAX_REORG_DEPTH=10, enforced in evaluate_reorg | ~~Phase 6a~~ done |
+| G7 | Coinbase maturity | 100 blocks | ✅ `validation.rs` — COINBASE_MATURITY=100, enforced in validate_block | ~~Phase 6b~~ done |
+| G8 | Fee burn | 100% of fees burned | ✅ `fee.rs` — 100% burn, BURN_ADDRESS defined | ~~Phase 6b~~ done |
 | G9 | Seed peers | 5+ required for eclipse resistance | 1 hardcoded (`91.98.122.165:8334`) | **Phase 8** |
 | G10 | Premine unlock_height | DAO Treasury cliff at ~525,600 | No unlock enforcement in V3 | **Phase 6b** |
 
 #### MEDIUM — required before production launch, not for testnet
 
-| ID | Item | Target phase |
-|----|------|--------------|
-| G11 | Fork choice rule: highest accumulated work (chain selection) | **Phase 6a** |
-| G12 | Orphan block handling and relay | **Phase 6e** |
-| G13 | Eclipse protection (peer diversity, connection limits) | **Phase 6d** |
-| G14 | Timestamp validation on incoming P2P blocks | **Phase 6e** |
-| G15 | Chain ID enforcement in wire messages | **Phase 6e** |
+| ID | Item | V3 current state | Status |
+|----|------|------------------|--------|
+| G11 | Fork choice rule: highest accumulated work (chain selection) | ✅ `chain.rs` — ForkChoice engine, is_stronger (strictly >) | ~~Phase 6a~~ done |
+| G12 | Orphan block handling and relay | ✅ `orphan.rs` — OrphanPool with FIFO eviction | ~~Phase 6e~~ done |
+| G13 | Eclipse protection (peer diversity, connection limits) | ✅ `p2p_security.rs` — MAX_CONNECTIONS=128, ConnectionLimiter | ~~Phase 6d~~ done |
+| G14 | Timestamp validation on incoming P2P blocks | ✅ `validation.rs` — ±7200s drift check | ~~Phase 6e~~ done |
+| G15 | Chain ID enforcement in wire messages | ✅ `orphan.rs` — validate_chain_id(), CHAIN_ID="zion-mainnet-1" | ~~Phase 6e~~ done |
 
 #### PRODUCTION — infrastructure for mainnet operations
 
@@ -602,7 +599,7 @@ Exit criteria:
 - mismatched chain ID peer is disconnected
 - all existing tests remain green
 
-Status: pending
+Status: done — `chain.rs` (400 LoC, 14 tests) + `mempool_v2.rs` (350 LoC, 12 tests) + `p2p_security.rs` (250 LoC, 10 tests) + `orphan.rs` (220 LoC, 10 tests), commit f0d9c75
 
 ### Phase 7: Production Infrastructure
 
@@ -694,9 +691,12 @@ Parallel track:
 
 Critical path — next up (sequential):
 
-9. **Phase 6: Chain Safety** — reorg (6a), maturity+burn (6b), mempool hardening (6c), P2P security (6d), orphan handling (6e).
-10. **Phase 7: Production Infrastructure** — LMDB storage, IBD sync, RPC expansion, metrics.
-11. **Phase 8: Mainnet Launch Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.
+8. ~~**Phase 6: Chain Safety** — reorg (6a), maturity+burn (6b), mempool hardening (6c), P2P security (6d), orphan handling (6e).~~ ✅ done
+
+Critical path — next up (sequential):
+
+9. **Phase 7: Production Infrastructure** — LMDB storage (7a), IBD sync (7b), RPC expansion (7c), peer manager (7d), metrics (7e).
+10. **Phase 8: Mainnet Launch Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.
 
 ## Implementation Dependencies
 
@@ -706,7 +706,7 @@ Critical path — next up (sequential):
                                      ├──→ 5e (crypto) ✅ ──→ 5f (tx model) ✅ ──→ 5g (wallet) ✅ ─┐
                                      │                          │                                │
                                      │                          ▼                                ▼
-                                     │                     5h (validation) ✅ ──→ Phase 6 ──→ Phase 7 ──→ Phase 8
+                                     │                     5h (validation) ✅ ──→ Phase 6 ✅ ──→ Phase 7 ──→ Phase 8
                                      │
 5d (propagation) ─────────────────────────────────────────────────────────→ Phase 7 ──→ Phase 8
 ```
@@ -758,7 +758,7 @@ DAO_TREASURY_LOCK_HEIGHT = 525_600
   TOTAL:                        16.28B ZION
 ```
 
-### Chain Safety (Phase 6 — pending)
+### Chain Safety (V3 chain.rs + validation.rs ✅)
 ```
 MAX_REORG_DEPTH        = 10 blocks (constitutional, stricter than L1's 50)
 SOFT_FINALITY_DEPTH    = 60 blocks
@@ -777,15 +777,17 @@ Fee destination        = 100% BURNED (deflationary)
 Coinbase               = reward only (no fee routing)
 ```
 
-### Mempool (Phase 6c — pending)
+### Mempool (V3 mempool_v2.rs ✅)
 ```
 MAX_MEMPOOL_SIZE       = 10_000 transactions
 MAX_MEMPOOL_BYTES      = 20_971_520 (20 MB)
 ```
 
-### P2P Security (Phase 6d — pending)
+### P2P Security (V3 p2p_security.rs ✅)
 ```
 Escalating bans        = 300s → 1800s → 7200s
+MAX_CONNECTIONS        = 128
+MAX_MESSAGES_PER_WINDOW = 100 per 60s
 IBD_THRESHOLD          = 50 blocks behind
 IBD_BATCH_SIZE         = 500 blocks per request
 IBD_STALL_TIMEOUT      = 120s, 3 retries
