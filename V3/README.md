@@ -57,8 +57,9 @@ Out of scope for the bootstrap:
 - `L1/core` now carries the genesis dedication message embedded in block 0 coinbase hash: ASCII art + ZION banner + dedication to Sarah Issobel, Maitreya Buddha, family, and humanity (`GENESIS_MESSAGE.txt`, `genesis.rs`)
 - `L1/core` now carries flood-fill block propagation: `SeenBlocks` dedup cache, `plan_relay()` flood-fill logic, `PropagationStats` telemetry, and node binary relay on both peer announce and RPC submit (`propagation.rs`)
 - `L1/core` now carries P2P hardening (Phase 10): persistent inbound connections (message loop per stream), outbound peer thread with periodic sync + heartbeat Ping/Pong, PeerManager wired into node (scoring, subnet diversity, idle disconnect), PeerSecurity wired into node (rate limiting, ban on accept, protocol violation punishment)
+- `L1/core` now carries peer discovery & persistence (Phase 11): active GetPeers exchange in outbound loop (every ~5 min), discovered peers merged into known_peers + PeerManager seeds, known_peers persisted to `peers.json` alongside chain state, loaded on startup (`lib.rs`, `node.rs`)
 - Docker images: multi-stage production builds for node, pool, miner (self-contained V3/ context, `rust:1.85-bookworm` builder → `debian:bookworm-slim` runtime)
-- Deployed to Helsinki (157.180.41.213): 3-service Docker compose stack running live, chain height 30+
+- Deployed to Helsinki (157.180.41.213): 3-service Docker compose stack running live, chain height 110+
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
@@ -156,7 +157,7 @@ ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-main
 ### Live Server
 
 - **157.180.41.213** (Helsinki, Hetzner) — 8 vCPU AMD EPYC, 16 GB RAM, 150 GB SSD, Ubuntu 24.04
-- Chain height: 80+ (first deploy 2026-03-13, JSON-RPC 2.0 live since Phase 9)
+- Chain height: 110+ (first deploy 2026-03-13, JSON-RPC 2.0 live since Phase 9, peer discovery since Phase 11)
 - Node P2P: `157.180.41.213:8334`
 - Node RPC: `157.180.41.213:8332`
 - Pool stratum: `157.180.41.213:8444`
@@ -193,7 +194,8 @@ Current template and accepted-block metadata now includes:
 3. ~~**Phase 8: Docker & Deployment**~~ ✅ done — multi-stage Docker images, compose stack, deployed to Helsinki.
 4. ~~**Phase 9: JSON-RPC 2.0 Live Methods**~~ ✅ done — 11 methods bound to NodeRuntime, auto-detected on RPC port, 371 tests.
 5. ~~**Phase 10: P2P Hardening**~~ ✅ done — persistent inbound connections, outbound peer thread with heartbeat, PeerManager scoring + PeerSecurity rate-limiting wired into node binary.
-6. **Phase 11: Full Async P2P** — parallel multi-peer IBD, async multiplexed connections, peer persistence.
-7. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
-8. BFG scrub of premine private keys from git history before public launch.
-9. CI/CD pipeline with automated image builds.
+6. ~~**Phase 11: Peer Discovery & Persistence**~~ ✅ done — active GetPeers exchange in outbound loop, discovered peers merged + persisted to `peers.json`, loaded on startup, 376 tests.
+7. **Phase 12: Full Async P2P** — parallel multi-peer IBD, async multiplexed connections, standard binary Merkle tree.
+8. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
+9. BFG scrub of premine private keys from git history before public launch.
+10. CI/CD pipeline with automated image builds.

@@ -616,7 +616,7 @@ impl NodeRuntime {
         };
         chain_store.replay_journal(&node_id, &core, &mut chain_state)?;
 
-        let runtime = Self {
+        let mut runtime = Self {
             node_id,
             config,
             core,
@@ -625,6 +625,7 @@ impl NodeRuntime {
             chain_store: Some(chain_store),
         };
         runtime.persist_chain_state()?;
+        runtime.load_persisted_peers();
         Ok(runtime)
     }
 
@@ -657,6 +658,60 @@ impl NodeRuntime {
         for peer in peers {
             self.register_peer(peer);
         }
+    }
+
+    // ── Peer persistence (Phase 11) ────────────────────────────────────
+
+    /// Return the path for persisting known peers (sibling of chain state file).
+    fn peers_path(&self) -> Option<PathBuf> {
+        self.chain_store.as_ref().map(|cs| {
+            let mut p = cs.path.clone();
+            p.set_file_name("peers.json");
+            p
+        })
+    }
+
+    /// Save known_peers to disk as JSON. No-op if no state_path configured.
+    pub fn persist_peers(&self) -> Result<(), String> {
+        let path = match self.peers_path() {
+            Some(p) => p,
+            None => return Ok(()),
+        };
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("peers mkdir: {e}"))?;
+        }
+        let json = serde_json::to_string_pretty(&self.known_peers)
+            .map_err(|e| format!("peers encode: {e}"))?;
+        fs::write(&path, json.as_bytes()).map_err(|e| format!("peers write: {e}"))?;
+        Ok(())
+    }
+
+    /// Load persisted peers from disk and merge into known_peers.
+    /// Called once at startup after `with_chain_store`.
+    pub fn load_persisted_peers(&mut self) {
+        let path = match self.peers_path() {
+            Some(p) => p,
+            None => return,
+        };
+        let raw = match fs::read_to_string(&path) {
+            Ok(r) => r,
+            Err(_) => return, // no file yet — first run
+        };
+        let peers: Vec<PeerEndpoint> = match serde_json::from_str(&raw) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("peers_load_err path={} err={e}", path.display());
+                return;
+            }
+        };
+        let count = peers.len();
+        self.register_peers(peers);
+        println!("peers_loaded count={count} total={}", self.known_peers.len());
+    }
+
+    /// Number of known peers (for diagnostics).
+    pub fn peer_count(&self) -> usize {
+        self.known_peers.len()
     }
 
     pub fn status(&self) -> NodeStatus {
@@ -2607,5 +2662,89 @@ mod tests {
         assert!(!journal_path(&state_path).exists());
 
         fs::remove_file(&state_path).ok();
+    }
+
+    #[test]
+    fn peer_persistence_round_trip() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let state_path = dir.path().join("state.json");
+
+        // Create runtime with chain store, add some peers
+        let mut runtime = NodeRuntime::with_chain_store(
+            "node-peers",
+            NodeConfig::mainnet(),
+            &state_path,
+        )
+        .expect("create runtime");
+
+        // Register new peers beyond the seeds
+        runtime.register_peer(PeerEndpoint::new("10.0.0.1", 8334));
+        runtime.register_peer(PeerEndpoint::new("10.0.0.2", 8334));
+        runtime.register_peer(PeerEndpoint::new("10.0.0.3", 8334));
+
+        let saved_count = runtime.known_peers().len();
+        runtime.persist_peers().expect("persist peers");
+
+        // Verify peers.json was created
+        let peers_path = dir.path().join("peers.json");
+        assert!(peers_path.exists(), "peers.json should exist");
+
+        // Create a new runtime from the same state path — peers should be loaded
+        let restored = NodeRuntime::with_chain_store(
+            "node-peers-2",
+            NodeConfig::mainnet(),
+            &state_path,
+        )
+        .expect("restore runtime");
+
+        assert_eq!(restored.known_peers().len(), saved_count);
+        assert!(
+            restored.known_peers().iter().any(|p| p.address() == "10.0.0.1:8334"),
+            "should contain persisted peer 10.0.0.1"
+        );
+        assert!(
+            restored.known_peers().iter().any(|p| p.address() == "10.0.0.3:8334"),
+            "should contain persisted peer 10.0.0.3"
+        );
+    }
+
+    #[test]
+    fn peer_persistence_no_state_path_is_noop() {
+        let runtime = NodeRuntime::new("node-no-store", NodeConfig::mainnet());
+        // Should succeed (no-op) without state path
+        runtime.persist_peers().expect("persist should be no-op");
+    }
+
+    #[test]
+    fn register_peers_deduplicates() {
+        let mut runtime = NodeRuntime::new("node-dedup", NodeConfig::mainnet());
+        let before = runtime.known_peers().len();
+
+        runtime.register_peer(PeerEndpoint::new("192.168.1.1", 8334));
+        assert_eq!(runtime.known_peers().len(), before + 1);
+
+        // Duplicate should be ignored
+        runtime.register_peer(PeerEndpoint::new("192.168.1.1", 8334));
+        assert_eq!(runtime.known_peers().len(), before + 1);
+
+        // Different port = different peer
+        runtime.register_peer(PeerEndpoint::new("192.168.1.1", 9999));
+        assert_eq!(runtime.known_peers().len(), before + 2);
+    }
+
+    #[test]
+    fn get_peers_returns_known_list() {
+        let mut runtime = NodeRuntime::new("node-getpeers", NodeConfig::mainnet());
+        runtime.register_peer(PeerEndpoint::new("10.1.1.1", 8334));
+        runtime.register_peer(PeerEndpoint::new("10.1.1.2", 8334));
+
+        let response = runtime.handle_p2p_message(P2pMessage::GetPeers).unwrap();
+        match response {
+            P2pMessage::Peers { peers } => {
+                assert!(peers.iter().any(|p| p.address() == "10.1.1.1:8334"));
+                assert!(peers.iter().any(|p| p.address() == "10.1.1.2:8334"));
+            }
+            other => panic!("expected Peers, got {other:?}"),
+        }
     }
 }
