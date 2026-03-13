@@ -98,6 +98,11 @@ This roadmap follows the release progression already defined in the repository d
   - explicit block-body hash plus subsidy/fee/miner-reward metadata in template and accepted-block state
   - journal-assisted recovery when snapshot state is missing or unusable
   - contiguous peer block synchronization over P2P with block export and validated import
+  - **Ed25519 keygen/sign/verify, BLAKE3 general hashing, canonical `zion1...` 44-char address derivation with checksum** (`crypto.rs`)
+  - **UTXO transaction model: TxInput/TxOutput/Transaction, SegWit-style BLAKE3 txid, signature verification** (`tx.rs`)
+  - **Fee policy: MIN_TX_FEE=1000, MIN_FEE_RATE=1, MAX_TX_SIZE=100KB, 100% burn, burn/DAO addresses** (`fee.rs`)
+  - **Wallet: largest-first coin selection, build_and_sign with zeroize, batch PPLNS payouts up to 200 recipients** (`wallet.rs`)
+  - **Full 10-step block validation: structure, timestamp, Merkle root, signatures, double-spend, coinbase maturity, fees, subsidy** (`validation.rs`)
 - `L1/pool`
   - share validation and revenue tracking
   - session-oriented wire protocol
@@ -133,9 +138,14 @@ This roadmap follows the release progression already defined in the repository d
 - live two-node rehearsal confirms block export from one node and validated `announce_block` import into another node
 - live bootstrap rehearsal confirms a fresh node can catch up from `ZION_SEED_PEERS` without manual block announce steps
 - canonical Ekam vector remains stable
+- **78 new tests across crypto (19), tx (10), fee (15), wallet (9), validation (25) — all green**
 
 ### Not Done Yet
 
+- chain safety rules: reorg depth enforcement, fork choice by total_work, coinbase maturity spend-time enforcement
+- mempool hardening: double-spend tracking, byte/count limits, fee-rate eviction
+- P2P security: rate limiter, blacklist, escalating bans, connection limiter
+- orphan block handling and relay
 - fuller propagation and multi-peer catch-up beyond the current one-block contiguous sync path
 - richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting
 - mainnet genesis ceremony assets and deploy pipeline for `V3/`
@@ -150,7 +160,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 135 pass, 0 fail |
+| Tests | ~200+ | 211 pass, 0 fail, 1 ignored |
 | Persistence | LMDB (7 databases) | JSON snapshot + journal |
 | Tx model | UTXO (Bitcoin-style) | Account-style (simplified) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ekam Deeksha only |
@@ -158,11 +168,11 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 
 #### Module Status (35 items)
 
-**Done (8):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic)
+**Done (13):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (10-step pipeline, Merkle tree, signatures, maturity, fees)
 
-**Partial (6):** mempool (missing double-spend tracking, byte limits, eviction), block validation (missing merkle verify, signature verify, coinbase maturity, block size limit, timestamp drift), P2P (missing async, connection pool, outbound relay, multi-peer sync, peer scoring), RPC (7/~40 methods), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree)
+**Partial (5):** mempool (missing double-spend tracking, byte limits, eviction), P2P (missing async, connection pool, outbound relay, multi-peer sync, peer scoring), RPC (7/~40 methods), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
 
-**Missing (21):** crypto/keys (Ed25519, `zion1...` addresses), UTXO tx model, wallet (coin selection, build_and_sign), batch payouts, fee model, chain reorg, burn addresses, chain safety rules (reorg depth, total_work), LMDB storage, P2P security (rate limiter, blacklist, escalating bans), P2P sync (IBD, batch download, stall detection), peer manager, metrics/Prometheus, peer discovery, checkpoints, heartbeat, peer persistence, security audit tools, load tests, multi-algo dispatch (intentionally skipped)
+**Missing (16):** chain reorg, chain safety rules (reorg depth, total_work), LMDB storage, P2P security (rate limiter, blacklist, escalating bans), P2P sync (IBD, batch download, stall detection), peer manager, metrics/Prometheus, peer discovery, checkpoints, heartbeat, peer persistence, security audit tools, load tests, orphan block handling, mempool hardening, multi-algo dispatch (intentionally skipped)
 
 #### Open Architectural Decisions
 
@@ -188,11 +198,11 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 
 | ID | Missing module | What is needed | V3 current state | Target phase |
 |----|----------------|----------------|------------------|--------------|
-| G16 | **Crypto / Ed25519** | Ed25519 keygen, sign/verify, `zion1...` address derivation, BLAKE3 general hash | No key management, no address derivation, no signatures | **Phase 5e** |
-| G17 | **UTXO tx model** | `TxInput`/`TxOutput`/`Transaction`, SegWit-style hash, `verify_signatures()` | Account-style `Transaction{from,to,amount,nonce}` — no signatures | **Phase 5f** |
-| G18 | **Fee model** | MIN_TX_FEE, fee-rate, MAX_TX_SIZE, 100% burn | `fee_zion` field exists but no enforcement | **Phase 5f** |
-| G19 | **Wallet** | UTXO coin selection, `build_and_sign()`, `zeroize`, batch payouts | No wallet module | **Phase 5g** |
-| G20 | **Full block validation** | 10-step pipeline: merkle, signatures, maturity, size, timestamp, double-spend | PoW + subsidy check only | **Phase 5h** |
+| G16 | **Crypto / Ed25519** | Ed25519 keygen, sign/verify, `zion1...` address derivation, BLAKE3 general hash | ✅ `crypto.rs` — 19 tests | ~~Phase 5e~~ done |
+| G17 | **UTXO tx model** | `TxInput`/`TxOutput`/`Transaction`, SegWit-style hash, `verify_signatures()` | ✅ `tx.rs` — 10 tests | ~~Phase 5f~~ done |
+| G18 | **Fee model** | MIN_TX_FEE, fee-rate, MAX_TX_SIZE, 100% burn | ✅ `fee.rs` — 15 tests | ~~Phase 5f~~ done |
+| G19 | **Wallet** | UTXO coin selection, `build_and_sign()`, `zeroize`, batch payouts | ✅ `wallet.rs` — 9 tests | ~~Phase 5g~~ done |
+| G20 | **Full block validation** | 10-step pipeline: merkle, signatures, maturity, size, timestamp, double-spend | ✅ `validation.rs` — 25 tests | ~~Phase 5h~~ done |
 
 #### HIGH — network security before production
 
@@ -403,7 +413,7 @@ Exit criteria:
 
 Status: pending
 
-### Phase 5e: Cryptographic Foundation (Audit items #15, G-new)
+### Phase 5e: Cryptographic Foundation (G16)
 
 Goal: introduce Ed25519 key management, BLAKE3 general hashing, and canonical `zion1...` address derivation.
 
@@ -430,9 +440,9 @@ Exit criteria:
 
 Migration source: `L1/core/src/crypto/keys.rs` (260 LoC) → rewrite clean
 
-Status: pending
+Status: done — `crypto.rs` (260 LoC, 19 tests), commit 33927a3
 
-### Phase 5f: Transaction Model (Audit items #16, #19)
+### Phase 5f: Transaction Model (G17, G18)
 
 Goal: implement the canonical UTXO transaction model with fee enforcement.
 
@@ -467,9 +477,9 @@ Exit criteria:
 
 Migration source: `L1/core/src/tx/mod.rs` (189 LoC) + `L1/core/src/blockchain/fee.rs` (335 LoC) → rewrite clean
 
-Status: pending
+Status: done — `tx.rs` (220 LoC, 10 tests) + `fee.rs` (210 LoC, 15 tests), commit 33927a3
 
-### Phase 5g: Wallet (Audit items #17, #18)
+### Phase 5g: Wallet (G19)
 
 Goal: enable users to build, sign, and broadcast transactions.
 
@@ -499,9 +509,9 @@ Exit criteria:
 
 Migration source: `L1/core/src/wallet/mod.rs` (300 LoC) + `L1/core/src/wallet/batch.rs` (609 LoC) → rewrite clean
 
-Status: pending
+Status: done — `wallet.rs` (310 LoC, 9 tests), commit 33927a3
 
-### Phase 5h: Full Block Validation (Audit items #10)
+### Phase 5h: Full Block Validation (G20)
 
 Goal: make block acceptance cryptographically secure with a complete 10-step validation pipeline.
 
@@ -535,7 +545,7 @@ Exit criteria:
 
 Migration source: `L1/core/src/blockchain/validation.rs` (556 LoC) → rewrite clean
 
-Status: pending
+Status: done — `validation.rs` (420 LoC, 25 tests), commit 33927a3
 
 ### Phase 6: Chain Safety Rules (G6–G8, G11–G15, Audit P0/P1)
 
@@ -673,21 +683,18 @@ Completed:
 1. ~~**Phase 5a: Emission** — flowers + decade decay (`emission.rs`).~~ ✅ done
 2. ~~**Phase 5b: LWMA DAA** — difficulty adjustment (`difficulty.rs`).~~ ✅ done
 3. ~~**Phase 5c: Genesis** — genesis block with 12 premine outputs (`genesis.rs`).~~ ✅ done
+4. ~~**Phase 5e: Crypto** — Ed25519 + BLAKE3 + `zion1...` addresses (`crypto.rs`).~~ ✅ done
+5. ~~**Phase 5f: Tx Model** — UTXO transactions + fee enforcement (`tx.rs`, `fee.rs`).~~ ✅ done
+6. ~~**Phase 5g: Wallet** — coin selection, build & sign (`wallet.rs`).~~ ✅ done
+7. ~~**Phase 5h: Validation** — 10-step block validation pipeline (`validation.rs`).~~ ✅ done
 
-Critical path — next up (sequential):
-
-4. **Phase 5e: Crypto** — Ed25519 + BLAKE3 + `zion1...` addresses (`crypto.rs`). Blocks everything else.
-5. **Phase 5f: Tx Model** — UTXO transactions + fee enforcement (`tx.rs`, `fee.rs`). Blocks wallet and validation.
-6. **Phase 5g: Wallet** — coin selection, build & sign (`wallet.rs`, `batch.rs`). Blocks testnet operations.
-7. **Phase 5h: Validation** — 10-step block validation pipeline (`validation.rs`). Blocks chain security.
-
-Parallel track (can proceed alongside 5e–5h):
+Parallel track:
 
 8. **Phase 5d: Propagation** — outbound block push + multi-peer catch-up. Required for multi-node testnet.
 
-After 5d–5h are complete:
+Critical path — next up (sequential):
 
-9. **Phase 6: Chain Safety** — reorg, mempool hardening, P2P security, orphan handling.
+9. **Phase 6: Chain Safety** — reorg (6a), maturity+burn (6b), mempool hardening (6c), P2P security (6d), orphan handling (6e).
 10. **Phase 7: Production Infrastructure** — LMDB storage, IBD sync, RPC expansion, metrics.
 11. **Phase 8: Mainnet Launch Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.
 
@@ -696,10 +703,10 @@ After 5d–5h are complete:
 ```
 5a (emission) ✅ ──→ 5c (genesis) ✅ ─┐
 5b (LWMA) ✅   ──→ 5c (genesis) ✅ ─┤
-                                     ├──→ 5e (crypto) ──→ 5f (tx model) ──→ 5g (wallet) ──┐
-                                     │                        │                            │
-                                     │                        ▼                            ▼
-                                     │                   5h (validation) ──→ Phase 6 ──→ Phase 7 ──→ Phase 8
+                                     ├──→ 5e (crypto) ✅ ──→ 5f (tx model) ✅ ──→ 5g (wallet) ✅ ─┐
+                                     │                          │                                │
+                                     │                          ▼                                ▼
+                                     │                     5h (validation) ✅ ──→ Phase 6 ──→ Phase 7 ──→ Phase 8
                                      │
 5d (propagation) ─────────────────────────────────────────────────────────→ Phase 7 ──→ Phase 8
 ```
@@ -760,12 +767,12 @@ MAX_BLOCK_SIZE         = 1_048_576 bytes (1 MB)
 MAX_TIMESTAMP_DRIFT    = 7_200 s (2 hours)
 ```
 
-### Fee Model (Phase 5f — pending)
+### Fee Model (V3 fee.rs ✅)
 ```
 MIN_TX_FEE             = 1_000 flowers (0.001 ZION)
 MIN_FEE_RATE           = 1 flower/byte
 MAX_TX_SIZE            = 100_000 bytes (100 KB)
-MAX_OUTPUT_AMOUNT      = 144_000_000_000_000_000_000_000 flowers
+MAX_OUTPUT_AMOUNT      = u64::MAX flowers
 Fee destination        = 100% BURNED (deflationary)
 Coinbase               = reward only (no fee routing)
 ```
@@ -784,7 +791,7 @@ IBD_BATCH_SIZE         = 500 blocks per request
 IBD_STALL_TIMEOUT      = 120s, 3 retries
 ```
 
-### Burn Addresses (Phase 6b — pending)
+### Burn Addresses (V3 fee.rs ✅)
 ```
 BURN_ADDRESS           = "zion1burn0000000000000000000000000000000dead"
 DAO_ADDRESS            = "zion1dao00000000000000000000000000000treasury"
@@ -798,7 +805,7 @@ ISSOBELLA_FUND         = 5%  (L5/L6 development)
 POOL_FEE               = 1%
 ```
 
-### Batch Payouts (Phase 5g — pending)
+### Batch Payouts (V3 wallet.rs ✅)
 ```
 MAX_BATCH_RECIPIENTS   = 200
 MIN_PAYOUT_AMOUNT      = 10_000_000_000_000 flowers (10 ZION)
