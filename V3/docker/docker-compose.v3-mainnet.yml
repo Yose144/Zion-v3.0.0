@@ -10,8 +10,8 @@
 services:
   node:
     build:
-      context: ../..
-      dockerfile: V3/docker/Dockerfile.node
+      context: ..
+      dockerfile: docker/Dockerfile.node
     image: zion-v3-node:latest
     container_name: zion-v3-node
     restart: unless-stopped
@@ -31,8 +31,8 @@ services:
 
   pool:
     build:
-      context: ../..
-      dockerfile: V3/docker/Dockerfile.pool
+      context: ..
+      dockerfile: docker/Dockerfile.pool
     image: zion-v3-pool:latest
     container_name: zion-v3-pool
     restart: unless-stopped
@@ -41,6 +41,8 @@ services:
     environment:
       ZION_POOL_BIND: "0.0.0.0:8444"
       ZION_NODE_RPC_ADDR: "node:8332"
+      ZION_POOL_LOOP_COUNT: "1000000"
+      ZION_NONCE_COUNT: "1000000"
     depends_on:
       - node
     networks:
@@ -48,14 +50,15 @@ services:
 
   miner:
     build:
-      context: ../..
-      dockerfile: V3/docker/Dockerfile.miner
+      context: ..
+      dockerfile: docker/Dockerfile.miner
     image: zion-v3-miner:latest
     container_name: zion-v3-miner
     restart: unless-stopped
     environment:
       ZION_POOL_ADDR: "pool:8444"
       ZION_MINER_THREADS: "2"
+      ZION_LOOP_COUNT: "1000000"
     depends_on:
       - pool
     networks:
