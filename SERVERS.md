@@ -1,8 +1,8 @@
 # 🖥️ ZION TerraNova — Active Servers
 
-> **Aktualizace:** 11. března 2026  
-> **Aktuální topologie:** 1 primární server  
-> **Chain status:** Ekam Deeksha testnet běží od genesis na hostu `91.98.122.165`
+> **Aktualizace:** 13. března 2026  
+> **Aktuální topologie:** 2 servery (1 testnet/produkce, 1 mainnet V3)  
+> **Chain status:** Ekam Deeksha testnet běží od genesis na hostu `91.98.122.165`, mainnet V3 server `157.180.41.213` připraven k provisioningu
 
 > Původní servery `77.42.31.72`, `178.156.240.160`, `5.223.43.93` a starší historické uzly jsou brané jako decommissioned. Nejsou už zdrojem pravdy pro operace ani dokumentaci.
 
@@ -11,6 +11,7 @@
 | # | Název | Lokace | IP | HW | SSH alias | Klíč | Stav |
 |---|-------|--------|----|-----|-----------|------|------|
 | 1 | Zion2 | primární produkční host | 91.98.122.165 | aktivní produkční VM | `zion-primary` | `zion_hetzner_key` | ✅ Core + Pool + Redis + Website deploy target |
+| 2 | Zion-MainetV3 | Helsinki, FI (Hetzner) | 157.180.41.213 | 8 vCPU AMD EPYC, 16 GB RAM, 150 GB SSD, Ubuntu 24.04 | `zion-mainnet` | `zion_hetzner_key` | 🟡 Mainnet V3 node, připraven k provisioningu |
 
 ### ❌ Decommissioned servery
 
@@ -27,6 +28,7 @@
 | Server | Revenue kontejnery | Mysterium ID | Stav |
 |---|---|---|---|
 | Zion2 (`91.98.122.165`) | `zion-core`, `zion-pool`, `zion-miner`, `zion-redis`, `zion-seed-1`, `zion-seed-2`, `zion-website` | n/a | ✅ Active |
+| Zion-MainetV3 (`157.180.41.213`) | — | n/a | 🟡 Čistý — Docker a chain stack ještě nenainstalován |
 
 ### Docker image verze (live 2026-03-11)
 
@@ -60,16 +62,21 @@
 
                                  Zion2 / primary
                                  91.98.122.165
+
+                                 Zion-MainetV3
+                                 157.180.41.213
 ```
 
 | # | Název | IP | Role |
 |---|-------|----|------|
 | 1 | Zion2 | 91.98.122.165 | primární host pro chain + pool + web |
+| 2 | Zion-MainetV3 | 157.180.41.213 | mainnet V3 node (provisioning) |
 
 ## Připojení
 
 ```bash
 ssh zion-primary    # 91.98.122.165 — current primary host
+ssh zion-mainnet    # 157.180.41.213 — mainnet V3 node
 ```
 
 ## Deploy seed nodů
@@ -93,13 +100,15 @@ docker compose -f docker/docker-compose.testnet.yml --env-file .env up -d
 91.98.122.165:8334
 ```
 
+> **Poznámka:** `157.180.41.213` je mainnet V3 node (Helsinki), není seed peer. Bude přidán jako seed až po provisioningu a spustění V3 chain stacku.
+
 ## 🔑 SSH klíče a přístupy
 
 ### Klíče (`~/.ssh/`)
 
 | Klíč | Soubor | Použití |
 |------|--------|---------|
-| **Hetzner** | `~/.ssh/zion_hetzner_key` | Zion2 / current primary |
+| **Hetzner** | `~/.ssh/zion_hetzner_key` | Zion2 + Zion-MainetV3 / current hosts |
 | **Testnet servery** | `~/.ssh/zion_server_key` | historický klíč, nepoužívat pro 2.9.8 rollout |
 | **Deploy (starý)** | `~/.ssh/zion_deployment_key` | historický klíč, nepoužívat |
 
@@ -116,12 +125,18 @@ Host zion-primary
     HostName 91.98.122.165
     User root
     IdentityFile ~/.ssh/zion_hetzner_key
+
+Host zion-mainnet
+    HostName 157.180.41.213
+    User root
+    IdentityFile ~/.ssh/zion_hetzner_key
 ```
 
 ### Přímé připojení (s explicitním klíčem)
 
 ```bash
 ssh -i ~/.ssh/zion_hetzner_key     root@91.98.122.165   # Zion2 / current primary
+ssh -i ~/.ssh/zion_hetzner_key     root@157.180.41.213  # Zion-MainetV3 / mainnet V3
 ```
 
 ## 🌐 Porty (Testnet)
@@ -133,4 +148,13 @@ ssh -i ~/.ssh/zion_hetzner_key     root@91.98.122.165   # Zion2 / current primar
 | **3333** | Stratum | Mining pool | Zion2 |
 | **8080** | Pool API | Pool statistiky | Zion2 |
 | **3000** | Web | Dashboard / Website | Zion2 |
+
+## 🌐 Porty (Mainnet V3 — plánováno)
+
+| Port | Služba | Popis | Kde |
+|------|--------|-------|-----|
+| **8334** | P2P | Mainnet peer-to-peer | Zion-MainetV3 |
+| **8444** | RPC | Mainnet JSON-RPC | Zion-MainetV3 |
+| **3333** | Stratum | Mining pool | Zion-MainetV3 |
+| **9090** | Metrics | Prometheus export | Zion-MainetV3 |
 
