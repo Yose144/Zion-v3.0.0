@@ -1,0 +1,36 @@
+# ZION V3 Mainnet Node
+# Multi-stage build for minimal production image
+#
+# Build:  docker build -f V3/docker/Dockerfile.node -t zion-v3-node .
+# Run:    docker run -d --name zion-node \
+#           -p 8334:8334 -p 8332:8332 \
+#           -v zion-data:/data/zion \
+#           zion-v3-node
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY V3/ V3/
+COPY Cargo.toml Cargo.lock* ./
+RUN cargo build --release --manifest-path V3/Cargo.toml -p zion-core --bin node
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/zion -s /sbin/nologin zion
+COPY --from=builder /build/V3/target/release/node /usr/local/bin/zion-node
+RUN mkdir -p /data/zion && chown -R zion:zion /data/zion
+
+ENV ZION_NODE_ID=v3-mainnet-node
+ENV ZION_NODE_STATE_PATH=/data/zion/state
+ENV ZION_P2P_BIND=0.0.0.0:8334
+ENV ZION_RPC_BIND=0.0.0.0:8332
+
+WORKDIR /data/zion
+EXPOSE 8334 8332
+VOLUME ["/data/zion"]
+USER zion
+ENTRYPOINT ["zion-node"]
