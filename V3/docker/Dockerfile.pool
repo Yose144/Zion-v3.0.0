@@ -1,7 +1,7 @@
 # ZION V3 Mining Pool
 # Multi-stage build for minimal production image
 #
-# Build:  docker build -f V3/docker/Dockerfile.pool -t zion-v3-pool .
+# Build:  cd V3 && docker build -f docker/Dockerfile.pool -t zion-v3-pool .
 # Run:    docker run -d --name zion-pool \
 #           -p 8444:8444 \
 #           -e ZION_NODE_RPC_ADDR=zion-node:8332 \
@@ -12,16 +12,15 @@ WORKDIR /build
 RUN apt-get update && apt-get install -y \
         cmake g++ make pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
-COPY V3/ V3/
-COPY Cargo.toml Cargo.lock* ./
-RUN cargo build --release --manifest-path V3/Cargo.toml -p zion-pool --bin server
+COPY . .
+RUN cargo build --release -p zion-pool --bin server
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \
         ca-certificates libssl3 curl \
     && rm -rf /var/lib/apt/lists/*
 RUN groupadd -r zion && useradd -r -g zion -d /data/zion-pool -s /sbin/nologin zion
-COPY --from=builder /build/V3/target/release/server /usr/local/bin/zion-pool
+COPY --from=builder /build/target/release/server /usr/local/bin/zion-pool
 
 ENV ZION_POOL_BIND=0.0.0.0:8444
 ENV ZION_NODE_RPC_ADDR=127.0.0.1:8332
