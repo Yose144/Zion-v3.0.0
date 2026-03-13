@@ -1,0 +1,211 @@
+//! ZION Fee Market — 100% Fee Burn Model
+//!
+//! All transaction fees are **burned** (destroyed). The coinbase output is
+//! capped at the block reward only — miners do NOT receive transaction fees.
+//!
+//! This makes ZION deflationary over time as fees reduce circulating supply.
+//!
+//! All values in flowers (1 ZION = 1,000,000,000,000 flowers).
+
+use crate::emission;
+
+// ── Constants ──────────────────────────────────────────────────────────
+
+/// Minimum transaction fee: 0.001 ZION = 1,000 flowers.
+pub const MIN_TX_FEE: u64 = 1_000;
+
+/// Minimum fee rate: 1 flower per byte of serialized transaction.
+pub const MIN_FEE_RATE: u64 = 1;
+
+/// Maximum transaction size: 100 KB.
+pub const MAX_TX_SIZE: usize = 100_000;
+
+/// Maximum single output amount: total supply in flowers.
+/// Note: TOTAL_SUPPLY is u128 but no single output can exceed u64::MAX flowers,
+/// which is ~18.4 × 10^18 — enough for the entire mining supply.
+pub const MAX_OUTPUT_AMOUNT: u64 = u64::MAX;
+
+// ── Fee calculation ────────────────────────────────────────────────────
+
+/// Estimate serialized transaction size in bytes.
+///
+/// - Base: 32 (id) + 4 (version) + 8 (fee) + 8 (timestamp) = 52
+/// - Per input: 32 (prev_hash) + 4 (index) + 64 (signature) + 32 (pubkey) = 132
+/// - Per output: 8 (amount) + 44 (address) + 8 (memo overhead) = 60
+pub fn estimate_tx_size(num_inputs: usize, num_outputs: usize) -> usize {
+    52 + num_inputs * 132 + num_outputs * 60
+}
+
+/// Fee rate in flowers per byte.
+pub fn fee_rate(fee: u64, tx_size_bytes: usize) -> u64 {
+    if tx_size_bytes == 0 { return 0; }
+    fee / tx_size_bytes as u64
+}
+
+/// Minimum required fee for a transaction of the given size.
+///
+/// Returns `max(MIN_TX_FEE, size × MIN_FEE_RATE)`.
+pub fn minimum_fee_for_size(tx_size_bytes: usize) -> u64 {
+    let rate_based = tx_size_bytes as u64 * MIN_FEE_RATE;
+    rate_based.max(MIN_TX_FEE)
+}
+
+// ── Fee validation ─────────────────────────────────────────────────────
+
+/// Validate that a transaction's fee meets minimum requirements.
+pub fn validate_fee(fee: u64, tx_size_bytes: usize) -> Result<(), String> {
+    if fee < MIN_TX_FEE {
+        return Err(format!(
+            "fee {} below minimum {} flowers (0.001 ZION)",
+            fee, MIN_TX_FEE
+        ));
+    }
+    let min_for_size = minimum_fee_for_size(tx_size_bytes);
+    if fee < min_for_size {
+        return Err(format!(
+            "fee {} below minimum for {} bytes (need {})",
+            fee, tx_size_bytes, min_for_size
+        ));
+    }
+    Ok(())
+}
+
+/// Validate all output amounts: non-zero, within supply cap, total within cap.
+pub fn validate_outputs(outputs: &[(u64, &str)]) -> Result<(), String> {
+    let mut total: u128 = 0;
+    for (i, &(amount, _)) in outputs.iter().enumerate() {
+        if amount == 0 {
+            return Err(format!("output {} has zero amount", i));
+        }
+        if amount > MAX_OUTPUT_AMOUNT {
+            return Err(format!("output {} amount {} exceeds max {}", i, amount, MAX_OUTPUT_AMOUNT));
+        }
+        total += amount as u128;
+    }
+    if total > MAX_OUTPUT_AMOUNT as u128 {
+        return Err(format!("total output {} exceeds max {}", total, MAX_OUTPUT_AMOUNT));
+    }
+    Ok(())
+}
+
+// ── Fee burning ────────────────────────────────────────────────────────
+
+/// Maximum allowed coinbase output for a block (reward only, no fees).
+pub fn max_coinbase_output(block_height: u64) -> u64 {
+    emission::block_subsidy(block_height)
+}
+
+/// Total fees burned in a block (sum of all non-coinbase tx fees).
+pub fn total_fees_burned(fees: &[u64]) -> u64 {
+    // First entry is coinbase (fee=0), rest are real txs
+    fees.iter().skip(1).sum()
+}
+
+// ── Burn addresses ─────────────────────────────────────────────────────
+
+/// Provable-burn address (no known private key).
+pub const BURN_ADDRESS: &str = "zion1burn0000000000000000000000000000000dead";
+
+/// DAO treasury address.
+pub const DAO_ADDRESS: &str = "zion1dao00000000000000000000000000000treasury";
+
+// ── Tests ──────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn min_fee_constant() {
+        assert_eq!(MIN_TX_FEE, 1_000);
+    }
+
+    #[test]
+    fn fee_rate_calculation() {
+        assert_eq!(fee_rate(1000, 250), 4);
+        assert_eq!(fee_rate(500, 250), 2);
+        assert_eq!(fee_rate(100, 250), 0);
+        assert_eq!(fee_rate(1000, 0), 0);
+    }
+
+    #[test]
+    fn minimum_fee_for_size_small_tx() {
+        assert_eq!(minimum_fee_for_size(100), MIN_TX_FEE);
+        assert_eq!(minimum_fee_for_size(500), MIN_TX_FEE);
+    }
+
+    #[test]
+    fn minimum_fee_for_size_large_tx() {
+        assert_eq!(minimum_fee_for_size(2000), 2000);
+        assert_eq!(minimum_fee_for_size(10_000), 10_000);
+    }
+
+    #[test]
+    fn estimate_tx_size_typical() {
+        // 1 input, 2 outputs (send + change)
+        let size = estimate_tx_size(1, 2);
+        assert_eq!(size, 52 + 132 + 120);
+    }
+
+    #[test]
+    fn validate_fee_ok() {
+        assert!(validate_fee(1_000, 250).is_ok());
+        assert!(validate_fee(100_000, 500).is_ok());
+    }
+
+    #[test]
+    fn validate_fee_too_low() {
+        assert!(validate_fee(999, 250).is_err());
+        assert!(validate_fee(0, 250).is_err());
+    }
+
+    #[test]
+    fn validate_fee_rate_too_low_for_large_tx() {
+        assert!(validate_fee(1_000, 2_000).is_err());
+    }
+
+    #[test]
+    fn validate_outputs_ok() {
+        let outputs = vec![(1_000_000u64, "a"), (5_000_000u64, "b")];
+        assert!(validate_outputs(&outputs).is_ok());
+    }
+
+    #[test]
+    fn validate_outputs_zero_rejected() {
+        assert!(validate_outputs(&[(0u64, "a")]).is_err());
+    }
+
+    #[test]
+    fn validate_outputs_overflow_rejected() {
+        let half = MAX_OUTPUT_AMOUNT / 2 + 1;
+        assert!(validate_outputs(&[(half, "a"), (half, "b")]).is_err());
+    }
+
+    #[test]
+    fn max_coinbase_block_1() {
+        assert_eq!(max_coinbase_output(1), 5_400_067_000_000_000);
+    }
+
+    #[test]
+    fn max_coinbase_genesis_is_zero() {
+        assert_eq!(max_coinbase_output(0), 0);
+    }
+
+    #[test]
+    fn max_coinbase_tail() {
+        let tail_block = 10 * 5_256_000 + 1;
+        assert_eq!(max_coinbase_output(tail_block), 724_784_723_787_776);
+    }
+
+    #[test]
+    fn fees_burned_not_in_coinbase() {
+        let reward = emission::block_subsidy(1);
+        assert_eq!(max_coinbase_output(1), reward);
+    }
+
+    #[test]
+    fn total_fees_burned_skips_coinbase() {
+        let fees = vec![0, 5_000, 3_000]; // coinbase=0, tx1=5000, tx2=3000
+        assert_eq!(total_fees_burned(&fees), 8_000);
+    }
+}

@@ -10,9 +10,14 @@ use zion_cosmic_harmony::{
 
 pub use zion_cosmic_harmony::RevenueSource;
 
+pub mod crypto;
 pub mod difficulty;
 pub mod emission;
+pub mod fee;
 pub mod genesis;
+pub mod tx;
+pub mod validation;
+pub mod wallet;
 
 pub const HEADER_SIZE: usize = 80;
 pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/0.1";
