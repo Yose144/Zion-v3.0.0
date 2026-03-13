@@ -211,6 +211,7 @@ pub fn genesis_block() -> AcceptedBlock {
 
     let hash = cosmic_harmony_ekam_deeksha(&header.to_bytes(), 0);
     let hash_hex = crate::hex(&hash.data);
+    let header_hex = crate::hex(&header.to_bytes());
 
     let body_hash = genesis_body_hash(&transactions);
 
@@ -221,6 +222,7 @@ pub fn genesis_block() -> AcceptedBlock {
         difficulty: difficulty::GENESIS_DIFFICULTY,
         nonce: 0,
         hash_hex,
+        header_hex,
         transaction_ids,
         transactions,
         total_fees_zion: 0,
