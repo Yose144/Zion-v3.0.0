@@ -24,8 +24,18 @@ pub const DAO_TREASURY_LOCK_HEIGHT: u64 = 525_600;
 pub const GENESIS_TIMESTAMP: u64 = 1_767_225_600;
 
 /// Genesis message embedded in the coinbase (Bitcoin-style scriptSig heritage).
-pub const GENESIS_MESSAGE: &str =
-    "ZION Genesis — For all children of the Earth — 2026-01-01 — Peace and One Love";
+/// Short form used in tx hashing; full form with ASCII art available via `genesis_message_full()`.
+pub const GENESIS_MESSAGE: &str = concat!(
+    "ZION Mainet Launch v3 — ",
+    "For Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam, Friends, Family, ",
+    "Freedom Humanity and all the children of this world: ZION is yours. ",
+    "Build a better world where you reach for the Stars. The Golden Age begins. ",
+    "Peace & One Love 4ever. ",
+    "— Yose / Zion Creator"
+);
+
+/// Full genesis message including ASCII art, embedded at compile time.
+pub const GENESIS_MESSAGE_FULL: &str = include_str!("GENESIS_MESSAGE.txt");
 
 // ---------------------------------------------------------------------------
 // Premine allocations — frozen data from PREMINE_ADDRESSES_PUBLIC.txt
@@ -165,8 +175,13 @@ pub fn genesis_block() -> AcceptedBlock {
         .iter()
         .enumerate()
         .map(|(i, output)| {
-            // Deterministic tx_id: sha256-style hex from "genesis-premine-{index}"
-            let tag = format!("genesis-premine-{i:02}");
+            // Deterministic tx_id: for tx 0, include genesis message in the hash
+            // (Bitcoin-style coinbase scriptSig heritage)
+            let tag = if i == 0 {
+                format!("genesis-premine-{i:02}:{}", GENESIS_MESSAGE)
+            } else {
+                format!("genesis-premine-{i:02}")
+            };
             let tx_id = genesis_tx_id(&tag);
             Transaction {
                 tx_id,
@@ -485,5 +500,34 @@ mod tests {
         for tx in &block.transactions {
             assert!(seen.insert(&tx.tx_id), "duplicate genesis tx_id: {}", tx.tx_id);
         }
+    }
+
+    #[test]
+    fn genesis_message_is_embedded() {
+        assert!(GENESIS_MESSAGE.contains("ZION Mainet Launch v3"));
+        assert!(GENESIS_MESSAGE.contains("Peace & One Love 4ever"));
+        assert!(GENESIS_MESSAGE.contains("Yose / Zion Creator"));
+    }
+
+    #[test]
+    fn genesis_message_full_contains_ascii_art() {
+        assert!(GENESIS_MESSAGE_FULL.contains("ZION"));
+        assert!(GENESIS_MESSAGE_FULL.contains("Mainet Launch v3"));
+        assert!(GENESIS_MESSAGE_FULL.contains("Golden Age begins"));
+    }
+
+    #[test]
+    fn genesis_coinbase_tx_includes_message() {
+        // The first tx's tx_id should differ from a plain "genesis-premine-00" hash
+        // because it includes GENESIS_MESSAGE in its tag
+        let block = genesis_block();
+        let plain_tag = "genesis-premine-00";
+        let plain_hash = crate::hex(
+            &cosmic_harmony_ekam_deeksha(plain_tag.as_bytes(), 0).data,
+        );
+        assert_ne!(
+            block.transactions[0].tx_id, plain_hash,
+            "coinbase tx_id must include genesis message"
+        );
     }
 }
