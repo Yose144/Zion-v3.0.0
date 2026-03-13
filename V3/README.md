@@ -40,6 +40,10 @@ Out of scope for the bootstrap:
 - `L1/core` now carries fee policy enforcement: MIN_TX_FEE=1000, MIN_FEE_RATE=1, MAX_TX_SIZE=100KB, 100% fee burn, burn/DAO addresses (`fee.rs`)
 - `L1/core` now carries the wallet module: largest-first UTXO coin selection, `build_and_sign()` with zeroize, batch PPLNS payouts up to 200 recipients (`wallet.rs`)
 - `L1/core` now carries full 10-step block validation: structure, timestamp, Merkle root, signatures, double-spend, coinbase maturity, fees, subsidy (`validation.rs`)
+- `L1/core` now carries chain safety: fork choice by total_work (strictly >), reorg planner with MAX_REORG_DEPTH=10, UTXO undo blocks, SOFT_FINALITY_DEPTH=60 (`chain.rs`)
+- `L1/core` now carries a hardened mempool: double-spend outpoint tracking, byte/count limits (20 MB / 10K txs), fee-rate eviction, structured rejection (`mempool_v2.rs`)
+- `L1/core` now carries P2P security: per-IP rate limiter, escalating bans (5 min → 30 min → 2 hr → permanent), connection limiter (128 max) (`p2p_security.rs`)
+- `L1/core` now carries orphan block handling: orphan pool with FIFO eviction (200 max, 10 min expiry), chain ID enforcement (`zion-mainnet-1`) (`orphan.rs`)
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
@@ -125,8 +129,8 @@ Current template and accepted-block metadata now includes:
 
 ## Next Steps
 
-1. **Phase 6: Chain Safety** — reorg handling (max depth 10), fork choice by total_work, coinbase maturity sspend-time enforcement, mempool hardening (double-spend, byte/count limits), P2P security (rate limiter, escalating bans), orphan block handling.
+1. ~~**Phase 6: Chain Safety**~~ ✅ done — reorg, fork choice, mempool hardening, P2P security, orphan handling.
 2. Extend the new peer block sync path into fuller propagation and multi-peer catch-up instead of one-block contiguous import only.
-3. **Phase 7: Production Infrastructure** — LMDB persistent storage, IBD state machine, HTTP JSON-RPC 2.0, peer manager, metrics/Prometheus.
+3. **Phase 7: Production Infrastructure** — LMDB persistent storage (7a), IBD state machine (7b), HTTP JSON-RPC 2.0 (7c), peer manager (7d), metrics/Prometheus (7e).
 4. Extend restart hardening beyond journal-assisted replay into stronger crash-window and corruption drills.
 5. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows, without reintroducing legacy desktop-agent orchestration.
