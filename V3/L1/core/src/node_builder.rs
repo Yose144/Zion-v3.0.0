@@ -20,7 +20,7 @@ use crate::ibd::{IbdEngine, SyncStatus};
 use crate::launch;
 use crate::metrics::NodeMetrics;
 use crate::peer_manager::PeerManager;
-use crate::rpc::{build_node_router, RpcRouter};
+use crate::rpc::{build_stub_router, RpcRouter};
 use crate::storage::{ChainDb, ChainMeta, StorageError, SCHEMA_VERSION};
 use crate::{NodeConfig, PeerEndpoint};
 
@@ -135,7 +135,7 @@ impl NodeHandle {
         metrics.set_chain_height(chain_tip.height);
 
         // 7. Build RPC router with node method stubs
-        let rpc = build_node_router();
+        let rpc = build_stub_router();
 
         Ok(Self {
             config,
