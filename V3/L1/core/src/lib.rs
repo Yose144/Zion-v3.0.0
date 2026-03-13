@@ -11,10 +11,14 @@ use zion_cosmic_harmony::{
 pub use zion_cosmic_harmony::RevenueSource;
 
 pub mod crypto;
+pub mod chain;
 pub mod difficulty;
 pub mod emission;
 pub mod fee;
 pub mod genesis;
+pub mod mempool_v2;
+pub mod orphan;
+pub mod p2p_security;
 pub mod tx;
 pub mod validation;
 pub mod wallet;
