@@ -17,8 +17,10 @@ pub mod emission;
 pub mod fee;
 pub mod genesis;
 pub mod ibd;
+pub mod launch;
 pub mod mempool_v2;
 pub mod metrics;
+pub mod node_builder;
 pub mod orphan;
 pub mod p2p_security;
 pub mod peer_manager;
@@ -85,7 +87,18 @@ impl NodeConfig {
             p2p_bind: PeerEndpoint::new("0.0.0.0", 8334),
             rpc_bind: PeerEndpoint::new("127.0.0.1", 8332),
             pool_bind: PeerEndpoint::new("0.0.0.0", 8444),
-            seed_peers: vec![PeerEndpoint::new("91.98.122.165", 8334)],
+            seed_peers: vec![
+                // EU – Prague, CZ (primary)
+                PeerEndpoint::new("91.98.122.165", 8334),
+                // EU – Frankfurt, DE
+                PeerEndpoint::new("seed-eu1.zionchain.org", 8334),
+                // NA – US East
+                PeerEndpoint::new("seed-us1.zionchain.org", 8334),
+                // NA – US West
+                PeerEndpoint::new("seed-us2.zionchain.org", 8334),
+                // APAC – Singapore
+                PeerEndpoint::new("seed-ap1.zionchain.org", 8334),
+            ],
         }
     }
 }

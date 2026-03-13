@@ -16,6 +16,7 @@
 use crate::crypto;
 use crate::emission;
 use crate::fee;
+use crate::genesis;
 use crate::tx::Transaction;
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -80,6 +81,8 @@ pub enum ValidationError {
     SubsidyExceeded { coinbase_output: u64, max_reward: u64 },
     NoCoinbase,
     CoinbaseHasInputs,
+    /// Spending from a time-locked premine address before its unlock height.
+    LockedPremine { tx_index: usize, address: String, unlock_height: u64 },
 }
 
 impl std::fmt::Display for ValidationError {
@@ -107,6 +110,8 @@ impl std::fmt::Display for ValidationError {
                 write!(f, "coinbase output {coinbase_output} exceeds reward {max_reward}"),
             Self::NoCoinbase => write!(f, "block has no coinbase transaction"),
             Self::CoinbaseHasInputs => write!(f, "coinbase transaction has inputs"),
+            Self::LockedPremine { tx_index, address, unlock_height } =>
+                write!(f, "tx {tx_index} spends locked premine address {address} (unlock at {unlock_height})"),
         }
     }
 }
@@ -281,7 +286,36 @@ pub fn validate_subsidy(
     Ok(())
 }
 
-/// Run the full 10-step validation pipeline.
+/// Step 11: Validate premine lock — inputs spending from DAO Treasury addresses
+/// must have the current height >= unlock_height.
+pub fn validate_premine_locks(
+    transactions: &[Transaction],
+    current_height: u64,
+    utxo_lookup: &dyn Fn(&[u8; 32], u32) -> Option<UtxoInfo>,
+) -> Result<(), ValidationError> {
+    for (tx_i, tx) in transactions.iter().enumerate().skip(1) {
+        for input in &tx.inputs {
+            if let Some(utxo) = utxo_lookup(&input.prev_tx_hash, input.output_index) {
+                if let Err(_) = genesis::is_premine_transfer_allowed(&utxo.address, current_height) {
+                    // Find the unlock height for the error message
+                    let unlock_height = genesis::PREMINE_OUTPUTS
+                        .iter()
+                        .find(|o| o.address == utxo.address)
+                        .and_then(|o| o.unlock_height)
+                        .unwrap_or(0);
+                    return Err(ValidationError::LockedPremine {
+                        tx_index: tx_i,
+                        address: utxo.address.clone(),
+                        unlock_height,
+                    });
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Run the full 11-step validation pipeline.
 ///
 /// Steps 2 (PoW) and 3 (difficulty) are expected to be done by the caller
 /// before invoking this, since they depend on mining header data not available
@@ -327,6 +361,9 @@ pub fn validate_block(
     } else {
         return Err(ValidationError::NoCoinbase);
     }
+
+    // Step 11: Premine lock enforcement (DAO Treasury)
+    validate_premine_locks(transactions, ctx.height, utxo_lookup)?;
 
     Ok(())
 }
@@ -606,5 +643,93 @@ mod tests {
         let lookup = |_: &[u8; 32], _: u32| -> Option<UtxoInfo> { None };
 
         assert!(validate_block(&txs, 1000, &root, &ctx, &sizes, &lookup).is_ok());
+    }
+
+    #[test]
+    fn validate_premine_lock_rejects_early_spend() {
+        let dao_addr = genesis::PREMINE_OUTPUTS
+            .iter()
+            .find(|o| o.category == "dao_treasury")
+            .unwrap()
+            .address;
+
+        let (_, pub_key) = generate_keypair();
+        let tx = Transaction {
+            id: [0xEE; 32],
+            version: 1,
+            inputs: vec![TxInput {
+                prev_tx_hash: [0xAA; 32],
+                output_index: 0,
+                signature: vec![0u8; 64],
+                public_key: pub_key.as_bytes().to_vec(),
+            }],
+            outputs: vec![TxOutput {
+                amount: 1000,
+                address: derive_address(pub_key.as_bytes()),
+                memo: None,
+            }],
+            fee: 1_000,
+            timestamp: 1_700_000_000,
+        };
+
+        // UTXO belongs to locked DAO treasury address
+        let lookup = |_: &[u8; 32], _: u32| -> Option<UtxoInfo> {
+            Some(UtxoInfo {
+                amount: 10_000,
+                address: dao_addr.to_string(),
+                created_height: 0,
+                is_coinbase: false,
+            })
+        };
+
+        // height 100 < 525_600 — should be rejected
+        let result = validate_premine_locks(&[make_coinbase(100), tx.clone()], 100, &lookup);
+        assert!(matches!(result, Err(ValidationError::LockedPremine { .. })));
+
+        // height 525_600 — should be allowed
+        let result2 = validate_premine_locks(&[make_coinbase(525_600), tx], 525_600, &lookup);
+        assert!(result2.is_ok());
+    }
+
+    #[test]
+    fn validate_premine_lock_allows_non_dao_addresses() {
+        let infra_addr = genesis::PREMINE_OUTPUTS
+            .iter()
+            .find(|o| o.category == "infrastructure")
+            .unwrap()
+            .address;
+
+        let (_, pub_key) = generate_keypair();
+        let tx = Transaction {
+            id: [0xFF; 32],
+            version: 1,
+            inputs: vec![TxInput {
+                prev_tx_hash: [0xBB; 32],
+                output_index: 0,
+                signature: vec![0u8; 64],
+                public_key: pub_key.as_bytes().to_vec(),
+            }],
+            outputs: vec![TxOutput {
+                amount: 1000,
+                address: derive_address(pub_key.as_bytes()),
+                memo: None,
+            }],
+            fee: 1_000,
+            timestamp: 1_700_000_000,
+        };
+
+        // UTXO belongs to infrastructure (unlocked immediately)
+        let lookup = |_: &[u8; 32], _: u32| -> Option<UtxoInfo> {
+            Some(UtxoInfo {
+                amount: 10_000,
+                address: infra_addr.to_string(),
+                created_height: 0,
+                is_coinbase: false,
+            })
+        };
+
+        // height 0 — should be allowed for non-DAO
+        let result = validate_premine_locks(&[make_coinbase(0), tx], 0, &lookup);
+        assert!(result.is_ok());
     }
 }
