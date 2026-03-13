@@ -56,6 +56,7 @@ Out of scope for the bootstrap:
 - `L1/core` now has 5 geographically distributed seed peers in `NodeConfig::mainnet()` (EU Prague, EU Frankfurt, US East, US West, APAC Singapore)
 - `L1/core` now carries the genesis dedication message embedded in block 0 coinbase hash: ASCII art + ZION banner + dedication to Sarah Issobel, Maitreya Buddha, family, and humanity (`GENESIS_MESSAGE.txt`, `genesis.rs`)
 - `L1/core` now carries flood-fill block propagation: `SeenBlocks` dedup cache, `plan_relay()` flood-fill logic, `PropagationStats` telemetry, and node binary relay on both peer announce and RPC submit (`propagation.rs`)
+- `L1/core` now carries P2P hardening (Phase 10): persistent inbound connections (message loop per stream), outbound peer thread with periodic sync + heartbeat Ping/Pong, PeerManager wired into node (scoring, subnet diversity, idle disconnect), PeerSecurity wired into node (rate limiting, ban on accept, protocol violation punishment)
 - Docker images: multi-stage production builds for node, pool, miner (self-contained V3/ context, `rust:1.85-bookworm` builder → `debian:bookworm-slim` runtime)
 - Deployed to Helsinki (157.180.41.213): 3-service Docker compose stack running live, chain height 30+
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
@@ -191,7 +192,8 @@ Current template and accepted-block metadata now includes:
 2. ~~**Phase 7: Production Infrastructure**~~ ✅ done — LMDB storage, IBD, RPC, peer manager, metrics.
 3. ~~**Phase 8: Docker & Deployment**~~ ✅ done — multi-stage Docker images, compose stack, deployed to Helsinki.
 4. ~~**Phase 9: JSON-RPC 2.0 Live Methods**~~ ✅ done — 11 methods bound to NodeRuntime, auto-detected on RPC port, 371 tests.
-5. **Phase 10: P2P Hardening** — persistent connections, parallel multi-peer catch-up, peer scoring integration.
-6. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
-7. BFG scrub of premine private keys from git history before public launch.
-8. CI/CD pipeline with automated image builds.
+5. ~~**Phase 10: P2P Hardening**~~ ✅ done — persistent inbound connections, outbound peer thread with heartbeat, PeerManager scoring + PeerSecurity rate-limiting wired into node binary.
+6. **Phase 11: Full Async P2P** — parallel multi-peer IBD, async multiplexed connections, peer persistence.
+7. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
+8. BFG scrub of premine private keys from git history before public launch.
+9. CI/CD pipeline with automated image builds.
