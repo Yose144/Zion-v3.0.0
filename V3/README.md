@@ -58,6 +58,7 @@ Out of scope for the bootstrap:
 - `L1/core` now carries flood-fill block propagation: `SeenBlocks` dedup cache, `plan_relay()` flood-fill logic, `PropagationStats` telemetry, and node binary relay on both peer announce and RPC submit (`propagation.rs`)
 - `L1/core` now carries P2P hardening (Phase 10): persistent inbound connections (message loop per stream), outbound peer thread with periodic sync + heartbeat Ping/Pong, PeerManager wired into node (scoring, subnet diversity, idle disconnect), PeerSecurity wired into node (rate limiting, ban on accept, protocol violation punishment)
 - `L1/core` now carries peer discovery & persistence (Phase 11): active GetPeers exchange in outbound loop (every ~5 min), discovered peers merged into known_peers + PeerManager seeds, known_peers persisted to `peers.json` alongside chain state, loaded on startup (`lib.rs`, `node.rs`)
+- `L1/core` now carries block validation hardening (Phase 12): `validate_peer_block()` verifies PoW (hash recomputed from header+nonce meets difficulty target), timestamp sanity (±2 hr median-time-past), checkpoint enforcement, header-field consistency; `AcceptedBlock` now stores `header_hex` for PoW-verifiable blocks; backwards-compatible with legacy persisted chain state (`lib.rs`, `validation.rs`, `genesis.rs`)
 - Docker images: multi-stage production builds for node, pool, miner (self-contained V3/ context, `rust:1.85-bookworm` builder → `debian:bookworm-slim` runtime)
 - Deployed to Helsinki (157.180.41.213): 3-service Docker compose stack running live, chain height 110+
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
@@ -195,7 +196,8 @@ Current template and accepted-block metadata now includes:
 4. ~~**Phase 9: JSON-RPC 2.0 Live Methods**~~ ✅ done — 11 methods bound to NodeRuntime, auto-detected on RPC port, 371 tests.
 5. ~~**Phase 10: P2P Hardening**~~ ✅ done — persistent inbound connections, outbound peer thread with heartbeat, PeerManager scoring + PeerSecurity rate-limiting wired into node binary.
 6. ~~**Phase 11: Peer Discovery & Persistence**~~ ✅ done — active GetPeers exchange in outbound loop, discovered peers merged + persisted to `peers.json`, loaded on startup, 376 tests.
-7. **Phase 12: Full Async P2P** — parallel multi-peer IBD, async multiplexed connections, standard binary Merkle tree.
-8. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
+7. ~~**Phase 12: Block Validation Hardening**~~ ✅ done — PoW verification via header_hex, timestamp sanity, checkpoint enforcement, header consistency checks, 385 tests.
+8. **Phase 13: Full Async P2P** — parallel multi-peer IBD, async multiplexed connections.
+9. Extend `DesktopApp` from local process supervision into richer runtime health, release provenance, and operator-safe signing flows.
 9. BFG scrub of premine private keys from git history before public launch.
 10. CI/CD pipeline with automated image builds.

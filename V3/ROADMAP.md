@@ -161,10 +161,11 @@ This roadmap follows the release progression already defined in the repository d
 - **3 new tests for genesis message embedding — all green**
 - **11 new integration tests for live JSON-RPC 2.0 method handlers — all green (371 total tests)**
 - **5 new tests for peer discovery & persistence (GetPeers exchange, persistence round-trip, dedup — 376 total tests)**
+- **9 new tests for block validation hardening (PoW verification, bad hash rejection, timestamp sanity, checkpoint enforcement, legacy compat — 385 total tests)**
 
 ### Not Done Yet
 
-- ~~persistent peer connections~~ → ✅ Phase 10, ~~peer discovery~~ → ✅ Phase 11, ~~peer persistence~~ → ✅ Phase 11; parallel multi-peer catch-up and full async multiplexing remain
+- ~~persistent peer connections~~ → ✅ Phase 10, ~~peer discovery~~ → ✅ Phase 11, ~~peer persistence~~ → ✅ Phase 11, ~~peer-block PoW/timestamp/checkpoint validation~~ → ✅ Phase 12; parallel multi-peer catch-up and full async multiplexing remain
 - richer block-body and transaction execution semantics beyond the current deterministic body hash and fee accounting
 - BFG scrub of premine private keys from git history
 - ~~production Docker images for node, pool, miner~~ → ✅ done (multi-stage Dockerfiles + compose stack)
@@ -181,7 +182,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 376 pass, 0 fail, 1 ignored (doc-test) |
+| Tests | ~200+ | 385 pass, 0 fail, 1 ignored (doc-test) |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |
@@ -189,11 +190,11 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 
 #### Module Status (35 items)
 
-**Done (28):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (11 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitBlock — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats), **peer discovery** (active GetPeers exchange, merge into known_peers + PeerManager seeds), **peer persistence** (known_peers → `peers.json`, load on startup)
+**Done (29):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (11 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitBlock — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats), **peer discovery** (active GetPeers exchange, merge into known_peers + PeerManager seeds), **peer persistence** (known_peers → `peers.json`, load on startup), **peer-block validation hardening** (PoW via header_hex, timestamp sanity, checkpoint enforcement)
 
-**Partial (3):** P2P (Phase 10+11 added persistent connections, outbound peer thread, heartbeat, PeerManager+PeerSecurity wiring, peer discovery, peer persistence; missing full async networking, parallel multi-peer IBD), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
+**Partial (3):** P2P (Phase 10+11+12 added persistent connections, outbound peer thread, heartbeat, PeerManager+PeerSecurity wiring, peer discovery, peer persistence, block validation hardening; missing full async networking, parallel multi-peer IBD), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
 
-**Missing (5):** P2P sync (full async networking with IBD integration), checkpoints, security audit tools, load tests, standard binary Merkle tree
+**Missing (4):** P2P sync (full async networking with IBD integration), security audit tools, load tests, standard binary Merkle tree
 
 #### Open Architectural Decisions
 
