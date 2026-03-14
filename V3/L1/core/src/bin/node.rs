@@ -17,18 +17,28 @@ use zion_core::{
 
 fn main() -> Result<()> {
     let config = NodeServerConfig::from_env()?;
-    let runtime = Arc::new(Mutex::new(match config.state_path.as_deref() {
-        Some(state_path) => NodeRuntime::with_chain_store(
-            config.node_id.clone(),
-            config.node_config.clone(),
-            state_path,
-        )
-        .map_err(anyhow::Error::msg)?,
-        None => NodeRuntime::new(config.node_id.clone(), config.node_config.clone()),
+    let miner_address = std::env::var("ZION_MINER_ADDRESS").unwrap_or_default();
+    let runtime = Arc::new(Mutex::new({
+        let mut rt = match config.state_path.as_deref() {
+            Some(state_path) => NodeRuntime::with_chain_store(
+                config.node_id.clone(),
+                config.node_config.clone(),
+                state_path,
+            )
+            .map_err(anyhow::Error::msg)?,
+            None => NodeRuntime::new(config.node_id.clone(), config.node_config.clone()),
+        };
+        if !miner_address.is_empty() {
+            rt.set_miner_address(miner_address.clone());
+        }
+        rt
     }));
 
     println!("ZION v3 node");
     println!("node_id={}", config.node_id);
+    if !miner_address.is_empty() {
+        println!("miner_address={}", miner_address);
+    }
     println!("protocol_version={}", node_protocol_version());
     println!("p2p_bind={}", config.node_config.p2p_bind.address());
     println!("rpc_bind={}", config.node_config.rpc_bind.address());
