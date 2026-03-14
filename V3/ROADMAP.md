@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-14 (Phase 11 update)
+Status date: 2026-03-15 (Phase 13 update)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -118,6 +118,7 @@ This roadmap follows the release progression already defined in the repository d
   - **Flood-fill block propagation: SeenBlocks dedup cache, plan_relay() logic, PropagationStats, node binary relay on peer announce and RPC submit** (`propagation.rs`)
   - **Peer discovery: active GetPeers exchange in outbound loop (every ~5 min), discovered peers merged into known_peers + PeerManager seeds** (`node.rs`, `lib.rs`)
   - **Peer persistence: known_peers saved to `peers.json` alongside chain state, loaded on startup, periodically updated** (`lib.rs`)
+  - **Chain linkage verification: `previous_hash_hex` in AcceptedBlock, parent-hash enforcement in `import_peer_block`/`import_peer_blocks`, header cross-check in `validate_peer_block`** (`lib.rs`, `genesis.rs`)
 - `L1/pool`
   - share validation and revenue tracking
   - session-oriented wire protocol
@@ -162,6 +163,7 @@ This roadmap follows the release progression already defined in the repository d
 - **11 new integration tests for live JSON-RPC 2.0 method handlers — all green (371 total tests)**
 - **5 new tests for peer discovery & persistence (GetPeers exchange, persistence round-trip, dedup — 376 total tests)**
 - **9 new tests for block validation hardening (PoW verification, bad hash rejection, timestamp sanity, checkpoint enforcement, legacy compat — 385 total tests)**
+- **8 new tests for chain linkage verification (previous_hash_hex mining, genesis zero hash, valid/broken chain linkage, batch intra-linkage, header consistency, legacy compat — 393 total tests)**
 
 ### Not Done Yet
 
@@ -182,7 +184,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 385 pass, 0 fail, 1 ignored (doc-test) |
+| Tests | ~200+ | 393 pass, 0 fail, 1 ignored (doc-test) |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |
@@ -190,7 +192,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 
 #### Module Status (35 items)
 
-**Done (29):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (11 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitBlock — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats), **peer discovery** (active GetPeers exchange, merge into known_peers + PeerManager seeds), **peer persistence** (known_peers → `peers.json`, load on startup), **peer-block validation hardening** (PoW via header_hex, timestamp sanity, checkpoint enforcement)
+**Done (30):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (11 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitBlock — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats), **peer discovery** (active GetPeers exchange, merge into known_peers + PeerManager seeds), **peer persistence** (known_peers → `peers.json`, load on startup), **peer-block validation hardening** (PoW via header_hex, timestamp sanity, checkpoint enforcement), **chain linkage verification** (previous_hash_hex in AcceptedBlock, import-time parent-hash enforcement, header cross-check)
 
 **Partial (3):** P2P (Phase 10+11+12 added persistent connections, outbound peer thread, heartbeat, PeerManager+PeerSecurity wiring, peer discovery, peer persistence, block validation hardening; missing full async networking, parallel multi-peer IBD), state management (missing broadcast channels, block processing lock, reorg lock), block template (missing standard binary Merkle tree integration)
 

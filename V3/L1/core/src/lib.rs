@@ -296,6 +296,10 @@ pub struct AcceptedBlock {
     /// peer-imported blocks.  Empty for legacy persisted blocks (pre-Phase 12).
     #[serde(default)]
     pub header_hex: String,
+    /// Hash of the parent block (hex). Enables chain-linkage verification.
+    /// Empty for legacy persisted blocks (pre-Phase 13). All-zeros hex for genesis.
+    #[serde(default)]
+    pub previous_hash_hex: String,
     pub transaction_ids: Vec<String>,
     pub transactions: Vec<Transaction>,
     pub total_fees_zion: u64,
@@ -993,6 +997,7 @@ impl NodeRuntime {
                 nonce: sealed_block.nonce,
                 hash_hex: hex(&sealed_block.hash),
                 header_hex: hex(&active_template.header.to_bytes()),
+                previous_hash_hex: hex(&active_template.header.previous_hash),
                 transaction_ids: active_template
                     .transactions
                     .iter()
@@ -1289,6 +1294,30 @@ impl ChainState {
             ));
         }
 
+        // Chain linkage: block must reference our current tip as parent.
+        let tip_hex = hex(&self.tip_hash);
+        if !block.previous_hash_hex.is_empty() {
+            if block.previous_hash_hex != tip_hex {
+                return Err(format!(
+                    "peer block previous_hash {} does not link to local tip {}",
+                    block.previous_hash_hex, tip_hex
+                ));
+            }
+        } else if !block.header_hex.is_empty() {
+            // Fall back to extracting previous_hash from header.
+            let header_bytes = parse_fixed_hex::<HEADER_SIZE>(
+                &block.header_hex,
+                "peer block header for chain linkage",
+            )?;
+            let header = MiningHeader::from_bytes(header_bytes);
+            if hex(&header.previous_hash) != tip_hex {
+                return Err(format!(
+                    "peer block header previous_hash does not link to local tip {}",
+                    tip_hex
+                ));
+            }
+        }
+
         let tip_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
         self.accept_block_record(node_id, core, block, tip_hash);
         Ok(())
@@ -1321,6 +1350,8 @@ impl ChainState {
         let mut expected_height = self.height.saturating_add(1);
         let mut seen_heights = HashSet::new();
         let mut seen_template_ids = HashSet::new();
+        // Track the expected parent hash for chain linkage verification.
+        let mut expected_parent_hex = hex(&self.tip_hash);
         for block in &blocks {
             self.validate_peer_block(block)?;
             if !seen_heights.insert(block.height) {
@@ -1347,6 +1378,17 @@ impl ChainState {
                     expected_height, block.height
                 ));
             }
+            // Chain linkage: every block must reference the previous one.
+            let parent_hex = Self::extract_previous_hash_hex(block);
+            if let Some(ref parent) = parent_hex {
+                if parent != &expected_parent_hex {
+                    return Err(format!(
+                        "peer batch block at height {} does not link to expected parent {}",
+                        block.height, expected_parent_hex
+                    ));
+                }
+            }
+            expected_parent_hex = block.hash_hex.clone();
             expected_height = expected_height.saturating_add(1);
         }
 
@@ -1356,6 +1398,22 @@ impl ChainState {
             self.accept_block_record(node_id, core, block, tip_hash);
         }
         Ok(imported)
+    }
+
+    /// Extract previous_hash_hex from a peer block, preferring the explicit
+    /// field and falling back to header_hex extraction.  Returns `None` for
+    /// legacy blocks that carry neither.
+    fn extract_previous_hash_hex(block: &AcceptedBlock) -> Option<String> {
+        if !block.previous_hash_hex.is_empty() {
+            return Some(block.previous_hash_hex.clone());
+        }
+        if !block.header_hex.is_empty() {
+            if let Ok(bytes) = parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "header") {
+                let header = MiningHeader::from_bytes(bytes);
+                return Some(hex(&header.previous_hash));
+            }
+        }
+        None
     }
 
     fn validate_peer_block(&self, block: &AcceptedBlock) -> Result<(), String> {
@@ -1410,6 +1468,17 @@ impl ChainState {
             let target = difficulty::difficulty_to_target(block.difficulty);
             if !target.allows(&computed_hash) {
                 return Err("peer block PoW hash does not meet difficulty target".to_string());
+            }
+
+            // Verify previous_hash_hex matches header.previous_hash
+            if !block.previous_hash_hex.is_empty() {
+                let header_prev = hex(&header.previous_hash);
+                if block.previous_hash_hex != header_prev {
+                    return Err(
+                        "peer block previous_hash_hex does not match header previous_hash"
+                            .to_string(),
+                    );
+                }
             }
         }
 
@@ -2640,6 +2709,7 @@ mod tests {
                 nonce: 77,
                 hash_hex: hex(&[0x55; 32]),
                 header_hex: String::new(),
+                previous_hash_hex: String::new(),
                 transaction_ids: vec![tx_mined.tx_id.clone()],
                 transactions: vec![tx_mined.clone()],
                 total_fees_zion: 2,
@@ -2696,6 +2766,7 @@ mod tests {
             nonce: 42,
             hash_hex: hex(&[0x66; 32]),
             header_hex: String::new(),
+            previous_hash_hex: String::new(),
             transaction_ids: vec![tx.tx_id.clone()],
             transactions: vec![tx.clone()],
             total_fees_zion: 6,
@@ -2997,5 +3068,129 @@ mod tests {
             err.contains("does not match canonical genesis") || err.contains("checkpoint"),
             "expected checkpoint or genesis hash error, got: {err}"
         );
+    }
+
+    // ── Phase 13: Chain Linkage Verification tests ─────────────────────
+
+    #[test]
+    fn mined_block_has_previous_hash_hex() {
+        let mut runtime = NodeRuntime::new("node-prevh", NodeConfig::mainnet());
+        mine_one_block(&mut runtime);
+        let block = &runtime.accepted_blocks()[1]; // height 1
+        assert!(!block.previous_hash_hex.is_empty(), "mined block must have previous_hash_hex");
+        // previous_hash should be genesis hash
+        let genesis = genesis::genesis_block();
+        assert_eq!(block.previous_hash_hex, genesis.hash_hex);
+    }
+
+    #[test]
+    fn genesis_block_has_zero_previous_hash() {
+        let genesis = genesis::genesis_block();
+        assert_eq!(genesis.previous_hash_hex, hex(&[0u8; 32]));
+    }
+
+    #[test]
+    fn peer_import_verifies_chain_linkage() {
+        let mut source = NodeRuntime::new("node-link-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+        mine_one_block(&mut source);
+
+        // Valid import: blocks link correctly genesis → h1 → h2
+        let mut target = NodeRuntime::new("node-link-tgt", NodeConfig::mainnet());
+        let imported = target
+            .import_peer_blocks(source.accepted_blocks().to_vec())
+            .expect("valid chain linkage should succeed");
+        assert_eq!(imported, 2);
+        assert_eq!(target.chain_height(), 2);
+    }
+
+    #[test]
+    fn peer_import_rejects_broken_chain_linkage() {
+        let mut source = NodeRuntime::new("node-break-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        // Tamper with previous_hash_hex — make it point to wrong parent
+        block.previous_hash_hex = hex(&[0xDD; 32]);
+
+        let mut target = NodeRuntime::new("node-break-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(vec![block])
+            .expect_err("broken chain linkage should be rejected");
+        assert!(
+            err.contains("does not link to") || err.contains("previous_hash"),
+            "expected chain linkage error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn peer_import_rejects_mismatched_previous_hash_in_header() {
+        let mut source = NodeRuntime::new("node-hdr-mismatch-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        // Set previous_hash_hex to something that doesn't match header.previous_hash
+        block.previous_hash_hex = hex(&[0xEE; 32]);
+
+        let mut target = NodeRuntime::new("node-hdr-mismatch-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(vec![block])
+            .expect_err("header/previous_hash mismatch should be rejected");
+        assert!(
+            err.contains("previous_hash"),
+            "expected previous_hash error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn batch_import_verifies_intra_batch_chain_linkage() {
+        let mut source = NodeRuntime::new("node-batch-link-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+        mine_one_block(&mut source);
+
+        let mut blocks = source.accepted_blocks().to_vec();
+        // Tamper with block at height 2: make its previous_hash_hex point to wrong block
+        blocks[2].previous_hash_hex = hex(&[0xCC; 32]);
+
+        let mut target = NodeRuntime::new("node-batch-link-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(blocks)
+            .expect_err("intra-batch broken linkage should be rejected");
+        assert!(
+            err.contains("does not link to") || err.contains("previous_hash"),
+            "expected chain linkage error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn peer_import_previous_hash_consistent_between_header_and_field() {
+        let mut source = NodeRuntime::new("node-consist-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+        let block = &source.accepted_blocks()[1];
+
+        // Extract previous_hash from header_hex
+        let header_bytes = parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "test header").unwrap();
+        let header = MiningHeader::from_bytes(header_bytes);
+        let header_prev = hex(&header.previous_hash);
+
+        // Both should match
+        assert_eq!(block.previous_hash_hex, header_prev);
+    }
+
+    #[test]
+    fn legacy_block_without_previous_hash_still_accepted() {
+        let mut source = NodeRuntime::new("node-legacy-prev-src", NodeConfig::mainnet());
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        // Simulate legacy block: no previous_hash_hex, no header_hex
+        block.previous_hash_hex = String::new();
+        block.header_hex = String::new();
+
+        let mut target = NodeRuntime::new("node-legacy-prev-tgt", NodeConfig::mainnet());
+        let imported = target
+            .import_peer_blocks(vec![block])
+            .expect("legacy block without previous_hash should still be accepted");
+        assert_eq!(imported, 1);
     }
 }
