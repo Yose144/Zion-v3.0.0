@@ -230,6 +230,7 @@ pub fn genesis_block() -> AcceptedBlock {
         body_hash_hex: crate::hex(&body_hash),
         subsidy_zion: 0,
         miner_reward_zion: 0,
+        miner_address: String::new(),
     }
 }
 

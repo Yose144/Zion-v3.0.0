@@ -26,6 +26,7 @@ services:
       ZION_P2P_BIND: "0.0.0.0:8334"
       ZION_RPC_BIND: "0.0.0.0:8332"
       ZION_SEED_PEERS: "91.98.122.165:8334,seed-eu1.zionchain.org:8334,seed-us1.zionchain.org:8334,seed-us2.zionchain.org:8334,seed-ap1.zionchain.org:8334"
+      ZION_MINER_ADDRESS: "zion-mainnet-miner-0"
     networks:
       - zion-v3
 
