@@ -166,7 +166,7 @@ Vše z původních fází A–D je implementováno:
 | **C — Chain safety** | ✅ HOTOVO | reorg.rs (UTXO rollback, fork choice), mempool hardening, p2p_security.rs, batch.rs |
 | **D — Produkční infrastruktura** | ✅ HOTOVO | LMDB storage (8 dbs), IBD sync, JSON-RPC 2.0 (11 methods), peer_manager.rs, metrics.rs |
 
-### Zbývající práce (post Phase 12)
+### Zbývající práce (post Phase 13)
 
 | # | Oblast | Priorita | Stav |
 |---|---|---|---|
@@ -301,6 +301,7 @@ V3 mainnet kód po Phase 10 pokrývá **všechny kritické subsystémy**:
 - ✅ **371 testů** (319 core + 32 cosmic-harmony + 4 miner + 13 pool + 2 pool-server + 1 doc-test)
 - ✅ **Phase 11:** peer discovery (GetPeers exchange), peer persistence (known_peers → peers.json) — 376 testů
 - ✅ **Phase 12:** block validation hardening — PoW via header_hex, timestamp sanity, checkpoint enforcement — 385 testů (333 core + 32 CH + 4 miner + 13 pool + 2 pool-server + 1 doc-test)
+- ✅ **Phase 13:** chain linkage verification — previous_hash_hex v AcceptedBlock, parent-hash enforcement v import, header cross-check — 393 testů (341 core + 32 CH + 4 miner + 13 pool + 2 pool-server + 1 doc-test)
 
 **Testnet běží na 157.180.41.213** — node, pool, miner containers UP, chain height 110+.
 
