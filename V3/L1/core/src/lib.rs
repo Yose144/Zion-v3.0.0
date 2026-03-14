@@ -306,6 +306,10 @@ pub struct AcceptedBlock {
     pub body_hash_hex: String,
     pub subsidy_zion: u64,
     pub miner_reward_zion: u64,
+    /// Address credited by the coinbase transaction. Empty for legacy blocks
+    /// (pre-Phase 14) and for blocks mined without a configured miner address.
+    #[serde(default)]
+    pub miner_address: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -423,6 +427,8 @@ struct ChainState {
     accepted_by_template_id: HashMap<u64, AcceptedBlock>,
     mempool: Vec<Transaction>,
     mempool_by_id: HashMap<String, Transaction>,
+    /// Address to credit in coinbase transactions. Empty = no coinbase generated.
+    miner_address: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -463,6 +469,7 @@ pub struct NodeRuntime {
     known_peers: Vec<PeerEndpoint>,
     chain_state: ChainState,
     chain_store: Option<ChainStore>,
+    miner_address: String,
 }
 
 impl Default for CoreRuntime {
@@ -593,6 +600,7 @@ impl NodeRuntime {
             known_peers,
             chain_state,
             chain_store: None,
+            miner_address: String::new(),
         }
     }
 
@@ -631,10 +639,35 @@ impl NodeRuntime {
             known_peers,
             chain_state,
             chain_store: Some(chain_store),
+            miner_address: String::new(),
         };
         runtime.persist_chain_state()?;
         runtime.load_persisted_peers();
         Ok(runtime)
+    }
+
+    /// Set the address that receives coinbase rewards for mined blocks.
+    /// When set, every new block template will include a coinbase transaction
+    /// crediting `subsidy + fees` to this address.
+    pub fn set_miner_address(&mut self, addr: String) {
+        self.miner_address = addr.clone();
+        self.chain_state.miner_address = addr;
+        // Rebuild active template to include coinbase for the current height.
+        let next_id = self.chain_state.next_template_id.saturating_sub(1);
+        self.chain_state.active_template = ChainState::build_template(
+            &self.node_id,
+            &self.core,
+            self.chain_state.height,
+            self.chain_state.tip_hash,
+            next_id,
+            &self.chain_state.mempool,
+            &self.chain_state.accepted_blocks,
+            &self.chain_state.miner_address,
+        );
+    }
+
+    pub fn miner_address(&self) -> &str {
+        &self.miner_address
     }
 
     pub fn config(&self) -> &NodeConfig {
@@ -1008,6 +1041,7 @@ impl NodeRuntime {
                 body_hash_hex: body_hash_hex(&active_template.transactions),
                 subsidy_zion: active_template.reward_zion,
                 miner_reward_zion: active_template.reward_zion + active_template.total_fees_zion,
+                miner_address: self.miner_address.clone(),
             };
             self.chain_state.accept_block(&self.node_id, &self.core, accepted_block, sealed_block);
             if let Err(error) = self.persist_chain_update(&ChainJournalEntry::BlockAccepted {
@@ -1118,7 +1152,7 @@ impl ChainState {
             .expect("genesis hash must be valid hex");
         let mempool = Vec::new();
         let template =
-            Self::build_template(node_id, core, 0, genesis_hash, 1, &mempool, &[genesis.clone()]);
+            Self::build_template(node_id, core, 0, genesis_hash, 1, &mempool, &[genesis.clone()], "");
         let mut accepted_by_height = BTreeMap::new();
         accepted_by_height.insert(0, genesis.clone());
         Self {
@@ -1131,6 +1165,7 @@ impl ChainState {
             accepted_by_template_id: HashMap::new(),
             mempool,
             mempool_by_id: HashMap::new(),
+            miner_address: String::new(),
         }
     }
 
@@ -1180,6 +1215,7 @@ impl ChainState {
             accepted_by_template_id: HashMap::new(),
             mempool: snapshot.mempool,
             mempool_by_id: HashMap::new(),
+            miner_address: String::new(),
         };
         chain_state.rebuild_mempool_index();
         chain_state.active_template.transactions = persisted_transaction_ids
@@ -1222,6 +1258,7 @@ impl ChainState {
             .insert(accepted_block.template_id, accepted_block.clone());
         self.accepted_blocks.push(accepted_block);
         let next_template_id = self.next_template_id;
+        let miner_addr = self.miner_address.clone();
         self.active_template = Self::build_template(
             node_id,
             core,
@@ -1230,6 +1267,7 @@ impl ChainState {
             next_template_id,
             &self.mempool,
             &self.accepted_blocks,
+            &miner_addr,
         );
         self.next_template_id = self.next_template_id.wrapping_add(1);
     }
@@ -1604,6 +1642,7 @@ impl ChainState {
         self.mempool.push(transaction.clone());
         self.mempool_by_id
             .insert(transaction.tx_id.clone(), transaction.clone());
+        let miner_addr = self.miner_address.clone();
         self.active_template = Self::build_template(
             node_id,
             core,
@@ -1612,6 +1651,7 @@ impl ChainState {
             self.active_template.template_id,
             &self.mempool,
             &self.accepted_blocks,
+            &miner_addr,
         );
         Ok(())
     }
@@ -1661,6 +1701,7 @@ impl ChainState {
         let mut template_transactions = Vec::new();
         for tx_id in &self.active_template.as_public().transaction_ids {
             let Some(transaction) = self.mempool_by_id.get(tx_id).cloned() else {
+                let miner_addr = self.miner_address.clone();
                 self.active_template = Self::build_template(
                     node_id,
                     core,
@@ -1669,6 +1710,7 @@ impl ChainState {
                     self.next_template_id.saturating_sub(1),
                     &self.mempool,
                     &self.accepted_blocks,
+                    &miner_addr,
                 );
                 return Ok(());
             };
@@ -1684,6 +1726,7 @@ impl ChainState {
             .sum();
 
         if self.active_template.height != self.height.saturating_add(1) {
+            let miner_addr = self.miner_address.clone();
             self.active_template = Self::build_template(
                 node_id,
                 core,
@@ -1692,6 +1735,7 @@ impl ChainState {
                 self.next_template_id.saturating_sub(1),
                 &self.mempool,
                 &self.accepted_blocks,
+                &miner_addr,
             );
         }
 
@@ -1717,10 +1761,30 @@ impl ChainState {
         template_id: u64,
         mempool: &[Transaction],
         accepted_blocks: &[AcceptedBlock],
+        miner_address: &str,
     ) -> TemplateState {
         let next_height = current_height.saturating_add(1);
-        let transactions = select_template_transactions(mempool);
-        let total_fees_zion = transactions.iter().map(|transaction| transaction.fee_zion).sum();
+        let mut transactions = select_template_transactions(mempool);
+        let total_fees_zion: u64 = transactions.iter().map(|transaction| transaction.fee_zion).sum();
+
+        // Phase 14: Generate coinbase transaction when miner_address is configured.
+        if !miner_address.is_empty() {
+            let subsidy = emission::block_subsidy(next_height);
+            let coinbase_amount = subsidy + total_fees_zion;
+            let coinbase_label = format!("coinbase:{}:{}", next_height, miner_address);
+            let coinbase_hash =
+                cosmic_harmony_ekam_deeksha(coinbase_label.as_bytes(), next_height);
+            let coinbase_tx = Transaction {
+                tx_id: hex(&coinbase_hash.data),
+                from: "coinbase".to_string(),
+                to: miner_address.to_string(),
+                amount_zion: coinbase_amount,
+                fee_zion: 0,
+                nonce: next_height,
+            };
+            transactions.insert(0, coinbase_tx);
+        }
+
         let merkle_root = derive_template_merkle_root(
             node_id,
             next_height,
@@ -2716,6 +2780,7 @@ mod tests {
                 body_hash_hex: body_hash_hex(&[tx_mined.clone()]),
                 subsidy_zion: emission::block_subsidy(1),
                 miner_reward_zion: emission::block_subsidy(1) + 2,
+                miner_address: String::new(),
             }],
             mempool: vec![
                 tx_dup.clone(),
@@ -2773,6 +2838,7 @@ mod tests {
             body_hash_hex: body_hash_hex(&[tx.clone()]),
             subsidy_zion: emission::block_subsidy(1),
             miner_reward_zion: emission::block_subsidy(1) + 6,
+            miner_address: String::new(),
         };
         let journal = [
             ChainJournalEntry::TransactionAccepted {
@@ -3192,5 +3258,133 @@ mod tests {
             .import_peer_blocks(vec![block])
             .expect("legacy block without previous_hash should still be accepted");
         assert_eq!(imported, 1);
+    }
+
+    // ── Phase 14: Coinbase transaction tests ──────────────────────────
+
+    #[test]
+    fn template_without_miner_address_has_no_coinbase() {
+        let runtime = NodeRuntime::new("node-no-cb", NodeConfig::mainnet());
+        let template = runtime.active_template();
+        // With no miner_address configured, template should have no transactions
+        assert!(
+            template.transaction_ids.is_empty(),
+            "template without miner_address must have no coinbase tx"
+        );
+    }
+
+    #[test]
+    fn template_with_miner_address_has_coinbase_tx() {
+        let mut runtime = NodeRuntime::new("node-cb", NodeConfig::mainnet());
+        runtime.set_miner_address("test-miner-wallet".to_string());
+        let template = runtime.active_template();
+
+        // Template should have exactly one transaction: the coinbase
+        assert_eq!(template.transaction_count, 1, "template should have coinbase tx");
+        assert_eq!(template.transaction_ids.len(), 1);
+    }
+
+    #[test]
+    fn coinbase_tx_credits_correct_address_and_amount() {
+        let mut runtime = NodeRuntime::new("node-cb-addr", NodeConfig::mainnet());
+        runtime.set_miner_address("alice-wallet".to_string());
+
+        // The active template is for height 1 (genesis is height 0).
+        let height = runtime.active_template().height;
+        assert_eq!(height, 1);
+
+        // Mine a block to accept it.
+        mine_one_block(&mut runtime);
+
+        let block = &runtime.accepted_blocks()[1]; // genesis=0, mined=1
+        assert_eq!(block.height, 1);
+        assert_eq!(block.miner_address, "alice-wallet");
+
+        // First transaction should be the coinbase.
+        let coinbase = &block.transactions[0];
+        assert_eq!(coinbase.from, "coinbase");
+        assert_eq!(coinbase.to, "alice-wallet");
+        assert_eq!(coinbase.fee_zion, 0);
+        assert_eq!(coinbase.nonce, 1); // nonce = height
+
+        // Amount = subsidy + fees (no user txs, so just subsidy).
+        let expected_subsidy = emission::block_subsidy(1);
+        assert_eq!(coinbase.amount_zion, expected_subsidy);
+        assert_eq!(block.miner_reward_zion, expected_subsidy);
+    }
+
+    #[test]
+    fn coinbase_tx_id_is_deterministic() {
+        let mut r1 = NodeRuntime::new("node-det-1", NodeConfig::mainnet());
+        r1.set_miner_address("det-wallet".to_string());
+
+        let mut r2 = NodeRuntime::new("node-det-2", NodeConfig::mainnet());
+        r2.set_miner_address("det-wallet".to_string());
+
+        // Both nodes at same height with same miner_address should produce
+        // the same coinbase tx_id (deterministic from height + address).
+        let t1 = r1.active_template();
+        let t2 = r2.active_template();
+        assert_eq!(t1.transaction_ids[0], t2.transaction_ids[0]);
+    }
+
+    #[test]
+    fn coinbase_tx_id_differs_for_different_addresses() {
+        let mut r1 = NodeRuntime::new("node-diff-1", NodeConfig::mainnet());
+        r1.set_miner_address("wallet-a".to_string());
+
+        let mut r2 = NodeRuntime::new("node-diff-2", NodeConfig::mainnet());
+        r2.set_miner_address("wallet-b".to_string());
+
+        let t1 = r1.active_template();
+        let t2 = r2.active_template();
+        assert_ne!(
+            t1.transaction_ids[0], t2.transaction_ids[0],
+            "different miner addresses must produce different coinbase tx_ids"
+        );
+    }
+
+    #[test]
+    fn mined_block_with_coinbase_flows_to_next_template() {
+        let mut runtime = NodeRuntime::new("node-cb-flow", NodeConfig::mainnet());
+        runtime.set_miner_address("flow-wallet".to_string());
+
+        // Mine block 1.
+        mine_one_block(&mut runtime);
+        assert_eq!(runtime.accepted_blocks().len(), 2); // genesis + 1
+
+        // Block 1 should have coinbase.
+        let b1 = &runtime.accepted_blocks()[1];
+        assert_eq!(b1.transactions[0].from, "coinbase");
+        assert_eq!(b1.transactions[0].to, "flow-wallet");
+
+        // Next template (height 2) should also have coinbase for height 2.
+        let t2 = runtime.active_template();
+        assert_eq!(t2.height, 2);
+        assert_eq!(t2.transaction_count, 1); // coinbase only
+        // Coinbase nonce should be the height.
+        // We can verify by checking the tx_id is different from block 1's coinbase.
+        assert_ne!(t2.transaction_ids[0], b1.transactions[0].tx_id);
+    }
+
+    #[test]
+    fn genesis_block_has_no_coinbase() {
+        let runtime = NodeRuntime::new("node-genesis-cb", NodeConfig::mainnet());
+        let genesis = &runtime.accepted_blocks()[0];
+        assert_eq!(genesis.height, 0);
+        assert!(genesis.miner_address.is_empty());
+        // Genesis should have premine transactions, none from "coinbase".
+        assert!(!genesis.transactions.iter().any(|tx| tx.from == "coinbase"));
+    }
+
+    #[test]
+    fn set_miner_address_rebuilds_active_template() {
+        let mut runtime = NodeRuntime::new("node-rebuild", NodeConfig::mainnet());
+        assert!(runtime.active_template().transaction_ids.is_empty());
+
+        runtime.set_miner_address("rebuild-wallet".to_string());
+        assert_eq!(runtime.miner_address(), "rebuild-wallet");
+        assert_eq!(runtime.active_template().transaction_count, 1);
+        assert_eq!(runtime.active_template().transaction_ids.len(), 1);
     }
 }
