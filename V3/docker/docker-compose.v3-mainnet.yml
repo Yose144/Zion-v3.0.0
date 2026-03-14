@@ -54,11 +54,10 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.miner
     image: zion-v3-miner:latest
-    container_name: zion-v3-miner
     restart: unless-stopped
     environment:
       ZION_POOL_ADDR: "pool:8444"
-      ZION_MINER_THREADS: "2"
+      ZION_MINER_THREADS: "1"
       ZION_LOOP_COUNT: "1000000"
     depends_on:
       - pool
