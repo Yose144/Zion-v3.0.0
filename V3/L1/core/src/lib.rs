@@ -36,6 +36,7 @@ pub const HEADER_SIZE: usize = 80;
 pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/0.1";
 pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;
 pub const MAX_MEMPOOL_TRANSACTIONS: usize = 4_096;
+pub const MAX_TEMPLATE_UTXO_TRANSACTIONS: usize = 16;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NetworkId {
@@ -273,6 +274,9 @@ pub struct BlockTemplate {
     pub total_fees_zion: u64,
     pub body_hash_hex: String,
     pub estimated_miner_reward_zion: u64,
+    pub utxo_transaction_ids: Vec<String>,
+    pub utxo_transaction_count: usize,
+    pub total_utxo_fees: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -362,6 +366,21 @@ impl RuntimeTransaction {
             Self::Utxo(_) => None,
         }
     }
+
+    fn as_utxo(&self) -> Option<&tx::Transaction> {
+        match self {
+            Self::Utxo(tx) => Some(tx),
+            Self::Account(_) => None,
+        }
+    }
+
+    #[allow(dead_code)]
+    fn into_utxo(self) -> Option<tx::Transaction> {
+        match self {
+            Self::Utxo(tx) => Some(tx),
+            Self::Account(_) => None,
+        }
+    }
 }
 
 impl From<Transaction> for RuntimeTransaction {
@@ -402,6 +421,13 @@ pub struct AcceptedBlock {
     /// (pre-Phase 14) and for blocks mined without a configured miner address.
     #[serde(default)]
     pub miner_address: String,
+    /// UTXO transaction IDs included in this block (Phase 16). Empty for
+    /// account-only blocks or legacy blocks.
+    #[serde(default)]
+    pub utxo_transaction_ids: Vec<String>,
+    /// Full UTXO transactions included in this block.
+    #[serde(default)]
+    pub utxo_transactions: Vec<tx::Transaction>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -531,6 +557,8 @@ struct ChainStateSnapshot {
     active_template: BlockTemplate,
     accepted_blocks: Vec<AcceptedBlock>,
     mempool: Vec<Transaction>,
+    #[serde(default)]
+    utxo_mempool: Vec<tx::Transaction>,
 }
 
 #[derive(Debug, Clone)]
@@ -1047,13 +1075,44 @@ impl NodeRuntime {
     ) -> RpcResponse {
         match transaction {
             SubmittedTransaction::Account(transaction) => self.submit_transaction_rpc(transaction),
-            SubmittedTransaction::Utxo(transaction) => RpcResponse::TransactionResult {
+            SubmittedTransaction::Utxo(transaction) => {
+                self.submit_utxo_transaction_rpc(transaction)
+            }
+        }
+    }
+
+    fn submit_utxo_transaction_rpc(
+        &mut self,
+        transaction: tx::Transaction,
+    ) -> RpcResponse {
+        let tx_id = hex(&transaction.id);
+        match self
+            .chain_state
+            .insert_utxo_transaction(&self.node_id, &self.core, transaction)
+        {
+            Ok(()) => {
+                if let Err(error) =
+                    self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
+                        transaction: self
+                            .chain_state
+                            .mempool_by_id
+                            .get(&tx_id)
+                            .cloned()
+                            .expect("accepted UTXO mempool transaction should be indexed"),
+                    })
+                {
+                    eprintln!("node_state_persist_error={error}");
+                }
+                RpcResponse::TransactionResult {
+                    accepted: true,
+                    tx_id,
+                    reason: None,
+                }
+            }
+            Err(reason) => RpcResponse::TransactionResult {
                 accepted: false,
-                tx_id: hex(&transaction.id),
-                reason: Some(
-                    "UTXO transaction payloads are recognized but not accepted by the active account runtime yet"
-                        .to_string(),
-                ),
+                tx_id,
+                reason: Some(reason),
             },
         }
     }
@@ -1132,6 +1191,7 @@ impl NodeRuntime {
 
         if let Some(sealed_block) = sealed {
             let template_transactions = active_template.account_transactions();
+            let template_utxo_transactions = active_template.utxo_transactions();
             let accepted_block = AcceptedBlock {
                 template_id,
                 height: active_template.height,
@@ -1152,6 +1212,11 @@ impl NodeRuntime {
                 subsidy_zion: active_template.reward_zion,
                 miner_reward_zion: active_template.reward_zion,
                 miner_address: self.miner_address.clone(),
+                utxo_transaction_ids: template_utxo_transactions
+                    .iter()
+                    .map(|tx| hex(&tx.id))
+                    .collect(),
+                utxo_transactions: template_utxo_transactions,
             };
             if let Err(reason) = self
                 .chain_state
@@ -1223,8 +1288,16 @@ impl TemplateState {
             .collect()
     }
 
+    fn utxo_transactions(&self) -> Vec<tx::Transaction> {
+        self.transactions
+            .iter()
+            .filter_map(|transaction| transaction.as_utxo().cloned())
+            .collect()
+    }
+
     fn as_public(&self) -> BlockTemplate {
         let account_transactions = self.account_transactions();
+        let utxo_transactions = self.utxo_transactions();
         BlockTemplate {
             template_id: self.template_id,
             height: self.height,
@@ -1239,6 +1312,12 @@ impl TemplateState {
             total_fees_zion: self.total_fees_zion,
             body_hash_hex: body_hash_hex(&account_transactions),
             estimated_miner_reward_zion: self.reward_zion,
+            utxo_transaction_ids: utxo_transactions
+                .iter()
+                .map(|tx| hex(&tx.id))
+                .collect(),
+            utxo_transaction_count: utxo_transactions.len(),
+            total_utxo_fees: utxo_transactions.iter().map(|tx| tx.fee).sum(),
         }
     }
 }
@@ -1284,6 +1363,13 @@ impl ChainState {
         self.mempool
             .iter()
             .filter_map(|transaction| transaction.as_account().cloned())
+            .collect()
+    }
+
+    fn utxo_mempool_transactions(&self) -> Vec<tx::Transaction> {
+        self.mempool
+            .iter()
+            .filter_map(|transaction| transaction.as_utxo().cloned())
             .collect()
     }
 
@@ -1358,6 +1444,12 @@ impl ChainState {
                 .mempool
                 .into_iter()
                 .map(RuntimeTransaction::from)
+                .chain(
+                    snapshot
+                        .utxo_mempool
+                        .into_iter()
+                        .map(RuntimeTransaction::from),
+                )
                 .collect(),
             mempool_by_id: HashMap::new(),
             miner_address: String::new(),
@@ -1400,6 +1492,7 @@ impl ChainState {
         let mined_ids: HashSet<&str> = accepted_block
             .transaction_ids
             .iter()
+            .chain(accepted_block.utxo_transaction_ids.iter())
             .map(String::as_str)
             .collect();
         self.mempool
@@ -1438,6 +1531,7 @@ impl ChainState {
                         block
                             .transaction_ids
                             .iter()
+                            .chain(block.utxo_transaction_ids.iter())
                             .any(|tx_id| tx_id == &transaction.tx_id())
                     })
                 {
@@ -1447,10 +1541,9 @@ impl ChainState {
                     RuntimeTransaction::Account(transaction) => {
                         self.insert_transaction(node_id, core, transaction)
                     }
-                    RuntimeTransaction::Utxo(_) => Err(
-                        "journal replay for UTXO transactions is not enabled in the active runtime yet"
-                            .to_string(),
-                    ),
+                    RuntimeTransaction::Utxo(transaction) => {
+                        self.insert_utxo_transaction(node_id, core, transaction)
+                    }
                 }
             }
             ChainJournalEntry::BlockAccepted { block } => {
@@ -1840,6 +1933,49 @@ impl ChainState {
                 block.difficulty, expected_difficulty, block.height
             ));
         }
+        // ── UTXO transaction structure ─────────────────────────────────
+        let utxo_expected_ids: Vec<String> = block
+            .utxo_transactions
+            .iter()
+            .map(|utxo_tx| hex(&utxo_tx.id))
+            .collect();
+        if utxo_expected_ids != block.utxo_transaction_ids {
+            return Err(
+                "peer block UTXO transaction ids do not match serialized UTXO transactions"
+                    .to_string(),
+            );
+        }
+        let mut seen_utxo_inputs: HashSet<([u8; 32], u32)> = HashSet::new();
+        for utxo_tx in &block.utxo_transactions {
+            if utxo_tx.id != utxo_tx.calculate_hash() {
+                return Err(format!(
+                    "peer block UTXO transaction {} has invalid id",
+                    hex(&utxo_tx.id)
+                ));
+            }
+            if !utxo_tx.verify_signatures() {
+                return Err(format!(
+                    "peer block UTXO transaction {} has invalid signatures",
+                    hex(&utxo_tx.id)
+                ));
+            }
+            let utxo_id_hex = hex(&utxo_tx.id);
+            if !seen_tx_ids.insert(utxo_id_hex) {
+                return Err(format!(
+                    "peer block contains duplicate UTXO transaction id {}",
+                    hex(&utxo_tx.id)
+                ));
+            }
+            for input in &utxo_tx.inputs {
+                if !seen_utxo_inputs.insert((input.prev_tx_hash, input.output_index)) {
+                    return Err(format!(
+                        "peer block contains double-spend of UTXO input {}:{}",
+                        hex(&input.prev_tx_hash),
+                        input.output_index,
+                    ));
+                }
+            }
+        }
         Ok(())
     }
 
@@ -1903,6 +2039,65 @@ impl ChainState {
         Ok(())
     }
 
+    fn insert_utxo_transaction(
+        &mut self,
+        node_id: &str,
+        core: &CoreRuntime,
+        transaction: tx::Transaction,
+    ) -> Result<(), String> {
+        if transaction.id != transaction.calculate_hash() {
+            return Err("UTXO transaction id does not match calculated hash".to_string());
+        }
+        if !transaction.verify_signatures() {
+            return Err("UTXO transaction signature verification failed".to_string());
+        }
+        if self.mempool.len() >= MAX_MEMPOOL_TRANSACTIONS {
+            return Err(format!("mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"));
+        }
+        let tx_id = hex(&transaction.id);
+        if self.mempool_by_id.contains_key(&tx_id) {
+            return Err(format!("duplicate transaction id: {tx_id}"));
+        }
+        if self.accepted_blocks.iter().any(|block| {
+            block.utxo_transaction_ids.iter().any(|id| id == &tx_id)
+        }) {
+            return Err(format!("UTXO transaction {} already mined", tx_id));
+        }
+        for input in &transaction.inputs {
+            let already_in_mempool = self.mempool.iter().any(|known| {
+                known.as_utxo().map_or(false, |utxo| {
+                    utxo.inputs.iter().any(|ki| {
+                        ki.prev_tx_hash == input.prev_tx_hash
+                            && ki.output_index == input.output_index
+                    })
+                })
+            });
+            if already_in_mempool {
+                return Err(format!(
+                    "UTXO input {}:{} is already being spent in mempool",
+                    hex(&input.prev_tx_hash),
+                    input.output_index,
+                ));
+            }
+        }
+        self.mempool
+            .push(RuntimeTransaction::Utxo(transaction.clone()));
+        self.mempool_by_id
+            .insert(tx_id, RuntimeTransaction::Utxo(transaction));
+        let miner_addr = self.miner_address.clone();
+        self.active_template = Self::build_template(
+            node_id,
+            core,
+            self.height,
+            self.tip_hash,
+            self.active_template.template_id,
+            &self.mempool,
+            &self.accepted_blocks,
+            &miner_addr,
+        );
+        Ok(())
+    }
+
     fn rebuild_indexes(&mut self) {
         self.accepted_by_height.clear();
         self.accepted_by_template_id.clear();
@@ -1927,24 +2122,40 @@ impl ChainState {
         let mined_ids: HashSet<&str> = self
             .accepted_blocks
             .iter()
-            .flat_map(|block| block.transaction_ids.iter().map(String::as_str))
+            .flat_map(|block| {
+                block
+                    .transaction_ids
+                    .iter()
+                    .chain(block.utxo_transaction_ids.iter())
+                    .map(String::as_str)
+            })
             .collect();
         let mut sender_nonces = HashSet::new();
         let mut seen = HashSet::new();
-        self.mempool.retain(|transaction| {
-            let Some(transaction) = transaction.as_account() else {
-                return false;
-            };
-            transaction.validate().is_ok()
-                && !mined_ids.contains(transaction.tx_id.as_str())
-                && seen.insert(transaction.tx_id.clone())
-                && sender_nonces.insert((transaction.from.clone(), transaction.nonce))
-                && !self.accepted_blocks.iter().any(|block| {
-                    block
-                        .transactions
-                        .iter()
-                        .any(|known| known.from == transaction.from && known.nonce == transaction.nonce)
-                })
+        let mut seen_utxo_inputs: HashSet<([u8; 32], u32)> = HashSet::new();
+        self.mempool.retain(|transaction| match transaction {
+            RuntimeTransaction::Account(tx) => {
+                tx.validate().is_ok()
+                    && !mined_ids.contains(tx.tx_id.as_str())
+                    && seen.insert(tx.tx_id.clone())
+                    && sender_nonces.insert((tx.from.clone(), tx.nonce))
+                    && !self.accepted_blocks.iter().any(|block| {
+                        block
+                            .transactions
+                            .iter()
+                            .any(|known| known.from == tx.from && known.nonce == tx.nonce)
+                    })
+            }
+            RuntimeTransaction::Utxo(utxo) => {
+                let id_hex = hex(&utxo.id);
+                utxo.id == utxo.calculate_hash()
+                    && utxo.verify_signatures()
+                    && !mined_ids.contains(id_hex.as_str())
+                    && seen.insert(id_hex)
+                    && utxo.inputs.iter().all(|input| {
+                        seen_utxo_inputs.insert((input.prev_tx_hash, input.output_index))
+                    })
+            }
         });
         self.rebuild_mempool_index();
 
@@ -2005,6 +2216,7 @@ impl ChainState {
             active_template: self.active_template.as_public(),
             accepted_blocks: self.accepted_blocks.clone(),
             mempool: self.account_mempool_transactions(),
+            utxo_mempool: self.utxo_mempool_transactions(),
         }
     }
 
@@ -2021,6 +2233,8 @@ impl ChainState {
         let next_height = current_height.saturating_add(1);
         let mut selected_transactions = select_template_transactions(mempool);
         let total_fees_zion: u64 = selected_transactions.iter().map(|transaction| transaction.fee_zion).sum();
+
+        let selected_utxo_transactions = select_template_utxo_transactions(mempool);
 
         // Phase 14: Generate coinbase transaction when miner_address is configured.
         if !miner_address.is_empty() {
@@ -2039,11 +2253,14 @@ impl ChainState {
             selected_transactions.insert(0, coinbase_tx);
         }
 
-        let transactions = selected_transactions
+        let mut transactions: Vec<RuntimeTransaction> = selected_transactions
             .iter()
             .cloned()
             .map(RuntimeTransaction::from)
-            .collect::<Vec<_>>();
+            .collect();
+        for utxo_tx in &selected_utxo_transactions {
+            transactions.push(RuntimeTransaction::from(utxo_tx.clone()));
+        }
 
         let merkle_root = derive_template_merkle_root(
             node_id,
@@ -2051,6 +2268,7 @@ impl ChainState {
             template_id,
             previous_hash,
             &selected_transactions,
+            &selected_utxo_transactions,
         );
 
         let next_difficulty = if accepted_blocks.is_empty() {
@@ -2227,6 +2445,7 @@ fn derive_template_merkle_root(
     template_id: u64,
     previous_hash: [u8; 32],
     transactions: &[Transaction],
+    utxo_transactions: &[tx::Transaction],
 ) -> [u8; 32] {
     let mut seed = [0u8; HEADER_SIZE];
     seed[0..32].copy_from_slice(&previous_hash);
@@ -2245,7 +2464,21 @@ fn derive_template_merkle_root(
             *slot ^= *value;
         }
     }
-    cosmic_harmony_ekam_deeksha(&seed, template_id ^ height ^ transactions.len() as u64).data
+    for utxo_tx in utxo_transactions {
+        let tx_hash = cosmic_harmony_ekam_deeksha(
+            &utxo_tx.id,
+            utxo_tx.fee ^ utxo_tx.timestamp ^ utxo_tx.total_output(),
+        )
+        .data;
+        for (slot, value) in seed.iter_mut().zip(tx_hash.iter().cycle()) {
+            *slot ^= *value;
+        }
+    }
+    cosmic_harmony_ekam_deeksha(
+        &seed,
+        template_id ^ height ^ (transactions.len() + utxo_transactions.len()) as u64,
+    )
+    .data
 }
 
 fn select_template_transactions(mempool: &[RuntimeTransaction]) -> Vec<Transaction> {
@@ -2261,6 +2494,16 @@ fn select_template_transactions(mempool: &[RuntimeTransaction]) -> Vec<Transacti
             .then(left.tx_id.cmp(&right.tx_id))
     });
     selected.truncate(MAX_TEMPLATE_TRANSACTIONS);
+    selected
+}
+
+fn select_template_utxo_transactions(mempool: &[RuntimeTransaction]) -> Vec<tx::Transaction> {
+    let mut selected: Vec<tx::Transaction> = mempool
+        .iter()
+        .filter_map(|transaction| transaction.as_utxo().cloned())
+        .collect();
+    selected.sort_by(|left, right| right.fee.cmp(&left.fee));
+    selected.truncate(MAX_TEMPLATE_UTXO_TRANSACTIONS);
     selected
 }
 
@@ -3054,6 +3297,9 @@ mod tests {
                     tx_mined.clone(),
                 ]),
                 estimated_miner_reward_zion: emission::block_subsidy(2),
+                utxo_transaction_ids: vec![],
+                utxo_transaction_count: 0,
+                total_utxo_fees: 0,
             },
             accepted_blocks: vec![AcceptedBlock {
                 template_id: 1,
@@ -3071,12 +3317,15 @@ mod tests {
                 subsidy_zion: emission::block_subsidy(1),
                 miner_reward_zion: emission::block_subsidy(1),
                 miner_address: String::new(),
+                utxo_transaction_ids: vec![],
+                utxo_transactions: vec![],
             }],
             mempool: vec![
                 tx_dup.clone(),
                 tx_dup.clone(),
                 tx_mined.clone(),
             ],
+            utxo_mempool: vec![],
         };
         fs::write(
             &state_path,
@@ -3129,6 +3378,8 @@ mod tests {
             subsidy_zion: emission::block_subsidy(1),
             miner_reward_zion: emission::block_subsidy(1),
             miner_address: String::new(),
+            utxo_transaction_ids: vec![],
+            utxo_transactions: vec![],
         };
         let journal = [
             ChainJournalEntry::TransactionAccepted {
@@ -3707,5 +3958,272 @@ mod tests {
         assert_eq!(runtime.miner_address(), "rebuild-wallet");
         assert_eq!(runtime.active_template().transaction_count, 1);
         assert_eq!(runtime.active_template().transaction_ids.len(), 1);
+    }
+
+    // ── Phase 16: UTXO bridge acceptance tests ────────────────────────
+
+    fn make_signed_utxo_tx() -> tx::Transaction {
+        let (sk, vk) = crypto::generate_keypair();
+        let addr = crypto::derive_address(vk.as_bytes());
+
+        let mut utxo = tx::Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: vec![tx::TxInput {
+                prev_tx_hash: [0xAA; 32],
+                output_index: 0,
+                signature: vec![],
+                public_key: vk.as_bytes().to_vec(),
+            }],
+            outputs: vec![tx::TxOutput {
+                amount: 1_000_000_000_000,
+                address: addr,
+                memo: None,
+            }],
+            fee: 1_000,
+            timestamp: 1_700_000_000,
+        };
+        utxo.finalize_id();
+        let sig = crypto::sign(&sk, &utxo.id);
+        utxo.inputs[0].signature = sig.to_vec();
+        utxo
+    }
+
+    fn make_signed_utxo_tx_with_input(prev_hash: [u8; 32], output_index: u32) -> tx::Transaction {
+        let (sk, vk) = crypto::generate_keypair();
+        let addr = crypto::derive_address(vk.as_bytes());
+
+        let mut utxo = tx::Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: vec![tx::TxInput {
+                prev_tx_hash: prev_hash,
+                output_index,
+                signature: vec![],
+                public_key: vk.as_bytes().to_vec(),
+            }],
+            outputs: vec![tx::TxOutput {
+                amount: 500_000_000_000,
+                address: addr,
+                memo: None,
+            }],
+            fee: 2_000,
+            timestamp: 1_700_000_100,
+        };
+        utxo.finalize_id();
+        let sig = crypto::sign(&sk, &utxo.id);
+        utxo.inputs[0].signature = sig.to_vec();
+        utxo
+    }
+
+    #[test]
+    fn utxo_transaction_submits_to_mempool() {
+        let mut runtime = NodeRuntime::new("node-utxo-mempool", NodeConfig::mainnet());
+        let utxo = make_signed_utxo_tx();
+        let tx_id = hex(&utxo.id);
+
+        let resp = runtime.submit_submitted_transaction(
+            SubmittedTransaction::Utxo(utxo),
+        );
+        assert!(matches!(
+            resp,
+            RpcResponse::TransactionResult { accepted: true, .. }
+        ));
+        assert_eq!(runtime.status().mempool_transactions, 1);
+        assert!(runtime.chain_state.mempool_by_id.contains_key(&tx_id));
+    }
+
+    #[test]
+    fn utxo_transaction_appears_in_template() {
+        let mut runtime = NodeRuntime::new("node-utxo-tmpl", NodeConfig::mainnet());
+        let utxo = make_signed_utxo_tx();
+        let tx_id = hex(&utxo.id);
+
+        runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
+
+        let template = runtime.active_template();
+        assert_eq!(template.utxo_transaction_count, 1);
+        assert_eq!(template.utxo_transaction_ids, vec![tx_id]);
+        assert_eq!(template.total_utxo_fees, 1_000);
+    }
+
+    #[test]
+    fn utxo_transaction_mined_in_block() {
+        let mut runtime = NodeRuntime::new("node-utxo-mine", NodeConfig::mainnet());
+        let utxo = make_signed_utxo_tx();
+        let tx_id = hex(&utxo.id);
+
+        runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
+        mine_one_block(&mut runtime);
+
+        let block = &runtime.accepted_blocks()[1];
+        assert_eq!(block.utxo_transaction_ids, vec![tx_id]);
+        assert_eq!(block.utxo_transactions.len(), 1);
+        assert_eq!(block.utxo_transactions[0], utxo);
+        // UTXO should be cleared from mempool after mining
+        assert_eq!(runtime.status().mempool_transactions, 0);
+    }
+
+    #[test]
+    fn utxo_transaction_rejects_invalid_hash() {
+        let mut runtime = NodeRuntime::new("node-utxo-badhash", NodeConfig::mainnet());
+        let mut utxo = make_signed_utxo_tx();
+        utxo.id = [0xBB; 32]; // tamper with ID
+
+        let resp = runtime.submit_submitted_transaction(
+            SubmittedTransaction::Utxo(utxo),
+        );
+        assert!(matches!(
+            resp,
+            RpcResponse::TransactionResult {
+                accepted: false,
+                reason: Some(ref reason),
+                ..
+            } if reason.contains("does not match calculated hash")
+        ));
+    }
+
+    #[test]
+    fn utxo_transaction_rejects_invalid_signature() {
+        let mut runtime = NodeRuntime::new("node-utxo-badsig", NodeConfig::mainnet());
+        let mut utxo = make_signed_utxo_tx();
+        utxo.inputs[0].signature = vec![0u8; 64]; // zero out signature
+        utxo.finalize_id(); // re-hash so ID matches
+
+        let resp = runtime.submit_submitted_transaction(
+            SubmittedTransaction::Utxo(utxo),
+        );
+        assert!(matches!(
+            resp,
+            RpcResponse::TransactionResult {
+                accepted: false,
+                reason: Some(ref reason),
+                ..
+            } if reason.contains("signature verification failed")
+        ));
+    }
+
+    #[test]
+    fn utxo_transaction_rejects_duplicate_id() {
+        let mut runtime = NodeRuntime::new("node-utxo-dup", NodeConfig::mainnet());
+        let utxo = make_signed_utxo_tx();
+
+        let first = runtime.submit_submitted_transaction(
+            SubmittedTransaction::Utxo(utxo.clone()),
+        );
+        assert!(matches!(first, RpcResponse::TransactionResult { accepted: true, .. }));
+
+        let second = runtime.submit_submitted_transaction(
+            SubmittedTransaction::Utxo(utxo),
+        );
+        assert!(matches!(
+            second,
+            RpcResponse::TransactionResult {
+                accepted: false,
+                reason: Some(ref reason),
+                ..
+            } if reason.contains("duplicate")
+        ));
+    }
+
+    #[test]
+    fn utxo_transaction_rejects_double_spend() {
+        let mut runtime = NodeRuntime::new("node-utxo-dblspend", NodeConfig::mainnet());
+        let tx1 = make_signed_utxo_tx_with_input([0xDD; 32], 0);
+        let tx2 = make_signed_utxo_tx_with_input([0xDD; 32], 0); // same input
+
+        let first = runtime.submit_submitted_transaction(
+            SubmittedTransaction::Utxo(tx1),
+        );
+        assert!(matches!(first, RpcResponse::TransactionResult { accepted: true, .. }));
+
+        let second = runtime.submit_submitted_transaction(
+            SubmittedTransaction::Utxo(tx2),
+        );
+        assert!(matches!(
+            second,
+            RpcResponse::TransactionResult {
+                accepted: false,
+                reason: Some(ref reason),
+                ..
+            } if reason.contains("already being spent")
+        ));
+    }
+
+    #[test]
+    fn utxo_and_account_transactions_coexist_in_template() {
+        let mut runtime = NodeRuntime::new("node-utxo-coexist", NodeConfig::mainnet());
+        let account_tx = sample_transaction("tx-coexist", 5, 1);
+        let utxo = make_signed_utxo_tx();
+
+        runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: account_tx.clone(),
+        });
+        runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
+
+        let template = runtime.active_template();
+        assert_eq!(template.transaction_count, 1);
+        assert_eq!(template.utxo_transaction_count, 1);
+        assert_eq!(template.total_fees_zion, 5);
+        assert_eq!(template.total_utxo_fees, 1_000);
+        assert_eq!(runtime.status().mempool_transactions, 2);
+    }
+
+    #[test]
+    fn utxo_mined_block_passes_peer_import() {
+        let mut source = NodeRuntime::new("node-utxo-src", NodeConfig::mainnet());
+        let utxo = make_signed_utxo_tx();
+
+        source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
+        mine_one_block(&mut source);
+
+        let mut target = NodeRuntime::new("node-utxo-tgt", NodeConfig::mainnet());
+        let imported = target
+            .import_peer_blocks(source.accepted_blocks().to_vec())
+            .expect("peer import with UTXO should succeed");
+        assert_eq!(imported, 1);
+        assert_eq!(target.accepted_blocks()[1].utxo_transactions.len(), 1);
+    }
+
+    #[test]
+    fn peer_import_rejects_utxo_with_bad_signature() {
+        let mut source = NodeRuntime::new("node-utxo-badsig-src", NodeConfig::mainnet());
+        let utxo = make_signed_utxo_tx();
+        source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
+        mine_one_block(&mut source);
+
+        let mut block = source.accepted_blocks()[1].clone();
+        // Tamper with UTXO signature
+        block.utxo_transactions[0].inputs[0].signature = vec![0u8; 64];
+
+        let mut target = NodeRuntime::new("node-utxo-badsig-tgt", NodeConfig::mainnet());
+        let err = target
+            .import_peer_blocks(vec![block])
+            .expect_err("bad UTXO signature should be rejected");
+        assert!(
+            err.contains("invalid signatures"),
+            "expected signature error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn utxo_template_fields_default_empty() {
+        let runtime = NodeRuntime::new("node-utxo-empty", NodeConfig::mainnet());
+        let template = runtime.active_template();
+        assert!(template.utxo_transaction_ids.is_empty());
+        assert_eq!(template.utxo_transaction_count, 0);
+        assert_eq!(template.total_utxo_fees, 0);
+    }
+
+    #[test]
+    fn utxo_accepted_block_fields_default_empty_for_account_only_blocks() {
+        let mut runtime = NodeRuntime::new("node-utxo-acct-only", NodeConfig::mainnet());
+        let tx = sample_transaction("tx-acct-only", 3, 1);
+        runtime.handle_rpc_request(RpcRequest::SubmitTransaction { transaction: tx });
+        mine_one_block(&mut runtime);
+
+        let block = &runtime.accepted_blocks()[1];
+        assert!(block.utxo_transaction_ids.is_empty());
+        assert!(block.utxo_transactions.is_empty());
     }
 }
