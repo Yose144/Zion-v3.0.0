@@ -33,6 +33,8 @@ pub const INVALID_ADDRESS: i64 = -32003;
 pub const TX_REJECTED: i64 = -32004;
 pub const NOT_SYNCED: i64 = -32005;
 
+const ACTIVE_TRANSACTION_MODEL: &str = "account";
+
 // ── Request / Response types ───────────────────────────────────────────
 
 /// A parsed JSON-RPC 2.0 request.
@@ -208,6 +210,10 @@ impl Default for RpcRouter {
     }
 }
 
+fn looks_like_utxo_address(value: &str) -> bool {
+    value.starts_with("zion1")
+}
+
 // ── Helper: build a router with standard node methods ──────────────────
 
 /// Create a stub router with all method names registered but no live state.
@@ -220,8 +226,8 @@ pub fn build_stub_router() -> RpcRouter {
         })
     };
     for method in [
-        "getBalance", "getBlock", "getBlockByHeight", "getTransaction",
-        "sendRawTransaction", "getBlockTemplate", "getMempoolInfo",
+        "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
+        "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
         "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock",
     ] {
         router.register(method, stub(method));
@@ -248,6 +254,8 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 "accepted_blocks": status.accepted_blocks,
                 "mempool_transactions": status.mempool_transactions,
                 "protocol_version": status.protocol_version,
+                "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                "utxo_validation_available": true,
             }))
         }));
     }
@@ -269,6 +277,8 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 "known_peers": status.known_peers.len(),
                 "accepted_blocks": status.accepted_blocks,
                 "mempool_transactions": status.mempool_transactions,
+                "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                "balance_lookup": "account_id",
             }))
         }));
     }
@@ -307,62 +317,76 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
         }));
     }
 
-    // ── getTransaction ─────────────────────────────────────────────────
-    {
+    // ── getTransaction / getAccountTransaction ───────────────────────
+    let register_get_transaction = |router: &mut RpcRouter, method_name: &'static str| {
         let rt = Arc::clone(&runtime);
-        router.register("getTransaction", Box::new(move |params: &Value| {
+        router.register(method_name, Box::new(move |params: &Value| {
             let txid = params.get("txid")
                 .or_else(|| params.get(0))
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'txid' param".into()))?;
             let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            // Search confirmed blocks
             for block in rt.accepted_blocks() {
                 for tx in &block.transactions {
                     if tx.tx_id == txid {
                         return Ok(json!({
+                            "transaction_model": ACTIVE_TRANSACTION_MODEL,
                             "transaction": tx,
                             "block_height": block.height,
                             "block_hash": block.hash_hex,
                             "confirmed": true,
+                            "source": "confirmed",
                         }));
                     }
                 }
             }
             Err((TX_NOT_FOUND, format!("transaction {txid} not found")))
         }));
-    }
+    };
+    register_get_transaction(&mut router, "getTransaction");
+    register_get_transaction(&mut router, "getAccountTransaction");
 
-    // ── getBalance ─────────────────────────────────────────────────────
-    {
+    // ── getBalance / getAccountBalance ────────────────────────────────
+    let register_get_balance = |router: &mut RpcRouter, method_name: &'static str| {
         let rt = Arc::clone(&runtime);
-        router.register("getBalance", Box::new(move |params: &Value| {
-            let address = params.get("address")
+        router.register(method_name, Box::new(move |params: &Value| {
+            let account_id = params.get("account")
+                .or_else(|| params.get("address"))
                 .or_else(|| params.get(0))
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'address' param".into()))?;
-            if address.is_empty() {
-                return Err((INVALID_ADDRESS, "empty address".into()));
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'account' param".into()))?;
+            if account_id.is_empty() {
+                return Err((INVALID_ADDRESS, "empty account id".into()));
+            }
+            if looks_like_utxo_address(account_id) {
+                return Err((
+                    INVALID_ADDRESS,
+                    "getBalance currently uses account ids from the active runtime; zion1 UTXO addresses are not supported on this endpoint yet".into(),
+                ));
             }
             let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
             let mut balance: i128 = 0;
             for block in rt.accepted_blocks() {
                 for tx in &block.transactions {
-                    if tx.to == address {
+                    if tx.to == account_id {
                         balance += tx.amount_zion as i128;
                     }
-                    if tx.from == address {
+                    if tx.from == account_id {
                         balance -= (tx.amount_zion + tx.fee_zion) as i128;
                     }
                 }
             }
             Ok(json!({
-                "address": address,
+                "account_id": account_id,
                 "balance_zion": balance.max(0) as u64,
                 "chain_height": rt.chain_height(),
+                "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                "balance_scope": "confirmed_chain_only",
             }))
         }));
-    }
+    };
+    register_get_balance(&mut router, "getBalance");
+    register_get_balance(&mut router, "getAccountBalance");
 
     // ── getBlockTemplate ───────────────────────────────────────────────
     {
@@ -384,6 +408,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 "size": status.mempool_transactions,
                 "template_transactions": status.active_template_transactions,
                 "template_total_fees_zion": status.active_template_total_fees_zion,
+                "transaction_model": ACTIVE_TRANSACTION_MODEL,
             }))
         }));
     }
@@ -400,13 +425,24 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
         }));
     }
 
-    // ── sendRawTransaction ─────────────────────────────────────────────
-    {
+    // ── sendRawTransaction / submitTransaction ────────────────────────
+    let register_submit_transaction = |router: &mut RpcRouter, method_name: &'static str| {
         let rt = Arc::clone(&runtime);
-        router.register("sendRawTransaction", Box::new(move |params: &Value| {
-            let tx: crate::Transaction = serde_json::from_value(
-                params.get("transaction").cloned().unwrap_or_else(|| params.clone())
-            ).map_err(|e| (INVALID_PARAMS, format!("invalid transaction: {e}")))?;
+        router.register(method_name, Box::new(move |params: &Value| {
+            let tx_value = params
+                .get("transaction")
+                .cloned()
+                .unwrap_or_else(|| params.clone());
+            let tx = match crate::SubmittedTransaction::parse_value(tx_value) {
+                Ok(crate::SubmittedTransaction::Account(tx)) => tx,
+                Ok(crate::SubmittedTransaction::Utxo(_)) => {
+                    return Err((
+                        INVALID_PARAMS,
+                        "UTXO transaction payloads are recognized but not accepted by the active account runtime yet".into(),
+                    ));
+                }
+                Err(message) => return Err((INVALID_PARAMS, message)),
+            };
             let mut rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
             let resp = rt.handle_rpc_request(crate::RpcRequest::SubmitTransaction { transaction: tx });
             match resp {
@@ -420,7 +456,10 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 _ => Err((INTERNAL_ERROR, "unexpected response".into())),
             }
         }));
-    }
+    };
+    register_submit_transaction(&mut router, "sendRawTransaction");
+    register_submit_transaction(&mut router, "submitTransaction");
+    register_submit_transaction(&mut router, "submitAccountTransaction");
 
     // ── submitBlock ────────────────────────────────────────────────────
     {
@@ -617,8 +656,8 @@ mod tests {
             })
         };
         for method in [
-            "getBalance", "getBlock", "getBlockByHeight", "getTransaction",
-            "sendRawTransaction", "getBlockTemplate", "getMempoolInfo",
+            "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
+            "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
             "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock",
         ] {
             router.register(method, stub(method));
@@ -630,17 +669,21 @@ mod tests {
     fn node_router_has_priority_methods() {
         let router = stub_node_router();
         assert!(router.has_method("getBalance"));
+        assert!(router.has_method("getAccountBalance"));
         assert!(router.has_method("getBlock"));
         assert!(router.has_method("getBlockByHeight"));
         assert!(router.has_method("getTransaction"));
+        assert!(router.has_method("getAccountTransaction"));
         assert!(router.has_method("sendRawTransaction"));
+        assert!(router.has_method("submitTransaction"));
+        assert!(router.has_method("submitAccountTransaction"));
         assert!(router.has_method("getBlockTemplate"));
         assert!(router.has_method("getMempoolInfo"));
         assert!(router.has_method("getPeerInfo"));
         assert!(router.has_method("getChainInfo"));
         assert!(router.has_method("getNodeInfo"));
         assert!(router.has_method("submitBlock"));
-        assert_eq!(router.method_count(), 11);
+        assert_eq!(router.method_count(), 15);
     }
 
     #[test]
@@ -706,6 +749,7 @@ mod tests {
         assert_eq!(result["chain_height"], 0);
         assert!(result["network"].is_string());
         assert!(result["consensus_profile"].is_string());
+        assert_eq!(result["transaction_model"], ACTIVE_TRANSACTION_MODEL);
     }
 
     #[test]
@@ -717,6 +761,7 @@ mod tests {
         assert_eq!(result["node_id"], "rpc-test");
         assert!(result["protocol_version"].is_string());
         assert!(result["known_peers"].is_number());
+        assert_eq!(result["transaction_model"], ACTIVE_TRANSACTION_MODEL);
     }
 
     #[test]
@@ -752,10 +797,29 @@ mod tests {
     #[test]
     fn live_get_balance_empty() {
         let router = live_router();
-        let resp = rpc_call(&router, "getBalance", json!({"address": "zion1nobody"}));
+        let resp = rpc_call(&router, "getBalance", json!({"account": "wallet.alpha"}));
         assert!(resp.error.is_none());
         let result = resp.result.unwrap();
         assert_eq!(result["balance_zion"], 0);
+        assert_eq!(result["transaction_model"], ACTIVE_TRANSACTION_MODEL);
+    }
+
+    #[test]
+    fn live_get_balance_rejects_utxo_address() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getBalance", json!({"address": "zion1nobody"}));
+        assert!(resp.error.is_some());
+        let err = resp.error.unwrap();
+        assert_eq!(err.code, INVALID_ADDRESS);
+        assert!(err.message.contains("UTXO addresses"));
+    }
+
+    #[test]
+    fn live_get_account_balance_alias_works() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getAccountBalance", json!({"account": "wallet.alpha"}));
+        assert!(resp.error.is_none(), "getAccountBalance failed: {:?}", resp.error);
+        assert_eq!(resp.result.unwrap()["account_id"], "wallet.alpha");
     }
 
     #[test]
@@ -797,6 +861,14 @@ mod tests {
     }
 
     #[test]
+    fn live_get_account_transaction_alias_not_found() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getAccountTransaction", json!({"txid": "nonexistent"}));
+        assert!(resp.error.is_some());
+        assert_eq!(resp.error.unwrap().code, TX_NOT_FOUND);
+    }
+
+    #[test]
     fn live_send_raw_transaction_invalid() {
         let router = live_router();
         let resp = rpc_call(&router, "sendRawTransaction", json!({"bad": true}));
@@ -805,8 +877,73 @@ mod tests {
     }
 
     #[test]
+    fn live_send_raw_transaction_rejects_hex_string_payload() {
+        let router = live_router();
+        let resp = rpc_call(&router, "sendRawTransaction", json!("deadbeef"));
+        assert!(resp.error.is_some());
+        let err = resp.error.unwrap();
+        assert_eq!(err.code, INVALID_PARAMS);
+        assert!(err.message.contains("transaction object"));
+    }
+
+    #[test]
+    fn live_submit_transaction_rejects_utxo_payload() {
+        let router = live_router();
+        let resp = rpc_call(&router, "submitTransaction", json!({
+            "id": vec![0u8; 32],
+            "version": 1,
+            "inputs": [{
+                "prev_tx_hash": vec![1u8; 32],
+                "output_index": 0,
+                "signature": vec![2u8; 64],
+                "public_key": vec![3u8; 32]
+            }],
+            "outputs": [{
+                "amount": 1000,
+                "address": "zion1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+            }],
+            "fee": 100,
+            "timestamp": 1700000000
+        }));
+        assert!(resp.error.is_some());
+        let err = resp.error.unwrap();
+        assert_eq!(err.code, INVALID_PARAMS);
+        assert!(err.message.contains("recognized"));
+    }
+
+    #[test]
+    fn live_submit_transaction_alias_accepts_object_payload() {
+        let router = live_router();
+        let resp = rpc_call(&router, "submitTransaction", json!({
+            "tx_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "from": "wallet.alpha",
+            "to": "wallet.beta",
+            "amount_zion": 25,
+            "fee_zion": 5,
+            "nonce": 1
+        }));
+        assert!(resp.error.is_none(), "submitTransaction failed: {:?}", resp.error);
+        assert_eq!(resp.result.unwrap()["accepted"], true);
+    }
+
+    #[test]
+    fn live_submit_account_transaction_alias_accepts_object_payload() {
+        let router = live_router();
+        let resp = rpc_call(&router, "submitAccountTransaction", json!({
+            "tx_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "from": "wallet.alpha",
+            "to": "wallet.beta",
+            "amount_zion": 30,
+            "fee_zion": 5,
+            "nonce": 1
+        }));
+        assert!(resp.error.is_none(), "submitAccountTransaction failed: {:?}", resp.error);
+        assert_eq!(resp.result.unwrap()["accepted"], true);
+    }
+
+    #[test]
     fn live_router_method_count() {
         let router = live_router();
-        assert_eq!(router.method_count(), 11);
+        assert_eq!(router.method_count(), 15);
     }
 }
