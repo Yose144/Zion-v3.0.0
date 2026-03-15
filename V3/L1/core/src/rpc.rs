@@ -902,7 +902,7 @@ mod tests {
         assert!(resp.error.is_some());
         let err = resp.error.unwrap();
         assert_eq!(err.code, TX_REJECTED);
-        assert!(err.message.contains("recognized"));
+        assert!(err.message.contains("UTXO transaction"));
     }
 
     #[test]
