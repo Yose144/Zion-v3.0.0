@@ -433,18 +433,12 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 .get("transaction")
                 .cloned()
                 .unwrap_or_else(|| params.clone());
-            let tx = match crate::SubmittedTransaction::parse_value(tx_value) {
-                Ok(crate::SubmittedTransaction::Account(tx)) => tx,
-                Ok(crate::SubmittedTransaction::Utxo(_)) => {
-                    return Err((
-                        INVALID_PARAMS,
-                        "UTXO transaction payloads are recognized but not accepted by the active account runtime yet".into(),
-                    ));
-                }
+            let submitted = match crate::SubmittedTransaction::parse_value(tx_value) {
+                Ok(transaction) => transaction,
                 Err(message) => return Err((INVALID_PARAMS, message)),
             };
             let mut rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let resp = rt.handle_rpc_request(crate::RpcRequest::SubmitTransaction { transaction: tx });
+            let resp = rt.submit_submitted_transaction(submitted);
             match resp {
                 crate::RpcResponse::TransactionResult { accepted, tx_id, reason } => {
                     if accepted {
@@ -907,7 +901,7 @@ mod tests {
         }));
         assert!(resp.error.is_some());
         let err = resp.error.unwrap();
-        assert_eq!(err.code, INVALID_PARAMS);
+        assert_eq!(err.code, TX_REJECTED);
         assert!(err.message.contains("recognized"));
     }
 

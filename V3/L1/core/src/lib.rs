@@ -324,6 +324,13 @@ impl SubmittedTransaction {
             Self::Utxo(_) => "utxo",
         }
     }
+
+    pub fn tx_id(&self) -> String {
+        match self {
+            Self::Account(tx) => tx.tx_id.clone(),
+            Self::Utxo(tx) => hex(&tx.id),
+        }
+    }
 }
 
 impl RuntimeTransaction {
@@ -1023,7 +1030,7 @@ impl NodeRuntime {
                 template: self.active_template(),
             },
             RpcRequest::SubmitTransaction { transaction } => {
-                self.submit_transaction_rpc(transaction)
+                self.submit_submitted_transaction(SubmittedTransaction::Account(transaction))
             }
             RpcRequest::SubmitCandidate {
                 template_id,
@@ -1031,6 +1038,23 @@ impl NodeRuntime {
                 nonce,
                 target_hex,
             } => self.submit_candidate_rpc(template_id, &header_hex, nonce, &target_hex),
+        }
+    }
+
+    pub fn submit_submitted_transaction(
+        &mut self,
+        transaction: SubmittedTransaction,
+    ) -> RpcResponse {
+        match transaction {
+            SubmittedTransaction::Account(transaction) => self.submit_transaction_rpc(transaction),
+            SubmittedTransaction::Utxo(transaction) => RpcResponse::TransactionResult {
+                accepted: false,
+                tx_id: hex(&transaction.id),
+                reason: Some(
+                    "UTXO transaction payloads are recognized but not accepted by the active account runtime yet"
+                        .to_string(),
+                ),
+            },
         }
     }
 
@@ -1232,6 +1256,12 @@ impl Transaction {
         }
         if !is_valid_account_id(&self.from) || !is_valid_account_id(&self.to) {
             return Err("transaction endpoints must use 3-64 ascii wallet ids".to_string());
+        }
+        if looks_like_utxo_address(&self.from) || looks_like_utxo_address(&self.to) {
+            return Err(
+                "transaction endpoints must use account-style wallet ids; zion1 UTXO addresses are not accepted by the active runtime"
+                    .to_string(),
+            );
         }
         if self.from == self.to {
             return Err("transaction sender and recipient must differ".to_string());
@@ -2286,6 +2316,10 @@ fn is_valid_account_id(value: &str) -> bool {
             .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.'))
 }
 
+fn looks_like_utxo_address(value: &str) -> bool {
+    value.starts_with("zion1")
+}
+
 fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N], String> {
     let normalized = raw.trim().trim_start_matches("0x");
     if normalized.len() != N * 2 {
@@ -2579,6 +2613,25 @@ mod tests {
                 reason: Some(ref reason),
                 ..
             } if reason.contains("64 hex chars")
+        ));
+
+        let utxo_like_endpoints = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: Transaction {
+                tx_id: sample_transaction("tx-utxo-like", 3, 1).tx_id,
+                from: "zion1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq".to_string(),
+                to: "wallet.beta".to_string(),
+                amount_zion: 10,
+                fee_zion: 1,
+                nonce: 2,
+            },
+        });
+        assert!(matches!(
+            utxo_like_endpoints,
+            RpcResponse::TransactionResult {
+                accepted: false,
+                reason: Some(ref reason),
+                ..
+            } if reason.contains("zion1") || reason.contains("UTXO")
         ));
 
         let first = sample_transaction("tx-nonce-a", 2, 9);
