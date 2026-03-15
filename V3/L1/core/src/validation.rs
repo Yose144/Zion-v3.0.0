@@ -322,6 +322,7 @@ pub fn validate_premine_locks(
 /// in the transaction list.
 pub fn validate_block(
     transactions: &[Transaction],
+    block_timestamp: u64,
     block_size_bytes: usize,
     merkle_root_expected: &[u8; 32],
     ctx: &ValidationContext,
@@ -335,7 +336,7 @@ pub fn validate_block(
 
     // Step 4: Timestamp
     validate_timestamp(
-        ctx.current_time, // block timestamp
+        block_timestamp,
         ctx.median_time_past,
         ctx.current_time,
     )?;
@@ -600,7 +601,7 @@ mod tests {
 
     #[test]
     fn validate_subsidy_coinbase_with_inputs_rejected() {
-        let (sk, vk) = generate_keypair();
+        let (_, vk) = generate_keypair();
         let tx = Transaction {
             id: [0u8; 32],
             version: 1,
@@ -642,7 +643,40 @@ mod tests {
         let sizes = vec![200, 300]; // estimated sizes
         let lookup = |_: &[u8; 32], _: u32| -> Option<UtxoInfo> { None };
 
-        assert!(validate_block(&txs, 1000, &root, &ctx, &sizes, &lookup).is_ok());
+        assert!(validate_block(&txs, 1_700_000_000, 1000, &root, &ctx, &sizes, &lookup).is_ok());
+    }
+
+    #[test]
+    fn full_validation_rejects_future_timestamp() {
+        let cb = make_coinbase(1);
+        let tx = make_signed_tx([0xDE; 32]);
+        let txs = vec![cb, tx];
+        let tx_hashes: Vec<[u8; 32]> = txs.iter().map(|t| t.id).collect();
+        let root = merkle_root(&tx_hashes);
+
+        let ctx = ValidationContext {
+            height: 1,
+            expected_difficulty: 1_000,
+            median_time_past: 1_699_999_900,
+            current_time: 1_700_000_000,
+        };
+
+        let sizes = vec![200, 300];
+        let lookup = |_: &[u8; 32], _: u32| -> Option<UtxoInfo> { None };
+
+        let result = validate_block(
+            &txs,
+            1_700_000_000 + MAX_TIMESTAMP_DRIFT + 1,
+            1000,
+            &root,
+            &ctx,
+            &sizes,
+            &lookup,
+        );
+        assert!(matches!(
+            result,
+            Err(ValidationError::TimestampTooFarFuture { .. })
+        ));
     }
 
     #[test]

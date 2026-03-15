@@ -27,7 +27,7 @@ ENV ZION_NODE_ID=v3-mainnet-node
 ENV ZION_NODE_STATE_PATH=/data/zion/state
 ENV ZION_P2P_BIND=0.0.0.0:8334
 ENV ZION_RPC_BIND=0.0.0.0:8332
-# Coinbase address — set to receive mining rewards (Phase 14).
+# Coinbase payout wallet id used by the current account-style runtime.
 # Empty = no coinbase transaction generated.
 ENV ZION_MINER_ADDRESS=
 

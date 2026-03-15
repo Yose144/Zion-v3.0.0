@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -284,6 +285,90 @@ pub struct Transaction {
     pub nonce: u64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SubmittedTransaction {
+    Account(Transaction),
+    Utxo(tx::Transaction),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+enum RuntimeTransaction {
+    Account(Transaction),
+    Utxo(tx::Transaction),
+}
+
+impl SubmittedTransaction {
+    pub fn parse_value(value: Value) -> Result<Self, String> {
+        if value.is_string() {
+            return Err(
+                "raw hex transactions are not supported by the current runtime; submit a transaction object"
+                    .into(),
+            );
+        }
+
+        if let Ok(account_tx) = serde_json::from_value::<Transaction>(value.clone()) {
+            return Ok(Self::Account(account_tx));
+        }
+
+        if let Ok(utxo_tx) = serde_json::from_value::<tx::Transaction>(value) {
+            return Ok(Self::Utxo(utxo_tx));
+        }
+
+        Err("invalid transaction payload for both account and UTXO models".into())
+    }
+
+    pub fn model(&self) -> &'static str {
+        match self {
+            Self::Account(_) => "account",
+            Self::Utxo(_) => "utxo",
+        }
+    }
+}
+
+impl RuntimeTransaction {
+    fn tx_id(&self) -> String {
+        match self {
+            Self::Account(tx) => tx.tx_id.clone(),
+            Self::Utxo(tx) => hex(&tx.id),
+        }
+    }
+
+    fn as_account(&self) -> Option<&Transaction> {
+        match self {
+            Self::Account(tx) => Some(tx),
+            Self::Utxo(_) => None,
+        }
+    }
+
+    #[cfg(test)]
+    fn as_account_mut(&mut self) -> Option<&mut Transaction> {
+        match self {
+            Self::Account(tx) => Some(tx),
+            Self::Utxo(_) => None,
+        }
+    }
+
+    fn into_account(self) -> Option<Transaction> {
+        match self {
+            Self::Account(tx) => Some(tx),
+            Self::Utxo(_) => None,
+        }
+    }
+}
+
+impl From<Transaction> for RuntimeTransaction {
+    fn from(value: Transaction) -> Self {
+        Self::Account(value)
+    }
+}
+
+impl From<tx::Transaction> for RuntimeTransaction {
+    fn from(value: tx::Transaction) -> Self {
+        Self::Utxo(value)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AcceptedBlock {
     pub template_id: u64,
@@ -412,7 +497,7 @@ struct TemplateState {
     target: DifficultyTarget,
     difficulty: u64,
     reward_zion: u64,
-    transactions: Vec<Transaction>,
+    transactions: Vec<RuntimeTransaction>,
     total_fees_zion: u64,
 }
 
@@ -425,8 +510,8 @@ struct ChainState {
     accepted_blocks: Vec<AcceptedBlock>,
     accepted_by_height: BTreeMap<u64, AcceptedBlock>,
     accepted_by_template_id: HashMap<u64, AcceptedBlock>,
-    mempool: Vec<Transaction>,
-    mempool_by_id: HashMap<String, Transaction>,
+    mempool: Vec<RuntimeTransaction>,
+    mempool_by_id: HashMap<String, RuntimeTransaction>,
     /// Address to credit in coinbase transactions. Empty = no coinbase generated.
     miner_address: String,
 }
@@ -450,7 +535,7 @@ struct ChainStore {
 #[serde(tag = "type", rename_all = "snake_case")]
 enum ChainJournalEntry {
     TransactionAccepted {
-        transaction: Transaction,
+        transaction: RuntimeTransaction,
     },
     BlockAccepted {
         block: AcceptedBlock,
@@ -646,9 +731,9 @@ impl NodeRuntime {
         Ok(runtime)
     }
 
-    /// Set the address that receives coinbase rewards for mined blocks.
+    /// Set the wallet id that receives coinbase rewards for mined blocks.
     /// When set, every new block template will include a coinbase transaction
-    /// crediting `subsidy + fees` to this address.
+    /// crediting the block subsidy to this wallet id.
     pub fn set_miner_address(&mut self, addr: String) {
         self.miner_address = addr.clone();
         self.chain_state.miner_address = addr;
@@ -932,7 +1017,7 @@ impl NodeRuntime {
                 revenue: self.core.revenue_snapshot(),
             },
             RpcRequest::GetMempool => RpcResponse::Mempool {
-                transactions: self.chain_state.mempool.clone(),
+                transactions: self.chain_state.account_mempool_transactions(),
             },
             RpcRequest::GetTemplate => RpcResponse::Template {
                 template: self.active_template(),
@@ -1022,6 +1107,7 @@ impl NodeRuntime {
         let accepted = sealed.is_some();
 
         if let Some(sealed_block) = sealed {
+            let template_transactions = active_template.account_transactions();
             let accepted_block = AcceptedBlock {
                 template_id,
                 height: active_template.height,
@@ -1032,18 +1118,29 @@ impl NodeRuntime {
                 header_hex: hex(&active_template.header.to_bytes()),
                 previous_hash_hex: hex(&active_template.header.previous_hash),
                 transaction_ids: active_template
-                    .transactions
+                    .account_transactions()
                     .iter()
                     .map(|transaction| transaction.tx_id.clone())
                     .collect(),
-                transactions: active_template.transactions.clone(),
+                transactions: template_transactions.clone(),
                 total_fees_zion: active_template.total_fees_zion,
-                body_hash_hex: body_hash_hex(&active_template.transactions),
+                body_hash_hex: body_hash_hex(&template_transactions),
                 subsidy_zion: active_template.reward_zion,
-                miner_reward_zion: active_template.reward_zion + active_template.total_fees_zion,
+                miner_reward_zion: active_template.reward_zion,
                 miner_address: self.miner_address.clone(),
             };
-            self.chain_state.accept_block(&self.node_id, &self.core, accepted_block, sealed_block);
+            if let Err(reason) = self
+                .chain_state
+                .accept_block(&self.node_id, &self.core, accepted_block, sealed_block)
+            {
+                return RpcResponse::SubmitResult {
+                    accepted: false,
+                    template_id,
+                    block_height: None,
+                    hash_hex: String::new(),
+                    reason: Some(format!("locally mined block failed validation: {reason}")),
+                };
+            }
             if let Err(error) = self.persist_chain_update(&ChainJournalEntry::BlockAccepted {
                 block: self
                     .chain_state
@@ -1095,22 +1192,29 @@ impl NodeRuntime {
 }
 
 impl TemplateState {
+    fn account_transactions(&self) -> Vec<Transaction> {
+        self.transactions
+            .iter()
+            .filter_map(|transaction| transaction.as_account().cloned())
+            .collect()
+    }
+
     fn as_public(&self) -> BlockTemplate {
+        let account_transactions = self.account_transactions();
         BlockTemplate {
             template_id: self.template_id,
             height: self.height,
             header_hex: hex(&self.header.to_bytes()),
             target_hex: self.target.to_hex(),
             reward_zion: self.reward_zion,
-            transaction_ids: self
-                .transactions
+            transaction_ids: account_transactions
                 .iter()
                 .map(|transaction| transaction.tx_id.clone())
                 .collect(),
-            transaction_count: self.transactions.len(),
+            transaction_count: account_transactions.len(),
             total_fees_zion: self.total_fees_zion,
-            body_hash_hex: body_hash_hex(&self.transactions),
-            estimated_miner_reward_zion: self.reward_zion + self.total_fees_zion,
+            body_hash_hex: body_hash_hex(&account_transactions),
+            estimated_miner_reward_zion: self.reward_zion,
         }
     }
 }
@@ -1146,6 +1250,13 @@ impl Transaction {
 }
 
 impl ChainState {
+    fn account_mempool_transactions(&self) -> Vec<Transaction> {
+        self.mempool
+            .iter()
+            .filter_map(|transaction| transaction.as_account().cloned())
+            .collect()
+    }
+
     fn new(node_id: &str, core: &CoreRuntime) -> Self {
         let genesis = genesis::genesis_block();
         let genesis_hash = parse_fixed_hex::<32>(&genesis.hash_hex, "genesis hash")
@@ -1213,14 +1324,23 @@ impl ChainState {
             accepted_blocks: snapshot.accepted_blocks,
             accepted_by_height: BTreeMap::new(),
             accepted_by_template_id: HashMap::new(),
-            mempool: snapshot.mempool,
+            mempool: snapshot
+                .mempool
+                .into_iter()
+                .map(RuntimeTransaction::from)
+                .collect(),
             mempool_by_id: HashMap::new(),
             miner_address: String::new(),
         };
         chain_state.rebuild_mempool_index();
         chain_state.active_template.transactions = persisted_transaction_ids
             .iter()
-            .filter_map(|tx_id| chain_state.mempool_by_id.get(tx_id).cloned())
+            .filter_map(|tx_id| {
+                chain_state
+                    .mempool_by_id
+                    .get(tx_id)
+                    .cloned()
+            })
             .collect();
         chain_state.sanitize_recovered_state(node_id, core)?;
         Ok(chain_state)
@@ -1232,8 +1352,10 @@ impl ChainState {
         core: &CoreRuntime,
         accepted_block: AcceptedBlock,
         sealed_block: SealedBlock,
-    ) {
+    ) -> Result<(), String> {
+        self.validate_peer_block(&accepted_block)?;
         self.accept_block_record(node_id, core, accepted_block, sealed_block.hash);
+        Ok(())
     }
 
     fn accept_block_record(
@@ -1250,7 +1372,8 @@ impl ChainState {
             .iter()
             .map(String::as_str)
             .collect();
-        self.mempool.retain(|transaction| !mined_ids.contains(transaction.tx_id.as_str()));
+        self.mempool
+            .retain(|transaction| !mined_ids.contains(transaction.tx_id().as_str()));
         self.rebuild_mempool_index();
         self.accepted_by_height
             .insert(accepted_block.height, accepted_block.clone());
@@ -1280,17 +1403,25 @@ impl ChainState {
     ) -> Result<(), String> {
         match entry {
             ChainJournalEntry::TransactionAccepted { transaction } => {
-                if self.mempool_by_id.contains_key(&transaction.tx_id)
+                if self.mempool_by_id.contains_key(&transaction.tx_id())
                     || self.accepted_blocks.iter().any(|block| {
                         block
                             .transaction_ids
                             .iter()
-                            .any(|tx_id| tx_id == &transaction.tx_id)
+                            .any(|tx_id| tx_id == &transaction.tx_id())
                     })
                 {
                     return Ok(());
                 }
-                self.insert_transaction(node_id, core, transaction)
+                match transaction {
+                    RuntimeTransaction::Account(transaction) => {
+                        self.insert_transaction(node_id, core, transaction)
+                    }
+                    RuntimeTransaction::Utxo(_) => Err(
+                        "journal replay for UTXO transactions is not enabled in the active runtime yet"
+                            .to_string(),
+                    ),
+                }
             }
             ChainJournalEntry::BlockAccepted { block } => {
                 if let Some(existing) = self.accepted_by_template_id.get(&block.template_id) {
@@ -1548,24 +1679,109 @@ impl ChainState {
         if expected_ids != block.transaction_ids {
             return Err("peer block transaction ids do not match serialized transactions".to_string());
         }
+        let mut seen_tx_ids = HashSet::new();
+        let mut seen_sender_nonces = HashSet::new();
+        let mut coinbase_count = 0usize;
         let total_fees_zion = block
             .transactions
             .iter()
-            .map(|transaction| {
-                transaction.validate()?;
+            .enumerate()
+            .map(|(index, transaction)| {
+                if !seen_tx_ids.insert(transaction.tx_id.clone()) {
+                    return Err(format!(
+                        "peer block contains duplicate transaction id {}",
+                        transaction.tx_id
+                    ));
+                }
+                if transaction.from == "coinbase" {
+                    coinbase_count = coinbase_count.saturating_add(1);
+                    if transaction.tx_id.len() != 64
+                        || !transaction.tx_id.chars().all(|ch| ch.is_ascii_hexdigit())
+                    {
+                        return Err("peer block coinbase transaction id must be exactly 64 hex chars"
+                            .to_string());
+                    }
+                    if transaction.to.trim().is_empty() {
+                        return Err(
+                            "peer block coinbase recipient must not be empty".to_string(),
+                        );
+                    }
+                    if !is_valid_account_id(&transaction.to) {
+                        return Err(
+                            "peer block coinbase recipient must use a 3-64 ascii wallet id"
+                                .to_string(),
+                        );
+                    }
+                    if index != 0 {
+                        return Err("peer block coinbase transaction must be first".to_string());
+                    }
+                    if transaction.fee_zion != 0 {
+                        return Err("peer block coinbase transaction must have zero fee".to_string());
+                    }
+                    if transaction.nonce != block.height {
+                        return Err(format!(
+                            "peer block coinbase nonce {} does not match block height {}",
+                            transaction.nonce, block.height
+                        ));
+                    }
+                    if block.miner_address.is_empty() {
+                        return Err(
+                            "peer block coinbase transaction requires miner_address metadata"
+                                .to_string(),
+                        );
+                    }
+                    if transaction.to != block.miner_address {
+                        return Err(
+                            "peer block coinbase recipient does not match miner_address"
+                                .to_string(),
+                        );
+                    }
+                    if transaction.amount_zion != block.subsidy_zion {
+                        return Err(format!(
+                            "peer block coinbase amount {} does not match subsidy {}",
+                            transaction.amount_zion, block.subsidy_zion
+                        ));
+                    }
+                    let coinbase_label =
+                        format!("coinbase:{}:{}", block.height, block.miner_address);
+                    let expected_coinbase_hash =
+                        cosmic_harmony_ekam_deeksha(coinbase_label.as_bytes(), block.height);
+                    let expected_coinbase_id = hex(&expected_coinbase_hash.data);
+                    if transaction.tx_id != expected_coinbase_id {
+                        return Err(
+                            "peer block coinbase tx_id is not deterministic for height and miner_address"
+                                .to_string(),
+                        );
+                    }
+                } else {
+                    transaction.validate()?;
+                    if !seen_sender_nonces.insert((transaction.from.clone(), transaction.nonce)) {
+                        return Err(format!(
+                            "peer block reuses sender nonce {} for {}",
+                            transaction.nonce, transaction.from
+                        ));
+                    }
+                }
                 Ok(transaction.fee_zion)
             })
             .collect::<Result<Vec<_>, String>>()?
             .into_iter()
             .sum::<u64>();
+        if coinbase_count > 1 {
+            return Err("peer block contains multiple coinbase transactions".to_string());
+        }
+        if !block.miner_address.is_empty() && coinbase_count == 0 {
+            return Err("peer block miner_address is set but coinbase transaction is missing".to_string());
+        }
         if total_fees_zion != block.total_fees_zion {
             return Err("peer block fee total does not match serialized transactions".to_string());
         }
         if block.body_hash_hex != body_hash_hex(&block.transactions) {
             return Err("peer block body hash does not match serialized transactions".to_string());
         }
-        if block.miner_reward_zion != block.subsidy_zion.saturating_add(block.total_fees_zion) {
-            return Err("peer block miner reward does not match subsidy plus fees".to_string());
+        if block.miner_reward_zion != block.subsidy_zion {
+            return Err("peer block miner reward must match subsidy only because fees are burned"
+                .to_string());
         }
         let expected_subsidy = emission::block_subsidy(block.height);
         if block.subsidy_zion != expected_subsidy {
@@ -1620,6 +1836,7 @@ impl ChainState {
         if self
             .mempool
             .iter()
+            .filter_map(RuntimeTransaction::as_account)
             .any(|known| known.from == transaction.from && known.nonce == transaction.nonce)
         {
             return Err(format!(
@@ -1639,9 +1856,9 @@ impl ChainState {
             ));
         }
 
-        self.mempool.push(transaction.clone());
+        self.mempool.push(RuntimeTransaction::from(transaction.clone()));
         self.mempool_by_id
-            .insert(transaction.tx_id.clone(), transaction.clone());
+            .insert(transaction.tx_id.clone(), RuntimeTransaction::from(transaction.clone()));
         let miner_addr = self.miner_address.clone();
         self.active_template = Self::build_template(
             node_id,
@@ -1670,7 +1887,7 @@ impl ChainState {
         self.mempool_by_id.clear();
         for transaction in &self.mempool {
             self.mempool_by_id
-                .insert(transaction.tx_id.clone(), transaction.clone());
+                .insert(transaction.tx_id(), transaction.clone());
         }
     }
 
@@ -1685,6 +1902,9 @@ impl ChainState {
         let mut sender_nonces = HashSet::new();
         let mut seen = HashSet::new();
         self.mempool.retain(|transaction| {
+            let Some(transaction) = transaction.as_account() else {
+                return false;
+            };
             transaction.validate().is_ok()
                 && !mined_ids.contains(transaction.tx_id.as_str())
                 && seen.insert(transaction.tx_id.clone())
@@ -1700,7 +1920,12 @@ impl ChainState {
 
         let mut template_transactions = Vec::new();
         for tx_id in &self.active_template.as_public().transaction_ids {
-            let Some(transaction) = self.mempool_by_id.get(tx_id).cloned() else {
+            let Some(transaction) = self
+                .mempool_by_id
+                .get(tx_id)
+                .cloned()
+                .and_then(RuntimeTransaction::into_account)
+            else {
                 let miner_addr = self.miner_address.clone();
                 self.active_template = Self::build_template(
                     node_id,
@@ -1714,7 +1939,7 @@ impl ChainState {
                 );
                 return Ok(());
             };
-            template_transactions.push(transaction);
+            template_transactions.push(RuntimeTransaction::from(transaction));
         }
 
         self.active_template.transactions = template_transactions;
@@ -1722,7 +1947,7 @@ impl ChainState {
             .active_template
             .transactions
             .iter()
-            .map(|transaction| transaction.fee_zion)
+            .filter_map(|transaction| transaction.as_account().map(|transaction| transaction.fee_zion))
             .sum();
 
         if self.active_template.height != self.height.saturating_add(1) {
@@ -1749,7 +1974,7 @@ impl ChainState {
             next_template_id: self.next_template_id,
             active_template: self.active_template.as_public(),
             accepted_blocks: self.accepted_blocks.clone(),
-            mempool: self.mempool.clone(),
+            mempool: self.account_mempool_transactions(),
         }
     }
 
@@ -1759,18 +1984,17 @@ impl ChainState {
         current_height: u64,
         previous_hash: [u8; 32],
         template_id: u64,
-        mempool: &[Transaction],
+        mempool: &[RuntimeTransaction],
         accepted_blocks: &[AcceptedBlock],
         miner_address: &str,
     ) -> TemplateState {
         let next_height = current_height.saturating_add(1);
-        let mut transactions = select_template_transactions(mempool);
-        let total_fees_zion: u64 = transactions.iter().map(|transaction| transaction.fee_zion).sum();
+        let mut selected_transactions = select_template_transactions(mempool);
+        let total_fees_zion: u64 = selected_transactions.iter().map(|transaction| transaction.fee_zion).sum();
 
         // Phase 14: Generate coinbase transaction when miner_address is configured.
         if !miner_address.is_empty() {
             let subsidy = emission::block_subsidy(next_height);
-            let coinbase_amount = subsidy + total_fees_zion;
             let coinbase_label = format!("coinbase:{}:{}", next_height, miner_address);
             let coinbase_hash =
                 cosmic_harmony_ekam_deeksha(coinbase_label.as_bytes(), next_height);
@@ -1778,19 +2002,25 @@ impl ChainState {
                 tx_id: hex(&coinbase_hash.data),
                 from: "coinbase".to_string(),
                 to: miner_address.to_string(),
-                amount_zion: coinbase_amount,
+                amount_zion: subsidy,
                 fee_zion: 0,
                 nonce: next_height,
             };
-            transactions.insert(0, coinbase_tx);
+            selected_transactions.insert(0, coinbase_tx);
         }
+
+        let transactions = selected_transactions
+            .iter()
+            .cloned()
+            .map(RuntimeTransaction::from)
+            .collect::<Vec<_>>();
 
         let merkle_root = derive_template_merkle_root(
             node_id,
             next_height,
             template_id,
             previous_hash,
-            &transactions,
+            &selected_transactions,
         );
 
         let next_difficulty = if accepted_blocks.is_empty() {
@@ -1988,8 +2218,11 @@ fn derive_template_merkle_root(
     cosmic_harmony_ekam_deeksha(&seed, template_id ^ height ^ transactions.len() as u64).data
 }
 
-fn select_template_transactions(mempool: &[Transaction]) -> Vec<Transaction> {
-    let mut selected = mempool.to_vec();
+fn select_template_transactions(mempool: &[RuntimeTransaction]) -> Vec<Transaction> {
+    let mut selected: Vec<Transaction> = mempool
+        .iter()
+        .filter_map(|transaction| transaction.as_account().cloned())
+        .collect();
     selected.sort_by(|left, right| {
         right
             .fee_zion
@@ -2299,6 +2532,10 @@ mod tests {
                 ..
             }
         ));
+        assert!(matches!(
+            runtime.chain_state.mempool.as_slice(),
+            [RuntimeTransaction::Account(stored)] if stored.tx_id == transaction.tx_id
+        ));
 
         match runtime.handle_rpc_request(RpcRequest::GetMempool) {
             RpcResponse::Mempool { transactions } => {
@@ -2313,7 +2550,7 @@ mod tests {
         assert_eq!(template.transaction_ids, vec![transaction.tx_id]);
         assert_eq!(template.total_fees_zion, 9);
         assert_eq!(template.body_hash_hex, body_hash_hex(&[sample_transaction("tx-a", 9, 1)]));
-        assert_eq!(template.estimated_miner_reward_zion, emission::block_subsidy(1) + 9);
+        assert_eq!(template.estimated_miner_reward_zion, emission::block_subsidy(1));
 
         let status = runtime.status();
         assert_eq!(status.mempool_transactions, 1);
@@ -2414,7 +2651,7 @@ mod tests {
         assert!(runtime.active_template().transaction_ids.is_empty());
         assert_eq!(runtime.accepted_blocks()[1].transaction_ids, vec![mined_transaction.tx_id]);
         assert_eq!(runtime.accepted_blocks()[1].subsidy_zion, emission::block_subsidy(1));
-        assert_eq!(runtime.accepted_blocks()[1].miner_reward_zion, emission::block_subsidy(1) + 3);
+        assert_eq!(runtime.accepted_blocks()[1].miner_reward_zion, emission::block_subsidy(1));
     }
 
     #[test]
@@ -2763,7 +3000,7 @@ mod tests {
                     tx_dup.clone(),
                     tx_mined.clone(),
                 ]),
-                estimated_miner_reward_zion: emission::block_subsidy(2) + 8,
+                estimated_miner_reward_zion: emission::block_subsidy(2),
             },
             accepted_blocks: vec![AcceptedBlock {
                 template_id: 1,
@@ -2779,7 +3016,7 @@ mod tests {
                 total_fees_zion: 2,
                 body_hash_hex: body_hash_hex(&[tx_mined.clone()]),
                 subsidy_zion: emission::block_subsidy(1),
-                miner_reward_zion: emission::block_subsidy(1) + 2,
+                miner_reward_zion: emission::block_subsidy(1),
                 miner_address: String::new(),
             }],
             mempool: vec![
@@ -2837,12 +3074,12 @@ mod tests {
             total_fees_zion: 6,
             body_hash_hex: body_hash_hex(&[tx.clone()]),
             subsidy_zion: emission::block_subsidy(1),
-            miner_reward_zion: emission::block_subsidy(1) + 6,
+            miner_reward_zion: emission::block_subsidy(1),
             miner_address: String::new(),
         };
         let journal = [
             ChainJournalEntry::TransactionAccepted {
-                transaction: tx.clone(),
+                transaction: RuntimeTransaction::from(tx.clone()),
             },
             ChainJournalEntry::BlockAccepted {
                 block: accepted_block.clone(),
@@ -2966,7 +3203,10 @@ mod tests {
             nonce,
             target_hex: template.target_hex.clone(),
         });
-        assert!(matches!(response, RpcResponse::SubmitResult { accepted: true, .. }));
+        assert!(
+            matches!(response, RpcResponse::SubmitResult { accepted: true, .. }),
+            "unexpected submit response: {response:?}"
+        );
     }
 
     #[test]
@@ -3311,6 +3551,34 @@ mod tests {
         let expected_subsidy = emission::block_subsidy(1);
         assert_eq!(coinbase.amount_zion, expected_subsidy);
         assert_eq!(block.miner_reward_zion, expected_subsidy);
+    }
+
+    #[test]
+    fn submit_candidate_rejects_locally_invalid_coinbase() {
+        let mut runtime = NodeRuntime::new("node-local-validate", NodeConfig::mainnet());
+        runtime.set_miner_address("local-wallet".to_string());
+        runtime.chain_state.active_template.transactions[0]
+            .as_account_mut()
+            .expect("coinbase must stay account-based in current runtime")
+            .amount_zion += 1;
+
+        let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
+        let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
+            template_id: template.template_id,
+            header_hex: template.header_hex,
+            nonce,
+            target_hex: template.target_hex,
+        });
+
+        assert!(matches!(
+            response,
+            RpcResponse::SubmitResult {
+                accepted: false,
+                reason: Some(ref reason),
+                ..
+            } if reason.contains("failed validation") && reason.contains("coinbase amount")
+        ), "unexpected submit response: {response:?}");
     }
 
     #[test]

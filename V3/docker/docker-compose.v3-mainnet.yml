@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
     ports:
       - "8334:8334"   # P2P
-      - "8332:8332"   # RPC (bind to localhost in production)
+      - "127.0.0.1:8332:8332"   # RPC is host-local only; pool reaches node over the Docker network
     volumes:
       - zion-node-data:/data/zion
     environment:

@@ -66,14 +66,23 @@ fn handle_client(
     let (hello_line, hello_message) = read_wire_message(&mut reader)?;
     println!("wire_hello={}", hello_line);
 
-    let (miner_id, worker_name) = match hello_message {
+    let (miner_id, worker_name, algorithm) = match hello_message {
         PoolMessage::Hello {
             miner_id,
             worker_name,
+            algorithm,
             ..
-        } => (miner_id, worker_name),
+        } => (miner_id, worker_name, algorithm),
         other => return Err(anyhow!("expected hello from miner, got {other:?}")),
     };
+
+    if algorithm != zion_core::consensus_profile() {
+        return Err(anyhow!(
+            "unsupported miner algorithm: expected {}, got {}",
+            zion_core::consensus_profile(),
+            algorithm
+        ));
+    }
 
     let welcome_message = pool.lock().expect("pool lock poisoned").welcome_message();
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
@@ -138,6 +147,12 @@ fn handle_client(
                 nonce,
                 hash_hex,
             } => {
+                if submit_miner_id != miner_id || submit_worker_name != worker_name {
+                    println!(
+                        "submit_identity_mismatch session={}/{} submit={}/{}; using session identity",
+                        miner_id, worker_name, submit_miner_id, submit_worker_name
+                    );
+                }
                 let solution = MiningSolution {
                     job_id,
                     candidate: zion_core::BlockCandidate {
@@ -148,8 +163,8 @@ fn handle_client(
                 };
                 let node_rpc_addr = config.node_rpc_addr.clone();
                 pool.lock().expect("pool lock poisoned").submit_solution_with(
-                    submit_miner_id,
-                    submit_worker_name,
+                    miner_id.clone(),
+                    worker_name.clone(),
                     solution,
                     config.revenue_source,
                     config.revenue_value_usd,
