@@ -189,10 +189,11 @@ usermod -aG docker zion
 # Nastav firewall — povol jen potřebné porty
 ufw allow 22/tcp      # SSH (abys mohla přistupovat na server)
 ufw allow 8334/tcp    # ZION P2P (komunikace mezi uzly)
-ufw allow 8332/tcp    # ZION RPC (komunikace node ↔ pool)
 ufw allow 8444/tcp    # ZION Pool (připojení minerů)
 ufw enable            # Zapni firewall
 ```
+
+> **RPC port 8332 neotvírej do internetu.** Pool se k node připojuje interně přes Docker síť a z hosta používej jen `localhost:8332`.
 
 > **Poznámka:** Port 22 je SSH — pokud ho zablokuješ, přijdeš o přístup k serveru!
 
@@ -302,7 +303,7 @@ docker compose -f docker/docker-compose.v3-mainnet.yml ps
 Mělo by se zobrazit:
 ```
 NAME    STATUS          PORTS
-node    Up X minutes    0.0.0.0:8334->8334, 0.0.0.0:8332->8332
+node    Up X minutes    0.0.0.0:8334->8334, 127.0.0.1:8332->8332
 pool    Up X minutes    0.0.0.0:8444->8444
 miner   Up X minutes
 ```
@@ -346,16 +347,18 @@ curl -s -X POST http://localhost:8332 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"getNodeInfo","params":[],"id":1}' | python3 -m json.tool
 
-# Zůstatek adresy
+# Zůstatek wallet id v aktuálním runtime
 curl -s -X POST http://localhost:8332 \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"getBalance","params":["zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p"],"id":1}' | python3 -m json.tool
+  -d '{"jsonrpc":"2.0","method":"getBalance","params":["zion-mainnet-miner-0"],"id":1}' | python3 -m json.tool
 
 # Připojení vrstevníci (peers)
 curl -s -X POST http://localhost:8332 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"getPeerInfo","params":[],"id":1}' | python3 -m json.tool
 ```
+
+> **Důležité:** `getBalance`, `getAccountBalance`, `submitTransaction` a `submitAccountTransaction` dnes pracují nad wallet id z běhového account-style runtime, ne nad odděleným UTXO/premine světem. Premine `zion1...` adresy proto tímto RPC zatím neuvidíš korektně a `getBalance` je nyní odmítne explicitně.
 
 ### 8.3 Co hledat v logách
 

@@ -21,7 +21,7 @@ use heed::{Env, EnvOpenOptions, Database};
 use heed::types::{Bytes, Str};
 use serde::{Deserialize, Serialize};
 
-use crate::chain::{UndoBlock, RestoredUtxo, Outpoint};
+use crate::chain::{UndoBlock, Outpoint};
 use crate::tx;
 
 // ── Constants ──────────────────────────────────────────────────────────

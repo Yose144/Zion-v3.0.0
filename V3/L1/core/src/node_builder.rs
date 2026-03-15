@@ -21,8 +21,8 @@ use crate::launch;
 use crate::metrics::NodeMetrics;
 use crate::peer_manager::PeerManager;
 use crate::rpc::{build_stub_router, RpcRouter};
-use crate::storage::{ChainDb, ChainMeta, StorageError, SCHEMA_VERSION};
-use crate::{NodeConfig, PeerEndpoint};
+use crate::storage::{ChainDb, StorageError};
+use crate::NodeConfig;
 
 // ── Error types ────────────────────────────────────────────────────────
 
@@ -248,6 +248,7 @@ fn parse_hash(hex_str: &str) -> [u8; 32] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PeerEndpoint;
     use tempfile::tempdir;
 
     fn test_config() -> NodeConfig {

@@ -46,8 +46,9 @@ Out of scope for the bootstrap:
 - `L1/core` now carries orphan block handling: orphan pool with FIFO eviction (200 max, 10 min expiry), chain ID enforcement (`zion-mainnet-1`) (`orphan.rs`)
 - `L1/core` now carries LMDB persistent storage via heed: 8 databases (blocks, utxos, tx_index, balance_cache, undo_blocks, height_to_hash, hash_to_height, meta), atomic block+UTXO writes, rollback, balance cache, schema versioning (`storage.rs`)
 - `L1/core` now carries the IBD state machine: batch sync (500 blocks/request), stall detection (120 s timeout, 3 retries), peer round-robin, SyncStatus tracking (Ibd/Syncing/Synced) (`ibd.rs`)
-- `L1/core` JSON-RPC 2.0 methods are now **live** (no longer stubs): all 11 methods bind to real `NodeRuntime` state via `Arc<Mutex<NodeRuntime>>`. Auto-detected on the existing RPC TCP port alongside the simple line-delimited protocol used by the pool/miner.
-- `L1/core` now carries a JSON-RPC 2.0 protocol handler: method registry, batch requests, standard error codes, 11 node methods via `build_node_router()` (`rpc.rs`)
+- `L1/core` JSON-RPC 2.0 methods are now **live** (no longer stubs): 15 methods bind to real `NodeRuntime` state via `Arc<Mutex<NodeRuntime>>`, including explicit account-runtime aliases `getAccountBalance`, `getAccountTransaction`, and `submitAccountTransaction` alongside the compatibility names. Auto-detected on the existing RPC TCP port alongside the simple line-delimited protocol used by the pool/miner.
+- `L1/core` JSON-RPC is still bound to the current account-style runtime path: `getBalance`, `getAccountBalance`, and transaction submission operate on wallet ids carried by `lib.rs` transactions, not on the separate UTXO wallet path in `tx.rs`/`wallet.rs`; `zion1...` lookups are rejected explicitly on that endpoint
+- `L1/core` now carries a JSON-RPC 2.0 protocol handler: method registry, batch requests, standard error codes, 15 node methods via `build_node_router()` (`rpc.rs`)
 - `L1/core` now carries the peer manager: scoring with ban threshold, subnet diversity (MAX_PER_SUBNET=4), heartbeat with idle timeout, inbound/outbound tracking, seed management (`peer_manager.rs`)
 - `L1/core` now carries metrics: atomic counters/gauges (blocks, txs, mempool, peers, difficulty), Prometheus text exposition format with `zion_` prefix, health check JSON (`metrics.rs`)
 - `L1/core` now carries genesis ceremony and launch readiness: frozen genesis hash, checkpoint system, 9 launch readiness checks (genesis integrity, emission, decay, tail, difficulty, DAO lock, premine addresses, checkpoints, zeroize) (`launch.rs`)
@@ -118,6 +119,7 @@ The `server` binary in `L1/pool` supports:
 The `node` binary in `L1/core` supports:
 
 - `ZION_NODE_ID`
+- `ZION_MINER_ADDRESS`
 - `ZION_P2P_BIND`
 - `ZION_RPC_BIND`
 - `ZION_POOL_BIND`
@@ -126,6 +128,9 @@ The `node` binary in `L1/core` supports:
 - `ZION_RPC_ACCEPT_LIMIT`
 - `ZION_NODE_STATE_PATH`
 - `ZION_SEED_PEERS`
+
+JSON-RPC note:
+`getAccountBalance`, `getAccountTransaction`, and `submitAccountTransaction` are the explicit account-runtime aliases. `sendRawTransaction` remains available for compatibility, but it does not accept raw hex payloads, and `getBalance` rejects `zion1...` UTXO addresses until the runtime is unified.
 
 ## Docker Deployment
 
@@ -143,7 +148,7 @@ docker compose -f docker/docker-compose.v3-mainnet.yml up -d
 
 | Service | Image | Ports | Volume |
 |---------|-------|-------|--------|
-| `node` | `zion-v3-node` | 8334 (P2P), 8332 (RPC) | `zion-node-data:/data/zion` |
+| `node` | `zion-v3-node` | 8334 (P2P), 127.0.0.1:8332 (RPC host-local only) | `zion-node-data:/data/zion` |
 | `pool` | `zion-v3-pool` | 8444 (stratum) | — |
 | `miner` | `zion-v3-miner` | — | — |
 
@@ -161,7 +166,7 @@ ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-main
 - **157.180.41.213** (Helsinki, Hetzner) — 8 vCPU AMD EPYC, 16 GB RAM, 150 GB SSD, Ubuntu 24.04
 - Chain height: 110+ (first deploy 2026-03-13, JSON-RPC 2.0 live since Phase 9, peer discovery since Phase 11)
 - Node P2P: `157.180.41.213:8334`
-- Node RPC: `157.180.41.213:8332`
+- Node RPC: host-local only on `127.0.0.1:8332` via SSH tunnel or local shell on the server
 - Pool stratum: `157.180.41.213:8444`
 
 ## Wire Protocol
@@ -181,7 +186,7 @@ Current `zion-core` node scaffolding supports:
 
 - P2P: `hello`, `welcome`, `ping`, `pong`, `get_peers`, `peers`, `get_status`, `status`, `get_blocks_since`, `blocks`, `announce_block`
 - RPC: `get_status`, `get_peers`, `get_revenue`, `get_mempool`, `get_template`, `submit_transaction`, `submit_candidate`
-- JSON-RPC 2.0: `getChainInfo`, `getNodeInfo`, `getBlock`, `getBlockByHeight`, `getBalance`, `getTransaction`, `getBlockTemplate`, `getMempoolInfo`, `getPeerInfo`, `sendRawTransaction`, `submitBlock`
+- JSON-RPC 2.0: `getChainInfo`, `getNodeInfo`, `getBlock`, `getBlockByHeight`, `getBalance`, `getAccountBalance`, `getTransaction`, `getAccountTransaction`, `getBlockTemplate`, `getMempoolInfo`, `getPeerInfo`, `sendRawTransaction`, `submitTransaction`, `submitAccountTransaction`, `submitBlock`
 
 Current template and accepted-block metadata now includes:
 
@@ -194,7 +199,7 @@ Current template and accepted-block metadata now includes:
 1. ~~**Phase 6: Chain Safety**~~ ✅ done — reorg, fork choice, mempool hardening, P2P security, orphan handling.
 2. ~~**Phase 7: Production Infrastructure**~~ ✅ done — LMDB storage, IBD, RPC, peer manager, metrics.
 3. ~~**Phase 8: Docker & Deployment**~~ ✅ done — multi-stage Docker images, compose stack, deployed to Helsinki.
-4. ~~**Phase 9: JSON-RPC 2.0 Live Methods**~~ ✅ done — 11 methods bound to NodeRuntime, auto-detected on RPC port, 371 tests.
+4. ~~**Phase 9: JSON-RPC 2.0 Live Methods**~~ ✅ done — 15 methods bound to NodeRuntime, auto-detected on RPC port, 371 tests.
 5. ~~**Phase 10: P2P Hardening**~~ ✅ done — persistent inbound connections, outbound peer thread with heartbeat, PeerManager scoring + PeerSecurity rate-limiting wired into node binary.
 6. ~~**Phase 11: Peer Discovery & Persistence**~~ ✅ done — active GetPeers exchange in outbound loop, discovered peers merged + persisted to `peers.json`, loaded on startup, 376 tests.
 7. ~~**Phase 12: Block Validation Hardening**~~ ✅ done — PoW verification via header_hex, timestamp sanity, checkpoint enforcement, header consistency checks, 385 tests.
