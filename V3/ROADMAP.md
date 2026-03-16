@@ -980,8 +980,101 @@ MAX_BATCH_RECIPIENTS   = 200
 MIN_PAYOUT_AMOUNT      = 10_000_000_000_000 flowers (10 ZION)
 ```
 
+## Phase 21+: Production Upgrade Track
+
+> Detailed plan: `V3/docs/UPGRADE_PLAN.md` (2026-03-17)
+
+The following phases cover everything needed between current canary validation and public mainnet launch.
+Each phase maps to a lettered section in the upgrade plan document.
+
+### Phase 21: Miner Production Hardening (Upgrade Plan §A)
+
+Goal: make `zion-miner` safe, usable, and performant for public miners.
+
+Key deliverables:
+- A1: graceful error handling (reconnect loop, GPU/NPU fallback, no panics)
+- A2: `--help` / `--version` CLI, config file support, startup banner, colored output
+- A3: multi-thread nonce scan (rayon), adaptive nonce window, memory pool reuse
+- A5: expand miner test coverage from 13 → 53 tests
+
+Exit criteria:
+- miner survives pool disconnect and reconnects within 30 s
+- `zion-miner --help` prints all options
+- multi-thread mode shows ≥2× hashrate over single-thread on 4+ core machine
+- 50+ miner tests pass
+
+Status: not started
+
+### Phase 22: Pool Production Hardening (Upgrade Plan §B)
+
+Goal: make the pool reliable for multiple concurrent miners and add payout engine.
+
+Key deliverables:
+- B1: graceful shutdown, per-IP rate limiting, session cap, memory audit
+- B2: Prometheus `/metrics` endpoint, `/health` + `/stats` JSON endpoints
+- B3: PPLNS payout engine with min threshold and batch wallet integration
+- B4: expand pool test coverage to 63+ tests
+
+Exit criteria:
+- pool handles ≥50 concurrent miners without memory growth
+- Prometheus scrapes pool metrics cleanly
+- PPLNS payout correctly distributes rewards across share window
+
+Status: not started
+
+### Phase 23: Monitoring & Observability (Upgrade Plan §C)
+
+Goal: deploy full Grafana + Prometheus + Alertmanager stack alongside V3 services.
+
+Key deliverables:
+- C1: Prometheus scrape targets for node, pool, miner, host
+- C2: 5 Grafana dashboards (chain, mining, revenue, node health, fleet)
+- C3: alerting rules (7 rules: no miners, high reject, chain stall, node down, disk, peers, mempool)
+- C4: docker-compose.monitoring.yml
+
+Exit criteria:
+- Grafana accessible on :3000 with all dashboards populated
+- Alertmanager fires test alert on simulated pool-down
+- Node/pool/miner metrics visible in Prometheus
+
+Status: not started
+
+### Phase 24: Security & Audit (Upgrade Plan §F)
+
+Goal: pre-launch security sweep.
+
+Key deliverables:
+- F1: BFG scrub premine keys, `cargo audit`, `cargo-fuzz`, panic audit, input validation review
+- F2: zero clippy warnings on miner + pool, comment cleanup
+
+Exit criteria:
+- `PREMINE_WALLETS_BACKUP.json` removed from all reachable git history
+- `cargo audit` returns 0 vulnerabilities
+- zero `unwrap()` in production hot paths
+
+Status: not started (BFG scrub is one-time, should be done early)
+
+### Phase 25: Infrastructure & Release (Upgrade Plan §E + §G)
+
+Goal: CI/CD, seed nodes, release artifacts, public documentation.
+
+Key deliverables:
+- E2: CI pipeline (lint → test → build → docker → deploy → smoke)
+- E3: signed release binaries for Linux/Windows/macOS
+- E4: 5 geographically distributed seed nodes deployed
+- G1-G3: mining guide, node operator guide, developer docs
+
+Exit criteria:
+- CI runs green on every push
+- Release binaries downloadable from GitHub Releases
+- 5 seed nodes online and reachable
+- MINING_GUIDE.md tested by non-developer user
+
+Status: not started
+
 ## Rules For Future Work
 
 - If `V3/` scope changes materially, update this file and `V3/README.md` in the same change.
 - Prefer removing ambiguity over preserving historical names.
 - When migrating code from the legacy tree, copy only audited behavior that serves the clean mainnet line.
+- For production upgrade phases (21+), follow `V3/docs/UPGRADE_PLAN.md` as the detailed reference.
