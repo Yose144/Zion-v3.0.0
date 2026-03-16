@@ -215,7 +215,17 @@ Pool server testy pokryvaji:
 - session group resolution
 - routing stats counters
 
-Aktualni stav: 11/11 pass pro server binary tests.
+Aktualni stav (2026-03-16):
+
+- `cargo test --manifest-path V3/Cargo.toml -p zion-pool --bin server --no-run` -> compile OK
+- `cargo test --manifest-path V3/Cargo.toml -p zion-pool` -> lib tests 13/13 pass
+- plne spusteni `--bin server` test executable je na tomto hostu blokovane lokalni AV politikou (Windows os error 225), proto je runtime potvrzeni provedeno E2E smoke scenarem niz
+
+Runtime smoke (manual E2E):
+
+- backend session (`miner_id=backend-smoke`, `worker=backend-revenue`) byla klasifikovana jako `session_group=revenue`
+- `routing_snapshot` potvrdil `revenue={submits:1,accepted:1}` a `src_blake3={submits:1,accepted:1}`
+- share byla accepted a session se ukoncila korektnim `bye`
 
 ## 9) Operacni poznamky
 
@@ -257,3 +267,27 @@ Dalsi prirozene kroky:
 - persistent metrics endpoint (Prometheus text / JSON)
 - daily aggregation report na lane utilization + acceptance
 - policy guardrails (napr. max revenue pct cap)
+
+## 12) Paralelni nasazeni na DE server (canary)
+
+Cil: spustit revenue konfiguraci paralelne bez dopadu na stavajici produkcni endpoint.
+
+Canary postup:
+
+1. Priprav DE host a spust samostatny pool bind na alternativnim portu (napr. 9444), neprepisuj stavajici 8444 endpoint.
+2. Nastav revenue env stejne jako v produkcni doporucene konfiguraci, navic:
+   - `ZION_ROUTING_LOG_EVERY=1` po dobu canary okna
+   - `ZION_ROUTING_METRICS_BIND=127.0.0.1:9550` pro remote check snapshotu
+3. Posli jen backend canary workery na DE endpoint (user workery nech na puvodnim endpointu).
+4. Sleduj 30-60 min:
+   - acceptance ratio
+   - `routing_snapshot` group/source rozdeleni
+   - reject reasons (stale/invalid/upstream)
+5. Pokud je acceptance stabilni a source split odpovida planu, presmeruj zbytek backend workeru.
+6. Teprve potom zvaž user traffic migration, pokud je to soucast planu.
+
+Minimalni rollback:
+
+- vrat backend minery na puvodni endpoint
+- vypni DE canary pool instanci
+- ponech logy/snapshoty pro postmortem
