@@ -315,6 +315,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
     let mut accepted_iterations = 0u64;
+    let mut rejected_iterations = 0u64;
     let mut last_result_line = None;
     let mut last_job_id = 0u64;
 
@@ -367,6 +368,8 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
             PoolMessage::Result { accepted, status } => {
                 if accepted {
                     accepted_iterations += 1;
+                } else {
+                    rejected_iterations += 1;
                 }
                 status
             }
@@ -379,42 +382,29 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         println!("wire_result={result_line_raw}");
     }
 
-    loop {
-        let (line, message) = read_wire_message(&mut reader)?;
-        match message {
-            PoolMessage::Stale { .. } => println!("wire_stale={line}"),
-            PoolMessage::Cancel { .. } => println!("wire_cancel={line}"),
-            PoolMessage::Bye {
-                accepted_shares,
-                rejected_shares,
-                revenue_total_usd,
-            } => {
-                println!("wire_bye={line}");
-                let elapsed_seconds = started_at.elapsed().as_secs_f64();
-                let hashrate_hps = if elapsed_seconds > 0.0 {
-                    attempted_hashes as f64 / elapsed_seconds
-                } else {
-                    0.0
-                };
-                return Ok(SessionOutcome {
-                    last_job_id,
-                    accepted_shares,
-                    rejected_shares,
-                    active_jobs: 0,
-                    accepted_iterations,
-                    attempted_hashes,
-                    elapsed_seconds,
-                    hashrate_hps,
-                    revenue_total_usd: revenue_total_usd
-                        .parse::<f64>()
-                        .with_context(|| format!("invalid bye revenue total: {revenue_total_usd}"))?,
-                    last_result_line,
-                    bye_line: Some(line),
-                });
-            }
-            other => return Err(anyhow!("unexpected session message after loop: {other:?}")),
-        }
-    }
+    // Remote pool sessions are long-lived and may immediately stream another
+    // job after the configured loop count. Finish cleanly with the local run
+    // counters instead of requiring a terminal Bye frame.
+    let elapsed_seconds = started_at.elapsed().as_secs_f64();
+    let hashrate_hps = if elapsed_seconds > 0.0 {
+        attempted_hashes as f64 / elapsed_seconds
+    } else {
+        0.0
+    };
+
+    Ok(SessionOutcome {
+        last_job_id,
+        accepted_shares: accepted_iterations,
+        rejected_shares: rejected_iterations,
+        active_jobs: 0,
+        accepted_iterations,
+        attempted_hashes,
+        elapsed_seconds,
+        hashrate_hps,
+        revenue_total_usd: 0.0,
+        last_result_line,
+        bye_line: None,
+    })
 }
 
 fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob)> {

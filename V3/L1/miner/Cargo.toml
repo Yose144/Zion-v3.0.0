@@ -13,6 +13,20 @@ path = "src/main.rs"
 default = []
 gpu = ["dep:ocl"]
 
+# Native algorithm acceleration (optional, requires C toolchain)
+native-etchash        = ["dep:zion-native-ffi", "zion-native-ffi/native-etchash"]
+native-kawpow         = ["dep:zion-native-ffi", "zion-native-ffi/native-kawpow"]
+native-autolykos      = ["dep:zion-native-ffi", "zion-native-ffi/native-autolykos"]
+native-kheavyhash     = ["dep:zion-native-ffi", "zion-native-ffi/native-kheavyhash"]
+native-blake3-algo    = ["dep:zion-native-ffi", "zion-native-ffi/native-blake3-algo"]
+native-cosmic-harmony = ["dep:zion-native-ffi", "zion-native-ffi/native-cosmic-harmony"]
+native-verushash      = ["dep:zion-native-ffi", "zion-native-ffi/native-verushash"]
+native-randomx        = ["dep:zion-native-ffi", "zion-native-ffi/native-randomx"]
+native-all = [
+    "native-etchash", "native-kawpow", "native-autolykos", "native-kheavyhash",
+    "native-blake3-algo", "native-cosmic-harmony", "native-verushash", "native-randomx",
+]
+
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
@@ -20,3 +34,4 @@ ocl = { version = "0.19", optional = true }
 serde_json.workspace = true
 zion-core = { path = "../core" }
 zion-pool = { path = "../pool" }
+zion-native-ffi = { path = "../native-ffi", optional = true }
