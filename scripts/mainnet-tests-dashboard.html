@@ -230,25 +230,25 @@
   <div class="wrap">
     <div class="hero">
       <h1>ZION Mainnet Test Dashboard</h1>
-      <p>Primary host: 91.98.122.165 | Snapshot UTC: 2026-03-16T22:39:24Z</p>
+      <p>Primary host: 91.98.122.165 | Snapshot UTC: 2026-03-16T22:51:02Z</p>
       <p>Mode: Testnet live + V3 canary node/pool on same server, miner tested locally</p>
       <div class="health-banner">
         <div>
           <strong>Cluster health:</strong>
-          <span class="health-badge badge-idle">IDLE</span>
+          <span class="health-badge badge-ok">PASS</span>
         </div>
         <div><strong>Reject trend:</strong> 0,00%</div>
       </div>
     </div>
 
     <div class="grid">
-      <div class="card health-idle"><div class="k">Health Status</div><div class="v idle">IDLE</div></div>
+      <div class="card health-ok"><div class="k">Health Status</div><div class="v ok">PASS</div></div>
       <div class="card"><div class="k">Reject Trend (delta)</div><div class="v">0,00%</div></div>
       <div class="card"><div class="k">Testnet Active Miners</div><div class="v">n/a</div></div>
       <div class="card"><div class="k">Testnet Hashrate</div><div class="v">n/a</div></div>
-      <div class="card"><div class="k">Canary Height</div><div class="v">34</div></div>
-      <div class="card"><div class="k">Canary Accept Rate</div><div class="v">0,00%</div></div>
-      <div class="card"><div class="k">Canary Accepted</div><div class="v">0</div></div>
+      <div class="card"><div class="k">Canary Height</div><div class="v">39</div></div>
+      <div class="card"><div class="k">Canary Accept Rate</div><div class="v">100,00%</div></div>
+      <div class="card"><div class="k">Canary Accepted</div><div class="v">5</div></div>
       <div class="card"><div class="k">Canary Rejected</div><div class="v">0</div></div>
       <div class="card"><div class="k">Pool Valid Shares</div><div class="v">n/a</div></div>
       <div class="card"><div class="k">Pool Invalid Shares</div><div class="v">n/a</div></div>
@@ -259,8 +259,8 @@
         <h3 class="section-title">Acceptance Gauge</h3>
         <div class="gauge-wrap">
           <div style="position:relative; display:grid; place-items:center;">
-            <div class="gauge" style="--pct: 0"></div>
-            <div class="gauge-value">0,00%</div>
+            <div class="gauge" style="--pct: 100"></div>
+            <div class="gauge-value">100,00%</div>
           </div>
           <div style="color: var(--muted); max-width: 340px; font-size: 13px; line-height: 1.45;">
             Snapshot acceptance for canary pool. Health combines this value with reject trend delta and treats zero-submit snapshots as IDLE instead of CRIT.
@@ -275,16 +275,16 @@
             <div class="meter-track"><div class="meter-fill fill-crit" style="width: 0%"></div></div>
           </div>
           <div class="meter-row">
-            <div class="meter-head"><span>Revenue Group Accept Ratio</span><span>0,00%</span></div>
-            <div class="meter-track"><div class="meter-fill fill-ok" style="width: 0%"></div></div>
+            <div class="meter-head"><span>Revenue Group Accept Ratio</span><span>100,00%</span></div>
+            <div class="meter-track"><div class="meter-fill fill-ok" style="width: 100%"></div></div>
           </div>
           <div class="meter-row">
             <div class="meter-head"><span>Zion Group Accept Ratio</span><span>0,00%</span></div>
             <div class="meter-track"><div class="meter-fill fill-warn" style="width: 0%"></div></div>
           </div>
           <div class="meter-row">
-            <div class="meter-head"><span>Blake3 Source Accept Ratio</span><span>0,00%</span></div>
-            <div class="meter-track"><div class="meter-fill fill-ok" style="width: 0%"></div></div>
+            <div class="meter-head"><span>Blake3 Source Accept Ratio</span><span>100,00%</span></div>
+            <div class="meter-track"><div class="meter-fill fill-ok" style="width: 100%"></div></div>
           </div>
         </div>
       </div>
@@ -293,28 +293,28 @@
     <div class="card" style="margin-top:12px;">
       <h3 class="section-title">Canary Pool Metrics</h3>
       <div class="grid" style="margin-top:0;">
-        <div class="card"><div class="k">Submits / min (delta)</div><div class="v">0,00</div></div>
-        <div class="card"><div class="k">Accepted / min (delta)</div><div class="v">0,00</div></div>
-        <div class="card"><div class="k">Revenue Group (acc/sub)</div><div class="v">0/0</div></div>
+        <div class="card"><div class="k">Submits / min (delta)</div><div class="v">0,43</div></div>
+        <div class="card"><div class="k">Accepted / min (delta)</div><div class="v">0,43</div></div>
+        <div class="card"><div class="k">Revenue Group (acc/sub)</div><div class="v">5/5</div></div>
         <div class="card"><div class="k">Zion Group (acc/sub)</div><div class="v">0/0</div></div>
-        <div class="card"><div class="k">Blake3 Source (acc/sub)</div><div class="v">0/0</div></div>
+        <div class="card"><div class="k">Blake3 Source (acc/sub)</div><div class="v">5/5</div></div>
       </div>
     </div>
 
     <div class="split">
       <div class="card">
         <h3 class="section-title">Host Overview</h3>
-        <pre>hostname=Zion2  uptime=up 6 days, 10 hours, 1 minute  load=0.00 0.01 0.00 2/406 2116840</pre>
+        <pre>hostname=Zion2  uptime=up 6 days, 10 hours, 13 minutes  load=0.15 0.03 0.01 1/406 2119727</pre>
         <br/>
         <h3 class="section-title">Memory</h3>
-        <pre>               total        used        free      shared  buff/cache   available Mem:           7.6Gi       1.1Gi       4.9Gi       8.5Mi       1.9Gi       6.5Gi Swap:             0B          0B          0B</pre>
+        <pre>               total        used        free      shared  buff/cache   available Mem:           7.6Gi       1.1Gi       4.9Gi       8.6Mi       1.9Gi       6.5Gi Swap:             0B          0B          0B</pre>
       </div>
       <div class="card">
         <h3 class="section-title">Docker Containers</h3>
-        <pre>NAMES                 IMAGE                 STATUS                PORTS zion-v3-canary-pool   zion-v3-pool:latest   Up 30 minutes         127.0.0.1:13333->8444/tcp, 127.0.0.1:19550->9550/tcp zion-v3-canary-node   zion-v3-node:latest   Up 2 hours            127.0.0.1:18332->8332/tcp, 127.0.0.1:18334->8334/tcp zion-website          zion-website:2.9.6    Up 4 days (healthy)   0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp zion-seed-1           zion-core:2.9.8       Up 5 days             8334/tcp, 8444/tcp zion-seed-2           zion-core:2.9.8       Up 5 days             8334/tcp, 8444/tcp zion-redis            redis:7-alpine        Up 5 days (healthy)   6379/tcp zion-core             zion-core:2.9.8       Up 5 days (healthy)   0.0.0.0:8334->8334/tcp, [::]:8334->8334/tcp, 0.0.0.0:8444->8444/tcp, [::]:8444->8444/tcp</pre>
+        <pre>NAMES                 IMAGE                 STATUS                PORTS zion-v3-canary-pool   zion-v3-pool:latest   Up 41 minutes         127.0.0.1:13333->8444/tcp, 127.0.0.1:19550->9550/tcp zion-v3-canary-node   zion-v3-node:latest   Up 2 hours            127.0.0.1:18332->8332/tcp, 127.0.0.1:18334->8334/tcp zion-website          zion-website:2.9.6    Up 4 days (healthy)   0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp zion-seed-1           zion-core:2.9.8       Up 5 days             8334/tcp, 8444/tcp zion-seed-2           zion-core:2.9.8       Up 5 days             8334/tcp, 8444/tcp zion-redis            redis:7-alpine        Up 5 days (healthy)   6379/tcp zion-core             zion-core:2.9.8       Up 5 days (healthy)   0.0.0.0:8334->8334/tcp, [::]:8334->8334/tcp, 0.0.0.0:8444->8444/tcp, [::]:8444->8444/tcp</pre>
         <br/>
         <h3 class="section-title">Container Stats</h3>
-        <pre>NAME                  CPU %     MEM USAGE / LIMIT    NET I/O zion-v3-canary-pool   0.00%     888KiB / 7.57GiB     28.4kB / 25.2kB zion-v3-canary-node   0.00%     7.023MiB / 7.57GiB   80.2kB / 157kB zion-website          0.00%     111.2MiB / 7.57GiB   63.4MB / 215MB zion-seed-1           0.00%     9.66MiB / 7.57GiB    8.96GB / 17.2MB zion-seed-2           0.00%     10.65MiB / 7.57GiB   8.96GB / 17.3MB zion-redis            0.51%     11.88MiB / 7.57GiB   3.42GB / 33.3GB zion-core             0.00%     10.89MiB / 7.57GiB   81MB / 18GB</pre>
+        <pre>NAME                  CPU %     MEM USAGE / LIMIT    NET I/O zion-v3-canary-pool   0.00%     952KiB / 7.57GiB     41.2kB / 37.1kB zion-v3-canary-node   0.00%     7.375MiB / 7.57GiB   87.3kB / 169kB zion-website          0.00%     110MiB / 7.57GiB     64MB / 221MB zion-seed-1           0.00%     9.664MiB / 7.57GiB   9.01GB / 17.3MB zion-seed-2           0.00%     10.65MiB / 7.57GiB   9.01GB / 17.3MB zion-redis            0.50%     12.12MiB / 7.57GiB   3.42GB / 33.3GB zion-core             0.00%     10.89MiB / 7.57GiB   81.2MB / 18.1GB</pre>
       </div>
     </div>
 
@@ -323,14 +323,14 @@
         <h3 class="section-title">Canary Node RPC</h3>
         <details>
           <summary>Show raw payload</summary>
-          <pre>{"type":"status","status":{"node_id":"v3-zion2-canary","network":"Mainnet","protocol_version":"zion-v3-node/0.1","consensus_profile":"cosmic_harmony_ekam_deeksha","chain_height":34,"tip_hash_hex":"0003898fe8916c5cfb5ae3d8e7d3ff8b0b885a59f03d3b7c173bf23c25488dce","active_template_id":35,"active_template_height":35,"accepted_blocks":35,"mempool_transactions":0,"active_template_transactions":1,"active_template_total_fees_zion":0,"p2p_bind":{"host":"0.0.0.0","port":8334},"rpc_bind":{"host":"0.0.0.0","port":8332},"pool_bind":{"host":"0.0.0.0","port":8444},"known_peers":[],"revenue":{"total_earnings_usd":0.0,"zion_fees_usd":0.0,"miner_payout_usd":0.0}}}</pre>
+          <pre>{"type":"status","status":{"node_id":"v3-zion2-canary","network":"Mainnet","protocol_version":"zion-v3-node/0.1","consensus_profile":"cosmic_harmony_ekam_deeksha","chain_height":39,"tip_hash_hex":"00012b2e91e1e70a3c9c23a5318e30b5de46082ebb1f53c020dda8bc9dc83815","active_template_id":40,"active_template_height":40,"accepted_blocks":40,"mempool_transactions":0,"active_template_transactions":1,"active_template_total_fees_zion":0,"p2p_bind":{"host":"0.0.0.0","port":8334},"rpc_bind":{"host":"0.0.0.0","port":8332},"pool_bind":{"host":"0.0.0.0","port":8444},"known_peers":[],"revenue":{"total_earnings_usd":0.0,"zion_fees_usd":0.0,"miner_payout_usd":0.0}}}</pre>
         </details>
       </div>
       <div class="card">
         <h3 class="section-title">Canary Routing Metrics</h3>
         <details>
           <summary>Show raw payload</summary>
-          <pre>{"submits":0,"accepted":0,"rejected":0,"accept_rate_pct":0.00,"groups":{"zion":{"submits":0,"accepted":0},"revenue":{"submits":0,"accepted":0},"ncl":{"submits":0,"accepted":0},"auto":{"submits":0,"accepted":0}},"sources":{"zion":{"submits":0,"accepted":0},"blake3":{"submits":0,"accepted":0},"ncl":{"submits":0,"accepted":0}}}</pre>
+          <pre>{"submits":5,"accepted":5,"rejected":0,"accept_rate_pct":100.00,"groups":{"zion":{"submits":0,"accepted":0},"revenue":{"submits":5,"accepted":5},"ncl":{"submits":0,"accepted":0},"auto":{"submits":0,"accepted":0}},"sources":{"zion":{"submits":0,"accepted":0},"blake3":{"submits":5,"accepted":5},"ncl":{"submits":0,"accepted":0}}}</pre>
         </details>
       </div>
     </div>
