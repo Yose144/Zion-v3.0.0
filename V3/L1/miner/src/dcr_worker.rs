@@ -6,12 +6,13 @@ use std::time::{Duration, Instant};
 use crate::dcr_hash::{hash_meets_target, NONCE_OFFSET};
 use crate::dcr_stratum::DcrStratumClient;
 #[cfg(feature = "gpu")]
-use crate::dcr_gpu::GpuDcrMiner;
+use crate::dcr_gpu::{autotune_best_work_size, load_saved_work_size, save_work_size, GpuDcrMiner};
 
 const DEFAULT_BTC_WALLET: &str = "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw";
 const DEFAULT_DCR_POOL: &str = "dcr.2miners.com:3333";
 const DEFAULT_DCR_WORKER: &str = "zion_stealth";
 const DEFAULT_GPU_WORK_SIZE: usize = 1 << 20;
+const DEFAULT_GPU_AUTOTUNE_SECS: f64 = 2.0;
 
 /// Nonces per inner batch before checking for new jobs / stop flag.
 /// 2^22 ≈ 4M — big enough to amortize poll overhead, small enough
@@ -47,6 +48,9 @@ pub struct DcrConfig {
     pub worker_name: String,
     pub backend: DcrBackend,
     pub gpu_work_size: usize,
+    pub gpu_autotune: bool,
+    pub gpu_autotune_secs: f64,
+    pub hash_impl: DcrHashImpl,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,6 +58,21 @@ pub enum DcrBackend {
     Auto,
     Cpu,
     Gpu,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DcrHashImpl {
+    RustPrecompute,
+    Native,
+}
+
+impl DcrHashImpl {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::RustPrecompute => "rust-precompute",
+            Self::Native => "native",
+        }
+    }
 }
 
 impl DcrBackend {
@@ -105,6 +124,15 @@ impl DcrConfig {
                 .and_then(|v| v.parse::<usize>().ok())
                 .unwrap_or(DEFAULT_GPU_WORK_SIZE)
                 .max(1024),
+            gpu_autotune: parse_bool_env("ZION_GPU_AUTOTUNE", true),
+            gpu_autotune_secs: std::env::var("ZION_GPU_AUTOTUNE_SECS")
+                .ok()
+                .and_then(|v| v.parse::<f64>().ok())
+                .unwrap_or(DEFAULT_GPU_AUTOTUNE_SECS)
+                .max(0.3),
+            hash_impl: parse_hash_impl(
+                &std::env::var("ZION_DCR_HASH_IMPL").unwrap_or_else(|_| "rust".to_string()),
+            ),
         })
     }
 
@@ -123,9 +151,36 @@ impl DcrConfig {
 ///
 /// Returns (join_handles, shared_stats).
 pub fn spawn_dcr_worker(
-    config: DcrConfig,
+    #[allow(unused_mut)]
+    mut config: DcrConfig,
     stop: Arc<AtomicBool>,
 ) -> (Vec<thread::JoinHandle<()>>, Arc<DcrStats>) {
+    #[cfg(feature = "gpu")]
+    {
+        if matches!(config.backend, DcrBackend::Auto | DcrBackend::Gpu) && config.gpu_autotune {
+            let mut candidates = vec![
+                (config.gpu_work_size / 4).max(262_144),
+                (config.gpu_work_size / 2).max(262_144),
+                config.gpu_work_size.max(262_144),
+                (config.gpu_work_size.saturating_mul(2)).min(4_194_304),
+                (config.gpu_work_size.saturating_mul(4)).min(4_194_304),
+            ];
+            candidates.sort_unstable();
+            candidates.dedup();
+
+            if let Ok((device, ws, mhps)) = autotune_best_work_size(&candidates, config.gpu_autotune_secs) {
+                let stored = load_saved_work_size(&device).unwrap_or(0);
+                let chosen = ws.max(stored);
+                config.gpu_work_size = chosen;
+                let _ = save_work_size(&device, chosen);
+                eprintln!(
+                    "dcr autotune device={} best_work_size={} sampled_mhps={:.2} saved={}",
+                    device, chosen, mhps, chosen
+                );
+            }
+        }
+    }
+
     let stats = Arc::new(DcrStats::new());
     let mut handles = Vec::with_capacity(config.threads);
 
@@ -222,12 +277,15 @@ fn mine_loop_cpu(config: &DcrConfig, thread_id: usize, stop: &AtomicBool, stats:
         let copy_len = job_hdr_len.min(180);
         header[..copy_len].copy_from_slice(&job.header[..copy_len]);
 
-        // Precompute Blake3 state for first 128 bytes (2 compression blocks).
-        // Only the 52-byte tail (containing the nonce at offset 12) is re-hashed.
+        let use_native_hash = matches!(config.hash_impl, DcrHashImpl::Native);
+
+        // Precompute Blake3 state for first 128 bytes only on the rust path.
         let mut base_hasher = blake3::Hasher::new();
-        base_hasher.update(&header[..128]);
         let mut tail = [0u8; 52];
-        tail.copy_from_slice(&header[128..180]);
+        if !use_native_hash {
+            base_hasher.update(&header[..128]);
+            tail.copy_from_slice(&header[128..180]);
+        }
         const TAIL_NONCE: usize = NONCE_OFFSET - 128; // 12
 
         let mut target = job.target;
@@ -235,6 +293,7 @@ fn mine_loop_cpu(config: &DcrConfig, thread_id: usize, stop: &AtomicBool, stats:
         let mut nonce = nonce_start;
         let mut batch_start = Instant::now();
         let mut batch_hashes: u64 = 0;
+        let mut prev_acc = stats.accepted_shares.load(Ordering::Relaxed);
 
         // ── tight hash loop ──
         'mining: loop {
@@ -248,10 +307,12 @@ fn mine_loop_cpu(config: &DcrConfig, thread_id: usize, stop: &AtomicBool, stats:
                     let new_len = new_job.header.len().min(180);
                     header = [0u8; 180];
                     header[..new_len].copy_from_slice(&new_job.header[..new_len]);
-                    // Rebuild precomputed state for new header
-                    base_hasher = blake3::Hasher::new();
-                    base_hasher.update(&header[..128]);
-                    tail.copy_from_slice(&header[128..180]);
+                    if !use_native_hash {
+                        // Rebuild precomputed state for new header.
+                        base_hasher = blake3::Hasher::new();
+                        base_hasher.update(&header[..128]);
+                        tail.copy_from_slice(&header[128..180]);
+                    }
                     target = new_job.target;
                     job_id = new_job.job_id;
                     nonce = nonce_start;
@@ -260,14 +321,19 @@ fn mine_loop_cpu(config: &DcrConfig, thread_id: usize, stop: &AtomicBool, stats:
                 Err(_) => break 'mining, // reconnect
             }
 
-            // Hash INNER_BATCH nonces (precomputed: only 52-byte tail)
+            // Hash INNER_BATCH nonces; rust path uses precomputed tail, native path hashes full header.
             for _ in 0..INNER_BATCH {
-                tail[TAIL_NONCE..TAIL_NONCE + 4]
-                    .copy_from_slice(&nonce.to_le_bytes());
+                let hash = if use_native_hash {
+                    header[NONCE_OFFSET..NONCE_OFFSET + 4].copy_from_slice(&nonce.to_le_bytes());
+                    dcr_hash_runtime(&header)
+                } else {
+                    tail[TAIL_NONCE..TAIL_NONCE + 4]
+                        .copy_from_slice(&nonce.to_le_bytes());
 
-                let mut h = base_hasher.clone();
-                h.update(&tail);
-                let hash: [u8; 32] = *h.finalize().as_bytes();
+                    let mut h = base_hasher.clone();
+                    h.update(&tail);
+                    *h.finalize().as_bytes()
+                };
                 if hash_meets_target(&hash, &target) {
                     if client.submit_share(&job_id, nonce).is_ok() {
                         stats.accepted_shares.fetch_add(1, Ordering::Relaxed);
@@ -290,10 +356,13 @@ fn mine_loop_cpu(config: &DcrConfig, thread_id: usize, stop: &AtomicBool, stats:
                 let mhps = batch_hashes as f64 / elapsed / 1_000_000.0;
                 let total_acc = stats.accepted_shares.load(Ordering::Relaxed);
                 let total_rej = stats.rejected_shares.load(Ordering::Relaxed);
+                let acc_delta = total_acc.saturating_sub(prev_acc);
+                let acc_per_min = (acc_delta as f64) * 60.0 / elapsed.max(0.001);
                 eprintln!(
-                    "dcr[{}] {:.2} MH/s  shares={}/{}",
-                    thread_id, mhps, total_acc, total_rej
+                    "dcr[{}] cpu effective={:.2} MH/s accepted/min={:.2} shares={}/{}",
+                    thread_id, mhps, acc_per_min, total_acc, total_rej
                 );
+                prev_acc = total_acc;
                 batch_start = Instant::now();
                 batch_hashes = 0;
             }
@@ -341,6 +410,7 @@ fn mine_loop_gpu(
     let mut nonce: u32;
     let mut batch_start = Instant::now();
     let mut batch_hashes: u64 = 0;
+    let mut prev_acc = stats.accepted_shares.load(Ordering::Relaxed);
 
     loop {
         if stop.load(Ordering::Relaxed) {
@@ -431,14 +501,18 @@ fn mine_loop_gpu(
                 let mhps = batch_hashes as f64 / elapsed / 1_000_000.0;
                 let total_acc = stats.accepted_shares.load(Ordering::Relaxed);
                 let total_rej = stats.rejected_shares.load(Ordering::Relaxed);
+                let acc_delta = total_acc.saturating_sub(prev_acc);
+                let acc_per_min = (acc_delta as f64) * 60.0 / elapsed.max(0.001);
                 eprintln!(
-                    "dcr[{}] gpu {} {:.2} MH/s shares={}/{}",
+                    "dcr[{}] gpu {} effective={:.2} MH/s accepted/min={:.2} shares={}/{}",
                     thread_id,
                     gpu.device_name(),
                     mhps,
+                    acc_per_min,
                     total_acc,
                     total_rej
                 );
+                prev_acc = total_acc;
                 batch_start = Instant::now();
                 batch_hashes = 0;
             }
@@ -451,6 +525,45 @@ fn parse_backend(raw: &str) -> DcrBackend {
         "cpu" => DcrBackend::Cpu,
         "gpu" => DcrBackend::Gpu,
         _ => DcrBackend::Auto,
+    }
+}
+
+fn parse_hash_impl(raw: &str) -> DcrHashImpl {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "native" => {
+            #[cfg(feature = "native-blake3-algo")]
+            {
+                DcrHashImpl::Native
+            }
+            #[cfg(not(feature = "native-blake3-algo"))]
+            {
+                eprintln!("dcr hash impl=native requested but native-blake3-algo feature is not enabled; using rust-precompute");
+                DcrHashImpl::RustPrecompute
+            }
+        }
+        _ => DcrHashImpl::RustPrecompute,
+    }
+}
+
+#[inline(always)]
+fn dcr_hash_runtime(header: &[u8; 180]) -> [u8; 32] {
+    #[cfg(feature = "native-blake3-algo")]
+    {
+        zion_native_ffi::blake3_algo::hash(header)
+    }
+    #[cfg(not(feature = "native-blake3-algo"))]
+    {
+        crate::dcr_hash::dcr_hash(header)
+    }
+}
+
+fn parse_bool_env(key: &str, default: bool) -> bool {
+    match std::env::var(key) {
+        Ok(v) => {
+            let t = v.trim().to_ascii_lowercase();
+            !(t == "0" || t == "false" || t == "no" || t == "off")
+        }
+        Err(_) => default,
     }
 }
 
@@ -469,9 +582,16 @@ fn wait_or_stop(stop: &AtomicBool, seconds: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, OnceLock};
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
 
     #[test]
     fn dcr_config_defaults() {
+        let _guard = env_lock().lock().expect("env lock");
         std::env::remove_var("ZION_DCR_ENABLED");
         std::env::remove_var("ZION_BTC_WALLET");
         std::env::remove_var("ZION_DCR_THREADS");
@@ -487,6 +607,7 @@ mod tests {
 
     #[test]
     fn dcr_config_disabled() {
+        let _guard = env_lock().lock().expect("env lock");
         std::env::set_var("ZION_DCR_ENABLED", "false");
         assert!(DcrConfig::from_env().is_none());
         std::env::remove_var("ZION_DCR_ENABLED");
@@ -494,6 +615,7 @@ mod tests {
 
     #[test]
     fn dcr_config_disabled_zero() {
+        let _guard = env_lock().lock().expect("env lock");
         std::env::set_var("ZION_DCR_ENABLED", "0");
         assert!(DcrConfig::from_env().is_none());
         std::env::remove_var("ZION_DCR_ENABLED");
@@ -508,6 +630,9 @@ mod tests {
             worker_name: DEFAULT_DCR_WORKER.to_string(),
             backend: DcrBackend::Auto,
             gpu_work_size: DEFAULT_GPU_WORK_SIZE,
+            gpu_autotune: true,
+            gpu_autotune_secs: DEFAULT_GPU_AUTOTUNE_SECS,
+            hash_impl: DcrHashImpl::RustPrecompute,
         };
         assert_eq!(config.wallet_short(), "bc1q...d8mw");
     }
@@ -521,6 +646,9 @@ mod tests {
             worker_name: "test".to_string(),
             backend: DcrBackend::Cpu,
             gpu_work_size: DEFAULT_GPU_WORK_SIZE,
+            gpu_autotune: false,
+            gpu_autotune_secs: DEFAULT_GPU_AUTOTUNE_SECS,
+            hash_impl: DcrHashImpl::RustPrecompute,
         };
         let stop = Arc::new(AtomicBool::new(true)); // pre-set stop
         let (handles, stats) = spawn_dcr_worker(config, stop);
@@ -536,6 +664,21 @@ mod tests {
         assert_eq!(parse_backend("auto"), DcrBackend::Auto);
         assert_eq!(parse_backend("cpu"), DcrBackend::Cpu);
         assert_eq!(parse_backend("gpu"), DcrBackend::Gpu);
+    }
+
+    #[test]
+    fn hash_impl_parser_defaults_rust() {
+        assert_eq!(parse_hash_impl(""), DcrHashImpl::RustPrecompute);
+        assert_eq!(parse_hash_impl("rust"), DcrHashImpl::RustPrecompute);
+    }
+
+    #[test]
+    fn hash_impl_parser_native_behavior() {
+        let parsed = parse_hash_impl("native");
+        #[cfg(feature = "native-blake3-algo")]
+        assert_eq!(parsed, DcrHashImpl::Native);
+        #[cfg(not(feature = "native-blake3-algo"))]
+        assert_eq!(parsed, DcrHashImpl::RustPrecompute);
     }
 
     #[test]
