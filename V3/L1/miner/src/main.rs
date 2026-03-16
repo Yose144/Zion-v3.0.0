@@ -123,18 +123,44 @@ fn main() -> Result<()> {
     let dcr_state = match dcr_worker::DcrConfig::from_env() {
         Some(dcr_cfg) => {
             println!(
-                "dcr_stealth=enabled backend={} threads={} pool={} payout={} gpu_work_size={}",
+                "dcr_stealth=enabled backend={} hash_impl={} threads={} pool={} payout={} gpu_work_size={} autotune={} autotune_secs={:.2}",
                 dcr_cfg.backend.as_str(),
+                dcr_cfg.hash_impl.as_str(),
                 dcr_cfg.threads,
                 dcr_cfg.pool_addr,
                 dcr_cfg.wallet_short(),
-                dcr_cfg.gpu_work_size
+                dcr_cfg.gpu_work_size,
+                dcr_cfg.gpu_autotune,
+                dcr_cfg.gpu_autotune_secs
             );
             let (handles, stats) = dcr_worker::spawn_dcr_worker(dcr_cfg, dcr_stop.clone());
             Some((handles, stats))
         }
         None => None,
     };
+
+    if parse_bool_env("ZION_DCR_ONLY", false) {
+        let run_secs = parse_env_u64("ZION_DCR_RUN_SECS", 120)?;
+        println!("mode=dcr_only run_secs={run_secs}");
+        thread::sleep(Duration::from_secs(run_secs));
+
+        dcr_stop.store(true, Ordering::Relaxed);
+        if let Some((handles, stats)) = dcr_state {
+            for h in handles {
+                let _ = h.join();
+            }
+            let total = stats.total_hashes.load(Ordering::Relaxed);
+            let acc = stats.accepted_shares.load(Ordering::Relaxed);
+            let rej = stats.rejected_shares.load(Ordering::Relaxed);
+            let mhps = total as f64 / run_secs.max(1) as f64 / 1_000_000.0;
+            let acc_min = acc as f64 * 60.0 / run_secs.max(1) as f64;
+            println!(
+                "dcr_only_summary total_hashes={} effective_mhps={:.2} accepted={} rejected={} accepted_per_min={:.2}",
+                total, mhps, acc, rej, acc_min
+            );
+        }
+        return Ok(());
+    }
 
     let outcome = match config.pool_addr.as_deref() {
         Some(pool_addr) => {
@@ -684,5 +710,15 @@ mod tests {
         let config = MinerConfig::from_env().expect("config from env");
         assert_eq!(config.pool_addr.as_deref(), Some("127.0.0.1:8444"));
         std::env::remove_var("ZION_POOL_ADDR");
+    }
+}
+
+fn parse_bool_env(key: &str, default: bool) -> bool {
+    match std::env::var(key) {
+        Ok(v) => {
+            let t = v.trim().to_ascii_lowercase();
+            !(t == "0" || t == "false" || t == "no" || t == "off")
+        }
+        Err(_) => default,
     }
 }

@@ -1,12 +1,12 @@
 # V3 Native Libs Gap - audit a migracni plan
 
-Status: 2026-03-16
+Status: 2026-03-16 (native-ffi runtime update)
 
 ## Shrnuti
 
-V3 uz ma zalozeny samostatny scaffold modul pro nativni knihovny: V3/L1/native-libs/.
+V3 uz ma jak scaffold (`V3/L1/native-libs/`), tak implementacni FFI crate (`V3/L1/native-ffi/`) s feature-gated C buildem.
 
-Aktualni gap je nyni v implementaci jednotlivych knihoven a CI pipeline, ne v absenci struktury.
+Aktualni gap je nyni hlavne v produkcnim hardeningu (CI matrix, artifact signing, per-algo verify/perf gates), ne v absenci runtime kodu.
 
 ## Co je v legacy, ale neni ve V3
 
@@ -33,13 +33,22 @@ V3/L1 uz obsahuje navic:
   - scripts/build_windows.ps1
   - scripts/build_linux.sh
   - include/zion_native_abi.h
+- native-ffi/ (implementace)
+  - Cargo crate s feature flags: native-etchash, native-kawpow, native-autolykos, native-kheavyhash, native-blake3-algo, native-cosmic-harmony, native-verushash, native-randomx, native-all
+  - csrc/ porty pro etchash, kawpow, autolykos, kheavyhash, blake3, cosmic-harmony, verushash, randomx
+  - build.rs s platform include discovery (MSVC/Windows SDK) a per-feature kompilaci
 
 ## Co uz V3 ma nativne v rust/opencl
 
 - zion-miner: DCR Blake3 GPU backend pres OpenCL (feature gpu)
 - zion-cosmic-harmony: native-npu feature scaffold (ONNX/ORT)
 
-To znamena, ze cast nativniho vykonu je uz integrovana primo v rust codebase, ale neexistuje sjednocena V3 native-libs vrstva pro dalsi algoritmy.
+To znamena, ze cast nativniho vykonu je uz integrovana primo v rust codebase a FFI vrstva existuje; zbyva sjednotit production-grade validaci a release workflow.
+
+Aktualni runtime napojeni:
+
+- `zion-miner` podporuje DCR CPU hash impl switch `ZION_DCR_HASH_IMPL=rust|native` (native vyzaduje `--features native-blake3-algo`)
+- pokud je pozadovan `native` bez feature, runtime fallbackne na rust-precompute cestu a vypise explicitni warning
 
 ## Dopad na E2E
 
@@ -53,16 +62,12 @@ Bez migrace native-libs do V3:
 
 ### Faze 1 - inventar + rozhrani (kratkodobe)
 
-Status: Castecne hotovo (scaffold + ABI header + build scripts).
+Status: Hotovo (scaffold + ABI header + build scripts + native-ffi crate + feature flags).
 
-Zbyva dodelat:
+Navazne dodelat:
 
-1. Pridat Cargo features ve V3 crates:
-   - native-randomx
-   - native-kawpow
-   - native-autolykos
-   - native-all
-2. Dopsat symbol-load smoke testy primo do V3 test flow
+1. Dopsat symbol-load smoke testy primo do V3 test flow
+2. Dopsat per-algo verify testy v rust wrappers (minimal vectors)
 
 ### Faze 2 - postupna migrace (strednedobe)
 

@@ -130,6 +130,7 @@ This roadmap follows the release progression already defined in the repository d
   - node-backed template consumption and solved-candidate submission over RPC
   - bridge-level stale-template and upstream-rejection integration coverage
   - shared-state multi-client TCP pool server binary
+  - session-group routing with ZION-first default for user miners and backend allowlist/hint routing into weighted multistream lanes
 - `L1/miner`
   - local in-process mining flow
   - remote TCP mining flow against `zion-pool`
@@ -178,6 +179,7 @@ This roadmap follows the release progression already defined in the repository d
 - **Phase 18b: E2E multi-node integration tests — 9 tests: block relay, GetBlocksSince sync, transaction relay, AnnounceTx serde roundtrip, three-node chain sync, duplicate block handling, tx→mine→sync, status exchange, network mismatch rejection — 393 total tests passing**
 - **Phase 19: Clippy cleanup campaign — zion-core lib/bin and zion-cosmic-harmony reduced to zero clippy warnings; style simplifications, map_or→is_some_and/is_none_or, loop cleanups, and targeted allow attributes where required by API shape**
 - **Phase 20: Miner DCR/GPU runtime integration — DCR worker modules wired into miner entrypoint, OpenCL kernel/build glue added, GPU backend smoke path validated (`ZION_DCR_BACKEND=gpu`, `ZION_LOOP_COUNT=1`)**
+- **Phase 20b: Native-FFI baseline + runtime hook — `L1/native-ffi` builds with `--features native-all` on Windows MSVC, and miner DCR CPU path now supports explicit hash dispatch (`ZION_DCR_HASH_IMPL=rust|native`) with safe fallback when native feature is not enabled**
 
 ### Not Done Yet
 
