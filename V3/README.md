@@ -71,6 +71,7 @@ Out of scope for the bootstrap:
 - `L1/cosmic-harmony` now carries the profit router with `ExternalCoin` enum (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR), `CoinProfile` metadata, `ProfitEntry` snapshots, fallback estimates, and `select_best_coin()` with hysteresis — Decred (Blake3/DCP-0011) and Alephium (Blake3) are first-class Blake3-compatible revenue coins
 - `L1/cosmic-harmony` revenue tracking now includes a `Blake3External` revenue source for Blake3-compatible external coins (DCR, ALPH) at the same 2% fee rate as profit-switch
 - `L1/miner` now supports both local in-process mode and remote TCP pool mode, plus repeated mining loops, telemetry, and a persistent wire session transcript
+- `L1/miner` now supports DCR Blake3 runtime backends (`auto` / `cpu` / `gpu`) with OpenCL kernel dispatch and CPU fallback integrated into the live DCR worker path when built with `--features gpu`
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`
 - whole V3 workspace currently builds and tests green
@@ -109,6 +110,13 @@ The `zion-miner` binary already supports basic configuration via environment var
 - `ZION_TARGET`
 - `ZION_REVENUE_SOURCE`
 - `ZION_REVENUE_USD`
+- `ZION_DCR_ENABLED`
+- `ZION_BTC_WALLET`
+- `ZION_DCR_BACKEND` (`auto`, `cpu`, `gpu`)
+- `ZION_DCR_POOL`
+- `ZION_DCR_THREADS`
+- `ZION_DCR_WORKER`
+- `ZION_GPU_WORK_SIZE`
 
 The `server` binary in `L1/pool` supports:
 
