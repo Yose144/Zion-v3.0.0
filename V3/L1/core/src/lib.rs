@@ -10,6 +10,7 @@ use zion_cosmic_harmony::{
 };
 
 pub use zion_cosmic_harmony::RevenueSource;
+pub use zion_cosmic_harmony::ExternalCoin;
 
 pub mod crypto;
 pub mod chain;
@@ -927,6 +928,14 @@ impl NodeRuntime {
         self.chain_state.height
     }
 
+    pub fn utxo_balance(&self, address: &str) -> u64 {
+        self.chain_state.utxo_balance(address)
+    }
+
+    pub fn spendable_utxos(&self, address: &str) -> Vec<SpendableUtxo> {
+        self.chain_state.spendable_utxos(address)
+    }
+
     pub fn needs_blocks_from(&self, peer_height: u64) -> bool {
         peer_height > self.chain_state.height
     }
@@ -1358,6 +1367,16 @@ impl Transaction {
     }
 }
 
+/// A spendable UTXO: output that has not been consumed by any accepted block.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SpendableUtxo {
+    pub tx_hash: String,
+    pub output_index: u32,
+    pub amount: u64,
+    pub address: String,
+    pub height: u64,
+}
+
 impl ChainState {
     fn account_mempool_transactions(&self) -> Vec<Transaction> {
         self.mempool
@@ -1371,6 +1390,59 @@ impl ChainState {
             .iter()
             .filter_map(|transaction| transaction.as_utxo().cloned())
             .collect()
+    }
+
+    /// Build the full UTXO set from accepted blocks. Returns a map from
+    /// (tx_hash_hex, output_index) → SpendableUtxo for all unspent outputs.
+    fn utxo_set(&self) -> HashMap<(String, u32), SpendableUtxo> {
+        let mut utxos: HashMap<(String, u32), SpendableUtxo> = HashMap::new();
+        for block in &self.accepted_blocks {
+            // Consume spent inputs
+            for utxo_tx in &block.utxo_transactions {
+                for input in &utxo_tx.inputs {
+                    utxos.remove(&(hex(&input.prev_tx_hash), input.output_index));
+                }
+            }
+            // Create new outputs
+            for utxo_tx in &block.utxo_transactions {
+                let tx_hash = hex(&utxo_tx.id);
+                for (idx, output) in utxo_tx.outputs.iter().enumerate() {
+                    utxos.insert(
+                        (tx_hash.clone(), idx as u32),
+                        SpendableUtxo {
+                            tx_hash: tx_hash.clone(),
+                            output_index: idx as u32,
+                            amount: output.amount,
+                            address: output.address.clone(),
+                            height: block.height,
+                        },
+                    );
+                }
+            }
+        }
+        utxos
+    }
+
+    /// Compute balance for a `zion1...` address by summing unspent UTXO outputs.
+    fn utxo_balance(&self, address: &str) -> u64 {
+        self.utxo_set()
+            .values()
+            .filter(|u| u.address == address)
+            .map(|u| u.amount)
+            .sum()
+    }
+
+    /// Return all spendable (unspent) UTXOs for a `zion1...` address.
+    fn spendable_utxos(&self, address: &str) -> Vec<SpendableUtxo> {
+        self.utxo_set()
+            .into_values()
+            .filter(|u| u.address == address)
+            .collect()
+    }
+
+    /// Check whether a specific outpoint exists as an unspent UTXO on chain.
+    fn utxo_exists(&self, tx_hash: &[u8; 32], output_index: u32) -> bool {
+        self.utxo_set().contains_key(&(hex(tx_hash), output_index))
     }
 
     fn new(node_id: &str, core: &CoreRuntime) -> Self {
@@ -2064,6 +2136,15 @@ impl ChainState {
             return Err(format!("UTXO transaction {} already mined", tx_id));
         }
         for input in &transaction.inputs {
+            // Verify the referenced UTXO output actually exists on chain and
+            // has not already been spent.
+            if !self.utxo_exists(&input.prev_tx_hash, input.output_index) {
+                return Err(format!(
+                    "UTXO input {}:{} does not exist or is already spent",
+                    hex(&input.prev_tx_hash),
+                    input.output_index,
+                ));
+            }
             let already_in_mempool = self.mempool.iter().any(|known| {
                 known.as_utxo().map_or(false, |utxo| {
                     utxo.inputs.iter().any(|ki| {
@@ -3960,8 +4041,78 @@ mod tests {
         assert_eq!(runtime.active_template().transaction_ids.len(), 1);
     }
 
-    // ── Phase 16: UTXO bridge acceptance tests ────────────────────────
+    // ── Phase 16+17: UTXO bridge acceptance tests ──────────────────────
 
+    /// Create a "funding" UTXO transaction (coinbase-like, no real inputs)
+    /// and mine it into a block so subsequent tests can spend its outputs.
+    /// Returns (funding_tx_id, address, verifying_key_bytes, signing_key).
+    fn seed_utxo_funding(
+        runtime: &mut NodeRuntime,
+        amount: u64,
+    ) -> ([u8; 32], String, Vec<u8>, ed25519_dalek::SigningKey) {
+        let (sk, vk) = crypto::generate_keypair();
+        let addr = crypto::derive_address(vk.as_bytes());
+        let vk_bytes = vk.as_bytes().to_vec();
+
+        // Create a coinbase-like funding tx (empty inputs → the UTXO set
+        // builder treats outputs as new UTXOs regardless of inputs).
+        let mut funding = tx::Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: vec![], // coinbase: no inputs
+            outputs: vec![tx::TxOutput {
+                amount,
+                address: addr.clone(),
+                memo: None,
+            }],
+            fee: 0,
+            timestamp: now_secs(),
+        };
+        funding.finalize_id();
+
+        // Manually inject the funding tx into an accepted block.
+        let block = &mut runtime.chain_state.accepted_blocks[0];
+        block.utxo_transactions.push(funding.clone());
+        block.utxo_transaction_ids.push(hex(&funding.id));
+
+        (funding.id, addr, vk_bytes, sk)
+    }
+
+    fn make_signed_utxo_tx_spending(
+        prev_hash: [u8; 32],
+        output_index: u32,
+        amount: u64,
+        sk: &ed25519_dalek::SigningKey,
+        vk_bytes: &[u8],
+        dest_address: &str,
+    ) -> tx::Transaction {
+        let fee = 1_000u64;
+        let mut utxo = tx::Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: vec![tx::TxInput {
+                prev_tx_hash: prev_hash,
+                output_index,
+                signature: vec![],
+                public_key: vk_bytes.to_vec(),
+            }],
+            outputs: vec![tx::TxOutput {
+                amount: amount - fee,
+                address: dest_address.to_string(),
+                memo: None,
+            }],
+            fee,
+            timestamp: now_secs(),
+        };
+        utxo.finalize_id();
+        let sig = crypto::sign(sk, &utxo.id);
+        utxo.inputs[0].signature = sig.to_vec();
+        utxo
+    }
+
+    /// Legacy helper: creates a valid-looking UTXO tx whose inputs don't
+    /// reference any on-chain output. Only usable for hash/signature tests
+    /// that fail before the existence check.
     fn make_signed_utxo_tx() -> tx::Transaction {
         let (sk, vk) = crypto::generate_keypair();
         let addr = crypto::derive_address(vk.as_bytes());
@@ -3989,37 +4140,11 @@ mod tests {
         utxo
     }
 
-    fn make_signed_utxo_tx_with_input(prev_hash: [u8; 32], output_index: u32) -> tx::Transaction {
-        let (sk, vk) = crypto::generate_keypair();
-        let addr = crypto::derive_address(vk.as_bytes());
-
-        let mut utxo = tx::Transaction {
-            id: [0u8; 32],
-            version: 1,
-            inputs: vec![tx::TxInput {
-                prev_tx_hash: prev_hash,
-                output_index,
-                signature: vec![],
-                public_key: vk.as_bytes().to_vec(),
-            }],
-            outputs: vec![tx::TxOutput {
-                amount: 500_000_000_000,
-                address: addr,
-                memo: None,
-            }],
-            fee: 2_000,
-            timestamp: 1_700_000_100,
-        };
-        utxo.finalize_id();
-        let sig = crypto::sign(&sk, &utxo.id);
-        utxo.inputs[0].signature = sig.to_vec();
-        utxo
-    }
-
     #[test]
     fn utxo_transaction_submits_to_mempool() {
         let mut runtime = NodeRuntime::new("node-utxo-mempool", NodeConfig::mainnet());
-        let utxo = make_signed_utxo_tx();
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destmempool");
         let tx_id = hex(&utxo.id);
 
         let resp = runtime.submit_submitted_transaction(
@@ -4036,7 +4161,8 @@ mod tests {
     #[test]
     fn utxo_transaction_appears_in_template() {
         let mut runtime = NodeRuntime::new("node-utxo-tmpl", NodeConfig::mainnet());
-        let utxo = make_signed_utxo_tx();
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1desttmpl");
         let tx_id = hex(&utxo.id);
 
         runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
@@ -4050,7 +4176,8 @@ mod tests {
     #[test]
     fn utxo_transaction_mined_in_block() {
         let mut runtime = NodeRuntime::new("node-utxo-mine", NodeConfig::mainnet());
-        let utxo = make_signed_utxo_tx();
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destmine");
         let tx_id = hex(&utxo.id);
 
         runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
@@ -4106,7 +4233,8 @@ mod tests {
     #[test]
     fn utxo_transaction_rejects_duplicate_id() {
         let mut runtime = NodeRuntime::new("node-utxo-dup", NodeConfig::mainnet());
-        let utxo = make_signed_utxo_tx();
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdup");
 
         let first = runtime.submit_submitted_transaction(
             SubmittedTransaction::Utxo(utxo.clone()),
@@ -4129,8 +4257,9 @@ mod tests {
     #[test]
     fn utxo_transaction_rejects_double_spend() {
         let mut runtime = NodeRuntime::new("node-utxo-dblspend", NodeConfig::mainnet());
-        let tx1 = make_signed_utxo_tx_with_input([0xDD; 32], 0);
-        let tx2 = make_signed_utxo_tx_with_input([0xDD; 32], 0); // same input
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let tx1 = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdbl1");
+        let tx2 = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdbl2"); // same input
 
         let first = runtime.submit_submitted_transaction(
             SubmittedTransaction::Utxo(tx1),
@@ -4154,7 +4283,8 @@ mod tests {
     fn utxo_and_account_transactions_coexist_in_template() {
         let mut runtime = NodeRuntime::new("node-utxo-coexist", NodeConfig::mainnet());
         let account_tx = sample_transaction("tx-coexist", 5, 1);
-        let utxo = make_signed_utxo_tx();
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destcoexist");
 
         runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
             transaction: account_tx.clone(),
@@ -4172,7 +4302,8 @@ mod tests {
     #[test]
     fn utxo_mined_block_passes_peer_import() {
         let mut source = NodeRuntime::new("node-utxo-src", NodeConfig::mainnet());
-        let utxo = make_signed_utxo_tx();
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000_000_000);
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destpeer");
 
         source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
         mine_one_block(&mut source);
@@ -4188,7 +4319,8 @@ mod tests {
     #[test]
     fn peer_import_rejects_utxo_with_bad_signature() {
         let mut source = NodeRuntime::new("node-utxo-badsig-src", NodeConfig::mainnet());
-        let utxo = make_signed_utxo_tx();
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000_000_000);
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destbadsig");
         source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
         mine_one_block(&mut source);
 
@@ -4225,5 +4357,44 @@ mod tests {
         let block = &runtime.accepted_blocks()[1];
         assert!(block.utxo_transaction_ids.is_empty());
         assert!(block.utxo_transactions.is_empty());
+    }
+
+    #[test]
+    fn utxo_transaction_rejects_nonexistent_input() {
+        let mut runtime = NodeRuntime::new("node-utxo-noexist", NodeConfig::mainnet());
+        let utxo = make_signed_utxo_tx(); // uses fake [0xAA; 32] input
+
+        let resp = runtime.submit_submitted_transaction(
+            SubmittedTransaction::Utxo(utxo),
+        );
+        assert!(matches!(
+            resp,
+            RpcResponse::TransactionResult {
+                accepted: false,
+                reason: Some(ref reason),
+                ..
+            } if reason.contains("does not exist or is already spent")
+        ));
+    }
+
+    #[test]
+    fn utxo_balance_reflects_funded_and_spent() {
+        let mut runtime = NodeRuntime::new("node-utxo-bal", NodeConfig::mainnet());
+        let (fund_id, addr, vk, sk) = seed_utxo_funding(&mut runtime, 5_000_000);
+
+        // Before spending, balance should be the funded amount
+        assert_eq!(runtime.utxo_balance(&addr), 5_000_000);
+        assert_eq!(runtime.spendable_utxos(&addr).len(), 1);
+
+        // Submit a spending tx
+        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 5_000_000, &sk, &vk, "zion1destbal");
+        runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
+        mine_one_block(&mut runtime);
+
+        // After mining the spend, the original address balance should be zero
+        assert_eq!(runtime.utxo_balance(&addr), 0);
+        assert!(runtime.spendable_utxos(&addr).is_empty());
+        // Destination got the output (amount - fee = 5_000_000 - 1_000)
+        assert_eq!(runtime.utxo_balance("zion1destbal"), 4_999_000);
     }
 }

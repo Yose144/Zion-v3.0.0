@@ -228,7 +228,7 @@ pub fn build_stub_router() -> RpcRouter {
     for method in [
         "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
         "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
-        "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock",
+        "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos",
     ] {
         router.register(method, stub(method));
     }
@@ -358,13 +358,17 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
             if account_id.is_empty() {
                 return Err((INVALID_ADDRESS, "empty account id".into()));
             }
-            if looks_like_utxo_address(account_id) {
-                return Err((
-                    INVALID_ADDRESS,
-                    "getBalance currently uses account ids from the active runtime; zion1 UTXO addresses are not supported on this endpoint yet".into(),
-                ));
-            }
             let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            if looks_like_utxo_address(account_id) {
+                let balance = rt.utxo_balance(account_id);
+                return Ok(json!({
+                    "address": account_id,
+                    "balance_flowers": balance,
+                    "chain_height": rt.chain_height(),
+                    "transaction_model": "utxo",
+                    "balance_scope": "confirmed_chain_only",
+                }));
+            }
             let mut balance: i128 = 0;
             for block in rt.accepted_blocks() {
                 for tx in &block.transactions {
@@ -387,6 +391,39 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     };
     register_get_balance(&mut router, "getBalance");
     register_get_balance(&mut router, "getAccountBalance");
+
+    // ── getUtxos ───────────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getUtxos", Box::new(move |params: &Value| {
+            let address = params.get("address")
+                .or_else(|| params.get(0))
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'address' param".into()))?;
+            if address.is_empty() {
+                return Err((INVALID_ADDRESS, "empty address".into()));
+            }
+            if !looks_like_utxo_address(address) {
+                return Err((INVALID_ADDRESS, "getUtxos requires a zion1 UTXO address".into()));
+            }
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let utxos = rt.spendable_utxos(address);
+            let utxo_list: Vec<Value> = utxos.iter().map(|u| json!({
+                "tx_hash": u.tx_hash,
+                "output_index": u.output_index,
+                "amount": u.amount,
+                "address": u.address,
+                "height": u.height,
+            })).collect();
+            Ok(json!({
+                "address": address,
+                "utxos": utxo_list,
+                "count": utxo_list.len(),
+                "total_amount": utxos.iter().map(|u| u.amount).sum::<u64>(),
+                "chain_height": rt.chain_height(),
+            }))
+        }));
+    }
 
     // ── getBlockTemplate ───────────────────────────────────────────────
     {
@@ -652,7 +689,7 @@ mod tests {
         for method in [
             "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
             "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
-            "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock",
+            "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos",
         ] {
             router.register(method, stub(method));
         }
@@ -677,7 +714,8 @@ mod tests {
         assert!(router.has_method("getChainInfo"));
         assert!(router.has_method("getNodeInfo"));
         assert!(router.has_method("submitBlock"));
-        assert_eq!(router.method_count(), 15);
+        assert!(router.has_method("getUtxos"));
+        assert_eq!(router.method_count(), 16);
     }
 
     #[test]
@@ -799,13 +837,13 @@ mod tests {
     }
 
     #[test]
-    fn live_get_balance_rejects_utxo_address() {
+    fn live_get_balance_returns_zero_for_unknown_utxo_address() {
         let router = live_router();
-        let resp = rpc_call(&router, "getBalance", json!({"address": "zion1nobody"}));
-        assert!(resp.error.is_some());
-        let err = resp.error.unwrap();
-        assert_eq!(err.code, INVALID_ADDRESS);
-        assert!(err.message.contains("UTXO addresses"));
+        let resp = rpc_call(&router, "getBalance", json!({"address": "zion1nobody000000000000000000000000000000000"}));
+        assert!(resp.error.is_none(), "getBalance for zion1 failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["balance_flowers"], 0);
+        assert_eq!(result["transaction_model"], "utxo");
     }
 
     #[test]
@@ -938,6 +976,26 @@ mod tests {
     #[test]
     fn live_router_method_count() {
         let router = live_router();
-        assert_eq!(router.method_count(), 15);
+        assert_eq!(router.method_count(), 16);
+    }
+
+    #[test]
+    fn live_get_utxos_returns_empty_for_unknown_address() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getUtxos", json!({"address": "zion1nobody000000000000000000000000000000000"}));
+        assert!(resp.error.is_none(), "getUtxos failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["count"], 0);
+        assert_eq!(result["total_amount"], 0);
+        assert!(result["utxos"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn live_get_utxos_rejects_account_address() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getUtxos", json!({"address": "wallet.alpha"}));
+        assert!(resp.error.is_some());
+        let err = resp.error.unwrap();
+        assert_eq!(err.code, INVALID_ADDRESS);
     }
 }

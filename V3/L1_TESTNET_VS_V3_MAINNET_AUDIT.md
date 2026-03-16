@@ -1,6 +1,6 @@
 # L1 Testnet → V3 Mainnet Audit
 
-> Vytvořeno: 2026-03-13 | Poslední aktualizace: 2026-03-16 (po Phase 16)
+> Vytvořeno: 2026-03-13 | Poslední aktualizace: 2026-03-16 (po Phase 17)
 > Účel: Kompletní inventář L1 testnet modulů vs V3 mainnet stav.
 > Cíl: Zajistit, že nic kritického z testnet nezapomeneme při mainnet pure-code migraci.
 
@@ -305,13 +305,14 @@ V3 mainnet kód po Phase 10 pokrývá **všechny kritické subsystémy**:
 - ✅ **Phase 14:** RPC model surface alignment — RuntimeTransaction adapter, account/UTXO dual routing
 - ✅ **Phase 15:** centralized submit boundary — SubmittedTransaction enum, parse_value, zion1 endpoint rejection
 - ✅ **Phase 16:** complete UTXO bridge — submit → validate (hash+signatures) → mempool → template → mine → peer validate → journal → snapshot/restore — 12 nových testů
+- ✅ **Phase 17:** UTXO RPC + chain validation — getBalance zion1 support, getUtxos endpoint (16 RPC metod), UTXO input existence check, SpendableUtxo, utxo_set/balance/spendable_utxos/utxo_exists — 374 testů core
 
 **Testnet běží na 157.180.41.213** — node, pool, miner containers UP, chain height 110+.
 
 Zbývající práce pro produkční mainnet:
-- UTXO balance RPC endpoint (`getBalance` pro `zion1...` adresy)
-- `getUtxos(address)` RPC endpoint pro external wallety
-- UTXO input existence check (propojení lib.rs bridge s storage.rs UTXO set)
+- ~~UTXO balance RPC endpoint (`getBalance` pro `zion1...` adresy)~~ → ✅ Phase 17
+- ~~`getUtxos(address)` RPC endpoint pro external wallety~~ → ✅ Phase 17
+- ~~UTXO input existence check (propojení lib.rs bridge s storage.rs UTXO set)~~ → ✅ Phase 17
 - Mempool transaction relay (P2P `AnnounceTx`/`GetTx`)
 - Block processing lock pro concurrent přístup
 - Full async P2P, CI/CD
