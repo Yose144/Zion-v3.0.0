@@ -2,6 +2,7 @@ param(
     [string]$HostIp = "91.98.122.165",
     [string]$User = "root",
     [string]$KeyPath = "$HOME/.ssh/zion_hetzner_key",
+  [Alias("OutputPath")]
     [string]$OutFile = "scripts/mainnet-tests-dashboard.html",
   [switch]$Open,
   [switch]$Watch,
@@ -44,7 +45,7 @@ function Get-HealthStatus {
     if ($AcceptRatePct -ge 80 -and $RejectTrendPct -le 20) {
         return @{ label = "WARN"; css = "warn" }
     }
-    return @{ label = "CRIT"; css = "warn" }
+    return @{ label = "CRIT"; css = "crit" }
 }
 
 function Format-NumOrNa {
@@ -114,11 +115,32 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
     $canarySubmits = if ($canaryRouting -and $canaryRouting.submits -ne $null) { [double]$canaryRouting.submits } else { $null }
     $canaryAcceptRate = if ($canaryRouting -and $canaryRouting.accept_rate_pct -ne $null) { [double]$canaryRouting.accept_rate_pct } else { $null }
 
+    $grpRevenueSubmits = if ($canaryRouting -and $canaryRouting.groups -and $canaryRouting.groups.revenue -and $canaryRouting.groups.revenue.submits -ne $null) { [double]$canaryRouting.groups.revenue.submits } else { $null }
+    $grpRevenueAccepted = if ($canaryRouting -and $canaryRouting.groups -and $canaryRouting.groups.revenue -and $canaryRouting.groups.revenue.accepted -ne $null) { [double]$canaryRouting.groups.revenue.accepted } else { $null }
+    $grpZionSubmits = if ($canaryRouting -and $canaryRouting.groups -and $canaryRouting.groups.zion -and $canaryRouting.groups.zion.submits -ne $null) { [double]$canaryRouting.groups.zion.submits } else { $null }
+    $grpZionAccepted = if ($canaryRouting -and $canaryRouting.groups -and $canaryRouting.groups.zion -and $canaryRouting.groups.zion.accepted -ne $null) { [double]$canaryRouting.groups.zion.accepted } else { $null }
+    $srcBlake3Submits = if ($canaryRouting -and $canaryRouting.sources -and $canaryRouting.sources.blake3 -and $canaryRouting.sources.blake3.submits -ne $null) { [double]$canaryRouting.sources.blake3.submits } else { $null }
+    $srcBlake3Accepted = if ($canaryRouting -and $canaryRouting.sources -and $canaryRouting.sources.blake3 -and $canaryRouting.sources.blake3.accepted -ne $null) { [double]$canaryRouting.sources.blake3.accepted } else { $null }
+
     $deltaSubmits = 0.0
     $deltaRejected = 0.0
+    $deltaAccepted = 0.0
+    $windowSeconds = 0.0
     if ($prevState -and $canarySubmits -ne $null -and $canaryRejected -ne $null) {
         $deltaSubmits = [Math]::Max(0.0, $canarySubmits - [double]$prevState.submits)
         $deltaRejected = [Math]::Max(0.0, $canaryRejected - [double]$prevState.rejected)
+      if ($canaryAccepted -ne $null -and $prevState.accepted -ne $null) {
+        $deltaAccepted = [Math]::Max(0.0, $canaryAccepted - [double]$prevState.accepted)
+      }
+      if ($prevState.timestamp) {
+        try {
+          $prevTs = [DateTime]::Parse($prevState.timestamp).ToUniversalTime()
+          $nowTs = [DateTime]::Parse($utcNow).ToUniversalTime()
+          $windowSeconds = [Math]::Max(0.0, ($nowTs - $prevTs).TotalSeconds)
+        } catch {
+          $windowSeconds = 0.0
+        }
+      }
     }
 
     $rejectTrendPct = if ($deltaSubmits -gt 0) { ($deltaRejected / $deltaSubmits) * 100.0 } else { 0.0 }
@@ -130,6 +152,13 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
     $canaryAcceptRateText = if ($canaryAcceptRate -ne $null) { $canaryAcceptRate.ToString("N2") } else { "n/a" }
     $rejectTrendText = $rejectTrendPct.ToString("N2")
 
+    $grpRevenueText = if ($grpRevenueSubmits -ne $null -and $grpRevenueAccepted -ne $null) { "$($grpRevenueAccepted.ToString("N0"))/$($grpRevenueSubmits.ToString("N0"))" } else { "n/a" }
+    $grpZionText = if ($grpZionSubmits -ne $null -and $grpZionAccepted -ne $null) { "$($grpZionAccepted.ToString("N0"))/$($grpZionSubmits.ToString("N0"))" } else { "n/a" }
+    $srcBlake3Text = if ($srcBlake3Submits -ne $null -and $srcBlake3Accepted -ne $null) { "$($srcBlake3Accepted.ToString("N0"))/$($srcBlake3Submits.ToString("N0"))" } else { "n/a" }
+
+    $submitRateText = if ($windowSeconds -gt 0) { (($deltaSubmits * 60.0) / $windowSeconds).ToString("N2") } else { "n/a" }
+    $acceptRatePerMinText = if ($windowSeconds -gt 0) { (($deltaAccepted * 60.0) / $windowSeconds).ToString("N2") } else { "n/a" }
+
     $html = @"
 <!doctype html>
 <html lang="en">
@@ -139,23 +168,26 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
   <title>ZION Mainnet Test Dashboard</title>
   <style>
     :root {
-      --bg: #f4f1ea;
-      --panel: #fffaf2;
-      --ink: #1c1a18;
-      --muted: #6a635a;
-      --accent: #15616d;
-      --accent2: #ff7d00;
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --accent: #0f766e;
+      --accent2: #0369a1;
       --ok: #2b9348;
-      --warn: #d00000;
-      --line: #d9d0c2;
+      --warn: #d97706;
+      --crit: #e10600;
+      --crit-bg: #ffe8e8;
+      --line: #dbe3ee;
     }
     body {
       margin: 0;
       font-family: "Segoe UI", "Trebuchet MS", sans-serif;
       color: var(--ink);
-      background: radial-gradient(circle at 15% 20%, #ffe8d6 0%, #f4f1ea 45%),
-                  radial-gradient(circle at 85% 10%, #e0fbfc 0%, transparent 40%),
-                  var(--bg);
+      background:
+        radial-gradient(circle at 8% -10%, #dbeafe 0%, transparent 28%),
+        radial-gradient(circle at 88% -15%, #cffafe 0%, transparent 24%),
+        var(--bg);
     }
     .wrap {
       max-width: 1180px;
@@ -163,11 +195,12 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       padding: 0 16px 32px;
     }
     .hero {
-      background: linear-gradient(120deg, #1c1a18 0%, #2f2a24 65%, #15616d 100%);
-      color: #fff;
+      background: linear-gradient(120deg, #ffffff 0%, #f8fbff 100%);
+      color: var(--ink);
       border-radius: 16px;
       padding: 18px 20px;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
     }
     .hero h1 {
       margin: 0;
@@ -176,9 +209,32 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
     }
     .hero p {
       margin: 8px 0 0;
-      color: #d6d0c7;
+      color: var(--muted);
       font-size: 13px;
     }
+    .health-banner {
+      margin-top: 12px;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .health-badge {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+    .badge-ok { color: #166534; background: #dcfce7; border-color: #86efac; }
+    .badge-warn { color: #92400e; background: #fef3c7; border-color: #fcd34d; }
+    .badge-crit { color: #ffffff; background: var(--crit); border-color: #b30000; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -190,7 +246,12 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 12px 14px;
-      box-shadow: 0 6px 16px rgba(24, 18, 8, 0.06);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+    }
+    .card.health-crit {
+      background: var(--crit-bg);
+      border-color: #ffb3b3;
+      box-shadow: 0 0 0 2px rgba(225, 6, 0, 0.12);
     }
     .k {
       color: var(--muted);
@@ -228,10 +289,23 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       font-size: 12px;
       line-height: 1.35;
       white-space: pre-wrap;
-      color: #2b2926;
+      color: #1e293b;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px;
     }
     .ok { color: var(--ok); font-weight: 700; }
     .warn { color: var(--warn); font-weight: 700; }
+    .crit { color: var(--crit); font-weight: 800; }
+    details { margin-top: 10px; }
+    summary {
+      cursor: pointer;
+      color: var(--accent2);
+      font-weight: 700;
+      font-size: 13px;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -240,11 +314,17 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       <h1>ZION Mainnet Test Dashboard</h1>
       <p>Primary host: $HostIp | Snapshot UTC: $utcNow</p>
       <p>Mode: Testnet live + V3 canary node/pool on same server, miner tested locally</p>
-      <p>Health: <span class="$($health.css)">$($health.label)</span> | Reject trend: $rejectTrendText%</p>
+      <div class="health-banner">
+        <div>
+          <strong>Cluster health:</strong>
+          <span class="health-badge badge-$($health.css)">$($health.label)</span>
+        </div>
+        <div><strong>Reject trend:</strong> $rejectTrendText%</div>
+      </div>
     </div>
 
     <div class="grid">
-      <div class="card"><div class="k">Health Status</div><div class="v $($health.css)">$($health.label)</div></div>
+      <div class="card health-$($health.css)"><div class="k">Health Status</div><div class="v $($health.css)">$($health.label)</div></div>
       <div class="card"><div class="k">Reject Trend (delta)</div><div class="v">$rejectTrendText%</div></div>
       <div class="card"><div class="k">Testnet Active Miners</div><div class="v">$poolActiveMiners</div></div>
       <div class="card"><div class="k">Testnet Hashrate</div><div class="v">$poolHashrate</div></div>
@@ -254,6 +334,17 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       <div class="card"><div class="k">Canary Rejected</div><div class="v">$canaryRejectedText</div></div>
       <div class="card"><div class="k">Pool Valid Shares</div><div class="v">$poolValidShares</div></div>
       <div class="card"><div class="k">Pool Invalid Shares</div><div class="v">$poolInvalidShares</div></div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3 class="section-title">Canary Pool Metrics</h3>
+      <div class="grid" style="margin-top:0;">
+        <div class="card"><div class="k">Submits / min (delta)</div><div class="v">$submitRateText</div></div>
+        <div class="card"><div class="k">Accepted / min (delta)</div><div class="v">$acceptRatePerMinText</div></div>
+        <div class="card"><div class="k">Revenue Group (acc/sub)</div><div class="v">$grpRevenueText</div></div>
+        <div class="card"><div class="k">Zion Group (acc/sub)</div><div class="v">$grpZionText</div></div>
+        <div class="card"><div class="k">Blake3 Source (acc/sub)</div><div class="v">$srcBlake3Text</div></div>
+      </div>
     </div>
 
     <div class="split">
@@ -275,12 +366,18 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
 
     <div class="split">
       <div class="card">
-        <h3 class="section-title">Canary Node RPC Raw</h3>
-        <pre>$canaryStatusRaw</pre>
+        <h3 class="section-title">Canary Node RPC</h3>
+        <details>
+          <summary>Show raw payload</summary>
+          <pre>$canaryStatusRaw</pre>
+        </details>
       </div>
       <div class="card">
-        <h3 class="section-title">Canary Routing Metrics Raw</h3>
-        <pre>$canaryRoutingRaw</pre>
+        <h3 class="section-title">Canary Routing Metrics</h3>
+        <details>
+          <summary>Show raw payload</summary>
+          <pre>$canaryRoutingRaw</pre>
+        </details>
       </div>
     </div>
 
@@ -303,7 +400,7 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
     }
 
     Set-Content -Path $OutFile -Value $html -Encoding UTF8
-    @{ submits = $canarySubmits; rejected = $canaryRejected; timestamp = $utcNow } | ConvertTo-Json | Set-Content -Path $stateFile -Encoding UTF8
+    @{ submits = $canarySubmits; accepted = $canaryAccepted; rejected = $canaryRejected; timestamp = $utcNow } | ConvertTo-Json | Set-Content -Path $stateFile -Encoding UTF8
 
     Write-Host "[dashboard] Generated $OutFile"
     if ($OpenOnWrite) {
