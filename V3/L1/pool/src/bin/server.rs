@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
@@ -15,6 +16,11 @@ fn main() -> Result<()> {
         CoreRuntime::default(),
         config.job_ttl_ms,
     )));
+    let revenue_scheduler = Arc::new(Mutex::new(RevenueScheduler::from_env(
+        config.revenue_source,
+        config.revenue_value_usd,
+    )?));
+    let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
     let listener = TcpListener::bind(&config.bind_addr)
         .with_context(|| format!("failed to bind pool listener on {}", config.bind_addr))?;
 
@@ -32,6 +38,27 @@ fn main() -> Result<()> {
     if let Some(node_rpc_addr) = config.node_rpc_addr.as_deref() {
         println!("node_rpc_addr={node_rpc_addr}");
     }
+    println!(
+        "session_default_group={} backend_miner_ids={} backend_worker_hints={}",
+        session_group_name(config.user_default_group),
+        config.backend_miner_ids.len(),
+        config.backend_worker_hints.join("|")
+    );
+    println!("routing_log_every={}", config.routing_log_every);
+    {
+        let scheduler = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
+        println!(
+            "revenue_mode={} lanes={} plan={} backend_auto_include_zion={}",
+            if scheduler.multistream_enabled {
+                "multistream"
+            } else {
+                "single"
+            },
+            scheduler.lanes.len(),
+            scheduler.describe_plan(),
+            scheduler.auto_assign_include_zion
+        );
+    }
 
     let mut handles = Vec::new();
     let mut accepted = 0u32;
@@ -43,13 +70,24 @@ fn main() -> Result<()> {
         let (stream, peer_addr) = listener.accept().context("failed to accept miner connection")?;
         println!("peer_addr={peer_addr}");
         let pool = Arc::clone(&pool);
+        let revenue_scheduler = Arc::clone(&revenue_scheduler);
+        let routing_stats = Arc::clone(&routing_stats);
         let config = config.clone();
-        handles.push(thread::spawn(move || handle_client(stream, pool, &config)));
+        handles.push(thread::spawn(move || {
+            handle_client(stream, pool, revenue_scheduler, routing_stats, &config)
+        }));
         accepted = accepted.saturating_add(1);
     }
 
     for handle in handles {
         handle.join().map_err(|_| anyhow!("pool client thread panicked"))??;
+    }
+    {
+        let snapshot = routing_stats
+            .lock()
+            .expect("routing stats lock poisoned")
+            .snapshot_line();
+        println!("routing_final {snapshot}");
     }
     Ok(())
 }
@@ -57,6 +95,8 @@ fn main() -> Result<()> {
 fn handle_client(
     stream: TcpStream,
     pool: Arc<Mutex<MiningPool>>,
+    revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
+    routing_stats: Arc<Mutex<RoutingStats>>,
     config: &ServerConfig,
 ) -> Result<()> {
     let reader_stream = stream.try_clone().context("failed to clone tcp stream")?;
@@ -83,6 +123,23 @@ fn handle_client(
             algorithm
         ));
     }
+
+    let requested_group = resolve_session_group(&miner_id, &worker_name, config);
+    let session_group = if requested_group == SessionGroup::Auto {
+        revenue_scheduler
+            .lock()
+            .expect("revenue scheduler lock poisoned")
+            .assign_auto_group()
+    } else {
+        requested_group
+    };
+    println!(
+        "session_group_requested={} session_group={} miner_id={} worker_name={}",
+        session_group_name(requested_group),
+        session_group_name(session_group),
+        miner_id,
+        worker_name
+    );
 
     let welcome_message = pool.lock().expect("pool lock poisoned").welcome_message();
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
@@ -139,7 +196,7 @@ fn handle_client(
         let (submit_line, submit_message) = read_wire_message(&mut reader)?;
         println!("wire_submit={submit_line}");
 
-        let decision = match submit_message {
+        let (decision, routed_source) = match submit_message {
             PoolMessage::Submit {
                 job_id,
                 miner_id: submit_miner_id,
@@ -161,13 +218,17 @@ fn handle_client(
                     },
                     hash: parse_hash_hex(&hash_hex)?,
                 };
+                let (revenue_source, revenue_value_usd) = revenue_scheduler
+                    .lock()
+                    .expect("revenue scheduler lock poisoned")
+                    .next_lane_for_group(session_group);
                 let node_rpc_addr = config.node_rpc_addr.clone();
-                pool.lock().expect("pool lock poisoned").submit_solution_with(
+                let decision = pool.lock().expect("pool lock poisoned").submit_solution_with(
                     miner_id.clone(),
                     worker_name.clone(),
                     solution,
-                    config.revenue_source,
-                    config.revenue_value_usd,
+                    revenue_source,
+                    revenue_value_usd,
                     move |job, solution, _sealed_block| match node_rpc_addr.as_deref() {
                         Some(node_rpc_addr) => {
                             match submit_candidate_to_node(node_rpc_addr, job, solution.candidate.nonce) {
@@ -191,10 +252,20 @@ fn handle_client(
                         }
                         None => ShareStatus::Accepted,
                     },
-                )
+                );
+                (decision, revenue_source)
             }
             other => return Err(anyhow!("expected submit from miner, got {other:?}")),
         };
+
+        let accepted = matches!(decision.status, ShareStatus::Accepted);
+        {
+            let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+            let should_log = stats.record(session_group, routed_source, accepted);
+            if should_log {
+                println!("routing_snapshot {}", stats.snapshot_line());
+            }
+        }
 
         if matches!(decision.status, ShareStatus::StaleJob) {
             let stale_message = pool.lock().expect("pool lock poisoned").stale_message(job.job_id);
@@ -336,6 +407,351 @@ struct ServerConfig {
     target: DifficultyTarget,
     revenue_source: RevenueSource,
     revenue_value_usd: f64,
+    user_default_group: SessionGroup,
+    backend_miner_ids: Vec<String>,
+    backend_worker_hints: Vec<String>,
+    routing_log_every: u64,
+}
+
+#[derive(Debug)]
+struct RoutingStats {
+    log_every: u64,
+    total_submits: u64,
+    total_accepted: u64,
+    group_submits: [u64; 4],
+    group_accepted: [u64; 4],
+    source_submits: [u64; 6],
+    source_accepted: [u64; 6],
+}
+
+#[derive(Debug, Clone, Copy)]
+struct RevenueLane {
+    source: RevenueSource,
+    value_usd: f64,
+    weight: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SessionGroup {
+    Zion,
+    Revenue,
+    Ncl,
+    Auto,
+}
+
+#[derive(Debug)]
+struct RevenueScheduler {
+    lanes: Vec<RevenueLane>,
+    total_weight: u32,
+    cursor: u32,
+    auto_assign_cursor: u32,
+    auto_assign_include_zion: bool,
+    default_value_usd: f64,
+    multistream_enabled: bool,
+}
+
+impl RevenueScheduler {
+    fn from_env(default_source: RevenueSource, default_value_usd: f64) -> Result<Self> {
+        let enabled = parse_env_bool("ZION_REVENUE_MULTISTREAM", false);
+        if !enabled {
+            return Ok(Self {
+                lanes: vec![RevenueLane {
+                    source: default_source,
+                    value_usd: default_value_usd,
+                    weight: 100,
+                }],
+                total_weight: 100,
+                cursor: 0,
+                auto_assign_cursor: 0,
+                auto_assign_include_zion: parse_env_bool("ZION_BACKEND_AUTO_INCLUDE_ZION", false),
+                default_value_usd,
+                multistream_enabled: false,
+            });
+        }
+
+        let mut lanes = Vec::new();
+        // Canonical pool-side 50/25/25 distribution.
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::Zion,
+            "ZION_STREAM_ZION_PCT",
+            "ZION_STREAM_ZION_USD",
+            50,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::Blake3External,
+            "ZION_STREAM_BLAKE3_PCT",
+            "ZION_STREAM_BLAKE3_USD",
+            25,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::NclAi,
+            "ZION_STREAM_NCL_PCT",
+            "ZION_STREAM_NCL_USD",
+            25,
+            default_value_usd,
+        )?;
+
+        let total_weight: u32 = lanes.iter().map(|l| l.weight).sum();
+        if total_weight == 0 {
+            return Err(anyhow!(
+                "ZION_REVENUE_MULTISTREAM=true but all stream weights are zero"
+            ));
+        }
+
+        Ok(Self {
+            lanes,
+            total_weight,
+            cursor: 0,
+            auto_assign_cursor: 0,
+            auto_assign_include_zion: parse_env_bool("ZION_BACKEND_AUTO_INCLUDE_ZION", false),
+            default_value_usd,
+            multistream_enabled: true,
+        })
+    }
+
+    fn assign_auto_group(&mut self) -> SessionGroup {
+        let mut choices: Vec<(SessionGroup, u32)> = Vec::new();
+        for lane in &self.lanes {
+            if lane.weight == 0 {
+                continue;
+            }
+            match lane.source {
+                RevenueSource::Zion => {
+                    if self.auto_assign_include_zion {
+                        choices.push((SessionGroup::Zion, lane.weight));
+                    }
+                }
+                RevenueSource::Blake3External => choices.push((SessionGroup::Revenue, lane.weight)),
+                RevenueSource::NclAi => choices.push((SessionGroup::Ncl, lane.weight)),
+                _ => {}
+            }
+        }
+
+        if choices.is_empty() {
+            return SessionGroup::Zion;
+        }
+
+        let total: u32 = choices.iter().map(|(_, w)| *w).sum();
+        if total == 0 {
+            return SessionGroup::Zion;
+        }
+
+        let mut position = self.auto_assign_cursor % total;
+        self.auto_assign_cursor = self.auto_assign_cursor.wrapping_add(1);
+        for (group, weight) in choices {
+            if position < weight {
+                return group;
+            }
+            position -= weight;
+        }
+
+        SessionGroup::Zion
+    }
+
+    fn next_lane(&mut self) -> (RevenueSource, f64) {
+        if self.lanes.len() == 1 {
+            let lane = self.lanes[0];
+            return (lane.source, lane.value_usd);
+        }
+
+        let mut position = self.cursor % self.total_weight;
+        self.cursor = self.cursor.wrapping_add(1);
+        for lane in &self.lanes {
+            if position < lane.weight {
+                return (lane.source, lane.value_usd);
+            }
+            position -= lane.weight;
+        }
+
+        let lane = self.lanes[0];
+        (lane.source, lane.value_usd)
+    }
+
+    fn next_lane_for_group(&mut self, group: SessionGroup) -> (RevenueSource, f64) {
+        match group {
+            SessionGroup::Zion => (
+                RevenueSource::Zion,
+                self.value_for_source(RevenueSource::Zion)
+                    .unwrap_or(self.default_value_usd),
+            ),
+            SessionGroup::Revenue => (
+                RevenueSource::Blake3External,
+                self.value_for_source(RevenueSource::Blake3External)
+                    .unwrap_or(self.default_value_usd),
+            ),
+            SessionGroup::Ncl => (
+                RevenueSource::NclAi,
+                self.value_for_source(RevenueSource::NclAi)
+                    .unwrap_or(self.default_value_usd),
+            ),
+            SessionGroup::Auto => self.next_lane(),
+        }
+    }
+
+    fn value_for_source(&self, source: RevenueSource) -> Option<f64> {
+        self.lanes
+            .iter()
+            .find(|lane| lane.source == source)
+            .map(|lane| lane.value_usd)
+    }
+
+    fn describe_plan(&self) -> String {
+        self.lanes
+            .iter()
+            .map(|lane| {
+                format!(
+                    "{}:{}%:${:.2}",
+                    revenue_source_name(lane.source),
+                    lane.weight,
+                    lane.value_usd
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+}
+
+impl RoutingStats {
+    fn new(log_every: u64) -> Self {
+        Self {
+            log_every,
+            total_submits: 0,
+            total_accepted: 0,
+            group_submits: [0; 4],
+            group_accepted: [0; 4],
+            source_submits: [0; 6],
+            source_accepted: [0; 6],
+        }
+    }
+
+    fn record(&mut self, group: SessionGroup, source: RevenueSource, accepted: bool) -> bool {
+        self.total_submits = self.total_submits.saturating_add(1);
+        self.group_submits[group_index(group)] =
+            self.group_submits[group_index(group)].saturating_add(1);
+        self.source_submits[source_index(source)] =
+            self.source_submits[source_index(source)].saturating_add(1);
+
+        if accepted {
+            self.total_accepted = self.total_accepted.saturating_add(1);
+            self.group_accepted[group_index(group)] =
+                self.group_accepted[group_index(group)].saturating_add(1);
+            self.source_accepted[source_index(source)] =
+                self.source_accepted[source_index(source)].saturating_add(1);
+        }
+
+        self.log_every > 0 && self.total_submits % self.log_every == 0
+    }
+
+    fn snapshot_line(&self) -> String {
+        let total = self.total_submits.max(1);
+        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let total_accept_rate = self.total_accepted as f64 * 100.0 / total as f64;
+
+        let mut out = String::new();
+        let _ = write!(
+            out,
+            "submits={} accepted={} rejected={} accept_rate={:.2}%",
+            self.total_submits, self.total_accepted, total_rejected, total_accept_rate
+        );
+
+        for group in [
+            SessionGroup::Zion,
+            SessionGroup::Revenue,
+            SessionGroup::Ncl,
+            SessionGroup::Auto,
+        ] {
+            let idx = group_index(group);
+            let submits = self.group_submits[idx];
+            let accepted = self.group_accepted[idx];
+            let pct = submits as f64 * 100.0 / total as f64;
+            let _ = write!(
+                out,
+                " {}={{submits:{},accepted:{},pct:{:.1}%}}",
+                session_group_name(group),
+                submits,
+                accepted,
+                pct
+            );
+        }
+
+        for source in [
+            RevenueSource::Zion,
+            RevenueSource::Blake3External,
+            RevenueSource::NclAi,
+        ] {
+            let idx = source_index(source);
+            let submits = self.source_submits[idx];
+            let accepted = self.source_accepted[idx];
+            let pct = submits as f64 * 100.0 / total as f64;
+            let _ = write!(
+                out,
+                " src_{}={{submits:{},accepted:{},pct:{:.1}%}}",
+                revenue_source_name(source),
+                submits,
+                accepted,
+                pct
+            );
+        }
+
+        out
+    }
+}
+
+fn group_index(group: SessionGroup) -> usize {
+    match group {
+        SessionGroup::Zion => 0,
+        SessionGroup::Revenue => 1,
+        SessionGroup::Ncl => 2,
+        SessionGroup::Auto => 3,
+    }
+}
+
+fn source_index(source: RevenueSource) -> usize {
+    match source {
+        RevenueSource::Zion => 0,
+        RevenueSource::KeccakBonus => 1,
+        RevenueSource::Sha3Bonus => 2,
+        RevenueSource::ProfitSwitch => 3,
+        RevenueSource::Blake3External => 4,
+        RevenueSource::NclAi => 5,
+    }
+}
+
+fn revenue_source_name(source: RevenueSource) -> &'static str {
+    match source {
+        RevenueSource::Zion => "zion",
+        RevenueSource::KeccakBonus => "keccak",
+        RevenueSource::Sha3Bonus => "sha3",
+        RevenueSource::ProfitSwitch => "profit",
+        RevenueSource::Blake3External => "blake3",
+        RevenueSource::NclAi => "ncl",
+    }
+}
+
+fn push_lane_from_env(
+    lanes: &mut Vec<RevenueLane>,
+    source: RevenueSource,
+    weight_key: &str,
+    value_key: &str,
+    default_weight: u32,
+    default_value_usd: f64,
+) -> Result<()> {
+    let weight = parse_env_u32(weight_key, default_weight)?;
+    if weight == 0 {
+        return Ok(());
+    }
+    let value_usd = parse_env_f64(value_key, default_value_usd)?;
+    lanes.push(RevenueLane {
+        source,
+        value_usd,
+        weight,
+    });
+    Ok(())
 }
 
 impl ServerConfig {
@@ -355,7 +771,69 @@ impl ServerConfig {
                 &std::env::var("ZION_REVENUE_SOURCE").unwrap_or_else(|_| "zion".to_string()),
             )?,
             revenue_value_usd: parse_env_f64("ZION_REVENUE_USD", 1.25)?,
+            user_default_group: parse_session_group(
+                &std::env::var("ZION_USER_DEFAULT_GROUP")
+                    .unwrap_or_else(|_| "zion".to_string()),
+            )?,
+            backend_miner_ids: parse_env_csv_lower("ZION_BACKEND_MINER_IDS"),
+            backend_worker_hints: {
+                let values = parse_env_csv_lower("ZION_BACKEND_WORKER_HINTS");
+                if values.is_empty() {
+                    vec!["backend".to_string(), "revenue".to_string(), "ncl".to_string()]
+                } else {
+                    values
+                }
+            },
+            routing_log_every: parse_env_u64("ZION_ROUTING_LOG_EVERY", 25)?,
         })
+    }
+}
+
+fn resolve_session_group(miner_id: &str, worker_name: &str, config: &ServerConfig) -> SessionGroup {
+    if let Some(group) = extract_group_hint(worker_name).or_else(|| extract_group_hint(miner_id)) {
+        return group;
+    }
+
+    let miner_id_lc = miner_id.trim().to_ascii_lowercase();
+    if !miner_id_lc.is_empty() && config.backend_miner_ids.iter().any(|id| id == &miner_id_lc) {
+        return SessionGroup::Auto;
+    }
+
+    let worker_name_lc = worker_name.to_ascii_lowercase();
+    if config
+        .backend_worker_hints
+        .iter()
+        .any(|hint| !hint.is_empty() && worker_name_lc.contains(hint.as_str()))
+    {
+        return SessionGroup::Auto;
+    }
+
+    config.user_default_group
+}
+
+fn extract_group_hint(raw: &str) -> Option<SessionGroup> {
+    let lower = raw.to_ascii_lowercase();
+    if lower.contains("g=zion") || lower.contains("group=zion") {
+        return Some(SessionGroup::Zion);
+    }
+    if lower.contains("g=revenue") || lower.contains("group=revenue") {
+        return Some(SessionGroup::Revenue);
+    }
+    if lower.contains("g=ncl") || lower.contains("group=ncl") {
+        return Some(SessionGroup::Ncl);
+    }
+    if lower.contains("g=auto") || lower.contains("group=auto") {
+        return Some(SessionGroup::Auto);
+    }
+    None
+}
+
+fn session_group_name(group: SessionGroup) -> &'static str {
+    match group {
+        SessionGroup::Zion => "zion",
+        SessionGroup::Revenue => "revenue",
+        SessionGroup::Ncl => "ncl",
+        SessionGroup::Auto => "auto",
     }
 }
 
@@ -413,11 +891,38 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
     }
 }
 
+fn parse_session_group(value: &str) -> Result<SessionGroup> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "zion" => Ok(SessionGroup::Zion),
+        "revenue" => Ok(SessionGroup::Revenue),
+        "ncl" => Ok(SessionGroup::Ncl),
+        "auto" => Ok(SessionGroup::Auto),
+        other => Err(anyhow!("unsupported session group: {other}")),
+    }
+}
+
+fn parse_env_csv_lower(key: &str) -> Vec<String> {
+    match std::env::var(key) {
+        Ok(raw) => raw
+            .split(',')
+            .map(|entry| entry.trim().to_ascii_lowercase())
+            .filter(|entry| !entry.is_empty())
+            .collect(),
+        Err(_) => Vec::new(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::net::SocketAddr;
+    use std::sync::{Mutex, OnceLock};
     use std::thread;
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
 
     fn sample_template() -> BlockTemplate {
         let header = MiningHeader {
@@ -497,10 +1002,15 @@ mod tests {
             CoreRuntime::default(),
             config.job_ttl_ms,
         )));
+        let revenue_scheduler = Arc::new(Mutex::new(RevenueScheduler::from_env(
+            config.revenue_source,
+            config.revenue_value_usd,
+        )?));
+        let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
 
         let handle = thread::spawn(move || -> Result<()> {
             let (stream, _) = listener.accept().context("accept pool test client")?;
-            handle_client(stream, pool, &config)
+            handle_client(stream, pool, revenue_scheduler, routing_stats, &config)
         });
 
         Ok((addr, handle))
@@ -521,6 +1031,10 @@ mod tests {
             target: DifficultyTarget::MAX,
             revenue_source: RevenueSource::Zion,
             revenue_value_usd: 1.25,
+            user_default_group: SessionGroup::Zion,
+            backend_miner_ids: Vec::new(),
+            backend_worker_hints: Vec::new(),
+            routing_log_every: 0,
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -652,6 +1166,255 @@ mod tests {
             RpcRequest::SubmitCandidate { template_id: 91, nonce: 42, .. }
         ));
     }
+
+    #[test]
+    fn revenue_scheduler_defaults_to_single_lane() {
+        let _guard = env_lock().lock().expect("env lock");
+        std::env::remove_var("ZION_REVENUE_MULTISTREAM");
+        let scheduler = RevenueScheduler::from_env(RevenueSource::Zion, 1.25).expect("scheduler");
+        assert!(!scheduler.multistream_enabled);
+        assert_eq!(scheduler.lanes.len(), 1);
+        assert_eq!(scheduler.total_weight, 100);
+        assert!(scheduler.describe_plan().contains("zion:100%"));
+    }
+
+    #[test]
+    fn revenue_scheduler_weighted_round_robin() {
+        let _guard = env_lock().lock().expect("env lock");
+        std::env::set_var("ZION_REVENUE_MULTISTREAM", "true");
+        std::env::set_var("ZION_STREAM_ZION_PCT", "2");
+        std::env::set_var("ZION_STREAM_BLAKE3_PCT", "1");
+        std::env::set_var("ZION_STREAM_NCL_PCT", "1");
+
+        let mut scheduler = RevenueScheduler::from_env(RevenueSource::Zion, 1.0).expect("scheduler");
+        let mut picks = Vec::new();
+        for _ in 0..4 {
+            picks.push(scheduler.next_lane().0);
+        }
+
+        assert_eq!(picks[0], RevenueSource::Zion);
+        assert_eq!(picks[1], RevenueSource::Zion);
+        assert_eq!(picks[2], RevenueSource::Blake3External);
+        assert_eq!(picks[3], RevenueSource::NclAi);
+
+        std::env::remove_var("ZION_REVENUE_MULTISTREAM");
+        std::env::remove_var("ZION_STREAM_ZION_PCT");
+        std::env::remove_var("ZION_STREAM_BLAKE3_PCT");
+        std::env::remove_var("ZION_STREAM_NCL_PCT");
+    }
+
+    #[test]
+    fn resolve_session_group_defaults_to_zion_for_user_sessions() {
+        let config = ServerConfig {
+            bind_addr: "127.0.0.1:0".to_string(),
+            accept_limit: Some(1),
+            node_rpc_addr: None,
+            loop_count: 1,
+            job_ttl_ms: 15_000,
+            start_nonce: 1,
+            nonce_count: 64,
+            nonce_stride: 64,
+            timestamp: 1,
+            target: DifficultyTarget::MAX,
+            revenue_source: RevenueSource::Zion,
+            revenue_value_usd: 1.25,
+            user_default_group: SessionGroup::Zion,
+            backend_miner_ids: vec!["backend-miner-1".to_string()],
+            backend_worker_hints: vec!["backend".to_string()],
+            routing_log_every: 0,
+        };
+
+        let group = resolve_session_group("user-miner", "rig-01", &config);
+        assert_eq!(group, SessionGroup::Zion);
+    }
+
+    #[test]
+    fn resolve_session_group_routes_backend_allowlist_to_auto() {
+        let config = ServerConfig {
+            bind_addr: "127.0.0.1:0".to_string(),
+            accept_limit: Some(1),
+            node_rpc_addr: None,
+            loop_count: 1,
+            job_ttl_ms: 15_000,
+            start_nonce: 1,
+            nonce_count: 64,
+            nonce_stride: 64,
+            timestamp: 1,
+            target: DifficultyTarget::MAX,
+            revenue_source: RevenueSource::Zion,
+            revenue_value_usd: 1.25,
+            user_default_group: SessionGroup::Zion,
+            backend_miner_ids: vec!["backend-miner-1".to_string()],
+            backend_worker_hints: vec!["backend".to_string()],
+            routing_log_every: 0,
+        };
+
+        let group = resolve_session_group("backend-miner-1", "rig-01", &config);
+        assert_eq!(group, SessionGroup::Auto);
+    }
+
+    #[test]
+    fn resolve_session_group_routes_backend_worker_hint_to_auto() {
+        let config = ServerConfig {
+            bind_addr: "127.0.0.1:0".to_string(),
+            accept_limit: Some(1),
+            node_rpc_addr: None,
+            loop_count: 1,
+            job_ttl_ms: 15_000,
+            start_nonce: 1,
+            nonce_count: 64,
+            nonce_stride: 64,
+            timestamp: 1,
+            target: DifficultyTarget::MAX,
+            revenue_source: RevenueSource::Zion,
+            revenue_value_usd: 1.25,
+            user_default_group: SessionGroup::Zion,
+            backend_miner_ids: vec![],
+            backend_worker_hints: vec!["backend".to_string(), "revenue".to_string()],
+            routing_log_every: 0,
+        };
+
+        let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
+        assert_eq!(group, SessionGroup::Auto);
+    }
+
+    #[test]
+    fn revenue_scheduler_group_pin_overrides_round_robin() {
+        let mut scheduler = RevenueScheduler {
+            lanes: vec![
+                RevenueLane {
+                    source: RevenueSource::Zion,
+                    value_usd: 1.0,
+                    weight: 2,
+                },
+                RevenueLane {
+                    source: RevenueSource::Blake3External,
+                    value_usd: 2.0,
+                    weight: 1,
+                },
+                RevenueLane {
+                    source: RevenueSource::NclAi,
+                    value_usd: 3.0,
+                    weight: 1,
+                },
+            ],
+            total_weight: 4,
+            cursor: 0,
+            auto_assign_cursor: 0,
+            auto_assign_include_zion: true,
+            default_value_usd: 1.25,
+            multistream_enabled: true,
+        };
+
+        let (source, usd) = scheduler.next_lane_for_group(SessionGroup::Revenue);
+        assert_eq!(source, RevenueSource::Blake3External);
+        assert!((usd - 2.0).abs() < f64::EPSILON);
+
+        let (source, usd) = scheduler.next_lane_for_group(SessionGroup::Ncl);
+        assert_eq!(source, RevenueSource::NclAi);
+        assert!((usd - 3.0).abs() < f64::EPSILON);
+
+        let (source, usd) = scheduler.next_lane_for_group(SessionGroup::Auto);
+        assert_eq!(source, RevenueSource::Zion);
+        assert!((usd - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn routing_stats_tracks_groups_and_sources() {
+        let mut stats = RoutingStats::new(2);
+        assert!(!stats.record(SessionGroup::Zion, RevenueSource::Zion, true));
+        assert!(stats.record(SessionGroup::Auto, RevenueSource::Blake3External, false));
+
+        assert_eq!(stats.total_submits, 2);
+        assert_eq!(stats.total_accepted, 1);
+        assert_eq!(stats.group_submits[group_index(SessionGroup::Zion)], 1);
+        assert_eq!(stats.group_submits[group_index(SessionGroup::Auto)], 1);
+        assert_eq!(stats.source_submits[source_index(RevenueSource::Zion)], 1);
+        assert_eq!(
+            stats.source_submits[source_index(RevenueSource::Blake3External)],
+            1
+        );
+
+        let snapshot = stats.snapshot_line();
+        assert!(snapshot.contains("submits=2 accepted=1 rejected=1"));
+        assert!(snapshot.contains("zion={submits:1,accepted:1"));
+        assert!(snapshot.contains("auto={submits:1,accepted:0"));
+    }
+
+    #[test]
+    fn auto_assignment_is_weighted_and_session_pinned() {
+        let mut scheduler = RevenueScheduler {
+            lanes: vec![
+                RevenueLane {
+                    source: RevenueSource::Zion,
+                    value_usd: 1.0,
+                    weight: 2,
+                },
+                RevenueLane {
+                    source: RevenueSource::Blake3External,
+                    value_usd: 2.0,
+                    weight: 1,
+                },
+                RevenueLane {
+                    source: RevenueSource::NclAi,
+                    value_usd: 3.0,
+                    weight: 1,
+                },
+            ],
+            total_weight: 4,
+            cursor: 0,
+            auto_assign_cursor: 0,
+            auto_assign_include_zion: true,
+            default_value_usd: 1.25,
+            multistream_enabled: true,
+        };
+
+        // Session allocation follows 2:1:1
+        assert_eq!(scheduler.assign_auto_group(), SessionGroup::Zion);
+        assert_eq!(scheduler.assign_auto_group(), SessionGroup::Zion);
+        assert_eq!(scheduler.assign_auto_group(), SessionGroup::Revenue);
+        assert_eq!(scheduler.assign_auto_group(), SessionGroup::Ncl);
+
+        // Once session is pinned to revenue, submit routing stays revenue (no per-share rotation).
+        let (src1, _) = scheduler.next_lane_for_group(SessionGroup::Revenue);
+        let (src2, _) = scheduler.next_lane_for_group(SessionGroup::Revenue);
+        assert_eq!(src1, RevenueSource::Blake3External);
+        assert_eq!(src2, RevenueSource::Blake3External);
+    }
+
+    #[test]
+    fn auto_assignment_can_exclude_zion() {
+        let mut scheduler = RevenueScheduler {
+            lanes: vec![
+                RevenueLane {
+                    source: RevenueSource::Zion,
+                    value_usd: 1.0,
+                    weight: 2,
+                },
+                RevenueLane {
+                    source: RevenueSource::Blake3External,
+                    value_usd: 2.0,
+                    weight: 1,
+                },
+                RevenueLane {
+                    source: RevenueSource::NclAi,
+                    value_usd: 3.0,
+                    weight: 1,
+                },
+            ],
+            total_weight: 4,
+            cursor: 0,
+            auto_assign_cursor: 0,
+            auto_assign_include_zion: false,
+            default_value_usd: 1.25,
+            multistream_enabled: true,
+        };
+
+        assert_eq!(scheduler.assign_auto_group(), SessionGroup::Revenue);
+        assert_eq!(scheduler.assign_auto_group(), SessionGroup::Ncl);
+        assert_eq!(scheduler.assign_auto_group(), SessionGroup::Revenue);
+        assert_eq!(scheduler.assign_auto_group(), SessionGroup::Ncl);
+    }
 }
 
 fn parse_optional_env_u32(key: &str) -> Result<Option<u32>> {
@@ -667,5 +1430,18 @@ fn parse_optional_env_u32(key: &str) -> Result<Option<u32>> {
             }
         }
         Err(_) => Ok(None),
+    }
+}
+
+fn parse_env_bool(key: &str, default: bool) -> bool {
+    match std::env::var(key) {
+        Ok(value) => {
+            let normalized = value.trim().to_ascii_lowercase();
+            !(normalized == "0"
+                || normalized == "false"
+                || normalized == "no"
+                || normalized == "off")
+        }
+        Err(_) => default,
     }
 }

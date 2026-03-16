@@ -15,7 +15,7 @@ Hlavni princip:
 
 - user sessions jsou defaultne pinute do ZION skupiny
 - backend sessions mohou jit do auto multistream scheduleru
-- scheduler dela weighted lane routing (typicky 50/25/25)
+- auto session je prirazena lane pri connectu (session pinning), ne per-share rotace
 
 ## 2) Kde je implementace
 
@@ -57,7 +57,11 @@ Pinning podle SessionGroup:
 - zion -> RevenueSource::Zion
 - revenue -> RevenueSource::Blake3External
 - ncl -> RevenueSource::NclAi
-- auto -> weighted round robin (next_lane)
+- auto -> lane assignment pri connectu (assign_auto_group), pak pinning
+
+Poznamka:
+
+- defaultne je backend auto assignment bez ZION lane (`ZION_BACKEND_AUTO_INCLUDE_ZION=false`), aby user sessions zustaly ZION-first a backend smeroval do revenue/ncl streamu.
 
 Tohle drzi uzivatele v ZION streamu, zatimco backend muze bezet revenue lanes.
 
@@ -103,6 +107,7 @@ KPI, ktere z toho ihned vidis:
 - ZION_USER_DEFAULT_GROUP
 - ZION_BACKEND_MINER_IDS
 - ZION_BACKEND_WORKER_HINTS
+- ZION_BACKEND_AUTO_INCLUDE_ZION
 - ZION_ROUTING_LOG_EVERY
 
 ### 5.2 Pool network/runtime
@@ -155,6 +160,7 @@ Pro model user ZION + backend revenue:
 - ZION_STREAM_NCL_PCT=25
 - ZION_USER_DEFAULT_GROUP=zion
 - ZION_BACKEND_WORKER_HINTS=backend,revenue,ncl
+- ZION_BACKEND_AUTO_INCLUDE_ZION=false
 - ZION_ROUTING_LOG_EVERY=25
 
 Backend miner sessions znac worker_name napr.:
@@ -182,11 +188,11 @@ Priklad:
 ### Krok C - pripoj backend miner session
 
 - worker obsahuje backend nebo revenue
-- ocekavani: session_group=auto
+- ocekavani: session_group_requested=auto a session_group=revenue nebo ncl (podle lane assignu)
 
 ### Krok D - over logy
 
-- routing_snapshot ukaze narust auto lane a blake3/ncl source podilu
+- routing_snapshot ukaze narust revenue/ncl skupin a blake3/ncl source podilu
 - routing_final po ukonceni potvrdi totals
 
 ### Krok E - over acceptance
@@ -204,7 +210,7 @@ Pool server testy pokryvaji:
 - session group resolution
 - routing stats counters
 
-Aktualni stav: 8/8 pass pro server binary tests.
+Aktualni stav: 11/11 pass pro server binary tests.
 
 ## 9) Operacni poznamky
 
@@ -218,6 +224,7 @@ Aktualni stav: 8/8 pass pro server binary tests.
 
 - zkontroluj ZION_REVENUE_MULTISTREAM=true
 - zkontroluj backend hint/allowlist match
+- zkontroluj ZION_BACKEND_AUTO_INCLUDE_ZION=false
 - over session_group log pro dany worker
 
 ### Auto lane se toci, ale blake3 lane nema accepted
@@ -237,7 +244,7 @@ Hotove:
 
 - pool-centric session routing
 - zion-first default pro user sessions
-- weighted multistream lanes pro backend auto sessions
+- weighted multistream lane assignment + session pinning pro backend auto sessions
 - basic routing telemetry a test coverage
 
 Dalsi prirozene kroky:
