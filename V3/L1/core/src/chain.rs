@@ -217,18 +217,14 @@ impl ForkChoice {
         let mut set = HashMap::new();
         let mut current = *tip;
         let mut depth: u64 = 0;
-        loop {
-            if let Some(entry) = self.entries.get(&current) {
-                set.insert(current, entry.height);
-                let next = entry.prev_hash;
-                if next == current || depth >= max_depth {
-                    break;
-                }
-                current = next;
-                depth += 1;
-            } else {
+        while let Some(entry) = self.entries.get(&current) {
+            set.insert(current, entry.height);
+            let next = entry.prev_hash;
+            if next == current || depth >= max_depth {
                 break;
             }
+            current = next;
+            depth += 1;
         }
         set
     }

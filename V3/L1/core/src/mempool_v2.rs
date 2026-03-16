@@ -153,10 +153,8 @@ impl HardenedMempool {
         }
 
         // 8. Count limit check.
-        if self.entries.len() >= MAX_MEMPOOL_SIZE {
-            if !self.evict_lowest_fee_rate(rate) {
-                return Err(MempoolError::MempoolFull);
-            }
+        if self.entries.len() >= MAX_MEMPOOL_SIZE && !self.evict_lowest_fee_rate(rate) {
+            return Err(MempoolError::MempoolFull);
         }
 
         // 9. Admit: register outpoints.
