@@ -11,7 +11,13 @@ path = "src/main.rs"
 
 [features]
 default = []
-gpu = ["dep:ocl"]
+
+# GPU backends (feature-gated)
+gpu         = ["gpu-opencl"]                           # alias → OpenCL
+gpu-opencl  = ["dep:ocl"]                              # Ekam Deeksha + DCR Blake3
+gpu-cuda    = []                                       # scaffold only (cudarc TBD)
+gpu-metal   = []                                       # scaffold only (metal-rs TBD)
+gpu-all     = ["gpu-opencl", "gpu-cuda", "gpu-metal"]
 
 # Native algorithm acceleration (optional, requires C toolchain)
 native-etchash        = ["dep:zion-native-ffi", "zion-native-ffi/native-etchash"]
@@ -30,8 +36,11 @@ native-all = [
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
+num_cpus = "1"
+rayon = "1"
 ocl = { version = "0.19", optional = true }
 serde_json.workspace = true
 zion-core = { path = "../core" }
 zion-pool = { path = "../pool" }
+zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-native-ffi = { path = "../native-ffi", optional = true }
