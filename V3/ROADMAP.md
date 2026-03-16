@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-16 (Phase 17 update)
+Status date: 2026-03-16 (Phase 20 update)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -134,6 +134,8 @@ This roadmap follows the release progression already defined in the repository d
   - local in-process mining flow
   - remote TCP mining flow against `zion-pool`
   - repeated loop, telemetry, and environment-driven runtime controls
+  - DCR stealth worker with Stratum session flow and CPU/GPU backend selection (`auto`/`cpu`/`gpu`)
+  - OpenCL-backed Blake3 GPU path (`dcr_blake3_mine.cl`) with configurable work size and CPU fallback
 - `DesktopApp`
   - fresh Electron shell created under `V3/`
   - L1-L6 operator navigation scaffold
@@ -158,6 +160,7 @@ This roadmap follows the release progression already defined in the repository d
 - live two-node rehearsal confirms block export from one node and validated `announce_block` import into another node
 - live bootstrap rehearsal confirms a fresh node can catch up from `ZION_SEED_PEERS` without manual block announce steps
 - canonical Ekam vector remains stable
+- zion-miner GPU benchmark mode (`--gpu-bench`) validates OpenCL precompute correctness and reports live device throughput
 - **78 new tests across crypto (19), tx (10), fee (15), wallet (9), validation (25) — all green**
 - **46 new tests across chain (14), mempool_v2 (12), p2p_security (10), orphan (10) — all green**
 - **62 new tests across storage (12), ibd (13), rpc (14), peer_manager (13), metrics (10) — all green**
@@ -173,6 +176,8 @@ This roadmap follows the release progression already defined in the repository d
 - **Phase 17: UTXO RPC + chain validation — getBalance zion1 support, getUtxos endpoint, UTXO input existence check, balance/funding/spending tests — 374 total tests passing**
 - **Phase 18: Mempool transaction relay — AnnounceTx P2P message, SeenTransactions dedup cache (8192 cap), plan_tx_relay(), tx propagation stats, relay wiring in node binary (P2P + RPC submit paths), SubmittedTransaction serde — 10 new propagation tests**
 - **Phase 18b: E2E multi-node integration tests — 9 tests: block relay, GetBlocksSince sync, transaction relay, AnnounceTx serde roundtrip, three-node chain sync, duplicate block handling, tx→mine→sync, status exchange, network mismatch rejection — 393 total tests passing**
+- **Phase 19: Clippy cleanup campaign — zion-core lib/bin and zion-cosmic-harmony reduced to zero clippy warnings; style simplifications, map_or→is_some_and/is_none_or, loop cleanups, and targeted allow attributes where required by API shape**
+- **Phase 20: Miner DCR/GPU runtime integration — DCR worker modules wired into miner entrypoint, OpenCL kernel/build glue added, GPU backend smoke path validated (`ZION_DCR_BACKEND=gpu`, `ZION_LOOP_COUNT=1`)**
 
 ### Not Done Yet
 
@@ -194,7 +199,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 434+ pass, 0 fail, 1 ignored (doc-test) |
+| Tests | ~200+ | 474+ pass, 0 fail |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |
