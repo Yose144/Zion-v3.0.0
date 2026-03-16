@@ -338,7 +338,7 @@ fn mine_loop_gpu(
     let nonce_start = nonce_base as u32;
 
     let mut backoff_secs: u64 = 1;
-    let mut nonce = nonce_start;
+    let mut nonce: u32;
     let mut batch_start = Instant::now();
     let mut batch_hashes: u64 = 0;
 
