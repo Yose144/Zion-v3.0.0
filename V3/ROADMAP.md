@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-16 (Phase 16 update)
+Status date: 2026-03-16 (Phase 17 update)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -122,6 +122,7 @@ This roadmap follows the release progression already defined in the repository d
   - **RPC model surface alignment: balance/tx API routes account vs UTXO, RuntimeTransaction adapter for mempool/template/journal** (`lib.rs`, `rpc.rs`) — Phase 14
   - **Centralized submit boundary: SubmittedTransaction enum with parse_value, model detection, zion1 endpoint rejection** (`lib.rs`, `rpc.rs`) — Phase 15
   - **Complete UTXO bridge into active mempool acceptance path: UTXO submit → validate (hash+signatures) → mempool → template → mined block → peer validation → journal replay → snapshot/restore** (`lib.rs`, `rpc.rs`, `genesis.rs`) — Phase 16
+  - **UTXO RPC + chain validation: `getBalance` supports zion1 addresses (balance_flowers), `getUtxos` RPC endpoint (spendable UTXOs per address), UTXO input existence check (rejects nonexistent/already-spent inputs), `SpendableUtxo` struct, `utxo_set()`/`utxo_balance()`/`spendable_utxos()`/`utxo_exists()` methods** (`lib.rs`, `rpc.rs`) — Phase 17
 - `L1/pool`
   - share validation and revenue tracking
   - session-oriented wire protocol
@@ -169,6 +170,7 @@ This roadmap follows the release progression already defined in the repository d
 - **8 new tests for chain linkage verification (previous_hash_hex mining, genesis zero hash, valid/broken chain linkage, batch intra-linkage, header consistency, legacy compat — 393 total tests)**
 - **Phase 14–15: RPC model alignment, RuntimeTransaction adapter, centralized submit boundary — tests updated**
 - **12 new UTXO acceptance tests (Phase 16): submit, template, mining, peer import, rejection, coexistence — 393+ total tests passing**
+- **Phase 17: UTXO RPC + chain validation — getBalance zion1 support, getUtxos endpoint, UTXO input existence check, balance/funding/spending tests — 374 total tests passing**
 
 ### Not Done Yet
 
@@ -189,15 +191,15 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 393+ pass, 0 fail, 1 ignored (doc-test) |
+| Tests | ~200+ | 434+ pass, 0 fail, 1 ignored (doc-test) |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |
 | Addresses | `zion1...` 44 chars, checksum | `zion1...` 44 chars, checksum |
 
-#### Module Status (35 items)
+#### Module Status (36 items)
 
-**Done (33):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (15 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getAccountBalance, getTransaction, getAccountTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitTransaction, submitAccountTransaction, submitBlock — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats), **peer discovery** (active GetPeers exchange, merge into known_peers + PeerManager seeds), **peer persistence** (known_peers → `peers.json`, load on startup), **peer-block validation hardening** (PoW via header_hex, timestamp sanity, checkpoint enforcement), **chain linkage verification** (previous_hash_hex in AcceptedBlock, import-time parent-hash enforcement, header cross-check), **RPC model alignment** (RuntimeTransaction adapter, account/UTXO dual routing, centralized submit boundary), **UTXO mempool bridge** (submit → validate → mempool → template → mine → peer validate → journal → snapshot), **AcceptedBlock convergence** (utxo_transactions + utxo_transaction_ids fields, backward-compatible serde)
+**Done (35):** emission, LWMA DAA, genesis/premine, P2P messages, pool crate, miner crate, block headers, chain state (basic), **crypto/keys** (Ed25519, BLAKE3, `zion1...` addresses), **UTXO tx model** (TxInput/TxOutput/Transaction), **fee model** (MIN_TX_FEE, fee-rate, burn), **wallet** (coin selection, build_and_sign, batch payouts), **full block validation** (11-step pipeline, Merkle tree, signatures, maturity, fees, DAO lock), **chain reorg** (fork choice, undo blocks, MAX_REORG_DEPTH=10), **hardened mempool** (double-spend, byte/count limits, fee-rate eviction), **P2P security** (rate limiter, escalating bans, connection limiter), **orphan handling** (orphan buffer, chain ID enforcement), **LMDB storage** (8 databases, atomic writes, rollback), **IBD state machine** (batch sync, stall detection), **JSON-RPC 2.0** (16 live methods: getChainInfo, getNodeInfo, getBlock, getBlockByHeight, getBalance, getAccountBalance, getTransaction, getAccountTransaction, getBlockTemplate, getMempoolInfo, getPeerInfo, sendRawTransaction, submitTransaction, submitAccountTransaction, submitBlock, getUtxos — auto-detected on RPC port alongside simple protocol), **peer manager** (scoring, banning, diversity), **metrics** (Prometheus, health check), **launch readiness** (genesis ceremony, checkpoints, 9 readiness checks), **node bootstrap** (NodeHandle wiring all subsystems), **block propagation** (flood-fill relay, SeenBlocks dedup, PropagationStats), **peer discovery** (active GetPeers exchange, merge into known_peers + PeerManager seeds), **peer persistence** (known_peers → `peers.json`, load on startup), **peer-block validation hardening** (PoW via header_hex, timestamp sanity, checkpoint enforcement), **chain linkage verification** (previous_hash_hex in AcceptedBlock, import-time parent-hash enforcement, header cross-check), **RPC model alignment** (RuntimeTransaction adapter, account/UTXO dual routing, centralized submit boundary), **UTXO mempool bridge** (submit → validate → mempool → template → mine → peer validate → journal → snapshot), **AcceptedBlock convergence** (utxo_transactions + utxo_transaction_ids fields, backward-compatible serde), **profit router + Decred revenue** (ExternalCoin enum with DCR/ALPH Blake3 coins, CoinProfile, ProfitEntry, fallback estimates, select_best_coin with hysteresis, Blake3External revenue source at 2% fee), **UTXO RPC + chain validation** (getBalance zion1, getUtxos, UTXO input existence check, SpendableUtxo, utxo_set/balance/spendable_utxos/utxo_exists)
 
 **Partial (2):** P2P (Phase 10+11+12 added persistent connections, outbound peer thread, heartbeat, PeerManager+PeerSecurity wiring, peer discovery, peer persistence, block validation hardening; missing full async networking, parallel multi-peer IBD), state management (missing broadcast channels, block processing lock, reorg lock)
 
@@ -795,6 +797,37 @@ Exit criteria:
 - All 370+ tests pass ✓
 
 Status: done (commit `ba601d4`)
+
+### Phase 17: UTXO RPC & Chain Validation
+
+Goal: UTXO balance queries, spendable UTXO listing, and chain-level input existence verification.
+
+Completed work:
+
+- `SpendableUtxo` struct: tx_hash, output_index, amount, address, height
+- `ChainState::utxo_set()`: builds full UTXO set from accepted_blocks (processes spends then creates outputs per block)
+- `ChainState::utxo_balance(address)`: sums unspent UTXO amounts for zion1 address
+- `ChainState::spendable_utxos(address)`: returns Vec<SpendableUtxo> for an address
+- `ChainState::utxo_exists(tx_hash, output_index)`: checks if outpoint exists as unspent
+- `insert_utxo_transaction()`: now verifies each input's referenced UTXO exists on chain and is unspent, before double-spend mempool check
+- `NodeRuntime::utxo_balance()` and `NodeRuntime::spendable_utxos()` public methods
+- `getBalance` RPC: now accepts zion1 addresses, returns `balance_flowers`, `transaction_model: "utxo"`
+- `getUtxos` RPC: new endpoint returning spendable UTXOs for a zion1 address (count, total_amount, utxos array)
+- RPC method count: 15 → 16
+- Test infrastructure: `seed_utxo_funding()` helper injects on-chain funding UTXOs for test spending
+- `make_signed_utxo_tx_spending()` helper creates valid chain-backed spending transactions
+- All 8 existing UTXO tests updated to use chain-backed funding
+- 4 new tests: nonexistent input rejection, UTXO balance tracking (funded + spent), getUtxos empty/reject
+
+Exit criteria:
+
+- `getBalance` returns UTXO balance for zion1 addresses ✓
+- `getUtxos` returns spendable UTXOs for zion1 addresses ✓
+- UTXO input referencing nonexistent outpoint is rejected ✓
+- Balance reflects funding and spending correctly ✓
+- All 374 tests pass ✓
+
+Status: done
 
 ## Immediate Next Steps
 
