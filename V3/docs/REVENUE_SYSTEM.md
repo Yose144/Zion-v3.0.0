@@ -93,6 +93,10 @@ KPI, ktere z toho ihned vidis:
 - kolik share je pripisano do zion/blake3/ncl source lanes
 - acceptance ratio po skupinach a lane source
 
+Volitelny endpoint:
+
+- pokud nastavis ZION_ROUTING_METRICS_BIND (napr. 127.0.0.1:9550), pool vraci po TCP pripojeni jeden JSON snapshot s aktualnimi counters.
+
 ## 5) Env konfigurace
 
 ### 5.1 Pool routing a multistream
@@ -109,6 +113,7 @@ KPI, ktere z toho ihned vidis:
 - ZION_BACKEND_WORKER_HINTS
 - ZION_BACKEND_AUTO_INCLUDE_ZION
 - ZION_ROUTING_LOG_EVERY
+- ZION_ROUTING_METRICS_BIND
 
 ### 5.2 Pool network/runtime
 

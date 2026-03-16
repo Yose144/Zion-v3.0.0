@@ -45,6 +45,16 @@ fn main() -> Result<()> {
         config.backend_worker_hints.join("|")
     );
     println!("routing_log_every={}", config.routing_log_every);
+    if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
+        println!("routing_metrics_bind={metrics_bind}");
+        let routing_stats = Arc::clone(&routing_stats);
+        let metrics_bind = metrics_bind.to_string();
+        thread::spawn(move || {
+            if let Err(error) = serve_routing_metrics(&metrics_bind, routing_stats) {
+                eprintln!("routing_metrics_error={error:#}");
+            }
+        });
+    }
     {
         let scheduler = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
         println!(
@@ -411,6 +421,7 @@ struct ServerConfig {
     backend_miner_ids: Vec<String>,
     backend_worker_hints: Vec<String>,
     routing_log_every: u64,
+    routing_metrics_bind: Option<String>,
 }
 
 #[derive(Debug)]
@@ -700,6 +711,69 @@ impl RoutingStats {
 
         out
     }
+
+    fn snapshot_json(&self) -> String {
+        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let accept_rate = if self.total_submits == 0 {
+            0.0
+        } else {
+            self.total_accepted as f64 * 100.0 / self.total_submits as f64
+        };
+
+        format!(
+            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"accept_rate_pct\":{:.2},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
+            self.total_submits,
+            self.total_accepted,
+            total_rejected,
+            accept_rate,
+            self.group_submits[group_index(SessionGroup::Zion)],
+            self.group_accepted[group_index(SessionGroup::Zion)],
+            self.group_submits[group_index(SessionGroup::Revenue)],
+            self.group_accepted[group_index(SessionGroup::Revenue)],
+            self.group_submits[group_index(SessionGroup::Ncl)],
+            self.group_accepted[group_index(SessionGroup::Ncl)],
+            self.group_submits[group_index(SessionGroup::Auto)],
+            self.group_accepted[group_index(SessionGroup::Auto)],
+            self.source_submits[source_index(RevenueSource::Zion)],
+            self.source_accepted[source_index(RevenueSource::Zion)],
+            self.source_submits[source_index(RevenueSource::Blake3External)],
+            self.source_accepted[source_index(RevenueSource::Blake3External)],
+            self.source_submits[source_index(RevenueSource::NclAi)],
+            self.source_accepted[source_index(RevenueSource::NclAi)],
+        )
+    }
+}
+
+fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>>) -> Result<()> {
+    let listener = TcpListener::bind(bind_addr)
+        .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
+
+    for stream in listener.incoming() {
+        let mut stream = match stream {
+            Ok(stream) => stream,
+            Err(error) => {
+                eprintln!("routing_metrics_accept_error={error}");
+                continue;
+            }
+        };
+
+        let payload = {
+            let stats = routing_stats
+                .lock()
+                .expect("routing stats lock poisoned");
+            stats.snapshot_json()
+        };
+
+        if let Err(error) = stream.write_all(payload.as_bytes()) {
+            eprintln!("routing_metrics_write_error={error}");
+            continue;
+        }
+        if let Err(error) = stream.write_all(b"\n") {
+            eprintln!("routing_metrics_newline_error={error}");
+        }
+    }
+
+    Ok(())
 }
 
 fn group_index(group: SessionGroup) -> usize {
@@ -785,7 +859,22 @@ impl ServerConfig {
                 }
             },
             routing_log_every: parse_env_u64("ZION_ROUTING_LOG_EVERY", 25)?,
+            routing_metrics_bind: parse_optional_env_string("ZION_ROUTING_METRICS_BIND"),
         })
+    }
+}
+
+fn parse_optional_env_string(key: &str) -> Option<String> {
+    match std::env::var(key) {
+        Ok(value) => {
+            let trimmed = value.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        }
+        Err(_) => None,
     }
 }
 
@@ -1035,6 +1124,7 @@ mod tests {
             backend_miner_ids: Vec::new(),
             backend_worker_hints: Vec::new(),
             routing_log_every: 0,
+            routing_metrics_bind: None,
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -1222,6 +1312,7 @@ mod tests {
             backend_miner_ids: vec!["backend-miner-1".to_string()],
             backend_worker_hints: vec!["backend".to_string()],
             routing_log_every: 0,
+            routing_metrics_bind: None,
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -1247,6 +1338,7 @@ mod tests {
             backend_miner_ids: vec!["backend-miner-1".to_string()],
             backend_worker_hints: vec!["backend".to_string()],
             routing_log_every: 0,
+            routing_metrics_bind: None,
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -1272,6 +1364,7 @@ mod tests {
             backend_miner_ids: vec![],
             backend_worker_hints: vec!["backend".to_string(), "revenue".to_string()],
             routing_log_every: 0,
+            routing_metrics_bind: None,
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -1339,6 +1432,11 @@ mod tests {
         assert!(snapshot.contains("submits=2 accepted=1 rejected=1"));
         assert!(snapshot.contains("zion={submits:1,accepted:1"));
         assert!(snapshot.contains("auto={submits:1,accepted:0"));
+
+        let snapshot_json = stats.snapshot_json();
+        assert!(snapshot_json.contains("\"submits\":2"));
+        assert!(snapshot_json.contains("\"groups\""));
+        assert!(snapshot_json.contains("\"sources\""));
     }
 
     #[test]
