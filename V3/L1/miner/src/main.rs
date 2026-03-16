@@ -216,8 +216,10 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
     let mut accepted_iterations = 0u64;
+    let mut rejected_iterations = 0u64;
     let mut last_result_line = None;
     let mut last_job_id = 0u64;
+    let mut tuned_nonce_count = config.nonce_count;
 
     let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name))?;
     let welcome_line = encode_message(&pool.welcome_message())?;
@@ -237,12 +239,35 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
         let start_nonce = config
             .start_nonce
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
-        let job = pool.issue_job(header, config.target, start_nonce, config.nonce_count);
+        let job = pool.issue_job(header, config.target, start_nonce, tuned_nonce_count);
         last_job_id = job.job_id;
-        let solution = pool
-            .runtime()
-            .scan_nonce_range(job)
-            .ok_or_else(|| anyhow!("no solution found in nonce window for job {}", job.job_id))?;
+        let solution = pool.runtime().scan_nonce_range(job);
+
+        if solution.is_none() {
+            attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
+            rejected_iterations += 1;
+            println!("iteration={}", iteration + 1);
+            println!("job_id={}", job.job_id);
+            println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
+            println!("share_status=\"NoSolutionInWindow\"");
+
+            if config.nonce_autotune {
+                let previous = tuned_nonce_count;
+                tuned_nonce_count = increase_nonce_window(
+                    tuned_nonce_count,
+                    config.nonce_count_max,
+                    config.nonce_adjust_percent,
+                );
+                if tuned_nonce_count != previous {
+                    println!(
+                        "nonce_autotune action=grow prev={} next={} max={}",
+                        previous, tuned_nonce_count, config.nonce_count_max
+                    );
+                }
+            }
+            continue;
+        }
+        let solution = solution.expect("checked is_some above");
 
         attempted_hashes = attempted_hashes
             .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
@@ -260,6 +285,8 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
         );
         if matches!(decision.status, ShareStatus::Accepted) {
             accepted_iterations += 1;
+        } else {
+            rejected_iterations += 1;
         }
 
         let job_line = encode_message(&pool.job_message(job))?;
@@ -283,6 +310,18 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
             println!("wire_stale={}", stale_line.trim());
             println!("wire_cancel={}", cancel_line.trim());
         }
+
+        if config.nonce_autotune {
+            let used = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
+            let quarter = tuned_nonce_count / 4;
+            if quarter > 0 && used <= quarter {
+                tuned_nonce_count = decrease_nonce_window(
+                    tuned_nonce_count,
+                    config.nonce_count_min,
+                    config.nonce_adjust_percent,
+                );
+            }
+        }
     }
 
     let stats = pool.stats();
@@ -298,7 +337,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
     Ok(SessionOutcome {
         last_job_id,
         accepted_shares: stats.accepted_shares,
-        rejected_shares: stats.rejected_shares,
+        rejected_shares: stats.rejected_shares.saturating_add(rejected_iterations),
         active_jobs: stats.active_jobs,
         accepted_iterations,
         attempted_hashes,
@@ -343,9 +382,18 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
     for iteration in 0..config.loop_count {
         let (job_line, job) = read_next_job(&mut reader)?;
         last_job_id = job.job_id;
-        let solution = runtime
-            .scan_nonce_range(job)
-            .ok_or_else(|| anyhow!("no solution found in nonce window for job {}", job.job_id))?;
+        let solution = runtime.scan_nonce_range(job);
+        if solution.is_none() {
+            attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
+            rejected_iterations += 1;
+            println!("iteration={}", iteration + 1);
+            println!("job_id={}", job.job_id);
+            println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
+            println!("share_status=\"NoSolutionInWindow\"");
+            println!("wire_job={job_line}");
+            continue;
+        }
+        let solution = solution.expect("checked is_some above");
         attempted_hashes = attempted_hashes
             .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
 
@@ -560,6 +608,10 @@ struct MinerConfig {
     nonce_stride: u64,
     start_nonce: u64,
     nonce_count: u64,
+    nonce_autotune: bool,
+    nonce_count_min: u64,
+    nonce_count_max: u64,
+    nonce_adjust_percent: u64,
     sleep_ms: u64,
     timestamp: u64,
     target: DifficultyTarget,
@@ -578,6 +630,10 @@ impl MinerConfig {
             nonce_stride: parse_env_u64("ZION_NONCE_STRIDE", 1_024)?,
             start_nonce: parse_env_u64("ZION_START_NONCE", 42)?,
             nonce_count: parse_env_u64("ZION_NONCE_COUNT", 1024)?,
+            nonce_autotune: parse_bool_env("ZION_NONCE_AUTOTUNE", true),
+            nonce_count_min: parse_env_u64("ZION_NONCE_COUNT_MIN", 10_000)?,
+            nonce_count_max: parse_env_u64("ZION_NONCE_COUNT_MAX", 5_000_000)?,
+            nonce_adjust_percent: parse_env_u64("ZION_NONCE_ADJUST_PCT", 50)?,
             sleep_ms: parse_env_u64("ZION_SLEEP_MS", 0)?,
             timestamp: parse_env_u64("ZION_TIMESTAMP", 1_762_000_200)?,
             target: parse_target_env("ZION_TARGET")?,
@@ -685,13 +741,25 @@ mod tests {
         std::env::set_var("ZION_LOOP_COUNT", "3");
         std::env::set_var("ZION_JOB_TTL_MS", "2500");
         std::env::set_var("ZION_NONCE_STRIDE", "4096");
+        std::env::set_var("ZION_NONCE_AUTOTUNE", "true");
+        std::env::set_var("ZION_NONCE_COUNT_MIN", "2000");
+        std::env::set_var("ZION_NONCE_COUNT_MAX", "2000000");
+        std::env::set_var("ZION_NONCE_ADJUST_PCT", "30");
         let config = MinerConfig::from_env().expect("config from env");
         assert_eq!(config.loop_count, 3);
         assert_eq!(config.job_ttl_ms, 2500);
         assert_eq!(config.nonce_stride, 4096);
+        assert!(config.nonce_autotune);
+        assert_eq!(config.nonce_count_min, 2000);
+        assert_eq!(config.nonce_count_max, 2_000_000);
+        assert_eq!(config.nonce_adjust_percent, 30);
         std::env::remove_var("ZION_LOOP_COUNT");
         std::env::remove_var("ZION_JOB_TTL_MS");
         std::env::remove_var("ZION_NONCE_STRIDE");
+        std::env::remove_var("ZION_NONCE_AUTOTUNE");
+        std::env::remove_var("ZION_NONCE_COUNT_MIN");
+        std::env::remove_var("ZION_NONCE_COUNT_MAX");
+        std::env::remove_var("ZION_NONCE_ADJUST_PCT");
     }
 
     #[test]
@@ -711,4 +779,25 @@ fn parse_bool_env(key: &str, default: bool) -> bool {
         }
         Err(_) => default,
     }
+}
+
+fn increase_nonce_window(current: u64, max: u64, adjust_percent: u64) -> u64 {
+    if current >= max {
+        return max;
+    }
+    let factor = 100u64.saturating_add(adjust_percent.max(1));
+    let grown = current
+        .saturating_mul(factor)
+        .saturating_div(100)
+        .max(current.saturating_add(1));
+    grown.min(max)
+}
+
+fn decrease_nonce_window(current: u64, min: u64, adjust_percent: u64) -> u64 {
+    if current <= min {
+        return min;
+    }
+    let factor = 100u64.saturating_sub(adjust_percent.min(90)).max(10);
+    let shrunk = current.saturating_mul(factor).saturating_div(100);
+    shrunk.max(min)
 }
