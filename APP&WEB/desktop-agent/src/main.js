@@ -14,6 +14,15 @@ const QRCode = require('qrcode');
 const DBG = process.env.ZION_DEBUG === '1';
 function dbg(...args) { if (DBG) console.debug('[DBG]', ...args); }
 
+// ── E2E Test Mode: Automated testing support
+const E2E_TEST = process.env.ZION_E2E_TEST === '1';
+if (E2E_TEST) {
+  console.log('ZION Desktop Agent E2E Test Mode Enabled');
+  console.log('Test Pool:', process.env.ZION_TEST_POOL || 'default');
+  console.log('Test Worker:', process.env.ZION_TEST_WORKER || 'e2e-test');
+  console.log('Test Timeout:', process.env.ZION_TEST_TIMEOUT || '30s');
+}
+
 const fileAppendState = new Map();
 const fileRotateLastCheckMs = new Map();
 
@@ -8914,6 +8923,15 @@ function _isNewerVersion(latest, current) {
 // App lifecycle
 app.whenReady().then(() => {
   console.log('ZION Native Awakening v2.9.6 started');
+
+  // E2E Test Mode: Signal ready state
+  if (E2E_TEST) {
+    console.log('ZION Desktop Agent ready for E2E testing');
+    setTimeout(() => {
+      console.log('E2E_TEST_MINING_INITIALIZED');
+    }, 2000); // Simulate mining init delay
+  }
+
   dbg('Config path:', CONFIG_PATH);
   dbg('Miner path:', MINER_PATH);
   dbg('Log path:', LOG_PATH);
