@@ -374,13 +374,18 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
 
     let (welcome_line_raw, welcome_message) = read_wire_message(&mut reader)?;
     println!("wire_welcome={welcome_line_raw}");
-    match welcome_message {
-        PoolMessage::Welcome { .. } => {}
+    let remote_job_ttl_ms = match welcome_message {
+        PoolMessage::Welcome { job_ttl_ms, .. } => job_ttl_ms,
         other => return Err(anyhow!("expected welcome from pool, got {other:?}")),
-    }
+    };
+
+    let ttl_guard_ms = remote_job_ttl_ms
+        .saturating_mul(config.remote_ttl_guard_percent)
+        .saturating_div(100);
 
     for iteration in 0..config.loop_count {
         let (job_line, job) = read_next_job(&mut reader)?;
+        let job_started_at = Instant::now();
         last_job_id = job.job_id;
         let solution = runtime.scan_nonce_range(job);
         if solution.is_none() {
@@ -399,6 +404,21 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
 
         if config.sleep_ms > 0 {
             thread::sleep(Duration::from_millis(config.sleep_ms));
+        }
+
+        let elapsed_ms = job_started_at.elapsed().as_millis() as u64;
+        if ttl_guard_ms > 0 && elapsed_ms >= ttl_guard_ms {
+            // Skip likely-stale submit when local hashing is slower than pool TTL.
+            println!("iteration={}", iteration + 1);
+            println!("job_id={}", job.job_id);
+            println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
+            println!("found_nonce={}", solution.candidate.nonce);
+            println!("hash={}", hex(&solution.hash));
+            println!("share_status=\"LocalSkipLikelyStale\"");
+            println!("scan_elapsed_ms={elapsed_ms}");
+            println!("ttl_guard_ms={ttl_guard_ms}");
+            println!("wire_job={job_line}");
+            continue;
         }
 
         let submit_message = PoolMessage::Submit {
@@ -612,6 +632,7 @@ struct MinerConfig {
     nonce_count_min: u64,
     nonce_count_max: u64,
     nonce_adjust_percent: u64,
+    remote_ttl_guard_percent: u64,
     sleep_ms: u64,
     timestamp: u64,
     target: DifficultyTarget,
@@ -634,6 +655,7 @@ impl MinerConfig {
             nonce_count_min: parse_env_u64("ZION_NONCE_COUNT_MIN", 10_000)?,
             nonce_count_max: parse_env_u64("ZION_NONCE_COUNT_MAX", 5_000_000)?,
             nonce_adjust_percent: parse_env_u64("ZION_NONCE_ADJUST_PCT", 50)?,
+            remote_ttl_guard_percent: parse_env_u64("ZION_REMOTE_TTL_GUARD_PCT", 90)?.clamp(10, 100),
             sleep_ms: parse_env_u64("ZION_SLEEP_MS", 0)?,
             timestamp: parse_env_u64("ZION_TIMESTAMP", 1_762_000_200)?,
             target: parse_target_env("ZION_TARGET")?,
@@ -745,6 +767,7 @@ mod tests {
         std::env::set_var("ZION_NONCE_COUNT_MIN", "2000");
         std::env::set_var("ZION_NONCE_COUNT_MAX", "2000000");
         std::env::set_var("ZION_NONCE_ADJUST_PCT", "30");
+        std::env::set_var("ZION_REMOTE_TTL_GUARD_PCT", "85");
         let config = MinerConfig::from_env().expect("config from env");
         assert_eq!(config.loop_count, 3);
         assert_eq!(config.job_ttl_ms, 2500);
@@ -753,6 +776,7 @@ mod tests {
         assert_eq!(config.nonce_count_min, 2000);
         assert_eq!(config.nonce_count_max, 2_000_000);
         assert_eq!(config.nonce_adjust_percent, 30);
+        assert_eq!(config.remote_ttl_guard_percent, 85);
         std::env::remove_var("ZION_LOOP_COUNT");
         std::env::remove_var("ZION_JOB_TTL_MS");
         std::env::remove_var("ZION_NONCE_STRIDE");
@@ -760,6 +784,7 @@ mod tests {
         std::env::remove_var("ZION_NONCE_COUNT_MIN");
         std::env::remove_var("ZION_NONCE_COUNT_MAX");
         std::env::remove_var("ZION_NONCE_ADJUST_PCT");
+        std::env::remove_var("ZION_REMOTE_TTL_GUARD_PCT");
     }
 
     #[test]
