@@ -407,6 +407,7 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "keccak" | "keccak_bonus" => Ok(RevenueSource::KeccakBonus),
         "sha3" | "sha3_bonus" => Ok(RevenueSource::Sha3Bonus),
         "profit" | "profit_switch" => Ok(RevenueSource::ProfitSwitch),
+        "blake3" | "blake3_external" | "dcr" | "alph" => Ok(RevenueSource::Blake3External),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         other => Err(anyhow!("unsupported revenue source: {other}")),
     }
@@ -438,6 +439,9 @@ mod tests {
             total_fees_zion: 0,
             body_hash_hex: "00".repeat(32),
             estimated_miner_reward_zion: 5_400,
+            utxo_transaction_ids: Vec::new(),
+            utxo_transaction_count: 0,
+            total_utxo_fees: 0,
         }
     }
 

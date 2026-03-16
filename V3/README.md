@@ -68,6 +68,8 @@ Out of scope for the bootstrap:
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
 - `L1/pool` also expires stale jobs and distinguishes invalid, stale, mismatched, and upstream-rejected submissions
 - `L1/pool` now also carries bridge-level integration tests for stale-template and upstream-rejection paths against node RPC
+- `L1/cosmic-harmony` now carries the profit router with `ExternalCoin` enum (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR), `CoinProfile` metadata, `ProfitEntry` snapshots, fallback estimates, and `select_best_coin()` with hysteresis — Decred (Blake3/DCP-0011) and Alephium (Blake3) are first-class Blake3-compatible revenue coins
+- `L1/cosmic-harmony` revenue tracking now includes a `Blake3External` revenue source for Blake3-compatible external coins (DCR, ALPH) at the same 2% fee rate as profit-switch
 - `L1/miner` now supports both local in-process mode and remote TCP pool mode, plus repeated mining loops, telemetry, and a persistent wire session transcript
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`

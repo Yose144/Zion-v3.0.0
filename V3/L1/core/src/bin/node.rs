@@ -10,9 +10,9 @@ use zion_core::{
     node_protocol_version,
     p2p_security::PeerSecurity,
     peer_manager::{PeerAction, PeerDirection, PeerManager},
-    propagation::{PropagationStats, SeenBlocks},
+    propagation::{PropagationStats, SeenBlocks, SeenTransactions},
     rpc::{build_node_router, RpcRouter},
-    AcceptedBlock, NodeConfig, NodeRuntime, P2pMessage, PeerEndpoint,
+    AcceptedBlock, NodeConfig, NodeRuntime, P2pMessage, PeerEndpoint, SubmittedTransaction,
 };
 
 fn main() -> Result<()> {
@@ -72,6 +72,7 @@ fn main() -> Result<()> {
 
     // Shared propagation state
     let seen_blocks = Arc::new(Mutex::new(SeenBlocks::new()));
+    let seen_txs = Arc::new(Mutex::new(SeenTransactions::new()));
     let prop_stats = Arc::new(PropagationStats::new());
 
     // Peer manager — scoring, tracking, subnet diversity
@@ -119,6 +120,7 @@ fn main() -> Result<()> {
     // ── P2P accept loop ────────────────────────────────────────────────
     let p2p_runtime = Arc::clone(&runtime);
     let p2p_seen = Arc::clone(&seen_blocks);
+    let p2p_seen_txs = Arc::clone(&seen_txs);
     let p2p_stats = Arc::clone(&prop_stats);
     let p2p_peer_mgr = Arc::clone(&peer_mgr);
     let p2p_peer_sec = Arc::clone(&peer_sec);
@@ -147,13 +149,14 @@ fn main() -> Result<()> {
             println!("p2p_peer_addr={peer_addr}");
             let runtime = Arc::clone(&p2p_runtime);
             let seen = Arc::clone(&p2p_seen);
+            let seen_txs = Arc::clone(&p2p_seen_txs);
             let stats = Arc::clone(&p2p_stats);
             let mgr = Arc::clone(&p2p_peer_mgr);
             let sec = Arc::clone(&p2p_peer_sec);
             let source = peer_addr.to_string();
             let source_ip = peer_ip;
             handles.push(thread::spawn(move || {
-                let result = handle_p2p_stream(stream, &runtime, &seen, &stats, &source, &mgr, &sec, source_ip);
+                let result = handle_p2p_stream(stream, &runtime, &seen, &seen_txs, &stats, &source, &mgr, &sec, source_ip);
                 // Release connection slot when stream ends
                 sec.lock().expect("lock").release_connection();
                 result
@@ -168,6 +171,7 @@ fn main() -> Result<()> {
 
     let rpc_runtime = Arc::clone(&runtime);
     let rpc_seen = Arc::clone(&seen_blocks);
+    let rpc_seen_txs = Arc::clone(&seen_txs);
     let rpc_stats = Arc::clone(&prop_stats);
     let rpc_router = Arc::clone(&jsonrpc_router);
     let rpc_limit = config.rpc_accept_limit;
@@ -182,10 +186,11 @@ fn main() -> Result<()> {
             println!("rpc_client_addr={peer_addr}");
             let runtime = Arc::clone(&rpc_runtime);
             let seen = Arc::clone(&rpc_seen);
+            let seen_txs = Arc::clone(&rpc_seen_txs);
             let stats = Arc::clone(&rpc_stats);
             let router = Arc::clone(&rpc_router);
             handles.push(thread::spawn(move || {
-                handle_rpc_stream(stream, &runtime, &seen, &stats, &router)
+                handle_rpc_stream(stream, &runtime, &seen, &seen_txs, &stats, &router)
             }));
             accepted = accepted.saturating_add(1);
         }
@@ -205,6 +210,9 @@ fn main() -> Result<()> {
     println!("blocks_relayed={}", snap.blocks_relayed);
     println!("relay_successes={}", snap.relay_successes);
     println!("relay_failures={}", snap.relay_failures);
+    println!("txs_relayed={}", snap.txs_relayed);
+    println!("tx_relay_successes={}", snap.tx_relay_successes);
+    println!("tx_relay_failures={}", snap.tx_relay_failures);
     println!("revenue_total_usd={:.2}", status.revenue.total_earnings_usd);
     Ok(())
 }
@@ -213,6 +221,7 @@ fn handle_p2p_stream(
     stream: TcpStream,
     runtime: &Arc<Mutex<NodeRuntime>>,
     seen: &Arc<Mutex<SeenBlocks>>,
+    seen_txs: &Arc<Mutex<SeenTransactions>>,
     stats: &Arc<PropagationStats>,
     source_addr: &str,
     peer_mgr: &Arc<Mutex<PeerManager>>,
@@ -287,8 +296,14 @@ fn handle_p2p_stream(
                 .record_message(pid, line.len() as u64, now);
         }
 
-        // Detect AnnounceBlock for relay
+        // Detect AnnounceBlock / AnnounceTx for relay
         let is_announce = matches!(&message, P2pMessage::AnnounceBlock { .. });
+        let announce_tx_info = match &message {
+            P2pMessage::AnnounceTx { tx_id, transaction } => {
+                Some((tx_id.clone(), transaction.clone()))
+            }
+            _ => None,
+        };
 
         let response = match runtime
             .lock()
@@ -337,6 +352,12 @@ fn handle_p2p_stream(
                 relay_block_to_peers(block, &peers, Some(source_addr), seen, stats);
             }
         }
+
+        // Relay newly accepted transaction to other peers
+        if let Some((tx_id, transaction)) = announce_tx_info {
+            let peers = runtime.lock().expect("lock").known_peers().to_vec();
+            relay_tx_to_peers(&tx_id, transaction, &peers, Some(source_addr), seen_txs, stats);
+        }
     }
 
     // Unregister peer when connection ends
@@ -352,6 +373,7 @@ fn handle_rpc_stream(
     stream: TcpStream,
     runtime: &Arc<Mutex<NodeRuntime>>,
     seen: &Arc<Mutex<SeenBlocks>>,
+    seen_txs: &Arc<Mutex<SeenTransactions>>,
     stats: &Arc<PropagationStats>,
     jsonrpc_router: &Arc<RpcRouter>,
 ) -> Result<()> {
@@ -387,6 +409,12 @@ fn handle_rpc_stream(
 
     // Check if this is a submit that might produce a new block
     let is_submit = matches!(&request, zion_core::RpcRequest::SubmitCandidate { .. });
+    let submit_tx = match &request {
+        zion_core::RpcRequest::SubmitTransaction { transaction } => {
+            Some(SubmittedTransaction::Account(transaction.clone()))
+        }
+        _ => None,
+    };
     let height_before = runtime.lock().expect("lock").chain_height();
 
     let response = runtime
@@ -409,6 +437,14 @@ fn handle_rpc_stream(
                 drop(rt);
                 relay_block_to_peers(block, &peers, None, seen, stats);
             }
+        }
+    }
+
+    // Relay accepted transaction to peers
+    if let Some(submitted) = submit_tx {
+        if let zion_core::RpcResponse::TransactionResult { accepted: true, ref tx_id, .. } = response {
+            let peers = runtime.lock().expect("lock").known_peers().to_vec();
+            relay_tx_to_peers(tx_id, submitted, &peers, None, seen_txs, stats);
         }
     }
 
@@ -682,6 +718,60 @@ fn relay_block_to_peers(
                 Err(e) => {
                     eprintln!("relay_err peer={} reason={e}", target.peer.address());
                     stats.record_failure();
+                }
+            }
+        });
+    }
+}
+
+/// Relay a newly accepted transaction to all eligible peers via flood-fill.
+fn relay_tx_to_peers(
+    tx_id: &str,
+    transaction: SubmittedTransaction,
+    peers: &[PeerEndpoint],
+    source_addr: Option<&str>,
+    seen_txs: &Arc<Mutex<SeenTransactions>>,
+    stats: &Arc<PropagationStats>,
+) {
+    use zion_core::propagation::plan_tx_relay;
+
+    let plan = {
+        let mut seen_guard = seen_txs.lock().expect("seen_txs lock poisoned");
+        plan_tx_relay(tx_id, peers, source_addr, &mut seen_guard)
+    };
+
+    let plan = match plan {
+        Some(p) => p,
+        None => {
+            stats.record_tx_duplicate();
+            return;
+        }
+    };
+
+    let target_count = plan.targets.len() as u64;
+    stats.record_tx_relay(target_count);
+    println!(
+        "relay_tx tx_id={:.16}… targets={}",
+        plan.tx_id, target_count
+    );
+
+    for target in plan.targets {
+        let tx_id = tx_id.to_string();
+        let transaction = transaction.clone();
+        let stats = Arc::clone(stats);
+        thread::spawn(move || {
+            let msg = P2pMessage::AnnounceTx {
+                tx_id: tx_id.clone(),
+                transaction,
+            };
+            match p2p_roundtrip(&target.peer, &msg) {
+                Ok(_) => {
+                    println!("tx_relay_ok peer={}", target.peer.address());
+                    stats.record_tx_success();
+                }
+                Err(e) => {
+                    eprintln!("tx_relay_err peer={} reason={e}", target.peer.address());
+                    stats.record_tx_failure();
                 }
             }
         });

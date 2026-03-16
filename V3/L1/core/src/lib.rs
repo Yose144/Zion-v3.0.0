@@ -290,7 +290,8 @@ pub struct Transaction {
     pub nonce: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "model", content = "data", rename_all = "snake_case")]
 pub enum SubmittedTransaction {
     Account(Transaction),
     Utxo(tx::Transaction),
@@ -469,6 +470,10 @@ pub enum P2pMessage {
     },
     AnnounceBlock {
         block: AcceptedBlock,
+    },
+    AnnounceTx {
+        tx_id: String,
+        transaction: SubmittedTransaction,
     },
 }
 
@@ -1008,6 +1013,24 @@ impl NodeRuntime {
                     status: self.status(),
                 })
             }
+            P2pMessage::AnnounceTx { tx_id, transaction } => {
+                let response = self.submit_submitted_transaction(transaction);
+                match &response {
+                    RpcResponse::TransactionResult { accepted, .. } if *accepted => {
+                        Ok(P2pMessage::Status {
+                            status: self.status(),
+                        })
+                    }
+                    RpcResponse::TransactionResult { reason, .. } => {
+                        Err(format!(
+                            "tx {} rejected: {}",
+                            tx_id,
+                            reason.as_deref().unwrap_or("unknown")
+                        ))
+                    }
+                    _ => Err("unexpected response from submit_submitted_transaction".into()),
+                }
+            }
             other => Err(format!("unsupported inbound p2p message: {other:?}")),
         }
     }
@@ -1017,6 +1040,13 @@ impl NodeRuntime {
     /// The caller is responsible for relaying to other peers.
     pub fn handle_announce_block(&mut self, block: AcceptedBlock) -> Result<Option<AcceptedBlock>, String> {
         self.import_peer_block(block)
+    }
+
+    /// Handle an `AnnounceTx` from a peer. Returns `true` if the
+    /// transaction was accepted into the mempool (and should be relayed).
+    pub fn handle_announce_tx(&mut self, _tx_id: &str, transaction: SubmittedTransaction) -> bool {
+        let response = self.submit_submitted_transaction(transaction);
+        matches!(&response, RpcResponse::TransactionResult { accepted, .. } if *accepted)
     }
 
     /// Return the last accepted block, if any. Useful after RPC
@@ -4396,5 +4426,218 @@ mod tests {
         assert!(runtime.spendable_utxos(&addr).is_empty());
         // Destination got the output (amount - fee = 5_000_000 - 1_000)
         assert_eq!(runtime.utxo_balance("zion1destbal"), 4_999_000);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // E2E multi-node tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn e2e_block_relay_between_two_nodes() {
+        let mut node_a = NodeRuntime::new("node-a", NodeConfig::mainnet());
+        let mut node_b = NodeRuntime::new("node-b", NodeConfig::mainnet());
+
+        // Mine 3 blocks on node A
+        for _ in 0..3 {
+            mine_one_block(&mut node_a);
+        }
+        assert_eq!(node_a.chain_height(), 3);
+        assert_eq!(node_b.chain_height(), 0);
+
+        // Relay each mined block from A to B via AnnounceBlock
+        for block in node_a.accepted_blocks()[1..].to_vec() {
+            let msg = P2pMessage::AnnounceBlock { block };
+            let result = node_b.handle_p2p_message(msg);
+            assert!(result.is_ok(), "block relay failed: {:?}", result.err());
+        }
+
+        assert_eq!(node_b.chain_height(), 3);
+        assert_eq!(
+            node_a.status().tip_hash_hex,
+            node_b.status().tip_hash_hex,
+        );
+    }
+
+    #[test]
+    fn e2e_get_blocks_since_sync() {
+        let mut node_a = NodeRuntime::new("node-src", NodeConfig::mainnet());
+        let mut node_b = NodeRuntime::new("node-dst", NodeConfig::mainnet());
+
+        // Mine 5 blocks on node A
+        for _ in 0..5 {
+            mine_one_block(&mut node_a);
+        }
+
+        // Simulate GetBlocksSince sync protocol
+        let msg = P2pMessage::GetBlocksSince {
+            from_height: 0,
+            limit: 100,
+        };
+        let response = node_a.handle_p2p_message(msg).expect("GetBlocksSince");
+        let blocks = match response {
+            P2pMessage::Blocks { blocks } => blocks,
+            other => panic!("expected Blocks, got {other:?}"),
+        };
+
+        // Import via sequential AnnounceBlock (respects per-block difficulty)
+        for block in blocks {
+            node_b
+                .handle_p2p_message(P2pMessage::AnnounceBlock { block })
+                .expect("announce");
+        }
+        assert_eq!(node_b.chain_height(), 5);
+    }
+
+    #[test]
+    fn e2e_transaction_relay_between_nodes() {
+        let mut node_a = NodeRuntime::new("node-tx-a", NodeConfig::mainnet());
+        let mut node_b = NodeRuntime::new("node-tx-b", NodeConfig::mainnet());
+
+        // Submit transaction on node A via RPC
+        let tx = sample_transaction("relay-tx-1", 5, 1);
+        let response = node_a.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: tx.clone(),
+        });
+        assert!(
+            matches!(&response, RpcResponse::TransactionResult { accepted: true, .. }),
+            "tx submit failed: {response:?}"
+        );
+
+        // Relay via AnnounceTx P2P message
+        let msg = P2pMessage::AnnounceTx {
+            tx_id: tx.tx_id.clone(),
+            transaction: SubmittedTransaction::Account(tx.clone()),
+        };
+        let result = node_b.handle_p2p_message(msg);
+        assert!(result.is_ok(), "tx relay failed: {:?}", result.err());
+
+        // Node B should have the transaction in its mempool
+        assert_eq!(node_b.status().mempool_transactions, 1);
+    }
+
+    #[test]
+    fn e2e_announce_tx_roundtrip_serialization() {
+        let tx = sample_transaction("serde-tx", 3, 1);
+        let msg = P2pMessage::AnnounceTx {
+            tx_id: tx.tx_id.clone(),
+            transaction: SubmittedTransaction::Account(tx),
+        };
+        let encoded = encode_p2p_message(&msg).expect("encode AnnounceTx");
+        let decoded = decode_p2p_message(&encoded).expect("decode AnnounceTx");
+        assert_eq!(decoded, msg);
+    }
+
+    #[test]
+    fn e2e_three_node_chain_sync() {
+        let mut miner = NodeRuntime::new("miner", NodeConfig::mainnet());
+        let mut relay = NodeRuntime::new("relay", NodeConfig::mainnet());
+        let mut edge = NodeRuntime::new("edge", NodeConfig::mainnet());
+
+        // Miner mines 2 blocks
+        mine_one_block(&mut miner);
+        mine_one_block(&mut miner);
+
+        // Miner -> Relay (AnnounceBlock)
+        for block in miner.accepted_blocks()[1..].to_vec() {
+            let msg = P2pMessage::AnnounceBlock { block };
+            relay.handle_p2p_message(msg).expect("relay import");
+        }
+        assert_eq!(relay.chain_height(), 2);
+
+        // Relay -> Edge (GetBlocksSince sync)
+        let resp = relay
+            .handle_p2p_message(P2pMessage::GetBlocksSince {
+                from_height: 0,
+                limit: 100,
+            })
+            .expect("GetBlocksSince");
+        if let P2pMessage::Blocks { blocks } = resp {
+            edge.import_peer_blocks(blocks).expect("edge import");
+        }
+        assert_eq!(edge.chain_height(), 2);
+
+        // All three nodes at same height with same tip
+        assert_eq!(miner.status().tip_hash_hex, relay.status().tip_hash_hex);
+        assert_eq!(relay.status().tip_hash_hex, edge.status().tip_hash_hex);
+    }
+
+    #[test]
+    fn e2e_duplicate_block_announce_is_harmless() {
+        let mut node_a = NodeRuntime::new("dup-src", NodeConfig::mainnet());
+        let mut node_b = NodeRuntime::new("dup-dst", NodeConfig::mainnet());
+
+        mine_one_block(&mut node_a);
+        let block = node_a.accepted_blocks()[1].clone();
+
+        // First announce — should succeed
+        let r1 = node_b.handle_p2p_message(P2pMessage::AnnounceBlock {
+            block: block.clone(),
+        });
+        assert!(r1.is_ok());
+        assert_eq!(node_b.chain_height(), 1);
+
+        // Second announce of same block — should not error or change height
+        let r2 = node_b.handle_p2p_message(P2pMessage::AnnounceBlock { block });
+        assert!(r2.is_ok());
+        assert_eq!(node_b.chain_height(), 1);
+    }
+
+    #[test]
+    fn e2e_transaction_then_mine_then_sync() {
+        let mut node_a = NodeRuntime::new("txmine-a", NodeConfig::mainnet());
+        let mut node_b = NodeRuntime::new("txmine-b", NodeConfig::mainnet());
+
+        // Submit a transaction, then mine a block that includes it
+        let tx = sample_transaction("mined-tx", 5, 1);
+        node_a.handle_rpc_request(RpcRequest::SubmitTransaction {
+            transaction: tx.clone(),
+        });
+        assert_eq!(node_a.status().mempool_transactions, 1);
+        mine_one_block(&mut node_a);
+        // After mining, mempool should be drained
+        assert_eq!(node_a.status().mempool_transactions, 0);
+
+        // Sync block to node B
+        let block = node_a.accepted_blocks()[1].clone();
+        node_b
+            .handle_p2p_message(P2pMessage::AnnounceBlock { block })
+            .expect("sync");
+        assert_eq!(node_b.chain_height(), 1);
+        assert_eq!(
+            node_a.status().tip_hash_hex,
+            node_b.status().tip_hash_hex,
+        );
+    }
+
+    #[test]
+    fn e2e_status_exchange() {
+        let mut node_a = NodeRuntime::new("status-a", NodeConfig::mainnet());
+        mine_one_block(&mut node_a);
+        mine_one_block(&mut node_a);
+
+        let resp = node_a
+            .handle_p2p_message(P2pMessage::GetStatus)
+            .expect("GetStatus");
+        match resp {
+            P2pMessage::Status { status } => {
+                assert_eq!(status.chain_height, 2);
+                assert!(!status.tip_hash_hex.is_empty());
+            }
+            other => panic!("expected Status, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn e2e_hello_handshake_network_mismatch_rejected() {
+        let mut node = NodeRuntime::new("net-check", NodeConfig::mainnet());
+        let msg = P2pMessage::Hello {
+            node_id: "remote".to_string(),
+            network: NetworkId::Testnet,
+            protocol_version: NODE_PROTOCOL_VERSION.to_string(),
+            listen_addr: "127.0.0.1:8334".to_string(),
+        };
+        let result = node.handle_p2p_message(msg);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("network mismatch"));
     }
 }
