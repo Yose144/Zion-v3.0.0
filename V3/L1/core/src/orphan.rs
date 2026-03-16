@@ -90,7 +90,7 @@ impl OrphanPool {
 
     /// Check whether there are orphans waiting for a given parent.
     pub fn has_children(&self, parent_hash: &[u8; 32]) -> bool {
-        self.by_parent.get(parent_hash).map_or(false, |v| !v.is_empty())
+        self.by_parent.get(parent_hash).is_some_and(|v| !v.is_empty())
     }
 
     /// Remove expired orphans. `now` is epoch seconds.

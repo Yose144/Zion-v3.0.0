@@ -296,7 +296,7 @@ pub fn validate_premine_locks(
     for (tx_i, tx) in transactions.iter().enumerate().skip(1) {
         for input in &tx.inputs {
             if let Some(utxo) = utxo_lookup(&input.prev_tx_hash, input.output_index) {
-                if let Err(_) = genesis::is_premine_transfer_allowed(&utxo.address, current_height) {
+                if genesis::is_premine_transfer_allowed(&utxo.address, current_height).is_err() {
                     // Find the unlock height for the error message
                     let unlock_height = genesis::PREMINE_OUTPUTS
                         .iter()

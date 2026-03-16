@@ -71,6 +71,7 @@ pub fn validate_fee(fee: u64, tx_size_bytes: usize) -> Result<(), String> {
 }
 
 /// Validate all output amounts: non-zero, within supply cap, total within cap.
+#[allow(clippy::absurd_extreme_comparisons)]
 pub fn validate_outputs(outputs: &[(u64, &str)]) -> Result<(), String> {
     let mut total: u128 = 0;
     for (i, &(amount, _)) in outputs.iter().enumerate() {

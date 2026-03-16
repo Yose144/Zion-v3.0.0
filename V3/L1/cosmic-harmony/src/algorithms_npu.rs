@@ -105,7 +105,7 @@ impl MlpWeights {
 
         // b1 [128]
         let mut b1 = [0i8; 128];
-        for i in 0..128 { b1[i] = bytes[pos] as i8; pos += 1; }
+        for item in b1.iter_mut() { *item = bytes[pos] as i8; pos += 1; }
 
         // W2 [64][128]
         let mut w2 = Box::new([[0i8; 128]; 64]);
@@ -118,20 +118,20 @@ impl MlpWeights {
 
         // b2 [64]
         let mut b2 = [0i8; 64];
-        for i in 0..64 { b2[i] = bytes[pos] as i8; pos += 1; }
+        for item in b2.iter_mut() { *item = bytes[pos] as i8; pos += 1; }
 
         // scale1 [128] — Q8: values 200..312 (≈ 0.78..1.22 multiplier)
         let mut scale1 = [256i16; 128];
-        for i in 0..128 {
+        for item in scale1.iter_mut() {
             // Rozsah 224..288 → dívá se jako 0.875..1.125
-            scale1[i] = 224 + (bytes[pos] as i16 & 0x3F);
+            *item = 224 + (bytes[pos] as i16 & 0x3F);
             pos += 1;
         }
 
         // scale2 [64]
         let mut scale2 = [256i16; 64];
-        for i in 0..64 {
-            scale2[i] = 224 + (bytes[pos] as i16 & 0x3F);
+        for item in scale2.iter_mut() {
+            *item = 224 + (bytes[pos] as i16 & 0x3F);
             pos += 1;
         }
 
