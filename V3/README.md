@@ -7,6 +7,7 @@ reuse audited source material during migration, while remaining isolated from th
 
 Active planning for `V3/` now lives in `V3/ROADMAP.md`.
 
+Production upgrade plan (miner hardening, monitoring, infra, public release): `V3/docs/UPGRADE_PLAN.md`.
 Revenue system detail: `V3/docs/REVENUE_SYSTEM.md`.
 Native libs gap audit: `V3/docs/NATIVE_LIBS_GAP_V3.md`.
 
