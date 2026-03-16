@@ -4,9 +4,9 @@ Status: 2026-03-16
 
 ## Shrnuti
 
-V3 momentalne nema samostatny modul pro nativni knihovny (FFI/native-libs), zatimco legacy L1 ma rozsahlou sadu binarek a build skriptu.
+V3 uz ma zalozeny samostatny scaffold modul pro nativni knihovny: V3/L1/native-libs/.
 
-To je aktualni gap pro vykonove a operacni parity scenare.
+Aktualni gap je nyni v implementaci jednotlivych knihoven a CI pipeline, ne v absenci struktury.
 
 ## Co je v legacy, ale neni ve V3
 
@@ -24,12 +24,15 @@ Zdroj: L1/native-libs/
   - ethash/progpow/equihash
   - cosmic_harmony v2/v3 variants
 
-V3/L1 momentalne obsahuje jen:
+V3/L1 uz obsahuje navic:
 
-- core/
-- cosmic-harmony/
-- miner/
-- pool/
+- native-libs/ (scaffold)
+  - algorithms/randomx
+  - algorithms/kawpow
+  - algorithms/autolykos
+  - scripts/build_windows.ps1
+  - scripts/build_linux.sh
+  - include/zion_native_abi.h
 
 ## Co uz V3 ma nativne v rust/opencl
 
@@ -50,13 +53,16 @@ Bez migrace native-libs do V3:
 
 ### Faze 1 - inventar + rozhrani (kratkodobe)
 
-1. Zavest V3/L1/native-libs/ s README + build skripty
-2. Definovat minimalni FFI ABI contract pro kazdy algoritmus
-3. Pridat Cargo features ve V3 crates:
+Status: Castecne hotovo (scaffold + ABI header + build scripts).
+
+Zbyva dodelat:
+
+1. Pridat Cargo features ve V3 crates:
    - native-randomx
    - native-kawpow
    - native-autolykos
    - native-all
+2. Dopsat symbol-load smoke testy primo do V3 test flow
 
 ### Faze 2 - postupna migrace (strednedobe)
 

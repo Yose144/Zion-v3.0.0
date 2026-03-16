@@ -76,6 +76,7 @@ Out of scope for the bootstrap:
 - `L1/cosmic-harmony` revenue tracking now includes a `Blake3External` revenue source for Blake3-compatible external coins (DCR, ALPH) at the same 2% fee rate as profit-switch
 - `L1/miner` now supports both local in-process mode and remote TCP pool mode, plus repeated mining loops, telemetry, and a persistent wire session transcript
 - `L1/miner` now supports DCR Blake3 runtime backends (`auto` / `cpu` / `gpu`) with OpenCL kernel dispatch and CPU fallback integrated into the live DCR worker path when built with `--features gpu`
+- `L1/native-libs` scaffold now exists for staged migration of native acceleration libraries (randomx, kawpow, autolykos) with platform build scripts and ABI header placeholders
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`
 - whole V3 workspace currently builds and tests green
@@ -142,6 +143,7 @@ The `server` binary in `L1/pool` supports:
 - `ZION_BACKEND_WORKER_HINTS` (comma-separated worker-name substrings treated as backend sessions; default `backend,revenue,ncl`)
 - `ZION_BACKEND_AUTO_INCLUDE_ZION` (`true`/`false`, default `false`) — zda backend auto session smi byt pinuta i do `zion` lane
 - `ZION_ROUTING_LOG_EVERY` (default `25`, `0` disables periodic routing snapshots)
+- `ZION_ROUTING_METRICS_BIND` (optional TCP bind, example `127.0.0.1:9550`) — line-delimited JSON snapshot endpoint for routing stats
 
 The `node` binary in `L1/core` supports:
 
