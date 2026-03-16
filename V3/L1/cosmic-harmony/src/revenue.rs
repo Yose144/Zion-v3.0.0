@@ -10,6 +10,7 @@ pub const MIN_ZION_ALLOCATION: f64 = 0.50;
 
 pub const MERGED_MINING_FEE: f64 = 0.05;
 pub const PROFIT_SWITCH_FEE: f64 = 0.02;
+pub const BLAKE3_EXTERNAL_FEE: f64 = 0.02;
 pub const NCL_FEE: f64 = 0.10;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -18,6 +19,10 @@ pub enum RevenueSource {
     KeccakBonus,
     Sha3Bonus,
     ProfitSwitch,
+    /// Revenue from Blake3-compatible external coins (DCR, ALPH).
+    /// Same fee rate as ProfitSwitch (2%) since our algo already uses Blake3
+    /// internally and the hash function is shared infrastructure.
+    Blake3External,
     NclAi,
 }
 
@@ -28,6 +33,7 @@ impl RevenueSource {
             Self::KeccakBonus => "keccak_bonus",
             Self::Sha3Bonus => "sha3_bonus",
             Self::ProfitSwitch => "profit_switch",
+            Self::Blake3External => "blake3_external",
             Self::NclAi => "ncl_ai",
         }
     }
@@ -35,7 +41,7 @@ impl RevenueSource {
     pub fn fee_rate(self) -> f64 {
         match self {
             Self::Zion | Self::KeccakBonus | Self::Sha3Bonus => MERGED_MINING_FEE,
-            Self::ProfitSwitch => PROFIT_SWITCH_FEE,
+            Self::ProfitSwitch | Self::Blake3External => BLAKE3_EXTERNAL_FEE,
             Self::NclAi => NCL_FEE,
         }
     }
@@ -158,6 +164,12 @@ mod tests {
     #[test]
     fn profit_switch_uses_lower_fee() {
         let fee = RevenueCollector::calculate_fee(RevenueSource::ProfitSwitch, 100.0);
+        assert!((fee - 2.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn blake3_external_uses_same_fee_as_profit_switch() {
+        let fee = RevenueCollector::calculate_fee(RevenueSource::Blake3External, 100.0);
         assert!((fee - 2.0).abs() < 0.001);
     }
 

@@ -587,6 +587,9 @@ mod tests {
             total_fees_zion: 0,
             body_hash_hex: "00".repeat(32),
             estimated_miner_reward_zion: 5_400,
+            utxo_transaction_ids: Vec::new(),
+            utxo_transaction_count: 0,
+            total_utxo_fees: 0,
         };
 
         let job = pool
