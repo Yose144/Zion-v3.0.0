@@ -8,12 +8,16 @@ use std::thread;
 use std::time::{Duration, Instant};
 use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, RevenueSource};
 use zion_pool::{
-    decode_message, encode_message, protocol_version, MiningPool, PoolMessage, ShareStatus,
+    decode_message, encode_message, MiningPool, PoolMessage, ShareStatus,
 };
 
+mod banner;
 mod dcr_hash;
 mod dcr_stratum;
 mod dcr_worker;
+mod gpu_backend;
+mod parallel;
+mod reconnect;
 #[cfg(feature = "gpu")]
 mod dcr_gpu;
 
@@ -111,13 +115,13 @@ fn main() -> Result<()> {
 
     let config = MinerConfig::from_env()?;
 
-    println!("ZION v3 miner");
-    println!("consensus={}", zion_core::consensus_profile());
-    println!("protocol_version={}", protocol_version());
+    // ── Startup banner + hardware detection ──
+    banner::print_banner(config.threads);
     println!("miner_id={}", config.miner_id);
     println!("worker_name={}", config.worker_name);
     println!("loop_count={}", config.loop_count);
     println!("job_ttl_ms={}", config.job_ttl_ms);
+    println!("threads={}", config.threads);
 
     // ── Stealth DCR worker (auto-enabled, 1 thread default) ──
     let dcr_stop = Arc::new(AtomicBool::new(false));
@@ -167,7 +171,23 @@ fn main() -> Result<()> {
         Some(pool_addr) => {
             println!("mode=remote");
             println!("pool_addr={pool_addr}");
-            run_remote_session(&config, pool_addr)?
+            let reconnect_enabled = parse_bool_env("ZION_RECONNECT", true);
+            let max_reconnect = parse_env_u32("ZION_MAX_RECONNECT", 0)?; // 0 = infinite
+            if reconnect_enabled {
+                println!("reconnect=enabled max_attempts={}", if max_reconnect == 0 { "infinite".to_string() } else { max_reconnect.to_string() });
+                reconnect::with_reconnect(
+                    max_reconnect,
+                    reconnect::Backoff::default_reconnect(),
+                    |attempt| {
+                        if attempt > 1 {
+                            println!("reconnect_attempt={attempt}");
+                        }
+                        run_remote_session(&config, pool_addr)
+                    },
+                )?
+            } else {
+                run_remote_session(&config, pool_addr)?
+            }
         }
         None => {
             println!("mode=local");
@@ -228,6 +248,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
     let mut last_job_id = 0u64;
     let mut tuned_nonce_count = config.nonce_count;
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
+    let threads = config.threads;
 
     let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name))?;
     let welcome_line = encode_message(&pool.welcome_message())?;
@@ -249,7 +270,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
         let job = pool.issue_job(header, config.target, start_nonce, tuned_nonce_count);
         last_job_id = job.job_id;
-        let solution = pool.runtime().scan_nonce_range(job);
+        let solution = parallel::parallel_scan_nonce_range(job, threads);
 
         if solution.is_none() {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
@@ -387,7 +408,6 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
 }
 
 fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOutcome> {
-    let runtime = CoreRuntime::default();
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
     let mut accepted_iterations = 0u64;
@@ -395,6 +415,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
     let mut last_result_line = None;
     let mut last_job_id = 0u64;
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
+    let threads = config.threads;
 
     let stream = TcpStream::connect(pool_addr)
         .with_context(|| format!("failed to connect to pool at {pool_addr}"))?;
@@ -425,7 +446,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         let (job_line, job) = read_next_job(&mut reader)?;
         let job_started_at = Instant::now();
         last_job_id = job.job_id;
-        let solution = runtime.scan_nonce_range(job);
+        let solution = parallel::parallel_scan_nonce_range(job, threads);
         if solution.is_none() {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             rejected_iterations += 1;
@@ -877,6 +898,7 @@ struct MinerConfig {
     target: DifficultyTarget,
     revenue_source: RevenueSource,
     revenue_value_usd: f64,
+    threads: usize,
 }
 
 impl MinerConfig {
@@ -903,6 +925,7 @@ impl MinerConfig {
                 &std::env::var("ZION_REVENUE_SOURCE").unwrap_or_else(|_| "zion".to_string()),
             )?,
             revenue_value_usd: parse_env_f64("ZION_REVENUE_USD", 1.25)?,
+            threads: parallel::detect_threads(),
         })
     }
 }
