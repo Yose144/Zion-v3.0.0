@@ -175,6 +175,23 @@ docker compose -f docker/docker-compose.v3-mainnet.yml build
 docker compose -f docker/docker-compose.v3-mainnet.yml up -d
 ```
 
+### Zion2 Canary
+
+For parallel Zion2 testing beside the live 2.9.8 testnet stack, use:
+
+```bash
+cd V3
+docker compose -f docker/docker-compose.v3-zion2-canary.yml build
+docker compose -f docker/docker-compose.v3-zion2-canary.yml up -d
+```
+
+Canary host bindings on Zion2:
+
+- node P2P: `127.0.0.1:18334`
+- node RPC: `127.0.0.1:18332`
+- pool stratum: `127.0.0.1:13333`
+- routing metrics: `127.0.0.1:19550`
+
 ### Services
 
 | Service | Image | Ports | Volume |
