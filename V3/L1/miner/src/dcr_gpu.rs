@@ -7,9 +7,12 @@
 //!
 //! Requires `--features gpu` to compile.
 
+use std::collections::BTreeMap;
+use std::path::PathBuf;
 use std::time::Instant;
 
 use ocl::{Buffer, Device, Kernel, Platform, ProQue};
+use serde_json::Value;
 
 /// Blake3 IV constants (matching the standard).
 const BLAKE3_IV: [u32; 8] = [
@@ -22,6 +25,63 @@ const CHUNK_START: u32 = 1;
 
 /// Max results the GPU kernel can write per dispatch.
 const MAX_RESULTS: u32 = 256;
+
+fn profile_path() -> PathBuf {
+    let base = std::env::var("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| std::env::temp_dir());
+    base.join("zion").join("miner_gpu_profiles.json")
+}
+
+pub fn load_saved_work_size(device: &str) -> Option<usize> {
+    let path = profile_path();
+    let text = std::fs::read_to_string(path).ok()?;
+    let parsed: Value = serde_json::from_str(&text).ok()?;
+    let obj = parsed.as_object()?;
+    let v = obj.get(device)?.as_u64()?;
+    Some(v as usize)
+}
+
+pub fn save_work_size(device: &str, work_size: usize) -> Result<(), String> {
+    let path = profile_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("create profile dir: {e}"))?;
+    }
+
+    let mut map: BTreeMap<String, usize> = if path.exists() {
+        let text = std::fs::read_to_string(&path).map_err(|e| format!("read profiles: {e}"))?;
+        serde_json::from_str(&text).unwrap_or_default()
+    } else {
+        BTreeMap::new()
+    };
+
+    map.insert(device.to_string(), work_size);
+    let payload = serde_json::to_string_pretty(&map).map_err(|e| format!("encode profiles: {e}"))?;
+    std::fs::write(&path, payload).map_err(|e| format!("write profiles: {e}"))
+}
+
+pub fn autotune_best_work_size(candidates: &[usize], secs: f64) -> Result<(String, usize, f64), String> {
+    if candidates.is_empty() {
+        return Err("no autotune candidates".to_string());
+    }
+
+    let mut best_ws = candidates[0];
+    let mut best_mhps = 0.0;
+    let mut best_device = String::new();
+
+    for &ws in candidates {
+        let mut gpu = GpuDcrMiner::new(ws)?;
+        let device = gpu.device_name();
+        let (_, _, mhps) = gpu.benchmark(secs)?;
+        if mhps > best_mhps {
+            best_mhps = mhps;
+            best_ws = ws;
+            best_device = device;
+        }
+    }
+
+    Ok((best_device, best_ws, best_mhps))
+}
 
 // ─── Blake3 compression (CPU-side precomputation) ───────────────────────────
 

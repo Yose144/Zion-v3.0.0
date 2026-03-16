@@ -145,6 +145,8 @@ background threadu dostaneme ~400–800 MH/s čistého Blake3
 | `ZION_DCR_WORKER` | `zion_stealth` | Worker name pro pool stats |
 | `ZION_DCR_INTENSITY` | `100` | 0–100 %, throttle pokud chceme šetřit CPU |
 | `ZION_DCR_ENABLED` | `true` | Zapnout DCR dual? (ignorováno pokud chybí `ZION_BTC_WALLET`) |
+| `ZION_POOL_PREFERENCE` | `default` | `nicehash` \/ `herominers` \/ `zpool` \/ `default` pool hierarchy |
+| `ZION_POOL_REGION` | `eu` | region mapping pro NiceHash/HeroMiners/ZPool endpointy |
 
 Stejný vzor pro budoucí coiny: `ZION_ALPH_POOL`, `ZION_KAS_POOL` atd.
 Všechny sdílí `ZION_BTC_WALLET` — **žádné per-coin wallet adresy**.
@@ -159,6 +161,12 @@ dcr_stealth=enabled threads=1 pool=dcr.2miners.com:3333 payout=bc1q...d8mw
 ```
 
 Wallet v logu zkrácen na `bc1q...` + poslední 4 znaky.
+
+### Poznámka k NiceHash (ověřeno proti legacy testnet implementaci)
+
+- NiceHash je vhodný pro **KAS/ETC/RVN/ERG** (jedna BTC adresa pro všechny tyto algos).
+- NiceHash **aktuálně nepodporuje Blake3 endpoint** pro `DCR`/`ALPH`, takže pro tyto coiny se fallbackuje na HeroMiners/ZPool/default.
+- Fallback hierarchy ve V3 profit-routeru je: `nicehash -> herominers -> zpool -> default`.
 
 ---
 

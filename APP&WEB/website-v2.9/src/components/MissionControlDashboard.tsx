@@ -92,12 +92,14 @@ function fmtUptime(secs?: number | null) {
   const m = Math.floor((secs % 3600) / 60);
   return d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`;
 }
-function valColor(pct: number) {
+function valColor(pct: number | null) {
+  if (pct == null) return 'text-gray-400';
   if (pct > 85) return 'text-red-400';
   if (pct > 70) return 'text-yellow-400';
   return 'text-emerald-400';
 }
-function barColor(pct: number) {
+function barColor(pct: number | null) {
+  if (pct == null) return 'bg-gray-500/40';
   if (pct > 85) return 'bg-red-500';
   if (pct > 70) return 'bg-yellow-500';
   return 'bg-emerald-500';
@@ -200,11 +202,18 @@ function fmtLastBlock(secs?: number | null) {
 
 function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string; flag: string; ip: string }) {
   const s = node?.stats;
-  const memPct = node?.mem?.total && node.mem.total > 0 ? Math.round((node.mem.used ?? 0) / node.mem.total * 100) : 0;
-  const diskPct = node?.disk?.used_pct ?? 0;
+  const memPct =
+    node?.mem?.total && node.mem.total > 0 && node.mem.used != null
+      ? Math.round((node.mem.used / node.mem.total) * 100)
+      : null;
+  const diskPct = node?.disk?.used_pct ?? null;
   const isHealthy = s?.status === 'OK' || s?.status === 'ok' || s?.status === 'healthy';
   const isSyncing = s?.sync?.state === 'Downloading' || s?.sync?.state === 'Syncing';
   const isStale = (s?.time_since_last_block ?? 0) > 300; // 5 min no blocks
+  const containersLabel =
+    node?.containers_up != null && node?.containers_healthy != null
+      ? `${node.containers_up}/${node.containers_healthy}`
+      : '—/—';
 
   const statusLabel = !s?.status ? 'Offline' : isHealthy ? 'Online' : isSyncing ? 'Syncing' : isStale ? 'Stale' : 'Unhealthy';
   const statusStyle = isHealthy
@@ -235,19 +244,19 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
         <MiniMetric label="Difficulty" value={fmt(s?.difficulty)} />
         <MiniMetric label="Mempool" value={fmt(s?.mempool_size)} />
         <MiniMetric label="Last Block" value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-yellow-400' : 'text-white'} />
-        <MiniMetric label="Containers" value={`${node?.containers_up ?? 0}/${node?.containers_healthy ?? 0}`} />
+        <MiniMetric label="Containers" value={containersLabel} />
         <div className="rounded-2xl bg-white/5 p-3 border border-white/10">
           <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">Memory</p>
-          <p className={`text-base font-bold font-mono ${valColor(memPct)}`}>{memPct}%</p>
+          <p className={`text-base font-bold font-mono ${valColor(memPct)}`}>{memPct == null ? '—' : `${memPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
-            <div className={`h-full rounded-full ${barColor(memPct)}`} style={{ width: `${memPct}%` }} />
+            <div className={`h-full rounded-full ${barColor(memPct)}`} style={{ width: `${memPct ?? 0}%` }} />
           </div>
         </div>
         <div className="rounded-2xl bg-white/5 p-3 border border-white/10">
           <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">Disk</p>
-          <p className={`text-base font-bold font-mono ${valColor(diskPct)}`}>{diskPct}%</p>
+          <p className={`text-base font-bold font-mono ${valColor(diskPct)}`}>{diskPct == null ? '—' : `${diskPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
-            <div className={`h-full rounded-full ${barColor(diskPct)}`} style={{ width: `${diskPct}%` }} />
+            <div className={`h-full rounded-full ${barColor(diskPct)}`} style={{ width: `${diskPct ?? 0}%` }} />
           </div>
         </div>
         <MiniMetric label="Load" value={String(node?.load ?? '—')} />

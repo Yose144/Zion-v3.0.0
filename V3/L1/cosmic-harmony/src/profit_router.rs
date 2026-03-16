@@ -14,6 +14,27 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+/// Pool routing preference, compatible with legacy revenue system semantics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PoolPreference {
+    NiceHash,
+    HeroMiners,
+    ZPool,
+    Default,
+}
+
+impl PoolPreference {
+    pub fn from_str_loose(value: &str) -> Self {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "nicehash" | "nh" => Self::NiceHash,
+            "herominers" | "hm" => Self::HeroMiners,
+            "zpool" => Self::ZPool,
+            _ => Self::Default,
+        }
+    }
+}
+
 // ── External coin enumeration ────────────────────────────────────────
 
 /// Coins that ZION miners can profit-switch to for the 25% multi-algo revenue slot.
@@ -130,6 +151,98 @@ impl ExternalCoin {
         }
     }
 
+    /// NiceHash endpoint for supported algos.
+    ///
+    /// Note: NiceHash currently does not expose Blake3 endpoints, so DCR/ALPH
+    /// return `None` and should fall back to HeroMiners/ZPool/default.
+    pub fn nicehash_pool(self, region: &str) -> Option<String> {
+        let (algo, port): (&str, u16) = match self {
+            Self::ETC => ("etchash", 9013),
+            Self::RVN => ("kawpow", 9017),
+            Self::ERG => ("autolykos", 9018),
+            Self::KAS => ("kheavyhash", 9024),
+            // NH does not provide Blake3 stratum endpoints for these at present.
+            Self::DCR | Self::ALPH => return None,
+            _ => return None,
+        };
+        let nh_region = match region.to_ascii_lowercase().as_str() {
+            "eu" => "eu",
+            "na" | "us" => "usa",
+            _ => "auto",
+        };
+        Some(format!("{}.{}.nicehash.com:{}", algo, nh_region, port))
+    }
+
+    /// HeroMiners endpoints for supported coins.
+    pub fn herominers_pool(self, region: &str) -> Option<String> {
+        let (subdomain, port): (&str, u16) = match self {
+            Self::ETC => ("etc", 1150),
+            Self::KAS => ("kaspa", 1206),
+            Self::ALPH => ("alephium", 1220),
+            Self::ERG => ("ergo", 1180),
+            Self::RVN => ("ravencoin", 1140),
+            _ => return None,
+        };
+
+        let hm_region = match region.to_ascii_lowercase().as_str() {
+            "eu" => "de",
+            "na" | "us" => "us",
+            "hk" | "sg" | "asia" => "hk",
+            _ => "de",
+        };
+
+        Some(format!("{}.{}.herominers.com:{}", hm_region, subdomain, port))
+    }
+
+    /// ZPool endpoints for supported coins.
+    pub fn zpool_pool(self, region: &str) -> Option<String> {
+        let (algo, port): (&str, u16) = match self {
+            Self::EVR => ("evrprogpow", 1330),
+            Self::MEWC => ("meowpow", 1327),
+            _ => return None,
+        };
+        let zp_region = match region.to_ascii_lowercase().as_str() {
+            "na" | "us" => "na",
+            _ => "eu",
+        };
+        Some(format!("{}.{}.mine.zpool.ca:{}", algo, zp_region, port))
+    }
+
+    /// Best pool endpoint using the legacy fallback hierarchy:
+    /// nicehash -> herominers -> zpool -> default.
+    pub fn best_pool(self, preference: PoolPreference, region: &str) -> String {
+        match preference {
+            PoolPreference::NiceHash => {
+                if let Some(url) = self.nicehash_pool(region) {
+                    return url;
+                }
+                if let Some(url) = self.herominers_pool(region) {
+                    return url;
+                }
+                if let Some(url) = self.zpool_pool(region) {
+                    return url;
+                }
+                self.default_pool().to_string()
+            }
+            PoolPreference::HeroMiners => {
+                if let Some(url) = self.herominers_pool(region) {
+                    return url;
+                }
+                if let Some(url) = self.zpool_pool(region) {
+                    return url;
+                }
+                self.default_pool().to_string()
+            }
+            PoolPreference::ZPool => {
+                if let Some(url) = self.zpool_pool(region) {
+                    return url;
+                }
+                self.default_pool().to_string()
+            }
+            PoolPreference::Default => self.default_pool().to_string(),
+        }
+    }
+
     /// Stratum protocol variant used by this coin's pool.
     pub fn protocol(self) -> StratumProtocol {
         match self {
@@ -214,6 +327,22 @@ impl CoinProfile {
     /// Build a default profile for a coin, splitting `default_pool()` into host:port.
     pub fn default_for(coin: ExternalCoin) -> Self {
         let (host, port) = split_host_port(coin.default_pool());
+        Self {
+            coin,
+            ticker: coin.ticker().to_string(),
+            algorithm: coin.algorithm().to_string(),
+            pool_host: host,
+            pool_port: port,
+            protocol: coin.protocol(),
+            worker_name: "zion_dynamic".to_string(),
+            enabled: true,
+        }
+    }
+
+    /// Build profile with pool preference + region fallback chain.
+    pub fn for_preference(coin: ExternalCoin, preference: PoolPreference, region: &str) -> Self {
+        let pool = coin.best_pool(preference, region);
+        let (host, port) = split_host_port(&pool);
         Self {
             coin,
             ticker: coin.ticker().to_string(),
@@ -435,5 +564,30 @@ mod tests {
     fn display_shows_ticker() {
         assert_eq!(format!("{}", ExternalCoin::DCR), "DCR");
         assert_eq!(format!("{}", ExternalCoin::ALPH), "ALPH");
+    }
+
+    #[test]
+    fn nicehash_supported_coin_gets_nh_endpoint() {
+        let pool = ExternalCoin::KAS
+            .best_pool(PoolPreference::NiceHash, "eu");
+        assert_eq!(pool, "kheavyhash.eu.nicehash.com:9024");
+    }
+
+    #[test]
+    fn nicehash_blake3_coin_falls_back() {
+        let pool = ExternalCoin::DCR
+            .best_pool(PoolPreference::NiceHash, "eu");
+        assert_eq!(pool, "dcr.2miners.com:3333");
+    }
+
+    #[test]
+    fn profile_for_preference_uses_selected_pool() {
+        let profile = CoinProfile::for_preference(
+            ExternalCoin::KAS,
+            PoolPreference::NiceHash,
+            "eu",
+        );
+        assert_eq!(profile.pool_host, "kheavyhash.eu.nicehash.com");
+        assert_eq!(profile.pool_port, 9024);
     }
 }
