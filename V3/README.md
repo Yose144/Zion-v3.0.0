@@ -7,6 +7,8 @@ reuse audited source material during migration, while remaining isolated from th
 
 Active planning for `V3/` now lives in `V3/ROADMAP.md`.
 
+Revenue system detail: `V3/docs/REVENUE_SYSTEM.md`.
+
 Pure-code scope for the bootstrap:
 
 - `L1/cosmic-harmony` — canonical Ekam Deeksha PoW and GPU backends
@@ -68,6 +70,7 @@ Out of scope for the bootstrap:
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
 - `L1/pool` also expires stale jobs and distinguishes invalid, stale, mismatched, and upstream-rejected submissions
 - `L1/pool` now also carries bridge-level integration tests for stale-template and upstream-rejection paths against node RPC
+- `L1/pool` now classifies miner sessions into groups at connect time (default user sessions pinned to `zion`, backend sessions can be routed into weighted `auto` multistream lanes)
 - `L1/cosmic-harmony` now carries the profit router with `ExternalCoin` enum (DCR, ALPH, KAS, ERG, RVN, ETC, EVR, MEWC, FLUX, CLORE, XMR), `CoinProfile` metadata, `ProfitEntry` snapshots, fallback estimates, and `select_best_coin()` with hysteresis — Decred (Blake3/DCP-0011) and Alephium (Blake3) are first-class Blake3-compatible revenue coins
 - `L1/cosmic-harmony` revenue tracking now includes a `Blake3External` revenue source for Blake3-compatible external coins (DCR, ALPH) at the same 2% fee rate as profit-switch
 - `L1/miner` now supports both local in-process mode and remote TCP pool mode, plus repeated mining loops, telemetry, and a persistent wire session transcript
@@ -116,7 +119,11 @@ The `zion-miner` binary already supports basic configuration via environment var
 - `ZION_DCR_POOL`
 - `ZION_DCR_THREADS`
 - `ZION_DCR_WORKER`
+- `ZION_DCR_ONLY`
+- `ZION_DCR_RUN_SECS`
 - `ZION_GPU_WORK_SIZE`
+- `ZION_GPU_AUTOTUNE`
+- `ZION_GPU_AUTOTUNE_SECS`
 
 The `server` binary in `L1/pool` supports:
 
@@ -125,6 +132,14 @@ The `server` binary in `L1/pool` supports:
 - `ZION_ACCEPT_LIMIT`
 - `ZION_POOL_LOOP_COUNT`
 - the same job timing and revenue knobs used by `zion-miner`
+- `ZION_REVENUE_MULTISTREAM` (`true`/`false`) — pool-side weighted revenue attribution
+- `ZION_STREAM_ZION_PCT` / `ZION_STREAM_ZION_USD` (default 50%)
+- `ZION_STREAM_BLAKE3_PCT` / `ZION_STREAM_BLAKE3_USD` (default 25%)
+- `ZION_STREAM_NCL_PCT` / `ZION_STREAM_NCL_USD` (default 25%)
+- `ZION_USER_DEFAULT_GROUP` (`zion`/`revenue`/`ncl`/`auto`, default `zion`)
+- `ZION_BACKEND_MINER_IDS` (comma-separated miner IDs that should use `auto` weighted lane routing)
+- `ZION_BACKEND_WORKER_HINTS` (comma-separated worker-name substrings treated as backend sessions; default `backend,revenue,ncl`)
+- `ZION_ROUTING_LOG_EVERY` (default `25`, `0` disables periodic routing snapshots)
 
 The `node` binary in `L1/core` supports:
 
