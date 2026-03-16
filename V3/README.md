@@ -112,6 +112,7 @@ The `zion-miner` binary already supports basic configuration via environment var
 - `ZION_JOB_TTL_MS`
 - `ZION_NONCE_STRIDE`
 - `ZION_SLEEP_MS`
+- `ZION_METRICS_REPORT_SECS` — periodic `session_status` cadence in seconds (default: 30, set `0` to disable intermediate status lines)
 - `ZION_TIMESTAMP`
 - `ZION_TARGET`
 - `ZION_REVENUE_SOURCE`
