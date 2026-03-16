@@ -159,6 +159,41 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
     $submitRateText = if ($windowSeconds -gt 0) { (($deltaSubmits * 60.0) / $windowSeconds).ToString("N2") } else { "n/a" }
     $acceptRatePerMinText = if ($windowSeconds -gt 0) { (($deltaAccepted * 60.0) / $windowSeconds).ToString("N2") } else { "n/a" }
 
+    $acceptPctBar = if ($canaryAcceptRate -ne $null) { [Math]::Max(0.0, [Math]::Min(100.0, $canaryAcceptRate)) } else { 0.0 }
+    $rejectPctBar = if ($canarySubmits -ne $null -and $canarySubmits -gt 0 -and $canaryRejected -ne $null) {
+      [Math]::Max(0.0, [Math]::Min(100.0, ($canaryRejected / $canarySubmits) * 100.0))
+    } else {
+      0.0
+    }
+    $revGrpPctBar = if ($grpRevenueSubmits -ne $null -and $grpRevenueSubmits -gt 0 -and $grpRevenueAccepted -ne $null) {
+      [Math]::Max(0.0, [Math]::Min(100.0, ($grpRevenueAccepted / $grpRevenueSubmits) * 100.0))
+    } else {
+      0.0
+    }
+    $zionGrpPctBar = if ($grpZionSubmits -ne $null -and $grpZionSubmits -gt 0 -and $grpZionAccepted -ne $null) {
+      [Math]::Max(0.0, [Math]::Min(100.0, ($grpZionAccepted / $grpZionSubmits) * 100.0))
+    } else {
+      0.0
+    }
+    $blake3PctBar = if ($srcBlake3Submits -ne $null -and $srcBlake3Submits -gt 0 -and $srcBlake3Accepted -ne $null) {
+      [Math]::Max(0.0, [Math]::Min(100.0, ($srcBlake3Accepted / $srcBlake3Submits) * 100.0))
+    } else {
+      0.0
+    }
+
+    $acceptPctBarText = $acceptPctBar.ToString("N2")
+    $rejectPctBarText = $rejectPctBar.ToString("N2")
+    $revGrpPctBarText = $revGrpPctBar.ToString("N2")
+    $zionGrpPctBarText = $zionGrpPctBar.ToString("N2")
+    $blake3PctBarText = $blake3PctBar.ToString("N2")
+
+    $inv = [System.Globalization.CultureInfo]::InvariantCulture
+    $acceptPctBarCss = $acceptPctBar.ToString("0.##", $inv)
+    $rejectPctBarCss = $rejectPctBar.ToString("0.##", $inv)
+    $revGrpPctBarCss = $revGrpPctBar.ToString("0.##", $inv)
+    $zionGrpPctBarCss = $zionGrpPctBar.ToString("0.##", $inv)
+    $blake3PctBarCss = $blake3PctBar.ToString("0.##", $inv)
+
     $html = @"
 <!doctype html>
 <html lang="en">
@@ -168,25 +203,27 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
   <title>ZION Mainnet Test Dashboard</title>
   <style>
     :root {
-      --bg: #f7f9fc;
-      --panel: #ffffff;
-      --ink: #0f172a;
-      --muted: #64748b;
-      --accent: #0f766e;
-      --accent2: #0369a1;
-      --ok: #2b9348;
-      --warn: #d97706;
-      --crit: #e10600;
-      --crit-bg: #ffe8e8;
-      --line: #dbe3ee;
+      --bg: #060b14;
+      --panel: #101826;
+      --panel-2: #0b1220;
+      --ink: #e5edf8;
+      --muted: #8ea2c0;
+      --accent: #22d3ee;
+      --accent2: #38bdf8;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --crit: #ff2b2b;
+      --crit-bg: #2b1114;
+      --line: #233148;
     }
     body {
       margin: 0;
       font-family: "Segoe UI", "Trebuchet MS", sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at 8% -10%, #dbeafe 0%, transparent 28%),
-        radial-gradient(circle at 88% -15%, #cffafe 0%, transparent 24%),
+        radial-gradient(circle at 10% -20%, #11335f 0%, transparent 34%),
+        radial-gradient(circle at 90% -10%, #0f3f4a 0%, transparent 30%),
+        linear-gradient(180deg, #050912 0%, #060b14 100%),
         var(--bg);
     }
     .wrap {
@@ -195,12 +232,12 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       padding: 0 16px 32px;
     }
     .hero {
-      background: linear-gradient(120deg, #ffffff 0%, #f8fbff 100%);
+      background: linear-gradient(135deg, #0b1322 0%, #0f1a2d 50%, #10233b 100%);
       color: var(--ink);
       border-radius: 16px;
       padding: 18px 20px;
       border: 1px solid var(--line);
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
     }
     .hero h1 {
       margin: 0;
@@ -217,7 +254,7 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       border-radius: 12px;
       padding: 10px 12px;
       border: 1px solid var(--line);
-      background: #f8fafc;
+      background: rgba(255, 255, 255, 0.02);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -232,9 +269,9 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       border-radius: 999px;
       border: 1px solid transparent;
     }
-    .badge-ok { color: #166534; background: #dcfce7; border-color: #86efac; }
-    .badge-warn { color: #92400e; background: #fef3c7; border-color: #fcd34d; }
-    .badge-crit { color: #ffffff; background: var(--crit); border-color: #b30000; }
+    .badge-ok { color: #06240f; background: #22c55e; border-color: #22c55e; }
+    .badge-warn { color: #2f1800; background: #f59e0b; border-color: #f59e0b; }
+    .badge-crit { color: #ffffff; background: var(--crit); border-color: #ff6b6b; box-shadow: 0 0 24px rgba(255, 43, 43, 0.35); }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -246,12 +283,12 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 12px 14px;
-      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
     }
     .card.health-crit {
       background: var(--crit-bg);
-      border-color: #ffb3b3;
-      box-shadow: 0 0 0 2px rgba(225, 6, 0, 0.12);
+      border-color: #8b2028;
+      box-shadow: 0 0 0 2px rgba(255, 43, 43, 0.2);
     }
     .k {
       color: var(--muted);
@@ -289,15 +326,87 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       font-size: 12px;
       line-height: 1.35;
       white-space: pre-wrap;
-      color: #1e293b;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      color: #c6d5ec;
+      background: var(--panel-2);
+      border: 1px solid #1d2b42;
       border-radius: 10px;
       padding: 10px;
     }
     .ok { color: var(--ok); font-weight: 700; }
     .warn { color: var(--warn); font-weight: 700; }
     .crit { color: var(--crit); font-weight: 800; }
+    .viz-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 960px) {
+      .viz-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .gauge-wrap {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .gauge {
+      --pct: 0;
+      width: 134px;
+      height: 134px;
+      border-radius: 50%;
+      background: conic-gradient(#22c55e calc(var(--pct) * 1%), #233148 0);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 1px #2b3c59;
+    }
+    .gauge::after {
+      content: "";
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: #0c1422;
+      box-shadow: inset 0 0 0 1px #26354f;
+    }
+    .gauge-value {
+      position: absolute;
+      font-size: 24px;
+      font-weight: 800;
+      color: #dff7e6;
+      text-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+    }
+    .meter-list {
+      display: grid;
+      gap: 10px;
+      width: min(560px, 100%);
+    }
+    .meter-row {
+      display: grid;
+      gap: 6px;
+    }
+    .meter-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .meter-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #16233a;
+      border: 1px solid #233148;
+      overflow: hidden;
+    }
+    .meter-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+    .fill-ok { background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%); }
+    .fill-warn { background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%); }
+    .fill-crit { background: linear-gradient(90deg, #c21515 0%, #ff2b2b 100%); }
     details { margin-top: 10px; }
     summary {
       cursor: pointer;
@@ -334,6 +443,42 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       <div class="card"><div class="k">Canary Rejected</div><div class="v">$canaryRejectedText</div></div>
       <div class="card"><div class="k">Pool Valid Shares</div><div class="v">$poolValidShares</div></div>
       <div class="card"><div class="k">Pool Invalid Shares</div><div class="v">$poolInvalidShares</div></div>
+    </div>
+
+    <div class="viz-grid">
+      <div class="card">
+        <h3 class="section-title">Acceptance Gauge</h3>
+        <div class="gauge-wrap">
+          <div style="position:relative; display:grid; place-items:center;">
+            <div class="gauge" style="--pct: $acceptPctBarCss"></div>
+            <div class="gauge-value">$canaryAcceptRateText%</div>
+          </div>
+          <div style="color: var(--muted); max-width: 340px; font-size: 13px; line-height: 1.45;">
+            Snapshot acceptance for canary pool. Health combines this value with reject trend delta to classify PASS/WARN/CRIT.
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="section-title">Share Quality Bars</h3>
+        <div class="meter-list">
+          <div class="meter-row">
+            <div class="meter-head"><span>Reject Share Ratio</span><span>$rejectPctBarText%</span></div>
+            <div class="meter-track"><div class="meter-fill fill-crit" style="width: $rejectPctBarCss%"></div></div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-head"><span>Revenue Group Accept Ratio</span><span>$revGrpPctBarText%</span></div>
+            <div class="meter-track"><div class="meter-fill fill-ok" style="width: $revGrpPctBarCss%"></div></div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-head"><span>Zion Group Accept Ratio</span><span>$zionGrpPctBarText%</span></div>
+            <div class="meter-track"><div class="meter-fill fill-warn" style="width: $zionGrpPctBarCss%"></div></div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-head"><span>Blake3 Source Accept Ratio</span><span>$blake3PctBarText%</span></div>
+            <div class="meter-track"><div class="meter-fill fill-ok" style="width: $blake3PctBarCss%"></div></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:12px;">
