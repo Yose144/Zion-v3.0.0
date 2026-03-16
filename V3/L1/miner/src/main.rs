@@ -13,8 +13,101 @@ use zion_pool::{
 mod dcr_hash;
 mod dcr_stratum;
 mod dcr_worker;
+#[cfg(feature = "gpu")]
+mod dcr_gpu;
 
 fn main() -> Result<()> {
+    // ── GPU Benchmark mode: `zion-miner --gpu-bench` ──
+    #[cfg(feature = "gpu")]
+    if std::env::args().any(|a| a == "--gpu-bench") {
+        let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1 << 20); // 1M work-items default
+        let secs: f64 = std::env::var("ZION_BENCH_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(5.0);
+
+        println!("--- GPU Blake3 DCR benchmark ---");
+
+        // Verify precompute correctness first
+        let mut test_header = [0u8; 180];
+        for i in 0..180 { test_header[i] = i as u8; }
+        if dcr_gpu::verify_precompute(&test_header) {
+            println!("precompute_verify=OK");
+        } else {
+            eprintln!("ERROR: precompute verification FAILED — GPU results would be wrong");
+            return Ok(());
+        }
+
+        let mut gpu = match dcr_gpu::GpuDcrMiner::new(work_size) {
+            Ok(g) => g,
+            Err(e) => {
+                eprintln!("GPU init failed: {e}");
+                return Ok(());
+            }
+        };
+        println!("device={}", gpu.device_name());
+        println!("global_work_size={work_size}");
+
+        match gpu.benchmark(secs) {
+            Ok((hashes, elapsed, mhps)) => {
+                println!("hashes={hashes} elapsed={elapsed:.2}s");
+                println!("gpu_blake3: {mhps:.2} MH/s");
+            }
+            Err(e) => eprintln!("GPU benchmark error: {e}"),
+        }
+        return Ok(());
+    }
+
+    // ── CPU Benchmark mode: `zion-miner --bench` ──
+    if std::env::args().any(|a| a == "--bench") {
+        let threads: usize = std::env::var("ZION_DCR_THREADS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1)
+            .max(1);
+        let secs: f64 = std::env::var("ZION_BENCH_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(5.0);
+
+        println!("blake3_bench simd={} threads={threads} duration={secs:.0}s",
+                 dcr_hash::detect_simd());
+
+        // Single-thread: compare full-header vs precomputed-state
+        println!("--- single-thread comparison ---");
+        let (_, _, mhps_full) = dcr_hash::bench_blake3(secs);
+        println!("full_header:   {mhps_full:.2} MH/s");
+        let (_, _, mhps_pre) = dcr_hash::bench_blake3_precompute(secs);
+        println!("precomputed:   {mhps_pre:.2} MH/s");
+
+        let best_fn = if mhps_pre > mhps_full { "precomputed" } else { "full_header" };
+        let best_rate = mhps_full.max(mhps_pre);
+        println!("winner: {best_fn} ({best_rate:.2} MH/s)");
+
+        if threads > 1 {
+            println!("--- multi-thread ({threads}T) ---");
+            let barrier = Arc::new(std::sync::Barrier::new(threads));
+            let mut handles = Vec::new();
+            for _ in 0..threads {
+                let b = barrier.clone();
+                handles.push(thread::spawn(move || {
+                    b.wait();
+                    dcr_hash::bench_blake3(secs)
+                }));
+            }
+            let mut total_mhps = 0.0;
+            for h in handles {
+                let (_, _, mhps) = h.join().unwrap();
+                total_mhps += mhps;
+            }
+            println!("total: {total_mhps:.2} MH/s ({threads} threads)");
+        }
+        return Ok(());
+    }
+
     let config = MinerConfig::from_env()?;
 
     println!("ZION v3 miner");
@@ -27,15 +120,18 @@ fn main() -> Result<()> {
 
     // ── Stealth DCR worker (auto-enabled, 1 thread default) ──
     let dcr_stop = Arc::new(AtomicBool::new(false));
-    let dcr_handles = match dcr_worker::DcrConfig::from_env() {
+    let dcr_state = match dcr_worker::DcrConfig::from_env() {
         Some(dcr_cfg) => {
             println!(
-                "dcr_stealth=enabled threads={} pool={} payout={}",
+                "dcr_stealth=enabled backend={} threads={} pool={} payout={} gpu_work_size={}",
+                dcr_cfg.backend.as_str(),
                 dcr_cfg.threads,
                 dcr_cfg.pool_addr,
-                dcr_cfg.wallet_short()
+                dcr_cfg.wallet_short(),
+                dcr_cfg.gpu_work_size
             );
-            Some(dcr_worker::spawn_dcr_worker(dcr_cfg, dcr_stop.clone()))
+            let (handles, stats) = dcr_worker::spawn_dcr_worker(dcr_cfg, dcr_stop.clone());
+            Some((handles, stats))
         }
         None => None,
     };
@@ -74,9 +170,15 @@ fn main() -> Result<()> {
 
     // ── Shutdown DCR worker ──
     dcr_stop.store(true, Ordering::Relaxed);
-    if let Some(handles) = dcr_handles {
+    if let Some((handles, stats)) = dcr_state {
         for h in handles {
             let _ = h.join();
+        }
+        let total = stats.total_hashes.load(Ordering::Relaxed);
+        let acc = stats.accepted_shares.load(Ordering::Relaxed);
+        let rej = stats.rejected_shares.load(Ordering::Relaxed);
+        if total > 0 {
+            println!("dcr_total_hashes={total} dcr_accepted={acc} dcr_rejected={rej}");
         }
     }
 

@@ -8,6 +8,7 @@ use crate::dcr_hash::difficulty_to_target;
 
 /// A DCR mining job received from the pool.
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct DcrJob {
     pub job_id: String,
     pub header: Vec<u8>,

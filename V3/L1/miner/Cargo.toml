@@ -9,9 +9,14 @@ authors.workspace = true
 name = "zion-miner"
 path = "src/main.rs"
 
+[features]
+default = []
+gpu = ["dep:ocl"]
+
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
+ocl = { version = "0.19", optional = true }
 serde_json.workspace = true
 zion-core = { path = "../core" }
 zion-pool = { path = "../pool" }

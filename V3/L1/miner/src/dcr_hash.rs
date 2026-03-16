@@ -1,24 +1,44 @@
-/// DCR PoW hash: blake3(header) → 32 bytes (DCP-0011).
-pub fn dcr_hash(header: &[u8]) -> [u8; 32] {
+/// DCR PoW hash: blake3(180-byte header) → 32 bytes (DCP-0011).
+///
+/// Fixed-size input lets the compiler elide bounds checks.
+#[inline(always)]
+pub fn dcr_hash(header: &[u8; 180]) -> [u8; 32] {
     *blake3::hash(header).as_bytes()
 }
 
-/// Returns true if `hash <= target` (big-endian comparison).
+/// Fast target check — `hash <= target` (big-endian, 256-bit).
+///
+/// Compares as two u128 words instead of per-byte loop.
+#[inline(always)]
 pub fn hash_meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
-    for i in 0..32 {
-        if hash[i] < target[i] {
-            return true;
-        }
-        if hash[i] > target[i] {
-            return false;
-        }
+    let h_hi = u128::from_be_bytes([
+        hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7],
+        hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15],
+    ]);
+    let t_hi = u128::from_be_bytes([
+        target[0], target[1], target[2], target[3], target[4], target[5], target[6], target[7],
+        target[8], target[9], target[10], target[11], target[12], target[13], target[14], target[15],
+    ]);
+    if h_hi != t_hi {
+        return h_hi < t_hi;
     }
-    true // equal
+    let h_lo = u128::from_be_bytes([
+        hash[16], hash[17], hash[18], hash[19], hash[20], hash[21], hash[22], hash[23],
+        hash[24], hash[25], hash[26], hash[27], hash[28], hash[29], hash[30], hash[31],
+    ]);
+    let t_lo = u128::from_be_bytes([
+        target[16], target[17], target[18], target[19], target[20], target[21], target[22], target[23],
+        target[24], target[25], target[26], target[27], target[28], target[29], target[30], target[31],
+    ]);
+    h_lo <= t_lo
 }
+
+/// DCR nonce position inside the 180-byte header.
+pub const NONCE_OFFSET: usize = 140;
 
 /// Convert stratum pool difficulty to 32-byte big-endian target.
 ///
-/// Uses Bitcoin-style diff1: `0x00000000FFFF0000…0000`.
+/// diff1 = `0x00000000FFFF0000…(224 zero bits)`.
 /// `pool_target = diff1 / difficulty`.
 pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
     if difficulty <= 0.0 || !difficulty.is_finite() {
@@ -26,9 +46,6 @@ pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
     }
 
     let diff_u64 = difficulty.ceil().max(1.0) as u64;
-
-    // diff1 as four big-endian u64 words:
-    // 0x00000000FFFF0000 | 0 | 0 | 0
     let words: [u64; 4] = [0x00000000FFFF0000, 0, 0, 0];
     let mut target = [0u8; 32];
     let mut remainder: u128 = 0;
@@ -43,6 +60,97 @@ pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
     target
 }
 
+/// Benchmark raw Blake3 hashing on a 180-byte header.
+/// Returns (hashes, elapsed_secs, megahashes_per_sec).
+pub fn bench_blake3(seconds: f64) -> (u64, f64, f64) {
+    use std::time::Instant;
+
+    let mut header = [0u8; 180];
+    let target = [0u8; 32]; // impossible — pure throughput measurement
+    let start = Instant::now();
+    let mut count: u64 = 0;
+    let mut nonce: u32 = 0;
+
+    loop {
+        for _ in 0..8192 {
+            header[NONCE_OFFSET..NONCE_OFFSET + 4].copy_from_slice(&nonce.to_le_bytes());
+            let hash = dcr_hash(&header);
+            std::hint::black_box(hash_meets_target(&hash, &target));
+            nonce = nonce.wrapping_add(1);
+        }
+        count += 8192;
+
+        let elapsed = start.elapsed().as_secs_f64();
+        if elapsed >= seconds {
+            let mhps = (count as f64) / elapsed / 1_000_000.0;
+            return (count, elapsed, mhps);
+        }
+    }
+}
+
+/// Benchmark with precomputed Hasher state (first 128 bytes cached).
+/// Only recomputes the last 52-byte block per nonce.
+pub fn bench_blake3_precompute(seconds: f64) -> (u64, f64, f64) {
+    use std::time::Instant;
+
+    let header = [0u8; 180];
+    let target = [0u8; 32];
+
+    // Pre-process the first 128 bytes (2 blake3 compression blocks)
+    let mut base_hasher = blake3::Hasher::new();
+    base_hasher.update(&header[..128]);
+
+    // Tail contains bytes 128..180, with nonce at offset 12..16
+    let mut tail = [0u8; 52];
+    tail.copy_from_slice(&header[128..180]);
+
+    let start = Instant::now();
+    let mut count: u64 = 0;
+    let mut nonce: u32 = 0;
+
+    loop {
+        for _ in 0..8192 {
+            tail[12..16].copy_from_slice(&nonce.to_le_bytes());
+            let mut h = base_hasher.clone();
+            h.update(&tail);
+            let hash: [u8; 32] = *h.finalize().as_bytes();
+            std::hint::black_box(hash_meets_target(&hash, &target));
+            nonce = nonce.wrapping_add(1);
+        }
+        count += 8192;
+
+        let elapsed = start.elapsed().as_secs_f64();
+        if elapsed >= seconds {
+            let mhps = (count as f64) / elapsed / 1_000_000.0;
+            return (count, elapsed, mhps);
+        }
+    }
+}
+
+/// Detect SIMD features available for Blake3.
+pub fn detect_simd() -> &'static str {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx512f") {
+            return "AVX-512";
+        }
+        if is_x86_feature_detected!("avx2") {
+            return "AVX2";
+        }
+        if is_x86_feature_detected!("sse4.1") {
+            return "SSE4.1";
+        }
+        if is_x86_feature_detected!("sse2") {
+            return "SSE2";
+        }
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        return "NEON";
+    }
+    "portable"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -55,11 +163,13 @@ mod tests {
     }
 
     #[test]
-    fn hash_length_independent() {
-        // blake3 accepts any input length
-        let _short = dcr_hash(&[0u8; 80]);
-        let _dcr = dcr_hash(&[0u8; 180]);
-        let _long = dcr_hash(&[0u8; 256]);
+    fn different_nonce_different_hash() {
+        let mut hdr = [0u8; 180];
+        hdr[NONCE_OFFSET..NONCE_OFFSET + 4].copy_from_slice(&0u32.to_le_bytes());
+        let h1 = dcr_hash(&hdr);
+        hdr[NONCE_OFFSET..NONCE_OFFSET + 4].copy_from_slice(&1u32.to_le_bytes());
+        let h2 = dcr_hash(&hdr);
+        assert_ne!(h1, h2);
     }
 
     #[test]
@@ -78,6 +188,16 @@ mod tests {
     fn equal_hash_and_target_passes() {
         let hash = dcr_hash(&[42; 180]);
         assert!(hash_meets_target(&hash, &hash));
+    }
+
+    #[test]
+    fn target_comparison_u128_consistent() {
+        for seed in 0u8..=255 {
+            let hash = dcr_hash(&[seed; 180]);
+            let mut t = hash;
+            if t[31] < 255 { t[31] += 1; }
+            assert!(hash_meets_target(&hash, &t));
+        }
     }
 
     #[test]
@@ -101,5 +221,11 @@ mod tests {
         assert_eq!(difficulty_to_target(0.0), [0xFF; 32]);
         assert_eq!(difficulty_to_target(-1.0), [0xFF; 32]);
         assert_eq!(difficulty_to_target(f64::NAN), [0xFF; 32]);
+    }
+
+    #[test]
+    fn bench_sanity() {
+        let (_count, _elapsed, mhps) = bench_blake3(0.3);
+        assert!(mhps > 0.01, "Blake3 throughput too low: {mhps:.2} MH/s");
     }
 }
