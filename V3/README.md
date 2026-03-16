@@ -8,6 +8,7 @@ reuse audited source material during migration, while remaining isolated from th
 Active planning for `V3/` now lives in `V3/ROADMAP.md`.
 
 Revenue system detail: `V3/docs/REVENUE_SYSTEM.md`.
+Native libs gap audit: `V3/docs/NATIVE_LIBS_GAP_V3.md`.
 
 Pure-code scope for the bootstrap:
 
@@ -139,6 +140,7 @@ The `server` binary in `L1/pool` supports:
 - `ZION_USER_DEFAULT_GROUP` (`zion`/`revenue`/`ncl`/`auto`, default `zion`)
 - `ZION_BACKEND_MINER_IDS` (comma-separated miner IDs that should use `auto` weighted lane routing)
 - `ZION_BACKEND_WORKER_HINTS` (comma-separated worker-name substrings treated as backend sessions; default `backend,revenue,ncl`)
+- `ZION_BACKEND_AUTO_INCLUDE_ZION` (`true`/`false`, default `false`) — zda backend auto session smi byt pinuta i do `zion` lane
 - `ZION_ROUTING_LOG_EVERY` (default `25`, `0` disables periodic routing snapshots)
 
 The `node` binary in `L1/core` supports:
