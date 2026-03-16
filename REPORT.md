@@ -98,6 +98,24 @@ Zbývající otevřený krok není návrh algoritmu, ale praktické **end-to-end
 | C-01 | 72h testnet stability window (formální, s důkazem) | 🔴 |
 | C-02 | Genesis blok vytvořit OFFLINE (genesis.json) | 🔴 |
 | C-03 | On-chain time-lock aktivovat v mainnet buildu | 🟠 |
+
+## Server Maintenance — 16. 3. 2026
+
+**Docker System Cleanup:**
+- ✅ **Space Reclaimed:** 49.65GB uvolněno při docker system prune
+- ✅ **Current Usage:** 75GB disk, 5.5GB použito (8% využití)
+- ✅ **Memory Status:** 7.6GB RAM, 1.1GB použito, 6.4GB available
+
+**Mining Infrastructure Fix:**
+- ✅ **Pool Port Mapping:** Opraven zion-v3-canary-pool port 3333:8444 (místo 13333:8444)
+- ✅ **Connectivity:** Port 3333 nyní naslouchá na 0.0.0.0, připraveno pro externí mining
+- ✅ **Pool Status:** Aktivní, zpracovává stratum připojení a distribuuje joby
+
+**Server Health Overview:**
+- **Uptime:** 6 days, 9 hours, 26 minutes
+- **Load Average:** 0.49, 0.18, 0.06 (nízké zatížení)
+- **Active Services:** 7 Docker kontejnerů (core, pool, node, website, redis, seed nodes)
+- **Network:** Všechny služby dostupné, mining pool připraven
 | C-04 | Docker images SHA-256 published | 🟠 |
 | C-04 | Alertmanager Telegram tokeny nastavit + test-incident | 🟠 |
 | C-05 | `MAINNET_CONSTITUTION.md` označit FROZEN (hash) | 🟠 |
