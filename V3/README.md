@@ -76,6 +76,7 @@ Out of scope for the bootstrap:
 - `L1/cosmic-harmony` revenue tracking now includes a `Blake3External` revenue source for Blake3-compatible external coins (DCR, ALPH) at the same 2% fee rate as profit-switch
 - `L1/miner` now supports both local in-process mode and remote TCP pool mode, plus repeated mining loops, telemetry, and a persistent wire session transcript
 - `L1/miner` now supports DCR Blake3 runtime backends (`auto` / `cpu` / `gpu`) with OpenCL kernel dispatch and CPU fallback integrated into the live DCR worker path when built with `--features gpu`
+- `L1/miner` now supports DCR CPU hash implementation selection via `ZION_DCR_HASH_IMPL` (`rust` default, `native` when built with `--features native-blake3-algo`) for explicit native-ffi Blake3 runtime dispatch
 - `L1/native-libs` scaffold now exists for staged migration of native acceleration libraries (randomx, kawpow, autolykos) with platform build scripts and ABI header placeholders
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`
@@ -118,6 +119,7 @@ The `zion-miner` binary already supports basic configuration via environment var
 - `ZION_DCR_ENABLED`
 - `ZION_BTC_WALLET`
 - `ZION_DCR_BACKEND` (`auto`, `cpu`, `gpu`)
+- `ZION_DCR_HASH_IMPL` (`rust`, `native`)
 - `ZION_DCR_POOL`
 - `ZION_DCR_THREADS`
 - `ZION_DCR_WORKER`
