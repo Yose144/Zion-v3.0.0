@@ -499,6 +499,7 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "keccak" | "keccak_bonus" => Ok(RevenueSource::KeccakBonus),
         "sha3" | "sha3_bonus" => Ok(RevenueSource::Sha3Bonus),
         "profit" | "profit_switch" => Ok(RevenueSource::ProfitSwitch),
+        "blake3" | "blake3_external" | "dcr" | "alph" => Ok(RevenueSource::Blake3External),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         other => Err(anyhow!("unsupported revenue source: {other}")),
     }
@@ -516,6 +517,9 @@ mod tests {
             Ok(RevenueSource::ProfitSwitch)
         ));
         assert!(matches!(parse_revenue_source("ncl"), Ok(RevenueSource::NclAi)));
+        assert!(matches!(parse_revenue_source("dcr"), Ok(RevenueSource::Blake3External)));
+        assert!(matches!(parse_revenue_source("alph"), Ok(RevenueSource::Blake3External)));
+        assert!(matches!(parse_revenue_source("blake3_external"), Ok(RevenueSource::Blake3External)));
     }
 
     #[test]

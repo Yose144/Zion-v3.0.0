@@ -306,6 +306,8 @@ V3 mainnet kód po Phase 10 pokrývá **všechny kritické subsystémy**:
 - ✅ **Phase 15:** centralized submit boundary — SubmittedTransaction enum, parse_value, zion1 endpoint rejection
 - ✅ **Phase 16:** complete UTXO bridge — submit → validate (hash+signatures) → mempool → template → mine → peer validate → journal → snapshot/restore — 12 nových testů
 - ✅ **Phase 17:** UTXO RPC + chain validation — getBalance zion1 support, getUtxos endpoint (16 RPC metod), UTXO input existence check, SpendableUtxo, utxo_set/balance/spendable_utxos/utxo_exists — 374 testů core
+- ✅ **Phase 18:** Mempool transaction relay — AnnounceTx P2P message, SeenTransactions dedup (8192 cap), plan_tx_relay(), SubmittedTransaction serde, tx propagation stats, node binary relay wiring (P2P + RPC paths) — 10 nových propagation testů
+- ✅ **Phase 18b:** E2E multi-node integration tests — 9 testů: block relay, GetBlocksSince sync, tx relay, AnnounceTx serde roundtrip, three-node chain sync, duplicate block handling, tx→mine→sync, status exchange, network mismatch — 393 testů celkem
 
 **Testnet běží na 157.180.41.213** — node, pool, miner containers UP, chain height 110+.
 
@@ -313,7 +315,7 @@ Zbývající práce pro produkční mainnet:
 - ~~UTXO balance RPC endpoint (`getBalance` pro `zion1...` adresy)~~ → ✅ Phase 17
 - ~~`getUtxos(address)` RPC endpoint pro external wallety~~ → ✅ Phase 17
 - ~~UTXO input existence check (propojení lib.rs bridge s storage.rs UTXO set)~~ → ✅ Phase 17
-- Mempool transaction relay (P2P `AnnounceTx`/`GetTx`)
-- Block processing lock pro concurrent přístup
+- ~~Mempool transaction relay (P2P `AnnounceTx`/`GetTx`)~~ → ✅ Phase 18
+- ~~E2E multi-node acceptance testy~~ → ✅ Phase 18b
+- Block processing lock pro concurrent přístup (deferred — requires splitting read/write paths in msg handlers)
 - Full async P2P, CI/CD
-- E2E multi-node acceptance testy
