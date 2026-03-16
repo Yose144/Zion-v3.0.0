@@ -128,6 +128,7 @@ The `zion-miner` binary already supports basic configuration via environment var
 - `ZION_GPU_WORK_SIZE`
 - `ZION_GPU_AUTOTUNE`
 - `ZION_GPU_AUTOTUNE_SECS`
+- `ZION_REMOTE_TTL_GUARD_PCT` — skip submit if scan took ≥N% of pool-advertised job TTL (default: 90, range: 10–100). Prevents `StaleJob` rejects when the scan runs over the TTL window.
 
 The `server` binary in `L1/pool` supports:
 
