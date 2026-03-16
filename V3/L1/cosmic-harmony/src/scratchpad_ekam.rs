@@ -204,11 +204,11 @@ fn kabala_phase(pad: &[u8], seed: &[u8; 64]) -> [u8; 64] {
     let blocks = block_count();
     let mut acc = *seed;
 
-    for k in 0..KABALA_READS {
+    for (k, &hic_val) in HIC.iter().enumerate().take(KABALA_READS) {
         let mut state_word = [0u8; 8];
         state_word.copy_from_slice(&acc[..8]);
         let state_u64 = u64::from_le_bytes(state_word);
-        let kabala_addr = ((HIC[k] ^ state_u64) as usize) % blocks;
+        let kabala_addr = ((hic_val ^ state_u64) as usize) % blocks;
 
         let kab_off = kabala_addr * BLOCK_SIZE;
         let chunk = &pad[kab_off..kab_off + BLOCK_SIZE];
@@ -216,7 +216,7 @@ fn kabala_phase(pad: &[u8], seed: &[u8; 64]) -> [u8; 64] {
         let mut h = Keccak256::new();
         h.update(acc);
         h.update(chunk);
-        h.update(HIC[k].to_le_bytes());
+        h.update(hic_val.to_le_bytes());
         h.update((k as u64).to_le_bytes());
         let d = h.finalize();
 
@@ -236,8 +236,8 @@ fn kabala_phase(pad: &[u8], seed: &[u8; 64]) -> [u8; 64] {
 fn brahma_jyoti_finalize(state: &[u8; 64]) -> Hash64 {
     let mut acc = *state;
 
-    for r in 0..KEY_ROUNDS {
-        let hic_bytes = HIC[r].to_le_bytes();
+    for (r, &hic_val) in HIC.iter().enumerate().take(KEY_ROUNDS) {
+        let hic_bytes = hic_val.to_le_bytes();
         let round_bytes = (r as u64).to_le_bytes();
         let out = sha3_fast::sha3_512_chunks([&acc, &hic_bytes, &round_bytes]);
 
@@ -311,9 +311,7 @@ pub fn memory_hard_transform_ekam_light(input: &[u8; 64]) -> Hash64 {
 fn prefetch_next(pad: &[u8], index: usize, pass: u64, forward: bool, blocks: usize) {
     let next_index = if forward {
         if index + 1 < blocks { index + 1 } else { return; }
-    } else {
-        if index > 0 { index - 1 } else { return; }
-    };
+    } else if index > 0 { index - 1 } else { return; };
 
     unsafe {
         use std::arch::x86_64::{_MM_HINT_T0, _mm_prefetch};
@@ -340,7 +338,6 @@ fn xor_block_in_place(dest: &mut [u8], src: &[u8]) {
     {
         if std::is_x86_feature_detected!("avx2") {
             unsafe { xor_avx2(dest.as_mut_ptr(), src.as_ptr()); }
-            return;
         }
     }
 

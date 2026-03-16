@@ -123,6 +123,12 @@ impl HugePageScratchpad {
     pub fn len(&self) -> usize {
         self.logical_size
     }
+
+    /// Whether this scratchpad has zero logical size.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.logical_size == 0
+    }
 }
 
 impl Drop for HugePageScratchpad {
@@ -352,7 +358,7 @@ fn alloc_huge_pages_inner(size: usize) -> Option<*mut u8> {
             let mut luid: u64 = 0;
             if LookupPrivilegeValueA(
                 ptr::null(),
-                b"SeLockMemoryPrivilege\0".as_ptr(),
+                c"SeLockMemoryPrivilege".as_ptr() as *const u8,
                 &mut luid,
             ) != 0
             {

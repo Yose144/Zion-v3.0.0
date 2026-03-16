@@ -40,10 +40,22 @@ impl Hash32 {
     }
 }
 
+impl Default for Hash32 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Hash64 {
     #[inline]
     pub const fn new() -> Self {
         Self { data: [0u8; 64] }
+    }
+}
+
+impl Default for Hash64 {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -70,10 +82,10 @@ pub fn golden_matrix_opt(input: &[u8]) -> Hash64 {
     let mut matrix = [[0u64; MATRIX_SIZE]; MATRIX_SIZE];
     let input_len = input.len();
 
-    for i in 0..MATRIX_SIZE {
+    for (i, row) in matrix.iter_mut().enumerate() {
         let base = i * MATRIX_SIZE;
         for j in 0..MATRIX_SIZE {
-            matrix[i][j] = input[(base + j) % input_len] as u64;
+            row[j] = input[(base + j) % input_len] as u64;
         }
     }
 

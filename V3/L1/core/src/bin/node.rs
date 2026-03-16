@@ -217,6 +217,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn handle_p2p_stream(
     stream: TcpStream,
     runtime: &Arc<Mutex<NodeRuntime>>,
@@ -389,7 +390,7 @@ fn handle_rpc_stream(
         .unwrap_or(serde_json::Value::Null);
 
     let is_jsonrpc = parsed.get("jsonrpc").is_some()
-        || parsed.as_array().map_or(false, |arr| {
+        || parsed.as_array().is_some_and(|arr| {
             arr.first().and_then(|v| v.get("jsonrpc")).is_some()
         });
 
@@ -844,27 +845,24 @@ fn outbound_peer_loop(
             match p2p_roundtrip(peer, &P2pMessage::Ping { nonce: epoch_secs() }) {
                 Ok(P2pMessage::Pong { .. }) => {
                     // Peer alive — check if it has new blocks
-                    match p2p_roundtrip(peer, &P2pMessage::GetStatus) {
-                        Ok(P2pMessage::Status { status }) => {
-                            if status.chain_height > our_height {
-                                println!(
-                                    "outbound_sync peer={} remote_height={} our_height={}",
-                                    peer.address(),
-                                    status.chain_height,
-                                    our_height,
-                                );
-                                match sync_from_peer(runtime, peer, batch_limit.max(1)) {
-                                    Ok(_) => {}
-                                    Err(e) => {
-                                        eprintln!(
-                                            "outbound_sync_err peer={} err={e}",
-                                            peer.address()
-                                        );
-                                    }
+                    if let Ok(P2pMessage::Status { status }) = p2p_roundtrip(peer, &P2pMessage::GetStatus) {
+                        if status.chain_height > our_height {
+                            println!(
+                                "outbound_sync peer={} remote_height={} our_height={}",
+                                peer.address(),
+                                status.chain_height,
+                                our_height,
+                            );
+                            match sync_from_peer(runtime, peer, batch_limit.max(1)) {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    eprintln!(
+                                        "outbound_sync_err peer={} err={e}",
+                                        peer.address()
+                                    );
                                 }
                             }
                         }
-                        _ => {}
                     }
                 }
                 Err(_) => {
@@ -875,7 +873,7 @@ fn outbound_peer_loop(
         }
 
         // ── Peer discovery: ask a peer for its known peers ─────────────
-        if cycle_count % DISCOVERY_EVERY_N_CYCLES == 0 && !peers.is_empty() {
+        if cycle_count.is_multiple_of(DISCOVERY_EVERY_N_CYCLES) && !peers.is_empty() {
             let idx = (cycle_count / DISCOVERY_EVERY_N_CYCLES) as usize % peers.len();
             let target = &peers[idx];
             match p2p_roundtrip(target, &P2pMessage::GetPeers) {
@@ -919,7 +917,7 @@ fn outbound_peer_loop(
         }
 
         // ── Persist known_peers to disk ────────────────────────────────
-        if cycle_count % PERSIST_PEERS_EVERY_N_CYCLES == 0 {
+        if cycle_count.is_multiple_of(PERSIST_PEERS_EVERY_N_CYCLES) {
             let rt = runtime.lock().expect("lock");
             if let Err(e) = rt.persist_peers() {
                 eprintln!("peers_persist_err err={e}");

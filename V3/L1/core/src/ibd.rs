@@ -287,7 +287,7 @@ impl IbdEngine {
         if available.is_empty() {
             return None;
         }
-        self.peer_index = self.peer_index % available.len();
+        self.peer_index %= available.len();
         let peer_id = available[self.peer_index].peer_id.clone();
         self.peer_index = (self.peer_index + 1) % available.len();
         Some(peer_id)

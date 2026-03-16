@@ -1286,7 +1286,7 @@ impl NodeRuntime {
             template_id,
             block_height: accepted.then_some(self.chain_state.height),
             hash_hex: hex(&hash),
-            reason: accepted.then_some(None).unwrap_or_else(|| Some("low difficulty".to_string())),
+            reason: if accepted { None } else { Some("low difficulty".to_string()) },
         }
     }
 
@@ -1481,7 +1481,7 @@ impl ChainState {
             .expect("genesis hash must be valid hex");
         let mempool = Vec::new();
         let template =
-            Self::build_template(node_id, core, 0, genesis_hash, 1, &mempool, &[genesis.clone()], "");
+            Self::build_template(node_id, core, 0, genesis_hash, 1, &mempool, std::slice::from_ref(&genesis), "");
         let mut accepted_by_height = BTreeMap::new();
         accepted_by_height.insert(0, genesis.clone());
         Self {
@@ -1733,7 +1733,7 @@ impl ChainState {
             .take_while(|block| {
                 self.accepted_by_height
                     .get(&block.height)
-                    .map_or(false, |existing| existing.hash_hex == block.hash_hex)
+                    .is_some_and(|existing| existing.hash_hex == block.hash_hex)
             })
             .count();
         let blocks: Vec<AcceptedBlock> = blocks.into_iter().skip(skip_count).collect();
@@ -2176,7 +2176,7 @@ impl ChainState {
                 ));
             }
             let already_in_mempool = self.mempool.iter().any(|known| {
-                known.as_utxo().map_or(false, |utxo| {
+                known.as_utxo().is_some_and(|utxo| {
                     utxo.inputs.iter().any(|ki| {
                         ki.prev_tx_hash == input.prev_tx_hash
                             && ki.output_index == input.output_index
@@ -2331,6 +2331,7 @@ impl ChainState {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn build_template(
         node_id: &str,
         _core: &CoreRuntime,

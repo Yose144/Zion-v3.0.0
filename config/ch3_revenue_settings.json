@@ -50,7 +50,7 @@
       "description": "Profit-switched multi-algo mining (25% compute allocation → BTC payouts)",
       "enabled": true,
       "mode": "auto",
-      "preferred_coins": ["KAS", "ERG", "ALPH", "RVN", "ETC", "EVR", "MEWC", "FLUX", "CLORE", "XMR"],
+      "preferred_coins": ["KAS", "ERG", "ALPH", "DCR", "RVN", "ETC", "EVR", "MEWC", "FLUX", "CLORE", "XMR"],
       "current_coin": null,
       "switching": {
         "min_profit_usd": 0.1,
@@ -168,6 +168,16 @@
           "enabled": true,
           "note": "2miners ALPH:4545 — BTC payout, Blake3"
         },
+        "DCR": {
+          "coin": "DCR",
+          "stratum": "stratum+tcp://dcr.2miners.com:3333",
+          "wallet": "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw",
+          "worker": "zion_dynamic",
+          "algorithm": "blake3",
+          "protocol": "stratum",
+          "enabled": true,
+          "note": "2miners DCR:3333 — BTC payout, Blake3 (DCP-0011). Same algo family as ZION's internal Blake3 hashing."
+        },
         "FLUX": {
           "coin": "FLUX",
           "stratum": "stratum+tcp://flux.woolypooly.com:3000",
@@ -264,7 +274,7 @@
     "check_interval_secs": 300,
     "switch_threshold_pct": 10.0,
     "min_switch_interval_secs": 1800,
-    "preferred_coins": ["KAS", "ERG", "ALPH", "RVN", "ETC", "EVR", "MEWC", "FLUX", "CLORE", "XMR"],
+    "preferred_coins": ["KAS", "ERG", "ALPH", "DCR", "RVN", "ETC", "EVR", "MEWC", "FLUX", "CLORE", "XMR"],
     "excluded_coins": ["CFX", "ZANO"],
     "fallback_coin": "ETC",
     "pool_preference": "2miners",
@@ -324,6 +334,11 @@
         "name": "2miners-ALPH",
         "coin": "ALPH",
         "url": "https://alph.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
+      },
+      {
+        "name": "2miners-DCR",
+        "coin": "DCR",
+        "url": "https://dcr.2miners.com/api/accounts/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"
       },
       {
         "name": "zpool-EVR",

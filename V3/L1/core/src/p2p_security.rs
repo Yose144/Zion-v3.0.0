@@ -107,7 +107,7 @@ impl PeerSecurity {
         });
 
         // Check existing ban.
-        if record.permanent || record.ban_until.map_or(false, |u| now < u) {
+        if record.permanent || record.ban_until.is_some_and(|u| now < u) {
             return Err(BanReason::RateLimitExceeded);
         }
 
@@ -179,7 +179,7 @@ impl PeerSecurity {
     pub fn banned_count(&self, now: u64) -> usize {
         self.peers
             .values()
-            .filter(|r| r.permanent || r.ban_until.map_or(false, |u| now < u))
+            .filter(|r| r.permanent || r.ban_until.is_some_and(|u| now < u))
             .count()
     }
 

@@ -120,7 +120,7 @@ pub fn plan_relay(
         .iter()
         .filter(|peer| {
             // Exclude the source peer
-            source_addr.map_or(true, |src| peer.address() != src)
+            source_addr.is_none_or(|src| peer.address() != src)
         })
         .map(|peer| RelayTarget { peer: peer.clone() })
         .collect();
@@ -320,7 +320,7 @@ pub fn plan_tx_relay(
 
     let targets: Vec<RelayTarget> = connected_peers
         .iter()
-        .filter(|peer| source_addr.map_or(true, |src| peer.address() != src))
+        .filter(|peer| source_addr.is_none_or(|src| peer.address() != src))
         .map(|peer| RelayTarget { peer: peer.clone() })
         .collect();
 
