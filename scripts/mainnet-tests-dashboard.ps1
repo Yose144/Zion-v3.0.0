@@ -35,9 +35,14 @@ function Try-ParseJson {
 
 function Get-HealthStatus {
     param(
+    [Nullable[double]]$Submits,
         [double]$AcceptRatePct,
         [double]$RejectTrendPct
     )
+
+  if ($null -eq $Submits -or $Submits -le 0) {
+    return @{ label = "IDLE"; css = "idle" }
+  }
 
     if ($AcceptRatePct -ge 95 -and $RejectTrendPct -le 5) {
         return @{ label = "PASS"; css = "ok" }
@@ -145,7 +150,7 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
 
     $rejectTrendPct = if ($deltaSubmits -gt 0) { ($deltaRejected / $deltaSubmits) * 100.0 } else { 0.0 }
     $acceptForHealth = if ($canaryAcceptRate -ne $null) { $canaryAcceptRate } else { 0.0 }
-    $health = Get-HealthStatus -AcceptRatePct $acceptForHealth -RejectTrendPct $rejectTrendPct
+    $health = Get-HealthStatus -Submits $canarySubmits -AcceptRatePct $acceptForHealth -RejectTrendPct $rejectTrendPct
 
     $canaryAcceptedText = if ($canaryAccepted -ne $null) { $canaryAccepted.ToString("N0") } else { "n/a" }
     $canaryRejectedText = if ($canaryRejected -ne $null) { $canaryRejected.ToString("N0") } else { "n/a" }
@@ -270,6 +275,7 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       border: 1px solid transparent;
     }
     .badge-ok { color: #06240f; background: #22c55e; border-color: #22c55e; }
+    .badge-idle { color: #d7e5f7; background: #334155; border-color: #475569; }
     .badge-warn { color: #2f1800; background: #f59e0b; border-color: #f59e0b; }
     .badge-crit { color: #ffffff; background: var(--crit); border-color: #ff6b6b; box-shadow: 0 0 24px rgba(255, 43, 43, 0.35); }
     .grid {
@@ -289,6 +295,10 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       background: var(--crit-bg);
       border-color: #8b2028;
       box-shadow: 0 0 0 2px rgba(255, 43, 43, 0.2);
+    }
+    .card.health-idle {
+      background: #182234;
+      border-color: #334155;
     }
     .k {
       color: var(--muted);
@@ -333,6 +343,7 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
       padding: 10px;
     }
     .ok { color: var(--ok); font-weight: 700; }
+    .idle { color: #d7e5f7; font-weight: 700; }
     .warn { color: var(--warn); font-weight: 700; }
     .crit { color: var(--crit); font-weight: 800; }
     .viz-grid {
@@ -454,7 +465,7 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
             <div class="gauge-value">$canaryAcceptRateText%</div>
           </div>
           <div style="color: var(--muted); max-width: 340px; font-size: 13px; line-height: 1.45;">
-            Snapshot acceptance for canary pool. Health combines this value with reject trend delta to classify PASS/WARN/CRIT.
+            Snapshot acceptance for canary pool. Health combines this value with reject trend delta and treats zero-submit snapshots as IDLE instead of CRIT.
           </div>
         </div>
       </div>
@@ -532,7 +543,7 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
 - V3 canary runs host-local on 18332/18334/13333/19550.
 - Server-side canary miner is intentionally stopped to keep CPU headroom.
 - Local miner tests can run through SSH tunnel: 127.0.0.1:13333.
-- Health rule: PASS if accept>=95% and reject trend<=5%; WARN if accept>=80% and trend<=20%; else CRIT.</pre>
+- Health rule: IDLE if submits=0; PASS if accept>=95% and reject trend<=5%; WARN if accept>=80% and trend<=20%; else CRIT.</pre>
     </div>
   </div>
 </body>
