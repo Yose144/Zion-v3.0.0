@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use std::collections::VecDeque;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -182,7 +183,13 @@ fn main() -> Result<()> {
     println!("attempted_hashes={}", outcome.attempted_hashes);
     println!("elapsed_seconds={:.6}", outcome.elapsed_seconds);
     println!("hashrate_hps={:.2}", outcome.hashrate_hps);
+    println!("hashrate_10s_hps={:.2}", outcome.hashrate_10s_hps);
+    println!("hashrate_60s_hps={:.2}", outcome.hashrate_60s_hps);
     println!("revenue_total_usd={:.2}", outcome.revenue_total_usd);
+    println!("no_solution_iterations={}", outcome.no_solution_iterations);
+    println!("local_skip_likely_stale={}", outcome.local_skip_likely_stale);
+    println!("submit_avg_latency_ms={:.2}", outcome.submit_avg_latency_ms);
+    println!("submit_max_latency_ms={}", outcome.submit_max_latency_ms);
 
     if let Some(line) = outcome.last_result_line.as_deref() {
         let parsed = decode_message(line)?;
@@ -220,6 +227,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
     let mut last_result_line = None;
     let mut last_job_id = 0u64;
     let mut tuned_nonce_count = config.nonce_count;
+    let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
 
     let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name))?;
     let welcome_line = encode_message(&pool.welcome_message())?;
@@ -246,6 +254,8 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
         if solution.is_none() {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             rejected_iterations += 1;
+            telemetry.record_attempted_hashes(attempted_hashes);
+            telemetry.record_no_solution();
             println!("iteration={}", iteration + 1);
             println!("job_id={}", job.job_id);
             println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
@@ -265,12 +275,21 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
                     );
                 }
             }
+            telemetry.maybe_print_status(
+                iteration + 1,
+                config.loop_count,
+                accepted_iterations,
+                rejected_iterations,
+                attempted_hashes,
+                None,
+            );
             continue;
         }
         let solution = solution.expect("checked is_some above");
 
         attempted_hashes = attempted_hashes
             .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
+        telemetry.record_attempted_hashes(attempted_hashes);
 
         if config.sleep_ms > 0 {
             thread::sleep(Duration::from_millis(config.sleep_ms));
@@ -289,6 +308,8 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
             rejected_iterations += 1;
         }
 
+        let submit_started_at = Instant::now();
+
         let job_line = encode_message(&pool.job_message(job))?;
         let submit_line = encode_message(&pool.solution_message(
             &config.miner_id,
@@ -296,6 +317,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
             solution,
         ))?;
         let result_line = encode_message(&pool.result_message(&decision))?;
+        telemetry.record_submit_latency(submit_started_at.elapsed());
         last_result_line = Some(result_line.clone());
 
         log_solution(iteration + 1, job, solution.candidate.nonce, &solution.hash, &decision.status);
@@ -322,6 +344,15 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
                 );
             }
         }
+
+        telemetry.maybe_print_status(
+            iteration + 1,
+            config.loop_count,
+            accepted_iterations,
+            rejected_iterations,
+            attempted_hashes,
+            None,
+        );
     }
 
     let stats = pool.stats();
@@ -343,7 +374,13 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
         attempted_hashes,
         elapsed_seconds,
         hashrate_hps,
+        hashrate_10s_hps: telemetry.hashrate_10s_hps(),
+        hashrate_60s_hps: telemetry.hashrate_60s_hps(),
         revenue_total_usd: stats.revenue.total_earnings_usd,
+        no_solution_iterations: telemetry.no_solution_iterations,
+        local_skip_likely_stale: telemetry.local_skip_likely_stale,
+        submit_avg_latency_ms: telemetry.submit_avg_latency_ms(),
+        submit_max_latency_ms: telemetry.submit_max_latency_ms,
         last_result_line,
         bye_line: Some(bye_line),
     })
@@ -357,6 +394,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
     let mut rejected_iterations = 0u64;
     let mut last_result_line = None;
     let mut last_job_id = 0u64;
+    let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
 
     let stream = TcpStream::connect(pool_addr)
         .with_context(|| format!("failed to connect to pool at {pool_addr}"))?;
@@ -391,16 +429,27 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         if solution.is_none() {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             rejected_iterations += 1;
+            telemetry.record_attempted_hashes(attempted_hashes);
+            telemetry.record_no_solution();
             println!("iteration={}", iteration + 1);
             println!("job_id={}", job.job_id);
             println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
             println!("share_status=\"NoSolutionInWindow\"");
             println!("wire_job={job_line}");
+            telemetry.maybe_print_status(
+                iteration + 1,
+                config.loop_count,
+                accepted_iterations,
+                rejected_iterations,
+                attempted_hashes,
+                Some(remote_job_ttl_ms),
+            );
             continue;
         }
         let solution = solution.expect("checked is_some above");
         attempted_hashes = attempted_hashes
             .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
+        telemetry.record_attempted_hashes(attempted_hashes);
 
         if config.sleep_ms > 0 {
             thread::sleep(Duration::from_millis(config.sleep_ms));
@@ -418,9 +467,19 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
             println!("scan_elapsed_ms={elapsed_ms}");
             println!("ttl_guard_ms={ttl_guard_ms}");
             println!("wire_job={job_line}");
+            telemetry.record_local_skip_likely_stale();
+            telemetry.maybe_print_status(
+                iteration + 1,
+                config.loop_count,
+                accepted_iterations,
+                rejected_iterations,
+                attempted_hashes,
+                Some(remote_job_ttl_ms),
+            );
             continue;
         }
 
+        let submit_started_at = Instant::now();
         let submit_message = PoolMessage::Submit {
             job_id: solution.job_id,
             miner_id: config.miner_id.clone(),
@@ -430,6 +489,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         };
         let submit_line = write_wire_message(&mut writer, &submit_message)?;
         let (result_line_raw, result_message) = read_next_result(&mut reader)?;
+        telemetry.record_submit_latency(submit_started_at.elapsed());
         last_result_line = Some(result_line_raw.clone());
 
         let status = match result_message {
@@ -448,6 +508,14 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         println!("wire_job={job_line}");
         println!("wire_submit={submit_line}");
         println!("wire_result={result_line_raw}");
+        telemetry.maybe_print_status(
+            iteration + 1,
+            config.loop_count,
+            accepted_iterations,
+            rejected_iterations,
+            attempted_hashes,
+            Some(remote_job_ttl_ms),
+        );
     }
 
     // Remote pool sessions are long-lived and may immediately stream another
@@ -469,10 +537,174 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         attempted_hashes,
         elapsed_seconds,
         hashrate_hps,
+        hashrate_10s_hps: telemetry.hashrate_10s_hps(),
+        hashrate_60s_hps: telemetry.hashrate_60s_hps(),
         revenue_total_usd: 0.0,
+        no_solution_iterations: telemetry.no_solution_iterations,
+        local_skip_likely_stale: telemetry.local_skip_likely_stale,
+        submit_avg_latency_ms: telemetry.submit_avg_latency_ms(),
+        submit_max_latency_ms: telemetry.submit_max_latency_ms,
         last_result_line,
         bye_line: None,
     })
+}
+
+#[derive(Debug, Clone)]
+struct HashrateWindow {
+    samples: VecDeque<(Instant, u64)>,
+    window_secs: u64,
+}
+
+impl HashrateWindow {
+    fn new(window_secs: u64) -> Self {
+        Self {
+            samples: VecDeque::with_capacity(128),
+            window_secs,
+        }
+    }
+
+    fn push_total_hashes(&mut self, now: Instant, total_hashes: u64) {
+        self.samples.push_back((now, total_hashes));
+        let cutoff = now.checked_sub(Duration::from_secs(self.window_secs.saturating_add(2)));
+        if let Some(cutoff) = cutoff {
+            while self.samples.front().is_some_and(|(t, _)| *t < cutoff) {
+                self.samples.pop_front();
+            }
+        }
+    }
+
+    fn rate_hps(&self) -> f64 {
+        if self.samples.len() < 2 {
+            return 0.0;
+        }
+        let (first_t, first_hashes) = self.samples.front().expect("len checked");
+        let (last_t, last_hashes) = self.samples.back().expect("len checked");
+        let dt = last_t.duration_since(*first_t).as_secs_f64();
+        if dt < 0.5 || last_hashes < first_hashes {
+            return 0.0;
+        }
+        (last_hashes - first_hashes) as f64 / dt
+    }
+}
+
+#[derive(Debug, Clone)]
+struct SessionTelemetry {
+    status_started_at: Instant,
+    last_status_at: Instant,
+    report_every_secs: u64,
+    window_10s: HashrateWindow,
+    window_60s: HashrateWindow,
+    no_solution_iterations: u64,
+    local_skip_likely_stale: u64,
+    submit_samples: u64,
+    submit_total_latency_ms: u128,
+    submit_max_latency_ms: u64,
+}
+
+impl SessionTelemetry {
+    fn new(report_every_secs: u64) -> Self {
+        let now = Instant::now();
+        Self {
+            status_started_at: now,
+            last_status_at: now,
+            report_every_secs,
+            window_10s: HashrateWindow::new(10),
+            window_60s: HashrateWindow::new(60),
+            no_solution_iterations: 0,
+            local_skip_likely_stale: 0,
+            submit_samples: 0,
+            submit_total_latency_ms: 0,
+            submit_max_latency_ms: 0,
+        }
+    }
+
+    fn record_attempted_hashes(&mut self, attempted_hashes: u64) {
+        let now = Instant::now();
+        self.window_10s.push_total_hashes(now, attempted_hashes);
+        self.window_60s.push_total_hashes(now, attempted_hashes);
+    }
+
+    fn record_no_solution(&mut self) {
+        self.no_solution_iterations = self.no_solution_iterations.saturating_add(1);
+    }
+
+    fn record_local_skip_likely_stale(&mut self) {
+        self.local_skip_likely_stale = self.local_skip_likely_stale.saturating_add(1);
+    }
+
+    fn record_submit_latency(&mut self, duration: Duration) {
+        let ms = duration.as_millis() as u64;
+        self.submit_samples = self.submit_samples.saturating_add(1);
+        self.submit_total_latency_ms = self.submit_total_latency_ms.saturating_add(ms as u128);
+        self.submit_max_latency_ms = self.submit_max_latency_ms.max(ms);
+    }
+
+    fn hashrate_10s_hps(&self) -> f64 {
+        self.window_10s.rate_hps()
+    }
+
+    fn hashrate_60s_hps(&self) -> f64 {
+        self.window_60s.rate_hps()
+    }
+
+    fn submit_avg_latency_ms(&self) -> f64 {
+        if self.submit_samples == 0 {
+            0.0
+        } else {
+            self.submit_total_latency_ms as f64 / self.submit_samples as f64
+        }
+    }
+
+    fn maybe_print_status(
+        &mut self,
+        iteration_done: u32,
+        loop_count: u32,
+        accepted: u64,
+        rejected: u64,
+        attempted_hashes: u64,
+        remote_job_ttl_ms: Option<u64>,
+    ) {
+        let now = Instant::now();
+        let is_final = loop_count > 0 && iteration_done >= loop_count;
+        let elapsed_since_last = now.duration_since(self.last_status_at).as_secs();
+        let should_print = is_final
+            || (self.report_every_secs > 0 && elapsed_since_last >= self.report_every_secs);
+        if !should_print {
+            return;
+        }
+
+        let uptime = now.duration_since(self.status_started_at).as_secs_f64().max(0.001);
+        let overall_hps = attempted_hashes as f64 / uptime;
+        let total_decisions = accepted.saturating_add(rejected);
+        let accept_pct = if total_decisions > 0 {
+            accepted as f64 * 100.0 / total_decisions as f64
+        } else {
+            0.0
+        };
+        let submit_avg = self.submit_avg_latency_ms();
+        let ttl_text = remote_job_ttl_ms
+            .map(|ttl| ttl.to_string())
+            .unwrap_or_else(|| "n/a".to_string());
+
+        println!(
+            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={}",
+            iteration_done,
+            loop_count,
+            uptime,
+            accepted,
+            rejected,
+            accept_pct,
+            self.no_solution_iterations,
+            self.local_skip_likely_stale,
+            overall_hps,
+            self.hashrate_10s_hps(),
+            self.hashrate_60s_hps(),
+            submit_avg,
+            self.submit_max_latency_ms,
+            ttl_text,
+        );
+        self.last_status_at = now;
+    }
 }
 
 fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob)> {
@@ -613,7 +845,13 @@ struct SessionOutcome {
     attempted_hashes: u64,
     elapsed_seconds: f64,
     hashrate_hps: f64,
+    hashrate_10s_hps: f64,
+    hashrate_60s_hps: f64,
     revenue_total_usd: f64,
+    no_solution_iterations: u64,
+    local_skip_likely_stale: u64,
+    submit_avg_latency_ms: f64,
+    submit_max_latency_ms: u64,
     last_result_line: Option<String>,
     bye_line: Option<String>,
 }
@@ -633,6 +871,7 @@ struct MinerConfig {
     nonce_count_max: u64,
     nonce_adjust_percent: u64,
     remote_ttl_guard_percent: u64,
+    metrics_report_every_secs: u64,
     sleep_ms: u64,
     timestamp: u64,
     target: DifficultyTarget,
@@ -656,6 +895,7 @@ impl MinerConfig {
             nonce_count_max: parse_env_u64("ZION_NONCE_COUNT_MAX", 5_000_000)?,
             nonce_adjust_percent: parse_env_u64("ZION_NONCE_ADJUST_PCT", 50)?,
             remote_ttl_guard_percent: parse_env_u64("ZION_REMOTE_TTL_GUARD_PCT", 90)?.clamp(10, 100),
+            metrics_report_every_secs: parse_env_u64("ZION_METRICS_REPORT_SECS", 30)?,
             sleep_ms: parse_env_u64("ZION_SLEEP_MS", 0)?,
             timestamp: parse_env_u64("ZION_TIMESTAMP", 1_762_000_200)?,
             target: parse_target_env("ZION_TARGET")?,
@@ -768,6 +1008,7 @@ mod tests {
         std::env::set_var("ZION_NONCE_COUNT_MAX", "2000000");
         std::env::set_var("ZION_NONCE_ADJUST_PCT", "30");
         std::env::set_var("ZION_REMOTE_TTL_GUARD_PCT", "85");
+        std::env::set_var("ZION_METRICS_REPORT_SECS", "12");
         let config = MinerConfig::from_env().expect("config from env");
         assert_eq!(config.loop_count, 3);
         assert_eq!(config.job_ttl_ms, 2500);
@@ -777,6 +1018,7 @@ mod tests {
         assert_eq!(config.nonce_count_max, 2_000_000);
         assert_eq!(config.nonce_adjust_percent, 30);
         assert_eq!(config.remote_ttl_guard_percent, 85);
+        assert_eq!(config.metrics_report_every_secs, 12);
         std::env::remove_var("ZION_LOOP_COUNT");
         std::env::remove_var("ZION_JOB_TTL_MS");
         std::env::remove_var("ZION_NONCE_STRIDE");
@@ -785,6 +1027,7 @@ mod tests {
         std::env::remove_var("ZION_NONCE_COUNT_MAX");
         std::env::remove_var("ZION_NONCE_ADJUST_PCT");
         std::env::remove_var("ZION_REMOTE_TTL_GUARD_PCT");
+        std::env::remove_var("ZION_METRICS_REPORT_SECS");
     }
 
     #[test]
