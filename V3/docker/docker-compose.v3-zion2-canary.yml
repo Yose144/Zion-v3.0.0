@@ -1,0 +1,82 @@
+# ZION V3 Zion2 Canary Stack
+#
+# Runs V3 in parallel on Zion2 alongside the live 2.9.8 testnet stack.
+# Host bindings intentionally avoid collisions with the public testnet ports.
+
+services:
+  node:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+    image: zion-v3-node:latest
+    container_name: zion-v3-canary-node
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18334:8334"
+      - "127.0.0.1:18332:8332"
+    volumes:
+      - zion-v3-canary-node-data:/data/zion
+    environment:
+      ZION_NODE_ID: v3-zion2-canary
+      ZION_NODE_STATE_PATH: /data/zion/state
+      ZION_P2P_BIND: "0.0.0.0:8334"
+      ZION_RPC_BIND: "0.0.0.0:8332"
+      ZION_SEED_PEERS: ""
+      ZION_MINER_ADDRESS: "zion-v3-canary-miner-0"
+    networks:
+      - zion-v3-canary
+
+  pool:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.pool
+    image: zion-v3-pool:latest
+    container_name: zion-v3-canary-pool
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:13333:8444"
+      - "127.0.0.1:19550:9550"
+    environment:
+      ZION_POOL_BIND: "0.0.0.0:8444"
+      ZION_NODE_RPC_ADDR: "node:8332"
+      ZION_POOL_LOOP_COUNT: "1000000"
+      ZION_NONCE_COUNT: "1000000"
+      ZION_REVENUE_MULTISTREAM: "true"
+      ZION_STREAM_ZION_PCT: "50"
+      ZION_STREAM_BLAKE3_PCT: "25"
+      ZION_STREAM_NCL_PCT: "25"
+      ZION_USER_DEFAULT_GROUP: "zion"
+      ZION_BACKEND_WORKER_HINTS: "backend,revenue,ncl"
+      ZION_BACKEND_AUTO_INCLUDE_ZION: "false"
+      ZION_ROUTING_LOG_EVERY: "1"
+      ZION_ROUTING_METRICS_BIND: "0.0.0.0:9550"
+    depends_on:
+      - node
+    networks:
+      - zion-v3-canary
+
+  miner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.miner
+    image: zion-v3-miner:latest
+    container_name: zion-v3-canary-miner
+    restart: unless-stopped
+    environment:
+      ZION_POOL_ADDR: "pool:8444"
+      ZION_MINER_ID: "backend-zion2-canary"
+      ZION_WORKER_NAME: "backend-revenue-canary"
+      ZION_LOOP_COUNT: "1000000"
+      ZION_DCR_ENABLED: "false"
+    depends_on:
+      - pool
+    networks:
+      - zion-v3-canary
+
+volumes:
+  zion-v3-canary-node-data:
+    driver: local
+
+networks:
+  zion-v3-canary:
+    driver: bridge
