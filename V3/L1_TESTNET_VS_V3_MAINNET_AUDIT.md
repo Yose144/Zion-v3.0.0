@@ -1,6 +1,6 @@
 # L1 Testnet → V3 Mainnet Audit
 
-> Vytvořeno: 2026-03-13 | Poslední aktualizace: 2026-03-13 (po Phase 10)
+> Vytvořeno: 2026-03-13 | Poslední aktualizace: 2026-03-16 (po Phase 16)
 > Účel: Kompletní inventář L1 testnet modulů vs V3 mainnet stav.
 > Cíl: Zajistit, že nic kritického z testnet nezapomeneme při mainnet pure-code migraci.
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | Zdrojové soubory | ~50 `.rs` ve 14 adresářích | ~20 `.rs` ve 4 crates |
 | Celkem LoC | ~17 500 | ~12 000+ |
-| Testy | ~200+ (odhad) | **371 pass, 0 fail, 1 ignored** |
+| Testy | ~200+ (odhad) | **393+ pass, 0 fail, 1 ignored** |
 | Persistence | LMDB (7 databází) | ✅ LMDB via heed (8 databází) |
 | Tx model | UTXO (Bitcoin-styl) | ✅ UTXO (TxInput/TxOutput/Transaction) |
 | Kryptografie | Ed25519 + BLAKE3 + RIPEMD160 | ✅ Ed25519 + BLAKE3 + RIPEMD160 |
@@ -302,11 +302,17 @@ V3 mainnet kód po Phase 10 pokrývá **všechny kritické subsystémy**:
 - ✅ **Phase 11:** peer discovery (GetPeers exchange), peer persistence (known_peers → peers.json) — 376 testů
 - ✅ **Phase 12:** block validation hardening — PoW via header_hex, timestamp sanity, checkpoint enforcement — 385 testů (333 core + 32 CH + 4 miner + 13 pool + 2 pool-server + 1 doc-test)
 - ✅ **Phase 13:** chain linkage verification — previous_hash_hex v AcceptedBlock, parent-hash enforcement v import, header cross-check — 393 testů (341 core + 32 CH + 4 miner + 13 pool + 2 pool-server + 1 doc-test)
+- ✅ **Phase 14:** RPC model surface alignment — RuntimeTransaction adapter, account/UTXO dual routing
+- ✅ **Phase 15:** centralized submit boundary — SubmittedTransaction enum, parse_value, zion1 endpoint rejection
+- ✅ **Phase 16:** complete UTXO bridge — submit → validate (hash+signatures) → mempool → template → mine → peer validate → journal → snapshot/restore — 12 nových testů
 
 **Testnet běží na 157.180.41.213** — node, pool, miner containers UP, chain height 110+.
 
 Zbývající práce pro produkční mainnet:
-- Standard binary Merkle tree
+- UTXO balance RPC endpoint (`getBalance` pro `zion1...` adresy)
+- `getUtxos(address)` RPC endpoint pro external wallety
+- UTXO input existence check (propojení lib.rs bridge s storage.rs UTXO set)
+- Mempool transaction relay (P2P `AnnounceTx`/`GetTx`)
 - Block processing lock pro concurrent přístup
 - Full async P2P, CI/CD
 - E2E multi-node acceptance testy
