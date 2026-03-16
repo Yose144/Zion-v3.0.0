@@ -3,7 +3,10 @@ param(
     [string]$User = "root",
     [string]$KeyPath = "$HOME/.ssh/zion_hetzner_key",
     [string]$OutFile = "scripts/mainnet-tests-dashboard.html",
-    [switch]$Open
+  [switch]$Open,
+  [switch]$Watch,
+  [int]$IntervalSeconds = 30,
+  [int]$Iterations = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,56 +32,105 @@ function Try-ParseJson {
     }
 }
 
-Write-Host "[dashboard] Collecting data from $User@$HostIp ..."
+function Get-HealthStatus {
+    param(
+        [double]$AcceptRatePct,
+        [double]$RejectTrendPct
+    )
 
-$utcNow = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    if ($AcceptRatePct -ge 95 -and $RejectTrendPct -le 5) {
+        return @{ label = "PASS"; css = "ok" }
+    }
+    if ($AcceptRatePct -ge 80 -and $RejectTrendPct -le 20) {
+        return @{ label = "WARN"; css = "warn" }
+    }
+    return @{ label = "CRIT"; css = "warn" }
+}
 
-$hostOverview = Invoke-Remote @'
+function Format-NumOrNa {
+    param($Value, [string]$Format = "N2")
+    if ($null -eq $Value -or $Value -is [string]) {
+        return "n/a"
+    }
+    return ([double]$Value).ToString($Format)
+}
+
+function Update-Dashboard {
+    param([bool]$OpenOnWrite = $false)
+
+    Write-Host "[dashboard] Collecting data from $User@$HostIp ..."
+
+    $utcNow = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $stateFile = [System.IO.Path]::ChangeExtension($OutFile, ".state.json")
+
+    $prevState = $null
+    if (Test-Path $stateFile) {
+        $prevState = Try-ParseJson (Get-Content $stateFile -Raw)
+    }
+
+    $hostOverview = Invoke-Remote @'
 printf 'hostname='; hostname
 printf '\nuptime='; uptime -p
 printf '\nload='; cat /proc/loadavg
 '@
-$memory = Invoke-Remote @'
+    $memory = Invoke-Remote @'
 free -h
 '@
 
-$dockerPs = Invoke-Remote @'
+    $dockerPs = Invoke-Remote @'
 docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
 '@
-$dockerStats = Invoke-Remote @'
+    $dockerStats = Invoke-Remote @'
 docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}'
 '@
 
-$poolStatsRaw = Invoke-Remote @'
+    $poolStatsRaw = Invoke-Remote @'
 curl -sf http://127.0.0.1:8080/stats || echo '{}'
 '@
-$poolStats = Try-ParseJson $poolStatsRaw
+    $poolStats = Try-ParseJson $poolStatsRaw
 
-$canaryStatusRaw = Invoke-Remote @'
+    $canaryStatusRaw = Invoke-Remote @'
 python3 -c 'import json,socket; s=socket.create_connection(("127.0.0.1",18332),5); s.sendall((json.dumps({"method":"get_status"})+"\n").encode()); print(s.recv(65536).decode().strip()); s.close()'
 '@
-$canaryStatusEnvelope = Try-ParseJson $canaryStatusRaw
-$canaryStatus = $null
-if ($canaryStatusEnvelope -and $canaryStatusEnvelope.status) {
-    $canaryStatus = $canaryStatusEnvelope.status
-}
+    $canaryStatusEnvelope = Try-ParseJson $canaryStatusRaw
+    $canaryStatus = $null
+    if ($canaryStatusEnvelope -and $canaryStatusEnvelope.status) {
+        $canaryStatus = $canaryStatusEnvelope.status
+    }
 
-$canaryRoutingRaw = Invoke-Remote @'
+    $canaryRoutingRaw = Invoke-Remote @'
 python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); print(s.recv(65536).decode().strip()); s.close()'
 '@
-$canaryRouting = Try-ParseJson $canaryRoutingRaw
+    $canaryRouting = Try-ParseJson $canaryRoutingRaw
 
-$poolActiveMiners = if ($poolStats -and $poolStats.active_miners -ne $null) { $poolStats.active_miners } else { "n/a" }
-$poolValidShares = if ($poolStats -and $poolStats.valid_shares -ne $null) { $poolStats.valid_shares } else { "n/a" }
-$poolInvalidShares = if ($poolStats -and $poolStats.invalid_shares -ne $null) { $poolStats.invalid_shares } else { "n/a" }
-$poolHashrate = if ($poolStats -and $poolStats.hashrate -ne $null) { $poolStats.hashrate } else { "n/a" }
+    $poolActiveMiners = if ($poolStats -and $poolStats.active_miners -ne $null) { $poolStats.active_miners } else { "n/a" }
+    $poolValidShares = if ($poolStats -and $poolStats.valid_shares -ne $null) { $poolStats.valid_shares } else { "n/a" }
+    $poolInvalidShares = if ($poolStats -and $poolStats.invalid_shares -ne $null) { $poolStats.invalid_shares } else { "n/a" }
+    $poolHashrate = if ($poolStats -and $poolStats.hashrate -ne $null) { $poolStats.hashrate } else { "n/a" }
 
-$canaryHeight = if ($canaryStatus -and $canaryStatus.chain_height -ne $null) { $canaryStatus.chain_height } else { "n/a" }
-$canaryAccepted = if ($canaryRouting -and $canaryRouting.accepted -ne $null) { $canaryRouting.accepted } else { "n/a" }
-$canaryRejected = if ($canaryRouting -and $canaryRouting.rejected -ne $null) { $canaryRouting.rejected } else { "n/a" }
-$canaryAcceptRate = if ($canaryRouting -and $canaryRouting.accept_rate_pct -ne $null) { $canaryRouting.accept_rate_pct } else { "n/a" }
+    $canaryHeight = if ($canaryStatus -and $canaryStatus.chain_height -ne $null) { $canaryStatus.chain_height } else { "n/a" }
+    $canaryAccepted = if ($canaryRouting -and $canaryRouting.accepted -ne $null) { [double]$canaryRouting.accepted } else { $null }
+    $canaryRejected = if ($canaryRouting -and $canaryRouting.rejected -ne $null) { [double]$canaryRouting.rejected } else { $null }
+    $canarySubmits = if ($canaryRouting -and $canaryRouting.submits -ne $null) { [double]$canaryRouting.submits } else { $null }
+    $canaryAcceptRate = if ($canaryRouting -and $canaryRouting.accept_rate_pct -ne $null) { [double]$canaryRouting.accept_rate_pct } else { $null }
 
-$html = @"
+    $deltaSubmits = 0.0
+    $deltaRejected = 0.0
+    if ($prevState -and $canarySubmits -ne $null -and $canaryRejected -ne $null) {
+        $deltaSubmits = [Math]::Max(0.0, $canarySubmits - [double]$prevState.submits)
+        $deltaRejected = [Math]::Max(0.0, $canaryRejected - [double]$prevState.rejected)
+    }
+
+    $rejectTrendPct = if ($deltaSubmits -gt 0) { ($deltaRejected / $deltaSubmits) * 100.0 } else { 0.0 }
+    $acceptForHealth = if ($canaryAcceptRate -ne $null) { $canaryAcceptRate } else { 0.0 }
+    $health = Get-HealthStatus -AcceptRatePct $acceptForHealth -RejectTrendPct $rejectTrendPct
+
+    $canaryAcceptedText = if ($canaryAccepted -ne $null) { $canaryAccepted.ToString("N0") } else { "n/a" }
+    $canaryRejectedText = if ($canaryRejected -ne $null) { $canaryRejected.ToString("N0") } else { "n/a" }
+    $canaryAcceptRateText = if ($canaryAcceptRate -ne $null) { $canaryAcceptRate.ToString("N2") } else { "n/a" }
+    $rejectTrendText = $rejectTrendPct.ToString("N2")
+
+    $html = @"
 <!doctype html>
 <html lang="en">
 <head>
@@ -188,15 +240,18 @@ $html = @"
       <h1>ZION Mainnet Test Dashboard</h1>
       <p>Primary host: $HostIp | Snapshot UTC: $utcNow</p>
       <p>Mode: Testnet live + V3 canary node/pool on same server, miner tested locally</p>
+      <p>Health: <span class="$($health.css)">$($health.label)</span> | Reject trend: $rejectTrendText%</p>
     </div>
 
     <div class="grid">
+      <div class="card"><div class="k">Health Status</div><div class="v $($health.css)">$($health.label)</div></div>
+      <div class="card"><div class="k">Reject Trend (delta)</div><div class="v">$rejectTrendText%</div></div>
       <div class="card"><div class="k">Testnet Active Miners</div><div class="v">$poolActiveMiners</div></div>
       <div class="card"><div class="k">Testnet Hashrate</div><div class="v">$poolHashrate</div></div>
       <div class="card"><div class="k">Canary Height</div><div class="v">$canaryHeight</div></div>
-      <div class="card"><div class="k">Canary Accept Rate</div><div class="v">$canaryAcceptRate%</div></div>
-      <div class="card"><div class="k">Canary Accepted</div><div class="v">$canaryAccepted</div></div>
-      <div class="card"><div class="k">Canary Rejected</div><div class="v">$canaryRejected</div></div>
+      <div class="card"><div class="k">Canary Accept Rate</div><div class="v">$canaryAcceptRateText%</div></div>
+      <div class="card"><div class="k">Canary Accepted</div><div class="v">$canaryAcceptedText</div></div>
+      <div class="card"><div class="k">Canary Rejected</div><div class="v">$canaryRejectedText</div></div>
       <div class="card"><div class="k">Pool Valid Shares</div><div class="v">$poolValidShares</div></div>
       <div class="card"><div class="k">Pool Invalid Shares</div><div class="v">$poolInvalidShares</div></div>
     </div>
@@ -234,21 +289,40 @@ $html = @"
       <pre>- Testnet public services remain on 3333/8080/8334/8444.
 - V3 canary runs host-local on 18332/18334/13333/19550.
 - Server-side canary miner is intentionally stopped to keep CPU headroom.
-- Local miner tests can run through SSH tunnel: 127.0.0.1:13333.</pre>
+- Local miner tests can run through SSH tunnel: 127.0.0.1:13333.
+- Health rule: PASS if accept>=95% and reject trend<=5%; WARN if accept>=80% and trend<=20%; else CRIT.</pre>
     </div>
   </div>
 </body>
 </html>
 "@
 
-$targetDir = Split-Path -Parent $OutFile
-if ($targetDir -and !(Test-Path $targetDir)) {
-    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    $targetDir = Split-Path -Parent $OutFile
+    if ($targetDir -and !(Test-Path $targetDir)) {
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    }
+
+    Set-Content -Path $OutFile -Value $html -Encoding UTF8
+    @{ submits = $canarySubmits; rejected = $canaryRejected; timestamp = $utcNow } | ConvertTo-Json | Set-Content -Path $stateFile -Encoding UTF8
+
+    Write-Host "[dashboard] Generated $OutFile"
+    if ($OpenOnWrite) {
+        Start-Process $OutFile
+    }
 }
 
-Set-Content -Path $OutFile -Value $html -Encoding UTF8
-Write-Host "[dashboard] Generated $OutFile"
-
-if ($Open) {
-    Start-Process $OutFile
+if ($Watch) {
+    $round = 0
+    while ($true) {
+        $round++
+        $shouldOpen = ($round -eq 1) -and $Open
+        Update-Dashboard -OpenOnWrite:$shouldOpen
+        if ($Iterations -gt 0 -and $round -ge $Iterations) {
+            break
+        }
+        Start-Sleep -Seconds $IntervalSeconds
+    }
+    Write-Host "[dashboard] Watch finished after $round iteration(s)."
+} else {
+    Update-Dashboard -OpenOnWrite:$Open
 }
