@@ -344,7 +344,7 @@ impl M1AgentMiner {
             .as_ref()
             .map(|hw| hw.unified_memory_mb)
             .unwrap_or(8192);
-        let scratchpad_bytes: usize = 65_536; // 64 KiB per thread
+        let scratchpad_bytes: usize = 262_144; // 256 KiB per thread (Ekam v2)
         let safe_vram = (vram_mb as usize * 1024 * 1024) / 5; // 20% unified
         let batch = config.gpu_batch_size.unwrap_or_else(|| {
             (safe_vram / scratchpad_bytes).max(512).min(8192)
