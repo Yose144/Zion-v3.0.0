@@ -411,11 +411,11 @@ void sha3_512_random_final(
 // Mirrors Rust: cosmic-harmony/src/scratchpad.rs  memory_hard_transform()
 // ============================================================================
 
-#define CL_SCRATCHPAD_BYTES (64u * 1024u)   // 65536 bytes — zlatý střed
+#define CL_SCRATCHPAD_BYTES (256u * 1024u)  // 262144 bytes — Tier 1+2 ASIC hardened
 #define CL_BLOCK_SIZE       64u
-#define CL_BLOCK_COUNT      1024u           // SCRATCHPAD_BYTES / BLOCK_SIZE
-#define CL_PASSES           2u             // Ka — dopředné průchody
-#define CL_RANDOM_READS     64u
+#define CL_BLOCK_COUNT      4096u           // SCRATCHPAD_BYTES / BLOCK_SIZE
+#define CL_PASSES           4u             // Ka — dopředné průchody (Tier 1: 2→4)
+#define CL_RANDOM_READS     256u           // Tier 1: 64→256
 
 /* CHv4.2 Merkabah Dual-Spin constants (active when CHV4_2_FORK_HEIGHT reached) */
 #define CL_BACKWARD_PASSES  2u             /* Ra — zpětné průchody */
