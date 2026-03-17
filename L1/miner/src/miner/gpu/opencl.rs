@@ -18,9 +18,10 @@ use ocl::enums::{DeviceInfo, DeviceInfoResult};
 const OPENCL_KERNEL: &str = include_str!("kernels/cosmic_harmony_deeksha.cl");
 
 /// Scratchpad size per thread (must match CL_SCRATCHPAD_BYTES in kernel)
-const SCRATCHPAD_BYTES: usize = 64 * 1024;
+/// Ekam v2 (Tier 1): 256 KiB per thread
+const SCRATCHPAD_BYTES: usize = 256 * 1024;
 /// Max parallel threads when memory-hard is active (scratchpad × threads ≤ ~2 GB)
-/// 4096 × 64 KiB = 256 MiB — fits comfortably in 4+ GB VRAM
+/// 4096 × 256 KiB = 1 GiB — fits in 2+ GB VRAM
 const MH_BATCH_DEFAULT: usize = 4096;
 
 /// OpenCL miner implementation
