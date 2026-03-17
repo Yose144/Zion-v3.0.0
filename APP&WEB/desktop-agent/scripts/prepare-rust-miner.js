@@ -26,8 +26,8 @@ const os = require('os');
 const { spawnSync } = require('child_process');
 
 /**
- * Detect optimal GPU features for current platform.
- * macOS arm64 → metal, macOS x64 → gpu (OpenCL), Linux/Win → gpu,cuda
+ * Detect optimal GPU features for current platform with enhanced CUDA fallback.
+ * macOS arm64 → metal, macOS x64 → gpu (OpenCL), Linux/Win → gpu,cuda with fallback
  */
 function detectPlatformFeatures() {
   const platform = process.platform;   // 'darwin', 'linux', 'win32'
@@ -45,20 +45,25 @@ function detectPlatformFeatures() {
   }
 
   if (platform === 'linux') {
-    // Check if nvidia-smi exists → enable CUDA too
-    const nv = spawnSync('which', ['nvidia-smi'], { stdio: 'pipe' });
-    if (nv.status === 0) {
-      console.log('[prepare-rust-miner] 🐧 Linux + NVIDIA detected → enabling OpenCL + CUDA');
+    // Enhanced NVIDIA detection with CUDA capability check
+    const cudaCheck = checkCudaCapability();
+    if (cudaCheck.hasCuda) {
+      console.log('[prepare-rust-miner] 🐧 Linux + NVIDIA CUDA detected → enabling OpenCL + CUDA');
+      console.log(`[prepare-rust-miner] 📊 GPU Info: ${cudaCheck.gpuCount} GPUs, Driver: ${cudaCheck.driverVersion}`);
       return 'gpu,cuda';
     }
-    console.log('[prepare-rust-miner] 🐧 Linux detected → enabling OpenCL GPU');
+    console.log('[prepare-rust-miner] 🐧 Linux detected → enabling OpenCL GPU (no CUDA)');
     return 'gpu';
   }
 
   if (platform === 'win32') {
+    // Enhanced Windows CUDA detection
+    const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    if (forceCuda) {
-      console.log('[prepare-rust-miner] 🪟 Windows detected → enabling OpenCL + CUDA (forced)');
+
+    if (forceCuda || cudaCheck.hasCuda) {
+      console.log('[prepare-rust-miner] 🪟 Windows + NVIDIA CUDA detected → enabling OpenCL + CUDA');
+      console.log(`[prepare-rust-miner] 📊 GPU Info: ${cudaCheck.gpuCount} GPUs, Driver: ${cudaCheck.driverVersion}`);
       return 'gpu,cuda';
     }
     console.log('[prepare-rust-miner] 🪟 Windows detected → enabling OpenCL GPU (safe default)');
@@ -67,6 +72,71 @@ function detectPlatformFeatures() {
 
   console.log('[prepare-rust-miner] ⚠️  Unknown platform → enabling OpenCL GPU');
   return 'gpu';
+}
+
+/**
+ * Enhanced CUDA capability detection with fallback logic
+ */
+function checkCudaCapability() {
+  const result = {
+    hasCuda: false,
+    gpuCount: 0,
+    driverVersion: 'unknown',
+    fallbackReason: null
+  };
+
+  try {
+    // Check nvidia-smi availability
+    const nvSmi = spawnSync('nvidia-smi', ['--query-gpu=count', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
+    if (nvSmi.status === 0) {
+      const gpuCount = parseInt(nvSmi.stdout.toString().trim());
+      if (gpuCount > 0) {
+        result.gpuCount = gpuCount;
+
+        // Get driver version
+        const driverCheck = spawnSync('nvidia-smi', ['--query-gpu=driver_version', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
+        if (driverCheck.status === 0) {
+          result.driverVersion = driverCheck.stdout.toString().trim().split('\n')[0];
+        }
+
+        // Check CUDA runtime availability
+        const cudaVersion = spawnSync('nvcc', ['--version'], { stdio: 'pipe' });
+        if (cudaVersion.status === 0) {
+          result.hasCuda = true;
+          console.log('[prepare-rust-miner] ✅ CUDA toolkit detected');
+        } else {
+          result.fallbackReason = 'CUDA toolkit not found, falling back to OpenCL';
+          console.log('[prepare-rust-miner] ⚠️  CUDA toolkit not found, will use OpenCL fallback');
+        }
+      }
+    } else {
+      result.fallbackReason = 'nvidia-smi not available';
+    }
+  } catch (error) {
+    result.fallbackReason = `CUDA detection error: ${error.message}`;
+    console.log(`[prepare-rust-miner] ⚠️  CUDA detection failed: ${error.message}`);
+  }
+
+  return result;
+}
+
+/**
+ * Get optimal thread configuration for GPU mining
+ */
+function getOptimalGpuThreads() {
+  const cudaCheck = checkCudaCapability();
+  let threads = 2; // safe default
+
+  if (cudaCheck.hasCuda && cudaCheck.gpuCount > 0) {
+    // NVIDIA GPUs: more aggressive threading
+    threads = Math.min(cudaCheck.gpuCount * 4, 16);
+  } else {
+    // AMD/Intel GPUs via OpenCL: conservative threading
+    threads = Math.min(cudaCheck.gpuCount * 2, 8);
+  }
+
+  console.log(`[prepare-rust-miner] 🧵 Optimal GPU threads: ${threads} (based on ${cudaCheck.gpuCount} GPUs)`);
+  return threads;
 }
 
 function parseArgs(argv) {
@@ -90,7 +160,9 @@ function parseArgs(argv) {
 
   // Auto-detect if no explicit features specified or --auto flag
   if (!out.features || out.autoDetect) {
-    out.features = detectPlatformFeatures();
+    const platformFeatures = detectPlatformFeatures();
+    // Always include native-cosmic-harmony for Ekam Deeksha v2 scratchpad support
+    out.features = platformFeatures ? `${platformFeatures},native-cosmic-harmony` : 'native-cosmic-harmony';
   }
 
   return out;
@@ -213,34 +285,51 @@ function main() {
       throw new Error(`Rust miner directory not found. Tried: ${rustMinerRootCandidates.join(', ')}`);
     }
 
-    const attemptBuild = (features) => {
+    const attemptBuild = (features, isRetry = false) => {
       const cargoArgs = ['build', '--release'];
       if (features) {
         cargoArgs.push('--features', features);
       }
-      console.log(`[prepare-rust-miner] Building Rust miner in ${rustMinerRoot} (features=${features || 'default'})`);
-      return spawnSync('cargo', cargoArgs, {
+
+      const featureDesc = features || 'default';
+      const retryMsg = isRetry ? ' (retry with fallback)' : '';
+      console.log(`[prepare-rust-miner] Building Rust miner in ${rustMinerRoot} (features=${featureDesc})${retryMsg}`);
+
+      const result = spawnSync('cargo', cargoArgs, {
         cwd: rustMinerRoot,
         stdio: 'inherit',
         env: process.env
       });
+
+      return {
+        ...result,
+        features: features,
+        isRetry: isRetry
+      };
     };
 
     let res = attemptBuild(args.features);
     if (res.error) {
       throw res.error;
     }
+
     if (res.status !== 0) {
       const requested = String(args.features || '').toLowerCase();
       const canFallbackGpu = requested.includes('cuda') && requested !== 'gpu';
-      if (canFallbackGpu) {
+
+      if (canFallbackGpu && !res.isRetry) {
         console.warn('[prepare-rust-miner] ⚠️ CUDA build failed, retrying with OpenCL-only features=gpu');
-        res = attemptBuild('gpu');
-      }
-      if (res.error) {
-        throw res.error;
-      }
-      if (res.status !== 0) {
+        res = attemptBuild('gpu', true);
+
+        if (res.status !== 0) {
+          console.error('[prepare-rust-miner] ❌ Both CUDA and OpenCL builds failed');
+          throw new Error(`cargo build failed with exit code ${res.status} (tried CUDA and OpenCL)`);
+        } else {
+          console.log('[prepare-rust-miner] ✅ OpenCL fallback build successful');
+          // Update features to reflect what actually worked
+          args.features = 'gpu';
+        }
+      } else {
         throw new Error(`cargo build failed with exit code ${res.status}`);
       }
     }
@@ -455,12 +544,88 @@ function main() {
         syncedGpuAssets += 1;
       }
     }
-    console.log(`[prepare-rust-miner] ✅ Synced ${syncedGpuAssets} canonical GPU asset groups into desktop resources`);
+  console.log(`[prepare-rust-miner] ✅ Synced ${syncedGpuAssets} canonical GPU asset groups into desktop resources`);
   } else {
     console.warn('[prepare-rust-miner] ⚠️ Canonical GPU asset source not found at L1/native-libs/all');
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // Auto-tuning configuration generation
+  // ═══════════════════════════════════════════════════════════
+  generateGpuTuningConfig(resourcesDir, args.features);
+
   console.log('[prepare-rust-miner] Done');
+}
+
+/**
+ * Generate GPU tuning configuration based on detected hardware
+ */
+function generateGpuTuningConfig(resourcesDir, features) {
+  const tuningConfig = {
+    version: "2.9.8",
+    generated_at: new Date().toISOString(),
+    platform: process.platform,
+    arch: os.arch(),
+    gpu_features: features,
+    recommendations: {}
+  };
+
+  // Get optimal thread configuration
+  const optimalThreads = getOptimalGpuThreads();
+  tuningConfig.recommendations.threads = optimalThreads;
+
+  // GPU-specific optimizations
+  const cudaCheck = checkCudaCapability();
+  if (cudaCheck.hasCuda) {
+    tuningConfig.recommendations.cuda = {
+      enabled: true,
+      gpu_count: cudaCheck.gpuCount,
+      driver_version: cudaCheck.driverVersion,
+      thread_distribution: "auto",
+      memory_optimization: "aggressive"
+    };
+  } else {
+    tuningConfig.recommendations.opencl = {
+      enabled: true,
+      fallback_reason: cudaCheck.fallbackReason,
+      thread_distribution: "conservative",
+      memory_optimization: "balanced"
+    };
+  }
+
+  // Platform-specific tuning
+  if (process.platform === 'darwin') {
+    if (os.arch() === 'arm64') {
+      tuningConfig.recommendations.metal = {
+        enabled: true,
+        performance_mode: "high",
+        memory_pool: "unified"
+      };
+    }
+  }
+
+  // Mining algorithm recommendations
+  tuningConfig.recommendations.algorithms = {
+    cosmic_harmony: {
+      priority: "high",
+      threads: optimalThreads,
+      intensity: cudaCheck.hasCuda ? "maximum" : "balanced"
+    },
+    multi_algo: {
+      enabled: true,
+      switch_interval_minutes: 15,
+      hysteresis_percent: 5.0
+    }
+  };
+
+  // Write tuning config
+  const tuningConfigPath = path.join(resourcesDir, 'gpu-tuning-config.json');
+  try {
+    fs.writeFileSync(tuningConfigPath, JSON.stringify(tuningConfig, null, 2));
+    console.log(`[prepare-rust-miner] ✅ Generated GPU tuning config: ${tuningConfigPath}`);
+  } catch (error) {
+    console.warn(`[prepare-rust-miner] ⚠️ Failed to write tuning config: ${error.message}`);
+  }
 }
 
 main();
