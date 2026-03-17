@@ -1,7 +1,7 @@
 {
   "name": "zion-desktop-agent",
-  "version": "2.9.7",
-  "description": "ZION TerraNova Desktop Mining Agent - Professional mining software with consciousness evolution",
+  "version": "2.9.9",
+  "description": "ZION Ekam Deeksha v2.9.9 Desktop Mining Agent - GPU + CPU mining with 256 KiB hardened scratchpad",
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
   "scripts": {

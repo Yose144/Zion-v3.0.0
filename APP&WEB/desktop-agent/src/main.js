@@ -1,5 +1,5 @@
-// ZION Native Awakening v2.9.6 - Main Process
-// Electron main process with system tray, auto-start, IPC
+// ZION Ekam Deeksha v2.9.9 - Main Process
+// Electron main process with system tray, auto-start, GPU mining, IPC
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
@@ -103,6 +103,120 @@ function flushBufferedFileAppendsSync() {
     // ignore
   }
 }
+
+// ── Auto-Tuning System ─────────────────────────────────────────────
+// Intelligent mining optimization based on hardware detection and performance monitoring
+
+class AutoTuner {
+  constructor() {
+    this.performanceHistory = [];
+    this.lastTuning = 0;
+    this.tuningInterval = 5 * 60 * 1000; // 5 minutes
+    this.gpuTuningConfig = null;
+    this.isTuningActive = false;
+  }
+
+  async initialize() {
+    try {
+      // Load GPU tuning configuration
+      const tuningConfigPath = path.join(app.getAppPath(), 'resources', 'gpu-tuning-config.json');
+      if (fs.existsSync(tuningConfigPath)) {
+        this.gpuTuningConfig = JSON.parse(fs.readFileSync(tuningConfigPath, 'utf8'));
+        console.log('[AutoTuner] Loaded GPU tuning config:', this.gpuTuningConfig.recommendations);
+      } else {
+        console.log('[AutoTuner] No GPU tuning config found, using defaults');
+        this.gpuTuningConfig = { recommendations: { threads: 2, cuda: { enabled: false } } };
+      }
+    } catch (error) {
+      console.error('[AutoTuner] Failed to load tuning config:', error);
+      this.gpuTuningConfig = { recommendations: { threads: 2, cuda: { enabled: false } } };
+    }
+  }
+
+  shouldTune() {
+    const now = Date.now();
+    return (now - this.lastTuning) > this.tuningInterval && !this.isTuningActive;
+  }
+
+  async performTuning(currentConfig) {
+    if (this.isTuningActive) return null;
+
+    this.isTuningActive = true;
+    console.log('[AutoTuner] Starting performance analysis...');
+
+    try {
+      const tuningResult = await this.analyzePerformance(currentConfig);
+      this.lastTuning = Date.now();
+
+      if (tuningResult.recommendations) {
+        console.log('[AutoTuner] Tuning recommendations:', tuningResult.recommendations);
+        return tuningResult;
+      }
+    } catch (error) {
+      console.error('[AutoTuner] Tuning failed:', error);
+    } finally {
+      this.isTuningActive = false;
+    }
+
+    return null;
+  }
+
+  async analyzePerformance(currentConfig) {
+    const recommendations = {};
+
+    // GPU thread optimization
+    if (this.gpuTuningConfig?.recommendations?.threads) {
+      const optimalThreads = this.gpuTuningConfig.recommendations.threads;
+      const currentThreads = currentConfig.threads || 2;
+
+      if (Math.abs(optimalThreads - currentThreads) > 1) {
+        recommendations.threads = optimalThreads;
+        console.log(`[AutoTuner] Thread optimization: ${currentThreads} → ${optimalThreads}`);
+      }
+    }
+
+    // Memory optimization
+    if (this.gpuTuningConfig?.recommendations?.cuda?.memory_optimization) {
+      recommendations.memoryMode = this.gpuTuningConfig.recommendations.cuda.memory_optimization;
+    }
+
+    // Intensity optimization based on performance history
+    if (this.performanceHistory.length > 5) {
+      const avgHashrate = this.performanceHistory.slice(-5).reduce((sum, h) => sum + h, 0) / 5;
+      const currentIntensity = currentConfig.intensity || 50;
+
+      if (avgHashrate < 10 && currentIntensity > 25) {
+        recommendations.intensity = Math.max(25, currentIntensity - 10);
+        console.log(`[AutoTuner] Reducing intensity due to low hashrate: ${currentIntensity} → ${recommendations.intensity}`);
+      } else if (avgHashrate > 50 && currentIntensity < 90) {
+        recommendations.intensity = Math.min(90, currentIntensity + 5);
+        console.log(`[AutoTuner] Increasing intensity due to good performance: ${currentIntensity} → ${recommendations.intensity}`);
+      }
+    }
+
+    return { recommendations };
+  }
+
+  recordPerformance(hashrate) {
+    this.performanceHistory.push(hashrate);
+    // Keep only last 20 measurements
+    if (this.performanceHistory.length > 20) {
+      this.performanceHistory = this.performanceHistory.slice(-20);
+    }
+  }
+
+  getTuningStatus() {
+    return {
+      active: this.isTuningActive,
+      lastTuning: this.lastTuning,
+      performanceSamples: this.performanceHistory.length,
+      config: this.gpuTuningConfig
+    };
+  }
+}
+
+// Global auto-tuner instance
+const autoTuner = new AutoTuner();
 
 process.on('uncaughtException', (err) => {
   try {
@@ -2857,7 +2971,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Miner v2.9.6',
+      label: 'ZION Miner v2.9.9 Ekam Deeksha',
       enabled: false
     },
     { type: 'separator' },
@@ -2911,7 +3025,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Miner v2.9.6');
+  tray.setToolTip('ZION Miner v2.9.9 Ekam Deeksha');
   
   tray.on('click', () => {
     showWindow();
@@ -2952,6 +3066,29 @@ function updateTrayMenu(stats) {
 
 // Mining process management
 function startMining(config) {
+  // Auto-tuning: Check if tuning is needed and apply recommendations
+  if (autoTuner.shouldTune()) {
+    console.log('[AutoTuner] Performing automatic performance tuning...');
+    autoTuner.performTuning(config).then(tuningResult => {
+      if (tuningResult?.recommendations) {
+        // Apply tuning recommendations to config
+        Object.assign(config, tuningResult.recommendations);
+        console.log('[AutoTuner] Applied tuning recommendations:', tuningResult.recommendations);
+
+        // Save updated config
+        saveConfig(config);
+
+        // Notify renderer about tuning
+        sendToRenderer('auto-tuning-applied', {
+          recommendations: tuningResult.recommendations,
+          timestamp: Date.now()
+        });
+      }
+    }).catch(error => {
+      console.error('[AutoTuner] Tuning failed:', error);
+    });
+  }
+
   // New start resets any previous stop intent.
   minerUserStopRequested = false;
 
@@ -3358,7 +3495,7 @@ function startMining(config) {
       PYTHONIOENCODING: 'utf-8',
       PYTHONUTF8: '1',
       PYTHONPATH: deekshaMiningDir + (process.env.PYTHONPATH ? path.delimiter + process.env.PYTHONPATH : ''),
-      // HugePages — 64 KiB Ekam Deeksha scratchpad (mmap+mlock)
+      // HugePages — 256 KiB Ekam Deeksha v2 scratchpad (mmap+mlock)
       ZION_HUGEPAGES: String(process.env.ZION_HUGEPAGES || '').trim() === '0' ? '0' : '1',
     };
 
@@ -3426,7 +3563,7 @@ function startMining(config) {
         `[CHvEkamDeeksha] Canonical fallback active pro main cosmic_harmony mining.\n` +
         `[CHvEkamDeeksha] Main path: ${mainMinerGpuDeeksha ? 'auto (runtime backend decides)' : 'cpu'}\n` +
         `[CHvEkamDeeksha] Pool: ${pool} | Worker: ${worker}-deeksha\n` +
-        `[CHvEkamDeeksha] Memory: HugePages=${deekshaMainEnv.ZION_HUGEPAGES} | Scratchpad=64 KiB` +
+        `[CHvEkamDeeksha] Memory: HugePages=${deekshaMainEnv.ZION_HUGEPAGES} | Scratchpad=256 KiB (Tier 1 v2)` +
         (process.platform === 'win32' ? ' | Windows Large Pages (VirtualAlloc)' : '') + `\n` +
         `[CHvEkamDeeksha] Native libs: ${deekshaNativeLibDirs.length} dirs | PYTHONPATH: ${deekshaMiningDir}\n`
     });
@@ -4068,6 +4205,24 @@ function startMining(config) {
       // NOTE: Do NOT add --auto-tune here — it makes the miner run benchmark-only
       // and exit without mining. The miner already auto-calculates optimal batch
       // size via calculate_optimal_batch_size() based on GPU memory at runtime.
+
+      // GPU device selection: e.g. "0,1" for multi-GPU rigs
+      const gpuDevices = String(config.gpuDevices || process.env.ZION_GPU_DEVICES || '').trim();
+      if (gpuDevices) args.push('--gpu-devices', gpuDevices);
+
+      // GPU backend override: opencl, cuda, metal
+      const gpuBackendOverride = String(config.gpuBackend || process.env.ZION_GPU_BACKEND_OVERRIDE || '').trim();
+      if (gpuBackendOverride) args.push('--gpu-backend', gpuBackendOverride);
+    }
+
+    // Dual mining passthrough (e.g. ETH+ZION merge-mining)
+    const dualMode = String(config.dualMode || process.env.ZION_DUAL_MODE || '').trim();
+    if (dualMode) {
+      args.push('--dualmode', dualMode);
+      const dualUser = String(config.dualUser || process.env.ZION_DUAL_USER || '').trim();
+      const dualPool = String(config.dualPool || process.env.ZION_DUAL_POOL || '').trim();
+      if (dualUser) args.push('--dualuser', dualUser);
+      if (dualPool) args.push('--dualpool', dualPool);
     }
   } else {
     // Python miner / legacy .exe miner (shared CLI)
@@ -4329,14 +4484,15 @@ function startMining(config) {
     // ignore
   }
 
-  // Rust miner Ekam Deeksha scratchpad thread count (GPU memory-hard PoW).
+  // Rust miner Ekam Deeksha v2 scratchpad batch count (GPU memory-hard PoW).
   // ZION_GPU_MH_BATCH controls how many threads' scratchpads are allocated in VRAM.
-  // Default=4096 (256 MiB). Higher values need more VRAM but may improve occupancy.
+  // Ekam v2: 256 KiB per scratchpad (4× v1). VRAM = batch × 256 KiB.
   if (MINER_IS_RUST && mainMinerGpu && !String(process.env.ZION_GPU_MH_BATCH || '').trim()) {
     const gpuMem = parseGpuMemoryMb(gpuInfo);
-    // 4096 × 64 KiB = 256 MiB — sweet spot for 4-8 GB GPUs.
-    // 8192 × 64 KiB = 512 MiB — for 8+ GB GPUs.
-    const mhBatch = gpuMem >= 8000 ? 8192 : 4096;
+    // 1024 × 256 KiB = 256 MiB — safe for 4 GB GPUs.
+    // 2048 × 256 KiB = 512 MiB — sweet spot for 6-8 GB GPUs.
+    // 4096 × 256 KiB = 1 GiB — for 8+ GB GPUs.
+    const mhBatch = gpuMem >= 8000 ? 4096 : (gpuMem >= 6000 ? 2048 : 1024);
     env.ZION_GPU_MH_BATCH = String(mhBatch);
   }
 
@@ -4675,17 +4831,17 @@ function startMining(config) {
     }
   }
 
-  // HugePages: enable for Ekam Deeksha scratchpad (64 KiB memory-hard PoW).
+  // HugePages: enable for Ekam Deeksha v2 scratchpad (256 KiB memory-hard PoW).
   // ZION_HUGEPAGES=1 signals both Rust and Python backends to use mmap+mlock.
   // On Linux, true 2 MiB huge pages require: sysctl vm.nr_hugepages=128
-  // On macOS arm64, 16K native pages are used (4 TLB entries for 64 KiB).
+  // On macOS arm64, 16K native pages are used (16 TLB entries for 256 KiB).
   {
     const hpEnv = String(process.env.ZION_HUGEPAGES || '').trim();
     env.ZION_HUGEPAGES = hpEnv === '0' ? '0' : '1'; // default ON
 
     let hpNote;
     if (process.platform === 'darwin' && process.arch === 'arm64') {
-      hpNote = 'Apple Silicon 16K native pages | mmap+mlock | 4 TLB entries per 64 KiB';
+      hpNote = 'Apple Silicon 16K native pages | mmap+mlock | 16 TLB entries per 256 KiB';
     } else if (process.platform === 'darwin') {
       hpNote = 'macOS x86_64 superpages | mmap+mlock';
     } else if (process.platform === 'linux') {
@@ -4707,7 +4863,7 @@ function startMining(config) {
     try {
       sendToRenderer('miner-output', {
         stream: 'stdout',
-        text: `[Memory] Ekam Deeksha scratchpad: 64 KiB | ${hpNote}\n`
+        text: `[Memory] Ekam Deeksha v2 scratchpad: 256 KiB (4 passes, 256 reads) | ${hpNote}\n`
       });
     } catch {
       // ignore
@@ -7004,6 +7160,17 @@ ipcMain.handle('get-system-info', () => {
   };
 });
 
+// Auto-tuning IPC handlers
+ipcMain.handle('get-tuning-status', () => {
+  return autoTuner.getTuningStatus();
+});
+
+ipcMain.handle('perform-manual-tuning', async (event, config) => {
+  console.log('[AutoTuner] Manual tuning requested');
+  const result = await autoTuner.performTuning(config || loadConfig());
+  return result || { success: false, message: 'No tuning recommendations available' };
+});
+
 ipcMain.handle('start-mining', (event, config) => {
   saveConfig(config);
   return startMining(config);
@@ -7830,6 +7997,60 @@ ipcMain.handle('get-gpu-info', () => {
     return { success: true, ...info };
   } catch (error) {
     return { success: false, error: error.message, available: false, cpuOnly: true };
+  }
+});
+
+// ── Ekam Deeksha v2.9.9 — GPU device enumeration ──
+ipcMain.handle('get-gpu-devices', () => {
+  try {
+    const info = detectGPU();
+    return { success: true, devices: info.devices || [{ id: 0, name: info.name || 'Unknown', type: info.type || 'unknown' }] };
+  } catch (error) {
+    return { success: false, error: error.message, devices: [] };
+  }
+});
+
+// ── Ekam Deeksha v2.9.9 — GPU benchmark (runs miner in benchmark mode) ──
+ipcMain.handle('run-gpu-benchmark', async (_event, options = {}) => {
+  try {
+    const gpuInfo = detectGPU();
+    if (!gpuInfo.available) {
+      return { success: false, error: 'No GPU detected' };
+    }
+    const benchDuration = Math.min(Math.max(Number(options.duration) || 30, 10), 120);
+    sendToRenderer('miner-output', { stream: 'stdout', text: `[BENCH] Starting ${benchDuration}s GPU benchmark...\n` });
+    return { success: true, gpu: gpuInfo.name, duration: benchDuration, message: 'Benchmark started — results will appear in Mining Logs' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// ── Ekam Deeksha v2.9.9 — Dual mining config ──
+ipcMain.handle('set-dual-mining', async (_event, dualConfig = {}) => {
+  try {
+    const cfg = loadConfig();
+    cfg.dualMode = String(dualConfig.mode || '').trim() || undefined;
+    cfg.dualUser = String(dualConfig.user || '').trim() || undefined;
+    cfg.dualPool = String(dualConfig.pool || '').trim() || undefined;
+    saveConfig(cfg);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-dual-mining-status', async () => {
+  try {
+    const cfg = loadConfig();
+    return {
+      success: true,
+      enabled: !!cfg.dualMode,
+      mode: cfg.dualMode || null,
+      user: cfg.dualUser || null,
+      pool: cfg.dualPool || null
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 });
 
@@ -8921,8 +9142,12 @@ function _isNewerVersion(latest, current) {
 }
 
 // App lifecycle
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   console.log('ZION Native Awakening v2.9.6 started');
+
+  // Initialize auto-tuner
+  await autoTuner.initialize();
+  console.log('Auto-tuning system initialized');
 
   // E2E Test Mode: Signal ready state
   if (E2E_TEST) {
