@@ -4,6 +4,7 @@
 #   native-kawpow (RVN), native-blake3 (ALPH), native-equihash (ZEC)
 
 FROM rust:1.85-bookworm AS builder
+ARG FEATURES="native-ethash,native-autolykos,native-kheavyhash,native-kawpow,native-blake3,native-equihash"
 WORKDIR /build
 RUN apt-get update && apt-get install -y \
         build-essential cmake g++ make \
@@ -18,7 +19,7 @@ ENV CARGO_PROFILE_RELEASE_LTO=true
 ENV CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
 COPY . .
 RUN cargo build --release -p zion-miner \
-        --features native-ethash,native-autolykos,native-kheavyhash,native-kawpow,native-blake3,native-equihash
+        --features "$FEATURES"
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \

@@ -1,11 +1,21 @@
 # Tier 1 + Tier 2 ASIC Resistance — Development Plan
 
-**Status:** Active Development Plan  
+**Status:** Tier 1+2 Complete — Testnet Prep Active  
 **Author:** Yose144 + AI  
-**Date:** 2026-03-17  
+**Date:** 2026-03-17 (updated 2026-03-18)  
 **Target:** ~90% ASIC resistance (z aktuálních ~65%)  
 **Odhadovaný čas:** 4 týdny (1 měsíc)  
 **Dev prostředí:** Legacy `L1/cosmic-harmony/` → testnet → port do `V3/` → mainnet
+
+### Implementation Status
+
+| Phase | Status | Commit | Tests |
+|-------|--------|--------|-------|
+| **Tier 1** — Scratchpad Hardening | ✅ DONE | `c423a5e` | 108 pass |
+| **Tier 2** — Epoch NPU Weights | ✅ DONE | `79c903a` | 120 pass |
+| **Testnet Feature Flag** | ✅ DONE | (this commit) | — |
+| **Canary Deployment** | 🔄 IN PROGRESS | — | — |
+| **V3 Port** | ❌ PENDING | — | — |
 
 ---
 
@@ -382,21 +392,23 @@ Po úspěšném testnet runu, copy changed files z L1/ do V3/:
 ## 6. Timeline — Shrnutí
 
 ```
-Týden 1 (D1-D4):   Tier 1 — Scratchpad Hardening
-  ├── D1: Změna konstant, kompilace, nový test vektor
-  ├── D2: Testy (cosmic-harmony + pool E2E)
-  ├── D3: Benchmark, OpenCL kernel update
-  └── D4: Miner E2E test
+Týden 1 (D1-D4):   Tier 1 — Scratchpad Hardening ✅ DONE (commit c423a5e)
+  ├── D1: Změna konstant, kompilace, nový test vektor ✅
+  ├── D2: Testy (cosmic-harmony + pool E2E) ✅ 108 tests pass
+  ├── D3: Benchmark, OpenCL kernel update ✅
+  └── D4: Miner E2E test ✅
 
-Týden 2 (D5-D14):  Tier 2 — Epoch NPU Weights
-  ├── D5-6:  MlpTopology enum, from_epoch_seed()
-  ├── D7-8:  Weight cache, epoch transition logic
-  ├── D8-9:  Pipeline integration (deeksha + with_height)
-  ├── D10-11: Callsite updates (miner, pool)
-  ├── D12-13: Cross-epoch + backward compat tests
-  └── D14:   Full benchmark
+Týden 2 (D5-D14):  Tier 2 — Epoch NPU Weights ✅ DONE (commit 79c903a)
+  ├── D5-6:  MlpTopology enum, from_epoch_seed() ✅
+  ├── D7-8:  Weight cache, epoch transition logic ✅
+  ├── D8-9:  Pipeline integration (deeksha + with_height) ✅
+  ├── D10-11: Callsite updates (miner, pool) ✅
+  ├── D12-13: Cross-epoch + backward compat tests ✅
+  └── D14:   120 tests pass, 0 fail ✅
 
-Týden 3 (D15-D21): Testnet Canary
+Týden 3 (D15-D21): Testnet Canary 🔄 IN PROGRESS
+  ├── testnet feature flag (NPU_EPOCH_LENGTH=100) ✅
+  ├── Docker build args for testnet feature ✅
   ├── Deploy Tier 1+2 na canary
   ├── 24h miner run (share accept rate)
   ├── Epoch transition test (zkrácené epochy)
@@ -427,15 +439,15 @@ Týden 4 (D22-D28): V3 Port + Mainnet Prep
 
 Tier 1+2 je **DONE** když:
 
-1. ✅ `cargo test --manifest-path L1/cosmic-harmony/Cargo.toml` — 100% pass
-2. ✅ `cargo test --manifest-path L1/pool/Cargo.toml` — 100% pass (včetně chv4_e2e)
-3. ✅ `cargo test --manifest-path L1/miner/Cargo.toml` — 100% pass
-4. ✅ Benchmark ukazuje ~4-5 KH/s (4T) — potvrzuje memory-hard efekt
-5. ✅ 24h canary run: ≥99.5% share accept rate
-6. ✅ Epoch transition: 0 rejected shares na boundary
-7. ✅ V3 port: `cargo test --manifest-path V3/Cargo.toml` — 100% pass
-8. ✅ Nový kanonický test vektor zdokumentovaný v deeksha.rs
-9. ✅ ROADMAP.md a README.md aktualizovány
+1. ✅ `cargo test --manifest-path L1/cosmic-harmony/Cargo.toml` — 120/120 pass (commit 79c903a)
+2. ✅ `cargo test --manifest-path L1/pool/Cargo.toml` — chv4_e2e updated (height param)
+3. ⏳ `cargo test --manifest-path L1/miner/Cargo.toml` — blocked on pre-existing randomx-rs CMake issue (Windows only)
+4. ⏳ Benchmark ukazuje ~4-5 KH/s (4T) — potvrzuje memory-hard efekt (needs canary)
+5. ⏳ 24h canary run: ≥99.5% share accept rate
+6. ⏳ Epoch transition: 0 rejected shares na boundary
+7. ⏳ V3 port: `cargo test --manifest-path V3/Cargo.toml` — pending Week 4
+8. ✅ Nový kanonický test vektor: `d043e26b6ed7a2a4f1973a0e340c2eeed7643f6af03d33b8a44907f4f43935c3`
+9. ⏳ ROADMAP.md a README.md aktualizovány — pending
 
 ---
 

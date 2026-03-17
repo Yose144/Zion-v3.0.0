@@ -5,7 +5,9 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.core
-    image: zion-core:2.9.8
+      args:
+        FEATURES: testnet
+    image: zion-core:2.9.8-testnet
     container_name: zion-core
     restart: unless-stopped
     ports:
@@ -39,7 +41,7 @@ services:
         ipv4_address: 172.29.0.10
 
   seed1:
-    image: zion-core:2.9.8
+    image: zion-core:2.9.8-testnet
     container_name: zion-seed-1
     restart: unless-stopped
     depends_on:
@@ -66,7 +68,7 @@ services:
         ipv4_address: 172.29.0.11
 
   seed2:
-    image: zion-core:2.9.8
+    image: zion-core:2.9.8-testnet
     container_name: zion-seed-2
     restart: unless-stopped
     depends_on:
@@ -96,7 +98,9 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.pool
-    image: zion-pool:2.9.8
+      args:
+        FEATURES: "native-ethash,native-autolykos,native-kheavyhash,testnet"
+    image: zion-pool:2.9.8-testnet
     container_name: zion-pool
     restart: unless-stopped
     ports:
@@ -129,7 +133,9 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.miner
-    image: zion-miner:2.9.8
+      args:
+        FEATURES: "native-ethash,native-autolykos,native-kheavyhash,native-kawpow,native-blake3,native-equihash,testnet"
+    image: zion-miner:2.9.8-testnet
     container_name: zion-miner
     restart: unless-stopped
     command:
