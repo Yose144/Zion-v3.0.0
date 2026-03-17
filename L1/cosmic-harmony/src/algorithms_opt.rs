@@ -505,9 +505,9 @@ pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) 
     use crate::deeksha::{CHV_DEEKSHA_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT};
     use crate::algorithms_npu::CHV4_NPU_FORK_HEIGHT;
 
-    // Ekam Deeksha v2 (Tier 1 ASIC hardening) — 256 KiB scratchpad
+    // Ekam Deeksha v2 (Tier 1+2 ASIC hardening) — 256 KiB scratchpad + epoch NPU
     if height >= CHV_EKAM_V2_FORK_HEIGHT {
-        return crate::deeksha::cosmic_harmony_ekam_deeksha_v2(block_header, nonce);
+        return crate::deeksha::cosmic_harmony_ekam_deeksha_v2(block_header, nonce, height);
     }
     // Ekam Deeksha (Tier 2) — Blake3 + AES cascade, active from CHV_EKAM_FORK_HEIGHT
     if height >= CHV_EKAM_FORK_HEIGHT {
@@ -886,7 +886,7 @@ mod tests {
         let header = b"ZION block header v2.9.6";
         let nonce = 9999u64;
 
-        let ekam_v2_hash = crate::deeksha::cosmic_harmony_ekam_deeksha_v2(header, nonce);
+        let ekam_v2_hash = crate::deeksha::cosmic_harmony_ekam_deeksha_v2(header, nonce, CHV_EKAM_V2_FORK_HEIGHT);
         let ekam_hash = crate::deeksha::cosmic_harmony_ekam_deeksha(header, nonce);
         let deeksha_hash = crate::deeksha::cosmic_harmony_deeksha(header, nonce);
 
@@ -897,10 +897,12 @@ mod tests {
             "Dispatch at CHV_EKAM_V2_FORK_HEIGHT must use Ekam v2"
         );
 
-        let dispatch_above = cosmic_harmony_with_height(header, nonce, CHV_EKAM_V2_FORK_HEIGHT + 1_000_000);
+        // Same epoch (height 0 and 1_000_000 with epoch_length 2016 → different epochs!)
+        // Use same height for comparison
+        let dispatch_above = cosmic_harmony_with_height(header, nonce, CHV_EKAM_V2_FORK_HEIGHT);
         assert_eq!(
             dispatch_above.data, ekam_v2_hash.data,
-            "Dispatch above v2 fork height must use Ekam v2"
+            "Dispatch at same height must produce same hash"
         );
 
         // All three pipelines must produce different hashes

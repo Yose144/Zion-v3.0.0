@@ -41,11 +41,11 @@ fn test_height_zero_equals_ekam_canonical() {
     let nonce: u64 = 0x1234_5678_9ABC_DEF0;
 
     let h_height = cosmic_harmony_with_height(&blob, nonce, 0);
-    let h_ekam_v2 = cosmic_harmony_ekam_deeksha_v2(&blob, nonce);
+    let h_ekam_v2 = cosmic_harmony_ekam_deeksha_v2(&blob, nonce, 0);
 
     assert_eq!(
         h_height.data, h_ekam_v2.data,
-        "cosmic_harmony_with_height(blob, nonce, 0) must equal cosmic_harmony_ekam_deeksha_v2(blob, nonce)"
+        "cosmic_harmony_with_height(blob, nonce, 0) must equal cosmic_harmony_ekam_deeksha_v2(blob, nonce, 0)"
     );
 
     // Original Deeksha is still directly callable but differs from v2.
@@ -71,10 +71,10 @@ fn test_canonical_hash_is_deterministic() {
 
     let h1 = cosmic_harmony_with_height(&blob, nonce, 0);
     let h2 = cosmic_harmony_with_height(&blob, nonce, 0);
-    let h3 = cosmic_harmony_ekam_deeksha_v2(&blob, nonce);
+    let h3 = cosmic_harmony_ekam_deeksha_v2(&blob, nonce, 0);
 
     assert_eq!(h1.data, h2.data, "Canonical dispatch must be deterministic (call 1 == call 2)");
-    assert_eq!(h1.data, h3.data, "cosmic_harmony_with_height(0) must equal cosmic_harmony_ekam_deeksha_v2");
+    assert_eq!(h1.data, h3.data, "cosmic_harmony_with_height(0) must equal cosmic_harmony_ekam_deeksha_v2(0)");
 }
 
 /// Legacy CHv4 helper must differ from CHv3 for the same (blob, nonce).

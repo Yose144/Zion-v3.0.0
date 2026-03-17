@@ -707,22 +707,19 @@ pub fn compute_hash(
     height: u32,
 ) -> Result<Vec<u8>> {
     match algo {
-        // Cosmic Harmony unified runtime — Ekam Deeksha canonical path (Tier 2: Blake3 XOF + AES cascade)
+        // Cosmic Harmony unified runtime — Ekam Deeksha v2 canonical path (Tier 1+2)
         NativeAlgorithm::CosmicHarmony => {
-            let _ = height;
-            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha(header, nonce);
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha_v2(header, nonce, height as u64);
             Ok(h.data.to_vec())
         }
 
         NativeAlgorithm::CosmicHarmonyV42 => {
-            let _ = height;
-            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha(header, nonce);
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha_v2(header, nonce, height as u64);
             Ok(h.data.to_vec())
         }
 
         NativeAlgorithm::CosmicHarmonyDeeksha => {
-            let _ = height;
-            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha(header, nonce);
+            let h = zion_cosmic_harmony_v3::cosmic_harmony_ekam_deeksha_v2(header, nonce, height as u64);
             Ok(h.data.to_vec())
         }
 
