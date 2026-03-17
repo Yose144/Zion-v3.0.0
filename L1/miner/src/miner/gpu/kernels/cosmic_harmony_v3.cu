@@ -50,10 +50,10 @@ __constant__ int KECCAK_ROTC[24] = {
 
 // Memory-hard scratchpad constants (must match OpenCL kernel + Rust impl)
 #define CUDA_BLOCK_SIZE      64
-#define CUDA_BLOCK_COUNT     1024
-#define CUDA_SCRATCHPAD_BYTES (CUDA_BLOCK_SIZE * CUDA_BLOCK_COUNT)  // 64 KiB per thread
-#define CUDA_PASSES          2
-#define CUDA_RANDOM_READS    64
+#define CUDA_BLOCK_COUNT     4096
+#define CUDA_SCRATCHPAD_BYTES (CUDA_BLOCK_SIZE * CUDA_BLOCK_COUNT)  // 256 KiB per thread
+#define CUDA_PASSES          4
+#define CUDA_RANDOM_READS    256
 
 // CHv4.2 Merkabah Dual-Spin constants
 #define CUDA_BACKWARD_PASSES 2           // Ra — backward passes

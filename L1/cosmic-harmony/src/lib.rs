@@ -75,7 +75,7 @@ pub mod hugepages; // HugePages (2 MiB) scratchpad allocator — like XMRig for 
 pub mod whattomine; // WhatToMine/CoinGecko API integration
 
 pub use algorithm_library::{AlgorithmInfo, AlgorithmModuleLibrary, PipelineExecutionResult};
-pub use algorithms_npu::{CHV4_NPU_FORK_HEIGHT, CHV4_MLP_GENESIS_SEED, npu_mixing_step, npu_mixing_hash64};
+pub use algorithms_npu::{CHV4_NPU_FORK_HEIGHT, CHV4_MLP_GENESIS_SEED, NPU_EPOCH_LENGTH, npu_mixing_step, npu_mixing_step_epoch, npu_mixing_hash64, epoch_from_height, epoch_seed, MlpTopology};
 pub use algorithms_opt::{cosmic_harmony_v3, cosmic_harmony_v4, cosmic_harmony_v4_2, cosmic_harmony_with_height, CHV4_2_FORK_HEIGHT, Hash32, Hash64};
 pub use deeksha::{cosmic_harmony_deeksha, cosmic_harmony_ekam_deeksha, cosmic_harmony_ekam_deeksha_v2, CHV_DEEKSHA_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT, self_test as deeksha_self_test, ekam_self_test as deeksha_ekam_self_test, ekam_v2_self_test as deeksha_ekam_v2_self_test};
 #[cfg(feature = "parallel")]

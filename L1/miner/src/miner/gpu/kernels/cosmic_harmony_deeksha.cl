@@ -20,11 +20,11 @@
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  65536
+#define SCRATCHPAD_SIZE  262144
 #define BLOCK_SIZE       64
-#define BLOCK_COUNT      1024
-#define PASSES           2
-#define RANDOM_READS     64
+#define BLOCK_COUNT      4096
+#define PASSES           4
+#define RANDOM_READS     256
 #define MATRIX_DIM       8
 
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
@@ -1037,7 +1037,7 @@ __kernel void deeksha_mine(
     __global const uchar  *header,         /* [0] block header bytes         */
     uint                   header_len,     /* [1] actual header length       */
     ulong                  nonce_base,     /* [2] starting nonce             */
-    __global uchar        *scratchpad_pool,/* [3] N × 65536 bytes            */
+    __global uchar        *scratchpad_pool,/* [3] N × 262144 bytes            */
     uint                   target_u32,     /* [4] LE u32 target              */
     __global ulong        *result_nonce,   /* [5] output: winning nonce      */
     __global uchar        *result_hash,    /* [6] output: 32-byte hash       */
