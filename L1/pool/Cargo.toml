@@ -31,6 +31,7 @@ native-all = [
     "native-kheavyhash", "native-equihash", "native-progpow",
     "native-argon2d", "native-blake3"
 ]
+testnet = ["zion-cosmic-harmony-v3/testnet"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }

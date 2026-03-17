@@ -3,6 +3,7 @@
 # C sources compiled inline by cc crate — requires gcc (included via build-essential).
 
 FROM rust:1.85-bookworm AS builder
+ARG FEATURES="native-ethash,native-autolykos,native-kheavyhash"
 WORKDIR /build
 RUN apt-get update && apt-get install -y \
         build-essential cmake g++ make \
@@ -11,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 COPY . .
 RUN cargo build --release -p zion-pool \
-        --features native-ethash,native-autolykos,native-kheavyhash
+        --features "$FEATURES"
 
 FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y \

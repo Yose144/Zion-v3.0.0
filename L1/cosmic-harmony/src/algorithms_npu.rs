@@ -463,8 +463,12 @@ pub fn chv4_npu_weights_flat() -> ChV4WeightsFlat {
 // ============================================================================
 
 /// Epoch length — blocks per NPU weight rotation cycle.
-/// 2016 = same as Bitcoin difficulty adjustment period.
+/// Mainnet: 2016 (same as Bitcoin difficulty adjustment period).
+/// Testnet: 100 (rapid rotation for epoch-boundary testing).
+#[cfg(not(feature = "testnet"))]
 pub const NPU_EPOCH_LENGTH: u64 = 2016;
+#[cfg(feature = "testnet")]
+pub const NPU_EPOCH_LENGTH: u64 = 100;
 
 /// Derive epoch number from block height.
 #[inline]
@@ -1177,13 +1181,14 @@ mod tests {
 
     #[test]
     fn test_epoch_from_height() {
+        let e = NPU_EPOCH_LENGTH;
         assert_eq!(epoch_from_height(0), 0);
-        assert_eq!(epoch_from_height(2015), 0);
-        assert_eq!(epoch_from_height(2016), 1);
-        assert_eq!(epoch_from_height(4031), 1);
-        assert_eq!(epoch_from_height(4032), 2);
-        assert_eq!(epoch_from_height(8063), 3);
-        assert_eq!(epoch_from_height(8064), 4);
+        assert_eq!(epoch_from_height(e - 1), 0);
+        assert_eq!(epoch_from_height(e), 1);
+        assert_eq!(epoch_from_height(2 * e - 1), 1);
+        assert_eq!(epoch_from_height(2 * e), 2);
+        assert_eq!(epoch_from_height(4 * e - 1), 3);
+        assert_eq!(epoch_from_height(4 * e), 4);
     }
 
     #[test]
@@ -1293,5 +1298,24 @@ mod tests {
         let epoch0_out = npu_mixing_step_epoch(&input, 0);
         assert_ne!(genesis_out, epoch0_out,
             "Epoch 0 NPU uses different key derivation than genesis — outputs must differ");
+    }
+
+    #[test]
+    fn test_testnet_epoch_length_value() {
+        // Verify the feature flag sets the correct epoch length
+        #[cfg(feature = "testnet")]
+        assert_eq!(NPU_EPOCH_LENGTH, 100, "testnet epoch must be 100 blocks");
+        #[cfg(not(feature = "testnet"))]
+        assert_eq!(NPU_EPOCH_LENGTH, 2016, "mainnet epoch must be 2016 blocks");
+    }
+
+    #[test]
+    fn test_epoch_boundary_produces_different_weights() {
+        // Block just before and just after epoch boundary must use different topologies
+        let last_in_epoch0 = NPU_EPOCH_LENGTH - 1;
+        let first_in_epoch1 = NPU_EPOCH_LENGTH;
+        let w0 = get_epoch_weights(epoch_from_height(last_in_epoch0));
+        let w1 = get_epoch_weights(epoch_from_height(first_in_epoch1));
+        assert!(!Arc::ptr_eq(&w0, &w1), "Different epochs must use different weight sets");
     }
 }

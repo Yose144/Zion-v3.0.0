@@ -2,10 +2,15 @@
 # Multi-stage build for minimal production image
 
 FROM rust:1.85-bookworm AS builder
+ARG FEATURES=""
 WORKDIR /build
 RUN apt-get update && apt-get install -y cmake g++ make pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 COPY . .
-RUN cargo build --release -p zion-core
+RUN if [ -n "$FEATURES" ]; then \
+      cargo build --release -p zion-core --features "$FEATURES"; \
+    else \
+      cargo build --release -p zion-core; \
+    fi
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y ca-certificates libssl3 curl && rm -rf /var/lib/apt/lists/*
