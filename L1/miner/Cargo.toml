@@ -39,6 +39,7 @@ metal = ["zion-cosmic-harmony-v3/metal"]
 cuda = ["dep:cudarc"]
 # Rayon parallel CPU mining (batch nonce search via rayon find_map_any + AtomicBool early exit)
 parallel = ["zion-cosmic-harmony-v3/parallel"]
+testnet = ["zion-cosmic-harmony-v3/testnet"]
 
 [dependencies]
 tokio = { version = "1.35", features = ["full"] }
