@@ -1,5 +1,5 @@
-export const SITE_VERSION = 'v2.9.8';
-export const SITE_RELEASE_NAME = 'Deeksha Patch & Code Freeze';
+export const SITE_VERSION = 'v2.9.9';
+export const SITE_RELEASE_NAME = 'Ekam Deeksha';
 export const SITE_RELEASE_LABEL = `${SITE_VERSION} \"${SITE_RELEASE_NAME}\"`;
 export const SITE_TESTNET_LABEL = `Live TestNet · ${SITE_RELEASE_LABEL}`;
 export const SITE_PRIMARY_HOST = '91.98.122.165';

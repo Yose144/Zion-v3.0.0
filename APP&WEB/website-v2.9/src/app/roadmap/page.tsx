@@ -29,10 +29,10 @@ import { SITE_RELEASE_LABEL } from '@/lib/site';
    ═══════════════════════════════════════════════════════════ */
 
 const heroStats = [
-  { label: 'Rust LOC', value: '114,520', descriptor: '12 crates · L1–L4' },
-  { label: 'Tests passing', value: '1,379', descriptor: '0 failing' },
-  { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · internal seeds active' },
-  { label: 'Release Gate', value: 'GO', descriptor: 'Deeksha code freeze live' }
+  { label: 'Rust LOC', value: '115,400+', descriptor: '12 crates · L1–L4' },
+  { label: 'Tests passing', value: '1,501', descriptor: '0 failing · +122 Ekam Deeksha' },
+  { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · Ekam Deeksha testnet live' },
+  { label: 'Release Gate', value: 'GO', descriptor: 'v2.9.9 Ekam Deeksha deployed' }
 ];
 
 const layerStack = [
@@ -44,7 +44,9 @@ const layerStack = [
     color: 'from-emerald-500 to-lime-400',
     border: 'border-emerald-500/40',
     items: [
-      'PoW Cosmic Harmony v3 — ASIC-resistant',
+      'PoW Cosmic Harmony v3 — Ekam Deeksha ASIC-resistant',
+      'Scratchpad Ekam: 256 KiB, 4 passes, 256 reads (Tier 1)',
+      'Epoch-rotating NPU weights — 2016/100 blocks (Tier 2)',
       'UTXO model + Ed25519 signatures',
       'Decade Decay emission: 5,400 → 724 ZION/block (100+ years + tail ∞)',
       '16.28B genesis premine (immediately unlocked)',
@@ -162,7 +164,7 @@ const premineAllocation = [
 
 const componentStatus = [
   { name: 'core/ (blockchain)', loc: '~22.7k', tests: 433, status: '✅', readiness: 94 },
-  { name: 'cosmic-harmony/ (PoW)', loc: '~17.9k', tests: 95, status: '✅', readiness: 92 },
+  { name: 'cosmic-harmony/ (PoW)', loc: '~18.3k', tests: 122, status: '✅', readiness: 95 },
   { name: 'pool/ (mining pool)', loc: '~19.5k', tests: 115, status: '✅', readiness: 93 },
   { name: 'miner/ (universal)', loc: '~14.5k', tests: 79, status: '✅', readiness: 90 },
   { name: 'bridge/ (L2 wZION)', loc: '~7k', tests: 167, status: '✅', readiness: 85 },
@@ -221,7 +223,7 @@ const phases: PhaseData[] = [
     priority: 'P0 Blocker',
     progress: 92,
     status: 'active',
-    description: '168h stability PASS (2026-03-03), archived multi-host validation complete. Sprint 1.10 closed, remaining: partition + 100 miners stress test.',
+    description: '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted, 0 rejected. Remaining: partition + 100 miners.',
     sprints: [
       { id: '1.0', title: 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
       { id: '1.1', title: 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
@@ -235,7 +237,11 @@ const phases: PhaseData[] = [
       { id: '1.9', title: 'Stress Test Suite — high TX, rapid blocks, partition', tests: 21, done: true },
       { id: '1.10', title: '168h Stability Run — archived multi-host validation, no critical incident', done: true },
       { id: '1.11', title: 'Live Partition Test — node isolation 30 min, reconnect', done: false },
-      { id: '1.12', title: '100 Miners Stress — simulate 100 Stratum clients', done: false }
+      { id: '1.12', title: '100 Miners Stress — simulate 100 Stratum clients', done: false },
+      { id: '1.13', title: 'Ekam Deeksha Tier 1 — Scratchpad 256 KiB, 4 passes, 256 reads', tests: 108, done: true },
+      { id: '1.14', title: 'Ekam Deeksha Tier 2 — Epoch NPU weights, rotate per 2016/100 blocks', tests: 14, done: true },
+      { id: '1.15', title: 'Testnet Feature Flag — conditional NPU_EPOCH_LENGTH compile-time', done: true },
+      { id: '1.16', title: 'Canary Deploy — pool 10/10 accepted, 0 rejected, 166 H/s', done: true }
     ],
     exitCriteria: [
       { text: 'TestNet deployed on 3+ servers', done: true },
@@ -248,7 +254,8 @@ const phases: PhaseData[] = [
       { text: 'Stress test suite (21 tests)', done: true },
       { text: '168h stability run without critical incident', done: true },
       { text: 'Orphan rate < 2%', done: false },
-      { text: 'No critical bug for 14 days', done: false }
+      { text: 'No critical bug for 14 days', done: false },
+      { text: 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100%', done: true }
     ]
   },
   {
@@ -413,13 +420,13 @@ export default function RoadmapPage() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 12. Mar 2026
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 17. Mar 2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> MainNet · 31.12.2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 1,379 tests passing
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> 1,501 tests passing
                 </span>
               </div>
             </div>
@@ -895,7 +902,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella · 6-layer architecture · Poslední aktualizace: 2026-03-03
+          ZION TerraNova {SITE_RELEASE_LABEL} — L1 TerraNova · L2 NCL · L3 DAO · L4 Oasis · L5 Free World · L6 ZION Issobella · 6-layer architecture · Poslední aktualizace: 2026-03-17
         </p>
       </div>
     </div>
