@@ -502,9 +502,13 @@ pub fn cosmic_harmony_v4_2(block_header: &[u8], nonce: u64) -> Hash32 {
 #[allow(clippy::absurd_extreme_comparisons)]
 #[inline]
 pub fn cosmic_harmony_with_height(block_header: &[u8], nonce: u64, height: u64) -> Hash32 {
-    use crate::deeksha::{CHV_DEEKSHA_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT};
+    use crate::deeksha::{CHV_DEEKSHA_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT};
     use crate::algorithms_npu::CHV4_NPU_FORK_HEIGHT;
 
+    // Ekam Deeksha v2 (Tier 1 ASIC hardening) — 256 KiB scratchpad
+    if height >= CHV_EKAM_V2_FORK_HEIGHT {
+        return crate::deeksha::cosmic_harmony_ekam_deeksha_v2(block_header, nonce);
+    }
     // Ekam Deeksha (Tier 2) — Blake3 + AES cascade, active from CHV_EKAM_FORK_HEIGHT
     if height >= CHV_EKAM_FORK_HEIGHT {
         return crate::deeksha::cosmic_harmony_ekam_deeksha(block_header, nonce);
@@ -878,42 +882,33 @@ mod tests {
 
     #[test]
     fn test_deeksha_fork_dispatch() {
-        use crate::deeksha::{CHV_EKAM_FORK_HEIGHT, CHV_DEEKSHA_FORK_HEIGHT};
+        use crate::deeksha::{CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT, CHV_DEEKSHA_FORK_HEIGHT};
         let header = b"ZION block header v2.9.6";
         let nonce = 9999u64;
 
+        let ekam_v2_hash = crate::deeksha::cosmic_harmony_ekam_deeksha_v2(header, nonce);
         let ekam_hash = crate::deeksha::cosmic_harmony_ekam_deeksha(header, nonce);
         let deeksha_hash = crate::deeksha::cosmic_harmony_deeksha(header, nonce);
 
-        // Pre-fork heights must use original Deeksha
-        if CHV_EKAM_FORK_HEIGHT > 0 {
-            let dispatch_pre = cosmic_harmony_with_height(header, nonce, 0);
-            assert_eq!(
-                dispatch_pre.data, deeksha_hash.data,
-                "Pre-fork height 0 must use original Deeksha"
-            );
-        }
-
-        // At and above fork height must use Ekam Deeksha
-        let dispatch_at_fork = cosmic_harmony_with_height(header, nonce, CHV_EKAM_FORK_HEIGHT);
+        // At and above v2 fork height must use Ekam v2
+        let dispatch_at_v2 = cosmic_harmony_with_height(header, nonce, CHV_EKAM_V2_FORK_HEIGHT);
         assert_eq!(
-            dispatch_at_fork.data, ekam_hash.data,
-            "Dispatch at CHV_EKAM_FORK_HEIGHT must use Ekam Deeksha"
+            dispatch_at_v2.data, ekam_v2_hash.data,
+            "Dispatch at CHV_EKAM_V2_FORK_HEIGHT must use Ekam v2"
         );
 
-        let dispatch_above = cosmic_harmony_with_height(header, nonce, CHV_EKAM_FORK_HEIGHT + 1_000_000);
+        let dispatch_above = cosmic_harmony_with_height(header, nonce, CHV_EKAM_V2_FORK_HEIGHT + 1_000_000);
         assert_eq!(
-            dispatch_above.data, ekam_hash.data,
-            "Dispatch above fork height must use Ekam Deeksha"
+            dispatch_above.data, ekam_v2_hash.data,
+            "Dispatch above v2 fork height must use Ekam v2"
         );
 
-        // Ekam and original Deeksha must differ
-        assert_ne!(
-            ekam_hash.data, deeksha_hash.data,
-            "Ekam and original Deeksha must produce different hashes"
-        );
+        // All three pipelines must produce different hashes
+        assert_ne!(ekam_v2_hash.data, ekam_hash.data, "Ekam v2 and v1 must differ");
+        assert_ne!(ekam_hash.data, deeksha_hash.data, "Ekam v1 and original must differ");
+        assert_ne!(ekam_v2_hash.data, deeksha_hash.data, "Ekam v2 and original must differ");
 
-        println!("✅ Fork dispatch correctly routes: pre-fork → original Deeksha, post-fork → Ekam Deeksha (CHV_EKAM_FORK_HEIGHT={})", CHV_EKAM_FORK_HEIGHT);
+        println!("✅ Fork dispatch: v2 fork height={}, routes to Ekam v2 (256 KiB scratchpad)", CHV_EKAM_V2_FORK_HEIGHT);
     }
 
     #[test]

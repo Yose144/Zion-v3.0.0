@@ -13,8 +13,9 @@
 
 use zion_cosmic_harmony_v3::{
     algorithms_opt, cosmic_harmony_deeksha, cosmic_harmony_ekam_deeksha,
+    cosmic_harmony_ekam_deeksha_v2,
     cosmic_harmony_v3, cosmic_harmony_v4,
-    cosmic_harmony_with_height, CHV_DEEKSHA_FORK_HEIGHT,
+    cosmic_harmony_with_height, CHV_DEEKSHA_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT,
 };
 use zion_pool::shares::validator::{Algorithm, ShareValidator, SubmittedShare};
 
@@ -32,26 +33,33 @@ fn test_deeksha_fork_height_is_zero() {
 
 // ── Group B: Canonical and legacy hash correctness ──────────────────────────
 
-/// cosmic_harmony_with_height at h=0 must equal cosmic_harmony_ekam_deeksha directly.
-/// (CHV_EKAM_FORK_HEIGHT=0 means Ekam is active from genesis and takes precedence.)
+/// cosmic_harmony_with_height at h=0 must equal cosmic_harmony_ekam_deeksha_v2 directly.
+/// (CHV_EKAM_V2_FORK_HEIGHT=0 means Ekam v2 is active from genesis.)
 #[test]
 fn test_height_zero_equals_ekam_canonical() {
     let blob = [0xABu8; 80];
     let nonce: u64 = 0x1234_5678_9ABC_DEF0;
 
     let h_height = cosmic_harmony_with_height(&blob, nonce, 0);
-    let h_ekam = cosmic_harmony_ekam_deeksha(&blob, nonce);
+    let h_ekam_v2 = cosmic_harmony_ekam_deeksha_v2(&blob, nonce);
 
     assert_eq!(
-        h_height.data, h_ekam.data,
-        "cosmic_harmony_with_height(blob, nonce, 0) must equal cosmic_harmony_ekam_deeksha(blob, nonce)"
+        h_height.data, h_ekam_v2.data,
+        "cosmic_harmony_with_height(blob, nonce, 0) must equal cosmic_harmony_ekam_deeksha_v2(blob, nonce)"
     );
 
-    // Original Deeksha is still directly callable but differs from Ekam.
+    // Original Deeksha is still directly callable but differs from v2.
     let h_deeksha = cosmic_harmony_deeksha(&blob, nonce);
     assert_ne!(
         h_height.data, h_deeksha.data,
-        "Ekam dispatch must differ from original Deeksha"
+        "Ekam v2 dispatch must differ from original Deeksha"
+    );
+
+    // Ekam v1 differs from v2
+    let h_ekam_v1 = cosmic_harmony_ekam_deeksha(&blob, nonce);
+    assert_ne!(
+        h_height.data, h_ekam_v1.data,
+        "Ekam v2 dispatch must differ from Ekam v1"
     );
 }
 
@@ -63,10 +71,10 @@ fn test_canonical_hash_is_deterministic() {
 
     let h1 = cosmic_harmony_with_height(&blob, nonce, 0);
     let h2 = cosmic_harmony_with_height(&blob, nonce, 0);
-    let h3 = cosmic_harmony_ekam_deeksha(&blob, nonce);
+    let h3 = cosmic_harmony_ekam_deeksha_v2(&blob, nonce);
 
     assert_eq!(h1.data, h2.data, "Canonical dispatch must be deterministic (call 1 == call 2)");
-    assert_eq!(h1.data, h3.data, "cosmic_harmony_with_height(0) must equal cosmic_harmony_ekam_deeksha");
+    assert_eq!(h1.data, h3.data, "cosmic_harmony_with_height(0) must equal cosmic_harmony_ekam_deeksha_v2");
 }
 
 /// Legacy CHv4 helper must differ from CHv3 for the same (blob, nonce).

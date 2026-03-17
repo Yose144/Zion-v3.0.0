@@ -997,7 +997,7 @@ fn print_banner() {
         " ╠──────────────────────────────────────────────────────────────────╣".bright_cyan()
     );
     // HugePages memory status line (XMRig-style)
-    let hp_status = zion_cosmic_harmony_v3::hugepages::memory_status_line(64 * 1024);
+    let hp_status = zion_cosmic_harmony_v3::hugepages::memory_status_line(256 * 1024);
     let hp_line = format!(" Memory      {}", hp_status);
     let padded = format!("{:<62}", hp_line);
     println!(
