@@ -148,7 +148,7 @@ services:
       - "--algorithm"
       - "cosmic_harmony"
       - "--threads"
-      - "1"
+      - "3"
     environment:
       - ZION_ENABLE_STREAM_SWITCH=0
       - ZION_NONCE_BASE=${ZION_NONCE_BASE:-0}
