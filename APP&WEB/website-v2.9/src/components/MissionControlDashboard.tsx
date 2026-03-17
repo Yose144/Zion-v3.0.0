@@ -112,6 +112,7 @@ function getInternalSeedContainers(data?: DashData | null) {
 /* ═══════════════════════ TAB CONFIG ═══════════════════════ */
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: Monitor },
+  { id: 'upgrade', label: 'Ekam Deeksha', icon: Sparkles },
   { id: 'roadmap', label: 'Roadmap', icon: Target },
   { id: 'layers', label: 'Layers', icon: Layers },
   { id: 'constitution', label: 'Constitution', icon: Lock },
@@ -658,9 +659,9 @@ export default function MissionControlDashboard() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <Stat label="Codebase" value="52,590" sub="lines of Rust" color="text-cyan-400" />
-                <Stat label="Tests" value="780+" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="Release Gate" value="GO" sub="Primary host live · internal seeds active" color="text-emerald-400" />
+                <Stat label="Codebase" value="53,200+" sub="lines of Rust" color="text-cyan-400" />
+                <Stat label="Tests" value="900+" sub="passing / 0 failing" color="text-emerald-400" />
+                <Stat label="Release Gate" value="GO" sub="v2.9.9 Ekam Deeksha live" color="text-emerald-400" />
                 <Stat label="Crates" value="5" sub="core, pool, miner, cosmic-harmony, native-libs" />
               </div>
             </motion.section>
@@ -691,7 +692,7 @@ export default function MissionControlDashboard() {
                   <tbody>
                     {[
                       { name: 'core/ (blockchain)', pct: 94, loc: '~17k LOC' },
-                      { name: 'cosmic-harmony/ (PoW)', pct: 88, loc: '~11k LOC' },
+                      { name: 'cosmic-harmony/ (PoW)', pct: 95, loc: '~18.3k LOC' },
                       { name: 'pool/ (mining pool)', pct: 93, loc: '~12k LOC' },
                       { name: 'miner/ (universal)', pct: 85, loc: '~6k LOC' },
                       { name: 'desktop-agent/ (Electron)', pct: 84, loc: '~3k JS' },
@@ -739,6 +740,288 @@ export default function MissionControlDashboard() {
         )}
 
         {/* ═══════════════════════════════════════════════
+            TAB: EKAM DEEKSHA UPGRADE
+           ═══════════════════════════════════════════════ */}
+        {activeTab === 'upgrade' && (
+          <div className="space-y-8">
+            {/* Upgrade Overview */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 via-transparent to-zion-purple/10 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <div className="flex items-center gap-3">
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v2.9.9</p>
+                  <span className="text-[10px] uppercase tracking-widest border border-zion-gold/40 bg-zion-gold/10 text-zion-gold px-2 py-0.5 rounded-full font-semibold">
+                    DEPLOYED · TESTNET LIVE
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Sparkles className="h-7 w-7 text-zion-gold" />
+                  Ekam Deeksha — ASIC Resistance Upgrade
+                </h2>
+                <p className="text-sm text-gray-400">
+                  Ekam Deeksha je dvouúrovňový upgrade ASIC rezistence pro Cosmic Harmony v3.
+                  Tier 1 zpevňuje scratchpad paměťový vzor, Tier 2 přidává epoch-rotující NPU váhy.
+                  Oba tiery jsou nasazeny a validovány na canary testnetu.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <Stat label="Verze" value="v2.9.9" sub="Ekam Deeksha" color="text-zion-gold" />
+                <Stat label="Nové testy" value="122" sub="108 Tier 1 + 14 Tier 2" color="text-emerald-400" mono />
+                <Stat label="Pool Accept" value="100%" sub="10/10 accepted · 0 rejected" color="text-emerald-400" mono />
+                <Stat label="Hashrate" value="166 H/s" sub="testnet canary miner" color="text-cyan-400" mono />
+              </div>
+            </motion.section>
+
+            {/* Tier Progress */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Implementation</p>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Shield className="h-7 w-7 text-emerald-400" />
+                  Tier Checklist
+                </h2>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2">
+                {/* Tier 1 */}
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <CheckCheck className="h-5 w-5 text-emerald-400" />
+                      Tier 1 — Scratchpad Ekam
+                    </h3>
+                    <span className="text-[10px] uppercase tracking-widest border border-emerald-400/30 bg-emerald-400/10 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">DONE</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    {[
+                      { done: true, text: 'Scratchpad 256 KiB (zvýšení z 64 KiB)' },
+                      { done: true, text: '4 hashovací průchody (z 3)' },
+                      { done: true, text: '256 paměťových čtení (z 128)' },
+                      { done: true, text: 'Memory-hard vzor — ASIC penalizace' },
+                      { done: true, text: '108 unit testů — deterministika, vektory' },
+                      { done: true, text: 'Commit c423a5e' },
+                    ].map(item => (
+                      <div key={item.text} className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <span className="text-gray-300">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Tier 2 */}
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <CheckCheck className="h-5 w-5 text-emerald-400" />
+                      Tier 2 — Epoch NPU Weights
+                    </h3>
+                    <span className="text-[10px] uppercase tracking-widest border border-emerald-400/30 bg-emerald-400/10 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">DONE</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    {[
+                      { done: true, text: 'NPU_EPOCH_LENGTH: 2016 (mainnet) / 100 (testnet)' },
+                      { done: true, text: 'Deterministické váhy z epoch seed' },
+                      { done: true, text: 'Rotace každých 2016 bloků (jako BTC retarget)' },
+                      { done: true, text: 'algorithms_npu.rs — +370 řádků' },
+                      { done: true, text: '14 testů — epoch boundaries, přechody' },
+                      { done: true, text: 'Commit 79c903a' },
+                    ].map(item => (
+                      <div key={item.text} className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <span className="text-gray-300">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* Deploy & Verification */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.16 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Deploy & Verify</p>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Server className="h-7 w-7 text-purple-400" />
+                  Canary Testnet Deployment
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 text-left">
+                      <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">Krok</th>
+                      <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">Popis</th>
+                      <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">Stav</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { step: 'Feature Flag', desc: 'Testnet conditional compile: NPU_EPOCH_LENGTH=100', status: 'done', ref: '605cd38' },
+                      { step: 'Docker Build', desc: 'zion-{core,pool,miner}:2.9.8-testnet images', status: 'done', ref: '3 images' },
+                      { step: 'Server Deploy', desc: '91.98.122.165 — full sync via SFTP + compose up', status: 'done', ref: '6 containers' },
+                      { step: 'Core Health', desc: 'Chain height 4034+, 2 peers, synced', status: 'done', ref: 'healthy' },
+                      { step: 'Pool Accept', desc: '10/10 shares accepted, 0 rejected (100%)', status: 'done', ref: '10 accepted' },
+                      { step: 'Miner Verify', desc: '166 H/s, 256 KiB scratchpad confirmed in logs', status: 'done', ref: '256 KiB' },
+                      { step: 'VarDiff', desc: 'Auto-adjusting: 500 → 2118 → 1000', status: 'done', ref: 'working' },
+                      { step: 'Epoch Transition', desc: 'Block 4100 boundary — epoch 40 → 41', status: 'pending', ref: 'monitoring' },
+                      { step: '24h Stability', desc: 'Overnight hashrate + accept rate monitoring', status: 'pending', ref: 'in progress' },
+                    ].map(row => (
+                      <tr key={row.step} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${row.status === 'pending' ? 'bg-amber-500/5' : ''}`}>
+                        <td className="py-3 px-4 font-semibold text-white">{row.step}</td>
+                        <td className="py-3 px-4 text-gray-400">{row.desc}</td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${row.status === 'done' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {row.status === 'done' ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                            {row.ref}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.section>
+
+            {/* Technical Details */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Technical</p>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Code2 className="h-7 w-7 text-cyan-400" />
+                  Ekam Deeksha — Technické parametry
+                </h2>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <h3 className="text-base font-semibold text-white mb-4">Scratchpad Ekam (Tier 1)</h3>
+                  <div className="space-y-2">
+                    {[
+                      ['Velikost', '256 KiB (262,144 B)'],
+                      ['Průchody', '4 (z 3)'],
+                      ['Paměťová čtení', '256 (z 128)'],
+                      ['Hash funkce', 'Blake3 + Keccak256'],
+                      ['Soubor', 'scratchpad_ekam.rs'],
+                      ['ASIC skóre', '65/100 → odhadovaný 78/100'],
+                    ].map(([k, v]) => (
+                      <div key={k} className="flex justify-between text-sm border-b border-white/5 pb-1.5">
+                        <span className="text-gray-400">{k}</span>
+                        <span className="font-mono text-white">{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <h3 className="text-base font-semibold text-white mb-4">Epoch NPU (Tier 2)</h3>
+                  <div className="space-y-2">
+                    {[
+                      ['Epoch délka', '2016 bloků (mainnet)'],
+                      ['Testnet epoch', '100 bloků'],
+                      ['Rotace vah', 'Deterministická z epoch seed'],
+                      ['NPU operace', '16 (add/sub/xor/rot/mul/...)'],
+                      ['Soubor', 'algorithms_npu.rs (+370 LOC)'],
+                      ['Test vektor', 'd043e26b...35c3'],
+                    ].map(([k, v]) => (
+                      <div key={k} className="flex justify-between text-sm border-b border-white/5 pb-1.5">
+                        <span className="text-gray-400">{k}</span>
+                        <span className="font-mono text-white">{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* Affected Files */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.24 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Changed Files</p>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Construction className="h-7 w-7 text-orange-400" />
+                  Dotčené soubory
+                </h2>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {[
+                  { file: 'L1/cosmic-harmony/src/scratchpad_ekam.rs', change: 'Nový — 256 KiB scratchpad', type: 'new' },
+                  { file: 'L1/cosmic-harmony/src/algorithms_npu.rs', change: 'Nový — epoch NPU weights (+370 LOC)', type: 'new' },
+                  { file: 'L1/cosmic-harmony/src/deeksha.rs', change: 'Upraven — v2 pipeline + block_height', type: 'mod' },
+                  { file: 'L1/cosmic-harmony/src/algorithms_opt.rs', change: 'Upraven — apply_npu_weights()', type: 'mod' },
+                  { file: 'L1/cosmic-harmony/src/lib.rs', change: 'Upraven — export nových modulů', type: 'mod' },
+                  { file: 'L1/miner/src/native_algos.rs', change: 'Upraven — deeksha_v2_hash()', type: 'mod' },
+                  { file: '3x GPU kernels', change: 'CUDA/OpenCL/Metal — NPU weights', type: 'mod' },
+                  { file: 'L1/pool/ E2E testy', change: 'Nové — pool-side validace Tier 1+2', type: 'new' },
+                  { file: 'docker/Dockerfile.{core,pool,miner}', change: 'FEATURES build arg + testnet', type: 'mod' },
+                  { file: 'docker/docker-compose.testnet.yml', change: 'Testnet feature flag v2.9.8', type: 'mod' },
+                ].map(f => (
+                  <div key={f.file} className="flex items-center gap-3 text-sm py-2.5 px-4 rounded-xl bg-white/5 border border-white/10">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${f.type === 'new' ? 'bg-emerald-400/20 text-emerald-300' : 'bg-blue-400/20 text-blue-300'}`}>
+                      {f.type === 'new' ? 'NEW' : 'MOD'}
+                    </span>
+                    <div>
+                      <span className="font-mono text-gray-300 text-xs">{f.file}</span>
+                      <p className="text-[11px] text-gray-500">{f.change}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.section>
+
+            {/* Git Commits */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Git Log</p>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Database className="h-7 w-7 text-purple-400" />
+                  Commity Ekam Deeksha
+                </h2>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { hash: 'c423a5e', msg: 'feat(cosmic-harmony): Tier 1 scratchpad ekam — 256 KiB, 4 passes, 256 reads, 108 tests', date: '2026-03-16' },
+                  { hash: '79c903a', msg: 'feat(cosmic-harmony): Tier 2 epoch NPU weights — rotate per 2016/100 blocks, 14 tests', date: '2026-03-16' },
+                  { hash: '605cd38', msg: 'feat: testnet feature flag — conditional NPU_EPOCH_LENGTH, Docker FEATURES build arg', date: '2026-03-17' },
+                  { hash: '8f40f73', msg: 'chore: deploy scripts + testnet compose alignment', date: '2026-03-17' },
+                ].map(c => (
+                  <div key={c.hash} className="flex items-center gap-3 text-sm py-2 px-4 rounded-xl bg-white/5 border border-white/10">
+                    <span className="font-mono text-xs text-zion-gold bg-zion-gold/10 px-2 py-1 rounded">{c.hash}</span>
+                    <span className="text-gray-300 flex-1">{c.msg}</span>
+                    <span className="text-xs text-gray-500 shrink-0">{c.date}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.section>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════
             TAB 2: ROADMAP
            ═══════════════════════════════════════════════ */}
         {activeTab === 'roadmap' && (
@@ -760,7 +1043,7 @@ export default function MissionControlDashboard() {
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-purple-400 to-pink-400" initial={{ width: 0 }} animate={{ width: '52%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · GO · archived 168h ✅ · historical canary logged</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · GO · 168h PASS ✅ · Ekam Deeksha deployed ✅</span>
               </div>
             </motion.section>
 
@@ -799,6 +1082,10 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.10 168h Stability" content="Archived 3-node / 3-continent validation gate · 7 dní" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> PASS · 2026-03-03</span>} highlight />
                   <SprintRow name="1.11 Partition Test" content="Izolace node 30 min, reconnect" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.12 100 Miners" content="Simulace 100 Stratum klientů" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
+                  <SprintRow name="1.13 Ekam Tier 1" content="Scratchpad 256 KiB, 4 passes, 256 reads" tests="108" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} highlight />
+                  <SprintRow name="1.14 Ekam Tier 2" content="Epoch NPU weights, rotate per 2016/100 blocks" tests="14" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} highlight />
+                  <SprintRow name="1.15 Testnet Flag" content="Conditional compile NPU_EPOCH_LENGTH" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="1.16 Canary Deploy" content="Pool 10/10 accepted, 0 rejected, 166 H/s" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> VERIFIED</span>} highlight />
                 </tbody></table>
               </PhaseAccordion>
 
@@ -873,7 +1160,7 @@ export default function MissionControlDashboard() {
                   { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-pink-500/5', title: 'Consciousness Mining as Gameplay', desc: 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-pink-400', active: false, Icon: Gamepad2 },
                   { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-purple-500/5', title: 'Neural Compute Layer & AI Agents', desc: 'WARP adapters 7/7 hotovo, NCL gateway online, AI Native SDK navazuje', tags: ['WARP 7/7', 'NCL Gateway', 'AI Orchestrátor', 'GPU za ZION'], date: '2026 Q1–Q2 (testnet hotovo)', labelColor: 'text-purple-400', active: true, Icon: Brain },
                   { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-blue-500/5', title: 'Atomic Swaps, AMM & DAO', desc: 'wZION bridge na Base Sepolia testnet ready, další DeFi kroky navazují', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Sepolia', 'DAO Voting'], date: '2026 Q1–Q2 (testnet ready)', labelColor: 'text-blue-400', active: true, Icon: ArrowLeftRight },
-                  { label: 'L1 — ZION BLOCKCHAIN ← ZDE', color: 'border-l-cyan-400 bg-cyan-500/[0.08] border-2 border-cyan-500/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Cosmic Harmony v3', desc: 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, dual-mining ZION+VRSC', tags: ['ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Dual Mining'], date: 'MainNet 31. 12. 2026', labelColor: 'text-cyan-400', active: true, Icon: Link },
+                  { label: 'L1 — ZION BLOCKCHAIN ← ZDE', color: 'border-l-cyan-400 bg-cyan-500/[0.08] border-2 border-cyan-500/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Cosmic Harmony v3 — Ekam Deeksha', desc: 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, dual-mining ZION+VRSC. Ekam Deeksha: 256 KiB scratchpad + epoch NPU weights (ASIC resistance Tier 1+2 deployed).', tags: ['Ekam Deeksha', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Dual Mining'], date: 'MainNet 31. 12. 2026', labelColor: 'text-cyan-400', active: true, Icon: Link },
                 ].map((l, idx) => (
                   <motion.div
                     key={l.label}
@@ -1060,6 +1347,8 @@ export default function MissionControlDashboard() {
                   [true, 'is_stronger_chain anti-fork'],
                   [true, 'VarDiff deadlock fix'],
                   [true, 'Pool accept loop deadlock fix'],
+                  [true, 'Ekam Deeksha Tier 1 — 256 KiB scratchpad'],
+                  [true, 'Ekam Deeksha Tier 2 — epoch NPU weights'],
                   [false, 'RPC autentizace (API key)'],
                   [false, 'Block size limit (max 1 MB)'],
                   [false, 'TX size limit (max 100 KB)'],
@@ -1077,14 +1366,14 @@ export default function MissionControlDashboard() {
                 ))}
               </div>
               <div className="mt-6 flex items-center gap-3 text-sm text-gray-400">
-                <span className="font-mono text-emerald-400">14</span>
+                <span className="font-mono text-emerald-400">16</span>
                 <span>/</span>
-                <span className="font-mono">19</span>
+                <span className="font-mono">21</span>
                 <span>completed</span>
                 <div className="h-2 flex-1 max-w-xs rounded-full bg-white/10">
-                  <div className="h-2 rounded-full bg-emerald-400" style={{ width: '73.7%' }} />
+                  <div className="h-2 rounded-full bg-emerald-400" style={{ width: '76.2%' }} />
                 </div>
-                <span className="font-mono text-cyan-400">73.7%</span>
+                <span className="font-mono text-cyan-400">76.2%</span>
               </div>
             </motion.section>
           </div>
@@ -1228,7 +1517,8 @@ export default function MissionControlDashboard() {
                     {[
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: '168h stability snapshot · archived 3-node PASS ✅', phase: '1.10', status: 'PASS', sColor: 'text-emerald-400' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'CHv4 E2E 11/11 PASS + cosmic_harmony_v3', phase: 'B-CRIT-01', status: 'DONE', sColor: 'text-emerald-400' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'E-07 canary 72h + invalid shares fix', phase: 'B-CRIT-02', status: `IN PROG · ${cr?.progress_pct ?? 0}%`, sColor: 'text-amber-400', bg: 'bg-amber-500/5' },
+                      { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Ekam Deeksha Tier 1+2 — ASIC resistance upgrade', phase: '1.13–1.16', status: 'DEPLOYED', sColor: 'text-emerald-400' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Ekam Deeksha 24h stability + epoch transition', phase: 'B-CRIT-02', status: 'IN PROG', sColor: 'text-amber-400', bg: 'bg-amber-500/5' },
                       { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Genesis/freeze artefakty + sign-off', phase: 'B-CRIT-03', status: 'BLOCKED', sColor: 'text-red-400', bg: 'bg-red-500/5' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Block explorer', phase: '2.3', status: 'HOTOVO', sColor: 'text-emerald-400' },
                       { prio: '✅', prioColor: 'text-emerald-400 font-bold', task: 'Node UX ("10 min setup")', phase: '2.1', status: 'HOTOVO', sColor: 'text-emerald-400' },
@@ -1257,7 +1547,7 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova {SITE_RELEASE_LABEL} · Archived 168h stability PASS ✅ · Deeksha canonical path live<br />
+          ZION TerraNova {SITE_RELEASE_LABEL} · Archived 168h stability PASS ✅ · Ekam Deeksha v2.9.9 live<br />
           <em>6-layer architecture · operations-first web shell</em><br /><br />
           Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
         </div>
