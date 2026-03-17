@@ -1,4 +1,4 @@
-// ZION Desktop Mining Agent v2.9.6 - Preload Script
+// ZION Ekam Deeksha v2.9.9 - Preload Script
 // IPC bridge between main process and renderer (security layer)
 
 const { contextBridge, ipcRenderer } = require('electron');
@@ -19,6 +19,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Mining control
   startMining: (config) => ipcRenderer.invoke('start-mining', config),
   stopMining: () => ipcRenderer.invoke('stop-mining'),
+
+  // Auto-tuning
+  getTuningStatus: () => ipcRenderer.invoke('get-tuning-status'),
+  performManualTuning: (config) => ipcRenderer.invoke('perform-manual-tuning', config),
 
   // Legacy CHv4.2 Merkabah GPU mining IPC bridge (backward compatibility)
   startChv42Gpu: (config) => ipcRenderer.invoke('start-chv42-gpu', config),
@@ -154,6 +158,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   warpInitiateInbound: (data) => ipcRenderer.invoke('warp-initiate-inbound', data),
   warpAdvanceTransfer: (data) => ipcRenderer.invoke('warp-advance-transfer', data),
 
+  // Auto-tuning events
+  onAutoTuningApplied: (callback) => {
+    ipcRenderer.on('auto-tuning-applied', (event, data) => callback(data));
+  },
+
   // ── L1 Tree Node (local zion-core process) ──────────────────────────────
   nodeGetStatus: () => ipcRenderer.invoke('node-get-status'),
   nodeGetPeers: () => ipcRenderer.invoke('node-get-peers'),
@@ -167,6 +176,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSecurityStatus: () => ipcRenderer.invoke('get-security-status'),
   fixSecurityBlocks: () => ipcRenderer.invoke('fix-security-blocks'),
   openDefenderSettings: () => ipcRenderer.invoke('open-defender-settings'),
+
+  // ── Ekam Deeksha v2.9.9 GPU + Dual Mining ──────────────────────────────
+  runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
+  getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
+  setDualMining: (config) => ipcRenderer.invoke('set-dual-mining', config),
+  getDualMiningStatus: () => ipcRenderer.invoke('get-dual-mining-status'),
+  onGpuBenchmarkResult: (callback) => {
+    ipcRenderer.on('gpu-benchmark-result', (event, data) => callback(data));
+  },
 
   // Cleanup listeners
   removeAllListeners: (channel) => {

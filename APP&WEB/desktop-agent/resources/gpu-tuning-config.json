@@ -1,0 +1,34 @@
+{
+  "version": "2.9.9",
+  "generated_at": "2026-03-16T22:42:02.110Z",
+  "platform": "win32",
+  "arch": "x64",
+  "gpu_features": "gpu",
+  "ekam_deeksha": {
+    "scratchpad_kib": 256,
+    "passes": 4,
+    "random_reads": 256,
+    "epoch_npu": true
+  },
+  "recommendations": {
+    "threads": 0,
+    "opencl": {
+      "enabled": true,
+      "fallback_reason": "nvidia-smi not available",
+      "thread_distribution": "conservative",
+      "memory_optimization": "balanced"
+    },
+    "algorithms": {
+      "cosmic_harmony": {
+        "priority": "high",
+        "threads": 0,
+        "intensity": "balanced"
+      },
+      "multi_algo": {
+        "enabled": true,
+        "switch_interval_minutes": 15,
+        "hysteresis_percent": 5
+      }
+    }
+  }
+}
