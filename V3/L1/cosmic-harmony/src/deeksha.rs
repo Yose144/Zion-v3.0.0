@@ -6,13 +6,55 @@ use crate::algorithms_opt::{
 };
 use crate::scratchpad_ekam::memory_hard_transform_ekam_light;
 
+// ============================================================================
+// FORK HEIGHT — SINGLE SOURCE OF TRUTH
+// ============================================================================
+
+/// Fork height for Ekam Deeksha v1 (Tier 2 — Blake3 + AES cascade, 64 KiB).
 pub const CHV_EKAM_FORK_HEIGHT: u64 = 0;
+
+/// Fork height for Ekam Deeksha v2 (Tier 1+2 ASIC hardening).
+/// Active from genesis in V3 mainnet — this IS the mainnet algorithm.
+pub const CHV_EKAM_V2_FORK_HEIGHT: u64 = 0;
+
+// ============================================================================
+// CONSENSUS PARAMETERS
+// ============================================================================
+
+/// Cosmic Fusion rounds (expanded from 4 to 8 for Ekam).
 pub const EKAM_FUSION_ROUNDS: usize = 8;
+
+// Ekam v2 consensus parameters (Tier 1 ASIC hardening)
+
+/// Ekam v2 scratchpad size — 256 KiB (4x v1).
+pub const EKAM_V2_SCRATCHPAD_SIZE: usize = 256 * 1024;
+
+/// Ekam v2 scratchpad passes — 4 (2x v1).
+pub const EKAM_V2_PASSES: usize = 4;
+
+/// Ekam v2 random reads — 256 (4x v1).
+pub const EKAM_V2_RANDOM_READS: usize = 256;
+
+// ============================================================================
+// CANONICAL TEST VECTORS
+// ============================================================================
+
+/// Ekam Deeksha v1 canonical test vector.
 pub const EKAM_CANONICAL_TEST_VECTOR_HEX: &str =
     "6339f2fb178fe2957a10d9e2a84cf9d5e340064f0d165e845b6a54eaf7924fbd";
 
+/// Ekam Deeksha v2 canonical test vector (Tier 1+2 — 256 KiB scratchpad + epoch NPU).
+/// Generated with epoch 0 (Standard topology, height 0).
+pub const EKAM_V2_CANONICAL_TEST_VECTOR_HEX: &str =
+    "d043e26b6ed7a2a4f1973a0e340c2eeed7643f6af03d33b8a44907f4f43935c3";
+
+// ============================================================================
+// NPU BACKEND SINGLETON
+// ============================================================================
+
 static EKAM_NPU: OnceLock<DeekshaCircuitBreaker> = OnceLock::new();
 
+/// Initialize NPU backend. Safe to call repeatedly (OnceLock).
 pub fn init_npu() {
     EKAM_NPU.get_or_init(DeekshaCircuitBreaker::build_best_available);
 }
@@ -22,6 +64,11 @@ fn npu() -> &'static DeekshaCircuitBreaker {
     EKAM_NPU.get_or_init(DeekshaCircuitBreaker::build_best_available)
 }
 
+// ============================================================================
+// EKAM DEEKSHA V1 PIPELINE (Tier 2 — Blake3 + AES cascade, 64 KiB)
+// ============================================================================
+
+/// Cosmic Harmony Ekam Deeksha v1 — 64 KiB scratchpad, 2 passes, 64 random reads.
 #[inline]
 pub fn cosmic_harmony_ekam_deeksha(block_header: &[u8], nonce: u64) -> Hash32 {
     let mut input = [0u8; 88];
@@ -37,6 +84,41 @@ pub fn cosmic_harmony_ekam_deeksha(block_header: &[u8], nonce: u64) -> Hash32 {
     cosmic_fusion_opt_rounds(&s5, EKAM_FUSION_ROUNDS)
 }
 
+// ============================================================================
+// EKAM DEEKSHA V2 PIPELINE (Tier 1+2 — 256 KiB + epoch NPU)
+// ============================================================================
+
+/// Cosmic Harmony Ekam Deeksha v2 — Tier 1+2 ASIC-hardened consensus hash.
+///
+/// Same 6-step pipeline as v1, but:
+/// - Step 4: 256 KiB scratchpad, 4 passes, 256 random reads (Tier 1)
+/// - Step 5: Epoch-rotating NPU weights with variable MLP topology (Tier 2)
+///
+/// This is the V3 mainnet canonical hash (active from genesis).
+#[inline]
+pub fn cosmic_harmony_ekam_deeksha_v2(block_header: &[u8], nonce: u64, block_height: u64) -> Hash32 {
+    use crate::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
+    use crate::algorithms_npu::{epoch_from_height, npu_mixing_step_epoch};
+
+    let mut input = [0u8; 88];
+    let len = block_header.len().min(80);
+    input[..len].copy_from_slice(&block_header[..len]);
+    input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+    let s1 = keccak256_opt(&input);
+    let s2 = sha3_512_opt(&s1.data);
+    let s3 = golden_matrix_opt(&s2.data);
+    let s4 = memory_hard_transform_ekam_light_v2(&s3.data);
+    let epoch = epoch_from_height(block_height);
+    let s5 = npu_mixing_step_epoch(&s4.data, epoch);
+    cosmic_fusion_opt_rounds(&s5, EKAM_FUSION_ROUNDS)
+}
+
+// ============================================================================
+// MINING HELPERS
+// ============================================================================
+
+/// Ekam v1 — sequential nonce search.
 pub fn ekam_find_nonce(
     header: &[u8],
     start_nonce: u64,
@@ -53,11 +135,34 @@ pub fn ekam_find_nonce(
     None
 }
 
+/// Ekam v2 — sequential nonce search (height-aware).
+pub fn ekam_v2_find_nonce(
+    header: &[u8],
+    start_nonce: u64,
+    count: u64,
+    target: &[u8; 32],
+    block_height: u64,
+) -> Option<(u64, Hash32)> {
+    for offset in 0..count {
+        let nonce = start_nonce.wrapping_add(offset);
+        let hash = cosmic_harmony_ekam_deeksha_v2(header, nonce, block_height);
+        if meets_target(&hash.data, target) {
+            return Some((nonce, hash));
+        }
+    }
+    None
+}
+
 #[inline(always)]
 fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
     hash <= target
 }
 
+// ============================================================================
+// SELF-TESTS
+// ============================================================================
+
+/// Ekam v1 self-test — determinism + canonical vector.
 pub fn ekam_self_test() -> bool {
     const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
     const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
@@ -72,6 +177,23 @@ pub fn ekam_self_test() -> bool {
     hex == EKAM_CANONICAL_TEST_VECTOR_HEX
 }
 
+/// Ekam v2 self-test — determinism + canonical vector.
+pub fn ekam_v2_self_test() -> bool {
+    const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
+    const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
+    const TEST_HEIGHT: u64 = 0;
+
+    let h1 = cosmic_harmony_ekam_deeksha_v2(TEST_HEADER, TEST_NONCE, TEST_HEIGHT);
+    let h2 = cosmic_harmony_ekam_deeksha_v2(TEST_HEADER, TEST_NONCE, TEST_HEIGHT);
+    if h1 != h2 {
+        return false;
+    }
+
+    let hex: String = h1.data.iter().map(|byte| format!("{:02x}", byte)).collect();
+    hex == EKAM_V2_CANONICAL_TEST_VECTOR_HEX
+}
+
+/// Generate Ekam v1 test vector.
 pub fn generate_ekam_test_vector() -> String {
     const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
     const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
@@ -79,11 +201,24 @@ pub fn generate_ekam_test_vector() -> String {
     hash.data.iter().map(|byte| format!("{:02x}", byte)).collect()
 }
 
+/// Generate Ekam v2 test vector.
+pub fn generate_ekam_v2_test_vector() -> String {
+    const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
+    const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
+    let hash = cosmic_harmony_ekam_deeksha_v2(TEST_HEADER, TEST_NONCE, 0);
+    hash.data.iter().map(|byte| format!("{:02x}", byte)).collect()
+}
+
+/// Hash 64-byte input through NPU backend.
 pub fn hash_bytes_with_npu(input: &[u8; 64]) -> Hash64 {
     let mut hash = Hash64::new();
     hash.data.copy_from_slice(&npu().mix(input));
     hash
 }
+
+// ============================================================================
+// TESTS
+// ============================================================================
 
 #[cfg(test)]
 mod tests {
@@ -102,6 +237,112 @@ mod tests {
     #[test]
     fn ekam_vector_matches() {
         let vector = generate_ekam_test_vector();
-        assert_eq!(vector, EKAM_CANONICAL_TEST_VECTOR_HEX, "generated Ekam vector changed");
+        assert_eq!(vector, EKAM_CANONICAL_TEST_VECTOR_HEX, "Ekam v1 vector changed");
+    }
+
+    #[test]
+    fn ekam_v2_hash_is_deterministic() {
+        let header = b"V3_EKAM_V2_TEST_HEADER";
+        let nonce = 42;
+        assert_eq!(
+            cosmic_harmony_ekam_deeksha_v2(header, nonce, 0),
+            cosmic_harmony_ekam_deeksha_v2(header, nonce, 0)
+        );
+    }
+
+    #[test]
+    fn ekam_v2_vector_matches() {
+        let vector = generate_ekam_v2_test_vector();
+        assert_eq!(vector, EKAM_V2_CANONICAL_TEST_VECTOR_HEX, "Ekam v2 vector changed");
+    }
+
+    #[test]
+    fn ekam_v2_self_test_passes() {
+        assert!(ekam_v2_self_test(), "Ekam v2 self-test failed");
+    }
+
+    #[test]
+    fn ekam_v1_self_test_passes() {
+        assert!(ekam_self_test(), "Ekam v1 self-test failed");
+    }
+
+    #[test]
+    fn v2_differs_from_v1() {
+        let header = b"v1 vs v2 comparison";
+        let nonce = 12345u64;
+        let v1 = cosmic_harmony_ekam_deeksha(header, nonce);
+        let v2 = cosmic_harmony_ekam_deeksha_v2(header, nonce, 0);
+        assert_ne!(v1.data, v2.data, "v2 must differ from v1");
+    }
+
+    #[test]
+    fn ekam_v2_epoch_variation() {
+        use crate::algorithms_npu::NPU_EPOCH_LENGTH;
+        let header = b"epoch variation test";
+        let nonce = 999u64;
+        let h_ep0 = cosmic_harmony_ekam_deeksha_v2(header, nonce, 0);
+        let h_ep1 = cosmic_harmony_ekam_deeksha_v2(header, nonce, NPU_EPOCH_LENGTH);
+        let h_ep2 = cosmic_harmony_ekam_deeksha_v2(header, nonce, NPU_EPOCH_LENGTH * 2);
+        assert_ne!(h_ep0.data, h_ep1.data, "Epoch 0 vs 1 must differ");
+        assert_ne!(h_ep1.data, h_ep2.data, "Epoch 1 vs 2 must differ");
+        assert_ne!(h_ep0.data, h_ep2.data, "Epoch 0 vs 2 must differ");
+    }
+
+    #[test]
+    fn ekam_v2_same_epoch_deterministic() {
+        let header = b"same epoch test";
+        let nonce = 777u64;
+        let h1 = cosmic_harmony_ekam_deeksha_v2(header, nonce, 0);
+        let h2 = cosmic_harmony_ekam_deeksha_v2(header, nonce, 1);
+        let h3 = cosmic_harmony_ekam_deeksha_v2(header, nonce, 100);
+        assert_eq!(h1.data, h2.data, "Same epoch heights must match");
+        assert_eq!(h2.data, h3.data, "Same epoch heights must match");
+    }
+
+    #[test]
+    fn ekam_v2_avalanche() {
+        let header = b"avalanche test header";
+        let h1 = cosmic_harmony_ekam_deeksha_v2(header, 1000, 0);
+        let h2 = cosmic_harmony_ekam_deeksha_v2(header, 1001, 0);
+        assert_ne!(h1.data, h2.data, "Different nonce must give different hash");
+    }
+
+    #[test]
+    fn ekam_v2_output_nonzero() {
+        let h = cosmic_harmony_ekam_deeksha_v2(b"nonzero test", 0, 0);
+        assert!(h.data.iter().any(|&b| b != 0), "Output must not be all-zero");
+    }
+
+    #[test]
+    fn ekam_find_nonce_works() {
+        let header = b"find nonce test";
+        let target = [0xffu8; 32];
+        assert!(ekam_find_nonce(header, 0, 10, &target).is_some());
+    }
+
+    #[test]
+    fn ekam_v2_find_nonce_works() {
+        let header = b"find nonce test";
+        let target = [0xffu8; 32];
+        assert!(ekam_v2_find_nonce(header, 0, 10, &target, 0).is_some());
+    }
+
+    #[test]
+    fn dispatch_routes_to_v2() {
+        use crate::algorithms_opt::cosmic_harmony_with_height;
+        let header = b"dispatch test header";
+        let nonce = 42u64;
+        let dispatched = cosmic_harmony_with_height(header, nonce, 0);
+        let direct_v2 = cosmic_harmony_ekam_deeksha_v2(header, nonce, 0);
+        assert_eq!(dispatched.data, direct_v2.data, "Dispatch must route to v2");
+    }
+
+    #[test]
+    fn npu_parity() {
+        use crate::algorithms_npu::npu_mixing_step;
+        let input = [0x7fu8; 64];
+        let via_backend = npu().mix(&input);
+        let cpu_direct = npu_mixing_step(&input);
+        assert_eq!(via_backend, cpu_direct, "NPU backend must match CPU path");
     }
 }

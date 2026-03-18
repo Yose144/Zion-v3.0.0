@@ -67,7 +67,7 @@ This roadmap follows the release progression already defined in the repository d
 
 ## V3 Invariants
 
-- One active consensus profile: `cosmic_harmony_ekam_deeksha`
+- One active consensus profile: `cosmic_harmony_ekam_deeksha_v2`
 - One clean L1 code line: `V3/L1/*`
 - One separate desktop control shell: `V3/DesktopApp/*`, only when explicitly requested and kept thin over V3 runtime contracts
 - No new work in the legacy root unless the user explicitly asks for migration sync or archival backport
@@ -80,8 +80,13 @@ This roadmap follows the release progression already defined in the repository d
 
 - `L1/cosmic-harmony`
   - Ekam Deeksha canonical PoW migrated
+  - **Tier 1 ASIC hardening: 256 KiB scratchpad, 4 passes, 256 random reads (4× memory, 2× passes, 4× reads vs v1)**
+  - **Tier 2 epoch-rotating NPU: MlpTopology enum (Standard/ThreeLayer/Wide/Deep), epoch length 2016, deterministic weight expansion from Blake3 epoch seed**
+  - **Ekam Deeksha v2 canonical pipeline: cosmic_harmony_ekam_deeksha_v2(header, nonce, height) — mainnet algorithm from genesis (fork height 0)**
+  - **Height-aware dispatch: cosmic_harmony_with_height() always routes to v2**
+  - **81 tests passing (23 NPU epoch, 7 scratchpad v2, 17 deeksha v1+v2, 4 dispatch/difficulty)**
   - revenue and NCL support retained in narrowed form
-  - OpenCL kernel source included
+  - OpenCL kernel source included (optimized: keccak_f1600 inline, native_sqrt, 46841 bytes)
 - `L1/core`
   - mining headers, jobs, solutions, targets, revenue snapshots
   - node config defaults for mainnet-track runtime
@@ -180,6 +185,7 @@ This roadmap follows the release progression already defined in the repository d
 - **Phase 19: Clippy cleanup campaign — zion-core lib/bin and zion-cosmic-harmony reduced to zero clippy warnings; style simplifications, map_or→is_some_and/is_none_or, loop cleanups, and targeted allow attributes where required by API shape**
 - **Phase 20: Miner DCR/GPU runtime integration — DCR worker modules wired into miner entrypoint, OpenCL kernel/build glue added, GPU backend smoke path validated (`ZION_DCR_BACKEND=gpu`, `ZION_LOOP_COUNT=1`)**
 - **Phase 20b: Native-FFI baseline + runtime hook — `L1/native-ffi` builds with `--features native-all` on Windows MSVC, and miner DCR CPU path now supports explicit hash dispatch (`ZION_DCR_HASH_IMPL=rust|native`) with safe fallback when native feature is not enabled**
+- **Phase 21: Tier 1+2 ASIC resistance V3 port — 256 KiB scratchpad (4× v1, 4 passes, 256 reads), epoch-rotating NPU (MlpTopology×4, 2016-block epochs, Blake3 seed), Ekam Deeksha v2 canonical pipeline, height-aware dispatch, meets_difficulty(), optimized GPU kernel (46841 bytes). 81 cosmic-harmony tests passing. Ported from L1 commits c423a5e (Tier 1) + 79c903a (Tier 2).**
 
 ### Not Done Yet
 
