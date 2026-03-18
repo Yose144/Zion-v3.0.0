@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Documentation · ZION v2.9.8',
+  title: 'Documentation · ZION v2.9.9',
   description: 'ZION documentation focused on live testnet operations, protocol baseline, mining setup, and archived history.',
 };
 

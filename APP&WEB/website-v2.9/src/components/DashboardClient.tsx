@@ -40,7 +40,7 @@ const missionMetrics = [
   {
     label: 'Version',
     value: SITE_VERSION,
-    description: 'Deeksha Patch & Code Freeze',
+    description: 'Pure Code · v2.9.9',
     icon: Gauge
   },
   {

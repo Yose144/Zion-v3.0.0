@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Explorer · ZION v2.9.8',
+  title: 'Explorer · ZION v2.9.9',
   description: 'Explore ZION blockchain blocks, transactions, addresses, and network statistics in real-time.',
 };
 
