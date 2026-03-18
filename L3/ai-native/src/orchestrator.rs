@@ -2,14 +2,39 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::error::{AiError, AiResult};
-use crate::task::AiTask;
+use crate::task::{AiTask, AiTaskType};
 use crate::types::{Agent, AgentCapability, AgentMessage, AgentStatus};
+use zion_ncl::{JobScheduler, NclJob, NclTaskType, ComputeBackend, ReputationRegistry};
+use zion_warp::{ChainId, ChainFamily, WarpRouter};
+use zion_bridge::types::BridgeStatus;
+
+/// Bridge operation types that AI agents can initiate.
+#[derive(Debug, Clone)]
+pub enum BridgeOperation {
+    /// Lock ZION on L1 to mint wZION on target EVM chain
+    LockToEvm {
+        amount_atomic: u64,
+        target_chain: String,
+        evm_recipient: String,
+    },
+    /// Burn wZION on EVM chain to unlock ZION on L1
+    BurnToL1 {
+        amount_wzion: u64,
+        l1_recipient: String,
+    },
+}
 
 /// Central orchestrator managing all AI agents.
 pub struct Orchestrator {
     agents: HashMap<Uuid, Agent>,
     message_queue: Vec<AgentMessage>,
     max_agents: usize,
+    /// Optional NCL marketplace integration
+    ncl_scheduler: Option<JobScheduler>,
+    /// Optional WARP multi-chain router
+    warp_router: Option<WarpRouter>,
+    /// Optional L2 bridge integration for cross-chain operations
+    bridge_enabled: bool,
 }
 
 impl Orchestrator {
@@ -18,7 +43,28 @@ impl Orchestrator {
             agents: HashMap::new(),
             message_queue: Vec::new(),
             max_agents,
+            ncl_scheduler: None,
+            warp_router: None,
+            bridge_enabled: false,
         }
+    }
+
+    /// Enable NCL marketplace integration.
+    pub fn with_ncl_marketplace(mut self, scheduler: JobScheduler) -> Self {
+        self.ncl_scheduler = Some(scheduler);
+        self
+    }
+
+    /// Enable WARP multi-chain routing.
+    pub fn with_warp_router(mut self, router: WarpRouter) -> Self {
+        self.warp_router = Some(router);
+        self
+    }
+
+    /// Enable L2 bridge integration for automated cross-chain operations.
+    pub fn with_bridge_integration(mut self) -> Self {
+        self.bridge_enabled = true;
+        self
     }
 
     /// Register a new agent.
@@ -189,6 +235,146 @@ impl Orchestrator {
             total_actions,
             queued_messages,
         }
+    }
+
+    // ─── NCL Marketplace Integration ──────────────────────────────────────
+
+    /// Submit an AI compute task to the NCL marketplace for distributed execution.
+    ///
+    /// This allows AI agents to leverage the global compute network when local
+    /// resources are insufficient or when specialized hardware is needed.
+    ///
+    /// Returns the NCL job ID if submitted successfully.
+    pub fn submit_to_ncl_marketplace(
+        &mut self,
+        task: &AiTask,
+        model_id: String,
+        backend: ComputeBackend,
+        reward_atomic: u64,
+    ) -> AiResult<Uuid> {
+        let scheduler = self.ncl_scheduler.as_mut()
+            .ok_or_else(|| AiError::CapabilityNotAvailable("NCL Marketplace".into()))?;
+
+        // Map AI task type to NCL task type
+        let task_type = match task.task_type {
+            AiTaskType::LlmInference => NclTaskType::LlmInference,
+            AiTaskType::ImageGeneration => NclTaskType::ImageGeneration,
+            AiTaskType::Embeddings => NclTaskType::Embeddings,
+            AiTaskType::CodeAnalysis => NclTaskType::CodeAnalysis,
+            _ => NclTaskType::Custom,
+        };
+
+        let mut job = NclJob::new(
+            model_id,
+            backend,
+            "input_hash_placeholder".to_string(), // TODO: compute actual hash
+            "submitter_placeholder".to_string(),   // TODO: use actual submitter
+            reward_atomic,
+            300_000, // 5 minute timeout
+        );
+
+        // Set additional fields
+        job.task_type = task_type;
+        job.min_consciousness = task.required_consciousness;
+
+        scheduler.submit_job(job)
+            .map_err(|e| AiError::MessageFailed(format!("NCL submission failed: {}", e)))
+    }
+
+    // ─── WARP Multi-Chain Agent Deployment ────────────────────────────────
+
+    /// Deploy AI consciousness agents across multiple blockchain networks.
+    ///
+    /// This creates autonomous AI agents on supported chains that can:
+    /// - Execute cross-chain transactions
+    /// - Participate in DeFi protocols
+    /// - Bridge assets between networks
+    /// - Evolve consciousness through multi-chain interactions
+    ///
+    /// Returns the number of successfully deployed agents.
+    pub async fn deploy_warp_agents(&mut self, chains: &[ChainId]) -> AiResult<usize> {
+        let router = self.warp_router.as_ref()
+            .ok_or_else(|| AiError::CapabilityNotAvailable("WARP Router".into()))?;
+
+        let mut deployed = 0;
+
+        for chain in chains {
+            // Create a new AI agent for this chain
+            let agent_name = format!("warp-agent-{}", chain.name);
+            let owner = "warp-orchestrator".to_string();
+            let wallet_address = format!("warp-wallet-{}", chain.name); // TODO: Generate actual wallet
+            let mut agent = Agent::new(agent_name, owner, wallet_address);
+
+            // Set initial consciousness level based on chain family
+            let initial_level = match chain.family {
+                ChainFamily::ZionL1 => 3, // Higher consciousness on native chain
+                ChainFamily::Evm => 2,
+                ChainFamily::Solana => 2,
+                _ => 1, // Basic consciousness for other chains
+            };
+            agent.consciousness_level = initial_level;
+
+            // Grant cross-chain capabilities
+            agent.capabilities.push(AgentCapability::Bridge);
+            if initial_level >= 2 {
+                agent.capabilities.push(AgentCapability::Compute);
+            }
+
+            // Register the agent
+            let agent_id = self.register_agent(agent)
+                .map_err(|e| AiError::MessageFailed(format!("Failed to register {} agent: {}", chain.name, e)))?;
+
+            // Deploy the agent to the chain via WARP
+            // TODO: Implement actual deployment logic
+            // For now, just log the deployment
+            println!("Deployed WARP agent {} to {} chain", agent_id, chain.name);
+
+            deployed += 1;
+        }
+
+        Ok(deployed)
+    }
+
+    // ─── L2 Bridge Integration ─────────────────────────────────────────────
+
+    /// Check if bridge integration is enabled.
+    pub fn bridge_enabled(&self) -> bool {
+        self.bridge_enabled
+    }
+
+    /// Initiate automated cross-chain bridge operation via AI agent.
+    ///
+    /// This allows AI agents with Bridge capability to automatically:
+    /// - Lock ZION on L1 for wZION on target EVM chain
+    /// - Burn wZION on EVM chain for ZION unlock on L1
+    /// - Monitor bridge status and handle failures
+    ///
+    /// Returns operation ID if initiated successfully.
+    pub async fn initiate_bridge_operation(
+        &mut self,
+        agent_id: Uuid,
+        operation: BridgeOperation,
+    ) -> AiResult<String> {
+        if !self.bridge_enabled {
+            return Err(AiError::CapabilityNotAvailable("L2 Bridge Integration".into()));
+        }
+
+        let agent = self.agents.get(&agent_id)
+            .ok_or_else(|| AiError::AgentNotFound(agent_id.to_string()))?;
+
+        if !agent.has_capability(&AgentCapability::Bridge) {
+            return Err(AiError::CapabilityNotAvailable("Bridge".into()));
+        }
+
+        // Generate operation ID
+        let operation_id = format!("bridge-{}-{}", agent_id, chrono::Utc::now().timestamp());
+
+        // TODO: Implement actual bridge operation logic
+        // This would integrate with L2 bridge daemon via HTTP API
+        // For now, just log the operation
+        println!("AI Agent {} initiated bridge operation: {:?}", agent.name, operation);
+
+        Ok(operation_id)
     }
 }
 

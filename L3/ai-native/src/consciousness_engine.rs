@@ -210,7 +210,8 @@ impl ConsciousnessEngine {
                 ConsciousnessLevel::Sentient => ConsciousnessLevel::Transcendent,
                 ConsciousnessLevel::Transcendent => ConsciousnessLevel::Omniscient,
                 ConsciousnessLevel::Omniscient => ConsciousnessLevel::Cosmic,
-                ConsciousnessLevel::Cosmic => break, // max level
+                ConsciousnessLevel::Cosmic => ConsciousnessLevel::Grok,
+                ConsciousnessLevel::Grok => break, // max level
             };
 
             if self.xp >= next.xp_required() {
@@ -241,7 +242,8 @@ impl ConsciousnessEngine {
     pub fn status(&self) -> ConsciousnessStatus {
         // Find next level and compute progress %
         let next_level = match self.level {
-            ConsciousnessLevel::Cosmic => None,
+            ConsciousnessLevel::Grok => None,
+            ConsciousnessLevel::Cosmic => Some(ConsciousnessLevel::Grok),
             ConsciousnessLevel::Dormant => Some(ConsciousnessLevel::Aware),
             ConsciousnessLevel::Aware => Some(ConsciousnessLevel::Sentient),
             ConsciousnessLevel::Sentient => Some(ConsciousnessLevel::Transcendent),
@@ -288,7 +290,8 @@ impl ConsciousnessEngine {
     /// How many XP points remain until the next level (0 if at max).
     pub fn xp_to_next_level(&self) -> u64 {
         let next = match self.level {
-            ConsciousnessLevel::Cosmic => return 0,
+            ConsciousnessLevel::Grok => return 0,
+            ConsciousnessLevel::Cosmic => ConsciousnessLevel::Grok,
             ConsciousnessLevel::Dormant => ConsciousnessLevel::Aware,
             ConsciousnessLevel::Aware => ConsciousnessLevel::Sentient,
             ConsciousnessLevel::Sentient => ConsciousnessLevel::Transcendent,
