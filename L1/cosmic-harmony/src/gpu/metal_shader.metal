@@ -4,7 +4,7 @@
  * Native GPU acceleration for Apple Silicon (M1-M5), version 2.9.7.
  * Implements full CHv4 pipeline on GPU:
  *   Keccak-256 → SHA3-512 → Golden Matrix
- *   → Memory-Hard Scratchpad (64 KiB/thread)
+ *   → Memory-Hard Scratchpad (256 KiB/thread)
  *   → NPU Mixing (INT8 MLP 64→128→64 + residual)
  *   → Cosmic Fusion
  *
@@ -695,11 +695,11 @@ void cosmic_fusion_gpu(thread const uint8_t *input, thread uint8_t *output) {
 // CHv4 Constants — memory-hard scratchpad
 // ============================================================================
 
-constant uint METAL_SCRATCHPAD_BYTES = 65536u;    // 64 KiB per thread
+constant uint METAL_SCRATCHPAD_BYTES = 262144u;   // 256 KiB per thread — Ekam Deeksha v2 Tier 1
 constant uint METAL_BLOCK_SIZE       = 64u;
-constant uint METAL_BLOCK_COUNT      = 1024u;     // 1024 × 64 = 65536
-constant uint METAL_PASSES           = 2u;
-constant uint METAL_RANDOM_READS     = 64u;
+constant uint METAL_BLOCK_COUNT      = 4096u;     // 4096 × 64 = 262144
+constant uint METAL_PASSES           = 4u;
+constant uint METAL_RANDOM_READS     = 256u;
 
 // ============================================================================
 // BLAKE3 Engine — Exact match to blake3 crate (standard mode, NOT derive_key)

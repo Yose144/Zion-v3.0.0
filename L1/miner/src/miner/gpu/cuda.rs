@@ -21,9 +21,9 @@ use cudarc::nvrtc::compile_ptx;
 const CUDA_KERNEL: &str = include_str!("kernels/cosmic_harmony_v3.cu");
 
 /// Scratchpad bytes per thread (must match CUDA_SCRATCHPAD_BYTES in kernel)
-const CUDA_SCRATCHPAD_BYTES: usize = 64 * 1024;  // 64 KiB
+const CUDA_SCRATCHPAD_BYTES: usize = 256 * 1024;  // 256 KiB — Ekam Deeksha v2 Tier 1
 /// Max parallel threads when memory-hard is active
-const CUDA_MH_BATCH_DEFAULT: usize = 2048;
+const CUDA_MH_BATCH_DEFAULT: usize = 1024;
 
 #[cfg(feature = "cuda")]
 fn cuda_result<T>(
@@ -139,9 +139,9 @@ impl GpuMiner for CudaMiner {
             let result_count_buf = cuda_result(device.alloc_zeros::<u32>(1), "CUDA result-count alloc failed")?;
             let result_hash_buf = cuda_result(device.alloc_zeros::<u8>(32), "CUDA result-hash alloc failed")?;
 
-            // Scratchpad: mh_batch_size × 64 KiB
+            // Scratchpad: mh_batch_size × 256 KiB
             let scratchpad_len = self.mh_batch_size * CUDA_SCRATCHPAD_BYTES;
-            println!("[CUDA] Allocating scratchpad: {} MiB ({} threads × 64 KiB)",
+            println!("[CUDA] Allocating scratchpad: {} MiB ({} threads × 256 KiB)",
                 scratchpad_len / (1024 * 1024), self.mh_batch_size);
             let scratchpad_buf = cuda_result(
                 device.alloc_zeros::<u8>(scratchpad_len),
