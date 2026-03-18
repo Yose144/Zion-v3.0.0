@@ -650,7 +650,7 @@ class ZionRpcClient {
       throw new Error('Failed to get network info');
     }
 
-    const tipHeight = info.height > 0 ? info.height - 1 : 0;
+    const tipHeight = info.height > 0 ? info.height : 0;
     const [lastBlock, poolStats] = await Promise.all([
       this.getBlockHeaderByHeight(tipHeight).catch(() => null),
       this.getPoolStats().catch(() => null),
