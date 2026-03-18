@@ -20,6 +20,7 @@ const t = {
     dao:        { cs: 'DAO',         en: 'DAO' },
     bridge:     { cs: 'Most',        en: 'Bridge' },
     pool:       { cs: 'Pool',        en: 'Pool' },
+    miner_stats: { cs: 'Statistiky minera', en: 'Miner Stats' },
     philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
   },

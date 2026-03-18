@@ -31,25 +31,13 @@ export async function GET() {
     let realEmission: number | null = null;
     try {
       const emission = await rpc.getCoinbaseTxSum(0, info.height);
-      realEmission = emission.emission_amount / ATOMIC_UNITS_PER_ZION;
+      if (emission.emission_amount > 0) {
+        realEmission = emission.emission_amount / ATOMIC_UNITS_PER_ZION;
+      }
     } catch { /* emission endpoint might not be available */ }
 
-    // Average block time from recent blocks
-    let avgBlockTime = info.target || 60;
-    try {
-      const endH = lastBlock?.height || info.height;
-      const startH = Math.max(0, endH - 19);
-      const headers = await rpc.getBlockHeaders(startH, endH);
-      if (headers.length >= 2) {
-        const ts = headers.map(h => h.timestamp).sort((a, b) => a - b);
-        const deltas: number[] = [];
-        for (let i = 1; i < ts.length; i++) {
-          const d = ts[i] - ts[i - 1];
-          if (d > 0) deltas.push(d);
-        }
-        if (deltas.length) avgBlockTime = Math.round(deltas.reduce((s, v) => s + v, 0) / deltas.length);
-      }
-    } catch { /* use default */ }
+    // Average block time: use daemon target (no extra block fetches)
+    const avgBlockTime = info.target || 60;
 
     const stats = {
       // Chain
@@ -115,7 +103,14 @@ export async function GET() {
         block_size: lastBlock.block_size || 0,
       } : null,
 
-      // Legacy compatibility
+      // Legacy / frontend compatibility aliases
+      latest_block: lastBlock ? {
+        height: lastBlock.height,
+        hash: lastBlock.hash,
+        timestamp: lastBlock.timestamp,
+      } : null,
+      mempool_size: info.tx_pool_size || 0,
+      total_supply: realEmission || estimatedSupply,
       total_blocks: info.height,
       total_transactions: info.tx_count || info.height,
     };

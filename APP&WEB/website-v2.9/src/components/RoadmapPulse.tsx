@@ -6,11 +6,11 @@ import Link from 'next/link';
 
 const phaseCards = [
   {
-    name: 'L1 TerraNova — Deeksha Freeze',
+    name: 'L1 TerraNova — Pure Code',
     window: 'Mar 2026 – Now',
     progress: 96,
     highlights: [
-      '2.9.8 Deeksha Patch & Code Freeze live',
+      'v2.9.9 Pure Code deployed — testnet live',
       'Primary host live, pool telemetry, and explorer synced',
       'Native miner/runtime path hardened for ARM + x86',
     ],
@@ -22,7 +22,7 @@ const phaseCards = [
     highlights: [
       'External security audit (Q2 2026)',
       'Hardware wallet integration (Ledger/Trezor)',
-      'Security hardening after Deeksha code freeze',
+      'Security hardening on Pure Code baseline',
     ],
   },
   {
@@ -72,10 +72,10 @@ export default function RoadmapPulse() {
           <div className="flex-1 space-y-3">
             <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">Roadmap</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              Deeksha <span className="text-gradient">v2.9.8 "Patch & Code Freeze"</span>
+              v2.9.9 <span className="text-gradient">Pure Code</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              Live TestNet runs on the Deeksha release line. Current priority is stability, telemetry,
+              Live TestNet runs on the v2.9.9 Pure Code release line. Current priority is stability, telemetry,
               documentation, and operational discipline before MainNet Q4 2026.
             </p>
           </div>
@@ -148,7 +148,7 @@ export default function RoadmapPulse() {
             <Rocket className="w-6 h-6 text-zion-cyan" />
             <div>
               <p className="text-xs uppercase tracking-[0.4em] text-gray-400">6-Layer Vision</p>
-              <h3 className="text-2xl font-semibold text-white">6-layer vision — po Deeksha freeze</h3>
+              <h3 className="text-2xl font-semibold text-white">6-layer vision — po Pure Code baseline</h3>
             </div>
           </div>
 
