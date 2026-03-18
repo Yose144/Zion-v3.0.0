@@ -4487,12 +4487,14 @@ function startMining(config) {
   // Rust miner Ekam Deeksha v2 scratchpad batch count (GPU memory-hard PoW).
   // ZION_GPU_MH_BATCH controls how many threads' scratchpads are allocated in VRAM.
   // Ekam v2: 256 KiB per scratchpad (4× v1). VRAM = batch × 256 KiB.
+  // Aligned with Rust miner opencl.rs VRAM auto-tuning (benchmarked 2026-03-18).
   if (MINER_IS_RUST && mainMinerGpu && !String(process.env.ZION_GPU_MH_BATCH || '').trim()) {
     const gpuMem = parseGpuMemoryMb(gpuInfo);
-    // 1024 × 256 KiB = 256 MiB — safe for 4 GB GPUs.
-    // 2048 × 256 KiB = 512 MiB — sweet spot for 6-8 GB GPUs.
-    // 4096 × 256 KiB = 1 GiB — for 8+ GB GPUs.
-    const mhBatch = gpuMem >= 8000 ? 4096 : (gpuMem >= 6000 ? 2048 : 1024);
+    // 512  × 256 KiB = 128 MiB — minimal GPUs (< 2 GB).
+    // 1024 × 256 KiB = 256 MiB — safe for 2-4 GB GPUs.
+    // 2048 × 256 KiB = 512 MiB — for 4-6 GB GPUs.
+    // 4096 × 256 KiB = 1 GiB — optimal for 6+ GB GPUs (proven on RX 5600 XT 6 GB).
+    const mhBatch = gpuMem >= 6000 ? 4096 : (gpuMem >= 4000 ? 2048 : (gpuMem >= 2000 ? 1024 : 512));
     env.ZION_GPU_MH_BATCH = String(mhBatch);
   }
 
