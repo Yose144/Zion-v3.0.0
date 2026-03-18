@@ -30,6 +30,15 @@
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 #define XTIME(a) ((uchar)(((a) << 1) ^ ((((a) >> 7) & 1) * 0x1b)))
 
+/* Chi macro: one 5-element row, no temp array (from optimized v3 kernel) */
+#define CHI_ROW(b) \
+{ ulong _a=st[(b)],_b=st[(b)+1],_c=st[(b)+2],_d=st[(b)+3],_e=st[(b)+4]; \
+  st[(b)]    = _a ^ ((~_b) & _c); \
+  st[(b)+1]  = _b ^ ((~_c) & _d); \
+  st[(b)+2]  = _c ^ ((~_d) & _e); \
+  st[(b)+3]  = _d ^ ((~_e) & _a); \
+  st[(b)+4]  = _e ^ ((~_a) & _b); }
+
 /* Keccak-f1600 round constants */
 __constant ulong RC[24] = {
     0x0000000000000001UL, 0x0000000000008082UL,
@@ -85,48 +94,54 @@ __constant uchar AES_RCON[10] = {
 
 void keccak_f1600(ulong *st)
 {
-    int rho[24] = {
-         1,  3,  6, 10, 15, 21, 28, 36,
-        45, 55,  2, 14, 27, 41, 56,  8,
-        25, 43, 62, 18, 39, 61, 20, 44
-    };
-    int pi[24] = {
-        10,  7, 11, 17, 18,  3,  5, 16,
-         8, 21, 24,  4, 15, 23, 19, 13,
-        12,  2, 20, 14, 22,  9,  6,  1
-    };
+    ulong bc0, bc1, bc2, bc3, bc4, t;
 
-    for (int round = 0; round < 24; round++) {
-        /* Theta */
-        ulong C[5], D[5];
-        for (int x = 0; x < 5; x++)
-            C[x] = st[x] ^ st[x+5] ^ st[x+10] ^ st[x+15] ^ st[x+20];
-        for (int x = 0; x < 5; x++)
-            D[x] = C[(x+4)%5] ^ ROL64(C[(x+1)%5], 1);
-        for (int x = 0; x < 25; x++)
-            st[x] ^= D[x % 5];
+    #pragma unroll 4
+    for (int rnd = 0; rnd < 24; rnd++) {
+        /* Theta — no arrays, direct column XOR */
+        bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
+        bc1 = st[1]^st[6]^st[11]^st[16]^st[21];
+        bc2 = st[2]^st[7]^st[12]^st[17]^st[22];
+        bc3 = st[3]^st[8]^st[13]^st[18]^st[23];
+        bc4 = st[4]^st[9]^st[14]^st[19]^st[24];
+        t=bc4^ROL64(bc1,1); st[0]^=t;st[5]^=t;st[10]^=t;st[15]^=t;st[20]^=t;
+        t=bc0^ROL64(bc2,1); st[1]^=t;st[6]^=t;st[11]^=t;st[16]^=t;st[21]^=t;
+        t=bc1^ROL64(bc3,1); st[2]^=t;st[7]^=t;st[12]^=t;st[17]^=t;st[22]^=t;
+        t=bc2^ROL64(bc4,1); st[3]^=t;st[8]^=t;st[13]^=t;st[18]^=t;st[23]^=t;
+        t=bc3^ROL64(bc0,1); st[4]^=t;st[9]^=t;st[14]^=t;st[19]^=t;st[24]^=t;
 
-        /* Rho + Pi */
-        ulong B[25];
-        B[0] = st[0];
-        ulong last = st[1];
-        for (int i = 0; i < 24; i++) {
-            ulong t = st[pi[i]];
-            B[pi[i]] = ROL64(last, rho[i]);
-            last = t;
-        }
-        for (int i = 0; i < 25; i++) st[i] = B[i];
+        /* Rho+Pi — fully inlined (no lookup tables, no loop, no B[25] array) */
+        t=st[1];
+        bc0=st[10];st[10]=ROL64(t, 1);t=bc0;
+        bc0=st[ 7];st[ 7]=ROL64(t, 3);t=bc0;
+        bc0=st[11];st[11]=ROL64(t, 6);t=bc0;
+        bc0=st[17];st[17]=ROL64(t,10);t=bc0;
+        bc0=st[18];st[18]=ROL64(t,15);t=bc0;
+        bc0=st[ 3];st[ 3]=ROL64(t,21);t=bc0;
+        bc0=st[ 5];st[ 5]=ROL64(t,28);t=bc0;
+        bc0=st[16];st[16]=ROL64(t,36);t=bc0;
+        bc0=st[ 8];st[ 8]=ROL64(t,45);t=bc0;
+        bc0=st[21];st[21]=ROL64(t,55);t=bc0;
+        bc0=st[24];st[24]=ROL64(t, 2);t=bc0;
+        bc0=st[ 4];st[ 4]=ROL64(t,14);t=bc0;
+        bc0=st[15];st[15]=ROL64(t,27);t=bc0;
+        bc0=st[23];st[23]=ROL64(t,41);t=bc0;
+        bc0=st[19];st[19]=ROL64(t,56);t=bc0;
+        bc0=st[13];st[13]=ROL64(t, 8);t=bc0;
+        bc0=st[12];st[12]=ROL64(t,25);t=bc0;
+        bc0=st[ 2];st[ 2]=ROL64(t,43);t=bc0;
+        bc0=st[20];st[20]=ROL64(t,62);t=bc0;
+        bc0=st[14];st[14]=ROL64(t,18);t=bc0;
+        bc0=st[22];st[22]=ROL64(t,39);t=bc0;
+        bc0=st[ 9];st[ 9]=ROL64(t,61);t=bc0;
+        bc0=st[ 6];st[ 6]=ROL64(t,20);t=bc0;
+                   st[ 1]=ROL64(t,44);
 
-        /* Chi */
-        for (int y = 0; y < 5; y++) {
-            ulong t[5];
-            for (int x = 0; x < 5; x++) t[x] = st[y*5+x];
-            for (int x = 0; x < 5; x++)
-                st[y*5+x] = t[x] ^ ((~t[(x+1)%5]) & t[(x+2)%5]);
-        }
+        /* Chi — inlined per-row macro (no temp array, no loop) */
+        CHI_ROW(0) CHI_ROW(5) CHI_ROW(10) CHI_ROW(15) CHI_ROW(20)
 
         /* Iota */
-        st[0] ^= RC[round];
+        st[0] ^= RC[rnd];
     }
 }
 
@@ -230,6 +245,39 @@ void keccak256(const uchar *in, int inlen, uchar *out)
     for (int i = 0; i < 25; i++) st[i] = 0;
     keccak_absorb(st, &pos, 136, in, inlen);
     keccak_finalize(st, pos, 136, 0x01, out, 32);
+}
+
+/*
+ * Specialized Keccak-256 for exactly 136-byte input (= Keccak-256 rate).
+ * Used in random_read_mix hot loop: Keccak-256(acc[64] || chunk[64] || r[8]).
+ * Eliminates all absorb overhead: no position tracking, no alignment checks.
+ * Input as pre-loaded ulongs, output as 4 ulongs (32 bytes).
+ */
+void keccak256_136_mix(const ulong acc64[8], const ulong chunk64[8],
+                       ulong r_val, ulong out64[4])
+{
+    ulong st[25];
+    #pragma unroll 25
+    for (int i = 0; i < 25; i++) st[i] = 0;
+
+    /* XOR exactly 17 ulongs = 136 bytes = one full rate block */
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) st[i] = acc64[i];
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) st[8 + i] = chunk64[i];
+    st[16] = r_val;
+
+    /* Rate block full -> permute */
+    keccak_f1600(st);
+
+    /* Keccak-256 padding: 0x01 at byte 0, 0x80 at byte 135 (rate-1) */
+    st[0]  ^= 0x01UL;
+    st[16] ^= 0x8000000000000000UL;
+    keccak_f1600(st);
+
+    /* Squeeze 32 bytes (4 ulongs) */
+    #pragma unroll 4
+    for (int i = 0; i < 4; i++) out64[i] = st[i];
 }
 
 /* SHA3-512: rate=72, padding=0x06, output=64 B (NIST SHA-3) */
@@ -397,36 +445,29 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
         uint off = pos * BLOCK_SIZE;
 
         /* Copy chunk from global scratchpad — ulong-width (8× fewer loads) */
-        uchar chunk[BLOCK_SIZE];
         __global const ulong *gsrc = (__global const ulong *)(pad + off);
-        ulong *ldst = (ulong *)chunk;
-        for (int i = 0; i < 8; i++) ldst[i] = gsrc[i];
+        ulong chunk64[8];
+        #pragma unroll 8
+        for (int i = 0; i < 8; i++) chunk64[i] = gsrc[i];
 
-        /* r as u64 LE — direct ulong write */
-        uchar r_bytes[8];
-        *(ulong *)r_bytes = (ulong)r;
-
-        /* d = Keccak-256(acc || chunk || r_le) */
-        ulong st[25]; int spos = 0;
-        for (int i = 0; i < 25; i++) st[i] = 0;
-        keccak_absorb(st, &spos, 136, acc,     64);
-        keccak_absorb(st, &spos, 136, chunk,   BLOCK_SIZE);
-        keccak_absorb(st, &spos, 136, r_bytes, 8);
-        uchar d[32];
-        keccak_finalize(st, spos, 136, 0x01, d, 32);
+        /* d = Keccak-256(acc || chunk || r_le) — specialized 136B fast path */
+        ulong d64[4];
+        keccak256_136_mix((const ulong *)acc, chunk64, (ulong)r, d64);
 
         /* Update accumulator — ulong XOR for first 32 bytes */
         {
             ulong *a64 = (ulong *)acc;
-            ulong *d64 = (ulong *)d;
+            #pragma unroll 4
             for (int u = 0; u < 4; u++) a64[u] ^= d64[u];
         }
-        for (int i = 0; i < 32; i++)
-            acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d[i]);
+        {
+            const uchar *d8 = (const uchar *)d64;
+            for (int i = 0; i < 32; i++)
+                acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d8[i]);
+        }
 
         /* Next position — direct ulong read */
-        ulong next_val = *(ulong *)d;
-        pos = (uint)((next_val ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
+        pos = (uint)((d64[0] ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
     }
 
     /* Final hash: SHA3-512(acc || pad[0:64] || pad[last_64:]) */
@@ -524,10 +565,13 @@ void b3_compress(const uint cv[8], const uint bw[16],
     };
     uint msg[16];
     for (int i = 0; i < 16; i++) msg[i] = bw[i];
-    for (int i = 0; i < 7; i++) {
+    /* 7 rounds, 6 permutations (last permute is unnecessary — msg is discarded) */
+    #pragma unroll 6
+    for (int i = 0; i < 6; i++) {
         b3_round(st, msg);
         b3_permute(msg);
     }
+    b3_round(st, msg);
 
     /* BLAKE3 feed-forward output:
      *   out[0..7]  = state[0..7]  ^ state[8..15]
@@ -814,7 +858,7 @@ void npu_mix(const uchar in64[64], uchar out64[64],
             long d = (long)(hidden[i] - mean);
             var_sum += d * d;
         }
-        int std_approx = (int)sqrt((float)(var_sum / (long)n)) + 1;
+        int std_approx = (int)native_sqrt((float)(var_sum / (long)n)) + 1;
         for (int i = 0; i < n; i++) {
             int normalized = ((hidden[i] - mean) * 128) / std_approx;
             hidden[i] = clamp((normalized * (int)scale1[i]) >> 8, -128, 127);
@@ -845,7 +889,7 @@ void npu_mix(const uchar in64[64], uchar out64[64],
             long d = (long)(output_i32[i] - mean);
             var_sum += d * d;
         }
-        int std_approx = (int)sqrt((float)(var_sum / (long)n)) + 1;
+        int std_approx = (int)native_sqrt((float)(var_sum / (long)n)) + 1;
         for (int i = 0; i < n; i++) {
             int normalized = ((output_i32[i] - mean) * 128) / std_approx;
             output_i32[i] = clamp((normalized * (int)scale2[i]) >> 8, -128, 127);
