@@ -60,7 +60,7 @@ export default function MinerStatsClient() {
     setStats(null);
 
     try {
-      const response = await fetch(`/pool/miner/${addr.trim()}`);
+      const response = await fetch(`/api/miner/${addr.trim()}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
