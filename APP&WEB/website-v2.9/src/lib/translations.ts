@@ -26,10 +26,10 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'Live TestNet · v2.9.8 · Deeksha', en: 'Live TestNet · v2.9.8 · Deeksha' },
+    badge_version:  { cs: 'Live TestNet · v2.9.9 · Pure Code', en: 'Live TestNet · v2.9.9 · Pure Code' },
     badge_chv4:     { cs: 'Primary host live · Zion2 · internal seeds', en: 'Primary host live · Zion2 · internal seeds' },
     tagline:        { cs: 'Veřejný testnet nativního Rust blockchainu', en: 'Public testnet of a native Rust blockchain' },
-    title_sub:      { cs: 'Live TestNet · v2.9.8', en: 'Live TestNet · v2.9.8' },
+    title_sub:      { cs: 'Live TestNet · v2.9.9', en: 'Live TestNet · v2.9.9' },
     description:    {
       cs: 'ZION TerraNova je živý testnet s explorerem, veřejným poolem, mining binárkami a provozní telemetrií na primárním hostu Zion2. Historický 3-node rollout zůstává v dokumentaci a reportech jako validační milník, ne jako aktuální topologie.',
       en: 'ZION TerraNova is a live testnet with an explorer, public pool, mining binaries, and operational telemetry on the Zion2 primary host. The historical 3-node rollout remains in documentation and reports as a validation milestone, not the current topology.',
@@ -42,7 +42,7 @@ const t = {
     signal_mainnet: { cs: 'Release Status', en: 'Release Status' },
     signal_loc:     { cs: 'Zion2 · veřejný host · interní seedy', en: 'Zion2 · public host · internal seeds' },
     signal_target:  { cs: 'GO · primary host aktivní', en: 'GO · primary host active' },
-    signal_status_l1: { cs: 'Deeksha live', en: 'Deeksha live' },
+    signal_status_l1: { cs: 'Pure Code live', en: 'Pure Code live' },
     signal_status_nodes: { cs: '1 veřejný host / 2 interní seedy', en: '1 public host / 2 internal seeds' },
     signal_status_mainnet: { cs: 'Release gate · GO', en: 'Release gate · GO' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },

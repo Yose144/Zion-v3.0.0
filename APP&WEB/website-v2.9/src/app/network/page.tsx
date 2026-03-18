@@ -44,7 +44,7 @@ const heroStats = [
   { label: 'Internal Seeds', value: '2', descriptor: 'Container peers behind primary host' },
   { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
   { label: 'Topology', value: 'Current', descriptor: 'Primary host + internal seeds' },
-  { label: 'Network', value: 'TestNet', descriptor: 'v2.9.8 · Deeksha release line' },
+  { label: 'Network', value: 'TestNet', descriptor: 'v2.9.9 · Pure Code release line' },
 ];
 
 const infraFeatures = [

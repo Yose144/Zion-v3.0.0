@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     default: `ZION Blockchain ${SITE_RELEASE_LABEL}`,
     template: '%s | ZION TerraNova',
   },
-  description: `ZION TerraNova ${SITE_VERSION}: native Rust blockchain, live ${SITE_NETWORK_TOPOLOGY} TestNet, Deeksha Patch & Code Freeze release line, pool telemetry, mining guides, and protocol docs.`,
+  description: `ZION TerraNova ${SITE_VERSION}: native Rust blockchain, live ${SITE_NETWORK_TOPOLOGY} TestNet, Pure Code release line, pool telemetry, mining guides, and protocol docs.`,
   keywords: "blockchain, consciousness mining, ZION, cryptocurrency, native rust, cosmic harmony, WARP bridge, testnet",
   openGraph: {
     type: 'website',
