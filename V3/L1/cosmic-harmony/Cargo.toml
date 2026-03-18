@@ -11,6 +11,7 @@ path = "src/lib.rs"
 [features]
 default = []
 native-npu = ["dep:ort"]
+testnet = []
 
 [dependencies]
 serde.workspace = true

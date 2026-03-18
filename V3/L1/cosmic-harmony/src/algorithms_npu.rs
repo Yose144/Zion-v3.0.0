@@ -25,6 +25,9 @@
 
 use blake3;
 
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+
 // ============================================================================
 // GENESIS SEED & PROTOCOL CONSTANTS
 // ============================================================================
@@ -105,7 +108,7 @@ impl MlpWeights {
 
         // b1 [128]
         let mut b1 = [0i8; 128];
-        for item in b1.iter_mut() { *item = bytes[pos] as i8; pos += 1; }
+        for i in 0..128 { b1[i] = bytes[pos] as i8; pos += 1; }
 
         // W2 [64][128]
         let mut w2 = Box::new([[0i8; 128]; 64]);
@@ -118,20 +121,20 @@ impl MlpWeights {
 
         // b2 [64]
         let mut b2 = [0i8; 64];
-        for item in b2.iter_mut() { *item = bytes[pos] as i8; pos += 1; }
+        for i in 0..64 { b2[i] = bytes[pos] as i8; pos += 1; }
 
         // scale1 [128] — Q8: values 200..312 (≈ 0.78..1.22 multiplier)
         let mut scale1 = [256i16; 128];
-        for item in scale1.iter_mut() {
+        for i in 0..128 {
             // Rozsah 224..288 → dívá se jako 0.875..1.125
-            *item = 224 + (bytes[pos] as i16 & 0x3F);
+            scale1[i] = 224 + (bytes[pos] as i16 & 0x3F);
             pos += 1;
         }
 
         // scale2 [64]
         let mut scale2 = [256i16; 64];
-        for item in scale2.iter_mut() {
-            *item = 224 + (bytes[pos] as i16 & 0x3F);
+        for i in 0..64 {
+            scale2[i] = 224 + (bytes[pos] as i16 & 0x3F);
             pos += 1;
         }
 
@@ -453,6 +456,253 @@ pub fn chv4_npu_weights_flat() -> ChV4WeightsFlat {
         scale1: w.scale1.to_vec(),
         scale2: w.scale2.to_vec(),
     }
+}
+
+// ============================================================================
+// EPOCH-ROTATING NPU WEIGHTS (Tier 2 ASIC resistance)
+// ============================================================================
+
+/// Epoch length — blocks per NPU weight rotation cycle.
+/// Mainnet: 2016 (same as Bitcoin difficulty adjustment period).
+/// Testnet: 100 (rapid rotation for epoch-boundary testing).
+#[cfg(not(feature = "testnet"))]
+pub const NPU_EPOCH_LENGTH: u64 = 2016;
+#[cfg(feature = "testnet")]
+pub const NPU_EPOCH_LENGTH: u64 = 100;
+
+/// Derive epoch number from block height.
+#[inline]
+pub fn epoch_from_height(height: u64) -> u64 {
+    height / NPU_EPOCH_LENGTH
+}
+
+/// Derive epoch-specific seed from genesis seed + epoch number.
+pub fn epoch_seed(epoch: u64) -> [u8; 32] {
+    let mut hasher = blake3::Hasher::new_keyed(CHV4_MLP_GENESIS_SEED);
+    hasher.update(b"CHv4_epoch_weights_v1");
+    hasher.update(&epoch.to_le_bytes());
+    *hasher.finalize().as_bytes()
+}
+
+/// MLP topology — rotates per epoch (4 variants).
+/// Different network shapes force ASIC designers to implement
+/// flexible matrix engines rather than fixed-dimension pipelines.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MlpTopology {
+    /// 64 → 128 → 64 (epoch % 4 == 0)
+    Standard,
+    /// 64 → 96 → 128 → 64 (epoch % 4 == 1)
+    ThreeLayer,
+    /// 64 → 256 → 64 (epoch % 4 == 2)
+    Wide,
+    /// 64 → 64 → 64 → 64 (epoch % 4 == 3)
+    Deep,
+}
+
+impl MlpTopology {
+    pub fn for_epoch(epoch: u64) -> Self {
+        match epoch % 4 {
+            0 => Self::Standard,
+            1 => Self::ThreeLayer,
+            2 => Self::Wide,
+            3 => Self::Deep,
+            _ => unreachable!(),
+        }
+    }
+
+    /// Layer dimensions: (in_dim, out_dim) for each linear layer.
+    fn layer_dims(&self) -> &[(usize, usize)] {
+        match self {
+            Self::Standard =>    &[(64, 128), (128, 64)],
+            Self::ThreeLayer =>  &[(64, 96), (96, 128), (128, 64)],
+            Self::Wide =>        &[(64, 256), (256, 64)],
+            Self::Deep =>        &[(64, 64), (64, 64), (64, 64)],
+        }
+    }
+}
+
+/// A single MLP layer with dynamic dimensions.
+struct EpochMlpLayer {
+    weights: Vec<i8>,    // [out_dim * in_dim], row-major
+    bias: Vec<i8>,       // [out_dim]
+    scale: Vec<i16>,     // [out_dim]
+    in_dim: usize,
+    out_dim: usize,
+}
+
+/// Epoch-specific MLP weights (variable topology).
+pub struct EpochMlpWeights {
+    pub topology: MlpTopology,
+    layers: Vec<EpochMlpLayer>,
+}
+
+/// Expand a 32-byte seed into deterministic pseudorandom bytes via Blake3 key derivation.
+fn expand_epoch_seed(seed: &[u8; 32], total_bytes: usize) -> Vec<u8> {
+    let chunks = (total_bytes + 31) / 32;
+    let mut expanded = Vec::with_capacity(chunks * 32);
+    let mut hasher = blake3::Hasher::new_keyed(seed);
+    hasher.update(b"CHv4_epoch_mlp_v1");
+    for chunk_idx in 0u32..(chunks as u32) {
+        let mut h = hasher.clone();
+        h.update(&chunk_idx.to_le_bytes());
+        expanded.extend_from_slice(h.finalize().as_bytes());
+    }
+    expanded
+}
+
+impl EpochMlpWeights {
+    /// Generate MLP weights for a given epoch.
+    pub fn from_epoch(epoch: u64) -> Self {
+        let seed = epoch_seed(epoch);
+        let topology = MlpTopology::for_epoch(epoch);
+        let dims = topology.layer_dims();
+
+        // Total bytes: weights + bias + scale(1 byte per element) per layer
+        let total_bytes: usize = dims
+            .iter()
+            .map(|&(in_d, out_d)| out_d * in_d + out_d + out_d)
+            .sum();
+
+        let bytes = expand_epoch_seed(&seed, total_bytes);
+        let mut pos = 0usize;
+        let mut layers = Vec::with_capacity(dims.len());
+
+        for &(in_dim, out_dim) in dims {
+            let w_len = out_dim * in_dim;
+            let weights: Vec<i8> = bytes[pos..pos + w_len]
+                .iter()
+                .map(|&b| b as i8)
+                .collect();
+            pos += w_len;
+
+            let bias: Vec<i8> = bytes[pos..pos + out_dim]
+                .iter()
+                .map(|&b| b as i8)
+                .collect();
+            pos += out_dim;
+
+            let scale: Vec<i16> = bytes[pos..pos + out_dim]
+                .iter()
+                .map(|&b| 224 + (b as i16 & 0x3F))
+                .collect();
+            pos += out_dim;
+
+            layers.push(EpochMlpLayer {
+                weights,
+                bias,
+                scale,
+                in_dim,
+                out_dim,
+            });
+        }
+
+        Self { topology, layers }
+    }
+}
+
+// Epoch weight cache — one weight set per epoch, evict old entries
+static EPOCH_WEIGHTS_CACHE: OnceLock<RwLock<HashMap<u64, Arc<EpochMlpWeights>>>> = OnceLock::new();
+
+fn epoch_cache() -> &'static RwLock<HashMap<u64, Arc<EpochMlpWeights>>> {
+    EPOCH_WEIGHTS_CACHE.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+/// Get cached epoch weights (generates and caches if missing).
+pub fn get_epoch_weights(epoch: u64) -> Arc<EpochMlpWeights> {
+    let cache = epoch_cache();
+
+    // Fast path: read lock
+    if let Ok(read) = cache.read() {
+        if let Some(w) = read.get(&epoch) {
+            return Arc::clone(w);
+        }
+    }
+
+    // Slow path: write lock + generate
+    let mut write = cache.write().unwrap();
+    // Double-check after acquiring write lock
+    if let Some(w) = write.get(&epoch) {
+        return Arc::clone(w);
+    }
+
+    let weights = Arc::new(EpochMlpWeights::from_epoch(epoch));
+    write.insert(epoch, Arc::clone(&weights));
+
+    // Evict old epochs (keep last 3)
+    if write.len() > 3 {
+        let min_keep = epoch.saturating_sub(2);
+        write.retain(|&k, _| k >= min_keep);
+    }
+
+    weights
+}
+
+/// Epoch-aware NPU forward pass (variable topology, INT8 deterministic).
+///
+/// Stack-allocated: two `[i32; 256]` buffers (2 KiB total).
+/// Zero heap allocation in the hot path — weights are pre-cached per epoch.
+fn epoch_npu_forward(weights: &EpochMlpWeights, input: &[u8; 64]) -> [u8; 64] {
+    let mut current = [0i32; 256];
+    let mut next = [0i32; 256];
+
+    // Convert input u8 → i32 (signed reinterpret, matches C: (int8_t)input[i])
+    for (i, &b) in input.iter().enumerate() {
+        current[i] = (b as i8) as i32;
+    }
+
+    // Save residual (input dimension is always 64)
+    let mut residual = [0i32; 64];
+    residual.copy_from_slice(&current[..64]);
+
+    let n_layers = weights.layers.len();
+    let mut current_dim: usize = 64;
+
+    for (layer_idx, layer) in weights.layers.iter().enumerate() {
+        debug_assert_eq!(layer.in_dim, current_dim);
+
+        // MatMul + bias: next[i] = clamp(Σ w[i][j] * current[j] + b[i]*32, -128, 127)
+        for i in 0..layer.out_dim {
+            let mut acc = layer.bias[i] as i32 * 32;
+            let row_start = i * layer.in_dim;
+            for j in 0..layer.in_dim {
+                acc += current[j] * layer.weights[row_start + j] as i32;
+            }
+            next[i] = (acc >> 12).clamp(-128, 127);
+        }
+
+        // LayerNorm
+        layer_norm_int8(&mut next[..layer.out_dim], &layer.scale);
+
+        // GELU for all but last layer
+        if layer_idx < n_layers - 1 {
+            for v in next[..layer.out_dim].iter_mut() {
+                *v = gelu_int8(*v);
+            }
+        }
+
+        // Advance: next → current
+        current[..layer.out_dim].copy_from_slice(&next[..layer.out_dim]);
+        current_dim = layer.out_dim;
+    }
+
+    // Final output must be 64 (all topologies end with out_dim=64)
+    debug_assert_eq!(current_dim, 64);
+
+    // Residual add + convert i32 → u8 (two's complement, matches C)
+    let mut result = [0u8; 64];
+    for i in 0..64 {
+        result[i] = (current[i] + residual[i]).clamp(-128, 127) as u8;
+    }
+    result
+}
+
+/// Epoch-aware NPU mixing step — public API for Tier 2 consensus pipeline.
+///
+/// Uses variable MLP topology and weights derived from epoch number.
+/// Thread-safe: weights are cached per epoch via RwLock + Arc.
+pub fn npu_mixing_step_epoch(input: &[u8; 64], epoch: u64) -> [u8; 64] {
+    let weights = get_epoch_weights(epoch);
+    epoch_npu_forward(&weights, input)
 }
 
 // ============================================================================
@@ -923,5 +1173,149 @@ mod tests {
         for &v in &data {
             assert!(v >= -128 && v <= 127);
         }
+    }
+
+    // ================================================================
+    // EPOCH NPU TESTS (Tier 2)
+    // ================================================================
+
+    #[test]
+    fn test_epoch_from_height() {
+        let e = NPU_EPOCH_LENGTH;
+        assert_eq!(epoch_from_height(0), 0);
+        assert_eq!(epoch_from_height(e - 1), 0);
+        assert_eq!(epoch_from_height(e), 1);
+        assert_eq!(epoch_from_height(2 * e - 1), 1);
+        assert_eq!(epoch_from_height(2 * e), 2);
+        assert_eq!(epoch_from_height(4 * e - 1), 3);
+        assert_eq!(epoch_from_height(4 * e), 4);
+    }
+
+    #[test]
+    fn test_epoch_seed_deterministic() {
+        let s1 = epoch_seed(0);
+        let s2 = epoch_seed(0);
+        assert_eq!(s1, s2, "epoch_seed must be deterministic");
+    }
+
+    #[test]
+    fn test_epoch_seeds_differ() {
+        let s0 = epoch_seed(0);
+        let s1 = epoch_seed(1);
+        let s2 = epoch_seed(2);
+        let s3 = epoch_seed(3);
+        assert_ne!(s0, s1);
+        assert_ne!(s1, s2);
+        assert_ne!(s2, s3);
+        assert_ne!(s0, s3);
+    }
+
+    #[test]
+    fn test_topology_rotation() {
+        assert_eq!(MlpTopology::for_epoch(0), MlpTopology::Standard);
+        assert_eq!(MlpTopology::for_epoch(1), MlpTopology::ThreeLayer);
+        assert_eq!(MlpTopology::for_epoch(2), MlpTopology::Wide);
+        assert_eq!(MlpTopology::for_epoch(3), MlpTopology::Deep);
+        assert_eq!(MlpTopology::for_epoch(4), MlpTopology::Standard);
+        assert_eq!(MlpTopology::for_epoch(100), MlpTopology::Standard);
+        assert_eq!(MlpTopology::for_epoch(101), MlpTopology::ThreeLayer);
+    }
+
+    #[test]
+    fn test_epoch_weights_generation() {
+        for epoch in 0..4 {
+            let w = EpochMlpWeights::from_epoch(epoch);
+            let expected_topology = MlpTopology::for_epoch(epoch);
+            assert_eq!(w.topology, expected_topology, "epoch={}", epoch);
+
+            let dims = expected_topology.layer_dims();
+            assert_eq!(w.layers.len(), dims.len(), "epoch={}", epoch);
+            for (i, layer) in w.layers.iter().enumerate() {
+                assert_eq!(layer.in_dim, dims[i].0, "epoch={} layer={}", epoch, i);
+                assert_eq!(layer.out_dim, dims[i].1, "epoch={} layer={}", epoch, i);
+                assert_eq!(layer.weights.len(), dims[i].0 * dims[i].1);
+                assert_eq!(layer.bias.len(), dims[i].1);
+                assert_eq!(layer.scale.len(), dims[i].1);
+                let nonzero = layer.weights.iter().any(|&x| x != 0);
+                assert!(nonzero, "epoch={} layer={} weights all zero", epoch, i);
+            }
+        }
+    }
+
+    #[test]
+    fn test_epoch_npu_deterministic() {
+        let input = [0x42u8; 64];
+        let out1 = npu_mixing_step_epoch(&input, 0);
+        let out2 = npu_mixing_step_epoch(&input, 0);
+        assert_eq!(out1, out2, "epoch NPU must be deterministic");
+    }
+
+    #[test]
+    fn test_epoch_npu_nonzero() {
+        let input = [0u8; 64];
+        for epoch in 0..4 {
+            let out = npu_mixing_step_epoch(&input, epoch);
+            let nonzero = out.iter().any(|&b| b != 0);
+            assert!(nonzero, "epoch={} output should not be all zeros", epoch);
+        }
+    }
+
+    #[test]
+    fn test_epoch_npu_different_epochs_differ() {
+        let input = [0x5Au8; 64];
+        let out0 = npu_mixing_step_epoch(&input, 0);
+        let out1 = npu_mixing_step_epoch(&input, 1);
+        let out2 = npu_mixing_step_epoch(&input, 2);
+        let out3 = npu_mixing_step_epoch(&input, 3);
+        assert_ne!(out0, out1, "Different epochs must produce different outputs");
+        assert_ne!(out1, out2);
+        assert_ne!(out2, out3);
+        assert_ne!(out0, out3);
+    }
+
+    #[test]
+    fn test_epoch_npu_avalanche() {
+        let input1 = [0x5Au8; 64];
+        let mut input2 = input1;
+        input2[0] ^= 0x01;
+        let out1 = npu_mixing_step_epoch(&input1, 0);
+        let out2 = npu_mixing_step_epoch(&input2, 0);
+        let diff = out1.iter().zip(out2.iter()).filter(|(a, b)| a != b).count();
+        assert!(diff >= 1, "Avalanche: at least 1 byte should differ, got {}", diff);
+    }
+
+    #[test]
+    fn test_epoch_cache_reuse() {
+        let w1 = get_epoch_weights(42);
+        let w2 = get_epoch_weights(42);
+        assert!(Arc::ptr_eq(&w1, &w2), "Same epoch should return cached Arc");
+    }
+
+    #[test]
+    fn test_epoch_npu_differs_from_genesis() {
+        let input = [0x42u8; 64];
+        let genesis_out = npu_mixing_step(&input);
+        let epoch0_out = npu_mixing_step_epoch(&input, 0);
+        assert_ne!(genesis_out, epoch0_out,
+            "Epoch 0 NPU uses different key derivation than genesis — outputs must differ");
+    }
+
+    #[test]
+    fn test_testnet_epoch_length_value() {
+        // Verify the feature flag sets the correct epoch length
+        #[cfg(feature = "testnet")]
+        assert_eq!(NPU_EPOCH_LENGTH, 100, "testnet epoch must be 100 blocks");
+        #[cfg(not(feature = "testnet"))]
+        assert_eq!(NPU_EPOCH_LENGTH, 2016, "mainnet epoch must be 2016 blocks");
+    }
+
+    #[test]
+    fn test_epoch_boundary_produces_different_weights() {
+        // Block just before and just after epoch boundary must use different topologies
+        let last_in_epoch0 = NPU_EPOCH_LENGTH - 1;
+        let first_in_epoch1 = NPU_EPOCH_LENGTH;
+        let w0 = get_epoch_weights(epoch_from_height(last_in_epoch0));
+        let w1 = get_epoch_weights(epoch_from_height(first_in_epoch1));
+        assert!(!Arc::ptr_eq(&w0, &w1), "Different epochs must use different weight sets");
     }
 }

@@ -160,6 +160,40 @@ fn fusion_round(state: &mut [u8; 64], round: u8) {
     }
 }
 
+// ============================================================================
+// DISPATCH — height-aware canonical hash selection
+// ============================================================================
+
+/// V3 mainnet canonical dispatch — always routes to Ekam Deeksha v2 (fork height 0).
+///
+/// In V3 mainnet, `CHV_EKAM_V2_FORK_HEIGHT == 0`, so every height uses v2.
+/// This function is the single entry point for consensus validation and mining.
+#[inline]
+pub fn cosmic_harmony_with_height(header: &[u8], nonce: u64, block_height: u64) -> Hash32 {
+    crate::deeksha::cosmic_harmony_ekam_deeksha_v2(header, nonce, block_height)
+}
+
+// ============================================================================
+// DIFFICULTY
+// ============================================================================
+
+/// Check whether a 32-byte hash meets the given difficulty target.
+///
+/// Compares big-endian: the hash must be <= target.
+#[inline]
+pub fn meets_difficulty(hash: &[u8; 32], target: &[u8; 32]) -> bool {
+    // Big-endian comparison (most significant byte first)
+    for i in 0..32 {
+        if hash[i] < target[i] {
+            return true;
+        }
+        if hash[i] > target[i] {
+            return false;
+        }
+    }
+    true // equal
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -178,5 +212,37 @@ mod tests {
         let left = cosmic_fusion_opt_rounds(&input, 8);
         let right = cosmic_fusion_opt_rounds(&input, 8);
         assert_eq!(left, right);
+    }
+
+    #[test]
+    fn dispatch_is_deterministic() {
+        let header = b"dispatch determinism test";
+        let h1 = cosmic_harmony_with_height(header, 0, 0);
+        let h2 = cosmic_harmony_with_height(header, 0, 0);
+        assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn meets_difficulty_basic() {
+        let target = [0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+        let easy = [0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        let hard = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        assert!(meets_difficulty(&easy, &target));
+        assert!(!meets_difficulty(&hard, &target));
+    }
+
+    #[test]
+    fn meets_difficulty_equal() {
+        let hash = [0x42u8; 32];
+        assert!(meets_difficulty(&hash, &hash), "Equal hash must meet target");
     }
 }
