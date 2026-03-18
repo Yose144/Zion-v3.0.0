@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import {
   Atom,
   Brain,
@@ -14,10 +16,127 @@ import {
   Sparkles,
   Sprout,
   Sun,
+  Zap,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { EKAM_GOLDEN_EGG_IMAGE, EKAM_SOURCE_URL } from '@/lib/site';
+
+const journeySteps = [
+  {
+    id: 'bigbang',
+    era: '13.8 miliard let',
+    label: 'BIG BANG',
+    title: 'Počátek vesmíru',
+    description:
+      'Z jediného bodu nekonečné hustoty vznikl prostor, čas a hmota. Prvotní záblesk — singularita — jež se rozvinula v celý existující kosmos.',
+    accent: 'from-violet-500 via-purple-400 to-indigo-500',
+    border: 'border-violet-500/30',
+    glow: 'bg-violet-500/10',
+    dot: 'bg-violet-400',
+    symbol: '✦',
+  },
+  {
+    id: 'hiranyagarbha',
+    era: 'Védská kosmogonie',
+    label: 'HIRANYAGARBHA',
+    title: 'Zlaté kosmické vejce',
+    description:
+      'Prvotní zlaté vejce (Hiranyagarbha) plující v prvotních vodách — zárodek celého stvoření nesoucí Brahmu, duši vesmíru a vědomí.',
+    accent: 'from-amber-400 via-yellow-300 to-orange-400',
+    border: 'border-amber-400/30',
+    glow: 'bg-amber-400/10',
+    dot: 'bg-amber-400',
+    symbol: '◉',
+  },
+  {
+    id: 'ekam',
+    era: 'Srí Lanka · Fyzické místo',
+    label: 'EKAM',
+    title: 'Posvátné místo vědomí',
+    description:
+      'Ekam — "jedno" v sanskrtu — je živoucí chrám zasvěcený kolektivnímu osvícení. Centrum Deeksha přenosu, kde se vědomí stýká s formou.',
+    accent: 'from-sky-400 via-cyan-300 to-teal-400',
+    border: 'border-sky-400/30',
+    glow: 'bg-sky-400/10',
+    dot: 'bg-sky-400',
+    symbol: '🏛',
+  },
+  {
+    id: 'zion',
+    era: 'Blockchain · Decentralizace',
+    label: 'ZION EKAM PoW',
+    title: 'Golden Egg on-chain',
+    description:
+      'ZION Cosmic Harmony kóduje Deeksha princip do proof-of-work. Každý blok je digitální Hiranyagarbha — zárodek nového řádu vědomí v digitálním prostoru.',
+    accent: 'from-emerald-400 via-zion-gold to-amber-400',
+    border: 'border-emerald-400/30',
+    glow: 'bg-emerald-400/10',
+    dot: 'bg-emerald-400',
+    symbol: '⬡',
+  },
+] as const;
+
+function JourneyStep({
+  step,
+  index,
+  isLast,
+}: {
+  step: (typeof journeySteps)[number];
+  index: number;
+  isLast: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+
+  return (
+    <div ref={ref} className="relative flex gap-6 sm:gap-10">
+      {/* ── Vertical connector line ── */}
+      {!isLast && (
+        <div className="absolute left-[1.375rem] sm:left-[1.625rem] top-14 bottom-0 w-px">
+          <motion.div
+            className={`h-full w-full bg-gradient-to-b ${step.accent} opacity-30`}
+            initial={{ scaleY: 0 }}
+            animate={inView ? { scaleY: 1 } : { scaleY: 0 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+            style={{ transformOrigin: 'top' }}
+          />
+        </div>
+      )}
+
+      {/* ── Timeline dot ── */}
+      <div className="relative flex-none pt-1">
+        <motion.div
+          className={`flex h-11 w-11 sm:h-13 sm:w-13 items-center justify-center rounded-full border-2 ${step.border} ${step.glow} backdrop-blur-sm shadow-lg`}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={inView ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+          transition={{ duration: 0.5, delay: index * 0.15 }}
+        >
+          <span className="text-xl leading-none">{step.symbol}</span>
+        </motion.div>
+      </div>
+
+      {/* ── Content card ── */}
+      <motion.div
+        className={`mb-10 flex-1 rounded-[1.5rem] border ${step.border} ${step.glow} p-5 sm:p-6 backdrop-blur-sm`}
+        initial={{ opacity: 0, x: 30 }}
+        animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
+        transition={{ duration: 0.6, delay: index * 0.15 + 0.1 }}
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/50 mb-1">
+          {step.era}
+        </p>
+        <p
+          className={`text-xs font-bold uppercase tracking-[0.26em] bg-gradient-to-r ${step.accent} bg-clip-text text-transparent mb-2`}
+        >
+          {step.label}
+        </p>
+        <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">{step.title}</h3>
+        <p className="text-sm leading-7 text-slate-300">{step.description}</p>
+      </motion.div>
+    </div>
+  );
+}
 
 const halls = [
   { title: 'hall_1_title', body: 'hall_1_body', Icon: Atom },
@@ -48,6 +167,35 @@ export default function EkamMuseumLanding() {
       {/* ── Background ── */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.16),_transparent_28%),radial-gradient(circle_at_85%_20%,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(180deg,_rgba(6,10,18,0.98),_rgba(8,12,26,0.94))]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent" />
+
+      {/* ═══════════ COSMIC JOURNEY ═══════════ */}
+      <section className="relative px-6 pt-24 pb-4 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-10 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-400/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-violet-200/80 mb-4">
+              <Sparkles className="h-3.5 w-3.5" />
+              Kosmická linie
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-semibold text-white">
+              Od Velkého třesku k&nbsp;Ekamu
+            </h2>
+            <p className="mt-3 text-base text-slate-400 max-w-xl mx-auto">
+              Cesta vědomí — od prvotní singularity přes védskou moudrost ke Golden Egg v digitálním prostoru.
+            </p>
+          </div>
+
+          <div className="relative">
+            {journeySteps.map((step, i) => (
+              <JourneyStep
+                key={step.id}
+                step={step}
+                index={i}
+                isLast={i === journeySteps.length - 1}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ═══════════ HERO ═══════════ */}
       <section className="relative px-6 pt-20 pb-12 sm:px-8 lg:px-10">
