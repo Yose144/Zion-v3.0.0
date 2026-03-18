@@ -391,7 +391,7 @@ export default function DocsPage() {
               {tr('docs', 'subtitle', lang)}
             </p>
             <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
-              Live testnet běží na v2.9.8 Deeksha canonical path. Nahoře jsou teď prioritně provozní a referenční materiály; hlubší historie zůstává v záložce History.
+              Live testnet běží na v2.9.9 Pure Code release line. Nahoře jsou teď prioritně provozní a referenční materiály; hlubší historie zůstává v záložce History.
             </div>
             <div className="flex items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (

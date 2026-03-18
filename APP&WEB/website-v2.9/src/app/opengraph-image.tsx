@@ -116,7 +116,7 @@ export default async function Image() {
             marginBottom: '32px',
           }}
         >
-          Deeksha Patch & Code Freeze · Native Rust L1 · Cosmic Harmony PoW
+          Pure Code · v2.9.9 · Native Rust L1 · Cosmic Harmony PoW
         </div>
 
         {/* Stats row */}
