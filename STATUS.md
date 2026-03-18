@@ -199,6 +199,104 @@ Revenue routing: operační
 
 ---
 
+## Stav serveru — Live analýza (2026-03-18)
+
+**Server:** `91.98.122.165` — Hetzner Helsinki „Zion2"  
+**Uptime:** 8 dní 6 hodin | **Load avg:** 3.27 / 3.08 / 3.02  
+**Disk:** 27 G / 75 G (37 % — ok) | **RAM:** 1.1 GiB / 7.6 GiB (14 % — ok) | **Swap:** 0
+
+### Kontejnery
+
+| Kontejner | Obraz | Status | CPU | RAM |
+|-----------|-------|--------|-----|-----|
+| `zion-miner` | `zion-miner:2.9.8-testnet` | Up 22 h | **295 %** (3 vlákna) | 7.5 MB |
+| `zion-website` | `zion-website:2.9.9` | Up 22 h ✅ healthy | 0.01 % | 72 MB |
+| `zion-pool` | `zion-pool:2.9.8-testnet` | Up 22 h ✅ healthy | 0.39 % | 13.6 MB |
+| `zion-redis` | `redis:7-alpine` | Up 22 h ✅ healthy | 0.55 % | 7.7 MB |
+| `zion-core` | `zion-core:2.9.8-testnet` | Up 22 h ✅ healthy | 2.80 % | 13.9 MB |
+| `zion-seed-1` | `zion-core:2.9.8-testnet` | Up 22 h ❌ stall | 0 % | 18.5 MB |
+| `zion-seed-2` | `zion-core:2.9.8-testnet` | Up 22 h ❌ stall | 0 % | 18.2 MB |
+
+### Pool statistiky
+
+| Metrika | Hodnota |
+|---------|---------|
+| Přijaté shares | **5 113** |
+| Odmítnuté shares | **7 478** (59 % rejection rate) |
+| Důvod odmítnutí | 7 471× „Does not meet target difficulty" + 7× „Duplicate" |
+| VarDiff rozsah | 1 000 – 2 444 (aktivní) |
+| Wallet | `zion1q893q6c5j7y0e3r062g4m7c240t5g294k7z6729` |
+| Job string | `h4035-ecfb0000-...-cosmic_harmony` |
+
+### Miner statistiky (interní pohled)
+
+| Metrika | Hodnota |
+|---------|---------|
+| Přijaté shares (miner) | 4 822 |
+| Odmítnuté shares (miner) | 2 |
+| Miner acceptance rate | **100.0 %** |
+| Hashrate | ~490 H/s (10s MA) |
+| Celkové hashe | 38.2 M za 22 h |
+| Vlákna | 3× CPU, bez GPU |
+| Výška | **4 035** (frozen) |
+
+### 🔴 Kritické problémy na serveru
+
+#### 1. Chain STUCK na výšce 4 035
+```
+❌ prev_hash MISMATCH at height 4035:
+   block.prev_hash = ecfb0000c8c21940...
+   computed(prev)  = e2e006f0eb46a3e4...
+```
+Výskyt: **186×** v logu zion-core. Pool vydává joby s `prev_hash = ecfb0000...` ale core má jiný aktuální chain tip → každý nový blok selže validací. Chain se nepohybuje.
+
+**Příčina:** Pravděpodobně race condition mezi pool `getBlockTemplate` a core state — pool drží stale prev_hash.
+
+#### 2. Seed nodes banované vlastním P2P security
+```
+[P2P Security] Blocked blacklisted IP: 172.29.0.11  ← zion-seed-1
+[P2P Security] Blocked blacklisted IP: 172.29.0.12  ← zion-seed-2
+```
+Seed nody jsou na jiné Docker subnet (`172.18.0.x`) než core (`172.29.0.x`). P2P security modul banuje Docker interní IPs seed nodů. Výsledek: seeds nemohou komunikovat s core.
+
+#### 3. IBD stall — seedy nemohou synchronizovat
+```
+⚠️ IBD stall detected (retry 3/3)
+⚠️ IBD aborted — 0 blocks downloaded
+```
+Seedy `zion-seed-1` a `zion-seed-2` jsou v reconnect smyčce — nemohou stáhnout jediný blok od core, protože jsou banované (viz bod 2).
+
+#### 4. DNS seed resoluce selhává
+```
+[P2P] DNS lookup failed for seed1.zionterranova.com: invalid socket address
+[P2P] DNS lookup failed for seed2.zionterranova.com: invalid socket address
+[P2P] DNS lookup failed for seed3.zionterranova.com: invalid socket address
+```
+Domenový název `zionterranova.com` není nakonfigurovaný / neexistuje. Core nemůže najít žádné peers přes DNS discovery.
+
+#### 5. Vysoká míra odmítnutí shares (pool-side)
+Pool celkově odmítl 7 478 sharů (59 %). Příčina: legacy miner (`zion-miner:2.9.8-testnet`) posílá shares neodpovídající pool VarDiff targetům → klasický difficulty mismatch u legacy stratum protokolu.
+
+### 🟢 Co funguje
+
+- Pool přijímá shares průběžně (každých 5–10 vteřin) od aktivního mineru
+- VarDiff retargeting správně kalibruje (1 000 → 2 444 → 1 000)
+- Website na portu 3000 běží zdravě (`zion-website:2.9.9` — upgrade již nasazen)
+- Redis zdravý
+- Miner hashuje 490 H/s na 3 CPU vláknech bez přerušení
+
+### Opravné akce (priorita)
+
+| Priorita | Akce |
+|----------|------|
+| 🔴 P1 | Restartovat `zion-core` + `zion-pool` — vyčistí stale prev_hash state a chain se odblokuje |
+| 🔴 P1 | Opravit P2P subnet config — seed nody musí být na stejné Docker síti jako core, nebo whitelist interní subnet v P2P security |
+| 🟡 P2 | Aktualizovat DNS seed domény na `zionchain.org` v node config |
+| 🟡 P2 | Nasadit V3 canary stack (compose již existuje v `/root/zion-2.9.6/V3/docker/`) |
+| 🟢 P3 | Vyladit legacy stratum difficulty mismatch nebo přejít na V3 pool |
+
+---
+
 ## Referenční dokumenty
 
 | Dokument | Obsah |
