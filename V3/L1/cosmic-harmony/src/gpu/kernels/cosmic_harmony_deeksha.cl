@@ -5,12 +5,12 @@
  *   Step 1: Keccak-256 (header||nonce → 32 B)
  *   Step 2: SHA3-512 (32 B → 64 B)
  *   Step 3: Golden Matrix (φ^k fixed-point, 64 B → 64 B)
- *   Step 4: Memory-Hard (64 KiB scratchpad, 2 sequential passes, 64 random reads)
+ *   Step 4: Memory-Hard (256 KiB scratchpad, 4 sequential passes, 256 random reads)
  *   Step 5: NPU Mix (INT8 MLP 64→128→64 + residual)
  *   Step 6: Cosmic Fusion (4 × Keccak-256 + AES-128 + XOR, final SHA3-512 → 32 B)
  *
  * Author: ZION AI Native Team
- * Version: 2.9.8 — Canonical Deeksha GPU
+ * Version: 2.9.9 — Ekam Deeksha v2 GPU (Tier 1)
  * Date: 10. března 2026
  */
 
@@ -20,11 +20,11 @@
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  65536
+#define SCRATCHPAD_SIZE  262144
 #define BLOCK_SIZE       64
-#define BLOCK_COUNT      1024
-#define PASSES           2
-#define RANDOM_READS     64
+#define BLOCK_COUNT      4096
+#define PASSES           4
+#define RANDOM_READS     256
 #define MATRIX_DIM       8
 
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
@@ -373,7 +373,7 @@ void sequential_passes(__global uchar *pad)
 }
 
 /*
- * 64 random reads from scratchpad into accumulator, then final SHA3-512.
+ * 256 random reads from scratchpad into accumulator, then final SHA3-512.
  *
  * For each read:
  *   d = Keccak-256(acc || chunk || r_le)

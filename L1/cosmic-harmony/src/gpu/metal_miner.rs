@@ -3,7 +3,7 @@
 //! Uses Apple Metal API for native GPU acceleration on Apple Silicon.
 //! Full CHv4 pipeline on GPU:
 //!   Keccak-256 → SHA3-512 → Golden Matrix
-//!   → Memory-Hard Scratchpad (64 KiB/thread)
+//!   → Memory-Hard Scratchpad (256 KiB/thread)
 //!   → NPU Mixing (INT8 MLP 64→128→64 + residual)
 //!   → Cosmic Fusion
 //! CHV4_NPU_FORK_HEIGHT = 0: CHv4 always active from genesis.
@@ -252,8 +252,8 @@ impl MetalMiner {
 
         log::debug!("   NPU weights uploaded ({} bytes total)", 8192 + 128 + 8192 + 64 + 256 + 128);
 
-        // ── CHv4: scratchpad buffer — each thread gets 64 KiB ──
-        let scratchpad_bytes = (batch_size as u64) * 65_536u64;
+        // ── CHv4: scratchpad buffer — each thread gets 256 KiB ──
+        let scratchpad_bytes = (batch_size as u64) * 262_144u64;
         let scratchpad_buf = device.new_buffer(scratchpad_bytes, options);
         // Guard against Metal returning nil (OOM) — buffer.length() would be 0.
         let allocated = scratchpad_buf.length();
