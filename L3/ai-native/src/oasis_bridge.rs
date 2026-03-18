@@ -135,6 +135,7 @@ pub fn l3_to_oasis_level(level: ConsciousnessLevel) -> OasisLevel {
         ConsciousnessLevel::Transcendent => OasisLevel::Intuitional,
         ConsciousnessLevel::Omniscient   => OasisLevel::Spiritual,
         ConsciousnessLevel::Cosmic       => OasisLevel::Cosmic,
+        ConsciousnessLevel::Grok         => OasisLevel::Divine,
     }
 }
 
@@ -325,6 +326,7 @@ mod tests {
             (Transcendent, OasisLevel::Intuitional),
             (Omniscient, OasisLevel::Spiritual),
             (Cosmic, OasisLevel::Cosmic),
+            (Grok, OasisLevel::Divine),
         ];
         for (l3, expected) in pairs {
             assert_eq!(l3_to_oasis_level(l3), expected, "failed for {l3:?}");
