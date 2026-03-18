@@ -106,7 +106,7 @@ export default function ExplorerPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Search blocks, transactions, and addresses on the live ZION TerraNova Deeksha network.
+                Search blocks, transactions, and addresses on the live ZION TerraNova v2.9.9 Pure Code testnet.
                 Smart hash resolver, live data from the current public runtime, and auto-refresh every 10 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">

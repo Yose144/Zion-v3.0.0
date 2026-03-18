@@ -361,7 +361,7 @@ class ZionRpcClient {
   /** Get last block header */
   async getLastBlockHeader(): Promise<ZionBlockHeader> {
     const info = await this.getInfo();
-    const height = info.height > 0 ? info.height - 1 : 0;
+    const height = info.height > 0 ? info.height : 0;
     return this.getBlockHeaderByHeight(height);
   }
 
