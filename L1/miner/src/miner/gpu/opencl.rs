@@ -335,10 +335,10 @@ impl GpuMiner for OpenCLMiner {
             let result_nonce_buf = pro_que.buffer_builder::<u64>().len(1).build()?;
             let result_hash_buf = pro_que.buffer_builder::<u8>().len(32).build()?;
 
-            // Scratchpad buffer: mh_batch_size × 64 KiB.
+            // Scratchpad buffer: mh_batch_size × 256 KiB.
             // Allocated once at init; only used when memory_hard=1 in the kernel.
             let scratchpad_len = self.mh_batch_size * SCRATCHPAD_BYTES;
-            println!("[OpenCL] Allocating scratchpad: {} MiB ({} threads × 64 KiB)",
+            println!("[OpenCL] Allocating scratchpad: {} MiB ({} threads × 256 KiB)",
                 scratchpad_len / (1024 * 1024), self.mh_batch_size);
             let scratchpad_buf = pro_que.buffer_builder::<u8>()
                 .len(scratchpad_len)
