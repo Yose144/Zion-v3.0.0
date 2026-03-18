@@ -14,9 +14,15 @@ interface BlockchainStats {
   max_supply?: number;
   total_transactions?: number;
   mempool_size?: number;
+  tx_pool_size?: number;
   difficulty?: number;
   block_height?: number;
   latest_block?: {
+    height: number;
+    hash: string;
+    timestamp: number;
+  };
+  last_block?: {
     height: number;
     hash: string;
     timestamp: number;
@@ -72,10 +78,16 @@ export default function LiveDashboard() {
   }, []);
 
   const supply = stats.total_supply ?? stats.circulating_supply ?? 0;
-  const formattedSupply = (supply / 1e9).toFixed(2) + 'B';
-  const formattedTimestamp = stats.latest_block?.timestamp
-    ? new Date(stats.latest_block.timestamp * 1000).toLocaleString('cs-CZ')
+  const formattedSupply = supply >= 1e9
+    ? (supply / 1e9).toFixed(2) + 'B'
+    : supply >= 1e6
+    ? (supply / 1e6).toFixed(2) + 'M'
+    : supply.toLocaleString();
+  const latestBlock = stats.last_block ?? stats.latest_block ?? null;
+  const formattedTimestamp = latestBlock?.timestamp
+    ? new Date(latestBlock.timestamp * 1000).toLocaleString('cs-CZ')
     : '—';
+  const mempoolSize = stats.mempool_size ?? stats.tx_pool_size ?? 0;
 
   const highlightCards = [
     {
@@ -100,7 +112,7 @@ export default function LiveDashboard() {
 
   const auxCards = [
     { label: 'Difficulty', value: (stats.difficulty ?? 0).toLocaleString(), icon: Shield },
-    { label: 'Mempool Size', value: (stats.mempool_size ?? 0).toLocaleString(), icon: Braces },
+    { label: 'Mempool Size', value: mempoolSize.toLocaleString(), icon: Braces },
   ];
 
   return (
@@ -111,7 +123,7 @@ export default function LiveDashboard() {
             <Activity className="w-5 h-5 text-zion-gold animate-pulse" />
             <span className="text-sm tracking-wide uppercase text-gray-300">Mission Console</span>
           </div>
-          <div className="text-3xl font-semibold text-gradient">Deeksha Live Telemetry</div>
+          <div className="text-3xl font-semibold text-gradient">v2.9.9 Pure Code · Live Telemetry</div>
           {error && (
             <span className="text-xs text-amber-300 bg-amber-500/10 rounded-full px-3 py-1 border border-amber-500/30">
               ⚠️ {error}
@@ -177,7 +189,7 @@ export default function LiveDashboard() {
             <div>
               <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">Latest block</p>
               <h3 className="text-3xl font-semibold text-white">
-                #{stats.latest_block?.height ?? stats.block_height ?? '—'}
+                #{latestBlock?.height ?? stats.block_height ?? '—'}
               </h3>
               <p className="text-sm text-gray-400">{formattedTimestamp}</p>
             </div>
@@ -201,7 +213,7 @@ export default function LiveDashboard() {
             </div>
 
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
-              Blockchain telemetry pulled live from the 2.9.8 Deeksha TestNet API every 30 s.
+              Blockchain telemetry pulled live from the v2.9.9 Pure Code TestNet API every 30 s.
               Current public runtime is one primary host with two internal seed containers behind it.
             </div>
           </motion.div>

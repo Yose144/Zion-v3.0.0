@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 type NavItem = { href: string; label: string; children?: NavItem[] };
 type NavGroup = { title: string; items: NavItem[] };
@@ -30,10 +31,11 @@ export default function Navigation() {
     {
       title: 'Build',
       items: [
-        { href: '/pool',     label: tr('nav', 'pool', lang) },
-        { href: '/mining',   label: tr('nav', 'mining', lang) },
-        { href: '/download', label: tr('nav', 'download', lang) },
-        { href: '/roadmap',  label: tr('nav', 'roadmap', lang) },
+        { href: '/pool',        label: tr('nav', 'pool', lang) },
+        { href: '/mining',      label: tr('nav', 'mining', lang) },
+        { href: '/miner-stats', label: tr('nav', 'miner_stats', lang) },
+        { href: '/download',    label: tr('nav', 'download', lang) },
+        { href: '/roadmap',     label: tr('nav', 'roadmap', lang) },
       ],
     },
     {
@@ -128,7 +130,7 @@ export default function Navigation() {
             </div>
             <span className="text-2xl font-bold text-gradient tracking-tight">ZION</span>
             <span className="text-[11px] px-2 py-1 rounded bg-white/5 border border-white/10 uppercase tracking-widest">
-              2.9.8 &ldquo;Live TestNet&rdquo;
+              {SITE_RELEASE_LABEL}
             </span>
           </Link>
 
