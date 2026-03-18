@@ -20,9 +20,6 @@ const OPENCL_KERNEL: &str = include_str!("kernels/cosmic_harmony_deeksha.cl");
 /// Scratchpad size per thread (must match CL_SCRATCHPAD_BYTES in kernel)
 /// Ekam v2 (Tier 1): 256 KiB per thread
 const SCRATCHPAD_BYTES: usize = 256 * 1024;
-/// Max parallel threads when memory-hard is active (scratchpad × threads ≤ ~2 GB)
-/// 4096 × 256 KiB = 1 GiB — fits in 2+ GB VRAM
-const MH_BATCH_DEFAULT: usize = 4096;
 
 /// OpenCL miner implementation
 pub struct OpenCLMiner {
@@ -70,13 +67,30 @@ impl OpenCLMiner {
                 .ok_or_else(|| anyhow!("OpenCL device {} not found", device_id))?
                 .clone();
 
-            // Allow overriding MH batch via env (for memory tuning)
+            // VRAM-based auto-tuning of MH batch size (threads per kernel dispatch).
+            // Benchmarked on RX 5600 XT (6 GB, 18 CU):
+            //   512  →  ~879 H/s  (128 MiB scratchpad)
+            //   4096 → ~10.3 kH/s (1024 MiB scratchpad)  ← optimal for 6 GB
+            //   8192 →  ~7.7 kH/s (2048 MiB — memory bandwidth saturated)
+            let vram_mb = device_info.memory_mb;
+            let auto_mh_batch = if vram_mb >= 6_000 {
+                4096  // 1 GiB scratchpad — confirmed optimal for 6+ GB
+            } else if vram_mb >= 4_000 {
+                2048  // 512 MiB
+            } else if vram_mb >= 2_000 {
+                1024  // 256 MiB
+            } else {
+                512   // 128 MiB
+            };
+            // Allow overriding via env (for manual tuning)
             let mh_batch_size = std::env::var("ZION_GPU_MH_BATCH")
                 .ok()
                 .and_then(|v| v.trim().parse::<usize>().ok())
-                .unwrap_or(MH_BATCH_DEFAULT)
+                .unwrap_or(auto_mh_batch)
                 .max(64)
                 .min(32768);
+            println!("[OpenCL] VRAM {} MB → mh_batch {} ({} MiB scratchpad)",
+                vram_mb, mh_batch_size, mh_batch_size * SCRATCHPAD_BYTES / (1024 * 1024));
 
             Ok(Self {
                 device_id,
