@@ -171,7 +171,23 @@ impl Inner {
             ));
         }
 
-        if let Err(e) = validation::validate_block(&block, prev_block.as_ref(), now) {
+        // Look up the stored hash for the previous block (from when it was first accepted).
+        // This avoids recalculating the hash, which may differ after algorithm upgrades.
+        let stored_prev_hash = if block.height() > 0 {
+            self.storage
+                .get_block_hash_by_height(block.height() - 1)
+                .ok()
+                .flatten()
+        } else {
+            None
+        };
+
+        if let Err(e) = validation::validate_block_with_stored_hash(
+            &block,
+            prev_block.as_ref(),
+            now,
+            stored_prev_hash.as_deref(),
+        ) {
             self.metrics
                 .blocks_rejected
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);

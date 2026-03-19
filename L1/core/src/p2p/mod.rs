@@ -238,15 +238,19 @@ pub async fn start(state: State, port: u16, mut initial_peers: Vec<String>) -> R
         let (socket, remote_addr) = listener.accept().await?;
         let ip = remote_addr.ip();
 
-        // Security check: blacklist
-        if blacklist.is_blacklisted(&ip) {
+        // Security check: blacklist (skip for private-network Docker seed IPs)
+        let conn_is_private = match ip {
+            std::net::IpAddr::V4(v4) => v4.is_private() || v4.is_loopback(),
+            std::net::IpAddr::V6(v6) => v6.is_loopback(),
+        };
+        if !conn_is_private && blacklist.is_blacklisted(&ip) {
             println!("[P2P Security] Blocked blacklisted IP: {}", ip);
             drop(socket);
             continue;
         }
 
-        // Security check: rate limit
-        if !rate_limiter.allow_connection(ip) {
+        // Security check: rate limit (skip for private-network Docker seed IPs)
+        if !conn_is_private && !rate_limiter.allow_connection(ip) {
             println!("[P2P Security] Rate limit exceeded for: {}", ip);
             // Temporary ban for 2 minutes (reduced from 5 min for testnet)
             blacklist.ban_temporary(ip, 120);
@@ -444,15 +448,24 @@ pub async fn handle_connection(
         // During IBD, peers legitimately exchange hundreds of block messages per minute.
         // Skip rate limiting entirely during IBD to prevent false-positive bans on
         // honest peers that are serving us the chain.
-        if !get_sync_status().is_ibd() {
-            if let Err(score) = msg_rate_limiter.allow_message(scalar_addr.ip()) {
-                if msg_rate_limiter.should_ban(&scalar_addr.ip()) {
-                    let ban_secs = msg_rate_limiter.ban_duration_secs(&scalar_addr.ip());
+        //
+        // Also skip for private-network (RFC 1918) peers — these are Docker-internal
+        // seed containers that legitimately send high-volume GetBlocksIBD requests
+        // when they sync from us.
+        let peer_ip = scalar_addr.ip();
+        let is_private = match peer_ip {
+            std::net::IpAddr::V4(v4) => v4.is_private() || v4.is_loopback(),
+            std::net::IpAddr::V6(v6) => v6.is_loopback(),
+        };
+        if !get_sync_status().is_ibd() && !is_private {
+            if let Err(score) = msg_rate_limiter.allow_message(peer_ip) {
+                if msg_rate_limiter.should_ban(&peer_ip) {
+                    let ban_secs = msg_rate_limiter.ban_duration_secs(&peer_ip);
                     println!(
                         "[P2P Security] Message flood from {} (score={}), banning for {}s",
                         scalar_addr, score, ban_secs
                     );
-                    blacklist.ban_temporary(scalar_addr.ip(), ban_secs);
+                    blacklist.ban_temporary(peer_ip, ban_secs);
                     return Err(anyhow::anyhow!("Banned for message flooding"));
                 }
                 // Below ban threshold — just skip this message

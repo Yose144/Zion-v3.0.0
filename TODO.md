@@ -1,8 +1,21 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 4. března 2026 (Session 64 — Interní audit zahájení, A-03/A-04 ZRUŠENO, ceremony blocked by audit; commit `2a7c8e5`)  
+> **Aktualizace:** 19. března 2026 (V3 TestNet stack live, chain height 48+, 5 fixes deployed)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
+
+---
+
+## 0.V3) V3 TestNet Deployment (2026-03-19) ✅ HOTOVO
+
+- [x] V3 node stack nasazen na Hetzner (docker-compose.v3-testnet.yml + .env)
+- [x] Redis crash-loop opraven (REDIS_PASSWORD env injection)
+- [x] Miner stale shares fix: NONCE_COUNT 5M→500K, JOB_TTL_MS 60s→180s
+- [x] V3 P2P duplicate block re-announcement fix (commit `f2ca370`)
+- [x] L1 prev_hash lenient validation (stored hash lookup, warn-only)
+- [x] L1 P2P private IP exemption (RFC 1918 bypass pro Docker seeds)
+- [x] Chain aktivně roste: height 48+, 49 accepted blocks
+- [x] Dokumentace aktualizována (REPORT.md, STATUS, V3/README.md)
 
 ---
 
