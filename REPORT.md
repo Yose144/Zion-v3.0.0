@@ -1,11 +1,41 @@
 # 📊 ZION TerraNova — Project Report
 
 > **Datum:** 24. února 2026  
-> **Aktualizace:** 16. března 2026  
-> **Verze:** workspace 2.9.6 / release line 2.9.8 Deeksha  
+> **Aktualizace:** 19. března 2026  
+> **Verze:** workspace 2.9.6 / release line 2.9.8 Deeksha / V3 workspace 3.0.0  
 > **MainNet cíl:** 31. prosince 2026
 
-> **Poznámka:** Tento report obsahuje historické session logy z února 2026. Aktuální kanonický stav metrik a topologie je v `docs/STATUS_CURRENT_2026-03-16.md`.
+> **Poznámka:** Tento report obsahuje historické session logy z února 2026. Aktuální kanonický stav metrik a topologie je v `docs/STATUS_CURRENT_2026-03-19.md`.
+
+## Addendum — 19. 3. 2026
+
+**V3 TestNet Stack — Live & Mining:**
+- ✅ **V3 node stack nasazen** na Hetzner 91.98.122.165, Docker compose `docker-compose.v3-testnet.yml`
+- ✅ **Chain height 48+**, 49 accepted blocks, chain aktivně roste
+- ✅ **7 kontejnerů:** core, seed1, seed2, pool, miner, redis, node (všechny healthy)
+- ✅ **Konsenzus:** `cosmic_harmony_ekam_deeksha_v2`, LWMA difficulty, 60-block window
+
+**Opravené problémy (19. 3. 2026):**
+
+1. **L1 prev_hash lenient validation** — Chain budovaný s evolvujícím CosmicHarmony vrací jiný hash při recalc. Fix: stored hash lookup + lenient validace (warning místo reject).
+   - Soubory: `L1/core/src/blockchain/validation.rs`, `L1/core/src/state/mod.rs`, `L1/core/src/storage/lmdb.rs`
+
+2. **L1 P2P private IP exemption** — Docker seed nody (172.29.0.x) banovány jako "message flood" při IBD. Fix: RFC 1918 private IP výjimka z blacklistu, rate limitu a connection limitu.
+   - Soubor: `L1/core/src/p2p/mod.rs`
+
+3. **Redis crash-loop** — `REDIS_PASSWORD` env var nebyl injektován (compose bez `--env-file .env`). Fix: plný teardown a restart s `--env-file .env`.
+
+4. **Miner stale shares (LocalSkipLikelyStale)** — 5M nonce scan trval 71s, překročil 60s job TTL. Fix: `ZION_NONCE_COUNT` snížen z 5M na 500K (~7s scan), `ZION_JOB_TTL_MS` zvýšen z 60s na 180s.
+   - Soubor: `docker/docker-compose.v3-testnet.yml` (pool + miner)
+
+5. **V3 P2P duplicate block re-announcement** — Seeds re-announcing bloky které core již má způsobovalo LWMA difficulty window mismatch. Fix: duplicate check přesunut před `validate_peer_block()`.
+   - Soubor: `V3/L1/core/src/lib.rs` — commit `f2ca370`
+
+**Git Status:**
+- Commit `f2ca370`: V3 P2P duplicate block fix (pushed)
+- 5 souborů modified: validation.rs, p2p/mod.rs, state/mod.rs, lmdb.rs, docker-compose.v3-testnet.yml
+
+---
 
 ## Addendum — 16. 3. 2026
 

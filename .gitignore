@@ -76,6 +76,13 @@ PREMINE_WALLETS_BACKUP.json
 MYSTERIUM_KEYS_BACKUP.json
 scripts/_decrypt_myst.py
 
+# Temporary deploy/patch artifacts
+V3_deploy.tar
+V3_full.tar
+fix_lmdb_dup.py
+patch_server.py
+patch_validation_v2.py
+
 # Rust
 Cargo.lock
 **/*.rs.bk
