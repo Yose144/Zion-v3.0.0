@@ -17,7 +17,7 @@ RUN if [ -n "$FEATURES" ]; then \
 
 FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y \
-        ca-certificates libssl3 curl \
+        ca-certificates libssl3 netcat-openbsd \
         libgcc-s1 libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 RUN groupadd -r zion && useradd -r -g zion -d /data/zion-pool -s /sbin/nologin zion
