@@ -165,6 +165,7 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> Option<MiningSolu
                     candidate: zion_core::BlockCandidate {
                         header: job.header,
                         nonce: *nonce,
+                        height: job.height,
                     },
                     hash: *hash,
                 })

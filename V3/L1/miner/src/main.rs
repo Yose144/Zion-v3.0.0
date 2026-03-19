@@ -738,6 +738,7 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob)> {
                 nonce_count,
                 target_hex,
                 header_hex,
+                height,
                 ..
             } => {
                 return Ok((
@@ -750,6 +751,7 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob)> {
                         },
                         start_nonce,
                         nonce_count,
+                        height,
                     },
                 ))
             }
