@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-16 (Phase 20 update)
+Status date: 2026-03-19 (Phase 22 update)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -186,6 +186,8 @@ This roadmap follows the release progression already defined in the repository d
 - **Phase 20: Miner DCR/GPU runtime integration — DCR worker modules wired into miner entrypoint, OpenCL kernel/build glue added, GPU backend smoke path validated (`ZION_DCR_BACKEND=gpu`, `ZION_LOOP_COUNT=1`)**
 - **Phase 20b: Native-FFI baseline + runtime hook — `L1/native-ffi` builds with `--features native-all` on Windows MSVC, and miner DCR CPU path now supports explicit hash dispatch (`ZION_DCR_HASH_IMPL=rust|native`) with safe fallback when native feature is not enabled**
 - **Phase 21: Tier 1+2 ASIC resistance V3 port — 256 KiB scratchpad (4× v1, 4 passes, 256 reads), epoch-rotating NPU (MlpTopology×4, 2016-block epochs, Blake3 seed), Ekam Deeksha v2 canonical pipeline, height-aware dispatch, meets_difficulty(), optimized GPU kernel (46841 bytes). 81 cosmic-harmony tests passing. Ported from L1 commits c423a5e (Tier 1) + 79c903a (Tier 2).**
+- **Phase 22: Docker testnet deploy & P2P fix — Docker compose rewritten for env-var config (`from_env()` only), raw TCP JSON-RPC health checks, netcat Dockerfiles, P2P duplicate block dedup before validation (eliminates difficulty mismatch on seed re-announce). 7-service stack on 91.98.122.165, chain height 40+, 100% accept, 0 P2P errors. 393 core + 13 pool tests pass.**
+- **Phase 22: Docker testnet deployment & P2P fix — complete Docker compose rewrite for env-var config (V3 binaries use `from_env()` exclusively, CLI args ignored), raw TCP JSON-RPC health checks on port 8332, `netcat-openbsd` in Dockerfiles replacing curl, ZION_NODE_STATE_PATH must be file path not directory, pool/miner loop_count=4294967295 for continuous operation, nonce_count tuned (500K), job TTL 180s. P2P bug fix: moved duplicate block check before `validate_peer_block()` in `import_peer_block()` to prevent spurious difficulty mismatch errors when seeds re-announce blocks (LWMA window already advanced). Deployed to 91.98.122.165: 7-service stack, chain height 40+, 100% share acceptance, zero P2P errors. Commits: 98fa4b5, f2ca370.**
 
 ### Not Done Yet
 
@@ -198,6 +200,7 @@ This roadmap follows the release progression already defined in the repository d
 - CI/CD pipeline, automated image builds, and monitoring dashboards
 - DesktopApp runtime supervision for node, pool, miner, release provenance, and signing workflows
 - difficulty auto-tuning in live mining (current testnet difficulty ramps fast with short nonce windows)
+- ~~Docker testnet deployment to 91.98.122.165~~ → ✅ Phase 22 (7-service stack, env-var config, P2P dedup fix)
 
 ### L1 Testnet → V3 Mainnet Migration Tracker
 
@@ -207,7 +210,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 474+ pass, 0 fail |
+| Tests | ~200+ | 393 core + 13 pool + 81 cosmic-harmony = 487+ pass, 0 fail |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |
@@ -721,7 +724,7 @@ Exit criteria:
 - non-code assets are aligned with the final runtime shape
 - all audit P0 and P1 findings verified resolved
 
-Status: in progress — code done; Docker images built and deployed to Helsinki; BFG scrub and CI/CD remain
+Status: in progress — code done; Docker images built and deployed to 91.98.122.165 (Hetzner Zion2); testnet live with chain growing (Phase 22); BFG scrub and CI/CD remain
 
 ### Phase 8a: Docker & Deployment
 
@@ -752,6 +755,38 @@ docker compose -f docker/docker-compose.v3-mainnet.yml build
 docker compose -f docker/docker-compose.v3-mainnet.yml up -d
 docker compose -f docker/docker-compose.v3-mainnet.yml logs -f
 ```
+
+Status: done
+
+### Phase 22: Docker Testnet Deployment & P2P Fix
+
+Goal: deploy V3 stack to production server and fix all runtime issues discovered during live testing.
+
+Completed work:
+
+#### Docker Compose Rewrite
+- **V3 binaries use `from_env()` exclusively** — CLI `command:` sections removed, all config via `ZION_*` env vars
+- **Raw TCP JSON-RPC health check** on port 8332: `echo '{"jsonrpc":"2.0","method":"getChainInfo","id":1}' | nc -w2 127.0.0.1 8332 | grep -q chain_height`
+- **Dockerfiles updated**: `curl` replaced with `netcat-openbsd` for health checks, port 8332 (RPC) added to EXPOSE
+- **State path fix**: `ZION_NODE_STATE_PATH` must be a FILE path (e.g. `/data/zion/chain_state.json`), not a directory
+- **Mining loop fix**: pool and miner both default `loop_count=1` — set to `4294967295` (effectively infinite) for continuous operation
+- **Nonce tuning**: `ZION_NONCE_COUNT=500000`, `ZION_JOB_TTL_MS=180000` for balanced throughput
+- **Docker network**: 172.29.0.0/24 subnet with static IPs (core=.10, seed1=.11, seed2=.12)
+- **Pool RPC connection**: pool connects to core via raw TCP on `ZION_NODE_RPC_ADDR=172.29.0.10:8332`
+
+#### P2P Bug Fix (`import_peer_block` difficulty mismatch)
+- **Root cause**: `import_peer_block()` called `validate_peer_block()` before checking if the block was already known. When seeds re-announced blocks the core already had, the LWMA difficulty window had already advanced (includes the current block), producing a different `expected_difficulty` than the block's actual difficulty.
+- **Fix**: moved the `accepted_by_height` duplicate check BEFORE `validate_peer_block()` — duplicates now return `Ok(None)` immediately without triggering expensive and incorrect difficulty recomputation.
+- **Result**: zero P2P errors post-fix (was dozens per minute before).
+
+#### Live Deployment (91.98.122.165)
+- 7-service Docker stack: core, seed1, seed2, pool, miner, redis, website
+- Chain height 40+ within 30 minutes, continuously growing
+- 100% share acceptance rate, 0 rejections
+- Algorithm: `cosmic_harmony_ekam_deeksha_v2` confirmed on all components
+- ~4.4K H/s sustained throughput (CPU miner, 3.5 cores allocated)
+
+Commits: `98fa4b5` (Docker config), `f2ca370` (P2P fix)
 
 Status: done
 

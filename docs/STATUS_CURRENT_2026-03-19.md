@@ -16,22 +16,29 @@ ZION TerraNova je kryptoměnový ekosystém se 4 hlavními vrstvami (L1–L4), v
 
 | Metrika | Hodnota |
 |---------|---------|
-| **Chain height** | 48+ (aktivně roste) |
-| **Accepted blocks** | 49 |
+| **Chain height** | 40+ (aktivně roste, 100% accept rate) |
+| **Accepted blocks** | 43+ |
 | **Konsenzus** | `cosmic_harmony_ekam_deeksha_v2` |
 | **Difficulty** | LWMA, 60-block window, ±25% clamp |
 | **Block time target** | 60s |
-| **Docker kontejnery** | 7 (core, seed1, seed2, pool, miner, redis, node) |
+| **Docker kontejnery** | 7 (core, seed1, seed2, pool, miner, redis, website) |
 | **Compose file** | `docker/docker-compose.v3-testnet.yml` |
-| **Mining config** | NONCE_COUNT=500K, JOB_TTL_MS=180s |
+| **Mining config** | NONCE_COUNT=500K, JOB_TTL_MS=180s, LOOP_COUNT=4294967295 |
+| **P2P chyby** | 0 (po fix `f2ca370`) |
+| **Miner throughput** | ~4.4K H/s (CPU, 3.5 cores) |
 
 ### Opravy nasazené 19. 3. 2026
 
-1. **prev_hash lenient validation** — stored hash lookup + warn-only při algorithm mismatch
-2. **P2P private IP exemption** — RFC 1918 bypass pro Docker seed nody
-3. **Redis env fix** — `--env-file .env` injekce pro REDIS_PASSWORD
-4. **Miner TTL tuning** — nonce 5M→500K, TTL 60s→180s (eliminace stale shares)
-5. **P2P duplicate block fix** — duplicate check před validate_peer_block() (commit `f2ca370`)
+1. **Docker compose rewrite** — V3 binaries používají `from_env()` výhradně (CLI args ignorovány), env vars `ZION_*` pro všechny služby
+2. **Raw TCP JSON-RPC health check** — `getChainInfo` přes `nc` na port 8332 (ne HTTP curl)
+3. **Dockerfile update** — `netcat-openbsd` místo `curl`, EXPOSE 8332 (RPC port)
+4. **State path fix** — `ZION_NODE_STATE_PATH` musí být soubor (`chain_state.json`), ne adresář
+5. **Mining loop fix** — pool/miner `loop_count=4294967295` pro kontinuální běh (default=1!)
+6. **Nonce/TTL tuning** — nonce 500K, TTL 180s (eliminace stale shares)
+7. **P2P duplicate block fix** — duplicate check před `validate_peer_block()` (`f2ca370`) — eliminuje falešné difficulty mismatch chyby při re-announcement bloků ze seed nodů
+8. **prev_hash lenient validation** — stored hash lookup + warn-only při algorithm mismatch
+9. **P2P private IP exemption** — RFC 1918 bypass pro Docker seed nody
+10. **Redis env fix** — `--env-file .env` injekce pro REDIS_PASSWORD
 
 ---
 
@@ -85,14 +92,14 @@ ZION TerraNova je kryptoměnový ekosystém se 4 hlavními vrstvami (L1–L4), v
 
 ## Git Status (19. 3. 2026)
 
-**HEAD:** `f2ca370` — V3: fix P2P duplicate block re-announcement causing difficulty mismatch
+**HEAD:** `cdf39de` — V3 testnet stabilization: L1 fixes, miner tuning, docs update 19.3.2026
 
-**Modified (unstaged):**
-- `L1/core/src/blockchain/validation.rs` — lenient prev_hash validation
-- `L1/core/src/p2p/mod.rs` — RFC 1918 private IP exemption
-- `L1/core/src/state/mod.rs` — stored prev hash lookup
-- `L1/core/src/storage/lmdb.rs` — get_block_hash_by_height()
-- `docker/docker-compose.v3-testnet.yml` — nonce/TTL tuning
+**Poslední commity:**
+- `cdf39de` — V3 testnet stabilization: L1 fixes, miner tuning, docs update
+- `f2ca370` — V3: fix P2P duplicate block re-announcement causing difficulty mismatch
+- `98fa4b5` — V3: fix Docker compose for env-var config, health checks, mining params
+- `c7823cd` — docker: add V3-specific Dockerfiles and testnet compose
+- `6e4a056` — V3: wire Ekam v2 PoW through core/pool/miner (height-aware BlockCandidate)
 
 ---
 
