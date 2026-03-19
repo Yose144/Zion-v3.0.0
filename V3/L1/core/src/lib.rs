@@ -1676,14 +1676,17 @@ impl ChainState {
         core: &CoreRuntime,
         block: AcceptedBlock,
     ) -> Result<(), String> {
-        self.validate_peer_block(&block)?;
-
+        // Early-return for duplicate blocks before expensive validation
+        // (avoids LWMA difficulty mismatch when seeds re-announce blocks
+        // that this node already accepted).
         if let Some(existing) = self.accepted_by_height.get(&block.height) {
             if existing.hash_hex == block.hash_hex {
                 return Ok(());
             }
             return Err(format!("conflicting peer block at height {}", block.height));
         }
+
+        self.validate_peer_block(&block)?;
 
         if block.height != self.height.saturating_add(1) {
             return Err(format!(
