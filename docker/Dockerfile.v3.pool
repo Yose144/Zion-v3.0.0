@@ -1,0 +1,29 @@
+# ZION V3 Mining Pool
+
+FROM rust:1.85-bookworm AS builder
+ARG FEATURES=""
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        build-essential cmake g++ make \
+        pkg-config libssl-dev \
+        libclang-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN if [ -n "$FEATURES" ]; then \
+      cargo build --release -p zion-pool --features "$FEATURES"; \
+    else \
+      cargo build --release -p zion-pool; \
+    fi
+
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+        libgcc-s1 libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/zion-pool -s /sbin/nologin zion
+COPY --from=builder /build/target/release/server /usr/local/bin/zion-pool
+RUN mkdir -p /data/zion-pool && chown -R zion:zion /data/zion-pool
+EXPOSE 3333 8080
+VOLUME ["/data/zion-pool"]
+USER zion
+ENTRYPOINT ["zion-pool"]

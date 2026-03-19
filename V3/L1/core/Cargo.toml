@@ -27,3 +27,7 @@ zion-cosmic-harmony = { path = "../cosmic-harmony" }
 
 [dev-dependencies]
 tempfile.workspace = true
+
+[features]
+default = []
+testnet = []

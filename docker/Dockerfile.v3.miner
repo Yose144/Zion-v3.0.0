@@ -1,0 +1,29 @@
+# ZION V3 Universal Miner
+
+FROM rust:1.85-bookworm AS builder
+ARG FEATURES=""
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        build-essential cmake g++ make \
+        pkg-config libssl-dev \
+        libclang-dev \
+    && rm -rf /var/lib/apt/lists/*
+ENV RUSTFLAGS="-C target-cpu=native"
+ENV CARGO_PROFILE_RELEASE_LTO=true
+ENV CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+COPY . .
+RUN if [ -n "$FEATURES" ]; then \
+      cargo build --release -p zion-miner --features "$FEATURES"; \
+    else \
+      cargo build --release -p zion-miner; \
+    fi
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 \
+        libgcc-s1 libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /home/zion -s /sbin/nologin zion
+COPY --from=builder /build/target/release/zion-miner /usr/local/bin/zion-miner
+USER zion
+ENTRYPOINT ["zion-miner"]
