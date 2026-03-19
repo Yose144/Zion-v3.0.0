@@ -170,6 +170,14 @@ impl ZionStorage {
         Ok(self.blocks.get(&rtxn, hash)?)
     }
 
+    /// Get the stored block hash for a given height (from the height_to_hash index).
+    /// This returns the hash that was computed when the block was first accepted,
+    /// which may differ from a recalculated hash if the hashing algorithm changed.
+    pub fn get_block_hash_by_height(&self, height: u64) -> Result<Option<String>> {
+        let rtxn = self.env.read_txn()?;
+        Ok(self.height_to_hash.get(&rtxn, &height)?.map(|s| s.to_string()))
+    }
+
     pub fn get_block_by_height(&self, height: u64) -> Result<Option<Block>> {
         let rtxn = self.env.read_txn()?;
         if let Some(hash) = self.height_to_hash.get(&rtxn, &height)? {

@@ -66,7 +66,8 @@ Out of scope for the bootstrap:
 - `L1/core` now carries block validation hardening (Phase 12): `validate_peer_block()` verifies PoW (hash recomputed from header+nonce meets difficulty target), timestamp sanity (±2 hr median-time-past), checkpoint enforcement, header-field consistency; `AcceptedBlock` now stores `header_hex` for PoW-verifiable blocks; backwards-compatible with legacy persisted chain state (`lib.rs`, `validation.rs`, `genesis.rs`)
 - `L1/core` now carries chain linkage verification (Phase 13): `AcceptedBlock` stores `previous_hash_hex` for explicit parent-chain linkage; `import_peer_block()` and `import_peer_blocks()` verify that each block's previous_hash links to the expected parent (local tip or preceding batch block); `validate_peer_block()` cross-checks `previous_hash_hex` against `header.previous_hash`; backwards-compatible with legacy blocks via `#[serde(default)]` (`lib.rs`, `genesis.rs`)
 - Docker images: multi-stage production builds for node, pool, miner (self-contained V3/ context, `rust:1.85-bookworm` builder → `debian:bookworm-slim` runtime)
-- Deployed to Helsinki (157.180.41.213): 3-service Docker compose stack running live, chain height 110+
+- Deployed to Hetzner (91.98.122.165): 7-service Docker compose stack running live, chain height 48+ and growing (19. 3. 2026)
+- **Testnet fixes (19. 3. 2026):** miner nonce/TTL tuning (500K/180s), P2P duplicate block dedup before validation (`f2ca370`), lenient prev_hash validation, RFC 1918 private IP P2P exemption, Redis env injection fix
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
