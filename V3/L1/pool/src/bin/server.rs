@@ -225,6 +225,7 @@ fn handle_client(
                     candidate: zion_core::BlockCandidate {
                         header: job.header,
                         nonce,
+                        height: job.height,
                     },
                     hash: parse_hash_hex(&hash_hex)?,
                 };

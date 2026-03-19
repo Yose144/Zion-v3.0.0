@@ -37,6 +37,7 @@ pub enum PoolMessage {
         nonce_count: u64,
         target_hex: String,
         header_hex: String,
+        height: u64,
     },
     Submit {
         job_id: u64,
@@ -164,6 +165,7 @@ impl MiningPool {
             target,
             start_nonce,
             nonce_count,
+            height: 0,
         };
         self.next_job_id = self.next_job_id.wrapping_add(1);
         self.active_jobs.insert(
@@ -193,6 +195,7 @@ impl MiningPool {
             target,
             start_nonce,
             nonce_count,
+            height: template.height,
         };
         self.next_job_id = self.next_job_id.max(template.template_id.wrapping_add(1));
         self.active_jobs.insert(
@@ -249,6 +252,7 @@ impl MiningPool {
             nonce_count: job.nonce_count,
             target_hex: to_hex(&job.target.bytes),
             header_hex: to_hex(&job.header.to_bytes()),
+            height: job.height,
         }
     }
 
@@ -483,12 +487,13 @@ mod tests {
                 difficulty_bits: 0x1f00ffff,
             },
             nonce: 11,
+            height: 0,
         }
     }
 
     #[test]
     fn pool_advertises_canonical_profile() {
-        assert_eq!(advertised_algorithm(), "cosmic_harmony_ekam_deeksha");
+        assert_eq!(advertised_algorithm(), "cosmic_harmony_ekam_deeksha_v2");
     }
 
     #[test]
