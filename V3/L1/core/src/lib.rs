@@ -5,7 +5,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    cosmic_harmony_ekam_deeksha, profile_name, RevenueCollector, RevenueEvent, RevenueStats,
+    cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name,
+    RevenueCollector, RevenueEvent, RevenueStats,
     CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
 };
 
@@ -144,11 +145,12 @@ impl MiningHeader {
 pub struct BlockCandidate {
     pub header: MiningHeader,
     pub nonce: u64,
+    pub height: u64,
 }
 
 impl BlockCandidate {
     pub fn hash(self) -> [u8; 32] {
-        cosmic_harmony_ekam_deeksha(&self.header.to_bytes(), self.nonce).data
+        cosmic_harmony_with_height(&self.header.to_bytes(), self.nonce, self.height).data
     }
 
     pub fn seal(self) -> SealedBlock {
@@ -174,6 +176,7 @@ pub struct MiningJob {
     pub target: DifficultyTarget,
     pub start_nonce: u64,
     pub nonce_count: u64,
+    pub height: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -642,6 +645,7 @@ impl CoreRuntime {
             let candidate = BlockCandidate {
                 header: job.header,
                 nonce: job.start_nonce.wrapping_add(offset),
+                height: job.height,
             };
             let hash = self.hash_candidate(candidate);
             if job.target.allows(&hash) {
@@ -1223,7 +1227,7 @@ impl NodeRuntime {
             };
         }
 
-        let candidate = BlockCandidate { header, nonce };
+        let candidate = BlockCandidate { header, nonce, height: active_template.height };
         let hash = self.core.hash_candidate(candidate);
         let sealed = self.core.validate_candidate(candidate, target);
         let accepted = sealed.is_some();
@@ -1849,6 +1853,7 @@ impl ChainState {
             let candidate = BlockCandidate {
                 header,
                 nonce: block.nonce,
+                height: block.height,
             };
             let computed_hash = candidate.hash();
             if computed_hash != block_hash {
@@ -2733,7 +2738,7 @@ mod tests {
 
     #[test]
     fn core_uses_canonical_profile() {
-        assert_eq!(consensus_profile(), "cosmic_harmony_ekam_deeksha");
+        assert_eq!(consensus_profile(), "cosmic_harmony_ekam_deeksha_v2");
     }
 
     #[test]
@@ -2755,9 +2760,10 @@ mod tests {
         let candidate = BlockCandidate {
             header: sample_header(),
             nonce: 42,
+            height: 0,
         };
 
-        let direct = cosmic_harmony_ekam_deeksha(&candidate.header.to_bytes(), candidate.nonce);
+        let direct = cosmic_harmony_with_height(&candidate.header.to_bytes(), candidate.nonce, 0);
         assert_eq!(runtime.hash_candidate(candidate), direct.data);
     }
 
@@ -2767,6 +2773,7 @@ mod tests {
         let candidate = BlockCandidate {
             header: sample_header(),
             nonce: 7,
+            height: 0,
         };
 
         let sealed = runtime
@@ -2807,6 +2814,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             start_nonce: 100,
             nonce_count: 8,
+            height: 0,
         };
 
         let solution = runtime.scan_nonce_range(job).expect("max target must find a solution");
@@ -2824,6 +2832,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             start_nonce: 55,
             nonce_count: 4,
+            height: 0,
         };
 
         let solution = runtime.scan_nonce_range(job).expect("solution should exist");
@@ -2849,7 +2858,7 @@ mod tests {
         );
         let target = DifficultyTarget::from_hex(&template.target_hex).unwrap();
         for nonce in 0..10_000_000 {
-            let candidate = BlockCandidate { header, nonce };
+            let candidate = BlockCandidate { header, nonce, height: template.height };
             if target.allows(&candidate.hash()) {
                 return nonce;
             }
@@ -2866,7 +2875,7 @@ mod tests {
             parse_fixed_hex::<HEADER_SIZE>(&template.header_hex, "template header")
                 .expect("template header bytes"),
         );
-        let candidate = BlockCandidate { header, nonce };
+        let candidate = BlockCandidate { header, nonce, height: template.height };
 
         let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: template.template_id,
@@ -3712,7 +3721,7 @@ mod tests {
         let target_val = difficulty::difficulty_to_target(block.difficulty);
         let mut found = false;
         for nonce in 0..10_000_000u64 {
-            let candidate = BlockCandidate { header, nonce };
+            let candidate = BlockCandidate { header, nonce, height: block.height };
             let h = candidate.hash();
             if target_val.allows(&h) {
                 block.nonce = nonce;

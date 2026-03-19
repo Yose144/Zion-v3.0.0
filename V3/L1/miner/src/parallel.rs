@@ -38,6 +38,7 @@ pub fn parallel_scan_nonce_range(job: MiningJob, threads: usize) -> Option<Minin
                 target: job.target,
                 start_nonce: start,
                 nonce_count: count,
+                height: job.height,
             };
 
             let sol = sequential_scan(sub_job, &cancelled);
@@ -60,6 +61,7 @@ fn sequential_scan(job: MiningJob, cancelled: &AtomicBool) -> Option<MiningSolut
         let candidate = BlockCandidate {
             header: job.header,
             nonce,
+            height: job.height,
         };
         let hash = candidate.hash();
         if job.target.allows(&hash) {
@@ -104,6 +106,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             start_nonce: 0,
             nonce_count: 100,
+            height: 0,
         };
 
         let seq = sequential_scan(job, &AtomicBool::new(false));
@@ -124,6 +127,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             start_nonce: 42,
             nonce_count: 10,
+            height: 0,
         };
 
         let seq = sequential_scan(job, &AtomicBool::new(false));
@@ -144,6 +148,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             start_nonce: 0,
             nonce_count: 1_000_000,
+            height: 0,
         };
 
         // With cancelled=true up front, should return None quickly
