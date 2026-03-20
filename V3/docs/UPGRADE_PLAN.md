@@ -391,10 +391,12 @@ Scope: po stabilizaci core L1 runtime
   F1 (cargo audit): ✅ čistý — bincode unmaintained (transitivní), žádná zranitelnost
 
 ═══ Sprint 3 ═══
-  B3: PPLNS payout engine
-  C1-C2: Prometheus + Grafana stack deploy
-  C3: Alerting rules
-  E1: TLS, firewall, log rotation
+  B3: PPLNS payout engine  ✅ (pplns.rs — PplnsEngine, sliding share window, proportional payouts, min threshold, unpaid accumulation, 13 tests)
+  C1: Prometheus config  ✅ (prometheus.yml — pool + node-exporter scrape)
+  C2: Grafana dashboards  ✅ (provisioning + zion-pool-overview.json — 11 panels: sessions, uptime, shares, PPLNS, CPU, mem, disk)
+  C3: Alerting rules  ✅ (alert_rules.yml — PoolNoMiners, HighShareRejectRate, PoolDown, HighCpu, HighMem, DiskSpaceLow)
+  C4: docker-compose.monitoring.yml  ✅ (prometheus + grafana + node-exporter, external canary network)
+  E1: Server hardening  ✅ (HARDENING.md — ufw, Docker log limits, logrotate, unattended-upgrades, SSH, TLS notes)
 
 ═══ Sprint 4 ═══
   A4: Config profiles (solo/pool/dual/benchmark)
