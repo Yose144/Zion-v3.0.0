@@ -19,8 +19,8 @@ export async function GET() {
     aggregate: {
       hashrate: 0,
       hashrate_24h: 0,
-      active_miners: 0,
-      total_miners: 0,
+      active_miners: poolStats?.miners?.active ?? 0,
+      total_miners: poolStats?.miners?.total ?? 0,
       blocks_found: 0,
       valid_shares: validShares,
       invalid_shares: invalidShares,
