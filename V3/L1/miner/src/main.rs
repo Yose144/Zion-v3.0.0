@@ -105,8 +105,10 @@ fn main() -> Result<()> {
             }
             let mut total_mhps = 0.0;
             for h in handles {
-                let (_, _, mhps) = h.join().unwrap();
-                total_mhps += mhps;
+                match h.join() {
+                    Ok((_, _, mhps)) => total_mhps += mhps,
+                    Err(_) => eprintln!("WARNING: benchmark thread panicked"),
+                }
             }
             println!("total: {total_mhps:.2} MH/s ({threads} threads)");
         }
@@ -270,9 +272,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
         let job = pool.issue_job(header, config.target, start_nonce, tuned_nonce_count);
         last_job_id = job.job_id;
-        let solution = parallel::parallel_scan_nonce_range(job, threads);
-
-        if solution.is_none() {
+        let Some(solution) = parallel::parallel_scan_nonce_range(job, threads) else {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             rejected_iterations += 1;
             telemetry.record_attempted_hashes(attempted_hashes);
@@ -305,8 +305,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
                 None,
             );
             continue;
-        }
-        let solution = solution.expect("checked is_some above");
+        };
 
         attempted_hashes = attempted_hashes
             .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
@@ -446,8 +445,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         let (job_line, job) = read_next_job(&mut reader)?;
         let job_started_at = Instant::now();
         last_job_id = job.job_id;
-        let solution = parallel::parallel_scan_nonce_range(job, threads);
-        if solution.is_none() {
+        let Some(solution) = parallel::parallel_scan_nonce_range(job, threads) else {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             rejected_iterations += 1;
             telemetry.record_attempted_hashes(attempted_hashes);
@@ -466,8 +464,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
                 Some(remote_job_ttl_ms),
             );
             continue;
-        }
-        let solution = solution.expect("checked is_some above");
+        };
         attempted_hashes = attempted_hashes
             .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
         telemetry.record_attempted_hashes(attempted_hashes);
@@ -595,11 +592,11 @@ impl HashrateWindow {
     }
 
     fn rate_hps(&self) -> f64 {
-        if self.samples.len() < 2 {
+        let (Some((first_t, first_hashes)), Some((last_t, last_hashes))) =
+            (self.samples.front(), self.samples.back())
+        else {
             return 0.0;
-        }
-        let (first_t, first_hashes) = self.samples.front().expect("len checked");
-        let (last_t, last_hashes) = self.samples.back().expect("len checked");
+        };
         let dt = last_t.duration_since(*first_t).as_secs_f64();
         if dt < 0.5 || last_hashes < first_hashes {
             return 0.0;
@@ -827,12 +824,21 @@ fn hex(bytes: &[u8]) -> String {
 fn parse_header_hex(raw: &str) -> Result<MiningHeader> {
     let bytes = parse_fixed_hex::<80>(raw, "job header")?;
 
-    let version = u32::from_le_bytes(bytes[0..4].try_into().expect("header version slice"));
-    let previous_hash = bytes[4..36].try_into().expect("previous hash slice");
-    let merkle_root = bytes[36..68].try_into().expect("merkle root slice");
-    let timestamp = u64::from_le_bytes(bytes[68..76].try_into().expect("timestamp slice"));
-    let difficulty_bits =
-        u32::from_le_bytes(bytes[76..80].try_into().expect("difficulty bits slice"));
+    let version = u32::from_le_bytes(
+        bytes[0..4].try_into().context("header version slice")?,
+    );
+    let previous_hash: [u8; 32] = bytes[4..36]
+        .try_into()
+        .context("previous hash slice")?;
+    let merkle_root: [u8; 32] = bytes[36..68]
+        .try_into()
+        .context("merkle root slice")?;
+    let timestamp = u64::from_le_bytes(
+        bytes[68..76].try_into().context("timestamp slice")?,
+    );
+    let difficulty_bits = u32::from_le_bytes(
+        bytes[76..80].try_into().context("difficulty bits slice")?,
+    );
 
     Ok(MiningHeader {
         version,

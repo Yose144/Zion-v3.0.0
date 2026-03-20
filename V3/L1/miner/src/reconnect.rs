@@ -36,6 +36,7 @@ impl Backoff {
     }
 
     /// Reset backoff to initial value after a successful connection.
+    #[allow(dead_code)]
     pub fn reset(&mut self) {
         // Restore by dividing back from multiplier logic.
         // Simpler: just recreate. Keep max_ms.
@@ -46,6 +47,7 @@ impl Backoff {
     }
 
     /// Current delay in ms (for logging).
+    #[allow(dead_code)]
     pub fn current_ms(&self) -> u64 {
         self.current_ms.min(self.max_ms)
     }
