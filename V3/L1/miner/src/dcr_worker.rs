@@ -63,6 +63,7 @@ pub enum DcrBackend {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DcrHashImpl {
     RustPrecompute,
+    #[allow(dead_code)]
     Native,
 }
 

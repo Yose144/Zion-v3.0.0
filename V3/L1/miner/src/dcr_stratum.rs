@@ -265,7 +265,7 @@ impl DcrStratumClient {
 
 fn hex_decode(hex: &str) -> Result<Vec<u8>> {
     let hex = hex.trim().trim_start_matches("0x");
-    if hex.len() % 2 != 0 {
+    if !hex.len().is_multiple_of(2) {
         bail!("odd-length hex string");
     }
     let mut bytes = Vec::with_capacity(hex.len() / 2);

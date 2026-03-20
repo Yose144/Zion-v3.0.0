@@ -88,7 +88,7 @@ pub trait GpuMiner: Send {
 /// Try to create the best available GPU backend.
 pub fn create_gpu_backend(
     kind: GpuBackendKind,
-    work_size: usize,
+    _work_size: usize,
 ) -> Result<Box<dyn GpuMiner>> {
     match kind {
         GpuBackendKind::Cpu => {
