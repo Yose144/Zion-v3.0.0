@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{IpAddr, TcpListener, TcpStream};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -12,6 +12,7 @@ use zion_core::{
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
 use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
+use zion_pool::pplns::{PplnsConfig, PplnsEngine};
 
 fn main() -> Result<()> {
     let config = ServerConfig::from_env()?;
@@ -24,6 +25,15 @@ fn main() -> Result<()> {
         config.revenue_value_usd,
     )?));
     let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
+    let pplns_engine = Arc::new(Mutex::new(PplnsEngine::new(PplnsConfig {
+        window_size: parse_env_u64("ZION_PPLNS_WINDOW_SIZE", 1_000).unwrap_or(1_000) as usize,
+        min_payout_flowers: parse_env_u64(
+            "ZION_PPLNS_MIN_PAYOUT",
+            zion_core::wallet::MIN_PAYOUT_AMOUNT,
+        )
+        .unwrap_or(zion_core::wallet::MIN_PAYOUT_AMOUNT),
+    })));
+    let active_sessions = Arc::new(AtomicU64::new(0));
     let listener = TcpListener::bind(&config.bind_addr)
         .with_context(|| format!("failed to bind pool listener on {}", config.bind_addr))?;
 
@@ -53,9 +63,11 @@ fn main() -> Result<()> {
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
         println!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
+        let active_sessions_ref = Arc::clone(&active_sessions);
+        let pplns_ref = Arc::clone(&pplns_engine);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
-            if let Err(error) = serve_routing_metrics(&metrics_bind, routing_stats, started_at) {
+            if let Err(error) = serve_routing_metrics(&metrics_bind, routing_stats, started_at, active_sessions_ref, pplns_ref) {
                 eprintln!("routing_metrics_error={error:#}");
             }
         });
@@ -126,9 +138,11 @@ fn main() -> Result<()> {
         let pool = Arc::clone(&pool);
         let revenue_scheduler = Arc::clone(&revenue_scheduler);
         let routing_stats = Arc::clone(&routing_stats);
+        let pplns_ref = Arc::clone(&pplns_engine);
+        let active_sessions_ref = Arc::clone(&active_sessions);
         let config = config.clone();
         handles.push(thread::spawn(move || {
-            handle_client(stream, pool, revenue_scheduler, routing_stats, &config)
+            handle_client(stream, pool, revenue_scheduler, routing_stats, pplns_ref, active_sessions_ref, &config)
         }));
         accepted = accepted.saturating_add(1);
     }
@@ -146,13 +160,26 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// RAII guard that decrements the active session counter on drop.
+struct SessionGuard(Arc<AtomicU64>);
+impl Drop for SessionGuard {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
 fn handle_client(
     stream: TcpStream,
     pool: Arc<Mutex<MiningPool>>,
     revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
     routing_stats: Arc<Mutex<RoutingStats>>,
+    pplns_engine: Arc<Mutex<PplnsEngine>>,
+    active_sessions: Arc<AtomicU64>,
     config: &ServerConfig,
 ) -> Result<()> {
+    active_sessions.fetch_add(1, Ordering::Relaxed);
+    let _guard = SessionGuard(Arc::clone(&active_sessions));
+
     let reader_stream = stream.try_clone().context("failed to clone tcp stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
@@ -194,6 +221,12 @@ fn handle_client(
         miner_id,
         worker_name
     );
+
+    // Register miner_id as payout address (miner_id is expected to be a zion1… address).
+    pplns_engine
+        .lock()
+        .expect("pplns lock poisoned")
+        .register_address(&miner_id, &miner_id);
 
     let welcome_message = pool.lock().expect("pool lock poisoned").welcome_message();
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
@@ -314,6 +347,12 @@ fn handle_client(
         };
 
         let accepted = matches!(decision.status, ShareStatus::Accepted);
+        if accepted {
+            pplns_engine
+                .lock()
+                .expect("pplns lock poisoned")
+                .record_share(&miner_id, &worker_name, job.height);
+        }
         {
             let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
             let should_log = stats.record(session_group, routed_source, accepted);
@@ -758,6 +797,7 @@ impl RoutingStats {
         out
     }
 
+    #[allow(dead_code)]
     fn snapshot_json(&self) -> String {
         let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
         let accept_rate = if self.total_submits == 0 {
@@ -832,9 +872,53 @@ impl RoutingStats {
         }
         out
     }
+
+    fn snapshot_json_ext(&self, active_sessions: u64, uptime_s: u64) -> String {
+        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let accept_rate = if self.total_submits == 0 {
+            0.0
+        } else {
+            self.total_accepted as f64 * 100.0 / self.total_submits as f64
+        };
+
+        format!(
+            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"accept_rate_pct\":{:.2},\"active_sessions\":{},\"uptime_s\":{},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
+            self.total_submits,
+            self.total_accepted,
+            total_rejected,
+            accept_rate,
+            active_sessions,
+            uptime_s,
+            self.group_submits[group_index(SessionGroup::Zion)],
+            self.group_accepted[group_index(SessionGroup::Zion)],
+            self.group_submits[group_index(SessionGroup::Revenue)],
+            self.group_accepted[group_index(SessionGroup::Revenue)],
+            self.group_submits[group_index(SessionGroup::Ncl)],
+            self.group_accepted[group_index(SessionGroup::Ncl)],
+            self.group_submits[group_index(SessionGroup::Auto)],
+            self.group_accepted[group_index(SessionGroup::Auto)],
+            self.source_submits[source_index(RevenueSource::Zion)],
+            self.source_accepted[source_index(RevenueSource::Zion)],
+            self.source_submits[source_index(RevenueSource::Blake3External)],
+            self.source_accepted[source_index(RevenueSource::Blake3External)],
+            self.source_submits[source_index(RevenueSource::NclAi)],
+            self.source_accepted[source_index(RevenueSource::NclAi)],
+        )
+    }
+
+    fn snapshot_prometheus_ext(&self, active_sessions: u64, uptime_s: u64) -> String {
+        let mut out = self.snapshot_prometheus();
+        let _ = writeln!(out, "# HELP zion_pool_active_sessions Currently connected miners.");
+        let _ = writeln!(out, "# TYPE zion_pool_active_sessions gauge");
+        let _ = writeln!(out, "zion_pool_active_sessions {active_sessions}");
+        let _ = writeln!(out, "# HELP zion_pool_uptime_seconds Pool uptime in seconds.");
+        let _ = writeln!(out, "# TYPE zion_pool_uptime_seconds counter");
+        let _ = writeln!(out, "zion_pool_uptime_seconds {uptime_s}");
+        out
+    }
 }
 
-fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>>, started_at: std::time::Instant) -> Result<()> {
+fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>>, started_at: std::time::Instant, active_sessions: Arc<AtomicU64>, pplns_engine: Arc<Mutex<PplnsEngine>>) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
 
@@ -868,14 +952,37 @@ fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>
                 let stats = routing_stats
                     .lock()
                     .expect("routing stats lock poisoned");
-                ("200 OK", "text/plain; version=0.0.4", stats.snapshot_prometheus())
+                let sessions = active_sessions.load(Ordering::Relaxed);
+                let uptime_s = started_at.elapsed().as_secs();
+                let mut body = stats.snapshot_prometheus_ext(sessions, uptime_s);
+                let pplns = pplns_engine.lock().expect("pplns lock poisoned").stats();
+                let _ = writeln!(body, "zion_pplns_window_size {}", pplns.window_size);
+                let _ = writeln!(body, "zion_pplns_window_used {}", pplns.window_used);
+                let _ = writeln!(body, "zion_pplns_registered_miners {}", pplns.registered_miners);
+                let _ = writeln!(body, "zion_pplns_total_paid_flowers {}", pplns.total_paid_flowers);
+                let _ = writeln!(body, "zion_pplns_payout_rounds {}", pplns.payout_rounds);
+                ("200 OK", "text/plain; version=0.0.4", body)
             }
             _ => {
                 // Default: JSON stats (backward compatible)
                 let stats = routing_stats
                     .lock()
                     .expect("routing stats lock poisoned");
-                ("200 OK", "application/json", stats.snapshot_json())
+                let sessions = active_sessions.load(Ordering::Relaxed);
+                let uptime_s = started_at.elapsed().as_secs();
+                let mut body = stats.snapshot_json_ext(sessions, uptime_s);
+                // Append PPLNS stats to JSON (inject before closing brace).
+                let pplns = pplns_engine.lock().expect("pplns lock poisoned").stats();
+                if body.ends_with('}') {
+                    body.pop();
+                    let _ = write!(
+                        body,
+                        ",\"pplns\":{{\"window_size\":{},\"window_used\":{},\"registered_miners\":{},\"total_unpaid_flowers\":{},\"total_paid_flowers\":{},\"payout_rounds\":{}}}}}",
+                        pplns.window_size, pplns.window_used, pplns.registered_miners,
+                        pplns.total_unpaid_flowers, pplns.total_paid_flowers, pplns.payout_rounds
+                    );
+                }
+                ("200 OK", "application/json", body)
             }
         };
 
@@ -1213,10 +1320,11 @@ mod tests {
             config.revenue_value_usd,
         )?));
         let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
+        let pplns = Arc::new(Mutex::new(PplnsEngine::new(PplnsConfig::default())));
 
         let handle = thread::spawn(move || -> Result<()> {
             let (stream, _) = listener.accept().context("accept pool test client")?;
-            handle_client(stream, pool, revenue_scheduler, routing_stats, &config)
+            handle_client(stream, pool, revenue_scheduler, routing_stats, pplns, Arc::new(AtomicU64::new(0)), &config)
         });
 
         Ok((addr, handle))

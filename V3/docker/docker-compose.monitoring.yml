@@ -1,0 +1,70 @@
+# ZION V3 Monitoring Stack
+#
+# Run alongside the canary stack:
+#   docker compose -f docker-compose.v3-zion2-canary.yml \
+#                  -f docker-compose.monitoring.yml up -d
+#
+# Connects to the same network so Prometheus can scrape pool:9550.
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: zion-v3-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - zion-v3-prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    networks:
+      - zion-v3-canary
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: zion-v3-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - zion-v3-grafana-data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_pw
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    networks:
+      - zion-v3-canary
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: zion-v3-node-exporter
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    networks:
+      - zion-v3-canary
+
+volumes:
+  zion-v3-prometheus-data:
+    driver: local
+  zion-v3-grafana-data:
+    driver: local
+
+networks:
+  zion-v3-canary:
+    external: true
+    name: docker_zion-v3-canary

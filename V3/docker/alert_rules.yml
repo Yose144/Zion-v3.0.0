@@ -1,0 +1,60 @@
+groups:
+  - name: zion-pool
+    rules:
+      - alert: PoolNoMiners
+        expr: zion_pool_active_sessions == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No miners connected to pool"
+          description: "Pool has had 0 active sessions for 5 minutes."
+
+      - alert: HighShareRejectRate
+        expr: >
+          (zion_pool_total_submits - zion_pool_total_accepted)
+          / zion_pool_total_submits > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Share reject rate above 20%"
+          description: "More than 20% of submitted shares are being rejected."
+
+      - alert: PoolDown
+        expr: up{job="zion-pool"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pool metrics endpoint unreachable"
+          description: "Prometheus cannot scrape the pool /metrics endpoint."
+
+  - name: zion-host
+    rules:
+      - alert: HighCpuUsage
+        expr: >
+          100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host CPU usage above 90%"
+
+      - alert: HighMemoryUsage
+        expr: >
+          (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host memory usage above 90%"
+
+      - alert: DiskSpaceLow
+        expr: >
+          (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Root disk usage above 85%"
