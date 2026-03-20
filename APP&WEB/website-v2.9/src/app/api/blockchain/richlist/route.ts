@@ -1,55 +1,18 @@
 import { NextResponse } from 'next/server';
-import { SITE_PRIMARY_POOL_API_URL, SITE_PRIMARY_RPC_URL } from '@/lib/site';
+import { getZionRpc } from '@/lib/zion-rpc';
 
-const SERVERS = [
-  { url: SITE_PRIMARY_RPC_URL, name: 'Zion2 Primary' },
-];
-
-const POOL_SERVERS = [
-  SITE_PRIMARY_POOL_API_URL,
-];
-
-async function rpc(method: string, params: unknown[] = []) {
-  for (const server of SERVERS) {
-    try {
-      const res = await fetch(server.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-        signal: AbortSignal.timeout(8000),
-      });
-      const json = await res.json();
-      if (json.result !== undefined) return json.result;
-    } catch { /* try next */ }
+async function rpc(method: string, params: Record<string, any> = {}) {
+  try {
+    const client = getZionRpc();
+    return await client.rpcCall(method, params);
+  } catch {
+    return null;
   }
-  return null;
 }
 
+// V3 pool doesn't expose per-miner data — return empty
 async function fetchPoolMiners() {
-  const miners: Record<string, { hashrate: number; pending: number; paid: number; shares: number }> = {};
-  
-  for (const server of POOL_SERVERS) {
-    try {
-      const res = await fetch(`${server}/stats`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      const data = await res.json();
-      
-      if (data.miners && typeof data.miners === 'object') {
-        for (const [addr, info] of Object.entries(data.miners as Record<string, any>)) {
-          if (!miners[addr]) {
-            miners[addr] = { hashrate: 0, pending: 0, paid: 0, shares: 0 };
-          }
-          miners[addr].hashrate += Number(info.hashrate || 0);
-          miners[addr].pending += Number(info.pending_balance || info.pending || 0);
-          miners[addr].paid += Number(info.total_paid || info.paid || 0);
-          miners[addr].shares += Number(info.shares_accepted || info.shares || 0);
-        }
-      }
-    } catch { /* skip */ }
-  }
-  
-  return miners;
+  return {} as Record<string, { hashrate: number; pending: number; paid: number; shares: number }>;
 }
 
 interface RichListEntry {
