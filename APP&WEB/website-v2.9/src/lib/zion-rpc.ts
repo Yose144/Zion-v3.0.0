@@ -160,6 +160,8 @@ export interface V3PoolRoutingStats {
   accepted: number;
   rejected: number;
   accept_rate_pct: number;
+  active_sessions: number;
+  uptime_s: number;
   groups: Record<string, { submits: number; accepted: number }>;
   sources: Record<string, { submits: number; accepted: number }>;
 }
@@ -212,7 +214,7 @@ function tcpJsonRpc(host: string, port: number, method: string, params: any = {}
 
 /**
  * Read V3 pool routing metrics over raw TCP.
- * The pool sends JSON immediately upon connection (no request needed).
+ * The pool serves HTTP on its metrics port — send GET / and parse the JSON body.
  */
 function tcpPoolMetrics(host: string, port: number, timeoutMs = POOL_TIMEOUT_MS): Promise<V3PoolRoutingStats> {
   return new Promise((resolve, reject) => {
@@ -224,21 +226,21 @@ function tcpPoolMetrics(host: string, port: number, timeoutMs = POOL_TIMEOUT_MS)
       if (!settled) { settled = true; socket.destroy(); reject(new Error('Pool metrics timeout')); }
     }, timeoutMs);
 
-    socket.connect(port, host);
+    socket.connect(port, host, () => {
+      socket.write(`GET / HTTP/1.0\r\nHost: ${host}\r\n\r\n`);
+    });
 
     socket.on('data', (chunk) => {
       data += chunk.toString();
-      if (data.includes('\n') || (data.includes('{') && data.includes('}'))) {
-        if (!settled) { settled = true; clearTimeout(timer); socket.destroy(); }
-        try { resolve(JSON.parse(data.trim())); }
-        catch { reject(new Error('Invalid pool metrics JSON')); }
-      }
     });
 
     socket.on('end', () => {
       if (settled) return;
       settled = true; clearTimeout(timer);
-      if (data.trim()) { try { resolve(JSON.parse(data.trim())); } catch { reject(new Error('Invalid pool metrics JSON')); } }
+      // Strip HTTP headers — body starts after \r\n\r\n
+      const bodyIdx = data.indexOf('\r\n\r\n');
+      const body = bodyIdx >= 0 ? data.slice(bodyIdx + 4).trim() : data.trim();
+      if (body) { try { resolve(JSON.parse(body)); } catch { reject(new Error('Invalid pool metrics JSON')); } }
       else reject(new Error('Pool metrics: empty response'));
     });
 
@@ -513,13 +515,14 @@ class ZionRpcClient {
         return {
           ok: true,
           hashrate: { pool: 0, pool_24h: 0 },
-          miners: { active: 0, total: 0 },
+          miners: { active: metrics.active_sessions ?? 0, total: metrics.active_sessions ?? 0 },
           shares: {
             valid: metrics.accepted ?? 0,
             invalid: metrics.rejected ?? 0,
           },
           blocks: { found: 0, pending: 0 },
           pool: { fee: 5, version: '2.9.8' },
+          uptime_s: metrics.uptime_s ?? 0,
           routing: {
             submits: metrics.submits ?? 0,
             accepted: metrics.accepted ?? 0,
