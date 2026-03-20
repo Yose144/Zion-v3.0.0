@@ -1,107 +1,58 @@
 import { NextResponse } from 'next/server';
-import { SITE_PRIMARY_HOST, SITE_VERSION } from '@/lib/site';
+import { SITE_VERSION } from '@/lib/site';
+import { getZionRpc } from '@/lib/zion-rpc';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/* ── Node definitions ─────────────────────────────────────────────── */
-const PRIMARY_NODE = { id: 'primary', host: SITE_PRIMARY_HOST, rpc: 8444, pool: 8080 };
-type NodeDefinition = typeof PRIMARY_NODE;
+/* ── Fetch data for primary node via V3 TCP RPC ───────────────────── */
+async function fetchNodeData() {
+  const rpc = getZionRpc();
 
-const TIMEOUT = 6_000;
+  let nodeStats: any = undefined;
+  let pool: any = undefined;
 
-/* ── Helpers ──────────────────────────────────────────────────────── */
-async function fetchJson<T = any>(url: string): Promise<T | null> {
   try {
-    const res = await fetch(url, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(TIMEOUT),
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
-}
+    const info = await rpc.getInfo();
+    const peerCount = (info.outgoing_connections_count ?? 0) + (info.incoming_connections_count ?? 0);
+    nodeStats = {
+      height: info.height ?? 0,
+      peers_connected: peerCount,
+      difficulty: info.difficulty ?? 0,
+      mempool_size: info.tx_pool_size ?? 0,
+      status: info.status ?? 'OK',
+      time_since_last_block: info.target ?? 60,
+      tip: info.top_block_hash ?? '',
+      tps: 0,
+      sync: { state: 'synced' },
+      network: `TestNet ${SITE_VERSION}`,
+    };
+  } catch { /* node unreachable */ }
 
-async function rpcCall<T = any>(url: string, method: string): Promise<T | null> {
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: '0', method, params: {} }),
-      cache: 'no-store',
-      signal: AbortSignal.timeout(TIMEOUT),
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return (json.result ?? json) as T;
-  } catch {
-    return null;
-  }
-}
-
-/* ── Fetch data for a single node ─────────────────────────────────── */
-async function fetchNodeData(node: NodeDefinition) {
-  const rpcUrl = `http://${node.host}:${node.rpc}/jsonrpc`;
-  const [rpcInfo, poolStats] = await Promise.all([
-    rpcCall<any>(rpcUrl, 'get_info'),
-    node.pool > 0 ? fetchJson<any>(`http://${node.host}:${node.pool}/stats`) : Promise.resolve(null),
-  ]);
-
-  const nodeStats = rpcInfo
-    ? {
-        height: rpcInfo.height ?? 0,
-        peers_connected: (rpcInfo.incoming_connections_count ?? 0) + (rpcInfo.outgoing_connections_count ?? 0),
-        difficulty: rpcInfo.difficulty ?? 0,
-        mempool_size: rpcInfo.tx_pool_size ?? 0,
-        status: rpcInfo.status ?? 'OK',
-        time_since_last_block: rpcInfo.target ?? 0,
-        tip: rpcInfo.top_block_hash ?? '',
-        tps: 0,
-        sync: { state: rpcInfo.synchronized ? 'synced' : 'syncing' },
-        network: `TestNet ${SITE_VERSION}`,
-      }
-    : undefined;
-
-  const pool = poolStats
-    ? {
+    const poolStats = await rpc.getPoolStats();
+    if (poolStats) {
+      pool = {
         ok: true,
-        miners: {
-          active: poolStats.miners?.active ?? 0,
-          total: poolStats.miners?.total ?? 0,
-        },
-        hashrate: {
-          pool: poolStats.hashrate?.pool ?? 0,
-          pool_24h: poolStats.hashrate?.pool_24h ?? 0,
-        },
-        shares: {
-          valid: poolStats.shares?.valid ?? 0,
-          invalid: poolStats.shares?.invalid ?? 0,
-        },
-        blocks: {
-          found: poolStats.blocks?.found ?? 0,
-          pending: poolStats.blocks?.pending ?? 0,
-        },
-        pool: {
-          fee: poolStats.pool?.fee ?? 0,
-          version: poolStats.pool?.version ?? SITE_VERSION,
-          uptime_secs: poolStats.pool?.uptime_secs ?? 0,
-        },
-        payouts: {
-          pending_miners: poolStats.payouts?.pending_miners ?? 0,
-        },
-        pplns_window_size: poolStats.pplns_window_size ?? 0,
-        blockchain: { connected: poolStats.blockchain?.connected ?? false },
-      }
-    : undefined;
+        miners: poolStats.miners ?? { active: 0, total: 0 },
+        hashrate: poolStats.hashrate ?? { pool: 0, pool_24h: 0 },
+        shares: poolStats.shares ?? { valid: 0, invalid: 0 },
+        blocks: poolStats.blocks ?? { found: 0, pending: 0 },
+        pool: poolStats.pool ?? { fee: 5, version: SITE_VERSION, uptime_secs: 0 },
+        payouts: { pending_miners: 0 },
+        pplns_window_size: 0,
+        blockchain: { connected: !!nodeStats },
+        routing: poolStats.routing ?? null,
+      };
+    }
+  } catch { /* pool unreachable */ }
 
-  return { ip: node.host, stats: nodeStats, pool };
+  return { ip: '', stats: nodeStats, pool };
 }
 
 /* ── GET handler ───────────────────────────────────────────────── */
 export async function GET() {
-  const primary = await fetchNodeData(PRIMARY_NODE);
+  const primary = await fetchNodeData();
 
   // 168h stability run — started 2026-02-24T11:48:00Z (3-node P2P verified)
   const STABILITY_START_EPOCH = 1771962480; // unix epoch UTC

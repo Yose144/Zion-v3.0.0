@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSeedNodesConfig, type SeedNodeConfig } from '@/lib/network-config';
+import { getZionRpc } from '@/lib/zion-rpc';
 
 /**
  * TREE_NODES Network API
- * 
+ *
  * Provides real-time status of the configured ZION public host topology.
- * Supports a single-host default with env-configured overrides.
+ * Uses V3 TCP JSON-RPC for node checks and TCP pool metrics.
  */
 
 const SEED_NODES = getSeedNodesConfig();
@@ -48,31 +49,6 @@ interface NetworkStatus {
   };
 }
 
-async function fetchWithTimeout(url: string, timeoutMs: number = 5000): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  
-  try {
-    const response = await fetch(url, { 
-      signal: controller.signal,
-      cache: 'no-store'
-    });
-    return response;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-function computeRpcUrl(node: SeedNodeConfig): string {
-  if (node.rpcUrl) return node.rpcUrl;
-  return `http://${node.host}:${node.ports.rpc}/json_rpc`;
-}
-
-function computePoolApiBaseUrl(node: SeedNodeConfig): string {
-  if (node.poolApiUrl) return node.poolApiUrl;
-  return `http://${node.host}:${node.ports.pool_api}`;
-}
-
 async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
   const status: NodeStatus = {
     id: node.id,
@@ -88,54 +64,29 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
     miners: 0,
     blocks: 0,
     uptime: 0,
-    lastChecked: new Date().toISOString()
+    lastChecked: new Date().toISOString(),
   };
 
-  // Try RPC for blockchain info
+  // V3 node RPC via TCP
   try {
-    const rpcUrl = computeRpcUrl(node);
-    
-    // Get block info - use POST with JSON-RPC (ZION uses get_info method)
+    const rpc = getZionRpc();
     const rpcStart = Date.now();
-    const blockRes = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: '1', method: 'get_info', params: [] }),
-      signal: AbortSignal.timeout(5000),
-      cache: 'no-store'
-    });
+    const info = await rpc.getInfo();
     status.rpcLatencyMs = Date.now() - rpcStart;
-    
-    if (blockRes.ok) {
-      const blockData = await blockRes.json();
-      // ZION RPC returns { result: { height, difficulty, status, tip } }
-      status.height = blockData.result?.height || 0;
-      status.peers = (blockData.result?.incoming_connections_count || 0) + (blockData.result?.outgoing_connections_count || 0);
-      status.online = blockData.result?.status === 'OK';
-    }
+    status.height = info.height ?? 0;
+    status.peers = (info.outgoing_connections_count ?? 0) + (info.incoming_connections_count ?? 0);
+    status.online = info.status === 'OK';
   } catch (e) {
     status.error = e instanceof Error ? e.message : 'RPC error';
   }
 
-  // Try Pool API for mining stats
+  // V3 pool metrics via TCP
   try {
-    const poolApiBase = computePoolApiBaseUrl(node).replace(/\/+$/, '');
+    const rpc = getZionRpc();
     const poolStart = Date.now();
-    const poolRes = await fetchWithTimeout(
-      `${poolApiBase}/stats`,
-      5000
-    );
+    const poolStats = await rpc.getPoolStats();
     status.poolLatencyMs = Date.now() - poolStart;
-    
-    if (poolRes.ok) {
-      const poolData = await poolRes.json();
-      status.hashrate = poolData.hashrate?.pool || 0;
-      status.miners = poolData.miners?.active || 0;
-      status.blocks = poolData.blocks?.found || 0;
-      // Use pool's blockchain height as fallback
-      if (!status.height && poolData.blockchain?.height) {
-        status.height = poolData.blockchain.height;
-      }
+    if (poolStats) {
       status.online = true;
     }
   } catch {
