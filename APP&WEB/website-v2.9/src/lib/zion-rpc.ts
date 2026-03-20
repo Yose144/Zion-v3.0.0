@@ -1,23 +1,23 @@
 /**
- * ZION Blockchain RPC Client
- * 
- * Direct communication with ZION daemon JSON-RPC (Monero-compatible).
- * This replaces the Pool API approach for accurate blockchain data.
- * 
- * RPC Methods:
- *  - get_info: Network overview (height, difficulty, hashrate, peers)
- *  - get_block_header_by_height: Single block header
- *  - get_block_headers_range: Range of block headers
- *  - get_last_block_header: Latest block header
- *  - get_block_count: Chain height
- *  - get_block: Full block with transactions
- *  - get_transactions: Transaction details by hash
- *  - get_transaction_pool: Mempool
- *  - get_connections: Connected peers
- *  - get_coinbase_tx_sum: Emission stats
- *  - get_fee_estimate: Fee estimation
+ * ZION V3 Blockchain RPC Client
+ *
+ * Direct TCP communication with ZION V3 daemon (line-delimited JSON-RPC 2.0).
+ * V3 node speaks raw TCP, not HTTP. Pool metrics also speak raw TCP.
+ *
+ * V3 RPC Methods:
+ *  - getChainInfo: Chain overview (height, tip, mempool, protocol)
+ *  - getNodeInfo: Node configuration and state
+ *  - getBlockByHeight: Block data by height
+ *  - getBlock: Block data by hash
+ *  - getTransaction: Transaction by hash
+ *  - getMempoolInfo: Mempool statistics
+ *  - getPeerInfo: Connected peers
+ *  - getBalance / getAccountBalance: Address balance
+ *  - getUtxos: UTXOs for address
+ *  - submitBlock / submitTransaction: Submission endpoints
  */
 
+import * as net from 'net';
 import { getSeedNodesConfig, type SeedNodeConfig } from './network-config';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -37,6 +37,7 @@ export interface ZionBlockHeader {
   depth: number;
   major_version: number;
   minor_version: number;
+  miner_address?: string;
 }
 
 export interface ZionBlock extends ZionBlockHeader {
@@ -78,8 +79,6 @@ export interface ZionTransaction {
   }>;
   extra: number[];
   fee: number;
-  // ZION-specific fields
-
   humanitarian_tithe?: number;
 }
 
@@ -107,7 +106,6 @@ export interface ZionNetworkInfo {
   offline: boolean;
   status: string;
   version: string;
-  // ZION-specific
   total_emission?: number;
   mining_speed?: number;
   database_size?: number;
@@ -155,485 +153,422 @@ export interface ZionEmission {
   status?: string;
 }
 
-// ─── RPC Client ──────────────────────────────────────────────────────────────
+// ─── V3 Pool Routing Stats (raw shape from pool metrics TCP endpoint) ────────
 
-const TIMEOUT_MS = 8000;
+export interface V3PoolRoutingStats {
+  submits: number;
+  accepted: number;
+  rejected: number;
+  accept_rate_pct: number;
+  groups: Record<string, { submits: number; accepted: number }>;
+  sources: Record<string, { submits: number; accepted: number }>;
+}
+
+// ─── TCP Transport ───────────────────────────────────────────────────────────
+
+const RPC_TIMEOUT_MS = 8000;
+const POOL_TIMEOUT_MS = 5000;
+
+/**
+ * Send a JSON-RPC 2.0 request over raw TCP to the V3 node.
+ * Protocol: single request per connection — write JSON line, read response, close.
+ */
+function tcpJsonRpc(host: string, port: number, method: string, params: any = {}, timeoutMs = RPC_TIMEOUT_MS): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    let data = '';
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) { settled = true; socket.destroy(); reject(new Error(`TCP RPC timeout (${method})`)); }
+    }, timeoutMs);
+
+    socket.connect(port, host, () => {
+      const req = JSON.stringify({ jsonrpc: '2.0', id: 1, method, params });
+      socket.write(req + '\n');
+    });
+
+    socket.on('data', (chunk) => { data += chunk.toString(); });
+
+    function settle() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      socket.destroy();
+      const trimmed = data.trim();
+      if (!trimmed) { reject(new Error('Empty RPC response')); return; }
+      try {
+        const json = JSON.parse(trimmed);
+        if (json.error) reject(new Error(json.error.message || JSON.stringify(json.error)));
+        else resolve(json.result);
+      } catch { reject(new Error(`Invalid JSON from RPC: ${trimmed.substring(0, 200)}`)); }
+    }
+
+    socket.on('end', settle);
+    socket.on('close', settle);
+    socket.on('error', (err) => { if (!settled) { settled = true; clearTimeout(timer); reject(err); } });
+  });
+}
+
+/**
+ * Read V3 pool routing metrics over raw TCP.
+ * The pool sends JSON immediately upon connection (no request needed).
+ */
+function tcpPoolMetrics(host: string, port: number, timeoutMs = POOL_TIMEOUT_MS): Promise<V3PoolRoutingStats> {
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    let data = '';
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) { settled = true; socket.destroy(); reject(new Error('Pool metrics timeout')); }
+    }, timeoutMs);
+
+    socket.connect(port, host);
+
+    socket.on('data', (chunk) => {
+      data += chunk.toString();
+      if (data.includes('\n') || (data.includes('{') && data.includes('}'))) {
+        if (!settled) { settled = true; clearTimeout(timer); socket.destroy(); }
+        try { resolve(JSON.parse(data.trim())); }
+        catch { reject(new Error('Invalid pool metrics JSON')); }
+      }
+    });
+
+    socket.on('end', () => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      if (data.trim()) { try { resolve(JSON.parse(data.trim())); } catch { reject(new Error('Invalid pool metrics JSON')); } }
+      else reject(new Error('Pool metrics: empty response'));
+    });
+
+    socket.on('error', (err) => { if (!settled) { settled = true; clearTimeout(timer); reject(err); } });
+  });
+}
+
+// ─── Block Mapping Helpers ───────────────────────────────────────────────────
+
+const ATOMIC_PER_ZION = 1_000_000_000_000;
+
+function mapV3BlockToHeader(block: any): ZionBlockHeader {
+  const rewardZion = block.miner_reward_zion ?? block.subsidy_zion ?? 5400.067;
+  const txCount = block.transaction_ids?.length ?? block.transactions?.length ?? 0;
+  return {
+    height: block.height ?? 0,
+    hash: block.hash_hex ?? '',
+    prev_hash: block.previous_hash_hex ?? '',
+    timestamp: block.timestamp ?? 0,
+    difficulty: block.difficulty ?? 0,
+    nonce: block.nonce ?? 0,
+    reward: Math.round(rewardZion * ATOMIC_PER_ZION),
+    miner_tx_hash: '',
+    num_txes: Math.max(0, txCount - 1),
+    block_size: 0,
+    orphan_status: false,
+    depth: 0,
+    major_version: 1,
+    minor_version: 0,
+    miner_address: block.miner_address ?? '',
+  };
+}
+
+function mapV3BlockToFull(block: any): ZionBlock {
+  const header = mapV3BlockToHeader(block);
+  const rewardZion = block.miner_reward_zion ?? block.subsidy_zion ?? 5400.067;
+  return {
+    ...header,
+    miner_tx: {
+      version: 1,
+      unlock_time: 0,
+      vin: [{ gen: { height: block.height ?? 0 } }],
+      vout: [{
+        amount: Math.round(rewardZion * ATOMIC_PER_ZION),
+        target: { key: block.miner_address ?? '' },
+      }],
+      extra: [],
+    },
+    tx_hashes: (block.transaction_ids ?? []).slice(1),
+  };
+}
+
+// ─── RPC Client ──────────────────────────────────────────────────────────────
 
 class ZionRpcClient {
   private nodes: SeedNodeConfig[];
   private primaryIndex: number = 0;
-  private failoverCounts: Map<string, number> = new Map();
 
   constructor() {
     this.nodes = getSeedNodesConfig();
   }
 
-  private getRpcUrl(node: SeedNodeConfig): string {
-    return node.rpcUrl || `http://${node.host}:${node.ports.rpc}/jsonrpc`;
-  }
-
-  private getPoolApiUrl(node: SeedNodeConfig): string {
-    return (node.poolApiUrl || `http://${node.host}:${node.ports.pool_api}`).replace(/\/+$/, '');
-  }
-
   /**
-   * Make a JSON-RPC call with automatic failover across seed nodes
+   * Make a V3 JSON-RPC call over TCP with automatic failover across seed nodes.
    */
   async rpcCall<T = any>(method: string, params: Record<string, any> = {}): Promise<T> {
     const errors: string[] = [];
 
-    // Try primary node first, then failover to others
     for (let attempt = 0; attempt < this.nodes.length; attempt++) {
       const nodeIndex = (this.primaryIndex + attempt) % this.nodes.length;
       const node = this.nodes[nodeIndex];
-      const url = this.getRpcUrl(node);
-
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: '0',
-            method,
-            params,
-          }),
-          signal: controller.signal,
-          cache: 'no-store',
-        });
-
-        clearTimeout(timeout);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const json = await response.json();
-
-        if (json.error) {
-          throw new Error(json.error.message || JSON.stringify(json.error));
-        }
-
-        // Success — promote this node to primary
-        if (attempt > 0) {
-          this.primaryIndex = nodeIndex;
-        }
-        this.failoverCounts.set(node.id, 0);
-
-        return json.result as T;
-      } catch (err: any) {
-        const msg = `${node.name}: ${err.message || 'Unknown error'}`;
-        errors.push(msg);
-
-        // Track failures
-        const count = (this.failoverCounts.get(node.id) || 0) + 1;
-        this.failoverCounts.set(node.id, count);
-      }
-    }
-
-    throw new Error(`All RPC nodes failed: ${errors.join(' | ')}`);
-  }
-
-  /**
-   * Make a direct HTTP call (non-JSON-RPC endpoints like /get_transactions)
-   */
-  async httpCall<T = any>(path: string, body?: Record<string, any>): Promise<T> {
-    const errors: string[] = [];
-
-    for (let attempt = 0; attempt < this.nodes.length; attempt++) {
-      const nodeIndex = (this.primaryIndex + attempt) % this.nodes.length;
-      const node = this.nodes[nodeIndex];
-      // Direct HTTP endpoints use the base host:rpc_port without /jsonrpc
-      const baseUrl = `http://${node.host}:${node.ports.rpc}`;
-
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-        const response = await fetch(`${baseUrl}${path}`, {
-          method: body ? 'POST' : 'GET',
-          headers: body ? { 'Content-Type': 'application/json' } : {},
-          body: body ? JSON.stringify(body) : undefined,
-          signal: controller.signal,
-          cache: 'no-store',
-        });
-
-        clearTimeout(timeout);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const json = await response.json();
-
-        if (attempt > 0) {
-          this.primaryIndex = nodeIndex;
-        }
-
-        return json as T;
+        const result = await tcpJsonRpc(node.host, node.ports.rpc, method, params) as T;
+        if (attempt > 0) this.primaryIndex = nodeIndex;
+        return result;
       } catch (err: any) {
         errors.push(`${node.name}: ${err.message}`);
       }
     }
-
-    throw new Error(`All nodes failed for ${path}: ${errors.join(' | ')}`);
-  }
-
-  /**
-   * Pool API call (for mining-specific data not available via RPC)
-   * Only queries nodes that have a pool API configured (poolApiUrl set or pool_api port > 0).
-   */
-  async poolCall<T = any>(path: string): Promise<T> {
-    const errors: string[] = [];
-
-    for (let attempt = 0; attempt < this.nodes.length; attempt++) {
-      const nodeIndex = (this.primaryIndex + attempt) % this.nodes.length;
-      const node = this.nodes[nodeIndex];
-
-      // Skip nodes without a pool API — avoids 8s timeout on port 0
-      if (!node.poolApiUrl && (!node.ports.pool_api || node.ports.pool_api === 0)) continue;
-
-      const baseUrl = this.getPoolApiUrl(node);
-
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-        const response = await fetch(`${baseUrl}${path}`, {
-          signal: controller.signal,
-          cache: 'no-store',
-        });
-
-        clearTimeout(timeout);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        return (await response.json()) as T;
-      } catch (err: any) {
-        errors.push(`${node.name} pool: ${err.message}`);
-      }
-    }
-
-    throw new Error(`All pool nodes failed for ${path}: ${errors.join(' | ')}`);
+    throw new Error(`All RPC nodes failed: ${errors.join(' | ')}`);
   }
 
   // ─── High-Level API Methods ──────────────────────────────────────────────
 
-  /** Get network info (height, difficulty, hashrate, peers, tx_count, mempool size) */
+  /** Get network info by combining V3 getChainInfo + getNodeInfo + tip block + getPeerInfo */
   async getInfo(): Promise<ZionNetworkInfo> {
-    // ZION daemon get_info returns minimal data, enrich with /stats
-    const [rpcInfo, stats] = await Promise.all([
-      this.rpcCall<any>('get_info').catch(() => null),
-      this.httpCall<any>('/stats').catch(() => null),
+    const [chainInfo, nodeInfo, peerInfo] = await Promise.all([
+      this.rpcCall<any>('getChainInfo'),
+      this.rpcCall<any>('getNodeInfo').catch(() => null),
+      this.rpcCall<any>('getPeerInfo').catch(() => null),
     ]);
-    // Merge both sources: /stats has peers_connected, mempool_size, tip, network
-    // get_info has tx_count, tx_pool_size, connections, block_size, cumulative_difficulty
-    const r = rpcInfo || {};
-    const s = stats || {};
+
+    // Get tip block for difficulty
+    let difficulty = 0;
+    const tipHeight = (chainInfo.chain_height || 1) - 1;
+    if (tipHeight >= 0) {
+      try {
+        const tip = await this.rpcCall<any>('getBlockByHeight', { height: tipHeight });
+        difficulty = tip?.difficulty ?? 0;
+      } catch { /* use 0 */ }
+    }
+
+    const peerCount = peerInfo?.count ?? nodeInfo?.known_peers ?? 0;
+    const isTestnet = chainInfo.network === 'testnet';
+
     return {
-      height: s.height || r.height || 0,
-      difficulty: s.difficulty || r.difficulty || 0,
-      target: r.target || 60,
-      tx_count: r.tx_count || s.height || 0,
-      tx_pool_size: s.mempool_size || r.tx_pool_size || 0,
-      incoming_connections_count: r.incoming_connections_count || 0,
-      outgoing_connections_count: r.outgoing_connections_count || s.peers_connected || 0,
-      white_peerlist_size: r.white_peerlist_size || 0,
-      grey_peerlist_size: r.grey_peerlist_size || 0,
-      mainnet: r.mainnet ?? (s.network !== 'testnet'),
-      testnet: r.testnet ?? (s.network === 'testnet'),
-      top_block_hash: r.top_block_hash || s.tip || '',
-      cumulative_difficulty: r.cumulative_difficulty || 0,
-      block_size_limit: r.block_size_limit || 0,
-      block_size_median: r.block_size_median || 0,
-      status: s.status || r.status || 'OK',
-      version: r.version || '',
-      start_time: r.start_time || 0,
-      database_size: r.database_size || 0,
+      height: chainInfo.chain_height ?? 0,
+      top_block_hash: chainInfo.tip_hash ?? '',
+      difficulty,
+      target: 60,
+      tx_count: chainInfo.accepted_blocks ?? chainInfo.chain_height ?? 0,
+      tx_pool_size: chainInfo.mempool_transactions ?? 0,
+      alt_blocks_count: 0,
+      outgoing_connections_count: peerCount,
+      incoming_connections_count: 0,
+      white_peerlist_size: peerCount,
+      grey_peerlist_size: 0,
+      mainnet: !isTestnet,
+      testnet: isTestnet,
+      stagenet: false,
+      nettype: chainInfo.network ?? 'testnet',
+      cumulative_difficulty: 0,
+      block_size_limit: 0,
+      block_size_median: 0,
+      start_time: 0,
+      free_space: 0,
+      offline: false,
+      status: 'OK',
+      version: chainInfo.protocol_version ?? '',
     } as ZionNetworkInfo;
   }
 
-  /** Get last block header */
+  /** Get last block header using chain height from getChainInfo */
   async getLastBlockHeader(): Promise<ZionBlockHeader> {
-    const info = await this.getInfo();
-    const height = info.height > 0 ? info.height : 0;
+    const chainInfo = await this.rpcCall<any>('getChainInfo');
+    const height = Math.max(0, (chainInfo.chain_height ?? 1) - 1);
     return this.getBlockHeaderByHeight(height);
   }
 
-  /** Get block header by height — uses REST /api/block/height/:height */
+  /** Get block header by height via V3 getBlockByHeight */
   async getBlockHeaderByHeight(height: number): Promise<ZionBlockHeader> {
-    const res = await this.httpCall<any>(`/api/block/height/${height}`);
-    const h = res?.block?.header || {};
-    const txs = res?.block?.transactions || [];
-    const coinbaseTx = txs[0] || {};
-    const reward = coinbaseTx.outputs?.[0]?.amount || 0;
-    return {
-      height: h.height || height,
-      hash: h.hash || h.prev_hash || '',
-      prev_hash: h.prev_hash || '',
-      timestamp: h.timestamp || 0,
-      difficulty: h.difficulty || 0,
-      nonce: h.nonce || 0,
-      reward,
-      miner_tx_hash: coinbaseTx.id || '',
-      num_txes: Math.max(0, txs.length - 1),
-      block_size: 0,
-      orphan_status: false,
-      depth: 0,
-      major_version: h.version || 1,
-      minor_version: 0,
-    };
+    const block = await this.rpcCall<any>('getBlockByHeight', { height });
+    return mapV3BlockToHeader(block);
   }
 
-  /** Get block header by hash */
+  /** Get block header by hash via V3 getBlock */
   async getBlockHeaderByHash(hash: string): Promise<ZionBlockHeader> {
-    const res = await this.httpCall<any>(`/api/block/hash/${hash}`);
-    const h = res?.block?.header || {};
-    const txs = res?.block?.transactions || [];
-    const coinbaseTx = txs[0] || {};
-    const reward = coinbaseTx.outputs?.[0]?.amount || 0;
-    return {
-      height: h.height || 0,
-      hash: h.hash || hash,
-      prev_hash: h.prev_hash || '',
-      timestamp: h.timestamp || 0,
-      difficulty: h.difficulty || 0,
-      nonce: h.nonce || 0,
-      reward,
-      miner_tx_hash: coinbaseTx.id || '',
-      num_txes: Math.max(0, txs.length - 1),
-      block_size: 0,
-      orphan_status: false,
-      depth: 0,
-      major_version: h.version || 1,
-      minor_version: 0,
-    };
+    const block = await this.rpcCall<any>('getBlock', { hash });
+    return mapV3BlockToHeader(block);
   }
 
-  /** Get range of block headers (inclusive) — uses batch REST endpoint */
+  /** Get range of block headers (inclusive) — sequential V3 getBlockByHeight calls */
   async getBlockHeaders(startHeight: number, endHeight: number): Promise<ZionBlockHeader[]> {
-    // Limit to max 100 blocks
     const clampedStart = Math.max(0, endHeight - 99);
     const start = Math.max(startHeight, clampedStart);
 
-    try {
-      // Try batch endpoint first (single request)
-      const res = await this.httpCall<any>(`/api/blocks/range/${start}/${endHeight}`);
-      if (res?.headers && Array.isArray(res.headers)) {
-        return res.headers.map((h: any) => ({
-          height: h.height || 0,
-          hash: h.hash || '',
-          prev_hash: h.prev_hash || '',
-          timestamp: h.timestamp || 0,
-          difficulty: h.difficulty || 0,
-          nonce: h.nonce || 0,
-          reward: h.reward || 0,
-          miner_tx_hash: '',
-          num_txes: h.num_txes || 0,
-          block_size: 0,
-          orphan_status: false,
-          depth: 0,
-          major_version: h.version || 1,
-          minor_version: 0,
-        }));
-      }
-    } catch {
-      // Fallback: iterate individual blocks (for older daemons)
-    }
-
-    // Fallback to N×1 iteration (max 20)
-    const fallbackStart = Math.max(start, endHeight - 19);
     const promises: Promise<ZionBlockHeader | null>[] = [];
-    for (let h = fallbackStart; h <= endHeight; h++) {
+    for (let h = start; h <= endHeight; h++) {
       promises.push(this.getBlockHeaderByHeight(h).catch(() => null));
     }
     const results = await Promise.all(promises);
     return results.filter((b): b is ZionBlockHeader => b !== null);
   }
 
-  /** Get full block with transaction hashes */
+  /** Get full block with transaction info */
   async getBlock(heightOrHash: number | string): Promise<ZionBlock> {
-    const res = typeof heightOrHash === 'number'
-      ? await this.httpCall<any>(`/api/block/height/${heightOrHash}`)
-      : await this.httpCall<any>(`/api/block/hash/${heightOrHash}`);
-    const h = res?.block?.header || {};
-    const txs = res?.block?.transactions || [];
-    const coinbaseTx = txs[0] || {};
-    const reward = coinbaseTx.outputs?.[0]?.amount || 0;
-    return {
-      height: h.height || 0,
-      hash: h.hash || '',
-      prev_hash: h.prev_hash || '',
-      timestamp: h.timestamp || 0,
-      difficulty: h.difficulty || 0,
-      nonce: h.nonce || 0,
-      reward,
-      miner_tx_hash: coinbaseTx.id || '',
-      num_txes: Math.max(0, txs.length - 1),
-      block_size: 0,
-      orphan_status: false,
-      depth: 0,
-      major_version: h.version || 1,
-      minor_version: 0,
-      miner_tx: {
-        version: coinbaseTx.version || 1,
-        unlock_time: 0,
-        vin: [{ gen: { height: h.height || 0 } }],
-        vout: (coinbaseTx.outputs || []).map((o: any) => ({
-          amount: o.amount || 0,
-          target: { key: o.address || '' },
-        })),
-        extra: [],
-      },
-      tx_hashes: txs.slice(1).map((t: any) => t.id || ''),
-    };
+    const block = typeof heightOrHash === 'number'
+      ? await this.rpcCall<any>('getBlockByHeight', { height: heightOrHash })
+      : await this.rpcCall<any>('getBlock', { hash: heightOrHash });
+    return mapV3BlockToFull(block);
   }
 
-  /** Get block count (chain height) */
+  /** Get chain height */
   async getBlockCount(): Promise<number> {
-    const info = await this.getInfo();
-    return info.height || 0;
+    const chainInfo = await this.rpcCall<any>('getChainInfo');
+    return chainInfo.chain_height ?? 0;
   }
 
-  /** Get transactions by hash — uses JSON-RPC getTx */
+  /** Get transactions by hash via V3 getTransaction */
   async getTransactions(txHashes: string[]): Promise<ZionTransaction[]> {
     if (txHashes.length === 0) return [];
-
     const results: ZionTransaction[] = [];
     for (const txid of txHashes) {
       try {
-        const res = await this.rpcCall<any>('getTx', { txid });
-        const tx = res?.transaction || res || {};
+        const res = await this.rpcCall<any>('getTransaction', { hash: txid });
+        const tx = res?.transaction ?? res ?? {};
         results.push({
           tx_hash: txid,
-          block_height: tx.block_height || 0,
-          block_timestamp: tx.timestamp || 0,
-          in_pool: tx.in_pool || false,
+          block_height: res?.block_height ?? tx.block_height ?? 0,
+          block_timestamp: tx.timestamp ?? 0,
+          in_pool: !(res?.confirmed ?? true),
           double_spend_seen: false,
           output_indices: [],
-          version: tx.version || 1,
+          version: tx.version ?? 1,
           unlock_time: 0,
-          vin: tx.inputs || [],
-          vout: tx.outputs || [],
+          vin: tx.inputs ?? [],
+          vout: tx.outputs ?? [],
           extra: [],
-          fee: tx.fee || 0,
+          fee: tx.fee ?? 0,
         });
-      } catch {
-        // Skip unavailable transactions
-      }
+      } catch { /* skip unavailable tx */ }
     }
     return results;
   }
 
-  /** Get mempool transactions — uses REST /api/mempool/info */
+  /** Get mempool info — V3 only returns count, not individual txs */
   async getTransactionPool(): Promise<ZionMempoolTx[]> {
     try {
-      const res = await this.httpCall<any>('/api/mempool/info');
-      const txids = res?.txids || res?.transactions || [];
-      // Return minimal mempool tx info
-      return txids.map((txid: string) => ({
-        id_hash: txid,
-        fee: 0,
-        blob_size: 0,
-        receive_time: Math.floor(Date.now() / 1000),
-      }));
+      const info = await this.rpcCall<any>('getMempoolInfo');
+      // V3 getMempoolInfo returns { size, template_transactions, template_total_fees_zion }
+      // No individual tx details available — return empty for now
+      return [];
     } catch {
       return [];
     }
   }
 
-  /** Get connected peers — uses JSON-RPC getPeerList for full peer details */
+  /** Get connected peers via V3 getPeerInfo */
   async getConnections(): Promise<ZionPeer[]> {
     try {
-      const res = await this.rpcCall<any>('getPeerList');
-      // New getPeerList returns { count, active, known, chain_height, peers: [...] }
-      const peerList = res?.peers || [];
-      return peerList.map((p: any) => ({
-        host: p.host || '',
-        port: p.port || 0,
-        peer_id: p.address || '',
+      const res = await this.rpcCall<any>('getPeerInfo');
+      const peers = res?.peers ?? [];
+      return peers.map((p: any) => ({
+        host: p.host ?? '',
+        port: p.port ?? 0,
+        peer_id: p.address ?? `${p.host}:${p.port}`,
         recv_count: 0,
         send_count: 0,
-        state: p.state || 'normal',
+        state: 'connected',
         live_time: 0,
         avg_download: 0,
         current_download: 0,
         avg_upload: 0,
         current_upload: 0,
-        connection_id: p.address || '',
-        height: p.height || 0,
-        incoming: p.incoming || false,
-        address: p.address || `${p.host}:${p.port}`,
-        // Extra fields from getPeerList
-        sub_version: p.sub_version || '',
-        last_seen: p.last_seen || 0,
-        idle_seconds: p.idle_seconds || 0,
-        connected: p.connected || false,
-        failed_attempts: p.failed_attempts || 0,
+        connection_id: p.address ?? '',
+        height: 0,
+        incoming: false,
+        address: p.address ?? `${p.host}:${p.port}`,
       }));
     } catch {
       return [];
     }
   }
 
-  /** Get coinbase emission / supply info — returns atomic units */
+  /** Estimate emission from block reward × height (V3 has no dedicated supply RPC) */
   async getCoinbaseTxSum(height: number, count: number): Promise<ZionEmission> {
+    const chainInfo = await this.rpcCall<any>('getChainInfo');
+    const chainHeight = chainInfo.chain_height ?? 0;
+    // BLOCK_REWARD_ATOMIC = 5,400,067,000,000,000 flowers (5400.067 ZION)
+    const BLOCK_REWARD_ATOMIC = 5_400_067_000_000_000;
+    return {
+      emission_amount: chainHeight * BLOCK_REWARD_ATOMIC,
+      fee_amount: 0,
+      status: 'OK',
+    };
+  }
+
+  /** Fee estimate — V3 doesn't have this yet */
+  async getFeeEstimate(): Promise<{ fee: number; quantization_mask: number }> {
+    return { fee: 0, quantization_mask: 1 };
+  }
+
+  // ─── Pool Methods (V3 raw TCP pool metrics) ────────────────────────────
+
+  /** Get pool routing statistics via TCP from the pool metrics port */
+  async getPoolStats(): Promise<any> {
+    const errors: string[] = [];
+    for (const node of this.nodes) {
+      if (!node.ports.pool_api || node.ports.pool_api === 0) continue;
+      try {
+        const metrics = await tcpPoolMetrics(node.host, node.ports.pool_api);
+        return {
+          ok: true,
+          hashrate: { pool: 0, pool_24h: 0 },
+          miners: { active: 0, total: 0 },
+          shares: {
+            valid: metrics.accepted ?? 0,
+            invalid: metrics.rejected ?? 0,
+          },
+          blocks: { found: 0, pending: 0 },
+          pool: { fee: 5, version: '2.9.8' },
+          routing: {
+            submits: metrics.submits ?? 0,
+            accepted: metrics.accepted ?? 0,
+            rejected: metrics.rejected ?? 0,
+            accept_rate_pct: metrics.accept_rate_pct ?? 0,
+            groups: metrics.groups ?? {},
+            sources: metrics.sources ?? {},
+          },
+        };
+      } catch (err: any) {
+        errors.push(`${node.name}: ${err.message}`);
+      }
+    }
+    return null;
+  }
+
+  /** Get miner info by address — try V3 getBalance */
+  async getMinerInfo(address: string): Promise<any> {
     try {
-      const res = await this.rpcCall<any>('getSupplyInfo');
-      // ZION RPC returns: mined_so_far_atomic, mined_so_far_zion, burned_atomic, burned_zion
-      // 1 ZION = 1,000,000 atomic (NOT 1e9 like Monero)
-      const ATOMIC = 1_000_000;
+      const balance = await this.rpcCall<any>('getBalance', { address });
       return {
-        emission_amount: res?.mined_so_far_atomic || (res?.mined_so_far_zion || 0) * ATOMIC,
-        fee_amount: res?.burned_atomic || (res?.burned_zion || 0) * ATOMIC,
-        status: 'OK',
+        address,
+        balance: balance?.balance_zion ?? 0,
+        recent_payouts: [],
       };
     } catch {
-      return { emission_amount: 0, fee_amount: 0, status: 'FAIL' };
+      return { address, balance: 0, recent_payouts: [] };
     }
   }
 
-  /** Get fee estimate (not implemented in ZION daemon) */
-  async getFeeEstimate(): Promise<{ fee: number; quantization_mask: number }> {
-    return { fee: 1000, quantization_mask: 1 };
-  }
-
-  /** Get sync info */
-  async getSyncInfo(): Promise<any> {
-    return this.httpCall('/api/sync/status');
-  }
-
-  // ─── Pool-Specific Methods (for mining stats not in daemon) ────────────
-
-  /** Get pool statistics */
-  async getPoolStats(): Promise<any> {
-    return this.poolCall('/stats');
-  }
-
-  /** Get miner info by address */
-  async getMinerInfo(address: string): Promise<any> {
-    return this.poolCall(`/miner/${address}`);
-  }
-
-  /** Get address balance from blockchain (authoritative) */
+  /** Get address balance from V3 */
   async getAddressBalance(address: string): Promise<{ balance_atomic: number; balance_zion: number; utxo_count: number }> {
-    return this.httpCall(`/api/address/${address}/balance`);
+    try {
+      const res = await this.rpcCall<any>('getBalance', { address });
+      return {
+        balance_atomic: res?.balance_flowers ?? 0,
+        balance_zion: res?.balance_zion ?? 0,
+        utxo_count: 0,
+      };
+    } catch {
+      return { balance_atomic: 0, balance_zion: 0, utxo_count: 0 };
+    }
   }
 
-  /** Get pool blocks */
-  async getPoolBlocks(): Promise<any> {
-    return this.poolCall('/blocks');
-  }
+  /** Get pool blocks — not available in V3 pool metrics */
+  async getPoolBlocks(): Promise<any> { return { blocks: [] }; }
 
-  /** Get pool payouts */
-  async getPoolPayouts(limit: number = 50): Promise<any> {
-    return this.poolCall(`/payouts?limit=${limit}`);
-  }
+  /** Get pool payouts — not available in V3 pool metrics */
+  async getPoolPayouts(limit: number = 50): Promise<any> { return { payouts: [] }; }
 
   // ─── Computed / Derived Methods ────────────────────────────────────────
 
@@ -650,7 +585,7 @@ class ZionRpcClient {
       throw new Error('Failed to get network info');
     }
 
-    const tipHeight = info.height > 0 ? info.height : 0;
+    const tipHeight = Math.max(0, info.height - 1);
     const [lastBlock, poolStats] = await Promise.all([
       this.getBlockHeaderByHeight(tipHeight).catch(() => null),
       this.getPoolStats().catch(() => null),
@@ -660,27 +595,20 @@ class ZionRpcClient {
       throw new Error('Failed to get last block');
     }
 
-    // Get recent blocks (last 10)
     const startHeight = Math.max(0, tipHeight - 9);
     const recentBlocks = await this.getBlockHeaders(startHeight, tipHeight).catch(() => []);
 
-    // Get emission (total mined coins)
-    // getCoinbaseTxSum returns atomic units; 1 ZION = 1,000,000 atomic
-    let emission: { total: number; fee: number } | null = null;
-    try {
-      const emissionData = await this.getCoinbaseTxSum(0, tipHeight + 1);
-      emission = {
-        total: emissionData.emission_amount / 1_000_000,
-        fee: emissionData.fee_amount / 1_000_000,
-      };
-    } catch {
-      // Emission endpoint might not be implemented yet
-    }
+    // Estimate emission from block rewards
+    const BLOCK_REWARD_ZION = 5400.067;
+    const emission = {
+      total: info.height * BLOCK_REWARD_ZION,
+      fee: 0,
+    };
 
     return {
       info,
       lastBlock,
-      recentBlocks: recentBlocks.reverse(), // Newest first
+      recentBlocks: recentBlocks.reverse(),
       poolStats,
       emission,
     };

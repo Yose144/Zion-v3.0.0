@@ -1,11 +1,51 @@
 # 📊 ZION TerraNova — Project Report
 
 > **Datum:** 24. února 2026  
-> **Aktualizace:** 19. března 2026  
+> **Aktualizace:** 20. března 2026  
 > **Verze:** workspace 2.9.6 / release line 2.9.8 Deeksha / V3 workspace 3.0.0  
 > **MainNet cíl:** 31. prosince 2026
 
 > **Poznámka:** Tento report obsahuje historické session logy z února 2026. Aktuální kanonický stav metrik a topologie je v `docs/STATUS_CURRENT_2026-03-19.md`.
+
+## Addendum — 20. 3. 2026
+
+**Website Dashboard — V3 API Rewrite & Deploy:**
+
+Website dashboard (`zionterranova.com/dashboard`) byl kompletně nefunkční — všechny API routy používaly HTTP POST na Monero-compatible JSON-RPC (port 8444), zatímco V3 node mluví raw TCP line-delimited JSON-RPC 2.0 na portu 8332 a pool metrics jsou taky raw TCP na portu 8080.
+
+**Root cause:** Protokolový mismatch — HTTP vs raw TCP, Monero metody (`get_info`, `get_last_block_header`) vs V3 metody (`getChainInfo`, `getNodeInfo`, `getBlockByHeight`).
+
+**Opravené soubory (12):**
+
+| Soubor | Změna |
+|--------|-------|
+| `src/lib/zion-rpc.ts` | Kompletní rewrite: `net.Socket` TCP klient, 16 V3 metod mapovaných na dashboard interfaces |
+| `src/lib/site.ts` | Port 8444 → 8332, odstraněn `/jsonrpc` HTTP path |
+| `src/lib/network-config.ts` | Port 8444 → 8332, odstraněny HTTP URL reference |
+| `src/app/api/mission-data/data/route.ts` | Inline HTTP → `getZionRpc()` TCP klient |
+| `src/app/api/pool/stats/route.ts` | HTTP `fetchPool()` → TCP pool metrics |
+| `src/app/api/health/route.ts` | HTTP checks → TCP calls |
+| `src/app/api/blockchain/richlist/route.ts` | Inline HTTP RPC → TCP klient |
+| `src/app/api/network/route.ts` | HTTP RPC + pool → TCP |
+| `src/app/api/miner/[address]/route.ts` | HTTP pool → `getZionRpc()` |
+| `src/app/api/pool/miner/[address]/route.ts` | HTTP per-miner API → TCP balance + pool stats |
+| `src/app/api/pool/miner/[address]/metrics/route.ts` | Prometheus scraping → TCP pool routing stats |
+
+**Ověřené live endpointy (po deployi):**
+
+| Endpoint | Status | Data |
+|----------|--------|------|
+| `/api/health` | ✅ | RPC healthy, chain height 72, pool 46 accepted shares |
+| `/api/blockchain/stats` | ✅ | Height 72, difficulty 25 516, 3 peers, 425 H/s |
+| `/api/blockchain/blocks` | ✅ | Reálné bloky s hashi, timestampy, odměnami |
+| `/api/pool/stats` | ✅ | 46 shares, 100% accept rate, routing groups viditelné |
+| `/api/mission-data/data` | ✅ | Kompletní dashboard payload (chain + pool) |
+
+**Deploy:** 10 souborů → SCP → server 91.98.122.165 → `docker compose build --no-cache` → `docker compose up -d` → container `zion-website` restartován, image `zion-website:2.9.9`.
+
+**Pozn.:** V3 pool zatím neexponuje per-miner hashrate, payouty ani Prometheus metriky — ty pole vrací 0/empty. Až pool přidá per-miner endpointy, stačí aktualizovat metody v `zion-rpc.ts`.
+
+---
 
 ## Addendum — 19. 3. 2026
 

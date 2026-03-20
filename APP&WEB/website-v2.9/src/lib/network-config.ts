@@ -1,4 +1,4 @@
-import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL, SITE_PRIMARY_RPC_URL } from '@/lib/site';
+import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
 export type SeedNodeConfig = {
   id: string;
@@ -36,8 +36,7 @@ const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
     region: 'PRIMARY',
     lat: 0,
     lon: 0,
-    ports: { p2p: 8334, rpc: 8444, stratum: 3333, pool_api: 8080 },
-    rpcUrl: SITE_PRIMARY_RPC_URL,
+    ports: { p2p: 8334, rpc: 8332, stratum: 3333, pool_api: 8080 },
     poolApiUrl: SITE_PRIMARY_POOL_API_URL,
   },
 ];

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { SITE_PRIMARY_HOST } from '@/lib/site';
-
-const POOL_API = `http://${SITE_PRIMARY_HOST}:8080`;
+import { getZionRpc } from '@/lib/zion-rpc';
 
 export async function GET(
   _: Request,
@@ -13,57 +11,38 @@ export async function GET(
   }
 
   try {
-    const [minersRes, statsRes] = await Promise.all([
-      fetch(`${POOL_API}/miners`, { cache: 'no-store' }),
-      fetch(`${POOL_API}/stats`, { cache: 'no-store' }),
+    const rpc = getZionRpc();
+    const [minerInfo, poolStats] = await Promise.all([
+      rpc.getMinerInfo(addr).catch(() => null),
+      rpc.getPoolStats().catch(() => null),
     ]);
 
-    const minersData = await minersRes.json();
-    const poolStats = statsRes.ok ? await statsRes.json() : null;
-
-    const miner = minersData?.miners?.find(
-      (m: { address: string }) => m.address === addr
-    );
-
-    if (!miner) {
+    if (!minerInfo) {
       return NextResponse.json({ error: 'Miner not found' }, { status: 404 });
     }
 
+    const valid = poolStats?.shares?.valid ?? poolStats?.routing?.accepted ?? 0;
+    const invalid = poolStats?.shares?.invalid ?? poolStats?.routing?.rejected ?? 0;
+    const total = valid + invalid;
+
     return NextResponse.json({
-      wallet_address: miner.address,
+      wallet_address: addr,
       is_active: true,
-      last_share: miner.last_share,
       stats: {
-        last_share_time: miner.last_share,
-        time_since_last_share: miner.last_share
-          ? Math.floor(Date.now() / 1000) - miner.last_share
-          : 0,
-        current_hashrate: poolStats?.hashrate?.pool ?? 0,
-        total_shares: poolStats?.shares?.valid ?? 0,
-        accepted_shares: poolStats?.shares?.valid ?? 0,
-        rejected_shares: poolStats?.shares?.invalid ?? 0,
+        current_hashrate: 0,
+        total_shares: valid,
+        accepted_shares: valid,
+        rejected_shares: invalid,
         blocks_found: 0,
-        first_seen: miner.last_share ?? 0,
-        last_seen: miner.last_share ?? 0,
       },
       balance: {
         pending: 0,
-        total_earned: 0,
+        total_earned: minerInfo.balance ?? 0,
       },
       payments: [],
       efficiency: {
-        acceptance_rate: (() => {
-          const v = poolStats?.shares?.valid ?? 0;
-          const i = poolStats?.shares?.invalid ?? 0;
-          const total = v + i;
-          return total > 0 ? Math.round((v / total) * 10000) / 100 : 100;
-        })(),
-        rejection_rate: (() => {
-          const v = poolStats?.shares?.valid ?? 0;
-          const i = poolStats?.shares?.invalid ?? 0;
-          const total = v + i;
-          return total > 0 ? Math.round((i / total) * 10000) / 100 : 0;
-        })(),
+        acceptance_rate: total > 0 ? Math.round((valid / total) * 10000) / 100 : 100,
+        rejection_rate: total > 0 ? Math.round((invalid / total) * 10000) / 100 : 0,
       },
       pool: poolStats,
     });
