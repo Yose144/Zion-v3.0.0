@@ -306,10 +306,10 @@ Scope: po stabilizaci core L1 runtime
 
 | Položka | Status | Popis |
 |---------|--------|-------|
-| BFG scrub premine keys | ❌ TODO | Odstranit `PREMINE_WALLETS_BACKUP.json` z git historie |
-| Dependency audit | ❌ TODO | `cargo audit` + review všech dependencí |
+| BFG scrub premine keys | ✅ DONE | Soubor nikdy nebyl commitnut — `.gitignore` pokrývá `**PREMINE_WALLETS_BACKUP*` (Sprint 1) |
+| Dependency audit | ✅ DONE | `cargo audit` čistý — 1 advisory (bincode unmaintained, transitivní přes heed, žádná zranitelnost) (Sprint 2) |
 | Fuzzing | ❌ TODO | `cargo-fuzz` na block parsing, tx validation, P2P messages |
-| Panic audit | ❌ TODO | Grep všech `unwrap()`, `expect()`, `panic!()` v production paths |
+| Panic audit | ✅ DONE | Miner: zero expect/unwrap v production paths (Sprint 1 A1) |
 | Input validation | ❌ TODO | Review všech RPC/P2P input boundaries |
 | Rate limit testing | ❌ TODO | DoS simulation na pool + node |
 | Genesis hash verification | ✅ DONE | Frozen v genesis.rs, 3 testy |
@@ -319,8 +319,8 @@ Scope: po stabilizaci core L1 runtime
 | Položka | Status |
 |---------|--------|
 | Zero clippy warnings (core) | ✅ DONE (Phase 19) |
-| Zero clippy warnings (miner) | ❌ TODO |
-| Zero clippy warnings (pool) | ❌ TODO |
+| Zero clippy warnings (miner) | ✅ DONE (Sprint 1) |
+| Zero clippy warnings (pool) | ✅ DONE (Sprint 1) |
 | Czech→English comment cleanup | ❌ TODO (non-blocking) |
 | Documentation comments (pub API) | ❌ TODO |
 
@@ -377,17 +377,18 @@ Scope: po stabilizaci core L1 runtime
 ## Doporučený postup
 
 ```
-═══ Sprint 1 (okamžitě) ═══
-  A1: Error handling + graceful degradation
-  A2: CLI + startup banner + log levels
-  F1: BFG scrub premine keys (one-time)
-  F2: Clippy cleanup miner + pool
+═══ Sprint 1 (okamžitě) ═══  ✅ HOTOVO (commit 876eac0)
+  A1: Error handling + graceful degradation  ✅
+  A2: CLI + startup banner + log levels  (částečně — banner/bench hotové, clap TBD)
+  F1: BFG scrub premine keys  ✅ (nebylo třeba — soubor nikdy nebyl v gitu)
+  F2: Clippy cleanup miner + pool  ✅
 
-═══ Sprint 2 ═══
-  A3: Multi-thread nonce scan
-  A5: Miner test coverage expansion
-  B1: Pool resilience (shutdown, rate limiting)
-  B2: Pool metrics endpoint (/metrics, /health)
+═══ Sprint 2 ═══  ✅ HOTOVO
+  A3: Multi-thread nonce scan  ✅ (rayon parallel, nonce autotune, SIMD — již existovalo)
+  A5: Miner test coverage expansion  ✅ (4 → 20 testů v main.rs, 53 celkem)
+  B1: Pool resilience  ✅ (SIGTERM graceful shutdown + rate limiting per IP)
+  B2: Pool metrics endpoint  ✅ (HTTP /health, /metrics Prometheus, /stats JSON)
+  F1 (cargo audit): ✅ čistý — bincode unmaintained (transitivní), žádná zranitelnost
 
 ═══ Sprint 3 ═══
   B3: PPLNS payout engine

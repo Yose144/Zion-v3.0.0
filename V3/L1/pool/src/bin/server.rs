@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Context, Result};
+use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{IpAddr, TcpListener, TcpStream};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, CoreRuntime, DifficultyTarget,
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
@@ -45,12 +48,14 @@ fn main() -> Result<()> {
         config.backend_worker_hints.join("|")
     );
     println!("routing_log_every={}", config.routing_log_every);
+    println!("max_sessions_per_ip={}", config.max_sessions_per_ip);
+    let started_at = std::time::Instant::now();
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
         println!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
-            if let Err(error) = serve_routing_metrics(&metrics_bind, routing_stats) {
+            if let Err(error) = serve_routing_metrics(&metrics_bind, routing_stats, started_at) {
                 eprintln!("routing_metrics_error={error:#}");
             }
         });
@@ -70,14 +75,53 @@ fn main() -> Result<()> {
         );
     }
 
+    let shutdown = Arc::new(AtomicBool::new(false));
+    {
+        let shutdown = Arc::clone(&shutdown);
+        ctrlc::set_handler(move || {
+            println!("shutdown_signal_received");
+            shutdown.store(true, Ordering::SeqCst);
+        })
+        .context("failed to set ctrl-c handler")?;
+    }
+
+    listener
+        .set_nonblocking(true)
+        .context("failed to set listener non-blocking")?;
+
     let mut handles = Vec::new();
     let mut accepted = 0u32;
+    let mut ip_sessions: HashMap<IpAddr, u32> = HashMap::new();
     loop {
+        if shutdown.load(Ordering::SeqCst) {
+            println!("shutdown_draining clients={}", handles.len());
+            break;
+        }
         if matches!(config.accept_limit, Some(limit) if accepted >= limit) {
             break;
         }
 
-        let (stream, peer_addr) = listener.accept().context("failed to accept miner connection")?;
+        let (stream, peer_addr) = match listener.accept() {
+            Ok(pair) => pair,
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                thread::sleep(Duration::from_millis(50));
+                continue;
+            }
+            Err(e) => return Err(anyhow::Error::new(e).context("failed to accept miner connection")),
+        };
+        stream
+            .set_nonblocking(false)
+            .context("failed to set client stream blocking")?;
+
+        let peer_ip = peer_addr.ip();
+        let ip_count = ip_sessions.entry(peer_ip).or_insert(0);
+        if config.max_sessions_per_ip > 0 && *ip_count >= config.max_sessions_per_ip {
+            println!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
+            drop(stream);
+            continue;
+        }
+        *ip_count = ip_count.saturating_add(1);
+
         println!("peer_addr={peer_addr}");
         let pool = Arc::clone(&pool);
         let revenue_scheduler = Arc::clone(&revenue_scheduler);
@@ -423,6 +467,7 @@ struct ServerConfig {
     backend_worker_hints: Vec<String>,
     routing_log_every: u64,
     routing_metrics_bind: Option<String>,
+    max_sessions_per_ip: u32,
 }
 
 #[derive(Debug)]
@@ -743,9 +788,53 @@ impl RoutingStats {
             self.source_accepted[source_index(RevenueSource::NclAi)],
         )
     }
+
+    fn snapshot_prometheus(&self) -> String {
+        let mut out = String::new();
+        let _ = writeln!(out, "# HELP zion_pool_submits_total Total share submissions.");
+        let _ = writeln!(out, "# TYPE zion_pool_submits_total counter");
+        let _ = writeln!(out, "zion_pool_submits_total {}", self.total_submits);
+        let _ = writeln!(out, "# HELP zion_pool_accepted_total Accepted shares.");
+        let _ = writeln!(out, "# TYPE zion_pool_accepted_total counter");
+        let _ = writeln!(out, "zion_pool_accepted_total {}", self.total_accepted);
+        let _ = writeln!(out, "# HELP zion_pool_rejected_total Rejected shares.");
+        let _ = writeln!(out, "# TYPE zion_pool_rejected_total counter");
+        let _ = writeln!(
+            out,
+            "zion_pool_rejected_total {}",
+            self.total_submits.saturating_sub(self.total_accepted)
+        );
+        let accept_rate = if self.total_submits == 0 {
+            0.0
+        } else {
+            self.total_accepted as f64 * 100.0 / self.total_submits as f64
+        };
+        let _ = writeln!(out, "# HELP zion_pool_accept_rate_pct Accept rate percentage.");
+        let _ = writeln!(out, "# TYPE zion_pool_accept_rate_pct gauge");
+        let _ = writeln!(out, "zion_pool_accept_rate_pct {accept_rate:.2}");
+        for (group, label) in [
+            (SessionGroup::Zion, "zion"),
+            (SessionGroup::Revenue, "revenue"),
+            (SessionGroup::Ncl, "ncl"),
+            (SessionGroup::Auto, "auto"),
+        ] {
+            let idx = group_index(group);
+            let _ = writeln!(
+                out,
+                "zion_pool_group_submits{{group=\"{label}\"}} {}",
+                self.group_submits[idx]
+            );
+            let _ = writeln!(
+                out,
+                "zion_pool_group_accepted{{group=\"{label}\"}} {}",
+                self.group_accepted[idx]
+            );
+        }
+        out
+    }
 }
 
-fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>>) -> Result<()> {
+fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>>, started_at: std::time::Instant) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
 
@@ -758,19 +847,45 @@ fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>
             }
         };
 
-        let payload = {
-            let stats = routing_stats
-                .lock()
-                .expect("routing stats lock poisoned");
-            stats.snapshot_json()
-        };
-
-        if let Err(error) = stream.write_all(payload.as_bytes()) {
-            eprintln!("routing_metrics_write_error={error}");
+        // Read the HTTP request line to determine the path.
+        let mut request_reader = BufReader::new(&stream);
+        let mut request_line = String::new();
+        if request_reader.read_line(&mut request_line).is_err() {
             continue;
         }
-        if let Err(error) = stream.write_all(b"\n") {
-            eprintln!("routing_metrics_newline_error={error}");
+        let path = request_line
+            .split_whitespace()
+            .nth(1)
+            .unwrap_or("/stats");
+
+        let (status, content_type, body) = match path {
+            "/health" => {
+                let uptime_s = started_at.elapsed().as_secs();
+                let body = format!("{{\"status\":\"ok\",\"uptime_s\":{uptime_s}}}");
+                ("200 OK", "application/json", body)
+            }
+            "/metrics" => {
+                let stats = routing_stats
+                    .lock()
+                    .expect("routing stats lock poisoned");
+                ("200 OK", "text/plain; version=0.0.4", stats.snapshot_prometheus())
+            }
+            _ => {
+                // Default: JSON stats (backward compatible)
+                let stats = routing_stats
+                    .lock()
+                    .expect("routing stats lock poisoned");
+                ("200 OK", "application/json", stats.snapshot_json())
+            }
+        };
+
+        let response = format!(
+            "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+
+        if let Err(error) = stream.write_all(response.as_bytes()) {
+            eprintln!("routing_metrics_write_error={error}");
         }
     }
 
@@ -861,6 +976,7 @@ impl ServerConfig {
             },
             routing_log_every: parse_env_u64("ZION_ROUTING_LOG_EVERY", 25)?,
             routing_metrics_bind: parse_optional_env_string("ZION_ROUTING_METRICS_BIND"),
+            max_sessions_per_ip: parse_env_u32("ZION_MAX_SESSIONS_PER_IP", 10)?,
         })
     }
 }
@@ -1126,6 +1242,7 @@ mod tests {
             backend_worker_hints: Vec::new(),
             routing_log_every: 0,
             routing_metrics_bind: None,
+            max_sessions_per_ip: 0,
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -1314,6 +1431,7 @@ mod tests {
             backend_worker_hints: vec!["backend".to_string()],
             routing_log_every: 0,
             routing_metrics_bind: None,
+            max_sessions_per_ip: 0,
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -1340,6 +1458,7 @@ mod tests {
             backend_worker_hints: vec!["backend".to_string()],
             routing_log_every: 0,
             routing_metrics_bind: None,
+            max_sessions_per_ip: 0,
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -1366,6 +1485,7 @@ mod tests {
             backend_worker_hints: vec!["backend".to_string(), "revenue".to_string()],
             routing_log_every: 0,
             routing_metrics_bind: None,
+            max_sessions_per_ip: 0,
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);

@@ -1068,6 +1068,163 @@ mod tests {
         assert_eq!(config.pool_addr.as_deref(), Some("127.0.0.1:8444"));
         std::env::remove_var("ZION_POOL_ADDR");
     }
+
+    // ── parse_fixed_hex ──
+
+    #[test]
+    fn parse_fixed_hex_rejects_wrong_length() {
+        let result = parse_fixed_hex::<32>("aabb", "test");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("64 hex chars"));
+    }
+
+    #[test]
+    fn parse_fixed_hex_rejects_invalid_hex_chars() {
+        let input = "zz".repeat(32);
+        let result = parse_fixed_hex::<32>(&input, "test");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("invalid hex byte"));
+    }
+
+    #[test]
+    fn parse_fixed_hex_strips_0x_prefix() {
+        let input = format!("0x{}", "aa".repeat(32));
+        let result = parse_fixed_hex::<32>(&input, "test");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), [0xaa; 32]);
+    }
+
+    #[test]
+    fn parse_fixed_hex_trims_whitespace() {
+        let input = format!("  {} ", "bb".repeat(32));
+        let result = parse_fixed_hex::<32>(&input, "test");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), [0xbb; 32]);
+    }
+
+    // ── parse_header_hex ──
+
+    #[test]
+    fn parse_header_hex_valid_80_bytes() {
+        let hex_str = "aa".repeat(80);
+        let header = parse_header_hex(&hex_str).expect("valid 80-byte header");
+        assert_eq!(header.version, u32::from_le_bytes([0xaa; 4]));
+    }
+
+    #[test]
+    fn parse_header_hex_rejects_short_input() {
+        let result = parse_header_hex("aabb");
+        assert!(result.is_err());
+    }
+
+    // ── parse_bool_env ──
+
+    #[test]
+    fn parse_bool_env_falsy_values() {
+        for val in ["0", "false", "no", "off", "FALSE", "Off"] {
+            std::env::set_var("ZION_TEST_BOOL_F", val);
+            assert!(!parse_bool_env("ZION_TEST_BOOL_F", true), "'{val}' should be falsy");
+        }
+        std::env::remove_var("ZION_TEST_BOOL_F");
+    }
+
+    #[test]
+    fn parse_bool_env_truthy_values() {
+        for val in ["1", "true", "yes", "on", "TRUE", "anything"] {
+            std::env::set_var("ZION_TEST_BOOL_T", val);
+            assert!(parse_bool_env("ZION_TEST_BOOL_T", false), "'{val}' should be truthy");
+        }
+        std::env::remove_var("ZION_TEST_BOOL_T");
+    }
+
+    #[test]
+    fn parse_bool_env_returns_default_when_missing() {
+        std::env::remove_var("ZION_TEST_BOOL_MISSING");
+        assert!(parse_bool_env("ZION_TEST_BOOL_MISSING", true));
+        assert!(!parse_bool_env("ZION_TEST_BOOL_MISSING", false));
+    }
+
+    // ── nonce window autotune ──
+
+    #[test]
+    fn increase_nonce_window_grows_by_percent() {
+        assert_eq!(increase_nonce_window(1000, 5_000_000, 50), 1500);
+    }
+
+    #[test]
+    fn increase_nonce_window_caps_at_max() {
+        assert_eq!(increase_nonce_window(5_000_000, 5_000_000, 50), 5_000_000);
+    }
+
+    #[test]
+    fn increase_nonce_window_always_grows_at_least_one() {
+        assert!(increase_nonce_window(1, 100, 1) > 1);
+    }
+
+    #[test]
+    fn decrease_nonce_window_shrinks_by_percent() {
+        assert_eq!(decrease_nonce_window(1000, 100, 50), 500);
+    }
+
+    #[test]
+    fn decrease_nonce_window_floors_at_min() {
+        assert_eq!(decrease_nonce_window(100, 100, 50), 100);
+        assert_eq!(decrease_nonce_window(50, 100, 50), 100);
+    }
+
+    // ── HashrateWindow ──
+
+    #[test]
+    fn hashrate_window_empty_returns_zero() {
+        let window = HashrateWindow::new(10);
+        assert_eq!(window.rate_hps(), 0.0);
+    }
+
+    #[test]
+    fn hashrate_window_single_sample_returns_zero() {
+        let mut window = HashrateWindow::new(10);
+        window.push_total_hashes(Instant::now(), 1000);
+        assert_eq!(window.rate_hps(), 0.0);
+    }
+
+    // ── SessionTelemetry ──
+
+    #[test]
+    fn session_telemetry_records_submit_latency() {
+        let mut telemetry = SessionTelemetry::new(30);
+        telemetry.record_submit_latency(Duration::from_millis(10));
+        telemetry.record_submit_latency(Duration::from_millis(30));
+        assert_eq!(telemetry.submit_samples, 2);
+        assert_eq!(telemetry.submit_max_latency_ms, 30);
+        let avg = telemetry.submit_avg_latency_ms();
+        assert!((avg - 20.0).abs() < 1.0);
+    }
+
+    // ── revenue source ──
+
+    #[test]
+    fn revenue_source_rejects_unknown() {
+        assert!(parse_revenue_source("unknown_source").is_err());
+    }
+
+    // ── target parser edge cases ──
+
+    #[test]
+    fn target_parser_rejects_short_hex() {
+        std::env::set_var("ZION_TARGET_SHORT_TEST", "aabb");
+        let result = parse_target_env("ZION_TARGET_SHORT_TEST");
+        assert!(result.is_err());
+        std::env::remove_var("ZION_TARGET_SHORT_TEST");
+    }
+
+    #[test]
+    fn target_parser_strips_0x_prefix() {
+        let hex64 = "ff".repeat(32);
+        std::env::set_var("ZION_TARGET_0X_TEST", format!("0x{hex64}"));
+        let target = parse_target_env("ZION_TARGET_0X_TEST").expect("valid 0x-prefixed target");
+        assert_eq!(target, DifficultyTarget::MAX);
+        std::env::remove_var("ZION_TARGET_0X_TEST");
+    }
 }
 
 fn parse_bool_env(key: &str, default: bool) -> bool {
