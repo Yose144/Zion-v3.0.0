@@ -150,7 +150,7 @@ function shortAddr(addr: string): string {
 }
 
 function atomicToZion(atomic: number): string {
-  return (atomic / 1e6).toFixed(4);
+  return (atomic / 1e12).toFixed(4);
 }
 
 function parseHashrateInput(value: string): number {

@@ -336,7 +336,7 @@
                 
                 blocks.forEach(block => {
                     const time = new Date(block.timestamp * 1000).toLocaleString('cs-CZ');
-                    const reward = ((block.reward || 0) / 1e6).toLocaleString('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+                    const reward = ((block.reward || 0) / 1e12).toLocaleString('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
                     html += `
                         <tr>
                             <td><a href="#block/${block.height}">${block.height}</a></td>
