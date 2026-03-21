@@ -75,6 +75,7 @@ Out of scope for the bootstrap:
 - **V3 CI/CD (Sprint 4 E2-E3):** `.github/workflows/v3-ci.yml` (test, clippy, fmt, audit scoped to V3/**), `.github/workflows/v3-release.yml` (v3* tags → linux+macOS binaries + Docker images + GitHub release)
 - **Sprint 5 pre-launch (B4+F1+G1-G2):** Pool test coverage expanded to 73 tests (wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output validation); security checklist completed (`V3/docs/SECURITY_CHECKLIST.md`); public mining guide (`V3/docs/MINING_GUIDE.md`) and node operator guide (`V3/docs/NODE_OPERATOR_GUIDE.md`) published
 - **Sprint 6 hardening (F2+F3+C5):** Production unwrap() audit (zero unsafe unwrap in hot paths), cargo-fuzz harnesses for pool (`fuzz_decode_message`, `fuzz_parse_hex`) and core (`fuzz_merkle_root`, `fuzz_validate_header`), Phase 23/24/25 status sync (monitoring ✅, security ✅ except BFG, infra ✅ except seed expansion), D2 block explorer marked complete (live at zionterranova.com/explorer)
+- **Sprint 7 post-launch (items 3+5+6):** Native FFI production hardening (`runtime_self_test()`, `AlgoTestResult`, `all_algorithms_healthy()` — validates determinism + non-zero for each compiled algorithm, 4 tests); difficulty auto-tuning (`DifficultyStats`, `difficulty_stats()`, `predict_difficulty()` — runtime hashrate estimation and N-block forward projection, 10 new tests, 31 total); CHv4.2 Merkabah Dual-Spin algorithm (`merkabah_forward_passes_ekam()`, `merkabah_dual_spin_ekam()`, `memory_hard_transform_ekam_v3()`, `cosmic_harmony_ekam_deeksha_v3()`, `ekam_v3_find_nonce()` — full forward+backward HIC pipeline, fork-gated at `CHV42_DUAL_SPIN_FORK_HEIGHT=u64::MAX`, 14 new cosmic-harmony tests, 95 total). **635 workspace tests pass.**
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
@@ -89,7 +90,7 @@ Out of scope for the bootstrap:
 - `L1/native-libs` scaffold now exists for staged migration of native acceleration libraries (randomx, kawpow, autolykos) with platform build scripts and ABI header placeholders
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`
-- whole V3 workspace currently builds and tests green
+- whole V3 workspace currently builds and tests green (635 tests: 403 core, 95 cosmic-harmony, 59 miner, 44 pool, 29 miner-integration, 4 native-ffi, 1 doctest)
 
 ## Workspace Layout
 

@@ -1,6 +1,6 @@
 # V3 Native Libs Gap - audit a migracni plan
 
-Status: 2026-03-16 (native-ffi runtime update)
+Status: 2026-03-21 (Sprint 7 — runtime self-test implemented)
 
 ## Shrnuti
 
@@ -80,7 +80,7 @@ Navazne dodelat:
 
 1. CI build matrix (Windows/Linux)
 2. artifact signing + checksum publish
-3. runtime self-check (dlopen/load + symbol test)
+3. ~~runtime self-check (dlopen/load + symbol test)~~ → ✅ Sprint 7: `runtime_self_test()` validates determinism + non-zero for each compiled algorithm, `AlgoTestResult` struct, `all_algorithms_healthy()` convenience wrapper, 4 tests pass
 4. perf baselines a regression gates
 
 ## Minimalni acceptance criteria
