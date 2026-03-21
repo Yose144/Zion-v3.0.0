@@ -404,11 +404,11 @@ Scope: po stabilizaci core L1 runtime
   E2: CI/CD pipeline  ✅ (v3-ci.yml — test, clippy, fmt, audit; path-filtered on V3/**)
   E3: Release artifacts  ✅ (v3-release.yml — linux+macOS binaries, Docker images, GitHub release on v3* tags)
 
-═══ Sprint 5 (pre-launch) ═══
-  F1: Full security checklist completion
-  B4: Pool test coverage target
-  E4: Seed node deployment
-  G1-G3: Public documentation and guides
+═══ Sprint 5 (pre-launch) ═══  ✅ HOTOVO
+  F1: Full security checklist completion  ✅ (SECURITY_CHECKLIST.md — cargo audit clean, panic audit, input validation review, rate limit, crypto safety)
+  B4: Pool test coverage target  ✅ (38 → 73 pool tests: wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output)
+  E4: Seed node deployment  ⏳ (existing EU seeds at 91.98.122.165 + 46.225.126.243; multi-region expansion deferred to infra phase)
+  G1-G3: Public documentation and guides  ✅ (MINING_GUIDE.md, NODE_OPERATOR_GUIDE.md published)
 
 ═══ Post-Launch ═══
   D2: Public block explorer / pool dashboard SPA

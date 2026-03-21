@@ -753,4 +753,275 @@ mod tests {
             }
         );
     }
+
+    // ── Sprint 5 B4: wire protocol edge cases ──────────────────────────
+
+    #[test]
+    fn decode_malformed_json_returns_error() {
+        assert!(decode_message("{not valid json}").is_err());
+    }
+
+    #[test]
+    fn decode_empty_string_returns_error() {
+        assert!(decode_message("").is_err());
+    }
+
+    #[test]
+    fn decode_truncated_json_returns_error() {
+        assert!(decode_message(r#"{"type":"hello","miner_id":"m"#).is_err());
+    }
+
+    #[test]
+    fn decode_unknown_message_type_returns_error() {
+        assert!(decode_message(r#"{"type":"foobar","data":1}"#).is_err());
+    }
+
+    #[test]
+    fn decode_missing_required_field_returns_error() {
+        // Hello without worker_name
+        assert!(decode_message(r#"{"type":"hello","miner_id":"m1","algorithm":"a"}"#).is_err());
+    }
+
+    #[test]
+    fn encode_decode_all_variants_roundtrip() {
+        let messages = vec![
+            PoolMessage::Hello {
+                miner_id: "m".to_string(),
+                worker_name: "w".to_string(),
+                algorithm: "algo".to_string(),
+            },
+            PoolMessage::Welcome {
+                protocol_version: "v1".to_string(),
+                algorithm: "algo".to_string(),
+                job_ttl_ms: 5000,
+            },
+            PoolMessage::Job {
+                job_id: 42,
+                algorithm: "algo".to_string(),
+                start_nonce: 0,
+                nonce_count: 100,
+                target_hex: "ff".repeat(32),
+                header_hex: "aa".repeat(80),
+                height: 10,
+            },
+            PoolMessage::Submit {
+                job_id: 42,
+                miner_id: "m".to_string(),
+                worker_name: "w".to_string(),
+                nonce: 77,
+                hash_hex: "bb".repeat(32),
+            },
+            PoolMessage::Result {
+                accepted: true,
+                status: "Accepted".to_string(),
+            },
+            PoolMessage::Stale { job_id: 1 },
+            PoolMessage::Cancel {
+                job_id: 1,
+                reason: "expired".to_string(),
+            },
+            PoolMessage::Bye {
+                accepted_shares: 5,
+                rejected_shares: 2,
+                revenue_total_usd: "1.00000000".to_string(),
+            },
+        ];
+
+        for original in &messages {
+            let encoded = encode_message(original).expect("encode");
+            assert!(encoded.ends_with('\n'), "wire line must end with newline");
+            let decoded = decode_message(&encoded).expect("decode");
+            assert_eq!(&decoded, original);
+        }
+    }
+
+    #[test]
+    fn encode_message_is_single_line() {
+        let msg = PoolMessage::Hello {
+            miner_id: "m".to_string(),
+            worker_name: "w".to_string(),
+            algorithm: "a".to_string(),
+        };
+        let encoded = encode_message(&msg).unwrap();
+        assert_eq!(encoded.matches('\n').count(), 1, "exactly one trailing newline");
+        assert!(encoded.ends_with('\n'));
+    }
+
+    // ── Sprint 5 B4: pool stats and multi-share tracking ───────────────
+
+    #[test]
+    fn pool_stats_after_mixed_accept_reject() {
+        let mut pool = MiningPool::default();
+        // Accept one
+        pool.submit_share(ShareSubmission {
+            miner_id: "m1".to_string(),
+            worker_name: "w1".to_string(),
+            candidate: sample_candidate(),
+            target: DifficultyTarget::MAX,
+            revenue_source: RevenueSource::Zion,
+            revenue_value_usd: 1.0,
+        });
+        // Reject one (zero target = impossible)
+        pool.submit_share(ShareSubmission {
+            miner_id: "m2".to_string(),
+            worker_name: "w2".to_string(),
+            candidate: sample_candidate(),
+            target: DifficultyTarget { bytes: [0u8; 32] },
+            revenue_source: RevenueSource::Zion,
+            revenue_value_usd: 0.5,
+        });
+        // Accept another
+        pool.submit_share(ShareSubmission {
+            miner_id: "m3".to_string(),
+            worker_name: "w3".to_string(),
+            candidate: sample_candidate(),
+            target: DifficultyTarget::MAX,
+            revenue_source: RevenueSource::Blake3External,
+            revenue_value_usd: 2.0,
+        });
+
+        let stats = pool.stats();
+        assert_eq!(stats.accepted_shares, 2);
+        assert_eq!(stats.rejected_shares, 1);
+        assert_eq!(stats.revenue.total_earnings_usd, 3.0);
+    }
+
+    #[test]
+    fn issue_multiple_jobs_assigns_unique_ids() {
+        let mut pool = MiningPool::default();
+        let header = MiningHeader {
+            version: 3,
+            previous_hash: [0xA0; 32],
+            merkle_root: [0xB0; 32],
+            timestamp: 1_762_000_600,
+            difficulty_bits: 0x1f00ffff,
+        };
+        let j1 = pool.issue_job(header, DifficultyTarget::MAX, 0, 8);
+        let j2 = pool.issue_job(header, DifficultyTarget::MAX, 100, 8);
+        let j3 = pool.issue_job(header, DifficultyTarget::MAX, 200, 8);
+
+        assert_ne!(j1.job_id, j2.job_id);
+        assert_ne!(j2.job_id, j3.job_id);
+        assert_eq!(pool.stats().active_jobs, 3);
+    }
+
+    #[test]
+    fn is_job_stale_fresh_vs_expired() {
+        // TTL=0 means everything is stale immediately
+        let mut pool = MiningPool::with_job_ttl(CoreRuntime::default(), 0);
+        let header = MiningHeader {
+            version: 3,
+            previous_hash: [0xC0; 32],
+            merkle_root: [0xD0; 32],
+            timestamp: 1_762_000_700,
+            difficulty_bits: 0x1f00ffff,
+        };
+        let job = pool.issue_job(header, DifficultyTarget::MAX, 0, 8);
+        assert!(pool.is_job_stale(job.job_id));
+
+        // Unknown job_id returns false (not stale, just non-existent)
+        assert!(!pool.is_job_stale(99999));
+    }
+
+    #[test]
+    fn submit_solution_job_mismatch_rejected() {
+        let mut pool = MiningPool::default();
+        let header = MiningHeader {
+            version: 3,
+            previous_hash: [0xE0; 32],
+            merkle_root: [0xF0; 32],
+            timestamp: 1_762_000_800,
+            difficulty_bits: 0x1f00ffff,
+        };
+        let job = pool.issue_job(header, DifficultyTarget::MAX, 0, 8);
+
+        // Create solution with wrong header
+        let wrong_header = MiningHeader {
+            version: 3,
+            previous_hash: [0x01; 32],
+            merkle_root: [0x02; 32],
+            timestamp: 1_762_000_900,
+            difficulty_bits: 0x1f00ffff,
+        };
+        let solution = MiningSolution {
+            job_id: job.job_id,
+            candidate: BlockCandidate {
+                header: wrong_header,
+                nonce: 42,
+                height: 0,
+            },
+            hash: [0u8; 32],
+        };
+
+        let decision = pool.submit_solution(
+            "m1".to_string(),
+            "w1".to_string(),
+            solution,
+            RevenueSource::Zion,
+            1.0,
+        );
+        assert_eq!(decision.status, ShareStatus::JobMismatch);
+        assert_eq!(pool.stats().rejected_shares, 1);
+    }
+
+    // ── Sprint 5 B4: hex parsing edge cases ────────────────────────────
+
+    #[test]
+    fn parse_fixed_hex_wrong_length_fails() {
+        let result = parse_fixed_hex::<32>("aabb", "test");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_fixed_hex_non_hex_chars_fails() {
+        let result = parse_fixed_hex::<2>("ZZZZ", "test");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_fixed_hex_valid_with_0x_prefix() {
+        let result = parse_fixed_hex::<2>("0xaabb", "test");
+        assert_eq!(result.unwrap(), [0xaa, 0xbb]);
+    }
+
+    #[test]
+    fn parse_fixed_hex_exact_length_works() {
+        let hex = "00".repeat(32);
+        let result = parse_fixed_hex::<32>(&hex, "test");
+        assert_eq!(result.unwrap(), [0u8; 32]);
+    }
+
+    #[test]
+    fn job_message_encodes_hex_fields_correctly() {
+        let mut pool = MiningPool::default();
+        let header = MiningHeader {
+            version: 3,
+            previous_hash: [0xff; 32],
+            merkle_root: [0xaa; 32],
+            timestamp: 100,
+            difficulty_bits: 0x1f00ffff,
+        };
+        let job = pool.issue_job(header, DifficultyTarget::MAX, 0, 64);
+        let msg = pool.job_message(job);
+        if let PoolMessage::Job { header_hex, target_hex, .. } = msg {
+            assert_eq!(header_hex.len(), 160, "80 bytes = 160 hex chars");
+            assert_eq!(target_hex.len(), 64, "32 bytes = 64 hex chars");
+        } else {
+            panic!("expected Job variant");
+        }
+    }
+
+    #[test]
+    fn default_pool_has_zero_stats() {
+        let pool = MiningPool::default();
+        let stats = pool.stats();
+        assert_eq!(stats.accepted_shares, 0);
+        assert_eq!(stats.rejected_shares, 0);
+        assert_eq!(stats.active_jobs, 0);
+    }
+
+    #[test]
+    fn protocol_version_is_stable() {
+        assert_eq!(protocol_version(), "zion-v3-stratum/0.2");
+    }
 }
