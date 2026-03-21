@@ -17,7 +17,15 @@ const ALLOWED_PREFIXES = [
   'node_memory_Mem',
   'node_load',
   'node_boot_time',
+  'node_uname_info',
+  'node_cpu_seconds',
+  'redis_up',
+  'redis_connected_clients',
+  'redis_used_memory',
+  'redis_keyspace_hits',
+  'redis_keyspace_misses',
   'up{',
+  'up',
 ];
 
 function isQueryAllowed(query: string): boolean {
@@ -45,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (range) {
       // Range query for sparklines / charts
-      const allowedRanges: Record<string, number> = { '1h': 3600, '6h': 21600, '24h': 86400 };
+      const allowedRanges: Record<string, number> = { '1h': 3600, '3h': 10800, '6h': 21600, '12h': 43200, '24h': 86400 };
       const secs = allowedRanges[range] ?? 3600;
       const now = Math.floor(Date.now() / 1000);
       const stepVal = Math.min(Math.max(parseInt(step || '60', 10) || 60, 15), 600);

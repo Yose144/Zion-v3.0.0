@@ -90,6 +90,15 @@ interface V3Sparklines {
   chainHeight: number[]; poolSessions: number[]; shares: number[];
 }
 
+interface V3Charts {
+  chainHeight: number[]; poolSessions: number[]; shares: number[];
+  cpuLoad: number[]; memPct: number[]; timestamps: number[];
+}
+
+interface ServiceStatus {
+  name: string; job: string; up: boolean | null; image: string; ports: string; note?: string;
+}
+
 /* ═══════════════════════ HELPERS ═══════════════════════ */
 function fmt(n?: number | null) { return n != null ? n.toLocaleString() : '—'; }
 function fmtTime(s?: number | null) {
@@ -201,6 +210,47 @@ async function fetchV3Sparklines(): Promise<V3Sparklines> {
   return { chainHeight: ex(h), poolSessions: ex(s), shares: ex(a) };
 }
 
+async function fetchV3Charts(): Promise<V3Charts> {
+  const [h,s,a,cpu,memTotal,memAvail] = await Promise.allSettled([
+    promRange('zion_chain_height','6h','300'),
+    promRange('zion_pool_active_sessions','6h','300'),
+    promRange('zion_pool_accepted_total','6h','300'),
+    promRange('node_load1','6h','300'),
+    promRange('node_memory_MemTotal_bytes','6h','300'),
+    promRange('node_memory_MemAvailable_bytes','6h','300'),
+  ]);
+  const ex = (r: PromiseSettledResult<PromRangeResult[]>) => {
+    if (r.status !== 'fulfilled') return []; const f = r.value[0]; return f ? f.values.map(([,v]) => parseFloat(v)) : [];
+  };
+  const ts = (r: PromiseSettledResult<PromRangeResult[]>) => {
+    if (r.status !== 'fulfilled') return []; const f = r.value[0]; return f ? f.values.map(([t]) => t) : [];
+  };
+  const totalArr = ex(memTotal), availArr = ex(memAvail);
+  const memPct = totalArr.map((t, i) => { const a = availArr[i] ?? 0; return t > 0 ? ((1 - a / t) * 100) : 0; });
+  return { chainHeight: ex(h), poolSessions: ex(s), shares: ex(a), cpuLoad: ex(cpu), memPct, timestamps: ts(h) };
+}
+
+async function fetchServiceStatuses(): Promise<ServiceStatus[]> {
+  const STACK: Omit<ServiceStatus, 'up'>[] = [
+    { name: 'zion-core', job: 'zion-core-helsinki', image: 'zion-core:2.9.8', ports: '8333, 8443, 9115' },
+    { name: 'zion-pool', job: 'zion-pool-helsinki', image: 'zion-pool:2.9.8', ports: '3333, 8080' },
+    { name: 'zion-miner', job: '', image: 'zion-miner:2.9.8', ports: '—', note: 'no scrape target' },
+    { name: 'zion-redis', job: 'redis-helsinki', image: 'redis:7-alpine', ports: '6379' },
+    { name: 'zion-seed-1', job: '', image: 'zion-core:2.9.8', ports: 'internal', note: 'seed node' },
+    { name: 'zion-seed-2', job: '', image: 'zion-core:2.9.8', ports: 'internal', note: 'seed node' },
+    { name: 'zion-website', job: '', image: 'zion-website:2.9.9', ports: '3000', note: 'this site' },
+    { name: 'zion-prometheus', job: 'prometheus', image: 'prom/prometheus:v2.53.0', ports: '9090' },
+    { name: 'zion-grafana', job: '', image: 'grafana/grafana:11.1.0', ports: '3001', note: '/grafana/' },
+    { name: 'zion-node-exporter', job: 'node-helsinki', image: 'node-exporter', ports: '9100' },
+    { name: 'zion-redis-exporter', job: 'redis-helsinki', image: 'redis-exporter', ports: '9121' },
+    { name: 'zion-alertmanager', job: '', image: 'alertmanager', ports: '9093' },
+  ];
+  const upResults = await promQuery('up');
+  const jobUp: Record<string, boolean> = {};
+  for (const r of upResults) { jobUp[r.metric.job ?? ''] = r.value[1] === '1'; }
+  return STACK.map(s => ({ ...s, up: s.job ? (jobUp[s.job] ?? null) : null }));
+}
+
 function fmtBytes(bytes: number | null | undefined) {
   if (bytes == null) return '—';
   if (bytes >= 1e12) return `${(bytes / 1e12).toFixed(1)} TB`;
@@ -212,6 +262,7 @@ function fmtBytes(bytes: number | null | undefined) {
 /* ═══════════════════════ TAB CONFIG ═══════════════════════ */
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: Monitor },
+  { id: 'metrics', label: 'Stack Metrics', icon: BarChart3 },
   { id: 'upgrade', label: 'Ekam Deeksha', icon: Sparkles },
   { id: 'roadmap', label: 'Roadmap', icon: Target },
   { id: 'layers', label: 'Layers', icon: Layers },
@@ -395,6 +446,66 @@ function MiniSparkline({ data: d, color = '#10b981', height = 28 }: { data: numb
   const min = Math.min(...d), max = Math.max(...d), range = max - min || 1, w = 140;
   const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${height - ((v - min) / range) * (height - 4) - 2}`).join(' ');
   return <svg viewBox={`0 0 ${w} ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', height = 120 }: { data: number[]; timestamps?: number[]; label: string; color?: string; unit?: string; height?: number }) {
+  if (d.length < 2) return <div className="rounded-xl bg-black/40 border border-white/10 p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">awaiting data</div></div>;
+  const min = Math.min(...d), max = Math.max(...d), range = max - min || 1;
+  const w = 600, h = height, pad = 2;
+  const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${h - ((v - min) / range) * (h - pad * 2) - pad}`);
+  const polyline = pts.join(' ');
+  const area = `${pts.join(' ')} ${w},${h} 0,${h}`;
+  const gradId = `grad_${label.replace(/\s/g, '_')}`;
+  // Y-axis labels
+  const yMax = max >= 1000 ? `${(max / 1000).toFixed(1)}k` : max >= 1 ? max.toFixed(max < 10 ? 1 : 0) : max.toFixed(2);
+  const yMin = min >= 1000 ? `${(min / 1000).toFixed(1)}k` : min >= 1 ? min.toFixed(min < 10 ? 1 : 0) : min.toFixed(2);
+  const yMid = ((min + max) / 2);
+  const yMidLabel = yMid >= 1000 ? `${(yMid / 1000).toFixed(1)}k` : yMid >= 1 ? yMid.toFixed(yMid < 10 ? 1 : 0) : yMid.toFixed(2);
+  // Time labels
+  const tLabels: string[] = [];
+  if (timestamps && timestamps.length >= 2) {
+    for (let i = 0; i < 5; i++) {
+      const idx = Math.floor((i / 4) * (timestamps.length - 1));
+      const t = timestamps[idx];
+      if (t != null) tLabels.push(new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    }
+  }
+  const latest = d[d.length - 1] ?? 0;
+  const latestStr = latest >= 1000 ? `${(latest / 1000).toFixed(1)}k` : latest.toFixed(latest < 10 ? 1 : 0);
+  return (
+    <div className="rounded-xl bg-black/40 border border-white/10 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs text-gray-400">{label}</div>
+        <div className="text-sm font-mono font-bold" style={{ color }}>{latestStr}{unit}</div>
+      </div>
+      <div className="flex gap-2">
+        <div className="flex flex-col justify-between text-[8px] text-gray-600 font-mono w-8 shrink-0">
+          <span>{yMax}</span><span>{yMidLabel}</span><span>{yMin}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }} preserveAspectRatio="none">
+            <defs>
+              <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
+            {/* Grid lines */}
+            <line x1={0} y1={h / 2} x2={w} y2={h / 2} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+            <line x1={0} y1={h / 4} x2={w} y2={h / 4} stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+            <line x1={0} y1={h * 3 / 4} x2={w} y2={h * 3 / 4} stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+            <polygon points={area} fill={`url(#${gradId})`} />
+            <polyline points={polyline} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {tLabels.length > 0 && (
+            <div className="flex justify-between text-[8px] text-gray-600 font-mono mt-1">
+              {tLabels.map((t, i) => <span key={i}>{t}</span>)}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function PoolGroupRow({ name, submits, accepted, dot }: { name: string; submits: number | null | undefined; accepted: number | null | undefined; dot: string }) {
@@ -705,6 +816,8 @@ export default function MissionControlDashboard() {
   const [loading, setLoading] = useState(true);
   const [v3, setV3] = useState<V3Metrics | null>(null);
   const [v3Sparks, setV3Sparks] = useState<V3Sparklines | null>(null);
+  const [v3Charts, setV3Charts] = useState<V3Charts | null>(null);
+  const [services, setServices] = useState<ServiceStatus[]>([]);
 
   const refresh = useCallback(async () => {
     try {
@@ -737,10 +850,19 @@ export default function MissionControlDashboard() {
         setV3Sparks(sparks);
       } catch { /* silent */ }
     };
+    const refreshCharts = async () => {
+      try {
+        const [charts, svc] = await Promise.all([fetchV3Charts(), fetchServiceStatuses()]);
+        setV3Charts(charts);
+        setServices(svc);
+      } catch { /* silent */ }
+    };
     refreshV3();
+    refreshCharts();
     const iv = setInterval(refresh, 30_000);
     const iv2 = setInterval(refreshV3, 15_000);
-    return () => { cancelled = true; clearInterval(iv); clearInterval(iv2); };
+    const iv3 = setInterval(refreshCharts, 60_000);
+    return () => { cancelled = true; clearInterval(iv); clearInterval(iv2); clearInterval(iv3); };
   }, [refresh]);
 
   const sr = data?.stability_run;
@@ -1044,9 +1166,163 @@ export default function MissionControlDashboard() {
               </div>
               <LogConsole logTail={data.log_tail} />
             </motion.section>
+          </div>
+        )}
 
-            {/* V3 Mainnet Metrics (live Prometheus) */}
+        {/* ═══════════════════════════════════════════════
+            TAB: STACK METRICS
+           ═══════════════════════════════════════════════ */}
+        {activeTab === 'metrics' && (
+          <div className="space-y-8">
+
+            {/* ── TEST METRICS BANNER ── */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 sm:p-4 flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-300">Testovací metriky / Test Metrics</p>
+                <p className="text-xs text-amber-200/70">Tato data pochází z testovacího provozu. Hodnoty nereprezentují produkční mainnet. · These are test-environment metrics, not production mainnet data.</p>
+              </div>
+            </motion.div>
+
+            {/* ── SERVICE STATUS GRID ── */}
+            <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="rounded-2xl sm:rounded-3xl border border-emerald-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
+              <div className="flex flex-col gap-2 mb-5">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Docker Stack</p>
+                <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Server className="h-6 w-6 text-emerald-400" />
+                  Service Overview — Helsinki · Hetzner
+                </h2>
+                <p className="text-xs text-gray-500">{services.length} containers · zion-net Docker network · Prometheus scrape 15s</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 text-left">
+                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Status</th>
+                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Container</th>
+                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Image</th>
+                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Ports</th>
+                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {services.map(s => (
+                      <tr key={s.name} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <td className="py-2 px-3">
+                          {s.up === true ? <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold"><span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />UP</span>
+                            : s.up === false ? <span className="inline-flex items-center gap-1.5 text-[10px] text-red-400 font-semibold"><span className="h-2 w-2 rounded-full bg-red-400" />DOWN</span>
+                            : <span className="inline-flex items-center gap-1.5 text-[10px] text-gray-500 font-semibold"><span className="h-2 w-2 rounded-full bg-gray-500" />N/A</span>}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-white text-xs">{s.name}</td>
+                        <td className="py-2 px-3 font-mono text-gray-400 text-xs">{s.image}</td>
+                        <td className="py-2 px-3 font-mono text-gray-400 text-xs">{s.ports}</td>
+                        <td className="py-2 px-3 text-gray-500 text-xs">{s.note ?? (s.job ? `job: ${s.job}` : '')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-gray-500">
+                <span>{services.filter(s => s.up === true).length} / {services.length} monitored targets UP</span>
+                <span>·</span>
+                <span>{services.filter(s => s.up === null).length} without Prometheus scrape</span>
+              </div>
+            </motion.section>
+
+            {/* ── V3 MAINNET METRICS ── */}
             {v3 && v3Sparks && <V3MetricsSection v3={v3} sparks={v3Sparks} />}
+
+            {/* ── 6H CHARTS ── */}
+            {v3Charts && (
+              <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="rounded-2xl sm:rounded-3xl border border-purple-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
+                <div className="flex flex-col gap-2 mb-5">
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Time Series</p>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                    <TrendingUp className="h-6 w-6 text-purple-400" />
+                    6-Hour Charts
+                  </h2>
+                  <p className="text-xs text-gray-500">5-minute resolution · Prometheus range queries · auto-refresh 60s</p>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <AreaChart data={v3Charts.chainHeight} timestamps={v3Charts.timestamps} label="Chain Height — 6h" color="#FFD700" />
+                  <AreaChart data={v3Charts.poolSessions} timestamps={v3Charts.timestamps} label="Active Miners — 6h" color="#a855f7" />
+                  <AreaChart data={v3Charts.shares} timestamps={v3Charts.timestamps} label="Accepted Shares (cumul.) — 6h" color="#10b981" />
+                  <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label="CPU Load (1m avg) — 6h" color="#06b6d4" />
+                  <AreaChart data={v3Charts.memPct} timestamps={v3Charts.timestamps} label="Memory Usage % — 6h" color="#ec4899" unit="%" />
+                </div>
+              </motion.section>
+            )}
+
+            {/* ── DOCKER STACK ARCHITECTURE ── */}
+            <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="rounded-2xl sm:rounded-3xl border border-cyan-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
+              <div className="flex flex-col gap-2 mb-5">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Infrastructure</p>
+                <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Layers className="h-6 w-6 text-cyan-400" />
+                  Docker Stack Architecture
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Core Layer */}
+                <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
+                  <h3 className="text-sm font-semibold text-cyan-400 flex items-center gap-2"><Database className="h-4 w-4" /> Core Layer</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between"><span className="text-gray-300">zion-core</span><span className="text-gray-500 font-mono">:8333 :8443 :9115</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">zion-redis</span><span className="text-gray-500 font-mono">:6379</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">zion-seed-1</span><span className="text-gray-500 font-mono">internal</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">zion-seed-2</span><span className="text-gray-500 font-mono">internal</span></div>
+                  </div>
+                  <p className="text-[10px] text-gray-500">Blockchain consensus + P2P + RPC · read-only rootfs · no-new-privileges</p>
+                </div>
+                {/* Mining Layer */}
+                <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
+                  <h3 className="text-sm font-semibold text-purple-400 flex items-center gap-2"><Pickaxe className="h-4 w-4" /> Mining Layer</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between"><span className="text-gray-300">zion-pool</span><span className="text-gray-500 font-mono">:3333 :8080</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">zion-miner</span><span className="text-gray-500 font-mono">—</span></div>
+                  </div>
+                  <p className="text-[10px] text-gray-500">Stratum pool · PPLNS engine · Cosmic Harmony PoW · internal miner</p>
+                </div>
+                {/* Monitoring Layer */}
+                <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
+                  <h3 className="text-sm font-semibold text-emerald-400 flex items-center gap-2"><Activity className="h-4 w-4" /> Monitoring Layer</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between"><span className="text-gray-300">prometheus</span><span className="text-gray-500 font-mono">:9090</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">grafana</span><span className="text-gray-500 font-mono">:3001</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">node-exporter</span><span className="text-gray-500 font-mono">:9100</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">redis-exporter</span><span className="text-gray-500 font-mono">:9121</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">alertmanager</span><span className="text-gray-500 font-mono">:9093</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">website</span><span className="text-gray-500 font-mono">:3000</span></div>
+                  </div>
+                  <p className="text-[10px] text-gray-500">Prometheus 90d retention · Grafana dashboards · alert rules</p>
+                </div>
+              </div>
+              <div className="mt-4 rounded-xl bg-white/5 border border-white/10 p-4">
+                <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2"><Globe className="h-4 w-4 text-gray-400" /> Network Topology</h3>
+                <div className="grid md:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <p className="text-gray-400 mb-1 font-semibold">Helsinki (Primary) — 91.98.122.165</p>
+                    <p className="text-gray-500">12 Docker containers · zion-net bridge · Prometheus local scrape</p>
+                    <p className="text-gray-500">Core + Pool + Miner + Redis + 2 Seeds + Monitoring stack</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 mb-1 font-semibold">Germany (Remote) — 46.225.126.243</p>
+                    <p className="text-gray-500">Remote Prometheus targets: zion-pool-germany, zion-core-germany</p>
+                    <p className="text-gray-500">Scraped over public IP from Helsinki Prometheus</p>
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* ── FOOTER LINKS ── */}
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-gray-500 pt-2 border-t border-white/10">
+              <span>30+ live Prometheus metrics</span>
+              <span>6h range queries · 5m resolution</span>
+              <span>15s instant refresh · 60s chart refresh</span>
+              <span>12 Docker containers</span>
+              <a href="/monitoring" className="text-emerald-400 hover:text-emerald-300 transition-colors">Full monitoring page →</a>
+              <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">Open Grafana →</a>
+            </div>
           </div>
         )}
 
