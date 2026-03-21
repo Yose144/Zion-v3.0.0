@@ -68,6 +68,28 @@ interface DashData {
   log_tail?: string;
 }
 
+/* ═══════════════════════ PROMETHEUS TYPES ═══════════════════════ */
+interface PromResult { metric: Record<string, string>; value: [number, string]; }
+interface PromRangeResult { metric: Record<string, string>; values: [number, string][]; }
+
+interface V3Metrics {
+  chainHeight: number | null; peerCount: number | null; mempoolSize: number | null;
+  blocksAccepted: number | null; templateHeight: number | null; templateTxs: number | null; templateFees: number | null;
+  poolActiveSessions: number | null; poolSubmits: number | null; poolAccepted: number | null;
+  poolRejected: number | null; poolAcceptRate: number | null; poolUptime: number | null;
+  groupZionSub: number | null; groupZionAcc: number | null; groupRevenueSub: number | null; groupRevenueAcc: number | null;
+  groupNclSub: number | null; groupNclAcc: number | null; groupAutoSub: number | null; groupAutoAcc: number | null;
+  pplnsWindowSize: number | null; pplnsWindowUsed: number | null; pplnsMiners: number | null;
+  pplnsPaid: number | null; pplnsRounds: number | null;
+  serverLoad1: number | null; serverLoad5: number | null; serverLoad15: number | null;
+  memTotal: number | null; memAvail: number | null; diskTotal: number | null; diskAvail: number | null;
+  bootTime: number | null; coreUp: number | null; poolUp: number | null;
+}
+
+interface V3Sparklines {
+  chainHeight: number[]; poolSessions: number[]; shares: number[];
+}
+
 /* ═══════════════════════ HELPERS ═══════════════════════ */
 function fmt(n?: number | null) { return n != null ? n.toLocaleString() : '—'; }
 function fmtTime(s?: number | null) {
@@ -107,6 +129,84 @@ function barColor(pct: number | null) {
 
 function getInternalSeedContainers(data?: DashData | null) {
   return data?.internal_seed_containers ?? data?.seed_containers ?? [];
+}
+
+/* ═══════════ PROMETHEUS HELPERS ═══════════ */
+async function promQuery(query: string): Promise<PromResult[]> {
+  try {
+    const r = await fetch(`/api/metrics?query=${encodeURIComponent(query)}`, { cache: 'no-store', signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return j?.data?.result ?? [];
+  } catch { return []; }
+}
+async function promRange(query: string, range = '1h', step = '120'): Promise<PromRangeResult[]> {
+  try {
+    const r = await fetch(`/api/metrics?query=${encodeURIComponent(query)}&range=${range}&step=${step}`, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return j?.data?.result ?? [];
+  } catch { return []; }
+}
+function pv(results: PromiseSettledResult<PromResult[]>[], i: number): number | null {
+  const r = results[i] as PromiseSettledResult<PromResult[]> | undefined;
+  if (r?.status === 'fulfilled') { const first = r.value[0]; if (first) return parseFloat(first.value[1] ?? ''); }
+  return null;
+}
+function pvLabel(results: (PromiseSettledResult<PromResult[]> | undefined)[], label: string, val: string): number | null {
+  for (const r of results) { if (!r || r.status !== 'fulfilled') continue; for (const m of r.value) { if (m.metric[label] === val) return parseFloat(m.value[1] ?? ''); } }
+  return null;
+}
+async function fetchV3Metrics(): Promise<V3Metrics> {
+  const qs = [
+    'zion_chain_height','zion_peer_count','zion_mempool_size','zion_blocks_accepted_total',
+    'zion_template_height','zion_template_txs','zion_template_fees_zion',
+    'zion_pool_active_sessions','zion_pool_submits_total','zion_pool_accepted_total',
+    'zion_pool_rejected_total','zion_pool_accept_rate_pct','zion_pool_uptime_seconds',
+    'zion_pool_group_submits','zion_pool_group_accepted',
+    'zion_pplns_window_size','zion_pplns_window_used','zion_pplns_registered_miners',
+    'zion_pplns_total_paid_flowers','zion_pplns_payout_rounds',
+    'node_load1','node_load5','node_load15',
+    'node_memory_MemTotal_bytes','node_memory_MemAvailable_bytes',
+    'node_filesystem_size_bytes{mountpoint="/"}','node_filesystem_avail_bytes{mountpoint="/"}',
+    'node_boot_time_seconds',
+    'up{job="zion-core-helsinki"}','up{job="zion-pool-helsinki"}',
+  ];
+  const res = await Promise.allSettled(qs.map(q => promQuery(q)));
+  return {
+    chainHeight: pv(res,0), peerCount: pv(res,1), mempoolSize: pv(res,2), blocksAccepted: pv(res,3),
+    templateHeight: pv(res,4), templateTxs: pv(res,5), templateFees: pv(res,6),
+    poolActiveSessions: pv(res,7), poolSubmits: pv(res,8), poolAccepted: pv(res,9),
+    poolRejected: pv(res,10), poolAcceptRate: pv(res,11), poolUptime: pv(res,12),
+    groupZionSub: pvLabel([res[13]],'group','zion'), groupZionAcc: pvLabel([res[14]],'group','zion'),
+    groupRevenueSub: pvLabel([res[13]],'group','revenue'), groupRevenueAcc: pvLabel([res[14]],'group','revenue'),
+    groupNclSub: pvLabel([res[13]],'group','ncl'), groupNclAcc: pvLabel([res[14]],'group','ncl'),
+    groupAutoSub: pvLabel([res[13]],'group','auto'), groupAutoAcc: pvLabel([res[14]],'group','auto'),
+    pplnsWindowSize: pv(res,15), pplnsWindowUsed: pv(res,16), pplnsMiners: pv(res,17),
+    pplnsPaid: pv(res,18), pplnsRounds: pv(res,19),
+    serverLoad1: pv(res,20), serverLoad5: pv(res,21), serverLoad15: pv(res,22),
+    memTotal: pv(res,23), memAvail: pv(res,24), diskTotal: pv(res,25), diskAvail: pv(res,26),
+    bootTime: pv(res,27), coreUp: pv(res,28), poolUp: pv(res,29),
+  };
+}
+async function fetchV3Sparklines(): Promise<V3Sparklines> {
+  const [h,s,a] = await Promise.allSettled([
+    promRange('zion_chain_height','1h','120'),
+    promRange('zion_pool_active_sessions','1h','120'),
+    promRange('zion_pool_accepted_total','1h','120'),
+  ]);
+  const ex = (r: PromiseSettledResult<PromRangeResult[]>) => {
+    if (r.status !== 'fulfilled') return []; const f = r.value[0]; return f ? f.values.map(([,v]) => parseFloat(v)) : [];
+  };
+  return { chainHeight: ex(h), poolSessions: ex(s), shares: ex(a) };
+}
+
+function fmtBytes(bytes: number | null | undefined) {
+  if (bytes == null) return '—';
+  if (bytes >= 1e12) return `${(bytes / 1e12).toFixed(1)} TB`;
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
+  return `${(bytes / 1024).toFixed(0)} KB`;
 }
 
 /* ═══════════════════════ TAB CONFIG ═══════════════════════ */
@@ -275,6 +375,202 @@ function MiniMetric({ label, value, color = 'text-white' }: { label: string; val
   );
 }
 
+function StatusDot({ up }: { up: number | null }) {
+  const c = up === 1 ? 'bg-emerald-400' : up === 0 ? 'bg-red-400' : 'bg-gray-500';
+  const p = up === 1 ? 'animate-pulse' : '';
+  return <span className={`inline-block h-2.5 w-2.5 rounded-full ${c} ${p}`} />;
+}
+
+function MetricBar({ value, max, color = 'bg-emerald-500' }: { value: number; max: number; color?: string }) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+  return (
+    <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+      <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+function MiniSparkline({ data: d, color = '#10b981', height = 28 }: { data: number[]; color?: string; height?: number }) {
+  if (d.length < 2) return <div className="h-7 flex items-center text-[10px] text-gray-600">awaiting data</div>;
+  const min = Math.min(...d), max = Math.max(...d), range = max - min || 1, w = 140;
+  const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${height - ((v - min) / range) * (height - 4) - 2}`).join(' ');
+  return <svg viewBox={`0 0 ${w} ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+function PoolGroupRow({ name, submits, accepted, dot }: { name: string; submits: number | null | undefined; accepted: number | null | undefined; dot: string }) {
+  const s = submits ?? 0, a = accepted ?? 0, rate = s > 0 ? ((a / s) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+      <div className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm font-medium text-white capitalize">{name}</span>
+          <span className="text-xs text-gray-400">{fmt(submits)} sub / {fmt(accepted)} acc</span>
+        </div>
+        <MetricBar value={a} max={s || 1} color={s > 0 ? 'bg-emerald-500' : 'bg-gray-600'} />
+      </div>
+      <span className="text-xs font-mono text-gray-300 w-12 text-right">{s > 0 ? `${rate.toFixed(0)}%` : '—'}</span>
+    </div>
+  );
+}
+
+/* ═══════════ V3 MAINNET METRICS SECTION ═══════════ */
+function V3MetricsSection({ v3: m, sparks }: { v3: V3Metrics; sparks: V3Sparklines }) {
+  const memPct = m.memTotal && m.memAvail ? ((1 - m.memAvail / m.memTotal) * 100) : null;
+  const diskPct = m.diskTotal && m.diskAvail ? ((1 - m.diskAvail / m.diskTotal) * 100) : null;
+  const uptime = m.bootTime ? Math.floor(Date.now() / 1000) - m.bootTime : null;
+  const pplnsPct = m.pplnsWindowSize && m.pplnsWindowUsed ? ((m.pplnsWindowUsed / m.pplnsWindowSize) * 100) : null;
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.26 }}
+      className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-emerald-500/30 bg-black/40 p-4 sm:p-6 lg:p-8 space-y-6"
+    >
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">V3 Mainnet</p>
+          <span className="text-[10px] uppercase tracking-widest border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded-full font-semibold">LIVE PROMETHEUS</span>
+        </div>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+          <TrendingUp className="h-7 w-7 text-emerald-400" />
+          V3 Mainnet Metrics
+        </h2>
+        <p className="text-sm text-gray-400">30+ live Prometheus metrics · Core node · Mining pool · PPLNS engine · Server infrastructure</p>
+      </div>
+
+      {/* Status indicators */}
+      <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.coreUp} /><span className="text-gray-300">Core Node</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.poolUp} /><span className="text-gray-300">Mining Pool</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.serverLoad1 != null ? 1 : null} /><span className="text-gray-300">Node Exporter</span></div>
+        <div className="ml-auto text-xs text-gray-500 font-mono">{m.chainHeight != null ? `Block #${m.chainHeight}` : ''}</div>
+      </div>
+
+      {/* ── Core Blockchain ── */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Server className="h-4 w-4 text-zion-cyan" /> Core Blockchain</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          <MiniMetric label="Chain Height" value={fmt(m.chainHeight)} color="text-zion-gold" />
+          <MiniMetric label="Template Ht" value={fmt(m.templateHeight)} color="text-amber-400" />
+          <MiniMetric label="Peers" value={fmt(m.peerCount)} color="text-cyan-400" />
+          <MiniMetric label="Mempool" value={fmt(m.mempoolSize)} color="text-purple-400" />
+          <MiniMetric label="Blocks Acc" value={fmt(m.blocksAccepted)} color="text-emerald-400" />
+          <MiniMetric label="Tmpl Txs" value={fmt(m.templateTxs)} color="text-sky-400" />
+          <MiniMetric label="Tmpl Fees" value={m.templateFees != null ? `${m.templateFees}` : '—'} color="text-amber-300" />
+        </div>
+        {sparks.chainHeight.length > 1 && (
+          <div className="mt-2 rounded-xl bg-black/40 border border-white/10 p-3">
+            <div className="text-[10px] text-gray-500 mb-1">Chain Height — 1h</div>
+            <MiniSparkline data={sparks.chainHeight} color="#FFD700" height={32} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Mining Pool ── */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Cpu className="h-4 w-4 text-zion-gold" /> Mining Pool</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          <MiniMetric label="Active Miners" value={fmt(m.poolActiveSessions)} color="text-zion-gold" />
+          <MiniMetric label="Submits" value={fmt(m.poolSubmits)} color="text-sky-400" />
+          <MiniMetric label="Accepted" value={fmt(m.poolAccepted)} color="text-emerald-400" />
+          <MiniMetric label="Rejected" value={fmt(m.poolRejected)} color="text-red-400" />
+          <MiniMetric label="Accept Rate" value={m.poolAcceptRate != null ? `${m.poolAcceptRate.toFixed(1)}%` : '—'} color={m.poolAcceptRate != null && m.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
+          <MiniMetric label="Pool Uptime" value={fmtUptime(m.poolUptime)} color="text-cyan-400" />
+          <MiniMetric label="PPLNS Miners" value={fmt(m.pplnsMiners)} color="text-pink-400" />
+        </div>
+        {(sparks.poolSessions.length > 1 || sparks.shares.length > 1) && (
+          <div className="mt-2 grid md:grid-cols-2 gap-2.5">
+            {sparks.poolSessions.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">Active Miners — 1h</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
+            {sparks.shares.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">Accepted Shares — 1h</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
+          </div>
+        )}
+      </div>
+
+      {/* ── Pool Groups ── */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Network className="h-4 w-4 text-sky-400" /> Pool Routing Groups</h3>
+        <div className="grid md:grid-cols-2 gap-2.5">
+          <PoolGroupRow name="zion (Main)" submits={m.groupZionSub} accepted={m.groupZionAcc} dot="bg-emerald-400" />
+          <PoolGroupRow name="revenue (CH3)" submits={m.groupRevenueSub} accepted={m.groupRevenueAcc} dot="bg-amber-400" />
+          <PoolGroupRow name="ncl (Neural)" submits={m.groupNclSub} accepted={m.groupNclAcc} dot="bg-purple-400" />
+          <PoolGroupRow name="auto" submits={m.groupAutoSub} accepted={m.groupAutoAcc} dot="bg-sky-400" />
+        </div>
+      </div>
+
+      {/* ── PPLNS Reward Engine ── */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Heart className="h-4 w-4 text-pink-400" /> PPLNS Reward Engine</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">Window Size</p>
+            <p className="text-lg font-mono font-bold text-pink-400">{fmt(m.pplnsWindowSize)}</p>
+          </div>
+          <div>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">Window Used</p>
+            <p className="text-lg font-mono font-bold text-pink-300">{fmt(m.pplnsWindowUsed)}</p>
+            {pplnsPct != null && <MetricBar value={m.pplnsWindowUsed ?? 0} max={m.pplnsWindowSize ?? 1} color="bg-pink-500" />}
+            <p className="text-[10px] text-gray-500">{pplnsPct != null ? `${pplnsPct.toFixed(1)}% full` : ''}</p>
+          </div>
+          <div>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">Registered Miners</p>
+            <p className="text-lg font-mono font-bold text-emerald-400">{fmt(m.pplnsMiners)}</p>
+          </div>
+          <div>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">Total Paid</p>
+            <p className="text-lg font-mono font-bold text-zion-gold">{fmt(m.pplnsPaid)} <span className="text-[10px] text-gray-500">flowers</span></p>
+          </div>
+          <div>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">Payout Rounds</p>
+            <p className="text-lg font-mono font-bold text-amber-400">{fmt(m.pplnsRounds)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Server Infrastructure ── */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-cyan-400" /> Server Infrastructure <span className="text-[10px] text-gray-500 font-normal">Helsinki · Hetzner</span></h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+            <p className="text-[9px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> CPU Load</p>
+            <p className="text-lg font-mono font-bold text-cyan-400">{m.serverLoad1?.toFixed(1) ?? '—'}</p>
+            <p className="text-[10px] text-gray-500">{m.serverLoad5?.toFixed(1) ?? '—'} / {m.serverLoad15?.toFixed(1) ?? '—'} (5m/15m)</p>
+          </div>
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">Memory</p>
+            <p className={`text-lg font-mono font-bold ${memPct != null && memPct > 85 ? 'text-red-400' : 'text-purple-400'}`}>{memPct != null ? `${memPct.toFixed(1)}%` : '—'}</p>
+            {m.memTotal && m.memAvail && <MetricBar value={m.memTotal - m.memAvail} max={m.memTotal} color={memPct != null && memPct > 85 ? 'bg-red-500' : 'bg-purple-500'} />}
+            <p className="text-[10px] text-gray-500">{fmtBytes(m.memAvail)} free / {fmtBytes(m.memTotal)}</p>
+          </div>
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">Disk</p>
+            <p className={`text-lg font-mono font-bold ${diskPct != null && diskPct > 85 ? 'text-red-400' : 'text-amber-400'}`}>{diskPct != null ? `${diskPct.toFixed(1)}%` : '—'}</p>
+            {m.diskTotal && m.diskAvail && <MetricBar value={m.diskTotal - m.diskAvail} max={m.diskTotal} color={diskPct != null && diskPct > 85 ? 'bg-red-500' : 'bg-amber-500'} />}
+            <p className="text-[10px] text-gray-500">{fmtBytes(m.diskAvail)} free / {fmtBytes(m.diskTotal)}</p>
+          </div>
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">Server Uptime</p>
+            <p className="text-lg font-mono font-bold text-emerald-400">{fmtUptime(uptime)}</p>
+            <p className="text-[10px] text-gray-500">since {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString() : '—'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer legend */}
+      <div className="flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-gray-500 pt-2 border-t border-white/10">
+        <span>30+ live Prometheus metrics</span>
+        <span>Instant + Range queries</span>
+        <span>15s auto-refresh</span>
+        <span>SVG sparklines (1h)</span>
+        <a href="/monitoring" className="text-emerald-400 hover:text-emerald-300 transition-colors">Full monitoring page →</a>
+        <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">Open Grafana →</a>
+      </div>
+    </motion.section>
+  );
+}
+
 function PoolSection({ primary }: { primary?: PoolData }) {
   const hm = primary?.miners ?? {};
   const hhr = primary?.hashrate ?? {};
@@ -407,6 +703,8 @@ export default function MissionControlDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [v3, setV3] = useState<V3Metrics | null>(null);
+  const [v3Sparks, setV3Sparks] = useState<V3Sparklines | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -431,8 +729,18 @@ export default function MissionControlDashboard() {
       } catch { /* silent */ }
       if (!cancelled) setLoading(false);
     })();
+    // V3 Prometheus metrics
+    const refreshV3 = async () => {
+      try {
+        const [metrics, sparks] = await Promise.all([fetchV3Metrics(), fetchV3Sparklines()]);
+        setV3(metrics);
+        setV3Sparks(sparks);
+      } catch { /* silent */ }
+    };
+    refreshV3();
     const iv = setInterval(refresh, 30_000);
-    return () => { cancelled = true; clearInterval(iv); };
+    const iv2 = setInterval(refreshV3, 15_000);
+    return () => { cancelled = true; clearInterval(iv); clearInterval(iv2); };
   }, [refresh]);
 
   const sr = data?.stability_run;
@@ -736,6 +1044,9 @@ export default function MissionControlDashboard() {
               </div>
               <LogConsole logTail={data.log_tail} />
             </motion.section>
+
+            {/* V3 Mainnet Metrics (live Prometheus) */}
+            {v3 && v3Sparks && <V3MetricsSection v3={v3} sparks={v3Sparks} />}
           </div>
         )}
 
