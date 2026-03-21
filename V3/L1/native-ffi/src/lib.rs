@@ -446,6 +446,142 @@ pub fn compiled_algorithms() -> Vec<&'static str> {
 }
 
 // ---------------------------------------------------------------------------
+// Runtime self-test — validates each compiled algorithm against a canonical
+// deterministic check at startup.  Returns a list of (algo_name, passed) pairs.
+// ---------------------------------------------------------------------------
+
+/// Result of a single algorithm self-test.
+#[derive(Debug, Clone)]
+pub struct AlgoTestResult {
+    pub name: &'static str,
+    pub passed: bool,
+    pub detail: String,
+}
+
+/// Run deterministic self-tests for every compiled algorithm.
+///
+/// Each test computes a hash with a fixed input and verifies:
+/// 1. The output is non-zero (symbol loaded correctly).
+/// 2. A second invocation produces the same output (determinism).
+///
+/// Call this once at miner startup.  If any result has `passed == false`,
+/// the corresponding algorithm should not be used for real mining.
+pub fn runtime_self_test() -> Vec<AlgoTestResult> {
+    let mut results = Vec::new();
+
+    #[cfg(feature = "native-etchash")]
+    {
+        let name = "etchash";
+        let header = [0xA1u8; 32];
+        let h1 = etchash::hash(&header, 1, 0);
+        let h2 = etchash::hash(&header, 1, 0);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name, passed: ok,
+            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+        });
+    }
+
+    #[cfg(feature = "native-kawpow")]
+    {
+        let name = "kawpow";
+        let header = [0xA2u8; 32];
+        let (_, h1) = kawpow::hash(&header, 1, 0);
+        let (_, h2) = kawpow::hash(&header, 1, 0);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name, passed: ok,
+            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+        });
+    }
+
+    #[cfg(feature = "native-autolykos")]
+    {
+        let name = "autolykos";
+        let header = [0xA3u8; 32];
+        let h1 = autolykos::hash(&header, 1, 700_000);
+        let h2 = autolykos::hash(&header, 1, 700_000);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name, passed: ok,
+            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+        });
+    }
+
+    #[cfg(feature = "native-kheavyhash")]
+    {
+        let name = "kheavyhash";
+        let header = [0xA4u8; 80];
+        let h1 = kheavyhash::mine(&header, 1);
+        let h2 = kheavyhash::mine(&header, 1);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name, passed: ok,
+            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+        });
+    }
+
+    #[cfg(feature = "native-blake3-algo")]
+    {
+        let name = "blake3";
+        let header = [0xA5u8; 32];
+        let h1 = blake3_algo::mine(&header, 1);
+        let h2 = blake3_algo::mine(&header, 1);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name, passed: ok,
+            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+        });
+    }
+
+    #[cfg(feature = "native-cosmic-harmony")]
+    {
+        let name = "cosmic-harmony";
+        let header = [0xA6u8; 80];
+        let h1 = cosmic_harmony::mine(&header, 1);
+        let h2 = cosmic_harmony::mine(&header, 1);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name, passed: ok,
+            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+        });
+    }
+
+    #[cfg(feature = "native-verushash")]
+    {
+        let name = "verushash";
+        let header = [0xA7u8; 76];
+        let h1 = verushash::hash(&header, 1);
+        let h2 = verushash::hash(&header, 1);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name, passed: ok,
+            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+        });
+    }
+
+    #[cfg(feature = "native-randomx")]
+    {
+        let name = "randomx";
+        let header = [0xA8u8; 76];
+        let h1 = randomx::hash(&header, 1);
+        let h2 = randomx::hash(&header, 1);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name, passed: ok,
+            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+        });
+    }
+
+    results
+}
+
+/// Returns `true` if all compiled algorithms pass their self-test.
+pub fn all_algorithms_healthy() -> bool {
+    runtime_self_test().iter().all(|r| r.passed)
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -458,6 +594,28 @@ mod tests {
         // Always passes — just documents which algos are in this build.
         let algos = compiled_algorithms();
         println!("zion-native-ffi compiled algorithms: {:?}", algos);
+    }
+
+    #[test]
+    fn runtime_self_test_all_pass() {
+        let results = runtime_self_test();
+        println!("runtime_self_test: {} algos tested", results.len());
+        for r in &results {
+            println!("  {} — {} ({})", r.name, if r.passed { "OK" } else { "FAIL" }, r.detail);
+            assert!(r.passed, "algorithm {} failed self-test: {}", r.name, r.detail);
+        }
+    }
+
+    #[test]
+    fn all_algorithms_healthy_passes() {
+        assert!(all_algorithms_healthy() || compiled_algorithms().is_empty());
+    }
+
+    #[test]
+    fn self_test_count_matches_compiled() {
+        let compiled = compiled_algorithms().len();
+        let tested = runtime_self_test().len();
+        assert_eq!(compiled, tested, "every compiled algo must have a self-test");
     }
 
     #[cfg(feature = "native-etchash")]

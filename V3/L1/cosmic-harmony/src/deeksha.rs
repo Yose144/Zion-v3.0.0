@@ -17,6 +17,10 @@ pub const CHV_EKAM_FORK_HEIGHT: u64 = 0;
 /// Active from genesis in V3 mainnet — this IS the mainnet algorithm.
 pub const CHV_EKAM_V2_FORK_HEIGHT: u64 = 0;
 
+/// Fork height for CHv4.2 Merkabah Dual-Spin (Phase X+ — not activated yet).
+/// Set to u64::MAX to prevent accidental activation before governance approval.
+pub const CHV42_DUAL_SPIN_FORK_HEIGHT: u64 = u64::MAX;
+
 // ============================================================================
 // CONSENSUS PARAMETERS
 // ============================================================================
@@ -115,6 +119,37 @@ pub fn cosmic_harmony_ekam_deeksha_v2(block_header: &[u8], nonce: u64, block_hei
 }
 
 // ============================================================================
+// CHv4.2 MERKABAH DUAL-SPIN PIPELINE (Phase X+ — fork-gated)
+// ============================================================================
+
+/// Cosmic Harmony CHv4.2 — Merkabah Dual-Spin pipeline.
+///
+/// Extends v2 with the full HIC pipeline in the memory-hard step:
+/// - Forward + backward HIC-enriched passes (dual-spin Merkabah)
+/// - Kabala phase (22 HIC-addressed dependent reads)
+/// - Brahma-jyoti finalization (22 rounds of SHA3-512 + HIC)
+///
+/// Gated by `CHV42_DUAL_SPIN_FORK_HEIGHT` (currently u64::MAX — not active).
+#[inline]
+pub fn cosmic_harmony_ekam_deeksha_v3(block_header: &[u8], nonce: u64, block_height: u64) -> Hash32 {
+    use crate::scratchpad_ekam::memory_hard_transform_ekam_v3;
+    use crate::algorithms_npu::{epoch_from_height, npu_mixing_step_epoch};
+
+    let mut input = [0u8; 88];
+    let len = block_header.len().min(80);
+    input[..len].copy_from_slice(&block_header[..len]);
+    input[80..88].copy_from_slice(&nonce.to_le_bytes());
+
+    let s1 = keccak256_opt(&input);
+    let s2 = sha3_512_opt(&s1.data);
+    let s3 = golden_matrix_opt(&s2.data);
+    let s4 = memory_hard_transform_ekam_v3(&s3.data);
+    let epoch = epoch_from_height(block_height);
+    let s5 = npu_mixing_step_epoch(&s4.data, epoch);
+    cosmic_fusion_opt_rounds(&s5, EKAM_FUSION_ROUNDS)
+}
+
+// ============================================================================
 // MINING HELPERS
 // ============================================================================
 
@@ -146,6 +181,24 @@ pub fn ekam_v2_find_nonce(
     for offset in 0..count {
         let nonce = start_nonce.wrapping_add(offset);
         let hash = cosmic_harmony_ekam_deeksha_v2(header, nonce, block_height);
+        if meets_target(&hash.data, target) {
+            return Some((nonce, hash));
+        }
+    }
+    None
+}
+
+/// CHv4.2 — sequential nonce search (height-aware, dual-spin).
+pub fn ekam_v3_find_nonce(
+    header: &[u8],
+    start_nonce: u64,
+    count: u64,
+    target: &[u8; 32],
+    block_height: u64,
+) -> Option<(u64, Hash32)> {
+    for offset in 0..count {
+        let nonce = start_nonce.wrapping_add(offset);
+        let hash = cosmic_harmony_ekam_deeksha_v3(header, nonce, block_height);
         if meets_target(&hash.data, target) {
             return Some((nonce, hash));
         }
@@ -206,6 +259,25 @@ pub fn generate_ekam_v2_test_vector() -> String {
     const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
     const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
     let hash = cosmic_harmony_ekam_deeksha_v2(TEST_HEADER, TEST_NONCE, 0);
+    hash.data.iter().map(|byte| format!("{:02x}", byte)).collect()
+}
+
+/// CHv4.2 self-test — determinism.
+pub fn ekam_v3_self_test() -> bool {
+    const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
+    const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
+    const TEST_HEIGHT: u64 = 0;
+
+    let h1 = cosmic_harmony_ekam_deeksha_v3(TEST_HEADER, TEST_NONCE, TEST_HEIGHT);
+    let h2 = cosmic_harmony_ekam_deeksha_v3(TEST_HEADER, TEST_NONCE, TEST_HEIGHT);
+    h1 == h2
+}
+
+/// Generate CHv4.2 test vector.
+pub fn generate_ekam_v3_test_vector() -> String {
+    const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
+    const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
+    let hash = cosmic_harmony_ekam_deeksha_v3(TEST_HEADER, TEST_NONCE, 0);
     hash.data.iter().map(|byte| format!("{:02x}", byte)).collect()
 }
 
@@ -344,5 +416,70 @@ mod tests {
         let via_backend = npu().mix(&input);
         let cpu_direct = npu_mixing_step(&input);
         assert_eq!(via_backend, cpu_direct, "NPU backend must match CPU path");
+    }
+
+    // ================================================================
+    // CHv4.2 Merkabah Dual-Spin (v3) pipeline tests
+    // ================================================================
+
+    #[test]
+    fn v3_hash_is_deterministic() {
+        let header = b"V3_CHV42_TEST_HEADER";
+        let nonce = 42;
+        assert_eq!(
+            cosmic_harmony_ekam_deeksha_v3(header, nonce, 0),
+            cosmic_harmony_ekam_deeksha_v3(header, nonce, 0)
+        );
+    }
+
+    #[test]
+    fn v3_differs_from_v2() {
+        let header = b"v2 vs v3 comparison";
+        let nonce = 12345u64;
+        let v2 = cosmic_harmony_ekam_deeksha_v2(header, nonce, 0);
+        let v3 = cosmic_harmony_ekam_deeksha_v3(header, nonce, 0);
+        assert_ne!(v2.data, v3.data, "v3 dual-spin must differ from v2");
+    }
+
+    #[test]
+    fn v3_avalanche() {
+        let header = b"v3 avalanche test";
+        let h1 = cosmic_harmony_ekam_deeksha_v3(header, 1000, 0);
+        let h2 = cosmic_harmony_ekam_deeksha_v3(header, 1001, 0);
+        assert_ne!(h1.data, h2.data, "Different nonce → different hash");
+    }
+
+    #[test]
+    fn v3_output_nonzero() {
+        let h = cosmic_harmony_ekam_deeksha_v3(b"v3 nonzero test", 0, 0);
+        assert!(h.data.iter().any(|&b| b != 0), "v3 output must not be all-zero");
+    }
+
+    #[test]
+    fn v3_self_test_passes() {
+        assert!(ekam_v3_self_test(), "CHv4.2 self-test failed");
+    }
+
+    #[test]
+    fn v3_find_nonce_works() {
+        let header = b"v3 find nonce test";
+        let target = [0xffu8; 32];
+        assert!(ekam_v3_find_nonce(header, 0, 10, &target, 0).is_some());
+    }
+
+    #[test]
+    fn v3_epoch_variation() {
+        use crate::algorithms_npu::NPU_EPOCH_LENGTH;
+        let header = b"v3 epoch test";
+        let nonce = 999u64;
+        let h_ep0 = cosmic_harmony_ekam_deeksha_v3(header, nonce, 0);
+        let h_ep1 = cosmic_harmony_ekam_deeksha_v3(header, nonce, NPU_EPOCH_LENGTH);
+        assert_ne!(h_ep0.data, h_ep1.data, "v3: different epochs → different hashes");
+    }
+
+    #[test]
+    fn v3_fork_height_not_active() {
+        assert_eq!(CHV42_DUAL_SPIN_FORK_HEIGHT, u64::MAX,
+            "CHv4.2 must not be active until governance approval");
     }
 }
