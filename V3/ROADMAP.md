@@ -1149,3 +1149,32 @@ Status: mostly complete (seed node expansion pending)
 - Prefer removing ambiguity over preserving historical names.
 - When migrating code from the legacy tree, copy only audited behavior that serves the clean mainnet line.
 - For production upgrade phases (21+), follow `V3/docs/UPGRADE_PLAN.md` as the detailed reference.
+
+## L2 / L3 Integration (Post-L1-Stable)
+
+Detailed plan: `V3/docs/L2_L3_MAINNET_PLAN.md`
+
+### L2 — wZION Bridge
+
+- Lock/Mint/Burn model: ZION → zion1bridge vault → 3-of-5 validator quorum → wZION ERC-20 mint on Base
+- **Critical decimal fix required**: root L2/L3 code assumes 6 decimals (1e6); V3 canonical is 12 decimals (1e12 flowers). Bridge multiplier must change from ×1e12 to ×1e6. Deploying unfixed = 1,000,000× inflation exploit.
+- L1 core changes needed: `BRIDGE_VAULT_ADDRESS`, `getBridgeLocks` RPC, `submitBridgeUnlock` RPC, Step 12 bridge unlock validation
+- Testnet contracts deployed on Base Sepolia (wZION, ZIONBridge, Governance, Treasury, Staking, Farm, Uniswap V3 pool)
+- Fee: 0.1% (50% burn, 25% DAO, 25% validators)
+- Finality: 60 L1 blocks (~60 min at 60s block time)
+
+### L3 — WARP Cross-Chain
+
+- Extends L2 bridge to 7 chain families: EVM, Solana, Tron, Stellar, Bitcoin, Cardano, Cosmos
+- Memo format: `WARP:1:<chain>:<recipient>` parsed from TxOutput memo field
+- Same validator quorum and vault as L2 (no separate infrastructure)
+- Per-route fees: 0.10%–0.25%
+- `ChainId::zion_l1()` decimals must be fixed from 6 to 12
+
+### Dependency Order
+
+```
+L1 mainnet stable (Phase 8 complete)
+ └─► L2 bridge: decimal fix → vault + RPC → daemon → testnet E2E → mainnet
+      └─► L3 WARP: chain adapters → router → testnet E2E → mainnet (EVM first, then others)
+```
