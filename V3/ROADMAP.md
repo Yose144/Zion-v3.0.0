@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-21 (Sprint 6 complete)
+Status date: 2026-03-21 (Sprint 7 complete — FFI self-test, difficulty monitor, CHv4.2 dual-spin)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -84,7 +84,7 @@ This roadmap follows the release progression already defined in the repository d
   - **Tier 2 epoch-rotating NPU: MlpTopology enum (Standard/ThreeLayer/Wide/Deep), epoch length 2016, deterministic weight expansion from Blake3 epoch seed**
   - **Ekam Deeksha v2 canonical pipeline: cosmic_harmony_ekam_deeksha_v2(header, nonce, height) — mainnet algorithm from genesis (fork height 0)**
   - **Height-aware dispatch: cosmic_harmony_with_height() always routes to v2**
-  - **81 tests passing (23 NPU epoch, 7 scratchpad v2, 17 deeksha v1+v2, 4 dispatch/difficulty)**
+  - **95 tests passing (23 NPU epoch, 13 scratchpad v1/v2/v3, 25 deeksha v1/v2/v3, 4 dispatch/difficulty) — +14 from CHv4.2**
   - revenue and NCL support retained in narrowed form
   - OpenCL kernel source included (optimized: keccak_f1600 inline, native_sqrt, 46841 bytes)
 - `L1/core`
@@ -205,7 +205,8 @@ This roadmap follows the release progression already defined in the repository d
 - CI/CD pipeline, automated image builds → ✅ Sprint 4 (v3-ci.yml + v3-release.yml)
 - ~~Phase 23: Monitoring~~ → ✅ Phase 23 (core metrics HTTP server, Prometheus V3 scrape alignment, alert rules for V3 metric names, 22-panel Grafana dashboard, 5-service monitoring stack deployed and verified)
 - DesktopApp runtime supervision for node, pool, miner, release provenance, and signing workflows
-- difficulty auto-tuning in live mining (current testnet difficulty ramps fast with short nonce windows)
+- ~~difficulty auto-tuning in live mining~~ → ✅ Sprint 7 (DifficultyStats, difficulty_stats(), predict_difficulty() — 10 new tests, 31 total)
+- ~~HIC / CHv4.2 algorithm~~ → ✅ Sprint 7 (Merkabah Dual-Spin: forward+backward HIC passes, v3 pipeline + mining helper, fork-gated at u64::MAX, 14 new tests, 95 total cosmic-harmony)
 - ~~Docker testnet deployment to 91.98.122.165~~ → ✅ Phase 22 (7-service stack, env-var config, P2P dedup fix)
 
 ### L1 Testnet → V3 Mainnet Migration Tracker
@@ -246,7 +247,7 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 |----|----------------|---------------------------|------------------|------------------|
 | G1 | **Emission / Decade Decay** | Decade Decay (×4/5 per 5,256,000 blocks), tail ~724.785 ZION | ✅ `emission.rs` — 16 tests | `L1/core/src/blockchain/reward.rs` |
 | G2 | **Atomic units (flowers)** | 1 ZION = 1e12 flowers; reward = 5,400,067,000,000,000 flowers | ✅ Integrated in `emission.rs` | Same as G1 |
-| G3 | **LWMA DAA** | 60-block window, ±25% max change, 30–120 s solve-time clamp | ✅ `difficulty.rs` — 21 tests, integer-only ±25% clamp | `L1/core/src/blockchain/consensus.rs` |
+| G3 | **LWMA DAA** | 60-block window, ±25% max change, 30–120 s solve-time clamp | ✅ `difficulty.rs` — 31 tests (+10 auto-tuning: stats, predict, hashrate), integer-only ±25% clamp | `L1/core/src/blockchain/consensus.rs` |
 | G4 | **Genesis block + premine** | 16.28B ZION into 12 addresses as coinbase outputs in block 0 | ✅ `genesis.rs` — 17 tests, 12 premine outputs, frozen hash, ChainState init | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
 | G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | ✅ `propagation.rs` — SeenBlocks dedup, plan_relay(), node binary relay on announce+submit | ~~Phase 5d~~ done |
 

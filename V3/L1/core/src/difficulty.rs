@@ -189,6 +189,104 @@ pub fn compact_to_target(bits: u32) -> DifficultyTarget {
 }
 
 // ---------------------------------------------------------------------------
+// Difficulty monitor — runtime analytics for live mining
+// ---------------------------------------------------------------------------
+
+/// Statistics about recent mining difficulty / block-time behavior.
+#[derive(Debug, Clone)]
+pub struct DifficultyStats {
+    /// Number of blocks in the sample.
+    pub sample_size: usize,
+    /// Mean observed solve time over the sample (seconds).
+    pub mean_solve_time: f64,
+    /// Ratio of mean_solve_time / TARGET_BLOCK_TIME (1.0 = perfect).
+    pub timing_ratio: f64,
+    /// Estimated network hashrate (hashes/second) derived from difficulty and
+    /// block times.  Uses: hashrate ≈ difficulty × 2³² / mean_solve_time.
+    pub estimated_hashrate: f64,
+    /// Current difficulty (most recent block in window).
+    pub current_difficulty: u64,
+    /// Predicted difficulty for the next block (LWMA forward projection).
+    pub predicted_next: u64,
+}
+
+/// Analyse a recent window of blocks and produce mining-relevant statistics.
+///
+/// `window` must be **oldest-first** and contain at least 2 entries.
+/// The same input format as [`lwma_next_difficulty`].
+pub fn difficulty_stats(window: &[BlockInfo]) -> Option<DifficultyStats> {
+    if window.len() < 2 {
+        return None;
+    }
+
+    let n = window.len() - 1;
+
+    // Compute mean solve time (clamped same as LWMA sees it).
+    let mut sum_solve: u64 = 0;
+    for i in 1..=n {
+        let raw = window[i].timestamp.saturating_sub(window[i - 1].timestamp);
+        sum_solve += raw.clamp(MIN_SOLVE_TIME, MAX_SOLVE_TIME);
+    }
+    let mean_solve = sum_solve as f64 / n as f64;
+    let timing_ratio = mean_solve / TARGET_BLOCK_TIME as f64;
+
+    let current_difficulty = window.last().unwrap().difficulty;
+
+    // Estimated hashrate: hashrate ≈ difficulty × 2^32 / solve_time
+    // (Bitcoin convention — difficulty 1 ≈ 2^32 hashes per block)
+    let estimated_hashrate = if mean_solve > 0.0 {
+        current_difficulty as f64 * (1u64 << 32) as f64 / mean_solve
+    } else {
+        0.0
+    };
+
+    let predicted_next = lwma_next_difficulty(window);
+
+    Some(DifficultyStats {
+        sample_size: n,
+        mean_solve_time: mean_solve,
+        timing_ratio,
+        estimated_hashrate,
+        current_difficulty,
+        predicted_next,
+    })
+}
+
+/// Predict difficulty N blocks into the future assuming constant hashrate.
+///
+/// Returns a Vec of predicted difficulties for blocks 1..=horizon.
+/// Assumes each future block takes `mean_solve_time` seconds (from current
+/// window stats).  This is an approximation — real difficulty will vary as
+/// new blocks arrive with different timestamps.
+pub fn predict_difficulty(window: &[BlockInfo], horizon: usize) -> Vec<u64> {
+    if window.len() < 2 || horizon == 0 {
+        return Vec::new();
+    }
+
+    let stats = match difficulty_stats(window) {
+        Some(s) => s,
+        None => return Vec::new(),
+    };
+    let solve_time = (stats.mean_solve_time as u64).clamp(MIN_SOLVE_TIME, MAX_SOLVE_TIME);
+
+    let mut chain: Vec<BlockInfo> = window.to_vec();
+    let mut predictions = Vec::with_capacity(horizon);
+
+    for _ in 0..horizon {
+        let start = chain.len().saturating_sub(LWMA_WINDOW + 1);
+        let next_diff = lwma_next_difficulty(&chain[start..]);
+        let last_ts = chain.last().unwrap().timestamp;
+        chain.push(BlockInfo {
+            timestamp: last_ts + solve_time,
+            difficulty: next_diff,
+        });
+        predictions.push(next_diff);
+    }
+
+    predictions
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -375,5 +473,96 @@ mod tests {
     fn compact_zero_returns_zero_target() {
         let target = compact_to_target(0);
         assert_eq!(target.bytes, [0u8; 32]);
+    }
+
+    // --- Difficulty monitor tests ---
+
+    #[test]
+    fn stats_perfect_timing() {
+        let window = make_window(60, 10_000, TARGET_BLOCK_TIME);
+        let stats = difficulty_stats(&window).unwrap();
+        assert_eq!(stats.sample_size, 60);
+        assert!((stats.mean_solve_time - 60.0).abs() < 0.01);
+        assert!((stats.timing_ratio - 1.0).abs() < 0.01);
+        assert_eq!(stats.current_difficulty, 10_000);
+        assert_eq!(stats.predicted_next, 10_000);
+        assert!(stats.estimated_hashrate > 0.0);
+    }
+
+    #[test]
+    fn stats_fast_blocks() {
+        let window = make_window(60, 10_000, 30);
+        let stats = difficulty_stats(&window).unwrap();
+        assert!((stats.mean_solve_time - 30.0).abs() < 0.01);
+        assert!(stats.timing_ratio < 0.6);
+        assert!(stats.predicted_next > stats.current_difficulty);
+    }
+
+    #[test]
+    fn stats_slow_blocks() {
+        let window = make_window(60, 10_000, 120);
+        let stats = difficulty_stats(&window).unwrap();
+        assert!((stats.mean_solve_time - 120.0).abs() < 0.01);
+        assert!(stats.timing_ratio > 1.5);
+        assert!(stats.predicted_next < stats.current_difficulty);
+    }
+
+    #[test]
+    fn stats_returns_none_for_single_block() {
+        let window = vec![BlockInfo { timestamp: 1000, difficulty: 5000 }];
+        assert!(difficulty_stats(&window).is_none());
+    }
+
+    #[test]
+    fn stats_returns_none_for_empty() {
+        assert!(difficulty_stats(&[]).is_none());
+    }
+
+    #[test]
+    fn predict_stable_chain_stays_stable() {
+        let window = make_window(60, 10_000, TARGET_BLOCK_TIME);
+        let preds = predict_difficulty(&window, 10);
+        assert_eq!(preds.len(), 10);
+        for &d in &preds {
+            assert_eq!(d, 10_000, "stable chain should keep difficulty constant");
+        }
+    }
+
+    #[test]
+    fn predict_fast_chain_ramps_up() {
+        let window = make_window(60, 10_000, 30);
+        let preds = predict_difficulty(&window, 5);
+        assert_eq!(preds.len(), 5);
+        assert!(preds[0] > 10_000, "first prediction should be higher");
+        // Each prediction should be >= the previous (chain is consistently fast)
+        for i in 1..preds.len() {
+            assert!(preds[i] >= preds[i - 1], "difficulty should keep climbing");
+        }
+    }
+
+    #[test]
+    fn predict_empty_horizon_returns_empty() {
+        let window = make_window(60, 10_000, 60);
+        assert!(predict_difficulty(&window, 0).is_empty());
+    }
+
+    #[test]
+    fn predict_short_window() {
+        let window = vec![
+            BlockInfo { timestamp: 1000, difficulty: 5000 },
+            BlockInfo { timestamp: 1060, difficulty: 5000 },
+        ];
+        let preds = predict_difficulty(&window, 3);
+        assert_eq!(preds.len(), 3);
+    }
+
+    #[test]
+    fn hashrate_estimate_scales_with_difficulty() {
+        let low = make_window(20, 1_000, 60);
+        let high = make_window(20, 100_000, 60);
+        let s_low = difficulty_stats(&low).unwrap();
+        let s_high = difficulty_stats(&high).unwrap();
+        assert!(s_high.estimated_hashrate > s_low.estimated_hashrate * 50.0,
+            "100x difficulty should produce much higher hashrate estimate");
     }
 }
