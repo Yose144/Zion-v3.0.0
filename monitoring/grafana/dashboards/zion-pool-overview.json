@@ -12,7 +12,7 @@
       }
     ]
   },
-  "description": "ZION TerraNova Mining Pool — real-time overview of hashrate, shares, blocks, miners, and connections",
+  "description": "ZION TerraNova V3 — Pool, Core Node, and PPLNS metrics",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -32,7 +32,7 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0 }] },
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
           "mappings": [{ "type": "value", "options": { "1": { "text": "UP", "color": "green" }, "0": { "text": "DOWN", "color": "red" } } }]
         }
       },
@@ -55,7 +55,7 @@
       "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
       "id": 2,
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "textMode": "value_and_name", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "stratum_active_connections{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
+      "targets": [{ "expr": "zion_pool_active_sessions{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
       "title": "Active Miners",
       "type": "stat"
     },
@@ -65,30 +65,14 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "thresholds": { "steps": [{ "color": "green", "value": null }] },
-          "unit": "Hs"
+          "unit": "none"
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
       "id": 3,
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "pool_hashrate{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
-      "title": "Pool Hashrate",
-      "type": "stat"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{ "color": "yellow", "value": null }] },
-          "unit": "none"
-        }
-      },
-      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
-      "id": 4,
-      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "blocks_found_total{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
-      "title": "Blocks Found (Total)",
+      "targets": [{ "expr": "zion_pool_accepted_total{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
+      "title": "Accepted Shares (Total)",
       "type": "stat"
     },
     {
@@ -100,10 +84,10 @@
           "unit": "percentunit"
         }
       },
-      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
-      "id": 5,
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "rate(shares_rejected_total{job=~\"zion-pool-.*\"}[5m]) / (rate(shares_accepted_total{job=~\"zion-pool-.*\"}[5m]) + rate(shares_rejected_total{job=~\"zion-pool-.*\"}[5m]))", "legendFormat": "{{ server }}" }],
+      "targets": [{ "expr": "rate(zion_pool_rejected_total{job=~\"zion-pool-.*\"}[5m]) / (rate(zion_pool_accepted_total{job=~\"zion-pool-.*\"}[5m]) + rate(zion_pool_rejected_total{job=~\"zion-pool-.*\"}[5m]) + 0.001)", "legendFormat": "{{ server }}" }],
       "title": "Reject Rate (5m)",
       "type": "stat"
     },
@@ -112,42 +96,39 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0 }] },
-          "mappings": [{ "type": "value", "options": { "1": { "text": "OK", "color": "green" }, "0": { "text": "DOWN", "color": "red" } } }]
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zion_pool_uptime_seconds{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
+      "title": "Pool Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "percentunit"
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
       "id": 6,
-      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "redis_up{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
-      "title": "Redis Status",
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zion_pool_accept_rate_pct{job=~\"zion-pool-.*\"} / 100", "legendFormat": "{{ server }}" }],
+      "title": "Accept Rate",
       "type": "stat"
     },
     {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
       "id": 101,
-      "title": "📈 Shares & Hashrate Over Time",
+      "title": "📈 Shares Over Time",
       "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 2, "fillOpacity": 15, "gradientMode": "scheme", "axisLabel": "H/s" },
-          "unit": "Hs"
-        }
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
-      "id": 10,
-      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
-      "targets": [
-        { "expr": "pool_hashrate{job=~\"zion-pool-.*\"}", "legendFormat": "Pool {{ server }}" },
-        { "expr": "network_hashrate{job=~\"zion-pool-.*\"}", "legendFormat": "Network {{ server }}" }
-      ],
-      "title": "Pool vs Network Hashrate",
-      "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
@@ -158,21 +139,40 @@
           "unit": "ops"
         }
       },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 10,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "rate(zion_pool_accepted_total{job=~\"zion-pool-.*\"}[5m])", "legendFormat": "Accepted {{ server }}" },
+        { "expr": "rate(zion_pool_rejected_total{job=~\"zion-pool-.*\"}[5m])", "legendFormat": "Rejected {{ server }}" }
+      ],
+      "title": "Share Rate (5m avg)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "none"
+        }
+      },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
       "id": 11,
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "expr": "rate(shares_accepted_total{job=~\"zion-pool-.*\"}[5m])", "legendFormat": "Accepted {{ server }}" },
-        { "expr": "rate(shares_rejected_total{job=~\"zion-pool-.*\"}[5m])", "legendFormat": "Rejected {{ server }}" }
+        { "expr": "zion_pool_active_sessions{job=~\"zion-pool-.*\"}", "legendFormat": "Active {{ server }}" },
+        { "expr": "zion_pplns_registered_miners{job=~\"zion-pool-.*\"}", "legendFormat": "PPLNS registered {{ server }}" }
       ],
-      "title": "Share Rate (5m avg)",
+      "title": "Active Sessions & Registered Miners",
       "type": "timeseries"
     },
     {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
       "id": 102,
-      "title": "⛓️ Blocks & Chain",
+      "title": "🔀 Routing Groups",
       "type": "row"
     },
     {
@@ -180,7 +180,7 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 2, "fillOpacity": 10, "drawStyle": "bars", "barAlignment": 0, "barWidthFactor": 0.6 },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "drawStyle": "bars", "barAlignment": 0, "barWidthFactor": 0.6 },
           "unit": "none"
         }
       },
@@ -188,10 +188,9 @@
       "id": 20,
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "expr": "increase(blocks_found_total{job=~\"zion-pool-.*\"}[1h])", "legendFormat": "Found {{ server }}" },
-        { "expr": "increase(blocks_orphaned_total{job=~\"zion-pool-.*\"}[1h])", "legendFormat": "Orphaned {{ server }}" }
+        { "expr": "zion_pool_group_accepted{job=~\"zion-pool-.*\"}", "legendFormat": "{{ group }}" }
       ],
-      "title": "Blocks Found vs Orphaned (per hour)",
+      "title": "Accepted Shares by Group",
       "type": "timeseries"
     },
     {
@@ -207,80 +206,17 @@
       "id": 21,
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "expr": "block_template_height{job=~\"zion-pool-.*\"}", "legendFormat": "Height {{ server }}" },
-        { "expr": "network_difficulty{job=~\"zion-pool-.*\"}", "legendFormat": "Difficulty {{ server }}" }
+        { "expr": "zion_pplns_window_used{job=~\"zion-pool-.*\"}", "legendFormat": "Window used {{ server }}" },
+        { "expr": "zion_pplns_window_size{job=~\"zion-pool-.*\"}", "legendFormat": "Window size {{ server }}" }
       ],
-      "title": "Block Height & Difficulty",
+      "title": "PPLNS Window",
       "type": "timeseries"
     },
     {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
       "id": 103,
-      "title": "👷 Per-Miner Metrics",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 2, "fillOpacity": 15, "gradientMode": "scheme" },
-          "unit": "Hs"
-        }
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
-      "id": 30,
-      "options": { "legend": { "displayMode": "table", "placement": "right", "sortBy": "Last *", "sortDesc": true }, "tooltip": { "mode": "multi" } },
-      "targets": [{ "expr": "topk(10, miner_hashrate{job=~\"zion-pool-.*\"})", "legendFormat": "{{ address }} ({{ server }})" }],
-      "title": "Top 10 Miner Hashrates",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 2, "fillOpacity": 15 },
-          "unit": "ops"
-        }
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
-      "id": 31,
-      "options": { "legend": { "displayMode": "table", "placement": "right", "sortBy": "Last *", "sortDesc": true }, "tooltip": { "mode": "multi" } },
-      "targets": [{ "expr": "topk(10, rate(miner_shares_total{status=\"accepted\",job=~\"zion-pool-.*\"}[5m]))", "legendFormat": "{{ address }}" }],
-      "title": "Top 10 Miner Share Rates",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "custom": { "filterable": true },
-          "unit": "none"
-        },
-        "overrides": [
-          { "matcher": { "id": "byName", "options": "Hashrate" }, "properties": [{ "id": "unit", "value": "Hs" }] },
-          { "matcher": { "id": "byName", "options": "Pending" }, "properties": [{ "id": "unit", "value": "none" }, { "id": "decimals", "value": 8 }] }
-        ]
-      },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 32 },
-      "id": 32,
-      "options": { "showHeader": true, "sortBy": [{ "displayName": "Hashrate", "desc": true }] },
-      "targets": [
-        { "expr": "miner_hashrate{job=~\"zion-pool-.*\"}", "legendFormat": "", "format": "table", "instant": true }
-      ],
-      "title": "All Miners Table",
-      "transformations": [
-        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true }, "renameByName": { "address": "Miner Address", "server": "Server", "Value": "Hashrate" } } }
-      ],
-      "type": "table"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 42 },
-      "id": 104,
-      "title": "⚡ NCL Multi-Algorithm",
+      "title": "⛓️ Core Node",
       "type": "row"
     },
     {
@@ -288,38 +224,95 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{ "color": "purple", "value": null }] },
-          "unit": "none"
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
+          "mappings": [{ "type": "value", "options": { "1": { "text": "UP", "color": "green" }, "0": { "text": "DOWN", "color": "red" } } }]
         }
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 43 },
-      "id": 40,
-      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "ncl_active_algorithms{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
-      "title": "Active Algorithms",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 24 },
+      "id": 30,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "up{job=~\"zion-core-.*\"}", "legendFormat": "{{ server }}" }],
+      "title": "Core Status",
       "type": "stat"
     },
     {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 42 },
-      "id": 104,
-      "title": "⚡ NCL Multi-Algorithm",
-      "type": "row"
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "yellow", "value": null }] },
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 24 },
+      "id": 31,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zion_chain_height{job=~\"zion-core-.*\"}", "legendFormat": "{{ server }}" }],
+      "title": "Chain Height",
+      "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{ "color": "purple", "value": null }] },
+          "thresholds": { "steps": [{ "color": "#6c3fba", "value": null }] },
           "unit": "none"
         }
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 43 },
-      "id": 40,
-      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "ncl_active_algorithms{job=~\"zion-pool-.*\"}", "legendFormat": "{{ server }}" }],
-      "title": "Active Algorithms",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 24 },
+      "id": 32,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zion_peer_count{job=~\"zion-core-.*\"}", "legendFormat": "{{ server }}" }],
+      "title": "Peer Count",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 24 },
+      "id": 33,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zion_mempool_size{job=~\"zion-core-.*\"}", "legendFormat": "{{ server }}" }],
+      "title": "Mempool Size",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 24 },
+      "id": 34,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zion_blocks_accepted_total{job=~\"zion-core-.*\"}", "legendFormat": "{{ server }}" }],
+      "title": "Blocks Accepted",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 24 },
+      "id": 35,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zion_template_height{job=~\"zion-core-.*\"}", "legendFormat": "{{ server }}" }],
+      "title": "Template Height",
       "type": "stat"
     },
     {
@@ -331,183 +324,50 @@
           "unit": "none"
         }
       },
-      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 43 },
-      "id": 41,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 36,
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "expr": "ncl_algorithm_switches_total{job=~\"zion-pool-.*\"}", "legendFormat": "Switches {{ server }}" },
-        { "expr": "pplns_window_size{job=~\"zion-pool-.*\"}", "legendFormat": "PPLNS Window {{ server }}" }
+        { "expr": "zion_chain_height{job=~\"zion-core-.*\"}", "legendFormat": "Height {{ server }}" },
+        { "expr": "zion_template_height{job=~\"zion-core-.*\"}", "legendFormat": "Template {{ server }}" }
       ],
-      "title": "NCL Algorithm Switches & PPLNS Window",
+      "title": "Chain Height & Template Height",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 51 },
-      "id": 105,
-      "title": "🤖 AI Consciousness Integration",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": {
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "orange", "value": 1 },
-              { "color": "yellow", "value": 3 },
-              { "color": "green", "value": 5 },
-              { "color": "blue", "value": 7 },
-              { "color": "purple", "value": 9 }
-            ]
-          },
-          "mappings": [],
-          "max": 10,
-          "min": 0
-        }
-      },
-      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 52 },
-      "id": 50,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "targets": [
-        {
-          "expr": "zion_ai_consciousness_level{agent=\"pool_orchestrator\"}",
-          "legendFormat": "Pool AI"
-        }
-      ],
-      "title": "Pool AI Consciousness",
-      "type": "gauge"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "vis": false },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [] },
-          "unit": "percent"
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "none"
         }
       },
-      "gridPos": { "h": 6, "w": 10, "x": 4, "y": 52 },
-      "id": 51,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "single", "sort": "none" }
-      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 37,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        {
-          "expr": "rate(zion_ai_pool_optimization_decisions[5m]) * 100",
-          "legendFormat": "Optimization rate"
-        },
-        {
-          "expr": "zion_ai_pool_efficiency_gain_percent",
-          "legendFormat": "Efficiency gain %"
-        }
+        { "expr": "zion_peer_count{job=~\"zion-core-.*\"}", "legendFormat": "Peers {{ server }}" },
+        { "expr": "zion_mempool_size{job=~\"zion-core-.*\"}", "legendFormat": "Mempool {{ server }}" }
       ],
-      "title": "AI Pool Optimization",
+      "title": "Peers & Mempool",
       "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 80 }
-            ]
-          }
-        }
-      },
-      "gridPos": { "h": 6, "w": 5, "x": 14, "y": 52 },
-      "id": 52,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "targets": [
-        {
-          "expr": "zion_ai_response_time_seconds{agent=\"pool_orchestrator\"}",
-          "legendFormat": "Response time"
-        }
-      ],
-      "title": "AI Response Time",
-      "type": "gauge"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 0 }
-            ]
-          }
-        }
-      },
-      "gridPos": { "h": 6, "w": 5, "x": 19, "y": 52 },
-      "id": 53,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "single", "sort": "none" }
-      },
-      "targets": [
-        {
-          "expr": "zion_ai_decisions_made_total{agent=\"pool_orchestrator\"}",
-          "legendFormat": "Decisions made"
-        }
-      ],
-      "title": "AI Decisions Made",
-      "type": "stat"
     }
   ],
+  "refresh": "30s",
   "schemaVersion": 39,
-  "style": "dark",
-  "tags": ["zion", "pool", "mining"],
+  "tags": ["zion", "pool", "mining", "v3"],
   "templating": {
     "list": [
       {
-        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "current": { "selected": false, "text": "Prometheus", "value": "prometheus" },
         "hide": 0,
         "includeAll": false,
+        "multi": false,
         "name": "DS_PROMETHEUS",
         "options": [],
         "query": "prometheus",
+        "refresh": 1,
         "type": "datasource"
       }
     ]
@@ -515,7 +375,7 @@
   "time": { "from": "now-6h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "ZION Pool Overview",
+  "title": "ZION TerraNova — Pool & Core Overview",
   "uid": "zion-pool-overview",
-  "version": 1
+  "version": 2
 }

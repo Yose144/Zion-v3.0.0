@@ -22,7 +22,7 @@ groups:
 
       # No shares accepted for 10 minutes
       - alert: PoolNoShares
-        expr: rate(shares_accepted_total{job=~"zion-pool-.*"}[10m]) == 0
+        expr: rate(zion_pool_accepted_total{job=~"zion-pool-.*"}[10m]) == 0
         for: 10m
         labels:
           severity: warning
@@ -34,8 +34,8 @@ groups:
       # High reject rate (> 15%)
       - alert: PoolHighRejectRate
         expr: |
-          rate(shares_rejected_total{job=~"zion-pool-.*"}[5m])
-          / (rate(shares_accepted_total{job=~"zion-pool-.*"}[5m]) + rate(shares_rejected_total{job=~"zion-pool-.*"}[5m]))
+          rate(zion_pool_rejected_total{job=~"zion-pool-.*"}[5m])
+          / (rate(zion_pool_accepted_total{job=~"zion-pool-.*"}[5m]) + rate(zion_pool_rejected_total{job=~"zion-pool-.*"}[5m]))
           > 0.15
         for: 5m
         labels:
@@ -47,7 +47,7 @@ groups:
 
       # No active connections
       - alert: PoolNoConnections
-        expr: stratum_active_connections{job=~"zion-pool-.*"} == 0
+        expr: zion_pool_active_sessions{job=~"zion-pool-.*"} == 0
         for: 5m
         labels:
           severity: warning
@@ -56,20 +56,20 @@ groups:
           summary: "Pool {{ $labels.server }} — zero active miners"
           description: "No active stratum connections on {{ $labels.server }} for 5 minutes."
 
-      # Redis down (pool side)
+      # Redis down (via redis-exporter)
       - alert: PoolRedisDown
-        expr: redis_up{job=~"zion-pool-.*"} == 0
+        expr: up{job=~"redis-.*"} == 0
         for: 1m
         labels:
           severity: critical
           team: infra
         annotations:
-          summary: "Pool {{ $labels.server }} — Redis connection lost"
-          description: "Redis is unreachable from pool on {{ $labels.server }}."
+          summary: "Redis {{ $labels.server }} — connection lost"
+          description: "Redis exporter is unreachable on {{ $labels.server }}."
 
-      # Block template stale (height unchanged for > 5 min)
+      # Block template stale (core template height unchanged for > 5 min)
       - alert: PoolBlockTemplateStale
-        expr: changes(block_template_height{job=~"zion-pool-.*"}[5m]) == 0 and block_template_height > 0
+        expr: changes(zion_template_height{job=~"zion-core-.*"}[5m]) == 0 and zion_template_height > 0
         for: 10m
         labels:
           severity: warning
@@ -78,19 +78,19 @@ groups:
           summary: "Pool {{ $labels.server }} — block template stale"
           description: "Block template height hasn't changed in 10 minutes on {{ $labels.server }}. Possible core node issue."
 
-      # Orphan rate > 10%
-      - alert: PoolHighOrphanRate
+      # High pool reject ratio over 30 min
+      - alert: PoolHighRejectRatio
         expr: |
-          blocks_orphaned_total{job=~"zion-pool-.*"}
-          / blocks_found_total{job=~"zion-pool-.*"}
+          zion_pool_rejected_total{job=~"zion-pool-.*"}
+          / (zion_pool_accepted_total{job=~"zion-pool-.*"} + 1)
           > 0.1
         for: 30m
         labels:
           severity: warning
           team: pool
         annotations:
-          summary: "Pool {{ $labels.server }} — orphan rate > 10%"
-          description: "Orphan rate is {{ $value | humanizePercentage }} on {{ $labels.server }}."
+          summary: "Pool {{ $labels.server }} — cumulative reject ratio > 10%"
+          description: "Reject ratio is {{ $value | humanizePercentage }} on {{ $labels.server }}."
 
   # ════════════════════════════════════
   # Core Node Alerts
@@ -101,7 +101,7 @@ groups:
       - alert: CoreBlocksRejectedHigh
         expr: |
           rate(zion_blocks_rejected_total{job=~"zion-core-.*"}[10m])
-          / (rate(zion_blocks_processed_total{job=~"zion-core-.*"}[10m]) + 0.001)
+          / (rate(zion_blocks_accepted_total{job=~"zion-core-.*"}[10m]) + 0.001)
           > 0.05
         for: 10m
         labels:

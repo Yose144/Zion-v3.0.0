@@ -50,7 +50,7 @@ scrape_configs:
     metrics_path: "/metrics"
     scrape_interval: 30s
     static_configs:
-      - targets: ["zion-core:8444"]
+      - targets: ["zion-core:9115"]
         labels:
           server: "helsinki"
           region: "eu-north"
@@ -94,7 +94,7 @@ scrape_configs:
     metrics_path: "/metrics"
     scrape_interval: 30s
     static_configs:
-      - targets: ["46.225.126.243:8444"]
+      - targets: ["46.225.126.243:9115"]
         labels:
           server: "germany"
           region: "eu-central"
