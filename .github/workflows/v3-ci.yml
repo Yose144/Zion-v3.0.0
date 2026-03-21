@@ -1,0 +1,95 @@
+name: V3 CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "V3/**"
+      - ".github/workflows/v3-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "V3/**"
+      - ".github/workflows/v3-ci.yml"
+
+defaults:
+  run:
+    working-directory: V3
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ───────────────────────────────────────────────
+  # Build + Test (needs C/C++ for native-ffi)
+  # ───────────────────────────────────────────────
+  test:
+    name: Test V3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: V3
+
+      - name: Install C/C++ build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      - name: Check workspace
+        run: cargo check --workspace
+
+      - name: Test workspace
+        run: cargo test --workspace -- --test-threads=1
+
+  # ───────────────────────────────────────────────
+  # Clippy
+  # ───────────────────────────────────────────────
+  clippy:
+    name: Clippy V3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: V3
+
+      - name: Install C/C++ build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      - name: Clippy (warnings)
+        run: cargo clippy --workspace --all-targets 2>&1
+
+  # ───────────────────────────────────────────────
+  # Format
+  # ───────────────────────────────────────────────
+  fmt:
+    name: Format V3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check format
+        run: cargo fmt --all --check
+
+  # ───────────────────────────────────────────────
+  # Security audit
+  # ───────────────────────────────────────────────
+  audit:
+    name: Audit V3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Run audit
+        run: cargo audit

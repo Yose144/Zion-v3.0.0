@@ -399,10 +399,10 @@ Scope: po stabilizaci core L1 runtime
   E1: Server hardening  ✅ (HARDENING.md — ufw, Docker log limits, logrotate, unattended-upgrades, SSH, TLS notes)
 
 ═══ Sprint 4 ═══
-  A4: Config profiles (solo/pool/dual/benchmark)
-  D1: Enhanced PowerShell dashboard
-  E2: CI/CD pipeline
-  E3: Release artifacts
+  A4: Config profiles (solo/pool/dual/benchmark)  ✅ (apply_profile_defaults() + 6 tests, 59 miner total)
+  D1: Enhanced PowerShell dashboard  ✅ (PPLNS panel, miner fleet table, log tail, window fill gauge)
+  E2: CI/CD pipeline  ✅ (v3-ci.yml — test, clippy, fmt, audit; path-filtered on V3/**)
+  E3: Release artifacts  ✅ (v3-release.yml — linux+macOS binaries, Docker images, GitHub release on v3* tags)
 
 ═══ Sprint 5 (pre-launch) ═══
   F1: Full security checklist completion

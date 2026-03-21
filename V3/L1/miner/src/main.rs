@@ -911,6 +911,9 @@ struct MinerConfig {
 
 impl MinerConfig {
     fn from_env() -> Result<Self> {
+        // Apply profile defaults first — env vars still override.
+        apply_profile_defaults();
+
         Ok(Self {
             miner_id: env_or_default("ZION_MINER_ID", "local-miner"),
             worker_name: env_or_default("ZION_WORKER_NAME", "cpu-rig-0"),
@@ -936,6 +939,68 @@ impl MinerConfig {
             threads: parallel::detect_threads(),
         })
     }
+}
+
+/// Config profiles set sensible env-var defaults for common mining scenarios.
+///
+/// Usage: `ZION_PROFILE=pool` (or solo, benchmark, dual)
+///
+/// Profile defaults are only applied for vars NOT already set, so explicit
+/// env vars always win.
+fn apply_profile_defaults() {
+    let profile = match std::env::var("ZION_PROFILE") {
+        Ok(v) => v.trim().to_lowercase(),
+        Err(_) => return,
+    };
+
+    let defaults: &[(&str, &str)] = match profile.as_str() {
+        "pool" => &[
+            // Long-running pool miner with autotune and reconnect.
+            ("ZION_LOOP_COUNT", "1000000"),
+            ("ZION_NONCE_AUTOTUNE", "true"),
+            ("ZION_NONCE_COUNT", "500000"),
+            ("ZION_NONCE_COUNT_MIN", "50000"),
+            ("ZION_NONCE_COUNT_MAX", "5000000"),
+            ("ZION_RECONNECT", "true"),
+            ("ZION_METRICS_REPORT_SECS", "30"),
+        ],
+        "solo" => &[
+            // Solo node mining — no pool, long run, large window.
+            ("ZION_LOOP_COUNT", "1000000"),
+            ("ZION_NONCE_AUTOTUNE", "true"),
+            ("ZION_NONCE_COUNT", "1000000"),
+            ("ZION_NONCE_COUNT_MAX", "10000000"),
+            ("ZION_METRICS_REPORT_SECS", "60"),
+        ],
+        "benchmark" | "bench" => &[
+            // Short burst to measure hash performance.
+            ("ZION_LOOP_COUNT", "10"),
+            ("ZION_NONCE_COUNT", "5000000"),
+            ("ZION_NONCE_AUTOTUNE", "false"),
+            ("ZION_METRICS_REPORT_SECS", "5"),
+            ("ZION_SLEEP_MS", "0"),
+        ],
+        "dual" => &[
+            // Pool mining with DCR stealth worker enabled.
+            ("ZION_LOOP_COUNT", "1000000"),
+            ("ZION_NONCE_AUTOTUNE", "true"),
+            ("ZION_NONCE_COUNT", "500000"),
+            ("ZION_RECONNECT", "true"),
+            ("ZION_METRICS_REPORT_SECS", "30"),
+            ("ZION_DCR_ENABLED", "true"),
+        ],
+        other => {
+            eprintln!("warning: unknown ZION_PROFILE={other:?}, ignoring (valid: pool, solo, benchmark, dual)");
+            return;
+        }
+    };
+
+    for &(key, value) in defaults {
+        if std::env::var(key).is_err() {
+            std::env::set_var(key, value);
+        }
+    }
+    println!("profile={profile}");
 }
 
 fn env_or_default(key: &str, default: &str) -> String {
@@ -1224,6 +1289,87 @@ mod tests {
         let target = parse_target_env("ZION_TARGET_0X_TEST").expect("valid 0x-prefixed target");
         assert_eq!(target, DifficultyTarget::MAX);
         std::env::remove_var("ZION_TARGET_0X_TEST");
+    }
+
+    // ── config profiles ──
+
+    #[test]
+    fn profile_pool_sets_loop_count_and_reconnect() {
+        std::env::remove_var("ZION_LOOP_COUNT");
+        std::env::remove_var("ZION_RECONNECT");
+        std::env::set_var("ZION_PROFILE", "pool");
+        apply_profile_defaults();
+        assert_eq!(std::env::var("ZION_LOOP_COUNT").unwrap(), "1000000");
+        assert_eq!(std::env::var("ZION_RECONNECT").unwrap(), "true");
+        // cleanup
+        for k in ["ZION_PROFILE", "ZION_LOOP_COUNT", "ZION_RECONNECT",
+                   "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
+                   "ZION_NONCE_COUNT_MIN", "ZION_NONCE_COUNT_MAX",
+                   "ZION_METRICS_REPORT_SECS"] {
+            std::env::remove_var(k);
+        }
+    }
+
+    #[test]
+    fn profile_benchmark_disables_autotune() {
+        std::env::remove_var("ZION_NONCE_AUTOTUNE");
+        std::env::set_var("ZION_PROFILE", "benchmark");
+        apply_profile_defaults();
+        assert_eq!(std::env::var("ZION_NONCE_AUTOTUNE").unwrap(), "false");
+        for k in ["ZION_PROFILE", "ZION_NONCE_AUTOTUNE", "ZION_LOOP_COUNT",
+                   "ZION_NONCE_COUNT", "ZION_METRICS_REPORT_SECS", "ZION_SLEEP_MS"] {
+            std::env::remove_var(k);
+        }
+    }
+
+    #[test]
+    fn profile_dual_enables_dcr() {
+        std::env::remove_var("ZION_DCR_ENABLED");
+        std::env::set_var("ZION_PROFILE", "dual");
+        apply_profile_defaults();
+        assert_eq!(std::env::var("ZION_DCR_ENABLED").unwrap(), "true");
+        for k in ["ZION_PROFILE", "ZION_DCR_ENABLED", "ZION_LOOP_COUNT",
+                   "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
+                   "ZION_RECONNECT", "ZION_METRICS_REPORT_SECS"] {
+            std::env::remove_var(k);
+        }
+    }
+
+    #[test]
+    fn profile_does_not_override_explicit_env() {
+        std::env::set_var("ZION_LOOP_COUNT", "42");
+        std::env::set_var("ZION_PROFILE", "pool");
+        apply_profile_defaults();
+        // Explicit env wins over profile default.
+        assert_eq!(std::env::var("ZION_LOOP_COUNT").unwrap(), "42");
+        for k in ["ZION_PROFILE", "ZION_LOOP_COUNT", "ZION_RECONNECT",
+                   "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
+                   "ZION_NONCE_COUNT_MIN", "ZION_NONCE_COUNT_MAX",
+                   "ZION_METRICS_REPORT_SECS"] {
+            std::env::remove_var(k);
+        }
+    }
+
+    #[test]
+    fn profile_unknown_is_ignored() {
+        std::env::set_var("ZION_PROFILE", "nonexistent");
+        std::env::remove_var("ZION_LOOP_COUNT");
+        apply_profile_defaults();
+        // Unknown profile touches nothing.
+        assert!(std::env::var("ZION_LOOP_COUNT").is_err());
+        std::env::remove_var("ZION_PROFILE");
+    }
+
+    #[test]
+    fn profile_bench_alias_works() {
+        std::env::remove_var("ZION_NONCE_AUTOTUNE");
+        std::env::set_var("ZION_PROFILE", "bench");
+        apply_profile_defaults();
+        assert_eq!(std::env::var("ZION_NONCE_AUTOTUNE").unwrap(), "false");
+        for k in ["ZION_PROFILE", "ZION_NONCE_AUTOTUNE", "ZION_LOOP_COUNT",
+                   "ZION_NONCE_COUNT", "ZION_METRICS_REPORT_SECS", "ZION_SLEEP_MS"] {
+            std::env::remove_var(k);
+        }
     }
 }
 
