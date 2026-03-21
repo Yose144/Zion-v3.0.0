@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-21 (Sprint 5 complete)
+Status date: 2026-03-21 (Sprint 6 complete)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -191,6 +191,7 @@ This roadmap follows the release progression already defined in the repository d
 - **Phase 22: Docker testnet deployment & P2P fix — complete Docker compose rewrite for env-var config (V3 binaries use `from_env()` exclusively, CLI args ignored), raw TCP JSON-RPC health checks on port 8332, `netcat-openbsd` in Dockerfiles replacing curl, ZION_NODE_STATE_PATH must be file path not directory, pool/miner loop_count=4294967295 for continuous operation, nonce_count tuned (500K), job TTL 180s. P2P bug fix: moved duplicate block check before `validate_peer_block()` in `import_peer_block()` to prevent spurious difficulty mismatch errors when seeds re-announce blocks (LWMA window already advanced). Deployed to 91.98.122.165: 7-service stack, chain height 40+, 100% share acceptance, zero P2P errors. Commits: 98fa4b5, f2ca370.**
 - **Sprint 4 (Upgrade Plan): config profiles (pool/solo/benchmark/dual via `ZION_PROFILE`), enhanced PowerShell dashboard (PPLNS panel + miner fleet + log tail), V3 CI/CD (`v3-ci.yml` + `v3-release.yml`). Miner 59 tests, pool 37 tests = 96 miner+pool tests. Commit: ab7b55d.**
 - **Sprint 5 (Upgrade Plan — pre-launch): Pool test coverage expanded to 73 tests (wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output). Security checklist completed (`SECURITY_CHECKLIST.md`). Public mining guide (`MINING_GUIDE.md`) and node operator guide (`NODE_OPERATOR_GUIDE.md`) published. Total: 393 core + 73 pool + 59 miner + 81 cosmic-harmony = 606 tests, 0 failures.**
+- **Sprint 6 (Upgrade Plan — hardening): Production unwrap() audit (zero unsafe unwrap in hot paths). cargo-fuzz harnesses: pool (`fuzz_decode_message`, `fuzz_parse_hex`) + core (`fuzz_merkle_root`, `fuzz_validate_header`). `parse_fixed_hex` promoted to pub for fuzz surface. Phase 23/24/25 status reconciliation — monitoring complete, security mostly complete (BFG deferred), infra mostly complete (seed expansion pending). D2 block explorer marked done (live at zionterranova.com/explorer — 7 pages, pool dashboard, 10+ API endpoints).**
 - **Phase 23: Grafana + Prometheus monitoring stack — Node metrics HTTP server (`serve_node_metrics()` on ZION_METRICS_BIND=:9115, Prometheus /metrics + JSON /health), Prometheus scrape target alignment (`:8444` → `:9115`), alert rules rewritten to match actual V3 metric names (`zion_pool_*`, `zion_*`), Docker compose updated with port 9115 exposure + explicit `name: zion-net` network, Grafana provisioning with 22-panel V3 dashboard (pool overview, shares timeseries, routing groups, PPLNS window, core node stats), hardcoded Grafana credential removed. Full 5-service monitoring stack deployed: Prometheus, Grafana, node-exporter, redis-exporter, alertmanager. All local Prometheus targets scraping, Grafana dashboard live with real-time V3 data.**
 
 ### Not Done Yet
@@ -201,7 +202,7 @@ This roadmap follows the release progression already defined in the repository d
 - ~~end-to-end multi-node acceptance and propagation flow validation~~ → ✅ Phase 18b (9 E2E tests)
 - BFG scrub of premine private keys from git history
 - ~~production Docker images for node, pool, miner~~ → ✅ done (multi-stage Dockerfiles + compose stack)
-- CI/CD pipeline, automated image builds
+- CI/CD pipeline, automated image builds → ✅ Sprint 4 (v3-ci.yml + v3-release.yml)
 - ~~Phase 23: Monitoring~~ → ✅ Phase 23 (core metrics HTTP server, Prometheus V3 scrape alignment, alert rules for V3 metric names, 22-panel Grafana dashboard, 5-service monitoring stack deployed and verified)
 - DesktopApp runtime supervision for node, pool, miner, release provenance, and signing workflows
 - difficulty auto-tuning in live mining (current testnet difficulty ramps fast with short nonce windows)
@@ -1084,11 +1085,11 @@ Progress:
 - ✅ Prometheus scrape configs updated (node :9115, pool :8080)
 - ✅ Alert rules rewritten to match actual V3 metric names (zion_pool_*, zion_*)
 - ✅ Docker compose v3-testnet port 9115 exposed
-- ⏳ Grafana dashboards (placeholder overview removed, need proper dashboards)
-- ⏳ Alertmanager integration
-- ⏳ Retention policy
+- ✅ Grafana dashboards (22-panel zion-pool-overview.json — sessions, shares, PPLNS, CPU, mem, disk, chain height, peers)
+- ✅ Alertmanager integration (alertmanager.yml with Discord routing, inhibit rules, 2-channel severity split; compose service + Prometheus alerting target)
+- ✅ Retention policy (Prometheus: 90d time + 10GB size via compose TSDB flags)
 
-Status: in progress
+Status: complete
 
 ### Phase 24: Security & Audit (Upgrade Plan §F)
 
@@ -1103,7 +1104,17 @@ Exit criteria:
 - `cargo audit` returns 0 vulnerabilities
 - zero `unwrap()` in production hot paths
 
-Status: not started (BFG scrub is one-time, should be done early)
+Progress:
+- ✅ `cargo audit` clean (Sprint 5 — no known vulnerabilities)
+- ✅ Panic audit (Sprint 5 SECURITY_CHECKLIST.md — all unwrap() in test-only paths)
+- ✅ Input validation review (Sprint 5 — pool server + node RPC boundaries)
+- ✅ Rate limiting & DoS hardening (Sprint 5 — peer security, connection limiter)
+- ✅ Cryptographic safety review (Sprint 5 — Ed25519+BLAKE3 verified)
+- ✅ Production unwrap() audit (Sprint 6 — zero unwrap in hot paths)
+- ✅ cargo-fuzz harnesses (Sprint 6 — pool decode_message, parse_hex, core validate_header)
+- ⏳ BFG scrub (PREMINE_WALLETS_BACKUP.json — requires coordinated history rewrite)
+
+Status: mostly complete (BFG scrub deferred — requires repo coordination)
 
 ### Phase 25: Infrastructure & Release (Upgrade Plan §E + §G)
 
@@ -1121,7 +1132,15 @@ Exit criteria:
 - 5 seed nodes online and reachable
 - MINING_GUIDE.md tested by non-developer user
 
-Status: not started
+Progress:
+- ✅ E2: CI pipeline (Sprint 4 — v3-ci.yml: test, clippy, fmt, audit; path-filtered on V3/**)
+- ✅ E3: Release artifacts (Sprint 4 — v3-release.yml: linux+macOS binaries, Docker images, GitHub release on v3* tags)
+- ✅ G1: Mining guide (Sprint 5 — MINING_GUIDE.md: profiles, env vars, Docker/systemd, FAQ)
+- ✅ G2: Node operator guide (Sprint 5 — NODE_OPERATOR_GUIDE.md: deployment, monitoring, hardening)
+- ✅ D2: Block explorer + pool dashboard (live at zionterranova.com/explorer — Next.js 16, 7 pages, pool dashboard)
+- ⏳ E4: Seed nodes (2 EU seeds at 91.98.122.165 + 46.225.126.243; need 3 more regions)
+
+Status: mostly complete (seed node expansion pending)
 
 ## Rules For Future Work
 
