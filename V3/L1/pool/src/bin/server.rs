@@ -103,7 +103,7 @@ fn main() -> Result<()> {
 
     let mut handles = Vec::new();
     let mut accepted = 0u32;
-    let mut ip_sessions: HashMap<IpAddr, u32> = HashMap::new();
+    let ip_sessions: Arc<Mutex<HashMap<IpAddr, u32>>> = Arc::new(Mutex::new(HashMap::new()));
     loop {
         if shutdown.load(Ordering::SeqCst) {
             println!("shutdown_draining clients={}", handles.len());
@@ -126,13 +126,17 @@ fn main() -> Result<()> {
             .context("failed to set client stream blocking")?;
 
         let peer_ip = peer_addr.ip();
-        let ip_count = ip_sessions.entry(peer_ip).or_insert(0);
-        if config.max_sessions_per_ip > 0 && *ip_count >= config.max_sessions_per_ip {
-            println!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
-            drop(stream);
-            continue;
+        {
+            let mut sessions = ip_sessions.lock().expect("ip_sessions lock");
+            let ip_count = sessions.entry(peer_ip).or_insert(0);
+            if config.max_sessions_per_ip > 0 && *ip_count >= config.max_sessions_per_ip {
+                println!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
+                drop(stream);
+                continue;
+            }
+            *ip_count = ip_count.saturating_add(1);
         }
-        *ip_count = ip_count.saturating_add(1);
+        let ip_guard = IpSessionGuard(Arc::clone(&ip_sessions), peer_ip);
 
         println!("peer_addr={peer_addr}");
         let pool = Arc::clone(&pool);
@@ -142,6 +146,7 @@ fn main() -> Result<()> {
         let active_sessions_ref = Arc::clone(&active_sessions);
         let config = config.clone();
         handles.push(thread::spawn(move || {
+            let _ip_guard = ip_guard;
             handle_client(stream, pool, revenue_scheduler, routing_stats, pplns_ref, active_sessions_ref, &config)
         }));
         accepted = accepted.saturating_add(1);
@@ -165,6 +170,21 @@ struct SessionGuard(Arc<AtomicU64>);
 impl Drop for SessionGuard {
     fn drop(&mut self) {
         self.0.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
+/// RAII guard that decrements the per-IP active session counter on drop.
+struct IpSessionGuard(Arc<Mutex<HashMap<IpAddr, u32>>>, IpAddr);
+impl Drop for IpSessionGuard {
+    fn drop(&mut self) {
+        if let Ok(mut sessions) = self.0.lock() {
+            if let Some(count) = sessions.get_mut(&self.1) {
+                *count = count.saturating_sub(1);
+                if *count == 0 {
+                    sessions.remove(&self.1);
+                }
+            }
+        }
     }
 }
 
