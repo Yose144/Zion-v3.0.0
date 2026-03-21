@@ -1,0 +1,110 @@
+name: V3 Release
+
+on:
+  push:
+    tags:
+      - 'v3*'
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: V3
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: V3
+
+      - name: Install C/C++ build tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/zion-core dist/ 2>/dev/null || true
+          cp target/${{ matrix.target }}/release/zion-pool dist/ 2>/dev/null || true
+          cp target/${{ matrix.target }}/release/zion-miner dist/ 2>/dev/null || true
+          tar czf ../zion-v3-${{ matrix.target }}.tar.gz -C dist .
+          cd ..
+          sha256sum zion-v3-${{ matrix.target }}.tar.gz > zion-v3-${{ matrix.target }}.tar.gz.sha256
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: zion-v3-${{ matrix.target }}
+          path: |
+            zion-v3-${{ matrix.target }}.tar.gz
+            zion-v3-${{ matrix.target }}.tar.gz.sha256
+
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install C/C++ build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      - name: Build V3 binaries for Docker
+        working-directory: V3
+        run: cargo build --release
+
+      - name: Build Docker images
+        working-directory: V3/docker
+        run: |
+          docker build -f Dockerfile.core -t zion-v3-node:${{ github.ref_name }} ..
+          docker build -f Dockerfile.pool -t zion-v3-pool:${{ github.ref_name }} ..
+          docker build -f Dockerfile.miner -t zion-v3-miner:${{ github.ref_name }} ..
+
+      - name: Save Docker images
+        run: |
+          docker save zion-v3-node:${{ github.ref_name }} | gzip > zion-v3-node-${{ github.ref_name }}.tar.gz
+          docker save zion-v3-pool:${{ github.ref_name }} | gzip > zion-v3-pool-${{ github.ref_name }}.tar.gz
+          docker save zion-v3-miner:${{ github.ref_name }} | gzip > zion-v3-miner-${{ github.ref_name }}.tar.gz
+
+      - name: Upload Docker images
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images
+          path: zion-v3-*-${{ github.ref_name }}.tar.gz
+
+  release:
+    name: Create Release
+    needs: [build, docker]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            zion-v3-*/zion-v3-*.tar.gz
+            zion-v3-*/zion-v3-*.tar.gz.sha256
+            docker-images/zion-v3-*.tar.gz
+          generate_release_notes: true

@@ -109,6 +109,46 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
 '@
     $canaryRouting = Try-ParseJson $canaryRoutingRaw
 
+    # ── PPLNS stats from canary pool /stats (Sprint 4 D1) ──
+    $pplnsWindowSize = if ($poolStats -and $poolStats.pplns -and $poolStats.pplns.window_size -ne $null) { $poolStats.pplns.window_size } else { "n/a" }
+    $pplnsWindowUsed = if ($poolStats -and $poolStats.pplns -and $poolStats.pplns.window_used -ne $null) { $poolStats.pplns.window_used } else { "n/a" }
+    $pplnsRegistered = if ($poolStats -and $poolStats.pplns -and $poolStats.pplns.registered_miners -ne $null) { $poolStats.pplns.registered_miners } else { "n/a" }
+    $pplnsTotalPaid = if ($poolStats -and $poolStats.pplns -and $poolStats.pplns.total_paid -ne $null) { Format-NumOrNa $poolStats.pplns.total_paid "N4" } else { "n/a" }
+    $pplnsPayoutRounds = if ($poolStats -and $poolStats.pplns -and $poolStats.pplns.payout_rounds -ne $null) { $poolStats.pplns.payout_rounds } else { "n/a" }
+    $pplnsFillPct = if ($pplnsWindowSize -ne "n/a" -and $pplnsWindowUsed -ne "n/a" -and [double]$pplnsWindowSize -gt 0) {
+        [Math]::Min(100.0, ([double]$pplnsWindowUsed / [double]$pplnsWindowSize) * 100.0)
+    } else { 0.0 }
+    $inv2 = [System.Globalization.CultureInfo]::InvariantCulture
+    $pplnsFillPctCss = $pplnsFillPct.ToString("0.##", $inv2)
+    $pplnsFillPctText = $pplnsFillPct.ToString("N1")
+
+    # ── Miner fleet (per-worker from pool /stats) ──
+    $minerFleetHtml = ""
+    if ($poolStats -and $poolStats.workers) {
+        $minerFleetHtml = "<table style='width:100%;border-collapse:collapse;font-size:12px;color:var(--ink);'><tr style='color:var(--muted);text-align:left;border-bottom:1px solid var(--line);'><th style='padding:4px 6px;'>Worker</th><th>Shares</th><th>Hashrate</th><th>Last Seen</th></tr>"
+        foreach ($w in $poolStats.workers) {
+            $wname = if ($w.name) { $w.name } else { "unknown" }
+            $wshares = if ($w.shares -ne $null) { $w.shares } else { "0" }
+            $whash = if ($w.hashrate -ne $null) { $w.hashrate } else { "n/a" }
+            $wlast = if ($w.last_seen) { $w.last_seen } else { "-" }
+            $minerFleetHtml += "<tr style='border-bottom:1px solid #1d2b42;'><td style='padding:4px 6px;color:var(--accent);'>$wname</td><td style='padding:4px 6px;'>$wshares</td><td style='padding:4px 6px;'>$whash</td><td style='padding:4px 6px;color:var(--muted);'>$wlast</td></tr>"
+        }
+        $minerFleetHtml += "</table>"
+    } else {
+        $minerFleetHtml = "<span style='color:var(--muted);font-size:13px;'>No worker data available (pool /stats.workers not present)</span>"
+    }
+
+    # ── Log tail (last 20 lines from each V3 container) ──
+    $logTailNode = Invoke-Remote @'
+docker logs --tail 20 zion-v3-node 2>&1 || echo '(no logs)'
+'@
+    $logTailPool = Invoke-Remote @'
+docker logs --tail 20 zion-v3-pool 2>&1 || echo '(no logs)'
+'@
+    $logTailMiner = Invoke-Remote @'
+docker logs --tail 20 zion-v3-miner 2>&1 || echo '(no logs)'
+'@
+
     $poolActiveMiners = if ($poolStats -and $poolStats.active_miners -ne $null) { $poolStats.active_miners } else { "n/a" }
     $poolValidShares = if ($poolStats -and $poolStats.valid_shares -ne $null) { $poolStats.valid_shares } else { "n/a" }
     $poolInvalidShares = if ($poolStats -and $poolStats.invalid_shares -ne $null) { $poolStats.invalid_shares } else { "n/a" }
@@ -501,6 +541,44 @@ python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",19550),5); pr
         <div class="card"><div class="k">Zion Group (acc/sub)</div><div class="v">$grpZionText</div></div>
         <div class="card"><div class="k">Blake3 Source (acc/sub)</div><div class="v">$srcBlake3Text</div></div>
       </div>
+    </div>
+
+    <div class="viz-grid" style="margin-top:12px;">
+      <div class="card">
+        <h3 class="section-title">PPLNS Payout Engine</h3>
+        <div class="grid" style="margin-top:0;">
+          <div class="card"><div class="k">Window Fill</div><div class="v">$pplnsWindowUsed / $pplnsWindowSize</div></div>
+          <div class="card"><div class="k">Registered Miners</div><div class="v">$pplnsRegistered</div></div>
+          <div class="card"><div class="k">Total Paid (ZION)</div><div class="v">$pplnsTotalPaid</div></div>
+          <div class="card"><div class="k">Payout Rounds</div><div class="v">$pplnsPayoutRounds</div></div>
+        </div>
+        <div style="margin-top:10px;">
+          <div class="meter-row">
+            <div class="meter-head"><span>PPLNS Window Fill</span><span>$pplnsFillPctText%</span></div>
+            <div class="meter-track"><div class="meter-fill fill-ok" style="width: $pplnsFillPctCss%"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="section-title">Miner Fleet</h3>
+        $minerFleetHtml
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3 class="section-title">Log Tail (last 20 lines)</h3>
+      <details open>
+        <summary>Node</summary>
+        <pre>$logTailNode</pre>
+      </details>
+      <details>
+        <summary>Pool</summary>
+        <pre>$logTailPool</pre>
+      </details>
+      <details>
+        <summary>Miner</summary>
+        <pre>$logTailMiner</pre>
+      </details>
     </div>
 
     <div class="split">
