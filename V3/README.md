@@ -70,6 +70,9 @@ Out of scope for the bootstrap:
 - **Testnet fixes (19. 3. 2026):** Docker compose rewritten for env-var config (`from_env()` only, CLI args ignored), raw TCP JSON-RPC health checks on port 8332, `netcat-openbsd` replacing curl in Dockerfiles, state path must be file (`chain_state.json`) not directory, pool/miner loop_count=4294967295 for continuous operation, nonce tuning (500K/180s TTL)
 - **P2P bug fix (19. 3. 2026):** duplicate block check moved before `validate_peer_block()` in `import_peer_block()` — eliminates spurious LWMA difficulty mismatch errors when seeds re-announce already-accepted blocks (`f2ca370`)
 - **Zero P2P errors** after fix deployment — chain growing continuously with 100% share acceptance rate
+- **Node metrics HTTP server (Phase 23 partial):** `serve_node_metrics()` on `ZION_METRICS_BIND` (default `0.0.0.0:9115`) — Prometheus text exposition at `/metrics` (chain_height, mempool_size, peer_count, sync_status, blocks_accepted, blocks_rejected, template_height), JSON health at `/health`
+- **Config profiles (Sprint 4 A4):** `ZION_PROFILE` env var — pre-set sensible defaults for `pool`, `solo`, `benchmark`/`bench`, `dual` profiles; explicit env vars always override profile defaults
+- **V3 CI/CD (Sprint 4 E2-E3):** `.github/workflows/v3-ci.yml` (test, clippy, fmt, audit scoped to V3/**), `.github/workflows/v3-release.yml` (v3* tags → linux+macOS binaries + Docker images + GitHub release)
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
@@ -134,6 +137,7 @@ The `zion-miner` binary already supports basic configuration via environment var
 - `ZION_GPU_AUTOTUNE`
 - `ZION_GPU_AUTOTUNE_SECS`
 - `ZION_REMOTE_TTL_GUARD_PCT` — skip submit if scan took ≥N% of pool-advertised job TTL (default: 90, range: 10–100). Prevents `StaleJob` rejects when the scan runs over the TTL window.
+- `ZION_PROFILE` — config profile preset: `pool` (long-run, autotune, reconnect), `solo` (large nonce window), `benchmark`/`bench` (short burst, no autotune), `dual` (pool + DCR). Explicit env vars always win.
 
 The `server` binary in `L1/pool` supports:
 
@@ -165,6 +169,7 @@ The `node` binary in `L1/core` supports:
 - `ZION_RPC_ACCEPT_LIMIT`
 - `ZION_NODE_STATE_PATH`
 - `ZION_SEED_PEERS`
+- `ZION_METRICS_BIND` — HTTP metrics endpoint bind address (default: `0.0.0.0:9115`); serves Prometheus `/metrics` and JSON `/health`
 
 JSON-RPC note:
 `getAccountBalance`, `getAccountTransaction`, and `submitAccountTransaction` are the explicit account-runtime aliases. `sendRawTransaction` remains available for compatibility, but it does not accept raw hex payloads, and `getBalance` rejects `zion1...` UTXO addresses until the runtime is unified.
