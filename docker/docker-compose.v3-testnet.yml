@@ -181,6 +181,7 @@ volumes:
 
 networks:
   zion-net:
+    name: zion-net
     driver: bridge
     ipam:
       config:
