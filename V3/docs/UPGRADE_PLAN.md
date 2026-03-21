@@ -410,8 +410,14 @@ Scope: po stabilizaci core L1 runtime
   E4: Seed node deployment  ⏳ (existing EU seeds at 91.98.122.165 + 46.225.126.243; multi-region expansion deferred to infra phase)
   G1-G3: Public documentation and guides  ✅ (MINING_GUIDE.md, NODE_OPERATOR_GUIDE.md published)
 
+═══ Sprint 6 (hardening) ═══
+  F2: Production unwrap() audit  ✅ (zero unwrap in hot paths — node, pool server, miner main loop)
+  F3: cargo-fuzz harnesses  ✅ (fuzz_decode_message, fuzz_parse_hex, fuzz_validate_header — pool + core)
+  C5: Alertmanager integration  ✅ (alertmanager.yml + compose wiring + silence/inhibit rules)
+  ROADMAP sync  ✅ (Phase 24/25 status updated to reflect Sprint 4-5 completions)
+
 ═══ Post-Launch ═══
-  D2: Public block explorer / pool dashboard SPA
+  D2: Public block explorer / pool dashboard SPA  ✅ (live at zionterranova.com/explorer — 7 pages, 10+ API endpoints, pool dashboard, Next.js 16)
   Native FFI production hardening
   HIC algorithm (Phase X+)
 ```
