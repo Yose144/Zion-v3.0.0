@@ -16,6 +16,8 @@ services:
       - NEXT_TELEMETRY_DISABLED=1
       # Bridge metrics endpoint — same zion-net Docker network
       - BRIDGE_METRICS_URL=http://zion-bridge:9101/metrics
+      # Prometheus for /api/metrics proxy (monitoring page)
+      - PROMETHEUS_URL=http://zion-prometheus:9090
     healthcheck:
       # AUDIT-FIX: localhost can resolve to ::1 in some environments while the
       # Next.js server listens on IPv4 (0.0.0.0). Use explicit 127.0.0.1.

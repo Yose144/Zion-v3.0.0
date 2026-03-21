@@ -23,6 +23,7 @@ const t = {
     miner_stats: { cs: 'Statistiky minera', en: 'Miner Stats' },
     philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
+    monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
   },
 
   /* ─── Hero ─── */
