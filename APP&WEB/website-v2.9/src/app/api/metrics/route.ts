@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://zion-prometheus:9090';
 
-// Allowlisted metric prefixes — only V3 metrics, nothing sensitive
+// Allowlisted metric prefixes — only V3 + infra metrics, nothing sensitive
 const ALLOWED_PREFIXES = [
   'zion_chain_',
   'zion_pool_',
@@ -13,6 +13,10 @@ const ALLOWED_PREFIXES = [
   'zion_peer_',
   'zion_blocks_',
   'zion_template_',
+  'node_filesystem_',
+  'node_memory_Mem',
+  'node_load',
+  'node_boot_time',
   'up{',
 ];
 
@@ -21,8 +25,13 @@ function isQueryAllowed(query: string): boolean {
   return ALLOWED_PREFIXES.some(prefix => q.startsWith(prefix));
 }
 
+const HEADERS = { 'Cache-Control': 'no-store, max-age=0' };
+
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query');
+  const range = request.nextUrl.searchParams.get('range'); // e.g. "1h", "6h", "24h"
+  const step = request.nextUrl.searchParams.get('step');   // e.g. "60", "300"
+
   if (!query) {
     return NextResponse.json({ error: 'Missing query parameter' }, { status: 400 });
   }
@@ -32,16 +41,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const url = `${PROMETHEUS_URL}/api/v1/query?query=${encodeURIComponent(query)}`;
+    let url: string;
+
+    if (range) {
+      // Range query for sparklines / charts
+      const allowedRanges: Record<string, number> = { '1h': 3600, '6h': 21600, '24h': 86400 };
+      const secs = allowedRanges[range] ?? 3600;
+      const now = Math.floor(Date.now() / 1000);
+      const stepVal = Math.min(Math.max(parseInt(step || '60', 10) || 60, 15), 600);
+      url = `${PROMETHEUS_URL}/api/v1/query_range?query=${encodeURIComponent(query)}&start=${now - secs}&end=${now}&step=${stepVal}`;
+    } else {
+      url = `${PROMETHEUS_URL}/api/v1/query?query=${encodeURIComponent(query)}`;
+    }
+
     const res = await fetch(url, {
       cache: 'no-store',
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(8000),
     });
 
     const data = await res.json();
-    return NextResponse.json(data, {
-      headers: { 'Cache-Control': 'no-store, max-age=0' },
-    });
+    return NextResponse.json(data, { headers: HEADERS });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Prometheus unavailable' },
