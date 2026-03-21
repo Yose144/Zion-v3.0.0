@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-19 (Phase 22 update)
+Status date: 2026-03-21 (Sprint 4 + Phase 23 partial)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -189,6 +189,8 @@ This roadmap follows the release progression already defined in the repository d
 - **Phase 22: Docker testnet deploy & P2P fix — Docker compose rewritten for env-var config (`from_env()` only), raw TCP JSON-RPC health checks, netcat Dockerfiles, P2P duplicate block dedup before validation (eliminates difficulty mismatch on seed re-announce). 7-service stack on 91.98.122.165, chain height 40+, 100% accept, 0 P2P errors. 393 core + 13 pool tests pass.**
 - **Phase 22b: Pool active-session metrics — `AtomicU64` session counter with RAII `SessionGuard` (lock-free inc on connect, auto-dec on thread exit), `snapshot_json_ext()` adds `active_sessions` + `uptime_s` to JSON, `snapshot_prometheus_ext()` adds `zion_pool_active_sessions` gauge + `zion_pool_uptime_seconds` counter to Prometheus output, website `getPoolStats()` maps `active_sessions` → dashboard `miners.active`**
 - **Phase 22: Docker testnet deployment & P2P fix — complete Docker compose rewrite for env-var config (V3 binaries use `from_env()` exclusively, CLI args ignored), raw TCP JSON-RPC health checks on port 8332, `netcat-openbsd` in Dockerfiles replacing curl, ZION_NODE_STATE_PATH must be file path not directory, pool/miner loop_count=4294967295 for continuous operation, nonce_count tuned (500K), job TTL 180s. P2P bug fix: moved duplicate block check before `validate_peer_block()` in `import_peer_block()` to prevent spurious difficulty mismatch errors when seeds re-announce blocks (LWMA window already advanced). Deployed to 91.98.122.165: 7-service stack, chain height 40+, 100% share acceptance, zero P2P errors. Commits: 98fa4b5, f2ca370.**
+- **Sprint 4 (Upgrade Plan): config profiles (pool/solo/benchmark/dual via `ZION_PROFILE`), enhanced PowerShell dashboard (PPLNS panel + miner fleet + log tail), V3 CI/CD (`v3-ci.yml` + `v3-release.yml`). Miner 59 tests, pool 37 tests = 96 miner+pool tests. Commit: ab7b55d.**
+- **Phase 23 (partial): Node metrics HTTP server (`serve_node_metrics()` on ZION_METRICS_BIND=:9115, Prometheus /metrics + JSON /health), Prometheus scrape target alignment (`:8444` → `:9115`), alert rules rewritten to match actual V3 metric names (`zion_pool_*`, `zion_*`). Docker compose updated with port 9115 exposure.**
 
 ### Not Done Yet
 
@@ -199,7 +201,7 @@ This roadmap follows the release progression already defined in the repository d
 - BFG scrub of premine private keys from git history
 - ~~production Docker images for node, pool, miner~~ → ✅ done (multi-stage Dockerfiles + compose stack)
 - CI/CD pipeline, automated image builds
-- **Phase 23 (next): Grafana + Prometheus monitoring stack** — pool already exposes `/metrics` (Prometheus text format) with `zion_pool_active_sessions` gauge, `zion_pool_uptime_seconds` counter, and per-group/source share counters; node exposes `/metrics` on port 8080. Remaining: Grafana dashboards (pool hashrate, active miners, share accept/reject rate, block height, node peer count), Prometheus scrape configs for all V3 services, alerting rules (pool down, 0 miners, chain stall), Docker compose integration (`docker-compose.monitoring.yml`), retention policy
+- **Phase 23 (in progress): Monitoring & metrics alignment** — node now serves Prometheus `/metrics` + JSON `/health` on `ZION_METRICS_BIND` (default `:9115`) via `serve_node_metrics()` in node binary; Prometheus scrape targets updated from `:8444` → `:9115`; alert rules rewritten to match actual `zion_pool_*` / `zion_*` metric names; Grafana pool overview dashboard removed (superseded by Prometheus-native queries). Remaining: fresh Grafana dashboards for chain/pool/fleet, Alertmanager integration, retention policy
 - DesktopApp runtime supervision for node, pool, miner, release provenance, and signing workflows
 - difficulty auto-tuning in live mining (current testnet difficulty ramps fast with short nonce windows)
 - ~~Docker testnet deployment to 91.98.122.165~~ → ✅ Phase 22 (7-service stack, env-var config, P2P dedup fix)
@@ -212,7 +214,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 393 core + 13 pool + 81 cosmic-harmony = 487+ pass, 0 fail |
+| Tests | ~200+ | 393 core + 37 pool (13 lib + 13 PPLNS + 11 server) + 59 miner + 81 cosmic-harmony = 570 pass, 0 fail |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |
@@ -1075,12 +1077,17 @@ Key deliverables:
 - C3: alerting rules (7 rules: no miners, high reject, chain stall, node down, disk, peers, mempool)
 - C4: docker-compose.monitoring.yml
 
-Exit criteria:
-- Grafana accessible on :3000 with all dashboards populated
-- Alertmanager fires test alert on simulated pool-down
-- Node/pool/miner metrics visible in Prometheus
+Progress:
+- ✅ Node metrics HTTP server on ZION_METRICS_BIND (default :9115) — chain_height, mempool_size, peer_count, sync_status, blocks_accepted/rejected, template_height
+- ✅ Pool metrics already on /metrics — active_sessions, uptime, shares, PPLNS, groups/sources
+- ✅ Prometheus scrape configs updated (node :9115, pool :8080)
+- ✅ Alert rules rewritten to match actual V3 metric names (zion_pool_*, zion_*)
+- ✅ Docker compose v3-testnet port 9115 exposed
+- ⏳ Grafana dashboards (placeholder overview removed, need proper dashboards)
+- ⏳ Alertmanager integration
+- ⏳ Retention policy
 
-Status: not started
+Status: in progress
 
 ### Phase 24: Security & Audit (Upgrade Plan §F)
 
