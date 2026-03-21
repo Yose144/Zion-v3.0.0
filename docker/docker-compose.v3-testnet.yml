@@ -16,6 +16,7 @@ services:
       - "8334:8334"   # P2P
       - "8332:8332"   # RPC (raw TCP JSON-RPC)
       - "8444:8444"   # Pool bind (stratum listener inside node)
+      - "9115:9115"   # Metrics HTTP (Prometheus scrape)
     volumes:
       - zion-testnet-data:/data/zion
     environment:
@@ -25,6 +26,7 @@ services:
       - ZION_P2P_BIND=0.0.0.0:8334
       - ZION_RPC_BIND=0.0.0.0:8332
       - ZION_POOL_BIND=0.0.0.0:8444
+      - ZION_METRICS_BIND=0.0.0.0:9115
       - ZION_SEED_PEERS=${SEED_PEERS:-172.29.0.11:8334,172.29.0.12:8334}
       - ZION_MINER_ADDRESS=${MINER_WALLET:-zion1q893q6c5j7y0e3r062g4m7c240t5g294k7z6729}
     healthcheck:
