@@ -26,6 +26,7 @@ export default function Navigation() {
         { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
         { href: '/network',   label: tr('nav', 'network', lang) },
         { href: '/explorer',  label: tr('nav', 'explorer', lang) },
+        { href: '/monitoring', label: tr('nav', 'monitoring', lang) },
       ],
     },
     {
