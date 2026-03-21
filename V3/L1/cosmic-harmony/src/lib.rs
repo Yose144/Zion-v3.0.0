@@ -13,11 +13,12 @@ pub mod sha3_fast;
 pub use algorithms_opt::{Hash32, Hash64, cosmic_harmony_with_height, meets_difficulty};
 pub use deeksha::{
     cosmic_harmony_ekam_deeksha, cosmic_harmony_ekam_deeksha_v2,
-    ekam_find_nonce, ekam_v2_find_nonce,
-    ekam_self_test, ekam_v2_self_test,
-    generate_ekam_test_vector, generate_ekam_v2_test_vector,
+    cosmic_harmony_ekam_deeksha_v3,
+    ekam_find_nonce, ekam_v2_find_nonce, ekam_v3_find_nonce,
+    ekam_self_test, ekam_v2_self_test, ekam_v3_self_test,
+    generate_ekam_test_vector, generate_ekam_v2_test_vector, generate_ekam_v3_test_vector,
     init_npu, hash_bytes_with_npu,
-    CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT,
+    CHV_EKAM_FORK_HEIGHT, CHV_EKAM_V2_FORK_HEIGHT, CHV42_DUAL_SPIN_FORK_HEIGHT,
     EKAM_CANONICAL_TEST_VECTOR_HEX, EKAM_V2_CANONICAL_TEST_VECTOR_HEX,
     EKAM_FUSION_ROUNDS,
     EKAM_V2_SCRATCHPAD_SIZE, EKAM_V2_PASSES, EKAM_V2_RANDOM_READS,

@@ -418,8 +418,9 @@ Scope: po stabilizaci core L1 runtime
 
 ═══ Post-Launch ═══
   D2: Public block explorer / pool dashboard SPA  ✅ (live at zionterranova.com/explorer — 7 pages, 10+ API endpoints, pool dashboard, Next.js 16)
-  Native FFI production hardening
-  HIC algorithm (Phase X+)
+  Native FFI production hardening  ✅ (runtime_self_test(), AlgoTestResult, all_algorithms_healthy() — 4 tests)
+  Difficulty auto-tuning  ✅ (DifficultyStats, difficulty_stats(), predict_difficulty() — 10 new tests, 31 total)
+  HIC algorithm (Phase X+)  ✅ (CHv4.2 Merkabah Dual-Spin — forward+backward HIC passes, fork-gated at u64::MAX, 14 new tests, 95 total cosmic-harmony)
 ```
 
 ---

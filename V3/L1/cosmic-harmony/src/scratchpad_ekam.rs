@@ -162,6 +162,52 @@ fn merkabah_backward_passes_ekam(pad: &mut [u8], seed: &[u8; 64]) {
 }
 
 // ============================================================================
+// CHv4.2 MERKABAH DUAL-SPIN — Forward + Backward HIC passes
+// ============================================================================
+
+/// Forward HIC-enriched passes — ascending Sefirot (Malkuth → Kether).
+///
+/// Mirrors `merkabah_backward_passes_ekam` but iterates forward, indexing
+/// HIC in ascending order.  Together the two directions form the Merkabah
+/// dual-spin (counter-rotating wheels).
+fn merkabah_forward_passes_ekam(pad: &mut [u8], seed: &[u8; 64]) {
+    let blocks = pad.len() / BLOCK_SIZE;
+
+    for pass in 0..BACKWARD_PASSES {
+        for b in 0..blocks {
+            let prev_b = if b == 0 { blocks - 1 } else { b - 1 };
+            let hic_idx = b % KEY_ROUNDS;
+
+            let cur_off = b * BLOCK_SIZE;
+            let prev_off = prev_b * BLOCK_SIZE;
+
+            let mut hasher = blake3::Hasher::new();
+            hasher.update(&pad[cur_off..cur_off + BLOCK_SIZE]);
+            hasher.update(&pad[prev_off..prev_off + BLOCK_SIZE]);
+            hasher.update(seed);
+            hasher.update(&HIC[hic_idx].to_le_bytes());
+            hasher.update(&(pass as u64).to_le_bytes());
+            hasher.update(&(b as u64).to_le_bytes());
+            let mut mixed = [0u8; BLOCK_SIZE];
+            hasher.finalize_xof().fill(&mut mixed);
+
+            xor_block_in_place(&mut pad[cur_off..cur_off + BLOCK_SIZE], &mixed);
+        }
+    }
+}
+
+/// CHv4.2 Merkabah Dual-Spin — interleaved forward + backward HIC passes.
+///
+/// Each iteration performs one forward pass (ascending Sefirot) followed by
+/// one backward pass (descending Sefirot), creating the counter-rotating
+/// wheel-within-wheel mixing pattern that maximizes diffusion of HIC
+/// constants across the full scratchpad.
+fn merkabah_dual_spin_ekam(pad: &mut [u8], seed: &[u8; 64]) {
+    merkabah_forward_passes_ekam(pad, seed);
+    merkabah_backward_passes_ekam(pad, seed);
+}
+
+// ============================================================================
 // RANDOM READ MIX — Preserved (Keccak-256 — crypto boundary)
 // ============================================================================
 
@@ -333,6 +379,50 @@ pub fn memory_hard_transform_ekam_light_v2(input: &[u8; 64]) -> Hash64 {
         init_scratchpad_ekam(input, pad);
         sequential_passes_ekam(pad, PASSES_V2);
         random_read_mix(input, pad, RANDOM_READS_V2)
+    })
+}
+
+// ============================================================================
+// PUBLIC API — CHv4.2 Merkabah Dual-Spin Transform (Phase X fork-gated)
+// ============================================================================
+
+/// Ekam Deeksha v3 — CHv4.2 full Merkabah Dual-Spin transform.
+///
+/// Extends v2 with the complete HIC pipeline:
+/// - Dual-spin Merkabah (forward + backward HIC-enriched passes)
+/// - Kabala phase (22 HIC-addressed dependent reads)
+/// - Brahma-jyoti finalization (22 rounds of SHA3-512 + HIC)
+///
+/// This is the Phase X+ algorithm, activated by `CHV42_DUAL_SPIN_FORK_HEIGHT`.
+///
+/// Pipeline:
+/// ```text
+/// Blake3 XOF init(seed → 256 KiB) →
+/// AES cascade 4 passes(256 KiB) →
+/// Merkabah Dual-Spin (forward + backward HIC passes) →
+/// Keccak-256 × 256 random reads →
+/// Kabala 22 HIC reads →
+/// Brahma-jyoti SHA3-512 finalize → Hash64
+/// ```
+pub fn memory_hard_transform_ekam_v3(input: &[u8; 64]) -> Hash64 {
+    with_huge_page_scratchpad(SCRATCHPAD_SIZE_V2, |pad| {
+        // Phase 1: Blake3 XOF init
+        init_scratchpad_ekam(input, pad);
+
+        // Phase 2: AES cascade forward/backward passes
+        sequential_passes_ekam(pad, PASSES_V2);
+
+        // Phase 3: CHv4.2 Merkabah Dual-Spin (forward + backward HIC passes)
+        merkabah_dual_spin_ekam(pad, input);
+
+        // Phase 4: Random read mix (Keccak-256 — preserved)
+        let mh_output = random_read_mix(input, pad, RANDOM_READS_V2);
+
+        // Phase 5: Kabala phase — 22 HIC reads (preserved)
+        let kabala_state = kabala_phase(pad, &mh_output.data);
+
+        // Phase 6: Brahma-jyoti finalize (SHA3-512 — preserved)
+        brahma_jyoti_finalize(&kabala_state)
     })
 }
 
@@ -510,5 +600,62 @@ mod tests {
         let input = [42u8; 64];
         let result = memory_hard_transform_ekam_v2(&input);
         assert!(result.data.iter().any(|&b| b != 0), "v2 output must not be all zeros");
+    }
+
+    // ================================================================
+    // CHv4.2 Merkabah Dual-Spin (v3) tests
+    // ================================================================
+
+    #[test]
+    fn test_v3_deterministic() {
+        let input = [7u8; 64];
+        let a = memory_hard_transform_ekam_v3(&input);
+        let b = memory_hard_transform_ekam_v3(&input);
+        assert_eq!(a.data, b.data, "v3 dual-spin must be deterministic");
+    }
+
+    #[test]
+    fn test_v3_avalanche() {
+        let mut a_in = [0u8; 64];
+        let mut b_in = [0u8; 64];
+        a_in[0] = 0;
+        b_in[0] = 1;
+        let a = memory_hard_transform_ekam_v3(&a_in);
+        let b = memory_hard_transform_ekam_v3(&b_in);
+        assert_ne!(a.data, b.data, "v3 avalanche: different inputs → different outputs");
+    }
+
+    #[test]
+    fn test_v3_nonzero() {
+        let input = [42u8; 64];
+        let result = memory_hard_transform_ekam_v3(&input);
+        assert!(result.data.iter().any(|&b| b != 0), "v3 output must not be all zeros");
+    }
+
+    #[test]
+    fn test_v3_differs_from_v2_full() {
+        let input = [7u8; 64];
+        let v2 = memory_hard_transform_ekam_v2(&input);
+        let v3 = memory_hard_transform_ekam_v3(&input);
+        assert_ne!(v2.data, v3.data, "v3 dual-spin must differ from v2 (extra forward HIC passes)");
+    }
+
+    #[test]
+    fn test_v3_differs_from_v2_light() {
+        let input = [7u8; 64];
+        let v2l = memory_hard_transform_ekam_light_v2(&input);
+        let v3 = memory_hard_transform_ekam_v3(&input);
+        assert_ne!(v2l.data, v3.data, "v3 must differ from v2 light");
+    }
+
+    #[test]
+    fn test_dual_spin_differs_from_backward_only() {
+        // Verify the forward passes actually change the result compared to
+        // backward-only (v2 full uses backward only; v3 uses dual-spin).
+        let input = [99u8; 64];
+        let v2_full = memory_hard_transform_ekam_v2(&input);
+        let v3_full = memory_hard_transform_ekam_v3(&input);
+        assert_ne!(v2_full.data, v3_full.data,
+            "Dual-spin must produce different output from backward-only Merkabah");
     }
 }
