@@ -458,7 +458,7 @@ fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{:02x}", byte)).collect()
 }
 
-fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N], String> {
+pub fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N], String> {
     let normalized = raw.trim().trim_start_matches("0x");
     if normalized.len() != N * 2 {
         return Err(format!("{label} must be exactly {} hex chars", N * 2));
