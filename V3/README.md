@@ -73,6 +73,7 @@ Out of scope for the bootstrap:
 - **Node metrics HTTP server (Phase 23 partial):** `serve_node_metrics()` on `ZION_METRICS_BIND` (default `0.0.0.0:9115`) — Prometheus text exposition at `/metrics` (chain_height, mempool_size, peer_count, sync_status, blocks_accepted, blocks_rejected, template_height), JSON health at `/health`
 - **Config profiles (Sprint 4 A4):** `ZION_PROFILE` env var — pre-set sensible defaults for `pool`, `solo`, `benchmark`/`bench`, `dual` profiles; explicit env vars always override profile defaults
 - **V3 CI/CD (Sprint 4 E2-E3):** `.github/workflows/v3-ci.yml` (test, clippy, fmt, audit scoped to V3/**), `.github/workflows/v3-release.yml` (v3* tags → linux+macOS binaries + Docker images + GitHub release)
+- **Sprint 5 pre-launch (B4+F1+G1-G2):** Pool test coverage expanded to 73 tests (wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output validation); security checklist completed (`V3/docs/SECURITY_CHECKLIST.md`); public mining guide (`V3/docs/MINING_GUIDE.md`) and node operator guide (`V3/docs/NODE_OPERATOR_GUIDE.md`) published
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation

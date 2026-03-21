@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-07-18 (Phase 23 complete)
+Status date: 2026-03-21 (Sprint 5 complete)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -190,6 +190,7 @@ This roadmap follows the release progression already defined in the repository d
 - **Phase 22b: Pool active-session metrics — `AtomicU64` session counter with RAII `SessionGuard` (lock-free inc on connect, auto-dec on thread exit), `snapshot_json_ext()` adds `active_sessions` + `uptime_s` to JSON, `snapshot_prometheus_ext()` adds `zion_pool_active_sessions` gauge + `zion_pool_uptime_seconds` counter to Prometheus output, website `getPoolStats()` maps `active_sessions` → dashboard `miners.active`**
 - **Phase 22: Docker testnet deployment & P2P fix — complete Docker compose rewrite for env-var config (V3 binaries use `from_env()` exclusively, CLI args ignored), raw TCP JSON-RPC health checks on port 8332, `netcat-openbsd` in Dockerfiles replacing curl, ZION_NODE_STATE_PATH must be file path not directory, pool/miner loop_count=4294967295 for continuous operation, nonce_count tuned (500K), job TTL 180s. P2P bug fix: moved duplicate block check before `validate_peer_block()` in `import_peer_block()` to prevent spurious difficulty mismatch errors when seeds re-announce blocks (LWMA window already advanced). Deployed to 91.98.122.165: 7-service stack, chain height 40+, 100% share acceptance, zero P2P errors. Commits: 98fa4b5, f2ca370.**
 - **Sprint 4 (Upgrade Plan): config profiles (pool/solo/benchmark/dual via `ZION_PROFILE`), enhanced PowerShell dashboard (PPLNS panel + miner fleet + log tail), V3 CI/CD (`v3-ci.yml` + `v3-release.yml`). Miner 59 tests, pool 37 tests = 96 miner+pool tests. Commit: ab7b55d.**
+- **Sprint 5 (Upgrade Plan — pre-launch): Pool test coverage expanded to 73 tests (wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output). Security checklist completed (`SECURITY_CHECKLIST.md`). Public mining guide (`MINING_GUIDE.md`) and node operator guide (`NODE_OPERATOR_GUIDE.md`) published. Total: 393 core + 73 pool + 59 miner + 81 cosmic-harmony = 606 tests, 0 failures.**
 - **Phase 23: Grafana + Prometheus monitoring stack — Node metrics HTTP server (`serve_node_metrics()` on ZION_METRICS_BIND=:9115, Prometheus /metrics + JSON /health), Prometheus scrape target alignment (`:8444` → `:9115`), alert rules rewritten to match actual V3 metric names (`zion_pool_*`, `zion_*`), Docker compose updated with port 9115 exposure + explicit `name: zion-net` network, Grafana provisioning with 22-panel V3 dashboard (pool overview, shares timeseries, routing groups, PPLNS window, core node stats), hardcoded Grafana credential removed. Full 5-service monitoring stack deployed: Prometheus, Grafana, node-exporter, redis-exporter, alertmanager. All local Prometheus targets scraping, Grafana dashboard live with real-time V3 data.**
 
 ### Not Done Yet
@@ -214,7 +215,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 393 core + 37 pool (13 lib + 13 PPLNS + 11 server) + 59 miner + 81 cosmic-harmony = 570 pass, 0 fail |
+| Tests | ~200+ | 393 core + 73 pool (31 lib + 13 PPLNS + 29 server) + 59 miner + 81 cosmic-harmony = 606 pass, 0 fail |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |

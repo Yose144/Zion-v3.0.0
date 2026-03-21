@@ -1742,6 +1742,246 @@ mod tests {
         assert_eq!(scheduler.assign_auto_group(), SessionGroup::Revenue);
         assert_eq!(scheduler.assign_auto_group(), SessionGroup::Ncl);
     }
+
+    // ── Sprint 5 B4: session group resolution edge cases ───────────────
+
+    #[test]
+    fn extract_group_hint_from_worker_name() {
+        assert_eq!(extract_group_hint("rig-g=revenue-01"), Some(SessionGroup::Revenue));
+        assert_eq!(extract_group_hint("rig-group=ncl"), Some(SessionGroup::Ncl));
+        assert_eq!(extract_group_hint("rig-g=zion"), Some(SessionGroup::Zion));
+        assert_eq!(extract_group_hint("rig-g=auto"), Some(SessionGroup::Auto));
+        assert_eq!(extract_group_hint("rig-plain"), None);
+    }
+
+    #[test]
+    fn extract_group_hint_case_insensitive() {
+        assert_eq!(extract_group_hint("G=REVENUE"), Some(SessionGroup::Revenue));
+        assert_eq!(extract_group_hint("GROUP=NCL"), Some(SessionGroup::Ncl));
+        assert_eq!(extract_group_hint("g=Zion"), Some(SessionGroup::Zion));
+    }
+
+    #[test]
+    fn resolve_session_group_explicit_hint_overrides_backend() {
+        let config = ServerConfig {
+            bind_addr: "127.0.0.1:0".to_string(),
+            accept_limit: Some(1),
+            node_rpc_addr: None,
+            loop_count: 1,
+            job_ttl_ms: 15_000,
+            start_nonce: 1,
+            nonce_count: 64,
+            nonce_stride: 64,
+            timestamp: 1,
+            target: DifficultyTarget::MAX,
+            revenue_source: RevenueSource::Zion,
+            revenue_value_usd: 1.25,
+            user_default_group: SessionGroup::Zion,
+            backend_miner_ids: vec!["backend-miner-1".to_string()],
+            backend_worker_hints: vec!["backend".to_string()],
+            routing_log_every: 0,
+            routing_metrics_bind: None,
+            max_sessions_per_ip: 0,
+        };
+
+        // Even though miner_id is in backend list, explicit hint wins
+        let group = resolve_session_group("backend-miner-1", "rig-g=ncl", &config);
+        assert_eq!(group, SessionGroup::Ncl);
+    }
+
+    // ── Sprint 5 B4: routing stats edge cases ──────────────────────────
+
+    #[test]
+    fn routing_stats_empty_state() {
+        let stats = RoutingStats::new(10);
+        assert_eq!(stats.total_submits, 0);
+        assert_eq!(stats.total_accepted, 0);
+        let line = stats.snapshot_line();
+        assert!(line.contains("submits=0"));
+        assert!(line.contains("accepted=0"));
+    }
+
+    #[test]
+    fn routing_stats_prometheus_format() {
+        let mut stats = RoutingStats::new(0);
+        stats.record(SessionGroup::Zion, RevenueSource::Zion, true);
+        stats.record(SessionGroup::Zion, RevenueSource::Zion, false);
+
+        let prom = stats.snapshot_prometheus();
+        assert!(prom.contains("zion_pool_submits_total 2"));
+        assert!(prom.contains("zion_pool_accepted_total 1"));
+        assert!(prom.contains("zion_pool_rejected_total 1"));
+        assert!(prom.contains("zion_pool_accept_rate_pct 50.00"));
+        assert!(prom.contains("zion_pool_group_submits{group=\"zion\"} 2"));
+    }
+
+    #[test]
+    fn routing_stats_prometheus_ext_includes_sessions_and_uptime() {
+        let stats = RoutingStats::new(0);
+        let prom = stats.snapshot_prometheus_ext(5, 120);
+        assert!(prom.contains("zion_pool_active_sessions 5"));
+        assert!(prom.contains("zion_pool_uptime_seconds 120"));
+    }
+
+    #[test]
+    fn routing_stats_json_ext_includes_sessions_and_uptime() {
+        let stats = RoutingStats::new(0);
+        let json = stats.snapshot_json_ext(3, 60);
+        assert!(json.contains("\"active_sessions\":3"));
+        assert!(json.contains("\"uptime_s\":60"));
+    }
+
+    #[test]
+    fn routing_stats_log_interval_triggers_correctly() {
+        let mut stats = RoutingStats::new(3);
+        // First two should not trigger
+        assert!(!stats.record(SessionGroup::Zion, RevenueSource::Zion, true));
+        assert!(!stats.record(SessionGroup::Zion, RevenueSource::Zion, true));
+        // Third should trigger
+        assert!(stats.record(SessionGroup::Zion, RevenueSource::Zion, true));
+        // Fourth should not
+        assert!(!stats.record(SessionGroup::Zion, RevenueSource::Zion, true));
+    }
+
+    // ── Sprint 5 B4: revenue scheduler edge cases ──────────────────────
+
+    #[test]
+    fn revenue_scheduler_single_lane_always_returns_same() {
+        let mut scheduler = RevenueScheduler {
+            lanes: vec![RevenueLane {
+                source: RevenueSource::Zion,
+                value_usd: 1.5,
+                weight: 100,
+            }],
+            total_weight: 100,
+            cursor: 0,
+            auto_assign_cursor: 0,
+            auto_assign_include_zion: false,
+            default_value_usd: 1.5,
+            multistream_enabled: false,
+        };
+
+        for _ in 0..10 {
+            let (src, val) = scheduler.next_lane();
+            assert_eq!(src, RevenueSource::Zion);
+            assert!((val - 1.5).abs() < f64::EPSILON);
+        }
+    }
+
+    #[test]
+    fn revenue_scheduler_cursor_wraps_around() {
+        let mut scheduler = RevenueScheduler {
+            lanes: vec![
+                RevenueLane { source: RevenueSource::Zion, value_usd: 1.0, weight: 1 },
+                RevenueLane { source: RevenueSource::Blake3External, value_usd: 2.0, weight: 1 },
+            ],
+            total_weight: 2,
+            cursor: 0,
+            auto_assign_cursor: 0,
+            auto_assign_include_zion: true,
+            default_value_usd: 1.0,
+            multistream_enabled: true,
+        };
+
+        let (s1, _) = scheduler.next_lane();
+        let (s2, _) = scheduler.next_lane();
+        let (s3, _) = scheduler.next_lane();
+        assert_eq!(s1, RevenueSource::Zion);
+        assert_eq!(s2, RevenueSource::Blake3External);
+        assert_eq!(s3, RevenueSource::Zion); // wraps
+    }
+
+    #[test]
+    fn revenue_scheduler_value_for_missing_source_returns_none() {
+        let scheduler = RevenueScheduler {
+            lanes: vec![RevenueLane {
+                source: RevenueSource::Zion,
+                value_usd: 1.0,
+                weight: 100,
+            }],
+            total_weight: 100,
+            cursor: 0,
+            auto_assign_cursor: 0,
+            auto_assign_include_zion: false,
+            default_value_usd: 1.0,
+            multistream_enabled: false,
+        };
+
+        assert!(scheduler.value_for_source(RevenueSource::Zion).is_some());
+        assert!(scheduler.value_for_source(RevenueSource::NclAi).is_none());
+    }
+
+    #[test]
+    fn describe_plan_includes_all_lanes() {
+        let scheduler = RevenueScheduler {
+            lanes: vec![
+                RevenueLane { source: RevenueSource::Zion, value_usd: 1.0, weight: 50 },
+                RevenueLane { source: RevenueSource::Blake3External, value_usd: 2.0, weight: 25 },
+                RevenueLane { source: RevenueSource::NclAi, value_usd: 3.0, weight: 25 },
+            ],
+            total_weight: 100,
+            cursor: 0,
+            auto_assign_cursor: 0,
+            auto_assign_include_zion: false,
+            default_value_usd: 1.0,
+            multistream_enabled: true,
+        };
+
+        let plan = scheduler.describe_plan();
+        assert!(plan.contains("zion:50%"));
+        assert!(plan.contains("blake3:25%"));
+        assert!(plan.contains("ncl:25%"));
+    }
+
+    // ── Sprint 5 B4: map_node_rejection coverage ───────────────────────
+
+    #[test]
+    fn map_node_rejection_classifies_reasons() {
+        assert_eq!(map_node_rejection(Some("stale template: expected 5")), ShareStatus::StaleJob);
+        assert_eq!(map_node_rejection(Some("header does not match")), ShareStatus::JobMismatch);
+        assert_eq!(map_node_rejection(Some("low difficulty hash")), ShareStatus::RejectedLowDifficulty);
+        assert_eq!(map_node_rejection(Some("unknown error")), ShareStatus::UpstreamRejected);
+        assert_eq!(map_node_rejection(None), ShareStatus::UpstreamRejected);
+    }
+
+    // ── Sprint 5 B4: parse helpers ─────────────────────────────────────
+
+    #[test]
+    fn parse_fixed_hex_rejects_wrong_length() {
+        assert!(parse_fixed_hex::<32>("aabb", "test").is_err());
+    }
+
+    #[test]
+    fn parse_fixed_hex_accepts_valid_input() {
+        let hex = "ff".repeat(32);
+        let bytes = parse_fixed_hex::<32>(&hex, "test").unwrap();
+        assert_eq!(bytes, [0xff; 32]);
+    }
+
+    #[test]
+    fn parse_hash_hex_validates_32_bytes() {
+        assert!(parse_hash_hex("aabb").is_err());
+        let valid = "00".repeat(32);
+        assert!(parse_hash_hex(&valid).is_ok());
+    }
+
+    #[test]
+    fn session_group_name_covers_all_variants() {
+        assert_eq!(session_group_name(SessionGroup::Zion), "zion");
+        assert_eq!(session_group_name(SessionGroup::Revenue), "revenue");
+        assert_eq!(session_group_name(SessionGroup::Ncl), "ncl");
+        assert_eq!(session_group_name(SessionGroup::Auto), "auto");
+    }
+
+    #[test]
+    fn revenue_source_name_covers_all_variants() {
+        assert_eq!(revenue_source_name(RevenueSource::Zion), "zion");
+        assert_eq!(revenue_source_name(RevenueSource::KeccakBonus), "keccak");
+        assert_eq!(revenue_source_name(RevenueSource::Sha3Bonus), "sha3");
+        assert_eq!(revenue_source_name(RevenueSource::ProfitSwitch), "profit");
+        assert_eq!(revenue_source_name(RevenueSource::Blake3External), "blake3");
+        assert_eq!(revenue_source_name(RevenueSource::NclAi), "ncl");
+    }
 }
 
 fn parse_optional_env_u32(key: &str) -> Result<Option<u32>> {
