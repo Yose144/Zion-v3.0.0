@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use std::collections::{HashSet, VecDeque};
+use std::fmt::Write as FmtWrite;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{IpAddr, TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
@@ -106,6 +107,17 @@ fn main() -> Result<()> {
         .context("failed to bind P2P listener")?;
     let rpc_listener = TcpListener::bind(config.node_config.rpc_bind.address())
         .context("failed to bind RPC listener")?;
+
+    // ── Metrics HTTP server ────────────────────────────────────────────
+    let metrics_bind = std::env::var("ZION_METRICS_BIND")
+        .unwrap_or_else(|_| "0.0.0.0:9115".to_string());
+    println!("metrics_bind={metrics_bind}");
+    let metrics_runtime = Arc::clone(&runtime);
+    let _metrics_thread = thread::spawn(move || {
+        if let Err(e) = serve_node_metrics(&metrics_bind, metrics_runtime) {
+            eprintln!("metrics_server_err={e}");
+        }
+    });
 
     // ── Outbound peer thread ───────────────────────────────────────────
     let ob_runtime = Arc::clone(&runtime);
@@ -939,4 +951,78 @@ fn epoch_secs() -> u64 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs()
+}
+
+// ── Metrics HTTP server ────────────────────────────────────────────────
+// Serves Prometheus text exposition at /metrics and JSON health at /health.
+// Reads NodeRuntime::status() on each request — no background thread needed.
+
+fn serve_node_metrics(bind_addr: &str, runtime: Arc<Mutex<NodeRuntime>>) -> Result<()> {
+    let listener = TcpListener::bind(bind_addr)
+        .with_context(|| format!("failed to bind metrics listener on {bind_addr}"))?;
+
+    for incoming in listener.incoming() {
+        let mut stream = match incoming {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("metrics_accept_err={e}");
+                continue;
+            }
+        };
+
+        let mut reader = BufReader::new(&stream);
+        let mut request_line = String::new();
+        if reader.read_line(&mut request_line).is_err() {
+            continue;
+        }
+        let path = request_line.split_whitespace().nth(1).unwrap_or("/metrics");
+
+        let status = runtime.lock().expect("runtime lock poisoned").status();
+        let peer_count = status.known_peers.len() as i64;
+
+        let (code, content_type, body) = match path {
+            "/health" => {
+                let body = format!(
+                    r#"{{"status":"ok","chain_height":{},"peer_count":{},"mempool_size":{}}}"#,
+                    status.chain_height, peer_count, status.mempool_transactions,
+                );
+                ("200 OK", "application/json", body)
+            }
+            "/metrics" | _ => {
+                let mut out = String::with_capacity(2048);
+                let _ = writeln!(out, "# HELP zion_chain_height Current chain tip height.");
+                let _ = writeln!(out, "# TYPE zion_chain_height gauge");
+                let _ = writeln!(out, "zion_chain_height {}", status.chain_height);
+                let _ = writeln!(out, "# HELP zion_mempool_size Number of transactions in mempool.");
+                let _ = writeln!(out, "# TYPE zion_mempool_size gauge");
+                let _ = writeln!(out, "zion_mempool_size {}", status.mempool_transactions);
+                let _ = writeln!(out, "# HELP zion_peer_count Total connected peers.");
+                let _ = writeln!(out, "# TYPE zion_peer_count gauge");
+                let _ = writeln!(out, "zion_peer_count {peer_count}");
+                let _ = writeln!(out, "# HELP zion_blocks_accepted_total Total blocks accepted.");
+                let _ = writeln!(out, "# TYPE zion_blocks_accepted_total gauge");
+                let _ = writeln!(out, "zion_blocks_accepted_total {}", status.accepted_blocks);
+                let _ = writeln!(out, "# HELP zion_template_height Active block template height.");
+                let _ = writeln!(out, "# TYPE zion_template_height gauge");
+                let _ = writeln!(out, "zion_template_height {}", status.active_template_height);
+                let _ = writeln!(out, "# HELP zion_template_txs Transactions in active template.");
+                let _ = writeln!(out, "# TYPE zion_template_txs gauge");
+                let _ = writeln!(out, "zion_template_txs {}", status.active_template_transactions);
+                let _ = writeln!(out, "# HELP zion_template_fees_zion Total fees in active template.");
+                let _ = writeln!(out, "# TYPE zion_template_fees_zion gauge");
+                let _ = writeln!(out, "zion_template_fees_zion {}", status.active_template_total_fees_zion);
+                ("200 OK", "text/plain; version=0.0.4", out)
+            }
+        };
+
+        let response = format!(
+            "HTTP/1.1 {code}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        if let Err(e) = stream.write_all(response.as_bytes()) {
+            eprintln!("metrics_write_err={e}");
+        }
+    }
+
+    Ok(())
 }
