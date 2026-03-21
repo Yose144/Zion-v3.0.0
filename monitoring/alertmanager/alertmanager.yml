@@ -75,39 +75,23 @@ inhibit_rules:
       - server
 
 # ── Receivers ────────────────────────────────────────────────────────────
+# NOTE: discord_configs requires Alertmanager ≥0.28 and real webhook URLs.
+# Env var substitution (${VAR}) is NOT supported by Alertmanager.
+# When Discord webhooks are ready, replace the placeholder URLs below
+# with actual webhook URLs and switch to discord_configs.
+#
+# To enable Discord alerts:
+# 1. Create webhooks in Discord (Server → Channel → Settings → Integrations)
+# 2. Replace webhook_url values with real URLs
+# 3. Switch from webhook_configs: [] to discord_configs blocks
+
 receivers:
   - name: "discord-ops"
-    discord_configs:
-      - webhook_url: "${DISCORD_WEBHOOK_OPS}"
-        title: '{{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} ZION Alert — {{ .GroupLabels.alertname }}'
-        message: |
-          **Server:** `{{ .CommonLabels.server }}`
-          **Severity:** {{ .CommonLabels.severity }}
-          **Alerts:** {{ len .Alerts }}
-
-          {{ range .Alerts -}}
-          › **{{ .Annotations.summary }}**
-          {{ .Annotations.description }}
-          _Started: {{ .StartsAt.Format "2006-01-02 15:04 UTC" }}_
-
-          {{ end -}}
-          [Alertmanager](http://77.42.31.72:9093) · [Grafana](http://77.42.31.72:3001)
-        send_resolved: true
+    # Null receiver — alerts are collected but not forwarded.
+    # Replace with discord_configs when webhook URLs are available.
+    webhook_configs: []
 
   - name: "discord-critical"
-    discord_configs:
-      - webhook_url: "${DISCORD_WEBHOOK_CRITICAL}"
-        title: '🚨 CRITICAL — {{ .GroupLabels.alertname }}'
-        message: |
-          **Server:** `{{ .CommonLabels.server }}`
-          **Alerts:** {{ len .Alerts }}
-
-          {{ range .Alerts -}}
-          › **{{ .Annotations.summary }}**
-          {{ .Annotations.description }}
-          _Started: {{ .StartsAt.Format "2006-01-02 15:04 UTC" }}_
-
-          {{ end -}}
-          **@here** — akce vyžadována
-          [Alertmanager](http://77.42.31.72:9093) · [Grafana](http://77.42.31.72:3001)
-        send_resolved: true
+    # Null receiver — alerts are collected but not forwarded.
+    # Replace with discord_configs when webhook URLs are available.
+    webhook_configs: []
