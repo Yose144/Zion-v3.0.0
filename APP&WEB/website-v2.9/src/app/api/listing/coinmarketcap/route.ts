@@ -3,10 +3,9 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import {
-  ATOMIC_UNITS_PER_ZION,
-  BLOCK_REWARD_ZION,
   TOTAL_SUPPLY_ZION,
 } from '@/lib/constants';
+import { resolveSupplySnapshot } from '@/lib/supply';
 
 export async function GET() {
   const rpc = getZionRpc();
@@ -29,14 +28,8 @@ export async function GET() {
       );
     }
 
-    const estimatedSupply = info.height * BLOCK_REWARD_ZION;
-    let circulating = estimatedSupply;
-    try {
-      const emission = await rpc.getCoinbaseTxSum(0, info.height);
-      circulating = emission.emission_amount / ATOMIC_UNITS_PER_ZION;
-    } catch {
-      circulating = estimatedSupply;
-    }
+    const supply = await resolveSupplySnapshot(rpc, info.height);
+    const circulating = supply.circulatingSupply;
 
     const updatedAt = new Date().toISOString();
 

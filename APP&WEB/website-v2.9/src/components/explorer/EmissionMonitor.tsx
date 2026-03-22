@@ -17,6 +17,7 @@ interface EmissionData {
   yearly_emission: number;
   estimated_years_remaining: number;
   estimated_full_emission_date: string;
+  mining_horizon_label?: string;
   block_height: number;
   humanitarian: {
     rate: number;
@@ -99,7 +100,7 @@ export default function EmissionMonitor() {
         <div className="grid grid-cols-2 gap-3">
           {[
             { label: "Daily Emission", icon: TrendingUp, color: "text-emerald-400", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString()} blocks` },
-            { label: "Mining Duration", icon: Timer, color: "text-cyan-400", value: `~${Math.round(data.estimated_years_remaining)} years`, sub: `Full: ${data.estimated_full_emission_date}` },
+            { label: "Mining Duration", icon: Timer, color: "text-cyan-400", value: data.mining_horizon_label ?? `~${Math.round(data.estimated_years_remaining)} years`, sub: `Full: ${data.estimated_full_emission_date}` },
             { label: "Total Fees", icon: Flame, color: "text-amber-400", value: `${fmt(data.total_fees)} ZION`, sub: "Cumulative network fees" },
             { label: "Humanitarian Tithe", icon: Heart, color: "text-pink-400", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
           ].map((m) => (
