@@ -447,7 +447,6 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         last_job_id = job.job_id;
         let Some(solution) = parallel::parallel_scan_nonce_range(job, threads) else {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
-            rejected_iterations += 1;
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
             println!("iteration={}", iteration + 1);
@@ -455,6 +454,27 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
             println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
             println!("share_status=\"NoSolutionInWindow\"");
             println!("wire_job={job_line}");
+            let no_solution_message = PoolMessage::NoSolution {
+                job_id: job.job_id,
+                miner_id: config.miner_id.clone(),
+                worker_name: config.worker_name.clone(),
+                attempted_hashes: Some(job.nonce_count),
+                elapsed_ms: Some(job_started_at.elapsed().as_millis() as u64),
+            };
+            let no_solution_line = write_wire_message(&mut writer, &no_solution_message)?;
+            let (result_line_raw, result_message) = read_next_result(&mut reader)?;
+            last_result_line = Some(result_line_raw.clone());
+            println!("wire_no_solution={no_solution_line}");
+            println!("wire_result={result_line_raw}");
+            match result_message {
+                PoolMessage::Result { accepted, status } => {
+                    if accepted {
+                        accepted_iterations += 1;
+                    }
+                    println!("pool_status={status}");
+                }
+                other => return Err(anyhow!("expected result from pool, got {other:?}")),
+            }
             telemetry.maybe_print_status(
                 iteration + 1,
                 config.loop_count,
@@ -489,6 +509,8 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
             worker_name: config.worker_name.clone(),
             nonce: solution.candidate.nonce,
             hash_hex: hex(&solution.hash),
+            attempted_hashes: Some(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1),
+            elapsed_ms: Some(job_started_at.elapsed().as_millis() as u64),
         };
         let submit_line = write_wire_message(&mut writer, &submit_message)?;
         let (result_line_raw, result_message) = read_next_result(&mut reader)?;
