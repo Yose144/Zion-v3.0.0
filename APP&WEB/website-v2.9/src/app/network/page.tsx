@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import NetworkStatus from '@/components/NetworkStatus';
@@ -10,15 +10,19 @@ import {
   Activity,
   BookOpen,
   CheckCircle2,
+  Cpu,
   Copy,
+  Database,
   Download,
   ExternalLink,
   Globe,
   Globe2,
+  HardDrive,
   Layers,
   MapPin,
   Orbit,
   Radio,
+  RefreshCw,
   Rocket,
   Server,
   Shield,
@@ -57,6 +61,37 @@ const infraFeatures = [
     color: 'text-emerald-400',
     border: 'border-emerald-500/30',
     bg: 'bg-emerald-500/5',
+  },
+];
+
+const runtimePanels = [
+  {
+    icon: Radio,
+    label: 'Public Stratum',
+    value: SITE_POOL_PRIMARY,
+    detail: 'Current primary mining ingress on Zion2',
+    accent: 'text-zion-gold',
+  },
+  {
+    icon: Terminal,
+    label: 'RPC Endpoint',
+    value: SITE_PRIMARY_RPC_URL,
+    detail: 'Native Rust JSON-RPC for explorers and tooling',
+    accent: 'text-zion-cyan',
+  },
+  {
+    icon: Globe,
+    label: 'P2P Peer',
+    value: `${SITE_PRIMARY_HOST}:8334`,
+    detail: 'Public peer entry with internal seed quorum behind it',
+    accent: 'text-emerald-400',
+  },
+  {
+    icon: BookOpen,
+    label: 'Release Context',
+    value: SITE_RELEASE_LABEL,
+    detail: 'Current live topology with archived 2.9.8 rollout retained in docs',
+    accent: 'text-zion-purple',
   },
 ];
 
@@ -106,8 +141,100 @@ const networkFacts = [
   { text: 'Geo-distributed public topology currently archived', done: false },
 ];
 
+interface MonitoringSnapshot {
+  chainHeight: number | null;
+  coreUp: number | null;
+  poolUp: number | null;
+  poolSessions: number | null;
+  poolAcceptRate: number | null;
+  poolUptime: number | null;
+  templateFees: number | null;
+  load1: number | null;
+  memAvailable: number | null;
+  memTotal: number | null;
+  diskAvailable: number | null;
+  diskTotal: number | null;
+}
+
+function fmtMetric(n: number | null | undefined, digits = 0) {
+  if (n == null) return '—';
+  return digits > 0 ? n.toFixed(digits) : n.toLocaleString('en-US');
+}
+
+function fmtPct(n: number | null | undefined, digits = 1) {
+  if (n == null) return '—';
+  return `${n.toFixed(digits)}%`;
+}
+
+function fmtBytes(bytes: number | null | undefined) {
+  if (bytes == null) return '—';
+  if (bytes >= 1e12) return `${(bytes / 1e12).toFixed(1)} TB`;
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+function fmtUptime(secs: number | null | undefined) {
+  if (!secs) return '—';
+  const days = Math.floor(secs / 86400);
+  const hours = Math.floor((secs % 86400) / 3600);
+  const minutes = Math.floor((secs % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+async function metricValue(query: string): Promise<number | null> {
+  try {
+    const res = await fetch(`/api/metrics?query=${encodeURIComponent(query)}`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const first = json?.data?.result?.[0];
+    return first ? Number.parseFloat(first.value?.[1] ?? '') : null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
+  const values = await Promise.all([
+    metricValue('zion_chain_height'),
+    metricValue('up{job="zion-core-helsinki"}'),
+    metricValue('up{job="zion-pool-helsinki"}'),
+    metricValue('zion_pool_active_sessions'),
+    metricValue('zion_pool_accept_rate_pct'),
+    metricValue('zion_pool_uptime_seconds'),
+    metricValue('zion_template_fees_zion'),
+    metricValue('node_load1'),
+    metricValue('node_memory_MemAvailable_bytes'),
+    metricValue('node_memory_MemTotal_bytes'),
+    metricValue('node_filesystem_avail_bytes{mountpoint="/"}'),
+    metricValue('node_filesystem_size_bytes{mountpoint="/"}'),
+  ]);
+
+  return {
+    chainHeight: values[0],
+    coreUp: values[1],
+    poolUp: values[2],
+    poolSessions: values[3],
+    poolAcceptRate: values[4],
+    poolUptime: values[5],
+    templateFees: values[6],
+    load1: values[7],
+    memAvailable: values[8],
+    memTotal: values[9],
+    diskAvailable: values[10],
+    diskTotal: values[11],
+  };
+}
+
 export default function NetworkPage() {
   const [copied, setCopied] = useState<string | null>(null);
+  const [monitoring, setMonitoring] = useState<MonitoringSnapshot | null>(null);
+  const [monitoringUpdatedAt, setMonitoringUpdatedAt] = useState<Date | null>(null);
   const factsDone = networkFacts.filter((f) => f.done).length;
   const factsTotal = networkFacts.length;
 
@@ -121,6 +248,25 @@ export default function NetworkPage() {
   const xmrigConnect = `./xmrig -o stratum+tcp://${primaryPool} -u YOUR_ZION_ADDRESS -p x`;
   const healthCurl = 'curl -s https://www.zionterranova.com/api/health';
   const networkCurl = 'curl -s https://www.zionterranova.com/api/network';
+
+  useEffect(() => {
+    let active = true;
+
+    const refresh = async () => {
+      const next = await fetchMonitoringSnapshot();
+      if (!active) return;
+      setMonitoring(next);
+      setMonitoringUpdatedAt(new Date());
+    };
+
+    refresh();
+    const interval = setInterval(refresh, 30000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -179,61 +325,40 @@ export default function NetworkPage() {
           </div>
         </motion.section>
 
-        {/* ═══════ OPERATOR TOOLKIT ═══════ */}
+        {/* ═══════ RUNTIME SNAPSHOT ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12 }}
+          transition={{ delay: 0.04 }}
           className="rounded-4xl border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Operator Toolkit</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Runtime Snapshot</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Terminal className="h-7 w-7 text-zion-cyan" />
-              Network Ops Pro
+              <Orbit className="h-7 w-7 text-zion-cyan" />
+              Public Network Surface
             </h2>
-            <p className="text-sm text-gray-400">Failover templates, health probes, and machine-readable monitoring endpoints.</p>
+            <p className="text-sm text-gray-400">The current live footprint distilled to the endpoints and roles operators actually need first.</p>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-3">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Primary Mining</p>
-              <p className="text-sm text-gray-300 mb-3">Current public stratum endpoint on Zion2. Historical multi-host failover belongs to archived topology docs.</p>
-              <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{xmrigConnect}</code>
-              <button onClick={() => copyText('xmrig-connect', xmrigConnect)} className="mt-3 inline-flex items-center gap-2 text-xs text-zion-cyan hover:text-white transition">
-                <Copy className="h-3.5 w-3.5" /> {copied === 'xmrig-connect' ? 'Copied' : 'Copy command'}
-              </button>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Health Probes</p>
-              <div className="space-y-2">
-                <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{healthCurl}</code>
-                <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{networkCurl}</code>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => copyText('health-curl', healthCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'health-curl' ? 'Copied' : 'Copy health'}</button>
-                <button onClick={() => copyText('network-curl', networkCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'network-curl' ? 'Copied' : 'Copy network'}</button>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Export & Docs</p>
-              <div className="space-y-2.5 text-sm">
-                <a href="/api/network" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
-                  <span className="font-mono text-xs text-gray-200">/api/network</span>
-                  <Download className="h-3.5 w-3.5 text-zion-gold" />
-                </a>
-                <a href="/api/health" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
-                  <span className="font-mono text-xs text-gray-200">/api/health</span>
-                  <Download className="h-3.5 w-3.5 text-zion-gold" />
-                </a>
-                <Link href="/api-reference" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
-                  <span className="text-gray-200">API Reference</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
-                </Link>
-              </div>
-            </div>
+          <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-4">
+            {runtimePanels.map((panel, idx) => (
+              <motion.div
+                key={panel.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.06 }}
+                className="rounded-3xl border border-white/10 bg-white/5 p-6"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <panel.icon className={`h-5 w-5 ${panel.accent}`} />
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{panel.label}</p>
+                </div>
+                <p className="text-base font-semibold text-white break-all">{panel.value}</p>
+                <p className="mt-2 text-sm text-gray-400">{panel.detail}</p>
+              </motion.div>
+            ))}
           </div>
         </motion.section>
 
@@ -315,11 +440,92 @@ export default function NetworkPage() {
           <NetworkStatus className="max-w-none" />
         </motion.section>
 
-        {/* ═══════ NETWORK MAP + POOL FINDER ═══════ */}
+        {/* ═══════ MONITORING SNAPSHOT ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.14 }}
+          className="rounded-4xl border border-white/10 bg-black/40 p-8"
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Observability</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Database className="h-7 w-7 text-zion-gold" />
+              Monitoring Snapshot
+            </h2>
+            <p className="text-sm text-gray-400">Fast operational signals mirrored from the monitoring stack so the public network page carries both topology and machine health at a glance.</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricPanel
+              label="Core Target"
+              value={monitoring?.coreUp === 1 ? 'UP' : monitoring?.coreUp === 0 ? 'DOWN' : '—'}
+              detail={`Height ${fmtMetric(monitoring?.chainHeight)}`}
+              accent={monitoring?.coreUp === 1 ? 'text-emerald-400' : 'text-red-400'}
+              icon={<Server className="h-5 w-5" />}
+            />
+            <MetricPanel
+              label="Pool Target"
+              value={monitoring?.poolUp === 1 ? 'UP' : monitoring?.poolUp === 0 ? 'DOWN' : '—'}
+              detail={`${fmtMetric(monitoring?.poolSessions)} active sessions`}
+              accent={monitoring?.poolUp === 1 ? 'text-emerald-400' : 'text-red-400'}
+              icon={<Radio className="h-5 w-5" />}
+            />
+            <MetricPanel
+              label="Accept Rate"
+              value={fmtPct(monitoring?.poolAcceptRate)}
+              detail={`Uptime ${fmtUptime(monitoring?.poolUptime)}`}
+              accent="text-zion-cyan"
+              icon={<Activity className="h-5 w-5" />}
+            />
+            <MetricPanel
+              label="Template Fees"
+              value={monitoring?.templateFees != null ? `${monitoring.templateFees.toFixed(4)} ZION` : '—'}
+              detail="Current fee envelope from the active block template"
+              accent="text-zion-gold"
+              icon={<Sparkles className="h-5 w-5" />}
+            />
+            <MetricPanel
+              label="Load Avg 1m"
+              value={fmtMetric(monitoring?.load1, 2)}
+              detail="Primary host pressure"
+              accent="text-zion-purple"
+              icon={<Cpu className="h-5 w-5" />}
+            />
+            <MetricPanel
+              label="Memory Free"
+              value={fmtBytes(monitoring?.memAvailable)}
+              detail={monitoring?.memTotal != null ? `${fmtBytes(monitoring?.memTotal)} total` : 'Node exporter memory'}
+              accent="text-emerald-400"
+              icon={<Database className="h-5 w-5" />}
+            />
+            <MetricPanel
+              label="Disk Free"
+              value={fmtBytes(monitoring?.diskAvailable)}
+              detail={monitoring?.diskTotal != null ? `${fmtBytes(monitoring?.diskTotal)} total` : 'Root filesystem'}
+              accent="text-blue-400"
+              icon={<HardDrive className="h-5 w-5" />}
+            />
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 flex flex-col justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">Deep Drilldown</p>
+                <p className="text-sm text-gray-300">For sparklines, raw Prometheus-backed counters, and stack inventory, continue to the full monitoring dashboard.</p>
+              </div>
+              <div className="mt-5 flex items-center justify-between text-xs text-gray-500 gap-3">
+                <span className="inline-flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5 text-zion-cyan" /> {monitoringUpdatedAt ? `Updated ${monitoringUpdatedAt.toLocaleTimeString()}` : 'Loading live data'}</span>
+                <Link href="/monitoring" className="text-zion-cyan hover:text-white transition-colors inline-flex items-center gap-1.5 shrink-0">
+                  Full monitoring <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ NETWORK MAP + POOL FINDER ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Geography</p>
@@ -341,7 +547,7 @@ export default function NetworkPage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18 }}
+          transition={{ delay: 0.22 }}
           className="rounded-4xl border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-8">
@@ -381,7 +587,7 @@ export default function NetworkPage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.22 }}
+          transition={{ delay: 0.26 }}
           className="rounded-4xl border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
@@ -410,11 +616,73 @@ export default function NetworkPage() {
           </div>
         </motion.section>
 
+        {/* ═══════ OPERATOR TOOLKIT ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="rounded-4xl border border-white/10 bg-black/40 p-8"
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Operator Toolkit</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Terminal className="h-7 w-7 text-zion-cyan" />
+              Network Ops Pro
+            </h2>
+            <p className="text-sm text-gray-400">Failover templates, health probes, and machine-readable endpoints for operators who need to work below the public dashboard layer.</p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Primary Mining</p>
+              <p className="text-sm text-gray-300 mb-3">Current public stratum endpoint on Zion2. Historical multi-host failover belongs to archived topology docs.</p>
+              <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{xmrigConnect}</code>
+              <button onClick={() => copyText('xmrig-connect', xmrigConnect)} className="mt-3 inline-flex items-center gap-2 text-xs text-zion-cyan hover:text-white transition">
+                <Copy className="h-3.5 w-3.5" /> {copied === 'xmrig-connect' ? 'Copied' : 'Copy command'}
+              </button>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Health Probes</p>
+              <div className="space-y-2">
+                <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{healthCurl}</code>
+                <code className="block rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-zion-gold break-all">{networkCurl}</code>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button onClick={() => copyText('health-curl', healthCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'health-curl' ? 'Copied' : 'Copy health'}</button>
+                <button onClick={() => copyText('network-curl', networkCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'network-curl' ? 'Copied' : 'Copy network'}</button>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Export & Docs</p>
+              <div className="space-y-2.5 text-sm">
+                <a href="/api/network" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
+                  <span className="font-mono text-xs text-gray-200">/api/network</span>
+                  <Download className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <a href="/api/health" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
+                  <span className="font-mono text-xs text-gray-200">/api/health</span>
+                  <Download className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <Link href="/monitoring" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
+                  <span className="text-gray-200">Monitoring dashboard</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
+                </Link>
+                <Link href="/api-reference" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
+                  <span className="text-gray-200">API Reference</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* ═══════ CTA ═══════ */}
         <motion.section
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.26 }}
+          transition={{ delay: 0.34 }}
           className="rounded-4xl border border-emerald-400/30 bg-linear-to-r from-emerald-500/20 via-zion-cyan/10 to-emerald-500/20 p-10 text-center"
         >
           <Radio className="mx-auto h-12 w-12 text-emerald-400" />
@@ -455,6 +723,31 @@ export default function NetworkPage() {
           ZION TerraNova {SITE_RELEASE_LABEL} — P2P Network Pro · {SITE_NETWORK_TOPOLOGY} · Archived multi-host rollout preserved in docs
         </p>
       </div>
+    </div>
+  );
+}
+
+function MetricPanel({
+  label,
+  value,
+  detail,
+  accent,
+  icon,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  accent: string;
+  icon: ReactNode;
+}) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+      <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-black/40 ${accent}`}>
+        {icon}
+      </div>
+      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-gray-500">{label}</p>
+      <p className={`mt-2 text-2xl font-semibold ${accent}`}>{value}</p>
+      <p className="mt-2 text-sm text-gray-400">{detail}</p>
     </div>
   );
 }
