@@ -499,12 +499,12 @@ export default function PoolDashboard() {
                   <h3 className="text-xl font-semibold text-white mt-1">Submission Channels</h3>
                 </div>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
-                  <Signal className="h-3.5 w-3.5 text-zion-cyan" /> {fmtPct(data.routing.accept_rate_pct)} accepted
+                  <Signal className="h-3.5 w-3.5 text-zion-cyan" /> {fmtPct(data?.routing?.accept_rate_pct)} accepted
                 </span>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {(routingGroups.length > 0 ? routingGroups : Object.entries(data.routing.groups)).map(([name, group]) => {
+                {(routingGroups.length > 0 ? routingGroups : Object.entries(data?.routing?.groups ?? {})).map(([name, group]) => {
                   const groupRate = group.submits > 0 ? (group.accepted / group.submits) * 100 : 0;
                   return (
                     <div key={name} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
@@ -527,12 +527,12 @@ export default function PoolDashboard() {
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-gray-400">Window utilization</span>
-                    <span className="text-white font-mono">{fmtPct(data.pplns.window_pct)}</span>
+                    <span className="text-white font-mono">{fmtPct(data?.pplns?.window_pct)}</span>
                   </div>
                   <div className="h-3 rounded-full bg-white/5 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-linear-to-r from-zion-cyan via-zion-gold to-emerald-400"
-                      style={{ width: `${Math.max(0, Math.min(100, data.pplns.window_pct ?? 0))}%` }}
+                      style={{ width: `${Math.max(0, Math.min(100, data?.pplns?.window_pct ?? 0))}%` }}
                     />
                   </div>
                 </div>
@@ -540,20 +540,20 @@ export default function PoolDashboard() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
                     <p className="text-xs text-gray-500">Registered miners</p>
-                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data.pplns.registered_miners)}</p>
+                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.registered_miners)}</p>
                   </div>
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
                     <p className="text-xs text-gray-500">Payout rounds</p>
-                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data.pplns.payout_rounds)}</p>
+                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.payout_rounds)}</p>
                   </div>
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
                     <p className="text-xs text-gray-500">Total paid</p>
-                    <p className="mt-1 text-xl font-semibold text-white font-mono">{data.pplns.total_paid_zion.toFixed(4)}</p>
+                    <p className="mt-1 text-xl font-semibold text-white font-mono">{(data?.pplns?.total_paid_zion ?? 0).toFixed(4)}</p>
                     <p className="text-xs text-gray-500">ZION</p>
                   </div>
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
                     <p className="text-xs text-gray-500">Pool uptime</p>
-                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtUptime(data.runtime.pool_uptime_seconds)}</p>
+                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtUptime(data?.runtime?.pool_uptime_seconds)}</p>
                   </div>
                 </div>
 
@@ -561,7 +561,7 @@ export default function PoolDashboard() {
                   <div className="flex items-center justify-between gap-3">
                     <span>Telemetry status</span>
                     <span className="font-mono text-xs text-white">
-                      pool {data.runtime.data_sources.pool_tcp ? 'on' : 'off'} · rpc {data.runtime.data_sources.core_rpc ? 'on' : 'off'} · prom {data.runtime.data_sources.prometheus ? 'on' : 'off'}
+                      pool {data?.runtime?.data_sources?.pool_tcp ? 'on' : 'off'} · rpc {data?.runtime?.data_sources?.core_rpc ? 'on' : 'off'} · prom {data?.runtime?.data_sources?.prometheus ? 'on' : 'off'}
                     </span>
                   </div>
                 </div>
