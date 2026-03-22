@@ -99,7 +99,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.pool
       args:
-        FEATURES: "native-ethash,native-autolykos,native-kheavyhash,testnet"
+        FEATURES: "testnet"
     image: zion-pool:2.9.8-testnet
     container_name: zion-pool
     restart: unless-stopped
@@ -116,6 +116,12 @@ services:
         condition: service_started
     environment:
       - RUST_LOG=info
+      - ZION_POOL_BIND=0.0.0.0:3333
+      - ZION_POOL_LOOP_COUNT=4294967295
+      - ZION_JOB_TTL_MS=180000
+      - ZION_NODE_RPC_ADDR=172.29.0.10:8332
+      - ZION_NONCE_COUNT=500000
+      - ZION_ROUTING_METRICS_BIND=0.0.0.0:8080
       - ZION_CORE_RPC=http://core:8444/jsonrpc
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       - ZION_REVENUE_CONFIG=/config/ch3_zion_only_settings.json

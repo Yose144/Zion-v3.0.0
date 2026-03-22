@@ -765,7 +765,7 @@ impl RoutingStats {
                 self.source_accepted[source_index(source)].saturating_add(1);
         }
 
-        self.log_every > 0 && self.total_submits.is_multiple_of(self.log_every)
+        self.log_every > 0 && self.total_submits % self.log_every == 0
     }
 
     fn snapshot_line(&self) -> String {
