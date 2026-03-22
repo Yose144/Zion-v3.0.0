@@ -475,26 +475,11 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
 
         let elapsed_ms = job_started_at.elapsed().as_millis() as u64;
         if ttl_guard_ms > 0 && elapsed_ms >= ttl_guard_ms {
-            // Skip likely-stale submit when local hashing is slower than pool TTL.
-            println!("iteration={}", iteration + 1);
-            println!("job_id={}", job.job_id);
-            println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
-            println!("found_nonce={}", solution.candidate.nonce);
-            println!("hash={}", hex(&solution.hash));
-            println!("share_status=\"LocalSkipLikelyStale\"");
-            println!("scan_elapsed_ms={elapsed_ms}");
-            println!("ttl_guard_ms={ttl_guard_ms}");
-            println!("wire_job={job_line}");
-            telemetry.record_local_skip_likely_stale();
-            telemetry.maybe_print_status(
-                iteration + 1,
-                config.loop_count,
-                accepted_iterations,
-                rejected_iterations,
-                attempted_hashes,
-                Some(remote_job_ttl_ms),
-            );
-            continue;
+            // Warn that local scan exceeded TTL guard, but submit anyway —
+            // the pool decides if the share is actually stale.  Skipping here
+            // causes a deadlock: pool blocks on read-submit while miner blocks
+            // on read-next-job, and nothing progresses.
+            println!("ttl_guard_warning scan_elapsed_ms={elapsed_ms} ttl_guard_ms={ttl_guard_ms} submitting_anyway=true");
         }
 
         let submit_started_at = Instant::now();
