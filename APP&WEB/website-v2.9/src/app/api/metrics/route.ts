@@ -19,6 +19,7 @@ const ALLOWED_PREFIXES = [
   'node_boot_time',
   'node_uname_info',
   'node_cpu_seconds',
+  'prometheus_',
   'redis_up',
   'redis_connected_clients',
   'redis_memory_',
