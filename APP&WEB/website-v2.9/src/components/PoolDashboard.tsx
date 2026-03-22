@@ -121,6 +121,7 @@ interface PoolData {
   runtime: {
     chain_height: number;
     difficulty: number;
+    network_hashrate?: number;
     pool_uptime_seconds: number;
     template_fees_zion: number;
     last_scrape_ts: number;
@@ -143,6 +144,11 @@ function fmtHash(h?: number): string {
   if (h >= 1e6) return `${(h / 1e6).toFixed(2)} MH/s`;
   if (h >= 1e3) return `${(h / 1e3).toFixed(2)} kH/s`;
   return `${h.toFixed(0)} H/s`;
+}
+
+function fmtHashOrPending(h?: number, fallback = 'Pending'): string {
+  if (!h || h <= 0) return fallback;
+  return fmtHash(h);
 }
 
 function fmtNum(n?: number): string {
@@ -327,7 +333,7 @@ export default function PoolDashboard() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 PPLNS rewards · 89% miner · 5% humanitarian · 5% Issobella fund.
-                Real-time pool metrics from the current public pool endpoint with auto-refresh every 15 seconds.
+                Operational telemetry from the public pool runtime with auto-refresh every 15 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -435,7 +441,7 @@ export default function PoolDashboard() {
             </div>
           ) : data ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label="Pool Hashrate" value={fmtHash(data.aggregate.hashrate)} sub={`24h avg: ${fmtHash(data.aggregate.hashrate_24h)}`} />
+              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label="Pool Hashrate" value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `24h avg: ${fmtHash(data.aggregate.hashrate_24h)}` : 'Live backend is not exporting hashrate yet'} />
               <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="Active Miners" value={String(data.aggregate.active_miners)} sub={`${data.aggregate.total_miners} total registered`} />
               <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label="Blocks Found" value={fmtNum(data.aggregate.blocks_found)} />
               <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label="Share Efficiency" value={`${data.aggregate.share_efficiency}%`} sub={`${fmtNum(data.aggregate.valid_shares)} valid`} />
@@ -445,7 +451,8 @@ export default function PoolDashboard() {
               <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label="Miner Share" value={`${data.fee.miner_share}%`} sub={`${data.fee.pool_fee}% fee`} />
               <StatCard icon={<HardHat className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={`${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`} />
               <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label="Total Paid" value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={`${fmtNum(data.pplns.payout_rounds)} payout rounds`} />
-              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label="Template Fees" value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={`Height ${fmtNum(data.runtime.chain_height)}`} />
+              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label="Network Hashrate" value={fmtHashOrPending(data.runtime.network_hashrate, 'Offline')} sub={`Height ${fmtNum(data.runtime.chain_height)}`} />
+              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label="Template Fees" value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={`Difficulty ${fmtDifficulty(data.runtime.difficulty)}`} />
               {data.servers.filter(s => s.stats?.blockchain?.connected).map(srv => (
                 <StatCard
                   key={srv.id}
@@ -564,6 +571,11 @@ export default function PoolDashboard() {
                       pool {data?.runtime?.data_sources?.pool_tcp ? 'on' : 'off'} · rpc {data?.runtime?.data_sources?.core_rpc ? 'on' : 'off'} · prom {data?.runtime?.data_sources?.prometheus ? 'on' : 'off'}
                     </span>
                   </div>
+                  {data.aggregate.hashrate <= 0 && (
+                    <p className="mt-2 text-xs text-zion-cyan/80">
+                      Pool hashrate is still unavailable on the live backend exporter, so the page prioritizes routing, PPLNS, and chain runtime health.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -710,7 +722,7 @@ export default function PoolDashboard() {
               <Users className="h-7 w-7 text-zion-cyan" />
               Active Miners ({visibleMiners.length})
             </h2>
-            <p className="text-sm text-gray-400">Public address directory is intentionally minimal; use miner search for full address-level detail.</p>
+            <p className="text-sm text-gray-400">Recent miner directory from the live pool backend. Use miner search for full address-level detail.</p>
             <div className="mt-1 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
               <button
                 onClick={() => setActiveOnly(true)}
@@ -768,7 +780,7 @@ export default function PoolDashboard() {
                     );
                   })}
                   {visibleMiners.length === 0 && (
-                    <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">Public miner directory is not exposed by the current pool API. Search by address above for individual stats.</td></tr>
+                    <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">Live backend is not exposing recent miner rows yet. Search by address above for individual stats.</td></tr>
                   )}
                 </tbody>
               </table>

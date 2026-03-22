@@ -7,7 +7,7 @@ import {
   MINER_SHARE_PCT,
   POOL_FEE_PCT,
 } from '@/lib/constants';
-import { SITE_PRIMARY_HOST } from '@/lib/site';
+import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
 const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://zion-prometheus:9090';
 
@@ -31,6 +31,23 @@ async function promQuery(query: string): Promise<PromResult[]> {
 
   const payload = await response.json();
   return payload?.data?.result ?? [];
+}
+
+async function fetchPoolApiJson<T = any>(path: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${SITE_PRIMARY_POOL_API_URL}${path}`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json() as T;
+  } catch {
+    return null;
+  }
 }
 
 function firstMetricValue(results: PromiseSettledResult<PromResult[]>[], index: number): number | null {
@@ -80,6 +97,8 @@ export async function GET() {
     info = await rpc.getInfo();
   } catch { /* chain unreachable */ }
 
+  const minersPayload = await fetchPoolApiJson<{ miners?: Array<{ address: string; last_share: number }> }>('/miners?limit=200');
+
   const promQueries = [
     'zion_chain_height',
     'zion_pool_active_sessions',
@@ -119,6 +138,7 @@ export async function GET() {
   const shareEfficiency = totalShares > 0 ? ((validShares / totalShares) * 100).toFixed(2) : '0';
   const pplnsWindowPct = pplnsWindowSize > 0 ? (pplnsWindowUsed / pplnsWindowSize) * 100 : null;
   const pplnsTotalPaidZion = pplnsTotalPaidFlowers / ATOMIC_UNITS_PER_ZION;
+  const networkHashrate = info?.difficulty ? info.difficulty / (info.target || 60) : 0;
 
   const routing = {
     submits_total: submitsTotal,
@@ -213,6 +233,7 @@ export async function GET() {
     runtime: {
       chain_height: chainHeight,
       difficulty: info?.difficulty ?? 0,
+      network_hashrate: networkHashrate,
       pool_uptime_seconds: poolUptimeSeconds,
       template_fees_zion: templateFeesZion,
       last_scrape_ts: Math.floor(Date.now() / 1000),
@@ -269,7 +290,13 @@ export async function GET() {
         },
       },
     }],
-    miners: [],
+    miners: Array.isArray(minersPayload?.miners)
+      ? minersPayload.miners.map((miner) => ({
+          address: miner.address,
+          last_share: miner.last_share,
+          server: 'primary',
+        }))
+      : [],
     recent_blocks: recentBlocks,
   });
 }
