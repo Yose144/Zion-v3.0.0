@@ -69,6 +69,7 @@ interface PrometheusMinerData {
   ok: boolean;
   has_metrics: boolean;
   scrape_ts: number;
+  source?: string;
   metrics: {
     hashrate: number;
     shares_valid: number;
@@ -520,7 +521,7 @@ export default function MinerDashboard({ address }: { address: string }) {
           </div>
         </motion.section>
 
-        {/* ═══════ PROMETHEUS METRICS INFO ═══════ */}
+        {/* ═══════ ADVANCED METRICS INFO ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -530,13 +531,13 @@ export default function MinerDashboard({ address }: { address: string }) {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Advanced</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Signal className="h-7 w-7 text-zion-cyan" />
-              Prometheus Metrics
+              Advanced Metrics
             </h2>
-            <p className="text-sm text-gray-400">Per-miner labeled metrics available for Grafana dashboards.</p>
+            <p className="text-sm text-gray-400">Best available miner telemetry from pool accounting and live runtime data.</p>
           </div>
           <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8">
             {!promMetrics ? (
-              <p className="text-sm text-gray-400">Loading Prometheus metrics...</p>
+              <p className="text-sm text-gray-400">Loading advanced miner metrics...</p>
             ) : (
               <>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -575,6 +576,9 @@ export default function MinerDashboard({ address }: { address: string }) {
                 <div className="mt-4 text-xs text-gray-500 space-y-1">
                   <p>
                     Last scrape: {promMetrics.scrape_ts > 0 ? timeAgo(promMetrics.scrape_ts) : "—"} · Updated every 15s
+                  </p>
+                  <p>
+                    Source: {promMetrics.source ?? 'runtime fallback'}
                   </p>
                   <p>
                     Endpoints: {promMetrics.servers.map((sv) => `${sv.server}:${sv.connected ? "ok" : "down"}`).join(" · ")}

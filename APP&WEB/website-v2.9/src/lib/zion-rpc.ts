@@ -19,6 +19,7 @@
 
 import * as net from 'net';
 import { getSeedNodesConfig, type SeedNodeConfig } from './network-config';
+import { SITE_PRIMARY_POOL_API_URL } from './site';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -337,6 +338,107 @@ class ZionRpcClient {
     throw new Error(`All RPC nodes failed: ${errors.join(' | ')}`);
   }
 
+  private async poolHttpGet<T = any>(path: string): Promise<T | null> {
+    try {
+      const response = await fetch(`${SITE_PRIMARY_POOL_API_URL}${path}`, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(4000),
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json() as T;
+    } catch {
+      return null;
+    }
+  }
+
+  private normalizePoolStats(payload: any): any | null {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+
+    if (payload.hashrate || payload.miners || payload.shares || payload.pool || payload.blockchain) {
+      return {
+        ok: payload.ok ?? true,
+        hashrate: {
+          pool: payload.hashrate?.pool ?? payload.hashrate?.pool_1h ?? payload.pool_hashrate ?? 0,
+          pool_1h: payload.hashrate?.pool_1h ?? payload.hashrate?.pool ?? payload.pool_hashrate ?? 0,
+          pool_24h: payload.hashrate?.pool_24h ?? payload.pool_hashrate_24h ?? 0,
+        },
+        miners: {
+          active: payload.miners?.active ?? 0,
+          total: payload.miners?.total ?? payload.miners?.active ?? 0,
+        },
+        shares: {
+          valid: payload.shares?.valid ?? 0,
+          invalid: payload.shares?.invalid ?? 0,
+        },
+        blocks: {
+          found: payload.blocks?.found ?? 0,
+          pending: payload.blocks?.pending ?? 0,
+        },
+        pool: payload.pool ?? null,
+        uptime_s: payload.pool?.uptime_secs ?? payload.uptime_s ?? 0,
+        routing: payload.routing ?? {
+          submits: payload.shares?.valid ?? 0,
+          accepted: payload.shares?.valid ?? 0,
+          rejected: payload.shares?.invalid ?? 0,
+          accept_rate_pct: 0,
+          groups: {},
+          sources: {},
+        },
+        pplns_window_size: payload.pplns_window_size ?? payload.pplns?.window_size ?? 0,
+        payouts: payload.payouts ?? {
+          pending_total_atomic: payload.pplns?.total_unpaid_flowers ?? 0,
+          pending_miners: 0,
+        },
+      };
+    }
+
+    if ('submits' in payload || 'accepted' in payload || 'active_sessions' in payload) {
+      return {
+        ok: true,
+        hashrate: { pool: 0, pool_1h: 0, pool_24h: 0 },
+        miners: {
+          active: payload.active_sessions ?? 0,
+          total: payload.pplns?.registered_miners ?? payload.active_sessions ?? 0,
+        },
+        shares: {
+          valid: payload.accepted ?? 0,
+          invalid: payload.rejected ?? 0,
+        },
+        blocks: { found: 0, pending: 0 },
+        pool: {
+          fee: 1,
+          humanitarian_tithe: 5,
+          issobella_fund: 5,
+          miner_share: 89,
+          version: '2.9.9',
+          uptime_secs: payload.uptime_s ?? 0,
+        },
+        uptime_s: payload.uptime_s ?? 0,
+        routing: {
+          submits: payload.submits ?? 0,
+          accepted: payload.accepted ?? 0,
+          rejected: payload.rejected ?? 0,
+          accept_rate_pct: payload.accept_rate_pct ?? 0,
+          groups: payload.groups ?? {},
+          sources: payload.sources ?? {},
+        },
+        pplns_window_size: payload.pplns?.window_size ?? 0,
+        payouts: {
+          pending_total_atomic: payload.pplns?.total_unpaid_flowers ?? 0,
+          pending_miners: 0,
+        },
+      };
+    }
+
+    return null;
+  }
+
   // ─── High-Level API Methods ──────────────────────────────────────────────
 
   /** Get network info by combining V3 getChainInfo + getNodeInfo + tip block + getPeerInfo */
@@ -521,6 +623,16 @@ class ZionRpcClient {
 
   /** Get pool routing statistics via TCP from the pool metrics port */
   async getPoolStats(): Promise<any> {
+    const httpStats = this.normalizePoolStats(await this.poolHttpGet('/stats'));
+    if (httpStats) {
+      return httpStats;
+    }
+
+    const httpPool = this.normalizePoolStats(await this.poolHttpGet('/pool'));
+    if (httpPool) {
+      return httpPool;
+    }
+
     const errors: string[] = [];
     for (const node of this.nodes) {
       if (!node.ports.pool_api || node.ports.pool_api === 0) continue;
@@ -555,6 +667,38 @@ class ZionRpcClient {
 
   /** Get miner info by address — try V3 getBalance */
   async getMinerInfo(address: string): Promise<any> {
+    const statsPayload = await this.poolHttpGet<any>(`/api/v1/miner/${address}/stats`);
+    const payoutsPayload = await this.poolHttpGet<any>(`/api/v1/miner/${address}/payouts`);
+
+    if (statsPayload?.ok && statsPayload?.stats) {
+      const minerStats = statsPayload.stats;
+      const pendingPayouts = Array.isArray(payoutsPayload?.pending_payouts)
+        ? payoutsPayload.pending_payouts
+        : [];
+
+      return {
+        address,
+        balance: {
+          pending: (minerStats.pending_balance ?? 0) / 1e12,
+          locked: 0,
+          paid: (minerStats.total_paid ?? 0) / 1e12,
+        },
+        recent_payouts: pendingPayouts.map((payout: any) => ({
+          amount: payout.amount ?? payout.amount_atomic ?? 0,
+          tx_id: payout.tx_id,
+          timestamp: payout.created_ts ?? payout.updated_ts ?? 0,
+          status: payout.status ?? 'pending',
+        })),
+        blocks_found: minerStats.blocks_found ?? 0,
+        accepted_shares: minerStats.valid_shares ?? 0,
+        rejected_shares: minerStats.invalid_shares ?? 0,
+        hashrate_1h: minerStats.hashrate_1h ?? 0,
+        hashrate_24h: minerStats.hashrate_24h ?? 0,
+        first_seen: 0,
+        last_seen: minerStats.last_share_time ?? 0,
+      };
+    }
+
     try {
       const balance = await this.rpcCall<any>('getBalance', { address });
       return {
