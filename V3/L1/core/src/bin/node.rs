@@ -885,7 +885,7 @@ fn outbound_peer_loop(
         }
 
         // ── Peer discovery: ask a peer for its known peers ─────────────
-        if cycle_count.is_multiple_of(DISCOVERY_EVERY_N_CYCLES) && !peers.is_empty() {
+        if cycle_count % DISCOVERY_EVERY_N_CYCLES == 0 && !peers.is_empty() {
             let idx = (cycle_count / DISCOVERY_EVERY_N_CYCLES) as usize % peers.len();
             let target = &peers[idx];
             match p2p_roundtrip(target, &P2pMessage::GetPeers) {
@@ -929,7 +929,7 @@ fn outbound_peer_loop(
         }
 
         // ── Persist known_peers to disk ────────────────────────────────
-        if cycle_count.is_multiple_of(PERSIST_PEERS_EVERY_N_CYCLES) {
+        if cycle_count % PERSIST_PEERS_EVERY_N_CYCLES == 0 {
             let rt = runtime.lock().expect("lock");
             if let Err(e) = rt.persist_peers() {
                 eprintln!("peers_persist_err err={e}");

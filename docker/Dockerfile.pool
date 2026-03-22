@@ -1,9 +1,8 @@
-# ZION Mining Pool
-# Native GPU-algo features: native-ethash (ETC) + native-autolykos (ERG) + native-kheavyhash (KAS)
-# C sources compiled inline by cc crate — requires gcc (included via build-essential).
+# ZION Mining Pool — V3 workspace build
+# Builds the V3 pool server binary from V3/L1/pool (stratum v2 + revenue routing).
 
 FROM rust:1.85-bookworm AS builder
-ARG FEATURES="native-ethash,native-autolykos,native-kheavyhash"
+ARG FEATURES="testnet"
 WORKDIR /build
 RUN apt-get update && apt-get install -y \
         build-essential cmake g++ make \
@@ -11,7 +10,7 @@ RUN apt-get update && apt-get install -y \
         libclang-dev \
     && rm -rf /var/lib/apt/lists/*
 COPY . .
-RUN cargo build --release -p zion-pool \
+RUN cargo build --release --manifest-path V3/Cargo.toml -p zion-pool \
         --features "$FEATURES"
 
 FROM ubuntu:24.04
@@ -21,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 RUN groupadd -r zion && useradd -r -g zion -d /data/zion-pool -s /sbin/nologin zion
 # NOTE: xmrig installed on host and bind-mounted into container
-COPY --from=builder /build/target/release/zion-pool /usr/local/bin/
+COPY --from=builder /build/V3/target/release/server /usr/local/bin/zion-pool
 RUN mkdir -p /data/zion-pool && chown -R zion:zion /data/zion-pool
 EXPOSE 3333 8080
 VOLUME ["/data/zion-pool"]
