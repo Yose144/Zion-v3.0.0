@@ -47,6 +47,19 @@ pub enum PoolMessage {
         worker_name: String,
         nonce: u64,
         hash_hex: String,
+        #[serde(default)]
+        attempted_hashes: Option<u64>,
+        #[serde(default)]
+        elapsed_ms: Option<u64>,
+    },
+    NoSolution {
+        job_id: u64,
+        miner_id: String,
+        worker_name: String,
+        #[serde(default)]
+        attempted_hashes: Option<u64>,
+        #[serde(default)]
+        elapsed_ms: Option<u64>,
     },
     Result {
         accepted: bool,
@@ -406,6 +419,8 @@ impl MiningPool {
             worker_name: worker_name.to_string(),
             nonce: solution.candidate.nonce,
             hash_hex: to_hex(&solution.hash),
+            attempted_hashes: None,
+            elapsed_ms: None,
         }
     }
 
@@ -810,6 +825,15 @@ mod tests {
                 worker_name: "w".to_string(),
                 nonce: 77,
                 hash_hex: "bb".repeat(32),
+                attempted_hashes: Some(100),
+                elapsed_ms: Some(250),
+            },
+            PoolMessage::NoSolution {
+                job_id: 42,
+                miner_id: "m".to_string(),
+                worker_name: "w".to_string(),
+                attempted_hashes: Some(100),
+                elapsed_ms: Some(250),
             },
             PoolMessage::Result {
                 accepted: true,

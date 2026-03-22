@@ -1,0 +1,38 @@
+{
+    "nodes": [
+        {
+            "id": "v3-testnet-1",
+            "host": "91.98.122.165",
+            "ports": {
+                "rpc": 8332,
+                "p2p": 8334,
+                "stratum": 3416,
+                "health": 8080,
+                "pool_api": 8080,
+                "discovery_udp": 8335
+            },
+            "role": ["node", "pool", "miner"]
+        }
+    ],
+    "alerting": {
+        "discord_webhook": null,
+        "telegram_bot_token": null,
+        "telegram_chat_id": null,
+        "min_level": "warning",
+        "check_interval_secs": 60
+    },
+    "backup": {
+        "data_dir": "/var/lib/zion/data",
+        "backup_dir": "/var/lib/zion/backups",
+        "retention_days": 30,
+        "encrypt": false,
+        "remote": null
+    },
+    "deploy": {
+        "compose_file": "docker/docker-compose.testnet.yml",
+        "ssh_key": "~/.ssh/zion_hetzner_key",
+        "image_tag": "v3-testnet"
+    },
+    "network": "testnet",
+    "version": "3.0.0"
+}

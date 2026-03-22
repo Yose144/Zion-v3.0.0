@@ -30,6 +30,14 @@ pub struct NodeMetrics {
     pub difficulty: AtomicU64,
     pub last_block_time_secs: AtomicU64,
     pub ibd_progress_pct: AtomicU64, // 0–10000 (two decimal places × 100)
+
+    // Phase 9c — enhanced diagnostics (ported from TREE_NODES health/monitoring)
+    pub checkpoint_height: AtomicU64,
+    pub discovered_peers: AtomicU64,
+    pub udp_announcements: AtomicU64,
+    pub uptime_secs: AtomicU64,
+    pub network_hashrate: AtomicU64,
+    pub best_peer_height: AtomicU64,
 }
 
 impl NodeMetrics {
@@ -51,6 +59,12 @@ impl NodeMetrics {
             difficulty: AtomicU64::new(0),
             last_block_time_secs: AtomicU64::new(0),
             ibd_progress_pct: AtomicU64::new(0),
+            checkpoint_height: AtomicU64::new(0),
+            discovered_peers: AtomicU64::new(0),
+            udp_announcements: AtomicU64::new(0),
+            uptime_secs: AtomicU64::new(0),
+            network_hashrate: AtomicU64::new(0),
+            best_peer_height: AtomicU64::new(0),
         }
     }
 
@@ -116,6 +130,30 @@ impl NodeMetrics {
         self.ibd_progress_pct.store(pct_x100, Ordering::Relaxed);
     }
 
+    pub fn set_checkpoint_height(&self, h: u64) {
+        self.checkpoint_height.store(h, Ordering::Relaxed);
+    }
+
+    pub fn set_discovered_peers(&self, n: u64) {
+        self.discovered_peers.store(n, Ordering::Relaxed);
+    }
+
+    pub fn inc_udp_announcements(&self) {
+        self.udp_announcements.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn set_uptime(&self, secs: u64) {
+        self.uptime_secs.store(secs, Ordering::Relaxed);
+    }
+
+    pub fn set_network_hashrate(&self, h: u64) {
+        self.network_hashrate.store(h, Ordering::Relaxed);
+    }
+
+    pub fn set_best_peer_height(&self, h: u64) {
+        self.best_peer_height.store(h, Ordering::Relaxed);
+    }
+
     // ── Prometheus text exposition ─────────────────────────────────────
 
     /// Render all metrics in Prometheus text exposition format.
@@ -160,17 +198,48 @@ impl NodeMetrics {
         gauge!("zion_last_block_time", "Timestamp of the last accepted block", self.last_block_time_secs, u64);
         gauge!("zion_ibd_progress_pct", "IBD progress in percent x100 (0-10000)", self.ibd_progress_pct, u64);
 
+        gauge!("zion_checkpoint_height", "Highest verified checkpoint height", self.checkpoint_height, u64);
+        gauge!("zion_discovered_peers", "Number of peers in discovery pool", self.discovered_peers, u64);
+        counter!("zion_udp_announcements_total", "Total UDP announcements processed", self.udp_announcements);
+        gauge!("zion_uptime_seconds", "Node uptime in seconds", self.uptime_secs, u64);
+        gauge!("zion_network_hashrate", "Estimated network hash rate", self.network_hashrate, u64);
+        gauge!("zion_best_peer_height", "Best known peer chain height", self.best_peer_height, u64);
+
         out
     }
 
-    /// Render a simple health check JSON.
+    /// Render a comprehensive health check JSON.
     pub fn health_check(&self) -> String {
         let height = self.chain_height.load(Ordering::Relaxed);
         let peers = self.peer_count.load(Ordering::Relaxed);
         let mempool = self.mempool_size.load(Ordering::Relaxed);
+        let difficulty = self.difficulty.load(Ordering::Relaxed);
+        let uptime = self.uptime_secs.load(Ordering::Relaxed);
+        let best_peer = self.best_peer_height.load(Ordering::Relaxed);
+        let checkpoint = self.checkpoint_height.load(Ordering::Relaxed);
+        let discovered = self.discovered_peers.load(Ordering::Relaxed);
+        let hashrate = self.network_hashrate.load(Ordering::Relaxed);
+        let ibd_pct = self.ibd_progress_pct.load(Ordering::Relaxed);
+        let last_block = self.last_block_time_secs.load(Ordering::Relaxed);
+
+        let sync_lag = if best_peer > height { best_peer - height } else { 0 };
+        let sync_status = if ibd_pct < 10_000 && sync_lag > 50 {
+            "ibd"
+        } else if sync_lag > 0 {
+            "syncing"
+        } else {
+            "synced"
+        };
+
         format!(
-            r#"{{"status":"ok","chain_height":{},"peer_count":{},"mempool_size":{}}}"#,
-            height, peers, mempool
+            concat!(
+                r#"{{"status":"ok","chain_height":{},"peer_count":{},"mempool_size":{},"#,
+                r#""difficulty":{},"uptime_secs":{},"best_peer_height":{},"sync_lag":{},"#,
+                r#""sync_status":"{}","checkpoint_height":{},"discovered_peers":{},"#,
+                r#""network_hashrate":{},"last_block_time":{}}}"#,
+            ),
+            height, peers, mempool, difficulty, uptime, best_peer, sync_lag,
+            sync_status, checkpoint, discovered, hashrate, last_block
         )
     }
 }
@@ -259,6 +328,12 @@ mod tests {
             "zion_difficulty",
             "zion_last_block_time",
             "zion_ibd_progress_pct",
+            "zion_checkpoint_height",
+            "zion_discovered_peers",
+            "zion_udp_announcements_total",
+            "zion_uptime_seconds",
+            "zion_network_hashrate",
+            "zion_best_peer_height",
         ];
 
         for name in expected {
@@ -272,12 +347,18 @@ mod tests {
         m.set_chain_height(100);
         m.set_peer_count(5, 3, 2);
         m.set_mempool_size(10);
+        m.set_difficulty(5000);
+        m.set_uptime(3600);
+        m.set_best_peer_height(100);
 
         let json = m.health_check();
         assert!(json.contains(r#""status":"ok""#));
         assert!(json.contains(r#""chain_height":100"#));
         assert!(json.contains(r#""peer_count":5"#));
         assert!(json.contains(r#""mempool_size":10"#));
+        assert!(json.contains(r#""difficulty":5000"#));
+        assert!(json.contains(r#""uptime_secs":3600"#));
+        assert!(json.contains(r#""sync_status":"synced""#));
     }
 
     #[test]
