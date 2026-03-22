@@ -1152,16 +1152,25 @@ Status: mostly complete (seed node expansion pending)
 
 ## L2 / L3 Integration (Post-L1-Stable)
 
-Detailed plan: `V3/docs/L2_L3_MAINNET_PLAN.md`
+Detailed plan: `V3/docs/L2_L3_MAINNET_PLAN.md` (Draft v2)
 
 ### L2 — wZION Bridge
 
 - Lock/Mint/Burn model: ZION → zion1bridge vault → 3-of-5 validator quorum → wZION ERC-20 mint on Base
 - **Critical decimal fix required**: root L2/L3 code assumes 6 decimals (1e6); V3 canonical is 12 decimals (1e12 flowers). Bridge multiplier must change from ×1e12 to ×1e6. Deploying unfixed = 1,000,000× inflation exploit.
-- L1 core changes needed: `BRIDGE_VAULT_ADDRESS`, `getBridgeLocks` RPC, `submitBridgeUnlock` RPC, Step 12 bridge unlock validation
-- Testnet contracts deployed on Base Sepolia (wZION, ZIONBridge, Governance, Treasury, Staking, Farm, Uniswap V3 pool)
+- L1 core changes needed: `BRIDGE_VAULT_ADDRESS`, `getBridgeLocks` RPC, `submitBridgeUnlock` RPC, Step 12 bridge unlock validation, memo prefix parsing (`BRIDGE:*`, `WARP:*`, `DAO:*`, `SWAP:*`)
+- Testnet contracts deployed on Base Sepolia (wZION, ZIONBridge, Governance, Treasury, Staking, Farm, AtomicSwap, Uniswap V3 pool)
 - Fee: 0.1% (50% burn, 25% DAO, 25% validators)
 - Finality: 60 L1 blocks (~60 min at 60s block time)
+
+### L2 — DeFi Stack
+
+- **Staking**: ZIONStaking.sol — Synthetix-style rewards distributor, 50% APR hard cap, 7-day cooldown, slashing hook
+- **Farming**: ZIONFarm.sol — MasterChef v2 LP farming, 90-day halving schedule per pool, dynamic allocPoint rebalancing
+- **Governance / DAO**: ZIONGovernance.sol + DAO daemon — 5 proposal types (Spend, Parameter, Upgrade, Emergency, Meta), token-weighted voting (1Z = 1 vote), 3-day voting + 24h timelock, L1 memo scanner for `DAO:vote` / `DAO:propose` prefixes
+- **Treasury**: ZIONTreasury.sol — 6 budget categories (Development, Marketing, Community, Infrastructure, Security, Reserve), 5-of-7 multisig disbursement
+- **Atomic Swap**: ZIONAtomicSwap.sol + swap daemon — HTLC with SHA-256 hashlock (→ BLAKE3 after fix), Ed25519 escrow, L1 UTXO coin-select, auto-refund on timeout
+- **DEX**: Uniswap V3 wZION/USDC pool on Base — no custom DEX contract, standard AMM integration
 
 ### L3 — WARP Cross-Chain
 
@@ -1170,11 +1179,21 @@ Detailed plan: `V3/docs/L2_L3_MAINNET_PLAN.md`
 - Same validator quorum and vault as L2 (no separate infrastructure)
 - Per-route fees: 0.10%–0.25%
 - `ChainId::zion_l1()` decimals must be fixed from 6 to 12
+- Working signers: EVM, Bitcoin, Solana, Stellar, Tron. **Stubs**: Cardano, Cosmos.
+
+### L3 — AI Native & NCL
+
+- **AI Native**: Agent framework with 7-level consciousness model (Dormant → Grok), XP economy (+10 success / -2 fail), orchestrator dispatching NCL → WARP → Bridge, pool optimizer, WARP agent optimizer (max ~75× multiplier)
+- **NCL (Neural Consciousness Layer)**: Decentralized AI compute marketplace — 6 task types (Inference, Training, DataProcessing, Optimization, Validation, Custom), priority + reputation-weighted scheduling, pricing = base_cost × backend_multiplier × size_factor, 90/10 worker/protocol revenue split
+- **Critical gap**: All 3 NCL compute backends (ONNX, WASM, TFLite) are stubs. ONNX via `ort` crate is recommended first implementation.
+- L1 core changes: minimal — off-chain reads from node RPC for balance/UTXO queries. No consensus changes.
 
 ### Dependency Order
 
 ```
 L1 mainnet stable (Phase 8 complete)
- └─► L2 bridge: decimal fix → vault + RPC → daemon → testnet E2E → mainnet
-      └─► L3 WARP: chain adapters → router → testnet E2E → mainnet (EVM first, then others)
+ └─► L2 Bridge: decimal fix → vault + RPC → daemon → testnet E2E → mainnet
+      ├─► L2 DeFi: staking + farm deploy → DAO daemon → atomic swap → Uniswap pool
+      └─► L3 WARP: chain adapters → router → testnet E2E → mainnet (EVM first)
+           └─► L3 AI Native + NCL: ONNX backend → agent framework → compute market → testnet
 ```
