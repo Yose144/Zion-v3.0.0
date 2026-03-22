@@ -21,6 +21,7 @@ const ALLOWED_PREFIXES = [
   'node_cpu_seconds',
   'redis_up',
   'redis_connected_clients',
+  'redis_memory_',
   'redis_used_memory',
   'redis_keyspace_hits',
   'redis_keyspace_misses',

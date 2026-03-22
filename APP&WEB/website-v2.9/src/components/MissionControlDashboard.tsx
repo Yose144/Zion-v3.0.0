@@ -92,11 +92,25 @@ interface V3Sparklines {
 
 interface V3Charts {
   chainHeight: number[]; poolSessions: number[]; shares: number[];
-  cpuLoad: number[]; memPct: number[]; timestamps: number[];
+  cpuLoad: number[]; memPct: number[]; redisMemory: number[]; timestamps: number[];
 }
 
 interface ServiceStatus {
   name: string; job: string; up: boolean | null; image: string; ports: string; note?: string;
+}
+
+interface StackSummary {
+  redisUp: number | null;
+  redisClients: number | null;
+  redisMemoryUsed: number | null;
+  redisMemoryMax: number | null;
+  redisHitRatio: number | null;
+  prometheusUp: number | null;
+  nodeExporterUp: number | null;
+  redisExporterUp: number | null;
+  germanyPoolUp: number | null;
+  germanyCoreUp: number | null;
+  hostKernel: string | null;
 }
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
@@ -211,13 +225,14 @@ async function fetchV3Sparklines(): Promise<V3Sparklines> {
 }
 
 async function fetchV3Charts(): Promise<V3Charts> {
-  const [h,s,a,cpu,memTotal,memAvail] = await Promise.allSettled([
+  const [h,s,a,cpu,memTotal,memAvail,redisMem] = await Promise.allSettled([
     promRange('zion_chain_height','6h','300'),
     promRange('zion_pool_active_sessions','6h','300'),
     promRange('zion_pool_accepted_total','6h','300'),
     promRange('node_load1','6h','300'),
     promRange('node_memory_MemTotal_bytes','6h','300'),
     promRange('node_memory_MemAvailable_bytes','6h','300'),
+    promRange('redis_memory_used_bytes','6h','300'),
   ]);
   const ex = (r: PromiseSettledResult<PromRangeResult[]>) => {
     if (r.status !== 'fulfilled') return []; const f = r.value[0]; return f ? f.values.map(([,v]) => parseFloat(v)) : [];
@@ -227,7 +242,15 @@ async function fetchV3Charts(): Promise<V3Charts> {
   };
   const totalArr = ex(memTotal), availArr = ex(memAvail);
   const memPct = totalArr.map((t, i) => { const a = availArr[i] ?? 0; return t > 0 ? ((1 - a / t) * 100) : 0; });
-  return { chainHeight: ex(h), poolSessions: ex(s), shares: ex(a), cpuLoad: ex(cpu), memPct, timestamps: ts(h) };
+  return {
+    chainHeight: ex(h),
+    poolSessions: ex(s),
+    shares: ex(a),
+    cpuLoad: ex(cpu),
+    memPct,
+    redisMemory: ex(redisMem),
+    timestamps: ts(h),
+  };
 }
 
 async function fetchServiceStatuses(): Promise<ServiceStatus[]> {
@@ -241,14 +264,61 @@ async function fetchServiceStatuses(): Promise<ServiceStatus[]> {
     { name: 'zion-website', job: '', image: 'zion-website:2.9.9', ports: '3000', note: 'this site' },
     { name: 'zion-prometheus', job: 'prometheus', image: 'prom/prometheus:v2.53.0', ports: '9090' },
     { name: 'zion-grafana', job: '', image: 'grafana/grafana:11.1.0', ports: '3001', note: '/grafana/' },
-    { name: 'zion-node-exporter', job: 'node-helsinki', image: 'node-exporter', ports: '9100' },
-    { name: 'zion-redis-exporter', job: 'redis-helsinki', image: 'redis-exporter', ports: '9121' },
-    { name: 'zion-alertmanager', job: '', image: 'alertmanager', ports: '9093' },
+    { name: 'zion-node-exporter', job: 'node-helsinki', image: 'prom/node-exporter:v1.8.1', ports: '9100' },
+    { name: 'zion-redis-exporter', job: 'redis-helsinki', image: 'oliver006/redis_exporter:v1.61.0', ports: '9121' },
+    { name: 'zion-alertmanager', job: '', image: 'prom/alertmanager:v0.27.0', ports: '9093' },
+    { name: 'germany-pool-target', job: 'zion-pool-germany', image: 'remote scrape', ports: '46.225.126.243:8080', note: 'Prometheus remote target' },
+    { name: 'germany-core-target', job: 'zion-core-germany', image: 'remote scrape', ports: '46.225.126.243:9115', note: 'Prometheus remote target' },
   ];
   const upResults = await promQuery('up');
   const jobUp: Record<string, boolean> = {};
   for (const r of upResults) { jobUp[r.metric.job ?? ''] = r.value[1] === '1'; }
   return STACK.map(s => ({ ...s, up: s.job ? (jobUp[s.job] ?? null) : null }));
+}
+
+async function fetchStackSummary(): Promise<StackSummary> {
+  const qs = [
+    'redis_up',
+    'redis_connected_clients',
+    'redis_memory_used_bytes',
+    'redis_memory_max_bytes',
+    'redis_keyspace_hits_total',
+    'redis_keyspace_misses_total',
+    'up{job="prometheus"}',
+    'up{job="node-helsinki"}',
+    'up{job="redis-helsinki"}',
+    'up{job="zion-pool-germany"}',
+    'up{job="zion-core-germany"}',
+    'node_uname_info',
+  ];
+  const res = await Promise.allSettled(qs.map(q => promQuery(q)));
+  const hits = pv(res, 4);
+  const misses = pv(res, 5);
+  const hitRatio = hits != null && misses != null && (hits + misses) > 0 ? (hits / (hits + misses)) * 100 : null;
+  const kernelResult = res[11];
+  let hostKernel: string | null = null;
+  if (kernelResult?.status === 'fulfilled') {
+    const first = kernelResult.value[0];
+    if (first) {
+      const sysname = first.metric.sysname ?? 'Linux';
+      const release = first.metric.release ?? 'unknown';
+      const machine = first.metric.machine ?? '';
+      hostKernel = `${sysname} ${release}${machine ? ` · ${machine}` : ''}`;
+    }
+  }
+  return {
+    redisUp: pv(res, 0),
+    redisClients: pv(res, 1),
+    redisMemoryUsed: pv(res, 2),
+    redisMemoryMax: pv(res, 3),
+    redisHitRatio: hitRatio,
+    prometheusUp: pv(res, 6),
+    nodeExporterUp: pv(res, 7),
+    redisExporterUp: pv(res, 8),
+    germanyPoolUp: pv(res, 9),
+    germanyCoreUp: pv(res, 10),
+    hostKernel,
+  };
 }
 
 function fmtBytes(bytes: number | null | undefined) {
@@ -818,6 +888,7 @@ export default function MissionControlDashboard() {
   const [v3Sparks, setV3Sparks] = useState<V3Sparklines | null>(null);
   const [v3Charts, setV3Charts] = useState<V3Charts | null>(null);
   const [services, setServices] = useState<ServiceStatus[]>([]);
+  const [stackSummary, setStackSummary] = useState<StackSummary | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -852,9 +923,10 @@ export default function MissionControlDashboard() {
     };
     const refreshCharts = async () => {
       try {
-        const [charts, svc] = await Promise.all([fetchV3Charts(), fetchServiceStatuses()]);
+        const [charts, svc, summary] = await Promise.all([fetchV3Charts(), fetchServiceStatuses(), fetchStackSummary()]);
         setV3Charts(charts);
         setServices(svc);
+        setStackSummary(summary);
       } catch { /* silent */ }
     };
     refreshV3();
@@ -1184,6 +1256,46 @@ export default function MissionControlDashboard() {
               </div>
             </motion.div>
 
+            {stackSummary && (
+              <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }} className="rounded-2xl sm:rounded-3xl border border-white/10 bg-linear-to-br from-cyan-500/10 via-transparent to-emerald-500/10 p-4 sm:p-6 lg:p-8">
+                <div className="flex flex-col gap-2 mb-5">
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Ops Summary</p>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                    <Gauge className="h-6 w-6 text-cyan-400" />
+                    Cluster Snapshot
+                  </h2>
+                  <p className="text-xs text-gray-500">Local scrape + remote Germany targets + Redis runtime health</p>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+                  <MiniMetric label="Redis" value={stackSummary.redisUp === 1 ? 'UP' : stackSummary.redisUp === 0 ? 'DOWN' : '—'} color={stackSummary.redisUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                  <MiniMetric label="Redis Clients" value={fmt(stackSummary.redisClients)} color="text-cyan-400" />
+                  <MiniMetric label="Redis Memory" value={fmtBytes(stackSummary.redisMemoryUsed)} color="text-purple-400" />
+                  <MiniMetric label="Cache Hit Rate" value={stackSummary.redisHitRatio != null ? `${stackSummary.redisHitRatio.toFixed(1)}%` : '—'} color={stackSummary.redisHitRatio != null && stackSummary.redisHitRatio > 90 ? 'text-emerald-400' : 'text-amber-400'} />
+                  <MiniMetric label="Germany Pool" value={stackSummary.germanyPoolUp === 1 ? 'UP' : stackSummary.germanyPoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.germanyPoolUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                  <MiniMetric label="Germany Core" value={stackSummary.germanyCoreUp === 1 ? 'UP' : stackSummary.germanyCoreUp === 0 ? 'DOWN' : '—'} color={stackSummary.germanyCoreUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                </div>
+                <div className="grid md:grid-cols-2 gap-3 mt-4">
+                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <span className="uppercase tracking-[0.25em] text-gray-500">Scrape Coverage</span>
+                      <span className="font-mono text-gray-300">{services.filter(s => s.up !== null).filter(s => s.up).length}/{services.filter(s => s.up !== null).length}</span>
+                    </div>
+                    <MetricBar value={services.filter(s => s.up !== null).filter(s => s.up).length} max={Math.max(services.filter(s => s.up !== null).length, 1)} color="bg-cyan-500" />
+                    <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-gray-500">
+                      <span>Prometheus: {stackSummary.prometheusUp === 1 ? 'up' : 'down'}</span>
+                      <span>Node exporter: {stackSummary.nodeExporterUp === 1 ? 'up' : 'down'}</span>
+                      <span>Redis exporter: {stackSummary.redisExporterUp === 1 ? 'up' : 'down'}</span>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                    <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Host Kernel</div>
+                    <div className="text-sm text-gray-200 font-mono break-all">{stackSummary.hostKernel ?? '—'}</div>
+                    <div className="mt-2 text-[10px] text-gray-500">Redis memory cap: {fmtBytes(stackSummary.redisMemoryMax)}</div>
+                  </div>
+                </div>
+              </motion.section>
+            )}
+
             {/* ── SERVICE STATUS GRID ── */}
             <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="rounded-2xl sm:rounded-3xl border border-emerald-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
               <div className="flex flex-col gap-2 mb-5">
@@ -1192,7 +1304,7 @@ export default function MissionControlDashboard() {
                   <Server className="h-6 w-6 text-emerald-400" />
                   Service Overview — Helsinki · Hetzner
                 </h2>
-                <p className="text-xs text-gray-500">{services.length} containers · zion-net Docker network · Prometheus scrape 15s</p>
+                <p className="text-xs text-gray-500">{services.length} services/targets · zion-net Docker network · Prometheus scrape 15s</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -1249,6 +1361,7 @@ export default function MissionControlDashboard() {
                   <AreaChart data={v3Charts.shares} timestamps={v3Charts.timestamps} label="Accepted Shares (cumul.) — 6h" color="#10b981" />
                   <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label="CPU Load (1m avg) — 6h" color="#06b6d4" />
                   <AreaChart data={v3Charts.memPct} timestamps={v3Charts.timestamps} label="Memory Usage % — 6h" color="#ec4899" unit="%" />
+                  <AreaChart data={v3Charts.redisMemory} timestamps={v3Charts.timestamps} label="Redis Memory — 6h" color="#f97316" />
                 </div>
               </motion.section>
             )}
@@ -1319,7 +1432,7 @@ export default function MissionControlDashboard() {
               <span>30+ live Prometheus metrics</span>
               <span>6h range queries · 5m resolution</span>
               <span>15s instant refresh · 60s chart refresh</span>
-              <span>12 Docker containers</span>
+              <span>Redis + remote target telemetry</span>
               <a href="/monitoring" className="text-emerald-400 hover:text-emerald-300 transition-colors">Full monitoring page →</a>
               <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">Open Grafana →</a>
             </div>
