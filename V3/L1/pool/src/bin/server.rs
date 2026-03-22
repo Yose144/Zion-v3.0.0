@@ -1,18 +1,18 @@
 use anyhow::{anyhow, Context, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{IpAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, CoreRuntime, DifficultyTarget,
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
 use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
-use zion_pool::pplns::{PplnsConfig, PplnsEngine};
+use zion_pool::pplns::{PayoutEntry, PplnsConfig, PplnsEngine};
 
 fn main() -> Result<()> {
     let config = ServerConfig::from_env()?;
@@ -25,6 +25,7 @@ fn main() -> Result<()> {
         config.revenue_value_usd,
     )?));
     let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
+    let miner_telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::default()));
     let pplns_engine = Arc::new(Mutex::new(PplnsEngine::new(PplnsConfig {
         window_size: parse_env_u64("ZION_PPLNS_WINDOW_SIZE", 1_000).unwrap_or(1_000) as usize,
         min_payout_flowers: parse_env_u64(
@@ -63,11 +64,19 @@ fn main() -> Result<()> {
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
         println!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
+        let miner_telemetry_ref = Arc::clone(&miner_telemetry);
         let active_sessions_ref = Arc::clone(&active_sessions);
         let pplns_ref = Arc::clone(&pplns_engine);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
-            if let Err(error) = serve_routing_metrics(&metrics_bind, routing_stats, started_at, active_sessions_ref, pplns_ref) {
+            if let Err(error) = serve_routing_metrics(
+                &metrics_bind,
+                routing_stats,
+                miner_telemetry_ref,
+                started_at,
+                active_sessions_ref,
+                pplns_ref,
+            ) {
                 eprintln!("routing_metrics_error={error:#}");
             }
         });
@@ -147,12 +156,22 @@ fn main() -> Result<()> {
         let pool = Arc::clone(&pool);
         let revenue_scheduler = Arc::clone(&revenue_scheduler);
         let routing_stats = Arc::clone(&routing_stats);
+        let miner_telemetry = Arc::clone(&miner_telemetry);
         let pplns_ref = Arc::clone(&pplns_engine);
         let active_sessions_ref = Arc::clone(&active_sessions);
         let config = config.clone();
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
-            handle_client(stream, pool, revenue_scheduler, routing_stats, pplns_ref, active_sessions_ref, &config)
+            handle_client(
+                stream,
+                pool,
+                revenue_scheduler,
+                routing_stats,
+                miner_telemetry,
+                pplns_ref,
+                active_sessions_ref,
+                &config,
+            )
         }));
         accepted = accepted.saturating_add(1);
     }
@@ -198,6 +217,7 @@ fn handle_client(
     pool: Arc<Mutex<MiningPool>>,
     revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
     routing_stats: Arc<Mutex<RoutingStats>>,
+    miner_telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     pplns_engine: Arc<Mutex<PplnsEngine>>,
     active_sessions: Arc<AtomicU64>,
     config: &ServerConfig,
@@ -246,6 +266,10 @@ fn handle_client(
         miner_id,
         worker_name
     );
+    {
+        let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+        telemetry.touch_session(&miner_id, &worker_name);
+    }
 
     // Register miner_id as payout address (miner_id is expected to be a zion1… address).
     pplns_engine
@@ -298,6 +322,7 @@ fn handle_client(
                     .issue_job(header, config.target, start_nonce, config.nonce_count)
             }
         };
+        let job_issued_at = Instant::now();
         let job_message = pool.lock().expect("pool lock poisoned").job_message(job);
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
@@ -308,13 +333,15 @@ fn handle_client(
         let (submit_line, submit_message) = read_wire_message(&mut reader)?;
         println!("wire_submit={submit_line}");
 
-        let (decision, routed_source) = match submit_message {
+        let outcome = match submit_message {
             PoolMessage::Submit {
                 job_id,
                 miner_id: submit_miner_id,
                 worker_name: submit_worker_name,
                 nonce,
                 hash_hex,
+                attempted_hashes,
+                elapsed_ms,
             } => {
                 if submit_miner_id != miner_id || submit_worker_name != worker_name {
                     println!(
@@ -366,45 +393,122 @@ fn handle_client(
                         None => ShareStatus::Accepted,
                     },
                 );
-                (decision, revenue_source)
+                JobCompletion::Submitted {
+                    decision,
+                    routed_source: revenue_source,
+                    attempted_hashes: attempted_hashes
+                        .unwrap_or_else(|| solution.candidate.nonce.saturating_sub(job.start_nonce) + 1),
+                    elapsed_ms: elapsed_ms
+                        .unwrap_or_else(|| job_issued_at.elapsed().as_millis() as u64),
+                }
+            }
+            PoolMessage::NoSolution {
+                job_id,
+                miner_id: submit_miner_id,
+                worker_name: submit_worker_name,
+                attempted_hashes,
+                elapsed_ms,
+            } => {
+                if job_id != job.job_id {
+                    return Err(anyhow!(
+                        "no-solution job mismatch: expected {}, got {}",
+                        job.job_id,
+                        job_id
+                    ));
+                }
+                if submit_miner_id != miner_id || submit_worker_name != worker_name {
+                    println!(
+                        "no_solution_identity_mismatch session={}/{} submit={}/{}; using session identity",
+                        miner_id, worker_name, submit_miner_id, submit_worker_name
+                    );
+                }
+                JobCompletion::NoSolution {
+                    attempted_hashes: attempted_hashes.unwrap_or(job.nonce_count),
+                    elapsed_ms: elapsed_ms
+                        .unwrap_or_else(|| job_issued_at.elapsed().as_millis() as u64),
+                }
             }
             other => return Err(anyhow!("expected submit from miner, got {other:?}")),
         };
 
-        let accepted = matches!(decision.status, ShareStatus::Accepted);
-        if accepted {
-            pplns_engine
-                .lock()
-                .expect("pplns lock poisoned")
-                .record_share(&miner_id, &worker_name, job.height);
-        }
-        {
-            let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
-            let should_log = stats.record(session_group, routed_source, accepted);
-            if should_log {
-                println!("routing_snapshot {}", stats.snapshot_line());
+        match outcome {
+            JobCompletion::Submitted {
+                decision,
+                routed_source,
+                attempted_hashes,
+                elapsed_ms,
+            } => {
+                let accepted = matches!(decision.status, ShareStatus::Accepted);
+                if accepted {
+                    let payouts = {
+                        let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                        pplns.record_share(&miner_id, &worker_name, job.height);
+                        if job.height > 0 {
+                            pplns.compute_payouts(zion_core::emission::block_subsidy(job.height))
+                        } else {
+                            Vec::new()
+                        }
+                    };
+                    if !payouts.is_empty() {
+                        let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                        telemetry.record_payouts(job.height, &payouts);
+                    }
+                }
+                {
+                    let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                    let should_log = stats.record(session_group, routed_source, accepted);
+                    if should_log {
+                        println!("routing_snapshot {}", stats.snapshot_line());
+                    }
+                }
+                {
+                    let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                    telemetry.record_job_result(
+                        &miner_id,
+                        &worker_name,
+                        matches!(decision.status, ShareStatus::Accepted),
+                        attempted_hashes,
+                        elapsed_ms,
+                    );
+                }
+
+                if matches!(decision.status, ShareStatus::StaleJob) {
+                    let stale_message = pool.lock().expect("pool lock poisoned").stale_message(job.job_id);
+                    let cancel_message = pool
+                        .lock()
+                        .expect("pool lock poisoned")
+                        .cancel_message(job.job_id, "submit-arrived-after-ttl");
+                    let stale_line = write_wire_message(&mut writer, &stale_message)?;
+                    let cancel_line = write_wire_message(
+                        &mut writer,
+                        &cancel_message,
+                    )?;
+                    println!("wire_stale={stale_line}");
+                    println!("wire_cancel={cancel_line}");
+                }
+
+                let result_message = pool.lock().expect("pool lock poisoned").result_message(&decision);
+                let result_line = write_wire_message(&mut writer, &result_message)?;
+                println!("share_status={:?}", decision.status);
+                println!("wire_result={result_line}");
+            }
+            JobCompletion::NoSolution {
+                attempted_hashes,
+                elapsed_ms,
+            } => {
+                {
+                    let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                    telemetry.record_no_solution(&miner_id, &worker_name, attempted_hashes, elapsed_ms);
+                }
+                let result_message = PoolMessage::Result {
+                    accepted: false,
+                    status: "NoSolution".to_string(),
+                };
+                let result_line = write_wire_message(&mut writer, &result_message)?;
+                println!("share_status=NoSolution");
+                println!("wire_result={result_line}");
             }
         }
-
-        if matches!(decision.status, ShareStatus::StaleJob) {
-            let stale_message = pool.lock().expect("pool lock poisoned").stale_message(job.job_id);
-            let cancel_message = pool
-                .lock()
-                .expect("pool lock poisoned")
-                .cancel_message(job.job_id, "submit-arrived-after-ttl");
-            let stale_line = write_wire_message(&mut writer, &stale_message)?;
-            let cancel_line = write_wire_message(
-                &mut writer,
-                &cancel_message,
-            )?;
-            println!("wire_stale={stale_line}");
-            println!("wire_cancel={cancel_line}");
-        }
-
-        let result_message = pool.lock().expect("pool lock poisoned").result_message(&decision);
-        let result_line = write_wire_message(&mut writer, &result_message)?;
-        println!("share_status={:?}", decision.status);
-        println!("wire_result={result_line}");
     }
 
     let bye_message = pool.lock().expect("pool lock poisoned").bye_message();
@@ -543,6 +647,215 @@ struct RoutingStats {
     group_accepted: [u64; 4],
     source_submits: [u64; 6],
     source_accepted: [u64; 6],
+}
+
+enum JobCompletion {
+    Submitted {
+        decision: zion_pool::ShareDecision,
+        routed_source: RevenueSource,
+        attempted_hashes: u64,
+        elapsed_ms: u64,
+    },
+    NoSolution {
+        attempted_hashes: u64,
+        elapsed_ms: u64,
+    },
+}
+
+#[derive(Debug, Clone)]
+struct WorkSample {
+    completed_at_s: u64,
+    attempted_hashes: u64,
+    elapsed_ms: u64,
+}
+
+#[derive(Debug, Clone)]
+struct MinerPayoutRecord {
+    amount_atomic: u64,
+    share_count: u64,
+    created_ts: u64,
+    height: u64,
+    status: &'static str,
+}
+
+#[derive(Debug, Clone)]
+struct MinerTelemetry {
+    worker_name: String,
+    first_seen_s: u64,
+    last_seen_s: u64,
+    last_share_time_s: u64,
+    valid_shares: u64,
+    invalid_shares: u64,
+    no_solution_jobs: u64,
+    blocks_found: u64,
+    completed_jobs: u64,
+    total_attempted_hashes: u64,
+    total_elapsed_ms: u64,
+    paid_total_atomic: u64,
+    samples: VecDeque<WorkSample>,
+    payouts: VecDeque<MinerPayoutRecord>,
+}
+
+#[derive(Debug, Default)]
+struct MinerTelemetryRegistry {
+    miners: HashMap<String, MinerTelemetry>,
+}
+
+const HASHRATE_WINDOW_1H_S: u64 = 60 * 60;
+const HASHRATE_WINDOW_24H_S: u64 = 24 * 60 * 60;
+const HASHRATE_WINDOW_LIVE_S: u64 = 10 * 60;
+const PAYOUT_HISTORY_LIMIT: usize = 50;
+
+impl MinerTelemetry {
+    fn new(worker_name: &str, now_s: u64) -> Self {
+        Self {
+            worker_name: worker_name.to_string(),
+            first_seen_s: now_s,
+            last_seen_s: now_s,
+            last_share_time_s: 0,
+            valid_shares: 0,
+            invalid_shares: 0,
+            no_solution_jobs: 0,
+            blocks_found: 0,
+            completed_jobs: 0,
+            total_attempted_hashes: 0,
+            total_elapsed_ms: 0,
+            paid_total_atomic: 0,
+            samples: VecDeque::new(),
+            payouts: VecDeque::new(),
+        }
+    }
+
+    fn touch(&mut self, worker_name: &str, now_s: u64) {
+        self.worker_name = worker_name.to_string();
+        if self.first_seen_s == 0 {
+            self.first_seen_s = now_s;
+        }
+        self.last_seen_s = now_s;
+    }
+
+    fn push_sample(&mut self, attempted_hashes: u64, elapsed_ms: u64, now_s: u64) {
+        if attempted_hashes == 0 || elapsed_ms == 0 {
+            return;
+        }
+        self.total_attempted_hashes = self.total_attempted_hashes.saturating_add(attempted_hashes);
+        self.total_elapsed_ms = self.total_elapsed_ms.saturating_add(elapsed_ms);
+        self.samples.push_back(WorkSample {
+            completed_at_s: now_s,
+            attempted_hashes,
+            elapsed_ms,
+        });
+        self.prune_samples(now_s);
+    }
+
+    fn prune_samples(&mut self, now_s: u64) {
+        while matches!(self.samples.front(), Some(sample) if sample.completed_at_s.saturating_add(HASHRATE_WINDOW_24H_S) < now_s) {
+            self.samples.pop_front();
+        }
+    }
+
+    fn hashrate_for_window(&self, window_s: u64, now_s: u64) -> f64 {
+        let mut hashes = 0u64;
+        let mut elapsed_ms = 0u64;
+        for sample in self.samples.iter().rev() {
+            if sample.completed_at_s.saturating_add(window_s) < now_s {
+                break;
+            }
+            hashes = hashes.saturating_add(sample.attempted_hashes);
+            elapsed_ms = elapsed_ms.saturating_add(sample.elapsed_ms);
+        }
+        if elapsed_ms == 0 {
+            0.0
+        } else {
+            hashes as f64 / (elapsed_ms as f64 / 1000.0)
+        }
+    }
+
+    fn total_shares(&self) -> u64 {
+        self.valid_shares
+            .saturating_add(self.invalid_shares)
+            .saturating_add(self.no_solution_jobs)
+    }
+}
+
+impl MinerTelemetryRegistry {
+    fn touch_session(&mut self, miner_id: &str, worker_name: &str) {
+        let now_s = now_unix_seconds();
+        self.miners
+            .entry(miner_id.to_string())
+            .and_modify(|miner| miner.touch(worker_name, now_s))
+            .or_insert_with(|| MinerTelemetry::new(worker_name, now_s));
+    }
+
+    fn record_job_result(
+        &mut self,
+        miner_id: &str,
+        worker_name: &str,
+        accepted: bool,
+        attempted_hashes: u64,
+        elapsed_ms: u64,
+    ) {
+        let now_s = now_unix_seconds();
+        let miner = self
+            .miners
+            .entry(miner_id.to_string())
+            .or_insert_with(|| MinerTelemetry::new(worker_name, now_s));
+        miner.touch(worker_name, now_s);
+        miner.completed_jobs = miner.completed_jobs.saturating_add(1);
+        miner.push_sample(attempted_hashes, elapsed_ms, now_s);
+        if accepted {
+            miner.valid_shares = miner.valid_shares.saturating_add(1);
+            miner.blocks_found = miner.blocks_found.saturating_add(1);
+            miner.last_share_time_s = now_s;
+        } else {
+            miner.invalid_shares = miner.invalid_shares.saturating_add(1);
+        }
+    }
+
+    fn record_no_solution(&mut self, miner_id: &str, worker_name: &str, attempted_hashes: u64, elapsed_ms: u64) {
+        let now_s = now_unix_seconds();
+        let miner = self
+            .miners
+            .entry(miner_id.to_string())
+            .or_insert_with(|| MinerTelemetry::new(worker_name, now_s));
+        miner.touch(worker_name, now_s);
+        miner.completed_jobs = miner.completed_jobs.saturating_add(1);
+        miner.no_solution_jobs = miner.no_solution_jobs.saturating_add(1);
+        miner.push_sample(attempted_hashes, elapsed_ms, now_s);
+    }
+
+    fn record_payouts(&mut self, height: u64, payouts: &[PayoutEntry]) {
+        let now_s = now_unix_seconds();
+        for payout in payouts {
+            let miner = self
+                .miners
+                .entry(payout.miner_id.clone())
+                .or_insert_with(|| MinerTelemetry::new("", now_s));
+            miner.last_seen_s = now_s;
+            miner.paid_total_atomic = miner.paid_total_atomic.saturating_add(payout.amount);
+            miner.payouts.push_front(MinerPayoutRecord {
+                amount_atomic: payout.amount,
+                share_count: payout.share_count,
+                created_ts: now_s,
+                height,
+                status: "paid",
+            });
+            while miner.payouts.len() > PAYOUT_HISTORY_LIMIT {
+                miner.payouts.pop_back();
+            }
+        }
+    }
+
+    fn pool_hashrate_for_window(&self, window_s: u64, now_s: u64) -> f64 {
+        self.miners
+            .values()
+            .map(|miner| miner.hashrate_for_window(window_s, now_s))
+            .sum()
+    }
+
+    fn total_blocks_found(&self) -> u64 {
+        self.miners.values().map(|miner| miner.blocks_found).sum()
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -943,7 +1256,14 @@ impl RoutingStats {
     }
 }
 
-fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>>, started_at: std::time::Instant, active_sessions: Arc<AtomicU64>, pplns_engine: Arc<Mutex<PplnsEngine>>) -> Result<()> {
+fn serve_routing_metrics(
+    bind_addr: &str,
+    routing_stats: Arc<Mutex<RoutingStats>>,
+    miner_telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
+    started_at: std::time::Instant,
+    active_sessions: Arc<AtomicU64>,
+    pplns_engine: Arc<Mutex<PplnsEngine>>,
+) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
 
@@ -974,40 +1294,41 @@ fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>
                 ("200 OK", "application/json", body)
             }
             "/metrics" => {
-                let stats = routing_stats
-                    .lock()
-                    .expect("routing stats lock poisoned");
                 let sessions = active_sessions.load(Ordering::Relaxed);
                 let uptime_s = started_at.elapsed().as_secs();
-                let mut body = stats.snapshot_prometheus_ext(sessions, uptime_s);
-                let pplns = pplns_engine.lock().expect("pplns lock poisoned").stats();
-                let _ = writeln!(body, "zion_pplns_window_size {}", pplns.window_size);
-                let _ = writeln!(body, "zion_pplns_window_used {}", pplns.window_used);
-                let _ = writeln!(body, "zion_pplns_registered_miners {}", pplns.registered_miners);
-                let _ = writeln!(body, "zion_pplns_total_paid_flowers {}", pplns.total_paid_flowers);
-                let _ = writeln!(body, "zion_pplns_payout_rounds {}", pplns.payout_rounds);
+                let stats = routing_stats.lock().expect("routing stats lock poisoned");
+                let telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                let pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                let body = build_prometheus_payload(&stats, &telemetry, &pplns, sessions, uptime_s);
                 ("200 OK", "text/plain; version=0.0.4", body)
             }
-            _ => {
-                // Default: JSON stats (backward compatible)
-                let stats = routing_stats
-                    .lock()
-                    .expect("routing stats lock poisoned");
+            p if p == "/stats" || p == "/" || p == "/pool" => {
                 let sessions = active_sessions.load(Ordering::Relaxed);
                 let uptime_s = started_at.elapsed().as_secs();
-                let mut body = stats.snapshot_json_ext(sessions, uptime_s);
-                // Append PPLNS stats to JSON (inject before closing brace).
-                let pplns = pplns_engine.lock().expect("pplns lock poisoned").stats();
-                if body.ends_with('}') {
-                    body.pop();
-                    let _ = write!(
-                        body,
-                        ",\"pplns\":{{\"window_size\":{},\"window_used\":{},\"registered_miners\":{},\"total_unpaid_flowers\":{},\"total_paid_flowers\":{},\"payout_rounds\":{}}}}}",
-                        pplns.window_size, pplns.window_used, pplns.registered_miners,
-                        pplns.total_unpaid_flowers, pplns.total_paid_flowers, pplns.payout_rounds
-                    );
-                }
+                let stats = routing_stats.lock().expect("routing stats lock poisoned");
+                let telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                let pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                let body = build_stats_payload(&stats, &telemetry, &pplns, sessions, uptime_s);
                 ("200 OK", "application/json", body)
+            }
+            p if p.starts_with("/miners") => {
+                let stats = routing_stats.lock().expect("routing stats lock poisoned");
+                let telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                let pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                let body = build_miners_payload(path, &stats, &telemetry, &pplns);
+                ("200 OK", "application/json", body)
+            }
+            p if p.starts_with("/api/v1/miner/") => {
+                let stats = routing_stats.lock().expect("routing stats lock poisoned");
+                let telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                let pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                match build_miner_api_payload(path, &stats, &telemetry, &pplns) {
+                    Some(body) => ("200 OK", "application/json", body),
+                    None => ("404 Not Found", "application/json", "{\"ok\":false,\"error\":\"miner not found\"}".to_string()),
+                }
+            }
+            _ => {
+                ("404 Not Found", "application/json", "{\"ok\":false,\"error\":\"not found\"}".to_string())
             }
         };
 
@@ -1022,6 +1343,305 @@ fn serve_routing_metrics(bind_addr: &str, routing_stats: Arc<Mutex<RoutingStats>
     }
 
     Ok(())
+}
+
+fn build_prometheus_payload(
+    stats: &RoutingStats,
+    telemetry: &MinerTelemetryRegistry,
+    pplns_engine: &PplnsEngine,
+    active_sessions: u64,
+    uptime_s: u64,
+) -> String {
+    let mut body = stats.snapshot_prometheus_ext(active_sessions, uptime_s);
+    let pplns = pplns_engine.stats();
+    let now_s = now_unix_seconds();
+    let pool_hashrate = telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s);
+    let pool_hashrate_1h = telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s);
+    let pool_hashrate_24h = telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s);
+    let _ = writeln!(body, "zion_pool_hashrate_hps {:.2}", pool_hashrate);
+    let _ = writeln!(body, "zion_pool_hashrate_1h_hps {:.2}", pool_hashrate_1h);
+    let _ = writeln!(body, "zion_pool_hashrate_24h_hps {:.2}", pool_hashrate_24h);
+    let _ = writeln!(body, "zion_pool_blocks_found_total {}", telemetry.total_blocks_found());
+    let _ = writeln!(body, "zion_pool_miners_tracked {}", telemetry.miners.len());
+    let _ = writeln!(body, "zion_pplns_window_size {}", pplns.window_size);
+    let _ = writeln!(body, "zion_pplns_window_used {}", pplns.window_used);
+    let _ = writeln!(body, "zion_pplns_registered_miners {}", pplns.registered_miners);
+    let _ = writeln!(body, "zion_pplns_total_paid_flowers {}", pplns.total_paid_flowers);
+    let _ = writeln!(body, "zion_pplns_payout_rounds {}", pplns.payout_rounds);
+    for (miner_id, miner) in &telemetry.miners {
+        let worker_name = sanitize_prometheus_label(&miner.worker_name);
+        let miner_label = sanitize_prometheus_label(miner_id);
+        let pending_balance = pplns_engine.unpaid_balance(miner_id);
+        let _ = writeln!(
+            body,
+            "zion_pool_miner_hashrate_hps{{miner_id=\"{}\",worker_name=\"{}\"}} {:.2}",
+            miner_label,
+            worker_name,
+            miner.hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s)
+        );
+        let _ = writeln!(
+            body,
+            "zion_pool_miner_valid_shares_total{{miner_id=\"{}\",worker_name=\"{}\"}} {}",
+            miner_label,
+            worker_name,
+            miner.valid_shares
+        );
+        let _ = writeln!(
+            body,
+            "zion_pool_miner_invalid_shares_total{{miner_id=\"{}\",worker_name=\"{}\"}} {}",
+            miner_label,
+            worker_name,
+            miner.invalid_shares
+        );
+        let _ = writeln!(
+            body,
+            "zion_pool_miner_no_solution_total{{miner_id=\"{}\",worker_name=\"{}\"}} {}",
+            miner_label,
+            worker_name,
+            miner.no_solution_jobs
+        );
+        let _ = writeln!(
+            body,
+            "zion_pool_miner_blocks_found_total{{miner_id=\"{}\",worker_name=\"{}\"}} {}",
+            miner_label,
+            worker_name,
+            miner.blocks_found
+        );
+        let _ = writeln!(
+            body,
+            "zion_pool_miner_pending_balance_atomic{{miner_id=\"{}\",worker_name=\"{}\"}} {}",
+            miner_label,
+            worker_name,
+            pending_balance
+        );
+        let _ = writeln!(
+            body,
+            "zion_pool_miner_paid_total_atomic{{miner_id=\"{}\",worker_name=\"{}\"}} {}",
+            miner_label,
+            worker_name,
+            miner.paid_total_atomic
+        );
+        let _ = writeln!(
+            body,
+            "zion_pool_miner_last_seen_seconds{{miner_id=\"{}\",worker_name=\"{}\"}} {}",
+            miner_label,
+            worker_name,
+            miner.last_seen_s
+        );
+    }
+    body
+}
+
+fn build_stats_payload(
+    stats: &RoutingStats,
+    telemetry: &MinerTelemetryRegistry,
+    pplns_engine: &PplnsEngine,
+    active_sessions: u64,
+    uptime_s: u64,
+) -> String {
+    let now_s = now_unix_seconds();
+    let pplns = pplns_engine.stats();
+    let json = serde_json::json!({
+        "ok": true,
+        "hashrate": {
+            "pool": telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s),
+            "pool_1h": telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s),
+            "pool_24h": telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s)
+        },
+        "miners": {
+            "active": active_sessions,
+            "total": telemetry.miners.len(),
+            "registered": pplns.registered_miners
+        },
+        "shares": {
+            "valid": stats.total_accepted,
+            "invalid": stats.total_submits.saturating_sub(stats.total_accepted),
+            "total": stats.total_submits,
+            "no_solution": telemetry.miners.values().map(|miner| miner.no_solution_jobs).sum::<u64>()
+        },
+        "blocks": {
+            "found": telemetry.total_blocks_found()
+        },
+        "pool_hashrate": telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s),
+        "pool_hashrate_24h": telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s),
+        "uptime_s": uptime_s,
+        "pool": {
+            "uptime_secs": uptime_s,
+            "version": "3.0.0"
+        },
+        "routing": {
+            "submits": stats.total_submits,
+            "accepted": stats.total_accepted,
+            "rejected": stats.total_submits.saturating_sub(stats.total_accepted),
+            "accept_rate_pct": if stats.total_submits == 0 { 0.0 } else { stats.total_accepted as f64 * 100.0 / stats.total_submits as f64 },
+            "groups": {
+                "zion": {
+                    "submits": stats.group_submits[group_index(SessionGroup::Zion)],
+                    "accepted": stats.group_accepted[group_index(SessionGroup::Zion)]
+                },
+                "revenue": {
+                    "submits": stats.group_submits[group_index(SessionGroup::Revenue)],
+                    "accepted": stats.group_accepted[group_index(SessionGroup::Revenue)]
+                },
+                "ncl": {
+                    "submits": stats.group_submits[group_index(SessionGroup::Ncl)],
+                    "accepted": stats.group_accepted[group_index(SessionGroup::Ncl)]
+                },
+                "auto": {
+                    "submits": stats.group_submits[group_index(SessionGroup::Auto)],
+                    "accepted": stats.group_accepted[group_index(SessionGroup::Auto)]
+                }
+            },
+            "sources": {
+                "zion": {
+                    "submits": stats.source_submits[source_index(RevenueSource::Zion)],
+                    "accepted": stats.source_accepted[source_index(RevenueSource::Zion)]
+                },
+                "blake3": {
+                    "submits": stats.source_submits[source_index(RevenueSource::Blake3External)],
+                    "accepted": stats.source_accepted[source_index(RevenueSource::Blake3External)]
+                },
+                "ncl": {
+                    "submits": stats.source_submits[source_index(RevenueSource::NclAi)],
+                    "accepted": stats.source_accepted[source_index(RevenueSource::NclAi)]
+                }
+            }
+        },
+        "pplns_window_size": pplns.window_size,
+        "pplns": {
+            "window_size": pplns.window_size,
+            "window_used": pplns.window_used,
+            "registered_miners": pplns.registered_miners,
+            "total_unpaid_flowers": pplns.total_unpaid_flowers,
+            "total_paid_flowers": pplns.total_paid_flowers,
+            "payout_rounds": pplns.payout_rounds
+        },
+        "payouts": {
+            "pending_total_atomic": pplns.total_unpaid_flowers,
+            "pending_miners": pplns.miners_with_unpaid,
+            "total_paid_atomic": pplns.total_paid_flowers,
+            "payout_rounds": pplns.payout_rounds
+        },
+        "api": {
+            "miners": "/miners?limit=200",
+            "miner_stats": "/api/v1/miner/:address/stats",
+            "miner_payouts": "/api/v1/miner/:address/payouts",
+            "metrics": "/metrics"
+        }
+    });
+    json.to_string()
+}
+
+fn build_miners_payload(
+    path: &str,
+    _stats: &RoutingStats,
+    telemetry: &MinerTelemetryRegistry,
+    pplns_engine: &PplnsEngine,
+) -> String {
+    let now_s = now_unix_seconds();
+    let limit = extract_limit(path).unwrap_or(200);
+    let mut miners: Vec<_> = telemetry.miners.iter().collect();
+    miners.sort_by_key(|(_, miner)| std::cmp::Reverse(miner.last_seen_s));
+    let miners = miners
+        .into_iter()
+        .take(limit)
+        .map(|(miner_id, miner)| {
+            serde_json::json!({
+                "address": miner_id,
+                "worker_name": miner.worker_name,
+                "last_share": miner.last_share_time_s,
+                "last_seen": miner.last_seen_s,
+                "hashrate": miner.hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s),
+                "hashrate_1h": miner.hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s),
+                "hashrate_24h": miner.hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s),
+                "blocks_found": miner.blocks_found,
+                "valid_shares": miner.valid_shares,
+                "invalid_shares": miner.invalid_shares,
+                "pending_balance": pplns_engine.unpaid_balance(miner_id)
+            })
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "ok": true,
+        "miners": miners,
+        "count": telemetry.miners.len()
+    })
+    .to_string()
+}
+
+fn build_miner_api_payload(
+    path: &str,
+    _stats: &RoutingStats,
+    telemetry: &MinerTelemetryRegistry,
+    pplns_engine: &PplnsEngine,
+) -> Option<String> {
+    let remainder = path.strip_prefix("/api/v1/miner/")?;
+    let (address, suffix) = remainder.split_once('/')?;
+    let miner = telemetry.miners.get(address)?;
+    let now_s = now_unix_seconds();
+    match suffix.split('?').next().unwrap_or(suffix) {
+        "stats" => Some(
+            serde_json::json!({
+                "ok": true,
+                "address": address,
+                "stats": {
+                    "hashrate_1h": miner.hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s),
+                    "hashrate_24h": miner.hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s),
+                    "total_shares": miner.total_shares(),
+                    "valid_shares": miner.valid_shares,
+                    "invalid_shares": miner.invalid_shares,
+                    "blocks_found": miner.blocks_found,
+                    "total_paid": miner.paid_total_atomic,
+                    "pending_balance": pplns_engine.unpaid_balance(address),
+                    "last_share_time": miner.last_share_time_s,
+                    "last_seen": miner.last_seen_s,
+                    "first_seen": miner.first_seen_s,
+                    "worker_name": miner.worker_name,
+                    "jobs_completed": miner.completed_jobs,
+                    "no_solution_jobs": miner.no_solution_jobs
+                }
+            })
+            .to_string(),
+        ),
+        "payouts" => Some(
+            serde_json::json!({
+                "ok": true,
+                "address": address,
+                "pending_payouts": miner.payouts.iter().map(|payout| serde_json::json!({
+                    "amount": payout.amount_atomic,
+                    "amount_atomic": payout.amount_atomic,
+                    "share_count": payout.share_count,
+                    "created_ts": payout.created_ts,
+                    "height": payout.height,
+                    "status": payout.status
+                })).collect::<Vec<_>>()
+            })
+            .to_string(),
+        ),
+        _ => None,
+    }
+}
+
+fn extract_limit(path: &str) -> Option<usize> {
+    let query = path.split_once('?')?.1;
+    for part in query.split('&') {
+        let (key, value) = part.split_once('=')?;
+        if key == "limit" {
+            return value.parse::<usize>().ok();
+        }
+    }
+    None
+}
+
+fn sanitize_prometheus_label(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn now_unix_seconds() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
 }
 
 fn group_index(group: SessionGroup) -> usize {
@@ -1345,11 +1965,21 @@ mod tests {
             config.revenue_value_usd,
         )?));
         let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
+        let miner_telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::default()));
         let pplns = Arc::new(Mutex::new(PplnsEngine::new(PplnsConfig::default())));
 
         let handle = thread::spawn(move || -> Result<()> {
             let (stream, _) = listener.accept().context("accept pool test client")?;
-            handle_client(stream, pool, revenue_scheduler, routing_stats, pplns, Arc::new(AtomicU64::new(0)), &config)
+            handle_client(
+                stream,
+                pool,
+                revenue_scheduler,
+                routing_stats,
+                miner_telemetry,
+                pplns,
+                Arc::new(AtomicU64::new(0)),
+                &config,
+            )
         });
 
         Ok((addr, handle))
@@ -1411,6 +2041,8 @@ mod tests {
                 worker_name: "rig-test".to_string(),
                 nonce: 42,
                 hash_hex: "00".repeat(32),
+                attempted_hashes: Some(128),
+                elapsed_ms: Some(1000),
             },
         )?;
 

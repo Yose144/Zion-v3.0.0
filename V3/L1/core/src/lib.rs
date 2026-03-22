@@ -15,7 +15,9 @@ pub use zion_cosmic_harmony::ExternalCoin;
 
 pub mod crypto;
 pub mod chain;
+pub mod checkpoint;
 pub mod difficulty;
+pub mod discovery;
 pub mod emission;
 pub mod fee;
 pub mod genesis;
