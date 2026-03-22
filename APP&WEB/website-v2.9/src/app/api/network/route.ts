@@ -75,6 +75,9 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
     status.rpcLatencyMs = Date.now() - rpcStart;
     status.height = info.height ?? 0;
     status.peers = (info.outgoing_connections_count ?? 0) + (info.incoming_connections_count ?? 0);
+    if (node.region === 'PRIMARY' || node.id === 'primary') {
+      status.hashrate = info.difficulty ? info.difficulty / (info.target || 60) : 0;
+    }
     status.online = info.status === 'OK';
   } catch (e) {
     status.error = e instanceof Error ? e.message : 'RPC error';
@@ -87,6 +90,12 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
     const poolStats = await rpc.getPoolStats();
     status.poolLatencyMs = Date.now() - poolStart;
     if (poolStats) {
+      if (node.region === 'PRIMARY' || node.id === 'primary') {
+        status.hashrate = poolStats.hashrate?.pool || poolStats.pool_hashrate || status.hashrate;
+        status.miners = poolStats.miners?.active ?? 0;
+        status.blocks = poolStats.blocks?.found ?? 0;
+        status.uptime = poolStats.pool?.uptime_secs ?? poolStats.uptime_s ?? 0;
+      }
       status.online = true;
     }
   } catch {
