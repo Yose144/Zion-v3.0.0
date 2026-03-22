@@ -34,5 +34,5 @@ services:
 
 networks:
   zion-net:
-    external: true
     name: zion-net
+    external: true
