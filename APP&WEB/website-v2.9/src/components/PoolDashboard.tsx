@@ -571,7 +571,7 @@ export default function PoolDashboard() {
                       pool {data?.runtime?.data_sources?.pool_tcp ? 'on' : 'off'} · rpc {data?.runtime?.data_sources?.core_rpc ? 'on' : 'off'} · prom {data?.runtime?.data_sources?.prometheus ? 'on' : 'off'}
                     </span>
                   </div>
-                  {data.aggregate.hashrate <= 0 && (
+                  {data?.aggregate?.hashrate !== undefined && data.aggregate.hashrate <= 0 && (
                     <p className="mt-2 text-xs text-zion-cyan/80">
                       Pool hashrate is still unavailable on the live backend exporter, so the page prioritizes routing, PPLNS, and chain runtime health.
                     </p>
