@@ -10,9 +10,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import {
-  ATOMIC_UNITS_PER_ZION,
   BLOCK_REWARD_ZION,
-  TOTAL_SUPPLY_ZION,
   BLOCKS_PER_DAY,
   BLOCKS_PER_YEAR,
   DAILY_EMISSION_ZION,
@@ -23,7 +21,9 @@ import {
   MINER_REWARD_ZION,
   HUMANITARIAN_REWARD_ZION,
   POOL_FEE_ZION,
+  TOTAL_SUPPLY_ZION,
 } from '@/lib/constants';
+import { resolveSupplySnapshot } from '@/lib/supply';
 
 export async function GET() {
   const rpc = getZionRpc();
@@ -32,34 +32,19 @@ export async function GET() {
     const info = await rpc.getInfo();
     const height = info.height;
 
-    // Try real emission from RPC
-    let emission = { total: 0, fees: 0 };
-    try {
-      const emissionData = await rpc.getCoinbaseTxSum(0, height);
-      // getCoinbaseTxSum returns atomic units; convert to ZION
-      emission.total = emissionData.emission_amount / ATOMIC_UNITS_PER_ZION;
-      emission.fees = emissionData.fee_amount / ATOMIC_UNITS_PER_ZION;
-    } catch {
-      // Estimate from block height (fallback)
-      emission.total = height * BLOCK_REWARD_ZION;
-    }
-
-    // Estimated time to mine all supply
-    const remainingSupply = TOTAL_SUPPLY_ZION - emission.total;
-    const estimatedDaysRemaining = remainingSupply / DAILY_EMISSION_ZION;
-    const estimatedYearsRemaining = estimatedDaysRemaining / 365.25;
+    const supply = await resolveSupplySnapshot(rpc, height);
 
     return NextResponse.json({
       // Current emission
-      total_emission: emission.total,
-      total_fees: emission.fees,
-      total_burned: emission.fees, // ZION burns ALL fees
+      total_emission: supply.minedSupply,
+      total_fees: 0,
+      total_burned: 0,
 
       // Supply
-      circulating_supply: emission.total,
-      max_supply: TOTAL_SUPPLY_ZION,
-      emission_pct: (emission.total / TOTAL_SUPPLY_ZION * 100),
-      remaining_supply: remainingSupply,
+      circulating_supply: supply.circulatingSupply,
+      max_supply: supply.maxSupply,
+      emission_pct: supply.emissionPct,
+      remaining_supply: supply.remainingSupply,
 
       // Rate
       base_reward_per_block: BLOCK_REWARD_ZION,
@@ -78,10 +63,9 @@ export async function GET() {
       },
 
       // Projection
-      estimated_years_remaining: estimatedYearsRemaining,
-      estimated_full_emission_date: new Date(
-        Date.now() + estimatedDaysRemaining * 24 * 60 * 60 * 1000
-      ).toISOString().split('T')[0],
+      estimated_years_remaining: supply.estimatedYearsRemaining,
+      estimated_full_emission_date: supply.estimatedFullEmissionDate,
+      mining_horizon_label: supply.miningHorizonLabel,
 
       // Current chain state
       block_height: height,
@@ -91,7 +75,7 @@ export async function GET() {
       humanitarian: {
         rate: HUMANITARIAN_TITHE_PCT / 100,
         per_block: HUMANITARIAN_REWARD_ZION,
-        estimated_total: emission.total * HUMANITARIAN_TITHE_PCT / 100,
+        estimated_total: supply.minedSupply * HUMANITARIAN_TITHE_PCT / 100,
       },
     }, {
       headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
