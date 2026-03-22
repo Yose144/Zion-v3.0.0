@@ -486,6 +486,7 @@ struct NodeServerConfig {
 impl NodeServerConfig {
     fn from_env() -> Result<Self> {
         let mut node_config = NodeConfig::mainnet();
+        node_config.network = parse_network_env(node_config.network)?;
 
         if let Ok(value) = std::env::var("ZION_P2P_BIND") {
             node_config.p2p_bind = parse_endpoint_env(&value, "ZION_P2P_BIND")?;
@@ -515,6 +516,24 @@ impl NodeServerConfig {
 
 fn env_or_default(key: &str, default: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| default.to_string())
+}
+
+fn parse_network_env(default: zion_core::NetworkId) -> Result<zion_core::NetworkId> {
+    match std::env::var("ZION_NETWORK") {
+        Ok(value) => parse_network_name(&value),
+        Err(_) => Ok(default),
+    }
+}
+
+fn parse_network_name(value: &str) -> Result<zion_core::NetworkId> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "mainnet" => Ok(zion_core::NetworkId::Mainnet),
+        "testnet" => Ok(zion_core::NetworkId::Testnet),
+        "devnet" => Ok(zion_core::NetworkId::Devnet),
+        other => Err(anyhow!(
+            "invalid ZION_NETWORK: {other} (expected mainnet, testnet, or devnet)"
+        )),
+    }
 }
 
 fn parse_endpoint_env(value: &str, key: &str) -> Result<PeerEndpoint> {
@@ -547,6 +566,23 @@ fn parse_seed_peers_env(value: &str) -> Result<Vec<PeerEndpoint>> {
         .filter(|entry| !entry.is_empty())
         .map(|entry| parse_endpoint_env(entry, "ZION_SEED_PEERS"))
         .collect::<Result<Vec<_>>>()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_network_name_accepts_testnet() {
+        let network = parse_network_name("testnet").expect("network");
+        assert_eq!(network, zion_core::NetworkId::Testnet);
+    }
+
+    #[test]
+    fn parse_network_name_rejects_unknown_network() {
+        let error = parse_network_name("weirdnet").unwrap_err();
+        assert!(error.to_string().contains("invalid ZION_NETWORK"));
+    }
 }
 
 fn bootstrap_peer_sync(runtime: &Arc<Mutex<NodeRuntime>>, batch_limit: u16) -> Result<()> {
