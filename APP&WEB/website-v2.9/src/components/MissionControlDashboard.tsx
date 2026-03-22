@@ -98,6 +98,13 @@ interface V3Charts {
 type ChartRange = '1h' | '6h' | '24h';
 type ServiceGroup = 'all' | 'core' | 'mining' | 'monitoring' | 'remote';
 
+interface OpsAlert {
+  id: string;
+  message: string;
+  severity: 'info' | 'warn' | 'critical';
+  href?: string;
+}
+
 interface ServiceStatus {
   name: string; job: string; up: boolean | null; image: string; ports: string; note?: string;
 }
@@ -410,6 +417,12 @@ function getServiceActions(service: ServiceStatus): { href: string; label: strin
   return actions;
 }
 
+function getServiceSortRank(service: ServiceStatus): number {
+  if (service.up === false) return 0;
+  if (service.up === null) return 1;
+  return 2;
+}
+
 /* ═══════════════════════ SUB-COMPONENTS ═══════════════════════ */
 function Stat({ label, value, sub, color = 'text-white', mono }: { label: string; value: string; sub?: string; color?: string; mono?: boolean }) {
   return (
@@ -561,7 +574,7 @@ function MiniMetric({ label, value, color = 'text-white' }: { label: string; val
   );
 }
 
-function OpsServiceCard({ service }: { service: ServiceStatus }) {
+function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (service: ServiceStatus) => void }) {
   const group = getServiceGroup(service);
   const actions = getServiceActions(service);
   const statusClass = service.up === true
@@ -572,7 +585,7 @@ function OpsServiceCard({ service }: { service: ServiceStatus }) {
   const dotClass = service.up === true ? 'bg-emerald-400' : service.up === false ? 'bg-red-400' : 'bg-gray-500';
   const statusLabel = service.up === true ? 'UP' : service.up === false ? 'DOWN' : 'N/A';
   return (
-    <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-3">
+    <button onClick={() => onOpen(service)} className="w-full text-left rounded-xl border border-white/10 bg-black/30 p-3 space-y-3 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors">
       <div className="flex items-start gap-3">
         <span className={`mt-1 h-2.5 w-2.5 rounded-full ${dotClass} ${service.up === true ? 'animate-pulse' : ''}`} />
         <div className="min-w-0 flex-1">
@@ -588,6 +601,7 @@ function OpsServiceCard({ service }: { service: ServiceStatus }) {
             <a
               key={`${service.name}_${action.label}`}
               href={action.href}
+              onClick={event => event.stopPropagation()}
               target={action.href.startsWith('/grafana') ? '_blank' : undefined}
               rel={action.href.startsWith('/grafana') ? 'noopener noreferrer' : undefined}
               className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-cyan-300 hover:border-cyan-400/40 hover:text-cyan-200 transition-colors"
@@ -608,6 +622,66 @@ function OpsServiceCard({ service }: { service: ServiceStatus }) {
           <div className="text-gray-300 break-words">{service.note ?? (service.job ? `job: ${service.job}` : 'local service')}</div>
         </div>
       </div>
+    </button>
+  );
+}
+
+function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onClose: () => void }) {
+  const group = getServiceGroup(service);
+  const actions = getServiceActions(service);
+  const statusLabel = service.up === true ? 'UP' : service.up === false ? 'DOWN' : 'N/A';
+  const statusClass = service.up === true
+    ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'
+    : service.up === false
+    ? 'text-red-300 border-red-500/30 bg-red-500/10'
+    : 'text-gray-300 border-white/10 bg-white/5';
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
+      <button aria-label="Close details" onClick={onClose} className="absolute inset-0" />
+      <motion.div initial={{ x: 32, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 32, opacity: 0 }} className="relative h-full w-full max-w-lg border-l border-white/10 bg-zinc-950/95 p-5 sm:p-6 overflow-y-auto">
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Service Detail</p>
+            <h3 className="text-2xl font-semibold text-white mt-2">{service.name}</h3>
+            <p className="text-xs text-gray-500 font-mono mt-1">{service.image}</p>
+          </div>
+          <button onClick={onClose} className="rounded-xl border border-white/10 bg-white/5 p-2 text-gray-300 hover:text-white hover:border-white/20 transition-colors">
+            <XCircle className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-5">
+          <span className={`text-[10px] font-semibold px-3 py-1 rounded-full border uppercase tracking-widest ${statusClass}`}>{statusLabel}</span>
+          <span className="text-[10px] font-semibold px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-300 uppercase tracking-widest">{group}</span>
+          {service.job && <span className="text-[10px] font-semibold px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-cyan-300 uppercase tracking-widest">{service.job}</span>}
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <MiniMetric label="Ports" value={service.ports} color="text-cyan-400" />
+          <MiniMetric label="Status" value={statusLabel} color={service.up === true ? 'text-emerald-400' : service.up === false ? 'text-red-400' : 'text-gray-300'} />
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/30 p-4 mb-5">
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Operational Context</div>
+          <div className="text-sm text-gray-300 leading-relaxed">{service.note ?? (service.job ? `Prometheus target linked through job ${service.job}.` : 'Local service without a direct Prometheus scrape target.')}</div>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/30 p-4 mb-5">
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">Quick Actions</div>
+          <div className="flex flex-wrap gap-2">
+            {actions.map(action => (
+              <a key={`${service.name}_drawer_${action.label}`} href={action.href} target={action.href.startsWith('/grafana') ? '_blank' : undefined} rel={action.href.startsWith('/grafana') ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-300 hover:border-cyan-400/40 hover:text-cyan-200 transition-colors">
+                <Link className="h-4 w-4" />
+                {action.label}
+              </a>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">Operator Notes</div>
+          <ul className="space-y-2 text-sm text-gray-300">
+            <li>Status `DOWN` znamená scrape fail nebo nedostupný target.</li>
+            <li>Status `N/A` znamená, že služba není napojená přímo na Prometheus scrape.</li>
+            <li>Pro hlubší drill-down použij Monitoring nebo Grafana akce výše.</li>
+          </ul>
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -1007,6 +1081,7 @@ export default function MissionControlDashboard() {
   const [stackSummary, setStackSummary] = useState<StackSummary | null>(null);
   const [chartRange, setChartRange] = useState<ChartRange>('6h');
   const [serviceGroup, setServiceGroup] = useState<ServiceGroup>('all');
+  const [selectedService, setSelectedService] = useState<ServiceStatus | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -1075,17 +1150,23 @@ export default function MissionControlDashboard() {
     : primaryHeight > 0
     ? 'text-cyan-400'
     : 'text-red-400';
-  const visibleServices = serviceGroup === 'all' ? services : services.filter(service => getServiceGroup(service) === serviceGroup);
+  const visibleServices = (serviceGroup === 'all' ? services : services.filter(service => getServiceGroup(service) === serviceGroup))
+    .slice()
+    .sort((left, right) => {
+      const rank = getServiceSortRank(left) - getServiceSortRank(right);
+      return rank !== 0 ? rank : left.name.localeCompare(right.name);
+    });
   const monitoredServices = services.filter(service => service.up !== null);
   const servicesUp = monitoredServices.filter(service => service.up).length;
   const servicesDown = monitoredServices.filter(service => service.up === false).length;
   const servicesNa = services.filter(service => service.up === null).length;
-  const opsAlerts = [
-    servicesDown > 0 ? `${servicesDown} target${servicesDown > 1 ? 's' : ''} down` : null,
-    stackSummary?.prometheusReloadOk === 0 ? 'Prometheus reload failed' : null,
-    stackSummary?.prometheusQueueLength != null && stackSummary.prometheusQueueLength > 0 ? `Alert queue ${fmt(stackSummary.prometheusQueueLength)}` : null,
-    stackSummary?.redisUp === 0 ? 'Redis exporter path unhealthy' : null,
-  ].filter((value): value is string => Boolean(value));
+  const opsAlerts: OpsAlert[] = [
+    servicesDown > 0 ? { id: 'targets-down', message: `${servicesDown} target${servicesDown > 1 ? 's' : ''} down`, severity: 'critical', href: '/monitoring' } : null,
+    stackSummary?.prometheusReloadOk === 0 ? { id: 'prometheus-reload', message: 'Prometheus reload failed', severity: 'critical', href: '/grafana/' } : null,
+    stackSummary?.prometheusQueueLength != null && stackSummary.prometheusQueueLength > 0 ? { id: 'alert-queue', message: `Alert queue ${fmt(stackSummary.prometheusQueueLength)}`, severity: stackSummary.prometheusQueueLength > 10 ? 'critical' : 'warn', href: '/grafana/' } : null,
+    stackSummary?.redisUp === 0 ? { id: 'redis-unhealthy', message: 'Redis exporter path unhealthy', severity: 'warn', href: '/monitoring' } : null,
+    servicesNa > 0 ? { id: 'na-services', message: `${servicesNa} service${servicesNa > 1 ? 's' : ''} without scrape`, severity: 'info', href: '/monitoring' } : null,
+  ].filter((value): value is OpsAlert => Boolean(value));
 
   return (
     <div className="zion-shell min-h-screen pt-24 sm:pt-32 pb-16 sm:pb-24 overflow-x-hidden">
@@ -1456,9 +1537,18 @@ export default function MissionControlDashboard() {
                       Ops Alerts
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {opsAlerts.map(alert => (
-                        <span key={alert} className="rounded-full border border-amber-500/30 bg-black/20 px-3 py-1 text-xs text-amber-200">{alert}</span>
-                      ))}
+                      {opsAlerts.map(alert => {
+                        const cls = alert.severity === 'critical'
+                          ? 'border-red-500/30 bg-red-500/10 text-red-200'
+                          : alert.severity === 'warn'
+                          ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+                          : 'border-cyan-500/30 bg-cyan-500/10 text-cyan-200';
+                        return alert.href ? (
+                          <a key={alert.id} href={alert.href} target={alert.href.startsWith('/grafana') ? '_blank' : undefined} rel={alert.href.startsWith('/grafana') ? 'noopener noreferrer' : undefined} className={`rounded-full border px-3 py-1 text-xs transition-colors hover:brightness-110 ${cls}`}>{alert.message}</a>
+                        ) : (
+                          <span key={alert.id} className={`rounded-full border px-3 py-1 text-xs ${cls}`}>{alert.message}</span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -1494,7 +1584,7 @@ export default function MissionControlDashboard() {
                 ))}
               </div>
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {visibleServices.map(service => <OpsServiceCard key={service.name} service={service} />)}
+                {visibleServices.map(service => <OpsServiceCard key={service.name} service={service} onOpen={setSelectedService} />)}
               </div>
               <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-gray-500">
                 <span>{servicesUp} / {monitoredServices.length || services.length} monitored targets UP</span>
@@ -1615,6 +1705,10 @@ export default function MissionControlDashboard() {
             </div>
           </div>
         )}
+
+        <AnimatePresence>
+          {selectedService && <ServiceDetailDrawer service={selectedService} onClose={() => setSelectedService(null)} />}
+        </AnimatePresence>
 
         {/* ═══════════════════════════════════════════════
             TAB: EKAM DEEKSHA UPGRADE
