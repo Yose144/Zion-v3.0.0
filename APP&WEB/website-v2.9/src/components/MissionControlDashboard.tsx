@@ -95,6 +95,8 @@ interface V3Charts {
   cpuLoad: number[]; memPct: number[]; redisMemory: number[]; timestamps: number[];
 }
 
+type ChartRange = '1h' | '6h' | '24h';
+
 interface ServiceStatus {
   name: string; job: string; up: boolean | null; image: string; ports: string; note?: string;
 }
@@ -111,6 +113,12 @@ interface StackSummary {
   germanyPoolUp: number | null;
   germanyCoreUp: number | null;
   hostKernel: string | null;
+  prometheusHeadSeries: number | null;
+  prometheusHeadChunks: number | null;
+  prometheusReloadOk: number | null;
+  alertmanagersDiscovered: number | null;
+  prometheusQueueLength: number | null;
+  prometheusVersion: string | null;
 }
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
@@ -224,15 +232,16 @@ async function fetchV3Sparklines(): Promise<V3Sparklines> {
   return { chainHeight: ex(h), poolSessions: ex(s), shares: ex(a) };
 }
 
-async function fetchV3Charts(): Promise<V3Charts> {
+async function fetchV3Charts(range: ChartRange): Promise<V3Charts> {
+  const step = range === '1h' ? '60' : range === '6h' ? '300' : '600';
   const [h,s,a,cpu,memTotal,memAvail,redisMem] = await Promise.allSettled([
-    promRange('zion_chain_height','6h','300'),
-    promRange('zion_pool_active_sessions','6h','300'),
-    promRange('zion_pool_accepted_total','6h','300'),
-    promRange('node_load1','6h','300'),
-    promRange('node_memory_MemTotal_bytes','6h','300'),
-    promRange('node_memory_MemAvailable_bytes','6h','300'),
-    promRange('redis_memory_used_bytes','6h','300'),
+    promRange('zion_chain_height', range, step),
+    promRange('zion_pool_active_sessions', range, step),
+    promRange('zion_pool_accepted_total', range, step),
+    promRange('node_load1', range, step),
+    promRange('node_memory_MemTotal_bytes', range, step),
+    promRange('node_memory_MemAvailable_bytes', range, step),
+    promRange('redis_memory_used_bytes', range, step),
   ]);
   const ex = (r: PromiseSettledResult<PromRangeResult[]>) => {
     if (r.status !== 'fulfilled') return []; const f = r.value[0]; return f ? f.values.map(([,v]) => parseFloat(v)) : [];
@@ -290,6 +299,12 @@ async function fetchStackSummary(): Promise<StackSummary> {
     'up{job="zion-pool-germany"}',
     'up{job="zion-core-germany"}',
     'node_uname_info',
+    'prometheus_tsdb_head_series',
+    'prometheus_tsdb_head_chunks',
+    'prometheus_config_last_reload_successful',
+    'prometheus_notifications_alertmanagers_discovered',
+    'prometheus_notifications_queue_length',
+    'prometheus_build_info',
   ];
   const res = await Promise.allSettled(qs.map(q => promQuery(q)));
   const hits = pv(res, 4);
@@ -306,6 +321,14 @@ async function fetchStackSummary(): Promise<StackSummary> {
       hostKernel = `${sysname} ${release}${machine ? ` · ${machine}` : ''}`;
     }
   }
+  let prometheusVersion: string | null = null;
+  const buildInfoResult = res[17];
+  if (buildInfoResult?.status === 'fulfilled') {
+    const first = buildInfoResult.value[0];
+    if (first) {
+      prometheusVersion = first.metric.version ?? null;
+    }
+  }
   return {
     redisUp: pv(res, 0),
     redisClients: pv(res, 1),
@@ -318,6 +341,12 @@ async function fetchStackSummary(): Promise<StackSummary> {
     germanyPoolUp: pv(res, 9),
     germanyCoreUp: pv(res, 10),
     hostKernel,
+    prometheusHeadSeries: pv(res, 12),
+    prometheusHeadChunks: pv(res, 13),
+    prometheusReloadOk: pv(res, 14),
+    alertmanagersDiscovered: pv(res, 15),
+    prometheusQueueLength: pv(res, 16),
+    prometheusVersion,
   };
 }
 
@@ -344,6 +373,12 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
+
+const CHART_RANGES: { value: ChartRange; label: string }[] = [
+  { value: '1h', label: '1h' },
+  { value: '6h', label: '6h' },
+  { value: '24h', label: '24h' },
+];
 
 /* ═══════════════════════ SUB-COMPONENTS ═══════════════════════ */
 function Stat({ label, value, sub, color = 'text-white', mono }: { label: string; value: string; sub?: string; color?: string; mono?: boolean }) {
@@ -492,6 +527,38 @@ function MiniMetric({ label, value, color = 'text-white' }: { label: string; val
     <div className="rounded-xl sm:rounded-2xl bg-white/5 p-2 sm:p-3 border border-white/10">
       <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.3em] text-gray-400">{label}</p>
       <p className={`text-sm sm:text-base font-bold font-mono ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+function OpsServiceCard({ service }: { service: ServiceStatus }) {
+  const statusClass = service.up === true
+    ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'
+    : service.up === false
+    ? 'text-red-300 border-red-500/30 bg-red-500/10'
+    : 'text-gray-400 border-white/10 bg-white/5';
+  const dotClass = service.up === true ? 'bg-emerald-400' : service.up === false ? 'bg-red-400' : 'bg-gray-500';
+  const statusLabel = service.up === true ? 'UP' : service.up === false ? 'DOWN' : 'N/A';
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-3">
+      <div className="flex items-start gap-3">
+        <span className={`mt-1 h-2.5 w-2.5 rounded-full ${dotClass} ${service.up === true ? 'animate-pulse' : ''}`} />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-white truncate">{service.name}</div>
+          <div className="text-[10px] text-gray-500 font-mono truncate">{service.image}</div>
+        </div>
+        <span className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border uppercase tracking-widest ${statusClass}`}>{statusLabel}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-[10px]">
+        <div className="rounded-lg border border-white/10 bg-white/5 p-2">
+          <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">Ports</div>
+          <div className="font-mono text-gray-300 break-all">{service.ports}</div>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-white/5 p-2">
+          <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">Meta</div>
+          <div className="text-gray-300 break-words">{service.note ?? (service.job ? `job: ${service.job}` : 'local service')}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -889,6 +956,7 @@ export default function MissionControlDashboard() {
   const [v3Charts, setV3Charts] = useState<V3Charts | null>(null);
   const [services, setServices] = useState<ServiceStatus[]>([]);
   const [stackSummary, setStackSummary] = useState<StackSummary | null>(null);
+  const [chartRange, setChartRange] = useState<ChartRange>('6h');
 
   const refresh = useCallback(async () => {
     try {
@@ -923,7 +991,7 @@ export default function MissionControlDashboard() {
     };
     const refreshCharts = async () => {
       try {
-        const [charts, svc, summary] = await Promise.all([fetchV3Charts(), fetchServiceStatuses(), fetchStackSummary()]);
+        const [charts, svc, summary] = await Promise.all([fetchV3Charts(chartRange), fetchServiceStatuses(), fetchStackSummary()]);
         setV3Charts(charts);
         setServices(svc);
         setStackSummary(summary);
@@ -935,7 +1003,7 @@ export default function MissionControlDashboard() {
     const iv2 = setInterval(refreshV3, 15_000);
     const iv3 = setInterval(refreshCharts, 60_000);
     return () => { cancelled = true; clearInterval(iv); clearInterval(iv2); clearInterval(iv3); };
-  }, [refresh]);
+  }, [refresh, chartRange]);
 
   const sr = data?.stability_run;
   const cr = data?.canary_run;
@@ -1293,6 +1361,33 @@ export default function MissionControlDashboard() {
                     <div className="mt-2 text-[10px] text-gray-500">Redis memory cap: {fmtBytes(stackSummary.redisMemoryMax)}</div>
                   </div>
                 </div>
+                <div className="grid md:grid-cols-3 gap-3 mt-4">
+                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                    <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Prometheus Runtime</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <MiniMetric label="Version" value={stackSummary.prometheusVersion ?? '—'} color="text-cyan-400" />
+                      <MiniMetric label="Reload" value={stackSummary.prometheusReloadOk === 1 ? 'OK' : 'ERR'} color={stackSummary.prometheusReloadOk === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                      <MiniMetric label="Head Series" value={fmt(stackSummary.prometheusHeadSeries)} color="text-purple-400" />
+                      <MiniMetric label="Head Chunks" value={fmt(stackSummary.prometheusHeadChunks)} color="text-amber-400" />
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                    <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Alert Pipeline</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <MiniMetric label="Alertmanagers" value={fmt(stackSummary.alertmanagersDiscovered)} color="text-emerald-400" />
+                      <MiniMetric label="Queue Length" value={fmt(stackSummary.prometheusQueueLength)} color="text-cyan-400" />
+                    </div>
+                    <div className="mt-2 text-[10px] text-gray-500">Alertmanager není scrape target v tomto stacku, stav se čte přes Prometheus notification pipeline.</div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                    <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Remote Coverage</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <MiniMetric label="Germany Pool" value={stackSummary.germanyPoolUp === 1 ? 'UP' : stackSummary.germanyPoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.germanyPoolUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                      <MiniMetric label="Germany Core" value={stackSummary.germanyCoreUp === 1 ? 'UP' : stackSummary.germanyCoreUp === 0 ? 'DOWN' : '—'} color={stackSummary.germanyCoreUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                    </div>
+                    <div className="mt-2 text-[10px] text-gray-500">Veřejně scrapeované targety z Helsinek Promethea.</div>
+                  </div>
+                </div>
               </motion.section>
             )}
 
@@ -1300,39 +1395,21 @@ export default function MissionControlDashboard() {
             <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="rounded-2xl sm:rounded-3xl border border-emerald-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
               <div className="flex flex-col gap-2 mb-5">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Docker Stack</p>
-                <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
-                  <Server className="h-6 w-6 text-emerald-400" />
-                  Service Overview — Helsinki · Hetzner
-                </h2>
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                    <Server className="h-6 w-6 text-emerald-400" />
+                    Ops Panel — Helsinki + Remote Targets
+                  </h2>
+                  <div className="flex flex-wrap gap-2 text-[10px]">
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 font-semibold uppercase tracking-widest">{services.filter(s => s.up === true).length} up</span>
+                    <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-red-300 font-semibold uppercase tracking-widest">{services.filter(s => s.up === false).length} down</span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300 font-semibold uppercase tracking-widest">{services.filter(s => s.up === null).length} n/a</span>
+                  </div>
+                </div>
                 <p className="text-xs text-gray-500">{services.length} services/targets · zion-net Docker network · Prometheus scrape 15s</p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-white/10 text-left">
-                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Status</th>
-                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Container</th>
-                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Image</th>
-                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Ports</th>
-                      <th className="py-2 px-3 text-[10px] uppercase tracking-widest text-gray-400 font-medium">Note</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {services.map(s => (
-                      <tr key={s.name} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="py-2 px-3">
-                          {s.up === true ? <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold"><span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />UP</span>
-                            : s.up === false ? <span className="inline-flex items-center gap-1.5 text-[10px] text-red-400 font-semibold"><span className="h-2 w-2 rounded-full bg-red-400" />DOWN</span>
-                            : <span className="inline-flex items-center gap-1.5 text-[10px] text-gray-500 font-semibold"><span className="h-2 w-2 rounded-full bg-gray-500" />N/A</span>}
-                        </td>
-                        <td className="py-2 px-3 font-mono text-white text-xs">{s.name}</td>
-                        <td className="py-2 px-3 font-mono text-gray-400 text-xs">{s.image}</td>
-                        <td className="py-2 px-3 font-mono text-gray-400 text-xs">{s.ports}</td>
-                        <td className="py-2 px-3 text-gray-500 text-xs">{s.note ?? (s.job ? `job: ${s.job}` : '')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {services.map(service => <OpsServiceCard key={service.name} service={service} />)}
               </div>
               <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-gray-500">
                 <span>{services.filter(s => s.up === true).length} / {services.length} monitored targets UP</span>
@@ -1347,21 +1424,34 @@ export default function MissionControlDashboard() {
             {/* ── 6H CHARTS ── */}
             {v3Charts && (
               <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="rounded-2xl sm:rounded-3xl border border-purple-500/30 bg-black/40 p-4 sm:p-6 lg:p-8">
-                <div className="flex flex-col gap-2 mb-5">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Time Series</p>
-                  <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
-                    <TrendingUp className="h-6 w-6 text-purple-400" />
-                    6-Hour Charts
-                  </h2>
-                  <p className="text-xs text-gray-500">5-minute resolution · Prometheus range queries · auto-refresh 60s</p>
+                <div className="flex flex-col gap-3 mb-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Time Series</p>
+                    <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                      <TrendingUp className="h-6 w-6 text-purple-400" />
+                      Charts — {chartRange.toUpperCase()}
+                    </h2>
+                    <p className="text-xs text-gray-500">Prometheus range queries · auto-refresh 60s · adaptive step by selected range</p>
+                  </div>
+                  <div className="inline-flex rounded-xl border border-white/10 bg-black/30 p-1 self-start">
+                    {CHART_RANGES.map(option => (
+                      <button
+                        key={option.value}
+                        onClick={() => setChartRange(option.value)}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${chartRange === option.value ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'text-gray-400 hover:text-gray-200'}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <AreaChart data={v3Charts.chainHeight} timestamps={v3Charts.timestamps} label="Chain Height — 6h" color="#FFD700" />
-                  <AreaChart data={v3Charts.poolSessions} timestamps={v3Charts.timestamps} label="Active Miners — 6h" color="#a855f7" />
-                  <AreaChart data={v3Charts.shares} timestamps={v3Charts.timestamps} label="Accepted Shares (cumul.) — 6h" color="#10b981" />
-                  <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label="CPU Load (1m avg) — 6h" color="#06b6d4" />
-                  <AreaChart data={v3Charts.memPct} timestamps={v3Charts.timestamps} label="Memory Usage % — 6h" color="#ec4899" unit="%" />
-                  <AreaChart data={v3Charts.redisMemory} timestamps={v3Charts.timestamps} label="Redis Memory — 6h" color="#f97316" />
+                  <AreaChart data={v3Charts.chainHeight} timestamps={v3Charts.timestamps} label={`Chain Height — ${chartRange}`} color="#FFD700" />
+                  <AreaChart data={v3Charts.poolSessions} timestamps={v3Charts.timestamps} label={`Active Miners — ${chartRange}`} color="#a855f7" />
+                  <AreaChart data={v3Charts.shares} timestamps={v3Charts.timestamps} label={`Accepted Shares (cumul.) — ${chartRange}`} color="#10b981" />
+                  <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label={`CPU Load (1m avg) — ${chartRange}`} color="#06b6d4" />
+                  <AreaChart data={v3Charts.memPct} timestamps={v3Charts.timestamps} label={`Memory Usage % — ${chartRange}`} color="#ec4899" unit="%" />
+                  <AreaChart data={v3Charts.redisMemory} timestamps={v3Charts.timestamps} label={`Redis Memory — ${chartRange}`} color="#f97316" />
                 </div>
               </motion.section>
             )}
