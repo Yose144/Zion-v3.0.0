@@ -12,8 +12,6 @@
 #   Node Exp:   9100 (host metrics)
 #   Redis Exp:  9121 (redis metrics)
 
-version: "3.8"
-
 services:
   # ── Prometheus ──
   prometheus:
@@ -163,5 +161,5 @@ volumes:
 
 networks:
   zion-net:
-    external: true
     name: zion-net
+    external: true
