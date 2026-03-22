@@ -56,7 +56,7 @@ interface PoolServer {
     miners?: { active: number; total: number };
     shares?: { valid: number; invalid: number };
     blocks?: { found: number; pending: number };
-    pool?: { fee: number; humanitarian_tithe: number; miner_share: number; version: string; uptime_secs: number };
+    pool?: { fee: number; humanitarian_tithe: number; issobella_fund?: number; miner_share: number; version: string; uptime_secs: number };
     pplns_window_size?: number;
     payouts?: { pending_miners: number; pending_total_atomic: number };
   } | null;
@@ -90,12 +90,45 @@ interface PoolData {
     valid_shares: number;
     invalid_shares: number;
     share_efficiency: string;
+    submits_total: number;
+    accepted_total: number;
+    rejected_total: number;
+    accept_rate_pct: number;
   };
   fee: {
     pool_fee: number;
     humanitarian_tithe: number;
+    issobella_fund?: number;
     miner_share: number;
     min_payout: number;
+  };
+  routing: {
+    submits_total: number;
+    accepted_total: number;
+    rejected_total: number;
+    accept_rate_pct: number;
+    groups: Record<string, { submits: number; accepted: number }>;
+  };
+  pplns: {
+    registered_miners: number;
+    window_size: number;
+    window_used: number;
+    window_pct: number | null;
+    total_paid_flowers: number;
+    total_paid_zion: number;
+    payout_rounds: number;
+  };
+  runtime: {
+    chain_height: number;
+    difficulty: number;
+    pool_uptime_seconds: number;
+    template_fees_zion: number;
+    last_scrape_ts: number;
+    data_sources: {
+      pool_tcp: boolean;
+      core_rpc: boolean;
+      prometheus: boolean;
+    };
   };
   servers: PoolServer[];
   miners: Miner[];
@@ -142,6 +175,13 @@ function fmtUptime(secs?: number): string {
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
+}
+
+function fmtPct(value?: number | string | null, digits = 2): string {
+  if (value === undefined || value === null) return '—';
+  const numeric = typeof value === 'string' ? Number.parseFloat(value) : value;
+  if (!Number.isFinite(numeric)) return '—';
+  return `${numeric.toFixed(digits)}%`;
 }
 
 function shortAddr(addr: string): string {
@@ -214,7 +254,7 @@ export default function PoolDashboard() {
   const backupServer = onlineServers[1] ?? data?.servers?.[1] ?? onlineServers[0] ?? data?.servers?.[0];
   const myHashrate = parseHashrateInput(myHashrateInput);
   const poolHashrate = data?.aggregate.hashrate ?? 0;
-  const rewardPerBlock = data?.recent_blocks?.[0]?.reward ? data.recent_blocks[0].reward / 1e6 : 5400;
+  const rewardPerBlock = data?.recent_blocks?.[0]?.reward ? data.recent_blocks[0].reward / 1e12 : 5400;
   const blocksPerDay = estimateBlocksPerDay(data?.recent_blocks ?? []);
   const mySharePct = poolHashrate > 0 ? (myHashrate / poolHashrate) * 100 : 0;
   const myDailyZion = poolHashrate > 0
@@ -228,6 +268,7 @@ export default function PoolDashboard() {
   const backupEndpoint = backupServer ? `${backupServer.host}:${backupServer.stratum}` : primaryEndpoint;
   const xmrigFailoverCmd = `./xmrig -o stratum+tcp://${primaryEndpoint} --url-backup=stratum+tcp://${backupEndpoint} -u YOUR_ZION_ADDRESS -p x`;
   const nativeFailoverCmd = `python zion_native_miner_v2_9.py --pool ${primaryEndpoint} --pool-backup ${backupEndpoint} --wallet YOUR_ZION_ADDRESS`;
+  const routingGroups = data?.routing?.groups ? Object.entries(data.routing.groups).filter(([, group]) => group.submits > 0 || group.accepted > 0) : [];
 
   const fetchData = useCallback(async () => {
     try {
@@ -323,78 +364,6 @@ export default function PoolDashboard() {
           </div>
         </motion.section>
 
-        {/* ═══════ PRO TOOLS ═══════ */}
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.03 }}
-        >
-          <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Pro Tools</p>
-            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              Operator Toolkit
-            </h2>
-            <p className="text-sm text-gray-400">Profit estimate, failover templates, monitoring API, and export-ready endpoints.</p>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-3">
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Profit Estimator</p>
-              <label className="text-xs text-gray-400">Your hashrate (supports K/M/G/T)</label>
-              <input
-                value={myHashrateInput}
-                onChange={(e) => setMyHashrateInput(e.target.value)}
-                placeholder="e.g. 250M"
-                className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 font-mono outline-none focus:border-zion-cyan/50"
-              />
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between"><span className="text-gray-500">Parsed hashrate</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">Pool share</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">Observed blocks/day</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
-                <div className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-emerald-200 text-xs uppercase tracking-wider">Estimated daily reward</span>
-                  <span className="text-emerald-300 font-bold font-mono">{myDailyZion.toFixed(4)} ZION</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Failover Config</p>
-              <div className="space-y-3">
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">XMRig (primary + backup)</p>
-                  <code className="block text-xs text-zion-cyan break-all">{xmrigFailoverCmd}</code>
-                  <div className="mt-2"><CopyButton text={xmrigFailoverCmd} /></div>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">Native Miner failover</p>
-                  <code className="block text-xs text-zion-cyan break-all">{nativeFailoverCmd}</code>
-                  <div className="mt-2"><CopyButton text={nativeFailoverCmd} /></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Automation & Export</p>
-              <div className="space-y-2.5 text-sm">
-                <a href="/api/pool/stats" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
-                  <span className="text-gray-200 font-mono text-xs">/api/pool/stats</span>
-                  <Download className="h-3.5 w-3.5 text-zion-gold" />
-                </a>
-                <a href="/api-reference" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
-                  <span className="text-gray-200">API reference</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
-                </a>
-                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
-                  <Bell className="h-3.5 w-3.5 mt-0.5" />
-                  <span>Set alert: if `last share &gt; 10 min` or `efficiency &lt; 95%`, rotate to backup endpoint.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.section>
-
         {/* ═══════ MINER SEARCH ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -470,9 +439,13 @@ export default function PoolDashboard() {
               <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="Active Miners" value={String(data.aggregate.active_miners)} sub={`${data.aggregate.total_miners} total registered`} />
               <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label="Blocks Found" value={fmtNum(data.aggregate.blocks_found)} />
               <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label="Share Efficiency" value={`${data.aggregate.share_efficiency}%`} sub={`${fmtNum(data.aggregate.valid_shares)} valid`} />
+              <StatCard icon={<Check className="h-5 w-5" />} color="text-teal-400" bg="bg-teal-400/10" label="Accept Rate" value={fmtPct(data.aggregate.accept_rate_pct)} sub={`${fmtNum(data.aggregate.accepted_total)} accepted`} />
+              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label="Rejected Shares" value={fmtNum(data.aggregate.rejected_total)} sub={`${fmtNum(data.aggregate.submits_total)} total submits`} />
               <StatCard icon={<Globe className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label="Servers Online" value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} />
               <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label="Miner Share" value={`${data.fee.miner_share}%`} sub={`${data.fee.pool_fee}% fee`} />
-              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label="Invalid Shares" value={fmtNum(data.aggregate.invalid_shares)} />
+              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={`${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`} />
+              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label="Total Paid" value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={`${fmtNum(data.pplns.payout_rounds)} payout rounds`} />
+              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label="Template Fees" value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={`Height ${fmtNum(data.runtime.chain_height)}`} />
               {data.servers.filter(s => s.stats?.blockchain?.connected).map(srv => (
                 <StatCard
                   key={srv.id}
@@ -501,6 +474,100 @@ export default function PoolDashboard() {
               <p className="text-gray-400">Pool data unavailable. Servers may be offline.</p>
             </div>
           )}
+        </motion.section>
+
+        {/* ═══════ POOL OPERATIONS ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Operations</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <TrendingUp className="h-7 w-7 text-zion-cyan" />
+              Pool Runtime Overview
+            </h2>
+            <p className="text-sm text-gray-400">Submission flow, PPLNS engine fill, and payout throughput sourced from live pool telemetry.</p>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <div className="flex items-center justify-between gap-4 mb-5">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">Routing Flow</p>
+                  <h3 className="text-xl font-semibold text-white mt-1">Submission Channels</h3>
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
+                  <Signal className="h-3.5 w-3.5 text-zion-cyan" /> {fmtPct(data.routing.accept_rate_pct)} accepted
+                </span>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {(routingGroups.length > 0 ? routingGroups : Object.entries(data.routing.groups)).map(([name, group]) => {
+                  const groupRate = group.submits > 0 ? (group.accepted / group.submits) * 100 : 0;
+                  return (
+                    <div key={name} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">{name}</p>
+                      <p className="mt-2 text-2xl font-semibold text-white font-mono">{fmtNum(group.accepted)}</p>
+                      <p className="text-xs text-gray-500">accepted shares</p>
+                      <div className="mt-3 space-y-1 text-xs">
+                        <div className="flex items-center justify-between text-gray-400"><span>Submits</span><span className="font-mono text-gray-200">{fmtNum(group.submits)}</span></div>
+                        <div className="flex items-center justify-between text-gray-400"><span>Accept rate</span><span className="font-mono text-zion-cyan">{fmtPct(groupRate)}</span></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-4">PPLNS Engine</p>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-gray-400">Window utilization</span>
+                    <span className="text-white font-mono">{fmtPct(data.pplns.window_pct)}</span>
+                  </div>
+                  <div className="h-3 rounded-full bg-white/5 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-linear-to-r from-zion-cyan via-zion-gold to-emerald-400"
+                      style={{ width: `${Math.max(0, Math.min(100, data.pplns.window_pct ?? 0))}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                    <p className="text-xs text-gray-500">Registered miners</p>
+                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data.pplns.registered_miners)}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                    <p className="text-xs text-gray-500">Payout rounds</p>
+                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data.pplns.payout_rounds)}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                    <p className="text-xs text-gray-500">Total paid</p>
+                    <p className="mt-1 text-xl font-semibold text-white font-mono">{data.pplns.total_paid_zion.toFixed(4)}</p>
+                    <p className="text-xs text-gray-500">ZION</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                    <p className="text-xs text-gray-500">Pool uptime</p>
+                    <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtUptime(data.runtime.pool_uptime_seconds)}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/10 p-4 text-sm text-zion-cyan">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Telemetry status</span>
+                    <span className="font-mono text-xs text-white">
+                      pool {data.runtime.data_sources.pool_tcp ? 'on' : 'off'} · rpc {data.runtime.data_sources.core_rpc ? 'on' : 'off'} · prom {data.runtime.data_sources.prometheus ? 'on' : 'off'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </motion.section>
 
         {/* ═══════ POOL SERVERS ═══════ */}
@@ -612,6 +679,14 @@ export default function PoolDashboard() {
               <p className="mt-1 text-xs text-gray-500">Funding global humanitarian causes</p>
             </div>
             <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
+              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-zion-gold/10 mx-auto mb-4">
+                <Heart className="h-7 w-7 text-zion-gold" />
+              </div>
+              <p className="text-4xl font-bold text-zion-gold font-mono">{data?.fee.issobella_fund ?? 5}%</p>
+              <h3 className="mt-2 text-base font-semibold text-white">Issobella Fund</h3>
+              <p className="mt-1 text-xs text-gray-500">Reserved humanitarian and stewardship treasury allocation</p>
+            </div>
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
               <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-zion-cyan/10 mx-auto mb-4">
                 <Shield className="h-7 w-7 text-zion-cyan" />
               </div>
@@ -635,7 +710,7 @@ export default function PoolDashboard() {
               <Users className="h-7 w-7 text-zion-cyan" />
               Active Miners ({visibleMiners.length})
             </h2>
-            <p className="text-sm text-gray-400">All registered mining addresses across pool servers.</p>
+            <p className="text-sm text-gray-400">Public address directory is intentionally minimal; use miner search for full address-level detail.</p>
             <div className="mt-1 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
               <button
                 onClick={() => setActiveOnly(true)}
@@ -693,7 +768,7 @@ export default function PoolDashboard() {
                     );
                   })}
                   {visibleMiners.length === 0 && (
-                    <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">No miners registered yet</td></tr>
+                    <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">Public miner directory is not exposed by the current pool API. Search by address above for individual stats.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -712,9 +787,9 @@ export default function PoolDashboard() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Ledger</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Box className="h-7 w-7 text-zion-gold" />
-              Recent Blocks ({data?.recent_blocks.length ?? 0})
+              Recent Network Blocks ({data?.recent_blocks.length ?? 0})
             </h2>
-            <p className="text-sm text-gray-400">Latest blocks found by the pool across all servers.</p>
+            <p className="text-sm text-gray-400">Latest confirmed chain blocks from the current runtime. Public pool winner attribution is not exposed separately yet.</p>
           </div>
 
           <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
@@ -750,7 +825,7 @@ export default function PoolDashboard() {
                     </tr>
                   ))}
                   {(!data?.recent_blocks || data.recent_blocks.length === 0) && (
-                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">No blocks found yet</td></tr>
+                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">No recent chain blocks available</td></tr>
                   )}
                 </tbody>
               </table>
@@ -906,11 +981,88 @@ export default function PoolDashboard() {
           </div>
         </motion.section>
 
+        {/* ═══════ PRO TOOLS ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Pro Tools</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <TrendingUp className="h-7 w-7 text-zion-cyan" />
+              Operator Toolkit
+            </h2>
+            <p className="text-sm text-gray-400">Failover templates, profit estimate, and automation endpoints for managed mining operations.</p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Profit Estimator</p>
+              <label className="text-xs text-gray-400">Your hashrate (supports K/M/G/T)</label>
+              <input
+                value={myHashrateInput}
+                onChange={(e) => setMyHashrateInput(e.target.value)}
+                placeholder="e.g. 250M"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 font-mono outline-none focus:border-zion-cyan/50"
+              />
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between"><span className="text-gray-500">Parsed hashrate</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">Pool share</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">Observed blocks/day</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">Reward / block</span><span className="text-gray-200 font-mono">{rewardPerBlock.toFixed(4)} ZION</span></div>
+                <div className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 flex items-center justify-between">
+                  <span className="text-emerald-200 text-xs uppercase tracking-wider">Estimated daily reward</span>
+                  <span className="text-emerald-300 font-bold font-mono">{myDailyZion.toFixed(4)} ZION</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Failover Config</p>
+              <div className="space-y-3">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">XMRig (primary + backup)</p>
+                  <code className="block text-xs text-zion-cyan break-all">{xmrigFailoverCmd}</code>
+                  <div className="mt-2"><CopyButton text={xmrigFailoverCmd} /></div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">Native Miner failover</p>
+                  <code className="block text-xs text-zion-cyan break-all">{nativeFailoverCmd}</code>
+                  <div className="mt-2"><CopyButton text={nativeFailoverCmd} /></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Automation & Export</p>
+              <div className="space-y-2.5 text-sm">
+                <a href="/api/pool/stats" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
+                  <span className="text-gray-200 font-mono text-xs">/api/pool/stats</span>
+                  <Download className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <a href="/api/pool/miner/YOUR_ZION_ADDRESS" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
+                  <span className="text-gray-200 font-mono text-xs">/api/pool/miner/&lt;address&gt;</span>
+                  <Download className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <a href="/monitoring" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
+                  <span className="text-gray-200">Mission control</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
+                </a>
+                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
+                  <Bell className="h-3.5 w-3.5 mt-0.5" />
+                  <span>Set alert: if last share exceeds 10 minutes or accept rate drops below 95%, rotate to the backup endpoint.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* ═══════ CTA ═══════ */}
         <motion.section
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.34 }}
+          transition={{ delay: 0.36 }}
           className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-10 text-center"
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-cyan" />
