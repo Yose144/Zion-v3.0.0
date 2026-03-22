@@ -1160,13 +1160,14 @@ export default function MissionControlDashboard() {
   const servicesUp = monitoredServices.filter(service => service.up).length;
   const servicesDown = monitoredServices.filter(service => service.up === false).length;
   const servicesNa = services.filter(service => service.up === null).length;
-  const opsAlerts: OpsAlert[] = [
+  const opsAlertsRaw: Array<OpsAlert | null> = [
     servicesDown > 0 ? { id: 'targets-down', message: `${servicesDown} target${servicesDown > 1 ? 's' : ''} down`, severity: 'critical', href: '/monitoring' } : null,
     stackSummary?.prometheusReloadOk === 0 ? { id: 'prometheus-reload', message: 'Prometheus reload failed', severity: 'critical', href: '/grafana/' } : null,
     stackSummary?.prometheusQueueLength != null && stackSummary.prometheusQueueLength > 0 ? { id: 'alert-queue', message: `Alert queue ${fmt(stackSummary.prometheusQueueLength)}`, severity: stackSummary.prometheusQueueLength > 10 ? 'critical' : 'warn', href: '/grafana/' } : null,
     stackSummary?.redisUp === 0 ? { id: 'redis-unhealthy', message: 'Redis exporter path unhealthy', severity: 'warn', href: '/monitoring' } : null,
     servicesNa > 0 ? { id: 'na-services', message: `${servicesNa} service${servicesNa > 1 ? 's' : ''} without scrape`, severity: 'info', href: '/monitoring' } : null,
-  ].filter((value): value is OpsAlert => Boolean(value));
+  ];
+  const opsAlerts = opsAlertsRaw.filter((value): value is OpsAlert => value !== null);
 
   return (
     <div className="zion-shell min-h-screen pt-24 sm:pt-32 pb-16 sm:pb-24 overflow-x-hidden">
