@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION } from '@/lib/constants';
+import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
+import { resolveSupplySnapshot } from '@/lib/supply';
 
 export async function GET() {
   const rpc = getZionRpc();
@@ -26,15 +27,7 @@ export async function GET() {
       throw new Error('Cannot reach any ZION daemon');
     }
 
-    // Circulating supply: try real emission first, fallback to estimate
-    const estimatedSupply = info.height * BLOCK_REWARD_ZION;
-    let realEmission: number | null = null;
-    try {
-      const emission = await rpc.getCoinbaseTxSum(0, info.height);
-      if (emission.emission_amount > 0) {
-        realEmission = emission.emission_amount / ATOMIC_UNITS_PER_ZION;
-      }
-    } catch { /* emission endpoint might not be available */ }
+    const supply = await resolveSupplySnapshot(rpc, info.height);
 
     // Average block time: use daemon target (no extra block fetches)
     const avgBlockTime = info.target || 60;
@@ -47,9 +40,9 @@ export async function GET() {
       cumulative_difficulty: info.cumulative_difficulty || 0,
 
       // Supply
-      circulating_supply: realEmission || estimatedSupply,
-      max_supply: 144_000_000_000,
-      emission_pct: ((realEmission || estimatedSupply) / 144_000_000_000 * 100).toFixed(6),
+      circulating_supply: supply.circulatingSupply,
+      max_supply: supply.maxSupply,
+      emission_pct: supply.emissionPct.toFixed(6),
 
       // Network
       network_hashrate: info.difficulty / (info.target || 60),
@@ -110,7 +103,7 @@ export async function GET() {
         timestamp: lastBlock.timestamp,
       } : null,
       mempool_size: info.tx_pool_size || 0,
-      total_supply: realEmission || estimatedSupply,
+      total_supply: supply.circulatingSupply,
       total_blocks: info.height,
       total_transactions: info.tx_count || info.height,
     };
