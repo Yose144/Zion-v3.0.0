@@ -124,6 +124,11 @@ fn main() -> Result<()> {
         stream
             .set_nonblocking(false)
             .context("failed to set client stream blocking")?;
+        // P1-fix: read timeout prevents zombie threads when miner disconnects
+        // ungracefully (no FIN), which leaks ip_sessions counter slots.
+        stream
+            .set_read_timeout(Some(Duration::from_secs(300)))
+            .context("failed to set client stream read timeout")?;
 
         let peer_ip = peer_addr.ip();
         {
