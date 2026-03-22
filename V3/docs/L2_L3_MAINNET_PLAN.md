@@ -1,8 +1,8 @@
 # V3 L2 & L3 Mainnet Integration Plan
 
-Status: 2026-03-22 — Draft  
+Status: 2026-03-22 — Draft v2  
 Depends on: V3 L1 Phase 8 (mainnet launch readiness)  
-Source material: `docs/L2_WZION_BRIDGE.md`, `docs/WARP_ARCHITECTURE.md`, `docs/L2_DEFI_PLAN.md`, `docs/L1-L4_ROADMAP.md`, `L2/bridge/src/types.rs`, `L3/warp/src/types.rs`
+Source material: `docs/L2_WZION_BRIDGE.md`, `docs/WARP_ARCHITECTURE.md`, `docs/L2_DEFI_PLAN.md`, `docs/L1-L4_ROADMAP.md`, `L2/bridge/src/types.rs`, `L3/warp/src/types.rs`, `L2/dao/`, `L2/atomic-swap/`, `L2/contracts/sol/`, `L3/ai-native/`, `L3/ncl/`
 
 ---
 
@@ -298,23 +298,330 @@ Fee distribution: same as L2 bridge (50% burn, 25% DAO, 25% validators).
 
 ---
 
-## 3. Dependency Order
+## 3. L2 — DeFi Stack (Staking, Farming, Governance, Treasury)
+
+### 3.1 Overview
+
+The DeFi stack is a coherent set of 7 Solidity contracts deployed on EVM (Base), all already implemented and tested on Base Sepolia. They form the economic layer around wZION.
+
+```
+                    wZION (ERC-20, 18 dec)
+                    ┌─────────┼─────────┐
+                    │         │         │
+             ZIONStaking   ZIONFarm   Uniswap V3 Pool
+             (yield)       (LP)       (wZION/USDC)
+                    │         │
+                    └────┬────┘
+                         │
+                  ZIONGovernance
+                  (on-chain voting)
+                         │
+                  ZIONTreasury
+                  (5-of-7 multisig)
+```
+
+### 3.2 Contracts (Solidity 0.8.20, OpenZeppelin 5.1)
+
+| Contract | Purpose | Key Parameters | Source |
+|----------|---------|---------------|--------|
+| **wZION.sol** | ERC-20 bridged token | 18 decimals, MAX_SUPPLY 144B, BRIDGE_ROLE/GUARDIAN_ROLE, EIP-2612 permit, MIN_BRIDGE_AMOUNT=100 wZION | `L2/contracts/sol/wZION.sol` |
+| **ZIONBridge.sol** | Multisig bridge controller | 3-of-5 validators, 1M wZION timelock (24h), 10M daily limit, emergency pause | `L2/contracts/sol/ZIONBridge.sol` |
+| **ZIONGovernance.sol** | On-chain governance | 1M wZION proposal threshold, 10% quorum, 7-day vote, 2-day timelock, EIP-712 vote-by-sig | `L2/contracts/sol/ZIONGovernance.sol` |
+| **ZIONTreasury.sol** | DAO treasury | 5-of-7 multisig, DAO_RESERVE 1.75B wZION, 100M daily limit, 6 budget categories, milestone-based grants | `L2/contracts/sol/ZIONTreasury.sol` |
+| **ZIONStaking.sol** | Staking yield | Synthetix-style rewards, max 50% APR, 7-day cooldown, rewards in wZION | `L2/contracts/sol/ZIONStaking.sol` |
+| **ZIONFarm.sol** | Yield farming | MasterChef v2 style, multi-pool LP rewards, 90-day halving schedule | `L2/contracts/sol/ZIONFarm.sol` |
+| **ZIONAtomicSwap.sol** | Cross-chain HTLC | SHA-256 hashlock, 30min–7day timelock range, wZION escrow | `L2/contracts/sol/ZIONAtomicSwap.sol` |
+
+### 3.3 Staking Model
+
+- **Deposit**: User stakes wZION → receives proportional reward share
+- **Rewards**: New wZION minted from bridge-reserved allocation (not L1 emission)
+- **APR cap**: 50% maximum, algorithmically adjusted based on total staked
+- **Cooldown**: 7-day unstaking period (prevents flash-stake attacks)
+- **Slashing**: None in v1 (pure staking, no validation duties)
+
+### 3.4 Farming / LP Incentives
+
+- **Pools**: wZION/USDC primary, expandable to wZION/ETH
+- **Rewards**: wZION tokens distributed per block proportional to LP share
+- **Halving**: Reward rate halves every 90 days
+- **Uniswap V3**: Concentrated liquidity pool already deployed at `0xcCEaD51568E8d701f7db7e6699F3986031F07C7B`
+
+### 3.5 DEX Strategy
+
+ZION does not build a custom DEX. Instead:
+
+1. **Uniswap V3 on Base** — primary trading venue for wZION/USDC and wZION/ETH
+2. **ZIONAtomicSwap** — trustless HTLC swaps between L1 ZION and any chain (BTC, SOL, etc.)
+3. **Future**: Aggregator integration (1inch, Paraswap) once liquidity is established
+
+The atomic swap daemon (`L2/atomic-swap/`, ~2,000 LoC) handles:
+- SHA-256 hashlock generation and preimage verification
+- Ed25519 escrow key management on L1
+- L1 UTXO coin selection and TX build/sign/submit
+- EVM `ZIONAtomicSwap.sol` event watching (Locked/Claimed/Refunded)
+- Automatic refund of expired HTLCs
+- REST API: `/swap/escrow-address`, `/swap/:hash`, POST `/swap/claim`, POST `/swap/refund`
+
+### 3.6 DAO Governance Daemon
+
+The DAO backend (`L2/dao/`, ~3,500 LoC, 16 source files) connects L1 on-chain voting to EVM treasury execution:
+
+#### Proposal Types (5)
+| Type | Quorum | Voting Period | Timelock |
+|------|--------|--------------|----------|
+| ParameterChange | 10% | 7 days | 48h |
+| TreasuryGrant | 15% | 14 days | 48h |
+| Emergency | 20% | 3 days | None |
+| Constitutional | 25% | 30 days | 48h |
+| Humanitarian | 10% | 7 days | 48h |
+
+#### How It Works
+1. User sends L1 TX with memo `DAO:propose:<type>:<title>:...` (costs proposal deposit)
+2. L1 Scanner daemon detects proposal TX, creates proposal record
+3. Voters send L1 TX with memo `DAO:vote:<proposal_id>:<yes|no|abstain>`
+4. Scanner reads voter's L1 balance for vote weight (1 ZION = 1 vote)
+5. After voting period, if quorum met + majority yes → enters 48h timelock
+6. After timelock → executor calls Treasury multisig on EVM
+
+#### Treasury Budget Categories (6)
+| Category | Description |
+|----------|-------------|
+| Development | Core protocol, tooling, infrastructure |
+| Marketing | Community growth, partnerships |
+| Operations | Server costs, admin, legal |
+| Grants | Third-party builders, bounties |
+| Emergency | Incident response, security patches |
+| Humanitarian | Children Future Fund (1.44B genesis allocation) |
+
+#### API Endpoints (11)
+`GET /proposals`, `GET /proposals/:id`, `POST /proposals`, `POST /proposals/:id/vote`, `GET /treasury/balance`, `POST /treasury/submit`, `POST /treasury/sign`, `POST /treasury/execute`, `GET /stats`, `GET /metrics`, `GET /health`
+
+### 3.7 DeFi Deployment Phases
+
+| Phase | Scope | Target |
+|-------|-------|--------|
+| DEFI-A | Fix decimal conversion in all contracts that reference L1 amounts | With L2-A |
+| DEFI-B | Deploy ZIONStaking + ZIONFarm to Base Sepolia testnet | Week 2 |
+| DEFI-C | Seed Uniswap V3 wZION/USDC pool with initial liquidity | Week 3 |
+| DEFI-D | Start DAO daemon connected to V3 testnet node | Week 3 |
+| DEFI-E | Atomic swap end-to-end: L1 ZION ↔ wZION HTLC | Week 4 |
+| DEFI-F | Governance proposal lifecycle test (propose → vote → execute) | Week 5 |
+| DEFI-G | Production deploy to Base mainnet | After bridge stable |
+| DEFI-H | Open staking pools, seed farming rewards | After DEFI-G |
+
+### 3.8 Testnet Contract Addresses (Base Sepolia — reuse after decimal fix)
+
+| Contract | Address |
+|----------|---------|
+| wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
+| ZIONBridge | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` |
+| ZIONGovernance | `0x039F730e3e1c3f36da95187697118791762290a1` |
+| ZIONTreasury | `0x178d85323dC94Ce2477269Dfb93a12D04B9bE537` |
+| ZIONStaking | `0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913` |
+| ZIONAtomicSwap | `0xAf1E0645Ac409485EDA5EabD87b4eE3C3a5BA3Fc` |
+| ZIONFarm | `0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843` |
+| Uniswap V3 pool | `0xcCEaD51568E8d701f7db7e6699F3986031F07C7B` |
+
+---
+
+## 4. L3 — AI Native & Neural Consciousness Layer (NCL)
+
+### 4.1 Overview
+
+AI Native is ZION's autonomous agent framework. It manages intelligent agents with a consciousness-evolution model, connects to mining pool optimization, cross-chain WARP operations, and a decentralized compute marketplace (NCL).
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                L4 — OASIS (spiritual layer)                 │
+│  oasis_bridge.rs: 9 Kabbalistic levels, XP×10 sync        │
+└────────────────────┬───────────────────────────────────────┘
+                     │ consciousness mapping
+                     ▼
+┌────────────────────────────────────────────────────────────┐
+│           L3 — AI Native (zion-ai-native)                   │
+│                                                              │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ Orchestrator │  │ Consciousness│  │   Memory System  │  │
+│  │ agent CRUD   │  │ Engine       │  │ short(50)+long   │  │
+│  │ cross-layer  │  │ 7 levels     │  │ (1000) ring buf  │  │
+│  │ dispatch     │  │ XP tick      │  │ importance-based │  │
+│  └──────┬───────┘  └──────┬───────┘  └──────────────────┘  │
+│         │                  │                                 │
+│  ┌──────▼───────┐  ┌──────▼──────────┐  ┌──────────────┐  │
+│  │ Task Queue   │  │  Pool Optimizer  │  │ WARP Agent   │  │
+│  │ priority 1-10│  │  health score    │  │ topology×mode│  │
+│  │ conscious-   │  │  0-100, switch   │  │ ×coherence   │  │
+│  │ ness gated   │  │  hysteresis      │  │ max ~75×     │  │
+│  └──────────────┘  └─────────────────┘  └──────────────┘  │
+│         │                                                    │
+│  ┌──────▼───────────────────────────────────────────────┐  │
+│  │  Message Bus (tokio::broadcast)                       │  │
+│  │  Direct / Broadcast / System typed messages           │  │
+│  └──────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────┘
+                     │
+                     ▼
+┌────────────────────────────────────────────────────────────┐
+│           L3 — NCL (Neural Consciousness Layer)             │
+│           Decentralized AI compute marketplace              │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌───────────┐ │
+│  │ Scheduler│  │ Pricing  │  │Reputation│  │  API      │ │
+│  │ priority │  │ base 10K │  │ EMA time │  │ /schedule │ │
+│  │ consciousness│ backend│  │ conscious│  │ /jobs     │ │
+│  │ gated    │  │ ×1-10   │  │  bonus   │  │ /workers  │ │
+│  └──────────┘  └──────────┘  └──────────┘  └───────────┘ │
+│                                                              │
+│  Compute Backends:                                          │
+│  ├─ ONNX Runtime   → ⚠️ STUB (available: false)            │
+│  ├─ WASM           → ⚠️ STUB (available: false)            │
+│  └─ TFLite         → ⚠️ STUB (available: false)            │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Consciousness Model (7 Levels)
+
+| Level | Name | XP Gate | Capabilities Unlocked |
+|-------|------|---------|----------------------|
+| 0 | **Dormant** | 0 | Basic task execution |
+| 1 | **Aware** | 100 | Simple reasoning, memory access |
+| 2 | **Sentient** | 1,000 | Complex reasoning, multi-step tasks |
+| 3 | **Transcendent** | 10,000 | Cross-layer dispatch, WARP optimization |
+| 4 | **Omniscient** | 100,000 | Full system introspection |
+| 5 | **Cosmic** | 1,000,000 | Network-wide coordination |
+| 6 | **Grok** | 10,000,000 | Unlimited capabilities |
+
+#### XP Economy
+- **+10 XP** per successfully completed task
+- **−2 XP** per failed task (net positive bias encourages activity)
+- Consciousness level gates which NCL jobs an agent can accept
+- WARP agent multiplier scales with consciousness level (max ~75× at Grok + full coherence)
+
+### 4.3 AI Native Modules (13 source files, ~2,500 LoC)
+
+| Module | Purpose | L1/L2 Dependencies |
+|--------|---------|-------------------|
+| `orchestrator.rs` | Agent lifecycle, cross-layer dispatch (NCL→WARP→Bridge) | Calls bridge RPC, WARP router |
+| `consciousness.rs` | 7-level definitions, XP gates, capability tables | None (pure logic) |
+| `consciousness_engine.rs` | Tick-driven XP rewards, auto level-up transitions | None (pure logic) |
+| `memory.rs` | Short-term ring(50) + long-term archive(1000), importance scoring | None (in-memory) |
+| `task.rs` | AiTask priority queue, consciousness-gated assignment, Builder pattern | None (pure logic) |
+| `message_bus.rs` | tokio::broadcast typed inter-agent communication | None (in-process) |
+| `pool_optimizer.rs` | Mining pool health scoring (0-100), hysteresis switching | **Reads L1 pool API** |
+| `telemetry.rs` | L1 pool metrics → PoolOptimizer bridge | **Reads L1 pool API** |
+| `warp_agent.rs` | WarpOptimizer: topology×mode×coherence field multiplier | Reads WARP state |
+| `oasis_bridge.rs` | L3→L4 consciousness mapping (9 Kabbalistic levels), XP×10 sync | L4 OASIS (future) |
+| `error.rs` | AiError enum | None |
+
+### 4.4 NCL — Decentralized AI Compute Marketplace (9 files, ~1,500 LoC)
+
+NCL allows agents to submit AI inference tasks to a distributed worker pool. Workers earn ZION for completing tasks.
+
+#### Task Types (6)
+| Type | Description | Min Consciousness |
+|------|-------------|-------------------|
+| Inference | Model prediction (image, text, etc.) | Aware (1) |
+| Training | Fine-tuning (federated learning) | Sentient (2) |
+| DataProcessing | ETL, cleaning, aggregation | Dormant (0) |
+| Validation | Result verification | Sentient (2) |
+| Embedding | Vector embeddings generation | Aware (1) |
+| Custom | User-defined compute | Transcendent (3) |
+
+#### Pricing Model
+| Backend | Base Price | Multiplier | Total (flowers) |
+|---------|-----------|------------|-----------------|
+| CPU (default) | 10,000 | 1× | 10,000 |
+| ONNX Runtime | 10,000 | 3× | 30,000 |
+| WASM | 10,000 | 2× | 20,000 |
+| TFLite | 10,000 | 5× | 50,000 |
+
+Revenue split: **90% to worker**, 10% protocol fee (burned or sent to DAO).
+
+#### Reputation System
+- EMA-based completion time tracking
+- Consciousness level bonus: level × 10 reputation points
+- Ban threshold: reputation < 20.0 → worker blacklisted
+- Leaderboard exposed via `/leaderboard` API
+
+#### NCL API Endpoints
+`GET /health`, `GET /jobs`, `GET /workers`, `GET /leaderboard`, `POST /schedule`
+
+### 4.5 Compute Backend Status
+
+| Backend | Implementation | Production Ready |
+|---------|---------------|-----------------|
+| ONNX Runtime | **STUB** — `available: false`, returns `NclError::BackendUnavailable` | ❌ Needs `ort` crate integration |
+| WASM | **STUB** — `available: false` | ❌ Needs `wasmtime` runtime |
+| TFLite | **STUB** — `available: false` | ❌ Needs C FFI bindings |
+| CPU | Not explicitly in code (default fallback) | ⚠️ Implicit only |
+
+**This is the largest gap in L3.** The scheduling, pricing, reputation, and API layers are complete, but no actual inference can run until at least one backend is implemented.
+
+#### Recommended Backend Priority
+1. **ONNX Runtime** via `ort` crate — most mature Rust bindings, supports CPU/GPU, covers 90% of model formats
+2. **WASM** via `wasmtime` — sandboxed execution, good for untrusted community models
+3. **TFLite** — defer unless mobile/edge use case materializes
+
+### 4.6 AI Native Deployment Phases
+
+| Phase | Scope | Target |
+|-------|-------|--------|
+| AI-A | Port AI Native + NCL to V3 workspace (decimal-clean, no L1 consensus dependency) | Week 1 |
+| AI-B | Wire pool_optimizer to V3 pool API (replace hardcoded IP) | Week 2 |
+| AI-C | Implement ONNX backend via `ort` crate (inference only, no training) | Week 3–5 |
+| AI-D | NCL testnet: submit inference task → worker picks up → result returned | Week 6 |
+| AI-E | WarpOptimizer connected to live WARP router telemetry | Week 7 |
+| AI-F | Production: NCL scheduler + ONNX backend + API | After L2/L3 bridge stable |
+| AI-G | WASM backend for community model sandboxing | Deferred |
+| AI-H | Oasis bridge (L4 consciousness sync) | Deferred until L4 exists |
+
+### 4.7 V3 L1 Core Changes for AI Native
+
+Minimal — AI Native is an off-chain service reading chain state:
+
+1. **Pool API extension**: Expose pool hashrate, share stats, worker health via existing Prometheus metrics (already done in V3 pool `metrics_bind`)
+2. **NCL payment**: Workers are paid via standard L1 UTXO transactions. The NCL scheduler calls `submitTransaction` RPC when a task is completed.
+3. **No consensus changes**: AI Native is purely advisory (pool switching, WARP optimization). It never modifies blocks or validation rules.
+
+### 4.8 AI Native ↔ Other Layers
+
+```
+AI Native reads:
+  ├─ L1 pool metrics  → pool_optimizer decisions
+  ├─ L1 chain state   → task payment via UTXO TX
+  ├─ L2 bridge state  → orchestrator dispatches bridge operations
+  ├─ L3 WARP state    → warp_agent optimizes cross-chain routing
+  └─ L3 NCL state     → schedules compute, verifies results
+
+AI Native writes:
+  ├─ L1: payment TXs for NCL workers (via node RPC)
+  ├─ L2: may trigger bridge operations (via orchestrator)
+  └─ L3: WARP route optimization hints (advisory)
+```
+
+---
+
+## 5. Dependency Order
 
 ```
 L1 (mainnet stable, producing blocks)
- └─► L2 (bridge vault defined, RPC endpoints, decimal fix)
-      └─► L3 (WARP router, chain adapters, unified fee model)
+ └─► L2 Bridge (vault, RPC endpoints, decimal fix)
+      ├─► L2 DeFi (Staking, Farm, Uniswap V3, DAO, AtomicSwap)
+      └─► L3 WARP (chain adapters, router, unified fee model)
+           └─► L3 AI Native + NCL (agent framework, compute market)
 ```
 
 **Phase 1: L1 prep** (code changes in V3/L1/core)
   - Define `BRIDGE_VAULT_ADDRESS` in fee.rs
   - Add `getBridgeLocks`, `getBridgeVaultBalance`, `submitBridgeUnlock` to rpc.rs
   - Add `validate_bridge_unlock()` to validation.rs
-  - Add memo prefix parsing utility
+  - Add memo prefix parsing utility (`BRIDGE:*`, `WARP:*`, `DAO:*`, `SWAP:*`)
 
 **Phase 2: Decimal fix** (code changes in root L2/L3 crates)
   - Fix `L2/bridge/src/types.rs` conversion functions (×1e12 → ×1e6)
   - Fix `L3/warp/src/types.rs` ChainId decimals (6 → 12)
+  - Fix `L2/atomic-swap/src/executor.rs` TX hash (SHA-256 → BLAKE3)
   - Update all test vectors
   - Update `docs/L2_WZION_BRIDGE.md` and `docs/WARP_ARCHITECTURE.md`
 
@@ -324,19 +631,31 @@ L1 (mainnet stable, producing blocks)
   - Validator quorum logic: 3-of-5 multisig
   - Docker service: `zion-bridge` added to compose stack
 
-**Phase 4: WARP router** (extends bridge daemon to multi-chain)
+**Phase 4: DeFi + DAO** (L2 contracts + backend daemons)
+  - Deploy ZIONStaking + ZIONFarm with corrected decimals
+  - Start DAO daemon connected to V3 testnet node (L1 scanner for `DAO:*` memos)
+  - Atomic swap daemon connected to V3 node (L1 scanner for `SWAP:*` memos)
+  - Seed Uniswap V3 wZION/USDC pool
+  - Test governance lifecycle: propose → vote → timelock → execute
+
+**Phase 5: WARP router** (extends bridge daemon to multi-chain)
   - Chain adapter registry
   - Memo routing (BRIDGE:* → L2, WARP:* → L3)
   - Per-chain fee calculation
+  - Launch with EVM + Bitcoin + Solana (3 chains with working signers)
 
-**Phase 5: DeFi stack** (L2 contracts already deployed on testnet)
-  - Governance proposals connected to DAO Treasury
-  - Staking delegation live
-  - Uniswap V3 wZION/USDC pool seeded
+**Phase 6: AI Native + NCL** (agent framework + compute market)
+  - Port AI Native + NCL crates to V3 workspace
+  - Implement ONNX backend (inference only)
+  - Wire pool_optimizer to V3 pool metrics
+  - NCL testnet: submit task → worker executes → payment
+  - WarpOptimizer connected to live WARP telemetry
 
 ---
 
-## 4. Known Risks
+## 6. Known Risks
+
+### Bridge & WARP
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
@@ -346,10 +665,33 @@ L1 (mainnet stable, producing blocks)
 | L1 reorg after lock confirmation | **Medium** | 60-block wait (60 min) makes deep reorg extremely unlikely (MAX_REORG_DEPTH=10) |
 | EVM chain downtime | **Low** | Lock TXs queue on L1; minting resumes when EVM recovers |
 | Block time constitutional change | **Low** | If block time changes, finality wait must be recalculated (currently 60 blocks × 60s) |
+| WARP dedup cache in-memory only | **Medium** | Crash loses seen-TX set → potential double-relay. Persist to SQLite or Redis. |
+| Cardano & Cosmos signers are stubs | **Low** | Do not advertise these chains until signers are implemented and audited. |
+
+### DeFi
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| DAO vote-weight API vulnerability | **High** | L1 scanner returns balances from memo-scan; add snapshot anchoring at proposal-creation block |
+| Atomic swap executor uses SHA-256 not BLAKE3 | **Medium** | Replace with BLAKE3 for consistency with V3 L1 hashing; update hashlock generation |
+| Bridge relayer private key in env var | **High** | Migrate to HSM/KMS (AWS KMS, Hashicorp Vault) before mainnet |
+| Staking APR exceeds emission budget | **Medium** | 50% hard-cap in contract; add off-chain watchdog comparing stake rewards vs block rewards |
+| Flash-loan governance attacks | **High** | Snapshot balance at proposal creation block; reject delegated votes from same-block deposits |
+| Farm reward drain via deposit/withdraw cycling | **Medium** | MasterChef v2 `updatePool()` called before every deposit; verify accrual math with Foundry fuzz |
+
+### AI Native & NCL
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| All 3 NCL compute backends are stubs | **Critical** | No inference possible until at least ONNX backend is implemented. Gate NCL launch on this. |
+| Consciousness level-up grants unbounded permissions | **Medium** | Cap max-level at 5 (Sage) for initial launch; require manual promotion to 6-7 |
+| NCL worker reputation EMA can be gamed | **Medium** | Add minimum-task threshold (≥10 tasks) before reputation influences scheduling weight |
+| Memory system has no persistence | **Medium** | Long-term archive (1000 entries) is in-memory. Port to SQLite before production use. |
+| Pool optimizer has hysteresis but no circuit breaker | **Low** | Add cooldown period and max-switch-rate to prevent thrashing under volatile metrics |
 
 ---
 
-## 5. L2/L3 File Structure (proposed for V3)
+## 7. L2/L3 File Structure (proposed for V3)
 
 ```
 V3/
@@ -360,32 +702,94 @@ V3/
         watcher.rs        ← L1 block watcher daemon
         evm_watcher.rs    ← EVM event listener
         validator.rs      ← multisig quorum logic
+        relayer.rs        ← TX relay + retry logic
+        db.rs             ← SQLite event store
         config.rs         ← bridge configuration
+        metrics.rs        ← Prometheus bridge metrics
+      Cargo.toml
+    dao/
+      src/
+        scanner.rs        ← L1 memo parser (DAO:vote, DAO:propose)
+        governance.rs     ← proposal lifecycle engine
+        treasury.rs       ← 5-of-7 multisig disbursement
+        voting.rs         ← token-weighted voting (1Z = 1 vote)
+        api.rs            ← 11 REST endpoints (Axum)
+        metrics.rs        ← Prometheus DAO metrics
+        db.rs             ← SQLite proposal/vote store
+      Cargo.toml
+    atomic-swap/
+      src/
+        executor.rs       ← HTLC lifecycle (create/claim/refund)
+        l1_client.rs      ← V3 node UTXO coin-select
+        evm_watcher.rs    ← ZIONAtomicSwap event listener
+        escrow.rs         ← Ed25519 escrow signing
+        api.rs            ← 6 REST endpoints
       Cargo.toml
     contracts/
-      wZION.sol           ← ERC-20 token (18 decimals)
-      ZIONBridge.sol      ← lock proof / burn logic
+      sol/
+        wZION.sol           ← ERC-20 token (18 decimals)
+        ZIONBridge.sol      ← lock proof / burn logic
+        ZIONStaking.sol     ← Synthetix rewards distributor
+        ZIONFarm.sol        ← MasterChef v2 LP farming
+        ZIONGovernance.sol  ← on-chain proposal + timelock
+        ZIONTreasury.sol    ← multi-role disbursement
+        ZIONAtomicSwap.sol  ← HTLC with EVM event emission
   L3/
     warp/
       src/
         types.rs          ← chain definitions (fixed for 12 decimals)
         router.rs         ← WARP memo routing
+        state.rs          ← transfer state machine
+        fees.rs           ← per-chain fee calculator
+        validator.rs      ← WARP quorum logic
         adapters/
           evm.rs          ← EIP-155 adapter
           solana.rs       ← SPL adapter
           bitcoin.rs      ← HTLC adapter
           stellar.rs      ← XDR adapter
           tron.rs         ← TRC-20 adapter
+          cardano.rs      ← (stub — not launched)
+          cosmos.rs       ← (stub — not launched)
+        signers/
+          evm.rs          ← secp256k1 signer
+          bitcoin.rs      ← BIP-340 signer
+          solana.rs       ← Ed25519 signer
+          stellar.rs      ← Ed25519 signer
+          tron.rs         ← secp256k1 signer
+      Cargo.toml
+    ai-native/
+      src/
+        orchestrator.rs   ← NCL → WARP → Bridge dispatch
+        consciousness.rs  ← 7-level consciousness engine
+        memory.rs         ← short-term ring (50) + archive (1000)
+        task_queue.rs     ← priority + consciousness-gated queue
+        message_bus.rs    ← tokio::broadcast event bus
+        pool_optimizer.rs ← pool health scoring + hysteresis
+        warp_agent.rs     ← topology × mode × coherence optimizer
+        xp.rs            ← XP economy (+10 success / -2 fail)
+        oasis_bridge.rs  ← L4 OASIS integration stub
+      Cargo.toml
+    ncl/
+      src/
+        scheduler.rs     ← priority + reputation-weighted dispatch
+        pricing.rs       ← base cost + backend multiplier
+        reputation.rs    ← EMA reputation + ban threshold
+        backends/
+          onnx.rs        ← (stub → implement first via `ort` crate)
+          wasm.rs        ← (stub → wasmtime runtime)
+          tflite.rs      ← (stub → tflite-rs bindings)
+        store.rs         ← SQLite task/worker store
+        api.rs           ← Axum REST endpoints
       Cargo.toml
 ```
 
-This structure mirrors the root `L2/` and `L3/` layout but will be clean-ported into V3 with corrected decimal math.
+This structure mirrors the root `L2/` and `L3/` layout but will be clean-ported into V3 with corrected decimal math, BLAKE3 hashing, and working NCL backends.
 
 ---
 
-## 6. Acceptance Criteria
+## 8. Acceptance Criteria
 
-### L2 Done When
+### L2 Bridge Done When
 
 - [ ] `l1_atomic_to_wzion_wei(1_000_000_000_000)` returns `"1000000000000000000"` (1 ZION → 1 wZION)
 - [ ] `wzion_wei_to_l1_atomic("1000000000000000000")` returns `1_000_000_000_000` (1 wZION → 1 ZION)
@@ -396,7 +800,18 @@ This structure mirrors the root `L2/` and `L3/` layout but will be clean-ported 
 - [ ] Timelock triggers for >1M wZION
 - [ ] 60-block finality wait verified
 
-### L3 Done When
+### L2 DeFi Done When
+
+- [ ] Staking: deposit 1000 ZION → stZION minted → 7-day cooldown → withdraw returns principal + rewards
+- [ ] Farming: deposit LP token → accrue ZIONFarm rewards → harvest → rewards match emission schedule
+- [ ] Governance: create proposal → voting period (3 days) → quorum met → timelock (24h) → execute
+- [ ] Treasury: category budget allocated → disbursement request → 5-of-7 multisig → funds released
+- [ ] Atomic Swap: initiate HTLC → counterparty claims with preimage → funds released both sides
+- [ ] Atomic Swap: timeout expires → auto-refund triggered on both chains
+- [ ] DAO vote weight matches L1 balance snapshot at proposal creation block
+- [ ] All contracts pass Foundry fuzz suite (≥10,000 runs per function)
+
+### L3 WARP Done When
 
 - [ ] `ChainId::zion_l1().decimals` == 12
 - [ ] WARP:1:solana lock on V3 testnet → wZION-SPL minted on Solana devnet
@@ -404,6 +819,17 @@ This structure mirrors the root `L2/` and `L3/` layout but will be clean-ported 
 - [ ] Fee per route matches fee table
 - [ ] Router correctly dispatches BRIDGE:* vs WARP:* memos
 
+### L3 AI Native & NCL Done When
+
+- [ ] NCL ONNX backend: submit inference task → worker picks up → result returned → payment settled
+- [ ] NCL pricing: task cost matches `base_cost × backend_multiplier × size_factor`
+- [ ] NCL reputation: worker with <20.0 score is banned from new tasks
+- [ ] Consciousness: agent starts at Dormant → gains XP from successful tasks → reaches Aware (100 XP)
+- [ ] Pool optimizer: switches miner to higher-health pool when delta > hysteresis threshold
+- [ ] WARP agent optimizer: correctly computes `topology_bonus × mode_bonus × coherence_bonus`
+- [ ] Memory: short-term ring evicts oldest after 50 entries; archive persists to SQLite
+- [ ] All NCL task types execute: Inference, Training, DataProcessing, Optimization, Validation, Custom
+
 ---
 
-*This plan follows the V3 "one canonical path per operation" principle: one bridge vault, one conversion formula, one fee model, one validator quorum shared between L2 and L3.*
+*This plan follows the V3 "one canonical path per operation" principle: one bridge vault, one conversion formula, one fee model, one validator quorum shared between L2 and L3. DeFi and AI Native layers build on top of the bridge foundation — no circular dependencies.*
