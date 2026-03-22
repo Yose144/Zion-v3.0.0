@@ -96,6 +96,7 @@ interface V3Charts {
 }
 
 type ChartRange = '1h' | '6h' | '24h';
+type ServiceGroup = 'all' | 'core' | 'mining' | 'monitoring' | 'remote';
 
 interface ServiceStatus {
   name: string; job: string; up: boolean | null; image: string; ports: string; note?: string;
@@ -380,6 +381,35 @@ const CHART_RANGES: { value: ChartRange; label: string }[] = [
   { value: '24h', label: '24h' },
 ];
 
+const SERVICE_GROUPS: { value: ServiceGroup; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'core', label: 'Core' },
+  { value: 'mining', label: 'Mining' },
+  { value: 'monitoring', label: 'Monitoring' },
+  { value: 'remote', label: 'Remote' },
+];
+
+function getServiceGroup(service: ServiceStatus): Exclude<ServiceGroup, 'all'> {
+  if (service.name.includes('germany-')) return 'remote';
+  if (service.name.includes('prometheus') || service.name.includes('grafana') || service.name.includes('exporter') || service.name.includes('alertmanager') || service.name.includes('website')) return 'monitoring';
+  if (service.name.includes('pool') || service.name.includes('miner')) return 'mining';
+  return 'core';
+}
+
+function getServiceActions(service: ServiceStatus): { href: string; label: string }[] {
+  const actions: { href: string; label: string }[] = [];
+  if (service.job || service.name.includes('core') || service.name.includes('pool') || service.name.includes('redis') || service.name.includes('germany-')) {
+    actions.push({ href: '/monitoring', label: 'Monitoring' });
+  }
+  if (service.name.includes('prometheus') || service.name.includes('grafana') || service.name.includes('exporter') || service.name.includes('alertmanager')) {
+    actions.push({ href: '/grafana/', label: 'Grafana' });
+  }
+  if (actions.length === 0) {
+    actions.push({ href: '/monitoring', label: 'Inspect' });
+  }
+  return actions;
+}
+
 /* ═══════════════════════ SUB-COMPONENTS ═══════════════════════ */
 function Stat({ label, value, sub, color = 'text-white', mono }: { label: string; value: string; sub?: string; color?: string; mono?: boolean }) {
   return (
@@ -532,6 +562,8 @@ function MiniMetric({ label, value, color = 'text-white' }: { label: string; val
 }
 
 function OpsServiceCard({ service }: { service: ServiceStatus }) {
+  const group = getServiceGroup(service);
+  const actions = getServiceActions(service);
   const statusClass = service.up === true
     ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'
     : service.up === false
@@ -548,6 +580,23 @@ function OpsServiceCard({ service }: { service: ServiceStatus }) {
           <div className="text-[10px] text-gray-500 font-mono truncate">{service.image}</div>
         </div>
         <span className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border uppercase tracking-widest ${statusClass}`}>{statusLabel}</span>
+      </div>
+      <div className="flex items-center justify-between gap-2 text-[10px]">
+        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 uppercase tracking-[0.2em] text-gray-400">{group}</span>
+        <div className="flex flex-wrap gap-1.5 justify-end">
+          {actions.map(action => (
+            <a
+              key={`${service.name}_${action.label}`}
+              href={action.href}
+              target={action.href.startsWith('/grafana') ? '_blank' : undefined}
+              rel={action.href.startsWith('/grafana') ? 'noopener noreferrer' : undefined}
+              className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-cyan-300 hover:border-cyan-400/40 hover:text-cyan-200 transition-colors"
+            >
+              <Link className="h-3 w-3" />
+              {action.label}
+            </a>
+          ))}
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-[10px]">
         <div className="rounded-lg border border-white/10 bg-white/5 p-2">
@@ -957,6 +1006,7 @@ export default function MissionControlDashboard() {
   const [services, setServices] = useState<ServiceStatus[]>([]);
   const [stackSummary, setStackSummary] = useState<StackSummary | null>(null);
   const [chartRange, setChartRange] = useState<ChartRange>('6h');
+  const [serviceGroup, setServiceGroup] = useState<ServiceGroup>('all');
 
   const refresh = useCallback(async () => {
     try {
@@ -1025,6 +1075,17 @@ export default function MissionControlDashboard() {
     : primaryHeight > 0
     ? 'text-cyan-400'
     : 'text-red-400';
+  const visibleServices = serviceGroup === 'all' ? services : services.filter(service => getServiceGroup(service) === serviceGroup);
+  const monitoredServices = services.filter(service => service.up !== null);
+  const servicesUp = monitoredServices.filter(service => service.up).length;
+  const servicesDown = monitoredServices.filter(service => service.up === false).length;
+  const servicesNa = services.filter(service => service.up === null).length;
+  const opsAlerts = [
+    servicesDown > 0 ? `${servicesDown} target${servicesDown > 1 ? 's' : ''} down` : null,
+    stackSummary?.prometheusReloadOk === 0 ? 'Prometheus reload failed' : null,
+    stackSummary?.prometheusQueueLength != null && stackSummary.prometheusQueueLength > 0 ? `Alert queue ${fmt(stackSummary.prometheusQueueLength)}` : null,
+    stackSummary?.redisUp === 0 ? 'Redis exporter path unhealthy' : null,
+  ].filter((value): value is string => Boolean(value));
 
   return (
     <div className="zion-shell min-h-screen pt-24 sm:pt-32 pb-16 sm:pb-24 overflow-x-hidden">
@@ -1388,6 +1449,19 @@ export default function MissionControlDashboard() {
                     <div className="mt-2 text-[10px] text-gray-500">Veřejně scrapeované targety z Helsinek Promethea.</div>
                   </div>
                 </div>
+                {opsAlerts.length > 0 && (
+                  <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+                    <div className="flex items-center gap-2 mb-2 text-amber-300 text-xs uppercase tracking-[0.25em] font-semibold">
+                      <AlertTriangle className="h-4 w-4" />
+                      Ops Alerts
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {opsAlerts.map(alert => (
+                        <span key={alert} className="rounded-full border border-amber-500/30 bg-black/20 px-3 py-1 text-xs text-amber-200">{alert}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.section>
             )}
 
@@ -1401,20 +1475,33 @@ export default function MissionControlDashboard() {
                     Ops Panel — Helsinki + Remote Targets
                   </h2>
                   <div className="flex flex-wrap gap-2 text-[10px]">
-                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 font-semibold uppercase tracking-widest">{services.filter(s => s.up === true).length} up</span>
-                    <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-red-300 font-semibold uppercase tracking-widest">{services.filter(s => s.up === false).length} down</span>
-                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300 font-semibold uppercase tracking-widest">{services.filter(s => s.up === null).length} n/a</span>
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 font-semibold uppercase tracking-widest">{servicesUp} up</span>
+                    <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-red-300 font-semibold uppercase tracking-widest">{servicesDown} down</span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-300 font-semibold uppercase tracking-widest">{servicesNa} n/a</span>
                   </div>
                 </div>
                 <p className="text-xs text-gray-500">{services.length} services/targets · zion-net Docker network · Prometheus scrape 15s</p>
               </div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {SERVICE_GROUPS.map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => setServiceGroup(option.value)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${serviceGroup === option.value ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300' : 'border-white/10 bg-white/5 text-gray-400 hover:text-gray-200 hover:border-white/20'}`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {services.map(service => <OpsServiceCard key={service.name} service={service} />)}
+                {visibleServices.map(service => <OpsServiceCard key={service.name} service={service} />)}
               </div>
               <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-gray-500">
-                <span>{services.filter(s => s.up === true).length} / {services.length} monitored targets UP</span>
+                <span>{servicesUp} / {monitoredServices.length || services.length} monitored targets UP</span>
                 <span>·</span>
-                <span>{services.filter(s => s.up === null).length} without Prometheus scrape</span>
+                <span>{servicesNa} without Prometheus scrape</span>
+                <span>·</span>
+                <span>showing {visibleServices.length} in {serviceGroup}</span>
               </div>
             </motion.section>
 
