@@ -531,12 +531,11 @@ mod tests {
         engine.add_from_dns(ip(10, 0, 0, 1), 8334, 1000);
         engine.add_from_dns(ip(10, 0, 0, 2), 8334, 2000);
 
-        // Prune at time where first peer is expired but second isn't
         let expiry = PEER_EXPIRY.as_secs();
-        engine.prune(2000 + expiry - 1); // peer at 1000 still alive (barely)
+        engine.prune(1000 + expiry - 1); // both peers are still within expiry
         assert_eq!(engine.peer_count(), 2);
 
-        engine.prune(1000 + expiry + 1); // peer at 1000 now expired
+        engine.prune(1000 + expiry + 1); // peer at 1000 is expired, peer at 2000 is not
         assert_eq!(engine.peer_count(), 1);
     }
 
