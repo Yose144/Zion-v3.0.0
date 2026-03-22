@@ -252,8 +252,22 @@ function tcpPoolMetrics(host: string, port: number, timeoutMs = POOL_TIMEOUT_MS)
 
 const ATOMIC_PER_ZION = 1_000_000_000_000;
 
+function normalizeRewardZion(rawReward: unknown): number {
+  if (typeof rawReward !== 'number' || !Number.isFinite(rawReward) || rawReward <= 0) {
+    return 5400.067;
+  }
+
+  // Some V3 RPC surfaces expose reward in atomic flowers despite the field name.
+  // Treat very large values as atomic and convert them back to ZION.
+  if (rawReward >= ATOMIC_PER_ZION) {
+    return rawReward / ATOMIC_PER_ZION;
+  }
+
+  return rawReward;
+}
+
 function mapV3BlockToHeader(block: any): ZionBlockHeader {
-  const rewardZion = block.miner_reward_zion ?? block.subsidy_zion ?? 5400.067;
+  const rewardZion = normalizeRewardZion(block.miner_reward_zion ?? block.subsidy_zion ?? block.reward);
   const txCount = block.transaction_ids?.length ?? block.transactions?.length ?? 0;
   return {
     height: block.height ?? 0,
@@ -276,7 +290,7 @@ function mapV3BlockToHeader(block: any): ZionBlockHeader {
 
 function mapV3BlockToFull(block: any): ZionBlock {
   const header = mapV3BlockToHeader(block);
-  const rewardZion = block.miner_reward_zion ?? block.subsidy_zion ?? 5400.067;
+  const rewardZion = normalizeRewardZion(block.miner_reward_zion ?? block.subsidy_zion ?? block.reward);
   return {
     ...header,
     miner_tx: {
