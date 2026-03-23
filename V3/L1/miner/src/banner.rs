@@ -3,7 +3,7 @@
 /// Print the startup banner with version, consensus, and hardware info.
 pub fn print_banner(threads: usize) {
     println!("╔══════════════════════════════════════════════╗");
-    println!("║          ZION v3 Miner — Ekam Deeksha       ║");
+    println!("║          ZION v3 Miner — Ekam Deeksha        ║");
     println!("╚══════════════════════════════════════════════╝");
     println!();
 

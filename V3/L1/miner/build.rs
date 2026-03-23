@@ -10,4 +10,11 @@ fn main() {
             .unwrap();
         println!("cargo:rustc-link-search=native={}", workspace_target.display());
     }
+
+    #[cfg(feature = "gpu-metal")]
+    {
+        println!("cargo:rustc-link-lib=framework=Metal");
+        println!("cargo:rustc-link-lib=framework=CoreGraphics");
+        println!("cargo:rustc-link-lib=framework=Foundation");
+    }
 }
