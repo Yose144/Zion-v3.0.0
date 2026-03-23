@@ -88,7 +88,7 @@ pub trait GpuMiner: Send {
 /// Try to create the best available GPU backend.
 pub fn create_gpu_backend(
     kind: GpuBackendKind,
-    _work_size: usize,
+    work_size: usize,
 ) -> Result<Box<dyn GpuMiner>> {
     match kind {
         GpuBackendKind::Cpu => {
@@ -419,29 +419,200 @@ pub mod cuda_deeksha {
     }
 }
 
-// ─── Metal Backend (scaffold) ───────────────────────────────────────────────
+// ─── Metal Backend (Apple Silicon) ───────────────────────────────────────────
 
 #[cfg(feature = "gpu-metal")]
 pub mod metal_deeksha {
     use super::*;
+    use metal::{Device, MTLResourceOptions, MTLSize};
+    use std::time::Instant;
+
+    const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct MetalDeekshaMiner {
-        work_size: usize,
+        device: Device,
+        queue: metal::CommandQueue,
+        pipeline: metal::ComputePipelineState,
+        header_buf: metal::Buffer,
+        params_buf: metal::Buffer,
+        nonce_base_buf: metal::Buffer,
+        scratchpad_buf: metal::Buffer,
+        result_nonce_buf: metal::Buffer,
+        result_hash_buf: metal::Buffer,
+        npu_w1_buf: metal::Buffer,
+        npu_b1_buf: metal::Buffer,
+        npu_w2_buf: metal::Buffer,
+        npu_b2_buf: metal::Buffer,
+        npu_scale1_buf: metal::Buffer,
+        npu_scale2_buf: metal::Buffer,
+        batch_size: usize,
+        threads_per_tg: usize,
+        device_name_cached: String,
     }
 
     impl MetalDeekshaMiner {
         pub fn new(work_size: usize) -> Result<Self> {
-            // TODO: Implement Metal backend for Apple Silicon.
-            // Requires: Ekam Deeksha MSL kernel + metal-rs bindings.
-            anyhow::bail!(
-                "Metal backend not yet implemented — tracking in UPGRADE_PLAN.md Phase A4"
+            let device = Device::system_default()
+                .ok_or_else(|| anyhow::anyhow!("no Metal device found"))?;
+            let device_name = device.name().to_string();
+            let queue = device.new_command_queue();
+
+            // Compile shader from embedded source
+            let shader_src = include_str!("ekam_deeksha.metal");
+            let options = metal::CompileOptions::new();
+            let library = device
+                .new_library_with_source(shader_src, &options)
+                .map_err(|e| anyhow::anyhow!("Metal shader compilation failed: {:?}", e))?;
+
+            let func = library
+                .get_function("ekam_deeksha_mine", None)
+                .map_err(|e| anyhow::anyhow!("kernel function not found: {:?}", e))?;
+
+            let pipeline = device
+                .new_compute_pipeline_state_with_function(&func)
+                .map_err(|e| anyhow::anyhow!("Metal pipeline creation failed: {:?}", e))?;
+
+            let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
+            let threads_per_tg = if device_name.contains("M1") { 64 } else { 128 }
+                .min(max_tpg);
+
+            let batch_size = work_size.max(threads_per_tg);
+            let opts = MTLResourceOptions::StorageModeShared;
+
+            // Core buffers
+            let header_buf = device.new_buffer(80, opts);
+            let params_buf = device.new_buffer(12, opts);          // 3 × u32
+            let nonce_base_buf = device.new_buffer(8, opts);       // u64
+            let result_nonce_buf = device.new_buffer(8, opts);     // atomic u64
+            let result_hash_buf = device.new_buffer(32, opts);     // hash output
+
+            // Scratchpad: batch_size × 256 KiB per thread
+            let scratch_bytes = (batch_size as u64) * 262_144u64;
+            let scratchpad_buf = device.new_buffer(scratch_bytes, opts);
+            if scratchpad_buf.length() < scratch_bytes {
+                anyhow::bail!(
+                    "scratchpad allocation failed: need {} MiB, got {} bytes",
+                    scratch_bytes / (1024 * 1024),
+                    scratchpad_buf.length()
+                );
+            }
+
+            // NPU weights
+            let npu_weights = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat();
+
+            let npu_w1_buf = device.new_buffer_with_data(
+                npu_weights.w1.as_ptr() as *const _,
+                (npu_weights.w1.len()) as u64,
+                opts,
             );
+            let npu_b1_buf = device.new_buffer_with_data(
+                npu_weights.b1.as_ptr() as *const _,
+                (npu_weights.b1.len()) as u64,
+                opts,
+            );
+            let npu_w2_buf = device.new_buffer_with_data(
+                npu_weights.w2.as_ptr() as *const _,
+                (npu_weights.w2.len()) as u64,
+                opts,
+            );
+            let npu_b2_buf = device.new_buffer_with_data(
+                npu_weights.b2.as_ptr() as *const _,
+                (npu_weights.b2.len()) as u64,
+                opts,
+            );
+            let npu_scale1_buf = device.new_buffer_with_data(
+                npu_weights.scale1.as_ptr() as *const _,
+                (npu_weights.scale1.len() * 2) as u64,
+                opts,
+            );
+            let npu_scale2_buf = device.new_buffer_with_data(
+                npu_weights.scale2.as_ptr() as *const _,
+                (npu_weights.scale2.len() * 2) as u64,
+                opts,
+            );
+
+            println!(
+                "gpu_metal_init device=\"{}\" batch_size={} threads_per_tg={} scratchpad_mib={}",
+                device_name, batch_size, threads_per_tg, scratch_bytes / (1024 * 1024)
+            );
+
+            Ok(Self {
+                device,
+                queue,
+                pipeline,
+                header_buf,
+                params_buf,
+                nonce_base_buf,
+                scratchpad_buf,
+                result_nonce_buf,
+                result_hash_buf,
+                npu_w1_buf,
+                npu_b1_buf,
+                npu_w2_buf,
+                npu_b2_buf,
+                npu_scale1_buf,
+                npu_scale2_buf,
+                batch_size,
+                threads_per_tg,
+                device_name_cached: device_name,
+            })
+        }
+
+        fn dispatch_batch(&mut self, nonce_start: u64, count: usize) {
+            // Write nonce base
+            unsafe {
+                let ptr = self.nonce_base_buf.contents() as *mut u64;
+                *ptr = nonce_start;
+            }
+
+            // Reset result sentinel
+            unsafe {
+                let ptr = self.result_nonce_buf.contents() as *mut u64;
+                *ptr = SENTINEL;
+            }
+
+            let cb = self.queue.new_command_buffer();
+            let enc = cb.new_compute_command_encoder();
+            enc.set_compute_pipeline_state(&self.pipeline);
+            enc.set_buffer(0, Some(&self.header_buf), 0);
+            enc.set_buffer(1, Some(&self.params_buf), 0);
+            enc.set_buffer(2, Some(&self.nonce_base_buf), 0);
+            enc.set_buffer(3, Some(&self.scratchpad_buf), 0);
+            enc.set_buffer(4, Some(&self.result_nonce_buf), 0);
+            enc.set_buffer(5, Some(&self.result_hash_buf), 0);
+            enc.set_buffer(6, Some(&self.npu_w1_buf), 0);
+            enc.set_buffer(7, Some(&self.npu_b1_buf), 0);
+            enc.set_buffer(8, Some(&self.npu_w2_buf), 0);
+            enc.set_buffer(9, Some(&self.npu_b2_buf), 0);
+            enc.set_buffer(10, Some(&self.npu_scale1_buf), 0);
+            enc.set_buffer(11, Some(&self.npu_scale2_buf), 0);
+
+            let grid = MTLSize::new(count as u64, 1, 1);
+            let tg = MTLSize::new(self.threads_per_tg as u64, 1, 1);
+            enc.dispatch_threads(grid, tg);
+            enc.end_encoding();
+
+            cb.commit();
+            cb.wait_until_completed();
+        }
+
+        fn read_result(&self) -> Option<(u64, [u8; 32])> {
+            let nonce = unsafe { *(self.result_nonce_buf.contents() as *const u64) };
+            if nonce == SENTINEL {
+                return None;
+            }
+            let mut hash = [0u8; 32];
+            unsafe {
+                let ptr = self.result_hash_buf.contents() as *const u8;
+                std::ptr::copy_nonoverlapping(ptr, hash.as_mut_ptr(), 32);
+            }
+            Some((nonce, hash))
         }
     }
 
     impl GpuMiner for MetalDeekshaMiner {
         fn device_name(&self) -> String {
-            "metal-unimplemented".to_string()
+            self.device_name_cached.clone()
         }
 
         fn backend_kind(&self) -> GpuBackendKind {
@@ -450,16 +621,93 @@ pub mod metal_deeksha {
 
         fn mine_batch(
             &mut self,
-            _header: MiningHeader,
-            _target: DifficultyTarget,
-            _nonce_start: u64,
-            _batch_size: u64,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
         ) -> Result<GpuBatchResult> {
-            anyhow::bail!("Metal backend not implemented");
+            let header_bytes = header.to_bytes();
+
+            // Write header
+            unsafe {
+                let ptr = self.header_buf.contents() as *mut u8;
+                std::ptr::copy_nonoverlapping(header_bytes.as_ptr(), ptr, header_bytes.len().min(80));
+            }
+
+            // Write params: [header_len, nonce_count, target_u32]
+            let target_u32 = u32::from_le_bytes([
+                target.bytes[0], target.bytes[1], target.bytes[2], target.bytes[3],
+            ]);
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.batch_size);
+
+                // Update params for this chunk
+                unsafe {
+                    let ptr = self.params_buf.contents() as *mut u32;
+                    *ptr = 80u32;                // header_len
+                    *ptr.add(1) = chunk as u32;  // nonce_count
+                    *ptr.add(2) = target_u32;    // target
+                }
+
+                self.dispatch_batch(current_nonce, chunk);
+
+                if let Some((nonce, hash)) = self.read_result() {
+                    all_solutions.push((nonce, hash));
+                }
+
+                total_tested += chunk as u64;
+                current_nonce = current_nonce.wrapping_add(chunk as u64);
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: total_tested,
+            })
         }
 
-        fn benchmark(&mut self, _secs: f64) -> Result<(u64, f64, f64)> {
-            anyhow::bail!("Metal backend not implemented");
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let header = MiningHeader {
+                version: 3,
+                previous_hash: [0xAA; 32],
+                merkle_root: [0xBB; 32],
+                timestamp: 1_762_000_200,
+                difficulty_bits: 0x1f00ffff,
+            };
+            let target = DifficultyTarget { bytes: [0; 32] };
+
+            // Write header once
+            let header_bytes = header.to_bytes();
+            unsafe {
+                let ptr = self.header_buf.contents() as *mut u8;
+                std::ptr::copy_nonoverlapping(header_bytes.as_ptr(), ptr, 80);
+            }
+            unsafe {
+                let ptr = self.params_buf.contents() as *mut u32;
+                *ptr = 80u32;
+                *ptr.add(1) = self.batch_size as u32;
+                *ptr.add(2) = 0u32; // impossible target
+            }
+
+            let start = Instant::now();
+            let mut total = 0u64;
+            let mut nonce = 0u64;
+
+            while start.elapsed().as_secs_f64() < secs {
+                self.dispatch_batch(nonce, self.batch_size);
+                total += self.batch_size as u64;
+                nonce = nonce.wrapping_add(self.batch_size as u64);
+            }
+
+            let elapsed = start.elapsed().as_secs_f64();
+            let khps = if elapsed > 0.0 { total as f64 / elapsed / 1_000.0 } else { 0.0 };
+            Ok((total, elapsed, khps))
         }
     }
 }
@@ -485,7 +733,13 @@ pub fn detect_gpus() -> Vec<String> {
     }
 
     // CUDA device detection would go here
-    // Metal device detection would go here
+
+    #[cfg(feature = "gpu-metal")]
+    {
+        if let Some(device) = metal::Device::system_default() {
+            devices.push(format!("metal:{}", device.name()));
+        }
+    }
 
     devices
 }

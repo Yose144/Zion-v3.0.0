@@ -252,6 +252,28 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
     let threads = config.threads;
 
+    // ── GPU backend init (best-effort — falls back to CPU) ──
+    let mut gpu: Option<Box<dyn gpu_backend::GpuMiner>> =
+        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu {
+            match gpu_backend::create_gpu_backend(config.gpu_backend, config.gpu_work_size) {
+                Ok(g) => {
+                    println!(
+                        "gpu_init backend={} device=\"{}\" work_size={}",
+                        g.backend_kind().as_str(),
+                        g.device_name(),
+                        config.gpu_work_size
+                    );
+                    Some(g)
+                }
+                Err(e) => {
+                    println!("gpu_init_fallback reason=\"{e}\" using=cpu");
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
     let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name))?;
     let welcome_line = encode_message(&pool.welcome_message())?;
     println!("wire_hello={}", hello_line.trim());
@@ -272,7 +294,13 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
         let job = pool.issue_job(header, config.target, start_nonce, tuned_nonce_count);
         last_job_id = job.job_id;
-        let Some(solution) = parallel::parallel_scan_nonce_range(job, threads) else {
+        // GPU-first, CPU-fallback nonce scan
+        let scan_result = if let Some(ref mut g) = gpu {
+            gpu_backend::gpu_scan_job(g.as_mut(), job)
+        } else {
+            parallel::parallel_scan_nonce_range(job, threads)
+        };
+        let Some(solution) = scan_result else {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             rejected_iterations += 1;
             telemetry.record_attempted_hashes(attempted_hashes);
@@ -416,6 +444,28 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
     let threads = config.threads;
 
+    // ── GPU backend init (best-effort — falls back to CPU) ──
+    let mut gpu: Option<Box<dyn gpu_backend::GpuMiner>> =
+        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu {
+            match gpu_backend::create_gpu_backend(config.gpu_backend, config.gpu_work_size) {
+                Ok(g) => {
+                    println!(
+                        "gpu_init backend={} device=\"{}\" work_size={}",
+                        g.backend_kind().as_str(),
+                        g.device_name(),
+                        config.gpu_work_size
+                    );
+                    Some(g)
+                }
+                Err(e) => {
+                    println!("gpu_init_fallback reason=\"{e}\" using=cpu");
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
     let stream = TcpStream::connect(pool_addr)
         .with_context(|| format!("failed to connect to pool at {pool_addr}"))?;
     let reader_stream = stream.try_clone().context("failed to clone pool stream")?;
@@ -445,7 +495,13 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         let (job_line, job) = read_next_job(&mut reader)?;
         let job_started_at = Instant::now();
         last_job_id = job.job_id;
-        let Some(solution) = parallel::parallel_scan_nonce_range(job, threads) else {
+        // GPU-first, CPU-fallback nonce scan
+        let scan_result = if let Some(ref mut g) = gpu {
+            gpu_backend::gpu_scan_job(g.as_mut(), job)
+        } else {
+            parallel::parallel_scan_nonce_range(job, threads)
+        };
+        let Some(solution) = scan_result else {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
@@ -914,6 +970,8 @@ struct MinerConfig {
     revenue_source: RevenueSource,
     revenue_value_usd: f64,
     threads: usize,
+    gpu_backend: gpu_backend::GpuBackendKind,
+    gpu_work_size: usize,
 }
 
 impl MinerConfig {
@@ -944,6 +1002,11 @@ impl MinerConfig {
             )?,
             revenue_value_usd: parse_env_f64("ZION_REVENUE_USD", 1.25)?,
             threads: parallel::detect_threads(),
+            gpu_backend: gpu_backend::GpuBackendKind::from_env(),
+            gpu_work_size: std::env::var("ZION_GPU_WORK_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(1 << 18), // 256K default
         })
     }
 }
