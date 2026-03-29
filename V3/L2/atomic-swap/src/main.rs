@@ -1,0 +1,126 @@
+//! ZION Atomic Swap Daemon entry point.
+//!
+//! # Usage
+//!
+//! ```bash
+//! # Start with a config file
+//! ZION_SWAP_ESCROW_KEY=<64-char-hex> \
+//! ZION_RPC_TOKEN=<token> \
+//!   zion-atomic-swap --config /etc/zion/atomic-swap.toml
+//!
+//! # Or use the bundled example config
+//!   zion-atomic-swap --config config/testnet.toml
+//! ```
+//!
+//! # Startup sequence
+//! 1. Load config (TOML file or defaults)
+//! 2. Open SQLite DB
+//! 3. Initialise `SwapExecutor` (validates escrow key → derives address)
+//! 4. Start L1 block watcher background task
+//! 5. Start auto-refund background task
+//! 6. Start axum HTTP API
+
+use std::sync::Arc;
+use tracing::info;
+use tracing_subscriber::EnvFilter;
+use zion_atomic_swap::{
+    config::SwapConfig,
+    db::SwapDb,
+    executor::SwapExecutor,
+    handlers::{self, AppState},
+    watcher::{L1Watcher, RefundLoop},
+};
+use axum::{routing::get, routing::post, Router};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // ── Logging ───────────────────────────────────────────────────────────
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .with_target(false)
+        .init();
+
+    // ── Config ────────────────────────────────────────────────────────────
+    let config_path = std::env::args()
+        .skip_while(|a| a != "--config")
+        .nth(1)
+        .unwrap_or_else(|| "config/atomic-swap.toml".to_string());
+
+    let cfg = if std::path::Path::new(&config_path).exists() {
+        info!("Loading config from {config_path}");
+        SwapConfig::from_file(&config_path)?
+    } else {
+        info!("Config file not found — using built-in defaults (dev mode)");
+        SwapConfig {
+            swap: Default::default(),
+            l1: Default::default(),
+            database: Default::default(),
+            api: Default::default(),
+            refund: Default::default(),
+        }
+    };
+
+    let cfg = Arc::new(cfg);
+
+    // ── Database ──────────────────────────────────────────────────────────
+    let db_path = &cfg.database.path;
+    info!("Opening database at {db_path}");
+    let db = Arc::new(SwapDb::open(db_path)?);
+
+    // ── Executor (validates escrow key) ───────────────────────────────────
+    let executor = Arc::new(SwapExecutor::new(Arc::clone(&cfg))?);
+    let escrow_address = executor.escrow_address.clone();
+    info!("Escrow address: {escrow_address}");
+
+    // ── Background: L1 watcher ────────────────────────────────────────────
+    {
+        let watcher = L1Watcher::new(
+            Arc::clone(&cfg),
+            Arc::clone(&db),
+            Arc::clone(&executor),
+            escrow_address.clone(),
+        );
+        tokio::spawn(async move {
+            watcher.run().await;
+        });
+    }
+
+    // ── Background: auto-refund loop ──────────────────────────────────────
+    {
+        let refund_loop = RefundLoop::new(
+            Arc::clone(&cfg),
+            Arc::clone(&db),
+            Arc::clone(&executor),
+        );
+        tokio::spawn(async move {
+            refund_loop.run().await;
+        });
+    }
+
+    // ── HTTP API ──────────────────────────────────────────────────────────
+    let state = AppState {
+        db: Arc::clone(&db),
+        executor: Arc::clone(&executor),
+        escrow_address: escrow_address.clone(),
+        bearer_token: cfg.api.bearer_token.clone(),
+    };
+
+    let app = Router::new()
+        .route("/health", get(handlers::health))
+        .route("/swap/escrow-address", get(handlers::escrow_address))
+        .route("/swap/pending", get(handlers::list_pending))
+        .route("/swap/:hash", get(handlers::swap_status))
+        .route("/swap/claim", post(handlers::claim))
+        .route("/swap/refund", post(handlers::refund))
+        .with_state(state);
+
+    let bind = &cfg.api.bind;
+    info!("🚀 Atomic Swap API listening on http://{bind}");
+    let listener = tokio::net::TcpListener::bind(bind).await?;
+    axum::serve(listener, app).await?;
+
+    Ok(())
+}
