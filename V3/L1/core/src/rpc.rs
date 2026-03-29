@@ -14,7 +14,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::NodeRuntime;
+use crate::crypto;
 use crate::emission;
+use crate::fee;
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -215,6 +217,55 @@ fn looks_like_utxo_address(value: &str) -> bool {
     value.starts_with("zion1")
 }
 
+fn format_flowers_as_zion(amount: u64) -> String {
+    format!(
+        "{}.{:012}",
+        amount / emission::FLOWERS_PER_ZION,
+        amount % emission::FLOWERS_PER_ZION
+    )
+}
+
+fn parse_bridge_memo(memo: &str) -> Option<(&str, &str)> {
+    let rest = memo.strip_prefix("BRIDGE:")?;
+    let (chain, recipient) = rest.split_once(':')?;
+    if chain.is_empty() || recipient.is_empty() {
+        return None;
+    }
+    Some((chain, recipient))
+}
+
+fn utxo_balance_at_height(rt: &NodeRuntime, address: &str, height: u64) -> u64 {
+    let mut utxos: HashMap<(String, u32), u64> = HashMap::new();
+    for block in rt.accepted_blocks().iter().filter(|block| block.height <= height) {
+        for utxo_tx in &block.utxo_transactions {
+            for input in &utxo_tx.inputs {
+                utxos.remove(&(crypto::to_hex(&input.prev_tx_hash), input.output_index));
+            }
+        }
+        for utxo_tx in &block.utxo_transactions {
+            let tx_hash = crypto::to_hex(&utxo_tx.id);
+            for (index, output) in utxo_tx.outputs.iter().enumerate() {
+                utxos.insert((tx_hash.clone(), index as u32), output.amount);
+            }
+        }
+    }
+
+    let mut balance = 0u64;
+    for block in rt.accepted_blocks().iter().filter(|block| block.height <= height) {
+        for utxo_tx in &block.utxo_transactions {
+            let tx_hash = crypto::to_hex(&utxo_tx.id);
+            for (index, output) in utxo_tx.outputs.iter().enumerate() {
+                if output.address == address
+                    && utxos.contains_key(&(tx_hash.clone(), index as u32))
+                {
+                    balance = balance.saturating_add(output.amount);
+                }
+            }
+        }
+    }
+    balance
+}
+
 // ── Helper: build a router with standard node methods ──────────────────
 
 /// Create a stub router with all method names registered but no live state.
@@ -230,6 +281,7 @@ pub fn build_stub_router() -> RpcRouter {
         "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
         "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
         "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos", "getSupplyInfo",
+        "getBalanceAtHeight", "getBridgeLocks", "getBridgeVaultBalance", "submitBridgeUnlock",
     ] {
         router.register(method, stub(method));
     }
@@ -393,6 +445,56 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     register_get_balance(&mut router, "getBalance");
     register_get_balance(&mut router, "getAccountBalance");
 
+    // ── getBalanceAtHeight ────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getBalanceAtHeight", Box::new(move |params: &Value| {
+            let account_id = params.get("account")
+                .or_else(|| params.get("address"))
+                .or_else(|| params.get(0))
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'account' param".into()))?;
+            let height = params.get("height")
+                .or_else(|| params.get(1))
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'height' param".into()))?;
+            if account_id.is_empty() {
+                return Err((INVALID_ADDRESS, "empty account id".into()));
+            }
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let effective_height = height.min(rt.chain_height());
+            if looks_like_utxo_address(account_id) {
+                let balance = utxo_balance_at_height(&rt, account_id, effective_height);
+                return Ok(json!({
+                    "address": account_id,
+                    "height": effective_height,
+                    "balance_flowers": balance,
+                    "balance_zion": format_flowers_as_zion(balance),
+                    "transaction_model": "utxo",
+                    "balance_scope": "confirmed_chain_only",
+                }));
+            }
+            let mut balance: i128 = 0;
+            for block in rt.accepted_blocks().iter().filter(|block| block.height <= effective_height) {
+                for tx in &block.transactions {
+                    if tx.to == account_id {
+                        balance += tx.amount_zion as i128;
+                    }
+                    if tx.from == account_id {
+                        balance -= (tx.amount_zion + tx.fee_zion) as i128;
+                    }
+                }
+            }
+            Ok(json!({
+                "account_id": account_id,
+                "height": effective_height,
+                "balance_zion": balance.max(0) as u64,
+                "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                "balance_scope": "confirmed_chain_only",
+            }))
+        }));
+    }
+
     // ── getUtxos ───────────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
@@ -423,6 +525,112 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 "total_amount": utxos.iter().map(|u| u.amount).sum::<u64>(),
                 "chain_height": rt.chain_height(),
             }))
+        }));
+    }
+
+    // ── getBridgeLocks ────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getBridgeLocks", Box::new(move |params: &Value| {
+            let from_height = params.get("from_height")
+                .or_else(|| params.get(0))
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'from_height' param".into()))?;
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let to_height = params.get("to_height")
+                .or_else(|| params.get(1))
+                .and_then(|v| v.as_u64())
+                .unwrap_or_else(|| rt.chain_height())
+                .min(rt.chain_height());
+            if from_height > to_height {
+                return Err((INVALID_PARAMS, "from_height cannot be greater than to_height".into()));
+            }
+
+            let mut locks = Vec::new();
+            for block in rt.accepted_blocks().iter().filter(|block| block.height >= from_height && block.height <= to_height) {
+                for utxo_tx in &block.utxo_transactions {
+                    let sender = utxo_tx.inputs.first()
+                        .map(|input| crypto::derive_address(&input.public_key))
+                        .unwrap_or_default();
+                    let txid = crypto::to_hex(&utxo_tx.id);
+                    for output in &utxo_tx.outputs {
+                        if output.address != fee::BRIDGE_VAULT_ADDRESS {
+                            continue;
+                        }
+                        let Some(memo) = output.memo.as_deref() else {
+                            continue;
+                        };
+                        let Some((recipient_chain, recipient)) = parse_bridge_memo(memo) else {
+                            continue;
+                        };
+                        locks.push(json!({
+                            "txid": txid,
+                            "block_height": block.height,
+                            "sender": sender,
+                            "recipient_chain": recipient_chain,
+                            "recipient": recipient,
+                            "amount_flowers": output.amount,
+                            "amount_zion": format_flowers_as_zion(output.amount),
+                            "memo": memo,
+                            "confirmed": true,
+                        }));
+                    }
+                }
+            }
+
+            Ok(json!({
+                "from_height": from_height,
+                "to_height": to_height,
+                "locks": locks,
+                "count": locks.len(),
+            }))
+        }));
+    }
+
+    // ── getBridgeVaultBalance ─────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getBridgeVaultBalance", Box::new(move |_params: &Value| {
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let balance = rt.utxo_balance(fee::BRIDGE_VAULT_ADDRESS);
+            Ok(json!({
+                "address": fee::BRIDGE_VAULT_ADDRESS,
+                "balance_flowers": balance,
+                "balance_zion": format_flowers_as_zion(balance),
+                "chain_height": rt.chain_height(),
+            }))
+        }));
+    }
+
+    // ── submitBridgeUnlock ────────────────────────────────────────────
+    {
+        router.register("submitBridgeUnlock", Box::new(move |params: &Value| {
+            let recipient = params.get("recipient")
+                .or_else(|| params.get("l1_recipient"))
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'recipient' param".into()))?;
+            let amount_flowers = params.get("amount_flowers")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'amount_flowers' param".into()))?;
+            let validator_proofs = params.get("validator_proofs")
+                .or_else(|| params.get("validators"))
+                .and_then(|v| v.as_array())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'validator_proofs' param".into()))?;
+
+            if !crypto::is_valid_address(recipient) {
+                return Err((INVALID_ADDRESS, "recipient must be a valid zion1 address".into()));
+            }
+            if amount_flowers == 0 {
+                return Err((INVALID_PARAMS, "amount_flowers must be > 0".into()));
+            }
+            if validator_proofs.len() < 3 {
+                return Err((INVALID_PARAMS, "submitBridgeUnlock requires at least 3 validator proofs".into()));
+            }
+
+            Err((
+                TX_REJECTED,
+                "submitBridgeUnlock scaffold is registered, but the bridge unlock validation path is not yet enabled in core".into(),
+            ))
         }));
     }
 
@@ -743,6 +951,7 @@ mod tests {
             "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
             "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
             "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos", "getSupplyInfo",
+            "getBalanceAtHeight", "getBridgeLocks", "getBridgeVaultBalance", "submitBridgeUnlock",
         ] {
             router.register(method, stub(method));
         }
@@ -769,7 +978,11 @@ mod tests {
         assert!(router.has_method("submitBlock"));
         assert!(router.has_method("getUtxos"));
         assert!(router.has_method("getSupplyInfo"));
-        assert_eq!(router.method_count(), 17);
+        assert!(router.has_method("getBalanceAtHeight"));
+        assert!(router.has_method("getBridgeLocks"));
+        assert!(router.has_method("getBridgeVaultBalance"));
+        assert!(router.has_method("submitBridgeUnlock"));
+        assert_eq!(router.method_count(), 21);
     }
 
     #[test]
@@ -1030,7 +1243,7 @@ mod tests {
     #[test]
     fn live_router_method_count() {
         let router = live_router();
-        assert_eq!(router.method_count(), 17);
+        assert_eq!(router.method_count(), 21);
     }
 
     #[test]
@@ -1077,5 +1290,60 @@ mod tests {
         assert!(resp.error.is_some());
         let err = resp.error.unwrap();
         assert_eq!(err.code, INVALID_ADDRESS);
+    }
+
+    #[test]
+    fn live_get_balance_at_height_genesis() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getBalanceAtHeight", json!({
+            "account": "wallet.alpha",
+            "height": 0
+        }));
+        assert!(resp.error.is_none(), "getBalanceAtHeight failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["height"], 0);
+        assert_eq!(result["balance_zion"], 0);
+    }
+
+    #[test]
+    fn live_get_bridge_locks_empty_at_genesis() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getBridgeLocks", json!({
+            "from_height": 0,
+            "to_height": 0
+        }));
+        assert!(resp.error.is_none(), "getBridgeLocks failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["count"], 0);
+        assert!(result["locks"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn live_get_bridge_vault_balance_defaults_to_zero() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getBridgeVaultBalance", json!(null));
+        assert!(resp.error.is_none(), "getBridgeVaultBalance failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["address"], fee::BRIDGE_VAULT_ADDRESS);
+        assert_eq!(result["balance_flowers"], 0);
+    }
+
+    #[test]
+    fn live_submit_bridge_unlock_scaffold_rejects_until_enabled() {
+        let router = live_router();
+        let recipient = crate::crypto::derive_address(&[7u8; 32]);
+        let resp = rpc_call(&router, "submitBridgeUnlock", json!({
+            "recipient": recipient,
+            "amount_flowers": 1_000_000_000_000u64,
+            "validator_proofs": [
+                {"validator_id": "v1", "signature": "01"},
+                {"validator_id": "v2", "signature": "02"},
+                {"validator_id": "v3", "signature": "03"}
+            ]
+        }));
+        assert!(resp.error.is_some());
+        let err = resp.error.unwrap();
+        assert_eq!(err.code, TX_REJECTED);
+        assert!(err.message.contains("not yet enabled"));
     }
 }
