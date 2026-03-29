@@ -1,0 +1,42 @@
+[
+  {
+    "query": "Jak funguje Ekam Deeksha mining algoritmus?",
+    "context_ids": [
+      "mining_algo",
+      "hiranyagarbha_agent"
+    ],
+    "answer": "Ekam Deeksha je vlastní mining algoritmus ZION blockchain síť. Funguje v 6 krocích:\n\n1. **Vstupní zpracování**: Vstupní blok o velikosti 64B je zpracován pomocí SHA3-512.\n2. **Rozšíření entropie**: Výsledek z kroku 1 je opět zpracován pomocí SHA3-512, aby se zvýšila entropie.\n3. **Golden Matrix transform**: Výsledek z kroku 2 je zpracován pomocí Golden Matrix transformace 3×3 s φ=0,618.\n4. **Memory-hard**: Výsledek z kroku 3 je zpracován pomocí 256 KiB scratchpada s AES-256 permutacemi, aby se zvýšila náročnost na paměť.\n5. **NPU Mix**: Výsledek z kroku 4 je zpracován pomocí INT8 MLP váhy, aby se zvýšila náročnost na zpracování.\n6. **Cosmic Fusion**: Výsledek z kroku 5 je zpracován pomocí 8 kol AES-CBC s rotujícím klíčem, aby se vytvořil konečný 256-bit hash.\n\nTento algoritmus je navržen tak, aby byl efektivní a bezpečný pro těžbu ZION blockchain síť."
+  },
+  {
+    "query": "Jak se připojit k ZION mining poolu?",
+    "context_ids": [
+      "pool_setup",
+      "mining_algo"
+    ],
+    "answer": "[KONTEXTU ODPOVÍDÁM]\n\nK připojení k ZION mining poolu použijte následující konfigurační údaje:\n\n- Protokol: stratum\n- Adresa serveru: pool.zion.network\n- Port: 3333\n- Připojte se pomocí následujícího connection stringu: stratum+tcp://pool.zion.network:3333\n\nNastavte také příslušné environmentální proměnné:\n\n- ZION_POOL_URL: stratum+tcp://pool.zion.network:3333\n- ZION_WALLET: váš ZION peněženka\n- ZION_WORKER: váš ZION worker ID\n\nDoporučená difficulty pro share je 0.001."
+  },
+  {
+    "query": "Co je HiranyagarbhaAgent a jak se inicializuje?",
+    "context_ids": [
+      "hiranyagarbha_agent",
+      "ekam_field"
+    ],
+    "answer": "HiranyagarbhaAgent je hlavní AI Native agent projektu ZION. Je to komplexní systém, který prochází fázemi vědomí od Dormant po Cosmic.\n\nAgent se inicializuje pomocí metody `genesis()`, která vrátí instanci třídy `HiranyagarbhaAgent`. Následně se LLM (Large Language Model) backend napojí přes metodu `set_llm_backend(backend)`, kde `backend` je instance LLM modelu."
+  },
+  {
+    "query": "Jak nasadit ZION V3 node na server?",
+    "context_ids": [
+      "node_deploy",
+      "pool_setup"
+    ],
+    "answer": "Nasadit ZION V3 node na server můžete pomocí následujícího příkazu:\n\n```bash\ndocker compose -f docker/docker-compose.v3-mainnet.yml up -d\n```\n\nTento příkaz spustí nasazení ZION V3 node přes Docker a spustí následující služby:\n\n* `zion-core` na portu 9333/9334\n* `zion-pool` na portu 3333\n* `zion-miner`\n\nPro nasazení na serveru Hetzner s IP adresou 5.223.84.191 použijte příkaz:\n\n```bash\ndocker compose -f docker/docker-compose.v3-mainnet.yml up -d --env ZION_NETWORK=mainnet\n```\n\nPro zobrazení stavu health check použijte příkaz:\n\n```bash\ncurl http://localhost:9334/health\n```"
+  },
+  {
+    "query": "Co je DharmaScore?",
+    "context_ids": [
+      "dharma_score",
+      "hiranyagarbha_agent"
+    ],
+    "answer": "DharmaScore je měřítko etického chování agenta, které se pohybuje od 0,0 (chaos) do 1,0 (satori). Je to souhrnná hodnota tří komponent: karuna (soucit), prajna (moudrost) a dana (štědrost). DharmaScore ovlivňuje váhu hlasů agenta v Orchestratoru a přístup k Oasis L4."
+  }
+]
