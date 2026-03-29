@@ -1,0 +1,535 @@
+//! SQLite persistence for bridge state.
+//!
+//! Stores processed lock/burn events, validator confirmations,
+//! and bridge statistics for crash recovery.
+
+use crate::types::{BridgeStats, BridgeStatus, EvmBurnEvent, L1LockEvent};
+use anyhow::Result;
+use rusqlite::{params, Connection};
+use std::path::Path;
+use tracing::info;
+
+pub struct BridgeDb {
+    conn: Connection,
+}
+
+impl BridgeDb {
+    /// Open or create the bridge database.
+    pub fn open(path: &Path) -> Result<Self> {
+        // Create parent directories if needed
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let conn = Connection::open(path)?;
+        let db = Self { conn };
+        db.init_tables()?;
+        Ok(db)
+    }
+
+    fn init_tables(&self) -> Result<()> {
+        self.conn.execute_batch(
+            "
+            CREATE TABLE IF NOT EXISTS l1_locks (
+                l1_tx_hash       TEXT PRIMARY KEY,
+                l1_block_height  INTEGER NOT NULL,
+                l1_sender        TEXT NOT NULL,
+                amount_flowers    INTEGER NOT NULL,
+                amount_wzion_wei     TEXT NOT NULL,
+                target_chain     TEXT NOT NULL,
+                evm_recipient    TEXT NOT NULL,
+                status           TEXT NOT NULL DEFAULT 'pending',
+                confirmations    INTEGER NOT NULL DEFAULT 0,
+                detected_at      TEXT NOT NULL,
+                completed_at     TEXT,
+                evm_tx_hash      TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS evm_burns (
+                burn_id          TEXT PRIMARY KEY,
+                evm_tx_hash      TEXT NOT NULL,
+                evm_block_number INTEGER NOT NULL,
+                evm_chain        TEXT NOT NULL,
+                evm_burner       TEXT NOT NULL,
+                amount_wzion_wei     TEXT NOT NULL,
+                amount_flowers INTEGER NOT NULL,
+                l1_recipient     TEXT NOT NULL,
+                status           TEXT NOT NULL DEFAULT 'pending',
+                confirmations    INTEGER NOT NULL DEFAULT 0,
+                detected_at      TEXT NOT NULL,
+                completed_at     TEXT,
+                l1_unlock_tx     TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS validator_confirmations (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                operation_type   TEXT NOT NULL,  -- 'lock' or 'burn'
+                operation_id     TEXT NOT NULL,
+                validator_addr   TEXT NOT NULL,
+                confirmed_at     TEXT NOT NULL,
+                UNIQUE(operation_type, operation_id, validator_addr)
+            );
+
+            CREATE TABLE IF NOT EXISTS bridge_state (
+                key              TEXT PRIMARY KEY,
+                value            TEXT NOT NULL,
+                updated_at       TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_locks_status ON l1_locks(status);
+            CREATE INDEX IF NOT EXISTS idx_burns_status ON evm_burns(status);
+            CREATE INDEX IF NOT EXISTS idx_confirmations_op ON validator_confirmations(operation_type, operation_id);
+            ",
+        )?;
+
+        info!("📦 Bridge database initialized");
+        Ok(())
+    }
+
+    /// Insert a new L1 lock event.
+    /// Uses INSERT OR IGNORE so that duplicate TX hashes are silently skipped —
+    /// prevents replay attacks where an attacker resends a completed lock to reset
+    /// its status back to Pending and trigger a second mint.
+    pub fn insert_lock(&self, lock: &L1LockEvent) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR IGNORE INTO l1_locks
+             (l1_tx_hash, l1_block_height, l1_sender, amount_flowers, amount_wzion_wei,
+              target_chain, evm_recipient, status, confirmations, detected_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                lock.l1_tx_hash,
+                lock.l1_block_height,
+                lock.l1_sender,
+                lock.amount_flowers,
+                lock.amount_wzion_wei,
+                lock.target_chain,
+                lock.evm_recipient,
+                format!("{:?}", lock.status),
+                lock.confirmations,
+                lock.detected_at.to_rfc3339(),
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Insert a new EVM burn event.
+    /// Uses INSERT OR IGNORE so that duplicate burn IDs are silently skipped —
+    /// prevents processing the same burn event twice if the watcher re-scans old blocks.
+    pub fn insert_burn(&self, burn: &EvmBurnEvent) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR IGNORE INTO evm_burns
+             (burn_id, evm_tx_hash, evm_block_number, evm_chain, evm_burner,
+              amount_wzion_wei, amount_flowers, l1_recipient, status, confirmations, detected_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            params![
+                burn.burn_id,
+                burn.evm_tx_hash,
+                burn.evm_block_number,
+                burn.evm_chain,
+                burn.evm_burner,
+                burn.amount_wzion_wei,
+                burn.amount_flowers,
+                burn.l1_recipient,
+                format!("{:?}", burn.status),
+                burn.confirmations,
+                burn.detected_at.to_rfc3339(),
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Update lock status.
+    pub fn update_lock_status(&self, l1_tx_hash: &str, status: BridgeStatus) -> Result<()> {
+        self.conn.execute(
+            "UPDATE l1_locks SET status = ?1 WHERE l1_tx_hash = ?2",
+            params![format!("{:?}", status), l1_tx_hash],
+        )?;
+        Ok(())
+    }
+
+    /// Update burn status.
+    pub fn update_burn_status(&self, burn_id: &str, status: BridgeStatus) -> Result<()> {
+        self.conn.execute(
+            "UPDATE evm_burns SET status = ?1 WHERE burn_id = ?2",
+            params![format!("{:?}", status), burn_id],
+        )?;
+        Ok(())
+    }
+
+    /// Get or set a bridge state key-value pair.
+    pub fn get_state(&self, key: &str) -> Result<Option<String>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT value FROM bridge_state WHERE key = ?1")?;
+        let result = stmt.query_row(params![key], |row| row.get(0)).ok();
+        Ok(result)
+    }
+
+    pub fn set_state(&self, key: &str, value: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO bridge_state (key, value, updated_at) VALUES (?1, ?2, datetime('now'))",
+            params![key, value],
+        )?;
+        Ok(())
+    }
+
+    /// Get last processed L1 block height.
+    pub fn get_last_l1_height(&self) -> Result<u64> {
+        self.get_state("last_l1_height")?
+            .map(|s| s.parse().unwrap_or(0))
+            .ok_or_else(|| anyhow::anyhow!("No last L1 height"))
+            .or(Ok(0))
+    }
+
+    /// Set last processed L1 block height.
+    pub fn set_last_l1_height(&self, height: u64) -> Result<()> {
+        self.set_state("last_l1_height", &height.to_string())
+    }
+
+    /// Get bridge statistics.
+    pub fn get_stats(&self) -> Result<BridgeStats> {
+        let total_locks: u64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM l1_locks WHERE status = 'Completed'",
+            [],
+            |r| r.get(0),
+        )?;
+
+        let total_burns: u64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM evm_burns WHERE status = 'Completed'",
+            [],
+            |r| r.get(0),
+        )?;
+
+        Ok(BridgeStats {
+            total_operations: total_locks + total_burns,
+            ..Default::default()
+        })
+    }
+
+    /// Get pending L1 lock events.
+    pub fn get_pending_locks(&self) -> Result<Vec<L1LockEvent>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT l1_tx_hash, l1_block_height, l1_sender, amount_flowers, amount_wzion_wei,
+                    target_chain, evm_recipient, status, confirmations, detected_at
+             FROM l1_locks WHERE status IN ('Pending', 'Confirmed')",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(L1LockEvent {
+                l1_tx_hash: row.get(0)?,
+                l1_block_height: row.get(1)?,
+                l1_sender: row.get(2)?,
+                amount_flowers: row.get(3)?,
+                amount_wzion_wei: row.get(4)?,
+                target_chain: row.get(5)?,
+                evm_recipient: row.get(6)?,
+                status: BridgeStatus::Pending, // simplified
+                confirmations: row.get(8)?,
+                detected_at: chrono::Utc::now(), // simplified
+            })
+        })?;
+        let mut locks = Vec::new();
+        for row in rows {
+            locks.push(row?);
+        }
+        Ok(locks)
+    }
+
+    /// Get pending EVM burn events.
+    pub fn get_pending_burns(&self) -> Result<Vec<EvmBurnEvent>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT burn_id, evm_tx_hash, evm_block_number, evm_chain, evm_burner,
+                    amount_wzion_wei, amount_flowers, l1_recipient, status, confirmations, detected_at
+             FROM evm_burns WHERE status IN ('Pending', 'Confirmed')",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(EvmBurnEvent {
+                burn_id: row.get(0)?,
+                evm_tx_hash: row.get(1)?,
+                evm_block_number: row.get(2)?,
+                evm_chain: row.get(3)?,
+                evm_burner: row.get(4)?,
+                amount_wzion_wei: row.get(5)?,
+                amount_flowers: row.get(6)?,
+                l1_recipient: row.get(7)?,
+                status: BridgeStatus::Pending,
+                confirmations: row.get(9)?,
+                detected_at: chrono::Utc::now(),
+            })
+        })?;
+        let mut burns = Vec::new();
+        for row in rows {
+            burns.push(row?);
+        }
+        Ok(burns)
+    }
+
+    /// Add a validator confirmation.
+    pub fn add_confirmation(&self, op_type: &str, op_id: &str, validator: &str) -> Result<bool> {
+        let result = self.conn.execute(
+            "INSERT OR IGNORE INTO validator_confirmations (operation_type, operation_id, validator_addr, confirmed_at)
+             VALUES (?1, ?2, ?3, datetime('now'))",
+            params![op_type, op_id, validator],
+        )?;
+        Ok(result > 0) // true if inserted (not duplicate)
+    }
+
+    /// Get confirmation count for an operation.
+    pub fn get_confirmation_count(&self, op_type: &str, op_id: &str) -> Result<u32> {
+        let count: u32 = self.conn.query_row(
+            "SELECT COUNT(*) FROM validator_confirmations WHERE operation_type = ?1 AND operation_id = ?2",
+            params![op_type, op_id],
+            |r| r.get(0),
+        )?;
+        Ok(count)
+    }
+
+    /// Count total locks/burns by status.
+    pub fn count_by_status(&self, table: &str, status: &str) -> Result<u64> {
+        let query = format!("SELECT COUNT(*) FROM {} WHERE status = ?1", table);
+        let count: u64 = self.conn.query_row(&query, params![status], |r| r.get(0))?;
+        Ok(count)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::*;
+    use chrono::Utc;
+    use tempfile::TempDir;
+
+    fn test_db() -> (BridgeDb, TempDir) {
+        let dir = TempDir::new().unwrap();
+        let db_path = dir.path().join("test_bridge.db");
+        let db = BridgeDb::open(&db_path).unwrap();
+        (db, dir)
+    }
+
+    fn sample_lock(tx_hash: &str) -> L1LockEvent {
+        L1LockEvent {
+            l1_tx_hash: tx_hash.into(),
+            l1_block_height: 1000,
+            l1_sender: "zion1qsender123".into(),
+            amount_flowers: 5_000_000_000_000_000, // 5000 ZION (V3: 12-dec flowers)
+            amount_wzion_wei: "5000000000000000000000".into(),
+            target_chain: "base".into(),
+            evm_recipient: "0x1234567890abcdef1234567890abcdef12345678".into(),
+            detected_at: Utc::now(),
+            status: BridgeStatus::Pending,
+            confirmations: 0,
+        }
+    }
+
+    fn sample_burn(burn_id: &str) -> EvmBurnEvent {
+        EvmBurnEvent {
+            evm_tx_hash: "0xdeadbeef".into(),
+            evm_block_number: 50000,
+            evm_chain: "base".into(),
+            evm_burner: "0xaaabbbccc".into(),
+            amount_wzion_wei: "1000000000000000000000".into(), // 1000 wZION
+            amount_flowers: 1_000_000_000_000_000, // 1000 ZION × 1e12
+            l1_recipient: "zion1qrecipient".into(),
+            burn_id: burn_id.into(),
+            detected_at: Utc::now(),
+            status: BridgeStatus::Pending,
+            confirmations: 0,
+        }
+    }
+
+    #[test]
+    fn test_db_open_and_init() {
+        let (db, _dir) = test_db();
+        // Tables should be created
+        let stats = db.get_stats().unwrap();
+        assert_eq!(stats.total_operations, 0);
+    }
+
+    #[test]
+    fn test_insert_and_query_lock() {
+        let (db, _dir) = test_db();
+        let lock = sample_lock("tx001");
+        db.insert_lock(&lock).unwrap();
+
+        let pending = db.get_pending_locks().unwrap();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].l1_tx_hash, "tx001");
+        assert_eq!(pending[0].amount_flowers, 5_000_000_000_000_000);
+        assert_eq!(pending[0].target_chain, "base");
+    }
+
+    #[test]
+    fn test_insert_and_query_burn() {
+        let (db, _dir) = test_db();
+        let burn = sample_burn("burn001");
+        db.insert_burn(&burn).unwrap();
+
+        let pending = db.get_pending_burns().unwrap();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].burn_id, "burn001");
+        assert_eq!(pending[0].amount_flowers, 1_000_000_000_000_000); // 1000 ZION
+    }
+
+    #[test]
+    fn test_update_lock_status_to_completed() {
+        let (db, _dir) = test_db();
+        db.insert_lock(&sample_lock("tx002")).unwrap();
+
+        // Status update to Completed
+        db.update_lock_status("tx002", BridgeStatus::Completed)
+            .unwrap();
+
+        // Should no longer appear in pending
+        let pending = db.get_pending_locks().unwrap();
+        assert_eq!(pending.len(), 0);
+
+        // Stats should reflect completed
+        let stats = db.get_stats().unwrap();
+        assert_eq!(stats.total_operations, 1);
+    }
+
+    #[test]
+    fn test_update_burn_status_to_completed() {
+        let (db, _dir) = test_db();
+        db.insert_burn(&sample_burn("burn002")).unwrap();
+
+        db.update_burn_status("burn002", BridgeStatus::Completed)
+            .unwrap();
+
+        let pending = db.get_pending_burns().unwrap();
+        assert_eq!(pending.len(), 0);
+
+        let stats = db.get_stats().unwrap();
+        assert_eq!(stats.total_operations, 1);
+    }
+
+    #[test]
+    fn test_state_get_set() {
+        let (db, _dir) = test_db();
+
+        // Initially no state
+        assert!(db.get_state("test_key").unwrap().is_none());
+
+        // Set and get
+        db.set_state("test_key", "test_value").unwrap();
+        assert_eq!(db.get_state("test_key").unwrap().unwrap(), "test_value");
+
+        // Overwrite
+        db.set_state("test_key", "new_value").unwrap();
+        assert_eq!(db.get_state("test_key").unwrap().unwrap(), "new_value");
+    }
+
+    #[test]
+    fn test_last_l1_height() {
+        let (db, _dir) = test_db();
+
+        // Default 0
+        assert_eq!(db.get_last_l1_height().unwrap(), 0);
+
+        db.set_last_l1_height(12345).unwrap();
+        assert_eq!(db.get_last_l1_height().unwrap(), 12345);
+
+        db.set_last_l1_height(99999).unwrap();
+        assert_eq!(db.get_last_l1_height().unwrap(), 99999);
+    }
+
+    #[test]
+    fn test_validator_confirmations() {
+        let (db, _dir) = test_db();
+
+        // Add confirmations
+        assert!(db.add_confirmation("lock", "tx001", "0xAAA").unwrap());
+        assert!(db.add_confirmation("lock", "tx001", "0xBBB").unwrap());
+        assert!(db.add_confirmation("lock", "tx001", "0xCCC").unwrap());
+
+        // Duplicate should return false
+        assert!(!db.add_confirmation("lock", "tx001", "0xAAA").unwrap());
+
+        // Count
+        assert_eq!(db.get_confirmation_count("lock", "tx001").unwrap(), 3);
+
+        // Different operation
+        assert_eq!(db.get_confirmation_count("lock", "tx002").unwrap(), 0);
+    }
+
+    #[test]
+    fn test_multiple_locks_and_burns() {
+        let (db, _dir) = test_db();
+
+        // Insert 5 locks, 3 burns
+        for i in 0..5 {
+            db.insert_lock(&sample_lock(&format!("lock_{}", i)))
+                .unwrap();
+        }
+        for i in 0..3 {
+            db.insert_burn(&sample_burn(&format!("burn_{}", i)))
+                .unwrap();
+        }
+
+        assert_eq!(db.get_pending_locks().unwrap().len(), 5);
+        assert_eq!(db.get_pending_burns().unwrap().len(), 3);
+
+        // Complete some
+        db.update_lock_status("lock_0", BridgeStatus::Completed)
+            .unwrap();
+        db.update_lock_status("lock_1", BridgeStatus::Completed)
+            .unwrap();
+        db.update_burn_status("burn_0", BridgeStatus::Completed)
+            .unwrap();
+
+        assert_eq!(db.get_pending_locks().unwrap().len(), 3);
+        assert_eq!(db.get_pending_burns().unwrap().len(), 2);
+
+        let stats = db.get_stats().unwrap();
+        assert_eq!(stats.total_operations, 3); // 2 locks + 1 burn completed
+    }
+
+    #[test]
+    fn test_insert_lock_ignore_duplicate() {
+        // INSERT OR IGNORE: second insert of same TX hash is silently skipped.
+        // The original row (with original confirmations) is preserved.
+        // This protects against replay attacks where an attacker resends a completed
+        // lock to reset its status or trigger a second mint.
+        let (db, _dir) = test_db();
+        let mut lock = sample_lock("tx_dup_ignore");
+        lock.confirmations = 0;
+        lock.status = BridgeStatus::Pending;
+        db.insert_lock(&lock).unwrap();
+
+        // Mark as Completed
+        db.update_lock_status("tx_dup_ignore", BridgeStatus::Completed).unwrap();
+
+        // Attacker tries to replay: insert same TX with Pending status
+        lock.confirmations = 0;
+        lock.status = BridgeStatus::Pending;
+        db.insert_lock(&lock).unwrap(); // INSERT OR IGNORE → no-op
+
+        // Completed status must be preserved (not reset to Pending)
+        let pending = db.get_pending_locks().unwrap();
+        assert_eq!(pending.len(), 0, "Replay attack must not reset Completed → Pending");
+    }
+
+    #[test]
+    fn test_count_by_status() {
+        let (db, _dir) = test_db();
+
+        db.insert_lock(&sample_lock("a")).unwrap();
+        db.insert_lock(&sample_lock("b")).unwrap();
+        db.insert_lock(&sample_lock("c")).unwrap();
+        db.update_lock_status("a", BridgeStatus::Completed).unwrap();
+
+        assert_eq!(db.count_by_status("l1_locks", "Completed").unwrap(), 1);
+        assert_eq!(db.count_by_status("l1_locks", "Pending").unwrap(), 2);
+    }
+
+    #[test]
+    fn test_failed_status() {
+        let (db, _dir) = test_db();
+        db.insert_lock(&sample_lock("fail_tx")).unwrap();
+        db.update_lock_status("fail_tx", BridgeStatus::Failed)
+            .unwrap();
+
+        // Failed should not be in pending
+        assert_eq!(db.get_pending_locks().unwrap().len(), 0);
+        assert_eq!(db.count_by_status("l1_locks", "Failed").unwrap(), 1);
+    }
+}

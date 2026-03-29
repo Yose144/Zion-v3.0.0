@@ -536,6 +536,7 @@ Current production blocker note:
 
 Additional production gates:
 
+- bridge watcher and relayer speak canonical V3 raw TCP JSON-RPC; remaining bridge blocker is core-side unlock validation behind `submitBridgeUnlock`
 - DAO scanner uses current V3 RPC method names, not legacy snake_case aliases
 - DAO proposal vote weight is anchored to snapshot height
 - atomic-swap watcher and executor speak canonical V3 RPC and use canonical BLAKE3-compatible transaction hashing

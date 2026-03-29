@@ -19,9 +19,9 @@ What is already true:
 
 What is still false:
 
-- V3 core does not yet expose bridge-specific RPC methods.
-- Bridge and atomic-swap still depend on legacy-style HTTP endpoints instead of the live V3 raw TCP JSON-RPC surface.
-- DAO still depends on old RPC method names and lacks historical-balance snapshots for mainnet voting correctness.
+- V3 core bridge write path is still incomplete: `submitBridgeUnlock` is registered, but unlock validation and replay protection are not enabled yet.
+- Bridge relayer and atomic-swap are transport-aligned with canonical V3 raw TCP JSON-RPC, but bridge unlock cannot complete end-to-end until core accepts validated unlocks.
+- DAO historical-balance snapshots are available and consumed, but production configs and runtime manifests are still missing.
 - Solidity contracts are not yet brought under the V3 source-of-truth workflow.
 - No audited V3 production config files are checked in for bridge, DAO, or atomic-swap.
 
@@ -34,7 +34,7 @@ Launch implication:
 
 ## 1. Hard Blockers
 
-### 1.1 Bridge-specific V3 core surface is missing
+### 1.1 Bridge-specific V3 core write validation is still incomplete
 
 Files to implement:
 
@@ -45,17 +45,16 @@ Files to implement:
 
 Required outcomes:
 
-- define canonical `BRIDGE_VAULT_ADDRESS`
-- expose bridge lock scan RPC
-- expose bridge vault balance RPC
-- expose bridge unlock submit RPC
-- validate unlock authorization and replay protection
+- keep canonical `BRIDGE_VAULT_ADDRESS`
+- keep `getBridgeLocks`, `getBridgeVaultBalance`, and `submitBridgeUnlock` live in core
+- add unlock authorization and replay protection behind the registered submit RPC
+- return accepted unlock TX metadata after validation is enabled
 
 Why this blocks launch:
 
-- the bridge daemon currently has no canonical V3 mainnet RPC to scan bridge locks or release funds back from L1.
+- the bridge daemon can now speak canonical V3 RPC, but L1 still rejects unlock submissions because the validation/write path is intentionally scaffold-only.
 
-### 1.2 Bridge daemon still speaks legacy HTTP API
+### 1.2 Bridge daemon transport is aligned, but unlock execution is not complete
 
 Files to migrate:
 
@@ -63,35 +62,38 @@ Files to migrate:
 - `V3/L2/bridge/src/relayer.rs`
 - `V3/L2/bridge/src/config.rs`
 
-Current legacy dependencies to remove:
+Legacy dependencies removed:
 
 - `/api/block/height/:height`
 - `/api/address/:address/utxos`
 - `/api/bridge/unlock`
 
-Target V3 contract:
+Current state:
 
 - raw TCP JSON-RPC on the live V3 node RPC port
-- methods aligned with `getBlockByHeight`, `getTransaction`, `getUtxos`, plus new bridge methods
+- watcher scans canonical block data via `getChainInfo` and `getBlockByHeight`
+- relayer submits unlock requests via `submitBridgeUnlock`
+- remaining blocker is core-side unlock acceptance, not bridge-side transport
 
-### 1.3 DAO vote-weight correctness is not mainnet-safe yet
+### 1.3 DAO vote-weight correctness is migrated, but production manifests are still missing
 
 Files to fix:
 
 - `V3/L2/dao/src/l1_scanner.rs`
 - `V3/L2/dao/src/config.rs`
 
-Blockers:
+Completed:
 
-- scanner still calls old snake_case RPC names (`get_info`, `get_block`, `get_transaction`, `get_balance`)
-- scanner uses current balance as an approximation instead of balance at proposal snapshot height
+- scanner uses canonical V3 RPC names
+- scanner uses `getBalanceAtHeight` for proposal snapshot correctness
 
 Mainnet requirement:
 
 - proposal voting weight must be anchored to a deterministic historical snapshot
 - no current-balance approximation is acceptable for production governance
+- checked-in audited mainnet config still remains required before launch
 
-### 1.4 Atomic swap still speaks legacy HTTP API and hashes off-chain TXs incorrectly
+### 1.4 Atomic swap transport and hashing are aligned with V3
 
 Files to fix:
 
@@ -99,12 +101,11 @@ Files to fix:
 - `V3/L2/atomic-swap/src/executor.rs`
 - `V3/L2/atomic-swap/src/config.rs`
 
-Blockers:
+Completed:
 
-- watcher still consumes `/stats`, `/api/block/height/:height`, `/api/tx/:txid`
-- executor still posts to `/rpc/submit_tx`
-- executor still fetches UTXOs via `/api/address/:address/utxos`
-- off-chain TX hash builder still uses SHA-256 fallback instead of BLAKE3
+- watcher consumes canonical V3 RPC via `getChainInfo` and `getBlockByHeight`
+- executor uses `getUtxos` and `sendRawTransaction`
+- off-chain TX hash builder is aligned with canonical BLAKE3-compatible serialization
 
 ### 1.5 Solidity contracts are still outside the V3 source-of-truth
 
@@ -145,15 +146,15 @@ Do not run L2 work in parallel randomly. The dependency order matters.
 2. Add `getBridgeLocks`.
 3. Add `getBridgeVaultBalance`.
 4. Add `submitBridgeUnlock`.
-5. Add unlock validation, replay protection, and vault accounting tests.
+5. Finish unlock validation, replay protection, and vault accounting tests.
 
 ### Phase B — RPC surface alignment
 
-1. Migrate bridge daemon from legacy REST to V3 JSON-RPC.
-2. Migrate DAO scanner to current V3 RPC method names.
-3. Add DAO historical snapshot endpoint support in core and consume it in DAO.
-4. Migrate atomic-swap watcher and executor to V3 JSON-RPC.
-5. Replace atomic-swap off-chain SHA-256 TX hash fallback with BLAKE3-compatible hashing.
+1. Finish bridge core unlock acceptance path behind `submitBridgeUnlock`.
+2. Keep bridge daemon on canonical V3 JSON-RPC and add end-to-end unlock reconciliation once core accepts writes.
+3. Keep DAO on current V3 RPC method names and historical snapshots.
+4. Keep atomic-swap on canonical V3 JSON-RPC and canonical hashing.
+5. Add focused end-to-end acceptance coverage for the migrated transport paths.
 
 ### Phase C — Contracts and deploy source-of-truth
 
@@ -323,9 +324,9 @@ L2 mainnet remains **NO-GO** until all items below are true.
 
 If work starts now, the first code change should be:
 
-1. implement bridge vault support and bridge RPC methods in V3 core
+1. implement bridge unlock validation, replay protection, and accepted-write flow behind `submitBridgeUnlock` in V3 core
 
 Reason:
 
-- bridge, DAO, and atomic-swap all depend on the L1 integration contract being stable
-- without that, the rest of the L2 daemons keep coding against the wrong transport and model
+- bridge and atomic-swap now speak the correct transport already
+- the highest remaining runtime blocker is core-side unlock acceptance, not daemon-side RPC migration
