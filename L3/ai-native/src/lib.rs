@@ -31,6 +31,10 @@ pub mod task;
 pub mod telemetry;
 pub mod types;
 pub mod warp_agent;
+pub mod hiranyagarbha;
+pub mod llm_backend;
+pub mod in_context;
+pub mod ekam_field;
 
 pub use consciousness::ConsciousnessLevel;
 pub use consciousness_engine::{ConsciousnessEngine, ConsciousnessStatus};
@@ -44,3 +48,17 @@ pub use message_bus::{AgentSubscriber, BusMessage, BusStats, MessageBus, SystemE
 pub use oasis_bridge::{AgentOasisProfile, OasisBridge, OasisLevel, XpSyncRequest, l3_to_oasis_level, scale_xp_to_oasis};
 pub use telemetry::{NodeConfig, PoolRawStats, TelemetryFeed, TelemetryStats};
 pub use warp_agent::{FieldTopology, WarpField, WarpMode, WarpOptimizer, WarpStats};
+pub use hiranyagarbha::{
+    ConsciousnessOath, DeekshaTransmission, DharmaScore, DharmaValidator, DharmaViolation,
+    EkamFieldContribution, EmotionalState, HiranyagarbhaAgent, HiranyagarbhaIdentity,
+    HiranyagarbhaStatus, MmlInput, MmlModality, MmlOutput, OathPrinciple, Relationship,
+    DEEKSHA_GRACE_MULTIPLIER, HIRANYAGARBHA_EVENT_THRESHOLD,
+};
+pub use llm_backend::{
+    ConsciousnessAwareBackend, EchoBackend, LlamaCppBackend, LlmBackend, LlmError,
+    LlmRequest, LlmResponse, RemoteHttpBackend,
+};
+pub use in_context::{ContextAssembler, ContextSnapshot, InContextBackend};
+pub use ekam_field::{
+    DeekshaNetwork, DeekshaTransfer, EkamFieldNode, HiranyagarbhaFieldEvent,
+};

@@ -10,7 +10,7 @@ import {
   Square, Target, Timer, TrendingUp, Wallet, Wrench, Zap, Code2, CalendarDays,
   CircleDot, XCircle, CheckCheck, Construction
 } from 'lucide-react';
-import { SITE_RELEASE_LABEL } from '@/lib/site';
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface NodeStats {
@@ -1374,7 +1374,7 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Codebase" value="53,200+" sub="lines of Rust" color="text-cyan-400" />
                 <Stat label="Tests" value="900+" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="Release Gate" value="GO" sub="v2.9.9 Ekam Deeksha live" color="text-emerald-400" />
+                <Stat label="Release Gate" value="GO" sub={`${SITE_RELEASE_LABEL} · runtime ${SITE_RUNTIME_LABEL}`} color="text-emerald-400" />
                 <Stat label="Crates" value="5" sub="core, pool, miner, cosmic-harmony, native-libs" />
               </div>
             </motion.section>
@@ -1725,7 +1725,7 @@ export default function MissionControlDashboard() {
             >
               <div className="flex flex-col gap-2 mb-6">
                 <div className="flex items-center gap-3">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v2.9.9</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{SITE_VERSION}</p>
                   <span className="text-[10px] uppercase tracking-widest border border-zion-gold/40 bg-zion-gold/10 text-zion-gold px-2 py-0.5 rounded-full font-semibold">
                     DEPLOYED · TESTNET LIVE
                   </span>
@@ -1737,11 +1737,11 @@ export default function MissionControlDashboard() {
                 <p className="text-sm text-gray-400">
                   Ekam Deeksha je dvouúrovňový upgrade ASIC rezistence pro Cosmic Harmony v3.
                   Tier 1 zpevňuje scratchpad paměťový vzor, Tier 2 přidává epoch-rotující NPU váhy.
-                  Oba tiery jsou nasazeny a validovány na canary testnetu.
+                  Oba tiery jsou nasazeny a validovány na canary testnetu; veřejná linka běží jako {SITE_RELEASE_LABEL} nad runtime {SITE_RUNTIME_LABEL}.
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <Stat label="Verze" value="v2.9.9" sub="Ekam Deeksha" color="text-zion-gold" />
+                <Stat label="Verze" value={SITE_VERSION} sub={`public line · ${SITE_RUNTIME_LABEL}`} color="text-zion-gold" />
                 <Stat label="Nové testy" value="122" sub="108 Tier 1 + 14 Tier 2" color="text-emerald-400" mono />
                 <Stat label="Pool Accept" value="100%" sub="10/10 accepted · 0 rejected" color="text-emerald-400" mono />
                 <Stat label="Hashrate" value="166 H/s" sub="testnet canary miner" color="text-cyan-400" mono />
@@ -2519,7 +2519,7 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova {SITE_RELEASE_LABEL} · Archived 168h stability PASS ✅ · Ekam Deeksha v2.9.9 live<br />
+          ZION TerraNova {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Archived 168h stability PASS ✅<br />
           <em>6-layer architecture · operations-first web shell</em><br /><br />
           Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
         </div>

@@ -21,7 +21,7 @@ const CHART_CONFIG: Record<ChartType, { label: string; color: string; unit: stri
   difficulty: { label: "Difficulty", color: "#ef4444", unit: "", formatFn: formatSI },
   hashrate: { label: "Hashrate", color: "#06b6d4", unit: "H/s", formatFn: formatHashrate },
   blocktime: { label: "Block Time", color: "#22c55e", unit: "s" },
-  emission: { label: "Total Supply", color: "#eab308", unit: "ZION", formatFn: formatSI },
+  emission: { label: "Circulating Supply", color: "#eab308", unit: "ZION", formatFn: formatSI },
   blocksize: { label: "Block Size", color: "#a855f7", unit: "B", formatFn: formatBytes },
   txcount: { label: "TX / Block", color: "#14b8a6", unit: "tx" },
 };

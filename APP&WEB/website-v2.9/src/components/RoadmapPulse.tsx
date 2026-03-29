@@ -75,7 +75,7 @@ export default function RoadmapPulse() {
               v2.9.9 <span className="text-gradient">Pure Code</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              Live TestNet runs on the v2.9.9 Pure Code release line. Current priority is stability, telemetry,
+              Live TestNet runs on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime. Current priority is stability, telemetry,
               documentation, and operational discipline before MainNet Q4 2026.
             </p>
           </div>

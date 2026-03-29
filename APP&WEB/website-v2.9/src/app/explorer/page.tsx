@@ -14,6 +14,7 @@ import ProSearchBar from "@/components/explorer/ProSearchBar";
 import NetworkTicker from "@/components/explorer/NetworkTicker";
 import NetworkPeers from "@/components/explorer/NetworkPeers";
 import RichListClient from "./richlist/RichListClient";
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import {
   Activity,
   BarChart3,
@@ -26,7 +27,6 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
    EXPLORER PAGE — Redesigned to match Roadmap visual language
@@ -106,7 +106,8 @@ export default function ExplorerPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Search blocks, transactions, and addresses on the live ZION TerraNova v2.9.9 Pure Code testnet.
+                Search blocks, transactions, and addresses on the live ZION TerraNova {SITE_RELEASE_LABEL} testnet.
+                Canonical runtime stays on {SITE_RUNTIME_LABEL}.
                 Smart hash resolver, live data from the current public runtime, and auto-refresh every 10 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">

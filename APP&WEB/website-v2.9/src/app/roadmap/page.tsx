@@ -31,8 +31,8 @@ import { SITE_RELEASE_LABEL } from '@/lib/site';
 const heroStats = [
   { label: 'Rust LOC', value: '115,400+', descriptor: '12 crates · L1–L4' },
   { label: 'Tests passing', value: '1,501', descriptor: '0 failing · +122 Ekam Deeksha' },
-  { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · Ekam Deeksha testnet live' },
-  { label: 'Release Gate', value: 'GO', descriptor: 'v2.9.9 Ekam Deeksha deployed' }
+  { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · public line 2.9.9 · runtime 2.9.8' },
+  { label: 'Release Gate', value: 'GO', descriptor: 'v2.9.9 Pure Code public line · Deeksha/Ekam runtime live' }
 ];
 
 const layerStack = [

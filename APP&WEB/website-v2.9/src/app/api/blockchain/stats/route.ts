@@ -40,8 +40,12 @@ export async function GET() {
       cumulative_difficulty: info.cumulative_difficulty || 0,
 
       // Supply
+      premine_supply: supply.premineSupply,
+      mined_supply: supply.minedSupply,
       circulating_supply: supply.circulatingSupply,
+      total_supply: supply.maxSupply,
       max_supply: supply.maxSupply,
+      remaining_supply: supply.remainingSupply,
       emission_pct: supply.emissionPct.toFixed(6),
 
       // Network
@@ -103,7 +107,6 @@ export async function GET() {
         timestamp: lastBlock.timestamp,
       } : null,
       mempool_size: info.tx_pool_size || 0,
-      total_supply: supply.circulatingSupply,
       total_blocks: info.height,
       total_transactions: info.tx_count || info.height,
     };
@@ -115,7 +118,9 @@ export async function GET() {
     console.error('Failed to fetch blockchain stats:', error);
     return NextResponse.json(
       {
-        block_height: 0, difficulty: 0, circulating_supply: 0, max_supply: 144_000_000_000,
+        block_height: 0, difficulty: 0, premine_supply: 16_280_000_000, mined_supply: 0,
+        circulating_supply: 0, total_supply: 144_000_000_000, max_supply: 144_000_000_000,
+        remaining_supply: 144_000_000_000,
         network_hashrate: 0, network_hashrate_formatted: 'Offline', tx_count: 0, tx_pool_size: 0,
         total_connections: 0, connected: false, status: 'offline',
         error: 'Failed to connect to ZION daemon',

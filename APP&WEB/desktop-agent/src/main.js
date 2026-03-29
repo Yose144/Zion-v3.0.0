@@ -283,15 +283,17 @@ function cleanupStrayMinerProcesses(preferRustBackend) {
     if (!enabled) return;
     if (!preferRustBackend) return;
 
-    try {
-      execFileSync('taskkill', ['/F', '/T', '/IM', 'zion-universal-miner.exe'], {
-        windowsHide: true,
-        timeout: 5000,
-        stdio: 'ignore'
-      });
-      logApp('stray-miner-cleanup', 'taskkill zion-universal-miner.exe');
-    } catch {
-      // ignore (no stray process or insufficient perms)
+    for (const imageName of ['zion-universal-miner.exe', 'zion-miner.exe']) {
+      try {
+        execFileSync('taskkill', ['/F', '/T', '/IM', imageName], {
+          windowsHide: true,
+          timeout: 5000,
+          stdio: 'ignore'
+        });
+        logApp('stray-miner-cleanup', `taskkill ${imageName}`);
+      } catch {
+        // ignore (no stray process or insufficient perms)
+      }
     }
   } catch {
     // ignore
@@ -986,16 +988,19 @@ function composeStatsPayload() {
 }
 
 function findRustMiner() {
+  // V3 miner binary names take priority over legacy universal miner.
+  const v3Names = process.platform === 'win32' ? ['zion-miner.exe'] : ['zion-miner'];
   const namesByPlatform = {
     darwin: [
+      ...v3Names,
       'zion-universal-miner',
       'zion-universal-miner-macos-arm64',
       'zion-universal-miner-macos-x64',
       'zion-universal-miner-arm64',
       'zion-universal-miner-x64'
     ],
-    linux: ['zion-universal-miner', 'zion-universal-miner-linux-x64'],
-    win32: ['zion-universal-miner.exe', 'zion-universal-miner-win-x64.exe', 'zion-miner.exe']
+    linux: [...v3Names, 'zion-universal-miner', 'zion-universal-miner-linux-x64'],
+    win32: [...v3Names, 'zion-universal-miner.exe', 'zion-universal-miner-win-x64.exe']
   };
 
   const names = namesByPlatform[process.platform] || [];
@@ -1003,6 +1008,9 @@ function findRustMiner() {
     ? [process.resourcesPath]
     : [
         path.join(APP_ROOT, 'resources'),
+        // V3 miner build outputs
+        path.join(APP_ROOT, '..', '..', 'V3', 'L1', 'miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'miner', 'target', 'release'),
@@ -1041,6 +1049,16 @@ function findPythonMiner() {
     }
   }
   return null;
+}
+
+/**
+ * Detect whether a resolved miner binary is the V3 miner (zion-miner) vs legacy (zion-universal-miner).
+ * V3 miner uses env-var configuration, not CLI flags.
+ */
+function isV3MinerBinary(minerPath) {
+  if (!minerPath) return false;
+  const base = path.basename(minerPath).toLowerCase().replace(/\.exe$/, '');
+  return base === 'zion-miner';
 }
 
 function resolveMinerSelection(preferred) {
@@ -4155,74 +4173,80 @@ function startMining(config) {
   }
   zionThreads = effectiveThreads - xmrRevenueThreads - nclThreads;
 
+  // ── V3 miner detection ──
+  const isV3 = MINER_IS_RUST && isV3MinerBinary(MINER_PATH);
+
   if (MINER_IS_RUST) {
     const algoLowerForHint = String(algorithmForMiner || requestedAlgorithmLower || 'cosmic_harmony').toLowerCase();
     const difficultyHint = computeDifficultyHint(config, algoLowerForHint);
 
-    // Rust miner CLI (zion-universal-miner) — main ZION group
-    args = [
-      '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
-      '--wallet', config.wallet,
-      '--threads', String(zionThreads),
-      '--mode', mainMinerGpu ? (zionThreads > 0 ? 'dual' : 'gpu') : 'cpu',
-      '--stats-file', STATS_PATH,
-      '--stats-interval', String(STATS_INTERVAL_SEC),
-      '--no-color'
-    ];
-
-    if (rustGroupSupported) {
-      args.push('--group', 'zion');
+    if (isV3) {
+      // ═══ V3 Miner — env-var driven, no CLI flags (except --bench/--gpu-bench) ═══
+      // V3 miner reads all config from environment variables.
+      args = [];
     } else {
-      try {
-        sendToRenderer('miner-output', {
-          stream: 'stderr',
-          text: '[WARN] Rust miner CLI does not support --group; running single-process mode (revenue split disabled).\n'
-        });
-      } catch {
-        // ignore
+      // Legacy Rust miner CLI (zion-universal-miner) — main ZION group
+      args = [
+        '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
+        '--wallet', config.wallet,
+        '--threads', String(zionThreads),
+        '--mode', mainMinerGpu ? (zionThreads > 0 ? 'dual' : 'gpu') : 'cpu',
+        '--stats-file', STATS_PATH,
+        '--stats-interval', String(STATS_INTERVAL_SEC),
+        '--no-color'
+      ];
+
+      if (rustGroupSupported) {
+        args.push('--group', 'zion');
+      } else {
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stderr',
+            text: '[WARN] Rust miner CLI does not support --group; running single-process mode (revenue split disabled).\n'
+          });
+        } catch {
+          // ignore
+        }
+        logApp('miner-group-unsupported', JSON.stringify({ minerPath: MINER_PATH }));
       }
-      logApp('miner-group-unsupported', JSON.stringify({ minerPath: MINER_PATH }));
-    }
 
-    if (difficultyHint) {
-      args.push('--difficulty', String(difficultyHint));
-      try {
-        sendToRenderer('miner-output', {
-          stream: 'stdout',
-          text: `[INFO] Difficulty hint: ${difficultyHint}\n`
-        });
-      } catch {
-        // ignore
+      if (difficultyHint) {
+        args.push('--difficulty', String(difficultyHint));
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stdout',
+            text: `[INFO] Difficulty hint: ${difficultyHint}\n`
+          });
+        } catch {
+          // ignore
+        }
       }
-    }
 
-    if (config.worker) args.push('--worker', String(config.worker));
-    if (algorithmForMiner) args.push('--algorithm', String(algorithmForMiner));
-    // Enable GPU on all platforms for Rust miner.
-    // On macOS this uses Metal backend (no OpenCL required).
-    if (mainMinerGpu) {
-      args.push('--gpu');
-      // NOTE: Do NOT add --auto-tune here — it makes the miner run benchmark-only
-      // and exit without mining. The miner already auto-calculates optimal batch
-      // size via calculate_optimal_batch_size() based on GPU memory at runtime.
+      if (config.worker) args.push('--worker', String(config.worker));
+      if (algorithmForMiner) args.push('--algorithm', String(algorithmForMiner));
+      // Enable GPU on all platforms for Rust miner.
+      // On macOS this uses Metal backend (no OpenCL required).
+      if (mainMinerGpu) {
+        args.push('--gpu');
 
-      // GPU device selection: e.g. "0,1" for multi-GPU rigs
-      const gpuDevices = String(config.gpuDevices || process.env.ZION_GPU_DEVICES || '').trim();
-      if (gpuDevices) args.push('--gpu-devices', gpuDevices);
+        // GPU device selection: e.g. "0,1" for multi-GPU rigs
+        const gpuDevices = String(config.gpuDevices || process.env.ZION_GPU_DEVICES || '').trim();
+        if (gpuDevices) args.push('--gpu-devices', gpuDevices);
 
-      // GPU backend override: opencl, cuda, metal
-      const gpuBackendOverride = String(config.gpuBackend || process.env.ZION_GPU_BACKEND_OVERRIDE || '').trim();
-      if (gpuBackendOverride) args.push('--gpu-backend', gpuBackendOverride);
-    }
+        // GPU backend override: opencl, cuda, metal
+        const gpuBackendOverride = String(config.gpuBackend || process.env.ZION_GPU_BACKEND_OVERRIDE || '').trim();
+        if (gpuBackendOverride) args.push('--gpu-backend', gpuBackendOverride);
+      }
 
-    // Dual mining passthrough (e.g. ETH+ZION merge-mining)
-    const dualMode = String(config.dualMode || process.env.ZION_DUAL_MODE || '').trim();
-    if (dualMode) {
-      args.push('--dualmode', dualMode);
-      const dualUser = String(config.dualUser || process.env.ZION_DUAL_USER || '').trim();
-      const dualPool = String(config.dualPool || process.env.ZION_DUAL_POOL || '').trim();
-      if (dualUser) args.push('--dualuser', dualUser);
-      if (dualPool) args.push('--dualpool', dualPool);
+      // Dual mining passthrough (e.g. ETH+ZION merge-mining)
+      const dualMode = String(config.dualMode || process.env.ZION_DUAL_MODE || '').trim();
+      if (dualMode) {
+        args.push('--dualmode', dualMode);
+        const dualUser = String(config.dualUser || process.env.ZION_DUAL_USER || '').trim();
+        const dualPool = String(config.dualPool || process.env.ZION_DUAL_POOL || '').trim();
+        if (dualUser) args.push('--dualuser', dualUser);
+        if (dualPool) args.push('--dualpool', dualPool);
+      }
     }
   } else {
     // Python miner / legacy .exe miner (shared CLI)
@@ -4469,6 +4493,49 @@ function startMining(config) {
     // Main process nonce base is randomized per session to avoid reconnect duplicates.
     ZION_NONCE_BASE: String(sessionNonceBaseMain)
   };
+
+  // ═══ V3 miner env-var configuration ═══
+  // V3 miner reads all config from environment variables, not CLI flags.
+  if (isV3) {
+    env.ZION_POOL_ADDR = `${config.pool.host}:${config.pool.port}`;
+    env.ZION_MINER_ID = config.wallet || 'desktop-miner';
+    env.ZION_WORKER_NAME = config.worker || 'desktop-agent';
+    env.ZION_PROFILE = 'pool';
+    env.ZION_LOOP_COUNT = '4294967295';
+    env.ZION_NONCE_AUTOTUNE = 'true';
+    env.ZION_RECONNECT = 'true';
+    env.ZION_METRICS_REPORT_SECS = String(STATS_INTERVAL_SEC || 30);
+    // DCR stealth worker is enabled by default in V3
+    if (pureZionMode) {
+      env.ZION_DCR_ENABLED = 'false';
+    }
+
+    // ── V3 GPU backend (Metal on Apple Silicon, OpenCL elsewhere) ──
+    if (gpuInfo.available) {
+      const v3Backend = String(process.env.ZION_BACKEND || '').trim().toLowerCase();
+      if (v3Backend) {
+        env.ZION_BACKEND = v3Backend;
+      } else if (process.platform === 'darwin' && os.arch() === 'arm64') {
+        env.ZION_BACKEND = 'metal';
+      } else {
+        env.ZION_BACKEND = 'opencl';
+      }
+      // GPU work size: scale by available memory
+      const gpuMem = parseGpuMemoryMb(gpuInfo);
+      const v3WorkSize = gpuMem >= 6000 ? (1 << 20) : (gpuMem >= 4000 ? (1 << 19) : (1 << 18));
+      env.ZION_GPU_WORK_SIZE = String(process.env.ZION_GPU_WORK_SIZE || v3WorkSize);
+    }
+
+    try {
+      const backendLabel = env.ZION_BACKEND ? `${env.ZION_BACKEND} (GPU work_size=${env.ZION_GPU_WORK_SIZE || 'default'})` : 'cpu';
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: `[V3] ZION v3 miner detected — using env-var configuration\n` +
+              `[V3] Pool: ${env.ZION_POOL_ADDR} | Miner: ${env.ZION_MINER_ID} | Worker: ${env.ZION_WORKER_NAME}\n` +
+              `[V3] Profile: pool | Autotune: on | Reconnect: on | Backend: ${backendLabel}\n`
+      });
+    } catch { /* ignore */ }
+  }
 
   // Prefer best GPU backend by detected vendor/platform (unless explicitly overridden).
   try {
@@ -6895,6 +6962,182 @@ function parseMinerOutput(output) {
   // GPU share rejected: "[GPU] share REJECTED"
   if (/GPU share REJECTED/i.test(output)) {
     minerStats.gpu_shares_rejected = (minerStats.gpu_shares_rejected || 0) + 1;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // V3 MINER OUTPUT PARSERS (zion-miner v3 key=value + JSON wire)
+  // ═══════════════════════════════════════════════════════════════
+
+  // ─── V3 session_status: "session_status iter=6/4294967295 uptime_s=439.9 accepted=6 rejected=0 ... hps_overall=2421.90 hps_10s=0.00 hps_60s=0.00 ..." ───
+  const v3StatusMatch = output.match(/session_status\s+iter=(\d+)\/(\d+)\s+uptime_s=([\d.]+)\s+accepted=(\d+)\s+rejected=(\d+)\s+accept_pct=([\d.]+)\s+no_solution=(\d+)\s+local_skip=(\d+)\s+hps_overall=([\d.]+)\s+hps_10s=([\d.]+)\s+hps_60s=([\d.]+)(?:\s+attempted_hashes=(\d+))?/);
+  if (v3StatusMatch) {
+    minerStats.accepted = parseInt(v3StatusMatch[4]);
+    minerStats.rejected = parseInt(v3StatusMatch[5]);
+    minerStats.shares = minerStats.accepted + minerStats.rejected;
+    minerStats.accept_rate = parseFloat(v3StatusMatch[6]);
+    minerStats.no_solution_iterations = parseInt(v3StatusMatch[7]);
+    const hpsOverall = parseFloat(v3StatusMatch[9]);
+    const hps10s = parseFloat(v3StatusMatch[10]);
+    const hps60s = parseFloat(v3StatusMatch[11]);
+    // V3 reports 0.00 for 10s/60s when windows are not yet full
+    minerStats.hashrate = hpsOverall;
+    minerStats.hashrate_10s = hps10s > 0 ? hps10s : hpsOverall;
+    minerStats.hashrate_60s = hps60s > 0 ? hps60s : hpsOverall;
+    if (!Number.isFinite(Number(minerStats.hashrate_max)) || hpsOverall > Number(minerStats.hashrate_max)) {
+      minerStats.hashrate_max = hpsOverall;
+    }
+    minerStats.uptime = parseFloat(v3StatusMatch[3]);
+    // Total hashes from session_status (live, not just exit)
+    if (v3StatusMatch[12]) {
+      const n = parseInt(v3StatusMatch[12]);
+      minerStats.total_hashes = n;
+      if (n > 1000000) {
+        minerStats.total_hashes_display = `${(n / 1000000).toFixed(1)}M`;
+      } else if (n > 1000) {
+        minerStats.total_hashes_display = `${(n / 1000).toFixed(1)}K`;
+      } else {
+        minerStats.total_hashes_display = String(n);
+      }
+    }
+  }
+
+  // ─── V3 wire_job JSON: extract height and algorithm ───
+  const v3WireJobMatch = output.match(/wire_job=\{[^}]*"height"\s*:\s*(\d+)[^}]*"algorithm"\s*:\s*"([^"]+)"/);
+  if (v3WireJobMatch) {
+    minerStats.last_job_height = v3WireJobMatch[1];
+    minerStats.stream_algorithm = v3WireJobMatch[2];
+  }
+  // Also match reversed key order
+  const v3WireJobAltMatch = output.match(/wire_job=\{[^}]*"algorithm"\s*:\s*"([^"]+)"[^}]*"height"\s*:\s*(\d+)/);
+  if (!v3WireJobMatch && v3WireJobAltMatch) {
+    minerStats.last_job_height = v3WireJobAltMatch[2];
+    minerStats.stream_algorithm = v3WireJobAltMatch[1];
+  }
+
+  // ─── V3 wire_job JSON: extract job_id ───
+  const v3JobIdMatch = output.match(/wire_job=\{[^}]*"job_id"\s*:\s*(\d+)/);
+  if (v3JobIdMatch) {
+    minerStats.last_job_id = v3JobIdMatch[1];
+  }
+
+  // ─── V3 share_status: "share_status=\"Accepted\"" ───
+  if (/share_status="Accepted"/.test(output)) {
+    // Individual accepted share — sync'd via session_status above
+  }
+
+  // ─── V3 version banner: "version=3.0.0-dev" ───
+  const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
+  if (v3VersionMatch) {
+    minerStats.miner_version = v3VersionMatch[1];
+  }
+
+  // ─── V3 consensus: "consensus=cosmic_harmony_ekam_deeksha_v2" ───
+  const v3ConsensusMatch = output.match(/^consensus=(\S+)/m);
+  if (v3ConsensusMatch) {
+    minerStats.stream_algorithm = v3ConsensusMatch[1];
+  }
+
+  // ─── V3 DCR stealth stats: "dcr_total_hashes=N dcr_accepted=N dcr_rejected=N" ───
+  const v3DcrMatch = output.match(/dcr_total_hashes=(\d+)\s+dcr_accepted=(\d+)\s+dcr_rejected=(\d+)/);
+  if (v3DcrMatch) {
+    minerStats.dcr_total_hashes = parseInt(v3DcrMatch[1]);
+    minerStats.dcr_accepted = parseInt(v3DcrMatch[2]);
+    minerStats.dcr_rejected = parseInt(v3DcrMatch[3]);
+  }
+
+  // ─── V3 reconnect: "reconnect_attempt=N" ───
+  const v3ReconnectMatch = output.match(/reconnect_attempt=(\d+)/);
+  if (v3ReconnectMatch) {
+    minerStats.reconnect_attempts = parseInt(v3ReconnectMatch[1]);
+  }
+
+  // ─── V3 GPU device: "gpu[0]=metal:Apple M1" ───
+  const v3GpuMatch = output.match(/^gpu\[\d+\]=(\w+):(.+)/m);
+  if (v3GpuMatch) {
+    minerStats.gpu_detected = true;
+    minerStats.gpu_type = v3GpuMatch[1];
+    minerStats.gpu_name = v3GpuMatch[2].trim();
+    minerStats.gpu_info = `${v3GpuMatch[1]}: ${v3GpuMatch[2].trim()}`;
+    minerStats.cpu_only_mode = false;
+  }
+
+  // ─── V3 backend: "backend=metal" / "backend=cpu" ───
+  const v3BackendMatch = output.match(/^backend=(\w+)/m);
+  if (v3BackendMatch) {
+    const be = v3BackendMatch[1].toLowerCase();
+    minerStats.runtime_backend = be;
+    if (be !== 'cpu') {
+      minerStats.gpu_detected = true;
+      minerStats.gpu_type = be;
+      minerStats.cpu_only_mode = false;
+    }
+  }
+
+  // ─── V3 GPU init: "gpu_init backend=metal device=\"Apple M1\" work_size=262144" ───
+  const v3GpuInitMatch = output.match(/gpu_init\s+backend=(\w+)\s+device="([^"]+)"\s+work_size=(\d+)/);
+  if (v3GpuInitMatch) {
+    minerStats.gpu_detected = true;
+    minerStats.gpu_type = v3GpuInitMatch[1];
+    minerStats.gpu_name = v3GpuInitMatch[2];
+    minerStats.gpu_info = `${v3GpuInitMatch[1]}: ${v3GpuInitMatch[2]} (ws=${v3GpuInitMatch[3]})`;
+    minerStats.cpu_only_mode = false;
+    minerStats.runtime_backend = v3GpuInitMatch[1];
+  }
+
+  // ─── V3 GPU fallback: "gpu_init_fallback reason=\"...\" using=cpu" ───
+  if (/gpu_init_fallback/.test(output)) {
+    minerStats.runtime_backend = 'cpu';
+    minerStats.gpu_detected = false;
+    minerStats.cpu_only_mode = true;
+  }
+
+  // ─── V3 mining threads: "cpu_cores=8 logical=8 mining_threads=8" ───
+  const v3ThreadsMatch = output.match(/mining_threads=(\d+)/);
+  if (v3ThreadsMatch) {
+    minerStats.cpu_threads = parseInt(v3ThreadsMatch[1]);
+    minerStats.threads = v3ThreadsMatch[1];
+  }
+
+  // ─── V3 pool addr: "pool_addr=91.98.122.165:3333" ───
+  const v3PoolMatch = output.match(/^pool_addr=(.+)/m);
+  if (v3PoolMatch) {
+    minerStats.pool = v3PoolMatch[1].trim();
+  }
+
+  // ─── V3 worker: "worker_name=desktop-agent" ───
+  const v3WorkerMatch = output.match(/^worker_name=(.+)/m);
+  if (v3WorkerMatch) {
+    minerStats.worker = v3WorkerMatch[1].trim();
+  }
+
+  // ─── V3 miner_id: "miner_id=zion1..." ───
+  const v3MinerIdMatch = output.match(/^miner_id=(.+)/m);
+  if (v3MinerIdMatch) {
+    minerStats.miner_id = v3MinerIdMatch[1].trim();
+  }
+
+  // ─── V3 session_status uptime → formatted display ───
+  if (v3StatusMatch) {
+    const uptimeSecs = parseFloat(v3StatusMatch[3]);
+    if (Number.isFinite(uptimeSecs) && uptimeSecs > 0) {
+      const h = Math.floor(uptimeSecs / 3600);
+      const m = Math.floor((uptimeSecs % 3600) / 60);
+      const s = Math.floor(uptimeSecs % 60);
+      minerStats.uptime_display = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+  }
+
+  // ─── V3 attempted hashes (exit summary): "attempted_hashes=N" ───
+  const v3HashesMatch = output.match(/attempted_hashes=(\d+)/);
+  if (v3HashesMatch) {
+    const n = parseInt(v3HashesMatch[1]);
+    if (n > 1000000) {
+      minerStats.total_hashes_display = `${(n / 1000000).toFixed(1)}M`;
+    } else if (n > 1000) {
+      minerStats.total_hashes_display = `${(n / 1000).toFixed(1)}K`;
+    } else {
+      minerStats.total_hashes_display = String(n);
+    }
   }
 
   // Best-effort: Rust miner logs these once.

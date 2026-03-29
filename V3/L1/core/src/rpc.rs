@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::NodeRuntime;
+use crate::emission;
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -228,7 +229,7 @@ pub fn build_stub_router() -> RpcRouter {
     for method in [
         "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
         "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
-        "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos",
+        "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos", "getSupplyInfo",
     ] {
         router.register(method, stub(method));
     }
@@ -492,6 +493,58 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     register_submit_transaction(&mut router, "submitTransaction");
     register_submit_transaction(&mut router, "submitAccountTransaction");
 
+    // ── getSupplyInfo ───────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register("getSupplyInfo", Box::new(move |_params: &Value| {
+            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let height = rt.chain_height();
+            let block_reward = emission::block_subsidy(height.max(1));
+
+            // Cumulative mined supply in flowers (walk decade boundaries)
+            let mined_flowers: u128 = {
+                let mut sum: u128 = 0;
+                let mut h: u64 = 1;
+                while h <= height {
+                    let decade_end =
+                        ((h - 1) / emission::BLOCKS_PER_DECADE + 1) * emission::BLOCKS_PER_DECADE;
+                    let blocks_in_range = decade_end.min(height) - h + 1;
+                    sum += emission::block_subsidy(h) as u128 * blocks_in_range as u128;
+                    h = decade_end + 1;
+                }
+                sum
+            };
+
+            let circulating_flowers = emission::GENESIS_PREMINE + mined_flowers;
+            let remaining_flowers = emission::TOTAL_SUPPLY.saturating_sub(circulating_flowers);
+
+            let supply_mined_pct = if emission::MINING_EMISSION > 0 {
+                (mined_flowers as f64 / emission::MINING_EMISSION as f64) * 100.0
+            } else {
+                0.0
+            };
+
+            Ok(json!({
+                "total_supply_atomic": emission::TOTAL_SUPPLY.to_string(),
+                "total_supply_zion": (emission::TOTAL_SUPPLY / emission::FLOWERS_PER_ZION as u128) as u64,
+                "premine_atomic": emission::GENESIS_PREMINE.to_string(),
+                "premine_zion": (emission::GENESIS_PREMINE / emission::FLOWERS_PER_ZION as u128) as u64,
+                "mining_emission_atomic": emission::MINING_EMISSION.to_string(),
+                "mining_emission_zion": (emission::MINING_EMISSION / emission::FLOWERS_PER_ZION as u128) as u64,
+                "mined_so_far_atomic": mined_flowers.to_string(),
+                "mined_so_far_zion": (mined_flowers / emission::FLOWERS_PER_ZION as u128) as u64,
+                "supply_mined_percent": format!("{:.6}", supply_mined_pct),
+                "circulating_supply_atomic": circulating_flowers.to_string(),
+                "circulating_supply_zion": (circulating_flowers / emission::FLOWERS_PER_ZION as u128) as u64,
+                "remaining_supply_atomic": remaining_flowers.to_string(),
+                "remaining_supply_zion": (remaining_flowers / emission::FLOWERS_PER_ZION as u128) as u64,
+                "block_reward_atomic": block_reward,
+                "block_reward_zion": block_reward as f64 / emission::FLOWERS_PER_ZION as f64,
+                "height": height,
+            }))
+        }));
+    }
+
     // ── submitBlock ────────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
@@ -689,7 +742,7 @@ mod tests {
         for method in [
             "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
             "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
-            "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos",
+            "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos", "getSupplyInfo",
         ] {
             router.register(method, stub(method));
         }
@@ -715,7 +768,8 @@ mod tests {
         assert!(router.has_method("getNodeInfo"));
         assert!(router.has_method("submitBlock"));
         assert!(router.has_method("getUtxos"));
-        assert_eq!(router.method_count(), 16);
+        assert!(router.has_method("getSupplyInfo"));
+        assert_eq!(router.method_count(), 17);
     }
 
     #[test]
@@ -976,7 +1030,33 @@ mod tests {
     #[test]
     fn live_router_method_count() {
         let router = live_router();
-        assert_eq!(router.method_count(), 16);
+        assert_eq!(router.method_count(), 17);
+    }
+
+    #[test]
+    fn live_get_supply_info() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getSupplyInfo", json!(null));
+        assert!(resp.error.is_none(), "getSupplyInfo failed: {:?}", resp.error);
+        let r = resp.result.unwrap();
+        assert_eq!(r["total_supply_zion"], 144_000_000_000u64);
+        assert_eq!(r["premine_zion"], 16_280_000_000u64);
+        assert_eq!(r["mining_emission_zion"], 127_720_000_000u64);
+        assert_eq!(r["height"], 0);
+        assert!(r["block_reward_atomic"].as_u64().unwrap() > 0);
+        assert!(r["total_supply_atomic"].is_string());
+        assert!(r["circulating_supply_atomic"].is_string());
+    }
+
+    #[test]
+    fn live_supply_emission_invariant() {
+        let router = live_router();
+        let resp = rpc_call(&router, "getSupplyInfo", json!(null));
+        let r = resp.result.unwrap();
+        let total: u128 = r["total_supply_atomic"].as_str().unwrap().parse().unwrap();
+        let premine: u128 = r["premine_atomic"].as_str().unwrap().parse().unwrap();
+        let emission: u128 = r["mining_emission_atomic"].as_str().unwrap().parse().unwrap();
+        assert_eq!(emission, total - premine);
     }
 
     #[test]

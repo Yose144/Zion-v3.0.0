@@ -8,6 +8,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { estimateCirculatingSupplyAtHeight } from '@/lib/supply';
 import { getZionRpc } from '@/lib/zion-rpc';
 
 type ChartType = 'difficulty' | 'blocktime' | 'hashrate' | 'emission' | 'blocksize' | 'txcount';
@@ -95,14 +96,9 @@ export async function GET(request: NextRequest) {
       }
 
       case 'emission': {
-        const baseReward = 50; // ZION per block
-        let cumulative = startHeight * baseReward;
         data = {
           labels: sampledHeaders.map(h => new Date(h.timestamp * 1000).toISOString()),
-          values: sampledHeaders.map(h => {
-            cumulative = h.height * baseReward;
-            return cumulative;
-          }),
+          values: sampledHeaders.map(h => estimateCirculatingSupplyAtHeight(h.height)),
         };
         break;
       }
