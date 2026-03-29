@@ -393,7 +393,7 @@ pub mod cuda_deeksha {
     const CUDA_KERNEL_SRC: &str = include_str!("cosmic_harmony_deeksha.cu");
     const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
-    const DEFAULT_WORK_SIZE_CAP: usize = 16_384;
+    const DEFAULT_WORK_SIZE_CAP: usize = 32_768;
 
     pub struct CudaDeekshaMiner {
         dev: Arc<CudaDevice>,
@@ -427,9 +427,9 @@ pub mod cuda_deeksha {
             dev.load_ptx(ptx, "deeksha", &["deeksha_mine", "ekam_deeksha_mine", "ekam_deeksha_debug"])
                 .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
 
-            // Conservative work size cap for 32GB-class GPUs. Default 16k lanes
-            // keeps scratchpad allocation around 4 GiB while allowing much better
-            // occupancy than the earlier debug-oriented 4k cap.
+            // Conservative work size cap for 32GB-class GPUs. Default 32k lanes
+            // keeps scratchpad allocation around 8 GiB and matched the best RTX 5090
+            // release benchmark in current testing.
             let work_cap = std::env::var("ZION_CUDA_WORK_CAP")
                 .ok()
                 .and_then(|v| v.trim().parse::<usize>().ok())
