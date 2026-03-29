@@ -768,7 +768,7 @@ impl SessionTelemetry {
             .unwrap_or_else(|| "n/a".to_string());
 
         println!(
-            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={}",
+            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={}",
             iteration_done,
             loop_count,
             uptime,
@@ -780,6 +780,7 @@ impl SessionTelemetry {
             overall_hps,
             self.hashrate_10s_hps(),
             self.hashrate_60s_hps(),
+            attempted_hashes,
             submit_avg,
             self.submit_max_latency_ms,
             ttl_text,

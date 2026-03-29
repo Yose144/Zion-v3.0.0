@@ -792,7 +792,7 @@ kernel void ekam_deeksha_mine(
     device const uint    *params          [[ buffer(1)  ]],  // [header_len, nonce_count, target_u32]
     device const ulong   *nonce_base_buf  [[ buffer(2)  ]],
     device       uchar   *scratchpad_pool [[ buffer(3)  ]],
-    device atomic_ulong  *result_nonce    [[ buffer(4)  ]],
+    device atomic_uint   *result_flag     [[ buffer(4)  ]],  // [0]=flag, [1]=nonce_lo, [2]=nonce_hi
     device       uchar   *result_hash     [[ buffer(5)  ]],
     device const char    *npu_w1          [[ buffer(6)  ]],
     device const char    *npu_b1          [[ buffer(7)  ]],
@@ -846,11 +846,12 @@ kernel void ekam_deeksha_mine(
     uint state0 = *(thread uint *)hash;
 
     if (state0 <= target_u32) {
-        ulong expected = 0xFFFFFFFFFFFFFFFFUL;
-        bool ok = atomic_compare_exchange_weak_explicit(
-            &result_nonce[0], &expected, nonce,
-            memory_order_relaxed, memory_order_relaxed);
-        if (ok) {
+        // Use 32-bit atomic exchange as found-flag (M1 Metal lacks 64-bit CAS)
+        uint old = atomic_exchange_explicit(&result_flag[0], 0u, memory_order_relaxed);
+        if (old == 0xFFFFFFFFu) {
+            // We won the race — write nonce as two u32 and the hash
+            atomic_store_explicit(&result_flag[1], (uint)(nonce & 0xFFFFFFFFu), memory_order_relaxed);
+            atomic_store_explicit(&result_flag[2], (uint)(nonce >> 32), memory_order_relaxed);
             device uint *rh32 = (device uint *)result_hash;
             thread uint *h32 = (thread uint *)hash;
             for (int i = 0; i < 8; i++)

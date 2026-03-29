@@ -17,6 +17,7 @@ import { useObservatory } from '@/contexts/ObservatoryContext';
 import type { ObservatoryMode } from '@/contexts/ObservatoryContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
 
 const observatoryMeta: Record<
@@ -270,7 +271,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  Live TestNet · v2.9.8 · Deeksha canonical · 1 public host · 2 internal seeds
+                  Live TestNet · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 1 public host · 2 internal seeds
                 </span>
               </div>
             </div>

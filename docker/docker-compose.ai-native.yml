@@ -1,0 +1,78 @@
+# NVIDIA NIM + NeMo Agent Toolkit — AI Native Stack
+#
+# Spuštění:
+#   docker compose -f docker/docker-compose.ai-native.yml up
+#
+# Proměnné prostředí (ulož do .env nebo exportuj):
+#   NVIDIA_API_KEY  — NIM NGC token (viz https://ngc.nvidia.com/setup/api-key)
+#   LLM_MODEL       — model name (výchozí: meta/llama-3.1-8b-instruct)
+#
+# NVIDIA NIM modely dostupné pro lokální nasazení (GPL leasable):
+#   meta/llama-3.1-8b-instruct   — 8B, ~16GB VRAM
+#   meta/llama-3.1-70b-instruct  — 70B, ~140GB VRAM
+#   mistralai/mistral-7b-instruct — 7B, ~14GB VRAM
+#
+# Pokud nemáš GPU: použij cloud mode (NIM cloud API)
+#   → nastav LLM_BASE_URL=https://integrate.api.nvidia.com/v1
+
+version: "3.9"
+
+services:
+
+  # ─── NVIDIA NIM — Lokální LLM inference server ───────────────────────────
+  # Vyžaduje: NVIDIA GPU s ≥16GB VRAM, Docker s GPU support
+  # Alternativa bez GPU: nastav LLM_BASE_URL na cloud endpoint
+  nim-llm:
+    image: nvcr.io/nim/${LLM_MODEL:-meta/llama-3.1-8b-instruct}:latest
+    container_name: zion-nim-llm
+    runtime: nvidia
+    environment:
+      - NGC_API_KEY=${NVIDIA_API_KEY}
+      - NIM_SERVED_MODEL_NAME=${LLM_MODEL:-meta/llama-3.1-8b-instruct}
+    ports:
+      - "8000:8000"
+    volumes:
+      - nim-cache:/opt/nim/.cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # ─── NeMo Agent Toolkit — Python orchestration/evaluation sidecar ─────────
+  # Volitelné — pro evaluaci, profiling a Red Team testing agentic workflows
+  # pip install nvidia-nat
+  nemo-agent-toolkit:
+    image: python:3.12-slim
+    container_name: zion-nemo-agent-toolkit
+    working_dir: /app
+    environment:
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - LLM_BASE_URL=http://nim-llm:8000/v1
+      - LLM_MODEL=${LLM_MODEL:-meta/llama-3.1-8b-instruct}
+    volumes:
+      - ../scripts/nat:/app
+      - ../config:/app/config
+    command: >
+      bash -c "
+        pip install --quiet nvidia-nat &&
+        echo 'NeMo Agent Toolkit ready' &&
+        tail -f /dev/null
+      "
+    depends_on:
+      nim-llm:
+        condition: service_healthy
+    profiles:
+      - eval  # Spuštění jen při: docker compose --profile eval up
+
+volumes:
+  nim-cache:
+    name: zion-nim-cache

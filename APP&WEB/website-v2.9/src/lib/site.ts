@@ -1,6 +1,9 @@
 export const SITE_VERSION = 'v2.9.9';
 export const SITE_RELEASE_NAME = 'Pure Code';
 export const SITE_RELEASE_LABEL = `${SITE_VERSION} \"${SITE_RELEASE_NAME}\"`;
+export const SITE_RUNTIME_VERSION = 'v2.9.8';
+export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical';
+export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
 export const SITE_TESTNET_LABEL = `Live TestNet · ${SITE_RELEASE_LABEL}`;
 export const SITE_PRIMARY_HOST = '91.98.122.165';
 export const SITE_PRIMARY_RPC_PORT = 8332;

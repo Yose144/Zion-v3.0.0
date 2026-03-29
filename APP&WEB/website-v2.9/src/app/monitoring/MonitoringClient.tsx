@@ -9,7 +9,7 @@ import {
   RefreshCw, Server, Shield, Sparkles, Users, Zap,
   Coins, CircleDollarSign, ArrowUpDown, Gauge, Timer,
 } from 'lucide-react';
-import { SITE_RELEASE_LABEL } from '@/lib/site';
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION } from '@/lib/site';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface PrometheusResult {
@@ -663,7 +663,7 @@ export default function MonitoringClient() {
               { name: 'Core Metrics', ver: ':9115', desc: 'V3 node Prometheus endpoint (7 gauges)', color: 'text-emerald-400' },
               { name: 'Pool Metrics', ver: ':8080', desc: 'Mining pool /metrics (20+ counters/gauges)', color: 'text-zion-gold' },
               { name: 'API Proxy', ver: '/api/metrics', desc: 'Secure allowlisted query proxy', color: 'text-sky-400' },
-              { name: 'Website', ver: 'v2.9.9', desc: 'Next.js 15 + Tailwind CSS 4', color: 'text-pink-400' },
+              { name: 'Website', ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-pink-400' },
             ].map((s) => (
               <div key={s.name} className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
                 <div className={`mt-0.5 h-2 w-2 rounded-full ${s.color.replace('text-', 'bg-')}`} />

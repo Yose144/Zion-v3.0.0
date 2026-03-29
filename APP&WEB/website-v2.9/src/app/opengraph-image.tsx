@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
+import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 export const alt = `ZION Blockchain ${SITE_RELEASE_LABEL}`;
 export const size = { width: 1200, height: 630 };
@@ -116,7 +116,7 @@ export default async function Image() {
             marginBottom: '32px',
           }}
         >
-          Pure Code · v2.9.9 · Native Rust L1 · Cosmic Harmony PoW
+          {`${SITE_RELEASE_LABEL} · runtime ${SITE_RUNTIME_LABEL} · Native Rust L1`}
         </div>
 
         {/* Stats row */}

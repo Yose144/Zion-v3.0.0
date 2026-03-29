@@ -34,7 +34,7 @@ Soubor `monitoring/alertmanager/alertmanager.yml` plně přepsán:
 
 ### 4. Ankr API key (`38f47cd`)
 
-Klíč `d036dcf6e89c08c7a36d0b2d723d2d8ac27090965fa5925f60cab30b9c02f152` doplněn do:
+Klíč `ANKR_API_KEY` byl doplněn do:
 - `config/bridge-testnet.toml` — nová `[ankr]` sekce
 - `docker/.env.example` — `ANKR_API_KEY` entry
 - `docker/docker-compose.bridge-testnet.yml` — env var předán do kontejneru

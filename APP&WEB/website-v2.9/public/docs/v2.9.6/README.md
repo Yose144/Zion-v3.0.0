@@ -285,7 +285,7 @@ cargo run --bin wallet-generator
 - **Website**: https://zionterranova.com
 - **Documentation**: https://zionterranova.com/docs
 - **GitHub**: https://github.com/Zion-TerraNova/2.9.6
-- **v2.9.8 Deeksha** (current): https://github.com/Zion-TerraNova/2.9.6
+- **Current public line**: workspace 2.9.6 repo, live 2.9.9 Pure Code release, canonical 2.9.8 Deeksha runtime
 
 ---
 

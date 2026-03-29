@@ -8,8 +8,8 @@ LOG_PREFIX="[deploy]"
 
 REMOTE_HOST="${REMOTE_HOST:-91.98.122.165}"
 REMOTE_USER="${REMOTE_USER:-root}"
-REMOTE_SRC="${REMOTE_SRC:-/root/zion-web-deploy/website-v2.9}"
-REMOTE_COMPOSE="${REMOTE_COMPOSE:-/root/zion-web-deploy/docker}"
+REMOTE_SRC="${REMOTE_SRC:-/root/zion-2.9.6/APP&WEB/website-v2.9}"
+REMOTE_COMPOSE="${REMOTE_COMPOSE:-/root/zion-2.9.6/docker}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/zion_hetzner_key}"
 COMPOSE_FILE="docker-compose.website.yml"
 SKIP_SYNC=0
@@ -24,7 +24,8 @@ Docker-based website deployment: rsync source -> rebuild image -> recreate conta
 Options:
   --host <hostname>        Target SSH host (default: $REMOTE_HOST or 91.98.122.165)
   --user <user>            SSH user (default: $REMOTE_USER or root)
-  --remote-src <path>      Remote source path (default: /root/zion-web-deploy/website-v2.9)
+  --remote-src <path>      Remote source path (default: /root/zion-2.9.6/APP&WEB/website-v2.9)
+  --remote-compose <path>  Remote Docker compose directory (default: /root/zion-2.9.6/docker)
   --ssh-key <path>         SSH private key (default: $SSH_KEY or ~/.ssh/zion_hetzner_key)
   --skip-sync              Skip rsync (rebuild from existing remote source)
   --dry-run                Sync only; skip Docker rebuild
@@ -36,6 +37,10 @@ EOF
 }
 
 log() { printf "%s %s %s\n" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$LOG_PREFIX" "$*"; }
+
+shell_quote() {
+  printf "'%s'" "${1//\'/\'\\\'\'}"
+}
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -49,6 +54,7 @@ while [[ $# -gt 0 ]]; do
     --host)       shift; REMOTE_HOST="${1:?Missing value for --host}" ;;
     --user)       shift; REMOTE_USER="${1:?Missing value for --user}" ;;
     --remote-src) shift; REMOTE_SRC="${1:?Missing value for --remote-src}" ;;
+    --remote-compose) shift; REMOTE_COMPOSE="${1:?Missing value for --remote-compose}" ;;
     --ssh-key)    shift; SSH_KEY="${1:?Missing value for --ssh-key}" ;;
     --skip-sync)  SKIP_SYNC=1 ;;
     --dry-run)    DRY_RUN=1 ;;
@@ -63,6 +69,8 @@ require_cmd ssh
 
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new"
 REMOTE="$REMOTE_USER@$REMOTE_HOST"
+REMOTE_SRC_DIR="$(shell_quote "$REMOTE_SRC")"
+REMOTE_COMPOSE_DIR="$(shell_quote "$REMOTE_COMPOSE")"
 
 cd "$ROOT_DIR"
 
@@ -75,14 +83,16 @@ fi
 # --- Rsync source to server ---
 if [[ $SKIP_SYNC -ne 1 ]]; then
   log "Syncing source to $REMOTE_HOST:$REMOTE_SRC"
+  ssh $SSH_OPTS "$REMOTE" "mkdir -p $REMOTE_SRC_DIR"
   rsync -avz --delete \
     --exclude='node_modules' \
     --exclude='.next' \
     --exclude='out' \
     --exclude='*.tar.gz' \
     --exclude='.env.local' \
+    --rsync-path="mkdir -p $REMOTE_SRC_DIR && cd $REMOTE_SRC_DIR && rsync" \
     -e "ssh $SSH_OPTS" \
-    ./ "$REMOTE:$REMOTE_SRC/"
+    ./ "$REMOTE:./"
 else
   log "Skipping rsync (--skip-sync)"
 fi
@@ -94,10 +104,10 @@ fi
 
 # --- Docker rebuild & recreate on server ---
 log "Building Docker image on $REMOTE_HOST"
-ssh $SSH_OPTS "$REMOTE" "cd '$REMOTE_COMPOSE' && docker compose -f '$COMPOSE_FILE' build --no-cache website"
+ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_DIR && docker compose -f '$COMPOSE_FILE' build --no-cache website"
 
 log "Recreating container"
-ssh $SSH_OPTS "$REMOTE" "cd '$REMOTE_COMPOSE' && docker compose -f '$COMPOSE_FILE' up -d website"
+ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_DIR && docker compose -f '$COMPOSE_FILE' up -d website"
 
 # --- Health check ---
 log "Waiting for container health check (up to 60s)"

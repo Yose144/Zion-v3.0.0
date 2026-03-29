@@ -47,6 +47,32 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+export function estimateMinedSupplyAtHeight(height: number): number {
+  let remainingBlocks = Math.max(0, Math.floor(height));
+  let minedSupply = 0;
+  let decadeIndex = 0;
+
+  while (remainingBlocks > 0 && decadeIndex < MAX_DECAY_DECADES) {
+    const blocksThisDecade = Math.min(remainingBlocks, BLOCKS_PER_DECADE);
+    const reward = BLOCK_REWARD_ZION * Math.pow(DECAY_FACTOR, decadeIndex);
+    minedSupply += blocksThisDecade * reward;
+    remainingBlocks -= blocksThisDecade;
+    decadeIndex += 1;
+  }
+
+  if (remainingBlocks > 0) {
+    minedSupply += remainingBlocks * TAIL_REWARD_ZION;
+  }
+
+  const maxMineableSupply = Math.max(0, TOTAL_SUPPLY_ZION - GENESIS_PREMINE_ZION);
+  return clamp(minedSupply, 0, maxMineableSupply);
+}
+
+export function estimateCirculatingSupplyAtHeight(height: number, premineSupply = GENESIS_PREMINE_ZION): number {
+  const circulatingSupply = premineSupply + estimateMinedSupplyAtHeight(height);
+  return clamp(circulatingSupply, 0, TOTAL_SUPPLY_ZION);
+}
+
 export function estimateRemainingMiningYears(chainHeight: number, minedSupply: number, premineSupply = GENESIS_PREMINE_ZION): number {
   const maxMineableSupply = Math.max(0, TOTAL_SUPPLY_ZION - premineSupply);
   let remainingMineable = Math.max(0, maxMineableSupply - minedSupply);

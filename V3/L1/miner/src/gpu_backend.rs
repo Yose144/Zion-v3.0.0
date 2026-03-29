@@ -428,6 +428,7 @@ pub mod metal_deeksha {
     use std::time::Instant;
 
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
+    const SENTINEL_U32: u32 = 0xFFFF_FFFF;
 
     pub struct MetalDeekshaMiner {
         device: Device,
@@ -483,7 +484,7 @@ pub mod metal_deeksha {
             let header_buf = device.new_buffer(80, opts);
             let params_buf = device.new_buffer(12, opts);          // 3 × u32
             let nonce_base_buf = device.new_buffer(8, opts);       // u64
-            let result_nonce_buf = device.new_buffer(8, opts);     // atomic u64
+            let result_nonce_buf = device.new_buffer(12, opts);    // atomic_uint flag + nonce_lo + nonce_hi
             let result_hash_buf = device.new_buffer(32, opts);     // hash output
 
             // Scratchpad: batch_size × 256 KiB per thread
@@ -565,10 +566,10 @@ pub mod metal_deeksha {
                 *ptr = nonce_start;
             }
 
-            // Reset result sentinel
+            // Reset result sentinel (u32 flag at offset 0)
             unsafe {
-                let ptr = self.result_nonce_buf.contents() as *mut u64;
-                *ptr = SENTINEL;
+                let ptr = self.result_nonce_buf.contents() as *mut u32;
+                *ptr = SENTINEL_U32;
             }
 
             let cb = self.queue.new_command_buffer();
@@ -597,10 +598,14 @@ pub mod metal_deeksha {
         }
 
         fn read_result(&self) -> Option<(u64, [u8; 32])> {
-            let nonce = unsafe { *(self.result_nonce_buf.contents() as *const u64) };
-            if nonce == SENTINEL {
+            let flag = unsafe { *(self.result_nonce_buf.contents() as *const u32) };
+            if flag == SENTINEL_U32 {
                 return None;
             }
+            // Nonce stored as two u32 at offsets [4..8] and [8..12]
+            let nonce_lo = unsafe { *(self.result_nonce_buf.contents().add(4) as *const u32) } as u64;
+            let nonce_hi = unsafe { *(self.result_nonce_buf.contents().add(8) as *const u32) } as u64;
+            let nonce = nonce_lo | (nonce_hi << 32);
             let mut hash = [0u8; 32];
             unsafe {
                 let ptr = self.result_hash_buf.contents() as *const u8;

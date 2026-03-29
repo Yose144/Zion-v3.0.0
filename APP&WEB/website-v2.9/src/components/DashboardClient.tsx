@@ -15,7 +15,7 @@ import {
   TreeDeciduous,
   Zap
 } from 'lucide-react';
-import { SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION } from '@/lib/site';
 
 interface DashboardClientProps {
   stats: any;
@@ -40,7 +40,7 @@ const missionMetrics = [
   {
     label: 'Version',
     value: SITE_VERSION,
-    description: 'Pure Code · v2.9.9',
+    description: `Public line ${SITE_RELEASE_LABEL} · runtime v${SITE_RUNTIME_VERSION.replace('v', '')}`,
     icon: Gauge
   },
   {
@@ -106,6 +106,7 @@ const grafanaDashboards = [
 
 export default function DashboardClient({ stats, health, blocks, poolStats }: DashboardClientProps) {
   const computedUptime = health?.uptime ? `${Math.floor(health.uptime / 3600)}h` : '—';
+  const totalSupply = stats?.total_supply ?? stats?.max_supply;
 
   // Format hashrate helper
   const formatHashrate = (hashrate: number) => {
@@ -233,7 +234,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <div className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <MetricCard label="Blocks" value={stats.total_blocks ? stats.total_blocks.toLocaleString() : '—'} />
-                  <MetricCard label="Total supply" value={stats.total_supply ? `${(stats.total_supply / 1e9).toFixed(2)}B` : '—'} />
+                  <MetricCard label="Total supply" value={totalSupply ? `${(totalSupply / 1e9).toFixed(2)}B` : '—'} />
                   <MetricCard label="Transactions" value={stats.total_transactions ? stats.total_transactions.toLocaleString() : '—'} />
                   <MetricCard label="Difficulty" value={stats.difficulty || '—'} />
                 </div>

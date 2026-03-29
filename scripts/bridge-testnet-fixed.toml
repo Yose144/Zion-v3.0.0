@@ -21,7 +21,7 @@ bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
 finality_blocks     = 3        # TESTNET: fast finality
 poll_interval_secs  = 15       # Check for new blocks every 15s
 # start_block_height = 0       # Uncomment to start from specific height
-l1_rpc_token = "5812008eeb500c923a3f5f678cc136d4997d5854b216fba699112ca2039dc8a1"  # ZION_RPC_TOKEN on L1 node
+l1_rpc_token = "CHANGE_ME_TO_CURRENT_L1_RPC_TOKEN"  # ZION_RPC_TOKEN on L1 node; keep the real token outside git
 # ── EVM Chains ──────────────────────────────────────────────
 #
 #  Priority order:
@@ -77,7 +77,7 @@ max_gas_gwei          = 10
 # -- Ankr RPC Backend --
 [ankr]
 enabled = true
-api_key = "d036dcf6e89c08c7a36d0b2d723d2d8ac27090965fa5925f60cab30b9c02f152"
+api_key = "CHANGE_ME_TO_ANKR_API_KEY"
 
 [validator]
 private_key_file   = "keys/validator.key"

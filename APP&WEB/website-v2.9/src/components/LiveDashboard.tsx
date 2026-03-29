@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Atom, Braces, Database, Gauge, Shield } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 
 interface BlockchainStats {
   // NOTE: Backend schema can vary across deployments.
@@ -12,6 +13,8 @@ interface BlockchainStats {
   total_supply?: number;
   circulating_supply?: number;
   max_supply?: number;
+  premine_supply?: number;
+  mined_supply?: number;
   total_transactions?: number;
   mempool_size?: number;
   tx_pool_size?: number;
@@ -31,7 +34,8 @@ interface BlockchainStats {
 
 const placeholderStats: BlockchainStats = {
   total_blocks: 0,
-  total_supply: 0,
+  total_supply: 144_000_000_000,
+  max_supply: 144_000_000_000,
   total_transactions: 0,
   mempool_size: 0,
   difficulty: 0,
@@ -77,7 +81,7 @@ export default function LiveDashboard() {
     };
   }, []);
 
-  const supply = stats.total_supply ?? stats.circulating_supply ?? 0;
+  const supply = stats.total_supply ?? stats.max_supply ?? stats.circulating_supply ?? 0;
   const formattedSupply = supply >= 1e9
     ? (supply / 1e9).toFixed(2) + 'B'
     : supply >= 1e6
@@ -123,7 +127,7 @@ export default function LiveDashboard() {
             <Activity className="w-5 h-5 text-zion-gold animate-pulse" />
             <span className="text-sm tracking-wide uppercase text-gray-300">Mission Console</span>
           </div>
-          <div className="text-3xl font-semibold text-gradient">v2.9.9 Pure Code · Live Telemetry</div>
+          <div className="text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Live Telemetry</div>
           {error && (
             <span className="text-xs text-amber-300 bg-amber-500/10 rounded-full px-3 py-1 border border-amber-500/30">
               ⚠️ {error}
@@ -213,7 +217,7 @@ export default function LiveDashboard() {
             </div>
 
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
-              Blockchain telemetry pulled live from the v2.9.9 Pure Code TestNet API every 30 s.
+              Blockchain telemetry pulled live from the {SITE_RELEASE_LABEL} TestNet API every 30 s, on top of the {SITE_RUNTIME_LABEL} runtime.
               Current public runtime is one primary host with two internal seed containers behind it.
             </div>
           </motion.div>
