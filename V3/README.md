@@ -50,9 +50,9 @@ Out of scope for the bootstrap:
 - `L1/core` now carries orphan block handling: orphan pool with FIFO eviction (200 max, 10 min expiry), chain ID enforcement (`zion-mainnet-1`) (`orphan.rs`)
 - `L1/core` now carries LMDB persistent storage via heed: 8 databases (blocks, utxos, tx_index, balance_cache, undo_blocks, height_to_hash, hash_to_height, meta), atomic block+UTXO writes, rollback, balance cache, schema versioning (`storage.rs`)
 - `L1/core` now carries the IBD state machine: batch sync (500 blocks/request), stall detection (120 s timeout, 3 retries), peer round-robin, SyncStatus tracking (Ibd/Syncing/Synced) (`ibd.rs`)
-- `L1/core` JSON-RPC 2.0 methods are now **live** (no longer stubs): 15 methods bind to real `NodeRuntime` state via `Arc<Mutex<NodeRuntime>>`, including explicit account-runtime aliases `getAccountBalance`, `getAccountTransaction`, and `submitAccountTransaction` alongside the compatibility names. Auto-detected on the existing RPC TCP port alongside the simple line-delimited protocol used by the pool/miner.
+- `L1/core` JSON-RPC 2.0 methods are now **live** (no longer stubs): 16 methods bind to real `NodeRuntime` state via `Arc<Mutex<NodeRuntime>>`, including `getSupplyInfo` (supply economics endpoint) and explicit account-runtime aliases `getAccountBalance`, `getAccountTransaction`, and `submitAccountTransaction` alongside the compatibility names. Auto-detected on the existing RPC TCP port alongside the simple line-delimited protocol used by the pool/miner.
 - `L1/core` JSON-RPC is still bound to the current account-style runtime path: `getBalance`, `getAccountBalance`, and transaction submission operate on wallet ids carried by `lib.rs` transactions, not on the separate UTXO wallet path in `tx.rs`/`wallet.rs`; `zion1...` lookups are rejected explicitly on that endpoint
-- `L1/core` now carries a JSON-RPC 2.0 protocol handler: method registry, batch requests, standard error codes, 15 node methods via `build_node_router()` (`rpc.rs`)
+- `L1/core` now carries a JSON-RPC 2.0 protocol handler: method registry, batch requests, standard error codes, 17 node methods via `build_node_router()` (`rpc.rs`)
 - `L1/core` now carries the peer manager: scoring with ban threshold, subnet diversity (MAX_PER_SUBNET=4), heartbeat with idle timeout, inbound/outbound tracking, seed management (`peer_manager.rs`)
 - `L1/core` now carries metrics: atomic counters/gauges (blocks, txs, mempool, peers, difficulty), Prometheus text exposition format with `zion_` prefix, health check JSON (`metrics.rs`)
 - `L1/core` now carries genesis ceremony and launch readiness: frozen genesis hash, checkpoint system, 9 launch readiness checks (genesis integrity, emission, decay, tail, difficulty, DAO lock, premine addresses, checkpoints, zeroize) (`launch.rs`)
@@ -90,7 +90,7 @@ Out of scope for the bootstrap:
 - `L1/native-libs` scaffold now exists for staged migration of native acceleration libraries (randomx, kawpow, autolykos) with platform build scripts and ABI header placeholders
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`
-- whole V3 workspace currently builds and tests green (635 tests: 403 core, 95 cosmic-harmony, 59 miner, 44 pool, 29 miner-integration, 4 native-ffi, 1 doctest)
+- whole V3 workspace currently builds and tests green (638 tests: 406 core, 95 cosmic-harmony, 59 miner, 44 pool, 29 miner-integration, 4 native-ffi, 1 doctest)
 
 ## Workspace Layout
 
@@ -248,7 +248,7 @@ Current `zion-core` node scaffolding supports:
 
 - P2P: `hello`, `welcome`, `ping`, `pong`, `get_peers`, `peers`, `get_status`, `status`, `get_blocks_since`, `blocks`, `announce_block`
 - RPC: `get_status`, `get_peers`, `get_revenue`, `get_mempool`, `get_template`, `submit_transaction`, `submit_candidate`
-- JSON-RPC 2.0: `getChainInfo`, `getNodeInfo`, `getBlock`, `getBlockByHeight`, `getBalance`, `getAccountBalance`, `getTransaction`, `getAccountTransaction`, `getBlockTemplate`, `getMempoolInfo`, `getPeerInfo`, `sendRawTransaction`, `submitTransaction`, `submitAccountTransaction`, `submitBlock`
+- JSON-RPC 2.0: `getChainInfo`, `getNodeInfo`, `getBlock`, `getBlockByHeight`, `getBalance`, `getAccountBalance`, `getTransaction`, `getAccountTransaction`, `getBlockTemplate`, `getMempoolInfo`, `getPeerInfo`, `sendRawTransaction`, `submitTransaction`, `submitAccountTransaction`, `submitBlock`, `getUtxos`, `getSupplyInfo`
 
 Current template and accepted-block metadata now includes:
 

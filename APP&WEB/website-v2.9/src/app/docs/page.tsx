@@ -192,7 +192,7 @@ const sections: Section[] = [
     accentText: 'text-emerald-400',
     accentBorder: 'border-emerald-400/30',
     docs: [
-      { id: 'live-index', title: 'Aktuální snapshot sítě', file: 'index.md' },
+      { id: 'live-index', title: 'Live Index: snapshot + verze', file: 'index.md' },
       { id: 'live-p2p', title: 'P2P topologie', file: 'v2.9.6/p2p.md' },
       { id: 'live-mainnet', title: 'Launch path', file: 'mainnet/README.md' },
     ],
@@ -391,7 +391,7 @@ export default function DocsPage() {
               {tr('docs', 'subtitle', lang)}
             </p>
             <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
-              Live testnet běží na v2.9.9 Pure Code release line. Nahoře jsou teď prioritně provozní a referenční materiály; hlubší historie zůstává v záložce History.
+              Live testnet běží na veřejné release linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8 Deeksha/Ekam. Sekce Live Index na /docs#live-index teď slouží jako kanonický vstup pro síťový snapshot, repo baseline 2.9.6 a aktuální release/runtime mapu.
             </div>
             <div className="flex items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (

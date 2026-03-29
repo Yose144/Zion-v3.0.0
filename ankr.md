@@ -5,7 +5,7 @@
 
 ---
 
-d036dcf6e89c08c7a36d0b2d723d2d8ac27090965fa5925f60cab30b9c02f152
+`ANKR_API_KEY=<doplnit z lokálního secret store nebo .env>`
 
 ## Obsah
 

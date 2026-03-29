@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Documentation · ZION v2.9.9',
-  description: 'ZION documentation focused on live testnet operations, protocol baseline, mining setup, and archived history.',
+  description: 'ZION documentation focused on /docs#live-index: live testnet snapshot, version matrix 2.9.6 / 2.9.8 / 2.9.9, protocol baseline, mining setup, and archived history.',
 };
 
 export default function DocsLayout({

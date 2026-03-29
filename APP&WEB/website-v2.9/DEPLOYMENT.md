@@ -1,4 +1,4 @@
-# ZION Web v2.8.9 - Deployment Guide
+# ZION Web v2.9.9 - Deployment Guide
 
 ## 📦 Build Summary
 
@@ -19,8 +19,23 @@
 
 ### Automated Deploy (recommended)
 ```bash
-cd website-v2.9
-./scripts/deploy.sh --host 77.42.31.72 --user root --path /var/www/zionterranova.com
+cd APP\&WEB/website-v2.9
+bash ./scripts/deploy.sh --host 91.98.122.165 --user root
+```
+
+Default production paths are now:
+
+- remote source: /root/zion-2.9.6/APP&WEB/website-v2.9
+- remote compose: /root/zion-2.9.6/docker
+
+If you need a different remote layout, use:
+
+```bash
+bash ./scripts/deploy.sh \
+  --host your-host \
+  --user root \
+  --remote-src /absolute/remote/source/path \
+  --remote-compose /absolute/remote/compose/path
 ```
 
 ### Manual Deploy to Main Domain

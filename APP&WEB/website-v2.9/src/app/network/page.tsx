@@ -37,6 +37,7 @@ import {
   SITE_PRIMARY_HOST,
   SITE_PRIMARY_RPC_URL,
   SITE_RELEASE_LABEL,
+  SITE_RUNTIME_LABEL,
 } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
@@ -48,7 +49,7 @@ const heroStats = [
   { label: 'Internal Seeds', value: '2', descriptor: 'Container peers behind primary host' },
   { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
   { label: 'Topology', value: 'Current', descriptor: 'Primary host + internal seeds' },
-  { label: 'Network', value: 'TestNet', descriptor: 'v2.9.9 · Pure Code release line' },
+  { label: 'Network', value: 'TestNet', descriptor: 'Public line v2.9.9 · runtime v2.9.8' },
 ];
 
 const infraFeatures = [
@@ -90,7 +91,7 @@ const runtimePanels = [
     icon: BookOpen,
     label: 'Release Context',
     value: SITE_RELEASE_LABEL,
-    detail: 'Current live topology with archived 2.9.8 rollout retained in docs',
+    detail: `Public line over ${SITE_RUNTIME_LABEL}; archived 2.9.8 rollout retained in docs`,
     accent: 'text-zion-purple',
   },
 ];
@@ -306,7 +307,7 @@ export default function NetworkPage() {
                   <Sparkles className="h-3 w-3 text-zion-gold" /> Native Rust
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Orbit className="h-3 w-3 text-zion-cyan" /> Deeksha 2.9.8
+                  <Orbit className="h-3 w-3 text-zion-cyan" /> Runtime: {SITE_RUNTIME_LABEL}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" /> 1 Public Host · 2 Internal Seeds

@@ -7,9 +7,9 @@ import { Book, Compass, Github, Route, ScrollText } from 'lucide-react';
 const resources = [
   {
     title: 'Live Docs',
-    description: 'Current network topology, protocol baseline, miner setup, and operational notes.',
+    description: 'Opens at /docs#live-index with current network topology, version matrix 2.9.6 / 2.9.8 / 2.9.9, miner setup, and operational notes.',
     icon: Book,
-    href: '/docs',
+    href: '/docs#live-index',
     accent: 'from-zion-gold/20 to-zion-purple/10',
   },
   {
@@ -31,7 +31,7 @@ const resources = [
 const ctas = [
   {
     title: 'Roadmap → MainNet 2026',
-    description: 'Focused path from live 2.9.8 testnet to release readiness and launch sequencing.',
+    description: 'Focused path from the live 2.9.9 public line and 2.9.8 canonical runtime to release readiness and launch sequencing.',
     icon: Route,
     href: '/roadmap',
   },

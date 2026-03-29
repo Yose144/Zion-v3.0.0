@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Github, MessageCircle, Globe, BookOpen, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
 
 const footerGroups = [
   {
@@ -105,7 +106,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-4 pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-600">
-            © 2026 ZION Blockchain · v2.9.8 Live TestNet
+            © 2026 ZION Blockchain · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_VERSION}
           </p>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

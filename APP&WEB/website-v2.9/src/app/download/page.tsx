@@ -166,7 +166,7 @@ export default function DownloadPage() {
               <span className="text-zion-cyan font-semibold">Wallet</span> &{' '}
               <span className="text-zion-purple font-semibold">Node</span> — for Windows, Linux & macOS.
               Pre-compiled native Rust binaries. Aktuální download artefakty jsou stále hostované pod release tagem v2.9.6,
-              ale zůstávají kompatibilní s v2.9.9 Pure Code testnetem.
+              ale zůstávají kompatibilní s veřejnou linií v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link

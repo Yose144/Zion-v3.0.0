@@ -37,7 +37,7 @@ function detectPlatformFeatures() {
     if (arch === 'arm64') {
       // Apple Silicon M1/M2/M3/M4/M5 → Metal is 10-30% faster than OpenCL
       console.log('[prepare-rust-miner] 🍎 Apple Silicon detected → enabling Metal GPU');
-      return 'metal';
+      return 'gpu-metal';
     }
     // Intel Mac → OpenCL only
     console.log('[prepare-rust-miner] 🖥️  Intel Mac detected → enabling OpenCL GPU');
@@ -224,6 +224,8 @@ function main() {
   const desktopAgentRoot = path.resolve(__dirname, '..');
   const workspaceRoot = path.resolve(desktopAgentRoot, '..', '..');
   const rustMinerRootCandidates = [
+    // V3 mainnet miner (preferred)
+    path.join(workspaceRoot, 'V3', 'L1', 'miner'),
     // Main workspace layouts
     path.join(workspaceRoot, 'L1', 'miner'),
     path.join(workspaceRoot, 'miner'),
@@ -237,6 +239,7 @@ function main() {
   ];
   const rustMinerRoot = rustMinerRootCandidates.find((p) => isDirectory(p));
   const cosmicHarmonyRootCandidates = [
+    path.join(workspaceRoot, 'V3', 'L1', 'cosmic-harmony'),
     path.join(workspaceRoot, 'L1', 'cosmic-harmony'),
     path.join(workspaceRoot, 'cosmic-harmony'),
     path.join(workspaceRoot, '2.9.5OLD', 'L1', 'cosmic-harmony'),
@@ -260,6 +263,8 @@ function main() {
     const roots = [
       rustMinerRoot,
       workspaceRoot,
+      // V3 workspace target (cargo puts V3 binaries here)
+      path.join(workspaceRoot, 'V3'),
       path.join(workspaceRoot, '2.9.5'),
       path.join(workspaceRoot, '2.9.5OLD'),
       path.join(workspaceRoot, '2.9.5OLD', 'zion-universal-miner'),
@@ -427,6 +432,11 @@ function main() {
   // Explicitly bundle the Rust cdylib that exports zion_deeksha_hash.
   // Prefer the freshly built target/release artifact over stale legacy libs.
   const explicitNativeLibCandidates = [
+    // V3 workspace target (preferred — clean-room mainnet build)
+    path.join(workspaceRoot, 'V3', 'target', 'release', `libzion_cosmic_harmony_v3${libExt}`),
+    path.join(workspaceRoot, 'V3', 'target', 'release', `zion_cosmic_harmony_v3${libExt}`),
+    path.join(workspaceRoot, 'V3', 'target', 'release', `libcosmic_harmony${libExt}`),
+    // Legacy workspace target
     path.join(workspaceRoot, 'target', 'release', `zion_cosmic_harmony_v3${libExt}`),
     path.join(workspaceRoot, 'target', 'release', `libzion_cosmic_harmony_v3${libExt}`),
     path.join(workspaceRoot, 'target', 'release', `cosmic_harmony_deeksha${libExt}`),
@@ -547,6 +557,25 @@ function main() {
   console.log(`[prepare-rust-miner] ✅ Synced ${syncedGpuAssets} canonical GPU asset groups into desktop resources`);
   } else {
     console.warn('[prepare-rust-miner] ⚠️ Canonical GPU asset source not found at L1/native-libs/all');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // V3 GPU kernel assets — Metal shader from V3 clean-room line
+  // ═══════════════════════════════════════════════════════════
+  const v3MetalShader = path.join(workspaceRoot, 'V3', 'L1', 'miner', 'src', 'ekam_deeksha.metal');
+  const v3OpenClKernel = path.join(workspaceRoot, 'V3', 'L1', 'cosmic-harmony', 'src', 'gpu', 'kernels', 'cosmic_harmony_deeksha.cl');
+  let v3AssetsSync = 0;
+  if (exists(v3MetalShader)) {
+    copyFileIfExists(v3MetalShader, path.join(miningLibDir, 'ekam_deeksha.metal'));
+    copyFileIfExists(v3MetalShader, path.join(miningLibDir, 'cosmic_harmony_ekam_deeksha.metal'));
+    v3AssetsSync++;
+  }
+  if (exists(v3OpenClKernel)) {
+    copyFileIfExists(v3OpenClKernel, path.join(miningLibDir, 'cosmic_harmony_deeksha.cl'));
+    v3AssetsSync++;
+  }
+  if (v3AssetsSync > 0) {
+    console.log(`[prepare-rust-miner] ✅ Synced ${v3AssetsSync} V3 GPU kernel assets`);
   }
 
   // ═══════════════════════════════════════════════════════════

@@ -1,7 +1,7 @@
 # ZION TerraNova — Dokumentace v2.9.6
 
 > *„On the Star — where technology meets spirit, from blockchain to the stars."*
-> **Operational note (2026-03-11):** Live testnet source of truth is 2.9.8 Ekam Deeksha canonical on one public host: Zion2 (91.98.122.165), with internal seed containers behind the same stack.
+> **Operational note (2026-03-23):** Public docs entrypoint now tracks the live 2.9.9 Pure Code release line on top of the 2.9.8 Deeksha canonical runtime, on one public host: Zion2 (91.98.122.165), with internal seed containers behind the same stack.
 
 ---
 
@@ -97,11 +97,11 @@ Vše on-chain ověřitelné, plně odemčeno od geneze. Governance spravuje DAO.
 
 | Repo | Popis |
 |------|-------|
-| [2.9.6](https://github.com/Zion-TerraNova/2.9.6) | Hlavní repo — v2.9.8 Deeksha kód, nativní binárky, Docker |
+| [2.9.6](https://github.com/Zion-TerraNova/2.9.6) | Hlavní repo — workspace baseline 2.9.6, live public release line 2.9.9, Deeksha/Ekam runtime a Docker |
 | [v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet) | Příprava Mainnet launche |
 | [2.9-QuantumLeap](https://github.com/Zion-TerraNova/2.9-QuantumLeap) | Python miner a nástroje |
 | [Zion-TestNet2.8.5](https://github.com/Zion-TerraNova/Zion-TestNet2.8.5) | Historický testnet |
 
 ---
 
-*ZION TerraNova v2.9.8 Deeksha • Dokumentace aktualizována březen 2026*
+*ZION TerraNova workspace 2.9.6 • public release line 2.9.9 Pure Code • canonical runtime 2.9.8 Deeksha • Dokumentace aktualizována březen 2026*
