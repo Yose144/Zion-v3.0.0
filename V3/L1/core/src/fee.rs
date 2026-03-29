@@ -110,6 +110,13 @@ pub const BURN_ADDRESS: &str = "zion1burn0000000000000000000000000000000dead";
 /// DAO treasury address.
 pub const DAO_ADDRESS: &str = "zion1dao00000000000000000000000000000treasury";
 
+/// Bridge vault address.
+///
+/// This address is intentionally keyless at the protocol level. Unlocks back to
+/// L1 must flow through a dedicated bridge authorization path rather than a
+/// normal wallet-controlled spend.
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1bridge000000000000000000000000000vault";
+
 // ── Tests ──────────────────────────────────────────────────────────────
 
 #[cfg(test)]
