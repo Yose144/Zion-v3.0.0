@@ -71,6 +71,10 @@ pub trait GpuMiner: Send {
     /// Backend kind.
     fn backend_kind(&self) -> GpuBackendKind;
 
+    /// Update NPU weights for the given block height's epoch.
+    /// No-op if the epoch hasn't changed since the last call.
+    fn update_epoch(&mut self, _height: u64) -> Result<()> { Ok(()) }
+
     /// Mine a batch of nonces starting from `nonce_start`.
     /// Returns any solutions found that meet the target.
     fn mine_batch(
@@ -324,6 +328,8 @@ pub mod opencl_deeksha {
                         hash.copy_from_slice(&hashes[i * 32..(i + 1) * 32]);
                         all_solutions.push((nonce, hash));
                     }
+                    total_tested += chunk;
+                    break; // Early termination: submit solution immediately
                 }
 
                 total_tested += chunk;
@@ -374,47 +380,258 @@ pub mod opencl_deeksha {
     }
 }
 
-// ─── CUDA Backend (scaffold) ────────────────────────────────────────────────
+// ─── CUDA Backend ───────────────────────────────────────────────────────────
 
 #[cfg(feature = "gpu-cuda")]
 pub mod cuda_deeksha {
     use super::*;
+    use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
+    use cudarc::nvrtc::compile_ptx;
+    use std::sync::Arc;
+    use std::time::Instant;
+
+    const CUDA_KERNEL_SRC: &str = include_str!("cosmic_harmony_deeksha.cu");
+    const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
+    const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct CudaDeekshaMiner {
+        dev: Arc<CudaDevice>,
         work_size: usize,
+        device_name_cached: String,
+        // Pre-allocated GPU buffers
+        header_buf:     CudaSlice<u8>,
+        scratchpad_buf: CudaSlice<u8>,
+        result_nonce:   CudaSlice<u64>,
+        result_hash:    CudaSlice<u8>,
+        // NPU weight buffers
+        npu_w1:     CudaSlice<i8>,
+        npu_b1:     CudaSlice<i8>,
+        npu_w2:     CudaSlice<i8>,
+        npu_b2:     CudaSlice<i8>,
+        npu_scale1: CudaSlice<i16>,
+        npu_scale2: CudaSlice<i16>,
+        current_epoch: u64,
     }
 
     impl CudaDeekshaMiner {
         pub fn new(work_size: usize) -> Result<Self> {
-            // TODO: Implement CUDA backend using cudarc or raw CUDA FFI.
-            // Requires: Ekam Deeksha CUDA kernel (.cu) + NVRTC compilation.
-            anyhow::bail!(
-                "CUDA backend not yet implemented — tracking in UPGRADE_PLAN.md Phase A4"
+            let dev = CudaDevice::new(0)
+                .map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
+
+            let device_name = dev.name()
+                .unwrap_or_else(|_| "unknown CUDA device".to_string());
+
+            // Compile PTX from embedded CUDA source
+            let ptx = compile_ptx(CUDA_KERNEL_SRC)
+                .map_err(|e| anyhow::anyhow!("NVRTC compile failed: {e}"))?;
+            dev.load_ptx(ptx, "deeksha", &["deeksha_mine", "ekam_deeksha_mine", "ekam_deeksha_debug"])
+                .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
+
+            // Auto-cap work_size based on available VRAM
+            // Each thread needs SCRATCHPAD_BYTES of global memory
+            let (free_mem, _total_mem) = dev.mem_info()
+                .map_err(|e| anyhow::anyhow!("CUDA mem_info failed: {e}"))?;
+            let max_threads = (free_mem as usize * 70 / 100) / SCRATCHPAD_BYTES;
+            let actual_work_size = work_size.min(max_threads).max(64);
+
+            // Allocate buffers
+            let header_buf = dev.alloc_zeros::<u8>(80)
+                .map_err(|e| anyhow::anyhow!("header alloc: {e}"))?;
+            let scratchpad_buf = dev.alloc_zeros::<u8>(actual_work_size * SCRATCHPAD_BYTES)
+                .map_err(|e| anyhow::anyhow!("scratchpad alloc: {e}"))?;
+            let result_nonce = dev.htod_copy(vec![SENTINEL])
+                .map_err(|e| anyhow::anyhow!("result_nonce alloc: {e}"))?;
+            let result_hash = dev.alloc_zeros::<u8>(32)
+                .map_err(|e| anyhow::anyhow!("result_hash alloc: {e}"))?;
+
+            // NPU weights — init with epoch 0
+            let init_epoch = 0u64;
+            let flat = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat_epoch(init_epoch);
+            let npu_w1 = dev.htod_copy(flat.w1)
+                .map_err(|e| anyhow::anyhow!("npu_w1 alloc: {e}"))?;
+            let npu_b1 = dev.htod_copy(flat.b1)
+                .map_err(|e| anyhow::anyhow!("npu_b1 alloc: {e}"))?;
+            let npu_w2 = dev.htod_copy(flat.w2)
+                .map_err(|e| anyhow::anyhow!("npu_w2 alloc: {e}"))?;
+            let npu_b2 = dev.htod_copy(flat.b2)
+                .map_err(|e| anyhow::anyhow!("npu_b2 alloc: {e}"))?;
+            let npu_scale1 = dev.htod_copy(flat.scale1)
+                .map_err(|e| anyhow::anyhow!("npu_scale1 alloc: {e}"))?;
+            let npu_scale2 = dev.htod_copy(flat.scale2)
+                .map_err(|e| anyhow::anyhow!("npu_scale2 alloc: {e}"))?;
+
+            println!(
+                "gpu_cuda_init device=\"{}\" work_size={} scratchpad_mb={}",
+                device_name,
+                actual_work_size,
+                actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024),
             );
+
+            Ok(Self {
+                dev,
+                work_size: actual_work_size,
+                device_name_cached: device_name,
+                header_buf,
+                scratchpad_buf,
+                result_nonce,
+                result_hash,
+                npu_w1,
+                npu_b1,
+                npu_w2,
+                npu_b2,
+                npu_scale1,
+                npu_scale2,
+                current_epoch: init_epoch,
+            })
         }
     }
 
     impl GpuMiner for CudaDeekshaMiner {
         fn device_name(&self) -> String {
-            "cuda-unimplemented".to_string()
+            self.device_name_cached.clone()
         }
 
         fn backend_kind(&self) -> GpuBackendKind {
             GpuBackendKind::Cuda
         }
 
-        fn mine_batch(
-            &mut self,
-            _header: MiningHeader,
-            _target: DifficultyTarget,
-            _nonce_start: u64,
-            _batch_size: u64,
-        ) -> Result<GpuBatchResult> {
-            anyhow::bail!("CUDA backend not implemented");
+        fn update_epoch(&mut self, height: u64) -> Result<()> {
+            let epoch = zion_cosmic_harmony::algorithms_npu::epoch_from_height(height);
+            if epoch == self.current_epoch {
+                return Ok(());
+            }
+            let flat = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat_epoch(epoch);
+            self.npu_w1 = self.dev.htod_copy(flat.w1)
+                .map_err(|e| anyhow::anyhow!("npu_w1 update: {e}"))?;
+            self.npu_b1 = self.dev.htod_copy(flat.b1)
+                .map_err(|e| anyhow::anyhow!("npu_b1 update: {e}"))?;
+            self.npu_w2 = self.dev.htod_copy(flat.w2)
+                .map_err(|e| anyhow::anyhow!("npu_w2 update: {e}"))?;
+            self.npu_b2 = self.dev.htod_copy(flat.b2)
+                .map_err(|e| anyhow::anyhow!("npu_b2 update: {e}"))?;
+            self.npu_scale1 = self.dev.htod_copy(flat.scale1)
+                .map_err(|e| anyhow::anyhow!("npu_scale1 update: {e}"))?;
+            self.npu_scale2 = self.dev.htod_copy(flat.scale2)
+                .map_err(|e| anyhow::anyhow!("npu_scale2 update: {e}"))?;
+            println!("gpu_cuda_npu_epoch_update epoch={} height={}", epoch, height);
+            self.current_epoch = epoch;
+            Ok(())
         }
 
-        fn benchmark(&mut self, _secs: f64) -> Result<(u64, f64, f64)> {
-            anyhow::bail!("CUDA backend not implemented");
+        fn mine_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let header_bytes = header.to_bytes();
+            self.dev.htod_sync_copy_into(&header_bytes[..], &mut self.header_buf)
+                .map_err(|e| anyhow::anyhow!("header upload: {e}"))?;
+
+            // Target: LE u32 from first 4 bytes of target
+            let target_u32 = u32::from_le_bytes([
+                target.bytes[0], target.bytes[1],
+                target.bytes[2], target.bytes[3],
+            ]);
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            let func = self.dev.get_func("deeksha", "deeksha_mine")
+                .ok_or_else(|| anyhow::anyhow!("deeksha_mine kernel not found"))?;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size) as u32;
+                let threads_per_block = 256u32;
+                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let cfg = LaunchConfig {
+                    grid_dim: (blocks, 1, 1),
+                    block_dim: (threads_per_block, 1, 1),
+                    shared_mem_bytes: 0,
+                };
+
+                // Reset sentinel
+                self.dev.htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
+                    .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
+
+                unsafe {
+                    func.clone().launch(cfg, (
+                        &self.header_buf,
+                        header_bytes.len() as u32,
+                        current_nonce,
+                        &self.scratchpad_buf,
+                        target_u32,
+                        &mut self.result_nonce,
+                        &mut self.result_hash,
+                        &self.npu_w1,
+                        &self.npu_b1,
+                        &self.npu_w2,
+                        &self.npu_b2,
+                        &self.npu_scale1,
+                        &self.npu_scale2,
+                    )).map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
+                }
+
+                // Sync and read result
+                let nonce_result = self.dev.dtoh_sync_copy(&self.result_nonce)
+                    .map_err(|e| anyhow::anyhow!("read result_nonce: {e}"))?;
+
+                if nonce_result[0] != SENTINEL {
+                    let hash_result = self.dev.dtoh_sync_copy(&self.result_hash)
+                        .map_err(|e| anyhow::anyhow!("read result_hash: {e}"))?;
+                    let mut hash = [0u8; 32];
+                    hash.copy_from_slice(&hash_result[..32]);
+                    all_solutions.push((nonce_result[0], hash));
+                    total_tested += chunk as u64;
+                    break; // Early termination on solution
+                }
+
+                total_tested += chunk as u64;
+                current_nonce = current_nonce.wrapping_add(chunk as u64);
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: total_tested,
+            })
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let header = MiningHeader {
+                version: 3,
+                previous_hash: [0xAA; 32],
+                merkle_root: [0xBB; 32],
+                timestamp: 1_762_000_200,
+                difficulty_bits: 0x1f00ffff,
+            };
+            let target = DifficultyTarget { bytes: [0; 32] };
+            let start = Instant::now();
+            let mut total_hashes = 0u64;
+            let mut nonce_start = 0u64;
+
+            while start.elapsed().as_secs_f64() < secs {
+                let result = self.mine_batch(
+                    header,
+                    target,
+                    nonce_start,
+                    self.work_size as u64,
+                )?;
+                total_hashes += result.nonces_tested;
+                nonce_start = nonce_start.wrapping_add(self.work_size as u64);
+            }
+
+            let elapsed = start.elapsed().as_secs_f64();
+            let khps = if elapsed > 0.0 {
+                total_hashes as f64 / elapsed / 1_000.0
+            } else {
+                0.0
+            };
+
+            Ok((total_hashes, elapsed, khps))
         }
     }
 }
@@ -440,15 +657,14 @@ pub mod metal_deeksha {
         scratchpad_buf: metal::Buffer,
         result_nonce_buf: metal::Buffer,
         result_hash_buf: metal::Buffer,
-        npu_w1_buf: metal::Buffer,
-        npu_b1_buf: metal::Buffer,
-        npu_w2_buf: metal::Buffer,
-        npu_b2_buf: metal::Buffer,
-        npu_scale1_buf: metal::Buffer,
-        npu_scale2_buf: metal::Buffer,
+        npu_weights_buf: metal::Buffer,
+        npu_biases_buf: metal::Buffer,
+        npu_scales_buf: metal::Buffer,
+        npu_meta_buf: metal::Buffer,
         batch_size: usize,
         threads_per_tg: usize,
         device_name_cached: String,
+        current_epoch: u64,
     }
 
     impl MetalDeekshaMiner {
@@ -474,10 +690,33 @@ pub mod metal_deeksha {
                 .map_err(|e| anyhow::anyhow!("Metal pipeline creation failed: {:?}", e))?;
 
             let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
-            let threads_per_tg = if device_name.contains("M1") { 64 } else { 128 }
-                .min(max_tpg);
+            // Memory-hard workloads (256 KiB scratchpad) benefit from smaller
+            // threadgroups to reduce L2 pressure.  Use 64 on M1 and let the
+            // GPU schedule many concurrent threadgroups across its cores.
+            // On M2+/Pro/Max larger threadgroups help hide latency.
+            let threads_per_tg = if device_name.contains("M1") {
+                64
+            } else if device_name.contains("Pro") || device_name.contains("Max") || device_name.contains("Ultra") {
+                256
+            } else {
+                128
+            }.min(max_tpg);
 
-            let batch_size = work_size.max(threads_per_tg);
+            // Auto-cap batch_size based on device memory.
+            // Each thread needs 256 KiB scratchpad.
+            // M1 (8 GB shared): ~58% optimal to avoid memory pressure.
+            // Pro/Max/Ultra (16-192 GB): can use more.
+            let recommended = device.recommended_max_working_set_size();
+            let pct = if recommended > 12_000_000_000 {
+                75  // Pro/Max/Ultra: plenty of GPU memory
+            } else {
+                58  // M1/M2 base: avoid memory pressure on shared RAM
+            };
+            let max_scratch_bytes = (recommended / 100) * pct;
+            let max_threads_by_mem = (max_scratch_bytes / 262_144) as usize;
+            let batch_size = work_size
+                .max(threads_per_tg)
+                .min(max_threads_by_mem.max(threads_per_tg));
             let opts = MTLResourceOptions::StorageModeShared;
 
             // Core buffers
@@ -492,43 +731,35 @@ pub mod metal_deeksha {
             let scratchpad_buf = device.new_buffer(scratch_bytes, opts);
             if scratchpad_buf.length() < scratch_bytes {
                 anyhow::bail!(
-                    "scratchpad allocation failed: need {} MiB, got {} bytes",
+                    "scratchpad allocation failed: need {} MiB, got {} bytes (device recommended {} MiB)",
                     scratch_bytes / (1024 * 1024),
-                    scratchpad_buf.length()
+                    scratchpad_buf.length(),
+                    recommended / (1024 * 1024),
                 );
             }
 
-            // NPU weights
-            let npu_weights = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat();
+            // NPU weights — packed variable-topology format for all epochs
+            let init_epoch = 0u64;
+            let packed = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_packed(init_epoch);
 
-            let npu_w1_buf = device.new_buffer_with_data(
-                npu_weights.w1.as_ptr() as *const _,
-                (npu_weights.w1.len()) as u64,
+            let npu_weights_buf = device.new_buffer_with_data(
+                packed.weights.as_ptr() as *const _,
+                packed.weights.len() as u64,
                 opts,
             );
-            let npu_b1_buf = device.new_buffer_with_data(
-                npu_weights.b1.as_ptr() as *const _,
-                (npu_weights.b1.len()) as u64,
+            let npu_biases_buf = device.new_buffer_with_data(
+                packed.biases.as_ptr() as *const _,
+                packed.biases.len() as u64,
                 opts,
             );
-            let npu_w2_buf = device.new_buffer_with_data(
-                npu_weights.w2.as_ptr() as *const _,
-                (npu_weights.w2.len()) as u64,
+            let npu_scales_buf = device.new_buffer_with_data(
+                packed.scales.as_ptr() as *const _,
+                (packed.scales.len() * 2) as u64,
                 opts,
             );
-            let npu_b2_buf = device.new_buffer_with_data(
-                npu_weights.b2.as_ptr() as *const _,
-                (npu_weights.b2.len()) as u64,
-                opts,
-            );
-            let npu_scale1_buf = device.new_buffer_with_data(
-                npu_weights.scale1.as_ptr() as *const _,
-                (npu_weights.scale1.len() * 2) as u64,
-                opts,
-            );
-            let npu_scale2_buf = device.new_buffer_with_data(
-                npu_weights.scale2.as_ptr() as *const _,
-                (npu_weights.scale2.len() * 2) as u64,
+            let npu_meta_buf = device.new_buffer_with_data(
+                packed.meta.as_ptr() as *const _,
+                (packed.meta.len() * 4) as u64,
                 opts,
             );
 
@@ -547,15 +778,14 @@ pub mod metal_deeksha {
                 scratchpad_buf,
                 result_nonce_buf,
                 result_hash_buf,
-                npu_w1_buf,
-                npu_b1_buf,
-                npu_w2_buf,
-                npu_b2_buf,
-                npu_scale1_buf,
-                npu_scale2_buf,
+                npu_weights_buf,
+                npu_biases_buf,
+                npu_scales_buf,
+                npu_meta_buf,
                 batch_size,
                 threads_per_tg,
                 device_name_cached: device_name,
+                current_epoch: init_epoch,
             })
         }
 
@@ -581,12 +811,10 @@ pub mod metal_deeksha {
             enc.set_buffer(3, Some(&self.scratchpad_buf), 0);
             enc.set_buffer(4, Some(&self.result_nonce_buf), 0);
             enc.set_buffer(5, Some(&self.result_hash_buf), 0);
-            enc.set_buffer(6, Some(&self.npu_w1_buf), 0);
-            enc.set_buffer(7, Some(&self.npu_b1_buf), 0);
-            enc.set_buffer(8, Some(&self.npu_w2_buf), 0);
-            enc.set_buffer(9, Some(&self.npu_b2_buf), 0);
-            enc.set_buffer(10, Some(&self.npu_scale1_buf), 0);
-            enc.set_buffer(11, Some(&self.npu_scale2_buf), 0);
+            enc.set_buffer(6, Some(&self.npu_weights_buf), 0);
+            enc.set_buffer(7, Some(&self.npu_biases_buf), 0);
+            enc.set_buffer(8, Some(&self.npu_scales_buf), 0);
+            enc.set_buffer(9, Some(&self.npu_meta_buf), 0);
 
             let grid = MTLSize::new(count as u64, 1, 1);
             let tg = MTLSize::new(self.threads_per_tg as u64, 1, 1);
@@ -624,6 +852,31 @@ pub mod metal_deeksha {
             GpuBackendKind::Metal
         }
 
+        fn update_epoch(&mut self, height: u64) -> Result<()> {
+            let epoch = zion_cosmic_harmony::algorithms_npu::epoch_from_height(height);
+            if epoch == self.current_epoch {
+                return Ok(());
+            }
+            let topology = zion_cosmic_harmony::algorithms_npu::MlpTopology::for_epoch(epoch);
+            let packed = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_packed(epoch);
+            let opts = MTLResourceOptions::StorageModeShared;
+            self.npu_weights_buf = self.device.new_buffer_with_data(
+                packed.weights.as_ptr() as *const _, packed.weights.len() as u64, opts,
+            );
+            self.npu_biases_buf = self.device.new_buffer_with_data(
+                packed.biases.as_ptr() as *const _, packed.biases.len() as u64, opts,
+            );
+            self.npu_scales_buf = self.device.new_buffer_with_data(
+                packed.scales.as_ptr() as *const _, (packed.scales.len() * 2) as u64, opts,
+            );
+            self.npu_meta_buf = self.device.new_buffer_with_data(
+                packed.meta.as_ptr() as *const _, (packed.meta.len() * 4) as u64, opts,
+            );
+            println!("gpu_npu_epoch_update epoch={} height={} topology={:?}", epoch, height, topology);
+            self.current_epoch = epoch;
+            Ok(())
+        }
+
         fn mine_batch(
             &mut self,
             header: MiningHeader,
@@ -640,7 +893,7 @@ pub mod metal_deeksha {
             }
 
             // Write params: [header_len, nonce_count, target_u32]
-            let target_u32 = u32::from_le_bytes([
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0], target.bytes[1], target.bytes[2], target.bytes[3],
             ]);
 
@@ -664,6 +917,8 @@ pub mod metal_deeksha {
 
                 if let Some((nonce, hash)) = self.read_result() {
                     all_solutions.push((nonce, hash));
+                    total_tested += (nonce.saturating_sub(current_nonce) + 1).min(chunk as u64);
+                    break; // Early termination: submit solution immediately
                 }
 
                 total_tested += chunk as u64;
@@ -685,7 +940,7 @@ pub mod metal_deeksha {
                 timestamp: 1_762_000_200,
                 difficulty_bits: 0x1f00ffff,
             };
-            let target = DifficultyTarget { bytes: [0; 32] };
+            let _target = DifficultyTarget { bytes: [0; 32] };
 
             // Write header once
             let header_bytes = header.to_bytes();
