@@ -3,7 +3,7 @@
 # ZION AI Native — Vast.ai Fine-tuning Deploy Script
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# One-click deployment: najde A100, uploadne dataset, spustí trénink, stáhne GGUF.
+# One-click deployment: najde A100/RTX 5090, uploadne dataset, spustí trénink, stáhne GGUF.
 #
 # Prerekvizity:
 #   pip install vastai
@@ -15,7 +15,7 @@
 #   ./vast_deploy.sh --find-only  # jen najdi GPU, nespouštěj
 #   ./vast_deploy.sh --resume ID  # připoj se k existující instanci#   ./vast_deploy.sh --download ID # stáhni výsledky
 #   ./vast_deploy.sh --destroy ID  # zruš instanci
-#   ./vast_deploy.sh --gpu 5090   # preferuj RTX 5090
+#   ./vast_deploy.sh --gpu RTX_5090   # preferuj RTX 5090
 #   ./vast_deploy.sh --gpu A100   # preferuj A100 (default)
 #   ./vast_deploy.sh --epochs 5   # více epoch# ═══════════════════════════════════════════════════════════════════════════════
 
@@ -28,7 +28,7 @@ HF_TOKEN="${HF_TOKEN:-}"
 NVIDIA_API_KEY="${NVIDIA_API_KEY:-}"
 
 # GPU požadavky
-GPU_NAME="A100"           # A100 PCIe 40GB  (~$0.80-1.20/hr na Vast)
+GPU_NAME="A100"           # A100 nebo RTX_5090 dle --gpu
 MIN_GPU_RAM=24            # GB — sníženo pro víc možností
 MIN_DISK=80               # GB — model + dataset + output
 MAX_PRICE=3.00            # $/hr — budget limit
@@ -224,8 +224,7 @@ echo "[4/5] Spouštím QLoRA fine-tuning..."
 python finetune_lora.py \
     --dataset data/zion_train.jsonl \
     --output  outputs/zion-llama-lora \
-    --epochs  3 \
-    --batch-size 4
+    --epochs  "${ZION_EPOCHS:-5}"
 
 # 5. Merge + GGUF export
 echo "[5/5] Merge LoRA + GGUF export..."
@@ -234,6 +233,7 @@ if [[ ! -d /opt/llama.cpp ]]; then
     git clone --depth 1 https://github.com/ggerganov/llama.cpp /opt/llama.cpp
     cd /opt/llama.cpp && pip install -q -r requirements.txt && cd /workspace
 fi
+pip install -q sentencepiece
 
 python merge_export.py \
     --adapter outputs/zion-llama-lora \
@@ -320,7 +320,7 @@ Použití:
   $0 --download <ID>      # Stáhni výsledky z instance
   $0 --destroy <ID>       # Zruš instanci
   $0 --status <ID>        # Stav instance + logy
-  $0 --gpu <NAME>         # GPU preference (A100, 5090, 4090, H100)
+    $0 --gpu <NAME>         # GPU preference (A100, RTX_5090, RTX_4090, H100)
   $0 --epochs <N>         # Počet epoch (default: 5)
 
 Env:

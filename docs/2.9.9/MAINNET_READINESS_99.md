@@ -1,6 +1,6 @@
 # ZION v2.9.9 — MainNet Readiness 99%
 
-> Datum: 2026-03-12  
+> Datum: 2026-03-29  
 > Závisí na: `MIGRATION_CHECKLIST.md`, `V3_MIGRATION_STRATEGY.md`, interní audit  
 > Strategie: Toto repo = archiv, v3.0 = nové čisté repo pro mainnet genesis
 
@@ -16,6 +16,7 @@
 | Desktop Agent JS | `node --check main.js` + `renderer.js` | **PASS** | 2026-03-12 |
 | Desktop Agent Python | `py_compile deeksha_fallback.py` + `v42_gpu.py` | **PASS** | 2026-03-12 |
 | GPU Metal benchmark | Apple M1, dispatch 8192 | **29.18 kH/s** | 2026-03-12 |
+| GPU CUDA benchmark | RTX 5090, release, dispatch 32768 | **30.37 kH/s** | 2026-03-29 |
 | GPU Kernel SHA-256 | OpenCL 4/4, CUDA 2/2, Metal 3/3 | **SYNC** | 2026-03-12 |
 | Kanonický test vektor | `6339f2fb178fe295...` | **bit-perfect** | 2026-03-12 |
 | Interní audit | `docs/2.9.7/INTERNAL_AUDIT.md` | **102/102 CLOSED** | 2026-03-05 |
@@ -60,7 +61,7 @@
 | Item | Stav | Důvod |
 |------|------|-------|
 | Live GPU benchmark AMD OpenCL | ⏳ | Vyžaduje AMD GPU hardware |
-| Live GPU benchmark NVIDIA CUDA | ⏳ | Vyžaduje NVIDIA GPU hardware |
+| Live GPU benchmark NVIDIA CUDA | ✅ | RTX 5090 release benchmark dokončen 2026-03-29 |
 | CPU↔GPU parity na live poolu | ⏳ | Vyžaduje --gpu runtime proti live chain |
 | Electron desktop mining E2E flow | ⏳ | Manuální GUI test |
 | Live pool smoke test (accepted shares) | ⏳ | Manuální --gpu runtime |
@@ -103,7 +104,7 @@ Celkové skóre: ~95% automated-verifiable ready
 ## Další kroky
 
 1. **Genesis ceremony** — audit clearance existuje, execution je na řadě
-2. **Manuální GPU smoke test** — 1× live pool test s `--gpu` flagem na M1
+2. **Manuální GPU smoke test** — 1× live pool test s `--gpu` flagem proti reálnému poolu (M1 nebo NVIDIA)
 3. **Tag `v2.9.9-archive`** — po smoke testu a ceremony
 4. **Inicializace v3.0 repo** — čisté `git init`, cherry-pick auditovaných modulů
 5. **Migrace do v3.0** — dle `V3_MIGRATION_STRATEGY.md` (fáze 2)
