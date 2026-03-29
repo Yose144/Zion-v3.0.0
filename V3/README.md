@@ -7,6 +7,8 @@ reuse audited source material during migration, while remaining isolated from th
 
 Active planning for `V3/` now lives in `V3/ROADMAP.md`.
 
+Comprehensive mainnet completion plan (L1 finish + L2/L3 migration): `V3/PLAN.md`.
+
 Production upgrade plan (miner hardening, monitoring, infra, public release): `V3/docs/UPGRADE_PLAN.md`.
 Revenue system detail: `V3/docs/REVENUE_SYSTEM.md`.
 Native libs gap audit: `V3/docs/NATIVE_LIBS_GAP_V3.md`.
@@ -17,6 +19,12 @@ Pure-code scope for the bootstrap:
 - `L1/core` — blockchain, consensus, validation, node wire/runtime scaffolding
 - `L1/pool` — stratum, template flow, payouts
 - `L1/miner` — miner runtime and GPU dispatch
+- `L2/bridge` — wZION bridge relay daemon (L1↔EVM, Base Sepolia), decimal-fixed for V3 12-decimal flowers
+- `L2/dao` — DAO governance daemon (proposal lifecycle, voting, treasury, humanitarian tithe), 12-decimal flowers
+- `L2/atomic-swap` — HTLC cross-chain atomic swaps, 12-decimal flowers
+- `L3/ncl` — Neural Consciousness Layer — decentralized AI compute marketplace
+- `L3/warp` — Universal cross-chain bridge (7 chain adapters: EVM, Bitcoin, Solana, Tron, Stellar, Cardano, Cosmos), 12-decimal flowers
+- `L3/ai-native` — Autonomous AI agent framework (orchestrator, consciousness engine, pool optimizer, warp agent)
 - `DesktopApp/` — clean operator desktop shell for wallets and future runtime control, added explicitly by request and kept separate from legacy desktop-agent orchestration
 
 Out of scope for the bootstrap:
@@ -29,6 +37,8 @@ Out of scope for the bootstrap:
 ## Current Status
 
 - workspace version: `3.0.0`
+- **V3 mainnet fee-split rollout verified live (2026-03-28):** core now enforces deterministic on-chain reward split `89/5/5/1` to miner, humanitarian, issobella, and pool-fee wallets; first explicitly verified split-enabled block was height `465`, with subsequent confirmation on audited nodes at heights `471` and `472`
+- **Cross-node rollout audit complete (2026-03-28):** Prague, USA, and Singapore stayed synchronized after deploy; root cause of the first failed activation was a stale server-side `docker/docker-compose.v3-mainnet.yml` missing fee-wallet env vars in the `core` service, not a code defect in `V3/L1/core`
 - canonical Ekam Deeksha consensus crate migrated into `L1/cosmic-harmony`
 - `L1/core` now provides block headers, mining jobs, target validation, revenue snapshots, node config defaults, active block-template state, template-aware RPC submit flow, and a basic TCP `node` binary
 - `L1/core` now also persists chain snapshots to disk, restores accepted-block state on restart, and exposes accepted-block indexes by height and template ID inside the node runtime
@@ -76,6 +86,7 @@ Out of scope for the bootstrap:
 - **Sprint 5 pre-launch (B4+F1+G1-G2):** Pool test coverage expanded to 73 tests (wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output validation); security checklist completed (`V3/docs/SECURITY_CHECKLIST.md`); public mining guide (`V3/docs/MINING_GUIDE.md`) and node operator guide (`V3/docs/NODE_OPERATOR_GUIDE.md`) published
 - **Sprint 6 hardening (F2+F3+C5):** Production unwrap() audit (zero unsafe unwrap in hot paths), cargo-fuzz harnesses for pool (`fuzz_decode_message`, `fuzz_parse_hex`) and core (`fuzz_merkle_root`, `fuzz_validate_header`), Phase 23/24/25 status sync (monitoring ✅, security ✅ except BFG, infra ✅ except seed expansion), D2 block explorer marked complete (live at zionterranova.com/explorer)
 - **Sprint 7 post-launch (items 3+5+6):** Native FFI production hardening (`runtime_self_test()`, `AlgoTestResult`, `all_algorithms_healthy()` — validates determinism + non-zero for each compiled algorithm, 4 tests); difficulty auto-tuning (`DifficultyStats`, `difficulty_stats()`, `predict_difficulty()` — runtime hashrate estimation and N-block forward projection, 10 new tests, 31 total); CHv4.2 Merkabah Dual-Spin algorithm (`merkabah_forward_passes_ekam()`, `merkabah_dual_spin_ekam()`, `memory_hard_transform_ekam_v3()`, `cosmic_harmony_ekam_deeksha_v3()`, `ekam_v3_find_nonce()` — full forward+backward HIC pipeline, fork-gated at `CHV42_DUAL_SPIN_FORK_HEIGHT=u64::MAX`, 14 new cosmic-harmony tests, 95 total). **635 workspace tests pass.**
+- **Sprint 8 stabilization (2026-03-26/27):** Miner test fix (`profile_does_not_override_explicit_env` — env var race condition between parallel tests, tolerant assertion). Comprehensive mainnet plan created (`V3/PLAN.md` — L1 finish, L2/L3 migration strategy, decimal audit, Go/No-Go checklist). **Complete L2/L3 migration:** L2/bridge migrated with critical decimal fix (6→12 decimals, `amount_atomic`→`amount_flowers`, `FLOWERS_PER_ZION=1e12`); L2/dao migrated with u128 treasury amounts and 12-decimal flowers; L2/atomic-swap migrated with `amount_flowers`/`min_lock_flowers` naming; L3/ncl migrated (`reward_atomic`→`reward_flowers`); L3/warp migrated (7 chain adapters, all fee/conversion values updated to 12 decimals); L3/ai-native migrated (agent framework, consciousness engine, pool optimizer). **~1,300 workspace tests pass, 0 failures.**
 - `L1/pool` now provides clean share validation plus a session-oriented JSON line wire protocol for hello/welcome/job/submit/result/stale/cancel/bye
 - `L1/pool` now also ships a shared-state TCP server binary for persistent multi-client remote mining sessions
 - `L1/pool` now consumes node templates over RPC when `ZION_NODE_RPC_ADDR` is configured and only finalizes accepted shares after node-side `submit_candidate` confirmation
@@ -90,7 +101,14 @@ Out of scope for the bootstrap:
 - `L1/native-libs` scaffold now exists for staged migration of native acceleration libraries (randomx, kawpow, autolykos) with platform build scripts and ABI header placeholders
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`
-- whole V3 workspace currently builds and tests green (638 tests: 406 core, 95 cosmic-harmony, 59 miner, 44 pool, 29 miner-integration, 4 native-ffi, 1 doctest)
+- whole V3 workspace currently builds and tests green (~1,300 tests: 432 core, 95 cosmic-harmony, 59 miner, 29 pool, 4 native-ffi, 157 bridge, 65 dao, 15 atomic-swap, 43 ncl, 252 warp, 89 ai-native, plus doctests)
+
+Operational references:
+
+- rollout report: `../docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`
+- go/no-go report: `../docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_GO_NO_GO.md`
+- post-deploy checklist: `../docs/mainnet/V3_ROLLOUT_VERIFICATION_CHECKLIST.md`
+- shell-ready deploy runbook: `docs/MAINNET_DEPLOY_RUNBOOK.md`
 
 ## Workspace Layout
 
@@ -98,10 +116,19 @@ Out of scope for the bootstrap:
 V3/
   DesktopApp/
   L1/
-    cosmic-harmony/
-    core/
-    pool/
-    miner/
+    cosmic-harmony/       # Ekam Deeksha PoW, 95 tests
+    core/                 # blockchain, consensus, P2P, RPC, 432 tests
+    pool/                 # stratum, template flow, 29 tests
+    miner/                # CPU/GPU mining, 59 tests
+    native-ffi/           # native acceleration scaffold, 4 tests
+  L2/
+    bridge/               # wZION relay daemon (Base Sepolia), 157 tests
+    dao/                  # DAO governance (proposals, voting, treasury), 65 tests
+    atomic-swap/          # HTLC cross-chain swaps, 15 tests
+  L3/
+    ncl/                  # Neural Consciousness Layer, 43 tests
+    warp/                 # Universal cross-chain bridge (7 adapters), 252 tests
+    ai-native/            # AI agent framework, 89 tests
   docker/
     Dockerfile.node
     Dockerfile.pool
@@ -137,6 +164,7 @@ The `zion-miner` binary already supports basic configuration via environment var
 - `ZION_DCR_ONLY`
 - `ZION_DCR_RUN_SECS`
 - `ZION_GPU_WORK_SIZE`
+- `ZION_CUDA_WORK_CAP` — CUDA-specific dispatch cap (default `32768`, validated on RTX 5090)
 - `ZION_GPU_AUTOTUNE`
 - `ZION_GPU_AUTOTUNE_SECS`
 - `ZION_REMOTE_TTL_GUARD_PCT` — skip submit if scan took ≥N% of pool-advertised job TTL (default: 90, range: 10–100). Prevents `StaleJob` rejects when the scan runs over the TTL window.
@@ -230,6 +258,8 @@ ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-main
 - Node P2P: `157.180.41.213:8334`
 - Node RPC: host-local only on `127.0.0.1:8332` via SSH tunnel or local shell on the server
 - Pool stratum: `157.180.41.213:8444`
+
+Current V3 mainnet operational set also includes Prague, USA, and Singapore nodes audited during the 2026-03-28 fee-split rollout.
 
 ## Wire Protocol
 

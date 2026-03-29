@@ -102,9 +102,14 @@ Individual env vars still override profile defaults.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ZION_GPU_WORK_SIZE` | `1048576` | GPU work-items per dispatch |
+| `ZION_CUDA_WORK_CAP` | `32768` | Hard cap for CUDA work size; validated sweet spot for RTX 5090 release benchmark |
 | `ZION_GPU_AUTOTUNE` | *(off)* | Enable GPU workload auto-tuning |
 | `ZION_GPU_AUTOTUNE_SECS` | *(gpu-specific)* | Autotune interval in seconds |
 | `ZION_BENCH_SECS` | `5.0` | Benchmark duration (`--bench` / `--gpu-bench`) |
+
+Current validated NVIDIA result:
+- RTX 5090, release build, canonical CUDA backend: `30.37 kH/s` at effective `work_size=32768`
+- Nearby sweep: `24576 -> 25.00 kH/s`, `40960 -> 30.04 kH/s`, `49152 -> 21.06 kH/s`
 
 ### DCR Dual-Mining
 

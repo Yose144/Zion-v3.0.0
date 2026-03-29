@@ -119,7 +119,7 @@ Než se repo označí jako archiv, musí splnit:
 - [ ] **GPU kernel sync audit** — 4 kopie Ekam kernelů = identické SHA-256
 - [ ] **97/97 cosmic-harmony testů PASS** (aktuálně ✅)
 - [ ] **11/11 pool E2E testů PASS**
-- [ ] **GPU benchmark ≥ 25 kH/s** na Apple M1 Metal (aktuálně ✅ 29.18 kH/s)
+- [ ] **GPU benchmark ≥ 25 kH/s** na hlavním GPU backendu (Apple M1 Metal ✅ 29.18 kH/s, NVIDIA RTX 5090 CUDA ✅ 30.37 kH/s)
 - [ ] **Kanonický test vektor bit-perfect** na CPU + GPU
 - [ ] **Internal Audit** — alespoň sekce A (consensus), B (algoritmus), G (testy) uzavřeny
 - [ ] **README.md** aktualizován s archivním statusem
