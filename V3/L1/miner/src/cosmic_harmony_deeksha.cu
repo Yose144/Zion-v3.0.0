@@ -16,7 +16,14 @@
  * Version: 2.9.8 — Canonical Deeksha CUDA GPU
  */
 
-#include <stdint.h>
+typedef unsigned char      uint8_t;
+typedef signed char        int8_t;
+typedef unsigned short     uint16_t;
+typedef short              int16_t;
+typedef unsigned int       uint32_t;
+typedef int                int32_t;
+typedef unsigned long long uint64_t;
+typedef long long          int64_t;
 
 /* ========================================================================== */
 /* Constants                                                                   */
@@ -983,8 +990,7 @@ extern "C" __global__ void deeksha_mine(
     const int8_t   *__restrict__ npu_b1,          /* MLP b1 [128]               */
     const int8_t   *__restrict__ npu_w2,          /* MLP W2 [64×128]            */
     const int8_t   *__restrict__ npu_b2,          /* MLP b2 [64]                */
-    const int16_t  *__restrict__ npu_scale1,      /* LayerNorm scale1 [128]     */
-    const int16_t  *__restrict__ npu_scale2       /* LayerNorm scale2 [64]      */
+    const int16_t  *__restrict__ npu_scales       /* LayerNorm scales [192]     */
 )
 {
     uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1018,6 +1024,8 @@ extern "C" __global__ void deeksha_mine(
 
     /* Step 5: NPU Mix (64 B → 64 B) */
     uint8_t s5[64];
+    const int16_t *npu_scale1 = npu_scales;
+    const int16_t *npu_scale2 = npu_scales + 128;
     npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
 
     /* Step 6: Cosmic Fusion (64 B → 32 B) */
@@ -1059,8 +1067,7 @@ extern "C" __global__ void ekam_deeksha_mine(
     const int8_t   *__restrict__ npu_b1,
     const int8_t   *__restrict__ npu_w2,
     const int8_t   *__restrict__ npu_b2,
-    const int16_t  *__restrict__ npu_scale1,
-    const int16_t  *__restrict__ npu_scale2
+    const int16_t  *__restrict__ npu_scales
 )
 {
     uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1093,6 +1100,8 @@ extern "C" __global__ void ekam_deeksha_mine(
     ekam_memory_hard_transform(s3, pad, s4);
 
     uint8_t s5[64];
+    const int16_t *npu_scale1 = npu_scales;
+    const int16_t *npu_scale2 = npu_scales + 128;
     npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
 
     uint8_t hash[32];
@@ -1128,8 +1137,7 @@ extern "C" __global__ void ekam_deeksha_debug(
     const int8_t   *__restrict__ npu_b1,
     const int8_t   *__restrict__ npu_w2,
     const int8_t   *__restrict__ npu_b2,
-    const int16_t  *__restrict__ npu_scale1,
-    const int16_t  *__restrict__ npu_scale2
+    const int16_t  *__restrict__ npu_scales
 )
 {
     if (blockIdx.x * blockDim.x + threadIdx.x != 0) return;
@@ -1160,6 +1168,8 @@ extern "C" __global__ void ekam_deeksha_debug(
     ekam_memory_hard_transform(s3, pad, s4);
 
     uint8_t s5[64];
+    const int16_t *npu_scale1 = npu_scales;
+    const int16_t *npu_scale2 = npu_scales + 128;
     npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
 
     uint8_t hash[32];
