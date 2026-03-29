@@ -11,6 +11,7 @@ accelerate>=0.28.0           # Multi-GPU, mixed precision
 peft>=0.10.0                 # LoRA, QLoRA adaptery
 trl>=0.8.6                   # SFTTrainer, RLHF utilities
 bitsandbytes>=0.43.0         # 4-bit / 8-bit quantization (CUDA only)
+sentencepiece>=0.2.0         # GGUF tokenizer conversion přes llama.cpp
 
 # ─── Dataset collection ───────────────────────────────────────
 requests>=2.31.0             # NVIDIA NIM API

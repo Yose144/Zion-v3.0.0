@@ -1,6 +1,6 @@
-# ZION Fine-tuning — A100 Průvodce
+# ZION Fine-tuning — Vast.ai / A100 / RTX 5090 Průvodce
 
-Kompletní postup: od nájmu A100 GPU → fine-tuned ZION expert model → Ollama lokálně.
+Kompletní postup: od generování datasetu přes Vast.ai nebo A100/RTX 5090 trénink až po GGUF model pro Ollama lokálně.
 
 ---
 
@@ -8,12 +8,20 @@ Kompletní postup: od nájmu A100 GPU → fine-tuned ZION expert model → Ollam
 
 | Fáze | Nástroj | Cena | Výsledek |
 |------|---------|------|----------|
-| Dataset | NVIDIA NIM free API | **$0** | `data/zion_train.jsonl` (~500 párů) |
-| Fine-tuning | Lambda Labs A100 | **~$0.35–2** | LoRA adaptér 400 MB |
-| Merge + GGUF | Stejný A100 | **~$0.10** | `zion-expert-q5.gguf` ~5 GB |
+| Dataset | NVIDIA NIM free API | **$0** | `data/zion_train.jsonl` (799 párů v ověřeném běhu 2026-03-29) |
+| Fine-tuning | Vast.ai RTX 5090 / A100 | **~$0.30–2** | LoRA adaptér ~321 MB |
+| Merge + GGUF | Stejný GPU host | **~$0.10–0.30** | `zion-merged-q5_k_m.gguf` ~5.7 GB |
 | Inference | Ollama na vlastním stroji | **$0** | `ollama run zion-expert` |
 
-**Celkové náklady: $0.50–3 za celý pipeline.**
+**Celkové náklady: ~$0.40–3 za celý pipeline.**
+
+### Ověřený běh 2026-03-29
+
+- Dataset: `799` párů (`34` seed + `765` generovaných)
+- GPU: Vast.ai `RTX 5090 32GB`
+- Režim: QLoRA, `5` epoch, auto tier `batch=2`, `grad_accum=16`, `packing=off`
+- Výsledek: `eval_loss=0.6549`, `perplexity=1.93`, `eval_mean_token_accuracy≈0.864`
+- GGUF export: `zion-merged-q5_k_m.gguf` (~5.7 GB)
 
 ---
 
@@ -64,20 +72,40 @@ export NVIDIA_API_KEY=nvapi-...
 # Generuj dataset (seed páry + NIM generování)
 python scripts/finetune/collect_dataset.py \
     --output scripts/finetune/data/zion_train.jsonl \
-    --max-docs 60
+    --max-docs 300 \
+    --max-chunks 4
 
 # Zkontroluj výsledek:
 wc -l scripts/finetune/data/zion_train.jsonl     # Počet párů
 head -c 500 scripts/finetune/data/zion_train.jsonl | python -m json.tool
 ```
 
-**Výstup:** `data/zion_train.jsonl` s ~100–200 Q&A páry (seed + vygenerované).
+**Výstup:** `data/zion_train.jsonl` s desítkami až stovkami párů.
+
+Ověřený robustní běh z 2026-03-29:
+- `300` souborů
+- `765` vygenerovaných párů
+- `34` seed párů
+- `799` tréninkových párů celkem
 
 ---
 
-## 4. Krok 2: Nájem A100 na Lambda Labs
+## 4. Krok 2: Nájem GPU hosta
 
-### Lambda Labs (doporučeno — nejlevnější A100)
+### Vast.ai (ověřeno na RTX 5090)
+
+Nejrychlejší cesta je použít automatizovaný script:
+
+```bash
+cd /Users/yeshuae/Projects/2.9.6/scripts/finetune
+
+# Najdi nebo spusť RTX 5090
+./vast_deploy.sh --gpu RTX_5090 --epochs 5
+```
+
+Ruční workflow je pořád možné, ale Vast.ai už byl ověřený včetně merge i GGUF exportu.
+
+### Lambda Labs (stále vhodné pro A100)
 
 1. Jdi na [lambdalabs.com](https://lambdalabs.com) → Cloud → Instances
 2. Vyber **A100 40GB PCIe** — $1.29/hr (**nejlevnější A100**)
@@ -89,6 +117,7 @@ head -c 500 scripts/finetune/data/zion_train.jsonl | python -m json.tool
 
 | Platforma | GPU | Cena/hr | Poznámka |
 |-----------|-----|---------|---------|
+| **Vast.ai** | RTX 5090 32GB | ~$0.49–0.62 | Ověřeno 2026-03-29, nejlepší poměr cena/výkon |
 | **Lambda Labs** | A100 40GB | $1.29 | Nejlevnější, spolehlivé |
 | **RunPod** | A100 40GB | $1.44 | Spot instances levnější |
 | **Vast.ai** | A100 40GB | $0.80–1.20 | Nejlevnější, méně spolehlivé |
@@ -96,11 +125,11 @@ head -c 500 scripts/finetune/data/zion_train.jsonl | python -m json.tool
 
 ---
 
-## 5. Krok 3: Setup na A100 (jednou po spuštění)
+## 5. Krok 3: Setup na GPU hostu (jednou po spuštění)
 
 ```bash
-# SSH na Lambda Labs instanci
-ssh ubuntu@{ip-adresa}
+# SSH na Vast.ai / Lambda instanci
+ssh root@{ip-adresa}
 
 # Klonuj ZION repo
 git clone https://github.com/Yose144/2.9.6.git zion
@@ -109,16 +138,15 @@ cd zion
 # Nainstaluj Python závislosti
 pip install -r scripts/finetune/requirements.txt
 
-# Flash Attention 2 (2-3× rychlejší trénink na A100)
+# Flash Attention 2 (volitelné)
 pip install flash-attn --no-build-isolation
 
-# HuggingFace přihlášení (pro Llama-3 gated model)
-huggingface-cli login
-#  → Vlož HF token z huggingface.co/settings/tokens
-#  → Akceptuj Llama-3 license: huggingface.co/meta-llama/Meta-Llama-3.1-8B-Instruct
+# HuggingFace přihlášení je volitelné.
+# Aktuální base model `unsloth/Meta-Llama-3.1-8B-Instruct` je použitelný i bez loginu,
+# ale s tokenem dostaneš lepší rate limit.
 
 # Zkopíruj dataset z Macu
-scp -r scripts/finetune/data ubuntu@{ip}:~/zion/scripts/finetune/
+scp -r scripts/finetune/data user@{ip}:~/zion/scripts/finetune/
 ```
 
 ---
@@ -126,7 +154,7 @@ scp -r scripts/finetune/data ubuntu@{ip}:~/zion/scripts/finetune/
 ## 6. Krok 4: Trénink QLoRA
 
 ```bash
-# Na A100 instanci:
+# Na GPU instanci:
 cd ~/zion
 
 # Dry run — zkontroluj dataset + config (bez GPU)
@@ -134,12 +162,11 @@ python scripts/finetune/finetune_lora.py \
     --dataset scripts/finetune/data/zion_train.jsonl \
     --dry-run
 
-# Spusť trénink (3 epochy, batch size 4)
+# Spusť trénink (auto-detect batch podle VRAM)
 python scripts/finetune/finetune_lora.py \
     --dataset scripts/finetune/data/zion_train.jsonl \
     --output  scripts/finetune/outputs/zion-llama-lora \
-    --epochs  3 \
-    --batch-size 4
+    --epochs  5
 
 # Průběh tréninku:
 # [10/150] loss=1.842, lr=0.0002
@@ -148,12 +175,16 @@ python scripts/finetune/finetune_lora.py \
 # Training complete! Avg loss: 0.456
 ```
 
+Aktuálně ověřené auto-tier chování:
+- `RTX 5090 32GB` → `batch=2`, `grad_accum=16`, `packing=off`
+- `A100 40GB` → vyšší batch tier dle VRAM auto-detectu
+
 **Typické časy:**
-| Velikost datasetu | Epochy | A100 40GB | Cena |
-|------------------|--------|-----------|------|
-| 100 párů | 3 | ~10 min | ~$0.22 |
-| 300 párů | 3 | ~25 min | ~$0.54 |
-| 500 párů | 5 | ~60 min | ~$1.29 |
+| Velikost datasetu | Epochy | GPU | Čas | Poznámka |
+|------------------|--------|-----|-----|----------|
+| 100 párů | 3 | A100 40GB | ~10 min | malý sanity run |
+| 300 párů | 3 | RTX 5090 32GB | ~8–12 min | robustnější smoke test |
+| 799 párů | 5 | RTX 5090 32GB | ~11.5 min | ověřeno 2026-03-29 |
 
 ---
 
@@ -164,7 +195,7 @@ python scripts/finetune/finetune_lora.py \
 git clone https://github.com/ggerganov/llama.cpp /opt/llama.cpp
 cd /opt/llama.cpp
 cmake -B build -DLLAMA_CUDA=ON && cmake --build build -j$(nproc)
-pip install -r /opt/llama.cpp/requirements/convert_legacy_llama.txt
+pip install sentencepiece
 
 # Merge LoRA + konvertuj do GGUF Q5_K_M
 cd ~/zion
@@ -176,8 +207,8 @@ python scripts/finetune/merge_export.py \
     --llamacpp /opt/llama.cpp
 
 # Výsledek:
-#   outputs/zion-llama-merged-q5_k_m.gguf   ~5.5 GB
-#   outputs/Modelfile.zion
+#   outputs/zion-llama-merged-q5_k_m.gguf   ~5.7 GB
+#   outputs/zion-llama-merged/Modelfile.zion
 ```
 
 ---
@@ -186,10 +217,10 @@ python scripts/finetune/merge_export.py \
 
 ```bash
 # Z Macu:
-scp ubuntu@{ip}:~/zion/scripts/finetune/outputs/zion-llama-merged-q5_k_m.gguf \
+scp user@{ip}:~/zion/scripts/finetune/outputs/zion-llama-merged-q5_k_m.gguf \
     ~/models/zion-expert-q5.gguf
 
-scp ubuntu@{ip}:~/zion/scripts/finetune/outputs/Modelfile.zion \
+scp user@{ip}:~/zion/scripts/finetune/outputs/zion-llama-merged/Modelfile.zion \
     ~/models/Modelfile.zion
 
 # Uprav cestu v Modelfile (absolutní cesta na Macu):

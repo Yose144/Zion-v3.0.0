@@ -110,6 +110,7 @@
 | Komponenta | Stav |
 |-----------|------|
 | GPU kernel (Ekam Deeksha 256 KiB scratchpad) | ✅ +74% vs baseline (5.97 → 10.38 kH/s) |
+| V3 CUDA benchmark (RTX 5090, release, ws=32768) | ✅ 30.37 kH/s |
 | VRAM-based auto-tuning batch size | ✅ Implementováno |
 | Dual mining (ZION + GPU coin) | ✅ Funguje |
 | Auto-tuner class (IPC, event listener) | ✅ Implementováno |
