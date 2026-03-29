@@ -1,8 +1,10 @@
 # V3 L2 & L3 Mainnet Integration Plan
 
-Status: 2026-03-22 — Draft v2  
+Status: 2026-03-29 — Draft v3  
 Depends on: V3 L1 Phase 8 (mainnet launch readiness)  
 Source material: `docs/L2_WZION_BRIDGE.md`, `docs/WARP_ARCHITECTURE.md`, `docs/L2_DEFI_PLAN.md`, `docs/L1-L4_ROADMAP.md`, `L2/bridge/src/types.rs`, `L3/warp/src/types.rs`, `L2/dao/`, `L2/atomic-swap/`, `L2/contracts/sol/`, `L3/ai-native/`, `L3/ncl/`
+
+Current production tracker: `V3/docs/L2_MAINNET_PRODUCTION_CHECKLIST.md`
 
 ---
 
@@ -60,6 +62,22 @@ Locking 1 ZION (= 1e12 flowers) would be multiplied by 1e12 → 1e24 wei → **1
 
 ## 1. L2 — wZION Bridge for Mainnet
 
+### 1.0 Current Production Readiness Reality
+
+As of 2026-03-29, V3/L2 bridge is **migrated but not production-ready**.
+
+The key blockers are now integration blockers, not migration blockers:
+
+- V3 core does not yet expose bridge-specific RPC methods for lock scanning, vault audit, or unlock submission.
+- `V3/L2/bridge` still consumes legacy-style HTTP endpoints (`/api/block/height/:height`, `/api/address/:address/utxos`, `/api/bridge/unlock`) instead of the live V3 raw TCP JSON-RPC surface.
+- Base mainnet contracts are still intentionally unset in the readiness tests.
+- production bridge config files are not yet checked in under V3.
+
+That means the correct status is:
+
+- bridge crate migration: **done**
+- bridge production launch: **not yet go**
+
 ### 1.1 Architecture (from root testnet, adapted for V3)
 
 ```
@@ -98,7 +116,7 @@ Locking 1 ZION (= 1e12 flowers) would be multiplied by 1e12 → 1e24 wei → **1
 ### 1.2 Lock/Mint Flow (L1 → EVM)
 
 1. User sends ZION TX to `zion1bridge000...vault` with memo `BRIDGE:base:0xRecipient`
-2. L1 Watcher (bridge daemon) polls V3 node via JSON-RPC `getBlockByHeight` / `getTransaction`
+2. L1 Watcher (bridge daemon) polls V3 node via JSON-RPC `getBridgeLocks` and uses `getBlockByHeight` / `getTransaction` only for reconciliation or diagnostics
 3. Waits for **60 L1 block confirmations** (= ~60 minutes at 60s block time)
 4. Each of 3-of-5 validators calls `ZIONBridge.submitLockProof(l1TxHash, recipient, amountWei)`
 5. At quorum → contract auto-mints `amount × 1e6` wei of wZION to EVM recipient
@@ -110,7 +128,7 @@ Locking 1 ZION (= 1e12 flowers) would be multiplied by 1e12 → 1e24 wei → **1
 2. wZION tokens are burned (totalSupply decreases)
 3. EVM Watcher detects `BridgeBurn` event
 4. Validators verify burn finality (12 EVM blocks)
-5. Validators call V3 node RPC `bridge_unlock(l1_recipient, amount_flowers)`
+5. Validators call V3 node RPC `submitBridgeUnlock(l1_recipient, amount_flowers, evm_tx_hash, validator_proofs)`
 6. Bridge vault releases `amountWei ÷ 1e6` flowers to L1 recipient
 
 ### 1.4 V3 L1 Core Changes Required
@@ -131,7 +149,7 @@ Define in `V3/L1/core/src/fee.rs`:
 pub const BRIDGE_VAULT_ADDRESS: &str = "zion1bridge000000000000000000000000000vault";
 ```
 
-Bridge vault is a **special address** — no private key exists. Only the bridge oracle mechanism can release funds from it (via a multisig-authorized coinbase-style output).
+Bridge vault is a **special address** — no private key exists. Only the bridge oracle mechanism can release funds from it through a validated unlock path.
 
 #### 1.4.3 Bridge RPC Endpoints
 
@@ -143,12 +161,108 @@ Add to `V3/L1/core/src/rpc.rs`:
 | `getBridgeVaultBalance` | — | `{balance_flowers, balance_zion}` | Vault audit |
 | `submitBridgeUnlock` | `{l1_recipient, amount_flowers, evm_tx_hash, validators[]}` | `{tx_hash, status}` | Burn→unlock (requires validator quorum) |
 
+Recommended JSON shapes:
+
+`getBridgeLocks`
+
+```json
+{
+  "from_height": 1000,
+  "to_height": 1100
+}
+```
+
+Response:
+
+```json
+{
+  "locks": [
+    {
+      "txid": "...",
+      "block_height": 1055,
+      "sender": "zion1...",
+      "recipient_chain": "base",
+      "recipient": "0x...",
+      "amount_flowers": 1000000000000,
+      "memo": "BRIDGE:base:0x..."
+    }
+  ]
+}
+```
+
+`getBridgeVaultBalance`
+
+```json
+{}
+```
+
+Response:
+
+```json
+{
+  "address": "zion1bridge000000000000000000000000000vault",
+  "balance_flowers": 123000000000000,
+  "balance_zion": "123.000000000000"
+}
+```
+
+`submitBridgeUnlock`
+
+```json
+{
+  "recipient": "zion1...",
+  "amount_flowers": 1000000000000,
+  "evm_chain": "base",
+  "evm_tx_hash": "0x...",
+  "burn_id": "...",
+  "validator_proofs": [
+    {
+      "validator_id": "validator-1",
+      "signature": "hex..."
+    }
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "status": "accepted",
+  "tx_hash": "...",
+  "unlock_id": "base:0x..."
+}
+```
+
+Transport note:
+
+- the canonical target is the current V3 raw TCP JSON-RPC server, not a legacy HTTP REST façade
+- if an HTTP compatibility shim is introduced later, it should wrap these same methods rather than create a second source-of-truth API
+
 #### 1.4.4 Bridge Unlock Validation
 
 Add to `V3/L1/core/src/validation.rs`:
 
 - Step 12: `validate_bridge_unlock()` — verify that unlock TX has ≥3 of 5 validator signatures, amount ≤ vault balance, EVM burn proof is valid
 - Bridge unlock TXs bypass normal UTXO spend rules (vault has no private key)
+
+Recommended validation order:
+
+1. request contains canonical recipient, amount, chain, burn id, and validator proofs
+2. `evm_tx_hash` / `burn_id` has not already been used
+3. validator proofs resolve to known bridge validators
+4. quorum threshold is met
+5. requested amount is non-zero and <= bridge vault balance
+6. recipient is a valid `zion1...` address
+7. referenced EVM burn event matches amount and recipient
+8. unlock is recorded atomically before release becomes spendable
+
+Recommended state additions in V3 core:
+
+- processed burn or unlock id set
+- bridge validator identity set
+- helper to scan accepted blocks for `BRIDGE:` memos
+- helper to compute vault balance from UTXO set or accepted state
 
 ### 1.5 EVM Contract Deployment Plan
 
@@ -159,6 +273,13 @@ Add to `V3/L1/core/src/validation.rs`:
 | L2-C | End-to-end lock/mint/burn/unlock on testnet | Testnet | Week 3–4 |
 | L2-D | Security audit: validator key management, rate limits | Testnet | Week 5 |
 | L2-E | Deploy to Base mainnet | Mainnet | After L1 mainnet stable |
+
+Production entry criteria before L2-E:
+
+- `getBridgeLocks`, `getBridgeVaultBalance`, and `submitBridgeUnlock` are live in V3 core
+- bridge daemon no longer depends on `/api/*` or `/rpc/submit_tx` legacy HTTP routes
+- mainnet config file has non-zero Base contract addresses and fixed `start_block`
+- Sepolia end-to-end lock/mint/burn/unlock passes against the same V3 RPC model used on mainnet
 
 ### 1.6 Existing Testnet Contracts (Base Sepolia — reuse after decimal fix)
 
@@ -367,6 +488,10 @@ The atomic swap daemon (`L2/atomic-swap/`, ~2,000 LoC) handles:
 
 The DAO backend (`L2/dao/`, ~3,500 LoC, 16 source files) connects L1 on-chain voting to EVM treasury execution:
 
+Current production blocker note:
+
+- DAO vote weight is not yet mainnet-safe until V3 core exposes historical balance snapshots and the scanner stops using current-balance approximation.
+
 #### Proposal Types (5)
 | Type | Quorum | Voting Period | Timelock |
 |------|--------|--------------|----------|
@@ -408,6 +533,12 @@ The DAO backend (`L2/dao/`, ~3,500 LoC, 16 source files) connects L1 on-chain vo
 | DEFI-E | Atomic swap end-to-end: L1 ZION ↔ wZION HTLC | Week 4 |
 | DEFI-F | Governance proposal lifecycle test (propose → vote → execute) | Week 5 |
 | DEFI-G | Production deploy to Base mainnet | After bridge stable |
+
+Additional production gates:
+
+- DAO scanner uses current V3 RPC method names, not legacy snake_case aliases
+- DAO proposal vote weight is anchored to snapshot height
+- atomic-swap watcher and executor speak canonical V3 RPC and use canonical BLAKE3-compatible transaction hashing
 | DEFI-H | Open staking pools, seed farming rewards | After DEFI-G |
 
 ### 3.8 Testnet Contract Addresses (Base Sepolia — reuse after decimal fix)
@@ -615,6 +746,7 @@ L1 (mainnet stable, producing blocks)
 **Phase 1: L1 prep** (code changes in V3/L1/core)
   - Define `BRIDGE_VAULT_ADDRESS` in fee.rs
   - Add `getBridgeLocks`, `getBridgeVaultBalance`, `submitBridgeUnlock` to rpc.rs
+  - Add `getBalanceAtHeight` for DAO snapshot correctness
   - Add `validate_bridge_unlock()` to validation.rs
   - Add memo prefix parsing utility (`BRIDGE:*`, `WARP:*`, `DAO:*`, `SWAP:*`)
 
@@ -637,6 +769,12 @@ L1 (mainnet stable, producing blocks)
   - Atomic swap daemon connected to V3 node (L1 scanner for `SWAP:*` memos)
   - Seed Uniswap V3 wZION/USDC pool
   - Test governance lifecycle: propose → vote → timelock → execute
+
+Before Phase 4 is considered complete:
+
+- DAO must use snapshot-correct vote weights
+- atomic-swap must no longer depend on legacy REST endpoints
+- bridge contracts and daemon config must be versioned from V3 source-of-truth
 
 **Phase 5: WARP router** (extends bridge daemon to multi-chain)
   - Chain adapter registry
