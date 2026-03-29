@@ -46,7 +46,10 @@ from pathlib import Path
 
 # ─── Konfigurace ─────────────────────────────────────────────────────────────
 
-BASE_MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"  # HuggingFace model ID
+BASE_MODEL = os.environ.get(
+    "ZION_BASE_MODEL",
+    "unsloth/Meta-Llama-3.1-8B-Instruct",  # Ungated mirror (no HF token needed)
+)  # Override: ZION_BASE_MODEL=meta-llama/Meta-Llama-3.1-8B-Instruct
 
 # QLoRA parametry — optimalizováno pro A100/5090
 LORA_CONFIG = {
@@ -82,10 +85,10 @@ GPU_TIERS = {
     # (min_vram_gb, max_vram_gb): (batch_size, grad_accum, description)
     (78, 999): (16, 2,  "A100 80GB / H100 — full power"),
     (38, 78):  (8,  4,  "A100 40GB / A6000 48GB"),
-    (30, 38):  (8,  4,  "RTX 5090 32GB"),
-    (22, 30):  (4,  8,  "RTX 4090 24GB"),
-    (14, 22):  (4,  8,  "RTX 4080 16GB / A4000 16GB"),
-    (10, 14):  (2, 16,  "RTX 4070 12GB / RTX 3060 12GB"),
+    (30, 38):  (2, 16,  "RTX 5090 32GB — safe no-packing"),
+    (22, 30):  (2, 16,  "RTX 4090 24GB"),
+    (14, 22):  (2, 16,  "RTX 4080 16GB / A4000 16GB"),
+    (10, 14):  (1, 32,  "RTX 4070 12GB / RTX 3060 12GB"),
     (0,  10):  (1, 32,  "Low VRAM — minimal config"),
 }
 
@@ -96,7 +99,7 @@ def detect_gpu_config() -> tuple[int, int, str]:
         import torch
         if not torch.cuda.is_available():
             return 1, 32, "CPU only — very slow"
-        vram_gb = torch.cuda.get_device_properties(0).total_mem / 1e9
+        vram_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
         name = torch.cuda.get_device_name(0)
         for (lo, hi), (bs, ga, desc) in GPU_TIERS.items():
             if lo <= vram_gb < hi:
@@ -157,9 +160,8 @@ def train(args) -> None:
             AutoModelForCausalLM,
             AutoTokenizer,
             BitsAndBytesConfig,
-            TrainingArguments,
         )
-        from trl import SFTTrainer
+        from trl import SFTTrainer, SFTConfig
     except ImportError as e:
         print(f"CHYBA: Chybí závislosti: {e}")
         print("Spusť: pip install -r requirements.txt")
@@ -213,7 +215,7 @@ def train(args) -> None:
         quantization_config=bnb_config,
         device_map="auto",           # Automatické rozmístění na GPU
         trust_remote_code=True,
-        attn_implementation="flash_attention_2",  # Flash Attention 2 na A100
+        attn_implementation="sdpa",   # Scaled Dot-Product Attention (PyTorch native)
     )
     model.config.use_cache = False  # Uvolní paměť při tréninku
     model.config.pretraining_tp = 1  # Tensor parallelism off
@@ -231,14 +233,14 @@ def train(args) -> None:
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
         output_dir=str(output_dir),
         num_train_epochs=args.epochs,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
         gradient_accumulation_steps=grad_accum,
         gradient_checkpointing=True,
-        warmup_ratio=0.1,
+        warmup_steps=20,
         learning_rate=2e-4,
         lr_scheduler_type="cosine",
         fp16=False,
@@ -254,9 +256,10 @@ def train(args) -> None:
         optim="paged_adamw_8bit",
         max_grad_norm=0.3,
         weight_decay=0.01,
-        group_by_length=True,
         dataloader_pin_memory=True,
         dataloader_num_workers=2,
+        max_length=args.max_seq_length,
+        packing=False,
         resume_from_checkpoint=args.resume if args.resume else None,
     )
 
@@ -267,11 +270,8 @@ def train(args) -> None:
         model=model,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         args=training_args,
-        dataset_text_field="text",
-        max_seq_length=args.max_seq_length,
-        packing=True,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
     )
 
