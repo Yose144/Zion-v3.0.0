@@ -1,0 +1,36 @@
+# Python závislosti pro ZION fine-tuning pipeline
+# Nainstaluj: pip install -r requirements.txt
+
+# ─── Core ML ─────────────────────────────────────────────────
+torch>=2.1.0                 # PyTorch (CUDA 12.1+)
+transformers>=4.40.0         # HuggingFace transformers
+datasets>=2.18.0             # HF datasets
+accelerate>=0.28.0           # Multi-GPU, mixed precision
+
+# ─── Fine-tuning ──────────────────────────────────────────────
+peft>=0.10.0                 # LoRA, QLoRA adaptery
+trl>=0.8.6                   # SFTTrainer, RLHF utilities
+bitsandbytes>=0.43.0         # 4-bit / 8-bit quantization (CUDA only)
+
+# ─── Dataset collection ───────────────────────────────────────
+requests>=2.31.0             # NVIDIA NIM API
+
+# ─── Volitelné — pro monitoring tréninku ──────────────────────
+# wandb                      # Weights & Biases tracking (odkomentuj pokud chceš)
+# tensorboard                # TensorBoard logging
+
+# ─── Poznámky k instalaci na A100 (Lambda Labs / RunPod) ─────
+#
+# 1. Základní instalace:
+#    pip install -r requirements.txt
+#
+# 2. Flash Attention 2 (výrazně rychlejší na A100):
+#    pip install flash-attn --no-build-isolation
+#
+# 3. llama.cpp pro GGUF konverzi:
+#    git clone https://github.com/ggerganov/llama.cpp /opt/llama.cpp
+#    cd /opt/llama.cpp && cmake -B build -DLLAMA_CUDA=ON && cmake --build build -j
+#
+# 4. HuggingFace přihlášení (pro Llama-3 gated model):
+#    huggingface-cli login
+#    # Nebo: export HF_TOKEN=hf_...

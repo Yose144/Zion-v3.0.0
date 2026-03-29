@@ -35,6 +35,7 @@ pub mod hiranyagarbha;
 pub mod llm_backend;
 pub mod in_context;
 pub mod ekam_field;
+pub mod rag;
 
 pub use consciousness::ConsciousnessLevel;
 pub use consciousness_engine::{ConsciousnessEngine, ConsciousnessStatus};
@@ -57,6 +58,10 @@ pub use hiranyagarbha::{
 pub use llm_backend::{
     ConsciousnessAwareBackend, EchoBackend, LlamaCppBackend, LlmBackend, LlmError,
     LlmRequest, LlmResponse, RemoteHttpBackend,
+};
+pub use rag::{
+    EmbeddingBackend, EmbeddingInputType, MockEmbeddingBackend, NimEmbeddingBackend,
+    RagBackend, RagDocument, RagRetriever, VectorStore,
 };
 pub use in_context::{ContextAssembler, ContextSnapshot, InContextBackend};
 pub use ekam_field::{
