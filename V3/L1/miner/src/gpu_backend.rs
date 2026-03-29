@@ -408,8 +408,7 @@ pub mod cuda_deeksha {
         npu_b1:     CudaSlice<i8>,
         npu_w2:     CudaSlice<i8>,
         npu_b2:     CudaSlice<i8>,
-        npu_scale1: CudaSlice<i16>,
-        npu_scale2: CudaSlice<i16>,
+        npu_scales: CudaSlice<i16>,
         current_epoch: u64,
     }
 
@@ -427,12 +426,9 @@ pub mod cuda_deeksha {
             dev.load_ptx(ptx, "deeksha", &["deeksha_mine", "ekam_deeksha_mine", "ekam_deeksha_debug"])
                 .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
 
-            // Auto-cap work_size based on available VRAM
-            // Each thread needs SCRATCHPAD_BYTES of global memory
-            let (free_mem, _total_mem) = dev.mem_info()
-                .map_err(|e| anyhow::anyhow!("CUDA mem_info failed: {e}"))?;
-            let max_threads = (free_mem as usize * 70 / 100) / SCRATCHPAD_BYTES;
-            let actual_work_size = work_size.min(max_threads).max(64);
+            // Conservative work size cap for 32GB-class GPUs; avoids oversized
+            // scratchpad allocations when memory query APIs vary across cudarc versions.
+            let actual_work_size = work_size.min(4096).max(64);
 
             // Allocate buffers
             let header_buf = dev.alloc_zeros::<u8>(80)
@@ -455,10 +451,10 @@ pub mod cuda_deeksha {
                 .map_err(|e| anyhow::anyhow!("npu_w2 alloc: {e}"))?;
             let npu_b2 = dev.htod_copy(flat.b2)
                 .map_err(|e| anyhow::anyhow!("npu_b2 alloc: {e}"))?;
-            let npu_scale1 = dev.htod_copy(flat.scale1)
-                .map_err(|e| anyhow::anyhow!("npu_scale1 alloc: {e}"))?;
-            let npu_scale2 = dev.htod_copy(flat.scale2)
-                .map_err(|e| anyhow::anyhow!("npu_scale2 alloc: {e}"))?;
+            let mut scales = flat.scale1;
+            scales.extend_from_slice(&flat.scale2);
+            let npu_scales = dev.htod_copy(scales)
+                .map_err(|e| anyhow::anyhow!("npu_scales alloc: {e}"))?;
 
             println!(
                 "gpu_cuda_init device=\"{}\" work_size={} scratchpad_mb={}",
@@ -479,8 +475,7 @@ pub mod cuda_deeksha {
                 npu_b1,
                 npu_w2,
                 npu_b2,
-                npu_scale1,
-                npu_scale2,
+                npu_scales,
                 current_epoch: init_epoch,
             })
         }
@@ -509,10 +504,10 @@ pub mod cuda_deeksha {
                 .map_err(|e| anyhow::anyhow!("npu_w2 update: {e}"))?;
             self.npu_b2 = self.dev.htod_copy(flat.b2)
                 .map_err(|e| anyhow::anyhow!("npu_b2 update: {e}"))?;
-            self.npu_scale1 = self.dev.htod_copy(flat.scale1)
-                .map_err(|e| anyhow::anyhow!("npu_scale1 update: {e}"))?;
-            self.npu_scale2 = self.dev.htod_copy(flat.scale2)
-                .map_err(|e| anyhow::anyhow!("npu_scale2 update: {e}"))?;
+            let mut scales = flat.scale1;
+            scales.extend_from_slice(&flat.scale2);
+            self.npu_scales = self.dev.htod_copy(scales)
+                .map_err(|e| anyhow::anyhow!("npu_scales update: {e}"))?;
             println!("gpu_cuda_npu_epoch_update epoch={} height={}", epoch, height);
             self.current_epoch = epoch;
             Ok(())
@@ -570,8 +565,7 @@ pub mod cuda_deeksha {
                         &self.npu_b1,
                         &self.npu_w2,
                         &self.npu_b2,
-                        &self.npu_scale1,
-                        &self.npu_scale2,
+                        &self.npu_scales,
                     )).map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
                 }
 
