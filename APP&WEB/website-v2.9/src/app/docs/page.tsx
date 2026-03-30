@@ -204,6 +204,7 @@ const sections: Section[] = [
     accentText: 'text-zion-gold',
     accentBorder: 'border-zion-gold/30',
     docs: [
+      { id: 'wp-v3-mainnet', title: 'Whitepaper V3 Mainnet (EN)', file: 'whitepaper/ZION_V3_Whitepaper.md' },
       { id: 'wp-v297', title: 'Whitepaper v2.9.7 (EN, archive)', file: 'whitepaper/ZION_Whitepaper_v2.9.7.md' },
       { id: 'wp-v295-full', title: 'Whitepaper v2.9.5 (full)', file: 'whitepaper/ZION_Whitepaper_v2.9.5_FULL.md' },
       { id: 'wp-lite', title: 'Whitepaper Lite (CS)', file: 'whitepaper-lite.md' },
