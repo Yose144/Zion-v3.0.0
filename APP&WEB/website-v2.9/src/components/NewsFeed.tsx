@@ -90,11 +90,11 @@ export default function NewsFeed() {
   const cs = lang === 'cs';
 
   return (
-    <section className="relative py-24 overflow-hidden">
+    <section className="relative py-24 px-4 overflow-hidden">
       {/* Subtle background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-yellow-400/[0.02] to-transparent pointer-events-none" />
 
-      <div className="max-w-6xl mx-auto px-6 relative">
+      <div className="zion-container relative">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -103,18 +103,18 @@ export default function NewsFeed() {
           transition={{ duration: 0.6 }}
           className="mb-12"
         >
-          <div className="flex items-center gap-3 mb-4">
-            <Newspaper className="w-5 h-5 text-yellow-400" />
-            <span className="text-xs tracking-widest text-white/50 uppercase">
+          <div className="flex items-center gap-3 mb-3">
+            <Newspaper className="w-5 h-5 text-zion-gold" />
+            <span className="text-sm uppercase tracking-[0.4em] text-gray-400">
               {cs ? 'Novinky & Aktualizace' : 'News & Updates'}
             </span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold">
-            <span className="bg-gradient-to-r from-yellow-400 via-amber-300 to-orange-400 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-5xl font-bold text-white">
+            <span className="text-gradient">
               {cs ? 'Novinky' : 'News'}
             </span>
           </h2>
-          <p className="text-white/50 mt-2 max-w-xl">
+          <p className="text-lg text-gray-300 mt-3 max-w-2xl">
             {cs
               ? 'Poslední zprávy z vývoje ZION ekosystému, DeFi, listingů a sítě.'
               : 'Latest updates from the ZION ecosystem development, DeFi, listings, and network.'}
@@ -135,7 +135,7 @@ export default function NewsFeed() {
                 href={article.href}
                 target={article.external ? '_blank' : undefined}
                 rel={article.external ? 'noopener noreferrer' : undefined}
-                className="group block h-full rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300 overflow-hidden"
+                className="group relative block h-full rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 overflow-hidden"
               >
                 {/* Gradient accent top */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-400/30 to-transparent" />
