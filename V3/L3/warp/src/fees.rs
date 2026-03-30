@@ -58,8 +58,8 @@ impl FeeEngine {
             engine.add_route(RouteFee {
                 chain_name: chain.to_string(),
                 fee_rate: 0.001,
-                min_fee: 100_000_000_000,        // 0.1 ZION
-                max_fee: 10_000_000_000_000_000, // 10,000 ZION
+                min_fee: 100_000_000_000,           // 0.1 ZION
+                max_fee: 10_000_000_000_000_000,    // 10,000 ZION
             });
         }
 
@@ -176,9 +176,7 @@ mod tests {
     fn test_fee_maximum_enforced() {
         let engine = FeeEngine::with_defaults();
         // 15M ZION → 0.1% = 15,000 ZION → clamped to max 10,000 ZION
-        let fee = engine
-            .calculate_fee("base", 15_000_000_000_000_000_000)
-            .unwrap();
+        let fee = engine.calculate_fee("base", 15_000_000_000_000_000_000).unwrap();
         assert_eq!(fee, 10_000_000_000_000_000);
     }
 
@@ -186,9 +184,7 @@ mod tests {
     fn test_fee_bitcoin_higher_rate() {
         let engine = FeeEngine::with_defaults();
         // 10,000 ZION = 10_000_000_000_000_000 flowers → 0.25% = 25_000_000_000_000
-        let fee = engine
-            .calculate_fee("bitcoin", 10_000_000_000_000_000)
-            .unwrap();
+        let fee = engine.calculate_fee("bitcoin", 10_000_000_000_000_000).unwrap();
         assert_eq!(fee, 25_000_000_000_000);
     }
 
@@ -196,9 +192,7 @@ mod tests {
     fn test_fee_cardano_rate() {
         let engine = FeeEngine::with_defaults();
         // 10,000 ZION = 10_000_000_000_000_000 flowers → 0.2% = 20_000_000_000_000
-        let fee = engine
-            .calculate_fee("cardano", 10_000_000_000_000_000)
-            .unwrap();
+        let fee = engine.calculate_fee("cardano", 10_000_000_000_000_000).unwrap();
         assert_eq!(fee, 20_000_000_000_000);
     }
 
@@ -247,9 +241,7 @@ mod tests {
             min_fee: 100_000_000_000,
             max_fee: 10_000_000_000_000_000,
         });
-        let fee = engine
-            .calculate_fee("optimism", 1_000_000_000_000_000)
-            .unwrap();
+        let fee = engine.calculate_fee("optimism", 1_000_000_000_000_000).unwrap();
         assert_eq!(fee, 1_000_000_000_000);
     }
 }

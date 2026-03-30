@@ -7,18 +7,14 @@ license.workspace = true
 description = "AI-Native — Autonomous agent framework on ZION blockchain"
 
 [dependencies]
-anyhow = { workspace = true }
 tokio = { version = "1", features = ["full"] }
-axum = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 thiserror = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 async-trait = "0.1"
-reqwest = { version = "0.12", features = ["blocking", "json"] }
 zion-ncl = { path = "../ncl" }
 zion-warp = { path = "../warp" }
 zion-bridge = { path = "../../L2/bridge" }

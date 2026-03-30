@@ -29,15 +29,11 @@ pub fn apply_parameter_change(
     match parameter_name {
         "quorum_percent" => {
             let v: f64 = proposed_value.parse().map_err(|_| {
-                DaoError::Internal(format!(
-                    "quorum_percent must be a float, got '{}'",
-                    proposed_value
-                ))
+                DaoError::Internal(format!("quorum_percent must be a float, got '{}'", proposed_value))
             })?;
             if !(1.0..=50.0).contains(&v) {
                 return Err(DaoError::Internal(format!(
-                    "quorum_percent must be 1–50, got {}",
-                    v
+                    "quorum_percent must be 1–50, got {}", v
                 )));
             }
             let old = config.quorum_percent;
@@ -46,15 +42,11 @@ pub fn apply_parameter_change(
         }
         "voting_period_days" => {
             let v: u32 = proposed_value.parse().map_err(|_| {
-                DaoError::Internal(format!(
-                    "voting_period_days must be u32, got '{}'",
-                    proposed_value
-                ))
+                DaoError::Internal(format!("voting_period_days must be u32, got '{}'", proposed_value))
             })?;
             if !(1..=30).contains(&v) {
                 return Err(DaoError::Internal(format!(
-                    "voting_period_days must be 1–30, got {}",
-                    v
+                    "voting_period_days must be 1–30, got {}", v
                 )));
             }
             let old = config.voting_period_days;
@@ -63,15 +55,11 @@ pub fn apply_parameter_change(
         }
         "timelock_hours" => {
             let v: u32 = proposed_value.parse().map_err(|_| {
-                DaoError::Internal(format!(
-                    "timelock_hours must be u32, got '{}'",
-                    proposed_value
-                ))
+                DaoError::Internal(format!("timelock_hours must be u32, got '{}'", proposed_value))
             })?;
             if !(12..=168).contains(&v) {
                 return Err(DaoError::Internal(format!(
-                    "timelock_hours must be 12–168, got {}",
-                    v
+                    "timelock_hours must be 12–168, got {}", v
                 )));
             }
             let old = config.timelock_hours;
@@ -80,10 +68,7 @@ pub fn apply_parameter_change(
         }
         "daily_spend_limit" => {
             let v: u64 = proposed_value.parse().map_err(|_| {
-                DaoError::Internal(format!(
-                    "daily_spend_limit must be u64 (whole ZION), got '{}'",
-                    proposed_value
-                ))
+                DaoError::Internal(format!("daily_spend_limit must be u64 (whole ZION), got '{}'", proposed_value))
             })?;
             // Max 500M ZION/day (config stores whole ZION, not flowers)
             if v > 500_000_000 {
@@ -97,10 +82,7 @@ pub fn apply_parameter_change(
         }
         "multisig_threshold" => {
             let v: u32 = proposed_value.parse().map_err(|_| {
-                DaoError::Internal(format!(
-                    "multisig_threshold must be u32, got '{}'",
-                    proposed_value
-                ))
+                DaoError::Internal(format!("multisig_threshold must be u32, got '{}'", proposed_value))
             })?;
             if v < 3 || v > config.multisig_total {
                 return Err(DaoError::Internal(format!(
@@ -114,10 +96,7 @@ pub fn apply_parameter_change(
         }
         "proposal_threshold" => {
             let v: u64 = proposed_value.parse().map_err(|_| {
-                DaoError::Internal(format!(
-                    "proposal_threshold must be u64 (flowers), got '{}'",
-                    proposed_value
-                ))
+                DaoError::Internal(format!("proposal_threshold must be u64 (flowers), got '{}'", proposed_value))
             })?;
             let old = config.proposal_threshold;
             config.proposal_threshold = v;
@@ -199,11 +178,7 @@ pub fn execute_proposal(
 
     // Execute based on proposal type
     let result = match &proposal.proposal_type.clone() {
-        ProposalType::Treasury {
-            recipient,
-            amount,
-            purpose,
-        } => {
+        ProposalType::Treasury { recipient, amount, purpose } => {
             let op_id = format!("dao-exec-{}", proposal.id);
             treasury.submit_operation(
                 op_id.clone(),
@@ -223,12 +198,7 @@ pub fn execute_proposal(
             )
         }
 
-        ProposalType::Humanitarian {
-            category,
-            amount,
-            region,
-            ..
-        } => {
+        ProposalType::Humanitarian { category, amount, region, .. } => {
             let op_id = format!("dao-humanitarian-{}", proposal.id);
             treasury.submit_operation(
                 op_id.clone(),
@@ -249,19 +219,18 @@ pub fn execute_proposal(
             )
         }
 
-        ProposalType::Grant {
-            recipient,
-            amount,
-            milestones,
-            ..
-        } => {
+        ProposalType::Grant { recipient, amount, milestones, .. } => {
             let op_id = format!("dao-grant-{}", proposal.id);
             treasury.submit_operation(
                 op_id.clone(),
                 TreasuryOperation::Spend {
                     recipient: recipient.clone(),
                     amount: *amount,
-                    purpose: format!("Grant #{} — {} milestones", proposal.id, milestones.len()),
+                    purpose: format!(
+                        "Grant #{} — {} milestones",
+                        proposal.id,
+                        milestones.len()
+                    ),
                     proposal_id: proposal.id,
                 },
                 executor_guardian,
@@ -275,16 +244,13 @@ pub fn execute_proposal(
             )
         }
 
-        ProposalType::Parameter {
-            parameter_name,
-            proposed_value,
-            ..
-        } => apply_parameter_change(config, parameter_name, proposed_value)?,
+        ProposalType::Parameter { parameter_name, proposed_value, .. } => {
+            apply_parameter_change(config, parameter_name, proposed_value)?
+        }
 
-        ProposalType::Emergency {
-            action,
-            justification,
-        } => execute_emergency_action(action, justification)?,
+        ProposalType::Emergency { action, justification } => {
+            execute_emergency_action(action, justification)?
+        }
     };
 
     // Update status

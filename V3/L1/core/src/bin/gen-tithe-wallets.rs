@@ -49,10 +49,5 @@ fn chrono_stub() -> String {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    format!(
-        "2026-03-27T{:02}:{:02}:{:02}Z",
-        (secs / 3600) % 24,
-        (secs / 60) % 60,
-        secs % 60
-    )
+    format!("2026-03-27T{:02}:{:02}:{:02}Z", (secs / 3600) % 24, (secs / 60) % 60, secs % 60)
 }

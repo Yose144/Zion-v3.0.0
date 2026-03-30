@@ -32,16 +32,16 @@ import { useLang } from '@/contexts/LanguageContext';
 
 const getHeroStats = (cs: boolean) => [
   { label: 'Rust LOC', value: '115,400+', descriptor: '12 crates · L1–L4' },
-  { label: cs ? 'Testy procházejí' : 'Tests passing', value: '1,501', descriptor: cs ? '0 selhání · +122 Ekam Deeksha' : '0 failing · +122 Ekam Deeksha' },
-  { label: cs ? 'Síť' : 'Network', value: '1/1 public', descriptor: 'Zion2 · rehearsal line 2.9.9 · runtime 2.9.8' },
-  { label: 'Release Gate', value: 'NO-GO', descriptor: cs ? 'veřejný launch blokován – čeká na closure evidence' : 'public launch blocked pending closure evidence' },
+  { label: 'Tests passing', value: '1,501', descriptor: '0 failing · +122 Ekam Deeksha' },
+  { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · rehearsal line 2.9.9 · runtime 2.9.8' },
+  { label: 'Release Gate', value: 'NO-GO', descriptor: 'public launch blocked pending closure evidence' }
 ];
 
 const getLayerStack = (cs: boolean) => [
   {
     layer: 'L1',
     emoji: '⛓️',
-    title: cs ? 'ZION Blockchain (řízená veřejná linie)' : 'ZION Blockchain (Controlled Public Line)',
+    title: 'ZION Blockchain (Launch Target)',
     period: '2026',
     color: 'from-emerald-500 to-lime-400',
     border: 'border-emerald-500/40',
@@ -64,8 +64,8 @@ const getLayerStack = (cs: boolean) => [
   {
     layer: 'L2',
     emoji: '💱',
-    title: cs ? 'DEX & DeFi vrstva' : 'DEX & DeFi Layer',
-    period: cs ? '2026 · Base Mainnet živě' : '2026 · Base Mainnet live',
+    title: 'DEX & DeFi Layer',
+    period: '2026 live · 2027 production',
     color: 'from-blue-500 to-cyan-500',
     border: 'border-blue-500/40',
     items: [
@@ -226,14 +226,12 @@ const getPhases = (cs: boolean): PhaseData[] => [
   },
   {
     id: '1',
-    title: cs ? 'Řízený testovací mainnet' : 'Controlled Test Mainnet',
-    period: cs ? 'Únor — Květen 2026' : 'Feb — May 2026',
+    title: 'Controlled Test Mainnet',
+    period: 'Feb — May 2026',
     priority: 'P0 Blocker',
     progress: 92,
     status: 'active',
-    description: cs
-      ? '168h stabilita PASS (2026-03-03). Ekam Deeksha Tier 1+2 nasazeny (2026-03-17): 256 KiB scratchpad, epoch NPU váhy, 10/10 pool přijato. Linie zůstává řízeným rehearsalem. Zbývá: partition + 100 minerů + closure evidence.'
-      : '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted. Line remains controlled rehearsal. Remaining: partition + 100 miners + closure evidence.',
+    description: '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted, 0 rejected. Current line remains a controlled rehearsal. Remaining: partition + 100 miners + public launch closure evidence.',
     sprints: [
       { id: '1.0', title: cs ? 'Identita sítě & Deploy — chain reset, Docker, 3 servery' : 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
       { id: '1.1', title: cs ? 'Validace konfigurace — TOML parsing, hraniční kontroly' : 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
@@ -249,24 +247,24 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { id: '1.11', title: cs ? 'Live Partition Test — izolace nodu 30 min, reconnect' : 'Live Partition Test — node isolation 30 min, reconnect', done: false },
       { id: '1.12', title: cs ? '100 minerů stres — simulace 100 Stratum klientů' : '100 Miners Stress — simulate 100 Stratum clients', done: false },
       { id: '1.13', title: 'Ekam Deeksha Tier 1 — Scratchpad 256 KiB, 4 passes, 256 reads', tests: 108, done: true },
-      { id: '1.14', title: cs ? 'Ekam Deeksha Tier 2 — Epoch NPU váhy, rotace per 2016/100 bloků' : 'Ekam Deeksha Tier 2 — Epoch NPU weights, rotate per 2016/100 blocks', tests: 14, done: true },
-      { id: '1.15', title: cs ? 'Feature Flag — podmíněný NPU_EPOCH_LENGTH compile-time' : 'Feature Flag — conditional NPU_EPOCH_LENGTH compile-time', done: true },
-      { id: '1.16', title: cs ? 'Canary Deploy — pool 10/10 přijato, 0 zamítnuto, 166 H/s' : 'Canary Deploy — pool 10/10 accepted, 0 rejected, 166 H/s', done: true },
+      { id: '1.14', title: 'Ekam Deeksha Tier 2 — Epoch NPU weights, rotate per 2016/100 blocks', tests: 14, done: true },
+      { id: '1.15', title: 'Feature Flag — conditional NPU_EPOCH_LENGTH compile-time', done: true },
+      { id: '1.16', title: 'Canary Deploy — pool 10/10 accepted, 0 rejected, 166 H/s', done: true }
     ],
     exitCriteria: [
-      { text: cs ? 'Řízený V3 test-mainnet nasazen na 3 serverech' : 'Controlled V3 test-mainnet deployed on 3 servers', done: true },
-      { text: cs ? 'Reorg/double-spend/fork testy (29 testů)' : 'Reorg/double-spend/fork tests (29 tests)', done: true },
-      { text: cs ? 'IBD hardening (42 testů)' : 'IBD hardening (42 tests)', done: true },
-      { text: cs ? 'Pool payout batch TX (23 testů)' : 'Pool payout batch TX (23 tests)', done: true },
-      { text: cs ? 'Buyback + DAO Treasury (28 testů)' : 'Buyback + DAO Treasury (28 tests)', done: true },
-      { text: cs ? 'RPC API kompletní (36 testů)' : 'RPC API complete (36 tests)', done: true },
-      { text: cs ? 'DoS ochrana (MessageRateLimiter)' : 'DoS protection (MessageRateLimiter)', done: true },
-      { text: cs ? 'Stress test sada (21 testů)' : 'Stress test suite (21 tests)', done: true },
-      { text: cs ? '168h stabilita bez kritického incidentu' : '168h stability run without critical incident', done: true },
-      { text: cs ? 'Orphan rate < 2%' : 'Orphan rate < 2%', done: false },
-      { text: cs ? 'Žádný kritický bug 14 dní' : 'No critical bug for 14 days', done: false },
-      { text: cs ? 'Ekam Deeksha Tier 1+2 canary — pool accept 100%' : 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100%', done: true },
-    ],
+      { text: 'Controlled V3 test-mainnet deployed on 3 servers', done: true },
+      { text: 'Reorg/double-spend/fork tests (29 tests)', done: true },
+      { text: 'IBD hardening (42 tests)', done: true },
+      { text: 'Pool payout batch TX (23 tests)', done: true },
+      { text: 'Buyback + DAO Treasury (28 tests)', done: true },
+      { text: 'RPC API complete (36 tests)', done: true },
+      { text: 'DoS protection (MessageRateLimiter)', done: true },
+      { text: 'Stress test suite (21 tests)', done: true },
+      { text: '168h stability run without critical incident', done: true },
+      { text: 'Orphan rate < 2%', done: false },
+      { text: 'No critical bug for 14 days', done: false },
+      { text: 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100%', done: true }
+    ]
   },
   {
     id: '2',
@@ -297,9 +295,7 @@ const getPhases = (cs: boolean): PhaseData[] => [
     priority: 'P1 Important',
     progress: 92,
     status: 'active',
-    description: cs
-      ? 'Veřejný host + interní validator linie aktivní, monitoring běží, legal/docs dokončeny. wZION bridge + Uniswap V3 DEX pool živě na Base Mainnet. DeFi stránky kompletně přepsány — bilingvální, mainnet.'
-      : 'Public host + internal validator lanes active, monitoring running, legal/docs complete. wZION bridge + Uniswap V3 DEX pool live on Base Mainnet. DeFi pages fully rewritten — bilingual, mainnet.',
+    description: 'Single public host + internal validator lanes active, monitoring running, legal/docs progressing. wZION bridge live on Base Sepolia testnet.',
     sprints: [
       { id: '3.1', title: cs ? 'Veřejný host & Monitoring — Zion2 live, Prometheus + Grafana' : 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana', done: true },
       { id: '3.2', title: cs ? 'Docker & Deploy — runbook + compose + live web deploy flow' : 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
@@ -310,15 +306,12 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { id: '3.7', title: cs ? 'DeFi L2 stránky — bridge/dao/warp bilingvální mainnet' : 'DeFi L2 pages cleanup — bridge/dao/warp bilingual mainnet', done: true },
     ],
     exitCriteria: [
-      { text: cs ? '1 veřejný host + interní validator linie stabilně online' : '1 public host + internal validator lanes stable online', done: true },
-      { text: cs ? 'Monitoring + alerting aktivní' : 'Monitoring + alerting active', done: true },
-      { text: cs ? 'Legal dokumenty kompletní' : 'Legal docs complete', done: true },
-      { text: cs ? 'wZION + Bridge živě na Base Mainnet' : 'wZION + Bridge live on Base Mainnet', done: true },
-      { text: cs ? 'DEX pool živě s počáteční likviditou' : 'DEX pool live with initial liquidity', done: true },
-      { text: cs ? 'DeFi UI na webu (swap, bridge, portfolio)' : 'DeFi UI on website (swap, bridge, portfolio)', done: true },
-      { text: cs ? 'DeFi L2 stránky bilingvální + mainnet' : 'DeFi L2 pages bilingual + mainnet cleanup', done: true },
-      { text: cs ? 'Produkční mainnet exchange rollout' : 'Production mainnet exchange rollout', done: false },
-    ],
+      { text: '1 public host + internal validator lanes stable online', done: true },
+      { text: 'Monitoring + alerting active', done: true },
+      { text: 'Legal docs complete', done: true },
+      { text: 'wZION + Bridge testnet-ready on Base Sepolia', done: true },
+      { text: 'Production mainnet exchange rollout', done: false }
+    ]
   },
   {
     id: '4',
@@ -463,20 +456,20 @@ export default function RoadmapPage() {
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Mission Control</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'Letový plán k veřejnému launchi' : 'Flight plan to public launch'}
+                  Flight plan to public launch
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? 'Realistický plán: stabilní řízený V3 test-mainnet rehearsal → closure evidence → launch-readiness balíček → rozhodnutí o veřejném launchi a teprve poté genesis, pokud gate přejde z NO-GO na GO. Jednoduchý L1 blockchain, který funguje bezchybně, je základem nekonečného ekosystému nad ním.'
-                  : 'Realistic plan: stable controlled V3 test-mainnet rehearsal → closure evidence → launch-readiness package → public launch decision and only then genesis if the gate moves from NO-GO to GO. A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.'}
+                Realistic plan: stable controlled V3 test-mainnet rehearsal → Base Sepolia bridge ready → WARP implementation complete → public launch decision and then full MainNet launch{' '}
+                <strong className="text-white">31. 12. 2026</strong>.
+                A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Aktualizováno 3. dub 2026' : 'Updated 3 Apr 2026'}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 28. Mar 2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Orbit className="h-3 w-3 text-zion-cyan" /> {cs ? 'Stav veřejného launche · NO-GO' : 'Public launch status · NO-GO'}
+                  <Orbit className="h-3 w-3 text-zion-cyan" /> Public launch target · 31.12.2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" /> {cs ? '1 501 testů prochází' : '1,501 tests passing'}
@@ -609,7 +602,7 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Exekuce' : 'Execution'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-purple" />
-              {cs ? 'Fáze 0–5 · Rehearsal → gated veřejný genesis' : 'Phase 0–5 · Rehearsal → gated public genesis'}
+              Fáze 0 – 5 · Test-mainnet rehearsal → Full MainNet
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Každá fáze má jasné exit criteria. Žádné zkratky.' : 'Every phase has clear exit criteria. No shortcuts.'}</p>
           </div>
