@@ -258,6 +258,19 @@ impl SwapDb {
         )?;
         Ok(())
     }
+
+    // ── EVM watcher helpers ───────────────────────────────────────────────
+
+    /// Return a cloned connection handle for the EVM watcher task and
+    /// ensure the EVM watcher tables exist.
+    pub fn conn_for_evm_watcher(&self) -> std::sync::Arc<std::sync::Mutex<rusqlite::Connection>> {
+        {
+            let conn = self.conn.lock().unwrap();
+            crate::evm_watcher::migrate(&conn)
+                .expect("EVM watcher migration failed");
+        }
+        Arc::clone(&self.conn)
+    }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
