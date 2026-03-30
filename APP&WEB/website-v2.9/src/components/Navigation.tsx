@@ -23,10 +23,9 @@ export default function Navigation() {
       title: 'Core',
       items: [
         { href: '/',          label: tr('nav', 'home', lang) },
-        { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
         { href: '/network',   label: tr('nav', 'network', lang) },
         { href: '/explorer',  label: tr('nav', 'explorer', lang) },
-        { href: '/monitoring', label: tr('nav', 'monitoring', lang) },
+        { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
       ],
     },
     {
@@ -52,8 +51,7 @@ export default function Navigation() {
       title: 'Reference',
       items: [
         { href: '/docs',           label: tr('nav', 'docs', lang) },
-        { href: '/api-reference',  label: tr('nav', 'api', lang) },
-        { href: '/ai-native',      label: tr('nav', 'ai_native', lang) },
+        { href: '/roadmap',        label: tr('nav', 'roadmap', lang) },
       ],
     },
   ];
