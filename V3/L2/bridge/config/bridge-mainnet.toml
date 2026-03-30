@@ -1,0 +1,77 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ZION Bridge Relay — Mainnet Configuration
+# Target: Base (EVM chain ID 8453) ↔ ZION L1 mainnet
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# NOTE: Do NOT deploy to mainnet until testnet bridge is verified end-to-end.
+# Contract addresses below are PLACEHOLDERS — deploy wZION + ZIONBridge to
+# Base mainnet first, then update wzion_address and bridge_contract_address.
+
+[bridge]
+name    = "ZION Bridge Relay"
+version = "0.1.0"
+network = "mainnet"
+
+# ── ZION L1 ──────────────────────────────────────────────────────────────────
+
+[l1]
+rpc_url            = "91.98.122.165:8443"       # Prague node (primary)
+rpc_url_backup     = "127.0.0.1:8443"           # local fallback
+bridge_address     = "zion1bridge000000000000000000000000000vault"
+finality_blocks    = 60
+poll_interval_secs = 15
+
+# ── Ankr Multi-Chain RPC ─────────────────────────────────────────────────────
+
+[ankr]
+enabled = true
+# api_key = ""   # REQUIRED for mainnet — set ANKR_API_KEY env var (premium tier recommended)
+
+# ── EVM Chains ───────────────────────────────────────────────────────────────
+
+[[evm_chains]]
+chain_id                = "base"
+name                    = "Base"
+evm_chain_id            = 8453
+rpc_url                 = "https://base-rpc.publicnode.com"
+rpc_url_backup          = "https://mainnet.base.org"
+wzion_address           = "0x0000000000000000000000000000000000000000"   # TODO: deploy wZION to Base mainnet
+bridge_contract_address = "0x0000000000000000000000000000000000000000"   # TODO: deploy ZIONBridge to Base mainnet
+finality_blocks         = 64         # higher finality for mainnet safety
+enabled                 = false      # DISABLED until contracts are deployed
+gas_strategy            = "eip1559"
+max_gas_gwei            = 5          # tight gas cap for mainnet
+# start_block           = 0          # set to contract deployment block
+
+# ── Validator / Multisig ─────────────────────────────────────────────────────
+
+[validator]
+private_key_file    = "/etc/zion/bridge-validator.key"
+validator_id        = "validator-1"
+threshold           = 3
+total_validators    = 5
+validator_addresses = []   # populate with all 5 validator EVM addresses
+
+# ── Security ─────────────────────────────────────────────────────────────────
+
+[security]
+max_single_amount     = "5000000000000000000000000"    # 5 M wZION
+daily_limit           = "10000000000000000000000000"   # 10 M wZION
+min_bridge_amount     = "100000000000000000000"        # 100 wZION
+timelock_threshold    = "1000000000000000000000000"    # 1 M wZION
+max_ops_per_hour      = 100
+l1_block_timeout_secs = 300
+auto_pause_on_anomaly = true
+
+# ── Database ─────────────────────────────────────────────────────────────────
+
+[database]
+path                = "/data/bridge/bridge.db"
+backup_interval_secs = 1800     # more frequent backups for mainnet
+
+# ── Metrics ──────────────────────────────────────────────────────────────────
+
+[metrics]
+enabled   = true
+port      = 9100
+log_level = "info"
