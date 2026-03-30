@@ -149,11 +149,14 @@ services:
     image: zion-miner:v3-mainnet
     container_name: zion-miner
     restart: unless-stopped
+    expose:
+      - "9116"
     environment:
       - RUST_LOG=info
       - ZION_POOL_ADDR=pool:3333
       - ZION_MINER_ID=${MINER_WALLET}
       - ZION_WORKER_NAME=${MINER_WORKER:-mainnet-miner}
+      - ZION_MINER_METRICS_BIND=0.0.0.0:9116
       - ZION_NONCE_AUTOTUNE=true
       - ZION_LOOP_COUNT=4294967295
       - ZION_NONCE_COUNT=500000
