@@ -1,7 +1,8 @@
 # ✅ ZION MainNet — Exit Criteria
 
-> **Verze:** 1.0  
+> **Verze:** 1.1  
 > **Vytvořeno:** 24. února 2026 (Session 50)  
+> **Aktualizováno:** 30. března 2026 — sladěno s aktivním V3 controlled rehearsal  
 > **Autoritativní dokument** — vybráno do launch-gatingu spolu s `MAINNET_CHECKLIST.md`  
 > **Stav:** DRAFT — vyžaduje sign-off před genesis freeze
 
@@ -12,6 +13,15 @@
 Tento dokument definuje **měřitelné, ověřitelné podmínky**, které musí být splněny před spuštěním ZION MainNetu.  
 Žádná podmínka nesmí být vynechána bez formálního `WAIVER` záznamu v sekci [Výjimky](#výjimky).
 
+Aktivní veřejné validační okno k 30. 3. 2026 je **72h controlled V3 rehearsal** nad auditovaným 3-node setem:
+- Prague — `91.98.122.165`
+- USA — `5.78.194.94`
+- Singapore — `5.223.84.191`
+
+Tento dokument rozlišuje:
+- **nečekaný restart / crash** — porušení C-01
+- **plánovaný upgrade restart** — je přípustný pouze tehdy, pokud je výslovně zdokumentovaný v collector evidenci a closure reportu včetně doby recovery a obnovení tip agreementu
+
 ---
 
 ## Kritéria P0 — Blokující (musí být splněno 100 %)
@@ -21,12 +31,14 @@ Tento dokument definuje **měřitelné, ověřitelné podmínky**, které musí 
 |---------|-----------|-------|
 | Orphan rate | < 5 % (klouzavý průměr 72h) | Grafana `PoolHighOrphanRate` |
 | Block reject rate | < 2 % | `blocks_rejected / blocks_total` |
-| Node uptime (5 nodů) | 100 % bez neočekávaného restartu | `docker ps`, `journalctl` |
+| Node uptime (3 auditované geo nody) | 100 % bez **nečekaného** restartu; plánovaný upgrade restart je přípustný jen s recovery evidencí | `docker inspect`, `docker ps`, collector log |
 | Block time průměr | 55–65 s (±8 %) po 72h | Prometheus `block_time_seconds` |
-| Chain height divergence | max ±2 bloky mezi 5 nody | cross-node height check |
+| Chain height divergence | steady-state `0 blk`, při recovery max dočasně ±2 bloky | cross-node height check |
+| Restart discipline | po plánovaném restartu se musí obnovit tip agreement, peer connectivity a pool acceptance | collector report + cross-node RPC |
 
-> **Perioda:** 72 hodin nepřetržitého provozu bez ručního zásahu  
-> **Důkaz:** screenshot Grafana dashboard + exportovaný Prometheus snapshot
+> **Perioda:** 72 hodin nepřetržitého provozu auditovaného 3-node setu  
+> **Pravidlo zásahu:** plánovaný upgrade restart neresetuje window, pokud je zachycený v evidenci a uzavřený recovery appendixem  
+> **Důkaz:** screenshot dashboardu, exportovaný Prometheus snapshot, collector evidence a restart/recovery appendix
 
 ---
 
@@ -103,6 +115,33 @@ Tento dokument definuje **měřitelné, ověřitelné podmínky**, které musí 
 7. [ ] Sign-off tabulka níže podepsat
 ```
 
+## Closure checklist pro 72h rehearsal
+
+Tento checklist se vyplňuje při uzavření aktivního rehearsal okna, než padne další `GO/NO-GO` verdict.
+
+### A. Live runtime evidence
+- [ ] Exportovat poslední collector snapshot a čas posledního vzorku
+- [ ] Uložit `getChainInfo` z Prague, USA a Singapore
+- [ ] Ověřit shodu `chain_height` a `tip_hash` na všech 3 nodech
+- [ ] Zapsat `restart_count` a `started_at` pro `zion-core` na všech 3 nodech
+
+### B. Restart / recovery appendix
+- [ ] Každý restart klasifikovat jako `planned upgrade` nebo `unexpected incident`
+- [ ] U plánovaných restartů uvést důvod, čas zásahu a čas návratu do `tip agreement`
+- [ ] Potvrdit, že po restartu se obnovila peer konektivita a `pool accept`
+- [ ] Pokud restart nebyl plánovaný, otevřít incident a rehearsal označit minimálně `AMBER`
+
+### C. Výkonnostní a launch-gating metriky
+- [ ] Zapsat pool acceptance / reject rate za celé okno
+- [ ] Zapsat chain growth, průměrný block time a divergence summary
+- [ ] Zapsat orphan / reject evidence nebo explicitní stav `not yet instrumented`
+- [ ] Zapsat, zda closure gate zůstává blokovaný kvůli BFG, genesis artefaktům a sign-offu
+
+### D. Výstup
+- [ ] Vydat krátký closure report s verdiktem `GO / AMBER / NO-GO`
+- [ ] Připojit odkazy na dashboard evidence, runbook a checklist
+- [ ] Pokud není public launch povolen, explicitně napsat zbývající blokátory
+
 ---
 
 ## Sign-Off
@@ -123,6 +162,7 @@ Tento dokument definuje **měřitelné, ověřitelné podmínky**, které musí 
 
 ---
 
-*Exit Criteria Version: 1.0*  
+*Exit Criteria Version: 1.1*  
 *Vytvořeno: 2026-02-24 (Session 50)*  
+*Aktualizováno: 2026-03-30 — aligned with 3-node V3 rehearsal*  
 *Stav: DRAFT — vyžaduje review před genesis freeze*
