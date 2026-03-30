@@ -100,12 +100,12 @@ if [[ $SKIP_SYNC -ne 1 ]]; then
     --exclude='*.tar.gz' \
     --exclude='.env.local' \
     -e "ssh $SSH_OPTS" \
-    ./ "$REMOTE:${REMOTE_SRC_RSYNC}/"
+    ./ "$REMOTE:./"
 
   log "Syncing compose file to $REMOTE_HOST:$REMOTE_COMPOSE"
   rsync -avz \
     -e "ssh $SSH_OPTS" \
-    "$REPO_ROOT/docker/$COMPOSE_FILE" "$REMOTE:${REMOTE_COMPOSE_RSYNC}/"
+    "$REPO_ROOT/docker/$COMPOSE_FILE" "$REMOTE:$REMOTE_COMPOSE/"
 else
   log "Skipping rsync (--skip-sync)"
 fi

@@ -39,10 +39,10 @@ impl FieldTopology {
     /// Base multiplier intrinsic to this topology shape.
     pub fn base_multiplier(self) -> f64 {
         match self {
-            Self::Sphere => 1.0,
-            Self::Torus => 1.2,
-            Self::Helix => 1.4,
-            Self::Fractal => 1.7,
+            Self::Sphere    => 1.0,
+            Self::Torus     => 1.2,
+            Self::Helix     => 1.4,
+            Self::Fractal   => 1.7,
             Self::Hypercube => 2.5,
         }
     }
@@ -51,10 +51,10 @@ impl FieldTopology {
     pub fn for_level(level: u8) -> Self {
         match level {
             0..=1 => Self::Sphere,
-            2 => Self::Torus,
-            3 => Self::Helix,
-            4 => Self::Fractal,
-            _ => Self::Hypercube,
+            2     => Self::Torus,
+            3     => Self::Helix,
+            4     => Self::Fractal,
+            _     => Self::Hypercube,
         }
     }
 }
@@ -62,10 +62,10 @@ impl FieldTopology {
 impl std::fmt::Display for FieldTopology {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Sphere => write!(f, "Sphere"),
-            Self::Torus => write!(f, "Torus"),
-            Self::Helix => write!(f, "Helix"),
-            Self::Fractal => write!(f, "Fractal"),
+            Self::Sphere    => write!(f, "Sphere"),
+            Self::Torus     => write!(f, "Torus"),
+            Self::Helix     => write!(f, "Helix"),
+            Self::Fractal   => write!(f, "Fractal"),
             Self::Hypercube => write!(f, "Hypercube"),
         }
     }
@@ -92,10 +92,10 @@ impl WarpMode {
     /// Multiplier applied on top of the field topology base.
     pub fn multiplier(self) -> f64 {
         match self {
-            Self::Standard => 1.0,
-            Self::Boost => 2.0,
-            Self::Overdrive => 3.0,
-            Self::Quantum => 5.0,
+            Self::Standard     => 1.0,
+            Self::Boost        => 2.0,
+            Self::Overdrive    => 3.0,
+            Self::Quantum      => 5.0,
             Self::Transcendent => 10.0,
         }
     }
@@ -104,10 +104,10 @@ impl WarpMode {
 impl std::fmt::Display for WarpMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Standard => write!(f, "Standard"),
-            Self::Boost => write!(f, "Boost"),
-            Self::Overdrive => write!(f, "Overdrive"),
-            Self::Quantum => write!(f, "Quantum"),
+            Self::Standard     => write!(f, "Standard"),
+            Self::Boost        => write!(f, "Boost"),
+            Self::Overdrive    => write!(f, "Overdrive"),
+            Self::Quantum      => write!(f, "Quantum"),
             Self::Transcendent => write!(f, "Transcendent"),
         }
     }
