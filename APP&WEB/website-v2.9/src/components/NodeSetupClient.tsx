@@ -69,8 +69,8 @@ const requirements = [
 ];
 
 const ports = [
-  { port: "8334", protocol: "TCP", purpose: "P2P peer-to-peer", required: true },
-  { port: "8444", protocol: "TCP", purpose: "JSON-RPC API", required: false },
+  { port: "8333", protocol: "TCP", purpose: "P2P peer-to-peer", required: true },
+  { port: "8443", protocol: "TCP", purpose: "JSON-RPC API", required: false },
   { port: "3333", protocol: "TCP", purpose: "Stratum mining", required: false },
   { port: "8080", protocol: "TCP", purpose: "Pool API", required: false },
 ];
@@ -99,8 +99,8 @@ const networkConfigs = [
 const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
   { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
-  { cmd: "zion-node --network mainnet --rpc-port 8444", desc: "Override RPC port" },
-  { cmd: "zion-node --peers 91.98.122.165:8334", desc: "Manual peer list (current public host)" },
+  { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
+  { cmd: "zion-node --peers 91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333", desc: "Manual peer list (current rehearsal seeds)" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
   { cmd: "zion-node --data-dir /custom/path", desc: "Custom data directory" },
 ];
@@ -223,8 +223,8 @@ docker pull ghcr.io/zion-terranova/zion-node:2.9.8
 # Run with persistent storage
 docker run -d \\
   --name zion-node \\
-  -p 8334:8334 \\
-  -p 8444:8444 \\
+  -p 8333:8333 \\
+  -p 8443:8443 \\
   -v zion-data:/data \\
   ghcr.io/zion-terranova/zion-node:2.9.8 \\
   --config /etc/zion/mainnet.toml`}
@@ -292,8 +292,8 @@ docker compose -f docker/docker-compose.mainnet.yml logs -f zion-node`}
               title={networkConfigs[activeNetwork].file}
               code={`[network]
 name = "${networkConfigs[activeNetwork].name.toLowerCase()}"
-p2p_port = 8334
-rpc_port = 8444
+p2p_port = 8333
+rpc_port = 8443
 max_peers = 128
 
 [consensus]
@@ -316,7 +316,9 @@ file = "zion.log"
 
 [peers]
 bootstrap = [
-  "91.98.122.165:8334"
+  "91.98.122.165:8333",
+  "5.78.194.94:8333",
+  "5.223.84.191:8333"
 ]`}
             />
           </div>
@@ -367,10 +369,10 @@ bootstrap = [
             <CodeBlock
               title="UFW Firewall (Ubuntu/Debian)"
               code={`# P2P — required for node
-sudo ufw allow 8334/tcp comment "ZION P2P"
+sudo ufw allow 8333/tcp comment "ZION P2P"
 
 # RPC — optional, restrict to localhost
-sudo ufw allow from 127.0.0.1 to any port 8444 proto tcp comment "ZION RPC"
+sudo ufw allow from 127.0.0.1 to any port 8443 proto tcp comment "ZION RPC"
 
 # Verify
 sudo ufw status`}
@@ -425,7 +427,7 @@ sudo ufw status`}
             <CodeBlock
               title="Check sync status"
               code={`# JSON-RPC call
-curl -s http://localhost:8444 \\
+curl -s http://localhost:8443 \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"getBlockchainInfo"}' | jq .
 
@@ -434,7 +436,7 @@ curl -s http://localhost:8444 \\
 
             <CodeBlock
               title="Check peer connections"
-              code={`curl -s http://localhost:8444 \\
+              code={`curl -s http://localhost:8443 \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"getPeerCount"}' | jq .
 
@@ -479,11 +481,11 @@ curl -s http://localhost:8444 \\
             {[
               {
                 q: "Node won't start",
-                a: 'Check Rust ≥ 1.75 (`rustc --version`). Ensure port 8334 is free (`lsof -i :8334`). Try `--log-level debug` for details.',
+                a: 'Check Rust ≥ 1.75 (`rustc --version`). Ensure port 8333 is free (`lsof -i :8333`). Try `--log-level debug` for details.',
               },
               {
                 q: "No peers connecting",
-                a: "Verify firewall allows TCP 8334. Try manual peers: `--peers 91.98.122.165:8334`. Check DNS resolution.",
+                a: "Verify firewall allows TCP 8333. Try manual peers: `--peers 91.98.122.165:8333,5.78.194.94:8333`. Check DNS resolution.",
               },
               {
                 q: "Sync stuck / slow",

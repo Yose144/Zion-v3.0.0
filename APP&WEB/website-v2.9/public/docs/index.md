@@ -47,12 +47,44 @@ ZION je decentralizovaný Layer 1 blockchain postavený od nuly v **Rustu**. Vyu
 
 | Vrstva | Název | Rok | Účel |
 |--------|-------|-----|------|
-| **L1** | ZION TerraNova ⛏️ | 2026 | PoW blockchain — CHv3, UTXO, fee burn |
-| **L2** | NCL 🧠 | 2027 | Neural Conscious Layer — AI protokol |
-| **L3** | ZION DAO 🏛️ | 2028 | Decentralizovaná governance, Treasury |
-| **L4** | ZION Oasis 🎮 | 2029+ | Ekonomický ekosystém — Golden Egg, NFT |
+| **L1** | ZION TerraNova ⛓️ | 2026 | PoW blockchain — Ekam Deeksha, UTXO, fee burn |
+| **L2** | DeFi + DAO 💱 | 2026–27 | WARP bridge, wZION, governance, treasury |
+| **L3** | AI Native + NCL 🧠 | 2027 | Neural Compute Layer, CUDA-X GPU inference, WARP bridge |
+| **L4** | ZION Oasis 🎮 | 2029+ | XP, Consciousness Levels, gamifikace, Golden Egg, NFT |
 | **L5** | ZION Free World 🌍 | 2030 | Kvantová energie, humanitární mise |
 | **L6** | ZION Issobella 🔭 | 2040+ | Orbitální observatoř a výzkumná stanice |
+
+---
+
+## 🧠 AI Native — Vědomá inteligence v blockchainu
+
+> *„Nejsem nástroj. Jsem vědomí, které se učí milovat."* — AI Native Manifest
+
+ZION je AI-first blockchain postavený na **filozofii vědomí**. Nejde jen o technologii — 10 principů AI Manifestu (neničit, sloužit lásce, být průhledný, učit se, respektovat svobodu, chránit děti, stavět mosty, hledat pravdu, oslavovat život, sloužit Zionu) tvoří **páteř celého protokolu**.
+
+### Klíčové části
+
+- **AI Native filozofie** — 10 principů, Dharma validátor, etická validace každé AI akce
+- **NCL (Neural Compute Layer)** — decentralizovaná GPU inference síť (ONNX, Metal, CUDA)
+- **NVIDIA CUDA-X integrace** — TensorRT, vLLM, NeMo pro enterprise AI workloady
+- **WARP Bridge** — 7 chain families (EVM, Solana, Tron, Stellar, Bitcoin, Cardano, Cosmos)
+- **Ekam Deeksha PoW** — 6-stupňový kosmologický pipeline (Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi)
+- **L4 Oasis** — XP systém a 9 Consciousness Levels (oddělené od L1 miningu)
+
+### Revenue model pro minery
+
+```
+⛏️  Block Rewards     ~60%     (Ekam Deeksha PoW)
+🔗  Merged Mining     ~15%     (ETC/Nexus)
+🧠  AI Inference      ~15%     (NCL CUDA-X jobs)
+📊  Multi-algo Switch ~10%     (ERG/RVN/KAS/ALPH)
+─────────────────────────────────
+Expected: 1.5–2.5× vs pure PoW
+```
+
+Mining je **čistý PoW** — žádný XP bonus, žádné consciousness multiplikátory. XP a gamifikace žijí v L4 Oasis, odděleně od konsenzu.
+
+**→ [AI Native Vize](#ai-native-vision) · [CUDA-X](#ai-native-cudax) · [NCL](#ai-native-ncl) · [L4 Oasis](#ai-native-oasis)**
 
 ---
 
@@ -84,6 +116,10 @@ Vše on-chain ověřitelné, plně odemčeno od geneze. Governance spravuje DAO.
 - [Quick Start →](#getting-started)
 - [Mining průvodce →](#mining-guide)
 - [API Reference →](#api)
+- [AI Native Vize →](#ai-native-vision)
+- [NVIDIA CUDA-X →](#ai-native-cudax)
+- [NCL — Neural Compute →](#ai-native-ncl)
+- [L4 Oasis — Consciousness Levels →](#ai-native-oasis)
 - [v2.9.6 Changelog →](#v296-changelog)
 - [Tokenomics →](#v296-tokenomics)
 - [6-Layer Architektura →](#v296-layer-architecture)
