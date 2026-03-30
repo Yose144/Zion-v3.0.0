@@ -1,0 +1,209 @@
+# ZION V3 MainNet Production Stack — builds from V3/ workspace
+# All V3 binaries use env-var config (from_env()), NOT CLI args.
+# Usage: docker compose -f docker/docker-compose.v3-mainnet.yml --env-file .env up -d --build
+#
+# Requires .env with: REDIS_PASSWORD, MINER_WALLET, MINER_WORKER
+# Optional .env: SEED_PEERS (comma-separated), MINER_CPUS
+
+services:
+  core:
+    build:
+      context: ../V3
+      dockerfile: ../docker/Dockerfile.v3.core
+    image: zion-core:v3-mainnet
+    container_name: zion-core
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    network_mode: host
+    volumes:
+      - zion-data:/data/zion
+    tmpfs:
+      - /tmp
+    environment:
+      - RUST_LOG=info
+      - ZION_NETWORK=mainnet
+      - ZION_NODE_ID=${NODE_ID:-v3-mainnet-0}
+      - ZION_NODE_STATE_PATH=/data/zion/chain_state.json
+      - ZION_P2P_BIND=0.0.0.0:8333
+      - ZION_RPC_BIND=0.0.0.0:8443
+      - ZION_POOL_BIND=0.0.0.0:8444
+      - ZION_METRICS_BIND=0.0.0.0:9115
+      - ZION_SEED_PEERS=${SEED_PEERS:-91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333}
+      - ZION_MINER_ADDRESS=${MINER_WALLET}
+      - ZION_HUMANITARIAN_WALLET=${HUMANITARIAN_WALLET:-zion1m4v5z8z850u480c5c208z274e334369275n5y20}
+      - ZION_ISSOBELLA_WALLET=${ISSOBELLA_WALLET:-zion170a374s6h390k7w244m5c4f354v8n4678844655}
+      - ZION_POOL_FEE_WALLET=${POOL_FEE_WALLET:-zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7}
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 8G
+        reservations:
+          cpus: '0.25'
+          memory: 2G
+
+  seed1:
+    image: zion-core:v3-mainnet
+    container_name: zion-seed-1
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      core:
+        condition: service_healthy
+    extra_hosts:
+      - "core:host-gateway"
+    volumes:
+      - seed1-data:/data/zion
+    tmpfs:
+      - /tmp
+    environment:
+      - RUST_LOG=info
+      - ZION_NETWORK=mainnet
+      - ZION_NODE_ID=${SEED_NODE_ID:-v3-seed-1}
+      - ZION_NODE_STATE_PATH=/data/zion/chain_state.json
+      - ZION_P2P_BIND=0.0.0.0:8333
+      - ZION_RPC_BIND=0.0.0.0:8443
+      - ZION_SEED_PEERS=core:8333
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 4G
+    networks:
+      - zion-net
+
+  pool:
+    build:
+      context: ../V3
+      dockerfile: ../docker/Dockerfile.v3.pool
+    image: zion-pool:v3-mainnet
+    container_name: zion-pool
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "3333:3333"   # Stratum
+      - "8080:8080"   # Pool API
+    volumes:
+      - pool-data:/data/zion-pool
+    tmpfs:
+      - /tmp
+    depends_on:
+      core:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    extra_hosts:
+      - "core:host-gateway"
+    environment:
+      - RUST_LOG=info
+      - ZION_POOL_BIND=0.0.0.0:3333
+      - ZION_NODE_RPC_ADDR=core:8443
+      - ZION_ROUTING_METRICS_BIND=0.0.0.0:8080
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - ZION_REVENUE_SOURCE=zion
+      - ZION_REVENUE_USD=1.25
+      - ZION_POOL_LOOP_COUNT=4294967295
+      - ZION_NONCE_COUNT=500000
+      - ZION_NONCE_STRIDE=65536
+      - ZION_JOB_TTL_MS=3600000
+      - ZION_HAS_GPU=0
+      - ZION_HUMANITARIAN_TITHE_PCT=5
+      - ZION_ISSOBELLA_FUND_PCT=5
+      - ZION_POOL_FEE_PCT=1
+      - ZION_HUMANITARIAN_WALLET=${HUMANITARIAN_WALLET:-zion1m4v5z8z850u480c5c208z274e334369275n5y20}
+      - ZION_ISSOBELLA_WALLET=${ISSOBELLA_WALLET:-zion170a374s6h390k7w244m5c4f354v8n4678844655}
+      - ZION_POOL_FEE_WALLET=${POOL_FEE_WALLET:-zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7}
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3333"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 4G
+        reservations:
+          cpus: '0.10'
+          memory: 512M
+    networks:
+      - zion-net
+
+  miner:
+    build:
+      context: ../V3
+      dockerfile: ../docker/Dockerfile.v3.miner
+    image: zion-miner:v3-mainnet
+    container_name: zion-miner
+    restart: unless-stopped
+    environment:
+      - RUST_LOG=info
+      - ZION_POOL_ADDR=pool:3333
+      - ZION_MINER_ID=${MINER_WALLET}
+      - ZION_WORKER_NAME=${MINER_WORKER:-mainnet-miner}
+      - ZION_NONCE_AUTOTUNE=true
+      - ZION_LOOP_COUNT=4294967295
+      - ZION_NONCE_COUNT=500000
+      - ZION_JOB_TTL_MS=3600000
+      - ZION_RECONNECT=true
+      - ZION_MAX_RECONNECT=0
+    depends_on:
+      pool:
+        condition: service_started
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /dev/hugepages:/dev/hugepages
+    cpus: ${MINER_CPUS:-0.25}
+    networks:
+      - zion-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: zion-redis
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 1G
+    networks:
+      - zion-net
+
+volumes:
+  zion-data:
+  seed1-data:
+  pool-data:
+  redis-data:
+
+networks:
+  zion-net:
+    driver: bridge

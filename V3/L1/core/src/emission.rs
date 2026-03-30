@@ -47,6 +47,31 @@ pub const TAIL_REWARD: u64 = 724_784_723_787_776;
 /// Coinbase maturity: outputs unspendable for this many blocks.
 pub const COINBASE_MATURITY: u64 = 100;
 
+// ─── Fee Split Constants (Protocol-Level) ────────────────────────────────────
+
+/// Miner share: 89% of block subsidy.
+pub const MINER_PCT: u64 = 89;
+
+/// Humanitarian tithe: 5% of block subsidy.
+pub const HUMANITARIAN_PCT: u64 = 5;
+
+/// Issobella fund: 5% of block subsidy.
+pub const ISSOBELLA_PCT: u64 = 5;
+
+/// Pool operator fee: 1% of block subsidy.
+pub const POOL_FEE_PCT: u64 = 1;
+
+/// Compute the fee split for a given block subsidy.
+/// Returns (miner, humanitarian, issobella, pool_fee) in flowers.
+/// The miner portion absorbs any rounding dust so the parts always sum to subsidy.
+pub fn fee_split(subsidy: u64) -> (u64, u64, u64, u64) {
+    let humanitarian = subsidy * HUMANITARIAN_PCT / 100;
+    let issobella = subsidy * ISSOBELLA_PCT / 100;
+    let pool_fee = subsidy * POOL_FEE_PCT / 100;
+    let miner = subsidy - humanitarian - issobella - pool_fee;
+    (miner, humanitarian, issobella, pool_fee)
+}
+
 /// Block subsidy for a given height in flowers.
 ///
 /// Height 0 is genesis (premine only — returns 0).
@@ -233,5 +258,37 @@ mod tests {
         assert_eq!(flowers_to_zion(zion_to_flowers(5400)), 5400);
         assert_eq!(flowers_to_zion(BASE_REWARD), 5400);
         assert_eq!(zion_to_flowers(1), FLOWERS_PER_ZION);
+    }
+
+    #[test]
+    fn fee_split_sums_to_subsidy() {
+        let subsidy = BASE_REWARD;
+        let (miner, humanitarian, issobella, pool_fee) = fee_split(subsidy);
+        assert_eq!(miner + humanitarian + issobella + pool_fee, subsidy);
+    }
+
+    #[test]
+    fn fee_split_percentages_correct() {
+        let subsidy = BASE_REWARD;
+        let (miner, humanitarian, issobella, pool_fee) = fee_split(subsidy);
+        // 89%
+        assert_eq!(miner, subsidy - subsidy * 5 / 100 - subsidy * 5 / 100 - subsidy * 1 / 100);
+        // 5%
+        assert_eq!(humanitarian, subsidy * 5 / 100);
+        assert_eq!(issobella, subsidy * 5 / 100);
+        // 1%
+        assert_eq!(pool_fee, subsidy * 1 / 100);
+    }
+
+    #[test]
+    fn fee_split_tail_sums_to_subsidy() {
+        let (m, h, i, p) = fee_split(TAIL_REWARD);
+        assert_eq!(m + h + i + p, TAIL_REWARD);
+    }
+
+    #[test]
+    fn fee_split_zero() {
+        let (m, h, i, p) = fee_split(0);
+        assert_eq!((m, h, i, p), (0, 0, 0, 0));
     }
 }

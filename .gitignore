@@ -95,6 +95,9 @@ Cargo.lock
 .coverage
 htmlcov/
 
+# Large V2 book archives — not tracked in git (685MB+)
+APP&WEB/public_html/V2/books/Old/
+
 # Misc
 *.tmp
 *.temp
@@ -125,3 +128,4 @@ next-build.log$LOG
 APP&WEB/website-v2.9/SeedDE
 
 test_out.txt
+TITHE_WALLETS_BACKUP.txt

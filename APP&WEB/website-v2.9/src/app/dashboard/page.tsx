@@ -4,8 +4,8 @@ import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: `Mission Control Dashboard · ZION ${SITE_RELEASE_LABEL}`,
-  description: 'Live Mission Control: current primary host status, pool metrics, roadmap, economy, security, and single-host telemetry with internal seed containers.',
-  keywords: "ZION dashboard, mission control, blockchain metrics, node status, native rust, mining pool, roadmap, economy",
+  description: 'Test-mainnet Mission Control: 48-72h rehearsal status, launch blockers, pool metrics, roadmap, security gates, and controlled 3-node telemetry.',
+  keywords: "ZION dashboard, test mainnet, launch rehearsal, blockchain metrics, node status, mining pool, roadmap, security gate",
 };
 
 export default function DashboardPage() {

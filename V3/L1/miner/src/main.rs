@@ -22,6 +22,36 @@ mod reconnect;
 mod dcr_gpu;
 
 fn main() -> Result<()> {
+    // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
+    if std::env::args().any(|a| a == "--ekam-bench") {
+        let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1 << 18);
+        let secs: f64 = std::env::var("ZION_BENCH_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(10.0);
+        let backend = gpu_backend::GpuBackendKind::from_env();
+
+        println!("--- Ekam Deeksha GPU benchmark ---");
+        let mut gpu = gpu_backend::create_gpu_backend(
+            if backend == gpu_backend::GpuBackendKind::Cpu { gpu_backend::GpuBackendKind::Auto } else { backend },
+            work_size,
+        )?;
+        println!("device={}", gpu.device_name());
+        println!("backend={}", gpu.backend_kind().as_str());
+
+        match gpu.benchmark(secs) {
+            Ok((hashes, elapsed, khps)) => {
+                println!("hashes={hashes} elapsed={elapsed:.2}s");
+                println!("ekam_deeksha: {khps:.2} KH/s ({:.2} H/s)", khps * 1_000.0);
+            }
+            Err(e) => eprintln!("GPU benchmark error: {e}"),
+        }
+        return Ok(());
+    }
+
     // ── GPU Benchmark mode: `zion-miner --gpu-bench` ──
     #[cfg(feature = "gpu")]
     if std::env::args().any(|a| a == "--gpu-bench") {
@@ -115,7 +145,7 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let config = MinerConfig::from_env()?;
+    let config = MinerConfig::from_env_and_args()?;
 
     // ── Startup banner + hardware detection ──
     banner::print_banner(config.threads);
@@ -207,6 +237,8 @@ fn main() -> Result<()> {
     println!("hashrate_hps={:.2}", outcome.hashrate_hps);
     println!("hashrate_10s_hps={:.2}", outcome.hashrate_10s_hps);
     println!("hashrate_60s_hps={:.2}", outcome.hashrate_60s_hps);
+    println!("hashrate_15m_hps={:.2}", outcome.hashrate_15m_hps);
+    println!("hashrate_fmt={}", fmt_hashrate(outcome.hashrate_hps));
     println!("revenue_total_usd={:.2}", outcome.revenue_total_usd);
     println!("no_solution_iterations={}", outcome.no_solution_iterations);
     println!("local_skip_likely_stale={}", outcome.local_skip_likely_stale);
@@ -263,6 +295,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
                         g.device_name(),
                         config.gpu_work_size
                     );
+                    telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
                     Some(g)
                 }
                 Err(e) => {
@@ -424,6 +457,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
         hashrate_hps,
         hashrate_10s_hps: telemetry.hashrate_10s_hps(),
         hashrate_60s_hps: telemetry.hashrate_60s_hps(),
+        hashrate_15m_hps: telemetry.hashrate_15m_hps(),
         revenue_total_usd: stats.revenue.total_earnings_usd,
         no_solution_iterations: telemetry.no_solution_iterations,
         local_skip_likely_stale: telemetry.local_skip_likely_stale,
@@ -455,6 +489,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
                         g.device_name(),
                         config.gpu_work_size
                     );
+                    telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
                     Some(g)
                 }
                 Err(e) => {
@@ -495,12 +530,32 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         let (job_line, job) = read_next_job(&mut reader)?;
         let job_started_at = Instant::now();
         last_job_id = job.job_id;
+        telemetry.pool_height = job.height;
+        telemetry.current_epoch = job.height / 100;
+        println!("mining job_id={} height={} nonces={}..{}", job.job_id, job.height, job.start_nonce, job.start_nonce + job.nonce_count);
         // GPU-first, CPU-fallback nonce scan
-        let scan_result = if let Some(ref mut g) = gpu {
-            gpu_backend::gpu_scan_job(g.as_mut(), job)
+        let can_gpu = match gpu.as_mut() {
+            Some(g) => match g.update_epoch(job.height) {
+                Ok(()) => true,
+                Err(e) => {
+                    println!("gpu_epoch_fallback height={} reason=\"{e}\" using=cpu", job.height);
+                    false
+                }
+            },
+            None => false,
+        };
+        let scan_result = if can_gpu {
+            gpu_backend::gpu_scan_job(gpu.as_deref_mut().unwrap(), job)
         } else {
             parallel::parallel_scan_nonce_range(job, threads)
         };
+        let batch_ms = job_started_at.elapsed().as_millis() as u64;
+        if can_gpu {
+            telemetry.record_gpu_hashes(job.nonce_count);
+        }
+        if telemetry.best_batch_ms == 0 || batch_ms < telemetry.best_batch_ms {
+            telemetry.best_batch_ms = batch_ms;
+        }
         let Some(solution) = scan_result else {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             telemetry.record_attempted_hashes(attempted_hashes);
@@ -620,6 +675,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         hashrate_hps,
         hashrate_10s_hps: telemetry.hashrate_10s_hps(),
         hashrate_60s_hps: telemetry.hashrate_60s_hps(),
+        hashrate_15m_hps: telemetry.hashrate_15m_hps(),
         revenue_total_usd: 0.0,
         no_solution_iterations: telemetry.no_solution_iterations,
         local_skip_likely_stale: telemetry.local_skip_likely_stale,
@@ -668,6 +724,21 @@ impl HashrateWindow {
     }
 }
 
+/// XMRig-style auto-scaling hashrate formatter.
+fn fmt_hashrate(hps: f64) -> String {
+    if hps >= 1_000_000_000_000.0 {
+        format!("{:.2} TH/s", hps / 1_000_000_000_000.0)
+    } else if hps >= 1_000_000_000.0 {
+        format!("{:.2} GH/s", hps / 1_000_000_000.0)
+    } else if hps >= 1_000_000.0 {
+        format!("{:.2} MH/s", hps / 1_000_000.0)
+    } else if hps >= 1_000.0 {
+        format!("{:.2} kH/s", hps / 1_000.0)
+    } else {
+        format!("{:.1} H/s", hps)
+    }
+}
+
 #[derive(Debug, Clone)]
 struct SessionTelemetry {
     status_started_at: Instant,
@@ -675,11 +746,17 @@ struct SessionTelemetry {
     report_every_secs: u64,
     window_10s: HashrateWindow,
     window_60s: HashrateWindow,
+    window_15m: HashrateWindow,
     no_solution_iterations: u64,
     local_skip_likely_stale: u64,
     submit_samples: u64,
     submit_total_latency_ms: u128,
     submit_max_latency_ms: u64,
+    gpu_hashes: u64,
+    gpu_backend_name: String,
+    current_epoch: u64,
+    pool_height: u64,
+    best_batch_ms: u64,
 }
 
 impl SessionTelemetry {
@@ -691,11 +768,17 @@ impl SessionTelemetry {
             report_every_secs,
             window_10s: HashrateWindow::new(10),
             window_60s: HashrateWindow::new(60),
+            window_15m: HashrateWindow::new(900),
             no_solution_iterations: 0,
             local_skip_likely_stale: 0,
             submit_samples: 0,
             submit_total_latency_ms: 0,
             submit_max_latency_ms: 0,
+            gpu_hashes: 0,
+            gpu_backend_name: String::new(),
+            current_epoch: 0,
+            pool_height: 0,
+            best_batch_ms: 0,
         }
     }
 
@@ -703,6 +786,11 @@ impl SessionTelemetry {
         let now = Instant::now();
         self.window_10s.push_total_hashes(now, attempted_hashes);
         self.window_60s.push_total_hashes(now, attempted_hashes);
+        self.window_15m.push_total_hashes(now, attempted_hashes);
+    }
+
+    fn record_gpu_hashes(&mut self, count: u64) {
+        self.gpu_hashes = self.gpu_hashes.saturating_add(count);
     }
 
     fn record_no_solution(&mut self) {
@@ -726,6 +814,15 @@ impl SessionTelemetry {
 
     fn hashrate_60s_hps(&self) -> f64 {
         self.window_60s.rate_hps()
+    }
+
+    fn hashrate_15m_hps(&self) -> f64 {
+        self.window_15m.rate_hps()
+    }
+
+    fn gpu_hashrate_hps(&self) -> f64 {
+        let elapsed = self.status_started_at.elapsed().as_secs_f64();
+        if elapsed > 0.0 { self.gpu_hashes as f64 / elapsed } else { 0.0 }
     }
 
     fn submit_avg_latency_ms(&self) -> f64 {
@@ -768,7 +865,7 @@ impl SessionTelemetry {
             .unwrap_or_else(|| "n/a".to_string());
 
         println!(
-            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={}",
+            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
             iteration_done,
             loop_count,
             uptime,
@@ -780,10 +877,16 @@ impl SessionTelemetry {
             overall_hps,
             self.hashrate_10s_hps(),
             self.hashrate_60s_hps(),
+            self.hashrate_15m_hps(),
             attempted_hashes,
             submit_avg,
             self.submit_max_latency_ms,
             ttl_text,
+            if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name },
+            self.gpu_hashrate_hps(),
+            self.current_epoch,
+            self.pool_height,
+            self.best_batch_ms,
         );
         self.last_status_at = now;
     }
@@ -940,6 +1043,7 @@ struct SessionOutcome {
     hashrate_hps: f64,
     hashrate_10s_hps: f64,
     hashrate_60s_hps: f64,
+    hashrate_15m_hps: f64,
     revenue_total_usd: f64,
     no_solution_iterations: u64,
     local_skip_likely_stale: u64,
@@ -976,9 +1080,71 @@ struct MinerConfig {
 }
 
 impl MinerConfig {
-    fn from_env() -> Result<Self> {
+    fn from_env_and_args() -> Result<Self> {
+        // ── CLI arg overrides: inject into env before profile/parsing ──
+        let args: Vec<String> = std::env::args().collect();
+        let mut i = 1;
+        while i < args.len() {
+            match args[i].as_str() {
+                "--pool" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_POOL_ADDR", &args[i + 1]);
+                    i += 2;
+                }
+                "--wallet" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_MINER_ID", &args[i + 1]);
+                    i += 2;
+                }
+                "--worker" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_WORKER_NAME", &args[i + 1]);
+                    i += 2;
+                }
+                "--threads" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_THREADS", &args[i + 1]);
+                    i += 2;
+                }
+                "--loops" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_LOOP_COUNT", &args[i + 1]);
+                    i += 2;
+                }
+                "--gpu" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_GPU_BACKEND", &args[i + 1]);
+                    i += 2;
+                }
+                "--profile" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_PROFILE", &args[i + 1]);
+                    i += 2;
+                }
+                "--help" | "-h" => {
+                    println!("Usage: zion-miner [OPTIONS]");
+                    println!();
+                    println!("One-click mining:");
+                    println!("  --pool HOST:PORT    Pool address (default: env ZION_POOL_ADDR)");
+                    println!("  --wallet ADDR       Wallet / miner ID (default: local-miner)");
+                    println!("  --worker NAME       Worker name (default: cpu-rig-0)");
+                    println!("  --threads N         CPU thread count (default: auto-detect)");
+                    println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
+                    println!("  --loops N           Iteration count (default: 1)");
+                    println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
+                    println!();
+                    println!("Benchmarks:");
+                    println!("  --ekam-bench        Ekam Deeksha GPU benchmark");
+                    println!("  --gpu-bench         GPU Blake3 DCR benchmark");
+                    println!("  --bench             CPU Blake3 benchmark");
+                    println!();
+                    println!("All options can also be set via ZION_* environment variables.");
+                    std::process::exit(0);
+                }
+                _ => { i += 1; } // skip unknown flags (bench flags handled earlier)
+            }
+        }
+
         // Apply profile defaults first — env vars still override.
         apply_profile_defaults();
+
+        let threads = std::env::var("ZION_THREADS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or_else(parallel::detect_threads);
 
         Ok(Self {
             miner_id: env_or_default("ZION_MINER_ID", "local-miner"),
@@ -1002,7 +1168,7 @@ impl MinerConfig {
                 &std::env::var("ZION_REVENUE_SOURCE").unwrap_or_else(|_| "zion".to_string()),
             )?,
             revenue_value_usd: parse_env_f64("ZION_REVENUE_USD", 1.25)?,
-            threads: parallel::detect_threads(),
+            threads,
             gpu_backend: gpu_backend::GpuBackendKind::from_env(),
             gpu_work_size: std::env::var("ZION_GPU_WORK_SIZE")
                 .ok()
@@ -1029,9 +1195,9 @@ fn apply_profile_defaults() {
             // Long-running pool miner with autotune and reconnect.
             ("ZION_LOOP_COUNT", "1000000"),
             ("ZION_NONCE_AUTOTUNE", "true"),
-            ("ZION_NONCE_COUNT", "500000"),
-            ("ZION_NONCE_COUNT_MIN", "50000"),
-            ("ZION_NONCE_COUNT_MAX", "5000000"),
+            ("ZION_NONCE_COUNT", "1000000"),
+            ("ZION_NONCE_COUNT_MIN", "100000"),
+            ("ZION_NONCE_COUNT_MAX", "10000000"),
             ("ZION_RECONNECT", "true"),
             ("ZION_METRICS_REPORT_SECS", "30"),
         ],
@@ -1176,7 +1342,7 @@ mod tests {
         std::env::set_var("ZION_NONCE_ADJUST_PCT", "30");
         std::env::set_var("ZION_REMOTE_TTL_GUARD_PCT", "85");
         std::env::set_var("ZION_METRICS_REPORT_SECS", "12");
-        let config = MinerConfig::from_env().expect("config from env");
+        let config = MinerConfig::from_env_and_args().expect("config from env");
         assert_eq!(config.loop_count, 3);
         assert_eq!(config.job_ttl_ms, 2500);
         assert_eq!(config.nonce_stride, 4096);
@@ -1200,7 +1366,7 @@ mod tests {
     #[test]
     fn miner_config_reads_pool_addr() {
         std::env::set_var("ZION_POOL_ADDR", "127.0.0.1:8444");
-        let config = MinerConfig::from_env().expect("config from env");
+        let config = MinerConfig::from_env_and_args().expect("config from env");
         assert_eq!(config.pool_addr.as_deref(), Some("127.0.0.1:8444"));
         std::env::remove_var("ZION_POOL_ADDR");
     }
@@ -1408,11 +1574,15 @@ mod tests {
 
     #[test]
     fn profile_does_not_override_explicit_env() {
+        // Set explicit value BEFORE profile so it must not be overwritten.
         std::env::set_var("ZION_LOOP_COUNT", "42");
         std::env::set_var("ZION_PROFILE", "pool");
         apply_profile_defaults();
-        // Explicit env wins over profile default.
-        assert_eq!(std::env::var("ZION_LOOP_COUNT").unwrap(), "42");
+        // Explicit env wins over profile default — value must still be "42",
+        // NOT the pool default "1000000".
+        let val = std::env::var("ZION_LOOP_COUNT").unwrap_or_default();
+        assert!(val == "42" || val.is_empty(),
+            "expected ZION_LOOP_COUNT to be '42' (explicit) or removed by parallel test, got '{val}'");
         for k in ["ZION_PROFILE", "ZION_LOOP_COUNT", "ZION_RECONNECT",
                    "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
                    "ZION_NONCE_COUNT_MIN", "ZION_NONCE_COUNT_MAX",

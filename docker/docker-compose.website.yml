@@ -11,6 +11,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    volumes:
+      - ../ops/mainnet-stability-run:/data/mainnet-stability-run:ro
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
@@ -28,6 +30,23 @@ services:
       start_period: 45s
     labels:
       - "com.zion.service=website"
+      - "com.zion.version=2.9.9"
+    networks:
+      - zion-net
+
+  mainnet-stability-collector:
+    image: node:22-alpine
+    container_name: zion-mainnet-stability-collector
+    restart: unless-stopped
+    working_dir: /workspace
+    command: >
+      sh -lc "mkdir -p /workspace/ops/mainnet-stability-run
+      && node scripts/mainnet_stability_collector.mjs --interval-sec 60 >> /workspace/ops/mainnet-stability-run/collector.log 2>&1"
+    volumes:
+      - ../scripts:/workspace/scripts:ro
+      - ../ops:/workspace/ops
+    labels:
+      - "com.zion.service=mainnet-stability-collector"
       - "com.zion.version=2.9.9"
     networks:
       - zion-net

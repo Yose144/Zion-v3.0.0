@@ -231,6 +231,9 @@ pub fn genesis_block() -> AcceptedBlock {
         subsidy_zion: 0,
         miner_reward_zion: 0,
         miner_address: String::new(),
+        humanitarian_address: String::new(),
+        issobella_address: String::new(),
+        pool_fee_address: String::new(),
         utxo_transaction_ids: vec![],
         utxo_transactions: vec![],
     }
