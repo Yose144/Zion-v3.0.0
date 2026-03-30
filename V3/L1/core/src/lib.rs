@@ -42,6 +42,140 @@ pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;
 pub const MAX_MEMPOOL_TRANSACTIONS: usize = 4_096;
 pub const MAX_TEMPLATE_UTXO_TRANSACTIONS: usize = 16;
 
+const BRIDGE_UNLOCK_MEMO_PREFIX: &str = "BRIDGE_UNLOCK:";
+
+fn bridge_unlock_replay_key(source_chain: &str, burn_id: &str, evm_tx_hash: &str) -> String {
+    format!("{source_chain}:{burn_id}:{evm_tx_hash}")
+}
+
+fn bridge_unlock_memo(source_chain: &str, burn_id: &str, evm_tx_hash: &str) -> String {
+    format!(
+        "{BRIDGE_UNLOCK_MEMO_PREFIX}{}",
+        bridge_unlock_replay_key(source_chain, burn_id, evm_tx_hash)
+    )
+}
+
+fn parse_bridge_unlock_memo(memo: &str) -> Option<(&str, &str, &str)> {
+    let rest = memo.strip_prefix(BRIDGE_UNLOCK_MEMO_PREFIX)?;
+    let mut parts = rest.splitn(3, ':');
+    let source_chain = parts.next()?;
+    let burn_id = parts.next()?;
+    let evm_tx_hash = parts.next()?;
+    if source_chain.is_empty() || burn_id.is_empty() || evm_tx_hash.is_empty() {
+        return None;
+    }
+    Some((source_chain, burn_id, evm_tx_hash))
+}
+
+fn bridge_unlock_replay_key_from_transaction(transaction: &tx::Transaction) -> Option<String> {
+    transaction
+        .outputs
+        .iter()
+        .filter_map(|output| output.memo.as_deref())
+        .find_map(|memo| {
+            let (source_chain, burn_id, evm_tx_hash) = parse_bridge_unlock_memo(memo)?;
+            Some(bridge_unlock_replay_key(source_chain, burn_id, evm_tx_hash))
+        })
+}
+
+#[derive(Debug, Clone)]
+pub struct BridgeUnlockRequest {
+    pub recipient: String,
+    pub amount_flowers: u64,
+    pub source_chain: String,
+    pub burn_id: String,
+    pub evm_tx_hash: String,
+}
+
+fn validate_bridge_unlock_transaction_shape_with_utxos(
+    transaction: &tx::Transaction,
+    utxos: &HashMap<(String, u32), SpendableUtxo>,
+) -> Result<Option<String>, String> {
+    let Some(replay_key) = bridge_unlock_replay_key_from_transaction(transaction) else {
+        return Ok(None);
+    };
+
+    if transaction.inputs.is_empty() {
+        return Err("bridge unlock transaction must spend bridge vault UTXOs".to_string());
+    }
+
+    let memo_outputs: Vec<&tx::TxOutput> = transaction
+        .outputs
+        .iter()
+        .filter(|output| {
+            output
+                .memo
+                .as_deref()
+                .is_some_and(|memo| memo.starts_with(BRIDGE_UNLOCK_MEMO_PREFIX))
+        })
+        .collect();
+    if memo_outputs.len() != 1 {
+        return Err("bridge unlock transaction must contain exactly one unlock memo output".to_string());
+    }
+
+    let recipient_output = memo_outputs[0];
+    if recipient_output.address == fee::BRIDGE_VAULT_ADDRESS {
+        return Err("bridge unlock recipient output must not point back to the bridge vault".to_string());
+    }
+
+    let outputs_for_validation: Vec<(u64, &str)> = transaction
+        .outputs
+        .iter()
+        .map(|output| (output.amount, output.address.as_str()))
+        .collect();
+    fee::validate_outputs(&outputs_for_validation)?;
+    for output in &transaction.outputs {
+        if output.address != fee::BRIDGE_VAULT_ADDRESS && !crypto::is_valid_address(&output.address) {
+            return Err(format!("bridge unlock output address is invalid: {}", output.address));
+        }
+        if output.memo.is_some() && output.address == fee::BRIDGE_VAULT_ADDRESS {
+            return Err("bridge unlock change output must not carry a memo".to_string());
+        }
+    }
+
+    let tx_size = fee::estimate_tx_size(transaction.inputs.len(), transaction.outputs.len());
+    fee::validate_fee(transaction.fee, tx_size)?;
+
+    let mut seen_inputs = HashSet::new();
+    let mut total_input = 0u64;
+    for input in &transaction.inputs {
+        if !input.signature.is_empty() || !input.public_key.is_empty() {
+            return Err("bridge unlock inputs must use the dedicated keyless bridge authorization path".to_string());
+        }
+        if !seen_inputs.insert((input.prev_tx_hash, input.output_index)) {
+            return Err("bridge unlock transaction contains duplicate inputs".to_string());
+        }
+        let Some(utxo) = utxos.get(&(hex(&input.prev_tx_hash), input.output_index)) else {
+            return Err(format!(
+                "bridge unlock input {}:{} does not exist or is already spent",
+                hex(&input.prev_tx_hash),
+                input.output_index,
+            ));
+        };
+        if utxo.address != fee::BRIDGE_VAULT_ADDRESS {
+            return Err("bridge unlock may only spend UTXOs owned by the bridge vault".to_string());
+        }
+        total_input = total_input
+            .checked_add(utxo.amount)
+            .ok_or_else(|| "bridge unlock input sum overflowed".to_string())?;
+    }
+
+    let total_output = transaction.total_output();
+    let required_input = total_output
+        .checked_add(transaction.fee)
+        .ok_or_else(|| "bridge unlock outputs plus fee overflowed".to_string())?;
+    if total_input != required_input {
+        return Err(format!(
+            "bridge unlock input total {} does not match outputs {} plus fee {}",
+            total_input,
+            total_output,
+            transaction.fee,
+        ));
+    }
+
+    Ok(Some(replay_key))
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NetworkId {
     Mainnet,
@@ -558,6 +692,7 @@ struct ChainState {
     mempool_by_id: HashMap<String, RuntimeTransaction>,
     /// Address to credit in coinbase transactions. Empty = no coinbase generated.
     miner_address: String,
+    bridge_unlock_replay_keys: HashSet<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -570,6 +705,8 @@ struct ChainStateSnapshot {
     mempool: Vec<Transaction>,
     #[serde(default)]
     utxo_mempool: Vec<tx::Transaction>,
+    #[serde(default)]
+    bridge_unlock_replay_keys: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -1162,6 +1299,20 @@ impl NodeRuntime {
         }
     }
 
+    pub fn submit_bridge_unlock(
+        &mut self,
+        request: BridgeUnlockRequest,
+    ) -> RpcResponse {
+        match self.chain_state.build_bridge_unlock_transaction(&request) {
+            Ok(transaction) => self.submit_utxo_transaction_rpc(transaction),
+            Err(reason) => RpcResponse::TransactionResult {
+                accepted: false,
+                tx_id: String::new(),
+                reason: Some(reason),
+            },
+        }
+    }
+
     fn submit_candidate_rpc(
         &mut self,
         template_id: u64,
@@ -1476,6 +1627,32 @@ impl ChainState {
             .collect()
     }
 
+    fn accepted_bridge_unlock_replay_keys(&self) -> HashSet<String> {
+        self.accepted_blocks
+            .iter()
+            .flat_map(|block| block.utxo_transactions.iter())
+            .filter_map(bridge_unlock_replay_key_from_transaction)
+            .collect()
+    }
+
+    fn rebuild_bridge_unlock_replay_keys(&mut self) {
+        self.bridge_unlock_replay_keys = self.accepted_bridge_unlock_replay_keys();
+        self.bridge_unlock_replay_keys.extend(
+            self.mempool
+                .iter()
+                .filter_map(|transaction| transaction.as_utxo())
+                .filter_map(bridge_unlock_replay_key_from_transaction),
+        );
+    }
+
+    fn validate_bridge_unlock_transaction_shape(
+        &self,
+        transaction: &tx::Transaction,
+    ) -> Result<Option<String>, String> {
+        let utxos = self.utxo_set();
+        validate_bridge_unlock_transaction_shape_with_utxos(transaction, &utxos)
+    }
+
     /// Check whether a specific outpoint exists as an unspent UTXO on chain.
     fn utxo_exists(&self, tx_hash: &[u8; 32], output_index: u32) -> bool {
         self.utxo_set().contains_key(&(hex(tx_hash), output_index))
@@ -1501,6 +1678,7 @@ impl ChainState {
             mempool,
             mempool_by_id: HashMap::new(),
             miner_address: String::new(),
+            bridge_unlock_replay_keys: HashSet::new(),
         }
     }
 
@@ -1561,6 +1739,7 @@ impl ChainState {
                 .collect(),
             mempool_by_id: HashMap::new(),
             miner_address: String::new(),
+            bridge_unlock_replay_keys: snapshot.bridge_unlock_replay_keys.into_iter().collect(),
         };
         chain_state.rebuild_mempool_index();
         chain_state.active_template.transactions = persisted_transaction_ids
@@ -1574,6 +1753,105 @@ impl ChainState {
             .collect();
         chain_state.sanitize_recovered_state(node_id, core)?;
         Ok(chain_state)
+    }
+
+    fn build_bridge_unlock_transaction(
+        &self,
+        request: &BridgeUnlockRequest,
+    ) -> Result<tx::Transaction, String> {
+        if request.amount_flowers == 0 {
+            return Err("bridge unlock amount must be greater than zero".to_string());
+        }
+        if !crypto::is_valid_address(&request.recipient) {
+            return Err("bridge unlock recipient must be a valid zion1 address".to_string());
+        }
+
+        let replay_key = bridge_unlock_replay_key(
+            &request.source_chain,
+            &request.burn_id,
+            &request.evm_tx_hash,
+        );
+        if self.bridge_unlock_replay_keys.contains(&replay_key) {
+            return Err(format!("bridge unlock replay key already used: {replay_key}"));
+        }
+
+        let mut spendable = self.spendable_utxos(fee::BRIDGE_VAULT_ADDRESS);
+        spendable.sort_by(|left, right| {
+            left.height
+                .cmp(&right.height)
+                .then(left.tx_hash.cmp(&right.tx_hash))
+                .then(left.output_index.cmp(&right.output_index))
+        });
+
+        let mut selected = Vec::new();
+        let mut total_input = 0u64;
+        let mut required_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(1, 2));
+        for utxo in spendable {
+            total_input = total_input
+                .checked_add(utxo.amount)
+                .ok_or_else(|| "bridge unlock input sum overflowed".to_string())?;
+            selected.push(utxo);
+            required_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(selected.len(), 2));
+            let required_total = request
+                .amount_flowers
+                .checked_add(required_fee)
+                .ok_or_else(|| "bridge unlock amount plus fee overflowed".to_string())?;
+            if total_input >= required_total {
+                break;
+            }
+        }
+
+        let required_total = request
+            .amount_flowers
+            .checked_add(required_fee)
+            .ok_or_else(|| "bridge unlock amount plus fee overflowed".to_string())?;
+        if total_input < required_total {
+            return Err(format!(
+                "bridge vault balance {} is insufficient for unlock amount {} plus fee {}",
+                total_input,
+                request.amount_flowers,
+                required_fee,
+            ));
+        }
+
+        let mut outputs = vec![tx::TxOutput {
+            amount: request.amount_flowers,
+            address: request.recipient.clone(),
+            memo: Some(bridge_unlock_memo(
+                &request.source_chain,
+                &request.burn_id,
+                &request.evm_tx_hash,
+            )),
+        }];
+
+        let change = total_input - required_total;
+        if change > 0 {
+            outputs.push(tx::TxOutput {
+                amount: change,
+                address: fee::BRIDGE_VAULT_ADDRESS.to_string(),
+                memo: None,
+            });
+        }
+
+        let mut transaction = tx::Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: selected
+                .into_iter()
+                .map(|utxo| tx::TxInput {
+                    prev_tx_hash: parse_fixed_hex::<32>(&utxo.tx_hash, "bridge vault UTXO hash")
+                        .expect("spendable_utxos must contain valid tx hashes"),
+                    output_index: utxo.output_index,
+                    signature: Vec::new(),
+                    public_key: Vec::new(),
+                })
+                .collect(),
+            outputs,
+            fee: required_fee,
+            timestamp: now_secs(),
+        };
+        transaction.finalize_id();
+        Ok(transaction)
     }
 
     fn accept_block(
@@ -1611,6 +1889,7 @@ impl ChainState {
         self.accepted_by_template_id
             .insert(accepted_block.template_id, accepted_block.clone());
         self.accepted_blocks.push(accepted_block);
+        self.rebuild_bridge_unlock_replay_keys();
         let next_template_id = self.next_template_id;
         let miner_addr = self.miner_address.clone();
         self.active_template = Self::build_template(
@@ -2058,6 +2337,7 @@ impl ChainState {
             );
         }
         let mut seen_utxo_inputs: HashSet<([u8; 32], u32)> = HashSet::new();
+        let mut seen_bridge_unlock_replay_keys = self.accepted_bridge_unlock_replay_keys();
         for utxo_tx in &block.utxo_transactions {
             if utxo_tx.id != utxo_tx.calculate_hash() {
                 return Err(format!(
@@ -2065,11 +2345,23 @@ impl ChainState {
                     hex(&utxo_tx.id)
                 ));
             }
-            if !utxo_tx.verify_signatures() {
-                return Err(format!(
-                    "peer block UTXO transaction {} has invalid signatures",
-                    hex(&utxo_tx.id)
-                ));
+            match self.validate_bridge_unlock_transaction_shape(utxo_tx)? {
+                Some(replay_key) => {
+                    if !seen_bridge_unlock_replay_keys.insert(replay_key.clone()) {
+                        return Err(format!(
+                            "peer block bridge unlock replay key already used: {}",
+                            replay_key,
+                        ));
+                    }
+                }
+                None => {
+                    if !utxo_tx.verify_signatures() {
+                        return Err(format!(
+                            "peer block UTXO transaction {} has invalid signatures",
+                            hex(&utxo_tx.id)
+                        ));
+                    }
+                }
             }
             let utxo_id_hex = hex(&utxo_tx.id);
             if !seen_tx_ids.insert(utxo_id_hex) {
@@ -2160,15 +2452,26 @@ impl ChainState {
         if transaction.id != transaction.calculate_hash() {
             return Err("UTXO transaction id does not match calculated hash".to_string());
         }
-        if !transaction.verify_signatures() {
-            return Err("UTXO transaction signature verification failed".to_string());
-        }
+        let bridge_unlock_replay_key = match self.validate_bridge_unlock_transaction_shape(&transaction)? {
+            Some(replay_key) => Some(replay_key),
+            None => {
+                if !transaction.verify_signatures() {
+                    return Err("UTXO transaction signature verification failed".to_string());
+                }
+                None
+            }
+        };
         if self.mempool.len() >= MAX_MEMPOOL_TRANSACTIONS {
             return Err(format!("mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"));
         }
         let tx_id = hex(&transaction.id);
         if self.mempool_by_id.contains_key(&tx_id) {
             return Err(format!("duplicate transaction id: {tx_id}"));
+        }
+        if let Some(replay_key) = &bridge_unlock_replay_key {
+            if self.bridge_unlock_replay_keys.contains(replay_key) {
+                return Err(format!("bridge unlock replay key already used: {replay_key}"));
+            }
         }
         if self.accepted_blocks.iter().any(|block| {
             block.utxo_transaction_ids.iter().any(|id| id == &tx_id)
@@ -2200,6 +2503,9 @@ impl ChainState {
                     input.output_index,
                 ));
             }
+        }
+        if let Some(replay_key) = bridge_unlock_replay_key {
+            self.bridge_unlock_replay_keys.insert(replay_key);
         }
         self.mempool
             .push(RuntimeTransaction::Utxo(transaction.clone()));
@@ -2254,6 +2560,8 @@ impl ChainState {
         let mut sender_nonces = HashSet::new();
         let mut seen = HashSet::new();
         let mut seen_utxo_inputs: HashSet<([u8; 32], u32)> = HashSet::new();
+        let mut seen_bridge_unlock_replay_keys = self.accepted_bridge_unlock_replay_keys();
+        let utxos = self.utxo_set();
         self.mempool.retain(|transaction| match transaction {
             RuntimeTransaction::Account(tx) => {
                 tx.validate().is_ok()
@@ -2269,16 +2577,25 @@ impl ChainState {
             }
             RuntimeTransaction::Utxo(utxo) => {
                 let id_hex = hex(&utxo.id);
-                utxo.id == utxo.calculate_hash()
-                    && utxo.verify_signatures()
-                    && !mined_ids.contains(id_hex.as_str())
-                    && seen.insert(id_hex)
-                    && utxo.inputs.iter().all(|input| {
+                if utxo.id != utxo.calculate_hash()
+                    || mined_ids.contains(id_hex.as_str())
+                    || !seen.insert(id_hex)
+                    || !utxo.inputs.iter().all(|input| {
                         seen_utxo_inputs.insert((input.prev_tx_hash, input.output_index))
                     })
+                {
+                    return false;
+                }
+
+                match validate_bridge_unlock_transaction_shape_with_utxos(utxo, &utxos) {
+                    Ok(Some(replay_key)) => seen_bridge_unlock_replay_keys.insert(replay_key),
+                    Ok(None) => utxo.verify_signatures(),
+                    Err(_) => false,
+                }
             }
         });
         self.rebuild_mempool_index();
+        self.bridge_unlock_replay_keys = seen_bridge_unlock_replay_keys;
 
         let mut template_transactions = Vec::new();
         for tx_id in &self.active_template.as_public().transaction_ids {
@@ -2338,6 +2655,7 @@ impl ChainState {
             accepted_blocks: self.accepted_blocks.clone(),
             mempool: self.account_mempool_transactions(),
             utxo_mempool: self.utxo_mempool_transactions(),
+            bridge_unlock_replay_keys: self.bridge_unlock_replay_keys.iter().cloned().collect(),
         }
     }
 
@@ -3452,6 +3770,7 @@ mod tests {
                 tx_mined.clone(),
             ],
             utxo_mempool: vec![],
+            bridge_unlock_replay_keys: vec![],
         };
         fs::write(
             &state_path,
