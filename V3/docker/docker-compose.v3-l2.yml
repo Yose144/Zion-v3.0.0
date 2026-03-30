@@ -49,6 +49,7 @@ services:
       - ../L2/atomic-swap/config:/etc/zion:ro
     environment:
       RUST_LOG: "zion_atomic_swap=debug,info"
+      ZION_SWAP_ESCROW_KEY: "2d7e73a41011d142c914861a3d0ee191c26050eb977d4cee3ce3b83524586b32"
     command: ["--config", "/etc/zion/swap-testnet.toml"]
       # ZION_SWAP_ESCROW_KEY: ""         # set in .env or secrets manager
       # ZION_RPC_TOKEN: ""
