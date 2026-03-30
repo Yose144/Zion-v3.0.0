@@ -1,0 +1,51 @@
+
+        {/* NEW: Live Grafana Metrics Section */}
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-cyan/30 bg-gradient-to-br from-zion-cyan/10 via-black/70 to-zion-purple/10 p-8 backdrop-blur-xl">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <BarChart3 className="w-10 h-10 text-zion-cyan" />
+              <div>
+                <h2 className="text-3xl font-semibold text-white">Live Grafana Metrics</h2>
+                <p className="text-sm text-gray-300 mt-1">Real-time monitoring dashboards · Prometheus + Grafana</p>
+              </div>
+            </div>
+            <Link href="https://zionterranova.com/grafana/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl bg-zion-cyan/20 border border-zion-cyan/50 px-6 py-3 text-sm font-semibold text-white hover:bg-zion-cyan/30 transition-all">
+              Open Grafana
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <Link href="https://zionterranova.com/grafana/d/pool-metrics" target="_blank" rel="noreferrer" className="group rounded-2xl border border-white/20 bg-black/40 p-6 hover:border-zion-cyan/50 hover:bg-black/60 transition-all">
+              <LineChart className="w-8 h-8 text-zion-cyan mb-4" />
+              <h3 className="text-lg font-semibold text-white group-hover:text-zion-cyan transition-colors">Pool Metrics Dashboard</h3>
+              <p className="text-sm text-gray-400 mt-2">Hashrate · Workers · Shares · Block discovery rate</p>
+              <div className="mt-4 flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zion-cyan">View dashboard<ArrowRight className="h-3 w-3" /></div>
+            </Link>
+
+            <Link href="https://zionterranova.com/grafana/d/system-metrics" target="_blank" rel="noreferrer" className="group rounded-2xl border border-white/20 bg-black/40 p-6 hover:border-zion-purple/50 hover:bg-black/60 transition-all">
+              <Gauge className="w-8 h-8 text-zion-purple mb-4" />
+              <h3 className="text-lg font-semibold text-white group-hover:text-zion-purple transition-colors">Full Dashboard</h3>
+              <p className="text-sm text-gray-400 mt-2">System health · CPU/RAM · Network · Disk I/O</p>
+              <div className="mt-4 flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zion-purple">View dashboard<ArrowRight className="h-3 w-3" /></div>
+            </Link>
+
+            <Link href="https://zionterranova.com/prometheus/graph" target="_blank" rel="noreferrer" className="group rounded-2xl border border-white/20 bg-black/40 p-6 hover:border-zion-gold/50 hover:bg-black/60 transition-all">
+              <Activity className="w-8 h-8 text-zion-gold mb-4" />
+              <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold transition-colors">Advanced Pool Dashboard</h3>
+              <p className="text-sm text-gray-400 mt-2">Prometheus query interface · Custom metrics · PromQL</p>
+              <div className="mt-4 flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zion-gold">View dashboard<ArrowRight className="h-3 w-3" /></div>
+            </Link>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="w-5 h-5 text-emerald-400 mt-1" />
+              <div>
+                <p className="text-sm font-semibold text-white">Monitoring Stack Status</p>
+                <p className="text-xs text-gray-400 mt-1">✓ Prometheus scraping metrics every 15s · ✓ Grafana dashboards auto-refresh · ✓ Historical data retention: 30 days</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+

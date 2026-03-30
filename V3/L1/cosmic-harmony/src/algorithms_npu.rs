@@ -458,6 +458,59 @@ pub fn chv4_npu_weights_flat() -> ChV4WeightsFlat {
     }
 }
 
+/// Return epoch-aware MLP weights in flat GPU format for a given epoch.
+///
+/// Only supports Standard topology (epoch % 4 == 0). Panics otherwise.
+/// This is the correct weight source for GPU backends matching the v2 pipeline
+/// (`npu_mixing_step_epoch`).
+pub fn chv4_npu_weights_flat_epoch(epoch: u64) -> ChV4WeightsFlat {
+    let weights = get_epoch_weights(epoch);
+    assert!(
+        weights.topology == MlpTopology::Standard,
+        "GPU kernel only supports Standard (64→128→64) topology, got {:?} for epoch {}",
+        weights.topology, epoch
+    );
+    let layer0 = &weights.layers[0];
+    let layer1 = &weights.layers[1];
+    ChV4WeightsFlat {
+        w1:     layer0.weights.clone(),
+        b1:     layer0.bias.clone(),
+        w2:     layer1.weights.clone(),
+        b2:     layer1.bias.clone(),
+        scale1: layer0.scale.clone(),
+        scale2: layer1.scale.clone(),
+    }
+}
+
+/// Packed variable-topology MLP weights for GPU kernels supporting all epoch topologies.
+pub struct ChV4WeightsPacked {
+    /// All layer weights concatenated: [layer0_weights..., layer1_weights..., ...]
+    pub weights: Vec<i8>,
+    /// All layer biases concatenated
+    pub biases: Vec<i8>,
+    /// All layer scales concatenated
+    pub scales: Vec<i16>,
+    /// Topology metadata: [num_layers, in0, out0, in1, out1, in2, out2]
+    pub meta: Vec<u32>,
+}
+
+/// Return epoch-aware MLP weights in packed format for variable-topology GPU kernels.
+pub fn chv4_npu_weights_packed(epoch: u64) -> ChV4WeightsPacked {
+    let weights = get_epoch_weights(epoch);
+    let mut w_all = Vec::new();
+    let mut b_all = Vec::new();
+    let mut s_all = Vec::new();
+    let mut meta = vec![weights.layers.len() as u32];
+    for layer in &weights.layers {
+        w_all.extend_from_slice(&layer.weights);
+        b_all.extend_from_slice(&layer.bias);
+        s_all.extend_from_slice(&layer.scale);
+        meta.push(layer.in_dim as u32);
+        meta.push(layer.out_dim as u32);
+    }
+    ChV4WeightsPacked { weights: w_all, biases: b_all, scales: s_all, meta }
+}
+
 // ============================================================================
 // EPOCH-ROTATING NPU WEIGHTS (Tier 2 ASIC resistance)
 // ============================================================================

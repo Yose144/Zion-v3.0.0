@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-21 (Sprint 7 complete — FFI self-test, difficulty monitor, CHv4.2 dual-spin)
+Status date: 2026-03-28 (Sprint 8 complete, fee-split rollout verified live)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -76,6 +76,14 @@ This roadmap follows the release progression already defined in the repository d
 
 ## Current State
 
+### Latest Verified Runtime Milestone
+
+- **On-chain fee-split enforcement is live:** V3 core now produces and validates four-output coinbase payouts on mainnet with deterministic split `89/5/5/1`
+- **First explicitly verified split-enabled block:** `465`
+- **Cross-node confirmation:** audited USA and Singapore nodes accepted subsequent split-enabled blocks `471` and `472`
+- **Operational root cause learned during rollout:** the first ineffective deploy was caused by a stale server-side `docker/docker-compose.v3-mainnet.yml` missing fee-wallet env vars in the `core` service; successful rebuild alone is not sufficient verification
+- **Canonical operational references:** `../docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`, `../docs/mainnet/V3_ROLLOUT_VERIFICATION_CHECKLIST.md`, `docs/MAINNET_DEPLOY_RUNBOOK.md`
+
 ### Completed
 
 - `L1/cosmic-harmony`
@@ -88,6 +96,9 @@ This roadmap follows the release progression already defined in the repository d
   - revenue and NCL support retained in narrowed form
   - OpenCL kernel source included (optimized: keccak_f1600 inline, native_sqrt, 46841 bytes)
 - `L1/core`
+  - **deterministic on-chain fee-split coinbase generation wired into active template rebuild and accepted-block state**
+  - **runtime fee-wallet env loading for miner, humanitarian, issobella, and pool-fee addresses**
+  - **backward-compatible block validation accepting both legacy single-output and new split-enabled coinbase layouts**
   - mining headers, jobs, solutions, targets, revenue snapshots
   - node config defaults for mainnet-track runtime
   - first P2P and RPC wire contracts
@@ -149,10 +160,44 @@ This roadmap follows the release progression already defined in the repository d
   - wallet role tagging for operator, treasury, bridge, and validator roots
   - clean auto-update hook isolation
   - thin supervision of prebuilt V3 node, pool, and miner binaries with live logs and persisted runtime env overrides
+- `L2/bridge` **(Sprint 8 — migrated from legacy `L2/bridge/`)**
+  - wZION relay daemon (L1↔EVM, Base Sepolia deployment)
+  - **Critical decimal fix**: `FLOWERS_PER_ZION` 1e6→1e12, `amount_atomic`→`amount_flowers`, DB schema updated
+  - Conversion functions: `flowers_to_wzion_wei()`, `wzion_wei_to_flowers()`, `flowers_to_zion_display()`
+  - L1 watcher (UTXO memo parser, `BRIDGE:base:0x...` format), EVM watcher (Burn event log parser)
+  - Relayer, DB (SQLite persistence), validator set (3-of-5 quorum), metrics, Ankr RPC client
+  - Config: mainnet + testnet TOML profiles, security limits (min/max/daily/timelock)
+  - **157 tests** (111 lib + 45 integration + 1 doctest)
+- `L2/dao` **(Sprint 8 — migrated from legacy `L2/dao/`)**
+  - DAO governance daemon: proposal lifecycle, voting, treasury, timelock, humanitarian tithe
+  - 12-decimal flowers, u128 treasury amounts (4B ZION scale)
+  - **65 tests** (40 lib + 25 integration)
+- `L2/atomic-swap` **(Sprint 8 — migrated from legacy `L2/atomic-swap/`)**
+  - HTLC cross-chain atomic swaps with `amount_flowers`/`min_lock_flowers`
+  - **15 tests**
+- `L3/ncl` **(Sprint 8 — migrated from legacy `L3/ncl/`)**
+  - Neural Consciousness Layer — decentralized AI compute marketplace
+  - 6 task types (Inference, Training, DataProcessing, Optimization, Validation, Custom)
+  - Scheduler (priority + reputation-weighted), pricing engine (base × backend × size)
+  - 3 compute backends (ONNX, WASM, TFLite — all stubs, ONNX first implementation planned)
+  - Reputation system (worker scoring, ban threshold, consciousness bonus)
+  - SQLite job store, REST API scaffold
+  - `reward_atomic`→`reward_flowers` naming for V3 12-decimal alignment
+  - **43 tests** (42 lib + 1 doctest)
+- `L3/warp` **(Sprint 8 — migrated from legacy `L3/warp/`)**
+  - Universal cross-chain bridge (7 chain adapters: EVM, Bitcoin, Solana, Tron, Stellar, Cardano, Cosmos)
+  - Decimal fix: ChainId::zion_l1() 6→12, all fee/conversion values updated
+  - **252 tests** (251 lib + 1 doctest)
+- `L3/ai-native` **(Sprint 8 — migrated from legacy `L3/ai-native/`)**
+  - Autonomous AI agent framework: orchestrator, consciousness engine, pool optimizer, warp agent
+  - `amount_flowers`/`reward_flowers` naming, thiserror=2
+  - **89 tests** (88 lib + 1 doctest)
 
 ### Verified
 
 - `cargo test --manifest-path V3/Cargo.toml` passes
+- local release build for `zion-core` passed before live rollout
+- live V3 fee-split rollout passed after manifest correction, with Prague / USA / Singapore synchronized post-deploy
 - pool/miner remote TCP smoke test passes
 - repeated miner sessions against one shared pool instance pass
 - core node scaffold responds over both P2P and RPC TCP endpoints
@@ -192,7 +237,10 @@ This roadmap follows the release progression already defined in the repository d
 - **Sprint 4 (Upgrade Plan): config profiles (pool/solo/benchmark/dual via `ZION_PROFILE`), enhanced PowerShell dashboard (PPLNS panel + miner fleet + log tail), V3 CI/CD (`v3-ci.yml` + `v3-release.yml`). Miner 59 tests, pool 37 tests = 96 miner+pool tests. Commit: ab7b55d.**
 - **Sprint 5 (Upgrade Plan — pre-launch): Pool test coverage expanded to 73 tests (wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output). Security checklist completed (`SECURITY_CHECKLIST.md`). Public mining guide (`MINING_GUIDE.md`) and node operator guide (`NODE_OPERATOR_GUIDE.md`) published. Total: 393 core + 73 pool + 59 miner + 81 cosmic-harmony = 606 tests, 0 failures.**
 - **Sprint 6 (Upgrade Plan — hardening): Production unwrap() audit (zero unsafe unwrap in hot paths). cargo-fuzz harnesses: pool (`fuzz_decode_message`, `fuzz_parse_hex`) + core (`fuzz_merkle_root`, `fuzz_validate_header`). `parse_fixed_hex` promoted to pub for fuzz surface. Phase 23/24/25 status reconciliation — monitoring complete, security mostly complete (BFG deferred), infra mostly complete (seed expansion pending). D2 block explorer marked done (live at zionterranova.com/explorer — 7 pages, pool dashboard, 10+ API endpoints).**
+- **Sprint 7 (Upgrade Plan — post-launch): Native FFI self-test (`runtime_self_test()`, `AlgoTestResult`, `all_algorithms_healthy()` — 4 tests). Difficulty auto-tuning (`DifficultyStats`, `difficulty_stats()`, `predict_difficulty()` — 10 new tests, 31 total). CHv4.2 Merkabah Dual-Spin algorithm (fork-gated at u64::MAX, 14 new cosmic-harmony tests, 95 total). 635 workspace tests pass.**
+- **Sprint 8 (Stabilization — 2026-03-26/27): Miner test hardening. V3/PLAN.md created. **Complete L2/L3 migration**: L2/bridge (157 tests, decimal fix 6→12), L2/dao (65 tests, u128 treasury), L2/atomic-swap (15 tests), L3/ncl (43 tests), L3/warp (252 tests, 7 chain adapters), L3/ai-native (89 tests, agent framework). All `amount_atomic`→`amount_flowers`, `FLOWERS_PER_ZION=1e12`. Total: ~1,300 workspace tests, 0 failures.**
 - **Phase 23: Grafana + Prometheus monitoring stack — Node metrics HTTP server (`serve_node_metrics()` on ZION_METRICS_BIND=:9115, Prometheus /metrics + JSON /health), Prometheus scrape target alignment (`:8444` → `:9115`), alert rules rewritten to match actual V3 metric names (`zion_pool_*`, `zion_*`), Docker compose updated with port 9115 exposure + explicit `name: zion-net` network, Grafana provisioning with 22-panel V3 dashboard (pool overview, shares timeseries, routing groups, PPLNS window, core node stats), hardcoded Grafana credential removed. Full 5-service monitoring stack deployed: Prometheus, Grafana, node-exporter, redis-exporter, alertmanager. All local Prometheus targets scraping, Grafana dashboard live with real-time V3 data.**
+- **Sprint 8 stabilization (2026-03-26/27):** Miner test hardening (`profile_does_not_override_explicit_env` — env var race condition between parallel tests, tolerant assertion). Comprehensive mainnet plan created (`V3/PLAN.md` — L1 finish phases, L2/L3 migration strategy with decimal audit, Go/No-Go genesis checklist). **Complete L2/L3 migration: bridge (157 tests), dao (65 tests), atomic-swap (15 tests), ncl (43 tests), warp (252 tests), ai-native (89 tests). ~1,300 workspace tests pass, 0 failures.**
 
 ### Not Done Yet
 
@@ -217,7 +265,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 |--------|-----------|------------|
 | Source files | ~50 `.rs` in 14 dirs | ~20 `.rs` in 4 crates |
 | Total LoC | ~17,500 | ~8,300 |
-| Tests | ~200+ | 393 core + 73 pool (31 lib + 13 PPLNS + 29 server) + 59 miner + 81 cosmic-harmony = 606 pass, 0 fail |
+| Tests | ~200+ | 432 core + 95 cosmic-harmony + 59 miner + 29 pool + 4 native-ffi + 157 bridge + 65 dao + 15 atomic-swap + 43 ncl + 252 warp + 89 ai-native + doctests = ~1,300 pass, 0 fail |
 | Persistence | LMDB (7 databases) | LMDB via heed (8 databases) |
 | Tx model | UTXO (Bitcoin-style) | UTXO (TxInput/TxOutput/Transaction) |
 | Crypto | Ed25519 + BLAKE3 + RIPEMD160 | Ed25519 + BLAKE3 + `zion1...` addresses |
@@ -235,7 +283,7 @@ Full audit: `V3/L1_TESTNET_VS_V3_MAINNET_AUDIT.md` (2026-03-13)
 
 1. **UTXO vs Account model** — ✅ RESOLVED: V3 uses UTXO model (`tx.rs`: TxInput/TxOutput/Transaction, SegWit-style BLAKE3 txid)
 2. **General hashing** — ✅ RESOLVED: BLAKE3 for tx/merkle/addresses, Ekam Deeksha for PoW only (`crypto.rs`)
-3. **Reward distribution** — L1 has 4-way split (89% miner, 5% tithe, 5% issobella, 1% pool). V3 gives 100% to miner. Decision: L3+ concern for mainnet.
+3. **Reward distribution** — ✅ RESOLVED (2026-03-27): Pool PPLNS engine now applies 89/5/5/1 fee split. Coinbase goes 100% to node wallet; pool accounting deducts 5% humanitarian tithe, 5% issobella fund, 1% pool fee before PPLNS distribution. Configurable via `ZION_HUMANITARIAN_TITHE_PCT`, `ZION_ISSOBELLA_FUND_PCT`, `ZION_POOL_FEE_PCT`, `ZION_HUMANITARIAN_WALLET` env vars.
 
 ### Gap Inventory (V3 code vs constitutional requirements)
 
@@ -913,6 +961,12 @@ Critical path — next up (sequential):
 10. ~~**Phase 8: Mainnet Launch Readiness** — genesis ceremony, BFG scrub, seed infra, reproducible builds.~~ ✅ code done (launch.rs, node_builder.rs, DAO lock, 5 seed peers)
 11. **Docker + Deploy** — production Docker images (multi-stage, self-contained V3/ context), compose stack, deployed to Helsinki (157.180.41.213), chain height 30+ ✅
 
+**Next up — L2/L3 integration (see `V3/PLAN.md` for full details):**
+
+12. **Phase A: L1 Finish** — async P2P multiplexing, BFG scrub (BLOCKER), genesis ceremony freeze
+13. **Phase B: L2 Migration** — decimal fix (CRITICAL: 6→12 decimals), bridge vault + RPC, contracts redeploy, DAO daemon
+14. **Phase C: L3 Migration** — NCL ONNX backend, WARP chain adapters (EVM first), AI-Native agent framework
+
 ## Implementation Dependencies
 
 ```
@@ -1014,12 +1068,12 @@ BURN_ADDRESS           = "zion1burn0000000000000000000000000000000dead"
 DAO_ADDRESS            = "zion1dao00000000000000000000000000000treasury"
 ```
 
-### Reward Distribution (TBD — L1 vs L3 decision)
+### Reward Distribution (✅ Implemented 2026-03-27)
 ```
-MINER_SHARE            = 89%
-TITHE                  = 5%  (humanitarian DAO)
-ISSOBELLA_FUND         = 5%  (L5/L6 development)
-POOL_FEE               = 1%
+MINER_SHARE            = 89%  (ZION_HUMANITARIAN_TITHE_PCT env override)
+TITHE                  = 5%   (humanitarian DAO — ZION_HUMANITARIAN_WALLET)
+ISSOBELLA_FUND         = 5%   (L5/L6 development — ZION_ISSOBELLA_WALLET)
+POOL_FEE               = 1%   (ZION_POOL_FEE_WALLET)
 ```
 
 ### Batch Payouts (V3 wallet.rs ✅)
@@ -1092,6 +1146,56 @@ Progress:
 
 Status: complete
 
+### Sprint 8: Stabilization, L2/L3 Migration Complete (2026-03-26/27)
+
+Goal: stabilize test suite, create comprehensive mainnet completion plan, complete L2/L3 migration into V3.
+
+Completed work:
+
+- Miner test fix: `profile_does_not_override_explicit_env` env var race condition between parallel tests, tolerant assertion.
+- Comprehensive mainnet plan: `V3/PLAN.md` created (~700 lines) covering L1 finish, L2/L3 migration, Go/No-Go checklist.
+- **V3/L2/bridge migration** from legacy `L2/bridge/`:
+  - Critical decimal fix: `FLOWERS_PER_ZION` changed from `1_000_000` (6-dec) to `1_000_000_000_000` (12-dec)
+  - Field renames: `amount_atomic` → `amount_flowers`, `amount_wzion` → `amount_wzion_wei`, `l1_atomic_to_wzion_wei` → `flowers_to_wzion_wei`, etc.
+  - DB schema column renamed: `amount_l1_atomic` → `amount_flowers`
+  - All conversion functions updated: `flowers_to_wzion_wei()`, `wzion_wei_to_flowers()`, `flowers_to_zion_display()`
+  - Test values updated from 6-dec to 12-dec magnitudes
+  - **157 tests pass** (111 lib + 45 integration + 1 doctest)
+- **V3/L3/ncl migration** from legacy `L3/ncl/`:
+  - Field renames: `reward_atomic` → `reward_flowers`
+  - Pricing defaults scaled for 12-dec: `base_price = 10_000_000_000` (0.01 ZION)
+  - **43 tests pass** (42 lib + 1 doctest)
+- **V3/L2/dao migration** from legacy `L2/dao/`:
+  - 16 src files + 1 integration test file
+  - Decimal fix: `amount_atomic` → `amount_flowers`, `fee_atomic` → `fee_flowers`
+  - Treasury amounts use `u128` for 4B ZION supply scale
+  - Config `daily_spend_limit` stored as whole ZION, converted via `FLOWERS_PER_ZION`
+  - **65 tests pass** (40 lib + 25 integration)
+- **V3/L2/atomic-swap migration** from legacy `L2/atomic-swap/`:
+  - 10 src files
+  - Decimal fix: `amount_flowers`/`min_lock_flowers` naming, values `1_000_000_000_000`
+  - **15 tests pass**
+- **V3/L3/warp migration** from legacy `L3/warp/`:
+  - 22 src + 8 adapter files
+  - Cargo.toml: `thiserror="2"`, correct path dependencies
+  - ChainId::zion_l1() decimals fixed from 6 to 12
+  - All conversion tests updated (6→12 decimal ZION values)
+  - fees.rs: all min_fee/max_fee values updated to 12-decimal scale
+  - config.rs: `daily_limit_flowers()` and `timelock_threshold_flowers()` ×1e12
+  - xp_bridge.rs: volume divisor changed from 1e6 to 1e12
+  - router.rs: daily_limit and timelock_threshold defaults updated
+  - **252 tests pass** (251 lib + 1 doctest)
+- **V3/L3/ai-native migration** from legacy `L3/ai-native/`:
+  - 13 src files
+  - Cargo.toml: `thiserror="2"`, path dependencies on ncl, warp, bridge
+  - Decimal fix: `amount_flowers`/`reward_flowers` naming
+  - **89 tests pass** (88 lib + 1 doctest)
+- V3 documentation update (README.md, ROADMAP.md, PLAN.md)
+
+Test results: **~1,300 tests, 0 failures** (L1: 666, L2/bridge: 157, L2/dao: 65, L2/atomic-swap: 15, L3/ncl: 43, L3/warp: 252, L3/ai-native: 89)
+
+Status: done
+
 ### Phase 24: Security & Audit (Upgrade Plan §F)
 
 Goal: pre-launch security sweep.
@@ -1150,20 +1254,23 @@ Status: mostly complete (seed node expansion pending)
 - When migrating code from the legacy tree, copy only audited behavior that serves the clean mainnet line.
 - For production upgrade phases (21+), follow `V3/docs/UPGRADE_PLAN.md` as the detailed reference.
 
-## L2 / L3 Integration (Post-L1-Stable)
+## L2 / L3 Integration (Migration Complete ✅)
 
 Detailed plan: `V3/docs/L2_L3_MAINNET_PLAN.md` (Draft v2)
 
-### L2 — wZION Bridge
+All Rust L2/L3 crates have been migrated into V3 with 12-decimal flowers conversion.
+Remaining work: L2/contracts Solidity redeploy, production hardening of individual services.
+
+### L2 — wZION Bridge ✅ Migrated
 
 - Lock/Mint/Burn model: ZION → zion1bridge vault → 3-of-5 validator quorum → wZION ERC-20 mint on Base
-- **Critical decimal fix required**: root L2/L3 code assumes 6 decimals (1e6); V3 canonical is 12 decimals (1e12 flowers). Bridge multiplier must change from ×1e12 to ×1e6. Deploying unfixed = 1,000,000× inflation exploit.
+- **Critical decimal fix required**: root L2/L3 code assumes 6 decimals (1e6); V3 canonical is 12 decimals (1e12 flowers). **✅ FIXED** in Sprint 8 migration — all conversion functions, DB schema, and test vectors updated.
 - L1 core changes needed: `BRIDGE_VAULT_ADDRESS`, `getBridgeLocks` RPC, `submitBridgeUnlock` RPC, Step 12 bridge unlock validation, memo prefix parsing (`BRIDGE:*`, `WARP:*`, `DAO:*`, `SWAP:*`)
 - Testnet contracts deployed on Base Sepolia (wZION, ZIONBridge, Governance, Treasury, Staking, Farm, AtomicSwap, Uniswap V3 pool)
 - Fee: 0.1% (50% burn, 25% DAO, 25% validators)
 - Finality: 60 L1 blocks (~60 min at 60s block time)
 
-### L2 — DeFi Stack
+### L2 — DeFi Stack ✅ DAO + Atomic-Swap Migrated
 
 - **Staking**: ZIONStaking.sol — Synthetix-style rewards distributor, 50% APR hard cap, 7-day cooldown, slashing hook
 - **Farming**: ZIONFarm.sol — MasterChef v2 LP farming, 90-day halving schedule per pool, dynamic allocPoint rebalancing
@@ -1172,16 +1279,16 @@ Detailed plan: `V3/docs/L2_L3_MAINNET_PLAN.md` (Draft v2)
 - **Atomic Swap**: ZIONAtomicSwap.sol + swap daemon — HTLC with SHA-256 hashlock (→ BLAKE3 after fix), Ed25519 escrow, L1 UTXO coin-select, auto-refund on timeout
 - **DEX**: Uniswap V3 wZION/USDC pool on Base — no custom DEX contract, standard AMM integration
 
-### L3 — WARP Cross-Chain
+### L3 — WARP Cross-Chain ✅ Migrated
 
 - Extends L2 bridge to 7 chain families: EVM, Solana, Tron, Stellar, Bitcoin, Cardano, Cosmos
 - Memo format: `WARP:1:<chain>:<recipient>` parsed from TxOutput memo field
 - Same validator quorum and vault as L2 (no separate infrastructure)
 - Per-route fees: 0.10%–0.25%
-- `ChainId::zion_l1()` decimals must be fixed from 6 to 12
+- `ChainId::zion_l1()` decimals must be fixed from 6 to 12 **✅ FIXED**
 - Working signers: EVM, Bitcoin, Solana, Stellar, Tron. **Stubs**: Cardano, Cosmos.
 
-### L3 — AI Native & NCL
+### L3 — AI Native & NCL ✅ Migrated
 
 - **AI Native**: Agent framework with 7-level consciousness model (Dormant → Grok), XP economy (+10 success / -2 fail), orchestrator dispatching NCL → WARP → Bridge, pool optimizer, WARP agent optimizer (max ~75× multiplier)
 - **NCL (Neural Consciousness Layer)**: Decentralized AI compute marketplace — 6 task types (Inference, Training, DataProcessing, Optimization, Validation, Custom), priority + reputation-weighted scheduling, pricing = base_cost × backend_multiplier × size_factor, 90/10 worker/protocol revenue split

@@ -77,7 +77,7 @@
 
 | Check | Status | Notes |
 |-------|--------|-------|
-| Premine keys never committed | ✅ | Verified Sprint 1 (F1) |
+| Premine backup never entered git history | ❌ | `git log --all --name-only` still shows `PREMINE_WALLETS_BACKUP.json`; BFG/history scrub remains required before any public launch or public fork |
 | No private keys in source tree | ✅ | Only public addresses in `PREMINE_ADDRESSES_PUBLIC.txt` |
 | `.env` files gitignored | ✅ | Server `.env` never committed |
 
@@ -90,8 +90,8 @@
 | `validate_candidate()` — block validation | HIGH | 🔲 Ready |
 | P2P message parsing (node) | HIGH | 🔲 Ready |
 
-> **Note:** Fuzzing infrastructure (`cargo-fuzz` harnesses) deferred to post-launch hardening.
-> All fuzz-target functions are pure, take `&[u8]` / `&str`, and return `Result` — ideal targets.
+> **Note:** `cargo-fuzz` harnesses already exist in `V3/L1/core/fuzz/` and `V3/L1/pool/fuzz/`.
+> What remains is a deliberate pre-launch fuzz campaign, corpus seeding, and sign-off on runtime fuzz coverage.
 
 ## 10. Test Coverage Summary
 
@@ -111,5 +111,5 @@
 - **Zero unsafe** in pool/miner code, one justified unsafe in core (LMDB)
 - **All user-facing inputs validated** with typed error returns
 - **Rate limiting active** per-IP with configurable limit
-- **Fuzzing targets identified** for post-launch hardening
+- **Fuzzing harnesses exist**, but sustained fuzz execution and sign-off are still pending
 - **73 pool tests** cover wire protocol edge cases, share lifecycle, revenue routing, PPLNS payouts, and Prometheus metrics output

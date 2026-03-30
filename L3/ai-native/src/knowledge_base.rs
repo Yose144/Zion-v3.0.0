@@ -1,0 +1,614 @@
+//! # Knowledge Base — Auto-indexer pro RAG pipeline
+//!
+//! Skenuje ZION projektovou strukturu, chunking dokumentů,
+//! a automaticky plní `RagRetriever` knowledge base.
+//!
+//! ## Podporované formáty
+//! - `.md`  — Markdown dokumentace
+//! - `.rs`  — Rust zdrojové soubory (doc komentáře)
+//! - `.toml` — TOML konfigurace
+//! - `.py`  — Python skripty (docstringy)
+//!
+//! ## Příklad
+//! ```rust
+//! use zion_ai_native::knowledge_base::{KnowledgeBase, KnowledgeConfig};
+//! use zion_ai_native::rag::{MockEmbeddingBackend, RagRetriever};
+//!
+//! let retriever = RagRetriever::new(Box::new(MockEmbeddingBackend::new(4)));
+//! let config = KnowledgeConfig::default();
+//! let mut kb = KnowledgeBase::new(retriever, config);
+//!
+//! kb.add_text("pool_setup", "ZION pool běží na portu 3333.");
+//! assert_eq!(kb.document_count(), 1);
+//! ```
+
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::fs;
+
+use crate::rag::{RagRetriever};
+use crate::llm_backend::LlmError;
+
+// ─── Konfigurace ─────────────────────────────────────────────────────────────
+
+/// Kanonické relativní kořeny pro širší AI Native corpus.
+pub const AI_NATIVE_CANONICAL_CORPUS_ROOTS: &[&str] = &[
+    "README.md",
+    "HIRANYAGARBHA_AI_NATIVE.md",
+    "AI_NATIVE_CONCEPT_2.9.md",
+    "AI-L3.md",
+    "docs/book/ekam-deeksha",
+    "docs/docs2.9/books",
+    "docs/docs2.9/CORE",
+    "docs/docs2.9/SACRED_KNOWLEDGE",
+    "docs/docs2.9/COSMIC_MAP",
+    "docs/docs2.9/ZION_OASIS",
+    "docs/docs2.9/deployment/AMENTI_LOG_INDEX.md",
+    "L3/ai-native/src",
+    "V3/README.md",
+    "V3/ROADMAP.md",
+    "V3/L2",
+    "V3/L3",
+];
+
+/// Užší profil pro publikované V2 books přes textové proxy a provenance docs.
+pub const V2_BOOKS_PROXY_CORPUS_ROOTS: &[&str] = &[
+    "docs/docs2.9/books",
+    "docs/docs2.9/deployment/AMENTI_LOG_INDEX.md",
+    "docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME",
+    "docs/docs2.9/SACRED_KNOWLEDGE",
+    "docs/docs2.9/COSMIC_MAP",
+    "docs/docs2.9/PROJECT_OVERVIEW.md",
+];
+
+/// Konfigurace knowledge base indexeru.
+#[derive(Debug, Clone)]
+pub struct KnowledgeConfig {
+    /// Maximální délka jednoho chunku v bajtech.
+    pub max_chunk_size: usize,
+    /// Překryv mezi chunky v bajtech.
+    pub chunk_overlap: usize,
+    /// Přípony souborů k indexaci.
+    pub extensions: Vec<String>,
+    /// Adresáře k přeskočení.
+    pub skip_dirs: Vec<String>,
+}
+
+impl Default for KnowledgeConfig {
+    fn default() -> Self {
+        Self {
+            max_chunk_size: 1500,
+            chunk_overlap: 200,
+            extensions: vec![
+                "md".into(), "rs".into(), "toml".into(), "py".into(),
+            ],
+            skip_dirs: vec![
+                "target".into(), "node_modules".into(), ".git".into(),
+                "outputs".into(), "opencl_sdk".into(),
+            ],
+        }
+    }
+}
+
+// ─── KnowledgeBase ───────────────────────────────────────────────────────────
+
+/// Auto-indexer pro RAG knowledge base.
+///
+/// Skenuje projektovou strukturu, chunkuje dokumenty a plní `RagRetriever`.
+pub struct KnowledgeBase {
+    pub retriever: RagRetriever,
+    config: KnowledgeConfig,
+    indexed_files: Vec<String>,
+    total_chunks: usize,
+}
+
+impl KnowledgeBase {
+    pub fn new(retriever: RagRetriever, config: KnowledgeConfig) -> Self {
+        Self {
+            retriever,
+            config,
+            indexed_files: Vec::new(),
+            total_chunks: 0,
+        }
+    }
+
+    /// Přidej textový dokument přímo (bez chunking).
+    pub fn add_text(&mut self, id: &str, content: &str) -> Result<(), LlmError> {
+        self.retriever.index(id, content)?;
+        self.total_chunks += 1;
+        Ok(())
+    }
+
+    /// Přidej textový dokument s metadaty.
+    pub fn add_text_with_metadata(
+        &mut self,
+        id: &str,
+        content: &str,
+        metadata: HashMap<String, String>,
+    ) -> Result<(), LlmError> {
+        self.retriever.index_with_metadata(id, content, metadata)?;
+        self.total_chunks += 1;
+        Ok(())
+    }
+
+    /// Skenuj adresář a indexuj všechny podporované soubory.
+    pub fn scan_directory(&mut self, root: &Path) -> Result<ScanResult, LlmError> {
+        let mut result = ScanResult::default();
+
+        let files = self.collect_files(root);
+        result.files_found = files.len();
+
+        for file_path in &files {
+            match self.index_file(file_path) {
+                Ok(n_chunks) => {
+                    result.files_indexed += 1;
+                    result.chunks_created += n_chunks;
+                    self.indexed_files.push(file_path.display().to_string());
+                }
+                Err(e) => {
+                    result.errors.push(format!("{}: {}", file_path.display(), e));
+                }
+            }
+        }
+
+        self.total_chunks += result.chunks_created;
+        Ok(result)
+    }
+
+    /// Skenuj více relativních kořenů v rámci workspace rootu.
+    ///
+    /// Hodí se pro kanonické curated korpusy, kde nechceme spouštět scan nad
+    /// celým repozitářem, ale nad přesně definovanou množinou cest.
+    pub fn scan_relative_roots(
+        &mut self,
+        workspace_root: &Path,
+        roots: &[&str],
+    ) -> Result<ScanResult, LlmError> {
+        let mut aggregate = ScanResult::default();
+
+        for relative_root in roots {
+            let path = workspace_root.join(relative_root);
+
+            if path.is_dir() {
+                let partial = self.scan_directory(&path)?;
+                aggregate.files_found += partial.files_found;
+                aggregate.files_indexed += partial.files_indexed;
+                aggregate.chunks_created += partial.chunks_created;
+                aggregate.errors.extend(partial.errors);
+            } else if path.is_file() {
+                aggregate.files_found += 1;
+                match self.index_file(&path) {
+                    Ok(n_chunks) => {
+                        aggregate.files_indexed += 1;
+                        aggregate.chunks_created += n_chunks;
+                        self.total_chunks += n_chunks;
+                        self.indexed_files.push(path.display().to_string());
+                    }
+                    Err(err) => {
+                        aggregate.errors.push(format!("{}: {}", path.display(), err));
+                    }
+                }
+            }
+        }
+
+        Ok(aggregate)
+    }
+
+    /// Indexuj curated AI Native corpus včetně knižních a RAG zdrojů.
+    pub fn scan_ai_native_canonical_corpus(
+        &mut self,
+        workspace_root: &Path,
+    ) -> Result<ScanResult, LlmError> {
+        self.scan_relative_roots(workspace_root, AI_NATIVE_CANONICAL_CORPUS_ROOTS)
+    }
+
+    /// Indexuj publikovanou V2 books vrstvu přes textové proxy zdroje.
+    pub fn scan_v2_books_proxy_corpus(
+        &mut self,
+        workspace_root: &Path,
+    ) -> Result<ScanResult, LlmError> {
+        self.scan_relative_roots(workspace_root, V2_BOOKS_PROXY_CORPUS_ROOTS)
+    }
+
+    /// Indexuj jeden soubor — chunking + embedding.
+    pub fn index_file(&mut self, path: &Path) -> Result<usize, LlmError> {
+        let content = fs::read_to_string(path)
+            .map_err(|e| LlmError::InternalError(format!("Read {}: {e}", path.display())))?;
+
+        if content.trim().is_empty() {
+            return Ok(0);
+        }
+
+        let ext = path.extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+
+        let processed = match ext {
+            "rs" => extract_rust_docs(&content),
+            "py" => extract_python_docs(&content),
+            _ => content.clone(),
+        };
+
+        if processed.trim().is_empty() {
+            return Ok(0);
+        }
+
+        let chunks = chunk_text(&processed, self.config.max_chunk_size, self.config.chunk_overlap);
+        let file_id = path.file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("unknown");
+
+        let mut metadata = HashMap::new();
+        metadata.insert("source".into(), path.display().to_string());
+        metadata.insert("extension".into(), ext.to_string());
+
+        for (i, chunk) in chunks.iter().enumerate() {
+            let chunk_id = if chunks.len() == 1 {
+                file_id.to_string()
+            } else {
+                format!("{file_id}#chunk{i}")
+            };
+            self.retriever.index_with_metadata(&chunk_id, chunk, metadata.clone())?;
+        }
+
+        Ok(chunks.len())
+    }
+
+    /// Sbírá soubory rekurzivně s filtrací přípona + skip_dirs.
+    fn collect_files(&self, root: &Path) -> Vec<PathBuf> {
+        let mut files = Vec::new();
+        self.walk_dir(root, &mut files);
+        files.sort();
+        files
+    }
+
+    fn walk_dir(&self, dir: &Path, out: &mut Vec<PathBuf>) {
+        let entries = match fs::read_dir(dir) {
+            Ok(e) => e,
+            Err(_) => return,
+        };
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let file_name = entry.file_name().to_string_lossy().to_string();
+
+            if path.is_dir() {
+                if !self.config.skip_dirs.contains(&file_name) {
+                    self.walk_dir(&path, out);
+                }
+            } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                if self.config.extensions.contains(&ext.to_string()) {
+                    out.push(path);
+                }
+            }
+        }
+    }
+
+    pub fn document_count(&self) -> usize {
+        self.retriever.store_size()
+    }
+
+    pub fn total_chunks(&self) -> usize {
+        self.total_chunks
+    }
+
+    pub fn indexed_files(&self) -> &[String] {
+        &self.indexed_files
+    }
+}
+
+// ─── ScanResult ──────────────────────────────────────────────────────────────
+
+/// Výsledek skenování adresáře.
+#[derive(Debug, Default)]
+pub struct ScanResult {
+    pub files_found: usize,
+    pub files_indexed: usize,
+    pub chunks_created: usize,
+    pub errors: Vec<String>,
+}
+
+// ─── Chunking ────────────────────────────────────────────────────────────────
+
+/// Rozděl text na chunky s překryvem.
+fn chunk_text(text: &str, max_size: usize, overlap: usize) -> Vec<String> {
+    if text.len() <= max_size {
+        return vec![text.to_string()];
+    }
+
+    let mut chunks = Vec::new();
+    let bytes = text.as_bytes();
+    let mut start = 0;
+
+    while start < bytes.len() {
+        let end = (start + max_size).min(bytes.len());
+
+        // Hledej konec odstavce nebo věty v blízkosti konce chunku
+        let actual_end = if end < bytes.len() {
+            find_break_point(text, start, end)
+        } else {
+            end
+        };
+
+        // Bezpečný string slice na UTF-8 hranicích
+        let chunk_str = safe_slice(text, start, actual_end);
+        if !chunk_str.trim().is_empty() {
+            chunks.push(chunk_str.to_string());
+        }
+
+        // Posun s překryvem
+        if actual_end >= bytes.len() {
+            break;
+        }
+        start = if actual_end > overlap { actual_end - overlap } else { actual_end };
+    }
+
+    chunks
+}
+
+/// Najdi vhodný bod zlomu (konec odstavce > konec věty > konec slova).
+fn find_break_point(text: &str, start: usize, max_end: usize) -> usize {
+    let segment = safe_slice(text, start, max_end);
+
+    // Hledej poslední \n\n (konec odstavce)
+    if let Some(pos) = segment.rfind("\n\n") {
+        return start + pos + 2;
+    }
+    // Poslední `. ` (konec věty)
+    if let Some(pos) = segment.rfind(". ") {
+        return start + pos + 2;
+    }
+    // Poslední `\n`
+    if let Some(pos) = segment.rfind('\n') {
+        return start + pos + 1;
+    }
+    // Poslední mezera
+    if let Some(pos) = segment.rfind(' ') {
+        return start + pos + 1;
+    }
+
+    max_end
+}
+
+/// Bezpečné oříznutí UTF-8 stringu na bajtových pozicích.
+fn safe_slice(text: &str, start: usize, end: usize) -> &str {
+    let s = start.min(text.len());
+    let e = end.min(text.len());
+
+    // Zarovnej na UTF-8 boundary
+    let s = (s..text.len()).find(|&i| text.is_char_boundary(i)).unwrap_or(text.len());
+    let e = (0..=e).rev().find(|&i| text.is_char_boundary(i)).unwrap_or(s);
+
+    if s >= e { "" } else { &text[s..e] }
+}
+
+// ─── Extraktory dokumentace ──────────────────────────────────────────────────
+
+/// Extrahuj doc komentáře (//! a ///) z Rust souboru.
+fn extract_rust_docs(content: &str) -> String {
+    let mut docs = Vec::new();
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(doc) = trimmed.strip_prefix("//!") {
+            docs.push(doc.trim().to_string());
+        } else if let Some(doc) = trimmed.strip_prefix("///") {
+            docs.push(doc.trim().to_string());
+        }
+    }
+
+    docs.join("\n")
+}
+
+/// Extrahuj docstringy z Python souboru.
+fn extract_python_docs(content: &str) -> String {
+    let mut docs = Vec::new();
+    let mut in_docstring = false;
+    let mut docstring_delim = "";
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        if !in_docstring {
+            if trimmed.starts_with("\"\"\"") || trimmed.starts_with("'''") {
+                docstring_delim = &trimmed[..3];
+                in_docstring = true;
+                // Jednořádkový docstring?
+                if trimmed.len() > 3 && trimmed[3..].contains(docstring_delim) {
+                    docs.push(trimmed[3..trimmed.len()-3].to_string());
+                    in_docstring = false;
+                } else {
+                    docs.push(trimmed[3..].to_string());
+                }
+            } else if trimmed.starts_with('#') {
+                docs.push(trimmed[1..].trim().to_string());
+            }
+        } else if trimmed.ends_with(docstring_delim) {
+            let end = trimmed.len().saturating_sub(3);
+            docs.push(trimmed[..end].to_string());
+            in_docstring = false;
+        } else {
+            docs.push(trimmed.to_string());
+        }
+    }
+
+    docs.join("\n")
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::rag::{MockEmbeddingBackend, RagRetriever};
+
+    fn test_kb() -> KnowledgeBase {
+        let retriever = RagRetriever::new(Box::new(MockEmbeddingBackend::new(4)));
+        KnowledgeBase::new(retriever, KnowledgeConfig::default())
+    }
+
+    fn make_temp_dir(label: &str) -> PathBuf {
+        let unique = format!(
+            "zion-ai-native-{}-{}",
+            label,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
+        std::env::temp_dir().join(unique)
+    }
+
+    #[test]
+    fn test_add_text() {
+        let mut kb = test_kb();
+        kb.add_text("test1", "ZION blockchain je PoW síť.").unwrap();
+        assert_eq!(kb.document_count(), 1);
+        assert_eq!(kb.total_chunks(), 1);
+    }
+
+    #[test]
+    fn test_add_text_with_metadata() {
+        let mut kb = test_kb();
+        let mut meta = HashMap::new();
+        meta.insert("source".into(), "README.md".into());
+        kb.add_text_with_metadata("readme", "ZION readme", meta).unwrap();
+        assert_eq!(kb.document_count(), 1);
+    }
+
+    #[test]
+    fn test_chunk_small_text() {
+        let chunks = chunk_text("Krátký text.", 1500, 200);
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0], "Krátký text.");
+    }
+
+    #[test]
+    fn test_chunk_large_text() {
+        let text = "A".repeat(3000);
+        let chunks = chunk_text(&text, 1500, 200);
+        assert!(chunks.len() >= 2);
+    }
+
+    #[test]
+    fn test_chunk_respects_paragraph_break() {
+        let text = format!("{}\n\n{}", "A".repeat(700), "B".repeat(900));
+        let chunks = chunk_text(&text, 800, 100);
+        assert!(chunks.len() >= 2);
+        // First chunk should end at paragraph break
+        assert!(chunks[0].trim().ends_with(|c: char| c == 'A'));
+    }
+
+    #[test]
+    fn test_extract_rust_docs() {
+        let rs = r#"
+//! Module docs
+//! line 2
+
+/// Struct doc
+pub struct Foo;
+
+fn internal() {}
+
+/// Function doc
+pub fn bar() {}
+"#;
+        let docs = extract_rust_docs(rs);
+        assert!(docs.contains("Module docs"));
+        assert!(docs.contains("Struct doc"));
+        assert!(docs.contains("Function doc"));
+        assert!(!docs.contains("fn internal"));
+    }
+
+    #[test]
+    fn test_extract_python_docs() {
+        let py = r#"
+"""Module docstring."""
+
+# A comment
+
+def foo():
+    """Function docstring.
+    Multi-line.
+    """
+    pass
+"#;
+        let docs = extract_python_docs(py);
+        assert!(docs.contains("Module docstring."));
+        assert!(docs.contains("A comment"));
+        assert!(docs.contains("Function docstring."));
+    }
+
+    #[test]
+    fn test_safe_slice_handles_utf8() {
+        let text = "Ekam Deeksha — zlatý zárodek";
+        let slice = safe_slice(text, 0, 15);
+        assert!(!slice.is_empty());
+        // Ověř že nekončí uprostřed vícebytového znaku
+        assert!(slice.is_ascii() || slice.chars().last().is_some());
+    }
+
+    #[test]
+    fn test_config_default() {
+        let config = KnowledgeConfig::default();
+        assert_eq!(config.max_chunk_size, 1500);
+        assert_eq!(config.chunk_overlap, 200);
+        assert!(config.extensions.contains(&"md".to_string()));
+        assert!(config.extensions.contains(&"rs".to_string()));
+        assert!(config.skip_dirs.contains(&"target".to_string()));
+    }
+
+    #[test]
+    fn test_scan_nonexistent_dir() {
+        let mut kb = test_kb();
+        let result = kb.scan_directory(Path::new("/nonexistent/path/12345"));
+        assert!(result.is_ok());
+        let r = result.unwrap();
+        assert_eq!(r.files_found, 0);
+    }
+
+    #[test]
+    fn test_multiple_documents() {
+        let mut kb = test_kb();
+        kb.add_text("doc1", "ZION mining pool").unwrap();
+        kb.add_text("doc2", "Ekam Deeksha algoritmus").unwrap();
+        kb.add_text("doc3", "Hiranyagarbha agent").unwrap();
+        assert_eq!(kb.document_count(), 3);
+        assert_eq!(kb.total_chunks(), 3);
+    }
+
+    #[test]
+    fn test_scan_relative_roots_handles_files_dirs_and_missing() {
+        let root = make_temp_dir("kb-roots");
+        let docs_dir = root.join("docs");
+        fs::create_dir_all(&docs_dir).unwrap();
+        fs::write(root.join("README.md"), "ZION root readme").unwrap();
+        fs::write(docs_dir.join("book.md"), "Ekam Deeksha corpus").unwrap();
+
+        let mut kb = test_kb();
+        let result = kb
+            .scan_relative_roots(&root, &["README.md", "docs", "missing.md"])
+            .unwrap();
+
+        assert_eq!(result.files_found, 2);
+        assert_eq!(result.files_indexed, 2);
+        assert!(result.chunks_created >= 2);
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn test_v2_books_proxy_profile_contains_books_root() {
+        assert!(V2_BOOKS_PROXY_CORPUS_ROOTS.contains(&"docs/docs2.9/books"));
+        assert!(V2_BOOKS_PROXY_CORPUS_ROOTS.contains(&"docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME"));
+    }
+
+    #[test]
+    fn test_scan_result_default() {
+        let r = ScanResult::default();
+        assert_eq!(r.files_found, 0);
+        assert_eq!(r.files_indexed, 0);
+        assert_eq!(r.chunks_created, 0);
+        assert!(r.errors.is_empty());
+    }
+}

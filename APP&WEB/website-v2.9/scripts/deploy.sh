@@ -4,6 +4,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
 LOG_PREFIX="[deploy]"
 
 REMOTE_HOST="${REMOTE_HOST:-91.98.122.165}"
@@ -93,6 +94,11 @@ if [[ $SKIP_SYNC -ne 1 ]]; then
     --rsync-path="mkdir -p $REMOTE_SRC_DIR && cd $REMOTE_SRC_DIR && rsync" \
     -e "ssh $SSH_OPTS" \
     ./ "$REMOTE:./"
+
+  log "Syncing compose file to $REMOTE_HOST:$REMOTE_COMPOSE"
+  rsync -avz \
+    -e "ssh $SSH_OPTS" \
+    "$REPO_ROOT/docker/$COMPOSE_FILE" "$REMOTE:$REMOTE_COMPOSE/"
 else
   log "Skipping rsync (--skip-sync)"
 fi

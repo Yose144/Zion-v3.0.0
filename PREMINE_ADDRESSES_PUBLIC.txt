@@ -1,9 +1,11 @@
 # ZION Genesis Premine Addresses (PUBLIC)
 # Generated: 2026-02-09T13:17:03.255494+00:00
-# Total: 16,280,000,000 ZION across 12 wallets
+# Updated:   2026-03-27 — added tithe wallets [13-14]
+# Total: 16,280,000,000 ZION across 12 genesis wallets + 2 tithe wallets
 #
 # ⚠️  This file contains ONLY public addresses (safe to share)
 # ⚠️  Private keys & mnemonics are in PREMINE_WALLETS_BACKUP.json
+# ⚠️  Tithe wallet keys are in TITHE_WALLETS_BACKUP.txt
 
 [ 1] oasis_golden_egg     | zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p | 1.65B ZION | ZION OASIS + Winners Golden Egg/Xp (Slot 1)
 [ 2] oasis_golden_egg     | zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a | 1.65B ZION | ZION OASIS + Winners Golden Egg/Xp (Slot 2)
@@ -17,3 +19,11 @@
 [10] infrastructure       | zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43 | 1.00B ZION | Network Infrastructure — P2P Seed Nodes
 [11] infrastructure       | zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f | 0.59B ZION | Genesis Creator — Lifetime Rent
 [12] humanitarian         | zion1m4v5z8z850u480c5c208z274e334369275n5y20 | 1.44B ZION | Children Future Fund — Humanitarian DAO
+
+# --- V3 Mainnet Tithe Wallets (added 2026-03-27) ---
+[13] issobella_fund       | zion170a374s6h390k7w244m5c4f354v8n4678844655 |    0 ZION | L5/L6 ZION Issobella Fund — 5% pool tithe
+[14] pool_fee             | zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7 |    0 ZION | Pool Operator Fee — 1% pool tithe
+
+# ─── V3 Pool Tithe Wallets (generated 2026-03-27) ──────────────────────
+[13] issobella_fund       | zion106936008n8m4t40528h0w4w7x4y0z087k37s732 | 0 ZION    | L5/L6 ZION Issobella Fund (5% pool tithe)
+[14] pool_fee             | zion1j2a620q7c0m8k553k6g2t7n7s5u776c3n2fh257 | 0 ZION    | Pool Operator Fee (1% pool tithe)

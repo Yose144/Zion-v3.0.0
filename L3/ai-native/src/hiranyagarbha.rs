@@ -49,11 +49,17 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 use crate::consciousness::ConsciousnessLevel;
 use crate::consciousness_engine::ConsciousnessEngine;
+use crate::knowledge_base::{
+    KnowledgeBase, KnowledgeConfig, ScanResult, AI_NATIVE_CANONICAL_CORPUS_ROOTS,
+    V2_BOOKS_PROXY_CORPUS_ROOTS,
+};
 use crate::llm_backend::{LlmBackend, LlmRequest};
 use crate::memory::MemoryEventKind;
+use crate::rag::{EmbeddingBackend, RagRetriever};
 
 // ─── MML Modalities ──────────────────────────────────────────────────────────
 
@@ -507,6 +513,9 @@ pub struct HiranyagarbhaAgent {
     /// Volitelný LLM inference backend (Phase II).
     /// Pokud je nastaven, `process_text()` ho použije místo placeholder logiky.
     llm_backend: Option<Box<dyn LlmBackend>>,
+    /// Volitelný RAG retriever (Phase V).
+    /// Automaticky augmentuje dotazy kontextem z knowledge base.
+    rag_retriever: Option<RagRetriever>,
 }
 
 impl HiranyagarbhaAgent {
@@ -543,6 +552,7 @@ impl HiranyagarbhaAgent {
                 MmlModality::SacredGeometry,
             ],
             llm_backend: None,
+            rag_retriever: None,
         }
     }
 
@@ -578,6 +588,72 @@ impl HiranyagarbhaAgent {
     /// ```
     pub fn set_llm_backend(&mut self, backend: impl LlmBackend + 'static) {
         self.llm_backend = Some(Box::new(backend));
+    }
+
+    /// Aktivuj RAG knowledge base (Phase V).
+    ///
+    /// Agent bude automaticky augmentovat každý textový dotaz
+    /// kontextem z knowledge base před odesláním do LLM backendu.
+    ///
+    /// ```rust,ignore
+    /// let embedding = NimEmbeddingBackend::new("nvapi-...");
+    /// agent.enable_rag(Box::new(embedding));
+    /// agent.index_document("pool", "Pool běží na portu 3333").unwrap();
+    /// ```
+    pub fn enable_rag(&mut self, embedding: Box<dyn EmbeddingBackend>) {
+        self.rag_retriever = Some(RagRetriever::new(embedding));
+    }
+
+    /// Indexuj dokument do RAG knowledge base. Vyžaduje `enable_rag()`.
+    pub fn index_document(&mut self, id: &str, content: &str) -> Result<(), crate::llm_backend::LlmError> {
+        match self.rag_retriever.as_mut() {
+            Some(retriever) => retriever.index(id, content),
+            None => Err(crate::llm_backend::LlmError::NotReady),
+        }
+    }
+
+    /// Vrátí mutable referenci na RAG retriever (pokud je RAG aktivní).
+    pub fn retriever_mut(&mut self) -> Option<&mut RagRetriever> {
+        self.rag_retriever.as_mut()
+    }
+
+    /// Indexuj curated relativní kořeny do RAG knowledge base.
+    /// Vyžaduje předchozí `enable_rag()`.
+    pub fn index_relative_corpus(
+        &mut self,
+        workspace_root: &Path,
+        roots: &[&str],
+    ) -> Result<ScanResult, crate::llm_backend::LlmError> {
+        let retriever = self
+            .rag_retriever
+            .take()
+            .ok_or(crate::llm_backend::LlmError::NotReady)?;
+
+        let mut kb = KnowledgeBase::new(retriever, KnowledgeConfig::default());
+        let result = kb.scan_relative_roots(workspace_root, roots);
+        self.rag_retriever = Some(kb.retriever);
+        result
+    }
+
+    /// Indexuj kanonický AI Native corpus včetně knižních proxy zdrojů.
+    pub fn index_canonical_corpus(
+        &mut self,
+        workspace_root: &Path,
+    ) -> Result<ScanResult, crate::llm_backend::LlmError> {
+        self.index_relative_corpus(workspace_root, AI_NATIVE_CANONICAL_CORPUS_ROOTS)
+    }
+
+    /// Indexuj zúžený profil publikovaných V2 books přes textové proxy dokumenty.
+    pub fn index_v2_books_proxy_corpus(
+        &mut self,
+        workspace_root: &Path,
+    ) -> Result<ScanResult, crate::llm_backend::LlmError> {
+        self.index_relative_corpus(workspace_root, V2_BOOKS_PROXY_CORPUS_ROOTS)
+    }
+
+    /// Počet dokumentů v RAG knowledge base.
+    pub fn knowledge_base_size(&self) -> usize {
+        self.rag_retriever.as_ref().map(|r| r.store_size()).unwrap_or(0)
     }
 
     /// Vrátí true pokud je LLM backend nastaven a připraven.
@@ -658,7 +734,23 @@ impl HiranyagarbhaAgent {
         // Phase II: pokud je nastaven LLM backend, deleguj na něj
         if let Some(ref backend) = self.llm_backend {
             if backend.is_ready() {
-                let req = LlmRequest::new(MmlModality::Text, content)
+                // Phase V: RAG augmentace — doplň kontext z knowledge base
+                let prompt = if let Some(ref retriever) = self.rag_retriever {
+                    match retriever.retrieve(content) {
+                        Ok(docs) if !docs.is_empty() => {
+                            let ctx = docs.iter().enumerate()
+                                .map(|(i, doc)| format!("{}. [{}]: {}", i + 1, doc.id, doc.content))
+                                .collect::<Vec<_>>()
+                                .join("\n");
+                            format!("[KONTEXT Z KNOWLEDGE BASE]\n{ctx}\n\n[DOTAZ]\n{content}")
+                        }
+                        _ => content.to_string(),
+                    }
+                } else {
+                    content.to_string()
+                };
+
+                let req = LlmRequest::new(MmlModality::Text, &prompt)
                     .with_consciousness(self.engine.level);
                 if let Ok(resp) = backend.generate(req) {
                     return resp.content;

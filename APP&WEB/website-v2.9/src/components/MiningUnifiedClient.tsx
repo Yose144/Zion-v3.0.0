@@ -156,8 +156,8 @@ const nodeRequirements = [
 ];
 
 const ports = [
-  { port: "8334", protocol: "TCP", purpose: "P2P peer-to-peer", required: true },
-  { port: "8444", protocol: "TCP", purpose: "JSON-RPC API", required: false },
+  { port: "8333", protocol: "TCP", purpose: "P2P peer-to-peer", required: true },
+  { port: "8443", protocol: "TCP", purpose: "JSON-RPC API", required: false },
   { port: "3333", protocol: "TCP", purpose: "Stratum mining", required: false },
   { port: "8080", protocol: "TCP", purpose: "Pool API", required: false },
 ];
@@ -171,8 +171,8 @@ const networkConfigs = [
 const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
   { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
-  { cmd: "zion-node --network mainnet --rpc-port 8444", desc: "Override RPC port" },
-  { cmd: `zion-node --peers ${POOL}:8334`, desc: "Manual peer list" },
+  { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
+  { cmd: `zion-node --peers ${POOL}:8333`, desc: "Manual peer list" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
   { cmd: "zion-node --data-dir /custom/path", desc: "Custom data directory" },
 ];
@@ -193,7 +193,7 @@ const faqItems = [
   { q: "Windows Defender blocks the binary?", a: 'Click "More info" → "Run anyway". The binaries are open-source (MIT license) but unsigned. You can also add C:\\ZION\\ to exclusions in Windows Security.' },
   { q: "macOS says 'cannot be opened'?", a: "Run: xattr -d com.apple.quarantine zion-miner-macos-arm64 — or go to System Settings → Privacy & Security → Allow Anyway." },
   { q: "What is Consciousness Mining?", a: "Your consciousness level (PHYSICAL → COSMIC) multiplies block rewards up to 15×. Level up by consistent mining, discovering blocks, and contributing to network health." },
-  { q: "Node won't start / No peers connecting?", a: `Check Rust ≥ 1.75 (rustc --version). Ensure port 8334 is free (lsof -i :8334). Verify firewall allows TCP 8334. Try manual peers: --peers ${SITE_PRIMARY_HOST}:8334.` },
+  { q: "Node won't start / No peers connecting?", a: `Check Rust ≥ 1.75 (rustc --version). Ensure port 8333 is free (lsof -i :8333). Verify firewall allows TCP 8333. Try manual peers: --peers ${SITE_PRIMARY_HOST}:8333.` },
   { q: "Can I mine on Raspberry Pi?", a: "Yes! Download the linux-arm64 version. RPi 4/5 works well with Yescrypt algorithm for best perf/watt." },
 ];
 
@@ -663,14 +663,14 @@ cargo build --release -p zion-miner --features opencl
 
                 <CodeBlock
                   title="Step 1 — Run your own full node"
-                  code={`zion-node --config config/mainnet.toml --rpc-port 8444`}
+                  code={`zion-node --config config/mainnet.toml --rpc-port 8443`}
                 />
                 <div className="mt-4">
                   <CodeBlock
                     title="Step 2 — Mine against your node"
                     code={`zion-miner \\
   --algo cosmic_harmony \\
-  --node http://127.0.0.1:8444 \\
+  --node http://127.0.0.1:8443 \\
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc) \\
   --solo`}
@@ -825,7 +825,7 @@ cargo build --release -p zion-node
 
 docker run -d \\
   --name zion-node \\
-  -p 8334:8334 -p 8444:8444 \\
+  -p 8333:8333 -p 8443:8443 \\
   -v zion-data:/data \\
   ghcr.io/zion-terranova/zion-node:2.9.8 \\
   --config /etc/zion/mainnet.toml`}
@@ -867,8 +867,8 @@ docker run -d \\
                 title={networkConfigs[activeNetwork].file}
                 code={`[network]
 name = "${networkConfigs[activeNetwork].name.toLowerCase()}"
-p2p_port = 8334
-rpc_port = 8444
+p2p_port = 8333
+rpc_port = 8443
 max_peers = 128
 
 [consensus]
@@ -885,7 +885,7 @@ data_dir = "~/.zion/${networkConfigs[activeNetwork].name.toLowerCase()}"
 
 [peers]
 bootstrap = [
-  "${POOL}:8334"
+  "${POOL}:8333"
 ]`}
               />
             </div>
@@ -924,8 +924,8 @@ bootstrap = [
             <div className="mt-4">
               <CodeBlock
                 title="UFW Firewall (Ubuntu/Debian)"
-                code={`sudo ufw allow 8334/tcp comment "ZION P2P"
-sudo ufw allow from 127.0.0.1 to any port 8444 proto tcp comment "ZION RPC"
+                code={`sudo ufw allow 8333/tcp comment "ZION P2P"
+sudo ufw allow from 127.0.0.1 to any port 8443 proto tcp comment "ZION RPC"
 sudo ufw status`}
               />
             </div>
@@ -956,13 +956,13 @@ sudo ufw status`}
             </h3>
             <CodeBlock
               title="Check sync status"
-              code={`curl -s http://localhost:8444 \\
+              code={`curl -s http://localhost:8443 \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"getBlockchainInfo"}' | jq .`}
             />
             <CodeBlock
               title="Check peers"
-              code={`curl -s http://localhost:8444 \\
+              code={`curl -s http://localhost:8443 \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"getPeerCount"}' | jq .`}
             />

@@ -28,25 +28,25 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'Live TestNet · v2.9.9 Pure Code · runtime v2.9.8', en: 'Live TestNet · v2.9.9 Pure Code · runtime v2.9.8' },
-    badge_chv4:     { cs: 'Primary host live · Zion2 · internal seeds', en: 'Primary host live · Zion2 · internal seeds' },
-    tagline:        { cs: 'Veřejný testnet nativního Rust blockchainu', en: 'Public testnet of a native Rust blockchain' },
-    title_sub:      { cs: 'Live TestNet · public line v2.9.9 · canonical runtime v2.9.8', en: 'Live TestNet · public line v2.9.9 · canonical runtime v2.9.8' },
+    badge_version:  { cs: 'V3 Test Mainnet · v2.9.9 Pure Code · runtime v2.9.8', en: 'V3 Test Mainnet · v2.9.9 Pure Code · runtime v2.9.8' },
+    badge_chv4:     { cs: '3-node mesh · Prague + USA + Singapore', en: '3-node mesh · Prague + USA + Singapore' },
+    tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
+    title_sub:      { cs: 'Kontrolovaný test mainnet · 3 nody · canonical runtime v2.9.8 Ekam Deeksha', en: 'Controlled test mainnet · 3 nodes · canonical runtime v2.9.8 Ekam Deeksha' },
     description:    {
-      cs: 'ZION TerraNova je živý testnet s explorerem, veřejným poolem, mining binárkami a provozní telemetrií na primárním hostu Zion2. Historický 3-node rollout zůstává v dokumentaci a reportech jako validační milník, ne jako aktuální topologie.',
-      en: 'ZION TerraNova is a live testnet with an explorer, public pool, mining binaries, and operational telemetry on the Zion2 primary host. The historical 3-node rollout remains in documentation and reports as a validation milestone, not the current topology.',
+      cs: 'ZION TerraNova běží jako řízený V3 test mainnet se 3-node P2P rehearsal sítí (Praha, USA, Singapur), veřejným poolem, mining binárkami a provozní telemetrií.',
+      en: 'ZION TerraNova runs as a controlled V3 test mainnet with a 3-node P2P rehearsal network (Prague, USA, Singapore), public pool, mining binaries, and operational telemetry.',
     },
     btn_start:      { cs: 'Začít těžit', en: 'Start Mining' },
     btn_docs:       { cs: 'Dokumentace', en: 'Docs' },
     btn_whitepaper: { cs: 'WhitePaper', en: 'WhitePaper' },
     signal_l1:      { cs: 'L1 Jádro', en: 'L1 Core' },
     signal_nodes:   { cs: 'Validátor síť', en: 'Validator Grid' },
-    signal_mainnet: { cs: 'Release Status', en: 'Release Status' },
-    signal_loc:     { cs: 'Zion2 · veřejný host · interní seedy', en: 'Zion2 · public host · internal seeds' },
-    signal_target:  { cs: 'GO · primary host aktivní', en: 'GO · primary host active' },
-    signal_status_l1: { cs: 'Pure Code live · runtime 2.9.8', en: 'Pure Code live · runtime 2.9.8' },
+    signal_mainnet: { cs: 'Launch Gate', en: 'Launch Gate' },
+    signal_loc:     { cs: 'Prague · USA · Singapore · P2P mesh', en: 'Prague · USA · Singapore · P2P mesh' },
+    signal_target:  { cs: 'NO-GO · public launch blokovaný', en: 'NO-GO · public launch gated' },
+    signal_status_l1: { cs: 'Pure Code active · runtime 2.9.8', en: 'Pure Code active · runtime 2.9.8' },
     signal_status_nodes: { cs: '1 veřejný host / 2 interní seedy', en: '1 public host / 2 internal seeds' },
-    signal_status_mainnet: { cs: 'Release gate · GO', en: 'Release gate · GO' },
+    signal_status_mainnet: { cs: 'Public launch gate · NO-GO', en: 'Public launch gate · NO-GO' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },
     metric_nodes:   { cs: 'Nódy Online', en: 'Nodes Online' },
     metric_tests:   { cs: 'Testy úspěšně', en: 'Tests Passing' },
@@ -244,7 +244,7 @@ const t = {
           cs: 'Rust kompilované těžaře pro Linux (x86_64), Windows a macOS (ARM64) se stratum-v2 pool protokolem.',
           en: 'Rust-compiled miners for Linux (x86_64), Windows, and macOS (ARM64) with stratum-v2 pool protocol.',
         },
-        badge: { cs: 'TestNet', en: 'TestNet' },
+        badge: { cs: 'Test Mainnet', en: 'Test Mainnet' },
       },
       dao: {
         title: { cs: 'DAO Správa', en: 'DAO Governance' },
@@ -265,8 +265,8 @@ const t = {
       p2p: {
         title: { cs: 'P2P síť', en: 'P2P Network' },
         desc:  {
-          cs: 'P2P peer discovery, propagace bloků a synchronizace mempolu přes veřejný primární host a interní seed kontejnery. Historický 3-node rollout je vedený v reportech.',
-          en: 'P2P peer discovery, block propagation, and mempool sync across the public primary host and internal seed containers. The historical 3-node rollout is preserved in reports.',
+          cs: 'P2P peer discovery, propagace bloků a synchronizace mempolu přes 3-node P2P mesh (Praha + USA + Singapur). Plná geo-distribuovaná topologie.',
+          en: 'P2P peer discovery, block propagation, and mempool sync across the 3-node P2P mesh (Prague + USA + Singapore). Full geo-distributed topology.',
         },
         badge: { cs: 'Živý', en: 'Live' },
       },
@@ -283,8 +283,8 @@ const t = {
       ph1: {
         phase: { cs: 'Fáze 1 · Nyní', en: 'Phase 1 · Now' },
         detail: {
-          cs: 'Hardened TestNet — Rust pool, Cosmic Harmony těžba, P2P sync. 82 % dokončeno.',
-          en: 'Hardened TestNet — Rust pool, Cosmic Harmony mining, P2P sync. 82 % done.',
+          cs: 'Kontrolovaný test mainnet — Rust pool, Cosmic Harmony těžba, P2P sync. 92 % dokončeno.',
+          en: 'Controlled test mainnet — Rust pool, Cosmic Harmony mining, P2P sync. 92 % done.',
         },
       },
       ph2: {
@@ -297,8 +297,8 @@ const t = {
       ph3: {
         phase: { cs: 'Fáze 4–5 · Q4 2026', en: 'Phase 4–5 · Q4 2026' },
         detail: {
-          cs: 'Dress rehearsal, genesis konfig, MainNet launch 31. 12. 2026.',
-          en: 'Dress rehearsal, genesis config, MainNet launch 31. 12. 2026.',
+          cs: 'Dress rehearsal, genesis konfigurace, uzavření public launch gate.',
+          en: 'Dress rehearsal, genesis configuration, public launch gate closure.',
         },
       },
     },
