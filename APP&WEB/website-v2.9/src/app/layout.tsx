@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ObservatoryProvider } from "@/contexts/ObservatoryContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -47,20 +48,22 @@ export default function RootLayout({
   return (
     <html lang="cs" className="dark">
       <body className={`${inter.variable} ${jetbrains.variable} antialiased bg-black text-white overflow-x-hidden`}>
-        <ThemeProvider>
-          <ObservatoryProvider>
-            <LanguageProvider>
-            <ClientBackgrounds />
-            <div className="relative z-10">
-              <Navigation />
-              <main className="zion-shell min-h-screen">
-                {children}
-              </main>
-              <Footer />
-            </div>
-            </LanguageProvider>
-          </ObservatoryProvider>
-        </ThemeProvider>
+        <GlobalErrorBoundary>
+          <ThemeProvider>
+            <ObservatoryProvider>
+              <LanguageProvider>
+                <ClientBackgrounds />
+                <div className="relative z-10">
+                  <Navigation />
+                  <main className="zion-shell min-h-screen">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
+              </LanguageProvider>
+            </ObservatoryProvider>
+          </ThemeProvider>
+        </GlobalErrorBoundary>
       </body>
     </html>
   );
