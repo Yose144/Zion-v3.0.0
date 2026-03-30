@@ -1,8 +1,9 @@
 # ZION TerraNova — Project Status
 
-> **Datum:** 2026-03-18  
-> **Verze:** v2.9.6-main / V3 Phase 20  
-> **Síť:** Mainnet Canary Live — `91.98.122.165` (Hetzner Helsinki)
+> **Datum:** 2026-03-30  
+> **Verze:** v2.9.6-main / V3 controlled rehearsal  
+> **Síť:** V3 Test Mainnet Rehearsal — Prague / USA / Singapore  
+> **Poznámka:** Aktivní launch-gating source of truth je `docs/mainnet/MAINNET_CHECKLIST.md`, `docs/mainnet/MAINNET_EXIT_CRITERIA.md` a veřejný dashboard. Nižší sekce tohoto souboru obsahují i starší implementační snapshoty, které nemusí přesně odrážet živý rehearsal stav.
 
 ---
 
@@ -10,13 +11,16 @@
 
 | Oblast | Stav |
 |--------|------|
-| V3 consensus / blockchain | ✅ Kompletní — 499+ testů, 0 selhání |
-| V3 canary deployment | ✅ Live — chain 110+ blocks, 5/5 shares přijato |
+| V3 consensus / blockchain | ✅ Controlled runtime drží tip agreement na 3 nodech |
+| V3 rehearsal deployment | 🔄 72h stability run běží — public launch zatím NO-GO |
 | V3 miner | ✅ Buildí, GPU/CPU backendy funkční |
 | Legacy desktop-agent (2.9.6) | ✅ Stabilní — GPU kernel +74% vs baseline |
-| Monitoring / Grafana | 🟡 Dashboardy updatovány, stack čeká na nasazení |
-| CI/CD pipeline | ❌ Neexistuje |
+| Monitoring / Grafana | ✅ Live dashboard + collector + Prometheus telemetry běží |
+| CI/CD pipeline | ✅ V3 CI/release workflows existují |
 | BFG scrub premine klíčů | ❌ Blokuje veřejný launch |
+| Exit criteria sign-off | ❌ Dokument stále draft bez podpisu |
+| Genesis artefakty + checksumy | ❌ Neuzavřeno |
+| 72h closure report | 🔄 Rozběhnutý, čeká na uzavření okna |
 | Miner UX pro veřejnost | 🟡 Plánováno (UPGRADE_PLAN Fáze A) |
 
 ---
@@ -148,8 +152,9 @@ Revenue routing: operační
 | # | Problém | Akce |
 |---|---------|------|
 | 1 | **BFG scrub premine klíčů** | 12 privátních klíčů v git historii (`PREMINE_WALLETS_BACKUP.json`) — **nutné před veřejným launchem** |
-| 2 | **CI/CD pipeline** | Žádný automatický build/test/deploy |
-| 3 | **Live monitoring** | Grafana/Prometheus stack nasadit na canary |
+| 2 | **Exit criteria sign-off** | `docs/mainnet/MAINNET_EXIT_CRITERIA.md` je stále draft bez finálního podpisu |
+| 3 | **Genesis artefakty + checksumy** | Offline genesis chain, tag a veřejné SHA-256 workflow nejsou uzavřené |
+| 4 | **72h closure report** | Rehearsal běží, ale chybí finální closure verdict s recovery appendixem |
 
 ### 🟡 VYSOKÁ PRIORITA (UPGRADE_PLAN Fáze A–B)
 
