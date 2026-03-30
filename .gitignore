@@ -130,3 +130,6 @@ APP&WEB/website-v2.9/SeedDE
 test_out.txt
 TITHE_WALLETS_BACKUP.txt
 *.gguf
+scripts/finetune/data/*_backup_*.jsonl
+scripts/finetune/data/*_full_books_refresh.jsonl
+scripts/finetune/data/*_seed_books_refresh.jsonl
