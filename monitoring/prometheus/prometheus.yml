@@ -56,6 +56,17 @@ scrape_configs:
           region: "eu-north"
           service: "core"
 
+  # ── ZION Miner — Prague (local) ──
+  - job_name: "zion-miner-prague"
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["zion-miner:9116"]
+        labels:
+          server: "prague"
+          region: "eu-north"
+          service: "miner"
+
   # ── Node Exporter — Helsinki (local, host-mapped port) ──
   - job_name: "node-prague"
     scrape_interval: 30s
