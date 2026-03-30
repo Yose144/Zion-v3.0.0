@@ -15,7 +15,7 @@ import {
   TreeDeciduous,
   Zap
 } from 'lucide-react';
-import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION } from '@/lib/site';
+import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION, SITE_POOL_PRIMARY } from '@/lib/site';
 
 interface DashboardClientProps {
   stats: any;
@@ -26,15 +26,15 @@ interface DashboardClientProps {
 
 const missionMetrics = [
   {
-    label: 'TestNet Status',
-    value: 'LIVE',
-    description: 'Native Rust infrastructure operational',
+    label: 'Test-Mainnet Status',
+    value: 'ACTIVE',
+    description: 'Controlled Rust rehearsal infrastructure operational',
     icon: Zap
   },
   {
     label: 'Pool Health',
     value: '100%',
-    description: '1 pool · Zion2 public host',
+    description: 'Public host + internal lanes · Prague + USA + Singapore',
     icon: ShieldCheck
   },
   {
@@ -53,8 +53,8 @@ const missionMetrics = [
 
 const roadmapSlices = [
   {
-    title: 'TestNet Live · Jan 2026',
-    bullets: ['Native Rust blockchain + pool infrastructure', '1 public host: Zion2 (internal seed containers behind the same stack)', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
+    title: 'Controlled Test Mainnet · Mar 2026',
+    bullets: ['Native Rust blockchain + pool infrastructure', 'Controlled rehearsal topology: Prague (EU) + USA + Singapore (internal lanes)', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
   },
   {
     title: 'Q1-Q2 2026 · Hardening',
@@ -125,7 +125,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Mission control</p>
               <h1 className="text-5xl md:text-6xl font-semibold text-gradient">Live systems dashboard</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-                Real-time telemetry from ZION {SITE_RELEASE_LABEL}: health checks, node status, blockchain vitals, and mining pool metrics for the current Zion2 public host.
+                Real-time telemetry from ZION {SITE_RELEASE_LABEL}: health checks, node status, blockchain vitals, and mining pool metrics across the controlled rehearsal topology.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -274,7 +274,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <Activity className="w-6 h-6 text-zion-purple" />
               <div>
                 <h2 className="text-2xl font-semibold text-white">Mining pool status</h2>
-                <p className="text-sm text-gray-400">Live metrics from stratum+tcp://91.98.122.165:3333</p>
+                <p className="text-sm text-gray-400">Live metrics from stratum+tcp://{SITE_POOL_PRIMARY}</p>
               </div>
             </div>
             <Link href="/pool/stats" target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1">

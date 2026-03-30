@@ -6968,8 +6968,8 @@ function parseMinerOutput(output) {
   // V3 MINER OUTPUT PARSERS (zion-miner v3 key=value + JSON wire)
   // ═══════════════════════════════════════════════════════════════
 
-  // ─── V3 session_status: "session_status iter=6/4294967295 uptime_s=439.9 accepted=6 rejected=0 ... hps_overall=2421.90 hps_10s=0.00 hps_60s=0.00 ..." ───
-  const v3StatusMatch = output.match(/session_status\s+iter=(\d+)\/(\d+)\s+uptime_s=([\d.]+)\s+accepted=(\d+)\s+rejected=(\d+)\s+accept_pct=([\d.]+)\s+no_solution=(\d+)\s+local_skip=(\d+)\s+hps_overall=([\d.]+)\s+hps_10s=([\d.]+)\s+hps_60s=([\d.]+)(?:\s+attempted_hashes=(\d+))?/);
+  // ─── V3 session_status: enriched with 15m hashrate, GPU backend, epoch, pool height ───
+  const v3StatusMatch = output.match(/session_status\s+iter=(\d+)\/(\d+)\s+uptime_s=([\d.]+)\s+accepted=(\d+)\s+rejected=(\d+)\s+accept_pct=([\d.]+)\s+no_solution=(\d+)\s+local_skip=(\d+)\s+hps_overall=([\d.]+)\s+hps_10s=([\d.]+)\s+hps_60s=([\d.]+)\s+hps_15m=([\d.]+)(?:\s+attempted_hashes=(\d+))?(?:\s+submit_avg_ms=([\d.]+))?(?:\s+submit_max_ms=(\d+))?(?:\s+remote_ttl_ms=(\S+))?(?:\s+gpu_backend=(\S+))?(?:\s+gpu_hps=([\d.]+))?(?:\s+epoch=(\d+))?(?:\s+pool_height=(\d+))?(?:\s+best_batch_ms=(\d+))?/);
   if (v3StatusMatch) {
     minerStats.accepted = parseInt(v3StatusMatch[4]);
     minerStats.rejected = parseInt(v3StatusMatch[5]);
@@ -6979,17 +6979,19 @@ function parseMinerOutput(output) {
     const hpsOverall = parseFloat(v3StatusMatch[9]);
     const hps10s = parseFloat(v3StatusMatch[10]);
     const hps60s = parseFloat(v3StatusMatch[11]);
-    // V3 reports 0.00 for 10s/60s when windows are not yet full
+    const hps15m = parseFloat(v3StatusMatch[12]);
+    // V3 reports 0.00 for 10s/60s/15m when windows are not yet full
     minerStats.hashrate = hpsOverall;
     minerStats.hashrate_10s = hps10s > 0 ? hps10s : hpsOverall;
     minerStats.hashrate_60s = hps60s > 0 ? hps60s : hpsOverall;
+    minerStats.hashrate_15m = hps15m > 0 ? hps15m : hpsOverall;
     if (!Number.isFinite(Number(minerStats.hashrate_max)) || hpsOverall > Number(minerStats.hashrate_max)) {
       minerStats.hashrate_max = hpsOverall;
     }
     minerStats.uptime = parseFloat(v3StatusMatch[3]);
     // Total hashes from session_status (live, not just exit)
-    if (v3StatusMatch[12]) {
-      const n = parseInt(v3StatusMatch[12]);
+    if (v3StatusMatch[13]) {
+      const n = parseInt(v3StatusMatch[13]);
       minerStats.total_hashes = n;
       if (n > 1000000) {
         minerStats.total_hashes_display = `${(n / 1000000).toFixed(1)}M`;
@@ -6999,6 +7001,12 @@ function parseMinerOutput(output) {
         minerStats.total_hashes_display = String(n);
       }
     }
+    // Enriched fields
+    if (v3StatusMatch[17]) minerStats.gpu_backend = v3StatusMatch[17];
+    if (v3StatusMatch[18]) minerStats.gpu_hps = parseFloat(v3StatusMatch[18]);
+    if (v3StatusMatch[19]) minerStats.epoch = parseInt(v3StatusMatch[19]);
+    if (v3StatusMatch[20]) minerStats.pool_height = parseInt(v3StatusMatch[20]);
+    if (v3StatusMatch[21]) minerStats.best_batch_ms = parseInt(v3StatusMatch[21]);
   }
 
   // ─── V3 wire_job JSON: extract height and algorithm ───
@@ -7020,9 +7028,36 @@ function parseMinerOutput(output) {
     minerStats.last_job_id = v3JobIdMatch[1];
   }
 
-  // ─── V3 share_status: "share_status=\"Accepted\"" ───
-  if (/share_status="Accepted"/.test(output)) {
-    // Individual accepted share — sync'd via session_status above
+  // ─── V3 share_status: "share_status=\"Accepted\"" or share_status=Accepted ───
+  if (/share_status="?Accepted"?/i.test(output)) {
+    minerStats.accepted = (Number(minerStats.accepted) || 0) + 1;
+    minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
+  } else if (/share_status="?(Rejected|InvalidJob|StaleJob|RejectedLowDifficulty|JobMismatch|UpstreamRejected)"?/i.test(output)) {
+    minerStats.rejected = (Number(minerStats.rejected) || 0) + 1;
+    minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
+  }
+
+  // ─── V3 wire_result JSON: extract accepted flag for real-time share counting ───
+  const v3WireResultMatch = output.match(/wire_result=\{[^}]*"accepted"\s*:\s*(true|false)/);
+  if (v3WireResultMatch) {
+    // wire_result fires for every pool response — do not double-count
+    // since share_status already counted above; use wire_result only if
+    // share_status was NOT in the same chunk.
+    if (!/share_status=/i.test(output)) {
+      if (v3WireResultMatch[1] === 'true') {
+        minerStats.accepted = (Number(minerStats.accepted) || 0) + 1;
+      } else {
+        minerStats.rejected = (Number(minerStats.rejected) || 0) + 1;
+      }
+      minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
+    }
+  }
+
+  // ─── V3 mining progress: "mining job_id=N height=N nonces=A..B" ───
+  const v3MiningMatch = output.match(/^mining\s+job_id=(\d+)\s+height=(\d+)\s+nonces=(\d+)\.\.(\d+)/m);
+  if (v3MiningMatch) {
+    minerStats.last_job_id = v3MiningMatch[1];
+    minerStats.last_job_height = v3MiningMatch[2];
   }
 
   // ─── V3 version banner: "version=3.0.0-dev" ───

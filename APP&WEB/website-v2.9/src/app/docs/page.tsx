@@ -130,7 +130,7 @@ const versions: Version[] = [
     label: 'v2.9',
     tag: 'LEGACY',
     tagColor: 'text-gray-600 border-gray-600/30 bg-gray-600/5',
-    description: 'Quantum Leap — first multi-node TestNet, Python era',
+    description: 'Quantum Leap — first multi-node network, Python era',
     categories: [
       {
         id: 'v29-overview',
@@ -187,7 +187,7 @@ interface Section {
 const sections: Section[] = [
   {
     id: 'live-ops',
-    title: 'Live TestNet',
+    title: 'Test-Mainnet Ops',
     icon: Globe,
     accentText: 'text-emerald-400',
     accentBorder: 'border-emerald-400/30',
@@ -222,14 +222,14 @@ const sections: Section[] = [
   },
   {
     id: 'mainnet',
-    title: 'MainNet Launch',
+    title: 'Public Launch Path',
     icon: Rocket,
     accentText: 'text-emerald-400',
     accentBorder: 'border-emerald-400/30',
     docs: [
-      { id: 'mainnet-plan', title: 'Launch Plan 2026', file: 'mainnet/README.md' },
+      { id: 'mainnet-plan', title: 'Public Launch Plan 2026', file: 'mainnet/README.md' },
       { id: 'mainnet-genesis-book', title: 'Genesis Book of Awakening', file: 'mainnet/genesis-book.md' },
-      { id: 'mainnet-checklist', title: 'MainNet Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
+      { id: 'mainnet-checklist', title: 'Public Launch Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
     ],
   },
   {
@@ -240,6 +240,19 @@ const sections: Section[] = [
     accentBorder: 'border-violet-400/30',
     docs: [
       { id: 'coingecko-checklist', title: 'CoinGecko Checklist', file: 'mainnet/coingecko.md' },
+    ],
+  },
+  {
+    id: 'ai-native',
+    title: 'AI Native',
+    icon: Sparkles,
+    accentText: 'text-purple-400',
+    accentBorder: 'border-purple-400/30',
+    docs: [
+      { id: 'ai-native-vision', title: 'AI Native — Vize & Manifest', file: 'ai-native/README.md' },
+      { id: 'ai-native-cudax', title: 'NVIDIA CUDA-X integrace', file: 'ai-native/cuda-x.md' },
+      { id: 'ai-native-ncl', title: 'NCL — Neural Compute', file: 'ai-native/ncl.md' },
+      { id: 'ai-native-oasis', title: 'L4 Oasis — Consciousness Levels', file: 'ai-native/oasis.md' },
     ],
   },
   {
@@ -272,7 +285,7 @@ export default function DocsPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
   const primaryVersions = versions.filter((version) => version.id === 'v2.9.6' || version.id === 'v2.9.5');
@@ -391,7 +404,7 @@ export default function DocsPage() {
               {tr('docs', 'subtitle', lang)}
             </p>
             <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
-              Live testnet běží na veřejné release linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8 Deeksha/Ekam. Sekce Live Index na /docs#live-index teď slouží jako kanonický vstup pro síťový snapshot, repo baseline 2.9.6 a aktuální release/runtime mapu.
+              Současná veřejná linka běží jako kontrolovaný V3 test mainnet na release linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8 Deeksha/Ekam. Sekce Live Index na /docs#live-index teď slouží jako kanonický vstup pro síťový snapshot, repo baseline 2.9.6, aktuální release/runtime mapu a launch blockers.
             </div>
             <div className="flex items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (

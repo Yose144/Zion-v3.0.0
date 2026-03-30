@@ -559,7 +559,16 @@ inline void ekam_memory_hard_transform(thread const uchar *input, device uchar *
 }
 
 // ============================================================================
-// Step 5: NPU Mix (INT8 MLP 64→128→64 + residual)
+// Step 5: NPU Mix — variable-topology INT8 MLP + residual
+//
+// Supports all 4 epoch topologies:
+//   Standard:   64→128→64  (2 layers)
+//   ThreeLayer: 64→96→128→64 (3 layers)
+//   Wide:       64→256→64  (2 layers)
+//   Deep:       64→64→64→64 (3 layers)
+//
+// npu_meta layout: [num_layers, in0, out0, in1, out1, in2, out2]
+// All weights/biases/scales packed sequentially per layer.
 // ============================================================================
 
 inline int gelu_int8(int x)
@@ -570,72 +579,81 @@ inline int gelu_int8(int x)
 }
 
 inline void npu_mix(thread const uchar *in64, thread uchar *out64,
-                    device const char *w1,
-                    device const char *b1,
-                    device const char *w2,
-                    device const char *b2,
-                    device const short *scale1,
-                    device const short *scale2)
+                    device const char *weights_all,
+                    device const char *biases_all,
+                    device const short *scales_all,
+                    device const uint *npu_meta)
 {
-    int input_i32[64];
+    uint num_layers = npu_meta[0];
+
+    // Working buffers — max dimension 256 (Wide topology)
+    int current[256];
+    int next_buf[256];
+
+    // Convert input u8 → i32 (signed reinterpret)
     for (int i = 0; i < 64; i++)
-        input_i32[i] = (int)((char)in64[i]);
+        current[i] = (int)((char)in64[i]);
 
-    int hidden[128];
-    for (int i = 0; i < 128; i++) {
-        int acc = (int)b1[i] * 32;
-        for (int j = 0; j < 64; j++)
-            acc += input_i32[j] * (int)w1[i * 64 + j];
-        hidden[i] = clamp(acc >> 12, -128, 127);
+    // Save residual (input is always 64)
+    int residual[64];
+    for (int i = 0; i < 64; i++)
+        residual[i] = current[i];
+
+    uint w_offset = 0;
+    uint b_offset = 0;
+    uint s_offset = 0;
+
+    for (uint layer = 0; layer < num_layers; layer++) {
+        uint in_dim  = npu_meta[1 + layer * 2];
+        uint out_dim = npu_meta[2 + layer * 2];
+
+        // MatMul + bias
+        for (uint i = 0; i < out_dim; i++) {
+            int acc = (int)biases_all[b_offset + i] * 32;
+            for (uint j = 0; j < in_dim; j++)
+                acc += current[j] * (int)weights_all[w_offset + i * in_dim + j];
+            next_buf[i] = clamp(acc >> 12, -128, 127);
+        }
+
+        // LayerNorm
+        {
+            long sum = 0;
+            for (uint i = 0; i < out_dim; i++) sum += (long)next_buf[i];
+            int mean = (int)(sum / (long)out_dim);
+            long var_sum = 0;
+            for (uint i = 0; i < out_dim; i++) {
+                long d = (long)(next_buf[i] - mean);
+                var_sum += d * d;
+            }
+            uint var_u = (uint)(var_sum / (long)out_dim);
+            uint std_approx = 1;
+            if (var_u > 0) {
+                std_approx = (uint)sqrt((float)var_u) + 1;
+            }
+            for (uint i = 0; i < out_dim; i++) {
+                int normalized = ((next_buf[i] - mean) * 128) / (int)std_approx;
+                next_buf[i] = clamp((normalized * (int)scales_all[s_offset + i]) >> 8, -128, 127);
+            }
+        }
+
+        // GELU for all but last layer
+        if (layer < num_layers - 1) {
+            for (uint i = 0; i < out_dim; i++)
+                next_buf[i] = gelu_int8(next_buf[i]);
+        }
+
+        // Advance: next → current
+        for (uint i = 0; i < out_dim; i++)
+            current[i] = next_buf[i];
+
+        w_offset += out_dim * in_dim;
+        b_offset += out_dim;
+        s_offset += out_dim;
     }
 
-    {
-        int n = 128;
-        long sum = 0;
-        for (int i = 0; i < n; i++) sum += (long)hidden[i];
-        int mean = (int)(sum / (long)n);
-        long var_sum = 0;
-        for (int i = 0; i < n; i++) {
-            long d = (long)(hidden[i] - mean);
-            var_sum += d * d;
-        }
-        int std_approx = (int)sqrt((float)(var_sum / (long)n)) + 1;
-        for (int i = 0; i < n; i++) {
-            int normalized = ((hidden[i] - mean) * 128) / std_approx;
-            hidden[i] = clamp((normalized * (int)scale1[i]) >> 8, -128, 127);
-        }
-    }
-
-    for (int i = 0; i < 128; i++)
-        hidden[i] = gelu_int8(hidden[i]);
-
-    int output_i32[64];
+    // Residual add + convert i32 → u8
     for (int i = 0; i < 64; i++) {
-        int acc = (int)b2[i] * 32;
-        for (int j = 0; j < 128; j++)
-            acc += hidden[j] * (int)w2[i * 128 + j];
-        output_i32[i] = clamp(acc >> 12, -128, 127);
-    }
-
-    {
-        int n = 64;
-        long sum = 0;
-        for (int i = 0; i < n; i++) sum += (long)output_i32[i];
-        int mean = (int)(sum / (long)n);
-        long var_sum = 0;
-        for (int i = 0; i < n; i++) {
-            long d = (long)(output_i32[i] - mean);
-            var_sum += d * d;
-        }
-        int std_approx = (int)sqrt((float)(var_sum / (long)n)) + 1;
-        for (int i = 0; i < n; i++) {
-            int normalized = ((output_i32[i] - mean) * 128) / std_approx;
-            output_i32[i] = clamp((normalized * (int)scale2[i]) >> 8, -128, 127);
-        }
-    }
-
-    for (int i = 0; i < 64; i++) {
-        int v = clamp(output_i32[i] + input_i32[i], -128, 127);
+        int v = clamp(current[i] + residual[i], -128, 127);
         out64[i] = (uchar)v;
     }
 }
@@ -794,12 +812,10 @@ kernel void ekam_deeksha_mine(
     device       uchar   *scratchpad_pool [[ buffer(3)  ]],
     device atomic_uint   *result_flag     [[ buffer(4)  ]],  // [0]=flag, [1]=nonce_lo, [2]=nonce_hi
     device       uchar   *result_hash     [[ buffer(5)  ]],
-    device const char    *npu_w1          [[ buffer(6)  ]],
-    device const char    *npu_b1          [[ buffer(7)  ]],
-    device const char    *npu_w2          [[ buffer(8)  ]],
-    device const char    *npu_b2          [[ buffer(9)  ]],
-    device const short   *npu_scale1      [[ buffer(10) ]],
-    device const short   *npu_scale2      [[ buffer(11) ]],
+    device const char    *npu_weights     [[ buffer(6)  ]],
+    device const char    *npu_biases      [[ buffer(7)  ]],
+    device const short   *npu_scales      [[ buffer(8)  ]],
+    device const uint    *npu_meta        [[ buffer(9)  ]],
     uint                  gid             [[ thread_position_in_grid ]]
 )
 {
@@ -838,12 +854,13 @@ kernel void ekam_deeksha_mine(
     ekam_memory_hard_transform(s3, pad, s4);
 
     uchar s5[64];
-    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+    npu_mix(s4, s5, npu_weights, npu_biases, npu_scales, npu_meta);
 
     uchar hash[32];
     cosmic_fusion_ekam(s5, hash);
 
-    uint state0 = *(thread uint *)hash;
+    // Compare first 4 bytes of hash vs target as big-endian u32 (PoW convention)
+    uint state0 = ((uint)hash[0] << 24) | ((uint)hash[1] << 16) | ((uint)hash[2] << 8) | (uint)hash[3];
 
     if (state0 <= target_u32) {
         // Use 32-bit atomic exchange as found-flag (M1 Metal lacks 64-bit CAS)

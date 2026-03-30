@@ -175,8 +175,8 @@ async function fetchMetrics(): Promise<MonitoringData> {
     /* 25 */ 'node_filesystem_size_bytes{mountpoint="/"}',
     /* 26 */ 'node_filesystem_avail_bytes{mountpoint="/"}',
     /* 27 */ 'node_boot_time_seconds',
-    /* 28 */ 'up{job="zion-core-helsinki"}',
-    /* 29 */ 'up{job="zion-pool-helsinki"}',
+    /* 28 */ 'up{job="zion-core-prague"}',
+    /* 29 */ 'up{job="zion-pool-prague"}',
   ];
 
   const results = await Promise.allSettled(queries.map(q => queryPrometheus(q)));
@@ -252,13 +252,13 @@ function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', sub }: 
   sub?: string;
 }) {
   return (
-    <div className="zion-panel rounded-xl bg-black/60 border border-white/10 p-4 flex flex-col gap-1.5">
-      <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider">
-        <Icon className={`h-4 w-4 ${accent}`} />
-        {label}
+    <div className="zion-panel rounded-xl bg-black/60 border border-white/10 p-4 flex flex-col gap-1.5 min-w-0">
+      <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-[0.2em] truncate">
+        <Icon className={`h-4 w-4 shrink-0 ${accent}`} />
+        <span className="truncate">{label}</span>
       </div>
-      <div className={`text-2xl font-mono font-bold ${accent}`}>{value}</div>
-      {sub && <div className="text-xs text-gray-500">{sub}</div>}
+      <div className={`text-xl sm:text-2xl font-mono font-bold ${accent} truncate`}>{value}</div>
+      {sub && <div className="text-xs text-gray-500 truncate">{sub}</div>}
     </div>
   );
 }
@@ -447,7 +447,7 @@ export default function MonitoringClient() {
             <Server className="h-5 w-5 text-zion-cyan" />
             Core Node
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Layers}   label="Chain Height"    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
             <StatCard icon={Layers}   label="Template Height" value={fmt(data?.templateHeight)} accent="text-amber-400" />
             <StatCard icon={Globe}    label="Peers"           value={fmt(data?.peerCount)} accent="text-zion-cyan" />
@@ -475,7 +475,7 @@ export default function MonitoringClient() {
             <Cpu className="h-5 w-5 text-zion-gold" />
             Mining Pool
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" />
             <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-sky-400" />
             <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-emerald-400" />
@@ -533,31 +533,31 @@ export default function MonitoringClient() {
             <CircleDollarSign className="h-5 w-5 text-pink-400" />
             PPLNS Reward Engine
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="space-y-2">
-              <div className="text-xs text-gray-400 uppercase tracking-wider">Window Size</div>
-              <div className="text-xl font-mono font-bold text-pink-400">{fmt(data?.pplnsWindowSize)}</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            <div className="space-y-2 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Size</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-pink-400 truncate">{fmt(data?.pplnsWindowSize)}</div>
               <div className="text-xs text-gray-500">maximum shares</div>
             </div>
-            <div className="space-y-2">
-              <div className="text-xs text-gray-400 uppercase tracking-wider">Window Used</div>
-              <div className="text-xl font-mono font-bold text-pink-300">{fmt(data?.pplnsWindowUsed)}</div>
+            <div className="space-y-2 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Used</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-pink-300 truncate">{fmt(data?.pplnsWindowUsed)}</div>
               {pplnsWindowPct != null && (
                 <ProgressBar value={data?.pplnsWindowUsed ?? 0} max={data?.pplnsWindowSize ?? 1} color="bg-pink-500" />
               )}
               <div className="text-xs text-gray-500">{pplnsWindowPct != null ? `${pplnsWindowPct.toFixed(1)}% full` : ''}</div>
             </div>
-            <div className="space-y-2">
-              <div className="text-xs text-gray-400 uppercase tracking-wider">Registered Miners</div>
-              <div className="text-xl font-mono font-bold text-emerald-400">{fmt(data?.pplnsRegisteredMiners)}</div>
+            <div className="space-y-2 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Registered Miners</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-emerald-400 truncate">{fmt(data?.pplnsRegisteredMiners)}</div>
             </div>
-            <div className="space-y-2">
-              <div className="text-xs text-gray-400 uppercase tracking-wider">Total Paid</div>
-              <div className="text-xl font-mono font-bold text-zion-gold">{fmt(data?.pplnsTotalPaid)} <span className="text-xs text-gray-500">flowers</span></div>
+            <div className="space-y-2 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Total Paid</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-zion-gold truncate">{fmt(data?.pplnsTotalPaid)} <span className="text-xs text-gray-500">ZION</span></div>
             </div>
-            <div className="space-y-2">
-              <div className="text-xs text-gray-400 uppercase tracking-wider">Payout Rounds</div>
-              <div className="text-xl font-mono font-bold text-amber-400">{fmt(data?.pplnsPayoutRounds)}</div>
+            <div className="space-y-2 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Payout Rounds</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-amber-400 truncate">{fmt(data?.pplnsPayoutRounds)}</div>
             </div>
           </div>
         </motion.section>
@@ -572,7 +572,7 @@ export default function MonitoringClient() {
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <HardDrive className="h-5 w-5 text-zion-cyan" />
             Server Infrastructure
-            <span className="ml-2 text-xs text-gray-500 font-normal">Helsinki · Hetzner</span>
+            <span className="ml-2 text-xs text-gray-500 font-normal">Prague · Hetzner</span>
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* CPU Load */}

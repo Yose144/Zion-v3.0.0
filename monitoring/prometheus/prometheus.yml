@@ -35,43 +35,43 @@ scrape_configs:
   # ══════════════════════════════════════════════════
 
   # ── ZION Pool — Helsinki (local) ──
-  - job_name: "zion-pool-helsinki"
+  - job_name: "zion-pool-prague"
     metrics_path: "/metrics"
     scrape_interval: 15s
     static_configs:
       - targets: ["zion-pool:8080"]
         labels:
-          server: "helsinki"
+          server: "prague"
           region: "eu-north"
           service: "pool"
 
   # ── ZION Core Node — Helsinki (local) ──
-  - job_name: "zion-core-helsinki"
+  - job_name: "zion-core-prague"
     metrics_path: "/metrics"
     scrape_interval: 30s
     static_configs:
       - targets: ["zion-core:9115"]
         labels:
-          server: "helsinki"
+          server: "prague"
           region: "eu-north"
           service: "core"
 
   # ── Node Exporter — Helsinki (local, host-mapped port) ──
-  - job_name: "node-helsinki"
+  - job_name: "node-prague"
     scrape_interval: 30s
     static_configs:
       - targets: ["zion-node-exporter:9100"]
         labels:
-          server: "helsinki"
+          server: "prague"
           service: "node-exporter"
 
   # ── Redis Exporter — Helsinki (local) ──
-  - job_name: "redis-helsinki"
+  - job_name: "redis-prague"
     scrape_interval: 30s
     static_configs:
       - targets: ["zion-redis-exporter:9121"]
         labels:
-          server: "helsinki"
+          server: "prague"
           service: "redis"
 
   # ══════════════════════════════════════════════════

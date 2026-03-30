@@ -1,102 +1,61 @@
 /*
- * ZION Cosmic Harmony v4 - Metal GPU Compute Shader
+ * ZION Ekam Deeksha — Metal GPU Compute Shader
+ * Apple Silicon M1–M5 Native Pipeline
  *
- * Native GPU acceleration for Apple Silicon (M1-M5), version 2.9.7.
- * Implements full CHv4 pipeline on GPU:
- *   Keccak-256 → SHA3-512 → Golden Matrix
- *   → Memory-Hard Scratchpad (64 KiB/thread)
- *   → NPU Mixing (INT8 MLP 64→128→64 + residual)
- *   → Cosmic Fusion
+ * Exact match to Rust cosmic_harmony_ekam_deeksha() canonical hash:
+ *   Step 1: Keccak-256 (header||nonce → 32 B)
+ *   Step 2: SHA3-512 (32 B → 64 B)
+ *   Step 3: Golden Matrix (φ^k fixed-point, 64 B → 64 B)
+ *   Step 4: Memory-Hard (Blake3 XOF 256 KiB scratchpad, 4 passes, 256 reads)
+ *   Step 5: NPU Mix (INT8 MLP 64→128→64 + residual)
+ *   Step 6: Cosmic Fusion (8 × Keccak-256 + AES-128, final SHA3-512 → 32 B)
  *
- * CHV4_NPU_FORK_HEIGHT = 0: CHv4 always active from genesis block 0.
- * Mirrors Rust: algorithms_opt.rs :: cosmic_harmony_with_height()
- *               scratchpad.rs    :: memory_hard_transform()
- *               algorithms_npu.rs:: npu_mixing_cpu_int8()
+ * Translated from canonical OpenCL kernel: cosmic_harmony_deeksha.cl
  *
  * Author: ZION AI Native Team
- * Version: 2.9.7
- * Date: March 2026
+ * Version: 3.0.0-dev
  */
 
 #include <metal_stdlib>
+#include <metal_atomic>
 using namespace metal;
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-void metal_random_read_mix(
-    thread const uint8_t seed[64],
-    device const uint8_t* pad,
-    thread uint8_t output[64]
-);
+#define SCRATCHPAD_SIZE  262144
+#define BLOCK_SIZE       64
+#define BLOCK_COUNT      4096
+#define PASSES           4
+#define RANDOM_READS     256
 
-void metal_npu_mixing(
-    thread const uint8_t input[64],
-    thread uint8_t output[64],
-    device const char*  npu_w1,
-    device const char*  npu_b1,
-    device const char*  npu_w2,
-    device const char*  npu_b2,
-    device const short* npu_scale1,
-    device const short* npu_scale2
-);
+#define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
+#define XTIME(a) ((uchar)(((a) << 1) ^ ((((a) >> 7) & 1) * 0x1b)))
 
-// Keccak round constants (24 rounds)
-constant uint64_t KECCAK_RC[24] = {
-    0x0000000000000001ULL, 0x0000000000008082ULL,
-    0x800000000000808AULL, 0x8000000080008000ULL,
-    0x000000000000808BULL, 0x0000000080000001ULL,
-    0x8000000080008081ULL, 0x8000000000008009ULL,
-    0x000000000000008AULL, 0x0000000000000088ULL,
-    0x0000000080008009ULL, 0x000000008000000AULL,
-    0x000000008000808BULL, 0x800000000000008BULL,
-    0x8000000000008089ULL, 0x8000000000008003ULL,
-    0x8000000000008002ULL, 0x8000000000000080ULL,
-    0x000000000000800AULL, 0x800000008000000AULL,
-    0x8000000080008081ULL, 0x8000000000008080ULL,
-    0x0000000080000001ULL, 0x8000000080008008ULL
+constant ulong RC[24] = {
+    0x0000000000000001UL, 0x0000000000008082UL,
+    0x800000000000808AUL, 0x8000000080008000UL,
+    0x000000000000808BUL, 0x0000000080000001UL,
+    0x8000000080008081UL, 0x8000000000008009UL,
+    0x000000000000008AUL, 0x0000000000000088UL,
+    0x0000000080008009UL, 0x000000008000000AUL,
+    0x000000008000808BUL, 0x800000000000008BUL,
+    0x8000000000008089UL, 0x8000000000008003UL,
+    0x8000000000008002UL, 0x8000000000000080UL,
+    0x000000000000800AUL, 0x800000008000000AUL,
+    0x8000000080008081UL, 0x8000000000008080UL,
+    0x0000000080000001UL, 0x8000000080008008UL,
 };
 
-// Keccak rotation offsets
-constant int KECCAK_ROTC[24] = {
-    1,  3,  6,  10, 15, 21, 28, 36,
-    45, 55, 2,  14, 27, 41, 56, 8,
-    25, 43, 62, 18, 39, 61, 20, 44
+constant ulong PHI_FP[16] = {
+    4294967296UL,     6949403065UL,     11244370361UL,    18193773427UL,
+    29438143788UL,    47631917215UL,    77070061004UL,    124701978219UL,
+    201772039223UL,   326474017443UL,   528246056666UL,   854720074109UL,
+    1382966130776UL,  2237686204885UL,  3620652335660UL,  5858338540545UL,
 };
 
-// Keccak pi lane indices
-constant int KECCAK_PILN[24] = {
-    10, 7,  11, 17, 18, 3,  5,  16,
-    8,  21, 24, 4,  15, 23, 19, 13,
-    12, 2,  20, 14, 22, 9,  6,  1
-};
-
-// Fixed-point golden ratio powers: PHI^n * 2^32
-constant uint64_t PHI_POWERS_FP[16] = {
-    4294967296ULL,
-    6949403065ULL,
-    11244370361ULL,
-    18193773427ULL,
-    29438143788ULL,
-    47631917215ULL,
-    77070061004ULL,
-    124701978219ULL,
-    201772039223ULL,
-    326474017443ULL,
-    528246056666ULL,
-    854720074109ULL,
-    1382966130776ULL,
-    2237686204885ULL,
-    3620652335660ULL,
-    5858338540545ULL
-};
-
-// ============================================================================
-// AES-128 constants — software AES matching Rust 'aes' crate (NIST AES-128-ECB)
-// Required for cosmic_fusion_gpu to produce data-dependent mask (Haraka-inspired)
-// ============================================================================
-constant uint8_t AES_SBOX[256] = {
+constant uchar AES_SBOX[256] = {
     0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
     0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
     0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
@@ -112,1529 +71,801 @@ constant uint8_t AES_SBOX[256] = {
     0xba,0x78,0x25,0x2e,0x1c,0xa6,0xb4,0xc6,0xe8,0xdd,0x74,0x1f,0x4b,0xbd,0x8b,0x8a,
     0x70,0x3e,0xb5,0x66,0x48,0x03,0xf6,0x0e,0x61,0x35,0x57,0xb9,0x86,0xc1,0x1d,0x9e,
     0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
-    0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
+    0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 };
-constant uint8_t AES_RCON[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
 
-// ============================================================================
-// Helper: rotl64
-// ============================================================================
+constant uchar AES_RCON[10] = {
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36
+};
 
-inline uint64_t rotl64(uint64_t x, int n) {
-    return (x << n) | (x >> (64 - n));
-}
-
-inline uint64_t load_le_u64_thread(thread const uint8_t *src) {
-    uint64_t word = 0;
-    for (int j = 0; j < 8; j++) {
-        word |= uint64_t(src[j]) << (j * 8);
-    }
-    return word;
-}
-
-inline uint64_t load_le_u64_device(device const uint8_t *src) {
-    uint64_t word = 0;
-    for (int j = 0; j < 8; j++) {
-        word |= uint64_t(src[j]) << (j * 8);
-    }
-    return word;
-}
-
-inline void store_hash32_from_state(thread const uint64_t *state, thread uint8_t *output) {
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 8; j++) {
-            output[i * 8 + j] = uint8_t(state[i] >> (j * 8));
-        }
-    }
-}
-
-inline void store_hash64_from_state(thread const uint64_t *state, thread uint8_t *output) {
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            output[i * 8 + j] = uint8_t(state[i] >> (j * 8));
-        }
-    }
-}
-
-// ============================================================================
-// Keccak-f[1600] Permutation (24 rounds) — thread-local
-// ============================================================================
-
-void keccak_f1600(thread uint64_t *state) {
-    uint64_t bc[5];
-    uint64_t t;
-    
-    for (int round = 0; round < 24; round++) {
-        // θ step
-        for (int i = 0; i < 5; i++) {
-            bc[i] = state[i] ^ state[i + 5] ^ state[i + 10] ^ state[i + 15] ^ state[i + 20];
-        }
-        for (int i = 0; i < 5; i++) {
-            t = bc[(i + 4) % 5] ^ rotl64(bc[(i + 1) % 5], 1);
-            for (int j = 0; j < 25; j += 5) {
-                state[j + i] ^= t;
-            }
-        }
-        
-        // ρ and π steps
-        t = state[1];
-        for (int i = 0; i < 24; i++) {
-            int j = KECCAK_PILN[i];
-            bc[0] = state[j];
-            state[j] = rotl64(t, KECCAK_ROTC[i]);
-            t = bc[0];
-        }
-        
-        // χ step
-        for (int j = 0; j < 25; j += 5) {
-            for (int i = 0; i < 5; i++) {
-                bc[i] = state[j + i];
-            }
-            for (int i = 0; i < 5; i++) {
-                state[j + i] ^= (~bc[(i + 1) % 5]) & bc[(i + 2) % 5];
-            }
-        }
-        
-        // ι step
-        state[0] ^= KECCAK_RC[round];
-    }
-}
-
-// ============================================================================
-// Keccak-256 (padding 0x01)
-// Rate = 136 bytes, output = 32 bytes
-// ============================================================================
-
-void keccak256_gpu(thread const uint8_t *input, int input_len, thread uint8_t *output) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-    
-    const int rate = 136;
-    int offset = 0;
-    
-    // Absorb full blocks
-    while (offset + rate <= input_len) {
-        for (int i = 0; i < rate / 8; i++) {
-            uint64_t word = 0;
-            for (int j = 0; j < 8; j++) {
-                word |= uint64_t(input[offset + i * 8 + j]) << (j * 8);
-            }
-            state[i] ^= word;
-        }
-        keccak_f1600(state);
-        offset += rate;
-    }
-    
-    // Absorb final block with Keccak padding
-    uint8_t block[136];
-    for (int i = 0; i < rate; i++) block[i] = 0;
-    int remaining = input_len - offset;
-    for (int i = 0; i < remaining; i++) {
-        block[i] = input[offset + i];
-    }
-    block[remaining] = 0x01;
-    block[rate - 1] |= 0x80;
-    
-    for (int i = 0; i < rate / 8; i++) {
-        uint64_t word = 0;
-        for (int j = 0; j < 8; j++) {
-            word |= uint64_t(block[i * 8 + j]) << (j * 8);
-        }
-        state[i] ^= word;
-    }
-    keccak_f1600(state);
-    
-    // Squeeze 32 bytes
-    store_hash32_from_state(state, output);
-}
-
-// Specialized Keccak-256 for fixed 88-byte input layout:
-// header[0..80] (zero-padded to 80 bytes) || nonce_le[8].
-// This avoids building a temporary 88-byte thread-local buffer on the hot path.
-void keccak256_header_nonce_gpu(
-    device const uint8_t *header,
-    int header_len,
-    uint64_t nonce,
-    thread uint8_t *output
-) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-
-    uint8_t block[136];
-    for (int i = 0; i < 136; i++) block[i] = 0;
-
-    int h_len = min(header_len, 80);
-    for (int i = 0; i < h_len; i++) block[i] = header[i];
-    for (int b = 0; b < 8; b++) block[80 + b] = uint8_t(nonce >> (b * 8));
-    block[88] = 0x01;
-    block[135] |= 0x80;
-
-    for (int i = 0; i < 17; i++) {
-        uint64_t word = 0;
-        for (int j = 0; j < 8; j++) {
-            word |= uint64_t(block[i * 8 + j]) << (j * 8);
-        }
-        state[i] ^= word;
-    }
-    keccak_f1600(state);
-
-    store_hash32_from_state(state, output);
-}
-
-// Specialized Keccak-256 for exact 33-byte input state32 || round_u8.
-void keccak256_state32_round_gpu(
-    thread const uint8_t *state32,
-    uint8_t round_num,
-    thread uint8_t *output
-) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-
-    uint8_t block[136];
-    for (int i = 0; i < 136; i++) block[i] = 0;
-    for (int i = 0; i < 32; i++) block[i] = state32[i];
-    block[32] = round_num;
-    block[33] = 0x01;
-    block[135] |= 0x80;
-
-    for (int i = 0; i < 17; i++) {
-        uint64_t word = 0;
-        for (int j = 0; j < 8; j++) {
-            word |= uint64_t(block[i * 8 + j]) << (j * 8);
-        }
-        state[i] ^= word;
-    }
-    keccak_f1600(state);
-
-    store_hash32_from_state(state, output);
-}
-
-// ============================================================================
-// SHA3-512 (padding 0x06)
-// Rate = 72 bytes, output = 64 bytes
-// ============================================================================
-
-void sha3_512_gpu(thread const uint8_t *input, int input_len, thread uint8_t *output) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-    
-    const int rate = 72;
-    int offset = 0;
-    
-    // Absorb full blocks
-    while (offset + rate <= input_len) {
-        for (int i = 0; i < rate / 8; i++) {
-            uint64_t word = 0;
-            for (int j = 0; j < 8; j++) {
-                word |= uint64_t(input[offset + i * 8 + j]) << (j * 8);
-            }
-            state[i] ^= word;
-        }
-        keccak_f1600(state);
-        offset += rate;
-    }
-    
-    // Final block with SHA3 padding
-    uint8_t block[72];
-    for (int i = 0; i < rate; i++) block[i] = 0;
-    int remaining = input_len - offset;
-    for (int i = 0; i < remaining; i++) {
-        block[i] = input[offset + i];
-    }
-    block[remaining] = 0x06;
-    block[rate - 1] |= 0x80;
-    
-    for (int i = 0; i < rate / 8; i++) {
-        uint64_t word = 0;
-        for (int j = 0; j < 8; j++) {
-            word |= uint64_t(block[i * 8 + j]) << (j * 8);
-        }
-        state[i] ^= word;
-    }
-    keccak_f1600(state);
-    
-    // Squeeze 64 bytes
-    store_hash64_from_state(state, output);
-}
-
-// Specialized SHA3-512 for 32-byte input.
-// Used immediately after Keccak-256 in the main Deeksha pipeline.
-void sha3_512_32_gpu(thread const uint8_t input[32], thread uint8_t *output) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-
-    uint8_t block[72];
-    for (int i = 0; i < 72; i++) block[i] = 0;
-    for (int i = 0; i < 32; i++) block[i] = input[i];
-    block[32] = 0x06;
-    block[71] |= 0x80;
-
-    for (int i = 0; i < 9; i++) {
-        uint64_t word = 0;
-        for (int j = 0; j < 8; j++) {
-            word |= uint64_t(block[i * 8 + j]) << (j * 8);
-        }
-        state[i] ^= word;
-    }
-    keccak_f1600(state);
-
-    store_hash64_from_state(state, output);
-}
-
-// Specialized SHA3-512 for exact 72-byte input state[64] || counter_le8.
-void sha3_512_state_counter_gpu(
-    thread const uint8_t state_bytes[64],
-    uint64_t counter,
-    thread uint8_t output[64]
-) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-
-    for (int i = 0; i < 8; i++) {
-        state[i] ^= load_le_u64_thread(state_bytes + i * 8);
-    }
-    state[8] ^= counter;
-    keccak_f1600(state);
-
-    // Exact full-rate absorb means an empty padded block follows.
-    state[0] ^= 0x06ULL;
-    state[8] ^= 0x8000000000000000ULL;
-    keccak_f1600(state);
-
-    store_hash64_from_state(state, output);
-}
-
-// Specialized SHA3-512 for exact 208-byte input:
-// cur[64] || prev[64] || rand[64] || pass_le8 || cur_idx_le8.
-void sha3_512_mix_block_gpu(
-    device const uint8_t* cur_blk,
-    device const uint8_t* prev_blk,
-    device const uint8_t* rand_blk,
-    uint64_t pass64,
-    uint64_t cur64,
-    thread uint8_t output[64]
-) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-
-    // Block 1: cur[64] || prev[0..7]
-    for (int i = 0; i < 8; i++) state[i] ^= load_le_u64_device(cur_blk + i * 8);
-    state[8] ^= load_le_u64_device(prev_blk);
-    keccak_f1600(state);
-
-    // Block 2: prev[8..63] || rand[0..15]
-    for (int i = 0; i < 7; i++) state[i] ^= load_le_u64_device(prev_blk + 8 + i * 8);
-    state[7] ^= load_le_u64_device(rand_blk);
-    state[8] ^= load_le_u64_device(rand_blk + 8);
-    keccak_f1600(state);
-
-    // Final block: rand[16..63] || pass64 || cur64 || padding
-    for (int i = 0; i < 6; i++) state[i] ^= load_le_u64_device(rand_blk + 16 + i * 8);
-    state[6] ^= pass64;
-    state[7] ^= cur64;
-    state[8] ^= 0x8000000000000006ULL;
-    keccak_f1600(state);
-
-    store_hash64_from_state(state, output);
-}
-
-// Specialized Keccak-256 for exact 136-byte input acc[64] || chunk[64] || round_le8.
-void keccak256_acc_chunk_round_gpu(
-    thread const uint8_t acc[64],
-    device const uint8_t* blk,
-    uint64_t round,
-    thread uint8_t output[32]
-) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-
-    for (int i = 0; i < 8; i++) state[i] ^= load_le_u64_thread(acc + i * 8);
-    for (int i = 0; i < 8; i++) state[8 + i] ^= load_le_u64_device(blk + i * 8);
-    state[16] ^= round;
-    keccak_f1600(state);
-
-    // Exact full-rate absorb => final empty padded block.
-    state[0] ^= 0x01ULL;
-    state[16] ^= 0x8000000000000000ULL;
-    keccak_f1600(state);
-
-    store_hash32_from_state(state, output);
-}
-
-// Specialized SHA3-512 for exact 192-byte input acc[64] || first_blk[64] || last_blk[64].
-void sha3_512_acc_edges_gpu(
-    thread const uint8_t acc[64],
-    device const uint8_t* first_blk,
-    device const uint8_t* last_blk,
-    thread uint8_t output[64]
-) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-
-    // Block 1: acc[64] || first[0..7]
-    for (int i = 0; i < 8; i++) state[i] ^= load_le_u64_thread(acc + i * 8);
-    state[8] ^= load_le_u64_device(first_blk);
-    keccak_f1600(state);
-
-    // Block 2: first[8..63] || last[0..15]
-    for (int i = 0; i < 7; i++) state[i] ^= load_le_u64_device(first_blk + 8 + i * 8);
-    state[7] ^= load_le_u64_device(last_blk);
-    state[8] ^= load_le_u64_device(last_blk + 8);
-    keccak_f1600(state);
-
-    // Final block: last[16..63] || padding
-    for (int i = 0; i < 6; i++) state[i] ^= load_le_u64_device(last_blk + 16 + i * 8);
-    state[6] ^= 0x06ULL;
-    state[8] ^= 0x8000000000000000ULL;
-    keccak_f1600(state);
-
-    store_hash64_from_state(state, output);
-}
-
-// ============================================================================
-// Golden Matrix (fixed-point)
-// ============================================================================
-
-void golden_matrix_gpu(thread const uint8_t *input, thread uint8_t *output) {
-    const int MATRIX_SIZE = 8;
-    uint64_t matrix[8][8];
-    uint64_t result[8];
-    
-    // Fill matrix from input bytes
-    for (int i = 0; i < MATRIX_SIZE; i++) {
-        int base = i * MATRIX_SIZE;
-        for (int j = 0; j < MATRIX_SIZE; j++) {
-            matrix[i][j] = uint64_t(input[(base + j) % 64]);
-        }
-    }
-    
-    // Apply golden ratio (fixed-point, matches Rust)
-    // Note: Metal does not have 128-bit ints, so we use manual approach
-    for (int i = 0; i < MATRIX_SIZE; i++) {
-        // Since matrix values are 0-255 and PHI_POWERS_FP are < 2^43,
-        // the product fits in 64 bits (8 bits + 43 bits = 51 bits)
-        // The sum of 8 such products fits in ~54 bits → fits in uint64_t
-        // But we need the shift-right-by-32 result, so we compute differently.
-        
-        // Split into high and low 32-bit parts for precision
-        uint64_t sum_hi = 0;
-        uint64_t sum_lo = 0;
-        
-        for (int j = 0; j < MATRIX_SIZE; j++) {
-            uint64_t a = matrix[i][j]; // 0-255
-            uint64_t b = PHI_POWERS_FP[i + j];
-            
-            // a * b: since a < 256 and b < 2^43, product < 2^51, fits in uint64_t
-            uint64_t product = a * b;
-            
-            // Add to accumulator (need to handle potential overflow for sum)
-            uint64_t old_lo = sum_lo;
-            sum_lo += product;
-            if (sum_lo < old_lo) sum_hi++; // carry
-        }
-        
-        // Shift right by 32
-        result[i] = (sum_lo >> 32) | (sum_hi << 32);
-    }
-    
-    // Convert to LE bytes
-    for (int i = 0; i < 8; i++) {
-        uint64_t val = result[i];
-        output[i * 8 + 0] = uint8_t(val >>  0);
-        output[i * 8 + 1] = uint8_t(val >>  8);
-        output[i * 8 + 2] = uint8_t(val >> 16);
-        output[i * 8 + 3] = uint8_t(val >> 24);
-        output[i * 8 + 4] = uint8_t(val >> 32);
-        output[i * 8 + 5] = uint8_t(val >> 40);
-        output[i * 8 + 6] = uint8_t(val >> 48);
-        output[i * 8 + 7] = uint8_t(val >> 56);
-    }
-}
-
-// ============================================================================
-// AES-128 software implementation
-// Matches Rust 'aes' crate encrypt_block() — NIST AES-128-ECB, standard byte order
-// ============================================================================
-
-// GF(2^8) multiply by 2 (xtime)
-inline uint8_t aes_xtime(uint8_t b) {
-    return (b << 1) ^ ((b & 0x80u) ? 0x1bu : 0x00u);
-}
-
-// Advance AES-128 round key in place.
-// This avoids materializing the full 176-byte expanded key schedule per encrypt call.
-void aes128_next_round_key(thread uint8_t rk[16], uint8_t rcon) {
-    uint8_t t0 = AES_SBOX[rk[13]] ^ rcon;
-    uint8_t t1 = AES_SBOX[rk[14]];
-    uint8_t t2 = AES_SBOX[rk[15]];
-    uint8_t t3 = AES_SBOX[rk[12]];
-
-    rk[0] ^= t0;
-    rk[1] ^= t1;
-    rk[2] ^= t2;
-    rk[3] ^= t3;
-
-    for (int i = 4; i < 16; i++) rk[i] ^= rk[i - 4];
-}
-
-// AES ShiftRows (state stored column-major: index = col*4+row)
-// Row r at indices r, r+4, r+8, r+12 — shift row r left by r
-void aes_shift_rows(thread uint8_t s[16]) {
-    uint8_t t;
-    // Row 1: indices 1,5,9,13 — shift left 1
-    t=s[1]; s[1]=s[5]; s[5]=s[9]; s[9]=s[13]; s[13]=t;
-    // Row 2: indices 2,6,10,14 — shift left 2
-    t=s[2]; s[2]=s[10]; s[10]=t;
-    t=s[6]; s[6]=s[14]; s[14]=t;
-    // Row 3: indices 3,7,11,15 — shift left 3 (= right 1)
-    t=s[3]; s[3]=s[15]; s[15]=s[11]; s[11]=s[7]; s[7]=t;
-}
-
-// AES MixColumns for one column (4 bytes starting at c)
-void aes_mix_column(thread uint8_t *c) {
-    uint8_t s0=c[0], s1=c[1], s2=c[2], s3=c[3];
-    c[0] = aes_xtime(s0) ^ aes_xtime(s1) ^ s1 ^ s2 ^ s3;
-    c[1] = s0 ^ aes_xtime(s1) ^ aes_xtime(s2) ^ s2 ^ s3;
-    c[2] = s0 ^ s1 ^ aes_xtime(s2) ^ aes_xtime(s3) ^ s3;
-    c[3] = aes_xtime(s0) ^ s0 ^ s1 ^ s2 ^ aes_xtime(s3);
-}
-
-// AES-128 ECB encrypt one 16-byte block
-// Matches Rust aes::Aes128::encrypt_block() exactly (NIST AES standard)
-void aes128_encrypt(
-    thread const uint8_t *key,
-    thread const uint8_t *plaintext,
-    thread uint8_t ciphertext[16]
-) {
-    uint8_t rk[16];
-    for (int i = 0; i < 16; i++) rk[i] = key[i];
-
-    // State: column-major, s[col*4+row] = byte[col*4+row]
-    uint8_t s[16];
-    // Initial AddRoundKey (round 0)
-    for (int i = 0; i < 16; i++) s[i] = plaintext[i] ^ rk[i];
-
-    // 9 main rounds
-    for (int r = 0; r < 9; r++) {
-        // SubBytes
-        for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
-        // ShiftRows
-        aes_shift_rows(s);
-        // MixColumns (4 columns, each 4 bytes)
-        aes_mix_column(s +  0);
-        aes_mix_column(s +  4);
-        aes_mix_column(s +  8);
-        aes_mix_column(s + 12);
-        // AddRoundKey
-        aes128_next_round_key(rk, AES_RCON[r]);
-        for (int i = 0; i < 16; i++) s[i] ^= rk[i];
-    }
-    // Final round (no MixColumns)
-    for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
-    aes_shift_rows(s);
-    aes128_next_round_key(rk, AES_RCON[9]);
-    for (int i = 0; i < 16; i++) s[i] ^= rk[i];
-
-    for (int i = 0; i < 16; i++) ciphertext[i] = s[i];
-}
-
-// ============================================================================
-// Cosmic Fusion — Haraka-inspired (Keccak256 + AES mask + key evolution)
-// Matches algorithms_opt.rs :: cosmic_fusion_opt / fusion_round EXACTLY
-// ============================================================================
-
-// Replicates Rust fusion_round(state, round):
-//   intermediate = keccak256(state[0..32] || round)
-//   block0 = AES128(key=intermediate[0..16], plaintext=state[32..48])
-//   key2   = intermediate[0..16] with key2[0]^=round, key2[15]^=0xAB
-//   block1 = AES128(key=key2,          plaintext=state[48..64])
-//   mask[0..32] = block0 || block1
-//   state[32..64] ^= intermediate[0..32]   (evolve upper half)
-//   state[0..32]   = intermediate[0..32] ^ mask[0..32]
-void fusion_round_gpu(thread uint8_t *state, uint8_t round_num) {
-    // Step 1: intermediate = Keccak256(state[0..32] || round_num)
-    uint8_t intermediate[32];
-    keccak256_state32_round_gpu(state, round_num, intermediate);
-
-    // Step 2: block0 = AES128(key=intermediate[0..16], plaintext=state[32..48])
-    uint8_t block0_out[16];
-    aes128_encrypt(intermediate, state + 32, block0_out);
-
-    // Step 3: block1 = AES128(key=key2, plaintext=state[48..64])
-    // key2 = intermediate[0..16] with key2[0] ^= round_num, key2[15] ^= 0xAB
-    uint8_t key2[16];
-    for (int i = 0; i < 16; i++) key2[i] = intermediate[i];
-    key2[0]  ^= round_num;
-    key2[15] ^= 0xABu;
-    uint8_t block1_out[16];
-    aes128_encrypt(key2, state + 48, block1_out);
-
-    // Step 4: Evolve upper half + update lower half (matches CPU non-AVX2 path)
-    for (int i = 0; i < 32; i++) state[32 + i] ^= intermediate[i];  // upper half evolve
-    for (int i = 0; i < 16; i++) state[i]      = intermediate[i]      ^ block0_out[i];
-    for (int i = 0; i < 16; i++) state[16 + i] = intermediate[16 + i] ^ block1_out[i];
-}
-
-void cosmic_fusion_gpu(thread const uint8_t *input, thread uint8_t *output) {
-    uint8_t state[64];
-    for (int i = 0; i < 64; i++) state[i] = input[i];
-    
-    // 4 fusion rounds
-    fusion_round_gpu(state, 0);
-    fusion_round_gpu(state, 1);
-    fusion_round_gpu(state, 2);
-    fusion_round_gpu(state, 3);
-    
-    // Final SHA3-512 of state[0:32], truncate to 32 bytes
-    uint8_t full[64];
-    sha3_512_32_gpu(state, full);
-    for (int i = 0; i < 32; i++) output[i] = full[i];
-}
-
-// ============================================================================
-// CHv4 Constants — memory-hard scratchpad
-// ============================================================================
-
-constant uint METAL_SCRATCHPAD_BYTES = 65536u;    // 64 KiB per thread
-constant uint METAL_BLOCK_SIZE       = 64u;
-constant uint METAL_BLOCK_COUNT      = 1024u;     // 1024 × 64 = 65536
-constant uint METAL_PASSES           = 2u;
-constant uint METAL_RANDOM_READS     = 64u;
-
-// ============================================================================
-// BLAKE3 Engine — Exact match to blake3 crate (standard mode, NOT derive_key)
-// Used by Ekam Deeksha scratchpad init + mixing.
-// ============================================================================
-
-constant uint32_t BLAKE3_IV[8] = {
+constant uint BLAKE3_IV[8] = {
     0x6A09E667u, 0xBB67AE85u, 0x3C6EF372u, 0xA54FF53Au,
     0x510E527Fu, 0x9B05688Cu, 0x1F83D9ABu, 0x5BE0CD19u
 };
 
-constant uint8_t BLAKE3_MSG_PERMUTATION[16] = {
+constant uchar BLAKE3_MSG_PERM[16] = {
     2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8
 };
 
-constant uint32_t BLAKE3_CHUNK_START = 1u;
-constant uint32_t BLAKE3_CHUNK_END   = 2u;
-constant uint32_t BLAKE3_ROOT        = 8u;
+#define B3_CHUNK_START 1u
+#define B3_CHUNK_END   2u
+#define B3_ROOT        8u
 
-inline uint32_t blake3_rotr32(uint32_t x, int n) {
-    return (x >> n) | (x << (32 - n));
-}
-
-void blake3_g(thread uint32_t *state, int a, int b, int c, int d, uint32_t mx, uint32_t my) {
-    state[a] = state[a] + state[b] + mx;
-    state[d] = blake3_rotr32(state[d] ^ state[a], 16);
-    state[c] = state[c] + state[d];
-    state[b] = blake3_rotr32(state[b] ^ state[c], 12);
-    state[a] = state[a] + state[b] + my;
-    state[d] = blake3_rotr32(state[d] ^ state[a], 8);
-    state[c] = state[c] + state[d];
-    state[b] = blake3_rotr32(state[b] ^ state[c], 7);
-}
-
-void blake3_round_fn(thread uint32_t *state, thread const uint32_t *msg) {
-    blake3_g(state, 0, 4,  8, 12, msg[0],  msg[1]);
-    blake3_g(state, 1, 5,  9, 13, msg[2],  msg[3]);
-    blake3_g(state, 2, 6, 10, 14, msg[4],  msg[5]);
-    blake3_g(state, 3, 7, 11, 15, msg[6],  msg[7]);
-    blake3_g(state, 0, 5, 10, 15, msg[8],  msg[9]);
-    blake3_g(state, 1, 6, 11, 12, msg[10], msg[11]);
-    blake3_g(state, 2, 7,  8, 13, msg[12], msg[13]);
-    blake3_g(state, 3, 4,  9, 14, msg[14], msg[15]);
-}
-
-void blake3_permute_msg(thread uint32_t msg[16]) {
-    uint32_t tmp[16];
-    for (int i = 0; i < 16; i++) tmp[i] = msg[BLAKE3_MSG_PERMUTATION[i]];
-    for (int i = 0; i < 16; i++) msg[i] = tmp[i];
-}
-
-// Blake3 compress: produces 16 u32 output state words.
-// Includes the standard Blake3 finalization XOR (matches reference implementation).
-void blake3_compress(
-    thread const uint32_t cv[8],
-    thread const uint32_t block_words[16],
-    uint64_t counter,
-    uint32_t block_len,
-    uint32_t flags,
-    thread uint32_t output[16]
-) {
-    uint32_t state[16] = {
-        cv[0], cv[1], cv[2], cv[3],
-        cv[4], cv[5], cv[6], cv[7],
-        BLAKE3_IV[0], BLAKE3_IV[1], BLAKE3_IV[2], BLAKE3_IV[3],
-        uint32_t(counter & 0xFFFFFFFFu),
-        uint32_t(counter >> 32),
-        block_len,
-        flags
-    };
-
-    uint32_t msg[16];
-    for (int i = 0; i < 16; i++) msg[i] = block_words[i];
-
-    for (int i = 0; i < 7; i++) {
-        blake3_round_fn(state, msg);
-        blake3_permute_msg(msg);
-    }
-
-    // Blake3 finalization: XOR halves + feed back CV
-    for (int i = 0; i < 8; i++) {
-        output[i] = state[i] ^ state[i + 8];
-        output[i + 8] = state[i + 8] ^ cv[i];
-    }
-}
-
-// Chaining value: first 8 words of finalized compress output
-void blake3_compress_cv(
-    thread const uint32_t cv[8],
-    thread const uint32_t block_words[16],
-    uint64_t counter,
-    uint32_t block_len,
-    uint32_t flags,
-    thread uint32_t output_cv[8]
-) {
-    uint32_t full[16];
-    blake3_compress(cv, block_words, counter, block_len, flags, full);
-    for (int i = 0; i < 8; i++) output_cv[i] = full[i];
-}
-
-// Load u32 LE words from byte buffer (zero-padded beyond buf_len)
-void blake3_load_block_words(thread const uint8_t *buf, int buf_len, thread uint32_t words[16]) {
-    for (int i = 0; i < 16; i++) words[i] = 0;
-    for (int i = 0; i < buf_len; i++) {
-        words[i / 4] |= uint32_t(buf[i]) << ((i % 4) * 8);
-    }
-}
-
-// Load u32 LE words from device buffer (zero-padded beyond buf_len)
-void blake3_load_block_words_device(device const uint8_t *buf, int buf_len, thread uint32_t words[16]) {
-    for (int i = 0; i < 16; i++) words[i] = 0;
-    for (int i = 0; i < buf_len; i++) {
-        words[i / 4] |= uint32_t(buf[i]) << ((i % 4) * 8);
-    }
-}
-
-// Chunk output struct: holds state for XOF extension
-struct Blake3ChunkOutput {
-    uint32_t input_cv[8];
-    uint32_t block_words[16];
-    uint32_t block_len;
-    uint32_t flags;
-};
-
-// Hash a single chunk (≤1024 bytes) entirely from thread-local memory.
-// Returns chunk output for XOF extension.
-Blake3ChunkOutput blake3_hash_single_chunk(thread const uint8_t *input, uint input_len) {
-    Blake3ChunkOutput out;
-    uint32_t cv[8];
-    for (int i = 0; i < 8; i++) cv[i] = BLAKE3_IV[i];
-
-    uint offset = 0;
-    uint block_index = 0;
-    // In Blake3, the counter is the CHUNK counter, not the block counter.
-    // For single-chunk hashing, the chunk counter is always 0.
-    const uint64_t chunk_counter = 0;
-
-    while (offset < input_len) {
-        uint remaining = input_len - offset;
-        uint this_len = (remaining > 64u) ? 64u : remaining;
-        bool is_first = (block_index == 0);
-        bool is_last  = (offset + this_len >= input_len);
-
-        uint32_t flags = 0u;
-        if (is_first) flags |= BLAKE3_CHUNK_START;
-        if (is_last)  flags |= BLAKE3_CHUNK_END;
-
-        uint32_t block_words[16];
-        blake3_load_block_words(input + offset, int(this_len), block_words);
-
-        if (is_last) {
-            for (int i = 0; i < 8; i++) out.input_cv[i] = cv[i];
-            for (int i = 0; i < 16; i++) out.block_words[i] = block_words[i];
-            out.block_len = this_len;
-            out.flags = flags;
-            return out;
-        }
-
-        blake3_compress_cv(cv, block_words, chunk_counter, this_len, flags, cv);
-        offset += this_len;
-        block_index++;
-    }
-
-    // Empty input fallback
-    for (int i = 0; i < 8; i++) out.input_cv[i] = BLAKE3_IV[i];
-    for (int i = 0; i < 16; i++) out.block_words[i] = 0;
-    out.block_len = 0;
-    out.flags = BLAKE3_CHUNK_START | BLAKE3_CHUNK_END;
-    return out;
-}
-
-// Blake3 XOF: fill device buffer from chunk output
-void blake3_xof_fill_device(Blake3ChunkOutput chunk_out, device uint8_t *buf, uint buf_len) {
-    uint output_block = 0;
-    uint written = 0;
-    while (written < buf_len) {
-        uint32_t state[16];
-        blake3_compress(
-            chunk_out.input_cv,
-            chunk_out.block_words,
-            uint64_t(output_block),
-            chunk_out.block_len,
-            chunk_out.flags | BLAKE3_ROOT,
-            state
-        );
-        uint to_write = min(64u, buf_len - written);
-        for (uint i = 0; i < to_write; i++) {
-            buf[written + i] = uint8_t(state[i / 4] >> ((i % 4) * 8));
-        }
-        written += to_write;
-        output_block++;
-    }
-}
-
-// Blake3 XOF: fill thread-local buffer from chunk output
-void blake3_xof_fill_thread(Blake3ChunkOutput chunk_out, thread uint8_t *buf, uint buf_len) {
-    uint output_block = 0;
-    uint written = 0;
-    while (written < buf_len) {
-        uint32_t state[16];
-        blake3_compress(
-            chunk_out.input_cv,
-            chunk_out.block_words,
-            uint64_t(output_block),
-            chunk_out.block_len,
-            chunk_out.flags | BLAKE3_ROOT,
-            state
-        );
-        uint to_write = min(64u, buf_len - written);
-        for (uint i = 0; i < to_write; i++) {
-            buf[written + i] = uint8_t(state[i / 4] >> ((i % 4) * 8));
-        }
-        written += to_write;
-        output_block++;
-    }
-}
-
-// ============================================================================
-// Ekam Deeksha Scratchpad — Blake3 XOF based (matches scratchpad_ekam.rs)
-// ============================================================================
-
-// Domain separator: "EKAM_SCRATCHPAD_INIT_V1" (23 bytes)
-constant uint8_t EKAM_DOMAIN_SEP[23] = {
+constant uchar EKAM_DOMAIN_SEP[23] = {
     'E','K','A','M','_','S','C','R','A','T','C','H','P','A','D','_','I','N','I','T','_','V','1'
 };
 
-// Blake3 hash over multi-source input for Ekam mixing.
-// Constructs a single-chunk Blake3 from: cur(64) || prev(64) || rand(64) || pass_le8 || idx_le8 = 208 bytes
-// Returns chunk output for XOF.
-Blake3ChunkOutput blake3_ekam_mix_input(
-    device const uint8_t *cur_blk,
-    device const uint8_t *prev_blk,
-    device const uint8_t *rand_blk,
-    uint64_t pass64,
-    uint64_t cur64
-) {
-    // Build 208-byte input: 4 blocks in single chunk
-    // Block 0: cur[0..64]   (64 B, CHUNK_START)
-    // Block 1: prev[0..64]  (64 B)
-    // Block 2: rand[0..64]  (64 B)
-    // Block 3: pass(8) || idx(8) = 16 B (CHUNK_END)
+// ============================================================================
+// Keccak-f1600
+// ============================================================================
 
-    uint32_t cv[8];
+#define CHI_ROW(b) \
+{ ulong _a=st[(b)],_b=st[(b)+1],_c=st[(b)+2],_d=st[(b)+3],_e=st[(b)+4]; \
+  st[(b)]    = _a ^ ((~_b) & _c); \
+  st[(b)+1]  = _b ^ ((~_c) & _d); \
+  st[(b)+2]  = _c ^ ((~_d) & _e); \
+  st[(b)+3]  = _d ^ ((~_e) & _a); \
+  st[(b)+4]  = _e ^ ((~_a) & _b); }
+
+inline void keccak_f1600(thread ulong *st)
+{
+    ulong bc0, bc1, bc2, bc3, bc4, t;
+
+    for (int rnd = 0; rnd < 24; rnd++) {
+        bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
+        bc1 = st[1]^st[6]^st[11]^st[16]^st[21];
+        bc2 = st[2]^st[7]^st[12]^st[17]^st[22];
+        bc3 = st[3]^st[8]^st[13]^st[18]^st[23];
+        bc4 = st[4]^st[9]^st[14]^st[19]^st[24];
+        t=bc4^ROL64(bc1,1); st[0]^=t;st[5]^=t;st[10]^=t;st[15]^=t;st[20]^=t;
+        t=bc0^ROL64(bc2,1); st[1]^=t;st[6]^=t;st[11]^=t;st[16]^=t;st[21]^=t;
+        t=bc1^ROL64(bc3,1); st[2]^=t;st[7]^=t;st[12]^=t;st[17]^=t;st[22]^=t;
+        t=bc2^ROL64(bc4,1); st[3]^=t;st[8]^=t;st[13]^=t;st[18]^=t;st[23]^=t;
+        t=bc3^ROL64(bc0,1); st[4]^=t;st[9]^=t;st[14]^=t;st[19]^=t;st[24]^=t;
+
+        t=st[1];
+        bc0=st[10];st[10]=ROL64(t, 1);t=bc0;
+        bc0=st[ 7];st[ 7]=ROL64(t, 3);t=bc0;
+        bc0=st[11];st[11]=ROL64(t, 6);t=bc0;
+        bc0=st[17];st[17]=ROL64(t,10);t=bc0;
+        bc0=st[18];st[18]=ROL64(t,15);t=bc0;
+        bc0=st[ 3];st[ 3]=ROL64(t,21);t=bc0;
+        bc0=st[ 5];st[ 5]=ROL64(t,28);t=bc0;
+        bc0=st[16];st[16]=ROL64(t,36);t=bc0;
+        bc0=st[ 8];st[ 8]=ROL64(t,45);t=bc0;
+        bc0=st[21];st[21]=ROL64(t,55);t=bc0;
+        bc0=st[24];st[24]=ROL64(t, 2);t=bc0;
+        bc0=st[ 4];st[ 4]=ROL64(t,14);t=bc0;
+        bc0=st[15];st[15]=ROL64(t,27);t=bc0;
+        bc0=st[23];st[23]=ROL64(t,41);t=bc0;
+        bc0=st[19];st[19]=ROL64(t,56);t=bc0;
+        bc0=st[13];st[13]=ROL64(t, 8);t=bc0;
+        bc0=st[12];st[12]=ROL64(t,25);t=bc0;
+        bc0=st[ 2];st[ 2]=ROL64(t,43);t=bc0;
+        bc0=st[20];st[20]=ROL64(t,62);t=bc0;
+        bc0=st[14];st[14]=ROL64(t,18);t=bc0;
+        bc0=st[22];st[22]=ROL64(t,39);t=bc0;
+        bc0=st[ 9];st[ 9]=ROL64(t,61);t=bc0;
+        bc0=st[ 6];st[ 6]=ROL64(t,20);t=bc0;
+                   st[ 1]=ROL64(t,44);
+
+        CHI_ROW(0) CHI_ROW(5) CHI_ROW(10) CHI_ROW(15) CHI_ROW(20)
+
+        st[0] ^= RC[rnd];
+    }
+}
+
+// ============================================================================
+// Keccak absorb / finalize
+// ============================================================================
+
+inline void keccak_absorb(thread ulong *st, thread int *pos, int rate,
+                          thread const uchar *in, int inlen)
+{
+    while (inlen > 0) {
+        int chunk = rate - *pos;
+        if (chunk > inlen) chunk = inlen;
+        int off = *pos;
+        int i = 0;
+        if ((off & 7) == 0) {
+            int ulongs = chunk >> 3;
+            for (int u = 0; u < ulongs; u++) {
+                ulong v = 0;
+                for (int b = 0; b < 8; b++)
+                    v |= (ulong)in[u * 8 + b] << (b * 8);
+                st[(off >> 3) + u] ^= v;
+            }
+            i = ulongs << 3;
+        }
+        for (; i < chunk; i++)
+            ((thread uchar*)st)[off + i] ^= in[i];
+        in    += chunk;
+        inlen -= chunk;
+        *pos  += chunk;
+        if (*pos == rate) {
+            keccak_f1600(st);
+            *pos = 0;
+        }
+    }
+}
+
+inline void keccak_finalize(thread ulong *st, int pos, int rate,
+                            uchar pad_byte, thread uchar *out, int outlen)
+{
+    ((thread uchar*)st)[pos]      ^= pad_byte;
+    ((thread uchar*)st)[rate - 1] ^= 0x80;
+    keccak_f1600(st);
+    int ulongs = outlen >> 3;
+    thread ulong *out64 = (thread ulong *)out;
+    for (int i = 0; i < ulongs; i++) out64[i] = st[i];
+    for (int i = (ulongs << 3); i < outlen; i++)
+        out[i] = ((thread uchar*)st)[i];
+}
+
+inline void keccak256(thread const uchar *in, int inlen, thread uchar *out)
+{
+    thread ulong st[25]; int pos = 0;
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    keccak_absorb(st, &pos, 136, in, inlen);
+    keccak_finalize(st, pos, 136, 0x01, out, 32);
+}
+
+inline void keccak256_136_mix(thread const ulong *acc64, thread const ulong *chunk64,
+                              ulong r_val, thread ulong *out64)
+{
+    thread ulong st[25];
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    for (int i = 0; i < 8; i++) st[i] = acc64[i];
+    for (int i = 0; i < 8; i++) st[8 + i] = chunk64[i];
+    st[16] = r_val;
+    keccak_f1600(st);
+    st[0]  ^= 0x01UL;
+    st[16] ^= 0x8000000000000000UL;
+    keccak_f1600(st);
+    for (int i = 0; i < 4; i++) out64[i] = st[i];
+}
+
+inline void sha3_512(thread const uchar *in, int inlen, thread uchar *out)
+{
+    thread ulong st[25]; int pos = 0;
+    for (int i = 0; i < 25; i++) st[i] = 0;
+    keccak_absorb(st, &pos, 72, in, inlen);
+    keccak_finalize(st, pos, 72, 0x06, out, 64);
+}
+
+// ============================================================================
+// Step 3: Golden Matrix (64 B → 64 B)
+// ============================================================================
+
+inline void golden_matrix(thread const uchar *in64, thread uchar *out64)
+{
+    ulong result[8];
+    for (int i = 0; i < 8; i++) {
+        ulong sum = 0;
+        for (int j = 0; j < 8; j++)
+            sum += (ulong)in64[i * 8 + j] * PHI_FP[i + j];
+        result[i] = sum >> 32;
+    }
+    for (int i = 0; i < 8; i++) {
+        ulong v = result[i];
+        for (int b = 0; b < 8; b++)
+            out64[i * 8 + b] = (uchar)(v >> (b * 8));
+    }
+}
+
+// ============================================================================
+// BLAKE3 Engine
+// ============================================================================
+
+inline uint b3_rotr32(uint x, int n) {
+    return (x >> n) | (x << (32 - n));
+}
+
+inline void b3_g(thread uint *st, int a, int b, int c, int d, uint mx, uint my) {
+    st[a] = st[a] + st[b] + mx;
+    st[d] = b3_rotr32(st[d] ^ st[a], 16);
+    st[c] = st[c] + st[d];
+    st[b] = b3_rotr32(st[b] ^ st[c], 12);
+    st[a] = st[a] + st[b] + my;
+    st[d] = b3_rotr32(st[d] ^ st[a], 8);
+    st[c] = st[c] + st[d];
+    st[b] = b3_rotr32(st[b] ^ st[c], 7);
+}
+
+inline void b3_round(thread uint *st, thread const uint *msg) {
+    b3_g(st, 0, 4,  8, 12, msg[0],  msg[1]);
+    b3_g(st, 1, 5,  9, 13, msg[2],  msg[3]);
+    b3_g(st, 2, 6, 10, 14, msg[4],  msg[5]);
+    b3_g(st, 3, 7, 11, 15, msg[6],  msg[7]);
+    b3_g(st, 0, 5, 10, 15, msg[8],  msg[9]);
+    b3_g(st, 1, 6, 11, 12, msg[10], msg[11]);
+    b3_g(st, 2, 7,  8, 13, msg[12], msg[13]);
+    b3_g(st, 3, 4,  9, 14, msg[14], msg[15]);
+}
+
+inline void b3_permute(thread uint *msg) {
+    uint tmp[16];
+    for (int i = 0; i < 16; i++) tmp[i] = msg[BLAKE3_MSG_PERM[i]];
+    for (int i = 0; i < 16; i++) msg[i] = tmp[i];
+}
+
+inline void b3_compress(thread const uint *cv, thread const uint *bw,
+                        ulong counter, uint block_len, uint flags,
+                        thread uint *output)
+{
+    uint st[16] = {
+        cv[0], cv[1], cv[2], cv[3],
+        cv[4], cv[5], cv[6], cv[7],
+        BLAKE3_IV[0], BLAKE3_IV[1], BLAKE3_IV[2], BLAKE3_IV[3],
+        (uint)(counter & 0xFFFFFFFFu),
+        (uint)(counter >> 32),
+        block_len,
+        flags
+    };
+    uint msg[16];
+    for (int i = 0; i < 16; i++) msg[i] = bw[i];
+    for (int i = 0; i < 6; i++) {
+        b3_round(st, msg);
+        b3_permute(msg);
+    }
+    b3_round(st, msg);
+    for (int i = 0; i < 8; i++) {
+        st[i] ^= st[i + 8];
+        st[i + 8] ^= cv[i];
+    }
+    for (int i = 0; i < 16; i++) output[i] = st[i];
+}
+
+inline void b3_compress_cv(thread const uint *cv, thread const uint *bw,
+                           ulong counter, uint block_len, uint flags,
+                           thread uint *out_cv)
+{
+    uint full[16];
+    b3_compress(cv, bw, counter, block_len, flags, full);
+    for (int i = 0; i < 8; i++) out_cv[i] = full[i];
+}
+
+inline void b3_load_words(thread const uchar *buf, int len, thread uint *words) {
+    for (int i = 0; i < 16; i++) words[i] = 0;
+    for (int i = 0; i < len; i++)
+        words[i / 4] |= (uint)buf[i] << ((i % 4) * 8);
+}
+
+inline void b3_load_words_global(device const uchar *buf, int len, thread uint *words) {
+    device const uint *buf32 = (device const uint *)buf;
+    int wcount = len >> 2;
+    for (int i = 0; i < wcount; i++) words[i] = buf32[i];
+    for (int i = wcount; i < 16; i++) words[i] = 0;
+    int done = wcount << 2;
+    if (done < len) {
+        uint w = 0;
+        for (int i = done; i < len; i++)
+            w |= (uint)buf[i] << ((i - done) * 8);
+        words[wcount] = w;
+    }
+}
+
+struct B3ChunkOut {
+    uint input_cv[8];
+    uint block_words[16];
+    uint block_len;
+    uint flags;
+};
+
+inline B3ChunkOut b3_hash_single_chunk(thread const uchar *input, uint input_len) {
+    B3ChunkOut out;
+    uint cv[8];
     for (int i = 0; i < 8; i++) cv[i] = BLAKE3_IV[i];
-    uint32_t block_words[16];
-
-    // Block 0: cur[0..64], CHUNK_START
-    blake3_load_block_words_device(cur_blk, 64, block_words);
-    blake3_compress_cv(cv, block_words, 0, 64, BLAKE3_CHUNK_START, cv);
-
-    // Block 1: prev[0..64] — counter=0 (chunk counter, NOT block index)
-    blake3_load_block_words_device(prev_blk, 64, block_words);
-    blake3_compress_cv(cv, block_words, 0, 64, 0, cv);
-
-    // Block 2: rand[0..64] — counter=0 (chunk counter, NOT block index)
-    blake3_load_block_words_device(rand_blk, 64, block_words);
-    blake3_compress_cv(cv, block_words, 0, 64, 0, cv);
-
-    // Block 3: pass_le8 || idx_le8 = 16 bytes, CHUNK_END
-    for (int i = 0; i < 16; i++) block_words[i] = 0;
-    block_words[0] = uint32_t(pass64 & 0xFFFFFFFFu);
-    block_words[1] = uint32_t(pass64 >> 32);
-    block_words[2] = uint32_t(cur64 & 0xFFFFFFFFu);
-    block_words[3] = uint32_t(cur64 >> 32);
-
-    Blake3ChunkOutput out;
-    for (int i = 0; i < 8; i++) out.input_cv[i] = cv[i];
-    for (int i = 0; i < 16; i++) out.block_words[i] = block_words[i];
-    out.block_len = 16;
-    out.flags = BLAKE3_CHUNK_END;
+    uint offset = 0;
+    while (offset < input_len) {
+        uint remaining = input_len - offset;
+        uint this_len = (remaining > 64u) ? 64u : remaining;
+        int is_first = (offset == 0);
+        int is_last  = (offset + this_len >= input_len);
+        uint fl = 0u;
+        if (is_first) fl |= B3_CHUNK_START;
+        if (is_last)  fl |= B3_CHUNK_END;
+        uint bw[16];
+        b3_load_words(input + offset, (int)this_len, bw);
+        if (is_last) {
+            for (int i = 0; i < 8; i++) out.input_cv[i] = cv[i];
+            for (int i = 0; i < 16; i++) out.block_words[i] = bw[i];
+            out.block_len = this_len;
+            out.flags = fl;
+            return out;
+        }
+        b3_compress_cv(cv, bw, 0UL, this_len, fl, cv);
+        offset += this_len;
+    }
+    for (int i = 0; i < 8; i++) out.input_cv[i] = BLAKE3_IV[i];
+    for (int i = 0; i < 16; i++) out.block_words[i] = 0;
+    out.block_len = 0;
+    out.flags = B3_CHUNK_START | B3_CHUNK_END;
     return out;
 }
 
-// Init scratchpad from 64-byte seed using Blake3 XOF.
-// Matches Rust: blake3::Hasher::new().update(seed).update(b"EKAM_SCRATCHPAD_INIT_V1").finalize_xof().fill(pad)
-void ekam_init_scratchpad(device uint8_t *pad, thread const uint8_t seed[64]) {
-    // Build 87-byte input: seed(64) || domain_sep(23)
-    uint8_t input[87];
+inline void b3_xof_fill_global(B3ChunkOut co, device uchar *buf, uint buf_len) {
+    device uint *buf32 = (device uint *)buf;
+    uint ob = 0, written = 0;
+    while (written < buf_len) {
+        uint st[16];
+        b3_compress(co.input_cv, co.block_words, (ulong)ob,
+                    co.block_len, co.flags | B3_ROOT, st);
+        uint to_write = min(64u, buf_len - written);
+        uint words = to_write >> 2;
+        uint base = written >> 2;
+        for (uint i = 0; i < words; i++)
+            buf32[base + i] = st[i];
+        uint done = words << 2;
+        for (uint i = done; i < to_write; i++)
+            buf[written + i] = (uchar)(st[i / 4] >> ((i % 4) * 8));
+        written += to_write;
+        ob++;
+    }
+}
+
+inline void b3_xof_fill_private(B3ChunkOut co, thread uchar *buf, uint buf_len) {
+    uint ob = 0, written = 0;
+    while (written < buf_len) {
+        uint st[16];
+        b3_compress(co.input_cv, co.block_words, (ulong)ob,
+                    co.block_len, co.flags | B3_ROOT, st);
+        uint to_write = min(64u, buf_len - written);
+        uint full_words = to_write >> 2;
+        thread uint *dst32 = (thread uint *)(buf + written);
+        for (uint w = 0; w < full_words; w++) dst32[w] = st[w];
+        for (uint i = (full_words << 2); i < to_write; i++)
+            buf[written + i] = (uchar)(st[i / 4] >> ((i % 4) * 8));
+        written += to_write;
+        ob++;
+    }
+}
+
+// ============================================================================
+// Step 4: Ekam Memory-Hard (Blake3 XOF scratchpad)
+// ============================================================================
+
+inline void ekam_init_scratchpad(thread const uchar *seed, device uchar *pad)
+{
+    uchar input[87];
     for (int i = 0; i < 64; i++) input[i] = seed[i];
     for (int i = 0; i < 23; i++) input[64 + i] = EKAM_DOMAIN_SEP[i];
-
-    Blake3ChunkOutput chunk_out = blake3_hash_single_chunk(input, 87u);
-    blake3_xof_fill_device(chunk_out, pad, METAL_SCRATCHPAD_BYTES);
+    B3ChunkOut co = b3_hash_single_chunk(input, 87u);
+    b3_xof_fill_global(co, pad, SCRATCHPAD_SIZE);
 }
 
-// Mix a single block: XOR with Blake3(cur || prev || rand || pass || idx).xof(64)
-// Matches Rust mix_block_ekam() exactly.
-void ekam_mix_block(
-    device uint8_t *pad,
-    uint cur_idx, uint prev_idx, uint rand_idx,
-    uint pass_num
-) {
-    device uint8_t *cur_blk  = pad + uint64_t(cur_idx)  * uint64_t(METAL_BLOCK_SIZE);
-    device uint8_t *prev_blk = pad + uint64_t(prev_idx) * uint64_t(METAL_BLOCK_SIZE);
-    device uint8_t *rand_blk = pad + uint64_t(rand_idx) * uint64_t(METAL_BLOCK_SIZE);
+inline void ekam_mix_block(device uchar *pad, uint index, ulong pass, int forward)
+{
+    uint prev_index;
+    if (forward)
+        prev_index = (index == 0) ? (BLOCK_COUNT - 1) : (index - 1);
+    else
+        prev_index = (index + 1 == BLOCK_COUNT) ? 0 : (index + 1);
 
-    Blake3ChunkOutput chunk_out = blake3_ekam_mix_input(
-        cur_blk, prev_blk, rand_blk,
-        uint64_t(pass_num), uint64_t(cur_idx)
-    );
+    uint cur_off  = index * BLOCK_SIZE;
+    uint prev_off = prev_index * BLOCK_SIZE;
 
-    uint8_t mixed[64];
-    blake3_xof_fill_thread(chunk_out, mixed, 64u);
+    ulong idx_val = *((device const ulong *)(pad + cur_off));
+    uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
+    uint rand_off = rand_index * BLOCK_SIZE;
 
-    for (int i = 0; i < 64; i++) cur_blk[i] ^= mixed[i];
+    uint cv[8];
+    for (int i = 0; i < 8; i++) cv[i] = BLAKE3_IV[i];
+    uint bw[16];
+
+    b3_load_words_global(pad + cur_off, 64, bw);
+    b3_compress_cv(cv, bw, 0UL, 64, B3_CHUNK_START, cv);
+
+    b3_load_words_global(pad + prev_off, 64, bw);
+    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
+
+    b3_load_words_global(pad + rand_off, 64, bw);
+    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
+
+    for (int i = 0; i < 16; i++) bw[i] = 0;
+    bw[0] = (uint)(pass & 0xFFFFFFFFu);
+    bw[1] = (uint)(pass >> 32);
+    bw[2] = (uint)((ulong)index & 0xFFFFFFFFu);
+    bw[3] = (uint)((ulong)index >> 32);
+
+    B3ChunkOut co;
+    for (int i = 0; i < 8; i++) co.input_cv[i] = cv[i];
+    for (int i = 0; i < 16; i++) co.block_words[i] = bw[i];
+    co.block_len = 16;
+    co.flags = B3_CHUNK_END;
+
+    uchar mixed[64];
+    b3_xof_fill_private(co, mixed, 64u);
+
+    device ulong *dst = (device ulong *)(pad + cur_off);
+    thread ulong *src = (thread ulong *)mixed;
+    for (int i = 0; i < 8; i++)
+        dst[i] ^= src[i];
 }
 
-// 2 sequential passes (forward/backward) with Blake3 mixing.
-// Matches Rust sequential_passes_ekam() exactly.
-void ekam_sequential_passes(device uint8_t *pad) {
-    for (uint pass = 0u; pass < METAL_PASSES; pass++) {
-        bool fwd = (pass % 2u == 0u);
-        for (uint i = 0u; i < METAL_BLOCK_COUNT; i++) {
-            uint cur  = fwd ? i : (METAL_BLOCK_COUNT - 1u - i);
-            uint prev = fwd
-                ? ((cur == 0u) ? METAL_BLOCK_COUNT - 1u : cur - 1u)
-                : ((cur == METAL_BLOCK_COUNT - 1u) ? 0u : cur + 1u);
-
-            device uint8_t *cb = pad + uint64_t(cur) * uint64_t(METAL_BLOCK_SIZE);
-            uint64_t idx64 = uint64_t(cb[0])
-                           | (uint64_t(cb[1]) << 8)
-                           | (uint64_t(cb[2]) << 16)
-                           | (uint64_t(cb[3]) << 24)
-                           | (uint64_t(cb[4]) << 32)
-                           | (uint64_t(cb[5]) << 40)
-                           | (uint64_t(cb[6]) << 48)
-                           | (uint64_t(cb[7]) << 56);
-            uint64_t rand64 = idx64 ^ uint64_t(pass) ^ uint64_t(cur);
-            uint rand_idx = uint(rand64 % uint64_t(METAL_BLOCK_COUNT));
-
-            ekam_mix_block(pad, cur, prev, rand_idx, pass);
+inline void ekam_sequential_passes(device uchar *pad)
+{
+    for (int pass = 0; pass < PASSES; pass++) {
+        int forward = (pass % 2 == 0);
+        if (forward) {
+            for (uint i = 0; i < BLOCK_COUNT; i++)
+                ekam_mix_block(pad, i, (ulong)pass, 1);
+        } else {
+            for (int i = BLOCK_COUNT - 1; i >= 0; i--)
+                ekam_mix_block(pad, (uint)i, (ulong)pass, 0);
         }
     }
 }
 
-// Ekam memory-hard transform (light variant):
-// Blake3 XOF init → Blake3 sequential passes → Keccak-256 random reads
-// Matches Rust memory_hard_transform_ekam_light() exactly.
-void ekam_memory_hard_transform(
-    thread const uint8_t gm_out[64],
-    device uint8_t *pad,
-    thread uint8_t output[64]
-) {
-    ekam_init_scratchpad(pad, gm_out);
+inline void random_read_mix(thread const uchar *seed, device const uchar *pad,
+                            thread uchar *out)
+{
+    uchar acc[64];
+    { thread ulong *d = (thread ulong *)acc; thread const ulong *s = (thread const ulong *)seed;
+      for (int i = 0; i < 8; i++) d[i] = s[i]; }
+
+    ulong pos_val = *(thread const ulong *)seed;
+    uint pos = (uint)(pos_val % BLOCK_COUNT);
+
+    for (int r = 0; r < RANDOM_READS; r++) {
+        uint off = pos * BLOCK_SIZE;
+
+        device const ulong *gsrc = (device const ulong *)(pad + off);
+        ulong chunk64[8];
+        for (int i = 0; i < 8; i++) chunk64[i] = gsrc[i];
+
+        ulong d64[4];
+        keccak256_136_mix((thread const ulong *)acc, chunk64, (ulong)r, d64);
+
+        {
+            thread ulong *a64 = (thread ulong *)acc;
+            for (int u = 0; u < 4; u++) a64[u] ^= d64[u];
+        }
+        {
+            thread const uchar *d8 = (thread const uchar *)d64;
+            for (int i = 0; i < 32; i++)
+                acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d8[i]);
+        }
+
+        pos = (uint)((d64[0] ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
+    }
+
+    uchar first_blk[BLOCK_SIZE], last_blk[BLOCK_SIZE];
+    {
+        device const ulong *fp = (device const ulong *)pad;
+        device const ulong *lp = (device const ulong *)(pad + SCRATCHPAD_SIZE - BLOCK_SIZE);
+        thread ulong *fd = (thread ulong *)first_blk;
+        thread ulong *ld = (thread ulong *)last_blk;
+        for (int i = 0; i < 8; i++) {
+            fd[i] = fp[i];
+            ld[i] = lp[i];
+        }
+    }
+
+    ulong fst[25]; int fpos = 0;
+    for (int i = 0; i < 25; i++) fst[i] = 0;
+    keccak_absorb(fst, &fpos, 72, acc,       64);
+    keccak_absorb(fst, &fpos, 72, first_blk, BLOCK_SIZE);
+    keccak_absorb(fst, &fpos, 72, last_blk,  BLOCK_SIZE);
+    keccak_finalize(fst, fpos, 72, 0x06, out, 64);
+}
+
+inline void ekam_memory_hard_transform(thread const uchar *input, device uchar *pad,
+                                       thread uchar *output)
+{
+    ekam_init_scratchpad(input, pad);
     ekam_sequential_passes(pad);
-    metal_random_read_mix(gm_out, pad, output);  // Keccak-256 reads — unchanged
+    random_read_mix(input, pad, output);
 }
 
 // ============================================================================
-// Ekam Cosmic Fusion — 8 rounds (matches EKAM_FUSION_ROUNDS = 8)
-// Reuses existing fusion_round_gpu() which matches Rust exactly.
+// Step 5: NPU Mix (INT8 MLP 64→128→64 + residual)
 // ============================================================================
 
-void cosmic_fusion_ekam_gpu(thread const uint8_t *input, thread uint8_t *output) {
-    uint8_t state[64];
-    for (int i = 0; i < 64; i++) state[i] = input[i];
-
-    for (uint8_t r = 0; r < 8; r++) {
-        fusion_round_gpu(state, r);
-    }
-
-    uint8_t full[64];
-    sha3_512_32_gpu(state, full);
-    for (int i = 0; i < 32; i++) output[i] = full[i];
-}
-
-// ============================================================================
-// Ekam Deeksha Full Pipeline on GPU
-// Steps 1-3: same as CHv4 (Keccak-256 → SHA3-512 → Golden Matrix)
-// Step 4: Ekam memory-hard (Blake3 XOF init + passes + Keccak-256 reads)
-// Step 5: NPU mixing (unchanged)
-// Step 6: 8-round Cosmic Fusion
-// ============================================================================
-
-void cosmic_harmony_ekam_deeksha_gpu(
-    device const uint8_t *header,
-    int header_len,
-    uint64_t nonce,
-    device uint8_t *pad,
-    device const char  *npu_w1,
-    device const char  *npu_b1,
-    device const char  *npu_w2,
-    device const char  *npu_b2,
-    device const short *npu_scale1,
-    device const short *npu_scale2,
-    thread uint8_t *output
-) {
-    uint8_t s1[32];
-    keccak256_header_nonce_gpu(header, header_len, nonce, s1);
-
-    uint8_t s2[64];
-    sha3_512_32_gpu(s1, s2);
-
-    uint8_t s3[64];
-    golden_matrix_gpu(s2, s3);
-
-    uint8_t s4[64];
-    ekam_memory_hard_transform(s3, pad, s4);
-
-    uint8_t s5[64];
-    metal_npu_mixing(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
-
-    cosmic_fusion_ekam_gpu(s5, output);
-}
-
-// ============================================================================
-// CHv4 Scratchpad helpers (reuse existing sha3_512_gpu / keccak256_gpu)
-// ============================================================================
-
-// Write 64-byte block to device scratchpad at block_idx position
-void metal_pad_write(device uint8_t* pad, uint block_idx, thread const uint8_t src[64]) {
-    device uint8_t* dst = pad + block_idx * METAL_BLOCK_SIZE;
-    for (uint i = 0; i < 64u; i++) dst[i] = src[i];
-}
-
-// SHA3-512(state[64] || counter_le8) → 64 bytes  (exact 72-byte input = one SHA3-512 block)
-void metal_sha3_512_state_counter(
-    thread const uint8_t state[64],
-    uint64_t counter,
-    thread uint8_t output[64]
-) {
-    sha3_512_state_counter_gpu(state, counter, output);
-}
-
-// Initialise scratchpad from 64-byte seed (= SHA3-512(header||nonce)).
-// Each of the METAL_BLOCK_COUNT blocks is SHA3-512(prev_block || block_index_le8).
-void metal_init_scratchpad(device uint8_t* pad, thread const uint8_t seed[64]) {
-    uint8_t state[64];
-    for (int i = 0; i < 64; i++) state[i] = seed[i];
-
-    for (uint blk = 0u; blk < METAL_BLOCK_COUNT; blk++) {
-        uint8_t next[64];
-        metal_sha3_512_state_counter(state, uint64_t(blk), next);
-        metal_pad_write(pad, blk, next);
-        for (int i = 0; i < 64; i++) state[i] = next[i];
-    }
-}
-
-// Mix a single scratchpad block: XOR with SHA3-512(cur || prev || rand || pass_le8 || cur_idx_le8)
-// Matches CPU mix_block: h.update(current) + h.update(prev) + h.update(random)
-//                       + h.update(pass.to_le_bytes()) + h.update((index as u64).to_le_bytes())
-void metal_mix_block(
-    device uint8_t* pad,
-    uint cur_idx, uint prev_idx, uint rand_idx,
-    uint pass_num
-) {
-    device uint8_t* cur_blk  = pad + uint64_t(cur_idx)  * uint64_t(METAL_BLOCK_SIZE);
-    device uint8_t* prev_blk = pad + uint64_t(prev_idx) * uint64_t(METAL_BLOCK_SIZE);
-    device uint8_t* rand_blk = pad + uint64_t(rand_idx) * uint64_t(METAL_BLOCK_SIZE);
-
-    uint64_t pass64 = uint64_t(pass_num);
-    uint64_t cur64  = uint64_t(cur_idx);
-
-    uint8_t hash[64];
-    sha3_512_mix_block_gpu(cur_blk, prev_blk, rand_blk, pass64, cur64, hash);
-
-    for (int i = 0; i < 64; i++) cur_blk[i] ^= hash[i];
-}
-
-// 2 sequential passes over the pad (alternating forward / backward)
-// Matches CPU sequential_passes + mix_block rand_idx logic EXACTLY:
-//   idx_bytes = pad[cur_off..cur_off+8]  (current block, u64 LE)
-//   rand_index = (u64_from_le(idx_bytes) XOR pass XOR index) % blocks
-void metal_sequential_passes(device uint8_t* pad) {
-    for (uint pass = 0u; pass < METAL_PASSES; pass++) {
-        bool fwd = (pass % 2u == 0u);
-        for (uint i = 0u; i < METAL_BLOCK_COUNT; i++) {
-            uint cur  = fwd ? i : (METAL_BLOCK_COUNT - 1u - i);
-            uint prev = fwd
-                ? ((cur == 0u) ? METAL_BLOCK_COUNT - 1u : cur - 1u)
-                : ((cur == METAL_BLOCK_COUNT - 1u) ? 0u : cur + 1u);
-
-            // rand_idx: first 8 bytes of CURRENT block as u64 LE, XOR pass, XOR cur
-            device uint8_t* cb = pad + uint64_t(cur) * uint64_t(METAL_BLOCK_SIZE);
-            uint64_t idx64 = uint64_t(cb[0])
-                           | (uint64_t(cb[1]) << 8)
-                           | (uint64_t(cb[2]) << 16)
-                           | (uint64_t(cb[3]) << 24)
-                           | (uint64_t(cb[4]) << 32)
-                           | (uint64_t(cb[5]) << 40)
-                           | (uint64_t(cb[6]) << 48)
-                           | (uint64_t(cb[7]) << 56);
-            uint64_t rand64 = idx64 ^ uint64_t(pass) ^ uint64_t(cur);
-            uint rand_idx = uint(rand64 % uint64_t(METAL_BLOCK_COUNT));
-
-            metal_mix_block(pad, cur, prev, rand_idx, pass);
-        }
-    }
-}
-
-// 64 pseudo-random reads into scratchpad; returns 64-byte SHA3-512 output.
-// Matches CPU random_read_mix EXACTLY:
-//   pos_init  = u64_le(seed[0..8]) % blocks
-//   h[32]     = keccak256(acc[64] || chunk[64] || r_le8[8])
-//   acc[0..32]   ^= h[i]         (XOR)
-//   acc[32..64]  wrapping_add h[i]
-//   pos = (u64_le(d[0..8]) ^ pos ^ r) % blocks
-//   output = SHA3-512(acc[64] || pad[0..64] || pad[-64..])
-void metal_random_read_mix(
-    thread const uint8_t seed[64],
-    device const uint8_t* pad,
-    thread uint8_t output[64]
-) {
-    uint8_t acc[64];
-    for (int i = 0; i < 64; i++) acc[i] = seed[i];
-
-    // Initial position from first 8 bytes of seed as u64 LE (matches CPU)
-    uint64_t pos64 = uint64_t(seed[0])
-                   | (uint64_t(seed[1]) << 8)
-                   | (uint64_t(seed[2]) << 16)
-                   | (uint64_t(seed[3]) << 24)
-                   | (uint64_t(seed[4]) << 32)
-                   | (uint64_t(seed[5]) << 40)
-                   | (uint64_t(seed[6]) << 48)
-                   | (uint64_t(seed[7]) << 56);
-    uint64_t pos = pos64 % uint64_t(METAL_BLOCK_COUNT);
-
-    for (uint64_t r = 0u; r < uint64_t(METAL_RANDOM_READS); r++) {
-        device const uint8_t* blk = pad + pos * uint64_t(METAL_BLOCK_SIZE);
-
-        uint8_t d[32];
-        keccak256_acc_chunk_round_gpu(acc, blk, r, d);
-
-        // acc[0..32]  ^= d[i]           (XOR — matches CPU)
-        // acc[32..64] wrapping_add d[i] (matches CPU)
-        for (int i = 0; i < 32; i++) {
-            acc[i]      = acc[i] ^ d[i];
-            acc[32 + i] = uint8_t((uint(acc[32 + i]) + uint(d[i])) & 0xFFu);
-        }
-
-        // pos = (u64_le(d[0..8]) ^ pos ^ r) % blocks (matches CPU)
-        uint64_t next_seed = uint64_t(d[0])
-                           | (uint64_t(d[1]) << 8)
-                           | (uint64_t(d[2]) << 16)
-                           | (uint64_t(d[3]) << 24)
-                           | (uint64_t(d[4]) << 32)
-                           | (uint64_t(d[5]) << 40)
-                           | (uint64_t(d[6]) << 48)
-                           | (uint64_t(d[7]) << 56);
-        pos = (next_seed ^ pos ^ r) % uint64_t(METAL_BLOCK_COUNT);
-    }
-
-    device const uint8_t* first_blk = pad;
-    device const uint8_t* last_blk  = pad + uint64_t(METAL_BLOCK_COUNT - 1u) * uint64_t(METAL_BLOCK_SIZE);
-    sha3_512_acc_edges_gpu(acc, first_blk, last_blk, output);
-}
-
-// Main memory-hard transform: init(gm_out) → passes → random-read-mix(gm_out) → output
-// Matches CPU memory_hard_transform(input) EXACTLY:
-//   init_scratchpad(input, pad)       ← input = golden_matrix output
-//   sequential_passes(pad)
-//   random_read_mix(input, pad)       ← returns SHA3-512(acc || pad[0] || pad[-1])
-void metal_memory_hard_transform(
-    thread const uint8_t gm_out[64],    // Golden-Matrix output — seed for init AND mix
-    device uint8_t* pad,               // per-thread 64 KiB scratch area
-    thread uint8_t output[64]
-) {
-    metal_init_scratchpad(pad, gm_out);   // seed = golden_matrix (was: s2 SHA3-512 — BUG FIXED)
-    metal_sequential_passes(pad);
-    metal_random_read_mix(gm_out, pad, output);  // output = SHA3-512(acc||...)
-    // NOTE: no final XOR with gm_out — CPU doesn't do that
-}
-
-// ============================================================================
-// CHv4 NPU Mixing — INT8 MLP 64→128→64 + residual
-// Mirrors algorithms_npu.rs :: npu_mixing_cpu_int8() EXACTLY (integer arithmetic).
-// ============================================================================
-
-// Integer GELU matching Rust gelu_int8(x: i32) -> i32:
-//   numerator = x * (128 + x); (x * (128+x)) >> 8, clamped to [-128,127]
-int metal_gelu_int8(int x) {
+inline int gelu_int8(int x)
+{
     int num = x * (128 + x);
     int result = num >> 8;
-    if (result < -128) result = -128;
-    if (result > 127)  result =  127;
-    return result;
+    return clamp(result, -128, 127);
 }
 
-// LayerNorm matching Rust layer_norm_int8(data: &mut [i32], scale: &[i16]):
-//   mean = sum / n
-//   std_approx = floor(sqrt(sum_sq_dev / n)) + 1
-//   normalized = (x - mean) * 128 / std_approx      (Q7)
-//   data[i] = ((normalized * scale[i]) >> 8).clamp(-128, 127)
-//
-// 'n' must be a compile-time constant (128 or 64) so the array fits on stack.
-void metal_layer_norm_int8_128(thread int* data, device const short* scale) {
-    const int n = 128;
-    // Mean (use long = int64 in Metal)
-    long sum = 0;
-    for (int i = 0; i < n; i++) sum += (long)data[i];
-    int mean = (int)(sum / (long)n);
-
-    // Variance sum
-    long var_sum = 0;
-    for (int i = 0; i < n; i++) {
-        long d = (long)(data[i] - mean);
-        var_sum += d * d;
-    }
-    // std_approx = floor(sqrt(var_sum / n)) + 1
-    int std_approx = (int)sqrt((float)(var_sum / (long)n)) + 1;
-
-    // Normalize + scale
-    for (int i = 0; i < n; i++) {
-        int normalized = ((data[i] - mean) * 128) / std_approx;
-        int v = (normalized * (int)scale[i]) >> 8;
-        if (v < -128) v = -128;
-        if (v >  127) v =  127;
-        data[i] = v;
-    }
-}
-
-void metal_layer_norm_int8_64(thread int* data, device const short* scale) {
-    const int n = 64;
-    long sum = 0;
-    for (int i = 0; i < n; i++) sum += (long)data[i];
-    int mean = (int)(sum / (long)n);
-
-    long var_sum = 0;
-    for (int i = 0; i < n; i++) {
-        long d = (long)(data[i] - mean);
-        var_sum += d * d;
-    }
-    int std_approx = (int)sqrt((float)(var_sum / (long)n)) + 1;
-
-    for (int i = 0; i < n; i++) {
-        int normalized = ((data[i] - mean) * 128) / std_approx;
-        int v = (normalized * (int)scale[i]) >> 8;
-        if (v < -128) v = -128;
-        if (v >  127) v =  127;
-        data[i] = v;
-    }
-}
-
-// NPU mixing: 64-byte input → 64-byte output
-// Exact integer replication of algorithms_npu.rs :: npu_mixing_cpu_int8().
-// Weight buffers supplied as flat i8/i16 arrays:
-//   npu_w1[128*64 i8] row-major W1[j][i]=npu_w1[j*64+i], npu_b1[128 i8]
-//   npu_w2[64*128 i8] row-major W2[i][j]=npu_w2[i*128+j], npu_b2[64 i8]
-//   npu_scale1[128 i16], npu_scale2[64 i16]
-void metal_npu_mixing(
-    thread const uint8_t input[64],
-    thread uint8_t output[64],
-    device const char*  npu_w1,
-    device const char*  npu_b1,
-    device const char*  npu_w2,
-    device const char*  npu_b2,
-    device const short* npu_scale1,
-    device const short* npu_scale2
-) {
-    // ── Step 1: Convert input u8 → i32 (reinterpret as signed i8) ──
+inline void npu_mix(thread const uchar *in64, thread uchar *out64,
+                    device const char *w1,
+                    device const char *b1,
+                    device const char *w2,
+                    device const char *b2,
+                    device const short *scale1,
+                    device const short *scale2)
+{
     int input_i32[64];
-    for (int i = 0; i < 64; i++) {
-        input_i32[i] = (int)((char)input[i]);  // char is signed in Metal
-    }
+    for (int i = 0; i < 64; i++)
+        input_i32[i] = (int)((char)in64[i]);
 
-    // ── Step 2: Layer 1 — Linear(64→128) ──
-    // acc = b1[j] * 32 + Σ(input[i] * W1[j][i])
-    // hidden[j] = (acc >> 12).clamp(-128, 127)
     int hidden[128];
-    for (int j = 0; j < 128; j++) {
-        int acc = (int)npu_b1[j] * 32;  // bias upscale Q5 — matches CPU: b1[i] as i32 * 32
-        device const char* row = npu_w1 + j * 64;
-        for (int i = 0; i < 64; i++) {
-            acc += input_i32[i] * (int)row[i];
+    for (int i = 0; i < 128; i++) {
+        int acc = (int)b1[i] * 32;
+        for (int j = 0; j < 64; j++)
+            acc += input_i32[j] * (int)w1[i * 64 + j];
+        hidden[i] = clamp(acc >> 12, -128, 127);
+    }
+
+    {
+        int n = 128;
+        long sum = 0;
+        for (int i = 0; i < n; i++) sum += (long)hidden[i];
+        int mean = (int)(sum / (long)n);
+        long var_sum = 0;
+        for (int i = 0; i < n; i++) {
+            long d = (long)(hidden[i] - mean);
+            var_sum += d * d;
         }
-        int val = acc >> 12;
-        if (val < -128) val = -128;
-        if (val >  127) val =  127;
-        hidden[j] = val;
-    }
-
-    // ── Step 3: LayerNorm for hidden (128 elements) ──
-    metal_layer_norm_int8_128(hidden, npu_scale1);
-
-    // ── Step 4: GELU for hidden ──
-    for (int j = 0; j < 128; j++) {
-        hidden[j] = metal_gelu_int8(hidden[j]);
-    }
-
-    // ── Step 5: Layer 2 — Linear(128→64) ──
-    // acc = b2[i] * 32 + Σ(hidden[j] * W2[i][j])
-    // out[i] = (acc >> 12).clamp(-128, 127)
-    int out_i32[64];
-    for (int i = 0; i < 64; i++) {
-        int acc = (int)npu_b2[i] * 32;
-        device const char* row = npu_w2 + i * 128;
-        for (int j = 0; j < 128; j++) {
-            acc += hidden[j] * (int)row[j];
+        // fast_isqrt: integer square root avoids float conversion overhead
+        uint var_u = (uint)(var_sum / (long)n);
+        uint std_approx = 1;
+        if (var_u > 0) {
+            std_approx = (uint)sqrt((float)var_u) + 1;
         }
-        int val = acc >> 12;
-        if (val < -128) val = -128;
-        if (val >  127) val =  127;
-        out_i32[i] = val;
+        for (int i = 0; i < n; i++) {
+            int normalized = ((hidden[i] - mean) * 128) / (int)std_approx;
+            hidden[i] = clamp((normalized * (int)scale1[i]) >> 8, -128, 127);
+        }
     }
 
-    // ── Step 6: LayerNorm for output (64 elements) ──
-    metal_layer_norm_int8_64(out_i32, npu_scale2);
+    for (int i = 0; i < 128; i++)
+        hidden[i] = gelu_int8(hidden[i]);
 
-    // ── Step 7: Residual add ──
+    int output_i32[64];
     for (int i = 0; i < 64; i++) {
-        int v = out_i32[i] + input_i32[i];
-        if (v < -128) v = -128;
-        if (v >  127) v =  127;
-        out_i32[i] = v;
+        int acc = (int)b2[i] * 32;
+        for (int j = 0; j < 128; j++)
+            acc += hidden[j] * (int)w2[i * 128 + j];
+        output_i32[i] = clamp(acc >> 12, -128, 127);
     }
 
-    // ── Step 8: Convert i32 → u8 (two's complement lower 8 bits) ──
+    {
+        int n = 64;
+        long sum = 0;
+        for (int i = 0; i < n; i++) sum += (long)output_i32[i];
+        int mean = (int)(sum / (long)n);
+        long var_sum = 0;
+        for (int i = 0; i < n; i++) {
+            long d = (long)(output_i32[i] - mean);
+            var_sum += d * d;
+        }
+        uint var_u = (uint)(var_sum / (long)n);
+        uint std_approx = 1;
+        if (var_u > 0) {
+            std_approx = (uint)sqrt((float)var_u) + 1;
+        }
+        for (int i = 0; i < n; i++) {
+            int normalized = ((output_i32[i] - mean) * 128) / (int)std_approx;
+            output_i32[i] = clamp((normalized * (int)scale2[i]) >> 8, -128, 127);
+        }
+    }
+
     for (int i = 0; i < 64; i++) {
-        output[i] = (uint8_t)(out_i32[i] & 0xFF);
+        int v = clamp(output_i32[i] + input_i32[i], -128, 127);
+        out64[i] = (uchar)v;
     }
 }
 
 // ============================================================================
-// CHv4 Full Pipeline on GPU
+// AES-128 (FIPS 197)
 // ============================================================================
 
-void cosmic_harmony_v4_gpu(
-    device const uint8_t *header,
-    int header_len,
-    uint64_t nonce,
-    device uint8_t* pad,
-    device const char*  npu_w1,
-    device const char*  npu_b1,
-    device const char*  npu_w2,
-    device const char*  npu_b2,
-    device const short* npu_scale1,
-    device const short* npu_scale2,
-    thread uint8_t *output            // 32 bytes
-) {
-    // Step 1: Keccak-256 → 32 bytes
-    uint8_t s1[32];
-    keccak256_header_nonce_gpu(header, header_len, nonce, s1);
+inline void aes_shift_rows(thread uchar *s)
+{
+    uchar t;
+    t = s[1]; s[1] = s[5]; s[5] = s[9]; s[9] = s[13]; s[13] = t;
+    t = s[2]; s[2] = s[10]; s[10] = t;
+    t = s[6]; s[6] = s[14]; s[14] = t;
+    t = s[15]; s[15] = s[11]; s[11] = s[7]; s[7] = s[3]; s[3] = t;
+}
 
-    // Step 2: SHA3-512 → 64 bytes  (also used as scratchpad seed)
-    uint8_t s2[64];
-    sha3_512_32_gpu(s1, s2);
+inline void aes_mix_columns(thread uchar *s)
+{
+    for (int c = 0; c < 4; c++) {
+        int off = c * 4;
+        uchar a0 = s[off], a1 = s[off+1], a2 = s[off+2], a3 = s[off+3];
+        s[off]   = XTIME(a0) ^ XTIME(a1) ^ a1 ^ a2 ^ a3;
+        s[off+1] = a0 ^ XTIME(a1) ^ XTIME(a2) ^ a2 ^ a3;
+        s[off+2] = a0 ^ a1 ^ XTIME(a2) ^ XTIME(a3) ^ a3;
+        s[off+3] = XTIME(a0) ^ a0 ^ a1 ^ a2 ^ XTIME(a3);
+    }
+}
 
-    // Step 3: Golden Matrix → 64 bytes
-    uint8_t s3[64];
-    golden_matrix_gpu(s2, s3);
+inline void aes128_encrypt(thread const uchar *key, thread uchar *block)
+{
+    uchar rk[176];
+    for (int i = 0; i < 16; i++) rk[i] = key[i];
 
-    // Step 4: Memory-hard scratchpad transform (CHv4)
-    // seed = s3 (golden_matrix output) — matches CPU memory_hard_transform(&step3.data)
-    uint8_t s4[64];
-    metal_memory_hard_transform(s3, pad, s4);
+    for (int i = 16; i < 176; i += 4) {
+        uchar t0 = rk[i-4], t1 = rk[i-3], t2 = rk[i-2], t3 = rk[i-1];
+        if ((i & 15) == 0) {
+            uchar tmp = t0;
+            t0 = AES_SBOX[t1] ^ AES_RCON[i/16 - 1];
+            t1 = AES_SBOX[t2];
+            t2 = AES_SBOX[t3];
+            t3 = AES_SBOX[tmp];
+        }
+        rk[i]   = rk[i-16] ^ t0;
+        rk[i+1] = rk[i-15] ^ t1;
+        rk[i+2] = rk[i-14] ^ t2;
+        rk[i+3] = rk[i-13] ^ t3;
+    }
 
-    // Step 5: NPU Mixing (CHv4)
-    uint8_t s5[64];
-    metal_npu_mixing(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+    for (int i = 0; i < 16; i++) block[i] ^= rk[i];
 
-    // Step 6: Cosmic Fusion → 32 bytes
-    cosmic_fusion_gpu(s5, output);
+    for (int round = 1; round <= 9; round++) {
+        for (int i = 0; i < 16; i++) block[i] = AES_SBOX[block[i]];
+        aes_shift_rows(block);
+        aes_mix_columns(block);
+        int off = round * 16;
+        for (int i = 0; i < 16; i++) block[i] ^= rk[off + i];
+    }
+
+    for (int i = 0; i < 16; i++) block[i] = AES_SBOX[block[i]];
+    aes_shift_rows(block);
+    for (int i = 0; i < 16; i++) block[i] ^= rk[160 + i];
 }
 
 // ============================================================================
-// Mining Parameters  (CHv4 — 128-byte struct, same base layout as CHv3)
+// Step 6: Cosmic Fusion (8 rounds)
 // ============================================================================
 
-struct CHv4MiningParams {
-    uint64_t start_nonce;   // offset   0
-    uint32_t header_len;    // offset   8
-    uint8_t  header[80];    // offset  12
-    uint8_t  target[32];    // offset  92
-    uint32_t block_height;  // offset 124
-    // total 128 bytes (4-byte pad implicit on GPU)
-};
+inline void fusion_round(thread uchar *state, uchar round_num)
+{
+    uchar hash_input[33];
+    {
+        thread ulong *hi64 = (thread ulong *)hash_input;
+        thread ulong *st64 = (thread ulong *)state;
+        for (int i = 0; i < 4; i++) hi64[i] = st64[i];
+    }
+    hash_input[32] = round_num;
 
-struct CHv4MiningResult {
-    uint64_t found_nonce;
-    uint8_t  found_hash[32];
-    uint32_t found;  // atomic flag: 0 = nothing, 1 = solution
-};
+    uchar intermediate[32];
+    keccak256(hash_input, 33, intermediate);
+
+    uchar aes_key[16], block0[16], block1[16];
+    {
+        thread ulong *k64 = (thread ulong *)aes_key;
+        thread ulong *i64 = (thread ulong *)intermediate;
+        k64[0] = i64[0]; k64[1] = i64[1];
+    }
+    {
+        thread ulong *b64 = (thread ulong *)block0;
+        thread ulong *s64 = (thread ulong *)(state + 32);
+        b64[0] = s64[0]; b64[1] = s64[1];
+    }
+    aes128_encrypt(aes_key, block0);
+
+    uchar key2[16];
+    {
+        thread ulong *k264 = (thread ulong *)key2;
+        thread ulong *k64  = (thread ulong *)aes_key;
+        k264[0] = k64[0]; k264[1] = k64[1];
+    }
+    key2[0]  ^= round_num;
+    key2[15] ^= 0xAB;
+    {
+        thread ulong *b64 = (thread ulong *)block1;
+        thread ulong *s64 = (thread ulong *)(state + 48);
+        b64[0] = s64[0]; b64[1] = s64[1];
+    }
+    aes128_encrypt(key2, block1);
+
+    uchar mask[32];
+    {
+        thread ulong *m64 = (thread ulong *)mask;
+        thread ulong *b064 = (thread ulong *)block0;
+        thread ulong *b164 = (thread ulong *)block1;
+        m64[0] = b064[0]; m64[1] = b064[1];
+        m64[2] = b164[0]; m64[3] = b164[1];
+    }
+
+    {
+        thread ulong *s64 = (thread ulong *)(state + 32);
+        thread ulong *i64 = (thread ulong *)intermediate;
+        for (int i = 0; i < 4; i++) s64[i] ^= i64[i];
+    }
+
+    {
+        thread ulong *s64 = (thread ulong *)state;
+        thread ulong *i64 = (thread ulong *)intermediate;
+        thread ulong *m64 = (thread ulong *)mask;
+        for (int i = 0; i < 4; i++) s64[i] = i64[i] ^ m64[i];
+    }
+}
+
+inline void cosmic_fusion_ekam(thread const uchar *in64, thread uchar *hash32)
+{
+    uchar state[64];
+    { thread ulong *d = (thread ulong *)state; thread const ulong *s = (thread const ulong *)in64;
+      for (int i = 0; i < 8; i++) d[i] = s[i]; }
+
+    for (uchar r = 0; r < 8; r++)
+        fusion_round(state, r);
+
+    uchar full[64];
+    sha3_512(state, 32, full);
+    { thread ulong *d = (thread ulong *)hash32; thread ulong *s = (thread ulong *)full;
+      for (int i = 0; i < 4; i++) d[i] = s[i]; }
+}
 
 // ============================================================================
-// Main Mining Kernel — CHv4
+// Main Kernel: ekam_deeksha_mine
 // ============================================================================
 
-kernel void cosmic_harmony_v3_mine(
-    device const CHv4MiningParams& params  [[buffer(0)]],
-    device CHv4MiningResult&       result  [[buffer(1)]],
-    device uint8_t*                scratchpad_buf [[buffer(2)]],
-    device const char*             npu_w1  [[buffer(3)]],
-    device const char*             npu_b1  [[buffer(4)]],
-    device const char*             npu_w2  [[buffer(5)]],
-    device const char*             npu_b2  [[buffer(6)]],
-    device const short*            npu_scale1 [[buffer(7)]],
-    device const short*            npu_scale2 [[buffer(8)]],
-    uint32_t thread_id [[thread_position_in_grid]]
-) {
-    uint64_t nonce = params.start_nonce + uint64_t(thread_id);
+kernel void ekam_deeksha_mine(
+    device const uchar   *header          [[ buffer(0)  ]],
+    device const uint    *params          [[ buffer(1)  ]],  // [header_len, nonce_count, target_u32]
+    device const ulong   *nonce_base_buf  [[ buffer(2)  ]],
+    device       uchar   *scratchpad_pool [[ buffer(3)  ]],
+    device atomic_uint   *result_flag     [[ buffer(4)  ]],  // [0]=flag, [1]=nonce_lo, [2]=nonce_hi
+    device       uchar   *result_hash     [[ buffer(5)  ]],
+    device const char    *npu_w1          [[ buffer(6)  ]],
+    device const char    *npu_b1          [[ buffer(7)  ]],
+    device const char    *npu_w2          [[ buffer(8)  ]],
+    device const char    *npu_b2          [[ buffer(9)  ]],
+    device const short   *npu_scale1      [[ buffer(10) ]],
+    device const short   *npu_scale2      [[ buffer(11) ]],
+    uint                  gid             [[ thread_position_in_grid ]]
+)
+{
+    uint header_len  = params[0];
+    uint nonce_count = params[1];
+    uint target_u32  = params[2];
+    ulong nonce_base = nonce_base_buf[0];
 
-    // Each thread gets its own 64 KiB slice of the scratchpad
-    device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
+    if (gid >= nonce_count) return;
 
-    // Compute CHv4 hash
-    uint8_t hash[32];
-    cosmic_harmony_v4_gpu(
-        params.header, int(params.header_len), nonce,
-        my_pad,
-        npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2,
-        hash
-    );
+    ulong nonce = nonce_base + (ulong)gid;
+    device uchar *pad = scratchpad_pool + (ulong)gid * SCRATCHPAD_SIZE;
 
-    // Difficulty check: state0 (u32 LE from hash[0..4]) <= target_u32 (u32 BE from target[0..4])
-    // Pool validator uses first 8 hex chars of the 64-char big-endian 256-bit target.
-    // That equals bytes [0..4] of the 32-byte target interpreted as big-endian u32.
-    // Must match: pool/src/shares/validator.rs :: check_target(CosmicHarmony)
-    //   → u32::from_str_radix(&job_target[0..8], 16)  which equals BE interpretation of target[0..4].
-    uint32_t state0    = uint32_t(hash[0])
-                       | (uint32_t(hash[1]) << 8)
-                       | (uint32_t(hash[2]) << 16)
-                       | (uint32_t(hash[3]) << 24);
-    uint32_t target_u32 = (uint32_t(params.target[0]) << 24)
-                        | (uint32_t(params.target[1]) << 16)
-                        | (uint32_t(params.target[2]) << 8)
-                        |  uint32_t(params.target[3]);
+    // Build input: header (<=80 B) + nonce (8 B LE) = 88 B
+    uchar input[88];
+    thread ulong *inp64 = (thread ulong *)input;
+    for (int i = 0; i < 11; i++) inp64[i] = 0;
+    uint hlen = min(header_len, (uint)80);
+    device const uint *hdr32 = (device const uint *)header;
+    thread uint *inp32 = (thread uint *)input;
+    uint hwords = hlen >> 2;
+    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
+    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
+    inp64[10] = nonce;
+
+    uchar s1[32];
+    keccak256(input, 88, s1);
+
+    uchar s2[64];
+    sha3_512(s1, 32, s2);
+
+    uchar s3[64];
+    golden_matrix(s2, s3);
+
+    uchar s4[64];
+    ekam_memory_hard_transform(s3, pad, s4);
+
+    uchar s5[64];
+    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+
+    uchar hash[32];
+    cosmic_fusion_ekam(s5, hash);
+
+    // Compare first 4 bytes of hash vs target as big-endian u32 (PoW convention)
+    uint state0 = ((uint)hash[0] << 24) | ((uint)hash[1] << 16) | ((uint)hash[2] << 8) | (uint)hash[3];
 
     if (state0 <= target_u32) {
-        uint32_t expected = 0u;
-        if (atomic_compare_exchange_weak_explicit(
-                (device atomic_uint*)&result.found,
-                &expected, 1u,
-                memory_order_relaxed, memory_order_relaxed)) {
-            result.found_nonce = nonce;
-            for (int i = 0; i < 32; i++) result.found_hash[i] = hash[i];
+        // Use 32-bit atomic exchange as found-flag (M1 Metal lacks 64-bit CAS)
+        uint old = atomic_exchange_explicit(&result_flag[0], 0u, memory_order_relaxed);
+        if (old == 0xFFFFFFFFu) {
+            // We won the race — write nonce as two u32 and the hash
+            atomic_store_explicit(&result_flag[1], (uint)(nonce & 0xFFFFFFFFu), memory_order_relaxed);
+            atomic_store_explicit(&result_flag[2], (uint)(nonce >> 32), memory_order_relaxed);
+            device uint *rh32 = (device uint *)result_hash;
+            thread uint *h32 = (thread uint *)hash;
+            for (int i = 0; i < 8; i++)
+                rh32[i] = h32[i];
         }
     }
-}
-
-// ============================================================================
-// Benchmark Kernel — CHv4 (no target check, writes 32-byte hashes)
-// ============================================================================
-
-kernel void cosmic_harmony_v3_benchmark(
-    device const CHv4MiningParams& params  [[buffer(0)]],
-    device uint8_t*                output_hashes [[buffer(1)]],
-    device uint8_t*                scratchpad_buf [[buffer(2)]],
-    device const char*             npu_w1  [[buffer(3)]],
-    device const char*             npu_b1  [[buffer(4)]],
-    device const char*             npu_w2  [[buffer(5)]],
-    device const char*             npu_b2  [[buffer(6)]],
-    device const short*            npu_scale1 [[buffer(7)]],
-    device const short*            npu_scale2 [[buffer(8)]],
-    uint32_t thread_id [[thread_position_in_grid]]
-) {
-    uint64_t nonce = params.start_nonce + uint64_t(thread_id);
-    device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
-
-    uint8_t hash[32];
-    cosmic_harmony_v4_gpu(
-        params.header, int(params.header_len), nonce,
-        my_pad,
-        npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2,
-        hash
-    );
-
-    device uint8_t* dst = output_hashes + thread_id * 32;
-    for (int i = 0; i < 32; i++) dst[i] = hash[i];
-}
-
-// ============================================================================
-// Ekam Deeksha Mining Kernel
-// ============================================================================
-
-kernel void cosmic_harmony_ekam_mine(
-    device const CHv4MiningParams& params  [[buffer(0)]],
-    device CHv4MiningResult&       result  [[buffer(1)]],
-    device uint8_t*                scratchpad_buf [[buffer(2)]],
-    device const char*             npu_w1  [[buffer(3)]],
-    device const char*             npu_b1  [[buffer(4)]],
-    device const char*             npu_w2  [[buffer(5)]],
-    device const char*             npu_b2  [[buffer(6)]],
-    device const short*            npu_scale1 [[buffer(7)]],
-    device const short*            npu_scale2 [[buffer(8)]],
-    uint32_t thread_id [[thread_position_in_grid]]
-) {
-    uint64_t nonce = params.start_nonce + uint64_t(thread_id);
-    device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
-
-    uint8_t hash[32];
-    cosmic_harmony_ekam_deeksha_gpu(
-        params.header, int(params.header_len), nonce,
-        my_pad,
-        npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2,
-        hash
-    );
-
-    uint32_t state0    = uint32_t(hash[0])
-                       | (uint32_t(hash[1]) << 8)
-                       | (uint32_t(hash[2]) << 16)
-                       | (uint32_t(hash[3]) << 24);
-    uint32_t target_u32 = (uint32_t(params.target[0]) << 24)
-                        | (uint32_t(params.target[1]) << 16)
-                        | (uint32_t(params.target[2]) << 8)
-                        |  uint32_t(params.target[3]);
-
-    if (state0 <= target_u32) {
-        uint32_t expected = 0u;
-        if (atomic_compare_exchange_weak_explicit(
-                (device atomic_uint*)&result.found,
-                &expected, 1u,
-                memory_order_relaxed, memory_order_relaxed)) {
-            result.found_nonce = nonce;
-            for (int i = 0; i < 32; i++) result.found_hash[i] = hash[i];
-        }
-    }
-}
-
-// ============================================================================
-// Ekam Deeksha Benchmark Kernel
-// ============================================================================
-
-kernel void cosmic_harmony_ekam_benchmark(
-    device const CHv4MiningParams& params  [[buffer(0)]],
-    device uint8_t*                output_hashes [[buffer(1)]],
-    device uint8_t*                scratchpad_buf [[buffer(2)]],
-    device const char*             npu_w1  [[buffer(3)]],
-    device const char*             npu_b1  [[buffer(4)]],
-    device const char*             npu_w2  [[buffer(5)]],
-    device const char*             npu_b2  [[buffer(6)]],
-    device const short*            npu_scale1 [[buffer(7)]],
-    device const short*            npu_scale2 [[buffer(8)]],
-    uint32_t thread_id [[thread_position_in_grid]]
-) {
-    uint64_t nonce = params.start_nonce + uint64_t(thread_id);
-    device uint8_t* my_pad = scratchpad_buf + uint64_t(thread_id) * METAL_SCRATCHPAD_BYTES;
-
-    uint8_t hash[32];
-    cosmic_harmony_ekam_deeksha_gpu(
-        params.header, int(params.header_len), nonce,
-        my_pad,
-        npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2,
-        hash
-    );
-
-    device uint8_t* dst = output_hashes + thread_id * 32;
-    for (int i = 0; i < 32; i++) dst[i] = hash[i];
 }
