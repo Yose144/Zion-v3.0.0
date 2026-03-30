@@ -24,6 +24,8 @@ const t = {
     philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
+    defi:       { cs: 'DeFi Hub',    en: 'DeFi Hub' },
+    defi_group: { cs: 'DeFi · L2',   en: 'DeFi · L2' },
   },
 
   /* ─── Hero ─── */
