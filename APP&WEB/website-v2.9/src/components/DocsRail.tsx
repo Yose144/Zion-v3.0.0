@@ -2,9 +2,16 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Book, Compass, Github, Route, ScrollText } from 'lucide-react';
+import { Book, Compass, FileText, Github, Route, ScrollText } from 'lucide-react';
 
 const resources = [
+  {
+    title: 'Whitepaper V3 Mainnet',
+    description: 'Clean V3 mainnet whitepaper in English: Ekam Deeksha v2, 144B tokenomics, L2 DeFi, and full L1-L6 stack.',
+    icon: FileText,
+    href: '/docs#wp-v3-mainnet',
+    accent: 'from-amber-500/20 to-zion-gold/10',
+  },
   {
     title: 'Current Docs',
     description: 'Opens at /docs#live-index with the current rehearsal topology, version matrix 2.9.6 / 2.9.8 / 2.9.9, miner setup, and launch blockers.',
@@ -60,7 +67,7 @@ export default function DocsRail() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
           {resources.map((resource, index) => (
             <motion.div
               key={resource.title}

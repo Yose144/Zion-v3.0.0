@@ -11,11 +11,11 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <GoldenEggHaraniagharba />
-      <HomeTreePortal />
+      <NewsFeed />
       <LiveDashboard />
       <Features />
-      <NewsFeed />
+      <GoldenEggHaraniagharba />
+      <HomeTreePortal />
       <RoadmapPulse />
       <DocsRail />
     </>
