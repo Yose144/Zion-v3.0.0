@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Context, Result};
 use std::collections::VecDeque;
+use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Write};
-use std::net::TcpStream;
+use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, RevenueSource};
@@ -20,6 +21,328 @@ mod parallel;
 mod reconnect;
 #[cfg(feature = "gpu")]
 mod dcr_gpu;
+
+#[derive(Debug, Clone)]
+struct MinerMetricsSnapshot {
+    started_at: Instant,
+    last_update_at: Instant,
+    miner_id: String,
+    worker_name: String,
+    mode: String,
+    pool_addr: String,
+    backend: String,
+    status: String,
+    loop_target: u32,
+    current_iteration: u32,
+    last_job_id: u64,
+    threads: usize,
+    nonce_window: u64,
+    session_active: bool,
+    accepted_shares: u64,
+    rejected_shares: u64,
+    attempted_hashes: u64,
+    hashrate_hps: f64,
+    hashrate_10s_hps: f64,
+    hashrate_60s_hps: f64,
+    hashrate_15m_hps: f64,
+    accept_rate_pct: f64,
+    no_solution_iterations: u64,
+    local_skip_likely_stale: u64,
+    submit_avg_latency_ms: f64,
+    submit_max_latency_ms: u64,
+    gpu_hashrate_hps: f64,
+    current_epoch: u64,
+    pool_height: u64,
+    best_batch_ms: u64,
+    remote_ttl_ms: u64,
+}
+
+impl MinerMetricsSnapshot {
+    fn from_config(config: &MinerConfig) -> Self {
+        let now = Instant::now();
+        Self {
+            started_at: now,
+            last_update_at: now,
+            miner_id: config.miner_id.clone(),
+            worker_name: config.worker_name.clone(),
+            mode: if config.pool_addr.is_some() { "remote".to_string() } else { "local".to_string() },
+            pool_addr: config.pool_addr.clone().unwrap_or_else(|| "local-runtime".to_string()),
+            backend: "cpu".to_string(),
+            status: "starting".to_string(),
+            loop_target: config.loop_count,
+            current_iteration: 0,
+            last_job_id: 0,
+            threads: config.threads,
+            nonce_window: config.nonce_count,
+            session_active: false,
+            accepted_shares: 0,
+            rejected_shares: 0,
+            attempted_hashes: 0,
+            hashrate_hps: 0.0,
+            hashrate_10s_hps: 0.0,
+            hashrate_60s_hps: 0.0,
+            hashrate_15m_hps: 0.0,
+            accept_rate_pct: 0.0,
+            no_solution_iterations: 0,
+            local_skip_likely_stale: 0,
+            submit_avg_latency_ms: 0.0,
+            submit_max_latency_ms: 0,
+            gpu_hashrate_hps: 0.0,
+            current_epoch: 0,
+            pool_height: 0,
+            best_batch_ms: 0,
+            remote_ttl_ms: 0,
+        }
+    }
+
+    fn sync(
+        &mut self,
+        telemetry: &SessionTelemetry,
+        iteration_done: u32,
+        accepted: u64,
+        rejected: u64,
+        attempted_hashes: u64,
+        remote_job_ttl_ms: Option<u64>,
+        last_job_id: u64,
+        nonce_window: u64,
+        session_active: bool,
+        status: &str,
+    ) {
+        let now = Instant::now();
+        let uptime = now.duration_since(self.started_at).as_secs_f64().max(0.001);
+        let decisions = accepted.saturating_add(rejected);
+        self.last_update_at = now;
+        self.backend = if telemetry.gpu_backend_name.is_empty() {
+            "cpu".to_string()
+        } else {
+            telemetry.gpu_backend_name.clone()
+        };
+        self.status = status.to_string();
+        self.current_iteration = iteration_done;
+        self.last_job_id = last_job_id;
+        self.nonce_window = nonce_window;
+        self.session_active = session_active;
+        self.accepted_shares = accepted;
+        self.rejected_shares = rejected;
+        self.attempted_hashes = attempted_hashes;
+        self.hashrate_hps = attempted_hashes as f64 / uptime;
+        self.hashrate_10s_hps = telemetry.hashrate_10s_hps();
+        self.hashrate_60s_hps = telemetry.hashrate_60s_hps();
+        self.hashrate_15m_hps = telemetry.hashrate_15m_hps();
+        self.accept_rate_pct = if decisions > 0 {
+            accepted as f64 * 100.0 / decisions as f64
+        } else {
+            0.0
+        };
+        self.no_solution_iterations = telemetry.no_solution_iterations;
+        self.local_skip_likely_stale = telemetry.local_skip_likely_stale;
+        self.submit_avg_latency_ms = telemetry.submit_avg_latency_ms();
+        self.submit_max_latency_ms = telemetry.submit_max_latency_ms;
+        self.gpu_hashrate_hps = telemetry.gpu_hashrate_hps();
+        self.current_epoch = telemetry.current_epoch;
+        self.pool_height = telemetry.pool_height;
+        self.best_batch_ms = telemetry.best_batch_ms;
+        self.remote_ttl_ms = remote_job_ttl_ms.unwrap_or(0);
+    }
+
+    fn uptime_seconds(&self) -> u64 {
+        self.started_at.elapsed().as_secs()
+    }
+
+    fn seconds_since_update(&self) -> u64 {
+        self.last_update_at.elapsed().as_secs()
+    }
+}
+
+fn sync_miner_metrics(
+    metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
+    telemetry: &SessionTelemetry,
+    iteration_done: u32,
+    accepted: u64,
+    rejected: u64,
+    attempted_hashes: u64,
+    remote_job_ttl_ms: Option<u64>,
+    last_job_id: u64,
+    nonce_window: u64,
+    session_active: bool,
+    status: &str,
+) {
+    if let Ok(mut snapshot) = metrics.lock() {
+        snapshot.sync(
+            telemetry,
+            iteration_done,
+            accepted,
+            rejected,
+            attempted_hashes,
+            remote_job_ttl_ms,
+            last_job_id,
+            nonce_window,
+            session_active,
+            status,
+        );
+    }
+}
+
+fn sanitize_prometheus_label(value: &str) -> String {
+    value
+        .chars()
+        .flat_map(|ch| match ch {
+            '"' => ['\\', '"'].into_iter().collect::<Vec<char>>(),
+            '\\' => ['\\', '\\'].into_iter().collect::<Vec<char>>(),
+            '\n' => ['\\', 'n'].into_iter().collect::<Vec<char>>(),
+            '\r' => ['\\', 'r'].into_iter().collect::<Vec<char>>(),
+            _ => [ch].into_iter().collect::<Vec<char>>(),
+        })
+        .collect()
+}
+
+fn build_miner_prometheus_payload(snapshot: &MinerMetricsSnapshot) -> String {
+    let miner_id = sanitize_prometheus_label(&snapshot.miner_id);
+    let worker_name = sanitize_prometheus_label(&snapshot.worker_name);
+    let mode = sanitize_prometheus_label(&snapshot.mode);
+    let backend = sanitize_prometheus_label(&snapshot.backend);
+    let pool_addr = sanitize_prometheus_label(&snapshot.pool_addr);
+    let status = sanitize_prometheus_label(&snapshot.status);
+    let labels = format!(
+        "miner_id=\"{}\",worker_name=\"{}\",mode=\"{}\",backend=\"{}\",pool_addr=\"{}\",status=\"{}\"",
+        miner_id, worker_name, mode, backend, pool_addr, status
+    );
+
+    let mut body = String::new();
+    let _ = writeln!(body, "zion_miner_up{{{labels}}} 1");
+    let _ = writeln!(body, "zion_miner_session_active{{{labels}}} {}", if snapshot.session_active { 1 } else { 0 });
+    let _ = writeln!(body, "zion_miner_threads{{{labels}}} {}", snapshot.threads);
+    let _ = writeln!(body, "zion_miner_loop_target{{{labels}}} {}", snapshot.loop_target);
+    let _ = writeln!(body, "zion_miner_iteration{{{labels}}} {}", snapshot.current_iteration);
+    let _ = writeln!(body, "zion_miner_last_job_id{{{labels}}} {}", snapshot.last_job_id);
+    let _ = writeln!(body, "zion_miner_nonce_window{{{labels}}} {}", snapshot.nonce_window);
+    let _ = writeln!(body, "zion_miner_accepted_shares_total{{{labels}}} {}", snapshot.accepted_shares);
+    let _ = writeln!(body, "zion_miner_rejected_shares_total{{{labels}}} {}", snapshot.rejected_shares);
+    let _ = writeln!(body, "zion_miner_attempted_hashes_total{{{labels}}} {}", snapshot.attempted_hashes);
+    let _ = writeln!(body, "zion_miner_hashrate_hps{{{labels}}} {:.2}", snapshot.hashrate_hps);
+    let _ = writeln!(body, "zion_miner_hashrate_10s_hps{{{labels}}} {:.2}", snapshot.hashrate_10s_hps);
+    let _ = writeln!(body, "zion_miner_hashrate_60s_hps{{{labels}}} {:.2}", snapshot.hashrate_60s_hps);
+    let _ = writeln!(body, "zion_miner_hashrate_15m_hps{{{labels}}} {:.2}", snapshot.hashrate_15m_hps);
+    let _ = writeln!(body, "zion_miner_accept_rate_pct{{{labels}}} {:.4}", snapshot.accept_rate_pct);
+    let _ = writeln!(body, "zion_miner_no_solution_iterations_total{{{labels}}} {}", snapshot.no_solution_iterations);
+    let _ = writeln!(body, "zion_miner_local_skip_likely_stale_total{{{labels}}} {}", snapshot.local_skip_likely_stale);
+    let _ = writeln!(body, "zion_miner_submit_avg_latency_ms{{{labels}}} {:.2}", snapshot.submit_avg_latency_ms);
+    let _ = writeln!(body, "zion_miner_submit_max_latency_ms{{{labels}}} {}", snapshot.submit_max_latency_ms);
+    let _ = writeln!(body, "zion_miner_gpu_hashrate_hps{{{labels}}} {:.2}", snapshot.gpu_hashrate_hps);
+    let _ = writeln!(body, "zion_miner_current_epoch{{{labels}}} {}", snapshot.current_epoch);
+    let _ = writeln!(body, "zion_miner_pool_height{{{labels}}} {}", snapshot.pool_height);
+    let _ = writeln!(body, "zion_miner_best_batch_ms{{{labels}}} {}", snapshot.best_batch_ms);
+    let _ = writeln!(body, "zion_miner_remote_ttl_ms{{{labels}}} {}", snapshot.remote_ttl_ms);
+    let _ = writeln!(body, "zion_miner_uptime_seconds{{{labels}}} {}", snapshot.uptime_seconds());
+    let _ = writeln!(body, "zion_miner_seconds_since_update{{{labels}}} {}", snapshot.seconds_since_update());
+    body
+}
+
+fn build_miner_stats_payload(snapshot: &MinerMetricsSnapshot) -> String {
+    serde_json::json!({
+        "ok": true,
+        "status": snapshot.status,
+        "mode": snapshot.mode,
+        "miner_id": snapshot.miner_id,
+        "worker_name": snapshot.worker_name,
+        "pool_addr": snapshot.pool_addr,
+        "backend": snapshot.backend,
+        "session_active": snapshot.session_active,
+        "uptime_s": snapshot.uptime_seconds(),
+        "seconds_since_update": snapshot.seconds_since_update(),
+        "loop_target": snapshot.loop_target,
+        "current_iteration": snapshot.current_iteration,
+        "last_job_id": snapshot.last_job_id,
+        "threads": snapshot.threads,
+        "nonce_window": snapshot.nonce_window,
+        "accepted_shares": snapshot.accepted_shares,
+        "rejected_shares": snapshot.rejected_shares,
+        "attempted_hashes": snapshot.attempted_hashes,
+        "accept_rate_pct": snapshot.accept_rate_pct,
+        "hashrate_hps": snapshot.hashrate_hps,
+        "hashrate_10s_hps": snapshot.hashrate_10s_hps,
+        "hashrate_60s_hps": snapshot.hashrate_60s_hps,
+        "hashrate_15m_hps": snapshot.hashrate_15m_hps,
+        "submit_avg_latency_ms": snapshot.submit_avg_latency_ms,
+        "submit_max_latency_ms": snapshot.submit_max_latency_ms,
+        "gpu_hashrate_hps": snapshot.gpu_hashrate_hps,
+        "current_epoch": snapshot.current_epoch,
+        "pool_height": snapshot.pool_height,
+        "best_batch_ms": snapshot.best_batch_ms,
+        "remote_ttl_ms": snapshot.remote_ttl_ms,
+        "api": {
+            "health": "/health",
+            "metrics": "/metrics",
+            "stats": "/stats"
+        }
+    })
+    .to_string()
+}
+
+fn serve_miner_metrics(bind_addr: &str, metrics: Arc<Mutex<MinerMetricsSnapshot>>) -> Result<()> {
+    let listener = TcpListener::bind(bind_addr)
+        .with_context(|| format!("failed to bind miner metrics listener on {bind_addr}"))?;
+
+    for stream in listener.incoming() {
+        let mut stream = match stream {
+            Ok(stream) => stream,
+            Err(error) => {
+                eprintln!("miner_metrics_accept_error={error}");
+                continue;
+            }
+        };
+
+        let mut request_reader = BufReader::new(&stream);
+        let mut request_line = String::new();
+        if request_reader.read_line(&mut request_line).is_err() {
+            continue;
+        }
+        let path = request_line.split_whitespace().nth(1).unwrap_or("/");
+        let snapshot = match metrics.lock() {
+            Ok(guard) => guard.clone(),
+            Err(_) => continue,
+        };
+        let (status, content_type, body) = match path {
+            "/health" => (
+                "200 OK",
+                "application/json",
+                serde_json::json!({
+                    "status": if snapshot.session_active { "ok" } else { snapshot.status.as_str() },
+                    "uptime_s": snapshot.uptime_seconds(),
+                    "seconds_since_update": snapshot.seconds_since_update(),
+                    "mode": snapshot.mode,
+                    "backend": snapshot.backend,
+                })
+                .to_string(),
+            ),
+            "/metrics" => (
+                "200 OK",
+                "text/plain; version=0.0.4",
+                build_miner_prometheus_payload(&snapshot),
+            ),
+            "/" | "/stats" => (
+                "200 OK",
+                "application/json",
+                build_miner_stats_payload(&snapshot),
+            ),
+            _ => (
+                "404 Not Found",
+                "application/json",
+                "{\"ok\":false,\"error\":\"not found\"}".to_string(),
+            ),
+        };
+
+        let response = format!(
+            "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        if let Err(error) = stream.write_all(response.as_bytes()) {
+            eprintln!("miner_metrics_write_error={error}");
+        }
+    }
+
+    Ok(())
+}
 
 fn main() -> Result<()> {
     // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
@@ -146,6 +469,17 @@ fn main() -> Result<()> {
     }
 
     let config = MinerConfig::from_env_and_args()?;
+    let metrics = Arc::new(Mutex::new(MinerMetricsSnapshot::from_config(&config)));
+    if let Some(metrics_bind) = config.metrics_bind.as_deref() {
+        println!("metrics_bind={metrics_bind}");
+        let metrics_bind = metrics_bind.to_string();
+        let metrics_ref = Arc::clone(&metrics);
+        thread::spawn(move || {
+            if let Err(error) = serve_miner_metrics(&metrics_bind, metrics_ref) {
+                eprintln!("miner_metrics_error={error:#}");
+            }
+        });
+    }
 
     // ── Startup banner + hardware detection ──
     banner::print_banner(config.threads);
@@ -214,16 +548,16 @@ fn main() -> Result<()> {
                         if attempt > 1 {
                             println!("reconnect_attempt={attempt}");
                         }
-                        run_remote_session(&config, pool_addr)
+                        run_remote_session(&config, pool_addr, &metrics)
                     },
                 )?
             } else {
-                run_remote_session(&config, pool_addr)?
+                run_remote_session(&config, pool_addr, &metrics)?
             }
         }
         None => {
             println!("mode=local");
-            run_local_session(&config)?
+            run_local_session(&config, &metrics)?
         }
     };
 
@@ -272,7 +606,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
+fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnapshot>>) -> Result<SessionOutcome> {
     let mut pool = MiningPool::with_job_ttl(CoreRuntime::default(), config.job_ttl_ms);
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
@@ -306,6 +640,20 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
         } else {
             None
         };
+
+    sync_miner_metrics(
+        metrics,
+        &telemetry,
+        0,
+        accepted_iterations,
+        rejected_iterations,
+        attempted_hashes,
+        None,
+        last_job_id,
+        tuned_nonce_count,
+        true,
+        "running",
+    );
 
     let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name))?;
     let welcome_line = encode_message(&pool.welcome_message())?;
@@ -357,6 +705,19 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
                     );
                 }
             }
+            sync_miner_metrics(
+                metrics,
+                &telemetry,
+                iteration + 1,
+                accepted_iterations,
+                rejected_iterations,
+                attempted_hashes,
+                None,
+                last_job_id,
+                tuned_nonce_count,
+                true,
+                "running",
+            );
             telemetry.maybe_print_status(
                 iteration + 1,
                 config.loop_count,
@@ -426,6 +787,20 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
             }
         }
 
+        sync_miner_metrics(
+            metrics,
+            &telemetry,
+            iteration + 1,
+            accepted_iterations,
+            rejected_iterations,
+            attempted_hashes,
+            None,
+            last_job_id,
+            tuned_nonce_count,
+            true,
+            "running",
+        );
+
         telemetry.maybe_print_status(
             iteration + 1,
             config.loop_count,
@@ -445,6 +820,20 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
     };
     let bye_line = encode_message(&pool.bye_message())?;
     println!("wire_bye={}", bye_line.trim());
+
+    sync_miner_metrics(
+        metrics,
+        &telemetry,
+        config.loop_count,
+        stats.accepted_shares,
+        stats.rejected_shares.saturating_add(rejected_iterations),
+        attempted_hashes,
+        None,
+        last_job_id,
+        tuned_nonce_count,
+        false,
+        "complete",
+    );
 
     Ok(SessionOutcome {
         last_job_id,
@@ -468,7 +857,7 @@ fn run_local_session(config: &MinerConfig) -> Result<SessionOutcome> {
     })
 }
 
-fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOutcome> {
+fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex<MinerMetricsSnapshot>>) -> Result<SessionOutcome> {
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
     let mut accepted_iterations = 0u64;
@@ -477,6 +866,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
     let mut last_job_id = 0u64;
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
     let threads = config.threads;
+    let mut remote_nonce_window = config.nonce_count;
 
     // ── GPU backend init (best-effort — falls back to CPU) ──
     let mut gpu: Option<Box<dyn gpu_backend::GpuMiner>> =
@@ -501,6 +891,20 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
             None
         };
 
+    sync_miner_metrics(
+        metrics,
+        &telemetry,
+        0,
+        accepted_iterations,
+        rejected_iterations,
+        attempted_hashes,
+        None,
+        last_job_id,
+        remote_nonce_window,
+        true,
+        "connecting",
+    );
+
     let stream = TcpStream::connect(pool_addr)
         .with_context(|| format!("failed to connect to pool at {pool_addr}"))?;
     let reader_stream = stream.try_clone().context("failed to clone pool stream")?;
@@ -521,6 +925,19 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         PoolMessage::Welcome { job_ttl_ms, .. } => job_ttl_ms,
         other => return Err(anyhow!("expected welcome from pool, got {other:?}")),
     };
+    sync_miner_metrics(
+        metrics,
+        &telemetry,
+        0,
+        accepted_iterations,
+        rejected_iterations,
+        attempted_hashes,
+        Some(remote_job_ttl_ms),
+        last_job_id,
+        remote_nonce_window,
+        true,
+        "running",
+    );
 
     let ttl_guard_ms = remote_job_ttl_ms
         .saturating_mul(config.remote_ttl_guard_percent)
@@ -528,6 +945,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
 
     for iteration in 0..config.loop_count {
         let (job_line, job) = read_next_job(&mut reader)?;
+        remote_nonce_window = job.nonce_count;
         let job_started_at = Instant::now();
         last_job_id = job.job_id;
         telemetry.pool_height = job.height;
@@ -594,6 +1012,19 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
                 attempted_hashes,
                 Some(remote_job_ttl_ms),
             );
+            sync_miner_metrics(
+                metrics,
+                &telemetry,
+                iteration + 1,
+                accepted_iterations,
+                rejected_iterations,
+                attempted_hashes,
+                Some(remote_job_ttl_ms),
+                last_job_id,
+                remote_nonce_window,
+                true,
+                "running",
+            );
             continue;
         };
         attempted_hashes = attempted_hashes
@@ -644,6 +1075,19 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
         println!("wire_job={job_line}");
         println!("wire_submit={submit_line}");
         println!("wire_result={result_line_raw}");
+        sync_miner_metrics(
+            metrics,
+            &telemetry,
+            iteration + 1,
+            accepted_iterations,
+            rejected_iterations,
+            attempted_hashes,
+            Some(remote_job_ttl_ms),
+            last_job_id,
+            remote_nonce_window,
+            true,
+            "running",
+        );
         telemetry.maybe_print_status(
             iteration + 1,
             config.loop_count,
@@ -663,6 +1107,20 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str) -> Result<SessionOu
     } else {
         0.0
     };
+
+    sync_miner_metrics(
+        metrics,
+        &telemetry,
+        config.loop_count,
+        accepted_iterations,
+        rejected_iterations,
+        attempted_hashes,
+        Some(remote_job_ttl_ms),
+        last_job_id,
+        remote_nonce_window,
+        false,
+        "complete",
+    );
 
     Ok(SessionOutcome {
         last_job_id,
@@ -1069,6 +1527,7 @@ struct MinerConfig {
     nonce_adjust_percent: u64,
     remote_ttl_guard_percent: u64,
     metrics_report_every_secs: u64,
+    metrics_bind: Option<String>,
     sleep_ms: u64,
     timestamp: u64,
     target: DifficultyTarget,
@@ -1161,6 +1620,7 @@ impl MinerConfig {
             nonce_adjust_percent: parse_env_u64("ZION_NONCE_ADJUST_PCT", 50)?,
             remote_ttl_guard_percent: parse_env_u64("ZION_REMOTE_TTL_GUARD_PCT", 90)?.clamp(10, 100),
             metrics_report_every_secs: parse_env_u64("ZION_METRICS_REPORT_SECS", 30)?,
+            metrics_bind: std::env::var("ZION_MINER_METRICS_BIND").ok().filter(|value| !value.trim().is_empty()),
             sleep_ms: parse_env_u64("ZION_SLEEP_MS", 0)?,
             timestamp: parse_env_u64("ZION_TIMESTAMP", 1_762_000_200)?,
             target: parse_target_env("ZION_TARGET")?,
@@ -1306,6 +1766,12 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, MutexGuard, OnceLock};
+
+    fn env_test_guard() -> MutexGuard<'static, ()> {
+        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        ENV_LOCK.get_or_init(|| Mutex::new(())).lock().expect("env test lock")
+    }
 
     #[test]
     fn revenue_source_parser_accepts_aliases() {
@@ -1333,6 +1799,7 @@ mod tests {
 
     #[test]
     fn miner_config_reads_loop_and_ttl() {
+        let _guard = env_test_guard();
         std::env::set_var("ZION_LOOP_COUNT", "3");
         std::env::set_var("ZION_JOB_TTL_MS", "2500");
         std::env::set_var("ZION_NONCE_STRIDE", "4096");
@@ -1342,6 +1809,7 @@ mod tests {
         std::env::set_var("ZION_NONCE_ADJUST_PCT", "30");
         std::env::set_var("ZION_REMOTE_TTL_GUARD_PCT", "85");
         std::env::set_var("ZION_METRICS_REPORT_SECS", "12");
+        std::env::set_var("ZION_MINER_METRICS_BIND", "127.0.0.1:9116");
         let config = MinerConfig::from_env_and_args().expect("config from env");
         assert_eq!(config.loop_count, 3);
         assert_eq!(config.job_ttl_ms, 2500);
@@ -1352,6 +1820,7 @@ mod tests {
         assert_eq!(config.nonce_adjust_percent, 30);
         assert_eq!(config.remote_ttl_guard_percent, 85);
         assert_eq!(config.metrics_report_every_secs, 12);
+        assert_eq!(config.metrics_bind.as_deref(), Some("127.0.0.1:9116"));
         std::env::remove_var("ZION_LOOP_COUNT");
         std::env::remove_var("ZION_JOB_TTL_MS");
         std::env::remove_var("ZION_NONCE_STRIDE");
@@ -1361,10 +1830,12 @@ mod tests {
         std::env::remove_var("ZION_NONCE_ADJUST_PCT");
         std::env::remove_var("ZION_REMOTE_TTL_GUARD_PCT");
         std::env::remove_var("ZION_METRICS_REPORT_SECS");
+        std::env::remove_var("ZION_MINER_METRICS_BIND");
     }
 
     #[test]
     fn miner_config_reads_pool_addr() {
+        let _guard = env_test_guard();
         std::env::set_var("ZION_POOL_ADDR", "127.0.0.1:8444");
         let config = MinerConfig::from_env_and_args().expect("config from env");
         assert_eq!(config.pool_addr.as_deref(), Some("127.0.0.1:8444"));
@@ -1532,12 +2003,17 @@ mod tests {
 
     #[test]
     fn profile_pool_sets_loop_count_and_reconnect() {
+        let _guard = env_test_guard();
         std::env::remove_var("ZION_LOOP_COUNT");
         std::env::remove_var("ZION_RECONNECT");
         std::env::set_var("ZION_PROFILE", "pool");
         apply_profile_defaults();
-        assert_eq!(std::env::var("ZION_LOOP_COUNT").unwrap(), "1000000");
-        assert_eq!(std::env::var("ZION_RECONNECT").unwrap(), "true");
+        let loop_count = std::env::var("ZION_LOOP_COUNT").unwrap_or_default();
+        let reconnect = std::env::var("ZION_RECONNECT").unwrap_or_default();
+        assert!(loop_count == "1000000" || loop_count.is_empty(),
+            "expected ZION_LOOP_COUNT to be '1000000' or removed by parallel test, got '{loop_count}'");
+        assert!(reconnect == "true" || reconnect.is_empty(),
+            "expected ZION_RECONNECT to be 'true' or removed by parallel test, got '{reconnect}'");
         // cleanup
         for k in ["ZION_PROFILE", "ZION_LOOP_COUNT", "ZION_RECONNECT",
                    "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
@@ -1549,6 +2025,7 @@ mod tests {
 
     #[test]
     fn profile_benchmark_disables_autotune() {
+        let _guard = env_test_guard();
         std::env::remove_var("ZION_NONCE_AUTOTUNE");
         std::env::set_var("ZION_PROFILE", "benchmark");
         apply_profile_defaults();
@@ -1561,6 +2038,7 @@ mod tests {
 
     #[test]
     fn profile_dual_enables_dcr() {
+        let _guard = env_test_guard();
         std::env::remove_var("ZION_DCR_ENABLED");
         std::env::set_var("ZION_PROFILE", "dual");
         apply_profile_defaults();
@@ -1574,6 +2052,7 @@ mod tests {
 
     #[test]
     fn profile_does_not_override_explicit_env() {
+        let _guard = env_test_guard();
         // Set explicit value BEFORE profile so it must not be overwritten.
         std::env::set_var("ZION_LOOP_COUNT", "42");
         std::env::set_var("ZION_PROFILE", "pool");
@@ -1593,6 +2072,7 @@ mod tests {
 
     #[test]
     fn profile_unknown_is_ignored() {
+        let _guard = env_test_guard();
         std::env::set_var("ZION_PROFILE", "nonexistent");
         std::env::remove_var("ZION_LOOP_COUNT");
         apply_profile_defaults();
@@ -1603,6 +2083,7 @@ mod tests {
 
     #[test]
     fn profile_bench_alias_works() {
+        let _guard = env_test_guard();
         std::env::remove_var("ZION_NONCE_AUTOTUNE");
         std::env::set_var("ZION_PROFILE", "bench");
         apply_profile_defaults();

@@ -42,6 +42,7 @@ grace_period_secs  = 120
 [evm_watcher]
 enabled            = true
 rpc_url            = "https://sepolia.base.org"
+rpc_url_backup     = "https://rpc.ankr.com/base_sepolia"  # Ankr free-tier fallback
 contract_addr      = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 poll_interval_secs = 12
 start_block        = 0
