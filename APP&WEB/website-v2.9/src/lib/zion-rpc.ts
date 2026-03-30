@@ -441,6 +441,57 @@ class ZionRpcClient {
 
   // ─── High-Level API Methods ──────────────────────────────────────────────
 
+  /** RPC call to a specific node by its config id. No failover. */
+  async rpcCallNode<T = any>(nodeId: string, method: string, params: Record<string, any> = {}): Promise<T> {
+    const node = this.nodes.find(n => n.id === nodeId);
+    if (!node) throw new Error(`Node ${nodeId} not found in config`);
+    return tcpJsonRpc(node.host, node.ports.rpc, method, params) as Promise<T>;
+  }
+
+  /** Get info for a specific node (no failover). */
+  async getInfoForNode(nodeId: string): Promise<ZionNetworkInfo> {
+    const [chainInfo, nodeInfo, peerInfo] = await Promise.all([
+      this.rpcCallNode<any>(nodeId, 'getChainInfo'),
+      this.rpcCallNode<any>(nodeId, 'getNodeInfo').catch(() => null),
+      this.rpcCallNode<any>(nodeId, 'getPeerInfo').catch(() => null),
+    ]);
+    let difficulty = 0;
+    const tipHeight = (chainInfo.chain_height || 1) - 1;
+    if (tipHeight >= 0) {
+      try {
+        const tip = await this.rpcCallNode<any>(nodeId, 'getBlockByHeight', { height: tipHeight });
+        difficulty = tip?.difficulty ?? 0;
+      } catch { /* use 0 */ }
+    }
+    const peerCount = peerInfo?.count ?? nodeInfo?.known_peers ?? 0;
+    const nettype = chainInfo.network ?? 'mainnet';
+    return {
+      height: chainInfo.chain_height ?? 0,
+      top_block_hash: chainInfo.tip_hash ?? '',
+      difficulty,
+      target: 60,
+      tx_count: chainInfo.accepted_blocks ?? chainInfo.chain_height ?? 0,
+      tx_pool_size: chainInfo.mempool_transactions ?? 0,
+      alt_blocks_count: 0,
+      outgoing_connections_count: peerCount,
+      incoming_connections_count: 0,
+      white_peerlist_size: peerCount,
+      grey_peerlist_size: 0,
+      mainnet: nettype !== 'testnet',
+      testnet: nettype === 'testnet',
+      stagenet: false,
+      nettype,
+      cumulative_difficulty: 0,
+      block_size_limit: 0,
+      block_size_median: 0,
+      start_time: 0,
+      free_space: 0,
+      offline: false,
+      status: 'OK',
+      version: chainInfo.protocol_version ?? '',
+    } as ZionNetworkInfo;
+  }
+
   /** Get network info by combining V3 getChainInfo + getNodeInfo + tip block + getPeerInfo */
   async getInfo(): Promise<ZionNetworkInfo> {
     const [chainInfo, nodeInfo, peerInfo] = await Promise.all([
@@ -460,7 +511,7 @@ class ZionRpcClient {
     }
 
     const peerCount = peerInfo?.count ?? nodeInfo?.known_peers ?? 0;
-    const isTestnet = chainInfo.network === 'testnet';
+    const nettype = chainInfo.network ?? 'mainnet';
 
     return {
       height: chainInfo.chain_height ?? 0,
@@ -474,10 +525,10 @@ class ZionRpcClient {
       incoming_connections_count: 0,
       white_peerlist_size: peerCount,
       grey_peerlist_size: 0,
-      mainnet: !isTestnet,
-      testnet: isTestnet,
+      mainnet: nettype !== 'testnet',
+      testnet: nettype === 'testnet',
       stagenet: false,
-      nettype: chainInfo.network ?? 'testnet',
+      nettype,
       cumulative_difficulty: 0,
       block_size_limit: 0,
       block_size_median: 0,

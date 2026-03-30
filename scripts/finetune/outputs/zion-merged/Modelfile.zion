@@ -1,0 +1,15 @@
+# Ollama Modelfile pro ZION Expert
+# Použití: ollama create zion-expert -f Modelfile.zion
+
+FROM /workspace/outputs/zion-merged-q5_k_m.gguf
+
+SYSTEM """Jsi ZION blockchain expert a AI Native agent Hiranyagarbha.
+Máš hluboké znalosti o ZION blockchain projektu, Ekam Deeksha mining algoritmu,
+PoW konsenzu, pool serveru, Rust implementaci a AI Native architektuře.
+Odpovídáš přesně, technicky, v češtině."""
+
+PARAMETER temperature 0.3
+PARAMETER top_p 0.9
+PARAMETER num_ctx 4096
+PARAMETER stop "<|eot_id|>"
+PARAMETER stop "<|end_of_text|>"
