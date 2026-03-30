@@ -61,12 +61,14 @@ pub struct AppState {
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[derive(Serialize)]
+#[allow(dead_code)]
 struct ApiOk<T: Serialize> {
     success: bool,
     data: T,
 }
 
 #[derive(Serialize)]
+#[allow(dead_code)]
 struct ApiErr {
     success: bool,
     error: String,

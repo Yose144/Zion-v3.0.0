@@ -47,6 +47,7 @@ struct RpcResponse<T> {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct BlockInfo {
     height: u64,
     #[serde(default)]
@@ -69,6 +70,7 @@ struct UtxoInput {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct TxOutput {
     address: String,
     #[serde(default)]
