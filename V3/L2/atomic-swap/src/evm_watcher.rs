@@ -33,7 +33,7 @@ use tracing::{debug, error, info, warn};
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvmWatcherConfig {
     #[serde(default)]
     pub enabled: bool,
