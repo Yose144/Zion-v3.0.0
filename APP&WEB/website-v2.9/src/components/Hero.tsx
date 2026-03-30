@@ -152,13 +152,14 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-white">{tr('hero', 'teaser_title', lang)}</span>
+                      <span className="text-sm font-bold text-white">Live test network, not a concept mockup</span>
                     <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-semibold">
-                        {tr('hero', 'teaser_badge', lang)}
+                        Active
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    {tr('hero', 'teaser_body', lang)}
+                    Network status, explorer, pool, downloads, and documentation — all in one place.
+                      This homepage is a public rehearsal entry point, not a production launch announcement.
                   </p>
                 </div>
                 <a
@@ -272,7 +273,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · {tr('hero', 'version_pill_rehearsal', lang)}
+                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 3-node rehearsal · Prague + USA + Singapore
                 </span>
               </div>
             </div>

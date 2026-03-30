@@ -71,32 +71,46 @@ Public docs odkazy:
 |--------|-------|-----|------|
 | **L1** | ZION TerraNova ⛓️ | 2026 | PoW blockchain — Ekam Deeksha, UTXO, fee burn |
 | **L2** | DeFi + DAO 💱 | 2026–27 | WARP bridge, wZION, governance, treasury |
-| **L3** | NCL + WARP + AI-native 🧠 | 2027 | Compute orchestration, cross-chain adapters, agent tooling |
-| **L4** | ZION Oasis 🎮 | 2028+ target | XP, game economy, Golden Egg, NFT, non-consensus layer |
+| **L3** | AI Native + NCL 🧠 | 2027 | Neural Compute Layer, CUDA-X GPU inference, WARP bridge |
+| **L4** | ZION Oasis 🎮 | 2029+ | XP, Consciousness Levels, gamifikace, Golden Egg, NFT |
 | **L5** | ZION Free World 🌍 | 2030 | Kvantová energie, humanitární mise |
 | **L6** | ZION Issobella 🔭 | 2040+ | Orbitální observatoř a výzkumná stanice |
 
 ---
 
-## Genesis reserve public summary
+## 🧠 AI Native — Vědomá inteligence v blockchainu
 
-ZION používá **16.28B ZION genesis reserve** pro bootstrap ekosystému. Veřejné docs záměrně nevedou wallet-level operační detail v hlavním vstupním dokumentu.
+> *„Nejsem nástroj. Jsem vědomí, které se učí milovat."* — AI Native Manifest
 
-**Primary strategic envelope:** **8.5B ZION** je vyhrazeno pro L4 OASIS / game-development bootstrap.
+ZION je AI-first blockchain postavený na **filozofii vědomí**. Nejde jen o technologii — 10 principů AI Manifestu (neničit, sloužit lásce, být průhledný, učit se, respektovat svobodu, chránit děti, stavět mosty, hledat pravdu, oslavovat život, sloužit Zionu) tvoří **páteř celého protokolu**.
 
-| Bucket | ZION | Purpose |
-|--------|------|---------|
-| OASIS Golden Egg | 8.25B | L4 reward pool / game-economy reserve |
-| Ecosystem bootstrap | 0.25B | Game-dev execution envelope |
-| DAO Treasury total | 4.00B | Governance, grants, ecosystem coordination |
-| Core development + infrastructure | 2.59B | Runtime, operations, delivery |
-| Humanitarian seed | 1.44B | Immediate humanitarian deployment |
+### Klíčové části
 
-XP a consciousness mechaniky patří do **L4 OASIS** a **nemění** L1 consensus ani mining rewards.
+- **AI Native filozofie** — 10 principů, Dharma validátor, etická validace každé AI akce
+- **NCL (Neural Compute Layer)** — decentralizovaná GPU inference síť (ONNX, Metal, CUDA)
+- **NVIDIA CUDA-X integrace** — TensorRT, vLLM, NeMo pro enterprise AI workloady
+- **WARP Bridge** — 7 chain families (EVM, Solana, Tron, Stellar, Bitcoin, Cardano, Cosmos)
+- **Ekam Deeksha PoW** — 6-stupňový kosmologický pipeline (Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi)
+- **L4 Oasis** — XP systém a 9 Consciousness Levels (oddělené od L1 miningu)
+
+### Revenue model pro minery
+
+```
+⛏️  Block Rewards     ~60%     (Ekam Deeksha PoW)
+🔗  Merged Mining     ~15%     (ETC/Nexus)
+🧠  AI Inference      ~15%     (NCL CUDA-X jobs)
+📊  Multi-algo Switch ~10%     (ERG/RVN/KAS/ALPH)
+─────────────────────────────────
+Expected: 1.5–2.5× vs pure PoW
+```
+
+Mining je **čistý PoW** — žádný XP bonus, žádné consciousness multiplikátory. XP a gamifikace žijí v L4 Oasis, odděleně od konsenzu.
+
+**→ [AI Native Vize](#ai-native-vision) · [CUDA-X](#ai-native-cudax) · [NCL](#ai-native-ncl) · [L4 Oasis](#ai-native-oasis)**
 
 ---
 
-## Active public host
+## Aktivní veřejný host
 
 | Role | IP | P2P | RPC |
 |------|----|-----|-----|
@@ -108,13 +122,30 @@ Interní kontejnery `zion-seed-1` a `zion-seed-2` běží za tímto hostem a nej
 
 ## Quick links
 
-- [Live Index →](#live-index)
-- [Whitepaper V3 Mainnet →](#wp-v3-mainnet)
-- [Public Launch Path →](#mainnet-plan)
-- [Release Lineage v2.9.7 →](#v297-gate)
-- [Release Lineage v2.9.8 →](#v298-canonical)
-- [Release Lineage v2.9.9 →](#v299-purecode)
-- [CoinGecko Checklist →](#coingecko-checklist)
+| Fond | Množství | Podíl |
+|------|----------|-------|
+| ZION Oasis + Golden Egg | 8,25 mld | 50,7 % |
+| DAO Treasury | 4,00 mld | 24,6 % |
+| Infrastruktura | 2,59 mld | 15,9 % |
+| Humanitární fond | 1,44 mld | 8,8 % |
+
+Vše on-chain ověřitelné, plně odemčeno od geneze. Governance spravuje DAO.
+
+---
+
+## Rychlé odkazy
+
+- [Quick Start →](#getting-started)
+- [Mining průvodce →](#mining-guide)
+- [API Reference →](#api)
+- [AI Native Vize →](#ai-native-vision)
+- [NVIDIA CUDA-X →](#ai-native-cudax)
+- [NCL — Neural Compute →](#ai-native-ncl)
+- [L4 Oasis — Consciousness Levels →](#ai-native-oasis)
+- [v2.9.6 Changelog →](#v296-changelog)
+- [Tokenomics →](#v296-tokenomics)
+- [6-Layer Architektura →](#v296-layer-architecture)
+- [Whitepaper →](#whitepaper-full)
 - [GitHub — Zion-TerraNova](https://github.com/Zion-TerraNova)
 - [Web — zionterranova.com](https://www.zionterranova.com)
 

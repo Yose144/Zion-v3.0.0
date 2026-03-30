@@ -6,15 +6,8 @@ import { useLang } from '@/contexts/LanguageContext';
 
 const getResources = (cs: boolean) => [
   {
-    title: cs ? 'Whitepaper V3 mainnetu' : 'Whitepaper V3 Mainnet',
-    description: cs ? 'Cisty whitepaper pro V3 mainnet v anglictine: Ekam Deeksha v2, tokenomika 144B, L2 DeFi a plny L1-L6 stack.' : 'Clean V3 mainnet whitepaper in English: Ekam Deeksha v2, 144B tokenomics, L2 DeFi, and full L1-L6 stack.',
-    icon: FileText,
-    href: '/docs#wp-v3-mainnet',
-    accent: 'from-amber-500/20 to-zion-gold/10',
-  },
-  {
-    title: cs ? 'Aktualni dokumentace' : 'Current Docs',
-    description: cs ? 'Otevre /docs#live-index s aktualni rehearsal topologii, matici verzi 2.9.6 / 2.9.8 / 2.9.9, nastavenim minera a launch blokery.' : 'Opens at /docs#live-index with the current rehearsal topology, version matrix 2.9.6 / 2.9.8 / 2.9.9, miner setup, and launch blockers.',
+    title: 'Current Docs',
+    description: 'Opens at /docs#live-index with the current rehearsal topology, version matrix 2.9.6 / 2.9.8 / 2.9.9, miner setup, and launch blockers.',
     icon: Book,
     href: '/docs#live-index',
     accent: 'from-zion-gold/20 to-zion-purple/10',
@@ -37,8 +30,8 @@ const getResources = (cs: boolean) => [
 
 const getCtas = (cs: boolean) => [
   {
-    title: cs ? 'Roadmapa -> gate verejneho launchu' : 'Roadmap -> Public Launch Gate',
-    description: cs ? 'Zamerena cesta od kontrolovane verejne linie 2.9.9 a kanonicke runtime 2.9.8 k closure reportum, genesis artefaktum a launch sekvenci.' : 'Focused path from the controlled 2.9.9 public line and 2.9.8 canonical runtime to closure reports, genesis artifacts, and launch sequencing.',
+    title: 'Roadmap → Public Launch Gate',
+    description: 'Focused path from the controlled 2.9.9 public line and 2.9.8 canonical runtime to closure reports, genesis artifacts, and launch sequencing.',
     icon: Route,
     href: '/roadmap',
   },
@@ -67,7 +60,7 @@ export default function DocsRail() {
             </h2>
           </div>
           <p className="text-gray-300 max-w-2xl">
-            {cs ? 'Vse, co potrebujete k inspekci aktualni rehearsal site: dokumentace, tezebni nastroje, explorer a zdrojovy kod.' : 'Everything you need to inspect the current rehearsal network: documentation, mining tools, explorer, and source code.'}
+            Everything you need to inspect the current rehearsal network: documentation, mining tools, explorer, and source code.
           </p>
         </div>
 

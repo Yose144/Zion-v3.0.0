@@ -25,7 +25,73 @@ const getDesktopAgentFeatures = (cs: boolean) => [
 
 const getSteps = (cs: boolean) => [
   {
-    title: cs ? '1. Vytvor penezenku' : '1. Create Wallet',
+    name: 'Miner',
+    id: 'miner',
+    desc: 'CPU/GPU miner with Cosmic Harmony v3 — connect to pool and start earning ZION',
+    icon: <Zap className="h-6 w-6" />,
+    prefix: 'zion-miner',
+    color: 'text-zion-gold',
+    quickCmd: `zion-miner --pool stratum+tcp://${SITE_POOL_PRIMARY} --wallet YOUR_ADDRESS`,
+  },
+  {
+    name: 'Wallet',
+    id: 'wallet',
+    desc: 'Generate wallets, check balance, send transactions — Ed25519 + BIP39 mnemonic',
+    icon: <Wallet className="h-6 w-6" />,
+    prefix: 'zion-wallet',
+    color: 'text-zion-cyan',
+    quickCmd: 'zion-wallet gen-mnemonic --out my-wallet.json --print',
+  },
+  {
+    name: 'Node',
+    id: 'node',
+    desc: 'Full blockchain node — verify transactions, serve RPC, support decentralization',
+    icon: <Server className="h-6 w-6" />,
+    prefix: 'zion-node',
+    color: 'text-zion-purple',
+    quickCmd: 'zion-node --network mainnet --rpc-port 8443 --p2p-port 8333',
+  },
+];
+
+const desktopAgentFeatures = [
+  'GUI Dashboard with real-time hashrate & balance',
+  'One-click mining — no terminal needed',
+  'Built-in wallet generator & manager',
+  'Auto-updates & system tray integration',
+  'Remote monitoring & Gaming mode',
+  'Available for Windows, macOS & Linux',
+];
+
+const faqItems = [
+  {
+    q: 'Do I need a Node to mine?',
+    a: `No. Connect your miner to the public pool (${SITE_POOL_PRIMARY}). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.`,
+  },
+  {
+    q: 'How do I create a wallet?',
+    a: 'Download the Wallet CLI and run: zion-wallet gen-mnemonic --out my-wallet.json --print. Write down the 24 words on paper — they are your backup. Never share them online.',
+  },
+  {
+    q: 'Windows Defender blocks the binary?',
+    a: 'Click "More info" → "Run anyway". The binaries are open-source (MIT license) but unsigned. You can also add C:\\ZION\\ to exclusions in Windows Security.',
+  },
+  {
+    q: 'macOS says "cannot be opened"?',
+    a: 'Run: xattr -d com.apple.quarantine zion-miner-macos-arm64 — or go to System Settings → Privacy & Security → Allow Anyway.',
+  },
+  {
+    q: 'What is Consciousness Mining?',
+    a: 'Your consciousness level (PHYSICAL → COSMIC) multiplies block rewards up to 15×. Level up by consistent mining, discovering blocks, and contributing to network health.',
+  },
+  {
+    q: 'Can I mine on Raspberry Pi?',
+    a: 'Yes! Download the linux-arm64 version. RPi 4/5 works well. Hashrate will be lower than desktop CPUs but fully functional.',
+  },
+];
+
+const steps = [
+  {
+    title: '1. Create Wallet',
     items: [
       cs ? 'Stahnete zion-wallet pro svuj OS' : 'Download zion-wallet for your OS',
       'Run: zion-wallet gen-mnemonic --out my-wallet.json --print',

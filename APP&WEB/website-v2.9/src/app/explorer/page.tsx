@@ -115,13 +115,13 @@ export default function ExplorerPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? `Vyhledavejte bloky, transakce a adresy na aktualni kontrolovane V3 test-mainnet lince ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonicky runtime zustava na ${SITE_RUNTIME_LABEL}. Smart hash resolver, ziva data z aktualniho verejneho rehearsal runtime a auto-refresh kazdych 15 sekund.`
-                  : `Search blocks, transactions, and addresses on the current ZION TerraNova ${SITE_RELEASE_LABEL} controlled V3 test-mainnet line. Canonical runtime stays on ${SITE_RUNTIME_LABEL}. Smart hash resolver, live data from the current public rehearsal runtime, and auto-refresh every 15 seconds.`}
+                Search blocks, transactions, and addresses on the current ZION TerraNova {SITE_RELEASE_LABEL} controlled V3 test-mainnet line.
+                Canonical runtime stays on {SITE_RUNTIME_LABEL}.
+                Smart hash resolver, live data from the current public rehearsal runtime, and auto-refresh every 10 seconds.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Ziva test data' : 'Live Test Data'}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Live Test Data
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
@@ -329,7 +329,7 @@ export default function ExplorerPage() {
             {cs ? 'Blockchain data v realnem case z nativnich Rust nodu. Kazdy blok, transakce a adresa - plne transparentni, plne otevrene.' : 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            {cs ? 'Decade Decay emise: 5,400 -> 724 ZION/blok · 100+ let + tail ∞ · Vsechny fees spalovany · 89/5/5/1 distribuce · Verejny launch zatim NO-GO' : 'Decade Decay emission: 5,400 -> 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Public launch currently NO-GO'}
+            Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · All fees burned · 89/5/5/1 distribuce · Public launch target 31.12.2026
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
