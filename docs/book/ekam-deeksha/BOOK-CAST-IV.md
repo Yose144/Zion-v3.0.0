@@ -63,31 +63,6 @@ Simplicitou svého vzhledu je Golden Orb vizuálně opačný k baroknímu maxima
 
 ---
 
-### Nové Šrimurthi — 800letá linie v jediné sousoše
-
-Golden Orb není v Sanctuariu osamoceným objektem. V Chrámu Jednoty stojí **Nové Šrimurthi** — sousoší, které zachycuje celou 800letou linii božské přítomnosti na Zemi v jednom ikonografickém celku. Sousoší bylo odhaleno v říjnu 2010 a reverend Michael Milner popsal okamžik prvního setkání s ním takto: *„Bylo to jako proudy světel, které do mě vstupují. Můj život se poskládal jako kousky puzzle."*
-
-Po směru hodinových ručiček zobrazuje šest postav obklopujících centrální zlatou kouli:
-
-| Pozice | Postava | Význam v linii |
-|--------|---------|----------------|
-| 1 | **Sri Swami Samarth** | Narasimha Saraswati ve věku 478 let, třetí inkarnace |
-| 2 | **Sri Paada Sri Vallabha** | Ten, kdo vyslovil proroctví (~1320 n.l.) |
-| 3 | **Sri Dattatreya** | Trojice Brahma–Višnu–Šiva v jednom těle (manifestace 1149 n.l.) |
-| 4 | **Sri Anagha Lakšmí** | Ženský aspekt: MahaSarasvatí, MahaLakšmí, MahaKálí v jedné |
-| 5 | **Sri Narasimha Saraswathi** | Mistr 400leté meditace (1378–1856) |
-| 6 | **Sri Shirdi Sai Baba** | Inkarnace Hanumana, nástroj Svámího Samartha |
-
-Ve středu — uvnitř **zlaté koule Milosti** (Adi Parashakti) — je přítomen **Sri Kalki AmmaBhagavan**: živý Avatar, naplnění 800letého proroctví.
-
-Na pozadí celé kompozice je **Sri Yantra** zapravená do mramorové podlahy meditační haly — tatáž posvátná geometrie devíti pronikajících trojúhelníků, která definuje půdorys celého chrámu (viz Kapitola 9).
-
-Šrimurthi tak vytváří ikonografický most: Golden Orb v centru sousoší je fyzicky tatáž zlatá koule, o níž Bhagavan říká, že se mu zjevila ve věku 3,5 let — symbol **Adiparasakti**, neprojeveného Božského principu. Kolem ní stojí šest postav představujících 800 let manifestací, inkarnací a přenosů, skrze které se tento princip připravoval na plné ztělesnění.
-
-Té noci po odhalení v roce 2010 začal ze Šrimurthi spontánně vytékat proud božského nektaru — a tekl několik dní. Pro komunitu Oneness šlo o potvrzení, že sousoší není pouhou uměleckou reprezentací, ale **živým polem** — yantrou, která nese energii celé linie.
-
----
-
 ### Symbolika koule v duchovních tradicích
 
 Koule jako symbol je jedním z nejuniverzálnějších. Napříč kulturami sdílí specifický soubor konotací:

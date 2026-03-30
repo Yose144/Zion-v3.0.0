@@ -1,0 +1,14 @@
+C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\deps\serde-65c067a2a0a74258.d: C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\build\serde-27124ab54d83a607\out/private.rs
+
+C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\deps\libserde-65c067a2a0a74258.rlib: C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\build\serde-27124ab54d83a607\out/private.rs
+
+C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\deps\libserde-65c067a2a0a74258.rmeta: C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\build\serde-27124ab54d83a607\out/private.rs
+
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs:
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs:
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs:
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs:
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs:
+C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\build\serde-27124ab54d83a607\out/private.rs:
+
+# env-dep:OUT_DIR=C:\\Users\\anaha\\Desktop\\ZION\\2.9.6-main\\V3/target-vega-fix\\release\\build\\serde-27124ab54d83a607\\out

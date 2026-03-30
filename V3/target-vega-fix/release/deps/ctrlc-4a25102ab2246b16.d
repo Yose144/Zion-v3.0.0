@@ -1,0 +1,11 @@
+C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\deps\ctrlc-4a25102ab2246b16.d: C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\lib.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\error.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\platform\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\platform\windows\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\signal.rs
+
+C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\deps\libctrlc-4a25102ab2246b16.rlib: C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\lib.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\error.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\platform\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\platform\windows\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\signal.rs
+
+C:\Users\anaha\Desktop\ZION\2.9.6-main\V3/target-vega-fix\release\deps\libctrlc-4a25102ab2246b16.rmeta: C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\lib.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\error.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\platform\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\platform\windows\mod.rs C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\signal.rs
+
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\lib.rs:
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\error.rs:
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\platform\mod.rs:
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\platform\windows\mod.rs:
+C:\Users\anaha\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ctrlc-3.5.2\src\signal.rs:
