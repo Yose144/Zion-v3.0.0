@@ -171,8 +171,10 @@ GPT-5:         ~1T+ (odhadovaně)    → frontier
 | BF16 (plná přesnost) | 144 GB | 2× A100 80GB | ~$4.80/hr |
 | **Q5_K_M (produkce)** | **~48 GB** | **A100 80GB** | **~$2.50/hr** |
 
-**Trénink fine-tune:** ~8-16 hodin na A100 80GB = $20-40 za run  
+**Trénink fine-tune:** ~8-16 hodin na A100 80GB = $20–40 za run (Q1 2026)  
 **Inference:** A100 40GB v Vast.ai ~$1.20/hr (vs $0.05/hr RTX 3060 teď)
+
+> 💡 **Q3 2026:** Po NVIDIA Vera Rubin NVL72 rollout se ceny A100 na spot trhu očekávají -30–50% — viz sekce "Cenové okno" níže.
 
 ### 2.3 RTX 5000 Blackwell — consumer GPU pro AI (2025/2026)
 
@@ -220,6 +222,63 @@ python train_zion_expert.py \
   --max_seq_length 8192 \
   --output_dir ./zion-expert-72b
 ```
+
+---
+
+## Cenové okno — NVIDIA Vera Rubin (GTC 2026)
+
+### Co bylo ohlášeno (16.–19. března 2026)
+
+NVIDIA na GTC 2026 v San Jose ohlásila **Vera Rubin** — novou full-stack AI architekturu (přímý nástupce Blackwellu):
+
+| Produkt | Klíčové specs | Dostupnost |
+|---|---|---|
+| **Vera Rubin NVL72** | 72× Rubin GPU v racku, supercomputer hustota | Azure první — live, globální rollout Q2/Q3 2026 |
+| **DGX Station GB300** | 748 GB coherent memory, 20 petaflops FP4, modely do 1T params | Odesílány od marca 2026 |
+| **Feynman (next-next)** | LP40 LPU + Rosa CPU + NVLink Kyber | 2027+ |
+
+**Klíčová fakta:**
+- Microsoft Azure byl **první hyperscaler**, který spustil Vera Rubin NVL72 (oznámeno na GTC)
+- AWS nasazuje **1 milion+ GPU** zahrnující Rubin architekturu v průběhu 2026
+- Jump Trading mezi prvními zákazníky NVL72 pro AI-driven trading
+
+### Dopad na ceny GPU pronájmu
+
+Historický vzor se opakuje — pokaždé, když nová generace zaplavuje hyperscalery, starší GPU přetéká na spot trhy:
+
+```
+Ampere (A100) 2020 → Hopper (H100) 2022   → A100 spot -40%
+Hopper  (H100) 2022 → Blackwell  2025      → H100 spot -35%
+Rubin NVL72 rollout Q2–Q3 2026             → A100/H100 spot → očekávaný pokles -30–50%
+```
+
+**Aktualizované odhady cen (Vast.ai) pro Hiranyagarbhu:**
+
+| GPU | Cena Q1 2026 | Odhadovaná cena Q3 2026 | Dopad na F2 trénink |
+|---|---|---|---|
+| A100 40GB | ~$1.20/hr | ~$0.70–0.90/hr | 8–16h run: ~$6–14 |
+| A100 80GB | ~$2.50/hr | ~$1.30–1.80/hr | 8–16h run: ~$10–29 |
+| H100 80GB | ~$2.99/hr | ~$1.80–2.20/hr | nejrychlejší, ale drahší |
+
+### Aktualizovaný timeline pro Hiranyagarbhu
+
+```
+Q1/Q2 2026 — NYNÍ (připravit dataset):
+  ✅ Fáze 0A — System prompt CoT upgrade ← tento týden
+  ✅ Fáze 0B — Multi-turn chat history ← tento týden
+  ⬜ Fáze 0C — RAG základní (ChromaDB + docs) ← za 1–2 týdny
+  ⬜ Fáze 1  — Dataset 15k párů (NIM generace, duben–červen)
+
+Q3 2026 — OKNO (70B launch):
+  ⬜ Fáze 2  — 70B fine-tune na A100 (~$10–25 za run) ← CÍLOVÉ OKNO
+  ⬜ Fáze 3  — RAG pipeline s ChromaDB
+  ⬜ Fáze 4  — DPO alignment
+
+Q4 2026:
+  ⬜ Fáze 5  — Produkce A100 reserved (~$120–150/měsíc vs $180 dnes)
+```
+
+> **Strategie:** Nespěchat na Fázi 2 teď za plné ceny — *maximalizovat F0/F1 připravenost* a počkat na Q3 2026, kdy Vera Rubin NVL72 globálně zaplave hyperscalery. Mezitím dataset a RAG jsou levné a výsledek bude lepší s 70B než uspěchaně s 8B.
 
 ---
 
@@ -333,7 +392,7 @@ Complex reasoning (future):   70B + RAG             → 800ms
 | **F0: RAG** | Týden 2 | $10 setup | Actuální data, přesná čísla |
 | **F1: Dataset 15k** | Týden 3–4 | $15 (NIM API) | Hlubší znalosti, méně opakování |
 | **F1: DPO páry** | Týden 4 | $5 | Konkrétní odpovědi |
-| **F2: 70B base** | Měsíc 2 | $35 trénink | Dramatický skok kvality |
+| **F2: 70B base** | Q3 2026 (ceny klesnou) | ~$15–25 trénink | Dramatický skok kvality |
 | **F3: RAG pipeline** | Měsíc 2–3 | $20 setup | Žadné hallucinations, citace |
 | **F4: DPO** | Měsíc 3 | $15 | Vyladěný styl, konzistence |
 | **F5: A100 deployment** | Měsíc 3–4 | $180/měsíc | Stabilní produkce |
@@ -365,14 +424,15 @@ Obecné otázky mimo ZION:
 - [ ] RAG server s ChromaDB nad docs/ (1 den)
 - [ ] Napojit RAG na `/api/ai-chat` (0.5 dne)
 
-**P3 — Příští 2 týdny:**
+**P3 — Q2 2026 (duben–červen):**
 - [ ] Generovat dataset 15k párů (NIM API)
-- [ ] Fine-tune Qwen2.5-72B-Instruct (Vast.ai A100)
-- [ ] Exportovat GGUF Q5_K_M, nasadit
+- [ ] DPO preference páry (1 000 párů)
+- [ ] RAG pipeline s ChromaDB nad docs/
 
-**P4 — Měsíc 2-3:**
+**P4 — Q3 2026 (cenové okno po Vera Rubin NVL72):**
+- [ ] Fine-tune Qwen2.5-72B-Instruct na A100 (~$15–25 za run)
 - [ ] DPO alignment
-- [ ] Produkční A100 instance (Vast.ai reserved)
+- [ ] Exportovat GGUF Q5_K_M, nasadit na A100 reserved (~$130/měsíc)
 
 ---
 
