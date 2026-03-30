@@ -129,3 +129,4 @@ APP&WEB/website-v2.9/SeedDE
 
 test_out.txt
 TITHE_WALLETS_BACKUP.txt
+*.gguf
