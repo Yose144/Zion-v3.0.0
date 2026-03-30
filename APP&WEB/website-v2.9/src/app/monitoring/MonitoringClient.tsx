@@ -180,8 +180,8 @@ async function fetchMetrics(): Promise<MonitoringData> {
     /* 25 */ 'node_filesystem_size_bytes{mountpoint="/"}',
     /* 26 */ 'node_filesystem_avail_bytes{mountpoint="/"}',
     /* 27 */ 'node_boot_time_seconds',
-    /* 28 */ PRAGUE_CORE_UP_QUERY,
-    /* 29 */ PRAGUE_POOL_UP_QUERY,
+    /* 28 */ 'up{job="zion-core-prague"}',
+    /* 29 */ 'up{job="zion-pool-prague"}',
   ];
 
   const results = await Promise.allSettled(queries.map(q => queryPrometheus(q)));
@@ -453,13 +453,13 @@ export default function MonitoringClient() {
             {cs ? 'Core node' : 'Core Node'}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            <StatCard icon={Layers}   label={cs ? 'Vyska chainu' : 'Chain Height'}    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
-            <StatCard icon={Layers}   label={cs ? 'Vyska sablony' : 'Template Height'} value={fmt(data?.templateHeight)} accent="text-amber-400" />
-            <StatCard icon={Globe}    label={cs ? 'Peeri' : 'Peers'}           value={fmt(data?.peerCount)} accent="text-zion-cyan" />
-            <StatCard icon={Database} label={cs ? 'Tx v mempoolu' : 'Mempool Txs'}     value={fmt(data?.mempoolSize)} accent="text-purple-400" />
-            <StatCard icon={Sparkles} label={cs ? 'Prijate bloky' : 'Blocks Accepted'} value={fmt(data?.blocksAccepted)} accent="text-emerald-400" />
-            <StatCard icon={Box}      label={cs ? 'Tx v sablone' : 'Template Txs'}    value={fmt(data?.templateTxs)} accent="text-sky-400" sub={cs ? 'v aktualnim bloku' : 'in current block'} />
-            <StatCard icon={Coins}    label={cs ? 'Fee sablony' : 'Template Fees'}   value={data?.templateFees != null ? `${data.templateFees} ZION` : '—'} accent="text-amber-300" sub={cs ? 'cekajici fee' : 'pending fees'} />
+            <StatCard icon={Layers}   label="Chain Height"    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
+            <StatCard icon={Layers}   label="Template Height" value={fmt(data?.templateHeight)} accent="text-amber-400" />
+            <StatCard icon={Globe}    label="Peers"           value={fmt(data?.peerCount)} accent="text-zion-cyan" />
+            <StatCard icon={Database} label="Mempool Txs"     value={fmt(data?.mempoolSize)} accent="text-purple-400" />
+            <StatCard icon={Sparkles} label="Blocks Accepted" value={fmt(data?.blocksAccepted)} accent="text-emerald-400" />
+            <StatCard icon={Box}      label="Template Txs"    value={fmt(data?.templateTxs)} accent="text-sky-400" sub="in current block" />
+            <StatCard icon={Coins}    label="Template Fees"   value={data?.templateFees != null ? `${data.templateFees} ZION` : '—'} accent="text-amber-300" sub="pending fees" />
           </div>
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
@@ -481,13 +481,13 @@ export default function MonitoringClient() {
             {cs ? 'Mining pool' : 'Mining Pool'}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            <StatCard icon={Users}    label={cs ? 'Aktivni mineri' : 'Active Miners'}    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" />
-            <StatCard icon={ArrowUpDown} label={cs ? 'Celkem submitu' : 'Total Submits'} value={fmt(data?.poolSubmitsTotal)} accent="text-sky-400" />
-            <StatCard icon={Sparkles} label={cs ? 'Prijate shares' : 'Accepted Shares'}  value={fmt(data?.poolAcceptedTotal)} accent="text-emerald-400" />
-            <StatCard icon={Activity} label={cs ? 'Odmitnute shares' : 'Rejected Shares'}  value={fmt(data?.poolRejectedTotal)} accent="text-red-400" />
-            <StatCard icon={Gauge}    label={cs ? 'Accept rate' : 'Accept Rate'}      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
-            <StatCard icon={Timer}    label={cs ? 'Uptime poolu' : 'Pool Uptime'}      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" />
-            <StatCard icon={Heart}    label={cs ? 'PPLNS mineri' : 'PPLNS Miners'}     value={fmt(data?.pplnsRegisteredMiners)} accent="text-pink-400" />
+            <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" />
+            <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-sky-400" />
+            <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-emerald-400" />
+            <StatCard icon={Activity} label="Rejected Shares"  value={fmt(data?.poolRejectedTotal)} accent="text-red-400" />
+            <StatCard icon={Gauge}    label="Accept Rate"      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
+            <StatCard icon={Timer}    label="Pool Uptime"      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" />
+            <StatCard icon={Heart}    label="PPLNS Miners"     value={fmt(data?.pplnsRegisteredMiners)} accent="text-pink-400" />
           </div>
           {/* Sparklines */}
           {sparklines && (sparklines.poolSessions.length > 1 || sparklines.shares.length > 1) && (
@@ -540,12 +540,12 @@ export default function MonitoringClient() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Velikost okna' : 'Window Size'}</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Size</div>
               <div className="text-base sm:text-xl font-mono font-bold text-pink-400 truncate">{fmt(data?.pplnsWindowSize)}</div>
-              <div className="text-xs text-gray-500">{cs ? 'maximalni shares' : 'maximum shares'}</div>
+              <div className="text-xs text-gray-500">maximum shares</div>
             </div>
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Vyuzite okno' : 'Window Used'}</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Used</div>
               <div className="text-base sm:text-xl font-mono font-bold text-pink-300 truncate">{fmt(data?.pplnsWindowUsed)}</div>
               {pplnsWindowPct != null && (
                 <ProgressBar value={data?.pplnsWindowUsed ?? 0} max={data?.pplnsWindowSize ?? 1} color="bg-pink-500" />
@@ -553,15 +553,15 @@ export default function MonitoringClient() {
               <div className="text-xs text-gray-500">{pplnsWindowPct != null ? (cs ? `${pplnsWindowPct.toFixed(1)} % zaplneno` : `${pplnsWindowPct.toFixed(1)}% full`) : ''}</div>
             </div>
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Registrovani mineri' : 'Registered Miners'}</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Registered Miners</div>
               <div className="text-base sm:text-xl font-mono font-bold text-emerald-400 truncate">{fmt(data?.pplnsRegisteredMiners)}</div>
             </div>
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Celkove vyplaceno' : 'Total Paid'}</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Total Paid</div>
               <div className="text-base sm:text-xl font-mono font-bold text-zion-gold truncate">{fmt(data?.pplnsTotalPaid)} <span className="text-xs text-gray-500">ZION</span></div>
             </div>
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Vyplatni kola' : 'Payout Rounds'}</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Payout Rounds</div>
               <div className="text-base sm:text-xl font-mono font-bold text-amber-400 truncate">{fmt(data?.pplnsPayoutRounds)}</div>
             </div>
           </div>
@@ -576,7 +576,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <HardDrive className="h-5 w-5 text-zion-cyan" />
-            {cs ? 'Serverova infrastruktura' : 'Server Infrastructure'}
+            Server Infrastructure
             <span className="ml-2 text-xs text-gray-500 font-normal">Prague · Hetzner</span>
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

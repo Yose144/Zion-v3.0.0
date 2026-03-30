@@ -15,7 +15,6 @@ import {
   TreeDeciduous,
   Zap
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION, SITE_POOL_PRIMARY } from '@/lib/site';
 
 interface DashboardClientProps {
@@ -27,15 +26,15 @@ interface DashboardClientProps {
 
 const getMissionMetrics = (cs: boolean) => [
   {
-    label: cs ? 'Stav test-mainnetu' : 'Test-Mainnet Status',
+    label: 'Test-Mainnet Status',
     value: 'ACTIVE',
-    description: cs ? 'Kontrolovana rehearsal infrastruktura v Rustu je aktivni' : 'Controlled Rust rehearsal infrastructure operational',
+    description: 'Controlled Rust rehearsal infrastructure operational',
     icon: Zap
   },
   {
     label: cs ? 'Zdravi poolu' : 'Pool Health',
     value: '100%',
-    description: cs ? 'Verejny host + interni linky · Praha + USA + Singapur' : 'Public host + internal lanes · Prague + USA + Singapore',
+    description: 'Public host + internal lanes · Prague + USA + Singapore',
     icon: ShieldCheck
   },
   {
@@ -54,8 +53,8 @@ const getMissionMetrics = (cs: boolean) => [
 
 const getRoadmapSlices = (cs: boolean) => [
   {
-    title: cs ? 'Kontrolovany Test Mainnet · brezen 2026' : 'Controlled Test Mainnet · Mar 2026',
-    bullets: cs ? ['Nativni Rust blockchain + pool infrastruktura', 'Kontrolovana rehearsal topologie: Praha (EU) + USA + Singapur (interni linky)', 'Realne tezebni odmeny · 5% humanitarni · 5% Issobella fond'] : ['Native Rust blockchain + pool infrastructure', 'Controlled rehearsal topology: Prague (EU) + USA + Singapore (internal lanes)', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
+    title: 'Controlled Test Mainnet · Mar 2026',
+    bullets: ['Native Rust blockchain + pool infrastructure', 'Controlled rehearsal topology: Prague (EU) + USA + Singapore (internal lanes)', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
   },
   {
     title: cs ? 'Q1-Q2 2026 · Zpevneni' : 'Q1-Q2 2026 · Hardening',
@@ -279,8 +278,8 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div className="flex items-center gap-3">
               <Activity className="w-6 h-6 text-zion-purple" />
               <div>
-                <h2 className="text-2xl font-semibold text-white">{cs ? 'Stav tezebniho poolu' : 'Mining pool status'}</h2>
-                <p className="text-sm text-gray-400">{cs ? `Zive metriky ze stratum+tcp://${SITE_POOL_PRIMARY}` : `Live metrics from stratum+tcp://${SITE_POOL_PRIMARY}`}</p>
+                <h2 className="text-2xl font-semibold text-white">Mining pool status</h2>
+                <p className="text-sm text-gray-400">Live metrics from stratum+tcp://{SITE_POOL_PRIMARY}</p>
               </div>
             </div>
             <Link href="/pool/stats" target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1">

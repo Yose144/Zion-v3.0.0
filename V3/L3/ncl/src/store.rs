@@ -20,7 +20,7 @@
 use crate::error::{NclError, NclResult};
 use crate::types::{NclJob, NclJobStatus};
 use rusqlite::{params, Connection};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 // ─── JobStore ────────────────────────────────────────────────────────────────
@@ -35,27 +35,12 @@ pub struct JobStore {
 }
 
 impl JobStore {
-    /// Acquire the connection guard, recovering from poisoning rather
-    /// than panicking. SQLite is independently thread-safe and our
-    /// SQL operations are stateless across calls — recovering the
-    /// inner state keeps the NCL daemon alive even if a previous
-    /// holder panicked. (Audit finding F5.)
-    fn conn(&self) -> MutexGuard<'_, Connection> {
-        self.conn.lock().unwrap_or_else(|poisoned| {
-            eprintln!(
-                "warning: JobStore mutex was poisoned by a panicking holder; \
-                 recovering inner connection state"
-            );
-            poisoned.into_inner()
-        })
-    }
-
     // ── Constructors ─────────────────────────────────────────────────────────
 
     /// Open (or create) a file-backed store at `path`.
     pub fn open(path: &str) -> NclResult<Self> {
-        let conn =
-            Connection::open(path).map_err(|e| NclError::Database(format!("sqlite open: {e}")))?;
+        let conn = Connection::open(path)
+            .map_err(|e| NclError::Database(format!("sqlite open: {e}")))?;
         let store = Self {
             conn: Arc::new(Mutex::new(conn)),
         };
@@ -79,7 +64,7 @@ impl JobStore {
 
     /// Create tables if they don't exist yet.
     fn init(&self) -> NclResult<()> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS jobs (
                 id          TEXT PRIMARY KEY,
@@ -105,7 +90,7 @@ impl JobStore {
     pub fn save_job(&self, job: &NclJob) -> NclResult<()> {
         let data = serde_json::to_string(job)
             .map_err(|e| NclError::Database(format!("serialize job: {e}")))?;
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         conn.execute(
             "INSERT OR REPLACE INTO jobs
              (id, status, priority, submitter, model_id, reward, created_at, data)
@@ -128,7 +113,7 @@ impl JobStore {
     /// Update only the status column of an existing job (fast path for
     /// scheduler state transitions).
     pub fn update_status(&self, id: Uuid, status: NclJobStatus) -> NclResult<()> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let rows = conn
             .execute(
                 "UPDATE jobs SET status = ?1 WHERE id = ?2",
@@ -148,9 +133,12 @@ impl JobStore {
 
     /// Delete a job record.
     pub fn delete_job(&self, id: Uuid) -> NclResult<()> {
-        let conn = self.conn();
-        conn.execute("DELETE FROM jobs WHERE id = ?1", params![id.to_string()])
-            .map_err(|e| NclError::Database(format!("delete_job: {e}")))?;
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM jobs WHERE id = ?1",
+            params![id.to_string()],
+        )
+        .map_err(|e| NclError::Database(format!("delete_job: {e}")))?;
         Ok(())
     }
 
@@ -158,7 +146,7 @@ impl JobStore {
 
     /// Load a single job by UUID.
     pub fn load_job(&self, id: Uuid) -> NclResult<NclJob> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let data: String = conn
             .query_row(
                 "SELECT data FROM jobs WHERE id = ?1",
@@ -173,7 +161,7 @@ impl JobStore {
     /// List all jobs, optionally filtered by status.
     /// Ordered by priority DESC, created_at ASC (same as scheduler).
     pub fn list_jobs(&self, status_filter: Option<NclJobStatus>) -> NclResult<Vec<NclJob>> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let sql = match status_filter {
             Some(_) => {
                 "SELECT data FROM jobs WHERE status = ?1
@@ -217,7 +205,7 @@ impl JobStore {
 
     /// Count total jobs, optionally by status.
     pub fn count(&self, status_filter: Option<NclJobStatus>) -> NclResult<usize> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let count: i64 = match status_filter {
             Some(s) => conn
                 .query_row(
@@ -237,7 +225,7 @@ impl JobStore {
     pub fn purge_old(&self, days: u64) -> NclResult<usize> {
         use chrono::{Duration, Utc};
         let cutoff = (Utc::now() - Duration::days(days as i64)).to_rfc3339();
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let deleted = conn
             .execute(
                 "DELETE FROM jobs WHERE status IN ('completed','failed','cancelled')
@@ -253,11 +241,11 @@ impl JobStore {
 
 fn status_to_str(s: NclJobStatus) -> &'static str {
     match s {
-        NclJobStatus::Queued => "queued",
-        NclJobStatus::Assigned => "assigned",
-        NclJobStatus::Running => "running",
+        NclJobStatus::Queued    => "queued",
+        NclJobStatus::Assigned  => "assigned",
+        NclJobStatus::Running   => "running",
         NclJobStatus::Completed => "completed",
-        NclJobStatus::Failed => "failed",
+        NclJobStatus::Failed    => "failed",
         NclJobStatus::Cancelled => "cancelled",
     }
 }
@@ -304,7 +292,7 @@ mod tests {
 
         let loaded = store.load_job(id).unwrap();
         assert_eq!(loaded.status, NclJobStatus::Queued); // full job blob not updated
-                                                         // status is updated in the index column; use list_jobs to verify filter
+        // status is updated in the index column; use list_jobs to verify filter
         let completed = store.list_jobs(Some(NclJobStatus::Completed)).unwrap();
         assert_eq!(completed.len(), 1);
     }

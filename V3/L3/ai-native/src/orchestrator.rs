@@ -4,9 +4,9 @@ use uuid::Uuid;
 use crate::error::{AiError, AiResult};
 use crate::task::{AiTask, AiTaskType};
 use crate::types::{Agent, AgentCapability, AgentMessage, AgentStatus};
+use zion_ncl::{JobScheduler, NclJob, NclTaskType, ComputeBackend, ReputationRegistry};
+use zion_warp::{ChainId, ChainFamily, WarpRouter};
 use zion_bridge::types::BridgeStatus;
-use zion_ncl::{ComputeBackend, JobScheduler, NclJob, NclTaskType, ReputationRegistry};
-use zion_warp::{ChainFamily, ChainId, WarpRouter};
 
 /// Bridge operation types that AI agents can initiate.
 #[derive(Debug, Clone)]
@@ -153,7 +153,9 @@ impl Orchestrator {
                     && a.consciousness_level >= task.required_consciousness
             })
             // Sort: higher consciousness first, then lower load
-            .max_by_key(|a| (a.consciousness_level as i64, -(a.total_actions as i64)))
+            .max_by_key(|a| {
+                (a.consciousness_level as i64, -(a.total_actions as i64))
+            })
             .map(|a| a.id)
             .ok_or_else(|| AiError::CapabilityNotAvailable("Compute".into()))?;
 
@@ -169,7 +171,11 @@ impl Orchestrator {
     }
 
     /// Grant a capability to an existing agent.
-    pub fn grant_capability(&mut self, agent_id: Uuid, cap: AgentCapability) -> AiResult<()> {
+    pub fn grant_capability(
+        &mut self,
+        agent_id: Uuid,
+        cap: AgentCapability,
+    ) -> AiResult<()> {
         let agent = self
             .agents
             .get_mut(&agent_id)
@@ -177,10 +183,10 @@ impl Orchestrator {
 
         // Check consciousness gate
         let required = match &cap {
-            AgentCapability::Compute => 2,
-            AgentCapability::Bridge => 3,
-            AgentCapability::Govern => 4,
-            _ => 0,
+            AgentCapability::Compute  => 2,
+            AgentCapability::Bridge   => 3,
+            AgentCapability::Govern   => 4,
+            _                         => 0,
         };
         if agent.consciousness_level < required {
             return Err(AiError::ConsciousnessInsufficient {
@@ -216,21 +222,9 @@ impl Orchestrator {
     /// Returns a list of `(task_id, agent_id)` pairs for tasks that timed out
     /// so the caller can notify the relevant agents.
     pub fn coordinate(&self) -> OrchestratorStatus {
-        let active = self
-            .agents
-            .values()
-            .filter(|a| a.status == AgentStatus::Active)
-            .count();
-        let suspended = self
-            .agents
-            .values()
-            .filter(|a| a.status == AgentStatus::Suspended)
-            .count();
-        let terminated = self
-            .agents
-            .values()
-            .filter(|a| a.status == AgentStatus::Terminated)
-            .count();
+        let active   = self.agents.values().filter(|a| a.status == AgentStatus::Active).count();
+        let suspended = self.agents.values().filter(|a| a.status == AgentStatus::Suspended).count();
+        let terminated = self.agents.values().filter(|a| a.status == AgentStatus::Terminated).count();
         let total_actions: u64 = self.agents.values().map(|a| a.total_actions).sum();
         let queued_messages = self.message_queue.len();
 
@@ -258,9 +252,7 @@ impl Orchestrator {
         backend: ComputeBackend,
         reward_flowers: u64,
     ) -> AiResult<Uuid> {
-        let scheduler = self
-            .ncl_scheduler
-            .as_mut()
+        let scheduler = self.ncl_scheduler.as_mut()
             .ok_or_else(|| AiError::CapabilityNotAvailable("NCL Marketplace".into()))?;
 
         // Map AI task type to NCL task type
@@ -276,7 +268,7 @@ impl Orchestrator {
             model_id,
             backend,
             "input_hash_placeholder".to_string(), // TODO: compute actual hash
-            "submitter_placeholder".to_string(),  // TODO: use actual submitter
+            "submitter_placeholder".to_string(),   // TODO: use actual submitter
             reward_flowers,
             300_000, // 5 minute timeout
         );
@@ -285,8 +277,7 @@ impl Orchestrator {
         job.task_type = task_type;
         job.min_consciousness = task.required_consciousness;
 
-        scheduler
-            .submit_job(job)
+        scheduler.submit_job(job)
             .map_err(|e| AiError::MessageFailed(format!("NCL submission failed: {}", e)))
     }
 
@@ -302,9 +293,7 @@ impl Orchestrator {
     ///
     /// Returns the number of successfully deployed agents.
     pub async fn deploy_warp_agents(&mut self, chains: &[ChainId]) -> AiResult<usize> {
-        let router = self
-            .warp_router
-            .as_ref()
+        let router = self.warp_router.as_ref()
             .ok_or_else(|| AiError::CapabilityNotAvailable("WARP Router".into()))?;
 
         let mut deployed = 0;
@@ -332,9 +321,8 @@ impl Orchestrator {
             }
 
             // Register the agent
-            let agent_id = self.register_agent(agent).map_err(|e| {
-                AiError::MessageFailed(format!("Failed to register {} agent: {}", chain.name, e))
-            })?;
+            let agent_id = self.register_agent(agent)
+                .map_err(|e| AiError::MessageFailed(format!("Failed to register {} agent: {}", chain.name, e)))?;
 
             // Deploy the agent to the chain via WARP
             // TODO: Implement actual deployment logic
@@ -368,14 +356,10 @@ impl Orchestrator {
         operation: BridgeOperation,
     ) -> AiResult<String> {
         if !self.bridge_enabled {
-            return Err(AiError::CapabilityNotAvailable(
-                "L2 Bridge Integration".into(),
-            ));
+            return Err(AiError::CapabilityNotAvailable("L2 Bridge Integration".into()));
         }
 
-        let agent = self
-            .agents
-            .get(&agent_id)
+        let agent = self.agents.get(&agent_id)
             .ok_or_else(|| AiError::AgentNotFound(agent_id.to_string()))?;
 
         if !agent.has_capability(&AgentCapability::Bridge) {
@@ -388,10 +372,7 @@ impl Orchestrator {
         // TODO: Implement actual bridge operation logic
         // This would integrate with L2 bridge daemon via HTTP API
         // For now, just log the operation
-        println!(
-            "AI Agent {} initiated bridge operation: {:?}",
-            agent.name, operation
-        );
+        println!("AI Agent {} initiated bridge operation: {:?}", agent.name, operation);
 
         Ok(operation_id)
     }
@@ -421,9 +402,7 @@ pub struct AgentWeights {
 
 impl AgentWeights {
     pub fn new() -> Self {
-        Self {
-            weights: HashMap::new(),
-        }
+        Self { weights: HashMap::new() }
     }
 
     pub fn set(&mut self, agent_id: Uuid, weight: f64) {
@@ -454,13 +433,16 @@ pub struct AgentVote {
 /// Aggregate multiple agent votes into a weighted majority decision.
 ///
 /// Returns `(decision, weighted_confidence)`.
-pub fn weighted_majority(votes: &[AgentVote], weights: &AgentWeights) -> (bool, f64) {
+pub fn weighted_majority(
+    votes: &[AgentVote],
+    weights: &AgentWeights,
+) -> (bool, f64) {
     if votes.is_empty() {
         return (false, 0.0);
     }
 
     let mut yes_weight = 0.0_f64;
-    let mut no_weight = 0.0_f64;
+    let mut no_weight  = 0.0_f64;
 
     for v in votes {
         let w = weights.get(&v.agent_id) * v.confidence;
@@ -477,11 +459,7 @@ pub fn weighted_majority(votes: &[AgentVote], weights: &AgentWeights) -> (bool, 
     }
 
     let decision = yes_weight >= no_weight;
-    let confidence = if decision {
-        yes_weight / total
-    } else {
-        no_weight / total
-    };
+    let confidence = if decision { yes_weight / total } else { no_weight / total };
     (decision, confidence)
 }
 
@@ -576,11 +554,8 @@ mod tests {
         let mut orch = Orchestrator::new(100);
         orch.register_agent(test_agent("no_compute")).unwrap();
         let mut task = AiTask::new(
-            AiTaskType::LlmInference,
-            "llama3",
-            "zion1user",
-            serde_json::json!({}),
-            0,
+            AiTaskType::LlmInference, "llama3", "zion1user",
+            serde_json::json!({}), 0,
         );
         assert!(orch.dispatch_task(&mut task).is_err());
     }
@@ -591,11 +566,7 @@ mod tests {
         let mut orch = Orchestrator::new(100);
         orch.register_agent(compute_agent("low_level", 1)).unwrap();
         let mut task = AiTask::new(
-            AiTaskType::ModelTraining,
-            "m",
-            "s",
-            serde_json::json!({}),
-            0,
+            AiTaskType::ModelTraining, "m", "s", serde_json::json!({}), 0,
         )
         .with_consciousness(3); // requires level 3
         assert!(orch.dispatch_task(&mut task).is_err());
@@ -607,7 +578,9 @@ mod tests {
         let mut orch = Orchestrator::new(100);
         orch.register_agent(compute_agent("low", 2)).unwrap();
         let high_id = orch.register_agent(compute_agent("high", 4)).unwrap();
-        let mut task = AiTask::new(AiTaskType::LlmInference, "m", "s", serde_json::json!({}), 0);
+        let mut task = AiTask::new(
+            AiTaskType::LlmInference, "m", "s", serde_json::json!({}), 0,
+        );
         let assigned = orch.dispatch_task(&mut task).unwrap();
         assert_eq!(assigned, high_id);
     }
@@ -643,18 +616,8 @@ mod tests {
         let id1 = Uuid::new_v4();
         let id2 = Uuid::new_v4();
         let votes = vec![
-            AgentVote {
-                agent_id: id1,
-                vote: true,
-                confidence: 0.9,
-                reason: "yes".into(),
-            },
-            AgentVote {
-                agent_id: id2,
-                vote: false,
-                confidence: 0.3,
-                reason: "no".into(),
-            },
+            AgentVote { agent_id: id1, vote: true,  confidence: 0.9, reason: "yes".into() },
+            AgentVote { agent_id: id2, vote: false, confidence: 0.3, reason: "no".into()  },
         ];
         let mut weights = AgentWeights::new();
         weights.set(id1, 1.0);

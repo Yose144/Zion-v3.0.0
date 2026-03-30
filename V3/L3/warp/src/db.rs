@@ -12,7 +12,7 @@
 //! ```
 
 use rusqlite::{params, Connection};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 use crate::error::{WarpError, WarpResult};
@@ -54,27 +54,10 @@ pub struct TransferDb {
 }
 
 impl TransferDb {
-    /// Acquire the connection guard, recovering from poisoning rather
-    /// than panicking. SQLite is independently thread-safe and our
-    /// SQL operations are stateless across calls — recovering the
-    /// inner state keeps the WARP daemon alive even if a previous
-    /// holder panicked. (Audit finding F5.)
-    fn conn(&self) -> MutexGuard<'_, Connection> {
-        self.conn.lock().unwrap_or_else(|poisoned| {
-            eprintln!(
-                "warning: TransferDb mutex was poisoned by a panicking holder; \
-                 recovering inner connection state"
-            );
-            poisoned.into_inner()
-        })
-    }
-
     /// Open or create a file-backed database.
     pub fn open(path: &str) -> WarpResult<Self> {
         let conn = Connection::open(path).map_err(db_err)?;
-        let db = Self {
-            conn: Arc::new(Mutex::new(conn)),
-        };
+        let db = Self { conn: Arc::new(Mutex::new(conn)) };
         db.init()?;
         Ok(db)
     }
@@ -82,15 +65,13 @@ impl TransferDb {
     /// Create an in-memory database (useful for tests and dev mode).
     pub fn in_memory() -> WarpResult<Self> {
         let conn = Connection::open_in_memory().map_err(db_err)?;
-        let db = Self {
-            conn: Arc::new(Mutex::new(conn)),
-        };
+        let db = Self { conn: Arc::new(Mutex::new(conn)) };
         db.init()?;
         Ok(db)
     }
 
     fn init(&self) -> WarpResult<()> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         conn.execute_batch(SCHEMA).map_err(db_err)?;
         Ok(())
     }
@@ -101,9 +82,10 @@ impl TransferDb {
 
     /// Persist a transfer (insert or replace).
     pub fn save(&self, t: &WarpTransfer) -> WarpResult<()> {
-        let data_json = serde_json::to_string(t)
-            .map_err(|e| WarpError::Database(format!("serialize transfer: {e}")))?;
-        let conn = self.conn();
+        let data_json = serde_json::to_string(t).map_err(|e| {
+            WarpError::Database(format!("serialize transfer: {e}"))
+        })?;
+        let conn = self.conn.lock().unwrap();
         conn.execute(
             r#"INSERT OR REPLACE INTO transfers
                (id, status, source_chain, dest_chain, sender, recipient,
@@ -132,19 +114,13 @@ impl TransferDb {
     }
 
     /// Update just the status and updated_at for an existing transfer.
-    pub fn update_status(
-        &self,
-        id: &Uuid,
-        status: WarpStatus,
-        updated_json: &str,
-    ) -> WarpResult<()> {
-        let conn = self.conn();
-        let changed = conn
-            .execute(
-                "UPDATE transfers SET status=?1, data_json=?2 WHERE id=?3",
-                params![status.to_string(), updated_json, id.to_string()],
-            )
-            .map_err(db_err)?;
+    pub fn update_status(&self, id: &Uuid, status: WarpStatus, updated_json: &str) -> WarpResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let changed = conn.execute(
+            "UPDATE transfers SET status=?1, data_json=?2 WHERE id=?3",
+            params![status.to_string(), updated_json, id.to_string()],
+        )
+        .map_err(db_err)?;
         if changed == 0 {
             return Err(WarpError::TransferNotFound(id.to_string()));
         }
@@ -157,15 +133,16 @@ impl TransferDb {
 
     /// Load a single transfer by UUID. Returns `None` if not found.
     pub fn load(&self, id: &Uuid) -> WarpResult<Option<WarpTransfer>> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let mut stmt = conn
             .prepare("SELECT data_json FROM transfers WHERE id=?1")
             .map_err(db_err)?;
         let mut rows = stmt.query(params![id.to_string()]).map_err(db_err)?;
         if let Some(row) = rows.next().map_err(db_err)? {
             let json: String = row.get(0).map_err(db_err)?;
-            let t: WarpTransfer = serde_json::from_str(&json)
-                .map_err(|e| WarpError::Database(format!("deserialize transfer: {e}")))?;
+            let t: WarpTransfer = serde_json::from_str(&json).map_err(|e| {
+                WarpError::Database(format!("deserialize transfer: {e}"))
+            })?;
             Ok(Some(t))
         } else {
             Ok(None)
@@ -188,7 +165,7 @@ impl TransferDb {
 
     /// Count all stored transfers.
     pub fn count(&self) -> WarpResult<usize> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let n: i64 = conn
             .query_row("SELECT COUNT(*) FROM transfers", [], |r| r.get(0))
             .map_err(db_err)?;
@@ -197,7 +174,7 @@ impl TransferDb {
 
     /// Count transfers with a given status string.
     pub fn count_by_status(&self, status: &str) -> WarpResult<usize> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM transfers WHERE status=?1",
@@ -214,14 +191,13 @@ impl TransferDb {
 
     /// Delete completed and failed transfers older than `days` days.
     pub fn purge_old(&self, days: u32) -> WarpResult<usize> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let cutoff = chrono::Utc::now() - chrono::Duration::days(days as i64);
-        let n = conn
-            .execute(
-                "DELETE FROM transfers WHERE status IN ('completed','failed') AND created_at < ?1",
-                params![cutoff.to_rfc3339()],
-            )
-            .map_err(db_err)?;
+        let n = conn.execute(
+            "DELETE FROM transfers WHERE status IN ('completed','failed') AND created_at < ?1",
+            params![cutoff.to_rfc3339()],
+        )
+        .map_err(db_err)?;
         Ok(n)
     }
 
@@ -230,7 +206,7 @@ impl TransferDb {
     // ─────────────────────────────────────────────────────────────────────────
 
     fn query_transfers(&self, sql: &str) -> WarpResult<Vec<WarpTransfer>> {
-        let conn = self.conn();
+        let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(sql).map_err(db_err)?;
         let rows = stmt
             .query_map([], |row| row.get::<_, String>(0))
@@ -239,8 +215,9 @@ impl TransferDb {
         let mut out = Vec::new();
         for r in rows {
             let json = r.map_err(db_err)?;
-            let t: WarpTransfer = serde_json::from_str(&json)
-                .map_err(|e| WarpError::Database(format!("deserialize: {e}")))?;
+            let t: WarpTransfer = serde_json::from_str(&json).map_err(|e| {
+                WarpError::Database(format!("deserialize: {e}"))
+            })?;
             out.push(t);
         }
         Ok(out)
@@ -322,8 +299,7 @@ mod tests {
         t.updated_at = chrono::Utc::now();
         let updated_json = serde_json::to_string(&t).unwrap();
 
-        db.update_status(&id, WarpStatus::Completed, &updated_json)
-            .unwrap();
+        db.update_status(&id, WarpStatus::Completed, &updated_json).unwrap();
 
         let loaded = db.load(&id).unwrap().unwrap();
         assert_eq!(loaded.status, WarpStatus::Completed);
