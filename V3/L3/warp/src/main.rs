@@ -24,7 +24,9 @@ async fn main() -> anyhow::Result<()> {
     // ── Logging ───────────────────────────────────────────────────────────────
     tracing_subscriber::registry()
         .with(fmt::layer())
-        .with(EnvFilter::from_default_env().add_directive("zion_warp=info".parse().unwrap()))
+        .with(EnvFilter::from_default_env().add_directive(
+            "zion_warp=info".parse().unwrap(),
+        ))
         .init();
 
     // ── Config ────────────────────────────────────────────────────────────────
@@ -62,7 +64,11 @@ async fn main() -> anyhow::Result<()> {
     // Extract router/db references before consuming `state` into Axum
     let watcher_router = state.router.clone();
     let watcher_db = state.db.clone();
-    let watcher = zion_warp::WarpWatcher::from_config(config.clone(), watcher_router, watcher_db);
+    let watcher = zion_warp::WarpWatcher::from_config(
+        config.clone(),
+        watcher_router,
+        watcher_db,
+    );
     tokio::spawn(watcher.run());
     info!("Chain watcher spawned");
 

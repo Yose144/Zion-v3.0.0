@@ -12,11 +12,11 @@ Use this for deploys that touch:
 - `V3/Cargo.toml`
 - `docker/docker-compose.v3-mainnet.yml`
 
-Current audited production node set:
+Current audited node set:
 
 - Prague: `91.98.122.165`
-
-Historical note: the 2026-03-28 fee-split rehearsal also covered USA and Singapore, but those nodes are no longer part of the active topology.
+- USA: `5.78.194.94`
+- Singapore: `5.223.84.191`
 
 ## 1. Local Preflight
 
@@ -42,10 +42,10 @@ Set the remote repo root once before rollout.
 
 ```bash
 export REMOTE_DIR="/path/to/deployed/2.9.6"
-export NODES="91.98.122.165"
+export NODES="91.98.122.165 5.78.194.94 5.223.84.191"
 ```
 
-For the active Prague deployment, keep `SEED_PEERS` pinned to the Prague primary unless and until a new audited multi-seed set is published.
+For audited fleet nodes, write `SEED_PEERS` per host and exclude the host's own public address. Fresh external nodes can still bootstrap from the full public list.
 
 ## 3. Sync Deploy Payload
 
@@ -106,9 +106,9 @@ Expected for fee-split deploys:
 - `ZION_ISSOBELLA_WALLET`
 - `ZION_POOL_FEE_WALLET`
 
-Also verify `ZION_SEED_PEERS` matches the currently audited bootstrap set. As of 2026-04-20 that means Prague-only.
+Also verify `ZION_SEED_PEERS` does not include the current host's own public `host:8333` entry when deploying the audited Prague/USA/Singapore fleet.
 
-## 7. Chain Health
+## 7. Cross-Node Chain Health
 
 Use raw TCP JSON-RPC on port `8443`.
 
@@ -119,7 +119,7 @@ for host in $NODES; do
 done
 ```
 
-Confirm the deployed node reports coherent:
+Confirm all nodes agree on:
 
 - `chain_height`
 - `tip_hash`
@@ -190,20 +190,34 @@ Not acceptable:
 - no accepted shares after restart recovery window
 - pool stats not moving
 
-## 11. Historical Multi-Node Audit
+## 11. Non-Primary Node Audit
 
-The original USA/Singapore checks remain relevant only when a new multi-node expansion is deliberately reintroduced. Do not treat them as part of the active production rollout.
+USA:
+
+```bash
+ssh root@5.78.194.94 "docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'zion-core|zion-seed-1'"
+ssh root@5.78.194.94 "docker logs --since 20m zion-core | tail -120"
+ssh root@5.78.194.94 "printf '%s\n' '{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}' | nc -w 2 127.0.0.1 8443"
+```
+
+Singapore:
+
+```bash
+ssh root@5.223.84.191 "docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'zion-core|zion-seed-1'"
+ssh root@5.223.84.191 "docker logs --since 20m zion-core | tail -120"
+ssh root@5.223.84.191 "printf '%s\n' '{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}' | nc -w 2 127.0.0.1 8443"
+```
 
 ## 12. Release Criteria For This Rollout
 
 The rollout is considered successful only if all of the following are true:
 
-- `zion-core` is healthy on the audited Prague production node
+- `zion-core` is healthy on every audited node
 - live env inside `zion-core` contains the intended runtime variables
-- Prague reports coherent `chain_height` and `tip_hash` over raw TCP JSON-RPC
+- all audited nodes agree on `chain_height` and `tip_hash`
 - at least one post-deploy block proves the intended runtime behavior on-chain
 - Prague pool resumes accepted share flow after restart
-- any future non-Prague nodes are explicitly re-audited before they are considered part of production
+- USA and Singapore accept and relay the updated blocks without divergence
 
 ## 13. Failure Pattern Learned On 2026-03-28
 
@@ -219,69 +233,3 @@ Mandatory lesson:
 
 - never treat successful container recreation as proof of runtime correctness
 - always inspect live `zion-core` env and the first new block after deploy
-
-## 14. V3 L2 Profile Rollout (Bridge / Swap / DAO)
-
-Use this section after core rollout is stable when enabling or updating L2 services.
-
-### 14.1 Prepare L2 profile env
-
-On the deployment host, create profile env from template:
-
-```bash
-cd /path/to/deployed/2.9.6
-cp -n V3/docker/.env.l2.example V3/docker/.env.l2
-```
-
-Set at minimum:
-
-- `ZION_BRIDGE_CONFIG`
-- `ZION_SWAP_CONFIG`
-- `ZION_DAO_CONFIG`
-- `ZION_SWAP_ESCROW_KEY`
-- `ZION_VALIDATOR_PRIVATE_KEY`
-
-For multisig fan-in and core-side proof verification also set:
-
-- `ZION_VALIDATOR_EXTRA_KEYS` / `ZION_VALIDATOR_EXTRA_IDS` (bridge relayer side)
-- `ZION_BRIDGE_VALIDATOR_PUBKEYS` / `ZION_BRIDGE_VALIDATOR_THRESHOLD` (core side)
-
-### 14.2 Start L2 stack
-
-```bash
-cd /path/to/deployed/2.9.6
-docker compose --env-file V3/docker/.env.l2 -f V3/docker/docker-compose.v3-l2.yml up -d --build
-```
-
-### 14.3 Verify container health
-
-```bash
-docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'zion-v3-bridge|zion-v3-swap|zion-v3-dao'
-```
-
-Health endpoints:
-
-- Bridge: `http://127.0.0.1:9100/health`
-- Swap: `http://127.0.0.1:8888/health`
-- DAO: `http://127.0.0.1:8081/api/dao/health`
-
-Quick checks:
-
-```bash
-curl -fsS http://127.0.0.1:9100/health
-curl -fsS http://127.0.0.1:8888/health
-curl -fsS http://127.0.0.1:8081/api/dao/health
-```
-
-### 14.4 Rollback (L2 only)
-
-```bash
-cd /path/to/deployed/2.9.6
-docker compose --env-file V3/docker/.env.l2 -f V3/docker/docker-compose.v3-l2.yml down
-```
-
-If needed, restore prior env profile and start again:
-
-```bash
-docker compose --env-file V3/docker/.env.l2 -f V3/docker/docker-compose.v3-l2.yml up -d
-```

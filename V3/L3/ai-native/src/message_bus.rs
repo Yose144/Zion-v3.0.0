@@ -53,9 +53,14 @@ pub enum SystemEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BusMessage {
     /// Point-to-point: only the agent with `.to` should act on it.
-    Direct { to: Uuid, msg: AgentMessage },
+    Direct {
+        to: Uuid,
+        msg: AgentMessage,
+    },
     /// Fan-out to every connected subscriber.
-    Broadcast { msg: AgentMessage },
+    Broadcast {
+        msg: AgentMessage,
+    },
     /// System / infrastructure event.
     System(SystemEvent),
 }
@@ -307,10 +312,7 @@ mod tests {
         bus.broadcast_system(SystemEvent::OrchestratorStarted);
 
         let msg = sub_a.try_next().expect("should receive system event");
-        assert!(matches!(
-            msg,
-            BusMessage::System(SystemEvent::OrchestratorStarted)
-        ));
+        assert!(matches!(msg, BusMessage::System(SystemEvent::OrchestratorStarted)));
     }
 
     #[tokio::test]

@@ -210,9 +210,8 @@ export default function LiveDashboard() {
             </div>
 
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
-              {cs
-                ? `Blockchain telemetrie se taha nazivo z API ${SITE_RELEASE_LABEL} V3 test-mainnetu kazdych 30 s nad runtime ${SITE_RUNTIME_LABEL}. Aktualni verejny runtime bezi jako kontrolovana 3-node rehearsal sit Praha, USA a Singapur.`
-                : `Blockchain telemetry is pulled live from the ${SITE_RELEASE_LABEL} V3 test-mainnet API every 30 s on top of the ${SITE_RUNTIME_LABEL} runtime. The current public runtime is a controlled 3-node rehearsal across Prague, USA, and Singapore.`}
+              Blockchain telemetry pulled live from the {SITE_RELEASE_LABEL} V3 test-mainnet API every 30 s, on top of the {SITE_RUNTIME_LABEL} runtime.
+              Current public runtime is a controlled 3-node rehearsal across Prague, USA, and Singapore.
             </div>
           </motion.div>
         </div>

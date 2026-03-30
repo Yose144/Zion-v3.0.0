@@ -172,10 +172,7 @@ function buildMainnetStabilityRun(
   collectorState: StabilityCollectorState | null,
   nowSec: number,
 ): MainnetStabilityRun {
-  // Use actual configured seed node count (Prague-only = 1).
-  // The collector state may have a stale expected_nodes from a previous
-  // multi-node topology — always trust the live network-config.
-  const expectedNodes = Math.max(1, getSeedNodesConfig().length);
+  const expectedNodes = Math.max(3, Math.floor(toNumber(collectorState?.latest?.expected_nodes) ?? 3));
   const startIso = collectorState?.started_at ?? DEFAULT_MAINNET_STABILITY_START_ISO;
   const durationSecs = Math.max(
     3600,
@@ -216,23 +213,23 @@ function buildMainnetStabilityRun(
   const poolValidShares = Math.floor(toNumber(collectorLatest?.pool_valid_shares) ?? liveValidShares);
   const poolInvalidShares = Math.floor(toNumber(collectorLatest?.pool_invalid_shares) ?? liveInvalidShares);
   const poolAcceptRate = toNumber(collectorLatest?.pool_accept_rate_pct) ?? liveAcceptRate;
-  const samplesCollected = Math.floor(toNumber(collectorState?.samples_collected) ?? 0);
-  const issueCount = Math.floor(toNumber(collectorState?.issue_count) ?? 0);
-  const healthySampleRatio = toNumber(collectorState?.healthy_sample_ratio);
-
-  const zeroSpread = (heightSpread ?? 0) === 0;
-  const stableTipAgreement = tipAgreement && onlineNodes === expectedNodes && zeroSpread;
-  const closureReady = stableTipAgreement && issueCount === 0;
 
   let status = 'SCHEDULED';
   if (progress.elapsed_secs > 0) {
-    status = stableTipAgreement ? 'RUNNING' : onlineNodes > 0 ? 'DEGRADED' : 'ISSUE';
+    status = tipAgreement && onlineNodes === expectedNodes && (heightSpread ?? 0) === 0 ? 'RUNNING' : onlineNodes > 0 ? 'DEGRADED' : 'ISSUE';
   }
   if (progress.progress_pct >= 100) {
-    status = closureReady ? 'PASS' : 'REVIEW REQUIRED';
+    status = tipAgreement && onlineNodes === expectedNodes && (heightSpread ?? 0) === 0 ? 'PASS' : 'REVIEW REQUIRED';
   }
 
-  const closureReportReady = progress.progress_pct >= 100 && closureReady;
+  const samplesCollected = Math.floor(toNumber(collectorState?.samples_collected) ?? 0);
+  const issueCount = Math.floor(toNumber(collectorState?.issue_count) ?? 0);
+  const healthySampleRatio = toNumber(collectorState?.healthy_sample_ratio);
+  const closureReportReady = progress.progress_pct >= 100
+    && tipAgreement
+    && onlineNodes === expectedNodes
+    && (heightSpread ?? 0) === 0
+    && issueCount === 0;
 
   return {
     start: startIso,
@@ -271,12 +268,11 @@ function buildMainnetStabilityRun(
 export async function GET() {
   const nodes = getSeedNodesConfig();
   const collectorState = await loadCollectorState();
-  // Query only configured seed nodes — avoids timeout delay for missing nodes.
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  // Query all nodes in parallel
   const [primary, usa, singapore] = await Promise.all([
-    fetchNodeData(nodeMap.get('prague-eu')?.id ?? nodes[0]?.id),
-    nodeMap.has('usa-west') ? fetchNodeData('usa-west') : Promise.resolve(undefined),
-    nodeMap.has('singapore-ap') ? fetchNodeData('singapore-ap') : Promise.resolve(undefined),
+    fetchNodeData(nodes.find(n => n.id === 'prague-eu')?.id ?? nodes[0]?.id),
+    fetchNodeData(nodes.find(n => n.id === 'usa-west')?.id),
+    fetchNodeData(nodes.find(n => n.id === 'singapore-ap')?.id),
   ]);
 
   const nowSec = Math.floor(Date.now() / 1000);
@@ -294,7 +290,7 @@ export async function GET() {
       },
       {
         title: 'Prague, USA a Singapore drží tip po rolloutu',
-        detail: 'Prague single-node drží chain tip stabilně. Multi-node topology bude přidána po stabilizaci.',
+        detail: 'Auditovaný 3-node set zůstal po fee-split deployi bez divergence a s potvrzeným syncem.',
       },
       {
         title: 'Deploy runbook a operator guide jsou srovnané',
@@ -344,7 +340,7 @@ export async function GET() {
     next_48h: [
       {
         title: 'Hour 0-24 — sběr vzorků bez driftu',
-        detail: 'Držet Prague na stabilním tipu, zaznamenat peer count, výšku chainu a první pool recovery okno.',
+        detail: 'Držet Prague, USA a Singapore na stejném tipu, zaznamenat peer count, výšku chainu a první pool recovery okno.',
       },
       {
         title: 'Hour 24-48 — restart discipline a recovery',
@@ -367,7 +363,7 @@ export async function GET() {
     mainnet_stability_run: mainnetStabilityRun,
     launch_rehearsal: mainnetStabilityRun,
     readiness_map: readinessMap,
-    current_topology: nodes.length === 1 ? 'single-node-prague' : '3-node-test-mainnet-mesh',
+    current_topology: '3-node-test-mainnet-mesh',
     primary,
     usa,
     singapore,
