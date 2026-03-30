@@ -3,9 +3,12 @@ import { getZionRpc } from '@/lib/zion-rpc';
 import {
   ATOMIC_UNITS_PER_ZION,
   HUMANITARIAN_TITHE_PCT,
+  HUMANITARIAN_WALLET,
   ISSOBELLA_FUND_PCT,
+  ISSOBELLA_WALLET,
   MINER_SHARE_PCT,
   POOL_FEE_PCT,
+  POOL_FEE_WALLET,
 } from '@/lib/constants';
 import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
@@ -219,6 +222,9 @@ export async function GET() {
       issobella_fund: ISSOBELLA_FUND_PCT,
       miner_share: MINER_SHARE_PCT,
       min_payout: 0.1,
+      humanitarian_wallet: HUMANITARIAN_WALLET,
+      issobella_wallet: ISSOBELLA_WALLET,
+      pool_fee_wallet: POOL_FEE_WALLET,
     },
     routing,
     pplns: {
@@ -245,8 +251,8 @@ export async function GET() {
     },
     servers: [{
       id: 'primary',
-      name: 'Zion2 Primary',
-      flag: '🖥️',
+      name: 'Prague Primary',
+      flag: '🇨🇿',
       host: SITE_PRIMARY_HOST,
       region: 'primary',
       stratum: 3333,

@@ -110,17 +110,11 @@ pub fn validate_block_with_stored_hash(
             // hash is also from the new algorithm and doesn't match either).
             let recalc = prev.calculate_hash();
             if block.header.prev_hash != recalc {
-                // Neither stored nor recalculated hash matches. This happens
-                // during fresh sync when blocks were originally mined with an
-                // older algorithm version. Accept with a warning — the chain
-                // link is structurally valid (prev block exists at height-1).
-                eprintln!(
-                    "⚠️  prev_hash algo-mismatch at height {} (accepting: prev block exists at h={})",
-                    block.header.height, prev.header.height
-                );
-                eprintln!("   block.prev_hash = {}", block.header.prev_hash);
-                eprintln!("   stored(prev)    = {}", expected_prev_hash);
-                eprintln!("   recalc(prev)    = {}", recalc);
+                return Err(format!(
+                    "prev_hash mismatch at height {}: block has {}, expected {} (recalc {})",
+                    block.header.height, block.header.prev_hash,
+                    expected_prev_hash, recalc
+                ));
             }
         }
     } else if block.header.height != 0 {

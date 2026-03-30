@@ -92,7 +92,7 @@ export default function Roadmap295Page() {
     {
       id: 'q4',
       name: 'Q4 2025',
-      title: 'Polish + TestNet Launch',
+      title: 'Polish + Historical V3 Launch Target',
       months: 'Říjen - Prosinec',
       status: 'pending',
       color: 'green',
@@ -102,7 +102,7 @@ export default function Roadmap295Page() {
         'Rainbow Bridge 44:44 complete',
         'Security audit ($50k)',
         'Bug bounty program',
-        'TestNet deployment',
+        'Historical V3 launch target deployment',
         'Documentation + guides',
         'Launch event (31.12.2025)'
       ],
@@ -119,8 +119,8 @@ export default function Roadmap295Page() {
     { date: '31.03.2025', title: 'Pool Native Complete', status: 'pending', color: 'cyan', icon: Server },
     { date: '30.06.2025', title: 'Blockchain Native Complete', status: 'pending', color: 'purple', icon: Layers },
     { date: '30.09.2025', title: 'Bridge + Wallet Complete', status: 'pending', color: 'gold', icon: Link2 },
-    { date: '31.12.2025', title: 'TestNet Launch', status: 'pending', color: 'green', icon: Rocket },
-    { date: '31.12.2026', title: 'MainNet Launch', status: 'future', color: 'white', icon: Sparkles }
+    { date: '31.12.2025', title: 'Historical V3 Launch Target', status: 'pending', color: 'green', icon: Rocket },
+    { date: '31.12.2026', title: 'Historical MainNet Target', status: 'future', color: 'white', icon: Sparkles }
   ];
 
   return (
@@ -140,7 +140,7 @@ export default function Roadmap295Page() {
             <strong>NATIVE AWAKENING</strong>
           </p>
           <p className="text-lg text-gray-400">
-            100% Native Stack • 12 Months • TestNet 31.12.2025
+            100% Native Stack • 12 Months • Historical roadmap archive
           </p>
         </div>
       </section>
@@ -179,7 +179,7 @@ export default function Roadmap295Page() {
       <section className="py-16 px-6">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-zion-purple mb-12">
-            📊 Current State (Prosinec 2025)
+            📊 Historical State Snapshot (Prosinec 2025)
           </h2>
           <div className="space-y-4">
             {currentState.map((item, idx) => (
@@ -368,7 +368,7 @@ export default function Roadmap295Page() {
         </div>
       </section>
 
-      {/* TestNet Requirements */}
+      {/* Historical V3 launch requirements */}
       <section className="py-16 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-green-500/30">
@@ -376,7 +376,7 @@ export default function Roadmap295Page() {
               <div className="flex items-center justify-center gap-3 mb-6">
                 <Zap className="w-8 h-8 text-green-400" />
                 <h2 className="text-3xl font-bold text-green-400 mb-0">
-                  TestNet Launch Requirements
+                  Historical V3 Launch Requirements
                 </h2>
               </div>
               <div className="text-gray-300 space-y-6">
@@ -430,7 +430,7 @@ export default function Roadmap295Page() {
               <div className="flex items-center justify-center gap-3 mb-6">
                 <TrendingUp className="w-8 h-8 text-zion-gold" />
                 <h2 className="text-3xl font-bold text-zion-gold mb-0">
-                  MainNet Vision 2026
+                  Historical MainNet Vision 2026
                 </h2>
               </div>
               <div className="text-gray-300 space-y-6">
@@ -446,7 +446,7 @@ export default function Roadmap295Page() {
                       <Zap className="w-12 h-12 text-zion-gold" />
                     </div>
                     <div className="text-2xl font-bold text-zion-gold mb-2">1,000+ TPS</div>
-                    <div className="text-sm text-gray-400">Production Ready</div>
+                    <div className="text-sm text-gray-400">Historical target</div>
                   </div>
                   <div className="bg-zion-cyan/10 border border-zion-cyan/30 rounded-xl p-6">
                     <div className="flex justify-center mb-3">

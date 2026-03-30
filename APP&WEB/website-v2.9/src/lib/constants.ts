@@ -94,6 +94,17 @@ export const ISSOBELLA_FUND_PCT = 5;
 /** Pool operator fee: 1% of block reward */
 export const POOL_FEE_PCT = 1;
 
+// ─── Tithe Wallet Addresses ─────────────────────────────────────────────────
+
+/** Humanitarian fund wallet (genesis premine [12]) */
+export const HUMANITARIAN_WALLET = 'zion1m4v5z8z850u480c5c208z274e334369275n5y20';
+
+/** L5/L6 Issobella fund wallet */
+export const ISSOBELLA_WALLET = 'zion170a374s6h390k7w244m5c4f354v8n4678844655';
+
+/** Pool fee wallet */
+export const POOL_FEE_WALLET = 'zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7';
+
 /** Miner reward per block in ZION (Decade 1) */
 export const MINER_REWARD_ZION = BLOCK_REWARD_ZION * MINER_SHARE_PCT / 100;
 

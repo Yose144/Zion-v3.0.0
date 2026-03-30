@@ -6,33 +6,33 @@ import Link from 'next/link';
 
 const phaseCards = [
   {
-    name: 'L1 TerraNova — Pure Code',
+    name: 'L1 TerraNova — Controlled Test Mainnet',
     window: 'Mar 2026 – Now',
     progress: 96,
     highlights: [
-      'v2.9.9 Pure Code deployed — testnet live',
-      'Primary host live, pool telemetry, and explorer synced',
-      'Native miner/runtime path hardened for ARM + x86',
+      'v2.9.9 Pure Code deployed — controlled V3 test-mainnet line',
+      '3-node rehearsal mesh active, pool telemetry, and explorer synced',
+      'On-chain 89/5/5/1 split verified; public launch still gated',
     ],
   },
   {
-    name: 'Security & MainNet Prep',
+    name: 'Launch Ops & Security Closure',
     window: 'Q2–Q3 2026',
     progress: 20,
     highlights: [
+      'BFG scrub + genesis artifacts / checksums',
       'External security audit (Q2 2026)',
-      'Hardware wallet integration (Ledger/Trezor)',
-      'Security hardening on Pure Code baseline',
+      'Measured 48–72h closure report + recovery evidence',
     ],
   },
   {
-    name: 'MainNet Genesis Launch',
+    name: 'Public Launch Gate',
     window: 'Q4 2026',
     progress: 5,
     highlights: [
-      'Genesis block — 16.28B ZION premine',
-      'Full P2P network — production mining live',
-      'CoinGecko listing + wZION bridge',
+      'Dress rehearsal + genesis freeze',
+      'Public launch decision only after closure criteria',
+      'CoinGecko listing + wZION bridge after public genesis',
     ],
   },
 ];
@@ -75,8 +75,8 @@ export default function RoadmapPulse() {
               v2.9.9 <span className="text-gradient">Pure Code</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              Live TestNet runs on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime. Current priority is stability, telemetry,
-              documentation, and operational discipline before MainNet Q4 2026.
+              The current public line is a controlled V3 test-mainnet rehearsal on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime.
+              Priority is closure evidence, telemetry, documentation, and operational discipline before any public launch decision.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">

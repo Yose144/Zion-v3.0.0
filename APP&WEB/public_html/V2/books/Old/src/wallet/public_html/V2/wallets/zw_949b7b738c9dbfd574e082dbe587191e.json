@@ -1,0 +1,10 @@
+{
+  "walletId": "zw_949b7b738c9dbfd574e082dbe587191e",
+  "tokens": 144,
+  "label": "Test Bonus",
+  "orderId": "TEST-ORD-001",
+  "customerEmail": "test@example.com",
+  "created": "2025-12-04T16:37:21.243150",
+  "expiresAt": "2026-12-04T16:37:21.243159",
+  "status": "active"
+}

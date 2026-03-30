@@ -82,6 +82,11 @@ head -c 500 scripts/finetune/data/zion_train.jsonl | python -m json.tool
 
 **Výstup:** `data/zion_train.jsonl` s desítkami až stovkami párů.
 
+Poznamka k V2 books:
+- publikovane PDF ve `APP&WEB/public_html/V2/books/` se nemaji brat jako primarni ingest format,
+- collector je uci pres repo-local textove proxy vrstvy jako `docs/docs2.9/books/`, `docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME/`, `docs/docs2.9/SACRED_KNOWLEDGE/`, `docs/docs2.9/COSMIC_MAP/` a `docs/docs2.9/deployment/AMENTI_LOG_INDEX.md`,
+- kanonicky prehled teto strategie drzi `docs/docs2.9/books/V2_BOOKS_AI_NATIVE_CORPUS.md`.
+
 Ověřený robustní běh z 2026-03-29:
 - `300` souborů
 - `765` vygenerovaných párů

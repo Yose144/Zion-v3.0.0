@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { BookOpen, Brain, Cpu, Gauge, Network, Radar, Zap } from 'lucide-react';
+import { SITE_POOL_PRIMARY } from '@/lib/site';
 
 const protocols = [
   {
@@ -88,7 +89,7 @@ export default function MiningClient() {
               <h2 className="text-3xl font-semibold text-white">Stratum endpoints</h2>
               <p className="text-sm text-gray-400">Auto-detect or pin a specific algorithm port.</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-mono text-zion-cyan">stratum+tcp://91.98.122.165:3333</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-mono text-zion-cyan">stratum+tcp://{SITE_POOL_PRIMARY}</div>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {supportedAlgorithms.map((algo) => (

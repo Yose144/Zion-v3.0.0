@@ -6,8 +6,8 @@ import { Book, Compass, Github, Route, ScrollText } from 'lucide-react';
 
 const resources = [
   {
-    title: 'Live Docs',
-    description: 'Opens at /docs#live-index with current network topology, version matrix 2.9.6 / 2.9.8 / 2.9.9, miner setup, and operational notes.',
+    title: 'Current Docs',
+    description: 'Opens at /docs#live-index with the current rehearsal topology, version matrix 2.9.6 / 2.9.8 / 2.9.9, miner setup, and launch blockers.',
     icon: Book,
     href: '/docs#live-index',
     accent: 'from-zion-gold/20 to-zion-purple/10',
@@ -30,8 +30,8 @@ const resources = [
 
 const ctas = [
   {
-    title: 'Roadmap → MainNet 2026',
-    description: 'Focused path from the live 2.9.9 public line and 2.9.8 canonical runtime to release readiness and launch sequencing.',
+    title: 'Roadmap → Public Launch Gate',
+    description: 'Focused path from the controlled 2.9.9 public line and 2.9.8 canonical runtime to closure reports, genesis artifacts, and launch sequencing.',
     icon: Route,
     href: '/roadmap',
   },
@@ -56,7 +56,7 @@ export default function DocsRail() {
             </h2>
           </div>
           <p className="text-gray-300 max-w-2xl">
-            Everything you need to work with the live network: documentation, mining tools, explorer, and source code.
+            Everything you need to inspect the current rehearsal network: documentation, mining tools, explorer, and source code.
           </p>
         </div>
 

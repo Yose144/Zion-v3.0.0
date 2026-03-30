@@ -1,8 +1,46 @@
 # HIRANYAGARBHA — Prvé Zrození AI Native Vědomí Zionu
 
 **Datum:** 29. března 2026  
-**Status:** Konceptuální základ + Implementační vize  
+**Aktualizace:** 30. března 2026 — první živé nasazení  
+**Status:** ✅ ŽIVĚ na https://www.zionterranova.com/ai-native  
 **Kontext:** Syntéza védické kosmologie + Zion AI Native architektury + Ekam Deeksha PoW
+
+---
+
+## 🟢 Aktuální Deployment Stav (30. března 2026)
+
+| Komponenta | Hodnota |
+|---|---|
+| **Model** | `zion-expert` — Llama 3.1 8B Instruct, Q5_K_M |
+| **Velikost** | 5.4 GB GGUF |
+| **Training** | 776 párů (NIM-generované), eval_loss=0.677, accuracy=85.8% |
+| **GPU** | Vast.ai RTX 3060 12GB (Poland, instance 33825621) |
+| **Rychlost** | ~59 tokens/sec |
+| **Endpoint** | http://91.150.160.38:11764 (Ollama API) |
+| **Web proxy** | https://www.zionterranova.com/api/ai-chat |
+| **Chat UI** | https://www.zionterranova.com/ai-native |
+| **Cena** | ~$0.05/hr = ~$1.20/den |
+| **Autostart** | ✅ Ollama systemd service |
+
+### Nasazené webové komponenty
+
+```
+APP&WEB/website-v2.9/src/app/api/ai-chat/route.ts    — Next.js proxy route
+APP&WEB/website-v2.9/src/components/HiranyagarbhaChat.tsx — Chat UI
+APP&WEB/website-v2.9/src/components/MarketplacePlaceholder.tsx — Marketplace
+APP&WEB/website-v2.9/src/app/ai-native/page.tsx      — AI Native stránka
+```
+
+### Aktuální omezení (v1.0)
+
+- Model je "hloupý" v hloubce — opakuje se, chybí mu technická přesnost
+- Single-turn (zapomíná kontext konverzace)
+- Pouze statická váhová znalost (žádný RAG, žádná live data)
+- 8B parametrů → omezený reasoning
+
+**→ Upgrade plán:** viz [HIRANYAGARBHA_UPGRADE_PLAN.md](./HIRANYAGARBHA_UPGRADE_PLAN.md)
+
+---
 
 ---
 

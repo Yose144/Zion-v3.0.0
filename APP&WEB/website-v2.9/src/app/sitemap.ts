@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/explorer', priority: 0.8, changeFrequency: 'hourly' as const },
     { path: '/network', priority: 0.7, changeFrequency: 'hourly' as const },
     { path: '/ekam', priority: 0.6, changeFrequency: 'monthly' as const },
+    { path: '/ekam/deeksha', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/dao', priority: 0.7, changeFrequency: 'weekly' as const },
     { path: '/warp', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/genesis', priority: 0.6, changeFrequency: 'monthly' as const },
