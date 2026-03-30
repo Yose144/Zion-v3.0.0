@@ -1,0 +1,52 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ZION DAO — Testnet Configuration
+# On-chain governance: proposals, voting (1 ZION = 1 vote), treasury multisig
+# ──────────────────────────────────────────────────────────────────────────────
+
+name    = "ZION DAO"
+version = "1.0.0"
+
+# ── HTTP API ─────────────────────────────────────────────────────────────────
+
+api_port = 8080
+api_key  = ""     # set ZION_DAO_API_KEY env var for production
+
+# ── Database ─────────────────────────────────────────────────────────────────
+
+db_path = "/data/dao/dao.db"
+
+# ── L1 Connection ────────────────────────────────────────────────────────────
+
+l1_rpc_url    = "91.98.122.165:8443"       # Prague node
+l1_rpc_backup = "127.0.0.1:8443"           # local fallback
+
+# ── L1 Scanner ───────────────────────────────────────────────────────────────
+
+scan_interval_secs = 10
+min_vote_weight    = 1_000_000_000_000      # 1 ZION in flowers
+finality_blocks    = 6
+
+# ── Governance ───────────────────────────────────────────────────────────────
+
+proposal_threshold  = 1_000_000_000_000_000_000   # 1 M ZION in flowers
+quorum_percent      = 10.0
+voting_period_days  = 7
+timelock_hours      = 48
+
+# ── Treasury ─────────────────────────────────────────────────────────────────
+
+treasury_addresses = [
+    "zion1dao0treasury0main000000000000000000001",
+    "zion1dao0treasury0main000000000000000000002",
+    "zion1dao0treasury0main000000000000000000003",
+]
+daily_spend_limit   = 100_000_000    # 100 M ZION (whole coins)
+multisig_threshold  = 5
+multisig_total      = 7
+
+# ── Guardians ────────────────────────────────────────────────────────────────
+# Add guardian entries when provisioned:
+# [[guardians]]
+# name       = "guardian-1"
+# address    = "zion1..."
+# public_key = "ed25519hex..."

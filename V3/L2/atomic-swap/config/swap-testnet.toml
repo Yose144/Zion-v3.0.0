@@ -1,0 +1,38 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ZION Atomic Swap Service — Testnet Configuration
+# Cross-chain HTLC swaps on ZION L1
+# ──────────────────────────────────────────────────────────────────────────────
+
+[swap]
+name              = "ZION Atomic Swap Service"
+network           = "testnet"
+min_lock_flowers  = 1_000_000_000_000      # 1 ZION minimum
+max_lock_atomic   = 10_000_000_000_000     # 10 000 ZION maximum
+release_fee_atomic = 2_000                 # 0.000000002 ZION flat fee
+
+# ── ZION L1 ──────────────────────────────────────────────────────────────────
+
+[l1]
+rpc_url            = "91.98.122.165:8443"  # Prague node
+# rpc_token        = ""                    # set ZION_RPC_TOKEN env var
+# escrow_key_hex   = ""                    # set ZION_SWAP_ESCROW_KEY env var
+scan_batch_size    = 10
+poll_interval_secs = 5
+
+# ── Database ─────────────────────────────────────────────────────────────────
+
+[database]
+path = "/data/atomic-swap/swap.db"
+
+# ── HTTP API ─────────────────────────────────────────────────────────────────
+
+[api]
+bind = "0.0.0.0:8888"
+# bearer_token = ""   # set for production; open for testnet
+
+# ── Refund Automation ────────────────────────────────────────────────────────
+
+[refund]
+auto_refund        = true
+check_interval_secs = 30
+grace_period_secs  = 120
