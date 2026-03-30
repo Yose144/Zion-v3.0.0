@@ -154,6 +154,23 @@ export interface ZionEmission {
   status?: string;
 }
 
+export interface ZionWalletSnapshot {
+  address: string;
+  balance_atomic: number;
+  balance_zion: number;
+  chain_height: number;
+  transaction_model: string;
+  utxo_count: number;
+  total_utxo_amount: number;
+  utxos: Array<{
+    tx_hash: string;
+    output_index: number;
+    amount: number;
+    address: string;
+    height: number;
+  }>;
+}
+
 // ─── V3 Pool Routing Stats (raw shape from pool metrics TCP endpoint) ────────
 
 export interface V3PoolRoutingStats {
@@ -766,14 +783,57 @@ class ZionRpcClient {
   async getAddressBalance(address: string): Promise<{ balance_atomic: number; balance_zion: number; utxo_count: number }> {
     try {
       const res = await this.rpcCall<any>('getBalance', { address });
+      const balanceAtomic = Number(res?.balance_flowers ?? res?.balance_atomic ?? 0);
+      const balanceZion = typeof res?.balance_zion === 'number'
+        ? res.balance_zion
+        : balanceAtomic / ATOMIC_PER_ZION;
+      const utxos = address.startsWith('zion1')
+        ? await this.rpcCall<any>('getUtxos', { address }).catch(() => null)
+        : null;
       return {
-        balance_atomic: res?.balance_flowers ?? 0,
-        balance_zion: res?.balance_zion ?? 0,
-        utxo_count: 0,
+        balance_atomic: balanceAtomic,
+        balance_zion: balanceZion,
+        utxo_count: utxos?.count ?? utxos?.utxos?.length ?? 0,
       };
     } catch {
       return { balance_atomic: 0, balance_zion: 0, utxo_count: 0 };
     }
+  }
+
+  async getWalletSnapshot(address: string): Promise<ZionWalletSnapshot> {
+    const [balance, utxos] = await Promise.all([
+      this.rpcCall<any>('getBalance', { address }),
+      address.startsWith('zion1')
+        ? this.rpcCall<any>('getUtxos', { address }).catch(() => null)
+        : Promise.resolve(null),
+    ]);
+
+    const balanceAtomic = Number(balance?.balance_flowers ?? balance?.balance_atomic ?? 0);
+    const balanceZion = typeof balance?.balance_zion === 'number'
+      ? balance.balance_zion
+      : balanceAtomic / ATOMIC_PER_ZION;
+    const rawUtxos = Array.isArray(utxos?.utxos) ? utxos.utxos : [];
+
+    return {
+      address,
+      balance_atomic: balanceAtomic,
+      balance_zion: balanceZion,
+      chain_height: balance?.chain_height ?? utxos?.chain_height ?? 0,
+      transaction_model: balance?.transaction_model ?? (address.startsWith('zion1') ? 'utxo' : 'account'),
+      utxo_count: utxos?.count ?? rawUtxos.length,
+      total_utxo_amount: utxos?.total_amount ?? rawUtxos.reduce((sum: number, item: any) => sum + Number(item?.amount ?? 0), 0),
+      utxos: rawUtxos.map((item: any) => ({
+        tx_hash: item.tx_hash ?? '',
+        output_index: item.output_index ?? 0,
+        amount: Number(item.amount ?? 0),
+        address: item.address ?? address,
+        height: item.height ?? 0,
+      })),
+    };
+  }
+
+  async submitSignedTransaction(transaction: unknown, method: 'submitTransaction' | 'submitAccountTransaction' | 'sendRawTransaction' = 'submitTransaction'): Promise<{ accepted: boolean; tx_id?: string }> {
+    return this.rpcCall(method, { transaction });
   }
 
   /** Get pool blocks — not available in V3 pool metrics */
