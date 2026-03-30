@@ -35,6 +35,7 @@ struct ChainInfo {
 #[derive(Debug, Deserialize)]
 struct L1Block {
     pub height: u64,
+    #[serde(alias = "hash_hex")]
     pub hash: String,
     #[serde(default)]
     pub utxo_transactions: Vec<L1Transaction>,
