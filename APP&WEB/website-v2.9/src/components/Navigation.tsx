@@ -40,10 +40,18 @@ export default function Navigation() {
       ],
     },
     {
+      title: 'DeFi',
+      items: [
+        { href: '/defi',           label: tr('nav', 'defi', lang) },
+        { href: '/bridge',         label: tr('nav', 'bridge', lang) },
+        { href: '/dao',            label: tr('nav', 'dao', lang) },
+        { href: '/warp',           label: tr('nav', 'warp', lang) },
+      ],
+    },
+    {
       title: 'Reference',
       items: [
         { href: '/docs',           label: tr('nav', 'docs', lang) },
-        { href: '/bridge',         label: tr('nav', 'bridge', lang) },
         { href: '/api-reference',  label: tr('nav', 'api', lang) },
         { href: '/ai-native',      label: tr('nav', 'ai_native', lang) },
       ],
@@ -54,6 +62,7 @@ export default function Navigation() {
   const groupLabels: Record<string, string> = {
     Core: tr('nav', 'mission', lang),
     Build:  tr('nav', 'stacks', lang),
+    DeFi: tr('nav', 'defi_group', lang),
     Reference: tr('nav', 'knowledge', lang),
   };
 
