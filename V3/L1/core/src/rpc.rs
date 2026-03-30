@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use crate::NodeRuntime;
@@ -604,6 +604,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
 
     // ── submitBridgeUnlock ────────────────────────────────────────────
     {
+        let rt = Arc::clone(&runtime);
         router.register("submitBridgeUnlock", Box::new(move |params: &Value| {
             let recipient = params.get("recipient")
                 .or_else(|| params.get("l1_recipient"))
@@ -612,6 +613,16 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
             let amount_flowers = params.get("amount_flowers")
                 .and_then(|v| v.as_u64())
                 .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'amount_flowers' param".into()))?;
+            let burn_id = params.get("burn_id")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'burn_id' param".into()))?;
+            let source_chain = params.get("evm_chain")
+                .or_else(|| params.get("source_chain"))
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'evm_chain' param".into()))?;
+            let evm_tx_hash = params.get("evm_tx_hash")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'evm_tx_hash' param".into()))?;
             let validator_proofs = params.get("validator_proofs")
                 .or_else(|| params.get("validators"))
                 .and_then(|v| v.as_array())
@@ -626,11 +637,39 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
             if validator_proofs.len() < 3 {
                 return Err((INVALID_PARAMS, "submitBridgeUnlock requires at least 3 validator proofs".into()));
             }
+            if burn_id.trim().is_empty() || source_chain.trim().is_empty() || evm_tx_hash.trim().is_empty() {
+                return Err((INVALID_PARAMS, "bridge unlock metadata must not be empty".into()));
+            }
 
-            Err((
-                TX_REJECTED,
-                "submitBridgeUnlock scaffold is registered, but the bridge unlock validation path is not yet enabled in core".into(),
-            ))
+            let mut validator_ids = HashSet::new();
+            for proof in validator_proofs {
+                let validator_id = proof.get("validator_id")
+                    .or_else(|| proof.get("id"))
+                    .and_then(|value| value.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "each validator proof requires a string validator_id".into()))?;
+                if !validator_ids.insert(validator_id.to_string()) {
+                    return Err((INVALID_PARAMS, format!("duplicate validator_id in validator_proofs: {validator_id}")));
+                }
+            }
+
+            let mut rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+            let response = rt.submit_bridge_unlock(crate::BridgeUnlockRequest {
+                recipient: recipient.to_string(),
+                amount_flowers,
+                source_chain: source_chain.to_string(),
+                burn_id: burn_id.to_string(),
+                evm_tx_hash: evm_tx_hash.to_string(),
+            });
+            match response {
+                crate::RpcResponse::TransactionResult { accepted, tx_id, reason } => {
+                    if accepted {
+                        Ok(json!({ "accepted": true, "tx_id": tx_id }))
+                    } else {
+                        Err((TX_REJECTED, reason.unwrap_or_else(|| "bridge unlock rejected".into())))
+                    }
+                }
+                _ => Err((INTERNAL_ERROR, "unexpected response".into())),
+            }
         }));
     }
 
@@ -1030,6 +1069,53 @@ mod tests {
         build_node_router(runtime)
     }
 
+    fn bridge_unlock_ready_router(amount: u64) -> RpcRouter {
+        use std::sync::{Arc, Mutex};
+
+        let mut runtime = crate::NodeRuntime::new("rpc-test", crate::NodeConfig::mainnet());
+        let funding = {
+            let mut transaction = crate::tx::Transaction {
+                id: [0u8; 32],
+                version: 1,
+                inputs: vec![],
+                outputs: vec![crate::tx::TxOutput {
+                    amount,
+                    address: fee::BRIDGE_VAULT_ADDRESS.to_string(),
+                    memo: None,
+                }],
+                fee: 0,
+                timestamp: 1_700_000_000,
+            };
+            transaction.finalize_id();
+            transaction
+        };
+
+        let funding_block = crate::AcceptedBlock {
+            template_id: 1,
+            height: 1,
+            timestamp: crate::now_secs(),
+            difficulty: crate::difficulty::GENESIS_DIFFICULTY,
+            nonce: 0,
+            hash_hex: crate::hex(&[0x11; 32]),
+            header_hex: String::new(),
+            previous_hash_hex: runtime.accepted_blocks()[0].hash_hex.clone(),
+            transaction_ids: vec![],
+            transactions: vec![],
+            total_fees_zion: 0,
+            body_hash_hex: crate::body_hash_hex(&[]),
+            subsidy_zion: crate::emission::block_subsidy(1),
+            miner_reward_zion: crate::emission::block_subsidy(1),
+            miner_address: String::new(),
+            utxo_transaction_ids: vec![crate::hex(&funding.id)],
+            utxo_transactions: vec![funding],
+        };
+
+        let imported = runtime.import_peer_blocks(vec![funding_block]);
+        assert!(matches!(imported, Ok(1)));
+
+        build_node_router(Arc::new(Mutex::new(runtime)))
+    }
+
     fn rpc_call(router: &RpcRouter, method: &str, params: Value) -> RpcResponse {
         router.handle_request(&RpcRequest {
             jsonrpc: "2.0".into(),
@@ -1329,12 +1415,15 @@ mod tests {
     }
 
     #[test]
-    fn live_submit_bridge_unlock_scaffold_rejects_until_enabled() {
+    fn live_submit_bridge_unlock_rejects_when_vault_is_empty() {
         let router = live_router();
         let recipient = crate::crypto::derive_address(&[7u8; 32]);
         let resp = rpc_call(&router, "submitBridgeUnlock", json!({
             "recipient": recipient,
             "amount_flowers": 1_000_000_000_000u64,
+            "burn_id": "burn-empty",
+            "evm_chain": "base-sepolia",
+            "evm_tx_hash": "0xempty",
             "validator_proofs": [
                 {"validator_id": "v1", "signature": "01"},
                 {"validator_id": "v2", "signature": "02"},
@@ -1344,6 +1433,55 @@ mod tests {
         assert!(resp.error.is_some());
         let err = resp.error.unwrap();
         assert_eq!(err.code, TX_REJECTED);
-        assert!(err.message.contains("not yet enabled"));
+        assert!(err.message.contains("insufficient"));
+    }
+
+    #[test]
+    fn live_submit_bridge_unlock_accepts_funded_vault_request() {
+        let router = bridge_unlock_ready_router(2_000_000_000_000);
+        let recipient = crate::crypto::derive_address(&[9u8; 32]);
+        let resp = rpc_call(&router, "submitBridgeUnlock", json!({
+            "recipient": recipient,
+            "amount_flowers": 1_000_000_000_000u64,
+            "burn_id": "burn-1",
+            "evm_chain": "base-sepolia",
+            "evm_tx_hash": "0xabc123",
+            "validator_proofs": [
+                {"validator_id": "v1", "signature": "01"},
+                {"validator_id": "v2", "signature": "02"},
+                {"validator_id": "v3", "signature": "03"}
+            ]
+        }));
+        assert!(resp.error.is_none(), "submitBridgeUnlock failed: {:?}", resp.error);
+        let result = resp.result.unwrap();
+        assert_eq!(result["accepted"], true);
+        assert!(result["tx_id"].as_str().is_some());
+    }
+
+    #[test]
+    fn live_submit_bridge_unlock_rejects_replay_key_reuse() {
+        let router = bridge_unlock_ready_router(3_000_000_000_000);
+        let recipient = crate::crypto::derive_address(&[11u8; 32]);
+        let params = json!({
+            "recipient": recipient,
+            "amount_flowers": 1_000_000_000_000u64,
+            "burn_id": "burn-replay",
+            "evm_chain": "base-sepolia",
+            "evm_tx_hash": "0xreplay",
+            "validator_proofs": [
+                {"validator_id": "v1", "signature": "01"},
+                {"validator_id": "v2", "signature": "02"},
+                {"validator_id": "v3", "signature": "03"}
+            ]
+        });
+
+        let first = rpc_call(&router, "submitBridgeUnlock", params.clone());
+        assert!(first.error.is_none(), "initial unlock failed: {:?}", first.error);
+
+        let second = rpc_call(&router, "submitBridgeUnlock", params);
+        assert!(second.error.is_some());
+        let err = second.error.unwrap();
+        assert_eq!(err.code, TX_REJECTED);
+        assert!(err.message.contains("replay key"));
     }
 }
