@@ -528,7 +528,7 @@ cargo build --release -p zion-miner --features opencl
                   code={`# Start the node (see Node Setup guide)
 ./target/release/zion-node \\
   --config config/mainnet.toml \\
-  --rpc-port 8444`}
+  --rpc-port 8443`}
                 />
 
                 <div className="mt-4">
@@ -536,7 +536,7 @@ cargo build --release -p zion-miner --features opencl
                     title="Step 2 — Mine against your node"
                     code={`./target/release/zion-miner \\
   --algo cosmic_harmony \
-  --node http://127.0.0.1:8444 \\
+  --node http://127.0.0.1:8443 \\
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc) \\
   --solo`}
@@ -547,7 +547,7 @@ cargo build --release -p zion-miner --features opencl
                   <CodeBlock
                     title="Alternative: getblocktemplate RPC"
                     code={`# Request a block template
-curl -s http://localhost:8444 \\
+curl -s http://localhost:8443 \\
   -H "Content-Type: application/json" \\
   -d '{
     "jsonrpc": "2.0",

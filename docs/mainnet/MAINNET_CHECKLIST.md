@@ -2,7 +2,15 @@
 
 **Comprehensive checklist for MainNet readiness**
 
-> 🔄 Aktualizace: 24. 2. 2026 (Session 50) — hloubkový scan kódu + live servery
+> 🔄 Aktualizace: 28. 3. 2026 — checklist doplněn o ověřený V3 fee-split rollout a live post-deploy audit
+
+## Recent Verified Milestone
+
+- ✅ V3 core reward split je ověřen přímo on-chain, ne pouze v pool accounting vrstvě
+- ✅ Live ověřené rozdělení block subsidy: miner `89%`, humanitarian `5%`, issobella `5%`, pool fee `1%`
+- ✅ První explicitně potvrzený split-enabled blok: `465`
+- ✅ Následné potvrzení na auditovaných nodech: bloky `471` a `472`
+- ✅ Referenční rollout report: `docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`
 
 ---
 
@@ -12,6 +20,7 @@
 - ✅ Genesis parametry definovány (chain id, timestamp, supply) — `consensus.rs`, `reward.rs`, `premine.rs`
 - ⚠️ `genesis.json` / `genesis.rs` — GENESIS_MESSAGE.txt placeholder existuje; formální genesis blok NENAPLNĚN před mainnet
 - ✅ Emission křivka implementována — `reward.rs` (decade decay, tail 724 ZION, 100+ let)
+- ✅ On-chain reward split enforcement ověřen ve V3 core — live potvrzené coinbase rozdělení `89/5/5/1`
 - ✅ Premine rozdělení finální — `premine.rs` (4 kategorie, 16.28B ZION)
 - ⚠️ Time-lock mechanismus — pole `unlock_height` v kódu existuje; on-chain enforcement **není aktivní v v2.9.5**, řídí DAO governance
 - [ ] Hash genesis souboru publikován — blokováno do vytvoření genesis bloku OFFLINE
@@ -23,8 +32,8 @@
 - ✅ Fork-choice rule implementován — highest accumulated work (`reorg.rs`)
 
 ### Exit Criteria
-- [ ] `mainnet_exit_criteria.md` vytvořen — **CHYBÍ, P0 blocker**
-- [ ] CI job: `mainnet_correctness_suite`
+- ⚠️ `MAINNET_EXIT_CRITERIA.md` existuje, ale je stále `DRAFT` a bez sign-offu — launch blocker do finálního schválení
+- [ ] CI job: `mainnet_correctness_suite` nebo ekvivalentní explicitní launch-gating workflow
 
 ---
 
@@ -35,6 +44,7 @@
 - [ ] Double-spend simulace — **CHYBÍ**
 - [ ] Fork-choice testy — logika v `reorg.rs`, ale integrační test chybí
 - ✅ Time drift / timestamp sanity — `validation.rs` (testnet 86400 s, mainnet 7200 s) ⚠️ zkontrolovat přepnutí při launch
+- ✅ Live payout workflow ověřen na V3 mainnet rolloutu včetně cross-node akceptace nových split bloků
 - [ ] Mempool edge cases
 - ✅ Max block size DoS ochrana — `validation.rs` limit 1 MB blokuje OOM
 
@@ -68,7 +78,7 @@
 ## 🟢 PHASE 3 — INFRASTRUCTURE (P1)
 
 ### Seed & Bootstrap
-- ✅ Min. 3 geografické seed nody — 5 nodů (Helsinki/SeedDE/Usa1/Usa2/Asia3), live 24. 2. 2026
+- ✅ Min. 3 geografické seed nody — Prague / USA / Singapore auditovány po V3 fee-split rolloutu 28. 3. 2026
 - ✅ Monitoring (Prometheus/Grafana) — běží na Helsinki (port 3001/9090)
 - [ ] Alerty (disk, peers, block lag) — **Alertmanager routing CHYBÍ** (Telegram/Slack)
 - [ ] Zálohy dat
@@ -76,6 +86,7 @@
 ### Docker & Deploy
 - ✅ `docker-compose.mainnet.yml` — existuje
 - ✅ `ops/runbook.md` — existuje
+- ✅ V3 rollout verification checklist doplněn — `docs/mainnet/V3_ROLLOUT_VERIFICATION_CHECKLIST.md`
 - [ ] Docker images published na registry
 - [ ] Checksums / SHA256 publikovány
 
@@ -167,4 +178,4 @@
 ---
 
 *Checklist Version: 1.1*  
-*Last Updated: 2026-02-24 (hloubkový scan kódu + live servery, Session 50)*
+*Last Updated: 2026-03-28 (V3 fee-split rollout verification)*

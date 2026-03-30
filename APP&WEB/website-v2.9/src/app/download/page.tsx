@@ -65,7 +65,7 @@ const tools: ToolInfo[] = [
     icon: <Server className="h-6 w-6" />,
     prefix: 'zion-node',
     color: 'text-zion-purple',
-    quickCmd: 'zion-node --network mainnet --rpc-port 8444 --p2p-port 8334',
+    quickCmd: 'zion-node --network mainnet --rpc-port 8443 --p2p-port 8333',
   },
 ];
 

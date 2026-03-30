@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
+import { SITE_ENVIRONMENT_LABEL, SITE_NETWORK_LABEL, SITE_NETWORK_TOPOLOGY, SITE_PUBLIC_LAUNCH_STATUS, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 export const alt = `ZION Blockchain ${SITE_RELEASE_LABEL}`;
 export const size = { width: 1200, height: 630 };
@@ -75,7 +75,7 @@ export default async function Image() {
             marginBottom: '24px',
           }}
         >
-          Live TestNet · {SITE_VERSION}
+          Test Mainnet Rehearsal · {SITE_VERSION}
         </div>
 
         {/* Title */}
@@ -116,7 +116,7 @@ export default async function Image() {
             marginBottom: '32px',
           }}
         >
-          {`${SITE_RELEASE_LABEL} · runtime ${SITE_RUNTIME_LABEL} · Native Rust L1`}
+          {`${SITE_NETWORK_LABEL} · ${SITE_PUBLIC_LAUNCH_STATUS} · runtime ${SITE_RUNTIME_LABEL} · Native Rust L1`}
         </div>
 
         {/* Stats row */}
@@ -127,7 +127,7 @@ export default async function Image() {
           }}
         >
           {[
-            { label: 'Release', value: SITE_VERSION },
+            { label: 'Environment', value: SITE_ENVIRONMENT_LABEL },
             { label: 'Public Hosts', value: '1' },
             { label: 'Topology', value: SITE_NETWORK_TOPOLOGY },
           ].map((stat) => (

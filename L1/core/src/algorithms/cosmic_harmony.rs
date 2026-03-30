@@ -92,13 +92,19 @@ mod tests {
         let hash1 = hash(input, nonce, 0);
         let hash2 = hash(input, nonce, 100000);
 
-        // Both heights use the same canonical Deeksha path.
-        // Height is used only for algorithm path selection, NOT as hash input — the
-        // block header data (containing height) is the caller's responsibility.
-        // Different heights on the same path → same output for same input+nonce.
-        assert_eq!(
+        // Since Ekam Deeksha v2 uses epoch-based NPU weight rotation
+        // (epoch = height / 2016), heights 0 and 100000 are in different
+        // epochs (0 vs 49), so they MUST produce different hashes.
+        assert_ne!(
             hash1, hash2,
-            "Both heights use Deeksha path: same input+nonce gives same hash"
+            "Different epochs must produce different hashes"
+        );
+
+        // Same epoch → same hash (both height 0 and 1 are in epoch 0)
+        let hash_same_epoch = hash(input, nonce, 1);
+        assert_eq!(
+            hash1, hash_same_epoch,
+            "Same epoch heights must produce identical hashes"
         );
     }
 

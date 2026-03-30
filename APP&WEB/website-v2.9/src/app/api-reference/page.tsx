@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 
 const apiStats = [
-  { label: 'Core uptime', value: 'TestNet', detail: '2 nodes synced', icon: Shield },
-  { label: 'API Port', value: '8444', detail: 'JSON-RPC + REST', icon: Activity },
+  { label: 'Core environment', value: 'V3 Test Mainnet', detail: 'controlled rehearsal line', icon: Shield },
+  { label: 'API Port', value: '8443', detail: 'JSON-RPC + REST', icon: Activity },
   { label: 'Pool Port', value: '8080', detail: 'stats endpoint', icon: Server },
 ];
 

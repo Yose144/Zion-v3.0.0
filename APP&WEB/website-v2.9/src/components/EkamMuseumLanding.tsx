@@ -354,6 +354,12 @@ export default function EkamMuseumLanding() {
       <section className="relative px-6 pt-4 pb-20 sm:px-8 lg:px-10">
         <div className="mx-auto flex max-w-6xl flex-wrap gap-4">
           <Link
+            href="/ekam/deeksha"
+            className="inline-flex items-center justify-center rounded-full border border-amber-200/20 bg-amber-300/10 px-6 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-200/30 hover:bg-amber-300/14"
+          >
+            O knize Ekam Deeksha
+          </Link>
+          <Link
             href="/"
             className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-amber-200/30 hover:bg-white/14"
           >

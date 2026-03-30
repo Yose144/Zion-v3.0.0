@@ -45,23 +45,43 @@ import {
    ═══════════════════════════════════════════════════════════ */
 
 const heroStats = [
-  { label: 'Public Host', value: '1', descriptor: 'Zion2 · public RPC + pool + web' },
-  { label: 'Internal Seeds', value: '2', descriptor: 'Container peers behind primary host' },
+  { label: 'Public Nodes', value: '1', descriptor: 'Prague public host + USA/Singapore internal lanes' },
+  { label: 'P2P Mesh', value: 'Controlled', descriptor: 'Public host + internal validator lanes' },
   { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
-  { label: 'Topology', value: 'Current', descriptor: 'Primary host + internal seeds' },
-  { label: 'Network', value: 'TestNet', descriptor: 'Public line v2.9.9 · runtime v2.9.8' },
+  { label: 'Topology', value: 'Rehearsal', descriptor: '3-region test-mainnet rehearsal topology' },
+  { label: 'Network', value: 'V3 Test Mainnet', descriptor: 'Public rehearsal line v2.9.9 · runtime v2.9.8' },
 ];
 
 const infraFeatures = [
   {
     icon: Server,
-    title: 'Zion2 Primary 🖥️',
-    detail: 'Current public host for chain, pool, explorer, and web',
-    ip: SITE_PRIMARY_HOST,
+    title: 'Prague (EU)',
+    detail: 'Primary seed node: chain, pool, web, explorer',
+    ip: '91.98.122.165',
     status: 'Primary',
     color: 'text-emerald-400',
     border: 'border-emerald-500/30',
     bg: 'bg-emerald-500/5',
+  },
+  {
+    icon: Server,
+    title: 'USA (Hillsboro)',
+    detail: 'Internal validator lane: chain, pool',
+    ip: '5.78.194.94',
+    status: 'Internal',
+    color: 'text-zion-cyan',
+    border: 'border-cyan-500/30',
+    bg: 'bg-cyan-500/5',
+  },
+  {
+    icon: Server,
+    title: 'Singapore (APAC)',
+    detail: 'Internal validator lane: chain, pool',
+    ip: '5.223.84.191',
+    status: 'Internal',
+    color: 'text-zion-purple',
+    border: 'border-purple-500/30',
+    bg: 'bg-purple-500/5',
   },
 ];
 
@@ -83,8 +103,8 @@ const runtimePanels = [
   {
     icon: Globe,
     label: 'P2P Peer',
-    value: `${SITE_PRIMARY_HOST}:8334`,
-    detail: 'Public peer entry with internal seed quorum behind it',
+    value: `${SITE_PRIMARY_HOST}:8333`,
+    detail: 'Primary public peer with internal lanes to USA + Singapore',
     accent: 'text-emerald-400',
   },
   {
@@ -121,25 +141,25 @@ const guideBlocks = [
   {
     icon: Globe,
     title: 'P2P Layer',
-    description: 'Native libp2p network for blockchain synchronization on the current primary-host topology.',
+    description: 'Native libp2p network for blockchain synchronization on the current rehearsal topology.',
     items: [
-      `Public peer: ${SITE_PRIMARY_HOST}:8334`,
-      'Internal seeds: zion-seed-1 + zion-seed-2',
-      'Compose subnet: 172.29.0.0/24',
+      `Public peer: ${SITE_PRIMARY_HOST}:8333`,
+      'Internal lanes: 5.78.194.94:8333, 5.223.84.191:8333',
+      '1 public host + 2 internal validator lanes',
     ],
   },
 ];
 
 const networkFacts = [
   { text: 'Native Rust P2P — libp2p mesh', done: true },
-  { text: '1 public host + 2 internal seed containers', done: true },
-  { text: 'Primary stratum endpoint exposed on Zion2', done: true },
-  { text: 'JSON-RPC endpoints live (port 8444)', done: true },
+  { text: '1 public host + 2 internal validator lanes', done: true },
+  { text: 'Primary stratum endpoint on Prague', done: true },
+  { text: 'JSON-RPC endpoints live (port 8443)', done: true },
   { text: '24/7 Docker containers with auto-restart', done: true },
   { text: 'LWMA DAA — target 60s block time', done: true },
-  { text: 'Archived multi-host validation preserved in reports', done: true },
+  { text: 'Archived 3-region relay evidence retained', done: true },
   { text: 'Prometheus + Grafana monitoring', done: true },
-  { text: 'Geo-distributed public topology currently archived', done: false },
+  { text: 'Geo-distributed rehearsal topology active', done: true },
 ];
 
 interface MonitoringSnapshot {
@@ -203,8 +223,8 @@ async function metricValue(query: string): Promise<number | null> {
 async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
   const values = await Promise.all([
     metricValue('zion_chain_height'),
-    metricValue('up{job="zion-core-helsinki"}'),
-    metricValue('up{job="zion-pool-helsinki"}'),
+    metricValue('up{job="zion-core-prague"}'),
+    metricValue('up{job="zion-pool-prague"}'),
     metricValue('zion_pool_active_sessions'),
     metricValue('zion_pool_accept_rate_pct'),
     metricValue('zion_pool_uptime_seconds'),
@@ -411,11 +431,11 @@ export default function NetworkPage() {
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Terminal className="w-3.5 h-3.5 text-gray-500" />
-                    <span>RPC: port 8444</span>
+                    <span>RPC: port 8443</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Globe className="w-3.5 h-3.5 text-gray-500" />
-                    <span>P2P: port 8334</span>
+                    <span>P2P: port 8333</span>
                   </div>
                 </div>
               </motion.div>
@@ -693,7 +713,7 @@ export default function NetworkPage() {
             Connect your miner, run your own node, or explore the blockchain while historical rollout context stays preserved in docs.
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · MainNet 31.12.2026
+            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch target 31.12.2026
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
             {['Cosmic Harmony PoW', 'Primary host live', 'Internal seeds', 'Docker native', 'Archived multi-host history'].map((item) => (

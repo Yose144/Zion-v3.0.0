@@ -5,6 +5,12 @@ members = [
     "L1/pool",
     "L1/miner",
     "L1/native-ffi",
+    "L2/bridge",
+    "L2/dao",
+    "L2/atomic-swap",
+    "L3/ncl",
+    "L3/warp",
+    "L3/ai-native",
 ]
 resolver = "2"
 
@@ -30,3 +36,24 @@ ctrlc = { version = "3", features = ["termination"] }
 thiserror = "2"
 tracing = "0.1"
 zeroize = { version = "1", features = ["derive"] }
+
+# ── Release profile: maximum performance ──
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+
+# Optimize PoW-heavy crates in dev/test builds so mining tests finish
+# in reasonable time (Ekam Deeksha v2 scratchpad ops are painfully slow at opt0).
+[profile.dev.package.zion-cosmic-harmony]
+opt-level = 2
+
+[profile.dev.package.zion-core]
+opt-level = 1
+
+[profile.test.package.zion-cosmic-harmony]
+opt-level = 2
+
+[profile.test.package.zion-core]
+opt-level = 1

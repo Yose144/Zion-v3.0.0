@@ -1,0 +1,5 @@
+OPENAI_API_KEY=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
+
+Created: 2025-11-10
+Location: Originally in /Users/yeshuae/Desktop/ZION/public_html/ai.key
+Purpose: OpenAI API access for ZION AI features
