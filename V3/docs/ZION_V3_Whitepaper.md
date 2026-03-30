@@ -19,7 +19,7 @@
 3. [L1 Architecture](#3-l1-architecture)
 4. [Consensus — Ekam Deeksha v2](#4-consensus--ekam-deeksha-v2)
 5. [Economic Model](#5-economic-model)
-6. [Consciousness Mining](#6-consciousness-mining-application-layer)
+6. [L4 XP Policy (OASIS Timeline)](#6-l4-xp-policy-oasis-timeline)
 7. [Fair Launch & Genesis](#7-fair-launch--genesis)
 8. [DAO Governance](#8-dao-governance)
 9. [Humanitarian Fund & L5/L6 Allocation](#9-humanitarian-fund--l5l6-allocation)
@@ -247,60 +247,21 @@ This distribution is enforced in `V3/L1/core/src/emission.rs` (`fee_split`) and 
 
 ---
 
-## 6. Consciousness Mining (Application Layer)
+## 6. L4 XP Policy (OASIS Timeline)
 
-### 6.1 Concept
+### 6.1 Scope
 
-Consciousness Mining is ZION's engagement and reputation model for upper layers (L3+). Miners earn **Experience Points (XP)** through sustained, honest participation.
+XP and consciousness progression are assigned to **L4 OASIS**, not L1 consensus. L1 remains deterministic PoW + emission + validation only.
 
-Important: XP logic is **not an L1 consensus rule** in current V3 core. L1 consensus is determined by PoW, validation rules, and constitutional emission parameters.
+### 6.2 Activation Window
 
-### 6.2 Consciousness Levels
+- **Target start:** ~2028 (aligned with L4 OASIS rollout window)
+- **Pre-2028 status:** design/R&D only
+- **Consensus impact:** none (non-consensus application layer)
 
-| Level | Name | XP Required | Reward Multiplier |
-|-------|------|-------------|-------------------|
-| 1 | Physical | 0 | 1.0× |
-| 2 | Emotional | 1,000 | 1.1× |
-| 3 | Mental | 5,000 | 1.25× |
-| 4 | Astral | 25,000 | 1.5× |
-| 5 | Causal | 100,000 | 2.0× |
-| 6 | Enlightened | 500,000 | 2.5× |
-| 7 | Cosmic | 2,000,000 | 3.5× |
-| 8 | Universal | 10,000,000 | 5.0× |
-| 9 | OnTheStar | 50,000,000 | 10.0× |
+### 6.3 Security Principle
 
-### 6.3 XP Sources
-
-| Activity | XP Earned |
-|----------|-----------|
-| Block found | +100 XP |
-| Share accepted | +1 XP |
-| NCL task completed | +10 XP |
-| Uptime streak (24h) | +50 XP |
-| Community contribution | Variable |
-
-### 6.4 XP Decay
-
-To prevent idle accounts from retaining high multipliers:
-
-- **Grace period:** 7 days of inactivity
-- **Decay rate:** −1 % per inactive day after grace period
-- **Floor:** XP never drops below 50 % of peak
-- **Reset:** Activity immediately stops decay
-
-### 6.5 Reward Formula
-
-```
-effective_reward = base_reward × consciousness_multiplier
-```
-
-For a miner at Level 6 (Enlightened, 2.5×) finding a block:
-
-```
-effective_reward = 5,400.067 × 2.5 = 13,500.17 ZION
-```
-
-The multiplier applies to the miner's share (89 %) of the block reward. The humanitarian, Issobella, and pool shares are calculated on the base reward.
+No XP rule may alter constitutional L1 economics (supply, decay, fee split, or base subsidy checks).
 
 ---
 
@@ -317,16 +278,18 @@ ZION is a **Fair Launch** project:
 
 The only way to acquire ZION is to **mine it** or receive it in a transaction.
 
-### 7.2 Genesis Premine
+### 7.2 Genesis Reserve (Public Summary)
 
-A total of **16,280,000,000 ZION** (11.31 % of total supply) is allocated at genesis to bootstrap the ecosystem. All addresses are published in `PREMINE_ADDRESSES_PUBLIC.txt`.
+A total of **16,280,000,000 ZION** (11.31 % of total supply) is reserved at genesis to bootstrap the ecosystem.
+
+**Primary strategic envelope:** **8,500,000,000 ZION** is dedicated to L4 OASIS/game development and game-economy bootstrap (8.25B direct OASIS slots + 0.25B ecosystem allocation for game-dev execution).
 
 | # | Allocation | ZION | Purpose |
 |---|-----------|------|---------|
 | 1–5 | OASIS Golden Egg | 8,250,000,000 | L4 game world reward pool (5 slots × 1.65B, 10-year vesting) |
 | 6 | DAO Treasury (main) | 2,500,000,000 | Community governance reserve |
 | 7 | DAO Grants & Bounties | 1,000,000,000 | Developer grants |
-| 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem development |
+| 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem development (includes game-dev execution envelope) |
 | 9 | Core Development Fund | 1,000,000,000 | Ongoing development |
 | 10 | Network Infrastructure | 1,000,000,000 | P2P seed nodes & infrastructure |
 | 11 | Genesis Creator | 590,000,000 | Lifetime project stewardship |
@@ -334,11 +297,11 @@ A total of **16,280,000,000 ZION** (11.31 % of total supply) is allocated at gen
 
 **DAO Treasury time-lock:** All 4,000,000,000 ZION in the DAO treasury (#6–8) is locked until block height **525,600** (~1 year after genesis).
 
-### 7.3 Transparency
+### 7.3 Security & Transparency
 
-- All genesis addresses are published in [`PREMINE_ADDRESSES_PUBLIC.txt`](../../PREMINE_ADDRESSES_PUBLIC.txt)
-- Genesis premine code is auditable in [`V3/L1/core/src/genesis.rs`](../L1/core/src/genesis.rs)
-- Every genesis transaction is on-chain verifiable from block #0
+- Public whitepaper intentionally omits operational wallet/address detail.
+- Genesis allocation rules are auditable in [`V3/L1/core/src/genesis.rs`](../L1/core/src/genesis.rs) and constitutional constants in [`V3/L1/core/src/emission.rs`](../L1/core/src/emission.rs).
+- Every genesis transaction is verifiable from block #0 by node software.
 
 ### 7.4 TestNet ≠ MainNet
 
@@ -417,7 +380,7 @@ Funds are governed by DAO voting. Recipient organizations submit proposals with:
 
 ### 9.3 Initial Seed
 
-From the genesis premine, **1,440,000,000 ZION** (wallet #12) is allocated as an immediately available humanitarian seed — for use before mining emission accumulates sufficient funding.
+From the genesis reserve, **1,440,000,000 ZION** is allocated as an immediately available humanitarian seed — for use before mining emission accumulates sufficient funding.
 
 ---
 
@@ -695,10 +658,11 @@ v3.0    ─ MainNet Genesis (Block #0)                    📅 Q4 2026
 | GPU miner alpha | Q2 2026 | CUDA/OpenCL functional |
 | Security audit | Q2 2026 | No critical vulnerabilities |
 | Mobile wallet | Q3 2026 | iOS + Android App Store |
-| MainNet Genesis | Q4 2026 | Block #0, genesis premine distributed |
+| MainNet Genesis | Q4 2026 | Block #0 and genesis reserve activation |
 | wZION mainnet | Q4 2026 | Live on Base/Arbitrum/BSC |
 | NCL + WARP live | Q1 2027 | 1,000 NCL tasks/day, WARP swaps active |
 | L3 DAO (Phase 2) | 2027 | On-chain voting |
+| L4 OASIS XP rollout | 2028 (target) | XP/economy features launched as non-consensus L4 layer |
 | L5 Free World | 2030 | Foundation + research lab |
 | 1st Decade Decay | 2036 | Block reward → 4,320 ZION |
 | L6 Issobella start | 2040 | Space Division initiated |
@@ -716,14 +680,13 @@ ZION is **open-source software** and **experimental technology** released under 
 
 Participation in the ZION network is **voluntary** and occurs **at your own risk**. Token value is not guaranteed. Price may decline to zero. The regulatory environment may change.
 
-ZION is a **community-run open-source protocol** and is **not operated by a single company issuer** in this V3 line. Premine addresses are published for transparency and auditability, not as an investment offer.
+ZION is a **community-run open-source protocol** and is **not operated by a single company issuer** in this V3 line.
 
 See also:
 
 - [`legal/DISCLAIMER.md`](../../legal/DISCLAIMER.md)
 - [`legal/TOKEN_NOT_SECURITY.md`](../../legal/TOKEN_NOT_SECURITY.md)
 - [`legal/RISK_DISCLOSURE.md`](../../legal/RISK_DISCLOSURE.md)
-- [`legal/PREMINE_DISCLOSURE.md`](../../legal/PREMINE_DISCLOSURE.md)
 
 ---
 
@@ -732,11 +695,10 @@ See also:
 | Resource | Description |
 |----------|-------------|
 | [`V3/L1/core/src/emission.rs`](../L1/core/src/emission.rs) | Constitutional emission constants (flowers, decay, tail, fee split) |
-| [`V3/L1/core/src/genesis.rs`](../L1/core/src/genesis.rs) | Genesis validation and premine integrity |
+| [`V3/L1/core/src/genesis.rs`](../L1/core/src/genesis.rs) | Genesis validation and reserve integrity |
 | [`V3/L1/core/src/difficulty.rs`](../L1/core/src/difficulty.rs) | LWMA difficulty algorithm |
 | [`V3/L1/cosmic-harmony/src/deeksha.rs`](../L1/cosmic-harmony/src/deeksha.rs) | Ekam Deeksha v2 canonical PoW |
 | [`V3/L2/dao/src/proposal.rs`](../L2/dao/src/proposal.rs) | DAO proposal types, quorum, voting windows |
-| [`PREMINE_ADDRESSES_PUBLIC.txt`](../../PREMINE_ADDRESSES_PUBLIC.txt) | Public genesis addresses |
 | [`docs/mainnet/MAINNET_CONSTITUTION.md`](../../docs/mainnet/MAINNET_CONSTITUTION.md) | Mainnet Constitution (frozen) |
 | [`V3/ROADMAP.md`](../ROADMAP.md) | Current implementation status and milestones |
 | [github.com/Yose144/Zion-2.9](https://github.com/Yose144/Zion-2.9) | Source code (MIT license) |

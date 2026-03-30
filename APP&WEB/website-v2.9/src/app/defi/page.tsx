@@ -158,7 +158,7 @@ export default function DefiPage() {
   return (
     <main className="min-h-screen bg-black text-white pt-24 pb-16">
       {/* ── Hero ── */}
-      <section className="max-w-6xl mx-auto px-6 mb-16">
+      <section className="zion-container mb-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -220,7 +220,7 @@ export default function DefiPage() {
       </section>
 
       {/* ── Product Cards ── */}
-      <section className="max-w-6xl mx-auto px-6 mb-20">
+      <section className="zion-container mb-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((p, i) => {
             const Icon = p.icon;
@@ -231,7 +231,7 @@ export default function DefiPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08, duration: 0.5 }}
-                className="group relative rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300 overflow-hidden"
+                className="group relative rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 overflow-hidden"
               >
                 {/* Gradient accent top */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-400/40 to-transparent" />
@@ -302,7 +302,7 @@ export default function DefiPage() {
       </section>
 
       {/* ── Contract Addresses ── */}
-      <section className="max-w-6xl mx-auto px-6 mb-20">
+      <section className="zion-container mb-20">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -311,7 +311,7 @@ export default function DefiPage() {
           <h2 className="text-2xl font-bold mb-6">
             {cs ? 'Nasazené kontrakty' : 'Deployed Contracts'}
           </h2>
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -358,7 +358,7 @@ export default function DefiPage() {
       </section>
 
       {/* ── How It Works ── */}
-      <section className="max-w-6xl mx-auto px-6 mb-20">
+      <section className="zion-container mb-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -395,7 +395,7 @@ export default function DefiPage() {
               return (
                 <div
                   key={i}
-                  className="p-6 rounded-xl border border-white/10 bg-white/[0.02]"
+                  className="p-6 rounded-3xl border border-white/10 bg-white/[0.03]"
                 >
                   <Icon className="w-8 h-8 text-yellow-400 mb-4" />
                   <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
@@ -408,7 +408,7 @@ export default function DefiPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="max-w-6xl mx-auto px-6 text-center">
+      <section className="zion-container text-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
