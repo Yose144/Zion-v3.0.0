@@ -2,7 +2,7 @@
 
 **Comprehensive checklist for MainNet readiness**
 
-> 🔄 Aktualizace: 28. 3. 2026 — checklist doplněn o ověřený V3 fee-split rollout a live post-deploy audit
+> 🔄 Aktualizace: 30. 3. 2026 — sladěno s aktivním 72h controlled V3 rehearsal
 
 ## Recent Verified Milestone
 
@@ -11,6 +11,7 @@
 - ✅ První explicitně potvrzený split-enabled blok: `465`
 - ✅ Následné potvrzení na auditovaných nodech: bloky `471` a `472`
 - ✅ Referenční rollout report: `docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`
+- ✅ Aktivní veřejný dashboard sleduje 72h rehearsal nad Prague / USA / Singapore a potvrzuje `tip agreement locked`
 
 ---
 
@@ -33,6 +34,7 @@
 
 ### Exit Criteria
 - ⚠️ `MAINNET_EXIT_CRITERIA.md` existuje, ale je stále `DRAFT` a bez sign-offu — launch blocker do finálního schválení
+- ⚠️ Plánovaný upgrade restart během rehearsal je přípustný jen pokud je uzavřený recovery evidencí v closure reportu
 - [ ] CI job: `mainnet_correctness_suite` nebo ekvivalentní explicitní launch-gating workflow
 
 ---
@@ -52,7 +54,7 @@
 - [ ] Node restart mid-block test
 - [ ] Network partition scénáře (2-3)
 - [ ] Clock skew tolerance test
-- ✅ 5 nodů běží 24–38h+ bez restartu (testnet, ověřeno 24. 2. 2026)
+- 🔄 Aktivní 72h rehearsal běží na 3 auditovaných geo nodech; finální verdict čeká na closure report
 
 ---
 
@@ -79,7 +81,7 @@
 
 ### Seed & Bootstrap
 - ✅ Min. 3 geografické seed nody — Prague / USA / Singapore auditovány po V3 fee-split rolloutu 28. 3. 2026
-- ✅ Monitoring (Prometheus/Grafana) — běží na Helsinki (port 3001/9090)
+- ✅ Monitoring (dashboard + collector + Prometheus/Grafana) — běží na primárním hostu a vrací live rehearsal data
 - [ ] Alerty (disk, peers, block lag) — **Alertmanager routing CHYBÍ** (Telegram/Slack)
 - [ ] Zálohy dat
 
@@ -99,6 +101,7 @@
 - [ ] Build binárek (hash publikovaný)
 - [ ] Genesis block vytvořen OFFLINE
 - [ ] Seed nody ready
+- [ ] 72h rehearsal closure report publikován včetně restart / recovery appendixu
 
 ### Launch Sequence
 - [ ] Genesis freeze ✓
@@ -177,5 +180,5 @@
 
 ---
 
-*Checklist Version: 1.1*  
-*Last Updated: 2026-03-28 (V3 fee-split rollout verification)*
+*Checklist Version: 1.2*  
+*Last Updated: 2026-03-30 (72h controlled V3 rehearsal alignment)*
