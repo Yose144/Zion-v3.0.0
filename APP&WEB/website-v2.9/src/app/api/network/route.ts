@@ -67,15 +67,15 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
     lastChecked: new Date().toISOString(),
   };
 
-  // V3 node RPC via TCP
+  // V3 node RPC via TCP — connect to this specific node
   try {
     const rpc = getZionRpc();
     const rpcStart = Date.now();
-    const info = await rpc.getInfo();
+    const info = await rpc.getInfoForNode(node.id);
     status.rpcLatencyMs = Date.now() - rpcStart;
     status.height = info.height ?? 0;
     status.peers = (info.outgoing_connections_count ?? 0) + (info.incoming_connections_count ?? 0);
-    if (node.region === 'PRIMARY' || node.id === 'primary') {
+    if (node.region === 'PRIMARY' || node.id === 'prague-eu') {
       status.hashrate = info.difficulty ? info.difficulty / (info.target || 60) : 0;
     }
     status.online = info.status === 'OK';
@@ -83,23 +83,23 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
     status.error = e instanceof Error ? e.message : 'RPC error';
   }
 
-  // V3 pool metrics via TCP
-  try {
-    const rpc = getZionRpc();
-    const poolStart = Date.now();
-    const poolStats = await rpc.getPoolStats();
-    status.poolLatencyMs = Date.now() - poolStart;
-    if (poolStats) {
-      if (node.region === 'PRIMARY' || node.id === 'primary') {
+  // V3 pool metrics via TCP — only primary runs the pool
+  if (node.id === 'prague-eu') {
+    try {
+      const rpc = getZionRpc();
+      const poolStart = Date.now();
+      const poolStats = await rpc.getPoolStats();
+      status.poolLatencyMs = Date.now() - poolStart;
+      if (poolStats) {
         status.hashrate = poolStats.hashrate?.pool || poolStats.pool_hashrate || status.hashrate;
         status.miners = poolStats.miners?.active ?? 0;
         status.blocks = poolStats.blocks?.found ?? 0;
         status.uptime = poolStats.pool?.uptime_secs ?? poolStats.uptime_s ?? 0;
+        status.online = true;
       }
-      status.online = true;
+    } catch {
+      // Pool might not be running, that's ok
     }
-  } catch {
-    // Pool might not be running, that's ok
   }
 
   return status;

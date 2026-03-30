@@ -1,26 +1,35 @@
-# 🗺️ ZION — MAINNET ROADMAP
+# ZION Mainnet Roadmap
 
 **Tech → MainNet → Adoption**
 
 ---
 
-## 📊 Current Status
+## Current Status
 
 | Metric | Value |
 |--------|-------|
-| **Native Stack Completion** | ~65-70% |
-| **Status Date** | 2026-02-03 |
+| **Native Stack Completion** | ~75-80% |
+| **Status Date** | 2026-03-28 |
 | **Target** | Stable MainNet + Public Economy + Exchanges |
 
 ---
 
-## ✅ Co máme hotové (reálně k 2026-02-03)
+## Recently Verified
 
-- Native stack v2.9.5: core node (P2P + JSON-RPC + health/metrics) + pool (Stratum + API) + redis
+- V3 core fee split is now enforced directly on-chain, not only in pool accounting
+- Verified live subsidy split: miner `89%`, humanitarian `5%`, issobella `5%`, pool fee `1%`
+- First explicitly verified split-enabled block: `465`
+- Additional cross-node confirmation observed at blocks `471` and `472`
+- Prague, USA and Singapore remained in sync after rollout
+- Reference report: `docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`
+
+## What Is Actually Done As Of 2026-03-28
+
+- V3 core runtime can now produce and validate split-enabled coinbase blocks on live mainnet
+- Three-node V3 mainnet rollout was audited on Prague, USA, and Singapore
+- Docker-first deployment path is active and verified with `docker/docker-compose.v3-mainnet.yml`
 - Docker-first směr: cílově 100% deployment přes Compose, systemd považovat za legacy
-- Sjednocené kanonické porty (TestNet baseline): P2P `8334`, Core RPC `8444`, Stratum `3333`, Pool API `8080`
-- Konfig kompatibilita: core má env override (porty/data/seeds); pool bere kanonické env + fallback na legacy env
-- Připravený minimal node compose pro identické nody (core+pool+redis) bez web/api/nginx
+- Live post-deploy verification checklist now exists: `docs/mainnet/V3_ROLLOUT_VERIFICATION_CHECKLIST.md`
 
 ## 🔴 PHASE 0 — SPEC FREEZE (Critical)
 
@@ -31,11 +40,11 @@
 **What to freeze:**
 - [ ] Genesis block
 - [ ] Chain ID
-- [ ] Emission schedule
+- [x] Emission schedule
 - [ ] Block time
 - [ ] Difficulty Adjustment Algorithm (DAA)
 - [ ] Max reorg depth (hard cap)
-- [ ] Fee model
+- [x] Fee model
 
 **Outputs:**
 - `mainnet-constitution.md`
@@ -100,6 +109,12 @@
 - Different continents
 - No "marketing" nodes
 
+Current verified baseline:
+
+- Prague
+- USA
+- Singapore
+
 **Monitor:**
 - Peer churn
 - Orphan rate
@@ -109,7 +124,7 @@
 ### 2.3 — Mining Reality Check
 - [ ] CPU-only
 - [ ] Mixed CPU/GPU
-- [ ] Pool vs solo
+- [x] Pool payout path on live V3 split-enabled chain
 - [ ] Latency effects
 
 > If something fails here → STOP, fix, repeat.
@@ -197,15 +212,15 @@ Only then:
 
 ---
 
-## 📋 Key Milestones
+## Key Milestones
 
 | Milestone | Status | Target |
 |-----------|--------|--------|
-| Spec Freeze | 🔴 Pending | Before TestNet |
+| Spec Freeze | 🟡 In Progress | Before launch freeze |
 | Genesis Created | 🔴 Pending | T-2 weeks |
-| Hardened TestNet | 🟡 In Progress | T-4 weeks |
-| MainNet RC | 🔴 Pending | T-1 week |
-| MainNet Launch | 🔴 Pending | TBD |
+| Hardened Runtime | 🟡 In Progress | Ongoing |
+| MainNet RC | 🟡 In Progress | After checklist closure |
+| MainNet Launch | 🟡 In Progress | TBD |
 | First DEX | 🔴 Pending | T+4 weeks |
 | CMC Listing | 🔴 Pending | T+4 weeks |
 | First CEX | 🔴 Pending | T+3 months |
@@ -226,15 +241,15 @@ Only then:
 
 ---
 
-## 🎯 Next Steps
+## Next Steps
 
-1. **Freeze spec** → mainnet-constitution.md
-2. **Create genesis** → genesis.json
-3. **Hardened TestNet** → 72-168h stability run
-4. **Genesis ceremony** → scripted, reproducible
-5. **Launch** → boring, stable
+1. Close remaining canonical spec freeze items in mainnet documents.
+2. Keep V3 runtime boring and auditable: no unrelated feature creep before launch gates are closed.
+3. Expand operational rehearsal around node restart, partition, and latency scenarios.
+4. Script reproducible rollout verification directly from `docs/mainnet/V3_ROLLOUT_VERIFICATION_CHECKLIST.md`.
+5. Move from verified runtime to launch checklist closure.
 
 ---
 
-*Roadmap Version: 1.0*  
-*Last Updated: 2026-02-03*
+*Roadmap Version: 1.1*  
+*Last Updated: 2026-03-28*

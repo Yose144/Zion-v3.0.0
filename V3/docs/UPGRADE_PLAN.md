@@ -306,11 +306,11 @@ Scope: po stabilizaci core L1 runtime
 
 | Položka | Status | Popis |
 |---------|--------|-------|
-| BFG scrub premine keys | ✅ DONE | Soubor nikdy nebyl commitnut — `.gitignore` pokrývá `**PREMINE_WALLETS_BACKUP*` (Sprint 1) |
+| BFG scrub premine keys | ❌ TODO | Git history still exposes `PREMINE_WALLETS_BACKUP.json`; history scrub remains required before public launch |
 | Dependency audit | ✅ DONE | `cargo audit` čistý — 1 advisory (bincode unmaintained, transitivní přes heed, žádná zranitelnost) (Sprint 2) |
-| Fuzzing | ❌ TODO | `cargo-fuzz` na block parsing, tx validation, P2P messages |
+| Fuzzing | 🟡 PARTIAL | Harnesses exist (`fuzz_decode_message`, `fuzz_parse_hex`, `fuzz_merkle_root`, `fuzz_validate_header`), but dedicated fuzz campaign/sign-off is still TODO |
 | Panic audit | ✅ DONE | Miner: zero expect/unwrap v production paths (Sprint 1 A1) |
-| Input validation | ❌ TODO | Review všech RPC/P2P input boundaries |
+| Input validation | 🟡 PARTIAL | Main pool/node boundaries are validated, but one explicit pre-launch review/sign-off pass is still missing |
 | Rate limit testing | ❌ TODO | DoS simulation na pool + node |
 | Genesis hash verification | ✅ DONE | Frozen v genesis.rs, 3 testy |
 

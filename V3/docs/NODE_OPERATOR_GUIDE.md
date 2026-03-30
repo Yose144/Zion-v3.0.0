@@ -1,257 +1,299 @@
 # ZION V3 Node Operator Guide
 
-> **Version:** 3.0.0 (v2.9.8 Deeksha canonical)  
-> **Network:** ZION Mainnet
+Version: 3.0.0  
+Network: ZION Mainnet track  
+Last updated: 2026-03-28
 
----
+This guide documents the **current V3 mainnet deployment model**.
 
-## Quick Start
+It intentionally reflects the live mainnet-track stack used in the 2026-03-28 fee-split rollout.
 
-### Build from source
+## 1. Critical Notes
+
+- The canonical production manifest is the root-level `docker/docker-compose.v3-mainnet.yml`
+- Do not assume `V3/docker/docker-compose.v3-mainnet.yml` is the deploy source of truth
+- Node RPC on current V3 mainnet is **raw TCP JSON-RPC** on port `8443`, not HTTP
+- The exact post-deploy verification flow lives in `MAINNET_DEPLOY_RUNBOOK.md`
+
+## 2. Build From Source
+
+From `V3/`:
 
 ```bash
 cd V3
-cargo build --release -p zion-core
-# binaries:
-#   target/release/zion-node
-#   target/release/zion-pool-server
+cargo build --release -p zion-core -p zion-pool -p zion-miner
 ```
 
-### Run a node
+Expected binaries:
+
+- `target/release/node`
+- `target/release/server`
+- `target/release/zion-miner`
+
+## 3. Recommended Docker Deploy
+
+From repo root:
 
 ```bash
-export ZION_NODE_ID="my-node-01"
-export ZION_P2P_BIND="0.0.0.0:8334"
-export ZION_RPC_BIND="127.0.0.1:8332"
-export ZION_SEED_PEERS="91.98.122.165:8334,46.225.126.243:8334"
-export ZION_NODE_STATE_PATH="/var/lib/zion/state"
-./zion-node
+cd /path/to/2.9.6
+docker compose --env-file .env -f docker/docker-compose.v3-mainnet.yml up -d --build
 ```
 
-### Run a pool (requires a running node)
+Current service set in the canonical manifest:
 
-```bash
-export ZION_POOL_BIND="0.0.0.0:3333"
-export ZION_NODE_RPC_ADDR="127.0.0.1:8332"
-export ZION_ROUTING_METRICS_BIND="0.0.0.0:9550"
-./zion-pool-server
-```
+- `core`
+- `seed1`
+- `pool`
+- `miner`
+- `redis`
 
----
+### Required `.env`
 
-## Node Environment Variables
+Minimum practical variables:
 
-### Identity & Networking
+- `REDIS_PASSWORD`
+- `MINER_WALLET`
+- `MINER_WORKER`
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZION_NODE_ID` | `v3-node-0` | Unique node identifier |
-| `ZION_MINER_ADDRESS` | *(empty)* | Coinbase address for block rewards |
-| `ZION_P2P_BIND` | `127.0.0.1:10000` | P2P listener bind address |
-| `ZION_RPC_BIND` | `127.0.0.1:8332` | RPC listener bind address |
-| `ZION_POOL_BIND` | `127.0.0.1:9332` | Pool mining listener (for local miner) |
-| `ZION_SEED_PEERS` | *(none)* | Comma-separated bootstrap peer addresses |
+Common optional variables:
 
-### Connection Limits
+- `NODE_ID`
+- `SEED_NODE_ID`
+- `SEED_PEERS`
+- `HUMANITARIAN_WALLET`
+- `ISSOBELLA_WALLET`
+- `POOL_FEE_WALLET`
+- `MINER_CPUS`
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZION_ACCEPT_LIMIT` | *(unbounded)* | Global connection limit |
-| `ZION_P2P_ACCEPT_LIMIT` | *(inherits above)* | P2P-only connection limit |
-| `ZION_RPC_ACCEPT_LIMIT` | *(inherits above)* | RPC-only connection limit |
-
-### State & Sync
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZION_NODE_STATE_PATH` | *(in-memory)* | Path for persistent LMDB blockchain store |
-| `ZION_SYNC_BATCH_LIMIT` | `32` | Max blocks per peer sync batch |
-
-### Monitoring
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZION_METRICS_BIND` | `0.0.0.0:9115` | Prometheus metrics HTTP endpoint |
-
----
-
-## Pool Server Environment Variables
+## 4. Current Mainnet Port Model
 
 ### Core
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZION_POOL_BIND` | `127.0.0.1:8444` | Stratum listener bind address |
-| `ZION_NODE_RPC_ADDR` | *(none)* | Node RPC for template/submit |
-| `ZION_ACCEPT_LIMIT` | *(unbounded)* | Max miner connections |
-| `ZION_POOL_LOOP_COUNT` | `1` | Job iterations per session |
-| `ZION_JOB_TTL_MS` | `15000` | Job expiry (ms) |
-| `ZION_MAX_SESSIONS_PER_IP` | `10` | Rate limit: max sessions per IP |
+- P2P: `8333/tcp`
+- RPC: `8443/tcp` raw JSON-RPC
+- internal pool listener on core: `8444/tcp`
+- metrics: `9115/http`
 
-### PPLNS Payouts
+### Pool
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZION_PPLNS_WINDOW_SIZE` | `1000` | Sliding share window for payout calculation |
-| `ZION_PPLNS_MIN_PAYOUT` | *(core constant)* | Min payout threshold (flowers) |
+- stratum: `3333/tcp`
+- stats and metrics: `8080/http`
 
-### Revenue Routing
+### Redis
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZION_REVENUE_MULTISTREAM` | `false` | Enable 50/25/25 multi-lane routing |
-| `ZION_STREAM_ZION_PCT` | `50` | ZION lane weight |
-| `ZION_STREAM_BLAKE3_PCT` | `25` | Blake3 external lane weight |
-| `ZION_STREAM_NCL_PCT` | `25` | NCL AI lane weight |
-| `ZION_USER_DEFAULT_GROUP` | `zion` | Default session group for miners |
-| `ZION_BACKEND_MINER_IDS` | *(empty)* | Backend miner IDs (auto-routed) |
-| `ZION_BACKEND_WORKER_HINTS` | `backend,revenue,ncl` | Worker name hints for backend detection |
+- internal only: `6379/tcp`
 
-### Metrics
+## 5. Running Binaries Manually
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZION_ROUTING_METRICS_BIND` | *(none)* | HTTP bind for pool metrics endpoint |
-| `ZION_ROUTING_LOG_EVERY` | `25` | Log routing snapshot every N submits |
+### Node
 
----
-
-## Docker Deployment
-
-### docker-compose (recommended)
-
-```yaml
-# docker-compose.v3-testnet.yml
-services:
-  zion-node:
-    image: zion-v3-node:latest
-    ports:
-      - "8334:8334"   # P2P
-      - "8332:8332"   # RPC
-      - "9115:9115"   # Metrics
-    environment:
-      - ZION_NODE_ID=prod-node-01
-      - ZION_P2P_BIND=0.0.0.0:8334
-      - ZION_RPC_BIND=0.0.0.0:8332
-      - ZION_METRICS_BIND=0.0.0.0:9115
-      - ZION_SEED_PEERS=91.98.122.165:8334
-      - ZION_NODE_STATE_PATH=/data/state
-
-  zion-pool:
-    image: zion-v3-pool:latest
-    ports:
-      - "3333:3333"    # Stratum
-      - "9550:9550"    # Pool metrics
-    environment:
-      - ZION_POOL_BIND=0.0.0.0:3333
-      - ZION_NODE_RPC_ADDR=zion-node:8332
-      - ZION_ROUTING_METRICS_BIND=0.0.0.0:9550
-      - ZION_MAX_SESSIONS_PER_IP=10
-```
-
-### Build Docker images
+Example mainnet-track node launch:
 
 ```bash
-docker build -f docker/Dockerfile.core -t zion-v3-node:latest .
-docker build -f docker/Dockerfile.pool -t zion-v3-pool:latest .
-docker build -f docker/Dockerfile.miner -t zion-v3-miner:latest .
+export ZION_NODE_ID="v3-mainnet-local"
+export ZION_NODE_STATE_PATH="/var/lib/zion/chain_state.json"
+export ZION_P2P_BIND="0.0.0.0:8333"
+export ZION_RPC_BIND="0.0.0.0:8443"
+export ZION_POOL_BIND="0.0.0.0:8444"
+export ZION_METRICS_BIND="0.0.0.0:9115"
+export ZION_SEED_PEERS="91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333"
+export ZION_MINER_ADDRESS="zion1..."
+
+# Set all three fee-wallet vars together, or none of them.
+export ZION_HUMANITARIAN_WALLET="zion1..."
+export ZION_ISSOBELLA_WALLET="zion1..."
+export ZION_POOL_FEE_WALLET="zion1..."
+
+./target/release/node
 ```
 
----
+Important runtime rule:
 
-## Monitoring Setup
+- `ZION_HUMANITARIAN_WALLET`, `ZION_ISSOBELLA_WALLET`, and `ZION_POOL_FEE_WALLET` must either all be set together or all be omitted
+- For the audited Prague/USA/Singapore fleet itself, exclude the host's own public address from `ZION_SEED_PEERS`; external or fresh nodes can use the full public seed list
 
-### Prometheus
+### Pool
 
-The node exposes metrics on `ZION_METRICS_BIND` (default `:9115`):
+Example pool launch against a local node:
 
-```
-GET /metrics    → Prometheus exposition format
-GET /health     → JSON health check
-```
+```bash
+export ZION_POOL_BIND="0.0.0.0:3333"
+export ZION_NODE_RPC_ADDR="127.0.0.1:8443"
+export ZION_ROUTING_METRICS_BIND="0.0.0.0:8080"
+export ZION_POOL_LOOP_COUNT="4294967295"
+export ZION_NONCE_COUNT="500000"
+export ZION_NONCE_STRIDE="65536"
+export ZION_JOB_TTL_MS="3600000"
 
-**Node metrics:**
-- `zion_chain_height` — current chain tip
-- `zion_mempool_size` — pending transactions
-- `zion_peer_count` — connected peers
-- `zion_blocks_accepted_total` — accepted blocks
-- `zion_blocks_rejected_total` — rejected blocks
-- `zion_template_height` — latest template height
-
-The pool exposes metrics on `ZION_ROUTING_METRICS_BIND`:
-
-```
-GET /metrics    → Prometheus exposition format
-GET /health     → JSON health check
-GET /stats      → JSON detailed stats
+./target/release/server
 ```
 
-**Pool metrics:**
-- `zion_pool_submits_total` — total share submissions
-- `zion_pool_accepted_total` — accepted shares
-- `zion_pool_rejected_total` — rejected shares
-- `zion_pool_active_sessions` — connected miners
-- `zion_pool_uptime_seconds` — pool uptime
-- `zion_pplns_window_used` — PPLNS window fill level
-- `zion_pplns_registered_miners` — registered payout addresses
+### Miner
 
-### Prometheus scrape config
+Example miner launch against a local or nearby pool:
 
-```yaml
-scrape_configs:
-  - job_name: 'zion-node'
-    static_configs:
-      - targets: ['localhost:9115']
-  - job_name: 'zion-pool'
-    static_configs:
-      - targets: ['localhost:9550']
+```bash
+export ZION_POOL_ADDR="127.0.0.1:3333"
+export ZION_MINER_ID="zion1..."
+export ZION_WORKER_NAME="mainnet-miner"
+export ZION_LOOP_COUNT="4294967295"
+export ZION_NONCE_COUNT="500000"
+export ZION_JOB_TTL_MS="3600000"
+
+./target/release/zion-miner
 ```
 
-### Alert rules (recommended)
+## 6. Node Environment Variables
 
-```yaml
-groups:
-  - name: zion
-    rules:
-      - alert: PoolNoMiners
-        expr: zion_pool_active_sessions == 0
-        for: 5m
-      - alert: HighRejectRate
-        expr: (zion_pool_rejected_total / zion_pool_submits_total) > 0.10
-        for: 10m
-      - alert: NodeNotSyncing
-        expr: changes(zion_chain_height[10m]) == 0
-        for: 15m
+### Identity and Networking
+
+| Variable | Purpose |
+|----------|---------|
+| `ZION_NODE_ID` | unique node identifier |
+| `ZION_MINER_ADDRESS` | miner coinbase address |
+| `ZION_HUMANITARIAN_WALLET` | 5% fee-split recipient |
+| `ZION_ISSOBELLA_WALLET` | 5% fee-split recipient |
+| `ZION_POOL_FEE_WALLET` | 1% fee-split recipient |
+| `ZION_P2P_BIND` | P2P bind address |
+| `ZION_RPC_BIND` | raw TCP JSON-RPC bind address |
+| `ZION_POOL_BIND` | internal pool listener bind |
+| `ZION_SEED_PEERS` | bootstrap peer list |
+
+### Limits and State
+
+| Variable | Purpose |
+|----------|---------|
+| `ZION_ACCEPT_LIMIT` | global connection limit |
+| `ZION_P2P_ACCEPT_LIMIT` | P2P-only limit |
+| `ZION_RPC_ACCEPT_LIMIT` | RPC-only limit |
+| `ZION_NODE_STATE_PATH` | persistent chain state file |
+| `ZION_SYNC_BATCH_LIMIT` | max batch size for peer sync |
+
+### Monitoring
+
+| Variable | Purpose |
+|----------|---------|
+| `ZION_METRICS_BIND` | node metrics HTTP endpoint |
+
+## 7. Pool Environment Variables
+
+### Core flow
+
+| Variable | Purpose |
+|----------|---------|
+| `ZION_POOL_BIND` | public stratum listener |
+| `ZION_NODE_RPC_ADDR` | raw TCP RPC target for template/submit |
+| `ZION_ACCEPT_LIMIT` | max miner connections |
+| `ZION_POOL_LOOP_COUNT` | session loop count |
+| `ZION_JOB_TTL_MS` | job expiry |
+| `ZION_NONCE_COUNT` | nonce scan window |
+| `ZION_NONCE_STRIDE` | nonce stride |
+| `ZION_MAX_SESSIONS_PER_IP` | session cap per IP |
+
+### Routing and metrics
+
+| Variable | Purpose |
+|----------|---------|
+| `ZION_REVENUE_MULTISTREAM` | multi-lane revenue routing |
+| `ZION_USER_DEFAULT_GROUP` | default miner group |
+| `ZION_BACKEND_MINER_IDS` | backend auto-routing allowlist |
+| `ZION_BACKEND_WORKER_HINTS` | backend worker pattern matching |
+| `ZION_ROUTING_METRICS_BIND` | pool metrics and stats HTTP bind |
+| `ZION_ROUTING_LOG_EVERY` | periodic routing snapshot interval |
+
+## 8. Health Checks And Verification
+
+### Core metrics
+
+Node metrics HTTP server:
+
+- `GET /metrics`
+- `GET /health`
+
+Example:
+
+```bash
+curl -s http://127.0.0.1:9115/health
+curl -s http://127.0.0.1:9115/metrics | head -20
 ```
 
----
+### Pool stats
 
-## Server Hardening
+Pool API surface on current mainnet stack:
 
-See [HARDENING.md](../../docs/ops/HARDENING.md) for the full checklist:
+- `GET /health`
+- `GET /metrics`
+- `GET /stats`
 
-- **Firewall (ufw):** Allow 8334 (P2P), 3333 (stratum). Restrict 8332 (RPC), 9115, 9550 to monitoring subnet.
-- **Docker log limits:** `--log-opt max-size=50m --log-opt max-file=3`
-- **Logrotate:** Rotate miner/pool stdout logs daily, keep 14 days.
-- **Unattended upgrades:** Enable for security patches.
-- **SSH:** Key-only auth, disable root password login.
+Example:
 
----
+```bash
+curl -s http://127.0.0.1:8080/health
+curl -s http://127.0.0.1:8080/stats
+```
 
-## Troubleshooting
+### Raw JSON-RPC check
 
-**Node won't sync:**  
-Check `ZION_SEED_PEERS` — at least one reachable seed is required. Verify
-firewall allows outbound TCP on port 8334.
+Do not use HTTP curl against `8443`.
 
-**Pool shows 0 sessions:**  
-Ensure `ZION_POOL_BIND` is on `0.0.0.0` (not `127.0.0.1`) if miners connect
-remotely. Check Docker port mapping.
+Use `nc` with line-delimited JSON-RPC:
 
-**High stale rate (>5%):**  
-Reduce `ZION_JOB_TTL_MS` or increase miner hash rate. Network latency between
-miner and pool also contributes — prefer geographically close pools.
+```bash
+printf '%s\n' '{"jsonrpc":"2.0","method":"getChainInfo","params":[],"id":1}' | nc -w 2 127.0.0.1 8443
+```
 
-**Metrics endpoint not responding:**  
-Verify `ZION_METRICS_BIND` / `ZION_ROUTING_METRICS_BIND` are set and the port
-is not blocked by firewall.
+Example block lookup:
+
+```bash
+printf '%s\n' '{"jsonrpc":"2.0","method":"getBlockByHeight","params":[465],"id":1}' | nc -w 2 127.0.0.1 8443
+```
+
+## 9. Hardening
+
+See `../docker/HARDENING.md` for current V3 server hardening guidance.
+
+At minimum:
+
+- restrict public exposure to the ports that are actually needed
+- keep RPC and metrics access tight if they do not need public reachability
+- enable Docker log limits and log rotation
+- keep SSH key-only
+
+## 10. Troubleshooting
+
+### Node will not sync
+
+- verify `ZION_SEED_PEERS` points to reachable `host:8333` peers
+- verify outbound TCP on `8333` is allowed
+- confirm all peers agree on `chain_height` and `tip_hash`
+
+### RPC looks dead
+
+- check whether you are mistakenly treating `8443` as HTTP
+- use raw TCP JSON-RPC over `nc`
+- inspect `docker logs zion-core`
+
+### Fee split did not activate after deploy
+
+- inspect live `zion-core` env, not only the compose file on disk
+- confirm all three fee wallet variables are present together
+- wait for the first new block and inspect it over `getBlockByHeight`
+- follow `MAINNET_DEPLOY_RUNBOOK.md`
+
+### Pool shows zero miners
+
+- verify `ZION_POOL_BIND=0.0.0.0:3333`
+- verify Docker port mapping for `3333`
+- inspect `http://127.0.0.1:8080/stats`
+
+### High stale or reject rate
+
+- inspect recent `zion-pool` and `zion-miner` logs
+- check whether the restart window is still recovering
+- prefer geographically close miner-to-pool placement
+
+## 11. Canonical References
+
+- `MAINNET_DEPLOY_RUNBOOK.md`
+- `../README.md`
+- `../ROADMAP.md`

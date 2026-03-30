@@ -76,6 +76,8 @@ SCAN_ROOTS_PRIORITIZED = {
         "docs/book/ekam-deeksha",
         # docs2.9 kopie knih
         "docs/docs2.9/books",
+        # Publikovana V2 knihovna + AI ingest manifest
+        "docs/docs2.9/deployment/AMENTI_LOG_INDEX.md",
         # Whitepaper 2025 + WP2.9 + WP3.0
         "docs/docs2.9/WHITEPAPER_2025",
         "docs/docs2.9/WP2.9",
@@ -292,12 +294,16 @@ def generate_qa_pair(api_key: str, source: str, chunk: str) -> dict | None:
     # Kategorie zdroje pro kontext
     category = "obecný"
     src_lower = source.lower()
-    if "sacred_knowledge" in src_lower:
+    if "sacred_library" in src_lower or "amenti" in src_lower:
+        category = "historicka knizni knihovna Amenti a Sacred Library"
+    elif "sacred_knowledge" in src_lower:
         category = "duchovní znalosti a Sacred Knowledge"
     elif "cosmic_map" in src_lower:
         category = "Cosmic Map - kosmická architektura ZION"
     elif "whitepaper" in src_lower or "/wp" in src_lower:
         category = "ZION Whitepaper - technická a ekonomická dokumentace"
+    elif "quantum-revolution" in src_lower or "quantova" in src_lower:
+        category = "Quantova Revoluce a historicka knizni osa 2.9"
     elif "book" in src_lower or "ucebnice" in src_lower or "cast" in src_lower:
         category = "knihy Ekam Deeksha - duchovní učebnice"
     elif "humanitarian" in src_lower or "tithe" in src_lower:
@@ -774,6 +780,90 @@ SEED_PAIRS = [
             "  10-KRISHNAJI & PREETHAJI: Zakladatelé Oneness\n"
             "  11-PRAXE: Praktická cvičení\n"
             "  12-ČASOVÁ OSA: Historická časová osa"
+        ),
+    },
+    {
+        "user": "Co je jadro uceni Sri Bhagavana o oddelenem ja?",
+        "assistant": (
+            "Jadrem uceni je tvrzeni, ze lidske utrpeni vyrusta z pocitu separovaneho ja. "
+            "Nejde jen o filozofii, ale o zazity rezim nervoveho systemu: vnitrni komentator, "
+            "obrana, srovnavani, strach a pocit odtrzeni od zivota. "
+            "Bhagavanova linie proto nehleda jen nove myslenky, ale zmenu samotne percepce. "
+            "Deeksha, meditace a vztahova prace maji pomoci oslabit tento separatni rezim a vratit cloveka k primemu prozivani."
+        ),
+    },
+    {
+        "user": "Jak se lisi starsi jazyk Oneness University od novejsiho jazyka Ekam a The Oneness Movement?",
+        "assistant": (
+            "Starsi Oneness University casteji mluvila o osviceni, probuzeni, Deekshe, Antaryaminovi, "
+            "Zlatem veku a linii Amma-Bhagavan. Novejsi Ekam a The Oneness Movement casteji pouzivaji jazyk "
+            "Beautiful State, Suffering State, field meditation, well-being a leadership. "
+            "Obsahova osa je ale podobna: prechod od utrpeni a separace k vetsi pritomnosti, vztahove inteligenci a vnitrnimu klidu."
+        ),
+    },
+    {
+        "user": "Proc Sri Bhagavan zduraznoval vztah k rodicum a partnerovi?",
+        "assistant": (
+            "V Bhagavanove linii nejsou rodice a partner vedlejsi tema. Jsou to mista, kde se nejjasneji ukazuje skutecny stav vedomi. "
+            "Nevyreseny vztah k matce, otci nebo partnerovi podle tohoto uceni udrzuje nervovy system v obrane, zraneni a opakovanych vzorcich. "
+            "Proto se mluvi o tom, ze bez uzdraveni zakladnich vztahu muze meditace snadno sklouznout do uniku od zivota."
+        ),
+    },
+    {
+        "user": "Co byl 21denni proces Oneness University?",
+        "assistant": (
+            "21denni proces byl hluboky retreatovy format spojeny se starsi fazi Oneness University. "
+            "Typicky kombinoval ticho, meditaci, skupinovou Deekshu, vztahove procesy, praci s rodinnymi vzorci, "
+            "setkani s Ammou a Bhagavanem a motiv Antaryamina. "
+            "Smyslem nebylo jen dostat informaci, ale vytvorit intenzivni pole, ve kterem se muze zmenit percepce a vnitrni stav cloveka."
+        ),
+    },
+    {
+        "user": "Co je Antaryamin v linii Bhagavana?",
+        "assistant": (
+            "Antaryamin znamena vnitrniho boha nebo vnitrni pritomnost, s niz lze vstoupit do osobniho vztahu. "
+            "V Oneness linii nejde o povinnou ikonografii. Pro nekoho muze mit podobu Jezise, Krisny, svetla, materske pritomnosti nebo beztvarneho vedomi. "
+            "Dulezite je, ze bozske neni jen abstraktni pojem, ale ziva a zkusenostni pritomnost."
+        ),
+    },
+    {
+        "user": "Jak souvisi Beautiful State s drivejsim jazykem probuzeni a Zlatym vekem?",
+        "assistant": (
+            "Beautiful State je novejsi, psychologictěji sdelitelny jazyk pro to, co starsi Oneness University casto popisovala jako probuzeni, osviceni nebo vstup do Zlateho veku. "
+            "Nejde o dokonaly permanentni stav bez problemu, ale o posun z rezimu strachu, odporu a vnitrniho hluku do rezimu vetsi pritomnosti, lasky, vdecnosti a jasnosti. "
+            "Zlaty vek je pak kolektivni rozsireni tohoto posunu na uroven vztahu a spolecnosti."
+        ),
+    },
+    {
+        "user": "Jak pracovat s Bhagavanovymi vyroky v datasetu a dokumentaci bez skluzu do nepresnosti?",
+        "assistant": (
+            "Bezpecnejsi je stavet na tematickych parafrazich a kratkych verejne znamych vyrocich nez na hromadnem sbirani dlouhych quote bloku. "
+            "Je dobre rozlisovat mezi historicky dolozitelnym vyrokem, devotionalnim podanim a autorskou interpretaci. "
+            "Do training datasetu patri formulace typu 'v Bhagavanove linii' nebo 'podle Oneness uceni', zatimco zazracne nebo tezko overitelne narativy je lepsi drzet mimo jadro korpusu."
+        ),
+    },
+    {
+        "user": "Jake knihy z APP&WEB/public_html/V2/books ma AI Native brat jako soucast book corpus?",
+        "assistant": (
+            "Published V2 books vrstva zahrnuje minimalne dve osy. Prvni je Quantova Revoluce jako historicka materska kniha, dolozena PDF edicemi a navazujicim book contextem v docs/docs2.9/books/. "
+            "Druhou je Sacred Library / Amenti knihovna, kde jsou ve verejne publikacni vrstve vedeny napriklad Cosmic Egg, Emerald Tablets, Dohrmanovo proroctvi, Omnity One Love, Starobyly sip a Tajemstvi Amenti. "
+            "Pro AI Native je dulezite brat je jako soucast historickeho knizniho korpusu projektu, ne jako nahodne bonusove soubory bez vztahu k dokumentaci."
+        ),
+    },
+    {
+        "user": "Jak current AI Native pipeline pracuje s PDF knihami z V2/books?",
+        "assistant": (
+            "Aktualni pipeline nestavi na primem ingestu binarnich PDF souboru. Collector i KnowledgeBase nejlepe pracuji s markdown, textovymi a kodovymi zdroji v repozitari. "
+            "Proto se publikovane PDF knihy maji brat hlavne jako artefakty a dukaz publikace, zatimco do samotneho AI uceni se maji tahat jejich repo-local proxy vrstvy: knizni manifesty, contextual docs, Sacred Library summary soubory, Cosmic Map syntézy a dalsi textove mosty. "
+            "Tento pristup je robustnejsi a zaroven bezpecnejsi z hlediska autorskych prav i kvality datasetu."
+        ),
+    },
+    {
+        "user": "Jake textove proxy zdroje ma AI Native pouzit misto slepeho cteni PDF knih?",
+        "assistant": (
+            "Pro Quantovou Revoluci ma AI Native pouzit hlavne docs/docs2.9/books/README.md a docs/docs2.9/books/quantum-revolution/BOOK_CONTEXT.md plus souvisejici analyzy a mapovani. "
+            "Pro Sacred Library / Amenti vrstvu jsou hlavni proxy zdroje docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME/SACRED_LIBRARY_COMPLETE.md, SACRED_LIBRARY_README.md, docs/docs2.9/deployment/AMENTI_LOG_INDEX.md, relevantni kapitoly SACRED_KNOWLEDGE a tematicke casti COSMIC_MAP. "
+            "Jinymi slovy: AI nema odpovidat stylem 'nacetl jsem PDF', ale stylem 'v repozitari jsou k temto kniham kuratorske textove vrstvy a z nich vychazi pracov­ni znalost'."
         ),
     },
     # ─── LIBERATION MANIFESTO & FILOZOFIE ────────────────────────────────────

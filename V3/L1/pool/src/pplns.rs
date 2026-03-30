@@ -2,6 +2,12 @@
 //!
 //! Tracks per-miner accepted shares in a sliding window and computes
 //! proportional payout splits when a block is found.
+//!
+//! Block rewards are split according to [`FeeConfig`]:
+//! - 89% to miners (distributed proportionally via PPLNS)
+//! - 5% humanitarian tithe (Children Future Fund)
+//! - 5% Issobella fund (L5/L6)
+//! - 1% pool operator fee
 
 use std::collections::{HashMap, VecDeque};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -20,9 +26,63 @@ pub struct PplnsShare {
 pub struct PayoutEntry {
     pub miner_id: String,
     pub address: String,
-    /// Amount in flowers (1 ZION = 1_000_000_000_000_000 flowers).
+    /// Amount in flowers (1 ZION = 1_000_000_000_000 flowers).
     pub amount: u64,
     pub share_count: u64,
+}
+
+/// Fee split configuration for pool reward distribution.
+#[derive(Debug, Clone)]
+pub struct FeeConfig {
+    /// Humanitarian tithe percentage (default: 5%).
+    pub humanitarian_pct: u64,
+    /// Issobella fund percentage (default: 5%).
+    pub issobella_pct: u64,
+    /// Pool operator fee percentage (default: 1%).
+    pub pool_fee_pct: u64,
+    /// Humanitarian tithe wallet address.
+    pub humanitarian_wallet: String,
+    /// Issobella fund wallet address.
+    pub issobella_wallet: String,
+    /// Pool fee wallet address (empty = stays in coinbase wallet).
+    pub pool_fee_wallet: String,
+}
+
+impl Default for FeeConfig {
+    fn default() -> Self {
+        Self {
+            humanitarian_pct: 5,
+            issobella_pct: 5,
+            pool_fee_pct: 1,
+            humanitarian_wallet: String::new(),
+            issobella_wallet: String::new(),
+            pool_fee_wallet: String::new(),
+        }
+    }
+}
+
+impl FeeConfig {
+    /// Total percentage deducted from block reward before miner distribution.
+    pub fn total_fee_pct(&self) -> u64 {
+        self.humanitarian_pct + self.issobella_pct + self.pool_fee_pct
+    }
+
+    /// Miner share percentage (100 - total fees).
+    pub fn miner_pct(&self) -> u64 {
+        100u64.saturating_sub(self.total_fee_pct())
+    }
+
+    /// Configuration with no fees (100% to miners).
+    pub fn no_fees() -> Self {
+        Self {
+            humanitarian_pct: 0,
+            issobella_pct: 0,
+            pool_fee_pct: 0,
+            humanitarian_wallet: String::new(),
+            issobella_wallet: String::new(),
+            pool_fee_wallet: String::new(),
+        }
+    }
 }
 
 /// PPLNS engine configuration.
@@ -32,6 +92,8 @@ pub struct PplnsConfig {
     pub window_size: usize,
     /// Minimum payout amount in flowers. Miners below this accumulate.
     pub min_payout_flowers: u64,
+    /// Fee split configuration (humanitarian tithe, issobella, pool fee).
+    pub fee_config: FeeConfig,
 }
 
 impl Default for PplnsConfig {
@@ -39,6 +101,7 @@ impl Default for PplnsConfig {
         Self {
             window_size: 1_000,
             min_payout_flowers: zion_core::wallet::MIN_PAYOUT_AMOUNT,
+            fee_config: FeeConfig::default(),
         }
     }
 }
@@ -57,6 +120,12 @@ pub struct PplnsEngine {
     total_paid_flowers: u64,
     /// Number of payout rounds executed.
     payout_rounds: u64,
+    /// Accumulated humanitarian tithe obligation (flowers).
+    fee_humanitarian_flowers: u64,
+    /// Accumulated Issobella fund obligation (flowers).
+    fee_issobella_flowers: u64,
+    /// Accumulated pool operator fee (flowers).
+    fee_pool_flowers: u64,
 }
 
 impl PplnsEngine {
@@ -68,6 +137,9 @@ impl PplnsEngine {
             unpaid: HashMap::new(),
             total_paid_flowers: 0,
             payout_rounds: 0,
+            fee_humanitarian_flowers: 0,
+            fee_issobella_flowers: 0,
+            fee_pool_flowers: 0,
         }
     }
 
@@ -128,9 +200,9 @@ impl PplnsEngine {
 
     /// Compute proportional payouts for a block reward.
     ///
-    /// Splits `block_reward_flowers` among miners proportional to their share
-    /// count in the current window. Miners without a registered address have
-    /// their portion held in `unpaid` balances until an address is set.
+    /// Deducts fees (humanitarian tithe, issobella fund, pool fee) from the
+    /// block reward first, then splits the remaining miner share among miners
+    /// proportional to their share count in the current window.
     ///
     /// Returns the list of miners whose accumulated balance meets the minimum
     /// payout threshold.
@@ -139,6 +211,27 @@ impl PplnsEngine {
             return Vec::new();
         }
 
+        // Apply fee split: deduct humanitarian, issobella, pool fee before miner distribution.
+        let fee = &self.config.fee_config;
+        let humanitarian_share = block_reward_flowers
+            .saturating_mul(fee.humanitarian_pct)
+            .saturating_div(100);
+        let issobella_share = block_reward_flowers
+            .saturating_mul(fee.issobella_pct)
+            .saturating_div(100);
+        let pool_fee_share = block_reward_flowers
+            .saturating_mul(fee.pool_fee_pct)
+            .saturating_div(100);
+        // Miner reward is the remainder after all fees (avoids rounding dust).
+        let miner_reward = block_reward_flowers
+            .saturating_sub(humanitarian_share)
+            .saturating_sub(issobella_share)
+            .saturating_sub(pool_fee_share);
+
+        self.fee_humanitarian_flowers = self.fee_humanitarian_flowers.saturating_add(humanitarian_share);
+        self.fee_issobella_flowers = self.fee_issobella_flowers.saturating_add(issobella_share);
+        self.fee_pool_flowers = self.fee_pool_flowers.saturating_add(pool_fee_share);
+
         // Count shares per miner in the current window.
         let mut share_counts: HashMap<&str, u64> = HashMap::new();
         let total_shares = self.window.len() as u64;
@@ -146,15 +239,15 @@ impl PplnsEngine {
             *share_counts.entry(&share.miner_id).or_insert(0) += 1;
         }
 
-        // Distribute reward proportionally and accumulate in `unpaid`.
+        // Distribute miner_reward proportionally and accumulate in `unpaid`.
         let mut distributed = 0u64;
         let miners: Vec<(&str, u64)> = share_counts.iter().map(|(k, v)| (*k, *v)).collect();
         for (i, &(miner_id, count)) in miners.iter().enumerate() {
             let amount = if i == miners.len() - 1 {
                 // Last miner gets the remainder to avoid rounding dust.
-                block_reward_flowers.saturating_sub(distributed)
+                miner_reward.saturating_sub(distributed)
             } else {
-                block_reward_flowers
+                miner_reward
                     .saturating_mul(count)
                     .saturating_div(total_shares)
             };
@@ -211,6 +304,22 @@ impl PplnsEngine {
             payout_rounds: self.payout_rounds,
         }
     }
+
+    /// Fee accumulation statistics.
+    pub fn fee_stats(&self) -> FeeStats {
+        FeeStats {
+            humanitarian_pct: self.config.fee_config.humanitarian_pct,
+            issobella_pct: self.config.fee_config.issobella_pct,
+            pool_fee_pct: self.config.fee_config.pool_fee_pct,
+            miner_pct: self.config.fee_config.miner_pct(),
+            humanitarian_accumulated_flowers: self.fee_humanitarian_flowers,
+            issobella_accumulated_flowers: self.fee_issobella_flowers,
+            pool_fee_accumulated_flowers: self.fee_pool_flowers,
+            humanitarian_wallet: self.config.fee_config.humanitarian_wallet.clone(),
+            issobella_wallet: self.config.fee_config.issobella_wallet.clone(),
+            pool_fee_wallet: self.config.fee_config.pool_fee_wallet.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -224,6 +333,21 @@ pub struct PplnsStats {
     pub payout_rounds: u64,
 }
 
+/// Fee accumulation statistics reported via pool API.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FeeStats {
+    pub humanitarian_pct: u64,
+    pub issobella_pct: u64,
+    pub pool_fee_pct: u64,
+    pub miner_pct: u64,
+    pub humanitarian_accumulated_flowers: u64,
+    pub issobella_accumulated_flowers: u64,
+    pub pool_fee_accumulated_flowers: u64,
+    pub humanitarian_wallet: String,
+    pub issobella_wallet: String,
+    pub pool_fee_wallet: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -232,6 +356,15 @@ mod tests {
         PplnsEngine::new(PplnsConfig {
             window_size,
             min_payout_flowers: min_payout,
+            fee_config: FeeConfig::no_fees(),
+        })
+    }
+
+    fn engine_with_fees(window_size: usize, min_payout: u64) -> PplnsEngine {
+        PplnsEngine::new(PplnsConfig {
+            window_size,
+            min_payout_flowers: min_payout,
+            fee_config: FeeConfig::default(), // 5/5/1 split
         })
     }
 
@@ -434,5 +567,88 @@ mod tests {
         let cfg = PplnsConfig::default();
         assert_eq!(cfg.window_size, 1_000);
         assert_eq!(cfg.min_payout_flowers, zion_core::wallet::MIN_PAYOUT_AMOUNT);
+        assert_eq!(cfg.fee_config.humanitarian_pct, 5);
+        assert_eq!(cfg.fee_config.issobella_pct, 5);
+        assert_eq!(cfg.fee_config.pool_fee_pct, 1);
+        assert_eq!(cfg.fee_config.miner_pct(), 89);
+    }
+
+    #[test]
+    fn fee_split_deducts_from_reward() {
+        let mut e = engine_with_fees(100, 1);
+        e.register_address("alice", "zion1alice");
+        for i in 0..10 {
+            e.record_share_at("alice", "rig1", 1, 1000 + i);
+        }
+        // Block reward = 1,000,000 flowers
+        let payouts = e.compute_payouts(1_000_000);
+        assert_eq!(payouts.len(), 1);
+        // Miner gets 89%: 890,000
+        assert_eq!(payouts[0].amount, 890_000);
+
+        let fs = e.fee_stats();
+        assert_eq!(fs.humanitarian_accumulated_flowers, 50_000); // 5%
+        assert_eq!(fs.issobella_accumulated_flowers, 50_000);    // 5%
+        assert_eq!(fs.pool_fee_accumulated_flowers, 10_000);     // 1%
+        // Total: 890k + 50k + 50k + 10k = 1M (no dust)
+        assert_eq!(
+            payouts[0].amount + fs.humanitarian_accumulated_flowers
+                + fs.issobella_accumulated_flowers + fs.pool_fee_accumulated_flowers,
+            1_000_000
+        );
+    }
+
+    #[test]
+    fn fee_split_accumulates_across_blocks() {
+        let mut e = engine_with_fees(100, 1);
+        e.register_address("alice", "zion1alice");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.compute_payouts(1_000_000);
+        e.record_share_at("alice", "rig1", 2, 2000);
+        e.compute_payouts(1_000_000);
+
+        let fs = e.fee_stats();
+        assert_eq!(fs.humanitarian_accumulated_flowers, 100_000); // 5% × 2 blocks
+        assert_eq!(fs.issobella_accumulated_flowers, 100_000);
+        assert_eq!(fs.pool_fee_accumulated_flowers, 20_000);
+    }
+
+    #[test]
+    fn fee_split_with_real_block_reward() {
+        // 5,400,067,000,000,000 flowers = 5,400.067 ZION (V3 base reward)
+        let block_reward: u64 = 5_400_067_000_000_000;
+        let mut e = engine_with_fees(100, 1);
+        e.register_address("miner1", "zion1miner1");
+        e.record_share_at("miner1", "rig1", 1, 1000);
+        let payouts = e.compute_payouts(block_reward);
+
+        let fs = e.fee_stats();
+        let humanitarian = 5_400_067_000_000_000u64 * 5 / 100; // 270,003,350,000,000
+        let issobella = 5_400_067_000_000_000u64 * 5 / 100;
+        let pool_fee = 5_400_067_000_000_000u64 * 1 / 100;     // 54,000,670,000,000
+        let miner_share = block_reward - humanitarian - issobella - pool_fee;
+
+        assert_eq!(fs.humanitarian_accumulated_flowers, humanitarian);
+        assert_eq!(fs.issobella_accumulated_flowers, issobella);
+        assert_eq!(fs.pool_fee_accumulated_flowers, pool_fee);
+        assert_eq!(payouts[0].amount, miner_share);
+        // Verify no dust lost
+        assert_eq!(
+            miner_share + humanitarian + issobella + pool_fee,
+            block_reward
+        );
+    }
+
+    #[test]
+    fn no_fees_config_gives_full_reward() {
+        let cfg = FeeConfig::no_fees();
+        assert_eq!(cfg.miner_pct(), 100);
+        assert_eq!(cfg.total_fee_pct(), 0);
+
+        let mut e = engine(100, 1);
+        e.register_address("alice", "zion1alice");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        let payouts = e.compute_payouts(1_000_000);
+        assert_eq!(payouts[0].amount, 1_000_000);
     }
 }
