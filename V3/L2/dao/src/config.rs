@@ -58,6 +58,7 @@ pub struct DaoConfig {
     pub multisig_total: u32,
 
     // ── Guardians ─────────────────────────────────────────────────────────
+    #[serde(default)]
     pub guardians: Vec<GuardianConfig>,
 }
 

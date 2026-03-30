@@ -124,6 +124,9 @@ interface V3Metrics {
   blocksAccepted: number | null; templateHeight: number | null; templateTxs: number | null; templateFees: number | null;
   poolActiveSessions: number | null; poolSubmits: number | null; poolAccepted: number | null;
   poolRejected: number | null; poolAcceptRate: number | null; poolUptime: number | null;
+  minerHashrate: number | null; minerHashrate10s: number | null; minerHashrate60s: number | null;
+  minerAccepted: number | null; minerRejected: number | null; minerAcceptRate: number | null;
+  minerSubmitAvgMs: number | null; minerPoolHeight: number | null; minerUp: number | null;
   groupZionSub: number | null; groupZionAcc: number | null; groupRevenueSub: number | null; groupRevenueAcc: number | null;
   groupNclSub: number | null; groupNclAcc: number | null; groupAutoSub: number | null; groupAutoAcc: number | null;
   pplnsWindowSize: number | null; pplnsWindowUsed: number | null; pplnsMiners: number | null;
@@ -134,13 +137,80 @@ interface V3Metrics {
 }
 
 interface V3Sparklines {
-  chainHeight: number[]; poolSessions: number[]; shares: number[];
+  chainHeight: number[]; poolSessions: number[]; shares: number[]; minerHashrate: number[];
 }
 
 interface V3Charts {
-  chainHeight: number[]; poolSessions: number[]; shares: number[];
+  chainHeight: number[]; poolSessions: number[]; shares: number[]; minerHashrate: number[];
   cpuLoad: number[]; memPct: number[]; redisMemory: number[]; timestamps: number[];
 }
+
+interface WalletDiagnosticsData {
+  ok: boolean;
+  rpc: {
+    connected: boolean;
+    chain_height: number;
+    peers: number;
+    mempool_size: number;
+    network: string;
+    version: string;
+    submit_methods: string[];
+  };
+  supply?: {
+    circulating_supply_zion: number;
+    remaining_supply_zion: number;
+    block_reward_zion: number;
+  } | null;
+  wallet?: {
+    address: string;
+    balance_atomic: number;
+    balance_zion: number;
+    balance_display: string;
+    chain_height: number;
+    transaction_model: string;
+    utxo_count: number;
+    total_utxo_amount: number;
+    total_utxo_zion: number;
+    utxos: Array<{
+      tx_hash: string;
+      output_index: number;
+      amount: number;
+      address: string;
+      height: number;
+    }>;
+  } | null;
+  miner?: {
+    pending_balance_zion: number;
+    paid_balance_zion: number;
+    accepted_shares: number;
+    rejected_shares: number;
+    blocks_found: number;
+    hashrate_1h: number;
+    hashrate_24h: number;
+    last_seen: number;
+    recent_payouts: Array<{
+      amount: number;
+      tx_id?: string;
+      timestamp?: number;
+      status?: string;
+    }>;
+  } | null;
+  broadcast: {
+    endpoint: string;
+    mode: string;
+    note: string;
+  };
+}
+
+interface WalletBroadcastResult {
+  ok: boolean;
+  method: string;
+  accepted: boolean;
+  tx_id: string | null;
+  error?: string;
+}
+
+type WalletSubmitMethod = 'submitTransaction' | 'submitAccountTransaction' | 'sendRawTransaction';
 
 type ChartRange = '1h' | '6h' | '24h';
 type ServiceGroup = 'all' | 'core' | 'mining' | 'monitoring' | 'remote';
@@ -192,6 +262,10 @@ function fmtHash(h?: number | null) {
   if (h >= 1e6) return `${(h / 1e6).toFixed(2)} MH/s`;
   if (h >= 1e3) return `${(h / 1e3).toFixed(2)} KH/s`;
   return `${h.toFixed(0)} H/s`;
+}
+function fmtZion(value?: number | null) {
+  if (value == null) return '—';
+  return `${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 6 })} ZION`;
 }
 function fmtUptime(secs?: number | null) {
   if (!secs) return '—';
@@ -249,6 +323,9 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
     'zion_template_height','zion_template_txs','zion_template_fees_zion',
     'zion_pool_active_sessions','zion_pool_submits_total','zion_pool_accepted_total',
     'zion_pool_rejected_total','zion_pool_accept_rate_pct','zion_pool_uptime_seconds',
+    'zion_miner_hashrate_hps','zion_miner_hashrate_10s_hps','zion_miner_hashrate_60s_hps',
+    'zion_miner_accepted_shares_total','zion_miner_rejected_shares_total','zion_miner_accept_rate_pct',
+    'zion_miner_submit_avg_latency_ms','zion_miner_pool_height','up{job="zion-miner-prague"}',
     'zion_pool_group_submits','zion_pool_group_accepted',
     'zion_pplns_window_size','zion_pplns_window_used','zion_pplns_registered_miners',
     'zion_pplns_total_paid_flowers','zion_pplns_payout_rounds',
@@ -264,35 +341,40 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
     templateHeight: pv(res,4), templateTxs: pv(res,5), templateFees: pv(res,6),
     poolActiveSessions: pv(res,7), poolSubmits: pv(res,8), poolAccepted: pv(res,9),
     poolRejected: pv(res,10), poolAcceptRate: pv(res,11), poolUptime: pv(res,12),
-    groupZionSub: pvLabel([res[13]],'group','zion'), groupZionAcc: pvLabel([res[14]],'group','zion'),
-    groupRevenueSub: pvLabel([res[13]],'group','revenue'), groupRevenueAcc: pvLabel([res[14]],'group','revenue'),
-    groupNclSub: pvLabel([res[13]],'group','ncl'), groupNclAcc: pvLabel([res[14]],'group','ncl'),
-    groupAutoSub: pvLabel([res[13]],'group','auto'), groupAutoAcc: pvLabel([res[14]],'group','auto'),
-    pplnsWindowSize: pv(res,15), pplnsWindowUsed: pv(res,16), pplnsMiners: pv(res,17),
-    pplnsPaid: pv(res,18), pplnsRounds: pv(res,19),
-    serverLoad1: pv(res,20), serverLoad5: pv(res,21), serverLoad15: pv(res,22),
-    memTotal: pv(res,23), memAvail: pv(res,24), diskTotal: pv(res,25), diskAvail: pv(res,26),
-    bootTime: pv(res,27), coreUp: pv(res,28), poolUp: pv(res,29),
+    minerHashrate: pv(res,13), minerHashrate10s: pv(res,14), minerHashrate60s: pv(res,15),
+    minerAccepted: pv(res,16), minerRejected: pv(res,17), minerAcceptRate: pv(res,18),
+    minerSubmitAvgMs: pv(res,19), minerPoolHeight: pv(res,20), minerUp: pv(res,21),
+    groupZionSub: pvLabel([res[22]],'group','zion'), groupZionAcc: pvLabel([res[23]],'group','zion'),
+    groupRevenueSub: pvLabel([res[22]],'group','revenue'), groupRevenueAcc: pvLabel([res[23]],'group','revenue'),
+    groupNclSub: pvLabel([res[22]],'group','ncl'), groupNclAcc: pvLabel([res[23]],'group','ncl'),
+    groupAutoSub: pvLabel([res[22]],'group','auto'), groupAutoAcc: pvLabel([res[23]],'group','auto'),
+    pplnsWindowSize: pv(res,24), pplnsWindowUsed: pv(res,25), pplnsMiners: pv(res,26),
+    pplnsPaid: pv(res,27), pplnsRounds: pv(res,28),
+    serverLoad1: pv(res,29), serverLoad5: pv(res,30), serverLoad15: pv(res,31),
+    memTotal: pv(res,32), memAvail: pv(res,33), diskTotal: pv(res,34), diskAvail: pv(res,35),
+    bootTime: pv(res,36), coreUp: pv(res,37), poolUp: pv(res,38),
   };
 }
 async function fetchV3Sparklines(): Promise<V3Sparklines> {
-  const [h,s,a] = await Promise.allSettled([
+  const [h,s,a,m] = await Promise.allSettled([
     promRange('zion_chain_height','1h','120'),
     promRange('zion_pool_active_sessions','1h','120'),
     promRange('zion_pool_accepted_total','1h','120'),
+    promRange('zion_miner_hashrate_hps','1h','120'),
   ]);
   const ex = (r: PromiseSettledResult<PromRangeResult[]>) => {
     if (r.status !== 'fulfilled') return []; const f = r.value[0]; return f ? f.values.map(([,v]) => parseFloat(v)) : [];
   };
-  return { chainHeight: ex(h), poolSessions: ex(s), shares: ex(a) };
+  return { chainHeight: ex(h), poolSessions: ex(s), shares: ex(a), minerHashrate: ex(m) };
 }
 
 async function fetchV3Charts(range: ChartRange): Promise<V3Charts> {
   const step = range === '1h' ? '60' : range === '6h' ? '300' : '600';
-  const [h,s,a,cpu,memTotal,memAvail,redisMem] = await Promise.allSettled([
+  const [h,s,a,m,cpu,memTotal,memAvail,redisMem] = await Promise.allSettled([
     promRange('zion_chain_height', range, step),
     promRange('zion_pool_active_sessions', range, step),
     promRange('zion_pool_accepted_total', range, step),
+    promRange('zion_miner_hashrate_hps', range, step),
     promRange('node_load1', range, step),
     promRange('node_memory_MemTotal_bytes', range, step),
     promRange('node_memory_MemAvailable_bytes', range, step),
@@ -310,6 +392,7 @@ async function fetchV3Charts(range: ChartRange): Promise<V3Charts> {
     chainHeight: ex(h),
     poolSessions: ex(s),
     shares: ex(a),
+    minerHashrate: ex(m),
     cpuLoad: ex(cpu),
     memPct,
     redisMemory: ex(redisMem),
@@ -321,7 +404,7 @@ async function fetchServiceStatuses(): Promise<ServiceStatus[]> {
   const STACK: Omit<ServiceStatus, 'up'>[] = [
     { name: 'zion-core', job: 'zion-core-prague', image: 'zion-core:2.9.8', ports: '8333, 8443, 9115' },
     { name: 'zion-pool', job: 'zion-pool-prague', image: 'zion-pool:2.9.8', ports: '3333, 8080' },
-    { name: 'zion-miner', job: '', image: 'zion-miner:2.9.8', ports: '—', note: 'no scrape target' },
+    { name: 'zion-miner', job: 'zion-miner-prague', image: 'zion-miner:2.9.8', ports: '9116', note: 'runtime metrics + health' },
     { name: 'zion-redis', job: 'redis-prague', image: 'redis:7-alpine', ports: '6379' },
     { name: 'zion-seed-1', job: '', image: 'zion-core:2.9.8', ports: 'internal', note: 'seed node' },
     { name: 'zion-seed-2', job: '', image: 'zion-core:2.9.8', ports: 'internal', note: 'seed node' },
@@ -403,6 +486,33 @@ async function fetchStackSummary(): Promise<StackSummary> {
     prometheusQueueLength: pv(res, 16),
     prometheusVersion,
   };
+}
+
+async function fetchWalletDiagnostics(address?: string): Promise<WalletDiagnosticsData> {
+  const query = address?.trim() ? `?address=${encodeURIComponent(address.trim())}` : '';
+  const response = await fetch(`/api/wallet${query}`, {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(8000),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.ok) {
+    throw new Error(payload?.error ?? 'Wallet diagnostics unavailable');
+  }
+  return payload as WalletDiagnosticsData;
+}
+
+async function submitWalletBroadcast(method: WalletSubmitMethod, transaction: unknown): Promise<WalletBroadcastResult> {
+  const response = await fetch('/api/wallet', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ method, transaction }),
+    signal: AbortSignal.timeout(12000),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.ok) {
+    throw new Error(payload?.error ?? 'Transaction submit failed');
+  }
+  return payload as WalletBroadcastResult;
 }
 
 function fmtBytes(bytes: number | null | undefined) {
@@ -840,6 +950,7 @@ function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2 text-sm"><StatusDot up={m.coreUp} /><span className="text-gray-300">Core Node</span></div>
         <div className="flex items-center gap-2 text-sm"><StatusDot up={m.poolUp} /><span className="text-gray-300">Mining Pool</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.minerUp} /><span className="text-gray-300">Miner Runtime</span></div>
         <div className="flex items-center gap-2 text-sm"><StatusDot up={m.serverLoad1 != null ? 1 : null} /><span className="text-gray-300">Node Exporter</span></div>
         <div className="ml-auto text-xs text-gray-500 font-mono">{m.chainHeight != null ? `Block #${m.chainHeight}` : ''}</div>
       </div>
@@ -880,6 +991,28 @@ function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3
           <div className="mt-2 grid md:grid-cols-2 gap-2.5">
             {sparks.poolSessions.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">Active Miners — 1h</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
             {sparks.shares.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">Accepted Shares — 1h</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
+          </div>
+        )}
+      </div>
+
+      {/* ── Miner Runtime ── */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Pickaxe className="h-4 w-4 text-emerald-400" /> Miner Runtime</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+          <MiniMetric label="Miner Target" value={m.minerUp === 1 ? 'UP' : m.minerUp === 0 ? 'DOWN' : '—'} color={m.minerUp === 1 ? 'text-emerald-400' : m.minerUp === 0 ? 'text-red-400' : 'text-gray-400'} />
+          <MiniMetric label="Hashrate" value={m.minerHashrate != null ? fmtHash(m.minerHashrate) : '—'} color="text-emerald-400" />
+          <MiniMetric label="Hashrate 10s" value={m.minerHashrate10s != null ? fmtHash(m.minerHashrate10s) : '—'} color="text-cyan-400" />
+          <MiniMetric label="Hashrate 60s" value={m.minerHashrate60s != null ? fmtHash(m.minerHashrate60s) : '—'} color="text-sky-400" />
+          <MiniMetric label="Accepted" value={fmt(m.minerAccepted)} color="text-emerald-400" />
+          <MiniMetric label="Rejected" value={fmt(m.minerRejected)} color="text-red-400" />
+          <MiniMetric label="Accept Rate" value={m.minerAcceptRate != null ? `${m.minerAcceptRate.toFixed(1)}%` : '—'} color={m.minerAcceptRate != null && m.minerAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
+          <MiniMetric label="Submit Avg" value={m.minerSubmitAvgMs != null ? `${m.minerSubmitAvgMs.toFixed(1)} ms` : '—'} color="text-purple-400" />
+          <MiniMetric label="Pool Height" value={fmt(m.minerPoolHeight)} color="text-zion-gold" />
+        </div>
+        {sparks.minerHashrate.length > 1 && (
+          <div className="mt-2 rounded-xl bg-black/40 border border-white/10 p-3">
+            <div className="text-[10px] text-gray-500 mb-1">Miner Hashrate — 1h</div>
+            <MiniSparkline data={sparks.minerHashrate} color="#10b981" height={32} />
           </div>
         )}
       </div>
@@ -961,6 +1094,185 @@ function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3
         <span>SVG sparklines (1h)</span>
         <a href="/monitoring" className="text-emerald-400 hover:text-emerald-300 transition-colors">Full monitoring page →</a>
         <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">Open Grafana →</a>
+      </div>
+    </motion.section>
+  );
+}
+
+function WalletDiagnosticsSection({
+  diagnostics,
+  loading,
+  error,
+  addressInput,
+  queriedAddress,
+  onAddressChange,
+  onLoad,
+  txMethod,
+  txPayload,
+  txSubmitting,
+  txResult,
+  txError,
+  onMethodChange,
+  onPayloadChange,
+  onSubmit,
+}: {
+  diagnostics: WalletDiagnosticsData | null;
+  loading: boolean;
+  error: string | null;
+  addressInput: string;
+  queriedAddress: string;
+  onAddressChange: (value: string) => void;
+  onLoad: () => void;
+  txMethod: WalletSubmitMethod;
+  txPayload: string;
+  txSubmitting: boolean;
+  txResult: WalletBroadcastResult | null;
+  txError: string | null;
+  onMethodChange: (value: WalletSubmitMethod) => void;
+  onPayloadChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  const rpc = diagnostics?.rpc;
+  const wallet = diagnostics?.wallet;
+  const miner = diagnostics?.miner;
+  const broadcastMethods = diagnostics?.rpc.submit_methods?.length
+    ? diagnostics.rpc.submit_methods
+    : ['submitTransaction', 'submitAccountTransaction', 'sendRawTransaction'];
+  const activeAddress = wallet?.address ?? queriedAddress;
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.14 }}
+      className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-emerald-500/30 bg-black/40 p-4 sm:p-6 lg:p-8 space-y-6"
+    >
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Wallet & RPC</p>
+          <span className="text-[10px] uppercase tracking-widest border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded-full font-semibold">SIGNED TX ONLY</span>
+        </div>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+          <Wallet className="h-7 w-7 text-emerald-400" />
+          Wallet Diagnostics & Transaction Submit
+        </h2>
+        <p className="text-sm text-gray-400">Live RPC health, balance, UTXO snapshot, miner payout visibility a bezpečný broadcast již podepsané transakce bez práce s privátními klíči na serveru.</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+        <Stat label="RPC" value={rpc?.connected ? 'ONLINE' : 'OFFLINE'} color={rpc?.connected ? 'text-emerald-400' : 'text-red-400'} />
+        <Stat label="Chain Height" value={fmt(rpc?.chain_height)} color="text-cyan-400" mono />
+        <Stat label="Peers" value={fmt(rpc?.peers)} color="text-emerald-400" mono />
+        <Stat label="Mempool" value={fmt(rpc?.mempool_size)} color="text-purple-400" mono />
+        <Stat label="Network" value={rpc?.network?.toUpperCase() ?? '—'} color="text-zion-gold" />
+        <Stat label="RPC Version" value={rpc?.version ?? '—'} color="text-gray-200" mono />
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <div className="flex-1 min-w-0">
+            <label className="block text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">Wallet Address Or Account</label>
+            <input
+              value={addressInput}
+              onChange={(event) => onAddressChange(event.target.value)}
+              placeholder="zion1... nebo wallet.alpha"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-cyan-500/40"
+            />
+          </div>
+          <button
+            onClick={onLoad}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-300 transition-colors hover:border-cyan-400/50 hover:text-cyan-200 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Loading…' : 'Load Wallet'}
+          </button>
+        </div>
+
+        {error && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <MiniMetric label="Address" value={activeAddress || 'not loaded'} color="text-cyan-400" />
+          <MiniMetric label="TX Model" value={wallet?.transaction_model ?? 'rpc-only'} color="text-zion-gold" />
+          <MiniMetric label="Balance" value={wallet ? fmtZion(wallet.balance_zion) : '—'} color="text-emerald-400" />
+          <MiniMetric label="UTXO Count" value={wallet ? fmt(wallet.utxo_count) : '—'} color="text-purple-400" />
+          <MiniMetric label="UTXO Total" value={wallet ? fmtZion(wallet.total_utxo_zion) : '—'} color="text-cyan-400" />
+          <MiniMetric label="Miner Pending" value={miner ? fmtZion(miner.pending_balance_zion) : '—'} color="text-amber-400" />
+          <MiniMetric label="Miner Paid" value={miner ? fmtZion(miner.paid_balance_zion) : '—'} color="text-emerald-400" />
+          <MiniMetric label="Miner Shares" value={miner ? `${fmt(miner.accepted_shares)} / ${fmt(miner.rejected_shares)}` : '—'} color="text-gray-200" />
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">Recent UTXOs</div>
+              <div className="text-[10px] text-gray-500">top 20 from RPC</div>
+            </div>
+            {wallet?.utxos?.length ? (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {wallet.utxos.slice(0, 6).map((utxo) => (
+                  <div key={`${utxo.tx_hash}_${utxo.output_index}`} className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-mono text-cyan-300 truncate">{utxo.tx_hash.slice(0, 12)}…:{utxo.output_index}</span>
+                      <span className="font-mono text-emerald-300">{fmtZion(utxo.amount / 1_000_000_000_000)}</span>
+                    </div>
+                    <div className="mt-1 text-gray-500">height {fmt(utxo.height)} · {utxo.address}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">{activeAddress ? 'No UTXOs returned for this address.' : 'Load a zion1 address to inspect UTXOs.'}</div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">RPC Submit Tester</div>
+              <div className="text-[10px] text-gray-500">signed payload only</div>
+            </div>
+            <div className="space-y-3">
+              <select
+                value={txMethod}
+                onChange={(event) => onMethodChange(event.target.value as WalletSubmitMethod)}
+                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500/40"
+              >
+                {broadcastMethods.map((method) => (
+                  <option key={method} value={method}>{method}</option>
+                ))}
+              </select>
+              <textarea
+                value={txPayload}
+                onChange={(event) => onPayloadChange(event.target.value)}
+                placeholder={'{\n  "version": 1,\n  "inputs": [],\n  "outputs": [],\n  "signature": "..."\n}'}
+                className="min-h-[220px] w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-cyan-500/40 font-mono"
+              />
+              <button
+                onClick={onSubmit}
+                disabled={txSubmitting}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 transition-colors hover:border-emerald-400/50 hover:text-emerald-200 disabled:opacity-50"
+              >
+                <ArrowLeftRight className={`h-4 w-4 ${txSubmitting ? 'animate-pulse' : ''}`} />
+                {txSubmitting ? 'Submitting…' : 'Broadcast Signed TX'}
+              </button>
+              {txResult && (
+                <div className={`rounded-xl border px-4 py-3 text-sm ${txResult.accepted ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-amber-500/30 bg-amber-500/10 text-amber-200'}`}>
+                  <div>method: {txResult.method}</div>
+                  <div>accepted: {txResult.accepted ? 'yes' : 'no'}</div>
+                  <div>tx_id: {txResult.tx_id ?? '—'}</div>
+                </div>
+              )}
+              {txError && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                  {txError}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </motion.section>
   );
@@ -1107,6 +1419,16 @@ export default function MissionControlDashboard() {
   const [chartRange, setChartRange] = useState<ChartRange>('6h');
   const [serviceGroup, setServiceGroup] = useState<ServiceGroup>('all');
   const [selectedService, setSelectedService] = useState<ServiceStatus | null>(null);
+  const [walletAddressInput, setWalletAddressInput] = useState('');
+  const [walletQueryAddress, setWalletQueryAddress] = useState('');
+  const [walletDiagnostics, setWalletDiagnostics] = useState<WalletDiagnosticsData | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [walletTxMethod, setWalletTxMethod] = useState<WalletSubmitMethod>('submitTransaction');
+  const [walletTxPayload, setWalletTxPayload] = useState('');
+  const [walletTxSubmitting, setWalletTxSubmitting] = useState(false);
+  const [walletTxResult, setWalletTxResult] = useState<WalletBroadcastResult | null>(null);
+  const [walletTxError, setWalletTxError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -1118,6 +1440,45 @@ export default function MissionControlDashboard() {
     } catch { /* silent */ }
     setLoading(false);
   }, []);
+
+  const refreshWallet = useCallback(async (addressOverride?: string) => {
+    const address = typeof addressOverride === 'string' ? addressOverride.trim() : walletQueryAddress.trim();
+    setWalletLoading(true);
+    setWalletError(null);
+    try {
+      const diagnostics = await fetchWalletDiagnostics(address);
+      setWalletDiagnostics(diagnostics);
+    } catch (error) {
+      setWalletError(error instanceof Error ? error.message : 'Wallet diagnostics unavailable');
+    } finally {
+      setWalletLoading(false);
+    }
+  }, [walletQueryAddress]);
+
+  const handleWalletLoad = useCallback(() => {
+    setWalletQueryAddress(walletAddressInput.trim());
+  }, [walletAddressInput]);
+
+  const handleWalletSubmit = useCallback(async () => {
+    setWalletTxResult(null);
+    setWalletTxError(null);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(walletTxPayload);
+    } catch {
+      setWalletTxError('Transaction payload must be valid JSON.');
+      return;
+    }
+    setWalletTxSubmitting(true);
+    try {
+      const result = await submitWalletBroadcast(walletTxMethod, parsed);
+      setWalletTxResult(result);
+    } catch (error) {
+      setWalletTxError(error instanceof Error ? error.message : 'Transaction submit failed');
+    } finally {
+      setWalletTxSubmitting(false);
+    }
+  }, [walletTxMethod, walletTxPayload]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1155,6 +1516,14 @@ export default function MissionControlDashboard() {
     const clock = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 60_000);
     return () => { cancelled = true; clearInterval(iv); clearInterval(iv2); clearInterval(iv3); clearInterval(clock); };
   }, [refresh, chartRange]);
+
+  useEffect(() => {
+    refreshWallet(walletQueryAddress);
+    const interval = setInterval(() => {
+      refreshWallet(walletQueryAddress);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [refreshWallet, walletQueryAddress]);
 
   const stabilityRun = data?.mainnet_stability_run ?? data?.launch_rehearsal ?? data?.stability_run;
   const readinessMap = data?.readiness_map;
@@ -1479,6 +1848,25 @@ export default function MissionControlDashboard() {
             {/* Mining Pool */}
             <PoolSection primary={primaryNode?.pool} />
 
+            {/* Wallet & RPC */}
+            <WalletDiagnosticsSection
+              diagnostics={walletDiagnostics}
+              loading={walletLoading}
+              error={walletError}
+              addressInput={walletAddressInput}
+              queriedAddress={walletQueryAddress}
+              onAddressChange={setWalletAddressInput}
+              onLoad={handleWalletLoad}
+              txMethod={walletTxMethod}
+              txPayload={walletTxPayload}
+              txSubmitting={walletTxSubmitting}
+              txResult={walletTxResult}
+              txError={walletTxError}
+              onMethodChange={setWalletTxMethod}
+              onPayloadChange={setWalletTxPayload}
+              onSubmit={handleWalletSubmit}
+            />
+
             {/* Project Stats */}
             <motion.section
               initial={{ opacity: 0, y: 24 }}
@@ -1749,6 +2137,7 @@ export default function MissionControlDashboard() {
                   <AreaChart data={v3Charts.chainHeight} timestamps={v3Charts.timestamps} label={`Chain Height — ${chartRange}`} color="#FFD700" />
                   <AreaChart data={v3Charts.poolSessions} timestamps={v3Charts.timestamps} label={`Active Miners — ${chartRange}`} color="#a855f7" />
                   <AreaChart data={v3Charts.shares} timestamps={v3Charts.timestamps} label={`Accepted Shares (cumul.) — ${chartRange}`} color="#10b981" />
+                  <AreaChart data={v3Charts.minerHashrate} timestamps={v3Charts.timestamps} label={`Miner Hashrate — ${chartRange}`} color="#22c55e" unit=" H/s" />
                   <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label={`CPU Load (1m avg) — ${chartRange}`} color="#06b6d4" />
                   <AreaChart data={v3Charts.memPct} timestamps={v3Charts.timestamps} label={`Memory Usage % — ${chartRange}`} color="#ec4899" unit="%" />
                   <AreaChart data={v3Charts.redisMemory} timestamps={v3Charts.timestamps} label={`Redis Memory — ${chartRange}`} color="#f97316" />
