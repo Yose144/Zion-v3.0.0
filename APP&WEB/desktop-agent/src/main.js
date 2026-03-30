@@ -3217,8 +3217,8 @@ function parseMinerOutput(output) {
     const hps10s = parseFloat(v3StatusMatch[10]);
     const hps60s = parseFloat(v3StatusMatch[11]);
     const hps15m = parseFloat(v3StatusMatch[12]);
-    // V3 reports 0.00 for 10s/60s/15m when windows are not yet full — use best available
-    minerStats.hashrate = hps10s || hps60s || hps15m || hpsOverall;
+    // V3 reports 0.00 for 10s/60s/15m when windows are not yet full
+    minerStats.hashrate = hpsOverall;
     minerStats.hashrate_10s = hps10s > 0 ? hps10s : hpsOverall;
     minerStats.hashrate_60s = hps60s > 0 ? hps60s : hpsOverall;
     minerStats.hashrate_15m = hps15m > 0 ? hps15m : hpsOverall;
@@ -3239,26 +3239,10 @@ function parseMinerOutput(output) {
       }
     }
     // Enriched fields
-    if (v3StatusMatch[17]) {
-      const gpuBe = v3StatusMatch[17].toLowerCase();
-      minerStats.gpu_backend = gpuBe;
-      minerStats.runtime_backend = gpuBe;
-      if (gpuBe !== 'cpu' && gpuBe !== 'none') {
-        minerStats.gpu_detected = true;
-        minerStats.gpu_type = gpuBe;
-        minerStats.cpu_only_mode = false;
-      }
-    }
-    if (v3StatusMatch[18]) {
-      const gpuHps = parseFloat(v3StatusMatch[18]);
-      minerStats.gpu_hps = gpuHps;
-      if (gpuHps > 0) minerStats.hashrate_gpu = gpuHps;
-    }
-    if (v3StatusMatch[19]) minerStats.current_epoch = parseInt(v3StatusMatch[19]);
-    if (v3StatusMatch[20]) {
-      minerStats.pool_height = parseInt(v3StatusMatch[20]);
-      minerStats.last_job_height = String(v3StatusMatch[20]);
-    }
+    if (v3StatusMatch[17]) minerStats.gpu_backend = v3StatusMatch[17];
+    if (v3StatusMatch[18]) minerStats.gpu_hps = parseFloat(v3StatusMatch[18]);
+    if (v3StatusMatch[19]) minerStats.epoch = parseInt(v3StatusMatch[19]);
+    if (v3StatusMatch[20]) minerStats.pool_height = parseInt(v3StatusMatch[20]);
     if (v3StatusMatch[21]) minerStats.best_batch_ms = parseInt(v3StatusMatch[21]);
   }
 
@@ -3311,48 +3295,6 @@ function parseMinerOutput(output) {
   if (v3MiningMatch) {
     minerStats.last_job_id = v3MiningMatch[1];
     minerStats.last_job_height = v3MiningMatch[2];
-  }
-
-  // ─── V3 XMRig-style new job: "[HH:MM:SS] new job  height N  diff N  algo ..." ───
-  const v3XNewJobMatch = output.match(/\] new job\s+height\s+(\d+)\s+diff\s+\S+\s+algo\s+(\S+)/);
-  if (v3XNewJobMatch) {
-    minerStats.last_job_height = v3XNewJobMatch[1];
-    minerStats.stream_algorithm = v3XNewJobMatch[2];
-  }
-
-  // ─── V3 XMRig-style accepted: "[HH:MM:SS] accepted A/R (+1) diff N [Nms] (P%)" ───
-  const v3XAcceptMatch = output.match(/\] accepted (\d+)\/(\d+)\s+\(\+1\)/);
-  if (v3XAcceptMatch) {
-    minerStats.accepted = parseInt(v3XAcceptMatch[1]);
-    minerStats.rejected = parseInt(v3XAcceptMatch[2]);
-    minerStats.shares = minerStats.accepted + minerStats.rejected;
-  }
-
-  // ─── V3 XMRig-style rejected: "[HH:MM:SS] rejected R/T — reason (Nms)" ───
-  const v3XRejectMatch = output.match(/\] rejected (\d+)\/(\d+)/);
-  if (v3XRejectMatch) {
-    minerStats.rejected = parseInt(v3XRejectMatch[1]);
-    minerStats.shares = parseInt(v3XRejectMatch[2]);
-    minerStats.accepted = minerStats.shares - minerStats.rejected;
-  }
-
-  // ─── V3 XMRig-style speed: "[HH:MM:SS] speed 10s/60s/15m  7.49  7.32  0.00 KH/s  max 7.61 KH/s" ───
-  const v3XSpeedMatch = output.match(/\] speed 10s\/60s\/15m\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(\S+\/s)\s+max\s+([\d.]+)/);
-  if (v3XSpeedMatch) {
-    const unit = v3XSpeedMatch[4].toLowerCase();
-    let mul = 1;
-    if (unit.includes('kh')) mul = 1e3;
-    else if (unit.includes('mh')) mul = 1e6;
-    else if (unit.includes('gh')) mul = 1e9;
-    const hr10v3x = parseFloat(v3XSpeedMatch[1]) * mul;
-    const hr60v3x = parseFloat(v3XSpeedMatch[2]) * mul;
-    const hr15v3x = parseFloat(v3XSpeedMatch[3]) * mul;
-    const hrMaxV3x = parseFloat(v3XSpeedMatch[5]) * mul;
-    minerStats.hashrate_10s = hr10v3x;
-    minerStats.hashrate_60s = hr60v3x;
-    minerStats.hashrate_15m = hr15v3x;
-    minerStats.hashrate_max = hrMaxV3x;
-    minerStats.hashrate = hr10v3x || hr60v3x || hr15v3x || hrMaxV3x;
   }
 
   // ─── V3 version banner: "version=3.0.0-dev" ───

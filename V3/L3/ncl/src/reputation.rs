@@ -67,7 +67,12 @@ impl ReputationRecord {
     // ─── Counters ────────────────────────────────────────────────────────
 
     /// Record a successful job completion.
-    pub fn record_success(&mut self, backend: &str, completion_ms: f64, reward_flowers: u64) {
+    pub fn record_success(
+        &mut self,
+        backend: &str,
+        completion_ms: f64,
+        reward_flowers: u64,
+    ) {
         self.jobs_completed += 1;
         self.total_earned += reward_flowers;
         self.last_seen = Utc::now();
@@ -196,7 +201,10 @@ impl ReputationRegistry {
             .iter()
             .map(|(id, r)| (id.as_str(), r.score()))
             .collect();
-        board.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        board.sort_by(|a, b| {
+            b.1.partial_cmp(&a.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         board
     }
 
@@ -209,7 +217,8 @@ impl ReputationRegistry {
             .max_by(|&&a, &&b| {
                 let sa = self.records.get(a).map(|r| r.score()).unwrap_or(100.0);
                 let sb = self.records.get(b).map(|r| r.score()).unwrap_or(100.0);
-                sa.partial_cmp(&sb).unwrap_or(std::cmp::Ordering::Equal)
+                sa.partial_cmp(&sb)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             })
             .copied()
     }
@@ -239,10 +248,7 @@ mod tests {
     fn test_new_worker_score_is_full() {
         let w = make_worker("w1");
         let score = w.score();
-        assert!(
-            score > 90.0,
-            "new worker should have near-full score, got {score}"
-        );
+        assert!(score > 90.0, "new worker should have near-full score, got {score}");
     }
 
     #[test]
@@ -299,9 +305,7 @@ mod tests {
             reg.get_mut("bad_worker").unwrap().record_failure("onnx");
         }
         for _ in 0..10 {
-            reg.get_mut("bad_worker")
-                .unwrap()
-                .record_success("onnx", 100.0, 0);
+            reg.get_mut("bad_worker").unwrap().record_success("onnx", 100.0, 0);
         }
         assert!(
             reg.is_banned("bad_worker"),
@@ -316,9 +320,7 @@ mod tests {
         reg.ensure("great", "zion1b");
         // Give "great" more successes
         for _ in 0..50 {
-            reg.get_mut("great")
-                .unwrap()
-                .record_success("onnx", 80.0, 0);
+            reg.get_mut("great").unwrap().record_success("onnx", 80.0, 0);
         }
         let best = reg.best_worker(&["average", "great"]).unwrap();
         assert_eq!(best, "great");

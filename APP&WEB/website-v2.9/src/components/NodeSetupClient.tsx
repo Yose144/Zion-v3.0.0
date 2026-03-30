@@ -98,9 +98,9 @@ const networkConfigs = [
 
 const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
-  { cmd: "zion-node --config mainnet.toml", desc: "Start with the public rehearsal config" },
+  { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
   { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
-  { cmd: "zion-node --peers 91.98.122.165:8333", desc: "Manual peer list (current seed)" },
+  { cmd: "zion-node --peers 91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333", desc: "Manual peer list (current rehearsal seeds)" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
   { cmd: "zion-node --data-dir /custom/path", desc: "Custom data directory" },
 ];
@@ -316,7 +316,9 @@ file = "zion.log"
 
 [peers]
 bootstrap = [
-  "91.98.122.165:8333"
+  "91.98.122.165:8333",
+  "5.78.194.94:8333",
+  "5.223.84.191:8333"
 ]`}
             />
           </div>
@@ -483,7 +485,7 @@ curl -s http://localhost:8443 \\
               },
               {
                 q: "No peers connecting",
-                a: "Verify firewall allows TCP 8333. Try manual peers: `--peers 91.98.122.165:8333`. Check DNS resolution.",
+                a: "Verify firewall allows TCP 8333. Try manual peers: `--peers 91.98.122.165:8333,5.78.194.94:8333`. Check DNS resolution.",
               },
               {
                 q: "Sync stuck / slow",
