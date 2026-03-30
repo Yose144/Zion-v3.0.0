@@ -1,0 +1,73 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ZION Bridge Relay — Testnet Configuration
+# Target: Base Sepolia (EVM chain ID 84532) ↔ ZION L1 mainnet
+# ──────────────────────────────────────────────────────────────────────────────
+
+[bridge]
+name    = "ZION Bridge Relay"
+version = "0.1.0"
+network = "testnet"
+
+# ── ZION L1 ──────────────────────────────────────────────────────────────────
+
+[l1]
+rpc_url            = "91.98.122.165:8443"       # Prague node (raw TCP JSON-RPC)
+rpc_url_backup     = "127.0.0.1:8443"           # local fallback when colocated
+bridge_address     = "zion1bridge000000000000000000000000000vault"
+finality_blocks    = 60
+poll_interval_secs = 15
+
+# ── Ankr Multi-Chain RPC ─────────────────────────────────────────────────────
+
+[ankr]
+enabled = true
+# api_key = ""   # set ANKR_API_KEY env var for premium tier; free tier works for testnet
+
+# ── EVM Chains ───────────────────────────────────────────────────────────────
+
+[[evm_chains]]
+chain_id                = "base_sepolia"
+name                    = "Base Sepolia"
+evm_chain_id            = 84532
+rpc_url                 = "https://base-sepolia-rpc.publicnode.com"
+rpc_url_backup          = "https://sepolia.base.org"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+finality_blocks         = 12
+enabled                 = true
+gas_strategy            = "eip1559"
+max_gas_gwei            = 10
+# start_block           = 0   # set to contract deployment block for faster initial sync
+
+# ── Validator / Multisig ─────────────────────────────────────────────────────
+
+[validator]
+private_key_file    = "/etc/zion/bridge-validator.key"
+validator_id        = "validator-1"
+threshold           = 3
+total_validators    = 5
+validator_addresses = []   # populate when validators are provisioned
+
+# ── Security ─────────────────────────────────────────────────────────────────
+
+[security]
+max_single_amount     = "5000000000000000000000000"    # 5 M wZION
+daily_limit           = "10000000000000000000000000"   # 10 M wZION
+min_bridge_amount     = "100000000000000000000"        # 100 wZION
+timelock_threshold    = "1000000000000000000000000"    # 1 M wZION
+max_ops_per_hour      = 100
+l1_block_timeout_secs = 300
+auto_pause_on_anomaly = true
+
+# ── Database ─────────────────────────────────────────────────────────────────
+
+[database]
+path                = "/data/bridge/bridge.db"
+backup_interval_secs = 3600
+
+# ── Metrics ──────────────────────────────────────────────────────────────────
+
+[metrics]
+enabled   = true
+port      = 9100
+log_level = "debug"      # verbose for testnet; use "info" in production
