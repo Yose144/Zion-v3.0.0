@@ -1,6 +1,7 @@
 //! Atomic-swap daemon configuration.
 
 use serde::{Deserialize, Serialize};
+use crate::evm_watcher::EvmWatcherConfig;
 
 /// Top-level daemon configuration (loaded from TOML).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,6 +20,10 @@ pub struct SwapConfig {
 
     /// Refund automation settings
     pub refund: RefundConfig,
+
+    /// EVM watcher for cross-chain HTLC events (Base, etc.)
+    #[serde(default)]
+    pub evm_watcher: Option<EvmWatcherConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

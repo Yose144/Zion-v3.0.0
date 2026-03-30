@@ -21,11 +21,12 @@
 //! 6. Start axum HTTP API
 
 use std::sync::Arc;
-use tracing::info;
+use tracing::{info, error};
 use tracing_subscriber::EnvFilter;
 use zion_atomic_swap::{
     config::SwapConfig,
     db::SwapDb,
+    evm_watcher,
     executor::SwapExecutor,
     handlers::{self, AppState},
     watcher::{L1Watcher, RefundLoop},
@@ -60,6 +61,7 @@ async fn main() -> anyhow::Result<()> {
             database: Default::default(),
             api: Default::default(),
             refund: Default::default(),
+            evm_watcher: None,
         }
     };
 
@@ -99,7 +101,21 @@ async fn main() -> anyhow::Result<()> {
             refund_loop.run().await;
         });
     }
-
+    // ── Background: EVM watcher (Base chain HTLC events) ──────────────
+    if let Some(evm_cfg) = cfg.evm_watcher.clone() {
+        if evm_cfg.enabled {
+            info!("Starting EVM watcher for {}", evm_cfg.contract_addr);
+            let swap_db = Arc::clone(&db);
+            tokio::spawn(async move {
+                let conn = swap_db.conn_for_evm_watcher();
+                if let Err(e) = evm_watcher::run(evm_cfg, conn).await {
+                    error!("EVM watcher exited with error: {e}");
+                }
+            });
+        } else {
+            info!("EVM watcher present in config but disabled");
+        }
+    }
     // ── HTTP API ──────────────────────────────────────────────────────────
     let state = AppState {
         db: Arc::clone(&db),
