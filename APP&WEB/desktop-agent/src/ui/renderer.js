@@ -710,6 +710,7 @@ function _getViewEls() {
 // Lazy-init dispatch table — avoids long if-else chain
 const _viewInitFns = {
   bridge:    () => initBridgeView(),
+  defi:      () => initDefiView(),
   oasis:     () => initOasisView(),
   dao:       () => initDaoView(),
   warp:      () => initWarpView(),
@@ -5653,4 +5654,118 @@ function _nodeAppendConsole(text, isErr = false) {
 if (typeof escapeHtml === 'undefined') {
   var escapeHtml = (s) => String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DeFi View — L2 Staking / Farming / Overview
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _defiInitDone = false;
+let _defiRefreshTimer = null;
+const DEFI_API = '/api/defi/status';
+const DEFI_SITE_API = 'https://zionterranova.com/api/defi/status';
+
+async function fetchDefiStatus() {
+  // Try local first (if running inside website), fallback to remote
+  for (const url of [DEFI_API, DEFI_SITE_API]) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data?.ok) return data;
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
+function updateDefiUI(data) {
+  if (!data) return;
+  const $ = id => document.getElementById(id);
+  if ($('defi-wzion-supply'))  $('defi-wzion-supply').textContent  = data.data?.wZION?.totalSupply ?? '—';
+  if ($('defi-total-staked'))  $('defi-total-staked').textContent  = data.data?.staking?.totalStaked ?? '—';
+  if ($('defi-staking-apr'))   $('defi-staking-apr').textContent   = data.data?.staking?.apr ?? '~12%';
+  if ($('defi-farm-pools'))    $('defi-farm-pools').textContent    = data.data?.farm?.poolCount ?? '—';
+  if ($('defi-proposals'))     $('defi-proposals').textContent     = data.data?.governance?.proposalCount ?? '—';
+  if ($('defi-network'))       $('defi-network').textContent       = data.network ?? 'Base Sepolia';
+  if ($('defi-farm-pool-count')) $('defi-farm-pool-count').textContent = data.data?.farm?.poolCount ?? '—';
+  if ($('defi-farm-rps'))      $('defi-farm-rps').textContent      = data.data?.farm?.rewardPerSecond ?? '—';
+}
+
+async function refreshDefiData() {
+  const data = await fetchDefiStatus();
+  updateDefiUI(data);
+}
+
+function initDefiView() {
+  if (_defiInitDone) {
+    // Already initialized — just refresh data
+    void refreshDefiData();
+    return;
+  }
+  _defiInitDone = true;
+
+  // Refresh button
+  const refreshBtn = document.getElementById('defi-refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => void refreshDefiData());
+  }
+
+  // Staking buttons — show status messages (real TX handling needs MetaMask)
+  const stakeBtn = document.getElementById('defi-stake-btn');
+  const unstakeBtn = document.getElementById('defi-unstake-btn');
+  const claimBtn = document.getElementById('defi-claim-btn');
+  const stakeStatus = document.getElementById('defi-stake-status');
+
+  if (stakeBtn) {
+    stakeBtn.addEventListener('click', () => {
+      const amt = document.getElementById('defi-stake-amount')?.value;
+      if (!amt || Number(amt) <= 0) {
+        if (stakeStatus) stakeStatus.textContent = '⚠ Enter a valid amount';
+        return;
+      }
+      if (stakeStatus) stakeStatus.textContent = '🔗 Connect MetaMask on zionterranova.com/defi to stake wZION on-chain';
+    });
+  }
+  if (unstakeBtn) {
+    unstakeBtn.addEventListener('click', () => {
+      if (stakeStatus) stakeStatus.textContent = '🔗 Unstaking requires MetaMask — visit zionterranova.com/defi';
+    });
+  }
+  if (claimBtn) {
+    claimBtn.addEventListener('click', () => {
+      if (stakeStatus) stakeStatus.textContent = '🔗 Claim rewards via MetaMask — visit zionterranova.com/defi';
+    });
+  }
+
+  // Farm buttons
+  const farmDeposit = document.getElementById('defi-farm-deposit-btn');
+  const farmWithdraw = document.getElementById('defi-farm-withdraw-btn');
+  const farmHarvest = document.getElementById('defi-farm-harvest-btn');
+  const farmStatus = document.getElementById('defi-farm-status');
+
+  if (farmDeposit) {
+    farmDeposit.addEventListener('click', () => {
+      if (farmStatus) farmStatus.textContent = '🔗 Deposit LP tokens via MetaMask — visit zionterranova.com/defi';
+    });
+  }
+  if (farmWithdraw) {
+    farmWithdraw.addEventListener('click', () => {
+      if (farmStatus) farmStatus.textContent = '🔗 Withdraw LP tokens via MetaMask — visit zionterranova.com/defi';
+    });
+  }
+  if (farmHarvest) {
+    farmHarvest.addEventListener('click', () => {
+      if (farmStatus) farmStatus.textContent = '🔗 Harvest rewards via MetaMask — visit zionterranova.com/defi';
+    });
+  }
+
+  // Initial data load
+  void refreshDefiData();
+
+  // Auto-refresh while on DeFi tab (every 30s)
+  _defiRefreshTimer = setInterval(() => {
+    if (currentView !== 'defi') return;
+    if (document.hidden) return;
+    void refreshDefiData();
+  }, 30000);
 }
