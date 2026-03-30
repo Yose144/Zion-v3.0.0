@@ -7317,6 +7317,233 @@
       </div>
 
       <!-- ═══════════════════════════════════════════════ -->
+      <!-- DeFi — Staking, Farming, L2 Overview           -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div id="defi-view" class="view-shell d-none">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 2 · DeFi</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">DeFi Hub</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-wallet"></use></svg>Staking · Farming · wZION Ecosystem</div>
+            </div>
+            <div class="web29-subtitle">Stake wZION, farm LP rewards, and explore the L2 DeFi ecosystem on Base</div>
+          </div>
+        </div>
+
+        <div class="section-tabs" data-group="defi">
+          <div class="section-tab active" data-section="defi-overview">
+            <span class="tab-dot"></span>
+            <span>Overview</span>
+          </div>
+          <div class="section-tab" data-section="defi-staking">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Staking</span>
+          </div>
+          <div class="section-tab" data-section="defi-farming">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Farming</span>
+          </div>
+          <div class="section-tab" data-section="defi-contracts">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
+            <span>Contracts</span>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: DeFi Overview ═══ -->
+        <div id="defi-overview" class="section-panel active">
+          <div class="control-panel mb-14">
+            <h3 class="panel-title">L2 DeFi Ecosystem</h3>
+            <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px">
+              <div class="stat-card" style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">wZION Supply</div>
+                <div id="defi-wzion-supply" style="font-size:20px;font-weight:700;font-family:monospace;color:#facc15">—</div>
+              </div>
+              <div class="stat-card" style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Total Staked</div>
+                <div id="defi-total-staked" style="font-size:20px;font-weight:700;font-family:monospace;color:#facc15">—</div>
+              </div>
+              <div class="stat-card" style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Staking APR</div>
+                <div id="defi-staking-apr" style="font-size:20px;font-weight:700;font-family:monospace;color:#4ade80">~12%</div>
+              </div>
+              <div class="stat-card" style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Farm Pools</div>
+                <div id="defi-farm-pools" style="font-size:20px;font-weight:700;font-family:monospace;color:#facc15">—</div>
+              </div>
+              <div class="stat-card" style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Proposals</div>
+                <div id="defi-proposals" style="font-size:20px;font-weight:700;font-family:monospace;color:#facc15">—</div>
+              </div>
+              <div class="stat-card" style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Network</div>
+                <div id="defi-network" style="font-size:14px;font-weight:600;font-family:monospace;color:rgba(255,255,255,.6)">Base Sepolia</div>
+              </div>
+            </div>
+            <div style="margin-top:16px;text-align:right">
+              <button id="defi-refresh-btn" class="btn-zion" style="font-size:12px;padding:6px 16px">↻ Refresh</button>
+            </div>
+          </div>
+
+          <!-- Quick links -->
+          <div class="control-panel mb-14">
+            <h3 class="panel-title">Quick Actions</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px">
+              <button class="btn-zion" onclick="document.querySelector('[data-view=bridge]').click()" style="text-align:left;padding:12px 16px">
+                <div style="font-weight:600">🔗 Bridge ZION</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">L1↔Base cross-chain transfer</div>
+              </button>
+              <button class="btn-zion" onclick="document.querySelector('[data-section=defi-staking]').click()" style="text-align:left;padding:12px 16px">
+                <div style="font-weight:600">💎 Stake wZION</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">Earn ~12% APR on staked wZION</div>
+              </button>
+              <button class="btn-zion" onclick="document.querySelector('[data-section=defi-farming]').click()" style="text-align:left;padding:12px 16px">
+                <div style="font-weight:600">🌱 Farm Rewards</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">LP staking with dual rewards</div>
+              </button>
+              <button class="btn-zion" onclick="document.querySelector('[data-view=dao]').click()" style="text-align:left;padding:12px 16px">
+                <div style="font-weight:600">🏛 Governance</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">Vote on DAO proposals</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Staking ═══ -->
+        <div id="defi-staking" class="section-panel d-none">
+          <div class="control-panel mb-14">
+            <h3 class="panel-title">wZION Staking</h3>
+            <div class="web29-subtitle" style="margin-bottom:16px">Stake wZION tokens on Base to earn rewards. 7-day cooldown period for unstaking.</div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+              <div style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Your Staked</div>
+                <div id="defi-user-staked" style="font-size:24px;font-weight:700;font-family:monospace;color:#facc15">—</div>
+              </div>
+              <div style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Pending Rewards</div>
+                <div id="defi-user-rewards" style="font-size:24px;font-weight:700;font-family:monospace;color:#4ade80">—</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+              <div style="flex:1">
+                <label style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px">Amount to Stake</label>
+                <input id="defi-stake-amount" type="number" min="0" step="1" placeholder="e.g. 1000" class="bridge-input" style="width:100%" />
+              </div>
+              <button id="defi-stake-btn" class="bridge-primary-btn">Stake</button>
+              <button id="defi-unstake-btn" class="btn-zion">Unstake</button>
+              <button id="defi-claim-btn" class="btn-zion" style="background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3);color:#4ade80">Claim</button>
+            </div>
+
+            <div id="defi-stake-status" style="font-size:11px;color:rgba(255,255,255,.3);min-height:16px"></div>
+          </div>
+
+          <!-- Contract info -->
+          <div class="control-panel mb-14">
+            <h3 class="panel-title">Contract Info</h3>
+            <div style="font-size:12px;font-family:monospace;color:rgba(255,255,255,.4);margin-top:8px">
+              <div>ZIONStaking: <a href="https://sepolia.basescan.org/address/0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913" target="_blank" style="color:#facc15">0x487D…7913</a></div>
+              <div style="margin-top:4px">APR: ~12% · Cooldown: 7 days · Min stake: 1 wZION</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Farming ═══ -->
+        <div id="defi-farming" class="section-panel d-none">
+          <div class="control-panel mb-14">
+            <h3 class="panel-title">Yield Farming</h3>
+            <div class="web29-subtitle" style="margin-bottom:16px">Provide LP tokens and earn dual rewards from the ZION Farm contract.</div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">
+              <div style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Active Pools</div>
+                <div id="defi-farm-pool-count" style="font-size:24px;font-weight:700;font-family:monospace;color:#facc15">—</div>
+              </div>
+              <div style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Reward / sec</div>
+                <div id="defi-farm-rps" style="font-size:24px;font-weight:700;font-family:monospace;color:#4ade80">—</div>
+              </div>
+              <div style="padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Your LP Staked</div>
+                <div id="defi-user-lp" style="font-size:24px;font-weight:700;font-family:monospace;color:#facc15">—</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+              <div style="flex:1">
+                <label style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px">LP Token Amount</label>
+                <input id="defi-farm-amount" type="number" min="0" step="1" placeholder="e.g. 100" class="bridge-input" style="width:100%" />
+              </div>
+              <button id="defi-farm-deposit-btn" class="bridge-primary-btn">Deposit</button>
+              <button id="defi-farm-withdraw-btn" class="btn-zion">Withdraw</button>
+              <button id="defi-farm-harvest-btn" class="btn-zion" style="background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3);color:#4ade80">Harvest</button>
+            </div>
+
+            <div id="defi-farm-status" style="font-size:11px;color:rgba(255,255,255,.3);min-height:16px"></div>
+          </div>
+
+          <div class="control-panel mb-14">
+            <h3 class="panel-title">Contract Info</h3>
+            <div style="font-size:12px;font-family:monospace;color:rgba(255,255,255,.4);margin-top:8px">
+              <div>ZIONFarm: <a href="https://sepolia.basescan.org/address/0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843" target="_blank" style="color:#facc15">0x1B8B…3843</a></div>
+              <div style="margin-top:4px">wZION/WETH Pool: <a href="https://sepolia.basescan.org/address/0xcCEaD51568E8d701f7db7e6699F3986031F07C7B" target="_blank" style="color:#facc15">0xcCEa…07C7B</a></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Contracts ═══ -->
+        <div id="defi-contracts" class="section-panel d-none">
+          <div class="control-panel mb-14">
+            <h3 class="panel-title">Deployed Contracts — Base Sepolia</h3>
+            <table style="width:100%;font-size:12px;font-family:monospace;margin-top:12px;border-collapse:collapse">
+              <thead>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.1)">
+                  <th style="text-align:left;padding:8px;color:rgba(255,255,255,.4);font-weight:500">Contract</th>
+                  <th style="text-align:left;padding:8px;color:rgba(255,255,255,.4);font-weight:500">Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:8px;color:rgba(255,255,255,.6)">wZION (ERC-20)</td>
+                  <td style="padding:8px"><a href="https://sepolia.basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6" target="_blank" style="color:#facc15">0x0c49…bb6</a></td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:8px;color:rgba(255,255,255,.6)">ZIONBridge</td>
+                  <td style="padding:8px"><a href="https://sepolia.basescan.org/address/0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1" target="_blank" style="color:#facc15">0xF4BF…ca1</a></td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:8px;color:rgba(255,255,255,.6)">ZIONAtomicSwap</td>
+                  <td style="padding:8px"><a href="https://sepolia.basescan.org/address/0xAf1E0645Ac409485EDA5EabD87b4eE3C3a5BA3Fc" target="_blank" style="color:#facc15">0xAf1E…A3Fc</a></td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:8px;color:rgba(255,255,255,.6)">ZIONGovernance</td>
+                  <td style="padding:8px"><a href="https://sepolia.basescan.org/address/0x039F730e3e1c3f36da95187697118791762290a1" target="_blank" style="color:#facc15">0x039F…90a1</a></td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:8px;color:rgba(255,255,255,.6)">ZIONTreasury</td>
+                  <td style="padding:8px"><a href="https://sepolia.basescan.org/address/0x178d85323dC94Ce2477269Dfb93a12D04B9bE537" target="_blank" style="color:#facc15">0x178d…e537</a></td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:8px;color:rgba(255,255,255,.6)">ZIONStaking</td>
+                  <td style="padding:8px"><a href="https://sepolia.basescan.org/address/0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913" target="_blank" style="color:#facc15">0x487D…7913</a></td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:8px;color:rgba(255,255,255,.6)">ZIONFarm</td>
+                  <td style="padding:8px"><a href="https://sepolia.basescan.org/address/0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843" target="_blank" style="color:#facc15">0x1B8B…3843</a></td>
+                </tr>
+                <tr>
+                  <td style="padding:8px;color:rgba(255,255,255,.6)">wZION/WETH Pool</td>
+                  <td style="padding:8px"><a href="https://sepolia.basescan.org/address/0xcCEaD51568E8d701f7db7e6699F3986031F07C7B" target="_blank" style="color:#facc15">0xcCEa…07C7B</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══════════════════════════════════════════════ -->
       <!-- DAO — On-Chain Governance                      -->
       <!-- ═══════════════════════════════════════════════ -->
       <div id="dao-view" class="view-shell d-none">
@@ -8390,6 +8617,14 @@
           <path fill="currentColor" d="M7 6V3L3 7l4 4V8c3.31 0 6 2.69 6 6H11c0-2.21-1.79-4-4-4zm10 2c0-3.31-2.69-6-6-6H9v2h2c2.21 0 4 1.79 4 4h-2l4 4 4-4h-4z"/>
         </svg>
         <span>Bridge</span>
+      </div>
+      <div class="nav-item" data-view="defi">
+        <svg class="icon" aria-hidden="true">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M2 17l10 5 10-5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <span>DeFi</span>
       </div>
       <div class="nav-item" data-view="dao">
         <svg class="icon" aria-hidden="true">
