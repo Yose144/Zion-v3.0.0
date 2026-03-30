@@ -20,34 +20,34 @@ const BRIDGE_BURN_TOPIC: &str =
 
 fn wzion_contract(chain: &str) -> Option<&'static str> {
     match chain {
-        "base" => Some("0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2"), // TODO: update after mainnet deploy
-        "base-sepolia" => Some("0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"), // wZION Base Sepolia
-        "arbitrum" => Some("0x8B3a85D1d0a7B99dC5b1C6c36f7894D8E4C99aA"),
-        "bsc" => Some("0x3c9B8D7e9f1A2b5C6d4E3F2a1B0c9D8e7F6a5B4"),
-        "polygon" => Some("0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0"),
+        "base"          => Some("0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2"),  // TODO: update after mainnet deploy
+        "base-sepolia"  => Some("0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"),  // wZION Base Sepolia
+        "arbitrum"      => Some("0x8B3a85D1d0a7B99dC5b1C6c36f7894D8E4C99aA"),
+        "bsc"           => Some("0x3c9B8D7e9f1A2b5C6d4E3F2a1B0c9D8e7F6a5B4"),
+        "polygon"       => Some("0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0"),
         _ => None,
     }
 }
 
 fn default_rpc(chain: &str) -> &'static str {
     match chain {
-        "base" => "https://mainnet.base.org",
+        "base"         => "https://mainnet.base.org",
         "base-sepolia" => "https://sepolia.base.org",
-        "arbitrum" => "https://arb1.arbitrum.io/rpc",
-        "bsc" => "https://bsc-dataseed.binance.org",
-        "polygon" => "https://polygon-rpc.com",
-        _ => "https://mainnet.base.org",
+        "arbitrum"     => "https://arb1.arbitrum.io/rpc",
+        "bsc"          => "https://bsc-dataseed.binance.org",
+        "polygon"      => "https://polygon-rpc.com",
+        _              => "https://mainnet.base.org",
     }
 }
 
 fn evm_chain_id(chain: &str) -> u64 {
     match chain {
-        "base" => 8453,
-        "base-sepolia" => 84532,
-        "arbitrum" => 42161,
-        "bsc" => 56,
-        "polygon" => 137,
-        _ => 1,
+        "base"          => 8453,
+        "base-sepolia"  => 84532,
+        "arbitrum"      => 42161,
+        "bsc"           => 56,
+        "polygon"       => 137,
+        _               => 1,
     }
 }
 
@@ -93,12 +93,7 @@ struct TxReceipt {
     status: Option<String>,
 }
 
-async fn rpc_call(
-    client: &reqwest::Client,
-    url: &str,
-    method: &str,
-    params: Value,
-) -> WarpResult<Value> {
+async fn rpc_call(client: &reqwest::Client, url: &str, method: &str, params: Value) -> WarpResult<Value> {
     let body = RpcRequest {
         jsonrpc: "2.0",
         method,
@@ -187,11 +182,12 @@ impl EvmAdapter {
         match result {
             Ok(v) if v.is_null() => Ok(None),
             Ok(v) => {
-                let receipt: TxReceipt =
-                    serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
+                let receipt: TxReceipt = serde_json::from_value(v).map_err(|e| {
+                    WarpError::AdapterError {
                         chain: self.chain_name.clone(),
                         reason: format!("Receipt parse error: {}", e),
-                    })?;
+                    }
+                })?;
                 Ok(Some(receipt))
             }
             Err(e) => Err(e),
@@ -312,11 +308,7 @@ impl ChainAdapter for EvmAdapter {
             .filter_map(|l| self.decode_burn_log(l, tip))
             .collect();
 
-        info!(
-            "[WARP][{}] Found {} BridgeBurn events",
-            self.chain_name,
-            proofs.len()
-        );
+        info!("[WARP][{}] Found {} BridgeBurn events", self.chain_name, proofs.len());
         Ok(proofs)
     }
 
@@ -367,15 +359,12 @@ impl ChainAdapter for EvmAdapter {
                         chain_id,
                         contract,
                         &calldata,
-                        0,       // value: 0 ETH
-                        300_000, // gas limit
+                        0,          // value: 0 ETH
+                        300_000,    // gas limit
                     )
                     .await?;
 
-                info!(
-                    "[WARP][{}] bridgeMint TX submitted: {}",
-                    self.chain_name, tx_hash
-                );
+                info!("[WARP][{}] bridgeMint TX submitted: {}", self.chain_name, tx_hash);
                 Ok(tx_hash)
             }
 
@@ -477,3 +466,4 @@ mod tests {
         let _ = adapter.health_check().await;
     }
 }
+

@@ -11,17 +11,17 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn wzion_asset(network: &str) -> Option<&'static str> {
     match network {
-        "mainnet" => Some("5a71011c726573745a494f4e"), // TODO: real policy+name
-        "preprod" => Some("5a71011c726573745a494f4e74"), // TODO: preprod
+        "mainnet" => Some("5a71011c726573745a494f4e"),   // TODO: real policy+name
+        "preprod" => Some("5a71011c726573745a494f4e74"),  // TODO: preprod
         _ => None,
     }
 }
 
 fn default_blockfrost(network: &str) -> &'static str {
     match network {
-        "preprod" => "https://cardano-preprod.blockfrost.io/api/v0",
-        "testnet" => "https://cardano-testnet.blockfrost.io/api/v0",
-        _ => "https://cardano-mainnet.blockfrost.io/api/v0",
+        "preprod"  => "https://cardano-preprod.blockfrost.io/api/v0",
+        "testnet"  => "https://cardano-testnet.blockfrost.io/api/v0",
+        _          => "https://cardano-mainnet.blockfrost.io/api/v0",
     }
 }
 
@@ -88,9 +88,7 @@ pub struct CardanoAdapter {
 }
 
 impl Default for CardanoAdapter {
-    fn default() -> Self {
-        Self::new()
-    }
+    fn default() -> Self { Self::new() }
 }
 
 impl CardanoAdapter {
@@ -102,10 +100,8 @@ impl CardanoAdapter {
 
         let mut headers = reqwest::header::HeaderMap::new();
         if let Some(ref pid) = project_id {
-            headers.insert(
-                "project_id",
-                reqwest::header::HeaderValue::from_str(pid).unwrap(),
-            );
+            headers.insert("project_id",
+                reqwest::header::HeaderValue::from_str(pid).unwrap());
         }
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(15))
@@ -113,87 +109,39 @@ impl CardanoAdapter {
             .build()
             .unwrap();
 
-        Self {
-            network,
-            api_url,
-            project_id,
-            client,
-        }
+        Self { network, api_url, project_id, client }
     }
 
     async fn get_latest_block(&self) -> WarpResult<BFBlock> {
         let url = format!("{}/blocks/latest", self.api_url);
-        self.client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })?
-            .json()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })
+        self.client.get(&url).send().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })?
+            .json().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })
     }
 
     async fn get_asset_txs(&self, asset: &str) -> WarpResult<Vec<BFAssetTx>> {
-        let url = format!(
-            "{}/assets/{}/transactions?order=desc&count=50",
-            self.api_url, asset
-        );
-        self.client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })?
-            .json()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })
+        let url = format!("{}/assets/{}/transactions?order=desc&count=50", self.api_url, asset);
+        self.client.get(&url).send().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })?
+            .json().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })
     }
 
     async fn get_tx_metadata(&self, tx_hash: &str) -> WarpResult<Vec<BFTxMetadata>> {
         let url = format!("{}/txs/{}/metadata", self.api_url, tx_hash);
-        self.client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })?
-            .json()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })
+        self.client.get(&url).send().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })?
+            .json().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })
     }
 
     async fn get_tx_utxos(&self, tx_hash: &str) -> WarpResult<BFTxUtxos> {
         let url = format!("{}/txs/{}/utxos", self.api_url, tx_hash);
-        self.client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })?
-            .json()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })
+        self.client.get(&url).send().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })?
+            .json().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })
     }
 
     async fn build_proof_from_tx(
@@ -204,8 +152,7 @@ impl CardanoAdapter {
     ) -> Option<DepositProof> {
         // Get tx metadata — look for label 674
         let metadata = self.get_tx_metadata(&asset_tx.tx_hash).await.ok()?;
-        let dest = metadata
-            .iter()
+        let dest = metadata.iter()
             .find(|m| m.label == "674")
             .and_then(|m| m.json_metadata.as_ref())
             .and_then(|j| j["warp_dest"].as_str())
@@ -217,26 +164,21 @@ impl CardanoAdapter {
         let outputs = utxos.outputs.as_deref().unwrap_or_default();
 
         // Amount = sum of wZION in inputs - sum in outputs (burned quantity)
-        let sum_in: u64 = inputs
-            .iter()
+        let sum_in: u64 = inputs.iter()
             .flat_map(|u| u.amount.as_deref().unwrap_or_default())
             .filter(|a| a.unit == asset)
             .filter_map(|a| a.quantity.parse::<u64>().ok())
             .sum();
-        let sum_out: u64 = outputs
-            .iter()
+        let sum_out: u64 = outputs.iter()
             .flat_map(|u| u.amount.as_deref().unwrap_or_default())
             .filter(|a| a.unit == asset)
             .filter_map(|a| a.quantity.parse::<u64>().ok())
             .sum();
 
         let amount = sum_in.saturating_sub(sum_out);
-        if amount == 0 {
-            return None;
-        }
+        if amount == 0 { return None; }
 
-        let sender = inputs
-            .first()
+        let sender = inputs.first()
             .and_then(|u| u.address.clone())
             .unwrap_or_default();
 
@@ -256,12 +198,8 @@ impl CardanoAdapter {
 
 #[async_trait]
 impl ChainAdapter for CardanoAdapter {
-    fn family(&self) -> ChainFamily {
-        ChainFamily::Cardano
-    }
-    fn name(&self) -> &str {
-        "cardano"
-    }
+    fn family(&self) -> ChainFamily { ChainFamily::Cardano }
+    fn name(&self) -> &str { "cardano" }
 
     async fn health_check(&self) -> WarpResult<bool> {
         if self.project_id.is_none() {
@@ -270,26 +208,17 @@ impl ChainAdapter for CardanoAdapter {
         }
         match self.get_latest_block().await {
             Ok(b) => {
-                info!(
-                    "[WARP][cardano] Health OK — block #{}",
-                    b.height.unwrap_or(0)
-                );
+                info!("[WARP][cardano] Health OK — block #{}", b.height.unwrap_or(0));
                 Ok(true)
             }
-            Err(e) => {
-                warn!("[WARP][cardano] Health FAIL: {}", e);
-                Ok(false)
-            }
+            Err(e) => { warn!("[WARP][cardano] Health FAIL: {}", e); Ok(false) }
         }
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let asset = match wzion_asset(&self.network) {
             Some(a) => a,
-            None => {
-                debug!("[WARP][cardano] No wZION asset configured");
-                return Ok(vec![]);
-            }
+            None => { debug!("[WARP][cardano] No wZION asset configured"); return Ok(vec![]); }
         };
         if self.project_id.is_none() {
             debug!("[WARP][cardano] No BLOCKFROST_PROJECT_ID — skipping");
@@ -298,11 +227,7 @@ impl ChainAdapter for CardanoAdapter {
 
         let tip = self.get_latest_block().await?.height.unwrap_or(0);
         let asset_txs = self.get_asset_txs(asset).await?;
-        debug!(
-            "[WARP][cardano] {} asset txs found for {}",
-            asset_txs.len(),
-            asset
-        );
+        debug!("[WARP][cardano] {} asset txs found for {}", asset_txs.len(), asset);
 
         let mut proofs = Vec::new();
         for tx in &asset_txs {
@@ -325,32 +250,17 @@ impl ChainAdapter for CardanoAdapter {
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
-        if self.project_id.is_none() {
-            return Ok(0);
-        }
+        if self.project_id.is_none() { return Ok(0); }
         Ok(self.get_latest_block().await?.height.unwrap_or(0))
     }
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
-        if self.project_id.is_none() {
-            return Ok(0);
-        }
+        if self.project_id.is_none() { return Ok(0); }
         let url = format!("{}/txs/{}", self.api_url, tx_hash);
-        let tx: BFTxDetails = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })?
-            .json()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "cardano".into(),
-                reason: e.to_string(),
-            })?;
+        let tx: BFTxDetails = self.client.get(&url).send().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })?
+            .json().await
+            .map_err(|e| WarpError::AdapterError { chain: "cardano".into(), reason: e.to_string() })?;
         let tx_block = tx.block_height.unwrap_or(0);
         let tip = self.get_latest_block().await?.height.unwrap_or(tx_block);
         Ok(tip.saturating_sub(tx_block))
@@ -388,21 +298,14 @@ mod tests {
     #[tokio::test]
     async fn test_cardano_watch_events_no_key_returns_empty() {
         // Without project_id, watch_events returns empty vec
-        assert!(CardanoAdapter::new()
-            .watch_events()
-            .await
-            .unwrap()
-            .is_empty());
+        assert!(CardanoAdapter::new().watch_events().await.unwrap().is_empty());
     }
 
     #[tokio::test]
     async fn test_cardano_execute_mint_is_err() {
         let inst = MintInstruction {
-            dest_chain: "cardano".into(),
-            recipient: "addr1xyz".into(),
-            amount_dest_atomic: 100,
-            signatures: vec![],
-            warp_message_hash: String::new(),
+            dest_chain: "cardano".into(), recipient: "addr1xyz".into(),
+            amount_dest_atomic: 100, signatures: vec![], warp_message_hash: String::new(),
         };
         assert!(CardanoAdapter::new().execute_mint(&inst).await.is_err());
     }
