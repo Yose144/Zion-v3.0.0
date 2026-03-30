@@ -5,7 +5,7 @@
 # Run:    docker run -d --name zion-bridge \
 #           -v bridge-data:/data/bridge \
 #           -v /etc/zion:/etc/zion:ro \
-#           -e BRIDGE_CONFIG=/etc/zion/bridge-testnet.toml \
+#           -e ZION_BRIDGE_CONFIG=/etc/zion/bridge-testnet.toml \
 #           zion-v3-bridge
 
 FROM rust:1.85-bookworm AS builder
@@ -24,10 +24,10 @@ RUN groupadd -r zion && useradd -r -g zion -d /data/bridge -s /sbin/nologin zion
 COPY --from=builder /build/target/release/zion-bridge /usr/local/bin/zion-bridge
 RUN mkdir -p /data/bridge && chown -R zion:zion /data/bridge
 
-ENV BRIDGE_CONFIG=/etc/zion/bridge-testnet.toml
+ENV ZION_BRIDGE_CONFIG=/etc/zion/bridge-testnet.toml
 
 WORKDIR /data/bridge
-EXPOSE 9100
+EXPOSE 9101
 VOLUME ["/data/bridge"]
 USER zion
 ENTRYPOINT ["zion-bridge"]
