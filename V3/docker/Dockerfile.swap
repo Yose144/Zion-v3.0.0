@@ -1,0 +1,32 @@
+# ZION V3 Atomic Swap Service
+# Multi-stage build for the HTLC swap daemon
+#
+# Build:  cd V3 && docker build -f docker/Dockerfile.swap -t zion-v3-swap .
+# Run:    docker run -d --name zion-swap \
+#           -v swap-data:/data/atomic-swap \
+#           -e SWAP_CONFIG=/etc/zion/swap-testnet.toml \
+#           zion-v3-swap
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-atomic-swap
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/atomic-swap -s /sbin/nologin zion
+COPY --from=builder /build/target/release/zion-atomic-swap /usr/local/bin/zion-atomic-swap
+RUN mkdir -p /data/atomic-swap && chown -R zion:zion /data/atomic-swap
+
+ENV SWAP_CONFIG=/etc/zion/swap-testnet.toml
+
+WORKDIR /data/atomic-swap
+EXPOSE 8888
+VOLUME ["/data/atomic-swap"]
+USER zion
+ENTRYPOINT ["zion-atomic-swap"]

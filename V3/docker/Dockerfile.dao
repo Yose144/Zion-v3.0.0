@@ -1,0 +1,32 @@
+# ZION V3 DAO Service
+# Multi-stage build for the on-chain governance daemon
+#
+# Build:  cd V3 && docker build -f docker/Dockerfile.dao -t zion-v3-dao .
+# Run:    docker run -d --name zion-dao \
+#           -v dao-data:/data/dao \
+#           -e DAO_CONFIG=/etc/zion/dao-testnet.toml \
+#           zion-v3-dao
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-dao
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/dao -s /sbin/nologin zion
+COPY --from=builder /build/target/release/zion-dao /usr/local/bin/zion-dao
+RUN mkdir -p /data/dao && chown -R zion:zion /data/dao
+
+ENV DAO_CONFIG=/etc/zion/dao-testnet.toml
+
+WORKDIR /data/dao
+EXPOSE 8080
+VOLUME ["/data/dao"]
+USER zion
+ENTRYPOINT ["zion-dao"]
