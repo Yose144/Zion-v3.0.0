@@ -12,7 +12,7 @@ use zion_core::{
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
 use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
-use zion_pool::pplns::{PayoutEntry, PplnsConfig, PplnsEngine};
+use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 
 fn main() -> Result<()> {
     let config = ServerConfig::from_env()?;
@@ -26,6 +26,27 @@ fn main() -> Result<()> {
     )?));
     let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
     let miner_telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::default()));
+    let fee_config = FeeConfig {
+        humanitarian_pct: parse_env_u64("ZION_HUMANITARIAN_TITHE_PCT", 5).unwrap_or(5),
+        issobella_pct: parse_env_u64("ZION_ISSOBELLA_FUND_PCT", 5).unwrap_or(5),
+        pool_fee_pct: parse_env_u64("ZION_POOL_FEE_PCT", 1).unwrap_or(1),
+        humanitarian_wallet: std::env::var("ZION_HUMANITARIAN_WALLET").unwrap_or_default(),
+        issobella_wallet: std::env::var("ZION_ISSOBELLA_WALLET").unwrap_or_default(),
+        pool_fee_wallet: std::env::var("ZION_POOL_FEE_WALLET").unwrap_or_default(),
+    };
+    println!(
+        "fee_split: miners={}% humanitarian={}% issobella={}% pool_fee={}%",
+        fee_config.miner_pct(),
+        fee_config.humanitarian_pct,
+        fee_config.issobella_pct,
+        fee_config.pool_fee_pct
+    );
+    if !fee_config.humanitarian_wallet.is_empty() {
+        println!("humanitarian_wallet={}", fee_config.humanitarian_wallet);
+    }
+    if !fee_config.issobella_wallet.is_empty() {
+        println!("issobella_wallet={}", fee_config.issobella_wallet);
+    }
     let pplns_engine = Arc::new(Mutex::new(PplnsEngine::new(PplnsConfig {
         window_size: parse_env_u64("ZION_PPLNS_WINDOW_SIZE", 1_000).unwrap_or(1_000) as usize,
         min_payout_flowers: parse_env_u64(
@@ -33,6 +54,7 @@ fn main() -> Result<()> {
             zion_core::wallet::MIN_PAYOUT_AMOUNT,
         )
         .unwrap_or(zion_core::wallet::MIN_PAYOUT_AMOUNT),
+        fee_config,
     })));
     let active_sessions = Arc::new(AtomicU64::new(0));
     let listener = TcpListener::bind(&config.bind_addr)
@@ -1354,6 +1376,7 @@ fn build_prometheus_payload(
 ) -> String {
     let mut body = stats.snapshot_prometheus_ext(active_sessions, uptime_s);
     let pplns = pplns_engine.stats();
+    let fees = pplns_engine.fee_stats();
     let now_s = now_unix_seconds();
     let pool_hashrate = telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s);
     let pool_hashrate_1h = telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s);
@@ -1368,6 +1391,10 @@ fn build_prometheus_payload(
     let _ = writeln!(body, "zion_pplns_registered_miners {}", pplns.registered_miners);
     let _ = writeln!(body, "zion_pplns_total_paid_flowers {}", pplns.total_paid_flowers);
     let _ = writeln!(body, "zion_pplns_payout_rounds {}", pplns.payout_rounds);
+    let _ = writeln!(body, "zion_fee_humanitarian_flowers {}", fees.humanitarian_accumulated_flowers);
+    let _ = writeln!(body, "zion_fee_issobella_flowers {}", fees.issobella_accumulated_flowers);
+    let _ = writeln!(body, "zion_fee_pool_flowers {}", fees.pool_fee_accumulated_flowers);
+    let _ = writeln!(body, "zion_fee_miner_pct {}", fees.miner_pct);
     for (miner_id, miner) in &telemetry.miners {
         let worker_name = sanitize_prometheus_label(&miner.worker_name);
         let miner_label = sanitize_prometheus_label(miner_id);
@@ -1441,6 +1468,7 @@ fn build_stats_payload(
 ) -> String {
     let now_s = now_unix_seconds();
     let pplns = pplns_engine.stats();
+    let fees = pplns_engine.fee_stats();
     let json = serde_json::json!({
         "ok": true,
         "hashrate": {
@@ -1468,6 +1496,18 @@ fn build_stats_payload(
         "pool": {
             "uptime_secs": uptime_s,
             "version": "3.0.0"
+        },
+        "fee_split": {
+            "miner_pct": fees.miner_pct,
+            "humanitarian_pct": fees.humanitarian_pct,
+            "issobella_pct": fees.issobella_pct,
+            "pool_fee_pct": fees.pool_fee_pct,
+            "humanitarian_accumulated_flowers": fees.humanitarian_accumulated_flowers,
+            "issobella_accumulated_flowers": fees.issobella_accumulated_flowers,
+            "pool_fee_accumulated_flowers": fees.pool_fee_accumulated_flowers,
+            "humanitarian_wallet": fees.humanitarian_wallet,
+            "issobella_wallet": fees.issobella_wallet,
+            "pool_fee_wallet": fees.pool_fee_wallet
         },
         "routing": {
             "submits": stats.total_submits,

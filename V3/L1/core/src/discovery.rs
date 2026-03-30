@@ -45,6 +45,9 @@ pub const DNS_SEEDS: &[&str] = &[
 /// Well-known bootstrap nodes for UDP announcements.
 pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[
     ("91.98.122.165", 8335),
+    ("157.180.41.213", 8335),
+    ("5.78.194.94", 8335),
+    ("5.223.84.191", 8335),
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -124,10 +127,14 @@ pub struct DiscoveryEngine {
     peers: HashMap<String, DiscoveredPeer>,
     /// DNS seed index for round-robin resolution.
     dns_index: usize,
+    /// DNS seeds used for round-robin resolution.
+    dns_seeds: Vec<String>,
     /// Last time we ran a full discovery cycle.
     last_cycle: Option<Instant>,
     /// Our own external address (if known), to avoid self-connection.
     self_addr: Option<(IpAddr, u16)>,
+    /// Bootstrap peers to receive UDP announcements / initial discovery nudges.
+    bootstrap_nodes: Vec<(IpAddr, u16)>,
     /// Network identifier for filtering announcements (e.g., "mainnet", "testnet").
     network: String,
 }
@@ -138,8 +145,10 @@ impl DiscoveryEngine {
         Self {
             peers: HashMap::new(),
             dns_index: 0,
+            dns_seeds: DNS_SEEDS.iter().map(|s| (*s).to_string()).collect(),
             last_cycle: None,
             self_addr: None,
+            bootstrap_nodes: Vec::new(),
             network: network.to_string(),
         }
     }
@@ -147,6 +156,19 @@ impl DiscoveryEngine {
     /// Set our own address to avoid self-connection.
     pub fn set_self_addr(&mut self, addr: IpAddr, port: u16) {
         self.self_addr = Some((addr, port));
+    }
+
+    /// Replace the current bootstrap node list used for UDP announcements.
+    pub fn set_bootstrap_nodes(&mut self, nodes: Vec<(IpAddr, u16)>) {
+        self.bootstrap_nodes = nodes;
+    }
+
+    /// Replace the current DNS seed list.
+    pub fn set_dns_seeds(&mut self, seeds: Vec<String>) {
+        self.dns_seeds = seeds;
+        if self.dns_index >= self.dns_seeds.len() {
+            self.dns_index = 0;
+        }
     }
 
     /// Number of tracked discovered peers.
@@ -301,11 +323,11 @@ impl DiscoveryEngine {
             self.prune(now_secs);
 
             // Resolve next DNS seed
-            if self.dns_index < DNS_SEEDS.len() {
+            if self.dns_index < self.dns_seeds.len() {
                 commands.push(DiscoveryCommand::ResolveDns {
-                    hostname: DNS_SEEDS[self.dns_index].to_string(),
+                    hostname: self.dns_seeds[self.dns_index].clone(),
                 });
-                self.dns_index = (self.dns_index + 1) % DNS_SEEDS.len();
+                self.dns_index = (self.dns_index + 1) % self.dns_seeds.len();
             }
 
             // Request peers from a few connected peers
@@ -315,11 +337,9 @@ impl DiscoveryEngine {
                 });
             }
 
-            // Send UDP announcement to bootstrap nodes
-            for &(host, port) in BOOTSTRAP_NODES {
-                if let Ok(addr) = host.parse::<IpAddr>() {
-                    commands.push(DiscoveryCommand::SendAnnounce { addr, port });
-                }
+            // Send UDP announcement to configured bootstrap nodes.
+            for &(addr, port) in &self.bootstrap_nodes {
+                commands.push(DiscoveryCommand::SendAnnounce { addr, port });
             }
         }
 
@@ -554,6 +574,7 @@ mod tests {
     #[test]
     fn tick_produces_dns_and_announce_commands() {
         let mut engine = DiscoveryEngine::new("testnet");
+        engine.set_bootstrap_nodes(vec![(ip(10, 0, 0, 1), DISCOVERY_PORT)]);
         let now = Instant::now();
         let cmds = engine.tick(now, 1000, &["peer1".into()], 0, 8);
 

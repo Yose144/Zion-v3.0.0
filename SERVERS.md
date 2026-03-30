@@ -1,8 +1,8 @@
 # 🖥️ ZION TerraNova — Active Servers
 
-> **Aktualizace:** 13. března 2026  
-> **Aktuální topologie:** 2 servery (1 testnet/produkce, 1 mainnet V3)  
-> **Chain status:** Ekam Deeksha testnet běží od genesis na hostu `91.98.122.165`, mainnet V3 server `157.180.41.213` připraven k provisioningu
+> **Aktualizace:** 27. března 2026  
+> **Aktuální topologie:** 3 servery, 3 regiony, V3 mainnet full mesh  
+> **Chain status:** V3 mainnet synced fleet: Prague `91.98.122.165` + USA `5.78.194.94` + Singapur `5.223.84.191` (chain height ~193, P2P relay_ok, full mesh 6/6 directions). Helsinki `157.180.41.213` decommissioned.
 
 > Původní servery `77.42.31.72`, `178.156.240.160`, `5.223.43.93` a starší historické uzly jsou brané jako decommissioned. Nejsou už zdrojem pravdy pro operace ani dokumentaci.
 
@@ -10,13 +10,15 @@
 
 | # | Název | Lokace | IP | HW | SSH alias | Klíč | Stav |
 |---|-------|--------|----|-----|-----------|------|------|
-| 1 | Zion2 | primární produkční host | 91.98.122.165 | aktivní produkční VM | `zion-primary` | `zion_hetzner_key` | ✅ Core + Pool + Redis + Website deploy target |
-| 2 | Zion-MainetV3 | Helsinki, FI (Hetzner) | 157.180.41.213 | 8 vCPU AMD EPYC, 16 GB RAM, 150 GB SSD, Ubuntu 24.04 | `zion-mainnet` | `zion_hetzner_key` | 🟡 Mainnet V3 node, připraven k provisioningu |
+| 1 | Zion-Prague | Praha / Norimberk (Hetzner) | 91.98.122.165 | CX33, 4 vCPU, 8 GB RAM, 80 GB SSD | `zion-primary` | `zion_hetzner_key` | ✅ V3 mainnet active — synced |
+| 2 | Zion-US | Hillsboro, OR (Hetzner) | 5.78.194.94 | CPX11, 2 vCPU, 2 GB RAM, 40 GB SSD | `zion-us` | `zion_hetzner_key` | ✅ V3 mainnet active — synced |
+| 3 | Zion-SG | Singapur (Hetzner) | 5.223.84.191 | CPX12, 2 vCPU, 2 GB RAM, 40 GB SSD | `zion-sg` | `zion_hetzner_key` | ✅ V3 mainnet active — synced |
 
 ### ❌ Decommissioned servery
 
 | Název | IP | Důvod |
 |-------|----|-------|
+| Zion-MainetV3 (Helsinki) | 157.180.41.213 | Decommissioned — server odebrán |
 | TreeOfLife-Zion | 77.42.31.72 | Nahrazeno novým primárním serverem |
 | Usa | 178.156.240.160 | Původní multi-node topologie zrušena |
 | Asia | 5.223.43.93 | Původní multi-node topologie zrušena |
@@ -27,8 +29,9 @@
 
 | Server | Revenue kontejnery | Mysterium ID | Stav |
 |---|---|---|---|
-| Zion2 (`91.98.122.165`) | `zion-core`, `zion-pool`, `zion-miner`, `zion-redis`, `zion-seed-1`, `zion-seed-2`, `zion-website` | n/a | ✅ Active |
-| Zion-MainetV3 (`157.180.41.213`) | — | n/a | 🟡 Čistý — Docker a chain stack ještě nenainstalován |
+| Zion-Prague (`91.98.122.165`) | `zion-core`, `zion-pool`, `zion-miner`, `zion-redis`, `zion-seed-1`, `zion-website` | n/a | ✅ V3 mainnet synced |
+| Zion-US (`5.78.194.94`) | `zion-core`, `zion-pool`, `zion-miner`, `zion-redis`, `zion-seed-1` | n/a | ✅ V3 mainnet synced |
+| Zion-SG (`5.223.84.191`) | `zion-core`, `zion-pool`, `zion-miner`, `zion-redis`, `zion-seed-1` | n/a | ✅ V3 mainnet synced |
 
 ### Docker image verze (live 2026-03-11)
 
@@ -57,26 +60,31 @@
 ```
                     ╔══════════════════════════════════════════════╗
                     ║   🌟 ZION TerraNova — Current Infra 🌟      ║
-                    ║   Single primary host during rebuild        ║
+                    ║   3 servers, 3 regions, V3 mainnet mesh     ║
                     ╚══════════════════════════════════════════════╝
 
-                                 Zion2 / primary
-                                 91.98.122.165
-
-                                 Zion-MainetV3
-                                 157.180.41.213
+              Zion-Prague (EU)  ◄──────►  Zion-US (USA)
+              91.98.122.165              5.78.194.94
+                     ▲                        ▲
+                     │    ╲              ╱     │
+                     │      ╲          ╱       │
+                     ▼        ╲      ╱         ▼
+                         Zion-SG (Singapur)
+                           5.223.84.191
 ```
 
 | # | Název | IP | Role |
 |---|-------|----|------|
-| 1 | Zion2 | 91.98.122.165 | primární host pro chain + pool + web |
-| 2 | Zion-MainetV3 | 157.180.41.213 | mainnet V3 node (provisioning) |
+| 1 | Zion-Prague | 91.98.122.165 | V3 mainnet node EU + website |
+| 2 | Zion-US | 5.78.194.94 | V3 mainnet node USA |
+| 3 | Zion-SG | 5.223.84.191 | V3 mainnet node Singapur |
 
 ## Připojení
 
 ```bash
-ssh zion-primary    # 91.98.122.165 — current primary host
-ssh zion-mainnet    # 157.180.41.213 — mainnet V3 node
+ssh zion-primary    # 91.98.122.165 — Zion-Prague (EU)
+ssh zion-us         # 5.78.194.94   — Zion-US (USA)
+ssh zion-sg         # 5.223.84.191  — Zion-SG (Singapur)
 ```
 
 ## Deploy seed nodů
@@ -97,10 +105,12 @@ docker compose -f docker/docker-compose.testnet.yml --env-file .env up -d
 ## SEED_PEERS
 
 ```
-91.98.122.165:8334
+91.98.122.165:8333
+5.78.194.94:8333
+5.223.84.191:8333
 ```
 
-> **Poznámka:** `157.180.41.213` je mainnet V3 node (Helsinki), není seed peer. Bude přidán jako seed až po provisioningu a spustění V3 chain stacku.
+> **Poznámka:** Všechny 3 nody jsou V3 mainnet seed peers. Port 8333 (mainnet). Helsinki decommissioned.
 
 ## 🔑 SSH klíče a přístupy
 
@@ -126,8 +136,13 @@ Host zion-primary
     User root
     IdentityFile ~/.ssh/zion_hetzner_key
 
-Host zion-mainnet
-    HostName 157.180.41.213
+Host zion-us
+    HostName 5.78.194.94
+    User root
+    IdentityFile ~/.ssh/zion_hetzner_key
+
+Host zion-sg
+    HostName 5.223.84.191
     User root
     IdentityFile ~/.ssh/zion_hetzner_key
 ```
@@ -135,8 +150,9 @@ Host zion-mainnet
 ### Přímé připojení (s explicitním klíčem)
 
 ```bash
-ssh -i ~/.ssh/zion_hetzner_key     root@91.98.122.165   # Zion2 / current primary
-ssh -i ~/.ssh/zion_hetzner_key     root@157.180.41.213  # Zion-MainetV3 / mainnet V3
+ssh -i ~/.ssh/zion_hetzner_key     root@91.98.122.165   # Zion-Prague / EU
+ssh -i ~/.ssh/zion_hetzner_key     root@5.78.194.94     # Zion-US / USA
+ssh -i ~/.ssh/zion_hetzner_key     root@5.223.84.191    # Zion-SG / Singapur
 ```
 
 ## 🌐 Porty (Testnet)
@@ -149,12 +165,14 @@ ssh -i ~/.ssh/zion_hetzner_key     root@157.180.41.213  # Zion-MainetV3 / mainne
 | **8080** | Pool API | Pool statistiky | Zion2 |
 | **3000** | Web | Dashboard / Website | Zion2 |
 
-## 🌐 Porty (Mainnet V3 — plánováno)
+## 🌐 Porty (Mainnet V3 — aktivní)
 
 | Port | Služba | Popis | Kde |
 |------|--------|-------|-----|
-| **8334** | P2P | Mainnet peer-to-peer | Zion-MainetV3 |
-| **8444** | RPC | Mainnet JSON-RPC | Zion-MainetV3 |
-| **3333** | Stratum | Mining pool | Zion-MainetV3 |
-| **9090** | Metrics | Prometheus export | Zion-MainetV3 |
+| **8333** | P2P | Mainnet peer-to-peer (host networking) | Prague, USA, SG |
+| **8443** | RPC | Mainnet JSON-RPC | Prague, USA, SG |
+| **8444** | Pool | Stratum pool bind | Prague, USA, SG |
+| **3333** | Stratum | Mining pool (Docker bridge) | Prague, USA, SG |
+| **8080** | Pool API | Pool statistiky | Prague, USA, SG |
+| **9115** | Metrics | Prometheus export | Prague, USA, SG |
 

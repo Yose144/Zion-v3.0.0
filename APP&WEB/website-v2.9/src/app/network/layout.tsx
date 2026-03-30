@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     `Real-time status of ZION native Rust blockchain hosts, mining pools, and P2P health across the live ${SITE_NETWORK_TOPOLOGY} runtime.`,
   keywords:
-    "ZION network, nodes, blockchain status, mining pool, native rust, testnet",
+    "ZION network, nodes, blockchain status, mining pool, native rust, mainnet, V3",
 };
 
 export default function NetworkLayout({

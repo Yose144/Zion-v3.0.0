@@ -36,6 +36,7 @@ pub mod llm_backend;
 pub mod in_context;
 pub mod ekam_field;
 pub mod rag;
+pub mod knowledge_base;
 
 pub use consciousness::ConsciousnessLevel;
 pub use consciousness_engine::{ConsciousnessEngine, ConsciousnessStatus};
@@ -66,4 +67,8 @@ pub use rag::{
 pub use in_context::{ContextAssembler, ContextSnapshot, InContextBackend};
 pub use ekam_field::{
     DeekshaNetwork, DeekshaTransfer, EkamFieldNode, HiranyagarbhaFieldEvent,
+};
+pub use knowledge_base::{
+    KnowledgeBase, KnowledgeConfig, ScanResult, AI_NATIVE_CANONICAL_CORPUS_ROOTS,
+    V2_BOOKS_PROXY_CORPUS_ROOTS,
 };

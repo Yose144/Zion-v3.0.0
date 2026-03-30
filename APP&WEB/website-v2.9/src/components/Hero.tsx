@@ -17,7 +17,7 @@ import { useObservatory } from '@/contexts/ObservatoryContext';
 import type { ObservatoryMode } from '@/contexts/ObservatoryContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
+import { SITE_ENVIRONMENT_LABEL, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
 
 const observatoryMeta: Record<
@@ -45,12 +45,12 @@ export default function Hero() {
 
   const missionSignals = [
     { title: tr('hero', 'signal_l1', lang),      status: tr('hero', 'signal_status_l1', lang),      value: '52 590 LOC · 780+ tests · Rust', accent: 'text-emerald-300' },
-    { title: tr('hero', 'signal_nodes', lang),   status: tr('hero', 'signal_status_nodes', lang),   value: 'Zion2 public host',             accent: 'text-zion-cyan' },
+    { title: tr('hero', 'signal_nodes', lang),   status: tr('hero', 'signal_status_nodes', lang),   value: '3-node P2P mesh',             accent: 'text-zion-cyan' },
     { title: tr('hero', 'signal_mainnet', lang), status: tr('hero', 'signal_status_mainnet', lang), value: tr('hero', 'signal_target', lang),  accent: 'text-zion-purple' },
   ];
   const heroMetrics = [
     { label: tr('hero', 'metric_loc', lang),   value: '52 590', icon: Zap },
-    { label: tr('hero', 'metric_nodes', lang), value: '1 / 1',   icon: Satellite },
+    { label: tr('hero', 'metric_nodes', lang), value: '3 / 3',   icon: Satellite },
     { label: tr('hero', 'metric_tests', lang), value: '780+',    icon: Gauge },
   ];
 
@@ -150,14 +150,14 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-bold text-white">Live network, not a concept mockup</span>
+                      <span className="text-sm font-bold text-white">Live test network, not a concept mockup</span>
                     <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-semibold">
-                      Live
+                        Active
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">
                     Network status, explorer, pool, downloads, and documentation — all in one place.
-                    This homepage is a public entry point, not an internal release note.
+                      This homepage is a public rehearsal entry point, not a production launch announcement.
                   </p>
                 </div>
                 <a
@@ -271,7 +271,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  Live TestNet · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 1 public host · 2 internal seeds
+                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 3-node rehearsal · Prague + USA + Singapore
                 </span>
               </div>
             </div>

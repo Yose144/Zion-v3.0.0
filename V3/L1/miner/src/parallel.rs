@@ -54,7 +54,7 @@ pub fn parallel_scan_nonce_range(job: MiningJob, threads: usize) -> Option<Minin
 /// Sequential single-thread scan respecting a cancellation flag.
 fn sequential_scan(job: MiningJob, cancelled: &AtomicBool) -> Option<MiningSolution> {
     for offset in 0..job.nonce_count {
-        if offset % 1024 == 0 && cancelled.load(Ordering::Relaxed) {
+        if offset % 4096 == 0 && cancelled.load(Ordering::Relaxed) {
             return None;
         }
         let nonce = job.start_nonce.wrapping_add(offset);

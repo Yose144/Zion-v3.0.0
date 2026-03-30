@@ -1106,6 +1106,9 @@ mod tests {
             subsidy_zion: crate::emission::block_subsidy(1),
             miner_reward_zion: crate::emission::block_subsidy(1),
             miner_address: String::new(),
+            humanitarian_address: String::new(),
+            issobella_address: String::new(),
+            pool_fee_address: String::new(),
             utxo_transaction_ids: vec![crate::hex(&funding.id)],
             utxo_transactions: vec![funding],
         };

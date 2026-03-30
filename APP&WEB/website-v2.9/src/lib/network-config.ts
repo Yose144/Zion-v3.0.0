@@ -27,17 +27,37 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
-// Current public topology: one primary host with two internal seed containers.
+// Archived 3-region rehearsal mesh configuration
 const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
   {
-    id: 'primary-host',
-    name: 'Zion2 Primary',
+    id: 'prague-eu',
+    name: 'Prague (EU)',
     host: SITE_PRIMARY_HOST,
-    region: 'PRIMARY',
-    lat: 0,
-    lon: 0,
-    ports: { p2p: 8334, rpc: 8332, stratum: 3333, pool_api: 8080 },
+    region: 'EU',
+    lat: 50.08,
+    lon: 14.44,
+    ports: { p2p: 8333, rpc: 8443, stratum: 3333, pool_api: 8080 },
     poolApiUrl: SITE_PRIMARY_POOL_API_URL,
+  },
+  {
+    id: 'usa-west',
+    name: 'USA (Hillsboro, OR)',
+    host: '5.78.194.94',
+    region: 'US',
+    lat: 45.52,
+    lon: -122.99,
+    ports: { p2p: 8333, rpc: 8443, stratum: 3333, pool_api: 8080 },
+    poolApiUrl: 'http://5.78.194.94:8080',
+  },
+  {
+    id: 'singapore-ap',
+    name: 'Singapore (APAC)',
+    host: '5.223.84.191',
+    region: 'APAC',
+    lat: 1.35,
+    lon: 103.82,
+    ports: { p2p: 8333, rpc: 8443, stratum: 3333, pool_api: 8080 },
+    poolApiUrl: 'http://5.223.84.191:8080',
   },
 ];
 

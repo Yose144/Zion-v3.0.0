@@ -31,15 +31,15 @@ import { SITE_RELEASE_LABEL } from '@/lib/site';
 const heroStats = [
   { label: 'Rust LOC', value: '115,400+', descriptor: '12 crates · L1–L4' },
   { label: 'Tests passing', value: '1,501', descriptor: '0 failing · +122 Ekam Deeksha' },
-  { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · public line 2.9.9 · runtime 2.9.8' },
-  { label: 'Release Gate', value: 'GO', descriptor: 'v2.9.9 Pure Code public line · Deeksha/Ekam runtime live' }
+  { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · rehearsal line 2.9.9 · runtime 2.9.8' },
+  { label: 'Release Gate', value: 'NO-GO', descriptor: 'public launch blocked pending closure evidence' }
 ];
 
 const layerStack = [
   {
     layer: 'L1',
     emoji: '⛓️',
-    title: 'ZION Blockchain (MainNet)',
+    title: 'ZION Blockchain (Launch Target)',
     period: '2026',
     color: 'from-emerald-500 to-lime-400',
     border: 'border-emerald-500/40',
@@ -63,7 +63,7 @@ const layerStack = [
     layer: 'L2',
     emoji: '💱',
     title: 'DEX & DeFi Layer',
-    period: '2026 testnet ready · 2027 production',
+    period: '2026 live · 2027 production',
     color: 'from-blue-500 to-cyan-500',
     border: 'border-blue-500/40',
     items: [
@@ -218,12 +218,12 @@ const phases: PhaseData[] = [
   },
   {
     id: '1',
-    title: 'Hardened TestNet',
+    title: 'Controlled Test Mainnet',
     period: 'Feb — May 2026',
     priority: 'P0 Blocker',
     progress: 92,
     status: 'active',
-    description: '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted, 0 rejected. Remaining: partition + 100 miners.',
+    description: '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted, 0 rejected. Current line remains a controlled rehearsal. Remaining: partition + 100 miners + public launch closure evidence.',
     sprints: [
       { id: '1.0', title: 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
       { id: '1.1', title: 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
@@ -240,11 +240,11 @@ const phases: PhaseData[] = [
       { id: '1.12', title: '100 Miners Stress — simulate 100 Stratum clients', done: false },
       { id: '1.13', title: 'Ekam Deeksha Tier 1 — Scratchpad 256 KiB, 4 passes, 256 reads', tests: 108, done: true },
       { id: '1.14', title: 'Ekam Deeksha Tier 2 — Epoch NPU weights, rotate per 2016/100 blocks', tests: 14, done: true },
-      { id: '1.15', title: 'Testnet Feature Flag — conditional NPU_EPOCH_LENGTH compile-time', done: true },
+      { id: '1.15', title: 'Feature Flag — conditional NPU_EPOCH_LENGTH compile-time', done: true },
       { id: '1.16', title: 'Canary Deploy — pool 10/10 accepted, 0 rejected, 166 H/s', done: true }
     ],
     exitCriteria: [
-      { text: 'TestNet deployed on 3+ servers', done: true },
+      { text: 'Controlled V3 test-mainnet deployed on 3 servers', done: true },
       { text: 'Reorg/double-spend/fork tests (29 tests)', done: true },
       { text: 'IBD hardening (42 tests)', done: true },
       { text: 'Pool payout batch TX (23 tests)', done: true },
@@ -285,7 +285,7 @@ const phases: PhaseData[] = [
     priority: 'P1 Important',
     progress: 55,
     status: 'active',
-    description: 'Primary-host infrastructure running, monitoring active, legal/docs progressing. wZION bridge live on Base Sepolia testnet.',
+    description: 'Single public host + internal validator lanes active, monitoring running, legal/docs progressing. wZION bridge live on Base Sepolia testnet.',
     sprints: [
       { id: '3.1', title: 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana', done: true },
       { id: '3.2', title: 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
@@ -293,7 +293,7 @@ const phases: PhaseData[] = [
       { id: '3.4', title: 'Exchange Readiness — wZION + Bridge live on Base Sepolia (testnet)', done: true }
     ],
     exitCriteria: [
-      { text: '1 public host + internal seeds stable online', done: true },
+      { text: '1 public host + internal validator lanes stable online', done: true },
       { text: 'Monitoring + alerting active', done: true },
       { text: 'Legal docs complete', done: true },
       { text: 'wZION + Bridge testnet-ready on Base Sepolia', done: true },
@@ -410,20 +410,20 @@ export default function RoadmapPage() {
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Mission Control</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  Flight plan to MainNet
+                  Flight plan to public launch
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Realistic plan: stable TestNet with public host runtime → Base Sepolia bridge ready → WARP implementation complete → MainNet launch{' '}
+                Realistic plan: stable controlled V3 test-mainnet rehearsal → Base Sepolia bridge ready → WARP implementation complete → public launch decision and then full MainNet launch{' '}
                 <strong className="text-white">31. 12. 2026</strong>.
                 A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 17. Mar 2026
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 28. Mar 2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Orbit className="h-3 w-3 text-zion-cyan" /> MainNet · 31.12.2026
+                  <Orbit className="h-3 w-3 text-zion-cyan" /> Public launch target · 31.12.2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" /> 1,501 tests passing
@@ -556,7 +556,7 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">L1 Execution</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-purple" />
-              Fáze 0 – 5 · TestNet → MainNet
+              Fáze 0 – 5 · Test-mainnet rehearsal → Full MainNet
             </h2>
             <p className="text-sm text-gray-400">Každá fáze má jasné exit criteria. Žádné zkratky.</p>
           </div>

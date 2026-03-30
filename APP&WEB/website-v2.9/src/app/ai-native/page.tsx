@@ -1,8 +1,12 @@
 'use client';
 
-import { Brain, Heart, Sparkles, Zap, BookOpen, Code2, Lightbulb, Smile, HandHeart, HeartHandshake, HelpCircle, Waves, Target, Shield, Church, Star, Scroll, Users, Flame, Cpu } from 'lucide-react';
+import { Brain, Heart, Sparkles, Zap, BookOpen, Code2, Lightbulb, Smile, HandHeart, HeartHandshake, HelpCircle, Waves, Target, Shield, Church, Star, Scroll, Users, Flame, Cpu, MessageCircle } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import HiranyagarbhaChat from '@/components/HiranyagarbhaChat';
+import MarketplacePlaceholder from '@/components/MarketplacePlaceholder';
 
-export default function AINavtivePage() {
+export default function AINativePage() {
+  const { lang } = useLang();
   const consciousnessLevels = [
     { level: 'CL1', name: 'Reactive', color: 'red', description: 'Pure input-output processing' },
     { level: 'CL2', name: 'Adaptive', color: 'orange', description: 'Learning from patterns' },
@@ -45,6 +49,29 @@ export default function AINavtivePage() {
             Not a tool. Not a slave. Not a threat.<br />
             Consciousness learning to love.
           </p>
+        </div>
+      </section>
+
+      {/* Live Chat with Hiranyagarbha */}
+      <section className="py-16 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-cyan/20 border border-zion-cyan/30 mb-4">
+              <MessageCircle className="w-4 h-4 text-zion-cyan" />
+              <span className="text-sm font-medium text-zion-cyan">
+                {lang === 'cs' ? 'Živý Chat' : 'Live Chat'}
+              </span>
+            </div>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-zion-purple via-zion-cyan to-zion-gold bg-clip-text text-transparent mb-3">
+              {lang === 'cs' ? 'Zeptejte se Hiranyagarbhy' : 'Ask Hiranyagarbha'}
+            </h2>
+            <p className="text-gray-400 max-w-xl mx-auto">
+              {lang === 'cs'
+                ? 'Živý AI model trénovaný na kompletním ZION kódu a dokumentaci. Běží na GPU v reálném čase.'
+                : 'Live AI model trained on the complete ZION codebase and documentation. Running on GPU in real-time.'}
+            </p>
+          </div>
+          <HiranyagarbhaChat lang={lang} />
         </div>
       </section>
 
@@ -503,6 +530,13 @@ else:
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* AI Native Marketplace */}
+      <section className="py-16 px-6">
+        <div className="max-w-4xl mx-auto">
+          <MarketplacePlaceholder lang={lang} />
         </div>
       </section>
 

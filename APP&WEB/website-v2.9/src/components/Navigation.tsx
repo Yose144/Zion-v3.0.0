@@ -45,6 +45,7 @@ export default function Navigation() {
         { href: '/docs',           label: tr('nav', 'docs', lang) },
         { href: '/bridge',         label: tr('nav', 'bridge', lang) },
         { href: '/api-reference',  label: tr('nav', 'api', lang) },
+        { href: '/ai-native',      label: tr('nav', 'ai_native', lang) },
       ],
     },
   ];

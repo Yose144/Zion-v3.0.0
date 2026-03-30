@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     }
 
     // If blocks had non-coinbase TXs, we could fetch them here
-    // For now, most blocks in TestNet only have coinbase
+    // For now, most blocks only have coinbase
 
     return NextResponse.json({
       count: allTxs.length,

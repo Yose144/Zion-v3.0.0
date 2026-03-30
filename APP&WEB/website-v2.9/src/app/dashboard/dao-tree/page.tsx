@@ -108,7 +108,7 @@ const daoMetrics = [
   {
     label: "Guardians initiated",
     value: "27",
-    note: "Limit 144 během TestNet",
+    note: "Limit 144 před public launch",
   },
   {
     label: "DAO Treasury",

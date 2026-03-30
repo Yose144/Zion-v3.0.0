@@ -1,8 +1,32 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
-> **Aktualizace:** 19. března 2026 (V3 TestNet stack live, chain height 48+, 5 fixes deployed)  
+> **Aktualizace:** 30. března 2026 (AI Native v1.0 live, Hiranyagarbha nasazen)  
 > **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
+
+---
+
+## 0.AI) AI Native — Hiranyagarbha (2026-03-30) ✅ HOTOVO (v1.0)
+
+- [x] Fine-tune Llama 3.1 8B na ZION datech (776 párů, eval_loss=0.677, accuracy=85.8%)
+- [x] GGUF Q5_K_M export (5.4 GB)
+- [x] Vast.ai RTX 3060 inference deployment (Poland, ~59 tok/s, $0.05/hr)
+- [x] Ollama API live: http://91.150.160.38:11764
+- [x] Website integrace: `/ai-native` stránka + HiranyagarbhaChat component
+- [x] Next.js API proxy: `/api/ai-chat` (bezpečný proxy k Ollama)
+- [x] MarketplacePlaceholder (Coming Q3 2026)
+- [x] AI Native v navigaci webu (Reference skupina)
+- [x] Produkční Docker build a nasazení na Hetzner
+
+### 🔜 AI Native — Upgrade (viz HIRANYAGARBHA_UPGRADE_PLAN.md)
+
+- [ ] **P1** Pokročilý system prompt + CoT instrukce (30 min)
+- [ ] **P1** Multi-turn chat historie (`/api/ai-chat` + frontend)
+- [ ] **P2** RAG server: ChromaDB + LlamaIndex nad docs/ (1 den)
+- [ ] **P3** Dataset 15k párů — NIM generace z celého codebase
+- [ ] **P3** Fine-tune Qwen2.5-72B-Instruct (Vast.ai A100, ~$35)
+- [ ] **P4** DPO alignment (preference training)
+- [ ] **P4** Produkční A100 instance (Vast.ai reserved, ~$180/měsíc)
 
 ---
 
