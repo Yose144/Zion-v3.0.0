@@ -126,6 +126,8 @@ dist/
 build-check.log
 next-build.log$LOG
 APP&WEB/website-v2.9/SeedDE
+APP&WEB/website-v2.9/next-build*.tar.gz
+APP&WEB/website-v2.9/*build*.tar.gz
 
 test_out.txt
 TITHE_WALLETS_BACKUP.txt
