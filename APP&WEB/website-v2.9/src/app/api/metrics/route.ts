@@ -7,6 +7,7 @@ const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://zion-prometheus:909
 // Allowlisted metric prefixes — only V3 + infra metrics, nothing sensitive
 const ALLOWED_PREFIXES = [
   'zion_chain_',
+  'zion_miner_',
   'zion_pool_',
   'zion_pplns_',
   'zion_mempool_',

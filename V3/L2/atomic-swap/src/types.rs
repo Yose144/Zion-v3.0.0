@@ -322,6 +322,7 @@ pub struct L1SpendableUtxo {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct L1Block {
     pub height: u64,
+    #[serde(alias = "hash_hex")]
     pub hash: String,
     #[serde(default)]
     pub utxo_transactions: Vec<L1UtxoTransaction>,

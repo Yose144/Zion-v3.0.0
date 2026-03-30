@@ -39,6 +39,9 @@ pub struct EvmWatcherConfig {
     pub enabled: bool,
     /// HTTP(S) JSON-RPC endpoint (e.g. Base Sepolia)
     pub rpc_url: String,
+    /// Backup/fallback RPC endpoint (e.g. Ankr: https://rpc.ankr.com/base)
+    #[serde(default)]
+    pub rpc_url_backup: Option<String>,
     /// Deployed ZIONAtomicSwap contract address (0x…)
     pub contract_addr: String,
     /// Polling interval in seconds
@@ -360,7 +363,8 @@ pub async fn run(
 
     let topics = Topics::new();
     info!("EVM watcher starting");
-    info!("  RPC:      {}", cfg.rpc_url);
+    info!("  RPC:        {}", cfg.rpc_url);
+    info!("  RPC backup: {}", cfg.rpc_url_backup.as_deref().unwrap_or("(none)"));
     info!("  Contract: {}", cfg.contract_addr);
     info!("  Locked topic:   {}", topics.locked);
     info!("  Claimed topic:  {}", topics.claimed);
@@ -391,8 +395,19 @@ async fn poll_once(
     topics:  &Topics,
     db_conn: &Arc<std::sync::Mutex<Connection>>,
 ) -> Result<usize> {
-    let latest = eth_block_number(client, &cfg.rpc_url).await
-        .context("eth_blockNumber")?;
+    // ── Block number: primary RPC → backup fallback ───────────────────────
+    let latest = match eth_block_number(client, &cfg.rpc_url).await {
+        Ok(n) => n,
+        Err(e) => {
+            if let Some(backup) = &cfg.rpc_url_backup {
+                debug!("Primary RPC block_number failed ({}) — trying backup", e);
+                eth_block_number(client, backup).await
+                    .context("eth_blockNumber (primary + backup both failed)")?
+            } else {
+                return Err(e).context("eth_blockNumber");
+            }
+        }
+    };
 
     let from_block = {
         let conn = db_conn.lock().unwrap();
@@ -406,14 +421,32 @@ async fn poll_once(
 
     let to_block = (from_block + 1_000 - 1).min(latest);
 
-    let logs = eth_get_logs(
+    // ── eth_getLogs: primary RPC → backup fallback ────────────────────────
+    let logs = match eth_get_logs(
         client,
         &cfg.rpc_url,
         &cfg.contract_addr,
         &[&topics.locked, &topics.claimed, &topics.refunded],
         from_block + 1,
         to_block,
-    ).await.context("eth_getLogs")?;
+    ).await {
+        Ok(l) => l,
+        Err(e) => {
+            if let Some(backup) = &cfg.rpc_url_backup {
+                debug!("Primary RPC get_logs failed ({}) — trying backup", e);
+                eth_get_logs(
+                    client,
+                    backup,
+                    &cfg.contract_addr,
+                    &[&topics.locked, &topics.claimed, &topics.refunded],
+                    from_block + 1,
+                    to_block,
+                ).await.context("eth_getLogs (primary + backup both failed)")?
+            } else {
+                return Err(e).context("eth_getLogs");
+            }
+        }
+    };
 
     let count = logs.len();
     if count > 0 {

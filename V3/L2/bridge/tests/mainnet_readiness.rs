@@ -858,7 +858,7 @@ fn test_parse_bridge_testnet_toml() {
         cfg.evm_chains[0].bridge_contract_address,
         "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
     );
-    assert_eq!(cfg.l1.rpc_url, "91.98.122.165:8443");
+    assert_eq!(cfg.l1.rpc_url, "127.0.0.1:8443");
     assert_eq!(cfg.l1.finality_blocks, 60);
     assert!(cfg.ankr.enabled);
     assert!(cfg.security.auto_pause_on_anomaly);
