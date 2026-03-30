@@ -1,0 +1,122 @@
+# ZION V3 L2 Services Stack
+#
+# Bridge relay, atomic swap, and DAO — runs alongside the L1 stack.
+# Shares the zion-v3 Docker network so services can reach the L1 node at "node:8332".
+#
+# Usage:
+#   # Start L1 first (if not already running):
+#   docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
+#
+#   # Then start L2 services:
+#   docker compose -f V3/docker/docker-compose.v3-l2.yml up -d
+#
+#   # Logs:
+#   docker compose -f V3/docker/docker-compose.v3-l2.yml logs -f bridge
+#
+#   # Stop L2 only:
+#   docker compose -f V3/docker/docker-compose.v3-l2.yml down
+
+services:
+  # ── Bridge Relay ───────────────────────────────────────────────────────────
+  bridge:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.bridge
+    image: zion-v3-bridge:latest
+    container_name: zion-v3-bridge
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9100:9100"   # Prometheus metrics (host-local)
+    volumes:
+      - bridge-data:/data/bridge
+      - ../L2/bridge/config:/etc/zion:ro
+    environment:
+      BRIDGE_CONFIG: /etc/zion/bridge-testnet.toml
+      RUST_LOG: "zion_bridge=debug,info"
+      # ZION_VALIDATOR_PRIVATE_KEY: ""   # set in .env or secrets manager
+      # ANKR_API_KEY: ""                 # optional — Ankr premium tier
+    depends_on:
+      - node
+    networks:
+      - zion-v3
+
+  # ── Atomic Swap ────────────────────────────────────────────────────────────
+  swap:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.swap
+    image: zion-v3-swap:latest
+    container_name: zion-v3-swap
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8888:8888"   # Swap API (host-local)
+    volumes:
+      - swap-data:/data/atomic-swap
+      - ../L2/atomic-swap/config:/etc/zion:ro
+    environment:
+      SWAP_CONFIG: /etc/zion/swap-testnet.toml
+      RUST_LOG: "zion_atomic_swap=debug,info"
+      # ZION_SWAP_ESCROW_KEY: ""         # set in .env or secrets manager
+      # ZION_RPC_TOKEN: ""
+    depends_on:
+      - node
+    networks:
+      - zion-v3
+
+  # ── DAO Governance ─────────────────────────────────────────────────────────
+  dao:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dao
+    image: zion-v3-dao:latest
+    container_name: zion-v3-dao
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"   # DAO API (host-local)
+    volumes:
+      - dao-data:/data/dao
+      - ../L2/dao/config:/etc/zion:ro
+    environment:
+      DAO_CONFIG: /etc/zion/dao-testnet.toml
+      RUST_LOG: "zion_dao=debug,info"
+      # ZION_DAO_API_KEY: ""             # set in .env or secrets manager
+    depends_on:
+      - node
+    networks:
+      - zion-v3
+
+  # ── L1 Node reference (external from v3-mainnet compose) ───────────────────
+  # If L1 is already running via docker-compose.v3-mainnet.yml, comment out
+  # this service and set `external: true` on the zion-v3 network below.
+  node:
+    image: zion-v3-node:latest
+    container_name: zion-v3-node
+    restart: unless-stopped
+    ports:
+      - "8334:8334"
+      - "127.0.0.1:8332:8332"
+    volumes:
+      - zion-node-data:/data/zion
+    environment:
+      ZION_NODE_ID: v3-mainnet-helsinki
+      ZION_NODE_STATE_PATH: /data/zion/state
+      ZION_P2P_BIND: "0.0.0.0:8334"
+      ZION_RPC_BIND: "0.0.0.0:8332"
+      ZION_SEED_PEERS: "91.98.122.165:8334,seed-eu1.zionchain.org:8334,seed-us1.zionchain.org:8334"
+      ZION_MINER_ADDRESS: "zion-mainnet-miner-0"
+    networks:
+      - zion-v3
+
+volumes:
+  zion-node-data:
+    driver: local
+  bridge-data:
+    driver: local
+  swap-data:
+    driver: local
+  dao-data:
+    driver: local
+
+networks:
+  zion-v3:
+    driver: bridge

@@ -1,0 +1,33 @@
+# ZION V3 Bridge Relay
+# Multi-stage build for the L2 bridge daemon
+#
+# Build:  cd V3 && docker build -f docker/Dockerfile.bridge -t zion-v3-bridge .
+# Run:    docker run -d --name zion-bridge \
+#           -v bridge-data:/data/bridge \
+#           -v /etc/zion:/etc/zion:ro \
+#           -e BRIDGE_CONFIG=/etc/zion/bridge-testnet.toml \
+#           zion-v3-bridge
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-bridge
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/bridge -s /sbin/nologin zion
+COPY --from=builder /build/target/release/zion-bridge /usr/local/bin/zion-bridge
+RUN mkdir -p /data/bridge && chown -R zion:zion /data/bridge
+
+ENV BRIDGE_CONFIG=/etc/zion/bridge-testnet.toml
+
+WORKDIR /data/bridge
+EXPOSE 9100
+VOLUME ["/data/bridge"]
+USER zion
+ENTRYPOINT ["zion-bridge"]
