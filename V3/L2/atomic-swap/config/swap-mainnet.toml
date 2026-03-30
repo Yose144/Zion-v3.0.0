@@ -1,14 +1,14 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# ZION Atomic Swap Service — Testnet Configuration
-# Cross-chain HTLC swaps on ZION L1
+# ZION Atomic Swap Service — Mainnet Configuration
+# Cross-chain HTLC swaps: ZION L1 ↔ Base (EVM)
 # ──────────────────────────────────────────────────────────────────────────────
 
 [swap]
 name              = "ZION Atomic Swap Service"
-network           = "testnet"
+network           = "mainnet"
 min_lock_flowers  = 1_000_000_000_000      # 1 ZION minimum
-max_lock_atomic   = 10_000_000_000_000     # 10 000 ZION maximum
-release_fee_atomic = 2_000                 # 0.000000002 ZION flat fee
+max_lock_atomic   = 100_000_000_000_000    # 100 000 ZION maximum
+release_fee_atomic = 10_000                # flat fee per release
 
 # ── ZION L1 ──────────────────────────────────────────────────────────────────
 
@@ -28,20 +28,20 @@ path = "/data/atomic-swap/swap.db"
 
 [api]
 bind = "0.0.0.0:8888"
-# bearer_token = ""   # set for production; open for testnet
+# bearer_token = ""   # MUST be set for mainnet via env or secrets
 
 # ── Refund Automation ────────────────────────────────────────────────────────
 
 [refund]
 auto_refund        = true
 check_interval_secs = 30
-grace_period_secs  = 120
+grace_period_secs  = 300
 
-# ── EVM Watcher (Base Sepolia HTLC events) ───────────────────────────────────
+# ── EVM Watcher (Base mainnet HTLC events) ───────────────────────────────────
 
 [evm_watcher]
 enabled            = true
-rpc_url            = "https://sepolia.base.org"
-contract_addr      = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+rpc_url            = "https://mainnet.base.org"
+contract_addr      = ""   # TODO: deploy ZIONAtomicSwap on Base mainnet
 poll_interval_secs = 12
 start_block        = 0
