@@ -36,3 +36,12 @@ bind = "0.0.0.0:8888"
 auto_refund        = true
 check_interval_secs = 30
 grace_period_secs  = 120
+
+# ── EVM Watcher (Base Sepolia HTLC events) ───────────────────────────────────
+
+[evm_watcher]
+enabled            = true
+rpc_url            = "https://sepolia.base.org"
+contract_addr      = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+poll_interval_secs = 12
+start_block        = 0

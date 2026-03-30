@@ -1,7 +1,7 @@
 # ZION V3 L2 Services Stack
 #
 # Bridge relay, atomic swap, and DAO — runs alongside the L1 stack.
-# Shares the zion-v3 Docker network so services can reach the L1 node at "node:8332".
+# Shares the zion-v3 Docker network so services can reach the L1 node at "zion-v3-node:8443".
 #
 # Usage:
 #   # Start L1 first (if not already running):
@@ -35,8 +35,6 @@ services:
       RUST_LOG: "zion_bridge=debug,info"
       # ZION_VALIDATOR_PRIVATE_KEY: ""   # set in .env or secrets manager
       # ANKR_API_KEY: ""                 # optional — Ankr premium tier
-    depends_on:
-      - node
     networks:
       - zion-v3
 
@@ -58,8 +56,6 @@ services:
       RUST_LOG: "zion_atomic_swap=debug,info"
       # ZION_SWAP_ESCROW_KEY: ""         # set in .env or secrets manager
       # ZION_RPC_TOKEN: ""
-    depends_on:
-      - node
     networks:
       - zion-v3
 
@@ -80,36 +76,10 @@ services:
       DAO_CONFIG: /etc/zion/dao-testnet.toml
       RUST_LOG: "zion_dao=debug,info"
       # ZION_DAO_API_KEY: ""             # set in .env or secrets manager
-    depends_on:
-      - node
-    networks:
-      - zion-v3
-
-  # ── L1 Node reference (external from v3-mainnet compose) ───────────────────
-  # If L1 is already running via docker-compose.v3-mainnet.yml, comment out
-  # this service and set `external: true` on the zion-v3 network below.
-  node:
-    image: zion-v3-node:latest
-    container_name: zion-v3-node
-    restart: unless-stopped
-    ports:
-      - "8334:8334"
-      - "127.0.0.1:8332:8332"
-    volumes:
-      - zion-node-data:/data/zion
-    environment:
-      ZION_NODE_ID: v3-mainnet-helsinki
-      ZION_NODE_STATE_PATH: /data/zion/state
-      ZION_P2P_BIND: "0.0.0.0:8334"
-      ZION_RPC_BIND: "0.0.0.0:8332"
-      ZION_SEED_PEERS: "91.98.122.165:8334,seed-eu1.zionchain.org:8334,seed-us1.zionchain.org:8334"
-      ZION_MINER_ADDRESS: "zion-mainnet-miner-0"
     networks:
       - zion-v3
 
 volumes:
-  zion-node-data:
-    driver: local
   bridge-data:
     driver: local
   swap-data:
@@ -119,4 +89,4 @@ volumes:
 
 networks:
   zion-v3:
-    driver: bridge
+    external: true

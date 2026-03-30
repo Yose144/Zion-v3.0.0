@@ -1,0 +1,47 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ZION Atomic Swap Service — Mainnet Configuration
+# Cross-chain HTLC swaps: ZION L1 ↔ Base (EVM)
+# ──────────────────────────────────────────────────────────────────────────────
+
+[swap]
+name              = "ZION Atomic Swap Service"
+network           = "mainnet"
+min_lock_flowers  = 1_000_000_000_000      # 1 ZION minimum
+max_lock_atomic   = 100_000_000_000_000    # 100 000 ZION maximum
+release_fee_atomic = 10_000                # flat fee per release
+
+# ── ZION L1 ──────────────────────────────────────────────────────────────────
+
+[l1]
+rpc_url            = "91.98.122.165:8443"  # Prague node
+# rpc_token        = ""                    # set ZION_RPC_TOKEN env var
+# escrow_key_hex   = ""                    # set ZION_SWAP_ESCROW_KEY env var
+scan_batch_size    = 10
+poll_interval_secs = 5
+
+# ── Database ─────────────────────────────────────────────────────────────────
+
+[database]
+path = "/data/atomic-swap/swap.db"
+
+# ── HTTP API ─────────────────────────────────────────────────────────────────
+
+[api]
+bind = "0.0.0.0:8888"
+# bearer_token = ""   # MUST be set for mainnet via env or secrets
+
+# ── Refund Automation ────────────────────────────────────────────────────────
+
+[refund]
+auto_refund        = true
+check_interval_secs = 30
+grace_period_secs  = 300
+
+# ── EVM Watcher (Base mainnet HTLC events) ───────────────────────────────────
+
+[evm_watcher]
+enabled            = true
+rpc_url            = "https://mainnet.base.org"
+contract_addr      = ""   # TODO: deploy ZIONAtomicSwap on Base mainnet
+poll_interval_secs = 12
+start_block        = 0
