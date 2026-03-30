@@ -25,18 +25,15 @@ services:
     image: zion-v3-bridge:latest
     container_name: zion-v3-bridge
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:9100:9100"   # Prometheus metrics (host-local)
+    network_mode: host
     volumes:
       - bridge-data:/data/bridge
       - ../L2/bridge/config:/etc/zion:ro
     environment:
-      BRIDGE_CONFIG: /etc/zion/bridge-testnet.toml
+      ZION_BRIDGE_CONFIG: /etc/zion/bridge-testnet.toml
       RUST_LOG: "zion_bridge=debug,info"
       # ZION_VALIDATOR_PRIVATE_KEY: ""   # set in .env or secrets manager
       # ANKR_API_KEY: ""                 # optional — Ankr premium tier
-    networks:
-      - zion-v3
 
   # ── Atomic Swap ────────────────────────────────────────────────────────────
   swap:
@@ -46,18 +43,15 @@ services:
     image: zion-v3-swap:latest
     container_name: zion-v3-swap
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8888:8888"   # Swap API (host-local)
+    network_mode: host
     volumes:
       - swap-data:/data/atomic-swap
       - ../L2/atomic-swap/config:/etc/zion:ro
     environment:
-      SWAP_CONFIG: /etc/zion/swap-testnet.toml
       RUST_LOG: "zion_atomic_swap=debug,info"
+    command: ["--config", "/etc/zion/swap-testnet.toml"]
       # ZION_SWAP_ESCROW_KEY: ""         # set in .env or secrets manager
       # ZION_RPC_TOKEN: ""
-    networks:
-      - zion-v3
 
   # ── DAO Governance ─────────────────────────────────────────────────────────
   dao:
@@ -67,8 +61,7 @@ services:
     image: zion-v3-dao:latest
     container_name: zion-v3-dao
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8080:8080"   # DAO API (host-local)
+    network_mode: host
     volumes:
       - dao-data:/data/dao
       - ../L2/dao/config:/etc/zion:ro
@@ -76,8 +69,6 @@ services:
       DAO_CONFIG: /etc/zion/dao-testnet.toml
       RUST_LOG: "zion_dao=debug,info"
       # ZION_DAO_API_KEY: ""             # set in .env or secrets manager
-    networks:
-      - zion-v3
 
 volumes:
   bridge-data:
@@ -86,7 +77,3 @@ volumes:
     driver: local
   dao-data:
     driver: local
-
-networks:
-  zion-v3:
-    external: true
