@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Write as FmtWrite;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{IpAddr, TcpListener, TcpStream, ToSocketAddrs, UdpSocket};
@@ -876,6 +876,85 @@ fn relay_tx_to_peers(
     }
 }
 
+// ── Persistent outbound connection pool ────────────────────────────────
+
+/// A single persistent TCP connection to a peer.
+struct PeerConn {
+    writer: TcpStream,
+    reader: BufReader<TcpStream>,
+}
+
+impl PeerConn {
+    fn connect(peer: &PeerEndpoint) -> Result<Self> {
+        let addr = peer
+            .address()
+            .to_socket_addrs()
+            .with_context(|| format!("failed to resolve peer {}", peer.address()))?
+            .next()
+            .with_context(|| format!("no address for peer {}", peer.address()))?;
+        let stream = TcpStream::connect_timeout(&addr, Duration::from_secs(10))
+            .with_context(|| format!("failed to connect to peer {}", peer.address()))?;
+        stream.set_read_timeout(Some(Duration::from_secs(30)))?;
+        stream.set_write_timeout(Some(Duration::from_secs(10)))?;
+        let _ = stream.set_nodelay(true);
+        let reader = BufReader::new(stream.try_clone().context("failed to clone stream")?);
+        Ok(Self { writer: stream, reader })
+    }
+
+    fn roundtrip(&mut self, message: &P2pMessage) -> Result<P2pMessage> {
+        let line = encode_p2p_message(message).context("failed to encode P2P message")?;
+        self.writer
+            .write_all(line.as_bytes())
+            .context("failed to write P2P message")?;
+        self.writer
+            .flush()
+            .context("failed to flush P2P message")?;
+        let response = read_line(&mut self.reader)?;
+        decode_p2p_message(&response).context("failed to decode P2P response")
+    }
+}
+
+/// Pool of persistent outbound connections, keyed by peer address string.
+/// Stale connections are automatically evicted on error and retried once.
+struct OutboundPool {
+    conns: HashMap<String, PeerConn>,
+}
+
+impl OutboundPool {
+    fn new() -> Self {
+        Self {
+            conns: HashMap::new(),
+        }
+    }
+
+    /// Send a message and receive a response, reusing an existing connection
+    /// or creating a new one. Stale connections are evicted and retried once.
+    fn roundtrip(
+        &mut self,
+        peer: &PeerEndpoint,
+        message: &P2pMessage,
+    ) -> Result<P2pMessage> {
+        let key = peer.address().to_string();
+        if let Some(conn) = self.conns.get_mut(&key) {
+            match conn.roundtrip(message) {
+                Ok(resp) => return Ok(resp),
+                Err(_) => {
+                    self.conns.remove(&key);
+                }
+            }
+        }
+        let mut conn = PeerConn::connect(peer)?;
+        let resp = conn.roundtrip(message)?;
+        self.conns.insert(key, conn);
+        Ok(resp)
+    }
+
+    /// Remove a peer's cached connection.
+    fn evict(&mut self, address: &str) {
+        self.conns.remove(address);
+    }
+}
+
 /// Outbound peer loop: periodically connects to known peers, syncs new blocks,
 /// sends heartbeat pings, discovers new peers via GetPeers, and runs
 /// PeerManager maintenance.
@@ -952,6 +1031,9 @@ fn outbound_peer_loop(
     let initial_height = runtime.lock().expect("lock").chain_height();
     let mut ibd = IbdEngine::new(initial_height);
 
+    // ── Persistent outbound connection pool ────────────────────────────
+    let mut pool = OutboundPool::new();
+
     loop {
         thread::sleep(Duration::from_secs(OUTBOUND_CYCLE_SECS));
         cycle_count += 1;
@@ -1005,11 +1087,11 @@ fn outbound_peer_loop(
         let our_height = runtime.lock().expect("lock").chain_height();
 
         for peer in &peers {
-            // Quick status check via Ping to keep connection alive
-            match p2p_roundtrip(peer, &P2pMessage::Ping { nonce: epoch_secs() }) {
+            // Quick status check via Ping to keep connection alive (persistent)
+            match pool.roundtrip(peer, &P2pMessage::Ping { nonce: epoch_secs() }) {
                 Ok(P2pMessage::Pong { .. }) => {
                     // Peer alive — check if it has new blocks
-                    if let Ok(P2pMessage::Status { status }) = p2p_roundtrip(peer, &P2pMessage::GetStatus) {
+                    if let Ok(P2pMessage::Status { status }) = pool.roundtrip(peer, &P2pMessage::GetStatus) {
                         // Feed height into IBD engine
                         ibd.update_peer(&peer.address(), status.chain_height);
                         if status.chain_height > our_height {
@@ -1042,7 +1124,7 @@ fn outbound_peer_loop(
         if cycle_count % DISCOVERY_EVERY_N_CYCLES == 0 && !peers.is_empty() {
             let idx = (cycle_count / DISCOVERY_EVERY_N_CYCLES) as usize % peers.len();
             let target = &peers[idx];
-            match p2p_roundtrip(target, &P2pMessage::GetPeers) {
+            match pool.roundtrip(target, &P2pMessage::GetPeers) {
                 Ok(P2pMessage::Peers { peers: discovered }) => {
                     let new_count = discovered.len();
                     if new_count > 0 {
@@ -1144,7 +1226,7 @@ fn outbound_peer_loop(
                             .find(|p| p.peer_id == peer_id)
                             .map(|p| PeerEndpoint::new(p.addr.to_string(), p.port));
                         if let Some(ep) = endpoint {
-                            if let Ok(P2pMessage::Peers { peers: found }) = p2p_roundtrip(&ep, &P2pMessage::GetPeers) {
+                            if let Ok(P2pMessage::Peers { peers: found }) = pool.roundtrip(&ep, &P2pMessage::GetPeers) {
                                 for p in &found {
                                     if let Some((h, port_str)) = p.address().rsplit_once(':') {
                                         if let (Ok(ip), Ok(port)) = (h.parse::<IpAddr>(), port_str.parse::<u16>()) {
@@ -1181,7 +1263,7 @@ fn outbound_peer_loop(
                             .find(|p| p.peer_id == peer_id)
                             .map(|p| PeerEndpoint::new(p.addr.to_string(), p.port));
                         if let Some(ep) = endpoint {
-                            match p2p_roundtrip(
+                            match pool.roundtrip(
                                 &ep,
                                 &P2pMessage::GetBlocksSince { from_height: start_height, limit: count.min(u16::MAX as u64) as u16 },
                             ) {
