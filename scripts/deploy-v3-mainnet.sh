@@ -71,14 +71,14 @@ resolve_seed_node_id() {
 
 resolve_services() {
     case "$1" in
-        primary) echo "core seed1 pool miner redis" ;;
+        primary|us) echo "core seed1 pool miner redis" ;;
         *) echo "core seed1" ;;
     esac
 }
 
 expected_container_floor() {
     case "$1" in
-        primary) echo "5" ;;
+        primary|us) echo "5" ;;
         *) echo "2" ;;
     esac
 }
