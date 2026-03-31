@@ -789,6 +789,7 @@ function _startBalanceAutoRefresh() {
 function _stopBalanceAutoRefresh() {
   if (_balanceAutoRefreshTimer) { clearInterval(_balanceAutoRefreshTimer); _balanceAutoRefreshTimer = null; }
 }
+window.addEventListener('beforeunload', _stopBalanceAutoRefresh);
 
 // Control setup
 function setupControls() {

@@ -325,7 +325,7 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
     'zion_pool_rejected_total','zion_pool_accept_rate_pct','zion_pool_uptime_seconds',
     'zion_miner_hashrate_hps','zion_miner_hashrate_10s_hps','zion_miner_hashrate_60s_hps',
     'zion_miner_accepted_shares_total','zion_miner_rejected_shares_total','zion_miner_accept_rate_pct',
-    'zion_miner_submit_avg_latency_ms','zion_miner_pool_height','up{job="zion-miner-prague"}',
+    'zion_miner_submit_avg_latency_ms','zion_miner_pool_height','up{job=~"zion-miner-.*|zion-miner-prague"}',
     'zion_pool_group_submits','zion_pool_group_accepted',
     'zion_pplns_window_size','zion_pplns_window_used','zion_pplns_registered_miners',
     'zion_pplns_total_paid_flowers','zion_pplns_payout_rounds',
@@ -333,9 +333,10 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
     'node_memory_MemTotal_bytes','node_memory_MemAvailable_bytes',
     'node_filesystem_size_bytes{mountpoint="/"}','node_filesystem_avail_bytes{mountpoint="/"}',
     'node_boot_time_seconds',
-    'up{job="zion-core-prague"}','up{job="zion-pool-prague"}',
+    'up{job=~"zion-core-.*|zion-core-prague"}','up{job=~"zion-pool-.*|zion-pool-prague"}',
   ];
   const res = await Promise.allSettled(qs.map(q => promQuery(q)));
+  const minerUp = pv(res, 21) ?? ((pv(res, 13) ?? 0) > 0 ? 1 : 0);
   return {
     chainHeight: pv(res,0), peerCount: pv(res,1), mempoolSize: pv(res,2), blocksAccepted: pv(res,3),
     templateHeight: pv(res,4), templateTxs: pv(res,5), templateFees: pv(res,6),
@@ -343,7 +344,7 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
     poolRejected: pv(res,10), poolAcceptRate: pv(res,11), poolUptime: pv(res,12),
     minerHashrate: pv(res,13), minerHashrate10s: pv(res,14), minerHashrate60s: pv(res,15),
     minerAccepted: pv(res,16), minerRejected: pv(res,17), minerAcceptRate: pv(res,18),
-    minerSubmitAvgMs: pv(res,19), minerPoolHeight: pv(res,20), minerUp: pv(res,21),
+    minerSubmitAvgMs: pv(res,19), minerPoolHeight: pv(res,20), minerUp,
     groupZionSub: pvLabel([res[22]],'group','zion'), groupZionAcc: pvLabel([res[23]],'group','zion'),
     groupRevenueSub: pvLabel([res[22]],'group','revenue'), groupRevenueAcc: pvLabel([res[23]],'group','revenue'),
     groupNclSub: pvLabel([res[22]],'group','ncl'), groupNclAcc: pvLabel([res[23]],'group','ncl'),
@@ -401,23 +402,32 @@ async function fetchV3Charts(range: ChartRange): Promise<V3Charts> {
 }
 
 async function fetchServiceStatuses(): Promise<ServiceStatus[]> {
+  const upResults = await promQuery('up');
+
+  const resolveJob = (prefixes: string[]): string => {
+    const match = upResults.find((item) => {
+      const job = item.metric.job ?? '';
+      return prefixes.some((prefix) => job.startsWith(prefix));
+    });
+    return match?.metric.job ?? '';
+  };
+
   const STACK: Omit<ServiceStatus, 'up'>[] = [
-    { name: 'zion-core', job: 'zion-core-prague', image: 'zion-core:2.9.8', ports: '8333, 8443, 9115' },
-    { name: 'zion-pool', job: 'zion-pool-prague', image: 'zion-pool:2.9.8', ports: '3333, 8080' },
-    { name: 'zion-miner', job: 'zion-miner-prague', image: 'zion-miner:2.9.8', ports: '9116', note: 'runtime metrics + health' },
-    { name: 'zion-redis', job: 'redis-prague', image: 'redis:7-alpine', ports: '6379' },
+    { name: 'zion-core', job: resolveJob(['zion-core-']) || 'zion-core-prague', image: 'zion-core:2.9.8', ports: '8333, 8443, 9115' },
+    { name: 'zion-pool', job: resolveJob(['zion-pool-']) || 'zion-pool-prague', image: 'zion-pool:2.9.8', ports: '3333, 8080' },
+    { name: 'zion-miner', job: resolveJob(['zion-miner-']) || 'zion-miner-prague', image: 'zion-miner:2.9.8', ports: '9116', note: 'runtime metrics + health' },
+    { name: 'zion-redis', job: resolveJob(['redis-']) || 'redis-prague', image: 'redis:7-alpine', ports: '6379' },
     { name: 'zion-seed-1', job: '', image: 'zion-core:2.9.8', ports: 'internal', note: 'seed node' },
     { name: 'zion-seed-2', job: '', image: 'zion-core:2.9.8', ports: 'internal', note: 'seed node' },
     { name: 'zion-website', job: '', image: 'zion-website:2.9.9', ports: '3000', note: 'this site' },
-    { name: 'zion-prometheus', job: 'prometheus', image: 'prom/prometheus:v2.53.0', ports: '9090' },
+    { name: 'zion-prometheus', job: resolveJob(['prometheus']) || 'prometheus', image: 'prom/prometheus:v2.53.0', ports: '9090' },
     { name: 'zion-grafana', job: '', image: 'grafana/grafana:11.1.0', ports: '3001', note: '/grafana/' },
-    { name: 'zion-node-exporter', job: 'node-prague', image: 'prom/node-exporter:v1.8.1', ports: '9100' },
-    { name: 'zion-redis-exporter', job: 'redis-prague', image: 'oliver006/redis_exporter:v1.61.0', ports: '9121' },
+    { name: 'zion-node-exporter', job: resolveJob(['node-']) || 'node-prague', image: 'prom/node-exporter:v1.8.1', ports: '9100' },
+    { name: 'zion-redis-exporter', job: resolveJob(['redis-']) || 'redis-prague', image: 'oliver006/redis_exporter:v1.61.0', ports: '9121' },
     { name: 'zion-alertmanager', job: '', image: 'prom/alertmanager:v0.27.0', ports: '9093' },
     { name: 'germany-pool-target', job: 'zion-pool-germany', image: 'remote scrape', ports: '46.225.126.243:8080', note: 'Prometheus remote target' },
     { name: 'germany-core-target', job: 'zion-core-germany', image: 'remote scrape', ports: '46.225.126.243:9115', note: 'Prometheus remote target' },
   ];
-  const upResults = await promQuery('up');
   const jobUp: Record<string, boolean> = {};
   for (const r of upResults) { jobUp[r.metric.job ?? ''] = r.value[1] === '1'; }
   return STACK.map(s => ({ ...s, up: s.job ? (jobUp[s.job] ?? null) : null }));
@@ -431,9 +441,9 @@ async function fetchStackSummary(): Promise<StackSummary> {
     'redis_memory_max_bytes',
     'redis_keyspace_hits_total',
     'redis_keyspace_misses_total',
-    'up{job="prometheus"}',
-    'up{job="node-prague"}',
-    'up{job="redis-prague"}',
+    'up{job=~"prometheus|prometheus-.*"}',
+    'up{job=~"node-.*|node-prague"}',
+    'up{job=~"redis-.*|redis-prague"}',
     'up{job="zion-pool-germany"}',
     'up{job="zion-core-germany"}',
     'node_uname_info',
@@ -1571,6 +1581,33 @@ export default function MissionControlDashboard() {
   const servicesUp = monitoredServices.filter(service => service.up).length;
   const servicesDown = monitoredServices.filter(service => service.up === false).length;
   const servicesNa = services.filter(service => service.up === null).length;
+  const primaryNodeWithMetrics: ServerNode | undefined = (() => {
+    if (!primaryNode) return undefined;
+    const memTotal = v3?.memTotal ?? null;
+    const memAvail = v3?.memAvail ?? null;
+    const diskTotal = v3?.diskTotal ?? null;
+    const diskAvail = v3?.diskAvail ?? null;
+    const fallbackMem =
+      memTotal != null && memAvail != null && memTotal > 0
+        ? { total: memTotal, used: Math.max(0, memTotal - memAvail) }
+        : undefined;
+    const fallbackDisk =
+      diskTotal != null && diskAvail != null && diskTotal > 0
+        ? { used_pct: Math.max(0, Math.min(100, ((diskTotal - diskAvail) / diskTotal) * 100)) }
+        : undefined;
+    const fallbackContainers = monitoredServices.length > 0
+      ? { containers_up: servicesUp, containers_healthy: monitoredServices.length }
+      : {};
+
+    return {
+      ...primaryNode,
+      mem: primaryNode.mem ?? fallbackMem,
+      disk: primaryNode.disk ?? fallbackDisk,
+      load: primaryNode.load ?? v3?.serverLoad1 ?? undefined,
+      containers_up: primaryNode.containers_up ?? fallbackContainers.containers_up,
+      containers_healthy: primaryNode.containers_healthy ?? fallbackContainers.containers_healthy,
+    };
+  })();
   const opsAlertsRaw: Array<OpsAlert | null> = [
     servicesDown > 0 ? { id: 'targets-down', message: `${servicesDown} target${servicesDown > 1 ? 's' : ''} down`, severity: 'critical', href: '/monitoring' } : null,
     stackSummary?.prometheusReloadOk === 0 ? { id: 'prometheus-reload', message: 'Prometheus reload failed', severity: 'critical', href: '/grafana/' } : null,
@@ -1836,7 +1873,7 @@ export default function MissionControlDashboard() {
                 <Stat label="Sync Status" value={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'SYNCED ✓' : primaryHeight > 0 ? 'RUNNING' : '—'} color={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
               </div>
               <div className="grid gap-5 lg:grid-cols-3">
-                <ServerCard node={primaryNode} name="Prague (EU)" flag="🇪🇺" ip="91.98.122.165 · RPC + pool + web" />
+                <ServerCard node={primaryNodeWithMetrics} name="Prague (EU)" flag="🇪🇺" ip="91.98.122.165 · RPC + pool + web" />
                 <ServerCard node={data?.usa} name="USA (Hillsboro)" flag="🇺🇸" ip="5.78.194.94 · RPC + pool" />
                 <ServerCard node={data?.singapore} name="Singapore (APAC)" flag="🇸🇬" ip="5.223.84.191 · RPC + pool" />
               </div>

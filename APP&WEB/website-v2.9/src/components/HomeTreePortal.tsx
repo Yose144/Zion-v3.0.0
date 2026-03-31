@@ -20,7 +20,7 @@ export default function HomeTreePortal() {
   const [revealed, setRevealed] = useState(false);
 
   return (
-    <section id="tree-of-life" className="px-4 py-10 md:py-14 scroll-mt-28">
+    <section id="tree-of-life" className="px-4 py-16 md:py-20 scroll-mt-28">
       <div className="zion-container space-y-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
