@@ -39,10 +39,6 @@ EOF
 
 log() { printf "%s %s %s\n" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$LOG_PREFIX" "$*"; }
 
-shell_quote() {
-  printf "'%s'" "${1//\'/\'\\\'\'}"
-}
-
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "Error: required command '$1' not found" >&2
@@ -70,8 +66,10 @@ require_cmd ssh
 
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new"
 REMOTE="$REMOTE_USER@$REMOTE_HOST"
-REMOTE_SRC_DIR="$(shell_quote "$REMOTE_SRC")"
-REMOTE_COMPOSE_DIR="$(shell_quote "$REMOTE_COMPOSE")"
+REMOTE_SRC_DQ="${REMOTE_SRC//\"/\\\"}"
+REMOTE_COMPOSE_DQ="${REMOTE_COMPOSE//\"/\\\"}"
+REMOTE_SRC_RSYNC="'$REMOTE_SRC'"
+REMOTE_COMPOSE_RSYNC="'$REMOTE_COMPOSE'"
 
 cd "$ROOT_DIR"
 
@@ -84,21 +82,20 @@ fi
 # --- Rsync source to server ---
 if [[ $SKIP_SYNC -ne 1 ]]; then
   log "Syncing source to $REMOTE_HOST:$REMOTE_SRC"
-  ssh $SSH_OPTS "$REMOTE" "mkdir -p $REMOTE_SRC_DIR"
+  ssh $SSH_OPTS "$REMOTE" "mkdir -p \"$REMOTE_SRC_DQ\""
   rsync -avz --delete \
     --exclude='node_modules' \
     --exclude='.next' \
     --exclude='out' \
     --exclude='*.tar.gz' \
     --exclude='.env.local' \
-    --rsync-path="mkdir -p $REMOTE_SRC_DIR && cd $REMOTE_SRC_DIR && rsync" \
     -e "ssh $SSH_OPTS" \
-    ./ "$REMOTE:./"
+    ./ "$REMOTE:${REMOTE_SRC_RSYNC}/"
 
   log "Syncing compose file to $REMOTE_HOST:$REMOTE_COMPOSE"
   rsync -avz \
     -e "ssh $SSH_OPTS" \
-    "$REPO_ROOT/docker/$COMPOSE_FILE" "$REMOTE:$REMOTE_COMPOSE/"
+    "$REPO_ROOT/docker/$COMPOSE_FILE" "$REMOTE:${REMOTE_COMPOSE_RSYNC}/"
 else
   log "Skipping rsync (--skip-sync)"
 fi
@@ -110,10 +107,10 @@ fi
 
 # --- Docker rebuild & recreate on server ---
 log "Building Docker image on $REMOTE_HOST"
-ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_DIR && docker compose -f '$COMPOSE_FILE' build --no-cache website"
+ssh $SSH_OPTS "$REMOTE" "cd \"$REMOTE_COMPOSE_DQ\" && docker compose -f '$COMPOSE_FILE' build --no-cache website"
 
 log "Recreating container"
-ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_DIR && docker compose -f '$COMPOSE_FILE' up -d website"
+ssh $SSH_OPTS "$REMOTE" "cd \"$REMOTE_COMPOSE_DQ\" && docker compose -f '$COMPOSE_FILE' up -d website"
 
 # --- Health check ---
 log "Waiting for container health check (up to 60s)"

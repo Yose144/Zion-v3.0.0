@@ -17,6 +17,7 @@ interface Doc {
   id: string;
   title: string;
   file: string;
+  href?: string;
 }
 
 interface Category {
@@ -36,6 +37,62 @@ interface Version {
 }
 
 const versions: Version[] = [
+  {
+    id: 'v2.9.9',
+    label: 'v2.9.9',
+    tag: 'CURRENT',
+    tagColor: 'text-zion-gold border-zion-gold/30 bg-zion-gold/10',
+    description: 'Pure Code line — cleanup + migration strategy toward V3',
+    categories: [
+      {
+        id: 'v299-overview',
+        title: 'Overview',
+        icon: Rocket,
+        docs: [
+          { id: 'v299-readme', title: 'v2.9.9 Pure Code Overview', file: 'v2.9.9/README.md' },
+          { id: 'v299-changelog', title: 'Changelog v2.9.9', file: 'v2.9.9/changelog.md' },
+          { id: 'v299-migration', title: 'Migration v2.9.9 → V3', file: 'v2.9.9/migration.md' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'v2.9.8',
+    label: 'v2.9.8',
+    tag: 'CANONICAL RUNTIME',
+    tagColor: 'text-zion-cyan border-zion-cyan/30 bg-zion-cyan/10',
+    description: 'Ekam Deeksha canonical runtime unification line',
+    categories: [
+      {
+        id: 'v298-overview',
+        title: 'Overview',
+        icon: Rocket,
+        docs: [
+          { id: 'v298-readme', title: 'v2.9.8 Ekam Overview', file: 'v2.9.8/README.md' },
+          { id: 'v298-changelog', title: 'Changelog v2.9.8', file: 'v2.9.8/changelog.md' },
+          { id: 'v298-runtime', title: 'Runtime Notes v2.9.8', file: 'v2.9.8/runtime.md' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'v2.9.7',
+    label: 'v2.9.7',
+    tag: 'PRE-MAINNET GATE',
+    tagColor: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10',
+    description: 'Stability and documentation gate before canonical runtime line',
+    categories: [
+      {
+        id: 'v297-overview',
+        title: 'Overview',
+        icon: Rocket,
+        docs: [
+          { id: 'v297-readme', title: 'v2.9.7 Pre-MainNet Gate', file: 'v2.9.7/README.md' },
+          { id: 'v297-changelog', title: 'Changelog v2.9.7', file: 'v2.9.7/changelog.md' },
+        ]
+      },
+    ]
+  },
   {
     id: 'v2.9.6',
     label: 'v2.9.6',
@@ -198,6 +255,18 @@ const sections: Section[] = [
     ],
   },
   {
+    id: 'release-lineage',
+    title: 'Release Lineage',
+    icon: GitBranch,
+    accentText: 'text-zion-gold',
+    accentBorder: 'border-zion-gold/30',
+    docs: [
+      { id: 'v297-gate', title: 'v2.9.7 — Pre-MainNet Gate', file: 'v2.9.7/README.md' },
+      { id: 'v298-canonical', title: 'v2.9.8 — Ekam canonical runtime', file: 'v2.9.8/README.md' },
+      { id: 'v299-purecode', title: 'v2.9.9 — Pure Code line', file: 'v2.9.9/README.md' },
+    ],
+  },
+  {
     id: 'whitepaper',
     title: 'WhitePaper',
     icon: FileText,
@@ -205,9 +274,7 @@ const sections: Section[] = [
     accentBorder: 'border-zion-gold/30',
     docs: [
       { id: 'wp-v3-mainnet', title: 'Whitepaper V3 Mainnet (EN)', file: 'whitepaper/ZION_V3_Whitepaper.md' },
-      { id: 'wp-v297', title: 'Whitepaper v2.9.7 (EN, archive)', file: 'whitepaper/ZION_Whitepaper_v2.9.7.md' },
-      { id: 'wp-v295-full', title: 'Whitepaper v2.9.5 (full)', file: 'whitepaper/ZION_Whitepaper_v2.9.5_FULL.md' },
-      { id: 'wp-lite', title: 'Whitepaper Lite (CS)', file: 'whitepaper-lite.md' },
+      { id: 'wp-lite', title: 'Whitepaper Lite (CS summary)', file: 'whitepaper-lite.md' },
     ],
   },
   {
@@ -229,8 +296,20 @@ const sections: Section[] = [
     accentBorder: 'border-emerald-400/30',
     docs: [
       { id: 'mainnet-plan', title: 'Public Launch Plan 2026', file: 'mainnet/README.md' },
-      { id: 'mainnet-genesis-book', title: 'Genesis Book of Awakening', file: 'mainnet/genesis-book.md' },
       { id: 'mainnet-checklist', title: 'Public Launch Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
+    ],
+  },
+  {
+    id: 'books',
+    title: 'Books',
+    icon: Book,
+    accentText: 'text-amber-300',
+    accentBorder: 'border-amber-300/30',
+    docs: [
+      { id: 'book-genesis', title: 'Genesis — Book of Awakening', file: 'mainnet/genesis-book.md', href: '/genesis' },
+      { id: 'book-ekam-full', title: 'Ekam Deeksha — Full Book', file: 'books/ekam-deeksha/BOOK-FULL-VERSION.md' },
+      { id: 'book-qr', title: 'Kvantová Revoluce', file: 'books/quantum-revolution.md' },
+      { id: 'book-ekam-ucebnice', title: 'Učebnice Ekam (historie)', file: 'books/ekam-deeksha/UCEBNICE-FULL-VERSION.md' },
     ],
   },
   {
@@ -245,7 +324,7 @@ const sections: Section[] = [
   },
   {
     id: 'ai-native',
-    title: 'AI Native',
+    title: 'AI / Research Archive',
     icon: Sparkles,
     accentText: 'text-purple-400',
     accentBorder: 'border-purple-400/30',
@@ -280,16 +359,16 @@ function findCategoryIdByDoc(docId: string): string | null {
 }
 
 export default function DocsPage() {
-  const [activeVersion, setActiveVersion] = useState('v2.9.6');
+  const [activeVersion, setActiveVersion] = useState('v2.9.9');
   const [selectedDoc, setSelectedDoc] = useState('live-index');
   const [activeCategory, setActiveCategory] = useState('live-ops');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.9': true, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': true, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'release-lineage': true, 'ai-native': false, 'whitepaper': true, 'architecture': false, 'mainnet': true, 'listing': false, 'legal': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
-  const primaryVersions = versions.filter((version) => version.id === 'v2.9.6' || version.id === 'v2.9.5');
+  const primaryVersions = versions.filter((version) => version.id === 'v2.9.9');
 
   // Get current version data
   const currentVersion = versions.find(v => v.id === activeVersion) || versions[0];
@@ -378,6 +457,16 @@ export default function DocsPage() {
   }, [selectedDoc, currentDoc]);
 
   const handleDocSelect = (docId: string, categoryId: string, versionId: string) => {
+    // Check if doc has a direct href — navigate away instead of loading markdown
+    const allDocs = [
+      ...versions.flatMap(v => v.categories).flatMap(cat => cat.docs),
+      ...sections.flatMap(s => s.docs),
+    ];
+    const targetDoc = allDocs.find(d => d.id === docId);
+    if (targetDoc?.href) {
+      window.location.href = targetDoc.href;
+      return;
+    }
     setSelectedDoc(docId);
     setActiveCategory(categoryId);
     setActiveVersion(versionId);
@@ -405,7 +494,7 @@ export default function DocsPage() {
               {tr('docs', 'subtitle', lang)}
             </p>
             <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
-              Současná veřejná linka běží jako kontrolovaný V3 test mainnet na release linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8 Deeksha/Ekam. Sekce Live Index na /docs#live-index teď slouží jako kanonický vstup pro síťový snapshot, repo baseline 2.9.6, aktuální release/runtime mapu a launch blockers.
+              Veřejný web teď primárně ukazuje kanonickou V3 launch cestu: Live Index, Whitepaper V3 Mainnet, launch path a aktivní síťový snapshot. V History panelu je nově kompletní release linie 2.9.7 (Pre-MainNet Gate) {'->'} 2.9.8 (Ekam canonical runtime) {'->'} 2.9.9 (Pure Code) jako auditovatelná vývojová osa.
             </div>
             <div className="flex items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (
@@ -594,9 +683,10 @@ export default function DocsPage() {
                                 <button
                                   key={doc.id}
                                   onClick={() => {
+                                    if (doc.href) { window.location.href = doc.href; return; }
                                     setSelectedDoc(doc.id);
                                     setActiveCategory(section.id);
-                                    setActiveVersion('v2.9.6');
+                                    setActiveVersion('v2.9.9');
                                   }}
                                   className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm flex items-center gap-2 ${
                                     selectedDoc === doc.id

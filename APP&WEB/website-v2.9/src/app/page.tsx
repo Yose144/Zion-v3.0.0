@@ -1,6 +1,8 @@
 import Hero from "@/components/Hero";
 import GoldenEggHaraniagharba from "@/components/GoldenEggHaraniagharba";
 import HomeTreePortal from "@/components/HomeTreePortal";
+import GenesisPreview from "@/components/GenesisPreview";
+import QuantumRevolution from "@/components/QuantumRevolution";
 import LiveDashboard from "@/components/LiveDashboard";
 import Features from "@/components/Features";
 import NewsFeed from "@/components/NewsFeed";
@@ -13,11 +15,13 @@ export default function Home() {
       <Hero />
       <NewsFeed />
       <LiveDashboard />
-      <Features />
       <GoldenEggHaraniagharba />
-      <HomeTreePortal />
+      <QuantumRevolution />
+      <GenesisPreview />
+      <Features />
       <RoadmapPulse />
       <DocsRail />
+      <HomeTreePortal />
     </>
   );
 }

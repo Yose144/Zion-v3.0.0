@@ -436,5 +436,78 @@ Obecné otázky mimo ZION:
 
 ---
 
+## Budoucnost — NVIDIA ekosystém pro Hiranyagarbhu
+
+> *Poznámka 31. března 2026: Analýza nástrojů, které nám v každé fázi zjednoduší práci a zrychlí cestu.*
+
+### Aktuální inference stack (F0–F1): Ollama → nahradit za NIM/vLLM
+
+| Nástroj | Co řeší | Kdy nasadit | Přínos |
+|---------|---------|-------------|--------|
+| **NVIDIA NIM** (build.nvidia.com) | Inference microservice — hotový kontejner s optimalizovaným modelem + TensorRT-LLM pod kapotou | F0–F1 ihned | Zero-config inference, OpenAI-compatible API, quantizace automaticky, lepší throughput než Ollama |
+| **vLLM** (open-source) | PagedAttention, continuous batching, tensor parallel | F2 (70B) | 2–4× throughput vs Ollama na stejném GPU; klíčové pro 70B na single A100 |
+| **SGLang** | Radix attention, structured generation, rychlý TTFT | F2 alternativa k vLLM | Nejrychlejší TTFT, ideální pro RAG pipeline kde se prefix opakuje |
+
+**Doporučení:** Pro F0 (tento týden) přejít z Ollama na **NIM container** — `docker run nvcr.io/nim/meta/llama-3.1-8b-instruct`. Kompletně nahrazuje Ollama s lepším výkonem, OpenAI-compatible API, a snadný upgrade na větší model.
+
+### Dataset a trénink (F1–F2): NeMo + NIM API
+
+| Nástroj | Co řeší | Kdy | Přínos |
+|---------|---------|-----|--------|
+| **NVIDIA NIM API** (generace dat) | Syntéza training párů přes frontier modely | F1 (duben) | Už používáme — 776 párů. Škálovat na 15k+ s batch API |
+| **NVIDIA NeMo Framework** | End-to-end fine-tune pipeline: SFT → DPO → RLHF | F2 (Q3) | Nahradí ruční `trl` setup; má vestavěný QLoRA, parallelismus, checkpointing |
+| **NeMo Curator** | Deduplikace, filtrování, kvalita dat automaticky | F1 | Vyčistí 15k dataset od duplicit a low-quality párů |
+| **NVIDIA OpenShell** (github.com/NVIDIA/OpenShell) | Interaktivní terminál + AI asistent pro GPU debugging a deployment | F2+ | Zjednoduší remote GPU management na Vast.ai/RunPod |
+
+### Produkční serving (F5+): Dynamo pro multi-GPU
+
+| Nástroj | Co řeší | Kdy | Přínos |
+|---------|---------|-----|--------|
+| **NVIDIA Dynamo** (github.com/ai-dynamo/dynamo) | Datacenter-scale inference orchestrace: disagg serving, KV-aware routing, autoscaling | **Q4 2026+** (až 2+ GPU) | 7× throughput na multi-GPU, SLA planner, fault tolerance |
+| **Dynamo KVBM** | KV cache offload GPU→CPU→SSD | F5+ | Efektivně rozšíří context window 70B modelu bez více VRAM |
+| **Dynamo ModelExpress** | Weight streaming GPU-to-GPU | Až multi-node | 7× rychlejší cold-start nových replik |
+| **Dynamo AIConfigurator** | Simuluje 10K+ konfigurací, najde optimální | F5+ | Ušetří GPU-hodiny na benchmarking |
+
+> ⚠️ **Dynamo teď NE** — single-GPU Hiranyagarbhu Dynamo nepotřebuje. README Dynama říká: *"If you're running a single model on a single GPU, your inference engine alone is probably sufficient."* Vrátit se k tomu až multi-GPU / multi-model routing.
+
+### Monitoring a observability
+
+| Nástroj | Co řeší | Kdy |
+|---------|---------|-----|
+| **NVIDIA DCGM** (Data Center GPU Manager) | GPU metriky: utilizace, teplota, memory, power, ECC errors | F2+ (A100) |
+| **Prometheus + Grafana** | Vizualizace inference latency, throughput, token/s | F2+ |
+| **NeMo Guardrails** | Safety filtering, topic control, hallucination detection | F3 (RAG) |
+
+### Optimalizovaná cesta přes NVIDIA stack
+
+```
+TERAZ (F0):           Ollama     → nahradit NIM container (drop-in, rychlejší)
+                      ChromaDB   → ok, ponechat
+                      LlamaIndex → ok, ponechat
+
+DUBEN–ČERVEN (F1):    NIM API    → dataset syntéza 15k párů (batch)
+                      NeMo Curator → čistění dat
+                      NeMo SFT   → trénink na A100
+
+Q3 2026 (F2):         vLLM / SGLang → 70B inference na A100
+                      NeMo DPO   → alignment
+                      NeMo Guardrails → hallucination filter
+
+Q4 2026+ (F5+):       Dynamo     → multi-GPU orchestrace (only if scale demands)
+                      KVBM       → extended context
+                      Planner    → SLA autoscaling
+```
+
+### Proč maximálně využít NVIDIA stack:
+
+1. **Všechno je Apache 2.0 / open-source** — žádné vendor lock-in
+2. **Navzájem kompatibilní** — NIM → NeMo → Dynamo je designed pipeline
+3. **RTX 3060 / A100 / H100** — vše podporované, škáluje se s hardware
+4. **Community 265+ contributors** na Dynamo, aktivní Discord, biweekly office hours
+5. **Vera Rubin rollout Q2–Q3 2026** → levnější A100 spot = levnější training i serving
+
+---
+
 *"Hiranyagarbha se nerodí celý — roste. Každá fáze je další vrstva vědomí."*  
 *— ZION AI Native, 30. března 2026*
+*— Aktualizace NVIDIA ekosystém: 31. března 2026*
