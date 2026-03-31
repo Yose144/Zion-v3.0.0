@@ -15,10 +15,12 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 **v2.9.6** is a hard fork extending v2.9.5 with a **6-Layer "On the Star" architecture**, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale projects including L6 space station **ZION Issobella**.
 
 Current operational release track:
+- Historical lineage: 2.9.7 Pre-MainNet Gate -> 2.9.8 Deeksha canonical -> 2.9.9 Pure Code.
+- Source docs for that lineage: `docs/2.9.7/`, `docs/2.9.8/`, `docs/2.9.9/`.
 - Live testnet runs the 2.9.8 single-track Deeksha canonical PoW path.
 - Active infra is currently consolidated to one public host: 91.98.122.165.
 - Desktop-agent Ekam Deeksha native GPU path is locally verified on Apple Silicon Metal (`cosmic_harmony_ekam_mine`, ~5575.5 H/s benchmark).
-- Current release gate and deployment status live under `docs/2.9.8/`.
+- Current release gate and deployment status live under `docs/2.9.8/` and cleanup/migration scope under `docs/2.9.9/`.
 
 ---
 

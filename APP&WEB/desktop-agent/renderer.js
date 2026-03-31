@@ -275,7 +275,20 @@ function runWizard(overlay) {
         }
 
         document.getElementById('wizard-address').textContent = result.wallet.address;
-        document.getElementById('wizard-mnemonic').textContent = result.wallet.mnemonic;
+        const mnemonicEl = document.getElementById('wizard-mnemonic');
+        if (mnemonicEl) {
+          mnemonicEl.textContent = result.wallet.mnemonic;
+          // Default: blur mnemonic for shoulder-surfing protection
+          mnemonicEl.style.filter = 'blur(5px)';
+          mnemonicEl.style.cursor = 'pointer';
+          mnemonicEl.style.userSelect = 'none';
+          mnemonicEl.title = 'Click to reveal / hide';
+          mnemonicEl.onclick = () => {
+            const isBlurred = mnemonicEl.style.filter.includes('blur');
+            mnemonicEl.style.filter = isBlurred ? 'none' : 'blur(5px)';
+            mnemonicEl.style.userSelect = isBlurred ? 'text' : 'none';
+          };
+        }
         config = result.config || config;
         showStep(3);
 

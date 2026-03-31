@@ -22,10 +22,25 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'ekam-deeksha-featured-cz-en-rollout',
+    date: '2026-03-31',
+    tag: 'Book',
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'Ekam Deeksha zvýrazněna na homepage + kompletní CZ/EN překlady ve Web 2.9',
+      en: 'Ekam Deeksha now featured on homepage + complete CZ/EN translations across Web 2.9',
+    },
+    summary: {
+      cs: 'Kniha Ekam Deeksha je nově výrazně zvýrazněná na homepage a přidaná do novinek. Současně postupně sjednocujeme kompletní české a anglické texty napříč Web 2.9, aby byl obsah konzistentní v obou jazycích.',
+      en: 'Ekam Deeksha is now prominently highlighted on the homepage and added to News. In parallel, we are rolling out complete Czech and English copy consistency across Web 2.9 for a unified bilingual experience.',
+    },
+    href: '/docs#book-ekam-full',
+  },
+  {
     slug: 'defi-hub-launch',
     date: '2026-03-30',
     tag: 'DeFi',
-    tagColor: 'text-yellow-400',
+    tagColor: 'text-zion-gold',
     title: {
       cs: 'ZION L2 DeFi Hub je live — Staking, Farming, DEX & Governance na Base',
       en: 'ZION L2 DeFi Hub is live — Staking, Farming, DEX & Governance on Base',
@@ -90,9 +105,9 @@ export default function NewsFeed() {
   const cs = lang === 'cs';
 
   return (
-    <section className="relative py-24 px-4 overflow-hidden">
+    <section className="relative py-20 px-4 overflow-hidden">
       {/* Subtle background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-yellow-400/[0.02] to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-b from-transparent via-zion-gold/[0.02] to-transparent pointer-events-none" />
 
       <div className="zion-container relative">
         {/* Header */}
@@ -138,7 +153,7 @@ export default function NewsFeed() {
                 className="group relative block h-full rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 overflow-hidden"
               >
                 {/* Gradient accent top */}
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-400/30 to-transparent" />
+                <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-zion-gold/30 to-transparent" />
 
                 <div className="p-6">
                   {/* Meta row */}
@@ -153,7 +168,7 @@ export default function NewsFeed() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-lg font-semibold text-white group-hover:text-yellow-400 transition-colors mb-3 leading-snug">
+                  <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold transition-colors mb-3 leading-snug">
                     {cs ? article.title.cs : article.title.en}
                   </h3>
 
@@ -163,7 +178,7 @@ export default function NewsFeed() {
                   </p>
 
                   {/* Read more */}
-                  <div className="flex items-center gap-1.5 text-xs text-yellow-400/60 group-hover:text-yellow-400 transition-colors">
+                  <div className="flex items-center gap-1.5 text-xs text-zion-gold/60 group-hover:text-zion-gold transition-colors">
                     <span>{cs ? 'Číst více' : 'Read more'}</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
