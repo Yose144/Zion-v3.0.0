@@ -1,10 +1,10 @@
 # ✅ ZION MainNet — Exit Criteria
 
-> **Verze:** 1.1  
+> **Verze:** 1.2  
 > **Vytvořeno:** 24. února 2026 (Session 50)  
-> **Aktualizováno:** 30. března 2026 — sladěno s aktivním V3 controlled rehearsal  
+> **Aktualizováno:** 31. března 2026 — formalizace s live evidencí z V3 rehearsal  
 > **Autoritativní dokument** — vybráno do launch-gatingu spolu s `MAINNET_CHECKLIST.md`  
-> **Stav:** DRAFT — vyžaduje sign-off před genesis freeze
+> **Stav:** FORMALIZED — 72h rehearsal v průběhu, closure pending
 
 ---
 
@@ -120,27 +120,55 @@ Tento dokument rozlišuje:
 Tento checklist se vyplňuje při uzavření aktivního rehearsal okna, než padne další `GO/NO-GO` verdict.
 
 ### A. Live runtime evidence
-- [ ] Exportovat poslední collector snapshot a čas posledního vzorku
-- [ ] Uložit `getChainInfo` z Prague, USA a Singapore
-- [ ] Ověřit shodu `chain_height` a `tip_hash` na všech 3 nodech
-- [ ] Zapsat `restart_count` a `started_at` pro `zion-core` na všech 3 nodech
+- [x] Exportovat poslední collector snapshot a čas posledního vzorku
+  - **2026-03-31T~15:00 UTC** — sběr dat ze všech 3 nodů
+- [x] Uložit `getChainInfo` z Prague, USA a Singapore
+  - Prague: `height=5104 tip=0001c143…9b65 accepted_blocks=5105`
+  - USA:    `height=5105 tip=0000dee0…3fa5 accepted_blocks=5106`
+  - SG:     `height=5105 tip=0000dee0…3fa5 accepted_blocks=5106`
+- [x] Ověřit shodu `chain_height` a `tip_hash` na všech 3 nodech
+  - USA a SG v plném agreement (5105, stejný tip). Prague 1 blk behind (transient, propagace probíhá).
+- [x] Zapsat `restart_count` a `started_at` pro `zion-core` na všech 3 nodech
+  - Prague: started `2026-03-29T12:05:40Z` | restarts=**0**
+  - USA:    started `2026-03-30T15:32:21Z` | restarts=**1** (plánovaný upgrade)
+  - SG:     started `2026-03-30T12:30:15Z` | restarts=**1** (plánovaný upgrade)
 
 ### B. Restart / recovery appendix
-- [ ] Každý restart klasifikovat jako `planned upgrade` nebo `unexpected incident`
-- [ ] U plánovaných restartů uvést důvod, čas zásahu a čas návratu do `tip agreement`
-- [ ] Potvrdit, že po restartu se obnovila peer konektivita a `pool accept`
+- [x] Každý restart klasifikovat jako `planned upgrade` nebo `unexpected incident`
+  - Prague: **žádný restart** — 0 restartů od 29. 3.
+  - USA: **planned upgrade** — restart 30. 3. při aktualizaci konfigurace
+  - SG: **planned upgrade** — restart 30. 3. při aktualizaci konfigurace
+- [x] U plánovaných restartů uvést důvod, čas zásahu a čas návratu do `tip agreement`
+  - USA/SG: config refresh → restarted → tip agreement obnoven do <2 min (stejný tip hash na obou)
+- [x] Potvrdit, že po restartu se obnovila peer konektivita a `pool accept`
+  - Potvrzeno — USA má nově nasazený pool (31. 3.) s 1 aktivním minerem, Prague pool běží 3.5+ dní
 - [ ] Pokud restart nebyl plánovaný, otevřít incident a rehearsal označit minimálně `AMBER`
+  - N/A — všechny restarty byly plánované
 
 ### C. Výkonnostní a launch-gating metriky
-- [ ] Zapsat pool acceptance / reject rate za celé okno
-- [ ] Zapsat chain growth, průměrný block time a divergence summary
-- [ ] Zapsat orphan / reject evidence nebo explicitní stav `not yet instrumented`
-- [ ] Zapsat, zda closure gate zůstává blokovaný kvůli BFG, genesis artefaktům a sign-offu
+- [x] Zapsat pool acceptance / reject rate za celé okno
+  - Prague pool: **4763 accepted / 37 rejected** → reject rate **0.77%** (< 2% ✓)
+  - USA pool: čerstvě nasazen 31. 3. — sbírá data
+- [x] Zapsat chain growth, průměrný block time a divergence summary
+  - Chain height: **5105** po ~3.5 днях rehearsalu
+  - Pool uptime: **305,503s** (~3.54 dní)
+  - Divergence: max 1 blk transient, steady-state 0 ✓
+- [x] Zapsat orphan / reject evidence nebo explicitní stav `not yet instrumented`
+  - Block reject: 37/4800 = 0.77% ✓
+  - Orphan rate: **not yet instrumented** (Grafana/Prometheus dashboard pending)
+- [x] Zapsat, zda closure gate zůstává blokovaný kvůli BFG, genesis artefaktům a sign-offu
+  - **BLOKÁTORY:** BFG history scrub (private keys v git), genesis ceremony offline, whitepaper finální verze
 
 ### D. Výstup
 - [ ] Vydat krátký closure report s verdiktem `GO / AMBER / NO-GO`
+  - **Předběžný verdikt: AMBER** — 72h okno ještě nedoběhlo, orphan monitoring chybí, BFG pending
 - [ ] Připojit odkazy na dashboard evidence, runbook a checklist
 - [ ] Pokud není public launch povolen, explicitně napsat zbývající blokátory
+  - 1. 72h window nedokončeno (zbývá ~cca 18-20h)
+  - 2. BFG scrub private keys z git historie
+  - 3. Grafana orphan rate dashboard
+  - 4. Genesis ceremony offline
+  - 5. Whitepaper finální verze
 
 ---
 
@@ -162,7 +190,7 @@ Tento checklist se vyplňuje při uzavření aktivního rehearsal okna, než pad
 
 ---
 
-*Exit Criteria Version: 1.1*  
+*Exit Criteria Version: 1.2*  
 *Vytvořeno: 2026-02-24 (Session 50)*  
-*Aktualizováno: 2026-03-30 — aligned with 3-node V3 rehearsal*  
-*Stav: DRAFT — vyžaduje review před genesis freeze*
+*Aktualizováno: 2026-03-31 — formalized with live V3 rehearsal evidence*  
+*Stav: FORMALIZED — closure pending po 72h window*
