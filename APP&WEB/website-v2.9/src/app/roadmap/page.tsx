@@ -39,7 +39,7 @@ const layerStack = [
   {
     layer: 'L1',
     emoji: '⛓️',
-    title: 'ZION Blockchain (Launch Target)',
+    title: 'ZION Blockchain (Controlled Public Line)',
     period: '2026',
     color: 'from-emerald-500 to-lime-400',
     border: 'border-emerald-500/40',
@@ -49,7 +49,7 @@ const layerStack = [
       'Epoch-rotating NPU weights — 2016/100 blocks (Tier 2)',
       'UTXO model + Ed25519 signatures',
       'Decade Decay emission: 5,400 → 724 ZION/block (100+ years + tail ∞)',
-      '16.28B genesis premine (immediately unlocked)',
+      '16.28B genesis reserve (public summary, operational detail withheld)',
       'LWMA DAA (60-block, ±25%)',
       'Fee burning — ALL fees destroyed',
       'Distribution: 89% miner · 5% humanit. · 5% Issobella · 1% pool',
@@ -77,7 +77,7 @@ const layerStack = [
   {
     layer: 'L3',
     emoji: '🧠',
-    title: 'Warp & AI Native',
+    title: 'NCL, WARP & AI-native',
     period: '2026 implementation done · 2027 production',
     color: 'from-purple-500 to-pink-500',
     border: 'border-purple-500/40',
@@ -93,14 +93,14 @@ const layerStack = [
     layer: 'L4',
     emoji: '🎮',
     title: 'ZION Oasis',
-    period: '2029+',
+    period: '2028+ target',
     color: 'from-yellow-500 to-orange-500',
     border: 'border-yellow-500/40',
     items: [
-      'UE5 open-world (consciousness mining)',
-      'XP / Consciousness Level system',
+      'UE5 open-world progression layer',
+      'XP / game-economy system (non-consensus)',
       'NFT avatars, items, territories',
-      'Play-to-Mine — game activities → hashrate'
+      'Golden Egg economy and player progression'
     ],
     active: false
   },
@@ -140,10 +140,10 @@ const constitution = [
   { param: 'Chain ID', value: 'zion-mainnet-1' },
   { param: 'Total Supply', value: '144,000,000,000 ZION' },
   { param: 'Mining Supply', value: '127,720,000,000 ZION' },
-  { param: 'Genesis Premine', value: '16,280,000,000 ZION' },
+  { param: 'Genesis Reserve', value: '16,280,000,000 ZION' },
   { param: 'Block Reward (D1)', value: '5,400.067 ZION' },
   { param: 'Emission Model', value: 'Decade Decay (-20%/10y)' },
-  { param: 'Tail Emission', value: '724.785 ZION/block ∞' },
+  { param: 'Tail Emission', value: '724.784723787776 ZION/block ∞' },
   { param: 'Block Time', value: '60 seconds' },
   { param: 'DAA', value: 'LWMA (60 bloků, ±25%)' },
   { param: 'Max Reorg', value: '10 blocks' },
@@ -156,10 +156,10 @@ const constitution = [
 ];
 
 const premineAllocation = [
-  { category: 'ZION OASIS + Winners Golden Egg/Xp', zion: '8,250,000,000', share: '50.7%', lock: 'Immediately available' },
+  { category: 'OASIS Golden Egg reserve', zion: '8,250,000,000', share: '50.7%', lock: 'Public summary only' },
   { category: 'DAO Treasury', zion: '4,000,000,000', share: '24.6%', lock: 'Immediately available' },
-  { category: 'Infrastructure & Dev', zion: '2,590,000,000', share: '15.9%', lock: 'Immediately available' },
-  { category: 'Humanitarian Fund', zion: '1,440,000,000', share: '8.8%', lock: 'Immediately available' }
+  { category: 'Infrastructure & development', zion: '2,590,000,000', share: '15.9%', lock: 'Operational envelope' },
+  { category: 'Humanitarian seed', zion: '1,440,000,000', share: '8.8%', lock: 'Immediately available' }
 ];
 
 const componentStatus = [
@@ -201,7 +201,7 @@ const phases: PhaseData[] = [
     description: '155 tests, 8 commits. Emission, DAA, fee market, wallet, consensus hardening — all frozen.',
     sprints: [
       { id: '0.0', title: 'Repo Migration — clean repo, workspace, Docker, CI/CD', done: true },
-      { id: '0.1', title: 'Emission & Genesis — 5,400 ZION/block, 16.28B premine', done: true },
+      { id: '0.1', title: 'Emission & Genesis — 5,400 ZION/block, 16.28B reserve', done: true },
       { id: '0.2', title: 'DAA & Consensus — LWMA 60-blok, ±25%, fork-choice', done: true },
       { id: '0.3', title: 'Fee Market & Mempool — fee burning, double-spend, eviction', done: true },
       { id: '0.4', title: 'Wallet & TX — UTXO select, Ed25519, broadcast, E2E', done: true },
@@ -209,7 +209,7 @@ const phases: PhaseData[] = [
     ],
     exitCriteria: [
       { text: 'Unit tests for new reward model', done: true },
-      { text: 'Genesis produces 16.28B premine', done: true },
+      { text: 'Genesis produces 16.28B reserve', done: true },
       { text: 'LWMA DAA deterministic', done: true },
       { text: 'Max reorg depth = 10 enforced', done: true },
       { text: 'Coinbase maturity = 100 enforced', done: true },
@@ -714,7 +714,7 @@ export default function RoadmapPage() {
           </div>
         </motion.section>
 
-        {/* ── CONSTITUTION + PREMINE ── */}
+        {/* ── CONSTITUTION + GENESIS RESERVE ── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -746,8 +746,8 @@ export default function RoadmapPage() {
             <div className="flex items-center gap-3 mb-5">
               <Scale className="h-6 w-6 text-zion-purple" />
               <div>
-                <h2 className="text-2xl font-semibold text-white">Genesis Premine</h2>
-                <p className="text-sm text-gray-400">16,280,000,000 ZION — transparentní alokace</p>
+                <h2 className="text-2xl font-semibold text-white">Genesis Reserve</h2>
+                <p className="text-sm text-gray-400">16,280,000,000 ZION — public summary for launch economics</p>
               </div>
             </div>
             <div className="space-y-4">
@@ -829,7 +829,7 @@ export default function RoadmapPage() {
               { layer: 'L1 Blockchain', period: '2026', phases: 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → MainNet 🚀', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
               { layer: 'L2 NCL', period: '2027', phases: 'Neural Conscious Layer · wZION Bridge ✅ · AI-native', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
               { layer: 'L3 ZION DAO', period: '2028', phases: 'Governance · Treasury 4B ZION · WARP 7/7 ✅', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
-              { layer: 'L4 Oasis', period: '2029+', phases: 'UE5 · Play-to-Mine · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
+              { layer: 'L4 Oasis', period: '2028+ target', phases: 'UE5 · XP economy · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
               { layer: 'L5 Free World', period: '2030+', phases: 'Humanitární mise · Volná energie', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
               { layer: 'L6 Issobella', period: '2040+', phases: 'Orbital Station · Fund', color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' }
             ].map((row) => (
