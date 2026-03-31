@@ -8,6 +8,7 @@ const fs = require('fs');
 const os = require('os');
 const WalletGenerator = require('./wallet-generator');
 const QRCode = require('qrcode');
+const crypto = require('crypto');
 
 // ── Logging: only miner metrics + errors go to console.log.
 // Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
@@ -718,6 +719,8 @@ let multiStreamStatus = {
   pollSource: 'none',   // 'pool-api' | 'none'
 };
 // ─────────────────────────────────────────────────────────────────────────
+let startMiningInProgress = false; // atomic guard against duplicate startMining() calls
+let gpuRevenueRecoveryTimer = null; // auto-recovery timer after GPU revenue auto-disable
 let minerStopping = false;
 let minerStopPromise = null;
 let minerAutoStopTimer = null;
@@ -1172,6 +1175,31 @@ const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
 const LOG_PATH = path.join(USER_DATA_PATH, 'miner.log');
 const WALLETS_PATH = path.join(USER_DATA_PATH, 'wallets');
 const STATS_PATH = path.join(USER_DATA_PATH, 'miner_stats.json');
+
+// Normalize user-supplied RPC URL to canonical http://host:port/jsonrpc form.
+function normalizeRpcUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return DEFAULT_RPC_URL;
+  if (/^https?:\/\//i.test(raw)) {
+    if (raw.endsWith('/jsonrpc')) return raw;
+    if (/:\d+\/?$/.test(raw)) return raw.replace(/\/+$/, '') + '/jsonrpc';
+    return raw;
+  }
+  if (/^[^\/]+:\d+$/.test(raw)) return `http://${raw}/jsonrpc`;
+  return raw;
+}
+
+// Centralized stats file path resolver for all mining streams.
+// Avoids scattered .replace() with inconsistent suffixes.
+function getStatsPath(streamId) {
+  switch (streamId) {
+    case 'main':          return STATS_PATH;
+    case 'revenue':       return STATS_PATH.replace(/\.json$/, '_revenue.json');
+    case 'gpu_revenue':   return STATS_PATH.replace(/\.json$/, '_gpu_revenue.json');
+    default:              return STATS_PATH.replace(/\.json$/, `_${streamId}.json`);
+  }
+}
+
 const STATS_INTERVAL_SEC = (() => {
   const raw = Number(String(process.env.ZION_STATS_INTERVAL_SEC || '5').trim());
   if (!Number.isFinite(raw) || raw < 2) return 5;
@@ -1468,6 +1496,14 @@ function normalizeAlgorithmName(algo) {
     return 'cosmic_harmony';
   }
   return raw || 'cosmic_harmony';
+}
+
+// Sanitize worker name for stratum auth and CLI args.
+// Only allows alphanumeric, dash, underscore, dot — max 32 chars.
+// Prevents newline/control-char injection into stratum JSON-RPC.
+function sanitizeWorkerName(raw) {
+  const s = String(raw || 'desktop-agent').trim().replace(/[^a-zA-Z0-9_.\-]/g, '').slice(0, 32);
+  return s || 'desktop-agent';
 }
 
 function isCosmicHarmonyFamily(algo) {
@@ -2183,23 +2219,23 @@ function chooseGpuBatchSize(gpuInfo, configuredBatch) {
   }
 
   if (kind === 'cuda' || kind === 'nvidia') {
-    if (memoryMb >= 20_000) return 16384;
-    if (memoryMb >= 12_000) return 12288;
-    if (memoryMb >= 8_000) return 8192;
-    if (memoryMb >= 6_000) return 6144;
-    return 4096;
+    if (memoryMb >= 20_000) return Math.min(bounds.max, 16384);
+    if (memoryMb >= 12_000) return Math.min(bounds.max, 12288);
+    if (memoryMb >= 8_000) return Math.min(bounds.max, 8192);
+    if (memoryMb >= 6_000) return Math.min(bounds.max, 6144);
+    return Math.max(bounds.min, 4096);
   }
 
   if (kind === 'metal') {
-    if (memoryMb >= 12_000) return 65536;
-    if (memoryMb >= 8_000) return 32768;
-    return 16384;
+    if (memoryMb >= 12_000) return Math.min(bounds.max, 65536);
+    if (memoryMb >= 8_000) return Math.min(bounds.max, 32768);
+    return Math.max(bounds.min, 16384);
   }
 
-  if (memoryMb >= 16_000) return 8192;
-  if (memoryMb >= 8_000) return 6144;
-  if (memoryMb >= 6_000) return 4096;
-  return 2048;
+  if (memoryMb >= 16_000) return Math.min(bounds.max, 8192);
+  if (memoryMb >= 8_000) return Math.min(bounds.max, 6144);
+  if (memoryMb >= 6_000) return Math.min(bounds.max, 4096);
+  return Math.max(bounds.min, 2048);
 }
 
 // ============================================================================
@@ -2358,7 +2394,7 @@ function spawnGpuRevenueDirect(coin, config, spawnCmd, minerCwd, envVars) {
   ).trim() || null;
 
   const poolInfo = getBestPoolInfo(upperCoin, pref, region, nhBtcAddr);
-  const gpuRevenueStatsPath = (STATS_PATH || 'data/stats.json').replace(/\.json$/, '_gpu_revenue.json');
+  const gpuRevenueStatsPath = getStatsPath('gpu_revenue');
 
   // NiceHash: username = BTC address; otherwise use configured revenueWallet
   const revenueWallet = String(
@@ -2380,7 +2416,7 @@ function spawnGpuRevenueDirect(coin, config, spawnCmd, minerCwd, envVars) {
     '--stats-interval', String(STATS_INTERVAL_SEC || 10),
     '--no-color',
   ];
-  if (config?.worker) args.push('--worker', `${String(config.worker)}_gpu`);
+  if (config?.worker) args.push('--worker', `${sanitizeWorkerName(config.worker)}_gpu`);
 
   dbg('[CH3-MULTI] spawnGpuRevenueDirect', upperCoin, poolInfo.pool, args);
   logApp('multi-stream-direct-spawn', JSON.stringify({ coin: upperCoin, pool: poolInfo.pool, args }));
@@ -2401,6 +2437,21 @@ function wireGpuRevenueDirectProcess(proc, label) {
       gpuRevenueHealth.disabled = true;
       logApp(`${label}-auto-disabled`, JSON.stringify({ reason, ...gpuRevenueHealth }));
       try { proc.kill(process.platform === 'win32' ? undefined : 'SIGTERM'); } catch {}
+      // Schedule automatic recovery after 5 minutes of cooldown.
+      // This prevents permanent GPU revenue death from transient pool issues.
+      if (gpuRevenueRecoveryTimer) { try { clearTimeout(gpuRevenueRecoveryTimer); } catch {} }
+      gpuRevenueRecoveryTimer = setTimeout(() => {
+        gpuRevenueRecoveryTimer = null;
+        if (!minerProcess || minerStopping || minerUserStopRequested) return;
+        gpuRevenueHealth = { startedAt: 0, accepted: 0, rejected: 0, disabled: false };
+        logApp(`${label}-auto-recovery`, 'GPU revenue auto-disabled cooldown expired, allowing restart on next cycle');
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stdout',
+            text: `[CH3-GPU] GPU revenue cooldown expired. Will retry on next profit-switch cycle.\n`
+          });
+        } catch {}
+      }, 300_000); // 5 min
     } catch {}
   };
   proc.stdout?.on('data', (d) => {
@@ -3084,6 +3135,20 @@ function updateTrayMenu(stats) {
 
 // Mining process management
 function startMining(config) {
+  // Atomic guard: prevent two overlapping startMining() calls from spawning
+  // duplicate miner processes (race between renderer auto-start, IPC,
+  // one-click onboarding, and app-level autoStart).
+  if (startMiningInProgress) {
+    try {
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: '[INFO] Start already in progress – ignoring duplicate request.\n'
+      });
+    } catch { /* ignore */ }
+    return { success: true, alreadyRunning: true };
+  }
+  startMiningInProgress = true;
+
   // Auto-tuning: Check if tuning is needed and apply recommendations
   if (autoTuner.shouldTune()) {
     console.log('[AutoTuner] Performing automatic performance tuning...');
@@ -3126,6 +3191,7 @@ function startMining(config) {
   }
 
   // Cancel any pending timers from a previous run.
+  // (From here on, every early return MUST clear startMiningInProgress.)
   if (poolFailoverTimer) { clearTimeout(poolFailoverTimer); poolFailoverTimer = null; }
   if (poolHealthTimer) { clearInterval(poolHealthTimer); poolHealthTimer = null; }
   try {
@@ -3201,7 +3267,7 @@ function startMining(config) {
 
     const pool = `${config.pool?.host || PRIMARY_TESTNET_HOST}:${config.pool?.port || PRIMARY_POOL_PORT}`;
     const wallet = config.wallet || '';
-    const worker = config.worker || 'desktop-agent';
+    const worker = sanitizeWorkerName(config.worker);
     logApp('chv42-main-start', JSON.stringify({ pyExe, gpuScript, pool, worker }));
     sendToRenderer('miner-output', { stream: 'stdout', text: `[CHv4.2] Spouštím Merkabah GPU miner...\n[CHv4.2] Python: ${pyExe}\n[CHv4.2] Pool: ${pool} | Worker: ${worker}\n` });
     const myStartToken = ++minerStartToken;
@@ -3216,8 +3282,10 @@ function startMining(config) {
     } catch (e) {
       const msg = `[CHv4.2] Failed to spawn GPU miner: ${e}\n`;
       sendToRenderer('miner-output', { stream: 'stderr', text: msg });
+      startMiningInProgress = false;
       return { success: false, error: String(e) };
     }
+    startMiningInProgress = false;
     sendToRenderer('miner-backend', { preferred: 'python', resolved: 'chv42-gpu', path: pyExe, lastError: '' });
     spawnedMiner.stdout.on('data', (d) => sendToRenderer('miner-output', { stream: 'stdout', text: d.toString() }));
     spawnedMiner.stderr.on('data', (d) => sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() }));
@@ -3293,7 +3361,7 @@ function startMining(config) {
 
     if (!revenueSuppressedForGpuInit && xmrRevenueThreads > 0) {
       try {
-        const revenueStatsPath = STATS_PATH.replace(/\.json$/, '_chv42_revenue.json');
+        const revenueStatsPath = getStatsPath('revenue');
         const revMinerPath = findPythonMiner() || MINER_PATH;
         const revArgs = [
           revMinerPath,
@@ -3363,7 +3431,7 @@ function startMining(config) {
       }
 
       if (rustRevenuePath && gpuRevenueAllowed && rustGroupSupported) {
-        const gpuRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_chv42_gpu_revenue.json');
+        const gpuRevenueStatsPath = getStatsPath('gpu_revenue');
         const gpuRevenueArgs = [
           '--pool', `stratum+tcp://${config.pool.host}:${config.pool.port}`,
           '--wallet', config.wallet,
@@ -3374,8 +3442,7 @@ function startMining(config) {
           '--stats-interval', String(STATS_INTERVAL_SEC || 30),
           '--no-color'
         ];
-        if (config.worker) gpuRevenueArgs.push('--worker', `${String(config.worker)}_gpu_rev`);
-
+        if (config.worker) gpuRevenueArgs.push('--worker', `${sanitizeWorkerName(config.worker)}_gpu_rev`);
         gpuRevenueProcess = spawn(rustRevenuePath, gpuRevenueArgs, {
           cwd: minerCwd,
           env: gpuRevenueEnv,
@@ -3419,6 +3486,7 @@ function startMining(config) {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
+    startMiningInProgress = false;
     return { success: true };
   }
   // ─────────────────────────────────────────────────────────────────────────
@@ -3540,7 +3608,7 @@ function startMining(config) {
 
     const pool = `${config.pool?.host || PRIMARY_TESTNET_HOST}:${config.pool?.port || PRIMARY_POOL_PORT}`;
     const wallet = config.wallet || '';
-    const worker = config.worker || 'desktop-agent';
+    const worker = sanitizeWorkerName(config.worker);
     const deekshaMainScript = mainMinerGpuDeeksha ? deekshaGpuScript : deekshaCpuScript;
     const deekshaResolvedBackend = mainMinerGpuDeeksha ? 'ekam-auto' : 'ekam-fallback';
     const deekshaMainArgs = [
@@ -3685,7 +3753,7 @@ function startMining(config) {
     // ── Deeksha Revenue (parity s CHv4.2) ─────────────────────────────────
     if (revenueEnabledDeeksha && deekshaRevenueThreads > 0) {
       try {
-        const deekshaRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_deeksha_revenue.json');
+        const deekshaRevenueStatsPath = getStatsPath('revenue');
         const revArgs = [
           deekshaCpuScript,
           '--pool', pool,
@@ -3731,6 +3799,7 @@ function startMining(config) {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
+    startMiningInProgress = false;
     return { success: true };
   }
   // ─────────────────────────────────────────────────────────────────────────
@@ -3785,6 +3854,7 @@ function startMining(config) {
     } catch {
       // ignore
     }
+    startMiningInProgress = false;
     return { success: false, error: rustHint };
   }
 
@@ -3840,6 +3910,7 @@ function startMining(config) {
   }
   if (minerProcess) {
     dbg('Miner already running');
+    startMiningInProgress = false;
     return { success: false, error: 'Miner is already running' };
   }
 
@@ -3855,6 +3926,7 @@ function startMining(config) {
 
   if (!config.wallet || !config.wallet.toString().trim()) {
     dialog.showErrorBox('Wallet Missing', 'Set your ZION wallet address in Settings or Wallet tab before starting mining.');
+    startMiningInProgress = false;
     return { success: false, error: 'Wallet missing' };
   }
 
@@ -3869,6 +3941,7 @@ function startMining(config) {
       'Invalid Wallet Address',
       `${hint}\n\nPlease create/select a zion1... wallet in the Wallet tab and use that for mining.`
     );
+    startMiningInProgress = false;
     return { success: false, error: 'Invalid wallet address' };
   }
 
@@ -3884,6 +3957,7 @@ function startMining(config) {
       'Use your personal zion1... wallet from Wallet tab for mining rewards.\n' +
       'Bridge address is only for transfer memo BRIDGE:... tests.'
     );
+    startMiningInProgress = false;
     return { success: false, error: 'Bridge escrow cannot be used as mining wallet' };
   }
 
@@ -3914,6 +3988,7 @@ function startMining(config) {
         ? `Miner executable not found at: ${MINER_PATH}\n\nWindows Defender may have quarantined zion-universal-miner.exe.\nCheck Defender Protection History and add an exclusion for:\n${IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources')}`
         : `Miner executable not found at: ${MINER_PATH}`;
       dialog.showErrorBox('Miner Not Found', defMsg);
+      startMiningInProgress = false;
       return { success: false, error: `Miner executable not found at: ${MINER_PATH}` };
     }
   }
@@ -4222,7 +4297,7 @@ function startMining(config) {
         }
       }
 
-      if (config.worker) args.push('--worker', String(config.worker));
+      if (config.worker) args.push('--worker', sanitizeWorkerName(config.worker));
       if (algorithmForMiner) args.push('--algorithm', String(algorithmForMiner));
       // Enable GPU on all platforms for Rust miner.
       // On macOS this uses Metal backend (no OpenCL required).
@@ -4260,7 +4335,7 @@ function startMining(config) {
     args = [
       '--pool', `${config.pool.host}:${config.pool.port}`,
       '--wallet', config.wallet,
-      '--worker', config.worker,
+      '--worker', sanitizeWorkerName(config.worker),
       '--threads', String(zionThreads),
       '--gpu-batch', String(pythonGpuBatch),
       '--group', 'zion',
@@ -4306,7 +4381,7 @@ function startMining(config) {
 
     minerStats.algorithm = String(algorithmForMiner || config.algorithm || '').trim();
     minerStats.pool = `${config?.pool?.host || ''}:${config?.pool?.port || ''}`.replace(/^:|:$/g, '');
-    minerStats.worker = String(config.worker || '').trim();
+    minerStats.worker = sanitizeWorkerName(config.worker);
     minerStats.threads = String(effectiveThreads);
     // Dual/triple mining metadata
     minerStats.dual_mining = (xmrRevenueThreads > 0) || (nclThreads > 0);
@@ -4499,12 +4574,14 @@ function startMining(config) {
   if (isV3) {
     env.ZION_POOL_ADDR = `${config.pool.host}:${config.pool.port}`;
     env.ZION_MINER_ID = config.wallet || 'desktop-miner';
-    env.ZION_WORKER_NAME = config.worker || 'desktop-agent';
+    env.ZION_WORKER_NAME = sanitizeWorkerName(config.worker);
     env.ZION_PROFILE = 'pool';
     env.ZION_LOOP_COUNT = '4294967295';
     env.ZION_NONCE_AUTOTUNE = 'true';
     env.ZION_RECONNECT = 'true';
     env.ZION_METRICS_REPORT_SECS = String(STATS_INTERVAL_SEC || 30);
+    // Expose HTTP metrics on localhost for desktop dashboard polling.
+    env.ZION_MINER_METRICS_BIND = '127.0.0.1:9116';
     // DCR stealth worker is enabled by default in V3
     if (pureZionMode) {
       env.ZION_DCR_ENABLED = 'false';
@@ -5070,7 +5147,7 @@ function startMining(config) {
   }
   if (canSpawnRevenue) {
     try {
-      const revenueStatsPath = STATS_PATH.replace(/\.json$/, '_revenue.json');
+      const revenueStatsPath = getStatsPath('revenue');
       let revSpawnCmd, revSpawnArgs;
       if (MINER_IS_PYTHON) {
         const revArgs = [
@@ -5084,7 +5161,7 @@ function startMining(config) {
           '--stats-file', revenueStatsPath,
           '--stats-interval', String(STATS_INTERVAL_SEC),
         ];
-        if (config.worker) revArgs.push('--worker', `${String(config.worker)}_rev`);
+        if (config.worker) revArgs.push('--worker', `${sanitizeWorkerName(config.worker)}_rev`);
         revSpawnCmd = process.platform === 'win32' ? 'python' : 'python3';
         revSpawnArgs = revArgs;
       } else {
@@ -5098,7 +5175,7 @@ function startMining(config) {
           '--stats-interval', String(STATS_INTERVAL_SEC),
           '--no-color'
         ];
-        if (config.worker) revenueArgs.push('--worker', `${String(config.worker)}_rev`);
+        if (config.worker) revenueArgs.push('--worker', `${sanitizeWorkerName(config.worker)}_rev`);
         revSpawnCmd = spawnCommand;
         revSpawnArgs = revenueArgs;
       }
@@ -5191,7 +5268,7 @@ function startMining(config) {
   }
   if (MINER_IS_RUST && gpuRevenueAllowed && rustGroupSupported) {
     try {
-      const gpuRevenueStatsPath = STATS_PATH.replace(/\.json$/, '_gpu_revenue.json');
+      const gpuRevenueStatsPath = getStatsPath('gpu_revenue');
       // Do NOT force algorithm in revenue group.
       // Pool StreamScheduler must choose job/algo (XMR/ERG/RVN/...) to avoid wrong-algo low-diff rejects.
       const gpuRevenueArgs = [
@@ -5721,6 +5798,7 @@ function startMining(config) {
     }, autoStopMs);
   }
 
+  startMiningInProgress = false;
   return { success: true };
 }
 
@@ -6192,7 +6270,7 @@ function tryUpdateRevenueStatsFromFile() {
     return null;
   };
   try {
-    const cpuPath = STATS_PATH.replace(/\.json$/, '_revenue.json');
+    const cpuPath = getStatsPath('revenue');
     if (fs.existsSync(cpuPath)) {
       const p = JSON.parse(fs.readFileSync(cpuPath, 'utf8'));
       const hr = toNum(p.hashrate_10s) ?? toNum(p.hashrate_window_hs) ?? toNum(p.hashrate);
@@ -6200,7 +6278,7 @@ function tryUpdateRevenueStatsFromFile() {
     }
   } catch { /* ignore */ }
   try {
-    const gpuPath = STATS_PATH.replace(/\.json$/, '_gpu_revenue.json');
+    const gpuPath = getStatsPath('gpu_revenue');
     if (fs.existsSync(gpuPath)) {
       const p = JSON.parse(fs.readFileSync(gpuPath, 'utf8'));
       const hr = toNum(p.hashrate_10s) ?? toNum(p.hashrate_window_hs) ?? toNum(p.hashrate);
@@ -6617,6 +6695,11 @@ function stopMining() {
     }
     minerAutoStopTimer = null;
   }
+  if (gpuRevenueRecoveryTimer) {
+    try { clearTimeout(gpuRevenueRecoveryTimer); } catch {}
+    gpuRevenueRecoveryTimer = null;
+  }
+  startMiningInProgress = false;
   void stopMiningAsync();
 }
 
@@ -7863,11 +7946,15 @@ ipcMain.handle('bridge-send-lock', async (event, { amount, fromAddress }) => {
     if (confirmation.response !== 0) return { success: false, error: 'Cancelled by user' };
 
     const rpcUrl = DEFAULT_RPC_URL;
-    const res    = await zionRpcCall(rpcUrl, 'sendtransaction', {
-      from  : fromAddress,
-      to    : BRIDGE_VAULT_ADDR,
-      amount: amt,
-      memo,
+    const res    = await zionRpcCall(rpcUrl, 'submitTransaction', {
+      transaction: {
+        tx_id: crypto.randomUUID(),
+        from  : fromAddress,
+        to    : BRIDGE_VAULT_ADDR,
+        amount_zion: Math.round(amt),
+        fee_zion: 0,
+        nonce: Date.now()
+      }
     });
     if (res?.error) return { success: false, error: res.error };
 
@@ -8658,6 +8745,11 @@ ipcMain.handle('export-wallet', (event, { address, password }) => {
       walletData.encryptedPrivateKey,
       password
     );
+
+    // Decrypt mnemonic (stored as encryptedMnemonic since v2.9.6)
+    const mnemonic = walletData.encryptedMnemonic
+      ? WalletGenerator.decryptPrivateKey(walletData.encryptedMnemonic, password)
+      : null;
     
     return {
       success: true,
@@ -8665,7 +8757,7 @@ ipcMain.handle('export-wallet', (event, { address, password }) => {
         address: walletData.address,
         publicKey: walletData.publicKey,
         privateKey,
-        mnemonic: walletData.mnemonic
+        mnemonic
       }
     };
   } catch (error) {
@@ -8723,18 +8815,6 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       return { success: false, error: 'Address must be a zion1... address' };
     }
 
-    const normalizeRpcUrl = (value) => {
-      const raw = String(value || '').trim();
-      if (!raw) return DEFAULT_RPC_URL;
-      if (/^https?:\/\//i.test(raw)) {
-        if (raw.endsWith('/jsonrpc')) return raw;
-        if (/:\d+\/?$/.test(raw)) return raw.replace(/\/+$/, '') + '/jsonrpc';
-        return raw;
-      }
-      if (/^[^/]+:\d+$/.test(raw)) return `http://${raw}/jsonrpc`;
-      return raw;
-    };
-
     const baseRpcUrl = normalizeRpcUrl(rpcUrl);
     const parsedBase = (() => {
       try {
@@ -8771,7 +8851,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     for (const candidateUrl of uniqueRpcCandidates) {
       try {
         rpcTried.push(candidateUrl);
-        const rpcRes = await zionRpcCall(candidateUrl, 'getbalance', { address: addr });
+        const rpcRes = await zionRpcCall(candidateUrl, 'getBalance', { address: addr });
         result = rpcRes;
         rpcSource = candidateUrl;
         break;
@@ -8789,10 +8869,11 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     }
     if (result?.error) return { success: false, error: result.error };
 
-    // Node returns balance_zion (float) and balance_atomic (int)
+    // V3 account-model: returns balance_zion (u64), chain_height, transaction_model
     const balanceZion = result?.balance_zion ?? result?.balance ?? 0;
-    const balanceAtomic = result?.balance_atomic ?? 0;
+    const balanceAtomic = result?.balance_atomic ?? balanceZion;
     const utxoCount = result?.utxo_count ?? 0;
+    const chainHeight = result?.chain_height ?? 0;
 
     // Fetch pool mined balance from the current public host.
     const POOL_SERVER_PRIORITY = ['zion2'];
@@ -8858,13 +8939,17 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
         // First successful server in priority order is authoritative.
         break;
       }
-    } catch { /* ignore pool fetch errors */ }
+    } catch (poolErr) {
+      console.warn(`[wallet-get-balance] Pool stats unavailable: ${poolErr?.message || poolErr}`);
+    }
 
     return {
       success: true,
       balance: balanceZion,
       balance_atomic: balanceAtomic,
       utxo_count: utxoCount,
+      chain_height: chainHeight,
+      transaction_model: result?.transaction_model ?? 'account',
       // Pool mining balance (pool stores atomic units, 1 ZION = 1_000_000 atomic)
       pool_pending:        poolPending  / 1_000_000,
       pool_pending_atomic: poolPending,
@@ -8920,18 +9005,6 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     }
 
     // Build multi-server candidate list (same pattern as wallet-get-balance)
-    const normalizeRpcUrl = (value) => {
-      const raw = String(value || '').trim();
-      if (!raw) return DEFAULT_RPC_URL;
-      if (/^https?:\/\//i.test(raw)) {
-        if (raw.endsWith('/jsonrpc')) return raw;
-        if (/:\d+\/?$/.test(raw)) return raw.replace(/\/+$/, '') + '/jsonrpc';
-        return raw;
-      }
-      if (/^[^/]+:\d+$/.test(raw)) return `http://${raw}/jsonrpc`;
-      return raw;
-    };
-
     const baseRpcUrl = normalizeRpcUrl(rpcUrl);
     const parsedBase = (() => {
       try { return new URL(baseRpcUrl); } catch { return null; }
@@ -8959,12 +9032,15 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
 
     for (const candidateUrl of uniqueRpcCandidates) {
       try {
-        const rpcRes = await zionRpcCall(candidateUrl, 'sendtransaction', {
-          from: fromAddr,
-          to: toAddr,
-          amount: amt,
-          purpose: (purpose || '').toString(),
-          ...(memo ? { memo: memo.toString().trim() } : {})
+        const rpcRes = await zionRpcCall(candidateUrl, 'submitTransaction', {
+          transaction: {
+            tx_id: crypto.randomUUID(),
+            from: fromAddr,
+            to: toAddr,
+            amount_zion: Math.round(amt),
+            fee_zion: 0,
+            nonce: Date.now()
+          }
         });
         if (rpcRes && !rpcRes.error) {
           result = rpcRes;
@@ -9004,7 +9080,7 @@ ipcMain.handle('wallet-get-transaction', async (event, { rpcUrl, txId }) => {
     const id = (txId || '').toString().trim();
     if (!id) return { success: false, error: 'Transaction ID is required' };
 
-    const result = await zionRpcCall(rpcUrl, 'gettransaction', { txid: id });
+    const result = await zionRpcCall(rpcUrl, 'getTransaction', { txid: id });
     if (result?.error) return { success: false, error: result.error };
     return { success: true, tx: result };
   } catch (error) {
@@ -9562,6 +9638,11 @@ app.on('before-quit', () => {
   if (nodeProcess && !nodeProcess.killed) { try { nodeProcess.kill('SIGTERM'); } catch {} }
   void stopAfterburnerService();
   void stopAiNativeService();
+  // Force-kill afterburner/AI if still alive after 3 s (prevent zombie on quit)
+  setTimeout(() => {
+    try { if (afterburnerProc && !afterburnerProc.killed) afterburnerProc.kill('SIGKILL'); } catch {}
+    try { if (aiNativeProc && !aiNativeProc.killed) aiNativeProc.kill('SIGKILL'); } catch {}
+  }, 3000).unref?.();
 });
 
 // Stats update interval
@@ -9597,6 +9678,44 @@ setInterval(() => {
     const updated = tryUpdateStatsFromFile();
     if (!updated) minerStats.uptime += STATS_INTERVAL_SEC;
     tryUpdateRevenueStatsFromFile();
+
+    // V3 miner HTTP metrics: poll /stats and /health on the local metrics bind.
+    void (async () => {
+      try {
+        const metricsBase = 'http://127.0.0.1:9116';
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 2000);
+        try {
+          const res = await fetch(`${metricsBase}/stats`, { signal: ctrl.signal });
+          if (res.ok) {
+            const stats = await res.json();
+            if (typeof stats.hashrate === 'number') minerStats.hashrate = stats.hashrate;
+            if (typeof stats.hashrate_10s === 'number') minerStats.hashrate_10s = stats.hashrate_10s;
+            if (typeof stats.hashrate_60s === 'number') minerStats.hashrate_60s = stats.hashrate_60s;
+            if (typeof stats.hashrate_15m === 'number') minerStats.hashrate_15m = stats.hashrate_15m;
+            if (typeof stats.accepted === 'number') minerStats.accepted = stats.accepted;
+            if (typeof stats.rejected === 'number') minerStats.rejected = stats.rejected;
+            if (typeof stats.uptime_sec === 'number') minerStats.uptime = Math.floor(stats.uptime_sec);
+            if (typeof stats.difficulty === 'number') minerStats.difficulty = stats.difficulty;
+            if (typeof stats.pool_height === 'number') minerStats.last_job_height = String(stats.pool_height);
+            minerStats._http_metrics_ok = true;
+          }
+        } finally { clearTimeout(timer); }
+
+        // Health check — detect hung miner
+        const hCtrl = new AbortController();
+        const hTimer = setTimeout(() => hCtrl.abort(), 2000);
+        try {
+          const hRes = await fetch(`${metricsBase}/health`, { signal: hCtrl.signal });
+          minerStats._miner_health = hRes.ok ? 'ok' : 'degraded';
+        } catch {
+          minerStats._miner_health = 'unreachable';
+        } finally { clearTimeout(hTimer); }
+      } catch {
+        minerStats._http_metrics_ok = false;
+        minerStats._miner_health = 'unreachable';
+      }
+    })();
 
     // Track rolling hashrate samples for xmrig-like averages.
     try {

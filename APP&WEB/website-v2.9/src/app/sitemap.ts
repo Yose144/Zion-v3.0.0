@@ -18,12 +18,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/dao', priority: 0.7, changeFrequency: 'weekly' as const },
     { path: '/warp', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/genesis', priority: 0.6, changeFrequency: 'monthly' as const },
-    { path: '/philosophy', priority: 0.5, changeFrequency: 'monthly' as const },
-    { path: '/ai-native', priority: 0.5, changeFrequency: 'monthly' as const },
     { path: '/docs', priority: 0.7, changeFrequency: 'weekly' as const },
-    { path: '/api-reference', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/miner-stats', priority: 0.6, changeFrequency: 'hourly' as const },
-    { path: '/roadmap-295', priority: 0.5, changeFrequency: 'monthly' as const },
   ];
 
   return routes.map((route) => ({
