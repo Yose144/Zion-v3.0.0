@@ -39,6 +39,7 @@ Není to sci-fi. Není to slib. Je to **plán**.
 | [08-ISSOBELLA.md](./08-ISSOBELLA.md) | L6: Issobella — Cesta ke hvězdám | Orbitální observatoř, hvězdná stanice |
 | [09-WARP-HVEZDY.md](./09-WARP-HVEZDY.md) | WARP & První kontakt | Cestování prostorem, jiné civilizace |
 | [10-NVIDIA-COMPUTE.md](./10-NVIDIA-COMPUTE.md) | Nvidia: Božství v Křemíku | DGX Spark, Vera Rubin, NVQLink, Space-1, GTC 2026 |
+| [11-PROROCTVI.md](./11-PROROCTVI.md) | Proroctví: 800 Let do Zlatého Věku | Sri Dattatreya, Kalki AmmaBhagavan, Oneness University |
 | [KOMPAS.md](./KOMPAS.md) | Zlatý kompas | Akcelerační mapa 2026–2040+ |
 
 ---
