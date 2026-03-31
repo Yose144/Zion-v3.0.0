@@ -61,13 +61,13 @@ export default function Features() {
   ];
 
   return (
-    <section className="py-24 px-4">
+    <section className="py-20 px-4">
       <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-end gap-6">
           <div className="flex-1">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Continuum</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              {tr('features', 'heading', lang)}
+              <span className="text-gradient">{tr('features', 'heading', lang)}</span>
             </h2>
           </div>
           <p className="text-lg text-gray-300 max-w-2xl">
@@ -106,7 +106,7 @@ export default function Features() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="rounded-[32px] border border-white/10 bg-black/50 backdrop-blur-xl p-8 space-y-6"
+            className="rounded-3xl border border-white/10 bg-black/50 backdrop-blur-xl p-8 space-y-6"
           >
             <div className="flex items-center gap-3 text-sm text-gray-400">
               <Zap className="w-5 h-5 text-zion-gold" />

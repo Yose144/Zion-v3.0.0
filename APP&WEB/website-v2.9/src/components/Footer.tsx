@@ -29,7 +29,7 @@ const footerGroups = [
     title: 'Knowledge',
     links: [
       { href: '/docs', label: 'Docs', Icon: BookOpen },
-      { href: '/api-reference', label: 'API Reference', Icon: FileText },
+      { href: '/docs#wp-v3-mainnet', label: 'Whitepaper', Icon: FileText },
       { href: '/download', label: 'Downloads', Icon: Download },
     ],
   },
