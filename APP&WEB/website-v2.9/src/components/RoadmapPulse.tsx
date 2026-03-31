@@ -66,7 +66,7 @@ const timeline = [
 
 export default function RoadmapPulse() {
   return (
-    <section className="py-24 px-4">
+    <section className="py-20 px-4">
       <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-center gap-6">
           <div className="flex-1 space-y-3">
@@ -82,16 +82,16 @@ export default function RoadmapPulse() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/roadmap"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-lg font-semibold"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-sm font-semibold"
             >
               Full Roadmap
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/explorer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl border border-white/10 bg-white/5 text-lg font-semibold"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold"
             >
-              <CalendarDays className="w-5 h-5 text-zion-cyan" />
+              <CalendarDays className="w-4 h-4 text-zion-cyan" />
               Block Explorer
             </Link>
           </div>

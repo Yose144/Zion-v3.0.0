@@ -2,9 +2,9 @@
 
 **Version:** 3.0 — Ekam Deeksha  
 **Date:** March 2026  
-**Authors:** ZION CoZ s.r.o., Prague  
+**Authors:** ZION Open-Source Contributors  
 **License:** MIT  
-**Status:** Pre-MainNet (Testnet operational)
+**Status:** V3 pre-mainnet (test-mainnet rehearsal operational)
 
 ---
 
@@ -19,7 +19,7 @@
 3. [L1 Architecture](#3-l1-architecture)
 4. [Consensus — Ekam Deeksha v2](#4-consensus--ekam-deeksha-v2)
 5. [Economic Model](#5-economic-model)
-6. [Consciousness Mining](#6-consciousness-mining)
+6. [L4 XP Policy (OASIS Timeline)](#6-l4-xp-policy-oasis-timeline)
 7. [Fair Launch & Genesis](#7-fair-launch--genesis)
 8. [DAO Governance](#8-dao-governance)
 9. [Humanitarian Fund & L5/L6 Allocation](#9-humanitarian-fund--l5l6-allocation)
@@ -37,7 +37,9 @@
 
 ## 1. Abstract
 
-**ZION TerraNova** is a proof-of-work cryptocurrency with a six-layer architecture (L1–L6) designed for ASIC resistance, fair distribution, built-in humanitarian funding, and a 100-year emission schedule.
+**ZION TerraNova** is a proof-of-work cryptocurrency with a six-layer architecture (L1-L6) designed for ASIC resistance, fair distribution, built-in humanitarian funding, and a 100-year emission schedule.
+
+This document is **V3-oriented**. Historical 2.9.x documents are treated as legacy context; technical truth is defined by `V3/` code, `V3/ROADMAP.md`, and `docs/mainnet/MAINNET_CONSTITUTION.md`.
 
 Key parameters at a glance:
 
@@ -46,12 +48,12 @@ Key parameters at a glance:
 | **Total supply** | 144,000,000,000 ZION (hard cap) |
 | **Block time** | 60 seconds |
 | **Initial block reward** | 5,400.067 ZION |
-| **Emission model** | Decade Decay (−20 % every 10 years) |
-| **Tail emission** | 724.785 ZION/block from ~2126, forever |
+| **Emission model** | Decade Decay (-20 % every 10 years) |
+| **Tail emission** | 724.784723787776 ZION/block from ~2126, forever |
 | **Mining algorithm** | Ekam Deeksha v2 (CPU/GPU, ASIC-resistant) |
 | **Signing** | Ed25519 |
 | **Hashing** | BLAKE3 |
-| **Address format** | Bech32 (`zion1…`) |
+| **Address format** | Bech32 (`zion1...`) |
 | **Transaction model** | UTXO |
 | **Consensus** | Proof-of-Work (Nakamoto) |
 | **L2 wrapped token** | wZION (ERC-20 on Base) |
@@ -79,7 +81,7 @@ Most cryptocurrency projects share common structural flaws:
 | Insider tokens | Fair Launch — no pre-sale, no ICO, no private rounds |
 | ASIC centralization | Ekam Deeksha v2 — memory-hard, CPU/GPU optimized |
 | No social impact | 10 % of every block reward enforced by code |
-| Supply shocks | Decade Decay — gradual −20 %/decade + perpetual tail |
+| Supply shocks | Decade Decay — gradual -20 %/decade + perpetual tail |
 
 ---
 
@@ -89,24 +91,24 @@ Most cryptocurrency projects share common structural flaws:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  JSON-RPC API  (Axum)          Port 7777        │
-│  Stratum v2 Pool Interface     Port 3333        │
+│  JSON-RPC 2.0 (TCP)           configurable      │
+│  Pool Stratum Session Wire    configurable      │
 ├─────────────────────────────────────────────────┤
 │  Consensus Engine (Ekam Deeksha v2)             │
 │  Mempool  ·  Block Builder  ·  DAA (LWMA)       │
 ├─────────────────────────────────────────────────┤
 │  UTXO Set  ·  Merkle Tree  ·  Fee Calculator    │
 ├─────────────────────────────────────────────────┤
-│  Persistence (LMDB)                             │
-│  P2P Gossip (TCP)              Port 9333        │
+│  Persistence (LMDB/heed)                        │
+│  P2P Gossip (TCP)              configurable     │
 └─────────────────────────────────────────────────┘
 ```
 
 - **Runtime:** Rust + Tokio async
 - **Database:** LMDB (memory-mapped, zero-copy reads)
-- **API:** Axum JSON-RPC (port 7777)
-- **Mining protocol:** Stratum v2 (port 3333)
-- **Peer-to-peer:** TCP gossip protocol (port 9333)
+- **API:** JSON-RPC 2.0 over TCP (runtime-configurable bind)
+- **Mining protocol:** Stratum-style session wire in `V3/L1/pool` (runtime-configurable bind)
+- **Peer-to-peer:** TCP gossip protocol (runtime-configurable bind)
 
 ### 3.2 UTXO Model
 
@@ -114,8 +116,9 @@ ZION uses the Unspent Transaction Output model. Each transaction consumes one or
 
 ```rust
 pub struct TxOutput {
-    pub value: u64,          // Amount in base units
-    pub script_pubkey: Vec<u8>, // Locking script (Ed25519 pubkey)
+  pub amount: u64,
+  pub address: String,
+  pub memo: Option<String>,
 }
 ```
 
@@ -137,7 +140,7 @@ All transaction fees are **burned** (destroyed). This makes ZION mildly deflatio
 
 ### 3.5 P2P Network
 
-- **Gossip protocol** over TCP (port 9333)
+- **Gossip protocol** over TCP (runtime-configurable bind)
 - Peer discovery via DNS seeds + hardcoded bootstrap nodes
 - Block propagation within seconds across global topology
 - Peer banning for protocol violations
@@ -161,12 +164,12 @@ The proof-of-work algorithm is called **Ekam Deeksha** (Sanskrit: "one initiatio
 ```
 Input: block_header ║ nonce (u64)
   │
-  ├─ Stage 1: Keccak-256        → 32-byte digest
-  ├─ Stage 2: SHA3-512          → 64-byte expansion
-  ├─ Stage 3: Golden Matrix     → matrix multiplication diffusion
+  ├─ Stage 1: Keccak-256         → 32-byte digest
+  ├─ Stage 2: SHA3-512           → 64-byte expansion
+  ├─ Stage 3: Golden Matrix      → matrix multiplication diffusion
   ├─ Stage 4: 256 KiB Scratchpad → memory-hard fill + dependent reads
-  ├─ Stage 5: NPU Mixing        → neural processing unit vector ops
-  └─ Stage 6: Cosmic Fusion     → final hash reduction
+  ├─ Stage 5: NPU Mixing         → neural processing unit vector ops
+  └─ Stage 6: Cosmic Fusion      → final hash reduction
   │
 Output: 32-byte PoW hash
 ```
@@ -203,19 +206,19 @@ Unlike Bitcoin's abrupt 4-year halvings, ZION reduces the block reward by **20 %
 
 | Decade | Years | Block Reward (ZION) | Decade Emission |
 |--------|-------|---------------------|-----------------|
-| 1 | 2026–2036 | 5,400.067 | 28,383,712,152 |
-| 2 | 2036–2046 | 4,320.054 | 22,706,969,722 |
-| 3 | 2046–2056 | 3,456.043 | 18,165,575,777 |
-| 4 | 2056–2066 | 2,764.834 | 14,532,460,622 |
-| 5 | 2066–2076 | 2,211.867 | 11,625,968,497 |
-| 6 | 2076–2086 | 1,769.494 | 9,300,774,798 |
-| 7 | 2086–2096 | 1,415.595 | 7,440,619,838 |
-| 8 | 2096–2106 | 1,132.476 | 5,952,495,871 |
-| 9 | 2106–2116 | 905.981 | 4,761,996,697 |
-| 10 | 2116–2126 | 724.785 | 3,809,597,357 |
-| **Tail** | **2126+** | **724.785** | **Forever** |
+| 1 | 2026-2036 | 5,400.067 | 28,383,712,152 |
+| 2 | 2036-2046 | 4,320.054 | 22,706,969,722 |
+| 3 | 2046-2056 | 3,456.043 | 18,165,575,777 |
+| 4 | 2056-2066 | 2,764.834 | 14,532,460,622 |
+| 5 | 2066-2076 | 2,211.867 | 11,625,968,497 |
+| 6 | 2076-2086 | 1,769.494 | 9,300,774,798 |
+| 7 | 2086-2096 | 1,415.595 | 7,440,619,838 |
+| 8 | 2096-2106 | 1,132.476 | 5,952,495,871 |
+| 9 | 2106-2116 | 905.981 | 4,761,996,697 |
+| 10 | 2116-2126 | 724.784723787776 | 3,809,597,357 |
+| **Tail** | **2126+** | **724.784723787776** | **Forever** |
 
-**Tail emission** begins after decade 10. A perpetual minimum reward of **724.785 ZION/block** ensures miners are always incentivized to secure the network — no "fee-only" security model required.
+**Tail emission** begins after decade 10. A perpetual minimum reward of **724.784723787776 ZION/block** ensures miners are always incentivized to secure the network — no "fee-only" security model required.
 
 ### 5.3 Block Reward Distribution
 
@@ -228,14 +231,14 @@ Every block reward is split automatically by the protocol:
 | **L5/L6 Issobella Fund** | 5 % | Science & space program |
 | **Pool operator** | 1 % | Pool infrastructure |
 
-This distribution is enforced in `reward_calculator.rs` and cannot be altered by governance.
+This distribution is enforced in `V3/L1/core/src/emission.rs` (`fee_split`) and cannot be altered by governance.
 
 ### 5.4 Comparison
 
 | | ZION | Bitcoin | Monero | Ethereum |
 |---|---|---|---|---|
 | Supply | 144B | 21M | ∞ (tail) | ∞ |
-| Emission | Decade Decay (−20%/10y) | Halving (−50%/4y) | Tail 0.6 XMR/block | Issuance + burn |
+| Emission | Decade Decay (-20%/10y) | Halving (-50%/4y) | Tail 0.6 XMR/block | Issuance + burn |
 | Block time | 60s | 600s | 120s | 12s |
 | Consensus | PoW (Ekam Deeksha) | PoW (SHA-256d) | PoW (RandomX) | PoS |
 | ASIC resistance | High (memory-hard) | None | High | N/A |
@@ -244,58 +247,21 @@ This distribution is enforced in `reward_calculator.rs` and cannot be altered by
 
 ---
 
-## 6. Consciousness Mining
+## 6. L4 XP Policy (OASIS Timeline)
 
-### 6.1 Concept
+### 6.1 Scope
 
-Consciousness Mining is ZION's unique engagement and reward system. Miners earn **Experience Points (XP)** through sustained, honest participation. Higher XP levels translate to a **reward multiplier** on block rewards and NCL (L3) tasks.
+XP and consciousness progression are assigned to **L4 OASIS**, not L1 consensus. L1 remains deterministic PoW + emission + validation only.
 
-### 6.2 Consciousness Levels
+### 6.2 Activation Window
 
-| Level | Name | XP Required | Reward Multiplier |
-|-------|------|-------------|-------------------|
-| 1 | Physical | 0 | 1.0× |
-| 2 | Emotional | 1,000 | 1.1× |
-| 3 | Mental | 5,000 | 1.25× |
-| 4 | Astral | 25,000 | 1.5× |
-| 5 | Causal | 100,000 | 2.0× |
-| 6 | Enlightened | 500,000 | 2.5× |
-| 7 | Cosmic | 2,000,000 | 3.5× |
-| 8 | Universal | 10,000,000 | 5.0× |
-| 9 | OnTheStar | 50,000,000 | 10.0× |
+- **Target start:** ~2028 (aligned with L4 OASIS rollout window)
+- **Pre-2028 status:** design/R&D only
+- **Consensus impact:** none (non-consensus application layer)
 
-### 6.3 XP Sources
+### 6.3 Security Principle
 
-| Activity | XP Earned |
-|----------|-----------|
-| Block found | +100 XP |
-| Share accepted | +1 XP |
-| NCL task completed | +10 XP |
-| Uptime streak (24h) | +50 XP |
-| Community contribution | Variable |
-
-### 6.4 XP Decay
-
-To prevent idle accounts from retaining high multipliers:
-
-- **Grace period:** 7 days of inactivity
-- **Decay rate:** −1 % per inactive day after grace period
-- **Floor:** XP never drops below 50 % of peak
-- **Reset:** Activity immediately stops decay
-
-### 6.5 Reward Formula
-
-```
-effective_reward = base_reward × consciousness_multiplier
-```
-
-For a miner at Level 6 (Enlightened, 2.5×) finding a block:
-
-```
-effective_reward = 5,400.067 × 2.5 = 13,500.17 ZION
-```
-
-The multiplier applies to the miner's share (89 %) of the block reward. The humanitarian, Issobella, and pool shares are calculated on the base reward.
+No XP rule may alter constitutional L1 economics (supply, decay, fee split, or base subsidy checks).
 
 ---
 
@@ -312,28 +278,30 @@ ZION is a **Fair Launch** project:
 
 The only way to acquire ZION is to **mine it** or receive it in a transaction.
 
-### 7.2 Genesis Premine
+### 7.2 Genesis Reserve (Public Summary)
 
-A total of **16,280,000,000 ZION** (11.31 % of total supply) is allocated at genesis to bootstrap the ecosystem. All addresses are published in `PREMINE_ADDRESSES_PUBLIC.txt`.
+A total of **16,280,000,000 ZION** (11.31 % of total supply) is reserved at genesis to bootstrap the ecosystem.
+
+**Primary strategic envelope:** **8,500,000,000 ZION** is dedicated to L4 OASIS/game development and game-economy bootstrap (8.25B direct OASIS slots + 0.25B ecosystem allocation for game-dev execution).
 
 | # | Allocation | ZION | Purpose |
 |---|-----------|------|---------|
-| 1–5 | OASIS Golden Egg | 8,250,000,000 | L4 game world reward pool (5 slots × 1.65B, 10-year vesting) |
+| 1-5 | OASIS Golden Egg | 8,250,000,000 | L4 game world reward pool (5 slots × 1.65B, 10-year vesting) |
 | 6 | DAO Treasury (main) | 2,500,000,000 | Community governance reserve |
 | 7 | DAO Grants & Bounties | 1,000,000,000 | Developer grants |
-| 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem development |
+| 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem development (includes game-dev execution envelope) |
 | 9 | Core Development Fund | 1,000,000,000 | Ongoing development |
 | 10 | Network Infrastructure | 1,000,000,000 | P2P seed nodes & infrastructure |
 | 11 | Genesis Creator | 590,000,000 | Lifetime project stewardship |
 | 12 | Humanitarian DAO | 1,440,000,000 | Immediate humanitarian seed |
 
-**DAO Treasury time-lock:** All 4,000,000,000 ZION in the DAO treasury (#6–8) is locked until block height **525,600** (~1 year after genesis).
+**DAO Treasury time-lock:** All 4,000,000,000 ZION in the DAO treasury (#6-8) is locked until block height **525,600** (~1 year after genesis).
 
-### 7.3 Transparency
+### 7.3 Security & Transparency
 
-- All genesis addresses are published in [`PREMINE_ADDRESSES_PUBLIC.txt`](../../PREMINE_ADDRESSES_PUBLIC.txt)
-- Genesis premine code is auditable in [`L1/core/src/blockchain/premine.rs`](../../L1/core/src/blockchain/premine.rs)
-- Every genesis transaction is on-chain verifiable from block #0
+- Public whitepaper intentionally omits operational wallet/address detail.
+- Genesis allocation rules are auditable in [`V3/L1/core/src/genesis.rs`](../L1/core/src/genesis.rs) and constitutional constants in [`V3/L1/core/src/emission.rs`](../L1/core/src/emission.rs).
+- Every genesis transaction is verifiable from block #0 by node software.
 
 ### 7.4 TestNet ≠ MainNet
 
@@ -354,13 +322,14 @@ TestNet tokens have no value and will not be carried over. MainNet begins with a
 ### 8.2 Voting Mechanism
 
 ```
-1 ZION = 1 vote
-Delegation:       Permissionless (revocable at any time)
+1 ZION = 1 vote (snapshot-weighted)
+Delegation:       Supported by governance layer policies
 Pre-execution lock: 48 hours
 
-Standard proposal:       quorum 4%, >50% FOR, 7 days
-Constitutional amendment: quorum 10%, >67% FOR, 14 days
-Emergency proposal:      quorum 2%, >75% FOR, 3 days
+Parameter proposal:  quorum 10%, 7 days
+Treasury proposal:   quorum 15%, 7 days
+Emergency proposal:  quorum 20%, 3 days
+Pass condition:      votes_for > votes_against
 ```
 
 ### 8.3 Treasury Spending
@@ -382,9 +351,9 @@ The DAO **cannot** change:
 
 | Phase | Timeline | Features |
 |-------|----------|----------|
-| Phase 1 | 2025–2026 | Snapshot voting, off-chain signaling |
-| Phase 2 | 2026–2027 | On-chain proposal lifecycle (MainNet) |
-| Phase 3 | 2027+ | Full decentralization, quadratic voting |
+| Phase 1 | 2025-2026 | Snapshot voting, off-chain signaling |
+| Phase 2 | 2026-2027 | On-chain proposal lifecycle (MainNet) |
+| Phase 3 | 2027+ | Full decentralization; optional quadratic-voting R&D (non-consensus layer) |
 
 ---
 
@@ -397,7 +366,7 @@ Every mined block automatically allocates:
 - **5 %** → Humanitarian Fund (`Children Future Fund — Humanitarian DAO`)
 - **5 %** → L5/L6 Issobella Fund
 
-Both allocations are enforced in `reward_calculator.rs` at the protocol level.
+Both allocations are enforced in `V3/L1/core/src/emission.rs` at the protocol level.
 
 ### 9.2 Humanitarian Fund Governance
 
@@ -411,7 +380,7 @@ Funds are governed by DAO voting. Recipient organizations submit proposals with:
 
 ### 9.3 Initial Seed
 
-From the genesis premine, **1,440,000,000 ZION** (wallet #12) is allocated as an immediately available humanitarian seed — for use before mining emission accumulates sufficient funding.
+From the genesis reserve, **1,440,000,000 ZION** is allocated as an immediately available humanitarian seed — for use before mining emission accumulates sufficient funding.
 
 ---
 
@@ -422,8 +391,8 @@ From the genesis premine, **1,440,000,000 ZION** (wallet #12) is allocated as an
 **wZION** is an ERC-20 wrapped token representing ZION value on EVM chains. The bridge enables liquidity movement without requiring L1 infrastructure on the EVM chain.
 
 ```
-ZION L1  ──[lock]──→  Bridge Contract  ──[mint]──→  wZION (EVM)
-wZION    ──[burn]──→  Bridge Contract  ──[unlock]──→  ZION L1
+ZION L1  --[lock]-->  Bridge Contract  --[mint]-->  wZION (EVM)
+wZION    --[burn]-->  Bridge Contract  --[unlock]-->  ZION L1
 ```
 
 ### 10.2 Bridge Security
@@ -444,7 +413,7 @@ wZION    ──[burn]──→  Bridge Contract  ──[unlock]──→  ZION L
 
 ### 10.4 L2 Smart Contracts
 
-All L2 contracts are deployed on Base Sepolia testnet. Mainnet deployment follows MainNet genesis.
+The wider ecosystem has Base Sepolia contract deployments in the current 2.9 line. In V3 codebase, L2 is represented by bridge/DAO/atomic-swap daemons and 12-decimal (flowers) accounting migration.
 
 | Contract | Description |
 |----------|-------------|
@@ -515,9 +484,7 @@ NCL auto-detects the fastest available AI backend:
 | Intel CPU/GPU | OpenVINO |
 | Other | ONNX Runtime (fallback) |
 
-**Time allocation:** Default 70 % mining / 30 % NCL. Configurable from 50–90 % mining. Mining always has priority.
-
-NCL rewards are also multiplied by the miner's Consciousness Level multiplier.
+**Time allocation:** Default 70 % mining / 30 % NCL. Configurable from 50-90 % mining. Mining always has priority.
 
 ### 11.4 WARP — Cross-chain Swap Protocol
 
@@ -533,7 +500,7 @@ WARP enables atomic swaps between ZION and tokens across 7 chain families:
 | Polkadot | DOT | ✅ Implemented |
 | TON | TON | ✅ Implemented |
 
-WARP REST API runs on port **8092** (Axum). Persistence via SQLite. XP Bridge — WARP swaps accumulate XP on L1.
+WARP REST API runs on port **8092** (Axum). Persistence via SQLite.
 
 ### 11.5 AI-native
 
@@ -547,7 +514,7 @@ The AI-native layer implements AI agents as first-class protocol objects: on-cha
 
 **Key concepts:**
 
-- **8 Genesis Territories** (Mount Zion, Cedar Forest, …)
+- **8 Genesis Territories** (Mount Zion, Cedar Forest, ...)
 - **9 Consciousness Levels** (Kabbalah Sefira: Malkuth → Keter)
 - **8.25B ZION reward pool** (5 genesis slots × 1.65B, 10-year distribution)
 - **XP off-chain** — SQLite `oasis.db`, L1 remains pure
@@ -615,8 +582,8 @@ L5 is the humanitarian and scientific layer funded directly by the blockchain pr
 
 | Source | Mechanism |
 |--------|-----------|
-| L5/L6 Issobella Fund | 5 % per block (automatic from `reward_calculator`) |
-| Tail emission (2126+) | 724.785 ZION/block forever |
+| L5/L6 Issobella Fund | 5 % per block (automatic from `V3/L1/core/src/emission.rs`) |
+| Tail emission (2126+) | 724.784723787776 ZION/block forever |
 | DAO Treasury | Long-term reserved funds |
 | L4 OASIS NFTs | Special cosmic NFT collections |
 
@@ -639,10 +606,9 @@ L5 is the humanitarian and scientific layer funded directly by the blockchain pr
 
 | Primitive | Usage |
 |-----------|-------|
-| **BLAKE3** | Block hashing, Merkle tree, NCL hash chaining |
+| **BLAKE3** | Transaction hashing, Merkle utilities, core hashing utilities |
 | **Ed25519** | Transaction and block signing |
-| **Argon2id** | Memory-hard element of consensus (ASIC resistance) |
-| **ChaCha20-Poly1305** | P2P encrypted communication |
+| **Keccak-256 + SHA3-512** | Ekam Deeksha v2 consensus pipeline stages |
 
 ### 15.2 Merkle Trees
 
@@ -672,14 +638,14 @@ The codebase includes ~1,300 automated tests across L1 core, pool, miner, L2 con
 ### 16.1 Release History
 
 ```
-v2.9.5  ─ TestNet genesis, Rust L1 stack               ✅ (Jan 2026)
-v2.9.6  ─ L2/L3/L4 implementation, Decade Decay,       ✅
+v2.9.5  - TestNet genesis, Rust L1 stack               ✅ (Jan 2026)
+v2.9.6  - L2/L3/L4 implementation, Decade Decay,       ✅
            WARP 7-chain, OASIS REST, Ankr RPC,
            nonce u64, ASIC score 90/100
-v2.9.7  ─ Code freeze, 168h stability test, API docs   ✅
-v2.9.8  ─ Ekam Deeksha canonical path, bug fix round 1 ✅
-v2.9.9  ─ Pure code cleanup, migration strategy         📅
-v3.0    ─ MainNet Genesis (Block #0)                    📅 Q4 2026
+v2.9.7  - Code freeze, 168h stability test, API docs   ✅
+v2.9.8  - Ekam Deeksha canonical path, bug fix round 1 ✅
+v2.9.9  - Pure code cleanup, migration strategy         📅
+v3.0    - MainNet Genesis (Block #0)                    📅 Q4 2026
 ```
 
 ### 16.2 Key Milestones
@@ -690,20 +656,21 @@ v3.0    ─ MainNet Genesis (Block #0)                    📅 Q4 2026
 | GPU miner alpha | Q2 2026 | CUDA/OpenCL functional |
 | Security audit | Q2 2026 | No critical vulnerabilities |
 | Mobile wallet | Q3 2026 | iOS + Android App Store |
-| MainNet Genesis | Q4 2026 | Block #0, genesis premine distributed |
+| MainNet Genesis | Q4 2026 | Block #0 and genesis reserve activation |
 | wZION mainnet | Q4 2026 | Live on Base/Arbitrum/BSC |
 | NCL + WARP live | Q1 2027 | 1,000 NCL tasks/day, WARP swaps active |
 | L3 DAO (Phase 2) | 2027 | On-chain voting |
+| L4 OASIS XP rollout | 2028 (target) | XP/economy features launched as non-consensus L4 layer |
 | L5 Free World | 2030 | Foundation + research lab |
 | 1st Decade Decay | 2036 | Block reward → 4,320 ZION |
 | L6 Issobella start | 2040 | Space Division initiated |
-| Tail emission | 2126 | 724.785 ZION/block forever |
+| Tail emission | 2126 | 724.784723787776 ZION/block forever |
 
 ---
 
 ## 17. Legal Disclaimer
 
-ZION is **open-source software** and **experimental technology**. ZION is **not**:
+ZION is **open-source software** and **experimental technology** released under the MIT license. ZION is **not**:
 
 - A security under MiCA or any other regulatory framework
 - An investment product with guaranteed returns
@@ -711,14 +678,13 @@ ZION is **open-source software** and **experimental technology**. ZION is **not*
 
 Participation in the ZION network is **voluntary** and occurs **at your own risk**. Token value is not guaranteed. Price may decline to zero. The regulatory environment may change.
 
-ZION CoZ s.r.o. develops and sells **software**, not tokens. Premine addresses are published in accordance with the principle of transparency, not as an investment offering.
+ZION is a **community-run open-source protocol** and is **not operated by a single company issuer** in this V3 line.
 
 See also:
 
 - [`legal/DISCLAIMER.md`](../../legal/DISCLAIMER.md)
 - [`legal/TOKEN_NOT_SECURITY.md`](../../legal/TOKEN_NOT_SECURITY.md)
 - [`legal/RISK_DISCLOSURE.md`](../../legal/RISK_DISCLOSURE.md)
-- [`legal/PREMINE_DISCLOSURE.md`](../../legal/PREMINE_DISCLOSURE.md)
 
 ---
 
@@ -726,12 +692,13 @@ See also:
 
 | Resource | Description |
 |----------|-------------|
-| [`config/mainnet.toml`](../../config/mainnet.toml) | Mainnet network parameters |
-| [`L1/core/src/blockchain/premine.rs`](../../L1/core/src/blockchain/premine.rs) | Genesis premine source code |
-| [`L1/core/src/blockchain/block.rs`](../../L1/core/src/blockchain/block.rs) | Block structure and algorithm |
-| [`PREMINE_ADDRESSES_PUBLIC.txt`](../../PREMINE_ADDRESSES_PUBLIC.txt) | Public genesis addresses |
-| [`docs/mainnet/MAINNET_CONSTITUTION.md`](../mainnet/MAINNET_CONSTITUTION.md) | Mainnet Constitution (frozen) |
-| [`legal/`](../../legal/) | Legal documentation |
+| [`V3/L1/core/src/emission.rs`](../L1/core/src/emission.rs) | Constitutional emission constants (flowers, decay, tail, fee split) |
+| [`V3/L1/core/src/genesis.rs`](../L1/core/src/genesis.rs) | Genesis validation and reserve integrity |
+| [`V3/L1/core/src/difficulty.rs`](../L1/core/src/difficulty.rs) | LWMA difficulty algorithm |
+| [`V3/L1/cosmic-harmony/src/deeksha.rs`](../L1/cosmic-harmony/src/deeksha.rs) | Ekam Deeksha v2 canonical PoW |
+| [`V3/L2/dao/src/proposal.rs`](../L2/dao/src/proposal.rs) | DAO proposal types, quorum, voting windows |
+| [`docs/mainnet/MAINNET_CONSTITUTION.md`](../../docs/mainnet/MAINNET_CONSTITUTION.md) | Mainnet Constitution (frozen) |
+| [`V3/ROADMAP.md`](../ROADMAP.md) | Current implementation status and milestones |
 | [github.com/Yose144/Zion-2.9](https://github.com/Yose144/Zion-2.9) | Source code (MIT license) |
 
 ---
@@ -741,4 +708,4 @@ See also:
 
 ---
 
-**© 2026 ZION CoZ s.r.o., Prague. MIT License. Whitepaper version 3.0.**
+**© 2026 ZION Open-Source Contributors. MIT License. Whitepaper version 3.0.**
