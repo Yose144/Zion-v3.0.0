@@ -690,8 +690,8 @@ export default function NetworkPage() {
                   <span className="text-gray-200">Monitoring dashboard</span>
                   <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
                 </Link>
-                <Link href="/api-reference" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
-                  <span className="text-gray-200">API Reference</span>
+                <Link href="/docs#live-index" className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 hover:bg-black/40 transition">
+                  <span className="text-gray-200">Docs hub</span>
                   <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
                 </Link>
               </div>
