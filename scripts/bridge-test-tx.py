@@ -6,6 +6,7 @@ import hashlib
 import struct
 import time
 import sys
+import os
 
 import blake3 as _blake3
 from nacl.signing import SigningKey
@@ -35,11 +36,11 @@ def blake3_hash(data):
 NODE_HOST = "127.0.0.1"
 NODE_PORT = 8443
 
-SENDER_SK_HEX = "e39894539019c7d2ecb1ca67e219f816e2f65ebea8d0d5ac26ecd8fd9fbf30f5"
-SENDER_PK_HEX = "ed749ac202cf7bcc13497c812ca9395eea8dd357605dedb0b304635a5582f422"
-SENDER_ADDRESS = "zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7"
+SENDER_SK_HEX = os.environ.get("ZION_SENDER_SK_HEX")
+SENDER_PK_HEX = os.environ.get("ZION_SENDER_PK_HEX")
+SENDER_ADDRESS = os.environ.get("ZION_SENDER_ADDRESS")
 
-VAULT_ADDRESS = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
+VAULT_ADDRESS = os.environ.get("ZION_BRIDGE_VAULT_ADDRESS", "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0")
 
 # 100 ZION = 100 * 1e12 flowers
 SEND_AMOUNT = 100 * 1_000_000_000_000
@@ -80,6 +81,19 @@ def calculate_tx_hash(version, inputs, outputs, fee, timestamp):
     return blake3_hash(bytes(data))
 
 def main():
+    required = {
+        "ZION_SENDER_SK_HEX": SENDER_SK_HEX,
+        "ZION_SENDER_PK_HEX": SENDER_PK_HEX,
+        "ZION_SENDER_ADDRESS": SENDER_ADDRESS,
+    }
+    missing = [name for name, value in required.items() if not value]
+    if missing:
+        print("ERROR: Missing required environment variables:")
+        for name in missing:
+            print(f"  - {name}")
+        print("\nSet wallet secrets via environment instead of storing them in the repository.")
+        sys.exit(1)
+
     sk_bytes = bytes.fromhex(SENDER_SK_HEX)
     sk = SigningKey(sk_bytes)
     pk_bytes = bytes(sk.verify_key)
