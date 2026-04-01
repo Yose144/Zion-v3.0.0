@@ -215,8 +215,8 @@ export default function ProRecentTransactions() {
         <div className="px-6 py-3 border-t border-white/4 flex items-center justify-between">
           <p className="text-[11px] text-gray-600">
             {cs
-              ? `Zobrazeno ${Math.min(15, txs.length)} poslednich transakci · Auto-refresh 10 s`
-              : `Showing ${Math.min(15, txs.length)} latest transactions · Auto-refresh 10s`}
+                ? `Zobrazeno ${Math.min(15, txs.length)} poslednich transakci · Auto-refresh 15 s`
+              : `Showing ${Math.min(15, txs.length)} latest transactions · Auto-refresh 15s`}
           </p>
           <Link
             href="/explorer/transactions"
