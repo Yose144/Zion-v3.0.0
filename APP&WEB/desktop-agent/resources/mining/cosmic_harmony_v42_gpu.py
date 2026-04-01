@@ -1162,7 +1162,7 @@ class DeekshaOpenCLBackend:
         nonce_count = _sanitize_gpu_batch_size(nonce_count, "deeksha-opencl")
 
         hdr_arr = np.frombuffer(header[:128].ljust(128, b"\x00"), dtype=np.uint8)
-        rn_arr  = np.full(1, np.uint32(0xFFFFFFFF), dtype=np.uint32)
+        rn_arr  = np.full(1, np.uint64(0xFFFFFFFFFFFFFFFF), dtype=np.uint64)
         rh_arr  = np.zeros(32, dtype=np.uint8)
 
         mf = cl.mem_flags
@@ -1194,13 +1194,13 @@ class DeekshaOpenCLBackend:
         )
         self._queue.finish()
 
-        out_nonce = np.empty(1, dtype=np.uint32)
+        out_nonce = np.empty(1, dtype=np.uint64)
         out_hash  = np.empty(32, dtype=np.uint8)
         cl.enqueue_copy(self._queue, out_nonce, buf_rn)
         cl.enqueue_copy(self._queue, out_hash,  buf_rh)
         self._queue.finish()
 
-        if int(out_nonce[0]) != 0xFFFFFFFF:
+        if int(out_nonce[0]) != 0xFFFFFFFFFFFFFFFF:
             return (int(nonce_base) + int(out_nonce[0]), bytes(out_hash))
         return None
 
@@ -1243,6 +1243,61 @@ class EkamDeekshaOpenCLBackend(DeekshaOpenCLBackend):
         except Exception:
             log.warning("[EkamDeekshaOpenCL] ekam_deeksha_mine kernel not found in .cl source")
             self._ready = False
+
+    def mine(
+        self, header: bytes, nonce_base: int, nonce_count: int, target_u32: int
+    ) -> Optional[Tuple[int, bytes]]:
+        """Ekam kernel has an extra nonce_count parameter (arg 4)."""
+        if not self._ready:
+            return None
+
+        import numpy as np
+        cl = self._cl
+
+        nonce_count = _sanitize_gpu_batch_size(nonce_count, "ekam-deeksha-opencl")
+
+        hdr_arr = np.frombuffer(header[:128].ljust(128, b"\x00"), dtype=np.uint8)
+        rn_arr  = np.full(1, np.uint64(0xFFFFFFFFFFFFFFFF), dtype=np.uint64)
+        rh_arr  = np.zeros(32, dtype=np.uint8)
+
+        mf = cl.mem_flags
+        buf_hdr = cl.Buffer(self._ctx, mf.READ_ONLY  | mf.COPY_HOST_PTR, hostbuf=hdr_arr)
+        buf_sp  = cl.Buffer(self._ctx, mf.READ_WRITE, size=int(nonce_count * 65536))
+        buf_rn  = cl.Buffer(self._ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=rn_arr)
+        buf_rh  = cl.Buffer(self._ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=rh_arr)
+
+        local_size = min(256, nonce_count)
+        global_size = ((nonce_count + local_size - 1) // local_size) * local_size
+
+        self._kernel(
+            self._queue,
+            (global_size,), (local_size,),
+            buf_hdr,
+            np.uint32(len(header)),
+            np.uint64(nonce_base),
+            np.uint32(nonce_count),
+            buf_sp,
+            np.uint32(target_u32),
+            buf_rn,
+            buf_rh,
+            self._buf_w1,
+            self._buf_b1,
+            self._buf_w2,
+            self._buf_b2,
+            self._buf_scale1,
+            self._buf_scale2,
+        )
+        self._queue.finish()
+
+        out_nonce = np.empty(1, dtype=np.uint64)
+        out_hash  = np.empty(32, dtype=np.uint8)
+        cl.enqueue_copy(self._queue, out_nonce, buf_rn)
+        cl.enqueue_copy(self._queue, out_hash,  buf_rh)
+        self._queue.finish()
+
+        if int(out_nonce[0]) != 0xFFFFFFFFFFFFFFFF:
+            return (int(nonce_base) + int(out_nonce[0]), bytes(out_hash))
+        return None
 
     def benchmark(self, nonce_count: int = 4096) -> float:
         nonce_count = _sanitize_gpu_batch_size(nonce_count, "ekam-deeksha-opencl")
