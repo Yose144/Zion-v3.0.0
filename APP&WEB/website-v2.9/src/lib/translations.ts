@@ -26,6 +26,17 @@ const t = {
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
     defi:       { cs: 'DeFi Hub',    en: 'DeFi Hub' },
     defi_group: { cs: 'DeFi · L2',   en: 'DeFi · L2' },
+    menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
+    switch_to_en: { cs: 'Přepnout do angličtiny', en: 'Switch to English' },
+    switch_to_cs: { cs: 'Přepnout do češtiny', en: 'Switch to Czech' },
+    open_menu: { cs: 'Otevřít menu', en: 'Open menu' },
+    close_menu: { cs: 'Zavřít menu', en: 'Close menu' },
+    warp_status: { cs: 'WARP status', en: 'WARP status' },
+    status_online: { cs: 'Online', en: 'Online' },
+    language_toggle_desktop_cs: { cs: '🇨🇿 CS', en: '🇨🇿 CS' },
+    language_toggle_desktop_en: { cs: '🇬🇧 EN', en: '🇬🇧 EN' },
+    language_toggle_mobile_cs: { cs: '🇨🇿 Česky → English', en: '🇨🇿 Czech → English' },
+    language_toggle_mobile_en: { cs: '🇬🇧 English → Česky', en: '🇬🇧 English → Czech' },
   },
 
   /* ─── Hero ─── */
@@ -431,10 +442,23 @@ const t = {
 
   /* ─── Footer ─── */
   footer: {
+    group_protocol: { cs: 'Protokol', en: 'Protocol' },
+    group_explore: { cs: 'Průzkum', en: 'Explore' },
+    group_knowledge: { cs: 'Znalosti', en: 'Knowledge' },
+    whitepaper: { cs: 'Whitepaper', en: 'Whitepaper' },
+    downloads: { cs: 'Downloady', en: 'Downloads' },
     tagline: {
       cs: 'Blockchain první generace. Nativní Rust těžba. Vědomá architektura.',
       en: 'First generation blockchain. Native Rust mining. Conscious architecture.',
     },
+    disclaimer: {
+      cs: 'ZION je experimentální open-source protokol. Nejde o investiční produkt a neposkytuje žádné záruky. Používáš jej na vlastní riziko. Tokeny ZION vznikají těžbou pomocí Proof of Work, nejsou prodávány žádným emitentem. Nic na tomto webu nepředstavuje finanční, investiční ani právní poradenství.',
+      en: 'ZION is an experimental open-source protocol. It is not an investment product and carries no guarantees. Use it at your own risk. ZION tokens are mined through Proof of Work and are not sold by any issuer. Nothing published here constitutes financial, investment, or legal advice.',
+    },
+    legal_suffix: { cs: 'Úplné podmínky najdeš v', en: 'See' },
+    legal_suffix_tail: { cs: '.', en: 'for full terms.' },
+    legal_disclaimer: { cs: 'Právní upozornění', en: 'Legal Disclaimer' },
+    test_mainnet_active: { cs: 'Test mainnet aktivní', en: 'Test Mainnet Active' },
   },
 } as const;
 

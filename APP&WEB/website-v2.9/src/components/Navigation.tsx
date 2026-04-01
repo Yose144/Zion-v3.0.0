@@ -200,49 +200,49 @@ export default function Navigation() {
             </div>
             <Link
               href="/network"
-              title="Network"
+              title={tr('nav', 'network', lang)}
               className="p-2 rounded-xl border border-white/20 hover:border-zion-cyan/50 bg-black/30 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <SignalHigh className="w-4 h-4 text-zion-cyan" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Network</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'network', lang)}</span>
             </Link>
             <Link
               href="/explorer"
-              title="Explorer"
+              title={tr('nav', 'explorer', lang)}
               className="p-2 rounded-xl border border-white/20 hover:border-zion-gold/50 bg-black/30 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <Orbit className="w-4 h-4 text-zion-gold" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Explorer</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'explorer', lang)}</span>
             </Link>
             <Link
               href="/pool"
-              title="Pool"
+              title={tr('nav', 'pool', lang)}
               className="p-2 rounded-xl border border-white/20 hover:border-zion-purple/50 bg-black/30 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <Pickaxe className="w-4 h-4 text-zion-purple" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Pool</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'pool', lang)}</span>
             </Link>
             <Link
               href="/dashboard"
-              title="Dashboard"
+              title={tr('nav', 'dashboard', lang)}
               className="p-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan inline-flex items-center justify-center shadow-[0_10px_30px_rgba(147,51,234,0.35)] group relative"
             >
               <LayoutDashboard className="w-4 h-4 text-white" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Dashboard</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'dashboard', lang)}</span>
             </Link>
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
               className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-gray-300 hover:text-white"
-              title={lang === 'cs' ? 'Switch to English' : 'Přepnout do češtiny'}
+              title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
-              {lang === 'cs' ? '🇨🇿 CS' : '🇬🇧 EN'}
+              {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
             </button>
           </div>
 
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden text-white p-3 rounded-xl border border-white/20 hover:border-white/40 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label={isOpen ? 'Zavřít menu' : 'Otevřít menu'}
+            aria-label={isOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}
             aria-expanded={isOpen}
           >
             {isOpen ? <X size={22} /> : <Menu size={22} />}
@@ -252,7 +252,7 @@ export default function Navigation() {
         <div className="mt-3 hidden sm:flex items-center justify-end text-xs text-gray-400">
           <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-gray-500">
             <Orbit className="w-3 h-3 text-zion-cyan" />
-            WARP STATUS · Online
+            {tr('nav', 'warp_status', lang)} · {tr('nav', 'status_online', lang)}
           </div>
         </div>
 
@@ -268,11 +268,11 @@ export default function Navigation() {
             {/* Slide-in panel */}
             <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(320px,85vw)] bg-black/95 backdrop-blur-xl border-l border-white/10 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]">
               <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <span className="text-sm font-bold text-gradient">ZION Menu</span>
+                <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-2 rounded-xl border border-white/20 hover:border-white/40 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  aria-label="Zavřít menu"
+                  aria-label={tr('nav', 'close_menu', lang)}
                 >
                   <X size={20} className="text-white" />
                 </button>
@@ -315,7 +315,7 @@ export default function Navigation() {
                     onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-gray-300 hover:text-white"
                   >
-                    {lang === 'cs' ? '🇨🇿 Česky → English' : '🇬🇧 English → Česky'}
+                    {lang === 'cs' ? tr('nav', 'language_toggle_mobile_cs', lang) : tr('nav', 'language_toggle_mobile_en', lang)}
                   </button>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
@@ -324,21 +324,21 @@ export default function Navigation() {
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center gap-2 min-h-[44px] active:bg-white/10"
                   >
-                    <Orbit className="w-3 h-3 text-zion-gold shrink-0" /> Explorer
+                    <Orbit className="w-3 h-3 text-zion-gold shrink-0" /> {tr('nav', 'explorer', lang)}
                   </Link>
                   <Link
                     href="/pool"
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center gap-2 min-h-[44px] active:bg-white/10"
                   >
-                    <Pickaxe className="w-3 h-3 text-zion-purple shrink-0" /> Pool
+                    <Pickaxe className="w-3 h-3 text-zion-purple shrink-0" /> {tr('nav', 'pool', lang)}
                   </Link>
                   <Link
                     href="/dashboard"
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-3 py-3 inline-flex items-center gap-2 text-white min-h-[44px] font-semibold"
                   >
-                    Dashboard
+                    {tr('nav', 'dashboard', lang)}
                   </Link>
                 </div>
               </div>
