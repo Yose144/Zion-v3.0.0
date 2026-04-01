@@ -6,35 +6,6 @@ import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
 
-const footerGroups = [
-  {
-    title: 'Protocol',
-    links: [
-      { href: '/roadmap', label: 'Roadmap', Icon: Map },
-      { href: '/download', label: 'Download', Icon: Download },
-      { href: '/mining', label: 'Mining', Icon: Pickaxe },
-      { href: '/network', label: 'Network', Icon: Globe },
-    ],
-  },
-  {
-    title: 'Explore',
-    links: [
-      { href: '/explorer', label: 'Explorer', Icon: Compass },
-      { href: '/dashboard', label: 'Dashboard', Icon: Orbit },
-      { href: '/pool', label: 'Pool', Icon: Pickaxe },
-      { href: '/bridge', label: 'Bridge', Icon: ArrowLeftRight },
-    ],
-  },
-  {
-    title: 'Knowledge',
-    links: [
-      { href: '/docs', label: 'Docs', Icon: BookOpen },
-      { href: '/docs#wp-v3-mainnet', label: 'Whitepaper', Icon: FileText },
-      { href: '/download', label: 'Downloads', Icon: Download },
-    ],
-  },
-];
-
 const socialLinks = [
   { href: 'https://github.com/Zion-TerraNova', label: 'GitHub', Icon: Github },
   { href: 'https://discord.gg/zion-terranova', label: 'Discord', Icon: MessageCircle },
@@ -42,6 +13,35 @@ const socialLinks = [
 
 export default function Footer() {
   const { lang } = useLang();
+  const footerGroups = [
+    {
+      title: tr('footer', 'group_protocol', lang),
+      links: [
+        { href: '/roadmap', label: tr('nav', 'roadmap', lang), Icon: Map },
+        { href: '/download', label: tr('nav', 'download', lang), Icon: Download },
+        { href: '/mining', label: tr('nav', 'mining', lang), Icon: Pickaxe },
+        { href: '/network', label: tr('nav', 'network', lang), Icon: Globe },
+      ],
+    },
+    {
+      title: tr('footer', 'group_explore', lang),
+      links: [
+        { href: '/explorer', label: tr('nav', 'explorer', lang), Icon: Compass },
+        { href: '/dashboard', label: tr('nav', 'dashboard', lang), Icon: Orbit },
+        { href: '/pool', label: tr('nav', 'pool', lang), Icon: Pickaxe },
+        { href: '/bridge', label: tr('nav', 'bridge', lang), Icon: ArrowLeftRight },
+      ],
+    },
+    {
+      title: tr('footer', 'group_knowledge', lang),
+      links: [
+        { href: '/docs', label: tr('nav', 'docs', lang), Icon: BookOpen },
+        { href: '/docs#wp-v3-mainnet', label: tr('footer', 'whitepaper', lang), Icon: FileText },
+        { href: '/download', label: tr('footer', 'downloads', lang), Icon: Download },
+      ],
+    },
+  ];
+
   return (
     <footer className="border-t border-white/10 bg-black/60 backdrop-blur-xl mt-20">
       <div className="zion-container py-12">
@@ -92,14 +92,12 @@ export default function Footer() {
         {/* Disclaimer */}
         <div className="mt-10 pt-6 border-t border-white/5">
           <p className="text-[11px] leading-relaxed text-gray-600 max-w-3xl">
-            ZION is an experimental open-source protocol. Not an investment. No guarantees. 
-            Use at your own risk. ZION tokens are mined through Proof-of-Work, not sold by any issuer. 
-            Nothing published here constitutes financial, investment, or legal advice. 
-            See{' '}
+            {tr('footer', 'disclaimer', lang)}
+            {' '}{tr('footer', 'legal_suffix', lang)}{' '}
             <Link href="/legal" className="text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors">
-              Legal Disclaimer
+              {tr('footer', 'legal_disclaimer', lang)}
             </Link>{' '}
-            for full terms.
+            {tr('footer', 'legal_suffix_tail', lang)}
           </p>
         </div>
 
@@ -110,7 +108,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-gray-500">Test Mainnet Active</span>
+            <span className="text-xs text-gray-500">{tr('footer', 'test_mainnet_active', lang)}</span>
           </div>
         </div>
       </div>
