@@ -165,7 +165,7 @@ fn main() -> Result<()> {
         // P1-fix: read timeout prevents zombie threads when miner disconnects
         // ungracefully (no FIN), which leaks ip_sessions counter slots.
         stream
-            .set_read_timeout(Some(Duration::from_secs(300)))
+            .set_read_timeout(Some(Duration::from_secs(config.session_read_timeout_secs)))
             .context("failed to set client stream read timeout")?;
 
         let peer_ip = peer_addr.ip();
@@ -251,8 +251,11 @@ fn handle_client(
     active_sessions: Arc<AtomicU64>,
     config: &ServerConfig,
 ) -> Result<()> {
+    let session_started = Instant::now();
     active_sessions.fetch_add(1, Ordering::Relaxed);
+    let session_count = active_sessions.load(Ordering::Relaxed);
     let _guard = SessionGuard(Arc::clone(&active_sessions));
+    println!("session_start active_sessions={session_count}");
 
     let reader_stream = stream.try_clone().context("failed to clone tcp stream")?;
     let mut reader = BufReader::new(reader_stream);
@@ -310,6 +313,8 @@ fn handle_client(
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
     println!("wire_welcome={welcome_line}");
 
+    let mut last_template_height: u64 = 0;
+
     for iteration in 0..config.loop_count {
         let stale_job_ids = pool.lock().expect("pool lock poisoned").expire_stale_jobs();
         for stale_job_id in stale_job_ids {
@@ -333,6 +338,12 @@ fn handle_client(
         let job = match config.node_rpc_addr.as_deref() {
             Some(node_rpc_addr) => {
                 let template = fetch_node_template(node_rpc_addr)?;
+                if template.height != last_template_height {
+                    if last_template_height > 0 {
+                        println!("template_advanced prev_height={} new_height={} miner={}", last_template_height, template.height, worker_name);
+                    }
+                    last_template_height = template.height;
+                }
                 pool.lock()
                     .expect("pool lock poisoned")
                     .issue_job_from_template(&template, start_nonce, config.nonce_count)
@@ -355,12 +366,14 @@ fn handle_client(
         let job_message = pool.lock().expect("pool lock poisoned").job_message(job);
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
-        println!("iteration={}", iteration + 1);
+        println!("iteration={} miner={} height={} nonces={}..{}", iteration + 1, worker_name, job.height, start_nonce, start_nonce + config.nonce_count);
         println!("issued_job_id={}", job.job_id);
         println!("wire_job={job_line}");
 
         let (submit_line, submit_message) = read_wire_message(&mut reader)?;
+        let iter_elapsed_ms = job_issued_at.elapsed().as_millis();
         println!("wire_submit={submit_line}");
+        println!("iteration_elapsed_ms={iter_elapsed_ms}");
 
         let outcome = match submit_message {
             PoolMessage::Submit {
@@ -576,8 +589,10 @@ fn handle_client(
 
     let bye_message = pool.lock().expect("pool lock poisoned").bye_message();
     let bye_line = write_wire_message(&mut writer, &bye_message)?;
+    let session_elapsed_secs = session_started.elapsed().as_secs();
     println!("session_miner_id={miner_id}");
     println!("session_worker_name={worker_name}");
+    println!("session_duration_secs={session_elapsed_secs}");
     println!("wire_bye={bye_line}");
     Ok(())
 }
@@ -743,6 +758,9 @@ struct ServerConfig {
     routing_log_every: u64,
     routing_metrics_bind: Option<String>,
     max_sessions_per_ip: u32,
+    /// TCP read timeout for miner sessions — prevents zombie threads on
+    /// ungraceful disconnects (no FIN).  Default: 300s.
+    session_read_timeout_secs: u64,
     /// Pool wallet address for payout signing (ZION_POOL_WALLET).
     pool_wallet_address: Option<String>,
     /// Ed25519 signing key for pool payout transactions (ZION_POOL_PAYOUT_SK_HEX).
@@ -1909,6 +1927,7 @@ impl ServerConfig {
             routing_log_every: parse_env_u64("ZION_ROUTING_LOG_EVERY", 25)?,
             routing_metrics_bind: parse_optional_env_string("ZION_ROUTING_METRICS_BIND"),
             max_sessions_per_ip: parse_env_u32("ZION_MAX_SESSIONS_PER_IP", 10)?,
+            session_read_timeout_secs: parse_env_u64("ZION_SESSION_READ_TIMEOUT_SECS", 300)?,
             pool_wallet_address: parse_optional_env_string("ZION_POOL_WALLET"),
             pool_signing_key: parse_pool_signing_key(),
         })
