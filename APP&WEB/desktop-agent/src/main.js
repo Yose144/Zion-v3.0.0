@@ -831,7 +831,11 @@ function emitMinerStatusLine(reason) {
       return count > 0 ? sum / count : null;
     };
 
-    const hrNow = formatHashrate(minerStats.hashrate);
+    // Prefer live hashrate; fall back to GPU rate if CPU reports 0 (e.g. between jobs)
+    const rawHr = (typeof minerStats.hashrate === 'number' && minerStats.hashrate > 0)
+      ? minerStats.hashrate
+      : (typeof minerStats.hashrate_gpu === 'number' && minerStats.hashrate_gpu > 0 ? minerStats.hashrate_gpu : 0);
+    const hrNow = formatHashrate(rawHr);
     const hr10 = avgOver(10_000);
     const hr60 = avgOver(60_000);
     const hr15m = avgOver(15 * 60_000);
@@ -10200,7 +10204,9 @@ setInterval(() => {
     // Track rolling hashrate samples for xmrig-like averages.
     try {
       const now = Date.now();
-      const hs = typeof minerStats.hashrate === 'number' && Number.isFinite(minerStats.hashrate) ? minerStats.hashrate : 0;
+      const cpuHr = typeof minerStats.hashrate === 'number' && Number.isFinite(minerStats.hashrate) ? minerStats.hashrate : 0;
+      const gpuHr = typeof minerStats.hashrate_gpu === 'number' && Number.isFinite(minerStats.hashrate_gpu) ? minerStats.hashrate_gpu : 0;
+      const hs = cpuHr > 0 ? cpuHr : gpuHr; // fall back to GPU rate between jobs
       minerRateSamples.push({ t: now, hs });
       const cut15m = now - 15 * 60_000;
       while (minerRateSamples.length && minerRateSamples[0].t < cut15m) {

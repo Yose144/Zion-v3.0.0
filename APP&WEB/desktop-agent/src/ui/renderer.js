@@ -1279,7 +1279,7 @@ function logStreamLine(stream, line) {
   } else {
     // Buffer for lazy flush when user switches to Logs
     _mcDeferredQueue.push(line);
-    if (_mcDeferredQueue.length > 30) _mcDeferredQueue.shift();
+    if (_mcDeferredQueue.length > 100) _mcDeferredQueue.shift();
   }
 }
 
@@ -1689,10 +1689,16 @@ function setupEventListeners() {
       }
     }
 
-    // Only append non-panel lines to scrolling log
-    for (const line of logLines.slice(0, 25)) { // Increased from 10 to 25 lines per output
-      logStreamLine(stream, line);
+    // Split into priority (always shown) vs bulk (limited) lines
+    const priorityRe = /accepted|rejected|speed\s+10s|new job|BLOCK FOUND|\[METRICS\]|gpu_init|wire_hello|wire_welcome|mode=remote|pool_addr=/i;
+    const priorityLines = [];
+    const bulkLines = [];
+    for (const line of logLines) {
+      if (priorityRe.test(line)) priorityLines.push(line);
+      else bulkLines.push(line);
     }
+    for (const line of priorityLines) logStreamLine(stream, line);
+    for (const line of bulkLines.slice(0, 10)) logStreamLine(stream, line);
   });
 
   window.electronAPI.onBlockFound((data) => {
