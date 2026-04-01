@@ -2889,7 +2889,7 @@ impl ChainState {
         let mut selected_transactions = select_template_transactions(mempool);
         let total_fees_zion: u64 = selected_transactions.iter().map(|transaction| transaction.fee_zion).sum();
 
-        let selected_utxo_transactions = select_template_utxo_transactions(mempool);
+        let mut selected_utxo_transactions = select_template_utxo_transactions(mempool);
 
         // Phase 14: Generate coinbase transaction(s) when miner_address is configured.
         if !miner_address.is_empty() {
@@ -2921,6 +2921,31 @@ impl ChainState {
                 selected_transactions.insert(0, mk_coinbase("coinbase_issobella", issobella_address, issobella_amt));
                 selected_transactions.insert(0, mk_coinbase("coinbase_humanitarian", humanitarian_address, humanitarian_amt));
                 selected_transactions.insert(0, mk_coinbase("coinbase", miner_address, miner_amt));
+
+                // Phase 18: Also generate UTXO coinbase outputs so rewards are
+                // spendable via the UTXO transaction model (pool payouts, wallet sends).
+                let mut utxo_coinbase_outputs = vec![
+                    tx::TxOutput { amount: miner_amt, address: miner_address.to_string(), memo: Some("coinbase".into()) },
+                ];
+                if !humanitarian_address.is_empty() {
+                    utxo_coinbase_outputs.push(tx::TxOutput { amount: humanitarian_amt, address: humanitarian_address.to_string(), memo: Some("coinbase_humanitarian".into()) });
+                }
+                if !issobella_address.is_empty() {
+                    utxo_coinbase_outputs.push(tx::TxOutput { amount: issobella_amt, address: issobella_address.to_string(), memo: Some("coinbase_issobella".into()) });
+                }
+                if !pool_fee_address.is_empty() {
+                    utxo_coinbase_outputs.push(tx::TxOutput { amount: pool_fee_amt, address: pool_fee_address.to_string(), memo: Some("coinbase_pool_fee".into()) });
+                }
+                let mut utxo_coinbase = tx::Transaction {
+                    id: [0u8; 32],
+                    version: 1,
+                    inputs: vec![],  // coinbase: no inputs
+                    outputs: utxo_coinbase_outputs,
+                    fee: 0,
+                    timestamp: next_height,  // deterministic: use height as timestamp for reproducibility
+                };
+                utxo_coinbase.finalize_id();
+                selected_utxo_transactions.insert(0, utxo_coinbase);
             } else {
                 // Legacy single coinbase: 100% to miner
                 let coinbase_label = format!("coinbase:{}:{}", next_height, miner_address);
@@ -2935,6 +2960,18 @@ impl ChainState {
                     nonce: next_height,
                 };
                 selected_transactions.insert(0, coinbase_tx);
+
+                // Phase 18: UTXO coinbase for single-output legacy mode
+                let mut utxo_coinbase = tx::Transaction {
+                    id: [0u8; 32],
+                    version: 1,
+                    inputs: vec![],
+                    outputs: vec![tx::TxOutput { amount: subsidy, address: miner_address.to_string(), memo: Some("coinbase".into()) }],
+                    fee: 0,
+                    timestamp: next_height,
+                };
+                utxo_coinbase.finalize_id();
+                selected_utxo_transactions.insert(0, utxo_coinbase);
             }
         }
 

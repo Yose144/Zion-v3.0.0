@@ -77,13 +77,9 @@ fn main() -> Result<()> {
         println!("node_rpc_addr={node_rpc_addr}");
     }
     println!(
-        "payout_execution={} payout_fee_flowers={}",
-        if config.payout_signing_key.is_some() {
-            "enabled"
-        } else {
-            "disabled"
-        },
-        config.payout_fee_flowers
+        "payout_execution={} pool_wallet={}",
+        if config.pool_signing_key.is_some() && config.pool_wallet_address.is_some() { "enabled" } else { "disabled" },
+        config.pool_wallet_address.as_deref().unwrap_or("(not set)"),
     );
     println!(
         "session_default_group={} backend_miner_ids={} backend_worker_hints={}",
@@ -486,36 +482,37 @@ fn handle_client(
                             Vec::new()
                         }
                     };
+                    // Phase 18: Execute on-chain payout via UTXO batch transaction.
                     if !payouts.is_empty() {
-                        {
-                            let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
-                            telemetry.record_pending_payouts(job.height, &payouts);
-                        }
-
-                        match execute_batch_payout(
-                            config.node_rpc_addr.as_deref(),
-                            config.payout_signing_key,
-                            config.payout_fee_flowers,
-                            &payouts,
-                        ) {
-                            Ok(tx_id) => {
-                                let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
-                                telemetry.record_submitted_payouts(job.height, &payouts, &tx_id);
-                            }
-                            Err(error) => {
-                                {
-                                    let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                                    pplns.rollback_payouts(&payouts);
+                        if let Some(node_rpc_addr) = config.node_rpc_addr.as_deref() {
+                            if let Some(ref pool_wallet_addr) = config.pool_wallet_address {
+                                if let Some(ref signing_key) = config.pool_signing_key {
+                                    match execute_pool_payout(
+                                        node_rpc_addr,
+                                        pool_wallet_addr,
+                                        signing_key,
+                                        &payouts,
+                                        job.height,
+                                    ) {
+                                        Ok(tx_id) => {
+                                            println!(
+                                                "payout_submitted height={} miners={} tx_id={}",
+                                                job.height, payouts.len(), tx_id
+                                            );
+                                        }
+                                        Err(err) => {
+                                            println!(
+                                                "payout_submit_failed height={} miners={} error={}",
+                                                job.height, payouts.len(), err
+                                            );
+                                        }
+                                    }
+                                } else {
+                                    println!(
+                                        "payout_skipped height={} miners={} reason=missing_signing_key",
+                                        job.height, payouts.len()
+                                    );
                                 }
-                                let error_text = error.to_string();
-                                println!(
-                                    "payout_submit_failed height={} miners={} error={}",
-                                    job.height,
-                                    payouts.len(),
-                                    error_text
-                                );
-                                let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
-                                telemetry.record_failed_payouts(job.height, &payouts, &error_text);
                             }
                         }
                     }
@@ -694,78 +691,6 @@ fn json_rpc_roundtrip(node_rpc_addr: &str, method: &str, params: serde_json::Val
         .ok_or_else(|| anyhow!("json-rpc {method} missing result field"))
 }
 
-fn execute_batch_payout(
-    node_rpc_addr: Option<&str>,
-    signing_key_bytes: Option<[u8; 32]>,
-    payout_fee_flowers: u64,
-    payouts: &[PayoutEntry],
-) -> Result<String> {
-    let node_rpc_addr = node_rpc_addr.ok_or_else(|| anyhow!("missing ZION_NODE_RPC_ADDR for payout execution"))?;
-    let signing_key_bytes = signing_key_bytes.ok_or_else(|| anyhow!("missing ZION_POOL_PAYOUT_SK_HEX for payout execution"))?;
-    let signing_key = SigningKey::from_bytes(&signing_key_bytes);
-    let payout_address = zion_core::crypto::derive_address(signing_key.verifying_key().as_bytes());
-
-    let utxo_result = json_rpc_roundtrip(
-        node_rpc_addr,
-        "getUtxos",
-        serde_json::json!({ "address": payout_address }),
-    )?;
-    let utxos_value = utxo_result
-        .get("utxos")
-        .cloned()
-        .ok_or_else(|| anyhow!("getUtxos result missing 'utxos' field"))?;
-    #[derive(serde::Deserialize)]
-    struct RpcUtxo {
-        tx_hash: [u8; 32],
-        output_index: u32,
-        amount: u64,
-        address: String,
-    }
-
-    let rpc_utxos: Vec<RpcUtxo> = serde_json::from_value(utxos_value)
-        .context("failed to parse getUtxos response")?;
-    let utxos: Vec<SpendableUtxo> = rpc_utxos
-        .into_iter()
-        .map(|u| SpendableUtxo {
-            tx_hash: u.tx_hash,
-            output_index: u.output_index,
-            amount: u.amount,
-            address: u.address,
-        })
-        .collect();
-    if utxos.is_empty() {
-        return Err(anyhow!("pool payout wallet has no spendable UTXOs"));
-    }
-
-    let recipients: Vec<BatchRecipient> = payouts
-        .iter()
-        .map(|entry| BatchRecipient {
-            address: entry.address.clone(),
-            amount: entry.amount,
-        })
-        .collect();
-
-    let built = zion_core::wallet::build_batch_payout(
-        &signing_key,
-        &payout_address,
-        &recipients,
-        payout_fee_flowers,
-        &utxos,
-    )
-    .map_err(|error| anyhow!("failed to build payout transaction: {error}"))?;
-
-    let submit_result = json_rpc_roundtrip(
-        node_rpc_addr,
-        "submitTransaction",
-        serde_json::json!({ "transaction": built.transaction }),
-    )?;
-    submit_result
-        .get("tx_id")
-        .and_then(|value| value.as_str())
-        .map(|value| value.to_string())
-        .ok_or_else(|| anyhow!("submitTransaction result missing tx_id"))
-}
-
 fn map_node_rejection(reason: Option<&str>) -> ShareStatus {
     match reason {
         Some(reason) if reason.contains("stale template") => ShareStatus::StaleJob,
@@ -798,7 +723,7 @@ fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N]> {
     Ok(bytes)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct ServerConfig {
     bind_addr: String,
     accept_limit: Option<u32>,
@@ -818,8 +743,10 @@ struct ServerConfig {
     routing_log_every: u64,
     routing_metrics_bind: Option<String>,
     max_sessions_per_ip: u32,
-    payout_signing_key: Option<[u8; 32]>,
-    payout_fee_flowers: u64,
+    /// Pool wallet address for payout signing (ZION_POOL_WALLET).
+    pool_wallet_address: Option<String>,
+    /// Ed25519 signing key for pool payout transactions (ZION_POOL_PAYOUT_SK_HEX).
+    pool_signing_key: Option<ed25519_dalek::SigningKey>,
 }
 
 #[derive(Debug)]
@@ -1982,8 +1909,8 @@ impl ServerConfig {
             routing_log_every: parse_env_u64("ZION_ROUTING_LOG_EVERY", 25)?,
             routing_metrics_bind: parse_optional_env_string("ZION_ROUTING_METRICS_BIND"),
             max_sessions_per_ip: parse_env_u32("ZION_MAX_SESSIONS_PER_IP", 10)?,
-            payout_signing_key: parse_optional_key_bytes_env("ZION_POOL_PAYOUT_SK_HEX")?,
-            payout_fee_flowers: parse_env_u64("ZION_POOL_PAYOUT_FEE_FLOWERS", 10_000)?,
+            pool_wallet_address: parse_optional_env_string("ZION_POOL_WALLET"),
+            pool_signing_key: parse_pool_signing_key(),
         })
     }
 }
@@ -2273,9 +2200,7 @@ mod tests {
             backend_worker_hints: Vec::new(),
             routing_log_every: 0,
             routing_metrics_bind: None,
-            max_sessions_per_ip: 0,
-            payout_signing_key: None,
-            payout_fee_flowers: 10_000,
+            max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -2466,9 +2391,7 @@ mod tests {
             backend_worker_hints: vec!["backend".to_string()],
             routing_log_every: 0,
             routing_metrics_bind: None,
-            max_sessions_per_ip: 0,
-            payout_signing_key: None,
-            payout_fee_flowers: 10_000,
+            max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -2495,9 +2418,7 @@ mod tests {
             backend_worker_hints: vec!["backend".to_string()],
             routing_log_every: 0,
             routing_metrics_bind: None,
-            max_sessions_per_ip: 0,
-            payout_signing_key: None,
-            payout_fee_flowers: 10_000,
+            max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -2524,9 +2445,7 @@ mod tests {
             backend_worker_hints: vec!["backend".to_string(), "revenue".to_string()],
             routing_log_every: 0,
             routing_metrics_bind: None,
-            max_sessions_per_ip: 0,
-            payout_signing_key: None,
-            payout_fee_flowers: 10_000,
+            max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -2714,9 +2633,7 @@ mod tests {
             backend_worker_hints: vec!["backend".to_string()],
             routing_log_every: 0,
             routing_metrics_bind: None,
-            max_sessions_per_ip: 0,
-            payout_signing_key: None,
-            payout_fee_flowers: 10_000,
+            max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
         };
 
         // Even though miner_id is in backend list, explicit hint wins
@@ -2946,4 +2863,187 @@ fn parse_env_bool(key: &str, default: bool) -> bool {
         }
         Err(_) => default,
     }
+}
+
+// ── Pool payout execution (Phase 18) ──────────────────────────────────
+
+fn parse_pool_signing_key() -> Option<ed25519_dalek::SigningKey> {
+    let hex_str = std::env::var("ZION_POOL_PAYOUT_SK_HEX").ok()?;
+    let hex_str = hex_str.trim();
+    if hex_str.is_empty() || hex_str.len() != 64 {
+        return None;
+    }
+    let bytes = parse_hex_bytes(hex_str)?;
+    if bytes.len() != 32 {
+        return None;
+    }
+    let mut key_bytes = [0u8; 32];
+    key_bytes.copy_from_slice(&bytes);
+    Some(ed25519_dalek::SigningKey::from_bytes(&key_bytes))
+}
+
+fn parse_hex_bytes(hex_str: &str) -> Option<Vec<u8>> {
+    if hex_str.len() % 2 != 0 {
+        return None;
+    }
+    let mut bytes = Vec::with_capacity(hex_str.len() / 2);
+    for chunk in hex_str.as_bytes().chunks(2) {
+        let pair = std::str::from_utf8(chunk).ok()?;
+        bytes.push(u8::from_str_radix(pair, 16).ok()?);
+    }
+    Some(bytes)
+}
+
+/// Fetch pool wallet's spendable UTXOs from the node via JSON-RPC 2.0.
+fn fetch_pool_utxos(node_rpc_addr: &str, address: &str) -> Result<Vec<SpendableUtxo>> {
+    let request_body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getUtxos",
+        "params": { "address": address }
+    });
+
+    let mut stream = TcpStream::connect(node_rpc_addr)
+        .with_context(|| format!("failed to connect to node rpc at {node_rpc_addr}"))?;
+    let mut request_line = serde_json::to_string(&request_body)?;
+    request_line.push('\n');
+    stream.write_all(request_line.as_bytes())?;
+    stream.flush()?;
+
+    let mut reader = BufReader::new(stream);
+    let mut response_line = String::new();
+    reader.read_line(&mut response_line)?;
+
+    let response: serde_json::Value = serde_json::from_str(&response_line)
+        .context("failed to parse getUtxos response")?;
+
+    if let Some(error) = response.get("error") {
+        if !error.is_null() {
+            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("unknown");
+            return Err(anyhow!("getUtxos error: {}", msg));
+        }
+    }
+
+    let result = response.get("result").ok_or_else(|| anyhow!("missing result in getUtxos response"))?;
+    let utxo_array = result.get("utxos").and_then(|u| u.as_array())
+        .ok_or_else(|| anyhow!("missing utxos array in getUtxos response"))?;
+
+    let mut utxos = Vec::new();
+    for item in utxo_array {
+        let tx_hash_hex = item.get("tx_hash").and_then(|v| v.as_str()).unwrap_or("");
+        let output_index = item.get("output_index").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+        let amount = item.get("amount").and_then(|v| v.as_u64()).unwrap_or(0);
+        let addr = item.get("address").and_then(|v| v.as_str()).unwrap_or("");
+
+        let hash_bytes = parse_hex_bytes(tx_hash_hex).unwrap_or_default();
+        if hash_bytes.len() != 32 {
+            continue;
+        }
+        let mut tx_hash = [0u8; 32];
+        tx_hash.copy_from_slice(&hash_bytes);
+
+        utxos.push(SpendableUtxo {
+            tx_hash,
+            output_index,
+            amount,
+            address: addr.to_string(),
+        });
+    }
+    Ok(utxos)
+}
+
+/// Submit a signed UTXO transaction to the node via JSON-RPC 2.0.
+fn submit_utxo_transaction(node_rpc_addr: &str, tx: &zion_core::tx::Transaction) -> Result<String> {
+    let tx_json = serde_json::to_value(tx)?;
+    let request_body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "submitTransaction",
+        "params": { "transaction": tx_json }
+    });
+
+    let mut stream = TcpStream::connect(node_rpc_addr)
+        .with_context(|| format!("failed to connect to node rpc at {node_rpc_addr}"))?;
+    let mut request_line = serde_json::to_string(&request_body)?;
+    request_line.push('\n');
+    stream.write_all(request_line.as_bytes())?;
+    stream.flush()?;
+
+    let mut reader = BufReader::new(stream);
+    let mut response_line = String::new();
+    reader.read_line(&mut response_line)?;
+
+    let response: serde_json::Value = serde_json::from_str(&response_line)
+        .context("failed to parse submitTransaction response")?;
+
+    if let Some(error) = response.get("error") {
+        if !error.is_null() {
+            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("unknown");
+            return Err(anyhow!("submitTransaction error: {}", msg));
+        }
+    }
+
+    let result = response.get("result").ok_or_else(|| anyhow!("missing result"))?;
+    let accepted = result.get("accepted").and_then(|v| v.as_bool()).unwrap_or(false);
+    if !accepted {
+        let reason = result.get("reason").and_then(|v| v.as_str()).unwrap_or("rejected");
+        return Err(anyhow!("transaction rejected: {}", reason));
+    }
+
+    let tx_id = result.get("tx_id").and_then(|v| v.as_str()).unwrap_or("unknown");
+    Ok(tx_id.to_string())
+}
+
+/// Execute a pool payout: fetch UTXOs, build batch transaction, sign, and submit.
+fn execute_pool_payout(
+    node_rpc_addr: &str,
+    pool_wallet_addr: &str,
+    signing_key: &ed25519_dalek::SigningKey,
+    payouts: &[PayoutEntry],
+    height: u64,
+) -> Result<String> {
+    if payouts.is_empty() {
+        return Err(anyhow!("no payouts to execute"));
+    }
+
+    // Fetch spendable UTXOs for the pool wallet.
+    let utxos = fetch_pool_utxos(node_rpc_addr, pool_wallet_addr)?;
+    if utxos.is_empty() {
+        return Err(anyhow!(
+            "pool payout wallet {} has no spendable UTXOs (balance will accumulate from new blocks)",
+            pool_wallet_addr,
+        ));
+    }
+
+    let recipients: Vec<BatchRecipient> = payouts
+        .iter()
+        .map(|p| BatchRecipient {
+            address: p.address.clone(),
+            amount: p.amount,
+        })
+        .collect();
+
+    let payout_fee = zion_core::fee::minimum_fee_for_size(
+        zion_core::fee::estimate_tx_size(utxos.len().min(10), recipients.len() + 1),
+    );
+
+    let build_result = zion_core::wallet::build_batch_payout(
+        signing_key,
+        pool_wallet_addr,
+        &recipients,
+        payout_fee,
+        &utxos,
+    )
+    .map_err(|err| anyhow!("payout build failed: {}", err))?;
+
+    println!(
+        "payout_built height={} recipients={} fee={} change={} inputs={}",
+        height,
+        recipients.len(),
+        payout_fee,
+        build_result.change_amount,
+        build_result.transaction.inputs.len(),
+    );
+
+    submit_utxo_transaction(node_rpc_addr, &build_result.transaction)
 }
