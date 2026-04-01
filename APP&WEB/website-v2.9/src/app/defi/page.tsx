@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -147,11 +148,7 @@ export default function DefiPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchStatus();
-    const i = setInterval(fetchStatus, 30_000);
-    return () => clearInterval(i);
-  }, [fetchStatus]);
+  usePolling(fetchStatus, 30_000);
 
   const cs = lang === 'cs';
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -35,6 +35,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL } from '@/lib/site';
 
 /* ═══════════════════════════════════════════════════════════
@@ -297,16 +298,10 @@ export default function PoolDashboard() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-    const iv = setInterval(fetchData, 15000);
-    return () => clearInterval(iv);
-  }, [fetchData]);
-
-  useEffect(() => {
-    const iv = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 10000);
-    return () => clearInterval(iv);
-  }, []);
+  usePolling(fetchData, 15_000);
+  usePolling(() => {
+    setNow(Math.floor(Date.now() / 1000));
+  }, 30_000, { immediate: false });
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">

@@ -1,19 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { motion } from "framer-motion";
-import ExplorerDashboard from "@/components/explorer/ExplorerDashboard";
-import ProExplorerStats from "@/components/explorer/ProExplorerStats";
-import ExplorerCharts from "@/components/explorer/ExplorerCharts";
-import EmissionMonitor from "@/components/explorer/EmissionMonitor";
-import MempoolFeed from "@/components/explorer/MempoolFeed";
-import ProRecentBlocks from "@/components/explorer/ProRecentBlocks";
-import ProRecentTransactions from "@/components/explorer/ProRecentTransactions";
 import ProSearchBar from "@/components/explorer/ProSearchBar";
-import NetworkTicker from "@/components/explorer/NetworkTicker";
-import NetworkPeers from "@/components/explorer/NetworkPeers";
-import RichListClient from "./richlist/RichListClient";
 import { useLang } from '@/contexts/LanguageContext';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import {
@@ -28,6 +19,19 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
+
+const ExplorerDashboard = dynamic(() => import("@/components/explorer/ExplorerDashboard"));
+const ProExplorerStats = dynamic(() => import("@/components/explorer/ProExplorerStats"));
+const ExplorerCharts = dynamic(() => import("@/components/explorer/ExplorerCharts"));
+const EmissionMonitor = dynamic(() => import("@/components/explorer/EmissionMonitor"));
+const MempoolFeed = dynamic(() => import("@/components/explorer/MempoolFeed"));
+const ProRecentBlocks = dynamic(() => import("@/components/explorer/ProRecentBlocks"));
+const ProRecentTransactions = dynamic(() => import("@/components/explorer/ProRecentTransactions"));
+const NetworkTicker = dynamic(() => import("@/components/explorer/NetworkTicker"), {
+  loading: () => <div className="h-[92px] bg-black/60 animate-pulse" />,
+});
+const NetworkPeers = dynamic(() => import("@/components/explorer/NetworkPeers"));
+const RichListClient = dynamic(() => import("./richlist/RichListClient"));
 
 /* ═══════════════════════════════════════════════════════════
    EXPLORER PAGE — Redesigned to match Roadmap visual language
@@ -112,15 +116,15 @@ export default function ExplorerPage() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 {cs
-                  ? `Vyhledavejte bloky, transakce a adresy na aktualni kontrolovane V3 test-mainnet lince ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonicky runtime zustava na ${SITE_RUNTIME_LABEL}. Smart hash resolver, ziva data z aktualniho verejneho rehearsal runtime a auto-refresh kazdych 10 sekund.`
-                  : `Search blocks, transactions, and addresses on the current ZION TerraNova ${SITE_RELEASE_LABEL} controlled V3 test-mainnet line. Canonical runtime stays on ${SITE_RUNTIME_LABEL}. Smart hash resolver, live data from the current public rehearsal runtime, and auto-refresh every 10 seconds.`}
+                  ? `Vyhledavejte bloky, transakce a adresy na aktualni kontrolovane V3 test-mainnet lince ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonicky runtime zustava na ${SITE_RUNTIME_LABEL}. Smart hash resolver, ziva data z aktualniho verejneho rehearsal runtime a auto-refresh kazdych 15 sekund.`
+                  : `Search blocks, transactions, and addresses on the current ZION TerraNova ${SITE_RELEASE_LABEL} controlled V3 test-mainnet line. Canonical runtime stays on ${SITE_RUNTIME_LABEL}. Smart hash resolver, live data from the current public rehearsal runtime, and auto-refresh every 15 seconds.`}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Ziva test data' : 'Live Test Data'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 10 s' : 'Auto-Refresh 10s'}
+                  <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Globe className="h-3 w-3 text-zion-cyan" /> {cs ? '1 verejny host' : '1 Public Host'}

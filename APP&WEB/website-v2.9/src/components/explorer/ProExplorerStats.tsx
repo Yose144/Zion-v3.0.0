@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { apiClient } from "@/lib/api";
 import { motion } from "framer-motion";
 import { useLang } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 import {
   type LucideIcon,
   Box,
@@ -126,14 +127,7 @@ export default function ProExplorerStats() {
     }
   }, []);
 
-  useEffect(() => {
-    const initial = setTimeout(fetchStats, 0);
-    const iv = setInterval(fetchStats, 12000);
-    return () => {
-      clearTimeout(initial);
-      clearInterval(iv);
-    };
-  }, [fetchStats]);
+  usePolling(fetchStats, 15_000);
 
   if (!stats && !error) {
     return (

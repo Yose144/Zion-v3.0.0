@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, Wifi, WifiOff } from 'lucide-react';
+import { usePolling } from '@/hooks/usePolling';
 
 interface NodeStatus {
   id: string;
@@ -59,23 +60,19 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
     .join(' ');
   const svgClasses = isHero ? 'w-full h-full min-h-[320px]' : 'w-full h-auto min-h-[320px]';
 
-  useEffect(() => {
-    async function fetchStatus() {
-      try {
-        const res = await fetch('/api/network');
-        if (res.ok) {
-          const data = await res.json();
-          setStatus(data);
-        }
-      } catch (e) {
-        console.error('Failed to fetch network status:', e);
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/network', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setStatus(data);
       }
+    } catch (e) {
+      console.error('Failed to fetch network status:', e);
     }
-
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 30000);
-    return () => clearInterval(interval);
   }, []);
+
+  usePolling(fetchStatus, 30_000);
 
   if (!status) {
     return (

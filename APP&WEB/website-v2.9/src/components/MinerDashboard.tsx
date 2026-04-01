@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -27,6 +27,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 
 /* ═══════════════════════════════════════════════════════════
    MINER DASHBOARD — Per-miner metrics & charts
@@ -250,11 +251,7 @@ export default function MinerDashboard({ address }: { address: string }) {
     }
   }, [address, cs]);
 
-  useEffect(() => {
-    fetchData();
-    const iv = setInterval(fetchData, 15000);
-    return () => clearInterval(iv);
-  }, [fetchData]);
+  usePolling(fetchData, 15_000);
 
   /* ── Loading state ── */
   if (loading) {
