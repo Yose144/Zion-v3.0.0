@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useLang } from '@/contexts/LanguageContext';
 import {
   Award,
   BarChart3,
@@ -83,7 +84,7 @@ const rankIcons = [
   { icon: Award, color: "text-amber-600" },
 ];
 
-const typeConfig = {
+const getTypeConfig = (cs: boolean) => ({
   premine: {
     bg: "bg-zion-purple/10",
     border: "border-zion-purple/20",
@@ -102,10 +103,10 @@ const typeConfig = {
     bg: "bg-white/5",
     border: "border-white/10",
     text: "text-white/60",
-    label: "Holder",
+    label: cs ? "Drzitel" : "Holder",
     icon: Wallet,
   },
-};
+});
 
 /* ── component ──────────────────────────────────────────────── */
 
@@ -115,6 +116,10 @@ interface RichListClientProps {
 }
 
 export default function RichListClient({ embedded = false }: RichListClientProps) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
+  const typeConfig = getTypeConfig(cs);
   const [data, setData] = useState<RichListData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -153,26 +158,26 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           >
             {[
               {
-                label: "Total Addresses",
-                value: data.stats.total_addresses.toLocaleString(),
+                label: cs ? "Celkem adres" : "Total Addresses",
+                value: data.stats.total_addresses.toLocaleString(locale),
                 icon: Users,
                 accent: "text-zion-cyan",
               },
               {
-                label: "Top 10 Ownership",
+                label: cs ? "Podil top 10" : "Top 10 Ownership",
                 value: `${data.stats.top_10_percentage.toFixed(1)}%`,
                 icon: BarChart3,
                 accent: "text-zion-gold",
               },
               {
-                label: "Gini Coefficient",
+                label: cs ? "Giniho koeficient" : "Gini Coefficient",
                 value: data.stats.gini_coefficient.toFixed(4),
                 icon: Scale,
                 accent: "text-zion-purple",
               },
               {
-                label: "Active Miners",
-                value: data.stats.miner_addresses.toLocaleString(),
+                label: cs ? "Aktivni mineri" : "Active Miners",
+                value: data.stats.miner_addresses.toLocaleString(locale),
                 icon: Pickaxe,
                 accent: "text-emerald-400",
               },
@@ -205,7 +210,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           >
             <h2 className="text-sm font-medium text-white/60 mb-4 flex items-center gap-2">
               <Gem className="w-4 h-4 text-zion-gold" />
-              Supply Distribution
+              {cs ? 'Distribuce zasoby' : 'Supply Distribution'}
             </h2>
             <div className="flex h-6 rounded-full overflow-hidden border border-white/10">
               {(() => {
@@ -226,12 +231,12 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                     <div
                       className="bg-linear-to-r from-zion-cyan to-blue-500 transition-all"
                       style={{ width: `${minerPerc}%` }}
-                      title={`Miners: ${minerPerc.toFixed(1)}%`}
+                      title={`${cs ? 'Mineri' : 'Miners'}: ${minerPerc.toFixed(1)}%`}
                     />
                     <div
                       className="bg-white/5 transition-all"
                       style={{ width: `${otherPerc}%` }}
-                      title={`Unmapped: ${otherPerc.toFixed(1)}%`}
+                      title={`${cs ? 'Nezarazeno' : 'Unmapped'}: ${otherPerc.toFixed(1)}%`}
                     />
                   </>
                 );
@@ -244,11 +249,11 @@ export default function RichListClient({ embedded = false }: RichListClientProps
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-zion-cyan" />
-                Mining rewards
+                {cs ? 'Tezebni odmeny' : 'Mining rewards'}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-white/10" />
-                Unmapped
+                {cs ? 'Nezarazeno' : 'Unmapped'}
               </span>
             </div>
           </motion.div>
@@ -256,7 +261,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
 
         {/* ═══════ LIMIT SELECTOR ═══════ */}
         <div className="flex items-center gap-3">
-          <span className="text-sm text-white/40">Show:</span>
+          <span className="text-sm text-white/40">{cs ? 'Zobrazit:' : 'Show:'}</span>
           {[25, 50, 100, 200].map((n) => (
             <button
               key={n}
@@ -282,19 +287,19 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {/* Table header */}
           <div className="grid grid-cols-[60px_1fr_1fr_120px_100px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
             <span className="text-[11px] text-white/30 uppercase tracking-wider">
-              Rank
+              {cs ? 'Poradi' : 'Rank'}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider">
-              Address
+              {cs ? 'Adresa' : 'Address'}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">
-              Balance (ZION)
+              {cs ? 'Zustatek (ZION)' : 'Balance (ZION)'}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right hidden md:block">
               % Supply
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">
-              Type
+              {cs ? 'Typ' : 'Type'}
             </span>
           </div>
 
@@ -302,7 +307,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {loading && (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 text-zion-gold animate-spin" />
-              <span className="ml-3 text-white/40 text-sm">Loading…</span>
+              <span className="ml-3 text-white/40 text-sm">{cs ? 'Nacitam…' : 'Loading…'}</span>
             </div>
           )}
 
@@ -314,7 +319,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 onClick={fetchRichList}
                 className="mt-4 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 text-sm transition-all"
               >
-                Retry
+                {cs ? 'Zkusit znovu' : 'Retry'}
               </button>
             </div>
           )}
@@ -402,19 +407,19 @@ export default function RichListClient({ embedded = false }: RichListClientProps
         {data && (
           <div className="text-center text-xs text-white/30 space-y-1">
             <p>
-              Data refreshed:{" "}
-              {new Date(data.timestamp).toLocaleString()} · Showing{" "}
-              {data.rich_list.length} addresses
+              {cs ? 'Data aktualizovana:' : 'Data refreshed:'}{' '}
+              {new Date(data.timestamp).toLocaleString(locale)} · {cs ? 'Zobrazeno' : 'Showing'}{' '}
+              {data.rich_list.length} {cs ? 'adres' : 'addresses'}
             </p>
             <p>
-              Premine allocation as defined in{" "}
+              {cs ? 'Premine alokace podle' : 'Premine allocation as defined in'}{' '}
               <Link
                 href="/genesis"
                 className="text-zion-gold/60 hover:text-zion-gold transition-colors underline"
               >
                 Genesis Block
               </Link>
-              . Miner balances from pool reward history.
+              {cs ? '. Zustatky mineru vychazi z historie odmen poolu.' : '. Miner balances from pool reward history.'}
             </p>
           </div>
         )}
