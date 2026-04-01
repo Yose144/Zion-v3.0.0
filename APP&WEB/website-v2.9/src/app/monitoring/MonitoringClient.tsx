@@ -10,6 +10,7 @@ import {
   Coins, CircleDollarSign, ArrowUpDown, Gauge, Timer,
 } from 'lucide-react';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION } from '@/lib/site';
+import { useLang } from '@/contexts/LanguageContext';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface PrometheusResult {
@@ -320,6 +321,9 @@ function GroupRow({ name, submits, accepted, color }: {
 /* ═══════════════════════ MAIN ═══════════════════════ */
 
 export default function MonitoringClient() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
   const [data, setData] = useState<MonitoringData | null>(null);
   const [sparklines, setSparklines] = useState<SparklineData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -375,14 +379,15 @@ export default function MonitoringClient() {
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-400 uppercase">
                 <Monitor className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · Monitoring
+                {SITE_RELEASE_LABEL} · {cs ? 'Monitoring' : 'Monitoring'}
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-emerald-200 to-emerald-400 bg-clip-text text-transparent">
-                Network Monitoring
+              <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-white via-emerald-200 to-emerald-400 bg-clip-text text-transparent">
+                {cs ? 'Sitovy monitoring' : 'Network Monitoring'}
               </h1>
               <p className="text-gray-400 max-w-2xl text-sm md:text-base">
-                Live Prometheus metrics from the V3 core node, mining pool, PPLNS engine,
-                and server infrastructure. 30+ metrics · Auto-refreshes every 15 seconds.
+                {cs
+                  ? 'Zive Prometheus metriky z V3 core nodu, mining poolu, PPLNS enginu a serverove infrastruktury. 30+ metrik · automaticky refresh kazdych 15 sekund.'
+                  : 'Live Prometheus metrics from the V3 core node, mining pool, PPLNS engine, and server infrastructure. 30+ metrics · Auto-refreshes every 15 seconds.'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -393,7 +398,7 @@ export default function MonitoringClient() {
                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white transition-colors"
               >
                 <BarChart3 className="h-4 w-4" />
-                Open Grafana Dashboard
+                {cs ? 'Otevrit Grafana dashboard' : 'Open Grafana Dashboard'}
                 <ExternalLink className="h-3.5 w-3.5 opacity-60" />
               </a>
               <button
@@ -402,13 +407,13 @@ export default function MonitoringClient() {
                 className="inline-flex items-center gap-2 rounded-xl border border-white/20 hover:border-white/40 px-5 py-3 text-sm font-medium text-gray-300 transition-colors"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                {cs ? 'Obnovit' : 'Refresh'}
               </button>
             </div>
           </div>
           {lastUpdate && (
             <div className="mt-4 text-xs text-gray-500">
-              Last update: {lastUpdate.toLocaleTimeString()} · Next in 15s
+              {cs ? 'Posledni aktualizace' : 'Last update'}: {lastUpdate.toLocaleTimeString(locale)} · {cs ? 'dalsi za 15 s' : 'Next in 15s'}
             </div>
           )}
         </motion.section>
@@ -422,18 +427,18 @@ export default function MonitoringClient() {
         >
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.coreUp ?? null} />
-            <span className="text-gray-300">Core Node</span>
+            <span className="text-gray-300">{cs ? 'Core node' : 'Core Node'}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.poolUp ?? null} />
-            <span className="text-gray-300">Mining Pool</span>
+            <span className="text-gray-300">{cs ? 'Mining pool' : 'Mining Pool'}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.serverLoad1 != null ? 1 : null} />
             <span className="text-gray-300">Node Exporter</span>
           </div>
           <div className="ml-auto text-xs text-gray-500 font-mono">
-            {data?.chainHeight != null ? `Block #${data.chainHeight}` : ''}
+            {data?.chainHeight != null ? `${cs ? 'Blok' : 'Block'} #${data.chainHeight.toLocaleString(locale)}` : ''}
           </div>
         </motion.section>
 
@@ -445,21 +450,21 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Server className="h-5 w-5 text-zion-cyan" />
-            Core Node
+            {cs ? 'Core node' : 'Core Node'}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            <StatCard icon={Layers}   label="Chain Height"    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
-            <StatCard icon={Layers}   label="Template Height" value={fmt(data?.templateHeight)} accent="text-amber-400" />
-            <StatCard icon={Globe}    label="Peers"           value={fmt(data?.peerCount)} accent="text-zion-cyan" />
-            <StatCard icon={Database} label="Mempool Txs"     value={fmt(data?.mempoolSize)} accent="text-purple-400" />
-            <StatCard icon={Sparkles} label="Blocks Accepted" value={fmt(data?.blocksAccepted)} accent="text-emerald-400" />
-            <StatCard icon={Box}      label="Template Txs"    value={fmt(data?.templateTxs)} accent="text-sky-400" sub="in current block" />
-            <StatCard icon={Coins}    label="Template Fees"   value={data?.templateFees != null ? `${data.templateFees} ZION` : '—'} accent="text-amber-300" sub="pending fees" />
+            <StatCard icon={Layers}   label={cs ? 'Vyska chainu' : 'Chain Height'}    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
+            <StatCard icon={Layers}   label={cs ? 'Vyska sablony' : 'Template Height'} value={fmt(data?.templateHeight)} accent="text-amber-400" />
+            <StatCard icon={Globe}    label={cs ? 'Peeri' : 'Peers'}           value={fmt(data?.peerCount)} accent="text-zion-cyan" />
+            <StatCard icon={Database} label={cs ? 'Tx v mempoolu' : 'Mempool Txs'}     value={fmt(data?.mempoolSize)} accent="text-purple-400" />
+            <StatCard icon={Sparkles} label={cs ? 'Prijate bloky' : 'Blocks Accepted'} value={fmt(data?.blocksAccepted)} accent="text-emerald-400" />
+            <StatCard icon={Box}      label={cs ? 'Tx v sablone' : 'Template Txs'}    value={fmt(data?.templateTxs)} accent="text-sky-400" sub={cs ? 'v aktualnim bloku' : 'in current block'} />
+            <StatCard icon={Coins}    label={cs ? 'Fee sablony' : 'Template Fees'}   value={data?.templateFees != null ? `${data.templateFees} ZION` : '—'} accent="text-amber-300" sub={cs ? 'cekajici fee' : 'pending fees'} />
           </div>
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
             <div className="mt-3 zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
-              <div className="text-xs text-gray-400 mb-2">Chain Height — last 1 hour</div>
+              <div className="text-xs text-gray-400 mb-2">{cs ? 'Vyska chainu — posledni 1 hodina' : 'Chain Height — last 1 hour'}</div>
               <Sparkline data={sparklines.chainHeight} color="#FFD700" height={40} />
             </div>
           )}
@@ -473,29 +478,29 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Cpu className="h-5 w-5 text-zion-gold" />
-            Mining Pool
+            {cs ? 'Mining pool' : 'Mining Pool'}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" />
-            <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-sky-400" />
-            <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-emerald-400" />
-            <StatCard icon={Activity} label="Rejected Shares"  value={fmt(data?.poolRejectedTotal)} accent="text-red-400" />
-            <StatCard icon={Gauge}    label="Accept Rate"      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
-            <StatCard icon={Timer}    label="Pool Uptime"      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" />
-            <StatCard icon={Heart}    label="PPLNS Miners"     value={fmt(data?.pplnsRegisteredMiners)} accent="text-pink-400" />
+            <StatCard icon={Users}    label={cs ? 'Aktivni mineri' : 'Active Miners'}    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" />
+            <StatCard icon={ArrowUpDown} label={cs ? 'Celkem submitu' : 'Total Submits'} value={fmt(data?.poolSubmitsTotal)} accent="text-sky-400" />
+            <StatCard icon={Sparkles} label={cs ? 'Prijate shares' : 'Accepted Shares'}  value={fmt(data?.poolAcceptedTotal)} accent="text-emerald-400" />
+            <StatCard icon={Activity} label={cs ? 'Odmitnute shares' : 'Rejected Shares'}  value={fmt(data?.poolRejectedTotal)} accent="text-red-400" />
+            <StatCard icon={Gauge}    label={cs ? 'Accept rate' : 'Accept Rate'}      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
+            <StatCard icon={Timer}    label={cs ? 'Uptime poolu' : 'Pool Uptime'}      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" />
+            <StatCard icon={Heart}    label={cs ? 'PPLNS mineri' : 'PPLNS Miners'}     value={fmt(data?.pplnsRegisteredMiners)} accent="text-pink-400" />
           </div>
           {/* Sparklines */}
           {sparklines && (sparklines.poolSessions.length > 1 || sparklines.shares.length > 1) && (
             <div className="mt-3 grid md:grid-cols-2 gap-3">
               {sparklines.poolSessions.length > 1 && (
                 <div className="zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
-                  <div className="text-xs text-gray-400 mb-2">Active Miners — last 1 hour</div>
+                  <div className="text-xs text-gray-400 mb-2">{cs ? 'Aktivni mineri — posledni 1 hodina' : 'Active Miners — last 1 hour'}</div>
                   <Sparkline data={sparklines.poolSessions} color="#FFD700" height={36} />
                 </div>
               )}
               {sparklines.shares.length > 1 && (
                 <div className="zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
-                  <div className="text-xs text-gray-400 mb-2">Accepted Shares — last 1 hour</div>
+                  <div className="text-xs text-gray-400 mb-2">{cs ? 'Prijate shares — posledni 1 hodina' : 'Accepted Shares — last 1 hour'}</div>
                   <Sparkline data={sparklines.shares} color="#10b981" height={36} />
                 </div>
               )}
@@ -512,7 +517,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Network className="h-5 w-5 text-sky-400" />
-            Pool Groups
+            {cs ? 'Skupiny poolu' : 'Pool Groups'}
           </h2>
           <div className="grid md:grid-cols-2 gap-3">
             <GroupRow name="zion (Main)" submits={data?.groupZionSubmits} accepted={data?.groupZionAccepted} color="bg-emerald-400" />
@@ -531,32 +536,32 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <CircleDollarSign className="h-5 w-5 text-pink-400" />
-            PPLNS Reward Engine
+            {cs ? 'PPLNS vyplatni engine' : 'PPLNS Reward Engine'}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Size</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Velikost okna' : 'Window Size'}</div>
               <div className="text-base sm:text-xl font-mono font-bold text-pink-400 truncate">{fmt(data?.pplnsWindowSize)}</div>
-              <div className="text-xs text-gray-500">maximum shares</div>
+              <div className="text-xs text-gray-500">{cs ? 'maximalni shares' : 'maximum shares'}</div>
             </div>
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Used</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Vyuzite okno' : 'Window Used'}</div>
               <div className="text-base sm:text-xl font-mono font-bold text-pink-300 truncate">{fmt(data?.pplnsWindowUsed)}</div>
               {pplnsWindowPct != null && (
                 <ProgressBar value={data?.pplnsWindowUsed ?? 0} max={data?.pplnsWindowSize ?? 1} color="bg-pink-500" />
               )}
-              <div className="text-xs text-gray-500">{pplnsWindowPct != null ? `${pplnsWindowPct.toFixed(1)}% full` : ''}</div>
+              <div className="text-xs text-gray-500">{pplnsWindowPct != null ? (cs ? `${pplnsWindowPct.toFixed(1)} % zaplneno` : `${pplnsWindowPct.toFixed(1)}% full`) : ''}</div>
             </div>
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Registered Miners</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Registrovani mineri' : 'Registered Miners'}</div>
               <div className="text-base sm:text-xl font-mono font-bold text-emerald-400 truncate">{fmt(data?.pplnsRegisteredMiners)}</div>
             </div>
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Total Paid</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Celkove vyplaceno' : 'Total Paid'}</div>
               <div className="text-base sm:text-xl font-mono font-bold text-zion-gold truncate">{fmt(data?.pplnsTotalPaid)} <span className="text-xs text-gray-500">ZION</span></div>
             </div>
             <div className="space-y-2 min-w-0">
-              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Payout Rounds</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider truncate">{cs ? 'Vyplatni kola' : 'Payout Rounds'}</div>
               <div className="text-base sm:text-xl font-mono font-bold text-amber-400 truncate">{fmt(data?.pplnsPayoutRounds)}</div>
             </div>
           </div>
@@ -571,26 +576,26 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <HardDrive className="h-5 w-5 text-zion-cyan" />
-            Server Infrastructure
+            {cs ? 'Serverova infrastruktura' : 'Server Infrastructure'}
             <span className="ml-2 text-xs text-gray-500 font-normal">Prague · Hetzner</span>
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* CPU Load */}
             <div className="space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Flame className="h-3 w-3" /> CPU Load
+                <Flame className="h-3 w-3" /> {cs ? 'CPU zatez' : 'CPU Load'}
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-mono font-bold text-zion-cyan">{fmtDec(data?.serverLoad1)}</span>
                 <span className="text-xs text-gray-500">{fmtDec(data?.serverLoad5)} / {fmtDec(data?.serverLoad15)}</span>
               </div>
-              <div className="text-xs text-gray-500">1m / 5m / 15m average</div>
+              <div className="text-xs text-gray-500">{cs ? 'prumer 1m / 5m / 15m' : '1m / 5m / 15m average'}</div>
             </div>
 
             {/* Memory */}
             <div className="space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Cpu className="h-3 w-3" /> Memory
+                <Cpu className="h-3 w-3" /> {cs ? 'Pamet' : 'Memory'}
               </div>
               <div className="text-xl font-mono font-bold text-purple-400">
                 {memUsedPct != null ? `${memUsedPct.toFixed(1)}%` : '—'}
@@ -603,7 +608,7 @@ export default function MonitoringClient() {
                 />
               )}
               <div className="text-xs text-gray-500">
-                {fmtBytes(data?.memAvailable)} free of {fmtBytes(data?.memTotal)}
+                {cs ? `${fmtBytes(data?.memAvailable)} volne z ${fmtBytes(data?.memTotal)}` : `${fmtBytes(data?.memAvailable)} free of ${fmtBytes(data?.memTotal)}`}
               </div>
             </div>
 
@@ -623,20 +628,20 @@ export default function MonitoringClient() {
                 />
               )}
               <div className="text-xs text-gray-500">
-                {fmtBytes(data?.diskAvailable)} free of {fmtBytes(data?.diskTotal)}
+                {cs ? `${fmtBytes(data?.diskAvailable)} volne z ${fmtBytes(data?.diskTotal)}` : `${fmtBytes(data?.diskAvailable)} free of ${fmtBytes(data?.diskTotal)}`}
               </div>
             </div>
 
             {/* Server Uptime */}
             <div className="space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Clock className="h-3 w-3" /> Server Uptime
+                <Clock className="h-3 w-3" /> {cs ? 'Uptime serveru' : 'Server Uptime'}
               </div>
               <div className="text-xl font-mono font-bold text-emerald-400">
                 {fmtUptime(serverUptime)}
               </div>
               <div className="text-xs text-gray-500">
-                since {data?.bootTime ? new Date(data.bootTime * 1000).toLocaleDateString() : '—'}
+                {cs ? 'od' : 'since'} {data?.bootTime ? new Date(data.bootTime * 1000).toLocaleDateString(locale) : '—'}
               </div>
             </div>
           </div>
@@ -651,19 +656,19 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-emerald-400" />
-            Monitoring Stack
+            {cs ? 'Monitoring stack' : 'Monitoring Stack'}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             {[
-              { name: 'Prometheus', ver: 'v2.53.0', desc: 'Metrics collection & alerting', color: 'text-orange-400' },
-              { name: 'Grafana', ver: 'v11.1.0', desc: '22-panel V3 dashboard', color: 'text-zion-gold' },
-              { name: 'Node Exporter', ver: 'v1.8.1', desc: 'Host CPU, RAM, disk, network', color: 'text-zion-cyan' },
-              { name: 'Redis Exporter', ver: 'v1.61.0', desc: 'Redis persistence metrics', color: 'text-red-400' },
-              { name: 'Alertmanager', ver: 'v0.27.0', desc: 'Alert routing & notifications', color: 'text-purple-400' },
-              { name: 'Core Metrics', ver: ':9115', desc: 'V3 node Prometheus endpoint (7 gauges)', color: 'text-emerald-400' },
-              { name: 'Pool Metrics', ver: ':8080', desc: 'Mining pool /metrics (20+ counters/gauges)', color: 'text-zion-gold' },
-              { name: 'API Proxy', ver: '/api/metrics', desc: 'Secure allowlisted query proxy', color: 'text-sky-400' },
-              { name: 'Website', ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-pink-400' },
+              { name: 'Prometheus', ver: 'v2.53.0', desc: cs ? 'Sber metrik a alerting' : 'Metrics collection & alerting', color: 'text-orange-400' },
+              { name: 'Grafana', ver: 'v11.1.0', desc: cs ? '22panelovy dashboard V3' : '22-panel V3 dashboard', color: 'text-zion-gold' },
+              { name: 'Node Exporter', ver: 'v1.8.1', desc: cs ? 'Host CPU, RAM, disk, sit' : 'Host CPU, RAM, disk, network', color: 'text-zion-cyan' },
+              { name: 'Redis Exporter', ver: 'v1.61.0', desc: cs ? 'Metriky persistence Redisu' : 'Redis persistence metrics', color: 'text-red-400' },
+              { name: 'Alertmanager', ver: 'v0.27.0', desc: cs ? 'Routing alertu a notifikace' : 'Alert routing & notifications', color: 'text-purple-400' },
+              { name: cs ? 'Core metriky' : 'Core Metrics', ver: ':9115', desc: cs ? 'Prometheus endpoint V3 nodu (7 gaugu)' : 'V3 node Prometheus endpoint (7 gauges)', color: 'text-emerald-400' },
+              { name: cs ? 'Pool metriky' : 'Pool Metrics', ver: ':8080', desc: cs ? 'Mining pool /metrics (20+ counteru/gaugu)' : 'Mining pool /metrics (20+ counters/gauges)', color: 'text-zion-gold' },
+              { name: 'API Proxy', ver: '/api/metrics', desc: cs ? 'Bezpecny allowlist query proxy' : 'Secure allowlisted query proxy', color: 'text-sky-400' },
+              { name: cs ? 'Web' : 'Website', ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-pink-400' },
             ].map((s) => (
               <div key={s.name} className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
                 <div className={`mt-0.5 h-2 w-2 rounded-full ${s.color.replace('text-', 'bg-')}`} />
@@ -679,11 +684,11 @@ export default function MonitoringClient() {
 
           {/* Legend */}
           <div className="mt-6 pt-4 border-t border-white/10 text-xs text-gray-500 flex flex-wrap gap-x-6 gap-y-2">
-            <span>30+ live Prometheus metrics</span>
-            <span>Instant + Range queries</span>
-            <span>Allowlisted proxy (zion_*, node_*)</span>
-            <span>15s auto-refresh</span>
-            <span>SVG sparklines (1h history)</span>
+            <span>{cs ? '30+ zivych Prometheus metrik' : '30+ live Prometheus metrics'}</span>
+            <span>{cs ? 'Instantni + range dotazy' : 'Instant + Range queries'}</span>
+            <span>{cs ? 'Allowlist proxy (zion_*, node_*)' : 'Allowlisted proxy (zion_*, node_*)'}</span>
+            <span>{cs ? 'Auto-refresh 15 s' : '15s auto-refresh'}</span>
+            <span>{cs ? 'SVG sparkliny (historie 1 h)' : 'SVG sparklines (1h history)'}</span>
           </div>
         </motion.section>
 

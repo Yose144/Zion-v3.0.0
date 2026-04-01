@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { apiClient } from "@/lib/api";
 import { motion } from "framer-motion";
+import { useLang } from "@/contexts/LanguageContext";
 import {
   type LucideIcon,
   Box,
@@ -109,6 +110,9 @@ function StatCard({ icon: Icon, label, value, sub, color, bgColor, delay = 0 }: 
 }
 
 export default function ProExplorerStats() {
+  const { lang } = useLang();
+  const cs = lang === "cs";
+  const locale = cs ? "cs-CZ" : "en-US";
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState(false);
 
@@ -149,37 +153,37 @@ export default function ProExplorerStats() {
     return (
       <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
         <Server className="h-8 w-8 text-red-400 mx-auto mb-2" />
-        <p className="text-red-400 text-sm">Unable to connect to ZION network</p>
-        <button onClick={fetchStats} className="mt-3 text-xs text-gray-400 hover:text-white transition">Retry →</button>
+        <p className="text-red-400 text-sm">{cs ? "Nepodařilo se připojit k síti ZION" : "Unable to connect to ZION network"}</p>
+        <button onClick={fetchStats} className="mt-3 text-xs text-gray-400 hover:text-white transition">{cs ? "Zkusit znovu →" : "Retry →"}</button>
       </div>
     );
   }
 
   const cards: StatCardProps[] = [
     {
-      icon: Box, label: "Block Height", value: fmt(stats.block_height),
-      sub: stats.last_block ? `Last: ${new Date(stats.last_block.timestamp * 1000).toLocaleTimeString()}` : undefined,
+      icon: Box, label: cs ? "Výška bloku" : "Block Height", value: fmt(stats.block_height),
+      sub: stats.last_block ? `${cs ? "Poslední" : "Last"}: ${new Date(stats.last_block.timestamp * 1000).toLocaleTimeString(locale)}` : undefined,
       color: "text-zion-gold", bgColor: "from-yellow-500/5 to-transparent",
     },
     {
-      icon: Cpu, label: "Network Hashrate", value: stats.network_hashrate_formatted,
-      sub: stats.pool_hashrate_formatted ? `Pool: ${stats.pool_hashrate_formatted}` : undefined,
+      icon: Cpu, label: cs ? "Hashrate sítě" : "Network Hashrate", value: stats.network_hashrate_formatted,
+      sub: stats.pool_hashrate_formatted ? `${cs ? "Pool" : "Pool"}: ${stats.pool_hashrate_formatted}` : undefined,
       color: "text-emerald-400", bgColor: "from-emerald-500/5 to-transparent",
     },
     {
-      icon: Hash, label: "Difficulty", value: fmt(stats.difficulty),
+      icon: Hash, label: cs ? "Obtížnost" : "Difficulty", value: fmt(stats.difficulty),
       color: "text-zion-cyan", bgColor: "from-cyan-500/5 to-transparent",
     },
     {
-      icon: Wallet, label: "Circulating Supply", value: `${fmt(stats.circulating_supply)} ZION`,
-      sub: `${stats.emission_pct}% of max`, color: "text-zion-gold", bgColor: "from-yellow-500/5 to-transparent",
+      icon: Wallet, label: cs ? "Oběžná zásoba" : "Circulating Supply", value: `${fmt(stats.circulating_supply)} ZION`,
+      sub: cs ? `${stats.emission_pct}% maxima` : `${stats.emission_pct}% of max`, color: "text-zion-gold", bgColor: "from-yellow-500/5 to-transparent",
     },
     {
-      icon: Clock, label: "Avg Block Time", value: `${stats.avg_block_time}s`,
-      sub: `Target: ${stats.target_block_time}s`, color: "text-blue-400", bgColor: "from-blue-500/5 to-transparent",
+      icon: Clock, label: cs ? "Průměrný čas bloku" : "Avg Block Time", value: `${stats.avg_block_time}s`,
+      sub: `${cs ? "Cíl" : "Target"}: ${stats.target_block_time}s`, color: "text-blue-400", bgColor: "from-blue-500/5 to-transparent",
     },
     {
-      icon: Layers, label: "Total Transactions", value: fmt(stats.tx_count),
+      icon: Layers, label: cs ? "Celkem transakcí" : "Total Transactions", value: fmt(stats.tx_count),
       color: "text-purple-400", bgColor: "from-purple-500/5 to-transparent",
     },
     {
@@ -187,30 +191,30 @@ export default function ProExplorerStats() {
       color: stats.tx_pool_size > 10 ? "text-amber-400" : "text-gray-400", bgColor: "from-amber-500/5 to-transparent",
     },
     {
-      icon: Users, label: "Connections", value: `${stats.total_connections}`,
+      icon: Users, label: cs ? "Spojení" : "Connections", value: `${stats.total_connections}`,
       sub: `↓${stats.incoming_connections} ↑${stats.outgoing_connections}`,
       color: "text-purple-400", bgColor: "from-purple-500/5 to-transparent",
     },
     {
-      icon: TrendingUp, label: "Active Miners", value: `${stats.active_miners}`,
-      sub: stats.pool_blocks_found ? `${stats.pool_blocks_found} blocks found` : undefined,
+      icon: TrendingUp, label: cs ? "Aktivní mineři" : "Active Miners", value: `${stats.active_miners}`,
+      sub: stats.pool_blocks_found ? `${stats.pool_blocks_found} ${cs ? "nalezených bloků" : "blocks found"}` : undefined,
       color: "text-emerald-400", bgColor: "from-emerald-500/5 to-transparent",
     },
     {
-      icon: Gauge, label: "Block Size",
+      icon: Gauge, label: cs ? "Velikost bloku" : "Block Size",
       value: stats.last_block ? fmtBytes(stats.last_block.block_size) : "—",
-      sub: `Median: ${fmtBytes(stats.block_size_median)}`,
+      sub: `${cs ? "Medián" : "Median"}: ${fmtBytes(stats.block_size_median)}`,
       color: "text-cyan-400", bgColor: "from-cyan-500/5 to-transparent",
     },
     {
-      icon: Database, label: "Database",
+      icon: Database, label: cs ? "Databáze" : "Database",
       value: stats.database_size ? fmtBytes(stats.database_size) : "—",
       sub: stats.version ? `v${stats.version}` : undefined,
       color: "text-pink-400", bgColor: "from-pink-500/5 to-transparent",
     },
     {
-      icon: Globe, label: "Known Peers", value: `${stats.white_peerlist_size}`,
-      sub: stats.alt_blocks_count ? `${stats.alt_blocks_count} alt blocks` : undefined,
+      icon: Globe, label: cs ? "Známé peery" : "Known Peers", value: `${stats.white_peerlist_size}`,
+      sub: stats.alt_blocks_count ? `${stats.alt_blocks_count} ${cs ? "alternativních bloků" : "alt blocks"}` : undefined,
       color: "text-indigo-400", bgColor: "from-indigo-500/5 to-transparent",
     },
   ];

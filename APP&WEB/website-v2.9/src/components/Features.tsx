@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Brain, Cpu, Landmark, Rocket, Shield, Sparkles, Zap } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import t, { tx, tr } from '@/lib/translations';
@@ -65,7 +64,7 @@ export default function Features() {
       <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-end gap-6">
           <div className="flex-1">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Continuum</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{lang === 'cs' ? 'Kontinuum' : 'Continuum'}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
               <span className="text-gradient">{tr('features', 'heading', lang)}</span>
             </h2>
@@ -77,14 +76,10 @@ export default function Features() {
 
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10">
           <div className="grid sm:grid-cols-2 gap-6">
-            {continuumTracks.map((track, index) => (
-              <motion.div
+            {continuumTracks.map((track) => (
+              <div
                 key={track.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                className={`rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur hover:border-white/30 transition relative overflow-hidden`}
+                className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur hover:border-white/30 transition relative overflow-hidden"
               >
                 <div className={`absolute inset-0 bg-linear-to-br ${track.spectrum} opacity-70 pointer-events-none`} />
                 <div className="relative space-y-3">
@@ -97,17 +92,11 @@ export default function Features() {
                   <h3 className="text-xl font-semibold text-white">{track.title}</h3>
                   <p className="text-sm text-gray-200 leading-relaxed">{track.description}</p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="rounded-3xl border border-white/10 bg-black/50 backdrop-blur-xl p-8 space-y-6"
-          >
+          <div className="rounded-3xl border border-white/10 bg-black/50 backdrop-blur-xl p-8 space-y-6">
             <div className="flex items-center gap-3 text-sm text-gray-400">
               <Zap className="w-5 h-5 text-zion-gold" />
               {tr('features', 'upgrade_heading', lang)}
@@ -125,7 +114,7 @@ export default function Features() {
             <div className="rounded-2xl border border-white/10 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-6 text-gray-100 text-sm">
               {tr('features', 'community_cta', lang)}
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
