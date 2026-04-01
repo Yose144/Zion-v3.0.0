@@ -3110,6 +3110,251 @@ function updateTrayMenu(stats) {
   tray.setContextMenu(trayMenu);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// V3 Fast-Path: clean startup that bypasses all legacy blocking code.
+// Called by startMining() when findRustMiner() returns a V3 binary.
+// Returns { success, ... } or null to fall through to legacy path.
+// ═══════════════════════════════════════════════════════════════════════════════
+function startMiningV3(config, v3Path) {
+  const t0 = Date.now();
+  const log = (msg) => {
+    try { sendToRenderer('miner-output', { stream: 'stdout', text: msg }); } catch {}
+  };
+  const logErr = (msg) => {
+    try { sendToRenderer('miner-output', { stream: 'stderr', text: msg }); } catch {}
+  };
+
+  log(`[V3-FAST] Starting V3 miner fast-path (${path.basename(v3Path)})\n`);
+
+  // ── 1. Validate wallet ─────────────────────────────────────────────────────
+  const wallet = String(config?.wallet || '').trim();
+  if (!wallet) {
+    dialog.showErrorBox('Wallet Missing', 'Set your ZION wallet address in Settings or Wallet tab before starting mining.');
+    startMiningInProgress = false;
+    if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+    return { success: false, error: 'Wallet missing' };
+  }
+  const addrType = WalletGenerator.getAddressType(wallet);
+  if (addrType !== 'zion1') {
+    const hint = addrType === 'legacy'
+      ? 'You are using a legacy ZION... address. The chain only credits zion1... addresses.'
+      : 'Invalid address format.';
+    dialog.showErrorBox('Invalid Wallet Address', `${hint}\n\nPlease create/select a zion1... wallet in the Wallet tab.`);
+    startMiningInProgress = false;
+    if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+    return { success: false, error: 'Invalid wallet address' };
+  }
+
+  // ── 2. Verify binary exists ────────────────────────────────────────────────
+  if (!fs.existsSync(v3Path)) {
+    const defMsg = process.platform === 'win32'
+      ? `V3 miner not found at: ${v3Path}\n\nWindows Defender may have quarantined zion-miner.exe.`
+      : `V3 miner not found at: ${v3Path}`;
+    dialog.showErrorBox('Miner Not Found', defMsg);
+    startMiningInProgress = false;
+    if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+    return { success: false, error: 'V3 miner not found' };
+  }
+
+  // ── 3. Idempotent guard ────────────────────────────────────────────────────
+  if (minerProcess && !minerStopping) {
+    log('[INFO] Duplicate start request ignored: miner session is already active.\n');
+    startMiningInProgress = false;
+    if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+    return { success: true, alreadyRunning: true };
+  }
+
+  // ── 4. Update global state ─────────────────────────────────────────────────
+  MINER_PATH = v3Path;
+  MINER_IS_RUST = true;
+  MINER_IS_PYTHON = false;
+  minerUserStopRequested = false;
+  minerStopping = false;
+  if (poolFailoverTimer) { clearTimeout(poolFailoverTimer); poolFailoverTimer = null; }
+  if (poolHealthTimer) { clearInterval(poolHealthTimer); poolHealthTimer = null; }
+  if (minerFallbackTimer) { clearTimeout(minerFallbackTimer); minerFallbackTimer = null; }
+  if (minerStartAckTimer) { clearTimeout(minerStartAckTimer); minerStartAckTimer = null; }
+  if (minerGpuInitWatchdogTimer) { clearTimeout(minerGpuInitWatchdogTimer); minerGpuInitWatchdogTimer = null; }
+  if (minerAutoStopTimer) { clearTimeout(minerAutoStopTimer); minerAutoStopTimer = null; }
+
+  log(`[V3-FAST] Binary: ${v3Path}\n`);
+
+  // ── 5. Compute threads and GPU ─────────────────────────────────────────────
+  const effectiveThreads = computeEffectiveThreads(config);
+  const pool = `${config.pool.host}:${config.pool.port}`;
+  const worker = config.worker ? sanitizeWorkerName(config.worker) : '';
+  const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
+  const wantsGpu = miningMode === 'gpu' || miningMode === 'dual';
+
+  // ── 6. Build CLI args ──────────────────────────────────────────────────────
+  const args = ['--pool', pool, '--wallet', wallet];
+  if (worker) args.push('--worker', worker);
+  if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
+  if (wantsGpu) {
+    const backendHint = String(config.gpuBackend || process.env.ZION_BACKEND || '').trim().toLowerCase();
+    if (backendHint) {
+      args.push('--gpu', backendHint);
+    } else {
+      args.push('--gpu', (process.platform === 'darwin' && os.arch() === 'arm64') ? 'metal' : 'opencl');
+    }
+  }
+
+  // ── 7. Build environment ───────────────────────────────────────────────────
+  const env = {
+    ...process.env,
+    ZION_POOL_ADDR: pool,
+    ZION_MINER_ID: wallet,
+    ZION_WORKER_NAME: worker || 'desktop',
+    ZION_PROFILE: 'pool',
+    ZION_LOOP_COUNT: '4294967295',
+    ZION_NONCE_AUTOTUNE: 'true',
+    ZION_RECONNECT: 'true',
+    ZION_METRICS_REPORT_SECS: String(STATS_INTERVAL_SEC || 30),
+    ZION_STATS_FILE: STATS_PATH,
+    ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
+    ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
+    ZION_ENABLE_STREAM_SWITCH: '0',
+  };
+  if (wantsGpu) {
+    const v3Backend = String(process.env.ZION_BACKEND || '').trim().toLowerCase();
+    if (v3Backend) {
+      env.ZION_BACKEND = v3Backend;
+    } else if (process.platform === 'darwin' && os.arch() === 'arm64') {
+      env.ZION_BACKEND = 'metal';
+    } else {
+      env.ZION_BACKEND = 'opencl';
+    }
+    env.ZION_HAS_GPU = '1';
+  }
+
+  log(`[V3-FAST] Pool: ${pool} | Wallet: ${wallet} | Worker: ${worker || 'desktop'}\n`);
+  log(`[V3-FAST] Threads: ${effectiveThreads} | GPU: ${wantsGpu ? (env.ZION_BACKEND || 'cpu') : 'off'}\n`);
+  log(`[V3-FAST] Args: ${args.join(' ')}\n`);
+
+  // ── 8. Determine cwd ──────────────────────────────────────────────────────
+  const minerCwd = IS_PACKAGED
+    ? process.resourcesPath
+    : path.join(APP_ROOT, '..');
+
+  // ── 9. Unix execute bit ────────────────────────────────────────────────────
+  if (process.platform !== 'win32') {
+    try { fs.chmodSync(v3Path, 0o755); } catch {}
+  }
+
+  // ── 10. Spawn ──────────────────────────────────────────────────────────────
+  try {
+    minerProcess = spawn(v3Path, args, {
+      cwd: minerCwd,
+      env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true
+    });
+  } catch (spawnErr) {
+    logErr(`[V3-FAST] Spawn failed: ${spawnErr?.message || String(spawnErr)}\n`);
+    minerProcess = null;
+    startMiningInProgress = false;
+    if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+    return { success: false, error: `Spawn failed: ${spawnErr?.message}` };
+  }
+
+  log(`[V3-FAST] Spawned PID ${minerProcess?.pid} in ${Date.now() - t0}ms\n`);
+  logApp('v3-fast-spawn', JSON.stringify({ pid: minerProcess?.pid, args, pool, wallet: wallet.slice(0, 12) + '...', threads: effectiveThreads }));
+
+  // ── 11. Grace period → miner-started ───────────────────────────────────────
+  const myStartToken = ++minerStartToken;
+  minerStartAckTimer = setTimeout(() => {
+    minerStartAckTimer = null;
+    if (minerUserStopRequested || minerStopping) return;
+    if (!minerProcess) return;
+    if (myStartToken !== minerStartToken) return;
+    try { sendToRenderer('miner-started', {}); } catch {}
+    updateTrayMenu(minerStats);
+  }, 450);
+
+  // ── 12. Boost priority (Windows, async) ────────────────────────────────────
+  try {
+    if (process.platform === 'win32') {
+      boostMinerProcessWindows(minerProcess?.pid, config, effectiveThreads);
+    }
+  } catch {}
+
+  // ── 13. Log write helper ───────────────────────────────────────────────────
+  const safeMinerLogWriteV3 = (text) => {
+    try {
+      appendToFileBuffered(LOG_PATH, text, {
+        flushDelayMs: 120,
+        maxBufferedChars: 512 * 1024
+      });
+    } catch {}
+  };
+
+  // ── 14. Stdout handler ─────────────────────────────────────────────────────
+  minerProcess.stdout.on('data', (data) => {
+    const output = data.toString();
+    const skip = shouldSkipFileLogLine(output);
+    if (!skip) safeMinerLogWriteV3(`[STDOUT] ${output}`);
+    if (!skip) enqueueMinerOutputToRenderer('stdout', output);
+    maybeEmitBlockFound(output);
+    parseMinerOutput(output);
+  });
+
+  // ── 15. Stderr handler ─────────────────────────────────────────────────────
+  minerProcess.stderr.on('data', (data) => {
+    const output = data.toString();
+    const skip = shouldSkipFileLogLine(output);
+    if (!skip) safeMinerLogWriteV3(`[STDERR] ${output}`);
+    if (!skip) enqueueMinerOutputToRenderer('stderr', output);
+    parseMinerOutput(output);
+  });
+
+  // ── 16. Close handler ──────────────────────────────────────────────────────
+  minerProcess.on('close', (code, signal) => {
+    flushBufferedFileAppendsSync();
+    console.log(`[V3] Miner exited code=${code}${signal ? ` signal=${signal}` : ''}`);
+    minerProcess = null;
+    if (minerStartAckTimer) { clearTimeout(minerStartAckTimer); minerStartAckTimer = null; }
+    flushMinerOutputToRenderer();
+    minerStats = { ...minerStats, hashrate: 0 };
+    updateTrayMenu(minerStats);
+    try { sendToRenderer('miner-stopped', { code, signal: signal || null }); } catch {}
+
+    // Auto-restart on crash (pool failover)
+    if (!minerStopping && !minerUserStopRequested && code !== 0 && poolFailoverCount < 3) {
+      poolFailoverCount++;
+      log(`[V3-FAST] Miner crashed (code=${code}). Failover ${poolFailoverCount}/3 in 5s...\n`);
+      if (poolFailoverTimer) clearTimeout(poolFailoverTimer);
+      poolFailoverTimer = setTimeout(() => {
+        try {
+          const cfg = loadConfig();
+          startMining(cfg);
+        } catch (err) {
+          logErr(`[V3-FAST] Failover restart failed: ${err?.message}\n`);
+        }
+      }, 5000);
+    }
+  });
+
+  minerProcess.on('error', (err) => {
+    logErr(`[V3-FAST] Process error: ${err?.message || String(err)}\n`);
+    logApp('v3-fast-error', JSON.stringify({ error: err?.message || String(err) }));
+  });
+
+  // ── 17. Update tray and stats ──────────────────────────────────────────────
+  minerStats.pool = pool;
+  minerStats.worker = worker || 'desktop';
+  minerStats.threads = String(effectiveThreads);
+  minerStats.algorithm = 'cosmic_harmony_deeksha';
+  updateTrayMenu(minerStats);
+
+  // ── 18. Clear guard ────────────────────────────────────────────────────────
+  startMiningInProgress = false;
+  if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+  poolFailoverCount = 0;
+
+  log(`[V3-FAST] Startup complete in ${Date.now() - t0}ms\n`);
+  return { success: true };
+}
+
 // Mining process management
 function startMining(config) {
   const startupT0 = Date.now();
@@ -3163,6 +3408,19 @@ function startMining(config) {
       }
     }
   }, 30000);
+
+  // ═══ V3 Fast-Path: bypass all legacy blocking code ═══
+  // If the V3 binary (zion-miner) is available, skip the entire legacy
+  // startup path (~2500 lines of blocking PowerShell calls, legacy Python
+  // fallbacks, CHv4.2 paths, revenue splits, and GPU detection).
+  {
+    const v3FastPath = findRustMiner();
+    if (v3FastPath && isV3MinerBinary(v3FastPath)) {
+      const v3Result = startMiningV3(config, v3FastPath);
+      if (v3Result) return v3Result;
+      // null return → fall through to legacy path (shouldn't happen)
+    }
+  }
 
   // Auto-tuning: Check if tuning is needed and apply recommendations
   if (autoTuner.shouldTune()) {
