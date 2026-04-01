@@ -27,6 +27,18 @@
 #define RANDOM_READS     256
 #define MATRIX_DIM       8
 
+/* NPU max intermediate dimension — set at compile time via -DNPU_MAX_DIM=N.
+ * Standard=128, ThreeLayer=128, Wide=256, Deep=64.
+ * Smaller values drastically reduce private-memory (register) pressure. */
+#ifndef NPU_MAX_DIM
+#define NPU_MAX_DIM 256
+#endif
+
+/* Work-group size hint — can override with -DWGS=N at compile time */
+#ifndef WGS
+#define WGS 64
+#endif
+
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 #define XTIME(a) ((uchar)(((a) << 1) ^ ((((a) >> 7) & 1) * 0x1b)))
 
@@ -522,32 +534,38 @@ inline uint b3_rotr32(uint x, int n) {
     return (x >> n) | (x << (32 - n));
 }
 
-void b3_g(uint *st, int a, int b, int c, int d, uint mx, uint my) {
-    st[a] = st[a] + st[b] + mx;
-    st[d] = b3_rotr32(st[d] ^ st[a], 16);
-    st[c] = st[c] + st[d];
-    st[b] = b3_rotr32(st[b] ^ st[c], 12);
-    st[a] = st[a] + st[b] + my;
-    st[d] = b3_rotr32(st[d] ^ st[a], 8);
-    st[c] = st[c] + st[d];
-    st[b] = b3_rotr32(st[b] ^ st[c], 7);
-}
+/* Macro version of b3_g — avoids function-call overhead and helps register allocator */
+#define B3_G(st, a, b, c, d, mx, my) do { \
+    (st)[(a)] = (st)[(a)] + (st)[(b)] + (mx); \
+    (st)[(d)] = b3_rotr32((st)[(d)] ^ (st)[(a)], 16); \
+    (st)[(c)] = (st)[(c)] + (st)[(d)]; \
+    (st)[(b)] = b3_rotr32((st)[(b)] ^ (st)[(c)], 12); \
+    (st)[(a)] = (st)[(a)] + (st)[(b)] + (my); \
+    (st)[(d)] = b3_rotr32((st)[(d)] ^ (st)[(a)], 8); \
+    (st)[(c)] = (st)[(c)] + (st)[(d)]; \
+    (st)[(b)] = b3_rotr32((st)[(b)] ^ (st)[(c)], 7); \
+} while(0)
 
 void b3_round(uint *st, const uint *msg) {
-    b3_g(st, 0, 4,  8, 12, msg[0],  msg[1]);
-    b3_g(st, 1, 5,  9, 13, msg[2],  msg[3]);
-    b3_g(st, 2, 6, 10, 14, msg[4],  msg[5]);
-    b3_g(st, 3, 7, 11, 15, msg[6],  msg[7]);
-    b3_g(st, 0, 5, 10, 15, msg[8],  msg[9]);
-    b3_g(st, 1, 6, 11, 12, msg[10], msg[11]);
-    b3_g(st, 2, 7,  8, 13, msg[12], msg[13]);
-    b3_g(st, 3, 4,  9, 14, msg[14], msg[15]);
+    B3_G(st, 0, 4,  8, 12, msg[0],  msg[1]);
+    B3_G(st, 1, 5,  9, 13, msg[2],  msg[3]);
+    B3_G(st, 2, 6, 10, 14, msg[4],  msg[5]);
+    B3_G(st, 3, 7, 11, 15, msg[6],  msg[7]);
+    B3_G(st, 0, 5, 10, 15, msg[8],  msg[9]);
+    B3_G(st, 1, 6, 11, 12, msg[10], msg[11]);
+    B3_G(st, 2, 7,  8, 13, msg[12], msg[13]);
+    B3_G(st, 3, 4,  9, 14, msg[14], msg[15]);
 }
 
+/* Scalar-variable permutation — avoids 64-byte tmp[16] array allocation.
+ * Named scalars let the compiler use registers directly.
+ * BLAKE3_MSG_PERM = {2,6,3,10,7,0,4,13,1,11,12,5,9,14,15,8} */
 void b3_permute(uint msg[16]) {
-    uint tmp[16];
-    for (int i = 0; i < 16; i++) tmp[i] = msg[BLAKE3_MSG_PERM[i]];
-    for (int i = 0; i < 16; i++) msg[i] = tmp[i];
+    uint m0=msg[0],m1=msg[1],m2=msg[2],m3=msg[3],m4=msg[4],m5=msg[5],m6=msg[6],m7=msg[7];
+    uint m8=msg[8],m9=msg[9],m10=msg[10],m11=msg[11],m12=msg[12],m13=msg[13],m14=msg[14],m15=msg[15];
+    msg[0]=m2; msg[1]=m6; msg[2]=m3; msg[3]=m10; msg[4]=m7; msg[5]=m0;
+    msg[6]=m4; msg[7]=m13; msg[8]=m1; msg[9]=m11; msg[10]=m12; msg[11]=m5;
+    msg[12]=m9; msg[13]=m14; msg[14]=m15; msg[15]=m8;
 }
 
 void b3_compress(const uint cv[8], const uint bw[16],
@@ -815,7 +833,12 @@ void cosmic_fusion_ekam(const uchar in64[64], uchar hash32[32])
 }
 
 /* ========================================================================== */
-/* Step 5: NPU Mix — INT8 MLP 64→128→64 with LayerNorm + GELU + Residual      */
+/* Step 5: NPU Mix — Variable-topology INT8 MLP + LayerNorm + GELU + Residual */
+/* Supports all 4 MlpTopology variants: Standard, ThreeLayer, Wide, Deep      */
+/*                                                                             */
+/* Meta buffer layout: [num_layers, in0, out0, in1, out1, ...]                */
+/* Packed buffers: weights, biases, scales — all layers concatenated          */
+/* Max intermediate dimension is 256 (Wide topology: 64→256→64)               */
 /* ========================================================================== */
 
 int gelu_int8(int x)
@@ -825,81 +848,99 @@ int gelu_int8(int x)
     return clamp(result, -128, 127);
 }
 
-void npu_mix(const uchar in64[64], uchar out64[64],
-             __global const char *w1,      /* [128][64]  = 8192 bytes */
-             __global const char *b1,      /* [128]      = 128 bytes  */
-             __global const char *w2,      /* [64][128]  = 8192 bytes */
-             __global const char *b2,      /* [64]       = 64 bytes   */
-             __global const short *scale1, /* [128]      = 256 bytes  */
-             __global const short *scale2) /* [64]       = 128 bytes  */
+/* Deterministic integer floor-sqrt via binary search.
+ * Matches Rust: ((x as f64).sqrt() as i32) for x in [0, 65536].
+ * Not affected by -cl-fast-relaxed-math. */
+int isqrt_floor(long x)
 {
+    if (x <= 0) return 0;
+    int lo = 0, hi = 256, r = 0;
+    while (lo <= hi) {
+        int mid = (lo + hi) >> 1;
+        if ((long)mid * (long)mid <= x) { r = mid; lo = mid + 1; }
+        else                             { hi = mid - 1; }
+    }
+    return r;
+}
+
+void npu_mix_packed(const uchar in64[64], uchar out64[64],
+                    __global const char  *npu_weights,
+                    __global const char  *npu_biases,
+                    __global const short *npu_scales,
+                    __global const uint  *npu_meta)
+{
+    /* Stack arrays sized to NPU_MAX_DIM (set at compile time per topology).
+     * Deep=64, Standard/ThreeLayer=128, Wide=256.
+     * Smaller arrays = less register pressure = fewer spills to global memory. */
+    int cur[NPU_MAX_DIM];
+    int nxt[NPU_MAX_DIM];
+
+    uint num_layers = npu_meta[0];
+
     /* Input: u8 → signed i8 → i32 */
-    int input_i32[64];
     for (int i = 0; i < 64; i++)
-        input_i32[i] = (int)((char)in64[i]);
+        cur[i] = (int)((char)in64[i]);
 
-    /* ── Layer 1: Linear(64→128) ── */
-    int hidden[128];
-    for (int i = 0; i < 128; i++) {
-        int acc = (int)b1[i] * 32;   /* bias upscale Q5 */
-        for (int j = 0; j < 64; j++)
-            acc += input_i32[j] * (int)w1[i * 64 + j];
-        hidden[i] = clamp(acc >> 12, -128, 127);
+    /* Save residual (input dimension is always 64) */
+    int residual[64];
+    for (int i = 0; i < 64; i++)
+        residual[i] = cur[i];
+
+    /* Track offsets into packed buffers */
+    uint w_off = 0;
+    uint b_off = 0;
+    uint s_off = 0;
+
+    for (uint L = 0; L < num_layers; L++) {
+        uint in_dim  = npu_meta[1 + L * 2];
+        uint out_dim = npu_meta[2 + L * 2];
+
+        /* ── Linear(in_dim → out_dim) ── */
+        for (uint i = 0; i < out_dim; i++) {
+            int acc = (int)npu_biases[b_off + i] * 32;   /* bias upscale Q5 */
+            uint row = w_off + i * in_dim;
+            for (uint j = 0; j < in_dim; j++)
+                acc += cur[j] * (int)npu_weights[row + j];
+            nxt[i] = clamp(acc >> 12, -128, 127);
+        }
+
+        /* ── LayerNorm ── */
+        {
+            long sum = 0;
+            for (uint i = 0; i < out_dim; i++) sum += (long)nxt[i];
+            int mean = (int)(sum / (long)out_dim);
+            long var_sum = 0;
+            for (uint i = 0; i < out_dim; i++) {
+                long d = (long)(nxt[i] - mean);
+                var_sum += d * d;
+            }
+            int std_approx = isqrt_floor(var_sum / (long)out_dim) + 1;
+            for (uint i = 0; i < out_dim; i++) {
+                int normalized = ((nxt[i] - mean) * 128) / std_approx;
+                nxt[i] = clamp((normalized * (int)npu_scales[s_off + i]) >> 8, -128, 127);
+            }
+        }
+
+        /* ── GELU for all but last layer ── */
+        if (L < num_layers - 1) {
+            for (uint i = 0; i < out_dim; i++)
+                nxt[i] = gelu_int8(nxt[i]);
+        }
+
+        /* Advance: nxt → cur */
+        for (uint i = 0; i < out_dim; i++)
+            cur[i] = nxt[i];
+
+        /* Advance packed offsets */
+        w_off += out_dim * in_dim;
+        b_off += out_dim;
+        s_off += out_dim;
     }
 
-    /* LayerNorm1 */
-    {
-        int n = 128;
-        long sum = 0;
-        for (int i = 0; i < n; i++) sum += (long)hidden[i];
-        int mean = (int)(sum / (long)n);
-        long var_sum = 0;
-        for (int i = 0; i < n; i++) {
-            long d = (long)(hidden[i] - mean);
-            var_sum += d * d;
-        }
-        int std_approx = (int)native_sqrt((float)(var_sum / (long)n)) + 1;
-        for (int i = 0; i < n; i++) {
-            int normalized = ((hidden[i] - mean) * 128) / std_approx;
-            hidden[i] = clamp((normalized * (int)scale1[i]) >> 8, -128, 127);
-        }
-    }
-
-    /* GELU activation */
-    for (int i = 0; i < 128; i++)
-        hidden[i] = gelu_int8(hidden[i]);
-
-    /* ── Layer 2: Linear(128→64) ── */
-    int output_i32[64];
+    /* Residual add + output conversion (final dim is always 64) */
     for (int i = 0; i < 64; i++) {
-        int acc = (int)b2[i] * 32;
-        for (int j = 0; j < 128; j++)
-            acc += hidden[j] * (int)w2[i * 128 + j];
-        output_i32[i] = clamp(acc >> 12, -128, 127);
-    }
-
-    /* LayerNorm2 */
-    {
-        int n = 64;
-        long sum = 0;
-        for (int i = 0; i < n; i++) sum += (long)output_i32[i];
-        int mean = (int)(sum / (long)n);
-        long var_sum = 0;
-        for (int i = 0; i < n; i++) {
-            long d = (long)(output_i32[i] - mean);
-            var_sum += d * d;
-        }
-        int std_approx = (int)native_sqrt((float)(var_sum / (long)n)) + 1;
-        for (int i = 0; i < n; i++) {
-            int normalized = ((output_i32[i] - mean) * 128) / std_approx;
-            output_i32[i] = clamp((normalized * (int)scale2[i]) >> 8, -128, 127);
-        }
-    }
-
-    /* Residual add + output conversion */
-    for (int i = 0; i < 64; i++) {
-        int v = clamp(output_i32[i] + input_i32[i], -128, 127);
-        out64[i] = (uchar)v; /* two's complement lower 8 bits */
+        int v = clamp(cur[i] + residual[i], -128, 127);
+        out64[i] = (uchar)v;
     }
 }
 
@@ -1085,12 +1126,10 @@ __kernel void deeksha_mine(
     uint                   target_u32,     /* [4] LE u32 target              */
     __global ulong        *result_nonce,   /* [5] output: winning nonce      */
     __global uchar        *result_hash,    /* [6] output: 32-byte hash       */
-    __global const char *npu_w1,         /* [7] MLP W1 [128×64]            */
-    __global const char *npu_b1,         /* [8] MLP b1 [128]               */
-    __global const char *npu_w2,         /* [9] MLP W2 [64×128]            */
-    __global const char *npu_b2,         /* [10] MLP b2 [64]               */
-    __global const short *npu_scale1,    /* [11] LayerNorm scale1 [128]    */
-    __global const short *npu_scale2     /* [12] LayerNorm scale2 [64]     */
+    __global const char   *npu_weights,    /* [7] packed MLP weights         */
+    __global const char   *npu_biases,     /* [8] packed MLP biases          */
+    __global const short  *npu_scales,     /* [9] packed LayerNorm scales    */
+    __global const uint   *npu_meta        /* [10] topology metadata         */
 )
 {
     uint tid   = get_global_id(0);
@@ -1124,17 +1163,17 @@ __kernel void deeksha_mine(
 
     /* ── Step 5: NPU Mix (64 B → 64 B) ── */
     uchar s5[64];
-    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+    npu_mix_packed(s4, s5, npu_weights, npu_biases, npu_scales, npu_meta);
 
     /* ── Step 6: Cosmic Fusion (64 B → 32 B) ── */
     uchar hash[32];
     cosmic_fusion(s5, hash);
 
-    /* ── Target check: LE u32 from first 4 bytes ≤ target ── */
-    uint state0 = (uint)hash[0]
-                | ((uint)hash[1] <<  8)
-                | ((uint)hash[2] << 16)
-                | ((uint)hash[3] << 24);
+    /* ── Target check: BE u32 from first 4 bytes ≤ target ── */
+    uint state0 = ((uint)hash[0] << 24)
+                | ((uint)hash[1] << 16)
+                | ((uint)hash[2] <<  8)
+                |  (uint)hash[3];
 
     if (state0 <= target_u32) {
         ulong old = atom_cmpxchg(result_nonce, 0xFFFFFFFFFFFFFFFFUL, nonce);
@@ -1150,7 +1189,7 @@ __kernel void deeksha_mine(
 /* Steps 1-3: same. Step 4: Blake3 XOF scratchpad. Step 6: 8-round fusion.    */
 /* ========================================================================== */
 
-__kernel __attribute__((work_group_size_hint(256, 1, 1)))
+__kernel __attribute__((work_group_size_hint(WGS, 1, 1)))
 void ekam_deeksha_mine(
     __global const uchar  *header,
     uint                   header_len,
@@ -1160,12 +1199,10 @@ void ekam_deeksha_mine(
     uint                   target_u32,
     __global ulong        *result_nonce,
     __global uchar        *result_hash,
-    __global const char   *npu_w1,
-    __global const char   *npu_b1,
-    __global const char   *npu_w2,
-    __global const char   *npu_b2,
-    __global const short  *npu_scale1,
-    __global const short  *npu_scale2
+    __global const char   *npu_weights,
+    __global const char   *npu_biases,
+    __global const short  *npu_scales,
+    __global const uint   *npu_meta
 )
 {
     uint tid   = get_global_id(0);
@@ -1175,44 +1212,47 @@ void ekam_deeksha_mine(
 
     /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];
-    /* Zero-init with ulong writes (11x ulong = 88 bytes) */
     ulong *inp64 = (ulong *)input;
     for (int i = 0; i < 11; i++) inp64[i] = 0;
     uint hlen = min(header_len, (uint)80);
-    /* Word-level header copy */
     __global const uint *hdr32 = (__global const uint *)header;
     uint *inp32 = (uint *)input;
     uint hwords = hlen >> 2;
     for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
     for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
-    /* Nonce as direct ulong write */
     inp64[10] = nonce;
 
-    uchar s1[32];
-    keccak256(input, 88, s1);
+    /* Reuse two 64-byte buffers across pipeline stages to cut private-memory
+     * pressure from ~408 B to ~160 B (saves registers, reduces spills).     */
+    uchar buf_a[64];
+    uchar buf_b[64];
 
-    uchar s2[64];
-    sha3_512(s1, 32, s2);
+    /* Step 1: Keccak-256 → buf_a[0:32] */
+    keccak256(input, 88, buf_a);
 
-    uchar s3[64];
-    golden_matrix(s2, s3);
+    /* Step 2: SHA3-512(buf_a[0:32]) → buf_b */
+    sha3_512(buf_a, 32, buf_b);
 
-    uchar s4[64];
-    ekam_memory_hard_transform(s3, pad, s4);
+    /* Step 3: Golden Matrix(buf_b) → buf_a */
+    golden_matrix(buf_b, buf_a);
 
-    uchar s5[64];
-    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+    /* Step 4: Memory-Hard(buf_a) → buf_b  (buf_a preserved as seed) */
+    ekam_memory_hard_transform(buf_a, pad, buf_b);
 
+    /* Step 5: NPU Mix(buf_b) → buf_a */
+    npu_mix_packed(buf_b, buf_a, npu_weights, npu_biases, npu_scales, npu_meta);
+
+    /* Step 6: Cosmic Fusion(buf_a) → hash[32] */
     uchar hash[32];
-    cosmic_fusion_ekam(s5, hash);
+    cosmic_fusion_ekam(buf_a, hash);
 
-    /* Target check: LE u32 from first 4 bytes */
-    uint state0 = *(uint *)hash;
+    /* Target check: BE u32 from first 4 bytes (matches pool's byte-order comparison) */
+    uint state0 = ((uint)hash[0] << 24) | ((uint)hash[1] << 16)
+                | ((uint)hash[2] <<  8) |  (uint)hash[3];
 
     if (state0 <= target_u32) {
         ulong old = atom_cmpxchg(result_nonce, 0xFFFFFFFFFFFFFFFFUL, nonce);
         if (old == 0xFFFFFFFFFFFFFFFFUL) {
-            /* Word-level hash copy (8 × uint = 32 bytes) */
             __global uint *rh32 = (__global uint *)result_hash;
             uint *h32 = (uint *)hash;
             for (int i = 0; i < 8; i++)
@@ -1227,12 +1267,10 @@ __kernel void ekam_deeksha_debug(
     ulong                  nonce,
     __global uchar        *scratchpad_pool,
     __global uchar        *stage_out,
-    __global const char   *npu_w1,
-    __global const char   *npu_b1,
-    __global const char   *npu_w2,
-    __global const char   *npu_b2,
-    __global const short  *npu_scale1,
-    __global const short  *npu_scale2
+    __global const char   *npu_weights,
+    __global const char   *npu_biases,
+    __global const short  *npu_scales,
+    __global const uint   *npu_meta
 )
 {
     if (get_global_id(0) != 0) return;
@@ -1263,7 +1301,7 @@ __kernel void ekam_deeksha_debug(
     ekam_memory_hard_transform(s3, pad, s4);
 
     uchar s5[64];
-    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+    npu_mix_packed(s4, s5, npu_weights, npu_biases, npu_scales, npu_meta);
 
     uchar hash[32];
     cosmic_fusion_ekam(s5, hash);

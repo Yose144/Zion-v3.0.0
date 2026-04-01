@@ -894,9 +894,34 @@ function emitMinerStatusLine(reason) {
 
     const line = parts.join(' | ') + '\n';
 
-    // UI log — ENABLED: Show [STATUS] lines for real-time mining stats
+    // UI log — Show [STATUS] to file, and a compact [METRICS] line to the Mining Console
     try {
       sendToRenderer('miner-output', { stream: 'stdout', text: line });
+    } catch {
+      // ignore
+    }
+
+    // Emit compact [METRICS] line for the Mining Console LOGS panel
+    try {
+      const gpu = minerStats.gpu_info || minerStats.gpu_type || '';
+      const gpuHr = typeof minerStats.hashrate_gpu === 'number' && minerStats.hashrate_gpu > 0
+        ? formatHashrate(minerStats.hashrate_gpu) : '';
+      const backend = minerStats.runtime_backend || '';
+      const epoch = minerStats.current_epoch != null ? String(minerStats.current_epoch) : '';
+      const metricsLine = [
+        `[METRICS] hr=${hrNow}`,
+        `10s=${formatHashrate(hr10 ?? 0)}`,
+        `60s=${formatHashrate(hr60 ?? 0)}`,
+        `15m=${formatHashrate(hr15m ?? 0)}`,
+        `A:${accepted} R:${rejected} ${accPct.toFixed(1)}%`,
+        `up=${up}`,
+        h ? `h=${h}` : null,
+        epoch ? `epoch=${epoch}` : null,
+        gpu ? `gpu=${gpu}` : null,
+        gpuHr ? `gpu_hr=${gpuHr}` : null,
+        backend ? `backend=${backend}` : null
+      ].filter(Boolean).join(' | ');
+      sendToRenderer('miner-output', { stream: 'stdout', text: metricsLine + '\n' });
     } catch {
       // ignore
     }
@@ -911,6 +936,26 @@ function emitMinerStatusLine(reason) {
         minCheckIntervalMs: 5000
       }
     });
+
+    // Also write compact metrics to the agent log (desktop_agent.log)
+    const gpu = minerStats.gpu_info || minerStats.gpu_type || '';
+    const backend = minerStats.runtime_backend || '';
+    const height = minerStats.last_job_height || '';
+    const epoch = minerStats.current_epoch != null ? minerStats.current_epoch : '';
+    logApp('mining-metrics', [
+      `hr=${hrNow}`,
+      `10s=${formatHashrate(hr10 ?? 0)}`,
+      `60s=${formatHashrate(hr60 ?? 0)}`,
+      `15m=${formatHashrate(hr15m ?? 0)}`,
+      `A=${accepted}`,
+      `R=${rejected}`,
+      `pct=${accPct.toFixed(1)}%`,
+      `up=${up}`,
+      height ? `h=${height}` : null,
+      epoch !== '' ? `epoch=${epoch}` : null,
+      gpu ? `gpu=${gpu}` : null,
+      backend ? `backend=${backend}` : null
+    ].filter(Boolean).join(' '));
   } catch {
     // ignore
   }
