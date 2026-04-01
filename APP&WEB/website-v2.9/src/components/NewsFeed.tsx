@@ -1,8 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Newspaper, ArrowRight, Layers, TrendingUp, Calendar, Tag } from 'lucide-react';
+import { Newspaper, ArrowRight, Calendar } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 // ─── Article type ─────────────────────────────────────────────────────────────
@@ -10,7 +9,7 @@ import { useLang } from '@/contexts/LanguageContext';
 export interface NewsArticle {
   slug: string;
   date: string;            // ISO date
-  tag: string;
+  tag: { cs: string; en: string };
   tagColor: string;        // tailwind text color
   title: { cs: string; en: string };
   summary: { cs: string; en: string };
@@ -24,7 +23,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
   {
     slug: 'ekam-deeksha-featured-cz-en-rollout',
     date: '2026-03-31',
-    tag: 'Book',
+    tag: { cs: 'Kniha', en: 'Book' },
     tagColor: 'text-zion-gold',
     title: {
       cs: 'Ekam Deeksha zvýrazněna na homepage + kompletní CZ/EN překlady ve Web 2.9',
@@ -39,7 +38,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
   {
     slug: 'defi-hub-launch',
     date: '2026-03-30',
-    tag: 'DeFi',
+    tag: { cs: 'DeFi', en: 'DeFi' },
     tagColor: 'text-zion-gold',
     title: {
       cs: 'ZION L2 DeFi Hub je live — Staking, Farming, DEX & Governance na Base',
@@ -54,7 +53,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
   {
     slug: 'coingecko-listing',
     date: '2026-03-30',
-    tag: 'Listing',
+    tag: { cs: 'Listing', en: 'Listing' },
     tagColor: 'text-green-400',
     title: {
       cs: 'CoinGecko registrace — ZION se připravuje na listing',
@@ -69,14 +68,14 @@ export const NEWS_ARTICLES: NewsArticle[] = [
   {
     slug: 'v3-testnet-live',
     date: '2026-03-15',
-    tag: 'Mainnet',
+    tag: { cs: 'Mainnet', en: 'Mainnet' },
     tagColor: 'text-blue-400',
     title: {
       cs: 'V3 Test Mainnet — 3-node mesh síť v provozu',
       en: 'V3 Test Mainnet — 3-node mesh network operational',
     },
     summary: {
-      cs: 'ZION V3 test mainnet běží s 3 nody (Praha, USA, Singapur). Canonical runtime v2.9.8 Ekam Deeksha, veřejný mining pool, Prometheus telemetrie. Chain height přes 470+ bloků.',
+      cs: 'ZION V3 test mainnet běží se 3 nody (Praha, USA, Singapur). Kanonický runtime v2.9.8 Ekam Deeksha, veřejný mining pool a Prometheus telemetrie. Chain height přes 470+ bloků.',
       en: 'ZION V3 test mainnet running with 3 nodes (Prague, USA, Singapore). Canonical runtime v2.9.8 Ekam Deeksha, public mining pool, Prometheus telemetry. Chain height over 470+ blocks.',
     },
     href: '/network',
@@ -84,7 +83,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
   {
     slug: 'bridge-testnet-deploy',
     date: '2026-03-10',
-    tag: 'L2',
+    tag: { cs: 'L2', en: 'L2' },
     tagColor: 'text-purple-400',
     title: {
       cs: 'L1↔L2 Bridge nasazen na Base Sepolia',
@@ -111,17 +110,11 @@ export default function NewsFeed() {
 
       <div className="zion-container relative">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mb-12"
-        >
+        <div className="mb-12">
           <div className="flex items-center gap-3 mb-3">
             <Newspaper className="w-5 h-5 text-zion-gold" />
             <span className="text-sm uppercase tracking-[0.4em] text-gray-400">
-              {cs ? 'Novinky & Aktualizace' : 'News & Updates'}
+              {cs ? 'Novinky a aktualizace' : 'News & Updates'}
             </span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white">
@@ -131,26 +124,20 @@ export default function NewsFeed() {
           </h2>
           <p className="text-lg text-gray-300 mt-3 max-w-2xl">
             {cs
-              ? 'Poslední zprávy z vývoje ZION ekosystému, DeFi, listingů a sítě.'
+              ? 'Poslední zprávy z vývoje ZION ekosystému, DeFi, listingu a sítě.'
               : 'Latest updates from the ZION ecosystem development, DeFi, listings, and network.'}
           </p>
-        </motion.div>
+        </div>
 
         {/* Articles grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {NEWS_ARTICLES.map((article, i) => (
-            <motion.div
-              key={article.slug}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
-            >
+          {NEWS_ARTICLES.map((article) => (
+            <div key={article.slug}>
               <Link
                 href={article.href}
                 target={article.external ? '_blank' : undefined}
                 rel={article.external ? 'noopener noreferrer' : undefined}
-                className="group relative block h-full rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 overflow-hidden"
+                className="group relative block h-full rounded-3xl border border-white/10 bg-white/3 hover:bg-white/6 transition-all duration-300 overflow-hidden"
               >
                 {/* Gradient accent top */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-zion-gold/30 to-transparent" />
@@ -159,7 +146,7 @@ export default function NewsFeed() {
                   {/* Meta row */}
                   <div className="flex items-center gap-3 mb-3">
                     <span className={`text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full border border-white/10 bg-white/5 ${article.tagColor}`}>
-                      {article.tag}
+                      {cs ? article.tag.cs : article.tag.en}
                     </span>
                     <span className="text-[11px] text-white/30 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
@@ -184,7 +171,7 @@ export default function NewsFeed() {
                   </div>
                 </div>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
