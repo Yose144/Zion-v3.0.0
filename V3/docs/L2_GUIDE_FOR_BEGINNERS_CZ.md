@@ -3,11 +3,28 @@
 Tento navod je napsany tak, aby ho zvladl i clovek, ktery L2 nikdy nespoustel.
 
 Cil: spustit tri L2 sluzby:
-- bridge (most mezi L1 a EVM)
+- bridge (most mezi L1 a EVM / Base mainnet)
 - swap (atomic swap service)
 - dao (governance API)
 
 Pokud pojedes krok po kroku, nemas co pokazit.
+
+---
+
+## 0) Stav kontraktu na Base mainnet (chain 8453)
+
+Vsechny 3 kontrakty jsou uz nasazene a overene na BaseScan:
+
+| Kontrakt | Adresa |
+|----------|--------|
+| wZION (ERC-20) | 0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6 |
+| ZIONBridge | 0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721 |
+| ZIONAtomicSwap | 0x3DE9Ad42716854083ab837706E3961d10B0e63Eb |
+
+Overeni na BaseScan:
+- https://basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6#code
+- https://basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721#code
+- https://basescan.org/address/0x3DE9Ad42716854083ab837706E3961d10B0e63Eb#code
 
 ---
 
@@ -158,6 +175,38 @@ docker compose --env-file V3/docker/.env.l2 -f V3/docker/docker-compose.v3-l2.ym
 3) docker compose --env-file V3/docker/.env.l2 -f V3/docker/docker-compose.v3-l2.yml up -d --build
 4) curl health endpointy
 5) kdyz je problem, cti docker logs
+
+---
+
+## 11) Overeni live kontraktu na Base mainnet (z lokalniho stroje)
+
+cd L2/contracts && npx hardhat run scripts/check-live-contracts.js --network base
+
+Melo by vypsat:
+  === wZION ===
+  name: Wrapped ZION
+  decimals: 18
+  paused: false
+
+  === ZIONBridge ===
+  threshold: 1
+  paused: false
+
+  === ZIONAtomicSwap ===
+  feeBps: 0
+  paused: false
+
+---
+
+## 12) Testy (lokalne — bez serveru)
+
+Solidity testy (132 testu):
+
+cd L2/contracts && npx hardhat test
+
+Rust L2 testy (260 testu):
+
+cd V3 && cargo test -p zion-bridge -p zion-atomic-swap -p zion-dao
 
 ---
 

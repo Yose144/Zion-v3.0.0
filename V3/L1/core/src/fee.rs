@@ -115,7 +115,10 @@ pub const DAO_ADDRESS: &str = "zion1dao00000000000000000000000000000treasury";
 /// This address is intentionally keyless at the protocol level. Unlocks back to
 /// L1 must flow through a dedicated bridge authorization path rather than a
 /// normal wallet-controlled spend.
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion1bridge000000000000000000000000000vault";
+///
+/// Derived deterministically from seed `"ZION Bridge Vault V3 Mainnet"`
+/// via SHA-256 → derive_address. See `crypto::bridge_vault_address()`.
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0";
 
 // ── Tests ──────────────────────────────────────────────────────────────
 
@@ -126,6 +129,11 @@ mod tests {
     #[test]
     fn min_fee_constant() {
         assert_eq!(MIN_TX_FEE, 1_000);
+    }
+
+    #[test]
+    fn bridge_vault_address_matches_crypto_derivation() {
+        assert_eq!(BRIDGE_VAULT_ADDRESS, crate::crypto::bridge_vault_address());
     }
 
     #[test]
