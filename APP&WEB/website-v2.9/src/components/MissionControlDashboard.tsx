@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, AlertTriangle, ArrowLeftRight, BarChart3, Brain, CheckCircle2,
@@ -11,6 +11,7 @@ import {
   CircleDot, XCircle, CheckCheck, Construction
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
@@ -1471,7 +1472,10 @@ export default function MissionControlDashboard() {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`/api/mission-data/data?t=${Date.now()}`);
+      const res = await fetch('/api/mission-data/data', {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
+      });
       if (res.ok) {
         const d = await res.json();
         setData(d);
@@ -1479,6 +1483,23 @@ export default function MissionControlDashboard() {
     } catch { /* silent */ }
     setLoading(false);
   }, []);
+
+  const refreshV3 = useCallback(async () => {
+    try {
+      const [metrics, sparks] = await Promise.all([fetchV3Metrics(), fetchV3Sparklines()]);
+      setV3(metrics);
+      setV3Sparks(sparks);
+    } catch { /* silent */ }
+  }, []);
+
+  const refreshCharts = useCallback(async () => {
+    try {
+      const [charts, svc, summary] = await Promise.all([fetchV3Charts(chartRange), fetchServiceStatuses(), fetchStackSummary()]);
+      setV3Charts(charts);
+      setServices(svc);
+      setStackSummary(summary);
+    } catch { /* silent */ }
+  }, [chartRange]);
 
   const refreshWallet = useCallback(async (addressOverride?: string) => {
     const address = typeof addressOverride === 'string' ? addressOverride.trim() : walletQueryAddress.trim();
@@ -1519,50 +1540,13 @@ export default function MissionControlDashboard() {
     }
   }, [walletTxMethod, walletTxPayload]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/mission-data/data?t=${Date.now()}`);
-        if (res.ok && !cancelled) {
-          const d = await res.json();
-          setData(d);
-        }
-      } catch { /* silent */ }
-      if (!cancelled) setLoading(false);
-    })();
-    // V3 Prometheus metrics
-    const refreshV3 = async () => {
-      try {
-        const [metrics, sparks] = await Promise.all([fetchV3Metrics(), fetchV3Sparklines()]);
-        setV3(metrics);
-        setV3Sparks(sparks);
-      } catch { /* silent */ }
-    };
-    const refreshCharts = async () => {
-      try {
-        const [charts, svc, summary] = await Promise.all([fetchV3Charts(chartRange), fetchServiceStatuses(), fetchStackSummary()]);
-        setV3Charts(charts);
-        setServices(svc);
-        setStackSummary(summary);
-      } catch { /* silent */ }
-    };
-    refreshV3();
-    refreshCharts();
-    const iv = setInterval(refresh, 30_000);
-    const iv2 = setInterval(refreshV3, 15_000);
-    const iv3 = setInterval(refreshCharts, 60_000);
-    const clock = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 60_000);
-    return () => { cancelled = true; clearInterval(iv); clearInterval(iv2); clearInterval(iv3); clearInterval(clock); };
-  }, [refresh, chartRange]);
-
-  useEffect(() => {
-    refreshWallet(walletQueryAddress);
-    const interval = setInterval(() => {
-      refreshWallet(walletQueryAddress);
-    }, 30_000);
-    return () => clearInterval(interval);
-  }, [refreshWallet, walletQueryAddress]);
+  usePolling(refresh, 30_000);
+  usePolling(refreshV3, 20_000);
+  usePolling(refreshCharts, 60_000);
+  usePolling(() => {
+    setNowSec(Math.floor(Date.now() / 1000));
+  }, 60_000, { immediate: false });
+  usePolling(() => refreshWallet(walletQueryAddress), 30_000);
 
   const stabilityRun = data?.mainnet_stability_run ?? data?.launch_rehearsal ?? data?.stability_run;
   const readinessMap = data?.readiness_map;
