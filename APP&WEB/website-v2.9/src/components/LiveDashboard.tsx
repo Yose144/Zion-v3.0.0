@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Atom, Braces, Database, Gauge, Shield } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api';
+import { usePolling } from '@/hooks/usePolling';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 
 interface BlockchainStats {
@@ -50,40 +51,28 @@ export default function LiveDashboard() {
   const [loadedAtLeastOnce, setLoadedAtLeastOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  const fetchStats = useCallback(async () => {
+    try {
+      const data = await apiClient<BlockchainStats | null>('/blockchain/stats');
 
-    async function fetchStats() {
-      try {
-        const data = await apiClient<BlockchainStats | null>('/blockchain/stats');
-        if (!active) return;
-
-        if (!data || typeof data !== 'object') {
-          throw new Error('Invalid blockchain stats payload');
-        }
-
-        setStats(data);
-        setLoadedAtLeastOnce(true);
-        setError(null);
-      } catch (err) {
-        if (!active) return;
-        // Don't show error in dev mode, just use placeholder data
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('API not available, using placeholder data');
-          setLoadedAtLeastOnce(true);
-          return;
-        }
-        setError(err instanceof Error ? err.message : 'Unknown error');
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid blockchain stats payload');
       }
-    }
 
-    fetchStats();
-    const interval = setInterval(fetchStats, 30000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+      setStats(data);
+      setLoadedAtLeastOnce(true);
+      setError(null);
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('API not available, using placeholder data');
+        setLoadedAtLeastOnce(true);
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    }
   }, []);
+
+  usePolling(fetchStats, 30_000);
 
   const supply = stats.total_supply ?? stats.max_supply ?? stats.circulating_supply ?? 0;
   const formattedSupply = supply >= 1e9

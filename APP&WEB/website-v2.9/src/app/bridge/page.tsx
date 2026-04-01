@@ -31,6 +31,7 @@ import {
   type BridgeStatus,
 } from '@/lib/bridge-api';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
+import { usePolling } from '@/hooks/usePolling';
 
 // ─── Steps data ───────────────────────────────────────────────────────────────
 
@@ -120,14 +121,7 @@ export default function BridgePage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    const initial = setTimeout(load, 0);
-    const id = setInterval(load, 15_000);
-    return () => {
-      clearTimeout(initial);
-      clearInterval(id);
-    };
-  }, [load]);
+  usePolling(load, 15_000);
 
   function copyText(text: string, key: string) {
     navigator.clipboard.writeText(text).then(() => {
