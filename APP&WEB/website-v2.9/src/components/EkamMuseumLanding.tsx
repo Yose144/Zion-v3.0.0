@@ -371,10 +371,13 @@ export default function EkamMuseumLanding() {
                 decoding="async"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent sm:from-slate-950/75" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/20 to-transparent sm:from-black/40 sm:via-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-100/80">Founders</p>
-                <p className="mt-1 text-xs text-white/85">Sri Amma & Sri Bhagavan</p>
+                <div className="inline-flex flex-col rounded-xl border border-white/15 bg-black/35 px-3 py-2 backdrop-blur-sm">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-100/85">{tr('ekamPage', 'founders_banner_label', lang)}</p>
+                  <p className="mt-1 text-xs text-white/90">{tr('ekamPage', 'founders_banner_caption', lang)}</p>
+                </div>
               </div>
             </div>
 
@@ -464,8 +467,8 @@ export default function EkamMuseumLanding() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-200">EKAM</p>
-                  <p className="mt-1 text-sm text-white/80">Varadaiahpalem, Andhra Pradesh</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-100/85">{tr('ekamPage', 'tour_gallery_ekam_label', lang)}</p>
+                  <p className="mt-1 text-sm text-white/85">{tr('ekamPage', 'tour_gallery_ekam_caption', lang)}</p>
                 </div>
               </div>
               {/* Turiya / Sacred space */}
@@ -480,7 +483,8 @@ export default function EkamMuseumLanding() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">Meditation space</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-100/85">{tr('ekamPage', 'tour_gallery_turiya_label', lang)}</p>
+                  <p className="mt-1 text-sm text-white/85">{tr('ekamPage', 'tour_gallery_turiya_caption', lang)}</p>
                 </div>
               </div>
               {/* Nordic centre */}
@@ -495,7 +499,8 @@ export default function EkamMuseumLanding() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">{tr('ekamPage', 'tour_nordic_title', lang)}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-100/85">{tr('ekamPage', 'tour_gallery_nordic_label', lang)}</p>
+                  <p className="mt-1 text-sm text-white/85">{tr('ekamPage', 'tour_gallery_nordic_caption', lang)}</p>
                 </div>
               </div>
             </div>
