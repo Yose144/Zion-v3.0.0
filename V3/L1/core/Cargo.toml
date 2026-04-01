@@ -22,6 +22,8 @@ ripemd.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
+k256.workspace = true
+hex.workspace = true
 zeroize.workspace = true
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 
