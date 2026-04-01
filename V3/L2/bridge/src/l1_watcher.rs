@@ -322,7 +322,7 @@ mod tests {
         let config = L1Config {
             rpc_url: "127.0.0.1:8443".into(),
             rpc_url_backup: None,
-            bridge_address: "zion1bridge000000000000000000000000000vault".into(),
+            bridge_address: "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0".into(),
             finality_blocks: 60,
             poll_interval_secs: 15,
             start_block_height: None,
@@ -425,7 +425,7 @@ mod tests {
         let config = L1Config {
             rpc_url: "127.0.0.1:8443".into(),
             rpc_url_backup: None,
-            bridge_address: "zion1bridge000000000000000000000000000vault".into(),
+            bridge_address: "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0".into(),
             finality_blocks: 60,
             poll_interval_secs: 15,
             start_block_height: None,

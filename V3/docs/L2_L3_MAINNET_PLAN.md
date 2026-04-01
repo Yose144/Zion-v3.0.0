@@ -64,19 +64,28 @@ Locking 1 ZION (= 1e12 flowers) would be multiplied by 1e12 → 1e24 wei → **1
 
 ### 1.0 Current Production Readiness Reality
 
-As of 2026-03-29, V3/L2 bridge is **migrated but not production-ready**.
+As of 2026-04-01, V3/L2 bridge is **migrated, contracts deployed, but bridge runtime not yet production-ready**.
 
-The key blockers are now integration blockers, not migration blockers:
+What is done:
+
+- All 3 Base mainnet contracts deployed and verified on BaseScan (wZION, ZIONBridge, ZIONAtomicSwap).
+- 132 Solidity tests pass. 260 Rust L2 tests pass.
+- L1 mining is live with UTXO coinbase, pool payout enabled, humanitarian tithe verified (89/5/5/1).
+- Bridge daemon runs on Prague server (testnet mode).
+
+What still blocks bridge activation:
 
 - V3 core does not yet expose bridge-specific RPC methods for lock scanning, vault audit, or unlock submission.
-- `V3/L2/bridge` still consumes legacy-style HTTP endpoints (`/api/block/height/:height`, `/api/address/:address/utxos`, `/api/bridge/unlock`) instead of the live V3 raw TCP JSON-RPC surface.
-- Base mainnet contracts are still intentionally unset in the readiness tests.
-- production bridge config files are not yet checked in under V3.
+- Bridge vault address is a placeholder — no real keyless vault exists on L1.
+- Cryptographic validator proof verification is not yet enforced in submitBridgeUnlock.
+- `bridge-mainnet.toml` has `enabled=false` — must stay disabled until above are resolved.
+- Bridge daemon still points at Base Sepolia config.
 
 That means the correct status is:
 
 - bridge crate migration: **done**
-- bridge production launch: **not yet go**
+- contract deployment: **done**
+- bridge production launch: **not yet go** (core-side unlock + vault = blockers)
 
 ### 1.1 Architecture (from root testnet, adapted for V3)
 
@@ -146,7 +155,7 @@ No core change needed — memo field exists in `tx.rs`.
 Define in `V3/L1/core/src/fee.rs`:
 
 ```rust
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion1bridge000000000000000000000000000vault";
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0";
 ```
 
 Bridge vault is a **special address** — no private key exists. Only the bridge oracle mechanism can release funds from it through a validated unlock path.
@@ -200,7 +209,7 @@ Response:
 
 ```json
 {
-  "address": "zion1bridge000000000000000000000000000vault",
+  "address": "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0",
   "balance_flowers": 123000000000000,
   "balance_zion": "123.000000000000"
 }
@@ -266,27 +275,39 @@ Recommended state additions in V3 core:
 
 ### 1.5 EVM Contract Deployment Plan
 
-| Phase | Scope | Network | Target |
-|-------|-------|---------|--------|
-| L2-A | Fix decimal conversion (×1e6), redeploy wZION to Base Sepolia | Testnet | Week 1 |
-| L2-B | Bridge daemon connects to V3 testnet node RPC | Testnet | Week 2 |
-| L2-C | End-to-end lock/mint/burn/unlock on testnet | Testnet | Week 3–4 |
-| L2-D | Security audit: validator key management, rate limits | Testnet | Week 5 |
-| L2-E | Deploy to Base mainnet | Mainnet | After L1 mainnet stable |
+| Phase | Scope | Network | Target | Status |
+|-------|-------|---------|--------|--------|
+| L2-A | Fix decimal conversion (×1e6), redeploy wZION to Base Sepolia | Testnet | Week 1 | ✅ Done |
+| L2-B | Bridge daemon connects to V3 testnet node RPC | Testnet | Week 2 | ✅ Done |
+| L2-C | End-to-end lock/mint/burn/unlock on testnet | Testnet | Week 3–4 | Partial (daemon runs, core unlock pending) |
+| L2-D | Security audit: validator key management, rate limits | Testnet | Week 5 | Pending |
+| L2-E | Deploy to Base mainnet | Mainnet | After L1 mainnet stable | ✅ **Contracts deployed + BaseScan verified 2026-04-01** |
 
-Production entry criteria before L2-E:
+Production entry criteria before bridge activation (L2-E runtime GO):
 
 - `getBridgeLocks`, `getBridgeVaultBalance`, and `submitBridgeUnlock` are live in V3 core
 - bridge daemon no longer depends on `/api/*` or `/rpc/submit_tx` legacy HTTP routes
 - mainnet config file has non-zero Base contract addresses and fixed `start_block`
 - Sepolia end-to-end lock/mint/burn/unlock passes against the same V3 RPC model used on mainnet
+- bridge vault address is real (not placeholder) with correct keyless-unlock semantics
+- cryptographic validator proof verification is enforced in submitBridgeUnlock
 
-### 1.6 Existing Testnet Contracts (Base Sepolia — reuse after decimal fix)
+### 1.6 Base Mainnet Contracts (deployed 2026-04-01)
 
 | Contract | Address | Status |
 |----------|---------|--------|
-| wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Redeploy with fixed decimals |
-| ZIONBridge | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | Redeploy with fixed conversion |
+| wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Live, verified on BaseScan |
+| ZIONBridge | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ Live, threshold=1, verified |
+| ZIONAtomicSwap | `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb` | ✅ Live, fee=0bps, verified |
+
+Deploy manifest: `L2/contracts/deployed-base-mainnet.json`
+
+### 1.6b Existing Testnet Contracts (Base Sepolia)
+
+| Contract | Address | Status |
+|----------|---------|--------|
+| wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Testnet instance |
+| ZIONBridge | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | Testnet instance |
 | ZIONGovernance | `0x039F730e3e1c3f36da95187697118791762290a1` | Keep |
 | ZIONTreasury | `0x178d85323dC94Ce2477269Dfb93a12D04B9bE537` | Keep |
 | ZIONStaking | `0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913` | Keep |
