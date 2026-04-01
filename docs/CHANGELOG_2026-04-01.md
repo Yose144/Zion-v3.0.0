@@ -3,6 +3,7 @@
 ## Souhrn
 
 Phase 18: UTXO coinbase generace, pool payout E2E pipeline, humanitarian tithe ověření, BaseScan verifikace.
+Sprint 9b: Všechny bridge blockery vyřešeny — vault adresa, wallet CLI, mainnet config, bridge relay nasazen na server.
 
 ---
 
@@ -79,3 +80,23 @@ Odstraněny duplikátní [13]/[14] záznamy (stará sada s jinými adresami, nep
 - Tests: 77/77 pool, 153+ core targeted — all pass
 - Chain height: 6801 (template 6802)
 - Git commit: `afbdf69` "Phase 18: UTXO coinbase + pool payout E2E + BaseScan verify"
+
+---
+
+## 5. Sprint 9b: Bridge Blockers Resolved (2026-04-01)
+
+**Vyřešené blockery:**
+
+| # | Blocker | Řešení |
+|---|---------|--------|
+| 1 | Placeholder vault adresa | Deterministická keyless vault adresa z SHA-256("ZION Bridge Vault V3 Mainnet") → `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` |
+| 2 | Crypto validator proof | Již implementováno — `submitBridgeUnlock` má secp256k1 ECDSA verifikaci s allowlistem + threshold |
+| 3 | L1 wallet CLI | Nový `wallet.rs` binárka: keygen, info, send, balance přes raw TCP JSON-RPC |
+| 4 | Bridge mainnet config | `bridge-mainnet.toml` → `enabled=true`, nasazeno na Prague server |
+
+**Nasazení:**
+- Bridge relay běží na Prague serveru s 3/5 threshold
+- L1 + EVM watchers aktivní, skenují Base mainnet bloky (chain 8453)
+- Vault adresa aktualizována v: `fee.rs`, `crypto.rs`, `bridge-mainnet.toml`, `bridge-testnet.toml`, `docker-compose.v3-mainnet.yml`
+- 448 core unit testů projde (per-modul)
+- Git commit: `4f5d43d` "v2.9.8: resolve all bridge blockers"
