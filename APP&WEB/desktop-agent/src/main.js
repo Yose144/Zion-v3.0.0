@@ -3209,7 +3209,7 @@ function startMiningV3(config, v3Path) {
     ZION_LOOP_COUNT: '4294967295',
     ZION_NONCE_AUTOTUNE: 'true',
     ZION_RECONNECT: 'true',
-    ZION_METRICS_REPORT_SECS: String(STATS_INTERVAL_SEC || 30),
+    ZION_METRICS_REPORT_SECS: '10',
     ZION_STATS_FILE: STATS_PATH,
     ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
     ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
@@ -7062,6 +7062,47 @@ function parseMinerOutput(output) {
     minerStats.hashrate_15m = parseFloat(speedMatch[3]) * mult;
     minerStats.hashrate_max = parseFloat(speedMatch[5]) * mult;
     minerStats.hashrate = minerStats.hashrate_10s; // primary = 10s window
+  }
+
+  // ─── V3 machine-parseable: "session_status iter=1/N ... hps_10s=91600.00 hps_overall=..." ───
+  const v3SessionMatch = output.match(/session_status\s.*?hps_overall=([\d.]+).*?hps_10s=([\d.]+).*?hps_60s=([\d.]+).*?hps_15m=([\d.]+).*?attempted_hashes=(\d+).*?accepted=(\d+).*?rejected=(\d+)/i)
+    || output.match(/session_status\s.*?accepted=(\d+).*?rejected=(\d+).*?hps_overall=([\d.]+).*?hps_10s=([\d.]+).*?hps_60s=([\d.]+).*?hps_15m=([\d.]+).*?attempted_hashes=(\d+)/i);
+  if (v3SessionMatch) {
+    // Fields may appear in different order; use named groups pattern
+    const raw = output;
+    const gf = (key) => { const m = raw.match(new RegExp(key + '=([\\d.]+)')); return m ? parseFloat(m[1]) : 0; };
+    const gi = (key) => { const m = raw.match(new RegExp(key + '=(\\d+)')); return m ? parseInt(m[1], 10) : 0; };
+    const hpsOverall = gf('hps_overall');
+    const hps10 = gf('hps_10s');
+    const hps60 = gf('hps_60s');
+    const hps15 = gf('hps_15m');
+    const accepted = gi('accepted');
+    const rejected = gi('rejected');
+    const attempted = gi('attempted_hashes');
+    if (hps10 > 0 || hpsOverall > 0) {
+      minerStats.hashrate = hps10 > 0 ? hps10 : hpsOverall;
+      minerStats.hashrate_10s = hps10;
+      minerStats.hashrate_60s = hps60;
+      minerStats.hashrate_15m = hps15;
+    }
+    minerStats.accepted = accepted;
+    minerStats.rejected = rejected;
+    minerStats.shares = accepted + rejected;
+    minerStats.total_hashes = attempted;
+    minerStats.total_hashes_display = String(attempted);
+    const epochMatch = raw.match(/epoch=(\d+)/);
+    if (epochMatch) minerStats.current_epoch = parseInt(epochMatch[1], 10);
+    const poolHeightMatch = raw.match(/pool_height=(\d+)/);
+    if (poolHeightMatch) minerStats.last_job_height = poolHeightMatch[1];
+  }
+
+  // ─── V3 shares line: "shares A:5 R:0 (100.0%) | hashes 458000" ───
+  const v3SharesMatch = output.match(/shares\s+A:(\d+)\s+R:(\d+)\s+\(([\d.]+)%\)/i);
+  if (v3SharesMatch) {
+    minerStats.accepted = parseInt(v3SharesMatch[1], 10);
+    minerStats.rejected = parseInt(v3SharesMatch[2], 10);
+    minerStats.shares = minerStats.accepted + minerStats.rejected;
+    minerStats.accept_rate = parseFloat(v3SharesMatch[3]);
   }
 
   // ─── Deeksha stats line: "[Stats] 155.683 H/s | shares=5 | hashes=9368 | backend=native" ───
