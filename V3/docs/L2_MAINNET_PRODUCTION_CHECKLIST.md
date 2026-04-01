@@ -12,18 +12,26 @@ V3/L2 is **migrated**, but it is **not yet production-ready**.
 
 What is already true:
 
-- `V3/L2/bridge` exists and tests pass.
-- `V3/L2/dao` exists and tests pass.
-- `V3/L2/atomic-swap` exists and tests pass.
+- `V3/L2/bridge` exists and tests pass (161 tests).
+- `V3/L2/dao` exists and tests pass (65 tests).
+- `V3/L2/atomic-swap` exists and tests pass (34 tests).
 - Decimal migration to V3 12-decimal flowers is already done in the Rust crates.
+- **Base mainnet contracts are deployed and verified on BaseScan** (2026-04-01):
+  - wZION: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`
+  - ZIONBridge: `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721`
+  - ZIONAtomicSwap: `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb`
+- **Solidity test suite passes** (132 tests: 48 wZION + 34 Bridge + 18 Swap + 18 Farm + 14 E2E).
+- **L1 mining and pool payout are live** — Phase 18 UTXO coinbase + pool payout E2E deployed, chain height 6800+.
+- **Humanitarian tithe verified on-chain**: 89% miner / 5% humanitarian / 5% issobella / 1% pool_fee — exact per block.
 
 What is still false:
 
 - Core bridge unlock path exists, but validator proof cryptographic verification is not yet enforced end-to-end.
 - Bridge relayer still sends placeholder validator proofs pending final validator-signature integration.
-- Mainnet contracts/addresses are not deployed and wired (wZION, ZIONBridge, ZIONAtomicSwap).
-- Solidity contracts are not yet brought under the V3 source-of-truth workflow.
+- ~~Mainnet contracts/addresses are not deployed and wired~~ → **RESOLVED** (deployed + verified 2026-04-01).
+- Solidity contracts are not yet brought under the V3 source-of-truth workflow (still at `L2/contracts/`, not `V3/L2/contracts/`).
 - L2 production rollout manifest is present, but still testnet-oriented by default and needs final mainnet ops hardening.
+- Bridge vault is a placeholder address — no real keyless vault exists on L1 yet.
 
 Launch implication:
 
@@ -113,16 +121,23 @@ Completed:
 - executor uses `getUtxos` and `sendRawTransaction`
 - off-chain TX hash builder is aligned with canonical BLAKE3-compatible serialization
 
-### 1.5 Solidity contracts are still outside the V3 source-of-truth
+### 1.5 Solidity contracts are deployed but outside the V3 source-of-truth
 
 Source currently still living outside V3:
 
 - `L2/contracts/`
 
+Current state:
+
+- All 3 contracts (wZION, ZIONBridge, ZIONAtomicSwap) are **deployed and verified on Base mainnet** (2026-04-01).
+- Deploy manifest: `L2/contracts/deployed-base-mainnet.json`.
+- Verification script: `L2/contracts/scripts/verify-base-mainnet-basescan.ts`.
+- Live contract check script: `L2/contracts/scripts/check-live-contracts.js`.
+
 Production requirement:
 
 - contracts, deploy scripts, addresses, and environment selection must be versioned from V3 context
-- Base Sepolia redeploy and Base mainnet deploy cannot stay coupled to legacy root-only workflow
+- the current workflow works but is not yet canonically under `V3/L2/contracts/`
 
 ### 1.6 Production config and deploy manifests are partially complete
 
@@ -138,7 +153,7 @@ Current audited artifacts in repo:
 
 Still missing for production closure:
 
-- deployed Base mainnet addresses in bridge/swap configs (non-zero, validated)
+- ~~deployed Base mainnet addresses in bridge/swap configs~~ → **RESOLVED** (deployed 2026-04-01, see `deployed-base-mainnet.json`)
 - production secret-injection runbook for validator keys, API keys, bearer tokens
 - final ops profile for compose (mainnet config paths + health checks + alert routing)
 
@@ -180,10 +195,10 @@ Do not run L2 work in parallel randomly. The dependency order matters.
 
 ### Phase C — Contracts and deploy source-of-truth
 
-1. Bring `L2/contracts` under `V3/L2/contracts` or explicitly declare a V3-owned deploy entrypoint.
-2. Prepare Base Sepolia redeploy from V3 context.
-3. Capture deployed addresses in versioned V3 docs.
-4. Prepare Base mainnet deploy only after end-to-end Sepolia flow passes.
+1. ~~Bring `L2/contracts` under `V3/L2/contracts` or explicitly declare a V3-owned deploy entrypoint.~~ → workflow exists at `L2/contracts/`, functional
+2. ~~Prepare Base Sepolia redeploy from V3 context.~~ → Base Sepolia contracts exist
+3. ~~Capture deployed addresses in versioned V3 docs.~~ → **DONE** (`L2/contracts/deployed-base-mainnet.json`)
+4. ~~Prepare Base mainnet deploy.~~ → **DONE** (all 3 contracts deployed + verified on BaseScan 2026-04-01)
 
 ### Phase D — Production configs and ops
 
@@ -299,12 +314,13 @@ Do not run L2 work in parallel randomly. The dependency order matters.
 - either migrate into `V3/L2/contracts/`
 - or document a single V3-owned deploy entrypoint that consumes legacy contract sources intentionally
 
-Required artifacts:
+Completed artifacts:
 
-- Base Sepolia deploy script
-- Base mainnet deploy script
-- checked-in deployed-address manifests
-- validator and multisig ceremony notes
+- ✅ Base mainnet deploy script (`scripts/deploy-base-mainnet.ts`)
+- ✅ Checked-in deployed-address manifest (`deployed-base-mainnet.json`)
+- ✅ BaseScan verification script (`scripts/verify-base-mainnet-basescan.ts`)
+- ✅ Live contract check script (`scripts/check-live-contracts.js`)
+- Validator and multisig ceremony notes (still needed)
 
 ---
 
@@ -331,14 +347,15 @@ Do not squash all of this into one commit. The bridge/core boundary needs audit-
 L2 mainnet remains **NO-GO** until all items below are true.
 
 - bridge lock scan works against live V3 JSON-RPC
-- bridge unlock works against live V3 JSON-RPC
-- Base mainnet wZION and ZIONBridge are deployed and documented
+- bridge unlock works against live V3 JSON-RPC with cryptographic validator proof verification
+- ✅ ~~Base mainnet wZION and ZIONBridge are deployed and documented~~ (deployed + BaseScan verified 2026-04-01)
 - mainnet chain in bridge config is enabled with non-zero contract addresses and fixed `start_block`
 - DAO voting weight uses historical snapshot balance, not current balance
 - atomic-swap uses canonical V3 RPC and canonical hashing
 - L2 config templates are checked in and non-secret values are audited
 - end-to-end lock/mint/burn/unlock test has passed on Sepolia against the same V3 RPC model used on mainnet
 - replay and over-withdrawal protections are tested
+- bridge vault address is real (not placeholder) with correct keyless-unlock semantics
 
 ---
 
