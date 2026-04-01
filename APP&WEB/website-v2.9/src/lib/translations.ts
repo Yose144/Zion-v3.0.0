@@ -222,6 +222,46 @@ const t = {
     cta_home: { cs: 'Zpět na homepage', en: 'Back to homepage' },
     cta_tree: { cs: 'Přejít k Tree of Life', en: 'Go to Tree of Life' },
     cta_source: { cs: 'Zdroj: Oneness / Ekam', en: 'Source: Oneness / Ekam' },
+    /* ── Founders / Family lineage ── */
+    founders_label: { cs: 'Duchovní linie', en: 'Spiritual lineage' },
+    founders_title: { cs: 'Rodina, ze které Ekam vzešel', en: 'The family behind Ekam' },
+    founders_subtitle: {
+      cs: 'Chrám Ekam vybudovala rodina duchovních učitelů, kteří přinesli praxi Deeksha do celého světa. Dnes jejich dílo pokračuje druhou generací — Sri Preethaji a Sri Krishnaji — společně s dcerou Lokaa.',
+      en: 'Ekam was built by a family of spiritual teachers who brought the practice of Deeksha to the world. Today their work continues through the second generation — Sri Preethaji and Sri Krishnaji — together with their daughter Lokaa.',
+    },
+    founders_amma_title: { cs: 'Sri Amma (Padmavathi)', en: 'Sri Amma (Padmavathi)' },
+    founders_amma_body: { cs: 'Spoluzakladatelka Oneness hnutí. Vtělení mateřského principu — Padmavathi z 800leté linie Dattatreya.', en: 'Co-founder of the Oneness movement. Embodiment of the maternal principle — Padmavathi from the 800-year Dattatreya lineage.' },
+    founders_bhagavan_title: { cs: 'Sri Bhagavan (Vijay Kumar)', en: 'Sri Bhagavan (Vijay Kumar)' },
+    founders_bhagavan_body: { cs: 'Zakladatel Oneness. Vizionář za Jeevashram, Satyaloka a chrámem Ekam. Zasvětil život probuzení lidstva.', en: 'Founder of Oneness. The visionary behind Jeevashram, Satyaloka, and the Ekam temple. Dedicated his life to awakening humanity.' },
+    founders_krishnaji_title: { cs: 'Sri Krishnaji (NKV Krishna)', en: 'Sri Krishnaji (NKV Krishna)' },
+    founders_krishnaji_body: { cs: 'Syn Ammy a Bhagavana. Osvícený mudrc a spoluzakladatel současného Oneness hnutí. Vede programy Tapas v Ekamu.', en: 'Son of Amma and Bhagavan. Enlightened sage and co-founder of the current Oneness movement. Leads the Tapas programs at Ekam.' },
+    founders_preethaji_title: { cs: 'Sri Preethaji (Preetha Krishna)', en: 'Sri Preethaji (Preetha Krishna)' },
+    founders_preethaji_body: { cs: 'Filozofka, autorka a spoluzakladatelka Oneness. Vede Field of Awakening po celém světě. Autorka bestselleru The Four Sacred Secrets.', en: 'Philosopher, author, and Oneness co-founder. Leads Field of Awakening worldwide. Author of the bestseller The Four Sacred Secrets.' },
+    founders_lokaa_title: { cs: 'Lokaa', en: 'Lokaa' },
+    founders_lokaa_body: { cs: 'Dcera Preethaji a Krishnaji. Třetí generace rodiny. Společně s rodiči vede nadaci sloužící 1 000+ vesnicím kolem Ekamu.', en: 'Daughter of Preethaji and Krishnaji. Third generation of the family. Together with her parents, oversees a foundation serving 1,000+ villages around Ekam.' },
+    founders_quote: {
+      cs: '„Každý den strávený v utrpení je promarněný den; každý den prožitý v krásném stavu je skutečně prožitý život."',
+      en: '"For every day spent in suffering is a wasted day; every day lived in a beautiful state is life truly lived."',
+    },
+    founders_quote_author: { cs: '— Sri Preethaji & Sri Krishnaji', en: '— Sri Preethaji & Sri Krishnaji' },
+    /* ── Virtual Tour embed ── */
+    tour_section_label: { cs: 'Virtuální prohlídka', en: 'Virtual tour' },
+    tour_section_title: { cs: 'Nahlédněte do nitra chrámu', en: 'Look inside the temple' },
+    tour_section_subtitle: {
+      cs: 'Ekam stojí na kopci u východního pohoří Ghátů, 73 km od Chennai. Bílý mramor, bezsloupová meditační hala pro 8 000 lidí a Zlatá Koule na vrcholu kopule.',
+      en: 'Ekam stands on a hill near the Eastern Ghats, 73 km from Chennai. White marble, a pillarless meditation hall for 8,000 people, and the Golden Orb atop the dome.',
+    },
+    tour_fact_cost: { cs: 'Stavební náklady: $75 milionů', en: 'Construction cost: $75 million' },
+    tour_fact_inaugurated: { cs: 'Otevřeno: 2008', en: 'Inaugurated: 2008' },
+    tour_fact_architect: { cs: 'Architekt: Prabhat Poddar (Auroville)', en: 'Architect: Prabhat Poddar (Auroville)' },
+    tour_fact_location: { cs: 'Varadaiahpalem, Andhra Pradesh, Indie', en: 'Varadaiahpalem, Andhra Pradesh, India' },
+    tour_nordic_title: { cs: 'Oneness Nordic — Evropské centrum', en: 'Oneness Nordic — European Centre' },
+    tour_nordic_body: {
+      cs: 'Bývalý buddhistický klášter v jižním Švédsku, nyní evropské centrum Oneness. Zasvěcený prostor obklopený dubovým a bukovým lesem Skåne.',
+      en: 'A former Buddhist monastery in southern Sweden, now the European Oneness centre. A consecrated space surrounded by the oak and beech forest of Skåne.',
+    },
+    tour_cta_youtube: { cs: 'Navštívit YouTube kanál Oneness', en: 'Visit Oneness YouTube channel' },
+    tour_cta_website: { cs: 'Oficiální web Oneness Movement', en: 'Official Oneness Movement website' },
   },
 
   /* ─── Features ─── */
