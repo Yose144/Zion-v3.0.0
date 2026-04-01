@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, Globe, TrendingUp, Users, Zap } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { useLang } from "@/contexts/LanguageContext";
 
 interface DashboardData {
   active_miners: number;
@@ -17,6 +18,8 @@ interface DashboardData {
 }
 
 export default function ExplorerDashboard() {
+  const { lang } = useLang();
+  const cs = lang === "cs";
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -82,6 +85,17 @@ export default function ExplorerDashboard() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "healthy":
+        return cs ? "zdravá" : "healthy";
+      case "warning":
+        return cs ? "varování" : "warning";
+      default:
+        return cs ? "offline" : "offline";
+    }
+  };
+
   if (loading) {
     return (
       <div className="zion-panel rounded-[28px] bg-black/60 p-6">
@@ -105,47 +119,47 @@ export default function ExplorerDashboard() {
       <div className="zion-panel rounded-[28px] border-red-500/20 bg-black/60 p-6">
         <div className="flex items-center gap-2 text-red-400 mb-2">
           <Activity className="w-5 h-5" />
-          <span className="font-semibold">Network Dashboard</span>
+          <span className="font-semibold">{cs ? "Přehled sítě" : "Network Dashboard"}</span>
         </div>
-        <p className="text-gray-500 text-sm">Unable to connect to daemon. Services may be starting...</p>
+        <p className="text-gray-500 text-sm">{cs ? "Nepodařilo se připojit k daemonu. Služby se možná právě spouštějí..." : "Unable to connect to daemon. Services may be starting..."}</p>
       </div>
     );
   }
 
   const metrics = [
     {
-      label: "Network",
-      value: data.network_status,
+      label: cs ? "Síť" : "Network",
+      value: getStatusLabel(data.network_status),
       color: getStatusColor(data.network_status),
       icon: Globe,
       dot: getStatusDot(data.network_status),
     },
     {
-      label: "Miners",
+      label: cs ? "Mineři" : "Miners",
       value: data.active_miners.toString(),
       color: "text-blue-400",
       icon: Users,
     },
     {
-      label: "Pool Hash",
+      label: cs ? "Hash poolu" : "Pool Hash",
       value: data.pool_hashrate,
       color: "text-green-400",
       icon: TrendingUp,
     },
     {
-      label: "Block Time",
+      label: cs ? "Čas bloku" : "Block Time",
       value: `${data.block_time_avg}s`,
       color: "text-cyan-400",
       icon: Activity,
     },
     {
-      label: "Mempool",
+      label: cs ? "Mempool" : "Mempool",
       value: data.tx_pool_size.toString(),
       color: "text-orange-400",
       icon: Zap,
     },
     {
-      label: "Peers",
+      label: cs ? "Peery" : "Peers",
       value: data.connections.toString(),
       color: "text-purple-400",
       icon: Globe,
@@ -161,8 +175,8 @@ export default function ExplorerDashboard() {
       <div className="flex items-center gap-3 mb-5">
         <Activity className="h-5 w-5 text-purple-400" />
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Live</p>
-          <h3 className="text-lg font-semibold text-white">Network Dashboard</h3>
+          <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{cs ? "Živě" : "Live"}</p>
+          <h3 className="text-lg font-semibold text-white">{cs ? "Přehled sítě" : "Network Dashboard"}</h3>
         </div>
       </div>
 
@@ -191,14 +205,14 @@ export default function ExplorerDashboard() {
       {/* Block reward info */}
       <div className="mt-4 zion-panel p-3">
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">
-          Block Reward
+          {cs ? "Odměna za blok" : "Block Reward"}
         </p>
         <div className="grid grid-cols-2 gap-2 text-xs">
           {[
-            { label: "Reward", value: "5,400 ZION", color: "text-zion-gold" },
-            { label: "Halving", value: "None", color: "text-gray-300" },
-            { label: "Miner Share", value: "89%", color: "text-emerald-400" },
-            { label: "Fee Policy", value: "Burned", color: "text-amber-400" },
+            { label: cs ? "Odměna" : "Reward", value: "5,400 ZION", color: "text-zion-gold" },
+            { label: cs ? "Halving" : "Halving", value: cs ? "Žádný" : "None", color: "text-gray-300" },
+            { label: cs ? "Podíl minera" : "Miner Share", value: "89%", color: "text-emerald-400" },
+            { label: cs ? "Politika poplatků" : "Fee Policy", value: cs ? "Spáleno" : "Burned", color: "text-amber-400" },
           ].map((c) => (
             <div key={c.label} className="flex items-center justify-between">
               <span className="text-gray-500">{c.label}</span>

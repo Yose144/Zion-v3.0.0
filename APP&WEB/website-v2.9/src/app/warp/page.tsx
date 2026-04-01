@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useLang } from '@/contexts/LanguageContext';
 import {
   Activity,
   ArrowRight,
@@ -14,78 +15,83 @@ import {
   Zap
 } from 'lucide-react';
 
-const warpStats = [
-  { label: 'Corridors Planned', value: '11', detail: 'BTC · ETH · SOL · L2 + Lightning', icon: CloudLightning },
-  { label: 'Guardian Runtime', value: '1 + quorum', detail: 'Zion2 public host · internal validator lanes', icon: ShieldCheck },
-  { label: 'Development Phase', value: 'Phase 2', detail: 'Architecture + validator design', icon: Globe2 },
-  { label: 'Target Launch', value: 'Q3 2026', detail: 'After security audit completion', icon: Zap }
+const getWarpStats = (cs: boolean) => [
+  { label: cs ? 'Planovane koridory' : 'Corridors Planned', value: '11', detail: 'BTC · ETH · SOL · L2 + Lightning', icon: CloudLightning },
+  { label: cs ? 'Guardian runtime' : 'Guardian Runtime', value: '1 + quorum', detail: cs ? 'Verejny host Zion2 · interni validator linky' : 'Zion2 public host · internal validator lanes', icon: ShieldCheck },
+  { label: cs ? 'Faze vyvoje' : 'Development Phase', value: cs ? 'Faze 2' : 'Phase 2', detail: cs ? 'Architektura + navrh validatoru' : 'Architecture + validator design', icon: Globe2 },
+  { label: cs ? 'Cil launchu' : 'Target Launch', value: 'Q3 2026', detail: cs ? 'Po dokonceni bezpecnostniho auditu' : 'After security audit completion', icon: Zap }
 ];
 
-const corridorRows = [
+const getCorridorRows = (cs: boolean) => [
   {
-    title: 'Bitcoin HTLC Bridge',
+    title: cs ? 'Bitcoin HTLC most' : 'Bitcoin HTLC Bridge',
     subtitle: 'SegWit + Taproot',
     entries: [
-      { label: 'Security Model', value: 'HTLC · 2-of-3 multi-sig · 24h timelock' },
-      { label: 'Status', value: 'Architecture design — planned for Q3 2026' },
-      { label: 'Use cases', value: 'Trustless swaps, Lightning exits, OTC bridging' }
+      { label: cs ? 'Bezpecnostni model' : 'Security Model', value: 'HTLC · 2-of-3 multi-sig · 24h timelock' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Navrh architektury — plan pro Q3 2026' : 'Architecture design — planned for Q3 2026' },
+      { label: cs ? 'Use case' : 'Use cases', value: cs ? 'Trustless swapy, Lightning exity, OTC bridging' : 'Trustless swaps, Lightning exits, OTC bridging' }
     ]
   },
   {
-    title: 'Ethereum Lock/Mint',
+    title: cs ? 'Ethereum Lock/Mint' : 'Ethereum Lock/Mint',
     subtitle: 'wZION ERC-20',
     entries: [
-      { label: 'Validators', value: 'Multi-sig quorum · audit planned Q2–Q3 2026' },
-      { label: 'Status', value: 'Smart contract development in progress' },
-      { label: 'Integration', value: 'EVM wallets, DeFi routing, DAO treasury' }
+      { label: cs ? 'Validatori' : 'Validators', value: cs ? 'Multi-sig quorum · audit planovan Q2–Q3 2026' : 'Multi-sig quorum · audit planned Q2–Q3 2026' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Vyvoj smart kontraktu probiha' : 'Smart contract development in progress' },
+      { label: cs ? 'Integrace' : 'Integration', value: 'EVM wallets, DeFi routing, DAO treasury' }
     ]
   },
   {
-    title: 'Solana SPL Program',
+    title: cs ? 'Solana SPL program' : 'Solana SPL Program',
     subtitle: 'PDA-secured',
     entries: [
-      { label: 'Finality', value: 'Tower BFT integration planned' },
-      { label: 'Status', value: 'Research phase — after BTC + ETH bridges' },
-      { label: 'Utility', value: 'Game assets, liquidity routing, warp swaps' }
+      { label: cs ? 'Finalita' : 'Finality', value: cs ? 'Planovana integrace Tower BFT' : 'Tower BFT integration planned' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Vyzkumna faze — po BTC + ETH mostech' : 'Research phase — after BTC + ETH bridges' },
+      { label: cs ? 'Vyuziti' : 'Utility', value: cs ? 'Game assety, routing likvidity, warp swapy' : 'Game assets, liquidity routing, warp swaps' }
     ]
   }
 ];
 
-const onboarding = [
+const getOnboarding = (cs: boolean) => [
   {
-    title: '1 · Provision access',
+    title: cs ? '1 · Zrizeni pristupu' : '1 · Provision access',
     items: [
-      'Whitelist validators or fetch public endpoints',
-      'Generate API tokens (read/transfer scopes)',
-      'Download SDK from official GitHub'
+      cs ? 'Whitelist validatoru nebo prevzeti verejnych endpointu' : 'Whitelist validators or fetch public endpoints',
+      cs ? 'Vygenerujte API tokeny (read/transfer scopes)' : 'Generate API tokens (read/transfer scopes)',
+      cs ? 'Stahnete SDK z oficialniho GitHubu' : 'Download SDK from official GitHub'
     ]
   },
   {
-    title: '2 · Wire liquidity',
+    title: cs ? '2 · Zapojeni likvidity' : '2 · Wire liquidity',
     items: [
-      'Lock assets into chosen corridor pool',
-      'Set validator quorum + alert webhooks',
-      'Run smoke test using sandbox chain pairs'
+      cs ? 'Uzamknete aktiva do vybraneho corridor poolu' : 'Lock assets into chosen corridor pool',
+      cs ? 'Nastavte validator quorum + alert webhooky' : 'Set validator quorum + alert webhooks',
+      cs ? 'Spustte smoke test na sandbox chain pairu' : 'Run smoke test using sandbox chain pairs'
     ]
   },
   {
-    title: '3 · Monitor + optimize',
+    title: cs ? '3 · Monitorovat + optimalizovat' : '3 · Monitor + optimize',
     items: [
-      'Subscribe to validator dashboard streams',
-      'Enable compact block relay metrics',
-      'Schedule weekly failover + incident drills'
+      cs ? 'Odebirat streamy validator dashboardu' : 'Subscribe to validator dashboard streams',
+      cs ? 'Zapnout compact block relay metriky' : 'Enable compact block relay metrics',
+      cs ? 'Naplanovat tydenni failover + incident drills' : 'Schedule weekly failover + incident drills'
     ]
   }
 ];
 
 export default function WarpPage() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const warpStats = getWarpStats(cs);
+  const corridorRows = getCorridorRows(cs);
+  const onboarding = getOnboarding(cs);
   return (
     <div className="zion-shell min-h-screen pt-32 pb-24 overflow-x-hidden">
       <div className="zion-container max-w-6xl space-y-16">
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl md:rounded-[32px] border border-white/10 bg-black/60 p-6 md:p-10 backdrop-blur-xl shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
+          className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 p-6 md:p-10 backdrop-blur-xl shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -94,28 +100,27 @@ export default function WarpPage() {
                 Warp 2.0 · Corridor Ops
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Cross-chain flight deck</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Cross-chain ridici panel' : 'Cross-chain flight deck'}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  Liquidity without borders
+                  {cs ? 'Likvidita bez hranic' : 'Liquidity without borders'}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Trustless Bitcoin swaps, Ethereum lock/mint, Solana SPL mint, Lightning exits and AMM routing from one console.
-                Corridors share validator telemetry, liquidity analytics, and automated alerts so treasury teams know exactly what is happening on every chain.
+                {cs ? 'Trustless Bitcoin swapy, Ethereum lock/mint, Solana SPL mint, Lightning exity a AMM routing z jedne konzole. Koridory sdileji validator telemetrii, analyzu likvidity a automaticke alerty, aby treasury tymy presne vedely, co se deje na kazdem chainu.' : 'Trustless Bitcoin swaps, Ethereum lock/mint, Solana SPL mint, Lightning exits and AMM routing from one console. Corridors share validator telemetry, liquidity analytics, and automated alerts so treasury teams know exactly what is happening on every chain.'}
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="/api-reference"
                   className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-black"
                 >
-                  Explore bridge APIs
+                  {cs ? 'Prozkoumat bridge API' : 'Explore bridge APIs'}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/docs"
                   className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white"
                 >
-                  Read validator guide
+                  {cs ? 'Cist validator guide' : 'Read validator guide'}
                 </Link>
               </div>
             </div>
@@ -140,8 +145,8 @@ export default function WarpPage() {
           className="space-y-6"
         >
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Corridor grid</p>
-            <h2 className="text-3xl font-semibold text-white">Validator-backed bridges</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Sit koridoru' : 'Corridor grid'}</p>
+            <h2 className="text-3xl font-semibold text-white">{cs ? 'Mosty kryte validatory' : 'Validator-backed bridges'}</h2>
           </div>
           <div className="space-y-6">
             {corridorRows.map((row) => (
@@ -152,7 +157,7 @@ export default function WarpPage() {
                     <h3 className="text-2xl font-semibold text-white">{row.title}</h3>
                   </div>
                   <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-gray-300">
-                    In development
+                    {cs ? 'Ve vyvoji' : 'In development'}
                   </span>
                 </div>
                 <div className="mt-5 grid gap-4 md:grid-cols-3">
@@ -173,18 +178,18 @@ export default function WarpPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="rounded-[32px] border border-white/10 bg-white/5 p-8"
+          className="rounded-4xl border border-white/10 bg-white/5 p-8"
         >
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Operations runbook</p>
-            <h2 className="text-3xl font-semibold text-white">Bring a new corridor online</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operacni runbook' : 'Operations runbook'}</p>
+            <h2 className="text-3xl font-semibold text-white">{cs ? 'Pripojit novy koridor online' : 'Bring a new corridor online'}</h2>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-3">
             {onboarding.map((block, idx) => (
               <div key={block.title} className="rounded-3xl border border-white/10 bg-black/30 p-6">
                 <div className="flex items-center gap-3">
                   <CircuitBoard className="h-5 w-5 text-zion-cyan" />
-                  <p className="text-xs uppercase tracking-[0.35em] text-gray-400">Stage {idx + 1}</p>
+                  <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{cs ? 'Faze' : 'Stage'} {idx + 1}</p>
                 </div>
                 <h3 className="mt-3 text-xl font-semibold text-white">{block.title}</h3>
                 <ul className="mt-4 space-y-2 text-sm text-gray-300">
@@ -205,13 +210,12 @@ export default function WarpPage() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.25 }}
-          className="rounded-[32px] border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/10 to-zion-purple/30 p-10 text-center"
+          className="rounded-4xl border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/10 to-zion-purple/30 p-10 text-center"
         >
           <Activity className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">Need custom routing or institutional onboarding?</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Potrebujete vlastni routing nebo institucionalni onboarding?' : 'Need custom routing or institutional onboarding?'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            The core team runs managed validators and can help bootstrap your corridor, connect OTC liquidity, or add
-            new chains. Reach out via official channels or open an issue on the public GitHub with replication steps.
+            {cs ? 'Core tym provozuje managed validatory a muze pomoci s bootstrapem vaseho koridoru, pripojenim OTC likvidity nebo pridanim novych chainu. Ozvete se pres oficialni kanaly nebo zalozte issue na verejnem GitHubu s kroky k reprodukci.' : 'The core team runs managed validators and can help bootstrap your corridor, connect OTC liquidity, or add new chains. Reach out via official channels or open an issue on the public GitHub with replication steps.'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -220,13 +224,13 @@ export default function WarpPage() {
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20"
             >
-              Open GitHub discussions
+              {cs ? 'Otevrit GitHub diskuse' : 'Open GitHub discussions'}
             </Link>
             <Link
               href="/docs"
               className="inline-flex items-center gap-2 rounded-2xl bg-white/90 px-6 py-3 text-sm font-semibold text-gray-900"
             >
-              Review integration docs
+              {cs ? 'Projit integracni docs' : 'Review integration docs'}
             </Link>
           </div>
         </motion.section>

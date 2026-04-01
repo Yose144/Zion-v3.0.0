@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ActivitySquare, Flame, Hash, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
+import { useLang } from "@/contexts/LanguageContext";
 
 interface MempoolTx {
   tx_hash: string;
@@ -28,11 +29,11 @@ interface MempoolResponse {
   transactions: MempoolTx[];
 }
 
-const formatTime = (seconds: number) => {
-  if (seconds < 60) return `${seconds}s ago`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
+const formatTime = (seconds: number, cs: boolean) => {
+  if (seconds < 60) return cs ? `před ${seconds} s` : `${seconds}s ago`;
+  if (seconds < 3600) return cs ? `před ${Math.floor(seconds / 60)} min` : `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return cs ? `před ${Math.floor(seconds / 3600)} h` : `${Math.floor(seconds / 3600)}h ago`;
+  return cs ? `před ${Math.floor(seconds / 86400)} d` : `${Math.floor(seconds / 86400)}d ago`;
 };
 
 const truncate = (value: string, lead = 8, tail = 6) => {
@@ -48,6 +49,8 @@ const formatBytes = (bytes: number) => {
 };
 
 export default function MempoolFeed() {
+  const { lang } = useLang();
+  const cs = lang === "cs";
   const [data, setData] = useState<MempoolResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +70,7 @@ export default function MempoolFeed() {
       } catch (err) {
         console.error("Failed to fetch mempool:", err);
         if (!isMounted) return;
-        setError("Mempool unavailable");
+        setError(cs ? "Mempool není dostupný" : "Mempool unavailable");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -92,7 +95,7 @@ export default function MempoolFeed() {
         <div className="flex items-center gap-3">
           <Flame className="h-5 w-5 text-orange-400" />
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Live</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{cs ? "Živě" : "Live"}</p>
             <h3 className="text-lg font-semibold text-white">Mempool</h3>
           </div>
         </div>
@@ -102,24 +105,24 @@ export default function MempoolFeed() {
             transition={{ duration: 2, repeat: Infinity }}
             className="inline-flex h-2 w-2 rounded-full bg-emerald-400"
           />
-          <span className="text-xs text-gray-500">5s refresh</span>
+          <span className="text-xs text-gray-500">{cs ? "obnova po 5 s" : "5s refresh"}</span>
         </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-          <p className="text-xs text-gray-400">Pending</p>
+          <p className="text-xs text-gray-400">{cs ? "Čekající" : "Pending"}</p>
           <p className="text-xl font-bold text-white">{data?.count ?? 0}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-          <p className="text-xs text-gray-400">Pool Size</p>
+          <p className="text-xs text-gray-400">{cs ? "Velikost poolu" : "Pool Size"}</p>
           <p className="text-xl font-bold text-cyan-400">
             {formatBytes(data?.pool_size_bytes ?? 0)}
           </p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-          <p className="text-xs text-gray-400">Fees</p>
+          <p className="text-xs text-gray-400">{cs ? "Poplatky" : "Fees"}</p>
           <p className="text-xl font-bold text-yellow-400">
             {(data?.total_fees ?? 0).toFixed(4)}
           </p>
@@ -138,7 +141,7 @@ export default function MempoolFeed() {
         )}
         {data && data.transactions.length === 0 && (
           <p className="text-center text-sm text-gray-500 py-4">
-            Mempool is empty — all transactions confirmed ✓
+            {cs ? "Mempool je prázdný, všechny transakce jsou potvrzené ✓" : "Mempool is empty — all transactions confirmed ✓"}
           </p>
         )}
         {data?.transactions.slice(0, 12).map((tx, i) => (
@@ -159,7 +162,7 @@ export default function MempoolFeed() {
               </Link>
               <span className="flex items-center gap-1 text-xs text-gray-500">
                 <ActivitySquare className="h-3 w-3" />
-                {formatTime(tx.age_seconds)}
+                {formatTime(tx.age_seconds, cs)}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">

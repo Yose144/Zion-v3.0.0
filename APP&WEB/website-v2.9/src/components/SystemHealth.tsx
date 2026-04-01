@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Activity } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 
 interface HealthData {
   status: string;
@@ -16,6 +17,8 @@ interface HealthData {
 }
 
 export default function SystemHealth() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,13 +50,27 @@ export default function SystemHealth() {
   const formatUptime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
+    return cs ? `${hours} h ${minutes} min` : `${hours}h ${minutes}m`;
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'ok':
+      case 'healthy':
+        return cs ? 'zdravý' : 'healthy';
+      case 'degraded':
+        return cs ? 'omezený' : 'degraded';
+      case 'unknown':
+        return cs ? 'neznámý' : 'unknown';
+      default:
+        return status;
+    }
   };
 
   if (loading) {
     return (
       <section className="mt-12">
-        <div className="animate-pulse text-gray-400">Loading system health...</div>
+        <div className="animate-pulse text-gray-400">{cs ? 'Načítám stav systému...' : 'Loading system health...'}</div>
       </section>
     );
   }
@@ -70,12 +87,12 @@ export default function SystemHealth() {
       >
         <div className="flex items-center gap-2 mb-6">
           <Activity className="w-6 h-6 text-green-400" />
-          <h2 className="text-3xl font-bold">System Health</h2>
+          <h2 className="text-3xl font-bold">{cs ? 'Stav systému' : 'System Health'}</h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">Status</div>
+            <div className="text-sm text-gray-400 mb-1">{cs ? 'Stav' : 'Status'}</div>
             <div className="flex items-center gap-2">
               {health.status === 'ok' || health.status === 'healthy' ? (
                 <CheckCircle className="w-5 h-5 text-green-400" />
@@ -84,17 +101,17 @@ export default function SystemHealth() {
               ) : (
                 <XCircle className="w-5 h-5 text-red-400" />
               )}
-              <span className="text-lg font-semibold capitalize">{health.status}</span>
+              <span className="text-lg font-semibold capitalize">{getStatusLabel(health.status)}</span>
             </div>
           </div>
 
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">Version</div>
+            <div className="text-sm text-gray-400 mb-1">{cs ? 'Verze' : 'Version'}</div>
             <div className="text-lg font-semibold text-zion-purple">{health.version}</div>
           </div>
 
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">Uptime</div>
+            <div className="text-sm text-gray-400 mb-1">{cs ? 'Doba běhu' : 'Uptime'}</div>
             <div className="text-lg font-semibold text-zion-cyan">
               {formatUptime(health.uptime_seconds)}
             </div>
@@ -103,12 +120,12 @@ export default function SystemHealth() {
 
         {health.dependencies && (
           <div className="mt-6">
-            <h3 className="text-xl font-semibold mb-4">Dependencies</h3>
+            <h3 className="text-xl font-semibold mb-4">{cs ? 'Závislosti' : 'Dependencies'}</h3>
             <div className="grid md:grid-cols-2 gap-4">
               {health.dependencies.rpc && (
                 <div className="bg-black/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold">RPC Node</span>
+                    <span className="font-semibold">{cs ? 'RPC uzel' : 'RPC Node'}</span>
                     {health.dependencies.rpc.healthy ? (
                       <CheckCircle className="w-5 h-5 text-green-400" />
                     ) : (
@@ -124,7 +141,7 @@ export default function SystemHealth() {
               {health.dependencies.mining_pool && (
                 <div className="bg-black/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold">Mining Pool</span>
+                    <span className="font-semibold">{cs ? 'Těžební pool' : 'Mining Pool'}</span>
                     {health.dependencies.mining_pool.healthy ? (
                       <CheckCircle className="w-5 h-5 text-green-400" />
                     ) : (
