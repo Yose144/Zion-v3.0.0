@@ -97,6 +97,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMinerStarted: (callback) => {
     ipcRenderer.on('miner-started', (event, data) => callback(data));
   },
+  onMinerStarting: (callback) => {
+    ipcRenderer.on('miner-starting', (event, data) => callback(data));
+  },
   onMinerStopped: (callback) => {
     ipcRenderer.on('miner-stopped', (event, data) => callback(data));
   },
