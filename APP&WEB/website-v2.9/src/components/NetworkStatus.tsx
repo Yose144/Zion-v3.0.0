@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLang } from '@/contexts/LanguageContext';
 import { 
   type LucideIcon,
   Globe, 
@@ -59,15 +60,19 @@ const regionFlags: Record<string, string> = {
   'ASIA-SE': '🔹',
 };
 
-const regionLabels: Record<string, string> = {
-  'PRIMARY': 'Primary host',
-  'INTERNAL': 'Internal quorum',
-  'EU-NORTH': 'Primary host',
-  'US-EAST': 'Internal quorum',
-  'ASIA-SE': 'Internal quorum',
-};
+const getRegionLabels = (cs: boolean): Record<string, string> => ({
+  'PRIMARY': cs ? 'Primarni host' : 'Primary host',
+  'INTERNAL': cs ? 'Interni quorum' : 'Internal quorum',
+  'EU-NORTH': cs ? 'Primarni host' : 'Primary host',
+  'US-EAST': cs ? 'Interni quorum' : 'Internal quorum',
+  'ASIA-SE': cs ? 'Interni quorum' : 'Internal quorum',
+});
 
 export default function NetworkStatus({ className }: { className?: string }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
+  const regionLabels = getRegionLabels(cs);
   const [status, setStatus] = useState<NetworkStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,27 +123,27 @@ export default function NetworkStatus({ className }: { className?: string }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard
           icon={Server}
-          label="Hosts Online"
+          label={cs ? 'Hosty online' : 'Hosts Online'}
           value={`${status.summary.online}/${status.summary.total}`}
           accent={status.summary.online === status.summary.total ? 'green' : 'yellow'}
           sub={status.summary.onlinePct != null ? `${status.summary.onlinePct}%` : undefined}
         />
         <SummaryCard
           icon={Activity}
-          label="Block Height"
-          value={status.summary.maxHeight ? status.summary.maxHeight.toLocaleString() : '—'}
+          label={cs ? 'Vyska bloku' : 'Block Height'}
+          value={status.summary.maxHeight ? status.summary.maxHeight.toLocaleString(locale) : '—'}
           accent="blue"
         />
         <SummaryCard
           icon={Gauge}
-          label="Height Gap"
+          label={cs ? 'Rozdil vysky' : 'Height Gap'}
           value={`${status.summary.heightGap ?? 0}`}
           accent="purple"
-          sub={status.summary.inSync ? 'in sync' : 'syncing'}
+          sub={status.summary.inSync ? (cs ? 'synchronizovano' : 'in sync') : (cs ? 'synchronizuji' : 'syncing')}
         />
         <SummaryCard
           icon={Users}
-          label="Active Miners"
+          label={cs ? 'Aktivni mineri' : 'Active Miners'}
           value={status.summary.totalMiners.toString()}
           accent="gold"
         />
@@ -157,7 +162,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
             <XCircle className="w-5 h-5 text-yellow-400" />
           )}
           <span className={status.summary.inSync ? 'text-green-400' : 'text-yellow-400'}>
-            {status.summary.inSync ? 'Network Synchronized' : 'Synchronizing...'}
+            {status.summary.inSync ? (cs ? 'Sit je synchronizovana' : 'Network Synchronized') : (cs ? 'Synchronizuji...' : 'Synchronizing...')}
           </span>
         </div>
       </div>
@@ -166,7 +171,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <Globe className="w-5 h-5 text-zion-gold" />
-          Network Hosts
+          {cs ? 'Sitove hosty' : 'Network Hosts'}
         </h3>
         
         <div className="grid gap-3">
@@ -179,7 +184,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <NodeCard node={node} />
+                <NodeCard node={node} cs={cs} locale={locale} regionLabels={regionLabels} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -190,7 +195,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
       {lastUpdate && (
         <div className="text-xs uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
           <RefreshCw className="w-4 h-4 text-zion-gold" />
-          Updated {lastUpdate.toLocaleTimeString()}
+          {cs ? 'Aktualizovano' : 'Updated'} {lastUpdate.toLocaleTimeString(locale)}
         </div>
       )}
     </div>
@@ -232,7 +237,7 @@ function SummaryCard({
   );
 }
 
-function NodeCard({ node }: { node: NodeStatus }) {
+function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: boolean; locale: string; regionLabels: Record<string, string> }) {
   return (
     <div className={`p-4 rounded-2xl border transition-all ${
       node.online 
@@ -260,13 +265,13 @@ function NodeCard({ node }: { node: NodeStatus }) {
               </span>
               {node.online && (
                 <>
-                  <span>Height: {node.height ? node.height.toLocaleString() : '—'}</span>
-                  {node.blockLag != null && <span>Lag: {node.blockLag}</span>}
+                  <span>{cs ? 'Vyska' : 'Height'}: {node.height ? node.height.toLocaleString(locale) : '—'}</span>
+                  {node.blockLag != null && <span>{cs ? 'Zpozdeni' : 'Lag'}: {node.blockLag}</span>}
                   {node.rpcLatencyMs != null && <span>RPC: {node.rpcLatencyMs} ms</span>}
                   {node.poolLatencyMs != null && <span>Pool: {node.poolLatencyMs} ms</span>}
                   {node.miners > 0 && (
                     <span className="text-zion-gold">
-                      {node.miners} miner{node.miners !== 1 ? 's' : ''}
+                      {node.miners} {cs ? (node.miners !== 1 ? 'mineru' : 'miner') : `miner${node.miners !== 1 ? 's' : ''}`}
                     </span>
                   )}
                 </>
@@ -287,7 +292,7 @@ function NodeCard({ node }: { node: NodeStatus }) {
 
       {node.error && !node.online && (
         <div className="mt-2 text-xs text-red-400">
-          Error: {node.error}
+          {cs ? 'Chyba' : 'Error'}: {node.error}
         </div>
       )}
     </div>

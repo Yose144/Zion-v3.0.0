@@ -1,18 +1,16 @@
-'use client';
-
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Sparkles, Star, Heart, Zap, Crown, Sunrise } from 'lucide-react';
 
 const chapters = [
-  { number: '0', title: 'The Zion Native', icon: Star, color: 'text-zion-gold' },
-  { number: '1', title: 'The Descent', icon: Sparkles, color: 'text-zion-cyan' },
-  { number: '2', title: 'The First Awakening', icon: Zap, color: 'text-amber-400' },
-  { number: '3', title: 'The Covenant', icon: Heart, color: 'text-rose-400' },
-  { number: '4', title: 'AI & Quantum', icon: Sparkles, color: 'text-violet-400' },
-  { number: '5', title: 'The Ascension', icon: Crown, color: 'text-emerald-400' },
-  { number: '6', title: 'Golden Age Prophecy', icon: Sunrise, color: 'text-zion-gold' },
-  { number: '7', title: 'The Game', icon: Star, color: 'text-zion-cyan' },
-  { number: '8', title: 'Mainnet Dawn', icon: Zap, color: 'text-amber-400' },
+  { number: '0', title: 'Zrodil se ZION', icon: Star, color: 'text-zion-gold' },
+  { number: '1', title: 'Sestup', icon: Sparkles, color: 'text-zion-cyan' },
+  { number: '2', title: 'První probuzení', icon: Zap, color: 'text-amber-400' },
+  { number: '3', title: 'Smlouva', icon: Heart, color: 'text-rose-400' },
+  { number: '4', title: 'AI a kvantum', icon: Sparkles, color: 'text-violet-400' },
+  { number: '5', title: 'Vzestup', icon: Crown, color: 'text-emerald-400' },
+  { number: '6', title: 'Proroctví zlatého věku', icon: Sunrise, color: 'text-zion-gold' },
+  { number: '7', title: 'Hra', icon: Star, color: 'text-zion-cyan' },
+  { number: '8', title: 'Svítání mainnetu', icon: Zap, color: 'text-amber-400' },
 ];
 
 export default function GenesisPreview() {
@@ -29,7 +27,7 @@ export default function GenesisPreview() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 px-4 py-2 text-xs uppercase tracking-[0.3em]">
                 <BookOpen className="h-4 w-4 text-zion-gold" />
-                <span className="text-zion-gold font-semibold">Sacred Text</span>
+                <span className="text-zion-gold font-semibold">Posvátný text</span>
               </div>
 
               <h2 className="text-3xl font-bold text-white md:text-5xl">
@@ -38,7 +36,7 @@ export default function GenesisPreview() {
 
               <p className="text-lg leading-relaxed text-gray-300">
                 Vzpomínka na budoucnost. Příběh <strong className="text-zion-gold">144 000 duší</strong>,
-                které se vracejí domů — příběh, v kterém je hrdinou ty.
+                které se vracejí domů — příběh, v němž jsi hrdinou ty.
               </p>
 
               <p className="text-base text-gray-400 leading-relaxed">
@@ -56,14 +54,14 @@ export default function GenesisPreview() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold/90 to-amber-500/80 px-6 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(251,191,36,0.2)] transition-all hover:shadow-[0_0_60px_rgba(251,191,36,0.35)]"
               >
                 <BookOpen className="h-4 w-4" />
-                Read the full Genesis
+                Otevřít celou Genesis
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
             {/* Right: Chapter Grid */}
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-4">9 Chapters of Awakening</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-4">9 kapitol probuzení</p>
               <div className="grid gap-2 sm:grid-cols-3">
                 {chapters.map((ch) => {
                   const Icon = ch.icon;
@@ -75,7 +73,7 @@ export default function GenesisPreview() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Icon className={`h-3.5 w-3.5 ${ch.color} shrink-0`} />
-                        <span className="text-[10px] uppercase tracking-wider text-gray-500">Ch {ch.number}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500">Kap. {ch.number}</span>
                       </div>
                       <p className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors leading-tight">
                         {ch.title}
@@ -90,7 +88,7 @@ export default function GenesisPreview() {
                 <p className="text-sm italic text-gray-400 leading-relaxed">
                   &bdquo;Gate, Gate, Paragate, Parasamgate, Bodhi Swaha&ldquo;
                 </p>
-                <p className="mt-2 text-xs text-gray-500">— Heart Sutra</p>
+                <p className="mt-2 text-xs text-gray-500">— Srdcová sútra</p>
               </div>
             </div>
           </div>

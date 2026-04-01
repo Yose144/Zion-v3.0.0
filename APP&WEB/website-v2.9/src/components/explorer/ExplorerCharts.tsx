@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { useLang } from "@/contexts/LanguageContext";
 
 type ChartType = "difficulty" | "blocktime" | "hashrate" | "emission" | "blocksize" | "txcount";
 type TimeRange = "1h" | "6h" | "24h" | "7d" | "30d" | "all";
@@ -17,25 +18,27 @@ interface ChartData {
   };
 }
 
-const CHART_CONFIG: Record<ChartType, { label: string; color: string; unit: string; formatFn?: (v: number) => string }> = {
-  difficulty: { label: "Difficulty", color: "#ef4444", unit: "", formatFn: formatSI },
-  hashrate: { label: "Hashrate", color: "#06b6d4", unit: "H/s", formatFn: formatHashrate },
-  blocktime: { label: "Block Time", color: "#22c55e", unit: "s" },
-  emission: { label: "Circulating Supply", color: "#eab308", unit: "ZION", formatFn: formatSI },
-  blocksize: { label: "Block Size", color: "#a855f7", unit: "B", formatFn: formatBytes },
-  txcount: { label: "TX / Block", color: "#14b8a6", unit: "tx" },
-};
+const getChartConfig = (cs: boolean): Record<ChartType, { label: string; color: string; unit: string; formatFn?: (v: number) => string }> => ({
+  difficulty: { label: cs ? "Obtížnost" : "Difficulty", color: "#ef4444", unit: "", formatFn: formatSI },
+  hashrate: { label: cs ? "Hashrate" : "Hashrate", color: "#06b6d4", unit: "H/s", formatFn: formatHashrate },
+  blocktime: { label: cs ? "Čas bloku" : "Block Time", color: "#22c55e", unit: "s" },
+  emission: { label: cs ? "Oběžná zásoba" : "Circulating Supply", color: "#eab308", unit: "ZION", formatFn: formatSI },
+  blocksize: { label: cs ? "Velikost bloku" : "Block Size", color: "#a855f7", unit: "B", formatFn: formatBytes },
+  txcount: { label: cs ? "TX / blok" : "TX / Block", color: "#14b8a6", unit: "tx" },
+});
 
-const TIME_RANGES: { value: TimeRange; label: string }[] = [
+const getTimeRanges = (cs: boolean): { value: TimeRange; label: string }[] => [
   { value: "1h", label: "1H" },
   { value: "6h", label: "6H" },
   { value: "24h", label: "24H" },
   { value: "7d", label: "7D" },
   { value: "30d", label: "30D" },
-  { value: "all", label: "All" },
+  { value: "all", label: cs ? "Vše" : "All" },
 ];
 
 export default function ExplorerCharts() {
+  const { lang } = useLang();
+  const cs = lang === "cs";
   const [activeChart, setActiveChart] = useState<ChartType>("hashrate");
   const [activeRange, setActiveRange] = useState<TimeRange>("24h");
   const [chartData, setChartData] = useState<ChartData | null>(null);
@@ -52,7 +55,9 @@ export default function ExplorerCharts() {
 
   useEffect(() => { fetchChart(); }, [fetchChart]);
 
-  const config = CHART_CONFIG[activeChart];
+  const chartConfig = getChartConfig(cs);
+  const timeRanges = getTimeRanges(cs);
+  const config = chartConfig[activeChart];
 
   return (
     <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] overflow-hidden">
@@ -63,15 +68,15 @@ export default function ExplorerCharts() {
             <BarChart3 className="w-4.5 h-4.5 text-purple-400" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Network Charts</h2>
-            <p className="text-[11px] text-white/30">{chartData?.data_points || 0} data points</p>
+            <h2 className="text-base font-semibold text-white">{cs ? "Grafy sítě" : "Network Charts"}</h2>
+            <p className="text-[11px] text-white/30">{chartData?.data_points || 0} {cs ? "datových bodů" : "data points"}</p>
           </div>
         </div>
       </div>
 
       {/* Chart type pills */}
       <div className="flex flex-wrap gap-1.5 px-6 pb-3">
-        {(Object.keys(CHART_CONFIG) as ChartType[]).map((type) => (
+        {(Object.keys(chartConfig) as ChartType[]).map((type) => (
           <button
             key={type}
             onClick={() => setActiveChart(type)}
@@ -81,14 +86,14 @@ export default function ExplorerCharts() {
                 : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
             }`}
           >
-            {CHART_CONFIG[type].label}
+            {chartConfig[type].label}
           </button>
         ))}
       </div>
 
       {/* Time range pills */}
       <div className="flex gap-0.5 px-6 pb-5">
-        {TIME_RANGES.map((range) => (
+        {timeRanges.map((range) => (
           <button
             key={range.value}
             onClick={() => setActiveRange(range.value)}
@@ -120,7 +125,7 @@ export default function ExplorerCharts() {
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 gap-2">
             <TrendingUp className="h-8 w-8" />
-            <p className="text-sm">No data available</p>
+            <p className="text-sm">{cs ? "Data nejsou dostupná" : "No data available"}</p>
           </div>
         )}
       </div>
@@ -129,9 +134,9 @@ export default function ExplorerCharts() {
       {chartData && chartData.data.values.length > 0 && (
         <div className="grid grid-cols-3 border-t border-white/[0.06]">
           {[
-            { label: "Min", value: Math.min(...chartData.data.values), color: "text-cyan-400" },
-            { label: "Avg", value: chartData.data.values.reduce((a, b) => a + b, 0) / chartData.data.values.length, color: "text-white" },
-            { label: "Max", value: Math.max(...chartData.data.values), color: "text-zion-gold" },
+            { label: cs ? "Min" : "Min", value: Math.min(...chartData.data.values), color: "text-cyan-400" },
+            { label: cs ? "Průměr" : "Avg", value: chartData.data.values.reduce((a, b) => a + b, 0) / chartData.data.values.length, color: "text-white" },
+            { label: cs ? "Max" : "Max", value: Math.max(...chartData.data.values), color: "text-zion-gold" },
           ].map((s, i) => (
             <div key={s.label} className={`text-center py-4 ${i < 2 ? "border-r border-white/[0.06]" : ""}`}>
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">{s.label}</p>

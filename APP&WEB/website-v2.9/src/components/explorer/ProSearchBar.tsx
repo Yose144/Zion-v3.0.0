@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { type LucideIcon, Search, Box, ArrowRightLeft, Wallet, Hash, X, Loader2 } from "lucide-react";
+import { useLang } from "@/contexts/LanguageContext";
 
 type SearchType = "block_height" | "block_hash" | "tx_hash" | "address" | "unknown";
 
@@ -53,7 +54,7 @@ function detectType(q: string, forcedType?: SearchType): SearchType {
   return "unknown";
 }
 
-function buildPreviews(query: string): SearchPreview[] {
+function buildPreviews(query: string, cs: boolean): SearchPreview[] {
   const parsed = parseQuery(query);
   const s = parsed.value;
   if (!s) return [];
@@ -65,10 +66,10 @@ function buildPreviews(query: string): SearchPreview[] {
     case "block_height":
       previews.push({
         type: "block_height",
-        label: `Block #${parseInt(s).toLocaleString()}`,
+        label: `${cs ? "Blok" : "Block"} #${parseInt(s).toLocaleString(cs ? "cs-CZ" : "en-US")}`,
         icon: Box,
         href: `/explorer/block?id=${s}`,
-        meta: "Search by block height",
+        meta: cs ? "Hledat podle výšky bloku" : "Search by block height",
       });
       break;
     case "tx_hash":
@@ -77,44 +78,44 @@ function buildPreviews(query: string): SearchPreview[] {
         label: `TX ${s.slice(0, 12)}…${s.slice(-8)}`,
         icon: ArrowRightLeft,
         href: `/explorer/tx?hash=${s}`,
-        meta: "Search as transaction hash",
+        meta: cs ? "Hledat jako hash transakce" : "Search as transaction hash",
       });
       if (!parsed.forcedType || parsed.forcedType === "block_hash") {
         previews.push({
           type: "block_hash",
-          label: `Block ${s.slice(0, 12)}…${s.slice(-8)}`,
+          label: `${cs ? "Blok" : "Block"} ${s.slice(0, 12)}…${s.slice(-8)}`,
           icon: Box,
           href: `/explorer/block?id=${s}`,
-          meta: "Search as block hash",
+          meta: cs ? "Hledat jako hash bloku" : "Search as block hash",
         });
       }
       break;
     case "address":
       previews.push({
         type: "address",
-        label: `Address ${s.slice(0, 12)}…${s.slice(-8)}`,
+        label: `${cs ? "Adresa" : "Address"} ${s.slice(0, 12)}…${s.slice(-8)}`,
         icon: Wallet,
         href: `/explorer/address?addr=${s}`,
-        meta: "Search ZION address",
+        meta: cs ? "Hledat ZION adresu" : "Search ZION address",
       });
       break;
     case "block_hash":
       previews.push({
         type: "block_hash",
-        label: `Hash ${s.slice(0, 12)}…`,
+        label: `${cs ? "Hash" : "Hash"} ${s.slice(0, 12)}…`,
         icon: Hash,
         href: `/explorer/block?id=${s}`,
-        meta: "Search by hash",
+        meta: cs ? "Hledat podle hashe" : "Search by hash",
       });
       break;
     default:
       if (s.length > 2) {
         previews.push({
           type: "unknown",
-          label: `Search "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
+          label: `${cs ? "Hledat" : "Search"} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
           icon: Search,
           href: `/explorer/block?id=${s}`,
-          meta: "Try searching as block/tx",
+          meta: cs ? "Zkusit hledat jako blok nebo tx" : "Try searching as block/tx",
         });
       }
   }
@@ -152,6 +153,8 @@ async function resolveTarget(query: string, fallbackHref?: string): Promise<stri
 }
 
 export default function ProSearchBar() {
+  const { lang } = useLang();
+  const cs = lang === "cs";
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
@@ -160,7 +163,7 @@ export default function ProSearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const previews = buildPreviews(query);
+  const previews = buildPreviews(query, cs);
 
   const handleSubmit = useCallback(
     async (href?: string) => {
@@ -243,7 +246,7 @@ export default function ProSearchBar() {
           }}
           onFocus={() => setFocused(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search by block height, tx hash, or address…"
+          placeholder={cs ? "Hledat podle výšky bloku, hashe tx nebo adresy…" : "Search by block height, tx hash, or address…"}
           className="w-full bg-transparent px-3 py-3.5 text-sm text-white placeholder:text-gray-500 
             focus:outline-none font-mono"
           autoComplete="off"
@@ -286,8 +289,8 @@ export default function ProSearchBar() {
                 onClick={() => handleSubmit(p.href)}
                 onMouseEnter={() => setSelected(i)}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
-                  i === selected ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"
-                } ${i > 0 ? "border-t border-white/[0.04]" : ""}`}
+                  i === selected ? "bg-white/6" : "hover:bg-white/3"
+                } ${i > 0 ? "border-t border-white/4" : ""}`}
               >
                 <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${
                   i === selected ? "bg-zion-cyan/15" : "bg-white/5"
@@ -298,8 +301,8 @@ export default function ProSearchBar() {
                   <p className="text-sm text-white font-medium truncate font-mono">{p.label}</p>
                   <p className="text-[11px] text-gray-500">{p.meta}</p>
                 </div>
-                <span className="text-[10px] text-gray-600 uppercase tracking-wider flex-shrink-0">
-                  {i === selected ? "Enter ↵" : ""}
+                <span className="text-[10px] text-gray-600 uppercase tracking-wider shrink-0">
+                  {i === selected ? (cs ? "Enter ↵" : "Enter ↵") : ""}
                 </span>
               </button>
             ))}
@@ -310,8 +313,8 @@ export default function ProSearchBar() {
       <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-gray-500">
         {[
           { label: "block:123456", value: "block:123456" },
-          { label: "tx:<hash>", value: "tx:" },
-          { label: "addr:<address>", value: "addr:" },
+          { label: cs ? "tx:<hash>" : "tx:<hash>", value: "tx:" },
+          { label: cs ? "addr:<adresa>" : "addr:<address>", value: "addr:" },
         ].map((hint) => (
           <button
             key={hint.label}

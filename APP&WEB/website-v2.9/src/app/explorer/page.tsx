@@ -14,6 +14,7 @@ import ProSearchBar from "@/components/explorer/ProSearchBar";
 import NetworkTicker from "@/components/explorer/NetworkTicker";
 import NetworkPeers from "@/components/explorer/NetworkPeers";
 import RichListClient from "./richlist/RichListClient";
+import { useLang } from '@/contexts/LanguageContext';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import {
   Activity,
@@ -32,45 +33,49 @@ import {
    EXPLORER PAGE — Redesigned to match Roadmap visual language
    ═══════════════════════════════════════════════════════════ */
 
-const quickLinks = [
+const getQuickLinks = (cs: boolean) => [
   {
-    title: "Block Archive",
-    description: "Complete ledger of all validated blocks",
-    href: "/explorer/blocks",
-    accent: "from-zion-gold/80 to-amber-600/80",
+    title: cs ? 'Archiv bloku' : 'Block Archive',
+    description: cs ? 'Kompletni ledger vsech validovanych bloku' : 'Complete ledger of all validated blocks',
+    href: '/explorer/blocks',
+    accent: 'from-zion-gold/80 to-amber-600/80',
     icon: Layers,
   },
   {
-    title: "Transaction Feed",
-    description: "Real-time flow of funds and fees",
-    href: "/explorer/transactions",
-    accent: "from-zion-cyan/80 to-blue-600/80",
+    title: cs ? 'Tok transakci' : 'Transaction Feed',
+    description: cs ? 'Tok fondu a fee v realnem case' : 'Real-time flow of funds and fees',
+    href: '/explorer/transactions',
+    accent: 'from-zion-cyan/80 to-blue-600/80',
     icon: Activity,
   },
   {
-    title: "Network Peers",
-    description: "Global node connectivity map",
-    href: "#peers",
-    accent: "from-purple-500/80 to-indigo-600/80",
+    title: cs ? 'Sitovi peeri' : 'Network Peers',
+    description: cs ? 'Globalni mapa konektivity nodu' : 'Global node connectivity map',
+    href: '#peers',
+    accent: 'from-purple-500/80 to-indigo-600/80',
     icon: Globe,
   },
   {
-    title: "Charts & Analytics",
-    description: "Historical difficulty, hashrate & emission",
-    href: "#charts",
-    accent: "from-emerald-500/80 to-teal-600/80",
+    title: cs ? 'Grafy a analytika' : 'Charts & Analytics',
+    description: cs ? 'Historicka obtiznost, hashrate a emise' : 'Historical difficulty, hashrate & emission',
+    href: '#charts',
+    accent: 'from-emerald-500/80 to-teal-600/80',
     icon: BarChart3,
   },
   {
-    title: "Explorer API",
-    description: "Direct JSON endpoints for integration and monitoring",
-    href: "/api-reference",
-    accent: "from-fuchsia-500/80 to-violet-600/80",
+    title: cs ? 'API explorera' : 'Explorer API',
+    description: cs ? 'Priame JSON endpointy pro integraci a monitoring' : 'Direct JSON endpoints for integration and monitoring',
+    href: '/api-reference',
+    accent: 'from-fuchsia-500/80 to-violet-600/80',
     icon: ExternalLink,
   },
 ];
 
 export default function ExplorerPage() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const quickLinks = getQuickLinks(cs);
+
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
       {/* ── Subtle background glows ── */}
@@ -97,28 +102,28 @@ export default function ExplorerPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <SearchCode className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · Explorer Pro
+                {SITE_RELEASE_LABEL} · {cs ? 'Pruzkumnik Pro' : 'Explorer Pro'}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Real-Time</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Zive' : 'Real-Time'}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  Blockchain Explorer
+                  {cs ? 'Průzkumník blockchainu' : 'Blockchain Explorer'}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Search blocks, transactions, and addresses on the current ZION TerraNova {SITE_RELEASE_LABEL} controlled V3 test-mainnet line.
-                Canonical runtime stays on {SITE_RUNTIME_LABEL}.
-                Smart hash resolver, live data from the current public rehearsal runtime, and auto-refresh every 10 seconds.
+                {cs
+                  ? `Vyhledavejte bloky, transakce a adresy na aktualni kontrolovane V3 test-mainnet lince ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonicky runtime zustava na ${SITE_RUNTIME_LABEL}. Smart hash resolver, ziva data z aktualniho verejneho rehearsal runtime a auto-refresh kazdych 10 sekund.`
+                  : `Search blocks, transactions, and addresses on the current ZION TerraNova ${SITE_RELEASE_LABEL} controlled V3 test-mainnet line. Canonical runtime stays on ${SITE_RUNTIME_LABEL}. Smart hash resolver, live data from the current public rehearsal runtime, and auto-refresh every 10 seconds.`}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> Live Test Data
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Ziva test data' : 'Live Test Data'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-emerald-400" /> Auto-Refresh 10s
+                  <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 10 s' : 'Auto-Refresh 10s'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> 1 Public Host
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {cs ? '1 verejny host' : '1 Public Host'}
                 </span>
               </div>
             </div>
@@ -135,12 +140,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.06 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Telemetry</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              Network Statistics
+              {cs ? 'Sitove statistiky' : 'Network Statistics'}
             </h2>
-            <p className="text-sm text-gray-400">Real-time metrics from the ZION blockchain daemon.</p>
+            <p className="text-sm text-gray-400">{cs ? 'Metriky v realnem case z blockchain daemonu ZION.' : 'Real-time metrics from the ZION blockchain daemon.'}</p>
           </div>
           <Suspense
             fallback={
@@ -166,12 +171,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.1 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Ledger</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ledger' : 'Ledger'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-gold" />
-              Blocks &amp; Transactions
+              {cs ? 'Bloky a transakce' : 'Blocks & Transactions'}
             </h2>
-            <p className="text-sm text-gray-400">Latest confirmed blocks and transaction feed from the ZION chain.</p>
+            <p className="text-sm text-gray-400">{cs ? 'Nejnovejsi potvrzene bloky a tok transakci ze chainu ZION.' : 'Latest confirmed blocks and transaction feed from the ZION chain.'}</p>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
@@ -199,8 +204,8 @@ export default function ExplorerPage() {
                     <Compass className="h-4.5 w-4.5 text-zion-gold" />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-white">Quick Navigation</h3>
-                    <p className="text-[11px] text-gray-500">Jump to section</p>
+                    <h3 className="text-base font-semibold text-white">{cs ? 'Rychla navigace' : 'Quick Navigation'}</h3>
+                    <p className="text-[11px] text-gray-500">{cs ? 'Skok do sekce' : 'Jump to section'}</p>
                   </div>
                 </div>
                 <div className="space-y-2.5">
@@ -235,12 +240,12 @@ export default function ExplorerPage() {
           id="charts"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Analytics</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Analytika' : 'Analytics'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-purple-400" />
-              Network Charts
+              {cs ? 'Sitove grafy' : 'Network Charts'}
             </h2>
-            <p className="text-sm text-gray-400">Historical difficulty, hashrate, emission, and block size trends.</p>
+            <p className="text-sm text-gray-400">{cs ? 'Historicke trendy obtiznosti, hashrate, emise a velikosti bloku.' : 'Historical difficulty, hashrate, emission, and block size trends.'}</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[400px]" />}>
             <ExplorerCharts />
@@ -254,12 +259,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.18 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Supply</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Zasoba' : 'Supply'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              Emission Monitor
+              {cs ? 'Monitoring emise' : 'Emission Monitor'}
             </h2>
-            <p className="text-sm text-gray-400">Track mining progress — Decade Decay: 5,400 → 724 ZION/block, 100+ years + tail ∞.</p>
+            <p className="text-sm text-gray-400">{cs ? 'Sledujte postup tezby - Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.' : 'Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.'}</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
             <EmissionMonitor />
@@ -274,12 +279,12 @@ export default function ExplorerPage() {
           id="peers"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">P2P Network</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'P2P sit' : 'P2P Network'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe className="h-7 w-7 text-zion-cyan" />
-              Network Peers
+              {cs ? 'Sitovi peeri' : 'Network Peers'}
             </h2>
-            <p className="text-sm text-gray-400">Current public host connectivity with archived multi-host validation history.</p>
+            <p className="text-sm text-gray-400">{cs ? 'Konektivita aktualniho verejneho hostu s archivovanou historii multi-host validace.' : 'Current public host connectivity with archived multi-host validation history.'}</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
             <NetworkPeers />
@@ -295,12 +300,12 @@ export default function ExplorerPage() {
           className="scroll-mt-28"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Distribution</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Distribuce' : 'Distribution'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-gold" />
-              Rich List
+              {cs ? 'Rich list' : 'Rich List'}
             </h2>
-            <p className="text-sm text-gray-400">Top ZION holders by balance — premine allocations, mining rewards, and network economics.</p>
+            <p className="text-sm text-gray-400">{cs ? 'Top drzitele ZION podle zustatku - premine alokace, tezebni odmeny a ekonomika site.' : 'Top ZION holders by balance - premine allocations, mining rewards, and network economics.'}</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[400px]" />}>
             <RichListClient embedded />
@@ -317,17 +322,17 @@ export default function ExplorerPage() {
           <SearchCode className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION TerraNova Explorer</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            Real-time blockchain data from native Rust nodes. Every block, transaction, and address — fully transparent, fully open.
+            {cs ? 'Blockchain data v realnem case z nativnich Rust nodu. Kazdy blok, transakce a adresa - plne transparentni, plne otevrene.' : 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · All fees burned · 89/5/5/1 distribuce · Public launch target 31.12.2026
+            {cs ? 'Decade Decay emise: 5,400 -> 724 ZION/blok · 100+ let + tail ∞ · Vsechny fees spalovany · 89/5/5/1 distribuce · Cil verejneho launch 31.12.2026' : 'Decade Decay emission: 5,400 -> 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Public launch target 31.12.2026'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              <Globe className="h-4 w-4" /> Network Status
+              <Globe className="h-4 w-4" /> {cs ? 'Stav site' : 'Network Status'}
             </Link>
             <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
-              <Activity className="h-4 w-4" /> Roadmap
+              <Activity className="h-4 w-4" /> {cs ? 'Roadmapa' : 'Roadmap'}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
@@ -341,7 +346,9 @@ export default function ExplorerPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — Blockchain Explorer Pro · Real-time data from native Rust runtime · 1 Public Host
+          {cs
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Data v realnem case z nativniho Rust runtime · 1 verejny host`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Real-time data from native Rust runtime · 1 Public Host`}
         </p>
       </div>
     </div>
