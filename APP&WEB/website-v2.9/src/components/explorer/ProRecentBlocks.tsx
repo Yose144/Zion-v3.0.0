@@ -201,8 +201,8 @@ export default function ProRecentBlocks() {
         <div className="px-6 py-3 border-t border-white/4 flex items-center justify-between">
           <p className="text-[11px] text-gray-600">
             {cs
-              ? `Zobrazeno ${Math.min(15, blocks.length)} poslednich bloku · Auto-refresh 10 s`
-              : `Showing ${Math.min(15, blocks.length)} latest blocks · Auto-refresh 10s`}
+                ? `Zobrazeno ${Math.min(15, blocks.length)} poslednich bloku · Auto-refresh 15 s`
+              : `Showing ${Math.min(15, blocks.length)} latest blocks · Auto-refresh 15s`}
           </p>
           <Link
             href="/explorer/blocks"
