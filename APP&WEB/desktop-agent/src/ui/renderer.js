@@ -1299,6 +1299,7 @@ function appendMiningConsole(raw) {
   // Skip panel lines (handled by updateStaticPanel)
   // Note: T-Rex style lines use "KEYWORD   : value" format — keep those (negative lookahead (?!\s*:))
   if (/^[\u250c\u2502\u2514]/.test(raw) || /^\s*(SPEED|SHARES|DIFF|UPTIME|HW|NET|EVENT)\b(?!\s*:)/i.test(raw)) return;
+  // [STATUS] lines are verbose — skip, but keep [METRICS] lines
   if (/^\[STATUS\]/i.test(raw)) return;
 
   const html = colorizeConsoleLine(raw);
@@ -1416,6 +1417,27 @@ function colorizeConsoleLine(raw) {
   m = raw.match(/Stream switch:\s*(\S+)\s*→\s*(\S+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-warn">~&gt; Stream switch</span> <span class="mc-algo">${esc(m[1])}</span> → <span class="mc-algo">${esc(m[2])}</span>` };
+  }
+
+  // ── [METRICS] compact GPU mining status ──
+  m = raw.match(/^\[METRICS\]\s+(.+)/i);
+  if (m) {
+    const body = m[1];
+    let html = esc(body);
+    // Highlight hashrate values
+    html = html.replace(/(\d+\.\d+\s*[kKmMgGtT]?H\/s)/g, '<span class="mc-hr">$1</span>');
+    // Highlight A:N green, R:N red
+    html = html.replace(/A:(\d+)/g, 'A:<span class="mc-accepted">$1</span>');
+    html = html.replace(/R:(\d+)/g, 'R:<span class="mc-rejected">$1</span>');
+    // Highlight accept percentage
+    html = html.replace(/(\d+\.\d+%)/g, '<span class="mc-info">$1</span>');
+    // Highlight gpu= and backend= values
+    html = html.replace(/gpu=([^\s|]+)/g, 'gpu=<span class="mc-ok">$1</span>');
+    html = html.replace(/backend=([^\s|]+)/g, 'backend=<span class="mc-algo">$1</span>');
+    // Highlight epoch and height
+    html = html.replace(/epoch=(\d+)/g, 'epoch=<span class="mc-diff">$1</span>');
+    html = html.replace(/h=(\d+)/g, 'h=<span class="mc-diff">$1</span>');
+    return { html: `${tsHtml}<span class="mc-speed">[METRICS]</span> ${html}` };
   }
 
   // ── Errors ──
