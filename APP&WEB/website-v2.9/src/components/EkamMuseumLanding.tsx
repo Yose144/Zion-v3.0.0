@@ -228,8 +228,8 @@ export default function EkamMuseumLanding() {
       </section>
 
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative pt-20 pb-12">
-        <div className="relative h-[42vh] overflow-hidden border-y border-white/10 bg-slate-950 sm:h-[50vh] lg:h-[58vh]">
+      <section className="relative pt-16 pb-16 sm:pt-18 sm:pb-20">
+        <div className="relative h-[40vh] overflow-hidden border-y border-white/10 bg-slate-950 sm:h-[48vh] lg:h-[56vh]">
           <Image
             src={EKAM_BANNER_IMAGE}
             alt="EKAM — Oneness Temple"
@@ -256,9 +256,9 @@ export default function EkamMuseumLanding() {
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto -mt-14 px-6 sm:-mt-18 sm:px-8 lg:px-10">
+        <div className="relative z-10 mx-auto -mt-10 px-6 sm:-mt-12 sm:px-8 lg:px-10">
           <div className="mx-auto max-w-6xl">
-            <div className="max-w-4xl rounded-4xl border border-white/12 bg-black/34 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.35)] backdrop-blur-md sm:p-8 lg:p-10">
+            <div className="max-w-4xl rounded-4xl border border-white/14 bg-black/38 p-6 shadow-[0_22px_64px_rgba(2,6,23,0.30)] backdrop-blur-md sm:p-8 lg:p-10">
               <div className="max-w-3xl space-y-5">
                 <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/12 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-amber-100/88">
                   <Sparkles className="h-3.5 w-3.5 text-zion-gold" />
@@ -277,7 +277,7 @@ export default function EkamMuseumLanding() {
       </section>
 
       {/* ═══════════ SACRED ARCHITECTURE ═══════════ */}
-      <section className="relative px-6 py-12 sm:px-8 lg:px-10">
+      <section className="relative px-6 pt-6 pb-12 sm:px-8 sm:pt-8 lg:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur-sm">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/60">{tr('ekamPage', 'arch_label', lang)}</p>
