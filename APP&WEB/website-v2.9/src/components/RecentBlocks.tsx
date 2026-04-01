@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Blocks, Clock, Hash, User } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 
 interface Block {
   height: number;
@@ -22,22 +23,18 @@ export default function RecentBlocks() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchBlocks() {
-      try {
-        const data = await apiClient<Block[]>('/blockchain/blocks?limit=5');
-        setBlocks(data);
-      } catch (error) {
-        console.error('Failed to fetch blocks:', error);
-      } finally {
-        setLoading(false);
-      }
+  const fetchBlocks = useCallback(async () => {
+    try {
+      const data = await apiClient<Block[]>('/blockchain/blocks?limit=5');
+      setBlocks(data);
+    } catch (error) {
+      console.error('Failed to fetch blocks:', error);
+    } finally {
+      setLoading(false);
     }
-
-    fetchBlocks();
-    const interval = setInterval(fetchBlocks, 15000); // Every 15s
-    return () => clearInterval(interval);
   }, []);
+
+  usePolling(fetchBlocks, 15_000);
 
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp * 1000);

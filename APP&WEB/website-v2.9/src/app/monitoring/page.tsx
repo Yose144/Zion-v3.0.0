@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
-import MonitoringClient from './MonitoringClient';
+import dynamic from 'next/dynamic';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
+
+const MonitoringClient = dynamic(() => import('./MonitoringClient'));
 
 export const metadata: Metadata = {
   title: `Monitoring · ZION ${SITE_RELEASE_LABEL}`,
