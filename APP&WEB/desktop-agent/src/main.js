@@ -1010,13 +1010,14 @@ function findRustMiner() {
   const searchPaths = IS_PACKAGED
     ? [process.resourcesPath]
     : [
-        path.join(APP_ROOT, 'resources'),
         // V3 miner build outputs
         path.join(APP_ROOT, '..', '..', 'V3', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'miner', 'target', 'release'),
+        // Dev fallback: bundled resources copy (can be stale vs local V3 build)
+        path.join(APP_ROOT, 'resources'),
         path.join(APP_ROOT, '..', '..', 'zion-universal-miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', '2.9.5OLD', 'zion-universal-miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', '2.9.5OLD', 'target', 'release'),
@@ -4256,9 +4257,26 @@ function startMining(config) {
     const difficultyHint = computeDifficultyHint(config, algoLowerForHint);
 
     if (isV3) {
-      // ═══ V3 Miner — env-var driven, no CLI flags (except --bench/--gpu-bench) ═══
-      // V3 miner reads all config from environment variables.
-      args = [];
+      // ═══ V3 Miner — one-click compatibility mode ═══
+      // Pass both CLI essentials and env vars so startup works with:
+      // 1) current env-driven V3 binaries and
+      // 2) older CLI-required zion-miner.exe bundles in resources.
+      args = [
+        '--pool', `${config.pool.host}:${config.pool.port}`,
+        '--wallet', config.wallet,
+      ];
+      if (config.worker) args.push('--worker', sanitizeWorkerName(config.worker));
+      if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
+
+      // Keep GPU hint for one-click UX where available.
+      if (mainMinerGpu && gpuInfo.available) {
+        const backendHint = String(config.gpuBackend || process.env.ZION_BACKEND || '').trim().toLowerCase();
+        if (backendHint) {
+          args.push('--gpu', backendHint);
+        } else {
+          args.push('--gpu', (process.platform === 'darwin' && os.arch() === 'arm64') ? 'metal' : 'opencl');
+        }
+      }
     } else {
       // Legacy Rust miner CLI (zion-universal-miner) — main ZION group
       args = [
