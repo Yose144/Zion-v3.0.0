@@ -8,8 +8,8 @@ global:
   evaluation_interval: 15s
   scrape_timeout: 10s
   external_labels:
-    cluster: "zion-testnet"
-    environment: "testnet"
+    cluster: "zion-mainnet"
+    environment: "production"
 
 # Alert rules
 rule_files:
@@ -34,7 +34,7 @@ scrape_configs:
   # host gateway (172.18.0.1) for host-mapped ports
   # ══════════════════════════════════════════════════
 
-  # ── ZION Pool — Helsinki (local) ──
+  # ── ZION Pool — Prague (local) ──
   - job_name: "zion-pool-prague"
     metrics_path: "/metrics"
     scrape_interval: 15s
@@ -45,15 +45,15 @@ scrape_configs:
           region: "eu-north"
           service: "pool"
 
-  # ── ZION Core Node — Helsinki (local) ──
+  # ── ZION Core Node — Prague (host-networked core scraped via host gateway) ──
   - job_name: "zion-core-prague"
     metrics_path: "/metrics"
     scrape_interval: 30s
     static_configs:
-      - targets: ["zion-core:9115"]
+      - targets: ["host.docker.internal:9115"]
         labels:
           server: "prague"
-          region: "eu-north"
+          region: "eu-central"
           service: "core"
 
   # ── ZION Miner — Prague (local) ──
@@ -67,7 +67,7 @@ scrape_configs:
           region: "eu-north"
           service: "miner"
 
-  # ── Node Exporter — Helsinki (local, host-mapped port) ──
+  # ── Node Exporter — Prague (local, host-mapped port) ──
   - job_name: "node-prague"
     scrape_interval: 30s
     static_configs:
@@ -76,7 +76,7 @@ scrape_configs:
           server: "prague"
           service: "node-exporter"
 
-  # ── Redis Exporter — Helsinki (local) ──
+  # ── Redis Exporter — Prague (local) ──
   - job_name: "redis-prague"
     scrape_interval: 30s
     static_configs:
@@ -86,30 +86,19 @@ scrape_configs:
           service: "redis"
 
   # ══════════════════════════════════════════════════
-  # REMOTE targets — Germany (public IP, port-forwarded)
+  # REMOTE targets — public metrics currently exposed by peer nodes
   # ══════════════════════════════════════════════════
 
-  # ── ZION Pool — Germany ──
-  - job_name: "zion-pool-germany"
-    metrics_path: "/metrics"
-    scrape_interval: 15s
-    static_configs:
-      - targets: ["46.225.126.243:8080"]
-        labels:
-          server: "germany"
-          region: "eu-central"
-          service: "pool"
-
-  # ── ZION Core Node — Germany ──
-  - job_name: "zion-core-germany"
+  # ── ZION Core Node — Singapore ──
+  - job_name: "zion-core-singapore"
     metrics_path: "/metrics"
     scrape_interval: 30s
     static_configs:
-      - targets: ["46.225.126.243:9115"]
+      - targets: ["5.223.84.191:9115"]
         labels:
-          server: "germany"
-          region: "eu-central"
+          server: "singapore"
+          region: "apac"
           service: "core"
 
-  # NOTE: node-exporter (9100) and redis-exporter (9121) on Germany
-  # are NOT exposed publicly — scraped by Germany's own Prometheus
+  # NOTE: Remote pool metrics are not exposed publicly on the active topology,
+  # so Prometheus scrapes only the Prague pool locally.
