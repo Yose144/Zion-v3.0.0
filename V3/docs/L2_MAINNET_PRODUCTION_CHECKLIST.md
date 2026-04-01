@@ -1,6 +1,6 @@
 # V3 L2 Mainnet Production Checklist
 
-Status: 2026-03-29  
+Status: 2026-04-01  
 Scope: V3 L2 production readiness for Bridge, DAO, and Atomic Swap  
 Depends on: [L2_L3_MAINNET_PLAN.md](L2_L3_MAINNET_PLAN.md), [MAINNET_DEPLOY_RUNBOOK.md](MAINNET_DEPLOY_RUNBOOK.md)
 
@@ -19,11 +19,11 @@ What is already true:
 
 What is still false:
 
-- V3 core bridge write path is still incomplete: `submitBridgeUnlock` is registered, but unlock validation and replay protection are not enabled yet.
-- Bridge relayer and atomic-swap are transport-aligned with canonical V3 raw TCP JSON-RPC, but bridge unlock cannot complete end-to-end until core accepts validated unlocks.
-- DAO historical-balance snapshots are available and consumed, but production configs and runtime manifests are still missing.
+- Core bridge unlock path exists, but validator proof cryptographic verification is not yet enforced end-to-end.
+- Bridge relayer still sends placeholder validator proofs pending final validator-signature integration.
+- Mainnet contracts/addresses are not deployed and wired (wZION, ZIONBridge, ZIONAtomicSwap).
 - Solidity contracts are not yet brought under the V3 source-of-truth workflow.
-- No audited V3 production config files are checked in for bridge, DAO, or atomic-swap.
+- L2 production rollout manifest is present, but still testnet-oriented by default and needs final mainnet ops hardening.
 
 Launch implication:
 
@@ -34,7 +34,7 @@ Launch implication:
 
 ## 1. Hard Blockers
 
-### 1.1 Bridge-specific V3 core write validation is still incomplete
+### 1.1 Bridge-specific unlock authorization is only partially complete
 
 Files to implement:
 
@@ -43,16 +43,22 @@ Files to implement:
 - `V3/L1/core/src/fee.rs`
 - `V3/L1/core/src/lib.rs`
 
-Required outcomes:
+Current state:
 
 - keep canonical `BRIDGE_VAULT_ADDRESS`
 - keep `getBridgeLocks`, `getBridgeVaultBalance`, and `submitBridgeUnlock` live in core
-- add unlock authorization and replay protection behind the registered submit RPC
-- return accepted unlock TX metadata after validation is enabled
+- replay protection exists in runtime/mempool flow
+- submit RPC enforces threshold count + duplicate validator_id guard
+
+Still required before launch:
+
+- enforce cryptographic validator proof verification in core unlock authorization path
+- bind validator identities/signatures to a configured validator set
+- return accepted unlock TX metadata with finalized proof provenance fields
 
 Why this blocks launch:
 
-- the bridge daemon can now speak canonical V3 RPC, but L1 still rejects unlock submissions because the validation/write path is intentionally scaffold-only.
+- without cryptographic proof validation, unlock authorization is not production-safe.
 
 ### 1.2 Bridge daemon transport is aligned, but unlock execution is not complete
 
@@ -118,17 +124,25 @@ Production requirement:
 - contracts, deploy scripts, addresses, and environment selection must be versioned from V3 context
 - Base Sepolia redeploy and Base mainnet deploy cannot stay coupled to legacy root-only workflow
 
-### 1.6 Production config and deploy manifests are missing
+### 1.6 Production config and deploy manifests are partially complete
 
-Missing audited artifacts:
+Current audited artifacts in repo:
 
 - `V3/L2/bridge/config/bridge-mainnet.toml`
 - `V3/L2/bridge/config/bridge-testnet.toml`
+- `V3/L2/atomic-swap/config/swap-mainnet.toml`
+- `V3/L2/atomic-swap/config/swap-testnet.toml`
 - `V3/L2/dao/config/dao-mainnet.toml`
-- `V3/L2/atomic-swap/config/atomic-swap-mainnet.toml`
-- root-level compose or deploy manifest for L2 services
+- `V3/L2/dao/config/dao-testnet.toml`
+- `V3/docker/docker-compose.v3-l2.yml`
 
-Without these files:
+Still missing for production closure:
+
+- deployed Base mainnet addresses in bridge/swap configs (non-zero, validated)
+- production secret-injection runbook for validator keys, API keys, bearer tokens
+- final ops profile for compose (mainnet config paths + health checks + alert routing)
+
+Without these closure items:
 
 - production rollout is not reproducible
 - secrets and endpoints are not auditable
