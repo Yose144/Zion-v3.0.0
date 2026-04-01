@@ -400,6 +400,14 @@ pub mod opencl_deeksha {
             if epoch == self.current_epoch {
                 return Ok(());
             }
+            // GPU kernel only supports Standard (64→128→64) topology
+            let topology = zion_cosmic_harmony::algorithms_npu::MlpTopology::for_epoch(epoch);
+            if !matches!(topology, zion_cosmic_harmony::algorithms_npu::MlpTopology::Standard) {
+                return Err(anyhow::anyhow!(
+                    "GPU kernel unsupported topology {:?} for epoch {} (height {}), falling back to CPU",
+                    topology, epoch, height
+                ));
+            }
             let flat = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat_epoch(epoch);
             self.npu_w1.write(&flat.w1).enq()?;
             self.npu_b1.write(&flat.b1).enq()?;
