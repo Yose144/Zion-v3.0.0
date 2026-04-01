@@ -105,6 +105,9 @@ function fmtPct(n: number | null | undefined) {
   return n != null ? `${n.toFixed(1)}%` : '—';
 }
 
+const PRAGUE_CORE_UP_QUERY = 'up{job="zion-core-prague",instance="host.docker.internal:9115"}';
+const PRAGUE_POOL_UP_QUERY = 'up{job="zion-pool-prague",instance="zion-pool:8080"}';
+
 async function queryPrometheus(query: string): Promise<PrometheusResult[]> {
   const res = await fetch(`/api/metrics?query=${encodeURIComponent(query)}`, {
     cache: 'no-store',
@@ -176,8 +179,8 @@ async function fetchMetrics(): Promise<MonitoringData> {
     /* 25 */ 'node_filesystem_size_bytes{mountpoint="/"}',
     /* 26 */ 'node_filesystem_avail_bytes{mountpoint="/"}',
     /* 27 */ 'node_boot_time_seconds',
-    /* 28 */ 'up{job="zion-core-prague"}',
-    /* 29 */ 'up{job="zion-pool-prague"}',
+    /* 28 */ PRAGUE_CORE_UP_QUERY,
+    /* 29 */ PRAGUE_POOL_UP_QUERY,
   ];
 
   const results = await Promise.allSettled(queries.map(q => queryPrometheus(q)));
