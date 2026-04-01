@@ -1,11 +1,27 @@
-# ZION V3 MainNet Production Stack — builds from V3/ workspace
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  ZION V3 MainNet — Unified Production Stack                  ║
+# ║  L1 (core, pool, miner, seed, redis)                         ║
+# ║  L2 (bridge, swap, dao)                                      ║
+# ║  Web (website, stability-collector)                           ║
+# ║  Monitoring (prometheus, grafana, exporters, alertmanager)    ║
+# ╚══════════════════════════════════════════════════════════════╝
+#
 # All V3 binaries use env-var config (from_env()), NOT CLI args.
 # Usage: docker compose -f docker/docker-compose.v3-mainnet.yml --env-file .env up -d --build
 #
 # Requires .env with: REDIS_PASSWORD, MINER_WALLET, MINER_WORKER
-# Optional .env: SEED_PEERS (comma-separated), MINER_CPUS
+# Optional .env: SEED_PEERS, MINER_CPUS, GRAFANA_ADMIN_PASSWORD
+#
+# Profiles:
+#   default  — L1 core stack (core, pool, miner, redis, seed1)
+#   l2       — Bridge, Swap, DAO
+#   web      — Website + stability collector
+#   monitor  — Prometheus, Grafana, exporters, alertmanager
 
 services:
+  # ════════════════════════════════════════════════════════════
+  # L1 — Core Node
+  # ════════════════════════════════════════════════════════════
   core:
     build:
       context: ../V3
@@ -207,12 +223,279 @@ services:
     networks:
       - zion-net
 
+  # ════════════════════════════════════════════════════════════
+  # L2 — Bridge, Swap, DAO
+  # ════════════════════════════════════════════════════════════
+  bridge:
+    build:
+      context: ../V3
+      dockerfile: docker/Dockerfile.bridge
+    image: zion-v3-bridge:latest
+    container_name: zion-v3-bridge
+    restart: unless-stopped
+    network_mode: host
+    profiles: ["l2"]
+    volumes:
+      - bridge-data:/data/bridge
+      - ../V3/L2/bridge/config:/etc/zion:ro
+    environment:
+      ZION_BRIDGE_CONFIG: "${ZION_BRIDGE_CONFIG:-/etc/zion/bridge-testnet.toml}"
+      RUST_LOG: "zion_bridge=debug,info"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9100/health >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  swap:
+    build:
+      context: ../V3
+      dockerfile: docker/Dockerfile.swap
+    image: zion-v3-swap:latest
+    container_name: zion-v3-swap
+    restart: unless-stopped
+    network_mode: host
+    profiles: ["l2"]
+    volumes:
+      - swap-data:/data/atomic-swap
+      - ../V3/L2/atomic-swap/config:/etc/zion:ro
+    environment:
+      RUST_LOG: "zion_atomic_swap=debug,info"
+      ZION_SWAP_ESCROW_KEY: "${ZION_SWAP_ESCROW_KEY:-}"
+    command: ["--config", "${ZION_SWAP_CONFIG:-/etc/zion/swap-testnet.toml}"]
+    depends_on:
+      bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8888/health >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  dao:
+    build:
+      context: ../V3
+      dockerfile: docker/Dockerfile.dao
+    image: zion-v3-dao:latest
+    container_name: zion-v3-dao
+    restart: unless-stopped
+    network_mode: host
+    profiles: ["l2"]
+    volumes:
+      - dao-data:/data/dao
+      - ../V3/L2/dao/config:/etc/zion:ro
+    environment:
+      DAO_CONFIG: "${ZION_DAO_CONFIG:-/etc/zion/dao-testnet.toml}"
+      RUST_LOG: "zion_dao=debug,info"
+    depends_on:
+      bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/api/dao/health >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ════════════════════════════════════════════════════════════
+  # Web — Website + Stability Collector
+  # ════════════════════════════════════════════════════════════
+  website:
+    build:
+      context: ../APP&WEB/website-v2.9
+      dockerfile: Dockerfile.production
+    image: zion-website:2.9.9
+    container_name: zion-website
+    restart: unless-stopped
+    profiles: ["web"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../ops/mainnet-stability-run:/data/mainnet-stability-run:ro
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - BRIDGE_METRICS_URL=http://zion-v3-bridge:9101/metrics
+      - PROMETHEUS_URL=http://zion-prometheus:9090
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    labels:
+      - "com.zion.service=website"
+      - "com.zion.version=2.9.9"
+    networks:
+      - zion-net
+
+  stability-collector:
+    image: node:22-alpine
+    container_name: zion-mainnet-stability-collector
+    restart: unless-stopped
+    profiles: ["web"]
+    working_dir: /workspace
+    command: >
+      sh -lc "mkdir -p /workspace/ops/mainnet-stability-run
+      && node scripts/mainnet_stability_collector.mjs --interval-sec 60 >> /workspace/ops/mainnet-stability-run/collector.log 2>&1"
+    volumes:
+      - ../scripts:/workspace/scripts:ro
+      - ../ops:/workspace/ops
+    labels:
+      - "com.zion.service=mainnet-stability-collector"
+    networks:
+      - zion-net
+
+  # ════════════════════════════════════════════════════════════
+  # Monitoring — Prometheus, Grafana, Exporters, Alertmanager
+  # ════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: zion-prometheus
+    restart: unless-stopped
+    profiles: ["monitor"]
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=90d"
+      - "--storage.tsdb.retention.size=10GB"
+      - "--web.enable-lifecycle"
+      - "--web.external-url=http://localhost:9090"
+    volumes:
+      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "9090:9090"
+    networks:
+      - zion-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "com.zion.service=prometheus"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: zion-grafana
+    restart: unless-stopped
+    profiles: ["monitor"]
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://zionterranova.com/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_DOMAIN=zionterranova.com
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/zion-pool-overview.json
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+    volumes:
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - zion-net
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "com.zion.service=grafana"
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: zion-node-exporter
+    restart: unless-stopped
+    profiles: ["monitor"]
+    command:
+      - "--path.rootfs=/host"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+      - "--collector.netclass.ignored-devices=^(veth|docker|br-).*$$"
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "9100:9100"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    networks:
+      - zion-net
+    labels:
+      - "com.zion.service=node-exporter"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.61.0
+    container_name: zion-redis-exporter
+    restart: unless-stopped
+    profiles: ["monitor"]
+    environment:
+      - REDIS_ADDR=redis://zion-redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "9121:9121"
+    networks:
+      - zion-net
+    depends_on:
+      - prometheus
+    labels:
+      - "com.zion.service=redis-exporter"
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: zion-alertmanager
+    restart: unless-stopped
+    profiles: ["monitor"]
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=http://localhost:9093"
+    volumes:
+      - ../monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - zion-net
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "com.zion.service=alertmanager"
+
 volumes:
   zion-data:
   seed1-data:
   pool-data:
   redis-data:
+  bridge-data:
+  swap-data:
+  dao-data:
+  prometheus-data:
+    name: zion-prometheus-data
+  grafana-data:
+    name: zion-grafana-data
+  alertmanager-data:
+    name: zion-alertmanager-data
 
 networks:
   zion-net:
+    name: zion-net
     driver: bridge
