@@ -318,6 +318,10 @@ function pvLabel(results: (PromiseSettledResult<PromResult[]> | undefined)[], la
   for (const r of results) { if (!r || r.status !== 'fulfilled') continue; for (const m of r.value) { if (m.metric[label] === val) return parseFloat(m.value[1] ?? ''); } }
   return null;
 }
+
+const PRAGUE_CORE_UP_QUERY = 'up{job="zion-core-prague",instance="host.docker.internal:9115"}';
+const PRAGUE_POOL_UP_QUERY = 'up{job="zion-pool-prague",instance="zion-pool:8080"}';
+
 async function fetchV3Metrics(): Promise<V3Metrics> {
   const qs = [
     'zion_chain_height','zion_peer_count','zion_mempool_size','zion_blocks_accepted_total',
@@ -334,7 +338,7 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
     'node_memory_MemTotal_bytes','node_memory_MemAvailable_bytes',
     'node_filesystem_size_bytes{mountpoint="/"}','node_filesystem_avail_bytes{mountpoint="/"}',
     'node_boot_time_seconds',
-    'up{job=~"zion-core-.*|zion-core-prague"}','up{job=~"zion-pool-.*|zion-pool-prague"}',
+    PRAGUE_CORE_UP_QUERY, PRAGUE_POOL_UP_QUERY,
   ];
   const res = await Promise.allSettled(qs.map(q => promQuery(q)));
   const minerUp = pv(res, 21) ?? ((pv(res, 13) ?? 0) > 0 ? 1 : 0);
