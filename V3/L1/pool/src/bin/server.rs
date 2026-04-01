@@ -7,10 +7,12 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use ed25519_dalek::SigningKey;
 use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, CoreRuntime, DifficultyTarget,
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
+use zion_core::wallet::{BatchRecipient, SpendableUtxo};
 use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 
@@ -74,6 +76,15 @@ fn main() -> Result<()> {
     if let Some(node_rpc_addr) = config.node_rpc_addr.as_deref() {
         println!("node_rpc_addr={node_rpc_addr}");
     }
+    println!(
+        "payout_execution={} payout_fee_flowers={}",
+        if config.payout_signing_key.is_some() {
+            "enabled"
+        } else {
+            "disabled"
+        },
+        config.payout_fee_flowers
+    );
     println!(
         "session_default_group={} backend_miner_ids={} backend_worker_hints={}",
         session_group_name(config.user_default_group),
@@ -462,6 +473,10 @@ fn handle_client(
             } => {
                 let accepted = matches!(decision.status, ShareStatus::Accepted);
                 if accepted {
+                    {
+                        let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                        telemetry.record_block_found(&miner_id, &worker_name);
+                    }
                     let payouts = {
                         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
                         pplns.record_share(&miner_id, &worker_name, job.height);
@@ -472,8 +487,37 @@ fn handle_client(
                         }
                     };
                     if !payouts.is_empty() {
-                        let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
-                        telemetry.record_payouts(job.height, &payouts);
+                        {
+                            let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                            telemetry.record_pending_payouts(job.height, &payouts);
+                        }
+
+                        match execute_batch_payout(
+                            config.node_rpc_addr.as_deref(),
+                            config.payout_signing_key,
+                            config.payout_fee_flowers,
+                            &payouts,
+                        ) {
+                            Ok(tx_id) => {
+                                let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                                telemetry.record_submitted_payouts(job.height, &payouts, &tx_id);
+                            }
+                            Err(error) => {
+                                {
+                                    let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                                    pplns.rollback_payouts(&payouts);
+                                }
+                                let error_text = error.to_string();
+                                println!(
+                                    "payout_submit_failed height={} miners={} error={}",
+                                    job.height,
+                                    payouts.len(),
+                                    error_text
+                                );
+                                let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                                telemetry.record_failed_payouts(job.height, &payouts, &error_text);
+                            }
+                        }
                     }
                 }
                 {
@@ -606,6 +650,122 @@ fn rpc_roundtrip(node_rpc_addr: &str, request: &RpcRequest) -> Result<RpcRespons
     decode_rpc_response(&response_line).context("failed to decode node rpc response")
 }
 
+fn json_rpc_roundtrip(node_rpc_addr: &str, method: &str, params: serde_json::Value) -> Result<serde_json::Value> {
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": method,
+        "params": params,
+        "id": 1
+    });
+    let request_line = serde_json::to_string(&request).context("failed to encode json-rpc request")?;
+
+    let mut stream = TcpStream::connect(node_rpc_addr)
+        .with_context(|| format!("failed to connect to node rpc at {node_rpc_addr}"))?;
+    stream
+        .write_all(request_line.as_bytes())
+        .context("failed to write json-rpc request")?;
+    stream
+        .write_all(b"\n")
+        .context("failed to write json-rpc newline")?;
+    stream.flush().context("failed to flush json-rpc request")?;
+
+    let mut reader = BufReader::new(stream);
+    let mut response_line = String::new();
+    let read = reader
+        .read_line(&mut response_line)
+        .context("failed to read json-rpc response")?;
+    if read == 0 {
+        return Err(anyhow!("node rpc closed the json-rpc connection"));
+    }
+
+    let response: serde_json::Value = serde_json::from_str(response_line.trim())
+        .context("failed to decode json-rpc response")?;
+    if let Some(error) = response.get("error") {
+        let message = error
+            .get("message")
+            .and_then(|value| value.as_str())
+            .unwrap_or("json-rpc error");
+        return Err(anyhow!("json-rpc {method} failed: {message}"));
+    }
+
+    response
+        .get("result")
+        .cloned()
+        .ok_or_else(|| anyhow!("json-rpc {method} missing result field"))
+}
+
+fn execute_batch_payout(
+    node_rpc_addr: Option<&str>,
+    signing_key_bytes: Option<[u8; 32]>,
+    payout_fee_flowers: u64,
+    payouts: &[PayoutEntry],
+) -> Result<String> {
+    let node_rpc_addr = node_rpc_addr.ok_or_else(|| anyhow!("missing ZION_NODE_RPC_ADDR for payout execution"))?;
+    let signing_key_bytes = signing_key_bytes.ok_or_else(|| anyhow!("missing ZION_POOL_PAYOUT_SK_HEX for payout execution"))?;
+    let signing_key = SigningKey::from_bytes(&signing_key_bytes);
+    let payout_address = zion_core::crypto::derive_address(signing_key.verifying_key().as_bytes());
+
+    let utxo_result = json_rpc_roundtrip(
+        node_rpc_addr,
+        "getUtxos",
+        serde_json::json!({ "address": payout_address }),
+    )?;
+    let utxos_value = utxo_result
+        .get("utxos")
+        .cloned()
+        .ok_or_else(|| anyhow!("getUtxos result missing 'utxos' field"))?;
+    #[derive(serde::Deserialize)]
+    struct RpcUtxo {
+        tx_hash: [u8; 32],
+        output_index: u32,
+        amount: u64,
+        address: String,
+    }
+
+    let rpc_utxos: Vec<RpcUtxo> = serde_json::from_value(utxos_value)
+        .context("failed to parse getUtxos response")?;
+    let utxos: Vec<SpendableUtxo> = rpc_utxos
+        .into_iter()
+        .map(|u| SpendableUtxo {
+            tx_hash: u.tx_hash,
+            output_index: u.output_index,
+            amount: u.amount,
+            address: u.address,
+        })
+        .collect();
+    if utxos.is_empty() {
+        return Err(anyhow!("pool payout wallet has no spendable UTXOs"));
+    }
+
+    let recipients: Vec<BatchRecipient> = payouts
+        .iter()
+        .map(|entry| BatchRecipient {
+            address: entry.address.clone(),
+            amount: entry.amount,
+        })
+        .collect();
+
+    let built = zion_core::wallet::build_batch_payout(
+        &signing_key,
+        &payout_address,
+        &recipients,
+        payout_fee_flowers,
+        &utxos,
+    )
+    .map_err(|error| anyhow!("failed to build payout transaction: {error}"))?;
+
+    let submit_result = json_rpc_roundtrip(
+        node_rpc_addr,
+        "submitTransaction",
+        serde_json::json!({ "transaction": built.transaction }),
+    )?;
+    submit_result
+        .get("tx_id")
+        .and_then(|value| value.as_str())
+        .map(|value| value.to_string())
+        .ok_or_else(|| anyhow!("submitTransaction result missing tx_id"))
+}
+
 fn map_node_rejection(reason: Option<&str>) -> ShareStatus {
     match reason {
         Some(reason) if reason.contains("stale template") => ShareStatus::StaleJob,
@@ -658,6 +818,8 @@ struct ServerConfig {
     routing_log_every: u64,
     routing_metrics_bind: Option<String>,
     max_sessions_per_ip: u32,
+    payout_signing_key: Option<[u8; 32]>,
+    payout_fee_flowers: u64,
 }
 
 #[derive(Debug)]
@@ -697,7 +859,9 @@ struct MinerPayoutRecord {
     share_count: u64,
     created_ts: u64,
     height: u64,
-    status: &'static str,
+    status: String,
+    tx_id: Option<String>,
+    error: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -827,11 +991,20 @@ impl MinerTelemetryRegistry {
         miner.push_sample(attempted_hashes, elapsed_ms, now_s);
         if accepted {
             miner.valid_shares = miner.valid_shares.saturating_add(1);
-            miner.blocks_found = miner.blocks_found.saturating_add(1);
             miner.last_share_time_s = now_s;
         } else {
             miner.invalid_shares = miner.invalid_shares.saturating_add(1);
         }
+    }
+
+    fn record_block_found(&mut self, miner_id: &str, worker_name: &str) {
+        let now_s = now_unix_seconds();
+        let miner = self
+            .miners
+            .entry(miner_id.to_string())
+            .or_insert_with(|| MinerTelemetry::new(worker_name, now_s));
+        miner.touch(worker_name, now_s);
+        miner.blocks_found = miner.blocks_found.saturating_add(1);
     }
 
     fn record_no_solution(&mut self, miner_id: &str, worker_name: &str, attempted_hashes: u64, elapsed_ms: u64) {
@@ -846,7 +1019,7 @@ impl MinerTelemetryRegistry {
         miner.push_sample(attempted_hashes, elapsed_ms, now_s);
     }
 
-    fn record_payouts(&mut self, height: u64, payouts: &[PayoutEntry]) {
+    fn record_pending_payouts(&mut self, height: u64, payouts: &[PayoutEntry]) {
         let now_s = now_unix_seconds();
         for payout in payouts {
             let miner = self
@@ -854,16 +1027,54 @@ impl MinerTelemetryRegistry {
                 .entry(payout.miner_id.clone())
                 .or_insert_with(|| MinerTelemetry::new("", now_s));
             miner.last_seen_s = now_s;
-            miner.paid_total_atomic = miner.paid_total_atomic.saturating_add(payout.amount);
             miner.payouts.push_front(MinerPayoutRecord {
                 amount_atomic: payout.amount,
                 share_count: payout.share_count,
                 created_ts: now_s,
                 height,
-                status: "paid",
+                status: "pending_execution".to_string(),
+                tx_id: None,
+                error: None,
             });
             while miner.payouts.len() > PAYOUT_HISTORY_LIMIT {
                 miner.payouts.pop_back();
+            }
+        }
+    }
+
+    fn record_submitted_payouts(&mut self, height: u64, payouts: &[PayoutEntry], tx_id: &str) {
+        for payout in payouts {
+            let Some(miner) = self.miners.get_mut(&payout.miner_id) else {
+                continue;
+            };
+            if let Some(record) = miner.payouts.iter_mut().find(|record| {
+                record.height == height
+                    && record.amount_atomic == payout.amount
+                    && record.share_count == payout.share_count
+                    && record.status == "pending_execution"
+            }) {
+                record.status = "submitted_to_node".to_string();
+                record.tx_id = Some(tx_id.to_string());
+                record.error = None;
+                miner.paid_total_atomic = miner.paid_total_atomic.saturating_add(payout.amount);
+            }
+        }
+    }
+
+    fn record_failed_payouts(&mut self, height: u64, payouts: &[PayoutEntry], error: &str) {
+        for payout in payouts {
+            let Some(miner) = self.miners.get_mut(&payout.miner_id) else {
+                continue;
+            };
+            if let Some(record) = miner.payouts.iter_mut().find(|record| {
+                record.height == height
+                    && record.amount_atomic == payout.amount
+                    && record.share_count == payout.share_count
+                    && record.status == "pending_execution"
+            }) {
+                record.status = "submit_failed".to_string();
+                record.tx_id = None;
+                record.error = Some(error.to_string());
             }
         }
     }
@@ -1653,7 +1864,9 @@ fn build_miner_api_payload(
                     "share_count": payout.share_count,
                     "created_ts": payout.created_ts,
                     "height": payout.height,
-                    "status": payout.status
+                    "status": payout.status.clone(),
+                    "tx_id": payout.tx_id.clone(),
+                    "error": payout.error.clone()
                 })).collect::<Vec<_>>()
             })
             .to_string(),
@@ -1769,7 +1982,22 @@ impl ServerConfig {
             routing_log_every: parse_env_u64("ZION_ROUTING_LOG_EVERY", 25)?,
             routing_metrics_bind: parse_optional_env_string("ZION_ROUTING_METRICS_BIND"),
             max_sessions_per_ip: parse_env_u32("ZION_MAX_SESSIONS_PER_IP", 10)?,
+            payout_signing_key: parse_optional_key_bytes_env("ZION_POOL_PAYOUT_SK_HEX")?,
+            payout_fee_flowers: parse_env_u64("ZION_POOL_PAYOUT_FEE_FLOWERS", 10_000)?,
         })
+    }
+}
+
+fn parse_optional_key_bytes_env(key: &str) -> Result<Option<[u8; 32]>> {
+    match std::env::var(key) {
+        Ok(value) => {
+            let trimmed = value.trim();
+            if trimmed.is_empty() {
+                return Ok(None);
+            }
+            parse_fixed_hex::<32>(trimmed, key).map(Some)
+        }
+        Err(_) => Ok(None),
     }
 }
 
@@ -2046,6 +2274,8 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0,
+            payout_signing_key: None,
+            payout_fee_flowers: 10_000,
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -2237,6 +2467,8 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0,
+            payout_signing_key: None,
+            payout_fee_flowers: 10_000,
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -2264,6 +2496,8 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0,
+            payout_signing_key: None,
+            payout_fee_flowers: 10_000,
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -2291,6 +2525,8 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0,
+            payout_signing_key: None,
+            payout_fee_flowers: 10_000,
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -2479,6 +2715,8 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0,
+            payout_signing_key: None,
+            payout_fee_flowers: 10_000,
         };
 
         // Even though miner_id is in backend list, explicit hint wins
