@@ -252,6 +252,12 @@ const rustCliFeatureCache = new Map();
 function rustMinerSupportsGroupFlag(minerPath) {
   try {
     if (!minerPath) return false;
+    // V3 zion-miner does not use/need --group split semantics from legacy miner.
+    // Skip expensive synchronous help probing to keep startup one-click responsive.
+    if (isV3MinerBinary(minerPath)) {
+      rustCliFeatureCache.set(minerPath, false);
+      return false;
+    }
     if (rustCliFeatureCache.has(minerPath)) {
       return !!rustCliFeatureCache.get(minerPath);
     }
@@ -1087,6 +1093,7 @@ function resolveMinerSelection(preferred) {
 }
 
 const rustMinerPath = findRustMiner();
+const allowPackagedPythonFallback = String(process.env.ZION_ALLOW_PACKAGED_PYTHON_FALLBACK || '').trim() === '1';
 if (rustMinerPath) {
   MINER_PATH = rustMinerPath;
   MINER_IS_RUST = true;
@@ -3100,7 +3107,7 @@ function startMining(config) {
         // ignore
       }
     }
-  }, 15000);
+  }, 30000);
 
   // Auto-tuning: Check if tuning is needed and apply recommendations
   if (autoTuner.shouldTune()) {
@@ -3850,6 +3857,11 @@ function startMining(config) {
   }
 
   const minerStartTs = Date.now();
+  const fallbackPythonPath = findPythonMiner();
+  const rustFallbackEligible =
+    MINER_IS_RUST &&
+    !!fallbackPythonPath &&
+    preferredBackend === 'auto';
 
   try {
     cleanupStrayMinerProcesses(MINER_IS_RUST);
