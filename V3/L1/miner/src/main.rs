@@ -18,6 +18,9 @@ mod dcr_stratum;
 mod dcr_worker;
 mod gpu_backend;
 mod parallel;
+
+/// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
+static VERBOSE: AtomicBool = AtomicBool::new(false);
 mod reconnect;
 #[cfg(feature = "gpu")]
 mod dcr_gpu;
@@ -597,6 +600,9 @@ fn main() -> Result<()> {
     }
 
     let config = MinerConfig::from_env_and_args()?;
+    let verbose = std::env::args().any(|a| a == "--verbose" || a == "-v")
+        || parse_bool_env("ZION_MINER_VERBOSE", false);
+    VERBOSE.store(verbose, Ordering::Relaxed);
     let metrics = Arc::new(Mutex::new(MinerMetricsSnapshot::from_config(&config)));
     if let Some(metrics_bind) = config.metrics_bind.as_deref() {
         println!("metrics_bind={metrics_bind}");
@@ -786,16 +792,20 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
 
     let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name))?;
     let welcome_line = encode_message(&pool.welcome_message())?;
-    println!("wire_hello={}", hello_line.trim());
-    println!("wire_welcome={}", welcome_line.trim());
+    if VERBOSE.load(Ordering::Relaxed) {
+        println!("wire_hello={}", hello_line.trim());
+        println!("wire_welcome={}", welcome_line.trim());
+    }
 
     for iteration in 0..config.loop_count {
         for stale_job_id in pool.expire_stale_jobs() {
             let stale_line = encode_message(&pool.stale_message(stale_job_id))?;
             let cancel_line =
                 encode_message(&pool.cancel_message(stale_job_id, "stale-ttl-expired"))?;
-            println!("wire_stale={}", stale_line.trim());
-            println!("wire_cancel={}", cancel_line.trim());
+            if VERBOSE.load(Ordering::Relaxed) {
+                println!("wire_stale={}", stale_line.trim());
+                println!("wire_cancel={}", cancel_line.trim());
+            }
         }
 
         let header = session_header(config, iteration);
@@ -815,10 +825,12 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
             rejected_iterations += 1;
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
-            println!("iteration={}", iteration + 1);
-            println!("job_id={}", job.job_id);
-            println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
-            println!("share_status=\"NoSolutionInWindow\"");
+            if VERBOSE.load(Ordering::Relaxed) {
+                println!("iteration={}", iteration + 1);
+                println!("job_id={}", job.job_id);
+                println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
+                println!("share_status=\"NoSolutionInWindow\"");
+            }
 
             if config.nonce_autotune {
                 let previous = tuned_nonce_count;
@@ -894,16 +906,20 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
         last_result_line = Some(result_line.clone());
 
         log_solution(iteration + 1, job, solution.candidate.nonce, &solution.hash, &decision.status);
-        println!("wire_job={}", job_line.trim());
-        println!("wire_submit={}", submit_line.trim());
-        println!("wire_result={}", result_line.trim());
+        if VERBOSE.load(Ordering::Relaxed) {
+            println!("wire_job={}", job_line.trim());
+            println!("wire_submit={}", submit_line.trim());
+            println!("wire_result={}", result_line.trim());
+        }
 
         if matches!(decision.status, ShareStatus::StaleJob) {
             let stale_line = encode_message(&pool.stale_message(job.job_id))?;
             let cancel_line =
                 encode_message(&pool.cancel_message(job.job_id, "submit-arrived-after-ttl"))?;
-            println!("wire_stale={}", stale_line.trim());
-            println!("wire_cancel={}", cancel_line.trim());
+            if VERBOSE.load(Ordering::Relaxed) {
+                println!("wire_stale={}", stale_line.trim());
+                println!("wire_cancel={}", cancel_line.trim());
+            }
         }
 
         if config.nonce_autotune {
@@ -1050,10 +1066,10 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
         algorithm: zion_core::consensus_profile().to_string(),
     };
     let hello_line = write_wire_message(&mut writer, &hello_message)?;
-    println!("wire_hello={hello_line}");
+    if VERBOSE.load(Ordering::Relaxed) { println!("wire_hello={hello_line}"); }
 
     let (welcome_line_raw, welcome_message) = read_wire_message(&mut reader)?;
-    println!("wire_welcome={welcome_line_raw}");
+    if VERBOSE.load(Ordering::Relaxed) { println!("wire_welcome={welcome_line_raw}"); }
     let remote_job_ttl_ms = match welcome_message {
         PoolMessage::Welcome { job_ttl_ms, .. } => job_ttl_ms,
         other => return Err(anyhow!("expected welcome from pool, got {other:?}")),
@@ -1083,7 +1099,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
         last_job_id = job.job_id;
         telemetry.pool_height = job.height;
         telemetry.current_epoch = job.height / 100;
-        println!("mining job_id={} height={} nonces={}..{}", job.job_id, job.height, job.start_nonce, job.start_nonce + job.nonce_count);
+        if VERBOSE.load(Ordering::Relaxed) { println!("mining job_id={} height={} nonces={}..{}", job.job_id, job.height, job.start_nonce, job.start_nonce + job.nonce_count); }
         println!("[{}] new job  height {}  diff {}  algo cosmic_harmony_ekam_deeksha",
             log_timestamp(), job.height, job.height % 1000,
         );
@@ -1114,11 +1130,13 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
-            println!("iteration={}", iteration + 1);
-            println!("job_id={}", job.job_id);
-            println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
-            println!("share_status=\"NoSolutionInWindow\"");
-            println!("wire_job={job_line}");
+            if VERBOSE.load(Ordering::Relaxed) {
+                println!("iteration={}", iteration + 1);
+                println!("job_id={}", job.job_id);
+                println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
+                println!("share_status=\"NoSolutionInWindow\"");
+                println!("wire_job={job_line}");
+            }
             let no_solution_message = PoolMessage::NoSolution {
                 job_id: job.job_id,
                 miner_id: config.miner_id.clone(),
@@ -1129,14 +1147,16 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
             let no_solution_line = write_wire_message(&mut writer, &no_solution_message)?;
             let (result_line_raw, result_message) = read_next_result(&mut reader)?;
             last_result_line = Some(result_line_raw.clone());
-            println!("wire_no_solution={no_solution_line}");
-            println!("wire_result={result_line_raw}");
+            if VERBOSE.load(Ordering::Relaxed) {
+                println!("wire_no_solution={no_solution_line}");
+                println!("wire_result={result_line_raw}");
+            }
             match result_message {
                 PoolMessage::Result { accepted, status } => {
                     if accepted {
                         accepted_iterations += 1;
                     }
-                    println!("pool_status={status}");
+                    if VERBOSE.load(Ordering::Relaxed) { println!("pool_status={status}"); }
                 }
                 other => return Err(anyhow!("expected result from pool, got {other:?}")),
             }
@@ -1222,9 +1242,11 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
         };
 
         log_solution(iteration + 1, job, solution.candidate.nonce, &solution.hash, &status);
-        println!("wire_job={job_line}");
-        println!("wire_submit={submit_line}");
-        println!("wire_result={result_line_raw}");
+        if VERBOSE.load(Ordering::Relaxed) {
+            println!("wire_job={job_line}");
+            println!("wire_submit={submit_line}");
+            println!("wire_result={result_line_raw}");
+        }
         sync_miner_metrics(
             metrics,
             &telemetry,
