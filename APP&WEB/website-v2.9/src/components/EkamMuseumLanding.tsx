@@ -27,8 +27,8 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import {
-  EKAM_GOLDEN_EGG_IMAGE,
   EKAM_BANNER_IMAGE,
+  EKAM_FOUNDERS_BANNER_IMAGE,
   EKAM_SOURCE_URL,
   EKAM_PREETHAJI_KRISHNAJI_IMAGE,
   EKAM_NORDIC_IMAGE,
@@ -361,6 +361,22 @@ export default function EkamMuseumLanding() {
               </div>
             </div>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{tr('ekamPage', 'founders_subtitle', lang)}</p>
+
+            <div className="mt-6 relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+              <img
+                src={EKAM_FOUNDERS_BANNER_IMAGE}
+                alt="Sri Amma & Sri Bhagavan"
+                className="aspect-[16/5] w-full object-cover"
+                loading="lazy"
+                decoding="async"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-100/80">Founders</p>
+                <p className="mt-1 text-xs text-white/85">Sri Amma & Sri Bhagavan</p>
+              </div>
+            </div>
 
             {/* ── Family portrait + quote ── */}
             <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
