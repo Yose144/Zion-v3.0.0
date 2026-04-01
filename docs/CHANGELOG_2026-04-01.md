@@ -100,3 +100,36 @@ Odstraněny duplikátní [13]/[14] záznamy (stará sada s jinými adresami, nep
 - Vault adresa aktualizována v: `fee.rs`, `crypto.rs`, `bridge-mainnet.toml`, `bridge-testnet.toml`, `docker-compose.v3-mainnet.yml`
 - 448 core unit testů projde (per-modul)
 - Git commit: `4f5d43d` "v2.9.8: resolve all bridge blockers"
+
+---
+
+## 6. Server Disk Cleanup (2026-04-01)
+
+Prague server (91.98.122.165) byl na 95% (4.2 GB volno / 75 GB disk).
+
+**Pročištěno:**
+
+| Položka | Uvolněno |
+|---------|----------|
+| Docker build cache | ~8 GB |
+| Journal logy (vacuum 100M) | 650 MB |
+| APT cache | ~300 MB |
+| Canary tarball | 229 MB |
+| /tmp soubory | ~0.5 MB |
+
+**Výsledek:** 95% → **83%** (13 GB volno). Ponechán AI model (`zion-llama-merged-q5_k_m.gguf`, 5.4 GB) pro budoucí použití.
+
+---
+
+## 7. Website UI Update (2026-04-01)
+
+46 souborů v `APP&WEB/website-v2.9/`: Explorer komponenty, Dashboard, Mining, Network page, BridgeBurnWidget, a další. 2087 insertions, 1785 deletions. Build projde (`next build` OK).
+
+---
+
+## 8. Bridge Test Transaction Script
+
+Nový `scripts/bridge-test-tx.py` — end-to-end testovací script pro bridge L1→wZION:
+- Ed25519 key derivation, UTXO selection, Blake3 tx signing
+- Posílá ZION na vault adresu s memo `BRIDGE:base:0x<recipient>`
+- JSON-RPC komunikace s V3 node

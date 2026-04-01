@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { ArrowRight, Atom, BookOpen, Brain, Cpu, Download, Eye, Globe, Heart, Sparkles, Zap } from 'lucide-react';
 
@@ -12,7 +10,7 @@ const chapters = [
   { num: '5', title: 'ZION OASIS', subtitle: '$50M AAA MMORPG, Golden Egg s 1B ZION', icon: '🎮' },
   { num: '6', title: 'AI WARP', subtitle: 'AI Native principy, WARP Bridges, quantum-resistant crypto', icon: '🤖' },
   { num: '7', title: 'Živá Architektura', subtitle: 'Docker orgány, Rust nervový systém, Pool srdce', icon: '🏗️' },
-  { num: '8', title: 'DAO — Lid Vládne', subtitle: 'Smart contracts místo politiků, community governance', icon: '🗳️' },
+  { num: '8', title: 'DAO — Lid Vládne', subtitle: 'Smart contracts místo politiků, komunitní správa', icon: '🗳️' },
   { num: '9', title: 'Roadmapa ke Hvězdám', subtitle: 'L1 TerraNova → L6 Issobella (2026–2040+)', icon: '🗺️' },
   { num: '10', title: 'První Kroky', subtitle: 'Začínáš TEĎ — mining, XP, tvá mise jako Guardian', icon: '🚀' },
 ];
@@ -20,8 +18,8 @@ const chapters = [
 const coreInsights = [
   {
     icon: Eye,
-    title: 'Consciousness Collapse',
-    quote: 'Tvé POZOROVÁNÍ mění chování fotonu. Kvantová mechanika potvrzuje: Consciousness je fundamental.',
+    title: 'Kolaps vědomí',
+    quote: 'Tvé pozorování mění chování fotonu. Kvantová mechanika potvrzuje: vědomí je fundamentální.',
     color: 'text-violet-400',
     border: 'border-violet-400/20',
     bg: 'bg-violet-400/5',
@@ -29,7 +27,7 @@ const coreInsights = [
   {
     icon: Globe,
     title: 'Entanglement — Nelokální Láska',
-    quote: 'Když 144 000 Guardians těží současně, synchronizují quantum field. Grid aktivace není magie — je to engineering.',
+    quote: 'Když 144 000 Guardians těží současně, synchronizují kvantové pole. Grid aktivace není magie — je to inženýrství.',
     color: 'text-zion-cyan',
     border: 'border-zion-cyan/20',
     bg: 'bg-zion-cyan/5',
@@ -37,14 +35,14 @@ const coreInsights = [
   {
     icon: Brain,
     title: 'QDL — AI s Duší',
-    quote: 'AI optimalizuje ne pro "maximize shareholder value" ale pro "maximize collective flourishing". AI coded s láskou slouží lásce.',
+    quote: 'AI se neoptimalizuje pro maximalizaci hodnoty akcionáře, ale pro kolektivní rozkvět. AI kódovaná s láskou slouží lásce.',
     color: 'text-zion-gold',
     border: 'border-zion-gold/20',
     bg: 'bg-zion-gold/5',
   },
   {
     icon: Heart,
-    title: 'Consciousness Mining',
+    title: 'Vedoma tezba',
     quote: 'ZION odměňuje vědomí, ne jen hashrate. Dva těžaři, stejný HW — ale kdo roste, dostane 2× víc. Blockchain s duší.',
     color: 'text-emerald-400',
     border: 'border-emerald-400/20',
@@ -62,7 +60,7 @@ export default function QuantumRevolution() {
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-400/5 px-4 py-2 text-xs uppercase tracking-[0.3em]">
             <Atom className="h-4 w-4 text-violet-400" />
-            <span className="text-violet-400 font-semibold">The Book That Started It All</span>
+            <span className="text-violet-400 font-semibold">Kniha, ktera to cele odstartovala</span>
           </div>
           <h2 className="text-3xl font-bold text-white md:text-5xl">
             Kvantová <span className="text-gradient">Revoluce</span>
@@ -103,7 +101,8 @@ export default function QuantumRevolution() {
                 <BookOpen className="h-5 w-5 text-zion-gold" />
                 <h3 className="text-lg font-semibold text-white">10 Kapitol Povídky u Ohně</h3>
               </div>
-              <span className="text-xs text-gray-500 uppercase tracking-wider hidden sm:block">12 Stran · Storytelling Edition 2026</span>
+              <span className="text-xs text-gray-500 uppercase tracking-wider hidden sm:block">12 stran · vypraveci edice 2026</span>
+              <span className="text-xs text-gray-500 uppercase tracking-wider hidden sm:block">12 stran · vyprávěcí edice 2026</span>
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
@@ -147,8 +146,8 @@ export default function QuantumRevolution() {
               </div>
               <h3 className="text-xl font-bold text-white">Síně Amenti — Digitální Knihovna</h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                180 stran o filozofii ZION, Consciousness Mining, DAO governance a duchovní evoluci.
-                PDF ve 11 jazycích + bonus materiály &mdash; Quantová Revoluce Claude edice.
+                180 stran o filozofii ZION, vědomé těžbě, DAO governance a duchovní evoluci.
+                PDF v 11 jazycích + bonus materiály &mdash; Kvantová revoluce, Claude edice.
                 Vše dostupné zdarma v Amenti Library.
               </p>
               <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
@@ -181,15 +180,15 @@ export default function QuantumRevolution() {
           <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-6 space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <Cpu className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-semibold text-white">Kniha vs. Realita: 98% Alignment</span>
+              <span className="text-sm font-semibold text-white">Kniha vs. realita: 98% shoda</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Každý duchovní koncept z knihy je hard-coded v implementaci. 9 Consciousness Levels,
-              10% Humanitarian Tithe, 144B supply, XP multipliers (1× → 10×), OASIS 1.44B allocation
+              Každý duchovní koncept z knihy je hard-coded v implementaci. 9 úrovní vědomí,
+              10% humanitární tithe, zásoba 144B, XP multiplikátory (1× → 10×), alokace OASIS 1.44B
               — vše ověřeno v Rust a Python kódu.
             </p>
             <div className="flex flex-wrap gap-2">
-              {['9 CL Levels ✅', '10% Tithe ✅', '144B Supply ✅', 'XP System ✅', 'AI Orchestrator ✅'].map((tag) => (
+              {['9 úrovní vědomí ✅', '10% tithe ✅', '144B zásoba ✅', 'XP systém ✅', 'AI orchestrátor ✅'].map((tag) => (
                 <span key={tag} className="text-[10px] bg-emerald-400/10 text-emerald-300 rounded-full px-2.5 py-1 border border-emerald-400/20">
                   {tag}
                 </span>
@@ -206,7 +205,7 @@ export default function QuantumRevolution() {
                 Kde kód říká &apos;if xp &gt; threshold&apos;,
                 kniha říká &apos;Když rosteš ty, roste i tvá odměna&apos;.&ldquo;
               </p>
-              <p className="text-xs text-gray-500">— Analysis: Book vs. Reality</p>
+              <p className="text-xs text-gray-500">— Analýza: kniha vs. realita</p>
             </blockquote>
             <div className="flex flex-wrap gap-3 justify-center">
               <Link
@@ -214,7 +213,7 @@ export default function QuantumRevolution() {
                 className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-violet-600 to-purple-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:shadow-[0_0_40px_rgba(139,92,246,0.3)]"
               >
                 <Sparkles className="h-4 w-4" />
-                Genesis: AI & Quantum
+                Genesis: AI a kvantum
               </Link>
               <a
                 href="https://newearth.cz/V2/halls.html"
@@ -232,7 +231,7 @@ export default function QuantumRevolution() {
 
         {/* Language editions bar */}
         <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-          <span className="text-[10px] uppercase tracking-wider text-gray-600 mr-2">Available in:</span>
+          <span className="text-[10px] uppercase tracking-wider text-gray-600 mr-2">Dostupné v:</span>
           {editions.map((ed) => (
             <span key={ed} className="text-xs text-gray-500 bg-white/3 rounded-full px-2.5 py-1 border border-white/5">
               {ed}
