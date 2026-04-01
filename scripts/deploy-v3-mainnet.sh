@@ -243,7 +243,7 @@ deploy_server() {
         docker compose -f $COMPOSE_FILE build $services 2>&1 | tail -15
     "
 
-    if [ "$alias" != "primary" ]; then
+    if [ "$alias" != "primary" ] && [ "$alias" != "us" ]; then
         log "[$name] Stopping non-canonical mining services on follower node..."
         ssh_cmd "$ip" "
             docker rm -f zion-miner zion-pool zion-redis 2>/dev/null || true
