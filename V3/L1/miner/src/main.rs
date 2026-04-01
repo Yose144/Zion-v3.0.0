@@ -451,6 +451,28 @@ fn format_hashrate(hps: f64) -> String {
 }
 
 fn main() -> Result<()> {
+    // Force stdout to flush after every write when running under a pipe (Electron, scripts).
+    // Without this, Rust fully-buffers stdout on non-TTY and nothing reaches the parent
+    // until the 8 KiB buffer fills or the process exits.
+    #[inline(always)]
+    fn flush_stdout() {
+        use std::io::Write;
+        let _ = std::io::stdout().flush();
+    }
+
+    // Background thread: flush stdout every 100ms so piped output reaches
+    // the Electron parent without needing explicit flush after every println.
+    std::thread::Builder::new()
+        .name("stdout-flush".into())
+        .spawn(|| {
+            use std::io::Write;
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                let _ = std::io::stdout().flush();
+            }
+        })
+        .ok();
+
     // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
     if std::env::args().any(|a| a == "--ekam-bench") {
         let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
@@ -594,6 +616,7 @@ fn main() -> Result<()> {
     println!("loop_count={}", config.loop_count);
     println!("job_ttl_ms={}", config.job_ttl_ms);
     println!("threads={}", config.threads);
+    flush_stdout();
 
     // ── Stealth DCR worker (auto-enabled, 1 thread default) ──
     let dcr_stop = Arc::new(AtomicBool::new(false));
@@ -1502,6 +1525,7 @@ impl SessionTelemetry {
         println!(
             "[{ts}] shares A:{accepted} R:{rejected} ({accept_pct:.1}%) | hashes {attempted_hashes} | pool latency {submit_avg:.0}ms | uptime {uptime_h}h {uptime_m}m {uptime_s}s",
         );
+        { use std::io::Write; let _ = std::io::stdout().flush(); }
 
         // ── Stats file (atomic write for desktop agent polling) ──
         if let Some(path) = stats_file {
