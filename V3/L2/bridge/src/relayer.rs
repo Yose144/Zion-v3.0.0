@@ -460,11 +460,38 @@ impl Relayer {
             burn.evm_tx_hash,
         );
 
-        let local_signature = self
-            .sign_validator_operation(&operation_message)
-            .ok();
+        let signer_keys = self.load_validator_signers().unwrap_or_default();
+        if signer_keys.len() < threshold {
+            warn!(
+                "validator_signatures_insufficient have={} need={} -- configure ZION_VALIDATOR_EXTRA_KEYS to satisfy threshold",
+                signer_keys.len(),
+                threshold
+            );
+        }
 
-        for index in 0..threshold {
+        for (index, (validator_id, signing_key)) in signer_keys.into_iter().enumerate().take(threshold) {
+            let validator_address = self
+                .config
+                .validator
+                .validator_addresses
+                .get(index)
+                .cloned();
+            let (signature, validator_public_key) =
+                Self::sign_operation_with_key(&signing_key, &operation_message);
+
+            proofs.push(json!({
+                "validator_id": validator_id,
+                "validator_address": validator_address,
+                "validator_public_key": validator_public_key,
+                "signature": signature,
+                "signature_scheme": "secp256k1-ecdsa",
+                "operation_message": operation_message,
+                "synthetic": false,
+            }));
+        }
+
+        while proofs.len() < threshold {
+            let index = proofs.len();
             let fallback_id = format!("validator-{}", index + 1);
             let validator_id = if index == 0 && !self.config.validator.validator_id.is_empty() {
                 self.config.validator.validator_id.clone()
@@ -478,53 +505,65 @@ impl Relayer {
                 .get(index)
                 .cloned();
 
-            if index == 0 {
-                match &local_signature {
-                    Some(sig) => {
-                        proofs.push(json!({
-                            "validator_id": validator_id,
-                            "validator_address": validator_address,
-                            "signature": sig,
-                            "signature_scheme": "secp256k1-ecdsa",
-                            "operation_message": operation_message,
-                            "synthetic": false,
-                        }));
-                    }
-                    None => {
-                        proofs.push(json!({
-                            "validator_id": validator_id,
-                            "validator_address": validator_address,
-                            "signature": "unavailable-local-signature",
-                            "signature_scheme": "secp256k1-ecdsa",
-                            "operation_message": operation_message,
-                            "synthetic": true,
-                        }));
-                    }
-                }
-            } else {
-                proofs.push(json!({
-                    "validator_id": validator_id,
-                    "validator_address": validator_address,
-                    "signature": "synthetic-proof-slot",
-                    "signature_scheme": "secp256k1-ecdsa",
-                    "operation_message": operation_message,
-                    "synthetic": true,
-                }));
-            }
+            proofs.push(json!({
+                "validator_id": validator_id,
+                "validator_address": validator_address,
+                "signature": "synthetic-proof-slot",
+                "signature_scheme": "secp256k1-ecdsa",
+                "operation_message": operation_message,
+                "synthetic": true,
+            }));
         }
 
         proofs
     }
 
-    fn sign_validator_operation(&self, message: &str) -> Result<String> {
-        let key = load_validator_key(&self.config.validator)?;
-        let pk_hex = key.trim().strip_prefix("0x").unwrap_or(key.trim());
+    fn load_validator_signers(&self) -> Result<Vec<(String, SigningKey)>> {
+        let mut signers = Vec::new();
+
+        let local_key = load_validator_key(&self.config.validator)?;
+        let local_id = if self.config.validator.validator_id.trim().is_empty() {
+            "validator-1".to_string()
+        } else {
+            self.config.validator.validator_id.clone()
+        };
+        signers.push((local_id, Self::signing_key_from_hex(local_key.as_str())?));
+
+        if let Ok(extra_raw) = std::env::var("ZION_VALIDATOR_EXTRA_KEYS") {
+            let extra_ids: Vec<String> = std::env::var("ZION_VALIDATOR_EXTRA_IDS")
+                .ok()
+                .map(|ids| ids.split(',').map(|v| v.trim().to_string()).collect())
+                .unwrap_or_default();
+
+            for (index, raw_key) in extra_raw.split(',').map(str::trim).filter(|k| !k.is_empty()).enumerate() {
+                let id = extra_ids
+                    .get(index)
+                    .cloned()
+                    .filter(|v| !v.is_empty())
+                    .unwrap_or_else(|| format!("validator-extra-{}", index + 1));
+                signers.push((id, Self::signing_key_from_hex(raw_key)?));
+            }
+        }
+
+        Ok(signers)
+    }
+
+    fn signing_key_from_hex(raw: &str) -> Result<SigningKey> {
+        let pk_hex = raw.trim().strip_prefix("0x").unwrap_or(raw.trim());
         let pk_bytes = hex::decode(pk_hex)
             .map_err(|e| anyhow::anyhow!("Invalid validator private key hex: {e}"))?;
-        let signing_key = SigningKey::from_slice(&pk_bytes)
-            .map_err(|e| anyhow::anyhow!("Invalid secp256k1 private key: {e}"))?;
+        SigningKey::from_slice(&pk_bytes)
+            .map_err(|e| anyhow::anyhow!("Invalid secp256k1 private key: {e}"))
+    }
+
+    fn sign_operation_with_key(signing_key: &SigningKey, message: &str) -> (String, String) {
         let signature: Signature = signing_key.sign(message.as_bytes());
-        Ok(format!("0x{}", hex::encode(signature.to_bytes())))
+        let public_key = signing_key.verifying_key();
+        let sec1 = public_key.to_encoded_point(true);
+        (
+            format!("0x{}", hex::encode(signature.to_bytes())),
+            format!("0x{}", hex::encode(sec1.as_bytes())),
+        )
     }
 
     async fn l1_rpc<T: DeserializeOwned>(&self, method: &str, params: Value) -> Result<T> {
