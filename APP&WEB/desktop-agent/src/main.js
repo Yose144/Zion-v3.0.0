@@ -1069,6 +1069,7 @@ function isV3MinerBinary(minerPath) {
 function resolveMinerSelection(preferred) {
   const pref = String(preferred || 'auto').toLowerCase();
   const rustPath = findRustMiner();
+  const pyPath = findPythonMiner();
   const select = (backend, p, isRust, isPython) => ({ backend, path: p, isRust, isPython });
 
   // V3 desktop defaults to Rust-only mining backend.
@@ -1077,9 +1078,10 @@ function resolveMinerSelection(preferred) {
   if ((pref === 'python' || pref === 'legacy') && !allowLegacyFallback) return null;
 
   if (rustPath) return select('rust', rustPath, true, false);
-  if (allowLegacyFallback && pref === 'python') {
-    const pyPath = findPythonMiner();
-    if (pyPath) return select('python', pyPath, false, true);
+  // Emergency fallback: only when Rust miner is unavailable.
+  // Keeps one-click behavior alive on machines where Rust binary is missing/quarantined.
+  if (pyPath && (allowLegacyFallback || pref === 'auto' || pref === 'rust' || pref === 'python')) {
+    return select('python', pyPath, false, true);
   }
   return null;
 }
@@ -1091,7 +1093,15 @@ if (rustMinerPath) {
   MINER_IS_PYTHON = false;
   dbg('[MINER] Using Rust native miner:', rustMinerPath);
 } else {
-  throw new Error('V3 Rust miner not found. Build V3/L1/miner release or package zion-miner.exe into resources.');
+  const pyFallback = findPythonMiner();
+  if (pyFallback) {
+    MINER_PATH = pyFallback;
+    MINER_IS_RUST = false;
+    MINER_IS_PYTHON = true;
+    dbg('[MINER] WARNING: Rust miner not found, using emergency Python fallback:', pyFallback);
+  } else {
+    throw new Error('V3 Rust miner not found and no Python fallback available. Build V3/L1/miner release or package zion-miner.exe into resources.');
+  }
 }
 
 const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
@@ -3753,6 +3763,32 @@ function startMining(config) {
   const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
   const selection = resolveMinerSelection(preferredBackend);
   if (!selection) {
+    const emergencyPythonPath = findPythonMiner();
+    if (emergencyPythonPath && (preferredBackend === 'rust' || preferredBackend === 'auto' || preferredBackend === 'python')) {
+      const warnMsg =
+        `[WARN] Rust miner not found (or blocked by AV). Falling back to Python backend as emergency mode.\n`;
+      MINER_IS_RUST = false;
+      MINER_IS_PYTHON = true;
+      MINER_PATH = emergencyPythonPath;
+      minerBackendPreferred = preferredBackend;
+      minerBackendResolved = 'python';
+      minerBackendPath = emergencyPythonPath;
+      minerBackendLastError = warnMsg.trim();
+      try {
+        sendToRenderer('miner-backend', {
+          preferred: minerBackendPreferred,
+          resolved: 'python',
+          path: emergencyPythonPath,
+          lastError: minerBackendLastError
+        });
+        sendToRenderer('miner-output', { stream: 'stderr', text: warnMsg });
+      } catch {
+        // ignore
+      }
+      startMiningInProgress = false;
+      return startMining({ ...config, minerBackend: 'python' });
+    }
+
     const rustHint = preferredBackend === 'rust'
       ? `Rust miner not found or blocked. On Windows, Windows Defender may quarantine zion-universal-miner.exe. Check Defender protection history and add an exclusion for: ${IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources')}`
       : 'No V3 Rust miner executable found. Build V3 miner or package zion-miner.exe.';
