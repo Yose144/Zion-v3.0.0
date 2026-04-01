@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Activity, Globe, TrendingUp, Users, Zap } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 
 interface DashboardData {
   active_miners: number;
@@ -23,51 +24,40 @@ export default function ExplorerDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const stats = await apiClient<any>("/blockchain/stats");
 
-    const fetchDashboardData = async () => {
-      try {
-        const stats = await apiClient<any>("/blockchain/stats");
-        if (!isMounted) return;
+      if (stats) {
+        const connections = stats.total_connections || stats.connections || 0;
+        const hashrate = stats.network_hashrate || 0;
+        const difficulty = stats.difficulty || 0;
+        const miners = stats.active_miners || stats.total_miners || 0;
 
-        if (stats) {
-          const connections = stats.total_connections || stats.connections || 0;
-          const hashrate = stats.network_hashrate || 0;
-          const difficulty = stats.difficulty || 0;
-          const miners = stats.active_miners || stats.total_miners || 0;
-
-          // Derive status from real data
-          let status = "offline";
-          if (difficulty > 0 || hashrate > 0 || connections > 0) {
-            status = miners > 0 ? "healthy" : (connections > 0 ? "healthy" : "warning");
-          }
-
-          setData({
-            active_miners: miners,
-            network_status: status,
-            block_time_avg: stats.avg_block_time || 60,
-            pool_hashrate: stats.pool_hashrate_formatted || formatHashrate(stats.pool_hashrate || 0),
-            connections,
-            tx_pool_size: stats.tx_pool_size || 0,
-            difficulty,
-            block_height: stats.block_height || 0,
-          });
+        let status = "offline";
+        if (difficulty > 0 || hashrate > 0 || connections > 0) {
+          status = miners > 0 ? "healthy" : (connections > 0 ? "healthy" : "warning");
         }
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
 
-    fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 15000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+        setData({
+          active_miners: miners,
+          network_status: status,
+          block_time_avg: stats.avg_block_time || 60,
+          pool_hashrate: stats.pool_hashrate_formatted || formatHashrate(stats.pool_hashrate || 0),
+          connections,
+          tx_pool_size: stats.tx_pool_size || 0,
+          difficulty,
+          block_height: stats.block_height || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  usePolling(fetchDashboardData, 15_000);
 
   const getStatusColor = (status: string) => {
     switch (status) {

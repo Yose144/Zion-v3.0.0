@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION } from '@/lib/site';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface PrometheusResult {
@@ -345,11 +346,7 @@ export default function MonitoringClient() {
     }
   }, []);
 
-  useEffect(() => {
-    refresh();
-    const iv = setInterval(refresh, 15_000);
-    return () => clearInterval(iv);
-  }, [refresh]);
+  usePolling(refresh, 15_000);
 
   // Derived calculations
   const memUsedPct = data?.memTotal && data?.memAvailable

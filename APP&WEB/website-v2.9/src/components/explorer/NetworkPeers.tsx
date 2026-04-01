@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Globe, Link2, Power, SatelliteDish, ArrowUpRight, ArrowDownLeft, Wifi, WifiOff, Clock, TrendingUp } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 
 interface PeerInfo {
   address: string;
@@ -48,32 +49,21 @@ export default function NetworkPeers() {
   const [data, setData] = useState<PeersPayload | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadPeers = async () => {
-      try {
-        const res = await fetch("/api/blockchain/peers", { cache: "no-store" });
-        if (!res.ok) throw new Error("Failed");
-        const payload: PeersPayload = await res.json();
-        if (!isMounted) return;
-        setData(payload);
-      } catch (error) {
-        console.error("Failed to fetch peer info", error);
-        if (!isMounted) return;
-        setData(null);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadPeers();
-    const interval = setInterval(loadPeers, 10000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+  const loadPeers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/blockchain/peers", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed");
+      const payload: PeersPayload = await res.json();
+      setData(payload);
+    } catch (error) {
+      console.error("Failed to fetch peer info", error);
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  usePolling(loadPeers, 15_000);
 
   const connectedCount = data?.connected_peers ?? 0;
   const knownCount = data?.known_peers ?? data?.peer_count ?? 0;
@@ -106,7 +96,7 @@ export default function NetworkPeers() {
         </div>
         <div className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.35em] text-gray-300 flex items-center gap-2">
           <Power className="w-3 h-3 text-emerald-400 animate-pulse" />
-          {cs ? "obnova 10 s" : "refresh 10s"}
+          {cs ? "obnova 15 s" : "refresh 15s"}
         </div>
       </div>
 
