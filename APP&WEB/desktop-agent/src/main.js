@@ -7061,7 +7061,7 @@ function parseMinerOutput(output) {
     minerStats.hashrate_60s = parseFloat(speedMatch[2]) * mult;
     minerStats.hashrate_15m = parseFloat(speedMatch[3]) * mult;
     minerStats.hashrate_max = parseFloat(speedMatch[5]) * mult;
-    minerStats.hashrate = minerStats.hashrate_10s; // primary = 10s window
+    minerStats.hashrate = minerStats.hashrate_10s || minerStats.hashrate_60s || minerStats.hashrate_15m || minerStats.hashrate_max; // fallback chain: first non-zero
   }
 
   // ─── V3 machine-parseable: "session_status iter=1/N ... hps_10s=91600.00 hps_overall=..." ───
@@ -7079,8 +7079,8 @@ function parseMinerOutput(output) {
     const accepted = gi('accepted');
     const rejected = gi('rejected');
     const attempted = gi('attempted_hashes');
-    if (hps10 > 0 || hpsOverall > 0) {
-      minerStats.hashrate = hps10 > 0 ? hps10 : hpsOverall;
+    if (hps10 > 0 || hps60 > 0 || hps15 > 0 || hpsOverall > 0) {
+      minerStats.hashrate = hps10 || hps60 || hps15 || hpsOverall;
       minerStats.hashrate_10s = hps10;
       minerStats.hashrate_60s = hps60;
       minerStats.hashrate_15m = hps15;
@@ -7431,8 +7431,8 @@ function parseMinerOutput(output) {
     const hps10s = parseFloat(v3StatusMatch[10]);
     const hps60s = parseFloat(v3StatusMatch[11]);
     const hps15m = parseFloat(v3StatusMatch[12]);
-    // V3 reports 0.00 for 10s/60s/15m when windows are not yet full
-    minerStats.hashrate = hpsOverall;
+    // V3 reports 0.00 for 10s/60s/15m when windows are not yet full — use best available
+    minerStats.hashrate = hps10s || hps60s || hps15m || hpsOverall;
     minerStats.hashrate_10s = hps10s > 0 ? hps10s : hpsOverall;
     minerStats.hashrate_60s = hps60s > 0 ? hps60s : hpsOverall;
     minerStats.hashrate_15m = hps15m > 0 ? hps15m : hpsOverall;
@@ -7542,11 +7542,15 @@ function parseMinerOutput(output) {
     if (unit.includes('kh')) mul = 1e3;
     else if (unit.includes('mh')) mul = 1e6;
     else if (unit.includes('gh')) mul = 1e9;
-    minerStats.hashrate = parseFloat(v3XSpeedMatch[1]) * mul;
-    minerStats.hashrate_10s = parseFloat(v3XSpeedMatch[1]) * mul;
-    minerStats.hashrate_60s = parseFloat(v3XSpeedMatch[2]) * mul;
-    minerStats.hashrate_15m = parseFloat(v3XSpeedMatch[3]) * mul;
-    minerStats.hashrate_max = parseFloat(v3XSpeedMatch[5]) * mul;
+    const hr10v3x = parseFloat(v3XSpeedMatch[1]) * mul;
+    const hr60v3x = parseFloat(v3XSpeedMatch[2]) * mul;
+    const hr15v3x = parseFloat(v3XSpeedMatch[3]) * mul;
+    const hrMaxV3x = parseFloat(v3XSpeedMatch[5]) * mul;
+    minerStats.hashrate_10s = hr10v3x;
+    minerStats.hashrate_60s = hr60v3x;
+    minerStats.hashrate_15m = hr15v3x;
+    minerStats.hashrate_max = hrMaxV3x;
+    minerStats.hashrate = hr10v3x || hr60v3x || hr15v3x || hrMaxV3x;
   }
 
   // ─── V3 version banner: "version=3.0.0-dev" ───
