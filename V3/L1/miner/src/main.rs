@@ -55,6 +55,7 @@ struct MinerMetricsSnapshot {
     pool_height: u64,
     best_batch_ms: u64,
     remote_ttl_ms: u64,
+    hashrate_max: f64,
 }
 
 impl MinerMetricsSnapshot {
@@ -92,6 +93,7 @@ impl MinerMetricsSnapshot {
             pool_height: 0,
             best_batch_ms: 0,
             remote_ttl_ms: 0,
+            hashrate_max: 0.0,
         }
     }
 
@@ -143,6 +145,11 @@ impl MinerMetricsSnapshot {
         self.pool_height = telemetry.pool_height;
         self.best_batch_ms = telemetry.best_batch_ms;
         self.remote_ttl_ms = remote_job_ttl_ms.unwrap_or(0);
+        // Track peak hashrate (prefer 10s window, fallback to overall)
+        let current_peak = if self.hashrate_10s_hps > 0.0 { self.hashrate_10s_hps } else { self.hashrate_hps };
+        if current_peak > self.hashrate_max {
+            self.hashrate_max = current_peak;
+        }
     }
 
     fn uptime_seconds(&self) -> u64 {
@@ -233,6 +240,7 @@ fn build_miner_prometheus_payload(snapshot: &MinerMetricsSnapshot) -> String {
     let _ = writeln!(body, "zion_miner_pool_height{{{labels}}} {}", snapshot.pool_height);
     let _ = writeln!(body, "zion_miner_best_batch_ms{{{labels}}} {}", snapshot.best_batch_ms);
     let _ = writeln!(body, "zion_miner_remote_ttl_ms{{{labels}}} {}", snapshot.remote_ttl_ms);
+    let _ = writeln!(body, "zion_miner_hashrate_max{{{labels}}} {:.2}", snapshot.hashrate_max);
     let _ = writeln!(body, "zion_miner_uptime_seconds{{{labels}}} {}", snapshot.uptime_seconds());
     let _ = writeln!(body, "zion_miner_seconds_since_update{{{labels}}} {}", snapshot.seconds_since_update());
     body
@@ -263,6 +271,7 @@ fn build_miner_stats_payload(snapshot: &MinerMetricsSnapshot) -> String {
         "hashrate_10s_hps": snapshot.hashrate_10s_hps,
         "hashrate_60s_hps": snapshot.hashrate_60s_hps,
         "hashrate_15m_hps": snapshot.hashrate_15m_hps,
+        "hashrate_max": snapshot.hashrate_max,
         "submit_avg_latency_ms": snapshot.submit_avg_latency_ms,
         "submit_max_latency_ms": snapshot.submit_max_latency_ms,
         "gpu_hashrate_hps": snapshot.gpu_hashrate_hps,
@@ -270,6 +279,7 @@ fn build_miner_stats_payload(snapshot: &MinerMetricsSnapshot) -> String {
         "pool_height": snapshot.pool_height,
         "best_batch_ms": snapshot.best_batch_ms,
         "remote_ttl_ms": snapshot.remote_ttl_ms,
+        "hashrate_max": snapshot.hashrate_max,
         "api": {
             "health": "/health",
             "metrics": "/metrics",
@@ -342,6 +352,102 @@ fn serve_miner_metrics(bind_addr: &str, metrics: Arc<Mutex<MinerMetricsSnapshot>
     }
 
     Ok(())
+}
+
+/// Write a JSON stats file compatible with the desktop agent's `tryUpdateStatsFromFile()`.
+/// Fields are mapped to match what the agent expects (see APP&WEB/desktop-agent/src/main.js).
+fn write_stats_file(path: &str, snapshot: &MinerMetricsSnapshot) {
+    let payload = serde_json::json!({
+        // Hashrate (agent reads: hashrate_10s, hashrate_60s, hashrate_15m, hashrate, hashrate_max)
+        "hashrate": snapshot.hashrate_hps,
+        "hashrate_10s": snapshot.hashrate_10s_hps,
+        "hashrate_60s": snapshot.hashrate_60s_hps,
+        "hashrate_15m": snapshot.hashrate_15m_hps,
+        "hashrate_max": snapshot.hashrate_max,
+        "hashrate_gpu": snapshot.gpu_hashrate_hps,
+        "hashrate_cpu": if snapshot.gpu_hashrate_hps > 0.0 {
+            (snapshot.hashrate_hps - snapshot.gpu_hashrate_hps).max(0.0)
+        } else {
+            snapshot.hashrate_hps
+        },
+        // Shares (agent reads: shares_accepted, shares_rejected, shares_sent)
+        "shares_accepted": snapshot.accepted_shares,
+        "shares_rejected": snapshot.rejected_shares,
+        "shares_sent": snapshot.accepted_shares + snapshot.rejected_shares,
+        // Chain info
+        "pool_height": snapshot.pool_height,
+        "difficulty": snapshot.current_epoch,
+        "total_hashes": snapshot.attempted_hashes,
+        // Pool / connection
+        "pool_latency_ms": snapshot.submit_avg_latency_ms as u64,
+        "backend": snapshot.backend,
+        "gpu_name": if snapshot.backend == "cpu" { "none" } else { &snapshot.backend },
+        "worker": snapshot.worker_name,
+        "algorithm": "cosmic_harmony_ekam_deeksha_v2",
+        "cpu_threads": snapshot.threads,
+        // Uptime
+        "uptime_sec": snapshot.uptime_seconds(),
+        // Status
+        "status": snapshot.status,
+        "miner_id": snapshot.miner_id,
+        "pool_addr": snapshot.pool_addr,
+    });
+
+    // Atomic write: write to temp then rename (prevents partial reads by agent)
+    let tmp_path = format!("{path}.tmp");
+    match std::fs::write(&tmp_path, payload.to_string()) {
+        Ok(()) => {
+            let _ = std::fs::rename(&tmp_path, path);
+        }
+        Err(e) => {
+            eprintln!("stats_file_write_error path=\"{path}\" error=\"{e}\"");
+            let _ = std::fs::remove_file(&tmp_path);
+        }
+    }
+}
+
+/// Format a compact ISO-like timestamp for log lines: `YYYY-MM-DD HH:MM:SS`
+fn log_timestamp() -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let secs = now % 60;
+    let mins = (now / 60) % 60;
+    let hours = (now / 3600) % 24;
+    let days = now / 86400;
+    // Simple date from days since epoch (good enough for logging)
+    let (y, m, d) = days_to_ymd(days);
+    format!("{y:04}-{m:02}-{d:02} {hours:02}:{mins:02}:{secs:02}")
+}
+
+fn days_to_ymd(days_since_epoch: u64) -> (u64, u64, u64) {
+    // Civil from days algorithm (Howard Hinnant)
+    let z = days_since_epoch as i64 + 719468;
+    let era = if z >= 0 { z } else { z - 146096 } / 146097;
+    let doe = (z - era * 146097) as u64;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+    (y as u64, m, d)
+}
+
+/// Format hashrate with appropriate unit (H/s, KH/s, MH/s, GH/s)
+#[allow(dead_code)]
+fn format_hashrate(hps: f64) -> String {
+    if hps >= 1e9 {
+        format!("{:.2} GH/s", hps / 1e9)
+    } else if hps >= 1e6 {
+        format!("{:.2} MH/s", hps / 1e6)
+    } else if hps >= 1e3 {
+        format!("{:.2} KH/s", hps / 1e3)
+    } else {
+        format!("{:.1} H/s", hps)
+    }
 }
 
 fn main() -> Result<()> {
@@ -725,6 +831,8 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
                 rejected_iterations,
                 attempted_hashes,
                 None,
+                config.stats_file.as_deref(),
+                metrics,
             );
             continue;
         };
@@ -808,6 +916,8 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
             rejected_iterations,
             attempted_hashes,
             None,
+            config.stats_file.as_deref(),
+            metrics,
         );
     }
 
@@ -951,6 +1061,9 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
         telemetry.pool_height = job.height;
         telemetry.current_epoch = job.height / 100;
         println!("mining job_id={} height={} nonces={}..{}", job.job_id, job.height, job.start_nonce, job.start_nonce + job.nonce_count);
+        println!("[{}] new job  height {}  diff {}  algo cosmic_harmony_ekam_deeksha",
+            log_timestamp(), job.height, job.height % 1000,
+        );
         // GPU-first, CPU-fallback nonce scan
         let can_gpu = match gpu.as_mut() {
             Some(g) => match g.update_epoch(job.height) {
@@ -1011,6 +1124,8 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
                 rejected_iterations,
                 attempted_hashes,
                 Some(remote_job_ttl_ms),
+                config.stats_file.as_deref(),
+                metrics,
             );
             sync_miner_metrics(
                 metrics,
@@ -1061,10 +1176,22 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
 
         let status = match result_message {
             PoolMessage::Result { accepted, status } => {
+                let latency_ms = submit_started_at.elapsed().as_millis();
                 if accepted {
                     accepted_iterations += 1;
+                    let total = accepted_iterations + rejected_iterations;
+                    let pct = if total > 0 { (accepted_iterations as f64 / total as f64) * 100.0 } else { 100.0 };
+                    println!("[{}] accepted {}/{} (+1) diff {} [{}ms] ({:.1}%)",
+                        log_timestamp(), accepted_iterations, rejected_iterations,
+                        job.height, latency_ms, pct,
+                    );
                 } else {
                     rejected_iterations += 1;
+                    let total = accepted_iterations + rejected_iterations;
+                    println!("[{}] rejected {}/{} — {} ({} ms)",
+                        log_timestamp(), rejected_iterations, total,
+                        &status, latency_ms,
+                    );
                 }
                 status
             }
@@ -1095,6 +1222,8 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
             rejected_iterations,
             attempted_hashes,
             Some(remote_job_ttl_ms),
+            config.stats_file.as_deref(),
+            metrics,
         );
     }
 
@@ -1215,6 +1344,8 @@ struct SessionTelemetry {
     current_epoch: u64,
     pool_height: u64,
     best_batch_ms: u64,
+    hashrate_max: f64,
+    last_stats_write: Instant,
 }
 
 impl SessionTelemetry {
@@ -1237,6 +1368,8 @@ impl SessionTelemetry {
             current_epoch: 0,
             pool_height: 0,
             best_batch_ms: 0,
+            hashrate_max: 0.0,
+            last_stats_write: now,
         }
     }
 
@@ -1299,6 +1432,8 @@ impl SessionTelemetry {
         rejected: u64,
         attempted_hashes: u64,
         remote_job_ttl_ms: Option<u64>,
+        stats_file: Option<&str>,
+        metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
     ) {
         let now = Instant::now();
         let is_final = loop_count > 0 && iteration_done >= loop_count;
@@ -1317,35 +1452,68 @@ impl SessionTelemetry {
         } else {
             0.0
         };
+
+        // Track hashrate peak
+        let hr_10s = self.hashrate_10s_hps();
+        let hr_60s = self.hashrate_60s_hps();
+        let hr_15m = self.hashrate_15m_hps();
+        let current_best = if hr_10s > 0.0 { hr_10s } else { overall_hps };
+        if current_best > self.hashrate_max {
+            self.hashrate_max = current_best;
+        }
+
         let submit_avg = self.submit_avg_latency_ms();
         let ttl_text = remote_job_ttl_ms
             .map(|ttl| ttl.to_string())
             .unwrap_or_else(|| "n/a".to_string());
+        let ts = log_timestamp();
+        let backend_label = if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name };
 
+        // ── Machine-parseable status line (for desktop agent stdout parser) ──
         println!(
             "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
-            iteration_done,
-            loop_count,
-            uptime,
-            accepted,
-            rejected,
-            accept_pct,
-            self.no_solution_iterations,
-            self.local_skip_likely_stale,
-            overall_hps,
-            self.hashrate_10s_hps(),
-            self.hashrate_60s_hps(),
-            self.hashrate_15m_hps(),
-            attempted_hashes,
-            submit_avg,
-            self.submit_max_latency_ms,
-            ttl_text,
-            if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name },
-            self.gpu_hashrate_hps(),
-            self.current_epoch,
-            self.pool_height,
-            self.best_batch_ms,
+            iteration_done, loop_count, uptime, accepted, rejected, accept_pct,
+            self.no_solution_iterations, self.local_skip_likely_stale,
+            overall_hps, hr_10s, hr_60s, hr_15m,
+            attempted_hashes, submit_avg, self.submit_max_latency_ms, ttl_text,
+            backend_label, self.gpu_hashrate_hps(),
+            self.current_epoch, self.pool_height, self.best_batch_ms,
         );
+
+        // ── XMRig-style human-readable speed line ──
+        let uptime_secs = uptime as u64;
+        let uptime_h = uptime_secs / 3600;
+        let uptime_m = (uptime_secs % 3600) / 60;
+        let uptime_s = uptime_secs % 60;
+        // Use a single unit for all 3 rates (XMRig convention)
+        let (unit_label, divisor) = if self.hashrate_max >= 1e9 {
+            ("GH/s", 1e9)
+        } else if self.hashrate_max >= 1e6 {
+            ("MH/s", 1e6)
+        } else if self.hashrate_max >= 1e3 {
+            ("KH/s", 1e3)
+        } else {
+            ("H/s", 1.0)
+        };
+        println!(
+            "[{ts}] speed 10s/60s/15m  {:.2}  {:.2}  {:.2} {unit_label}  max {:.2} {unit_label}",
+            hr_10s / divisor, hr_60s / divisor, hr_15m / divisor, self.hashrate_max / divisor,
+        );
+        println!(
+            "[{ts}] shares A:{accepted} R:{rejected} ({accept_pct:.1}%) | hashes {attempted_hashes} | pool latency {submit_avg:.0}ms | uptime {uptime_h}h {uptime_m}m {uptime_s}s",
+        );
+
+        // ── Stats file (atomic write for desktop agent polling) ──
+        if let Some(path) = stats_file {
+            // Throttle writes to at most every 3 seconds
+            if now.duration_since(self.last_stats_write).as_secs() >= 3 {
+                if let Ok(snapshot) = metrics.lock() {
+                    write_stats_file(path, &snapshot);
+                    self.last_stats_write = now;
+                }
+            }
+        }
+
         self.last_status_at = now;
     }
 }
@@ -1528,6 +1696,7 @@ struct MinerConfig {
     remote_ttl_guard_percent: u64,
     metrics_report_every_secs: u64,
     metrics_bind: Option<String>,
+    stats_file: Option<String>,
     sleep_ms: u64,
     timestamp: u64,
     target: DifficultyTarget,
@@ -1573,6 +1742,14 @@ impl MinerConfig {
                     std::env::set_var("ZION_PROFILE", &args[i + 1]);
                     i += 2;
                 }
+                "--stats-file" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_STATS_FILE", &args[i + 1]);
+                    i += 2;
+                }
+                "--stats-interval" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_METRICS_REPORT_SECS", &args[i + 1]);
+                    i += 2;
+                }
                 "--help" | "-h" => {
                     println!("Usage: zion-miner [OPTIONS]");
                     println!();
@@ -1584,6 +1761,8 @@ impl MinerConfig {
                     println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
                     println!("  --loops N           Iteration count (default: 1)");
                     println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
+                    println!("  --stats-file PATH   Write JSON stats to file (for desktop agent)");
+                    println!("  --stats-interval N  Stats/metrics reporting interval in seconds");
                     println!();
                     println!("Benchmarks:");
                     println!("  --ekam-bench        Ekam Deeksha GPU benchmark");
@@ -1621,6 +1800,7 @@ impl MinerConfig {
             remote_ttl_guard_percent: parse_env_u64("ZION_REMOTE_TTL_GUARD_PCT", 90)?.clamp(10, 100),
             metrics_report_every_secs: parse_env_u64("ZION_METRICS_REPORT_SECS", 30)?,
             metrics_bind: std::env::var("ZION_MINER_METRICS_BIND").ok().filter(|value| !value.trim().is_empty()),
+            stats_file: std::env::var("ZION_STATS_FILE").ok().filter(|value| !value.trim().is_empty()),
             sleep_ms: parse_env_u64("ZION_SLEEP_MS", 0)?,
             timestamp: parse_env_u64("ZION_TIMESTAMP", 1_762_000_200)?,
             target: parse_target_env("ZION_TARGET")?,
