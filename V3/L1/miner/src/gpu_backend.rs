@@ -204,20 +204,23 @@ pub mod opencl_deeksha {
         scratchpad_buf: Buffer<u8>,
         result_nonce_buf: Buffer<u64>,
         result_hash_buf: Buffer<u8>,
-        npu_w1: Buffer<i8>,
-        npu_b1: Buffer<i8>,
-        npu_w2: Buffer<i8>,
-        npu_b2: Buffer<i8>,
-        npu_scale1: Buffer<i16>,
-        npu_scale2: Buffer<i16>,
+        npu_weights: Buffer<i8>,
+        npu_biases: Buffer<i8>,
+        npu_scales: Buffer<i16>,
+        npu_meta: Buffer<u32>,
         work_size: usize,
+        local_work_size: usize,
         device_name_cached: String,
         current_epoch: u64,
+        current_npu_max_dim: usize,
+        platform: Platform,
+        device: Device,
+        kernel_src: String,
     }
 
     /// Determine max work_size that fits in GPU VRAM.
     /// Each thread needs SCRATCHPAD_BYTES (256 KiB).
-    /// Reserve ~25% for NPU buffers, driver overhead, and other allocations.
+    /// Reserve VRAM for NPU buffers, driver overhead, and other allocations.
     fn vram_aware_work_size(device: &Device, requested: usize) -> usize {
         let global_mem = device.info(ocl::enums::DeviceInfo::GlobalMemSize)
             .ok()
@@ -227,8 +230,13 @@ pub mod opencl_deeksha {
             })
             .unwrap_or(2_000_000_000); // fallback 2 GB
 
-        // Use 70% of VRAM for scratchpad
-        let usable = (global_mem * 70) / 100;
+        // Use configurable % of VRAM for scratchpad (default 25%)
+        let vram_pct: usize = std::env::var("ZION_OCL_VRAM_PCT")
+            .ok()
+            .and_then(|v| v.trim().parse().ok())
+            .unwrap_or(25)
+            .clamp(10, 90);
+        let usable = (global_mem * vram_pct) / 100;
         let max_by_mem = usable / SCRATCHPAD_BYTES;
 
         // Also respect env override
@@ -253,9 +261,48 @@ pub mod opencl_deeksha {
         }
     }
 
+    /// NPU max intermediate dimension for current topology.
+    fn npu_max_dim_for_epoch(epoch: u64) -> usize {
+        let topology = zion_cosmic_harmony::algorithms_npu::MlpTopology::for_epoch(epoch);
+        match topology {
+            zion_cosmic_harmony::algorithms_npu::MlpTopology::Standard => 128,
+            zion_cosmic_harmony::algorithms_npu::MlpTopology::ThreeLayer => 128,
+            zion_cosmic_harmony::algorithms_npu::MlpTopology::Wide => 256,
+            zion_cosmic_harmony::algorithms_npu::MlpTopology::Deep => 64,
+        }
+    }
+
+    /// Detect optimal local work size for device.
+    fn detect_local_work_size(device_name: &str) -> usize {
+        let env_lws: Option<usize> = std::env::var("ZION_OCL_LOCAL_SIZE")
+            .ok()
+            .and_then(|v| v.trim().parse().ok());
+        if let Some(lws) = env_lws {
+            return lws.clamp(32, 512);
+        }
+        // Benchmarked: 256 is universally best for Ekam Deeksha on AMD GPUs.
+        // RDNA1 (gfx10xx) = 8 waves of 32 = 256. GCN (gfx6-9) = 4 waves of 64 = 256.
+        if device_name.contains("gfx") || device_name.contains("Radeon") || device_name.contains("AMD") {
+            256
+        } else {
+            256
+        }
+    }
+
+    /// Build OpenCL compile options string including topology-specific defines.
+    fn full_build_opts(device_name: &str, npu_max_dim: usize, local_wgs: usize) -> String {
+        let mut opts = amd_build_opts(device_name);
+        // Append topology-specific defines
+        if !opts.is_empty() {
+            opts.push(' ');
+        }
+        opts.push_str(&format!("-DNPU_MAX_DIM={} -DWGS={}", npu_max_dim, local_wgs));
+        opts
+    }
+
     impl OpenClDeekshaMiner {
         pub fn new(work_size: usize) -> Result<Self> {
-            let kernel_src = opencl_kernel::get_deeksha_kernel_source();
+            let kernel_src = opencl_kernel::get_deeksha_kernel_source().to_string();
 
             let platform = Platform::default();
             let device = Device::first(platform)
@@ -264,20 +311,19 @@ pub mod opencl_deeksha {
                 .unwrap_or_else(|_| "unknown".to_string());
 
             let actual_work_size = vram_aware_work_size(&device, work_size);
-            let build_opts = amd_build_opts(&device_name);
+            let local_work_size = detect_local_work_size(&device_name);
 
-            let pro_que = if build_opts.is_empty() {
-                ProQue::builder()
-                    .platform(platform)
-                    .device(device)
-                    .src(kernel_src)
-                    .dims(actual_work_size)
-                    .build()
-                    .map_err(|e| anyhow::anyhow!("OpenCL build failed: {e}"))?
-            } else {
+            // Topology-aware build: NPU_MAX_DIM reduces private-memory pressure
+            let init_epoch = 0u64;
+            let npu_max_dim = npu_max_dim_for_epoch(init_epoch);
+            let build_opts = full_build_opts(&device_name, npu_max_dim, local_work_size);
+
+            let pro_que = {
                 let mut prog = ProgramBuilder::new();
-                prog.src(kernel_src)
-                    .cmplr_opt(build_opts.clone());
+                prog.src(kernel_src.clone());
+                if !build_opts.is_empty() {
+                    prog.cmplr_opt(build_opts.clone());
+                }
                 ProQue::builder()
                     .platform(platform)
                     .device(device)
@@ -308,24 +354,24 @@ pub mod opencl_deeksha {
             let result_hash_buf = Buffer::<u8>::builder()
                 .queue(q.clone()).len(32).build()?;
 
-            // ── NPU weight buffers ──────────────────────────────────────
+            // ── NPU weight buffers (packed variable-topology) ────────────
             let init_epoch = 0u64;
-            let flat = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat_epoch(init_epoch);
+            let packed = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_packed(init_epoch);
 
-            let npu_w1 = Buffer::<i8>::builder()
-                .queue(q.clone()).len(flat.w1.len()).copy_host_slice(&flat.w1).build()?;
-            let npu_b1 = Buffer::<i8>::builder()
-                .queue(q.clone()).len(flat.b1.len()).copy_host_slice(&flat.b1).build()?;
-            let npu_w2 = Buffer::<i8>::builder()
-                .queue(q.clone()).len(flat.w2.len()).copy_host_slice(&flat.w2).build()?;
-            let npu_b2 = Buffer::<i8>::builder()
-                .queue(q.clone()).len(flat.b2.len()).copy_host_slice(&flat.b2).build()?;
-            let npu_scale1 = Buffer::<i16>::builder()
-                .queue(q.clone()).len(flat.scale1.len()).copy_host_slice(&flat.scale1).build()?;
-            let npu_scale2 = Buffer::<i16>::builder()
-                .queue(q.clone()).len(flat.scale2.len()).copy_host_slice(&flat.scale2).build()?;
+            let npu_weights = Buffer::<i8>::builder()
+                .queue(q.clone()).len(packed.weights.len().max(1))
+                .copy_host_slice(&packed.weights).build()?;
+            let npu_biases = Buffer::<i8>::builder()
+                .queue(q.clone()).len(packed.biases.len().max(1))
+                .copy_host_slice(&packed.biases).build()?;
+            let npu_scales = Buffer::<i16>::builder()
+                .queue(q.clone()).len(packed.scales.len().max(1))
+                .copy_host_slice(&packed.scales).build()?;
+            let npu_meta = Buffer::<u32>::builder()
+                .queue(q.clone()).len(packed.meta.len())
+                .copy_host_slice(&packed.meta).build()?;
 
-            // ── Kernel: ekam_deeksha_mine (14 args) ─────────────────────
+            // ── Kernel: ekam_deeksha_mine (12 args) ─────────────────────
             // Signature:
             //   0: header        (__global const uchar*)
             //   1: header_len    (uint)
@@ -335,12 +381,10 @@ pub mod opencl_deeksha {
             //   5: target_u32    (uint)
             //   6: result_nonce  (__global ulong*)
             //   7: result_hash   (__global uchar*)
-            //   8: npu_w1        (__global const char*)
-            //   9: npu_b1        (__global const char*)
-            //  10: npu_w2        (__global const char*)
-            //  11: npu_b2        (__global const char*)
-            //  12: npu_scale1    (__global const short*)
-            //  13: npu_scale2    (__global const short*)
+            //   8: npu_weights   (__global const char*)
+            //   9: npu_biases    (__global const char*)
+            //  10: npu_scales    (__global const short*)
+            //  11: npu_meta      (__global const uint*)
             let kernel = pro_que
                 .kernel_builder(opencl_kernel::EKAM_DEEKSHA_KERNEL_NAME)
                 .arg(&header_buf)          // 0
@@ -351,19 +395,17 @@ pub mod opencl_deeksha {
                 .arg(0u32)                 // 5: target_u32 (updated per batch)
                 .arg(&result_nonce_buf)    // 6
                 .arg(&result_hash_buf)     // 7
-                .arg(&npu_w1)              // 8
-                .arg(&npu_b1)              // 9
-                .arg(&npu_w2)              // 10
-                .arg(&npu_b2)              // 11
-                .arg(&npu_scale1)          // 12
-                .arg(&npu_scale2)          // 13
+                .arg(&npu_weights)         // 8
+                .arg(&npu_biases)          // 9
+                .arg(&npu_scales)          // 10
+                .arg(&npu_meta)            // 11
                 .build()
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
 
             let scratch_mib = actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024);
             println!(
-                "gpu_opencl_init device=\"{}\" work_size={} scratchpad_mib={} build_opts=\"{}\"",
-                device_name, actual_work_size, scratch_mib, build_opts,
+                "gpu_opencl_init device=\"{}\" work_size={} local_ws={} scratchpad_mib={} npu_max_dim={} build_opts=\"{}\"",
+                device_name, actual_work_size, local_work_size, scratch_mib, npu_max_dim, build_opts,
             );
 
             Ok(Self {
@@ -373,15 +415,18 @@ pub mod opencl_deeksha {
                 scratchpad_buf,
                 result_nonce_buf,
                 result_hash_buf,
-                npu_w1,
-                npu_b1,
-                npu_w2,
-                npu_b2,
-                npu_scale1,
-                npu_scale2,
+                npu_weights,
+                npu_biases,
+                npu_scales,
+                npu_meta,
                 work_size: actual_work_size,
+                local_work_size,
                 device_name_cached: device_name,
                 current_epoch: init_epoch,
+                current_npu_max_dim: npu_max_dim,
+                platform,
+                device,
+                kernel_src,
             })
         }
     }
@@ -400,22 +445,82 @@ pub mod opencl_deeksha {
             if epoch == self.current_epoch {
                 return Ok(());
             }
-            // GPU kernel only supports Standard (64→128→64) topology
             let topology = zion_cosmic_harmony::algorithms_npu::MlpTopology::for_epoch(epoch);
-            if !matches!(topology, zion_cosmic_harmony::algorithms_npu::MlpTopology::Standard) {
-                return Err(anyhow::anyhow!(
-                    "GPU kernel unsupported topology {:?} for epoch {} (height {}), falling back to CPU",
-                    topology, epoch, height
-                ));
+            let packed = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_packed(epoch);
+            let new_max_dim = npu_max_dim_for_epoch(epoch);
+
+            // If topology changed max dimension, recompile kernel for optimal register usage
+            if new_max_dim != self.current_npu_max_dim {
+                let build_opts = full_build_opts(&self.device_name_cached, new_max_dim, self.local_work_size);
+                println!(
+                    "gpu_opencl_recompile epoch={} npu_max_dim={}->{} opts=\"{}\"",
+                    epoch, self.current_npu_max_dim, new_max_dim, build_opts
+                );
+                let mut prog = ProgramBuilder::new();
+                prog.src(self.kernel_src.clone());
+                if !build_opts.is_empty() {
+                    prog.cmplr_opt(build_opts);
+                }
+                self.pro_que = ProQue::builder()
+                    .platform(self.platform)
+                    .device(self.device)
+                    .prog_bldr(prog)
+                    .dims(self.work_size)
+                    .build()
+                    .map_err(|e| anyhow::anyhow!("OpenCL recompile failed: {e}"))?;
+                self.current_npu_max_dim = new_max_dim;
+
+                // Reallocate ALL buffers on new ProQue
+                let q = self.pro_que.queue().clone();
+                self.header_buf = Buffer::<u8>::builder()
+                    .queue(q.clone()).len(128).build()?;
+                self.scratchpad_buf = Buffer::<u8>::builder()
+                    .queue(q.clone())
+                    .len(self.work_size * SCRATCHPAD_BYTES)
+                    .build()?;
+                self.result_nonce_buf = Buffer::<u64>::builder()
+                    .queue(q.clone()).len(1).build()?;
+                self.result_hash_buf = Buffer::<u8>::builder()
+                    .queue(q.clone()).len(32).build()?;
             }
-            let flat = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat_epoch(epoch);
-            self.npu_w1.write(&flat.w1).enq()?;
-            self.npu_b1.write(&flat.b1).enq()?;
-            self.npu_w2.write(&flat.w2).enq()?;
-            self.npu_b2.write(&flat.b2).enq()?;
-            self.npu_scale1.write(&flat.scale1).enq()?;
-            self.npu_scale2.write(&flat.scale2).enq()?;
-            println!("gpu_opencl_npu_epoch_update epoch={} height={}", epoch, height);
+
+            // Reallocate NPU buffers (topology-dependent sizes)
+            let q = self.pro_que.queue().clone();
+            self.npu_weights = Buffer::<i8>::builder()
+                .queue(q.clone()).len(packed.weights.len().max(1))
+                .copy_host_slice(&packed.weights).build()?;
+            self.npu_biases = Buffer::<i8>::builder()
+                .queue(q.clone()).len(packed.biases.len().max(1))
+                .copy_host_slice(&packed.biases).build()?;
+            self.npu_scales = Buffer::<i16>::builder()
+                .queue(q.clone()).len(packed.scales.len().max(1))
+                .copy_host_slice(&packed.scales).build()?;
+            self.npu_meta = Buffer::<u32>::builder()
+                .queue(q.clone()).len(packed.meta.len())
+                .copy_host_slice(&packed.meta).build()?;
+
+            // Rebuild kernel with current buffers
+            self.kernel = self.pro_que
+                .kernel_builder(opencl_kernel::EKAM_DEEKSHA_KERNEL_NAME)
+                .arg(&self.header_buf)
+                .arg(80u32)
+                .arg(0u64)
+                .arg(self.work_size as u32)
+                .arg(&self.scratchpad_buf)
+                .arg(0u32)
+                .arg(&self.result_nonce_buf)
+                .arg(&self.result_hash_buf)
+                .arg(&self.npu_weights)
+                .arg(&self.npu_biases)
+                .arg(&self.npu_scales)
+                .arg(&self.npu_meta)
+                .build()
+                .map_err(|e| anyhow::anyhow!("kernel rebuild failed: {e}"))?;
+
+            println!(
+                "gpu_opencl_npu_epoch_update epoch={} height={} topology={:?} npu_max_dim={}",
+                epoch, height, topology, self.current_npu_max_dim
+            );
             self.current_epoch = epoch;
             Ok(())
         }
@@ -430,8 +535,8 @@ pub mod opencl_deeksha {
             let header_bytes = header.to_bytes();
             self.header_buf.write(&header_bytes[..]).enq()?;
 
-            // Target: LE u32 from first 4 bytes
-            let target_u32 = u32::from_le_bytes([
+            // Target: BE u32 from first 4 bytes (matches pool's big-endian byte comparison)
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0], target.bytes[1],
                 target.bytes[2], target.bytes[3],
             ]);
@@ -443,8 +548,7 @@ pub mod opencl_deeksha {
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size);
-                // Work-group size: 256 for AMD RDNA/GCN wavefront occupancy
-                let local_size = 256.min(chunk);
+                let local_size = self.local_work_size.min(chunk);
                 let global_size = ((chunk + local_size - 1) / local_size) * local_size;
 
                 // Reset sentinel
