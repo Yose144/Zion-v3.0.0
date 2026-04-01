@@ -720,6 +720,7 @@ let multiStreamStatus = {
 };
 // ─────────────────────────────────────────────────────────────────────────
 let startMiningInProgress = false; // atomic guard against duplicate startMining() calls
+let startMiningGuardTimer = null; // clears stale start lock if setup path aborts unexpectedly
 let gpuRevenueRecoveryTimer = null; // auto-recovery timer after GPU revenue auto-disable
 let minerStopping = false;
 let minerStopPromise = null;
@@ -1068,108 +1069,29 @@ function isV3MinerBinary(minerPath) {
 function resolveMinerSelection(preferred) {
   const pref = String(preferred || 'auto').toLowerCase();
   const rustPath = findRustMiner();
-  const pyPath = findPythonMiner();
-  const legacyExePath = process.platform === 'win32'
-    ? (IS_PACKAGED
-        ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.exe')
-        : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.exe'))
-    : null;
-
-  const hasLegacy = legacyExePath && fs.existsSync(legacyExePath);
   const select = (backend, p, isRust, isPython) => ({ backend, path: p, isRust, isPython });
 
-  if (pref === 'rust') {
-    if (rustPath) return select('rust', rustPath, true, false);
-    // Rust not found (possibly quarantined by Defender) — soft-downgrade to Python/legacy.
-    // This prevents hard 'Miner Not Found' errors when Defender removes the binary.
-    if (pyPath) return select('python', pyPath, false, true);
-    if (hasLegacy) return select('legacy', legacyExePath, false, false);
-    return null;
-  }
+  // V3 desktop defaults to Rust-only mining backend.
+  // Legacy backends can be re-enabled only for explicit emergency support.
+  const allowLegacyFallback = String(process.env.ZION_ALLOW_LEGACY_PY_FALLBACK || '').trim() === '1';
+  if ((pref === 'python' || pref === 'legacy') && !allowLegacyFallback) return null;
 
-  if (pref === 'python') {
-    if (pyPath) return select('python', pyPath, false, true);
-    // Strict: user explicitly requested Python, so do not silently fall back.
-    return null;
-  }
-
-  if (pref === 'legacy') {
-    if (hasLegacy) return select('legacy', legacyExePath, false, false);
-    return null;
-  }
-
-  // auto
   if (rustPath) return select('rust', rustPath, true, false);
-  if (pyPath) return select('python', pyPath, false, true);
-  if (hasLegacy) return select('legacy', legacyExePath, false, false);
+  if (allowLegacyFallback && pref === 'python') {
+    const pyPath = findPythonMiner();
+    if (pyPath) return select('python', pyPath, false, true);
+  }
   return null;
 }
 
 const rustMinerPath = findRustMiner();
-const allowPackagedPythonFallback = String(process.env.ZION_ALLOW_PACKAGED_PYTHON_FALLBACK || '').trim() === '1';
 if (rustMinerPath) {
   MINER_PATH = rustMinerPath;
   MINER_IS_RUST = true;
   MINER_IS_PYTHON = false;
   dbg('[MINER] Using Rust native miner:', rustMinerPath);
-} else if (process.platform === 'darwin') {
-  // macOS: packaged release must use native Rust backend one-click.
-  if (IS_PACKAGED && !allowPackagedPythonFallback) {
-    throw new Error('Rust miner binary not found in packaged app resources. Rebuild release with prepare-rust-miner.');
-  }
-  // Dev fallback: use Python script
-  MINER_IS_PYTHON = true;
-  MINER_IS_RUST = false;
-  MINER_PATH = findPythonMiner() || (IS_PACKAGED
-    ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.py')
-    : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py'));
-  dbg('[MINER] Using Python miner (macOS fallback)');
-} else if (process.platform === 'linux') {
-  // Linux: packaged release must use native Rust backend one-click.
-  if (IS_PACKAGED && !allowPackagedPythonFallback) {
-    throw new Error('Rust miner binary not found in packaged app resources. Rebuild release with prepare-rust-miner.');
-  }
-  // Dev fallback: use Python script
-  MINER_IS_PYTHON = true;
-  MINER_IS_RUST = false;
-  MINER_PATH = findPythonMiner() || (IS_PACKAGED
-    ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.py')
-    : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py'));
-  dbg('[MINER] Using Python miner (Linux fallback)');
 } else {
-  // Windows: Python fallback (if present) -> legacy .exe last
-  const devPythonMiner = path.join(APP_ROOT, '..', 'zion_native_miner_v2_9.py');
-  const resourcesPythonMiner = IS_PACKAGED
-    ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.py')
-    : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.py');
-  const discoveredPythonMiner = findPythonMiner();
-  const legacyExePath = IS_PACKAGED
-    ? path.join(process.resourcesPath, 'zion_native_miner_v2_9.exe')
-    : path.join(APP_ROOT, 'resources', 'zion_native_miner_v2_9.exe');
-
-  if (discoveredPythonMiner) {
-    MINER_IS_PYTHON = true;
-    MINER_IS_RUST = false;
-    MINER_PATH = discoveredPythonMiner;
-    dbg('[MINER] Using Python miner (Windows fallback)');
-  } else if (!IS_PACKAGED && fs.existsSync(devPythonMiner)) {
-    MINER_IS_PYTHON = true;
-    MINER_IS_RUST = false;
-    MINER_PATH = devPythonMiner;
-    dbg('[MINER] Using Python miner (dev mode fallback)');
-  } else if (fs.existsSync(resourcesPythonMiner)) {
-    MINER_IS_PYTHON = true;
-    MINER_IS_RUST = false;
-    MINER_PATH = resourcesPythonMiner;
-    dbg('[MINER] Using Python miner (Windows fallback)');
-  } else if (fs.existsSync(legacyExePath)) {
-    MINER_IS_PYTHON = false;
-    MINER_IS_RUST = false;
-    MINER_PATH = legacyExePath;
-    dbg('[MINER] WARNING: Using legacy PyInstaller miner (.exe)');
-  } else {
-    throw new Error('No miner executable found! Please reinstall the application.');
-  }
+  throw new Error('V3 Rust miner not found. Build V3/L1/miner release or package zion-miner.exe into resources.');
 }
 
 const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
@@ -3149,6 +3071,26 @@ function startMining(config) {
     return { success: true, alreadyRunning: true };
   }
   startMiningInProgress = true;
+  try {
+    if (startMiningGuardTimer) clearTimeout(startMiningGuardTimer);
+  } catch {
+    // ignore
+  }
+  // Safety net: if setup path exits unexpectedly without clearing the guard,
+  // unlock start after a short timeout to avoid permanent "start in progress" state.
+  startMiningGuardTimer = setTimeout(() => {
+    if (startMiningInProgress && !minerProcess) {
+      startMiningInProgress = false;
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stderr',
+          text: '[WARN] Recovered from stale start lock. You can start mining again.\n'
+        });
+      } catch {
+        // ignore
+      }
+    }
+  }, 15000);
 
   // Auto-tuning: Check if tuning is needed and apply recommendations
   if (autoTuner.shouldTune()) {
@@ -3498,9 +3440,12 @@ function startMining(config) {
   const _deekshaAlgoName = normalizeAlgorithmName(config?.algorithm || '');
   const _deekshaPreferredBackend = String(config?.minerBackend || 'rust').toLowerCase();
   const _deekshaRustPath = findRustMiner();
+  const _allowLegacyPyFallback = String(process.env.ZION_ALLOW_LEGACY_PY_FALLBACK || '').trim() === '1';
   const _forceDeekshaPythonPath =
-    !_deekshaRustPath ||
-    String(process.env.ZION_FORCE_DEEKSHA_PYTHON || '').trim() === '1';
+    _allowLegacyPyFallback && (
+      !_deekshaRustPath ||
+      String(process.env.ZION_FORCE_DEEKSHA_PYTHON || '').trim() === '1'
+    );
   if (_deekshaAlgoName === 'cosmic_harmony' && _forceDeekshaPythonPath) {
     const isPackaged = app.isPackaged;
     const deekshaCpuScript = isPackaged
@@ -3808,38 +3753,9 @@ function startMining(config) {
   const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
   const selection = resolveMinerSelection(preferredBackend);
   if (!selection) {
-    // Rust was explicitly requested (or auto) but the binary is missing / quarantined.
-    // Before showing an error, try to auto-downgrade to Python if it exists.
-    const emergencyPythonPath = findPythonMiner();
-    if (emergencyPythonPath && (preferredBackend === 'rust' || preferredBackend === 'auto')) {
-      const warnMsg =
-        `[WARN] Rust miner not found (Windows Defender may have quarantined zion-universal-miner.exe). ` +
-        `Automatically falling back to Python miner.\n`;
-      MINER_IS_RUST = false;
-      MINER_IS_PYTHON = true;
-      MINER_PATH = emergencyPythonPath;
-      minerBackendPreferred = preferredBackend;
-      minerBackendResolved = 'python';
-      minerBackendPath = emergencyPythonPath;
-      minerBackendLastError = warnMsg.trim();
-      try {
-        sendToRenderer('miner-backend', {
-          preferred: minerBackendPreferred,
-          resolved: 'python',
-          path: emergencyPythonPath,
-          lastError: minerBackendLastError
-        });
-        sendToRenderer('miner-output', { stream: 'stderr', text: warnMsg });
-      } catch { /* ignore */ }
-      // Reconstruct a synthetic selection and continue
-      const synth = { backend: 'python', path: emergencyPythonPath, isRust: false, isPython: true };
-      // Jump directly to the rest of startMining with python backend explicitly
-      return startMining({ ...config, minerBackend: 'python' });
-    }
-
     const rustHint = preferredBackend === 'rust'
       ? `Rust miner not found or blocked. On Windows, Windows Defender may quarantine zion-universal-miner.exe. Check Defender protection history and add an exclusion for: ${IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources')}`
-      : 'No miner executable found. Please install Rust miner or Python miner.';
+      : 'No V3 Rust miner executable found. Build V3 miner or package zion-miner.exe.';
     minerBackendPreferred = preferredBackend;
     minerBackendResolved = null;
     minerBackendPath = '';
@@ -3898,11 +3814,6 @@ function startMining(config) {
   }
 
   const minerStartTs = Date.now();
-  const fallbackPythonPath = findPythonMiner();
-  const rustFallbackEligible =
-    MINER_IS_RUST &&
-    !!fallbackPythonPath &&
-    preferredBackend === 'auto';
 
   try {
     cleanupStrayMinerProcesses(MINER_IS_RUST);
@@ -3964,34 +3875,12 @@ function startMining(config) {
 
   // Check if miner executable exists
   if (!fs.existsSync(MINER_PATH)) {
-    // On Windows, Defender may quarantine the Rust binary after app startup.
-    // If a Python fallback exists and user hasn't explicitly pinned Rust, auto-switch.
-    if (MINER_IS_RUST && fallbackPythonPath && preferredBackend === 'auto') {
-      MINER_IS_RUST = false;
-      MINER_IS_PYTHON = true;
-      MINER_PATH = fallbackPythonPath;
-      minerBackendLastError = 'Rust miner was removed (Windows Defender quarantine?). Switched to Python miner automatically.';
-      try {
-        sendToRenderer('miner-output', {
-          stream: 'stderr',
-          text: `[WARN] ${minerBackendLastError}\n`
-        });
-        sendToRenderer('miner-backend', {
-          preferred: minerBackendPreferred,
-          resolved: 'python',
-          path: fallbackPythonPath,
-          lastError: minerBackendLastError
-        });
-      } catch { /* ignore */ }
-      // Continue — MINER_PATH is now the Python script
-    } else {
-      const defMsg = MINER_IS_RUST && process.platform === 'win32'
-        ? `Miner executable not found at: ${MINER_PATH}\n\nWindows Defender may have quarantined zion-universal-miner.exe.\nCheck Defender Protection History and add an exclusion for:\n${IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources')}`
-        : `Miner executable not found at: ${MINER_PATH}`;
-      dialog.showErrorBox('Miner Not Found', defMsg);
-      startMiningInProgress = false;
-      return { success: false, error: `Miner executable not found at: ${MINER_PATH}` };
-    }
+    const defMsg = MINER_IS_RUST && process.platform === 'win32'
+      ? `Miner executable not found at: ${MINER_PATH}\n\nWindows Defender may have quarantined zion-miner.exe.\nCheck Defender Protection History and add an exclusion for:\n${IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources')}`
+      : `Miner executable not found at: ${MINER_PATH}`;
+    dialog.showErrorBox('Miner Not Found', defMsg);
+    startMiningInProgress = false;
+    return { success: false, error: `Miner executable not found at: ${MINER_PATH}` };
   }
 
   // Auto load-balance for max performance + responsiveness.
