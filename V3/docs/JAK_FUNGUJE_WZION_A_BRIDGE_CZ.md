@@ -223,6 +223,130 @@ Arbitrum                →  stejná adresa
 
 ---
 
+## 11. Aktuální stav L1 sítě (1. dubna 2026)
+
+```
+Chain height:    6 661 bloků
+Konsensus:       cosmic_harmony_ekam_deeksha_v2
+Síť:             Mainnet (3 nody, full mesh)
+Pool:            běží, share accepted
+Miner:           ~3 200 H/s, 90 % accept rate
+Všechny 3 nody:  synced na stejném tipu
+```
+
+### Co L1 ještě NEUMÍ (blokéry pro ostrý bridge):
+
+| Chybí | Proč to blokuje mainnet bridge |
+|-------|-------------------------------|
+| Payout execution | `missing ZION_POOL_PAYOUT_SK_HEX` — pool nemá klíč na výplaty |
+| Bridge vault adresa | Placeholder, ne reálná on-chain adresa |
+| submitBridgeUnlock end-to-end | Kryptografická validace je v kódu, ale nebyla testována na live chainu |
+| Reálné transakce | Chain má 6 661 bloků, zatím žádný reálný provoz |
+| Wallet / explorer | Uživatelé nemají jak poslat ZION na vault |
+
+---
+
+## 12. Strategie: Testnet vs Mainnet — co dělat TEĎ
+
+### Doporučení: Hybridní přístup
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CO UDĚLAT HNED                             │
+│                                                              │
+│  ✅ Deploy wZION na Base MAINNET                             │
+│     → Token existuje, je viditelný, má CoinGecko listing     │
+│     → Mintování ZAKÁZÁNO dokud bridge není ostrý             │
+│     → Adresa je známá, můžeš ji propagovat                  │
+│                                                              │
+│  ✅ Deploy ZIONBridge + AtomicSwap na Base MAINNET           │
+│     → Kontrakty existují, ale bridge je PAUSED               │
+│     → Ready to flip — až L1 bude připravená                 │
+│                                                              │
+│  ✅ Nechat bridge relay na Prague běžet na TESTNET           │
+│     → Testuje reálný flow, zachytává bugy                   │
+│     → Žádné riziko ztráty peněz                             │
+│                                                              │
+│  ⏳ Přepnout na mainnet AŽ:                                 │
+│     1. L1 pool payout funguje (reálné ZION výplaty)          │
+│     2. Bridge vault je reálná adresa na L1                   │
+│     3. Aspoň 1 úspěšný end-to-end test na testnetu         │
+│     4. Explorer/wallet umožňuje uživatelům posílat ZION     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Proč tento přístup:
+
+1. **wZION na Base mainnetu hned** = token je "real", může se listovat, lidi ho vidí
+2. **Bridge PAUSED** = nikdo nemůže mintovat bez povolení — bezpečné
+3. **Testnet relay běží** = neustále testujeme, odlaďujeme
+4. **Flip to mainnet** = až bude L1 ready, stačí změnit 1 config soubor
+
+### Co to stojí:
+
+- Deploy 3 kontraktů na Base mainnet: **~$2–5 v ETH** (Base je levný)
+- Čas: **~30 minut** (deploy + verifikace + update configů)
+
+---
+
+## 13. Postup pro deploy na Base Mainnet
+
+### Předpoklady:
+
+1. MetaMask s adresou `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`
+2. ETH na Base mainnetu na této adrese (~$5–10)
+3. BASESCAN_API_KEY (zdarma z basescan.org — registrace)
+
+### Krok za krokem:
+
+```bash
+# 1. Přejdi do kontraktového adresáře
+cd L2/contracts
+
+# 2. Nastav proměnné prostředí
+export DEPLOYER_PRIVATE_KEY="tvůj_privátní_klíč"   # z MetaMasku
+export BASESCAN_API_KEY="tvůj_basescan_key"
+export BASE_RPC="https://mainnet.base.org"
+
+# 3. Deploy wZION token
+npx hardhat run scripts/deploy-wzion.ts --network base
+
+# 4. Deploy ZIONBridge (v paused stavu)
+npx hardhat run scripts/deploy-bridge.ts --network base
+
+# 5. Deploy ZIONAtomicSwap
+npx hardhat run scripts/deploy-atomic-swap.ts --network base
+
+# 6. Verifikuj na BaseScan
+npx hardhat verify --network base <WZION_ADRESA>
+npx hardhat verify --network base <BRIDGE_ADRESA>
+npx hardhat verify --network base <SWAP_ADRESA>
+```
+
+### Po deployi:
+
+1. Zapiš nové adresy do `V3/L2/bridge/config/bridge-mainnet.toml`
+2. Zapiš swap adresu do `V3/L2/atomic-swap/config/swap-mainnet.toml`
+3. Vytvoř `L2/contracts/deployed-base-mainnet.json` s adresami
+4. Commit + push
+
+### Přepnutí bridge relay na mainnet (AŽ bude L1 ready):
+
+```bash
+# Na Prague serveru:
+ssh root@91.98.122.165
+
+# Změň env proměnnou
+# V .env souboru pro L2:
+ZION_BRIDGE_CONFIG=/etc/zion/bridge-mainnet.toml
+
+# Recreate bridge kontejner
+cd /root/zion-2.9.6/V3/docker
+docker compose -f docker-compose.v3-l2.yml up -d --force-recreate bridge
+```
+
+---
+
 ## Shrnutí jednou větou
 
-> **wZION je zrcadlo ZIONu na Base síti — most (bridge) ho zamyká/odemyká, swap umožňuje přímou výměnu, a DAO dává komunitě kontrolu. Tvoje MetaMask adresa funguje všude stejně.**
+> **wZION je zrcadlo ZIONu na Base síti — most (bridge) ho zamyká/odemyká, swap umožňuje přímou výměnu, a DAO dává komunitě kontrolu. Tvoje MetaMask adresa funguje všude stejně. Deploy na Base mainnet je ready — bridge se aktivuje až L1 dozraje.**
