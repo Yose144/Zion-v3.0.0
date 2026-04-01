@@ -28,6 +28,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import {
   EKAM_GOLDEN_EGG_IMAGE,
+  EKAM_BANNER_IMAGE,
   EKAM_SOURCE_URL,
   EKAM_PREETHAJI_KRISHNAJI_IMAGE,
   EKAM_NORDIC_IMAGE,
@@ -247,8 +248,8 @@ export default function EkamMuseumLanding() {
             <div className="relative overflow-hidden rounded-[2rem] border border-amber-200/20 bg-slate-950/60 p-3 shadow-[0_24px_80px_rgba(2,6,23,0.5)] backdrop-blur">
               <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-white/10">
                 <Image
-                  src={EKAM_GOLDEN_EGG_IMAGE}
-                  alt="EKAM — Hiranyagarbha Golden Egg"
+                  src={EKAM_BANNER_IMAGE}
+                  alt="EKAM — Oneness Temple"
                   fill
                   sizes="(min-width: 1024px) 30rem, 100vw"
                   className="object-cover"
@@ -438,8 +439,8 @@ export default function EkamMuseumLanding() {
               {/* Ekam hero */}
               <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 sm:col-span-2 lg:col-span-1 lg:row-span-2">
                 <img
-                  src={EKAM_GOLDEN_EGG_IMAGE}
-                  alt="Ekam — Oneness sacred space"
+                  src={EKAM_BANNER_IMAGE}
+                  alt="Ekam — Oneness Temple"
                   className="h-full w-full object-cover"
                   loading="lazy"
                   decoding="async"
