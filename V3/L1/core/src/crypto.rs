@@ -128,6 +128,27 @@ pub fn is_valid_address(address: &str) -> bool {
     expected_ck == actual_ck
 }
 
+// ── Keyless address derivation ─────────────────────────────────────────
+
+/// Derive a deterministic keyless address from a well-known seed string.
+///
+/// The seed is SHA-256 hashed to produce 32 bytes which are then fed through
+/// the standard `derive_address` pipeline. Because the "public key" is a hash
+/// of a plaintext seed, no private key exists — the address is provably
+/// unspendable via normal wallet operations.
+pub fn derive_keyless_address(seed: &str) -> String {
+    let synthetic_pubkey = Sha256::digest(seed.as_bytes());
+    derive_address(&synthetic_pubkey)
+}
+
+/// The canonical seed string used to derive the ZION bridge vault address.
+pub const BRIDGE_VAULT_SEED: &str = "ZION Bridge Vault V3 Mainnet";
+
+/// Derive the canonical bridge vault address.
+pub fn bridge_vault_address() -> String {
+    derive_keyless_address(BRIDGE_VAULT_SEED)
+}
+
 // ── hex helpers ────────────────────────────────────────────────────────
 
 /// Encode bytes as lowercase hex string.
@@ -277,6 +298,28 @@ mod tests {
         let addr = derive_address_from_hex(&hex_pk).unwrap();
         assert!(is_valid_address(&addr));
         assert_eq!(addr, derive_address(&pk));
+    }
+
+    // ── hex helpers ───────────────────────────────────────────────
+
+    // ── keyless vault address ─────────────────────────────────────
+
+    #[test]
+    fn bridge_vault_address_is_valid_and_deterministic() {
+        let addr = bridge_vault_address();
+        assert!(is_valid_address(&addr), "vault address is invalid: {addr}");
+        assert_eq!(addr, bridge_vault_address(), "vault address is not deterministic");
+        eprintln!("BRIDGE_VAULT_ADDRESS = {addr}");
+    }
+
+    #[test]
+    fn keyless_address_differs_from_keypair_address() {
+        // A keyless address derived from a seed must not collide with
+        // any address derived from a real keypair (probabilistic check).
+        let vault = bridge_vault_address();
+        let (_, vk) = generate_keypair();
+        let normal = derive_address(vk.as_bytes());
+        assert_ne!(vault, normal);
     }
 
     // ── hex helpers ───────────────────────────────────────────────

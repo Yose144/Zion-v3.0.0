@@ -324,7 +324,7 @@ impl Default for BridgeConfig {
             l1: L1Config {
                 rpc_url: "127.0.0.1:8443".into(),
                 rpc_url_backup: None,
-                bridge_address: "zion1bridge000000000000000000000000000vault".into(),
+                bridge_address: "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0".into(),
                 finality_blocks: 60,
                 poll_interval_secs: 15,
                 start_block_height: None,
@@ -377,7 +377,7 @@ mod tests {
         assert_eq!(cfg.l1.rpc_url, "127.0.0.1:8443");
         assert_eq!(
             cfg.l1.bridge_address,
-            "zion1bridge000000000000000000000000000vault"
+            "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
         );
         assert_eq!(cfg.l1.finality_blocks, 60);
         assert_eq!(cfg.l1.poll_interval_secs, 15);
@@ -443,7 +443,7 @@ network = "testnet"
 
 [l1]
 rpc_url = "91.98.122.165:8443"
-bridge_address = "zion1bridge000000000000000000000000000vault"
+bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
 finality_blocks = 60
 poll_interval_secs = 15
 
