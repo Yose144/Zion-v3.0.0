@@ -11,16 +11,30 @@ import {
   Compass,
   Diamond,
   Droplets,
+  ExternalLink,
+  Heart,
   Landmark,
+  MapPin,
   Orbit,
+  Play,
+  Quote,
   Sparkles,
   Sprout,
   Sun,
+  Users,
   Zap,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import { EKAM_GOLDEN_EGG_IMAGE, EKAM_SOURCE_URL } from '@/lib/site';
+import {
+  EKAM_GOLDEN_EGG_IMAGE,
+  EKAM_SOURCE_URL,
+  EKAM_PREETHAJI_KRISHNAJI_IMAGE,
+  EKAM_NORDIC_IMAGE,
+  EKAM_TURIYA_IMAGE,
+  EKAM_PREETHAJI_KRISHNAJI_URL,
+  EKAM_YOUTUBE_CHANNEL,
+} from '@/lib/site';
 
 const journeySteps = [
   {
@@ -157,6 +171,21 @@ const geoFacts = [
   { key: 'geo_chakra', Icon: Diamond },
   { key: 'geo_golden', Icon: Orbit },
   { key: 'geo_vastu', Icon: Compass },
+] as const;
+
+const familyMembers = [
+  { key: 'founders_bhagavan', Icon: Zap },
+  { key: 'founders_amma', Icon: Heart },
+  { key: 'founders_krishnaji', Icon: Sun },
+  { key: 'founders_preethaji', Icon: Sparkles },
+  { key: 'founders_lokaa', Icon: Sprout },
+] as const;
+
+const tourFacts = [
+  { key: 'tour_fact_cost', Icon: Diamond },
+  { key: 'tour_fact_inaugurated', Icon: Landmark },
+  { key: 'tour_fact_architect', Icon: Compass },
+  { key: 'tour_fact_location', Icon: MapPin },
 ] as const;
 
 export default function EkamMuseumLanding() {
@@ -312,6 +341,184 @@ export default function EkamMuseumLanding() {
                 <h3 className="mt-3 text-base font-semibold text-white">{tr('ekamPage', 'deeksha_smarana_title', lang)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{tr('ekamPage', 'deeksha_smarana_body', lang)}</p>
               </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ FOUNDERS & FAMILY LINEAGE ═══════════ */}
+      <section className="relative px-6 py-12 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-[2rem] border border-amber-200/12 bg-[linear-gradient(135deg,rgba(255,215,120,0.06),rgba(255,255,255,0.02))] p-7 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-300/10 text-amber-100">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/60">{tr('ekamPage', 'founders_label', lang)}</p>
+                <h2 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{tr('ekamPage', 'founders_title', lang)}</h2>
+              </div>
+            </div>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{tr('ekamPage', 'founders_subtitle', lang)}</p>
+
+            {/* ── Family portrait + quote ── */}
+            <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+              <div className="space-y-4">
+                <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+                  <img
+                    src={EKAM_PREETHAJI_KRISHNAJI_IMAGE}
+                    alt="Sri Preethaji & Sri Krishnaji"
+                    className="aspect-[16/10] w-full object-cover object-top"
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <p className="text-xs font-semibold text-amber-100/90">Sri Preethaji & Sri Krishnaji</p>
+                    <p className="mt-0.5 text-[10px] text-white/60">Co-founders of Oneness</p>
+                  </div>
+                </div>
+                <a
+                  href={EKAM_PREETHAJI_KRISHNAJI_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-amber-100/70 transition hover:text-amber-100"
+                >
+                  {tr('ekamPage', 'cta_source', lang)}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+
+                {/* ── Quote ── */}
+                <div className="rounded-2xl border border-amber-300/15 bg-amber-300/5 p-5">
+                  <Quote className="mb-2 h-5 w-5 text-amber-300/40" />
+                  <p className="text-sm italic leading-relaxed text-amber-100/80">
+                    {tr('ekamPage', 'founders_quote', lang)}
+                  </p>
+                  <p className="mt-2 text-xs font-semibold text-amber-200/60">
+                    {tr('ekamPage', 'founders_quote_author', lang)}
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Family cards ── */}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
+                {familyMembers.map(({ key, Icon }) => (
+                  <article key={key} className="rounded-3xl border border-white/10 bg-slate-950/35 p-5 transition hover:border-amber-200/24">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200/20 bg-amber-300/10 text-amber-100">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="mt-3 text-sm font-semibold text-white">{tr('ekamPage', `${key}_title`, lang)}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{tr('ekamPage', `${key}_body`, lang)}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ VIRTUAL TOUR / TEMPLE GALLERY ═══════════ */}
+      <section className="relative px-6 py-12 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200/20 bg-sky-300/10 text-sky-100">
+                <Play className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-100/60">{tr('ekamPage', 'tour_section_label', lang)}</p>
+                <h2 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{tr('ekamPage', 'tour_section_title', lang)}</h2>
+              </div>
+            </div>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{tr('ekamPage', 'tour_section_subtitle', lang)}</p>
+
+            {/* ── Image gallery ── */}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Ekam hero */}
+              <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 sm:col-span-2 lg:col-span-1 lg:row-span-2">
+                <img
+                  src={EKAM_GOLDEN_EGG_IMAGE}
+                  alt="Ekam — Oneness sacred space"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-200">EKAM</p>
+                  <p className="mt-1 text-sm text-white/80">Varadaiahpalem, Andhra Pradesh</p>
+                </div>
+              </div>
+              {/* Turiya / Sacred space */}
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                <img
+                  src={EKAM_TURIYA_IMAGE}
+                  alt="Sacred meditation space"
+                  className="aspect-[16/10] w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">Meditation space</p>
+                </div>
+              </div>
+              {/* Nordic centre */}
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                <img
+                  src={EKAM_NORDIC_IMAGE}
+                  alt="Oneness Nordic — European Centre"
+                  className="aspect-[16/10] w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">{tr('ekamPage', 'tour_nordic_title', lang)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Facts row ── */}
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {tourFacts.map(({ key, Icon }) => (
+                <div key={key} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <Icon className="h-4 w-4 shrink-0 text-amber-200/60" />
+                  <p className="text-xs font-medium text-slate-300">{tr('ekamPage', key, lang)}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Nordic description ── */}
+            <div className="mt-6 rounded-2xl border border-sky-200/10 bg-sky-300/5 p-5">
+              <h3 className="text-base font-semibold text-white">{tr('ekamPage', 'tour_nordic_title', lang)}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-300">{tr('ekamPage', 'tour_nordic_body', lang)}</p>
+            </div>
+
+            {/* ── External links ── */}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href={EKAM_YOUTUBE_CHANNEL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-amber-200/30"
+              >
+                <Play className="h-4 w-4" />
+                {tr('ekamPage', 'tour_cta_youtube', lang)}
+              </a>
+              <a
+                href={EKAM_SOURCE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-amber-200/15 bg-amber-300/8 px-5 py-2.5 text-sm font-semibold text-amber-50 transition hover:border-amber-200/30"
+              >
+                <ExternalLink className="h-4 w-4" />
+                {tr('ekamPage', 'tour_cta_website', lang)}
+              </a>
             </div>
           </div>
         </div>
