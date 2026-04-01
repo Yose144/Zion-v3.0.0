@@ -15,9 +15,9 @@ path = "src/bin/server.rs"
 [dependencies]
 anyhow.workspace = true
 ctrlc.workspace = true
+ed25519-dalek.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-ed25519-dalek.workspace = true
 zion-core = { path = "../core" }
 
 [features]
