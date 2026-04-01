@@ -35,10 +35,10 @@ name                    = "Base"
 evm_chain_id            = 8453
 rpc_url                 = "https://base-rpc.publicnode.com"
 rpc_url_backup          = "https://mainnet.base.org"
-wzion_address           = "0x0000000000000000000000000000000000000000"   # TODO: deploy wZION to Base mainnet
-bridge_contract_address = "0x0000000000000000000000000000000000000000"   # TODO: deploy ZIONBridge to Base mainnet
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 64         # higher finality for mainnet safety
-enabled                 = false      # DISABLED until contracts are deployed
+enabled                 = false      # PAUSED — enable after L1 bridge vault is operational
 gas_strategy            = "eip1559"
 max_gas_gwei            = 5          # tight gas cap for mainnet
 # start_block           = 0          # set to contract deployment block
@@ -50,7 +50,10 @@ private_key_file    = "/etc/zion/bridge-validator.key"
 validator_id        = "validator-1"
 threshold           = 3
 total_validators    = 5
-validator_addresses = []   # populate with all 5 validator EVM addresses
+validator_addresses = [
+    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+    "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787",
+]   # mainnet: expand to 5 validators before production traffic
 
 # ── Security ─────────────────────────────────────────────────────────────────
 
