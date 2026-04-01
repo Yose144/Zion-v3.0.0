@@ -228,44 +228,45 @@ export default function EkamMuseumLanding() {
       </section>
 
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative px-6 pt-20 pb-12 sm:px-8 lg:px-10">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr] lg:items-center xl:grid-cols-[1.02fr_0.98fr]">
-          <div className="space-y-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-amber-100/88">
-              <Sparkles className="h-3.5 w-3.5 text-zion-gold" />
-              {tr('ekamPage', 'badge', lang)}
-            </span>
-            <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              {tr('ekamPage', 'title', lang)}
-            </h1>
-            <p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-              {tr('ekamPage', 'subtitle', lang)}
-            </p>
-          </div>
+      <section className="relative pt-20 pb-12">
+        <div className="relative min-h-[62vh] overflow-hidden border-y border-white/10 bg-slate-950 sm:min-h-[68vh] lg:min-h-[72vh]">
+          <Image
+            src={EKAM_BANNER_IMAGE}
+            alt="EKAM — Oneness Temple"
+            fill
+            sizes="100vw"
+            className="object-cover object-center"
+            priority
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,16,0.22),rgba(5,8,16,0.34)_24%,rgba(5,8,16,0.82)_72%,rgba(5,8,16,0.96)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(251,191,36,0.18),transparent_24%),radial-gradient(circle_at_85%_22%,rgba(56,189,248,0.12),transparent_20%)]" />
 
-          <div className="relative w-full">
-            <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-amber-300/20 via-transparent to-sky-400/20 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-amber-200/20 bg-slate-950/60 p-3 shadow-[0_24px_80px_rgba(2,6,23,0.5)] backdrop-blur">
-              <div className="relative aspect-[16/9] overflow-hidden rounded-[1.5rem] border border-white/10">
-                <Image
-                  src={EKAM_BANNER_IMAGE}
-                  alt="EKAM — Oneness Temple"
-                  fill
-                  sizes="(min-width: 1280px) 42rem, (min-width: 1024px) 50vw, 100vw"
-                  className="object-cover object-center"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between gap-4 p-5">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.26em] text-amber-100/70">EKAM</p>
-                    <p className="mt-1 text-sm text-white/90">Varadaiahpalem · Oneness Temple</p>
+          <div className="relative mx-auto flex min-h-[62vh] max-w-6xl items-end px-6 pb-8 sm:min-h-[68vh] sm:px-8 sm:pb-10 lg:min-h-[72vh] lg:px-10 lg:pb-12">
+            <div className="w-full max-w-4xl rounded-4xl border border-white/12 bg-black/28 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.35)] backdrop-blur-md sm:p-8 lg:p-10">
+              <div className="flex flex-wrap items-end justify-between gap-6">
+                <div className="max-w-3xl space-y-5">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/12 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-amber-100/88">
+                    <Sparkles className="h-3.5 w-3.5 text-zion-gold" />
+                    {tr('ekamPage', 'badge', lang)}
+                  </span>
+                  <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                    {tr('ekamPage', 'title', lang)}
+                  </h1>
+                  <p className="max-w-2xl text-base leading-8 text-slate-200 sm:text-lg">
+                    {tr('ekamPage', 'subtitle', lang)}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
+                  <div className="rounded-2xl border border-white/12 bg-black/32 px-4 py-3 backdrop-blur-sm">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-100/80">EKAM</p>
+                    <p className="mt-1 text-sm text-white/92">Varadaiahpalem · Oneness Temple</p>
                   </div>
                   <a
                     href={EKAM_SOURCE_URL}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition hover:border-amber-200/40"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition hover:border-amber-200/40"
                   >
                     {tr('ekamPage', 'cta_source', lang)}
                   </a>
