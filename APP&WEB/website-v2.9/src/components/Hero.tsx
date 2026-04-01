@@ -20,28 +20,30 @@ import { tr } from '@/lib/translations';
 import { SITE_ENVIRONMENT_LABEL, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
 
-const observatoryMeta: Record<
-  ObservatoryMode,
-  { signal: string; focus: string }
-> = {
-  'deep-space': {
-    signal: 'Interstellar anomaly hunting',
-    focus: 'Cosmic miner orchestration',
-  },
-  'planet-orbit': {
-    signal: 'Orbital AI relay + pool sync',
-    focus: 'WARP bridges & liquidity',
-  },
-  'galactic-core': {
-    signal: 'DAO chambers + warp council',
-    focus: 'Governance + sacred ledgers',
-  },
-};
-
 export default function Hero() {
   const { mode, setMode, availableModes } = useObservatory();
-  const active = observatoryMeta[mode];
   const { lang } = useLang();
+  const observatoryMeta: Record<ObservatoryMode, { label: string; description: string; signal: string; focus: string }> = {
+    'deep-space': {
+      label: tr('hero', 'mode_deep_space_label', lang),
+      description: tr('hero', 'mode_deep_space_desc', lang),
+      signal: tr('hero', 'mode_deep_space_signal', lang),
+      focus: tr('hero', 'mode_deep_space_focus', lang),
+    },
+    'planet-orbit': {
+      label: tr('hero', 'mode_planet_orbit_label', lang),
+      description: tr('hero', 'mode_planet_orbit_desc', lang),
+      signal: tr('hero', 'mode_planet_orbit_signal', lang),
+      focus: tr('hero', 'mode_planet_orbit_focus', lang),
+    },
+    'galactic-core': {
+      label: tr('hero', 'mode_galactic_core_label', lang),
+      description: tr('hero', 'mode_galactic_core_desc', lang),
+      signal: tr('hero', 'mode_galactic_core_signal', lang),
+      focus: tr('hero', 'mode_galactic_core_focus', lang),
+    },
+  };
+  const active = observatoryMeta[mode];
 
   const missionSignals = [
     { title: tr('hero', 'signal_l1', lang),      status: tr('hero', 'signal_status_l1', lang),      value: '52 590 LOC · 780+ tests · Rust', accent: 'text-emerald-300' },
@@ -150,21 +152,20 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-white">Live test network, not a concept mockup</span>
+                      <span className="text-sm font-bold text-white">{tr('hero', 'teaser_title', lang)}</span>
                     <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-semibold">
-                        Active
+                        {tr('hero', 'teaser_badge', lang)}
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    Network status, explorer, pool, downloads, and documentation — all in one place.
-                      This homepage is a public rehearsal entry point, not a production launch announcement.
+                    {tr('hero', 'teaser_body', lang)}
                   </p>
                 </div>
                 <a
                   href="#tree-of-life"
                   className="flex-none ml-auto text-xs text-pink-300 hover:text-pink-200 flex items-center gap-1 transition"
                 >
-                  Explore <ArrowRight className="w-3.5 h-3.5" />
+                  {tr('hero', 'teaser_cta', lang)} <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>
             </motion.div>
@@ -203,18 +204,18 @@ export default function Hero() {
                 <div>
                   <p className="text-xs uppercase text-gray-500 tracking-[0.3em] mb-1">{tr('hero', 'observatory_label', lang)}</p>
                   <h3 className="text-xl font-bold text-white">
-                    {availableModes.find((m) => m.id === mode)?.label}
+                    {active.label}
                   </h3>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500 mb-1">Signal Focus</p>
+                  <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_focus_label', lang)}</p>
                   <p className="text-sm text-zion-cyan font-semibold">{active.focus}</p>
                 </div>
               </header>
 
               {/* scanline */}
               <div className="rounded-xl border border-white/6 bg-gradient-to-br from-white/5 to-transparent p-4">
-                <p className="text-xs text-gray-500 mb-1">Current Scanline</p>
+                <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_scan_label', lang)}</p>
                 <p className="text-sm text-white">{active.signal}</p>
               </div>
 
@@ -237,9 +238,9 @@ export default function Hero() {
                             mode === availableMode.id ? 'bg-zion-gold animate-pulse' : 'bg-zion-cyan/50'
                           }`}
                         />
-                        {availableMode.label}
+                        {observatoryMeta[availableMode.id].label}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">{availableMode.description}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{observatoryMeta[availableMode.id].description}</p>
                     </div>
                     <ArrowRight
                       className={`w-4 h-4 transition-all ${
@@ -271,7 +272,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 3-node rehearsal · Prague + USA + Singapore
+                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · {tr('hero', 'version_pill_rehearsal', lang)}
                 </span>
               </div>
             </div>

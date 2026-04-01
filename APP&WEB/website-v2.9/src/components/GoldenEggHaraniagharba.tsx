@@ -8,7 +8,6 @@ import { tr } from '@/lib/translations';
 
 export default function GoldenEggHaraniagharba() {
   const { lang } = useLang();
-  const cs = lang === 'cs';
 
   return (
     <section className="relative px-4 py-16 md:py-20">
@@ -60,22 +59,20 @@ export default function GoldenEggHaraniagharba() {
                 <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/90">
-                      {cs ? 'Nově zvýrazněno' : 'Now featured'}
+                      {tr('goldenEgg', 'featured_label', lang)}
                     </p>
                     <h3 className="mt-1 text-lg font-semibold text-white md:text-xl">
-                      {cs ? 'Ekam Deeksha — Full Book' : 'Ekam Deeksha — Full Book'}
+                      {tr('goldenEgg', 'featured_title', lang)}
                     </h3>
                     <p className="mt-1 text-sm text-amber-100/80">
-                      {cs
-                        ? 'Kompletní verze knihy je přímo v docs a tvoří hlavní most mezi filozofií a runtime v2.9.x.'
-                        : 'The complete edition is now highlighted in docs as the core bridge between philosophy and the v2.9.x runtime.'}
+                      {tr('goldenEgg', 'featured_body', lang)}
                     </p>
                   </div>
                   <Link
                     href="/docs#book-ekam-full"
                     className="inline-flex items-center justify-center gap-2 rounded-xl border border-zion-gold/40 bg-black/35 px-4 py-2 text-sm font-semibold text-zion-gold transition hover:bg-black/55"
                   >
-                    {cs ? 'Otevřít knihu' : 'Open book'}
+                    {tr('goldenEgg', 'featured_cta', lang)}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -124,10 +121,10 @@ export default function GoldenEggHaraniagharba() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-zion-gold/90 uppercase tracking-wide">
-                      {cs ? 'Kniha Ekam Deeksha' : 'Ekam Deeksha Book'}
+                      {tr('goldenEgg', 'book_card_label', lang)}
                     </p>
                     <p className="mt-0.5 text-sm font-semibold text-white truncate">
-                      {cs ? 'Full verze (CZ + EN) v dokumentaci' : 'Full version (CZ + EN) in docs'}
+                      {tr('goldenEgg', 'book_card_body', lang)}
                     </p>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0 text-zion-gold/80 transition group-hover:translate-x-1" />
