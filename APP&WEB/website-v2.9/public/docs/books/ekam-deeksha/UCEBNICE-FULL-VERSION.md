@@ -1517,14 +1517,30 @@ Tyto praxe byly v predsedí 2017 centrální — pred redem Dásu i novými foll
 
 <- 160 unit testů, 5? - 160 unit testů, 5 doc testů — všy: SOURCE: 'UCEBNICE-12-CASOVA-OSA.md' -->
 
-# Kapitola 12 — Casová osa: Kompletní chronologie 1949–2026
+# Kapitola 12 — Casová osa: Kompletní chronologie 1149–2026
+
+## 12.0 Hlubší předhistorie — 800letá linie Sri Dattatreyi
+
+| Rok | Událost |
+|-----|---------|
+| **1149 n.l.** | **Manifestace Sri Dattatreyi** — trojice Brahmy, Višnua a Šivy v jednom těle se poprvé projeví jako osmiletý chlapec pod banánovníkem. Nejde o inkarnaci (narození matce), ale o přímou fyzickou manifestaci Božství |
+| **~1320** | **Sri Paada Sri Vallabha** narozen v Pitapuramu — první inkarnace Dattatreyi v Kali juze. Ve věku 1 roku koná zázraky. Ve věku 15 let odmítá sňatek: *„Jsem již ženatý s Mukti."* Vyslovuje klíčové **proroctví**: *„Vrátím se na konci Kali jugy. Vezmu si dceru Venkaji — Padmavati. Vrátím se jako Kalki a pomohu lidstvu dosáhnout Zlatého věku."* |
+| **~1350** | **Mahasamadhi** Sri Paady Sri Vallabhy ve věku 30 let (Karnataka) |
+| **1378** | **Sri Narasimha Saraswati** narozen v Maharaštře — druhá inkarnace. Mlčí do 5 let, poté recituje védy. V 9 letech odchází jako sanjásin |
+| **1458** | Narasimha Saraswat vstupuje do **400 let trvající meditace** — 150 let v Kdalivanum, 250 let v Himálajích. Termiti kolem něho budují hradbu |
+| **1856** | Přichází do Alkokoty (Maharaštra) jako **Svámí Samarth** — s fyzickým tělem starým téměř 500 let |
+| **1878** | **Mahasamadhi Svámího Samartha**. Před odchodem říká žáku Shirdi Sai Babovi: *„Vstoupím do tvého těla a začnu skrze tebe pracovat."* |
+
+*Zdroj: Sripada Srivallabha Charitaamrutam (vydáno 2001 po 33 generacích ústního předávání); ášrámová tradice; blog TerraNova | Genesis (post 5).*
+
+---
 
 ## 12.1 Předhistorie a zakladatelé
 
 | Rok | Událost |
 |-----|---------|
-| **1949, 7. brezna** | Narozeni Vijaye Kumara Naidua (pozdeji Sri Bhagavan), vesnice Natham, distrikt Vellore, Tamil Nadu |
-| **1954, 15. srpna** | Narozeni Padmavathi (pozdeji Sri Amma), vesnice Sangam, Andhra Pradesh |
+| **1949, 7. brezna** | Narozeni Vijaye Kumara Naidua (pozdeji Sri Bhagavan), vesnice Natham, distrikt Vellore, Tamil Nadu — **přesně 800 let po první manifestaci Sri Dattatreyi v roce 1149**. Baratgiri Maharaj (Bapu), přímý žák Svámího Samartha, má během samadhi vizi o narození Kalkiho |
+| **1954, 15. srpna** | Narozeni Padmavathi (pozdeji Sri Amma), vesnice Sangam, Andhra Pradesh — dcera Venkaji z Nellore, **přesně jak bylo prorokováno Sri Paadou Sri Vallabhou kolem roku 1320** |
 | **1955** | Rodina Vijaye Kumara se stehuje do Chennai |
 | **cca 1960–1966** | Vijay Kumar navštevuje Don Bosco School v Chennai; prítel R. Sankar ho seznamuje s filozofií Jiddu Krishnamurtiho |
 | **cca 1966–1970** | Studium matematiky na DG Vaishnav College, Chennai |
@@ -1565,6 +1581,7 @@ Tyto praxe byly v predsedí 2017 centrální — pred redem Dásu i novými foll
 | Rok | Událost |
 |-----|---------|
 | **2009** | Oneness Trainers oprávneni **iniciovat nové deeksha givers** — exponenciální šírení: jeden trenér = stovky nových giveru |
+| **2010, říjen** | Odhalení **Nového Šrimurthi** v Chrámu Jednoty — sousoší zobrazující celou 800letou linii Sri Dattatreyi (6 postav kolem centrální zlaté koule Milosti s Sri Kalki AmmaBhagavanem uvnitř). Ze Šrimurthi spontánně teče božský nektar po několik dní. Reverend Michael Milner zaznamenává svědectví |
 | **2012** | Zavedení **Oneness Meditace** — skupinová forma s video vedením. **21. prosince 2012**: globální udalost v rámci „konce Mayského kalendáre"; hnutí tvrdí, ze bylo „probuzeno" **70 000 lidí** = kritická masa pro Zlatý vek |
 | **2013** | Sri Bhagavan a Sri Amma prohlašují, ze „jejich misie je dokoncena". **Rád Dásu rozpušten** → premena na **Golden Age Community**. Zavedení **Golden Orb Sri Murti** — posvétná soška spojená se Zlatou koulí |
 | **2014** | Zavedení **Sacred Chambers** — speciální mikro-prostory pro individuální meditaci pred Sri Murti; tři komory (Kama, Artha, Dharma-Moksha) |
