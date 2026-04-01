@@ -15,6 +15,7 @@ export const SITE_PRIMARY_DAO_API_URL = `http://${SITE_PRIMARY_HOST}:8081`;
 export const SITE_NETWORK_TOPOLOGY = '3-node test-mainnet rehearsal · Prague + USA + Singapore';
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:3333`;
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
+export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';
 export const EKAM_SOURCE_URL = 'https://www.theonenessmovement.org/about-oneness';
 
 /* ── Ekam extended image gallery ── */
