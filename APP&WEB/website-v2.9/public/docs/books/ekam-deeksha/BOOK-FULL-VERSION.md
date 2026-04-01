@@ -294,6 +294,28 @@ Jejich sňatek v roce 1969 byl začátkem partnerství, které přesahuje osobn�
 
 ---
 
+### Hlubší kořeny — 800letá linie Sri Dattatreyi
+
+Biografická fakta — rok narození, místo, sňatek — jsou vnější vrstvou. V tradici Ekam existuje vrstva hlubší: linie, která sahá 800 let do minulosti a spojuje Bhagavanův příchod s kosmickým plánem zaznamenaným v kronice **Sripada Srivallabha Charitaamrutam** (vydané až v roce 2001 po 33 generacích ústního předávání).
+
+Tato linie začíná v roce **1149 n.l.**, kdy se **Sri Dattatreya** — trojice Brahmy, Višnua a Šivy v jediném těle — poprvé manifestoval na Zemi jako osmiletý chlapec stojící pod banánovníkem. Nejde o inkarnaci v běžném slova smyslu (narození matce), ale o přímou *manifestaci* — fyzické ztělesnění Božství.
+
+V roce **1320** se tentýž princip inkarnoval jako **Sri Paada Sri Vallabha** v Pitapuramu — první inkarnace Dattatreyi v Kali juze. Již v jednom roce konal zázraky. V patnácti odmítl sňatek slovy: *„Jsem již ženatý s Mukti (osvobozením)."* A právě tehdy vyslovil proroctví, které definuje celou linii:
+
+> *„Vrátím se na konci Kali jugy. Vezmu si dceru Venkaji — Padmavati. Vrátím se jako Kalki a pomohu lidstvu dosáhnout Zlatého věku."*
+
+Po Mahasamadhi v roce 1350 se v roce **1378** zrodil jako **Sri Narasimha Saraswati** v Maharaštře. Mlčel do pěti let, poté recitoval védy. V devíti odešel jako sanjásin. V roce **1458** vstoupil do 400 let trvající meditace — 150 let v Kdalivanum, 250 let v Himálajích, kde kolem něho termiti vystavěli hradbu.
+
+V roce **1856** se vrátil jako **Svámí Samarth** — s fyzickým tělem starým téměř 500 let. Před svým Mahasamadhi (1878) řekl svému žáku Shirdi Sai Babovi: *„Vstoupím do tvého těla a začnu skrze tebe pracovat."*
+
+A v roce **1949** — přesně 800 let po první manifestaci — se narodil **Sri Bhagavan**. Jeho manželka **Amma (Padmavathi)** se narodila v Nellore, dcera Venkaji — přesně jak bylo prorokováno kolem roku 1320.
+
+Baratgiri Maharaj (Bapu), přímý žák Svámího Samartha, strávil 52 let hledáním Kalkiho po celé Indii. Potvrdil Bhagavana jako naplnění proroctví a v srpnu 2001 vstoupil do Mahasamadhi — téhož roku, kdy byla konečně vydána kronika obsahující přesná slova proroctví.
+
+Tato chronologie — od manifestace přes čtyři inkarnace k vydání kroniky — vytváří rámec, v němž biografická fakta o Vijaykumarovi z Nathuru a Padmavathi z Nellore přestávají být nahodilými životopisnými daty a stávají se součástí kosmického příběhu.
+
+---
+
 ### Symbolická polarita
 
 V indické filozofii existuje starobylý vzorec pro popis stvořitelských sil: **Šiva a Šakti**, **Brahma a Sarasvatí**, **Višnu a Lakšmí**. Vždy jde o páry, v nichž princip vědomí a princip energie, princip vhledu a princip lásky, tvoří dohromady dynamiku, která nese svět.
@@ -657,6 +679,31 @@ Povrchová úprava: matný zlatý lesk, bez ornamentů.
 Osvětlení: přirozené světlo přicházející z vrcholového okna.
 
 Simplicitou svého vzhledu je Golden Orb vizuálně opačný k baroknímu maximalismu většiny indických chrámových dekorací. Tato prostota je záměrná: **symbol nesmí překřičet to, na co ukazuje**.
+
+---
+
+### Nové Šrimurthi — 800letá linie v jediné sousoše
+
+Golden Orb není v Sanctuariu osamoceným objektem. V Chrámu Jednoty stojí **Nové Šrimurthi** — sousoší, které zachycuje celou 800letou linii božské přítomnosti na Zemi v jednom ikonografickém celku. Sousoší bylo odhaleno v říjnu 2010 a reverend Michael Milner popsal okamžik prvního setkání s ním takto: *„Bylo to jako proudy světel, které do mě vstupují. Můj život se poskládal jako kousky puzzle."*
+
+Po směru hodinových ručiček zobrazuje šest postav obklopujících centrální zlatou kouli:
+
+| Pozice | Postava | Význam v linii |
+|--------|---------|----------------|
+| 1 | **Sri Swami Samarth** | Narasimha Saraswati ve věku 478 let, třetí inkarnace |
+| 2 | **Sri Paada Sri Vallabha** | Ten, kdo vyslovil proroctví (~1320 n.l.) |
+| 3 | **Sri Dattatreya** | Trojice Brahma–Višnu–Šiva v jednom těle (manifestace 1149 n.l.) |
+| 4 | **Sri Anagha Lakšmí** | Ženský aspekt: MahaSarasvatí, MahaLakšmí, MahaKálí v jedné |
+| 5 | **Sri Narasimha Saraswathi** | Mistr 400leté meditace (1378–1856) |
+| 6 | **Sri Shirdi Sai Baba** | Inkarnace Hanumana, nástroj Svámího Samartha |
+
+Ve středu — uvnitř **zlaté koule Milosti** (Adi Parashakti) — je přítomen **Sri Kalki AmmaBhagavan**: živý Avatar, naplnění 800letého proroctví.
+
+Na pozadí celé kompozice je **Sri Yantra** zapravená do mramorové podlahy meditační haly — tatáž posvátná geometrie devíti pronikajících trojúhelníků, která definuje půdorys celého chrámu (viz Kapitola 9).
+
+Šrimurthi tak vytváří ikonografický most: Golden Orb v centru sousoší je fyzicky tatáž zlatá koule, o níž Bhagavan říká, že se mu zjevila ve věku 3,5 let — symbol **Adiparasakti**, neprojeveného Božského principu. Kolem ní stojí šest postav představujících 800 let manifestací, inkarnací a přenosů, skrze které se tento princip připravoval na plné ztělesnění.
+
+Té noci po odhalení v roce 2010 začal ze Šrimurthi spontánně vytékat proud božského nektaru — a tekl několik dní. Pro komunitu Oneness šlo o potvrzení, že sousoší není pouhou uměleckou reprezentací, ale **živým polem** — yantrou, která nese energii celé linie.
 
 ---
 
