@@ -1359,6 +1359,12 @@ function colorizeConsoleLine(raw) {
     return { html: `${tsHtml}<span class="mc-job">new job</span> height <span class="mc-hr">${m[1]}</span> diff <span class="mc-diff">${m[2]}</span> algo <span class="mc-algo">${esc(m[3])}</span>` };
   }
 
+  // ── V3 shares summary: "shares A:5 R:0 (100.0%) | hashes 42000 | pool latency 38ms | uptime 0h 5m 12s" ──
+  m = raw.match(/shares A:(\d+)\s+R:(\d+)\s+\(([\d.]+)%\)\s+\|\s+hashes\s+(\d+)\s+\|\s+pool latency\s+([\d.]+)ms\s+\|\s+uptime\s+(.*)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-speed">shares</span> A:<span class="mc-accepted">${m[1]}</span> R:<span class="mc-rejected">${m[2]}</span> <span class="mc-info">(${m[3]}%)</span> | hashes <span class="mc-hr">${m[4]}</span> | latency <span class="mc-ts">${m[5]}ms</span> | uptime <span class="mc-info">${esc(m[6].trim())}</span>` };
+  }
+
   // ── BLOCK FOUND ──
   m = raw.match(/BLOCK FOUND.*?height\s+(\d+).*?\(total:\s*(\d+)\)/i);
   if (m) {
