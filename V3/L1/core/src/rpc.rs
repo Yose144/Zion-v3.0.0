@@ -642,6 +642,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
             }
 
             let mut validator_ids = HashSet::new();
+            let mut non_synthetic_signed = 0usize;
             for proof in validator_proofs {
                 let validator_id = proof.get("validator_id")
                     .or_else(|| proof.get("id"))
@@ -650,6 +651,37 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 if !validator_ids.insert(validator_id.to_string()) {
                     return Err((INVALID_PARAMS, format!("duplicate validator_id in validator_proofs: {validator_id}")));
                 }
+
+                let signature = proof
+                    .get("signature")
+                    .and_then(|value| value.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, format!("validator proof {validator_id} is missing string signature")))?;
+                let synthetic = proof
+                    .get("synthetic")
+                    .and_then(|value| value.as_bool())
+                    .unwrap_or(false);
+
+                if !synthetic {
+                    let sig_hex = signature.strip_prefix("0x").unwrap_or(signature);
+                    let sig_ok = sig_hex.len() == 128
+                        && sig_hex.chars().all(|c| c.is_ascii_hexdigit());
+                    if !sig_ok {
+                        return Err((
+                            INVALID_PARAMS,
+                            format!(
+                                "validator proof {validator_id} must contain a 64-byte secp256k1 signature hex"
+                            ),
+                        ));
+                    }
+                    non_synthetic_signed += 1;
+                }
+            }
+
+            if non_synthetic_signed == 0 {
+                return Err((
+                    INVALID_PARAMS,
+                    "submitBridgeUnlock requires at least one non-synthetic signed validator proof".into(),
+                ));
             }
 
             let mut rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
@@ -1428,9 +1460,9 @@ mod tests {
             "evm_chain": "base-sepolia",
             "evm_tx_hash": "0xempty",
             "validator_proofs": [
-                {"validator_id": "v1", "signature": "01"},
-                {"validator_id": "v2", "signature": "02"},
-                {"validator_id": "v3", "signature": "03"}
+                {"validator_id": "v1", "signature": "0x11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", "synthetic": false},
+                {"validator_id": "v2", "signature": "synthetic-proof-slot", "synthetic": true},
+                {"validator_id": "v3", "signature": "synthetic-proof-slot", "synthetic": true}
             ]
         }));
         assert!(resp.error.is_some());
@@ -1450,9 +1482,9 @@ mod tests {
             "evm_chain": "base-sepolia",
             "evm_tx_hash": "0xabc123",
             "validator_proofs": [
-                {"validator_id": "v1", "signature": "01"},
-                {"validator_id": "v2", "signature": "02"},
-                {"validator_id": "v3", "signature": "03"}
+                {"validator_id": "v1", "signature": "0x11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", "synthetic": false},
+                {"validator_id": "v2", "signature": "synthetic-proof-slot", "synthetic": true},
+                {"validator_id": "v3", "signature": "synthetic-proof-slot", "synthetic": true}
             ]
         }));
         assert!(resp.error.is_none(), "submitBridgeUnlock failed: {:?}", resp.error);
@@ -1472,9 +1504,9 @@ mod tests {
             "evm_chain": "base-sepolia",
             "evm_tx_hash": "0xreplay",
             "validator_proofs": [
-                {"validator_id": "v1", "signature": "01"},
-                {"validator_id": "v2", "signature": "02"},
-                {"validator_id": "v3", "signature": "03"}
+                {"validator_id": "v1", "signature": "0x11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", "synthetic": false},
+                {"validator_id": "v2", "signature": "synthetic-proof-slot", "synthetic": true},
+                {"validator_id": "v3", "signature": "synthetic-proof-slot", "synthetic": true}
             ]
         });
 
