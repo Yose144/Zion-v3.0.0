@@ -1081,11 +1081,13 @@ function resolveMinerSelection(preferred) {
   // V3 desktop defaults to Rust-only mining backend.
   // Legacy backends can be re-enabled only for explicit emergency support.
   const allowLegacyFallback = String(process.env.ZION_ALLOW_LEGACY_PY_FALLBACK || '').trim() === '1';
-  if ((pref === 'python' || pref === 'legacy') && !allowLegacyFallback) return null;
-
+  // V3: Rust always wins when available — even if config.minerBackend='python'.
+  // Prevents infinite recursion when emergency block recurses with minerBackend:'python'
+  // and resolveMinerSelection('python') would return null due to legacy-fallback gate.
   if (rustPath) return select('rust', rustPath, true, false);
-  // Emergency fallback: only when Rust miner is unavailable.
-  // Keeps one-click behavior alive on machines where Rust binary is missing/quarantined.
+  // Block legacy Python preference unless env override is active.
+  if ((pref === 'python' || pref === 'legacy') && !allowLegacyFallback) return null;
+  // Emergency fallback: Rust unavailable — only then offer Python.
   if (pyPath && (allowLegacyFallback || pref === 'auto' || pref === 'rust' || pref === 'python')) {
     return select('python', pyPath, false, true);
   }
@@ -1424,7 +1426,6 @@ function normalizeAlgorithmName(algo) {
     raw === 'ch4_2' ||
     raw === 'chv4.2' ||
     raw === 'ch42' ||
-    raw === 'merkabah' ||
     raw === 'deeksha' ||
     raw === 'cosmic_harmony_deeksha' ||
     raw === 'ekam' ||
@@ -3793,7 +3794,8 @@ function startMining(config) {
         // ignore
       }
       startMiningInProgress = false;
-      return startMining({ ...config, minerBackend: 'python' });
+        // Use 'auto' so resolveMinerSelection returns Python (not null) and avoids infinite recursion.
+        return startMining({ ...config, minerBackend: 'auto' });
     }
 
     const rustHint = preferredBackend === 'rust'
