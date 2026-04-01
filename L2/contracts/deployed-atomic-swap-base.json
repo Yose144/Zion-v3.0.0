@@ -1,0 +1,8 @@
+{
+  "network": "base",
+  "deployedAt": "2026-04-01T16:11:52.760Z",
+  "deployer": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+  "ZIONAtomicSwap": "0x3DE9Ad42716854083ab837706E3961d10B0e63Eb",
+  "admin": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+  "guardian": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186"
+}
