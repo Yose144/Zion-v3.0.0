@@ -287,6 +287,28 @@ impl PplnsEngine {
         payouts
     }
 
+    /// Roll back a previously computed payout batch.
+    ///
+    /// Used by the pool when payout execution fails after `compute_payouts`
+    /// has already moved balances out of `unpaid`.
+    pub fn rollback_payouts(&mut self, payouts: &[PayoutEntry]) {
+        if payouts.is_empty() {
+            return;
+        }
+
+        for payout in payouts {
+            let current = self.unpaid.get(&payout.miner_id).copied().unwrap_or(0);
+            self.unpaid
+                .insert(payout.miner_id.clone(), current.saturating_add(payout.amount));
+        }
+
+        let round_total: u64 = payouts.iter().map(|p| p.amount).sum();
+        self.total_paid_flowers = self.total_paid_flowers.saturating_sub(round_total);
+        if self.payout_rounds > 0 {
+            self.payout_rounds -= 1;
+        }
+    }
+
     /// Get the unpaid balance for a miner (flowers).
     pub fn unpaid_balance(&self, miner_id: &str) -> u64 {
         self.unpaid.get(miner_id).copied().unwrap_or(0)
