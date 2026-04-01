@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
+use k256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
 
 use crate::NodeRuntime;
 use crate::crypto;
@@ -37,6 +38,40 @@ pub const TX_REJECTED: i64 = -32004;
 pub const NOT_SYNCED: i64 = -32005;
 
 const ACTIVE_TRANSACTION_MODEL: &str = "account";
+
+fn bridge_operation_message(
+    recipient: &str,
+    amount_flowers: u64,
+    source_chain: &str,
+    burn_id: &str,
+    evm_tx_hash: &str,
+) -> String {
+    format!(
+        "unlock|recipient={}|amount={}|chain={}|burn_id={}|evm_tx={}",
+        recipient, amount_flowers, source_chain, burn_id, evm_tx_hash
+    )
+}
+
+fn load_bridge_validator_pubkey_allowlist() -> HashSet<String> {
+    std::env::var("ZION_BRIDGE_VALIDATOR_PUBKEYS")
+        .ok()
+        .map(|raw| {
+            raw.split(',')
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .map(|v| v.trim_start_matches("0x").to_ascii_lowercase())
+                .collect::<HashSet<_>>()
+        })
+        .unwrap_or_default()
+}
+
+fn required_bridge_validator_threshold() -> usize {
+    std::env::var("ZION_BRIDGE_VALIDATOR_THRESHOLD")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(3)
+}
 
 // ── Request / Response types ───────────────────────────────────────────
 
@@ -642,7 +677,24 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
             }
 
             let mut validator_ids = HashSet::new();
-            let mut non_synthetic_signed = 0usize;
+            let mut verified_validators = HashSet::new();
+            let operation_message = bridge_operation_message(
+                recipient,
+                amount_flowers,
+                source_chain,
+                burn_id,
+                evm_tx_hash,
+            );
+            let allowed_pubkeys = load_bridge_validator_pubkey_allowlist();
+            let required_threshold = required_bridge_validator_threshold();
+
+            if allowed_pubkeys.is_empty() {
+                return Err((
+                    INVALID_PARAMS,
+                    "core bridge validator allowlist is empty (set ZION_BRIDGE_VALIDATOR_PUBKEYS)".into(),
+                ));
+            }
+
             for proof in validator_proofs {
                 let validator_id = proof.get("validator_id")
                     .or_else(|| proof.get("id"))
@@ -662,25 +714,94 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .unwrap_or(false);
 
                 if !synthetic {
-                    let sig_hex = signature.strip_prefix("0x").unwrap_or(signature);
-                    let sig_ok = sig_hex.len() == 128
-                        && sig_hex.chars().all(|c| c.is_ascii_hexdigit());
-                    if !sig_ok {
+                    let public_key = proof
+                        .get("validator_public_key")
+                        .and_then(|value| value.as_str())
+                        .ok_or_else(|| {
+                            (
+                                INVALID_PARAMS,
+                                format!(
+                                    "validator proof {validator_id} requires validator_public_key for cryptographic verification"
+                                ),
+                            )
+                        })?;
+
+                    let pubkey_hex = public_key.trim_start_matches("0x").to_ascii_lowercase();
+                    if !allowed_pubkeys.is_empty() && !allowed_pubkeys.contains(&pubkey_hex) {
                         return Err((
                             INVALID_PARAMS,
-                            format!(
-                                "validator proof {validator_id} must contain a 64-byte secp256k1 signature hex"
-                            ),
+                            format!("validator proof {validator_id} pubkey is not in core allowlist"),
                         ));
                     }
-                    non_synthetic_signed += 1;
+
+                    let pubkey_bytes = hex::decode(&pubkey_hex)
+                        .map_err(|_| {
+                            (
+                                INVALID_PARAMS,
+                                format!("validator proof {validator_id} has invalid validator_public_key hex"),
+                            )
+                        })?;
+                    let verifying_key = VerifyingKey::from_sec1_bytes(&pubkey_bytes)
+                        .map_err(|_| {
+                            (
+                                INVALID_PARAMS,
+                                format!("validator proof {validator_id} has invalid secp256k1 public key bytes"),
+                            )
+                        })?;
+
+                    let sig_hex = signature.trim_start_matches("0x");
+                    let sig_bytes = hex::decode(sig_hex).map_err(|_| {
+                        (
+                            INVALID_PARAMS,
+                            format!("validator proof {validator_id} has invalid signature hex"),
+                        )
+                    })?;
+                    if sig_bytes.len() != 64 {
+                        return Err((
+                            INVALID_PARAMS,
+                            format!("validator proof {validator_id} signature must be 64 bytes"),
+                        ));
+                    }
+                    let signature = Signature::from_slice(&sig_bytes).map_err(|_| {
+                        (
+                            INVALID_PARAMS,
+                            format!("validator proof {validator_id} signature is not canonical ECDSA"),
+                        )
+                    })?;
+
+                    let proof_message = proof
+                        .get("operation_message")
+                        .and_then(|value| value.as_str())
+                        .unwrap_or(&operation_message);
+                    if proof_message != operation_message {
+                        return Err((
+                            INVALID_PARAMS,
+                            format!("validator proof {validator_id} operation_message mismatch"),
+                        ));
+                    }
+
+                    verifying_key
+                        .verify(operation_message.as_bytes(), &signature)
+                        .map_err(|_| {
+                            (
+                                INVALID_PARAMS,
+                                format!(
+                                    "validator proof {validator_id} failed secp256k1 signature verification"
+                                ),
+                            )
+                        })?;
+
+                    verified_validators.insert(validator_id.to_string());
                 }
             }
 
-            if non_synthetic_signed == 0 {
+            if verified_validators.len() < required_threshold {
                 return Err((
                     INVALID_PARAMS,
-                    "submitBridgeUnlock requires at least one non-synthetic signed validator proof".into(),
+                    format!(
+                        "submitBridgeUnlock requires at least {} cryptographically verified validator proofs",
+                        required_threshold
+                    ),
                 ));
             }
 
@@ -874,7 +995,10 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use k256::ecdsa::{signature::Signer, Signature, SigningKey};
     use serde_json::json;
+
+    static BRIDGE_ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
     fn test_router() -> RpcRouter {
         let mut router = RpcRouter::new();
@@ -1158,6 +1282,44 @@ mod tests {
             params,
             id: json!(1),
         })
+    }
+
+    fn make_bridge_validator_proofs(
+        recipient: &str,
+        amount_flowers: u64,
+        source_chain: &str,
+        burn_id: &str,
+        evm_tx_hash: &str,
+    ) -> (Vec<Value>, String) {
+        let operation_message = bridge_operation_message(
+            recipient,
+            amount_flowers,
+            source_chain,
+            burn_id,
+            evm_tx_hash,
+        );
+
+        let mut proofs = Vec::new();
+        let mut pubkeys = Vec::new();
+        for index in 0..3u8 {
+            let key_bytes = [index + 1; 32];
+            let signing_key = SigningKey::from_slice(&key_bytes).expect("test signing key");
+            let signature: Signature = signing_key.sign(operation_message.as_bytes());
+            let sec1 = signing_key.verifying_key().to_encoded_point(true);
+            let pubkey_hex = format!("0x{}", hex::encode(sec1.as_bytes()));
+            pubkeys.push(pubkey_hex.clone());
+
+            proofs.push(json!({
+                "validator_id": format!("v{}", usize::from(index) + 1),
+                "validator_public_key": pubkey_hex,
+                "signature": format!("0x{}", hex::encode(signature.to_bytes())),
+                "signature_scheme": "secp256k1-ecdsa",
+                "operation_message": operation_message,
+                "synthetic": false,
+            }));
+        }
+
+        (proofs, pubkeys.join(","))
     }
 
     #[test]
@@ -1451,20 +1613,28 @@ mod tests {
 
     #[test]
     fn live_submit_bridge_unlock_rejects_when_vault_is_empty() {
+        let _guard = BRIDGE_ENV_MUTEX.lock().expect("bridge env mutex lock");
         let router = live_router();
         let recipient = crate::crypto::derive_address(&[7u8; 32]);
+        let (validator_proofs, allowlist) = make_bridge_validator_proofs(
+            &recipient,
+            1_000_000_000_000u64,
+            "base-sepolia",
+            "burn-empty",
+            "0xempty",
+        );
+        std::env::set_var("ZION_BRIDGE_VALIDATOR_PUBKEYS", allowlist);
+        std::env::set_var("ZION_BRIDGE_VALIDATOR_THRESHOLD", "3");
         let resp = rpc_call(&router, "submitBridgeUnlock", json!({
             "recipient": recipient,
             "amount_flowers": 1_000_000_000_000u64,
             "burn_id": "burn-empty",
             "evm_chain": "base-sepolia",
             "evm_tx_hash": "0xempty",
-            "validator_proofs": [
-                {"validator_id": "v1", "signature": "0x11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", "synthetic": false},
-                {"validator_id": "v2", "signature": "synthetic-proof-slot", "synthetic": true},
-                {"validator_id": "v3", "signature": "synthetic-proof-slot", "synthetic": true}
-            ]
+            "validator_proofs": validator_proofs
         }));
+        std::env::remove_var("ZION_BRIDGE_VALIDATOR_PUBKEYS");
+        std::env::remove_var("ZION_BRIDGE_VALIDATOR_THRESHOLD");
         assert!(resp.error.is_some());
         let err = resp.error.unwrap();
         assert_eq!(err.code, TX_REJECTED);
@@ -1473,20 +1643,28 @@ mod tests {
 
     #[test]
     fn live_submit_bridge_unlock_accepts_funded_vault_request() {
+        let _guard = BRIDGE_ENV_MUTEX.lock().expect("bridge env mutex lock");
         let router = bridge_unlock_ready_router(2_000_000_000_000);
         let recipient = crate::crypto::derive_address(&[9u8; 32]);
+        let (validator_proofs, allowlist) = make_bridge_validator_proofs(
+            &recipient,
+            1_000_000_000_000u64,
+            "base-sepolia",
+            "burn-1",
+            "0xabc123",
+        );
+        std::env::set_var("ZION_BRIDGE_VALIDATOR_PUBKEYS", allowlist);
+        std::env::set_var("ZION_BRIDGE_VALIDATOR_THRESHOLD", "3");
         let resp = rpc_call(&router, "submitBridgeUnlock", json!({
             "recipient": recipient,
             "amount_flowers": 1_000_000_000_000u64,
             "burn_id": "burn-1",
             "evm_chain": "base-sepolia",
             "evm_tx_hash": "0xabc123",
-            "validator_proofs": [
-                {"validator_id": "v1", "signature": "0x11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", "synthetic": false},
-                {"validator_id": "v2", "signature": "synthetic-proof-slot", "synthetic": true},
-                {"validator_id": "v3", "signature": "synthetic-proof-slot", "synthetic": true}
-            ]
+            "validator_proofs": validator_proofs
         }));
+        std::env::remove_var("ZION_BRIDGE_VALIDATOR_PUBKEYS");
+        std::env::remove_var("ZION_BRIDGE_VALIDATOR_THRESHOLD");
         assert!(resp.error.is_none(), "submitBridgeUnlock failed: {:?}", resp.error);
         let result = resp.result.unwrap();
         assert_eq!(result["accepted"], true);
@@ -1495,25 +1673,33 @@ mod tests {
 
     #[test]
     fn live_submit_bridge_unlock_rejects_replay_key_reuse() {
+        let _guard = BRIDGE_ENV_MUTEX.lock().expect("bridge env mutex lock");
         let router = bridge_unlock_ready_router(3_000_000_000_000);
         let recipient = crate::crypto::derive_address(&[11u8; 32]);
+        let (validator_proofs, allowlist) = make_bridge_validator_proofs(
+            &recipient,
+            1_000_000_000_000u64,
+            "base-sepolia",
+            "burn-replay",
+            "0xreplay",
+        );
+        std::env::set_var("ZION_BRIDGE_VALIDATOR_PUBKEYS", allowlist);
+        std::env::set_var("ZION_BRIDGE_VALIDATOR_THRESHOLD", "3");
         let params = json!({
             "recipient": recipient,
             "amount_flowers": 1_000_000_000_000u64,
             "burn_id": "burn-replay",
             "evm_chain": "base-sepolia",
             "evm_tx_hash": "0xreplay",
-            "validator_proofs": [
-                {"validator_id": "v1", "signature": "0x11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", "synthetic": false},
-                {"validator_id": "v2", "signature": "synthetic-proof-slot", "synthetic": true},
-                {"validator_id": "v3", "signature": "synthetic-proof-slot", "synthetic": true}
-            ]
+            "validator_proofs": validator_proofs
         });
 
         let first = rpc_call(&router, "submitBridgeUnlock", params.clone());
         assert!(first.error.is_none(), "initial unlock failed: {:?}", first.error);
 
         let second = rpc_call(&router, "submitBridgeUnlock", params);
+        std::env::remove_var("ZION_BRIDGE_VALIDATOR_PUBKEYS");
+        std::env::remove_var("ZION_BRIDGE_VALIDATOR_THRESHOLD");
         assert!(second.error.is_some());
         let err = second.error.unwrap();
         assert_eq!(err.code, TX_REJECTED);
