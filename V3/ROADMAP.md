@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-28 (Sprint 8 complete, fee-split rollout verified live)
+Status date: 2026-04-01 (Sprint 9 complete, Phase 18 UTXO coinbase + pool payout E2E deployed, humanitarian tithe verified)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -78,6 +78,10 @@ This roadmap follows the release progression already defined in the repository d
 
 ### Latest Verified Runtime Milestone
 
+- **Phase 18 UTXO coinbase + pool payout E2E (2026-04-01):** `getBalance` now combines account+UTXO for zion1 addresses (was returning 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline: `execute_pool_payout()` with Ed25519 UTXO signing. Deployed to Prague, chain height 6801, miner balance 14.12B ZION, template utxo_tx_count=1.
+- **Humanitarian tithe verified on-chain (2026-04-01):** Per-block split is exact: miner 4,806,059,630,000,000 flowers (89%), humanitarian 270,003,350,000,000 (5%), issobella 270,003,350,000,000 (5%), pool_fee 54,000,670,000,000 (1%). Total = block subsidy. Cumulative balances ~93% of theoretical max (early blocks pre-config).
+- **BaseScan verification (2026-04-01):** All 3 Base mainnet contracts (wZION, ZIONBridge, ZIONAtomicSwap) verified on BaseScan via Etherscan V2 API.
+
 - **On-chain fee-split enforcement is live:** V3 core now produces and validates four-output coinbase payouts on mainnet with deterministic split `89/5/5/1`
 - **First explicitly verified split-enabled block:** `465`
 - **Cross-node confirmation:** audited USA and Singapore nodes accepted subsequent split-enabled blocks `471` and `472`
@@ -139,6 +143,8 @@ This roadmap follows the release progression already defined in the repository d
   - **Centralized submit boundary: SubmittedTransaction enum with parse_value, model detection, zion1 endpoint rejection** (`lib.rs`, `rpc.rs`) — Phase 15
   - **Complete UTXO bridge into active mempool acceptance path: UTXO submit → validate (hash+signatures) → mempool → template → mined block → peer validation → journal replay → snapshot/restore** (`lib.rs`, `rpc.rs`, `genesis.rs`) — Phase 16
   - **UTXO RPC + chain validation: `getBalance` supports zion1 addresses (balance_flowers), `getUtxos` RPC endpoint (spendable UTXOs per address), UTXO input existence check (rejects nonexistent/already-spent inputs), `SpendableUtxo` struct, `utxo_set()`/`utxo_balance()`/`spendable_utxos()`/`utxo_exists()` methods** (`lib.rs`, `rpc.rs`) — Phase 17
+  - **Phase 18 UTXO coinbase: `build_template()` generates UTXO coinbase transaction with 4 outputs (89% miner, 5% humanitarian, 5% issobella, 1% pool_fee), `getBalance`/`getBalanceAtHeight` combine account+UTXO balances for zion1 addresses** (`lib.rs`, `rpc.rs`)
+  - **Phase 18 pool payout E2E: `execute_pool_payout()`, `fetch_pool_utxos()`, `submit_utxo_transaction()`, `parse_pool_signing_key()`, `ServerConfig` extended with `pool_wallet_address`/`pool_signing_key`** (`pool/src/bin/server.rs`)
 - `L1/pool`
   - share validation and revenue tracking
   - session-oriented wire protocol
@@ -198,6 +204,9 @@ This roadmap follows the release progression already defined in the repository d
 - `cargo test --manifest-path V3/Cargo.toml` passes
 - local release build for `zion-core` passed before live rollout
 - live V3 fee-split rollout passed after manifest correction, with Prague / USA / Singapore synchronized post-deploy
+- **Phase 18 deployed to Prague (2026-04-01):** miner balance 14.12B ZION (was 0), UTXO coinbase in template, pool payout enabled
+- **Humanitarian tithe on-chain verification (2026-04-01):** per-block 89/5/5/1 split exact to the flower, cumulative balances ~93% theoretical (early blocks pre-config)
+- **BaseScan verification (2026-04-01):** all 3 Base mainnet contracts verified via Etherscan V2 API
 - pool/miner remote TCP smoke test passes
 - repeated miner sessions against one shared pool instance pass
 - core node scaffold responds over both P2P and RPC TCP endpoints
