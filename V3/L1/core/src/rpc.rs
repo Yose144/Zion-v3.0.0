@@ -448,12 +448,27 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
             }
             let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
             if looks_like_utxo_address(account_id) {
-                let balance = rt.utxo_balance(account_id);
+                let utxo_balance = rt.utxo_balance(account_id);
+                // Also scan account-model transactions (coinbase/premine credits)
+                let mut account_balance: i128 = 0;
+                for block in rt.accepted_blocks() {
+                    for tx in &block.transactions {
+                        if tx.to == account_id {
+                            account_balance += tx.amount_zion as i128;
+                        }
+                        if tx.from == account_id {
+                            account_balance -= (tx.amount_zion + tx.fee_zion) as i128;
+                        }
+                    }
+                }
+                let account_balance = account_balance.max(0) as u64;
                 return Ok(json!({
                     "address": account_id,
-                    "balance_flowers": balance,
+                    "balance_flowers": utxo_balance.saturating_add(account_balance),
+                    "utxo_balance_flowers": utxo_balance,
+                    "account_balance_flowers": account_balance,
                     "chain_height": rt.chain_height(),
-                    "transaction_model": "utxo",
+                    "transaction_model": ACTIVE_TRANSACTION_MODEL,
                     "balance_scope": "confirmed_chain_only",
                 }));
             }
@@ -499,13 +514,27 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
             let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
             let effective_height = height.min(rt.chain_height());
             if looks_like_utxo_address(account_id) {
-                let balance = utxo_balance_at_height(&rt, account_id, effective_height);
+                let utxo_balance = utxo_balance_at_height(&rt, account_id, effective_height);
+                let mut account_balance: i128 = 0;
+                for block in rt.accepted_blocks().iter().filter(|block| block.height <= effective_height) {
+                    for tx in &block.transactions {
+                        if tx.to == account_id {
+                            account_balance += tx.amount_zion as i128;
+                        }
+                        if tx.from == account_id {
+                            account_balance -= (tx.amount_zion + tx.fee_zion) as i128;
+                        }
+                    }
+                }
+                let account_balance = account_balance.max(0) as u64;
                 return Ok(json!({
                     "address": account_id,
                     "height": effective_height,
-                    "balance_flowers": balance,
-                    "balance_zion": format_flowers_as_zion(balance),
-                    "transaction_model": "utxo",
+                    "balance_flowers": utxo_balance.saturating_add(account_balance),
+                    "utxo_balance_flowers": utxo_balance,
+                    "account_balance_flowers": account_balance,
+                    "balance_zion": format_flowers_as_zion(utxo_balance.saturating_add(account_balance)),
+                    "transaction_model": ACTIVE_TRANSACTION_MODEL,
                     "balance_scope": "confirmed_chain_only",
                 }));
             }
@@ -1393,7 +1422,8 @@ mod tests {
         assert!(resp.error.is_none(), "getBalance for zion1 failed: {:?}", resp.error);
         let result = resp.result.unwrap();
         assert_eq!(result["balance_flowers"], 0);
-        assert_eq!(result["transaction_model"], "utxo");
+        // After Phase 18 fix, zion1 addresses report combined account+UTXO balance
+        assert_eq!(result["transaction_model"], ACTIVE_TRANSACTION_MODEL);
     }
 
     #[test]

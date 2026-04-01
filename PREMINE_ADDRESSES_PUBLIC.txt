@@ -27,3 +27,6 @@
 # ─── V3 Pool Tithe Wallets (generated 2026-03-27) ──────────────────────
 [13] issobella_fund       | zion106936008n8m4t40528h0w4w7x4y0z087k37s732 | 0 ZION    | L5/L6 ZION Issobella Fund (5% pool tithe)
 [14] pool_fee             | zion1j2a620q7c0m8k553k6g2t7n7s5u776c3n2fh257 | 0 ZION    | Pool Operator Fee (1% pool tithe)
+
+# ─── V3 Pool Payout Wallet (generated 2026-04-01) ──────────────────────
+[15] pool_payout          | zion1k3h7p6q4z7l0s495w6h775f566u0276237rh8x5 | 0 ZION    | Pool Payout Wallet — signs miner payouts
