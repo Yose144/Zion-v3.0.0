@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import MissionControlDashboard from '@/components/MissionControlDashboard';
+import dynamic from 'next/dynamic';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
+
+const MissionControlDashboard = dynamic(() => import('@/components/MissionControlDashboard'));
 
 export const metadata: Metadata = {
   title: `Mission Control Dashboard | Dashboard mise · ZION ${SITE_RELEASE_LABEL}`,

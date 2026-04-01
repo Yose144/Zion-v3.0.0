@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { apiClient } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +15,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { usePolling } from "@/hooks/usePolling";
 
 interface TickerData {
   block_height: number;
@@ -51,31 +52,37 @@ const formatAge = (ts: number): string => {
 
 export default function NetworkTicker() {
   const [data, setData] = useState<TickerData | null>(null);
-  const [prevHeight, setPrevHeight] = useState<number>(0);
   const [flash, setFlash] = useState(false);
+  const prevHeightRef = useRef(0);
+  const flashTimeoutRef = useRef<number | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
       const json = await apiClient<any>("/blockchain/stats");
-      if (json.block_height > prevHeight && prevHeight > 0) {
+      const nextHeight = json.block_height || 0;
+      if (nextHeight > prevHeightRef.current && prevHeightRef.current > 0) {
         setFlash(true);
-        setTimeout(() => setFlash(false), 2000);
+        if (flashTimeoutRef.current != null) {
+          window.clearTimeout(flashTimeoutRef.current);
+        }
+        flashTimeoutRef.current = window.setTimeout(() => setFlash(false), 2000);
       }
-      setPrevHeight(json.block_height || 0);
+      prevHeightRef.current = nextHeight;
       setData(json);
     } catch {
       /* silent */
     }
-  }, [prevHeight]);
+  }, []);
+
+  usePolling(fetchData, 15_000);
 
   useEffect(() => {
-    const initial = setTimeout(fetchData, 0);
-    const iv = setInterval(fetchData, 8000);
     return () => {
-      clearTimeout(initial);
-      clearInterval(iv);
+      if (flashTimeoutRef.current != null) {
+        window.clearTimeout(flashTimeoutRef.current);
+      }
     };
-  }, [fetchData]);
+  }, []);
 
   if (!data) {
     return (
