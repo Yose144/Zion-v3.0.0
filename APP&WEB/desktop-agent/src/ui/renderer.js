@@ -22,6 +22,7 @@ function escapeHtml(str) {
 let currentView = 'dashboard';
 let config = {};
 let isRunning = false;
+let isStarting = false;
 
 const PRIMARY_TESTNET_HOST = '91.98.122.165';
 const PRIMARY_POOL_PORT = 3333;
@@ -925,12 +926,20 @@ function setupControls() {
       await openOneClickWizard();
       return;
     }
-    
+
+    isStarting = true;
+    updateControlButtons();
+    updateStatusBadge('starting');
+
     const result = await window.electronAPI.startMining(config);
     if (result.success) {
       console.log('Mining started');
       return;
     }
+
+    isStarting = false;
+    updateControlButtons();
+    updateStatusBadge('stopped');
 
     const msg = result?.error || 'Failed to start mining.';
     addLogEntry(`Start failed: ${msg}`, 'error');
@@ -1554,7 +1563,17 @@ function setupEventListeners() {
     });
   }
 
+  if (typeof window.electronAPI.onMinerStarting === 'function') {
+    window.electronAPI.onMinerStarting(() => {
+      isStarting = true;
+      updateControlButtons();
+      updateStatusBadge('starting');
+      addLogEntry('Mining startup in progress...', 'info');
+    });
+  }
+
   window.electronAPI.onMinerStarted(() => {
+    isStarting = false;
     isRunning = true;
     updateControlButtons();
     updateStatusBadge('mining');
@@ -1566,6 +1585,7 @@ function setupEventListeners() {
   });
   
   window.electronAPI.onMinerStopped((data) => {
+    isStarting = false;
     isRunning = false;
     updateControlButtons();
     updateStatusBadge('stopped');
@@ -1607,6 +1627,10 @@ function setupEventListeners() {
   });
 
   window.electronAPI.onMinerError((data) => {
+    isStarting = false;
+    isRunning = false;
+    updateControlButtons();
+    updateStatusBadge('stopped');
     const msg = data?.message || 'Miner error';
     addLogEntry(`Miner error: ${msg}`, 'error');
   });
@@ -1666,18 +1690,21 @@ function setupEventListeners() {
 function updateControlButtons() {
   const startBtn = document.getElementById('start-btn');
   const stopBtn = document.getElementById('stop-btn');
-  
-  startBtn.disabled = isRunning;
-  stopBtn.disabled = !isRunning;
+
+  startBtn.disabled = isRunning || isStarting;
+  stopBtn.disabled = !(isRunning || isStarting);
 }
 
 function updateStatusBadge(status) {
   const badge = document.getElementById('status-badge');
   if (!badge) return;
-  
+
   if (status === 'mining') {
     badge.className = 'status-badge mining';
     badge.textContent = 'MINING';
+  } else if (status === 'starting') {
+    badge.className = 'status-badge stopped';
+    badge.textContent = 'STARTING';
   } else {
     badge.className = 'status-badge stopped';
     badge.textContent = 'STOPPED';
@@ -1983,6 +2010,7 @@ function scheduleStatsUpdate(stats) {
     if (s.isRunning !== _lastIsRunning) {
       _lastIsRunning = s.isRunning;
       isRunning = s.isRunning;
+      if (s.isRunning) isStarting = false;
       updateControlButtons();
       updateStatusBadge(s.isRunning ? 'mining' : 'stopped');
     }
