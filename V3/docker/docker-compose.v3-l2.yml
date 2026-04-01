@@ -36,6 +36,12 @@ services:
       # ZION_VALIDATOR_EXTRA_KEYS: ""    # comma-separated extra validator private keys
       # ZION_VALIDATOR_EXTRA_IDS: ""     # optional comma-separated IDs for extra keys
       # ANKR_API_KEY: ""                 # optional — Ankr premium tier
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9100/health >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # ── Atomic Swap ────────────────────────────────────────────────────────────
   swap:
@@ -55,6 +61,15 @@ services:
       # Provide via .env / secrets manager before startup.
       ZION_SWAP_ESCROW_KEY: "${ZION_SWAP_ESCROW_KEY:?set-in-env}"
     command: ["--config", "${ZION_SWAP_CONFIG:-/etc/zion/swap-testnet.toml}"]
+    depends_on:
+      bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8888/health >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
       # ZION_SWAP_ESCROW_KEY: ""         # set in .env or secrets manager
       # ZION_RPC_TOKEN: ""
 
@@ -74,6 +89,15 @@ services:
       DAO_CONFIG: "${ZION_DAO_CONFIG:-/etc/zion/dao-testnet.toml}"
       RUST_LOG: "zion_dao=debug,info"
       # ZION_DAO_API_KEY: ""             # set in .env or secrets manager
+    depends_on:
+      bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/api/dao/health >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
 volumes:
   bridge-data:
