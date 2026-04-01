@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Globe, Link2, Power, SatelliteDish, ArrowUpRight, ArrowDownLeft, Wifi, WifiOff, Clock, TrendingUp } from "lucide-react";
+import { useLang } from "@/contexts/LanguageContext";
 
 interface PeerInfo {
   address: string;
@@ -34,13 +35,16 @@ const formatIdleTime = (seconds: number) => {
   return `${Math.floor(seconds / 86400)}d`;
 };
 
-const formatLastSeen = (timestamp: number) => {
+const formatLastSeen = (timestamp: number, locale: string) => {
   if (!timestamp) return "—";
   const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
 
 export default function NetworkPeers() {
+  const { lang } = useLang();
+  const cs = lang === "cs";
+  const locale = cs ? "cs-CZ" : "en-US";
   const [data, setData] = useState<PeersPayload | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -75,9 +79,9 @@ export default function NetworkPeers() {
   const knownCount = data?.known_peers ?? data?.peer_count ?? 0;
 
   const stats = [
-    { label: "Known peers", value: knownCount, icon: Globe },
-    { label: "Connected", value: connectedCount, icon: SatelliteDish },
-    { label: "Active links", value: connectedCount, icon: Link2 },
+    { label: cs ? "Známé peery" : "Known peers", value: knownCount, icon: Globe },
+    { label: cs ? "Připojeno" : "Connected", value: connectedCount, icon: SatelliteDish },
+    { label: cs ? "Aktivní spojení" : "Active links", value: connectedCount, icon: Link2 },
   ];
 
   return (
@@ -91,18 +95,18 @@ export default function NetworkPeers() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-gray-400 flex items-center gap-2">
-            Peer telemetry
+            {cs ? "Peer telemetrie" : "Peer telemetry"}
             <motion.span
               animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 3, repeat: Infinity }}
               className="inline-flex h-2 w-2 rounded-full bg-emerald-400"
             />
           </p>
-          <h2 className="text-xl font-semibold text-white">Network peers</h2>
+          <h2 className="text-xl font-semibold text-white">{cs ? "Síťoví peeři" : "Network peers"}</h2>
         </div>
         <div className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.35em] text-gray-300 flex items-center gap-2">
           <Power className="w-3 h-3 text-emerald-400 animate-pulse" />
-          refresh 10s
+          {cs ? "obnova 10 s" : "refresh 10s"}
         </div>
       </div>
 
@@ -124,12 +128,12 @@ export default function NetworkPeers() {
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-300">
             <Power className="h-4 w-4 text-emerald-300" />
-            <span>Peer directory</span>
+            <span>{cs ? "Seznam peerů" : "Peer directory"}</span>
             {loading && <span className="text-xs text-gray-500">Načítám...</span>}
           </div>
           {data && data.chain_height > 0 && (
             <span className="text-xs text-gray-500">
-              Chain height: <span className="text-zion-cyan font-mono">{data.chain_height?.toLocaleString()}</span>
+              {cs ? "Výška chainu" : "Chain height"}: <span className="text-zion-cyan font-mono">{data.chain_height?.toLocaleString(locale)}</span>
             </span>
           )}
         </div>
@@ -180,11 +184,11 @@ export default function NetworkPeers() {
                       <div className="flex items-center gap-2 mt-0.5">
                         {peer.connected ? (
                           <span className="text-[10px] uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-                            <Wifi className="h-3 w-3" /> Connected
+                            <Wifi className="h-3 w-3" /> {cs ? "Připojen" : "Connected"}
                           </span>
                         ) : (
                           <span className="text-[10px] uppercase tracking-wider text-gray-500 flex items-center gap-1">
-                            <WifiOff className="h-3 w-3" /> Known
+                            <WifiOff className="h-3 w-3" /> {cs ? "Známý" : "Known"}
                           </span>
                         )}
                         {peer.incoming ? (
@@ -210,8 +214,8 @@ export default function NetworkPeers() {
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
                   <span className="flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" />
-                    Height: <span className={`font-mono ${isSynced ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {peer.height.toLocaleString()}
+                    {cs ? "Výška" : "Height"}: <span className={`font-mono ${isSynced ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {peer.height.toLocaleString(locale)}
                     </span>
                     {!isSynced && data.chain_height > 0 && (
                       <span className="text-amber-500 text-[10px]">(-{data.chain_height - peer.height})</span>
@@ -219,16 +223,16 @@ export default function NetworkPeers() {
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    Idle: {formatIdleTime(peer.idle_seconds)}
+                    {cs ? "Nečinnost" : "Idle"}: {formatIdleTime(peer.idle_seconds)}
                   </span>
                   {peer.sub_version && (
                     <span className="text-gray-500">v{peer.sub_version}</span>
                   )}
                   {peer.failed_attempts > 0 && (
-                    <span className="text-red-400">⚠ {peer.failed_attempts} failures</span>
+                    <span className="text-red-400">⚠ {peer.failed_attempts} {cs ? "selhání" : "failures"}</span>
                   )}
                   <span className="text-gray-600">
-                    Last: {formatLastSeen(peer.last_seen)}
+                    {cs ? "Naposledy" : "Last"}: {formatLastSeen(peer.last_seen, locale)}
                   </span>
                 </div>
               </motion.div>
