@@ -9,6 +9,7 @@ use crate::evm_rpc::EvmHttpClient;
 use crate::evm_tx::{build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release, encode_submit_lock_proof, hash_to_bytes32};
 use crate::types::{EvmBurnEvent, L1LockEvent};
 use anyhow::Result;
+use k256::ecdsa::{signature::Signer, Signature, SigningKey};
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
@@ -269,11 +270,11 @@ impl Relayer {
             "burn_id": burn.burn_id,
             "evm_chain": burn.evm_chain,
             "evm_tx_hash": burn.evm_tx_hash,
-            "validator_proofs": self.build_validator_proofs(),
+            "validator_proofs": self.build_validator_proofs(&burn, l1_amount),
         });
 
         warn!(
-            "submitBridgeUnlock is still scaffolded in V3 core; relayer is using placeholder validator proofs only to align transport with canonical RPC"
+            "submitBridgeUnlock transport is canonical V3 RPC; validator proofs now include local cryptographic signature plus synthetic fillers until full multisig fan-in is enabled"
         );
 
         let l1_result: Value = self
@@ -446,9 +447,22 @@ impl Relayer {
         Ok(())
     }
 
-    fn build_validator_proofs(&self) -> Vec<Value> {
+    fn build_validator_proofs(&self, burn: &EvmBurnEvent, amount_flowers: u64) -> Vec<Value> {
         let threshold = usize::from(self.config.validator.threshold.max(3));
         let mut proofs = Vec::with_capacity(threshold);
+
+        let operation_message = format!(
+            "unlock|recipient={}|amount={}|chain={}|burn_id={}|evm_tx={}",
+            burn.l1_recipient,
+            amount_flowers,
+            burn.evm_chain,
+            burn.burn_id,
+            burn.evm_tx_hash,
+        );
+
+        let local_signature = self
+            .sign_validator_operation(&operation_message)
+            .ok();
 
         for index in 0..threshold {
             let fallback_id = format!("validator-{}", index + 1);
@@ -464,14 +478,53 @@ impl Relayer {
                 .get(index)
                 .cloned();
 
-            proofs.push(json!({
-                "validator_id": validator_id,
-                "validator_address": validator_address,
-                "signature": "pending-core-unlock-validation",
-            }));
+            if index == 0 {
+                match &local_signature {
+                    Some(sig) => {
+                        proofs.push(json!({
+                            "validator_id": validator_id,
+                            "validator_address": validator_address,
+                            "signature": sig,
+                            "signature_scheme": "secp256k1-ecdsa",
+                            "operation_message": operation_message,
+                            "synthetic": false,
+                        }));
+                    }
+                    None => {
+                        proofs.push(json!({
+                            "validator_id": validator_id,
+                            "validator_address": validator_address,
+                            "signature": "unavailable-local-signature",
+                            "signature_scheme": "secp256k1-ecdsa",
+                            "operation_message": operation_message,
+                            "synthetic": true,
+                        }));
+                    }
+                }
+            } else {
+                proofs.push(json!({
+                    "validator_id": validator_id,
+                    "validator_address": validator_address,
+                    "signature": "synthetic-proof-slot",
+                    "signature_scheme": "secp256k1-ecdsa",
+                    "operation_message": operation_message,
+                    "synthetic": true,
+                }));
+            }
         }
 
         proofs
+    }
+
+    fn sign_validator_operation(&self, message: &str) -> Result<String> {
+        let key = load_validator_key(&self.config.validator)?;
+        let pk_hex = key.trim().strip_prefix("0x").unwrap_or(key.trim());
+        let pk_bytes = hex::decode(pk_hex)
+            .map_err(|e| anyhow::anyhow!("Invalid validator private key hex: {e}"))?;
+        let signing_key = SigningKey::from_slice(&pk_bytes)
+            .map_err(|e| anyhow::anyhow!("Invalid secp256k1 private key: {e}"))?;
+        let signature: Signature = signing_key.sign(message.as_bytes());
+        Ok(format!("0x{}", hex::encode(signature.to_bytes())))
     }
 
     async fn l1_rpc<T: DeserializeOwned>(&self, method: &str, params: Value) -> Result<T> {
