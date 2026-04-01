@@ -874,8 +874,8 @@ fn test_parse_bridge_mainnet_toml() {
     assert_eq!(cfg.evm_chains[0].chain_id, "base");
     assert_eq!(cfg.evm_chains[0].evm_chain_id, 8453);
     assert!(
-        !cfg.evm_chains[0].enabled,
-        "mainnet chain must be disabled until contracts are deployed"
+        cfg.evm_chains[0].enabled,
+        "mainnet Base chain should be enabled (L1 bridge vault is operational)"
     );
     assert_eq!(cfg.metrics.log_level, "info");
 }
