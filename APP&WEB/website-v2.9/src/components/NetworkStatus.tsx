@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 import { 
   type LucideIcon,
   Globe, 
@@ -93,11 +94,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
     }
   }, []);
 
-  useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 30000); // Update every 30s
-    return () => clearInterval(interval);
-  }, [fetchStatus]);
+  usePolling(fetchStatus, 30_000);
 
   if (loading && !status) {
     return (

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Activity } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 
 interface HealthData {
   status: string;
@@ -22,30 +23,28 @@ export default function SystemHealth() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchHealth() {
-      try {
-        const response = await fetch('/api/health');
-        const data = await response.json();
-        setHealth(data);
-      } catch (error) {
-        console.error('Health check failed:', error);
-        // Set minimal fallback data
-        setHealth({
-          status: 'unknown',
-          version: 'v2.9.6',
-          environment: 'production',
-          uptime_seconds: 0
-        });
-      } finally {
-        setLoading(false);
-      }
+  const fetchHealth = useCallback(async () => {
+    try {
+      const response = await fetch('/api/health', {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000),
+      });
+      const data = await response.json();
+      setHealth(data);
+    } catch (error) {
+      console.error('Health check failed:', error);
+      setHealth({
+        status: 'unknown',
+        version: 'v2.9.6',
+        environment: 'production',
+        uptime_seconds: 0
+      });
+    } finally {
+      setLoading(false);
     }
-
-    fetchHealth();
-    const interval = setInterval(fetchHealth, 5000); // Every 5s
-    return () => clearInterval(interval);
   }, []);
+
+  usePolling(fetchHealth, 15_000);
 
   const formatUptime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);

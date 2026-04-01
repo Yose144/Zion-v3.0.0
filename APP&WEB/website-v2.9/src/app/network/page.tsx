@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 import NetworkStatus from '@/components/NetworkStatus';
 import NetworkMap from '@/components/NetworkMap';
 import PoolFinder from '@/components/PoolFinder';
@@ -306,24 +307,13 @@ export default function NetworkPage() {
   const healthCurl = 'curl -s https://www.zionterranova.com/api/health';
   const networkCurl = 'curl -s https://www.zionterranova.com/api/network';
 
-  useEffect(() => {
-    let active = true;
-
-    const refresh = async () => {
-      const next = await fetchMonitoringSnapshot();
-      if (!active) return;
-      setMonitoring(next);
-      setMonitoringUpdatedAt(new Date());
-    };
-
-    refresh();
-    const interval = setInterval(refresh, 30000);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+  const refreshMonitoring = useCallback(async () => {
+    const next = await fetchMonitoringSnapshot();
+    setMonitoring(next);
+    setMonitoringUpdatedAt(new Date());
   }, []);
+
+  usePolling(refreshMonitoring, 30_000);
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">

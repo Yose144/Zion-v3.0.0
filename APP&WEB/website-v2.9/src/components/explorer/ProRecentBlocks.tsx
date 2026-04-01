@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { motion } from "framer-motion";
 import { Box, ChevronRight, Copy, Check } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 
 interface Block {
   height: number;
@@ -76,17 +77,10 @@ export default function ProRecentBlocks() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchBlocks();
-    const iv = setInterval(fetchBlocks, 10000);
-    return () => clearInterval(iv);
-  }, [fetchBlocks]);
-
-  // Re-render ages every second
-  useEffect(() => {
-    const iv = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(iv);
-  }, []);
+  usePolling(fetchBlocks, 15_000);
+  usePolling(() => {
+    setTick((t) => t + 1);
+  }, 15_000, { immediate: false });
 
   return (
     <motion.div
