@@ -1,0 +1,35 @@
+{
+  "network": "base",
+  "chainId": "8453",
+  "deployedAt": "2026-04-01T15:10:00Z",
+  "deployer": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+  "contracts": {
+    "wZION": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+    "ZIONBridge": "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721",
+    "ZIONAtomicSwap": "0x3DE9Ad42716854083ab837706E3961d10B0e63Eb"
+  },
+  "bridge": {
+    "validators": [
+      "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+      "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787"
+    ],
+    "threshold": 1,
+    "bridgeRoleGranted": true,
+    "paused": false,
+    "note": "Bridge contract is NOT paused at contract level but bridge-mainnet.toml has enabled=false. Enable in config only after L1 vault is operational."
+  },
+  "swap": {
+    "admin": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+    "guardian": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+    "feeBps": 0
+  },
+  "verification": {
+    "basescan": "pending — requires BASESCAN_API_KEY"
+  },
+  "totalDeployCostEth": "0.000032",
+  "explorerLinks": {
+    "wZION": "https://basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+    "ZIONBridge": "https://basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721",
+    "ZIONAtomicSwap": "https://basescan.org/address/0x3DE9Ad42716854083ab837706E3961d10B0e63Eb"
+  }
+}

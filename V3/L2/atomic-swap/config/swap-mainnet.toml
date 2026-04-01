@@ -43,6 +43,6 @@ grace_period_secs  = 300
 enabled            = true
 rpc_url            = "https://mainnet.base.org"
 rpc_url_backup     = "https://rpc.ankr.com/base"    # Ankr free-tier fallback
-contract_addr      = ""   # TODO: deploy ZIONAtomicSwap on Base mainnet
+contract_addr      = "0x3DE9Ad42716854083ab837706E3961d10B0e63Eb"
 poll_interval_secs = 12
 start_block        = 0
