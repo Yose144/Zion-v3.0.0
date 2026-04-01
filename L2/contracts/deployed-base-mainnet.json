@@ -24,7 +24,12 @@
     "feeBps": 0
   },
   "verification": {
-    "basescan": "pending — requires BASESCAN_API_KEY"
+    "basescan": "verified",
+    "basescanApiVersion": "v2",
+    "verifiedAt": "2026-04-01",
+    "wZION": "https://basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6#code",
+    "ZIONBridge": "https://basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721#code",
+    "ZIONAtomicSwap": "https://basescan.org/address/0x3DE9Ad42716854083ab837706E3961d10B0e63Eb#code"
   },
   "totalDeployCostEth": "0.000032",
   "explorerLinks": {
