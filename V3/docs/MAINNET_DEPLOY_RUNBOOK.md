@@ -233,3 +233,69 @@ Mandatory lesson:
 
 - never treat successful container recreation as proof of runtime correctness
 - always inspect live `zion-core` env and the first new block after deploy
+
+## 14. V3 L2 Profile Rollout (Bridge / Swap / DAO)
+
+Use this section after core rollout is stable when enabling or updating L2 services.
+
+### 14.1 Prepare L2 profile env
+
+On the deployment host, create profile env from template:
+
+```bash
+cd /path/to/deployed/2.9.6
+cp -n V3/docker/.env.l2.example V3/docker/.env.l2
+```
+
+Set at minimum:
+
+- `ZION_BRIDGE_CONFIG`
+- `ZION_SWAP_CONFIG`
+- `ZION_DAO_CONFIG`
+- `ZION_SWAP_ESCROW_KEY`
+- `ZION_VALIDATOR_PRIVATE_KEY`
+
+For multisig fan-in and core-side proof verification also set:
+
+- `ZION_VALIDATOR_EXTRA_KEYS` / `ZION_VALIDATOR_EXTRA_IDS` (bridge relayer side)
+- `ZION_BRIDGE_VALIDATOR_PUBKEYS` / `ZION_BRIDGE_VALIDATOR_THRESHOLD` (core side)
+
+### 14.2 Start L2 stack
+
+```bash
+cd /path/to/deployed/2.9.6
+docker compose --env-file V3/docker/.env.l2 -f V3/docker/docker-compose.v3-l2.yml up -d --build
+```
+
+### 14.3 Verify container health
+
+```bash
+docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'zion-v3-bridge|zion-v3-swap|zion-v3-dao'
+```
+
+Health endpoints:
+
+- Bridge: `http://127.0.0.1:9100/health`
+- Swap: `http://127.0.0.1:8888/health`
+- DAO: `http://127.0.0.1:8081/api/dao/health`
+
+Quick checks:
+
+```bash
+curl -fsS http://127.0.0.1:9100/health
+curl -fsS http://127.0.0.1:8888/health
+curl -fsS http://127.0.0.1:8081/api/dao/health
+```
+
+### 14.4 Rollback (L2 only)
+
+```bash
+cd /path/to/deployed/2.9.6
+docker compose --env-file V3/docker/.env.l2 -f V3/docker/docker-compose.v3-l2.yml down
+```
+
+If needed, restore prior env profile and start again:
+
+```bash
+docker compose --env-file V3/docker/.env.l2 -f V3/docker/docker-compose.v3-l2.yml up -d
+```
