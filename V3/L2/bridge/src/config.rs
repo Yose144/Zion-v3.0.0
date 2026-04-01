@@ -239,6 +239,59 @@ impl BridgeConfig {
     pub fn active_chains(&self) -> Vec<&EvmChainConfig> {
         self.evm_chains.iter().filter(|c| c.enabled).collect()
     }
+
+    /// Validate runtime safety constraints before starting bridge workers.
+    pub fn validate_runtime(&self) -> anyhow::Result<()> {
+        if self.validator.threshold < 2 {
+            anyhow::bail!("validator.threshold must be at least 2");
+        }
+        if self.validator.threshold > self.validator.total_validators {
+            anyhow::bail!(
+                "validator.threshold ({}) exceeds validator.total_validators ({})",
+                self.validator.threshold,
+                self.validator.total_validators
+            );
+        }
+
+        let mainnet = self.bridge.network.eq_ignore_ascii_case("mainnet");
+        if mainnet {
+            if self.l1.rpc_url.trim().is_empty() {
+                anyhow::bail!("mainnet requires non-empty l1.rpc_url");
+            }
+            if self.validator.validator_addresses.len() < usize::from(self.validator.threshold) {
+                anyhow::bail!(
+                    "mainnet requires validator_addresses >= threshold ({} < {})",
+                    self.validator.validator_addresses.len(),
+                    self.validator.threshold
+                );
+            }
+        }
+
+        for chain in self.active_chains() {
+            if mainnet {
+                if chain.wzion_address.eq_ignore_ascii_case("0x0000000000000000000000000000000000000000") {
+                    anyhow::bail!(
+                        "mainnet chain '{}' has zero wzion_address; deploy contract first",
+                        chain.chain_id
+                    );
+                }
+                if chain.bridge_contract_address.eq_ignore_ascii_case("0x0000000000000000000000000000000000000000") {
+                    anyhow::bail!(
+                        "mainnet chain '{}' has zero bridge_contract_address; deploy contract first",
+                        chain.chain_id
+                    );
+                }
+                if chain.start_block.is_none() {
+                    anyhow::bail!(
+                        "mainnet chain '{}' must set start_block to deployment height",
+                        chain.chain_id
+                    );
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl EvmChainConfig {
@@ -555,5 +608,88 @@ log_level = "info"
         assert!(daily > max_single, "Daily limit must exceed single max");
         assert!(max_single > min, "Max single must exceed minimum");
         assert!(min > 0, "Minimum must be positive");
+    }
+
+    #[test]
+    fn test_validate_runtime_mainnet_rejects_zero_contracts() {
+        let mut cfg = BridgeConfig::default();
+        cfg.bridge.network = "mainnet".into();
+        cfg.validator.validator_addresses = vec![
+            "0x1111111111111111111111111111111111111111".into(),
+            "0x2222222222222222222222222222222222222222".into(),
+            "0x3333333333333333333333333333333333333333".into(),
+        ];
+        cfg.evm_chains = vec![EvmChainConfig {
+            chain_id: "base".into(),
+            name: "Base".into(),
+            evm_chain_id: 8453,
+            rpc_url: Some("https://mainnet.base.org".into()),
+            rpc_url_backup: None,
+            wzion_address: "0x0000000000000000000000000000000000000000".into(),
+            bridge_contract_address: "0x0000000000000000000000000000000000000000".into(),
+            finality_blocks: 64,
+            enabled: true,
+            gas_strategy: "eip1559".into(),
+            max_gas_gwei: 5,
+            start_block: Some(1),
+        }];
+
+        let err = cfg.validate_runtime().unwrap_err().to_string();
+        assert!(err.contains("zero wzion_address"));
+    }
+
+    #[test]
+    fn test_validate_runtime_mainnet_requires_start_block() {
+        let mut cfg = BridgeConfig::default();
+        cfg.bridge.network = "mainnet".into();
+        cfg.validator.validator_addresses = vec![
+            "0x1111111111111111111111111111111111111111".into(),
+            "0x2222222222222222222222222222222222222222".into(),
+            "0x3333333333333333333333333333333333333333".into(),
+        ];
+        cfg.evm_chains = vec![EvmChainConfig {
+            chain_id: "base".into(),
+            name: "Base".into(),
+            evm_chain_id: 8453,
+            rpc_url: Some("https://mainnet.base.org".into()),
+            rpc_url_backup: None,
+            wzion_address: "0x1111111111111111111111111111111111111111".into(),
+            bridge_contract_address: "0x2222222222222222222222222222222222222222".into(),
+            finality_blocks: 64,
+            enabled: true,
+            gas_strategy: "eip1559".into(),
+            max_gas_gwei: 5,
+            start_block: None,
+        }];
+
+        let err = cfg.validate_runtime().unwrap_err().to_string();
+        assert!(err.contains("must set start_block"));
+    }
+
+    #[test]
+    fn test_validate_runtime_mainnet_ok_when_guardrails_satisfied() {
+        let mut cfg = BridgeConfig::default();
+        cfg.bridge.network = "mainnet".into();
+        cfg.validator.validator_addresses = vec![
+            "0x1111111111111111111111111111111111111111".into(),
+            "0x2222222222222222222222222222222222222222".into(),
+            "0x3333333333333333333333333333333333333333".into(),
+        ];
+        cfg.evm_chains = vec![EvmChainConfig {
+            chain_id: "base".into(),
+            name: "Base".into(),
+            evm_chain_id: 8453,
+            rpc_url: Some("https://mainnet.base.org".into()),
+            rpc_url_backup: None,
+            wzion_address: "0x1111111111111111111111111111111111111111".into(),
+            bridge_contract_address: "0x2222222222222222222222222222222222222222".into(),
+            finality_blocks: 64,
+            enabled: true,
+            gas_strategy: "eip1559".into(),
+            max_gas_gwei: 5,
+            start_block: Some(12_345_678),
+        }];
+
+        assert!(cfg.validate_runtime().is_ok());
     }
 }
