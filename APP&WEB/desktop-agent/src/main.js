@@ -628,6 +628,16 @@ Write-Output $lpm
     }
   } catch { /* not available yet */ }
 
+  // Do not block miner startup with UAC elevation by default.
+  // The elevated secedit flow can pause for ~30s (or longer) and causes stale start locks.
+  // Opt-in only when explicitly requested.
+  const allowElevatedGrant = String(process.env.ZION_WINDOWS_LP_ELEVATED || '').trim() === '1';
+  if (!allowElevatedGrant) {
+    _winLargePagesEnabled = false;
+    logApp('largepages-enable-skipped', JSON.stringify({ reason: 'elevated-flow-disabled', env: 'ZION_WINDOWS_LP_ELEVATED' }));
+    return { enabled: false, alreadyEnabled: false, error: 'elevated grant disabled (set ZION_WINDOWS_LP_ELEVATED=1 to enable)' };
+  }
+
   // Attempt to enable: grant SeLockMemoryPrivilege to current user via ntrights or secedit.
   // This requires elevation (admin) — we use Start-Process -Verb RunAs.
   try {
@@ -2126,6 +2136,32 @@ function detectGPU() {
   return result;
 }
 
+function detectGpuForStartupFast(config) {
+  const now = Date.now();
+  if (cachedGpuInfo && (now - gpuInfoLastProbeMs) < 60000) return cachedGpuInfo;
+
+  const miningMode = String(config?.miningMode || (config?.gpu ? 'dual' : 'cpu')).toLowerCase();
+  const wantsGpu = miningMode === 'gpu' || miningMode === 'dual' || miningMode === 'gpu-revenue' || !!config?.gpu;
+  const fallback = {
+    available: wantsGpu,
+    type: wantsGpu ? 'gpu' : 'none',
+    name: wantsGpu ? 'GPU (startup-fast-path)' : '',
+    driver: '',
+    memory: '',
+    temperature: '',
+    utilization: '',
+    cpuOnly: !wantsGpu,
+    backendPreferred: (process.platform === 'darwin' && os.arch() === 'arm64') ? 'metal' : 'opencl',
+    cudaCapable: false,
+  };
+
+  setTimeout(() => {
+    try { detectGPU(); } catch { /* ignore */ }
+  }, 0);
+
+  return fallback;
+}
+
 function parseGpuMemoryMb(gpuInfo) {
   try {
     const raw = String(gpuInfo?.memory || '').trim();
@@ -3076,6 +3112,18 @@ function updateTrayMenu(stats) {
 
 // Mining process management
 function startMining(config) {
+  const startupT0 = Date.now();
+  const startupMark = (phase) => {
+    try {
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: `[DEBUG] startup phase=${phase} t=${Date.now() - startupT0}ms\n`
+      });
+    } catch {
+      // ignore
+    }
+  };
+
   // Atomic guard: prevent two overlapping startMining() calls from spawning
   // duplicate miner processes (race between renderer auto-start, IPC,
   // one-click onboarding, and app-level autoStart).
@@ -3089,6 +3137,7 @@ function startMining(config) {
     return { success: true, alreadyRunning: true };
   }
   startMiningInProgress = true;
+  startupMark('guard-set');
   try {
     sendToRenderer('miner-starting', { ts: Date.now() });
   } catch {
@@ -3140,6 +3189,7 @@ function startMining(config) {
 
   // New start resets any previous stop intent.
   minerUserStopRequested = false;
+  startupMark('before-selection');
 
   // Idempotent guard: renderer auto-start, one-click onboarding, and app-level
   // autoStart can overlap. If a miner process is already alive, do not spawn a
@@ -3775,6 +3825,7 @@ function startMining(config) {
 
   const preferredBackend = String(config?.minerBackend || 'auto').toLowerCase();
   const selection = resolveMinerSelection(preferredBackend);
+  startupMark('after-selection');
   if (!selection) {
     const emergencyPythonPath = findPythonMiner();
     if (emergencyPythonPath && (preferredBackend === 'rust' || preferredBackend === 'auto' || preferredBackend === 'python')) {
@@ -3864,6 +3915,7 @@ function startMining(config) {
   }
 
   const minerStartTs = Date.now();
+  const isV3StartPath = MINER_IS_RUST && isV3MinerBinary(MINER_PATH);
   const fallbackPythonPath = findPythonMiner();
   const rustFallbackEligible =
     MINER_IS_RUST &&
@@ -3871,10 +3923,13 @@ function startMining(config) {
     preferredBackend === 'auto';
 
   try {
-    cleanupStrayMinerProcesses(MINER_IS_RUST);
+    if (!isV3StartPath) {
+      cleanupStrayMinerProcesses(MINER_IS_RUST);
+    }
   } catch {
     // ignore
   }
+  startupMark('after-cleanup');
   if (minerProcess) {
     dbg('Miner already running');
     startMiningInProgress = false;
@@ -4446,7 +4501,8 @@ function startMining(config) {
   }
 
   // Detect GPU and pass to miner via env
-  const gpuInfo = detectGPU();
+  const gpuInfo = detectGpuForStartupFast(config);
+  startupMark('after-gpu-detect');
   minerStats.gpu_detected = gpuInfo.available;
   minerStats.gpu_type = gpuInfo.type;
   minerStats.gpu_name = gpuInfo.name;
@@ -5077,6 +5133,7 @@ function startMining(config) {
     stdio: ['pipe', 'pipe', 'pipe'],
     windowsHide: true
   });
+  startupMark('after-spawn');
 
   // Emit miner-started only after the process survives a short grace period.
   // Prevents "started" spam when the miner exits immediately (e.g. bad CLI flags).
