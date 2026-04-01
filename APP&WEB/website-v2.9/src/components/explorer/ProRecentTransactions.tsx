@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { motion } from "framer-motion";
 import { ArrowRightLeft, ChevronRight, Copy, Check, Clock } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 
 interface Transaction {
   tx_hash: string;
@@ -89,16 +90,10 @@ export default function ProRecentTransactions() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchTxs();
-    const iv = setInterval(fetchTxs, 10000);
-    return () => clearInterval(iv);
-  }, [fetchTxs]);
-
-  useEffect(() => {
-    const iv = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(iv);
-  }, []);
+  usePolling(fetchTxs, 15_000);
+  usePolling(() => {
+    setTick((t) => t + 1);
+  }, 15_000, { immediate: false });
 
   return (
     <motion.div

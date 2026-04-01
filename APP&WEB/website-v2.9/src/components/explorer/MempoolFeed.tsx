@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { ActivitySquare, Flame, Hash, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 
 interface MempoolTx {
   tx_hash: string;
@@ -55,34 +56,23 @@ export default function MempoolFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchMempool = useCallback(async () => {
+    try {
+      const result = await apiClient<MempoolResponse>(
+        "/blockchain/mempool",
+        { cache: "no-store" }
+      );
+      setData(result);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch mempool:", err);
+      setError(cs ? "Mempool není dostupný" : "Mempool unavailable");
+    } finally {
+      setLoading(false);
+    }
+  }, [cs]);
 
-    const fetchMempool = async () => {
-      try {
-        const result = await apiClient<MempoolResponse>(
-          "/blockchain/mempool",
-          { cache: "no-store" }
-        );
-        if (!isMounted) return;
-        setData(result);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch mempool:", err);
-        if (!isMounted) return;
-        setError(cs ? "Mempool není dostupný" : "Mempool unavailable");
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchMempool();
-    const interval = setInterval(fetchMempool, 5000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
+  usePolling(fetchMempool, 15_000);
 
   return (
     <motion.div
@@ -105,7 +95,7 @@ export default function MempoolFeed() {
             transition={{ duration: 2, repeat: Infinity }}
             className="inline-flex h-2 w-2 rounded-full bg-emerald-400"
           />
-          <span className="text-xs text-gray-500">{cs ? "obnova po 5 s" : "5s refresh"}</span>
+          <span className="text-xs text-gray-500">{cs ? "obnova po 15 s" : "15s refresh"}</span>
         </div>
       </div>
 
