@@ -1,0 +1,52 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ZION DAO — Mainnet Configuration
+# On-chain governance: proposals, voting (1 ZION = 1 vote), treasury multisig
+# ──────────────────────────────────────────────────────────────────────────────
+
+name    = "ZION DAO"
+version = "1.0.0"
+
+# ── HTTP API ─────────────────────────────────────────────────────────────────
+
+api_port = 8081
+api_key  = ""             # set ZION_DAO_API_KEY env var for production
+
+# ── Database ─────────────────────────────────────────────────────────────────
+
+db_path = "/data/dao/dao.db"
+
+# ── L1 Connection ────────────────────────────────────────────────────────────
+
+l1_rpc_url    = "127.0.0.1:8443"
+l1_rpc_backup = ""                         # set backup RPC for failover
+
+# ── L1 Scanner ───────────────────────────────────────────────────────────────
+
+scan_interval_secs = 15
+min_vote_weight    = 1_000_000_000_000      # 1 ZION in flowers
+finality_blocks    = 12                     # mainnet: deeper finality
+
+# ── Governance ───────────────────────────────────────────────────────────────
+
+proposal_threshold  = 10_000_000_000_000_000_000  # 10 M ZION in flowers
+quorum_percent      = 15.0                         # mainnet: stricter quorum
+voting_period_days  = 14                           # mainnet: longer voting
+timelock_hours      = 72                           # mainnet: longer timelock
+
+# ── Treasury ─────────────────────────────────────────────────────────────────
+
+treasury_addresses = [
+    "zion1dao0treasury0main000000000000000000001",
+    "zion1dao0treasury0main000000000000000000002",
+    "zion1dao0treasury0main000000000000000000003",
+]
+daily_spend_limit   = 50_000_000     # 50 M ZION (whole coins) — conservative start
+multisig_threshold  = 5
+multisig_total      = 7
+
+# ── Guardians ────────────────────────────────────────────────────────────────
+# Add guardian entries when provisioned:
+# [[guardians]]
+# name       = "guardian-1"
+# address    = "zion1..."
+# public_key = "ed25519hex..."
