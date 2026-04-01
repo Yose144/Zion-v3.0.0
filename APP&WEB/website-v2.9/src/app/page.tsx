@@ -1,13 +1,15 @@
-import Hero from "@/components/Hero";
-import GoldenEggHaraniagharba from "@/components/GoldenEggHaraniagharba";
-import HomeTreePortal from "@/components/HomeTreePortal";
-import GenesisPreview from "@/components/GenesisPreview";
-import QuantumRevolution from "@/components/QuantumRevolution";
-import LiveDashboard from "@/components/LiveDashboard";
-import Features from "@/components/Features";
-import NewsFeed from "@/components/NewsFeed";
-import RoadmapPulse from "@/components/RoadmapPulse";
-import DocsRail from "@/components/DocsRail";
+import dynamic from 'next/dynamic';
+import Hero from '@/components/Hero';
+import GenesisPreview from '@/components/GenesisPreview';
+import QuantumRevolution from '@/components/QuantumRevolution';
+
+const NewsFeed = dynamic(() => import('@/components/NewsFeed'));
+const LiveDashboard = dynamic(() => import('@/components/LiveDashboard'));
+const GoldenEggHaraniagharba = dynamic(() => import('@/components/GoldenEggHaraniagharba'));
+const Features = dynamic(() => import('@/components/Features'));
+const RoadmapPulse = dynamic(() => import('@/components/RoadmapPulse'));
+const DocsRail = dynamic(() => import('@/components/DocsRail'));
+const HomeTreePortal = dynamic(() => import('@/components/HomeTreePortal'));
 
 export default function Home() {
   return (

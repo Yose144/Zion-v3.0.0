@@ -15,7 +15,7 @@ const t = {
     genesis:  { cs: 'Genesis', en: 'Genesis' },
     api:      { cs: 'API', en: 'API' },
     docs:     { cs: 'Dokumentace', en: 'Docs' },
-    dashboard:  { cs: 'Dashboard',  en: 'Dashboard' },
+    dashboard:  { cs: 'Přehled',  en: 'Dashboard' },
     warp:       { cs: 'WARP',        en: 'WARP' },
     dao:        { cs: 'DAO',         en: 'DAO' },
     bridge:     { cs: 'Most',        en: 'Bridge' },
@@ -363,7 +363,7 @@ const t = {
         badge: { cs: 'Živý', en: 'Live' },
       },
       explorer: {
-        title: { cs: 'Block Explorer', en: 'Block Explorer' },
+        title: { cs: 'Pruzkumnik blockchainu', en: 'Block Explorer' },
         desc:  {
           cs: 'Real-time průzkumník bloků, transakcí a adres s live telemetrickým dashboardem a REST API.',
           en: 'Real-time block, transaction, and address explorer with live telemetry dashboard and REST API.',

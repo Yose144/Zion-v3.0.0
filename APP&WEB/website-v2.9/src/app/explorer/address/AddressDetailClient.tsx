@@ -16,6 +16,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { useLang } from '@/contexts/LanguageContext';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -43,18 +44,18 @@ function InfoRow({ label, value, mono, color, copy }: { label: string; value: st
   );
 }
 
-function formatDate(ts: number) {
+function formatDate(ts: number, locale: string) {
   if (!ts) return "—";
-  return new Date(ts * 1000).toLocaleString();
+  return new Date(ts * 1000).toLocaleString(locale);
 }
 
-function timeAgo(ts: number) {
+function timeAgo(ts: number, cs: boolean) {
   if (!ts) return "—";
   const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+  if (s < 60) return cs ? `pred ${s} s` : `${s}s ago`;
+  if (s < 3600) return cs ? `pred ${Math.floor(s / 60)} min` : `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
+  return cs ? `pred ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
 }
 
 /* ── types ───────────────────────────────────────────────────── */
@@ -101,6 +102,9 @@ const consciousnessMap: Record<string, { bg: string; border: string; text: strin
 /* ── component ───────────────────────────────────────────────── */
 
 export default function AddressDetailClient() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
   const router = useRouter();
   const searchParams = useSearchParams();
   const addr = useMemo(() => String(searchParams.get("addr") || "").trim(), [searchParams]);
@@ -113,13 +117,13 @@ export default function AddressDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setData(null);
-        if (!addr) { setError("Missing address. Use ?addr=zion1... or ?addr=ZION..."); return; }
+        if (!addr) { setError(cs ? "Chybi adresa. Pouzijte ?addr=zion1... nebo ?addr=ZION..." : "Missing address. Use ?addr=zion1... or ?addr=ZION..."); return; }
         const result = await apiClient<AddressData>(`/blockchain/address?addr=${encodeURIComponent(addr)}`, { cache: "no-store" });
         setData(result);
-      } catch (err) { setError(`Failed to load address: ${err}`); }
+      } catch (err) { setError(cs ? `Nepodarilo se nacist adresu: ${err}` : `Failed to load address: ${err}`); }
       finally { setLoading(false); }
     })();
-  }, [addr]);
+  }, [addr, cs]);
 
   /* ── loading ─────────────────────────────────────────────── */
   if (loading) {
@@ -139,14 +143,14 @@ export default function AddressDetailClient() {
           <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
             <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
             <ChevronRight className="w-3 h-3" />
-            <span className="text-white/70">Address</span>
+            <span className="text-white/70">{cs ? 'Adresa' : 'Address'}</span>
           </nav>
           <div className="zion-panel rounded-[28px] bg-black/60 border border-red-500/20 p-10 text-center">
             <XCircle className="h-10 w-10 text-red-400/60 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-white mb-2">Address Not Found</h1>
+            <h1 className="text-xl font-bold text-white mb-2">{cs ? 'Adresa nenalezena' : 'Address Not Found'}</h1>
             <p className="text-white/40 text-sm mb-6 font-mono break-all">{error || addr}</p>
             <button onClick={() => router.push("/explorer")} className="px-5 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] transition-colors text-sm text-white/60 hover:text-white/90">
-              ← Back to Explorer
+              {cs ? '← Zpet do exploreru' : '← Back to Explorer'}
             </button>
           </div>
         </div>
@@ -168,7 +172,7 @@ export default function AddressDetailClient() {
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
           <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-white/70">Address</span>
+          <span className="text-white/70">{cs ? 'Adresa' : 'Address'}</span>
         </nav>
 
         {/* title & address */}
@@ -178,10 +182,10 @@ export default function AddressDetailClient() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-white tracking-tight">Address</h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight">{cs ? 'Adresa' : 'Address'}</h1>
               {data.is_miner && (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  ⛏ Active Miner
+                  ⛏ {cs ? 'Aktivni miner' : 'Active Miner'}
                 </span>
               )}
             </div>
@@ -195,10 +199,10 @@ export default function AddressDetailClient() {
         {/* ── 4-col balance summary ──────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: "Total Paid", value: `${data.balance.paid.toFixed(2)} ZION`, color: "text-zion-gold" },
-            { label: "Pending", value: `${data.balance.pending.toFixed(4)} ZION`, color: "text-amber-400" },
-            { label: "Locked", value: `${data.balance.locked.toFixed(4)} ZION`, color: "text-cyan-400" },
-            { label: "Transactions", value: String(data.transaction_count), color: "text-white" },
+            { label: cs ? "Celkem vyplaceno" : "Total Paid", value: `${data.balance.paid.toFixed(2)} ZION`, color: "text-zion-gold" },
+            { label: cs ? "Ceka" : "Pending", value: `${data.balance.pending.toFixed(4)} ZION`, color: "text-amber-400" },
+            { label: cs ? "Uzamceno" : "Locked", value: `${data.balance.locked.toFixed(4)} ZION`, color: "text-cyan-400" },
+            { label: cs ? "Transakce" : "Transactions", value: String(data.transaction_count), color: "text-white" },
           ].map((s) => (
             <div key={s.label} className="zion-panel rounded-[20px] bg-black/60 p-5">
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1.5">{s.label}</p>
@@ -213,15 +217,15 @@ export default function AddressDetailClient() {
           <div className="zion-panel rounded-[28px] bg-black/60 p-6">
             <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-purple-400" />
-              Address Details
+              {cs ? 'Detaily adresy' : 'Address Details'}
             </h2>
-            <InfoRow label="Address" value={addr} mono copy />
-            <InfoRow label="Total Paid" value={`${data.balance.paid.toFixed(4)} ZION`} color="text-zion-gold" />
-            <InfoRow label="Pending Balance" value={`${data.balance.pending.toFixed(4)} ZION`} color="text-amber-400" />
-            <InfoRow label="Locked Balance" value={`${data.balance.locked.toFixed(4)} ZION`} color="text-cyan-400" />
-            <InfoRow label="Transactions" value={String(data.transaction_count)} />
-            {data.first_seen > 0 && <InfoRow label="First Seen" value={formatDate(data.first_seen)} />}
-            {data.last_seen > 0 && <InfoRow label="Last Active" value={formatDate(data.last_seen)} />}
+            <InfoRow label={cs ? 'Adresa' : 'Address'} value={addr} mono copy />
+            <InfoRow label={cs ? 'Celkem vyplaceno' : 'Total Paid'} value={`${data.balance.paid.toFixed(4)} ZION`} color="text-zion-gold" />
+            <InfoRow label={cs ? 'Cekajici zustatek' : 'Pending Balance'} value={`${data.balance.pending.toFixed(4)} ZION`} color="text-amber-400" />
+            <InfoRow label={cs ? 'Uzamceny zustatek' : 'Locked Balance'} value={`${data.balance.locked.toFixed(4)} ZION`} color="text-cyan-400" />
+            <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={String(data.transaction_count)} />
+            {data.first_seen > 0 && <InfoRow label={cs ? 'Prvni vyskyt' : 'First Seen'} value={formatDate(data.first_seen, locale)} />}
+            {data.last_seen > 0 && <InfoRow label={cs ? 'Naposledy aktivni' : 'Last Active'} value={formatDate(data.last_seen, locale)} />}
           </div>
 
           {/* ── Mining Stats card (or placeholder) ──────────── */}
@@ -229,25 +233,25 @@ export default function AddressDetailClient() {
             <div className="zion-panel rounded-[28px] bg-black/60 p-6">
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Pickaxe className="w-4 h-4 text-emerald-400" />
-                Mining Stats
+                {cs ? 'Statistiky tezby' : 'Mining Stats'}
               </h2>
               <InfoRow label="Hashrate (1h)" value={data.mining_stats.hashrate_formatted} color="text-emerald-400" />
-              <InfoRow label="Blocks Found" value={String(data.mining_stats.blocks_found)} color="text-zion-gold" />
-              <InfoRow label="Accepted Shares" value={data.mining_stats.accepted_shares.toLocaleString()} />
-              <InfoRow label="Rejected Shares" value={data.mining_stats.rejected_shares.toLocaleString()} color="text-red-400" />
-              {data.mining_stats.worker_name && <InfoRow label="Worker" value={data.mining_stats.worker_name} mono />}
+              <InfoRow label={cs ? 'Nalezene bloky' : 'Blocks Found'} value={String(data.mining_stats.blocks_found)} color="text-zion-gold" />
+              <InfoRow label={cs ? 'Prijate shares' : 'Accepted Shares'} value={data.mining_stats.accepted_shares.toLocaleString(locale)} />
+              <InfoRow label={cs ? 'Odmítnute shares' : 'Rejected Shares'} value={data.mining_stats.rejected_shares.toLocaleString(locale)} color="text-red-400" />
+              {data.mining_stats.worker_name && <InfoRow label={cs ? 'Worker' : 'Worker'} value={data.mining_stats.worker_name} mono />}
 
               {/* consciousness level */}
               <div className={`mt-4 rounded-2xl ${cStyle.bg} border ${cStyle.border} p-4 flex items-center justify-between`}>
                 <div className="flex items-center gap-3">
                   <CIcon className={`w-6 h-6 ${cStyle.text}`} />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-white/30">Consciousness Level</p>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Uroven vedomi' : 'Consciousness Level'}</p>
                     <p className={`${cStyle.text} font-bold text-lg`}>{level.replace(/_/g, " ")}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-white/30">Multiplier</p>
+                  <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Nasobic' : 'Multiplier'}</p>
                   <p className={`${cStyle.text} font-bold text-2xl tabular-nums`}>{data.mining_stats.consciousness_multiplier}×</p>
                 </div>
               </div>
@@ -255,8 +259,8 @@ export default function AddressDetailClient() {
           ) : (
             <div className="zion-panel rounded-[28px] bg-black/60 p-6 flex flex-col items-center justify-center text-center">
               <Pickaxe className="w-8 h-8 text-white/10 mb-3" />
-              <p className="text-white/30 text-sm">Not an active miner</p>
-              <p className="text-white/15 text-xs mt-1">Mining stats will appear once this address starts mining.</p>
+              <p className="text-white/30 text-sm">{cs ? 'Neni to aktivni miner' : 'Not an active miner'}</p>
+              <p className="text-white/15 text-xs mt-1">{cs ? 'Statistiky tezby se objevi, jakmile tato adresa zacne tezit.' : 'Mining stats will appear once this address starts mining.'}</p>
             </div>
           )}
         </div>
@@ -265,30 +269,30 @@ export default function AddressDetailClient() {
         <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden">
           <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white/70">
-              Transactions ({data.transactions.length})
+              {cs ? 'Transakce' : 'Transactions'} ({data.transactions.length})
             </h2>
             {data.transactions.length > 0 && (
               <Link
                 href={`/explorer/transactions?address=${encodeURIComponent(addr)}`}
                 className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
               >
-                View all →
+                {cs ? 'Zobrazit vse →' : 'View all →'}
               </Link>
             )}
           </div>
 
           {/* table header */}
           <div className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">Type</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Typ' : 'Type'}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">Age</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Stari' : 'Age'}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Amount</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Castka' : 'Amount'}</span>
           </div>
 
           {data.transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <p className="text-white/20 text-sm">No transactions found</p>
+              <p className="text-white/20 text-sm">{cs ? 'Nenalezeny zadne transakce' : 'No transactions found'}</p>
             </div>
           ) : (
             data.transactions.map((t) => {
@@ -303,7 +307,7 @@ export default function AddressDetailClient() {
                   <div className="flex items-center">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
                       t.type === "payout" ? "bg-emerald-500/15 text-emerald-400" : "bg-blue-500/15 text-blue-400"
-                    }`}>{t.type}</span>
+                    }`}>{t.type === 'payout' ? (cs ? 'vyplata' : 'payout') : (cs ? 'prevod' : t.type)}</span>
                   </div>
 
                   {/* hash */}
@@ -315,7 +319,7 @@ export default function AddressDetailClient() {
                   </div>
 
                   {/* age */}
-                  <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(t.timestamp)}</div>
+                  <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(t.timestamp, cs)}</div>
 
                   {/* fee */}
                   <div className="flex items-center justify-end text-[12px] text-white/30 tabular-nums font-mono">

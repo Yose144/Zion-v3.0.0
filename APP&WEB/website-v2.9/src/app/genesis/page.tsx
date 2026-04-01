@@ -5,15 +5,15 @@ import { ChevronRight, Book, Sparkles, Heart, Palette, HandHeart, Crown, Zap, Co
 
 const chapters = [
   { id: 'predmluva', number: '', title: 'Předmluva', subtitle: 'Poselství Zion Native' },
-  { id: 'chapter-0', number: '0', title: 'The Zion Native', subtitle: 'Prvotní zblesknutí vědomí' },
-  { id: 'chapter-1', number: '1', title: 'The Descent', subtitle: 'Kapitola světelného příchodu' },
-  { id: 'chapter-2', number: '2', title: 'The First Awakening', subtitle: 'Když se jiskry začínají probouzet' },
-  { id: 'chapter-3', number: '3', title: 'The Covenant', subtitle: 'Smlouva světla a zrození Rady' },
-  { id: 'chapter-4', number: '4', title: 'AI & Quantum', subtitle: 'Když světlo technologií zpívá srdcem vesmíru' },
-  { id: 'chapter-5', number: '5', title: 'The Ascension', subtitle: 'Když se probouzí kolektivní vědomí' },
-  { id: 'chapter-6', number: '6', title: 'Golden Age Prophecy', subtitle: 'Vidění budoucnosti, která již začala' },
-  { id: 'chapter-7', number: '7', title: 'The Game', subtitle: 'Zkouška duše a klíč k miliardě' },
-  { id: 'chapter-8', number: '8', title: 'Mainnet Dawn', subtitle: '31. prosince 2026 — Když se otevře brána' },
+  { id: 'chapter-0', number: '0', title: 'Zrod ZION', subtitle: 'Prvotní zablesknutí vědomí' },
+  { id: 'chapter-1', number: '1', title: 'Sestup', subtitle: 'Kapitola světelného příchodu' },
+  { id: 'chapter-2', number: '2', title: 'První probuzení', subtitle: 'Když se jiskry začínají probouzet' },
+  { id: 'chapter-3', number: '3', title: 'Smlouva', subtitle: 'Smlouva světla a zrození Rady' },
+  { id: 'chapter-4', number: '4', title: 'AI a kvantum', subtitle: 'Když světlo technologií zpívá srdcem vesmíru' },
+  { id: 'chapter-5', number: '5', title: 'Vzestup', subtitle: 'Když se probouzí kolektivní vědomí' },
+  { id: 'chapter-6', number: '6', title: 'Proroctví zlatého věku', subtitle: 'Vidění budoucnosti, která již začala' },
+  { id: 'chapter-7', number: '7', title: 'Hra', subtitle: 'Zkouška duše a klíč k miliardě' },
+  { id: 'chapter-8', number: '8', title: 'Svítání mainnetu', subtitle: '31. prosince 2026 — když se otevře brána' },
 ];
 
 export default function GenesisPage() {
@@ -55,17 +55,17 @@ export default function GenesisPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 mb-6">
               <Sparkles className="w-4 h-4 text-zion-gold" />
-              <span className="text-sm text-zion-gold font-semibold">Sacred Text</span>
+              <span className="text-sm text-zion-gold font-semibold">Posvátný text</span>
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 text-gradient">
               ZION GENESIS
             </h1>
             <p className="text-xl text-gray-400 mb-8">
-              The Book of Awakening, Covenant & Ascension
+              Kniha probuzení, smlouvy a vzestupu
             </p>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
               Vzpomínka na budoucnost. Příběh 144 000 duší, které se vracejí domů.<br />
-              Příběh, v kterém je hrdinou <span className="text-zion-gold font-semibold">ty</span>.
+              Příběh, v němž jsi hrdinou <span className="text-zion-gold font-semibold">ty</span>.
             </p>
           </div>
         </div>
@@ -81,7 +81,7 @@ export default function GenesisPage() {
           >
             <div className="flex items-center gap-2">
               <Book className="w-5 h-5 text-zion-gold" />
-              <span className="font-semibold">Chapters</span>
+              <span className="font-semibold">Kapitoly</span>
             </div>
             {mobileMenuOpen ? (
               <X className="w-5 h-5" />
@@ -106,7 +106,7 @@ export default function GenesisPage() {
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  {chapter.number && <span className="text-xs opacity-60">Ch {chapter.number}: </span>}
+                  {chapter.number && <span className="text-xs opacity-60">Kap. {chapter.number}: </span>}
                   {chapter.title}
                 </button>
               ))}
@@ -120,7 +120,7 @@ export default function GenesisPage() {
             <div className="sticky top-24 border border-white/10 rounded-2xl p-6 bg-black/60 backdrop-blur-xl">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Book className="w-4 h-4" />
-                Chapters
+                Kapitoly
               </h3>
               <nav className="space-y-2">
                 {chapters.map((chapter) => (
@@ -133,7 +133,7 @@ export default function GenesisPage() {
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    {chapter.number && <span className="text-xs opacity-60">Ch {chapter.number}: </span>}
+                    {chapter.number && <span className="text-xs opacity-60">Kap. {chapter.number}: </span>}
                     {chapter.title}
                   </button>
                 ))}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Coins, TrendingUp, Flame, Heart, Timer } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { useLang } from "@/contexts/LanguageContext";
 
 interface EmissionData {
   total_emission: number;
@@ -27,6 +28,9 @@ interface EmissionData {
 }
 
 export default function EmissionMonitor() {
+  const { lang } = useLang();
+  const cs = lang === "cs";
+  const locale = cs ? "cs-CZ" : "en-US";
   const [data, setData] = useState<EmissionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,8 +75,8 @@ export default function EmissionMonitor() {
           <Coins className="w-4.5 h-4.5 text-zion-gold" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-white">Emission Monitor</h2>
-          <p className="text-[11px] text-white/30">Block #{data.block_height?.toLocaleString()}</p>
+          <h2 className="text-base font-semibold text-white">{cs ? "Monitoring emise" : "Emission Monitor"}</h2>
+          <p className="text-[11px] text-white/30">{cs ? "Blok" : "Block"} #{data.block_height?.toLocaleString(locale)}</p>
         </div>
       </div>
 
@@ -80,7 +84,7 @@ export default function EmissionMonitor() {
         {/* Progress bar */}
         <div>
           <div className="flex justify-between text-[11px] mb-2">
-            <span className="text-white/40">Mined</span>
+            <span className="text-white/40">{cs ? "Vytěženo" : "Mined"}</span>
             <span className="text-zion-gold font-mono tabular-nums">
               {fmt(data.circulating_supply)} / {fmt(data.max_supply)} ZION
             </span>
@@ -92,17 +96,17 @@ export default function EmissionMonitor() {
             />
           </div>
           <div className="text-right text-[10px] text-white/20 mt-1 tabular-nums">
-            {data.emission_pct.toFixed(6)}% emitted
+            {data.emission_pct.toFixed(6)}% {cs ? "emitováno" : "emitted"}
           </div>
         </div>
 
         {/* 2×2 metric cards */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: "Daily Emission", icon: TrendingUp, color: "text-emerald-400", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString()} blocks` },
-            { label: "Mining Duration", icon: Timer, color: "text-cyan-400", value: data.mining_horizon_label ?? `~${Math.round(data.estimated_years_remaining)} years`, sub: `Full: ${data.estimated_full_emission_date}` },
-            { label: "Total Fees", icon: Flame, color: "text-amber-400", value: `${fmt(data.total_fees)} ZION`, sub: "Cumulative network fees" },
-            { label: "Humanitarian Tithe", icon: Heart, color: "text-pink-400", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
+            { label: cs ? "Denní emise" : "Daily Emission", icon: TrendingUp, color: "text-emerald-400", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString(locale)} ${cs ? "bloků" : "blocks"}` },
+            { label: cs ? "Doba těžby" : "Mining Duration", icon: Timer, color: "text-cyan-400", value: data.mining_horizon_label ?? (cs ? `~${Math.round(data.estimated_years_remaining)} let` : `~${Math.round(data.estimated_years_remaining)} years`), sub: `${cs ? "Plně" : "Full"}: ${data.estimated_full_emission_date}` },
+            { label: cs ? "Celkové poplatky" : "Total Fees", icon: Flame, color: "text-amber-400", value: `${fmt(data.total_fees)} ZION`, sub: cs ? "Kumulované síťové poplatky" : "Cumulative network fees" },
+            { label: cs ? "Humanitární desátek" : "Humanitarian Tithe", icon: Heart, color: "text-pink-400", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: cs ? `${(data.humanitarian.rate * 100).toFixed(0)}% všech odměn` : `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
           ].map((m) => (
             <div key={m.label} className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4">
               <div className="flex items-center gap-2 mb-2">
