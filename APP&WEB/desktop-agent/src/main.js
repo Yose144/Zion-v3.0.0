@@ -4580,6 +4580,8 @@ function startMining(config) {
     env.ZION_NONCE_AUTOTUNE = 'true';
     env.ZION_RECONNECT = 'true';
     env.ZION_METRICS_REPORT_SECS = String(STATS_INTERVAL_SEC || 30);
+    // Stats file for dashboard metrics polling (same as Python miner path)
+    env.ZION_STATS_FILE = STATS_PATH;
     // Expose HTTP metrics on localhost for desktop dashboard polling.
     env.ZION_MINER_METRICS_BIND = '127.0.0.1:9116';
     // DCR stealth worker is enabled by default in V3
@@ -7143,6 +7145,44 @@ function parseMinerOutput(output) {
     minerStats.last_job_height = v3MiningMatch[2];
   }
 
+  // ─── V3 XMRig-style new job: "[HH:MM:SS] new job  height N  diff N  algo ..." ───
+  const v3XNewJobMatch = output.match(/\] new job\s+height\s+(\d+)\s+diff\s+\S+\s+algo\s+(\S+)/);
+  if (v3XNewJobMatch) {
+    minerStats.last_job_height = v3XNewJobMatch[1];
+    minerStats.stream_algorithm = v3XNewJobMatch[2];
+  }
+
+  // ─── V3 XMRig-style accepted: "[HH:MM:SS] accepted A/R (+1) diff N [Nms] (P%)" ───
+  const v3XAcceptMatch = output.match(/\] accepted (\d+)\/(\d+)\s+\(\+1\)/);
+  if (v3XAcceptMatch) {
+    minerStats.accepted = parseInt(v3XAcceptMatch[1]);
+    minerStats.rejected = parseInt(v3XAcceptMatch[2]);
+    minerStats.shares = minerStats.accepted + minerStats.rejected;
+  }
+
+  // ─── V3 XMRig-style rejected: "[HH:MM:SS] rejected R/T — reason (Nms)" ───
+  const v3XRejectMatch = output.match(/\] rejected (\d+)\/(\d+)/);
+  if (v3XRejectMatch) {
+    minerStats.rejected = parseInt(v3XRejectMatch[1]);
+    minerStats.shares = parseInt(v3XRejectMatch[2]);
+    minerStats.accepted = minerStats.shares - minerStats.rejected;
+  }
+
+  // ─── V3 XMRig-style speed: "[HH:MM:SS] speed 10s/60s/15m  7.49  7.32  0.00 KH/s  max 7.61 KH/s" ───
+  const v3XSpeedMatch = output.match(/\] speed 10s\/60s\/15m\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(\S+\/s)\s+max\s+([\d.]+)/);
+  if (v3XSpeedMatch) {
+    const unit = v3XSpeedMatch[4].toLowerCase();
+    let mul = 1;
+    if (unit.includes('kh')) mul = 1e3;
+    else if (unit.includes('mh')) mul = 1e6;
+    else if (unit.includes('gh')) mul = 1e9;
+    minerStats.hashrate = parseFloat(v3XSpeedMatch[1]) * mul;
+    minerStats.hashrate_10s = parseFloat(v3XSpeedMatch[1]) * mul;
+    minerStats.hashrate_60s = parseFloat(v3XSpeedMatch[2]) * mul;
+    minerStats.hashrate_15m = parseFloat(v3XSpeedMatch[3]) * mul;
+    minerStats.hashrate_max = parseFloat(v3XSpeedMatch[5]) * mul;
+  }
+
   // ─── V3 version banner: "version=3.0.0-dev" ───
   const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
   if (v3VersionMatch) {
@@ -7200,6 +7240,17 @@ function parseMinerOutput(output) {
     minerStats.gpu_info = `${v3GpuInitMatch[1]}: ${v3GpuInitMatch[2]} (ws=${v3GpuInitMatch[3]})`;
     minerStats.cpu_only_mode = false;
     minerStats.runtime_backend = v3GpuInitMatch[1];
+  }
+
+  // ─── V3 OpenCL detailed init: "gpu_opencl_init device=\"gfx1010\" work_size=16384 scratchpad_mib=4096" ───
+  const v3OclInitMatch = output.match(/gpu_opencl_init\s+device="([^"]+)"\s+work_size=(\d+)\s+scratchpad_mib=(\d+)/);
+  if (v3OclInitMatch) {
+    minerStats.gpu_detected = true;
+    minerStats.gpu_type = 'opencl';
+    minerStats.gpu_name = v3OclInitMatch[1];
+    minerStats.gpu_info = `opencl: ${v3OclInitMatch[1]} (ws=${v3OclInitMatch[2]}, scratchpad=${v3OclInitMatch[3]}MiB)`;
+    minerStats.cpu_only_mode = false;
+    minerStats.runtime_backend = 'opencl';
   }
 
   // ─── V3 GPU fallback: "gpu_init_fallback reason=\"...\" using=cpu" ───
@@ -8728,9 +8779,15 @@ ipcMain.handle('import-wallet', (event, { mnemonic, password, name }) => {
 
 ipcMain.handle('export-wallet', (event, { address, password }) => {
   try {
-    // Find wallet file
-    const files = fs.readdirSync(WALLETS_PATH);
-    const walletFile = files.find(f => f.startsWith(address.substring(0, 15)));
+    // Find wallet file by matching stored address (not prefix-only)
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    let walletFile = null;
+    for (const f of files) {
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, f), 'utf8'));
+        if (d.address === address) { walletFile = f; break; }
+      } catch { /* skip invalid */ }
+    }
     
     if (!walletFile) {
       throw new Error('Wallet not found');
@@ -8741,15 +8798,23 @@ ipcMain.handle('export-wallet', (event, { address, password }) => {
     );
     
     // Decrypt private key
-    const privateKey = WalletGenerator.decryptPrivateKey(
-      walletData.encryptedPrivateKey,
-      password
-    );
+    let privateKey;
+    try {
+      privateKey = WalletGenerator.decryptPrivateKey(
+        walletData.encryptedPrivateKey,
+        password
+      );
+    } catch (decErr) {
+      throw new Error('Wrong password or corrupted wallet file');
+    }
 
     // Decrypt mnemonic (stored as encryptedMnemonic since v2.9.6)
-    const mnemonic = walletData.encryptedMnemonic
-      ? WalletGenerator.decryptPrivateKey(walletData.encryptedMnemonic, password)
-      : null;
+    let mnemonic = null;
+    if (walletData.encryptedMnemonic) {
+      try {
+        mnemonic = WalletGenerator.decryptPrivateKey(walletData.encryptedMnemonic, password);
+      } catch { /* mnemonic may be absent in older wallets */ }
+    }
     
     return {
       success: true,
