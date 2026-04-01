@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Atom, Braces, Database, Gauge, Shield } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 
@@ -42,6 +43,9 @@ const placeholderStats: BlockchainStats = {
 };
 
 export default function LiveDashboard() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
   const [stats, setStats] = useState<BlockchainStats>(placeholderStats);
   const [loadedAtLeastOnce, setLoadedAtLeastOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,37 +90,37 @@ export default function LiveDashboard() {
     ? (supply / 1e9).toFixed(2) + 'B'
     : supply >= 1e6
     ? (supply / 1e6).toFixed(2) + 'M'
-    : supply.toLocaleString();
+    : supply.toLocaleString(locale);
   const latestBlock = stats.last_block ?? stats.latest_block ?? null;
   const formattedTimestamp = latestBlock?.timestamp
-    ? new Date(latestBlock.timestamp * 1000).toLocaleString('cs-CZ')
+    ? new Date(latestBlock.timestamp * 1000).toLocaleString(locale)
     : '—';
   const mempoolSize = stats.mempool_size ?? stats.tx_pool_size ?? 0;
 
   const highlightCards = [
     {
-      label: 'Total Blocks',
-      value: (stats.total_blocks ?? 0).toLocaleString(),
+      label: cs ? 'Bloky celkem' : 'Total Blocks',
+      value: (stats.total_blocks ?? 0).toLocaleString(locale),
       icon: Database,
       accent: 'from-zion-gold/25 to-zion-purple/10',
     },
     {
-      label: 'Total Supply',
+      label: cs ? 'Zasoba celkem' : 'Total Supply',
       value: formattedSupply,
       icon: Gauge,
       accent: 'from-zion-purple/25 to-zion-cyan/10',
     },
     {
-      label: 'Transactions',
-      value: (stats.total_transactions ?? 0).toLocaleString(),
+      label: cs ? 'Transakce' : 'Transactions',
+      value: (stats.total_transactions ?? 0).toLocaleString(locale),
       icon: Atom,
       accent: 'from-zion-cyan/25 to-zion-gold/10',
     },
   ];
 
   const auxCards = [
-    { label: 'Difficulty', value: (stats.difficulty ?? 0).toLocaleString(), icon: Shield },
-    { label: 'Mempool Size', value: mempoolSize.toLocaleString(), icon: Braces },
+    { label: cs ? 'Obtiznost' : 'Difficulty', value: (stats.difficulty ?? 0).toLocaleString(locale), icon: Shield },
+    { label: cs ? 'Velikost mempoolu' : 'Mempool Size', value: mempoolSize.toLocaleString(locale), icon: Braces },
   ];
 
   return (
@@ -125,9 +129,9 @@ export default function LiveDashboard() {
         <div className="flex flex-wrap items-center gap-4">
           <div className="inline-flex items-center gap-3 rounded-full border border-white/10 px-4 py-2">
             <Activity className="w-5 h-5 text-zion-gold animate-pulse" />
-            <span className="text-sm tracking-wide uppercase text-gray-300">Mission Console</span>
+            <span className="text-sm tracking-wide uppercase text-gray-300">{cs ? 'Mise console' : 'Mission Console'}</span>
           </div>
-          <div className="text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Live Telemetry</div>
+          <div className="text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · {cs ? 'Ziva telemetrie' : 'Live Telemetry'}</div>
           {error && (
             <span className="text-xs text-amber-300 bg-amber-500/10 rounded-full px-3 py-1 border border-amber-500/30">
               ⚠️ {error}
@@ -145,12 +149,12 @@ export default function LiveDashboard() {
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">Continuum status</p>
-                <h3 className="text-2xl font-semibold text-white">Galactic network sync</h3>
+                <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">{cs ? 'Stav kontinuua' : 'Continuum status'}</p>
+                <h3 className="text-2xl font-semibold text-white">{cs ? 'Synchronizace galakticke site' : 'Galactic network sync'}</h3>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-400">
                 <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                Updated {loadedAtLeastOnce ? 'live' : 'initializing'}
+                {cs ? 'Aktualizace' : 'Updated'} {loadedAtLeastOnce ? (cs ? 'zive' : 'live') : (cs ? 'spousteni' : 'initializing')}
               </div>
             </div>
 
@@ -191,7 +195,7 @@ export default function LiveDashboard() {
             className="rounded-[28px] border border-white/10 bg-black/60 backdrop-blur-xl p-6 flex flex-col gap-6"
           >
             <div>
-              <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">Latest block</p>
+              <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">{cs ? 'Posledni blok' : 'Latest block'}</p>
               <h3 className="text-3xl font-semibold text-white">
                 #{latestBlock?.height ?? stats.block_height ?? '—'}
               </h3>
@@ -201,24 +205,25 @@ export default function LiveDashboard() {
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs text-gray-400 mb-2">Hash</p>
               <p className="font-mono text-xs text-zion-cyan break-all">
-                {stats.latest_block?.hash ?? 'Waiting for signal'}
+                {latestBlock?.hash ?? (cs ? 'Cekani na signal' : 'Waiting for signal')}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-gray-400">Mempool</p>
-                <p className="text-xl font-semibold text-white">{(stats.mempool_size ?? 0).toLocaleString()}</p>
+                <p className="text-xl font-semibold text-white">{(stats.mempool_size ?? 0).toLocaleString(locale)}</p>
               </div>
               <div>
-                <p className="text-gray-400">Difficulty</p>
-                <p className="text-xl font-semibold text-white">{(stats.difficulty ?? 0).toLocaleString()}</p>
+                <p className="text-gray-400">{cs ? 'Obtiznost' : 'Difficulty'}</p>
+                <p className="text-xl font-semibold text-white">{(stats.difficulty ?? 0).toLocaleString(locale)}</p>
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
-              Blockchain telemetry pulled live from the {SITE_RELEASE_LABEL} V3 test-mainnet API every 30 s, on top of the {SITE_RUNTIME_LABEL} runtime.
-              Current public runtime is a controlled 3-node rehearsal across Prague, USA, and Singapore.
+              {cs
+                ? `Blockchain telemetrie se taha nazivo z API ${SITE_RELEASE_LABEL} V3 test-mainnetu kazdych 30 s nad runtime ${SITE_RUNTIME_LABEL}. Aktualni verejny runtime bezi jako kontrolovana 3-node rehearsal sit Praha, USA a Singapur.`
+                : `Blockchain telemetry is pulled live from the ${SITE_RELEASE_LABEL} V3 test-mainnet API every 30 s on top of the ${SITE_RUNTIME_LABEL} runtime. The current public runtime is a controlled 3-node rehearsal across Prague, USA, and Singapore.`}
             </div>
           </motion.div>
         </div>

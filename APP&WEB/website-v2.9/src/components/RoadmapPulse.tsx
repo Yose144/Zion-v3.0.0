@@ -1,82 +1,88 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { ArrowRight, CalendarDays, CheckCircle2, Rocket } from 'lucide-react';
 import Link from 'next/link';
+import { useLang } from '@/contexts/LanguageContext';
 
-const phaseCards = [
+const getPhaseCards = (cs: boolean) => [
   {
-    name: 'L1 TerraNova — Controlled Test Mainnet',
-    window: 'Mar 2026 – Now',
+    name: cs ? 'L1 TerraNova — kontrolovany test mainnet' : 'L1 TerraNova — Controlled Test Mainnet',
+    window: cs ? 'Bre 2026 – nyni' : 'Mar 2026 – Now',
     progress: 96,
     highlights: [
-      'v2.9.9 Pure Code deployed — controlled V3 test-mainnet line',
-      '3-node rehearsal mesh active, pool telemetry, and explorer synced',
-      'On-chain 89/5/5/1 split verified; public launch still gated',
+      cs ? 'Nasazena v2.9.9 Pure Code verejna linie kontrolovaneho V3 test-mainnetu' : 'v2.9.9 Pure Code deployed — controlled V3 test-mainnet line',
+      cs ? 'Aktivni 3-node rehearsal mesh, pool telemetrie a synchronizovany explorer' : '3-node rehearsal mesh active, pool telemetry, and explorer synced',
+      cs ? 'Overen on-chain split 89/5/5/1; verejny launch stale blokovan gate criteria' : 'On-chain 89/5/5/1 split verified; public launch still gated',
     ],
   },
   {
-    name: 'Launch Ops & Security Closure',
+    name: cs ? 'Launch ops a bezpecnostni closure' : 'Launch Ops & Security Closure',
     window: 'Q2–Q3 2026',
     progress: 20,
     highlights: [
-      'BFG scrub + genesis artifacts / checksums',
-      'External security audit (Q2 2026)',
-      'Measured 48–72h closure report + recovery evidence',
+      cs ? 'BFG scrub + genesis artefakty / checksumy' : 'BFG scrub + genesis artifacts / checksums',
+      cs ? 'Externi bezpecnostni audit (Q2 2026)' : 'External security audit (Q2 2026)',
+      cs ? 'Mereny 48–72h closure report + evidence recovery scenaru' : 'Measured 48–72h closure report + recovery evidence',
     ],
   },
   {
-    name: 'Public Launch Gate',
+    name: cs ? 'Gate verejneho launchu' : 'Public Launch Gate',
     window: 'Q4 2026',
     progress: 5,
     highlights: [
-      'Dress rehearsal + genesis freeze',
-      'Public launch decision only after closure criteria',
-      'CoinGecko listing + wZION bridge after public genesis',
+      cs ? 'Dress rehearsal + genesis freeze' : 'Dress rehearsal + genesis freeze',
+      cs ? 'Rozhodnuti o verejnem launchi az po splneni closure kriterii' : 'Public launch decision only after closure criteria',
+      cs ? 'CoinGecko listing + wZION bridge az po verejne genesis' : 'CoinGecko listing + wZION bridge after public genesis',
     ],
   },
 ];
 
-const timeline = [
+const getTimeline = (cs: boolean) => [
   {
     title: '⛏️ L1 TerraNova · 2026',
-    focus: 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
+    focus: cs ? 'Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zasoba 144B ZION' : 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
   },
   {
     title: '🧠 L2 NCL · 2027',
-    focus: 'Neural Conscious Layer, AI-native protocol, wZION bridge',
+    focus: cs ? 'Neural Conscious Layer, AI-native protokol, wZION bridge' : 'Neural Conscious Layer, AI-native protocol, wZION bridge',
   },
   {
     title: '🏛️ L3 DAO · 2028',
-    focus: 'Community governance, Treasury 4B ZION, on-chain voting',
+    focus: cs ? 'Komunitni governance, treasury 4B ZION, on-chain hlasovani' : 'Community governance, Treasury 4B ZION, on-chain voting',
   },
   {
     title: '🎮 L4 Oasis · 2029',
-    focus: 'Golden Egg, XP economy, Winners program, game layer',
+    focus: cs ? 'Golden Egg, XP ekonomika, Winners program, herni vrstva' : 'Golden Egg, XP economy, Winners program, game layer',
   },
   {
     title: '🌍 L5 Free World · 2030',
-    focus: 'Humanitarian missions, free energy R&D, off-grid communities',
+    focus: cs ? 'Humanitarni mise, free-energy R&D, off-grid komunity' : 'Humanitarian missions, free energy R&D, off-grid communities',
   },
   {
     title: '🔭 L6 Issobella · 2040+',
-    focus: 'Orbital observatory, LEO research station, long-range mission layer',
+    focus: cs ? 'Orbitalni observator, LEO vyzkumna stanice, dlouhy mission layer' : 'Orbital observatory, LEO research station, long-range mission layer',
   },
 ];
 
 export default function RoadmapPulse() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const phaseCards = getPhaseCards(cs);
+  const timeline = getTimeline(cs);
+
   return (
     <section className="py-20 px-4">
       <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-center gap-6">
           <div className="flex-1 space-y-3">
-            <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">Roadmap</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{cs ? 'Roadmapa' : 'Roadmap'}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
               v2.9.9 <span className="text-gradient">Pure Code</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              The current public line is a controlled V3 test-mainnet rehearsal on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime.
-              Priority is closure evidence, telemetry, documentation, and operational discipline before any public launch decision.
+              {cs
+                ? 'Aktualni verejna linie je kontrolovana V3 test-mainnet rehearsal na v2.9.9 Pure Code vetvi nad kanonickym runtime v2.9.8 Deeksha/Ekam. Prioritou jsou closure evidence, telemetrie, dokumentace a operacni disciplina pred jakymkoli rozhodnutim o verejnem launchi.'
+                : 'The current public line is a controlled V3 test-mainnet rehearsal on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime. Priority is closure evidence, telemetry, documentation, and operational discipline before any public launch decision.'}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -84,7 +90,7 @@ export default function RoadmapPulse() {
               href="/roadmap"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-sm font-semibold"
             >
-              Full Roadmap
+              {cs ? 'Cela roadmapa' : 'Full Roadmap'}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -92,19 +98,15 @@ export default function RoadmapPulse() {
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold"
             >
               <CalendarDays className="w-4 h-4 text-zion-cyan" />
-              Block Explorer
+              {cs ? 'Pruzkumnik blockchainu' : 'Block Explorer'}
             </Link>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           {phaseCards.map((phase, idx) => (
-            <motion.div
+            <div
               key={phase.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, delay: idx * 0.05 }}
               className="rounded-3xl border border-white/10 bg-black/50 p-6 space-y-4 backdrop-blur"
             >
               <div className="flex items-center justify-between">
@@ -117,11 +119,8 @@ export default function RoadmapPulse() {
                 </div>
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  whileInView={{ width: `${phase.progress}%` }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: 0.2 + idx * 0.05 }}
+                <div
+                  style={{ width: `${phase.progress}%` }}
                   className="h-full bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan"
                 />
               </div>
@@ -133,34 +132,28 @@ export default function RoadmapPulse() {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </div>
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="rounded-3xl border border-white/10 bg-white/5 p-6"
-        >
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-center gap-3 mb-6">
             <Rocket className="w-6 h-6 text-zion-cyan" />
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">6-Layer Vision</p>
-              <h3 className="text-2xl font-semibold text-white">6-layer vision — po Pure Code baseline</h3>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{cs ? '6vrstva vize' : '6-Layer Vision'}</p>
+              <h3 className="text-2xl font-semibold text-white">{cs ? '6vrstva vize po Pure Code baseline' : '6-layer vision — after the Pure Code baseline'}</h3>
             </div>
           </div>
 
           <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {timeline.map((entry, idx) => (
+            {timeline.map((entry) => (
               <div key={entry.title} className="rounded-2xl border border-white/10 bg-black/40 p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{entry.title}</p>
                 <p className="text-sm text-gray-200 mt-3 leading-relaxed">{entry.focus}</p>
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

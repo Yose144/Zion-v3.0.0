@@ -10,6 +10,7 @@ import {
   Square, Target, Timer, TrendingUp, Wallet, Wrench, Zap, Code2, CalendarDays,
   CircleDot, XCircle, CheckCheck, Construction
 } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
@@ -534,20 +535,20 @@ function fmtBytes(bytes: number | null | undefined) {
 }
 
 /* ═══════════════════════ TAB CONFIG ═══════════════════════ */
-const TABS = [
-  { id: 'dashboard', label: 'Dashboard', icon: Monitor },
-  { id: 'metrics', label: 'Stack Metrics', icon: BarChart3 },
+const getTabs = (cs: boolean) => [
+  { id: 'dashboard', label: cs ? 'Prehled' : 'Dashboard', icon: Monitor },
+  { id: 'metrics', label: cs ? 'Metriky stacku' : 'Stack Metrics', icon: BarChart3 },
   { id: 'upgrade', label: 'Ekam Deeksha', icon: Sparkles },
-  { id: 'roadmap', label: 'Roadmap', icon: Target },
-  { id: 'layers', label: 'Layers', icon: Layers },
-  { id: 'constitution', label: 'Constitution', icon: Lock },
-  { id: 'economy', label: 'Economy', icon: Wallet },
-  { id: 'security', label: 'Security', icon: Shield },
-  { id: 'timeline', label: 'Timeline', icon: CalendarDays },
-  { id: 'priority', label: 'Priority', icon: Zap },
+  { id: 'roadmap', label: cs ? 'Roadmapa' : 'Roadmap', icon: Target },
+  { id: 'layers', label: cs ? 'Vrstvy' : 'Layers', icon: Layers },
+  { id: 'constitution', label: cs ? 'Ustava' : 'Constitution', icon: Lock },
+  { id: 'economy', label: cs ? 'Ekonomika' : 'Economy', icon: Wallet },
+  { id: 'security', label: cs ? 'Bezpecnost' : 'Security', icon: Shield },
+  { id: 'timeline', label: cs ? 'Casova osa' : 'Timeline', icon: CalendarDays },
+  { id: 'priority', label: cs ? 'Priorita' : 'Priority', icon: Zap },
 ] as const;
 
-type TabId = (typeof TABS)[number]['id'];
+type TabId = 'dashboard' | 'metrics' | 'upgrade' | 'roadmap' | 'layers' | 'constitution' | 'economy' | 'security' | 'timeline' | 'priority';
 
 const CHART_RANGES: { value: ChartRange; label: string }[] = [
   { value: '1h', label: '1h' },
@@ -555,10 +556,10 @@ const CHART_RANGES: { value: ChartRange; label: string }[] = [
   { value: '24h', label: '24h' },
 ];
 
-const SERVICE_GROUPS: { value: ServiceGroup; label: string }[] = [
-  { value: 'all', label: 'All' },
+const getServiceGroups = (cs: boolean): { value: ServiceGroup; label: string }[] => [
+  { value: 'all', label: cs ? 'Vse' : 'All' },
   { value: 'core', label: 'Core' },
-  { value: 'mining', label: 'Mining' },
+  { value: 'mining', label: cs ? 'Tezba' : 'Mining' },
   { value: 'monitoring', label: 'Monitoring' },
   { value: 'remote', label: 'Remote' },
 ];
@@ -570,7 +571,7 @@ function getServiceGroup(service: ServiceStatus): Exclude<ServiceGroup, 'all'> {
   return 'core';
 }
 
-function getServiceActions(service: ServiceStatus): { href: string; label: string }[] {
+function getServiceActions(service: ServiceStatus, cs: boolean): { href: string; label: string }[] {
   const actions: { href: string; label: string }[] = [];
   if (service.job || service.name.includes('core') || service.name.includes('pool') || service.name.includes('redis') || service.name.includes('germany-')) {
     actions.push({ href: '/monitoring', label: 'Monitoring' });
@@ -579,7 +580,7 @@ function getServiceActions(service: ServiceStatus): { href: string; label: strin
     actions.push({ href: '/grafana/', label: 'Grafana' });
   }
   if (actions.length === 0) {
-    actions.push({ href: '/monitoring', label: 'Inspect' });
+    actions.push({ href: '/monitoring', label: cs ? 'Zkontrolovat' : 'Inspect' });
   }
   return actions;
 }
@@ -615,12 +616,15 @@ function ProgressBar({ pct, className = '' }: { pct: number; className?: string 
 }
 
 function BigProgress({ run }: { run?: StabilityRun }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
   const pct = run?.progress_pct ?? 0;
   return (
     <div className="mb-4">
       <div className="flex flex-col sm:flex-row sm:justify-between text-[10px] sm:text-xs text-gray-500 mb-2 gap-0.5">
-        <span>Start: {run?.start ? new Date(run.start).toLocaleString() : '—'}</span>
-        <span>End: {run?.start && run?.duration_secs ? new Date(new Date(run.start).getTime() + run.duration_secs * 1000).toLocaleString() : '—'}</span>
+        <span>{cs ? 'Zacatek:' : 'Start:'} {run?.start ? new Date(run.start).toLocaleString(locale) : '—'}</span>
+        <span>{cs ? 'Konec:' : 'End:'} {run?.start && run?.duration_secs ? new Date(new Date(run.start).getTime() + run.duration_secs * 1000).toLocaleString(locale) : '—'}</span>
       </div>
       <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
         <motion.div
@@ -645,6 +649,8 @@ function fmtLastBlock(secs?: number | null) {
 }
 
 function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string; flag: string; ip: string }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const s = node?.stats;
   const memPct =
     node?.mem?.total && node.mem.total > 0 && node.mem.used != null
@@ -659,7 +665,7 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
       ? `${node.containers_up}/${node.containers_healthy}`
       : '—/—';
 
-  const statusLabel = !s?.status ? 'Offline' : isHealthy ? 'Online' : isSyncing ? 'Syncing' : isStale ? 'Stale' : 'Unhealthy';
+  const statusLabel = !s?.status ? (cs ? 'Offline' : 'Offline') : isHealthy ? (cs ? 'Online' : 'Online') : isSyncing ? (cs ? 'Synchronizace' : 'Syncing') : isStale ? (cs ? 'Neaktualni' : 'Stale') : (cs ? 'Nezdrave' : 'Unhealthy');
   const statusStyle = isHealthy
     ? 'text-emerald-200 bg-emerald-400/10 border-emerald-400/30'
     : isSyncing
@@ -683,27 +689,27 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
-        <MiniMetric label="Height" value={fmt(s?.height)} color="text-cyan-400" />
-        <MiniMetric label="Peers" value={fmt(s?.peers_connected)} />
-        <MiniMetric label="Difficulty" value={fmt(s?.difficulty)} />
+        <MiniMetric label={cs ? 'Vyska' : 'Height'} value={fmt(s?.height)} color="text-cyan-400" />
+        <MiniMetric label={cs ? 'Peeri' : 'Peers'} value={fmt(s?.peers_connected)} />
+        <MiniMetric label={cs ? 'Obtiznost' : 'Difficulty'} value={fmt(s?.difficulty)} />
         <MiniMetric label="Mempool" value={fmt(s?.mempool_size)} />
-        <MiniMetric label="Last Block" value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-yellow-400' : 'text-white'} />
-        <MiniMetric label="Containers" value={containersLabel} />
+        <MiniMetric label={cs ? 'Posledni blok' : 'Last Block'} value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-yellow-400' : 'text-white'} />
+        <MiniMetric label={cs ? 'Kontejnery' : 'Containers'} value={containersLabel} />
         <div className="rounded-2xl bg-white/5 p-3 border border-white/10">
-          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">Memory</p>
+          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{cs ? 'Pamet' : 'Memory'}</p>
           <p className={`text-base font-bold font-mono ${valColor(memPct)}`}>{memPct == null ? '—' : `${memPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(memPct)}`} style={{ width: `${memPct ?? 0}%` }} />
           </div>
         </div>
         <div className="rounded-2xl bg-white/5 p-3 border border-white/10">
-          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">Disk</p>
+          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{cs ? 'Disk' : 'Disk'}</p>
           <p className={`text-base font-bold font-mono ${valColor(diskPct)}`}>{diskPct == null ? '—' : `${diskPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(diskPct)}`} style={{ width: `${diskPct ?? 0}%` }} />
           </div>
         </div>
-        <MiniMetric label="Load" value={String(node?.load ?? '—')} />
+        <MiniMetric label={cs ? 'Zatez' : 'Load'} value={String(node?.load ?? '—')} />
       </div>
     </div>
   );
@@ -719,8 +725,10 @@ function MiniMetric({ label, value, color = 'text-white' }: { label: string; val
 }
 
 function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (service: ServiceStatus) => void }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const group = getServiceGroup(service);
-  const actions = getServiceActions(service);
+  const actions = getServiceActions(service, cs);
   const statusClass = service.up === true
     ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'
     : service.up === false
@@ -758,12 +766,12 @@ function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (
       </div>
       <div className="grid grid-cols-2 gap-2 text-[10px]">
         <div className="rounded-lg border border-white/10 bg-white/5 p-2">
-          <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">Ports</div>
+          <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">{cs ? 'Porty' : 'Ports'}</div>
           <div className="font-mono text-gray-300 break-all">{service.ports}</div>
         </div>
         <div className="rounded-lg border border-white/10 bg-white/5 p-2">
           <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">Meta</div>
-          <div className="text-gray-300 wrap-break-word">{service.note ?? (service.job ? `job: ${service.job}` : 'local service')}</div>
+          <div className="text-gray-300 wrap-break-word">{service.note ?? (service.job ? `job: ${service.job}` : (cs ? 'lokalni sluzba' : 'local service'))}</div>
         </div>
       </div>
     </button>
@@ -771,8 +779,10 @@ function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (
 }
 
 function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onClose: () => void }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const group = getServiceGroup(service);
-  const actions = getServiceActions(service);
+  const actions = getServiceActions(service, cs);
   const statusLabel = service.up === true ? 'UP' : service.up === false ? 'DOWN' : 'N/A';
   const statusClass = service.up === true
     ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'
@@ -781,11 +791,11 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
     : 'text-gray-300 border-white/10 bg-white/5';
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
-      <button aria-label="Close details" onClick={onClose} className="absolute inset-0" />
+      <button aria-label={cs ? 'Zavrit detail' : 'Close details'} onClick={onClose} className="absolute inset-0" />
       <motion.div initial={{ x: 32, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 32, opacity: 0 }} className="relative h-full w-full max-w-lg border-l border-white/10 bg-zinc-950/95 p-5 sm:p-6 overflow-y-auto">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Service Detail</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{cs ? 'Detail sluzby' : 'Service Detail'}</p>
             <h3 className="text-2xl font-semibold text-white mt-2">{service.name}</h3>
             <p className="text-xs text-gray-500 font-mono mt-1">{service.image}</p>
           </div>
@@ -799,15 +809,15 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
           {service.job && <span className="text-[10px] font-semibold px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-cyan-300 uppercase tracking-widest">{service.job}</span>}
         </div>
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <MiniMetric label="Ports" value={service.ports} color="text-cyan-400" />
-          <MiniMetric label="Status" value={statusLabel} color={service.up === true ? 'text-emerald-400' : service.up === false ? 'text-red-400' : 'text-gray-300'} />
+          <MiniMetric label={cs ? 'Porty' : 'Ports'} value={service.ports} color="text-cyan-400" />
+          <MiniMetric label={cs ? 'Stav' : 'Status'} value={statusLabel} color={service.up === true ? 'text-emerald-400' : service.up === false ? 'text-red-400' : 'text-gray-300'} />
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 p-4 mb-5">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Operational Context</div>
-          <div className="text-sm text-gray-300 leading-relaxed">{service.note ?? (service.job ? `Prometheus target linked through job ${service.job}.` : 'Local service without a direct Prometheus scrape target.')}</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">{cs ? 'Provozni kontext' : 'Operational Context'}</div>
+          <div className="text-sm text-gray-300 leading-relaxed">{service.note ?? (service.job ? (cs ? `Prometheus target je propojen pres job ${service.job}.` : `Prometheus target linked through job ${service.job}.`) : (cs ? 'Lokalni sluzba bez primeho Prometheus scrape targetu.' : 'Local service without a direct Prometheus scrape target.'))}</div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 p-4 mb-5">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">Quick Actions</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{cs ? 'Rychle akce' : 'Quick Actions'}</div>
           <div className="flex flex-wrap gap-2">
             {actions.map(action => (
               <a key={`${service.name}_drawer_${action.label}`} href={action.href} target={action.href.startsWith('/grafana') ? '_blank' : undefined} rel={action.href.startsWith('/grafana') ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-300 hover:border-cyan-400/40 hover:text-cyan-200 transition-colors">
@@ -818,11 +828,11 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
           </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">Operator Notes</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{cs ? 'Poznamky operatora' : 'Operator Notes'}</div>
           <ul className="space-y-2 text-sm text-gray-300">
-            <li>Status `DOWN` znamená scrape fail nebo nedostupný target.</li>
-            <li>Status `N/A` znamená, že služba není napojená přímo na Prometheus scrape.</li>
-            <li>Pro hlubší drill-down použij Monitoring nebo Grafana akce výše.</li>
+            <li>{cs ? 'Stav DOWN znamena scrape fail nebo nedostupny target.' : 'Status DOWN means a scrape failure or an unreachable target.'}</li>
+            <li>{cs ? 'Stav N/A znamena, ze sluzba neni napojena primo na Prometheus scrape.' : 'Status N/A means the service is not connected directly to a Prometheus scrape.'}</li>
+            <li>{cs ? 'Pro hlubsi drill-down pouzij akce Monitoring nebo Grafana vyse.' : 'Use the Monitoring or Grafana actions above for deeper drill-down.'}</li>
           </ul>
         </div>
       </motion.div>
@@ -846,14 +856,19 @@ function MetricBar({ value, max, color = 'bg-emerald-500' }: { value: number; ma
 }
 
 function MiniSparkline({ data: d, color = '#10b981', height = 28 }: { data: number[]; color?: string; height?: number }) {
-  if (d.length < 2) return <div className="h-7 flex items-center text-[10px] text-gray-600">awaiting data</div>;
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  if (d.length < 2) return <div className="h-7 flex items-center text-[10px] text-gray-600">{cs ? 'cekam na data' : 'awaiting data'}</div>;
   const min = Math.min(...d), max = Math.max(...d), range = max - min || 1, w = 140;
   const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${height - ((v - min) / range) * (height - 4) - 2}`).join(' ');
   return <svg viewBox={`0 0 ${w} ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
 function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', height = 120 }: { data: number[]; timestamps?: number[]; label: string; color?: string; unit?: string; height?: number }) {
-  if (d.length < 2) return <div className="rounded-xl bg-black/40 border border-white/10 p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">awaiting data</div></div>;
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
+  if (d.length < 2) return <div className="rounded-xl bg-black/40 border border-white/10 p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">{cs ? 'cekam na data' : 'awaiting data'}</div></div>;
   const min = Math.min(...d), max = Math.max(...d), range = max - min || 1;
   const w = 600, h = height, pad = 2;
   const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${h - ((v - min) / range) * (h - pad * 2) - pad}`);
@@ -871,7 +886,7 @@ function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', h
     for (let i = 0; i < 5; i++) {
       const idx = Math.floor((i / 4) * (timestamps.length - 1));
       const t = timestamps[idx];
-      if (t != null) tLabels.push(new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      if (t != null) tLabels.push(new Date(t * 1000).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }));
     }
   }
   const latest = d[d.length - 1] ?? 0;
@@ -931,6 +946,9 @@ function PoolGroupRow({ name, submits, accepted, dot }: { name: string; submits:
 
 /* ═══════════ V3 TEST MAINNET METRICS SECTION ═══════════ */
 function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3Sparklines; nowSec: number }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
   const memPct = m.memTotal && m.memAvail ? ((1 - m.memAvail / m.memTotal) * 100) : null;
   const diskPct = m.diskTotal && m.diskAvail ? ((1 - m.diskAvail / m.diskTotal) * 100) : null;
   const uptime = m.bootTime ? nowSec - m.bootTime : null;
@@ -946,40 +964,40 @@ function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">V3 Test Mainnet</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'V3 test mainnet' : 'V3 Test Mainnet'}</p>
           <span className="text-[10px] uppercase tracking-widest border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded-full font-semibold">LIVE PROMETHEUS</span>
         </div>
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
           <TrendingUp className="h-7 w-7 text-emerald-400" />
-          V3 Test Mainnet Metrics
+          {cs ? 'Metriky V3 test mainnetu' : 'V3 Test Mainnet Metrics'}
         </h2>
-        <p className="text-sm text-gray-400">30+ live Prometheus metrics pro controlled rehearsal stack: core node, mining pool, PPLNS engine a host infrastrukturu.</p>
+        <p className="text-sm text-gray-400">{cs ? '30+ zivych Prometheus metrik pro controlled rehearsal stack: core node, mining pool, PPLNS engine a host infrastrukturu.' : '30+ live Prometheus metrics for the controlled rehearsal stack: core node, mining pool, PPLNS engine, and host infrastructure.'}</p>
       </div>
 
       {/* Status indicators */}
       <div className="flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.coreUp} /><span className="text-gray-300">Core Node</span></div>
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.poolUp} /><span className="text-gray-300">Mining Pool</span></div>
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.minerUp} /><span className="text-gray-300">Miner Runtime</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.coreUp} /><span className="text-gray-300">{cs ? 'Core node' : 'Core Node'}</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.poolUp} /><span className="text-gray-300">{cs ? 'Mining pool' : 'Mining Pool'}</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.minerUp} /><span className="text-gray-300">{cs ? 'Miner runtime' : 'Miner Runtime'}</span></div>
         <div className="flex items-center gap-2 text-sm"><StatusDot up={m.serverLoad1 != null ? 1 : null} /><span className="text-gray-300">Node Exporter</span></div>
-        <div className="ml-auto text-xs text-gray-500 font-mono">{m.chainHeight != null ? `Block #${m.chainHeight}` : ''}</div>
+        <div className="ml-auto text-xs text-gray-500 font-mono">{m.chainHeight != null ? `${cs ? 'Blok' : 'Block'} #${m.chainHeight.toLocaleString(locale)}` : ''}</div>
       </div>
 
       {/* ── Core Blockchain ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Server className="h-4 w-4 text-zion-cyan" /> Core Blockchain</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Server className="h-4 w-4 text-zion-cyan" /> {cs ? 'Core blockchain' : 'Core Blockchain'}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-          <MiniMetric label="Chain Height" value={fmt(m.chainHeight)} color="text-zion-gold" />
-          <MiniMetric label="Template Ht" value={fmt(m.templateHeight)} color="text-amber-400" />
-          <MiniMetric label="Peers" value={fmt(m.peerCount)} color="text-cyan-400" />
+          <MiniMetric label={cs ? 'Vyska chainu' : 'Chain Height'} value={fmt(m.chainHeight)} color="text-zion-gold" />
+          <MiniMetric label={cs ? 'Vyska sablony' : 'Template Ht'} value={fmt(m.templateHeight)} color="text-amber-400" />
+          <MiniMetric label={cs ? 'Peeri' : 'Peers'} value={fmt(m.peerCount)} color="text-cyan-400" />
           <MiniMetric label="Mempool" value={fmt(m.mempoolSize)} color="text-purple-400" />
-          <MiniMetric label="Blocks Acc" value={fmt(m.blocksAccepted)} color="text-emerald-400" />
-          <MiniMetric label="Tmpl Txs" value={fmt(m.templateTxs)} color="text-sky-400" />
-          <MiniMetric label="Tmpl Fees" value={m.templateFees != null ? `${m.templateFees}` : '—'} color="text-amber-300" />
+          <MiniMetric label={cs ? 'Prijate bloky' : 'Blocks Acc'} value={fmt(m.blocksAccepted)} color="text-emerald-400" />
+          <MiniMetric label={cs ? 'Tx v sablone' : 'Tmpl Txs'} value={fmt(m.templateTxs)} color="text-sky-400" />
+          <MiniMetric label={cs ? 'Fee sablony' : 'Tmpl Fees'} value={m.templateFees != null ? `${m.templateFees}` : '—'} color="text-amber-300" />
         </div>
         {sparks.chainHeight.length > 1 && (
           <div className="mt-2 rounded-xl bg-black/40 border border-white/10 p-3">
-            <div className="text-[10px] text-gray-500 mb-1">Chain Height — 1h</div>
+            <div className="text-[10px] text-gray-500 mb-1">{cs ? 'Vyska chainu — 1h' : 'Chain Height — 1h'}</div>
             <MiniSparkline data={sparks.chainHeight} color="#FFD700" height={32} />
           </div>
         )}
@@ -987,41 +1005,41 @@ function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3
 
       {/* ── Mining Pool ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Cpu className="h-4 w-4 text-zion-gold" /> Mining Pool</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Cpu className="h-4 w-4 text-zion-gold" /> {cs ? 'Mining pool' : 'Mining Pool'}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-          <MiniMetric label="Active Miners" value={fmt(m.poolActiveSessions)} color="text-zion-gold" />
-          <MiniMetric label="Submits" value={fmt(m.poolSubmits)} color="text-sky-400" />
-          <MiniMetric label="Accepted" value={fmt(m.poolAccepted)} color="text-emerald-400" />
-          <MiniMetric label="Rejected" value={fmt(m.poolRejected)} color="text-red-400" />
-          <MiniMetric label="Accept Rate" value={m.poolAcceptRate != null ? `${m.poolAcceptRate.toFixed(1)}%` : '—'} color={m.poolAcceptRate != null && m.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
-          <MiniMetric label="Pool Uptime" value={fmtUptime(m.poolUptime)} color="text-cyan-400" />
-          <MiniMetric label="PPLNS Miners" value={fmt(m.pplnsMiners)} color="text-pink-400" />
+          <MiniMetric label={cs ? 'Aktivni mineri' : 'Active Miners'} value={fmt(m.poolActiveSessions)} color="text-zion-gold" />
+          <MiniMetric label={cs ? 'Submity' : 'Submits'} value={fmt(m.poolSubmits)} color="text-sky-400" />
+          <MiniMetric label={cs ? 'Prijate' : 'Accepted'} value={fmt(m.poolAccepted)} color="text-emerald-400" />
+          <MiniMetric label={cs ? 'Odmitnute' : 'Rejected'} value={fmt(m.poolRejected)} color="text-red-400" />
+          <MiniMetric label={cs ? 'Accept rate' : 'Accept Rate'} value={m.poolAcceptRate != null ? `${m.poolAcceptRate.toFixed(1)}%` : '—'} color={m.poolAcceptRate != null && m.poolAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
+          <MiniMetric label={cs ? 'Uptime poolu' : 'Pool Uptime'} value={fmtUptime(m.poolUptime)} color="text-cyan-400" />
+          <MiniMetric label={cs ? 'PPLNS mineri' : 'PPLNS Miners'} value={fmt(m.pplnsMiners)} color="text-pink-400" />
         </div>
         {(sparks.poolSessions.length > 1 || sparks.shares.length > 1) && (
           <div className="mt-2 grid md:grid-cols-2 gap-2.5">
-            {sparks.poolSessions.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">Active Miners — 1h</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
-            {sparks.shares.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">Accepted Shares — 1h</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
+            {sparks.poolSessions.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">{cs ? 'Aktivni mineri — 1h' : 'Active Miners — 1h'}</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
+            {sparks.shares.length > 1 && (<div className="rounded-xl bg-black/40 border border-white/10 p-3"><div className="text-[10px] text-gray-500 mb-1">{cs ? 'Prijate shares — 1h' : 'Accepted Shares — 1h'}</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
           </div>
         )}
       </div>
 
       {/* ── Miner Runtime ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Pickaxe className="h-4 w-4 text-emerald-400" /> Miner Runtime</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Pickaxe className="h-4 w-4 text-emerald-400" /> {cs ? 'Miner runtime' : 'Miner Runtime'}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-          <MiniMetric label="Miner Target" value={m.minerUp === 1 ? 'UP' : m.minerUp === 0 ? 'DOWN' : '—'} color={m.minerUp === 1 ? 'text-emerald-400' : m.minerUp === 0 ? 'text-red-400' : 'text-gray-400'} />
+          <MiniMetric label={cs ? 'Cil minera' : 'Miner Target'} value={m.minerUp === 1 ? 'UP' : m.minerUp === 0 ? 'DOWN' : '—'} color={m.minerUp === 1 ? 'text-emerald-400' : m.minerUp === 0 ? 'text-red-400' : 'text-gray-400'} />
           <MiniMetric label="Hashrate" value={m.minerHashrate != null ? fmtHash(m.minerHashrate) : '—'} color="text-emerald-400" />
-          <MiniMetric label="Hashrate 10s" value={m.minerHashrate10s != null ? fmtHash(m.minerHashrate10s) : '—'} color="text-cyan-400" />
-          <MiniMetric label="Hashrate 60s" value={m.minerHashrate60s != null ? fmtHash(m.minerHashrate60s) : '—'} color="text-sky-400" />
-          <MiniMetric label="Accepted" value={fmt(m.minerAccepted)} color="text-emerald-400" />
-          <MiniMetric label="Rejected" value={fmt(m.minerRejected)} color="text-red-400" />
-          <MiniMetric label="Accept Rate" value={m.minerAcceptRate != null ? `${m.minerAcceptRate.toFixed(1)}%` : '—'} color={m.minerAcceptRate != null && m.minerAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
-          <MiniMetric label="Submit Avg" value={m.minerSubmitAvgMs != null ? `${m.minerSubmitAvgMs.toFixed(1)} ms` : '—'} color="text-purple-400" />
-          <MiniMetric label="Pool Height" value={fmt(m.minerPoolHeight)} color="text-zion-gold" />
+          <MiniMetric label={cs ? 'Hashrate 10 s' : 'Hashrate 10s'} value={m.minerHashrate10s != null ? fmtHash(m.minerHashrate10s) : '—'} color="text-cyan-400" />
+          <MiniMetric label={cs ? 'Hashrate 60 s' : 'Hashrate 60s'} value={m.minerHashrate60s != null ? fmtHash(m.minerHashrate60s) : '—'} color="text-sky-400" />
+          <MiniMetric label={cs ? 'Prijate' : 'Accepted'} value={fmt(m.minerAccepted)} color="text-emerald-400" />
+          <MiniMetric label={cs ? 'Odmitnute' : 'Rejected'} value={fmt(m.minerRejected)} color="text-red-400" />
+          <MiniMetric label={cs ? 'Accept rate' : 'Accept Rate'} value={m.minerAcceptRate != null ? `${m.minerAcceptRate.toFixed(1)}%` : '—'} color={m.minerAcceptRate != null && m.minerAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
+          <MiniMetric label={cs ? 'Prumer submitu' : 'Submit Avg'} value={m.minerSubmitAvgMs != null ? `${m.minerSubmitAvgMs.toFixed(1)} ms` : '—'} color="text-purple-400" />
+          <MiniMetric label={cs ? 'Vyska poolu' : 'Pool Height'} value={fmt(m.minerPoolHeight)} color="text-zion-gold" />
         </div>
         {sparks.minerHashrate.length > 1 && (
           <div className="mt-2 rounded-xl bg-black/40 border border-white/10 p-3">
-            <div className="text-[10px] text-gray-500 mb-1">Miner Hashrate — 1h</div>
+            <div className="text-[10px] text-gray-500 mb-1">{cs ? 'Hashrate minera — 1 h' : 'Miner Hashrate — 1h'}</div>
             <MiniSparkline data={sparks.minerHashrate} color="#10b981" height={32} />
           </div>
         )}
@@ -1029,7 +1047,7 @@ function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3
 
       {/* ── Pool Groups ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Network className="h-4 w-4 text-sky-400" /> Pool Routing Groups</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Network className="h-4 w-4 text-sky-400" /> {cs ? 'Routing skupiny poolu' : 'Pool Routing Groups'}</h3>
         <div className="grid md:grid-cols-2 gap-2.5">
           <PoolGroupRow name="zion (Main)" submits={m.groupZionSub} accepted={m.groupZionAcc} dot="bg-emerald-400" />
           <PoolGroupRow name="revenue (CH3)" submits={m.groupRevenueSub} accepted={m.groupRevenueAcc} dot="bg-amber-400" />
@@ -1040,28 +1058,28 @@ function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3
 
       {/* ── PPLNS Reward Engine ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Heart className="h-4 w-4 text-pink-400" /> PPLNS Reward Engine</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Heart className="h-4 w-4 text-pink-400" /> {cs ? 'PPLNS vyplatni engine' : 'PPLNS Reward Engine'}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Window Size</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Velikost okna' : 'Window Size'}</p>
             <p className="text-base sm:text-lg font-mono font-bold text-pink-400 truncate">{fmt(m.pplnsWindowSize)}</p>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Window Used</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Vyuzite okno' : 'Window Used'}</p>
             <p className="text-base sm:text-lg font-mono font-bold text-pink-300 truncate">{fmt(m.pplnsWindowUsed)}</p>
             {pplnsPct != null && <MetricBar value={m.pplnsWindowUsed ?? 0} max={m.pplnsWindowSize ?? 1} color="bg-pink-500" />}
-            <p className="text-[10px] text-gray-500">{pplnsPct != null ? `${pplnsPct.toFixed(1)}% full` : ''}</p>
+            <p className="text-[10px] text-gray-500">{pplnsPct != null ? (cs ? `${pplnsPct.toFixed(1)} % zaplneno` : `${pplnsPct.toFixed(1)}% full`) : ''}</p>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Registered Miners</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Registrovani mineri' : 'Registered Miners'}</p>
             <p className="text-base sm:text-lg font-mono font-bold text-emerald-400 truncate">{fmt(m.pplnsMiners)}</p>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Total Paid</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Celkove vyplaceno' : 'Total Paid'}</p>
             <p className="text-base sm:text-lg font-mono font-bold text-zion-gold truncate">{fmt(m.pplnsPaid)} <span className="text-[10px] text-gray-500">ZION</span></p>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Payout Rounds</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Vyplatni kola' : 'Payout Rounds'}</p>
             <p className="text-base sm:text-lg font-mono font-bold text-amber-400 truncate">{fmt(m.pplnsRounds)}</p>
           </div>
         </div>
@@ -1069,41 +1087,41 @@ function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3
 
       {/* ── Server Infrastructure ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-cyan-400" /> Server Infrastructure <span className="text-[10px] text-gray-500 font-normal">Prague · Hetzner</span></h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-cyan-400" /> {cs ? 'Serverova infrastruktura' : 'Server Infrastructure'} <span className="text-[10px] text-gray-500 font-normal">Prague · Hetzner</span></h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> CPU Load</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {cs ? 'CPU zatez' : 'CPU Load'}</p>
             <p className="text-lg font-mono font-bold text-cyan-400">{m.serverLoad1?.toFixed(1) ?? '—'}</p>
             <p className="text-[10px] text-gray-500">{m.serverLoad5?.toFixed(1) ?? '—'} / {m.serverLoad15?.toFixed(1) ?? '—'} (5m/15m)</p>
           </div>
           <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Memory</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Pamet' : 'Memory'}</p>
             <p className={`text-lg font-mono font-bold ${memPct != null && memPct > 85 ? 'text-red-400' : 'text-purple-400'}`}>{memPct != null ? `${memPct.toFixed(1)}%` : '—'}</p>
             {m.memTotal && m.memAvail && <MetricBar value={m.memTotal - m.memAvail} max={m.memTotal} color={memPct != null && memPct > 85 ? 'bg-red-500' : 'bg-purple-500'} />}
-            <p className="text-[10px] text-gray-500">{fmtBytes(m.memAvail)} free / {fmtBytes(m.memTotal)}</p>
+            <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.memAvail)} volne / ${fmtBytes(m.memTotal)}` : `${fmtBytes(m.memAvail)} free / ${fmtBytes(m.memTotal)}`}</p>
           </div>
           <div className="rounded-xl bg-white/5 border border-white/10 p-3">
             <p className="text-[9px] uppercase tracking-wider text-gray-400">Disk</p>
             <p className={`text-lg font-mono font-bold ${diskPct != null && diskPct > 85 ? 'text-red-400' : 'text-amber-400'}`}>{diskPct != null ? `${diskPct.toFixed(1)}%` : '—'}</p>
             {m.diskTotal && m.diskAvail && <MetricBar value={m.diskTotal - m.diskAvail} max={m.diskTotal} color={diskPct != null && diskPct > 85 ? 'bg-red-500' : 'bg-amber-500'} />}
-            <p className="text-[10px] text-gray-500">{fmtBytes(m.diskAvail)} free / {fmtBytes(m.diskTotal)}</p>
+            <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.diskAvail)} volne / ${fmtBytes(m.diskTotal)}` : `${fmtBytes(m.diskAvail)} free / ${fmtBytes(m.diskTotal)}`}</p>
           </div>
           <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Server Uptime</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Uptime serveru' : 'Server Uptime'}</p>
             <p className="text-lg font-mono font-bold text-emerald-400">{fmtUptime(uptime)}</p>
-            <p className="text-[10px] text-gray-500">since {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString() : '—'}</p>
+            <p className="text-[10px] text-gray-500">{cs ? 'od' : 'since'} {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString(locale) : '—'}</p>
           </div>
         </div>
       </div>
 
       {/* Footer legend */}
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-gray-500 pt-2 border-t border-white/10">
-        <span>30+ live Prometheus metrics</span>
-        <span>Instant + Range queries</span>
-        <span>15s auto-refresh</span>
-        <span>SVG sparklines (1h)</span>
-        <a href="/monitoring" className="text-emerald-400 hover:text-emerald-300 transition-colors">Full monitoring page →</a>
-        <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">Open Grafana →</a>
+        <span>{cs ? '30+ zivych Prometheus metrik' : '30+ live Prometheus metrics'}</span>
+        <span>{cs ? 'Instantni + range dotazy' : 'Instant + Range queries'}</span>
+        <span>{cs ? 'Auto-refresh 15 s' : '15s auto-refresh'}</span>
+        <span>{cs ? 'SVG sparkliny (1 h)' : 'SVG sparklines (1h)'}</span>
+        <a href="/monitoring" className="text-emerald-400 hover:text-emerald-300 transition-colors">{cs ? 'Cela monitoring stranka →' : 'Full monitoring page →'}</a>
+        <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">{cs ? 'Otevrit Grafanu →' : 'Open Grafana →'}</a>
       </div>
     </motion.section>
   );
@@ -1142,6 +1160,8 @@ function WalletDiagnosticsSection({
   onPayloadChange: (value: string) => void;
   onSubmit: () => void;
 }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const rpc = diagnostics?.rpc;
   const wallet = diagnostics?.wallet;
   const miner = diagnostics?.miner;
@@ -1160,28 +1180,28 @@ function WalletDiagnosticsSection({
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Wallet & RPC</p>
-          <span className="text-[10px] uppercase tracking-widest border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded-full font-semibold">SIGNED TX ONLY</span>
+          <span className="text-[10px] uppercase tracking-widest border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded-full font-semibold">{cs ? 'JEN PODEPSANE TX' : 'SIGNED TX ONLY'}</span>
         </div>
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
           <Wallet className="h-7 w-7 text-emerald-400" />
-          Wallet Diagnostics & Transaction Submit
+          {cs ? 'Diagnostika walletu a odeslani transakce' : 'Wallet Diagnostics & Transaction Submit'}
         </h2>
-        <p className="text-sm text-gray-400">Live RPC health, balance, UTXO snapshot, miner payout visibility a bezpečný broadcast již podepsané transakce bez práce s privátními klíči na serveru.</p>
+        <p className="text-sm text-gray-400">{cs ? 'Zive zdravi RPC, balance, UTXO snapshot, viditelnost payoutu minera a bezpecny broadcast jiz podepsane transakce bez prace s privatnimi klici na serveru.' : 'Live RPC health, balance, UTXO snapshot, miner payout visibility, and safe broadcast of an already signed transaction without handling private keys on the server.'}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         <Stat label="RPC" value={rpc?.connected ? 'ONLINE' : 'OFFLINE'} color={rpc?.connected ? 'text-emerald-400' : 'text-red-400'} />
-        <Stat label="Chain Height" value={fmt(rpc?.chain_height)} color="text-cyan-400" mono />
+        <Stat label={cs ? 'Vyska chainu' : 'Chain Height'} value={fmt(rpc?.chain_height)} color="text-cyan-400" mono />
         <Stat label="Peers" value={fmt(rpc?.peers)} color="text-emerald-400" mono />
         <Stat label="Mempool" value={fmt(rpc?.mempool_size)} color="text-purple-400" mono />
-        <Stat label="Network" value={rpc?.network?.toUpperCase() ?? '—'} color="text-zion-gold" />
-        <Stat label="RPC Version" value={rpc?.version ?? '—'} color="text-gray-200" mono />
+        <Stat label={cs ? 'Sit' : 'Network'} value={rpc?.network?.toUpperCase() ?? '—'} color="text-zion-gold" />
+        <Stat label={cs ? 'Verze RPC' : 'RPC Version'} value={rpc?.version ?? '—'} color="text-gray-200" mono />
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
           <div className="flex-1 min-w-0">
-            <label className="block text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">Wallet Address Or Account</label>
+            <label className="block text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">{cs ? 'Adresa walletu nebo ucet' : 'Wallet Address Or Account'}</label>
             <input
               value={addressInput}
               onChange={(event) => onAddressChange(event.target.value)}
@@ -1195,7 +1215,7 @@ function WalletDiagnosticsSection({
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-300 transition-colors hover:border-cyan-400/50 hover:text-cyan-200 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? 'Loading…' : 'Load Wallet'}
+            {loading ? (cs ? 'Nacitam…' : 'Loading…') : (cs ? 'Nacist wallet' : 'Load Wallet')}
           </button>
         </div>
 
@@ -1206,21 +1226,21 @@ function WalletDiagnosticsSection({
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MiniMetric label="Address" value={activeAddress || 'not loaded'} color="text-cyan-400" />
+          <MiniMetric label={cs ? 'Adresa' : 'Address'} value={activeAddress || (cs ? 'nenacteno' : 'not loaded')} color="text-cyan-400" />
           <MiniMetric label="TX Model" value={wallet?.transaction_model ?? 'rpc-only'} color="text-zion-gold" />
           <MiniMetric label="Balance" value={wallet ? fmtZion(wallet.balance_zion) : '—'} color="text-emerald-400" />
-          <MiniMetric label="UTXO Count" value={wallet ? fmt(wallet.utxo_count) : '—'} color="text-purple-400" />
-          <MiniMetric label="UTXO Total" value={wallet ? fmtZion(wallet.total_utxo_zion) : '—'} color="text-cyan-400" />
-          <MiniMetric label="Miner Pending" value={miner ? fmtZion(miner.pending_balance_zion) : '—'} color="text-amber-400" />
-          <MiniMetric label="Miner Paid" value={miner ? fmtZion(miner.paid_balance_zion) : '—'} color="text-emerald-400" />
-          <MiniMetric label="Miner Shares" value={miner ? `${fmt(miner.accepted_shares)} / ${fmt(miner.rejected_shares)}` : '—'} color="text-gray-200" />
+          <MiniMetric label={cs ? 'Pocet UTXO' : 'UTXO Count'} value={wallet ? fmt(wallet.utxo_count) : '—'} color="text-purple-400" />
+          <MiniMetric label={cs ? 'UTXO celkem' : 'UTXO Total'} value={wallet ? fmtZion(wallet.total_utxo_zion) : '—'} color="text-cyan-400" />
+          <MiniMetric label={cs ? 'Miner pending' : 'Miner Pending'} value={miner ? fmtZion(miner.pending_balance_zion) : '—'} color="text-amber-400" />
+          <MiniMetric label={cs ? 'Miner vyplaceno' : 'Miner Paid'} value={miner ? fmtZion(miner.paid_balance_zion) : '—'} color="text-emerald-400" />
+          <MiniMetric label={cs ? 'Miner shares' : 'Miner Shares'} value={miner ? `${fmt(miner.accepted_shares)} / ${fmt(miner.rejected_shares)}` : '—'} color="text-gray-200" />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">Recent UTXOs</div>
-              <div className="text-[10px] text-gray-500">top 20 from RPC</div>
+              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{cs ? 'Posledni UTXO' : 'Recent UTXOs'}</div>
+              <div className="text-[10px] text-gray-500">{cs ? 'top 20 z RPC' : 'top 20 from RPC'}</div>
             </div>
             {wallet?.utxos?.length ? (
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -1230,19 +1250,19 @@ function WalletDiagnosticsSection({
                       <span className="font-mono text-cyan-300 truncate">{utxo.tx_hash.slice(0, 12)}…:{utxo.output_index}</span>
                       <span className="font-mono text-emerald-300">{fmtZion(utxo.amount / 1_000_000_000_000)}</span>
                     </div>
-                    <div className="mt-1 text-gray-500">height {fmt(utxo.height)} · {utxo.address}</div>
+                    <div className="mt-1 text-gray-500">{cs ? 'vyska' : 'height'} {fmt(utxo.height)} · {utxo.address}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-gray-500">{activeAddress ? 'No UTXOs returned for this address.' : 'Load a zion1 address to inspect UTXOs.'}</div>
+              <div className="text-sm text-gray-500">{activeAddress ? (cs ? 'Pro tuto adresu se nevratilo zadne UTXO.' : 'No UTXOs returned for this address.') : (cs ? 'Nacti adresu zion1 pro kontrolu UTXO.' : 'Load a zion1 address to inspect UTXOs.')}</div>
             )}
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">RPC Submit Tester</div>
-              <div className="text-[10px] text-gray-500">signed payload only</div>
+              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{cs ? 'RPC tester odeslani' : 'RPC Submit Tester'}</div>
+              <div className="text-[10px] text-gray-500">{cs ? 'jen podepsany payload' : 'signed payload only'}</div>
             </div>
             <div className="space-y-3">
               <select
@@ -1266,12 +1286,12 @@ function WalletDiagnosticsSection({
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 transition-colors hover:border-emerald-400/50 hover:text-emerald-200 disabled:opacity-50"
               >
                 <ArrowLeftRight className={`h-4 w-4 ${txSubmitting ? 'animate-pulse' : ''}`} />
-                {txSubmitting ? 'Submitting…' : 'Broadcast Signed TX'}
+                {txSubmitting ? (cs ? 'Odesilam…' : 'Submitting…') : (cs ? 'Broadcast podepsane TX' : 'Broadcast Signed TX')}
               </button>
               {txResult && (
                 <div className={`rounded-xl border px-4 py-3 text-sm ${txResult.accepted ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-amber-500/30 bg-amber-500/10 text-amber-200'}`}>
-                  <div>method: {txResult.method}</div>
-                  <div>accepted: {txResult.accepted ? 'yes' : 'no'}</div>
+                  <div>{cs ? 'metoda' : 'method'}: {txResult.method}</div>
+                  <div>{cs ? 'prijato' : 'accepted'}: {txResult.accepted ? (cs ? 'ano' : 'yes') : (cs ? 'ne' : 'no')}</div>
                   <div>tx_id: {txResult.tx_id ?? '—'}</div>
                 </div>
               )}
@@ -1417,6 +1437,11 @@ function LogConsole({ logTail }: { logTail?: string }) {
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════ */
 export default function MissionControlDashboard() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
+  const tabs = getTabs(cs);
+  const serviceGroups = getServiceGroups(cs);
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1620,7 +1645,7 @@ export default function MissionControlDashboard() {
     {
       key: 'done',
       title: 'Hotovo',
-      badge: 'READY NOW',
+      badge: cs ? 'HOTOVO' : 'READY NOW',
       Icon: CheckCheck,
       cardClass: 'border-emerald-500/20 bg-emerald-500/5',
       badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
@@ -1630,7 +1655,7 @@ export default function MissionControlDashboard() {
     {
       key: 'missing',
       title: 'Chybí před public launch',
-      badge: 'BLOCKERS',
+      badge: cs ? 'BLOKERY' : 'BLOCKERS',
       Icon: XCircle,
       cardClass: 'border-red-500/20 bg-red-500/5',
       badgeClass: 'border-red-500/30 bg-red-500/10 text-red-300',
@@ -1640,7 +1665,7 @@ export default function MissionControlDashboard() {
     {
       key: 'not-missing',
       title: 'Co už nechybí',
-      badge: 'CLARIFIED',
+      badge: cs ? 'VYJASNENO' : 'CLARIFIED',
       Icon: CircleDot,
       cardClass: 'border-cyan-500/20 bg-cyan-500/5',
       badgeClass: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300',
@@ -1650,7 +1675,7 @@ export default function MissionControlDashboard() {
     {
       key: 'next-48h',
       title: 'Další 48-72h',
-      badge: 'REHEARSAL',
+      badge: cs ? 'NACVIK' : 'REHEARSAL',
       Icon: Construction,
       cardClass: 'border-amber-500/20 bg-amber-500/5',
       badgeClass: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
@@ -1673,42 +1698,43 @@ export default function MissionControlDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-amber-300 uppercase">
                 <Activity className="h-4 w-4" />
-                TEST MAINNET · PUBLIC LAUNCH {launchGate}
+                {cs ? 'TEST MAINNET · VEREJNY LAUNCH' : 'TEST MAINNET · PUBLIC LAUNCH'} {launchGate}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Live Telemetry</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Ziva telemetrie' : 'Live Telemetry'}</p>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-gradient leading-tight">
-                  Mission Control
+                  {cs ? 'Rizeni mise' : 'Mission Control'}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time monitoring, roadmap tracking a launch-closing mapa pro controlled V3 test mainnet.
-                Dashboard sleduje audited Prague, USA a Singapore node set, aktivní 72h mainnet stability run a closure evidence před jakýmkoli public production launch.
+                {cs
+                  ? 'Monitoring v realnem case, sledovani roadmapy a launch-closing mapa pro controlled V3 test mainnet. Dashboard sleduje auditovany node set Praha, USA a Singapur, aktivni 72h mainnet stability run a closure evidence pred jakymkoli verejnym production launchem.'
+                  : 'Real-time monitoring, roadmap tracking, and a launch-closing map for the controlled V3 test mainnet. The dashboard tracks the audited Prague, USA, and Singapore node set, the active 72h mainnet stability run, and closure evidence before any public production launch.'}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE DATA · 30s refresh
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {cs ? 'ZIVA DATA · refresh 30 s' : 'LIVE DATA · 30s refresh'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Timer className="h-3 w-3 text-amber-300" /> 72h stability run · {rehearsalStatus}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-cyan-200">
-                  <Sparkles className="h-3 w-3" /> 3 nodes · Prague + USA + Singapore
+                  <Sparkles className="h-3 w-3" /> {cs ? '3 nody · Praha + USA + Singapur' : '3 nodes · Prague + USA + Singapore'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-red-200">
-                  <AlertTriangle className="h-3 w-3" /> Public launch remains blocked
+                  <AlertTriangle className="h-3 w-3" /> {cs ? 'Verejny launch zustava blokovan' : 'Public launch remains blocked'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? 'All Systems Healthy' : anyHealthy ? 'Partial Systems Up' : 'Systems Monitoring'}
+                  <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? (cs ? 'Vsechny systemy zdrave' : 'All Systems Healthy') : anyHealthy ? (cs ? 'Cast systemu online' : 'Partial Systems Up') : (cs ? 'Monitoring systemu' : 'Systems Monitoring')}
                 </span>
               </div>
             </div>
             <div className="grid w-full gap-3 grid-cols-2 lg:w-auto lg:min-w-[340px]">
               {[
-                { label: 'Block Height', value: fmt(primaryHeight), descriptor: 'latest controlled chain tip' },
-                { label: 'Seeds', value: String(internalSeedContainers.length || 2), descriptor: 'internal seed containers' },
-                { label: 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: 'public node peers' },
-                { label: 'Launch Gate', value: launchGate, descriptor: `${missingCount} blockers before public launch` },
+                { label: cs ? 'Vyska bloku' : 'Block Height', value: fmt(primaryHeight), descriptor: cs ? 'posledni controlled chain tip' : 'latest controlled chain tip' },
+                { label: cs ? 'Seedy' : 'Seeds', value: String(internalSeedContainers.length || 2), descriptor: cs ? 'interni seed kontejnery' : 'internal seed containers' },
+                { label: cs ? 'Sitovi peeri' : 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: cs ? 'peeri verejneho nodu' : 'public node peers' },
+                { label: cs ? 'Launch gate' : 'Launch Gate', value: launchGate, descriptor: cs ? `${missingCount} blokeru pred verejnym launchem` : `${missingCount} blockers before public launch` },
               ].map((chip) => (
                 <div key={chip.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
@@ -1729,7 +1755,7 @@ export default function MissionControlDashboard() {
         >
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <Zap className="h-4 w-4 text-cyan-400 mx-2 sm:mx-3 shrink-0" />
-            {TABS.map(tab => (
+            {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -1740,7 +1766,7 @@ export default function MissionControlDashboard() {
             ))}
             <div className="ml-auto flex items-center gap-2 text-xs text-emerald-400 whitespace-nowrap pr-2 sm:pr-3">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="hidden sm:inline">LIVE</span>
+              <span className="hidden sm:inline">{cs ? 'ZIVE' : 'LIVE'}</span>
             </div>
           </div>
         </motion.div>
@@ -1749,7 +1775,7 @@ export default function MissionControlDashboard() {
         {loading && !data && (
           <div className="text-center py-20 text-gray-500">
             <div className="inline-block w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mb-4" />
-            <p>Loading Mission Control data…</p>
+            <p>{cs ? 'Nacitam data Mission Control…' : 'Loading Mission Control data…'}</p>
           </div>
         )}
 
@@ -1757,9 +1783,9 @@ export default function MissionControlDashboard() {
         {!loading && !data && (
           <div className="text-center py-16 text-gray-500 rounded-2xl border border-orange-500/20 bg-orange-500/5">
             <Radio className="h-8 w-8 text-orange-400 mx-auto mb-3" />
-            <p className="text-orange-300 font-semibold">Live telemetry unavailable</p>
-            <p className="text-sm mt-1">Node API temporarily unreachable — roadmap &amp; constitution tabs still work.</p>
-            <button onClick={refresh} className="mt-4 px-4 py-2 text-xs rounded-xl border border-orange-400/30 text-orange-300 hover:bg-orange-500/10 transition-colors">Retry</button>
+            <p className="text-orange-300 font-semibold">{cs ? 'Ziva telemetrie neni dostupna' : 'Live telemetry unavailable'}</p>
+            <p className="text-sm mt-1">{cs ? 'Node API je docasne nedostupne - zalozky roadmapy a ustavy stale funguji.' : 'Node API temporarily unreachable - roadmap & constitution tabs still work.'}</p>
+            <button onClick={refresh} className="mt-4 px-4 py-2 text-xs rounded-xl border border-orange-400/30 text-orange-300 hover:bg-orange-500/10 transition-colors">{cs ? 'Zkusit znovu' : 'Retry'}</button>
           </div>
         )}
 
@@ -1777,9 +1803,9 @@ export default function MissionControlDashboard() {
             >
               <div className="flex flex-col gap-2 mb-6">
                 <div className="flex items-center gap-3">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Active Verification</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Aktivni verifikace' : 'Active Verification'}</p>
                   <span className={`text-[10px] uppercase tracking-widest border px-2 py-0.5 rounded-full font-semibold ${collectorEnabled ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300' : 'border-amber-500/40 bg-amber-500/10 text-amber-300'}`}>
-                    {collectorEnabled ? 'collector live' : 'live snapshot only'}
+                    {collectorEnabled ? (cs ? 'collector live' : 'collector live') : cs ? 'jen live snapshot' : 'live snapshot only'}
                   </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
@@ -1787,23 +1813,23 @@ export default function MissionControlDashboard() {
                   72h Mainnet Stability Run
                 </h2>
                 <p className="text-sm text-gray-400">
-                  Jediný veřejný validation window pro controlled V3 runtime. Historické snapshoty byly odstraněny; launch gate se teď opírá o živý tip agreement, collector evidenci a closure report.
+                  {cs ? 'Jedine verejne validation window pro controlled V3 runtime. Historicke snapshoty byly odstraneny; launch gate se ted opira o zivy tip agreement, collector evidenci a closure report.' : 'The only public validation window for the controlled V3 runtime. Historical snapshots were removed; the launch gate now depends on live tip agreement, collector evidence, and the closure report.'}
                 </p>
               </div>
               <BigProgress run={stabilityRun} />
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
-                <Stat label="Elapsed" value={fmtTime(stabilityRun?.elapsed_secs)} color="text-cyan-400" mono />
-                <Stat label="Remaining" value={fmtTime(stabilityRun?.remaining_secs)} mono />
-                <Stat label="Online Nodes" value={`${stabilityRun?.agreement?.online_nodes ?? onlineCount}/${stabilityRun?.agreement?.expected_nodes ?? 3}`} color={allHealthy ? 'text-emerald-400' : 'text-amber-300'} mono />
-                <Stat label="Tip Agreement" value={tipAgreement ? 'LOCKED' : 'DRIFT'} color={tipAgreement ? 'text-emerald-400' : 'text-amber-300'} />
-                <Stat label="Height Spread" value={heightSpread != null ? `${heightSpread} blk` : '—'} color={heightSpread === 0 ? 'text-emerald-400' : 'text-amber-300'} mono />
-                <Stat label="Pool Accept" value={poolAcceptRate != null ? `${poolAcceptRate}%` : '—'} color={(poolAcceptRate ?? 0) >= 95 ? 'text-emerald-400' : 'text-amber-300'} mono />
+                <Stat label={cs ? 'Uplynulo' : 'Elapsed'} value={fmtTime(stabilityRun?.elapsed_secs)} color="text-cyan-400" mono />
+                <Stat label={cs ? 'Zbyva' : 'Remaining'} value={fmtTime(stabilityRun?.remaining_secs)} mono />
+                <Stat label={cs ? 'Online nody' : 'Online Nodes'} value={`${stabilityRun?.agreement?.online_nodes ?? onlineCount}/${stabilityRun?.agreement?.expected_nodes ?? 3}`} color={allHealthy ? 'text-emerald-400' : 'text-amber-300'} mono />
+                <Stat label={cs ? 'Tip agreement' : 'Tip Agreement'} value={tipAgreement ? (cs ? 'UZAMCENO' : 'LOCKED') : 'DRIFT'} color={tipAgreement ? 'text-emerald-400' : 'text-amber-300'} />
+                <Stat label={cs ? 'Rozptyl vysky' : 'Height Spread'} value={heightSpread != null ? `${heightSpread} blk` : '—'} color={heightSpread === 0 ? 'text-emerald-400' : 'text-amber-300'} mono />
+                <Stat label={cs ? 'Pool accept' : 'Pool Accept'} value={poolAcceptRate != null ? `${poolAcceptRate}%` : '—'} color={(poolAcceptRate ?? 0) >= 95 ? 'text-emerald-400' : 'text-amber-300'} mono />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 mt-3 sm:mt-4">
-                <Stat label="Samples" value={fmt(samplesCollected)} color="text-cyan-400" mono />
-                <Stat label="Issues" value={fmt(collectorIssues)} color={collectorIssues === 0 ? 'text-emerald-400' : 'text-amber-300'} mono />
-                <Stat label="Collector" value={collectorEnabled ? 'LIVE' : 'PENDING'} color={collectorEnabled ? 'text-cyan-400' : 'text-amber-300'} sub={lastSampleAt} />
-                <Stat label="Closure Gate" value={stabilityRun?.closure_report_ready ? 'READY' : 'OPEN'} color={stabilityRun?.closure_report_ready ? 'text-emerald-400' : 'text-red-400'} sub={stabilityRun?.closure_report_ready ? '72h evidence complete' : 'Public launch remains blocked'} />
+                <Stat label={cs ? 'Vzorky' : 'Samples'} value={fmt(samplesCollected)} color="text-cyan-400" mono />
+                <Stat label={cs ? 'Problemy' : 'Issues'} value={fmt(collectorIssues)} color={collectorIssues === 0 ? 'text-emerald-400' : 'text-amber-300'} mono />
+                <Stat label="Collector" value={collectorEnabled ? 'LIVE' : (cs ? 'CEKA' : 'PENDING')} color={collectorEnabled ? 'text-cyan-400' : 'text-amber-300'} sub={lastSampleAt} />
+                <Stat label={cs ? 'Closure gate' : 'Closure Gate'} value={stabilityRun?.closure_report_ready ? (cs ? 'PRIPRAVENO' : 'READY') : 'OPEN'} color={stabilityRun?.closure_report_ready ? 'text-emerald-400' : 'text-red-400'} sub={stabilityRun?.closure_report_ready ? (cs ? '72h evidence dokoncena' : '72h evidence complete') : (cs ? 'Verejny launch zustava blokovan' : 'Public launch remains blocked')} />
               </div>
             </motion.section>
 
@@ -2121,7 +2147,7 @@ export default function MissionControlDashboard() {
                 <p className="text-xs text-gray-500">{services.length} services/targets · zion-net Docker network · Prometheus scrape 15s</p>
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
-                {SERVICE_GROUPS.map(option => (
+                {serviceGroups.map(option => (
                   <button
                     key={option.value}
                     onClick={() => setServiceGroup(option.value)}
@@ -2554,16 +2580,16 @@ export default function MissionControlDashboard() {
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Progress</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Postup' : 'Progress'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Target className="h-7 w-7 text-zion-gold" />
-                  Roadmap — Test Mainnet → Public Launch
+                  {cs ? 'Roadmapa — test mainnet → verejny launch' : 'Roadmap — Test Mainnet → Public Launch'}
                 </h2>
-                <p className="text-sm text-gray-400">Fáze 0 je hotová, controlled test mainnet běží a public production launch zůstává zavřený, dokud se nedokončí poslední gate.</p>
+                <p className="text-sm text-gray-400">{cs ? 'Faze 0 je hotova, controlled test mainnet bezi a verejny production launch zustava zavreny, dokud se nedokonci posledni gate.' : 'Phase 0 is complete, the controlled test mainnet is running, and the public production launch remains closed until the final gate is finished.'}</p>
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-amber-400 to-red-400" initial={{ width: 0 }} animate={{ width: '58%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · TEST MAINNET · 72H STABILITY RUN · PUBLIC LAUNCH NO-GO</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · TEST MAINNET · 72H STABILITY RUN · {cs ? 'VEREJNY LAUNCH NO-GO' : 'PUBLIC LAUNCH NO-GO'}</span>
               </div>
             </motion.section>
 
@@ -2574,7 +2600,7 @@ export default function MissionControlDashboard() {
               transition={{ delay: 0.12 }}
               className="space-y-5"
             >
-              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title="Fáze 0 — Spec Freeze & Core Rewrite" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
+              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title={cs ? 'Faze 0 — zmrazeni specifikace a prepis core' : 'Phase 0 — Spec Freeze & Core Rewrite'} pct={100} status={cs ? 'DOKONCENO' : 'COMPLETED'} statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Únor 2026 — 155 testů, 8 commitů</p>
                 <table className="w-full text-left"><tbody>
                   <SprintRow name="0.0 Repo Migrace" content="Čisté repo, workspace, Docker, CI/CD" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -2586,8 +2612,8 @@ export default function MissionControlDashboard() {
                 </tbody></table>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Controlled Test Mainnet" pct={90} status="AKTIVNÍ" statusColor="border-cyan-400/30 bg-cyan-400/10 text-cyan-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Březen 2026 | aktivní 72h mainnet stability run + live closure evidence collector</p>
+              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title={cs ? 'Faze 1 — controlled test mainnet' : 'Phase 1 — Controlled Test Mainnet'} pct={90} status={cs ? 'AKTIVNI' : 'ACTIVE'} statusColor="border-cyan-400/30 bg-cyan-400/10 text-cyan-200" defaultOpen>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Brezen 2026 | aktivni 72h mainnet stability run + live collector closure evidence' : 'March 2026 | active 72h mainnet stability run + live closure evidence collector'}</p>
                 <table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Obsah</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Testy</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Stav</th></tr></thead><tbody>
                   <SprintRow name="1.0 Network Deploy" content="Chain reset, Docker, historical 3-server rollout baseline" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.1 Config Validation" content="TOML parsing, boundary checks" tests="70" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -2605,9 +2631,9 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.13 Ekam Tier 1" content="Scratchpad 256 KiB, 4 passes, 256 reads" tests="108" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} highlight />
                   <SprintRow name="1.14 Ekam Tier 2" content="Epoch NPU weights, rotate per 2016/100 blocks" tests="14" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} highlight />
                   <SprintRow name="1.15 Testnet Flag" content="Conditional compile NPU_EPOCH_LENGTH" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.16 Collector Evidence" content={`Persisted samples ${fmt(samplesCollected)} · issues ${fmt(collectorIssues)} · last sample ${lastSampleAt}`} tests="—" status={<span className={`${collectorEnabled ? 'text-cyan-300' : 'text-amber-300'} inline-flex items-center gap-1`}><Activity className="h-3.5 w-3.5" /> {collectorEnabled ? 'LIVE' : 'PENDING'}</span>} highlight />
-                  <SprintRow name="1.17 On-chain Reward Split" content="89/5/5/1 enforced live on blocks 465 / 471 / 472" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> LIVE</span>} highlight />
-                  <SprintRow name="1.18 Closure Evidence" content="Chain growth, tip agreement, reject rate a recovery verdict pro public launch gate" tests="—" status={<span className={`${stabilityRun?.closure_report_ready ? 'text-emerald-400' : 'text-red-300'} inline-flex items-center gap-1`}>{stabilityRun?.closure_report_ready ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />} {stabilityRun?.closure_report_ready ? 'READY' : 'OPEN'}</span>} highlight />
+                  <SprintRow name="1.16 Collector Evidence" content={cs ? `Persistovane vzorky ${fmt(samplesCollected)} · problemy ${fmt(collectorIssues)} · posledni vzorek ${lastSampleAt}` : `Persisted samples ${fmt(samplesCollected)} · issues ${fmt(collectorIssues)} · last sample ${lastSampleAt}`} tests="—" status={<span className={`${collectorEnabled ? 'text-cyan-300' : 'text-amber-300'} inline-flex items-center gap-1`}><Activity className="h-3.5 w-3.5" /> {collectorEnabled ? 'LIVE' : (cs ? 'CEKA' : 'PENDING')}</span>} highlight />
+                  <SprintRow name="1.17 On-chain Reward Split" content={cs ? '89/5/5/1 vynuceno live na blocich 465 / 471 / 472' : '89/5/5/1 enforced live on blocks 465 / 471 / 472'} tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> LIVE</span>} highlight />
+                  <SprintRow name="1.18 Closure Evidence" content={cs ? 'Rust chainu, tip agreement, reject rate a recovery verdict pro gate verejneho launchu' : 'Chain growth, tip agreement, reject rate, and recovery verdict for the public launch gate'} tests="—" status={<span className={`${stabilityRun?.closure_report_ready ? 'text-emerald-400' : 'text-red-300'} inline-flex items-center gap-1`}>{stabilityRun?.closure_report_ready ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />} {stabilityRun?.closure_report_ready ? (cs ? 'PRIPRAVENO' : 'READY') : 'OPEN'}</span>} highlight />
                 </tbody></table>
               </PhaseAccordion>
 
@@ -2620,8 +2646,8 @@ export default function MissionControlDashboard() {
                 </tbody></table>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Globe className="h-6 w-6 text-yellow-400" />} title="Fáze 3 — Launch Ops & Security Closure" pct={60} status="PROBÍHÁ" statusColor="border-yellow-400/30 bg-yellow-400/10 text-yellow-200">
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Březen 2026 | closure práce mezi controlled rehearsal a public launch gatem</p>
+              <PhaseAccordion icon={<Globe className="h-6 w-6 text-yellow-400" />} title={cs ? 'Faze 3 — launch ops a security closure' : 'Phase 3 — Launch Ops & Security Closure'} pct={60} status={cs ? 'PROBIHA' : 'IN PROGRESS'} statusColor="border-yellow-400/30 bg-yellow-400/10 text-yellow-200">
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Brezen 2026 | closure prace mezi controlled rehearsal a gatem verejneho launchu' : 'March 2026 | closure work between the controlled rehearsal and the public launch gate'}</p>
                 <table className="w-full text-left"><tbody>
                   <SprintRow name="3.1 Node Set Audit" content="Prague + USA + Singapore potvrzené po fee-split rolloutu" status={<span className="text-emerald-400">SYNCED</span>} />
                   <SprintRow name="3.2 Release Artefacts" content="runbook ✅, operator guide ✅, checksums ⬜, release tag ⬜" status={<span className="text-yellow-400">2/4</span>} />
@@ -2630,11 +2656,11 @@ export default function MissionControlDashboard() {
                 </tbody></table>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Target className="h-6 w-6 text-gray-400" />} title="Fáze 4 — Public Launch Gate" pct={20} status="PO REHEARSALU" statusColor="border-white/20 bg-white/5 text-gray-300">
+              <PhaseAccordion icon={<Target className="h-6 w-6 text-gray-400" />} title={cs ? 'Faze 4 — gate verejneho launchu' : 'Phase 4 — Public Launch Gate'} pct={20} status={cs ? 'PO REHEARSALU' : 'POST-REHEARSAL'} statusColor="border-white/20 bg-white/5 text-gray-300">
                 <table className="w-full text-left"><tbody>
-                  <SprintRow name="4.1 Closure Report" content="Measured 48-72h verdict pro chain growth, rejects a recovery" status={<Square className="h-4 w-4 text-gray-500" />} />
+                  <SprintRow name="4.1 Closure Report" content={cs ? 'Merene 48-72h rozhodnuti pro rust chainu, rejects a recovery' : 'Measured 48-72h verdict for chain growth, rejects, and recovery'} status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="4.2 Exit Criteria Sign-off" content="MAINNET_EXIT_CRITERIA.md uzavřen nebo waiver log potvrzen" status={<Square className="h-4 w-4 text-gray-500" />} />
-                  <SprintRow name="4.3 Genesis Artefacts" content="Offline genesis hash, checksums, release tag a artifact chain" status={<Square className="h-4 w-4 text-gray-500" />} />
+                  <SprintRow name="4.3 Genesis Artefacts" content={cs ? 'Offline genesis hash, checksumy, release tag a artifact chain' : 'Offline genesis hash, checksums, release tag, and artifact chain'} status={<Square className="h-4 w-4 text-gray-500" />} />
                 </tbody></table>
               </PhaseAccordion>
 
@@ -2668,21 +2694,21 @@ export default function MissionControlDashboard() {
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
             >
               <div className="flex flex-col gap-2 mb-8">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Architecture</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Layers className="h-7 w-7 text-zion-gold" />
-                  Layer Stack
+                  {cs ? 'Vrstvovy stack' : 'Layer Stack'}
                 </h2>
                 <p className="text-sm text-gray-400 italic">&quot;Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním.&quot;</p>
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-rose-500/5', title: 'Orbital Consciousness Station', desc: 'Vesmírná stanice ZION Issobella — decentralizovaný výzkum, orbital mining, 5% block reward fund', tags: ['Space Station', 'Orbital Mining', '5% Fund', 'Deep Research'], date: '2040+', labelColor: 'text-rose-400', active: false, Icon: Rocket },
-                  { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-amber-500/5', title: 'Sovereign Governance Layer', desc: 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic', tags: ['Governance', 'Sovereignty', 'Community', 'Freedom'], date: '2030+', labelColor: 'text-amber-400', active: false, Icon: Globe2 },
-                  { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-pink-500/5', title: 'Consciousness Mining as Gameplay', desc: 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-pink-400', active: false, Icon: Gamepad2 },
-                  { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-purple-500/5', title: 'Neural Compute Layer & AI Agents', desc: 'WARP adapters 7/7 hotovo, NCL gateway online, AI Native SDK navazuje', tags: ['WARP 7/7', 'NCL Gateway', 'AI Orchestrátor', 'GPU za ZION'], date: '2026 Q1–Q2 (testnet hotovo)', labelColor: 'text-purple-400', active: true, Icon: Brain },
-                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-blue-500/5', title: 'Atomic Swaps, AMM & DAO', desc: 'wZION bridge na Base Sepolia testnet ready, další DeFi kroky navazují', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Sepolia', 'DAO Voting'], date: '2026 Q1–Q2 (testnet ready)', labelColor: 'text-blue-400', active: true, Icon: ArrowLeftRight },
-                  { label: 'L1 — ZION BLOCKCHAIN ← ZDE', color: 'border-l-cyan-400 bg-cyan-500/[0.08] border-2 border-cyan-500/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Cosmic Harmony v3 — Ekam Deeksha', desc: 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, dual-mining ZION+VRSC. Ekam Deeksha: 256 KiB scratchpad + epoch NPU weights (ASIC resistance Tier 1+2 deployed).', tags: ['Ekam Deeksha', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Dual Mining'], date: 'Test mainnet now · production target 31. 12. 2026', labelColor: 'text-cyan-400', active: true, Icon: Link },
+                  { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-rose-500/5', title: cs ? 'Orbitalni stanice vedomi' : 'Orbital Consciousness Station', desc: cs ? 'Vesmirna stanice ZION Issobella — decentralizovany vyzkum, orbital mining, 5% fond z block rewardu' : 'ZION Issobella space station — decentralized research, orbital mining, 5% block reward fund', tags: cs ? ['Vesmirna stanice', 'Orbital mining', '5% fond', 'Hluboky vyzkum'] : ['Space Station', 'Orbital Mining', '5% Fund', 'Deep Research'], date: '2040+', labelColor: 'text-rose-400', active: false, Icon: Rocket },
+                  { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-amber-500/5', title: cs ? 'Vrstva suverenni governance' : 'Sovereign Governance Layer', desc: cs ? 'Plne decentralizovana sprava, komunitni governance, svobodny ekosystem bez hranic' : 'Fully decentralized governance, community governance, a borderless free ecosystem', tags: cs ? ['Governance', 'Suverenita', 'Komunita', 'Svoboda'] : ['Governance', 'Sovereignty', 'Community', 'Freedom'], date: '2030+', labelColor: 'text-amber-400', active: false, Icon: Globe2 },
+                  { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-pink-500/5', title: cs ? 'Tezba vedomi jako gameplay' : 'Consciousness Mining as Gameplay', desc: cs ? 'UE5 open-world, XP/urovne vedomi, NFT avatary, Play-to-Mine' : 'UE5 open world, XP/consciousness levels, NFT avatars, Play-to-Mine', tags: cs ? ['UE5 svet', 'XP system', 'NFT avatary', 'Play-to-Mine'] : ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-pink-400', active: false, Icon: Gamepad2 },
+                  { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-purple-500/5', title: cs ? 'Vrstva neural compute a AI agentu' : 'Neural Compute Layer & AI Agents', desc: cs ? 'WARP adaptery 7/7 hotovo, NCL gateway online, AI Native SDK navazuje' : 'WARP adapters 7/7 complete, NCL gateway online, AI Native SDK follows next', tags: cs ? ['WARP 7/7', 'NCL gateway', 'AI orchestrator', 'GPU za ZION'] : ['WARP 7/7', 'NCL Gateway', 'AI Orchestrator', 'GPU for ZION'], date: cs ? '2026 Q1–Q2 (testnet hotovy)' : '2026 Q1–Q2 (testnet ready)', labelColor: 'text-purple-400', active: true, Icon: Brain },
+                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-blue-500/5', title: cs ? 'Atomic swapy, AMM a DAO' : 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge na Base Sepolia testnet ready, dalsi DeFi kroky navazuji' : 'wZION bridge on Base Sepolia testnet ready, with further DeFi steps following', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Sepolia', 'DAO Voting'], date: cs ? '2026 Q1–Q2 (testnet ready)' : '2026 Q1–Q2 (testnet ready)', labelColor: 'text-blue-400', active: true, Icon: ArrowLeftRight },
+                  { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : 'L1 — ZION BLOCKCHAIN ← HERE', color: 'border-l-cyan-400 bg-cyan-500/[0.08] border-2 border-cyan-500/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Cosmic Harmony v3 — Ekam Deeksha', desc: cs ? 'UTXO + Ed25519, emise Decade Decay (-20 % za dekadu), LWMA DAA, fee burning, dual-mining ZION+VRSC. Ekam Deeksha: 256 KiB scratchpad + epoch NPU vahy (ASIC resistance Tier 1+2 nasazeno).' : 'UTXO + Ed25519, Decade Decay emission (-20% per decade), LWMA DAA, fee burning, dual-mining ZION+VRSC. Ekam Deeksha: 256 KiB scratchpad + epoch NPU weights (ASIC resistance Tier 1+2 deployed).', tags: cs ? ['Ekam Deeksha', 'ASIC-resistant', 'UTXO model', 'Ed25519', 'Decade Decay', 'Fee burn', 'Dual mining'] : ['Ekam Deeksha', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Dual Mining'], date: cs ? 'Test mainnet ted · produkcni cil 31. 12. 2026' : 'Test mainnet now · production target 31. 12. 2026', labelColor: 'text-cyan-400', active: true, Icon: Link },
                 ].map((l, idx) => (
                   <motion.div
                     key={l.label}
@@ -2720,29 +2746,29 @@ export default function MissionControlDashboard() {
                 <div className="flex items-center gap-3 mb-6">
                   <Lock className="h-6 w-6 text-zion-gold" />
                   <div>
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">Target Mainnet Constitution</h2>
-                    <p className="text-xs sm:text-sm text-gray-400">Plánované produkční parametry; tento dashboard sleduje test-mainnet rehearsal proti nim</p>
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">{cs ? 'Cilova ustava mainnetu' : 'Target Mainnet Constitution'}</h2>
+                    <p className="text-xs sm:text-sm text-gray-400">{cs ? 'Planovane produkcni parametry; tento dashboard sleduje test-mainnet rehearsal proti nim' : 'Planned production parameters; this dashboard tracks the test-mainnet rehearsal against them'}</p>
                   </div>
                 </div>
                 <div className="space-y-0">
                   {[
                     ['Chain ID', 'zion-mainnet-1'],
-                    ['Total Supply', '144,000,000,000'],
-                    ['Mining Supply', '127,720,000,000'],
-                    ['Genesis Premine', '16,280,000,000'],
-                    ['Block Reward (D1)', '5,400.067 ZION'],
-                    ['Emission Model', 'Decade Decay (-20%/10y)'],
-                    ['Tail Emission', '724.785 ZION/block ∞'],
-                    ['Block Time', '60 sekund'],
+                    [cs ? 'Celkova zasoba' : 'Total Supply', '144,000,000,000'],
+                    [cs ? 'Tezebni zasoba' : 'Mining Supply', '127,720,000,000'],
+                    [cs ? 'Genesis premine' : 'Genesis Premine', '16,280,000,000'],
+                    [cs ? 'Block reward (D1)' : 'Block Reward (D1)', '5,400.067 ZION'],
+                    [cs ? 'Emisni model' : 'Emission Model', 'Decade Decay (-20%/10y)'],
+                    [cs ? 'Tail emise' : 'Tail Emission', '724.785 ZION/block ∞'],
+                    [cs ? 'Cas bloku' : 'Block Time', cs ? '60 sekund' : '60 seconds'],
                     ['DAA', 'LWMA (60 bloků, ±25%)'],
-                    ['Max Reorg', '10 bloků'],
-                    ['Soft Finality', '60 bloků'],
-                    ['Coinbase Maturity', '100 bloků'],
+                    [cs ? 'Max reorg' : 'Max Reorg', cs ? '10 bloku' : '10 blocks'],
+                    [cs ? 'Soft finalita' : 'Soft Finality', cs ? '60 bloku' : '60 blocks'],
+                    [cs ? 'Coinbase maturity' : 'Coinbase Maturity', cs ? '100 bloku' : '100 blocks'],
                     ['Consensus', 'PoW CHv3 + VRSC dual'],
-                    ['Distribution', '89% miner · 5% humanit. · 5% Issobella · 1% pool'],
+                    [cs ? 'Distribuce' : 'Distribution', cs ? '89 % miner · 5 % humanit. · 5 % Issobella · 1 % pool' : '89% miner · 5% humanitarian · 5% Issobella · 1% pool'],
                     ['Presale', 'NEEXISTUJE'],
-                    ['Atomic Units', '1M per ZION'],
-                    ['Mining Horizon', '100+ let + tail ∞'],
+                    [cs ? 'Atomic units' : 'Atomic Units', cs ? '1M na ZION' : '1M per ZION'],
+                    [cs ? 'Horizont tezby' : 'Mining Horizon', cs ? '100+ let + tail ∞' : '100+ years + tail ∞'],
                   ].map(([param, value]) => (
                     <div key={param} className="flex items-center justify-between py-2 sm:py-2.5 border-b border-white/5 text-xs sm:text-sm gap-2">
                       <span className="text-gray-400 shrink-0">{param}</span>
@@ -2760,16 +2786,16 @@ export default function MissionControlDashboard() {
                 <div className="flex items-center gap-3 mb-6">
                   <Scale className="h-6 w-6 text-zion-purple" />
                   <div>
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">Genesis Premine</h2>
-                    <p className="text-xs sm:text-sm text-gray-400">16,280,000,000 ZION — plánovaná transparentní alokace pro public genesis</p>
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">{cs ? 'Genesis premine' : 'Genesis Premine'}</h2>
+                    <p className="text-xs sm:text-sm text-gray-400">{cs ? '16,280,000,000 ZION — planovana transparentni alokace pro verejny genesis' : '16,280,000,000 ZION — planned transparent allocation for public genesis'}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   {[
-                    { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '8,250,000,000', pct: 50.7, lock: 'Okamžitě dostupné', lockColor: 'text-emerald-400' },
+                    { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '8,250,000,000', pct: 50.7, lock: cs ? 'Okamzite dostupne' : 'Immediately available', lockColor: 'text-emerald-400' },
                     { cat: 'DAO Treasury', Icon: Database, amount: '4,000,000,000', pct: 24.6, lock: 'Okamžitě dostupné', lockColor: 'text-emerald-400' },
-                    { cat: 'Infrastructure & Dev', Icon: Wrench, amount: '2,500,000,000', pct: 15.4, lock: 'Okamžitě dostupné', lockColor: 'text-emerald-400' },
-                    { cat: 'Humanitarian Fund', Icon: Heart, amount: '1,530,000,000', pct: 9.4, lock: 'Okamžitě dostupné', lockColor: 'text-emerald-400' },
+                    { cat: cs ? 'Infrastruktura a vyvoj' : 'Infrastructure & Dev', Icon: Wrench, amount: '2,500,000,000', pct: 15.4, lock: cs ? 'Okamzite dostupne' : 'Immediately available', lockColor: 'text-emerald-400' },
+                    { cat: cs ? 'Humanitarni fond' : 'Humanitarian Fund', Icon: Heart, amount: '1,530,000,000', pct: 9.4, lock: cs ? 'Okamzite dostupne' : 'Immediately available', lockColor: 'text-emerald-400' },
                   ].map(p => (
                     <div key={p.cat} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                       <div className="flex items-center justify-between">
@@ -2806,17 +2832,17 @@ export default function MissionControlDashboard() {
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Target Economics</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Cilova ekonomika' : 'Target Economics'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Wallet className="h-7 w-7 text-zion-gold" />
-                  Target Mainnet Economic Model
+                  {cs ? 'Cilovy ekonomicky model mainnetu' : 'Target Mainnet Economic Model'}
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <Stat label="Block Reward (D1)" value="5,400.067" sub="ZION/block · Decade Decay" color="text-cyan-400" mono />
-                <Stat label="Tail Emission" value="724.785" sub="ZION/block ∞ (od 2126)" color="text-emerald-400" mono />
-                <Stat label="Distribution" value="89/5/5/1" sub="miner / humanit. / Issobella / pool" color="text-purple-400" mono />
-                <Stat label="Mining Horizon" value="100+ let" sub="+ perpetuální tail ∞" color="text-zion-gold" mono />
+                <Stat label={cs ? 'Block reward (D1)' : 'Block Reward (D1)'} value="5,400.067" sub="ZION/block · Decade Decay" color="text-cyan-400" mono />
+                <Stat label={cs ? 'Tail emise' : 'Tail Emission'} value="724.785" sub={cs ? 'ZION/block ∞ (od 2126)' : 'ZION/block ∞ (from 2126)'} color="text-emerald-400" mono />
+                <Stat label={cs ? 'Distribuce' : 'Distribution'} value="89/5/5/1" sub={cs ? 'miner / humanit. / Issobella / pool' : 'miner / humanitarian / Issobella / pool'} color="text-purple-400" mono />
+                <Stat label={cs ? 'Horizont tezby' : 'Mining Horizon'} value={cs ? '100+ let' : '100+ years'} sub={cs ? '+ perpetualni tail ∞' : '+ perpetual tail ∞'} color="text-zion-gold" mono />
               </div>
             </motion.section>
 
@@ -2828,8 +2854,8 @@ export default function MissionControlDashboard() {
             >
               <Flame className="h-8 w-8 sm:h-10 sm:w-10 text-red-400 shrink-0" />
               <div>
-                <p className="text-sm sm:text-lg font-bold text-white">ALL L1 Transaction Fees → <span className="text-red-400">BURNED</span></p>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">Posílány na burn address bez privátního klíče → deflationary tlak</p>
+                <p className="text-sm sm:text-lg font-bold text-white">{cs ? 'VSECHNY L1 TRANSAKCNI POPLATKY → ' : 'ALL L1 TRANSACTION FEES → '}<span className="text-red-400">{cs ? 'SPALENY' : 'BURNED'}</span></p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">{cs ? 'Posilany na burn adresu bez privatniho klice → deflacni tlak' : 'Sent to a burn address without a private key → deflationary pressure'}</p>
               </div>
             </motion.section>
           </div>
@@ -2847,12 +2873,12 @@ export default function MissionControlDashboard() {
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Security</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Bezpecnost' : 'Security'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Shield className="h-7 w-7 text-emerald-400" />
-                  Test Mainnet Security Gate
+                  {cs ? 'Bezpecnostni gate test mainnetu' : 'Test Mainnet Security Gate'}
                 </h2>
-                <p className="text-sm text-gray-400">Ready pro controlled rehearsal, ale stále ne ready pro public production launch.</p>
+                <p className="text-sm text-gray-400">{cs ? 'Ready pro controlled rehearsal, ale stale ne ready pro verejny production launch.' : 'Ready for the controlled rehearsal, but still not ready for the public production launch.'}</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {[
@@ -2884,15 +2910,15 @@ export default function MissionControlDashboard() {
               </div>
               <div className="mt-6 grid gap-3 lg:grid-cols-3">
                 <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-gray-300">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">Ready For Rehearsal</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">{cs ? 'Ready pro rehearsal' : 'Ready For Rehearsal'}</p>
                   <p className="mt-2">Consensus, reward split, metrics base a deploy docs jsou dostatečně silné pro controlled test-mainnet běh.</p>
                 </div>
                 <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-gray-300">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-red-300">Public Launch Blockers</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-red-300">{cs ? 'Blokery verejneho launchu' : 'Public Launch Blockers'}</p>
                   <p className="mt-2">Historie repa, genesis artefakty, exit criteria a closure report musí být zavřené před public production claimem.</p>
                 </div>
                 <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4 text-sm text-gray-300">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">Not Immediate Blockers</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">{cs ? 'Nejsou okamzite blokery' : 'Not Immediate Blockers'}</p>
                   <p className="mt-2">Externí audit, exchange onboarding a post-launch UX polish jsou důležité, ale nejsou to dnešní rehearsal gate položky.</p>
                 </div>
               </div>
@@ -2912,10 +2938,10 @@ export default function MissionControlDashboard() {
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
             >
               <div className="flex flex-col gap-2 mb-8">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Timeline</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Casova osa' : 'Timeline'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <CalendarDays className="h-7 w-7 text-zion-gold" />
-                  Master Timeline — Test Mainnet To Production
+                  {cs ? 'Hlavni casova osa — test mainnet do produkce' : 'Master Timeline — Test Mainnet To Production'}
                 </h2>
               </div>
               <div className="grid lg:grid-cols-2 gap-6">
@@ -2925,7 +2951,7 @@ export default function MissionControlDashboard() {
                     {[
                       { done: true, date: 'Únor 2026', title: 'Fáze 0 — Spec Freeze', desc: 'Core rewrite, consensus hardening a základní test floor', color: 'text-emerald-400' },
                       { active: true, date: 'Březen 2026', title: 'Controlled Test Mainnet', desc: '3-node mesh live, on-chain reward split ověřený', color: 'text-cyan-400' },
-                      { active: true, date: stabilityRun?.start ? new Date(stabilityRun.start).toLocaleDateString() : 'Březen 2026', title: '72h Mainnet Stability Run', desc: 'Live collector, tip agreement a closure evidence pro launch gate', color: 'text-amber-300' },
+                      { active: true, date: stabilityRun?.start ? new Date(stabilityRun.start).toLocaleDateString(locale) : (cs ? 'Brezen 2026' : 'March 2026'), title: '72h Mainnet Stability Run', desc: cs ? 'Live collector, tip agreement a closure evidence pro launch gate' : 'Live collector, tip agreement, and closure evidence for the launch gate', color: 'text-amber-300' },
                       { date: 'Duben 2026', title: 'Launch Gate Closure', desc: 'BFG, exit criteria, checksumy, backup/alerts, closure report', color: 'text-yellow-400' },
                       { date: 'Později v roce 2026', title: 'PRODUCTION MAINNET GENESIS', desc: 'Až po closure reportu a finálním sign-offu', color: 'text-pink-400' },
                     ].map((item, i) => (
@@ -2939,10 +2965,10 @@ export default function MissionControlDashboard() {
                   </div>
                 </div>
                 <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6">
-                  <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> Post-Launch Queue — Not Blocking Today</h3>
+                  <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> {cs ? 'Post-launch fronta — dnes neblokuje' : 'Post-Launch Queue — Not Blocking Today'}</h3>
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-gray-700 space-y-4 sm:space-y-6">
                     {[
-                      { date: 'Po public genesis', title: 'Post-Launch Ops', desc: 'Longer canaries, exchange onboarding, public binaries', color: 'text-white' },
+                      { date: cs ? 'Po verejnem genesis' : 'Post-public genesis', title: cs ? 'Post-launch operace' : 'Post-Launch Ops', desc: cs ? 'Delsi canary behy, onboarding na burzy, verejne binarky' : 'Longer canaries, exchange onboarding, public binaries', color: 'text-white' },
                       { date: 'Po L1 gate', title: 'L2 — DEX & DeFi', desc: 'wZION bridge a další DeFi vrstvy nejsou dnešní launch blockers', color: 'text-blue-400' },
                       { date: 'Po L1 gate', title: 'L3 — Warp & AI Native', desc: 'NCL a AI runtime navazují po stabilním L1 základu', color: 'text-purple-400' },
                       { date: '2029+', title: 'L4 — ZION Oasis', desc: 'UE5 World, XP System, Play-to-Mine', color: 'text-pink-400' },
@@ -2970,7 +2996,7 @@ export default function MissionControlDashboard() {
             >
               <div className="space-y-3 sm:space-y-4 overflow-x-auto">
                 {[
-                  { layer: 'L1 Blockchain', period: '2026', phases: 'Spec Freeze · Test Mainnet · Launch Gate · Production', color: 'from-emerald-400 to-lime-400', width: '48%', offset: '0%' },
+                  { layer: cs ? 'L1 Blockchain' : 'L1 Blockchain', period: '2026', phases: cs ? 'Spec freeze · Test mainnet · Launch gate · Produkce' : 'Spec Freeze · Test Mainnet · Launch Gate · Production', color: 'from-emerald-400 to-lime-400', width: '48%', offset: '0%' },
                   { layer: 'L2 NCL / Neural Conscious', period: 'Post-L1', phases: 'wZION Bridge · Base Sepolia', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '50%' },
                   { layer: 'L3 ZION DAO', period: 'Post-L1', phases: 'WARP Protocol · NCL · AI', color: 'from-purple-400 to-pink-400', width: '22%', offset: '60%' },
                   { layer: 'L4 Oasis', period: '2029+', phases: 'UE5 · Play-to-Mine · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
@@ -3017,12 +3043,12 @@ export default function MissionControlDashboard() {
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Priorities</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Priority' : 'Priorities'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Zap className="h-7 w-7 text-yellow-400" />
-                  Launch Priority Map
+                  {cs ? 'Mapa priorit launchu' : 'Launch Priority Map'}
                 </h2>
-                <p className="text-sm text-gray-400">Jedna tabulka pro hotovo, blockers a věci, které dnes nejsou launch gate.</p>
+                <p className="text-sm text-gray-400">{cs ? 'Jedna tabulka pro hotovo, blokery a veci, ktere dnes nejsou launch gate.' : 'One table for completed items, blockers, and things that are not part of today’s launch gate.'}</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -3036,16 +3062,16 @@ export default function MissionControlDashboard() {
                   </thead>
                   <tbody>
                     {[
-                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'On-chain reward split 89/5/5/1 ověřen live bloky', phase: 'RUNTIME', status: 'VERIFIED', sColor: 'text-emerald-400' },
+                      { prio: cs ? 'HOTOVO' : 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'On-chain reward split 89/5/5/1 ověřen live bloky', phase: 'RUNTIME', status: cs ? 'OVERENO' : 'VERIFIED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Prague + USA + Singapore rollout bez divergence', phase: 'OPS', status: 'SYNCED', sColor: 'text-emerald-400' },
-                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Runbook + operator guide + go/no-go report', phase: 'DOCS', status: 'ALIGNED', sColor: 'text-emerald-400' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'BFG scrub / git history hygiene', phase: 'R1', status: 'BLOCKER', sColor: 'text-red-400', bg: 'bg-red-500/5' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Genesis artefakty + checksumy + release tag', phase: 'R2', status: 'BLOCKER', sColor: 'text-red-400', bg: 'bg-red-500/5' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Exit criteria sign-off', phase: 'R3', status: 'BLOCKER', sColor: 'text-red-400', bg: 'bg-red-500/5' },
-                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: '72h mainnet stability closure report', phase: 'R4', status: collectorEnabled ? 'RUNNING' : 'PENDING', sColor: collectorEnabled ? 'text-amber-400' : 'text-gray-500', bg: 'bg-amber-500/5' },
+                      { prio: cs ? 'HOTOVO' : 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Runbook + operator guide + go/no-go report', phase: 'DOCS', status: cs ? 'SLADENO' : 'ALIGNED', sColor: 'text-emerald-400' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'BFG scrub / git history hygiene', phase: 'R1', status: cs ? 'BLOCKER' : 'BLOCKER', sColor: 'text-red-400', bg: 'bg-red-500/5' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Genesis artefakty + checksumy + release tag', phase: 'R2', status: cs ? 'BLOCKER' : 'BLOCKER', sColor: 'text-red-400', bg: 'bg-red-500/5' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Exit criteria sign-off', phase: 'R3', status: cs ? 'BLOCKER' : 'BLOCKER', sColor: 'text-red-400', bg: 'bg-red-500/5' },
+                      { prio: 'P0', prioColor: 'text-red-400 font-bold', task: '72h mainnet stability closure report', phase: 'R4', status: collectorEnabled ? (cs ? 'BEZI' : 'RUNNING') : (cs ? 'CEKA' : 'PENDING'), sColor: collectorEnabled ? 'text-amber-400' : 'text-gray-500', bg: 'bg-amber-500/5' },
                       { prio: 'P1', prioColor: 'text-yellow-400 font-bold', task: 'RPC/P2P boundary review + fuzz smoke campaign', phase: 'A1', status: 'TODO', sColor: 'text-gray-500' },
                       { prio: 'P1', prioColor: 'text-yellow-400 font-bold', task: 'Backup/restore + alert routing', phase: 'A3', status: 'TODO', sColor: 'text-gray-500' },
-                      { prio: 'NB', prioColor: 'text-cyan-400 font-semibold', task: 'L2/L3 bridge, exchange onboarding a mobile polish', phase: 'POST-L1', status: 'NOT BLOCKING', sColor: 'text-cyan-400' },
+                      { prio: 'NB', prioColor: 'text-cyan-400 font-semibold', task: 'L2/L3 bridge, exchange onboarding a mobile polish', phase: 'POST-L1', status: cs ? 'NEBLOKUJE' : 'NOT BLOCKING', sColor: 'text-cyan-400' },
                     ].map((row, i) => (
                       <tr key={i} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${row.bg ?? ''}`}>
                         <td className={`px-4 py-3 rounded-l-lg ${row.prioColor}`}>{row.prio}</td>
@@ -3063,9 +3089,9 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 72h mainnet stability map · public launch NO-GO<br />
-          <em>6-layer architecture · operations-first web shell</em><br /><br />
-          Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
+          ZION TerraNova {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · {cs ? 'mapa 72h stability runu' : '72h mainnet stability map'} · {cs ? 'verejny launch NO-GO' : 'public launch NO-GO'}<br />
+          <em>{cs ? '6vrstva architektura · web shell orientovany na operace' : '6-layer architecture · operations-first web shell'}</em><br /><br />
+          {cs ? 'Posledni aktualizace' : 'Last update'}: {data?.timestamp ? new Date(data.timestamp).toLocaleString(locale) : '—'} · Auto-refresh: 30s
         </div>
       </div>
     </div>

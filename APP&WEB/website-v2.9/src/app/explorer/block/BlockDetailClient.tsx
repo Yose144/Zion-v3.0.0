@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
+import { useLang } from '@/contexts/LanguageContext';
 
 interface BlockTx {
   tx_hash: string;
@@ -53,14 +54,14 @@ interface BlockDetail {
   total_output: number;
 }
 
-const fmtDate = (ts: number) => ts ? new Date(ts * 1000).toLocaleString() : "—";
-const fmtAge = (ts: number) => {
+const fmtDate = (ts: number, locale: string) => ts ? new Date(ts * 1000).toLocaleString(locale) : "—";
+const fmtAge = (ts: number, cs: boolean) => {
   if (!ts) return "—";
   const s = Math.floor(Date.now() / 1000 - ts);
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
-  return `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h ago`;
+  if (s < 60) return cs ? `pred ${s} s` : `${s}s ago`;
+  if (s < 3600) return cs ? `pred ${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
+  if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
+  return cs ? `pred ${Math.floor(s / 86400)} d ${Math.floor((s % 86400) / 3600)} h` : `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h ago`;
 };
 const fmtSize = (b: number) => {
   if (b >= 1e6) return `${(b / 1e6).toFixed(2)} MB`;
@@ -104,6 +105,9 @@ function InfoRow({ label, value, copyable, mono, color, link, badge }: {
 }
 
 export default function BlockDetailClient() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const locale = cs ? 'cs-CZ' : 'en-US';
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = useMemo(() => {
@@ -120,18 +124,18 @@ export default function BlockDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setBlock(null);
-        if (!id) { setError("Missing block id/height"); return; }
+        if (!id) { setError(cs ? "Chybi id nebo vyska bloku" : "Missing block id/height"); return; }
         const isHash = /^[a-f0-9]{64}$/i.test(id);
         const query = isHash ? `/blockchain/block?hash=${id}` : `/blockchain/block?height=${id}`;
         const data = await apiClient<BlockDetail>(query);
         setBlock(data);
       } catch (err) {
-        setError(`Failed to load block: ${err}`);
+        setError(cs ? `Nepodarilo se nacist blok: ${err}` : `Failed to load block: ${err}`);
       } finally {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, cs]);
 
   if (loading) {
     return (
@@ -155,11 +159,11 @@ export default function BlockDetailClient() {
       <div className="zion-shell min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <Box className="h-16 w-16 text-red-400/50 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">Block Not Found</h1>
-          <p className="text-gray-500 text-sm mb-6">{error || "This block does not exist on the ZION network."}</p>
+          <h1 className="text-2xl font-bold text-white mb-2">{cs ? 'Blok nenalezen' : 'Block Not Found'}</h1>
+          <p className="text-gray-500 text-sm mb-6">{error || (cs ? 'Tento blok v siti ZION neexistuje.' : 'This block does not exist on the ZION network.')}</p>
           <Link href="/explorer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 
             text-sm text-white hover:bg-white/10 transition">
-            <ArrowLeft className="h-4 w-4" /> Back to Explorer
+            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpet do exploreru' : 'Back to Explorer'}
           </Link>
         </div>
       </div>
@@ -175,9 +179,9 @@ export default function BlockDetailClient() {
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
           <span className="text-gray-700">/</span>
-          <Link href="/explorer/blocks" className="text-gray-500 hover:text-white transition">Blocks</Link>
+          <Link href="/explorer/blocks" className="text-gray-500 hover:text-white transition">{cs ? 'Bloky' : 'Blocks'}</Link>
           <span className="text-gray-700">/</span>
-          <span className="text-white font-medium">#{block.height.toLocaleString()}</span>
+          <span className="text-white font-medium">#{block.height.toLocaleString(locale)}</span>
         </nav>
 
         {/* Header */}
@@ -187,9 +191,9 @@ export default function BlockDetailClient() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
-              Block <span className="text-zion-gold">#{block.height.toLocaleString()}</span>
+              {cs ? 'Blok' : 'Block'} <span className="text-zion-gold">#{block.height.toLocaleString(locale)}</span>
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">{fmtDate(block.timestamp)} · {fmtAge(block.timestamp)}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{fmtDate(block.timestamp, locale)} · {fmtAge(block.timestamp, cs)}</p>
           </div>
           <div className="sm:ml-auto flex items-center gap-2">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
@@ -198,7 +202,7 @@ export default function BlockDetailClient() {
                 : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             }`}>
               <Shield className="h-3 w-3" />
-              {block.orphan_status ? "Orphaned" : `${block.confirmations.toLocaleString()} Confirmations`}
+              {block.orphan_status ? (cs ? 'Osiroteny' : 'Orphaned') : `${block.confirmations.toLocaleString(locale)} ${cs ? 'potvrzeni' : 'Confirmations'}`}
             </span>
           </div>
         </motion.div>
@@ -212,15 +216,15 @@ export default function BlockDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
                 <Layers className="h-4 w-4 text-zion-cyan" />
               </div>
-              <h2 className="text-lg font-semibold text-white">Block Details</h2>
+              <h2 className="text-lg font-semibold text-white">{cs ? 'Detaily bloku' : 'Block Details'}</h2>
             </div>
-            <InfoRow label="Height" value={block.height.toLocaleString()} />
-            <InfoRow label="Timestamp" value={`${fmtDate(block.timestamp)} (${fmtAge(block.timestamp)})`} />
+            <InfoRow label={cs ? 'Vyska' : 'Height'} value={block.height.toLocaleString(locale)} />
+            <InfoRow label={cs ? 'Cas' : 'Timestamp'} value={`${fmtDate(block.timestamp, locale)} (${fmtAge(block.timestamp, cs)})`} />
             <InfoRow label="Hash" value={block.hash} mono copyable />
-            <InfoRow label="Previous Hash" value={truncHash(block.prev_hash, 16)} mono copyable
+            <InfoRow label={cs ? 'Predchozi hash' : 'Previous Hash'} value={truncHash(block.prev_hash, 16)} mono copyable
               link={block.prev_hash ? `/explorer/block?id=${block.height - 1}` : undefined} />
-            <InfoRow label="Block Size" value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString()} bytes)`} />
-            <InfoRow label="Version" value={`${block.major_version}.${block.minor_version}`} />
+            <InfoRow label={cs ? 'Velikost bloku' : 'Block Size'} value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString(locale)} ${cs ? 'bajtu' : 'bytes'})`} />
+            <InfoRow label={cs ? 'Verze' : 'Version'} value={`${block.major_version}.${block.minor_version}`} />
           </motion.div>
 
           {/* Mining Details */}
@@ -230,14 +234,14 @@ export default function BlockDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-gold/10 flex items-center justify-center">
                 <Cpu className="h-4 w-4 text-zion-gold" />
               </div>
-              <h2 className="text-lg font-semibold text-white">Mining Details</h2>
+              <h2 className="text-lg font-semibold text-white">{cs ? 'Detaily tezby' : 'Mining Details'}</h2>
             </div>
-            <InfoRow label="Difficulty" value={block.difficulty.toLocaleString()} />
+            <InfoRow label={cs ? 'Obtiznost' : 'Difficulty'} value={block.difficulty.toLocaleString(locale)} />
             <InfoRow label="Nonce" value={block.nonce.toLocaleString()} />
-            <InfoRow label="Block Reward" value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
-            <InfoRow label="Total Fees" value={`${block.total_fees.toFixed(6)} ZION`} color="text-amber-400" />
-            <InfoRow label="Transactions" value={`${block.tx_count} (${block.num_txes} user + 1 coinbase)`} />
-            {block.miner && <InfoRow label="Miner Key" value={truncHash(block.miner)} mono copyable />}
+            <InfoRow label={cs ? 'Odmena za blok' : 'Block Reward'} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
+            <InfoRow label={cs ? 'Celkove fee' : 'Total Fees'} value={`${block.total_fees.toFixed(6)} ZION`} color="text-amber-400" />
+            <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={`${block.tx_count} (${block.num_txes} ${cs ? 'uzivatel' : 'user'} + 1 coinbase)`} />
+            {block.miner && <InfoRow label={cs ? 'Klic minera' : 'Miner Key'} value={truncHash(block.miner)} mono copyable />}
             <InfoRow label="Coinbase TX" value={truncHash(block.miner_tx_hash)} mono copyable />
           </motion.div>
         </div>
@@ -245,10 +249,10 @@ export default function BlockDetailClient() {
         {/* Summary bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Total Output", value: `${block.total_output.toFixed(4)} ZION`, color: "text-white" },
-            { label: "Fees Collected", value: `${block.total_fees.toFixed(6)} ZION`, color: "text-amber-400" },
-            { label: "Block Reward", value: `${block.reward.toFixed(4)} ZION`, color: "text-zion-gold" },
-            { label: "Tx Count", value: `${block.tx_count}`, color: "text-zion-cyan" },
+            { label: cs ? "Celkovy vystup" : "Total Output", value: `${block.total_output.toFixed(4)} ZION`, color: "text-white" },
+            { label: cs ? "Vybrane fee" : "Fees Collected", value: `${block.total_fees.toFixed(6)} ZION`, color: "text-amber-400" },
+            { label: cs ? "Odmena bloku" : "Block Reward", value: `${block.reward.toFixed(4)} ZION`, color: "text-zion-gold" },
+            { label: cs ? "Pocet tx" : "Tx Count", value: `${block.tx_count}`, color: "text-zion-cyan" },
           ].map((item) => (
             <div key={item.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
               <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
@@ -264,7 +268,7 @@ export default function BlockDetailClient() {
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <Hash className="h-4 w-4 text-emerald-400" />
             </div>
-            <h2 className="text-lg font-semibold text-white">Transactions ({block.txs?.length || 0})</h2>
+            <h2 className="text-lg font-semibold text-white">{cs ? 'Transakce' : 'Transactions'} ({block.txs?.length || 0})</h2>
           </div>
 
           {/* TX Table */}
@@ -272,12 +276,12 @@ export default function BlockDetailClient() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.04]">
-                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">Type</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{cs ? 'Typ' : 'Type'}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3">Hash</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">Inputs</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">Outputs</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{cs ? 'Vstupy' : 'Inputs'}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{cs ? 'Vystupy' : 'Outputs'}</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Fee</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">Amount</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{cs ? 'Castka' : 'Amount'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -289,7 +293,7 @@ export default function BlockDetailClient() {
                           ? "bg-zion-gold/10 text-zion-gold border-zion-gold/20"
                           : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
                       }`}>
-                        {tx.type === "coinbase" ? "⛏ Coinbase" : "↔ Transfer"}
+                        {tx.type === "coinbase" ? `⛏ ${cs ? 'Coinbase' : 'Coinbase'}` : `↔ ${cs ? 'Prevod' : 'Transfer'}`}
                       </span>
                     </td>
                     <td className="px-3 py-3">
@@ -330,18 +334,18 @@ export default function BlockDetailClient() {
               hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Block</span> #{(block.height - 1).toLocaleString()}
+            <span className="hidden sm:inline">{cs ? 'Blok' : 'Block'}</span> #{(block.height - 1).toLocaleString(locale)}
           </button>
           <Link href="/explorer/blocks"
             className="text-xs text-gray-500 hover:text-white transition font-medium">
-            All Blocks
+            {cs ? 'Vsechny bloky' : 'All Blocks'}
           </Link>
           <button
             onClick={() => router.push(`/explorer/block?id=${block.height + 1}`)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white 
               hover:bg-white/10 transition"
           >
-            <span className="hidden sm:inline">Block</span> #{(block.height + 1).toLocaleString()}
+            <span className="hidden sm:inline">{cs ? 'Blok' : 'Block'}</span> #{(block.height + 1).toLocaleString(locale)}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>

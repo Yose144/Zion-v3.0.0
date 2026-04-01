@@ -440,7 +440,9 @@ export default function DocsPage() {
       } catch (err) {
         console.error('Failed to load document:', err);
         if (!isCancelled) {
-          setContent(`# Document Not Available\n\nThe document **${currentDoc?.title}** (${currentDoc?.file}) is currently not available.\n\nPlease check back later or try another document from the navigation.`);
+          setContent(lang === 'cs'
+            ? `# Dokument neni dostupny\n\nDokument **${currentDoc?.title}** (${currentDoc?.file}) momentalne neni k dispozici.\n\nZkuste to prosim pozdeji nebo vyberte jiny dokument z navigace.`
+            : `# Document Not Available\n\nThe document **${currentDoc?.title}** (${currentDoc?.file}) is currently not available.\n\nPlease check back later or try another document from the navigation.`);
         }
       } finally {
         if (!isCancelled) {
@@ -454,7 +456,7 @@ export default function DocsPage() {
     return () => {
       isCancelled = true;
     };
-  }, [selectedDoc, currentDoc]);
+  }, [selectedDoc, currentDoc, lang]);
 
   const handleDocSelect = (docId: string, categoryId: string, versionId: string) => {
     // Check if doc has a direct href — navigate away instead of loading markdown
