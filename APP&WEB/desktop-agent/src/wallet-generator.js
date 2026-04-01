@@ -149,6 +149,9 @@ class ZionWalletGenerator {
    * Encrypt private key with password (AES-256-GCM)
    */
   static encryptPrivateKey(privateKeyHex, password) {
+    if (!password || typeof password !== 'string' || password.length < 1) {
+      throw new Error('Password is required for wallet encryption');
+    }
     const salt = randomBytes(16);
     const iv = randomBytes(12);
     
