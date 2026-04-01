@@ -3090,6 +3090,11 @@ function startMining(config) {
   }
   startMiningInProgress = true;
   try {
+    sendToRenderer('miner-starting', { ts: Date.now() });
+  } catch {
+    // ignore
+  }
+  try {
     if (startMiningGuardTimer) clearTimeout(startMiningGuardTimer);
   } catch {
     // ignore
@@ -4309,6 +4314,33 @@ function startMining(config) {
     args.push('--mode', effectiveMode);
   }
 
+  // Safety net: V3 Rust miner must never be spawned without required CLI args.
+  // If a future code path leaves args empty, reconstruct canonical essentials.
+  if (MINER_IS_RUST && isV3) {
+    const hasPoolArg = Array.isArray(args) && args.includes('--pool');
+    const hasWalletArg = Array.isArray(args) && args.includes('--wallet');
+    if (!Array.isArray(args) || args.length === 0 || !hasPoolArg || !hasWalletArg) {
+      args = [
+        '--pool', `${config?.pool?.host || PRIMARY_TESTNET_HOST}:${config?.pool?.port || PRIMARY_POOL_PORT}`,
+        '--wallet', String(config?.wallet || ''),
+      ];
+      if (config?.worker) args.push('--worker', sanitizeWorkerName(config.worker));
+      if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
+      if (mainMinerGpu && gpuInfo.available) {
+        const backendHint = String(config?.gpuBackend || process.env.ZION_BACKEND || '').trim().toLowerCase();
+        args.push('--gpu', backendHint || ((process.platform === 'darwin' && os.arch() === 'arm64') ? 'metal' : 'opencl'));
+      }
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stderr',
+          text: '[WARN] V3 args guard repaired empty/invalid miner args before spawn.\n'
+        });
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   const minerLabel = MINER_IS_RUST
     ? `rust ${MINER_PATH}`
     : MINER_IS_PYTHON
@@ -4989,6 +5021,7 @@ function startMining(config) {
       minerPath: MINER_PATH,
       spawnCommand,
       spawnArgs: Array.isArray(spawnArgs) ? spawnArgs.slice(0, 20) : spawnArgs,
+      spawnArgsCount: Array.isArray(spawnArgs) ? spawnArgs.length : -1,
       minerExists: fs.existsSync(MINER_PATH),
       aiMiningDirExists: fs.existsSync(path.join(minerCwd, 'ai', 'mining')),
       zionMiningDirExists: fs.existsSync(path.join(minerCwd, 'zion', 'mining')),
@@ -6247,6 +6280,15 @@ function tryUpdateRevenueStatsFromFile() {
 }
 
 async function stopMiningAsync() {
+  const hadPendingStart = startMiningInProgress || !!minerStartAckTimer;
+  startMiningInProgress = false;
+  try {
+    if (startMiningGuardTimer) clearTimeout(startMiningGuardTimer);
+  } catch {
+    // ignore
+  }
+  startMiningGuardTimer = null;
+
   minerUserStopRequested = true;
   minerStartToken += 1;
 
@@ -6270,6 +6312,17 @@ async function stopMiningAsync() {
   minerGpuInitWatchdogTimer = null;
 
   if (!minerProcess) {
+    if (hadPendingStart) {
+      try {
+        sendToRenderer('miner-output', {
+          stream: 'stdout',
+          text: '[INFO] Pending miner start cancelled by user.\n'
+        });
+        sendToRenderer('miner-stopped', { code: 0, signal: 'start-cancelled' });
+      } catch {
+        // ignore
+      }
+    }
     return { success: true, alreadyStopped: true };
   }
 
