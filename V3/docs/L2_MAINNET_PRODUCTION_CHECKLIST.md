@@ -142,6 +142,14 @@ Still missing for production closure:
 - production secret-injection runbook for validator keys, API keys, bearer tokens
 - final ops profile for compose (mainnet config paths + health checks + alert routing)
 
+Progress on compose profile workflow:
+
+- `V3/docker/docker-compose.v3-l2.yml` now supports env-driven config profile switching:
+	- `ZION_BRIDGE_CONFIG`
+	- `ZION_SWAP_CONFIG`
+	- `ZION_DAO_CONFIG`
+- `V3/docker/.env.l2.example` added as a template for testnet/mainnet profile and secret injection.
+
 Without these closure items:
 
 - production rollout is not reproducible
