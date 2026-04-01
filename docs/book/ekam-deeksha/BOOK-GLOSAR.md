@@ -210,6 +210,21 @@ Viz *Sri Yantra*. Nejsložitější geometrická mandala védské tradice: devě
 **Sri Yantra**  
 Viz *Sri Chakra*.
 
+**Sri Dattatreya**  
+Viz *Dattatreya*.
+
+**Sri Murti (Nové Šrimurthi)**  
+Sousoší odhalené v říjnu 2010 v Chrámu Jednoty (Oneness University), zobrazující celou 800letou linii Sri Dattatreyi v jednom ikonografickém celku. Po směru hodinových ručiček: Sri Swami Samarth, Sri Paada Sri Vallabha, Sri Dattatreya, Sri Anagha Lakšmí, Sri Narasimha Saraswathi, Sri Shirdi Sai Baba. Ve středu — uvnitř zlaté koule Milosti (*Adiparasakti*) — Sri Kalki AmmaBhagavan. Na pozadí: *Sri Yantra* zapravená do mramorové podlahy. Té noci po odhalení ze Šrimurthi spontánně vytékal proud božského nektaru po několik dní.
+
+**Sri Paada Sri Vallabha**  
+První inkarnace Sri Dattatreyi v Kali juze, narozen v Pitapuramu kolem roku 1320 n.l. Ve věku jednoho roku konal zázraky. Vyslovil klíčové proroctví linie: *„Vrátím se na konci Kali jugy. Vezmu si dceru Venkaji — Padmavati. Vrátím se jako Kalki a pomohu lidstvu dosáhnout Zlatého věku."* Mahasamadhi kolem roku 1350. Životopis zaznamenán v *Sripada Srivallabha Charitaamrutam*.
+
+**Sripada Srivallabha Charitaamrutam**  
+Kronika života Sri Paady Sri Vallabhy, předávaná ústně po 33 generací a poprvé vydaná tiskem v roce 2001. Obsahuje proroctví o příchodu Kalkiho, jménu jeho manželky (Padmavati), místě jejího narození a jménu jejího otce (Venkaji) — což linie Ekam interpretuje jako naplněné v osobách Amma a Bhagavana.
+
+**Svámí Samarth (Swami Samarth)** (स्वामी समर्थ)  
+Třetí inkarnace Sri Dattatreyi; přišel do Alkokoty (Maharaštra) v roce 1856 poté, co strávil ~400 let v hluboké meditaci (jako Sri Narasimha Saraswati). Fyzické tělo stáří téměř 500 let. Před Mahasamadhi (1878) řekl žáku Shirdi Sai Babovi: *„Vstoupím do tvého těla a začnu skrze tebe pracovat."* Přímý žák Baratgiri Maharaj (Bapu) později identifikoval Bhagavana jako naplnění Dattatreyova proroctví.
+
 ---
 
 ## T
