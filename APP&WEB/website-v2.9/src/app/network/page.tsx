@@ -245,11 +245,14 @@ async function metricValue(query: string): Promise<number | null> {
   }
 }
 
+const PRAGUE_CORE_UP_QUERY = 'up{job="zion-core-prague",instance="host.docker.internal:9115"}';
+const PRAGUE_POOL_UP_QUERY = 'up{job="zion-pool-prague",instance="zion-pool:8080"}';
+
 async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
   const values = await Promise.all([
     metricValue('zion_chain_height'),
-    metricValue('up{job="zion-core-prague"}'),
-    metricValue('up{job="zion-pool-prague"}'),
+    metricValue(PRAGUE_CORE_UP_QUERY),
+    metricValue(PRAGUE_POOL_UP_QUERY),
     metricValue('zion_pool_active_sessions'),
     metricValue('zion_pool_accept_rate_pct'),
     metricValue('zion_pool_uptime_seconds'),
