@@ -38,6 +38,7 @@ async fn main() -> Result<()> {
     });
 
     let config = BridgeConfig::load(&config_path)?;
+    config.validate_runtime()?;
     let config = Arc::new(config);
 
     info!("📋 Network: {}", config.bridge.network);
