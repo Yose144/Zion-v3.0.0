@@ -1056,6 +1056,12 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
 
     let stream = TcpStream::connect(pool_addr)
         .with_context(|| format!("failed to connect to pool at {pool_addr}"))?;
+    // Socket read timeout: prevents miner from blocking forever if pool
+    // disconnects ungracefully or hangs.  Triggers reconnect on timeout.
+    let read_timeout_secs = parse_env_u64("ZION_READ_TIMEOUT_SECS", 300).unwrap_or(300);
+    stream
+        .set_read_timeout(Some(Duration::from_secs(read_timeout_secs)))
+        .context("failed to set pool socket read timeout")?;
     let reader_stream = stream.try_clone().context("failed to clone pool stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
@@ -1066,10 +1072,10 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
         algorithm: zion_core::consensus_profile().to_string(),
     };
     let hello_line = write_wire_message(&mut writer, &hello_message)?;
-    if VERBOSE.load(Ordering::Relaxed) { println!("wire_hello={hello_line}"); }
+    println!("wire_hello={hello_line}");
 
     let (welcome_line_raw, welcome_message) = read_wire_message(&mut reader)?;
-    if VERBOSE.load(Ordering::Relaxed) { println!("wire_welcome={welcome_line_raw}"); }
+    println!("wire_welcome={welcome_line_raw}");
     let remote_job_ttl_ms = match welcome_message {
         PoolMessage::Welcome { job_ttl_ms, .. } => job_ttl_ms,
         other => return Err(anyhow!("expected welcome from pool, got {other:?}")),
@@ -1099,10 +1105,10 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
         last_job_id = job.job_id;
         telemetry.pool_height = job.height;
         telemetry.current_epoch = job.height / 100;
-        if VERBOSE.load(Ordering::Relaxed) { println!("mining job_id={} height={} nonces={}..{}", job.job_id, job.height, job.start_nonce, job.start_nonce + job.nonce_count); }
-        println!("[{}] new job  height {}  diff {}  algo cosmic_harmony_ekam_deeksha",
-            log_timestamp(), job.height, job.height % 1000,
+        println!("[{}] new job  height {}  nonces {}..{}  job_id={}",
+            log_timestamp(), job.height, job.start_nonce, job.start_nonce + job.nonce_count, job.job_id,
         );
+        if VERBOSE.load(Ordering::Relaxed) { println!("wire_job={job_line}"); }
         // GPU-first, CPU-fallback nonce scan
         let can_gpu = match gpu.as_mut() {
             Some(g) => match g.update_epoch(job.height) {
@@ -1130,11 +1136,12 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
+            // Always log scan result for operational visibility
+            println!("[{}] no_solution  iteration={}  height={}  nonces={}..{}  elapsed_ms={}",
+                log_timestamp(), iteration + 1, job.height,
+                job.start_nonce, job.start_nonce + job.nonce_count, batch_ms,
+            );
             if VERBOSE.load(Ordering::Relaxed) {
-                println!("iteration={}", iteration + 1);
-                println!("job_id={}", job.job_id);
-                println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
-                println!("share_status=\"NoSolutionInWindow\"");
                 println!("wire_job={job_line}");
             }
             let no_solution_message = PoolMessage::NoSolution {
@@ -1188,6 +1195,13 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
         attempted_hashes = attempted_hashes
             .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
         telemetry.record_attempted_hashes(attempted_hashes);
+
+        // Always log found nonce for operational visibility
+        let search_depth = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
+        println!("[{}] found_nonce={}  height={}  depth={}/{}  elapsed_ms={}",
+            log_timestamp(), solution.candidate.nonce, job.height,
+            search_depth, job.nonce_count, batch_ms,
+        );
 
         if config.sleep_ms > 0 {
             thread::sleep(Duration::from_millis(config.sleep_ms));
