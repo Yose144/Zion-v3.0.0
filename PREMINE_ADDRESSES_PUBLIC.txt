@@ -1,7 +1,7 @@
 # ZION Genesis Premine Addresses (PUBLIC)
 # Generated: 2026-02-09T13:17:03.255494+00:00
-# Updated:   2026-03-27 — added tithe wallets [13-14]
-# Total: 16,280,000,000 ZION across 12 genesis wallets + 2 tithe wallets
+# Updated:   2026-04-01 — added tithe wallets [13-14], pool payout [15]
+# Total: 16,280,000,000 ZION across 12 genesis wallets + 2 tithe wallets + 1 pool payout wallet
 #
 # ⚠️  This file contains ONLY public addresses (safe to share)
 # ⚠️  Private keys & mnemonics are in PREMINE_WALLETS_BACKUP.json
@@ -21,12 +21,10 @@
 [12] humanitarian         | zion1m4v5z8z850u480c5c208z274e334369275n5y20 | 1.44B ZION | Children Future Fund — Humanitarian DAO
 
 # --- V3 Mainnet Tithe Wallets (added 2026-03-27) ---
+# Fee split per block: 89% miner, 5% humanitarian, 5% issobella, 1% pool_fee
+# Humanitarian tithe goes to existing [12] humanitarian address
 [13] issobella_fund       | zion170a374s6h390k7w244m5c4f354v8n4678844655 |    0 ZION | L5/L6 ZION Issobella Fund — 5% pool tithe
 [14] pool_fee             | zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7 |    0 ZION | Pool Operator Fee — 1% pool tithe
-
-# ─── V3 Pool Tithe Wallets (generated 2026-03-27) ──────────────────────
-[13] issobella_fund       | zion106936008n8m4t40528h0w4w7x4y0z087k37s732 | 0 ZION    | L5/L6 ZION Issobella Fund (5% pool tithe)
-[14] pool_fee             | zion1j2a620q7c0m8k553k6g2t7n7s5u776c3n2fh257 | 0 ZION    | Pool Operator Fee (1% pool tithe)
 
 # ─── V3 Pool Payout Wallet (generated 2026-04-01) ──────────────────────
 [15] pool_payout          | zion1k3h7p6q4z7l0s495w6h775f566u0276237rh8x5 | 0 ZION    | Pool Payout Wallet — signs miner payouts
