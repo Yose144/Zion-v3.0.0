@@ -13,12 +13,12 @@ import { useLang } from '@/contexts/LanguageContext';
 import {
   BRIDGE_CONTRACTS,
   WZION_ABI,
-  BASE_SEPOLIA_CHAIN_ID,
-  switchToBaseSepolia,
+  BASE_CHAIN_ID,
+  switchToBase,
 } from '@/lib/bridge-api';
 
-// wZION has 8 decimals (same as native ZION satoshis)
-const WZION_DECIMALS = 8;
+// wZION on Base Mainnet has 18 decimals (standard ERC-20)
+const WZION_DECIMALS = 18;
 
 type Phase =
   | 'idle'
@@ -87,11 +87,11 @@ export default function BridgeBurnWidget() {
       if (!accounts[0]) throw new Error('No account returned');
 
       setPhase('switching-chain');
-      await switchToBaseSepolia();
+      await switchToBase();
 
       const network = await provider.getNetwork();
-      if (network.chainId !== BASE_SEPOLIA_CHAIN_ID) {
-        throw new Error(`Wrong network: expected Base Sepolia (${BASE_SEPOLIA_CHAIN_ID}), got ${network.chainId}`);
+      if (network.chainId !== BASE_CHAIN_ID) {
+        throw new Error(`Wrong network: expected Base Mainnet (${BASE_CHAIN_ID}), got ${network.chainId}`);
       }
 
       setAccount(accounts[0] as string);
@@ -152,13 +152,13 @@ export default function BridgeBurnWidget() {
     setPhase('confirming');
     try {
       const provider = getProvider();
-      await switchToBaseSepolia();
+      await switchToBase();
       const signer = provider.getSigner();
 
       // ensure still on right network
       const network = await provider.getNetwork();
-      if (network.chainId !== BASE_SEPOLIA_CHAIN_ID) {
-        throw new Error(cs ? 'Prepnite prosim v MetaMask na Base Sepolia' : 'Please switch to Base Sepolia in MetaMask');
+      if (network.chainId !== BASE_CHAIN_ID) {
+        throw new Error(cs ? 'Přepněte prosím v MetaMask na Base' : 'Please switch to Base in MetaMask');
       }
 
       const contract = new ethers.Contract(BRIDGE_CONTRACTS.wzion_address, WZION_ABI, signer);
@@ -198,7 +198,7 @@ export default function BridgeBurnWidget() {
         </div>
 
         <p className="text-xs text-gray-400 leading-relaxed">
-          {cs ? 'Pripojte MetaMask na Base Sepolia, spalte sve wZION a prijmete ZION na L1.' : 'Connect MetaMask on Base Sepolia to burn your wZION and receive ZION on L1.'}
+          {cs ? 'Připojte MetaMask na Base, spalte své wZION a přijměte ZION na L1.' : 'Connect MetaMask on Base to burn your wZION and receive ZION on L1.'}
         </p>
 
         {!hasMetaMask && (
@@ -229,7 +229,7 @@ export default function BridgeBurnWidget() {
           {phase === 'connecting' && <RefreshCw className="h-4 w-4 animate-spin" />}
           {phase === 'switching-chain' && <RefreshCw className="h-4 w-4 animate-spin" />}
           {phase === 'idle' && <Wallet className="h-4 w-4" />}
-          {phase === 'connecting' ? (cs ? 'Zadam ucet…' : 'Requesting account…') : phase === 'switching-chain' ? (cs ? 'Prepinam na Base Sepolia…' : 'Switching to Base Sepolia…') : (cs ? 'Pripojit MetaMask' : 'Connect MetaMask')}
+          {phase === 'connecting' ? (cs ? 'Žádám účet…' : 'Requesting account…') : phase === 'switching-chain' ? (cs ? 'Přepínám na Base…' : 'Switching to Base…') : (cs ? 'Připojit MetaMask' : 'Connect MetaMask')}
         </button>
       </div>
     );
@@ -261,7 +261,7 @@ export default function BridgeBurnWidget() {
                 <Copy className="h-3 w-3 text-gray-400" />
               </button>
               <a
-                href={`https://sepolia.basescan.org/tx/${txInfo.hash}`}
+                href={`https://basescan.org/tx/${txInfo.hash}`}
                 target="_blank"
                 rel="noreferrer"
                 className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-1.5 hover:bg-white/10 transition-colors"
@@ -274,7 +274,7 @@ export default function BridgeBurnWidget() {
         </div>
 
         <p className="text-xs text-gray-400 leading-relaxed">
-          {cs ? 'Relay detekuje event ' : 'The relay will detect the '}<code className="text-orange-300">BurnForBridge</code>{cs ? ' po 64 potvrzenich EVM bloku (~2 min na Sepolii), pak odesle L1 unlock. Vase ZION dorazi do ~5 minut.' : ' event after 64 EVM block confirmations (~2 min on Sepolia), then submit an L1 unlock. Your ZION will arrive within ~5 minutes.'}
+          {cs ? 'Relay detekuje event ' : 'The relay will detect the '}<code className="text-orange-300">BurnForBridge</code>{cs ? ' po 64 potvrzeních EVM bloků (~2 min), pak odešle L1 unlock. Vaše ZION dorazí do ~5 minut.' : ' event after 64 EVM block confirmations (~2 min), then submit an L1 unlock. Your ZION will arrive within ~5 minutes.'}
         </p>
 
         <button
@@ -297,7 +297,7 @@ export default function BridgeBurnWidget() {
   // Ready / confirming / pending states — main form
   const isBusy = phase === 'confirming' || phase === 'pending' || phase === 'loading-balance';
   const amountFloat = parseFloat(amount) || 0;
-  const amountAtomicDisplay = amountFloat > 0 ? (amountFloat * 1e8).toLocaleString(cs ? 'cs-CZ' : 'en-US', { maximumFractionDigits: 0 }) : '0';
+  const amountAtomicDisplay = amountFloat > 0 ? ethers.utils.parseUnits(amountFloat.toString(), WZION_DECIMALS).toString() : '0';
 
   return (
     <div className="rounded-2xl border border-orange-500/30 bg-linear-to-b from-orange-500/10 to-black/60 p-6 space-y-4">
@@ -347,7 +347,7 @@ export default function BridgeBurnWidget() {
         />
         {amountFloat > 0 && (
           <p className="text-xs text-gray-500">
-            = <span className="text-white font-mono">{amountAtomicDisplay}</span> {cs ? 'atomickych jednotek' : 'atomic units'} (×10<sup>8</sup>)
+            = <span className="text-white font-mono">{amountAtomicDisplay}</span> {cs ? 'wei' : 'wei'} (×10<sup>18</sup>)
           </p>
         )}
       </div>
@@ -391,7 +391,7 @@ export default function BridgeBurnWidget() {
             BaseScan <ExternalLink className="h-3 w-3" />
           </a>
         </p>
-        <p className="text-xs text-gray-500">{cs ? 'Sit' : 'Network'}: Base Sepolia (chain 84532) · 8 {cs ? 'desetinnych mist' : 'decimals'} · {cs ? 'zadny protokolovy poplatek' : 'no protocol fee'}</p>
+        <p className="text-xs text-gray-500">{cs ? 'Síť' : 'Network'}: Base Mainnet (chain 8453) · 18 {cs ? 'desetinných míst' : 'decimals'} · {cs ? 'žádný protokolový poplatek' : 'no protocol fee'}</p>
       </div>
 
       <button
