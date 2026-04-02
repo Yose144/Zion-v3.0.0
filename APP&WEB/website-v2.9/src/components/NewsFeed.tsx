@@ -21,6 +21,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'gpu-benchmark-matrix',
+    date: '2026-04-02',
+    tag: { cs: 'Mining', en: 'Mining' },
+    tagColor: 'text-cyan-400',
+    title: {
+      cs: 'GPU Benchmark Matrix — 8 GPU od GTX 1060 po H100 SXM (81.7 KH/s)',
+      en: 'GPU Benchmark Matrix — 8 GPUs from GTX 1060 to H100 SXM (81.7 KH/s)',
+    },
+    summary: {
+      cs: 'Kompletní benchmark Ekam Deeksha v2 napříč 8 GPU. H100 SXM dosáhl 81.7 KH/s (nový rekord), RTX 3060 je král cena/výkon (344 KH/$). TPB=24 (¾ warpu) je optimální pro moderní architektury Hopper a Ampere. I 3GB karty těží!',
+      en: 'Complete Ekam Deeksha v2 benchmark across 8 GPUs. H100 SXM reached 81.7 KH/s (new record), RTX 3060 is the cost-efficiency king (344 KH/$). TPB=24 (¾ warp) is optimal for modern Hopper and Ampere architectures. Even 3GB cards can mine!',
+    },
+    href: '/benchmarks',
+  },
+  {
     slug: 'defi-mainnet-live',
     date: '2026-04-02',
     tag: { cs: 'DeFi', en: 'DeFi' },
@@ -114,9 +129,13 @@ export const NEWS_ARTICLES: NewsArticle[] = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const HOMEPAGE_LIMIT = 4;
+
 export default function NewsFeed() {
   const { lang } = useLang();
   const cs = lang === 'cs';
+  const visibleArticles = NEWS_ARTICLES.slice(0, HOMEPAGE_LIMIT);
+  const hasMore = NEWS_ARTICLES.length > HOMEPAGE_LIMIT;
 
   return (
     <section className="relative py-20 px-4 overflow-hidden">
@@ -146,7 +165,7 @@ export default function NewsFeed() {
 
         {/* Articles grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {NEWS_ARTICLES.map((article) => (
+          {visibleArticles.map((article) => (
             <div key={article.slug}>
               <Link
                 href={article.href}
@@ -189,6 +208,19 @@ export default function NewsFeed() {
             </div>
           ))}
         </div>
+
+        {/* View all link */}
+        {hasMore && (
+          <div className="mt-8 text-center">
+            <Link
+              href="/news"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 hover:text-white transition-all text-sm"
+            >
+              {cs ? `Všechny novinky (${NEWS_ARTICLES.length})` : `All news (${NEWS_ARTICLES.length})`}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -21,6 +21,8 @@ const t = {
     bridge:     { cs: 'Most',        en: 'Bridge' },
     pool:       { cs: 'Pool',        en: 'Pool' },
     miner_stats: { cs: 'Statistiky minera', en: 'Miner Stats' },
+    benchmarks: { cs: 'Benchmarky', en: 'Benchmarks' },
+    news: { cs: 'Novinky', en: 'News' },
     philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
