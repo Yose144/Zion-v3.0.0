@@ -18,6 +18,7 @@
 | AMD RX 5600 XT | RDNA1 | 6 GB GDDR6 | 288 | — | **10.0** ² | lws=256 | — | local | ∞ |
 | RTX 5070 Ti | Blackwell (SM 12.0) | 16 GB GDDR7 | 896 | 12.0 | **21.0** | 48 | 49152 | $0.10 | 210 |
 | A100 SXM4 | Ampere (SM 8.0) | 40 GB HBM2e | 2039 | 8.0 | **38.5** | any (flat) | any | $0.62 | 62 |
+| **H100 SXM** | **Hopper (SM 9.0)** | **80 GB HBM3** | **3350** | **9.0** | **81.7** | **24** | **262144** | **$1.88** | **43** |
 
 ¹ RTX 2060S was benchmarked in an earlier session with pool overhead — number is lower bound (effective pool rate, not pure GPU).  
 ² AMD RX 5600 XT uses OpenCL backend, not CUDA. Numbers from local machine, Standard epoch.
@@ -36,6 +37,7 @@
 
 ### 2. Memory bandwidth → hashrate is sublinear
 ```
+H100:  3350 GB/s → 81.7 KH/s  (0.024 KH/s per GB/s)
 A100:  2039 GB/s → 38.5 KH/s  (0.019 KH/s per GB/s)
 5070Ti: 896 GB/s → 21.0 KH/s  (0.023 KH/s per GB/s)
 1080:   320 GB/s →  9.5 KH/s  (0.030 KH/s per GB/s)
@@ -60,6 +62,7 @@ Lower-end GPUs get more KH/s per GB/s of bandwidth. This is because:
 Best $/KH:  RTX 3060     @ $0.048/hr → 344 KH/$
 Runner-up:  RTX 5070 Ti  @ $0.10/hr  → 210 KH/$
             GTX 1080     @ $0.048/hr → 198 KH/$
+Raw power:  H100 SXM     @ $1.88/hr  → 81.7 KH/s (but only 43 KH/$)
 Worst $/KH: A100 SXM4    @ $0.62/hr  → 62 KH/$
 ```
 **RTX 3060 is the clear cost-efficiency king** at 344 KH/$ — nearly 2× better than RTX 5070 Ti.
@@ -158,6 +161,28 @@ This confirms A100's 40 MB L2 cache and HBM2e latency hiding are already optimal
 | 128 | 16.00 |
 | 256 | 3.83 |
 
+### H100 SXM 80GB — Work Count Sweep (TPB=24)
+| wc | Scratchpad MB | KH/s |
+|----|--------------|------|
+| 16384 | 4096 | 57.37 |
+| 32768 | 8192 | 65.51 |
+| 65536 | 16384 | 67.58 |
+| 131072 | 32768 | 77.82 |
+| 196608 | 49152 | 79.58 |
+| **262144** | **65536** | **81.69** |
+| 300000 | 75000 | 78.40 |
+
+### H100 SXM 80GB — TPB Sweep (wc=131072)
+| TPB | KH/s |
+|-----|------|
+| **24** | **77.76** |
+| 32 | 72.08 |
+| 48 | 73.34 |
+| 64 | 72.13 |
+| 96 | 68.98 |
+| 128 | 72.15 |
+| 256 | 69.44 |
+
 ### A100 SXM4 — TPB Sweep (wc=32768)
 | TPB | KH/s |
 |-----|------|
@@ -180,7 +205,7 @@ This confirms A100's 40 MB L2 cache and HBM2e latency hiding are already optimal
 | 8 GB (1080, 3060 Ti) | 48 | 16384 | 1080: 256 also works |
 | 12 GB (3060) | **24** | **4096** | ¾ warp optimal on Ampere |
 | 16 GB (5070 Ti, 4080) | 48 | 49152 | |
-| 24+ GB (A100, H100) | 48 | 65536 | Insensitive to tuning |
+| 24+ GB (A100, H100) | **24** | 262144 | H100 scales with wc; A100 flat |
 
 ---
 
@@ -193,6 +218,7 @@ This confirms A100's 40 MB L2 cache and HBM2e latency hiding are already optimal
 | 34011678 | 31429 | RTX 3060 12GB | ssh3.vast.ai:11678 | $0.048 | South Korea |
 | 34004483 | 29691 | RTX 5070 Ti | ssh4.vast.ai:14482 | $0.10 | Korea |
 | 34009169 | 13280 | A100 SXM4 40GB | ssh6.vast.ai:19168 | $0.62 | Czechia |
+| 34013110 | 27591 | H100 SXM 80GB | ssh4.vast.ai:13110 | $1.88 | — |
 
 All benchmarks run with `--ekam-bench` mode (10-second sustained measurement, no pool overhead).
 
