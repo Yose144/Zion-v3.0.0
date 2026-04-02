@@ -48,12 +48,12 @@ max_gas_gwei            = 5          # tight gas cap for mainnet
 [validator]
 private_key_file    = "/etc/zion/bridge-validator.key"
 validator_id        = "validator-1"
-threshold           = 3
-total_validators    = 5
+threshold           = 1
+total_validators    = 2
 validator_addresses = [
     "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
     "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787",
-]   # mainnet: expand to 5 validators before production traffic
+]   # mainnet: active validator is 0xdde175 (deployer key)
 
 # ── Security ─────────────────────────────────────────────────────────────────
 
@@ -76,5 +76,5 @@ backup_interval_secs = 1800     # more frequent backups for mainnet
 
 [metrics]
 enabled   = true
-port      = 9100
+port      = 9101
 log_level = "info"
