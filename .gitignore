@@ -135,3 +135,9 @@ TITHE_WALLETS_BACKUP.txt
 scripts/finetune/data/*_backup_*.jsonl
 scripts/finetune/data/*_full_books_refresh.jsonl
 scripts/finetune/data/*_seed_books_refresh.jsonl
+
+# Root cleanup — junk/binary/sensitive files
+ssh_*.json
+4194304
+LIVESTATS.html
+APP
