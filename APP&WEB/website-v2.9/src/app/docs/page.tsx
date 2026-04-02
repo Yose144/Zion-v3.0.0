@@ -419,6 +419,17 @@ export default function DocsPage() {
   useEffect(() => {
     let isCancelled = false;
 
+    const loadTextFromCandidates = async (paths: string[]) => {
+      for (const path of paths) {
+        const response = await fetch(`/docs/${path}`);
+        if (response.ok) {
+          return response.text();
+        }
+      }
+
+      throw new Error(`Failed to load ${paths.join(', ')}`);
+    };
+
     async function loadDoc() {
       if (!currentDoc) return;
       // Philosophy is a TSX component, not markdown — skip fetch
@@ -429,11 +440,8 @@ export default function DocsPage() {
       
       setLoading(true);
       try {
-        const response = await fetch(`/docs/${currentDoc.file}`);
-        if (!response.ok) {
-          throw new Error(`Failed to load ${currentDoc.file}`);
-        }
-        const text = await response.text();
+        const candidateFiles = [`${lang}/${currentDoc.file}`, currentDoc.file];
+        const text = await loadTextFromCandidates(candidateFiles);
         if (!isCancelled) {
           setContent(text);
         }
