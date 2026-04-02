@@ -1,10 +1,11 @@
 # 🚀 ZION TerraNova v2.9.6 — "On the Star"
 
 > **From blockchain to the stars — where technology meets spirit.**
-> **Operational note (2026-03-10):** Live testnet source of truth is now 2.9.8 Deeksha canonical. For rollout, release readiness and active infra use `docs/2.9.8/INDEX.md`, not the historical 2.9.6 sections below.
 
-[![Build](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/actions/workflows/ci.yml/badge.svg)](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+> **Status (April 2026):** V3 mainnet is live on 3 servers (Prague, USA, Singapore). L2 wZION bridge to Base is operational. DeFi roadmap active — see `docs/DEFI_FULL_ROADMAP.md`.  
+> Active development: `V3/` — clean-room mainnet code. Legacy root tree is reference/archive only.
 
 ---
 
@@ -14,13 +15,7 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 
 **v2.9.6** is a hard fork extending v2.9.5 with a **6-Layer "On the Star" architecture**, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale projects including L6 space station **ZION Issobella**.
 
-Current operational release track:
-- Historical lineage: 2.9.7 Pre-MainNet Gate -> 2.9.8 Deeksha canonical -> 2.9.9 Pure Code.
-- Source docs for that lineage: `docs/2.9.7/`, `docs/2.9.8/`, `docs/2.9.9/`.
-- Live testnet runs the 2.9.8 single-track Deeksha canonical PoW path.
-- Active infra is currently consolidated to one public host: 91.98.122.165.
-- Desktop-agent Ekam Deeksha native GPU path is locally verified on Apple Silicon Metal (`cosmic_harmony_ekam_mine`, ~5575.5 H/s benchmark).
-- Current release gate and deployment status live under `docs/2.9.8/` and cleanup/migration scope under `docs/2.9.9/`.
+**V3** is the active clean-room mainnet code line under `V3/`. See [V3/README.md](V3/README.md) and [V3/ROADMAP.md](V3/ROADMAP.md) for current implementation status.
 
 ---
 
@@ -128,20 +123,26 @@ Current operational release track:
 
 ## Mining — Current Live Path
 
-Current live testnet mining is the single-track ZION Deeksha path exposed to miners as `cosmic_harmony`.
+ZION mainnet runs the single-track Deeksha canonical PoW path (`cosmic_harmony`).
 
-Legacy revenue and external-mining support still exists in the pool/miner stack for ETC, RVN, ERG, KAS, VRSC and related streams, but the active public rollout on 2026-03-11 is pure-ZION by default.
+Three pool-mining servers are live:
+- **Prague** (91.98.122.165) — ~470 H/s
+- **USA** (5.78.194.94) — ~168 H/s
+- **Singapore** (5.223.84.191)
+
+Desktop-agent Ekam Deeksha native GPU path is verified on Apple Silicon Metal (~5575.5 H/s benchmark).
 
 ---
 
-## Network — Active Single-Host Topology (live 2.9.8 testnet)
+## Network — Live Mainnet Topology (April 2026)
 
-| Node | Location | IP | Role | Ports |
-|------|----------|----|------|-------|
-| Zion2 | current primary host | 91.98.122.165 | Core + Pool + Miner + Web + internal seeds | P2P 8334, RPC 8444, Stratum 3333, Pool API 8080 |
-| Seed 1 | internal container | internal only | additional seed role in compose | internal only |
-| Seed 2 | internal container | internal only | additional seed role in compose | internal only |
-| TestNet | — | — | public entrypoint | P2P 8334, RPC 8444 |
+| Node | Location | IP | Role |
+|------|----------|----|------|
+| Prague | Hetzner EU | 91.98.122.165 | Core + Pool + Miner + Bridge + Web |
+| USA | Hetzner US | 5.78.194.94 | Core + Pool + Miner |
+| Singapore | Hetzner SG | 5.223.84.191 | Core + Pool + Miner |
+
+Ports: P2P 8334, RPC 8443 (TCP), Stratum 3333, Pool API 8080, Website 443
 
 ---
 
@@ -185,32 +186,24 @@ cargo run --bin wallet-generator
 
 ```
 2.9.6/
-├── L1/                # ⛏️ Blockchain Core (LOCKED for MainNet)
-│   ├── core/          #    Blockchain node (consensus, P2P, storage, RPC)
-│   ├── pool/          #    Mining pool (Stratum v2, PPLNS)
-│   ├── miner/         #    Universal miner (CPU + GPU)
-│   ├── cosmic-harmony/#    PoW algorithm library (CHv3)
-│   └── native-libs/   #    Native C/Metal/CUDA algorithm libs
-├── L2/                # 💱 DeFi & Governance
-│   ├── bridge/        #    wZION EVM bridge relay (Rust)
-│   ├── contracts/     #    Solidity: wZION ERC-20 + ZIONBridge
-│   └── dao/           #    DAO governance (treasury, voting, humanitarian)
-├── L3/                # 🧠 Warp & AI
-│   ├── warp/          #    Cross-chain bridge (7 chain families)
-│   ├── ncl/           #    Neural Compute Layer (AI marketplace)
-│   └── ai-native/     #    AI Agent framework (SDK, consciousness)
+├── V3/                # 🚀 Active mainnet code (clean-room)
+│   ├── L1/            #    Blockchain core, pool, miner, hashing
+│   ├── L2/            #    Bridge relay, smart contracts
+│   └── ROADMAP.md     #    Source of truth for V3 progress
+├── L1/                # ⛏️ Legacy Blockchain Core (reference)
+├── L2/                # 💱 Legacy DeFi & Governance (reference)
+├── L3/                # 🧠 AI-Native / Warp / NCL
 ├── L4/                # 🎮 OASIS
-│   └── oasis/         #    Game world (XP, guilds, territories)
 ├── L5/                # 🌍 ZION Free World (vision 2030)
-│   └── README.md      #    Quantum energy, humanitarian missions
 ├── L6/                # 🔭 ZION Issobella (vision 2040+)
-│   └── README.md      #    Earth orbital station
+├── APP&WEB/           # Frontend applications
+│   ├── desktop-agent/ #    Electron desktop agent + mining GUI
+│   ├── mobile-app/    #    React Native + Expo mobile app
+│   └── website-v2.9/  #    Next.js 16 website + explorer
 ├── config/            # Configuration files (mainnet, testnet, devnet)
-├── desktop-agent/     # Desktop AI agent (Electron)
-├── docker/            # Docker deployment
-├── docs/              # Documentation & whitepaper
-├── website-v2.9/      # Official website (Next.js)
-├── scripts/           # Operational scripts
+├── docker/            # Docker deployment (compose files, Dockerfiles)
+├── docs/              # Documentation, whitepapers, roadmaps
+├── scripts/           # Operational & deployment scripts
 ├── legal/             # Legal disclaimers
 └── tests/             # Integration & stress tests
 ```
@@ -219,67 +212,57 @@ cargo run --bin wallet-generator
 
 ## Documentation
 
-### v2.9.6 Specification
-
-- [Consensus (CHv3)](docs/v2.9.6/consensus.md) — 5-phase pipeline, fork logic, LWMA
-- [P2P Protocol](docs/v2.9.6/p2p.md) — Peer discovery, block propagation, seed nodes
-- [Tokenomics](docs/v2.9.6/tokenomics.md) — Decade Decay emission + 5 proposals
-- [Layer Architecture](docs/v2.9.6/layer-architecture.md) — 6-Layer "On the Star" spec
-- [Launch Plan](docs/v2.9.6/launch-plan.md) — 4-phase mainnet timeline
-- [Migration Guide](docs/v2.9.6/migration.md) — v2.9.5 → v2.9.6 transition
-- [Security Audit](docs/v2.9.6/audit.md) — Audit status & plan
-- [Changelog](docs/v2.9.6/changelog.md) — Complete list of changes
-
-### Layer Architecture
-
-- [L3 AI Architecture](docs/v2.9.6/L3_AI_ARCHITECTURE.md) — AI agents, NCL, WARP engine
-- [L4 Oasis Architecture](docs/v2.9.6/L4_OASIS_ARCHITECTURE.md) — XP system, guilds, REST API, SQLite
-- [Ankr Integration](docs/ankr.md) — L2 bridge via Ankr HTTP RPC, wZION plan
-
-### General
-
-- [Whitepaper v2.9.5](docs/whitepaper/) — Full technical specification
-- [MainNet Constitution](docs/MAINNET_CONSTITUTION.md) — Immutable protocol parameters
-- [Run a Node](docs/RUN_NODE.md) — Node setup guide
-- [Mining Guide](docs/MINING_GUIDE.md) — CPU/GPU/Pool/Solo mining
-- [API Reference](docs/API_REFERENCE.md) — JSON-RPC endpoints
+- [V3/ROADMAP.md](V3/ROADMAP.md) — Active V3 mainnet progress
+- [docs/DEFI_FULL_ROADMAP.md](docs/DEFI_FULL_ROADMAP.md) — DeFi ecosystem roadmap
+- [docs/MAINNET_CONSTITUTION.md](docs/MAINNET_CONSTITUTION.md) — Immutable protocol parameters
+- [docs/v2.9.6/](docs/v2.9.6/) — v2.9.6 specification (consensus, P2P, tokenomics, layers)
+- [docs/whitepaper/](docs/whitepaper/) — Full technical whitepaper
+- [docs/2.9.7/](docs/2.9.7/) — Pre-MainNet gate documentation
+- [docs/2.9.8/](docs/2.9.8/) — Deeksha canonical release documentation
+- [docs/2.9.9/](docs/2.9.9/) — Pure-code cleanup and migration
 
 ---
 
-## v2.9.6 Status
+## Current Status (April 2026)
 
 > 🎯 **MainNet target: December 31, 2026**
 
-### Done ✅
+### Live ✅
 
-- [x] CHv3 unification — single PoW algorithm
-- [x] Pool validator — unified CosmicHarmony = CHv3
-- [x] Dual-mining ZION + VRSC (PerMiner groups)
-- [x] 6-Layer "On the Star" architecture
-- [x] Tokenomics — 5 proposals + Model A selected
+- [x] V3 clean-room mainnet running on 3 servers (Prague, USA, Singapore)
+- [x] CHv3 PoW consensus — single Deeksha canonical path
+- [x] Mining pool with PPLNS, fee-split (89/5/5/1), LWMA DAA
 - [x] Decade Decay emission — `reward.rs` implementation
-- [x] Block reward distribution — 89/5/5/1 (miner/humanitarian/Issobella/pool)
-- [x] L6 naming → **ZION Issobella** ✅
-- [x] Complete docs/v2.9.6
-- [x] Repo reorganized into L1–L6 layer folders
-- [x] L5/L6 vision folders with README.md
+- [x] L2 wZION bridge to Base — lock → relay → mint operational
+- [x] Smart contracts deployed on Base (wZION, ZIONBridge, ZIONStaking, ZIONGovernance, ZIONFarm)
+- [x] Website with block explorer (blocks, TX, addresses, richlist)
+- [x] Desktop agent (Electron) — mining GUI + wallet
+- [x] Mobile app (React Native + Expo) — 9 screens
+- [x] 6-Layer "On the Star" architecture
+- [x] 1,300+ tests passing, 157 bridge tests
 
 ### In Progress ⏳
 
-- [ ] L5/L6 fund in coinbase distribution
-- [ ] TestNet fork activation
-- [ ] Tier 5 Exchange listing prep
+- [ ] Bridge hardening (3/5 multisig, rate limits, monitoring)
+- [ ] HTTP REST wrapper for node RPC
+- [ ] DEX/Swap integration (Uniswap V3 liquidity)
+- [ ] Explorer upgrade (real-time WebSocket, search)
+- [ ] Desktop/Mobile bridge + swap UX
 - [ ] 3rd party security audit (Q3 2026)
-- [ ] MainNet fork activation
+
+### Roadmaps
+
+- [V3/ROADMAP.md](V3/ROADMAP.md) — V3 mainnet implementation progress
+- [docs/DEFI_FULL_ROADMAP.md](docs/DEFI_FULL_ROADMAP.md) — Full DeFi ecosystem roadmap (6 waves)
+- [docs/MAINNET_CONSTITUTION.md](docs/MAINNET_CONSTITUTION.md) — Immutable protocol parameters
 
 ---
 
 ## Links
 
 - **Website**: https://zionterranova.com
-- **Documentation**: https://zionterranova.com/docs
-- **GitHub**: https://github.com/Zion-TerraNova/2.9.5-NativeAwakening
-- **Archive** (v2.9.5): https://github.com/Yose144/Zion-2.9.5
+- **Explorer**: https://zionterranova.com/explorer
+- **GitHub**: https://github.com/Yose144/2.9.6
 
 ---
 
