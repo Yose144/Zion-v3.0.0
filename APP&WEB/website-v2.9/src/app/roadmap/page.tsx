@@ -70,6 +70,7 @@ const layerStack = [
       'wZION Bridge — Base Mainnet live ✅',
       'Uniswap V3 pool wZION/WETH (0.3%) — Base Mainnet live ✅',
       'DeFi UI — swap, bridge, portfolio on zionterranova.com/defi ✅',
+      'DeFi L2 pages — bridge/dao/warp bilingual + mainnet ✅',
       'Liquidity seeded: 50 wZION + 0.0005 WETH ✅',
       'Staking & Governance — planned after mainnet launch',
       'DAO Governance v1 — planned'
@@ -87,6 +88,7 @@ const layerStack = [
       'NCL — AI task marketplace',
       'AI Orchestrator — agent routing',
       'WARP adapters 7/7 implemented ✅ (2026-03-02)',
+      'Ethereum corridor live on Base Mainnet ✅',
       'AI Native SDK'
     ],
     active: false
@@ -294,7 +296,8 @@ const phases: PhaseData[] = [
       { id: '3.3', title: 'Legal & Compliance — disclaimers, token-not-security, risk', done: true },
       { id: '3.4', title: 'wZION + Bridge deployed on Base Mainnet', done: true },
       { id: '3.5', title: 'Uniswap V3 pool wZION/WETH (0.3%) seeded on Base Mainnet', done: true },
-      { id: '3.6', title: 'DeFi UI — functional swap/bridge/portfolio on website', done: true }
+      { id: '3.6', title: 'DeFi UI — functional swap/bridge/portfolio on website', done: true },
+      { id: '3.7', title: 'DeFi L2 pages cleanup — bridge/dao/warp bilingual mainnet', done: true }
     ],
     exitCriteria: [
       { text: '1 public host + internal validator lanes stable online', done: true },
@@ -303,6 +306,7 @@ const phases: PhaseData[] = [
       { text: 'wZION + Bridge live on Base Mainnet', done: true },
       { text: 'DEX pool live with initial liquidity', done: true },
       { text: 'DeFi UI on website (swap, bridge, portfolio)', done: true },
+      { text: 'DeFi L2 pages bilingual + mainnet cleanup', done: true },
       { text: 'Production mainnet exchange rollout', done: false }
     ]
   },
