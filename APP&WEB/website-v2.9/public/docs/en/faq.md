@@ -80,7 +80,7 @@ The fastest route is Docker, see [Quick Start →](#getting-started). You can al
 
 ### When is mainnet planned?
 
-Target date: **31 Dec 2026**. See the current status in [Roadmap →](#whitepaper-roadmap).
+Current public status: **NO-GO until closure evidence is complete**. End-2026 remains a target window, not a guaranteed date. See the current status in [Roadmap →](#whitepaper-roadmap).
 
 ---
 
