@@ -44,20 +44,20 @@ export const BASE_SEPOLIA_CONFIG: DexChainConfig = {
 };
 
 /**
- * Base Mainnet — production deployment (uncomment when L1 mainnet stable)
- * wZION must be deployed first (DEX-01 prerequisite).
+ * Base Mainnet — production deployment
+ * wZION deployed and verified on BaseScan.
  */
 export const BASE_MAINNET_CONFIG: DexChainConfig = {
   name: "base",
   chainId: 8453,
-  wzionAddress: process.env.WZION_ADDRESS_MAINNET || "0x0000000000000000000000000000000000000000",
+  wzionAddress: process.env.WZION_ADDRESS_MAINNET || "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
   wethAddress: "0x4200000000000000000000000000000000000006",
   uniswapV3Factory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
-  uniswapV3NonfungiblePositionManager: "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f5",
+  uniswapV3NonfungiblePositionManager: "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1",
   uniswapV3SwapRouter: "0x2626664c2603336E57B271c5C0b26F421741e481",
   feeTier: 3000,
-  // 1 ZION = 0.0001 ETH initial ask (adjust before launch)
-  initialPriceWethPerWzion: 100_000_000_000_000n, // 1e14 wei = 0.0001 ETH
+  // 1 ZION = 0.00001 ETH (~$0.035 at ETH $3500)
+  initialPriceWethPerWzion: 10_000_000_000_000n, // 1e13 wei = 0.00001 ETH
 };
 
 /** Select config by network name */

@@ -25,7 +25,7 @@ export const CHAINS: Record<NetworkId, ChainConfig> = {
     chainId: 84532,
     rpcUrl: 'https://sepolia.base.org',
     explorerBase: 'https://sepolia.basescan.org',
-    live: true,
+    live: false,
   },
   'base-mainnet': {
     id: 'base-mainnet',
@@ -33,17 +33,18 @@ export const CHAINS: Record<NetworkId, ChainConfig> = {
     chainId: 8453,
     rpcUrl: 'https://mainnet.base.org',
     explorerBase: 'https://basescan.org',
-    live: false,
+    live: true,
   },
 };
 
 /** Currently active network */
-export const ACTIVE_NETWORK: NetworkId = 'base-sepolia';
+export const ACTIVE_NETWORK: NetworkId = 'base-mainnet';
 export const ACTIVE_CHAIN = CHAINS[ACTIVE_NETWORK];
 
-// ─── Deployed contract addresses (Base Sepolia) ──────────────────────────────
+// ─── Deployed contract addresses ─────────────────────────────────────────────
 
-export const CONTRACTS = {
+/** Base Sepolia (testnet) — historical reference */
+export const CONTRACTS_SEPOLIA = {
   wZION:          '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   ZIONBridge:     '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
   ZIONAtomicSwap: '0xAf1E0645Ac409485EDA5EabD87b4eE3C3a5BA3Fc',
@@ -52,6 +53,17 @@ export const CONTRACTS = {
   ZIONStaking:    '0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913',
   ZIONFarm:       '0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843',
   UniV3Pool:      '0xcCEaD51568E8d701f7db7e6699F3986031F07C7B',
+} as const;
+
+/** Base Mainnet — production */
+export const CONTRACTS = {
+  wZION:          '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
+  WETH:           '0x4200000000000000000000000000000000000006',
+  ZIONBridge:     '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+  UniV3Pool:      '0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB',
+  UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
+  QuoterV2:       '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
+  PositionManager:'0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
 } as const;
 
 export const DEPLOYER = '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186';
@@ -108,6 +120,23 @@ export const BRIDGE_ABI = [
   'function dailyMinted() view returns (uint256)',
 ] as const;
 
+// ─── Uniswap V3 ABIs ────────────────────────────────────────────────────────
+
+export const SWAP_ROUTER_ABI = [
+  'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)',
+] as const;
+
+export const QUOTER_V2_ABI = [
+  'function quoteExactInputSingle((address tokenIn, address tokenOut, uint256 amountIn, uint24 fee, uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)',
+] as const;
+
+export const POOL_V3_ABI = [
+  'function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)',
+  'function liquidity() view returns (uint128)',
+  'function token0() view returns (address)',
+  'function token1() view returns (address)',
+] as const;
+
 // ─── DeFi product definitions ────────────────────────────────────────────────
 
 export interface DefiProduct {
@@ -133,49 +162,10 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     descriptionCs: 'Zamkni ZION na L1, obdrž wZION ERC-20 na Base. Spal wZION pro odemčení zpět na L1. 1:1 peg, multi-validátorový relay.',
     contract: CONTRACTS.ZIONBridge,
     href: '/bridge',
-    status: 'testnet',
+    status: 'live',
     icon: 'bridge',
     color: 'from-cyan-500 to-blue-500',
     tags: ['Lock/Mint', 'Burn/Unlock', 'Multi-sig', 'Timelock'],
-  },
-  {
-    id: 'staking',
-    name: 'ZION Staking',
-    nameCs: 'ZION Staking',
-    description: 'Stake wZION for fixed 12% APR. 7-day cooldown period. Rewards funded from bridge fees and ecosystem allocation.',
-    descriptionCs: 'Stakuj wZION za fixních 12% APR. 7denní cooldown. Odměny z bridge poplatků a ekosystémové alokace.',
-    contract: CONTRACTS.ZIONStaking,
-    href: '/defi#staking',
-    status: 'testnet',
-    icon: 'staking',
-    color: 'from-emerald-500 to-green-500',
-    tags: ['12% APR', '7d Cooldown', 'Reward Pool'],
-  },
-  {
-    id: 'farm',
-    name: 'ZION Farm',
-    nameCs: 'ZION Farma',
-    description: 'MasterChef-style yield farming. Stake wZION or LP tokens in pools. Halving schedule with emergency withdraw.',
-    descriptionCs: 'Yield farming ve stylu MasterChef. Stakuj wZION nebo LP tokeny v poolech. Halving harmonogram s emergency výběrem.',
-    contract: CONTRACTS.ZIONFarm,
-    href: '/defi#farm',
-    status: 'testnet',
-    icon: 'farm',
-    color: 'from-amber-500 to-yellow-500',
-    tags: ['Multi-pool', 'Halving', 'LP Farming'],
-  },
-  {
-    id: 'swap',
-    name: 'Atomic Swap',
-    nameCs: 'Atomický Swap',
-    description: 'Hash Time-Locked Contract (HTLC) swaps between ZION L1 and Base EVM. Trustless, no intermediary.',
-    descriptionCs: 'HTLC swapy mezi ZION L1 a Base EVM. Trustless, bez prostředníka.',
-    contract: CONTRACTS.ZIONAtomicSwap,
-    href: '/defi#swap',
-    status: 'testnet',
-    icon: 'swap',
-    color: 'from-purple-500 to-pink-500',
-    tags: ['HTLC', 'Trustless', 'Cross-chain'],
   },
   {
     id: 'dex',
@@ -184,11 +174,24 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     description: 'Uniswap V3 concentrated liquidity pool. Trade wZION for WETH and vice-versa. 0.3% fee tier.',
     descriptionCs: 'Uniswap V3 pool s koncentrovanou likviditou. Obchoduj wZION za WETH a zpět. 0.3% poplatek.',
     contract: CONTRACTS.UniV3Pool,
-    href: '/defi#dex',
-    status: 'testnet',
+    href: '/defi',
+    status: 'live',
     icon: 'dex',
     color: 'from-sky-500 to-indigo-500',
     tags: ['Uniswap V3', '0.3% Fee', 'Concentrated LP'],
+  },
+  {
+    id: 'staking',
+    name: 'ZION Staking',
+    nameCs: 'ZION Staking',
+    description: 'Stake wZION for fixed 12% APR. 7-day cooldown period. Rewards funded from bridge fees and ecosystem allocation.',
+    descriptionCs: 'Stakuj wZION za fixních 12% APR. 7denní cooldown. Odměny z bridge poplatků a ekosystémové alokace.',
+    contract: CONTRACTS_SEPOLIA.ZIONStaking,
+    href: '/defi#staking',
+    status: 'planned',
+    icon: 'staking',
+    color: 'from-emerald-500 to-green-500',
+    tags: ['12% APR', '7d Cooldown', 'Reward Pool'],
   },
   {
     id: 'governance',
@@ -196,9 +199,9 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     nameCs: 'Governance',
     description: 'Token-weighted on-chain voting. Create proposals, vote, execute via timelock. Quorum-based decision making.',
     descriptionCs: 'On-chain hlasování váhou tokenů. Vytváření návrhů, hlasování, exekuce přes timelock. Rozhodování na kvórum.',
-    contract: CONTRACTS.ZIONGovernance,
+    contract: CONTRACTS_SEPOLIA.ZIONGovernance,
     href: '/dao',
-    status: 'testnet',
+    status: 'planned',
     icon: 'governance',
     color: 'from-rose-500 to-red-500',
     tags: ['Proposals', 'Voting', 'Timelock', 'Quorum'],
