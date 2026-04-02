@@ -20,16 +20,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   startMining: (config) => ipcRenderer.invoke('start-mining', config),
   stopMining: () => ipcRenderer.invoke('stop-mining'),
 
-  // Auto-tuning
-  getTuningStatus: () => ipcRenderer.invoke('get-tuning-status'),
-  performManualTuning: (config) => ipcRenderer.invoke('perform-manual-tuning', config),
 
-  // Legacy CHv4.2 Merkabah GPU mining IPC bridge (backward compatibility)
-  startChv42Gpu: (config) => ipcRenderer.invoke('start-chv42-gpu', config),
-  stopChv42Gpu: () => ipcRenderer.invoke('stop-chv42-gpu'),
-  getChv42Status: () => ipcRenderer.invoke('get-chv42-status'),
-  onChv42Output: (callback) => ipcRenderer.on('chv42-output', (event, data) => callback(data)),
-  onChv42Stopped: (callback) => ipcRenderer.on('chv42-stopped', (event, data) => callback(data)),
   
   // Stats
   getStats: () => ipcRenderer.invoke('get-stats'),
@@ -59,26 +50,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   autoSelectPool: () => ipcRenderer.invoke('auto-select-pool'),
   getPeerList: () => ipcRenderer.invoke('get-peer-list'),
 
-  // AI / Chat
-  aiChat: (data) => ipcRenderer.invoke('ai-chat', data),
 
-  // AI Afterburner (commands)
-  afterburnerCommand: (data) => ipcRenderer.invoke('afterburner-command', data),
-
-  // AI Native (consciousness mining integration)
-  aiNativeStart: (config) => ipcRenderer.invoke('ai-native-start', config),
-  aiNativeStop: () => ipcRenderer.invoke('ai-native-stop'),
-  aiNativeStats: () => ipcRenderer.invoke('ai-native-stats'),
-  aiNativeStatus: () => ipcRenderer.invoke('ai-native-status'),
-  
-  // AI Native - New operations
-  aiNativeChat: (messages) => ipcRenderer.invoke('ai-native-chat', messages),
-  aiNativeSearchKnowledge: (query, limit) => ipcRenderer.invoke('ai-native-search-knowledge', query, limit),
-  aiNativeAsk: (question) => ipcRenderer.invoke('ai-native-ask', question),
-  aiNativeDashboard: () => ipcRenderer.invoke('ai-native-dashboard'),
-  aiNativeBlockchainStatus: () => ipcRenderer.invoke('ai-native-blockchain-status'),
-  aiNativePoolMonitor: () => ipcRenderer.invoke('ai-native-pool-monitor'),
-  aiNativeSystemHealth: () => ipcRenderer.invoke('ai-native-system-health'),
 
   // Auto-update
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
@@ -112,17 +84,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onBlockFound: (callback) => {
     ipcRenderer.on('block-found', (event, data) => callback(data));
   },
-  onStreamSwitch: (callback) => {
-    ipcRenderer.on('stream-switch', (event, data) => callback(data));
-  },
   onStatsUpdate: (callback) => {
     ipcRenderer.on('stats-update', (event, data) => callback(data));
-  },
-
-  // ── CH3 Multi-Stream (dual/triple mining: ZION + GPU coin + CPU revenue) ──
-  getMultiStreamStatus: () => ipcRenderer.invoke('get-multi-stream-status'),
-  onMultiStreamStatus: (callback) => {
-    ipcRenderer.on('multi-stream-status', (event, data) => callback(data));
   },
   onMinerBackend: (callback) => {
     ipcRenderer.on('miner-backend', (event, data) => callback(data));
@@ -131,40 +94,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('config-updated', (event) => callback());
   },
 
-  // ── L2 Bridge (wZION, Base EVM) ──────────────────────────────────────────
-  bridgeGetWzionBalance: (evmAddress) => ipcRenderer.invoke('bridge-get-wzion-balance', evmAddress),
-  bridgeGetStats: () => ipcRenderer.invoke('bridge-get-stats'),
-  bridgeTxStatus: (txHash) => ipcRenderer.invoke('bridge-tx-status', txHash),
-  bridgePrepareLock: (evmRecipient) => ipcRenderer.invoke('bridge-prepare-lock', evmRecipient),
-  walletGetEvmAddress: (password) => ipcRenderer.invoke('wallet-get-evm-address', password),
-  bridgeSendLock: (data) => ipcRenderer.invoke('bridge-send-lock', data),
-  bridgeBurnWzion: (data) => ipcRenderer.invoke('bridge-burn-wzion', data),
 
-  // ── L2 DAO (Governance, Treasury, Proposals) ─────────────────────────────
-  daoGetStats: () => ipcRenderer.invoke('dao-get-stats'),
-  daoGetProposals: (params) => ipcRenderer.invoke('dao-get-proposals', params),
-  daoGetProposal: (id) => ipcRenderer.invoke('dao-get-proposal', id),
-  daoCreateProposal: (data) => ipcRenderer.invoke('dao-create-proposal', data),
-  daoGetVotes: (id) => ipcRenderer.invoke('dao-get-votes', id),
-  daoCastVote: (data) => ipcRenderer.invoke('dao-cast-vote', data),
-  daoGetTreasury: () => ipcRenderer.invoke('dao-get-treasury'),
-  daoHealth: () => ipcRenderer.invoke('dao-health'),
-
-  // ── L3 WARP (Cross-chain Bridge Router) ──────────────────────────────────
-  warpGetHealth: () => ipcRenderer.invoke('warp-get-health'),
-  warpGetChains: () => ipcRenderer.invoke('warp-get-chains'),
-  warpGetMetrics: () => ipcRenderer.invoke('warp-get-metrics'),
-  warpGetTransfers: () => ipcRenderer.invoke('warp-get-transfers'),
-  warpGetPendingTransfers: () => ipcRenderer.invoke('warp-get-pending-transfers'),
-  warpGetTransfer: (id) => ipcRenderer.invoke('warp-get-transfer', id),
-  warpInitiateOutbound: (data) => ipcRenderer.invoke('warp-initiate-outbound', data),
-  warpInitiateInbound: (data) => ipcRenderer.invoke('warp-initiate-inbound', data),
-  warpAdvanceTransfer: (data) => ipcRenderer.invoke('warp-advance-transfer', data),
-
-  // Auto-tuning events
-  onAutoTuningApplied: (callback) => {
-    ipcRenderer.on('auto-tuning-applied', (event, data) => callback(data));
-  },
 
   // ── L1 Tree Node (local zion-core process) ──────────────────────────────
   nodeGetStatus: () => ipcRenderer.invoke('node-get-status'),
