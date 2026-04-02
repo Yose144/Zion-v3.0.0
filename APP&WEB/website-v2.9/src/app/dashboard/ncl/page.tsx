@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { usePolling } from "@/hooks/usePolling";
 
 interface NCLStatus {
   enabled: boolean;
@@ -63,59 +64,50 @@ export default function NCLDashboard() {
   const [selectedWorker, setSelectedWorker] = useState<string | null>(null);
   const [allocation, setAllocation] = useState(30);
 
-  // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // In production, fetch from API
-        // For now, use mock data
-        setStatus({
-          enabled: true,
-          workers: { total: 42, active: 38 },
-          tasks: { pending: 156, active: 23, completed: 15234 },
-          rewards: { total_paid: 45.67, avg_per_task: 0.003 },
-        });
+  usePolling(async () => {
+    try {
+      setStatus({
+        enabled: true,
+        workers: { total: 42, active: 38 },
+        tasks: { pending: 156, active: 23, completed: 15234 },
+        rewards: { total_paid: 45.67, avg_per_task: 0.003 },
+      });
 
-        setWorkers([
-          {
-            worker_id: "ZION_ABC123.rig1",
-            miner_address: "ZION_ABC123456789...",
-            consciousness_level: 5,
-            consciousness_multiplier: 1.5,
-            npu_allocation: 0.3,
-            tasks_completed: 1234,
-            total_earnings: 12.45,
-          },
-          {
-            worker_id: "ZION_DEF456.rig1",
-            miner_address: "ZION_DEF456789012...",
-            consciousness_level: 3,
-            consciousness_multiplier: 1.1,
-            npu_allocation: 0.25,
-            tasks_completed: 567,
-            total_earnings: 5.67,
-          },
-        ]);
+      setWorkers([
+        {
+          worker_id: "ZION_ABC123.rig1",
+          miner_address: "ZION_ABC123456789...",
+          consciousness_level: 5,
+          consciousness_multiplier: 1.5,
+          npu_allocation: 0.3,
+          tasks_completed: 1234,
+          total_earnings: 12.45,
+        },
+        {
+          worker_id: "ZION_DEF456.rig1",
+          miner_address: "ZION_DEF456789012...",
+          consciousness_level: 3,
+          consciousness_multiplier: 1.1,
+          npu_allocation: 0.25,
+          tasks_completed: 567,
+          total_earnings: 5.67,
+        },
+      ]);
 
-        setLeaderboard([
-          { rank: 1, miner_address: "ZION_ABC...", consciousness_level: 6, tasks_completed: 5432, total_earnings: 54.32 },
-          { rank: 2, miner_address: "ZION_XYZ...", consciousness_level: 5, tasks_completed: 4321, total_earnings: 43.21 },
-          { rank: 3, miner_address: "ZION_DEF...", consciousness_level: 5, tasks_completed: 3210, total_earnings: 32.10 },
-          { rank: 4, miner_address: "ZION_GHI...", consciousness_level: 4, tasks_completed: 2109, total_earnings: 21.09 },
-          { rank: 5, miner_address: "ZION_JKL...", consciousness_level: 3, tasks_completed: 1098, total_earnings: 10.98 },
-        ]);
+      setLeaderboard([
+        { rank: 1, miner_address: "ZION_ABC...", consciousness_level: 6, tasks_completed: 5432, total_earnings: 54.32 },
+        { rank: 2, miner_address: "ZION_XYZ...", consciousness_level: 5, tasks_completed: 4321, total_earnings: 43.21 },
+        { rank: 3, miner_address: "ZION_DEF...", consciousness_level: 5, tasks_completed: 3210, total_earnings: 32.10 },
+        { rank: 4, miner_address: "ZION_GHI...", consciousness_level: 4, tasks_completed: 2109, total_earnings: 21.09 },
+        { rank: 5, miner_address: "ZION_JKL...", consciousness_level: 3, tasks_completed: 1098, total_earnings: 10.98 },
+      ]);
 
-        setLoading(false);
-      } catch (error) {
-        console.error("Failed to fetch NCL data:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 10000); // Refresh every 10s
-    return () => clearInterval(interval);
-  }, []);
+      setLoading(false);
+    } catch (error) {
+      console.error("Failed to fetch NCL data:", error);
+      setLoading(false);
+    }
+  }, 10000);
 
   const handleAllocationChange = async (workerId: string, newAllocation: number) => {
     // In production, POST to API
@@ -185,7 +177,7 @@ export default function NCLDashboard() {
         </div>
 
         {/* Revenue Stream Card */}
-        <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 rounded-xl p-6 border border-purple-500/30">
+        <div className="bg-linear-to-br from-purple-900/50 to-blue-900/50 rounded-xl p-6 border border-purple-500/30">
           <div className="text-purple-300 text-sm mb-2">Revenue Stream #5</div>
           <div className="text-3xl font-bold text-white">NCL AI Bonus</div>
           <div className="text-purple-300 text-sm mt-2">
@@ -298,7 +290,7 @@ export default function NCLDashboard() {
       </div>
 
       {/* Revenue Streams Overview */}
-      <div className="mt-8 bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="mt-8 bg-linear-to-r from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-700">
         <h2 className="text-xl font-bold text-white mb-4">📊 CH v3 Revenue Streams</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

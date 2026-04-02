@@ -1,5 +1,7 @@
 # Origins — September 26, 2025
 
+> Historical archive note: this document preserves the early technical origin story. Any roadmap-style milestones inside it reflect historical expectations, not the current public launch status.
+
 > The day ZION's core algorithm was born.
 
 ---
@@ -62,7 +64,7 @@ This session confirmed the algorithm design was viable — shares were being fou
 | Jan 2026 | v2.9.5 "Native Awakening" — 100% Rust, production TestNet |
 | Feb 2026 | v2.9.6 "On the Star" — 6-layer architecture, Decade Decay |
 | Mar 2026 | v2.9.7 — Pre-MainNet Gate |
-| Dec 2026 | MainNet target |
+| Dec 2026 | Historical target window recorded in the archive |
 
 ---
 

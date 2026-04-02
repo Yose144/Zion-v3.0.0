@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { usePolling } from '@/hooks/usePolling';
 
 interface GuardiansStatsResponse {
   success: boolean;
@@ -47,16 +48,7 @@ export default function DaoStatsClient() {
     }
   };
 
-  useEffect(() => {
-    // Initial fetch
-    fetchStats();
-
-    // Set up auto-refresh
-    const interval = setInterval(fetchStats, REFRESH_INTERVAL);
-
-    // Cleanup
-    return () => clearInterval(interval);
-  }, []);
+  usePolling(fetchStats, REFRESH_INTERVAL);
 
   if (loading) {
     return (

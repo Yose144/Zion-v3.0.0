@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePolling } from '@/hooks/usePolling';
 
 type NodeStatus = {
   id: string;
@@ -55,27 +56,21 @@ export default function InteractiveEarthBackground({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-    async function fetchStatus() {
+  usePolling(
+    async () => {
       if (!isVisible) return;
       try {
         const res = await fetch('/api/network', { cache: 'no-store' });
         if (!res.ok) return;
         const data = (await res.json()) as NetworkStatus;
-        if (mounted) setStatus(data);
+        setStatus(data);
       } catch {
         // ignore
       }
-    }
-
-    fetchStatus();
-    const interval = window.setInterval(fetchStatus, 30000);
-    return () => {
-      mounted = false;
-      window.clearInterval(interval);
-    };
-  }, [isVisible]);
+    },
+    30000,
+    { enabled: isVisible }
+  );
 
   useEffect(() => {
     let cancelled = false;
