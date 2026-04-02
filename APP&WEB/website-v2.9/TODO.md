@@ -4,8 +4,9 @@
 
 - [x] Zavést bilingvní docs loader `public/docs/{cs,en}` s fallbackem na legacy `public/docs/*`
 - [x] Přeložit první public docs batch: index, getting-started, setup, mining-guide, faq, api, architecture, legal/disclaimer, legal/risk, legal/token
-- [ ] Dočistit docs route wrapper a sidebar, aby CZ/EN platilo i pro navigaci, category labels a hero copy
-- [ ] Pokračovat v překladu public docs: community, pool-setup, tutorials, další onboarding obsah
+- [x] Dočistit docs route wrapper a sidebar, aby CZ/EN platilo i pro navigaci, category labels a hero copy
+- [x] Pokračovat v překladu public docs: community, pool-setup, tutorials, další onboarding obsah
+- [ ] Další performance batch: `/download` a `/api-reference` rozdělit na lehčí initial payload a menší client ostrovy
 
 ## Performance Priorities
 
@@ -16,10 +17,6 @@
 ## Translation Priorities
 
 - [ ] Truth-align a pak přeložit `public/docs/mainnet/README.md`
-- [ ] Přeložit `public/docs/community.md`
-- [ ] Přeložit `public/docs/pool-setup.md`
-- [ ] Přeložit `public/docs/tutorials/index.md`
-- [ ] Přeložit `public/docs/tutorials/first-dapp.md`
 - [ ] Rozhodnout, které starší dokumenty (`roadmap-lite`, `whitepaper-lite`) nejdřív projdou truth-alignmentem a až pak CZ/EN převodem
 
 ## Notes
