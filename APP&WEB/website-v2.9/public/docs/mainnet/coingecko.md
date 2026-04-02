@@ -1,7 +1,7 @@
 # CoinGecko Listing — Submission Checklist
 
 **Cíl:** Úspěšná registrace ZION na CoinGecko (+ CoinMarketCap)  
-**Target:** Q3–Q4 2026 (před MainNet Launche nebo souběžně)
+**Target:** gated Q3–Q4 2026 window (jen pokud launch package dojde na GO)
 
 ---
 
@@ -88,7 +88,7 @@ Key features:
 - Public TestNet live (primary host Zion2 + internal seeds)
 - 780+ automated tests, security audit: 0 critical findings
 
-MainNet launch target: December 31, 2026.
+Public launch remains NO-GO until closure evidence is complete; CoinGecko prep should stay aligned with the gated launch path rather than a fixed date.
 ```
 
 ---
@@ -125,4 +125,4 @@ MainNet launch target: December 31, 2026.
 
 ---
 
-*Viz také: [MainNet Launch Plan](README.md) · [Architecture](../architecture/README.md) · [Whitepaper](../whitepaper/ZION_Whitepaper_v2.9.7.md)*
+*Viz take: [Public Launch Path](README.md) · [Architecture](../architecture/README.md) · [Whitepaper](../whitepaper/ZION_Whitepaper_v2.9.7.md)*

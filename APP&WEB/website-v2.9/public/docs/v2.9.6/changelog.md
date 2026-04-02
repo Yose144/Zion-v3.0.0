@@ -1,6 +1,6 @@
 # 🚀 ZION v2.9.6 Changelog — Pre-Mainnet Fork
 
-> *Co je nového od v2.9.5. Cílový mainnet: 31. prosince 2026.*
+> *Archive note: tento changelog zachycuje tehdejsi pre-mainnet framing. Aktualni verejny launch stav se ridi novou launch gate linii a zustava NO-GO.*
 
 ---
 

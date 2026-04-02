@@ -81,7 +81,7 @@ ZION TerraNova je vertikálně integrovaný blockchain ekosystém postavený nat
 - Aktuálně: **Base Sepolia** testnet
 - Smart contract: `L2/contracts/wZION.sol`
 - Bridge UI: stránka `/bridge`
-- Mainnet target: Base, Ethereum (Q3–Q4 2026)
+- Cilkove launch okno pro bridge rollout: Base, Ethereum (Q3-Q4 2026, gated)
 
 ---
 
@@ -153,12 +153,12 @@ ZION TerraNova je vertikálně integrovaný blockchain ekosystém postavený nat
 ## Development priorities 2026
 
 ```text
-Q1 2026 (nyní): L1 stabilizace · docs · MainNet Gate
-Q2 2026:        CHv4 upgrade · wZION bridge testnet -> mainnet
-Q3 2026:        L2 NCL prototype · wallet binaries · CoinGecko
-Q4 2026:        MainNet Launch · L2 full · listing
+Q1 2026 (nyni): L1 stabilizace · docs · launch gate
+Q2 2026:        CHv4 upgrade · wZION bridge testnet -> gated rollout
+Q3 2026:        L2 NCL prototype · wallet binaries · CoinGecko prep
+Q4 2026:        Rozhodovaci okno verejneho launchu · L2/listing az po GO
 ```
 
 ---
 
-*Viz také: [Consensus CHv3→CHv4](consensus.md) · [MainNet Launch Plan](../mainnet/README.md)*
+*Viz take: [Consensus CHv3→CHv4](consensus.md) · [Verejna launch cesta](../mainnet/README.md)*

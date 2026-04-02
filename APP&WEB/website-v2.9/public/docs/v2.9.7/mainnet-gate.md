@@ -14,7 +14,7 @@
 
 **MainNet launch is gated on ALL B-CRIT criteria being CLOSED (green).**
 
-Target: **31 December 2026**
+Historical target window in this snapshot: **31 December 2026**
 
 ---
 
@@ -102,4 +102,4 @@ Full premine addresses are published at:
 | Security Audit | Q2 2026 | 📋 Planned |
 | Bridge Mainnet | Q3 2026 | 📋 Planned |
 | TestNet Stability Window | Q3-Q4 2026 | 📋 Planned |
-| **MainNet Launch** | **31 Dec 2026** | 🎯 Target |
+| **MainNet Launch** | **31 Dec 2026** | Historical target window |
