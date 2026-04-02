@@ -1453,6 +1453,57 @@ function chooseGpuBatchSize(gpuInfo, configuredBatch) {
   return Math.max(bounds.min, 2048);
 }
 
+/**
+ * Load the GPU tuning config from resources/gpu-tuning-config.json.
+ * Returns the parsed object or null on failure.
+ */
+function loadGpuTuningConfig() {
+  try {
+    const resourceBase = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources');
+    const cfgPath = path.join(resourceBase, 'gpu-tuning-config.json');
+    if (!fs.existsSync(cfgPath)) return null;
+    return JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Apply NVIDIA CUDA tuning from gpu-tuning-config.json tier recommendations.
+ * Returns env var overrides: { ZION_CUDA_WORK_CAP?, ... }
+ */
+function applyCudaTuning(gpuInfo, tuningConfig) {
+  const result = {};
+  const cuda = tuningConfig?.recommendations?.cuda;
+  if (!cuda?.enabled) return result;
+
+  const memMb = parseGpuMemoryMb(gpuInfo);
+
+  // Tier-based work_cap from config if not already set by chooseGpuBatchSize
+  if (cuda.tiers && memMb > 0) {
+    const tierKeys = Object.keys(cuda.tiers)
+      .map(k => ({ key: k, gb: parseInt(k) }))
+      .filter(t => Number.isFinite(t.gb))
+      .sort((a, b) => b.gb - a.gb); // descending
+    for (const tier of tierKeys) {
+      if (memMb >= tier.gb * 1000) {
+        const tierCfg = cuda.tiers[tier.key];
+        if (tierCfg?.work_cap > 0) {
+          result.ZION_CUDA_WORK_CAP = String(tierCfg.work_cap);
+        }
+        break;
+      }
+    }
+  }
+
+  // threads_per_block override (different NVIDIA arches may prefer 128/256/512)
+  if (cuda.threads_per_block && cuda.threads_per_block !== 256) {
+    result.ZION_CUDA_BLOCK_SIZE = String(cuda.threads_per_block);
+  }
+
+  return result;
+}
+
 // ============================================================================
 // CH3 MULTI-STREAM: Dual/Triple Mining Support
 // ZION (50% CPU) + Best GPU Coin (25% GPU, direct to external pool) +
@@ -2022,15 +2073,47 @@ function startMiningV3(config, v3Path) {
     ZION_ENABLE_STREAM_SWITCH: '0',
   };
   if (wantsGpu) {
+    // ── GPU detection & backend auto-select ──
     const v3Backend = String(process.env.ZION_BACKEND || '').trim().toLowerCase();
+    let gpuInfo = null;
+    try { gpuInfo = detectGPU(); } catch { /* ignore */ }
+
     if (v3Backend) {
       env.ZION_BACKEND = v3Backend;
     } else if (process.platform === 'darwin' && os.arch() === 'arm64') {
       env.ZION_BACKEND = 'metal';
+    } else if (gpuInfo?.backendPreferred === 'cuda' && gpuInfo?.cudaCapable) {
+      env.ZION_BACKEND = 'cuda';
     } else {
       env.ZION_BACKEND = 'opencl';
     }
     env.ZION_HAS_GPU = '1';
+
+    // ── VRAM-aware batch/work-cap sizing ──
+    const batchSize = chooseGpuBatchSize(gpuInfo, config?.gpuBatchSize);
+    const backend = env.ZION_BACKEND;
+    if (backend === 'cuda') {
+      env.ZION_CUDA_WORK_CAP = String(batchSize);
+      // Apply tier-based CUDA tuning from gpu-tuning-config.json
+      const tuningCfg = loadGpuTuningConfig();
+      if (tuningCfg) {
+        const cudaOverrides = applyCudaTuning(gpuInfo, tuningCfg);
+        Object.assign(env, cudaOverrides);
+      }
+    } else if (backend === 'opencl') {
+      env.ZION_OCL_WORK_CAP = String(batchSize);
+      if (config?.gpuVramPercent) {
+        const pct = Math.max(10, Math.min(90, Number(config.gpuVramPercent) || 25));
+        env.ZION_OCL_VRAM_PCT = String(pct);
+      }
+      if (config?.gpuLocalSize) {
+        const ls = Math.max(32, Math.min(512, Number(config.gpuLocalSize) || 256));
+        env.ZION_OCL_LOCAL_SIZE = String(ls);
+      }
+    }
+
+    log(`[V3-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize}\n`);
+    if (gpuInfo?.memory) log(`[V3-FAST] GPU VRAM: ${gpuInfo.memory} | Driver: ${gpuInfo.driver || 'n/a'}\n`);
   }
 
   log(`[V3-FAST] Pool: ${pool} | Wallet: ${wallet} | Worker: ${worker || 'desktop'}\n`);
