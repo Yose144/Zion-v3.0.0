@@ -284,6 +284,20 @@ Bridge umožňuje převést ZION tokeny z hlavního chainu na Base blockchain ja
 | **wZION** (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | [BaseScan](https://basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6) |
 | **ZIONBridge** | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | [BaseScan](https://basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721) |
 | **ZIONAtomicSwap** | (verified na BaseScan) | |
+| **UniV3 Pool** (wZION/WETH 0.3%) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | [BaseScan](https://basescan.org/address/0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB) |
+
+### DeFi Hub & Web stránky
+
+Kompletní DeFi sekce webu (zionterranova.com):
+
+| Stránka | URL | Popis |
+|---------|-----|-------|
+| **DeFi Hub** | `/defi` | Swap wZION/WETH, bridge burn, portfolio |
+| **Bridge** | `/bridge` | Detailní bridge operace, architektura, FAQ |
+| **DAO** | `/dao` | Governance, treasury, návrhy, Tree of Life |
+| **Warp** | `/warp` | Multi-chain koridory (ETH live, BTC+SOL plánované) |
+
+Všechny stránky jsou bilingvální (cs/en) a používají Base Mainnet (chain 8453).
 
 ### Jak funguje bridge (zjednodušeně)
 
