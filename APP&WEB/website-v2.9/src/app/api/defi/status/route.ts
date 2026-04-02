@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 const HEADERS = { 'Cache-Control': 'no-store, max-age=0' };
 
-const RPC_URL = process.env.BASE_RPC_URL || 'https://sepolia.base.org';
+const RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 
 // Minimal contract interfaces for on-chain reads
 const CALLS = {
@@ -26,13 +26,10 @@ const CALLS = {
 
 const CONTRACTS: Record<string, string> = {
   wZION:          '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-  ZIONBridge:     '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
-  ZIONAtomicSwap: '0xAf1E0645Ac409485EDA5EabD87b4eE3C3a5BA3Fc',
-  ZIONStaking:    '0x487D87E243f87b1DDEEDEB890c40F2cEcCf67913',
-  ZIONFarm:       '0x1B8BA92C401d53cBcEc422BAD4b83fABcb0A3843',
-  ZIONGovernance: '0x039F730e3e1c3f36da95187697118791762290a1',
-  ZIONTreasury:   '0x178d85323dC94Ce2477269Dfb93a12D04B9bE537',
-  UniV3Pool:      '0xcCEaD51568E8d701f7db7e6699F3986031F07C7B',
+  ZIONBridge:     '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+  UniV3Pool:      '0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB',
+  UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
+  WETH:           '0x4200000000000000000000000000000000000006',
 };
 
 async function ethCall(to: string, data: string): Promise<string | null> {
@@ -73,18 +70,10 @@ export async function GET() {
   try {
     const [
       totalSupplyHex,
-      totalStakedHex,
-      poolLengthHex,
-      rewardPerSecHex,
-      proposalCountHex,
       thresholdHex,
       validatorCountHex,
     ] = await Promise.all([
       ethCall(CONTRACTS.wZION, CALLS.totalSupply),
-      ethCall(CONTRACTS.ZIONStaking, CALLS.totalStaked),
-      ethCall(CONTRACTS.ZIONFarm, CALLS.poolLength),
-      ethCall(CONTRACTS.ZIONFarm, CALLS.rewardPerSec),
-      ethCall(CONTRACTS.ZIONGovernance, CALLS.proposalCount),
       ethCall(CONTRACTS.ZIONBridge, CALLS.threshold),
       ethCall(CONTRACTS.ZIONBridge, CALLS.validatorCount),
     ]);
@@ -100,17 +89,16 @@ export async function GET() {
           totalSupplyRaw: totalSupplyHex,
         },
         staking: {
-          totalStaked: hexToDecimal18(totalStakedHex),
-          totalStakedRaw: totalStakedHex,
-          apr: '12%',
+          totalStaked: '0',
+          apr: '—',
           cooldownDays: 7,
         },
         farm: {
-          poolCount: hexToNumber(poolLengthHex),
-          rewardPerSecond: hexToDecimal18(rewardPerSecHex),
+          poolCount: 0,
+          rewardPerSecond: '0',
         },
         governance: {
-          proposalCount: hexToNumber(proposalCountHex),
+          proposalCount: 0,
         },
         bridge: {
           threshold: hexToNumber(thresholdHex),
