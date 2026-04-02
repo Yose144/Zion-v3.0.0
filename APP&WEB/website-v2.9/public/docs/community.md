@@ -46,7 +46,7 @@
 | Dual-mining ZION + VRSC | ✅ Hotovo |
 | Desktop wallet | 🔄 Ve vývoji |
 | Mobile wallet | 🔄 Ve vývoji |
-| Mainnet launch | 📅 31. 12. 2026 |
+| Public launch gate | NO-GO |
 
 Kompletní roadmap viz [Roadmap →](#whitepaper-roadmap).
 

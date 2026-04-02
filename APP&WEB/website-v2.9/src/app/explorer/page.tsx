@@ -329,7 +329,7 @@ export default function ExplorerPage() {
             {cs ? 'Blockchain data v realnem case z nativnich Rust nodu. Kazdy blok, transakce a adresa - plne transparentni, plne otevrene.' : 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            {cs ? 'Decade Decay emise: 5,400 -> 724 ZION/blok · 100+ let + tail ∞ · Vsechny fees spalovany · 89/5/5/1 distribuce · Cil verejneho launch 31.12.2026' : 'Decade Decay emission: 5,400 -> 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Public launch target 31.12.2026'}
+            {cs ? 'Decade Decay emise: 5,400 -> 724 ZION/blok · 100+ let + tail ∞ · Vsechny fees spalovany · 89/5/5/1 distribuce · Verejny launch zatim NO-GO' : 'Decade Decay emission: 5,400 -> 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Public launch currently NO-GO'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">

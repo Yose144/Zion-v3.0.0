@@ -80,7 +80,7 @@ Nejrychlejší cesta vede přes Docker, viz [Quick Start →](#getting-started).
 
 ### Kdy bude mainnet?
 
-Cíl je **31. 12. 2026**. Aktuální stav sleduj na [Roadmap →](#whitepaper-roadmap).
+Aktuální veřejný stav je **NO-GO do uzavření closure evidence**. Konec roku 2026 zůstává cílové okno, ne garantované datum. Aktuální stav sleduj na [Roadmap →](#whitepaper-roadmap).
 
 ---
 

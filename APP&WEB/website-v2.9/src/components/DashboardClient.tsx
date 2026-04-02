@@ -45,9 +45,9 @@ const getMissionMetrics = (cs: boolean) => [
     icon: Gauge
   },
   {
-    label: cs ? 'Cil MainNetu' : 'MainNet Target',
-    value: '31 Dec 2026',
-    description: cs ? 'Po bezpecnostnim auditu a stress testech' : 'After security audit + stress testing',
+    label: cs ? 'Launch gate' : 'Launch Gate',
+    value: 'NO-GO',
+    description: cs ? 'Rozhodnuti o verejnem launchi az po closure evidence' : 'Public launch decision only after closure evidence',
     icon: SignalHigh
   }
 ];
@@ -62,8 +62,8 @@ const getRoadmapSlices = (cs: boolean) => [
     bullets: cs ? ['Bezpecnostni audit (Trail of Bits)', 'Nativni penezenka + podpora Ledger/Trezor', 'Zapojeni komunitnich tezebnich poolu'] : ['Security audit (Trail of Bits)', 'Native wallet + Ledger/Trezor support', 'Community mining pools onboarding']
   },
   {
-    title: cs ? 'MainNet · 31 pros 2026' : 'MainNet · 31 Dec 2026',
-    bullets: cs ? ['Plne produkcni nasazeni', 'Multi-chain mosty v provozu', 'Aktivace DAO governance'] : ['Full production deployment', 'Multi-chain bridges operational', 'DAO governance activation']
+    title: cs ? 'Launch window · konec 2026 (gated)' : 'Launch window · end 2026 (gated)',
+    bullets: cs ? ['Verejny launch jen po closure reportu', 'Mosty a listing readiness az po GO rozhodnuti', 'Governance aktivace az po schvalenem launch baliku'] : ['Public launch only after closure reporting', 'Bridge and listing readiness only after a GO decision', 'Governance activation only after the approved launch package']
   }
 ];
 
@@ -482,7 +482,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div>
               <p className="text-xs uppercase tracking-[0.4em] text-gray-200">{cs ? 'Co dal' : 'What\'s next'}</p>
               <h2 className="text-3xl font-semibold text-white">{cs ? 'Operacni roadmapa' : 'Operational roadmap'}</h2>
-              <p className="text-sm text-gray-100 max-w-xl mt-2">{cs ? 'Prevzato primo z docs/roadmaps a FINAL_REPORT_v2.9.6_SESSION.' : 'Pulled directly from docs/roadmaps and FINAL_REPORT_v2.9.6_SESSION.'}</p>
+              <p className="text-sm text-gray-100 max-w-xl mt-2">{cs ? 'Prevzato z aktualni verejne launch cesty a rehearsal readiness materialu.' : 'Pulled from the current public launch path and rehearsal-readiness material.'}</p>
             </div>
             <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-black/60 px-5 py-2 text-sm font-semibold text-white">
               {cs ? 'Otevrit roadmapu' : 'Open roadmap'}

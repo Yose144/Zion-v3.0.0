@@ -447,7 +447,7 @@ export default function NetworkPage() {
               : 'Native Rust infrastructure running 24/7 from the current primary host with internal quorum support. Connect your miner, run your own node, or explore the blockchain while historical rollout context stays preserved in docs.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            {cs ? '89 % miner · 5 % humanitarian · 5 % fond Issobella · 1 % pool fee · Cil verejneho launch 31.12.2026' : '89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch target 31.12.2026'}
+            {cs ? '89 % miner · 5 % humanitarian · 5 % fond Issobella · 1 % pool fee · Verejny launch zatim NO-GO' : '89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch currently NO-GO'}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
             {[
