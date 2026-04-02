@@ -207,7 +207,7 @@ if (process.platform === 'win32' && !app.isPackaged) {
 
 // Keep cache clean on Windows without overriding userData paths.
 // (We must NOT set userData to a different path; only set cache.)
-app.disableHardwareAcceleration();
+// GPU acceleration enabled — required for backdrop-filter, canvas, and smooth compositing.
 
 // Avoid multiple Electron instances fighting over the same cache directory.
 const gotLock = app.requestSingleInstanceLock();
