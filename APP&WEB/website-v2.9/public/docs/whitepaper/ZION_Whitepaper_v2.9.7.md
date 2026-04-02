@@ -2,7 +2,7 @@
 
 **Version:** 2.9.7 — Pre-MainNet Gate  
 **Date:** March 2026  
-**Status:** TestNet Live · MainNet target December 31, 2026  
+**Status:** Historical snapshot from the pre-mainnet gate stage · current public launch status is tracked separately and remains NO-GO pending closure evidence  
 **Website:** https://zionterranova.com  
 **Repository:** https://github.com/Zion-TerraNova
 

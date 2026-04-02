@@ -146,7 +146,7 @@ Three blocking criteria must be cleared before MainNet launch:
 
 Additional targets: 50+ distributed seed nodes, pool tested at 100+ MH/s, bridge audit complete.
 
-Target: **31 December 2026**
+Historical target window in this snapshot: **31 December 2026**
 
 ---
 

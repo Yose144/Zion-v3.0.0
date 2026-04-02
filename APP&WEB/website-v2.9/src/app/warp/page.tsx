@@ -19,7 +19,7 @@ const getWarpStats = (cs: boolean) => [
   { label: cs ? 'Planovane koridory' : 'Corridors Planned', value: '11', detail: 'BTC · ETH · SOL · L2 + Lightning', icon: CloudLightning },
   { label: cs ? 'Guardian runtime' : 'Guardian Runtime', value: '1 + quorum', detail: cs ? 'Verejny host Zion2 · interni validator linky' : 'Zion2 public host · internal validator lanes', icon: ShieldCheck },
   { label: cs ? 'Faze vyvoje' : 'Development Phase', value: cs ? 'Faze 2' : 'Phase 2', detail: cs ? 'Architektura + navrh validatoru' : 'Architecture + validator design', icon: Globe2 },
-  { label: cs ? 'Cil launchu' : 'Target Launch', value: 'Q3 2026', detail: cs ? 'Po dokonceni bezpecnostniho auditu' : 'After security audit completion', icon: Zap }
+  { label: cs ? 'Launch gate' : 'Launch Gate', value: 'NO-GO', detail: cs ? 'Rozhodnuti az po closure evidence a auditu' : 'Decision only after closure evidence and audit', icon: Zap }
 ];
 
 const getCorridorRows = (cs: boolean) => [
@@ -28,7 +28,7 @@ const getCorridorRows = (cs: boolean) => [
     subtitle: 'SegWit + Taproot',
     entries: [
       { label: cs ? 'Bezpecnostni model' : 'Security Model', value: 'HTLC · 2-of-3 multi-sig · 24h timelock' },
-      { label: cs ? 'Stav' : 'Status', value: cs ? 'Navrh architektury — plan pro Q3 2026' : 'Architecture design — planned for Q3 2026' },
+      { label: cs ? 'Stav' : 'Status', value: cs ? 'Navrh architektury — gated corridor, ne live launch slib' : 'Architecture design — gated corridor, not a live launch promise' },
       { label: cs ? 'Use case' : 'Use cases', value: cs ? 'Trustless swapy, Lightning exity, OTC bridging' : 'Trustless swaps, Lightning exits, OTC bridging' }
     ]
   },
@@ -36,7 +36,7 @@ const getCorridorRows = (cs: boolean) => [
     title: cs ? 'Ethereum Lock/Mint' : 'Ethereum Lock/Mint',
     subtitle: 'wZION ERC-20',
     entries: [
-      { label: cs ? 'Validatori' : 'Validators', value: cs ? 'Multi-sig quorum · audit planovan Q2–Q3 2026' : 'Multi-sig quorum · audit planned Q2–Q3 2026' },
+      { label: cs ? 'Validatori' : 'Validators', value: cs ? 'Multi-sig quorum · audit a gate closure stale otevrene' : 'Multi-sig quorum · audit and gate closure still open' },
       { label: cs ? 'Stav' : 'Status', value: cs ? 'Vyvoj smart kontraktu probiha' : 'Smart contract development in progress' },
       { label: cs ? 'Integrace' : 'Integration', value: 'EVM wallets, DeFi routing, DAO treasury' }
     ]

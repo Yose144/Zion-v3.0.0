@@ -77,7 +77,7 @@ export default function DownloadPage() {
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION CLI bootstrap bundle pro live ${SITE_VERSION} — ` : `ZION CLI bootstrap bundle for live ${SITE_VERSION} — `}<span className="text-zion-gold font-semibold">Miner</span>,{' '}
+              {cs ? `ZION CLI bootstrap bundle pro verejnou rehearsal linii ${SITE_VERSION} — ` : `ZION CLI bootstrap bundle for the public rehearsal line ${SITE_VERSION} — `}<span className="text-zion-gold font-semibold">Miner</span>,{' '}
               <span className="text-zion-cyan font-semibold">Wallet</span> {cs ? 'a' : '&'}{' '}
               <span className="text-zion-purple font-semibold">Node</span>{cs ? ' — pro Windows, Linux a macOS. Predkompilovane nativni Rust binarky. Aktualni download artefakty jsou stale hostovane pod release tagem v2.9.6, ale zustavaji kompatibilni s verejnou linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8.' : ' — for Windows, Linux & macOS. Pre-compiled native Rust binaries. Current download artifacts are still hosted under the v2.9.6 release tag, but remain compatible with the public v2.9.9 Pure Code line on top of the canonical v2.9.8 runtime path.'}
             </p>

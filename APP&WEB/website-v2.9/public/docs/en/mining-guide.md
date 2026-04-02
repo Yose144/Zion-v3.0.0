@@ -149,7 +149,7 @@ curl -s localhost:8444/jsonrpc \
 ## More information
 
 - [Pool Setup →](#pool-setup) — run your own mining pool
-- [Advanced Setup →](#setup) — production configuration
+- [Advanced Setup →](#setup) — public rehearsal configuration
 - [API Reference →](#api) — RPC endpoints
 - [GitHub](https://github.com/Zion-TerraNova/2.9.6) — source code
 

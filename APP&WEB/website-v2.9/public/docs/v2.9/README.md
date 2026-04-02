@@ -1,6 +1,7 @@
 # ZION TerraNova v2.9 — "Quantum Leap"
 
 > **Era: October – December 2025 · Status: Legacy (superseded by v2.9.5)**
+> **Archive note:** this page is kept as a historical snapshot of the Python-era track and does not describe the current public launch gate or current operational topology.
 
 v2.9 "Quantum Leap" was the first multi-layer, multi-node TestNet era of ZION. It ran on a Python/FastAPI stack and established the core architectural vision that defined all subsequent versions.
 

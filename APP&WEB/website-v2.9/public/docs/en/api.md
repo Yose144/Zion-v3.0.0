@@ -1,6 +1,6 @@
 # API Reference — ZION v2.9.6
 
-The ZION node exposes a JSON-RPC 2.0 API on port **8444** (testnet) and **8443** (mainnet).
+The ZION node exposes a JSON-RPC 2.0 API on port **8444** (testnet) and **8443** (the mainnet profile on the public rehearsal line).
 
 ---
 

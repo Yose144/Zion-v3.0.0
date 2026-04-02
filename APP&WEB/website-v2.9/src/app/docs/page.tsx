@@ -88,7 +88,7 @@ const categoryTitles: Record<string, LocalizedText> = {
   'v296-layers': { cs: '6vrstvá architektura', en: '6-Layer Architecture' },
   'v296-economics': { cs: 'Ekonomika', en: 'Economics' },
   'v296-architecture': { cs: 'Protokol', en: 'Protocol' },
-  'v296-mainnet': { cs: 'Příprava mainnetu', en: 'Mainnet Preparation' },
+  'v296-mainnet': { cs: 'Launch readiness', en: 'Launch Readiness' },
   'v295-overview': { cs: 'Přehled', en: 'Overview' },
   'v295-protocol': { cs: 'Protokol', en: 'Protocol' },
   'v295-whitepaper': { cs: 'Whitepaper', en: 'Whitepaper' },
