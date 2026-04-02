@@ -842,6 +842,7 @@ const IS_PACKAGED = app.isPackaged;
 // For development: use the Python script in project root or resources
 let MINER_PATH;
 let MINER_IS_RUST = false;
+let minerFallbackTimer = null;
 let minerStartAckTimer = null;
 let minerGpuInitWatchdogTimer = null;
 let minerStartToken = 0;
