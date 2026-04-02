@@ -509,8 +509,8 @@ cargo build --release -p zion-miner --features opencl
                   Solo Mining — Full Block Rewards
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  Mine directly against the blockchain. You get the entire block
-                  reward (50 ZION + fees) when you find a block — but payouts
+                  Mine directly against the blockchain. You get the full current
+                  block reward plus fees when you find a block — but payouts
                   are less frequent than pool mining.
                 </p>
 
@@ -565,7 +565,7 @@ curl -s http://localhost:8443 \\
                   <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-4">
                     <h4 className="text-sm font-medium text-emerald-400 mb-2">✅ Pros</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• Full 50 ZION block reward</li>
+                      <li>• Full current block reward + fees</li>
                       <li>• No pool fees</li>
                       <li>• Maximum decentralization</li>
                       <li>• Privacy — no pool knows your address</li>

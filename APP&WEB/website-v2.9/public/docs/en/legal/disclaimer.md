@@ -33,7 +33,7 @@ ZION TerraNova may integrate with or reference third-party services such as the 
 
 ## Experimental phase
 
-At the time of publication, ZION is in the **TestNet phase**. The software may contain bugs. Mainnet deployment is planned for **31 Dec 2026**. Until then:
+At the time of publication, ZION is running as a **controlled public rehearsal runtime**. The software may contain bugs, and public launch remains **NO-GO** until closure evidence is complete. Until then:
 
 - testnet tokens have no guaranteed portability,
 - the protocol may change through hard forks,
