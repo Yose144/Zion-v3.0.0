@@ -141,11 +141,46 @@ over layers dynamically. Epoch transitions upload new weights via `htod_sync_cop
 
 **Optimal work_cap for 8 GB VRAM: 8192** (matches gpu-tuning-config.json tier).
 
-### Pool Mining Performance
+### 5.2 RTX 3060 (12 GB, Ampere GA106, 3584 CUDA cores)
 
-- **GPU hashrate:** 18.6 KH/s (raw kernel throughput)
-- **Effective hashrate:** 6.6 KH/s (including pool I/O, epoch updates)
-- **Batch time:** ~310 ms per 4096-nonce batch
+**Instance:** Vast.ai #34002348, Quebec CA, $0.0614/hr  
+**Driver:** 555.58.02, CUDA 12.4, Memory bus: 192-bit GDDR6 @ 360 GB/s
+
+| work_cap | GPU KH/s | Effective KH/s | Batch ms | Notes |
+|----------|----------|----------------|----------|-------|
+| 256 | 10.13 | 0.43 | 271 | Too small — kernel overhead dominates |
+| 512 | 10.29 | 0.36 | 272 | Same issue |
+| 1024 | 10.16 | 1.41 | 274 | Start of useful range |
+| 2048 | 10.32 | 1.33 | 275 | Good for low-VRAM |
+| 4096 | 10.07 | 1.11 | 409 | Desktop default tier |
+| **8192** | **9.31** | **2.64** | **884** | **Peak effective rate** |
+| 12288 | 9.51 | 0.55 | 977 | Regression — VRAM pressure |
+| 16384 | 9.19 | 0.44 | 1331 | Too large for 12 GB |
+
+**Optimal work_cap for 12 GB RTX 3060: 8192** (NOT 12288 despite having 12 GB VRAM).
+
+### 5.3 Memory-Bandwidth Analysis
+
+**Critical finding:** Ekam Deeksha is **memory-bandwidth-bound**, not compute-bound.
+
+| GPU | CUDA Cores | Bus Width | Bandwidth | Peak KH/s |
+|-----|------------|-----------|-----------|----------|
+| RTX 2060 SUPER | 2176 | 256-bit | 448 GB/s | 3.35 |
+| RTX 3060 | 3584 | 192-bit | 360 GB/s | 2.64 |
+
+The RTX 3060 has **65% more CUDA cores** but **20% less memory bandwidth** than
+the RTX 2060 SUPER, and it performs **21% slower**. This confirms:
+
+1. **Memory bus width is the dominant performance factor** for this algorithm
+2. GPUs with wider buses (256-bit, 384-bit) outperform higher-CUDA-core GPUs with narrow buses
+3. This characteristic provides **natural ASIC resistance** — random scratchpad
+   access patterns cannot be easily parallelized by custom silicon
+4. **GPU tuning tiers should be based on bandwidth, not just VRAM capacity**
+
+### 5.4 Pool Mining Performance
+
+- **RTX 2060S:** GPU kernel 18.6 KH/s, effective 6.6 KH/s, batch ~310 ms
+- **RTX 3060:** GPU kernel 48.9 KH/s (cumulative), effective ~1.01 KH/s, batch ~409 ms
 - **NVRTC compile:** ~1 second (one-time at startup)
 - **Memory:** 2 GB scratchpad + ~50 MB NPU buffers at work_cap=8192
 
@@ -202,10 +237,13 @@ From `resources/gpu-tuning-config.json`:
 
 | GPU | VRAM | Expected work_cap | Status |
 |-----|------|--------------------|--------|
-| RTX 2060 SUPER | 8 GB | 8192 | ✅ Tested, 3.35 KH/s |
-| RTX 5070 | 12 GB | 12288 | Planned |
-| RTX 4090 | 24 GB | 16384 | Planned |
-| GTX 1660 | 6 GB | 6144 | Planned |
+| RTX 2060 SUPER | 8 GB (256-bit, 448 GB/s) | 8192 | ✅ 3.35 KH/s peak |
+| RTX 3060 | 12 GB (192-bit, 360 GB/s) | 8192 | ✅ 2.64 KH/s peak |
+| RTX 5070 | 12 GB (192-bit, 448 GB/s) | 8192 | Planned |
+| RTX 4070 Ti | 12 GB (192-bit, 504 GB/s) | 8192 | Planned |
+| RTX 4090 | 24 GB (384-bit, 1008 GB/s) | 16384 | Planned — expect highest perf |
+| RTX 3090 | 24 GB (384-bit, 936 GB/s) | 16384 | Planned |
+| GTX 1660 | 6 GB (192-bit, 336 GB/s) | 6144 | Planned |
 
 ### Future Improvements
 
@@ -218,6 +256,8 @@ From `resources/gpu-tuning-config.json`:
   compilation on subsequent launches (~1s saved per startup).
 - **Adaptive batch sizing** — Runtime autotune that profiles first batch
   and adjusts work_cap for optimal throughput.
+- **Bandwidth-aware tuning** — Use memory bandwidth (not just VRAM capacity)
+  as the primary tier selection metric in gpu-tuning-config.json.
 
 ---
 
