@@ -1,6 +1,6 @@
 # Whitepaper Lite — ZION TerraNova v2.9.9 public line
 
-Rychle shrnuti aktualni verejne komunikovane ZION linie bez toho, aby se rehearsal runtime zaměnoval za spusteny mainnet.
+Rychle shrnuti aktualni verejne komunikovane ZION linie bez toho, aby se rehearsal runtime zamenoval za spusteny mainnet.
 
 ---
 
