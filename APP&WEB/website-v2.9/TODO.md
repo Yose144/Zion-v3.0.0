@@ -6,12 +6,13 @@
 - [x] Přeložit první public docs batch: index, getting-started, setup, mining-guide, faq, api, architecture, legal/disclaimer, legal/risk, legal/token
 - [x] Dočistit docs route wrapper a sidebar, aby CZ/EN platilo i pro navigaci, category labels a hero copy
 - [x] Pokračovat v překladu public docs: community, pool-setup, tutorials, další onboarding obsah
-- [ ] Další performance batch: `/download` a `/api-reference` rozdělit na lehčí initial payload a menší client ostrovy
+- [x] Další performance batch: `/download` a `/api-reference` rozdělit na lehčí initial payload a menší client ostrovy
+- [ ] Další pass: prověřit `/network` a další veřejné stránky s velkou client vrstvou
 
 ## Performance Priorities
 
 - [ ] Odlehčit `/docs` route: lazy-load jen části, které nejsou potřeba při prvním renderu
-- [ ] Prověřit `/network`, `/download`, `/api-reference` pro další rozdělení interaktivních částí od statického obsahu
+- [ ] Prověřit `/network` pro další rozdělení interaktivních částí od statického obsahu
 - [ ] Projít další polling/UI komponenty a sjednotit je s visibility-aware přístupem tam, kde to ještě chybí
 
 ## Translation Priorities
