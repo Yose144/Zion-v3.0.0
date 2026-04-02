@@ -1,6 +1,8 @@
 # 🚀 Mainnet Launch plán
 
-> *Cíl: 31. prosince 2026. Od testnetu k mainnetu.*
+> *Archive note: tento dokument zachovava tehdejsi launch plan snapshot. Neni to aktualni verejny launch commit.*
+
+> *Historicke cilove okno: konec 2026. Od testnetu k launch gate.*
 
 ---
 
@@ -56,7 +58,7 @@
 | Mining pool třetích stran | ⏳ |
 | Community growth (Discord, Telegram) | ⏳ |
 
-### Fáze 4 — Mainnet Launch (Říjen–Prosinec 2026)
+### Fáze 4 — Historical Mainnet Launch Window (Říjen–Prosinec 2026)
 
 | Úkol | Status |
 |------|--------|
@@ -65,7 +67,7 @@
 | Seed node deployment (3+ kontinenty) | ⏳ |
 | Mainnet config finalizace | ⏳ |
 | Emission schedule DAO vote | ⏳ |
-| **🚀 MAINNET LIVE: 31. 12. 2026** | ⏳ |
+| **🚀 Historical target window: 31. 12. 2026** | ⏳ |
 
 ---
 
