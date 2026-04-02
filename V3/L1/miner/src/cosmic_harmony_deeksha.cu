@@ -724,7 +724,19 @@ __device__ void ekam_memory_hard_transform(const uint8_t input[64], uint8_t *pad
 }
 
 /* ========================================================================== */
-/* Step 5: NPU Mix — INT8 MLP 64→128→64 with LayerNorm + GELU + Residual      */
+/* Step 5: NPU Mix — Variable-topology INT8 MLP with LayerNorm + GELU + Residual */
+/*                                                                             */
+/* Topologies (rotate per epoch % 4):                                          */
+/*   0: Standard   64→128→64   (2 layers)                                     */
+/*   1: ThreeLayer 64→96→128→64 (3 layers)                                    */
+/*   2: Wide       64→256→64   (2 layers)                                     */
+/*   3: Deep       64→64→64→64 (3 layers)                                     */
+/*                                                                             */
+/* Packed buffers layout:                                                      */
+/*   weights: [layer0_weights..., layer1_weights..., ...]                      */
+/*   biases:  [layer0_bias..., layer1_bias..., ...]                            */
+/*   scales:  [layer0_scale..., layer1_scale..., ...]                          */
+/*   meta:    [num_layers, in0, out0, in1, out1, ...]                          */
 /* ========================================================================== */
 
 __device__ int gelu_int8(int x)
@@ -734,79 +746,79 @@ __device__ int gelu_int8(int x)
     return max(-128, min(127, result));
 }
 
-__device__ void npu_mix(const uint8_t in64[64], uint8_t out64[64],
-                        const int8_t *w1,       /* [128][64]  = 8192 bytes */
-                        const int8_t *b1,       /* [128]      = 128 bytes  */
-                        const int8_t *w2,       /* [64][128]  = 8192 bytes */
-                        const int8_t *b2,       /* [64]       = 64 bytes   */
-                        const int16_t *scale1,  /* [128]      = 256 bytes  */
-                        const int16_t *scale2)  /* [64]       = 128 bytes  */
+__device__ void npu_mix_packed(const uint8_t in64[64], uint8_t out64[64],
+                               const int8_t   *weights,   /* all layers concatenated */
+                               const int8_t   *biases,    /* all layers concatenated */
+                               const int16_t  *scales,    /* all layers concatenated */
+                               const uint32_t *meta)      /* [num_layers, in0, out0, ...] */
 {
-    int input_i32[64];
+    int current[256];   /* max hidden dim = 256 (Wide topology) */
+    int next[256];
+
+    /* Convert input u8 → i32 (signed reinterpret: (int8_t)in64[i]) */
     for (int i = 0; i < 64; i++)
-        input_i32[i] = (int)((int8_t)in64[i]);
+        current[i] = (int)((int8_t)in64[i]);
 
-    /* Layer 1: Linear(64→128) */
-    int hidden[128];
-    for (int i = 0; i < 128; i++) {
-        int acc = (int)b1[i] * 32;
-        for (int j = 0; j < 64; j++)
-            acc += input_i32[j] * (int)w1[i * 64 + j];
-        hidden[i] = max(-128, min(127, acc >> 12));
+    /* Save residual (input dim is always 64) */
+    int residual[64];
+    for (int i = 0; i < 64; i++)
+        residual[i] = current[i];
+
+    int num_layers = (int)meta[0];
+    int w_off = 0;    /* weight offset */
+    int b_off = 0;    /* bias offset */
+    int s_off = 0;    /* scale offset */
+    int cur_dim = 64;
+
+    for (int layer = 0; layer < num_layers; layer++) {
+        int in_dim  = (int)meta[1 + 2 * layer];
+        int out_dim = (int)meta[2 + 2 * layer];
+
+        /* MatMul + bias */
+        for (int i = 0; i < out_dim; i++) {
+            int acc = (int)biases[b_off + i] * 32;
+            for (int j = 0; j < in_dim; j++)
+                acc += current[j] * (int)weights[w_off + i * in_dim + j];
+            next[i] = max(-128, min(127, acc >> 12));
+        }
+
+        /* LayerNorm */
+        {
+            int64_t sum = 0;
+            for (int i = 0; i < out_dim; i++) sum += (int64_t)next[i];
+            int mean = (int)(sum / (int64_t)out_dim);
+            int64_t var_sum = 0;
+            for (int i = 0; i < out_dim; i++) {
+                int64_t d = (int64_t)(next[i] - mean);
+                var_sum += d * d;
+            }
+            int std_approx = (int)sqrtf((float)(var_sum / (int64_t)out_dim)) + 1;
+            for (int i = 0; i < out_dim; i++) {
+                int normalized = ((next[i] - mean) * 128) / std_approx;
+                next[i] = max(-128, min(127, (normalized * (int)scales[s_off + i]) >> 8));
+            }
+        }
+
+        /* GELU for all but last layer */
+        if (layer < num_layers - 1) {
+            for (int i = 0; i < out_dim; i++)
+                next[i] = gelu_int8(next[i]);
+        }
+
+        /* Advance: next → current */
+        for (int i = 0; i < out_dim; i++)
+            current[i] = next[i];
+        cur_dim = out_dim;
+
+        /* Advance offsets */
+        w_off += in_dim * out_dim;
+        b_off += out_dim;
+        s_off += out_dim;
     }
 
-    /* LayerNorm1 */
-    {
-        int n = 128;
-        int64_t sum = 0;
-        for (int i = 0; i < n; i++) sum += (int64_t)hidden[i];
-        int mean = (int)(sum / (int64_t)n);
-        int64_t var_sum = 0;
-        for (int i = 0; i < n; i++) {
-            int64_t d = (int64_t)(hidden[i] - mean);
-            var_sum += d * d;
-        }
-        int std_approx = (int)sqrtf((float)(var_sum / (int64_t)n)) + 1;
-        for (int i = 0; i < n; i++) {
-            int normalized = ((hidden[i] - mean) * 128) / std_approx;
-            hidden[i] = max(-128, min(127, (normalized * (int)scale1[i]) >> 8));
-        }
-    }
-
-    /* GELU activation */
-    for (int i = 0; i < 128; i++)
-        hidden[i] = gelu_int8(hidden[i]);
-
-    /* Layer 2: Linear(128→64) */
-    int output_i32[64];
+    /* Residual add + output conversion (final dim is always 64) */
     for (int i = 0; i < 64; i++) {
-        int acc = (int)b2[i] * 32;
-        for (int j = 0; j < 128; j++)
-            acc += hidden[j] * (int)w2[i * 128 + j];
-        output_i32[i] = max(-128, min(127, acc >> 12));
-    }
-
-    /* LayerNorm2 */
-    {
-        int n = 64;
-        int64_t sum = 0;
-        for (int i = 0; i < n; i++) sum += (int64_t)output_i32[i];
-        int mean = (int)(sum / (int64_t)n);
-        int64_t var_sum = 0;
-        for (int i = 0; i < n; i++) {
-            int64_t d = (int64_t)(output_i32[i] - mean);
-            var_sum += d * d;
-        }
-        int std_approx = (int)sqrtf((float)(var_sum / (int64_t)n)) + 1;
-        for (int i = 0; i < n; i++) {
-            int normalized = ((output_i32[i] - mean) * 128) / std_approx;
-            output_i32[i] = max(-128, min(127, (normalized * (int)scale2[i]) >> 8));
-        }
-    }
-
-    /* Residual add + output conversion */
-    for (int i = 0; i < 64; i++) {
-        int v = max(-128, min(127, output_i32[i] + input_i32[i]));
+        int v = max(-128, min(127, current[i] + residual[i]));
         out64[i] = (uint8_t)v;
     }
 }
@@ -986,11 +998,10 @@ extern "C" __global__ void deeksha_mine(
     uint32_t                     target_u32,      /* LE u32 target              */
     uint64_t       *__restrict__ result_nonce,    /* output: winning nonce      */
     uint8_t        *__restrict__ result_hash,     /* output: 32-byte hash       */
-    const int8_t   *__restrict__ npu_w1,          /* MLP W1 [128×64]            */
-    const int8_t   *__restrict__ npu_b1,          /* MLP b1 [128]               */
-    const int8_t   *__restrict__ npu_w2,          /* MLP W2 [64×128]            */
-    const int8_t   *__restrict__ npu_b2,          /* MLP b2 [64]                */
-    const int16_t  *__restrict__ npu_scales       /* LayerNorm scales [192]     */
+    const int8_t   *__restrict__ npu_weights,     /* packed MLP weights         */
+    const int8_t   *__restrict__ npu_biases,      /* packed MLP biases          */
+    const int16_t  *__restrict__ npu_scales,      /* packed MLP scales          */
+    const uint32_t *__restrict__ npu_meta         /* [num_layers, in0, out0...] */
 )
 {
     uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1024,9 +1035,7 @@ extern "C" __global__ void deeksha_mine(
 
     /* Step 5: NPU Mix (64 B → 64 B) */
     uint8_t s5[64];
-    const int16_t *npu_scale1 = npu_scales;
-    const int16_t *npu_scale2 = npu_scales + 128;
-    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+    npu_mix_packed(s4, s5, npu_weights, npu_biases, npu_scales, npu_meta);
 
     /* Step 6: Cosmic Fusion (64 B → 32 B) */
     uint8_t hash[32];
@@ -1063,11 +1072,10 @@ extern "C" __global__ void ekam_deeksha_mine(
     uint32_t                     target_u32,
     uint64_t       *__restrict__ result_nonce,
     uint8_t        *__restrict__ result_hash,
-    const int8_t   *__restrict__ npu_w1,
-    const int8_t   *__restrict__ npu_b1,
-    const int8_t   *__restrict__ npu_w2,
-    const int8_t   *__restrict__ npu_b2,
-    const int16_t  *__restrict__ npu_scales
+    const int8_t   *__restrict__ npu_weights,
+    const int8_t   *__restrict__ npu_biases,
+    const int16_t  *__restrict__ npu_scales,
+    const uint32_t *__restrict__ npu_meta
 )
 {
     uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1100,9 +1108,7 @@ extern "C" __global__ void ekam_deeksha_mine(
     ekam_memory_hard_transform(s3, pad, s4);
 
     uint8_t s5[64];
-    const int16_t *npu_scale1 = npu_scales;
-    const int16_t *npu_scale2 = npu_scales + 128;
-    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+    npu_mix_packed(s4, s5, npu_weights, npu_biases, npu_scales, npu_meta);
 
     uint8_t hash[32];
     cosmic_fusion_ekam(s5, hash);
@@ -1133,11 +1139,10 @@ extern "C" __global__ void ekam_deeksha_debug(
     uint64_t                     nonce,
     uint8_t        *__restrict__ scratchpad_pool,
     uint8_t        *__restrict__ stage_out,
-    const int8_t   *__restrict__ npu_w1,
-    const int8_t   *__restrict__ npu_b1,
-    const int8_t   *__restrict__ npu_w2,
-    const int8_t   *__restrict__ npu_b2,
-    const int16_t  *__restrict__ npu_scales
+    const int8_t   *__restrict__ npu_weights,
+    const int8_t   *__restrict__ npu_biases,
+    const int16_t  *__restrict__ npu_scales,
+    const uint32_t *__restrict__ npu_meta
 )
 {
     if (blockIdx.x * blockDim.x + threadIdx.x != 0) return;
@@ -1168,9 +1173,7 @@ extern "C" __global__ void ekam_deeksha_debug(
     ekam_memory_hard_transform(s3, pad, s4);
 
     uint8_t s5[64];
-    const int16_t *npu_scale1 = npu_scales;
-    const int16_t *npu_scale2 = npu_scales + 128;
-    npu_mix(s4, s5, npu_w1, npu_b1, npu_w2, npu_b2, npu_scale1, npu_scale2);
+    npu_mix_packed(s4, s5, npu_weights, npu_biases, npu_scales, npu_meta);
 
     uint8_t hash[32];
     cosmic_fusion_ekam(s5, hash);
