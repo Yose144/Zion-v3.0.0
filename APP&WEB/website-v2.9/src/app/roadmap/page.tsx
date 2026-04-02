@@ -63,16 +63,18 @@ const layerStack = [
     layer: 'L2',
     emoji: '💱',
     title: 'DEX & DeFi Layer',
-    period: '2026 rehearsal/testnet · 2027 gated production',
+    period: '2026 Base Mainnet live · staking/governance planned',
     color: 'from-blue-500 to-cyan-500',
     border: 'border-blue-500/40',
     items: [
-      'Atomic Swaps (ZION ↔ BTC/ETH/XMR)',
-      'wZION Bridge — Base Sepolia testnet ready ✅',
-      'Liquidity Pools & AMM DEX',
-      'DAO Governance v1'
+      'wZION Bridge — Base Mainnet live ✅',
+      'Uniswap V3 pool wZION/WETH (0.3%) — Base Mainnet live ✅',
+      'DeFi UI — swap, bridge, portfolio on zionterranova.com/defi ✅',
+      'Liquidity seeded: 50 wZION + 0.0005 WETH ✅',
+      'Staking & Governance — planned after mainnet launch',
+      'DAO Governance v1 — planned'
     ],
-    active: false
+    active: true
   },
   {
     layer: 'L3',
@@ -283,20 +285,24 @@ const phases: PhaseData[] = [
     title: 'Infrastructure & Legal',
     period: 'Aug — Sep 2026',
     priority: 'P1 Important',
-    progress: 55,
+    progress: 85,
     status: 'active',
-    description: 'Single public host + internal validator lanes active, monitoring running, legal/docs progressing. wZION bridge live on Base Sepolia testnet.',
+    description: 'Single public host + internal validator lanes active, monitoring running, legal/docs progressing. wZION bridge + Uniswap V3 DEX pool live on Base Mainnet.',
     sprints: [
       { id: '3.1', title: 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana', done: true },
       { id: '3.2', title: 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
       { id: '3.3', title: 'Legal & Compliance — disclaimers, token-not-security, risk', done: true },
-      { id: '3.4', title: 'Exchange Readiness — wZION + Bridge live on Base Sepolia (testnet)', done: true }
+      { id: '3.4', title: 'wZION + Bridge deployed on Base Mainnet', done: true },
+      { id: '3.5', title: 'Uniswap V3 pool wZION/WETH (0.3%) seeded on Base Mainnet', done: true },
+      { id: '3.6', title: 'DeFi UI — functional swap/bridge/portfolio on website', done: true }
     ],
     exitCriteria: [
       { text: '1 public host + internal validator lanes stable online', done: true },
       { text: 'Monitoring + alerting active', done: true },
       { text: 'Legal docs complete', done: true },
-      { text: 'wZION + Bridge testnet-ready on Base Sepolia', done: true },
+      { text: 'wZION + Bridge live on Base Mainnet', done: true },
+      { text: 'DEX pool live with initial liquidity', done: true },
+      { text: 'DeFi UI on website (swap, bridge, portfolio)', done: true },
       { text: 'Production mainnet exchange rollout', done: false }
     ]
   },
@@ -352,9 +358,9 @@ const postLaunch = [
     items: ['Monitor orphan rate < 2%', 'Difficulty stabilita 60s ± 10%', 'Explorer + Supply API veřejný', 'Hotfix releases pokud potřeba']
   },
   {
-    title: '6B: První DEX Listing',
+    title: '6B: DEX & Listings',
     sub: 'Dny 14–45',
-    items: ['Deploy wZION ERC-20 (Base/Arbitrum)', 'Uniswap pool (wZION/ETH)', 'Počáteční likvidita + price discovery']
+    items: ['wZION ERC-20 deployed on Base Mainnet ✅', 'Uniswap V3 pool wZION/WETH live ✅', 'DeFi UI on zionterranova.com/defi ✅', 'Deepen liquidity + price discovery', 'CoinGecko / DexScreener listing']
   },
   {
     title: '6C: CMC & CoinGecko',
@@ -419,7 +425,7 @@ export default function RoadmapPage() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 28. Mar 2026
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 2. Apr 2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Public launch status · NO-GO
