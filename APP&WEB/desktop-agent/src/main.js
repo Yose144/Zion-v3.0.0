@@ -1931,6 +1931,8 @@ function startMiningV3(config, v3Path) {
   };
 
   log(`[V3-FAST] Starting V3 miner fast-path (${path.basename(v3Path)})\n`);
+  log(`[V3-FAST] Config keys: ${Object.keys(config || {}).join(', ')}\n`);
+  log(`[V3-FAST] Pool: ${JSON.stringify(config?.pool)} | Wallet set: ${!!config?.wallet}\n`);
 
   // ── 1. Validate wallet ─────────────────────────────────────────────────────
   const wallet = String(config?.wallet || '').trim();
@@ -1986,7 +1988,9 @@ function startMiningV3(config, v3Path) {
 
   // ── 5. Compute threads and GPU ─────────────────────────────────────────────
   const effectiveThreads = computeEffectiveThreads(config);
-  const pool = `${config.pool.host}:${config.pool.port}`;
+  const poolHost = config?.pool?.host || PRIMARY_TESTNET_HOST;
+  const poolPort = config?.pool?.port || PRIMARY_POOL_PORT;
+  const pool = `${poolHost}:${poolPort}`;
   const worker = config.worker ? sanitizeWorkerName(config.worker) : '';
   const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
   const wantsGpu = miningMode === 'gpu' || miningMode === 'dual';
@@ -1996,13 +2000,10 @@ function startMiningV3(config, v3Path) {
   if (worker) args.push('--worker', worker);
   if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
   if (wantsGpu) {
-    const backendHint = String(config.gpuBackend || process.env.ZION_BACKEND || '').trim().toLowerCase();
-    if (backendHint) {
-      args.push('--gpu', backendHint);
-    } else {
-      args.push('--gpu', (process.platform === 'darwin' && os.arch() === 'arm64') ? 'metal' : 'opencl');
-    }
+    args.push('--gpu');
+    args.push('--mode', miningMode);   // cpu | gpu | dual
   }
+  args.push('--stats-file', STATS_PATH);
 
   // ── 7. Build environment ───────────────────────────────────────────────────
   const env = {
@@ -2115,7 +2116,9 @@ function startMiningV3(config, v3Path) {
   // ── 16. Close handler ──────────────────────────────────────────────────────
   minerProcess.on('close', (code, signal) => {
     flushBufferedFileAppendsSync();
-    console.log(`[V3] Miner exited code=${code}${signal ? ` signal=${signal}` : ''}`);
+    const exitMsg = `[V3] Miner exited code=${code}${signal ? ` signal=${signal}` : ''}\n`;
+    console.log(exitMsg.trim());
+    log(exitMsg);
     minerProcess = null;
     if (minerStartAckTimer) { clearTimeout(minerStartAckTimer); minerStartAckTimer = null; }
     flushMinerOutputToRenderer();
@@ -2221,9 +2224,22 @@ function startMining(config) {
   {
     const v3FastPath = findRustMiner();
     if (v3FastPath && isV3MinerBinary(v3FastPath)) {
-      const v3Result = startMiningV3(config, v3FastPath);
-      if (v3Result) return v3Result;
-      // null return → fall through to legacy path (shouldn't happen)
+      try {
+        const v3Result = startMiningV3(config, v3FastPath);
+        if (v3Result) return v3Result;
+      } catch (v3Err) {
+        console.error('[V3-FAST] startMiningV3 threw:', v3Err);
+        startupMark('v3-exception');
+        try {
+          sendToRenderer('miner-output', {
+            stream: 'stderr',
+            text: `[V3-FAST] Startup error: ${v3Err?.message || String(v3Err)}\n`
+          });
+        } catch {}
+        startMiningInProgress = false;
+        if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+        return { success: false, error: `V3 startup error: ${v3Err?.message}` };
+      }
     }
   }
 }
