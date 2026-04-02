@@ -1,79 +1,72 @@
-# Whitepaper Lite — ZION TerraNova v2.9.5
+# Whitepaper Lite — ZION TerraNova v2.9.9 public line
 
-Stručný přehled ZION blockchainu pro rychlou orientaci.
-
----
-
-## Vize
-
-ZION je blockchain první generace zaměřený na decentralizaci, spravedlivé těžení a humanitární dopad. Postaven v Rustu pro maximální výkon a bezpečnost.
+Rychle shrnuti aktualni verejne komunikovane ZION linie bez toho, aby se rehearsal runtime zaměnoval za spusteny mainnet.
 
 ---
 
-## Klíčová čísla
+## Co je ZION dnes
+
+ZION je nativni Rust Proof-of-Work protokol s verejne pristupnym **V3 test-mainnet rehearsal** runtime. Aktualni public surface je vedena pres release linii **v2.9.9 Pure Code** na kanonicke runtime baze **v2.9.8**.
+
+To znamena:
+
+- verejny web, explorer, RPC a mining vstupy jsou online,
+- sit slouzi jako kontrolovany rehearsal runtime,
+- verejny mainnet launch jeste neprosel vsemi closure gate podminkami.
+
+---
+
+## Verejne parametry
 
 | Parametr | Hodnota |
 |----------|---------|
-| Celková emise | 144 000 000 000 ZION |
-| Mining supply | 127 720 000 000 ZION (88,7 %) |
-| Premine | 16 280 000 000 ZION (11,3 %) |
-| Block reward | 5 400,067 ZION (konstantní) |
-| Block time | 60 sekund |
-| Halving | Ne |
-| Mining doba | ~45 let (23,65 mil. bloků) |
-| Fee policy | Burn (spalování) |
+| Celkova emise | 144 000 000 000 ZION |
+| Mining supply | 127 720 000 000 ZION |
+| Premine | 16 280 000 000 ZION |
+| Block time target | 60 sekund |
+| Fee policy | Burn |
+| Aktualni public runtime | CHv3-line rehearsal |
+| Final public launch consensus | stale open |
 
 ---
 
-## Konsenzus
+## Architektura v jedne minute
 
-- **Algoritmus**: Cosmic Harmony v3 (multi-algo, CPU-friendly, ASIC-resistant)
-- **DAA**: LWMA s oknem 60 bloků, max změna ±25 %
-- **Soft finality**: 60 bloků
-- **Typ**: Proof-of-Work
-
----
-
-## Premine distribuce
-
-| Fond | Množství | Podíl |
-|------|----------|-------|
-| ZION Oasis + Golden Egg | 8 250 000 000 | 50,7 % |
-| DAO Treasury | 4 000 000 000 | 24,6 % |
-| Infrastruktura | 2 590 000 000 | 15,9 % |
-| Humanitární fond | 1 440 000 000 | 8,8 % |
-
-Distribuováno při genesi. Žádný další minting mimo PoW mining.
+- **Core**: Rust runtime, LMDB storage, Ed25519 wallet flow
+- **P2P**: libp2p sit s verejnym primary hostem a internimi validator linkami
+- **RPC / REST**: verejne endpointy pro explorer, tooling a monitoring
+- **Mining**: verejny stratum pool pro CPU / Cosmic Harmony klienty
+- **Docs / Ops**: live index, API reference, network status a monitoring povrch
 
 ---
 
-## Technologie
+## Public truth
 
-- **Jazyk**: Rust
-- **Storage**: LMDB
-- **P2P**: libp2p, gossip protokol
-- **RPC**: JSON-RPC 2.0
-- **Porty**: P2P 8333/8334, RPC 8443/8444
+Aktualni web a docs maji byt ctene takto:
+
+- **ano**: controlled public rehearsal runtime,
+- **ano**: aktivni verejne endpointy a binarky,
+- **ne**: spusteny verejny mainnet,
+- **ne**: uzavreny launch gate proces.
+
+Public launch zustava **NO-GO**, dokud nejsou uzavreny audit, explorer evidence, wallet readiness a final launch konfigurace.
 
 ---
 
-## Roadmap
+## Launch cesta
 
-- ✅ Rust core + Cosmic Harmony v3
-- ✅ Testnet (multi-node)
-- ✅ Nativní binárky + Docker
-- 🔄 Desktop & Mobile wallet
-- 📅 Mainnet: 31. 12. 2026
+1. Stabilni rehearsal runtime.
+2. Closure evidence a auditni material.
+3. Finalni launch readiness package.
+4. Az potom public mainnet genesis.
+
+Cilove okno end-2026 zustava smer, ne potvrzeny live stav.
 
 ---
 
 ## Odkazy
 
-- [Kompletní Whitepaper →](#whitepaper-full)
-- [Architektura →](#arch-overview)
+- [Docs Hub](/docs)
+- [Network Status](/network)
 - [GitHub](https://github.com/Zion-TerraNova)
 - [Web](https://www.zionterranova.com)
-
----
-
-*ZION TerraNova v2.9.5 — „Where technology meets spirit"*

@@ -1,108 +1,77 @@
-# MainNet Launch Plan — ZION TerraNova
+# Verejna launch cesta 2026 — ZION TerraNova
 
-**Cílový datum:** 31. 12. 2026  
-**Aktuální stav:** Pre-MainNet Gate (v2.9.7)  
-**Aktuální síť:** TestNet (Helsinki · USA · Asia)
-
----
-
-## Fáze přípravy
-
-```
-[DONE]  Phase 0 — Foundation (Sep–Dec 2025)
-         ✅ Genesis blok, CHv3 algoritmus, Python prototype
-         ✅ TestNet proto (archivováno)
-
-[DONE]  Phase 1 — Native Core (Jan–Mar 2026)
-         ✅ 100% Rust rewrite (52 590 LOC)
-         ✅ 780+ testů, LMDB, Ed25519
-         ✅ Primary-host TestNet (Zion2, 91.98.122.165)
-         ✅ wZION Bridge (Base Sepolia testnet)
-         ✅ Unified website v2.9.7
-
-[NOW]   Phase 2 — Gate Checks (Mar–Jun 2026)
-         🔄 CHv4 algoritmus (vývoj)
-         🔄 Stabilizace P2P vrstvy
-         🔄 Docs - whitepaper, architecture, CoinGecko
-         🔄 Bezpečnostní audit L1 kódu
-         📋 Explorer - plně funkční (ne mockup)
-
-[NEXT]  Phase 3 — MainNet Readiness (Jul–Oct 2026)
-         📋 Hard fork na CHv4
-         📋 L2 bridge mainnet deployment
-         📋 DEX likvidita (seed round)
-         📋 Wallet binaries (Win/Mac/Linux)
-         📋 CoinGecko submission
-
-[FINAL] Phase 4 — MainNet Launch (Nov–Dec 2026)
-         📋 Genesis 2 (MainNet block 0)
-         📋 Public launch event
-         📋 L2 NCL / wZION Bridge live
-         📋 Listing (CoinGecko, CMC)
-```
+**Aktualni verejny stav:** kontrolovany V3 test-mainnet rehearsal  
+**Public launch:** NO-GO, dokud nejsou uzavreny launch gate dukazy  
+**Aktivni verejny runtime:** v2.9.9 Pure Code nad kanonickou runtime linii v2.9.8
 
 ---
 
-## Blockerové požadavky (B-CRIT)
+## Co je verejne live dnes
 
-Tyto body musí být splněny **před** MainNet Launche:
+- Verejny primary host v Praze pro web, explorer, RPC a stratum
+- Interni validacni linky USA + Singapore pro quorum a rehearsal synchronizaci
+- Verejny pool endpoint pro mining klienty
+- Verejna dokumentace, live index, health endpointy a monitoring povrch
+- Archivovana release linie 2.9.7 -> 2.9.8 -> 2.9.9 jako auditni stopa
 
-| ID | Požadavek | Stav |
-|----|-----------|------|
-| B-CRIT-01 | 30 dní bez kritické chyby na TestNetu | 🔄 |
-| B-CRIT-02 | Bezpečnostní audit L1 (externě) | 📋 |
-| B-CRIT-03 | Plně funkční explorer (block/TX search) | 📋 |
-| B-CRIT-04 | Wallet ke stažení (Win + Linux) | 📋 |
-| B-CRIT-05 | Whitepaper v2.9.7 EN veřejně přístupný | 🔄 |
-| B-CRIT-06 | 5+ nezávislých mining nodů mimo team | 📋 |
-| B-CRIT-07 | L2 bridge audit + mainnet deployment | 📋 |
-| B-CRIT-08 | DAO constitution ratifikace | 📋 |
+To znamena, ze ZION ma **verejne pristupny rehearsal runtime**, ne spusteny verejny mainnet.
 
 ---
 
-## Síťové parametry pro MainNet
+## Co jeste neni uzavrene
 
-| Parametr | Hodnota |
-|----------|---------|
-| Total supply | 144 000 000 000 ZION |
-| Premine | 16 280 000 000 ZION (11.3%) |
-| Mining supply | 127 720 000 000 ZION (88.7%) |
-| Block reward | 5 400.067 ZION |
-| Block time | 60 s |
-| Decay | Decade Decay: −20% každých 10 let (od bloku 5 256 000) |
-| Tail emission | 725.000 ZION/blok (permanentní) |
-| Fee policy | Burn (100% poplatků spalováno) |
-| Algoritmus | CHv4 (při launchi) |
-| Adresa | Z3 prefix |
-| Port | 8333 (mainnet), 18333 (testnet) |
+Nasledujici body zustavaji gate podminky pred verejnym launch:
 
----
+| Gate | Stav | Poznamka |
+|------|------|----------|
+| Externi audit L1 / runtime | OPEN | Verejne publikovatelny auditni zaver zatim chybi |
+| Explorer closure evidence | OPEN | Verejna funkcnost musi zustat dolozena bez mock path |
+| Wallet distribution readiness | OPEN | Finalni verejne wallet delivery flow jeste neni uzavren |
+| CHv4 / final consensus path | IN PROGRESS | Verejna launch verze neni finalizovana |
+| Independent miner / node evidence | OPEN | Potrebna sirsi externi operacni validace |
+| Listing readiness package | IN PROGRESS | CoinGecko / CMC material se stale cisti |
+| Launch governance / constitution closure | OPEN | Public launch potrebuje uzavreny governance frame |
 
-## Timeline 2026
-
-```
-Jan–Mar 2026   Rust rewrite, stabilizace, website redesign
-Mar–Apr 2026   Docs hub, whitepaper EN, CoinGecko prep
-Apr–Jun 2026   CHv4 vývoj + testnet hard fork
-Jun–Aug 2026   Bezpečnostní audit, explorer, wallet binaries
-Sep–Oct 2026   L2 bridge mainnet, DEX seed liquidity
-Nov 2026       CoinGecko submission, marketing
-Dec 2026       🚀 MainNet Genesis Block
-```
+Dokud jsou tyto body otevrene, launch zustava **NO-GO**.
 
 ---
 
-## Premine Alokace
+## Verejna launch sekvence
 
-| Účel | Podíl | ZION |
-|------|-------|------|
-| Humanitární rezerva | 40% | 6 512 000 000 |
-| Vývoj & infrastruktura | 30% | 4 884 000 000 |
-| Ekosystém & partnerství | 20% | 3 256 000 000 |
-| Founding team | 10% | 1 628 000 000 |
+1. Udrzet stabilni rehearsal runtime a sbirat closure evidence.
+2. Uzavrit audit, explorer, wallet a operacni gate podminky.
+3. Finalizovat verejne publikovatelnou launch konfiguraci.
+4. Teprve potom otevrit public mainnet genesis a launch event.
 
-> Vesting: 4 roky lineárně pro founding team. Humanitární rezerva spravována DAO.
+End-2026 zustava **cilove okno**, ne hotovy slib ani aktivni stav.
 
 ---
 
-*Viz také: [Pre-MainNet Checklist](../v2.9.7/mainnet-gate.md) · [CoinGecko Checklist](coingecko.md) · [Architecture](../architecture/README.md)*
+## Parametry, ktere jsou dnes verejne komunikovane
+
+| Parametr | Verejny stav |
+|----------|--------------|
+| Celkova emise | 144 000 000 000 ZION |
+| Mining supply | 127 720 000 000 ZION |
+| Premine | 16 280 000 000 ZION |
+| Block time | 60 s target |
+| Fee policy | burn |
+| Aktualni verejny runtime | CHv3-line public rehearsal |
+| Final public launch consensus | jeste neuzavreno |
+
+Tyto parametry jsou soucasti verejneho launch materialu, ale **neznamenaji, ze mainnet uz bezi**.
+
+---
+
+## Jak cist aktualni web
+
+- `/docs#live-index` = aktualni public snapshot a release matrix
+- `/network` = ziva topologie rehearsal runtime
+- `/download` = aktualni binarky kompatibilni s verejnou linii
+- `/api-reference` = verejny RPC / REST povrch
+
+Historicke multi-host rollouty a drivejsi testnet framing zustavaji v archivnich release dokumentech, ne jako tvrzeni o dnesnim produkcnim stavu.
+
+---
+
+*Viz take: [Docs Hub](/docs) · [Network Status](/network) · [API Reference](/api-reference)*
