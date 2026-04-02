@@ -1,12 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import { Book, BookOpen, Code2, Rocket, Shield, Zap, FileText, Github, ExternalLink, ChevronRight, ChevronDown, Sparkles, Menu, X, Infinity, Users, HelpCircle, Globe, GitBranch, Lock, Layers, Coins, Cpu, Map, AlertTriangle, Building2, LayoutList } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import PhilosophyContent from '@/components/docs/PhilosophyContent';
 import { useLang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
+import { tr, tx } from '@/lib/translations';
+
+const PhilosophyContent = dynamic(() => import('@/components/docs/PhilosophyContent'));
 
 /* ═══════════════════════════════════════════
    Version Tree — each version is a "branch"
@@ -34,6 +36,141 @@ interface Version {
   tagColor: string;
   description: string;
   categories: Category[];
+}
+
+type LocalizedText = { cs: string; en: string };
+
+const docsPageCopy = {
+  badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
+  overviewNotice: {
+    cs: 'Veřejný web teď primárně ukazuje kanonickou V3 launch cestu: Live Index, Whitepaper V3 Mainnet, launch path a aktivní síťový snapshot. V History panelu je kompletní release linie 2.9.7 (Pre-MainNet Gate) -> 2.9.8 (Ekam canonical runtime) -> 2.9.9 (Pure Code) jako auditovatelná vývojová osa.',
+    en: 'The public site now primarily exposes the canonical V3 launch path: Live Index, V3 Mainnet Whitepaper, launch path, and the active network snapshot. The History panel carries the full 2.9.7 (Pre-MainNet Gate) -> 2.9.8 (Ekam canonical runtime) -> 2.9.9 (Pure Code) release line as an auditable development timeline.',
+  },
+  githubLabel: { cs: 'GitHub', en: 'GitHub' },
+  apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
+} as const satisfies Record<string, LocalizedText>;
+
+const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
+  'v2.9.9': {
+    tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
+    description: { cs: 'Pure Code linie — cleanup a migrační most směrem k V3', en: 'Pure Code line — cleanup + migration strategy toward V3' },
+  },
+  'v2.9.8': {
+    tag: { cs: 'KANONICKÝ RUNTIME', en: 'CANONICAL RUNTIME' },
+    description: { cs: 'Ekam Deeksha kanonická runtime sjednocovací linie', en: 'Ekam Deeksha canonical runtime unification line' },
+  },
+  'v2.9.7': {
+    tag: { cs: 'PRE-MAINNET GATE', en: 'PRE-MAINNET GATE' },
+    description: { cs: 'Stabilizační a dokumentační gate před kanonickou runtime linií', en: 'Stability and documentation gate before canonical runtime line' },
+  },
+  'v2.9.6': {
+    tag: { cs: 'ZÁKLAD', en: 'BASELINE' },
+    description: { cs: 'Protokolový baseline — architektura, ekonomika, migrace, konsenzus', en: 'Protocol baseline — architecture, economics, migration, consensus' },
+  },
+  'v2.9.5': {
+    tag: { cs: 'ARCHIV', en: 'ARCHIVE' },
+    description: { cs: 'Native Awakening — kompletní Rust přepis a Fair Launch', en: 'Native Awakening — complete Rust rewrite, Fair Launch' },
+  },
+  'v2.9': {
+    tag: { cs: 'LEGACY', en: 'LEGACY' },
+    description: { cs: 'Quantum Leap — první multi-node síť a Python éra', en: 'Quantum Leap — first multi-node network, Python era' },
+  },
+  'v2.8.x': {
+    tag: { cs: 'LEGACY', en: 'LEGACY' },
+    description: { cs: 'Python éra — v2.8.5 genesis a v2.8.9 Polish Sprint', en: 'Python era — v2.8.5 genesis, v2.8.9 Polish Sprint' },
+  },
+};
+
+const categoryTitles: Record<string, LocalizedText> = {
+  'v299-overview': { cs: 'Přehled', en: 'Overview' },
+  'v298-overview': { cs: 'Přehled', en: 'Overview' },
+  'v297-overview': { cs: 'Přehled', en: 'Overview' },
+  'v296-overview': { cs: 'Přehled', en: 'Overview' },
+  'v296-layers': { cs: '6vrstvá architektura', en: '6-Layer Architecture' },
+  'v296-economics': { cs: 'Ekonomika', en: 'Economics' },
+  'v296-architecture': { cs: 'Protokol', en: 'Protocol' },
+  'v296-mainnet': { cs: 'Příprava mainnetu', en: 'Mainnet Preparation' },
+  'v295-overview': { cs: 'Přehled', en: 'Overview' },
+  'v295-protocol': { cs: 'Protokol', en: 'Protocol' },
+  'v295-whitepaper': { cs: 'Whitepaper', en: 'Whitepaper' },
+  'v29-overview': { cs: 'Přehled', en: 'Overview' },
+  'v28-overview': { cs: 'Přehled', en: 'Overview' },
+  'v28-archive': { cs: 'Archiv', en: 'Archive' },
+};
+
+const sectionTitles: Record<string, LocalizedText> = {
+  'live-ops': { cs: 'Test-mainnet operace', en: 'Test-Mainnet Ops' },
+  'release-lineage': { cs: 'Release lineage', en: 'Release Lineage' },
+  'whitepaper': { cs: 'Whitepaper', en: 'Whitepaper' },
+  'architecture': { cs: 'Architektura', en: 'Architecture' },
+  'mainnet': { cs: 'Veřejná launch cesta', en: 'Public Launch Path' },
+  'books': { cs: 'Knihy', en: 'Books' },
+  'listing': { cs: 'Listing / CoinGecko', en: 'Listing / CoinGecko' },
+  'ai-native': { cs: 'AI / výzkumný archiv', en: 'AI / Research Archive' },
+  'legal': { cs: 'Právní rámec', en: 'Legal' },
+};
+
+const docTitles: Record<string, LocalizedText> = {
+  'v299-readme': { cs: 'Přehled v2.9.9 Pure Code', en: 'v2.9.9 Pure Code Overview' },
+  'v299-changelog': { cs: 'Changelog v2.9.9', en: 'Changelog v2.9.9' },
+  'v299-migration': { cs: 'Migrace v2.9.9 -> V3', en: 'Migration v2.9.9 -> V3' },
+  'v298-readme': { cs: 'Přehled v2.9.8 Ekam', en: 'v2.9.8 Ekam Overview' },
+  'v298-changelog': { cs: 'Changelog v2.9.8', en: 'Changelog v2.9.8' },
+  'v298-runtime': { cs: 'Runtime poznámky v2.9.8', en: 'Runtime Notes v2.9.8' },
+  'v297-readme': { cs: 'v2.9.7 Pre-MainNet Gate', en: 'v2.9.7 Pre-MainNet Gate' },
+  'v297-changelog': { cs: 'Changelog v2.9.7', en: 'Changelog v2.9.7' },
+  'v296-readme': { cs: 'Přehled v2.9.6', en: 'v2.9.6 Overview' },
+  'v296-changelog': { cs: 'Co je nového', en: 'What Changed' },
+  'v296-migration': { cs: 'Migrace z v2.9.5', en: 'Migration from v2.9.5' },
+  'v296-layer-architecture': { cs: 'On the Star — 6 vrstev', en: 'On the Star — 6 Layers' },
+  'v296-tokenomics': { cs: 'Tokenomika — Decade Decay (Model A)', en: 'Tokenomics — Decade Decay (Model A)' },
+  'v296-consensus': { cs: 'Změny konsenzu', en: 'Consensus Changes' },
+  'v296-p2p': { cs: 'P2P síťový protokol', en: 'P2P Network Protocol' },
+  'v296-launch-plan': { cs: 'Launch plán', en: 'Launch Plan' },
+  'v296-audit': { cs: 'Bezpečnostní audit', en: 'Security Audit' },
+  'v295-readme': { cs: 'Přehled ZION v2.9.5', en: 'ZION v2.9.5 Overview' },
+  'v295-changelog': { cs: 'Changelog od v2.9', en: 'Changelog from v2.9' },
+  'v295-tokenomics': { cs: 'Tokenomika a ekonomický model', en: 'Tokenomics & Economic Model' },
+  'v295-consensus': { cs: 'Cosmic Harmony v3', en: 'Cosmic Harmony v3' },
+  'whitepaper-295-full': { cs: 'Whitepaper v2.9.5 (kompletní)', en: 'Whitepaper v2.9.5 (full)' },
+  'whitepaper-lite': { cs: 'Whitepaper Lite', en: 'Whitepaper Lite' },
+  'v29-readme': { cs: 'ZION v2.9 — Quantum Leap', en: 'ZION v2.9 — Quantum Leap' },
+  'v29-origins': { cs: 'Počátky — 26. září 2025', en: 'Origins — Sep 26, 2025' },
+  'v28-readme': { cs: 'Legacy éra v2.8.x', en: 'v2.8.x Legacy Era' },
+  'whitepaper-285': { cs: 'Whitepaper v2.8.5', en: 'Whitepaper v2.8.5' },
+  'cosmic-map-public': { cs: 'Cosmic Map (veřejná edice)', en: 'Cosmic Map (public edition)' },
+  'live-index': { cs: 'Live Index: snapshot a verze', en: 'Live Index: snapshot + versions' },
+  'live-p2p': { cs: 'P2P topologie', en: 'P2P Topology' },
+  'live-mainnet': { cs: 'Launch cesta', en: 'Launch Path' },
+  'v297-gate': { cs: 'v2.9.7 — Pre-MainNet Gate', en: 'v2.9.7 — Pre-MainNet Gate' },
+  'v298-canonical': { cs: 'v2.9.8 — Ekam kanonický runtime', en: 'v2.9.8 — Ekam canonical runtime' },
+  'v299-purecode': { cs: 'v2.9.9 — Pure Code linie', en: 'v2.9.9 — Pure Code line' },
+  'wp-v3-mainnet': { cs: 'Whitepaper V3 Mainnet (EN)', en: 'V3 Mainnet Whitepaper (EN)' },
+  'wp-lite': { cs: 'Whitepaper Lite (CZ shrnutí)', en: 'Whitepaper Lite (CZ summary)' },
+  'arch-overview': { cs: '6vrstvý stack', en: '6-Layer Stack' },
+  'arch-consensus': { cs: 'Roadmapa CHv3 -> CHv4', en: 'CHv3 -> CHv4 Roadmap' },
+  'mainnet-plan': { cs: 'Veřejný launch plán 2026', en: 'Public Launch Plan 2026' },
+  'mainnet-checklist': { cs: 'Checklist launch gate (archiv)', en: 'Public Launch Gate Checklist (archive)' },
+  'book-genesis': { cs: 'Genesis — Kniha probuzení', en: 'Genesis — Book of Awakening' },
+  'book-ekam-full': { cs: 'Ekam Deeksha — kompletní kniha', en: 'Ekam Deeksha — Full Book' },
+  'book-qr': { cs: 'Kvantová revoluce', en: 'Quantum Revolution' },
+  'book-ekam-ucebnice': { cs: 'Učebnice Ekam (historie)', en: 'Ekam Study Book (history)' },
+  'coingecko-checklist': { cs: 'CoinGecko checklist', en: 'CoinGecko Checklist' },
+  'ai-native-vision': { cs: 'AI Native — vize a manifest', en: 'AI Native — Vision & Manifest' },
+  'ai-native-cudax': { cs: 'NVIDIA CUDA-X integrace', en: 'NVIDIA CUDA-X Integration' },
+  'ai-native-ncl': { cs: 'NCL — Neural Compute', en: 'NCL — Neural Compute' },
+  'ai-native-oasis': { cs: 'L4 Oasis — úrovně vědomí', en: 'L4 Oasis — Consciousness Levels' },
+  'legal-disclaimer': { cs: 'Disclaimer', en: 'Disclaimer' },
+  'legal-risk': { cs: 'Risk Disclosure', en: 'Risk Disclosure' },
+  'legal-token': { cs: 'Token Not Security', en: 'Token Not Security' },
+};
+
+function resolveLabel(value: string | LocalizedText, lang: 'cs' | 'en') {
+  return typeof value === 'string' ? value : tx(value, lang);
+}
+
+function resolveMappedLabel<T extends string>(mapping: Record<string, LocalizedText>, key: string, fallback: T, lang: 'cs' | 'en') {
+  return mapping[key] ? tx(mapping[key], lang) : fallback;
 }
 
 const versions: Version[] = [
@@ -368,6 +505,7 @@ export default function DocsPage() {
   const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.9': true, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': true, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'release-lineage': true, 'ai-native': false, 'whitepaper': true, 'architecture': false, 'mainnet': true, 'listing': false, 'legal': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
+  const currentLang = lang === 'cs' ? 'cs' : 'en';
   const primaryVersions = versions.filter((version) => version.id === 'v2.9.9');
 
   // Get current version data
@@ -382,6 +520,16 @@ export default function DocsPage() {
 
   // Check if selected doc belongs to a resource section (not versioned)
   const currentSection = sections.find(s => s.docs.some(d => d.id === selectedDoc));
+  const getVersionTag = (version: Version) => resolveLabel(versionText[version.id]?.tag ?? version.tag, currentLang);
+  const getVersionDescription = (version: Version) => resolveLabel(versionText[version.id]?.description ?? version.description, currentLang);
+  const getCategoryTitle = (category: Category) => resolveMappedLabel(categoryTitles, category.id, category.title, currentLang);
+  const getSectionTitle = (section: Section) => resolveMappedLabel(sectionTitles, section.id, section.title, currentLang);
+  const getDocTitle = (doc: Doc) => resolveMappedLabel(docTitles, doc.id, doc.title, currentLang);
+  const currentDocTitle = currentDoc ? getDocTitle(currentDoc) : '';
+  const currentSectionTitle = currentSection ? getSectionTitle(currentSection) : '';
+  const currentCategoryTitle = currentDoc && !currentSection
+    ? getCategoryTitle(docCategories.find(cat => cat.docs.some(d => d.id === currentDoc.id)) || docCategories[0])
+    : '';
 
   // Sync with URL hash
   useEffect(() => {
@@ -449,8 +597,8 @@ export default function DocsPage() {
         console.error('Failed to load document:', err);
         if (!isCancelled) {
           setContent(lang === 'cs'
-            ? `# Dokument neni dostupny\n\nDokument **${currentDoc?.title}** (${currentDoc?.file}) momentalne neni k dispozici.\n\nZkuste to prosim pozdeji nebo vyberte jiny dokument z navigace.`
-            : `# Document Not Available\n\nThe document **${currentDoc?.title}** (${currentDoc?.file}) is currently not available.\n\nPlease check back later or try another document from the navigation.`);
+            ? `# Dokument neni dostupny\n\nDokument **${currentDocTitle}** (${currentDoc?.file}) momentalne neni k dispozici.\n\nZkuste to prosim pozdeji nebo vyberte jiny dokument z navigace.`
+            : `# Document Not Available\n\nThe document **${currentDocTitle}** (${currentDoc?.file}) is currently not available.\n\nPlease check back later or try another document from the navigation.`);
         }
       } finally {
         if (!isCancelled) {
@@ -464,7 +612,7 @@ export default function DocsPage() {
     return () => {
       isCancelled = true;
     };
-  }, [selectedDoc, currentDoc, lang]);
+  }, [selectedDoc, currentDoc, currentDocTitle, lang]);
 
   const handleDocSelect = (docId: string, categoryId: string, versionId: string) => {
     // Check if doc has a direct href — navigate away instead of loading markdown
@@ -495,7 +643,7 @@ export default function DocsPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/5 mb-6">
               <BookOpen className="w-4 h-4 text-zion-cyan" />
-              <span className="text-sm text-zion-cyan font-semibold">Knowledge Base</span>
+              <span className="text-sm text-zion-cyan font-semibold">{tx(docsPageCopy.badge, currentLang)}</span>
             </div>
             <h1 className="text-6xl md:text-7xl font-bold mb-6 text-gradient">
               {tr('docs', 'title', lang)}
@@ -504,7 +652,7 @@ export default function DocsPage() {
               {tr('docs', 'subtitle', lang)}
             </p>
             <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
-              Veřejný web teď primárně ukazuje kanonickou V3 launch cestu: Live Index, Whitepaper V3 Mainnet, launch path a aktivní síťový snapshot. V History panelu je nově kompletní release linie 2.9.7 (Pre-MainNet Gate) {'->'} 2.9.8 (Ekam canonical runtime) {'->'} 2.9.9 (Pure Code) jako auditovatelná vývojová osa.
+              {tx(docsPageCopy.overviewNotice, currentLang)}
             </div>
             <div className="flex items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (
@@ -528,7 +676,7 @@ export default function DocsPage() {
                   <GitBranch className="w-3.5 h-3.5" />
                   {v.label}
                   <span className={`text-[10px] px-1.5 py-0.5 rounded border ${v.tagColor}`}>
-                    {v.tag}
+                    {getVersionTag(v)}
                   </span>
                 </button>
               ))}
@@ -543,7 +691,7 @@ export default function DocsPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/20 bg-white/5 text-white hover:border-zion-gold/50 transition-all"
               >
                 <Github className="w-5 h-5" />
-                GitHub
+                {tx(docsPageCopy.githubLabel, currentLang)}
                 <ExternalLink className="w-4 h-4" />
               </a>
               <a
@@ -553,7 +701,7 @@ export default function DocsPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/20 bg-white/5 text-white hover:border-zion-cyan/50 transition-all"
               >
                 <Zap className="w-5 h-5 text-zion-cyan" />
-                API Health
+                {tx(docsPageCopy.apiHealthLabel, currentLang)}
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
@@ -571,7 +719,7 @@ export default function DocsPage() {
           >
             <div className="flex items-center gap-2">
               <GitBranch className="w-5 h-5 text-zion-cyan" />
-              <span className="font-semibold">{currentVersion.label} — {currentVersion.description}</span>
+              <span className="font-semibold">{currentVersion.label} — {getVersionDescription(currentVersion)}</span>
             </div>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -589,7 +737,7 @@ export default function DocsPage() {
                       <GitBranch className="w-4 h-4 text-zion-cyan" />
                       {version.label}
                       <span className={`text-[10px] px-1.5 py-0.5 rounded border ${version.tagColor}`}>
-                        {version.tag}
+                        {getVersionTag(version)}
                       </span>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedVersions[version.id] ? 'rotate-180' : ''}`} />
@@ -606,7 +754,7 @@ export default function DocsPage() {
                           }`}
                         >
                           <Icon className="w-4 h-4" />
-                          {category.title}
+                          {getCategoryTitle(category)}
                         </button>
                         {isActive && (
                           <div className="mt-1 ml-6 space-y-1 border-l border-zion-cyan/20 pl-3 mb-2">
@@ -618,7 +766,7 @@ export default function DocsPage() {
                                   selectedDoc === doc.id ? 'text-zion-gold font-medium' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                               >
-                                {doc.title}
+                                {getDocTitle(doc)}
                               </button>
                             ))}
                           </div>
@@ -682,7 +830,7 @@ export default function DocsPage() {
                             <div className="flex items-center gap-2">
                               <Icon className={`w-4 h-4 ${section.accentText}`} />
                               <span className={`font-semibold ${hasActiveDoc ? 'text-white' : 'text-gray-400'}`}>
-                                {section.title}
+                                {getSectionTitle(section)}
                               </span>
                             </div>
                             <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -705,7 +853,7 @@ export default function DocsPage() {
                                   }`}
                                 >
                                   <FileText className="w-3.5 h-3.5 shrink-0" />
-                                  <span className="text-xs">{doc.title}</span>
+                                  <span className="text-xs">{getDocTitle(doc)}</span>
                                 </button>
                               ))}
                             </div>
@@ -738,7 +886,7 @@ export default function DocsPage() {
                             {version.label}
                           </span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded border ${version.tagColor}`}>
-                            {version.tag}
+                            {getVersionTag(version)}
                           </span>
                         </div>
                         <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -763,7 +911,7 @@ export default function DocsPage() {
                                 >
                                   <div className="flex items-center gap-2">
                                     <Icon className="w-4 h-4" />
-                                    {category.title}
+                                    {getCategoryTitle(category)}
                                   </div>
                                 </button>
 
@@ -779,7 +927,7 @@ export default function DocsPage() {
                                             : 'text-gray-500 hover:text-gray-300'
                                         }`}
                                       >
-                                        {doc.title}
+                                        {getDocTitle(doc)}
                                       </button>
                                     ))}
                                   </div>
@@ -810,22 +958,22 @@ export default function DocsPage() {
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
                       {currentSection ? (
                         <>
-                          <span className={currentSection.accentText}>{currentSection.title}</span>
+                          <span className={currentSection.accentText}>{currentSectionTitle}</span>
                           <ChevronRight className="w-3 h-3" />
-                          <span className="text-zion-gold">{currentDoc.title}</span>
+                          <span className="text-zion-gold">{currentDocTitle}</span>
                         </>
                       ) : (
                         <>
                           <span className="font-mono text-zion-cyan">{currentVersion.label}</span>
                           <ChevronRight className="w-3 h-3" />
-                          <span>{docCategories.find(cat => cat.docs.some(d => d.id === currentDoc.id))?.title}</span>
+                          <span>{currentCategoryTitle}</span>
                           <ChevronRight className="w-3 h-3" />
-                          <span className="text-zion-gold">{currentDoc.title}</span>
+                          <span className="text-zion-gold">{currentDocTitle}</span>
                         </>
                       )}
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight text-gradient">
-                      {currentDoc.title}
+                      {currentDocTitle}
                     </h1>
                     <div className="flex items-center gap-3 text-sm">
                       <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded border ${currentVersion.tagColor}`}>
