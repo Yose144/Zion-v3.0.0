@@ -23,6 +23,7 @@ export default function Navigation() {
       title: 'Core',
       items: [
         { href: '/',          label: tr('nav', 'home', lang) },
+        { href: '/news',      label: tr('nav', 'news', lang) },
         { href: '/network',   label: tr('nav', 'network', lang) },
         { href: '/explorer',  label: tr('nav', 'explorer', lang) },
         { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
@@ -33,6 +34,7 @@ export default function Navigation() {
       items: [
         { href: '/pool',        label: tr('nav', 'pool', lang) },
         { href: '/mining',      label: tr('nav', 'mining', lang) },
+        { href: '/benchmarks',  label: tr('nav', 'benchmarks', lang) },
         { href: '/miner-stats', label: tr('nav', 'miner_stats', lang) },
         { href: '/download',    label: tr('nav', 'download', lang) },
         { href: '/roadmap',     label: tr('nav', 'roadmap', lang) },
