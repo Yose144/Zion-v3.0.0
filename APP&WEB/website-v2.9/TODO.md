@@ -12,7 +12,7 @@
 
 ## Performance Priorities
 
-- [ ] Odlehčit `/docs` route: lazy-load jen části, které nejsou potřeba při prvním renderu
+- [x] Odlehčit `/docs` route: lazy-load jen části, které nejsou potřeba při prvním renderu
 - [x] Prověřit `/network` pro další rozdělení interaktivních částí od statického obsahu
 - [ ] Projít další polling/UI komponenty a sjednotit je s visibility-aware přístupem tam, kde to ještě chybí
 
@@ -20,6 +20,7 @@
 
 - [x] Truth-align a přeložit `public/docs/mainnet/README.md`
 - [x] Truth-align a přeložit `public/docs/whitepaper-lite.md`
+- [x] Truth-align a přeložit `public/docs/roadmap-lite.md`
 - [ ] Rozhodnout, které další starší dokumenty (`roadmap-lite` apod.) nejdřív projdou truth-alignmentem a až pak CZ/EN převodem
 
 ## Notes

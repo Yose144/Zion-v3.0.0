@@ -3,12 +3,11 @@
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import { Book, BookOpen, Code2, Rocket, Shield, Zap, FileText, Github, ExternalLink, ChevronRight, ChevronDown, Sparkles, Menu, X, Infinity, Users, HelpCircle, Globe, GitBranch, Lock, Layers, Coins, Cpu, Map, AlertTriangle, Building2, LayoutList } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr, tx } from '@/lib/translations';
 
 const PhilosophyContent = dynamic(() => import('@/components/docs/PhilosophyContent'));
+const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'));
 
 /* ═══════════════════════════════════════════
    Version Tree — each version is a "branch"
@@ -149,7 +148,8 @@ const docTitles: Record<string, LocalizedText> = {
   'wp-lite': { cs: 'Whitepaper Lite (CZ shrnutí)', en: 'Whitepaper Lite (CZ summary)' },
   'arch-overview': { cs: '6vrstvý stack', en: '6-Layer Stack' },
   'arch-consensus': { cs: 'Roadmapa CHv3 -> CHv4', en: 'CHv3 -> CHv4 Roadmap' },
-  'mainnet-plan': { cs: 'Veřejný launch plán 2026', en: 'Public Launch Plan 2026' },
+  'mainnet-plan': { cs: 'Veřejná launch cesta', en: 'Public Launch Path' },
+  'roadmap-lite': { cs: 'Roadmap Lite — launch readiness', en: 'Roadmap Lite — launch readiness' },
   'mainnet-checklist': { cs: 'Checklist launch gate (archiv)', en: 'Public Launch Gate Checklist (archive)' },
   'book-genesis': { cs: 'Genesis — Kniha probuzení', en: 'Genesis — Book of Awakening' },
   'book-ekam-full': { cs: 'Ekam Deeksha — kompletní kniha', en: 'Ekam Deeksha — Full Book' },
@@ -432,7 +432,8 @@ const sections: Section[] = [
     accentText: 'text-emerald-400',
     accentBorder: 'border-emerald-400/30',
     docs: [
-      { id: 'mainnet-plan', title: 'Public Launch Plan 2026', file: 'mainnet/README.md' },
+      { id: 'mainnet-plan', title: 'Public Launch Path', file: 'mainnet/README.md' },
+      { id: 'roadmap-lite', title: 'Roadmap Lite — launch readiness', file: 'roadmap-lite.md' },
       { id: 'mainnet-checklist', title: 'Public Launch Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
     ],
   },
@@ -997,9 +998,7 @@ export default function DocsPage() {
                       <div className="h-32 w-full rounded-xl bg-white/5 animate-pulse mt-8" />
                     </div>
                   ) : (
-                    <article className="prose prose-invert prose-lg max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-                    </article>
+                    <DocMarkdownArticle content={content} />
                   )}
                 </div>
               </>
