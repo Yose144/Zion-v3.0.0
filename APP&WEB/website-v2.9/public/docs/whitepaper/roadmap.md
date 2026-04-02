@@ -1,5 +1,7 @@
 # Roadmap — ZION TerraNova
 
+> Archive note: this roadmap is preserved as a historical planning snapshot. Fixed launch dates and pre-2026 sequencing below are not the current public launch commitment.
+
 ---
 
 ## Timeline
@@ -60,9 +62,9 @@
 - Documentation finalizace
 - Community onboarding
 
-### Q4 2026 — Mainnet Launch 📅
+### Q4 2026 — Historical Mainnet Launch Target 📅
 
-- **31. 12. 2026** — Mainnet genesis block
+- **31. 12. 2026** — historical mainnet target window recorded in this archive
 - Exchange listings
 - DAO Treasury aktivace
 - Humanitární fond distribuce
@@ -91,7 +93,7 @@
 | Desktop wallet | 🔄 Ve vývoji |
 | Mobile wallet | 🔄 Ve vývoji |
 | Security audit | 📅 Q1 2026 |
-| Mainnet launch | 📅 31. 12. 2026 |
+| Mainnet launch | Historical target window only |
 
 ---
 
