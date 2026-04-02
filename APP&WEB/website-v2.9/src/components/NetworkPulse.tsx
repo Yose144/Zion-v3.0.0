@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, TrendingUp, Zap } from 'lucide-react';
+import { usePolling } from '@/hooks/usePolling';
 
 interface NetworkMetrics {
   blockHeight: number;
@@ -16,37 +17,28 @@ export default function NetworkPulse() {
   const [currentHashrate, setCurrentHashrate] = useState(0);
   const [trend, setTrend] = useState<'up' | 'down' | 'stable'>('stable');
 
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      // Simulace dat - v produkci by se načítalo z API
-      const newMetric: NetworkMetrics = {
-        blockHeight: Math.floor(Math.random() * 1000) + 5000,
-        hashrate: Math.random() * 100 + 50,
-        activeMiners: Math.floor(Math.random() * 20) + 5,
-        timestamp: Date.now(),
-      };
-
-      setMetrics((prev) => {
-        const updated = [...prev, newMetric].slice(-20); // Poslední 20 metriky
-        
-        // Výpočet trendu
-        if (updated.length >= 2) {
-          const last = updated[updated.length - 1].hashrate;
-          const prev = updated[updated.length - 2].hashrate;
-          setTrend(last > prev ? 'up' : last < prev ? 'down' : 'stable');
-        }
-        
-        return updated;
-      });
-
-      setCurrentHashrate(newMetric.hashrate);
+  usePolling(() => {
+    const newMetric: NetworkMetrics = {
+      blockHeight: Math.floor(Math.random() * 1000) + 5000,
+      hashrate: Math.random() * 100 + 50,
+      activeMiners: Math.floor(Math.random() * 20) + 5,
+      timestamp: Date.now(),
     };
 
-    fetchMetrics();
-    const interval = setInterval(fetchMetrics, 3000); // Update každé 3s
+    setMetrics((prev) => {
+      const updated = [...prev, newMetric].slice(-20);
 
-    return () => clearInterval(interval);
-  }, []);
+      if (updated.length >= 2) {
+        const last = updated[updated.length - 1].hashrate;
+        const previous = updated[updated.length - 2].hashrate;
+        setTrend(last > previous ? 'up' : last < previous ? 'down' : 'stable');
+      }
+
+      return updated;
+    });
+
+    setCurrentHashrate(newMetric.hashrate);
+  }, 3000);
 
   const maxHashrate = Math.max(...metrics.map((m) => m.hashrate), 100);
   const normalizedData = metrics.map((m) => (m.hashrate / maxHashrate) * 100);
