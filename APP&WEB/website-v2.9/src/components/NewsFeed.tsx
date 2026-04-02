@@ -21,6 +21,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'defi-mainnet-live',
+    date: '2026-04-02',
+    tag: { cs: 'DeFi', en: 'DeFi' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'wZION DEX je live na Base Mainnet — swap, bridge a portfolio',
+      en: 'wZION DEX is live on Base Mainnet — swap, bridge & portfolio',
+    },
+    summary: {
+      cs: 'Uniswap V3 pool wZION/WETH nasazen na Base Mainnet s reálnou likviditou. Na zionterranova.com/defi nyní funguje přímý swap ETH↔wZION, burn bridge (wZION→ZION L1) a portfolio dashboard s live cenami z on-chain poolu.',
+      en: 'Uniswap V3 wZION/WETH pool deployed on Base Mainnet with real liquidity. zionterranova.com/defi now features direct ETH↔wZION swap, burn bridge (wZION→ZION L1), and a portfolio dashboard with live on-chain pool prices.',
+    },
+    href: '/defi',
+  },
+  {
     slug: 'ekam-deeksha-featured-cz-en-rollout',
     date: '2026-03-31',
     tag: { cs: 'Kniha', en: 'Book' },
@@ -41,12 +56,12 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'DeFi', en: 'DeFi' },
     tagColor: 'text-zion-gold',
     title: {
-      cs: 'ZION L2 DeFi Hub je live — Staking, Farming, DEX & Governance na Base',
-      en: 'ZION L2 DeFi Hub is live — Staking, Farming, DEX & Governance on Base',
+      cs: 'ZION L2 DeFi kontrakty nasazeny — Bridge, DEX pool a wZION na Base',
+      en: 'ZION L2 DeFi contracts deployed — Bridge, DEX pool & wZION on Base',
     },
     summary: {
-      cs: 'Kompletní L2 DeFi ekosystém nasazený na Base Sepolia. 8 smart kontraktů — wZION Bridge, ZIONStaking (~12% APR), ZIONFarm (dual rewards), Atomic Swap (HTLC), Uniswap V3 pool (wZION/WETH), Governance s treasury. Vše dostupné na webu i v desktop agentu.',
-      en: 'Complete L2 DeFi ecosystem deployed on Base Sepolia. 8 smart contracts — wZION Bridge, ZIONStaking (~12% APR), ZIONFarm (dual rewards), Atomic Swap (HTLC), Uniswap V3 pool (wZION/WETH), Governance with treasury. Available on the website and in the desktop agent.',
+      cs: 'wZION ERC-20, ZIONBridge a Uniswap V3 pool (wZION/WETH 0.3%) nasazeny na Base. Relay propojuje ZION L1 s Base. Bridge umožňuje lock/mint a burn/unlock. DEX pool s počáteční likviditou 50 wZION + 0.0005 WETH.',
+      en: 'wZION ERC-20, ZIONBridge, and Uniswap V3 pool (wZION/WETH 0.3%) deployed on Base. Relay connects ZION L1 with Base. Bridge enables lock/mint and burn/unlock. DEX pool seeded with 50 wZION + 0.0005 WETH.',
     },
     href: '/defi',
   },
@@ -86,12 +101,12 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'L2', en: 'L2' },
     tagColor: 'text-purple-400',
     title: {
-      cs: 'L1↔L2 Bridge nasazen na Base Sepolia',
-      en: 'L1↔L2 Bridge deployed on Base Sepolia',
+      cs: 'L1↔L2 Bridge nasazen — relay propojuje ZION s Base',
+      en: 'L1↔L2 Bridge deployed — relay connects ZION with Base',
     },
     summary: {
-      cs: 'Rust relay propojuje ZION L1 s Base Sepolia. Lock ZION → mint wZION, burn wZION → unlock ZION. Guardian threshold validace, 60-block finality na L1, 64-block finality na EVM.',
-      en: 'Rust relay connects ZION L1 with Base Sepolia. Lock ZION → mint wZION, burn wZION → unlock ZION. Guardian threshold validation, 60-block finality on L1, 64-block finality on EVM.',
+      cs: 'Rust relay propojuje ZION L1 s Base. Lock ZION → mint wZION, burn wZION → unlock ZION. Guardian threshold validace, 60-block finality na L1, 64-block finality na EVM.',
+      en: 'Rust relay connects ZION L1 with Base. Lock ZION → mint wZION, burn wZION → unlock ZION. Guardian threshold validation, 60-block finality on L1, 64-block finality on EVM.',
     },
     href: '/bridge',
   },
