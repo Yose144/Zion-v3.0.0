@@ -529,6 +529,7 @@ function initWarpStarfield() {
     } else {
       running = true;
       lastFrameTime = 0;
+      seed();
       frameId = window.requestAnimationFrame(animate);
     }
   });
@@ -541,17 +542,6 @@ function initWarpStarfield() {
 
   window.addEventListener('beforeunload', () => {
     if (frameId) window.cancelAnimationFrame(frameId);
-  });
-
-  // Pause animation when tab/app is not visible to save CPU/GPU
-  document.addEventListener('visibilitychange', () => {
-    const nowHidden = document.hidden;
-    running = !nowHidden;
-    if (running) {
-      // Re-seed lightly on resume for a smoother feel
-      seed();
-      if (!frameId) animate();
-    }
   });
 }
 
