@@ -106,7 +106,15 @@ def main():
     if derived_addr != SENDER_ADDRESS:
         print("WARNING: Address mismatch! TX may fail sig verification.")
 
-    evm_recipient = sys.argv[1] if len(sys.argv) > 1 else "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
+    if len(sys.argv) > 1:
+        evm_recipient = sys.argv[1]
+    else:
+        print("ERROR: EVM recipient address required as first argument.")
+        print("Usage: bridge-test-tx.py <0xEVM_ADDRESS>")
+        sys.exit(1)
+    if not evm_recipient.startswith("0x") or len(evm_recipient) != 42:
+        print(f"ERROR: Invalid EVM address: {evm_recipient}")
+        sys.exit(1)
     bridge_memo = f"BRIDGE:base:{evm_recipient}"
 
     print(f"\n=== ZION Bridge Test Transaction ===")
