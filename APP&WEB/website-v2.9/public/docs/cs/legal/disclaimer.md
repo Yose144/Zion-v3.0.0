@@ -33,7 +33,7 @@ ZION TerraNova může integrovat nebo odkazovat na služby třetích stran, nap�
 
 ## Experimentální fáze
 
-V době zveřejnění tohoto dokumentu je ZION v **TestNet fázi**. Software může obsahovat chyby. Mainnet nasazení je plánováno na **31. 12. 2026**. Do té doby platí:
+V době zveřejnění tohoto dokumentu běží ZION jako **kontrolovaný veřejný rehearsal runtime**. Software může obsahovat chyby a veřejný launch zůstává **NO-GO**, dokud nebude hotová closure evidence. Do té doby platí:
 
 - testnetové tokeny nemají garantovanou přenositelnost,
 - protokol se může měnit prostřednictvím hard forků,

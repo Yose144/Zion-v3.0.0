@@ -1383,12 +1383,12 @@ export default function GenesisPage() {
               </p>
               <div className="flex flex-wrap gap-4 justify-center mt-8">
                 <div className="px-6 py-3 rounded-lg border border-zion-cyan/30 bg-zion-cyan/10">
-                  <p className="text-sm text-gray-400">Připrav se na</p>
-                  <p className="text-xl font-bold text-zion-cyan">31.12.2026</p>
+                  <p className="text-sm text-gray-400">Cilove okno</p>
+                  <p className="text-xl font-bold text-zion-cyan">konec 2026</p>
                 </div>
                 <div className="px-6 py-3 rounded-lg border border-zion-gold/30 bg-zion-gold/10">
-                  <p className="text-sm text-gray-400">Mainnet Launch</p>
-                  <p className="text-xl font-bold text-zion-gold">00:00 UTC</p>
+                  <p className="text-sm text-gray-400">Public launch gate</p>
+                  <p className="text-xl font-bold text-zion-gold">NO-GO</p>
                 </div>
               </div>
               <p className="text-gray-500 text-sm mt-8 flex flex-col items-center gap-1">
