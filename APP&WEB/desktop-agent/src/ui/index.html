@@ -42,6 +42,20 @@
       box-sizing: border-box;
     }
 
+    /* ── Performance: eliminate redundant nested backdrop-filter ──────────
+       .view-shell already has blur(32px). Nested children re-blurring the
+       same already-blurred surface wastes GPU compositing layers with zero
+       visual benefit.  Keep blur only on top-level containers:
+       .view-shell, .dock-bar, .wizard-card, body::after.                 */
+    .view-shell * {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    /* Hidden views should not composite at all */
+    .view-hidden, .d-none {
+      contain: strict;
+    }
+
     /* Global glass reset — no white inputs anywhere */
     input, textarea, select {
       background: rgba(0, 0, 0, 0.22);
@@ -51,8 +65,6 @@
       font-size: 13px;
       font-family: inherit;
       padding: 12px 16px;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
     input:focus, textarea:focus, select:focus {
@@ -93,6 +105,15 @@
     }
 
     /* Warp starfield canvas layer (web2.9-style) */
+    .warp-starfield {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      will-change: transform;
+    }
 
     /* HUD Grid Background — subtle, pool-style */
     body::before {
