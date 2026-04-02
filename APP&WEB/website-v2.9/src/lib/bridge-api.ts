@@ -29,10 +29,10 @@ export interface BridgeContractInfo {
 
 export const BRIDGE_CONTRACTS: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-  bridge_address: '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
-  network: 'Base Sepolia (Testnet)',
-  chain_id: 84532,
-  explorer_base: 'https://sepolia.basescan.org/address/',
+  bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+  network: 'Base Mainnet',
+  chain_id: 8453,
+  explorer_base: 'https://basescan.org/address/',
 };
 
 const defaultStatus: BridgeStatus = {
@@ -104,12 +104,15 @@ export const WZION_ABI = [
   'event BurnForBridge(address indexed burner, uint256 amount, string l1Recipient)',
 ] as const;
 
-/** Base Sepolia chain ID */
-export const BASE_SEPOLIA_CHAIN_ID = 84532;
-export const BASE_SEPOLIA_HEX_ID = '0x14A34'; // 84532 in hex
+/** Base Mainnet chain ID */
+export const BASE_CHAIN_ID = 8453;
+export const BASE_HEX_ID = '0x2105'; // 8453 in hex
 
-/** Add / switch MetaMask to Base Sepolia */
-export async function switchToBaseSepolia(): Promise<void> {
+/** @deprecated — use BASE_CHAIN_ID */
+export const BASE_SEPOLIA_CHAIN_ID = BASE_CHAIN_ID;
+
+/** Add / switch MetaMask to Base Mainnet */
+export async function switchToBase(): Promise<void> {
   const { ethereum } = window as Window & { ethereum?: unknown };
   if (!ethereum) throw new Error('MetaMask not found');
   const eth = ethereum as {
@@ -118,7 +121,7 @@ export async function switchToBaseSepolia(): Promise<void> {
   try {
     await eth.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: BASE_SEPOLIA_HEX_ID }],
+      params: [{ chainId: BASE_HEX_ID }],
     });
   } catch (e: unknown) {
     // 4902 = chain not added yet
@@ -127,11 +130,11 @@ export async function switchToBaseSepolia(): Promise<void> {
         method: 'wallet_addEthereumChain',
         params: [
           {
-            chainId: BASE_SEPOLIA_HEX_ID,
-            chainName: 'Base Sepolia',
+            chainId: BASE_HEX_ID,
+            chainName: 'Base',
             nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-            rpcUrls: ['https://sepolia.base.org'],
-            blockExplorerUrls: ['https://sepolia.basescan.org'],
+            rpcUrls: ['https://mainnet.base.org'],
+            blockExplorerUrls: ['https://basescan.org'],
           },
         ],
       });
@@ -140,3 +143,6 @@ export async function switchToBaseSepolia(): Promise<void> {
     }
   }
 }
+
+/** @deprecated — use switchToBase() */
+export const switchToBaseSepolia = switchToBase;
