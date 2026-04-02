@@ -7,18 +7,20 @@
 - [x] Dočistit docs route wrapper a sidebar, aby CZ/EN platilo i pro navigaci, category labels a hero copy
 - [x] Pokračovat v překladu public docs: community, pool-setup, tutorials, další onboarding obsah
 - [x] Další performance batch: `/download` a `/api-reference` rozdělit na lehčí initial payload a menší client ostrovy
-- [ ] Další pass: prověřit `/network` a další veřejné stránky s velkou client vrstvou
+- [x] Další pass: prověřit `/network` a další veřejné stránky s velkou client vrstvou
+- [ ] Další pass: odlehčit další ops route a route-level motion tam, kde ještě zůstává bez přínosu
 
 ## Performance Priorities
 
 - [ ] Odlehčit `/docs` route: lazy-load jen části, které nejsou potřeba při prvním renderu
-- [ ] Prověřit `/network` pro další rozdělení interaktivních částí od statického obsahu
+- [x] Prověřit `/network` pro další rozdělení interaktivních částí od statického obsahu
 - [ ] Projít další polling/UI komponenty a sjednotit je s visibility-aware přístupem tam, kde to ještě chybí
 
 ## Translation Priorities
 
-- [ ] Truth-align a pak přeložit `public/docs/mainnet/README.md`
-- [ ] Rozhodnout, které starší dokumenty (`roadmap-lite`, `whitepaper-lite`) nejdřív projdou truth-alignmentem a až pak CZ/EN převodem
+- [x] Truth-align a přeložit `public/docs/mainnet/README.md`
+- [x] Truth-align a přeložit `public/docs/whitepaper-lite.md`
+- [ ] Rozhodnout, které další starší dokumenty (`roadmap-lite` apod.) nejdřív projdou truth-alignmentem a až pak CZ/EN převodem
 
 ## Notes
 
