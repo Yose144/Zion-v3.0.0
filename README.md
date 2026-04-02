@@ -4,14 +4,14 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Status (April 2026):** V3 mainnet is live on 3 servers (Prague, USA, Singapore). L2 wZION bridge to Base is operational. DeFi roadmap active — see `docs/DEFI_FULL_ROADMAP.md`.  
-> Active development: `V3/` — clean-room mainnet code. Legacy root tree is reference/archive only.
+> **Status (April 2026):** V3 mainnet is live on 3 servers (Prague, USA, Singapore). L2 wZION bridge to Base is operational. DeFi roadmap active - see [docs/DEFI_FULL_ROADMAP.md](docs/DEFI_FULL_ROADMAP.md).  
+> Active development: [V3/](V3/) - clean-room mainnet code. Legacy root tree is reference/archive only.
 
 ---
 
 ## What is ZION?
 
-ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It uses Proof-of-Work consensus with the custom **Cosmic Harmony v3** (CHv3) mining algorithm — CPU-friendly with GPU acceleration support.
+ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. Live mainnet mining runs the single-track Deeksha canonical PoW path (`cosmic_harmony`) with CPU and GPU acceleration.
 
 **v2.9.6** is a hard fork extending v2.9.5 with a **6-Layer "On the Star" architecture**, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale projects including L6 space station **ZION Issobella**.
 
@@ -27,7 +27,7 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 | **Block Reward** | 5,400.067 ZION → Decade Decay (-20%/10y), tail 725 ZION |
 | **Block Time** | 60 seconds |
 | **Mining Horizon** | **100+ years** + perpetual tail emission |
-| **Consensus** | Proof of Work — Cosmic Harmony v3 |
+| **Consensus** | Proof of Work - Deeksha canonical (`cosmic_harmony`) |
 | **Transaction Model** | UTXO with Ed25519 signatures |
 | **Storage** | LMDB |
 | **DAA** | LWMA (60-block window, ±25% per block) |
@@ -96,7 +96,7 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 
 | Layer | Name | Year | Purpose |
 |-------|------|------|---------|
-| **L1** | **ZION TerraNova** ⛏️ | 2026 | PoW blockchain — CHv3, UTXO, fee burn, LWMA DAA |
+| **L1** | **ZION TerraNova** ⛏️ | 2026 | PoW blockchain - Deeksha canonical (`cosmic_harmony`), UTXO, fee burn, LWMA DAA |
 | **L2** | **NCL** 🧠 | 2027 | Neural Conscious Layer — AI-native protocol, on-chain model registry |
 | **L3** | **ZION DAO** 🏛️ | 2028 | Decentralized governance, Treasury (4B ZION), community grants |
 | **L4** | **ZION Oasis** 🎮 | 2029 | Economic ecosystem — Golden Egg, Winners, NFT, Game layer |
@@ -107,17 +107,19 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 
 ---
 
-## Consensus — Cosmic Harmony v3
+## Consensus - Live Canonical Path
 
 | Parameter | Value |
 |-----------|-------|
-| Fork height (CHv3) | `0` (genesis) |
-| Memory-hard fork | `50,000` (scratchpad activation) |
-| Scratchpad | 256 KiB, 4 passes, 512 random reads |
-| Difficulty adjustment | LWMA, window 60 blocks, ±25% clamp |
+| PoW path | Deeksha canonical (`cosmic_harmony`) |
+| Activation | Genesis (`height 0`) |
+| Difficulty adjustment | LWMA, window 60 blocks, +/-25% clamp |
 | Block time target | 60 seconds |
+| Transaction model | UTXO + Ed25519 signatures |
 
-> 📋 Full specification: [docs/v2.9.6/consensus.md](docs/v2.9.6/consensus.md)
+> 📋 Historical baseline spec (v2.9.6): [docs/v2.9.6/consensus.md](docs/v2.9.6/consensus.md)
+>  
+> 📋 Active implementation status: [V3/README.md](V3/README.md), [V3/ROADMAP.md](V3/ROADMAP.md)
 
 ---
 
@@ -151,19 +153,19 @@ Ports: P2P 8334, RPC 8443 (TCP), Stratum 3333, Pool API 8080, Website 443
 ### Run a Full Node
 
 ```bash
-# Using Docker (recommended)
-docker-compose -f docker/docker-compose.mainnet.yml up -d
+# Using Docker (recommended, V3 mainnet)
+docker compose -f docker/docker-compose.v3-mainnet.yml build
+docker compose -f docker/docker-compose.v3-mainnet.yml up -d
 
-# From source
-cargo build --release
-./target/release/zion-core --config config/mainnet.toml
+# From source (V3 workspace)
+cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node -- --config config/mainnet.toml
 ```
 
 ### Mine ZION
 
 ```bash
-# Pool mining against the active 2.9.8 testnet host
-./target/release/zion-miner \
+# Pool mining (V3 canonical path)
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner -- \
      --pool 91.98.122.165:3333 \
   --wallet YOUR_ZION_ADDRESS \
   --worker my-miner \
@@ -171,13 +173,13 @@ cargo build --release
      --algo cosmic_harmony
 
 # Solo mining
-./target/release/zion-miner --solo --rpc localhost:8444
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner -- --solo --rpc 127.0.0.1:8332
 ```
 
 ### Generate a Wallet
 
 ```bash
-cargo run --bin wallet-generator
+cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin wallet
 ```
 
 ---
