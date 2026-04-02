@@ -80,7 +80,7 @@ const networkConfigs = [
     name: "Mainnet",
     file: "mainnet.toml",
     badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    description: "Production network — real ZION",
+    description: "Public rehearsal line — launch remains NO-GO",
   },
   {
     name: "Testnet",
@@ -98,7 +98,7 @@ const networkConfigs = [
 
 const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
-  { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
+  { cmd: "zion-node --config mainnet.toml", desc: "Start with the public rehearsal config" },
   { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
   { cmd: "zion-node --peers 91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333", desc: "Manual peer list (current rehearsal seeds)" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },

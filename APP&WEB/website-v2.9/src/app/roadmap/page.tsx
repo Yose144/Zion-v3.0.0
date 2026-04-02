@@ -323,17 +323,17 @@ const phases: PhaseData[] = [
   },
   {
     id: '5',
-    title: 'MainNet Launch 🚀',
-    period: 'Dec 2026',
-    priority: '🎯 Hard Deadline: 31.12.2026',
+    title: 'Public Launch Decision & Genesis',
+    period: 'Target window: end 2026',
+    priority: '🎯 Gated by closure evidence',
     progress: 0,
     status: 'upcoming',
-    description: 'Genesis block created OFFLINE (air-gapped). Public host bootstrap, pool mining, explorer, supply API — all live.',
+    description: 'If closure criteria are satisfied, genesis can be created offline and public launch operations can begin. Until then the line remains NO-GO and rehearsal-only.',
     sprints: [
       { id: 'T-14', title: 'Genesis freeze — všechny parametry zmrazeny', done: false },
       { id: 'T-7', title: 'Community announcement + wallety ke stažení', done: false },
       { id: 'T-2', title: 'Final node software release', done: false },
-      { id: 'T-0', title: '🚀 MAINNET GENESIS — 31. 12. 2026', done: false }
+      { id: 'T-0', title: '🚀 Public genesis only after GO decision', done: false }
     ],
     exitCriteria: [
       { text: 'Genesis block hash published', done: false },
@@ -414,8 +414,7 @@ export default function RoadmapPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Realistic plan: stable controlled V3 test-mainnet rehearsal → Base Sepolia bridge ready → WARP implementation complete → public launch decision and then full MainNet launch{' '}
-                <strong className="text-white">31. 12. 2026</strong>.
+                Realistic plan: stable controlled V3 test-mainnet rehearsal → closure evidence → launch-readiness package → public launch decision and only then genesis if the gate moves from NO-GO to GO.
                 A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
@@ -423,7 +422,7 @@ export default function RoadmapPage() {
                   <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 28. Mar 2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Orbit className="h-3 w-3 text-zion-cyan" /> Public launch target · 31.12.2026
+                  <Orbit className="h-3 w-3 text-zion-cyan" /> Public launch status · NO-GO
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" /> 1,501 tests passing
@@ -867,10 +866,10 @@ export default function RoadmapPage() {
           className="rounded-4xl border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-10 text-center"
         >
           <Rocket className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">MainNet launch · 31. 12. 2026</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">Public launch gate · currently NO-GO</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            L1 je srdce. Stavíme zdola nahoru. Žádné zkratky.
-            Na podzim proběhne dress rehearsal + security audit, pak soft-launch a 31. 12. 2026 genesis block.
+            L1 je srdce. Stavime zdola nahoru. Zadna zkratka.
+            Nejprve rehearsal stabilita, closure evidence, audit a launch-readiness package. Public genesis prichazi az po skutecnem GO rozhodnuti, ne podle samotneho kalendare.
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             Právní pozice: ZION = protocol-native utility token, NE security. Žádné ICO/IEO/IDO. Tokeny jsou{' '}
