@@ -973,6 +973,239 @@ const LOG_PATH = path.join(USER_DATA_PATH, 'miner.log');
 const WALLETS_PATH = path.join(USER_DATA_PATH, 'wallets');
 const STATS_PATH = path.join(USER_DATA_PATH, 'miner_stats.json');
 
+// Miner log rotation limits
+const MAX_MINER_LOG_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_MINER_LOG_BACKUPS = 0;
+const MAX_MINER_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function ensureDirectories() {
+  const dirs = [USER_DATA_PATH, CACHE_PATH, WALLETS_PATH];
+  dirs.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      dbg('Created directory:', dir);
+    }
+  });
+}
+
+function fixSecurityBlocks() {
+  const results = { fixed: [], errors: [] };
+  const resourceBase = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources');
+  const binaryNames = ['zion-miner', 'zion-universal-miner'];
+  if (process.platform === 'win32') {
+    binaryNames.push('zion-miner.exe', 'zion-universal-miner.exe');
+  }
+  const targetPaths = binaryNames
+    .map(name => path.join(resourceBase, name))
+    .filter(p => fs.existsSync(p));
+
+  if (process.platform === 'darwin') {
+    for (const targetPath of targetPaths) {
+      try {
+        const { execSync } = require('child_process');
+        execSync(`xattr -dr com.apple.quarantine "${targetPath}" 2>/dev/null || true`, { timeout: 5000 });
+        fs.chmodSync(targetPath, 0o755);
+        results.fixed.push(path.basename(targetPath));
+      } catch (err) {
+        results.errors.push(`${path.basename(targetPath)}: ${err?.message}`);
+      }
+    }
+  }
+  if (process.platform === 'linux') {
+    for (const targetPath of targetPaths) {
+      try { fs.chmodSync(targetPath, 0o755); results.fixed.push(path.basename(targetPath)); } catch { /* ignore */ }
+    }
+  }
+  if (process.platform === 'win32') {
+    const minerExes = targetPaths.filter(p => /\.exe$/i.test(p));
+    for (const exe of minerExes) {
+      if (!fs.existsSync(exe)) results.errors.push(`missing (quarantined?): ${path.basename(exe)}`);
+    }
+  }
+  if (results.fixed.length) dbg('[security-fix] Fixed:', results.fixed.join(', '));
+  if (results.errors.length) dbg('[security-fix] Errors:', results.errors.join(', '));
+  return results;
+}
+
+function migrateLegacyUserDataIfNeeded() {
+  const legacyRoot = path.join(USER_DATA_PATH, 'cache', path.basename(USER_DATA_PATH));
+  const legacyConfig = path.join(legacyRoot, 'miner_config.json');
+  const legacyLog = path.join(legacyRoot, 'miner.log');
+  const legacyWallets = path.join(legacyRoot, 'wallets');
+  try {
+    if (!fs.existsSync(CONFIG_PATH) && fs.existsSync(legacyConfig)) {
+      fs.copyFileSync(legacyConfig, CONFIG_PATH);
+      dbg('Migrated legacy config to:', CONFIG_PATH);
+    }
+    if (!fs.existsSync(LOG_PATH) && fs.existsSync(legacyLog)) {
+      fs.copyFileSync(legacyLog, LOG_PATH);
+      dbg('Migrated legacy log to:', LOG_PATH);
+    }
+    if (!fs.existsSync(WALLETS_PATH) && fs.existsSync(legacyWallets)) {
+      fs.mkdirSync(WALLETS_PATH, { recursive: true });
+      for (const file of fs.readdirSync(legacyWallets)) {
+        const from = path.join(legacyWallets, file);
+        const to = path.join(WALLETS_PATH, file);
+        if (!fs.existsSync(to)) fs.copyFileSync(from, to);
+      }
+      dbg('Migrated legacy wallets to:', WALLETS_PATH);
+    }
+  } catch (err) {
+    console.warn('Legacy data migration failed:', err);
+  }
+}
+
+function rotateFileIfTooLarge(filePath, maxBytes, maxBackups = 1, maxAgeMs = null) {
+  const metaPath = `${filePath}.meta.json`;
+  const readEpochMs = (stat, now) => {
+    try {
+      if (fs.existsSync(metaPath)) {
+        const j = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+        const v = Number(j?.createdAtMs);
+        if (Number.isFinite(v) && v > 0) return v;
+      }
+    } catch { /* ignore */ }
+    const bt = typeof stat?.birthtimeMs === 'number' ? stat.birthtimeMs : NaN;
+    const ct = typeof stat?.ctimeMs === 'number' ? stat.ctimeMs : NaN;
+    const epoch = (Number.isFinite(bt) && bt > 0) ? bt : (Number.isFinite(ct) && ct > 0) ? ct : now;
+    try { fs.writeFileSync(metaPath, JSON.stringify({ createdAtMs: epoch }), 'utf8'); } catch { /* ignore */ }
+    return epoch;
+  };
+  const writeEpochMs = (epochMs) => {
+    try { fs.writeFileSync(metaPath, JSON.stringify({ createdAtMs: epochMs }), 'utf8'); } catch { /* ignore */ }
+  };
+  const purgeOldBackups = (now) => {
+    if (maxAgeMs == null) return;
+    const n = Number(maxBackups);
+    if (!Number.isFinite(n) || n <= 0) return;
+    for (let i = 1; i <= n; i++) {
+      const p = `${filePath}.${i}`;
+      try {
+        if (!fs.existsSync(p)) continue;
+        const s = fs.statSync(p);
+        if (!s.isFile()) continue;
+        if ((now - (s.mtimeMs || s.mtime.getTime())) > maxAgeMs) fs.unlinkSync(p);
+      } catch { /* ignore */ }
+    }
+  };
+  try {
+    if (!fs.existsSync(filePath)) return;
+    const stat = fs.statSync(filePath);
+    if (!stat.isFile()) return;
+    const now = Date.now();
+    purgeOldBackups(now);
+    const epochMs = maxAgeMs != null ? readEpochMs(stat, now) : now;
+    if (stat.size <= maxBytes && !(maxAgeMs != null && (now - epochMs) > maxAgeMs)) return;
+    if (!Number.isFinite(Number(maxBackups)) || Number(maxBackups) <= 0) {
+      try { fs.truncateSync(filePath, 0); } catch { /* ignore */ }
+      writeEpochMs(now);
+      return;
+    }
+    for (let i = maxBackups; i >= 1; i--) {
+      const src = `${filePath}.${i}`;
+      const dst = `${filePath}.${i + 1}`;
+      if (fs.existsSync(src)) {
+        try { i + 1 > maxBackups ? fs.unlinkSync(src) : (fs.existsSync(dst) && fs.unlinkSync(dst), fs.renameSync(src, dst)); } catch { /* ignore */ }
+      }
+    }
+    try {
+      const backup = `${filePath}.1`;
+      if (fs.existsSync(backup)) fs.unlinkSync(backup);
+      fs.renameSync(filePath, backup);
+    } catch {
+      try { fs.truncateSync(filePath, 0); } catch { /* ignore */ }
+    }
+    writeEpochMs(now);
+  } catch { /* ignore */ }
+}
+
+// ── V3 Config Defaults ──────────────────────────────────────────────────────
+const DESKTOP_PURE_ZION_DEFAULT = true;
+
+const DEFAULT_CONFIG = {
+  pool: {
+    host: PRIMARY_TESTNET_HOST,
+    port: PRIMARY_POOL_PORT
+  },
+  desktopPureZionDefault: DESKTOP_PURE_ZION_DEFAULT,
+  rpcUrl: DEFAULT_RPC_URL,
+  algorithm: 'cosmic_harmony',
+  wallet: '',
+  worker: 'desktop-agent',
+  threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
+  gpu: true,
+  gpuCpuThreads: 5,
+  gpuBatchSize: 16000000,
+  minerBackend: 'rust',
+  autoStart: false,
+  autoSelectPool: true,
+  minimizeToTray: true,
+  startMinimized: false
+};
+
+function normalizeAlgorithmName(algo) {
+  const raw = String(algo || '').trim().toLowerCase().replace(/-/g, '_');
+  if (['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3',
+       'chv4','ch4','deeksha','cosmic_harmony_deeksha','ekam','ekam_deeksha',
+       'cosmic_harmony_ekam'].includes(raw)) {
+    return 'cosmic_harmony';
+  }
+  return raw || 'cosmic_harmony';
+}
+
+function sanitizeWorkerName(raw) {
+  const s = String(raw || 'desktop-agent').trim().replace(/[^a-zA-Z0-9_.\-]/g, '').slice(0, 32);
+  return s || 'desktop-agent';
+}
+
+function loadConfig() {
+  try {
+    if (fs.existsSync(CONFIG_PATH)) {
+      const configOnDisk = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+      const merged = {
+        ...DEFAULT_CONFIG,
+        ...configOnDisk,
+        pool: {
+          ...DEFAULT_CONFIG.pool,
+          ...(configOnDisk.pool || {})
+        }
+      };
+      // Upgrade legacy backend pins to rust
+      const mb = String(merged?.minerBackend || '').toLowerCase();
+      if (!mb || mb === 'auto' || mb === 'python') merged.minerBackend = 'rust';
+      // Migrate localhost RPC to testnet server
+      if (typeof merged.rpcUrl === 'string') {
+        const trimmed = merged.rpcUrl.trim();
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)/i.test(trimmed)) {
+          merged.rpcUrl = DEFAULT_RPC_URL;
+        }
+      }
+      if (merged.pool && /^(localhost|127\.0\.0\.1)$/i.test(merged.pool.host)) {
+        merged.pool.host = PRIMARY_TESTNET_HOST;
+        merged.pool.port = PRIMARY_POOL_PORT;
+      }
+      merged.algorithm = normalizeAlgorithmName(merged.algorithm || DEFAULT_CONFIG.algorithm);
+      merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;
+      return merged;
+    }
+  } catch (err) {
+    console.error('Failed to load config:', err);
+  }
+  return { ...DEFAULT_CONFIG, desktopPureZionDefault: DESKTOP_PURE_ZION_DEFAULT };
+}
+
+function saveConfig(config) {
+  try {
+    const { desktopPureZionDefault, ...persistedConfig } = config || {};
+    persistedConfig.algorithm = normalizeAlgorithmName(persistedConfig.algorithm || DEFAULT_CONFIG.algorithm);
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(persistedConfig, null, 2));
+    return true;
+  } catch (err) {
+    console.error('Failed to save config:', err);
+    return false;
+  }
+}
+
 // Normalize user-supplied RPC URL to canonical http://host:port/jsonrpc form.
 function normalizeRpcUrl(value) {
   const raw = String(value || '').trim();
