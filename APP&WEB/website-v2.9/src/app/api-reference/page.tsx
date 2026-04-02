@@ -1,47 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import {
   Activity,
   ArrowUpRight,
-  Check,
-  Copy,
   Database,
   PlugZap,
   SatelliteDish,
   Server,
   Shield,
   Sparkles,
-  Terminal
 } from 'lucide-react';
+
+const ApiQuickstartPanels = dynamic(() => import('@/components/api/ApiQuickstartPanels'));
 
 const getApiStats = (cs: boolean) => [
   { label: cs ? 'Core prostredi' : 'Core environment', value: 'V3 Test Mainnet', detail: cs ? 'kontrolovana rehearsal linie' : 'controlled rehearsal line', icon: Shield },
   { label: 'API Port', value: '8443', detail: 'JSON-RPC + REST', icon: Activity },
   { label: cs ? 'Pool port' : 'Pool Port', value: '8080', detail: cs ? 'stats endpoint' : 'stats endpoint', icon: Server },
-];
-
-const getCodeSamples = (cs: boolean) => [
-  {
-    id: 'curl',
-    label: cs ? 'cURL rychly ping' : 'cURL quick ping',
-    snippet: `curl -X GET \
-  https://zionterranova.com/api/blockchain/stats \
-  -H 'Accept: application/json'`
-  },
-  {
-    id: 'ts',
-    label: 'TypeScript fetch',
-    snippet: `const res = await fetch('https://zionterranova.com/api/blockchain/stats', {
-  headers: {
-    'Accept': 'application/json',
-  },
-});
-const data = await res.json();`
-  }
 ];
 
 const getEndpointGroups = (cs: boolean) => [
@@ -139,45 +117,16 @@ const getEndpointGroups = (cs: boolean) => [
   }
 ];
 
-const getOnboardingSteps = (cs: boolean) => [
-  {
-    title: cs ? '1 · Autentizace' : '1 · Authenticate',
-    detail: cs ? 'GET routy jsou otevrene. Pro POST/PUT pridejte do hlavicek x-zion-key; klice rotujte kazdych 30 dni.' : 'GET routes are open. For POST/PUT include x-zion-key in headers; rotate keys every 30 days.'
-  },
-  {
-    title: cs ? '2 · Zvolte transport' : '2 · Choose transport',
-    detail: cs ? 'HTTPS pro RPC/REST, WebSockets pro stratum a metriky. Vsechny servery podporuji HTTP/2.' : 'HTTPS for RPC/REST, WebSockets for stratum + metrics. All servers support HTTP/2.'
-  },
-  {
-    title: cs ? '3 · Pripnete prostredi' : '3 · Pin environment',
-    detail: cs ? 'Sandbox zrcadli produkci na https://api-sandbox.zionterranova.com s testnet daty.' : 'Sandbox mirrors production at https://api-sandbox.zionterranova.com with testnet data.'
-  }
-];
-
 export default function ApiReferencePage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
   const apiStats = getApiStats(cs);
   const endpointGroups = getEndpointGroups(cs);
-  const onboardingSteps = getOnboardingSteps(cs);
-  const codeSamples = getCodeSamples(cs);
-  const [copied, setCopied] = useState<string | null>(null);
-
-  const handleCopy = (id: string, value: string) => {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(id);
-      setTimeout(() => setCopied(null), 1500);
-    });
-  };
 
   return (
     <div className="zion-shell min-h-screen pt-32 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-6xl space-y-12">
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-[36px] border border-white/10 bg-black/60 p-8 backdrop-blur-xl shadow-[0_30px_120px_rgba(0,0,0,0.5)]"
-        >
+        <section className="rounded-[36px] border border-white/10 bg-black/60 p-8 backdrop-blur-xl shadow-[0_30px_120px_rgba(0,0,0,0.5)]">
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
             <Sparkles className="h-4 w-4" /> API v2.9 · Orion Mesh
           </div>
@@ -201,13 +150,9 @@ export default function ApiReferencePage() {
               <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {cs ? 'Plná dokumentace' : 'Full docs'}
             </Link>
           </div>
-        </motion.section>
+        </section>
 
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid gap-4 sm:grid-cols-3"
-        >
+        <section className="grid gap-4 sm:grid-cols-3">
           {apiStats.map((stat) => {
             const Icon = stat.icon;
             return (
@@ -218,13 +163,9 @@ export default function ApiReferencePage() {
               </div>
             );
           })}
-        </motion.section>
+        </section>
 
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
+        <section className="space-y-6">
           {endpointGroups.map((group) => {
             const Icon = group.icon;
             return (
@@ -261,64 +202,11 @@ export default function ApiReferencePage() {
               </div>
             );
           })}
-        </motion.section>
+        </section>
 
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid gap-6 lg:grid-cols-2"
-        >
-          <div className="rounded-4xl border border-white/10 bg-black/50 p-6 backdrop-blur">
-            <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
-              <Terminal className="h-6 w-6 text-zion-gold" /> {cs ? 'Quickstart ukázky' : 'Quickstart snippets'}
-            </h3>
-            <div className="mt-4 space-y-4">
-              {codeSamples.map((sample) => (
-                <div key={sample.id} className="rounded-2xl border border-white/10 bg-black/70 p-4">
-                  <div className="mb-2 flex items-center justify-between text-sm text-gray-300">
-                    <span>{sample.label}</span>
-                    <button
-                      onClick={() => handleCopy(sample.id, sample.snippet)}
-                      className="inline-flex items-center gap-1 text-xs text-zion-gold"
-                    >
-                      {copied === sample.id ? (
-                        <>
-                          <Check className="h-3 w-3" /> {cs ? 'Zkopirovano' : 'Copied'}
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3" /> {cs ? 'Kopirovat' : 'Copy'}
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <pre className="overflow-x-auto text-sm text-zion-cyan">
-                    <code>{sample.snippet}</code>
-                  </pre>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-4xl border border-white/10 bg-black/50 p-6 backdrop-blur">
-            <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
-              <Server className="h-6 w-6 text-zion-gold" /> {cs ? 'Checklist nasazení' : 'Onboarding checklist'}
-            </h3>
-            <div className="mt-4 space-y-4">
-              {onboardingSteps.map((step) => (
-                <div key={step.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-sm uppercase tracking-[0.3em] text-gray-500">{step.title}</p>
-                  <p className="text-sm text-gray-300 mt-2">{step.detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.section>
+        <ApiQuickstartPanels cs={cs} />
 
-        <motion.section
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="rounded-[36px] border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-8 text-center"
-        >
+        <section className="rounded-[36px] border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-8 text-center">
           <h3 className="text-3xl font-semibold text-white">{cs ? 'Připraven zapojit mesh?' : 'Ready to wire the mesh?'}</h3>
           <p className="mt-3 text-gray-50">
             {cs ? 'Nasaďte SDK z GitHubu, sledujte živé health a ozvěte se týmu v docs, pokud potřebujete další scopes.' : 'Deploy the SDKs from GitHub, watch live health, and ping the team in docs if you need additional scopes.'}
@@ -339,7 +227,7 @@ export default function ApiReferencePage() {
               {cs ? 'Projít dokumentaci' : 'Explore documentation'}
             </Link>
           </div>
-        </motion.section>
+        </section>
       </div>
     </div>
   );
