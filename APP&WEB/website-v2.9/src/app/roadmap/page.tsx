@@ -63,7 +63,7 @@ const layerStack = [
     layer: 'L2',
     emoji: '💱',
     title: 'DEX & DeFi Layer',
-    period: '2026 live · 2027 production',
+    period: '2026 rehearsal/testnet · 2027 gated production',
     color: 'from-blue-500 to-cyan-500',
     border: 'border-blue-500/40',
     items: [
@@ -78,7 +78,7 @@ const layerStack = [
     layer: 'L3',
     emoji: '🧠',
     title: 'NCL, WARP & AI-native',
-    period: '2026 implementation done · 2027 production',
+    period: '2026 implementation done · 2027 gated production',
     color: 'from-purple-500 to-pink-500',
     border: 'border-purple-500/40',
     items: [
@@ -555,7 +555,7 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">L1 Execution</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-purple" />
-              Fáze 0 – 5 · Test-mainnet rehearsal → Full MainNet
+              Fáze 0 – 5 · Test-mainnet rehearsal → gated public genesis
             </h2>
             <p className="text-sm text-gray-400">Každá fáze má jasné exit criteria. Žádné zkratky.</p>
           </div>
@@ -670,7 +670,7 @@ export default function RoadmapPage() {
               <Globe2 className="h-7 w-7 text-zion-gold" />
               Fáze 6 · Post-Launch &amp; Exchange
             </h2>
-            <p className="text-sm text-gray-400">Leden — Červen 2027 · MainNet → stabilita → DEX → CEX → CMC/CG. Žádný hype první den.</p>
+            <p className="text-sm text-gray-400">Leden — Červen 2027 · pouze po GO rozhodnuti: stabilita → DEX → CEX → CMC/CG. Zadny hype prvni den.</p>
           </div>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {postLaunch.map((block, idx) => (
@@ -724,8 +724,8 @@ export default function RoadmapPage() {
             <div className="flex items-center gap-3 mb-5">
               <Lock className="h-6 w-6 text-zion-gold" />
               <div>
-                <h2 className="text-2xl font-semibold text-white">MainNet Constitution</h2>
-                <p className="text-sm text-gray-400">Zmrazené parametry — nelze změnit bez hard forku</p>
+                <h2 className="text-2xl font-semibold text-white">Launch Constitution Draft</h2>
+                <p className="text-sm text-gray-400">Zmrazene parametry pro pripadny public genesis, ne potvrzeni ze launch uz byl vyhlasen</p>
               </div>
             </div>
             <div className="space-y-0">
@@ -783,7 +783,7 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Security</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-emerald-400" />
-              MainNet Readiness Security Checklist
+              Launch-Readiness Security Checklist
             </h2>
           </div>
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -825,7 +825,7 @@ export default function RoadmapPage() {
           </div>
           <div className="space-y-4">
             {[
-              { layer: 'L1 Blockchain', period: '2026', phases: 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → MainNet 🚀', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
+              { layer: 'L1 Blockchain', period: '2026', phases: 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
               { layer: 'L2 NCL', period: '2027', phases: 'Neural Conscious Layer · wZION Bridge ✅ · AI-native', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '44%' },
               { layer: 'L3 ZION DAO', period: '2028', phases: 'Governance · Treasury 4B ZION · WARP 7/7 ✅', color: 'from-purple-400 to-pink-400', width: '22%', offset: '56%' },
               { layer: 'L4 Oasis', period: '2028+ target', phases: 'UE5 · XP economy · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
