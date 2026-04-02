@@ -213,23 +213,23 @@ function buildMainnetStabilityRun(
   const poolValidShares = Math.floor(toNumber(collectorLatest?.pool_valid_shares) ?? liveValidShares);
   const poolInvalidShares = Math.floor(toNumber(collectorLatest?.pool_invalid_shares) ?? liveInvalidShares);
   const poolAcceptRate = toNumber(collectorLatest?.pool_accept_rate_pct) ?? liveAcceptRate;
-
-  let status = 'SCHEDULED';
-  if (progress.elapsed_secs > 0) {
-    status = tipAgreement && onlineNodes === expectedNodes && (heightSpread ?? 0) === 0 ? 'RUNNING' : onlineNodes > 0 ? 'DEGRADED' : 'ISSUE';
-  }
-  if (progress.progress_pct >= 100) {
-    status = tipAgreement && onlineNodes === expectedNodes && (heightSpread ?? 0) === 0 ? 'PASS' : 'REVIEW REQUIRED';
-  }
-
   const samplesCollected = Math.floor(toNumber(collectorState?.samples_collected) ?? 0);
   const issueCount = Math.floor(toNumber(collectorState?.issue_count) ?? 0);
   const healthySampleRatio = toNumber(collectorState?.healthy_sample_ratio);
-  const closureReportReady = progress.progress_pct >= 100
-    && tipAgreement
-    && onlineNodes === expectedNodes
-    && (heightSpread ?? 0) === 0
-    && issueCount === 0;
+
+  const zeroSpread = (heightSpread ?? 0) === 0;
+  const stableTipAgreement = tipAgreement && onlineNodes === expectedNodes && zeroSpread;
+  const closureReady = stableTipAgreement && issueCount === 0;
+
+  let status = 'SCHEDULED';
+  if (progress.elapsed_secs > 0) {
+    status = stableTipAgreement ? 'RUNNING' : onlineNodes > 0 ? 'DEGRADED' : 'ISSUE';
+  }
+  if (progress.progress_pct >= 100) {
+    status = closureReady ? 'PASS' : 'REVIEW REQUIRED';
+  }
+
+  const closureReportReady = progress.progress_pct >= 100 && closureReady;
 
   return {
     start: startIso,
