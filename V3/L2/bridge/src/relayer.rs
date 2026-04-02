@@ -139,6 +139,26 @@ impl Relayer {
             .find(|c| c.chain_id == lock.target_chain && c.enabled)
             .ok_or_else(|| anyhow::anyhow!("Target chain '{}' not configured or disabled", lock.target_chain))?;
 
+        // ── Reject bridge contract as recipient (prevents self-mint) ──
+        if lock.evm_recipient.eq_ignore_ascii_case(&chain_config.bridge_contract_address) {
+            anyhow::bail!(
+                "🚫 evm_recipient is the bridge contract itself ({}). \
+                 Lock TX memo must contain the user's EVM wallet, not the bridge address. \
+                 Skipping TX: {}",
+                lock.evm_recipient,
+                lock.l1_tx_hash,
+            );
+        }
+        if lock.evm_recipient.eq_ignore_ascii_case(&chain_config.wzion_address) {
+            anyhow::bail!(
+                "🚫 evm_recipient is the wZION token contract ({}). \
+                 Lock TX memo must contain the user's EVM wallet, not the token address. \
+                 Skipping TX: {}",
+                lock.evm_recipient,
+                lock.l1_tx_hash,
+            );
+        }
+
         // ── Load validator key ────────────────────────────────────────
         let key = load_validator_key(&self.config.validator)?;
         let validator_address = derive_evm_address(key.as_str())?;
