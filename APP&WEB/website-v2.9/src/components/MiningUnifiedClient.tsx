@@ -164,14 +164,14 @@ const ports = [
 ];
 
 const networkConfigs = [
-  { name: "Mainnet", file: "mainnet.toml", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", description: "Production network — real ZION" },
+  { name: "Mainnet", file: "mainnet.toml", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", description: "Public rehearsal line — launch remains NO-GO" },
   { name: "Testnet", file: "testnet.toml", badge: "bg-zion-gold/10 text-zion-gold border-zion-gold/20", description: "Testing with free test coins" },
   { name: "Devnet", file: "devnet.toml", badge: "bg-zion-purple/10 text-zion-purple border-zion-purple/20", description: "Local development network" },
 ];
 
 const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
-  { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
+  { cmd: "zion-node --config mainnet.toml", desc: "Start with the public rehearsal config" },
   { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
   { cmd: `zion-node --peers ${POOL}:8333`, desc: "Manual peer list" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
@@ -308,7 +308,7 @@ export default function MiningUnifiedClient() {
     ...net,
     description: cs
       ? [
-          'Produkčni sit - skutecny ZION',
+          'Verejna rehearsal linie - launch zustava NO-GO',
           'Testovani s bezplatnymi test coinami',
           'Lokalni vyvojova sit',
         ][index]
@@ -763,7 +763,7 @@ cargo build --release -p zion-miner --features opencl
                   {cs ? 'Solo tezba - plne blokove odmeny' : 'Solo Mining — Full Block Rewards'}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {cs ? 'Tezte primo proti blockchainu. Plnych 50 ZION + fees za blok.' : 'Mine directly against the blockchain. Full 50 ZION + fees per block.'}
+                  {cs ? 'Tezte primo proti blockchainu. Ziskavate celou aktualni blokovou odmenu a fees za nalezeny blok, ale payouty jsou mene pravidelne nez u poolu.' : 'Mine directly against the blockchain. You get the full current block reward and fees when you find a block, but payouts are less frequent than with pool mining.'}
                 </p>
 
                 <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-4 mb-5">
@@ -793,7 +793,7 @@ cargo build --release -p zion-miner --features opencl
                   <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-4">
                     <h4 className="text-sm font-medium text-emerald-400 mb-2">✅ {cs ? 'Vyhody' : 'Pros'}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• {cs ? 'Plna blokova odmena 50 ZION' : 'Full 50 ZION block reward'}</li>
+                      <li>• {cs ? 'Plna aktualni blokova odmena + fees' : 'Full current block reward + fees'}</li>
                       <li>• {cs ? 'Bez pool fee' : 'No pool fees'}</li>
                       <li>• {cs ? 'Maximalni decentralizace' : 'Maximum decentralization'}</li>
                       <li>• {cs ? 'Soukromi - zadny pool nezna vasu adresu' : 'Privacy — no pool knows your address'}</li>
