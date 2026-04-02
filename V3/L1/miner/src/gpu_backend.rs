@@ -654,14 +654,23 @@ pub mod cuda_deeksha {
         scratchpad_buf: CudaSlice<u8>,
         result_nonce:   CudaSlice<u64>,
         result_hash:    CudaSlice<u8>,
-        // NPU weight buffers
-        npu_w1:     CudaSlice<i8>,
-        npu_b1:     CudaSlice<i8>,
-        npu_w2:     CudaSlice<i8>,
-        npu_b2:     CudaSlice<i8>,
-        npu_scales: CudaSlice<i16>,
+        // NPU packed weight buffers (variable topology)
+        npu_weights: CudaSlice<i8>,
+        npu_biases:  CudaSlice<i8>,
+        npu_scales:  CudaSlice<i16>,
+        npu_meta:    CudaSlice<u32>,
         current_epoch: u64,
     }
+
+    // Max buffer sizes across all topologies:
+    //  Standard:   w=16384 b=192 s=192  (2 layers: 64→128→64)
+    //  ThreeLayer: w=26624 b=288 s=288  (3 layers: 64→96→128→64)
+    //  Wide:       w=32768 b=320 s=320  (2 layers: 64→256→64)
+    //  Deep:       w=12288 b=192 s=192  (3 layers: 64→64→64→64)
+    const MAX_NPU_WEIGHTS: usize = 32768;
+    const MAX_NPU_BIASES: usize = 320;
+    const MAX_NPU_SCALES: usize = 320;  // i16 count
+    const MAX_NPU_META: usize = 8;      // u32 count (1 + 2*max_layers)
 
     impl CudaDeekshaMiner {
         pub fn new(work_size: usize) -> Result<Self> {
@@ -677,9 +686,7 @@ pub mod cuda_deeksha {
             dev.load_ptx(ptx, "deeksha", &["deeksha_mine", "ekam_deeksha_mine", "ekam_deeksha_debug"])
                 .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
 
-            // Conservative work size cap for 32GB-class GPUs. Default 32k lanes
-            // keeps scratchpad allocation around 8 GiB and matched the best RTX 5090
-            // release benchmark in current testing.
+            // Conservative work size cap
             let work_cap = std::env::var("ZION_CUDA_WORK_CAP")
                 .ok()
                 .and_then(|v| v.trim().parse::<usize>().ok())
@@ -687,7 +694,7 @@ pub mod cuda_deeksha {
                 .max(64);
             let actual_work_size = work_size.min(work_cap).max(64);
 
-            // Allocate buffers
+            // Allocate fixed buffers
             let header_buf = dev.alloc_zeros::<u8>(80)
                 .map_err(|e| anyhow::anyhow!("header alloc: {e}"))?;
             let scratchpad_buf = dev.alloc_zeros::<u8>(actual_work_size * SCRATCHPAD_BYTES)
@@ -697,21 +704,29 @@ pub mod cuda_deeksha {
             let result_hash = dev.alloc_zeros::<u8>(32)
                 .map_err(|e| anyhow::anyhow!("result_hash alloc: {e}"))?;
 
-            // NPU weights — init with epoch 0
+            // NPU packed buffers — allocate max size, upload epoch 0 weights
             let init_epoch = 0u64;
-            let flat = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat_epoch(init_epoch);
-            let npu_w1 = dev.htod_copy(flat.w1)
-                .map_err(|e| anyhow::anyhow!("npu_w1 alloc: {e}"))?;
-            let npu_b1 = dev.htod_copy(flat.b1)
-                .map_err(|e| anyhow::anyhow!("npu_b1 alloc: {e}"))?;
-            let npu_w2 = dev.htod_copy(flat.w2)
-                .map_err(|e| anyhow::anyhow!("npu_w2 alloc: {e}"))?;
-            let npu_b2 = dev.htod_copy(flat.b2)
-                .map_err(|e| anyhow::anyhow!("npu_b2 alloc: {e}"))?;
-            let mut scales = flat.scale1;
-            scales.extend_from_slice(&flat.scale2);
-            let npu_scales = dev.htod_copy(scales)
+            let packed = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_packed(init_epoch);
+
+            let mut w_padded = packed.weights;
+            w_padded.resize(MAX_NPU_WEIGHTS, 0);
+            let npu_weights = dev.htod_copy(w_padded)
+                .map_err(|e| anyhow::anyhow!("npu_weights alloc: {e}"))?;
+
+            let mut b_padded = packed.biases;
+            b_padded.resize(MAX_NPU_BIASES, 0);
+            let npu_biases = dev.htod_copy(b_padded)
+                .map_err(|e| anyhow::anyhow!("npu_biases alloc: {e}"))?;
+
+            let mut s_padded = packed.scales;
+            s_padded.resize(MAX_NPU_SCALES, 0);
+            let npu_scales = dev.htod_copy(s_padded)
                 .map_err(|e| anyhow::anyhow!("npu_scales alloc: {e}"))?;
+
+            let mut m_padded = packed.meta;
+            m_padded.resize(MAX_NPU_META, 0);
+            let npu_meta = dev.htod_copy(m_padded)
+                .map_err(|e| anyhow::anyhow!("npu_meta alloc: {e}"))?;
 
             println!(
                 "gpu_cuda_init device=\"{}\" work_size={} scratchpad_mb={}",
@@ -728,11 +743,10 @@ pub mod cuda_deeksha {
                 scratchpad_buf,
                 result_nonce,
                 result_hash,
-                npu_w1,
-                npu_b1,
-                npu_w2,
-                npu_b2,
+                npu_weights,
+                npu_biases,
                 npu_scales,
+                npu_meta,
                 current_epoch: init_epoch,
             })
         }
@@ -752,20 +766,30 @@ pub mod cuda_deeksha {
             if epoch == self.current_epoch {
                 return Ok(());
             }
-            let flat = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_flat_epoch(epoch);
-            self.npu_w1 = self.dev.htod_copy(flat.w1)
-                .map_err(|e| anyhow::anyhow!("npu_w1 update: {e}"))?;
-            self.npu_b1 = self.dev.htod_copy(flat.b1)
-                .map_err(|e| anyhow::anyhow!("npu_b1 update: {e}"))?;
-            self.npu_w2 = self.dev.htod_copy(flat.w2)
-                .map_err(|e| anyhow::anyhow!("npu_w2 update: {e}"))?;
-            self.npu_b2 = self.dev.htod_copy(flat.b2)
-                .map_err(|e| anyhow::anyhow!("npu_b2 update: {e}"))?;
-            let mut scales = flat.scale1;
-            scales.extend_from_slice(&flat.scale2);
-            self.npu_scales = self.dev.htod_copy(scales)
+            let packed = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_packed(epoch);
+
+            let mut w_padded = packed.weights;
+            w_padded.resize(MAX_NPU_WEIGHTS, 0);
+            self.dev.htod_sync_copy_into(&w_padded, &mut self.npu_weights)
+                .map_err(|e| anyhow::anyhow!("npu_weights update: {e}"))?;
+
+            let mut b_padded = packed.biases;
+            b_padded.resize(MAX_NPU_BIASES, 0);
+            self.dev.htod_sync_copy_into(&b_padded, &mut self.npu_biases)
+                .map_err(|e| anyhow::anyhow!("npu_biases update: {e}"))?;
+
+            let mut s_padded = packed.scales;
+            s_padded.resize(MAX_NPU_SCALES, 0);
+            self.dev.htod_sync_copy_into(&s_padded, &mut self.npu_scales)
                 .map_err(|e| anyhow::anyhow!("npu_scales update: {e}"))?;
-            println!("gpu_cuda_npu_epoch_update epoch={} height={}", epoch, height);
+
+            let mut m_padded = packed.meta;
+            m_padded.resize(MAX_NPU_META, 0);
+            self.dev.htod_sync_copy_into(&m_padded, &mut self.npu_meta)
+                .map_err(|e| anyhow::anyhow!("npu_meta update: {e}"))?;
+
+            let topo = zion_cosmic_harmony::algorithms_npu::MlpTopology::for_epoch(epoch);
+            println!("gpu_cuda_npu_epoch_update epoch={} height={} topology={:?}", epoch, height, topo);
             self.current_epoch = epoch;
             Ok(())
         }
@@ -792,8 +816,8 @@ pub mod cuda_deeksha {
             let mut current_nonce = nonce_start;
             let mut left = batch_size;
 
-            let func = self.dev.get_func("deeksha", "deeksha_mine")
-                .ok_or_else(|| anyhow::anyhow!("deeksha_mine kernel not found"))?;
+            let func = self.dev.get_func("deeksha", "ekam_deeksha_mine")
+                .ok_or_else(|| anyhow::anyhow!("ekam_deeksha_mine kernel not found"))?;
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
@@ -814,15 +838,15 @@ pub mod cuda_deeksha {
                         &self.header_buf,
                         header_bytes.len() as u32,
                         current_nonce,
+                        chunk,
                         &self.scratchpad_buf,
                         target_u32,
                         &mut self.result_nonce,
                         &mut self.result_hash,
-                        &self.npu_w1,
-                        &self.npu_b1,
-                        &self.npu_w2,
-                        &self.npu_b2,
+                        &self.npu_weights,
+                        &self.npu_biases,
                         &self.npu_scales,
+                        &self.npu_meta,
                     )).map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
                 }
 
@@ -1242,7 +1266,14 @@ pub fn detect_gpus() -> Vec<String> {
         }
     }
 
-    // CUDA device detection would go here
+    // CUDA device detection
+    #[cfg(feature = "gpu-cuda")]
+    {
+        if let Ok(dev) = cudarc::driver::CudaDevice::new(0) {
+            let name = dev.name().unwrap_or_else(|_| "unknown CUDA device".to_string());
+            devices.push(format!("cuda:{name}"));
+        }
+    }
 
     #[cfg(feature = "gpu-metal")]
     {
