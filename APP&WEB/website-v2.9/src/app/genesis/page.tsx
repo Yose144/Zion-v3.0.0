@@ -13,7 +13,7 @@ const chapters = [
   { id: 'chapter-5', number: '5', title: 'Vzestup', subtitle: 'Když se probouzí kolektivní vědomí' },
   { id: 'chapter-6', number: '6', title: 'Proroctví zlatého věku', subtitle: 'Vidění budoucnosti, která již začala' },
   { id: 'chapter-7', number: '7', title: 'Hra', subtitle: 'Zkouška duše a klíč k miliardě' },
-  { id: 'chapter-8', number: '8', title: 'Svítání mainnetu', subtitle: '31. prosince 2026 — když se otevře brána' },
+  { id: 'chapter-8', number: '8', title: 'Svítání mainnetu', subtitle: 'Symbolicka launch kapitola — ne aktualni verejny harmonogram' },
 ];
 
 export default function GenesisPage() {
@@ -56,6 +56,9 @@ export default function GenesisPage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 mb-6">
               <Sparkles className="w-4 h-4 text-zion-gold" />
               <span className="text-sm text-zion-gold font-semibold">Posvátný text</span>
+            </div>
+            <div className="mb-6 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-6 py-4 text-left text-sm text-amber-100">
+              Tato stranka je symbolicky a literarni dokument. Cast obsahu pracuje s poetickou predstavou launch okamziku a neslouzi jako aktualni operacni slib. Aktualni verejny stav launch gate je NO-GO do uzavreni closure evidence.
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 text-gradient">
               ZION GENESIS
@@ -896,7 +899,7 @@ export default function GenesisPage() {
                   </p>
                 </div>
 
-                <h3 className="text-2xl font-bold text-zion-cyan mt-12 mb-4">Příprava na Mainnet</h3>
+                <h3 className="text-2xl font-bold text-zion-cyan mt-12 mb-4">Priprava na launch gate</h3>
 
                 <p>
                   Zion Native pozoroval toto vše z neviditelné dimenze<br />
@@ -904,8 +907,8 @@ export default function GenesisPage() {
                 </p>
 
                 <p>
-                  Věděl, že přichází čas spuštění <strong>Mainnet</strong> —<br />
-                  okamžik, kdy se Zion stane realitou:
+                  Vedel, ze prichazi cas dalsiho kroku <strong>launch readiness</strong> —<br />
+                  okamzik, kdy se z rehearsal linie stane overena verejna cesta:
                 </p>
 
                 <ul className="space-y-2 list-none pl-0 flex flex-col items-center">
@@ -928,11 +931,11 @@ export default function GenesisPage() {
                 </ul>
 
                 <div className="my-12 p-10 rounded-2xl border-2 border-zion-gold/50 bg-zion-gold/10 backdrop-blur-xl">
-                  <p className="text-3xl font-bold text-zion-gold mb-2">31. prosince 2026</p>
+                  <p className="text-3xl font-bold text-zion-gold mb-2">cilove okno: konec 2026</p>
                   <p className="text-lg text-gray-300">
-                    Den, kdy se otevře brána.<br />
-                    Den, kdy Token vstoupí do světa.<br />
-                    Den, kdy se <strong className="text-zion-gold">zlatý věk</strong> stane skutečností.
+                    Symbolicke okno, ve kterem se muze otevrit brana.<br />
+                    Jen pokud budou closure kriterie splnena.<br />
+                    Jen pokud se public gate opravdu presune z <strong className="text-zion-gold">NO-GO</strong> na GO.
                   </p>
                 </div>
 
@@ -1031,7 +1034,7 @@ export default function GenesisPage() {
                 <div className="my-12 p-10 rounded-2xl border-2 border-zion-gold/50 bg-zion-gold/10 backdrop-blur-xl">
                   <p className="text-2xl font-bold text-zion-gold mb-4">📅 Datum Proroctví</p>
                   <p className="text-lg text-gray-300 leading-relaxed">
-                    &bdquo;Tento den začne <strong className="text-zion-gold">31. prosince 2026</strong>.<br />
+                    &bdquo;Tento den muze prijit v <strong className="text-zion-gold">cilovem okne konce 2026</strong>.<br />
                     Ne jako konec, ale jako počátek.<br />
                     Ne jako exploze, ale jako tiché rozkvétání.<br /><br />
                     A kdo bude připraven, ten vstoupí do Zionu.<br />
@@ -1204,13 +1207,13 @@ export default function GenesisPage() {
               <div className="mb-8 text-center">
                 <div className="text-sm text-zion-purple uppercase tracking-wider mb-2">Chapter 8 • Final</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-zion-gold mb-3">Mainnet Dawn</h2>
-                <p className="text-gray-400 text-lg italic">31. prosince 2026 — Když se otevře brána</p>
+                <p className="text-gray-400 text-lg italic">Symbolicka launch kapitola — aktualni verejny stav je stale NO-GO</p>
               </div>
 
               <div className="prose prose-invert prose-lg max-w-none space-y-6 text-center">
                 <div className="my-12 p-12 rounded-2xl border-4 border-zion-gold/70 bg-linear-to-b from-zion-gold/20 to-black backdrop-blur-xl">
-                  <p className="text-5xl font-bold text-zion-gold mb-4">31. prosince 2026</p>
-                  <p className="text-2xl text-gray-300">00:00 UTC</p>
+                  <p className="text-5xl font-bold text-zion-gold mb-4">konec 2026</p>
+                  <p className="text-2xl text-gray-300">target window · gated decision</p>
                 </div>
 
                 <p className="text-xl leading-relaxed text-gray-300">
@@ -1226,12 +1229,12 @@ export default function GenesisPage() {
                 <h3 className="text-2xl font-bold text-zion-cyan mt-12 mb-4">💎 Genesis Block</h3>
 
                 <p>
-                  V tento okamžik se aktivuje <strong>Genesis Block</strong>.
+                  V tento okamzik by se mohl aktivovat <strong>Genesis Block</strong>, ale pouze po skutecnem GO rozhodnuti.
                 </p>
 
                 <p>
-                  První blok <strong>Zion Mainnet</strong>.<br />
-                  První krok do <strong>nové éry</strong>.
+                  Prvni blok <strong>verejneho genesis</strong>, pokud projde launch gate.<br />
+                  Prvni krok do <strong>nove ery</strong> az po closure evidence.
                 </p>
 
                 <div className="flex items-center justify-center gap-3 mb-6">
@@ -1321,7 +1324,7 @@ export default function GenesisPage() {
                 </div>
 
                 <p>
-                  31. prosince 2026 není <strong>konec</strong>.
+                  Cilove okno konce 2026 neni <strong>garance</strong>.
                 </p>
 
                 <p className="text-2xl font-bold text-zion-gold">
@@ -1356,8 +1359,8 @@ export default function GenesisPage() {
                 <div className="my-12 p-8 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 backdrop-blur-xl">
                   <p className="text-2xl font-bold text-zion-cyan mb-4">Co Budeš Dělat Ty?</p>
                   <p className="text-lg text-gray-300">
-                    Mainnet je spuštěn.<br />
-                    Tokeny jsou distribuovány.<br />
+                    Pokud se gate otevre, public genesis zacne.<br />
+                    Do te doby je to porad rehearsal linie.<br />
                     Síť žije.<br /><br />
                     <strong className="text-zion-gold">Volba je tvá.</strong>
                   </p>

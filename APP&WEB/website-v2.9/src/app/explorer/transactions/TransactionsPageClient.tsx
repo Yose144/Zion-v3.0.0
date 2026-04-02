@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowRightLeft, ChevronRight, Copy, Check, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from "@/hooks/usePolling";
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -77,13 +78,8 @@ export default function TransactionsPageClient() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const tickRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  /* live age ticker */
-  useEffect(() => {
-    tickRef.current = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(tickRef.current);
-  }, []);
+  usePolling(() => setNow(Date.now()), 1000);
 
   const loadTransactions = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     try {
@@ -128,7 +124,7 @@ export default function TransactionsPageClient() {
 
   return (
     <div className="zion-shell min-h-screen relative">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zion-purple/10 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-zion-purple/10 via-transparent to-transparent" />
 
       <div className="relative z-10 zion-container max-w-[1400px] py-8">
 
@@ -163,7 +159,7 @@ export default function TransactionsPageClient() {
         {/* table card */}
         <div className="mt-6 zion-panel rounded-[28px] bg-black/60 overflow-hidden">
           {/* table header */}
-          <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/[0.06]">
+          <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/6">
             <span />
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Typ' : 'Type'}</span>
@@ -175,7 +171,7 @@ export default function TransactionsPageClient() {
 
           {/* loading skeleton */}
           {loading && [...Array(12)].map((_, i) => (
-            <div key={i} className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/[0.03] animate-pulse">
+            <div key={i} className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/3 animate-pulse">
               <div className="flex items-center justify-center"><span className="w-2.5 h-2.5 rounded-full bg-white/10" /></div>
               <div className="h-4 bg-white/5 rounded w-48" />
               <div className="h-4 bg-white/5 rounded w-16" />
@@ -200,7 +196,7 @@ export default function TransactionsPageClient() {
             <Link
               key={`${tx.hash}-${i}`}
               href={`/explorer/tx?hash=${encodeURIComponent(tx.hash)}`}
-              className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
+              className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/3 hover:bg-white/2 transition-colors group"
             >
               {/* status */}
               <div className="flex items-center justify-center"><StatusDot status={tx.status} /></div>
@@ -252,7 +248,7 @@ export default function TransactionsPageClient() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-colors text-sm text-white/60 hover:text-white/90 disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/4 border border-white/8 hover:bg-white/8 transition-colors text-sm text-white/60 hover:text-white/90 disabled:opacity-50"
               >
                 {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> {cs ? 'Nacitam…' : 'Loading…'}</> : cs ? 'Nacist dalsi transakce' : 'Load More Transactions'}
               </button>

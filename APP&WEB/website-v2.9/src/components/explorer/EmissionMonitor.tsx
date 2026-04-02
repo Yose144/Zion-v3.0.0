@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Coins, TrendingUp, Flame, Heart, Timer } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 
 interface EmissionData {
   total_emission: number;
@@ -34,16 +35,11 @@ export default function EmissionMonitor() {
   const [data, setData] = useState<EmissionData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchEmission = async () => {
-      try { setData(await apiClient<EmissionData>("/blockchain/emission")); }
-      catch { /* silent */ }
-      finally { setLoading(false); }
-    };
-    fetchEmission();
-    const interval = setInterval(fetchEmission, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  usePolling(async () => {
+    try { setData(await apiClient<EmissionData>("/blockchain/emission")); }
+    catch { /* silent */ }
+    finally { setLoading(false); }
+  }, 60000);
 
   const fmt = (num: number, dec = 2) => {
     if (num >= 1e12) return (num / 1e12).toFixed(dec) + "T";
@@ -55,10 +51,10 @@ export default function EmissionMonitor() {
 
   if (loading) {
     return (
-      <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] p-6 animate-pulse">
+      <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/8 p-6 animate-pulse">
         <div className="h-5 bg-white/5 rounded w-44 mb-5" />
         <div className="h-3 bg-white/5 rounded-full mb-6" />
-        <div className="grid grid-cols-2 gap-3">{[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-white/[0.03] rounded-2xl" />)}</div>
+        <div className="grid grid-cols-2 gap-3">{[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-white/3 rounded-2xl" />)}</div>
       </div>
     );
   }
@@ -68,7 +64,7 @@ export default function EmissionMonitor() {
   const progressPct = Math.min(data.emission_pct, 100);
 
   return (
-    <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] overflow-hidden">
+    <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/8 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-6 pt-6 pb-4">
         <div className="w-9 h-9 rounded-xl bg-zion-gold/10 border border-zion-gold/20 flex items-center justify-center">
@@ -89,9 +85,9 @@ export default function EmissionMonitor() {
               {fmt(data.circulating_supply)} / {fmt(data.max_supply)} ZION
             </span>
           </div>
-          <div className="h-2.5 bg-white/[0.04] rounded-full overflow-hidden">
+          <div className="h-2.5 bg-white/4 rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-zion-gold/80 via-amber-400 to-yellow-300 transition-all duration-1000"
+              className="h-full rounded-full bg-linear-to-r from-zion-gold/80 via-amber-400 to-yellow-300 transition-all duration-1000"
               style={{ width: `${progressPct}%` }}
             />
           </div>
@@ -108,7 +104,7 @@ export default function EmissionMonitor() {
             { label: cs ? "Celkové poplatky" : "Total Fees", icon: Flame, color: "text-amber-400", value: `${fmt(data.total_fees)} ZION`, sub: cs ? "Kumulované síťové poplatky" : "Cumulative network fees" },
             { label: cs ? "Humanitární desátek" : "Humanitarian Tithe", icon: Heart, color: "text-pink-400", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: cs ? `${(data.humanitarian.rate * 100).toFixed(0)}% všech odměn` : `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
           ].map((m) => (
-            <div key={m.label} className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4">
+            <div key={m.label} className="rounded-2xl bg-white/3 border border-white/6 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <m.icon className={`w-3.5 h-3.5 ${m.color}`} />
                 <span className="text-[10px] uppercase tracking-[0.15em] text-white/30">{m.label}</span>

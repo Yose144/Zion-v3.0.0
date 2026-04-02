@@ -5,6 +5,7 @@ import { Box, ChevronDown, Copy, Check, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from "@/hooks/usePolling";
 
 interface Block {
   height: number;
@@ -41,7 +42,7 @@ function CopyBtn({ text }: { text: string }) {
   const [ok, setOk] = useState(false);
   return (
     <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
-      className="text-gray-600 hover:text-white transition ml-1.5 flex-shrink-0">
+      className="text-gray-600 hover:text-white transition ml-1.5 shrink-0">
       {ok ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
     </button>
   );
@@ -73,15 +74,11 @@ export default function BlocksPage() {
 
   useEffect(() => { loadBlocks(1, false); }, [loadBlocks]);
 
-  // Tick for age refresh
-  useEffect(() => {
-    const iv = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(iv);
-  }, []);
+  usePolling(() => setTick((tick) => tick + 1), 1000);
 
   return (
     <div className="zion-shell min-h-screen">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-zion-gold/10 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-linear-to-b from-zion-gold/10 via-transparent to-transparent" />
 
       <div className="relative z-10 zion-container py-10 max-w-6xl space-y-6">
         {/* Breadcrumb */}
@@ -93,7 +90,7 @@ export default function BlocksPage() {
 
         {/* Header */}
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-zion-gold/10 flex items-center justify-center flex-shrink-0">
+          <div className="h-12 w-12 rounded-2xl bg-zion-gold/10 flex items-center justify-center shrink-0">
             <Box className="h-6 w-6 text-zion-gold" />
           </div>
           <div>
@@ -107,7 +104,7 @@ export default function BlocksPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06]">
+                <tr className="border-b border-white/6">
                   <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{cs ? 'Vyska' : 'Height'}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{cs ? 'Stari' : 'Age'}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">Hash</th>
@@ -120,7 +117,7 @@ export default function BlocksPage() {
               <tbody>
                 {loading && blocks.length === 0
                   ? [...Array(20)].map((_, i) => (
-                      <tr key={i} className="border-b border-white/[0.03]">
+                      <tr key={i} className="border-b border-white/3">
                         {[...Array(7)].map((_, j) => (
                           <td key={j} className="px-3 py-3 first:px-6 last:px-6">
                             <div className="h-4 bg-white/5 rounded animate-pulse" />
@@ -129,7 +126,7 @@ export default function BlocksPage() {
                       </tr>
                     ))
                   : blocks.map((block) => (
-                      <tr key={block.height} className="border-b border-white/[0.03] hover:bg-white/[0.03] transition-colors">
+                      <tr key={block.height} className="border-b border-white/3 hover:bg-white/3 transition-colors">
                         <td className="px-6 py-3">
                           <Link href={`/explorer/block?id=${block.height}`}
                             className="text-zion-cyan hover:text-white transition font-mono font-semibold text-sm">
@@ -170,7 +167,7 @@ export default function BlocksPage() {
           </div>
 
           {/* Footer / Load More */}
-          <div className="px-6 py-4 border-t border-white/[0.04] flex items-center justify-between">
+          <div className="px-6 py-4 border-t border-white/4 flex items-center justify-between">
             <p className="text-[11px] text-gray-600">
               {cs ? `Zobrazeno ${blocks.length} bloku` : `Showing ${blocks.length} blocks`}
             </p>
