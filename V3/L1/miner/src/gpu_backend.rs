@@ -636,7 +636,7 @@ pub mod opencl_deeksha {
 pub mod cuda_deeksha {
     use super::*;
     use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
-    use cudarc::nvrtc::compile_ptx;
+    use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
     use std::sync::Arc;
     use std::time::Instant;
 
@@ -680,9 +680,11 @@ pub mod cuda_deeksha {
             let device_name = dev.name()
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
-            // Compile PTX from embedded CUDA source
-            let ptx = compile_ptx(CUDA_KERNEL_SRC)
-                .map_err(|e| anyhow::anyhow!("NVRTC compile failed: {e}"))?;
+            // Compile PTX with fast-math (integer-safe; helps sqrtf in NPU LayerNorm)
+            let ptx = compile_ptx_with_opts(CUDA_KERNEL_SRC, CompileOptions {
+                options: vec!["--use_fast_math".to_string()],
+                ..Default::default()
+            }).map_err(|e| anyhow::anyhow!("NVRTC compile failed: {e}"))?;
             dev.load_ptx(ptx, "deeksha", &["deeksha_mine", "ekam_deeksha_mine", "ekam_deeksha_debug"])
                 .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
 
@@ -819,9 +821,13 @@ pub mod cuda_deeksha {
             let func = self.dev.get_func("deeksha", "ekam_deeksha_mine")
                 .ok_or_else(|| anyhow::anyhow!("ekam_deeksha_mine kernel not found"))?;
 
+            let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(48);
+
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
-                let threads_per_block = 256u32;
                 let blocks = (chunk + threads_per_block - 1) / threads_per_block;
                 let cfg = LaunchConfig {
                     grid_dim: (blocks, 1, 1),
