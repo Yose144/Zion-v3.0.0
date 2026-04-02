@@ -12,7 +12,7 @@ const getPhaseCards = (cs: boolean) => [
     highlights: [
       cs ? 'Nasazena v2.9.9 Pure Code verejna linie kontrolovaneho V3 test-mainnetu' : 'v2.9.9 Pure Code deployed — controlled V3 test-mainnet line',
       cs ? 'Aktivni 3-node rehearsal mesh, pool telemetrie a synchronizovany explorer' : '3-node rehearsal mesh active, pool telemetry, and explorer synced',
-      cs ? 'Overen on-chain split 89/5/5/1; verejny launch stale blokovan gate criteria' : 'On-chain 89/5/5/1 split verified; public launch still gated',
+      cs ? 'Overen on-chain split 89/5/5/1; wZION DEX live na Base Mainnet' : 'On-chain 89/5/5/1 split verified; wZION DEX live on Base Mainnet',
     ],
   },
   {
@@ -43,8 +43,8 @@ const getTimeline = (cs: boolean) => [
     focus: cs ? 'Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zasoba 144B ZION' : 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
   },
   {
-    title: '🧠 L2 NCL · 2027',
-    focus: cs ? 'Neural Conscious Layer, AI-native protokol, wZION bridge' : 'Neural Conscious Layer, AI-native protocol, wZION bridge',
+    title: '🧠 L2 NCL & DeFi · 2026–2027',
+    focus: cs ? 'wZION DEX na Base Mainnet (live), Bridge relay, NCL AI-native protokol' : 'wZION DEX on Base Mainnet (live), Bridge relay, NCL AI-native protocol',
   },
   {
     title: '🏛️ L3 DAO · 2028',
