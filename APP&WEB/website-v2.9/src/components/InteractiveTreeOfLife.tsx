@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { usePolling } from '@/hooks/usePolling';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ZION Tree of Life v4 — Ancient Bodhi · Mount Kailash Edition
@@ -439,19 +440,13 @@ export default function InteractiveTreeOfLife() {
   const rotateY = useTransform(springX, [-1, 1], [-3, 3]);
   const rotateX = useTransform(springY, [-1, 1], [2, -2]);
 
-  // Fetch block height
-  useEffect(() => {
-    const fetchHeight = async () => {
-      try {
-        const res = await fetch('/api/blockchain/stats');
-        const data = await res.json();
-        setBlockHeight(data.block_height || data.total_blocks || null);
-      } catch { /* silent */ }
-    };
-    fetchHeight();
-    const iv = setInterval(fetchHeight, 15000);
-    return () => clearInterval(iv);
-  }, []);
+  usePolling(async () => {
+    try {
+      const res = await fetch('/api/blockchain/stats');
+      const data = await res.json();
+      setBlockHeight(data.block_height || data.total_blocks || null);
+    } catch { /* silent */ }
+  }, 15000);
 
   // Adaptive performance budget (mobile / reduced-motion)
   useEffect(() => {

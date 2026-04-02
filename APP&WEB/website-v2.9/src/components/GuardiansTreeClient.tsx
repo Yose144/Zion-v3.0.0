@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ConsciousnessTreeKabbalah from '@/components/ConsciousnessTreeKabbalah';
 import { Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { usePolling } from '@/hooks/usePolling';
 
 type GuardianData = {
   total144k: number;
@@ -47,14 +48,7 @@ export default function GuardiansTreeClient() {
     }
   };
 
-  useEffect(() => {
-    fetchGuardianStats();
-    
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(fetchGuardianStats, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  usePolling(fetchGuardianStats, 60000);
 
   if (loading && !data) {
     return (

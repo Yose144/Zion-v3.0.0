@@ -256,7 +256,7 @@ cargo run --bin wallet-generator
 
 ## v2.9.6 Status
 
-> 🎯 **MainNet target: 31. prosince 2026**
+> 🎯 **Historical target window: konec 2026**
 
 ### Hotovo ✅
 
