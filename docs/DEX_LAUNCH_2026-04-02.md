@@ -98,6 +98,49 @@ Správná adresa z Uniswap docs: `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1`
 
 ---
 
+## Aktuální stav likvidity a co to znamená
+
+Pool byl nasazen s minimálním seedem: **50 wZION + 0.0005 WETH** (~$3.50 celkem).
+Toto je **technický proof-of-concept**, ne obchodní pool.
+
+### Proč nemůžu swapnout velké množství?
+
+Uniswap V3 je AMM (Automated Market Maker) — cena se počítá z poměru tokenů v poolu.
+Při nízké likviditě má každý swap obrovský **price impact**:
+
+| Swap | Price impact | Dostaneš |
+|---|---|---|
+| 1 wZION → ETH | ~2% | ~férovou cenu |
+| 10 wZION → ETH | ~20% | výrazně méně |
+| 1 000 wZION → ETH | ~99% | skoro nic |
+
+### Kolik likvidity je potřeba pro reálné obchodování?
+
+Při ceně 1 ZION = 0.00001 ETH (~$0.035):
+
+| Úroveň | wZION v poolu | ETH v poolu | Celková hodnota |
+|---|---|---|---|
+| **Teď** (seed) | 50 | 0.0005 | ~$3.50 |
+| Malý test | 10 000 | 0.1 | ~$350 |
+| Funkční pool | 100 000 | 1 | ~$3 500 |
+| Slušný pool | 1 000 000 | 10 | ~$35 000 |
+
+### Jak přidat likviditu?
+
+1. Poslat ETH na deployer adresu (`0xdde175...`) na Base
+2. Bridgnout ZION z L1 premine peněženky → wZION na Base
+3. Wrap ETH → WETH
+4. Spustit `seed-liquidity.ts` s většími částkami (nebo přidat přes Uniswap UI)
+
+### Právní poznámka
+
+- Uniswap je **permissionless** — kdokoliv může vytvořit pool, žádné povolení není třeba
+- "Impersonator token" warning je normální u nových tokenů — zmizí po registraci na token listu
+- Pool s $3 likvidity je **technický milestone**, ne finanční produkt
+- Pro reálné obchodování je třeba: více likvidity, token list registrace, a audit
+
+---
+
 ## Co dál
 
 - [ ] Přidat více likvidity (větší ETH páření)
