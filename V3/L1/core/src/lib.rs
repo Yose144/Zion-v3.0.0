@@ -1159,6 +1159,34 @@ impl NodeRuntime {
         peer_height > self.chain_state.height
     }
 
+    /// Return the current tip hash as hex string.
+    pub fn tip_hash_hex(&self) -> String {
+        hex(&self.chain_state.tip_hash)
+    }
+
+    /// Wipe chain state back to genesis and persist the clean slate.
+    /// Used for fork recovery when the local chain has diverged beyond
+    /// MAX_REORG_DEPTH and automatic reorg is impossible.
+    pub fn reset_to_genesis(&mut self) -> Result<(), String> {
+        eprintln!(
+            "fork_recovery_reset height={} tip={}",
+            self.chain_state.height,
+            hex(&self.chain_state.tip_hash),
+        );
+        self.chain_state = ChainState::new(&self.node_id, &self.core);
+        // Restore wallet addresses so post-IBD mining works
+        self.chain_state.miner_address = self.miner_address.clone();
+        self.chain_state.humanitarian_address = self.humanitarian_address.clone();
+        self.chain_state.issobella_address = self.issobella_address.clone();
+        self.chain_state.pool_fee_address = self.pool_fee_address.clone();
+        self.persist_chain_state()?;
+        if let Some(ref chain_store) = self.chain_store {
+            chain_store.clear_journal()?;
+        }
+        eprintln!("fork_recovery_reset_complete new_height=0");
+        Ok(())
+    }
+
     pub fn persist_chain_state(&self) -> Result<(), String> {
         match &self.chain_store {
             Some(chain_store) => chain_store.save_snapshot(&self.chain_state.snapshot())?,
