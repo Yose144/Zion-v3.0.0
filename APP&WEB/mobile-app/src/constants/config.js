@@ -1,27 +1,27 @@
 // ZION Configuration v2.9.6 — synchronized with desktop-agent/src/main.js
 export const CONFIG = {
-  // ── Network settings — live mainnet nodes (3. března 2026) ─────────────────────────────────
+  // ── Network settings — V3 mainnet nodes (port 8443 RPC, 8080 pool API) ────────────
   RPC_NODES: [
-    'http://77.42.31.72:8444',       // Helsinki (EU, primární seed)
-    'http://178.156.240.160:8444',   // USA (US-East)
-    'http://5.223.43.93:8444',       // Asia (AP-Singapore)
+    'http://91.98.122.165:8443/jsonrpc',  // Prague (CZ, primary)
+    'http://5.78.194.94:8443/jsonrpc',    // USA (US-East)
+    'http://5.223.84.191:8443/jsonrpc',   // Singapore (AP)
   ],
   POOL_API_NODES: [
-    'http://77.42.31.72:8080',       // Helsinki pool API
-    'http://178.156.240.160:8080',   // USA pool API
-    'http://5.223.43.93:8080',       // Asia pool API
+    'http://91.98.122.165:8080',          // Prague pool API
+    'http://5.78.194.94:8080',            // USA pool API
+    'http://5.223.84.191:8080',           // Singapore pool API
   ],
   POOL_URL: 'https://pool.zionterranova.com',
   API_URL: 'https://api.zionterranova.com',
   EXPLORER_URL: 'https://explorer.zionterranova.com',
 
   // Pool stratum endpoints
-  POOL_HOST: '77.42.31.72',
+  POOL_HOST: '91.98.122.165',
   POOL_PORT: 3333,
   POOL_HOSTS: [
-    { host: '77.42.31.72',       name: 'Helsinki' },
-    { host: '178.156.240.160',   name: 'USA' },
-    { host: '5.223.43.93',       name: 'Asia' },
+    { host: '91.98.122.165',    name: 'Prague' },
+    { host: '5.78.194.94',      name: 'USA' },
+    { host: '5.223.84.191',     name: 'Singapore' },
   ],
 
   // P2P network
