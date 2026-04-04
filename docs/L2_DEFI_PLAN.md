@@ -4,7 +4,7 @@
 > **Crate:** `L2/bridge/`, `L2/dao/`, `L2/contracts/`  
 > **Timeline:** ~~Post-MainNet → 2027 Q1-Q2~~ **Probouzeno: Březen 2026 (rok napřed)**  
 > **Prerekvizita:** ✅ Bridge live na Base Sepolia, wZION deployed  
-> **Poslední aktualizace:** 2. března 2026
+> **Poslední aktualizace:** 4. dubna 2026
 
 ---
 
@@ -100,9 +100,10 @@ POOL_ADDRESS=<addr> npx hardhat run scripts/seed-liquidity.ts --network base-sep
 | `config.rs` | ~150 | 5 | ✅ TOML loading, multi-chain, security limits |
 | `types.rs` | ~200 | 16 | ✅ L1↔EVM konverze (×1e12), status enum, events |
 | `l1_watcher.rs` | ~180 | 12 | ✅ Poll L1 RPC, BRIDGE memo parser, finality 60 bloků |
-| `evm_watcher.rs` | ~120 | 2 | ✅ ethers-rs WS, BridgeBurn event subscription |
-| `relayer.rs` | ~200 | 2 | ✅ Lock→Mint + Burn→Unlock pipeline |
+| `evm_watcher.rs` | ~120 | 2 | ✅ HTTP polling + Ankr fallback, auto-reconnect (exp. backoff 5→80s) |
+| `relayer.rs` | ~200 | 2 | ✅ Lock→Mint + Burn→Unlock + rate limit + amount enforcement + metrics |
 | `validator.rs` | ~100 | 3 | ✅ ConsensusTracker (N-of-M, dedup) |
+| `rate_limiter.rs` | ~120 | 4 | ✅ Sliding-window (global + per-address), Mutex-based thread-safe |
 | `db.rs` | ~300 | 12 | ✅ SQLite CRUD (locks, burns, confirmations, state) |
 | `metrics.rs` | ~150 | 5 | ✅ Atomic countery, thread-safe snapshot |
 | `main.rs` | ~120 | — | ✅ Tokio runtime, mpsc channels, graceful shutdown |
@@ -115,12 +116,12 @@ POOL_ADDRESS=<addr> npx hardhat run scripts/seed-liquidity.ts --network base-sep
 | # | Úkol | Priorita | Odhad | Stav |
 |---|------|----------|-------|------|
 | **B-01** | L1 `/api/bridge/unlock` endpoint | 🔴 P0 | — | ✅ HOTOVO (`ZION_BRIDGE_VAULT_KEY` funguje) |
-| **B-02** | EVM WebSocket auto-reconnect | 🟡 P1 | 1 den | 🔄 TODO |
+| **B-02** | EVM WebSocket auto-reconnect | 🟡 P1 | 1 den | ✅ HOTOVO (exp. backoff 5→80s, 5 retries, Ankr fallback) |
 | **B-03** | Prometheus /metrics HTTP endpoint | 🟡 P1 | — | ✅ HOTOVO (port 9100) |
 | **B-04** | Private key management (ne plaintext) | 🔴 P0 | — | ✅ HOTOVO (env var) |
 | **B-05** | Testnet deploy (Base Sepolia) | 🔴 P0 | — | ✅ HOTOVO (wZION + ZIONBridge live) |
 | **B-06** | E2E test na testnet | 🔴 P0 | — | ✅ HOTOVO (700 wZION zmintováno) |
-| **B-07** | Rate limiter pro bridge requests | 🟡 P1 | 1 den | 🔄 TODO |
+| **B-07** | Rate limiter pro bridge requests | 🟡 P1 | 1 den | ✅ HOTOVO (sliding-window global + per-address, amount min/max, recipient validation) |
 | **B-08** | Operational runbook | 🟡 P1 | — | ✅ HOTOVO (`ops/runbook.md`) |
 | **B-09** | Bridge dashboard (Grafana) | 🟢 P2 | — | ✅ HOTOVO (Grafana + Prometheus monitoring) |
 | **B-10** | Mainnet deploy (Base + Arbitrum) | 🔴 P0 | 1 den | 🔄 Po L1 mainnet launch |
