@@ -430,6 +430,12 @@ fn handle_rpc_stream(
     let line = read_line_limited(&mut reader, RPC_MAX_REQUEST_BYTES)?;
     println!("rpc_in={line}");
 
+    // ── HTTP POST support for Electron/mobile clients ───────────────────
+    // Desktop agent and mobile app send HTTP POST requests; detect and handle them.
+    if line.starts_with("POST ") || line.starts_with("GET ") {
+        return handle_rpc_http(&line, &mut reader, &mut writer, jsonrpc_router);
+    }
+
     // Protocol detection: JSON-RPC 2.0 requests contain "jsonrpc" key
     let parsed: serde_json::Value = serde_json::from_str(&line)
         .unwrap_or(serde_json::Value::Null);
@@ -538,6 +544,80 @@ fn read_line_limited(reader: &mut impl BufRead, max_bytes: usize) -> Result<Stri
         }
     }
     Ok(line.trim().to_string())
+}
+
+/// Handle an HTTP POST/GET request on the RPC port.
+/// Reads headers to find Content-Length, reads the JSON body, routes through
+/// the JSON-RPC router, and writes back a proper HTTP response.
+/// CORS headers are included so browser-based wallets can call directly.
+fn handle_rpc_http(
+    first_line: &str,
+    reader: &mut impl BufRead,
+    writer: &mut impl Write,
+    router: &Arc<RpcRouter>,
+) -> Result<()> {
+    // Read HTTP headers
+    let mut content_length: usize = 0;
+    loop {
+        let header_line = {
+            let mut buf = String::new();
+            reader.read_line(&mut buf).context("failed to read HTTP header")?;
+            buf
+        };
+        let trimmed = header_line.trim();
+        if trimmed.is_empty() {
+            break; // end of headers
+        }
+        if let Some(value) = trimmed.strip_prefix("Content-Length:").or_else(|| trimmed.strip_prefix("content-length:")) {
+            content_length = value.trim().parse().unwrap_or(0);
+        }
+    }
+
+    let is_post = first_line.starts_with("POST ");
+
+    if !is_post || content_length == 0 {
+        // GET or empty POST — return health-style JSON
+        let body = r#"{"status":"ok","service":"zion-v3-rpc","protocol":"jsonrpc-2.0"}"#;
+        let http_response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n{}",
+            body.len(), body
+        );
+        writer.write_all(http_response.as_bytes())?;
+        writer.flush()?;
+        return Ok(());
+    }
+
+    // Enforce body size limit
+    if content_length > RPC_MAX_REQUEST_BYTES {
+        let err_body = r#"{"jsonrpc":"2.0","error":{"code":-32600,"message":"request too large"},"id":null}"#;
+        let http_response = format!(
+            "HTTP/1.1 413 Payload Too Large\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n{}",
+            err_body.len(), err_body
+        );
+        writer.write_all(http_response.as_bytes())?;
+        writer.flush()?;
+        return Ok(());
+    }
+
+    // Read JSON body
+    let mut body_buf = vec![0u8; content_length];
+    reader.read_exact(&mut body_buf).context("failed to read HTTP body")?;
+    let body_str = String::from_utf8_lossy(&body_buf);
+    println!("rpc_http_in={body_str}");
+
+    // Route through JSON-RPC router
+    let response_bytes = router.handle_raw(&body_buf);
+    let resp_str = String::from_utf8_lossy(&response_bytes);
+    println!("rpc_http_out={resp_str}");
+
+    let http_response = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\nConnection: close\r\n\r\n",
+        response_bytes.len()
+    );
+    writer.write_all(http_response.as_bytes())?;
+    writer.write_all(&response_bytes)?;
+    writer.flush()?;
+    Ok(())
 }
 
 #[derive(Debug, Clone)]
