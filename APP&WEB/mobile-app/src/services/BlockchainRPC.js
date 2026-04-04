@@ -1,6 +1,6 @@
 /**
- * ZION Blockchain RPC Service v2.9.5
- * Direct communication with ZION blockchain nodes
+ * ZION Blockchain RPC Service v2.9.8
+ * Direct communication with ZION V3 blockchain nodes
  * 
  * Features:
  * - JSON-RPC 2.0 client
@@ -13,12 +13,12 @@
 import axios from 'axios';
 import { CONFIG } from '../constants/config';
 
-// Default RPC endpoints (with failover) — v2.9.5 canonical ports
+// Default RPC endpoints (with failover) — V3 mainnet canonical port 8443
 const DEFAULT_RPC_NODES = [
   'https://rpc.zionterranova.com',
-  'http://77.42.31.72:8444',      // Helsinki (seed node)
-  'http://5.78.145.234:8444',     // USA
-  'http://5.223.56.124:8444',     // Singapore
+  'http://91.98.122.165:8443/jsonrpc',   // Prague (CZ, primary)
+  'http://5.78.194.94:8443/jsonrpc',     // USA
+  'http://5.223.84.191:8443/jsonrpc',    // Singapore
 ];
 
 class BlockchainRPC {
@@ -85,14 +85,15 @@ class BlockchainRPC {
    * Get current block height
    */
   async getBlockCount() {
-    return await this.rpcCall('getblockcount');
+    const info = await this.rpcCall('getChainInfo');
+    return info?.height ?? info?.chain_height ?? info;
   }
 
   /**
    * Get block by height or hash
    */
   async getBlock(heightOrHash) {
-    return await this.rpcCall('getblock', { block: heightOrHash });
+    return await this.rpcCall('getBlockByHeight', { height: heightOrHash });
   }
 
   /**
@@ -107,14 +108,14 @@ class BlockchainRPC {
    * Get network info
    */
   async getNetworkInfo() {
-    return await this.rpcCall('getnetworkinfo');
+    return await this.rpcCall('getNodeInfo');
   }
 
   /**
-   * Get blockchain info
+   * Get blockchain info (V3: getChainInfo)
    */
   async getBlockchainInfo() {
-    return await this.rpcCall('getblockchaininfo');
+    return await this.rpcCall('getChainInfo');
   }
 
   // ==================== WALLET QUERIES ====================
@@ -126,12 +127,18 @@ class BlockchainRPC {
    */
   async getBalance(address) {
     try {
-      const result = await this.rpcCall('getbalance', { address });
-      const atomic = result?.balance ?? result ?? 0;
-      // Core returns atomic units; convert to ZION
-      return typeof atomic === 'number' && atomic > 1_000_000
-        ? atomic / 1_000_000
-        : atomic;
+      const result = await this.rpcCall('getBalance', { address });
+      // V3 returns: { balance_flowers, utxo_balance_flowers, chain_height, ... }
+      // balance_flowers is in atomic flowers (1 ZION = 1e12 flowers)
+      if (result?.balance_flowers !== undefined) {
+        return result.balance_flowers / 1_000_000_000_000;
+      }
+      // Fallback: balance_zion string (e.g. "1234.000000000000")
+      if (result?.balance_zion !== undefined) {
+        return parseFloat(result.balance_zion) || 0;
+      }
+      const raw = result?.balance ?? result ?? 0;
+      return typeof raw === 'number' ? raw : parseFloat(raw) || 0;
     } catch (error) {
       console.error('getBalance error:', error);
       return 0;
@@ -146,7 +153,7 @@ class BlockchainRPC {
    */
   async getUTXOs(address) {
     try {
-      const result = await this.rpcCall('getutxos', { address });
+      const result = await this.rpcCall('getUtxos', { address });
       return result?.utxos || result || [];
     } catch (error) {
       console.error('getUTXOs error:', error);
@@ -161,7 +168,7 @@ class BlockchainRPC {
    */
   async getTransactionHistory(address, limit = 50) {
     try {
-      const result = await this.rpcCall('gettransactions', { 
+      const result = await this.rpcCall('getAccountTransaction', { 
         address, 
         limit 
       });
@@ -176,7 +183,7 @@ class BlockchainRPC {
    * Get transaction by hash
    */
   async getTransaction(txHash) {
-    return await this.rpcCall('gettransaction', { hash: txHash });
+    return await this.rpcCall('getTransaction', { txid: txHash });
   }
 
   // ==================== TRANSACTION OPERATIONS ====================
@@ -187,17 +194,24 @@ class BlockchainRPC {
    * @param {string} signedTxHex - Hex-encoded signed transaction
    * @returns {Promise<string>} Transaction hash
    */
-  async broadcastTransaction(signedTxHex) {
-    const result = await this.rpcCall('sendrawtransaction', { 
-      tx: signedTxHex 
+  async broadcastTransaction(signedTxObj) {
+    // V3 expects a transaction JSON object, not hex.
+    // submitTransaction accepts both account-model and UTXO-model transactions.
+    const txPayload = typeof signedTxObj === 'string'
+      ? JSON.parse(signedTxObj)
+      : signedTxObj;
+
+    const result = await this.rpcCall('submitTransaction', { 
+      transaction: txPayload 
     });
     
-    if (!result || !result.txid) {
+    if (!result?.accepted && !result?.tx_id) {
       throw new Error(result?.error || 'Failed to broadcast transaction');
     }
 
-    console.log(`✅ Transaction broadcast: ${result.txid}`);
-    return result.txid;
+    const txId = result.tx_id || result.txid;
+    console.log(`✅ Transaction broadcast: ${txId}`);
+    return txId;
   }
 
   /**
@@ -293,7 +307,7 @@ class BlockchainRPC {
    */
   async getPoolStats() {
     try {
-      const poolUrl = CONFIG.POOL_API_URL || 'http://77.42.31.72:8080';
+      const poolUrl = CONFIG.POOL_API_URL || 'http://91.98.122.165:8080';
       const response = await this.client.get(`${poolUrl}/api/pool/stats`);
       return response.data;
     } catch (error) {
@@ -307,7 +321,7 @@ class BlockchainRPC {
    */
   async getMinerStats(address) {
     try {
-      const poolUrl = CONFIG.POOL_API_URL || 'http://77.42.31.72:8080';
+      const poolUrl = CONFIG.POOL_API_URL || 'http://91.98.122.165:8080';
       const response = await this.client.get(`${poolUrl}/api/miner/${address}`);
       return response.data;
     } catch (error) {

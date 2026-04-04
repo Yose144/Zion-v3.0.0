@@ -13,7 +13,7 @@ const crypto = require('crypto');
 // ── Network Constants ───────────────────────────────────────────────────────
 const PRIMARY_TESTNET_HOST = '91.98.122.165';
 const PRIMARY_POOL_PORT = 3333;
-const PRIMARY_RPC_PORT = 8444;
+const PRIMARY_RPC_PORT = 8443;
 const DEFAULT_RPC_URL = `http://${PRIMARY_TESTNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
 
 // ── Logging: only miner metrics + errors go to console.log.
@@ -1512,7 +1512,9 @@ function applyCudaTuning(gpuInfo, tuningConfig) {
 // ============================================================================
 
 const TESTNET_SERVERS = [
-  { id: 'zion2', name: 'Zion2', host: PRIMARY_TESTNET_HOST, flag: 'CZ', location: 'Primary TestNet' }
+  { id: 'zion2', name: 'Prague', host: PRIMARY_TESTNET_HOST, flag: 'CZ', location: 'EU Primary' },
+  { id: 'zion3', name: 'USA', host: '5.78.194.94', flag: 'US', location: 'US-East' },
+  { id: 'zion4', name: 'Singapore', host: '5.223.84.191', flag: 'SG', location: 'AP-Singapore' },
 ];
 
 async function checkServerPort(host, port, timeout = 3000) {
@@ -1594,7 +1596,7 @@ async function getAllServersStatus() {
     TESTNET_SERVERS.map(async (server) => {
       const [poolStatus, rpcStatus] = await Promise.all([
         checkStratumHealth(server.host, 3333),  // deep stratum check, not just TCP
-        checkServerPort(server.host, 8444)
+        checkServerPort(server.host, PRIMARY_RPC_PORT)
       ]);
       return {
         ...server,
@@ -1637,7 +1639,7 @@ async function autoSelectBestPool() {
 
     if (config.pool?.host !== best.host) {
       config.pool = { host: best.host, port: 3333 };
-      config.rpcUrl = `http://${best.host}:8444/jsonrpc`;
+      config.rpcUrl = `http://${best.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
       saveConfig(config);
       dbg(`[auto-select] Config updated to ${best.host}`);
     }
@@ -3836,7 +3838,7 @@ ipcMain.handle('get-network-metrics', async () => {
         const node = { ...server, online: false, height: 0, hashrate: 0, miners: 0, blocks: 0 };
         // RPC get_info → height
         try {
-          const rpcUrl = `http://${server.host}:8444/jsonrpc`;
+          const rpcUrl = `http://${server.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), 5000);
           const res = await fetch(rpcUrl, {
@@ -3918,7 +3920,7 @@ ipcMain.handle('get-peer-list', async () => {
 
     for (const server of TESTNET_SERVERS) {
       try {
-        const rpcUrl = `http://${server.host}:8444/jsonrpc`;
+        const rpcUrl = `http://${server.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 5000);
         const res = await fetch(rpcUrl, {
@@ -4214,13 +4216,13 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     })();
     const baseHost = parsedBase?.hostname || '';
     const baseProtocol = parsedBase?.protocol || 'http:';
-    const basePort = parsedBase?.port || '8444';
+    const basePort = parsedBase?.port || '8443';
 
-    const canonicalRpcCandidates = TESTNET_SERVERS.map((s) => `http://${s.host}:8444/jsonrpc`);
+    const canonicalRpcCandidates = TESTNET_SERVERS.map((s) => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`);
 
     const rpcCandidates = [
       baseRpcUrl,
-      baseHost ? `${baseProtocol}//${baseHost}:8444/jsonrpc` : '',
+      baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
       ...TESTNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
       ...canonicalRpcCandidates
     ].filter(Boolean);
@@ -4258,14 +4260,18 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     }
     if (result?.error) return { success: false, error: result.error };
 
-    // V3 account-model: returns balance_zion (u64), chain_height, transaction_model
-    const balanceZion = result?.balance_zion ?? result?.balance ?? 0;
-    const balanceAtomic = result?.balance_atomic ?? balanceZion;
+    // V3 returns: balance_flowers (u64 in flowers), chain_height, transaction_model
+    // 1 ZION = 1_000_000_000_000 flowers (1e12)
+    const balanceFlowers = result?.balance_flowers ?? 0;
+    const balanceZion = balanceFlowers > 0
+      ? balanceFlowers / 1_000_000_000_000
+      : (typeof result?.balance_zion === 'string' ? parseFloat(result.balance_zion) : (result?.balance_zion ?? result?.balance ?? 0));
+    const balanceAtomic = balanceFlowers || result?.balance_atomic || 0;
     const utxoCount = result?.utxo_count ?? 0;
     const chainHeight = result?.chain_height ?? 0;
 
-    // Fetch pool mined balance from the current public host.
-    const POOL_SERVER_PRIORITY = ['zion2'];
+    // Fetch pool mined balance — try all V3 pool servers.
+    const POOL_SERVER_PRIORITY = ['zion2', 'zion3', 'zion4'];
     const POOL_API_SERVERS = POOL_SERVER_PRIORITY
       .map(id => TESTNET_SERVERS.find(s => s.id === id))
       .filter(Boolean);
@@ -4339,12 +4345,12 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       utxo_count: utxoCount,
       chain_height: chainHeight,
       transaction_model: result?.transaction_model ?? 'account',
-      // Pool mining balance (pool stores atomic units, 1 ZION = 1_000_000 atomic)
-      pool_pending:        poolPending  / 1_000_000,
+      // Pool mining balance (V3 pool stores flowers: 1 ZION = 1_000_000_000_000 flowers)
+      pool_pending:        poolPending  / 1_000_000_000_000,
       pool_pending_atomic: poolPending,
       pool_pending_stats_atomic: poolPendingFromStats,
       pool_pending_payouts_atomic: poolPendingFromPayouts,
-      pool_paid:           poolPaid     / 1_000_000,
+      pool_paid:           poolPaid     / 1_000_000_000_000,
       pool_paid_atomic:    poolPaid,
       pool_shares:         poolShares,
       pool_blocks:         poolBlocks,
@@ -4400,13 +4406,13 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     })();
     const baseHost = parsedBase?.hostname || '';
     const baseProtocol = parsedBase?.protocol || 'http:';
-    const basePort = parsedBase?.port || '8444';
+    const basePort = parsedBase?.port || '8443';
 
     const rpcCandidates = [
       baseRpcUrl,
-      baseHost ? `${baseProtocol}//${baseHost}:8444/jsonrpc` : '',
+      baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
       ...TESTNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
-      ...TESTNET_SERVERS.map(s => `http://${s.host}:8444/jsonrpc`)
+      ...TESTNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
     ].filter(Boolean);
 
     const seenRpc = new Set();
