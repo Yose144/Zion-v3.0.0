@@ -34,6 +34,7 @@ pub mod evm_tx;
 pub mod evm_watcher;
 pub mod l1_watcher;
 pub mod metrics;
+pub mod rate_limiter;
 pub mod relayer;
 pub mod types;
 pub mod validator;
