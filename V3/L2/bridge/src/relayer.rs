@@ -7,6 +7,8 @@ use crate::config::BridgeConfig;
 use crate::config::ValidatorConfig;
 use crate::evm_rpc::EvmHttpClient;
 use crate::evm_tx::{build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release, encode_submit_lock_proof, hash_to_bytes32};
+use crate::metrics::BridgeMetrics;
+use crate::rate_limiter::{RateLimiter, RateLimitResult};
 use crate::types::{EvmBurnEvent, L1LockEvent};
 use anyhow::Result;
 use k256::ecdsa::{signature::Signer, Signature, SigningKey};
@@ -14,6 +16,7 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
@@ -78,11 +81,18 @@ fn load_validator_key(config: &ValidatorConfig) -> anyhow::Result<Zeroizing<Stri
 /// Bridge relayer that processes lock and burn events.
 pub struct Relayer {
     config: Arc<BridgeConfig>,
+    rate_limiter: RateLimiter,
+    metrics: Arc<BridgeMetrics>,
 }
 
 impl Relayer {
-    pub fn new(config: Arc<BridgeConfig>) -> Self {
-        Self { config }
+    pub fn new(config: Arc<BridgeConfig>, metrics: Arc<BridgeMetrics>) -> Self {
+        let rate_limiter = RateLimiter::new(config.security.max_ops_per_hour);
+        Self {
+            config,
+            rate_limiter,
+            metrics,
+        }
     }
 
     /// Start the relayer — listens for events from both watchers and submits proofs.
@@ -130,6 +140,49 @@ impl Relayer {
             lock.target_chain,
             lock.l1_tx_hash,
         );
+
+        // ── Rate limit ────────────────────────────────────────────────
+        match self.rate_limiter.check_and_record(&lock.l1_sender) {
+            RateLimitResult::Allowed => {}
+            RateLimitResult::GlobalLimitReached { current, max } => {
+                self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+                anyhow::bail!(
+                    "🚫 Rate limit: global hourly limit reached ({}/{}) — skipping lock TX: {}",
+                    current, max, lock.l1_tx_hash,
+                );
+            }
+            RateLimitResult::AddressLimitReached { address, current, max } => {
+                self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+                anyhow::bail!(
+                    "🚫 Rate limit: address {} exceeded per-address limit ({}/{}) — skipping lock TX: {}",
+                    address, current, max, lock.l1_tx_hash,
+                );
+            }
+        }
+
+        // ── Validate recipient EVM address format ─────────────────────
+        validate_evm_address(&lock.evm_recipient)
+            .map_err(|e| anyhow::anyhow!("🚫 Invalid evm_recipient: {} — TX: {}", e, lock.l1_tx_hash))?;
+
+        // ── Amount security checks ────────────────────────────────────
+        let wei: u128 = lock.amount_wzion_wei.parse().unwrap_or(0);
+        let max_single: u128 = self.config.security.max_single_amount.parse().unwrap_or(u128::MAX);
+        let min_amount: u128 = self.config.security.min_bridge_amount.parse().unwrap_or(0);
+
+        if wei < min_amount {
+            self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+            anyhow::bail!(
+                "🚫 Amount below minimum: {} < {} (min_bridge_amount) — TX: {}",
+                lock.amount_wzion_wei, self.config.security.min_bridge_amount, lock.l1_tx_hash,
+            );
+        }
+        if wei > max_single {
+            self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+            anyhow::bail!(
+                "🚫 Amount exceeds max_single_amount: {} > {} — TX: {}",
+                lock.amount_wzion_wei, self.config.security.max_single_amount, lock.l1_tx_hash,
+            );
+        }
 
         // ── Find EVM chain config ─────────────────────────────────────
         let chain_config = self
@@ -232,12 +285,14 @@ impl Relayer {
             chain_config.name,
             chain_config.bridge_contract_address,
         );
+        self.metrics.evm_mints_submitted.fetch_add(1, Ordering::Relaxed);
 
         // ── Poll for receipt ──────────────────────────────────────────
         tokio::spawn({
             let evm_url = rpc_url.to_string();
             let tx = tx_hash.clone();
             let chain_name = chain_config.name.clone();
+            let metrics = Arc::clone(&self.metrics);
             async move {
                 let evm2 = EvmHttpClient::from_rpc_url(&evm_url);
                 for attempt in 1..=20 {
@@ -247,8 +302,10 @@ impl Relayer {
                             let status = receipt["status"].as_str().unwrap_or("0x0");
                             if status == "0x1" {
                                 info!("   🟢 submitLockProof CONFIRMED on {} (attempt {}) — tx: {}", chain_name, attempt, tx);
+                                metrics.evm_mints_confirmed.fetch_add(1, Ordering::Relaxed);
                             } else {
                                 error!("   🔴 submitLockProof REVERTED on {} (attempt {}) — tx: {}", chain_name, attempt, tx);
+                                metrics.errors.fetch_add(1, Ordering::Relaxed);
                             }
                             return;
                         }
@@ -275,6 +332,49 @@ impl Relayer {
             "📤 Processing EVM→L1 burn: {} wZION → {} on L1 (chain: {}, burn_id: {})",
             burn.amount_wzion_wei, burn.l1_recipient, burn.evm_chain, burn.burn_id,
         );
+
+        // ── Rate limit ────────────────────────────────────────────────
+        match self.rate_limiter.check_and_record(&burn.evm_burner) {
+            RateLimitResult::Allowed => {}
+            RateLimitResult::GlobalLimitReached { current, max } => {
+                self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+                anyhow::bail!(
+                    "🚫 Rate limit: global hourly limit reached ({}/{}) — skipping burn: {}",
+                    current, max, burn.burn_id,
+                );
+            }
+            RateLimitResult::AddressLimitReached { address, current, max } => {
+                self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+                anyhow::bail!(
+                    "🚫 Rate limit: address {} exceeded per-address limit ({}/{}) — skipping burn: {}",
+                    address, current, max, burn.burn_id,
+                );
+            }
+        }
+
+        // ── Validate L1 recipient address format ──────────────────────
+        validate_l1_address(&burn.l1_recipient)
+            .map_err(|e| anyhow::anyhow!("🚫 Invalid l1_recipient: {} — burn_id: {}", e, burn.burn_id))?;
+
+        // ── Amount security checks ────────────────────────────────────
+        let wei: u128 = burn.amount_wzion_wei.parse().unwrap_or(0);
+        let max_single: u128 = self.config.security.max_single_amount.parse().unwrap_or(u128::MAX);
+        let min_amount: u128 = self.config.security.min_bridge_amount.parse().unwrap_or(0);
+
+        if wei < min_amount {
+            self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+            anyhow::bail!(
+                "🚫 Burn amount below minimum: {} < {} — burn_id: {}",
+                burn.amount_wzion_wei, self.config.security.min_bridge_amount, burn.burn_id,
+            );
+        }
+        if wei > max_single {
+            self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+            anyhow::bail!(
+                "🚫 Burn amount exceeds max_single_amount: {} > {} — burn_id: {}",
+                burn.amount_wzion_wei, self.config.security.max_single_amount, burn.burn_id,
+            );
+        }
 
         let l1_amount = burn.amount_flowers;
         info!(
@@ -311,6 +411,7 @@ impl Relayer {
             l1_tx_hash,
             crate::types::conversion::flowers_to_zion_display(l1_amount),
         );
+        self.metrics.l1_unlocks_submitted.fetch_add(1, Ordering::Relaxed);
 
 // ── Step 2: Confirm burn release on ZIONBridge EVM contract via Ankr ──
         let chain_config = self
@@ -436,6 +537,7 @@ impl Relayer {
             let tx = cbr_tx_hash.clone();
             let chain_name = chain_config.name.clone();
             let burn_id = burn.burn_id.clone();
+            let metrics = Arc::clone(&self.metrics);
             async move {
                 let evm2 = EvmHttpClient::from_rpc_url(&evm_url);
                 for attempt in 1..=20 {
@@ -446,9 +548,11 @@ impl Relayer {
                             if status == "0x1" {
                                 info!("   🟢 confirmBurnRelease CONFIRMED on {} (attempt {}) — burn_id: {} tx: {}",
                                     chain_name, attempt, burn_id, tx);
+                                metrics.l1_unlocks_confirmed.fetch_add(1, Ordering::Relaxed);
                             } else {
                                 error!("   🔴 confirmBurnRelease REVERTED on {} (attempt {}) — burn_id: {} tx: {}",
                                     chain_name, attempt, burn_id, tx);
+                                metrics.errors.fetch_add(1, Ordering::Relaxed);
                             }
                             return;
                         }
@@ -626,4 +730,105 @@ fn normalize_rpc_addr(value: &str) -> String {
         .or_else(|| trimmed.strip_prefix("https://"))
         .unwrap_or(trimmed)
         .to_string()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Address validation helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Validate that an EVM address is well-formed: `0x` prefix + 40 hex characters.
+/// Rejects the zero address (`0x0000…0000`).
+fn validate_evm_address(addr: &str) -> Result<()> {
+    let addr = addr.trim();
+    if !addr.starts_with("0x") && !addr.starts_with("0X") {
+        anyhow::bail!("EVM address must start with 0x, got: {}", addr);
+    }
+    let hex_part = &addr[2..];
+    if hex_part.len() != 40 {
+        anyhow::bail!(
+            "EVM address must be 40 hex chars after 0x, got {} chars: {}",
+            hex_part.len(),
+            addr,
+        );
+    }
+    if hex_part.chars().any(|c| !c.is_ascii_hexdigit()) {
+        anyhow::bail!("EVM address contains non-hex characters: {}", addr);
+    }
+    // Reject zero address
+    if hex_part.chars().all(|c| c == '0') {
+        anyhow::bail!("EVM address is the zero address: {}", addr);
+    }
+    Ok(())
+}
+
+/// Validate that an L1 address is well-formed: starts with `zion1` and is
+/// 40–60 characters of alphanumeric content.
+fn validate_l1_address(addr: &str) -> Result<()> {
+    let addr = addr.trim();
+    if !addr.starts_with("zion1") {
+        anyhow::bail!("L1 address must start with zion1, got: {}", addr);
+    }
+    if addr.len() < 40 || addr.len() > 60 {
+        anyhow::bail!(
+            "L1 address length {} out of range [40, 60]: {}",
+            addr.len(),
+            addr,
+        );
+    }
+    if addr[5..].chars().any(|c| !c.is_ascii_alphanumeric()) {
+        anyhow::bail!("L1 address contains invalid characters: {}", addr);
+    }
+    Ok(())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_evm_address_valid() {
+        assert!(validate_evm_address("0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186").is_ok());
+        assert!(validate_evm_address("0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6").is_ok());
+    }
+
+    #[test]
+    fn test_validate_evm_address_rejects_zero() {
+        assert!(validate_evm_address("0x0000000000000000000000000000000000000000").is_err());
+    }
+
+    #[test]
+    fn test_validate_evm_address_rejects_short() {
+        assert!(validate_evm_address("0xabc").is_err());
+    }
+
+    #[test]
+    fn test_validate_evm_address_rejects_no_prefix() {
+        assert!(validate_evm_address("dde17506BC2D2dCE1d594bD1D85B0BAbb389D186").is_err());
+    }
+
+    #[test]
+    fn test_validate_l1_address_valid() {
+        assert!(validate_l1_address("zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0").is_ok());
+    }
+
+    #[test]
+    fn test_validate_l1_address_rejects_wrong_prefix() {
+        assert!(validate_l1_address("btc1abc123456789012345678901234567890").is_err());
+    }
+
+    #[test]
+    fn test_validate_l1_address_rejects_too_short() {
+        assert!(validate_l1_address("zion1abc").is_err());
+    }
+
+    #[test]
+    fn test_normalize_rpc_addr() {
+        assert_eq!(normalize_rpc_addr("tcp://127.0.0.1:8443"), "127.0.0.1:8443");
+        assert_eq!(normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"), "127.0.0.1:8443");
+        assert_eq!(normalize_rpc_addr("91.98.122.165:8443"), "91.98.122.165:8443");
+    }
 }
