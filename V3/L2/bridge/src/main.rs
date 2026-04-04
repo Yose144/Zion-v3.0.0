@@ -99,8 +99,9 @@ async fn main() -> Result<()> {
 
     // Start relayer
     let relayer_config = config.clone();
+    let relayer_metrics = Arc::clone(&metrics);
     let _relayer_handle = tokio::spawn(async move {
-        let relayer = Relayer::new(relayer_config);
+        let relayer = Relayer::new(relayer_config, relayer_metrics);
         if let Err(e) = relayer.run(lock_rx, burn_rx).await {
             error!("Relayer crashed: {:?}", e);
         }
