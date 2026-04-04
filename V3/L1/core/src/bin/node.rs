@@ -419,11 +419,15 @@ fn handle_rpc_stream(
     stats: &Arc<PropagationStats>,
     jsonrpc_router: &Arc<RpcRouter>,
 ) -> Result<()> {
+    // ── RPC hardening: read timeout + body size limit ──────────────────
+    stream
+        .set_read_timeout(Some(Duration::from_secs(RPC_READ_TIMEOUT_SECS)))
+        .ok();
     let reader_stream = stream.try_clone().context("failed to clone RPC stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
-    let line = read_line(&mut reader)?;
+    let line = read_line_limited(&mut reader, RPC_MAX_REQUEST_BYTES)?;
     println!("rpc_in={line}");
 
     // Protocol detection: JSON-RPC 2.0 requests contain "jsonrpc" key
@@ -498,6 +502,40 @@ fn read_line(reader: &mut impl BufRead) -> Result<String> {
     let read = reader.read_line(&mut line).context("failed to read line")?;
     if read == 0 {
         return Err(anyhow!("connection closed before message"));
+    }
+    Ok(line.trim().to_string())
+}
+
+/// Read a single line with a maximum byte limit to prevent OOM attacks.
+fn read_line_limited(reader: &mut impl BufRead, max_bytes: usize) -> Result<String> {
+    let mut line = String::new();
+    let mut total = 0usize;
+    loop {
+        let available = reader.fill_buf().context("failed to fill buffer")?;
+        if available.is_empty() {
+            if total == 0 {
+                return Err(anyhow!("connection closed before message"));
+            }
+            break;
+        }
+        if let Some(newline_pos) = available.iter().position(|&b| b == b'\n') {
+            let chunk = &available[..=newline_pos];
+            total += chunk.len();
+            if total > max_bytes {
+                return Err(anyhow!("RPC request exceeds {max_bytes} byte limit"));
+            }
+            line.push_str(&String::from_utf8_lossy(chunk));
+            reader.consume(newline_pos + 1);
+            break;
+        } else {
+            let len = available.len();
+            total += len;
+            if total > max_bytes {
+                return Err(anyhow!("RPC request exceeds {max_bytes} byte limit"));
+            }
+            line.push_str(&String::from_utf8_lossy(available));
+            reader.consume(len);
+        }
     }
     Ok(line.trim().to_string())
 }
@@ -965,6 +1003,12 @@ const MAX_RELAY_THREADS: usize = 16;
 const DISCOVERY_EVERY_N_CYCLES: u64 = 10;
 /// Persist known_peers to disk every N cycles (~5 min).
 const PERSIST_PEERS_EVERY_N_CYCLES: u64 = 10;
+/// How many consecutive sync failures at the same height triggers fork recovery.
+const FORK_RECOVERY_THRESHOLD: u32 = 10;
+/// Maximum RPC request body size (64 KiB — prevents OOM from oversized payloads).
+const RPC_MAX_REQUEST_BYTES: usize = 65_536;
+/// RPC connection read timeout (30 seconds).
+const RPC_READ_TIMEOUT_SECS: u64 = 30;
 
 fn outbound_peer_loop(
     runtime: &Arc<Mutex<NodeRuntime>>,
@@ -1034,6 +1078,10 @@ fn outbound_peer_loop(
     // ── Persistent outbound connection pool ────────────────────────────
     let mut pool = OutboundPool::new();
 
+    // ── Fork detection state ───────────────────────────────────────────
+    let mut sync_fail_count: u32 = 0;
+    let mut sync_fail_height: u64 = 0;
+
     loop {
         thread::sleep(Duration::from_secs(OUTBOUND_CYCLE_SECS));
         cycle_count += 1;
@@ -1085,6 +1133,11 @@ fn outbound_peer_loop(
         // Proactive sync: check each known peer for new blocks
         let peers = runtime.lock().expect("lock").known_peers().to_vec();
         let our_height = runtime.lock().expect("lock").chain_height();
+        let our_tip = runtime.lock().expect("lock").tip_hash_hex();
+
+        // ── Fork detection: compare our tip with peer tips ─────────────
+        let mut peers_ahead = 0u32;
+        let mut peers_disagree_tip = 0u32;
 
         for peer in &peers {
             // Quick status check via Ping to keep connection alive (persistent)
@@ -1094,6 +1147,15 @@ fn outbound_peer_loop(
                     if let Ok(P2pMessage::Status { status }) = pool.roundtrip(peer, &P2pMessage::GetStatus) {
                         // Feed height into IBD engine
                         ibd.update_peer(&peer.address(), status.chain_height);
+
+                        // Track tip agreement for fork detection
+                        if status.chain_height > our_height {
+                            peers_ahead += 1;
+                            if status.tip_hash_hex != our_tip {
+                                peers_disagree_tip += 1;
+                            }
+                        }
+
                         if status.chain_height > our_height {
                             println!(
                                 "outbound_sync peer={} remote_height={} our_height={}",
@@ -1102,12 +1164,23 @@ fn outbound_peer_loop(
                                 our_height,
                             );
                             match sync_from_peer(runtime, peer, batch_limit.max(1)) {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    // Sync succeeded — reset failure counter
+                                    sync_fail_count = 0;
+                                }
                                 Err(e) => {
                                     eprintln!(
                                         "outbound_sync_err peer={} err={e}",
                                         peer.address()
                                     );
+                                    // Track consecutive failures at the same height
+                                    let current_height = runtime.lock().expect("lock").chain_height();
+                                    if current_height == sync_fail_height {
+                                        sync_fail_count += 1;
+                                    } else {
+                                        sync_fail_height = current_height;
+                                        sync_fail_count = 1;
+                                    }
                                 }
                             }
                         }
@@ -1117,6 +1190,39 @@ fn outbound_peer_loop(
                     // Peer unreachable — will be cleaned up by heartbeat timeout
                 }
                 _ => {}
+            }
+        }
+
+        // ── Fork recovery: if sync is stuck at the same height for too
+        //    many cycles and ALL reachable peers disagree with our tip,
+        //    reset to genesis and re-IBD from the canonical chain. ──────
+        if sync_fail_count >= FORK_RECOVERY_THRESHOLD
+            && peers_ahead > 0
+            && peers_disagree_tip == peers_ahead
+        {
+            eprintln!(
+                "fork_detected height={} tip={} failures={} disagreeing_peers={}/{}",
+                our_height, our_tip, sync_fail_count, peers_disagree_tip, peers_ahead,
+            );
+            let mut rt = runtime.lock().expect("lock");
+            if let Err(e) = rt.reset_to_genesis() {
+                eprintln!("fork_recovery_failed err={e}");
+            } else {
+                drop(rt);
+                sync_fail_count = 0;
+                sync_fail_height = 0;
+                // Immediately try to resync from first available peer
+                for peer in &peers {
+                    match sync_from_peer(runtime, peer, batch_limit.max(1)) {
+                        Ok(_) => {
+                            eprintln!("fork_recovery_ibd_started peer={}", peer.address());
+                            break;
+                        }
+                        Err(e) => {
+                            eprintln!("fork_recovery_ibd_err peer={} err={e}", peer.address());
+                        }
+                    }
+                }
             }
         }
 
@@ -1345,8 +1451,8 @@ fn serve_node_metrics(bind_addr: &str, runtime: Arc<Mutex<NodeRuntime>>) -> Resu
         let (code, content_type, body) = match path {
             "/health" => {
                 let body = format!(
-                    r#"{{"status":"ok","chain_height":{},"peer_count":{},"mempool_size":{}}}"#,
-                    status.chain_height, peer_count, status.mempool_transactions,
+                    r#"{{"status":"ok","chain_height":{},"tip_hash":"{}","peer_count":{},"mempool_size":{}}}"#,
+                    status.chain_height, status.tip_hash_hex, peer_count, status.mempool_transactions,
                 );
                 ("200 OK", "application/json", body)
             }
@@ -1373,6 +1479,9 @@ fn serve_node_metrics(bind_addr: &str, runtime: Arc<Mutex<NodeRuntime>>) -> Resu
                 let _ = writeln!(out, "# HELP zion_template_fees_zion Total fees in active template.");
                 let _ = writeln!(out, "# TYPE zion_template_fees_zion gauge");
                 let _ = writeln!(out, "zion_template_fees_zion {}", status.active_template_total_fees_zion);
+                let _ = writeln!(out, "# HELP zion_tip_hash_info Current chain tip hash (label).");
+                let _ = writeln!(out, "# TYPE zion_tip_hash_info gauge");
+                let _ = writeln!(out, "zion_tip_hash_info{{tip_hash=\"{}\"}} 1", status.tip_hash_hex);
                 ("200 OK", "text/plain; version=0.0.4", out)
             }
         };
