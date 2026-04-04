@@ -1,8 +1,8 @@
 # ZION L2 DeFi — Kompletní Roadmapa k Veřejnému Launchi
 
-> **Datum:** 2. dubna 2026  
-> **Verze:** 1.0  
-> **Status:** Bridge LIVE na Base Mainnet, první wZION minty potvrzeny  
+> **Datum:** 4. dubna 2026  
+> **Verze:** 1.1  
+> **Status:** Bridge LIVE na Base Mainnet, bridge hardening (rate limiter, security enforcement, metrics) dokončen  
 > **Cíl:** Plnohodnotný DeFi ekosystém — DEX, Swap, DAO, Explorer, Desktop Agent, Mobile App, Web — připraveno pro veřejné oznámení (BitcoinTalk, Crypto Twitter, Reddit)
 
 ---
@@ -24,6 +24,11 @@ BRIDGE (L2)
   ✅ 200 wZION úspěšně zmintováno (první 2 test TX)
   ✅ 3. test TX v procesu (správný příjemce 0xdde175...)
   ✅ Relayer běží na Praze, 60-bloková finalita
+  ✅ Rate limiter (sliding-window, global + per-address) — enforced
+  ✅ Amount security enforcement (min/max single, anti-dust)
+  ✅ Recipient address validation (EVM + L1 format, zero-address rejection)
+  ✅ Metrics wired into relayer (mints/unlocks submitted/confirmed, errors)
+  ✅ EVM watcher auto-reconnect (exponential backoff 5→80s)
   ⚠️  Zatím 1/2 validator threshold (produkce potřebuje 3/5)
 
 SMART KONTRAKTY (Base)
@@ -69,14 +74,18 @@ FRONTEND
 | # | Úkol | Priorita | Stav |
 |---|------|----------|------|
 | 0.1 | Ověřit 3. test TX (správný příjemce na MetaMask) | P0 | ⏳ Čeká na 60 bloků finality |
-| 0.2 | Přebuildit bridge image s recipient safety guard | P0 | ⬜ |
+| 0.2 | Přebuildit bridge image s recipient safety guard | P0 | ✅ Recipient validation (EVM + L1 format, zero-addr, contract-addr rejection) |
 | 0.3 | Burn→Unlock směr (Base→L1): E2E test | P0 | ⬜ |
 | 0.4 | Zvýšit validator threshold na 3/5 | P1 | ⬜ |
-| 0.5 | Rate limiter pro bridge requests | P1 | ⬜ |
-| 0.6 | EVM WebSocket auto-reconnect | P1 | ⬜ |
+| 0.5 | Rate limiter pro bridge requests | P1 | ✅ Sliding-window limiter (global + per-address), enforced v relayeru |
+| 0.6 | EVM WebSocket auto-reconnect | P1 | ✅ Exponential backoff 5→10→20→40→80s, 5 retries |
 | 0.7 | Bridge monitoring dashboard (Grafana) | P2 | ✅ Základní existuje |
+| 0.8 | Amount security enforcement (min/max/anti-dust) | P1 | ✅ min_bridge_amount + max_single_amount enforced |
+| 0.9 | Metrics wiring do relayeru | P1 | ✅ mints/unlocks submitted/confirmed, errors counter |
 
 **Výstup:** Bridge spolehlivě funguje oběma směry, validator bezpečnost, monitoring.
+
+> **Aktualizace 04/2026:** Rate limiter, amount enforcement, recipient validation, EVM auto-reconnect a metrics wiring dokončeny. 47 testů prošlo. Zbývá: validator 3/5 threshold, Burn→Unlock E2E test, timelock pro velké částky.
 
 ---
 
