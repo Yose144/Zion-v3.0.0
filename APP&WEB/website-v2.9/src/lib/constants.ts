@@ -105,6 +105,17 @@ export const ISSOBELLA_WALLET = 'zion170a374s6h390k7w244m5c4f354v8n4678844655';
 /** Pool fee wallet */
 export const POOL_FEE_WALLET = 'zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7';
 
+/** Pool payout wallet (coinbase recipient, distributes mining rewards via PPLNS) */
+export const POOL_WALLET = 'zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073';
+
+/** Known address labels for explorer display */
+export const KNOWN_ADDRESS_LABELS: Record<string, { label: string; labelCs: string; type: 'pool' | 'fund' | 'fee' | 'premine' }> = {
+  [HUMANITARIAN_WALLET]: { label: 'Humanitarian Fund', labelCs: 'Humanitární fond', type: 'fund' },
+  [ISSOBELLA_WALLET]: { label: 'Issobella Fund (L5/L6)', labelCs: 'Fond Issobella (L5/L6)', type: 'fund' },
+  [POOL_FEE_WALLET]: { label: 'Pool Fee Wallet', labelCs: 'Peněženka poplatků poolu', type: 'fee' },
+  [POOL_WALLET]: { label: 'Pool Payout Wallet', labelCs: 'Pooluova výplatní peněženka', type: 'pool' },
+};
+
 /** Miner reward per block in ZION (Decade 1) */
 export const MINER_REWARD_ZION = BLOCK_REWARD_ZION * MINER_SHARE_PCT / 100;
 
