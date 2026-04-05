@@ -27,6 +27,10 @@ interface TickerData {
   circulating_supply: number;
   emission_pct: string;
   connected: boolean;
+  active_miners: number;
+  pool_hashrate_formatted: string;
+  pool_pending_payouts_atomic: number;
+  pool_pending_miners: number;
   last_block?: {
     height: number;
     hash: string;
@@ -88,8 +92,8 @@ export default function NetworkTicker() {
     return (
       <div className="w-full bg-black/80 border-b border-white/5">
         <div className="px-5 py-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {[...Array(10)].map((_, i) => (
               <div key={i} className="h-10 bg-white/5 rounded-xl animate-pulse" />
             ))}
           </div>
@@ -97,6 +101,10 @@ export default function NetworkTicker() {
       </div>
     );
   }
+
+  const pendingZion = data.pool_pending_payouts_atomic
+    ? (data.pool_pending_payouts_atomic / 1e12).toFixed(2)
+    : "0";
 
   const items = [
     {
@@ -147,6 +155,18 @@ export default function NetworkTicker() {
       value: `${data.emission_pct}%`,
       color: "text-pink-400",
     },
+    {
+      icon: Zap,
+      label: "Pool Hash",
+      value: data.pool_hashrate_formatted || "—",
+      color: "text-cyan-400",
+    },
+    {
+      icon: Globe,
+      label: "Miners",
+      value: `${data.active_miners ?? 0}`,
+      color: "text-emerald-400",
+    },
   ];
 
   const lastBlockAge = data.last_block
@@ -196,8 +216,8 @@ export default function NetworkTicker() {
           </div>
         </div>
 
-        {/* Stats grid — 2 cols mobile, 4 cols tablet+ */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {/* Stats grid — 2 cols mobile, 5 cols tablet+ */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {items.map((item) => (
             <div
               key={item.label}

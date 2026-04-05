@@ -379,7 +379,7 @@ fn write_stats_file(path: &str, snapshot: &MinerMetricsSnapshot) {
         "shares_sent": snapshot.accepted_shares + snapshot.rejected_shares,
         // Chain info
         "pool_height": snapshot.pool_height,
-        "difficulty": snapshot.current_epoch,
+        "current_epoch": snapshot.current_epoch,
         "total_hashes": snapshot.attempted_hashes,
         // Pool / connection
         "pool_latency_ms": snapshot.submit_avg_latency_ms as u64,
@@ -1795,7 +1795,7 @@ impl MinerConfig {
                     i += 2;
                 }
                 "--gpu" if i + 1 < args.len() => {
-                    std::env::set_var("ZION_GPU_BACKEND", &args[i + 1]);
+                    std::env::set_var("ZION_BACKEND", &args[i + 1]);
                     i += 2;
                 }
                 "--profile" if i + 1 < args.len() => {

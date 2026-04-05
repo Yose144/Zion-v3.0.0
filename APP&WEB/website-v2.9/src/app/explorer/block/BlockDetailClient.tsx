@@ -44,6 +44,8 @@ interface BlockDetail {
   orphan_status: boolean;
   status: string;
   miner: string;
+  miner_label: string | null;
+  is_pool_block: boolean;
   miner_tx_hash: string;
   major_version: number;
   minor_version: number;
@@ -241,7 +243,21 @@ export default function BlockDetailClient() {
             <InfoRow label={cs ? 'Odmena za blok' : 'Block Reward'} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
             <InfoRow label={cs ? 'Celkove fee' : 'Total Fees'} value={`${block.total_fees.toFixed(6)} ZION`} color="text-amber-400" />
             <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={`${block.tx_count} (${block.num_txes} ${cs ? 'uzivatel' : 'user'} + 1 coinbase)`} />
-            {block.miner && <InfoRow label={cs ? 'Klic minera' : 'Miner Key'} value={truncHash(block.miner)} mono copyable />}
+            {block.miner && (
+              <InfoRow
+                label={cs ? 'Coinbase příjemce' : 'Coinbase Recipient'}
+                value={block.miner_label || truncHash(block.miner)}
+                mono={!block.miner_label}
+                copyable
+                color={block.is_pool_block ? 'text-emerald-400' : undefined}
+                link={`/explorer/address?addr=${block.miner}`}
+                badge={block.is_pool_block ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                    Pool
+                  </span>
+                ) : undefined}
+              />
+            )}
             <InfoRow label="Coinbase TX" value={truncHash(block.miner_tx_hash)} mono copyable />
           </motion.div>
         </div>
