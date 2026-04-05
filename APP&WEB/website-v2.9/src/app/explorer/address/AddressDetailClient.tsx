@@ -62,7 +62,9 @@ function timeAgo(ts: number, cs: boolean) {
 
 interface AddressData {
   address: string;
-  balance: { total: number; pending: number; locked: number; paid: number };
+  known_label: string | null;
+  known_type: string | null;
+  balance: { total: number; total_atomic: number; utxo_count: number; pool_pending: number; pool_locked: number; pool_paid: number };
   total_received: number;
   total_sent: number;
   net_balance: number;
@@ -183,7 +185,17 @@ export default function AddressDetailClient() {
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white tracking-tight">{cs ? 'Adresa' : 'Address'}</h1>
-              {data.is_miner && (
+              {data.known_label && (
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
+                  data.known_type === 'pool' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                  data.known_type === 'fund' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                  data.known_type === 'fee' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                  'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                }`}>
+                  {data.known_label}
+                </span>
+              )}
+              {data.is_miner && !data.known_label && (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   ⛏ {cs ? 'Aktivni miner' : 'Active Miner'}
                 </span>
@@ -196,13 +208,13 @@ export default function AddressDetailClient() {
           </div>
         </div>
 
-        {/* ── 4-col balance summary ──────────────────────────── */}
+        {/* ── balance summary ──────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: cs ? "Celkem vyplaceno" : "Total Paid", value: `${data.balance.paid.toFixed(2)} ZION`, color: "text-zion-gold" },
-            { label: cs ? "Ceka" : "Pending", value: `${data.balance.pending.toFixed(4)} ZION`, color: "text-amber-400" },
-            { label: cs ? "Uzamceno" : "Locked", value: `${data.balance.locked.toFixed(4)} ZION`, color: "text-cyan-400" },
-            { label: cs ? "Transakce" : "Transactions", value: String(data.transaction_count), color: "text-white" },
+            { label: cs ? "On-chain zustatek" : "On-Chain Balance", value: `${data.balance.total.toFixed(4)} ZION`, color: "text-white" },
+            { label: cs ? "UTXOs" : "UTXOs", value: String(data.balance.utxo_count), color: "text-zion-cyan" },
+            { label: cs ? "Pool (ceka)" : "Pool (Pending)", value: `${data.balance.pool_pending.toFixed(4)} ZION`, color: "text-amber-400" },
+            { label: cs ? "Pool (vyplaceno)" : "Pool (Paid)", value: `${data.balance.pool_paid.toFixed(2)} ZION`, color: "text-zion-gold" },
           ].map((s) => (
             <div key={s.label} className="zion-panel rounded-[20px] bg-black/60 p-5">
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1.5">{s.label}</p>
@@ -220,9 +232,10 @@ export default function AddressDetailClient() {
               {cs ? 'Detaily adresy' : 'Address Details'}
             </h2>
             <InfoRow label={cs ? 'Adresa' : 'Address'} value={addr} mono copy />
-            <InfoRow label={cs ? 'Celkem vyplaceno' : 'Total Paid'} value={`${data.balance.paid.toFixed(4)} ZION`} color="text-zion-gold" />
-            <InfoRow label={cs ? 'Cekajici zustatek' : 'Pending Balance'} value={`${data.balance.pending.toFixed(4)} ZION`} color="text-amber-400" />
-            <InfoRow label={cs ? 'Uzamceny zustatek' : 'Locked Balance'} value={`${data.balance.locked.toFixed(4)} ZION`} color="text-cyan-400" />
+            <InfoRow label={cs ? 'On-chain zustatek' : 'On-Chain Balance'} value={`${data.balance.total.toFixed(4)} ZION`} color="text-white" />
+            <InfoRow label="UTXOs" value={String(data.balance.utxo_count)} />
+            <InfoRow label={cs ? 'Pool (ceka)' : 'Pool Pending'} value={`${data.balance.pool_pending.toFixed(4)} ZION`} color="text-amber-400" />
+            <InfoRow label={cs ? 'Pool (vyplaceno)' : 'Pool Paid'} value={`${data.balance.pool_paid.toFixed(4)} ZION`} color="text-zion-gold" />
             <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={String(data.transaction_count)} />
             {data.first_seen > 0 && <InfoRow label={cs ? 'Prvni vyskyt' : 'First Seen'} value={formatDate(data.first_seen, locale)} />}
             {data.last_seen > 0 && <InfoRow label={cs ? 'Naposledy aktivni' : 'Last Active'} value={formatDate(data.last_seen, locale)} />}
