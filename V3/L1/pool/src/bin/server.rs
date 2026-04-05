@@ -7,7 +7,6 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use ed25519_dalek::SigningKey;
 use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, CoreRuntime, DifficultyTarget,
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
@@ -512,6 +511,7 @@ fn handle_client(
                             telemetry.record_pending_payouts(job.height, &payouts);
                         }
                         let mut payout_executed = false;
+                        let mut deferred_payouts: Vec<PayoutEntry> = Vec::new();
                         if let Some(node_rpc_addr) = config.node_rpc_addr.as_deref() {
                             if let Some(ref pool_wallet_addr) = config.pool_wallet_address {
                                 if let Some(ref signing_key) = config.pool_signing_key {
@@ -522,14 +522,25 @@ fn handle_client(
                                         &payouts,
                                         job.height,
                                     ) {
-                                        Ok(tx_id) => {
+                                        Ok(outcome) => {
                                             payout_executed = true;
+                                            deferred_payouts = outcome.deferred;
                                             println!(
-                                                "payout_submitted height={} miners={} tx_id={}",
-                                                job.height, payouts.len(), tx_id
+                                                "payout_submitted height={} miners={} deferred={} tx_id={}",
+                                                job.height,
+                                                outcome.executed.len(),
+                                                deferred_payouts.len(),
+                                                outcome.tx_id
                                             );
                                             let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
-                                            telemetry.record_submitted_payouts(job.height, &payouts, &tx_id);
+                                            telemetry.record_submitted_payouts(job.height, &outcome.executed, &outcome.tx_id);
+                                            if !deferred_payouts.is_empty() {
+                                                telemetry.record_failed_payouts(
+                                                    job.height,
+                                                    &deferred_payouts,
+                                                    "deferred: insufficient pool payout wallet balance for full batch",
+                                                );
+                                            }
                                         }
                                         Err(err) => {
                                             println!(
@@ -556,6 +567,14 @@ fn handle_client(
                             println!(
                                 "pplns_rollback height={} miners={} reason=payout_not_executed",
                                 job.height, payouts.len()
+                            );
+                        } else if !deferred_payouts.is_empty() {
+                            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                            pplns.rollback_payouts(&deferred_payouts);
+                            println!(
+                                "pplns_partial_rollback height={} deferred_miners={} reason=insufficient_wallet_balance",
+                                job.height,
+                                deferred_payouts.len()
                             );
                         }
                     }
@@ -3044,13 +3063,20 @@ fn submit_utxo_transaction(node_rpc_addr: &str, tx: &zion_core::tx::Transaction)
 }
 
 /// Execute a pool payout: fetch UTXOs, build batch transaction, sign, and submit.
+#[derive(Debug, Clone)]
+struct PayoutExecutionOutcome {
+    tx_id: String,
+    executed: Vec<PayoutEntry>,
+    deferred: Vec<PayoutEntry>,
+}
+
 fn execute_pool_payout(
     node_rpc_addr: &str,
     pool_wallet_addr: &str,
     signing_key: &ed25519_dalek::SigningKey,
     payouts: &[PayoutEntry],
     height: u64,
-) -> Result<String> {
+) -> Result<PayoutExecutionOutcome> {
     if payouts.is_empty() {
         return Err(anyhow!("no payouts to execute"));
     }
@@ -3064,35 +3090,79 @@ fn execute_pool_payout(
         ));
     }
 
-    let recipients: Vec<BatchRecipient> = payouts
-        .iter()
-        .map(|p| BatchRecipient {
-            address: p.address.clone(),
-            amount: p.amount,
-        })
-        .collect();
+    // Build the largest payable batch: sort ascending and trim largest payouts
+    // on insufficient-funds errors so at least part of the round can be paid.
+    let mut candidates = payouts.to_vec();
+    candidates.sort_by_key(|p| p.amount);
+    let mut last_build_error = String::new();
 
-    let payout_fee = zion_core::fee::minimum_fee_for_size(
-        zion_core::fee::estimate_tx_size(utxos.len().min(10), recipients.len() + 1),
-    );
+    while !candidates.is_empty() {
+        let recipients: Vec<BatchRecipient> = candidates
+            .iter()
+            .map(|p| BatchRecipient {
+                address: p.address.clone(),
+                amount: p.amount,
+            })
+            .collect();
 
-    let build_result = zion_core::wallet::build_batch_payout(
-        signing_key,
-        pool_wallet_addr,
-        &recipients,
-        payout_fee,
-        &utxos,
-    )
-    .map_err(|err| anyhow!("payout build failed: {}", err))?;
+        let payout_fee = zion_core::fee::minimum_fee_for_size(
+            zion_core::fee::estimate_tx_size(utxos.len().min(10), recipients.len() + 1),
+        );
 
-    println!(
-        "payout_built height={} recipients={} fee={} change={} inputs={}",
-        height,
-        recipients.len(),
-        payout_fee,
-        build_result.change_amount,
-        build_result.transaction.inputs.len(),
-    );
+        match zion_core::wallet::build_batch_payout(
+            signing_key,
+            pool_wallet_addr,
+            &recipients,
+            payout_fee,
+            &utxos,
+        ) {
+            Ok(build_result) => {
+                let tx_id = submit_utxo_transaction(node_rpc_addr, &build_result.transaction)?;
+                let deferred: Vec<PayoutEntry> = payouts
+                    .iter()
+                    .filter(|entry| !candidates.contains(*entry))
+                    .cloned()
+                    .collect();
 
-    submit_utxo_transaction(node_rpc_addr, &build_result.transaction)
+                if !deferred.is_empty() {
+                    let deferred_total: u128 = deferred.iter().map(|p| p.amount as u128).sum();
+                    println!(
+                        "payout_partial height={} executed={} deferred={} deferred_total_atomic={}",
+                        height,
+                        candidates.len(),
+                        deferred.len(),
+                        deferred_total,
+                    );
+                }
+
+                println!(
+                    "payout_built height={} recipients={} fee={} change={} inputs={}",
+                    height,
+                    recipients.len(),
+                    payout_fee,
+                    build_result.change_amount,
+                    build_result.transaction.inputs.len(),
+                );
+
+                return Ok(PayoutExecutionOutcome {
+                    tx_id,
+                    executed: candidates,
+                    deferred,
+                });
+            }
+            Err(err) => {
+                last_build_error = err.to_string();
+                if !last_build_error.contains("insufficient funds") {
+                    return Err(anyhow!("payout build failed: {}", last_build_error));
+                }
+                if candidates.len() == 1 {
+                    return Err(anyhow!("payout build failed: {}", last_build_error));
+                }
+                // Drop the largest payout and retry to maximize paid miners.
+                candidates.pop();
+            }
+        }
+    }
+
+    Err(anyhow!("payout build failed: {}", last_build_error))
 }
