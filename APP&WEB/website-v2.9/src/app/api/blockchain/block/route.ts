@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION } from '@/lib/constants';
+import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION, KNOWN_ADDRESS_LABELS, POOL_WALLET } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
@@ -123,6 +123,8 @@ export async function GET(request: NextRequest) {
       // Miner info
       miner: minerAddress,
       miner_address: minerAddress,
+      miner_label: KNOWN_ADDRESS_LABELS[minerAddress]?.label || null,
+      is_pool_block: minerAddress === POOL_WALLET,
 
       // Transactions
       tx_count: txs.length,

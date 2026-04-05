@@ -7,6 +7,7 @@ const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const WalletGenerator = require('./wallet-generator');
+const UtxoBuilder = require('./utxo-builder');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 
@@ -2054,8 +2055,16 @@ function startMiningV3(config, v3Path) {
   if (worker) args.push('--worker', worker);
   if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
   if (wantsGpu) {
-    args.push('--gpu');
-    args.push('--mode', miningMode);   // cpu | gpu | dual
+    // --gpu BACKEND: auto | metal | opencl | cuda | cpu
+    // The Rust miner's --gpu takes the backend as its required argument.
+    // env.ZION_BACKEND is already set below; pass it directly as CLI arg.
+    const gpuBackendArg = (() => {
+      const explicit = String(process.env.ZION_BACKEND || '').trim().toLowerCase();
+      if (explicit) return explicit;
+      if (process.platform === 'darwin' && os.arch() === 'arm64') return 'metal';
+      return 'auto';
+    })();
+    args.push('--gpu', gpuBackendArg);
   }
   args.push('--stats-file', STATS_PATH);
 
@@ -2377,6 +2386,7 @@ function tryUpdateStatsFromFile() {
 
     // Enhanced stats (v2.9.5+)
     if (typeof payload.difficulty === 'number') minerStats.difficulty = payload.difficulty;
+    if (typeof payload.current_epoch === 'number') minerStats.current_epoch = payload.current_epoch;
     if (typeof payload.best_share_diff === 'number') minerStats.best_share_diff = payload.best_share_diff;
     if (typeof payload.pool_height === 'number') minerStats.last_job_height = String(payload.pool_height);
     if (typeof payload.pool_latency_ms === 'number') minerStats.pool_latency_ms = payload.pool_latency_ms;
@@ -2831,6 +2841,23 @@ function parseMinerOutput(output) {
     if (epochMatch) minerStats.current_epoch = parseInt(epochMatch[1], 10);
     const poolHeightMatch = raw.match(/pool_height=(\d+)/);
     if (poolHeightMatch) minerStats.last_job_height = poolHeightMatch[1];
+    // GPU fields from session_status → propagate to dashboard-facing keys
+    const gpuBeMatch = raw.match(/gpu_backend=(\w+)/);
+    if (gpuBeMatch) {
+      const gpuBe = gpuBeMatch[1].toLowerCase();
+      minerStats.gpu_backend = gpuBe;
+      minerStats.runtime_backend = gpuBe;
+      if (gpuBe !== 'cpu' && gpuBe !== 'none') {
+        minerStats.gpu_detected = true;
+        minerStats.gpu_type = gpuBe;
+        minerStats.cpu_only_mode = false;
+      }
+    }
+    const gpuHpsVal = gf('gpu_hps');
+    if (gpuHpsVal > 0) {
+      minerStats.gpu_hps = gpuHpsVal;
+      minerStats.hashrate_gpu = gpuHpsVal;
+    }
   }
 
   // ─── V3 shares line: "shares A:5 R:0 (100.0%) | hashes 458000" ───
@@ -3190,10 +3217,26 @@ function parseMinerOutput(output) {
       }
     }
     // Enriched fields
-    if (v3StatusMatch[17]) minerStats.gpu_backend = v3StatusMatch[17];
-    if (v3StatusMatch[18]) minerStats.gpu_hps = parseFloat(v3StatusMatch[18]);
-    if (v3StatusMatch[19]) minerStats.epoch = parseInt(v3StatusMatch[19]);
-    if (v3StatusMatch[20]) minerStats.pool_height = parseInt(v3StatusMatch[20]);
+    if (v3StatusMatch[17]) {
+      const gpuBe = v3StatusMatch[17].toLowerCase();
+      minerStats.gpu_backend = gpuBe;
+      minerStats.runtime_backend = gpuBe;
+      if (gpuBe !== 'cpu' && gpuBe !== 'none') {
+        minerStats.gpu_detected = true;
+        minerStats.gpu_type = gpuBe;
+        minerStats.cpu_only_mode = false;
+      }
+    }
+    if (v3StatusMatch[18]) {
+      const gpuHps = parseFloat(v3StatusMatch[18]);
+      minerStats.gpu_hps = gpuHps;
+      if (gpuHps > 0) minerStats.hashrate_gpu = gpuHps;
+    }
+    if (v3StatusMatch[19]) minerStats.current_epoch = parseInt(v3StatusMatch[19]);
+    if (v3StatusMatch[20]) {
+      minerStats.pool_height = parseInt(v3StatusMatch[20]);
+      minerStats.last_job_height = String(v3StatusMatch[20]);
+    }
     if (v3StatusMatch[21]) minerStats.best_batch_ms = parseInt(v3StatusMatch[21]);
   }
 
@@ -3836,24 +3879,13 @@ ipcMain.handle('get-network-metrics', async () => {
     const nodes = await Promise.all(
       TESTNET_SERVERS.map(async (server) => {
         const node = { ...server, online: false, height: 0, hashrate: 0, miners: 0, blocks: 0 };
-        // RPC get_info → height
+        // RPC getChainInfo → height (TCP JSON-RPC)
         try {
           const rpcUrl = `http://${server.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 5000);
-          const res = await fetch(rpcUrl, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ jsonrpc: '2.0', id: 'metrics', method: 'get_info', params: [] }),
-            signal: ctrl.signal
-          });
-          clearTimeout(timer);
-          if (res.ok) {
-            const json = await res.json();
-            node.height = json.result?.height || 0;
-            node.online = json.result?.status === 'OK' || node.height > 0;
-            dbg(`[NET-METRICS] ${server.name} RPC: height=${node.height}, online=${node.online}`);
-          }
+          const info = await zionRpcCall(rpcUrl, 'getChainInfo', {});
+          node.height = info?.chain_height || info?.height || 0;
+          node.online = node.height > 0;
+          dbg(`[NET-METRICS] ${server.name} RPC: height=${node.height}, online=${node.online}`);
         } catch (e) { dbg(`[NET-METRICS] ${server.name} RPC failed:`, e.message); }
         // Pool API /stats → hashrate, miners, blocks
         try {
@@ -3921,30 +3953,19 @@ ipcMain.handle('get-peer-list', async () => {
     for (const server of TESTNET_SERVERS) {
       try {
         const rpcUrl = `http://${server.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 5000);
-        const res = await fetch(rpcUrl, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 'peers', method: 'getPeerList', params: [] }),
-          signal: ctrl.signal
-        });
-        clearTimeout(timer);
-        if (res.ok) {
-          const json = await res.json();
-          const peers = json.result?.peers || [];
-          for (const peer of peers) {
-            if (!seenAddresses.has(peer.address)) {
-              seenAddresses.add(peer.address);
-              allPeers.push({
-                ...peer,
-                source_node: server.name,
-                source_host: server.host,
-              });
-            }
+        const result = await zionRpcCall(rpcUrl, 'getPeerList', []);
+        const peers = result?.peers || [];
+        for (const peer of peers) {
+          if (!seenAddresses.has(peer.address)) {
+            seenAddresses.add(peer.address);
+            allPeers.push({
+              ...peer,
+              source_node: server.name,
+              source_host: server.host,
+            });
           }
-          dbg(`[PEERS] ${server.name}: ${peers.length} peers`);
         }
+        dbg(`[PEERS] ${server.name}: ${peers.length} peers`);
       } catch (e) {
         dbg(`[PEERS] ${server.name} failed:`, e.message);
       }
@@ -4167,35 +4188,84 @@ ipcMain.handle('validate-address', (event, address) => {
 });
 
 async function zionRpcCall(rpcUrl, method, params) {
+  const net = require('net');
   const url = (rpcUrl || '').toString().trim();
   if (!url) {
     throw new Error('RPC URL is missing');
   }
 
-  const body = {
+  // V3 core uses raw TCP JSON-RPC (not HTTP). Parse host:port from URL.
+  let host, port;
+  try {
+    const parsed = new URL(url);
+    host = parsed.hostname;
+    port = parseInt(parsed.port, 10) || 8443;
+  } catch {
+    const parts = url.split(':');
+    host = parts[0];
+    port = parseInt(parts[1], 10) || 8443;
+  }
+  if (!host) throw new Error('Cannot parse RPC host from: ' + url);
+
+  const payload = JSON.stringify({
     jsonrpc: '2.0',
     id: 'zion-desktop-agent',
     method,
     params
-  };
+  }) + '\n';
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body)
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    let data = '';
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        socket.destroy();
+        reject(new Error(`RPC timeout calling ${method} on ${host}:${port}`));
+      }
+    }, 8000);
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      socket.destroy();
+
+      const trimmed = data.trim();
+      if (!trimmed) {
+        reject(new Error(`Empty RPC response for ${method} from ${host}:${port}`));
+        return;
+      }
+
+      try {
+        const json = JSON.parse(trimmed);
+        if (json.error) {
+          reject(new Error(json.error.message ?? JSON.stringify(json.error)));
+          return;
+        }
+        resolve(json.result ?? null);
+      } catch (err) {
+        reject(new Error(`RPC parse error: ${err.message}`));
+      }
+    };
+
+    socket.connect(port, host, () => {
+      socket.write(payload);
+    });
+    socket.on('data', (chunk) => { data += chunk.toString(); });
+    socket.on('end', finish);
+    socket.on('close', finish);
+    socket.on('error', (err) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        socket.destroy();
+        reject(new Error(`RPC connect error (${host}:${port}): ${err.message}`));
+      }
+    });
   });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`RPC HTTP ${res.status}${text ? `: ${text}` : ''}`);
-  }
-
-  const json = await res.json();
-  if (json?.error) {
-    const msg = json.error?.message || JSON.stringify(json.error);
-    throw new Error(msg);
-  }
-  return json?.result;
 }
 
 ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
@@ -4251,24 +4321,27 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       }
     }
 
+    // Even if RPC fails, we continue to fetch pool balance below.
+    let rpcOk = !!result && !result?.error;
+    let rpcError = '';
     if (!result) {
-      return {
-        success: false,
-        error: `RPC unavailable: ${lastRpcError || 'no reachable endpoint'}`,
-        rpc_tried: rpcTried
-      };
+      rpcError = lastRpcError || 'no reachable endpoint';
+    } else if (result?.error) {
+      rpcError = result.error?.message || JSON.stringify(result.error);
+      rpcOk = false;
     }
-    if (result?.error) return { success: false, error: result.error };
 
     // V3 returns: balance_flowers (u64 in flowers), chain_height, transaction_model
     // 1 ZION = 1_000_000_000_000 flowers (1e12)
-    const balanceFlowers = result?.balance_flowers ?? 0;
-    const balanceZion = balanceFlowers > 0
-      ? balanceFlowers / 1_000_000_000_000
-      : (typeof result?.balance_zion === 'string' ? parseFloat(result.balance_zion) : (result?.balance_zion ?? result?.balance ?? 0));
-    const balanceAtomic = balanceFlowers || result?.balance_atomic || 0;
-    const utxoCount = result?.utxo_count ?? 0;
-    const chainHeight = result?.chain_height ?? 0;
+    const balanceFlowers = rpcOk ? (result?.balance_flowers ?? 0) : 0;
+    const balanceZion = rpcOk
+      ? (balanceFlowers > 0
+          ? balanceFlowers / 1_000_000_000_000
+          : (typeof result?.balance_zion === 'string' ? parseFloat(result.balance_zion) : (result?.balance_zion ?? result?.balance ?? 0)))
+      : 0;
+    const balanceAtomic = rpcOk ? (balanceFlowers || result?.balance_atomic || 0) : 0;
+    const utxoCount = rpcOk ? (result?.utxo_count ?? 0) : 0;
+    const chainHeight = rpcOk ? (result?.chain_height ?? 0) : 0;
 
     // Fetch pool mined balance — try all V3 pool servers.
     const POOL_SERVER_PRIORITY = ['zion2', 'zion3', 'zion4'];
@@ -4344,7 +4417,9 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       balance_atomic: balanceAtomic,
       utxo_count: utxoCount,
       chain_height: chainHeight,
-      transaction_model: result?.transaction_model ?? 'account',
+      transaction_model: rpcOk ? (result?.transaction_model ?? 'account') : 'unknown',
+      rpc_ok: rpcOk,
+      rpc_error: rpcError || '',
       // Pool mining balance (V3 pool stores flowers: 1 ZION = 1_000_000_000_000 flowers)
       pool_pending:        poolPending  / 1_000_000_000_000,
       pool_pending_atomic: poolPending,
@@ -4363,14 +4438,14 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       pool_source_host:    poolSourceHost,
       rpc_source:          rpcSource,
       rpc_tried:           rpcTried,
-      address: result?.address ?? addr
+      address: rpcOk ? (result?.address ?? addr) : addr
     };
   } catch (error) {
     return { success: false, error: error?.message || String(error) };
   }
 });
 
-ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amount, purpose, memo }) => {
+ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amount, purpose, memo, password }) => {
   try {
     const fromAddr = (from || '').toString().trim();
     const toAddr = (to || '').toString().trim();
@@ -4385,12 +4460,38 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       return { success: false, error: 'Amount must be a positive number' };
     }
 
+    if (!password) {
+      return { success: false, error: 'Wallet password is required to sign the transaction' };
+    }
+
+    // ── Step 1: Decrypt private key from wallet file ────────────────
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    let walletData = null;
+    for (const f of files) {
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, f), 'utf8'));
+        if (d.address === fromAddr) { walletData = d; break; }
+      } catch { /* skip invalid */ }
+    }
+    if (!walletData) {
+      return { success: false, error: 'Wallet file not found for sender address. Import or create the wallet first.' };
+    }
+
+    let privateKeyHex;
+    try {
+      privateKeyHex = WalletGenerator.decryptPrivateKey(walletData.encryptedPrivateKey, password);
+    } catch {
+      return { success: false, error: 'Wrong wallet password' };
+    }
+
+    const privateKeyDer = Buffer.from(privateKeyHex, 'hex');
+
     // Security: require user confirmation before sending
     const confirmation = await dialog.showMessageBox(mainWindow, {
       type: 'warning',
       title: 'Confirm Transaction',
       message: `Send ${amt} ZION?`,
-      detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}${memo ? '\nMemo: ' + memo : ''}\n\nThis action cannot be undone.`,
+      detail: `From: ${fromAddr}\nTo: ${toAddr}${purpose ? '\nPurpose: ' + purpose : ''}${memo ? '\nMemo: ' + memo : ''}\n\nFee: 0.000001 ZION (minimum)\n\nThis action cannot be undone.`,
       buttons: ['Send', 'Cancel'],
       defaultId: 1,
       cancelId: 1
@@ -4399,7 +4500,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       return { success: false, error: 'Transaction cancelled by user' };
     }
 
-    // Build multi-server candidate list (same pattern as wallet-get-balance)
+    // ── Step 2: Get UTXOs for the sender address ─────────────────────
     const baseRpcUrl = normalizeRpcUrl(rpcUrl);
     const parsedBase = (() => {
       try { return new URL(baseRpcUrl); } catch { return null; }
@@ -4422,29 +4523,60 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       return true;
     });
 
-    let result = null;
+    let utxos = null;
+    let utxoRpcUrl = '';
     let lastRpcError = '';
 
     for (const candidateUrl of uniqueRpcCandidates) {
       try {
-        const rpcRes = await zionRpcCall(candidateUrl, 'submitTransaction', {
-          transaction: {
-            tx_id: crypto.randomUUID(),
-            from: fromAddr,
-            to: toAddr,
-            amount_zion: Math.round(amt),
-            fee_zion: 0,
-            nonce: Date.now()
-          }
-        });
+        const utxoRes = await zionRpcCall(candidateUrl, 'getUtxos', { address: fromAddr });
+        if (utxoRes && !utxoRes.error && Array.isArray(utxoRes.utxos)) {
+          utxos = utxoRes.utxos;
+          utxoRpcUrl = candidateUrl;
+          break;
+        }
+        if (utxoRes?.error) {
+          lastRpcError = typeof utxoRes.error === 'string' ? utxoRes.error : JSON.stringify(utxoRes.error);
+        }
+      } catch (err) {
+        lastRpcError = err?.message || String(err);
+      }
+    }
+
+    if (!utxos) {
+      return { success: false, error: `Cannot retrieve UTXOs: ${lastRpcError || 'no reachable endpoint'}` };
+    }
+
+    if (utxos.length === 0) {
+      return { success: false, error: 'No spendable UTXOs found for this address (balance is 0)' };
+    }
+
+    // ── Step 3: Build and sign UTXO transaction ──────────────────────
+    let signedTx;
+    try {
+      signedTx = UtxoBuilder.buildUtxoTransaction({
+        fromAddress: fromAddr,
+        toAddress: toAddr,
+        amountZion: amt,
+        utxos,
+        privateKeyDer,
+        memo: memo || undefined
+      });
+    } catch (buildErr) {
+      return { success: false, error: buildErr.message };
+    }
+
+    // ── Step 4: Submit via submitTransaction ─────────────────────────
+    let result = null;
+    for (const candidateUrl of uniqueRpcCandidates) {
+      try {
+        const rpcRes = await zionRpcCall(candidateUrl, 'submitTransaction', signedTx);
         if (rpcRes && !rpcRes.error) {
           result = rpcRes;
           break;
         }
-        // If the node returned an explicit application error (e.g. "insufficient balance"),
-        // propagate it immediately — no point trying other servers.
         if (rpcRes?.error) {
-          return { success: false, error: rpcRes.error };
+          return { success: false, error: typeof rpcRes.error === 'string' ? rpcRes.error : JSON.stringify(rpcRes.error) };
         }
       } catch (err) {
         lastRpcError = err?.message || String(err);
@@ -4460,10 +4592,9 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
 
     return {
       success: true,
-      txId: result?.tx_id || result?.txid || result?.hash,
+      txId: result?.tx_id || result?.txid || UtxoBuilder.bytesToHex(signedTx.id),
       status: result?.status || 'submitted',
-      amount_atomic: result?.amount_atomic,
-      amount_zion: result?.amount_zion ?? amt
+      amount_zion: amt
     };
   } catch (error) {
     return { success: false, error: error?.message || String(error) };
@@ -4881,15 +5012,40 @@ setInterval(() => {
           const res = await fetch(`${metricsBase}/stats`, { signal: ctrl.signal });
           if (res.ok) {
             const stats = await res.json();
-            if (typeof stats.hashrate === 'number') minerStats.hashrate = stats.hashrate;
-            if (typeof stats.hashrate_10s === 'number') minerStats.hashrate_10s = stats.hashrate_10s;
-            if (typeof stats.hashrate_60s === 'number') minerStats.hashrate_60s = stats.hashrate_60s;
-            if (typeof stats.hashrate_15m === 'number') minerStats.hashrate_15m = stats.hashrate_15m;
-            if (typeof stats.accepted === 'number') minerStats.accepted = stats.accepted;
-            if (typeof stats.rejected === 'number') minerStats.rejected = stats.rejected;
-            if (typeof stats.uptime_sec === 'number') minerStats.uptime = Math.floor(stats.uptime_sec);
-            if (typeof stats.difficulty === 'number') minerStats.difficulty = stats.difficulty;
+            // V3 miner HTTP /stats uses *_hps suffixed field names — map to agent keys.
+            const hrTotal = typeof stats.hashrate_hps === 'number' ? stats.hashrate_hps
+                          : typeof stats.hashrate === 'number' ? stats.hashrate : null;
+            const hr10 = typeof stats.hashrate_10s_hps === 'number' ? stats.hashrate_10s_hps
+                       : typeof stats.hashrate_10s === 'number' ? stats.hashrate_10s : null;
+            const hr60 = typeof stats.hashrate_60s_hps === 'number' ? stats.hashrate_60s_hps
+                       : typeof stats.hashrate_60s === 'number' ? stats.hashrate_60s : null;
+            const hr15 = typeof stats.hashrate_15m_hps === 'number' ? stats.hashrate_15m_hps
+                       : typeof stats.hashrate_15m === 'number' ? stats.hashrate_15m : null;
+            const hrMax = typeof stats.hashrate_max === 'number' ? stats.hashrate_max : null;
+            const gpuHr = typeof stats.gpu_hashrate_hps === 'number' ? stats.gpu_hashrate_hps
+                        : typeof stats.hashrate_gpu === 'number' ? stats.hashrate_gpu : null;
+            // Prefer 10s window for primary display, fallback chain
+            if (hr10 != null || hr60 != null || hr15 != null || hrTotal != null) {
+              minerStats.hashrate = hr10 || hr60 || hr15 || hrTotal;
+            }
+            if (hr10 != null) minerStats.hashrate_10s = hr10;
+            if (hr60 != null) minerStats.hashrate_60s = hr60;
+            if (hr15 != null) minerStats.hashrate_15m = hr15;
+            if (hrMax != null) minerStats.hashrate_max = hrMax;
+            if (gpuHr != null && gpuHr > 0) minerStats.hashrate_gpu = gpuHr;
+            const acc = typeof stats.accepted_shares === 'number' ? stats.accepted_shares
+                      : typeof stats.accepted === 'number' ? stats.accepted : null;
+            const rej = typeof stats.rejected_shares === 'number' ? stats.rejected_shares
+                      : typeof stats.rejected === 'number' ? stats.rejected : null;
+            if (acc != null) minerStats.accepted = acc;
+            if (rej != null) minerStats.rejected = rej;
+            if (acc != null || rej != null) minerStats.shares = (acc || 0) + (rej || 0);
+            const up = typeof stats.uptime_s === 'number' ? stats.uptime_s
+                     : typeof stats.uptime_sec === 'number' ? stats.uptime_sec : null;
+            if (up != null) minerStats.uptime = Math.floor(up);
+            if (typeof stats.current_epoch === 'number') minerStats.current_epoch = stats.current_epoch;
             if (typeof stats.pool_height === 'number') minerStats.last_job_height = String(stats.pool_height);
+            if (typeof stats.backend === 'string') minerStats.runtime_backend = stats.backend;
             minerStats._http_metrics_ok = true;
           }
         } finally { clearTimeout(timer); }
