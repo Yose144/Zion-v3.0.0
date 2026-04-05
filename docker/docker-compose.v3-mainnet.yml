@@ -9,7 +9,8 @@
 # All V3 binaries use env-var config (from_env()), NOT CLI args.
 # Usage: docker compose -f docker/docker-compose.v3-mainnet.yml --env-file .env up -d --build
 #
-# Requires .env with: REDIS_PASSWORD, MINER_WALLET, MINER_WORKER
+# Requires .env with: REDIS_PASSWORD, MINER_WALLET, MINER_WORKER,
+#   ZION_POOL_WALLET, ZION_POOL_PAYOUT_SK_HEX
 # Optional .env: SEED_PEERS, MINER_CPUS, GRAFANA_ADMIN_PASSWORD
 #
 # Profiles:
@@ -47,7 +48,8 @@ services:
       - ZION_POOL_BIND=0.0.0.0:8444
       - ZION_METRICS_BIND=0.0.0.0:9115
       - ZION_SEED_PEERS=${SEED_PEERS:-91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333}
-      - ZION_MINER_ADDRESS=${MINER_WALLET}
+      # Coinbase 89% goes to pool wallet; pool re-distributes via PPLNS.
+      - ZION_MINER_ADDRESS=${ZION_POOL_WALLET}
       - ZION_HUMANITARIAN_WALLET=${HUMANITARIAN_WALLET:-zion1m4v5z8z850u480c5c208z274e334369275n5y20}
       - ZION_ISSOBELLA_WALLET=${ISSOBELLA_WALLET:-zion170a374s6h390k7w244m5c4f354v8n4678844655}
       - ZION_POOL_FEE_WALLET=${POOL_FEE_WALLET:-zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7}
@@ -140,14 +142,14 @@ services:
       - ZION_JOB_TTL_MS=1200000
       - ZION_SESSION_READ_TIMEOUT_SECS=1200
       - ZION_HAS_GPU=0
-      - ZION_HUMANITARIAN_TITHE_PCT=5
-      - ZION_ISSOBELLA_FUND_PCT=5
-      - ZION_POOL_FEE_PCT=1
-      - ZION_HUMANITARIAN_WALLET=${HUMANITARIAN_WALLET:-zion1m4v5z8z850u480c5c208z274e334369275n5y20}
-      - ZION_ISSOBELLA_WALLET=${ISSOBELLA_WALLET:-zion170a374s6h390k7w244m5c4f354v8n4678844655}
-      - ZION_POOL_FEE_WALLET=${POOL_FEE_WALLET:-zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7}
-      - ZION_POOL_WALLET=${ZION_POOL_WALLET:-}
-      - ZION_POOL_PAYOUT_SK_HEX=${ZION_POOL_PAYOUT_SK_HEX:-}
+      # Protocol fees (5/5/1) are handled by core coinbase. Pool PPLNS
+      # receives only the miner share (89%). Set ZION_POOL_FEE_PCT for
+      # an optional extra pool-operator fee on top of protocol split.
+      - ZION_HUMANITARIAN_TITHE_PCT=0
+      - ZION_ISSOBELLA_FUND_PCT=0
+      - ZION_POOL_FEE_PCT=${ZION_POOL_FEE_PCT:-0}
+      - ZION_POOL_WALLET=${ZION_POOL_WALLET}
+      - ZION_POOL_PAYOUT_SK_HEX=${ZION_POOL_PAYOUT_SK_HEX}
       - ZION_POOL_PAYOUT_FEE_FLOWERS=${ZION_POOL_PAYOUT_FEE_FLOWERS:-10000}
     healthcheck:
       test: ["CMD-SHELL", "nc -z 127.0.0.1 3333"]

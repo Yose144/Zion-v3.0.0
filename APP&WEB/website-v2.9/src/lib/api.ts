@@ -115,33 +115,56 @@ export function getApiUrl(path: string): string {
 }
 
 /**
- * Fetch wrapper with error handling
+ * Fetch wrapper with retry logic and error handling.
+ * Retries up to 2 times with exponential backoff on network errors or 5xx.
  * @param path - API endpoint path
- * @param options - Fetch options
- * @returns Response or throws error
+ * @param options - Fetch options (extends RequestInit with retries/retryDelay)
+ * @returns Parsed JSON response
  */
 export async function apiClient<T = any>(
   path: string,
-  options?: RequestInit
+  options?: RequestInit & { retries?: number; retryDelay?: number },
 ): Promise<T> {
   const url = getApiUrl(path);
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    });
+  const maxRetries = options?.retries ?? 2;
+  const baseDelay = options?.retryDelay ?? 800;
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+      });
+
+      if (!response.ok) {
+        const isRetryable = response.status >= 500 || response.status === 408 || response.status === 429;
+        if (isRetryable && attempt < maxRetries) {
+          lastError = new Error(`API error: ${response.status} ${response.statusText}`);
+          await delay(baseDelay * Math.pow(2, attempt));
+          continue;
+        }
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < maxRetries && !lastError.message.startsWith('API error: 4')) {
+        await delay(baseDelay * Math.pow(2, attempt));
+        continue;
+      }
     }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`API call failed: ${url}`, error);
-    throw error;
   }
+
+  console.error(`API call failed after ${maxRetries + 1} attempts: ${url}`, lastError);
+  throw lastError ?? new Error(`API call failed: ${url}`);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

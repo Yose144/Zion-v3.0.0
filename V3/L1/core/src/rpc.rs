@@ -462,11 +462,13 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     }
                 }
                 let account_balance = account_balance.max(0) as u64;
+                let utxo_count = rt.spendable_utxos(account_id).len() as u64;
                 return Ok(json!({
                     "address": account_id,
                     "balance_flowers": utxo_balance.saturating_add(account_balance),
                     "utxo_balance_flowers": utxo_balance,
                     "account_balance_flowers": account_balance,
+                    "utxo_count": utxo_count,
                     "chain_height": rt.chain_height(),
                     "transaction_model": ACTIVE_TRANSACTION_MODEL,
                     "balance_scope": "confirmed_chain_only",
