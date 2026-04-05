@@ -86,24 +86,67 @@ class ZionWalletGenerator {
   }
 
   /**
-   * Derive ZION address from public key
+   * Derive ZION address from public key (V3-compatible).
+   *
+   * Must match V3/L1/core/src/crypto.rs derive_address():
+   *   1. SHA-256(pubkey) → RIPEMD-160 → 20 bytes
+   *   2. Each byte → 2 base32 chars → 40 chars
+   *   3. Truncate to 35 body chars
+   *   4. Append 4-char checksum of "zion1" + body
+   *   5. Result: "zion1" + body(35) + checksum(4) = 44 chars
+   *
    * @param {Buffer} publicKey - Raw Ed25519 public key (32 bytes)
-   * @returns {string} ZION address
+   * @returns {string} ZION address (44 chars)
    */
   static deriveAddress(publicKey) {
-    // Create a zion1 address compatible with chain validation.
-    // We deterministically map SHA256(pubkey) into the allowed bech32-like charset.
-    const charset = '023456789acdefghjklmnpqrstuvwxyz';
-    const hash = crypto.createHash('sha256').update(publicKey).digest();
+    const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
 
+    // SHA-256 → RIPEMD-160 (matches V3/L1/core/src/crypto.rs)
+    const sha = crypto.createHash('sha256').update(publicKey).digest();
+    const keyHash = crypto.createHash('ripemd160').update(sha).digest(); // 20 bytes
+
+    // Each byte → 2 base32 chars (byte % 32, (byte / 32) % 32)
     let data = '';
-    let i = 0;
-    while (data.length < 39) {
-      const byte = hash[i % hash.length];
-      data += charset[byte % 32];
-      i++;
+    for (const byte of keyHash) {
+      data += ZION_BASE32[byte % 32];
+      data += ZION_BASE32[Math.floor(byte / 32) % 32];
     }
-    return 'zion1' + data;
+    // Truncate to 35 body chars
+    const body = data.slice(0, 35);
+
+    // 4-char checksum: SHA-256("zion1" + body), first 2 bytes → 4 base32 chars
+    const ckHash = crypto.createHash('sha256').update('zion1' + body).digest();
+    let checksum = '';
+    for (let i = 0; i < 2; i++) {
+      const b = ckHash[i];
+      checksum += ZION_BASE32[b % 32];
+      checksum += ZION_BASE32[Math.floor(b / 32) % 32];
+    }
+
+    return 'zion1' + body + checksum;
+  }
+
+  /**
+   * Validate a zion1 address (format + checksum, matches V3 is_valid_address).
+   * @param {string} address
+   * @returns {boolean}
+   */
+  static isValidAddress(address) {
+    if (!address || !address.startsWith('zion1') || address.length !== 44) return false;
+    const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
+    for (let i = 5; i < 44; i++) {
+      if (!ZION_BASE32.includes(address[i])) return false;
+    }
+    const body = address.slice(5, 40);
+    const actualCk = address.slice(40, 44);
+    const ckHash = crypto.createHash('sha256').update('zion1' + body).digest();
+    let expectedCk = '';
+    for (let i = 0; i < 2; i++) {
+      const b = ckHash[i];
+      expectedCk += ZION_BASE32[b % 32];
+      expectedCk += ZION_BASE32[Math.floor(b / 32) % 32];
+    }
+    return expectedCk === actualCk;
   }
 
   /**
@@ -224,12 +267,14 @@ class ZionWalletGenerator {
     const a = address.trim();
     if (!a) return 'invalid';
 
-    // Canonical chain format: zion1 + exactly 39 lowercase alphanumeric chars = 44 total
-    // Matches L1 Rust validation: is_valid_zion1_address() accepts [0-9a-z] for body
+    // Canonical chain format: zion1 + 35 body + 4 checksum = 44 total
+    // Matches V3/L1/core/src/crypto.rs is_valid_address()
     if (a.startsWith('zion1')) {
       if (a.length !== 44) return 'invalid';
       const data = a.slice(5);
       if (!/^[0-9a-z]{39}$/.test(data)) return 'invalid';
+      // Verify checksum when possible (V3-compatible addresses)
+      // Accept addresses even if checksum doesn't match (legacy desktop-agent addresses)
       return 'zion1';
     }
 

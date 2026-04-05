@@ -1567,6 +1567,16 @@ function setupEventListeners() {
       if (priorityRe.test(line)) priorityLines.push(line);
       else bulkLines.push(line);
     }
+    // Deduplicate METRICS lines: when renderer receives a burst (e.g. after
+    // Electron throttled the background window), keep only the latest one
+    // to avoid flooding the log with identical-timestamp entries.
+    let lastMetricsIdx = -1;
+    for (let i = priorityLines.length - 1; i >= 0; i--) {
+      if (/^\[METRICS\]/.test(priorityLines[i])) {
+        if (lastMetricsIdx === -1) { lastMetricsIdx = i; }
+        else { priorityLines.splice(i, 1); if (lastMetricsIdx > i) lastMetricsIdx--; }
+      }
+    }
     for (const line of priorityLines) logStreamLine(stream, line);
     for (const line of bulkLines.slice(0, 10)) logStreamLine(stream, line);
   });
@@ -1659,7 +1669,11 @@ function updateStats(stats) {
   };
 
   // ═══ Hashrate (primary) ═══
-  const formatted = formatHashrate(stats.hashrate);
+  // Fallback: if combined hashrate is 0 but GPU reports non-zero, use GPU rate
+  const primaryHr = (stats.hashrate > 0 ? stats.hashrate : null)
+    || (stats.hashrate_gpu > 0 ? stats.hashrate_gpu : null)
+    || stats.hashrate || 0;
+  const formatted = formatHashrate(primaryHr);
   setText('hashrate-value', formatted.value);
   const unitEl = getEl('hashrate-unit');
   if (unitEl) {
@@ -1953,6 +1967,7 @@ function setupWalletControls() {
   const sendAmountEl = document.getElementById('send-amount');
   const sendPurposeEl = document.getElementById('send-purpose');
   const sendMemoEl = document.getElementById('send-memo');
+  const sendPasswordEl = document.getElementById('send-wallet-password');
   const sendTxBtn = document.getElementById('send-tx-btn');
   const sendStatusEl = document.getElementById('send-status');
   const sendFromDisplay = document.getElementById('send-from-display');
@@ -1997,9 +2012,14 @@ function setupWalletControls() {
     try {
       const result = await window.electronAPI.walletGetBalance({ rpcUrl: getRpcUrl(), address: addr });
       if (result?.success) {
-        const bal = result.balance_zion ?? (result.balance_atomic != null ? result.balance_atomic / 1e6 : null);
-        if (sendFromBalance) sendFromBalance.textContent = bal != null ? `${bal.toFixed(6)} ZION` : 'n/a';
-        if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = '';
+        if (result.rpc_ok === false) {
+          if (sendFromBalance) sendFromBalance.textContent = '— (node offline)';
+          if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = 'on-chain RPC offline';
+        } else {
+          const bal = result.balance ?? (result.balance_atomic != null ? result.balance_atomic / 1e12 : null);
+          if (sendFromBalance) sendFromBalance.textContent = bal != null ? `${bal.toFixed(6)} ZION` : 'n/a';
+          if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = '';
+        }
       } else {
         if (sendFromBalance) sendFromBalance.textContent = '—';
         if (sendFromBalanceStatus) sendFromBalanceStatus.textContent = result?.error || 'error';
@@ -2214,7 +2234,14 @@ function setupWalletControls() {
       return;
     }
 
-    if (walletBalanceEl) walletBalanceEl.textContent = Number(result.balance ?? 0).toFixed(6);
+    // On-chain balance (may be unavailable if RPC node is down)
+    if (result.rpc_ok === false) {
+      if (walletBalanceEl) walletBalanceEl.textContent = '— (node offline)';
+      if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `On-chain RPC offline · pool data OK`;
+    } else {
+      if (walletBalanceEl) walletBalanceEl.textContent = Number(result.balance ?? 0).toFixed(6);
+      if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = '';
+    }
     // UTXO count
     const utxoEl = document.getElementById('wallet-utxo-count');
     if (utxoEl) utxoEl.textContent = Number(result.utxo_count ?? 0).toLocaleString();
@@ -2257,7 +2284,7 @@ function setupWalletControls() {
     const currentPaidAtomic = Number(result.pool_paid_atomic ?? 0);
     if (Number.isFinite(currentPaidAtomic) && currentPaidAtomic >= 0) {
       if (Number.isFinite(lastPoolPaidAtomic) && currentPaidAtomic > lastPoolPaidAtomic) {
-        const delta = (currentPaidAtomic - lastPoolPaidAtomic) / 1_000_000;
+        const delta = (currentPaidAtomic - lastPoolPaidAtomic) / 1_000_000_000_000;
         payoutDeltaText = ` · payout +${delta.toFixed(4)} ZION`;
       }
       lastPoolPaidAtomic = currentPaidAtomic;
@@ -2267,7 +2294,7 @@ function setupWalletControls() {
     const pendingStatsAtomic = Number(result.pool_pending_stats_atomic ?? 0);
     const pendingPayoutsAtomic = Number(result.pool_pending_payouts_atomic ?? 0);
     if (Number.isFinite(pendingStatsAtomic) && Number.isFinite(pendingPayoutsAtomic) && pendingStatsAtomic !== pendingPayoutsAtomic) {
-      pendingDriftText = ` · pending drift ${(pendingStatsAtomic / 1_000_000).toFixed(4)}↔${(pendingPayoutsAtomic / 1_000_000).toFixed(4)}`;
+      pendingDriftText = ` · pending drift ${(pendingStatsAtomic / 1_000_000_000_000).toFixed(4)}↔${(pendingPayoutsAtomic / 1_000_000_000_000).toFixed(4)}`;
     }
 
     const rpcSourceText = (() => {
@@ -2365,6 +2392,7 @@ function setupWalletControls() {
     const amountRaw = (sendAmountEl && 'value' in sendAmountEl ? sendAmountEl.value : '').toString().trim();
     const purpose = (sendPurposeEl && 'value' in sendPurposeEl ? sendPurposeEl.value : '').toString();
     const memo = (sendMemoEl && 'value' in sendMemoEl ? sendMemoEl.value : '').toString().trim();
+    const password = (sendPasswordEl && 'value' in sendPasswordEl ? sendPasswordEl.value : '').toString();
 
     // Validate from
     if (!from || !from.startsWith('zion1')) {
@@ -2391,6 +2419,12 @@ function setupWalletControls() {
       return;
     }
 
+    // Require password for UTXO signing
+    if (!password) {
+      if (sendStatusEl) sendStatusEl.textContent = '⚠ Wallet password is required to sign the transaction.';
+      return;
+    }
+
     if (sendStatusEl) sendStatusEl.textContent = '⏳ Confirming…';
 
     const result = await window.electronAPI.walletSendTransaction({
@@ -2399,7 +2433,8 @@ function setupWalletControls() {
       to,
       amount: parsedAmount,
       purpose,
-      memo: memo || undefined
+      memo: memo || undefined,
+      password
     });
 
     if (!result?.success) {
@@ -2414,6 +2449,7 @@ function setupWalletControls() {
     if (sendAmountEl) sendAmountEl.value = '';
     if (sendPurposeEl) sendPurposeEl.value = '';
     if (sendMemoEl) sendMemoEl.value = '';
+    if (sendPasswordEl) sendPasswordEl.value = '';
     // Refresh balance after successful send
     setTimeout(refreshSendFrom, 1500);
   });

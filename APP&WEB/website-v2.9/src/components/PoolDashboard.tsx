@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -10,6 +10,7 @@ import {
   Bell,
   Box,
   Check,
+  ChevronDown,
   CircleDot,
   Copy,
   Cpu,
@@ -260,6 +261,7 @@ export default function PoolDashboard() {
   const [searchError, setSearchError] = useState("");
   const [myHashrateInput, setMyHashrateInput] = useState('100M');
   const [activeOnly, setActiveOnly] = useState(true);
+  const hashrateHistoryRef = useRef<{ts: number; value: number}[]>([]);
   const router = useRouter();
 
   const onlineServers = (data?.servers ?? []).filter((s) => s.online);
@@ -290,6 +292,12 @@ export default function PoolDashboard() {
       if (json.ok) {
         setData(json);
         setLastUpdate(new Date());
+        const hr = json.aggregate?.hashrate ?? 0;
+        const snapTs = Math.floor(Date.now() / 1000);
+        hashrateHistoryRef.current = [
+          ...hashrateHistoryRef.current.filter((p: {ts: number}) => snapTs - p.ts < 3600),
+          { ts: snapTs, value: hr }
+        ].slice(-60);
       }
     } catch {
       /* silent */
@@ -484,6 +492,105 @@ export default function PoolDashboard() {
             </div>
           )}
         </motion.section>
+
+        {/* ═══════ POOL PERFORMANCE ═══════ */}
+        {data && (
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.07 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <TrendingUp className="h-7 w-7 text-emerald-400" />
+              {cs ? 'Výkon poolu' : 'Pool Performance'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Živý graf hashrate, podíl na síti a statistika štěstí poolu.' : 'Live hashrate chart, network share, and pool luck statistics.'}</p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+            {/* Hashrate Chart */}
+            <div className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Hashrate poolu (poslední hodina)' : 'Pool Hashrate (last hour)'}</p>
+                  <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">{fmtHash(data.aggregate.hashrate)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">{cs ? '24h průměr' : '24h average'}</p>
+                  <p className="text-sm font-mono text-gray-300">{fmtHash(data.aggregate.hashrate_24h)}</p>
+                </div>
+              </div>
+              <HashrateSpark data={hashrateHistoryRef.current} height={120} />
+            </div>
+
+            {/* Right column: Network share + Luck + Pending */}
+            <div className="space-y-4">
+              {/* Network Share */}
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Podíl na síti' : 'Network Share'}</p>
+                {(() => {
+                  const netHash = data.runtime.network_hashrate ?? 0;
+                  const poolHash = data.aggregate.hashrate ?? 0;
+                  const sharePct = netHash > 0 ? (poolHash / netHash) * 100 : 0;
+                  return (
+                    <>
+                      <p className="text-2xl font-bold text-zion-cyan font-mono">{sharePct.toFixed(2)}%</p>
+                      <div className="mt-3 h-2.5 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-zion-cyan to-emerald-400 transition-all duration-500" style={{ width: `${Math.min(100, sharePct)}%` }} />
+                      </div>
+                      <div className="mt-2 flex justify-between text-[10px] text-gray-500">
+                        <span>Pool: {fmtHash(poolHash)}</span>
+                        <span>{cs ? 'Síť' : 'Network'}: {fmtHash(netHash)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Pool Luck */}
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{cs ? 'Štěstí poolu' : 'Pool Luck'}</p>
+                {(() => {
+                  const netHash = data.runtime.network_hashrate ?? 0;
+                  const poolHash = data.aggregate.hashrate ?? 0;
+                  const uptime = data.runtime.pool_uptime_seconds ?? 0;
+                  const blocksFound = data.aggregate.blocks_found ?? 0;
+                  const expectedBlocks = netHash > 0 && uptime > 0 ? (poolHash / netHash) * (uptime / 60) : 0;
+                  const luck = expectedBlocks > 0 ? (blocksFound / expectedBlocks) * 100 : 0;
+                  const luckColor = luck >= 100 ? 'text-emerald-400' : luck >= 80 ? 'text-zion-gold' : luck >= 50 ? 'text-amber-400' : 'text-red-400';
+                  return (
+                    <>
+                      <p className={`text-2xl font-bold font-mono ${luckColor}`}>{luck > 0 ? `${luck.toFixed(0)}%` : '—'}</p>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        {blocksFound} {cs ? 'nalezeno' : 'found'} / {expectedBlocks.toFixed(1)} {cs ? 'očekáváno' : 'expected'}
+                      </p>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Pending Payouts */}
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{cs ? 'Čekající výplaty' : 'Pending Payouts'}</p>
+                {(() => {
+                  const srv = data.servers.find(s => s.stats?.payouts);
+                  const pending = srv?.stats?.payouts;
+                  const pendingZion = pending?.pending_total_atomic ? (pending.pending_total_atomic / 1e12).toFixed(4) : '0';
+                  const pendingMiners = pending?.pending_miners ?? 0;
+                  return (
+                    <>
+                      <p className="text-2xl font-bold text-amber-400 font-mono">{pendingZion} ZION</p>
+                      <p className="text-[11px] text-gray-500 mt-1">{pendingMiners} {cs ? 'minerů čeká' : 'miners queued'}</p>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+        )}
 
         {/* ═══════ POOL OPERATIONS ═══════ */}
         <motion.section
@@ -1075,6 +1182,37 @@ export default function PoolDashboard() {
           </div>
         </motion.section>
 
+        {/* ═══════ FAQ ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.34 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <span className="flex items-center justify-center h-7 w-7 rounded-full border border-blue-400/30 bg-blue-400/10 text-blue-400 text-sm font-bold">?</span>
+              {cs ? 'Časté dotazy' : 'Frequently Asked Questions'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Odpovědi na nejčastější otázky minerů.' : 'Answers to the most common miner questions.'}</p>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { q: cs ? 'Jaký algoritmus ZION používá?' : 'What algorithm does ZION use?', a: cs ? 'ZION používá Cosmic Harmony — vlastní proof-of-work algoritmus přívětivý k CPU a odolný vůči ASIC. Podporuje CPU i GPU těžbu.' : 'ZION uses Cosmic Harmony — a custom CPU-friendly, ASIC-resistant proof-of-work algorithm. It supports both CPU and GPU mining.' },
+              { q: cs ? 'Jak funguje PPLNS?' : 'How does PPLNS work?', a: cs ? 'PPLNS (Pay Per Last N Shares) odměňuje minery podle jejich příspěvku v posledních N share. Je férovější než proporcionální odměny a penalizuje pool-hopping.' : 'PPLNS (Pay Per Last N Shares) rewards miners based on their contribution in the last N shares. It is fairer than proportional rewards and penalizes pool-hopping.' },
+              { q: cs ? 'Jaký je minimální payout?' : 'What is the minimum payout?', a: cs ? 'Minimální výplata je 0.1 ZION. Výplaty probíhají automaticky po nalezení bloku, jakmile váš zůstatek dosáhne prahu.' : 'The minimum payout is 0.1 ZION. Payouts happen automatically after a block is found once your balance reaches the threshold.' },
+              { q: cs ? 'Kam jdou tithe a fondy?' : 'Where do tithe and funds go?', a: cs ? 'Distribuce coinbase: 89 % miner, 5 % humanitární tithe, 5 % fond Issobella, 1 % pool fee. Tithe a fondy jsou kódovány přímo v coinbase transakci na chain úrovni.' : 'Coinbase distribution: 89% miner, 5% humanitarian tithe, 5% Issobella fund, 1% pool fee. Tithe and funds are encoded directly in the coinbase transaction at the chain level.' },
+              { q: cs ? 'Mohu používat XMRig nebo jen nativní miner?' : 'Can I use XMRig or only the native miner?', a: cs ? 'Oba jsou podporovány. XMRig je průmyslový standard s optimalizacemi pro CPU. Nativní ZION miner nabízí dedikovanou podporu Cosmic Harmony a GPU akceleraci.' : 'Both are supported. XMRig is industry-standard with CPU optimizations. The native ZION miner offers dedicated Cosmic Harmony support and GPU acceleration.' },
+              { q: cs ? 'Co znamená Pool Luck?' : 'What does Pool Luck mean?', a: cs ? 'Pool Luck ukazuje poměr nalezených bloků vs. statisticky očekávaných na základě hashrate poolu a obtížnosti sítě. 100 % = přesně dle očekávání, nad 100 % = lepší než průměr.' : 'Pool Luck shows the ratio of blocks found vs. statistically expected based on pool hashrate and network difficulty. 100% = exactly as expected, above 100% = better than average.' },
+              { q: cs ? 'Jak nastavím failover?' : 'How do I set up failover?', a: cs ? 'Použijte záložní pool endpoint v konfiguraci XMRig (--url-backup) nebo v nativním mineru (--pool-backup). Automaticky přepne při výpadku primárního serveru.' : 'Use the backup pool endpoint in your XMRig config (--url-backup) or native miner (--pool-backup). It auto-switches on primary server failure.' },
+              { q: cs ? 'Jak často probíhají výplaty?' : 'How often are payouts processed?', a: cs ? 'Výplaty se zpracovávají po každém nalezeném bloku. Pool spočítá PPLNS podíly, vytvoří transakci a odešle ji do sítě. Potvrzení trvá obvykle 10 bloků.' : 'Payouts are processed after every block found. The pool calculates PPLNS shares, creates a transaction, and broadcasts it. Confirmation takes around 10 blocks.' },
+            ].map((item) => (
+              <FAQItem key={item.q} question={item.q} answer={item.a} />
+            ))}
+          </div>
+        </motion.section>
+
         {/* ═══════ CTA ═══════ */}
         <motion.section
           initial={{ opacity: 0, scale: 0.98 }}
@@ -1137,6 +1275,65 @@ function MiniStat({ label, value, highlight }: { label: string; value: string; h
     <div>
       <p className="text-[11px] text-gray-500">{label}</p>
       <p className={`text-sm font-mono ${highlight ? "text-zion-cyan font-bold" : "text-gray-300"}`}>{value}</p>
+    </div>
+  );
+}
+
+/* ═══════════════════════ HASHRATE SPARK ═══════════════════════ */
+function HashrateSpark({ data, height = 100 }: { data: {ts: number; value: number}[]; height?: number }) {
+  if (data.length < 2) {
+    return (
+      <div className="flex items-center justify-center rounded-xl bg-white/[0.02] border border-white/[0.06]" style={{ height }}>
+        <p className="text-xs text-gray-500">Collecting data…</p>
+      </div>
+    );
+  }
+
+  const values = data.map(d => d.value);
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const w = 600;
+  const h = height;
+  const pad = 4;
+  const plotH = h - pad * 2;
+  const plotW = w - pad * 2;
+
+  const points = values.map((v, i) => {
+    const x = pad + (i / Math.max(1, values.length - 1)) * plotW;
+    const y = pad + plotH - ((v - min) / range) * plotH;
+    return `${x},${y}`;
+  });
+
+  const linePath = `M${points.join(' L')}`;
+  const areaPath = `${linePath} L${pad + plotW},${pad + plotH} L${pad},${pad + plotH} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="poolSparkGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgb(52, 211, 153)" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="rgb(52, 211, 153)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#poolSparkGrad)" />
+      <path d={linePath} fill="none" stroke="rgb(52, 211, 153)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/* ═══════════════════════ FAQ ITEM ═══════════════════════ */
+function FAQItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] overflow-hidden">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
+        <span className="text-sm font-medium text-white">{question}</span>
+        <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform flex-shrink-0 ml-4 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="px-5 pb-4 text-sm text-gray-400 leading-relaxed border-t border-white/[0.04] pt-3">{answer}</div>
+      )}
     </div>
   );
 }
