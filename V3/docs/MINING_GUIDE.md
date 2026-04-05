@@ -8,6 +8,8 @@
 
 ## Quick Start
 
+For rig OS deployment (SimpleMining OS custom miner package), see [SMOS_INTEGRATION.md](SMOS_INTEGRATION.md).
+
 ### 1. Download the miner
 
 Download the latest `zion-miner` binary from the
