@@ -3105,8 +3105,11 @@ fn execute_pool_payout(
             })
             .collect();
 
+        // Use full UTXO count as upper-bound for inputs — coin selection may
+        // need many UTXOs and the node validates fee ≥ size × MIN_FEE_RATE.
+        // Over-estimating inputs only adds negligible extra flowers to the fee.
         let payout_fee = zion_core::fee::minimum_fee_for_size(
-            zion_core::fee::estimate_tx_size(utxos.len().min(10), recipients.len() + 1),
+            zion_core::fee::estimate_tx_size(utxos.len(), recipients.len() + 1),
         );
 
         match zion_core::wallet::build_batch_payout(
