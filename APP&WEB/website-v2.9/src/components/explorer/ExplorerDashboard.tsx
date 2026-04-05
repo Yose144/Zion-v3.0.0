@@ -195,14 +195,16 @@ export default function ExplorerDashboard() {
       {/* Block reward info */}
       <div className="mt-4 zion-panel p-3">
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">
-          {cs ? "Odměna za blok" : "Block Reward"}
+          {cs ? "Distribuce odmeny" : "Reward Distribution"}
         </p>
         <div className="grid grid-cols-2 gap-2 text-xs">
           {[
-            { label: cs ? "Odměna" : "Reward", value: "5,400 ZION", color: "text-zion-gold" },
-            { label: cs ? "Halving" : "Halving", value: cs ? "Žádný" : "None", color: "text-gray-300" },
-            { label: cs ? "Podíl minera" : "Miner Share", value: "89%", color: "text-emerald-400" },
-            { label: cs ? "Politika poplatků" : "Fee Policy", value: cs ? "Spáleno" : "Burned", color: "text-amber-400" },
+            { label: cs ? "Odmena" : "Reward", value: "5,400 ZION", color: "text-zion-gold" },
+            { label: cs ? "Emise" : "Emission", value: cs ? "Decade Decay" : "Decade Decay", color: "text-gray-300" },
+            { label: cs ? "Miner (89%)" : "Miner (89%)", value: "4,806 ZION", color: "text-emerald-400" },
+            { label: cs ? "Humanitar." : "Humanitarian", value: "5% (270)", color: "text-blue-400" },
+            { label: cs ? "Issobella" : "Issobella", value: "5% (270)", color: "text-purple-400" },
+            { label: cs ? "Pool fee" : "Pool Fee", value: "1% (54)", color: "text-amber-400" },
           ].map((c) => (
             <div key={c.label} className="flex items-center justify-between">
               <span className="text-gray-500">{c.label}</span>

@@ -87,6 +87,10 @@ export async function GET() {
       total_miners: poolStats?.miners?.total || poolStats?.total_miners || 0,
       pool_blocks_found: poolStats?.blocks?.found || poolStats?.blocks_found || 0,
       valid_shares: poolStats?.shares?.valid || poolStats?.valid_shares || 0,
+      pool_uptime_s: poolStats?.uptime_s || 0,
+      pool_pplns_window: poolStats?.pplns_window_size || 0,
+      pool_pending_payouts_atomic: poolStats?.payouts?.pending_total_atomic || 0,
+      pool_pending_miners: poolStats?.payouts?.pending_miners || 0,
       connected: true,
 
       // Last block

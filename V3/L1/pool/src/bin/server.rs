@@ -28,10 +28,14 @@ fn main() -> Result<()> {
     )?));
     let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
     let miner_telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::default()));
+    // Protocol fees (humanitarian 5%, issobella 5%, pool 1%) are handled
+    // by core in the coinbase transaction. Pool receives only the miner
+    // share (89%) so PPLNS fee defaults are 0. Set ZION_POOL_FEE_PCT to
+    // add an extra pool-operator fee on top of the protocol split.
     let fee_config = FeeConfig {
-        humanitarian_pct: parse_env_u64("ZION_HUMANITARIAN_TITHE_PCT", 5).unwrap_or(5),
-        issobella_pct: parse_env_u64("ZION_ISSOBELLA_FUND_PCT", 5).unwrap_or(5),
-        pool_fee_pct: parse_env_u64("ZION_POOL_FEE_PCT", 1).unwrap_or(1),
+        humanitarian_pct: parse_env_u64("ZION_HUMANITARIAN_TITHE_PCT", 0).unwrap_or(0),
+        issobella_pct: parse_env_u64("ZION_ISSOBELLA_FUND_PCT", 0).unwrap_or(0),
+        pool_fee_pct: parse_env_u64("ZION_POOL_FEE_PCT", 0).unwrap_or(0),
         humanitarian_wallet: std::env::var("ZION_HUMANITARIAN_WALLET").unwrap_or_default(),
         issobella_wallet: std::env::var("ZION_ISSOBELLA_WALLET").unwrap_or_default(),
         pool_fee_wallet: std::env::var("ZION_POOL_FEE_WALLET").unwrap_or_default(),
@@ -490,13 +494,24 @@ fn handle_client(
                         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
                         pplns.record_share(&miner_id, &worker_name, job.height);
                         if job.height > 0 {
-                            pplns.compute_payouts(zion_core::emission::block_subsidy(job.height))
+                            // Pass only the miner share (89%) — core already
+                            // distributes protocol fees via coinbase outputs.
+                            let (miner_share, _, _, _) = zion_core::emission::fee_split(
+                                zion_core::emission::block_subsidy(job.height),
+                            );
+                            pplns.compute_payouts(miner_share)
                         } else {
                             Vec::new()
                         }
                     };
                     // Phase 18: Execute on-chain payout via UTXO batch transaction.
                     if !payouts.is_empty() {
+                        // Record pending payouts in telemetry before attempting execution.
+                        {
+                            let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                            telemetry.record_pending_payouts(job.height, &payouts);
+                        }
+                        let mut payout_executed = false;
                         if let Some(node_rpc_addr) = config.node_rpc_addr.as_deref() {
                             if let Some(ref pool_wallet_addr) = config.pool_wallet_address {
                                 if let Some(ref signing_key) = config.pool_signing_key {
@@ -508,16 +523,21 @@ fn handle_client(
                                         job.height,
                                     ) {
                                         Ok(tx_id) => {
+                                            payout_executed = true;
                                             println!(
                                                 "payout_submitted height={} miners={} tx_id={}",
                                                 job.height, payouts.len(), tx_id
                                             );
+                                            let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                                            telemetry.record_submitted_payouts(job.height, &payouts, &tx_id);
                                         }
                                         Err(err) => {
                                             println!(
                                                 "payout_submit_failed height={} miners={} error={}",
                                                 job.height, payouts.len(), err
                                             );
+                                            let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                                            telemetry.record_failed_payouts(job.height, &payouts, &format!("{err}"));
                                         }
                                     }
                                 } else {
@@ -527,6 +547,16 @@ fn handle_client(
                                     );
                                 }
                             }
+                        }
+                        // Rollback PPLNS unpaid balances if payout was not successfully
+                        // submitted to the node — prevents balance from vanishing.
+                        if !payout_executed {
+                            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                            pplns.rollback_payouts(&payouts);
+                            println!(
+                                "pplns_rollback height={} miners={} reason=payout_not_executed",
+                                job.height, payouts.len()
+                            );
                         }
                     }
                 }
