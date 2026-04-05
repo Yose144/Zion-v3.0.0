@@ -1,4 +1,4 @@
-# 🚀 ZION TerraNova v2.9.6 — "On the Star"
+# 🚀 ZION TerraNova v2.9.6 — "On the Star" repo /// dir V3 Mainet" 
 
 > **From blockchain to the stars — where technology meets spirit.**
 
