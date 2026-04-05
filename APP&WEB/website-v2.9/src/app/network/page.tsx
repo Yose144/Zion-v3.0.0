@@ -1,16 +1,22 @@
 'use client';
 
+import { useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { usePolling } from '@/hooks/usePolling';
 import {
   Activity,
+  BarChart3,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
+  Coins,
   Cpu,
   ExternalLink,
   Globe,
   Globe2,
+  Hash,
   Layers,
   MapPin,
   Orbit,
@@ -21,8 +27,18 @@ import {
   ShieldCheck,
   Sparkles,
   Terminal,
+  TrendingUp,
   Zap,
 } from 'lucide-react';
+import {
+  BLOCK_REWARD_ZION,
+  BLOCKS_PER_DECADE,
+  DECAY_FACTOR,
+  TOTAL_SUPPLY_ZION,
+  GENESIS_PREMINE_ZION,
+  BLOCK_TIME_SECONDS,
+  blockRewardAtHeight,
+} from '@/lib/constants';
 import {
   SITE_NETWORK_TOPOLOGY,
   SITE_POOL_PRIMARY,
@@ -208,6 +224,58 @@ export default function NetworkPage() {
 
   const primaryPool = SITE_POOL_PRIMARY;
 
+  /* ── Chain stats fetch ── */
+  interface ChainStats {
+    block_height: number;
+    difficulty: number;
+    cumulative_difficulty: number;
+    circulating_supply: number;
+    emission_pct: string;
+    network_hashrate: number;
+    network_hashrate_formatted: string;
+    target_block_time: number;
+    avg_block_time: number;
+    tx_count: number;
+    tx_pool_size: number;
+    total_connections: number;
+    incoming_connections: number;
+    outgoing_connections: number;
+    white_peerlist_size: number;
+    grey_peerlist_size: number;
+    block_size_limit: number;
+    block_size_median: number;
+    database_size: number;
+    alt_blocks_count: number;
+    active_miners: number;
+    pool_hashrate: number;
+    pool_hashrate_formatted: string;
+    pool_blocks_found: number;
+    pool_uptime_s: number;
+    version: string;
+    connected: boolean;
+    last_block?: { height: number; hash: string; timestamp: number; difficulty: number; reward: number; num_txes: number; block_size: number };
+  }
+
+  const [chainStats, setChainStats] = useState<ChainStats | null>(null);
+  const hashrateHistoryRef = useRef<{ts: number; value: number}[]>([]);
+  const difficultyHistoryRef = useRef<{ts: number; value: number}[]>([]);
+  const blockTimeHistoryRef = useRef<{ts: number; value: number}[]>([]);
+
+  const fetchChainStats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/blockchain/stats', { cache: 'no-store' });
+      if (!res.ok) return;
+      const json = await res.json();
+      setChainStats(json);
+      const now = Math.floor(Date.now() / 1000);
+      hashrateHistoryRef.current = [...hashrateHistoryRef.current.filter(p => now - p.ts < 3600), { ts: now, value: json.network_hashrate ?? 0 }].slice(-60);
+      difficultyHistoryRef.current = [...difficultyHistoryRef.current.filter(p => now - p.ts < 3600), { ts: now, value: json.difficulty ?? 0 }].slice(-60);
+      blockTimeHistoryRef.current = [...blockTimeHistoryRef.current.filter(p => now - p.ts < 3600), { ts: now, value: json.avg_block_time ?? 0 }].slice(-60);
+    } catch { /* silent */ }
+  }, []);
+
+  usePolling(fetchChainStats, 15_000);
+
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
       {/* ── Subtle background glows ── */}
@@ -289,6 +357,214 @@ export default function NetworkPage() {
             ))}
           </div>
         </section>
+
+        {/* ═══════ NETWORK HEALTH SCORE ═══════ */}
+        {chainStats && (
+        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Zdraví' : 'Health'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <ShieldCheck className="h-7 w-7 text-emerald-400" />
+              {cs ? 'Skóre zdraví sítě' : 'Network Health Score'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Agregátní indikátor stavu sítě na základě klíčových metrik.' : 'Aggregate health indicator based on key network metrics.'}</p>
+          </div>
+
+          {(() => {
+            const checks = [
+              { label: cs ? 'Node online' : 'Node Online', ok: chainStats.connected, weight: 25 },
+              { label: cs ? 'Bloky se těží' : 'Blocks Mining', ok: chainStats.block_height > 0, weight: 20 },
+              { label: cs ? 'Aktivní mineři' : 'Active Miners', ok: chainStats.active_miners > 0, weight: 15 },
+              { label: cs ? 'Normální block time' : 'Normal Block Time', ok: chainStats.avg_block_time > 0 && chainStats.avg_block_time < 180, weight: 15 },
+              { label: 'P2P Peers', ok: chainStats.total_connections >= 1, weight: 10 },
+              { label: 'Mempool', ok: true, weight: 5 },
+              { label: cs ? 'Databáze OK' : 'Database OK', ok: chainStats.database_size > 0, weight: 5 },
+              { label: cs ? 'Pool online' : 'Pool Online', ok: chainStats.pool_hashrate > 0 || chainStats.active_miners > 0, weight: 5 },
+            ];
+            const score = checks.reduce((acc, c) => acc + (c.ok ? c.weight : 0), 0);
+            const scoreColor = score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-zion-gold' : score >= 50 ? 'text-amber-400' : 'text-red-400';
+            const scoreBorder = score >= 90 ? 'border-emerald-400/30' : score >= 70 ? 'border-zion-gold/30' : score >= 50 ? 'border-amber-400/30' : 'border-red-400/30';
+            const scoreGlow = score >= 90 ? 'shadow-emerald-400/20' : score >= 70 ? 'shadow-zion-gold/20' : score >= 50 ? 'shadow-amber-400/20' : 'shadow-red-400/20';
+
+            return (
+              <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
+                {/* Score circle */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className={`relative w-40 h-40 rounded-full border-4 ${scoreBorder} flex items-center justify-center shadow-lg ${scoreGlow}`}>
+                    <div className="text-center">
+                      <p className={`text-5xl font-bold tabular-nums ${scoreColor}`}>{score}</p>
+                      <p className="text-xs text-gray-500 mt-1">{cs ? 'ze 100' : 'of 100'}</p>
+                    </div>
+                    <svg className="absolute inset-0" viewBox="0 0 160 160">
+                      <circle cx="80" cy="80" r="74" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+                      <circle cx="80" cy="80" r="74" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"
+                        className={scoreColor}
+                        strokeDasharray={`${(score / 100) * 465} 465`}
+                        transform="rotate(-90 80 80)"
+                      />
+                    </svg>
+                  </div>
+                  <p className={`mt-4 text-sm font-semibold ${scoreColor}`}>
+                    {score >= 90 ? (cs ? 'Výborný' : 'Excellent') : score >= 70 ? (cs ? 'Dobrý' : 'Good') : score >= 50 ? (cs ? 'Průměrný' : 'Fair') : (cs ? 'Kritický' : 'Critical')}
+                  </p>
+                </div>
+
+                {/* Check items */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {checks.map((c) => (
+                    <div key={c.label} className={`rounded-2xl border p-4 ${c.ok ? 'border-emerald-400/20 bg-emerald-400/5' : 'border-red-400/20 bg-red-400/5'}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-2 h-2 rounded-full ${c.ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                        <span className="text-[11px] text-gray-400 uppercase tracking-wider">{c.label}</span>
+                      </div>
+                      <p className={`text-lg font-bold ${c.ok ? 'text-emerald-400' : 'text-red-400'}`}>{c.ok ? (cs ? 'OK' : 'OK') : (cs ? 'FAIL' : 'FAIL')}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{c.weight} {cs ? 'bodů' : 'pts'}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </section>
+        )}
+
+        {/* ═══════ CHAIN PERFORMANCE ═══════ */}
+        {chainStats && (
+        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <TrendingUp className="h-7 w-7 text-zion-cyan" />
+              {cs ? 'Výkon chainu' : 'Chain Performance'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Živé grafy hashrate, obtížnosti a block time za poslední hodinu.' : 'Live sparklines for hashrate, difficulty, and block time over the last hour.'}</p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            {/* Hashrate */}
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Hashrate sítě' : 'Network Hashrate'}</p>
+                  <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">{chainStats.network_hashrate_formatted}</p>
+                </div>
+              </div>
+              <NetSparkline data={hashrateHistoryRef.current.map(p => p.value)} color="rgb(52, 211, 153)" height={80} />
+            </div>
+
+            {/* Difficulty */}
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Obtížnost' : 'Difficulty'}</p>
+                  <p className="text-2xl font-bold text-zion-cyan font-mono mt-1">{fmtLargeNum(chainStats.difficulty)}</p>
+                </div>
+              </div>
+              <NetSparkline data={difficultyHistoryRef.current.map(p => p.value)} color="rgb(34, 211, 238)" height={80} />
+            </div>
+
+            {/* Block Time */}
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Průměrný block time' : 'Avg Block Time'}</p>
+                  <p className="text-2xl font-bold text-blue-400 font-mono mt-1">{chainStats.avg_block_time}s</p>
+                </div>
+                <span className="text-xs text-gray-500">{cs ? 'Cíl' : 'Target'}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
+              </div>
+              <NetSparkline data={blockTimeHistoryRef.current.map(p => p.value)} color="rgb(96, 165, 250)" height={80} />
+            </div>
+          </div>
+        </section>
+        )}
+
+        {/* ═══════ CHAIN STATISTICS ═══════ */}
+        {chainStats && (
+        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Statistika' : 'Statistics'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <BarChart3 className="h-7 w-7 text-zion-gold" />
+              {cs ? 'Statistiky chainu' : 'Chain Statistics'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Detailní metriky z živého blockchainu.' : 'Detailed metrics from the live blockchain.'}</p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            <ChainStatCard label={cs ? 'Výška bloku' : 'Block Height'} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" />
+            <ChainStatCard label={cs ? 'Obtížnost' : 'Difficulty'} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" />
+            <ChainStatCard label={cs ? 'Kumulativní obtížnost' : 'Cumulative Diff'} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" />
+            <ChainStatCard label={cs ? 'Oběžná zásoba' : 'Circulating Supply'} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" />
+            <ChainStatCard label={cs ? 'Emise' : 'Emission'} value={`${chainStats.emission_pct}%`} color="text-pink-400" />
+            <ChainStatCard label={cs ? 'Celkem TX' : 'Total TX'} value={chainStats.tx_count.toLocaleString(locale)} color="text-purple-400" />
+            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-amber-400' : 'text-gray-400'} />
+            <ChainStatCard label={cs ? 'Peery celkem' : 'Total Peers'} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-purple-400" />
+            <ChainStatCard label={cs ? 'Známé peery' : 'Known Peers'} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-indigo-400" />
+            <ChainStatCard label={cs ? 'Limit bloku' : 'Block Size Limit'} value={fmtBytes(chainStats.block_size_limit)} sub={`${cs ? 'Medián' : 'Median'}: ${fmtBytes(chainStats.block_size_median)}`} color="text-cyan-400" />
+            <ChainStatCard label={cs ? 'Databáze' : 'Database'} value={fmtBytes(chainStats.database_size)} color="text-pink-400" />
+            <ChainStatCard label={cs ? 'Verze' : 'Version'} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" />
+            <ChainStatCard label={cs ? 'Alt bloky' : 'Alt Blocks'} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-amber-400" />
+            <ChainStatCard label={cs ? 'Aktivní mineři' : 'Active Miners'} value={`${chainStats.active_miners}`} color="text-emerald-400" />
+            <ChainStatCard label={cs ? 'Pool hashrate' : 'Pool Hashrate'} value={chainStats.pool_hashrate_formatted || '—'} color="text-emerald-400" />
+            <ChainStatCard label={cs ? 'Pool bloky' : 'Pool Blocks'} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" />
+            {chainStats.last_block && (
+              <>
+                <ChainStatCard label={cs ? 'Poslední blok' : 'Last Block'} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" />
+                <ChainStatCard label={cs ? 'Odměna' : 'Last Reward'} value={`${(chainStats.last_block.reward / 1e12).toFixed(2)} ZION`} color="text-emerald-400" />
+              </>
+            )}
+          </div>
+        </section>
+        )}
+
+        {/* ═══════ EMISSION PROGRESS ═══════ */}
+        {chainStats && (
+        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Emise' : 'Emission'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Coins className="h-7 w-7 text-zion-gold" />
+              {cs ? 'Průběh emise' : 'Emission Progress'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Decade Decay model: -20 % každých 10 let. Max supply 144 miliard ZION.' : 'Decade Decay model: -20% every 10 years. Max supply 144 billion ZION.'}</p>
+          </div>
+
+          {/* Overall progress bar */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-400">{cs ? 'Vytěženo' : 'Mined'}: {chainStats.emission_pct}%</span>
+              <span className="text-sm text-gray-400">{fmtLargeNum(chainStats.circulating_supply)} / {fmtLargeNum(TOTAL_SUPPLY_ZION)} ZION</span>
+            </div>
+            <div className="h-4 rounded-full bg-white/5 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-zion-gold via-emerald-400 to-zion-cyan transition-all duration-500" style={{ width: `${Math.min(100, Number(chainStats.emission_pct))}%` }} />
+            </div>
+          </div>
+
+          {/* Decade table */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {Array.from({ length: 10 }, (_, i) => {
+              const decadeStart = i * BLOCKS_PER_DECADE + 1;
+              const decadeEnd = (i + 1) * BLOCKS_PER_DECADE;
+              const reward = blockRewardAtHeight(decadeStart);
+              const currentDecade = Math.floor((chainStats.block_height - 1) / BLOCKS_PER_DECADE);
+              const isCurrent = i === currentDecade;
+              const isPast = i < currentDecade;
+              return (
+                <div key={i} className={`rounded-2xl border p-4 ${isCurrent ? 'border-zion-gold/40 bg-zion-gold/10' : isPast ? 'border-emerald-400/20 bg-emerald-400/5' : 'border-white/[0.08] bg-white/[0.03]'}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] uppercase tracking-wider text-gray-500">{cs ? 'Dekáda' : 'Decade'} {i + 1}</span>
+                    {isCurrent && <span className="text-[9px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{cs ? 'Nyní' : 'Now'}</span>}
+                    {isPast && <span className="text-[9px] text-emerald-400">✓</span>}
+                  </div>
+                  <p className={`text-lg font-bold font-mono ${isCurrent ? 'text-zion-gold' : isPast ? 'text-emerald-400' : 'text-gray-400'}`}>{reward.toFixed(2)}</p>
+                  <p className="text-[10px] text-gray-500">ZION/{cs ? 'blok' : 'block'}</p>
+                  <p className="text-[10px] text-gray-500 mt-1 font-mono">{fmtLargeNum(decadeStart)}–{fmtLargeNum(decadeEnd)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+        )}
 
         {/* ═══════ INFRASTRUCTURE ═══════ */}
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
@@ -437,6 +713,19 @@ export default function NetworkPage() {
         {/* ═══════ OPERATOR TOOLKIT ═══════ */}
         <NetworkOperatorToolkit cs={cs} primaryPool={primaryPool} />
 
+        {/* ═══════ NETWORK FAQ ═══════ */}
+        <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Hash className="h-7 w-7 text-purple-400" />
+              {cs ? 'Často kladené dotazy' : 'Frequently Asked Questions'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Vše o síti ZION na jednom místě.' : 'Everything about the ZION network in one place.'}</p>
+          </div>
+          <NetFAQSection cs={cs} />
+        </section>
+
         {/* ═══════ CTA ═══════ */}
         <section className="rounded-4xl border border-emerald-400/30 bg-linear-to-r from-emerald-500/20 via-zion-cyan/10 to-emerald-500/20 p-10 text-center">
           <Radio className="mx-auto h-12 w-12 text-emerald-400" />
@@ -499,4 +788,82 @@ function SurfaceSkeleton({ lines = 4 }: { lines?: number }) {
       ))}
     </div>
   );
+}
+
+/* ─── NetSparkline ─── */
+function NetSparkline({ data, color, height = 60 }: { data: number[]; color: string; height?: number }) {
+  if (!data.length) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-gray-500">collecting…</span></div>;
+  const w = 260;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${height - ((v - min) / range) * (height - 4) - 2}`).join(' ');
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} className="w-full" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`sg-${color.replace(/[^a-z0-9]/gi, '')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+      <polygon points={`0,${height} ${pts} ${w},${height}`} fill={`url(#sg-${color.replace(/[^a-z0-9]/gi, '')})`} />
+    </svg>
+  );
+}
+
+/* ─── ChainStatCard ─── */
+function ChainStatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color: string }) {
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+      <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+      <p className={`text-lg font-bold font-mono ${color} truncate`}>{value}</p>
+      {sub && <p className="text-[10px] text-gray-500 mt-0.5 font-mono">{sub}</p>}
+    </div>
+  );
+}
+
+/* ─── NetFAQSection ─── */
+function NetFAQSection({ cs }: { cs: boolean }) {
+  const [open, setOpen] = useState<number | null>(null);
+  const faqs = [
+    { q: cs ? 'Jaký konsenzus ZION používá?' : 'What consensus does ZION use?', a: cs ? 'Cosmic Harmony Proof-of-Work – vlastní CryptoNight varianta optimalizovaná pro CPU/GPU mining s 60s block time a Decade Decay emisí.' : 'Cosmic Harmony Proof-of-Work – a custom CryptoNight variant optimized for CPU/GPU mining with 60s block time and Decade Decay emission.' },
+    { q: cs ? 'Jaký je cílový block time?' : 'What is the target block time?', a: cs ? '60 sekund. Obtížnost se dynamicky přizpůsobuje každý blok, aby udržela stabilní tempo.' : '60 seconds. Difficulty adjusts dynamically every block to maintain a stable pace.' },
+    { q: cs ? 'Kolik ZION se vytěží za blok?' : 'How many ZION are mined per block?', a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
+    { q: cs ? 'Jaká je maximální zásoba?' : 'What is the maximum supply?', a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
+    { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? 'Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://91.98.122.165:4444 jako pool adresu. Detaily najdete v Connection Guides výše.' : 'Download XMRig or the Desktop Agent and use stratum+tcp://91.98.122.165:4444 as the pool address. See the Connection Guides section above for details.' },
+    { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? 'Klonujte repo, spusťte cargo build --release v L1/core a pak ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 91.98.122.165:21000. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.' : 'Clone the repo, cargo build --release from L1/core and then ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 91.98.122.165:21000. Docker compose is available in docker/docker-compose.mainnet.yml.' },
+    { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
+    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'Interní mainnet je v provozu 24/7 pro testování a validaci. Veřejný launch je aktuálně NO-GO – sledujte roadmapu pro aktualizace.' : 'Internal mainnet is running 24/7 for testing and validation. Public launch is currently NO-GO – follow the roadmap for updates.' },
+  ];
+  return (
+    <div className="divide-y divide-white/[0.06]">
+      {faqs.map((f, i) => (
+        <div key={i}>
+          <button onClick={() => setOpen(open === i ? null : i)} className="w-full flex items-center justify-between py-4 text-left gap-4 group">
+            <span className="text-sm text-gray-200 group-hover:text-white transition-colors">{f.q}</span>
+            <ChevronDown className={`h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 ${open === i ? 'rotate-180' : ''}`} />
+          </button>
+          {open === i && <p className="pb-4 text-sm text-gray-400 leading-relaxed">{f.a}</p>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── formatters ─── */
+function fmtLargeNum(n: number | undefined): string {
+  if (n == null) return '—';
+  if (n >= 1e12) return `${(n / 1e12).toFixed(2)}T`;
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+  return n.toLocaleString();
+}
+function fmtBytes(b: number | undefined): string {
+  if (b == null) return '—';
+  if (b >= 1e9) return `${(b / 1e9).toFixed(1)} GB`;
+  if (b >= 1e6) return `${(b / 1e6).toFixed(1)} MB`;
+  if (b >= 1e3) return `${(b / 1e3).toFixed(0)} KB`;
+  return `${b} B`;
 }

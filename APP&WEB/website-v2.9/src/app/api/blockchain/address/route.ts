@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
+import { KNOWN_ADDRESS_LABELS } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
@@ -58,6 +59,8 @@ export async function GET(request: NextRequest) {
 
     const addressInfo = {
       address,
+      known_label: KNOWN_ADDRESS_LABELS[address]?.label || null,
+      known_type: KNOWN_ADDRESS_LABELS[address]?.type || null,
       balance,
       total_received: minerData?.balance?.paid || totalReceived,
       total_sent: 0,

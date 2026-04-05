@@ -30,8 +30,10 @@ pub enum GpuBackendKind {
 
 impl GpuBackendKind {
     pub fn from_env() -> Self {
-        match std::env::var("ZION_BACKEND")
-            .unwrap_or_default()
+        let val = std::env::var("ZION_BACKEND")
+            .or_else(|_| std::env::var("ZION_GPU_BACKEND"))
+            .unwrap_or_default();
+        match val
             .trim()
             .to_ascii_lowercase()
             .as_str()
