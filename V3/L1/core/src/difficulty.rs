@@ -132,6 +132,38 @@ pub fn difficulty_to_target(difficulty: u64) -> DifficultyTarget {
     DifficultyTarget { bytes }
 }
 
+/// Convert a 256-bit target back to a u64 difficulty: `difficulty = (2²⁵⁶ − 1) / target`.
+///
+/// Returns [`MIN_DIFFICULTY`] when `target` is all-zeros (division by zero guard).
+pub fn target_to_difficulty(target: &DifficultyTarget) -> u64 {
+    // Check for all-zero target.
+    if target.bytes.iter().all(|&b| b == 0) {
+        return MIN_DIFFICULTY;
+    }
+    // If target == MAX, difficulty is 1.
+    if target.bytes == [0xFF; 32] {
+        return 1;
+    }
+    // Use leading byte position for fast approximation:
+    // difficulty ≈ 2^256 / target.  We compute via 128-bit division of the
+    // most-significant 16 bytes of MAX / target.
+    let mut target_val: u128 = 0;
+    for &b in &target.bytes[..16] {
+        target_val = (target_val << 8) | b as u128;
+    }
+    if target_val == 0 {
+        // Target is extremely small (only lower 16 bytes set) → very high difficulty.
+        return MAX_DIFFICULTY;
+    }
+    let max_val: u128 = u128::MAX; // top 16 bytes of 2^256-1
+    let diff_128 = max_val / target_val;
+    if diff_128 > MAX_DIFFICULTY as u128 {
+        MAX_DIFFICULTY
+    } else {
+        (diff_128 as u64).max(MIN_DIFFICULTY)
+    }
+}
+
 /// Encode a `DifficultyTarget` as compact nBits (Bitcoin-style).
 ///
 /// Format: `(size << 24) | mantissa` where
