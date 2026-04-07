@@ -62,6 +62,7 @@ fn main() -> Result<()> {
         fee_config,
     })));
     let active_sessions = Arc::new(AtomicU64::new(0));
+    let session_id_counter = Arc::new(AtomicU64::new(0));
     let listener = TcpListener::bind(&config.bind_addr)
         .with_context(|| format!("failed to bind pool listener on {}", config.bind_addr))?;
 
@@ -191,6 +192,7 @@ fn main() -> Result<()> {
         let miner_telemetry = Arc::clone(&miner_telemetry);
         let pplns_ref = Arc::clone(&pplns_engine);
         let active_sessions_ref = Arc::clone(&active_sessions);
+        let session_id_ref = Arc::clone(&session_id_counter);
         let config = config.clone();
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
@@ -202,6 +204,7 @@ fn main() -> Result<()> {
                 miner_telemetry,
                 pplns_ref,
                 active_sessions_ref,
+                session_id_ref,
                 &config,
             )
         }));
@@ -252,13 +255,15 @@ fn handle_client(
     miner_telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     pplns_engine: Arc<Mutex<PplnsEngine>>,
     active_sessions: Arc<AtomicU64>,
+    session_id_counter: Arc<AtomicU64>,
     config: &ServerConfig,
 ) -> Result<()> {
     let session_started = Instant::now();
+    let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
     active_sessions.fetch_add(1, Ordering::Relaxed);
     let session_count = active_sessions.load(Ordering::Relaxed);
     let _guard = SessionGuard(Arc::clone(&active_sessions));
-    println!("session_start active_sessions={session_count}");
+    println!("session_start active_sessions={session_count} session_id={session_id}");
 
     let reader_stream = stream.try_clone().context("failed to clone tcp stream")?;
     let mut reader = BufReader::new(reader_stream);
@@ -335,8 +340,12 @@ fn handle_client(
             println!("wire_cancel={cancel_line}");
         }
 
+        // Per-session nonce partitioning: space sessions 1 billion nonces apart
+        // to prevent duplicate work across concurrent miners.
+        let session_nonce_offset = session_id.wrapping_mul(1_000_000_000);
         let start_nonce = config
             .start_nonce
+            .wrapping_add(session_nonce_offset)
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
         let job = match config.node_rpc_addr.as_deref() {
             Some(node_rpc_addr) => {
@@ -2240,6 +2249,7 @@ mod tests {
                 routing_stats,
                 miner_telemetry,
                 pplns,
+                Arc::new(AtomicU64::new(0)),
                 Arc::new(AtomicU64::new(0)),
                 &config,
             )
