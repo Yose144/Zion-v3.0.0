@@ -77,6 +77,12 @@ pub enum PoolMessage {
         rejected_shares: u64,
         revenue_total_usd: String,
     },
+    /// Pool → miner: adjust share difficulty (optional, sent before a Job).
+    /// Miners that don't recognise it simply ignore the message.
+    SetDifficulty {
+        difficulty: u64,
+        target_hex: String,
+    },
 }
 
 pub fn encode_message(message: &PoolMessage) -> Result<String, serde_json::Error> {
@@ -466,6 +472,22 @@ impl MiningPool {
 
     pub fn runtime(&self) -> &CoreRuntime {
         &self.runtime
+    }
+
+    /// Forward revenue tracking to the inner runtime (used by two-tier vardiff validation).
+    pub fn record_revenue(&self, source: RevenueSource, value_usd: f64, qualifies: bool) {
+        self.runtime.record_revenue(source, value_usd, qualifies);
+    }
+
+    /// Increment the accepted-share counter (for two-tier vardiff flow where
+    /// share validation is done externally).
+    pub fn record_accepted_share(&mut self) {
+        self.accepted_shares += 1;
+    }
+
+    /// Increment the rejected-share counter.
+    pub fn record_rejected_share(&mut self) {
+        self.rejected_shares += 1;
     }
 }
 
