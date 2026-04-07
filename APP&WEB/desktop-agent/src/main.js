@@ -1514,8 +1514,6 @@ function applyCudaTuning(gpuInfo, tuningConfig) {
 
 const TESTNET_SERVERS = [
   { id: 'zion2', name: 'Prague', host: PRIMARY_TESTNET_HOST, flag: 'CZ', location: 'EU Primary' },
-  { id: 'zion3', name: 'USA', host: '5.78.194.94', flag: 'US', location: 'US-East' },
-  { id: 'zion4', name: 'Singapore', host: '5.223.84.191', flag: 'SG', location: 'AP-Singapore' },
 ];
 
 async function checkServerPort(host, port, timeout = 3000) {

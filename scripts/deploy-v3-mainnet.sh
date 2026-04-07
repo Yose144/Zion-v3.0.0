@@ -23,7 +23,7 @@ LOCAL_SRC="$(cd "$(dirname "$0")/.." && pwd)"
 # the active seed rotation until they are restored, otherwise fresh nodes learn
 # dead peers and burn sync cycles.
 SERVER_ALIASES=(eu primary us sg)
-ACTIVE_SERVER_ALIASES=(primary us sg)
+ACTIVE_SERVER_ALIASES=(primary)
 
 resolve_alias() {
     case "$1" in

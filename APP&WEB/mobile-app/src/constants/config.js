@@ -3,13 +3,9 @@ export const CONFIG = {
   // ── Network settings — V3 mainnet nodes (port 8443 RPC, 8080 pool API) ────────────
   RPC_NODES: [
     'http://91.98.122.165:8443/jsonrpc',  // Prague (CZ, primary)
-    'http://5.78.194.94:8443/jsonrpc',    // USA (US-East)
-    'http://5.223.84.191:8443/jsonrpc',   // Singapore (AP)
   ],
   POOL_API_NODES: [
     'http://91.98.122.165:8080',          // Prague pool API
-    'http://5.78.194.94:8080',            // USA pool API
-    'http://5.223.84.191:8080',           // Singapore pool API
   ],
   POOL_URL: 'https://pool.zionterranova.com',
   API_URL: 'https://api.zionterranova.com',
@@ -20,8 +16,6 @@ export const CONFIG = {
   POOL_PORT: 3333,
   POOL_HOSTS: [
     { host: '91.98.122.165',    name: 'Prague' },
-    { host: '5.78.194.94',      name: 'USA' },
-    { host: '5.223.84.191',     name: 'Singapore' },
   ],
 
   // P2P network

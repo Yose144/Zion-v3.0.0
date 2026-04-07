@@ -187,7 +187,7 @@ pub fn genesis_block() -> AcceptedBlock {
                 tx_id,
                 from: "genesis".to_string(),
                 to: output.address.to_string(),
-                amount_zion: output.amount_zion,
+                amount_zion: output.amount_flowers,
                 fee_zion: 0,
                 nonce: i as u64,
             }
@@ -475,7 +475,7 @@ mod tests {
         for (i, output) in PREMINE_OUTPUTS.iter().enumerate() {
             let tx = &block.transactions[i];
             assert_eq!(tx.to, output.address);
-            assert_eq!(tx.amount_zion, output.amount_zion);
+            assert_eq!(tx.amount_zion, output.amount_flowers);
             assert_eq!(tx.from, "genesis");
             assert_eq!(tx.fee_zion, 0);
         }
