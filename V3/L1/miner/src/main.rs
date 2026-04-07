@@ -1607,6 +1607,9 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob)> {
             }
             PoolMessage::Stale { .. } => println!("wire_stale={line}"),
             PoolMessage::Cancel { .. } => println!("wire_cancel={line}"),
+            PoolMessage::SetDifficulty { difficulty, .. } => {
+                println!("pool_set_difficulty={difficulty}");
+            }
             other => return Err(anyhow!("expected job from pool, got {other:?}")),
         }
     }
@@ -1619,6 +1622,9 @@ fn read_next_result(reader: &mut impl BufRead) -> Result<(String, PoolMessage)> 
             PoolMessage::Result { .. } => return Ok((line, message)),
             PoolMessage::Stale { .. } => println!("wire_stale={line}"),
             PoolMessage::Cancel { .. } => println!("wire_cancel={line}"),
+            PoolMessage::SetDifficulty { difficulty, .. } => {
+                println!("pool_set_difficulty={difficulty}");
+            }
             other => return Err(anyhow!("expected result from pool, got {other:?}")),
         }
     }
