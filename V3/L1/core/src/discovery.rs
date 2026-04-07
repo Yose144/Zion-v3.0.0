@@ -37,17 +37,11 @@ pub const MAX_ANNOUNCE_AGE: u64 = 600;
 /// DNS seed hostnames for initial peer discovery.
 pub const DNS_SEEDS: &[&str] = &[
     "seed-eu1.zionchain.org",
-    "seed-us1.zionchain.org",
-    "seed-us2.zionchain.org",
-    "seed-ap1.zionchain.org",
 ];
 
 /// Well-known bootstrap nodes for UDP announcements.
 pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[
     ("91.98.122.165", 8335),
-    ("157.180.41.213", 8335),
-    ("5.78.194.94", 8335),
-    ("5.223.84.191", 8335),
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────
