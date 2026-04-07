@@ -2239,8 +2239,16 @@ function setupWalletControls() {
       if (walletBalanceEl) walletBalanceEl.textContent = '— (node offline)';
       if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `On-chain RPC offline · pool data OK`;
     } else {
-      if (walletBalanceEl) walletBalanceEl.textContent = Number(result.balance ?? 0).toFixed(6);
-      if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = '';
+      const onChainBal = Number(result.balance ?? 0);
+      if (walletBalanceEl) walletBalanceEl.textContent = onChainBal.toFixed(6);
+      // Detect payout-not-executing: on-chain=0, pool_pending>0, pool_paid=0
+      const poolPend = Number(result.pool_pending ?? 0);
+      const poolPd = Number(result.pool_paid ?? 0);
+      if (onChainBal === 0 && poolPend > 0 && poolPd === 0) {
+        if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = '⏳ Pool payouts pending — rewards not yet sent on-chain';
+      } else {
+        if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = '';
+      }
     }
     // UTXO count
     const utxoEl = document.getElementById('wallet-utxo-count');
