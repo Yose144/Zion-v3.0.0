@@ -172,10 +172,10 @@ function buildMainnetStabilityRun(
   collectorState: StabilityCollectorState | null,
   nowSec: number,
 ): MainnetStabilityRun {
-  // Use actual configured seed node count (Prague-only = 1) unless the
-  // collector state explicitly records a different expectation.
-  const configuredNodes = getSeedNodesConfig().length;
-  const expectedNodes = Math.max(1, Math.floor(toNumber(collectorState?.latest?.expected_nodes) ?? configuredNodes));
+  // Use actual configured seed node count (Prague-only = 1).
+  // The collector state may have a stale expected_nodes from a previous
+  // multi-node topology — always trust the live network-config.
+  const expectedNodes = Math.max(1, getSeedNodesConfig().length);
   const startIso = collectorState?.started_at ?? DEFAULT_MAINNET_STABILITY_START_ISO;
   const durationSecs = Math.max(
     3600,
