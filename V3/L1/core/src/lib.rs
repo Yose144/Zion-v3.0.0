@@ -229,12 +229,8 @@ impl NodeConfig {
             rpc_bind: PeerEndpoint::new("0.0.0.0", 8443),
             pool_bind: PeerEndpoint::new("0.0.0.0", 8444),
             seed_peers: vec![
-                // EU – Prague, CZ (primary)
+                // EU – Prague, CZ (primary — sole active node)
                 PeerEndpoint::new("91.98.122.165", 8333),
-                // US – USA
-                PeerEndpoint::new("5.78.194.94", 8333),
-                // AP – Singapore
-                PeerEndpoint::new("5.223.84.191", 8333),
             ],
         }
     }
@@ -415,12 +411,33 @@ pub struct BlockTemplate {
     pub total_utxo_fees: u64,
 }
 
+/// Custom serde for u128: serializes as string, deserializes from string or number.
+/// Required because serde_json does not natively support u128 without `arbitrary_precision`.
+mod serde_u128 {
+    use serde::{self, Deserialize, Deserializer, Serializer};
+    pub fn serialize<S>(value: &u128, serializer: S) -> Result<S::Ok, S::Error>
+    where S: Serializer {
+        serializer.serialize_str(&value.to_string())
+    }
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<u128, D::Error>
+    where D: Deserializer<'de> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrNum { Str(String), Num(u64) }
+        match StringOrNum::deserialize(deserializer)? {
+            StringOrNum::Str(s) => s.parse::<u128>().map_err(serde::de::Error::custom),
+            StringOrNum::Num(n) => Ok(n as u128),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Transaction {
     pub tx_id: String,
     pub from: String,
     pub to: String,
-    pub amount_zion: u64,
+    #[serde(with = "serde_u128")]
+    pub amount_zion: u128,
     pub fee_zion: u64,
     pub nonce: u64,
 }
@@ -1490,7 +1507,7 @@ impl NodeRuntime {
             let miner_reward_zion = template_transactions
                 .first()
                 .filter(|transaction| transaction.from == "coinbase")
-                .map(|transaction| transaction.amount_zion)
+                .map(|transaction| transaction.amount_zion as u64)
                 .unwrap_or(active_template.reward_zion);
             let accepted_block = AcceptedBlock {
                 template_id,
@@ -1604,7 +1621,7 @@ impl TemplateState {
         let estimated_miner_reward_zion = account_transactions
             .first()
             .filter(|transaction| transaction.from == "coinbase")
-            .map(|transaction| transaction.amount_zion)
+            .map(|transaction| transaction.amount_zion as u64)
             .unwrap_or(self.reward_zion);
         BlockTemplate {
             template_id: self.template_id,
@@ -1659,7 +1676,7 @@ impl Transaction {
         if self.fee_zion == 0 {
             return Err("transaction fee must be greater than zero".to_string());
         }
-        if self.fee_zion > self.amount_zion {
+        if (self.fee_zion as u128) > self.amount_zion {
             return Err("transaction fee must not exceed transaction amount".to_string());
         }
         Ok(())
@@ -2324,7 +2341,7 @@ impl ChainState {
         let mut seen_tx_ids = HashSet::new();
         let mut seen_sender_nonces = HashSet::new();
         let mut coinbase_count = 0usize;
-        let mut total_coinbase_zion = 0u64;
+        let mut total_coinbase_zion = 0u128;
         let has_fee_addresses = !block.humanitarian_address.is_empty()
             || !block.issobella_address.is_empty()
             || !block.pool_fee_address.is_empty();
@@ -2443,7 +2460,7 @@ impl ChainState {
                                 .to_string(),
                         );
                     }
-                    if transaction.amount_zion != expected_amount {
+                    if transaction.amount_zion != expected_amount as u128 {
                         return Err(format!(
                             "peer block coinbase amount {} does not match expected {}",
                             transaction.amount_zion, expected_amount
@@ -2490,7 +2507,7 @@ impl ChainState {
                     .to_string(),
             );
         }
-        if total_coinbase_zion != 0 && total_coinbase_zion != block.subsidy_zion {
+        if total_coinbase_zion != 0 && total_coinbase_zion != block.subsidy_zion as u128 {
             return Err(format!(
                 "peer block coinbase total {} does not match subsidy {}",
                 total_coinbase_zion, block.subsidy_zion
@@ -2938,7 +2955,7 @@ impl ChainState {
                         tx_id: hex(&hash.data),
                         from: "coinbase".to_string(),
                         to: addr.to_string(),
-                        amount_zion: amount,
+                        amount_zion: amount as u128,
                         fee_zion: 0,
                         nonce: next_height,
                     }
@@ -2983,7 +3000,7 @@ impl ChainState {
                     tx_id: hex(&coinbase_hash.data),
                     from: "coinbase".to_string(),
                     to: miner_address.to_string(),
-                    amount_zion: subsidy,
+                    amount_zion: subsidy as u128,
                     fee_zion: 0,
                     nonce: next_height,
                 };
@@ -3207,7 +3224,7 @@ fn derive_template_merkle_root(
     for transaction in transactions {
         let tx_hash = cosmic_harmony_ekam_deeksha(
             transaction.tx_id.as_bytes(),
-            transaction.nonce ^ transaction.fee_zion ^ transaction.amount_zion,
+            transaction.nonce ^ transaction.fee_zion ^ (transaction.amount_zion as u64),
         )
         .data;
         for (slot, value) in seed.iter_mut().zip(tx_hash.iter().cycle()) {
@@ -3268,7 +3285,7 @@ fn derive_block_body_hash(transactions: &[Transaction]) -> [u8; 32] {
     for transaction in transactions {
         let tx_hash = cosmic_harmony_ekam_deeksha(
             transaction.tx_id.as_bytes(),
-            transaction.nonce ^ transaction.amount_zion ^ transaction.fee_zion,
+            transaction.nonce ^ (transaction.amount_zion as u64) ^ transaction.fee_zion,
         )
         .data;
         for (slot, value) in seed.iter_mut().zip(tx_hash.iter().cycle()) {
@@ -4672,7 +4689,7 @@ mod tests {
 
         // Amount = subsidy + fees (no user txs, so just subsidy).
         let expected_subsidy = emission::block_subsidy(1);
-        assert_eq!(coinbase.amount_zion, expected_subsidy);
+        assert_eq!(coinbase.amount_zion, expected_subsidy as u128);
         assert_eq!(block.miner_reward_zion, expected_subsidy);
     }
 
@@ -4698,19 +4715,19 @@ mod tests {
 
         assert_eq!(transactions[0].from, "coinbase");
         assert_eq!(transactions[0].to, "alice-wallet");
-        assert_eq!(transactions[0].amount_zion, miner_amount);
+        assert_eq!(transactions[0].amount_zion, miner_amount as u128);
 
         assert_eq!(transactions[1].from, "coinbase");
         assert_eq!(transactions[1].to, "human-wallet");
-        assert_eq!(transactions[1].amount_zion, humanitarian_amount);
+        assert_eq!(transactions[1].amount_zion, humanitarian_amount as u128);
 
         assert_eq!(transactions[2].from, "coinbase");
         assert_eq!(transactions[2].to, "issobella-wallet");
-        assert_eq!(transactions[2].amount_zion, issobella_amount);
+        assert_eq!(transactions[2].amount_zion, issobella_amount as u128);
 
         assert_eq!(transactions[3].from, "coinbase");
         assert_eq!(transactions[3].to, "pool-wallet");
-        assert_eq!(transactions[3].amount_zion, pool_fee_amount);
+        assert_eq!(transactions[3].amount_zion, pool_fee_amount as u128);
     }
 
     #[test]
@@ -4725,7 +4742,7 @@ mod tests {
 
         let template = source.chain_state.active_template.clone();
         let transactions = template.account_transactions();
-        let miner_reward_zion = transactions[0].amount_zion;
+        let miner_reward_zion = transactions[0].amount_zion as u64;
         let block = AcceptedBlock {
             template_id: template.template_id,
             height: template.height,
@@ -4766,17 +4783,17 @@ mod tests {
         assert_eq!(block.miner_reward_zion, miner_amount);
 
         assert_eq!(block.transactions[0].to, "alice-wallet");
-        assert_eq!(block.transactions[0].amount_zion, miner_amount);
+        assert_eq!(block.transactions[0].amount_zion, miner_amount as u128);
         assert_eq!(block.transactions[1].to, "human-wallet");
-        assert_eq!(block.transactions[1].amount_zion, humanitarian_amount);
+        assert_eq!(block.transactions[1].amount_zion, humanitarian_amount as u128);
         assert_eq!(block.transactions[2].to, "issobella-wallet");
-        assert_eq!(block.transactions[2].amount_zion, issobella_amount);
+        assert_eq!(block.transactions[2].amount_zion, issobella_amount as u128);
         assert_eq!(block.transactions[3].to, "pool-wallet");
-        assert_eq!(block.transactions[3].amount_zion, pool_fee_amount);
+        assert_eq!(block.transactions[3].amount_zion, pool_fee_amount as u128);
 
         assert_eq!(
-            block.transactions.iter().map(|transaction| transaction.amount_zion).sum::<u64>(),
-            block.subsidy_zion
+            block.transactions.iter().map(|transaction| transaction.amount_zion).sum::<u128>(),
+            block.subsidy_zion as u128
         );
     }
 

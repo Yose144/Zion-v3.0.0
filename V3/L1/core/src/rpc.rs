@@ -457,17 +457,18 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                             account_balance += tx.amount_zion as i128;
                         }
                         if tx.from == account_id {
-                            account_balance -= (tx.amount_zion + tx.fee_zion) as i128;
+                            account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
                         }
                     }
                 }
-                let account_balance = account_balance.max(0) as u64;
+                let account_balance = account_balance.max(0) as u128;
                 let utxo_count = rt.spendable_utxos(account_id).len() as u64;
+                let total = utxo_balance as u128 + account_balance;
                 return Ok(json!({
                     "address": account_id,
-                    "balance_flowers": utxo_balance.saturating_add(account_balance),
+                    "balance_flowers": total.to_string(),
                     "utxo_balance_flowers": utxo_balance,
-                    "account_balance_flowers": account_balance,
+                    "account_balance_flowers": account_balance.to_string(),
                     "utxo_count": utxo_count,
                     "chain_height": rt.chain_height(),
                     "transaction_model": ACTIVE_TRANSACTION_MODEL,
@@ -481,13 +482,13 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                         balance += tx.amount_zion as i128;
                     }
                     if tx.from == account_id {
-                        balance -= (tx.amount_zion + tx.fee_zion) as i128;
+                        balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
                     }
                 }
             }
             Ok(json!({
                 "account_id": account_id,
-                "balance_zion": balance.max(0) as u64,
+                "balance_zion": balance.max(0).to_string(),
                 "chain_height": rt.chain_height(),
                 "transaction_model": ACTIVE_TRANSACTION_MODEL,
                 "balance_scope": "confirmed_chain_only",
@@ -524,18 +525,19 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                             account_balance += tx.amount_zion as i128;
                         }
                         if tx.from == account_id {
-                            account_balance -= (tx.amount_zion + tx.fee_zion) as i128;
+                            account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
                         }
                     }
                 }
-                let account_balance = account_balance.max(0) as u64;
+                let account_balance = account_balance.max(0) as u128;
+                let total = utxo_balance as u128 + account_balance;
                 return Ok(json!({
                     "address": account_id,
                     "height": effective_height,
-                    "balance_flowers": utxo_balance.saturating_add(account_balance),
+                    "balance_flowers": total.to_string(),
                     "utxo_balance_flowers": utxo_balance,
-                    "account_balance_flowers": account_balance,
-                    "balance_zion": format_flowers_as_zion(utxo_balance.saturating_add(account_balance)),
+                    "account_balance_flowers": account_balance.to_string(),
+                    "balance_zion": format_flowers_as_zion(total as u64),
                     "transaction_model": ACTIVE_TRANSACTION_MODEL,
                     "balance_scope": "confirmed_chain_only",
                 }));
@@ -547,14 +549,14 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                         balance += tx.amount_zion as i128;
                     }
                     if tx.from == account_id {
-                        balance -= (tx.amount_zion + tx.fee_zion) as i128;
+                        balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
                     }
                 }
             }
             Ok(json!({
                 "account_id": account_id,
                 "height": effective_height,
-                "balance_zion": balance.max(0) as u64,
+                "balance_zion": balance.max(0).to_string(),
                 "transaction_model": ACTIVE_TRANSACTION_MODEL,
                 "balance_scope": "confirmed_chain_only",
             }))
