@@ -86,19 +86,19 @@ scrape_configs:
           service: "redis"
 
   # ══════════════════════════════════════════════════
-  # REMOTE targets — public metrics currently exposed by peer nodes
+  # REMOTE targets — currently disabled (USA + Singapore offline)
   # ══════════════════════════════════════════════════
 
-  # ── ZION Core Node — Singapore ──
-  - job_name: "zion-core-singapore"
-    metrics_path: "/metrics"
-    scrape_interval: 30s
-    static_configs:
-      - targets: ["5.223.84.191:9115"]
-        labels:
-          server: "singapore"
-          region: "apac"
-          service: "core"
+  # ── ZION Core Node — Singapore (OFFLINE) ──
+  # - job_name: "zion-core-singapore"
+  #   metrics_path: "/metrics"
+  #   scrape_interval: 30s
+  #   static_configs:
+  #     - targets: ["5.223.84.191:9115"]
+  #       labels:
+  #         server: "singapore"
+  #         region: "apac"
+  #         service: "core"
 
   # NOTE: Remote pool metrics are not exposed publicly on the active topology,
   # so Prometheus scrapes only the Prague pool locally.

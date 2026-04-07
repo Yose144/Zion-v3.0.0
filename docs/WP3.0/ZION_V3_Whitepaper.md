@@ -54,7 +54,7 @@ Key parameters at a glance:
 | **Signing** | Ed25519 |
 | **Hashing** | BLAKE3 |
 | **Address format** | Bech32 (`zion1...`) |
-| **Transaction model** | UTXO |
+| **Transaction model** | Hybrid Account + UTXO |
 | **Consensus** | Proof-of-Work (Nakamoto) |
 | **L2 wrapped token** | wZION (ERC-20 on Base) |
 | **Language** | Rust (Tokio async runtime) |
