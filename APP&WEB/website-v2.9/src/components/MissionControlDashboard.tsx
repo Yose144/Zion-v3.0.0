@@ -1882,17 +1882,15 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <Stat label="Network" value={primaryStats?.network ?? `V3 Test Mainnet ${SITE_RELEASE_LABEL}`} color="text-cyan-400" />
-                <Stat label="Total Peers" value={fmt(primaryStats?.peers_connected ?? 0)} sub={`${onlineCount}/3 nodes online`} mono />
+                <Stat label="Total Peers" value={fmt(primaryStats?.peers_connected ?? 0)} sub={`${onlineCount}/1 nodes online`} mono />
                 <Stat label="Difficulty" value={fmt(primaryStats?.difficulty)} mono />
                 <Stat label="Sync Status" value={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'SYNCED ✓' : primaryHeight > 0 ? 'RUNNING' : '—'} color={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
               </div>
-              <div className="grid gap-5 lg:grid-cols-3">
+              <div className="grid gap-5 lg:grid-cols-1">
                 <ServerCard node={primaryNodeWithMetrics} name="Prague (EU)" flag="🇪🇺" ip="91.98.122.165 · RPC + pool + web" />
-                <ServerCard node={data?.usa} name="USA (Hillsboro)" flag="🇺🇸" ip="5.78.194.94 · RPC + pool" />
-                <ServerCard node={data?.singapore} name="Singapore (APAC)" flag="🇸🇬" ip="5.223.84.191 · RPC + pool" />
               </div>
               <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300">
-                Auditovaný 3-node P2P mesh přes 3 regiony (EU, USA, APAC). Tento set je controlled test-mainnet rehearsal runtime, ne veřejně otevřený production launch.
+                Auditovaný 1-node mainnet runtime (EU Prague). USA a Singapore servery dočasně offline.
               </div>
             </motion.section>
 
