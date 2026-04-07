@@ -12,7 +12,7 @@ use zion_core::{
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
 use zion_core::wallet::{BatchRecipient, SpendableUtxo};
-use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
+use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 
 fn main() -> Result<()> {
@@ -247,6 +247,96 @@ impl Drop for IpSessionGuard {
     }
 }
 
+// ---------------------------------------------------------------------------
+// VarDiff — per-session adaptive share difficulty
+// ---------------------------------------------------------------------------
+
+/// Per-session variable-difficulty state.
+///
+/// Adjusts the share difficulty so that the miner submits approximately every
+/// `target_secs` seconds.  Higher-hashrate miners get a harder target (more
+/// PPLNS weight per share), while low-hashrate miners get an easier target so
+/// they still submit shares regularly.
+struct VarDiff {
+    current_difficulty: u64,
+    min_difficulty: u64,
+    max_difficulty: u64,
+    target_secs: f64,
+    retarget_shares: u64,
+    /// Timestamps of recent share submissions for retarget calculation.
+    submit_times: VecDeque<Instant>,
+    /// Accumulated shares since last retarget.
+    shares_since_retarget: u64,
+}
+
+impl VarDiff {
+    fn new(config: &ServerConfig) -> Self {
+        Self {
+            current_difficulty: config.vardiff_start_difficulty.max(1),
+            min_difficulty: config.vardiff_min_difficulty.max(1),
+            max_difficulty: if config.vardiff_max_difficulty == 0 {
+                u64::MAX
+            } else {
+                config.vardiff_max_difficulty
+            },
+            target_secs: config.vardiff_target_secs.max(1) as f64,
+            retarget_shares: config.vardiff_retarget_shares.max(2),
+            submit_times: VecDeque::with_capacity(32),
+            shares_since_retarget: 0,
+        }
+    }
+
+    /// The current share difficulty target (256-bit).
+    fn share_target(&self) -> DifficultyTarget {
+        zion_core::difficulty::difficulty_to_target(self.current_difficulty)
+    }
+
+    /// Record a share submission and optionally retarget difficulty.
+    ///
+    /// Returns `Some(new_difficulty)` if the difficulty was adjusted.
+    fn record_submit(&mut self) -> Option<u64> {
+        let now = Instant::now();
+        self.submit_times.push_back(now);
+        self.shares_since_retarget += 1;
+
+        // Keep a bounded ring of timestamps.
+        while self.submit_times.len() > 32 {
+            self.submit_times.pop_front();
+        }
+
+        if self.shares_since_retarget < self.retarget_shares || self.submit_times.len() < 2 {
+            return None;
+        }
+
+        // Compute average time between submissions.
+        let n = self.submit_times.len() - 1;
+        let total_secs = self.submit_times.back().unwrap()
+            .duration_since(*self.submit_times.front().unwrap())
+            .as_secs_f64();
+        if total_secs <= 0.0 || n == 0 {
+            return None;
+        }
+        let avg_secs = total_secs / n as f64;
+
+        // Retarget: new_diff = current_diff × (target_time / avg_time).
+        // Clamp the ratio to [0.25, 4.0] to prevent wild swings.
+        let ratio = (self.target_secs / avg_secs).clamp(0.25, 4.0);
+        let new_diff_f = self.current_difficulty as f64 * ratio;
+        let new_diff = (new_diff_f as u64)
+            .max(self.min_difficulty)
+            .min(self.max_difficulty);
+
+        self.shares_since_retarget = 0;
+
+        if new_diff != self.current_difficulty {
+            self.current_difficulty = new_diff;
+            Some(new_diff)
+        } else {
+            None
+        }
+    }
+}
+
 fn handle_client(
     stream: TcpStream,
     pool: Arc<Mutex<MiningPool>>,
@@ -321,6 +411,18 @@ fn handle_client(
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
     println!("wire_welcome={welcome_line}");
 
+    // Initialise per-session variable difficulty.
+    let mut vardiff = VarDiff::new(config);
+    // Send initial share difficulty to miner.
+    {
+        let sd_msg = PoolMessage::SetDifficulty {
+            difficulty: vardiff.current_difficulty,
+            target_hex: to_hex(&vardiff.share_target().bytes),
+        };
+        let sd_line = write_wire_message(&mut writer, &sd_msg)?;
+        println!("wire_set_difficulty={sd_line}");
+    }
+
     let mut last_template_height: u64 = 0;
 
     for iteration in 0..config.loop_count {
@@ -375,7 +477,19 @@ fn handle_client(
             }
         };
         let job_issued_at = Instant::now();
-        let job_message = pool.lock().expect("pool lock poisoned").job_message(job);
+        // Store network target for block validation; send share target to miner.
+        let network_target = job.target;
+        let share_target = vardiff.share_target();
+        let share_difficulty = vardiff.current_difficulty;
+        let job_message = PoolMessage::Job {
+            job_id: job.job_id,
+            algorithm: zion_core::consensus_profile().to_string(),
+            start_nonce: job.start_nonce,
+            nonce_count: job.nonce_count,
+            target_hex: to_hex(&share_target.bytes),
+            header_hex: to_hex(&job.header.to_bytes()),
+            height: job.height,
+        };
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
         println!("iteration={} miner={} height={} nonces={}..{}", iteration + 1, worker_name, job.height, start_nonce, start_nonce + config.nonce_count);
@@ -403,57 +517,158 @@ fn handle_client(
                         miner_id, worker_name, submit_miner_id, submit_worker_name
                     );
                 }
-                let solution = MiningSolution {
-                    job_id,
-                    candidate: zion_core::BlockCandidate {
-                        header: job.header,
-                        nonce,
-                        height: job.height,
-                    },
-                    hash: parse_hash_hex(&hash_hex)?,
+
+                // ── Two-tier vardiff validation ──────────────────────────
+                // 1. Verify hash integrity (candidate.seal().hash == submitted hash).
+                // 2. Check against share_target (easy) → valid share for PPLNS.
+                // 3. Check against network_target (hard) → block found, submit to node.
+
+                let candidate = zion_core::BlockCandidate {
+                    header: job.header,
+                    nonce,
+                    height: job.height,
                 };
-                let (revenue_source, revenue_value_usd) = revenue_scheduler
-                    .lock()
-                    .expect("revenue scheduler lock poisoned")
-                    .next_lane_for_group(session_group);
-                let node_rpc_addr = config.node_rpc_addr.clone();
-                let decision = pool.lock().expect("pool lock poisoned").submit_solution_with(
-                    miner_id.clone(),
-                    worker_name.clone(),
-                    solution,
-                    revenue_source,
-                    revenue_value_usd,
-                    move |job, solution, _sealed_block| match node_rpc_addr.as_deref() {
-                        Some(node_rpc_addr) => {
-                            match submit_candidate_to_node(node_rpc_addr, job, solution.candidate.nonce) {
-                                Ok(RpcResponse::SubmitResult {
-                                    accepted: true, ..
-                                }) => ShareStatus::Accepted,
-                                Ok(RpcResponse::SubmitResult {
-                                    accepted: false,
-                                    reason,
-                                    ..
-                                }) => map_node_rejection(reason.as_deref()),
-                                Ok(other) => {
-                                    println!("node_rpc_unexpected={other:?}");
-                                    ShareStatus::UpstreamRejected
-                                }
-                                Err(error) => {
-                                    println!("node_rpc_error={error:#}");
-                                    ShareStatus::UpstreamRejected
+                let sealed = candidate.seal();
+                let submitted_hash = parse_hash_hex(&hash_hex)?;
+
+                // Log hash mismatch but use our own computed hash for validation
+                // (miner-submitted hash is cosmetic; we trust only our own seal).
+                if sealed.hash != submitted_hash {
+                    println!(
+                        "hash_mismatch_info miner={} job={} computed={} submitted={}",
+                        worker_name, job_id,
+                        to_hex(&sealed.hash),
+                        hash_hex
+                    );
+                }
+
+                if !share_target.allows(&sealed.hash) {
+                    // Hash does not meet even the (easier) share target → reject.
+                    println!(
+                        "share_below_target miner={} job={} diff={}",
+                        worker_name, job_id, share_difficulty
+                    );
+                    pool.lock().expect("pool lock poisoned").record_rejected_share();
+                    let decision = ShareDecision {
+                        status: ShareStatus::RejectedLowDifficulty,
+                        sealed_block: None,
+                    };
+                    JobCompletion::Submitted {
+                        decision,
+                        routed_source: RevenueSource::Zion,
+                        attempted_hashes: attempted_hashes
+                            .unwrap_or_else(|| nonce.saturating_sub(job.start_nonce) + 1),
+                        elapsed_ms: elapsed_ms
+                            .unwrap_or_else(|| job_issued_at.elapsed().as_millis() as u64),
+                    }
+                } else {
+                    // ── Valid share: meets share_target ──────────────────
+                    // Record in PPLNS with difficulty weight.
+                    {
+                        let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                        pplns.record_share_with_diff(&miner_id, &worker_name, job.height, share_difficulty);
+                    }
+                    println!(
+                        "valid_share miner={} job={} share_diff={}",
+                        worker_name, job_id, share_difficulty
+                    );
+
+                    // Vardiff retarget after each valid share submission.
+                    if let Some(new_diff) = vardiff.record_submit() {
+                        println!(
+                            "vardiff_retarget miner={} old_diff={} new_diff={}",
+                            worker_name, share_difficulty, new_diff
+                        );
+                        let set_diff_msg = PoolMessage::SetDifficulty {
+                            difficulty: new_diff,
+                            target_hex: to_hex(&vardiff.share_target().bytes),
+                        };
+                        let diff_line = write_wire_message(&mut writer, &set_diff_msg)?;
+                        println!("wire_set_difficulty={diff_line}");
+                    }
+
+                    // Check if hash also meets the (harder) network target → block found!
+                    let (revenue_source, revenue_value_usd) = revenue_scheduler
+                        .lock()
+                        .expect("revenue scheduler lock poisoned")
+                        .next_lane_for_group(session_group);
+
+                    let decision = if network_target.allows(&sealed.hash) {
+                        // Block found! Submit to the node.
+                        println!(
+                            "BLOCK_FOUND miner={} height={} nonce={} hash={}",
+                            worker_name, job.height, nonce, hash_hex
+                        );
+                        let node_rpc_addr = config.node_rpc_addr.clone();
+                        let node_status = match node_rpc_addr.as_deref() {
+                            Some(addr) => {
+                                match submit_candidate_to_node(addr, job, nonce) {
+                                    Ok(RpcResponse::SubmitResult {
+                                        accepted: true, ..
+                                    }) => ShareStatus::Accepted,
+                                    Ok(RpcResponse::SubmitResult {
+                                        accepted: false,
+                                        reason,
+                                        ..
+                                    }) => map_node_rejection(reason.as_deref()),
+                                    Ok(other) => {
+                                        println!("node_rpc_unexpected={other:?}");
+                                        ShareStatus::UpstreamRejected
+                                    }
+                                    Err(error) => {
+                                        println!("node_rpc_error={error:#}");
+                                        ShareStatus::UpstreamRejected
+                                    }
                                 }
                             }
+                            None => ShareStatus::Accepted,
+                        };
+
+                        // Record revenue for the block.
+                        let block_accepted = matches!(node_status, ShareStatus::Accepted);
+                        pool.lock()
+                            .expect("pool lock poisoned")
+                            .record_revenue(revenue_source, revenue_value_usd, block_accepted);
+
+                        ShareDecision {
+                            status: node_status,
+                            sealed_block: if block_accepted {
+                                Some(sealed)
+                            } else {
+                                None
+                            },
                         }
-                        None => ShareStatus::Accepted,
-                    },
-                );
-                JobCompletion::Submitted {
-                    decision,
-                    routed_source: revenue_source,
-                    attempted_hashes: attempted_hashes
-                        .unwrap_or_else(|| solution.candidate.nonce.saturating_sub(job.start_nonce) + 1),
-                    elapsed_ms: elapsed_ms
-                        .unwrap_or_else(|| job_issued_at.elapsed().as_millis() as u64),
+                    } else {
+                        // Valid share but not a block — accept for PPLNS only.
+                        ShareDecision {
+                            status: ShareStatus::Accepted,
+                            sealed_block: None,
+                        }
+                    };
+
+                    // Track accepted/rejected in pool stats for bye_message.
+                    {
+                        let mut p = pool.lock().expect("pool lock poisoned");
+                        if matches!(decision.status, ShareStatus::Accepted) {
+                            p.record_accepted_share();
+                        } else {
+                            p.record_rejected_share();
+                        }
+                    }
+
+                    let solution = MiningSolution {
+                        job_id,
+                        candidate,
+                        hash: submitted_hash,
+                    };
+                    JobCompletion::Submitted {
+                        decision,
+                        routed_source: revenue_source,
+                        attempted_hashes: attempted_hashes
+                            .unwrap_or_else(|| solution.candidate.nonce.saturating_sub(job.start_nonce) + 1),
+                        elapsed_ms: elapsed_ms
+                            .unwrap_or_else(|| job_issued_at.elapsed().as_millis() as u64),
+                    }
                 }
             }
             PoolMessage::NoSolution {
@@ -476,6 +691,9 @@ fn handle_client(
                         miner_id, worker_name, submit_miner_id, submit_worker_name
                     );
                 }
+                // Record no-solution in vardiff too — the miner tried but found nothing,
+                // which still affects the timing cadence.
+                vardiff.record_submit();
                 JobCompletion::NoSolution {
                     attempted_hashes: attempted_hashes.unwrap_or(job.nonce_count),
                     elapsed_ms: elapsed_ms
@@ -493,20 +711,23 @@ fn handle_client(
                 elapsed_ms,
             } => {
                 let accepted = matches!(decision.status, ShareStatus::Accepted);
-                if accepted {
+                // PPLNS share was already recorded in the submit handler above
+                // (with difficulty weight).  Trigger payout only when a block
+                // was actually found (sealed_block is present).
+                let block_found = decision.sealed_block.is_some();
+                if block_found && accepted {
                     {
                         let mut telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
                         telemetry.record_block_found(&miner_id, &worker_name);
                     }
                     let payouts = {
-                        let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                        pplns.record_share(&miner_id, &worker_name, job.height);
                         if job.height > 0 {
                             // Pass only the miner share (89%) — core already
                             // distributes protocol fees via coinbase outputs.
                             let (miner_share, _, _, _) = zion_core::emission::fee_split(
                                 zion_core::emission::block_subsidy(job.height),
                             );
+                            let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
                             pplns.compute_payouts(miner_share)
                         } else {
                             Vec::new()
@@ -823,6 +1044,17 @@ struct ServerConfig {
     pool_wallet_address: Option<String>,
     /// Ed25519 signing key for pool payout transactions (ZION_POOL_PAYOUT_SK_HEX).
     pool_signing_key: Option<ed25519_dalek::SigningKey>,
+    // --- Vardiff configuration ---
+    /// Starting share difficulty for new sessions.  Default: 1 (accept everything).
+    vardiff_start_difficulty: u64,
+    /// Target time between share submissions in seconds.  Default: 10.
+    vardiff_target_secs: u64,
+    /// How often to retarget difficulty (number of shares).  Default: 6.
+    vardiff_retarget_shares: u64,
+    /// Minimum share difficulty.  Default: 1.
+    vardiff_min_difficulty: u64,
+    /// Maximum share difficulty (0 = unlimited = network diff).  Default: 0.
+    vardiff_max_difficulty: u64,
 }
 
 #[derive(Debug)]
@@ -1988,6 +2220,11 @@ impl ServerConfig {
             session_read_timeout_secs: parse_env_u64("ZION_SESSION_READ_TIMEOUT_SECS", 300)?,
             pool_wallet_address: parse_optional_env_string("ZION_POOL_WALLET"),
             pool_signing_key: parse_pool_signing_key(),
+            vardiff_start_difficulty: parse_env_u64("ZION_VARDIFF_START_DIFF", 1)?,
+            vardiff_target_secs: parse_env_u64("ZION_VARDIFF_TARGET_SECS", 10)?,
+            vardiff_retarget_shares: parse_env_u64("ZION_VARDIFF_RETARGET_SHARES", 6)?,
+            vardiff_min_difficulty: parse_env_u64("ZION_VARDIFF_MIN_DIFF", 1)?,
+            vardiff_max_difficulty: parse_env_u64("ZION_VARDIFF_MAX_DIFF", 0)?,
         })
     }
 }
@@ -2279,6 +2516,12 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
+            session_read_timeout_secs: 300,
+            vardiff_start_difficulty: 1,
+            vardiff_target_secs: 10,
+            vardiff_retarget_shares: 6,
+            vardiff_min_difficulty: 1,
+            vardiff_max_difficulty: 0,
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -2298,6 +2541,10 @@ mod tests {
         let mut messages = Vec::new();
         let (_, welcome) = read_wire_message(&mut reader)?;
         messages.push(welcome);
+
+        // With vardiff, the pool sends a SetDifficulty message after welcome.
+        let (_, set_diff_message) = read_wire_message(&mut reader)?;
+        messages.push(set_diff_message);
 
         let (_, job_message) = read_wire_message(&mut reader)?;
         let job_id = match &job_message {
@@ -2350,18 +2597,22 @@ mod tests {
         .expect("stale bridge session should succeed");
 
         assert!(matches!(messages[0], PoolMessage::Welcome { .. }));
-        assert!(matches!(messages[1], PoolMessage::Job { job_id: 91, .. }));
-        assert!(matches!(messages[2], PoolMessage::Stale { job_id: 91 }));
-        assert!(matches!(messages[3], PoolMessage::Cancel { job_id: 91, .. }));
+        assert!(matches!(messages[1], PoolMessage::SetDifficulty { .. }));
+        assert!(matches!(messages[2], PoolMessage::Job { job_id: 91, .. }));
+        // With two-tier vardiff, the share meets share_target (MAX) so it is
+        // accepted for PPLNS.  It also meets network_target (MAX) so it is
+        // submitted to the node, which returns "stale template".
+        assert!(matches!(messages[3], PoolMessage::Stale { job_id: 91 }));
+        assert!(matches!(messages[4], PoolMessage::Cancel { job_id: 91, .. }));
         assert!(matches!(
-            messages[4],
+            messages[5],
             PoolMessage::Result {
                 accepted: false,
                 ref status
             } if status == "StaleJob"
         ));
         assert!(matches!(
-            messages[5],
+            messages[6],
             PoolMessage::Bye {
                 accepted_shares: 0,
                 rejected_shares: 1,
@@ -2388,16 +2639,17 @@ mod tests {
         .expect("upstream rejection bridge session should succeed");
 
         assert!(matches!(messages[0], PoolMessage::Welcome { .. }));
-        assert!(matches!(messages[1], PoolMessage::Job { job_id: 91, .. }));
+        assert!(matches!(messages[1], PoolMessage::SetDifficulty { .. }));
+        assert!(matches!(messages[2], PoolMessage::Job { job_id: 91, .. }));
         assert!(matches!(
-            messages[2],
+            messages[3],
             PoolMessage::Result {
                 accepted: false,
                 ref status
             } if status == "UpstreamRejected"
         ));
         assert!(matches!(
-            messages[3],
+            messages[4],
             PoolMessage::Bye {
                 accepted_shares: 0,
                 rejected_shares: 1,
@@ -2470,6 +2722,12 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
+            session_read_timeout_secs: 300,
+            vardiff_start_difficulty: 1,
+            vardiff_target_secs: 10,
+            vardiff_retarget_shares: 6,
+            vardiff_min_difficulty: 1,
+            vardiff_max_difficulty: 0,
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -2497,6 +2755,12 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
+            session_read_timeout_secs: 300,
+            vardiff_start_difficulty: 1,
+            vardiff_target_secs: 10,
+            vardiff_retarget_shares: 6,
+            vardiff_min_difficulty: 1,
+            vardiff_max_difficulty: 0,
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -2524,6 +2788,12 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
+            session_read_timeout_secs: 300,
+            vardiff_start_difficulty: 1,
+            vardiff_target_secs: 10,
+            vardiff_retarget_shares: 6,
+            vardiff_min_difficulty: 1,
+            vardiff_max_difficulty: 0,
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -2712,6 +2982,12 @@ mod tests {
             routing_log_every: 0,
             routing_metrics_bind: None,
             max_sessions_per_ip: 0, pool_wallet_address: None, pool_signing_key: None,
+            session_read_timeout_secs: 300,
+            vardiff_start_difficulty: 1,
+            vardiff_target_secs: 10,
+            vardiff_retarget_shares: 6,
+            vardiff_min_difficulty: 1,
+            vardiff_max_difficulty: 0,
         };
 
         // Even though miner_id is in backend list, explicit hint wins
