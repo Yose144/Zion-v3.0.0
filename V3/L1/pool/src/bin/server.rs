@@ -3159,7 +3159,9 @@ fn execute_pool_payout(
                     return Err(anyhow!("payout build failed: {}", last_build_error));
                 }
                 if candidates.len() == 1 {
-                    return Err(anyhow!("payout build failed: {}", last_build_error));
+                    // All miners dropped and single miner still exceeds
+                    // balance — fall through to budget-capped mode below.
+                    break;
                 }
                 // Drop the largest payout and retry to maximize paid miners.
                 candidates.pop();
@@ -3167,5 +3169,108 @@ fn execute_pool_payout(
         }
     }
 
-    Err(anyhow!("payout build failed: {}", last_build_error))
+    // ── Budget-capped payout ───────────────────────────────────────────
+    // When the full unpaid balance for every miner exceeds the pool
+    // wallet's spendable UTXOs, scale down proportionally so at least
+    // some payment goes through each round instead of nothing.
+    let available_total: u64 = utxos.iter().map(|u| u.amount).sum();
+    let payout_fee_est = zion_core::fee::minimum_fee_for_size(
+        zion_core::fee::estimate_tx_size(utxos.len(), payouts.len() + 1),
+    );
+    let max_payable = available_total.saturating_sub(payout_fee_est);
+    let total_needed: u64 = payouts.iter().map(|p| p.amount).sum();
+    let min_payout = zion_core::wallet::MIN_PAYOUT_AMOUNT;
+
+    if max_payable < min_payout || total_needed == 0 {
+        return Err(anyhow!("payout build failed: {}", last_build_error));
+    }
+
+    // Scale each miner's payout proportionally to available budget.
+    let mut capped_candidates: Vec<PayoutEntry> = Vec::new();
+    let mut distributed: u64 = 0;
+    let sorted_payouts: Vec<&PayoutEntry> = {
+        let mut v: Vec<&PayoutEntry> = payouts.iter().collect();
+        v.sort_by_key(|p| p.amount);
+        v
+    };
+    for (i, p) in sorted_payouts.iter().enumerate() {
+        let capped_amount = if i == sorted_payouts.len() - 1 {
+            max_payable.saturating_sub(distributed)
+        } else {
+            ((p.amount as u128) * (max_payable as u128) / (total_needed as u128)) as u64
+        };
+        if capped_amount >= min_payout {
+            distributed = distributed.saturating_add(capped_amount);
+            capped_candidates.push(PayoutEntry {
+                miner_id: p.miner_id.clone(),
+                address: p.address.clone(),
+                amount: capped_amount,
+                share_count: p.share_count,
+            });
+        }
+    }
+
+    if capped_candidates.is_empty() {
+        return Err(anyhow!("payout build failed: {}", last_build_error));
+    }
+
+    let capped_recipients: Vec<BatchRecipient> = capped_candidates
+        .iter()
+        .map(|p| BatchRecipient {
+            address: p.address.clone(),
+            amount: p.amount,
+        })
+        .collect();
+    let capped_fee = zion_core::fee::minimum_fee_for_size(
+        zion_core::fee::estimate_tx_size(utxos.len(), capped_recipients.len() + 1),
+    );
+
+    match zion_core::wallet::build_batch_payout(
+        signing_key,
+        pool_wallet_addr,
+        &capped_recipients,
+        capped_fee,
+        &utxos,
+    ) {
+        Ok(build_result) => {
+            let tx_id = submit_utxo_transaction(node_rpc_addr, &build_result.transaction)?;
+
+            // Deferred entries: original amount minus capped for executed
+            // miners, plus full amounts for any miners that couldn't fit.
+            let mut deferred: Vec<PayoutEntry> = Vec::new();
+            for orig in payouts {
+                if let Some(cap) = capped_candidates.iter().find(|c| c.miner_id == orig.miner_id) {
+                    let remainder = orig.amount.saturating_sub(cap.amount);
+                    if remainder > 0 {
+                        deferred.push(PayoutEntry {
+                            miner_id: orig.miner_id.clone(),
+                            address: orig.address.clone(),
+                            amount: remainder,
+                            share_count: orig.share_count,
+                        });
+                    }
+                } else {
+                    deferred.push(orig.clone());
+                }
+            }
+
+            println!(
+                "payout_budget_capped height={} available={} needed={} executed={} deferred={} fee={}",
+                height, available_total, total_needed,
+                capped_candidates.len(), deferred.len(), capped_fee,
+            );
+            println!(
+                "payout_built height={} recipients={} fee={} change={} inputs={}",
+                height, capped_recipients.len(), capped_fee,
+                build_result.change_amount, build_result.transaction.inputs.len(),
+            );
+
+            Ok(PayoutExecutionOutcome {
+                tx_id,
+                executed: capped_candidates,
+                deferred,
+            })
+        }
+        Err(err) => Err(anyhow!("payout build failed (budget-capped): {}", err)),
+    }
 }
