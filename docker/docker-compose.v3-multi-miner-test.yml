@@ -1,0 +1,146 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  ZION V3 Multi-Miner PPLNS Fairness Test                     ║
+# ║  10 miners with varying CPU limits to simulate different      ║
+# ║  hashrates. Used to verify vardiff + difficulty-weighted PPLNS║
+# ╚══════════════════════════════════════════════════════════════╝
+#
+# Usage: docker compose -f docker/docker-compose.v3-multi-miner-test.yml up -d
+# Stop:  docker compose -f docker/docker-compose.v3-multi-miner-test.yml down
+
+x-miner-common: &miner-common
+  image: zion-miner:v3-mainnet
+  restart: unless-stopped
+  extra_hosts:
+    - "pool:host-gateway"
+  environment: &miner-env
+    RUST_LOG: info
+    ZION_POOL_ADDR: pool:3333
+    ZION_MINER_ID: ${MINER_WALLET:-zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073}
+    ZION_NONCE_AUTOTUNE: "true"
+    ZION_LOOP_COUNT: "4294967295"
+    ZION_NONCE_COUNT: "100000"
+    ZION_JOB_TTL_MS: "1200000"
+    ZION_RECONNECT: "true"
+    ZION_MAX_RECONNECT: "0"
+    ZION_MINER_VERBOSE: "1"
+    ZION_READ_TIMEOUT_SECS: "1200"
+  networks:
+    - zion-net
+
+services:
+  # ── Fast miners (more CPU = higher hashrate = higher vardiff) ──
+  miner-fast-1:
+    <<: *miner-common
+    container_name: zion-miner-fast-1
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: fast-1
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+
+  miner-fast-2:
+    <<: *miner-common
+    container_name: zion-miner-fast-2
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: fast-2
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+
+  # ── Medium miners ──
+  miner-med-1:
+    <<: *miner-common
+    container_name: zion-miner-med-1
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: med-1
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+
+  miner-med-2:
+    <<: *miner-common
+    container_name: zion-miner-med-2
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: med-2
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+
+  miner-med-3:
+    <<: *miner-common
+    container_name: zion-miner-med-3
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: med-3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+
+  # ── Slow miners (limited CPU = lower hashrate = lower vardiff) ──
+  miner-slow-1:
+    <<: *miner-common
+    container_name: zion-miner-slow-1
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: slow-1
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+
+  miner-slow-2:
+    <<: *miner-common
+    container_name: zion-miner-slow-2
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: slow-2
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+
+  miner-slow-3:
+    <<: *miner-common
+    container_name: zion-miner-slow-3
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: slow-3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+
+  miner-slow-4:
+    <<: *miner-common
+    container_name: zion-miner-slow-4
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: slow-4
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+
+  miner-slow-5:
+    <<: *miner-common
+    container_name: zion-miner-slow-5
+    environment:
+      <<: *miner-env
+      ZION_WORKER_NAME: slow-5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+
+networks:
+  zion-net:
+    external: true
