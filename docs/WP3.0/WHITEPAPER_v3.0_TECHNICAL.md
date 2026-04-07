@@ -64,7 +64,7 @@ Síť je implementována v jazyce **Rust** na vrstvách L1–L4:
 | Block time | 60 sekund |
 | Mining horizon | 100+ let + tail emission |
 | Premine | 16 280 000 000 ZION (11,31 %) |
-| Nejmenší jednotka | Spec 2.9.7: 1 ZION = 1 000 000 000 000 flower (12 des. míst); aktuální runtime/API: 1 ZION = 1 000 000 atomic units |
+| Nejmenší jednotka | 1 ZION = 1 000 000 000 000 flower (12 des. míst) |
 | Konsensus | CosmicHarmony v3 (paměťově náročný PoW) |
 | Algoritmus DAA | LWMA, okno 60 bloků, max. ±25 % |
 | Distribuce bloku | 89 % miners / 5 % humanitarian / 5 % L5–L6 / 1 % pool |
@@ -117,19 +117,19 @@ Základní hodnoty projektu vycházejí ze spirituálně-etické tradice:
 ├─────────────────┼───────────────────────────────────────────┤
 │ Consensus       │ CosmicHarmony v3 (PoW)                    │
 ├─────────────────┼───────────────────────────────────────────┤
-│ Ledger model    │ UTXO (Unspent Transaction Output)         │
+│ Ledger model    │ Hybrid Account + UTXO                     │
 ├─────────────────┼───────────────────────────────────────────┤
 │ Storage         │ LMDB (Lightning Memory-Mapped Database)   │
 ├─────────────────┼───────────────────────────────────────────┤
 │ P2P             │ Tokio TCP, gossip protokol                │
 ├─────────────────┼───────────────────────────────────────────┤
-│ Crypto          │ Blake3, Ed25519, Argon2id, ChaCha20-Poly  │
+│ Crypto          │ Blake3, Ed25519, Keccak-256, SHA3-512     │
 └─────────────────┴───────────────────────────────────────────┘
 ```
 
-### 3.2 UTXO model
+### 3.2 Hybridní Account + UTXO model
 
-ZION používá klasický UTXO model (jako Bitcoin), nikoliv account model (jako Ethereum). Každá transakce spotřebovává existující UTXO a vytváří nové. Výhody:
+ZION V3 používá hybridní transakční model: jednoduchý Account model (from/to/amount) pro coinbase a běžné transfery, a plný UTXO model (inputs/outputs) pro pokročilé transakce (multi-input, bridge unlock). Výhody:
 
 - Paralelní validace nezávislých transakcí
 - Jednoduší formální ověřitelnost
@@ -173,9 +173,9 @@ Mining pool implementuje **Stratum v2** protokol:
 
 ### 3.6 P2P bezpečnost
 
-- **Rate limiting** — max. 100 zpráv/sekundu na peer
-- **Automatický ban** — přestupníci blokováni na 3 600 sekund
-- **Max peers** — 128 (96 inbound, 32 outbound)
+- **Rate limiting** — max. 100 zpráv/60 s na peer
+- **Automatický ban** — eskalační model: 300 s → 1 800 s → 7 200 s (permanentní po 3. striků)
+- **Max peers** — 128
 - **Gossip protokol** — efektivní propagace transakcí a bloků
 
 ### 3.7 Poplatky
@@ -190,9 +190,11 @@ Transakční poplatky jsou **burnovány** (fee_policy = "burn"), nikoliv přidě
 
 **CosmicHarmony v3 (CHv3)** je paměťově náročný Proof-of-Work algoritmus, navržený jako odolný vůči ASIC specializaci. Staví na kombinaci:
 
-1. **Argon2id** — memory-hard hashing (ASIC resistance)
-2. **Blake3** — rychlý kryptografický hash
-3. **Scratchpad pattern** — náhodný přístup do paměti (memory latency bottleneck)
+1. **Keccak-256 + SHA3-512** — kryptografický základ pipeline
+2. **Golden Matrix** — maticová difúzní vrstva
+3. **256 KiB Scratchpad** — memory-hard náhodný přístup (ASIC resistance)
+4. **NPU Mixing** — neuronová akcelerace (CoreML / TensorRT / OpenVINO)
+5. **Cosmic Fusion** — finální hash redukce (8 kol)
 
 ### 4.2 Verze algoritmů podle výšky bloku
 
@@ -232,7 +234,7 @@ Cíl:    60 sekund/blok
 
 ### 5.1 Klíčové konstanty
 
-Ekonomické parametry jsou ověřitelné v kódu: `L1/core/src/blockchain/premine.rs` (premine + base supply) a `L1/pool/src/blockchain/reward_calculator.rs` (Decade Decay + tail emission + distribuce).
+Ekonomické parametry jsou ověřitelné v kódu: `V3/L1/core/src/genesis.rs` (premine + genesis) a `V3/L1/core/src/emission.rs` (Decade Decay + tail emission + fee split).
 
 ```
 Base Supply Target: 144 000 000 000 ZION (144B)
@@ -244,8 +246,7 @@ Block Time:                60 sekund
 Decade Decay:              −20 % každých 5 256 000 bloků (10 let)
 Tail emission (2126+):     724,785 ZION/blok navěky
 
-Flower units (spec):    1 000 000 000 000 flower/ZION (12 des. míst)
-Runtime/API (aktuálně): 1 000 000 atomic units/ZION
+Flower units:           1 000 000 000 000 flower/ZION (12 des. míst)
 ```
 
 ### 5.2 Matematický důkaz emise (Dekáda 1)
@@ -809,8 +810,8 @@ L5 je humanitární a vědecká vrstva financovaná přímo z blockchainového p
 |------------|---------|
 | **Blake3** | Block hashing, merkle tree, NCL hash chaining |
 | **Ed25519** | Podepisování transakcí a bloků |
-| **Argon2id** | Memory-hard element konsenzu (ASIC resistance) |
-| **ChaCha20-Poly1305** | P2P šifrovaná komunikace |
+| **Keccak-256 + SHA3-512** | Ekam Deeksha v2 konsensus pipeline (stage 1+2) |
+| **Golden Matrix + Scratchpad** | Ekam Deeksha v2 memory-hard stages (stage 3+4) |
 
 ### 15.2 Stromy transakcí
 

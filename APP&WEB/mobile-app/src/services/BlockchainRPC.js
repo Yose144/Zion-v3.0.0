@@ -17,8 +17,6 @@ import { CONFIG } from '../constants/config';
 const DEFAULT_RPC_NODES = [
   'https://rpc.zionterranova.com',
   'http://91.98.122.165:8443/jsonrpc',   // Prague (CZ, primary)
-  'http://5.78.194.94:8443/jsonrpc',     // USA
-  'http://5.223.84.191:8443/jsonrpc',    // Singapore
 ];
 
 class BlockchainRPC {
