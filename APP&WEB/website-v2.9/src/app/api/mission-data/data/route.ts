@@ -172,7 +172,10 @@ function buildMainnetStabilityRun(
   collectorState: StabilityCollectorState | null,
   nowSec: number,
 ): MainnetStabilityRun {
-  const expectedNodes = Math.max(3, Math.floor(toNumber(collectorState?.latest?.expected_nodes) ?? 3));
+  // Use actual configured seed node count (Prague-only = 1) unless the
+  // collector state explicitly records a different expectation.
+  const configuredNodes = getSeedNodesConfig().length;
+  const expectedNodes = Math.max(1, Math.floor(toNumber(collectorState?.latest?.expected_nodes) ?? configuredNodes));
   const startIso = collectorState?.started_at ?? DEFAULT_MAINNET_STABILITY_START_ISO;
   const durationSecs = Math.max(
     3600,
@@ -268,11 +271,12 @@ function buildMainnetStabilityRun(
 export async function GET() {
   const nodes = getSeedNodesConfig();
   const collectorState = await loadCollectorState();
-  // Query all nodes in parallel
+  // Query only configured seed nodes — avoids timeout delay for missing nodes.
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
   const [primary, usa, singapore] = await Promise.all([
-    fetchNodeData(nodes.find(n => n.id === 'prague-eu')?.id ?? nodes[0]?.id),
-    fetchNodeData(nodes.find(n => n.id === 'usa-west')?.id),
-    fetchNodeData(nodes.find(n => n.id === 'singapore-ap')?.id),
+    fetchNodeData(nodeMap.get('prague-eu')?.id ?? nodes[0]?.id),
+    nodeMap.has('usa-west') ? fetchNodeData('usa-west') : Promise.resolve(undefined),
+    nodeMap.has('singapore-ap') ? fetchNodeData('singapore-ap') : Promise.resolve(undefined),
   ]);
 
   const nowSec = Math.floor(Date.now() / 1000);
@@ -290,7 +294,7 @@ export async function GET() {
       },
       {
         title: 'Prague, USA a Singapore drží tip po rolloutu',
-        detail: 'Auditovaný 3-node set zůstal po fee-split deployi bez divergence a s potvrzeným syncem.',
+        detail: 'Prague single-node drží chain tip stabilně. Multi-node topology bude přidána po stabilizaci.',
       },
       {
         title: 'Deploy runbook a operator guide jsou srovnané',
@@ -340,7 +344,7 @@ export async function GET() {
     next_48h: [
       {
         title: 'Hour 0-24 — sběr vzorků bez driftu',
-        detail: 'Držet Prague, USA a Singapore na stejném tipu, zaznamenat peer count, výšku chainu a první pool recovery okno.',
+        detail: 'Držet Prague na stabilním tipu, zaznamenat peer count, výšku chainu a první pool recovery okno.',
       },
       {
         title: 'Hour 24-48 — restart discipline a recovery',
@@ -363,7 +367,7 @@ export async function GET() {
     mainnet_stability_run: mainnetStabilityRun,
     launch_rehearsal: mainnetStabilityRun,
     readiness_map: readinessMap,
-    current_topology: '3-node-test-mainnet-mesh',
+    current_topology: nodes.length === 1 ? 'single-node-prague' : '3-node-test-mainnet-mesh',
     primary,
     usa,
     singapore,
