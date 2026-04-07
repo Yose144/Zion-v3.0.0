@@ -19,6 +19,10 @@ pub struct PplnsShare {
     pub worker_name: String,
     pub timestamp_ms: u64,
     pub height: u64,
+    /// Share difficulty (work weight).  A share at difficulty 1000 counts
+    /// as 1000× more work than a share at difficulty 1.  For backward
+    /// compatibility, 0 is treated as 1.
+    pub difficulty: u64,
 }
 
 /// Per-miner payout entry produced by [`PplnsEngine::compute_payouts`].
@@ -154,8 +158,22 @@ impl PplnsEngine {
         self.addresses.get(miner_id).map(|s| s.as_str())
     }
 
-    /// Record an accepted share into the PPLNS window.
+    /// Record an accepted share into the PPLNS window (difficulty = 1).
     pub fn record_share(&mut self, miner_id: &str, worker_name: &str, height: u64) {
+        self.record_share_with_diff(miner_id, worker_name, height, 1);
+    }
+
+    /// Record an accepted share with explicit difficulty weight.
+    ///
+    /// A share at difficulty 1000 contributes 1000× as much PPLNS weight
+    /// as a share at difficulty 1.  This is the core of fair vardiff PPLNS.
+    pub fn record_share_with_diff(
+        &mut self,
+        miner_id: &str,
+        worker_name: &str,
+        height: u64,
+        difficulty: u64,
+    ) {
         let timestamp_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
@@ -166,6 +184,7 @@ impl PplnsEngine {
             worker_name: worker_name.to_string(),
             timestamp_ms,
             height,
+            difficulty: difficulty.max(1),
         });
 
         // Evict oldest shares beyond the window.
@@ -182,11 +201,24 @@ impl PplnsEngine {
         height: u64,
         timestamp_ms: u64,
     ) {
+        self.record_share_at_diff(miner_id, worker_name, height, timestamp_ms, 1);
+    }
+
+    /// Record a share with explicit timestamp and difficulty (for testing).
+    pub fn record_share_at_diff(
+        &mut self,
+        miner_id: &str,
+        worker_name: &str,
+        height: u64,
+        timestamp_ms: u64,
+        difficulty: u64,
+    ) {
         self.window.push_back(PplnsShare {
             miner_id: miner_id.to_string(),
             worker_name: worker_name.to_string(),
             timestamp_ms,
             height,
+            difficulty: difficulty.max(1),
         });
         while self.window.len() > self.config.window_size {
             self.window.pop_front();
@@ -232,24 +264,34 @@ impl PplnsEngine {
         self.fee_issobella_flowers = self.fee_issobella_flowers.saturating_add(issobella_share);
         self.fee_pool_flowers = self.fee_pool_flowers.saturating_add(pool_fee_share);
 
-        // Count shares per miner in the current window.
+        // Accumulate difficulty-weighted work per miner in the current window.
+        // Each share contributes its difficulty value as weight, so a share at
+        // diff=1000 counts 1000× more than one at diff=1.
+        let mut share_weights: HashMap<&str, u128> = HashMap::new();
         let mut share_counts: HashMap<&str, u64> = HashMap::new();
-        let total_shares = self.window.len() as u64;
+        let mut total_weight: u128 = 0;
         for share in &self.window {
+            let w = share.difficulty.max(1) as u128;
+            *share_weights.entry(&share.miner_id).or_insert(0) += w;
             *share_counts.entry(&share.miner_id).or_insert(0) += 1;
+            total_weight += w;
+        }
+        if total_weight == 0 {
+            total_weight = 1;
         }
 
-        // Distribute miner_reward proportionally and accumulate in `unpaid`.
+        // Distribute miner_reward proportionally by difficulty weight.
         let mut distributed = 0u64;
-        let miners: Vec<(&str, u64)> = share_counts.iter().map(|(k, v)| (*k, *v)).collect();
-        for (i, &(miner_id, count)) in miners.iter().enumerate() {
+        let miners: Vec<(&str, u128)> = share_weights.iter().map(|(k, v)| (*k, *v)).collect();
+        for (i, &(miner_id, weight)) in miners.iter().enumerate() {
             let amount = if i == miners.len() - 1 {
                 // Last miner gets the remainder to avoid rounding dust.
                 miner_reward.saturating_sub(distributed)
             } else {
-                miner_reward
-                    .saturating_mul(count)
-                    .saturating_div(total_shares)
+                // u128 intermediate to avoid overflow on large rewards × weights.
+                ((miner_reward as u128)
+                    .saturating_mul(weight)
+                    / total_weight) as u64
             };
             distributed = distributed.saturating_add(amount);
             *self.unpaid.entry(miner_id.to_string()).or_insert(0) += amount;
@@ -672,5 +714,103 @@ mod tests {
         e.record_share_at("alice", "rig1", 1, 1000);
         let payouts = e.compute_payouts(1_000_000);
         assert_eq!(payouts[0].amount, 1_000_000);
+    }
+
+    // ── Difficulty-weighted PPLNS tests ─────────────────────────────────
+
+    #[test]
+    fn difficulty_weighted_two_miners_proportional() {
+        // GPU miner at diff=1000, CPU miner at diff=1.
+        // Each submits 1 share.  GPU should get 1000/1001 ≈ 99.9%.
+        let mut e = engine(100, 1);
+        e.register_address("gpu", "zion1gpu");
+        e.register_address("cpu", "zion1cpu");
+
+        e.record_share_at_diff("gpu", "rig-gpu", 1, 1000, 1000);
+        e.record_share_at_diff("cpu", "rig-cpu", 1, 2000, 1);
+
+        let payouts = e.compute_payouts(1_001_000);
+        let gpu = payouts.iter().find(|p| p.miner_id == "gpu").unwrap();
+        let cpu = payouts.iter().find(|p| p.miner_id == "cpu").unwrap();
+
+        // GPU: 1000/1001 * 1_001_000 = 1_000_000
+        // CPU: 1/1001 * 1_001_000 = 1_000
+        assert_eq!(gpu.amount + cpu.amount, 1_001_000);
+        assert_eq!(gpu.amount, 1_000_000);
+        assert_eq!(cpu.amount, 1_000);
+        // Each has 1 share.
+        assert_eq!(gpu.share_count, 1);
+        assert_eq!(cpu.share_count, 1);
+    }
+
+    #[test]
+    fn difficulty_weighted_equal_work_different_counts() {
+        // Miner A: 10 shares at diff=100 = total weight 1000
+        // Miner B: 1 share at diff=1000 = total weight 1000
+        // Both should get equal payout.
+        let mut e = engine(100, 1);
+        e.register_address("a", "zion1a");
+        e.register_address("b", "zion1b");
+
+        for i in 0..10 {
+            e.record_share_at_diff("a", "rig-a", 1, 1000 + i, 100);
+        }
+        e.record_share_at_diff("b", "rig-b", 1, 2000, 1000);
+
+        let payouts = e.compute_payouts(1_000_000);
+        let a = payouts.iter().find(|p| p.miner_id == "a").unwrap();
+        let b = payouts.iter().find(|p| p.miner_id == "b").unwrap();
+
+        assert_eq!(a.amount + b.amount, 1_000_000);
+        assert_eq!(a.amount, 500_000);
+        assert_eq!(b.amount, 500_000);
+        assert_eq!(a.share_count, 10);
+        assert_eq!(b.share_count, 1);
+    }
+
+    #[test]
+    fn backward_compat_record_share_defaults_to_diff_1() {
+        // record_share() should produce difficulty=1 shares.
+        let mut e = engine(100, 1);
+        e.register_address("alice", "zion1alice");
+        e.register_address("bob", "zion1bob");
+
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.record_share_at("alice", "rig1", 1, 1001);
+        e.record_share_at("bob", "rig2", 1, 2000);
+
+        let payouts = e.compute_payouts(900_000);
+        let alice = payouts.iter().find(|p| p.miner_id == "alice").unwrap();
+        let bob = payouts.iter().find(|p| p.miner_id == "bob").unwrap();
+
+        // 2:1 ratio with diff=1 each → alice 600k, bob 300k
+        assert_eq!(alice.amount + bob.amount, 900_000);
+        assert_eq!(alice.amount, 600_000);
+        assert_eq!(bob.amount, 300_000);
+    }
+
+    #[test]
+    fn difficulty_zero_treated_as_one() {
+        let mut e = engine(100, 1);
+        e.register_address("alice", "zion1alice");
+        // difficulty=0 should be treated as 1
+        e.record_share_at_diff("alice", "rig1", 1, 1000, 0);
+        let payouts = e.compute_payouts(1_000_000);
+        assert_eq!(payouts[0].amount, 1_000_000);
+    }
+
+    #[test]
+    fn no_dust_lost_weighted_many_miners() {
+        let mut e = engine(1000, 1);
+        for i in 0..7u64 {
+            let id = format!("miner{i}");
+            e.register_address(&id, &format!("zion1addr{i}"));
+            e.record_share_at_diff(&id, "rig", 1, 1000 + i, (i + 1) * 100);
+        }
+        // Indivisible reward
+        let reward = 1_000_003u64;
+        let payouts = e.compute_payouts(reward);
+        let total: u64 = payouts.iter().map(|p| p.amount).sum();
+        assert_eq!(total, reward, "no flowers lost to rounding in weighted mode");
     }
 }
