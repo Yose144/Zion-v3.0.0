@@ -26,9 +26,9 @@ pub struct TxInput {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TxOutput {
-    /// Amount in flowers (atomic units). u64 is sufficient for all amounts
-    /// since total supply fits in u64 (144B × 10^12 = 1.44 × 10^23 > u64::MAX).
-    /// For premine outputs that need > u64, genesis uses special handling.
+    /// Amount in flowers (atomic units). u64 max is ~18.4 × 10^18 flowers
+    /// (≈ 18,446 ZION). Sufficient for individual transaction outputs.
+    /// Genesis premine uses the Account model with u128 `amount_zion` in flowers.
     pub amount: u64,
     /// Destination address (`zion1...` 44-char format).
     pub address: String,

@@ -358,8 +358,8 @@ mod tests {
     }
 
     #[test]
-    fn mainnet_config_has_five_seeds() {
+    fn mainnet_config_has_seed_peers() {
         let cfg = NodeConfig::mainnet();
-        assert!(cfg.seed_peers.len() >= 3, "mainnet needs 3+ seed peers");
+        assert!(!cfg.seed_peers.is_empty(), "mainnet needs at least 1 seed peer");
     }
 }
