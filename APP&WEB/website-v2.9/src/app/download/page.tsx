@@ -12,8 +12,8 @@ import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site'
 const DownloadToolBrowser = dynamic(() => import('@/components/download/DownloadToolBrowser'));
 const DownloadFaq = dynamic(() => import('@/components/download/DownloadFaq'));
 
-const GH = 'https://github.com/Zion-TerraNova/2.9.6/releases/download/v2.9.6';
-const GH_RELEASE = 'https://github.com/Zion-TerraNova/2.9.6/releases/tag/v2.9.6';
+const DL = 'https://zionterranova.com/api/downloads';
+const GH_RELEASE = 'https://zionterranova.com/api/downloads';
 
 const getDesktopAgentFeatures = (cs: boolean) => [
   cs ? 'GUI dashboard s hashratem a zustatkem v realnem case' : 'GUI Dashboard with real-time hashrate & balance',
