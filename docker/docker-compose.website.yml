@@ -13,9 +13,11 @@ services:
       - "3000:3000"
     volumes:
       - ../ops/mainnet-stability-run:/data/mainnet-stability-run:ro
+      - /opt/zion/downloads:/opt/zion/downloads:ro
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+      - ZION_DOWNLOADS_DIR=/opt/zion/downloads
       # Bridge metrics endpoint — same zion-net Docker network
       - BRIDGE_METRICS_URL=http://zion-bridge:9101/metrics
       # Prometheus for /api/metrics proxy (monitoring page)
