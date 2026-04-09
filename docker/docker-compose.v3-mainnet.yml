@@ -320,9 +320,11 @@ services:
       - "3000:3000"
     volumes:
       - ../ops/mainnet-stability-run:/data/mainnet-stability-run:ro
+      - /opt/zion/downloads:/opt/zion/downloads:ro
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+      - ZION_DOWNLOADS_DIR=/opt/zion/downloads
       - BRIDGE_METRICS_URL=http://zion-v3-bridge:9101/metrics
       - PROMETHEUS_URL=http://zion-prometheus:9090
     healthcheck:
