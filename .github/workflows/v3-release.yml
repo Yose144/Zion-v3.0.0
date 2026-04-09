@@ -21,10 +21,13 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
+            gpu_features: gpu-opencl
           - target: x86_64-apple-darwin
             os: macos-latest
+            gpu_features: ""
           - target: aarch64-apple-darwin
             os: macos-latest
+            gpu_features: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -37,10 +40,15 @@ jobs:
 
       - name: Install C/C++ build tools (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake ocl-icd-opencl-dev
 
       - name: Build release
-        run: cargo build --release --target ${{ matrix.target }}
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+          FEATURES="${{ matrix.gpu_features }}"
+          if [ -n "$FEATURES" ]; then
+            cargo build --release --target ${{ matrix.target }} --features "$FEATURES" -p zion-miner
+          fi
 
       - name: Package
         run: |
@@ -52,6 +60,18 @@ jobs:
           cd ..
           sha256sum zion-v3-${{ matrix.target }}.tar.gz > zion-v3-${{ matrix.target }}.tar.gz.sha256
 
+      - name: Package SMOS bundle (Linux only)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: |
+          mkdir -p smos-bundle
+          cp target/${{ matrix.target }}/release/zion-miner smos-bundle/
+          cp scripts/smos/start-zion-miner.sh smos-bundle/
+          cp scripts/smos/smos.env.example smos-bundle/
+          chmod +x smos-bundle/start-zion-miner.sh
+          tar czf ../zion-v3-smos-linux-x86_64.tar.gz -C smos-bundle .
+          cd ..
+          sha256sum zion-v3-smos-linux-x86_64.tar.gz > zion-v3-smos-linux-x86_64.tar.gz.sha256
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
@@ -59,6 +79,8 @@ jobs:
           path: |
             zion-v3-${{ matrix.target }}.tar.gz
             zion-v3-${{ matrix.target }}.tar.gz.sha256
+            zion-v3-smos-linux-x86_64.tar.gz
+            zion-v3-smos-linux-x86_64.tar.gz.sha256
 
   docker:
     name: Docker images
@@ -72,7 +94,9 @@ jobs:
 
       - name: Build V3 binaries for Docker
         working-directory: V3
-        run: cargo build --release
+        run: |
+          cargo build --release
+          cargo build --release --features gpu-opencl -p zion-miner
 
       - name: Build Docker images
         working-directory: V3/docker
@@ -106,5 +130,7 @@ jobs:
           files: |
             zion-v3-*/zion-v3-*.tar.gz
             zion-v3-*/zion-v3-*.tar.gz.sha256
+            zion-v3-*/zion-v3-smos-*.tar.gz
+            zion-v3-*/zion-v3-smos-*.tar.gz.sha256
             docker-images/zion-v3-*.tar.gz
           generate_release_notes: true
