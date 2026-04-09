@@ -6,7 +6,7 @@ import { ArrowDownToLine, Server, Wallet, Zap } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { SITE_POOL_PRIMARY } from '@/lib/site';
 
-const GH = 'https://github.com/Zion-TerraNova/2.9.6/releases/download/v2.9.6';
+const DL = 'https://zionterranova.com/api/downloads';
 
 type CLIBuild = {
   os: string;
@@ -107,7 +107,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       <div className="space-y-4">
         {platforms.map((platform) => {
           const filename = `${tool.prefix}-${platform.suffix}`;
-          const url = `${GH}/${filename}`;
+          const url = `${DL}/${filename}`;
           return (
             <div
               key={platform.suffix}
