@@ -1,11 +1,11 @@
 # ZION Vega GPU Mining Debug Report
 
-**Date:** 2026-04-09  
+**Date:** 2026-04-09 — 2026-04-10  
 **Rig:** 518837 (ZionRig) — SimpleMining.net  
 **GPU:** AMD Vega 56/64 (gfx900:xnack-, GCN 5.0, 8 GB HBM2)  
-**OS:** SMOS kernel 6.9.12-sm6#088, osSeries=RX  
-**Pool:** 91.98.122.165:3333 (ZION V3 Stratum)  
-**Miner:** ZION V3 Miner (Rust, Ekam Deeksha PoW, OpenCL backend)  
+**OS:** SMOS i066d (kernel `5.15.80-sm#066d`, driver `amd21.50.2r5.16.16`) — previously i088, i085  
+**Pool:** 91.98.122.165:3333 (ZION V3 Stratum) / fr.zano.herominers.com:1110 (ZANO validation)  
+**Miner:** ZION V3 Miner (Rust, Ekam Deeksha PoW, OpenCL backend) / SRBMiner v3.2.5 (ZANO validation)  
 
 ---
 
@@ -13,18 +13,26 @@
 
 First-ever attempt to run the ZION Ekam Deeksha GPU miner on AMD Vega hardware via SimpleMining OS. Resolved multiple blocking issues through iterative binary rebuilds. The miner now initializes the GPU, compiles the OpenCL kernel, allocates all buffers, connects to the pool, and receives mining jobs. **Kernel execution (clEnqueueWriteBuffer / clEnqueueNDRangeKernel) still hangs** due to a suspected AMD ROCm/Mesa OpenCL driver bug on gfx900.
 
+**UPDATE 2026-04-10 (RESOLVED):** The Vega power lock issue on SMOS has been fully resolved. Root cause: the `amd22.40.6` driver family (ROCm 6.x, used by images i088 and i085) completely ignores Vega/GCN5 sysfs power management, locking GPU at ~19W idle regardless of OC settings. Reflashing to image **i066d** (driver `amd21.50.2`, ROCm 5.x) immediately restored proper power control — GPU jumped from 19W to 186W on first boot. After OC tuning (10 iterations), the rig now mines ZANO progpow at **17.17 MH/s / 198W** with optimal settings (Core=1200, Mem=950, PL=100, VDDC=950). The rig is ready for Deeksha miner deployment.
+
 ---
 
-## OC Settings Applied
+## OC Settings Applied (Current — v9, image i066d)
 
-| Parameter | Value |
-|-----------|-------|
-| PowerLimit (PowerTune) | 1 |
-| Core Clock | 1100 MHz |
-| Memory Clock | 900 MHz |
-| VDDC | 950 mV |
-| MVDD | 950 mV |
-| MVDDCI | 830 mV |
+| Parameter | SMOS Setting | Actual Telemetry |
+|-----------|-------------|------------------|
+| Core Clock | **1200 MHz** | CC=1197 MHz |
+| Memory Clock | **950 MHz** | MC=950 MHz |
+| PowerLimit | **100** (= 100% TDP) | P=198W |
+| VDDC | **950 mV** | — |
+| Hashrate (ZANO progpow) | — | **17.17 MH/s** |
+| Efficiency | — | **86.70 kH/W** |
+
+> **Key OC findings on i066d:**
+> - `PL` values 1–7 = DPM power stage (crashes MC to 800 MHz). `PL=100` = 100% TDP percentage (correct).
+> - `ocMemory ≥ 1000` → MC crashes to 800 MHz. `ocMemory=950` keeps MC stable at 950–1000 MHz.
+> - Full **reboot** required after each OC change (reload alone doesn't reset DPM table).
+> - Previous OC on i088/i085 was irrelevant — driver `amd22.40.6` ignored Vega power management entirely (19W lock).
 
 ---
 
@@ -76,22 +84,43 @@ Then hangs on first `header_buf.write()` in `mine_batch()`.
 
 ---
 
+## SMOS Resolution: i066d Reflash
+
+### Root Cause: amd22.40.6 driver family breaks Vega PM
+
+| Image | Kernel | Driver | Vega Power | Mining |
+|-------|--------|--------|------------|--------|
+| **i088** | 6.9.12-sm6#088 | amd22.40.6r6.10.8 | **0–19W lock** | GPU detected DEAD |
+| **i085** | 6.1.57-sm5#085 | amd22.40.6r6.1.10 | **19–20W lock** | OpenCL init OK, TRM STUCK |
+| **i066d** ✅ | 5.15.80-sm#066d | amd21.50.2r5.16.16 | **186–198W** | **Fully functional** |
+
+The entire `amd22.40.6` driver family (ROCm 6.x) on GCN 5.0 (gfx900/Vega) ignores sysfs power management. Power stays at idle ~19W regardless of OC settings. Driver `amd21.50.2` (ROCm 5.x, image i066d) handles Vega PM correctly.
+
+### SMOS Command IDs
+
+| commandId | Image | Vega Compatibility |
+|-----------|-------|--------------------|
+| **40** | i066d (`amd21.50.2`, ROCm 5.x) | ✅ Works — proper Vega PM |
+| 65 | i073 (`amd22.40.6`) | ❌ Vega 19W lock |
+| 72 | i085 (`amd22.40.6`) | ❌ Vega 19W lock |
+| 79 | i088 (`amd22.40.6`) | ❌ GPU detected DEAD |
+| 90 | i089 beta (NV only) | N/A |
+
+---
+
 ## Next Steps
 
-### Immediate (driver workaround)
-1. **Pre-compiled kernel binary (`.bin`) approach**: Compile the kernel offline, load via `clCreateProgramWithBinary()` instead of `clBuildProgram()`. This bypasses the compilation corruption entirely.
-2. **Use `clCreateBuffer(CL_MEM_USE_HOST_PTR)` + `clEnqueueMapBuffer`**: Pin host memory as GPU-accessible instead of explicit write commands.
-3. **Try `CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE`**: Different queue creation flags may avoid the deadlock.
+### Active — Deeksha Miner Deployment
+1. **Build Linux zion-miner binary** with `--features gpu-opencl` for SMOS (x86_64-unknown-linux-gnu).
+2. **Package as SMOS custom miner** (zip with binary + start script + env vars `ZION_OCL_LOCAL_SIZE=64`, `ZION_OCL_VRAM_PCT=25`).
+3. **Upload to server** and update minerOptions in ZION-Deeksha-AMD group (1765707).
+4. **Switch rig to Deeksha group** via `PATCH /rigs/change-rig-group` and monitor console.
+5. **Verify GPU init on i066d** — previous OpenCL issues (compiler hang, buffer deadlock) were on i085/i088; i066d (ROCm 5.x) may behave differently.
 
-### Medium-term
-4. **Test with `ROCm` runtime**: SMOS may ship Mesa OpenCL (`clover`). ROCm's proprietary runtime (`amdgpu-pro`) may not have this bug.
-5. **Reduce kernel complexity**: Strip down the 1,154-line kernel to a minimal PoW stub for gfx900, add stages incrementally.
-6. **Memory-mapped approach**: Use `SVM` (Shared Virtual Memory) if available instead of explicit transfers.
-
-### After mining works
-7. **Re-enable NPU weights**: Load correct NPU data once writes work.
-8. **Scale work_size**: Currently 64 (16 MiB scratchpad). Target: 4096+ (1 GB+) for full VRAM utilization.
-9. **OC tuning**: Optimize for efficiency (H/W ratio) across PowerTune, core, memory, voltage profiles.
+### Open Correctness Issues
+6. **`gpu_candidate_hash_mismatch`** — GPU occasionally returns candidates whose hash doesn't match CPU reference. CPU gate protects pool, but root cause in OpenCL kernel remains.
+7. **Stage-by-stage OpenCL pipeline audit** — especially `npu_mix_packed` and final fusion path.
+8. **Tighter GPU-side target check** — current `target_u32` prefilter instead of full 32-byte compare.
 
 ---
 
@@ -130,8 +159,11 @@ Then hangs on first `header_buf.write()` in `mine_batch()`.
 | `/rigs/518837/console` | GET | Miner stdout (base64) |
 | `/rigs/518837/console?type=dmesg` | GET | Kernel dmesg (base64) |
 | `/rigs/518837` | GET | Rig status |
+| `/rigs/change-rig-group` | PATCH | Switch rig to different group |
+| `/rig-commands` | GET | List available commands (reflash images etc.) |
 
-Content-Type for execute-* endpoints: `application/merge-patch+json`
+Content-Type for PATCH endpoints: `application/merge-patch+json`  
+Content-Type for PUT endpoints: `application/json`
 
 ---
 
@@ -146,4 +178,5 @@ Content-Type for execute-* endpoints: `application/merge-patch+json`
 
 ---
 
-*Report generated automatically during autonomous debugging session.*
+*Report generated automatically during autonomous debugging session.*  
+*Last update: 2026-04-10 — SMOS resolved via i066d reflash (driver amd21.50.2); Vega running at 198W / 17.17 MH/s (ZANO). OC optimum found (v9). Ready for Deeksha miner deployment.*
