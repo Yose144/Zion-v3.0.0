@@ -918,14 +918,15 @@ function findRustMiner() {
   const searchPaths = IS_PACKAGED
     ? [process.resourcesPath]
     : [
+        // Prefer explicit refreshed dev copies and alternate target dirs first.
+        path.join(APP_ROOT, 'resources'),
+        path.join(APP_ROOT, '..', '..', 'V3', 'target-vega-fix', 'release'),
         // V3 miner build outputs
         path.join(APP_ROOT, '..', '..', 'V3', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'miner', 'target', 'release'),
-        // Dev fallback: bundled resources copy (can be stale vs local V3 build)
-        path.join(APP_ROOT, 'resources'),
         path.join(APP_ROOT, '..', '..', 'zion-universal-miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', '2.9.5OLD', 'zion-universal-miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', '2.9.5OLD', 'target', 'release'),
@@ -934,12 +935,30 @@ function findRustMiner() {
         path.join(APP_ROOT, '..', 'builds')
       ];
 
-  for (const searchPath of searchPaths) {
-    for (const name of names) {
+  for (const name of names) {
+    const candidates = [];
+    for (const [pathIndex, searchPath] of searchPaths.entries()) {
       const fullPath = path.join(searchPath, name);
-      if (fs.existsSync(fullPath)) return fullPath;
+      if (!fs.existsSync(fullPath)) continue;
+      try {
+        const stat = fs.statSync(fullPath);
+        candidates.push({ fullPath, mtimeMs: stat.mtimeMs || 0, pathIndex });
+      } catch {
+        candidates.push({ fullPath, mtimeMs: 0, pathIndex });
+      }
+    }
+
+    if (candidates.length > 0) {
+      candidates.sort((left, right) => {
+        if (right.mtimeMs !== left.mtimeMs) {
+          return right.mtimeMs - left.mtimeMs;
+        }
+        return left.pathIndex - right.pathIndex;
+      });
+      return candidates[0].fullPath;
     }
   }
+
   return null;
 }
 
@@ -1413,6 +1432,17 @@ function parseGpuMemoryMb(gpuInfo) {
   } catch {
     return 0;
   }
+}
+
+function recommendedOpenclLocalSize(gpuInfo) {
+  const name = String(gpuInfo?.name || '').toLowerCase();
+  const type = String(gpuInfo?.type || '').toLowerCase();
+
+  if (type === 'amd' && /vega|gfx9|gfx8|gfx7|gfx6/.test(name)) {
+    return 64;
+  }
+
+  return 256;
 }
 
 function chooseGpuBatchSize(gpuInfo, configuredBatch) {
@@ -2047,22 +2077,25 @@ function startMiningV3(config, v3Path) {
   const worker = config.worker ? sanitizeWorkerName(config.worker) : '';
   const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
   const wantsGpu = miningMode === 'gpu' || miningMode === 'dual';
+  const explicitGpuBackend = String(config?.gpuBackend || process.env.ZION_BACKEND || '').trim().toLowerCase();
+  let gpuInfo = null;
+  if (wantsGpu) {
+    try { gpuInfo = detectGPU(); } catch { /* ignore */ }
+  }
+  const selectedGpuBackend = !wantsGpu
+    ? 'cpu'
+    : explicitGpuBackend || (
+      process.platform === 'darwin' && os.arch() === 'arm64'
+        ? 'metal'
+        : (gpuInfo?.backendPreferred === 'cuda' && gpuInfo?.cudaCapable ? 'cuda' : 'opencl')
+    );
 
   // ── 6. Build CLI args ──────────────────────────────────────────────────────
   const args = ['--pool', pool, '--wallet', wallet];
   if (worker) args.push('--worker', worker);
   if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
   if (wantsGpu) {
-    // --gpu BACKEND: auto | metal | opencl | cuda | cpu
-    // The Rust miner's --gpu takes the backend as its required argument.
-    // env.ZION_BACKEND is already set below; pass it directly as CLI arg.
-    const gpuBackendArg = (() => {
-      const explicit = String(process.env.ZION_BACKEND || '').trim().toLowerCase();
-      if (explicit) return explicit;
-      if (process.platform === 'darwin' && os.arch() === 'arm64') return 'metal';
-      return 'auto';
-    })();
-    args.push('--gpu', gpuBackendArg);
+    args.push('--gpu', selectedGpuBackend);
   }
   args.push('--stats-file', STATS_PATH);
 
@@ -2084,19 +2117,7 @@ function startMiningV3(config, v3Path) {
   };
   if (wantsGpu) {
     // ── GPU detection & backend auto-select ──
-    const v3Backend = String(process.env.ZION_BACKEND || '').trim().toLowerCase();
-    let gpuInfo = null;
-    try { gpuInfo = detectGPU(); } catch { /* ignore */ }
-
-    if (v3Backend) {
-      env.ZION_BACKEND = v3Backend;
-    } else if (process.platform === 'darwin' && os.arch() === 'arm64') {
-      env.ZION_BACKEND = 'metal';
-    } else if (gpuInfo?.backendPreferred === 'cuda' && gpuInfo?.cudaCapable) {
-      env.ZION_BACKEND = 'cuda';
-    } else {
-      env.ZION_BACKEND = 'opencl';
-    }
+    env.ZION_BACKEND = selectedGpuBackend;
     env.ZION_HAS_GPU = '1';
 
     // ── VRAM-aware batch/work-cap sizing ──
@@ -2116,10 +2137,11 @@ function startMiningV3(config, v3Path) {
         const pct = Math.max(10, Math.min(90, Number(config.gpuVramPercent) || 25));
         env.ZION_OCL_VRAM_PCT = String(pct);
       }
-      if (config?.gpuLocalSize) {
-        const ls = Math.max(32, Math.min(512, Number(config.gpuLocalSize) || 256));
-        env.ZION_OCL_LOCAL_SIZE = String(ls);
-      }
+      const configuredLocalSize = Number(config?.gpuLocalSize);
+      const localSize = Number.isFinite(configuredLocalSize) && configuredLocalSize > 0
+        ? Math.max(32, Math.min(512, configuredLocalSize))
+        : recommendedOpenclLocalSize(gpuInfo);
+      env.ZION_OCL_LOCAL_SIZE = String(localSize);
     }
 
     log(`[V3-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize}\n`);
@@ -2178,6 +2200,8 @@ function startMiningV3(config, v3Path) {
   } catch {}
 
   // ── 13. Log write helper ───────────────────────────────────────────────────
+  const shouldSkipFileLogLine = (line) => /^\[METRICS\]/.test(line.trim());
+  const maybeEmitBlockFound = (_output) => {};
   const safeMinerLogWriteV3 = (text) => {
     try {
       appendToFileBuffered(LOG_PATH, text, {

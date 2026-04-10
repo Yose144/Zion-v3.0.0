@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 use crate::dcr_hash::{hash_meets_target, NONCE_OFFSET};
 use crate::dcr_stratum::DcrStratumClient;
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
 use crate::dcr_gpu::{autotune_best_work_size, load_saved_work_size, save_work_size, GpuDcrMiner};
 
 const DEFAULT_BTC_WALLET: &str = "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw";
@@ -156,7 +156,7 @@ pub fn spawn_dcr_worker(
     mut config: DcrConfig,
     stop: Arc<AtomicBool>,
 ) -> (Vec<thread::JoinHandle<()>>, Arc<DcrStats>) {
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
     {
         if matches!(config.backend, DcrBackend::Auto | DcrBackend::Gpu) && config.gpu_autotune {
             let mut candidates = vec![
@@ -378,7 +378,7 @@ fn mine_loop_gpu_or_fallback(
     stats: &DcrStats,
     allow_cpu_fallback: bool,
 ) {
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
     {
         if mine_loop_gpu(config, thread_id, stop, stats).is_ok() {
             return;
@@ -393,7 +393,7 @@ fn mine_loop_gpu_or_fallback(
     }
 }
 
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
 fn mine_loop_gpu(
     config: &DcrConfig,
     thread_id: usize,
