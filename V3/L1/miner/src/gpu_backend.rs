@@ -166,14 +166,34 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> Option<MiningSolu
     match gpu.mine_batch(job.header, job.target, job.start_nonce, job.nonce_count) {
         Ok(result) => {
             if let Some((nonce, hash)) = result.solutions.first() {
+                let candidate = zion_core::BlockCandidate {
+                    header: job.header,
+                    nonce: *nonce,
+                    height: job.height,
+                };
+                let verified_hash = candidate.hash();
+
+                if verified_hash != *hash {
+                    eprintln!(
+                        "gpu_candidate_hash_mismatch nonce={} gpu_hash={:02x?} cpu_hash={:02x?}",
+                        nonce,
+                        hash,
+                        verified_hash,
+                    );
+                }
+
+                if !job.target.allows(&verified_hash) {
+                    eprintln!(
+                        "gpu_candidate_rejected_locally nonce={} reason=cpu_hash_above_target",
+                        nonce,
+                    );
+                    return None;
+                }
+
                 Some(MiningSolution {
                     job_id: job.job_id,
-                    candidate: zion_core::BlockCandidate {
-                        header: job.header,
-                        nonce: *nonce,
-                        height: job.height,
-                    },
-                    hash: *hash,
+                    candidate,
+                    hash: verified_hash,
                 })
             } else {
                 None
@@ -282,10 +302,16 @@ pub mod opencl_deeksha {
         if let Some(lws) = env_lws {
             return lws.clamp(32, 512);
         }
-        // Benchmarked: 256 is universally best for Ekam Deeksha on AMD GPUs.
-        // RDNA1 (gfx10xx) = 8 waves of 32 = 256. GCN (gfx6-9) = 4 waves of 64 = 256.
-        if device_name.contains("gfx") || device_name.contains("Radeon") || device_name.contains("AMD") {
-            256
+        let device_name = device_name.to_ascii_lowercase();
+
+        // Vega / GCN wave64 parts benchmark better with a 64-thread local size.
+        if device_name.contains("vega")
+            || device_name.contains("gfx6")
+            || device_name.contains("gfx7")
+            || device_name.contains("gfx8")
+            || device_name.contains("gfx9")
+        {
+            64
         } else {
             256
         }

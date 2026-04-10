@@ -22,7 +22,7 @@ mod parallel;
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
 mod reconnect;
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
 mod dcr_gpu;
 
 #[derive(Debug, Clone)]
@@ -507,7 +507,7 @@ fn main() -> Result<()> {
     }
 
     // ── GPU Benchmark mode: `zion-miner --gpu-bench` ──
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
     if std::env::args().any(|a| a == "--gpu-bench") {
         let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
             .ok()

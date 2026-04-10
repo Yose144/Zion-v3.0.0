@@ -4,10 +4,10 @@
   so electron-builder bundles it for one-click install on all platforms.
 
   Platform-aware GPU features:
-    macOS (arm64)  → --features metal     (Apple Silicon M1-M5 Metal GPU)
-    macOS (x86_64) → --features gpu       (OpenCL fallback)
-    Linux          → --features gpu,cuda  (OpenCL + NVIDIA CUDA)
-    Windows        → --features gpu,cuda  (OpenCL + NVIDIA CUDA)
+    macOS (arm64)  → --features gpu-metal                 (Apple Silicon Metal GPU)
+    macOS (x86_64) → --features gpu-opencl                (Intel Mac OpenCL)
+    Linux          → --features gpu-opencl,gpu-cuda       (OpenCL + NVIDIA CUDA)
+    Windows        → --features gpu-opencl,gpu-cuda       (OpenCL + NVIDIA CUDA)
 
   Usage:
     node scripts/prepare-rust-miner.js [--no-build] [--features <f>] [--require]
@@ -27,7 +27,7 @@ const { spawnSync } = require('child_process');
 
 /**
  * Detect optimal GPU features for current platform with enhanced CUDA fallback.
- * macOS arm64 → metal, macOS x64 → gpu (OpenCL), Linux/Win → gpu,cuda with fallback
+ * macOS arm64 → gpu-metal, macOS x64 → gpu-opencl, Linux/Win → gpu-opencl,gpu-cuda with fallback
  */
 function detectPlatformFeatures() {
   const platform = process.platform;   // 'darwin', 'linux', 'win32'
@@ -41,7 +41,7 @@ function detectPlatformFeatures() {
     }
     // Intel Mac → OpenCL only
     console.log('[prepare-rust-miner] 🖥️  Intel Mac detected → enabling OpenCL GPU');
-    return 'gpu';
+    return 'gpu-opencl';
   }
 
   if (platform === 'linux') {
@@ -50,10 +50,10 @@ function detectPlatformFeatures() {
     if (cudaCheck.hasCuda) {
       console.log('[prepare-rust-miner] 🐧 Linux + NVIDIA CUDA detected → enabling OpenCL + CUDA');
       console.log(`[prepare-rust-miner] 📊 GPU Info: ${cudaCheck.gpuCount} GPUs, Driver: ${cudaCheck.driverVersion}`);
-      return 'gpu,cuda';
+      return 'gpu-opencl,gpu-cuda';
     }
     console.log('[prepare-rust-miner] 🐧 Linux detected → enabling OpenCL GPU (no CUDA)');
-    return 'gpu';
+    return 'gpu-opencl';
   }
 
   if (platform === 'win32') {
@@ -64,14 +64,14 @@ function detectPlatformFeatures() {
     if (forceCuda || cudaCheck.hasCuda) {
       console.log('[prepare-rust-miner] 🪟 Windows + NVIDIA CUDA detected → enabling OpenCL + CUDA');
       console.log(`[prepare-rust-miner] 📊 GPU Info: ${cudaCheck.gpuCount} GPUs, Driver: ${cudaCheck.driverVersion}`);
-      return 'gpu,cuda';
+      return 'gpu-opencl,gpu-cuda';
     }
     console.log('[prepare-rust-miner] 🪟 Windows detected → enabling OpenCL GPU (safe default)');
-    return 'gpu';
+    return 'gpu-opencl';
   }
 
   console.log('[prepare-rust-miner] ⚠️  Unknown platform → enabling OpenCL GPU');
-  return 'gpu';
+  return 'gpu-opencl';
 }
 
 /**
@@ -132,7 +132,7 @@ function getOptimalGpuThreads() {
     threads = Math.min(cudaCheck.gpuCount * 4, 16);
   } else {
     // AMD/Intel GPUs via OpenCL: conservative threading
-    threads = Math.min(cudaCheck.gpuCount * 2, 8);
+    threads = Math.max(2, Math.min(Math.max(cudaCheck.gpuCount, 1) * 2, 8));
   }
 
   console.log(`[prepare-rust-miner] 🧵 Optimal GPU threads: ${threads} (based on ${cudaCheck.gpuCount} GPUs)`);
@@ -254,17 +254,17 @@ function main() {
   // `zion-miner(.exe)`, not `zion-universal-miner(.exe)`.
   const exeName = process.platform === 'win32' ? 'zion-universal-miner.exe' : 'zion-universal-miner';
   const builtExeNames = process.platform === 'win32'
-    ? ['zion-universal-miner.exe', 'zion-miner.exe', 'zion-universal-miner', 'zion-miner']
-    : ['zion-universal-miner', 'zion-miner'];
+    ? ['zion-miner.exe', 'zion-universal-miner.exe', 'zion-miner', 'zion-universal-miner']
+    : ['zion-miner', 'zion-universal-miner'];
   // Cargo workspaces typically place artifacts under the workspace root target/ directory,
   // even when invoked from a member crate.
   const builtBinaryCandidates = (() => {
     const out = [];
     const roots = [
       rustMinerRoot,
-      workspaceRoot,
       // V3 workspace target (cargo puts V3 binaries here)
       path.join(workspaceRoot, 'V3'),
+      workspaceRoot,
       path.join(workspaceRoot, '2.9.5'),
       path.join(workspaceRoot, '2.9.5OLD'),
       path.join(workspaceRoot, '2.9.5OLD', 'zion-universal-miner'),
@@ -320,11 +320,12 @@ function main() {
 
     if (res.status !== 0) {
       const requested = String(args.features || '').toLowerCase();
-      const canFallbackGpu = requested.includes('cuda') && requested !== 'gpu';
+      const requestedFeatures = requested.split(',').map((feature) => feature.trim()).filter(Boolean);
+      const canFallbackGpu = requestedFeatures.includes('gpu-cuda');
 
       if (canFallbackGpu && !res.isRetry) {
-        console.warn('[prepare-rust-miner] ⚠️ CUDA build failed, retrying with OpenCL-only features=gpu');
-        res = attemptBuild('gpu', true);
+        console.warn('[prepare-rust-miner] ⚠️ CUDA build failed, retrying with OpenCL-only features=gpu-opencl');
+        res = attemptBuild('gpu-opencl', true);
 
         if (res.status !== 0) {
           console.error('[prepare-rust-miner] ❌ Both CUDA and OpenCL builds failed');
@@ -332,7 +333,7 @@ function main() {
         } else {
           console.log('[prepare-rust-miner] ✅ OpenCL fallback build successful');
           // Update features to reflect what actually worked
-          args.features = 'gpu';
+          args.features = 'gpu-opencl';
         }
       } else {
         throw new Error(`cargo build failed with exit code ${res.status}`);
