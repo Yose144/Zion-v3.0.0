@@ -1,11 +1,11 @@
 # ZION Vega GPU Mining — Debug Report
 
-**Datum:** 2026-04-09  
+**Datum:** 2026-04-09 — 2026-04-10  
 **Rig:** 518837 (ZionRig) — SimpleMining.net  
 **GPU:** AMD Vega 56/64 (gfx900:xnack-, GCN 5.0, 8 GB HBM2)  
-**OS:** SMOS kernel 6.9.12-sm6#088, image řada i088, osSeries=RX  
-**Pool:** 91.98.122.165:3333 (ZION V3 Stratum)  
-**Miner:** ZION V3 Miner (Rust, Ekam Deeksha PoW, OpenCL backend)  
+**OS:** SMOS i066d (kernel `5.15.80-sm#066d`, driver `amd21.50.2r5.16.16`) — dříve i088, i085  
+**Pool:** 91.98.122.165:3333 (ZION V3 Stratum) / fr.zano.herominers.com:1110 (ZANO validace)  
+**Miner:** ZION V3 Miner (Rust, Ekam Deeksha PoW, OpenCL backend) / SRBMiner v3.2.5 (ZANO validace)  
 
 ---
 
@@ -16,6 +16,8 @@ První pokus o spuštění ZION Ekam Deeksha GPU mineru na AMD Vega HW přes Sim
 **AKTUALIZACE 2026-04-10:** Původní hypotéza „Vega je prakticky mrtvá pro ZION mining“ se v lokálním Windows běhu nepotvrdila. Po opravě výběru binárky v desktop-agentu, po nasazení Vega-specifického OpenCL local size `64` a po zapnutí CPU re-verifikace GPU nálezů se live výkon zvedl z původních ~`5.4-5.9 KH/s` na ~`22-30 KH/s` při stavu `A:8 R:0 (100.0%)`. Skok tedy nevznikl změnou PoW algoritmu, ale tím, že se konečně spouští správná binárka se správným runtime nastavením.
 
 **PRACOVNÍ NÁLEZ:** Na image i088 dochází k neúplné detekci AMD Vega ve SMOS stacku. GPU je viditelná přes PCI (`03:00.0 Vega 10`), má smysluplné teploty a VBIOS, ale SMOS současně hlásí `Failed detecting GPU`, `GPU type not recognized` a standardní minery ji nepřevezmou. Diagnostika v3.1.0–v3.1.4 ukázala reprodukovatelné OpenCL write/freezy v tehdejším SMOS stacku, ale pozdější lokální validace a live běh desktop-agentu ukázaly, že **nejde o univerzálně potvrzený HW dead state Vegy**. Aktuální problém je užší: korektnost části OpenCL pipeline na Vega/gfx900, nikoli totální neschopnost karty těžit.
+
+**VYŘEŠENO 2026-04-10 (SMOS):** Klíčový průlom: reflash na image **i066d** (`SM-i066d-5.15.80-a21.50.2-rf22.20.3-5.16.16`) okamžitě vyřešil problém napájení Vegy na SMOS. Driver `amd21.50.2` (ROCm 5.16.16) správně ovládá Vega power management — odběr GPU skočil z uzamčených **19W na 186W** ihned po bootu. Oba předchozí image (i088 s `amd22.40.6r6.10.8` i i085 s `amd22.40.6r6.1.10`) používaly rodinu driverů `amd22.40.6`, která na Vega/GCN5 zcela ignoruje sysfs power management. Po OC tuningu rig stabilně těží ZANO progpow na **17.17 MH/s** při **198W** (v9 OC profil). Rig je připraven k nasazení Deeksha mineru.
 
 ---
 
@@ -182,6 +184,45 @@ Tento skok **není důkaz**, že se samotný OpenCL kernel náhle zrychlil o 5x 
 
 Jinými slovy: jde o **provozní throughput uplift po opravě runtime cesty**, ne o čistý „kernel miracle patch“.
 
+### Přenositelnost na RX karty
+
+Tenhle výsledek má smysl otestovat i na běžných AMD `RX` kartách, hlavně tam, kde desktop-agent nebo dev runtime může spouštět starší binárku nebo nevhodný OpenCL profil.
+
+Co je pravděpodobně přenositelné i mimo Vegu:
+
+- **oprava výběru správné binárky** v desktop-agentu,
+- **sjednocení feature path na `gpu-opencl`** pro Windows/OpenCL build,
+- **CPU re-verifikace GPU kandidátů** jako ochrana proti pool rejectům,
+- a obecně **agresivnější audit OpenCL runtime parametrů** místo spoléhání na generický default.
+
+Co naopak nemusí být univerzální:
+
+- konkrétní `local_ws=64` je velmi pravděpodobně **Vega/GCN-specific** optimum,
+- na `RX 500/5000/6000/7000` může být nejlepší jiná hodnota podle architektury, driveru a wavefront chování,
+- proto je správné přenést hlavně **metodu**, ne slepě zkopírovat všechny Vega čísla.
+
+Praktická hypotéza pro RX test: i když samotný RX kernel třeba nezrychlí o `4-5x`, může se i tam zlepšit **reálný pool throughput**, pokud se odstraní špatný runtime path, stará binárka nebo skryté local rejecty.
+
+### Doporučený test přímo na rigu
+
+Pro první RX validaci na rigu má smysl držet test co nejjednodušší:
+
+1. nasadit stejnou runtime větev s opraveným `findRustMiner()` a aktuální OpenCL build binárkou,
+2. nechat default RX local size beze změny nebo začít konzervativně na `256`,
+3. sbírat současně:
+	- reported hashrate,
+	- `A/R` poměr,
+	- výskyt `gpu_candidate_hash_mismatch`,
+	- výskyt `gpu_candidate_rejected_locally`,
+4. porovnat starý a nový běh aspoň na stejném poolu a podobném časovém okně,
+5. teprve potom zkoušet architektura-specific tuning `ZION_OCL_LOCAL_SIZE` pro konkrétní RX generaci.
+
+Pokud RX rig po stejné sadě oprav ukáže:
+
+- méně rejectů při podobném hashrate, je to runtime/submit win,
+- vyšší accepted throughput při stejné nebo nižší reject rate, je to reálný výkonový win,
+- stejné mismatch logy jako Vega, je potřeba řešit společný OpenCL correctness problém i mimo gfx900.
+
 ### Co ještě zůstává otevřené
 
 - V live logu se stále objevují `gpu_candidate_hash_mismatch` a `gpu_candidate_rejected_locally`.
@@ -189,20 +230,43 @@ Jinými slovy: jde o **provozní throughput uplift po opravě runtime cesty**, n
 - Prakticky je to teď pod kontrolou, protože CPU gate chrání pool před špatným submittem.
 - Technicky ale zůstává otevřený hlubší correctness bug v `V3/L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl` nebo v jeho host-side napojení.
 
+### Dlouhý běh: interpretace po ~4 hodinách uptime
+
+Pozdější dlouhý běh ukázal stav přibližně:
+
+- uptime ~`4h 12m`,
+- `accepted=8`, `rejected=0`,
+- `attempted_hashes=150,248,648`,
+- `gpu_hps≈9.98 kH/s`, `hps_overall≈9.93 kH/s`.
+
+To znamená zhruba **1 accepted share na ~18.8 milionu hashů**, tedy asi **1 share za ~31 minut** při reálném sustained výkonu kolem `10 kH/s`.
+
+Praktický závěr:
+
+- `8 accepted` po ~4 hodinách při tomto výkonu **nevypadá jako zaseknutý miner**,
+- je to zhruba konzistentní s low-hashrate minerem jedoucím na pool minimum difficulty,
+- důležitější je, že stále zůstává `R:0`, takže CPU gate dál úspěšně filtruje špatné GPU kandidáty před submittem.
+
+Současně tenhle běh ukazuje ještě jednu důležitou věc: skutečný dlouhodobý výkon se v tomto stavu jeví spíš kolem **`~10 kH/s sustained`** než kolem dříve pozorovaných krátkodobých `22-30 kH/s`. Vyšší čísla v desktop-agent `[METRICS]` je potřeba brát opatrně, protože mohou odrážet mix rolling oken a parser/state lag, zatímco `session_status ... gpu_hps=...` je v tomhle běhu konzistentnější zdroj pravdy.
+
 ---
 
-## Nastavení OC (aktuální)
+## Nastavení OC (aktuální — v9, image i066d)
 
-| Parametr | Hodnota |
-|----------|---------|
-| PowerLimit | **60%** (~177W TDP) |
-| Core Clock | **1050 MHz** |
-| Memory Clock | **1050 MHz** |
-| VDDC | **875 mV** |
-| MVDD | **850 mV** |
-| MVDDCI | 900 mV |
+| Parametr | Nastavení SMOS | Reálná telemetrie |
+|----------|----------------|-------------------|
+| Core Clock | **1200 MHz** | CC=1197 MHz |
+| Memory Clock | **950 MHz** | MC=950 MHz |
+| PowerLimit | **100** (= 100% TDP) | P=198W |
+| VDDC | **950 mV** | — |
+| Hashrate (ZANO progpow) | — | **17.17 MH/s** |
+| Efektivita | — | **86.70 kH/W** |
 
-> ⚠️ Dříve byl PowerLimit na **6** (= ~18W = 6% z 295W TDP), což bylo zcela nedostatečné. Opraven na 60%, ale d20 chyba přetrvává i s korektním napájením.
+> **Důležité OC poznatky na i066d:**
+> - `PL` hodnoty 1–7 = DPM power stage (shazuje MC na 800 MHz). `PL=100` = 100% TDP (správná interpretace).
+> - `ocMemory ≥ 1000` → MC crash na 800 MHz. `ocMemory=950` udržuje MC stabilně na 950–1000 MHz.
+> - Po každé OC změně nutný **reboot** (ne jen reload) — jinak se DPM tabulka neresetuje čistě.
+> - Předchozí OC na starších image (i088, i085) bylo irelevantní — driver `amd22.40.6` Vega power management vůbec neovládal (19W lock).
 
 ---
 
@@ -309,14 +373,66 @@ Doporučený checklist po dokončení reflashe:
 
 ---
 
+## Vyřešení SMOS: reflash na i066d
+
+### Root cause: rodina driverů amd22.40.6 neovládá Vega PM
+
+Po extensive testování na třech SMOS image:
+
+| Image | Kernel | Driver | Vega Power | Mining |
+|-------|--------|--------|------------|--------|
+| **i088** | 6.9.12-sm6#088 | amd22.40.6r6.10.8 | **0–19W lock** | GPU detected DEAD |
+| **i085** | 6.1.57-sm5#085 | amd22.40.6r6.1.10 | **19–20W lock** | OpenCL init OK, TRM STUCK |
+| **i066d** ✅ | 5.15.80-sm#066d | amd21.50.2r5.16.16 | **186–198W** | **Plně funkční** |
+
+Root cause: celá driver rodina `amd22.40.6` (ROCm 6.x) na GCN 5.0 (gfx900/Vega) zcela ignoruje sysfs power management. Power zůstává na idle ~19W bez ohledu na OC nastavení. Driver `amd21.50.2` (ROCm 5.x, image i066d) Vega PM ovládá správně.
+
+### Reflash postup
+
+1. Zjištěno přes `GET /rig-commands`, že commandId=40 odpovídá image i066d
+2. Předchozí pokusy s commandId=72 reflashovaly na **stejný** i085 image (nebylo zřejmé z SMOS UI)
+3. Po prvním pokusu o i066d reflash hlásil rig „Detected running previous reflash" → vyžadoval reboot
+4. Po rebootu a opakovaném reflash příkazu se i066d image stáhl (~1 GB) a zapsal na USB
+5. Po bootu na i066d GPU okamžitě reportovala P=186W, CC=1097 MHz, MC=1000 MHz
+6. SRBMiner v3.2.5 (ZANO progpow) okamžitě začal přijímat share (A:3 v prvních minutách)
+
+### OC tuning série (v1–v10)
+
+| Verze | Core | Mem | PL | VDDC | CC | MC | Power | Hashrate | Poznámka |
+|-------|------|-----|-----|------|------|------|-------|----------|----------|
+| stock | — | — | — | — | 1097 | 1000 | 186W | 15.89 MH/s | Baseline po reflash |
+| v1 | 1400 | 1100 | 0 | 950 | 1224 | **800** | 214W | 14.10 | MC crash (Mem≥1000) |
+| v3 | 1200 | 1000 | 3 | 950 | 1115 | **800** | 187W | 16.68 | MC crash (PL=3=DPM) |
+| v4 | 1200 | 1100 | 5 | 1000 | 1001 | **167** | 149W | 11.66 | ocMode=true catastrophic |
+| v5 | 1300 | 950 | 4 | 975 | 1086 | 800 | 197W | 15.62 | PL=4=DPM |
+| v6 | 1250 | 950 | 100 | 975 | 1072 | 800 | 191W | 15.45 | DPM stale z v5 |
+| v7 | 1150 | 950 | 100 | 950 | 1128 | 950 | 194W | 15.40 | Reboot, MC=950 ✅ |
+| **v9** ★ | **1200** | **950** | **100** | **950** | **1197** | **950** | **198W** | **17.17** | **Optimum** |
+| v10 | 1250 | 950 | 100 | 975 | — | — | — | stuck | GPU neinit, příliš agresivní |
+
+### Aktuální stav rigu
+
+- Image: i066d, kernel `5.15.80-sm#066d`, driver `amd21.50.2r5.16.16`
+- OC: v9 (Core=1200, Mem=950, PL=100, VDDC=950)
+- Mining: ZANO progpow_zano přes SRBMiner v3.2.5 → **17.17 MH/s, 198W, A:share flow OK**
+- Skupina: ZANO (1765837) — validační group pro ověření GPU HW
+- **Připraveno**: přepnutí na ZION-Deeksha-AMD group (1765707) s custom Deeksha minerem
+
+---
+
 ## Další kroky
 
-### Prioritní další kroky
-1. **Udržet CPU re-verifikaci v live path** — je to aktuální bezpečnostní pojistka proti Vega false-positive share nálezům.
-2. **Udělát stage-by-stage audit OpenCL pipeline proti CPU referenci** — hlavně kolem `npu_mix_packed` a závěrečného hash/fusion path.
-3. **Zvážit zpřísnění GPU-side target checku** — současný OpenCL path stále používá zjednodušený `target_u32` prefilter místo plného 32-byte porovnání.
-4. **Ověřit, zda lze srovnat Rust OpenCL path s kanonickým Python/OpenCL backendem** bez regresí ve V3 runtime.
-5. **SMOS považovat dál za separátní runtime problém** — aktuální Windows/live desktop-agent výsledek už nepotvrzuje tezi o obecně mrtvé Vega kartě.
+### Aktivní — nasazení Deeksha mineru
+1. **Buildnout Linux zion-miner binárku** s `--features gpu-opencl` pro SMOS (x86_64-unknown-linux-gnu).
+2. **Zabalit jako SMOS custom miner** (zip s binárkou + start skriptem + env vars `ZION_OCL_LOCAL_SIZE=64`, `ZION_OCL_VRAM_PCT=25`).
+3. **Uploadnout na server** a aktualizovat minerOptions v ZION-Deeksha-AMD group (1765707).
+4. **Přepnout rig na Deeksha group** přes `PATCH /rigs/change-rig-group` a monitorovat konzoli.
+5. **Ověřit GPU init na i066d** — předchozí OpenCL problémy (compiler hang, buffer deadlock) byly na i085/i088; na i066d (ROCm 5.x) se mohou chovat jinak.
+
+### Otevřené correctness problémy
+6. **`gpu_candidate_hash_mismatch`** — občas GPU vrátí kandidáta, jehož hash se neshoduje s CPU referencí. CPU gate chrání pool, ale root cause v OpenCL kernelu zůstává.
+7. **Stage-by-stage audit OpenCL pipeline** — hlavně `npu_mix_packed` a závěrečný fusion path.
+8. **Zpřísnění GPU-side target checku** — aktuální `target_u32` prefilter místo plného 32B compare.
 
 ---
 
@@ -367,8 +483,21 @@ Doporučený checklist po dokončení reflashe:
 | `/rigs/518837/console` | GET | Miner stdout (base64) |
 | `/rigs/518837/console?type=dmesg` | GET | Kernel dmesg (base64) |
 | `/rigs/518837` | GET | Stav rigu |
+| `/rigs/change-rig-group` | PATCH | Přepnutí rigu do jiné skupiny |
+| `/rig-commands` | GET | Seznam dostupných příkazů (reflash images atd.) |
 
-Content-Type pro execute-* endpointy: `application/merge-patch+json`
+Content-Type pro PATCH endpointy: `application/merge-patch+json`  
+Content-Type pro PUT endpointy: `application/json`
+
+### SMOS příkazy (commandId)
+
+| commandId | Image | Vega kompatibilita |
+|-----------|-------|---------------------|
+| **40** | i066d (`amd21.50.2`, ROCm 5.x) | ✅ Funguje — správný Vega PM |
+| 65 | i073 (`amd22.40.6`) | ❌ Vega 19W lock |
+| 72 | i085 (`amd22.40.6`) | ❌ Vega 19W lock |
+| 79 | i088 (`amd22.40.6`) | ❌ GPU detected DEAD |
+| 90 | i089 beta (NV only) | N/A |
 
 ---
 
@@ -383,5 +512,5 @@ Content-Type pro execute-* endpointy: `application/merge-patch+json`
 
 ---
 
-*Report vygenerován a průběžně aktualizován během autonomní debugovací session 2026-04-09 až 2026-04-10.*
-*Poslední aktualizace: 2026-04-10 — potvrzen výrazný live hashrate skok po opravě runtime cesty, stale-binary bugfixu a Vega OpenCL tuningu; otevřený zůstává už jen correctness bug části OpenCL pipeline na gfx900.*
+*Report vygenerován a průběžně aktualizován během autonomní debugovací session 2026-04-09 až 2026-04-10.*  
+*Poslední aktualizace: 2026-04-10 — SMOS vyřešeno reflashem na i066d (driver amd21.50.2); Vega jede na 198W / 17.17 MH/s (ZANO). OC optimum nalezeno (v9). Připraveno k nasazení Deeksha mineru.*
