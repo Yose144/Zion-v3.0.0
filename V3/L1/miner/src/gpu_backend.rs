@@ -161,10 +161,22 @@ pub fn create_gpu_backend(
     }
 }
 
+/// Outcome of a GPU scan with candidate-filter statistics.
+pub struct GpuScanOutcome {
+    pub solution: Option<MiningSolution>,
+    pub nonces_tested: u64,
+    pub candidates_found: u64,
+    pub candidates_verified: u64,
+    pub candidates_hash_mismatch: u64,
+    pub candidates_above_target: u64,
+}
+
 /// Scan a job using a GPU backend, returning the first solution.
-pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> Option<MiningSolution> {
+/// Tracks candidate-filter statistics for performance diagnostics.
+pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> GpuScanOutcome {
     match gpu.mine_batch(job.header, job.target, job.start_nonce, job.nonce_count) {
         Ok(result) => {
+            let nonces_tested = result.nonces_tested;
             if let Some((nonce, hash)) = result.solutions.first() {
                 let candidate = zion_core::BlockCandidate {
                     header: job.header,
@@ -172,36 +184,75 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> Option<MiningSolu
                     height: job.height,
                 };
                 let verified_hash = candidate.hash();
+                let is_mismatch = verified_hash != *hash;
+                let is_above_target = !job.target.allows(&verified_hash);
 
-                if verified_hash != *hash {
-                    eprintln!(
-                        "gpu_candidate_hash_mismatch nonce={} gpu_hash={:02x?} cpu_hash={:02x?}",
-                        nonce,
-                        hash,
-                        verified_hash,
-                    );
+                if is_mismatch {
+                    // Compact per-mismatch line (always, not gated on VERBOSE)
+                    use std::sync::atomic::{AtomicU64, Ordering};
+                    static MISMATCH_COUNT: AtomicU64 = AtomicU64::new(0);
+                    let count = MISMATCH_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+                    // Print first 5 mismatches and then every 50th
+                    if count <= 5 || count % 50 == 0 {
+                        let hex = |b: &[u8]| -> String { b.iter().map(|x| format!("{:02x}", x)).collect() };
+                        println!(
+                            "GPU_MISMATCH #{} nonce={} h={} gpu={} cpu={}",
+                            count, nonce, job.height,
+                            hex(&hash[..8]), hex(&verified_hash[..8]),
+                        );
+                    }
                 }
 
-                if !job.target.allows(&verified_hash) {
-                    eprintln!(
-                        "gpu_candidate_rejected_locally nonce={} reason=cpu_hash_above_target",
-                        nonce,
-                    );
-                    return None;
+                if is_above_target {
+                    if crate::VERBOSE.load(std::sync::atomic::Ordering::Relaxed) {
+                        eprintln!(
+                            "gpu_candidate_rejected_locally nonce={} reason=cpu_hash_above_target",
+                            nonce,
+                        );
+                    }
+                    return GpuScanOutcome {
+                        solution: None,
+                        nonces_tested,
+                        candidates_found: 1,
+                        candidates_verified: 0,
+                        candidates_hash_mismatch: if is_mismatch { 1 } else { 0 },
+                        candidates_above_target: 1,
+                    };
                 }
 
-                Some(MiningSolution {
-                    job_id: job.job_id,
-                    candidate,
-                    hash: verified_hash,
-                })
+                GpuScanOutcome {
+                    solution: Some(MiningSolution {
+                        job_id: job.job_id,
+                        candidate,
+                        hash: verified_hash,
+                    }),
+                    nonces_tested,
+                    candidates_found: 1,
+                    candidates_verified: 1,
+                    candidates_hash_mismatch: if is_mismatch { 1 } else { 0 },
+                    candidates_above_target: 0,
+                }
             } else {
-                None
+                GpuScanOutcome {
+                    solution: None,
+                    nonces_tested,
+                    candidates_found: 0,
+                    candidates_verified: 0,
+                    candidates_hash_mismatch: 0,
+                    candidates_above_target: 0,
+                }
             }
         }
         Err(e) => {
             eprintln!("gpu_mine_batch_error: {e}");
-            None
+            GpuScanOutcome {
+                solution: None,
+                nonces_tested: 0,
+                candidates_found: 0,
+                candidates_verified: 0,
+                candidates_hash_mismatch: 0,
+                candidates_above_target: 0,
+            }
         }
     }
 }
@@ -238,6 +289,11 @@ pub mod opencl_deeksha {
         platform: Platform,
         device: Device,
         kernel_src: String,
+        /// GCN s4-only mode: GPU does stages 1-4, CPU does NPU+fusion+target.
+        /// Avoids GCN compiler bugs in NPU code under high register pressure.
+        is_gcn: bool,
+        s4_kernel: Option<Kernel>,
+        s4_out_buf: Option<Buffer<u8>>,
     }
 
     /// Determine max work_size that fits in GPU VRAM.
@@ -267,19 +323,47 @@ pub mod opencl_deeksha {
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(usize::MAX);
 
-        requested.min(max_by_mem).min(env_cap).max(64)
+        // GCN devices (Vega, Polaris) cap at 128 work items to reduce register
+        // spill pressure and memory contention with the 256 KiB scratchpad.
+        let dev = device.name().unwrap_or_default().to_ascii_lowercase();
+        let gcn_cap = if dev.contains("vega") || dev.contains("polaris")
+            || dev.contains("fiji") || dev.contains("ellesmere")
+            || dev.contains("gfx6") || dev.contains("gfx7")
+            || dev.contains("gfx8") || dev.contains("gfx9")
+        {
+            128
+        } else {
+            usize::MAX
+        };
+
+        requested.min(max_by_mem).min(env_cap).min(gcn_cap).max(64)
     }
 
     /// AMD RDNA / GCN build options for better perf on Radeon GPUs.
+    ///
+    /// GCN (Vega, Polaris) gets conservative flags only — `-cl-fast-relaxed-math`
+    /// causes the AMD compiler to enable aggressive optimizations that can break
+    /// integer code paths (NPU LayerNorm, GELU) when register spills occur.
+    /// RDNA can safely use the full flag set.
     fn amd_build_opts(device_name: &str) -> String {
-        if device_name.contains("gfx") || device_name.contains("Radeon")
-            || device_name.contains("AMD") || device_name.contains("RDNA")
-        {
+        let dev = device_name.to_ascii_lowercase();
+        let is_amd = dev.contains("gfx") || dev.contains("radeon")
+            || dev.contains("amd") || dev.contains("rdna");
+        if !is_amd {
+            return String::new();
+        }
+        // GCN (gfx6/7/8/9, Vega, Polaris, Fiji): safe integer-only flags
+        let is_gcn = dev.contains("vega") || dev.contains("polaris")
+            || dev.contains("fiji") || dev.contains("ellesmere")
+            || dev.contains("gfx6") || dev.contains("gfx7")
+            || dev.contains("gfx8") || dev.contains("gfx9");
+        if is_gcn {
+            "-cl-std=CL1.2 -cl-mad-enable".to_string()
+        } else {
+            // RDNA (gfx10+, Navi, RX 5000/6000/7000): full optimization
             "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math \
              -cl-no-signed-zeros -cl-denorms-are-zero"
                 .to_string()
-        } else {
-            String::new()
         }
     }
 
@@ -329,14 +413,102 @@ pub mod opencl_deeksha {
     }
 
     impl OpenClDeekshaMiner {
+        fn device_score(platform_name: &str, device_name: &str) -> i64 {
+            let platform_l = platform_name.to_ascii_lowercase();
+            let device_l = device_name.to_ascii_lowercase();
+            let mut score: i64 = 0;
+
+            // Match desktop-agent ordering: AMD > Intel > NVIDIA for Deeksha OpenCL path.
+            if platform_l.contains("amd")
+                || device_l.contains("amd")
+                || device_l.contains("radeon")
+                || device_l.contains("gfx")
+            {
+                score += 5_000;
+            } else if platform_l.contains("intel")
+                || device_l.contains("intel")
+                || device_l.contains("arc")
+            {
+                score += 3_000;
+            } else if platform_l.contains("nvidia")
+                || platform_l.contains("cuda")
+                || device_l.contains("nvidia")
+            {
+                score += 2_000;
+            }
+
+            score
+        }
+
+        fn pick_opencl_device() -> Result<(Platform, Device, String, String)> {
+            let platforms = Platform::list();
+            if platforms.is_empty() {
+                anyhow::bail!("no OpenCL platforms found");
+            }
+
+            let platform_idx_override = std::env::var("ZION_OCL_PLATFORM_IDX")
+                .ok()
+                .and_then(|v| v.trim().parse::<usize>().ok());
+            let device_idx_override = std::env::var("ZION_OCL_DEVICE_IDX")
+                .ok()
+                .and_then(|v| v.trim().parse::<usize>().ok());
+
+            let mut candidates: Vec<(i64, usize, usize, Platform, Device, String, String)> = Vec::new();
+
+            for (pidx, platform) in platforms.into_iter().enumerate() {
+                if let Some(only_idx) = platform_idx_override {
+                    if pidx != only_idx {
+                        continue;
+                    }
+                }
+
+                let platform_name = platform.name().unwrap_or_else(|_| "unknown-platform".to_string());
+                let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU))
+                    .map_err(|e| anyhow::anyhow!("OpenCL device list on platform {platform_name}: {e}"))?;
+
+                for (didx, device) in gpus.into_iter().enumerate() {
+                    let device_name = device.name().unwrap_or_else(|_| "unknown-device".to_string());
+                    let score = Self::device_score(&platform_name, &device_name);
+                    candidates.push((
+                        score,
+                        pidx,
+                        didx,
+                        platform,
+                        device,
+                        platform_name.clone(),
+                        device_name,
+                    ));
+                }
+            }
+
+            if candidates.is_empty() {
+                anyhow::bail!("no OpenCL GPU devices found");
+            }
+
+            if let Some(global_idx) = device_idx_override {
+                let idx = global_idx.min(candidates.len().saturating_sub(1));
+                let (_, pidx, didx, platform, device, platform_name, device_name) =
+                    candidates.swap_remove(idx);
+                println!(
+                    "gpu_opencl_pick mode=override index={} platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
+                    idx, pidx, didx, platform_name, device_name
+                );
+                return Ok((platform, device, platform_name, device_name));
+            }
+
+            candidates.sort_by(|a, b| b.0.cmp(&a.0));
+            let (_, pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
+            println!(
+                "gpu_opencl_pick mode=auto platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
+                pidx, didx, platform_name, device_name
+            );
+            Ok((platform, device, platform_name, device_name))
+        }
+
         pub fn new(work_size: usize) -> Result<Self> {
             let kernel_src = opencl_kernel::get_deeksha_kernel_source().to_string();
 
-            let platform = Platform::default();
-            let device = Device::first(platform)
-                .map_err(|e| anyhow::anyhow!("no OpenCL device found: {e}"))?;
-            let device_name = device.name()
-                .unwrap_or_else(|_| "unknown".to_string());
+            let (platform, device, platform_name, device_name) = Self::pick_opencl_device()?;
 
             let actual_work_size = vram_aware_work_size(&device, work_size);
             let local_work_size = detect_local_work_size(&device_name);
@@ -431,12 +603,46 @@ pub mod opencl_deeksha {
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
 
             let scratch_mib = actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024);
+
+            // Detect GCN devices for s4-only mode (CPU-side NPU+fusion)
+            let dev_lower = device_name.to_ascii_lowercase();
+            let is_gcn = dev_lower.contains("vega") || dev_lower.contains("polaris")
+                || dev_lower.contains("fiji") || dev_lower.contains("ellesmere")
+                || dev_lower.contains("gfx6") || dev_lower.contains("gfx7")
+                || dev_lower.contains("gfx8") || dev_lower.contains("gfx9");
+
+            let (s4_kernel, s4_out_buf) = if is_gcn {
+                let s4_out = Buffer::<u8>::builder()
+                    .queue(pro_que.queue().clone())
+                    .len(actual_work_size * 64)
+                    .build()
+                    .map_err(|e| anyhow::anyhow!("s4_out alloc failed: {e}"))?;
+
+                let s4k = pro_que
+                    .kernel_builder(opencl_kernel::EKAM_DEEKSHA_S4_KERNEL_NAME)
+                    .arg(&header_buf)              // 0: header
+                    .arg(80u32)                    // 1: header_len
+                    .arg(0u64)                     // 2: nonce_base
+                    .arg(actual_work_size as u32)  // 3: nonce_count
+                    .arg(&scratchpad_buf)          // 4: scratchpad_pool
+                    .arg(&s4_out)                  // 5: s4_out
+                    .build()
+                    .map_err(|e| anyhow::anyhow!("s4 kernel build failed: {e}"))?;
+
+                println!(
+                    "gpu_gcn_s4_mode enabled — GPU stages 1-4, CPU does NPU+fusion+target",
+                );
+                (Some(s4k), Some(s4_out))
+            } else {
+                (None, None)
+            };
+
             println!(
-                "gpu_opencl_init device=\"{}\" work_size={} local_ws={} scratchpad_mib={} npu_max_dim={} build_opts=\"{}\"",
-                device_name, actual_work_size, local_work_size, scratch_mib, npu_max_dim, build_opts,
+                "gpu_opencl_init platform=\"{}\" device=\"{}\" work_size={} local_ws={} scratchpad_mib={} npu_max_dim={} gcn_s4={} build_opts=\"{}\"",
+                platform_name, device_name, actual_work_size, local_work_size, scratch_mib, npu_max_dim, is_gcn, build_opts,
             );
 
-            Ok(Self {
+            let miner = Self {
                 pro_que,
                 kernel,
                 header_buf,
@@ -455,6 +661,355 @@ pub mod opencl_deeksha {
                 platform,
                 device,
                 kernel_src,
+                is_gcn,
+                s4_kernel,
+                s4_out_buf,
+            };
+
+            // Startup self-test: run debug kernel and compare all 6 stages with CPU
+            if let Err(e) = miner.self_test() {
+                println!("GPU_SELF_TEST_ERROR: {e}");
+            }
+
+            Ok(miner)
+        }
+
+        /// Run GPU debug kernel with a known input and compare all 6 pipeline
+        /// stages against CPU.  Prints results to stdout so SMOS captures them.
+        fn self_test(&self) -> Result<()> {
+            println!("=== GPU SELF-TEST START ===");
+
+            let test_header = MiningHeader {
+                version: 3,
+                previous_hash: [0xAA; 32],
+                merkle_root: [0xBB; 32],
+                timestamp: 1_762_000_200,
+                difficulty_bits: 0x1f00ffff,
+            };
+            let test_nonce: u64 = 42;
+            let test_height: u64 = 0; // epoch 0, matching init
+
+            let header_bytes = test_header.to_bytes();
+            self.header_buf.write(&header_bytes[..]).enq()?;
+
+            // Stage output buffer: 32 + 64 + 64 + 64 + 64 + 32 = 320 bytes
+            let q = self.pro_que.queue().clone();
+            let stage_buf = Buffer::<u8>::builder()
+                .queue(q).len(320).build()?;
+
+            // Build and run debug kernel (single work item)
+            let debug_kernel = self.pro_que
+                .kernel_builder("ekam_deeksha_debug")
+                .arg(&self.header_buf)              // 0: header
+                .arg(header_bytes.len() as u32)     // 1: header_len
+                .arg(test_nonce)                    // 2: nonce
+                .arg(&self.scratchpad_buf)           // 3: scratchpad_pool
+                .arg(&stage_buf)                     // 4: stage_out
+                .arg(&self.npu_weights)              // 5
+                .arg(&self.npu_biases)               // 6
+                .arg(&self.npu_scales)               // 7
+                .arg(&self.npu_meta)                 // 8
+                .build()
+                .map_err(|e| anyhow::anyhow!("debug kernel build: {e}"))?;
+
+            unsafe {
+                debug_kernel.cmd()
+                    .global_work_size(1)
+                    .local_work_size(1)
+                    .enq()?;
+            }
+
+            let mut gpu = vec![0u8; 320];
+            stage_buf.read(&mut gpu).enq()?;
+
+            // CPU computation
+            use zion_cosmic_harmony::algorithms_opt::{
+                keccak256_opt, sha3_512_opt, golden_matrix_opt, cosmic_fusion_opt_rounds,
+            };
+            use zion_cosmic_harmony::algorithms_npu::{epoch_from_height, npu_mixing_step_epoch};
+            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
+
+            let mut input = [0u8; 88];
+            input[..80].copy_from_slice(&header_bytes);
+            input[80..88].copy_from_slice(&test_nonce.to_le_bytes());
+
+            let cpu_s1 = keccak256_opt(&input);
+            let cpu_s2 = sha3_512_opt(&cpu_s1.data);
+            let cpu_s3 = golden_matrix_opt(&cpu_s2.data);
+            let cpu_s4 = memory_hard_transform_ekam_light_v2(&cpu_s3.data);
+            let epoch = epoch_from_height(test_height);
+            let cpu_s5 = npu_mixing_step_epoch(&cpu_s4.data, epoch);
+            let cpu_hash = cosmic_fusion_opt_rounds(&cpu_s5, 8);
+
+            let hex = |b: &[u8]| -> String { b.iter().map(|x| format!("{:02x}", x)).collect() };
+
+            // Compare each stage
+            let stages: [(&str, &[u8], &[u8]); 6] = [
+                ("s1_keccak256", &gpu[0..32],    &cpu_s1.data),
+                ("s2_sha3_512",  &gpu[32..96],   &cpu_s2.data),
+                ("s3_golden",    &gpu[96..160],  &cpu_s3.data),
+                ("s4_memhard",   &gpu[160..224], &cpu_s4.data),
+                ("s5_npu",       &gpu[224..288], &cpu_s5),
+                ("s6_fusion",    &gpu[288..320], &cpu_hash.data),
+            ];
+
+            let mut all_ok = true;
+            for (name, g, c) in &stages {
+                let ok = *g == *c;
+                println!("SELF_TEST {}={}", name, if ok { "OK" } else { "FAIL" });
+                if !ok {
+                    all_ok = false;
+                    let glen = g.len().min(32);
+                    let clen = c.len().min(32);
+                    println!("  gpu={}", hex(&g[..glen]));
+                    println!("  cpu={}", hex(&c[..clen]));
+                    break; // Only print first diverging stage
+                }
+            }
+
+            if all_ok {
+                println!("SELF_TEST gpu_hash={} cpu_hash={} MATCH",
+                    hex(&gpu[288..320]), hex(&cpu_hash.data));
+            }
+            println!("=== GPU SELF-TEST END ===");
+            Ok(())
+        }
+
+        /// Run a full pipeline self-test at a specific epoch.
+        /// Re-uses current NPU buffers (must be called after they are updated).
+        fn self_test_at_epoch(&self, epoch: u64) -> Result<()> {
+            use zion_cosmic_harmony::algorithms_opt::{
+                keccak256_opt, sha3_512_opt, golden_matrix_opt, cosmic_fusion_opt_rounds,
+            };
+            use zion_cosmic_harmony::algorithms_npu::npu_mixing_step_epoch;
+            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
+
+            println!("=== GPU EPOCH SELF-TEST epoch={} ===", epoch);
+
+            let test_header = MiningHeader {
+                version: 3,
+                previous_hash: [0xAA; 32],
+                merkle_root: [0xBB; 32],
+                timestamp: 1_762_000_200,
+                difficulty_bits: 0x1f00ffff,
+            };
+            let test_nonce: u64 = 42;
+
+            let header_bytes = test_header.to_bytes();
+            self.header_buf.write(&header_bytes[..]).enq()?;
+
+            let q = self.pro_que.queue().clone();
+            let stage_buf = Buffer::<u8>::builder()
+                .queue(q).len(320).build()?;
+
+            let debug_kernel = self.pro_que
+                .kernel_builder("ekam_deeksha_debug")
+                .arg(&self.header_buf)
+                .arg(header_bytes.len() as u32)
+                .arg(test_nonce)
+                .arg(&self.scratchpad_buf)
+                .arg(&stage_buf)
+                .arg(&self.npu_weights)
+                .arg(&self.npu_biases)
+                .arg(&self.npu_scales)
+                .arg(&self.npu_meta)
+                .build()
+                .map_err(|e| anyhow::anyhow!("debug kernel build: {e}"))?;
+
+            unsafe {
+                debug_kernel.cmd()
+                    .global_work_size(1)
+                    .local_work_size(1)
+                    .enq()?;
+            }
+
+            let mut gpu = vec![0u8; 320];
+            stage_buf.read(&mut gpu).enq()?;
+
+            // CPU pipeline with the same epoch
+            let mut input = [0u8; 88];
+            input[..80].copy_from_slice(&header_bytes);
+            input[80..88].copy_from_slice(&test_nonce.to_le_bytes());
+
+            let cpu_s1 = keccak256_opt(&input);
+            let cpu_s2 = sha3_512_opt(&cpu_s1.data);
+            let cpu_s3 = golden_matrix_opt(&cpu_s2.data);
+            let cpu_s4 = memory_hard_transform_ekam_light_v2(&cpu_s3.data);
+            let cpu_s5 = npu_mixing_step_epoch(&cpu_s4.data, epoch);
+            let cpu_hash = cosmic_fusion_opt_rounds(&cpu_s5, 8);
+
+            let hex = |b: &[u8]| -> String { b.iter().map(|x| format!("{:02x}", x)).collect() };
+
+            let stages: [(&str, &[u8], &[u8]); 6] = [
+                ("s1_keccak256", &gpu[0..32],    &cpu_s1.data),
+                ("s2_sha3_512",  &gpu[32..96],   &cpu_s2.data),
+                ("s3_golden",    &gpu[96..160],  &cpu_s3.data),
+                ("s4_memhard",   &gpu[160..224], &cpu_s4.data),
+                ("s5_npu",       &gpu[224..288], &cpu_s5),
+                ("s6_fusion",    &gpu[288..320], &cpu_hash.data),
+            ];
+
+            let mut all_ok = true;
+            for (name, g, c) in &stages {
+                let ok = *g == *c;
+                println!("EPOCH_TEST e={} {}={}", epoch, name, if ok { "OK" } else { "FAIL" });
+                if !ok {
+                    all_ok = false;
+                    let glen = g.len().min(32);
+                    let clen = c.len().min(32);
+                    println!("  gpu={}", hex(&g[..glen]));
+                    println!("  cpu={}", hex(&c[..clen]));
+                    // Don't break — print ALL stages to help diagnose
+                }
+            }
+
+            if all_ok {
+                println!("EPOCH_TEST e={} MATCH gpu_hash={}", epoch, hex(&gpu[288..320]));
+                Ok(())
+            } else {
+                anyhow::bail!("GPU-CPU mismatch at epoch {}", epoch)
+            }
+        }
+
+        /// GCN s4-only mining: GPU does stages 1-4 (incl. memory-hard), CPU does NPU + fusion + target.
+        fn mine_batch_s4(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            use zion_cosmic_harmony::algorithms_npu::npu_mixing_step_epoch;
+            use zion_cosmic_harmony::algorithms_opt::cosmic_fusion_opt_rounds;
+
+            let s4_kernel = self.s4_kernel.as_ref()
+                .ok_or_else(|| anyhow::anyhow!("s4 kernel not initialized"))?;
+            let s4_out_buf = self.s4_out_buf.as_ref()
+                .ok_or_else(|| anyhow::anyhow!("s4 output buffer not initialized"))?;
+
+            let header_bytes = header.to_bytes();
+            self.header_buf.write(&header_bytes[..]).enq()?;
+
+            let epoch = self.current_epoch;
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size);
+                let local_size = self.local_work_size.min(chunk);
+                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+
+                // Update s4 kernel args
+                s4_kernel.set_arg(1, header_bytes.len() as u32)?;
+                s4_kernel.set_arg(2, current_nonce)?;
+                s4_kernel.set_arg(3, chunk as u32)?;
+
+                unsafe {
+                    s4_kernel.cmd()
+                        .global_work_size(global_size)
+                        .local_work_size(local_size)
+                        .enq()?;
+                }
+
+                // Read back all s4 results (chunk * 64 bytes)
+                let mut s4_data = vec![0u8; chunk * 64];
+                s4_out_buf.read(&mut s4_data).enq()?;
+
+                // CPU: NPU mix + cosmic fusion + target check for each work item
+                for i in 0..chunk {
+                    let s4_slice = &s4_data[i * 64..(i + 1) * 64];
+                    let s4_arr: &[u8; 64] = s4_slice.try_into().unwrap();
+                    let s5 = npu_mixing_step_epoch(s4_arr, epoch);
+                    let hash = cosmic_fusion_opt_rounds(&s5, 8);
+
+                    if target.allows(&hash.data) {
+                        let nonce = current_nonce.wrapping_add(i as u64);
+                        all_solutions.push((nonce, hash.data));
+                        break; // Return first solution
+                    }
+                }
+
+                total_tested += chunk as u64;
+
+                if !all_solutions.is_empty() {
+                    break;
+                }
+
+                current_nonce = current_nonce.wrapping_add(chunk as u64);
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: total_tested,
+            })
+        }
+
+        /// Full-pipeline mining: GPU does all 6 stages + target check.
+        fn mine_batch_full(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let header_bytes = header.to_bytes();
+            self.header_buf.write(&header_bytes[..]).enq()?;
+
+            let target_u32 = u32::from_be_bytes([
+                target.bytes[0], target.bytes[1],
+                target.bytes[2], target.bytes[3],
+            ]);
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size);
+                let local_size = self.local_work_size.min(chunk);
+                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+
+                let sentinel_slice: [u64; 1] = [SENTINEL];
+                self.result_nonce_buf.write(&sentinel_slice[..]).enq()?;
+
+                self.kernel.set_arg(1, header_bytes.len() as u32)?;
+                self.kernel.set_arg(2, current_nonce)?;
+                self.kernel.set_arg(3, chunk as u32)?;
+                self.kernel.set_arg(5, target_u32)?;
+
+                unsafe {
+                    self.kernel.cmd()
+                        .global_work_size(global_size)
+                        .local_work_size(local_size)
+                        .enq()?;
+                }
+
+                let mut nonce_out = vec![SENTINEL];
+                self.result_nonce_buf.read(&mut nonce_out).enq()?;
+
+                if nonce_out[0] != SENTINEL {
+                    let mut hash_out = vec![0u8; 32];
+                    self.result_hash_buf.read(&mut hash_out).enq()?;
+                    let mut hash = [0u8; 32];
+                    hash.copy_from_slice(&hash_out);
+                    all_solutions.push((nonce_out[0], hash));
+                    total_tested += chunk as u64;
+                    break;
+                }
+
+                total_tested += chunk as u64;
+                current_nonce = current_nonce.wrapping_add(chunk as u64);
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: total_tested,
             })
         }
     }
@@ -510,6 +1065,25 @@ pub mod opencl_deeksha {
                     .queue(q.clone()).len(1).build()?;
                 self.result_hash_buf = Buffer::<u8>::builder()
                     .queue(q.clone()).len(32).build()?;
+
+                // Rebuild s4 kernel/buffer if GCN mode
+                if self.is_gcn {
+                    let s4_out = Buffer::<u8>::builder()
+                        .queue(q.clone())
+                        .len(self.work_size * 64)
+                        .build()?;
+                    self.s4_kernel = Some(self.pro_que
+                        .kernel_builder(opencl_kernel::EKAM_DEEKSHA_S4_KERNEL_NAME)
+                        .arg(&self.header_buf)
+                        .arg(80u32)
+                        .arg(0u64)
+                        .arg(self.work_size as u32)
+                        .arg(&self.scratchpad_buf)
+                        .arg(&s4_out)
+                        .build()
+                        .map_err(|e| anyhow::anyhow!("s4 kernel rebuild failed: {e}"))?);
+                    self.s4_out_buf = Some(s4_out);
+                }
             }
 
             // Reallocate NPU buffers (topology-dependent sizes)
@@ -550,6 +1124,21 @@ pub mod opencl_deeksha {
                 epoch, height, topology, self.current_npu_max_dim
             );
             self.current_epoch = epoch;
+
+            // Post-epoch self-test: verify full pipeline matches CPU at new epoch.
+            // Uses debug kernel (single work-item) so result is deterministic.
+            if let Err(e) = self.self_test_at_epoch(epoch) {
+                println!(
+                    "GPU_EPOCH_SELFTEST_FAIL epoch={} topology={:?} err=\"{e}\"",
+                    epoch, topology
+                );
+            } else {
+                println!(
+                    "GPU_EPOCH_SELFTEST_OK epoch={} topology={:?}",
+                    epoch, topology
+                );
+            }
+
             Ok(())
         }
 
@@ -560,65 +1149,10 @@ pub mod opencl_deeksha {
             nonce_start: u64,
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
-            let header_bytes = header.to_bytes();
-            self.header_buf.write(&header_bytes[..]).enq()?;
-
-            // Target: BE u32 from first 4 bytes (matches pool's big-endian byte comparison)
-            let target_u32 = u32::from_be_bytes([
-                target.bytes[0], target.bytes[1],
-                target.bytes[2], target.bytes[3],
-            ]);
-
-            let mut all_solutions = Vec::new();
-            let mut total_tested = 0u64;
-            let mut current_nonce = nonce_start;
-            let mut left = batch_size;
-
-            while left > 0 {
-                let chunk = (left as usize).min(self.work_size);
-                let local_size = self.local_work_size.min(chunk);
-                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
-
-                // Reset sentinel
-                let sentinel_slice: [u64; 1] = [SENTINEL];
-                self.result_nonce_buf.write(&sentinel_slice[..]).enq()?;
-
-                // Update dynamic kernel args
-                self.kernel.set_arg(1, header_bytes.len() as u32)?;
-                self.kernel.set_arg(2, current_nonce)?;
-                self.kernel.set_arg(3, chunk as u32)?;
-                self.kernel.set_arg(5, target_u32)?;
-
-                unsafe {
-                    self.kernel.cmd()
-                        .global_work_size(global_size)
-                        .local_work_size(local_size)
-                        .enq()?;
-                }
-
-                // Read result
-                let mut nonce_out = vec![SENTINEL];
-                self.result_nonce_buf.read(&mut nonce_out).enq()?;
-
-                if nonce_out[0] != SENTINEL {
-                    let mut hash_out = vec![0u8; 32];
-                    self.result_hash_buf.read(&mut hash_out).enq()?;
-                    let mut hash = [0u8; 32];
-                    hash.copy_from_slice(&hash_out);
-                    all_solutions.push((nonce_out[0], hash));
-                    total_tested += chunk as u64;
-                    break; // Early termination
-                }
-
-                total_tested += chunk as u64;
-                current_nonce = current_nonce.wrapping_add(chunk as u64);
-                left = left.saturating_sub(chunk as u64);
+            if self.is_gcn {
+                return self.mine_batch_s4(header, target, nonce_start, batch_size);
             }
-
-            Ok(GpuBatchResult {
-                solutions: all_solutions,
-                nonces_tested: total_tested,
-            })
+            self.mine_batch_full(header, target, nonce_start, batch_size)
         }
 
         fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
