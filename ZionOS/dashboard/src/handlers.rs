@@ -755,6 +755,8 @@ pub struct EnqueueCommandReq {
     pub command: String,
     #[serde(default)]
     pub payload: serde_json::Value,
+    #[serde(default)]
+    pub max_attempts: Option<u32>,
 }
 
 #[derive(serde::Deserialize)]
@@ -791,9 +793,13 @@ pub async fn enqueue_command(
         command: req.command,
         payload: req.payload,
         status: CommandStatus::Pending,
+        attempts: 0,
+        max_attempts: req.max_attempts.unwrap_or(3).clamp(1, 10),
+        leased_until: None,
         created_at: now,
         acked_at: None,
         ack_message: None,
+        last_error: None,
     };
 
     let mut commands = state.commands.write().await;
@@ -820,11 +826,40 @@ pub async fn next_command(
     State(state): State<Arc<AppState>>,
     Path(rig_id): Path<String>,
 ) -> Json<serde_json::Value> {
-    let commands = state.commands.read().await;
+    const LEASE_SECONDS: i64 = 15;
+
+    let now = chrono::Utc::now().timestamp();
+    let mut changed = false;
+    let mut commands = state.commands.write().await;
+
+    for cmd in commands.iter_mut().filter(|c| c.rig_id == rig_id && c.status == CommandStatus::Pending) {
+        if let Some(until) = cmd.leased_until {
+            if until <= now && cmd.attempts >= cmd.max_attempts {
+                cmd.status = CommandStatus::Failed;
+                cmd.acked_at = Some(now);
+                cmd.ack_message = Some("retry limit exceeded before ack".to_string());
+                cmd.last_error = Some("lease timeout exhausted retries".to_string());
+                changed = true;
+            }
+        }
+    }
+
     let next = commands
-        .iter()
-        .find(|c| c.rig_id == rig_id && c.status == CommandStatus::Pending)
-        .cloned();
+        .iter_mut()
+        .filter(|c| c.rig_id == rig_id && c.status == CommandStatus::Pending)
+        .find(|c| c.leased_until.map(|until| until <= now).unwrap_or(true))
+        .map(|cmd| {
+            cmd.attempts = cmd.attempts.saturating_add(1);
+            cmd.leased_until = Some(now + LEASE_SECONDS);
+            changed = true;
+            cmd.clone()
+        });
+    drop(commands);
+
+    if changed {
+        persist_state(&state).await;
+    }
+
     Json(serde_json::json!({"ok": true, "command": next}))
 }
 
@@ -848,8 +883,12 @@ pub async fn ack_command(
         .ok_or(StatusCode::NOT_FOUND)?;
 
     cmd.status = status.clone();
+    cmd.leased_until = None;
     cmd.acked_at = Some(now);
     cmd.ack_message = req.message.clone();
+    if status == CommandStatus::Failed {
+        cmd.last_error = req.message.clone();
+    }
 
     let snapshot = cmd.clone();
     drop(commands);
