@@ -79,9 +79,21 @@ pub struct AgentCommand {
     #[serde(default)]
     pub payload: serde_json::Value,
     pub status: CommandStatus,
+    #[serde(default)]
+    pub attempts: u32,
+    #[serde(default = "default_max_attempts")]
+    pub max_attempts: u32,
+    #[serde(default)]
+    pub leased_until: Option<i64>,
     pub created_at: i64,
     pub acked_at: Option<i64>,
     pub ack_message: Option<String>,
+    #[serde(default)]
+    pub last_error: Option<String>,
+}
+
+fn default_max_attempts() -> u32 {
+    3
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
