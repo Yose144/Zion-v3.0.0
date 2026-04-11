@@ -25,7 +25,7 @@ try {
   }
 
   Write-Host 'Autopilot baseline complete.' -ForegroundColor Green
-  Write-Host 'Next: implement command queue according to ZionOS_MASTERPLAN_AUTOPILOT.md' -ForegroundColor Green
+  Write-Host 'Next: command history filters + retry/lease integration test + startup policy hardening.' -ForegroundColor Green
 }
 finally {
   Pop-Location
