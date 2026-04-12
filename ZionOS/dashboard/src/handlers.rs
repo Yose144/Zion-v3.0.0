@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State, ws::{Message, WebSocket, WebSocketUpgrade}},
+    extract::{Path, Query, State, ws::{Message, WebSocket, WebSocketUpgrade}},
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -765,18 +765,46 @@ pub struct AckCommandReq {
     pub message: Option<String>,
 }
 
+#[derive(serde::Deserialize, Default)]
+pub struct ListCommandsQuery {
+    pub status: Option<String>,
+    pub limit: Option<usize>,
+    pub offset: Option<usize>,
+}
+
+fn command_status_matches(command: &AgentCommand, status: &Option<String>) -> bool {
+    match status.as_deref().map(|s| s.trim().to_ascii_lowercase()) {
+        Some(ref s) if s == "pending" => command.status == CommandStatus::Pending,
+        Some(ref s) if s == "acked" || s == "ok" || s == "success" => command.status == CommandStatus::Acked,
+        Some(ref s) if s == "failed" || s == "error" => command.status == CommandStatus::Failed,
+        Some(_) => false,
+        None => true,
+    }
+}
+
 pub async fn list_commands(
     State(state): State<Arc<AppState>>,
     Path(rig_id): Path<String>,
+    Query(query): Query<ListCommandsQuery>,
 ) -> Json<Vec<AgentCommand>> {
+    let limit = query.limit.unwrap_or(100).clamp(1, 1000);
+    let offset = query.offset.unwrap_or(0);
+
     let commands = state.commands.read().await;
     let mut out: Vec<AgentCommand> = commands
         .iter()
-        .filter(|c| c.rig_id == rig_id)
+        .filter(|c| c.rig_id == rig_id && command_status_matches(c, &query.status))
         .cloned()
         .collect();
-    out.sort_by_key(|c| c.created_at);
-    Json(out)
+    out.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+
+    let paged = out
+        .into_iter()
+        .skip(offset)
+        .take(limit)
+        .collect();
+
+    Json(paged)
 }
 
 pub async fn enqueue_command(
