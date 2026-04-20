@@ -2016,7 +2016,7 @@ export default function MissionControlDashboard() {
               transition={{ delay: 0.28 }}
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-zion-gold/20 bg-linear-to-br from-zion-gold/5 via-transparent to-zion-purple/5 p-4 sm:p-6 lg:p-8"
             >
-              <a href="/kompas" className="flex flex-col sm:flex-row items-start sm:items-center gap-5 group">
+              <a href="/terranova" className="flex flex-col sm:flex-row items-start sm:items-center gap-5 group">
                 <div className="w-14 h-14 rounded-2xl bg-zion-gold/10 border border-zion-gold/30 flex items-center justify-center shrink-0 group-hover:border-zion-gold/60 transition-colors">
                   <Compass className="h-7 w-7 text-zion-gold" />
                 </div>
