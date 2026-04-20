@@ -42,7 +42,7 @@ Out of scope for the bootstrap:
 - **BaseScan verification (2026-04-01):** All 3 Base mainnet contracts (wZION, ZIONBridge, ZIONAtomicSwap) verified on BaseScan.
 - **All bridge blockers resolved (2026-04-01):** Deterministic keyless vault address (`zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`), crypto validator proof (secp256k1 ECDSA in `submitBridgeUnlock`), L1 wallet CLI (`wallet.rs`), bridge mainnet config enabled. Bridge relay deployed on Prague server — 3/5 threshold, L1+EVM watchers active, scanning Base mainnet (chain 8453).
 - **V3 mainnet fee-split rollout verified live (2026-03-28):** core now enforces deterministic on-chain reward split `89/5/5/1` to miner, humanitarian, issobella, and pool-fee wallets; first explicitly verified split-enabled block was height `465`, with subsequent confirmation on audited nodes at heights `471` and `472`
-- **Cross-node rollout audit complete (2026-03-28):** Prague, USA, and Singapore stayed synchronized after deploy; root cause of the first failed activation was a stale server-side `docker/docker-compose.v3-mainnet.yml` missing fee-wallet env vars in the `core` service, not a code defect in `V3/L1/core`
+- **Historical cross-node rollout evidence (2026-03-28):** Prague, USA, and Singapore accepted the fee-split rollout during the original rehearsal; the current operational topology has since been consolidated to Prague-only.
 - canonical Ekam Deeksha consensus crate migrated into `L1/cosmic-harmony`
 - `L1/core` now provides block headers, mining jobs, target validation, revenue snapshots, node config defaults, active block-template state, template-aware RPC submit flow, and a basic TCP `node` binary
 - `L1/core` now also persists chain snapshots to disk, restores accepted-block state on restart, and exposes accepted-block indexes by height and template ID inside the node runtime
@@ -65,14 +65,14 @@ Out of scope for the bootstrap:
 - `L1/core` now carries LMDB persistent storage via heed: 8 databases (blocks, utxos, tx_index, balance_cache, undo_blocks, height_to_hash, hash_to_height, meta), atomic block+UTXO writes, rollback, balance cache, schema versioning (`storage.rs`)
 - `L1/core` now carries the IBD state machine: batch sync (500 blocks/request), stall detection (120 s timeout, 3 retries), peer round-robin, SyncStatus tracking (Ibd/Syncing/Synced) (`ibd.rs`)
 - `L1/core` JSON-RPC 2.0 methods are now **live** (no longer stubs): 16 methods bind to real `NodeRuntime` state via `Arc<Mutex<NodeRuntime>>`, including `getSupplyInfo` (supply economics endpoint) and explicit account-runtime aliases `getAccountBalance`, `getAccountTransaction`, and `submitAccountTransaction` alongside the compatibility names. Auto-detected on the existing RPC TCP port alongside the simple line-delimited protocol used by the pool/miner.
-- `L1/core` JSON-RPC is still bound to the current account-style runtime path: `getBalance`, `getAccountBalance`, and transaction submission operate on wallet ids carried by `lib.rs` transactions, not on the separate UTXO wallet path in `tx.rs`/`wallet.rs`; `zion1...` lookups are rejected explicitly on that endpoint
+- `L1/core` JSON-RPC now exposes a hybrid balance surface: account ids remain valid, and `zion1...` addresses return combined account+UTXO chain balance on the live runtime
 - `L1/core` now carries a JSON-RPC 2.0 protocol handler: method registry, batch requests, standard error codes, 17 node methods via `build_node_router()` (`rpc.rs`)
 - `L1/core` now carries the peer manager: scoring with ban threshold, subnet diversity (MAX_PER_SUBNET=4), heartbeat with idle timeout, inbound/outbound tracking, seed management (`peer_manager.rs`)
 - `L1/core` now carries metrics: atomic counters/gauges (blocks, txs, mempool, peers, difficulty), Prometheus text exposition format with `zion_` prefix, health check JSON (`metrics.rs`)
 - `L1/core` now carries genesis ceremony and launch readiness: frozen genesis hash, checkpoint system, 9 launch readiness checks (genesis integrity, emission, decay, tail, difficulty, DAO lock, premine addresses, checkpoints, zeroize) (`launch.rs`)
 - `L1/core` now carries the node bootstrap orchestrator: `NodeHandle` wiring ChainDb + IbdEngine + PeerManager + NodeMetrics + RpcRouter, open-from-disk or genesis init, status/advance_tip/register_peer/heartbeat/prometheus/health_check (`node_builder.rs`)
 - `L1/core` now carries DAO treasury lock enforcement as Step 11 in the 11-step `validate_block()` pipeline, blocking DAO Treasury spends before height 525,600 (`validation.rs`)
-- `L1/core` now has 5 geographically distributed seed peers in `NodeConfig::mainnet()` (EU Prague, EU Frankfurt, US East, US West, APAC Singapore)
+- `L1/core` mainnet defaults are currently pinned to the Prague primary bootstrap node; stale DNS seed hostnames were retired until a new audited seed set exists
 - `L1/core` now carries the genesis dedication message embedded in block 0 coinbase hash: ASCII art + ZION banner + dedication to Sarah Issobel, Maitreya Buddha, family, and humanity (`GENESIS_MESSAGE.txt`, `genesis.rs`)
 - `L1/core` now carries flood-fill block propagation: `SeenBlocks` dedup cache, `plan_relay()` flood-fill logic, `PropagationStats` telemetry, and node binary relay on both peer announce and RPC submit (`propagation.rs`)
 - `L1/core` now carries P2P hardening (Phase 10): persistent inbound connections (message loop per stream), outbound peer thread with periodic sync + heartbeat Ping/Pong, PeerManager wired into node (scoring, subnet diversity, idle disconnect), PeerSecurity wired into node (rate limiting, ban on accept, protocol violation punishment)
@@ -207,7 +207,7 @@ The `node` binary in `L1/core` supports:
 - `ZION_METRICS_BIND` — HTTP metrics endpoint bind address (default: `0.0.0.0:9115`); serves Prometheus `/metrics` and JSON `/health`
 
 JSON-RPC note:
-`getAccountBalance`, `getAccountTransaction`, and `submitAccountTransaction` are the explicit account-runtime aliases. `sendRawTransaction` remains available for compatibility, but it does not accept raw hex payloads, and `getBalance` rejects `zion1...` UTXO addresses until the runtime is unified.
+`getAccountBalance`, `getAccountTransaction`, and `submitAccountTransaction` are the explicit account-runtime aliases. `sendRawTransaction` remains available for compatibility, and `getBalance` accepts both account ids and `zion1...` UTXO addresses on the live hybrid runtime.
 
 ## Docker Deployment
 
@@ -242,8 +242,8 @@ Canary host bindings on Zion2:
 
 | Service | Image | Ports | Volume |
 |---------|-------|-------|--------|
-| `node` | `zion-v3-node` | 8334 (P2P), 127.0.0.1:8332 (RPC host-local only) | `zion-node-data:/data/zion` |
-| `pool` | `zion-v3-pool` | 8444 (stratum) | — |
+| `node` | `zion-v3-node` | 8333 (P2P), 127.0.0.1:8443 (RPC host-local only) | `zion-node-data:/data/zion` |
+| `pool` | `zion-v3-pool` | 3333 (stratum) | — |
 | `miner` | `zion-v3-miner` | — | — |
 
 ### Remote Deploy (rsync)
@@ -257,13 +257,11 @@ ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-main
 
 ### Live Server
 
-- **157.180.41.213** (Helsinki, Hetzner) — 8 vCPU AMD EPYC, 16 GB RAM, 150 GB SSD, Ubuntu 24.04
-- Chain height: 110+ (first deploy 2026-03-13, JSON-RPC 2.0 live since Phase 9, peer discovery since Phase 11)
-- Node P2P: `157.180.41.213:8334`
-- Node RPC: host-local only on `127.0.0.1:8332` via SSH tunnel or local shell on the server
-- Pool stratum: `157.180.41.213:8444`
-
-Current V3 mainnet operational set also includes Prague, USA, and Singapore nodes audited during the 2026-03-28 fee-split rollout.
+- **91.98.122.165** (Prague, Hetzner) — current primary V3 mainnet host
+- Node P2P: `91.98.122.165:8333`
+- Node RPC: raw TCP JSON-RPC on `91.98.122.165:8443`
+- Pool stratum: `91.98.122.165:3333`
+- Website bridge status reaches the host-networked bridge via `host.docker.internal:9101`
 
 ## Wire Protocol
 
