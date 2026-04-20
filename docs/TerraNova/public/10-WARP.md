@@ -1,7 +1,6 @@
 # Kapitola 10 — WARP & První Kontakt
 
 > *„Gate, Gate, Paragate, Parasamgate, Bodhi Swaha.  
-> Přejdi, přejdi, přejdi na druhý břeh,  
 > přejdi celý na druhý břeh — probuzení!"*  
 > — Prajňápáramitá sútra (Srdce Sútra)
 
