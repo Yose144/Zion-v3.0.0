@@ -3,8 +3,8 @@ import type { BookChapter } from '../bookMetaPublic';
 const chapter: BookChapter = {
   id: 'kosmologie',
   number: 'II',
-  titleCs: 'Kosmologie Terra Nova',
-  titleEn: 'Terra Nova Cosmology',
+  titleCs: 'Kosmologie Zion Terra Nova',
+  titleEn: 'Zion Terra Nova Cosmology',
   epigraphCs: '„Ekam sat vipra bahudha vadanti — Pravda je jedna. Mudří ji nazývají různě." — Rigvéda I.164.46',
   epigraphEn: '"Ekam sat vipra bahudha vadanti — Truth is one. The wise call it by many names." — Rig Veda I.164.46',
   color: '#F59E0B',

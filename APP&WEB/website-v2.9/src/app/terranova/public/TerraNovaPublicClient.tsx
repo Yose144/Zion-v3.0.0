@@ -334,22 +334,99 @@ export default function TerraNovaPublicClient() {
               )}
 
               {/* Chapter body */}
-              <div className="relative space-y-8 max-w-3xl">
+              <div className="relative space-y-10 max-w-3xl">
                 {sections.map((sec, si) => (
-                  <div key={si}>
+                  <div key={si} className={si > 0 ? 'pt-2' : ''}>
+                    {si > 0 && (
+                      <div className="h-px w-full mb-8 bg-linear-to-r from-transparent via-white/8 to-transparent" />
+                    )}
                     {sec.heading && (
-                      <h3 className="text-lg md:text-xl font-semibold text-white mb-3">
+                      <h3
+                        className="text-base md:text-lg font-semibold mb-4 flex items-center gap-2"
+                        style={{ color: chapter.color }}
+                      >
                         {sec.heading}
                       </h3>
                     )}
-                    {sec.body.split('\n\n').map((para, pi) => (
-                      <p
-                        key={pi}
-                        className="text-gray-300 leading-[1.85] text-[15px] md:text-base mb-4 last:mb-0"
-                      >
-                        {para}
-                      </p>
-                    ))}
+                    <div className="space-y-4">
+                      {sec.body.split('\n\n').map((para, pi) => {
+                        const lines = para.split('\n');
+                        const hasChecklist = lines.some(
+                          (l) => l.startsWith('✅') || l.startsWith('⬜'),
+                        );
+                        const hasTree = lines.some(
+                          (l) =>
+                            l.includes('├──') ||
+                            l.includes('└──') ||
+                            l.includes('│') ||
+                            l.startsWith('━'),
+                        );
+                        if (hasChecklist) {
+                          return (
+                            <div key={pi} className="space-y-2">
+                              {lines.map((line, li) => {
+                                if (line.startsWith('✅')) {
+                                  return (
+                                    <div
+                                      key={li}
+                                      className="flex items-start gap-2.5"
+                                    >
+                                      <span className="shrink-0 mt-0.5 text-green-400 text-base">
+                                        ✅
+                                      </span>
+                                      <span className="text-gray-300 text-sm leading-relaxed">
+                                        {line.slice(2).trim()}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                if (line.startsWith('⬜')) {
+                                  return (
+                                    <div
+                                      key={li}
+                                      className="flex items-start gap-2.5 opacity-50"
+                                    >
+                                      <span className="shrink-0 mt-0.5 text-gray-500 text-base">
+                                        ⬜
+                                      </span>
+                                      <span className="text-gray-400 text-sm leading-relaxed">
+                                        {line.slice(2).trim()}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return line.trim() ? (
+                                  <p
+                                    key={li}
+                                    className="text-gray-400 text-sm leading-relaxed"
+                                  >
+                                    {line}
+                                  </p>
+                                ) : null;
+                              })}
+                            </div>
+                          );
+                        }
+                        if (hasTree) {
+                          return (
+                            <pre
+                              key={pi}
+                              className="font-mono text-xs text-gray-400 bg-black/50 rounded-xl p-4 overflow-x-auto border border-white/5 leading-relaxed"
+                            >
+                              {para}
+                            </pre>
+                          );
+                        }
+                        return (
+                          <p
+                            key={pi}
+                            className="text-gray-300 leading-[1.85] text-[15px] md:text-base"
+                          >
+                            {para}
+                          </p>
+                        );
+                      })}
+                    </div>
                   </div>
                 ))}
               </div>
