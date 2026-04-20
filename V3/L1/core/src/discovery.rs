@@ -35,9 +35,10 @@ pub const PEER_EXPIRY: Duration = Duration::from_secs(24 * 3600);
 pub const MAX_ANNOUNCE_AGE: u64 = 600;
 
 /// DNS seed hostnames for initial peer discovery.
-pub const DNS_SEEDS: &[&str] = &[
-    "seed-eu1.zionchain.org",
-];
+///
+/// Production is currently consolidated to the Prague primary host; stale
+/// public seed hostnames were retired until a new multi-seed set exists.
+pub const DNS_SEEDS: &[&str] = &[];
 
 /// Well-known bootstrap nodes for UDP announcements.
 pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[

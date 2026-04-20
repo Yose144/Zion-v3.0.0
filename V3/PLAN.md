@@ -13,8 +13,8 @@ Závisí na: V3/ROADMAP.md (L1 fáze 1–23 hotovo), V3/docs/L2_L3_MAINNET_PLAN.
 - V3 core fee split je nyní vynucen přímo on-chain, ne pouze pool-side accountingem
 - Live ověřené rozdělení subsidy: miner `89%`, humanitarian `5%`, issobella `5%`, pool fee `1%`
 - První explicitně potvrzený split-enabled blok: `465`
-- Následné cross-node potvrzení na auditovaných nodech: bloky `471` a `472`
-- Prague, USA a Singapore zůstaly po rolloutu synchronizované
+- Následné historické cross-node potvrzení na auditovaných nodech: bloky `471` a `472`
+- Původní Prague / USA / Singapore rehearsal byl úspěšný, ale dnešní aktivní topologie je konsolidovaná na Prague-only runtime
 - Root cause prvního neúčinného deploye byl stale server-side `docker/docker-compose.v3-mainnet.yml`, kde fee wallet env proměnné chyběly v `core` service
 - Operativní reference:
     - `../docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`
@@ -35,7 +35,7 @@ Závisí na: V3/ROADMAP.md (L1 fáze 1–23 hotovo), V3/docs/L2_L3_MAINNET_PLAN.
 | Persistence | LMDB (8 databází) |
 | Docker | 3 multi-stage image, 7-service compose |
 | Testnet | Hetzner live, chain height 110+ |
-| Mainnet rollout | Prague + USA + Singapore auditované, split-enabled bloky ověřeny |
+| Mainnet rollout | Prague primary auditovaný; původní USA + Singapore rollout zůstává jen jako historická evidence |
 | Fáze hotovy | 1–13, 16–23, Sprint 4–9 |
 
 ### V3/L2 — kompletně migrováno ✅
