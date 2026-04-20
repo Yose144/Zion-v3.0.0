@@ -3,6 +3,9 @@
 > *„Svoboda není absence pravidel.  
 > Svoboda je přítomnost volby — a vědomí za ní."*
 
+> *„Nejrevolučnější věc, kterou lze udělat, je vzít si zpět svůj čas, svou půdu a svou energii — a použít je k budování světa, který stojí za to budovat."*  
+> — Vandana Shiva
+
 ---
 
 ## 6.1 Co je L5 Free World
