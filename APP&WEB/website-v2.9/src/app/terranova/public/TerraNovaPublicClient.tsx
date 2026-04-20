@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import ZlatyKompas, { DIRECTIONS } from '@/components/ZlatyKompas';
 import { BOOK_META_PUBLIC } from './bookMetaPublic';
 import { CHAPTERS_PUBLIC } from './chapters';
 import type { BookChapter } from './bookMetaPublic';
@@ -20,6 +21,7 @@ export default function TerraNovaPublicClient() {
 
   const [activeChapter, setActiveChapter] = useState<number>(0);
   const [tocOpen, setTocOpen] = useState(false);
+  const [compassDir, setCompassDir] = useState<number | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const chapter = CHAPTERS_PUBLIC[activeChapter];
@@ -248,6 +250,88 @@ export default function TerraNovaPublicClient() {
                   </blockquote>
                 )}
               </div>
+
+              {/* ── Interactive Compass (chapter XI only) ── */}
+              {chapter.id === 'kompas' && (
+                <div className="my-10 space-y-8">
+                  {/* Compass SVG */}
+                  <div className="zion-panel rounded-3xl p-4 md:p-8 relative overflow-hidden">
+                    <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,215,0,0.15),transparent_70%)]" />
+                    </div>
+                    <p className="text-center text-xs uppercase tracking-[0.4em] text-gray-500 mb-4">
+                      {cs ? 'Klikni na směr pro detail' : 'Click a direction for detail'}
+                    </p>
+                    <div className="max-w-lg mx-auto">
+                      <ZlatyKompas selected={compassDir} onSelect={setCompassDir} />
+                    </div>
+                  </div>
+
+                  {/* Direction detail */}
+                  <AnimatePresence mode="wait">
+                    {compassDir !== null && DIRECTIONS[compassDir] && (
+                      <motion.div
+                        key={DIRECTIONS[compassDir].id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.25 }}
+                        className="rounded-2xl border bg-black/70 backdrop-blur-xl p-5 space-y-3"
+                        style={{ borderColor: `rgba(${DIRECTIONS[compassDir].rgb},0.25)` }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl" style={{ color: DIRECTIONS[compassDir].color }}>{DIRECTIONS[compassDir].symbol}</span>
+                          <h4 className="text-lg font-semibold" style={{ color: DIRECTIONS[compassDir].color }}>
+                            {cs ? DIRECTIONS[compassDir].titleCs : DIRECTIONS[compassDir].titleEn}
+                          </h4>
+                        </div>
+                        <p className="text-gray-300 leading-relaxed">
+                          {cs ? DIRECTIONS[compassDir].descCs : DIRECTIONS[compassDir].descEn}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* All 7 directions grid */}
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-4 text-center">
+                      {cs ? 'Sedm směrů' : 'Seven directions'}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {DIRECTIONS.map((d, i) => {
+                        const isActive = compassDir === i;
+                        return (
+                          <button
+                            key={d.id}
+                            onClick={() => setCompassDir(isActive ? null : i)}
+                            className="group rounded-2xl border p-4 text-left transition-all duration-300"
+                            style={{
+                              borderColor: isActive ? `rgba(${d.rgb},0.35)` : 'rgba(255,255,255,0.06)',
+                              backgroundColor: isActive ? `rgba(${d.rgb},0.06)` : 'rgba(0,0,0,0.3)',
+                            }}
+                          >
+                            <span
+                              className="text-xl mb-2 block transition-transform duration-300 group-hover:scale-110"
+                              style={{ color: isActive ? d.color : 'rgba(255,255,255,0.3)' }}
+                            >
+                              {d.symbol}
+                            </span>
+                            <p
+                              className="text-sm font-semibold transition-colors"
+                              style={{ color: isActive ? d.color : 'rgba(255,255,255,0.6)' }}
+                            >
+                              {cs ? d.titleCs : d.titleEn}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Divider before milestones */}
+                  <div className="h-px w-full bg-linear-to-r from-transparent via-zion-gold/20 to-transparent" />
+                </div>
+              )}
 
               {/* Chapter body */}
               <div className="relative space-y-8 max-w-3xl">
