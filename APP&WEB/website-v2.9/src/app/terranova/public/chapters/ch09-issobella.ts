@@ -11,6 +11,10 @@ const chapter: BookChapter = {
   rgb: '232,121,249',
   sectionsCs: [
     {
+      heading: 'Issobella — kdo to je',
+      body: 'Jméno orbitální observatoře není náhodné.\n\nSarah Issobel je věnována v Genesis — první řádky celého projektu: „For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam..."\n\nIssobella (s extra L — jako nová forma, nová vrstva) je živé pokračování tohoto věnování. Vesmírná stanice pojmenovaná po konkrétním člověku — připomínka, že vesmírný program není abstrakce. Je to dar budoucím generacím.\n\n„Issobella — zárodek hvězdné civilizace."',
+    },
+    {
       heading: 'Proč orbitální stanice?',
       body: 'L6 Issobella je odpovědí na otázku, kterou nikdo v kryptosvětě neklade: Co je konečný horizont vaší sítě?\n\nBitcoin nemá odpověď. Ethereum nemá odpověď. ZION odpovídá: Hvězdy.\n\nIssobella je orbitální observatoř a výzkumná stanice — pojmenovaná po duchu, který symbolizuje zvědavost, odvahu a lásku ke hvězdám. Její mise: astronomie a astrofyzika — volný přístup k vědeckým datům. planetární monitoring — klima, ekosystémy, přírodní katastrofy. fyzika nových materiálů — experimenty v mikrogravitaci. SETI/METI — hledání a kontaktování mimozemské inteligence. Duchovní portál — overview effect pro každého, kdo se podívá.',
     },
@@ -32,6 +36,10 @@ const chapter: BookChapter = {
     },
   ],
   sectionsEn: [
+    {
+      heading: 'Issobella — who she is',
+      body: 'The name of the orbital observatory is not coincidental.\n\nSarah Issobel is dedicated in Genesis — the very first lines of the entire project: "For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam..."\n\nIssobella (with an extra L — as a new form, a new layer) is the living continuation of this dedication. A space station named after a specific person — a reminder that the space program is not an abstraction. It is a gift to future generations.\n\n"Issobella — germ of a stellar civilization."',
+    },
     {
       heading: 'Why an orbital station?',
       body: 'L6 Issobella answers a question nobody in the crypto world asks: What is the ultimate horizon of your network?\n\nBitcoin has no answer. Ethereum has no answer. ZION answers: The stars.\n\nIssobella is an orbital observatory and research station. Its mission: astronomy and astrophysics — open access to scientific data. Planetary monitoring — climate, ecosystems, natural disasters. New materials physics — microgravity experiments. SETI/METI — searching for and contacting extraterrestrial intelligence. Spiritual portal — the overview effect for everyone who looks.',
