@@ -54,7 +54,6 @@ export default function Navigation() {
       items: [
         { href: '/docs',           label: tr('nav', 'docs', lang) },
         { href: '/roadmap',        label: tr('nav', 'roadmap', lang) },
-        { href: '/kompas',         label: tr('nav', 'kompas', lang) },
         { href: '/terranova',     label: tr('nav', 'terranova', lang) },
       ],
     },

@@ -8,11 +8,7 @@ import {
   ChevronRight,
   List,
   X,
-  Compass,
-  ArrowRight,
-  ArrowLeft,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import { BOOK_META_PUBLIC } from './bookMetaPublic';
 import { CHAPTERS_PUBLIC } from './chapters';
@@ -62,24 +58,7 @@ export default function TerraNovaPublicClient() {
       </div>
 
       <div className="relative z-10 zion-container max-w-5xl">
-        {/* ═══════ EDITION BANNER ═══════ */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 flex items-center justify-center gap-3"
-        >
-          <Link
-            href="/terranova"
-            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-zion-gold transition-colors"
-          >
-            <ArrowLeft className="w-3 h-3" />
-            {cs ? 'Čtenářská edice' : 'Reader edition'}
-          </Link>
-          <span className="text-gray-700">·</span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-zion-cyan uppercase">
-            {cs ? meta.editionCs : meta.editionEn}
-          </span>
-        </motion.div>
+
 
         {/* ═══════ BOOK HEADER ═══════ */}
         <motion.header
@@ -165,7 +144,7 @@ export default function TerraNovaPublicClient() {
           <div className="grid gap-2 sm:grid-cols-2">
             {CHAPTERS_PUBLIC.map((ch, i) => {
               const isActive = activeChapter === i;
-              const isAppendix = ch.number === 'A' || ch.number === 'B';
+              const isAppendix = ['A', 'B', 'C'].includes(ch.number);
               return (
                 <button
                   key={ch.id}
@@ -246,7 +225,7 @@ export default function TerraNovaPublicClient() {
                       ? cs
                         ? 'Prolog'
                         : 'Prologue'
-                      : chapter.number === 'A' || chapter.number === 'B'
+                      : ['A', 'B', 'C'].includes(chapter.number)
                         ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
                         : `${cs ? 'Část' : 'Part'} ${chapter.number}`}
                   </span>
@@ -290,22 +269,6 @@ export default function TerraNovaPublicClient() {
                   </div>
                 ))}
               </div>
-
-              {/* Kompas link for chapter XI */}
-              {chapter.id === 'kompas' && (
-                <div className="mt-10 pt-6 border-t border-white/5">
-                  <Link
-                    href="/kompas"
-                    className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/30 bg-zion-gold/8 px-5 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/15 transition-colors"
-                  >
-                    <Compass className="w-4 h-4" />
-                    {cs
-                      ? 'Otevřít interaktivní Zlatý Kompas'
-                      : 'Open Interactive Golden Compass'}
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              )}
 
               {/* Chapter navigation */}
               <div className="mt-12 pt-6 border-t border-white/5 flex items-center justify-between">
@@ -360,25 +323,9 @@ export default function TerraNovaPublicClient() {
         >
           <p className="text-gray-500 text-sm italic max-w-xl mx-auto">
             {cs
-              ? 'Toto je úplné vydání. Obsahuje veškerý materiál z RAW kapitol i čtenářské edice, sjednocený pro veřejnost.'
-              : 'This is the complete edition. It contains all material from RAW chapters and the reader edition, unified for the public.'}
+              ? 'Úplná veřejná edice čtvrté knihy ZION. Od kosmologie přes komunity, AI a architekturu až ke hvězdám.'
+              : 'Complete public edition of the fourth ZION book. From cosmology through communities, AI, and architecture to the stars.'}
           </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link
-              href="/terranova"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-            >
-              <BookOpen className="w-4 h-4" />
-              {cs ? 'Čtenářská edice' : 'Reader Edition'}
-            </Link>
-            <Link
-              href="/kompas"
-              className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 px-5 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/10 transition-colors"
-            >
-              <Compass className="w-4 h-4" />
-              {cs ? 'Zlatý Kompas' : 'Golden Compass'}
-            </Link>
-          </div>
         </motion.footer>
       </div>
 
@@ -415,7 +362,7 @@ export default function TerraNovaPublicClient() {
               <nav className="space-y-1">
                 {CHAPTERS_PUBLIC.map((ch, i) => {
                   const isActive = activeChapter === i;
-                  const isAppendix = ch.number === 'A' || ch.number === 'B';
+                  const isAppendix = ['A', 'B', 'C'].includes(ch.number);
                   return (
                     <button
                       key={ch.id}
@@ -459,24 +406,7 @@ export default function TerraNovaPublicClient() {
                 })}
               </nav>
 
-              <div className="mt-8 pt-4 border-t border-white/5 space-y-2">
-                <Link
-                  href="/terranova"
-                  className="flex items-center gap-2 text-xs text-gray-500 hover:text-white transition-colors"
-                  onClick={() => setTocOpen(false)}
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  {cs ? 'Čtenářská edice' : 'Reader Edition'}
-                </Link>
-                <Link
-                  href="/kompas"
-                  className="flex items-center gap-2 text-xs text-zion-gold/70 hover:text-zion-gold transition-colors"
-                  onClick={() => setTocOpen(false)}
-                >
-                  <Compass className="w-3.5 h-3.5" />
-                  {cs ? 'Interaktivní Kompas' : 'Interactive Compass'}
-                </Link>
-              </div>
+
             </motion.div>
           </>
         )}
