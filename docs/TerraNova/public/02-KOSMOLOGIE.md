@@ -65,6 +65,9 @@ Moderní fyzika to nazývá *non-locality*.
 
 **Terra Nova to nazývá přechozí předpoklad:** Jednota není ideál. Je to realita. My ji jen přestáváme ignorovat.
 
+> *„Sarvaṃ khalvidaṃ brahma — Vše, co existuje, je Brahman."*  
+> — Chándogya Upanišad 3.14.1
+
 ### Pilíř II: Vědomí jako primum movens
 
 Descartes řekl *cogito ergo sum* — myslím, tedy jsem.  
