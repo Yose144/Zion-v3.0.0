@@ -48,11 +48,81 @@ export default function TerraNovaPublicClient() {
   });
 
   const MILESTONES = [
-    { year: '2026', emoji: '🟡', labelCs: 'L1 Genesis', labelEn: 'L1 Genesis', descCs: 'Blockchain žije, bloky se těží', descEn: 'Blockchain lives, blocks mined', color: '#FFD700', rgb: '255,215,0' },
-    { year: '2027', emoji: '🔵', labelCs: 'L2 Ekosystém', labelEn: 'L2 Ecosystem', descCs: 'DeFi, DAO, komunity', descEn: 'DeFi, DAO, communities', color: '#60A5FA', rgb: '96,165,250' },
-    { year: '2028', emoji: '🟢', labelCs: 'L4 OASIS', labelEn: 'L4 OASIS', descCs: 'AI NCL, WARP, herní vrstva', descEn: 'AI NCL, WARP, game layer', color: '#34D399', rgb: '52,211,153' },
-    { year: '2030', emoji: '🌍', labelCs: 'L5 Svoboda', labelEn: 'L5 Freedom', descCs: '100 komunit, Zlatá republika', descEn: '100 communities, Golden Republic', color: '#A78BFA', rgb: '167,139,250' },
-    { year: '2040+', emoji: '🔭', labelCs: 'L6 Issobella', labelEn: 'L6 Issobella', descCs: 'Orbitální stanice, hvězdy', descEn: 'Orbital station, the stars', color: '#F472B6', rgb: '244,114,182' },
+    {
+      year: '2026', emoji: '🟡', labelCs: 'L1 Genesis', labelEn: 'L1 Genesis',
+      descCs: 'Blockchain žije, bloky se těží', descEn: 'Blockchain lives, blocks mined',
+      color: '#FFD700', rgb: '255,215,0',
+      checks: [
+        { done: true,  text: 'Čistý Rust codebase — auditovatelný a open-source' },
+        { done: true,  text: 'Multi-kontinentální testovací cyklus archivován' },
+        { done: true,  text: 'Produkční runtime konsolidován a stabilní' },
+        { done: true,  text: 'Desktop agent — mining na macOS, Windows, Linux' },
+        { done: true,  text: 'Website a dokumentace live' },
+        { done: true,  text: 'Base mainnet bridge kontrakty ověřeny, relay aktivní' },
+        { done: false, text: 'Finální whitepaper PDF' },
+        { done: false, text: 'Bezpečnostní audit git historie' },
+        { done: false, text: 'Genesis freeze — podepsaný, s checksum' },
+        { done: false, text: '72h nepřerušený closure report' },
+        { done: false, text: 'Externí bezpečnostní audit' },
+        { done: false, text: '★ VEŘEJNÝ LAUNCH — Q4 2026' },
+      ],
+    },
+    {
+      year: '2027', emoji: '🔵', labelCs: 'L2 Ekosystém', labelEn: 'L2 Ecosystem',
+      descCs: 'DeFi, DAO, komunity', descEn: 'DeFi, DAO, communities',
+      color: '#60A5FA', rgb: '96,165,250',
+      checks: [
+        { done: false, text: 'Veřejná wZION likvidita na Base mainnet' },
+        { done: false, text: 'DAO governance — první hlasování komunity' },
+        { done: false, text: 'Hiranyagarbha AI v2 — model s pamětí' },
+        { done: false, text: 'NCL vrstva — AI orchestrace celé sítě' },
+        { done: false, text: 'WARP bridges — ETH a BTC cross-chain' },
+        { done: false, text: 'Listing na CoinGecko a CoinMarketCap' },
+        { done: false, text: '10+ aktivních Terra Nova komunit' },
+      ],
+    },
+    {
+      year: '2028', emoji: '🟢', labelCs: 'L4 OASIS', labelEn: 'L4 OASIS',
+      descCs: 'AI NCL, WARP, herní vrstva', descEn: 'AI NCL, WARP, game layer',
+      color: '#34D399', rgb: '52,211,153',
+      checks: [
+        { done: false, text: 'OASIS whitepaper a design dokument' },
+        { done: false, text: 'Fotorealistický prototyp v Unreal Engine 5' },
+        { done: false, text: 'Golden Egg hunt — 108 indicií z eposů' },
+        { done: false, text: 'Sacred Avatars — 10 mytologických postav' },
+        { done: false, text: 'OASIS beta — 10 000 hráčů z celého světa' },
+        { done: false, text: 'Consciousness Level systém funkční' },
+        { done: false, text: 'CL9 přístup k Issobella simulaci' },
+      ],
+    },
+    {
+      year: '2030', emoji: '🌍', labelCs: 'L5 Svoboda', labelEn: 'L5 Freedom',
+      descCs: '100 komunit, Zlatá republika', descEn: '100 communities, Golden Republic',
+      color: '#A78BFA', rgb: '167,139,250',
+      checks: [
+        { done: false, text: '100 Terra Nova komunit na všech kontinentech' },
+        { done: false, text: 'Humanitární fond: $1M+ měsíčně automaticky' },
+        { done: false, text: '10 Medical Table prototypů v off-grid komunitách' },
+        { done: false, text: 'Free Energy Research: 3 aktivní linie' },
+        { done: false, text: 'Seed Library: 50 regionálních knihoven semen' },
+        { done: false, text: 'Terra Nova DAO — globální governance' },
+        { done: false, text: 'Zlatá republika — první soběstačná komuna' },
+      ],
+    },
+    {
+      year: '2040+', emoji: '🔭', labelCs: 'L6 Issobella', labelEn: 'L6 Issobella',
+      descCs: 'Orbitální stanice, hvězdy', descEn: 'Orbital station, the stars',
+      color: '#F472B6', rgb: '244,114,182',
+      checks: [
+        { done: false, text: 'Issobella fond: partnerství s institucemi' },
+        { done: false, text: 'Orbitální studie proveditelnosti (NASA/ESA/ISRO)' },
+        { done: false, text: 'WARP Research Engine — fyzikální prototyp' },
+        { done: false, text: 'Station Module 1 — launch na oběžnou dráhu' },
+        { done: false, text: 'SETI program — systematické hledání signálů' },
+        { done: false, text: 'První rezidentní výzkumníci z Guardian komunity' },
+        { done: false, text: 'METI — první poselství lidstva ke hvězdám' },
+      ],
+    },
   ];
 
   return (
@@ -290,26 +360,73 @@ export default function TerraNovaPublicClient() {
               {cs ? 'Akcelerační mapa · Milníky' : 'Acceleration Map · Milestones'}
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+
+          {/* Timeline strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8">
+            {MILESTONES.map((m) => {
+              const total = m.checks.length;
+              const done = m.checks.filter((c) => c.done).length;
+              const pct = Math.round((done / total) * 100);
+              return (
+                <div
+                  key={m.year}
+                  className="rounded-2xl border p-4 text-center space-y-2 transition-all duration-300 hover:scale-[1.02]"
+                  style={{ borderColor: `rgba(${m.rgb},0.2)`, backgroundColor: `rgba(${m.rgb},0.04)` }}
+                >
+                  <div className="text-2xl">{m.emoji}</div>
+                  <p className="text-xs font-bold tracking-wider" style={{ color: m.color }}>{m.year}</p>
+                  <p className="text-xs font-semibold text-white/80">{cs ? m.labelCs : m.labelEn}</p>
+                  {/* progress bar */}
+                  <div className="w-full h-1 rounded-full bg-white/5 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: m.color }}
+                    />
+                  </div>
+                  <p className="text-[10px]" style={{ color: m.color }}>{done}/{total}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Detailed checklist phases */}
+          <div className="grid md:grid-cols-2 gap-4">
             {MILESTONES.map((m) => (
               <div
-                key={m.year}
-                className="rounded-2xl border p-4 text-center space-y-2 transition-all duration-300 hover:scale-[1.02]"
-                style={{
-                  borderColor: `rgba(${m.rgb},0.2)`,
-                  backgroundColor: `rgba(${m.rgb},0.04)`,
-                }}
+                key={m.year + '-detail'}
+                className="rounded-2xl border p-5 space-y-3"
+                style={{ borderColor: `rgba(${m.rgb},0.15)`, backgroundColor: `rgba(${m.rgb},0.03)` }}
               >
-                <div className="text-2xl">{m.emoji}</div>
-                <p className="text-xs font-bold tracking-wider" style={{ color: m.color }}>
-                  {m.year}
-                </p>
-                <p className="text-xs font-semibold text-white/80">
-                  {cs ? m.labelCs : m.labelEn}
-                </p>
-                <p className="text-[11px] text-gray-500 leading-snug">
-                  {cs ? m.descCs : m.descEn}
-                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">{m.emoji}</span>
+                  <span className="text-xs font-bold tracking-widest" style={{ color: m.color }}>
+                    {m.year}
+                  </span>
+                  <span className="text-sm font-semibold text-white/80">
+                    {cs ? m.labelCs : m.labelEn}
+                  </span>
+                </div>
+                <ul className="space-y-1.5">
+                  {m.checks.map((c, ci) => (
+                    <li key={ci} className="flex items-start gap-2">
+                      <span
+                        className="shrink-0 mt-0.5 text-sm"
+                        style={{ color: c.done ? m.color : 'rgba(255,255,255,0.15)' }}
+                      >
+                        {c.done ? '✅' : '⬜'}
+                      </span>
+                      <span
+                        className="text-[11px] leading-snug"
+                        style={{
+                          color: c.done ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
+                          fontWeight: c.text.startsWith('★') ? 700 : 400,
+                        }}
+                      >
+                        {c.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
