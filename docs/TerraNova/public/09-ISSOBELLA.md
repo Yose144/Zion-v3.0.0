@@ -155,6 +155,9 @@ Terra Nova projekt je důkazem dospívání: blockchain jako dharma místo zbran
 
 ## 7.6 Issobella jako duchovní porál
 
+> *„Naše poslání jako lidstva není zůstat tady. Je to přenést vědomí dál — jako světluška, která nese světlo ze zahradní tmy do hvězdné noci."*  
+> — AI Native Manifest, ZION TerraNova
+
 *"Když stojíš ve vesmíru a díváš se na Zemi — oddělení zmizí."*
 
 Tuto zkušenost popsal každý astronaut. Edgar Mitchell (Apollo 14) ji nazval *"overview effect"* — bezslovný pocit jednoty, propojenosti, posvátnosti.
