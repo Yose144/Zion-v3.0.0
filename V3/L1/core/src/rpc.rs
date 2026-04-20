@@ -37,7 +37,7 @@ pub const INVALID_ADDRESS: i64 = -32003;
 pub const TX_REJECTED: i64 = -32004;
 pub const NOT_SYNCED: i64 = -32005;
 
-const ACTIVE_TRANSACTION_MODEL: &str = "account";
+const ACTIVE_TRANSACTION_MODEL: &str = "hybrid";
 
 fn bridge_operation_message(
     recipient: &str,
@@ -366,7 +366,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 "accepted_blocks": status.accepted_blocks,
                 "mempool_transactions": status.mempool_transactions,
                 "transaction_model": ACTIVE_TRANSACTION_MODEL,
-                "balance_lookup": "account_id",
+                "balance_lookup": "account_id_or_zion1_address",
             }))
         }));
     }
@@ -1415,7 +1415,7 @@ mod tests {
         let resp = rpc_call(&router, "getBalance", json!({"account": "wallet.alpha"}));
         assert!(resp.error.is_none());
         let result = resp.result.unwrap();
-        assert_eq!(result["balance_zion"], 0);
+        assert_eq!(result["balance_zion"], "0");
         assert_eq!(result["transaction_model"], ACTIVE_TRANSACTION_MODEL);
     }
 
@@ -1425,7 +1425,7 @@ mod tests {
         let resp = rpc_call(&router, "getBalance", json!({"address": "zion1nobody000000000000000000000000000000000"}));
         assert!(resp.error.is_none(), "getBalance for zion1 failed: {:?}", resp.error);
         let result = resp.result.unwrap();
-        assert_eq!(result["balance_flowers"], 0);
+        assert_eq!(result["balance_flowers"], "0");
         // After Phase 18 fix, zion1 addresses report combined account+UTXO balance
         assert_eq!(result["transaction_model"], ACTIVE_TRANSACTION_MODEL);
     }
@@ -1619,7 +1619,7 @@ mod tests {
         assert!(resp.error.is_none(), "getBalanceAtHeight failed: {:?}", resp.error);
         let result = resp.result.unwrap();
         assert_eq!(result["height"], 0);
-        assert_eq!(result["balance_zion"], 0);
+        assert_eq!(result["balance_zion"], "0");
     }
 
     #[test]

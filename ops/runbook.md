@@ -1,68 +1,44 @@
-# 🛠️ ZION TerraNova — Operations Runbook
+# ZION TerraNova — Operations Runbook
 
-> **Version:** 1.0  
-> **Last Updated:** 12. března 2026  
-> **Environment:** TestNet (transition to MainNet planned 31.12.2026)
+> Version: 1.1
+> Last Updated: 20. dubna 2026
+> Environment: MainNet single-host Prague runtime
 
-> **March 2026 note:** The canonical live topology is now a single primary host at `91.98.122.165` (Zion2). Older Helsinki/Germany multi-node references below are historical unless explicitly marked as archival.
-
----
-
-## 📋 Table of Contents
-
-1. [Infrastructure Overview](#infrastructure-overview)
-2. [SSH Access](#ssh-access)
-3. [Docker Services](#docker-services)
-4. [Common Operations](#common-operations)
-5. [Monitoring](#monitoring)
-6. [Incident Response](#incident-response)
-7. [Backup & Recovery](#backup--recovery)
-8. [Deployment](#deployment)
-9. [Troubleshooting](#troubleshooting)
-
----
+Canonical live topology is the Prague primary host at `91.98.122.165`. Older Helsinki/USA/Singapore references elsewhere in the repository are historical audit evidence unless explicitly marked as active.
 
 ## Infrastructure Overview
 
-| Server | IP | Location | Role | Specs |
-|--------|-----|----------|------|-------|
-| **Zion2** | `91.98.122.165` | Hetzner | Primary host: core + pool + miner + website + monitoring | Active source of truth |
+| Server | IP | Location | Role | Status |
+|--------|----|----------|------|--------|
+| Zion2 | `91.98.122.165` | Prague / Hetzner | Core + Pool + Miner + Website + Monitoring + Bridge | Active source of truth |
 
 ### Network Ports
 
 | Port | Service | Protocol |
 |------|---------|----------|
-| 8334 | P2P (TestNet) | TCP |
 | 8333 | P2P (MainNet) | TCP |
-| 8444 | RPC (TestNet) | HTTP |
-| 8443 | RPC (MainNet) | HTTP |
+| 8443 | RPC (MainNet) | Raw TCP JSON-RPC |
 | 3333 | Stratum (Mining Pool) | TCP |
-| 8080 | Pool REST API | HTTP |
+| 8080 | Pool API / metrics | HTTP |
 | 3000 | Website (Next.js) | HTTP |
 | 9090 | Prometheus | HTTP |
 | 3001 | Grafana | HTTP |
 | 9100 | Node Exporter | HTTP |
+| 9101 | Bridge metrics / health | HTTP |
+| 9115 | Core metrics / health | HTTP |
 | 9121 | Redis Exporter | HTTP |
 | 6379 | Redis (internal) | TCP |
-
----
 
 ## SSH Access
 
 ```bash
-# Zion2 primary host
 ssh -i ~/.ssh/zion_hetzner_key root@91.98.122.165
 ```
-
-### SSH between servers
-
-Current canonical operations are single-host. Historical peer-to-peer SSH flows are retained only in archived infra reports.
-
----
 
 ## Docker Services
 
 ### List all services
+
 ```bash
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 ```
@@ -71,377 +47,167 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 | Container | Image | Ports | Healthcheck |
 |-----------|-------|-------|-------------|
-| `zion-core` | `zion-core:2.9.6-*` | 8334, 8444 | `curl http://localhost:8444/stats` |
-| `zion-pool` | `zion-pool:2.9.6-*` | 3333, 8080 | `curl http://localhost:8080/health` |
-| `zion-miner` | `zion-miner:2.9.6-*` | — | Mining process |
+| `zion-core` | `zion-core:v3-mainnet` | 8333, 8443, 9115 | `curl http://127.0.0.1:9115/health` |
+| `zion-pool` | `zion-pool:v3-mainnet` | 3333, 8080 | `curl http://127.0.0.1:8080/health` |
+| `zion-miner` | `zion-miner:v3-mainnet` | — | mining process |
+| `zion-v3-bridge` | `zion-v3-bridge:latest` | 9101 | `curl http://127.0.0.1:9101/health` |
 | `zion-redis` | `redis:7-alpine` | 6379 | `redis-cli ping` |
-| `zion-web` | `zion-web:latest` | 3000 | HTTP GET / |
-| `zion-prometheus` | `prom/prometheus:v2.53.0` | 9090 | `wget http://localhost:9090/-/healthy` |
-| `zion-grafana` | `grafana/grafana:11.1.0` | 3001 | `wget http://localhost:3000/api/health` |
-| `zion-node-exporter` | `prom/node-exporter:v1.8.1` | 9100 | — |
-| `zion-redis-exporter` | `oliver006/redis_exporter:v1.61.0` | 9121 | — |
-
----
+| `zion-website` | `zion-website:2.9.9` | 3000 | HTTP GET `/` |
+| `zion-prometheus` | `prom/prometheus:v2.53.0` | 9090 | `wget http://127.0.0.1:9090/-/healthy` |
+| `zion-grafana` | `grafana/grafana:11.1.0` | 3001 | `wget http://127.0.0.1:3000/api/health` |
+| `zion-node-exporter` | `prom/node-exporter:v1.8.1` | 9100 | none |
+| `zion-redis-exporter` | `oliver006/redis_exporter:v1.61.0` | 9121 | none |
 
 ## Common Operations
 
 ### View logs
+
 ```bash
-# Real-time logs
 docker logs -f zion-core
 docker logs -f zion-pool
-docker logs -f zion-web
-
-# Last 100 lines
+docker logs -f zion-website
 docker logs --tail 100 zion-core
-
-# With timestamps
 docker logs -f --timestamps zion-pool
 ```
 
 ### Restart a service
+
 ```bash
 docker restart zion-core
 docker restart zion-pool
-docker restart zion-web
+docker restart zion-website
 ```
 
-### Full stack restart
+### Core stack restart
+
 ```bash
 cd /opt/zion
-docker compose -f docker/docker-compose.testnet.yml down
-docker compose -f docker/docker-compose.testnet.yml up -d
+docker compose --env-file .env -f docker/docker-compose.v3-mainnet.yml up -d --build core pool miner
 ```
 
 ### Check blockchain height
-```bash
-curl -s http://localhost:8444/stats | jq '.block_height'
-```
 
-### Check pool status
 ```bash
-curl -s http://localhost:8080/health | jq .
-curl -s http://localhost:8080/metrics | head -20
+printf '%s\n' '{"jsonrpc":"2.0","method":"getChainInfo","params":[],"id":1}' | nc -w 2 127.0.0.1 8443 | jq '.result.chain_height'
 ```
 
 ### Check peer count
+
 ```bash
-curl -s http://localhost:8444/stats | jq '.peer_count'
+printf '%s\n' '{"jsonrpc":"2.0","method":"getPeerInfo","params":[],"id":1}' | nc -w 2 127.0.0.1 8443 | jq '.result.count'
+```
+
+### Check pool status
+
+```bash
+curl -s http://127.0.0.1:8080/health | jq .
+curl -s http://127.0.0.1:8080/metrics | head -20
+curl -s http://127.0.0.1:8080/stats | jq .
+```
+
+### Check bridge health
+
+```bash
+curl -s http://127.0.0.1:9101/health | jq .
+curl -s http://127.0.0.1:9101/metrics | head -20
 ```
 
 ### Check Redis
+
 ```bash
-docker exec zion-redis redis-cli -a zion_testnet_2026 INFO server | head -10
-docker exec zion-redis redis-cli -a zion_testnet_2026 DBSIZE
+docker exec zion-redis redis-cli -a "$REDIS_PASSWORD" INFO server | head -10
+docker exec zion-redis redis-cli -a "$REDIS_PASSWORD" DBSIZE
 ```
 
-### Check memory usage
+### Check memory and disk
+
 ```bash
 free -h
 docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
-```
-
-### Check disk usage
-```bash
 df -h /
 docker system df
 ```
 
----
-
 ## Monitoring
 
-### Prometheus
-- URL: `http://server:9090`
-- Config: `/opt/zion/monitoring/prometheus/prometheus.yml`
-- Rules: `/opt/zion/monitoring/prometheus/rules/alerts.yml`
-- Data: Docker volume `zion-prometheus-data`
+- Prometheus: `http://server:9090`
+- Grafana: `http://server:3001` or `https://zionterranova.com/grafana/`
+- Core metrics: `http://127.0.0.1:9115/metrics`
+- Bridge metrics: `http://127.0.0.1:9101/metrics`
 
-### Grafana
-- URL: `http://server:3001` or `https://zionterranova.com/grafana/`
-- Login: `admin` / `ZionTerra2026!`
-- Anonymous viewer: enabled
-- Dashboards:
-  - **ZION Pool Overview** — hashrate, shares, blocks, per-miner metrics
-  - **ZION Infrastructure** — CPU, RAM, disk, network
+### Public smoke checks
 
-### Key metrics to watch
+```bash
+curl -s https://zionterranova.com/api/health | jq .
+curl -s https://zionterranova.com/api/bridge/status | jq .
+```
 
-| Metric | Normal Range | Alert Threshold |
-|--------|-------------|-----------------|
-| CPU usage | < 50% | > 90% for 10m |
-| Memory usage | < 70% | > 90% for 10m |
-| Disk usage | < 70% | > 85% |
-| Peer count | 3-10 | < 3 |
-| Pool connections | 1+ | 0 for 5m |
-| Share reject rate | < 5% | > 15% |
-| Block template freshness | Updated every block | Stale > 10m |
+Expected current production result:
+
+- `/api/health` returns `status: ok` with healthy RPC node and mining pool metadata.
+- `/api/bridge/status` returns `online: true` and live bridge metrics fetched through the website proxy.
 
 ### Start monitoring stack
+
 ```bash
 cd /opt/zion
 docker compose -f docker/docker-compose.monitoring.yml up -d
 ```
 
----
-
 ## Incident Response
 
-### Level 1 — Service Down
+### Service down
 
-**Symptom:** One container stopped  
-**Action:**
 ```bash
 docker restart <container-name>
 docker logs --tail 50 <container-name>
 ```
 
-### Level 2 — Node Out of Sync
+### Node out of sync or stalled
 
-**Symptom:** Block height not increasing, peers = 0  
-**Action:**
 ```bash
-# Check peers
-curl -s http://localhost:8444/stats | jq '{height: .block_height, peers: .peer_count}'
-
-# Force reconnect
+printf '%s\n' '{"jsonrpc":"2.0","method":"getChainInfo","params":[],"id":1}' | nc -w 2 127.0.0.1 8443 | jq '.result | {height: .chain_height, tip_hash: .tip_hash}'
+printf '%s\n' '{"jsonrpc":"2.0","method":"getPeerInfo","params":[],"id":1}' | nc -w 2 127.0.0.1 8443 | jq '.result | {peers: .count}'
 docker restart zion-core
 sleep 30
-curl -s http://localhost:8444/stats | jq '.peer_count'
+printf '%s\n' '{"jsonrpc":"2.0","method":"getPeerInfo","params":[],"id":1}' | nc -w 2 127.0.0.1 8443 | jq '.result.count'
 ```
 
-### Level 3 — Fork / Divergence Suspected
+### Fork or divergence suspected
 
-**Symptom:** Unexpected block height movement, tip mismatch in metrics, or reorg spam in logs  
-**Action:**
 ```bash
-# Single-host model: inspect canonical node directly
-HEIGHT=$(curl -s http://127.0.0.1:8444/stats | jq '.block_height')
-TIP=$(curl -s http://127.0.0.1:8444/stats | jq -r '.top_block_hash')
+HEIGHT=$(printf '%s\n' '{"jsonrpc":"2.0","method":"getChainInfo","params":[],"id":1}' | nc -w 2 127.0.0.1 8443 | jq '.result.chain_height')
+TIP=$(printf '%s\n' '{"jsonrpc":"2.0","method":"getChainInfo","params":[],"id":1}' | nc -w 2 127.0.0.1 8443 | jq -r '.result.tip_hash')
 echo "Zion2: $HEIGHT / $TIP"
-
-# Monitor logs for reorg activity
 docker logs --tail 100 zion-core | grep -i "reorg\|fork\|stronger"
 ```
 
-### Level 4 — Server Unreachable
+### Server unreachable
 
-**Symptom:** Cannot SSH, server down  
-**Action:**
-1. Check Hetzner Cloud Console for server status
-2. Perform hard reboot via Hetzner Console
-3. SSH in after reboot, check Docker services
-4. Verify chain sync
+1. Check Hetzner Cloud Console for server status.
+2. Perform hard reboot via Hetzner Console.
+3. SSH back in and inspect Docker services.
+4. Verify RPC, pool, website, and metrics endpoints.
 
-### Level 5 — Pool Redis Down
+### Pool Redis down
 
-**Symptom:** `redis_up = 0`, pool not accepting shares  
-**Action:**
 ```bash
 docker restart zion-redis
 sleep 5
-docker exec zion-redis redis-cli -a zion_testnet_2026 ping
+docker exec zion-redis redis-cli -a "$REDIS_PASSWORD" ping
 docker restart zion-pool
 ```
 
----
+## Backup And Recovery
 
-## Backup & Recovery
+### Chain state and volumes
 
-### LMDB Database (Blockchain Data)
-
-**Location:** Inside `zion-core` container at `/data/`  
-**Backup:**
 ```bash
-# Stop core node first (to ensure consistency)
 docker stop zion-core
-
-# Copy LMDB data
-docker cp zion-core:/data/blockchain.lmdb /opt/zion/backups/blockchain-$(date +%Y%m%d).lmdb
-
-# Restart
+docker volume inspect zion-data
 docker start zion-core
 ```
 
-### Redis Data
+### Website and monitoring config
 
-**Backup:**
-```bash
-# Trigger Redis save
-docker exec zion-redis redis-cli -a zion_testnet_2026 BGSAVE
-
-# Copy dump
-docker cp zion-redis:/data/dump.rdb /opt/zion/backups/redis-$(date +%Y%m%d).rdb
-```
-
-### Configuration Backup
-```bash
-# Backup all configs
-tar czf /opt/zion/backups/config-$(date +%Y%m%d).tar.gz \
-  /opt/zion/config/ \
-  /opt/zion/docker/ \
-  /opt/zion/monitoring/
-```
-
-### Recovery from Backup
-```bash
-# 1. Stop services
-docker compose -f docker/docker-compose.testnet.yml down
-
-# 2. Restore LMDB
-docker cp /opt/zion/backups/blockchain-YYYYMMDD.lmdb zion-core:/data/blockchain.lmdb
-
-# 3. Restore Redis
-docker cp /opt/zion/backups/redis-YYYYMMDD.rdb zion-redis:/data/dump.rdb
-
-# 4. Restart services
-docker compose -f docker/docker-compose.testnet.yml up -d
-```
-
----
-
-## Deployment
-
-### Website (Next.js)
-```bash
-# From local machine:
-cd APP&WEB/website-v2.9
-bash scripts/deploy.sh
-```
-
-### Pool (Rust)
-```bash
-# From local machine:
-bash scripts/deploy-pool-core.sh --pool-only
-```
-
-### Core Node (Rust)
-```bash
-# From local machine:
-bash scripts/deploy-pool-core.sh --core-only
-```
-
-### Monitoring Stack
-```bash
-# From local machine:
-./scripts/deploy-monitoring.sh primary
-```
-
----
-
-## Troubleshooting
-
-### Docker build fails — out of memory
-```bash
-# Check available memory
-free -h
-
-# Clean Docker cache
-docker system prune -a --volumes
-docker builder prune -a
-
-# Build with memory limit
-docker build --memory=4g -t zion-web:latest .
-```
-
-### Website build hangs (ARM64 / swap)
-```bash
-# Check if swap is active
-swapon --show
-
-# Create swap if needed
-fallocate -l 4G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-swapon /swapfile
-
-# Build in background screen
-screen -dmS web-build bash -c 'cd /opt/zion/website-v2.9 && docker build -t zion-web:latest . > /tmp/web-build.log 2>&1; echo DONE >> /tmp/web-build.log'
-tail -f /tmp/web-build.log
-```
-
-### Pool "Job not found" (Error 21)
-This was fixed in the stratum server. If it reoccurs:
-```bash
-docker logs --tail 50 zion-pool | grep "Job not found"
-# Restart pool
-docker restart zion-pool
-```
-
-### Redis connection refused
-```bash
-# Check if Redis is running
-docker ps | grep redis
-
-# Check Redis password
-docker exec zion-redis redis-cli -a zion_testnet_2026 ping
-
-# Restart Redis and pool
-docker restart zion-redis
-sleep 3
-docker restart zion-pool
-```
-
-### Nginx 502 Bad Gateway
-```bash
-# Check if upstream service is running
-docker ps | grep zion-web
-curl -s http://localhost:3000/ | head -5
-
-# Check Nginx config
-nginx -t
-systemctl reload nginx
-```
-
-### Revenue blockers (archival, pre-consolidation) — 23.02.2026
-
-> This section is historical and documents the old Helsinki + SeedDE topology before the March 2026 single-host consolidation.
-
-#### 1) DERO: `unregistered miner or you need to wait 15 mins`
-```bash
-# Check logs on both servers
-ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72  'docker logs --tail 80 zion-dero-miner | tail -30'
-ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243 'docker logs --tail 80 zion-dero-miner | tail -30'
-
-# Verify wallet value in env on server
-ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72  'grep -n "^DERO_WALLET=" /root/revenue-stack/.env.revenue'
-ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243 'grep -n "^DERO_WALLET=" /root/revenue-stack/.env.revenue'
-
-# Action: wait 15+ min after registration/first connect, then recheck logs.
-```
-
-#### 2) EPIC: `connect error: operation canceled` (`fastepic.eu:3416`)
-```bash
-# DNS + TCP check from SeedDE
-ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243 'getent hosts fastepic.eu || true; timeout 8 bash -lc "cat < /dev/null > /dev/tcp/fastepic.eu/3416" && echo epic-port-open || echo epic-port-fail'
-
-# Runtime logs
-ssh -i ~/.ssh/zion_hetzner_key root@46.225.126.243 'docker logs --tail 120 zion-epic-miner | tail -40'
-
-# If unreachable persists: switch to alternate EPIC pool endpoint in docker-compose.revenue.yml,
-# redeploy only epic service:
-# COMPOSE_PROFILES=germany docker compose --env-file .env.revenue -f docker-compose.revenue.yml up -d --force-recreate epic-miner
-```
-
-#### 3) NKN wallet init flow (currently disabled)
-```bash
-# One-time wallet creation in isolated test (no compose)
-ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72 'docker run --rm -v /opt/nkn/data:/nkn/data nknorg/nkn:latest nknd -c --password-file /nkn/data/wallet.pswd --wallet /nkn/data/wallet.json --no-nat'
-
-# Then enable nkn service in revenue compose and start only nkn:
-# docker compose --env-file .env.revenue -f docker-compose.revenue.yml up -d nkn
-```
-
----
-
-## Contacts & Escalation
-
-| Role | Contact |
-|------|---------|
-| Infrastructure | GitHub Issues |
-| Community | Discord: discord.gg/zion-terranova |
-| Source Code | github.com/Yose144/Zion-2.9.5 |
-
----
-
-*🌟 ZION TerraNova — "Keep the nodes running, keep the chain alive."*
+Keep `/opt/zion/.env`, `docker/`, `monitoring/`, and `ops/` backed up together. Current runtime correctness depends on compose wiring, not just the binaries.

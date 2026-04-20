@@ -1,5 +1,19 @@
 # ZION Web v2.9.9 - Deployment Guide
 
+> Last verified production deploy: 20. dubna 2026
+
+## Current Production Status
+
+- Local `npm run build` passes cleanly on the current tree.
+- Production deploy target is Prague primary: `91.98.122.165`.
+- Canonical remote paths:
+  - source: `/root/zion-2.9.6/APP&WEB/website-v2.9`
+  - compose: `/root/zion-2.9.6/docker`
+- Website bridge status now reaches the host-networked bridge via `host.docker.internal:9101` from `docker-compose.website.yml`.
+- Verified live after deploy on 2026-04-20:
+  - `https://zionterranova.com/api/health`
+  - `https://zionterranova.com/api/bridge/status`
+
 ## 📦 Build Summary
 
 - **Build Size:** 1.8 MB
@@ -13,7 +27,7 @@
   
 - **Documentation:** 19 markdown files from webv3.3
 - **Build Time:** ~3-4 seconds
-- **Status:** ✅ Ready for deployment
+- **Status:** ✅ Buildable and deployed on Prague primary
 
 ## 🚀 Deployment Commands
 
@@ -40,17 +54,18 @@ bash ./scripts/deploy.sh \
 
 ### Manual Deploy to Main Domain
 ```bash
-rsync -avz --delete out/ root@www.zionterranova.com:/var/www/zionterranova.com/
-```
+rsync -avz --delete \
+  -e "ssh -i ~/.ssh/zion_hetzner_key" \
+  ./ root@91.98.122.165:/root/zion-2.9.6/APP\&WEB/website-v2.9/ \
+  --exclude node_modules --exclude .next --exclude out --exclude .env.local
 
-### Deploy to Subdirectory (v2.8.9)
-```bash
-rsync -avz --delete out/ root@www.zionterranova.com:/var/www/zionterranova.com/v2.8.9/
-```
+rsync -avz \
+  -e "ssh -i ~/.ssh/zion_hetzner_key" \
+  /Users/yeshuae/Projects/2.9.6/docker/docker-compose.website.yml \
+  root@91.98.122.165:/root/zion-2.9.6/docker/
 
-### Deploy to Test Subdomain
-```bash
-rsync -avz --delete out/ root@www.zionterranova.com:/var/www/test.zionterranova.com/
+ssh -i ~/.ssh/zion_hetzner_key root@91.98.122.165 \
+  "cd /root/zion-2.9.6/docker && docker compose -f docker-compose.website.yml build --no-cache website && docker compose -f docker-compose.website.yml up -d website"
 ```
 
 ## 📋 Pre-Deployment Checklist
@@ -140,14 +155,17 @@ rsync -avz --delete out/ root@www.zionterranova.com:/var/www/test.zionterranova.
 curl -I https://zionterranova.com/
 curl -I https://zionterranova.com/dashboard/
 curl -I https://zionterranova.com/docs/
+curl -s https://zionterranova.com/api/health | jq
+curl -s https://zionterranova.com/api/bridge/status | jq
 ```
 
 ### Test API Integration
 ```bash
-curl -s https://zionterranova.com/health | jq
+curl -s https://zionterranova.com/api/health | jq
+curl -s https://zionterranova.com/api/bridge/status | jq
 
 # Or from the browser console:
-fetch('https://zionterranova.com/health')
+fetch('https://zionterranova.com/api/health')
   .then(r => r.json())
   .then(console.log)
 ```
@@ -185,10 +203,10 @@ fetch('https://zionterranova.com/health')
 - **Main Site:** https://zionterranova.com
 - **API:** https://zionterranova.com/api
 - **GitHub:** https://github.com/Zion-TerraNova
-- **Build Directory:** /Users/yeshuae/Desktop/ZION/Zion-2.9/website-v2.8.9
+- **Production Host:** 91.98.122.165
 
 ---
 
-**Version:** v2.8.9  
-**Build Date:** November 10, 2025  
-**Status:** ✅ Ready for Production
+**Version:** v2.9.9  
+**Build Date:** 20. dubna 2026  
+**Status:** ✅ Deployed and verified on Prague primary
