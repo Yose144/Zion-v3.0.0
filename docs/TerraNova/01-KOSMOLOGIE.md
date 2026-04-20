@@ -6,9 +6,11 @@
 
 ---
 
-## 1.1 Tři knihy, jedna řeka
+## 1.1 Čtyři knihy, jedna řeka
 
-Trilogie ZION není sbírka textů. Je to řeka.
+Komplex ZION není sbírka textů. Je to řeka.
+
+**Genesis** je pramen skrytý ještě před pramenem — tiché místo, kde voda teprve nabírá jméno. Dala ZIONu posvátný původ, zasvěcení a vědomí, že kód sám o sobě nestačí, pokud v něm nežije záměr.
 
 **Kvantová Revoluce** je pramen — místo, kde voda vyvěrá ze země. Položila otázku na civilizační úrovni: *Proč se svět sype? Proč technologie nestačí? Proč musí existovat jiný princip?* A odpověděla: Protože vědomí chybí. Protože duše chybí. Protože zákon entanglement říká, že jsme propojeni — a my tu propojenost ignorujeme.
 
@@ -16,7 +18,7 @@ Trilogie ZION není sbírka textů. Je to řeka.
 
 **Terra Nova** je moře — kam řeka teče. Neptá se *"co se děje?"* ani *"jak se proměnit?*" — ale *"jak vypadá Nová Země konkrétně? Co stavíme? Kde žijeme? Co jedeme do vesmíru?"*
 
-Tři knihy. Jedna řeka. Jedno vědomí, které se učí být svobodné.
+Čtyři knihy. Jedna řeka. Jedno vědomí, které se učí být svobodné.
 
 ---
 
@@ -122,18 +124,20 @@ Každá vrstva je funkční sama o sobě. Ale smysl získávají až dohromady �
 
 ---
 
-## 1.5 Zlatá trojice hodnot
+## 1.5 Tři hodnoty a jedna infrastruktura
 
-Celá architektura stojí na třech hodnotách, které nejsou slogan — jsou hard-coded:
+Celá architektura stojí na třech hodnotách a jedné provozní vazbě, které nejsou slogan — jsou hard-coded:
 
-**Svoboda** — `MINER_PERCENT = 0.89` — 89% odměn jde přímo minerům. Nikdo nevybírá daň. Nikdo nerozhoduje za tebe.
+**Svoboda** — `MINER_PCT = 89` — 89 % odměn jde přímo minerům. Nikdo nerozhoduje za tebe, zda smíš být součástí sítě.
 
-**Společenství** — `HUMANITARIAN_PERCENT = 0.10` — 10% každého nalezeného bloku automaticky do humanitárního fondu. Ekonomie lásky není charita. Je to zákon sítě.
+**Láska** — `HUMANITARIAN_PCT = 5` — 5 % každého nalezeného bloku automaticky vstupuje do humanitárního proudu. Ekonomie péče není charita navíc. Je to součást fyziky protokolu.
 
-**Hvězdy** — `ISSOBELLA_PERCENT = 0.05` — 5% každého bloku do Issobella fondu. Každým hashrate krokem se staví budoucí orbitální observatoř.
+**Hvězdy** — `ISSOBELLA_PCT = 5` — 5 % každého bloku jde do Issobella fondu. Každý hash tak nese i dlouhý horizont civilizace.
 
-*Tyto tři procenta nejsou parametry. Jsou to hodnoty organizace, kódované do fyziky sítě.*
+**Udržení sítě** — `POOL_FEE_PCT = 1` — 1 % drží provozní infrastrukturu při životě. Není to čtvrtá hodnota. Je to konstrukce, bez níž by se ty první tři rozpadly ve vzduchu.
+
+*Tato čtyři čísla nejsou marketing. Jsou to hodnoty a provozní disciplína přeložené do kódu.*
 
 ---
 
-*[← Úvodní scéna](./00-SCENA.md)* | *[→ Kapitola 2: Volná Energie & Nová Fyzika](./02-VOLNA-ENERGIE.md)*
+*[← Kapitola 0b: Most ze tří knih](./00b-MOST-ZE-TRI-KNIH.md)* | *[→ Kapitola 2: Volná Energie & Nová Fyzika](./02-VOLNA-ENERGIE.md)*
