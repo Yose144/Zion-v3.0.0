@@ -2,9 +2,9 @@
 
 > **Verze:** 1.2  
 > **Vytvořeno:** 24. února 2026 (Session 50)  
-> **Aktualizováno:** 31. března 2026 — formalizace s live evidencí z V3 rehearsal  
+> **Aktualizováno:** 20. dubna 2026 — active topology aligned to Prague-only runtime  
 > **Autoritativní dokument** — vybráno do launch-gatingu spolu s `MAINNET_CHECKLIST.md`  
-> **Stav:** FORMALIZED — 72h rehearsal v průběhu, closure pending
+> **Stav:** FORMALIZED — historical 3-node rehearsal archived, active runtime is Prague-only
 
 ---
 
@@ -13,10 +13,10 @@
 Tento dokument definuje **měřitelné, ověřitelné podmínky**, které musí být splněny před spuštěním ZION MainNetu.  
 Žádná podmínka nesmí být vynechána bez formálního `WAIVER` záznamu v sekci [Výjimky](#výjimky).
 
-Aktivní veřejné validační okno k 30. 3. 2026 je **72h controlled V3 rehearsal** nad auditovaným 3-node setem:
+Aktivní provozní realita k 20. 4. 2026 je **single-host Prague runtime**:
 - Prague — `91.98.122.165`
-- USA — `5.78.194.94`
-- Singapore — `5.223.84.191`
+
+Historická 72h controlled V3 rehearsal nad Prague / USA / Singapore zůstává jako audit evidence, ne jako aktuální topologie.
 
 Tento dokument rozlišuje:
 - **nečekaný restart / crash** — porušení C-01
@@ -31,12 +31,12 @@ Tento dokument rozlišuje:
 |---------|-----------|-------|
 | Orphan rate | < 5 % (klouzavý průměr 72h) | Grafana `PoolHighOrphanRate` |
 | Block reject rate | < 2 % | `blocks_rejected / blocks_total` |
-| Node uptime (3 auditované geo nody) | 100 % bez **nečekaného** restartu; plánovaný upgrade restart je přípustný jen s recovery evidencí | `docker inspect`, `docker ps`, collector log |
+| Node uptime (auditovaný Prague host) | 100 % bez **nečekaného** restartu; plánovaný upgrade restart je přípustný jen s recovery evidencí | `docker inspect`, `docker ps`, collector log |
 | Block time průměr | 55–65 s (±8 %) po 72h | Prometheus `block_time_seconds` |
-| Chain height divergence | steady-state `0 blk`, při recovery max dočasně ±2 bloky | cross-node height check |
+| Chain height divergence | N/A v single-host režimu; při budoucím multi-node rozšíření znovu aktivovat cross-node gate | cross-node height check |
 | Restart discipline | po plánovaném restartu se musí obnovit tip agreement, peer connectivity a pool acceptance | collector report + cross-node RPC |
 
-> **Perioda:** 72 hodin nepřetržitého provozu auditovaného 3-node setu  
+> **Perioda:** 72 hodin nepřetržitého provozu auditovaného Prague runtime  
 > **Pravidlo zásahu:** plánovaný upgrade restart neresetuje window, pokud je zachycený v evidenci a uzavřený recovery appendixem  
 > **Důkaz:** screenshot dashboardu, exportovaný Prometheus snapshot, collector evidence a restart/recovery appendix
 
@@ -68,7 +68,7 @@ Tento dokument rozlišuje:
 ### C-04 — Infra a deployment
 | Metrika | Požadavek |
 |---------|-----------|
-| Seed nody (min 3 geo) | ≥ 3 geograficky oddělené nody synchronizovány na genesis |
+| Bootstrap topology | Prague primary je auditovaný bootstrap; návrat k ≥ 3 geo seedům vyžaduje nový go/no-go audit |
 | Docker images | SHA-256 hash publikován pro `zion-core`, `zion-pool`, `zion-miner` |
 | Alertmanager | Telegram/Slack routing aktivní, test-incident otestován |
 | `MAX_TIMESTAMP_DRIFT` | = 7200 s v produkčním mainnet buildu |

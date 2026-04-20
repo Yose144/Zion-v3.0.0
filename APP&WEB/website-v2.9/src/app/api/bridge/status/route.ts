@@ -4,16 +4,16 @@ import { NextResponse } from 'next/server';
  * GET /api/bridge/status
  *
  * Server-side proxy: fetches Prometheus metrics from the ZION bridge relay
- * (port 9100) and returns parsed JSON.
+ * (port 9101) and returns parsed JSON.
  *
- * Config: BRIDGE_METRICS_URL env var (default: http://localhost:9100/metrics)
+ * Config: BRIDGE_METRICS_URL env var.
  */
 
-// Výchozí: zion-bridge container na Docker síti zion-net, port 9101
-// (9100 je rezervovaný pro node-exporter)
+// Produkce: bridge běží v host network mode, website ho tedy čte přes host-gateway.
+// 9100 je node-exporter; bridge health/metrics běží na 9101.
 // Override přes env var BRIDGE_METRICS_URL
 const BRIDGE_METRICS_URL =
-  process.env.BRIDGE_METRICS_URL ?? 'http://zion-bridge:9101/metrics';
+  process.env.BRIDGE_METRICS_URL ?? 'http://host.docker.internal:9101/metrics';
 
 /** Parse a single Prometheus metric line: "metric_name{...} value" → number */
 function parse(text: string, name: string): number {
