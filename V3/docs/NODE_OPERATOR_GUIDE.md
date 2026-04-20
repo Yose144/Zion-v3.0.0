@@ -96,7 +96,7 @@ export ZION_P2P_BIND="0.0.0.0:8333"
 export ZION_RPC_BIND="0.0.0.0:8443"
 export ZION_POOL_BIND="0.0.0.0:8444"
 export ZION_METRICS_BIND="0.0.0.0:9115"
-export ZION_SEED_PEERS="91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333"
+export ZION_SEED_PEERS="91.98.122.165:8333"
 export ZION_MINER_ADDRESS="zion1..."
 
 # Set all three fee-wallet vars together, or none of them.
@@ -110,7 +110,7 @@ export ZION_POOL_FEE_WALLET="zion1..."
 Important runtime rule:
 
 - `ZION_HUMANITARIAN_WALLET`, `ZION_ISSOBELLA_WALLET`, and `ZION_POOL_FEE_WALLET` must either all be set together or all be omitted
-- For the audited Prague/USA/Singapore fleet itself, exclude the host's own public address from `ZION_SEED_PEERS`; external or fresh nodes can use the full public seed list
+- The current audited topology is Prague-only. Use the Prague primary as bootstrap until a new multi-seed set is deployed and audited.
 
 ### Pool
 
