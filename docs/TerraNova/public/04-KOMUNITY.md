@@ -16,6 +16,9 @@ Každá Terra Nova komunita, která dosáhne energetické soběstačnosti, potra
 Gandhi to nazval *"být změnou, kterou chceš vidět"*.  
 Terra Nova to nazývá *"deploy the change"* — jako se deployuje software.
 
+> *„Komunita není místo. Je to praxe — každodenní rozhodnutí sloužit životu namísto strachu."*  
+> — Ekam Deeksha, principy společenství
+
 ---
 
 ## 3.2 Architektura Terra Nova komunity

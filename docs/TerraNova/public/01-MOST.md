@@ -1,7 +1,5 @@
 # Kapitola 01 — Most čtyř knih
 
-> *Tato kapitola spojuje RAW 00b-MOST-ZE-TRI-KNIH a ORG 01-MOST-CTYRI-KNIHY.*
-
 > *„Žádná Nová Země nevznikne z ničeho.  
 > Každá budoucnost, která stojí za to, musí nejdřív vědět, odkud přichází."*
 
