@@ -34,6 +34,9 @@ Druhá kategorie znamená: energie existuje v přírodě hojně a zadarmo. Slunc
 
 **Problém nebyl nikdy technický. Byl to business model.**
 
+> *„Příroda je nekonečně štědrá. Scarcity je výmysl — nástroj kontroly, ne fyzikální zákon."*  
+> — Jacque Fresco, Venus Project
+
 ---
 
 ## 2.3 Venus Project — Město bez peněz

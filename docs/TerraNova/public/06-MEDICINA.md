@@ -19,6 +19,9 @@ Moderní medicína je zázrak i tragédie zároveň.
 - Přitom 80% nemocí je způsobeno životním stylem — stresem, stravou, pohybem, prostředím
 - Žádná tableta nenahradí smysl, komunitu a čistou vodu
 
+> *„Léčení není záležitostí léků. Je to záležitost vědomí, které se vrací ke svému přirozenému stavu jednoty."*  
+> — Bhagavan Sri Kalki, Oneness University
+
 Terra Nova není protimedicínská. Je to **doplňková architektura** — ne místo nemocnic, ale vedle nich.
 
 ---
