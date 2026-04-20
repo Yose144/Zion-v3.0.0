@@ -443,4 +443,4 @@ Odpověď TerraNova:
 - [Kapitola 1 — Kosmologie](./01-KOSMOLOGIE.md) — Hiranyagarbha v ZION architektuře
 - [Kapitola 4 — AI Native](./04-AI-NATIVE.md) — Hiranyagarbha neuronová síť s duší
 - [Kapitola 10 — Nvidia](./10-NVIDIA-COMPUTE.md) — Hardware pro manifestaci vize
-*[← Příloha A: Nvidia](./A-NVIDIA.md)* | *[→ README](./README.md)*
+*[← Příloha A: Nvidia](./A-NVIDIA.md)* | *[→ Příloha C: Zjevení](./C-ZJEVENI.md)*

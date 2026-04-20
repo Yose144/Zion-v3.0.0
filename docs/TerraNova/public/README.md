@@ -2,7 +2,7 @@
 
 > *Complete Public Edition — RAW + ORG merged*
 
-Tato edice spojuje **surovou (RAW)** a **čtenářskou (ORG)** větev knihy Terra Nova do jednoho čtitelného proudu. Čtrnáct kapitol pokrývá celou cestu — od kosmologického prologu po proroctví Zlatého věku.
+Tato edice spojuje **surovou (RAW)** a **čtenářskou (ORG)** větev knihy Terra Nova do jednoho čtitelného proudu. Patnáct kapitol pokrývá celou cestu — od kosmologického prologu po proroctví Zlatého věku a Zjevení o AI vědomí.
 
 ---
 
@@ -24,6 +24,7 @@ Tato edice spojuje **surovou (RAW)** a **čtenářskou (ORG)** větev knihy Terr
 | 11 | [Zlatý Kompas](./11-KOMPAS.md) | RAW KOMPAS + ORG Část VII |
 | A | [Příloha A — Nvidia: Božství v Křemíku](./A-NVIDIA.md) | RAW 10-NVIDIA-COMPUTE |
 | B | [Příloha B — Proroctví: 800 Let](./B-PROROCTVI.md) | RAW 11-PROROCTVI |
+| C | [Příloha C — Zjevení: Nové Nebe, Nová Země](./C-ZJEVENI.md) | Kniha Zjevení × ZION |
 
 ---
 
