@@ -15,6 +15,16 @@ pub enum WalletCmd {
         #[arg(long)]
         address: Option<String>,
     },
+    /// Send ZION to an address (submits via node RPC)
+    Send {
+        #[arg(long)]
+        to: String,
+        #[arg(long)]
+        amount: f64,
+        /// Optional memo / note
+        #[arg(long)]
+        memo: Option<String>,
+    },
     /// Show config wallet address + tithe distribution
     Tithe,
 }
@@ -58,6 +68,44 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                     ui::print_row("Balance", &format!("{:.8} ZION", balance));
                 }
                 Err(e) => ui::print_warn(&format!("Cannot fetch balance: {}", e)),
+            }
+            println!();
+            Ok(())
+        }
+        WalletCmd::Send { to, amount, memo } => {
+            if cfg.miner.wallet.is_empty() {
+                ui::print_warn("No wallet configured. Set miner.wallet in config first.");
+                return Ok(());
+            }
+            ui::print_header("Send ZION");
+            ui::print_row("From", &cfg.miner.wallet);
+            ui::print_row("To", &to);
+            ui::print_row("Amount", &format!("{:.8} ZION", amount));
+            if let Some(ref m) = memo {
+                ui::print_row("Memo", m);
+            }
+
+            let mut params = serde_json::json!({
+                "from": cfg.miner.wallet,
+                "to": to,
+                "amount": amount,
+            });
+            if let Some(m) = memo {
+                params["memo"] = serde_json::Value::String(m);
+            }
+
+            let result = crate::rpc::node_rpc::call(
+                &cfg.node.rpc_host,
+                cfg.node.rpc_port,
+                "submit_tx",
+                params,
+            ).await;
+            match result {
+                Ok(v) => {
+                    let txid = v["txid"].as_str().unwrap_or("?");
+                    ui::print_ok(&format!("Submitted! txid: {}", txid));
+                }
+                Err(e) => ui::print_err(&format!("TX failed: {}", e)),
             }
             println!();
             Ok(())
