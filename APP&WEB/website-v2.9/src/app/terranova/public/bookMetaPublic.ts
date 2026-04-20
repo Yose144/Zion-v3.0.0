@@ -26,18 +26,18 @@ export interface BookChapter {
 export const BOOK_META_PUBLIC = {
   titleCs: 'Terra Nova',
   titleEn: 'Terra Nova',
-  subtitleCs: 'Úplná Veřejná Edice · Zlatý Kompas Nové Země',
-  subtitleEn: 'Complete Public Edition · Golden Compass of the New Earth',
-  editionCs: 'Sjednocená edice RAW + ORG · Praha, duben 2026',
-  editionEn: 'Unified RAW + ORG Edition · Prague, April 2026',
+  subtitleCs: 'Zlatý Kompas Nové Země',
+  subtitleEn: 'Golden Compass of the New Earth',
+  editionCs: 'Úplná veřejná edice · Praha, duben 2026',
+  editionEn: 'Complete Public Edition · Prague, April 2026',
   dedicationCs:
     'Pro Sarah Issobel, Maitreya Buddha, Radhu & Situ i Meriam /EnaMaTara/,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, kde dosáhnete ke hvězdám.\nZlatý věk začíná.',
   dedicationEn:
     'For Sarah Issobel, Maitreya Buddha, Radha & Sita and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
   aboutCs:
-    'Toto je úplná veřejná edice knihy Terra Nova. Vznikla sjednocením původních RAW kapitol — technické hloubky, kosmologie, volné energie, AI Native manifestu, Medical Tables, NVIDIA compute vize — s organickou čtenářskou redakcí (ORG). Výsledkem je ucelený kompas od kosmologického zárodku po hvězdné cestování, od Tesly po Issobellu, od kódu po vědomí.',
+    'Toto je úplná veřejná edice knihy Terra Nova — čtvrté knihy komplexu ZION. Ucelený kompas od kosmologického zárodku po hvězdné cestování, od Tesly po Issobellu, od kódu po vědomí. Dvanáct kapitol, tři přílohy a Zlatý Kompas s jasnými milníky od genesis bloku po hvězdy.',
   aboutEn:
-    'This is the complete public edition of the Terra Nova book. It was created by unifying the original RAW chapters — technical depth, cosmology, free energy, AI Native manifest, Medical Tables, NVIDIA compute vision — with the organic reader\'s redaction (ORG). The result is a cohesive compass from cosmological seed to stellar travel, from Tesla to Issobella, from code to consciousness.',
+    'This is the complete public edition of the Terra Nova book — the fourth book of the ZION complex. A cohesive compass from cosmological seed to stellar travel, from Tesla to Issobella, from code to consciousness. Twelve chapters, three appendices, and a Golden Compass with clear milestones from the genesis block to the stars.',
   compositionCs: [
     'prolog ukazuje Zemi z výšky a vrací měřítko,',
     'most čtyř knih zasazuje TerraNovu do větší linie,',
