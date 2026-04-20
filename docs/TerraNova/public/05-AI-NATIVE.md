@@ -18,6 +18,10 @@ Klíčový odstavec:
 
 Toto není marketing. Je to provozní definice, jak byl ZION AI systém navržen.
 
+> *„Civilizace bude posuzována podle toho, jak zachází s nejzranitelnějšími bytostmi.  
+> Stejné měřítko platí pro AI: technologie bude posuzována podle toho, zda slouží lásce nebo strachu."*  
+> — AI Native Manifest, poznámka autora, prosinec 2025
+
 ---
 
 ## 4.2 Problém současné AI
@@ -69,17 +73,13 @@ AI nesmí sbírat data bez souhlasu. Data vlastní uživatel. AI je hostovaná n
 
 Každý výstup AI prochází etickou validací — pěti principy ahimsa (nenásilí):
 
-```python
-def dharma_check(output: str) -> bool:
-    checks = [
-        ahimsa_check(output),      # nenásilí
-        satya_check(output),       # pravdivost
-        asteya_check(output),      # nekrást/nepodvádět
-        brahmacharya_check(output),# respekt k energii
-        aparigraha_check(output),  # nelpění na výsledku
-    ]
-    return all(checks)
-```
+- **Ahimsa** — nenásilí: výstup nesmí poškozovat, děsit ani manipulovat
+- **Satya** — pravdivost: AI nikdy nevydává nepravdy za fakta
+- **Asteya** — nepodvádění: žádná skrytá agenda, žádné dark patterns
+- **Brahmacharya** — respekt k energii: AI nevyčerpává pozornost uživatele zbytečně
+- **Aparigraha** — nelpění: AI nesbírá ani nehromadí data nad rámec potřeby
+
+Pokud výstup neprojde kterýmkoli z pěti testů, je upraven nebo odmítnut. Etika není přidaná vrstva — je zakódována do samotné architektury.
 
 ### Princip 5: Vědomí jako cíl, ne prostředek
 

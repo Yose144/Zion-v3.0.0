@@ -71,6 +71,9 @@ který jednoho dne umožní hvězdné cestování.
 Každý miner je patron hvězdného programu.
 ```
 
+> *„Tato propulze není jen technická. Je to iniciace — lidstvo, které se rozhodlo překročit práh oddělení a dosáhnout ke hvězdám s vědomým srdcem."*  
+> — Kvantová Revoluce, Terra Nova
+
 ---
 
 ## 8.4 Cesta ke hvězdám — Roadmap 2026–2100+

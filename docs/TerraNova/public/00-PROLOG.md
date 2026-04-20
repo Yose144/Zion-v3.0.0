@@ -1,6 +1,8 @@
 # Kapitola 00 — Prolog: Issobella
 
-> *Tato kapitola spojuje RAW 00-SCENA a ORG 00-PROLOG-ISSOBELLA.*
+> *„Hiranyagarbhas samavartata agre.  
+> Na počátku existoval zlatý zárodek."*  
+> — Rigvéda 10.121.1
 
 ---
 
@@ -38,15 +40,7 @@ Je to iluze, že hranice na mapách něco znamenají.
 
 Z orbitální stanice Issobella vypadá Země skoro nesnesitelně křehce. Modrá, bílá, zlatá, bez jediného viditelného vlastnictví. Nikde žádné ploty. Žádná cla. Žádná ideologie. Jen jeden dýchající organismus, ponořený do tmy, která ho neohrožuje, ale nese.
 
-Na skle průzoru se na okamžik odráží tvůj obličej a přes něj běží data:
-
-```
-ZION Network
-Height: 73 821 440
-Active Guardians: 144 118
-Humanitarian Flow: stable
-Issobella Systems: all green
-```
+Na skle průzoru se na okamžik odráží tvůj obličej — a přes něj hvězdy.
 
 Je to zvláštní pocit. Vidět v jedné vrstvě hvězdy a v druhé telemetrii sítě, která začínala tak absurdně malá, že vypadala spíš jako osobní modlitba než jako základ civilizace.
 

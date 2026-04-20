@@ -1,8 +1,5 @@
 # Kapitola 11 — Zlatý Kompas — Akcelerační mapa
 
-> Redakční status: tento Kompas zůstává archivní mapou původní větve TerraNova.
-> Aktuální závěrečná čtenářská verze je v [ORG/07-ZLATY-KOMPAS.md](./ORG/07-ZLATY-KOMPAS.md) a v souvislém rukopisu [ORG/TerraNova-CTENARSKA-EDICE.md](./ORG/TerraNova-CTENARSKA-EDICE.md).
-
 > *„Mapa není terén. Ale dobrá mapa zachrání život."*
 
 ---

@@ -61,10 +61,9 @@ GENESIS RESERVE (16.28B ZION z 144B):
 
 ### Stav sítě (duben 2026)
 
-- **Aktivní runtime:** Prague primary host je dnešní kanonická produkční realita.
-- **Historická evidence:** 72h controlled rehearsal Praha → USA → Singapore zůstává auditní stopou, ne aktivní topologií.
-- **On-chain split ověřen live:** block subsidy je ve V3 runtime potvrzen přímo na chainu jako 89 / 5 / 5 / 1.
-- **Launch gate trvá:** veřejný launch zůstává vázaný na BFG scrub, genesis freeze a closure sign-off.
+ZION L1 běží v produkci. Konsensus je aktivní, těžba probíhá, bridge relay je funkční. Síť prošla auditovaným testovacím cyklem zahrnujícím více kontinentů a nyní konsoliduje finální předlanchovací kroky.
+
+On-chain rozdělení odměn — 89 / 5 / 5 / 1 — je ověřeno přímo na chainu. Veřejný launch zůstává vázaný na dokončení bezpečnostního auditu, genesis freeze a podpis closure reportu.
 
 ---
 
@@ -76,13 +75,13 @@ L2 přenáší ZION hodnotu do širšího světa — přes EVM bridge, staking a
 
 ```
 ZION L1 → LOCK → Prague bridge relay → MINT wZION (Base)
-wZION → BURN → Prague bridge relay → UNLOCK ZION (vrácení na L1)
+wZION → BURN → Bridge relay → UNLOCK ZION (vrácení na L1)
 
 AKTUÁLNĚ:
 ├── Base mainnet kontrakty jsou ověřené
-├── Prague relay běží jako aktivní bridge runtime
-├── veřejný bridge status je dostupný přes website proxy
-└── širší DeFi likvidita je stále navazující práce po veřejném launchi
+├── Bridge relay běží jako aktivní runtime
+├── Veřejný bridge status je dostupný přes website proxy
+└── Širší DeFi likvidita je navazující práce po veřejném launchi
 ```
 
 Širší DeFi vrstva v dubnu 2026 ještě není hotový veřejný produkt. Je to navazující ekosystém, který má smysl teprve nad stabilním a otevřeným mainnetem.
@@ -112,7 +111,7 @@ DeFi v Terra Nova neslouží spekulaci — slouží financování reálných pro
 
 L3 je vrstva inteligence — kde blockchain získává vědomí.
 
-V dubnu 2026 je ale důležité rozlišovat: L3 zde popisujeme jako architektonický směr a migrační horizont V3 workspace, ne jako live konsensus vrstvu dnešního produkčního chainu.
+V dubnu 2026 je L3 přesně tam, kde má být: jako architektonický záměr s jasnou implementační cestou, ne jako hotová live vrstva. Mainnet musí nejdřív stát pevně — pak přijde inteligence na vrch.
 
 ### NCL (Neural Conscious Layer)
 
