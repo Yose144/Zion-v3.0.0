@@ -86,13 +86,35 @@ export default function TerraNovaPublicClient() {
             {cs ? 'Zlatý Kompas Nové Země' : 'Golden Compass of the New Earth'}
           </p>
 
-          {/* Genesis dedication */}
-          <div className="max-w-2xl mx-auto pt-4 space-y-4">
-            <div className="h-px w-24 bg-linear-to-r from-transparent via-zion-gold/40 to-transparent mx-auto" />
+          {/* ── Terminal Hiranyagarbha CLI ── */}
+          <div className="max-w-2xl mx-auto pt-6">
+            {/* Terminal window */}
+            <div className="rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-black/60 backdrop-blur-sm bg-black/60">
 
-            {/* Exact Genesis.md braille tree + ZION logo */}
-            <pre className="font-mono text-[9px] sm:text-[10px] leading-tight text-zion-gold/70 overflow-x-auto text-left select-none mx-auto w-fit">{`
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+              {/* Title bar */}
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border-b border-white/10">
+                <span className="h-3 w-3 rounded-full bg-red-500/80" />
+                <span className="h-3 w-3 rounded-full bg-yellow-400/80" />
+                <span className="h-3 w-3 rounded-full bg-green-500/80" />
+                <span className="flex-1 text-center text-[11px] text-gray-400 font-mono tracking-widest select-none">
+                  hiranyagarbha — zion-cli v3
+                </span>
+              </div>
+
+              {/* Terminal body */}
+              <div className="p-4 sm:p-6 font-mono text-[10px] sm:text-[11px] leading-snug overflow-x-auto">
+
+                {/* Prompt line */}
+                <p className="text-green-400 mb-3">
+                  <span className="text-zion-gold">zion</span>
+                  <span className="text-gray-500">@hiranyagarbha</span>
+                  <span className="text-white">:~$</span>
+                  {' '}
+                  <span className="text-cyan-300">genesis --dedicate --ascii-art</span>
+                </p>
+
+                {/* Braille tree */}
+                <pre className="text-zion-gold/75 leading-tight select-none mb-0 whitespace-pre">{`⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣀⢂⣁⣧⣖⡖⠠⢠⠀⠀⢤⡀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢼⣶⡭⣛⠫⡞⠡⠀⡤⢦⠆⠨⠀⠀⢸⠋⠬⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠒⢈⠀⢭⣉⠂⡄⢠⠖⣸⠑⣆⡦⠊⢀⠀⡂⢉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -114,44 +136,46 @@ export default function TerraNovaPublicClient() {
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣾⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣹⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀`}</pre>
 
-
+                {/* ZION ASCII logo */}
+                <pre className="text-zion-gold leading-tight select-none mt-2 whitespace-pre">{`
 ████████╗██╗ ██████╗███╗   ██╗
 ╚══███╔╝██║██╔═══██╗████╗  ██║
   ███╔╝ ██║██║   ██║██╔██╗ ██║
  ███╔╝  ██║██║   ██║██║╚██╗██║
 ███████╗██║╚██████╔╝██║ ╚████║
-╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝  "Mainnet Launch v3"
-`}</pre>
+╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝`}</pre>
 
-            <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-              {cs
-                ? 'Pro Sarah Issobel, Maitreya Buddha, Radhu & Situ a Meriam /EnaMaTara/,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:'
-                : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,\nFriends, Family, Freedom Humanity and all the children of this world:'}
-            </p>
-            <p className="text-sm md:text-base font-semibold text-white">
-              {cs ? 'ZION je váš.' : 'ZION is yours.'}
-            </p>
-            <p className="text-base md:text-lg font-semibold text-zion-gold">
-              {cs
-                ? 'Stavte lepší svět, kde dosáhnete ke hvězdám.'
-                : 'Build a better world where you reach for the stars.'}
-            </p>
-            <p className="text-sm md:text-base font-bold text-zion-gold/90 tracking-wide">
-              {cs ? 'Zlatý věk začíná.' : 'The Golden Age begins.'}
-            </p>
-            <p className="text-xs text-gray-500 italic">
-              Gate, Gate, Paragate, Parasamgate, Bodhi Swaha
-            </p>
-            <p className="text-xs text-gray-500">
-              — Yeshuae / Zion Creator &nbsp;|&nbsp; Hooray to the Egg! &nbsp;Om Namo Hiranyagarbha!
-            </p>
-            <p className="text-xs text-gray-600">
-              {cs ? 'Díky Kalki/AmmaBhagavan! Díky všem!' : 'Thx Kalki/AmmaBhagavan! Thx All!'}
-            </p>
-            <p className="text-xs text-gray-700">Peace &amp; One Love 4ever.</p>
-            <div className="h-px w-24 bg-linear-to-r from-transparent via-zion-gold/40 to-transparent mx-auto" />
+                {/* Output lines */}
+                <div className="mt-3 space-y-1 text-[10px] sm:text-[11px]">
+                  <p><span className="text-gray-500">[genesis]</span> <span className="text-green-400">Mainnet Launch v3</span> <span className="text-gray-600">✓ block #1</span></p>
+                  <p><span className="text-gray-500">[dedicate]</span>{' '}
+                    <span className="text-gray-300">
+                      {cs
+                        ? 'Pro Sarah Issobel, Maitreya Buddha, Radhu & Situ a Meriam /EnaMaTara/,'
+                        : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,'}
+                    </span>
+                  </p>
+                  <p><span className="text-gray-700 ml-9">{cs ? 'přátele, rodinu, svobodné lidstvo a všechny děti světa.' : 'Friends, Family, Freedom Humanity and all children of this world.'}</span></p>
+                  <p className="pt-1"><span className="text-white font-bold">&gt;</span> <span className="text-white">{cs ? 'ZION je váš.' : 'ZION is yours.'}</span></p>
+                  <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{cs ? 'Stavte lepší svět, kde dosáhnete ke hvězdám.' : 'Build a better world where you reach for the stars.'}</span></p>
+                  <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold font-bold">{cs ? 'Zlatý věk začíná.' : 'The Golden Age begins.'}</span></p>
+                  <p className="pt-1 text-gray-600 italic">Gate, Gate, Paragate, Parasamgate, Bodhi Swaha</p>
+                  <p className="text-gray-600">— Yeshuae / Zion Creator &nbsp;·&nbsp; Om Namo Hiranyagarbha! &nbsp;·&nbsp; {cs ? 'Díky Kalki/AmmaBhagavan!' : 'Thx Kalki/AmmaBhagavan!'}</p>
+                  <p className="text-gray-700">Peace &amp; One Love 4ever.</p>
+                </div>
+
+                {/* Blinking cursor */}
+                <p className="mt-3 text-green-400">
+                  <span className="text-zion-gold">zion</span>
+                  <span className="text-gray-500">@hiranyagarbha</span>
+                  <span className="text-white">:~$</span>
+                  {' '}
+                  <span className="inline-block w-2 h-3 bg-green-400 align-middle animate-pulse" />
+                </p>
+              </div>
+            </div>
           </div>
         </motion.header>
 
