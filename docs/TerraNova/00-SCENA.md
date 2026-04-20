@@ -73,4 +73,4 @@ Pojď — příběh teprve začíná.
 
 ---
 
-*[→ Kapitola 1: Kosmologie Zion Terra Nova](./01-KOSMOLOGIE.md)*
+*[→ Kapitola 0b: Most ze tří knih](./00b-MOST-ZE-TRI-KNIH.md)*
