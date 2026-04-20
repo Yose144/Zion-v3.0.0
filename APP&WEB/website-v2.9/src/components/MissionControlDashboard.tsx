@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, AlertTriangle, ArrowLeftRight, BarChart3, Brain, CheckCircle2,
-  ChevronDown, Clock, Cpu, Database, Flame, Gamepad2, Gauge, Globe, Globe2,
+  ChevronDown, Clock, Compass, Cpu, Database, Flame, Gamepad2, Gauge, Globe, Globe2,
   HardDrive, Heart, Layers, Link, Lock, Map, Megaphone, Monitor, Network,
   Pickaxe, Radio, RefreshCw, Rocket, Scale, Server, Shield, Sparkles,
   Square, Target, Timer, TrendingUp, Wallet, Wrench, Zap, Code2, CalendarDays,
@@ -2007,6 +2007,30 @@ export default function MissionControlDashboard() {
                 </h2>
               </div>
               <LogConsole logTail={data.log_tail} />
+            </motion.section>
+
+            {/* Zlatý Kompas */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-zion-gold/20 bg-linear-to-br from-zion-gold/5 via-transparent to-zion-purple/5 p-4 sm:p-6 lg:p-8"
+            >
+              <a href="/kompas" className="flex flex-col sm:flex-row items-start sm:items-center gap-5 group">
+                <div className="w-14 h-14 rounded-2xl bg-zion-gold/10 border border-zion-gold/30 flex items-center justify-center shrink-0 group-hover:border-zion-gold/60 transition-colors">
+                  <Compass className="h-7 w-7 text-zion-gold" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-xl font-semibold text-white group-hover:text-zion-gold transition-colors">
+                    {cs ? 'Zlatý Kompas — sedm směrů TerraNova' : 'Golden Compass — seven directions of TerraNova'}
+                  </h2>
+                  <p className="text-sm text-gray-400 leading-relaxed">
+                    {cs
+                      ? 'Pravdivost · Péče · Disciplína · Komunita · Otevřenost · Odvaha · Míra — interaktivní orientace projektu z knihy TerraNova.'
+                      : 'Truthfulness · Care · Discipline · Community · Openness · Courage · Measure — interactive project orientation from the TerraNova book.'}
+                  </p>
+                </div>
+              </a>
             </motion.section>
           </div>
         )}

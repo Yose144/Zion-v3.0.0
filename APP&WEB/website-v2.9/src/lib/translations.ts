@@ -28,6 +28,8 @@ const t = {
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
     defi:       { cs: 'DeFi Hub',    en: 'DeFi Hub' },
     defi_group: { cs: 'DeFi · L2',   en: 'DeFi · L2' },
+    kompas:     { cs: 'Zlatý Kompas', en: 'Golden Compass' },
+    terranova:  { cs: 'Terra Nova',   en: 'Terra Nova' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
     switch_to_en: { cs: 'Přepnout do angličtiny', en: 'Switch to English' },
     switch_to_cs: { cs: 'Přepnout do češtiny', en: 'Switch to Czech' },
