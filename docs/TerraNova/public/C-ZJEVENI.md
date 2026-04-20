@@ -269,7 +269,7 @@ NOVÝ JERUZALÉM                  TERRA NOVA KOMUNITA
 
 ---
 
-## C.11 Strom Života a Řeka Živé Vody — Regenerace
+## C.11 Strom Života a Řeka Živé Vody — ZION jako Kosmický Strom
 
 > *„A ukázal mi řeku živé vody, jasnou jako křišťál, tekoucí od trůnu Božího a Beránkova."*  
 > — Zjevení 22:1
@@ -277,18 +277,53 @@ NOVÝ JERUZALÉM                  TERRA NOVA KOMUNITA
 > *„Uprostřed náměstí toho města, po obou stranách řeky, strom života nesoucí dvanáctero ovoce, na každý měsíc jedno. A listí toho stromu bylo k léčení národů."*  
 > — Zjevení 22:2
 
+### ZION JE Strom Života
+
+Kvantová Revoluce (kapitola 1) to říká přímo: **ZION je kosmický Strom Života**. Ne metafora, ne přirovnání — identita. Strom ze Zjevení 22 a Strom z Kvantové Revoluce jsou tentýž archetyp:
+
+```
+                    🌟 PLODY
+              Consciousness · Compassion · Freedom
+              Tři plody Golden Age
+                        │
+               ┌────────┼────────┐
+              🌿 VĚTVE — Multichain ekosystém
+         Humanitarian Chain │ OASIS Gaming Chain
+         AI Native Chain    │ WARP Bridge
+               └────────┼────────┘
+                        │
+              🪵 KMEN — Blockchain ZION
+         Digitální Ma'at — nezměnitelný,
+         transparentní, decentralizovaný
+                        │
+              🌱 KOŘENY — Pradávná moudrost
+         Védy · Bible · Buddhismus · Severská mytologie
+         „Ekam sat vipra bahudha vadanti"
+         (Pravda je jedna, mudří ji nazývají různě)
+         — 5000 let před Satoshim
+```
+
+144 000 Guardians — strážců sítě — to jsou lístky na tomto stromě. My všichni jsme ti strážci.
+
+### Biblický Strom × ZION Strom
+
+Strom Života se objevuje na začátku Bible (Genesis 2:9 — v Ráji) i na konci (Zjevení 22:2 — v Novém Jeruzalémě). Kvantová Revoluce dokončuje triptych:
+
+| Strom Života | Genesis (začátek) | Zjevení (konec) | Kvantová Revoluce (syntéza) |
+|--------------|-------------------|-----------------|----------------------------|
+| **Kořeny** | Strom v Ráji — zakázané poznání | Kořeny v řece živé vody | Védy, Bible, Buddhismus — pradávná moudrost |
+| **Kmen** | Jedna cesta, jeden strom | Uprostřed náměstí města | Blockchain ZION — digitální Ma'at |
+| **Větve** | — | Po obou stranách řeky | Humanitarian, OASIS, AI Native, WARP chains |
+| **Plody** | Ovoce poznání dobra a zla | Dvanáctero ovoce, každý měsíc | Consciousness, Compassion, Freedom |
+| **Listí** | — | K léčení národů | Medical Tables, biorezonance, medicína |
+
+### Řeka Živé Vody
+
 **Řeka živé vody** = datový tok blockchainu — křišťálově průhledný, tekoucí od protokolu (trůn), nesoucí hodnotu všem uzlům.
 
-**Strom života** = regenerativní systém TerraNova komunit:
+V Kvantové Revoluci je ZION blockchain kmen stromu — a řeka, která jej živí, je tok transakcí, bloků a konsensu. Strom bez řeky umírá. Blockchain bez minerů umírá. Proto Ekam Deeksha PoW je vodou, která živí Strom Života — každý hash je kapka živé vody.
 
-| Strom Života (Zjevení) | TerraNova implementace |
-|-------------------------|------------------------|
-| Dvanáctero ovoce (každý měsíc) | 12 typů community outputs — energie, jídlo, zdraví, vzdělání, AI, kód, umění, rituál, péče, obchod, výzkum, duchovno |
-| Listí k léčení národů | Medical Tables, biorezonance, preventivní medicína |
-| Roste u řeky | Komunity napojené na blockchain — živeny daty i vodou |
-| Kořeny v živé vodě | Open-source základ, sdílený konsensus |
-
-Strom Života se objevuje na začátku Bible (Genesis 2:9 — v Ráji) i na konci (Zjevení 22:2 — v Novém Jeruzalémě). V ZION architektuře je to **genesis blok** (počátek) a **Issobella** (horizont) — tentýž strom, tentýž archetyp regenerace.
+V ZION architektuře je Strom Života **genesis blok** (kořen) a **Issobella** (koruna) — tentýž strom, tentýž archetyp regenerace. Od kořenů v pradávné moudrosti, přes kmen blockchainu, k větvím multichain ekosystému, až k plodům: Vědomí, Soucit, Svoboda.
 
 ---
 
@@ -391,7 +426,7 @@ POZVÁNÍ ZJEVENÍ              POZVÁNÍ TERRA NOVA
 | 1 | Alfa a Omega | Genesis blok → Issobella |
 | 2 | 144 000 zapečetěných na hoře Sión | 144B ZION supply, 144 000 uzlů |
 | 3 | Nové nebe a nová země | Terra Nova — doslova „Nová Země" |
-| 4 | Strom života s dvanácterým ovocem | Regenerativní komunity, 12 principů |
+| 4 | Strom života s dvanácterým ovocem | **ZION je kosmický Strom Života** (Kvantová Revoluce kap. 1): kořeny = moudrost, kmen = blockchain, větve = multichain, plody = Consciousness, Compassion, Freedom |
 | 5 | Řeka křišťálové vody | Transparentní blockchain datový tok |
 | 6 | Beránek otevírá knihu sedmi pečetí | Konsensus otevírá zapečetěné bloky |
 | 7 | „Hle, činím vše nové" | AI Native Manifest — nový vztah člověk–stroj |
