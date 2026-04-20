@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-04-01 (Sprint 9 complete, all bridge blockers resolved, bridge relay live on mainnet)
+Status date: 2026-04-20 (post-audit correction for single-host Prague topology)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -85,7 +85,7 @@ This roadmap follows the release progression already defined in the repository d
 
 - **On-chain fee-split enforcement is live:** V3 core now produces and validates four-output coinbase payouts on mainnet with deterministic split `89/5/5/1`
 - **First explicitly verified split-enabled block:** `465`
-- **Cross-node confirmation:** audited USA and Singapore nodes accepted subsequent split-enabled blocks `471` and `472`
+- **Historical cross-node confirmation:** the original USA and Singapore rehearsal nodes accepted split-enabled blocks `471` and `472`; those nodes are no longer part of the active topology
 - **Operational root cause learned during rollout:** the first ineffective deploy was caused by a stale server-side `docker/docker-compose.v3-mainnet.yml` missing fee-wallet env vars in the `core` service; successful rebuild alone is not sufficient verification
 - **Canonical operational references:** `../docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`, `../docs/mainnet/V3_ROLLOUT_VERIFICATION_CHECKLIST.md`, `docs/MAINNET_DEPLOY_RUNBOOK.md`
 
@@ -204,7 +204,7 @@ This roadmap follows the release progression already defined in the repository d
 
 - `cargo test --manifest-path V3/Cargo.toml` passes
 - local release build for `zion-core` passed before live rollout
-- live V3 fee-split rollout passed after manifest correction, with Prague / USA / Singapore synchronized post-deploy
+- live V3 fee-split rollout passed after manifest correction; today the audited production topology is the Prague primary host only
 - **Phase 18 deployed to Prague (2026-04-01):** miner balance 14.12B ZION (was 0), UTXO coinbase in template, pool payout enabled
 - **Humanitarian tithe on-chain verification (2026-04-01):** per-block 89/5/5/1 split exact to the flower, cumulative balances ~93% theoretical (early blocks pre-config)
 - **BaseScan verification (2026-04-01):** all 3 Base mainnet contracts verified via Etherscan V2 API
@@ -328,7 +328,7 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | G6 | Max reorg depth | 10 blocks | ✅ `chain.rs` — MAX_REORG_DEPTH=10, enforced in evaluate_reorg | ~~Phase 6a~~ done |
 | G7 | Coinbase maturity | 100 blocks | ✅ `validation.rs` — COINBASE_MATURITY=100, enforced in validate_block | ~~Phase 6b~~ done |
 | G8 | Fee burn | 100% of fees burned | ✅ `fee.rs` — 100% burn, BURN_ADDRESS defined | ~~Phase 6b~~ done |
-| G9 | Seed peers | 5+ required for eclipse resistance | ✅ 5 geographically distributed peers in `NodeConfig::mainnet()` | ~~Phase 8~~ done |
+| G9 | Seed peers | 5+ required for eclipse resistance | ⚠️ Current runtime is Prague-only bootstrap; audited multi-seed expansion must be reintroduced before broader public rollout | re-opened |
 | G10 | Premine unlock_height | DAO Treasury cliff at ~525,600 | ✅ `validation.rs` Step 11: `validate_premine_locks()` calls `genesis::is_premine_transfer_allowed()` | ~~Phase 8~~ done |
 
 #### MEDIUM — required before production launch, not for testnet
