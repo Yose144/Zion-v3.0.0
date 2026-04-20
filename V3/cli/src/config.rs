@@ -14,6 +14,10 @@ pub struct Config {
     pub agent: AgentConfig,
     #[serde(default)]
     pub deploy: DeployConfig,
+    #[serde(default)]
+    pub bridge: BridgeConfig,
+    #[serde(default)]
+    pub dao: DaoConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,6 +52,16 @@ pub struct DeployConfig {
     pub default_server: String,
     pub ssh_key: String,
     pub ssh_user: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BridgeConfig {
+    pub port: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DaoConfig {
+    pub port: u16,
 }
 
 impl Default for NodeConfig {
@@ -99,6 +113,18 @@ impl Default for DeployConfig {
     }
 }
 
+impl Default for BridgeConfig {
+    fn default() -> Self {
+        Self { port: 8888 }
+    }
+}
+
+impl Default for DaoConfig {
+    fn default() -> Self {
+        Self { port: 8081 }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -107,6 +133,8 @@ impl Default for Config {
             miner: MinerConfig::default(),
             agent: AgentConfig::default(),
             deploy: DeployConfig::default(),
+            bridge: BridgeConfig::default(),
+            dao: DaoConfig::default(),
         }
     }
 }

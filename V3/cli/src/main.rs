@@ -6,7 +6,7 @@ mod config;
 mod rpc;
 mod ui;
 
-use commands::{agent, deploy, mine, node, onboard, pool, status, wallet};
+use commands::{agent, bridge, dao, deploy, explorer, mine, node, onboard, pool, status, wallet};
 
 #[allow(unused_imports)]
 use toml;
@@ -92,6 +92,18 @@ enum Commands {
         #[command(subcommand)]
         cmd: ConfigCmd,
     },
+    /// L2 bridge gateway
+    Bridge {
+        #[command(subcommand)]
+        cmd: bridge::BridgeCmd,
+    },
+    /// L2 DAO governance
+    Dao {
+        #[command(subcommand)]
+        cmd: dao::DaoCmd,
+    },
+    /// Block explorer TUI
+    Explorer,
 }
 
 #[derive(Subcommand)]
@@ -129,6 +141,9 @@ async fn main() -> Result<()> {
         Commands::Wallet { cmd } => wallet::run(&cfg, cmd).await,
         Commands::Agent { cmd } => agent::run(&cfg, cmd).await,
         Commands::Deploy { cmd } => deploy::run(&cfg, cmd).await,
+        Commands::Bridge { cmd } => bridge::run(&cfg, cmd).await,
+        Commands::Dao { cmd } => dao::run(&cfg, cmd).await,
+        Commands::Explorer => explorer::run(&cfg).await,
         Commands::Config { cmd } => match cmd {
             ConfigCmd::Show => {
                 let text = toml::to_string_pretty(&cfg)?;

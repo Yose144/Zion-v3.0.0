@@ -1,5 +1,8 @@
 pub mod agent;
+pub mod bridge;
+pub mod dao;
 pub mod deploy;
+pub mod explorer;
 pub mod mine;
 pub mod node;
 pub mod onboard;
