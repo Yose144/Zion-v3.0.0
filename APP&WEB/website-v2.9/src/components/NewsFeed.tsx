@@ -36,21 +36,6 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     href: '/terranova',
   },
   {
-    slug: 'zlaty-kompas',
-    date: '2026-04-20',
-    tag: { cs: 'TerraNova', en: 'TerraNova' },
-    tagColor: 'text-zion-gold',
-    title: {
-      cs: 'Zlatý Kompas — sedm směrů TerraNova nyní interaktivně na webu',
-      en: 'Golden Compass — seven directions of TerraNova now interactive on the web',
-    },
-    summary: {
-      cs: 'Zlatý Kompas z knihy TerraNova ožívá jako interaktivní vizualizace. Sedm směrů — Pravdivost, Péče, Disciplína, Komunita, Otevřenost, Odvaha a Míra — jako navigační orientace projektu. Klikni a prozkoumej.',
-      en: 'The Golden Compass from the TerraNova book comes to life as an interactive visualization. Seven directions — Truthfulness, Care, Discipline, Community, Openness, Courage, and Measure — as the project\'s navigational orientation. Click and explore.',
-    },
-    href: '/terranova',
-  },
-  {
     slug: 'gpu-benchmark-matrix',
     date: '2026-04-02',
     tag: { cs: 'Mining', en: 'Mining' },
