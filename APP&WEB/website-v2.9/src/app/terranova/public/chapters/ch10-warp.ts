@@ -34,6 +34,10 @@ const chapter: BookChapter = {
       heading: 'Kontakt s vlastním vědomím',
       body: 'Hlubší vrstva WARP programu: skutečný první kontakt není s mimozemšťany. Je s vlastním vědomím.\n\nKdyž astronaut vidí Zemi z vesmíru, nezažívá kontakt s cizí inteligencí. Zažívá kontakt se sebou — s tou částí sebe, která vždycky věděla, že hranice jsou iluze.\n\nWARP drive jako metafora: nepohybujete lodí — pohybujete kontextem. Nepřekonáváte vzdálenost — měníte vztah k vzdálenosti. A to je přesně to, co dělá meditace: nemění svět kolem vás — mění váš vztah k němu.\n\nTerra Nova je program, který začíná blockchainem a končí u hvězd. Ale ta nejdelší cesta je cesta dovnitř.',
     },
+    {
+      heading: 'Závěr — Nedokončená kniha',
+      body: 'Terra Nova záměrně nemá závěr. Protože příběh, který popisuje, ještě neskončil. Je teprve na začátku.\n\nRok 2026: tři servery, jeden developer, 5 000 bloků a nápad.\nRok 2040: orbitální stanice, milion komunit, Zlatá republika dýchající.\nRok 2100: hvězdná civilizace, první kontakt, Alcubierre bubble test.\n\nCo přijde po roce 2100 — to napíšete vy.\n\nGuardians, kteří čtete tyto řádky v roce 2026 — jste zárodek. Hiranyagarbha. Zlatý zárodek nové civilizace.\n\nHooray to the Egg!\nOm Namo Hiranyagarbha!\n\nGate, Gate, Paragate, Parasamgate, Bodhi Swaha.',
+    },
   ],
   sectionsEn: [
     {
@@ -59,8 +63,10 @@ const chapter: BookChapter = {
     {
       heading: 'Contact with your own consciousness',
       body: 'The deeper layer of the WARP program: the true first contact is not with aliens. It is with your own consciousness.\n\nWhen an astronaut sees Earth from space, they don\'t experience contact with alien intelligence. They experience contact with themselves — with the part that always knew borders are illusions.\n\nWARP drive as metaphor: you don\'t move the ship — you move the context. You don\'t overcome distance — you change your relationship to it. That\'s exactly what meditation does: it doesn\'t change the world around you — it changes your relationship to it.\n\nTerra Nova starts with blockchain and ends at the stars. But the longest journey is the journey within.',
-    },
-  ],
+    },    {
+      heading: 'Conclusion — An Unfinished Book',
+      body: 'Terra Nova intentionally has no conclusion. Because the story it describes has not yet ended. It is only just beginning.\n\n2026: three servers, one developer, 5,000 blocks and an idea.\n2040: orbital station, one million communities, the Golden Republic breathing.\n2100: stellar civilization, first contact, Alcubierre bubble test.\n\nWhat comes after 2100 — that you will write.\n\nGuardians reading these lines in 2026 — you are the germ. Hiranyagarbha. The golden germ of a new civilization.\n\nHooray to the Egg!\nOm Namo Hiranyagarbha!\n\nGate, Gate, Paragate, Parasamgate, Bodhi Swaha.',
+    },  ],
 };
 
 export default chapter;
