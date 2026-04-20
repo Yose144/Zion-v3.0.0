@@ -1,5 +1,8 @@
 # Zlatý Kompas — Terra Nova akcelerační mapa
 
+> Redakční status: tento Kompas zůstává archivní mapou původní větve TerraNova.
+> Aktuální závěrečná čtenářská verze je v [ORG/07-ZLATY-KOMPAS.md](./ORG/07-ZLATY-KOMPAS.md) a v souvislém rukopisu [ORG/TerraNova-CTENARSKA-EDICE.md](./ORG/TerraNova-CTENARSKA-EDICE.md).
+
 > *„Mapa není terén. Ale dobrá mapa zachrání život."*
 
 ---
@@ -23,10 +26,12 @@
 ### 🟡 Fáze 1: L1 Genesis (2026)
 
 - [x] V3 codebase — čistý Rust, auditovatelný
-- [x] 3-node rehearsal mesh (Praha + USA + Singapore)
+- [x] Historická 72h controlled rehearsal (Praha + USA + Singapore) archivována jako audit evidence
+- [x] Aktivní runtime konsolidován na Prague primary host
 - [x] Desktop-agent funkční (mining na macOS/Win/Linux)
-- [x] Website + docs + whitepaper live
-- [x] L2 DeFi na Base Sepolia testnet
+- [x] Website + docs live
+- [x] Base mainnet bridge contracts verified + Prague relay aktivní
+- [ ] Finální whitepaper PDF
 - [ ] BFG history scrub (citlivá data z git historie)
 - [ ] Genesis freeze — signed, checksummed
 - [ ] 72h closure report (nepřerušený běh)
@@ -35,7 +40,7 @@
 
 ### 🔵 Fáze 2: L2/L3 Ekosystém (2027)
 
-- [ ] wZION bridge na Base mainnet (reálná likvidita)
+- [ ] Veřejná wZION likvidita na Base mainnet
 - [ ] DAO governance první hlasování
 - [ ] Hiranyagarbha AI v2 (70B model, RAG, multi-turn)
 - [ ] NCL vrstva — AI orchestrace sítě
@@ -85,18 +90,19 @@
 | **Fyzik/výzkumník** | Free Energy Research, LENR, Medical Tables |
 | **Farmář/stavitel** | Zakladatel první Terra Nova komunity |
 | **Léčitel** | Medical Table protokol, Deeksha facilitátor |
-| **Spisovatel/umělec** | Trilogia ZION rozšíření, Guardian stories |
-| **Investor** | wZION, Uniswap pool, Issobella NFT |
+| **Spisovatel/umělec** | Čtyři knihy ZION, Guardian stories |
+| **Podporovatel / partner** | likvidita, hardware, komunitní infrastruktura |
 | **Každý** | Šiř slovo. Žij hodnoty. Buď Guardian. |
 
 ---
 
-## Zlatá trojice — zákon sítě
+## Čtyři proudy sítě
 
 ```
 SVOBODA   →  89% odměn minerům
-LÁSKA     →  10% humanitárnímu fondu
+LÁSKA     →   5% humanitárnímu fondu
 HVĚZDY    →   5% Issobella fondu
+PROVOZ    →   1% pool fee infrastruktuře
 
 Blockchain jako modlitba.
 Mining jako dharma.
