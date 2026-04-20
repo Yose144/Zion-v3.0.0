@@ -22,58 +22,58 @@
 
 ### 🟡 Fáze 1: L1 Genesis (2026)
 
-- [x] V3 codebase — čistý Rust, auditovatelný
-- [x] Historická 72h controlled rehearsal (Praha + USA + Singapore) archivována jako audit evidence
-- [x] Aktivní runtime konsolidován na Prague primary host
-- [x] Desktop-agent funkční (mining na macOS/Win/Linux)
-- [x] Website + docs live
-- [x] Base mainnet bridge contracts verified + Prague relay aktivní
+- [x] Čistý Rust codebase — auditovatelný a open-source
+- [x] Multi-kontinentální testovací cyklus úspěšně archivován
+- [x] Produkční runtime konsolidován a stabilní
+- [x] Desktop agent funkční — mining na macOS, Windows i Linux
+- [x] Website a dokumentace live
+- [x] Base mainnet bridge kontrakty ověřeny, relay aktivní
 - [ ] Finální whitepaper PDF
-- [ ] BFG history scrub (citlivá data z git historie)
-- [ ] Genesis freeze — signed, checksummed
-- [ ] 72h closure report (nepřerušený běh)
-- [ ] External security audit
-- [ ] **PUBLIC LAUNCH ← Q4 2026**
+- [ ] Bezpečnostní audit git historie
+- [ ] Genesis freeze — podepsaný, s checksum
+- [ ] 72h nepřerušený closure report
+- [ ] Externí bezpečnostní audit
+- [ ] **VEŘEJNÝ LAUNCH ← Q4 2026**
 
 ### 🔵 Fáze 2: L2/L3 Ekosystém (2027)
 
 - [ ] Veřejná wZION likvidita na Base mainnet
-- [ ] DAO governance první hlasování
-- [ ] Hiranyagarbha AI v2 (70B model, RAG, multi-turn)
-- [ ] NCL vrstva — AI orchestrace sítě
-- [ ] WARP bridges (ETH, BTC atomic swap)
-- [ ] CoinGecko + CoinMarketCap listing
-- [ ] 10+ Terra Nova komunit aktivních
+- [ ] DAO governance — první hlasování komunity
+- [ ] Hiranyagarbha AI v2 — pokročilý jazykový model s pamětí
+- [ ] NCL vrstva — AI orchestrace celé sítě
+- [ ] WARP bridges — cross-chain propojení s ETH a BTC
+- [ ] Listing na CoinGecko a CoinMarketCap
+- [ ] 10+ aktivních Terra Nova komunit
 
 ### 🟢 Fáze 3: L4 OASIS (2028–2029)
 
-- [ ] OASIS whitepaper + design doc
-- [ ] Unreal Engine 5 prototype (první island)
-- [ ] Golden Egg hunt — 108 indicií připraveno
-- [ ] Sacred Avatars — prvních 10 designů
-- [ ] OASIS beta — 10 000 hráčů
-- [ ] Consciousness Level v OASIS funkční
+- [ ] OASIS whitepaper a design dokument
+- [ ] Fotorealistický prototyp v Unreal Engine 5
+- [ ] Golden Egg hunt — 108 indicií ze starověkých eposů
+- [ ] Sacred Avatars — prvních 10 mytologických postav
+- [ ] OASIS beta — 10 000 hráčů z celého světa
+- [ ] Consciousness Level systém v OASIS funkční
 - [ ] CL9 přístup k Issobella simulaci
 
 ### 🌍 Fáze 4: L5 Free World (2030–2035)
 
-- [ ] 100 Terra Nova komunit globálně
-- [ ] Humanitarian fund: $1M+ měsíčně distribuováno
-- [ ] 10 Medical Table prototypů v komunitách
+- [ ] 100 Terra Nova komunit na všech kontinentech
+- [ ] Humanitární fond: $1M+ měsíčně distribuováno automaticky
+- [ ] 10 Medical Table prototypů v off-grid komunitách
 - [ ] Free Energy Research: 3 aktivní výzkumné linie
-- [ ] Seed Library network: 50 regionálních knihoven
-- [ ] Terra Nova DAO — globální governance
-- [ ] Zlatá republika první komuny
+- [ ] Seed Library network: 50 regionálních knihoven semen
+- [ ] Terra Nova DAO — globální governance bez politiků
+- [ ] Zlatá republika — první plně soběstačná komuna
 
 ### 🔭 Fáze 5: L6 Issobella (2040+)
 
-- [ ] Issobella fund: hardware partnerství
-- [ ] Orbital feasibility study (NASA/ESA/ISRO spolupráce)
-- [ ] WARP Research Engine — první fyzikální prototyp
-- [ ] Station Module 1 — launch
-- [ ] SETI program aktivní
+- [ ] Issobella fond: hardware partnerství s výzkumnými institucemi
+- [ ] Orbitální studie proveditelnosti (NASA/ESA/ISRO spolupráce)
+- [ ] WARP Research Engine — první fyzikální prototyp propulze
+- [ ] Station Module 1 — launch na oběžnou dráhu
+- [ ] SETI program aktivní — systematické hledání signálů
 - [ ] První rezidentní výzkumníci z Guardian komunity
-- [ ] METI — první zpráva odeslaná
+- [ ] METI — první poselství lidstva odesláno ke hvězdám
 
 ---
 
@@ -81,13 +81,13 @@
 
 | Kdo jsi | Co děláš TEĎ |
 |---------|--------------|
-| **Developer** | Pull request do V3, Hiranyagarbha AI, WARP bridge |
-| **Miner** | Těž — každý hash financuje vše výše |
+| **Developer** | Přispěj kódem do ZION, Hiranyagarbha AI nebo WARP bridge |
+| **Miner** | Těž — každý hash financuje komunity, výzkum i hvězdy |
 | **Designer** | OASIS avatary, Sacred geometry, UI |
-| **Fyzik/výzkumník** | Free Energy Research, LENR, Medical Tables |
-| **Farmář/stavitel** | Zakladatel první Terra Nova komunity |
+| **Fyzik/výzkumník** | Free Energy, Medical Tables, LENR |
+| **Farmář/stavitel** | Založ první Terra Nova komunitu |
 | **Léčitel** | Medical Table protokol, Deeksha facilitátor |
-| **Spisovatel/umělec** | Čtyři knihy ZION, Guardian stories |
+| **Spisovatel/umělec** | Příběhy Guardianů, čtyři knihy ZION |
 | **Podporovatel / partner** | likvidita, hardware, komunitní infrastruktura |
 | **Každý** | Šiř slovo. Žij hodnoty. Buď Guardian. |
 
