@@ -2,7 +2,7 @@
 
 **Comprehensive checklist for MainNet readiness**
 
-> 🔄 Aktualizace: 30. 3. 2026 — sladěno s aktivním 72h controlled V3 rehearsal
+> 🔄 Aktualizace: 20. 4. 2026 — sladěno s active Prague-only runtime
 
 ## Recent Verified Milestone
 
@@ -11,7 +11,7 @@
 - ✅ První explicitně potvrzený split-enabled blok: `465`
 - ✅ Následné potvrzení na auditovaných nodech: bloky `471` a `472`
 - ✅ Referenční rollout report: `docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`
-- ✅ Aktivní veřejný dashboard sleduje 72h rehearsal nad Prague / USA / Singapore a potvrzuje `tip agreement locked`
+- ✅ Aktivní veřejný dashboard sleduje Prague primary runtime; původní Prague / USA / Singapore rehearsal zůstává jen jako historická evidence
 
 ---
 
@@ -33,7 +33,7 @@
 - ✅ Fork-choice rule implementován — highest accumulated work (`reorg.rs`)
 
 ### Exit Criteria
-- ⚠️ `MAINNET_EXIT_CRITERIA.md` existuje, ale je stále `DRAFT` a bez sign-offu — launch blocker do finálního schválení
+- ⚠️ `MAINNET_EXIT_CRITERIA.md` existuje, ale stále nemá finální sign-off — launch blocker do finálního schválení
 - ⚠️ Plánovaný upgrade restart během rehearsal je přípustný jen pokud je uzavřený recovery evidencí v closure reportu
 - [ ] CI job: `mainnet_correctness_suite` nebo ekvivalentní explicitní launch-gating workflow
 
@@ -54,7 +54,7 @@
 - [ ] Node restart mid-block test
 - [ ] Network partition scénáře (2-3)
 - [ ] Clock skew tolerance test
-- 🔄 Aktivní 72h rehearsal běží na 3 auditovaných geo nodech; finální verdict čeká na closure report
+- 🔄 Aktivní runtime je Prague-only; případné nové geo nody musí projít samostatným rehearsal a closure reportem
 
 ---
 
@@ -80,7 +80,7 @@
 ## 🟢 PHASE 3 — INFRASTRUCTURE (P1)
 
 ### Seed & Bootstrap
-- ✅ Min. 3 geografické seed nody — Prague / USA / Singapore auditovány po V3 fee-split rolloutu 28. 3. 2026
+- ⚠️ Aktuálně auditovaný je pouze Prague primary host; multi-geo seed expansion je odložená a před veřejnou expanzí musí být znovu auditovaná
 - ✅ Monitoring (dashboard + collector + Prometheus/Grafana) — běží na primárním hostu a vrací live rehearsal data
 - [ ] Alerty (disk, peers, block lag) — **Alertmanager routing CHYBÍ** (Telegram/Slack)
 - [ ] Zálohy dat
