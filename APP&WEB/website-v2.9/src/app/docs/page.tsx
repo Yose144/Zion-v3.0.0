@@ -154,6 +154,7 @@ const docTitles: Record<string, LocalizedText> = {
   'book-genesis': { cs: 'Genesis — Kniha probuzení', en: 'Genesis — Book of Awakening' },
   'book-ekam-full': { cs: 'Ekam Deeksha — kompletní kniha', en: 'Ekam Deeksha — Full Book' },
   'book-qr': { cs: 'Kvantová revoluce', en: 'Quantum Revolution' },
+  'book-terranova': { cs: 'Terra Nova — Zlatý Kompas Nové Země', en: 'Terra Nova — Golden Compass of the New Earth' },
   'book-ekam-ucebnice': { cs: 'Učebnice Ekam (historie)', en: 'Ekam Study Book (history)' },
   'coingecko-checklist': { cs: 'CoinGecko checklist', en: 'CoinGecko Checklist' },
   'ai-native-vision': { cs: 'AI Native — vize a manifest', en: 'AI Native — Vision & Manifest' },
@@ -447,6 +448,7 @@ const sections: Section[] = [
       { id: 'book-genesis', title: 'Genesis — Book of Awakening', file: 'mainnet/genesis-book.md', href: '/genesis' },
       { id: 'book-ekam-full', title: 'Ekam Deeksha — Full Book', file: 'books/ekam-deeksha/BOOK-FULL-VERSION.md' },
       { id: 'book-qr', title: 'Kvantová Revoluce', file: 'books/quantum-revolution.md' },
+      { id: 'book-terranova', title: 'Terra Nova — Zlatý Kompas Nové Země', file: '', href: '/terranova' },
       { id: 'book-ekam-ucebnice', title: 'Učebnice Ekam (historie)', file: 'books/ekam-deeksha/UCEBNICE-FULL-VERSION.md' },
     ],
   },
@@ -503,7 +505,7 @@ export default function DocsPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.9': true, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': true, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'release-lineage': true, 'ai-native': false, 'whitepaper': true, 'architecture': false, 'mainnet': true, 'listing': false, 'legal': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.9': true, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': true, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'release-lineage': true, 'ai-native': false, 'whitepaper': true, 'architecture': false, 'mainnet': true, 'books': true, 'listing': false, 'legal': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
   const currentLang = lang === 'cs' ? 'cs' : 'en';

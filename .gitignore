@@ -140,5 +140,5 @@ scripts/finetune/data/*_seed_books_refresh.jsonl
 ssh_*.json
 4194304
 LIVESTATS.html
-APP
+/APP
 APP&WEB/Websites/*.zip

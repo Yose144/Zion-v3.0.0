@@ -21,6 +21,36 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'terranova-book',
+    date: '2026-04-20',
+    tag: { cs: 'Kniha', en: 'Book' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'Terra Nova — čtvrtá kniha ZION je online jako veřejná čtenářská edice',
+      en: 'Terra Nova — fourth ZION book is online as a public reader\'s edition',
+    },
+    summary: {
+      cs: 'Kompletní čtenářská edice TerraNovy: od Prologu na orbitální stanici Issobella, přes komunity, AI a péči, architekturu L1–L6, hvězdný horizont až po Zlatý Kompas sedmi směrů. Bilingvální CZ/EN, propojená s interaktivním Kompasem.',
+      en: 'Complete reader\'s edition of TerraNova: from the Prologue on orbital station Issobella, through communities, AI and care, L1–L6 architecture, stellar horizon to the Golden Compass of seven directions. Bilingual CZ/EN, linked with the interactive Compass.',
+    },
+    href: '/terranova',
+  },
+  {
+    slug: 'zlaty-kompas',
+    date: '2026-04-20',
+    tag: { cs: 'TerraNova', en: 'TerraNova' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'Zlatý Kompas — sedm směrů TerraNova nyní interaktivně na webu',
+      en: 'Golden Compass — seven directions of TerraNova now interactive on the web',
+    },
+    summary: {
+      cs: 'Zlatý Kompas z knihy TerraNova ožívá jako interaktivní vizualizace. Sedm směrů — Pravdivost, Péče, Disciplína, Komunita, Otevřenost, Odvaha a Míra — jako navigační orientace projektu. Klikni a prozkoumej.',
+      en: 'The Golden Compass from the TerraNova book comes to life as an interactive visualization. Seven directions — Truthfulness, Care, Discipline, Community, Openness, Courage, and Measure — as the project\'s navigational orientation. Click and explore.',
+    },
+    href: '/kompas',
+  },
+  {
     slug: 'gpu-benchmark-matrix',
     date: '2026-04-02',
     tag: { cs: 'Mining', en: 'Mining' },
