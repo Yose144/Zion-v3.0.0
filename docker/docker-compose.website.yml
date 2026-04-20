@@ -18,10 +18,12 @@ services:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
       - ZION_DOWNLOADS_DIR=/opt/zion/downloads
-      # Bridge metrics endpoint — same zion-net Docker network
-      - BRIDGE_METRICS_URL=http://zion-bridge:9101/metrics
+      # Bridge runs in host network mode, so the website reaches it via host-gateway.
+      - BRIDGE_METRICS_URL=http://host.docker.internal:9101/metrics
       # Prometheus for /api/metrics proxy (monitoring page)
       - PROMETHEUS_URL=http://zion-prometheus:9090
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       # AUDIT-FIX: localhost can resolve to ::1 in some environments while the
       # Next.js server listens on IPv4 (0.0.0.0). Use explicit 127.0.0.1.
