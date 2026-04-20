@@ -12,6 +12,7 @@ import ch10 from './ch10-warp';
 import ch11 from './ch11-kompas';
 import chA from './chA-nvidia';
 import chB from './chB-proroctvi';
+import chC from './chC-zjeveni';
 
 import type { BookChapter } from '../bookMetaPublic';
 
@@ -30,4 +31,5 @@ export const CHAPTERS_PUBLIC: BookChapter[] = [
   ch11,
   chA,
   chB,
+  chC,
 ];
