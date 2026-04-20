@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import ZlatyKompas, { DIRECTIONS } from '@/components/ZlatyKompas';
-import { BOOK_META_PUBLIC } from './bookMetaPublic';
 import { CHAPTERS_PUBLIC } from './chapters';
 import type { BookChapter } from './bookMetaPublic';
 
@@ -48,7 +47,13 @@ export default function TerraNovaPublicClient() {
     return () => window.removeEventListener('keydown', handler);
   });
 
-  const meta = BOOK_META_PUBLIC;
+  const MILESTONES = [
+    { year: '2026', emoji: '🟡', labelCs: 'L1 Genesis', labelEn: 'L1 Genesis', descCs: 'Blockchain žije, bloky se těží', descEn: 'Blockchain lives, blocks mined', color: '#FFD700', rgb: '255,215,0' },
+    { year: '2027', emoji: '🔵', labelCs: 'L2 Ekosystém', labelEn: 'L2 Ecosystem', descCs: 'DeFi, DAO, komunity', descEn: 'DeFi, DAO, communities', color: '#60A5FA', rgb: '96,165,250' },
+    { year: '2028', emoji: '🟢', labelCs: 'L4 OASIS', labelEn: 'L4 OASIS', descCs: 'AI NCL, WARP, herní vrstva', descEn: 'AI NCL, WARP, game layer', color: '#34D399', rgb: '52,211,153' },
+    { year: '2030', emoji: '🌍', labelCs: 'L5 Svoboda', labelEn: 'L5 Freedom', descCs: '100 komunit, Zlatá republika', descEn: '100 communities, Golden Republic', color: '#A78BFA', rgb: '167,139,250' },
+    { year: '2040+', emoji: '🔭', labelCs: 'L6 Issobella', labelEn: 'L6 Issobella', descCs: 'Orbitální stanice, hvězdy', descEn: 'Orbital station, the stars', color: '#F472B6', rgb: '244,114,182' },
+  ];
 
   return (
     <div className="zion-shell min-h-screen pt-24 md:pt-28 pb-24 overflow-x-hidden">
@@ -61,75 +66,186 @@ export default function TerraNovaPublicClient() {
 
       <div className="relative z-10 zion-container max-w-5xl">
 
-
-        {/* ═══════ BOOK HEADER ═══════ */}
+        {/* ═══════ HERO ═══════ */}
         <motion.header
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12 space-y-5"
+          transition={{ duration: 0.7 }}
+          className="text-center mb-20 space-y-6"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-1.5 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
+          <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-1.5 text-xs font-semibold tracking-[0.35em] text-zion-gold uppercase">
             <BookOpen className="h-4 w-4" />
             {cs ? 'Čtvrtá kniha ZION' : 'Fourth Book of ZION'}
           </div>
 
           <h1 className="zion-page-heading text-gradient">
-            {cs ? meta.titleCs : meta.titleEn}
+            Terra Nova
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-300 font-light">
-            {cs ? meta.subtitleCs : meta.subtitleEn}
+          <p className="text-xl md:text-2xl text-gray-300 font-light tracking-wide">
+            {cs ? 'Zlatý Kompas Nové Země' : 'Golden Compass of the New Earth'}
           </p>
+
+          {/* Genesis dedication */}
+          <div className="max-w-2xl mx-auto pt-4 space-y-4">
+            <div className="h-px w-24 bg-linear-to-r from-transparent via-zion-gold/40 to-transparent mx-auto" />
+            <p className="text-sm md:text-base text-gray-300 leading-relaxed whitespace-pre-line">
+              {cs
+                ? 'Pro Sarah Issobel, Maitreya Buddha, Radhu & Situ a Meriam /EnaMaTara/,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš.'
+                : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,\nFriends, Family, Freedom Humanity and all the children of this world:\nZION is yours.'}
+            </p>
+            <p className="text-base md:text-lg font-semibold text-zion-gold">
+              {cs
+                ? 'Stavte lepší svět, kde dosáhnete ke hvězdám.'
+                : 'Build a better world where you reach for the stars.'}
+            </p>
+            <p className="text-sm md:text-base font-bold text-zion-gold/90 tracking-wide">
+              {cs ? 'Zlatý věk začíná.' : 'The Golden Age begins.'}
+            </p>
+            <p className="text-xs text-gray-500 italic">
+              Gate, Gate, Paragate, Parasamgate, Bodhi Swaha
+            </p>
+            <p className="text-xs text-gray-600">
+              — Yeshuae / Zion Creator &nbsp;|&nbsp; Hooray to the Egg! &nbsp;Om Namo Hiranyagarbha!
+            </p>
+            <p className="text-xs text-gray-700">Peace &amp; One Love 4ever.</p>
+            <div className="h-px w-24 bg-linear-to-r from-transparent via-zion-gold/40 to-transparent mx-auto" />
+          </div>
         </motion.header>
 
-        {/* ═══════ DEDICATION ═══════ */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
-          className="mb-12 text-center"
-        >
-          <blockquote className="text-sm md:text-base text-gray-400 italic leading-relaxed whitespace-pre-line max-w-2xl mx-auto">
-            {cs ? meta.dedicationCs : meta.dedicationEn}
-          </blockquote>
-          <p className="mt-3 text-xs text-gray-600">
-            — Yeshuae Ben Yose / Zion Creator
-          </p>
-        </motion.div>
-
-        {/* ═══════ ABOUT + COMPOSITION ═══════ */}
+        {/* ═══════ ZLATÝ KOMPAS — INTERAKTIVNÍ ═══════ */}
         <motion.section
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mb-16 space-y-6"
+          transition={{ delay: 0.25, duration: 0.7 }}
+          className="mb-20"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-8 space-y-5">
-            <p className="text-gray-300 leading-relaxed">
-              {cs ? meta.aboutCs : meta.aboutEn}
+          {/* Section heading */}
+          <div className="text-center mb-10">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
+              {cs ? 'Zlatý Kompas' : 'Golden Compass'}
             </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-zion-gold mb-2">
+              {cs ? '7 Směrů TerraNovy' : '7 Directions of TerraNova'}
+            </h2>
+            <p className="text-gray-500 text-sm">
+              {cs ? 'Klikni na symbol kompasu pro detail směru' : 'Click a compass symbol for direction detail'}
+            </p>
+          </div>
 
-            <div className="border-t border-white/5 pt-5">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-3">
-                {cs ? 'Kompoziční mapa' : 'Compositional Map'}
-              </p>
-              <ol className="space-y-1.5">
-                {(cs ? meta.compositionCs : meta.compositionEn).map(
-                  (line, i) => (
-                    <li
-                      key={i}
-                      className="text-sm text-gray-400 flex items-start gap-2"
-                    >
-                      <span className="text-zion-gold/60 font-mono text-xs mt-0.5">
-                        {i + 1}.
-                      </span>
-                      <span>{line}</span>
-                    </li>
-                  ),
-                )}
-              </ol>
+          {/* Compass + directions grid */}
+          <div className="grid lg:grid-cols-2 gap-8 items-start mb-10">
+            {/* Compass SVG */}
+            <div className="zion-panel rounded-3xl p-4 md:p-8 relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,215,0,0.04),transparent_70%)]" />
+              </div>
+              <div className="max-w-md mx-auto">
+                <ZlatyKompas selected={compassDir} onSelect={setCompassDir} />
+              </div>
             </div>
+
+            {/* Direction detail + grid */}
+            <div className="space-y-4">
+              <AnimatePresence mode="wait">
+                {compassDir !== null && DIRECTIONS[compassDir] ? (
+                  <motion.div
+                    key={DIRECTIONS[compassDir].id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.22 }}
+                    className="rounded-2xl border bg-black/60 backdrop-blur-xl p-5 space-y-3"
+                    style={{ borderColor: `rgba(${DIRECTIONS[compassDir].rgb},0.3)` }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl" style={{ color: DIRECTIONS[compassDir].color }}>
+                        {DIRECTIONS[compassDir].symbol}
+                      </span>
+                      <h4 className="text-lg font-semibold" style={{ color: DIRECTIONS[compassDir].color }}>
+                        {cs ? DIRECTIONS[compassDir].titleCs : DIRECTIONS[compassDir].titleEn}
+                      </h4>
+                    </div>
+                    <p className="text-gray-300 leading-relaxed text-sm">
+                      {cs ? DIRECTIONS[compassDir].descCs : DIRECTIONS[compassDir].descEn}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="rounded-2xl border border-white/5 bg-black/30 p-5 text-center"
+                  >
+                    <p className="text-gray-600 text-sm">
+                      {cs ? '← Vyber směr na kompasu' : '← Select a direction on the compass'}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 7 direction buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                {DIRECTIONS.map((d, i) => {
+                  const isActive = compassDir === i;
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => setCompassDir(isActive ? null : i)}
+                      className="group rounded-xl border p-3 text-left transition-all duration-300 flex items-center gap-2.5"
+                      style={{
+                        borderColor: isActive ? `rgba(${d.rgb},0.4)` : 'rgba(255,255,255,0.06)',
+                        backgroundColor: isActive ? `rgba(${d.rgb},0.08)` : 'rgba(0,0,0,0.3)',
+                      }}
+                    >
+                      <span
+                        className="text-lg shrink-0 transition-transform duration-300 group-hover:scale-110"
+                        style={{ color: isActive ? d.color : 'rgba(255,255,255,0.25)' }}
+                      >
+                        {d.symbol}
+                      </span>
+                      <span
+                        className="text-xs font-semibold truncate transition-colors"
+                        style={{ color: isActive ? d.color : 'rgba(255,255,255,0.5)' }}
+                      >
+                        {cs ? d.titleCs : d.titleEn}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* ── MILNÍKY ── */}
+          <div className="text-center mb-6">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
+              {cs ? 'Akcelerační mapa · Milníky' : 'Acceleration Map · Milestones'}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {MILESTONES.map((m) => (
+              <div
+                key={m.year}
+                className="rounded-2xl border p-4 text-center space-y-2 transition-all duration-300 hover:scale-[1.02]"
+                style={{
+                  borderColor: `rgba(${m.rgb},0.2)`,
+                  backgroundColor: `rgba(${m.rgb},0.04)`,
+                }}
+              >
+                <div className="text-2xl">{m.emoji}</div>
+                <p className="text-xs font-bold tracking-wider" style={{ color: m.color }}>
+                  {m.year}
+                </p>
+                <p className="text-xs font-semibold text-white/80">
+                  {cs ? m.labelCs : m.labelEn}
+                </p>
+                <p className="text-[11px] text-gray-500 leading-snug">
+                  {cs ? m.descCs : m.descEn}
+                </p>
+              </div>
+            ))}
           </div>
         </motion.section>
 
@@ -137,12 +253,14 @@ export default function TerraNovaPublicClient() {
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
           className="mb-16"
         >
-          <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-5 text-center">
-            {cs ? 'Obsah' : 'Contents'}
-          </p>
+          <div className="text-center mb-6">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
+              {cs ? 'Obsah knihy' : 'Table of Contents'}
+            </p>
+          </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {CHAPTERS_PUBLIC.map((ch, i) => {
               const isActive = activeChapter === i;
@@ -153,12 +271,8 @@ export default function TerraNovaPublicClient() {
                   onClick={() => goTo(i)}
                   className="group rounded-2xl border p-4 text-left transition-all duration-300 flex items-center gap-3"
                   style={{
-                    borderColor: isActive
-                      ? `rgba(${ch.rgb},0.35)`
-                      : 'rgba(255,255,255,0.06)',
-                    backgroundColor: isActive
-                      ? `rgba(${ch.rgb},0.06)`
-                      : 'rgba(0,0,0,0.3)',
+                    borderColor: isActive ? `rgba(${ch.rgb},0.35)` : 'rgba(255,255,255,0.06)',
+                    backgroundColor: isActive ? `rgba(${ch.rgb},0.06)` : 'rgba(0,0,0,0.3)',
                   }}
                 >
                   <span
@@ -169,19 +283,11 @@ export default function TerraNovaPublicClient() {
                       backgroundColor: `rgba(${ch.rgb},${isActive ? 0.1 : 0.03})`,
                     }}
                   >
-                    {isAppendix
-                      ? ch.number
-                      : ch.number === 'Prolog'
-                        ? '✦'
-                        : ch.number}
+                    {isAppendix ? ch.number : ch.number === 'Prolog' ? '✦' : ch.number}
                   </span>
                   <p
                     className="text-sm font-semibold truncate transition-colors"
-                    style={{
-                      color: isActive
-                        ? ch.color
-                        : 'rgba(255,255,255,0.65)',
-                    }}
+                    style={{ color: isActive ? ch.color : 'rgba(255,255,255,0.65)' }}
                   >
                     {isAppendix
                       ? `${cs ? 'Příloha' : 'Appendix'} ${ch.number} — ${cs ? ch.titleCs : ch.titleEn}`
@@ -251,85 +357,14 @@ export default function TerraNovaPublicClient() {
                 )}
               </div>
 
-              {/* ── Interactive Compass (chapter XI only) ── */}
+              {/* ── Kompas reference (chapter XI) ── */}
               {chapter.id === 'kompas' && (
-                <div className="my-10 space-y-8">
-                  {/* Compass SVG */}
-                  <div className="zion-panel rounded-3xl p-4 md:p-8 relative overflow-hidden">
-                    <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,215,0,0.15),transparent_70%)]" />
-                    </div>
-                    <p className="text-center text-xs uppercase tracking-[0.4em] text-gray-500 mb-4">
-                      {cs ? 'Klikni na směr pro detail' : 'Click a direction for detail'}
-                    </p>
-                    <div className="max-w-lg mx-auto">
-                      <ZlatyKompas selected={compassDir} onSelect={setCompassDir} />
-                    </div>
-                  </div>
-
-                  {/* Direction detail */}
-                  <AnimatePresence mode="wait">
-                    {compassDir !== null && DIRECTIONS[compassDir] && (
-                      <motion.div
-                        key={DIRECTIONS[compassDir].id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.25 }}
-                        className="rounded-2xl border bg-black/70 backdrop-blur-xl p-5 space-y-3"
-                        style={{ borderColor: `rgba(${DIRECTIONS[compassDir].rgb},0.25)` }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl" style={{ color: DIRECTIONS[compassDir].color }}>{DIRECTIONS[compassDir].symbol}</span>
-                          <h4 className="text-lg font-semibold" style={{ color: DIRECTIONS[compassDir].color }}>
-                            {cs ? DIRECTIONS[compassDir].titleCs : DIRECTIONS[compassDir].titleEn}
-                          </h4>
-                        </div>
-                        <p className="text-gray-300 leading-relaxed">
-                          {cs ? DIRECTIONS[compassDir].descCs : DIRECTIONS[compassDir].descEn}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* All 7 directions grid */}
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-4 text-center">
-                      {cs ? 'Sedm směrů' : 'Seven directions'}
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {DIRECTIONS.map((d, i) => {
-                        const isActive = compassDir === i;
-                        return (
-                          <button
-                            key={d.id}
-                            onClick={() => setCompassDir(isActive ? null : i)}
-                            className="group rounded-2xl border p-4 text-left transition-all duration-300"
-                            style={{
-                              borderColor: isActive ? `rgba(${d.rgb},0.35)` : 'rgba(255,255,255,0.06)',
-                              backgroundColor: isActive ? `rgba(${d.rgb},0.06)` : 'rgba(0,0,0,0.3)',
-                            }}
-                          >
-                            <span
-                              className="text-xl mb-2 block transition-transform duration-300 group-hover:scale-110"
-                              style={{ color: isActive ? d.color : 'rgba(255,255,255,0.3)' }}
-                            >
-                              {d.symbol}
-                            </span>
-                            <p
-                              className="text-sm font-semibold transition-colors"
-                              style={{ color: isActive ? d.color : 'rgba(255,255,255,0.6)' }}
-                            >
-                              {cs ? d.titleCs : d.titleEn}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Divider before milestones */}
-                  <div className="h-px w-full bg-linear-to-r from-transparent via-zion-gold/20 to-transparent" />
+                <div className="my-8 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-5 text-center">
+                  <p className="text-sm text-gray-400">
+                    {cs
+                      ? '↑ Zlatý Kompas je interaktivní v horní části stránky. Níže jsou milníky a detaily.'
+                      : '↑ The Golden Compass is interactive at the top of the page. Milestones and details below.'}
+                  </p>
                 </div>
               )}
 
