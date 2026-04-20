@@ -5,6 +5,7 @@ import QuantumRevolution from '@/components/QuantumRevolution';
 
 const NewsFeed = dynamic(() => import('@/components/NewsFeed'));
 const LiveDashboard = dynamic(() => import('@/components/LiveDashboard'));
+const TerraNovaHomeMilestones = dynamic(() => import('@/components/TerraNovaHomeMilestones'));
 const GoldenEggHaraniagharba = dynamic(() => import('@/components/GoldenEggHaraniagharba'));
 const Features = dynamic(() => import('@/components/Features'));
 const RoadmapPulse = dynamic(() => import('@/components/RoadmapPulse'));
@@ -17,6 +18,7 @@ export default function Home() {
       <Hero />
       <NewsFeed />
       <LiveDashboard />
+      <TerraNovaHomeMilestones />
       <GoldenEggHaraniagharba />
       <QuantumRevolution />
       <GenesisPreview />
