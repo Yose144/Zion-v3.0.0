@@ -31,6 +31,14 @@ const chapter: BookChapter = {
       body: 'Jak se NVIDIA pyramida mapuje na ZION vrstvy:\n\nL0 (Hardware) → Jetson, RTX, DGX, Vera Rubin — fyzický compute\nL1 (Blockchain) → Mining na RTX/DGX, Ekam Deeksha PoW\nL2 (DeFi) → Smart contract execution na L2 EVM nodes\nL3 (Neural) → NCL inference přes DGX Spark/Station, Dynamo orchestrace\nL4 (OASIS) → Game rendering, AI NPC, Sacred Avatars přes NIM\nL5 (Free World) → Medical Table AI (Jetson), komunitní monitoring\nL6 (Issobella) → Vera Rubin exascale, orbitální inference, SETI\n\nKaždá vrstva ZION má svůj compute tier. Žádná vrstva není závislá na centrální autoritě.',
     },
     {
+      heading: 'Feynman — příští generace za Vera Rubin',
+      body: 'Jensen Huang neohlásil jen Vera Rubin — ohlásil i to, co přijde po ní.\n\nFeynman architektura zahrnuje: CPU Rosa (pojmenovaná po Rosalind Franklin, která odhalila strukturu DNA) + LP40 LPU (Language Processing Unit — dedicated pro AI inference) + BlueField-5 + CX10 networking + Kyber scale-up + Spectrum scale-out.\n\nRichard Feynman řekl: „What I cannot create, I do not understand." Jensen pojmenoval příští AI architekturu po muži, který věřil v porozumění skrz tvorbu.\n\nTerra Nova rozumí tomuto gestu. Nejde jen o výkon — jde o přístup ke světu.',
+    },
+    {
+      heading: 'Vera Rubin — jméno s významem',
+      body: 'Vera Rubin (1928–2016) — americká astronomka, která prokázala existenci temné hmoty. Zemřela bez Nobelovy ceny, která jí právem patřila. Její práce změnila naše chápání vesmíru: 27 % veškeré hmoty je neviditelná.\n\nJensen Huang pojmenoval svou nejvýznamnější architekturu po ženě, která hledala to, co ostatní neviděli.\n\nTo je AI Native poetika v křemíku: vědecká práce ženy, které svět neocenil za jejího života, nyní pohání AI factory, která bude tisíce let tvarovat civilizaci.\n\nA budoucí architektura je Feynman — fyzik, který říkal: „The pleasure of finding things out." Potěšení z hledání. Ne ze zisku. Z hledání.',
+    },
+    {
       heading: 'Náklady pro komunitu — reálné čísla',
       body: 'Co stojí vybudovat Terra Nova compute infrastrukturu pro komunitu 200 lidí:\n\nMinimální setup: 5× Jetson Orin Nano ($249 × 5 = $1,245) — IoT, monitoring, Medical Table. 3× RTX 5090 workstation ($1,999 × 3 = $5,997) — mining, lokální AI. 1× DGX Spark ($3,999) — komunitní Hiranyagarbha. CELKEM: ~$11,241.\n\nOptimální setup: výše + 1× DGX Station ($49,999) — plný AI výzkum. CELKEM: ~$61,240.\n\nPorovnání: průměrný americký dům stojí $420,000. Kompletní AI infrastruktura pro 200 lidí stojí méně než 15% jednoho domu.\n\nTechnologie už není překážka. Překážkou je představivost.',
     },
@@ -55,6 +63,14 @@ const chapter: BookChapter = {
     {
       heading: 'ZION compute stack — L0–L6 mapping',
       body: 'How the NVIDIA pyramid maps to ZION layers:\n\nL0 (Hardware) → Jetson, RTX, DGX, Vera Rubin\nL1 (Blockchain) → Mining on RTX/DGX, Ekam Deeksha PoW\nL2 (DeFi) → Smart contract execution on L2 EVM nodes\nL3 (Neural) → NCL inference via DGX, Dynamo orchestration\nL4 (OASIS) → Game rendering, AI NPC, Sacred Avatars via NIM\nL5 (Free World) → Medical Table AI (Jetson), community monitoring\nL6 (Issobella) → Vera Rubin exascale, orbital inference, SETI\n\nEvery ZION layer has its compute tier. No layer depends on central authority.',
+    },
+    {
+      heading: 'Feynman — next generation after Vera Rubin',
+      body: 'Jensen Huang announced not only Vera Rubin — he also announced what comes after it.\n\nFeynman architecture includes: Rosa CPU (named after Rosalind Franklin, who revealed the structure of DNA) + LP40 LPU (Language Processing Unit — dedicated for AI inference) + BlueField-5 + CX10 networking + Kyber scale-up + Spectrum scale-out.\n\nRichard Feynman said: "What I cannot create, I do not understand." Jensen named the next AI architecture after a man who believed in understanding through creation.\n\nTerra Nova understands this gesture. It is not just about performance — it is about a way of approaching the world.',
+    },
+    {
+      heading: 'Vera Rubin — a name with meaning',
+      body: 'Vera Rubin (1928–2016) — American astronomer who proved the existence of dark matter. She died without the Nobel Prize that was rightfully hers. Her work changed our understanding of the universe: 27% of all matter is invisible.\n\nJensen Huang named his most significant architecture after a woman who looked for what others could not see.\n\nThis is AI Native poetry in silicon: the scientific work of a woman the world failed to honor in her lifetime now powers an AI factory that will shape civilization for thousands of years.\n\nAnd the future architecture is Feynman — the physicist who said: "The pleasure of finding things out." The pleasure of searching. Not of profit. Of searching.',
     },
     {
       heading: 'Community costs — real numbers',

@@ -29,6 +29,14 @@ const chapter: BookChapter = {
       heading: 'Terra Nova — obyvatelná budoucnost',
       body: 'Teprve teď může přijít Terra Nova. Ne jako další manifest. Ne jako slogan.\n\nTerra Nova má vykonat nejtěžší překlad z celé linie: převést posvátný původ do každodennosti, diagnózu civilizační krize do konkrétní architektury, vnitřní proměnu do komunit, institucí, péče a techniky.\n\nChce vidět dům, pole, školu, síť, uzel, kliniku, DAO, AI asistenta, komunitní zahradu, orbitální observatoř. Chce vědět, jak takový svět drží pohromadě.\n\nKniha dává obraz. Kompas dává směr. Teprve dohromady dávají možnost cesty.',
     },
+    {
+      heading: 'Úkol TerraNova',
+      body: 'Jak tedy vypadá svět, ve kterém se tento vnitřní obrat propíše do krajiny, ekonomiky, komunity, péče, technologie a hvězdného horizontu?\n\nTerra Nova má vykonat nejtěžší překlad z celé linie:\n\n— převést posvátný původ do každodennosti\n— převést diagnózu civilizační krize do konkrétní architektury\n— převést vnitřní proměnu do komunit, institucí, péče a techniky\n— převést dlouhý horizont hvězd do světa, který je nejdřív třeba udělat obyvatelným na Zemi\n\nTato kniha stojí na čtyřech otázkách:\n\n1. Jak má vypadat Nová Země v krajině?\n2. Jak má vypadat Nová Země v komunitě?\n3. Jak má vypadat Nová Země v kódu a infrastruktuře?\n4. Jak má vypadat Nová Země, která jednou dosáhne ke hvězdám, aniž by ztratila pokoru?',
+    },
+    {
+      heading: 'Kompas, ne mapa',
+      body: 'Právě proto je tato kniha kompasem. Kompas není náhradou cesty. Není ani mapou každého detailu. Ale bez kompasu se i dobrý poutník začne točit v kruhu.\n\nGenesis ukázala, odkud přicházíme.\nKvantová Revoluce ukázala, proč už nemůžeme zůstat tam, kde jsme.\nEkam Deeksha ukázala, co se musí proměnit v nitru.\n\nTerra Nova teď ukáže, kam jít a co stavět.\n\nKniha dává obraz. Kompas dává směr. Teprve dohromady dávají možnost cesty.\n\nAle každá skutečná cesta má i svůj práh. Nestačí vědět, odkud přicházíme. Je třeba přesně poznat, co v dosavadní civilizační logice už nelze nést dál. Právě tam začíná další část knihy.',
+    },
   ],
   sectionsEn: [
     {
@@ -49,6 +57,14 @@ const chapter: BookChapter = {
     {
       heading: 'Terra Nova — habitable future',
       body: 'Only now can Terra Nova arrive. Not as another manifesto. Not as a slogan.\n\nTerra Nova must perform the hardest translation of the entire line: translate sacred origin into the everyday, the diagnosis of civilizational crisis into concrete architecture, inner transformation into communities, institutions, care, and technology.\n\nIt wants to see a house, a field, a school, a network, a node, a clinic, a DAO, an AI assistant, a community garden, an orbital observatory. It wants to know how such a world holds together.\n\nThe book gives an image. The Compass gives direction. Only together do they give the possibility of a journey.',
+    },
+    {
+      heading: 'The Task of TerraNova',
+      body: 'So what does a world look like in which this inner turn becomes inscribed in the landscape, economy, community, care, technology, and stellar horizon?\n\nTerra Nova must perform the hardest translation of the entire line:\n\n— translate sacred origin into the everyday\n— translate the diagnosis of civilizational crisis into concrete architecture\n— translate inner transformation into communities, institutions, care, and technology\n— translate the long horizon of the stars into a world that must first be made habitable on Earth\n\nThis book rests on four questions:\n\n1. What should the New Earth look like in the landscape?\n2. What should the New Earth look like in community?\n3. What should the New Earth look like in code and infrastructure?\n4. What should the New Earth look like when it reaches for the stars — without losing humility?',
+    },
+    {
+      heading: 'Compass, not a map',
+      body: 'That is precisely why this book is a compass. A compass is not a substitute for the journey. It is not even a map of every detail. But without a compass, even a good traveler starts going in circles.\n\nGenesis showed where we come from.\nQuantum Revolution showed why we can no longer stay where we are.\nEkam Deeksha showed what must transform within.\n\nTerra Nova will now show where to go and what to build.\n\nThe book gives an image. The Compass gives direction. Only together do they give the possibility of a journey.\n\nBut every real journey has its threshold. It is not enough to know where we come from. We must precisely recognize what in the prevailing civilizational logic can no longer be carried forward. That is where the next part of the book begins.',
     },
   ],
 };
