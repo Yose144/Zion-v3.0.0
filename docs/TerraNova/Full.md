@@ -1,5 +1,8 @@
 # Terra Nova — Úvodní Scéna
 
+> Redakční status: tento soubor zůstává archivní souvislou verzí původní větve TerraNova.
+> Pro aktuální čtenářskou osu použij [ORG/Full.md](./ORG/Full.md) nebo [ORG/TerraNova-CTENARSKA-EDICE.md](./ORG/TerraNova-CTENARSKA-EDICE.md).
+
 ---
 
 ## Rok 2040. Místo: Orbitální stanice Issobella. Výška: 420 km nad Zemí.
