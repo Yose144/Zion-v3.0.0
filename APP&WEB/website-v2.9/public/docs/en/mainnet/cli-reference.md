@@ -38,6 +38,8 @@ zion restart bridge
 zion stop monitoring
 ```
 
+If you pass an unsupported target, the CLI should fail locally with the supported target list before it reaches remote compose operations.
+
 ## L1 examples
 
 ```bash

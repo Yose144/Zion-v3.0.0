@@ -38,6 +38,8 @@ zion restart bridge
 zion stop monitoring
 ```
 
+Když zadáš nepodporovaný target, CLI má teď selhat lokálně s výpisem podporovaných targetů ještě před vzdáleným compose voláním.
+
 ## L1 příklady
 
 ```bash
