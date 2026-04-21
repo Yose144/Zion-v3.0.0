@@ -37,9 +37,25 @@ cargo build -p zion-cli
 ./target/debug/zion --help
 ```
 
+If you run the binary without a subcommand, it now opens an interactive arrow-key launcher:
+
+```bash
+zion
+```
+
+You can also open the launcher explicitly:
+
+```bash
+zion menu
+```
+
+The menu is intended as the operator-first entrypoint for routine flows. It uses arrow keys plus Enter, then dispatches the same canonical commands that remain available in typed form.
+After a command finishes, the launcher now waits and returns you back into the menu instead of dropping straight to the shell.
+
 ## Top-Level Commands
 
 ```text
+menu         Open interactive arrow-key operator menu
 onboard      First-time setup wizard
 start        Start service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
 stop         Stop service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
@@ -184,6 +200,15 @@ Mining notes:
 `zion explorer` provides the TUI explorer view.
 
 ## Typical Flows
+
+### Interactive launcher
+
+```bash
+zion
+```
+
+Use this when you want OpenClaw-style navigation instead of remembering subcommands. The launcher covers the common operator surfaces: health checks, service lifecycle, node, pool, mining, wallet, agent, bridge, dao, warp, ncl, config, and TUI views.
+The launcher also stays alive across commands, so routine operator work can happen inside one continuous session.
 
 ### Full-stack status check
 

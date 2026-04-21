@@ -8,6 +8,21 @@ Use it when you need practical examples for the existing CLI surface rather than
 
 ## Top-Level Runtime Control
 
+### Interactive launcher
+
+```bash
+zion
+zion menu
+```
+
+What this does:
+
+- opens an arrow-key operator menu instead of requiring you to remember the whole command tree,
+- dispatches the same canonical typed commands under the hood,
+- returns you to the menu after command completion instead of dumping you straight back to the shell,
+- works best in a real interactive terminal,
+- falls back to normal typed command usage for scripts and non-interactive environments.
+
 ### Global health and visibility
 
 ```bash
@@ -20,6 +35,7 @@ zion dashboard
 
 What these do:
 
+- `zion` opens the interactive launcher when no subcommand is provided,
 - `zion status` runs the broad stack health view,
 - `zion doctor` runs the operator preflight across config sanity, local miner readiness, and endpoint reachability,
 - `zion logs <service>` tails deploy-managed service logs,
