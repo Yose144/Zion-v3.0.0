@@ -34,6 +34,8 @@ Important examples:
 - `agent` or `ai-native` -> `ai-native`
 - `monitoring` -> monitoring bundle
 
+Unsupported lifecycle targets should now fail locally with a clear supported-target list before any SSH call is attempted.
+
 ## 4. Public docs are missing after a docs change
 
 The website reads markdown from the website public docs tree.
