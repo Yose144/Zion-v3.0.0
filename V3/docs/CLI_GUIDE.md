@@ -93,6 +93,12 @@ completions  Print shell completion script
 - `status`
 - `dcr`
 
+Mining notes:
+
+- `zion mine start --backend opencl|metal|cuda` now forwards the selected backend explicitly to `zion-miner`,
+- `zion mine bench --ekam` now invokes the miner's real Ekam benchmark mode,
+- `zion mine start --profile dual` keeps the ZION wallet and BTC payout wallet separate via `miner.wallet` and `miner.btc_wallet`.
+
 `zion wallet`
 
 - `new`
@@ -251,7 +257,8 @@ Useful commands:
 ```bash
 zion config show
 zion config path
-zion config set server.host 91.98.122.165
+zion config validate
+zion config set node.rpc_host 91.98.122.165
 zion onboard
 ```
 

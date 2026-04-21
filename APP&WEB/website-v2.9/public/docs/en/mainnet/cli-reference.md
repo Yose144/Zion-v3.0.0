@@ -53,10 +53,13 @@ zion pool miners
 
 zion mine status
 zion mine bench
+zion mine bench --ekam --backend opencl --work-size 8192
 
 zion wallet balance
 zion wallet send zion1example 1.25
 ```
+
+`zion mine start` now forwards explicit backends like `opencl`, `metal`, and `cuda` to the miner correctly, and `zion mine bench --ekam` now hits the real Ekam benchmark mode.
 
 ## L2 examples
 
@@ -97,7 +100,8 @@ zion deploy prune
 
 zion config show
 zion config path
-zion config set server.host 91.98.122.165
+zion config validate
+zion config set node.rpc_host 91.98.122.165
 
 zion monitor
 zion explorer
