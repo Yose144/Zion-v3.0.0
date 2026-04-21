@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Subcommand;
+use std::path::{Path, PathBuf};
 
 use crate::config::Config;
 use crate::ui;
@@ -17,7 +18,7 @@ pub enum MineCmd {
         /// Number of threads (default: auto)
         #[arg(long)]
         threads: Option<String>,
-        /// Backend: auto | cpu | gpu | metal | opencl
+        /// Backend: auto | cpu | gpu | metal | opencl | cuda
         #[arg(long)]
         backend: Option<String>,
         /// Profile: pool | solo | benchmark | dual
@@ -33,6 +34,12 @@ pub enum MineCmd {
         /// Cosmic Harmony Ekam Deeksha benchmark
         #[arg(long)]
         ekam: bool,
+        /// Backend: auto | gpu | metal | opencl | cuda
+        #[arg(long)]
+        backend: Option<String>,
+        /// Override GPU work size for GPU or Ekam benchmarks
+        #[arg(long)]
+        work_size: Option<usize>,
         /// Benchmark duration in seconds
         #[arg(long, default_value = "5")]
         secs: u64,
@@ -59,19 +66,21 @@ pub enum DcrCmd {
 pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
     match cmd {
         MineCmd::Start { pool, wallet, threads, backend, profile } => {
+            let normalized_profile = normalize_profile(&profile)?;
             let pool_addr = pool.unwrap_or_else(|| {
                 format!("{}:{}", cfg.pool.host, cfg.pool.port)
             });
             let wallet_addr = wallet.unwrap_or_else(|| cfg.miner.wallet.clone());
             let thread_count = threads.unwrap_or_else(|| cfg.miner.threads.clone());
-            let be = backend.unwrap_or_else(|| cfg.miner.backend.clone());
+            let requested_backend = backend.unwrap_or_else(|| cfg.miner.backend.clone());
+            let normalized_backend = normalize_backend(&requested_backend, true)?;
 
             ui::print_header("Starting Miner");
             ui::print_row("Pool", &pool_addr);
             ui::print_row("Wallet", if wallet_addr.is_empty() { "(not set)" } else { &wallet_addr });
-            ui::print_row("Backend", &be);
+            ui::print_row("Backend", normalized_backend.display_name);
             ui::print_row("Threads", &thread_count);
-            ui::print_row("Profile", &profile);
+            ui::print_row("Profile", normalized_profile);
             println!();
 
             if wallet_addr.is_empty() {
@@ -83,13 +92,23 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
             // Build env for miner binary
             let mut env_args = vec![
                 ("ZION_POOL_ADDR", pool_addr.clone()),
-                ("ZION_PROFILE", profile.clone()),
+                ("ZION_PROFILE", normalized_profile.to_string()),
+                ("ZION_MINER_ID", wallet_addr.clone()),
             ];
-            if !wallet_addr.is_empty() {
-                env_args.push(("ZION_BTC_WALLET", wallet_addr.clone()));
-            }
             if thread_count != "auto" {
-                env_args.push(("ZION_DETECT_THREADS", thread_count.clone()));
+                env_args.push(("ZION_THREADS", thread_count.clone()));
+            }
+            if let Some(env_backend) = normalized_backend.env_backend {
+                env_args.push(("ZION_BACKEND", env_backend.to_string()));
+            }
+            if normalized_profile == "dual" {
+                if !cfg.miner.btc_wallet.trim().is_empty() {
+                    env_args.push(("ZION_BTC_WALLET", cfg.miner.btc_wallet.clone()));
+                    ui::print_info("Dual profile: using configured BTC payout wallet for DCR sidecar.");
+                } else {
+                    ui::print_warn("Dual profile selected but miner.btc_wallet is not set.");
+                    ui::print_warn("Set it with: zion config set miner.btc_wallet <bc1...>");
+                }
             }
 
             let miner_bin = find_miner_binary()?;
@@ -99,29 +118,61 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
             for (k, v) in &env_args {
                 cmd_proc.env(k, v);
             }
-            if be == "gpu" || be == "metal" || be == "opencl" {
-                cmd_proc.arg("--gpu");
+            if let Some(cli_backend) = normalized_backend.cli_gpu_arg {
+                cmd_proc.args(["--gpu", cli_backend]);
             }
             cmd_proc.status()?;
             Ok(())
         }
 
-        MineCmd::Bench { gpu, ekam, secs } => {
+        MineCmd::Bench { gpu, ekam, backend, work_size, secs } => {
             ui::print_header("Benchmark");
+            let benchmark_mode = determine_benchmark_mode(gpu, ekam)?;
+            let normalized_backend = normalize_backend(
+                backend.as_deref().unwrap_or(if matches!(benchmark_mode, BenchmarkMode::CpuBlake3) {
+                    "cpu"
+                } else {
+                    "auto"
+                }),
+                false,
+            )?;
+
+            if matches!(benchmark_mode, BenchmarkMode::CpuBlake3) && normalized_backend.mode != BackendMode::Cpu {
+                anyhow::bail!("CPU benchmark does not accept GPU backends. Use --gpu or --ekam for GPU benchmark modes.");
+            }
+
             let miner_bin = find_miner_binary()?;
 
             let mut cmd_proc = std::process::Command::new(&miner_bin);
             cmd_proc.env("ZION_BENCH_SECS", secs.to_string());
+            if let Some(work_size) = work_size {
+                cmd_proc.env("ZION_GPU_WORK_SIZE", work_size.to_string());
+            }
+            if let Some(env_backend) = normalized_backend.env_backend {
+                cmd_proc.env("ZION_BACKEND", env_backend);
+            }
 
-            if ekam {
+            match benchmark_mode {
+                BenchmarkMode::EkamDeeksha => {
                 ui::print_info("Mode: Cosmic Harmony Ekam Deeksha v2");
-                cmd_proc.env("ZION_PROFILE", "benchmark");
-            } else if gpu {
-                ui::print_info("Mode: GPU Blake3");
-                cmd_proc.arg("--gpu-bench");
-            } else {
-                ui::print_info("Mode: CPU Blake3");
-                cmd_proc.arg("--bench");
+                    ui::print_row("Backend", normalized_backend.display_name);
+                    if let Some(work_size) = work_size {
+                        ui::print_row("Work Size", &work_size.to_string());
+                    }
+                    cmd_proc.arg("--ekam-bench");
+                }
+                BenchmarkMode::GpuBlake3 => {
+                    ui::print_info("Mode: GPU Blake3");
+                    ui::print_row("Backend", normalized_backend.display_name);
+                    if let Some(work_size) = work_size {
+                        ui::print_row("Work Size", &work_size.to_string());
+                    }
+                    cmd_proc.arg("--gpu-bench");
+                }
+                BenchmarkMode::CpuBlake3 => {
+                    ui::print_info("Mode: CPU Blake3");
+                    cmd_proc.arg("--bench");
+                }
             }
 
             cmd_proc.status()?;
@@ -184,19 +235,42 @@ fn find_miner_binary() -> Result<String> {
     if let Ok(p) = which_bin("zion-miner") {
         return Ok(p);
     }
-    // 2. Try workspace release build
-    let release = "V3/target/release/zion-miner";
-    if std::path::Path::new(release).exists() {
-        return Ok(release.to_string());
+
+    for candidate in miner_binary_candidates() {
+        if candidate.exists() {
+            return Ok(candidate.display().to_string());
+        }
     }
-    // 3. Try debug build
-    let debug = "V3/target/debug/zion-miner";
-    if std::path::Path::new(debug).exists() {
-        return Ok(debug.to_string());
-    }
+
     anyhow::bail!(
         "zion-miner binary not found. Build with:\n  cd V3 && cargo build -p zion-miner --release"
     )
+}
+
+fn miner_binary_candidates() -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+    for relative in [
+        PathBuf::from("target/release/zion-miner"),
+        PathBuf::from("target/debug/zion-miner"),
+        PathBuf::from("V3/target/release/zion-miner"),
+        PathBuf::from("V3/target/debug/zion-miner"),
+    ] {
+        push_unique_path(&mut candidates, relative);
+    }
+
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    if let Some(workspace_root) = manifest_dir.parent() {
+        push_unique_path(&mut candidates, workspace_root.join("target/release/zion-miner"));
+        push_unique_path(&mut candidates, workspace_root.join("target/debug/zion-miner"));
+    }
+
+    candidates
+}
+
+fn push_unique_path(paths: &mut Vec<PathBuf>, candidate: PathBuf) {
+    if !paths.iter().any(|existing| existing == &candidate) {
+        paths.push(candidate);
+    }
 }
 
 fn which_bin(name: &str) -> Result<String> {
@@ -205,5 +279,130 @@ fn which_bin(name: &str) -> Result<String> {
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
     } else {
         anyhow::bail!("not found")
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BenchmarkMode {
+    CpuBlake3,
+    GpuBlake3,
+    EkamDeeksha,
+}
+
+fn determine_benchmark_mode(gpu: bool, ekam: bool) -> Result<BenchmarkMode> {
+    match (gpu, ekam) {
+        (true, true) => anyhow::bail!("Choose either --gpu or --ekam, not both."),
+        (true, false) => Ok(BenchmarkMode::GpuBlake3),
+        (false, true) => Ok(BenchmarkMode::EkamDeeksha),
+        (false, false) => Ok(BenchmarkMode::CpuBlake3),
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BackendMode {
+    Auto,
+    Cpu,
+    GpuAlias,
+    Metal,
+    OpenCl,
+    Cuda,
+}
+
+struct NormalizedBackend<'a> {
+    mode: BackendMode,
+    display_name: &'a str,
+    env_backend: Option<&'a str>,
+    cli_gpu_arg: Option<&'a str>,
+}
+
+fn normalize_backend<'a>(backend: &'a str, allow_cpu: bool) -> Result<NormalizedBackend<'a>> {
+    match backend.trim().to_ascii_lowercase().as_str() {
+        "auto" => Ok(NormalizedBackend {
+            mode: BackendMode::Auto,
+            display_name: "auto",
+            env_backend: Some("auto"),
+            cli_gpu_arg: None,
+        }),
+        "cpu" if allow_cpu => Ok(NormalizedBackend {
+            mode: BackendMode::Cpu,
+            display_name: "cpu",
+            env_backend: Some("cpu"),
+            cli_gpu_arg: None,
+        }),
+        "gpu" => Ok(NormalizedBackend {
+            mode: BackendMode::GpuAlias,
+            display_name: "gpu (auto)",
+            env_backend: Some("auto"),
+            cli_gpu_arg: Some("auto"),
+        }),
+        "metal" => Ok(NormalizedBackend {
+            mode: BackendMode::Metal,
+            display_name: "metal",
+            env_backend: Some("metal"),
+            cli_gpu_arg: Some("metal"),
+        }),
+        "opencl" | "ocl" => Ok(NormalizedBackend {
+            mode: BackendMode::OpenCl,
+            display_name: "opencl",
+            env_backend: Some("opencl"),
+            cli_gpu_arg: Some("opencl"),
+        }),
+        "cuda" => Ok(NormalizedBackend {
+            mode: BackendMode::Cuda,
+            display_name: "cuda",
+            env_backend: Some("cuda"),
+            cli_gpu_arg: Some("cuda"),
+        }),
+        "cpu" => anyhow::bail!("This command does not accept backend 'cpu' in GPU mode."),
+        other => anyhow::bail!(
+            "Unsupported backend '{}'. Supported backends: auto, cpu, gpu, metal, opencl, cuda",
+            other
+        ),
+    }
+}
+
+fn normalize_profile(profile: &str) -> Result<&str> {
+    match profile.trim().to_ascii_lowercase().as_str() {
+        "pool" => Ok("pool"),
+        "solo" => Ok("solo"),
+        "benchmark" | "bench" => Ok("benchmark"),
+        "dual" => Ok("dual"),
+        other => anyhow::bail!(
+            "Unsupported miner profile '{}'. Supported profiles: pool, solo, benchmark, dual",
+            other
+        ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bench_mode_rejects_conflicting_flags() {
+        assert!(determine_benchmark_mode(true, true).is_err());
+    }
+
+    #[test]
+    fn backend_normalization_supports_opencl_and_cuda() {
+        let opencl = normalize_backend("opencl", true).expect("opencl backend");
+        assert_eq!(opencl.env_backend, Some("opencl"));
+        assert_eq!(opencl.cli_gpu_arg, Some("opencl"));
+
+        let cuda = normalize_backend("cuda", true).expect("cuda backend");
+        assert_eq!(cuda.env_backend, Some("cuda"));
+        assert_eq!(cuda.cli_gpu_arg, Some("cuda"));
+    }
+
+    #[test]
+    fn profile_normalization_supports_bench_alias() {
+        assert_eq!(normalize_profile("bench").expect("bench alias"), "benchmark");
+    }
+
+    #[test]
+    fn miner_binary_candidates_include_workspace_target() {
+        let candidates = miner_binary_candidates();
+        assert!(candidates.iter().any(|path| path.ends_with("target/release/zion-miner")));
+        assert!(candidates.iter().any(|path| path.ends_with("target/debug/zion-miner")));
     }
 }

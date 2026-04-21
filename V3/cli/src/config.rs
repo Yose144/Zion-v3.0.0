@@ -2,6 +2,17 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+pub struct ValidationReport {
+    pub errors: Vec<String>,
+    pub warnings: Vec<String>,
+}
+
+impl ValidationReport {
+    pub fn is_ok(&self) -> bool {
+        self.errors.is_empty()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -36,6 +47,7 @@ pub struct PoolConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MinerConfig {
     pub wallet: String,
+    pub btc_wallet: String,
     pub threads: String,
     pub backend: String,
     pub profile: String,
@@ -87,6 +99,7 @@ impl Default for MinerConfig {
     fn default() -> Self {
         Self {
             wallet: String::new(),
+            btc_wallet: String::new(),
             threads: "auto".into(),
             backend: "auto".into(),
             profile: "pool".into(),
@@ -183,6 +196,7 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["pool", "host"] => cfg.pool.host = value.into(),
         ["pool", "port"] => cfg.pool.port = value.parse()?,
         ["miner", "wallet"] => cfg.miner.wallet = value.into(),
+        ["miner", "btc_wallet"] => cfg.miner.btc_wallet = value.into(),
         ["miner", "threads"] => cfg.miner.threads = value.into(),
         ["miner", "backend"] => cfg.miner.backend = value.into(),
         ["miner", "profile"] => cfg.miner.profile = value.into(),
@@ -208,4 +222,64 @@ pub fn expand_path(p: &str) -> String {
         }
     }
     p.to_string()
+}
+
+pub fn validate(cfg: &Config) -> ValidationReport {
+    let mut errors = Vec::new();
+    let mut warnings = Vec::new();
+
+    if cfg.node.rpc_host.trim().is_empty() {
+        errors.push("node.rpc_host must not be empty".to_string());
+    }
+    if cfg.node.rpc_port == 0 {
+        errors.push("node.rpc_port must be greater than 0".to_string());
+    }
+    if cfg.node.p2p_port == 0 {
+        errors.push("node.p2p_port must be greater than 0".to_string());
+    }
+    if cfg.pool.host.trim().is_empty() {
+        errors.push("pool.host must not be empty".to_string());
+    }
+    if cfg.pool.port == 0 {
+        errors.push("pool.port must be greater than 0".to_string());
+    }
+
+    match cfg.miner.backend.trim().to_ascii_lowercase().as_str() {
+        "auto" | "cpu" | "gpu" | "metal" | "opencl" | "ocl" | "cuda" => {}
+        other => errors.push(format!(
+            "miner.backend has unsupported value '{}'. Supported: auto, cpu, gpu, metal, opencl, cuda",
+            other
+        )),
+    }
+
+    match cfg.miner.profile.trim().to_ascii_lowercase().as_str() {
+        "pool" | "solo" | "benchmark" | "bench" | "dual" => {}
+        other => errors.push(format!(
+            "miner.profile has unsupported value '{}'. Supported: pool, solo, benchmark, dual",
+            other
+        )),
+    }
+
+    if cfg.agent.url.trim().is_empty() {
+        errors.push("agent.url must not be empty".to_string());
+    } else if !cfg.agent.url.starts_with("http://") && !cfg.agent.url.starts_with("https://") {
+        errors.push("agent.url must start with http:// or https://".to_string());
+    }
+
+    let ssh_key = expand_path(&cfg.deploy.ssh_key);
+    if ssh_key.trim().is_empty() {
+        errors.push("deploy.ssh_key must not be empty".to_string());
+    } else if !std::path::Path::new(&ssh_key).exists() {
+        warnings.push(format!("deploy.ssh_key does not exist on disk: {}", ssh_key));
+    }
+
+    if cfg.deploy.ssh_user.trim().is_empty() {
+        errors.push("deploy.ssh_user must not be empty".to_string());
+    }
+
+    if cfg.miner.profile.trim().eq_ignore_ascii_case("dual") && cfg.miner.btc_wallet.trim().is_empty() {
+        warnings.push("miner.profile is dual but miner.btc_wallet is empty; DCR sidecar will rely on env or fallback BTC payout wallet".to_string());
+    }
+
+    ValidationReport { errors, warnings }
 }
