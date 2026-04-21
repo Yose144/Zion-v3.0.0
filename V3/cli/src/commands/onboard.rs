@@ -6,7 +6,7 @@ use crate::rpc::{agent_rpc, node_rpc};
 use crate::ui;
 
 pub async fn run(_cfg: &Config) -> Result<()> {
-    ui::print_banner();
+    ui::print_genesis_banner();
     println!("  ╔══════════════════════════════════════════════╗");
     println!("  ║       Welcome to ZION — The Golden Age       ║");
     println!("  ║   Om Namo Hiranyagarbha  |  Peace & One Love ║");
