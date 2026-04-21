@@ -74,15 +74,25 @@ export default function TerraNovaPublicClient() {
       checks: [
         { done: false, text: 'Veřejná wZION likvidita na Base mainnet' },
         { done: false, text: 'DAO governance — první hlasování komunity' },
-        { done: false, text: 'Hiranyagarbha AI v2 — model s pamětí' },
-        { done: false, text: 'NCL vrstva — AI orchestrace celé sítě' },
-        { done: false, text: 'WARP bridges — ETH a BTC cross-chain' },
         { done: false, text: 'Listing na CoinGecko a CoinMarketCap' },
         { done: false, text: '10+ aktivních Terra Nova komunit' },
       ],
     },
     {
-      year: '2028', emoji: '🟢', labelCs: 'L4 OASIS', labelEn: 'L4 OASIS',
+      year: '2028', emoji: '🟣', labelCs: 'L3 AI Native', labelEn: 'L3 AI Native',
+      descCs: 'Hiranyagarbha, NCL, WARP', descEn: 'Hiranyagarbha, NCL, WARP',
+      color: '#C084FC', rgb: '192,132,252',
+      checks: [
+        { done: false, text: 'Hiranyagarbha AI v2 — model s pamětí' },
+        { done: false, text: 'NCL vrstva — AI orchestrace celé sítě' },
+        { done: false, text: 'WARP bridges — ETH a BTC cross-chain' },
+        { done: false, text: 'AI Native knowledge base — runtime + dokumentace + Terra Nova' },
+        { done: false, text: 'Distribuovaná inference přes komunitní uzly' },
+        { done: false, text: 'Guardian tooling — AI podpora pro energie, zdraví a governance' },
+      ],
+    },
+    {
+      year: '2029', emoji: '🟢', labelCs: 'L4 OASIS', labelEn: 'L4 OASIS',
       descCs: 'Golden Egg, XP ekonomie, herní vrstva', descEn: 'Golden Egg, XP economy, game layer',
       color: '#34D399', rgb: '52,211,153',
       checks: [
@@ -223,8 +233,8 @@ export default function TerraNovaPublicClient() {
                   <p><span className="text-gray-500">[dedicate]</span>{' '}
                     <span className="text-gray-300">
                       {cs
-                        ? 'Pro Sarah Issobel, Maitreya Buddha, Radhu & Situ a Meriam /EnaMaTara/,'
-                        : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,'}
+                        ? 'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ & Meriam,'
+                        : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam,'}
                     </span>
                   </p>
                   <p><span className="text-gray-700 ml-9">{cs ? 'přátele, rodinu, svobodné lidstvo a všechny děti světa.' : 'Friends, Family, Freedom Humanity and all children of this world.'}</span></p>
@@ -362,7 +372,7 @@ export default function TerraNovaPublicClient() {
           </div>
 
           {/* Timeline strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
             {MILESTONES.map((m) => {
               const total = m.checks.length;
               const done = m.checks.filter((c) => c.done).length;
