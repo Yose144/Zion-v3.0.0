@@ -152,12 +152,20 @@ If the read path already looks wrong, do not proceed to transfer or vote actions
 
 `zion monitor` and `zion explorer` are TUI-oriented.
 
+The new `zion` interactive launcher is also terminal-oriented.
+
 If the shell environment is non-interactive, fall back to non-TUI commands first:
 
 ```bash
 zion status
 zion node blocks
 zion pool stats
+```
+
+If you are in a real terminal and want the guided launcher explicitly, use:
+
+```bash
+zion menu
 ```
 
 ## 10. Fast incident triage checklist
