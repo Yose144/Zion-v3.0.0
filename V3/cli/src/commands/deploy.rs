@@ -63,7 +63,7 @@ pub async fn run(cfg: &Config, cmd: DeployCmd) -> Result<()> {
 }
 
 pub async fn start_service(cfg: &Config, service: &str) -> Result<()> {
-    let compose_svc = map_service(service);
+    let compose_svc = validate_service_target(service)?;
     let host = &cfg.node.rpc_host;
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
@@ -81,7 +81,7 @@ pub async fn start_service(cfg: &Config, service: &str) -> Result<()> {
 }
 
 pub async fn stop_service(cfg: &Config, service: &str) -> Result<()> {
-    let compose_svc = map_service(service);
+    let compose_svc = validate_service_target(service)?;
     let host = &cfg.node.rpc_host;
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
@@ -99,7 +99,7 @@ pub async fn stop_service(cfg: &Config, service: &str) -> Result<()> {
 }
 
 pub async fn restart_service(cfg: &Config, service: &str) -> Result<()> {
-    let compose_svc = map_service(service);
+    let compose_svc = validate_service_target(service)?;
     let host = &cfg.node.rpc_host;
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
@@ -113,7 +113,7 @@ pub async fn restart_service(cfg: &Config, service: &str) -> Result<()> {
 }
 
 pub async fn tail_logs(cfg: &Config, service: &str) -> Result<()> {
-    let compose_svc = map_service(service);
+    let compose_svc = validate_service_target(service)?;
     let host = &cfg.node.rpc_host;
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
@@ -173,4 +173,33 @@ fn map_service(service: &str) -> String {
         "monitoring" => "prometheus grafana node-exporter redis-exporter alertmanager".into(),
         _ => service.into(), // "all" passes through, docker compose handles it
     }
+}
+
+fn validate_service_target(service: &str) -> Result<String> {
+    if is_supported_service_target(service) {
+        return Ok(map_service(service));
+    }
+
+    anyhow::bail!(
+        "Unsupported service target '{}'. Supported targets: all, node, core, pool, miner, agent, ai-native, bridge, dao, website, redis, monitoring",
+        service
+    )
+}
+
+fn is_supported_service_target(service: &str) -> bool {
+    matches!(
+        service,
+        "all"
+            | "node"
+            | "core"
+            | "pool"
+            | "miner"
+            | "agent"
+            | "ai-native"
+            | "bridge"
+            | "dao"
+            | "website"
+            | "redis"
+            | "monitoring"
+    )
 }
