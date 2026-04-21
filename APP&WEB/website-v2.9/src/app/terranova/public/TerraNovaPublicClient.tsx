@@ -83,7 +83,7 @@ export default function TerraNovaPublicClient() {
     },
     {
       year: '2028', emoji: '🟢', labelCs: 'L4 OASIS', labelEn: 'L4 OASIS',
-      descCs: 'AI NCL, WARP, herní vrstva', descEn: 'AI NCL, WARP, game layer',
+      descCs: 'Golden Egg, XP ekonomie, herní vrstva', descEn: 'Golden Egg, XP economy, game layer',
       color: '#34D399', rgb: '52,211,153',
       checks: [
         { done: false, text: 'OASIS whitepaper a design dokument' },

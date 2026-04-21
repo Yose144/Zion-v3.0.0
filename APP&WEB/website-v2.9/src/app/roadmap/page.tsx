@@ -956,7 +956,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — L1 Blockchain · L2 DeFi & DEX · L3 NCL & WARP · L4 Oasis · L5 Free World · L6 Issobella · 6-layer architecture · {cs ? 'Poslední aktualizace' : 'Last updated'}: 2026-04-03
+          ZION TerraNova {SITE_RELEASE_LABEL} — L1 Blockchain · L2 Bridge/DAO/DeFi · L3 AI Native/WARP/NCL · L4 Oasis · L5 Free World · L6 Issobella · 6-layer architecture · {cs ? 'Poslední aktualizace' : 'Last updated'}: 2026-04-21
         </p>
       </div>
     </div>
