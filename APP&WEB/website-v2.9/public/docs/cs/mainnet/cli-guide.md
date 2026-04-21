@@ -79,3 +79,9 @@ Proto je kanonická interpretace dnes:
 - AI Native = orchestrator a control plane,
 - LLM backend = volitelná integrace,
 - fallback režim je přijatelný, pokud je transparentní.
+
+## Související docs
+
+- `ZION CLI Reference`
+- `ZION CLI Troubleshooting`
+- `ZION CLI Deploy Playbook`
