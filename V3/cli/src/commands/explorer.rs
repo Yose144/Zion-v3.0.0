@@ -122,7 +122,7 @@ pub async fn run(cfg: &Config) -> Result<()> {
 
 async fn refresh_data(state: &mut ExplorerState, host: &str, port: u16) {
     // Get chain stats
-    match node_rpc::call0(host, port, "get_stats").await {
+    match node_rpc::call0(host, port, "getChainInfo").await {
         Ok(v) => {
             state.height = v["height"].as_u64().unwrap_or(0);
             state.tip_hash = v["tip_hash"].as_str().unwrap_or("").into();
@@ -143,11 +143,11 @@ async fn refresh_data(state: &mut ExplorerState, host: &str, port: u16) {
         let res = node_rpc::call(
             host,
             port,
-            "get_block_by_height",
+            "getBlockByHeight",
             serde_json::json!({ "height": h }),
         ).await;
         if let Ok(b) = res {
-            let hash = b["hash"].as_str().unwrap_or("").into();
+            let hash = b["hash_hex"].as_str().or_else(|| b["hash"].as_str()).unwrap_or("").into();
             let txs = b["tx_count"].as_u64()
                 .or_else(|| b["transactions"].as_array().map(|a| a.len() as u64))
                 .unwrap_or(0);
