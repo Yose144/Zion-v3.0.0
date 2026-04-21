@@ -34,6 +34,8 @@ Důležité příklady:
 - `agent` nebo `ai-native` -> `ai-native`
 - `monitoring` -> monitoring bundle
 
+Nepodporovaný lifecycle target má teď selhat lokálně s jasným seznamem podporovaných targetů ještě před SSH voláním.
+
 ## 4. Veřejné docs po změně chybí
 
 Web čte markdowny z website public docs tree.
