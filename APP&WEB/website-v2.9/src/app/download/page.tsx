@@ -51,6 +51,29 @@ const getSteps = (cs: boolean) => [
   },
 ];
 
+const getCliPlatforms = (cs: boolean) => [
+  {
+    os: 'Windows 10 / 11 — x64',
+    command: 'cargo build -p zion-cli --release && .\\target\\release\\zion.exe --help',
+    note: cs ? 'Aktuální jistota: build ze zdroje a lokální běh CLI na Windows.' : 'Current guaranteed path: build from source and run the CLI locally on Windows.',
+  },
+  {
+    os: 'Linux — Intel / AMD',
+    command: 'cargo build -p zion-cli --release && ./target/release/zion --help',
+    note: cs ? 'Doporučená operator cesta pro servery a workstationy.' : 'Recommended operator path for servers and workstations.',
+  },
+  {
+    os: 'Linux — ARM64 (RPi)',
+    command: 'cargo build -p zion-cli --release && ./target/release/zion --help',
+    note: cs ? 'Stejný source flow pro ARM64 uzly a lehké operátorské stroje.' : 'The same source flow for ARM64 nodes and light operator machines.',
+  },
+  {
+    os: 'macOS — Apple Silicon',
+    command: 'cargo build -p zion-cli --release && ./target/release/zion --help',
+    note: cs ? 'Lokální build je dnes nejpoctivější veřejně garantovaná cesta pro macOS.' : 'Local build is the most honest publicly guaranteed path for macOS today.',
+  },
+];
+
 /* ───────────────────────── component ───────────────────────── */
 
 export default function DownloadPage() {
@@ -58,6 +81,7 @@ export default function DownloadPage() {
   const cs = lang === 'cs';
   const desktopAgentFeatures = getDesktopAgentFeatures(cs);
   const steps = getSteps(cs);
+  const cliPlatforms = getCliPlatforms(cs);
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -102,6 +126,45 @@ export default function DownloadPage() {
                 <ExternalLink className="h-3 w-3" />
               </Link>
             </div>
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operator gateway' : 'Operator gateway'}</p>
+            <h2 className="text-3xl font-semibold text-white">ZION CLI · Windows · Linux · macOS</h2>
+            <p className="text-gray-400 max-w-3xl">
+              {cs
+                ? 'ZION CLI je sjednocený vstup do celého stacku: node, pool, miner, agent, bridge, dao, deploy a monitoring. Veřejná dokumentace už je hotová; veřejné binární release artefakty pro všechny OS teď teprve doháníme, takže dnešní garantovaná cesta je build ze zdroje.'
+                : 'ZION CLI is the unified entrypoint for the whole stack: node, pool, miner, agent, bridge, dao, deploy, and monitoring. The public docs are already in place; public binary release artifacts for all OSes are still catching up, so today the guaranteed path is building from source.'}
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {cliPlatforms.map((platform) => (
+              <div key={platform.os} className="rounded-3xl border border-white/10 bg-black/40 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-xl font-semibold text-white">{platform.os}</h3>
+                  <span className="rounded-full border border-zion-gold/20 bg-zion-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-zion-gold">
+                    ZION CLI
+                  </span>
+                </div>
+                <p className="mt-3 text-sm text-gray-400">{platform.note}</p>
+                <div className="mt-4 rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
+                  <span className="text-gray-500">$</span>{' '}
+                  {platform.command}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/5 p-5">
+            <p className="text-sm text-gray-300">
+              <span className="text-zion-cyan font-semibold">{cs ? 'Zdroj pravdy:' : 'Source of truth:'}</span>{' '}
+              {cs ? 'operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci ' : 'operator commands, guide, FAQ, reference, and troubleshooting live in the '}
+              <Link href="/docs" className="text-zion-cyan underline hover:no-underline">ZION CLI</Link>
+              {cs ? ' v dokumentaci.' : ' section of the docs.'}
+            </p>
           </div>
         </section>
 

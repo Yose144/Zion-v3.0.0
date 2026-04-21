@@ -2,7 +2,7 @@
 
 > *Čtvrtá kniha ZION · Zlatý Kompas Nové Země*
 
-Patnáct kapitol pokrývá celou cestu — od kosmologického prologu přes AI vědomí, komunity a architekturu L1–L6 po Issobellu, WARP a Zlatý Kompas s jasnými milníky.
+Patnáct kapitol pokrývá celou cestu — od kosmologického prologu přes AI vědomí, komunity a oddělené vrstvy L1, L2, L3, L4, L5 a L6 až po Issobellu, WARP a Zlatý Kompas s jasnými milníky.
 
 ---
 
