@@ -2,6 +2,7 @@
 # ║  ZION V3 MainNet — Unified Production Stack                  ║
 # ║  L1 (core, pool, miner, seed, redis)                         ║
 # ║  L2 (bridge, swap, dao)                                      ║
+# ║  L3 (ai-native, warp/ncl control plane)                      ║
 # ║  Web (website, stability-collector)                           ║
 # ║  Monitoring (prometheus, grafana, exporters, alertmanager)    ║
 # ╚══════════════════════════════════════════════════════════════╝
@@ -14,7 +15,7 @@
 # Optional .env: SEED_PEERS, MINER_CPUS, GRAFANA_ADMIN_PASSWORD
 #
 # Profiles:
-#   default  — L1 core stack (core, pool, miner, redis, seed1)
+#   default  — L1 core stack + L3 agent (core, pool, miner, redis, seed1, ai-native)
 #   l2       — Bridge, Swap, DAO
 #   web      — Website + stability collector
 #   monitor  — Prometheus, Grafana, exporters, alertmanager
@@ -304,6 +305,56 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+  # ════════════════════════════════════════════════════════════
+  # L3 — AI Native
+  # ════════════════════════════════════════════════════════════
+  ai-native:
+    build:
+      context: ../V3
+      dockerfile: ../docker/Dockerfile.v3.ai-native
+    image: zion-ai-native:v3-mainnet
+    container_name: zion-ai-native
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8001:8001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    tmpfs:
+      - /tmp
+    depends_on:
+      core:
+        condition: service_healthy
+      pool:
+        condition: service_started
+    environment:
+      - RUST_LOG=info
+      - HIRANYAGARBHA_BIND=0.0.0.0:8001
+      - HIRANYAGARBHA_BACKEND=${HIRANYAGARBHA_BACKEND:-auto}
+      - LLM_BASE_URL=${LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      - LLM_MODEL=${LLM_MODEL:-zion-expert}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
+      - ZION_NODE_RPC_ADDR=host.docker.internal:8443
+      - ZION_POOL_API_URL=http://host.docker.internal:8080
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8001/health >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 768M
+        reservations:
+          cpus: '0.10'
+          memory: 128M
+    networks:
+      - zion-net
 
   # ════════════════════════════════════════════════════════════
   # Web — Website + Stability Collector
