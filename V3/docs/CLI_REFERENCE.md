@@ -48,6 +48,8 @@ zion stop monitoring
 
 `monitoring` expands into the monitoring service bundle instead of a single process.
 
+If you pass an unsupported target, the CLI now fails locally with the supported target list instead of deferring the error to remote `docker compose`.
+
 ## L1 Commands
 
 ### `zion node`
