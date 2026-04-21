@@ -45,6 +45,7 @@ start        Start service(s): all | node | pool | miner | agent | ai-native | b
 stop         Stop service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
 restart      Restart service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
 status       Health check — all layers
+doctor       Run preflight diagnostics for config, local tools, and endpoints
 logs         Tail logs for a service
 dashboard    Open web dashboard in browser
 node         L1 core node commands
@@ -188,6 +189,7 @@ Mining notes:
 
 ```bash
 zion status
+zion doctor
 zion node status
 zion pool stats
 zion agent status
@@ -258,9 +260,12 @@ Useful commands:
 zion config show
 zion config path
 zion config validate
+zion doctor
 zion config set node.rpc_host 91.98.122.165
 zion onboard
 ```
+
+`zion doctor` is the one-shot preflight for publishable/operator-facing installs. It combines config validation, local miner binary discovery, node RPC reachability, and AI Native reachability in one place.
 
 ## Operator Notes
 
