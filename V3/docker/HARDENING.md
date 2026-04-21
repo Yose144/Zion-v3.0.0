@@ -10,6 +10,7 @@ ufw default allow outgoing
 ufw allow 22/tcp          # SSH
 ufw allow 8334/tcp        # P2P (node)
 ufw allow 3333/tcp        # Stratum (public miner port, if exposed)
+ufw allow 8001/tcp        # AI Native API (only if public agent access is required)
 # Keep RPC, metrics, Grafana on loopback only — no ufw rule needed.
 ufw enable
 ufw status verbose

@@ -31,6 +31,13 @@ export default function Features() {
       spectrum: 'from-rose-500/20 via-zion-purple/10 to-transparent',
     },
     {
+      title: tx(t.features.tracks.ai_native.title, lang),
+      description: tx(t.features.tracks.ai_native.desc, lang),
+      icon: Zap,
+      badge: tx(t.features.tracks.ai_native.badge, lang),
+      spectrum: 'from-fuchsia-500/20 via-zion-cyan/10 to-transparent',
+    },
+    {
       title: tx(t.features.tracks.warp.title, lang),
       description: tx(t.features.tracks.warp.desc, lang),
       icon: Rocket,
