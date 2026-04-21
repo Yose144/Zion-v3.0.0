@@ -79,3 +79,9 @@ So the canonical interpretation today is:
 - AI Native = orchestrator and control plane,
 - LLM backend = optional integration,
 - fallback mode is acceptable if it is explicit and truthful.
+
+## Related docs
+
+- `ZION CLI Reference`
+- `ZION CLI Troubleshooting`
+- `ZION CLI Deploy Playbook`
