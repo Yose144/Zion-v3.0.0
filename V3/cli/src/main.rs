@@ -1,8 +1,10 @@
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
+use std::io::{self, IsTerminal};
 
 mod commands;
 mod config;
+mod menu;
 mod rpc;
 mod ui;
 
@@ -26,11 +28,13 @@ struct Cli {
     config: Option<String>,
 
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Open interactive arrow-key operator menu
+    Menu,
     /// First-time setup wizard
     Onboard,
     /// Start service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
@@ -143,9 +147,58 @@ enum ConfigCmd {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    let cfg = config::load(cli.config.as_deref())?;
+    let should_open_menu = cli
+        .command
+        .as_ref()
+        .map(|cmd| matches!(cmd, Commands::Menu))
+        .unwrap_or(true);
 
-    match cli.command {
+    if should_open_menu {
+        if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
+            let mut cmd = Cli::command();
+            cmd.print_help()?;
+            println!();
+            return Ok(());
+        }
+
+        return run_menu_session(cli.config).await;
+    }
+
+    dispatch(cli).await
+}
+
+async fn run_menu_session(default_config: Option<String>) -> Result<()> {
+    let mut show_genesis = true;
+
+    loop {
+        let args = match menu::run(show_genesis)? {
+            Some(args) => args,
+            None => return Ok(()),
+        };
+        show_genesis = false;
+
+        let mut cli = Cli::try_parse_from(args)?;
+        if cli.config.is_none() {
+            cli.config = default_config.clone();
+        }
+
+        if let Err(err) = dispatch(cli).await {
+            ui::print_err(&format!("{}", err));
+            println!();
+        }
+
+        ui::wait_for_enter("Press Enter to return to the ZION menu...")?;
+    }
+}
+
+async fn dispatch(cli: Cli) -> Result<()> {
+    let cfg = config::load(cli.config.as_deref())?;
+    let command = cli
+        .command
+        .ok_or_else(|| anyhow::anyhow!("no command selected"))?;
+
+    match command {
+        Commands::Menu => unreachable!("interactive menu is resolved before dispatch"),
         Commands::Onboard => onboard::run(&cfg).await,
         Commands::Status => status::run(&cfg).await,
         Commands::Doctor => doctor::run(&cfg).await,

@@ -13,10 +13,18 @@ OpenClaw note: the inspiration here is the gateway-first operator UX of OpenClaw
 
 `zion` already works as a real operator entrypoint for:
 
+- a menu-first arrow-key launcher when you start `zion` with no subcommand
 - L1 node, pool, miner, and wallet flows
 - L2 bridge and DAO gateway flows
 - L3 AI Native, Warp, and NCL status/gateway flows
 - deploy, logs, monitoring, explorer, onboarding, config, and shell completions
+
+The CLI entry now has a dedicated Genesis presentation layer:
+
+- the interactive launcher opens with the Genesis tree and ZION mainnet banner
+- onboarding opens with the same Genesis entry banner
+- the launcher now stays alive across commands and returns the operator back into the menu after each completed action
+- typed commands still remain the canonical execution surface underneath the launcher
 
 Canonical operator docs now live in:
 
@@ -36,6 +44,7 @@ The website documentation should mirror these under one clean section named `ZIO
 |------|--------|-------|
 | Top-level crate in `V3/cli/` | Done | The CLI is in the active V3 workspace, not in `V3/L1/cli`. |
 | Core runtime commands | Done | `onboard`, `start`, `stop`, `restart`, `status`, `doctor`, `logs`, `dashboard`, `monitor`, `explorer`, `completions`. |
+| Menu-first launcher | Done | `zion` with no subcommand now opens an arrow-key operator launcher and `zion menu` opens it explicitly. |
 | Node gateway | Done | Speaks the real raw TCP JSON-RPC node protocol on `:8443` and uses canonical method names. |
 | Pool gateway | Done | Operator inspection surface exists through `zion pool`. |
 | Miner gateway | Done | `zion mine` supports start, status, bench, stop, and DCR-related flow. |
@@ -55,7 +64,7 @@ The website documentation should mirror these under one clean section named `ZIO
 |------|--------|---------|
 | AI Native runtime posture | Partial | The CLI integrates with the live AI Native service, but current production posture is orchestrator/control-plane first. Heavy local inference is not the default assumption. |
 | Doctor diagnostics | Partial | `zion doctor` already helps, but it does not yet cover deeper SSH/deploy readiness, compose state, or richer mining environment diagnostics. |
-| OpenClaw-inspired operator UX | Partial | The gateway-first direction is real and GPU/backend surfacing is much better, but the CLI is not yet at full polished, publishable operator-suite level. |
+| OpenClaw-inspired operator UX | Partial | The gateway-first direction is now materially better: menu-first launcher, guided command generation, Genesis entry banner, and persistent return-to-menu flow are real. The remaining gap is tighter grouped dashboards, richer guided forms, and deeper in-app navigation without bouncing through plain command output. |
 | Download-ready distribution | Partial | The CLI is usable from source builds today, but release packaging and public install flow are still not finished. |
 
 ---
@@ -80,6 +89,7 @@ The rule from now on is simple: if it is not in `V3/cli/src/main.rs` and the com
 Top-level commands currently exposed by the real CLI:
 
 ```text
+menu
 onboard
 start
 stop
@@ -108,6 +118,7 @@ Primary command groups:
 
 | Group | Current role |
 |-------|--------------|
+| `zion` | menu-first operator launcher for common flows |
 | `zion node` | L1 core RPC inspection and status flow |
 | `zion pool` | pool operator inspection |
 | `zion mine` | miner control, benchmarks, backend selection, DCR sidecar-related flow |
@@ -125,6 +136,20 @@ For exact commands and examples, the source of truth is the CLI docs set under `
 ---
 
 ## Quick Start For The Real CLI
+
+Interactive launcher first:
+
+```bash
+zion
+```
+
+Explicit launcher entry:
+
+```bash
+zion menu
+```
+
+Typed CLI still remains fully canonical underneath the launcher.
 
 Build from the V3 workspace root:
 
@@ -148,6 +173,14 @@ zion config validate
 zion doctor
 zion status
 ```
+
+Current practical operator flow:
+
+1. Start with `zion`
+2. Use arrows to choose the area
+3. Let the launcher generate the canonical command
+4. Review the output and press Enter to return into the launcher
+5. Drop to typed subcommands only for narrower advanced work
 
 ---
 
@@ -241,10 +274,21 @@ Those files should not be mixed into `Public Launch Path` anymore.
 
 The next sensible CLI milestones are:
 
-1. release-oriented metadata and install surface such as `zion version` and update strategy
+1. grouped operator dashboard screen with higher-signal categories and less raw list feeling
 2. wider `doctor` coverage for SSH, deploy, compose, and mining environment checks
-3. more polished download-ready packaging for public operator distribution
-4. more OpenClaw-inspired operator UX around upgrades, diagnostics, and high-signal help output
+3. richer guided forms for mining, wallet send, deploy, and agent workflows
+4. release-oriented metadata and install surface such as `zion version` and update strategy
+5. more polished download-ready packaging for public operator distribution
+
+## Current UX Plan
+
+The CLI is now on a clearer path:
+
+- Phase 1 done: real command surface, RPC wiring, deploy flows, doctor, TUI views
+- Phase 2 done: menu-first arrow launcher and Genesis entry banner
+- Phase 3 done: persistent in-app navigation and post-command return flow
+- Phase 4 next: richer guided forms for mining, wallet send, deploy, and agent workflows
+- Phase 5 later: release polish, version/update surface, public install ergonomics
 
 ---
 
