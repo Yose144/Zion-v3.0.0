@@ -1,11 +1,15 @@
 pub mod agent;
 pub mod bridge;
+pub mod completions;
 pub mod dao;
 pub mod deploy;
 pub mod explorer;
 pub mod mine;
+pub mod monitor;
+pub mod ncl;
 pub mod node;
 pub mod onboard;
 pub mod pool;
 pub mod status;
 pub mod wallet;
+pub mod warp;
